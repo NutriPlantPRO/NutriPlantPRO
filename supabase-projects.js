@@ -1173,9 +1173,14 @@
         var payload = Object.assign({}, reportData);
         // Historial entre equipos: metadatos + selectedSections. HTML solo si se está compartiendo
         // (shareToken + reportHTML) o si el payload es pequeño. Evita fallos por Radar/base64 enormes.
+        // Preferir Storage (shareHtmlPath): no meter reportHTML gigante en JSONB.
+        var shareHtmlPath = String(payload.shareHtmlPath || payload.share_html_path || '').trim();
         var htmlLen = typeof payload.reportHTML === 'string' ? payload.reportHTML.length : 0;
         var sharingWithHtml = !!(payload.shareToken && payload.shareEnabled !== false && htmlLen > 0);
-        if (htmlLen > 400000 && !sharingWithHtml) {
+        if (shareHtmlPath) {
+          delete payload.reportHTML;
+          htmlLen = 0;
+        } else if (htmlLen > 400000 && !sharingWithHtml) {
           delete payload.reportHTML;
           htmlLen = 0;
         }
@@ -1194,8 +1199,16 @@
               if (payload.shareEnabled === undefined && ex.shareEnabled !== undefined) payload.shareEnabled = ex.shareEnabled;
               if (!payload.shareCreatedAt && ex.shareCreatedAt) payload.shareCreatedAt = ex.shareCreatedAt;
             }
-            // Conservar HTML de share ya subido si este sync es solo metadatos.
+            const exPath = String(ex.shareHtmlPath || ex.share_html_path || '').trim();
+            if (!shareHtmlPath && exPath) {
+              payload.shareHtmlPath = exPath;
+              shareHtmlPath = exPath;
+              delete payload.reportHTML;
+              htmlLen = 0;
+            }
+            // Conservar HTML de share ya subido si este sync es solo metadatos (y no hay path en Storage).
             if (
+              !shareHtmlPath &&
               (!payload.reportHTML || typeof payload.reportHTML !== 'string' || !payload.reportHTML.trim()) &&
               typeof ex.reportHTML === 'string' &&
               ex.reportHTML.trim()
@@ -1235,6 +1248,55 @@
       } catch (e) {
         console.warn('⚠️ syncReport:', e);
         return false;
+      }
+    },
+
+    /**
+     * Sube el HTML de vista compartida a Storage (evita el tope ~6 MB de Netlify en /api/report-view).
+     * @returns {Promise<string|null>} path relativo en bucket report-shares
+     */
+    uploadReportShareHtml: async function(userId, reportId, html) {
+      if (!userId || !UUID_REGEX.test(String(userId)) || !reportId) return null;
+      const raw = typeof html === 'string' ? html : '';
+      if (!raw.trim()) return null;
+      const client = getClient();
+      if (!client) {
+        console.warn('⚠️ uploadReportShareHtml: sin cliente Supabase');
+        return null;
+      }
+      try {
+        let hasSession = false;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const sessionRes = await client.auth.getSession();
+            hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+          } catch (sessionErr) {
+            hasSession = false;
+          }
+          if (hasSession) break;
+          if (attempt < 3) await new Promise(function(r) { setTimeout(r, 350); });
+        }
+        if (!hasSession) {
+          console.warn('⚠️ uploadReportShareHtml: sin sesión');
+          return null;
+        }
+        const safeId = String(reportId).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120);
+        const path = String(userId) + '/' + safeId + '.html';
+        const blob = new Blob([raw], { type: 'text/html;charset=utf-8' });
+        const { error } = await client.storage.from('report-shares').upload(path, blob, {
+          upsert: true,
+          contentType: 'text/html;charset=utf-8',
+          cacheControl: '3600'
+        });
+        if (error) {
+          console.error('⚠️ uploadReportShareHtml:', error.message || error);
+          return null;
+        }
+        console.log('☁️ HTML de vista compartida en Storage:', path);
+        return path;
+      } catch (e) {
+        console.warn('⚠️ uploadReportShareHtml:', e);
+        return null;
       }
     },
 

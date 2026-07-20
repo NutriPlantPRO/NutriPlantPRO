@@ -122,6 +122,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/admin/share-report"
+  to = "/.netlify/functions/admin-share-report"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/nutri-pro-extract"
   to = "/.netlify/functions/nutri-pro-extract"
   status = 200

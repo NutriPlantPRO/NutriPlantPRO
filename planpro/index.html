@@ -5464,12 +5464,6 @@
       background: rgba(236, 253, 245, 0.75);
       border-color: rgba(5, 150, 105, 0.28);
     }
-    .np-mapa-link-hint {
-      flex: 1 1 160px;
-      font-size: 12px;
-      color: #475569;
-      line-height: 1.35;
-    }
     .np-mapa-node.is-link-from circle,
     .np-mapa-node.is-link-from rect,
     .np-mapa-node.is-link-from polygon {
@@ -11337,7 +11331,6 @@
           <div class="np-mapa-link-bar" id="npMapaLinkBar" aria-label="Relacionar desde el mapa">
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapaLinkToggle">Relacionar</button>
             <div id="npMapaLinkTypes" class="np-rel-type-pills" aria-label="Tipo de relación"></div>
-            <span class="np-mapa-link-hint" id="npMapaLinkHint">Activa Relacionar y toca dos apuntes (origen → destino).</span>
           </div>
         </section>
         <div class="np-mapa-stage" aria-label="Neuron PRO con franjas laterales para scroll">
@@ -28225,7 +28218,6 @@
   }
 
   function updateMapaLinkHint() {
-    var hint = $('npMapaLinkHint');
     var bar = $('npMapaLinkBar');
     var toggle = $('npMapaLinkToggle');
     if (bar) bar.classList.toggle('is-on', !!planProMapaLinkState.active);
@@ -28233,18 +28225,15 @@
       toggle.textContent = planProMapaLinkState.active ? 'Cancelar' : 'Relacionar';
       toggle.classList.toggle('btn-ghost-blue', !planProMapaLinkState.active);
     }
-    if (!hint) return;
     if (!planProMapaLinkState.active) {
-      hint.textContent =
-        'Activa Relacionar y toca dos apuntes (origen → destino). Filtra por planta si hay muchos.';
+      showMapaTip('');
       return;
     }
     var typeLab = planProRelationTypeLabel(planProMapaLinkState.type, false);
     if (!planProMapaLinkState.fromId) {
-      hint.textContent = 'Modo activo · ' + typeLab + ' · toca el apunte origen.';
+      showMapaTip(typeLab + ' · toca el origen');
     } else {
-      hint.textContent =
-        'Origen listo · ' + typeLab + ' · toca el destino (o el mismo para cancelar origen).';
+      showMapaTip(typeLab + ' · toca el destino');
     }
   }
 
@@ -28617,9 +28606,9 @@
     var nA = Math.max(activeAreas.length, 1);
     var totalItemsHint = Object.keys(itemsById).length;
     var plantR =
-      560 +
-      Math.max(0, nA - 1) * 160 +
-      Math.min(280, totalItemsHint * 3.8);
+      720 +
+      Math.max(0, nA - 1) * 220 +
+      Math.min(320, totalItemsHint * 4.2);
 
     var CAT_DEPTH_STYLE = [
       { r: 18, color: '#475569' },
@@ -28645,10 +28634,10 @@
       if (!kids.length) return;
       var orbit =
         depth === 0
-          ? 250 + Math.max(0, kids.length - 1) * 48
+          ? 280 + Math.max(0, kids.length - 1) * 56
           : depth === 1
-            ? 145 + Math.max(0, kids.length - 1) * 28
-            : 110 + Math.max(0, kids.length - 1) * 22;
+            ? 160 + Math.max(0, kids.length - 1) * 32
+            : 118 + Math.max(0, kids.length - 1) * 24;
       var style = CAT_DEPTH_STYLE[Math.min(depth, 2)];
       kids.forEach(function (c, ci) {
         var cAng =
@@ -28937,10 +28926,13 @@
 
     separateMapaNodes(nodes, Math.min(100, 55 + Math.floor(nodes.length / 8)));
     nestOrbitsHierarchically();
+    separateSiblingOrbitClusters(nodes, byId, itemsById, 40);
+    nestOrbitsHierarchically();
     separateSiblingOrbitClusters(nodes, byId, itemsById, 28);
     nestOrbitsHierarchically();
-    separateSiblingOrbitClusters(nodes, byId, itemsById, 16);
-    separatePlantOrbitClusters(nodes, 28);
+    separatePlantOrbitClusters(nodes, 40);
+    nestOrbitsHierarchically();
+    separatePlantOrbitClusters(nodes, 24);
     nestOrbitsHierarchically();
 
     /* Si algún nodo quedó con coords inválidas, recentrar. */
@@ -29049,6 +29041,8 @@
       if (n.clusterAreaId === areaId || (n.kind === 'area' && n.refId === areaId)) {
         n.x += dx;
         n.y += dy;
+        if (n.orbitCx != null) n.orbitCx += dx;
+        if (n.orbitCy != null) n.orbitCy += dy;
       }
     });
   }
@@ -29112,6 +29106,8 @@
       if (!n || !moveIds[n.id]) return;
       n.x += dx;
       n.y += dy;
+      if (n.orbitCx != null) n.orbitCx += dx;
+      if (n.orbitCy != null) n.orbitCy += dy;
     });
   }
 
@@ -29120,12 +29116,12 @@
    * A más apuntes/sub-ramas → órbita más grande → más distancia entre hermanas.
    */
   function separateSiblingOrbitClusters(nodes, byId, itemsById, iterations) {
-    iterations = iterations || 28;
+    iterations = iterations || 36;
     var groups = {};
     (nodes || []).forEach(function (n) {
       if (!n || n.kind !== 'cat') return;
       var reach = n.orbitReach || 0;
-      if (reach < (n.r || 10) + 18) return;
+      if (reach < (n.r || 10) + 14) return;
       var pk = n.parentCatId
         ? 'cat:' + n.parentCatId
         : n.parentAreaId
@@ -29135,9 +29131,7 @@
       if (!groups[pk]) groups[pk] = [];
       groups[pk].push(n);
     });
-    /* No exigir órbitas 100% disjuntas (eso explotaba el layout); solo reducir solape fuerte. */
-    var pad = 18;
-    var overlapFactor = 0.78;
+    var gap = 22;
     Object.keys(groups).forEach(function (pk) {
       var siblings = groups[pk];
       if (siblings.length < 2) return;
@@ -29149,18 +29143,17 @@
           for (j = i + 1; j < siblings.length; j++) {
             var a = siblings[i];
             var b = siblings[j];
-            var ax = a.x;
-            var ay = a.y;
-            var bx = b.x;
-            var by = b.y;
-            var need =
-              ((a.orbitReach || 0) + (b.orbitReach || 0)) * overlapFactor + pad;
+            var ax = a.orbitCx != null ? a.orbitCx : a.x;
+            var ay = a.orbitCy != null ? a.orbitCy : a.y;
+            var bx = b.orbitCx != null ? b.orbitCx : b.x;
+            var by = b.orbitCy != null ? b.orbitCy : b.y;
+            var need = (a.orbitReach || 0) + (b.orbitReach || 0) + gap;
             var dx = bx - ax;
             var dy = by - ay;
             var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
             if (dist >= need) continue;
-            var push = ((need - dist) / 2) * (0.55 + (1 - iter / iterations) * 0.35);
-            push = Math.min(push, 48);
+            var push = ((need - dist) / 2) * (0.62 + (1 - iter / iterations) * 0.32);
+            push = Math.min(push, 36);
             var ux = dx / dist;
             var uy = dy / dist;
             translateMapaCatSubtree(nodes, byId, itemsById, a.refId, -ux * push, -uy * push);
@@ -29172,13 +29165,12 @@
   }
 
   function separatePlantOrbitClusters(nodes, iterations) {
-    iterations = iterations || 28;
+    iterations = iterations || 36;
     var plants = (nodes || []).filter(function (n) {
       return n && n.kind === 'area' && n.orbitReach > 0;
     });
     if (plants.length < 2) return;
-    var pad = 48;
-    var overlapFactor = 0.82;
+    var gap = 40;
     var iter;
     var i;
     var j;
@@ -29187,15 +29179,17 @@
         for (j = i + 1; j < plants.length; j++) {
           var a = plants[i];
           var b = plants[j];
-          /* Usar posición del ícono (se actualiza al empujar). orbitCx viejo hacía push infinito. */
-          var need =
-            ((a.orbitReach || 100) + (b.orbitReach || 100)) * overlapFactor + pad;
-          var dx = b.x - a.x;
-          var dy = b.y - a.y;
+          var ax = a.orbitCx != null ? a.orbitCx : a.x;
+          var ay = a.orbitCy != null ? a.orbitCy : a.y;
+          var bx = b.orbitCx != null ? b.orbitCx : b.x;
+          var by = b.orbitCy != null ? b.orbitCy : b.y;
+          var need = (a.orbitReach || 100) + (b.orbitReach || 100) + gap;
+          var dx = bx - ax;
+          var dy = by - ay;
           var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
           if (dist >= need) continue;
-          var push = ((need - dist) / 2) * (0.6 + (1 - iter / iterations) * 0.35);
-          push = Math.min(push, 80);
+          var push = ((need - dist) / 2) * (0.65 + (1 - iter / iterations) * 0.3);
+          push = Math.min(push, 55);
           var ux = dx / dist;
           var uy = dy / dist;
           translateMapaCluster(nodes, a.refId, -ux * push, -uy * push);

@@ -4,10 +4,16 @@
  * URL esperada:
  *   /api/report-view?rid=<report_id>&t=<share_token>
  *
- * Seguridad:
- * - Usa SUPABASE_SERVICE_ROLE_KEY en backend (nunca en navegador).
- * - Devuelve HTML solo si rid + token coinciden (sin fecha de vencimiento).
+ * Los reportes con Radar (imágenes base64) superan el tope de respuesta de Netlify
+ * (~6 MB). Preferimos `data.shareHtmlPath` en Storage (bucket report-shares) y
+ * devolvemos una página liviana con iframe + URL firmada.
  */
+
+/** Por debajo del límite Netlify (~6.29 MB) para respuestas inline legacy. */
+const MAX_INLINE_HTML_CHARS = 5200000;
+const SHARE_BUCKET = 'report-shares';
+/** URL firmada: 7 días; el link rid+t no caduca (se firma de nuevo en cada visita). */
+const SIGNED_TTL_SEC = 60 * 60 * 24 * 7;
 
 function htmlResponse(statusCode, html) {
   return {
@@ -78,7 +84,6 @@ function withSharedViewChrome(reportHtml, options) {
     .np-shared-topbar .links a[data-social="linkedin"]:hover{color:#0077b5}
     .np-shared-topbar .links svg{width:18px;height:18px}
     .np-shared-note{max-width:1200px;margin:10px auto 0;padding:10px 12px;border:1px solid #bae6fd;background:#eff6ff;color:#0c4a6e;border-radius:8px;font:600 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    /* Vista compartida móvil: ancho completo y rejillas en una columna (el reporte usa rutas relativas a dashboard.css) */
     html{-webkit-text-size-adjust:100%}
     html,body{max-width:100%!important;overflow-x:hidden;box-sizing:border-box}
     *,*::before,*::after{box-sizing:border-box}
@@ -97,7 +102,6 @@ function withSharedViewChrome(reportHtml, options) {
       .report-admin-table.report-vpd-saved-table{min-width:0;max-width:100%}
       .report-amend-results-wrap .results-table{min-width:520px}
     }
-    /* Solo en vista compartida: evita que la marca de agua quede detrás de la banda */
     .report-watermark-corner{top:60px!important}
     @media (max-width:680px){
       .np-shared-topbar .inner{padding:0 10px}
@@ -108,16 +112,8 @@ function withSharedViewChrome(reportHtml, options) {
     }
     @media print{
       .np-shared-topbar,.np-shared-note{display:none!important}
-      html,body{
-        overflow:visible!important;
-        height:auto!important;
-        max-height:none!important;
-        position:static!important;
-      }
-      .report-main,.section,.project-info,.header,.footer{
-        overflow:visible!important;
-        max-height:none!important;
-      }
+      html,body{overflow:visible!important;height:auto!important;max-height:none!important;position:static!important}
+      .report-main,.section,.project-info,.header,.footer{overflow:visible!important;max-height:none!important}
     }
   </style>`;
   const chromeScript = `<script>
@@ -215,6 +211,78 @@ function npSharedReportPrint(){
   return out;
 }
 
+/** Página liviana: topbar + iframe al HTML en Storage (no pasa por el tope de Netlify). */
+function storageShellPage(signedUrl) {
+  const src = escapeHtml(signedUrl);
+  const srcJson = JSON.stringify(String(signedUrl || ''));
+  return `<!doctype html>
+<html lang="es" class="notranslate" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>NutriPlant PRO — Reporte</title>
+  <style>
+    html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc}
+    .np-shared-topbar{position:sticky;top:0;z-index:9999;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);border-bottom:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .np-shared-topbar .inner{height:48px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 16px;position:relative}
+    .np-shared-topbar .brand{position:absolute;left:16px;top:50%;transform:translateY(-50%);line-height:0}
+    .np-shared-topbar .brand img{height:40px;width:auto;display:block}
+    .np-shared-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:none;border-radius:8px;background:#0284c7;color:#fff;font:600 13px/1 system-ui,sans-serif;cursor:pointer}
+    .np-shared-pdf-btn:hover{background:#0369a1}
+    .np-shared-note{margin:0;padding:10px 16px;border-bottom:1px solid #bae6fd;background:#eff6ff;color:#0c4a6e;font:600 13px/1.35 system-ui,sans-serif}
+    #np-share-frame{display:block;width:100%;height:calc(100vh - 96px);border:0;background:#fff}
+    @media print{
+      .np-shared-topbar,.np-shared-note{display:none!important}
+      #np-share-frame{height:100vh}
+    }
+  </style>
+</head>
+<body>
+  <header class="np-shared-topbar">
+    <div class="inner">
+      <a class="brand" href="https://nutriplantpro.com/dashboard.html" target="_blank" rel="noopener noreferrer">
+        <img src="https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
+      </a>
+      <button type="button" class="np-shared-pdf-btn" id="np-share-print-btn" title="Guardar como PDF">📥 Descargar PDF</button>
+    </div>
+  </header>
+  <div class="np-shared-note">Vista compartida NutriPlant PRO. El enlace <strong>no caduca</strong>. Usa «Descargar PDF» (Imprimir → Guardar como PDF).</div>
+  <iframe id="np-share-frame" title="Reporte NutriPlant PRO" src="${src}"></iframe>
+  <script>
+  (function(){
+    var url=${srcJson};
+    document.getElementById('np-share-print-btn').addEventListener('click',function(){
+      var pw=window.open(url,'_blank');
+      if(!pw){
+        alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');
+        return;
+      }
+      var fired=false;
+      function doPrint(){
+        if(fired)return;
+        fired=true;
+        try{pw.focus();pw.print();}catch(e){}
+      }
+      try{
+        pw.addEventListener('load',function(){setTimeout(doPrint,500);});
+        setTimeout(doPrint,2000);
+      }catch(e){setTimeout(doPrint,800);}
+    });
+  })();
+  </script>
+</body>
+</html>`;
+}
+
+async function getSupabaseAdmin() {
+  const url = String(process.env.SUPABASE_URL || '').trim();
+  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!url || !key) return null;
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient(url, key);
+}
+
 exports.handler = async function(event) {
   try {
     const q = event.queryStringParameters || {};
@@ -259,11 +327,41 @@ exports.handler = async function(event) {
       return htmlResponse(403, errorPage('Acceso denegado', 'Este link no coincide con el reporte en el servidor. Suele pasar si la subida a la nube falló al compartir o si el reporte fue eliminado. Vuelve al panel, pulsa «Compartir vista» una sola vez y espera el mensaje de éxito.'));
     }
 
-    // Política NutriPlant: los links compartidos no caducan (shareExpiresAt se ignora).
+    const shareHtmlPath = String(data.shareHtmlPath || data.share_html_path || '').trim();
+    if (shareHtmlPath) {
+      const supabase = await getSupabaseAdmin();
+      if (!supabase) {
+        return htmlResponse(500, errorPage('Configuración incompleta', 'No se pudo firmar la vista del reporte.'));
+      }
+      const { data: signed, error: signErr } = await supabase.storage
+        .from(SHARE_BUCKET)
+        .createSignedUrl(shareHtmlPath, SIGNED_TTL_SEC);
+      if (signErr || !signed || !signed.signedUrl) {
+        console.error('report-view sign:', signErr && signErr.message);
+        return htmlResponse(
+          502,
+          errorPage(
+            'Vista no disponible',
+            'No se pudo abrir el archivo del reporte en la nube. Vuelve al panel y pulsa «Compartir vista» otra vez.'
+          )
+        );
+      }
+      return htmlResponse(200, storageShellPage(signed.signedUrl));
+    }
 
     const html = typeof data.reportHTML === 'string' ? data.reportHTML : '';
     if (!html) {
       return htmlResponse(410, errorPage('Vista no disponible', 'Este reporte no tiene una vista lista para compartir. Genera un nuevo link.'));
+    }
+
+    if (html.length > MAX_INLINE_HTML_CHARS) {
+      return htmlResponse(
+        413,
+        errorPage(
+          'Reporte demasiado grande',
+          'Este link antiguo guarda el HTML completo (Radar/imágenes) y supera el límite del servidor (~6 MB). En el panel del proyecto pulsa otra vez «Compartir vista» para regenerar el enlace (se sube a Storage).'
+        )
+      );
     }
 
     const h = event.headers || {};
@@ -280,4 +378,3 @@ exports.handler = async function(event) {
     return htmlResponse(500, errorPage('Error inesperado', e && e.message ? e.message : 'No se pudo abrir esta vista.'));
   }
 };
-

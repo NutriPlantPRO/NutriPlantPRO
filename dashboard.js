@@ -9145,16 +9145,45 @@ window.shareReportView = async function(reportId) {
       return;
     }
 
+    // HTML con Radar/base64 suele superar ~6 MB: Netlify no puede devolverlo en /api/report-view.
+    // Subir a Storage y guardar solo la ruta en el reporte.
+    var shareHtmlPath = null;
+    var htmlBytes = htmlSnapshot.length;
+    var mustUseStorage = htmlBytes > 450000;
+    if (
+      typeof window.nutriplantSupabaseProjects !== 'undefined' &&
+      typeof window.nutriplantSupabaseProjects.uploadReportShareHtml === 'function'
+    ) {
+      showMessage('⏳ Subiendo vista a la nube (reportes con Radar son más pesados)…', 'info');
+      shareHtmlPath = await window.nutriplantSupabaseProjects.uploadReportShareHtml(
+        userId,
+        report.id,
+        htmlSnapshot
+      );
+    }
+    if (mustUseStorage && !shareHtmlPath) {
+      showMessage(
+        '❌ No se pudo subir el HTML del reporte a Storage (bucket report-shares). Ejecuta en Supabase el SQL supabase/migrations/20260720_report_shares_storage.sql y vuelve a compartir.',
+        'error'
+      );
+      return;
+    }
+
     var cloudPayload = {
       ...report,
       userId: userId,
       projectId: projectId,
-      reportHTML: htmlSnapshot,
       shareToken: token,
       shareEnabled: true,
       shareCreatedAt: report.shareCreatedAt || nowIso,
       shareExpiresAt: null
     };
+    if (shareHtmlPath) {
+      cloudPayload.shareHtmlPath = shareHtmlPath;
+      delete cloudPayload.reportHTML;
+    } else {
+      cloudPayload.reportHTML = htmlSnapshot;
+    }
 
     // Sincronizar snapshot + token a nube antes de entregar URL (si falla, no copiar link: el servidor no tendría el token).
     var synced = false;
@@ -9177,6 +9206,7 @@ window.shareReportView = async function(reportId) {
       shareCreatedAt: cloudPayload.shareCreatedAt,
       shareExpiresAt: null
     };
+    if (shareHtmlPath) localUpdated.shareHtmlPath = shareHtmlPath;
     delete localUpdated.reportHTML;
     generatedReports[reportIndex] = localUpdated;
     try { localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports)); } catch (e) {}
@@ -13669,7 +13699,8 @@ window.generatePDFReport = function() {
   loadChartImagesForReport(selectedSections, finishPdf);
 };
 
-/** Admin: genera PDF con datos del proyecto del usuario sin guardar ni modificar nada suyo. */
+/** Admin: genera PDF con datos del proyecto del usuario sin guardar ni modificar nada suyo.
+ *  Si job.shareLink === true, crea link /api/report-view (Storage + reports). */
 window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
   function setStatus(msg) {
     if (typeof statusCallback === 'function') statusCallback(msg);
@@ -13686,6 +13717,7 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
     return;
   }
   const reportLanguage = job.reportLanguage === 'en' ? 'en' : 'es';
+  const wantShare = !!job.shareLink;
   const prevProject = (typeof currentProject !== 'undefined') ? currentProject : null;
   window._nutriplantAdminReadOnlyReport = true;
   window._nutriplantAdminReadOnlyReportAuthor = job.adminAuthorName || 'Consulta Admin NutriPlant PRO';
@@ -13699,30 +13731,178 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
     currentProject.userId = job.userId;
   }
 
-  const printWindow = window.open('about:blank', '_blank');
+  let printWindow = null;
+  if (!wantShare) {
+    printWindow = window.open('about:blank', '_blank');
     if (!printWindow) {
-    alert('Tu navegador bloqueó la ventana de impresión. Habilita pop-ups e inténtalo de nuevo.');
-    window._nutriplantAdminReadOnlyReport = false;
-    window._nutriplantAdminReadOnlyReportAuthor = '';
-    window._nutriplantAdminReportAuth = null;
-    currentProject = prevProject;
-    try { window.close(); } catch (e) {}
-    return;
-  }
-  try {
-    printWindow.document.open();
-    printWindow.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>NutriPlant PRO</title></head><body style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#475569;"><p style="padding:24px;margin:0;font-size:15px;">Generando reporte…</p></body></html>');
-    printWindow.document.close();
-  } catch (e0) { /* ignore */ }
-
-  function cleanup() {
-    window._nutriplantAdminReadOnlyReport = false;
-    window._nutriplantAdminReadOnlyReportAuthor = '';
-    window._nutriplantAdminReportAuth = null;
-    currentProject = prevProject;
-    setTimeout(function() {
+      alert('Tu navegador bloqueó la ventana de impresión. Habilita pop-ups e inténtalo de nuevo.');
+      window._nutriplantAdminReadOnlyReport = false;
+      window._nutriplantAdminReadOnlyReportAuthor = '';
+      window._nutriplantAdminReportAuth = null;
+      currentProject = prevProject;
       try { window.close(); } catch (e) {}
-    }, 800);
+      return;
+    }
+    try {
+      printWindow.document.open();
+      printWindow.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>NutriPlant PRO</title></head><body style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#475569;"><p style="padding:24px;margin:0;font-size:15px;">Generando reporte…</p></body></html>');
+      printWindow.document.close();
+    } catch (e0) { /* ignore */ }
+  }
+
+  function cleanup(keepOpen) {
+    window._nutriplantAdminReadOnlyReport = false;
+    window._nutriplantAdminReadOnlyReportAuthor = '';
+    window._nutriplantAdminReportAuth = null;
+    currentProject = prevProject;
+    if (!keepOpen) {
+      setTimeout(function() {
+        try { window.close(); } catch (e) {}
+      }, 800);
+    }
+  }
+
+  function adminShareApiUrl() {
+    try {
+      if (window.location && /admin-report-print/i.test(window.location.pathname || '')) {
+        return window.location.origin + '/api/admin/share-report';
+      }
+    } catch (e) {}
+    return (window.location.origin || '') + '/api/admin/share-report';
+  }
+
+  function showShareLinkResult(url) {
+    setStatus('Link listo. Copia y comparte.');
+    var box = document.querySelector('.box');
+    if (!box) {
+      alert('Link: ' + url);
+      cleanup(false);
+      return;
+    }
+    box.innerHTML =
+      '<div style="font-size:28px;margin-bottom:8px;">🔗</div>' +
+      '<p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#0f172a;">Link compartido generado</p>' +
+      '<p style="margin:0 0 12px;font-size:12px;color:#64748b;line-height:1.45;">Mismo tipo de vista que «Compartir vista». No caduca. Puedes cerrar esta ventana.</p>' +
+      '<input id="npAdminShareUrl" type="text" readonly value="' +
+      String(url).replace(/&/g, '&amp;').replace(/"/g, '&quot;') +
+      '" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;margin-bottom:10px;" />' +
+      '<button type="button" id="npAdminShareCopy" style="width:100%;padding:10px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-weight:700;cursor:pointer;">📋 Copiar link</button>' +
+      '<p style="margin:12px 0 0;font-size:11px;color:#94a3b8;">Si el listado de reportes no se actualiza, recarga el detalle del proyecto en admin.</p>';
+    var inp = document.getElementById('npAdminShareUrl');
+    var btn = document.getElementById('npAdminShareCopy');
+    if (btn && inp) {
+      btn.addEventListener('click', function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(inp.value).then(function () {
+            btn.textContent = '✅ Copiado';
+          }).catch(function () {
+            inp.select();
+            document.execCommand('copy');
+            btn.textContent = '✅ Copiado';
+          });
+        } else {
+          inp.select();
+          document.execCommand('copy');
+          btn.textContent = '✅ Copiado';
+        }
+      });
+      try { inp.select(); } catch (eSel) {}
+    }
+    cleanup(true);
+  }
+
+  async function finishShare(chartImages) {
+    try {
+      setStatus('Armando HTML del reporte…');
+      let reportHTML = '';
+      try {
+        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+      } catch (renderErr) {
+        if (reportLanguage === 'en') {
+          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es');
+        } else {
+          throw renderErr;
+        }
+      }
+      if (!reportHTML || !String(reportHTML).trim()) {
+        throw new Error('HTML vacío');
+      }
+
+      const userId = String(job.userId || '').trim();
+      const projectId = String(job.projectId || (job.project && job.project.id) || '').trim();
+      const adminKey = String(job.adminKey || '').trim();
+      if (!userId || !projectId || !adminKey) {
+        throw new Error('Faltan userId, projectId o admin_key para compartir');
+      }
+
+      setStatus('Preparando subida a la nube…');
+      const prepRes = await fetch(adminShareApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_key: adminKey,
+          action: 'prepare',
+          user_id: userId,
+          project_id: projectId
+        })
+      });
+      const prep = await prepRes.json().catch(function () { return {}; });
+      if (!prepRes.ok || !prep.ok) {
+        throw new Error(prep.error || ('prepare HTTP ' + prepRes.status));
+      }
+
+      setStatus('Subiendo vista (puede tardar si hay Radar)…');
+      const uploadHeaders = { 'Content-Type': 'text/html;charset=utf-8', 'x-upsert': 'true' };
+      if (prep.upload_token) {
+        uploadHeaders.Authorization = 'Bearer ' + prep.upload_token;
+      }
+      const upRes = await fetch(prep.upload_url, {
+        method: 'PUT',
+        headers: uploadHeaders,
+        body: reportHTML
+      });
+      if (!upRes.ok) {
+        const t = await upRes.text().catch(function () { return ''; });
+        throw new Error('Subida Storage falló (' + upRes.status + '). ' + (t || '').slice(0, 180));
+      }
+
+      setStatus('Registrando link…');
+      const projectName =
+        (job.project && (job.project.name || job.project.projectName)) || 'Proyecto';
+      const finRes = await fetch(adminShareApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_key: adminKey,
+          action: 'finalize',
+          user_id: userId,
+          project_id: projectId,
+          report_id: prep.report_id,
+          share_token: prep.share_token,
+          share_html_path: prep.share_html_path,
+          selected_sections: selectedSections,
+          report_language: reportLanguage,
+          project_name: projectName,
+          admin_author_name: job.adminAuthorName || 'Consulta Admin NutriPlant PRO'
+        })
+      });
+      const fin = await finRes.json().catch(function () { return {}; });
+      if (!finRes.ok || !fin.ok) {
+        throw new Error(fin.error || ('finalize HTTP ' + finRes.status));
+      }
+
+      const shareUrl =
+        String(window.location.origin || 'https://nutriplantpro.com').replace(/\/$/, '') +
+        '/api/report-view?rid=' +
+        encodeURIComponent(prep.report_id) +
+        '&t=' +
+        encodeURIComponent(prep.share_token);
+      showShareLinkResult(shareUrl);
+    } catch (error) {
+      console.error('runAdminReadOnlyReportFromJob share:', error);
+      alert('Error generando link: ' + (error && error.message ? error.message : error));
+      cleanup(false);
+    }
   }
 
   function finishPdf(chartImages) {
@@ -13747,14 +13927,14 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
     } catch (error) {
       console.error('runAdminReadOnlyReportFromJob:', error);
       alert('Error generando reporte: ' + (error && error.message ? error.message : error));
-      try { printWindow.close(); } catch (eClose) {}
+      try { if (printWindow) printWindow.close(); } catch (eClose) {}
     } finally {
-      cleanup();
+      cleanup(false);
     }
   }
 
-  setStatus('Calculando gráficas y secciones…');
-  loadChartImagesForReport(selectedSections, finishPdf);
+  setStatus(wantShare ? 'Calculando gráficas y secciones para el link…' : 'Calculando gráficas y secciones…');
+  loadChartImagesForReport(selectedSections, wantShare ? finishShare : finishPdf);
 };
 
 // Función para generar el contenido del PDF
@@ -13918,7 +14098,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           background: #fff;
           box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
           padding: 14px;
-          page-break-inside: avoid;
+          page-break-inside: auto;
         }
         .section-title {
           font-size: 1.05rem;
@@ -15014,10 +15194,8 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
             break-inside: auto;
             page-break-inside: auto;
           }
-          .report-section-new-page {
-            break-before: page;
-            page-break-before: always;
-          }
+          /* Secciones de corrida: sin salto forzado (evita hojas casi en blanco) */
+          .report-section-new-page,
           .report-section-first {
             break-before: auto;
             page-break-before: auto;
@@ -15076,8 +15254,13 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
             font-size: 7.2px;
           }
-          /* Radar / Lectura: no partir un bloque a la mitad; sin saltos forzados (flujo corrido) */
+          /* Radar / Lectura: flujo corrido; no forzar bloques grandes a página nueva (evita hojas en blanco) */
           .report-keep-together {
+            break-inside: auto;
+            page-break-inside: auto;
+          }
+          /* Sí evitar partir a la mitad celdas chicas (una capa + su escala) */
+          .report-keep-together.report-keep-tight {
             break-inside: avoid;
             page-break-inside: avoid;
           }
@@ -15139,17 +15322,10 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         </div>
   `;
   
-  // Agregar secciones seleccionadas (chartImages para gráficas de fertirriego en PDF)
+  // Secciones de corrida (sin salto de página forzado entre Radar, Clima, etc.)
   const chartImgs = chartImages || {};
-  selectedSections.forEach((sectionId, idx) => {
-    let sectionHTML = createSectionHTML(sectionId, chartImgs, lang);
-    if (typeof sectionHTML === 'string' && sectionHTML.includes('class="section"')) {
-      sectionHTML = sectionHTML.replace(
-        'class="section"',
-        idx === 0 ? 'class="section report-section-first"' : 'class="section report-section-new-page"'
-      );
-    }
-    html += sectionHTML;
+  selectedSections.forEach((sectionId) => {
+    html += createSectionHTML(sectionId, chartImgs, lang);
   });
   
   html += `
@@ -15574,7 +15750,7 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
   const cell = function (cap, dataUrl, alt, withScale, color) {
     if (!dataUrl) return '';
     return (
-      `<div class="report-keep-together" style="min-width:0;">` +
+      `<div class="report-keep-together report-keep-tight" style="min-width:0;">` +
       `<div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px;">${cap}</div>` +
       `<img src="${dataUrl}" alt="${alt}" style="${imgStyle}" />` +
       (withScale ? scaleHtml : '') +
