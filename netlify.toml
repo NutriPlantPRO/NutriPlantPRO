@@ -116,6 +116,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/admin/patch-profile"
+  to = "/.netlify/functions/admin-patch-profile"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/nutri-pro-extract"
   to = "/.netlify/functions/nutri-pro-extract"
   status = 200

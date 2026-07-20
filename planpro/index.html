@@ -28725,17 +28725,40 @@
     });
 
     /**
-     * Órbitas ajustadas al contenido real (sin hueco de más):
-     * de más profundo a más alto, cada una = distancia a hijos directos
-     * (+ órbita del hijo si la tiene). Sin paddings grandes.
+     * Órbita = círculo mínimo que cubre los discos hijos (sin hueco de más a un lado).
+     * Guarda orbitCx/orbitCy (centro del halo) aparte del ícono si hace falta.
      */
     function nestOrbitsHierarchically() {
-      function dist(a, b) {
-        return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+      function dist(ax, ay, bx, by) {
+        return Math.sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
+      }
+      function fitOrbitToDiscs(discs, pad) {
+        if (!discs || !discs.length) return null;
+        var minX = Infinity;
+        var minY = Infinity;
+        var maxX = -Infinity;
+        var maxY = -Infinity;
+        discs.forEach(function (d) {
+          var rr = d.r || 0;
+          minX = Math.min(minX, d.x - rr);
+          maxX = Math.max(maxX, d.x + rr);
+          minY = Math.min(minY, d.y - rr);
+          maxY = Math.max(maxY, d.y + rr);
+        });
+        var cx = (minX + maxX) / 2;
+        var cy = (minY + maxY) / 2;
+        var reach = 0;
+        discs.forEach(function (d) {
+          var need = dist(cx, cy, d.x, d.y) + (d.r || 0);
+          if (need > reach) reach = need;
+        });
+        return { cx: cx, cy: cy, reach: reach + (pad || 0) };
       }
 
       nodes.forEach(function (n) {
         n.orbitReach = 0;
+        n.orbitCx = null;
+        n.orbitCy = null;
       });
 
       var cats = nodes
@@ -28748,24 +28771,24 @@
         });
 
       cats.forEach(function (n) {
-        var maxR = 0;
+        var discs = [];
         nodes.forEach(function (ch) {
           if (ch.id === n.id) return;
           if (ch.kind === 'cat' && ch.parentCatId === n.refId) {
-            var childOrbit = ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8;
-            var dCat = dist(n, ch) + childOrbit + 6;
-            if (dCat > maxR) maxR = dCat;
+            discs.push({
+              x: ch.orbitCx != null ? ch.orbitCx : ch.x,
+              y: ch.orbitCy != null ? ch.orbitCy : ch.y,
+              r: ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8
+            });
             return;
           }
           if (ch.kind === 'item') {
             var it = itemsById[ch.refId];
             if (it && it.category_id === n.refId) {
-              var dItem = dist(n, ch) + (ch.r || 8) + 6;
-              if (dItem > maxR) maxR = dItem;
+              discs.push({ x: ch.x, y: ch.y, r: (ch.r || 8) + 2 });
             }
           }
         });
-        /* Nutri pegados a apuntes directos de esta rama. */
         nodes.forEach(function (ch) {
           if (ch.kind !== 'nutri_file' && ch.kind !== 'nutri_link') return;
           var near = false;
@@ -28773,58 +28796,47 @@
             if (itn.kind !== 'item') return;
             var it2 = itemsById[itn.refId];
             if (!it2 || it2.category_id !== n.refId) return;
-            if (dist(ch, itn) < 100) near = true;
+            if (dist(ch.x, ch.y, itn.x, itn.y) < 100) near = true;
           });
-          if (!near) return;
-          var dN = dist(n, ch) + (ch.r || 8) + 6;
-          if (dN > maxR) maxR = dN;
+          if (near) discs.push({ x: ch.x, y: ch.y, r: (ch.r || 8) + 2 });
         });
-        if (maxR > 0) n.orbitReach = Math.max((n.r || 10) + 20, maxR);
+        var fit = fitOrbitToDiscs(discs, 4);
+        if (!fit) return;
+        n.orbitReach = Math.max((n.r || 10) + 16, fit.reach);
+        n.orbitCx = fit.cx;
+        n.orbitCy = fit.cy;
       });
 
-      /* Planta: solo lo que realmente cuelga (ramas raíz + apuntes sueltos). */
       nodes.forEach(function (n) {
         if (n.kind !== 'area') return;
-        var maxD = 0;
+        var discs = [];
         nodes.forEach(function (ch) {
           if (ch.kind === 'cat' && ch.parentAreaId === n.refId && !(ch.depth > 0)) {
-            var childOrbit = ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8;
-            var need = dist(n, ch) + childOrbit + 8;
-            if (need > maxD) maxD = need;
+            discs.push({
+              x: ch.orbitCx != null ? ch.orbitCx : ch.x,
+              y: ch.orbitCy != null ? ch.orbitCy : ch.y,
+              r: ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8
+            });
             return;
           }
           if (ch.kind === 'item') {
             var itA = itemsById[ch.refId];
-            /* Solo apuntes sin rama (sueltos en la planta). */
             if (itA && itA.area_id === n.refId && !itA.category_id) {
-              var dItem = dist(n, ch) + (ch.r || 8) + 8;
-              if (dItem > maxD) maxD = dItem;
+              discs.push({ x: ch.x, y: ch.y, r: (ch.r || 8) + 2 });
             }
           }
         });
-        n.orbitReach = maxD > 0 ? maxD : 0;
-      });
-    }
-
-    /** Centra el nodo planta en el centroide de sus ramas para que la órbita no quede enorme con hueco. */
-    function recenterPlantOnBranches() {
-      nodes.forEach(function (area) {
-        if (area.kind !== 'area') return;
-        var pts = [];
-        nodes.forEach(function (ch) {
-          if (ch.kind === 'cat' && ch.parentAreaId === area.refId && !(ch.depth > 0)) {
-            pts.push(ch);
-          }
-        });
-        if (pts.length < 1) return;
-        var sx = 0;
-        var sy = 0;
-        pts.forEach(function (p) {
-          sx += p.x;
-          sy += p.y;
-        });
-        area.x = sx / pts.length;
-        area.y = sy / pts.length;
+        var fit = fitOrbitToDiscs(discs, 5);
+        if (!fit) {
+          n.orbitReach = 0;
+          return;
+        }
+        /* Mueve el ícono de la planta al centro real del contenido. */
+        n.x = fit.cx;
+        n.y = fit.cy;
+        n.orbitCx = fit.cx;
+        n.orbitCy = fit.cy;
+        n.orbitReach = fit.reach;
       });
     }
 
@@ -28902,7 +28914,6 @@
     nestOrbitsHierarchically();
     separateSiblingOrbitClusters(nodes, byId, itemsById, 36);
     separatePlantOrbitClusters(nodes, 48);
-    recenterPlantOnBranches();
     nestOrbitsHierarchically();
 
     var hierEdges = [];
@@ -29079,7 +29090,7 @@
       if (!groups[pk]) groups[pk] = [];
       groups[pk].push(n);
     });
-    var pad = 40;
+    var pad = 28;
     Object.keys(groups).forEach(function (pk) {
       var siblings = groups[pk];
       if (siblings.length < 2) return;
@@ -29091,9 +29102,13 @@
           for (j = i + 1; j < siblings.length; j++) {
             var a = siblings[i];
             var b = siblings[j];
+            var ax = a.orbitCx != null ? a.orbitCx : a.x;
+            var ay = a.orbitCy != null ? a.orbitCy : a.y;
+            var bx = b.orbitCx != null ? b.orbitCx : b.x;
+            var by = b.orbitCy != null ? b.orbitCy : b.y;
             var need = (a.orbitReach || 0) + (b.orbitReach || 0) + pad;
-            var dx = b.x - a.x;
-            var dy = b.y - a.y;
+            var dx = bx - ax;
+            var dy = by - ay;
             var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
             if (dist >= need) continue;
             var push = ((need - dist) / 2) * (0.72 + (1 - iter / iterations) * 0.38);
@@ -29101,6 +29116,14 @@
             var uy = dy / dist;
             translateMapaCatSubtree(nodes, byId, itemsById, a.refId, -ux * push, -uy * push);
             translateMapaCatSubtree(nodes, byId, itemsById, b.refId, ux * push, uy * push);
+            if (a.orbitCx != null) {
+              a.orbitCx -= ux * push;
+              a.orbitCy -= uy * push;
+            }
+            if (b.orbitCx != null) {
+              b.orbitCx += ux * push;
+              b.orbitCy += uy * push;
+            }
           }
         }
       }
@@ -29123,8 +29146,12 @@
           var a = plants[i];
           var b = plants[j];
           var need = (a.orbitReach || 100) + (b.orbitReach || 100) + pad;
-          var dx = b.x - a.x;
-          var dy = b.y - a.y;
+          var ax = a.orbitCx != null ? a.orbitCx : a.x;
+          var ay = a.orbitCy != null ? a.orbitCy : a.y;
+          var bx = b.orbitCx != null ? b.orbitCx : b.x;
+          var by = b.orbitCy != null ? b.orbitCy : b.y;
+          var dx = bx - ax;
+          var dy = by - ay;
           var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
           if (dist >= need) continue;
           var push = ((need - dist) / 2) * (0.75 + (1 - iter / iterations) * 0.4);
@@ -29446,12 +29473,12 @@
       var mx = e.clientX - rect.left;
       var my = e.clientY - rect.top;
       var before = planProMapaView.scale;
-      /* Zoom trackpad: ágil pero sin el salto brusco original (1.14). */
+      /* Zoom trackpad ágil (cerca del ritmo original, un poco más suave). */
       var dy = e.deltaY;
       if (e.deltaMode === 1) dy *= 16;
       else if (e.deltaMode === 2) dy *= Math.max(rect.height, 400);
-      var factor = Math.exp(-dy * 0.0044);
-      factor = Math.min(1.15, Math.max(0.87, factor));
+      var factor = Math.exp(-dy * 0.0062);
+      factor = Math.min(1.18, Math.max(0.85, factor));
       var next = Math.min(4.5, Math.max(0.12, before * factor));
       var wx = (mx - planProMapaView.x) / before;
       var wy = (my - planProMapaView.y) / before;
@@ -29607,8 +29634,8 @@
         }
         var orb = document.createElementNS(ns, 'circle');
         orb.setAttribute('class', cls);
-        orb.setAttribute('cx', n.x);
-        orb.setAttribute('cy', n.y);
+        orb.setAttribute('cx', n.orbitCx != null ? n.orbitCx : n.x);
+        orb.setAttribute('cy', n.orbitCy != null ? n.orbitCy : n.y);
         orb.setAttribute('r', Math.max(n.r + 8, n.orbitReach));
         orb.setAttribute('fill', col);
         orb.setAttribute('fill-opacity', String(opacity));

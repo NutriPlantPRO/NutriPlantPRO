@@ -388,9 +388,14 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             'name', 'email', 'phone', 'profession', 'location', 'crops',
             'subscription_status', 'subscription_amount', 'cancelled_by_admin',
             'chat_blocked', 'chat_limit_monthly', 'chat_usage_current_month', 'chat_usage_month',
-            'exclude_from_revenue', 'password_plain', 'updated_at',
+            'exclude_from_revenue', 'password_plain', 'radar_credits_bonus', 'updated_at',
         }
         clean = {k: v for k, v in profile.items() if k in allowed_keys}
+        if 'radar_credits_bonus' in clean:
+            try:
+                clean['radar_credits_bonus'] = max(0, int(float(clean['radar_credits_bonus'])))
+            except (TypeError, ValueError):
+                clean['radar_credits_bonus'] = 0
         if not clean:
             self._send_json_response({'error': 'profile vacío o sin campos permitidos'}, 400)
             return

@@ -8476,9 +8476,10 @@
                             }
                         }
 
-                        // 3) Sin política RLS "Admins can update all profiles", el cliente solo puede actualizar el propio perfil → 0 filas sin error.
-                        //    El servidor (service_role en server.py) aplica el mismo payload y bypass RLS.
-                        if (isSupabaseUserId && matched === 0) {
+                        // 3) Siempre intentar API service_role (Netlify o server.py): el cliente anon
+                        //    a menudo no puede escribir radar_credits_bonus de otro usuario (RLS).
+                        //    Sin esto el bonus queda solo en localStorage y el usuario no puede generar Radar.
+                        if (isSupabaseUserId) {
                             try {
                                 const paramsSrv = new URLSearchParams(window.location.search);
                                 const adminKeySrv = paramsSrv.get('k') || '';
@@ -8495,20 +8496,46 @@
                                 if (resSrv.ok && jsonSrv.ok && Array.isArray(jsonSrv.data) && jsonSrv.data.length > 0) {
                                     matched = jsonSrv.data.length;
                                     error = null;
-                                    console.log('☁️ Perfil actualizado en la nube (API servidor / service_role)');
-                                } else {
+                                    console.log('☁️ Perfil actualizado en la nube (API service_role / patch-profile)');
+                                    if (jsonSrv.warning) {
+                                        cloudSyncMessage += '\n\n⚠️ ' + jsonSrv.warning;
+                                    } else {
+                                        var savedBonus = jsonSrv.data[0] && jsonSrv.data[0].radar_credits_bonus;
+                                        if (savedBonus != null) {
+                                            var sb = Math.max(0, Math.floor(Number(savedBonus) || 0));
+                                            updatedUser.radar_credits_bonus = sb;
+                                            cloudSyncMessage +=
+                                                '\n\n🛰️ Bonus Radar confirmado en nube: ' +
+                                                sb +
+                                                ' (tope mes ≈ ' +
+                                                (20 + sb) +
+                                                '). El usuario debe pulsar «Estado» en Radar o recargar.';
+                                        }
+                                    }
+                                } else if (matched === 0) {
                                     console.warn('patch-profile servidor:', jsonSrv.error || resSrv.status);
+                                    if (!error) {
+                                        cloudSyncMessage =
+                                            '\n\n⚠️ No se pudo guardar el perfil/bonus Radar en la nube vía API (' +
+                                            (jsonSrv.error || resSrv.status) +
+                                            '). El usuario puede seguir sin el bonus hasta que el deploy tenga /api/admin/patch-profile.';
+                                    }
                                 }
                             } catch (eSrv) {
                                 console.warn('patch-profile servidor:', eSrv);
+                                if (matched === 0) {
+                                    cloudSyncMessage +=
+                                        '\n\n⚠️ Error de red al guardar bonus Radar en la nube: ' +
+                                        (eSrv && eSrv.message ? eSrv.message : eSrv);
+                                }
                             }
                         }
 
                         if (error) {
                             console.warn('⚠️ Error actualizando perfil en Supabase:', error.message);
-                            cloudSyncMessage = '\n\n⚠️ Se guardó localmente, pero falló guardar en la nube: ' + (error.message || 'error desconocido');
+                            cloudSyncMessage = '\n\n⚠️ Se guardó localmente, pero falló guardar en la nube: ' + (error.message || 'error desconocido') + cloudSyncMessage;
                         } else if (!matched) {
-                            cloudSyncMessage = '\n\n⚠️ No se pudo actualizar el perfil en Supabase (0 filas). Opciones:\n• Ejecuta en SQL Editor: supabase-fix-rls-recursion.sql y supabase-admin-update-user-project.sql\n• O deja corriendo server.py con supabase-server-config.json (API /api/admin/patch-profile).';
+                            cloudSyncMessage = '\n\n⚠️ No se pudo actualizar el perfil en Supabase (0 filas). Opciones:\n• Ejecuta en SQL Editor: supabase-fix-rls-recursion.sql y supabase-admin-update-user-project.sql\n• O deja corriendo server.py / redeploy Netlify con /api/admin/patch-profile.' + cloudSyncMessage;
                         } else {
                             console.log('☁️ Perfil actualizado en la nube');
                         }
