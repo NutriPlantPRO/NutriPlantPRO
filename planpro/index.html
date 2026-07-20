@@ -28937,11 +28937,23 @@
 
     separateMapaNodes(nodes, Math.min(100, 55 + Math.floor(nodes.length / 8)));
     nestOrbitsHierarchically();
-    separateSiblingOrbitClusters(nodes, byId, itemsById, 60);
+    separateSiblingOrbitClusters(nodes, byId, itemsById, 28);
     nestOrbitsHierarchically();
-    separateSiblingOrbitClusters(nodes, byId, itemsById, 36);
-    separatePlantOrbitClusters(nodes, 48);
+    separateSiblingOrbitClusters(nodes, byId, itemsById, 16);
+    separatePlantOrbitClusters(nodes, 28);
     nestOrbitsHierarchically();
+
+    /* Si algún nodo quedó con coords inválidas, recentrar. */
+    nodes.forEach(function (n) {
+      if (!n) return;
+      if (!isFinite(n.x) || !isFinite(n.y)) {
+        n.x = cx;
+        n.y = cy;
+      }
+      if (n.orbitCx != null && !isFinite(n.orbitCx)) n.orbitCx = n.x;
+      if (n.orbitCy != null && !isFinite(n.orbitCy)) n.orbitCy = n.y;
+      if (n.orbitReach != null && !isFinite(n.orbitReach)) n.orbitReach = 0;
+    });
 
     var hierEdges = [];
     nodes.forEach(function (n) {
@@ -29108,7 +29120,7 @@
    * A más apuntes/sub-ramas → órbita más grande → más distancia entre hermanas.
    */
   function separateSiblingOrbitClusters(nodes, byId, itemsById, iterations) {
-    iterations = iterations || 48;
+    iterations = iterations || 28;
     var groups = {};
     (nodes || []).forEach(function (n) {
       if (!n || n.kind !== 'cat') return;
@@ -29123,7 +29135,9 @@
       if (!groups[pk]) groups[pk] = [];
       groups[pk].push(n);
     });
-    var pad = 28;
+    /* No exigir órbitas 100% disjuntas (eso explotaba el layout); solo reducir solape fuerte. */
+    var pad = 18;
+    var overlapFactor = 0.78;
     Object.keys(groups).forEach(function (pk) {
       var siblings = groups[pk];
       if (siblings.length < 2) return;
@@ -29135,28 +29149,22 @@
           for (j = i + 1; j < siblings.length; j++) {
             var a = siblings[i];
             var b = siblings[j];
-            var ax = a.orbitCx != null ? a.orbitCx : a.x;
-            var ay = a.orbitCy != null ? a.orbitCy : a.y;
-            var bx = b.orbitCx != null ? b.orbitCx : b.x;
-            var by = b.orbitCy != null ? b.orbitCy : b.y;
-            var need = (a.orbitReach || 0) + (b.orbitReach || 0) + pad;
+            var ax = a.x;
+            var ay = a.y;
+            var bx = b.x;
+            var by = b.y;
+            var need =
+              ((a.orbitReach || 0) + (b.orbitReach || 0)) * overlapFactor + pad;
             var dx = bx - ax;
             var dy = by - ay;
             var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
             if (dist >= need) continue;
-            var push = ((need - dist) / 2) * (0.72 + (1 - iter / iterations) * 0.38);
+            var push = ((need - dist) / 2) * (0.55 + (1 - iter / iterations) * 0.35);
+            push = Math.min(push, 48);
             var ux = dx / dist;
             var uy = dy / dist;
             translateMapaCatSubtree(nodes, byId, itemsById, a.refId, -ux * push, -uy * push);
             translateMapaCatSubtree(nodes, byId, itemsById, b.refId, ux * push, uy * push);
-            if (a.orbitCx != null) {
-              a.orbitCx -= ux * push;
-              a.orbitCy -= uy * push;
-            }
-            if (b.orbitCx != null) {
-              b.orbitCx += ux * push;
-              b.orbitCy += uy * push;
-            }
           }
         }
       }
@@ -29164,12 +29172,13 @@
   }
 
   function separatePlantOrbitClusters(nodes, iterations) {
-    iterations = iterations || 40;
+    iterations = iterations || 28;
     var plants = (nodes || []).filter(function (n) {
       return n && n.kind === 'area' && n.orbitReach > 0;
     });
     if (plants.length < 2) return;
-    var pad = 64;
+    var pad = 48;
+    var overlapFactor = 0.82;
     var iter;
     var i;
     var j;
@@ -29178,16 +29187,15 @@
         for (j = i + 1; j < plants.length; j++) {
           var a = plants[i];
           var b = plants[j];
-          var need = (a.orbitReach || 100) + (b.orbitReach || 100) + pad;
-          var ax = a.orbitCx != null ? a.orbitCx : a.x;
-          var ay = a.orbitCy != null ? a.orbitCy : a.y;
-          var bx = b.orbitCx != null ? b.orbitCx : b.x;
-          var by = b.orbitCy != null ? b.orbitCy : b.y;
-          var dx = bx - ax;
-          var dy = by - ay;
+          /* Usar posición del ícono (se actualiza al empujar). orbitCx viejo hacía push infinito. */
+          var need =
+            ((a.orbitReach || 100) + (b.orbitReach || 100)) * overlapFactor + pad;
+          var dx = b.x - a.x;
+          var dy = b.y - a.y;
           var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
           if (dist >= need) continue;
-          var push = ((need - dist) / 2) * (0.75 + (1 - iter / iterations) * 0.4);
+          var push = ((need - dist) / 2) * (0.6 + (1 - iter / iterations) * 0.35);
+          push = Math.min(push, 80);
           var ux = dx / dist;
           var uy = dy / dist;
           translateMapaCluster(nodes, a.refId, -ux * push, -uy * push);
@@ -29265,8 +29273,8 @@
     var vw = Math.max(rect.width || 640, 320);
     var vh = Math.max(rect.height || 480, 280);
     var pad = opts.pad != null ? opts.pad : 28;
-    var minScale = opts.minScale != null ? opts.minScale : 0.22;
-    var maxScale = opts.maxScale != null ? opts.maxScale : 1.15;
+    var minScale = opts.minScale != null ? opts.minScale : 0.06;
+    var maxScale = opts.maxScale != null ? opts.maxScale : 1.35;
     var scale = Math.min((vw - pad * 2) / bounds.w, (vh - pad * 2) / bounds.h);
     scale = Math.max(minScale, Math.min(maxScale, scale));
     /* Centrar el contenido real (min/max), no un box inflado. */

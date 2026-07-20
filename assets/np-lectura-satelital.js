@@ -534,9 +534,18 @@
     var badge = document.getElementById('lecturaCreditsBadge');
     var total = lecturaCost();
     var st = window.__nutriplantRadarNdviStatus;
-    var avail = st && st.credits && Number.isFinite(Number(st.credits.available))
+    var availRaw = st && st.credits && Number.isFinite(Number(st.credits.available))
       ? Number(st.credits.available)
       : null;
+    var usedN = st && st.credits && Number.isFinite(Number(st.credits.used)) ? Number(st.credits.used) : null;
+    var baseN = st && st.credits && Number.isFinite(Number(st.credits.base)) ? Number(st.credits.base) : null;
+    var bonusN = st && st.credits && Number.isFinite(Number(st.credits.bonus))
+      ? Math.max(0, Math.floor(Number(st.credits.bonus)))
+      : 0;
+    var avail =
+      baseN != null || (st && st.credits && st.credits.bonus != null)
+        ? Math.max(0, (baseN != null ? baseN : 20) - (usedN != null ? usedN : 0)) + bonusN
+        : availRaw;
     var limit = st && st.credits && Number.isFinite(Number(st.credits.limit))
       ? Number(st.credits.limit)
       : null;
@@ -550,8 +559,11 @@
     else if (overArea) tone = 'warn';
 
     if (credEl) {
-      if (avail != null && limit != null) {
-        credEl.textContent = avail + '/' + limit + ' créditos';
+      if (avail != null) {
+        credEl.textContent =
+          avail +
+          ' disponibles' +
+          (bonusN > 0 ? ' (bonus ' + bonusN + ')' : '');
       } else {
         credEl.textContent = '—';
       }

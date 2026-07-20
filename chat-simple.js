@@ -1690,7 +1690,7 @@ ESTILO DE RESPUESTA:
         const cr = st.credits;
         const cred =
           cr && cr.limit != null
-            ? `Radar Pilot: ${cr.available ?? '—'}/${cr.limit} créditos Radar disponibles este mes.`
+            ? `Radar Pilot: ${cr.available ?? '—'} créditos Radar disponibles este mes${cr.bonus ? ` (bonus ${cr.bonus})` : ''}.`
             : 'Radar Pilot: usa créditos Radar internos.';
         const ndvi = st.hasLatestImage ? 'NDVI guardado' : 'sin NDVI';
         const ndmi = st.hasLatestNdmiImage ? 'NDMI guardado' : 'sin NDMI';

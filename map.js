@@ -3726,15 +3726,37 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       return;
     }
     const u = Number(data.credits?.used) || 0;
-    const l = Number(data.credits?.limit) || 0;
-    const disponibles = Math.max(0, l - u);
+    const base = Number(data.credits?.base);
+    const bonus = Number(data.credits?.bonus);
+    const baseSafe = Number.isFinite(base) ? Math.max(0, Math.floor(base)) : 20;
+    const bonusSafe = Number.isFinite(bonus) ? Math.max(0, Math.floor(bonus)) : 0;
+    const l =
+      Number.isFinite(Number(data.credits?.limit))
+        ? Math.max(0, Math.floor(Number(data.credits.limit)))
+        : baseSafe + bonusSafe;
+    const disponiblesFromApi = Number(data.credits?.available);
+    // Preferir fórmula nueva en cliente (base restante + bonus) para no depender
+    // de un deploy parcial que aún mande available = tope − usados.
+    const disponibles =
+      Number.isFinite(base) || Number.isFinite(bonus)
+        ? Math.max(0, baseSafe - u) + bonusSafe
+        : Number.isFinite(disponiblesFromApi)
+          ? Math.max(0, Math.floor(disponiblesFromApi))
+          : Math.max(0, l - u);
     const history = Array.isArray(data.history) ? data.history : [];
     np_populateRadarSnapshotSelect(history, np_getPreferredRadarRequestId());
     window.__nutriplantRadarNdviStatus = {
       ok: true,
       projectId: proj.id,
       updatedAt: new Date().toISOString(),
-      credits: { used: u, limit: l, available: disponibles },
+      credits: {
+        used: u,
+        limit: l,
+        base: baseSafe,
+        bonus: bonusSafe,
+        base_remaining: Math.max(0, baseSafe - u),
+        available: disponibles
+      },
       pricing: data.pricing || null,
       latest: data.latest || null,
       pending_job: data.pending_job || null,
@@ -3753,10 +3775,18 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     if (disponibles <= 0) tone = 'low';
     else if (disponibles < pilotCost) tone = 'low';
     else if (disponibles <= 3) tone = 'warn';
+    const creditValue =
+      bonusSafe > 0
+        ? disponibles + ' disponibles (bonus ' + bonusSafe + ')'
+        : disponibles + ' disponibles';
     np_setRadarCreditsBadge({
-      value: disponibles + '/' + l + ' créditos',
+      value: creditValue,
       cost:
         (costLine || 'Costo Pilot según hectáreas') +
+        ' · usados ' +
+        u +
+        ' · base ' +
+        baseSafe +
         (history.length
           ? ' · ' + history.length + ' imagen' + (history.length === 1 ? '' : 'es')
           : ''),
