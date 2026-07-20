@@ -4344,6 +4344,16 @@
       align-items: center;
       justify-content: flex-end;
       gap: 6px;
+      flex: 0 0 auto;
+    }
+    .np-create-relations-host {
+      margin-top: 10px;
+    }
+    .np-create-relations-hint {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.35;
     }
     .np-save-bulb {
       flex: 0 0 auto;
@@ -11846,6 +11856,7 @@
                 <input id="npCreateMapsUrl" type="url" inputmode="url" autocomplete="off" placeholder="Pega link de Maps" />
                 <button type="button" class="np-detail-maps-action" id="npCreateMapsPickBtn">Elegir en mapa</button>
               </div>
+              <div id="npCreateRelationsHost" class="np-create-relations-host"></div>
             </div>
           </div>
         </div>
@@ -11858,6 +11869,14 @@
             aria-label="Guardar apunte"
           >💡</button>
           <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCreateModalClose">Cerrar</button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-ghost-green"
+            id="npCreateExportPdfBtn"
+            title="Generar PDF de este apunte y guardarlo en Nutri PRO › Apuntes PDF"
+          >
+            PDF → Nutri PRO
+          </button>
         </div>
       </div>
       <div class="np-modal-body">
@@ -18722,7 +18741,9 @@
     nutriProHighlightLinkId: null,
     nutriProCustomLinkCategories: [],
     nutriProSearchTimer: null,
-    nutriProSearchGen: 0
+    nutriProSearchGen: 0,
+    /** Crear apunte: id tras el primer guardado (permite Relaciones + PDF sin cerrar). */
+    createItemId: null
   };
 
   function deepCloneBlocks(blocks) {
@@ -24682,6 +24703,32 @@
     if (!modal || !modal.classList.contains('np-modal-open')) return;
     modal.classList.remove('np-modal-open', 'np-modal-overlay--above-cal');
     modal.setAttribute('aria-hidden', 'true');
+    state.createItemId = null;
+    var relHost = $('npCreateRelationsHost');
+    if (relHost) relHost.innerHTML = '';
+  }
+
+  function renderCreateRelationsPlaceholder() {
+    var relHost = $('npCreateRelationsHost');
+    if (!relHost) return;
+    relHost.innerHTML = '';
+    if (state.createItemId) return;
+    var hint = document.createElement('p');
+    hint.className = 'np-create-relations-hint';
+    hint.textContent =
+      'Relaciones: guarda el apunte (💡) una vez y aquí podrás vincularlo como en un apunte ya abierto.';
+    relHost.appendChild(hint);
+  }
+
+  async function refreshCreateRelationsPanel() {
+    var relHost = $('npCreateRelationsHost');
+    if (!relHost) return;
+    relHost.innerHTML = '';
+    if (!state.createItemId) {
+      renderCreateRelationsPlaceholder();
+      return;
+    }
+    await mountDetailRelationsPanel(relHost, state.createItemId);
   }
 
   function openCreateApunteModal(opts) {
@@ -24696,6 +24743,7 @@
       resetCreateFormMeta();
       clearRichEditor();
       resetCreateFormPendingBlocks();
+      state.createItemId = null;
     }
     wireCreateFichaPill();
     wireCreateLifeToggleOnce();
@@ -24705,6 +24753,7 @@
       { closed_at: createFormIsClosed ? '1' : null },
       $('npCreateLifeLabel')
     );
+    renderCreateRelationsPlaceholder();
     var modal = $('npCreateModal');
     if (!modal) return;
     var panel = modal.querySelector('.np-modal-panel');
@@ -27688,6 +27737,15 @@
       await exportApuntePdfToNutriPro();
     });
   }
+  var npCreateExportPdfBtn = $('npCreateExportPdfBtn');
+  if (npCreateExportPdfBtn && npCreateExportPdfBtn.dataset.npWired !== '1') {
+    npCreateExportPdfBtn.dataset.npWired = '1';
+    npCreateExportPdfBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      await exportApuntePdfToNutriPro({ fromCreate: true, button: npCreateExportPdfBtn });
+    });
+  }
   $('npDetailModal').addEventListener('click', async function (e) {
     if (e.target === $('npDetailModal')) await closeItemDetail();
   });
@@ -28045,19 +28103,26 @@
     }
   });
 
+  var createSaveInFlight = null;
+
   $('npFormCreate').addEventListener('submit', async function (e) {
     e.preventDefault();
+    if (createSaveInFlight) {
+      await createSaveInFlight;
+      return;
+    }
+    createSaveInFlight = (async function () {
     var title = ($('npTitle').value || '').trim();
     if (!title) {
       showToast('Escribe un título para guardar.', true);
       setSaveBulbState($('npCreateSaveBulb'), 'err');
-      return;
+      return null;
     }
     if (!state.selectedCategoryId) {
       $('npNeedCategory').classList.remove('np-hide');
       showToast('Selecciona una rama en el árbol (izquierda).', true);
       setSaveBulbState($('npCreateSaveBulb'), 'err');
-      return;
+      return null;
     }
     $('npNeedCategory').classList.add('np-hide');
     setSaveBulbState($('npCreateSaveBulb'), 'saving');
@@ -28074,11 +28139,10 @@
     if (String(mapsRaw || '').trim() && !mapsAttachment) {
       showToast('Pega un link válido de Maps o deja ubicación vacía.', true);
       setSaveBulbState($('npCreateSaveBulb'), 'err');
-      return;
+      return null;
     }
     var dueCreate = createFormDueKey || '';
     var prioCreate = createFormPriorityLevel ? storePriorityFromLevel(createFormPriorityLevel) : null;
-    var newItemId = npCloudUuid();
     var createAttachments = [];
     if (mapsAttachment) createAttachments.push(mapsAttachment);
     if (createFormDueTime) {
@@ -28090,8 +28154,9 @@
         updated_at: new Date().toISOString()
       });
     }
+    var isUpdate = !!state.createItemId;
+    var itemId = state.createItemId || npCloudUuid();
     var payload = {
-      id: newItemId,
       owner_id: state.userId,
       area_id: state.selectedAreaId,
       category_id: state.selectedCategoryId,
@@ -28101,8 +28166,7 @@
       body_plain: plain.trim() ? plain : null,
       due_at: dueCreate || null,
       body_blocks: state.pendingBlocks.length ? state.pendingBlocks : [],
-      attachments: createAttachments,
-      sort_order: planProNextItemSortOrder(state.selectedCategoryId)
+      attachments: createAttachments
     };
     if (state.planProBodyHtmlColumn) {
       payload.body_html = plain.trim() ? rawHtml : null;
@@ -28110,32 +28174,56 @@
     if (createFormIsClosed) {
       payload.closed_at = new Date().toISOString();
       payload.status = 'Cerrado';
+    } else {
+      payload.closed_at = null;
+      payload.status = null;
+    }
+    if (!isUpdate) {
+      payload.id = itemId;
+      payload.sort_order = planProNextItemSortOrder(state.selectedCategoryId);
     }
     var btn = $('npBtnCreate');
     var createBulb = $('npCreateSaveBulb');
     btn.disabled = true;
     if (createBulb) createBulb.disabled = true;
-    var res = await npCloudSyncTrack(function () {
-      return state.client.from('plan_pro_items').insert(payload).select('id').single();
-    }, npCloudInsertOp('plan_pro_items', payload, 'id', { id: newItemId }));
+
+    async function runInsert(pl) {
+      return npCloudSyncTrack(function () {
+        return state.client.from('plan_pro_items').insert(pl).select('id').single();
+      }, npCloudInsertOp('plan_pro_items', pl, 'id', { id: itemId }));
+    }
+    async function runUpdate(pl) {
+      return npCloudSyncTrack(function () {
+        return state.client
+          .from('plan_pro_items')
+          .update(pl)
+          .eq('id', itemId)
+          .eq('owner_id', state.userId)
+          .select('id')
+          .maybeSingle();
+      }, npCloudUpdateOp(
+        'plan_pro_items',
+        pl,
+        { id: itemId, owner_id: state.userId },
+        'item:update:' + itemId
+      ));
+    }
+
+    var res = isUpdate ? await runUpdate(payload) : await runInsert(payload);
     if (res.error) {
       var msg = res.error.message || 'No se pudo guardar';
       if (state.planProBodyHtmlColumn && /body_html/i.test(msg) && /does not exist/i.test(msg)) {
         state.planProBodyHtmlColumn = false;
         delete payload.body_html;
-        res = await npCloudSyncTrack(function () {
-          return state.client.from('plan_pro_items').insert(payload).select('id').single();
-        }, npCloudInsertOp('plan_pro_items', payload, 'id', { id: newItemId }));
+        res = isUpdate ? await runUpdate(payload) : await runInsert(payload);
         if (!res.error && !state.planProBodyHtmlWarnShown) {
           state.planProBodyHtmlWarnShown = true;
           showToast('Guardado sin columna body_html (modo compatible). Ejecuta supabase-plan-pro-body-html.sql en Supabase cuando puedas.', false);
         }
       }
-      if (res.error && /sort_order|column|schema cache/i.test(res.error.message || '')) {
+      if (res.error && !isUpdate && /sort_order|column|schema cache/i.test(res.error.message || '')) {
         delete payload.sort_order;
-        res = await npCloudSyncTrack(function () {
-          return state.client.from('plan_pro_items').insert(payload).select('id').single();
-        }, npCloudInsertOp('plan_pro_items', payload, 'id', { id: newItemId }));
+        res = await runInsert(payload);
       }
       if (res.error) {
         btn.disabled = false;
@@ -28145,20 +28233,30 @@
           msg2 += ' · Ejecuta en Supabase el script supabase-plan-pro-body-html.sql';
         }
         showToast(msg2, true);
-        return;
+        return null;
       }
     }
     btn.disabled = false;
     setSaveBulbState(createBulb, 'ok');
-    showToast(res.queued ? 'Apunte guardado localmente; subirá cuando vuelva la señal.' : 'Apunte guardado en la nube.');
-    $('npTitle').value = '';
-    resetCreateFormMeta();
-    clearRichEditor();
-    state.pendingBlocks = [];
-    flushPendingPreviewRefresh();
-    closeCreateApunteModal();
-    if (res.queued) return;
-    await loadItems();
+    var wasFirstSave = !isUpdate;
+    state.createItemId = itemId;
+    if (wasFirstSave) {
+      showToast(
+        (res.queued ? 'Apunte guardado localmente. ' : 'Apunte guardado. ') +
+          'Ya puedes usar Relaciones y PDF → Nutri PRO.'
+      );
+      await refreshCreateRelationsPanel();
+    } else {
+      showToast(res.queued ? 'Cambios guardados localmente; subirán cuando vuelva la señal.' : 'Cambios guardados.');
+    }
+    if (!res.queued) await loadItems();
+    return itemId;
+    })();
+    try {
+      await createSaveInFlight;
+    } finally {
+      createSaveInFlight = null;
+    }
   });
 
   (function initPlanHeaderAccessMenu() {
@@ -28299,6 +28397,9 @@
     if (prev === 'mapa' && m !== 'mapa') {
       snapshotPlanProMapaView();
       planProMapaPendingRestore = true;
+    }
+    if (prev === 'nutri-pro' && m !== 'nutri-pro') {
+      persistNutriProSelectedFolder();
     }
     state.nutriProAppMode = m;
     var vAp = $('npViewApuntes');
@@ -28724,10 +28825,23 @@
     nutriByKey = nutriByKey || {};
     var areaIdsUsed = {};
     var catIdsUsed = {};
+    var catById = {};
+    (categories || []).forEach(function (c) {
+      if (c && c.id) catById[c.id] = c;
+    });
+    function resolveItemAreaId(it) {
+      if (!it) return null;
+      if (it.area_id) return it.area_id;
+      if (it.category_id && catById[it.category_id] && catById[it.category_id].area_id) {
+        return catById[it.category_id].area_id;
+      }
+      return null;
+    }
     Object.keys(itemsById).forEach(function (id) {
       var it = itemsById[id];
       if (!it) return;
-      if (it.area_id) areaIdsUsed[it.area_id] = true;
+      var areaId = resolveItemAreaId(it);
+      if (areaId) areaIdsUsed[areaId] = true;
       if (it.category_id) catIdsUsed[it.category_id] = true;
     });
     if (includeOrphanRamas) {
@@ -28735,10 +28849,6 @@
         if (c && c.area_id && areaIdsUsed[c.area_id]) catIdsUsed[c.id] = true;
       });
     }
-    var catById = {};
-    (categories || []).forEach(function (c) {
-      if (c && c.id) catById[c.id] = c;
-    });
     var addedAnc = true;
     var guardAnc = 0;
     while (addedAnc && guardAnc < 12) {
@@ -28750,10 +28860,21 @@
           catIdsUsed[c.parent_id] = true;
           addedAnc = true;
         }
+        if (c && c.area_id) areaIdsUsed[c.area_id] = true;
       });
     }
+    /* Incluir plantas usadas aunque estén archivadas; si falta el registro, sintetizar. */
     var activeAreas = (areas || []).filter(function (a) {
-      return a && !a.archived_at && areaIdsUsed[a.id];
+      return a && areaIdsUsed[a.id];
+    });
+    Object.keys(areaIdsUsed).forEach(function (aid) {
+      if (activeAreas.some(function (a) { return a && a.id === aid; })) return;
+      activeAreas.push({
+        id: aid,
+        title: 'Planta',
+        color_hex: '#94a3b8',
+        _synthetic: true
+      });
     });
     if (!activeAreas.length) {
       activeAreas = (areas || []).filter(function (a) {
@@ -28856,12 +28977,26 @@
     Object.keys(itemsById).forEach(function (id) {
       var it = itemsById[id];
       if (!it) return;
-      var pKey =
-        it.category_id && byId['cat:' + it.category_id]
-          ? 'cat:' + it.category_id
-          : it.area_id && byId['area:' + it.area_id]
-            ? 'area:' + it.area_id
-            : '_orphan';
+      var pKey = '_orphan';
+      if (it.category_id && byId['cat:' + it.category_id]) {
+        pKey = 'cat:' + it.category_id;
+      } else if (it.category_id) {
+        /* Categoría profunda / no dibujada: subir hasta una rama visible. */
+        var curCat = catById[it.category_id];
+        var gUp = 0;
+        while (curCat && gUp++ < 10) {
+          if (byId['cat:' + curCat.id]) {
+            pKey = 'cat:' + curCat.id;
+            break;
+          }
+          if (!curCat.parent_id) break;
+          curCat = catById[curCat.parent_id];
+        }
+      }
+      if (pKey === '_orphan') {
+        var areaId = resolveItemAreaId(it);
+        if (areaId && byId['area:' + areaId]) pKey = 'area:' + areaId;
+      }
       if (!itemsByParent[pKey]) itemsByParent[pKey] = [];
       itemsByParent[pKey].push(it);
     });
@@ -28896,12 +29031,14 @@
           y: py + Math.sin(ang) * orbit,
           r: 9,
           labelSide: slot % 2 === 0 ? 1 : -1,
-          clusterAreaId: it.area_id || null
+          clusterAreaId: resolveItemAreaId(it) || (parent && parent.clusterAreaId) || null
         };
         nodes.push(node);
         byId[node.id] = node;
       });
     });
+
+    var nutriAnchors = {};
 
     /**
      * Órbita = círculo que cubre el contenido (sin dejar ramas/apuntes fuera).
@@ -28987,6 +29124,7 @@
 
       cats.forEach(function (n) {
         var discs = [];
+        discs.push({ x: n.x, y: n.y, r: nodeVisualR(n) });
         nodes.forEach(function (ch) {
           if (ch.id === n.id) return;
           if (ch.kind === 'cat' && ch.parentCatId === n.refId) {
@@ -29006,12 +29144,19 @@
         });
         nodes.forEach(function (ch) {
           if (ch.kind !== 'nutri_file' && ch.kind !== 'nutri_link') return;
+          var anchorId = nutriAnchors[ch.id];
+          var anchor = anchorId ? byId['item:' + anchorId] : null;
+          if (anchor && itemUnderCat(anchor, n.refId)) {
+            discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
+            return;
+          }
+          /* Fallback: cerca de un apunte de esta rama. */
           var near = false;
           nodes.forEach(function (itn) {
             if (itn.kind !== 'item') return;
             var it2 = itemsById[itn.refId];
             if (!it2 || it2.category_id !== n.refId) return;
-            if (dist(ch.x, ch.y, itn.x, itn.y) < 100) near = true;
+            if (dist(ch.x, ch.y, itn.x, itn.y) < 120) near = true;
           });
           if (near) discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
         });
@@ -29035,6 +29180,7 @@
       nodes.forEach(function (n) {
         if (n.kind !== 'area') return;
         var discs = [];
+        discs.push({ x: n.x, y: n.y, r: nodeVisualR(n) });
         /* Toda la planta: cada nodo del cluster + órbitas de ramas (nada fuera del halo). */
         nodes.forEach(function (ch) {
           if (ch.id === n.id) return;
@@ -29053,7 +29199,9 @@
         });
         var fit = fitOrbitToDiscs(discs, 10);
         if (!fit) {
-          n.orbitReach = 0;
+          n.orbitReach = (n.r || 10) + 28;
+          n.orbitCx = n.x;
+          n.orbitCy = n.y;
           return;
         }
         n.orbitCx = fit.cx;
@@ -29062,7 +29210,7 @@
       });
     }
 
-    var nutriAnchors = {};
+    nutriAnchors = {};
     nutriRelations.forEach(function (r) {
       var ends = [
         { kind: r.from_kind, id: r.from_id },
@@ -29112,6 +29260,22 @@
     orphanNutri.forEach(function (key, oi) {
       var meta = nutriByKey[key];
       if (!meta || byId[key]) return;
+      /* Pegar al apunte visible más cercano por relación semántica, si existe. */
+      var bestAnchor = null;
+      nutriRelations.forEach(function (r) {
+        var ends = [
+          { kind: r.from_kind, id: r.from_id },
+          { kind: r.to_kind, id: r.to_id }
+        ];
+        var selfHit = false;
+        var otherApunte = null;
+        ends.forEach(function (e) {
+          var k = mapaGraphNodeKey(e.kind, e.id);
+          if (k === key) selfHit = true;
+          else if (e.kind === 'apunte' && byId['item:' + e.id]) otherApunte = byId['item:' + e.id];
+        });
+        if (selfHit && otherApunte) bestAnchor = otherApunte;
+      });
       var ang = (oi / Math.max(orphanNutri.length, 1)) * Math.PI * 2;
       var nNode = {
         id: key,
@@ -29120,11 +29284,11 @@
         label: meta.title || (meta.kind === 'nutri_link' ? 'Link' : 'Archivo'),
         color: meta.kind === 'nutri_link' ? '#0891b2' : '#ea580c',
         url: meta.url || '',
-        x: cx + Math.cos(ang) * 120,
-        y: cy + Math.sin(ang) * 120,
+        x: bestAnchor ? bestAnchor.x + Math.cos(ang) * 90 : cx + Math.cos(ang) * 120,
+        y: bestAnchor ? bestAnchor.y + Math.sin(ang) * 90 : cy + Math.sin(ang) * 120,
         r: 9,
         labelSide: oi % 2 === 0 ? 1 : -1,
-        clusterAreaId: null
+        clusterAreaId: bestAnchor ? bestAnchor.clusterAreaId || null : null
       };
       nodes.push(nNode);
       byId[nNode.id] = nNode;
@@ -29140,6 +29304,79 @@
     nestOrbitsHierarchically();
     separatePlantOrbitClusters(nodes, 24);
     nestOrbitsHierarchically();
+
+    /* Red de seguridad: nodos sin planta → órbita flotante; fuera del halo → ampliar planta. */
+    (function ensureNoNodeLeftWithoutOrbit() {
+      function dist2(ax, ay, bx, by) {
+        return Math.sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
+      }
+      function visualR(n) {
+        var r = n.r || 8;
+        if (n.kind === 'cat') return r * 1.35;
+        if (n.kind === 'nutri_file' || n.kind === 'nutri_link') return r * 1.35;
+        return r + 4;
+      }
+      nodes.forEach(function (n) {
+        if (!n || n.kind === 'area') return;
+        if (!n.clusterAreaId) return;
+        var area = byId['area:' + n.clusterAreaId];
+        if (!area) return;
+        var ocx = area.orbitCx != null ? area.orbitCx : area.x;
+        var ocy = area.orbitCy != null ? area.orbitCy : area.y;
+        var need = dist2(ocx, ocy, n.x, n.y) + visualR(n) + 12;
+        if (!area.orbitReach || need > area.orbitReach) {
+          area.orbitReach = need;
+          if (area.orbitCx == null) area.orbitCx = ocx;
+          if (area.orbitCy == null) area.orbitCy = ocy;
+        }
+      });
+      var floating = nodes.filter(function (n) {
+        if (!n) return false;
+        if (n.kind !== 'item' && n.kind !== 'nutri_file' && n.kind !== 'nutri_link' && n.kind !== 'cat') {
+          return false;
+        }
+        if (!n.clusterAreaId) return true;
+        return !byId['area:' + n.clusterAreaId];
+      });
+      if (!floating.length) return;
+      var minX = Infinity;
+      var minY = Infinity;
+      var maxX = -Infinity;
+      var maxY = -Infinity;
+      floating.forEach(function (n) {
+        var rr = visualR(n);
+        minX = Math.min(minX, n.x - rr);
+        maxX = Math.max(maxX, n.x + rr);
+        minY = Math.min(minY, n.y - rr);
+        maxY = Math.max(maxY, n.y + rr);
+      });
+      var fcx = (minX + maxX) / 2;
+      var fcy = (minY + maxY) / 2;
+      var reach = 36;
+      floating.forEach(function (n) {
+        reach = Math.max(reach, dist2(fcx, fcy, n.x, n.y) + visualR(n) + 14);
+      });
+      var shell = {
+        id: 'area:_floating',
+        kind: 'area',
+        refId: '_floating',
+        label: '',
+        color: '#94a3b8',
+        x: fcx,
+        y: fcy,
+        r: 1,
+        orbitCx: fcx,
+        orbitCy: fcy,
+        orbitReach: reach,
+        clusterAreaId: '_floating',
+        _orbitShell: true
+      };
+      nodes.push(shell);
+      byId[shell.id] = shell;
+      floating.forEach(function (n) {
+        n.clusterAreaId = '_floating';
+      });
+    })();
 
     /* Si algún nodo quedó con coords inválidas, recentrar. */
     nodes.forEach(function (n) {
@@ -29164,12 +29401,25 @@
       }
       if (n.kind === 'item') {
         var it = itemsById[n.refId];
-        var pId =
-          it && it.category_id && byId['cat:' + it.category_id]
-            ? 'cat:' + it.category_id
-            : it && it.area_id && byId['area:' + it.area_id]
-              ? 'area:' + it.area_id
-              : null;
+        var pId = null;
+        if (it && it.category_id && byId['cat:' + it.category_id]) {
+          pId = 'cat:' + it.category_id;
+        } else if (it && it.category_id) {
+          var curH = catById[it.category_id];
+          var gH = 0;
+          while (curH && gH++ < 10) {
+            if (byId['cat:' + curH.id]) {
+              pId = 'cat:' + curH.id;
+              break;
+            }
+            if (!curH.parent_id) break;
+            curH = catById[curH.parent_id];
+          }
+        }
+        if (!pId) {
+          var aId = resolveItemAreaId(it);
+          if (aId && byId['area:' + aId]) pId = 'area:' + aId;
+        }
         if (pId && byId[pId]) hierEdges.push({ from: pId, to: n.id, kind: 'hier' });
       }
     });
@@ -29373,7 +29623,7 @@
   function separatePlantOrbitClusters(nodes, iterations) {
     iterations = iterations || 36;
     var plants = (nodes || []).filter(function (n) {
-      return n && n.kind === 'area' && n.orbitReach > 0;
+      return n && n.kind === 'area' && n.orbitReach > 0 && !n._orbitShell;
     });
     if (plants.length < 2) return;
     var gap = 40;
@@ -30053,7 +30303,11 @@
       /* Órbitas de atrás → adelante: planta, rama, sub-rama, sub² (cajas rusas). */
       var orbitNodes = layout.nodes
         .filter(function (n) {
-          return (n.kind === 'area' || n.kind === 'cat') && n.orbitReach && n.orbitReach > (n.r || 10) + 6;
+          return (
+            (n.kind === 'area' || n.kind === 'cat') &&
+            n.orbitReach &&
+            n.orbitReach > (n.r || 10) + 2
+          );
         })
         .slice()
         .sort(function (a, b) {
@@ -30070,7 +30324,7 @@
         var opacity = 0.07;
         if (n.kind === 'area') {
           cls += ' np-mapa-orbit--plant';
-          opacity = 0.055;
+          opacity = n._orbitShell ? 0.05 : 0.055;
         } else if (depth <= 0) {
           cls += ' np-mapa-orbit--rama';
           opacity = 0.075;
@@ -30166,6 +30420,7 @@
       });
 
       layout.nodes.forEach(function (n) {
+        if (n._orbitShell) return;
         var g = document.createElementNS(ns, 'g');
         g.setAttribute('class', 'np-mapa-node');
         g.setAttribute('data-kind', n.kind);
@@ -30628,6 +30883,28 @@
     return s;
   }
 
+  function nutriProFolderStorageKey() {
+    return 'np_nutri_pro_selected_folder_v1_' + (state.userId || 'anon');
+  }
+
+  function persistNutriProSelectedFolder() {
+    if (!state.userId) return;
+    try {
+      localStorage.setItem(
+        nutriProFolderStorageKey(),
+        state.nutriProSelectedFolderId ? String(state.nutriProSelectedFolderId) : ''
+      );
+    } catch (e) {}
+  }
+
+  function readPersistedNutriProFolderId() {
+    try {
+      return localStorage.getItem(nutriProFolderStorageKey());
+    } catch (e) {
+      return null;
+    }
+  }
+
   function nutriProTopLevelFolders() {
     return (state.nutriProFolders || []).filter(function (f) {
       return f && !f.parent_id;
@@ -30636,17 +30913,42 @@
 
   function ensureNutriProFolderSelection() {
     var folders = state.nutriProFolders || [];
-    if (state.nutriProSelectedFolderId) {
-      var ok = folders.some(function (f) {
-        return f && f.id === state.nutriProSelectedFolderId;
-      });
-      if (ok) return;
+    function folderExists(id) {
+      return !!(
+        id &&
+        folders.some(function (f) {
+          return f && f.id === id;
+        })
+      );
     }
-    var tops = nutriProTopLevelFolders().slice().sort(function (a, b) {
-      return String(a.title || '').localeCompare(String(b.title || ''));
-    });
+    /* 1) Mantener la carpeta actual si sigue existiendo. */
+    if (folderExists(state.nutriProSelectedFolderId)) {
+      persistNutriProSelectedFolder();
+      return;
+    }
+    /* 2) Restaurar la última carpeta donde estabas (localStorage). */
+    var saved = readPersistedNutriProFolderId();
+    if (saved !== null) {
+      if (saved === '') {
+        state.nutriProSelectedFolderId = null;
+        state.nutriProFolderEditingId = null;
+        return;
+      }
+      if (folderExists(saved)) {
+        state.nutriProSelectedFolderId = saved;
+        nutriProExpandFolderAncestors(saved);
+        return;
+      }
+    }
+    /* 3) Primera vez: primera carpeta raíz (alfabética). */
+    var tops = nutriProTopLevelFolders()
+      .slice()
+      .sort(function (a, b) {
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      });
     state.nutriProSelectedFolderId = tops.length ? tops[0].id : null;
     if (!state.nutriProSelectedFolderId) state.nutriProFolderEditingId = null;
+    persistNutriProSelectedFolder();
   }
 
   function nutriProFolderLabel(folderId) {
@@ -30924,6 +31226,7 @@
     state.nutriProSelectedFolderId = folderId || null;
     state.nutriProFolderEditingId = null;
     state.nutriProHighlightLinkId = null;
+    persistNutriProSelectedFolder();
     if (folderId) {
       var exists = (state.nutriProFolders || []).some(function (f) {
         return f && f.id === folderId;
@@ -30948,6 +31251,7 @@
     state.nutriProSelectedFolderId = folderId || null;
     state.nutriProFolderEditingId = null;
     state.nutriProHighlightFileId = null;
+    persistNutriProSelectedFolder();
     if (folderId) {
       var exists = (state.nutriProFolders || []).some(function (f) {
         return f && f.id === folderId;
@@ -31808,15 +32112,22 @@
     var noteEl = document.createElement('div');
     noteEl.className = 'np-apunte-pdf-note np-modal-note-rich';
     var liveEd = $('npModalBodyRich');
+    if ((!liveEd || state.detailItemId !== row.id) && state.createItemId && row.id === state.createItemId) {
+      liveEd = $('npBodyRich');
+    }
     var noteHtml =
-      liveEd && state.detailItemId === row.id ? liveEd.innerHTML : resolveModalNoteHtml(row);
+      liveEd && ((state.detailItemId === row.id) || (state.createItemId === row.id))
+        ? liveEd.innerHTML
+        : resolveModalNoteHtml(row);
     noteEl.innerHTML = sanitizeRich(noteHtml);
     root.appendChild(noteEl);
 
     var blocks =
       state.detailItemId === row.id && state.detailBlocksWorking
         ? deepCloneBlocks(state.detailBlocksWorking)
-        : deepCloneBlocks(row.body_blocks);
+        : state.createItemId === row.id && state.pendingBlocks
+          ? deepCloneBlocks(state.pendingBlocks)
+          : deepCloneBlocks(row.body_blocks);
     if (blocks && blocks.length) {
       var blockSection = document.createElement('div');
       blockSection.className = 'np-apunte-pdf-block-section';
@@ -31842,7 +32153,8 @@
     return root;
   }
 
-  async function exportApuntePdfToNutriPro() {
+  async function exportApuntePdfToNutriPro(opts) {
+    opts = opts || {};
     if (!state.client || !state.userId) {
       showToast('Inicia sesión para guardar en Nutri PRO.', true);
       return;
@@ -31851,14 +32163,37 @@
       showToast('Nutri PRO no está listo. Ejecuta el SQL de Nutri PRO en Supabase.', true);
       return;
     }
-    var row = state.detailItemRecord;
-    if (!row || !row.id) return;
-    var btn = $('npDetailExportPdfBtn');
-    if (btn && btn.disabled) return;
+    var fromCreate = !!opts.fromCreate;
+    var btn = opts.button || (fromCreate ? $('npCreateExportPdfBtn') : $('npDetailExportPdfBtn'));
+    var row = opts.row || null;
 
-    syncDetailBlocksInputsFromDOM();
-    await flushDetailMainNote();
-    await flushDetailItemMeta();
+    if (fromCreate) {
+      var form = $('npFormCreate');
+      if (form && typeof form.requestSubmit === 'function') form.requestSubmit();
+      else if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      if (createSaveInFlight) await createSaveInFlight;
+      await new Promise(function (r) {
+        setTimeout(r, 30);
+      });
+      if (!state.createItemId) {
+        showToast('Guarda el apunte (💡) con título y rama antes del PDF.', true);
+        return;
+      }
+      row = await fetchPlanProItemForDetail(state.createItemId);
+      if (!row) {
+        showToast('No se pudo leer el apunte para el PDF.', true);
+        return;
+      }
+    } else {
+      row = row || state.detailItemRecord;
+      if (!row || !row.id) return;
+      syncDetailBlocksInputsFromDOM();
+      await flushDetailMainNote();
+      await flushDetailItemMeta();
+      row = state.detailItemRecord || row;
+    }
+
+    if (btn && btn.disabled) return;
 
     if (btn) {
       btn.disabled = true;
@@ -31980,6 +32315,7 @@
     state.nutriProSelectedFolderId = folderId || null;
     state.nutriProFolderEditingId = null;
     state.nutriProFilesListExpanded = false;
+    persistNutriProSelectedFolder();
     var treeNeedsRender = false;
     if (folderId) treeNeedsRender = !!nutriProExpandFolderAncestors(folderId);
     if (treeNeedsRender) renderNutriProFolderTree();
@@ -33466,6 +33802,7 @@
     await loadNutriProFolders();
     state.nutriProSelectedFolderId = created.id;
     state.nutriProFolderEditingId = null;
+    persistNutriProSelectedFolder();
     renderNutriProFolderTree();
     syncNutriProFolderContext();
     await loadNutriProFiles(created.id);
@@ -33490,6 +33827,7 @@
     nutriProPersistCollapsedFolders();
     state.nutriProSelectedFolderId = created.id;
     state.nutriProFolderEditingId = null;
+    persistNutriProSelectedFolder();
     renderNutriProFolderTree();
     syncNutriProFolderContext();
     await loadNutriProFiles(created.id);
