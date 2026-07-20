@@ -11433,9 +11433,13 @@
               <input type="checkbox" id="npMapaOnlyLinked" />
               Solo con relaciones
             </label>
-            <label class="np-mapa-check" title="Incluir ramas sin links">
+            <label class="np-mapa-check" title="Mostrar también ramas que aún no tienen apuntes">
               <input type="checkbox" id="npMapaIncludeOrphanRamas" />
-              Ramas sin links
+              Ramas vacías
+            </label>
+            <label class="np-mapa-check" title="Mostrar archivos y links de Nutri PRO en el mapa (para relacionarlos)">
+              <input type="checkbox" id="npMapaShowNutri" />
+              Mostrar Nutri
             </label>
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapaRefreshBtn">Actualizar</button>
             <button type="button" class="btn btn-ghost" id="npMapaResetViewBtn">Centrar</button>
@@ -28437,6 +28441,7 @@
   var planProMapaFocusTimer = null;
   var planProMapaLinkState = {
     active: false,
+    fromKind: null,
     fromId: null,
     type: 'relacionado_con',
     typePills: null
@@ -28498,7 +28503,10 @@
 
   function setMapaLinkMode(on) {
     planProMapaLinkState.active = !!on;
-    if (!planProMapaLinkState.active) planProMapaLinkState.fromId = null;
+    if (!planProMapaLinkState.active) {
+      planProMapaLinkState.fromId = null;
+      planProMapaLinkState.fromKind = null;
+    }
     updateMapaLinkHint();
     if (planProMapaLinkState.active) {
       var only = $('npMapaOnlyLinked');
@@ -28511,21 +28519,33 @@
     scheduleRenderPlanProMapa();
   }
 
-  async function handleMapaApunteTap(itemId, label) {
+  function mapaRelateKindLabel(kind) {
+    if (kind === 'nutri_file') return 'Archivo';
+    if (kind === 'nutri_link') return 'Link';
+    return 'Apunte';
+  }
+
+  async function handleMapaRelateTap(kind, id, label, node) {
+    kind = kind === 'nutri_file' || kind === 'nutri_link' ? kind : 'apunte';
     if (!planProMapaLinkState.active) {
-      await openMapaApunteKeepView(itemId);
+      if (kind === 'apunte') await openMapaApunteKeepView(id);
+      else await openMapaNutriNode(node || { kind: kind, refId: id, label: label });
       return;
     }
-    if (!itemId) return;
+    if (!id) return;
     if (!planProMapaLinkState.fromId) {
-      planProMapaLinkState.fromId = itemId;
+      planProMapaLinkState.fromKind = kind;
+      planProMapaLinkState.fromId = id;
       updateMapaLinkHint();
-      showMapaTip('Origen: ' + (label || 'Apunte') + ' · toca el destino');
+      showMapaTip(
+        'Origen: ' + mapaRelateKindLabel(kind) + ' «' + (label || '') + '» · toca el destino'
+      );
       scheduleRenderPlanProMapa();
       return;
     }
-    if (planProMapaLinkState.fromId === itemId) {
+    if (planProMapaLinkState.fromKind === kind && planProMapaLinkState.fromId === id) {
       planProMapaLinkState.fromId = null;
+      planProMapaLinkState.fromKind = null;
       updateMapaLinkHint();
       showToast('Origen cancelado.');
       scheduleRenderPlanProMapa();
@@ -28535,16 +28555,27 @@
       (planProMapaLinkState.typePills && planProMapaLinkState.typePills.getValue()) ||
       planProMapaLinkState.type ||
       'relacionado_con';
+    var fromKind = planProMapaLinkState.fromKind || 'apunte';
+    var fromId = planProMapaLinkState.fromId;
     try {
       npCloudSyncTouch();
-      await createPlanProRelation(planProMapaLinkState.fromId, itemId, type);
+      if (fromKind === 'apunte' && kind === 'apunte') {
+        await createPlanProRelation(fromId, id, type);
+      } else {
+        await createNutriRelation(fromKind, fromId, kind, id, type);
+      }
       showToast('Relación: ' + planProRelationTypeLabel(type, false));
       planProMapaLinkState.fromId = null;
+      planProMapaLinkState.fromKind = null;
       updateMapaLinkHint();
       scheduleRenderPlanProMapa();
     } catch (e) {
       showToast((e && e.message) || 'No se pudo vincular.', true);
     }
+  }
+
+  async function handleMapaApunteTap(itemId, label) {
+    await handleMapaRelateTap('apunte', itemId, label);
   }
 
   async function openMapaNutriNode(node) {
@@ -28732,23 +28763,71 @@
     }
 
     var onlyLinked = !($('npMapaOnlyLinked') && !$('npMapaOnlyLinked').checked);
+    var showAllNutri = !!( $('npMapaShowNutri') && $('npMapaShowNutri').checked );
     var areaFilter = ($('npMapaFilterArea') && $('npMapaFilterArea').value) || '';
     var itemsById = {};
     var itemIds = Object.keys(idSet);
     if (!onlyLinked) {
-      var extraQ = state.client
-        .from('plan_pro_items')
-        .select('id,title,area_id,category_id')
-        .eq('owner_id', state.userId)
-        .limit(400);
-      if (areaFilter) extraQ = extraQ.eq('area_id', areaFilter);
-      var extraRes = await extraQ;
-      if (!extraRes.error) {
-        (extraRes.data || []).forEach(function (it) {
-          idSet[it.id] = true;
+      /* Carga por páginas: sin tope artificial bajo (antes 400). */
+      var pageSize = 500;
+      var pageFrom = 0;
+      var pagesGuard = 0;
+      while (pagesGuard < 20) {
+        pagesGuard += 1;
+        var extraQ = state.client
+          .from('plan_pro_items')
+          .select('id,title,area_id,category_id')
+          .eq('owner_id', state.userId)
+          .range(pageFrom, pageFrom + pageSize - 1);
+        if (areaFilter) extraQ = extraQ.eq('area_id', areaFilter);
+        var extraRes = await extraQ;
+        if (extraRes.error) break;
+        var batch = extraRes.data || [];
+        batch.forEach(function (it) {
+          if (it && it.id) idSet[it.id] = true;
         });
+        if (batch.length < pageSize) break;
+        pageFrom += pageSize;
       }
       itemIds = Object.keys(idSet);
+    }
+
+    if (showAllNutri && state.client && state.userId) {
+      try {
+        var allFilesRes = await state.client
+          .from('plan_pro_nutri_files')
+          .select('id,title,original_name')
+          .eq('owner_id', state.userId)
+          .limit(800);
+        if (!allFilesRes.error) {
+          (allFilesRes.data || []).forEach(function (f) {
+            if (!f || !f.id) return;
+            nutriByKey[mapaGraphNodeKey('nutri_file', f.id)] = {
+              kind: 'nutri_file',
+              id: f.id,
+              title: f.title || f.original_name || 'Archivo'
+            };
+          });
+        }
+        var allLinksRes = await state.client
+          .from('plan_pro_nutri_links')
+          .select('id,title,url')
+          .eq('owner_id', state.userId)
+          .limit(400);
+        if (!allLinksRes.error) {
+          (allLinksRes.data || []).forEach(function (l) {
+            if (!l || !l.id) return;
+            nutriByKey[mapaGraphNodeKey('nutri_link', l.id)] = {
+              kind: 'nutri_link',
+              id: l.id,
+              title: l.title || 'Link',
+              url: l.url || ''
+            };
+          });
+        }
+      } catch (eNutriAll) {
+        /* ignore: mapa sigue con lo ya relacionado */
+      }
     }
     if (itemIds.length) {
       for (var i = 0; i < itemIds.length; i += 80) {
@@ -29276,7 +29355,13 @@
         });
         if (selfHit && otherApunte) bestAnchor = otherApunte;
       });
-      var ang = (oi / Math.max(orphanNutri.length, 1)) * Math.PI * 2;
+      var perRing = 16;
+      var ring = Math.floor(oi / perRing);
+      var slot = oi % perRing;
+      var ang = (slot / perRing) * Math.PI * 2 - Math.PI / 2;
+      var rad = bestAnchor ? 90 + ring * 55 : 160 + ring * 72;
+      var bx = bestAnchor ? bestAnchor.x : cx + 420;
+      var by = bestAnchor ? bestAnchor.y : cy;
       var nNode = {
         id: key,
         kind: meta.kind === 'nutri_link' ? 'nutri_link' : 'nutri_file',
@@ -29284,10 +29369,10 @@
         label: meta.title || (meta.kind === 'nutri_link' ? 'Link' : 'Archivo'),
         color: meta.kind === 'nutri_link' ? '#0891b2' : '#ea580c',
         url: meta.url || '',
-        x: bestAnchor ? bestAnchor.x + Math.cos(ang) * 90 : cx + Math.cos(ang) * 120,
-        y: bestAnchor ? bestAnchor.y + Math.sin(ang) * 90 : cy + Math.sin(ang) * 120,
+        x: bx + Math.cos(ang) * rad,
+        y: by + Math.sin(ang) * rad,
         r: 9,
-        labelSide: oi % 2 === 0 ? 1 : -1,
+        labelSide: slot % 2 === 0 ? 1 : -1,
         clusterAreaId: bestAnchor ? bestAnchor.clusterAreaId || null : null
       };
       nodes.push(nNode);
@@ -30426,7 +30511,14 @@
         g.setAttribute('data-kind', n.kind);
         g.setAttribute('data-ref', n.refId);
         g.setAttribute('data-node-id', n.id);
-        if (n.kind === 'item' && planProMapaLinkState.fromId === n.refId) {
+        if (n.kind === 'item' && planProMapaLinkState.fromKind === 'apunte' && planProMapaLinkState.fromId === n.refId) {
+          g.classList.add('is-link-from');
+        }
+        if (
+          (n.kind === 'nutri_file' || n.kind === 'nutri_link') &&
+          planProMapaLinkState.fromKind === n.kind &&
+          planProMapaLinkState.fromId === n.refId
+        ) {
           g.classList.add('is-link-from');
         }
         appendMapaNodeBody(ns, g, n);
@@ -30476,13 +30568,13 @@
           g.addEventListener('click', function (ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            handleMapaApunteTap(n.refId, n.label);
+            handleMapaRelateTap('apunte', n.refId, n.label);
           });
         } else if (n.kind === 'nutri_file' || n.kind === 'nutri_link') {
           g.addEventListener('click', function (ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            openMapaNutriNode(n);
+            handleMapaRelateTap(n.kind, n.refId, n.label, n);
           });
         } else if (n.kind === 'area') {
           g.addEventListener('click', function (ev) {
@@ -35106,6 +35198,13 @@
     if (mapaOrphan && mapaOrphan.dataset.npWired !== '1') {
       mapaOrphan.dataset.npWired = '1';
       mapaOrphan.addEventListener('change', function () {
+        scheduleRenderPlanProMapa();
+      });
+    }
+    var mapaShowNutri = $('npMapaShowNutri');
+    if (mapaShowNutri && mapaShowNutri.dataset.npWired !== '1') {
+      mapaShowNutri.dataset.npWired = '1';
+      mapaShowNutri.addEventListener('change', function () {
         scheduleRenderPlanProMapa();
       });
     }
