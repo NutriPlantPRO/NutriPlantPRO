@@ -5230,24 +5230,42 @@
       pointer-events: none;
       opacity: 0.85;
     }
+    .np-mapa-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin: 0 0 8px;
+    }
     .np-mapa-toolbar {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 14px;
+      gap: 8px 10px;
+      padding: 6px 10px;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.9);
       border: 1px solid rgba(148, 163, 184, 0.28);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .np-mapa-toolbar-plant {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
     }
     .np-mapa-toolbar label {
       font-size: 12px;
       font-weight: 650;
       color: #475569;
+      white-space: nowrap;
     }
     .np-mapa-toolbar select {
-      min-height: 32px;
-      padding: 4px 10px;
+      min-height: 30px;
+      min-width: 110px;
+      max-width: 160px;
+      padding: 3px 10px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.36);
       font: inherit;
@@ -5258,11 +5276,19 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      flex: 0 0 auto;
       font-size: 12px;
       font-weight: 600;
       color: #475569;
       cursor: pointer;
       user-select: none;
+      white-space: nowrap;
+    }
+    .np-mapa-toolbar .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      padding: 5px 12px;
+      min-height: 30px;
     }
     .np-mapa-canvas-wrap {
       position: relative;
@@ -5357,16 +5383,22 @@
     }
     .np-mapa-legend {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-      font-size: 11px;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px 11px;
+      font-size: 10.5px;
       color: #64748b;
-      padding: 0 4px;
+      padding: 2px 2px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
     }
     .np-mapa-legend span {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
     .np-mapa-legend i {
       display: inline-block;
@@ -5387,14 +5419,17 @@
     }
     .np-mapa-link-bar {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       gap: 8px 10px;
-      margin-top: 8px;
-      padding: 8px 10px;
+      margin-top: 6px;
+      padding: 6px 10px;
       border-radius: 12px;
       background: rgba(238, 242, 255, 0.65);
       border: 1px solid rgba(99, 102, 241, 0.2);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
     }
     .np-mapa-link-bar.is-on {
       background: rgba(236, 253, 245, 0.75);
@@ -11234,21 +11269,24 @@
             <img src="../assets/N_Hoja_Azul.png" alt="" class="np-pillar-panel-logo" width="22" height="22" decoding="async" aria-hidden="true" />
             Neuron PRO
           </h2>
-          <p class="np-muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;">
-            Red de formas: planta ○ · rama ▢ · sub-rama ◇ · sub² hexágono · apunte ○ · archivo ▭ · link ◇. La sombra de la planta engoba todas sus ramas; la de cada rama (tono un poco más marcado) muestra su alcance interno. Toca una línea tipada para ver ambos extremos.
+          <p class="np-muted np-mapa-lead" style="margin:0 0 8px;font-size:12px;line-height:1.4;">
+            Planta ○ · rama ▢ · sub-rama ◇ · apunte ○ · archivo ▭ · link ◇. Sombras = alcance. Toca una línea tipada para ver extremos.
           </p>
+          <div class="np-mapa-controls">
           <div class="np-mapa-toolbar" aria-label="Controles del mapa">
-            <label for="npMapaFilterArea">Planta</label>
-            <select id="npMapaFilterArea" aria-label="Filtrar por planta">
-              <option value="">Todas</option>
-            </select>
-            <label class="np-mapa-check">
+            <div class="np-mapa-toolbar-plant">
+              <label for="npMapaFilterArea">Planta</label>
+              <select id="npMapaFilterArea" aria-label="Filtrar por planta">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <label class="np-mapa-check" title="Solo apuntes con relaciones">
               <input type="checkbox" id="npMapaOnlyLinked" />
-              Solo apuntes con relaciones
+              Solo con relaciones
             </label>
-            <label class="np-mapa-check">
+            <label class="np-mapa-check" title="Incluir ramas sin links">
               <input type="checkbox" id="npMapaIncludeOrphanRamas" />
-              Incluir ramas sin links
+              Ramas sin links
             </label>
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapaRefreshBtn">Actualizar</button>
             <button type="button" class="btn btn-ghost" id="npMapaResetViewBtn">Centrar</button>
@@ -11265,6 +11303,7 @@
             <span><i style="width:14px;height:14px;border-radius:50%;background:rgba(34,197,94,0.28);border:0;"></i> Alcance planta</span>
             <span><i style="width:10px;height:10px;border-radius:50%;background:rgba(71,85,105,0.35);border:0;"></i> Alcance rama</span>
             <span><i class="np-mapa-legend-line np-mapa-legend-line--hier"></i> Jerarquía</span>
+          </div>
           </div>
           <div class="np-mapa-link-bar" id="npMapaLinkBar" aria-label="Relacionar desde el mapa">
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapaLinkToggle">Relacionar</button>
@@ -28686,61 +28725,19 @@
     });
 
     /**
-     * Órbitas en cascada (cajas rusas):
-     * planta ⊃ rama ⊃ sub-rama ⊃ apuntes.
-     * Cada órbita cubre a sus hijos; la del padre se amplía hasta contener
-     * la órbita completa del hijo (no solo el ícono).
+     * Órbitas ajustadas al contenido real (sin hueco de más):
+     * de más profundo a más alto, cada una = distancia a hijos directos
+     * (+ órbita del hijo si la tiene). Sin paddings grandes.
      */
     function nestOrbitsHierarchically() {
       function dist(a, b) {
         return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
-      }
-      function catUnderAncestor(catNode, ancestorId) {
-        var cur = catNode;
-        var guard = 0;
-        while (cur && guard < 10) {
-          if (cur.parentCatId === ancestorId) return true;
-          if (!cur.parentCatId) return false;
-          cur = byId['cat:' + cur.parentCatId];
-          guard += 1;
-        }
-        return false;
-      }
-      function itemUnderCat(itemNode, catId) {
-        var it = itemsById[itemNode.refId];
-        if (!it || !it.category_id) return false;
-        if (it.category_id === catId) return true;
-        var cur = byId['cat:' + it.category_id];
-        var guard = 0;
-        while (cur && guard < 10) {
-          if (cur.refId === catId) return true;
-          if (!cur.parentCatId) return false;
-          cur = byId['cat:' + cur.parentCatId];
-          guard += 1;
-        }
-        return false;
-      }
-      function nutriNearCat(nutriNode, catId) {
-        /* Archivo/link anclado a un apunte de esta rama (o descendiente). */
-        if (nutriNode.kind !== 'nutri_file' && nutriNode.kind !== 'nutri_link') return false;
-        var best = null;
-        var bestD = Infinity;
-        nodes.forEach(function (itn) {
-          if (itn.kind !== 'item' || !itemUnderCat(itn, catId)) return;
-          var d = dist(nutriNode, itn);
-          if (d < bestD) {
-            bestD = d;
-            best = itn;
-          }
-        });
-        return !!(best && bestD < 110);
       }
 
       nodes.forEach(function (n) {
         n.orbitReach = 0;
       });
 
-      /* 1) Alcance base de cada rama/sub-rama (cualquier profundidad) por contenido. */
       var cats = nodes
         .filter(function (n) {
           return n.kind === 'cat';
@@ -28754,54 +28751,80 @@
         var maxR = 0;
         nodes.forEach(function (ch) {
           if (ch.id === n.id) return;
-          var ok = false;
-          if (ch.kind === 'cat' && catUnderAncestor(ch, n.refId)) ok = true;
-          if (ch.kind === 'item' && itemUnderCat(ch, n.refId)) ok = true;
-          if ((ch.kind === 'nutri_file' || ch.kind === 'nutri_link') && nutriNearCat(ch, n.refId)) ok = true;
-          if (!ok) return;
-          var d = dist(n, ch) + (ch.r || 8) + 14;
-          if (d > maxR) maxR = d;
-        });
-        if (maxR > 0) n.orbitReach = Math.max((n.r || 10) + 28, maxR);
-      });
-
-      /* 2) Ampliar padres hasta que la órbita del hijo quede DENTRO. */
-      var guard = 0;
-      var changed = true;
-      while (changed && guard++ < 12) {
-        changed = false;
-        cats.forEach(function (ch) {
-          if (!(ch.orbitReach > 0) || !ch.parentCatId) return;
-          var parent = byId['cat:' + ch.parentCatId];
-          if (!parent) return;
-          var need = dist(parent, ch) + ch.orbitReach + 12;
-          if (need > (parent.orbitReach || 0) + 0.5) {
-            parent.orbitReach = need;
-            changed = true;
+          if (ch.kind === 'cat' && ch.parentCatId === n.refId) {
+            var childOrbit = ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8;
+            var dCat = dist(n, ch) + childOrbit + 6;
+            if (dCat > maxR) maxR = dCat;
+            return;
+          }
+          if (ch.kind === 'item') {
+            var it = itemsById[ch.refId];
+            if (it && it.category_id === n.refId) {
+              var dItem = dist(n, ch) + (ch.r || 8) + 6;
+              if (dItem > maxR) maxR = dItem;
+            }
           }
         });
-      }
+        /* Nutri pegados a apuntes directos de esta rama. */
+        nodes.forEach(function (ch) {
+          if (ch.kind !== 'nutri_file' && ch.kind !== 'nutri_link') return;
+          var near = false;
+          nodes.forEach(function (itn) {
+            if (itn.kind !== 'item') return;
+            var it2 = itemsById[itn.refId];
+            if (!it2 || it2.category_id !== n.refId) return;
+            if (dist(ch, itn) < 100) near = true;
+          });
+          if (!near) return;
+          var dN = dist(n, ch) + (ch.r || 8) + 6;
+          if (dN > maxR) maxR = dN;
+        });
+        if (maxR > 0) n.orbitReach = Math.max((n.r || 10) + 20, maxR);
+      });
 
-      /* 3) Planta: cubre ramas raíz (con su órbita completa) y apuntes sueltos. */
+      /* Planta: solo lo que realmente cuelga (ramas raíz + apuntes sueltos). */
       nodes.forEach(function (n) {
         if (n.kind !== 'area') return;
-        var maxD = (n.r || 10) + 48;
+        var maxD = 0;
         nodes.forEach(function (ch) {
           if (ch.kind === 'cat' && ch.parentAreaId === n.refId && !(ch.depth > 0)) {
             var childOrbit = ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8;
-            var need = dist(n, ch) + childOrbit + 16;
+            var need = dist(n, ch) + childOrbit + 8;
             if (need > maxD) maxD = need;
             return;
           }
           if (ch.kind === 'item') {
             var itA = itemsById[ch.refId];
-            if (itA && itA.area_id === n.refId) {
-              var dItem = dist(n, ch) + (ch.r || 8) + 20;
+            /* Solo apuntes sin rama (sueltos en la planta). */
+            if (itA && itA.area_id === n.refId && !itA.category_id) {
+              var dItem = dist(n, ch) + (ch.r || 8) + 8;
               if (dItem > maxD) maxD = dItem;
             }
           }
         });
-        n.orbitReach = maxD;
+        n.orbitReach = maxD > 0 ? maxD : 0;
+      });
+    }
+
+    /** Centra el nodo planta en el centroide de sus ramas para que la órbita no quede enorme con hueco. */
+    function recenterPlantOnBranches() {
+      nodes.forEach(function (area) {
+        if (area.kind !== 'area') return;
+        var pts = [];
+        nodes.forEach(function (ch) {
+          if (ch.kind === 'cat' && ch.parentAreaId === area.refId && !(ch.depth > 0)) {
+            pts.push(ch);
+          }
+        });
+        if (pts.length < 1) return;
+        var sx = 0;
+        var sy = 0;
+        pts.forEach(function (p) {
+          sx += p.x;
+          sy += p.y;
+        });
+        area.x = sx / pts.length;
+        area.y = sy / pts.length;
       });
     }
 
@@ -28875,11 +28898,11 @@
 
     separateMapaNodes(nodes, Math.min(100, 55 + Math.floor(nodes.length / 8)));
     nestOrbitsHierarchically();
-    /* Separar órbitas de ramas hermanas (Salud vs Trámites, etc.) para que no se monten. */
     separateSiblingOrbitClusters(nodes, byId, itemsById, 60);
     nestOrbitsHierarchically();
     separateSiblingOrbitClusters(nodes, byId, itemsById, 36);
     separatePlantOrbitClusters(nodes, 48);
+    recenterPlantOnBranches();
     nestOrbitsHierarchically();
 
     var hierEdges = [];
@@ -29423,12 +29446,12 @@
       var mx = e.clientX - rect.left;
       var my = e.clientY - rect.top;
       var before = planProMapaView.scale;
-      /* Zoom suave pero usable: entre el salto brusco (1.14) y el modo muy lento. */
+      /* Zoom trackpad: ágil pero sin el salto brusco original (1.14). */
       var dy = e.deltaY;
       if (e.deltaMode === 1) dy *= 16;
       else if (e.deltaMode === 2) dy *= Math.max(rect.height, 400);
-      var factor = Math.exp(-dy * 0.00285);
-      factor = Math.min(1.12, Math.max(0.893, factor));
+      var factor = Math.exp(-dy * 0.0044);
+      factor = Math.min(1.15, Math.max(0.87, factor));
       var next = Math.min(4.5, Math.max(0.12, before * factor));
       var wx = (mx - planProMapaView.x) / before;
       var wy = (my - planProMapaView.y) / before;

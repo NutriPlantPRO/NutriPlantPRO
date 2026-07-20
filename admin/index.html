@@ -6564,17 +6564,17 @@
 
                         <!-- Créditos extra Radar NDVI / NDMI (bonus mensual en Supabase) -->
                         <div style="padding: 12px; background: #ecfdf5; border: 1px solid #86efac; border-radius: 8px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #14532d;">🛰️ Radar NDVI / NDMI (créditos)</label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #14532d;">🛰️ Radar NDVI / NDMI / NDRE / RGB (créditos)</label>
                             <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.45;">
-                                <strong>Tope mensual</strong> en la app = créditos base del servidor (p. ej. 20 desde Netlify) <strong>más</strong> el número que pongas aquí.
-                                Costo por generación según superficie del polígono: ≤30 ha = 1 crédito · &gt;30 ha = 2 · &gt;100 ha = 3 (NDVI+NDMI juntos).
+                                <strong>Tope del mes</strong> = base (20) + este bonus.<br>
+                                <strong>Disponibles</strong> = tope − ya usados este mes. Si ya gastó más que el tope, Disponibles sigue en <strong>0</strong> hasta que el bonus suba el tope por encima de lo usado.
                             </p>
                             <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151;">Bonus mensual (+N créditos Radar)</label>
                             <input type="number" id="edit-user-radar-credits-bonus" min="0" step="1"
                                    value="${Math.max(0, Math.floor(Number(user.radar_credits_bonus != null ? user.radar_credits_bonus : 0)))}"
                                    style="width: 140px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                             <small style="display: block; color: #64748b; font-size: 12px; margin-top: 8px; line-height: 1.4;">
-                                Pon <strong>0</strong> si no quieres sumar nada extra. Ej. <strong>10</strong> = 10 créditos Radar adicionales al tope mensual (según superficie del predio: 1–3 créditos por generación).
+                                Ej. si usó <strong>50</strong> y la base es 20, pon bonus <strong>≥ 30</strong> (tope 50) o más para que vuelva a tener disponibles. Pilot ≤30 ha=1 · &gt;30=2 · &gt;100=3; Lectura 3 o 4.
                             </small>
                         </div>
                     </div>
@@ -8407,6 +8407,18 @@
                                 error = retryEx.error || null;
                                 matched = Array.isArray(retryEx.data) ? retryEx.data.length : 0;
                             }
+                            if (error && /radar_credits_bonus/i.test(error.message || '') && /column/i.test(error.message || '')) {
+                                console.warn('⚠️ profiles.radar_credits_bonus no existe. Ejecuta 20260426_radar_profiles_bonus.sql. Reintentando sin bonus…');
+                                const fallbackPayload = { ...payload };
+                                delete fallbackPayload.radar_credits_bonus;
+                                const retryRadar = await client.from('profiles').update(fallbackPayload).eq('id', userId).select('id');
+                                error = retryRadar.error || null;
+                                matched = Array.isArray(retryRadar.data) ? retryRadar.data.length : 0;
+                                if (!error && matched) {
+                                    cloudSyncMessage +=
+                                        '\n\n⚠️ El bonus Radar NO se guardó en la nube: falta la columna radar_credits_bonus. Ejecuta en Supabase SQL: supabase/migrations/20260426_radar_profiles_bonus.sql';
+                                }
+                            }
                         }
 
                         // 2) Fallback por email (cuando ID no es UUID o no encontró fila por ID)
@@ -8450,6 +8462,17 @@
                                 const retryByEmailEx = await client.from('profiles').update(fallbackPayload).ilike('email', String(updatedUser.email)).select('id');
                                 error = retryByEmailEx.error || null;
                                 matched = Array.isArray(retryByEmailEx.data) ? retryByEmailEx.data.length : 0;
+                            }
+                            if (error && /radar_credits_bonus/i.test(error.message || '') && /column/i.test(error.message || '')) {
+                                const fallbackPayload = { ...payload };
+                                delete fallbackPayload.radar_credits_bonus;
+                                const retryByEmailRadar = await client.from('profiles').update(fallbackPayload).ilike('email', String(updatedUser.email)).select('id');
+                                error = retryByEmailRadar.error || null;
+                                matched = Array.isArray(retryByEmailRadar.data) ? retryByEmailRadar.data.length : 0;
+                                if (!error && matched) {
+                                    cloudSyncMessage +=
+                                        '\n\n⚠️ El bonus Radar NO se guardó en la nube: falta la columna radar_credits_bonus. Ejecuta en Supabase SQL: supabase/migrations/20260426_radar_profiles_bonus.sql';
+                                }
                             }
                         }
 
@@ -8642,9 +8665,13 @@
                 alert('⚠️ Contraseña en el panel y en profiles se guardó, pero NO se pudo actualizar en Supabase Auth.\n\nEl usuario NO podrá entrar con la nueva contraseña hasta que lo arregles.\n\nRevisa:\n1) Que el servidor esté corriendo: python server.py\n2) Que exista supabase-server-config.json con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY\n3) La consola del navegador (F12) para más detalle.');
                 window._adminPasswordUpdateFailed = false;
             }
+            var radarBonusSaved = Math.max(0, Math.floor(Number(updatedUser.radar_credits_bonus != null ? updatedUser.radar_credits_bonus : 0)));
+            var radarTopeSaved = 20 + radarBonusSaved;
             alert('✅ Usuario actualizado exitosamente.\n\n' + 
                   (newPassword ? '🔒 Nueva contraseña guardada. El usuario deberá iniciar sesión nuevamente.\n\n' : '') +
                   (existingUser.email !== updatedUser.email ? `📧 Email actualizado: ${existingUser.email} → ${updatedUser.email}\n\n` : '') +
+                  '🛰️ Bonus Radar: ' + radarBonusSaved + ' → tope del mes ≈ ' + radarTopeSaved + ' (base 20 + bonus).\n' +
+                  'Disponibles = tope − usados del mes. Si ya gastó más que el tope, siguen en 0 hasta subir el bonus.\n\n' +
                   'Los cambios son efectivos inmediatamente.' + cloudSyncMessage);
             
             closeEditUserModal();
@@ -12506,6 +12533,11 @@
             }
             var radarCreditsLimit = radarCreditsBase + radarCreditsBonus;
             var radarCreditsAvailable = Math.max(0, radarCreditsLimit - radarCreditsUsed);
+            var radarDeficit = Math.max(0, radarCreditsUsed - radarCreditsLimit);
+            var radarBonusMinForOne =
+                radarCreditsUsed > radarCreditsLimit
+                    ? Math.max(0, radarCreditsUsed - radarCreditsBase + 1)
+                    : null;
 
             let adminUserExtLibraryBuilt = { html: '', chartJobs: [] };
             try {
@@ -12592,13 +12624,20 @@
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">🛰️ Créditos Radar (mes ${escapeHtml(radarMonthKey)})</h3>
                             ${radarCreditsLoaded ? `
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 12px;">
-                                <div><strong style="color: #14532d;">Disponibles:</strong><br><span style="color: #059669; font-size: 22px; font-weight: 800;">${radarCreditsAvailable}</span></div>
+                                <div><strong style="color: #14532d;">Disponibles:</strong><br><span style="color: ${radarCreditsAvailable > 0 ? '#059669' : '#b91c1c'}; font-size: 22px; font-weight: 800;">${radarCreditsAvailable}</span></div>
                                 <div><strong style="color: #14532d;">Usados:</strong><br><span style="color: #166534; font-size: 16px; font-weight: 700;">${radarCreditsUsed}</span></div>
                                 <div><strong style="color: #14532d;">Tope del mes:</strong><br><span style="color: #166534; font-size: 16px; font-weight: 700;">${radarCreditsLimit}</span></div>
                                 <div><strong style="color: #14532d;">Base:</strong><br><span style="color: #64748b; font-size: 15px; font-weight: 600;">${radarCreditsBase}</span></div>
                                 <div><strong style="color: #14532d;">Bonus admin:</strong><br><span style="color: #64748b; font-size: 15px; font-weight: 600;">${radarCreditsBonus}</span></div>
                             </div>
-                            <p style="color: #64748b; font-size: 12px; margin: 12px 0 0 0; line-height: 1.45;">Tope = base (${radarCreditsBase}) + bonus. Pilot y Lectura Satelital consumen del mismo cupo. El bonus se edita en «Editar usuario».</p>
+                            ${radarDeficit > 0
+                                ? `<p style="color:#b45309;font-size:13px;margin:12px 0 0;line-height:1.45;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px;">
+                                    Ya usó <strong>${radarCreditsUsed}</strong> y el tope es solo <strong>${radarCreditsLimit}</strong> (déficit ${radarDeficit}).
+                                    Por eso <strong>Disponibles = 0</strong>. En «Editar usuario» pon bonus ≥ <strong>${radarBonusMinForOne}</strong>
+                                    (tope ${radarCreditsBase}+${radarBonusMinForOne}=${radarCreditsBase + radarBonusMinForOne}) para que vuelva a tener cupo.
+                                   </p>`
+                                : ''}
+                            <p style="color: #64748b; font-size: 12px; margin: 12px 0 0 0; line-height: 1.45;">Tope = base (${radarCreditsBase}) + bonus. Disponibles = tope − usados. Pilot y Lectura Satelital consumen del mismo cupo. El bonus se edita en «Editar usuario».</p>
                             ` : `
                             <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.45;">No se pudieron cargar los créditos usados este mes.${radarCreditsError ? ' (' + escapeHtml(radarCreditsError) + ')' : ''} Bonus en perfil: <strong>${radarCreditsBonus}</strong>. Tope estimado: <strong>${radarCreditsLimit}</strong>.</p>
                             `}
