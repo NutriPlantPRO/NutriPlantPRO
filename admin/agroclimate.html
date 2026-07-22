@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alertas agroclimáticas | Admin NutriPlant</title>
+  <link rel="icon" href="../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./agroclimate.css?v=20260722">
+</head>
+<body>
+  <header class="aa-header">
+    <a id="aa-back" href="./"><img src="../assets/N_Hoja_Azul.png" alt=""> Panel Admin</a>
+    <div>
+      <strong>Alertas agroclimáticas</strong>
+      <small>Solicitudes, predios, entregas y accesos</small>
+    </div>
+    <button id="aa-refresh">Actualizar</button>
+  </header>
+
+  <main class="aa-shell">
+    <section id="aa-metrics" class="aa-metrics"></section>
+    <section class="aa-toolbar">
+      <input id="aa-search" type="search" placeholder="Buscar folio, nombre, correo, cultivo o región">
+      <select id="aa-status">
+        <option value="">Todos los estados</option>
+        <option value="pending_whatsapp">Esperando WhatsApp</option>
+        <option value="pending_review">Pendiente de revisión</option>
+        <option value="active">Activos</option>
+        <option value="paused">Pausados</option>
+        <option value="rejected">Rechazados</option>
+        <option value="unsubscribed">Bajas</option>
+      </select>
+      <div class="aa-view-buttons">
+        <button class="active" data-view="table">☷ Tabla</button>
+        <button data-view="map">📍 Mapa de predios</button>
+      </div>
+    </section>
+    <p id="aa-status-line" class="aa-status-line" role="status"></p>
+
+    <section id="aa-table-view" class="aa-panel">
+      <div class="aa-table-wrap">
+        <table>
+          <thead><tr>
+            <th>Folio / estado</th><th>Solicitante</th><th>Predio</th><th>Interés</th>
+            <th>Accesos</th><th>Registro</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="aa-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="aa-map-view" class="aa-panel" hidden>
+      <div class="aa-map-head">
+        <div><strong>Predios con alertas agroclimáticas</strong><small id="aa-map-count"></small></div>
+        <span>Selecciona un pin para ver el registro</span>
+      </div>
+      <div id="aa-map"></div>
+    </section>
+  </main>
+
+  <div id="aa-edit-modal" class="aa-modal" hidden>
+    <div class="aa-modal-panel">
+      <div class="aa-modal-head"><div><small>Edición administrativa</small><h2 id="aa-edit-title">Registro</h2></div><button data-close>×</button></div>
+      <form id="aa-edit-form">
+        <input name="subscriber_id" type="hidden">
+        <div class="aa-form-grid">
+          <label>Nombre<input name="full_name" required></label>
+          <label>Correo<input name="email" type="email" required></label>
+          <label>Lada<input name="phone_country_code" required></label>
+          <label>WhatsApp<input name="phone_national" required></label>
+          <label>Ocupación<input name="occupation" required></label>
+          <label>País<input name="country" required></label>
+          <label>Estado / provincia<input name="region" required></label>
+          <label>CP / ZIP<input name="postal_code" required></label>
+          <label>Cultivo<input name="crop" required></label>
+          <label>Superficie<input name="area_range" required></label>
+          <label>Etapa<input name="crop_stage" required></label>
+          <label>Uso principal<input name="primary_use" required></label>
+          <label class="span-2">Decisión a mejorar<textarea name="decision_goal" rows="3"></textarea></label>
+          <label>Nombre del predio<input name="plot_name" required></label>
+          <label>Kc<input name="kc" type="number" min="0" max="2.5" step=".01"></label>
+          <label>Latitud<input name="latitude" type="number" step="any" required></label>
+          <label>Longitud<input name="longitude" type="number" step="any" required></label>
+          <label>Zona horaria<input name="timezone"></label>
+          <label class="span-2">Notas administrativas<textarea name="admin_notes" rows="3"></textarea></label>
+        </div>
+        <p id="aa-edit-status" class="aa-status-line"></p>
+        <button class="aa-primary" type="submit">Guardar todos los cambios</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="./agroclimate.js?v=20260722"></script>
+</body>
+</html>

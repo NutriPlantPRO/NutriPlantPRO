@@ -35,6 +35,10 @@
 [functions."nutriplant-admin-assistant"]
   timeout = 26
 
+[functions."agroclimate-weekly"]
+  schedule = "0 * * * *"
+  timeout = 60
+
 # Inicio: por defecto ir a login (la mayoría de equipos)
 [[redirects]]
   from = "/"
@@ -100,6 +104,18 @@
 [[redirects]]
   from = "/api/plan-pro-calendar-email"
   to = "/.netlify/functions/plan-pro-calendar-email"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/agroclimate"
+  to = "/.netlify/functions/agroclimate"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/agroclimate"
+  to = "/.netlify/functions/agroclimate-admin"
   status = 200
   force = true
 

@@ -308,6 +308,11 @@
           <span class="button-text">Estimador de déficit de presión de vapor</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAgroclimateForecast()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌤️</span>
+          <span class="button-text">Pronóstico agroclimático</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🚜</span>
           <span class="button-text">Balance de enmiendas por CIC</span>
@@ -1720,6 +1725,19 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showAgroclimateForecast() {
+      const modal = document.getElementById('agroclimateForecastModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+    }
+
+    function closeAgroclimateForecast() {
+      const modal = document.getElementById('agroclimateForecastModal');
+      const frame = document.getElementById('agroclimateForecastFrame');
+      if (modal) modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     // Balance de enmiendas por CIC (gratis en login, sin persistencia)
     function showAmendmentCalculator() {
       const modal = document.getElementById('amendmentCalculatorModal');
@@ -1894,6 +1912,10 @@
       const vpdModal = document.getElementById('vpdCalculatorModal');
       if (e.target === vpdModal) {
         closeVPDCalculator();
+      }
+      const agroclimateModal = document.getElementById('agroclimateForecastModal');
+      if (e.target === agroclimateModal) {
+        closeAgroclimateForecast();
       }
       const granularMixModal = document.getElementById('granularMixCalculatorModal');
       if (e.target === granularMixModal) {
@@ -2513,6 +2535,22 @@
       </div>
       <div class="modal-body">
         <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=202606201700" title="Estimador de déficit de presión de vapor" allow="geolocation 'self'"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Pronóstico agroclimático -->
+  <div id="agroclimateForecastModal" class="modal-overlay">
+    <div class="modal modal-vpd">
+      <div class="modal-header">
+        <h2 class="modal-title">🌤️ Pronóstico agroclimático</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeAgroclimateForecast()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260722" title="Pronóstico agroclimático" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
