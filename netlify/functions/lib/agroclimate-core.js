@@ -109,13 +109,18 @@ function rowsFromOpenMeteo(data, kc, mode = 'weekly') {
   const hourlyByDay = {};
   (data.hourly?.time || []).forEach((time, index) => {
     const day = String(time).slice(0, 10);
-    if (!hourlyByDay[day]) hourlyByDay[day] = { vpds: [], radiation: [], humidity: [], dew: [] };
+    if (!hourlyByDay[day]) hourlyByDay[day] = { vpds: [], radiation: [], humidity: [], dew: [], vpdLow: 0, vpdOpt: 0, vpdHigh: 0 };
     const vpd = vpdAtHour(
       data.hourly.temperature_2m?.[index],
       data.hourly.relative_humidity_2m?.[index],
       data.hourly.shortwave_radiation?.[index]
     );
-    if (vpd != null) hourlyByDay[day].vpds.push(vpd);
+    if (vpd != null) {
+      hourlyByDay[day].vpds.push(vpd);
+      if (vpd < 0.5) hourlyByDay[day].vpdLow += 1;
+      else if (vpd <= 1.5) hourlyByDay[day].vpdOpt += 1;
+      else hourlyByDay[day].vpdHigh += 1;
+    }
     const rad = numberOrNull(data.hourly.shortwave_radiation?.[index]);
     if (rad != null) hourlyByDay[day].radiation.push(rad);
     const humidity = numberOrNull(data.hourly.relative_humidity_2m?.[index]);
@@ -147,7 +152,7 @@ function rowsFromOpenMeteo(data, kc, mode = 'weekly') {
   const kcValue = numberOrNull(kc);
   const rows = data.daily.time
     .map((date, index) => {
-      const h = hourlyByDay[date] || { vpds: [], radiation: [], humidity: [], dew: [] };
+      const h = hourlyByDay[date] || { vpds: [], radiation: [], humidity: [], dew: [], vpdLow: 0, vpdOpt: 0, vpdHigh: 0 };
       const et0 = numberOrNull(data.daily.et0_fao_evapotranspiration?.[index]);
       return {
         date,
@@ -162,6 +167,9 @@ function rowsFromOpenMeteo(data, kc, mode = 'weekly') {
         radiationMax: h.radiation.length ? round(Math.max(...h.radiation), 0) : null,
         vpdMin: h.vpds.length ? round(Math.min(...h.vpds), 2) : null,
         vpdMax: h.vpds.length ? round(Math.max(...h.vpds), 2) : null,
+        vpdHoursLow: h.vpdLow,
+        vpdHoursOpt: h.vpdOpt,
+        vpdHoursHigh: h.vpdHigh,
         et0,
         etc: et0 != null && kcValue != null ? round(et0 * kcValue, 1) : null,
         rain: numberOrNull(data.daily.precipitation_sum?.[index])

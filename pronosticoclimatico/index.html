@@ -7,9 +7,10 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260722g">
+  <link rel="stylesheet" href="./styles.css?v=20260722j">
 </head>
 <body>
+  <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
   <header id="agro-public-header" class="agro-public-header">
     <a class="agro-brand" href="../login.html" aria-label="NutriPlant PRO">
       <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" height="36">
@@ -130,7 +131,14 @@
         </div>
         <div id="agro-mobile-days" class="agro-mobile-days"></div>
         <button id="agro-table-toggle" type="button" class="agro-btn ghost agro-table-toggle">Ver tabla completa</button>
-        <div id="agro-table-wrap" class="agro-table-wrap"></div>
+        <div class="agro-table-shell">
+          <p id="agro-table-scroll-hint" class="agro-table-scroll-hint" hidden>
+            <button type="button" class="agro-table-scroll-btn" data-scroll-dir="-1" aria-label="Desplazar tabla a la izquierda">‹</button>
+            <span>Desliza a los lados para ver toda la tabla</span>
+            <button type="button" class="agro-table-scroll-btn" data-scroll-dir="1" aria-label="Desplazar tabla a la derecha">›</button>
+          </p>
+          <div id="agro-table-wrap" class="agro-table-wrap"></div>
+        </div>
       </section>
 
       <section class="agro-card">
@@ -144,7 +152,7 @@
         <div class="agro-chart-box">
           <canvas id="agro-chart"></canvas>
         </div>
-        <p id="agro-chart-note" class="agro-chart-note">Eje izquierdo: precipitación, ETo y ETc (mm). Eje derecho: VPD mínimo y máximo (kPa).</p>
+        <p id="agro-chart-note" class="agro-chart-note">Barras: horas VPD del día (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Líneas: lluvia, ETo y ETc (mm).</p>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
@@ -182,6 +190,21 @@
       <strong>Empieza seleccionando tu ubicación.</strong>
       <span>Los datos se consultan únicamente al presionar “Generar pronóstico”.</span>
     </section>
+
+    <footer id="agro-print-footer" class="agro-print-footer">
+      <div class="agro-print-footer-row">
+        <div class="agro-print-footer-legal">
+          <strong>© 2026 NutriPlant PRO</strong><br>
+          Todos los derechos reservados • Marca registrada
+        </div>
+        <div class="agro-print-footer-by">Generado por: <strong>NutriPlant PRO</strong></div>
+      </div>
+      <img class="agro-print-footer-leaf" src="../assets/N_Hoja_Azul.png" alt="" aria-hidden="true">
+      <div class="agro-print-footer-qr">
+        <img src="../assets/qr-nutriplantpro.png" alt="QR NutriPlant PRO" width="72" height="72" onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&amp;data=https%3A%2F%2Fnutriplantpro.com%2F';">
+        <span>https://nutriplantpro.com/</span>
+      </div>
+    </footer>
   </main>
 
   <div id="agro-kc-modal" class="agro-modal" hidden>
@@ -308,6 +331,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260722h"></script>
+  <script src="./app.js?v=20260722j"></script>
 </body>
 </html>

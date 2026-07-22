@@ -71,15 +71,16 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
     )
     .join('\n');
   const text =
-    `Pronóstico Agroclimático NutriPlant\n` +
-    `Predio: ${plot.plot_name || 'Mi predio'}\n\n` +
-    `Ver reporte completo: ${reportUrl}\n\n` +
+    `Hola ${subscriber.full_name || ''},\n\n` +
+    `Este es el pronóstico agroclimático de tu predio (${plot.plot_name || 'Mi predio'}).\n\n` +
+    `Ver reporte completo (tabla, gráfica, mapa y PDF):\n${reportUrl}\n\n` +
     `Resumen: temperatura ${value(summary.tempMin)}–${value(summary.tempMax)} °C; ` +
     `VPD ${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa; ` +
     `ETo ${value(summary.et0Total)} mm; ETc ${value(summary.etcTotal)} mm; ` +
     `lluvia ${value(summary.rainTotal)} mm.\n\n${plainDays}\n\n` +
-    `Pronóstico estimado para las coordenadas registradas. Valida las condiciones en campo.\n` +
-    `Administrar o dejar de recibir alertas: ${reportUrl}\n`;
+    `Pronóstico estimado para las coordenadas registradas. Valida las condiciones en campo.\n\n` +
+    `Editar predio o dejar de recibir alertas:\n${reportUrl}\n\n` +
+    `NutriPlant PRO\nhttps://nutriplantpro.com/\n`;
 
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
     <div style="max-width:820px;margin:0 auto;padding:18px;">
@@ -89,9 +90,10 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
         <p style="margin:0;color:#e0f2fe;">${escapeHtml(plot.plot_name || 'Mi predio')}</p>
       </div>
       <div style="background:#fff;padding:20px;border:1px solid #dbeafe;border-top:0;border-radius:0 0 14px 14px;">
-        <p style="margin:0 0 16px;">Hola <strong>${escapeHtml(subscriber.full_name)}</strong>, este es el pronóstico de tu predio.</p>
+        <p style="margin:0 0 10px;font-size:15px;line-height:1.5;">Hola <strong>${escapeHtml(subscriber.full_name)}</strong>, aquí tienes el pronóstico de tu predio para los próximos días.</p>
+        <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">Abre el enlace para ver la tabla completa, la gráfica, el mapa y descargar el PDF.</p>
         <p style="text-align:center;margin:0 0 18px;">
-          <a href="${escapeHtml(reportUrl)}" style="display:inline-block;padding:12px 18px;border-radius:9px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;">Ver reporte completo, gráfica, mapa y PDF</a>
+          <a href="${escapeHtml(reportUrl)}" style="display:inline-block;padding:12px 18px;border-radius:9px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;">Ver reporte completo</a>
         </p>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
           <div style="padding:10px;border-radius:9px;background:#f0f9ff;"><small>Temperatura</small><br><strong>${value(summary.tempMin)}–${value(summary.tempMax)} °C</strong></div>
@@ -100,9 +102,12 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
         </div>
         ${forecastTable(rows)}
         <p style="margin:16px 0 0;color:#64748b;font-size:12px;line-height:1.5;">Pronóstico meteorológico estimado para las coordenadas registradas. La temperatura de hoja y el VPD son orientativos; valida el microclima en campo.</p>
-        <hr style="border:0;border-top:1px solid #e2e8f0;margin:18px 0;">
-        <p style="margin:0;color:#475569;font-size:13px;">Lleva seguimiento nutricional, hídrico y agronómico con <a href="https://nutriplantpro.com/login.html">NutriPlant PRO</a>.</p>
-        <p style="margin:12px 0 0;font-size:11px;color:#64748b;"><a href="${escapeHtml(reportUrl)}">Editar predio o dejar de recibir alertas</a>.</p>
+        <p style="margin:14px 0 0;font-size:12px;color:#64748b;"><a href="${escapeHtml(reportUrl)}" style="color:#0369a1;">Editar predio o dejar de recibir alertas</a></p>
+        <hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0 16px;">
+        <p style="margin:0;text-align:center;line-height:1.45;">
+          <a href="https://nutriplantpro.com/" style="color:#1d4ed8;font-size:18px;font-weight:800;text-decoration:none;letter-spacing:.01em;">NutriPlant PRO</a><br>
+          <a href="https://nutriplantpro.com/" style="color:#2563eb;font-size:13px;font-weight:600;text-decoration:none;">https://nutriplantpro.com/</a>
+        </p>
       </div>
     </div>
   </body></html>`;

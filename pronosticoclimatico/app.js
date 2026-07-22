@@ -20,7 +20,7 @@
   let viewKc = null;
   let referenceKcLabel = '';
   let kcModalTarget = 'location';
-  const visible = { rain: true, et0: true, etc: true, vpdMin: true, vpdMax: true };
+  const visible = { vpdHours: true, rain: true, et0: true, etc: true };
 
   const n = (v) => Number.isFinite(Number(v)) ? Number(v) : null;
   const round = (v, d = 1) => n(v) == null ? null : Math.round(n(v) * 10 ** d) / 10 ** d;
@@ -226,9 +226,14 @@
     const hourly = {};
     (data.hourly?.time || []).forEach((time, i) => {
       const day = time.slice(0, 10);
-      hourly[day] ||= { vpds: [], radiations: [], humidities: [], dews: [] };
+      hourly[day] ||= { vpds: [], radiations: [], humidities: [], dews: [], vpdLow: 0, vpdOpt: 0, vpdHigh: 0 };
       const val = vpd(data.hourly.temperature_2m?.[i], data.hourly.relative_humidity_2m?.[i], data.hourly.shortwave_radiation?.[i]);
-      if (val != null) hourly[day].vpds.push(val);
+      if (val != null) {
+        hourly[day].vpds.push(val);
+        if (val < 0.5) hourly[day].vpdLow += 1;
+        else if (val <= 1.5) hourly[day].vpdOpt += 1;
+        else hourly[day].vpdHigh += 1;
+      }
       const rad = n(data.hourly.shortwave_radiation?.[i]);
       if (rad != null) hourly[day].radiations.push(rad);
       const humidity = n(data.hourly.relative_humidity_2m?.[i]);
@@ -239,7 +244,7 @@
     const today = String(data.current?.time || data.daily.time[7]).slice(0, 10);
     const historyStart = addDays(today, -7), forecastEnd = addDays(today, 6);
     return data.daily.time.map((date, i) => {
-      const h = hourly[date] || { vpds: [], radiations: [], humidities: [], dews: [] };
+      const h = hourly[date] || { vpds: [], radiations: [], humidities: [], dews: [], vpdLow: 0, vpdOpt: 0, vpdHigh: 0 };
       const et0 = n(data.daily.et0_fao_evapotranspiration?.[i]);
       return {
         date,
@@ -254,6 +259,9 @@
         radiationMax: h.radiations.length ? Math.max(...h.radiations) : null,
         vpdMin: h.vpds.length ? round(Math.min(...h.vpds), 2) : null,
         vpdMax: h.vpds.length ? round(Math.max(...h.vpds), 2) : null,
+        vpdHoursLow: h.vpdLow,
+        vpdHoursOpt: h.vpdOpt,
+        vpdHoursHigh: h.vpdHigh,
         et0,
         etc: et0 != null && kc != null ? round(et0 * kc) : null,
         rain: n(data.daily.precipitation_sum?.[i])
@@ -265,6 +273,9 @@
     const today = new Date().toISOString().slice(0, 10);
     return Array.from({ length: 14 }, (_, i) => {
       const day = addDays(today, i - 7), x = i + 1, et0 = round(3.2 + (x % 5) * .55);
+      const low = 4 + (x % 5);
+      const opt = 8 + (x % 4);
+      const high = Math.max(0, 24 - low - opt);
       return {
         date: day, kind: i < 7 ? 'history' : 'forecast',
         tempMin: 14 + (x % 4), tempMax: 26 + (x % 6),
@@ -272,6 +283,7 @@
         dewMin: 10 + (x % 4), dewMax: 16 + (x % 3),
         radiationSum: round(17 + (x % 6) * 1.2), radiationMax: 620 + (x % 5) * 45,
         vpdMin: round(.28 + (x % 3) * .08, 2), vpdMax: round(1.45 + (x % 5) * .22, 2),
+        vpdHoursLow: low, vpdHoursOpt: opt, vpdHoursHigh: high,
         et0, etc: round(et0 * .9), rain: x % 4 === 0 ? round(2.5 + x * .35) : 0
       };
     });
@@ -386,25 +398,70 @@
   }
 
   function chartSets() {
-    const sets = [
-      ['rain', 'Precipitación', '#0284c7', 'bar', 'yMm', 'rain'],
-      ['et0', 'ETo', '#16a34a', 'line', 'yMm', 'et0'],
-      ['etc', 'ETc', '#64748b', 'line', 'yMm', 'etc'],
-      ['vpdMin', 'VPD mínimo', '#7c3aed', 'line', 'yVpd', 'vpdMin'],
-      ['vpdMax', 'VPD máximo', '#be123c', 'line', 'yVpd', 'vpdMax']
+    const sets = [];
+    if (visible.vpdHours) {
+      sets.push(
+        {
+          type: 'bar',
+          label: 'Horas VPD <0.5',
+          yAxisID: 'yHours',
+          data: rows.map((r) => r.vpdHoursLow ?? 0),
+          backgroundColor: 'rgba(29, 78, 216, 0.28)',
+          borderColor: 'rgba(29, 78, 216, 0.45)',
+          borderWidth: 1,
+          stack: 'vpdHours',
+          order: 3,
+          barPercentage: 0.72,
+          categoryPercentage: 0.78
+        },
+        {
+          type: 'bar',
+          label: 'Horas VPD 0.5–1.5',
+          yAxisID: 'yHours',
+          data: rows.map((r) => r.vpdHoursOpt ?? 0),
+          backgroundColor: 'rgba(22, 163, 74, 0.22)',
+          borderColor: 'rgba(22, 163, 74, 0.4)',
+          borderWidth: 1,
+          stack: 'vpdHours',
+          order: 3,
+          barPercentage: 0.72,
+          categoryPercentage: 0.78
+        },
+        {
+          type: 'bar',
+          label: 'Horas VPD >1.5',
+          yAxisID: 'yHours',
+          data: rows.map((r) => r.vpdHoursHigh ?? 0),
+          backgroundColor: 'rgba(127, 29, 29, 0.28)',
+          borderColor: 'rgba(127, 29, 29, 0.48)',
+          borderWidth: 1,
+          stack: 'vpdHours',
+          order: 3,
+          barPercentage: 0.72,
+          categoryPercentage: 0.78
+        }
+      );
+    }
+    const lines = [
+      ['rain', 'Precipitación', '#0284c7', 'rain'],
+      ['et0', 'ETo', '#0f766e', 'et0'],
+      ['etc', 'ETc', '#64748b', 'etc']
     ];
-    return sets.filter((s) => visible[s[0]]).map((s) => ({
-      label: s[1],
-      borderColor: s[2],
-      backgroundColor: s[3] === 'bar' ? `${s[2]}55` : 'transparent',
-      type: s[3],
-      yAxisID: s[4],
-      data: rows.map((r) => r[s[5]]),
-      borderWidth: 2,
-      tension: .28,
-      pointRadius: 2,
-      fill: s[3] === 'bar'
-    }));
+    lines.filter((s) => visible[s[0]]).forEach((s) => {
+      sets.push({
+        type: 'line',
+        label: s[1],
+        borderColor: s[2],
+        backgroundColor: 'transparent',
+        yAxisID: 'yMm',
+        data: rows.map((r) => r[s[3]]),
+        borderWidth: 2.2,
+        tension: .28,
+        pointRadius: 2.5,
+        order: 1
+      });
+    });
+    return sets;
   }
 
   function drawChart() {
@@ -416,7 +473,7 @@
     if (!canvas) return;
     chart?.destroy();
     chart = new Chart(canvas, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels: rows.map((r) => dateLabel(r.date, true)),
         datasets: chartSets()
@@ -426,8 +483,21 @@
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         scales: {
-          yMm: { position: 'left', beginAtZero: true, title: { display: true, text: 'mm' } },
-          yVpd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'kPa' } }
+          x: { stacked: true },
+          yHours: {
+            position: 'left',
+            stacked: true,
+            min: 0,
+            max: 24,
+            title: { display: true, text: 'Horas VPD / día' },
+            ticks: { stepSize: 4 }
+          },
+          yMm: {
+            position: 'right',
+            beginAtZero: true,
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: 'mm' }
+          }
         },
         plugins: { legend: { display: false } }
       }
@@ -435,7 +505,7 @@
   }
 
   function renderToggles() {
-    const labels = { rain: 'Lluvia', et0: 'ETo', etc: 'ETc', vpdMin: 'VPD mín', vpdMax: 'VPD máx' };
+    const labels = { vpdHours: 'Horas VPD', rain: 'Lluvia', et0: 'ETo', etc: 'ETc' };
     $('agro-chart-toggles').innerHTML = Object.keys(labels).map((key) =>
       `<button type="button" class="agro-chart-toggle${visible[key] ? '' : ' off'}" data-series="${key}">${labels[key]}</button>`).join('');
   }
@@ -448,12 +518,12 @@
     syncKcBar();
     const chartNote = $('agro-chart-note');
     if (chartNote) {
-      chartNote.textContent = activeKc() == null
-        ? 'Eje izquierdo: precipitación y ETo (mm). ETc pendiente de Kc. Eje derecho: VPD (kPa).'
-        : `Eje izquierdo: precipitación, ETo y ETc (mm). La ETc de esta vista usa Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc). Eje derecho: VPD (kPa).`;
+      const kcTxt = activeKc() == null ? 'ETc pendiente de Kc.' : `ETc con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc).`;
+      chartNote.textContent = `Barras (eje izq., 24 h): horas VPD <0.5 azul tenue, 0.5–1.5 verde tenue, >1.5 tinto. Líneas (eje der., mm): lluvia, ETo y ETc. ${kcTxt}`;
     }
     $('agro-table-wrap').innerHTML = tableHtml();
     $('agro-table-wrap').classList.add('open');
+    syncTableScrollHint();
     $('agro-results').hidden = false;
     $('agro-empty-note').hidden = true;
     $('agro-register-cta').hidden = personal;
@@ -464,8 +534,25 @@
     renderToggles();
     requestAnimationFrame(() => {
       drawChart();
-      setTimeout(sendResize, 120);
+      syncTableScrollHint();
+      setTimeout(() => {
+        syncTableScrollHint();
+        sendResize();
+      }, 120);
     });
+  }
+
+  function syncTableScrollHint() {
+    const wrap = $('agro-table-wrap');
+    const hint = $('agro-table-scroll-hint');
+    if (!wrap || !hint) return;
+    const overflow = wrap.scrollWidth > wrap.clientWidth + 4;
+    hint.hidden = !overflow;
+    const leftBtn = hint.querySelector('[data-scroll-dir="-1"]');
+    const rightBtn = hint.querySelector('[data-scroll-dir="1"]');
+    const max = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+    if (leftBtn) leftBtn.disabled = wrap.scrollLeft <= 2;
+    if (rightBtn) rightBtn.disabled = wrap.scrollLeft >= max - 2;
   }
 
   function kcModal(target) {
@@ -555,7 +642,7 @@
       $('agro-lat').value = report.latitude ?? '';
       $('agro-lng').value = report.longitude ?? '';
       $('agro-kc').value = savedKc ?? '';
-      if (!rows.length && report.latitude != null) {
+      if ((!rows.length || rows.some((r) => r.vpdHoursLow == null)) && report.latitude != null) {
         const weather = await fetch(weatherUrl(report.latitude, report.longitude)).then((r) => r.json());
         rows = weatherRows(weather, activeKc());
       } else if (rows.length) {
@@ -646,6 +733,24 @@
     $('agro-table-toggle').addEventListener('click', () => {
       $('agro-table-wrap').classList.toggle('open');
       $('agro-table-toggle').textContent = $('agro-table-wrap').classList.contains('open') ? 'Ocultar tabla completa' : 'Ver tabla completa';
+      syncTableScrollHint();
+    });
+    const tableWrap = $('agro-table-wrap');
+    const scrollHint = $('agro-table-scroll-hint');
+    if (tableWrap) {
+      tableWrap.addEventListener('scroll', syncTableScrollHint, { passive: true });
+    }
+    if (scrollHint) {
+      scrollHint.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-scroll-dir]');
+        if (!btn || !tableWrap) return;
+        tableWrap.scrollBy({ left: Number(btn.dataset.scrollDir) * Math.max(180, Math.floor(tableWrap.clientWidth * 0.7)), behavior: 'smooth' });
+      });
+    }
+    window.addEventListener('resize', () => {
+      syncTableScrollHint();
+      if (map) map.invalidateSize();
+      sendResize();
     });
     $('agro-chart-toggles').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-series]');
@@ -680,10 +785,6 @@
       }
       saveInputs();
     }));
-    window.addEventListener('resize', () => {
-      if (map) map.invalidateSize();
-      sendResize();
-    });
   }
 
   function init() {
