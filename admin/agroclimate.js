@@ -62,19 +62,48 @@
     ].map((x) => metric(x[0], x[1])).join('');
   }
 
-  function actionButtons(r) {
-    const buttons = [`<button class="aa-action" data-action="edit" data-id="${r.id}">Editar</button>`];
-    if (r.status === 'pending_whatsapp') buttons.push(`<button class="aa-action warn" data-action="confirm" data-id="${r.id}">Confirmó WhatsApp</button>`);
-    if (['pending_whatsapp', 'pending_review', 'paused'].includes(r.status)) buttons.push(`<button class="aa-action primary" data-action="approve" data-id="${r.id}">Aprobar y enviar</button>`);
-    if (r.status === 'active') {
-      buttons.push(`<button class="aa-action" data-action="send" data-id="${r.id}">Enviar ahora</button>`);
-      buttons.push(`<button class="aa-action danger" data-action="pause" data-id="${r.id}">Pausar</button>`);
+  function normalizePhoneParts(countryCode, national) {
+    let code = String(countryCode || '').trim();
+    if (!code.startsWith('+')) code = `+${code.replace(/[^\d]/g, '')}`;
+    code = `+${code.replace(/[^\d]/g, '')}`;
+    let local = String(national || '').replace(/\D/g, '').replace(/^0+/, '');
+    const digitsCode = code.replace(/\D/g, '');
+    if (digitsCode && local.startsWith(digitsCode) && local.length > digitsCode.length + 6) {
+      local = local.slice(digitsCode.length);
     }
-    if (r.status === 'paused') buttons.push(`<button class="aa-action primary" data-action="activate" data-id="${r.id}">Reactivar</button>`);
-    if (['pending_whatsapp', 'pending_review'].includes(r.status)) buttons.push(`<button class="aa-action danger" data-action="reject" data-id="${r.id}">Rechazar</button>`);
-    const message = `Hola ${r.full_name}. Soy de NutriPlant y te escribo sobre tu solicitud de alertas agroclimáticas, folio ${r.request_code}.`;
-    buttons.push(`<a class="aa-action" href="https://wa.me/${esc(String(r.phone_e164 || '').replace(/\D/g, ''))}?text=${encodeURIComponent(message)}" target="_blank">WhatsApp</a>`);
+    const e164 = `${code}${local}`;
+    const digits = e164.replace(/\D/g, '');
+    const ok = /^\+\d{1,4}$/.test(code) && local.length >= 6 && local.length <= 15 && digits.length >= 8 && digits.length <= 15;
+    return { code, local, e164, digits, ok };
+  }
+
+  function actionButtons(r) {
+    const buttons = [`<button type="button" class="aa-action" data-action="edit" data-id="${r.id}" title="Editar registro">Editar</button>`];
+    if (r.status === 'pending_whatsapp') buttons.push(`<button type="button" class="aa-action warn" data-action="confirm" data-id="${r.id}" title="Marcar WhatsApp recibido">WA ok</button>`);
+    if (['pending_whatsapp', 'pending_review', 'paused'].includes(r.status)) buttons.push(`<button type="button" class="aa-action primary" data-action="approve" data-id="${r.id}" title="Aprobar y enviar primer correo">Aprobar</button>`);
+    if (r.status === 'active') {
+      buttons.push(`<button type="button" class="aa-action" data-action="send" data-id="${r.id}" title="Enviar reporte ahora">Enviar</button>`);
+      buttons.push(`<button type="button" class="aa-action danger" data-action="pause" data-id="${r.id}" title="Pausar alertas">Pausar</button>`);
+    }
+    if (r.status === 'paused') buttons.push(`<button type="button" class="aa-action primary" data-action="activate" data-id="${r.id}" title="Reactivar alertas">Activar</button>`);
+    if (['pending_whatsapp', 'pending_review'].includes(r.status)) buttons.push(`<button type="button" class="aa-action danger" data-action="reject" data-id="${r.id}" title="Rechazar solicitud">Rechazar</button>`);
+    buttons.push(`<button type="button" class="aa-action aa-wa" data-action="whatsapp" data-id="${r.id}" title="Abrir WhatsApp">WA</button>`);
     return buttons.join('');
+  }
+
+  function openWhatsApp(id) {
+    const r = records.find((x) => x.id === id);
+    if (!r) return;
+    const phone = normalizePhoneParts(r.phone_country_code, r.phone_national || '');
+    const fromE164 = String(r.phone_e164 || '').replace(/\D/g, '');
+    const usable = phone.ok ? phone.digits : (fromE164.length >= 8 && fromE164.length <= 15 ? fromE164 : '');
+    if (!usable) {
+      alert('El WhatsApp está incompleto o mal escrito (lada/número). Corrígelo en la edición.');
+      showEdit(id);
+      return;
+    }
+    const message = `Hola ${r.full_name}. Soy de NutriPlant y te escribo sobre tu solicitud de alertas agroclimáticas, folio ${r.request_code}.`;
+    window.open(`https://wa.me/${usable}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
   }
 
   function renderTable() {
@@ -118,28 +147,207 @@
     }
   }
 
+  function normalizePlace(value) {
+    return String(value || '')
+      .toLocaleLowerCase('es')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  function guessTimezone(country, region, latitude, longitude) {
+    const c = normalizePlace(country);
+    const r = normalizePlace(region);
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+
+    if (c.includes('mexico') || c === 'mx' || c.includes('méxico')) {
+      if (/baja california$|tijuana|mexicali|ensenada/.test(r) && !/sur/.test(r)) return 'America/Tijuana';
+      if (/baja california sur|la paz|los cabos/.test(r)) return 'America/Mazatlan';
+      if (/sonora|hermosillo|obregon/.test(r)) return 'America/Hermosillo';
+      if (/sinaloa|nayarit|durango|mazatlan/.test(r)) return 'America/Mazatlan';
+      if (/quintana roo|cancun|cancún|playa del carmen|tulum|chetumal/.test(r)) return 'America/Cancun';
+      if (/yucatan|yucatán|merida|mérida|campeche/.test(r)) return 'America/Merida';
+      if (/nuevo leon|nuevo león|monterrey|coahuila|tamaulipas/.test(r)) return 'America/Monterrey';
+      if (/chihuahua/.test(r)) return 'America/Chihuahua';
+      return 'America/Mexico_City';
+    }
+
+    if (c.includes('estados unidos') || c.includes('united states') || c === 'usa' || c === 'us' || c.includes('ee.?uu')) {
+      if (/florida|new york|georgia|carolina|virginia|massachusetts|pennsylvania|ohio|michigan|indiana|maine|jersey/.test(r)) return 'America/New_York';
+      if (/texas|illinois|missouri|louisiana|alabama|mississippi|wisconsin|minnesota|iowa|kansas|oklahoma|arkansas|tennessee|kentucky/.test(r)) return 'America/Chicago';
+      if (/colorado|utah|new mexico|montana|wyoming|idaho|arizona/.test(r) && !/phoenix/.test(r)) return 'America/Denver';
+      if (/arizona|phoenix/.test(r)) return 'America/Phoenix';
+      if (/california|washington|oregon|nevada|seattle|los angeles|san francisco/.test(r)) return 'America/Los_Angeles';
+      if (Number.isFinite(lng)) {
+        if (lng <= -115) return 'America/Los_Angeles';
+        if (lng <= -102) return 'America/Denver';
+        if (lng <= -87) return 'America/Chicago';
+        return 'America/New_York';
+      }
+      return 'America/New_York';
+    }
+
+    const byCountry = [
+      [['canada'], 'America/Toronto'],
+      [['colombia'], 'America/Bogota'],
+      [['peru', 'perú'], 'America/Lima'],
+      [['ecuador'], 'America/Guayaquil'],
+      [['chile'], 'America/Santiago'],
+      [['argentina'], 'America/Argentina/Buenos_Aires'],
+      [['brasil', 'brazil'], 'America/Sao_Paulo'],
+      [['venezuela'], 'America/Caracas'],
+      [['bolivia'], 'America/La_Paz'],
+      [['paraguay'], 'America/Asuncion'],
+      [['uruguay'], 'America/Montevideo'],
+      [['guatemala'], 'America/Guatemala'],
+      [['el salvador'], 'America/El_Salvador'],
+      [['honduras'], 'America/Tegucigalpa'],
+      [['nicaragua'], 'America/Managua'],
+      [['costa rica'], 'America/Costa_Rica'],
+      [['panama', 'panamá'], 'America/Panama'],
+      [['cuba'], 'America/Havana'],
+      [['republica dominicana', 'dominican'], 'America/Santo_Domingo'],
+      [['puerto rico'], 'America/Puerto_Rico'],
+      [['espana', 'españa', 'spain'], 'Europe/Madrid'],
+      [['portugal'], 'Europe/Lisbon'],
+      [['francia', 'france'], 'Europe/Paris'],
+      [['italia', 'italy'], 'Europe/Rome'],
+      [['alemania', 'germany'], 'Europe/Berlin'],
+      [['reino unido', 'united kingdom', 'uk', 'inglaterra'], 'Europe/London'],
+      [['paises bajos', 'países bajos', 'netherlands', 'holanda'], 'Europe/Amsterdam'],
+      [['belgica', 'bélgica', 'belgium'], 'Europe/Brussels'],
+      [['suiza', 'switzerland'], 'Europe/Zurich'],
+      [['marruecos', 'morocco'], 'Africa/Casablanca'],
+      [['argelia', 'algeria'], 'Africa/Algiers'],
+      [['egipto', 'egypt'], 'Africa/Cairo'],
+      [['sudafrica', 'sudáfrica', 'south africa'], 'Africa/Johannesburg'],
+      [['nigeria'], 'Africa/Lagos'],
+      [['kenia', 'kenya'], 'Africa/Nairobi'],
+      [['costa de marfil', "cote d'ivoire", 'ivory coast'], 'Africa/Abidjan'],
+      [['senegal'], 'Africa/Dakar']
+    ];
+    for (let i = 0; i < byCountry.length; i += 1) {
+      if (byCountry[i][0].some((token) => c.includes(token))) return byCountry[i][1];
+    }
+
+    if (Number.isFinite(lng) && Number.isFinite(lat)) {
+      if (lng >= -120 && lng <= -85 && lat >= 14 && lat <= 33) return 'America/Mexico_City';
+      if (lng >= -125 && lng <= -66 && lat >= 24 && lat <= 50) return 'America/New_York';
+    }
+    return '';
+  }
+
+  function ensureTimezoneOption(select, value) {
+    if (!value) return;
+    const exists = Array.from(select.options).some((opt) => opt.value === value);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = value;
+      select.appendChild(opt);
+    }
+    select.value = value;
+  }
+
+  function refreshTimezoneSuggestion(force) {
+    const form = $('aa-edit-form');
+    if (!form) return;
+    const select = form.elements.timezone;
+    const hint = $('aa-timezone-hint');
+    const guessed = guessTimezone(
+      form.elements.country.value,
+      form.elements.region.value,
+      form.elements.latitude.value,
+      form.elements.longitude.value
+    );
+    if (!guessed) {
+      if (hint) hint.textContent = 'No se pudo inferir zona. Elige una de la lista.';
+      return;
+    }
+    if (force || !select.value) {
+      ensureTimezoneOption(select, guessed);
+      if (hint) hint.textContent = `Sugerida por país/región: ${guessed}`;
+    } else if (hint) {
+      hint.textContent = select.value === guessed
+        ? `Coincide con país/región: ${guessed}`
+        : `País/región sugieren ${guessed}. Puedes dejar la actual.`;
+    }
+  }
+
+  function showCreate() {
+    const form = $('aa-edit-form');
+    form.reset();
+    form.elements.subscriber_id.value = '';
+    form.elements.form_mode.value = 'create';
+    form.elements.phone_country_code.value = '+52';
+    form.elements.plot_name.value = 'Mi predio';
+    form.elements.initial_status.value = 'pending_review';
+    form.elements.timezone.value = '';
+    $('aa-status-field').hidden = false;
+    $('aa-delete-btn').hidden = true;
+    $('aa-edit-kicker').textContent = 'Alta manual';
+    $('aa-edit-title').textContent = 'Nuevo usuario de alertas';
+    $('aa-edit-status').textContent = 'Se guardará directo en Supabase.';
+    $('aa-edit-status').style.color = '';
+    $('aa-timezone-hint').textContent = '';
+    form.querySelector('[type="submit"]').textContent = 'Crear usuario';
+    $('aa-edit-modal').hidden = false;
+  }
+
   function showEdit(id) {
     const r = records.find((x) => x.id === id);
     if (!r) return;
     const p = plotOf(r) || {};
     const form = $('aa-edit-form');
+    form.elements.form_mode.value = 'edit';
     form.elements.subscriber_id.value = r.id;
     ['full_name','email','phone_country_code','phone_national','occupation','country','region','postal_code','crop','area_range','crop_stage','primary_use','decision_goal','admin_notes']
       .forEach((key) => { form.elements[key].value = r[key] ?? ''; });
-    ['plot_name','kc','latitude','longitude','timezone'].forEach((key) => { form.elements[key].value = p[key] ?? ''; });
+    form.elements.plot_name.value = p.plot_name ?? 'Mi predio';
+    form.elements.kc.value = p.kc == null ? '' : p.kc;
+    form.elements.latitude.value = Number.isFinite(Number(p.latitude)) ? p.latitude : '';
+    form.elements.longitude.value = Number.isFinite(Number(p.longitude)) ? p.longitude : '';
+    ensureTimezoneOption(form.elements.timezone, p.timezone || '');
+    if (!form.elements.timezone.value) refreshTimezoneSuggestion(true);
+    else refreshTimezoneSuggestion(false);
+    $('aa-status-field').hidden = true;
+    $('aa-delete-btn').hidden = false;
+    $('aa-edit-kicker').textContent = 'Edición administrativa';
     $('aa-edit-title').textContent = `${r.request_code} · ${r.full_name}`;
     $('aa-edit-status').textContent = '';
+    $('aa-edit-status').style.color = '';
+    form.querySelector('[type="submit"]').textContent = 'Guardar todos los cambios';
     $('aa-edit-modal').hidden = false;
   }
 
   async function saveEdit(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const mode = form.elements.form_mode.value || 'edit';
+    refreshTimezoneSuggestion(false);
     const values = Object.fromEntries(new FormData(form).entries());
+    if (!values.timezone) {
+      values.timezone = guessTimezone(values.country, values.region, values.latitude, values.longitude);
+      ensureTimezoneOption(form.elements.timezone, values.timezone);
+    }
+    const phone = normalizePhoneParts(values.phone_country_code, values.phone_national);
+    if (!phone.ok) {
+      $('aa-edit-status').textContent = 'WhatsApp inválido. Revisa lada (+1, +52…) y número nacional.';
+      $('aa-edit-status').style.color = '#b91c1c';
+      return;
+    }
     const subscriber = {};
     ['full_name','email','phone_country_code','phone_national','occupation','country','region','postal_code','crop','area_range','crop_stage','primary_use','decision_goal','admin_notes']
       .forEach((key) => { subscriber[key] = values[key]; });
-    subscriber.phone_e164 = `${values.phone_country_code}${String(values.phone_national).replace(/\D/g, '')}`;
+    subscriber.phone_country_code = phone.code;
+    subscriber.phone_national = phone.local;
+    subscriber.phone_e164 = phone.e164;
+    subscriber.email_consent = true;
+    subscriber.whatsapp_consent = true;
+    if (mode === 'create') subscriber.status = values.initial_status || 'pending_review';
+    form.elements.phone_country_code.value = phone.code;
+    form.elements.phone_national.value = phone.local;
     const plot = {
       plot_name: values.plot_name,
       kc: values.kc === '' ? null : Number(values.kc),
@@ -149,15 +357,51 @@
     };
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
-    $('aa-edit-status').textContent = 'Guardando…';
+    $('aa-edit-status').textContent = mode === 'create' ? 'Creando en Supabase…' : 'Guardando…';
+    $('aa-edit-status').style.color = '';
     try {
-      await api('update', { subscriber_id: values.subscriber_id, subscriber, plot });
-      $('aa-edit-modal').hidden = true;
+      if (mode === 'create') {
+        const out = await api('create', { subscriber, plot });
+        $('aa-edit-modal').hidden = true;
+        setStatus(`Usuario creado. Folio ${out.subscriber?.request_code || ''}.`);
+      } else {
+        await api('update', { subscriber_id: values.subscriber_id, subscriber, plot });
+        $('aa-edit-modal').hidden = true;
+        setStatus('Registro actualizado en Supabase.');
+      }
       await load();
     } catch (error) {
       $('aa-edit-status').textContent = error.message;
       $('aa-edit-status').style.color = '#b91c1c';
     } finally { submit.disabled = false; }
+  }
+
+  async function deleteSubscriber() {
+    const form = $('aa-edit-form');
+    const id = form.elements.subscriber_id.value;
+    const r = records.find((x) => x.id === id);
+    if (!id || !r) return;
+    const ok = confirm(
+      `¿Borrar definitivamente a ${r.full_name} (folio ${r.request_code})?\n\n` +
+      'Se eliminará también de Supabase: predio, tokens, reportes y entregas.'
+    );
+    if (!ok) return;
+    const sure = prompt(`Para confirmar, escribe el folio exactamente: ${r.request_code}`);
+    if (String(sure || '').trim().toUpperCase() !== String(r.request_code).toUpperCase()) {
+      alert('Folio no coincide. No se borró nada.');
+      return;
+    }
+    $('aa-edit-status').textContent = 'Borrando en Supabase…';
+    $('aa-edit-status').style.color = '';
+    try {
+      await api('delete', { subscriber_id: id });
+      $('aa-edit-modal').hidden = true;
+      setStatus(`Usuario ${r.request_code} eliminado de Supabase.`);
+      await load();
+    } catch (error) {
+      $('aa-edit-status').textContent = error.message;
+      $('aa-edit-status').style.color = '#b91c1c';
+    }
   }
 
   async function runAction(action, id) {
@@ -221,6 +465,7 @@
   function bind() {
     $('aa-back').href = `./?k=${encodeURIComponent(adminKey)}`;
     $('aa-refresh').addEventListener('click', load);
+    $('aa-add-user').addEventListener('click', showCreate);
     $('aa-search').addEventListener('input', applyFilters);
     $('aa-status').addEventListener('change', applyFilters);
     document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => switchView(b.dataset.view)));
@@ -228,10 +473,17 @@
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'edit') showEdit(btn.dataset.id);
+      else if (btn.dataset.action === 'whatsapp') openWhatsApp(btn.dataset.id);
       else runAction(btn.dataset.action, btn.dataset.id);
     });
     $('aa-edit-form').addEventListener('submit', saveEdit);
-    $('[data-close]').addEventListener('click', () => { $('aa-edit-modal').hidden = true; });
+    $('aa-delete-btn').addEventListener('click', deleteSubscriber);
+    ['country', 'region', 'latitude', 'longitude'].forEach((name) => {
+      const field = $('aa-edit-form').elements[name];
+      if (field) field.addEventListener('change', () => refreshTimezoneSuggestion(true));
+      if (field) field.addEventListener('blur', () => refreshTimezoneSuggestion(!field.form.elements.timezone.value));
+    });
+    $('aa-edit-close').addEventListener('click', () => { $('aa-edit-modal').hidden = true; });
     $('aa-edit-modal').addEventListener('click', (e) => { if (e.target === $('aa-edit-modal')) $('aa-edit-modal').hidden = true; });
     window.aaEditFromMap = showEdit;
   }

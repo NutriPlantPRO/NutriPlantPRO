@@ -6,7 +6,8 @@
 
   var FIT_FRAME_IDS = {
     waterHardnessCalculatorFrame: true,
-    nMineralizableMoCalculatorFrame: true
+    nMineralizableMoCalculatorFrame: true,
+    agroclimateForecastFrame: true
   };
 
   function isMobileFit() {

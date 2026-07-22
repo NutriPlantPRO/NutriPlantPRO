@@ -6,7 +6,7 @@
   <title>Alertas agroclimáticas | Admin NutriPlant</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./agroclimate.css?v=20260722">
+  <link rel="stylesheet" href="./agroclimate.css?v=20260722f">
 </head>
 <body>
   <header class="aa-header">
@@ -32,6 +32,7 @@
         <option value="unsubscribed">Bajas</option>
       </select>
       <div class="aa-view-buttons">
+        <button type="button" id="aa-add-user" class="aa-add-btn">＋ Agregar usuario</button>
         <button class="active" data-view="table">☷ Tabla</button>
         <button data-view="map">📍 Mapa de predios</button>
       </div>
@@ -61,37 +62,123 @@
 
   <div id="aa-edit-modal" class="aa-modal" hidden>
     <div class="aa-modal-panel">
-      <div class="aa-modal-head"><div><small>Edición administrativa</small><h2 id="aa-edit-title">Registro</h2></div><button data-close>×</button></div>
+      <div class="aa-modal-head"><div><small id="aa-edit-kicker">Edición administrativa</small><h2 id="aa-edit-title">Registro</h2></div><button type="button" id="aa-edit-close" aria-label="Cerrar">×</button></div>
       <form id="aa-edit-form">
         <input name="subscriber_id" type="hidden">
+        <input name="form_mode" type="hidden" value="edit">
         <div class="aa-form-grid">
           <label>Nombre<input name="full_name" required></label>
           <label>Correo<input name="email" type="email" required></label>
-          <label>Lada<input name="phone_country_code" required></label>
+          <label>Lada<input name="phone_country_code" required placeholder="+52"></label>
           <label>WhatsApp<input name="phone_national" required></label>
-          <label>Ocupación<input name="occupation" required></label>
+          <label>Ocupación
+            <select name="occupation" required>
+              <option value="">Seleccionar</option>
+              <option>Agrónomo</option><option>Técnico agrícola</option><option>Estudiante</option>
+              <option>Agricultor</option><option>Asesor</option><option>Otro</option>
+            </select>
+          </label>
+          <label id="aa-status-field" hidden>Estado inicial
+            <select name="initial_status">
+              <option value="pending_review">Pendiente de revisión</option>
+              <option value="active">Activo (ya puede recibir)</option>
+              <option value="pending_whatsapp">Esperando WhatsApp</option>
+            </select>
+          </label>
           <label>País<input name="country" required></label>
           <label>Estado / provincia<input name="region" required></label>
           <label>CP / ZIP<input name="postal_code" required></label>
           <label>Cultivo<input name="crop" required></label>
-          <label>Superficie<input name="area_range" required></label>
+          <label>Superficie
+            <select name="area_range" required>
+              <option value="">Seleccionar</option>
+              <option>Menos de 1 ha</option><option>1 a 5 ha</option><option>5 a 20 ha</option>
+              <option>20 a 50 ha</option><option>Más de 50 ha</option>
+            </select>
+          </label>
           <label>Etapa<input name="crop_stage" required></label>
-          <label>Uso principal<input name="primary_use" required></label>
-          <label class="span-2">Decisión a mejorar<textarea name="decision_goal" rows="3"></textarea></label>
+          <label>Uso principal
+            <select name="primary_use" required>
+              <option value="">Seleccionar</option>
+              <option>Programación del riego</option><option>Seguimiento de VPD</option>
+              <option>Planeación de aplicaciones</option><option>Planeación de labores o cosecha</option>
+              <option>Prevención de riesgos climáticos</option><option>Otro</option>
+            </select>
+          </label>
+          <label class="span-2">Decisión a mejorar<textarea name="decision_goal" rows="3" required></textarea></label>
           <label>Nombre del predio<input name="plot_name" required></label>
           <label>Kc<input name="kc" type="number" min="0" max="2.5" step=".01"></label>
           <label>Latitud<input name="latitude" type="number" step="any" required></label>
           <label>Longitud<input name="longitude" type="number" step="any" required></label>
-          <label>Zona horaria<input name="timezone"></label>
+          <label class="span-2">Zona horaria
+            <select name="timezone" id="aa-timezone">
+              <option value="">Se detectará por país / región</option>
+              <option value="America/Mexico_City">America/Mexico_City (México centro)</option>
+              <option value="America/Tijuana">America/Tijuana (México NO)</option>
+              <option value="America/Hermosillo">America/Hermosillo (Sonora)</option>
+              <option value="America/Mazatlan">America/Mazatlan (México Pacífico)</option>
+              <option value="America/Cancun">America/Cancun (Quintana Roo)</option>
+              <option value="America/Merida">America/Merida</option>
+              <option value="America/Monterrey">America/Monterrey</option>
+              <option value="America/Chihuahua">America/Chihuahua</option>
+              <option value="America/New_York">America/New_York (EE.UU. Este)</option>
+              <option value="America/Chicago">America/Chicago (EE.UU. Centro)</option>
+              <option value="America/Denver">America/Denver (EE.UU. Montaña)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (EE.UU. Pacífico)</option>
+              <option value="America/Phoenix">America/Phoenix</option>
+              <option value="America/Toronto">America/Toronto</option>
+              <option value="America/Vancouver">America/Vancouver</option>
+              <option value="America/Bogota">America/Bogota</option>
+              <option value="America/Lima">America/Lima</option>
+              <option value="America/Guayaquil">America/Guayaquil</option>
+              <option value="America/Santiago">America/Santiago</option>
+              <option value="America/Argentina/Buenos_Aires">America/Argentina/Buenos_Aires</option>
+              <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+              <option value="America/Caracas">America/Caracas</option>
+              <option value="America/La_Paz">America/La_Paz</option>
+              <option value="America/Asuncion">America/Asuncion</option>
+              <option value="America/Montevideo">America/Montevideo</option>
+              <option value="America/Guatemala">America/Guatemala</option>
+              <option value="America/El_Salvador">America/El_Salvador</option>
+              <option value="America/Tegucigalpa">America/Tegucigalpa</option>
+              <option value="America/Managua">America/Managua</option>
+              <option value="America/Costa_Rica">America/Costa_Rica</option>
+              <option value="America/Panama">America/Panama</option>
+              <option value="America/Havana">America/Havana</option>
+              <option value="America/Santo_Domingo">America/Santo_Domingo</option>
+              <option value="America/Puerto_Rico">America/Puerto_Rico</option>
+              <option value="Europe/Madrid">Europe/Madrid</option>
+              <option value="Europe/Lisbon">Europe/Lisbon</option>
+              <option value="Europe/Paris">Europe/Paris</option>
+              <option value="Europe/Rome">Europe/Rome</option>
+              <option value="Europe/Berlin">Europe/Berlin</option>
+              <option value="Europe/London">Europe/London</option>
+              <option value="Europe/Amsterdam">Europe/Amsterdam</option>
+              <option value="Europe/Brussels">Europe/Brussels</option>
+              <option value="Europe/Zurich">Europe/Zurich</option>
+              <option value="Africa/Casablanca">Africa/Casablanca (Marruecos)</option>
+              <option value="Africa/Algiers">Africa/Algiers</option>
+              <option value="Africa/Cairo">Africa/Cairo</option>
+              <option value="Africa/Johannesburg">Africa/Johannesburg</option>
+              <option value="Africa/Lagos">Africa/Lagos</option>
+              <option value="Africa/Nairobi">Africa/Nairobi</option>
+              <option value="Africa/Abidjan">Africa/Abidjan</option>
+              <option value="Africa/Dakar">Africa/Dakar</option>
+            </select>
+            <small id="aa-timezone-hint" class="aa-cell-sub"></small>
+          </label>
           <label class="span-2">Notas administrativas<textarea name="admin_notes" rows="3"></textarea></label>
         </div>
         <p id="aa-edit-status" class="aa-status-line"></p>
-        <button class="aa-primary" type="submit">Guardar todos los cambios</button>
+        <div class="aa-edit-actions">
+          <button class="aa-primary" type="submit">Guardar todos los cambios</button>
+          <button id="aa-delete-btn" class="aa-danger-btn" type="button">Borrar usuario</button>
+        </div>
       </form>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./agroclimate.js?v=20260722"></script>
+  <script src="./agroclimate.js?v=20260722f"></script>
 </body>
 </html>

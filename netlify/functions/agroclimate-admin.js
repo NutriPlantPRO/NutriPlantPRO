@@ -1,7 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 const {
+  createRequestCode,
   createReportTokenForSubscriber,
   fetchOpenMeteo,
+  normalizePhone,
   numberOrNull,
   rowsFromOpenMeteo,
   sha256,
@@ -95,6 +97,113 @@ async function list(supabase, body) {
     neverAccessed: all.filter((x) => x.status === 'active' && !x.last_report_access_at).length
   };
   return json(200, { ok: true, subscribers: all, metrics });
+}
+
+async function create(supabase, body, adminId) {
+  const s = body.subscriber || {};
+  const p = body.plot || {};
+  const required = [
+    'full_name', 'email', 'phone_country_code', 'phone_national', 'occupation',
+    'country', 'region', 'postal_code', 'crop', 'area_range', 'crop_stage',
+    'primary_use', 'decision_goal'
+  ];
+  for (const key of required) {
+    if (!text(s[key], 400)) return json(400, { ok: false, message: `Falta ${key}.` });
+  }
+  const email = text(s.email, 180).toLowerCase();
+  const phoneE164 = normalizePhone(s.phone_country_code, s.phone_national) || text(s.phone_e164, 30);
+  if (!phoneE164) return json(400, { ok: false, message: 'WhatsApp inválido.' });
+  const latitude = numberOrNull(p.latitude);
+  const longitude = numberOrNull(p.longitude);
+  if (latitude == null || latitude < -90 || latitude > 90) return json(400, { ok: false, message: 'Latitud inválida.' });
+  if (longitude == null || longitude < -180 || longitude > 180) return json(400, { ok: false, message: 'Longitud inválida.' });
+  const kc = p.kc === '' || p.kc == null ? null : numberOrNull(p.kc);
+  if (kc != null && (kc < 0 || kc > 2.5)) return json(400, { ok: false, message: 'Kc inválido.' });
+
+  const dupEmail = await supabase.from('climate_alert_subscribers').select('request_code').eq('email', email).maybeSingle();
+  if (dupEmail.data) return json(409, { ok: false, message: `Ya existe ese correo. Folio ${dupEmail.data.request_code}.` });
+  const dupPhone = await supabase.from('climate_alert_subscribers').select('request_code').eq('phone_e164', phoneE164).maybeSingle();
+  if (dupPhone.data) return json(409, { ok: false, message: `Ya existe ese WhatsApp. Folio ${dupPhone.data.request_code}.` });
+
+  let status = text(s.status || body.status || 'pending_review', 40);
+  if (!STATUS_VALUES.has(status)) status = 'pending_review';
+  const now = new Date().toISOString();
+
+  let subscriber = null;
+  let insertError = null;
+  for (let attempt = 0; attempt < 8 && !subscriber; attempt += 1) {
+    const requestCode = createRequestCode();
+    const payload = {
+      request_code: requestCode,
+      full_name: text(s.full_name, 120),
+      email,
+      phone_country_code: text(s.phone_country_code, 6),
+      phone_national: text(s.phone_national, 24).replace(/\D/g, ''),
+      phone_e164: phoneE164,
+      occupation: text(s.occupation, 40),
+      country: text(s.country, 80),
+      region: text(s.region, 100),
+      postal_code: text(s.postal_code, 20),
+      crop: text(s.crop, 100),
+      area_range: text(s.area_range, 40),
+      crop_stage: text(s.crop_stage, 100),
+      primary_use: text(s.primary_use, 100),
+      decision_goal: text(s.decision_goal, 400),
+      admin_notes: text(s.admin_notes, 1000) || null,
+      status,
+      email_consent: s.email_consent !== false,
+      whatsapp_consent: s.whatsapp_consent !== false,
+      terms_accepted: true,
+      consent_source: 'admin_manual',
+      whatsapp_confirmed_at: ['pending_review', 'active', 'paused'].includes(status) ? now : null,
+      approved_at: status === 'active' ? now : null,
+      approved_by: status === 'active' ? adminId : null
+    };
+    const result = await supabase.from('climate_alert_subscribers').insert(payload).select('*').single();
+    if (!result.error) subscriber = result.data;
+    else {
+      insertError = result.error;
+      if (result.error.code !== '23505') break;
+    }
+  }
+  if (!subscriber) {
+    console.error('agroclimate admin create:', insertError);
+    return json(502, { ok: false, message: insertError?.message || 'No se pudo crear el usuario.' });
+  }
+
+  const plotResult = await supabase.from('climate_alert_plots').insert({
+    subscriber_id: subscriber.id,
+    plot_name: text(p.plot_name, 80) || 'Mi predio',
+    latitude,
+    longitude,
+    timezone: text(p.timezone, 80) || null,
+    kc,
+    kc_source: kc == null ? null : 'manual',
+    active: true
+  }).select('*').single();
+  if (plotResult.error) {
+    await supabase.from('climate_alert_subscribers').delete().eq('id', subscriber.id);
+    return json(502, { ok: false, message: plotResult.error.message });
+  }
+
+  await Promise.all([
+    supabase.from('climate_alert_events').insert({
+      subscriber_id: subscriber.id,
+      event_type: 'admin_manual_create',
+      actor_type: 'admin',
+      actor_id: adminId,
+      metadata: { status }
+    }),
+    supabase.from('climate_alert_admin_audit').insert({
+      subscriber_id: subscriber.id,
+      admin_user_id: adminId,
+      action: 'create_registration',
+      before_data: null,
+      after_data: { subscriber, plot: plotResult.data }
+    })
+  ]);
+
+  return json(201, { ok: true, subscriber, plot: plotResult.data });
 }
 
 async function update(supabase, body, adminId) {
@@ -270,6 +379,21 @@ async function sendNow(supabase, event, body) {
   return json(delivery.ok ? 200 : 502, { ok: delivery.ok, snapshot, delivery });
 }
 
+async function removeSubscriber(supabase, body, adminId) {
+  const id = text(body.subscriber_id, 80);
+  const before = await readSubscriber(supabase, id);
+  await supabase.from('climate_alert_admin_audit').insert({
+    subscriber_id: id,
+    admin_user_id: adminId,
+    action: 'delete_registration',
+    before_data: { subscriber: before.subscriber, plot: before.plot },
+    after_data: null
+  });
+  const result = await supabase.from('climate_alert_subscribers').delete().eq('id', id);
+  if (result.error) return json(502, { ok: false, message: result.error.message });
+  return json(200, { ok: true, deleted_id: id, request_code: before.subscriber.request_code });
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: headers(), body: '' };
   if (event.httpMethod !== 'POST') return json(405, { ok: false, message: 'Método no permitido.' });
@@ -287,6 +411,8 @@ exports.handler = async function handler(event) {
       return json(200, { ok: true, ...data });
     }
     if (action === 'update') return update(supabase, body, auth.adminId);
+    if (action === 'create') return create(supabase, body, auth.adminId);
+    if (action === 'delete') return removeSubscriber(supabase, body, auth.adminId);
     if (action === 'status') return setStatus(supabase, body, auth.adminId);
     if (action === 'approve') return approve(supabase, event, body, auth.adminId);
     if (action === 'send_now') return sendNow(supabase, event, body);

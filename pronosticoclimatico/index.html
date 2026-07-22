@@ -6,34 +6,52 @@
   <meta name="description" content="Pronóstico agroclimático NutriPlant por ubicación: VPD, ETo, ETc, precipitación, temperatura, humedad, radiación y punto de rocío.">
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINhmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260722">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./styles.css?v=20260722g">
 </head>
 <body>
   <header id="agro-public-header" class="agro-public-header">
     <a class="agro-brand" href="../login.html" aria-label="NutriPlant PRO">
-      <img src="../assets/N_Hoja_Azul.png" alt="" width="46" height="46">
-      <span>
-        <strong>NutriPlant PRO</strong>
-        <small>Pronóstico agroclimático</small>
-      </span>
+      <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" height="36">
     </a>
-    <nav class="agro-header-actions" aria-label="Accesos NutriPlant">
-      <a href="../login.html#herramientas">Herramientas gratuitas</a>
-      <a href="../manual-tecnico/index.html" target="_blank" rel="noopener">Manual técnico</a>
-      <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener" aria-label="Facebook">f</a>
-      <a href="https://www.instagram.com/nutriplantpro" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
-      <a href="https://youtube.com/@nutriplantpro" target="_blank" rel="noopener" aria-label="YouTube">▶</a>
-      <a href="../login.html">Ingresar</a>
-      <a class="primary" href="../login.html?mode=register">Suscribirme</a>
-    </nav>
+    <div class="agro-header-right">
+      <nav class="agro-header-pills" aria-label="Accesos NutriPlant">
+        <a class="agro-pill agro-pill--platform" href="../login.html" title="Ir a NutriPlant PRO">
+          <img src="../assets/N_Hoja_Azul.png" alt="" width="18" height="18">
+          <span>NutriPlant PRO</span>
+        </a>
+      </nav>
+      <div class="agro-social-links" aria-label="Redes sociales">
+        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </a>
+        <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        </a>
+        <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="whatsapp" title="Canal de WhatsApp" aria-label="WhatsApp">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </a>
+      </div>
+    </div>
   </header>
 
   <main class="agro-shell">
     <section class="agro-title-block">
       <div>
         <p class="agro-eyebrow">NutriPlant · información meteorológica por coordenadas</p>
-        <h1>Pronóstico agroclimático</h1>
+        <h1 class="agro-page-title">
+          <img src="../assets/N_Hoja_Azul.png" alt="" width="42" height="42">
+          <span>Pronóstico agroclimático</span>
+        </h1>
         <p class="agro-lead">Consulta temperatura, humedad, punto de rocío, radiación, VPD, ETo, ETc y precipitación para tu ubicación.</p>
       </div>
       <div id="agro-report-meta" class="agro-report-meta" hidden></div>
@@ -45,7 +63,6 @@
           <p class="agro-kicker">Ubicación</p>
           <h2>Selecciona el punto del predio</h2>
         </div>
-        <span class="agro-source-badge">Open-Meteo</span>
       </div>
       <p class="agro-help">Usa tu ubicación, escribe coordenadas o mueve el marcador. La lectura representa un punto meteorológico y puede diferir del microclima dentro del dosel.</p>
 
@@ -64,6 +81,7 @@
             <input id="agro-kc" type="number" min="0" max="2.5" step="0.01" placeholder="Opcional">
             <button id="agro-kc-reference-btn" type="button" class="agro-btn ghost">Referencia FAO</button>
           </div>
+          <small id="agro-kc-personal-lock" class="agro-help" hidden>En tu cuenta el Kc permanente solo lo cambia administración. Arriba de la tabla puedes probar otro Kc solo para esta vista.</small>
         </label>
       </div>
 
@@ -89,6 +107,27 @@
             <span><i class="forecast"></i> Pronóstico</span>
           </div>
         </div>
+        <div id="agro-kc-bar" class="agro-kc-bar" hidden>
+          <div class="agro-kc-bar-grid">
+            <div class="agro-kc-saved-box">
+              <small>Kc registrado</small>
+              <strong id="agro-kc-saved-value">—</strong>
+              <span id="agro-kc-ref-label" class="agro-kc-ref-label"></span>
+            </div>
+            <div class="agro-kc-view-box">
+              <label for="agro-kc-view">Kc solo para esta vista</label>
+              <div class="agro-input-action">
+                <input id="agro-kc-view" type="number" min="0" max="2.5" step="0.01" placeholder="0.00">
+                <button id="agro-kc-view-ref-btn" type="button" class="agro-btn ghost">Referencia FAO</button>
+                <button id="agro-kc-view-apply-btn" type="button" class="agro-btn secondary">Aplicar a la vista</button>
+              </div>
+            </div>
+            <a id="agro-kc-whatsapp" class="agro-kc-wa" href="#" target="_blank" rel="noopener noreferrer" title="Pedir cambio permanente de Kc por WhatsApp" aria-label="Pedir cambio permanente de Kc por WhatsApp">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            </a>
+          </div>
+          <p id="agro-kc-bar-note" class="agro-kc-bar-note">La ETc (evapotranspiración del cultivo) se calcula como ETo × Kc. Al cambiar el Kc de vista se recalcula la ETc de la tabla, resumen y gráfica solo aquí.</p>
+        </div>
         <div id="agro-mobile-days" class="agro-mobile-days"></div>
         <button id="agro-table-toggle" type="button" class="agro-btn ghost agro-table-toggle">Ver tabla completa</button>
         <div id="agro-table-wrap" class="agro-table-wrap"></div>
@@ -105,7 +144,7 @@
         <div class="agro-chart-box">
           <canvas id="agro-chart"></canvas>
         </div>
-        <p class="agro-chart-note">Eje izquierdo: precipitación, ETo y ETc (mm). Eje derecho: VPD mínimo y máximo (kPa).</p>
+        <p id="agro-chart-note" class="agro-chart-note">Eje izquierdo: precipitación, ETo y ETc (mm). Eje derecho: VPD mínimo y máximo (kPa).</p>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
@@ -116,7 +155,7 @@
         <div class="agro-action-row">
           <button id="agro-pdf-btn" type="button" class="agro-btn primary">📥 Descargar reporte en PDF</button>
           <button id="agro-edit-btn" type="button" class="agro-btn secondary">✏️ Editar predio</button>
-          <button id="agro-unsubscribe-btn" type="button" class="agro-btn danger">Dejar de recibir alertas</button>
+          <a id="agro-unsubscribe-btn" class="agro-btn danger" href="#" target="_blank" rel="noopener noreferrer" hidden>🟢 Dejar de recibir alertas</a>
         </div>
       </section>
 
@@ -133,9 +172,9 @@
         <img src="../assets/N_Hoja_Azul.png" alt="" width="54" height="54">
         <div>
           <h2>Lleva el seguimiento completo con NutriPlant PRO</h2>
-          <p>Integra clima, nutrición, riego, análisis y seguimiento agronómico en un solo lugar.</p>
+          <p>Integra clima, nutrición, riego, análisis y seguimiento agronómico en un solo lugar. Suscríbete y desbloquea la plataforma completa.</p>
         </div>
-        <a class="agro-btn primary" href="../login.html?mode=register">Conocer NutriPlant PRO</a>
+        <a class="agro-btn primary" href="../login.html?mode=register">Suscribirme a NutriPlant PRO</a>
       </section>
     </section>
 
@@ -172,24 +211,47 @@
         <div class="agro-form-grid">
           <label>Nombre completo <input name="full_name" required maxlength="120"></label>
           <label>Correo electrónico <input name="email" type="email" required maxlength="180"></label>
-          <label>WhatsApp
+          <label><span class="agro-whatsapp-label">🟢 WhatsApp</span>
             <div class="agro-phone-row">
-              <select name="phone_country_code" required aria-label="Lada">
-                <option value="+52">🇲🇽 +52</option>
+              <select id="agro-phone-code" name="phone_country_code" required aria-label="Lada">
+                <option value="+52">🇲🇽 México +52</option>
                 <option value="+1">🇺🇸/🇨🇦 +1</option>
-                <option value="+34">🇪🇸 +34</option>
-                <option value="+54">🇦🇷 +54</option>
-                <option value="+56">🇨🇱 +56</option>
-                <option value="+57">🇨🇴 +57</option>
-                <option value="+51">🇵🇪 +51</option>
-                <option value="+502">🇬🇹 +502</option>
-                <option value="+506">🇨🇷 +506</option>
-                <option value="+507">🇵🇦 +507</option>
-                <option value="+593">🇪🇨 +593</option>
-                <option value="+591">🇧🇴 +591</option>
-                <option value="+595">🇵🇾 +595</option>
-                <option value="+598">🇺🇾 +598</option>
+                <option value="+54">🇦🇷 Argentina +54</option>
+                <option value="+591">🇧🇴 Bolivia +591</option>
+                <option value="+55">🇧🇷 Brasil +55</option>
+                <option value="+56">🇨🇱 Chile +56</option>
+                <option value="+57">🇨🇴 Colombia +57</option>
+                <option value="+506">🇨🇷 Costa Rica +506</option>
+                <option value="+593">🇪🇨 Ecuador +593</option>
+                <option value="+503">🇸🇻 El Salvador +503</option>
+                <option value="+502">🇬🇹 Guatemala +502</option>
+                <option value="+504">🇭🇳 Honduras +504</option>
+                <option value="+505">🇳🇮 Nicaragua +505</option>
+                <option value="+507">🇵🇦 Panamá +507</option>
+                <option value="+595">🇵🇾 Paraguay +595</option>
+                <option value="+51">🇵🇪 Perú +51</option>
+                <option value="+598">🇺🇾 Uruguay +598</option>
+                <option value="+58">🇻🇪 Venezuela +58</option>
+                <option value="+34">🇪🇸 España +34</option>
+                <option value="+351">🇵🇹 Portugal +351</option>
+                <option value="+33">🇫🇷 Francia +33</option>
+                <option value="+39">🇮🇹 Italia +39</option>
+                <option value="+49">🇩🇪 Alemania +49</option>
+                <option value="+44">🇬🇧 Reino Unido +44</option>
+                <option value="+31">🇳🇱 Países Bajos +31</option>
+                <option value="+32">🇧🇪 Bélgica +32</option>
+                <option value="+41">🇨🇭 Suiza +41</option>
+                <option value="+212">🇲🇦 Marruecos +212</option>
+                <option value="+213">🇩🇿 Argelia +213</option>
+                <option value="+20">🇪🇬 Egipto +20</option>
+                <option value="+27">🇿🇦 Sudáfrica +27</option>
+                <option value="+234">🇳🇬 Nigeria +234</option>
+                <option value="+254">🇰🇪 Kenia +254</option>
+                <option value="+225">🇨🇮 Costa de Marfil +225</option>
+                <option value="+221">🇸🇳 Senegal +221</option>
+                <option value="other">Otro (escribir lada)</option>
               </select>
+              <input id="agro-phone-code-other" name="phone_country_code_other" type="text" inputmode="tel" maxlength="6" placeholder="+___" hidden>
               <input name="phone_national" type="tel" inputmode="tel" required maxlength="24" placeholder="Número">
             </div>
           </label>
@@ -229,8 +291,8 @@
         <input name="longitude" type="hidden">
         <input name="kc" type="hidden">
         <label class="agro-check"><input name="accept_terms" type="checkbox" required> Acepto los <a href="../terminos-condiciones.html" target="_blank">términos</a> y la <a href="../politicas-privacidad.html" target="_blank">política de privacidad</a>.</label>
-        <label class="agro-check"><input name="email_consent" type="checkbox" required> Solicito recibir el pronóstico agroclimático semanal por correo.</label>
-        <label class="agro-check"><input name="whatsapp_consent" type="checkbox"> Acepto recibir mensajes manuales de NutriPlant por WhatsApp relacionados con esta solicitud.</label>
+        <label class="agro-check"><input name="whatsapp_consent" type="checkbox" required> 🟢 Acepto recibir por WhatsApp mensajes de NutriPlant relacionados con esta solicitud (preferido).</label>
+        <label class="agro-check"><input name="email_consent" type="checkbox" required> También solicito recibir el pronóstico agroclimático semanal por correo.</label>
         <p id="agro-register-status" class="agro-status" role="status" aria-live="polite"></p>
         <button type="submit" class="agro-btn primary wide">Guardar solicitud</button>
       </form>
@@ -243,9 +305,9 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260722"></script>
+  <script src="./app.js?v=20260722h"></script>
 </body>
 </html>

@@ -16,6 +16,10 @@
   let rows = [];
   let timezone = '';
   let report = null;
+  let savedKc = null;
+  let viewKc = null;
+  let referenceKcLabel = '';
+  let kcModalTarget = 'location';
   const visible = { rain: true, et0: true, etc: true, vpdMin: true, vpdMax: true };
 
   const n = (v) => Number.isFinite(Number(v)) ? Number(v) : null;
@@ -60,10 +64,77 @@
 
   function setMode() {
     if (embed) document.documentElement.classList.add('agro-embed');
+    const fromEmailLink = !!token;
     $('agro-location-card').hidden = personal;
     $('agro-register-cta').hidden = personal;
     $('agro-personal-actions').hidden = !personal;
     $('agro-promo').hidden = !personal || embed;
+    const unsub = $('agro-unsubscribe-btn');
+    if (unsub) {
+      // Solo desde el link del correo (?token=...), no en herramienta libre ni demo.
+      unsub.hidden = !fromEmailLink;
+      unsub.style.display = fromEmailLink ? '' : 'none';
+    }
+    const lock = $('agro-kc-personal-lock');
+    if (lock) lock.hidden = !personal;
+    if (personal) {
+      $('agro-kc').readOnly = true;
+      $('agro-kc').title = 'El Kc permanente se cambia por WhatsApp / administración';
+      $('agro-kc-reference-btn').hidden = true;
+    }
+  }
+
+  function activeKc() {
+    return viewKc != null ? viewKc : savedKc;
+  }
+
+  function applyEtcWithKc(kc) {
+    const factor = n(kc);
+    rows = rows.map((r) => ({
+      ...r,
+      etc: r.et0 != null && factor != null ? round(r.et0 * factor) : null
+    }));
+  }
+
+  function syncKcBar() {
+    const bar = $('agro-kc-bar');
+    if (!bar) return;
+    bar.hidden = !rows.length;
+    const kc = activeKc();
+    const usingViewOnly = viewKc != null && savedKc != null && Number(viewKc) !== Number(savedKc);
+    $('agro-kc-saved-value').textContent = savedKc == null ? '—' : Number(savedKc).toFixed(2);
+    $('agro-kc-ref-label').textContent = referenceKcLabel || (savedKc == null ? 'Sin Kc registrado' : 'Kc permanente de tu predio');
+    const viewInput = $('agro-kc-view');
+    if (document.activeElement !== viewInput) {
+      viewInput.value = kc == null ? '' : Number(kc).toFixed(2);
+    }
+    const note = $('agro-kc-bar-note');
+    if (note) {
+      if (kc == null) {
+        note.textContent = 'Sin Kc no se puede calcular la ETc (evapotranspiración del cultivo). Usa Referencia FAO o escribe un Kc para esta vista.';
+      } else if (usingViewOnly) {
+        note.innerHTML = `ETc en esta vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong> (Kc de vista). El Kc registrado sigue siendo <strong>${Number(savedKc).toFixed(2)}</strong> y es el que usarán tus alertas.`;
+      } else {
+        note.innerHTML = `ETc (evapotranspiración del cultivo) = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Si cambias el Kc aquí, se recalcula solo en esta vista; tus alertas siguen con el Kc registrado.`;
+      }
+    }
+    const wa = $('agro-kc-whatsapp');
+    const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
+    const name = report?.full_name || report?.plot_name || '';
+    const message = `Hola NutriPlant. Quiero cambiar el Kc permanente de mis alertas agroclimáticas.${folio}${name ? ` Predio/nombre: ${name}.` : ''} Kc actual: ${savedKc == null ? 'sin definir' : savedKc}. Nuevo Kc deseado: `;
+    wa.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
+    wa.hidden = false;
+  }
+
+  function applyViewKc() {
+    const next = n($('agro-kc-view').value);
+    if (next != null && (next < 0 || next > 2.5)) {
+      setStatus('El Kc de vista debe estar entre 0 y 2.5.', 'error');
+      return;
+    }
+    viewKc = next;
+    applyEtcWithKc(activeKc());
+    render();
   }
 
   function saved() {
@@ -99,14 +170,23 @@
   }
 
   function initMap(force) {
-    if (!window.L || (personal && !force) || map) return;
+    if (!window.L) {
+      setStatus('No se pudo cargar el mapa. Recarga la página.', 'error');
+      return;
+    }
+    if ((personal && !force) || map) {
+      if (map) setTimeout(() => map.invalidateSize(), 80);
+      return;
+    }
     const prior = personal ? (report || {}) : (saved() || {});
     const lat = n(prior.lat) ?? 19.4326, lng = n(prior.lng) ?? -99.1332;
     const initialLat = n(prior.latitude) ?? lat;
     const initialLng = n(prior.longitude) ?? lng;
-    if (prior.plotName) $('agro-plot-name').value = prior.plotName;
+    if (prior.plotName || prior.plot_name) $('agro-plot-name').value = prior.plotName || prior.plot_name || '';
     if (prior.kc != null) $('agro-kc').value = prior.kc;
-    map = L.map('agro-map').setView([initialLat, initialLng], personal ? 12 : 5);
+    const mapEl = $('agro-map');
+    if (!mapEl) return;
+    map = L.map(mapEl, { scrollWheelZoom: true }).setView([initialLat, initialLng], personal ? 12 : 5);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19, attribution: 'Imágenes © Esri — Maxar, Earthstar Geographics'
     }).addTo(map);
@@ -114,7 +194,7 @@
     marker.on('dragend', () => { const p = marker.getLatLng(); applyCoords(p.lat, p.lng); });
     map.on('click', (e) => applyCoords(e.latlng.lat, e.latlng.lng));
     applyCoords(initialLat, initialLng);
-    setTimeout(() => map.invalidateSize(), 150);
+    [100, 300, 800].forEach((ms) => setTimeout(() => { if (map) map.invalidateSize(); }, ms));
   }
 
   function geolocate() {
@@ -208,13 +288,29 @@
       if (!response.ok) throw new Error(`Open-Meteo respondió ${response.status}`);
       const data = await response.json();
       timezone = data.timezone || '';
-      rows = weatherRows(data, n($('agro-kc').value));
-      report = { ...(report || {}), plot_name: $('agro-plot-name').value || 'Ubicación seleccionada', latitude: c.lat, longitude: c.lng, kc: n($('agro-kc').value) };
+      savedKc = personal ? (savedKc != null ? savedKc : n(report?.kc)) : n($('agro-kc').value);
+      viewKc = savedKc;
+      rows = weatherRows(data, activeKc());
+      report = {
+        ...(report || {}),
+        plot_name: $('agro-plot-name').value || report?.plot_name || 'Ubicación seleccionada',
+        latitude: c.lat,
+        longitude: c.lng,
+        kc: savedKc
+      };
+      if (!personal) $('agro-kc').value = savedKc ?? '';
       if (personal && token) {
         const saveResponse = await fetch(API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_plot', token, ...report })
+          body: JSON.stringify({
+            action: 'update_plot',
+            token,
+            plot_name: report.plot_name,
+            latitude: report.latitude,
+            longitude: report.longitude,
+            kc: savedKc
+          })
         });
         const savedPlot = await saveResponse.json().catch(() => ({}));
         if (!saveResponse.ok) throw new Error(savedPlot.message || 'No se pudo guardar el predio.');
@@ -234,10 +330,10 @@
       ['Temperatura', `${fmt(extreme(future, 'tempMin', 'min'), 1)} a ${fmt(extreme(future, 'tempMax', 'max'), 1, ' °C')}`, 'Rango del pronóstico', ''],
       ['VPD', `${fmt(extreme(future, 'vpdMin', 'min'), 2)} a ${fmt(extreme(future, 'vpdMax', 'max'), 2, ' kPa')}`, 'Mínimo y máximo', 'vpd'],
       ['ETo acumulada', fmt(sum(future, 'et0'), 1, ' mm'), 'Demanda de referencia', 'et'],
-      ['ETc acumulada', fmt(sum(future, 'etc'), 1, ' mm'), report?.kc != null ? `Kc ${report.kc}` : 'Ingresa Kc para calcular', 'et'],
+      ['ETc acumulada', fmt(sum(future, 'etc'), 1, ' mm'), activeKc() != null ? `Con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc)` : 'Ingresa Kc para calcular', 'et'],
       ['Precipitación', fmt(sum(future, 'rain'), 1, ' mm'), 'Acumulada prevista', 'rain'],
       ['Humedad', `${fmt(extreme(future, 'humidityMin', 'min'), 0)} a ${fmt(extreme(future, 'humidityMax', 'max'), 0, ' %')}`, 'Rango del pronóstico', ''],
-      ['Radiación', fmt(sum(future, 'radiationSum'), 1, ' MJ/m²'), 'Acumulada prevista', ''],
+      ['Rad máx', `${fmt(extreme(future, 'radiationMax', 'min'), 0)} a ${fmt(extreme(future, 'radiationMax', 'max'), 0, ' W/m²')}`, 'Rango del pronóstico', ''],
       ['Periodo', `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, `${future.length} días`, '']
     ];
     return cards.map((c) => `<article class="agro-summary-card ${c[3]}"><small>${c[0]}</small><strong>${c[1]}</strong><span>${c[2]}</span></article>`).join('');
@@ -252,7 +348,7 @@
         <div class="agro-day-metric"><small>VPD</small><strong>${fmt(r.vpdMin, 2)}–${fmt(r.vpdMax, 2, ' kPa')}</strong></div>
         <div class="agro-day-metric"><small>ETo / ETc</small><strong>${fmt(r.et0, 1)} / ${fmt(r.etc, 1)} mm</strong></div>
         <div class="agro-day-metric"><small>Lluvia</small><strong>${fmt(r.rain, 1, ' mm')}</strong></div>
-        <div class="agro-day-metric"><small>Radiación</small><strong>${fmt(r.radiationSum, 1, ' MJ/m²')}</strong></div>
+        <div class="agro-day-metric"><small>Rad máx</small><strong>${fmt(r.radiationMax, 0, ' W/m²')}</strong></div>
       </div></article>`).join('');
   }
 
@@ -262,18 +358,30 @@
       const first = r.kind === 'forecast' && firstForecast;
       if (first) firstForecast = false;
       return `<tr class="${r.kind}${first ? ' first-forecast' : ''}">
-        <td>${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${r.kind === 'history' ? 'Histórico' : 'Pronóstico'}</span></td>
-        <td>${fmt(r.tempMin, 1)}</td><td>${fmt(r.tempMax, 1)}</td>
-        <td>${fmt(r.humidityMin, 0)}</td><td>${fmt(r.humidityMax, 0)}</td>
-        <td>${fmt(r.dewMin, 1)}</td><td>${fmt(r.dewMax, 1)}</td>
-        <td>${fmt(r.radiationSum, 1)}</td><td>${fmt(r.radiationMax, 0)}</td>
-        <td>${fmt(r.vpdMin, 2)}</td><td>${fmt(r.vpdMax, 2)}</td>
-        <td>${fmt(r.et0, 1)}</td><td>${fmt(r.etc, 1)}</td><td>${fmt(r.rain, 1)}</td>
+        <td class="agro-date-col">${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${r.kind === 'history' ? 'Histórico' : 'Pronóstico'}</span></td>
+        <td class="col-atm">${fmt(r.tempMin, 1)}</td><td class="col-atm">${fmt(r.tempMax, 1)}</td>
+        <td class="col-atm">${fmt(r.humidityMin, 0)}</td><td class="col-atm">${fmt(r.humidityMax, 0)}</td>
+        <td class="col-atm">${fmt(r.dewMin, 1)}</td><td class="col-atm col-end-atm">${fmt(r.dewMax, 1)}</td>
+        <td class="col-vpd">${fmt(r.radiationMax, 0)}</td>
+        <td class="col-vpd">${fmt(r.vpdMin, 2)}</td><td class="col-vpd col-end-vpd">${fmt(r.vpdMax, 2)}</td>
+        <td class="col-water">${fmt(r.et0, 1)}</td><td class="col-water">${fmt(r.etc, 1)}</td><td class="col-water">${fmt(r.rain, 1)}</td>
       </tr>`;
     }).join('');
     return `<table class="agro-table"><thead>
-      <tr><th rowspan="2">Fecha</th><th class="group-atmosphere" colspan="6">Ambiente</th><th class="group-vpd" colspan="4">Radiación y VPD</th><th class="group-water" colspan="3">Agua</th></tr>
-      <tr><th title="Temperatura mínima">T mín °C</th><th title="Temperatura máxima">T máx °C</th><th>HR mín %</th><th>HR máx %</th><th>Rocío mín °C</th><th>Rocío máx °C</th><th>Rad MJ/m²</th><th>Rad máx W/m²</th><th>VPD mín</th><th>VPD máx</th><th>ETo mm</th><th>ETc mm</th><th>Lluvia mm</th></tr>
+      <tr class="agro-group-row">
+        <th class="agro-date-col" rowspan="2">Fecha</th>
+        <th class="group-atmosphere" colspan="6">Ambiente</th>
+        <th class="group-vpd" colspan="3">Radiación y VPD</th>
+        <th class="group-water" colspan="3">Agua</th>
+      </tr>
+      <tr class="agro-metric-row">
+        <th class="col-atm">T mín °C</th><th class="col-atm">T máx °C</th>
+        <th class="col-atm">HR mín %</th><th class="col-atm">HR máx %</th>
+        <th class="col-atm">Rocío mín °C</th><th class="col-atm col-end-atm">Rocío máx °C</th>
+        <th class="col-vpd">Rad máx W/m²</th>
+        <th class="col-vpd">VPD mín</th><th class="col-vpd col-end-vpd">VPD máx</th>
+        <th class="col-water">ETo mm</th><th class="col-water">ETc mm${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water">Lluvia mm</th>
+      </tr>
     </thead><tbody>${body}</tbody></table>`;
   }
 
@@ -286,18 +394,37 @@
       ['vpdMax', 'VPD máximo', '#be123c', 'line', 'yVpd', 'vpdMax']
     ];
     return sets.filter((s) => visible[s[0]]).map((s) => ({
-      key: s[0], label: s[1], borderColor: s[2], backgroundColor: s[3] === 'bar' ? `${s[2]}55` : s[2],
-      type: s[3], yAxisID: s[4], data: rows.map((r) => r[s[5]]), borderWidth: 2, tension: .28, pointRadius: 2
+      label: s[1],
+      borderColor: s[2],
+      backgroundColor: s[3] === 'bar' ? `${s[2]}55` : 'transparent',
+      type: s[3],
+      yAxisID: s[4],
+      data: rows.map((r) => r[s[5]]),
+      borderWidth: 2,
+      tension: .28,
+      pointRadius: 2,
+      fill: s[3] === 'bar'
     }));
   }
 
   function drawChart() {
-    if (!window.Chart) return;
+    if (!window.Chart) {
+      setStatus('No se pudo cargar la gráfica. Recarga la página.', 'error');
+      return;
+    }
+    const canvas = $('agro-chart');
+    if (!canvas) return;
     chart?.destroy();
-    chart = new Chart($('agro-chart'), {
-      data: { labels: rows.map((r) => shortDateLabel(r.date)), datasets: chartSets() },
+    chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: rows.map((r) => dateLabel(r.date, true)),
+        datasets: chartSets()
+      },
       options: {
-        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         scales: {
           yMm: { position: 'left', beginAtZero: true, title: { display: true, text: 'mm' } },
           yVpd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'kPa' } }
@@ -317,18 +444,32 @@
     if (!rows.length) return;
     const future = rows.filter((r) => r.kind === 'forecast');
     $('agro-summary-grid').innerHTML = summaryHtml(future);
-    $('agro-mobile-days').innerHTML = dayCardsHtml();
+    $('agro-mobile-days').innerHTML = '';
+    syncKcBar();
+    const chartNote = $('agro-chart-note');
+    if (chartNote) {
+      chartNote.textContent = activeKc() == null
+        ? 'Eje izquierdo: precipitación y ETo (mm). ETc pendiente de Kc. Eje derecho: VPD (kPa).'
+        : `Eje izquierdo: precipitación, ETo y ETc (mm). La ETc de esta vista usa Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc). Eje derecho: VPD (kPa).`;
+    }
     $('agro-table-wrap').innerHTML = tableHtml();
+    $('agro-table-wrap').classList.add('open');
     $('agro-results').hidden = false;
     $('agro-empty-note').hidden = true;
+    $('agro-register-cta').hidden = personal;
+    $('agro-personal-actions').hidden = !personal;
+    syncUnsubscribeLink();
     $('agro-report-meta').hidden = !personal;
     if (personal) $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || 'Predio')}</strong><br>${esc(timezone || report?.timezone || '')}${report?.request_code ? `<br>Folio ${esc(report.request_code)}` : ''}`;
     renderToggles();
-    drawChart();
-    setTimeout(sendResize, 100);
+    requestAnimationFrame(() => {
+      drawChart();
+      setTimeout(sendResize, 120);
+    });
   }
 
-  function kcModal() {
+  function kcModal(target) {
+    kcModalTarget = target === 'view' ? 'view' : 'location';
     $('agro-kc-modal').hidden = false;
     renderKc('');
   }
@@ -336,9 +477,9 @@
   function renderKc(filter) {
     const query = String(filter || '').toLocaleLowerCase('es');
     const data = (window.FAO_KC_REFERENCE || []).filter((x) => `${x.crop} ${x.stage}`.toLocaleLowerCase('es').includes(query));
-    $('agro-kc-list').innerHTML = data.length ? data.map((x, i) => {
+    $('agro-kc-list').innerHTML = data.length ? data.map((x) => {
       const suggested = round((Number(x.kcMin) + Number(x.kcMax)) / 2, 2);
-      return `<div class="agro-kc-row"><b>${esc(x.crop)}</b><span>${esc(x.stage)}</span><strong>${x.kcMin}–${x.kcMax}</strong><button type="button" class="agro-btn ghost" data-kc="${suggested}" data-crop="${esc(x.crop)}">Usar ${suggested}</button></div>`;
+      return `<div class="agro-kc-row"><b>${esc(x.crop)}</b><span>${esc(x.stage)}</span><strong>${x.kcMin}–${x.kcMax}</strong><button type="button" class="agro-btn ghost" data-kc="${suggested}" data-crop="${esc(x.crop)}" data-range="${esc(`${x.kcMin}–${x.kcMax}`)}" data-stage="${esc(x.stage)}">Usar ${suggested}</button></div>`;
     }).join('') : '<p>No se encontraron coincidencias.</p>';
   }
 
@@ -358,6 +499,16 @@
     event.preventDefault();
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
+    if (data.phone_country_code === 'other') {
+      let custom = String(data.phone_country_code_other || '').trim();
+      if (!custom.startsWith('+')) custom = `+${custom.replace(/[^\d]/g, '')}`;
+      if (!/^\+\d{1,4}$/.test(custom)) {
+        setStatus('Escribe una lada válida, por ejemplo +212.', 'error', true);
+        return;
+      }
+      data.phone_country_code = custom;
+    }
+    delete data.phone_country_code_other;
     data.accept_terms = !!form.elements.accept_terms.checked;
     data.email_consent = !!form.elements.email_consent.checked;
     data.whatsapp_consent = !!form.elements.whatsapp_consent.checked;
@@ -382,7 +533,10 @@
     if (demo) {
       rows = demoRows();
       timezone = 'America/Mexico_City';
-      report = { plot_name: 'Predio demostrativo', kc: .9, request_code: 'K7M2', latitude: 19.4326, longitude: -99.1332 };
+      report = { plot_name: 'Predio demostrativo', kc: .9, request_code: 'K7M2', latitude: 19.4326, longitude: -99.1332, full_name: 'Demo' };
+      savedKc = .9;
+      viewKc = .9;
+      referenceKcLabel = 'Referencia demo · 0.90';
       return render();
     }
     try {
@@ -392,13 +546,20 @@
       report = out.subscriber || {};
       rows = out.rows || [];
       timezone = report.timezone || '';
+      savedKc = n(report.kc);
+      viewKc = savedKc;
+      if (report.crop || report.crop_stage) {
+        referenceKcLabel = [report.crop, report.crop_stage].filter(Boolean).join(' · ');
+      }
       $('agro-plot-name').value = report.plot_name || '';
       $('agro-lat').value = report.latitude ?? '';
       $('agro-lng').value = report.longitude ?? '';
-      $('agro-kc').value = report.kc ?? '';
+      $('agro-kc').value = savedKc ?? '';
       if (!rows.length && report.latitude != null) {
         const weather = await fetch(weatherUrl(report.latitude, report.longitude)).then((r) => r.json());
-        rows = weatherRows(weather, n(report.kc));
+        rows = weatherRows(weather, activeKc());
+      } else if (rows.length) {
+        applyEtcWithKc(activeKc());
       }
       render();
     } catch (error) {
@@ -406,11 +567,21 @@
     }
   }
 
-  async function unsubscribe() {
-    if (!token || !confirm('¿Deseas dejar de recibir las alertas agroclimáticas?')) return;
-    const response = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unsubscribe', token }) });
-    const out = await response.json().catch(() => ({}));
-    alert(response.ok ? 'Tus alertas fueron desactivadas.' : (out.message || 'No se pudo procesar la solicitud.'));
+  function unsubscribeWhatsAppHref() {
+    const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
+    const name = report?.full_name || report?.plot_name || '';
+    const message = `Hola NutriPlant. Quiero dejar de recibir las alertas agroclimáticas.${folio}${name ? ` Nombre/predio: ${name}.` : ''} Por favor páusenme desde administración.`;
+    return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
+  }
+
+  function syncUnsubscribeLink() {
+    const btn = $('agro-unsubscribe-btn');
+    if (!btn) return;
+    const fromEmailLink = !!token;
+    btn.hidden = !fromEmailLink;
+    btn.style.display = fromEmailLink ? '' : 'none';
+    if (!fromEmailLink) return;
+    btn.href = unsubscribeWhatsAppHref();
   }
 
   function sendResize() {
@@ -421,21 +592,57 @@
   function bind() {
     $('agro-geolocate-btn').addEventListener('click', geolocate);
     $('agro-generate-btn').addEventListener('click', generate);
-    $('agro-kc-reference-btn').addEventListener('click', kcModal);
+    $('agro-kc-reference-btn').addEventListener('click', () => kcModal('location'));
+    $('agro-kc-view-ref-btn').addEventListener('click', () => kcModal('view'));
+    $('agro-kc-view-apply-btn').addEventListener('click', applyViewKc);
+    $('agro-kc-view').addEventListener('change', applyViewKc);
+    $('agro-kc-view').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyViewKc();
+      }
+    });
     $('agro-kc-search').addEventListener('input', (e) => renderKc(e.target.value));
     $('agro-kc-list').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-kc]');
       if (!btn) return;
-      $('agro-kc').value = btn.dataset.kc;
-      const crop = $('agro-register-form').elements.crop;
-      if (crop && !crop.value) crop.value = btn.dataset.crop || '';
+      const picked = n(btn.dataset.kc);
+      const label = `${btn.dataset.crop || ''} · ${btn.dataset.stage || ''} · ref ${btn.dataset.range || picked}`;
+      if (kcModalTarget === 'view') {
+        viewKc = picked;
+        referenceKcLabel = label;
+        $('agro-kc-view').value = picked == null ? '' : picked;
+        applyEtcWithKc(activeKc());
+        render();
+      } else if (!personal) {
+        savedKc = picked;
+        viewKc = picked;
+        referenceKcLabel = label;
+        $('agro-kc').value = picked ?? '';
+        const crop = $('agro-register-form').elements.crop;
+        if (crop && !crop.value) crop.value = btn.dataset.crop || '';
+        saveInputs();
+        if (rows.length) {
+          applyEtcWithKc(activeKc());
+          render();
+        }
+      }
       $('agro-kc-modal').hidden = true;
-      saveInputs();
     });
     document.querySelectorAll('[data-close-modal]').forEach((btn) => btn.addEventListener('click', () => $(btn.dataset.closeModal).hidden = true));
     document.querySelectorAll('.agro-modal').forEach((modal) => modal.addEventListener('click', (e) => { if (e.target === modal) modal.hidden = true; }));
     $('agro-open-register-btn').addEventListener('click', openRegister);
     $('agro-register-form').addEventListener('submit', register);
+    const phoneCode = $('agro-phone-code');
+    const phoneOther = $('agro-phone-code-other');
+    if (phoneCode && phoneOther) {
+      phoneCode.addEventListener('change', () => {
+        const other = phoneCode.value === 'other';
+        phoneOther.hidden = !other;
+        phoneOther.required = other;
+        if (!other) phoneOther.value = '';
+      });
+    }
     $('agro-table-toggle').addEventListener('click', () => {
       $('agro-table-wrap').classList.toggle('open');
       $('agro-table-toggle').textContent = $('agro-table-wrap').classList.contains('open') ? 'Ocultar tabla completa' : 'Ver tabla completa';
@@ -448,16 +655,35 @@
       drawChart();
     });
     $('agro-pdf-btn').addEventListener('click', () => window.print());
-    $('agro-unsubscribe-btn').addEventListener('click', unsubscribe);
+    $('agro-unsubscribe-btn')?.addEventListener('click', (e) => {
+      if (!token) {
+        e.preventDefault();
+        return;
+      }
+      syncUnsubscribeLink();
+      if (!confirm('Se abrirá WhatsApp para pedir que pausemos tus alertas. ¿Continuar?')) {
+        e.preventDefault();
+      }
+    });
     $('agro-edit-btn').addEventListener('click', () => {
       $('agro-location-card').hidden = false;
       $('agro-generate-btn').textContent = '💾 Guardar ubicación y actualizar';
+      $('agro-kc').value = savedKc ?? '';
       initMap(true);
-      setTimeout(() => map?.invalidateSize(), 100);
+      [80, 250, 600].forEach((ms) => setTimeout(() => map?.invalidateSize(), ms));
       $('agro-location-card').scrollIntoView({ behavior: 'smooth' });
     });
-    ['agro-lat', 'agro-lng', 'agro-kc', 'agro-plot-name'].forEach((id) => $(id).addEventListener('change', saveInputs));
-    window.addEventListener('resize', sendResize);
+    ['agro-lat', 'agro-lng', 'agro-kc', 'agro-plot-name'].forEach((id) => $(id).addEventListener('change', () => {
+      if (id === 'agro-kc' && !personal) {
+        savedKc = n($('agro-kc').value);
+        viewKc = savedKc;
+      }
+      saveInputs();
+    }));
+    window.addEventListener('resize', () => {
+      if (map) map.invalidateSize();
+      sendResize();
+    });
   }
 
   function init() {
