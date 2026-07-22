@@ -111,11 +111,11 @@
     const note = $('agro-kc-bar-note');
     if (note) {
       if (kc == null) {
-        note.textContent = 'Sin Kc no se puede calcular la ETc (evapotranspiración del cultivo). Usa Referencia FAO o escribe un Kc para esta vista.';
+        note.textContent = 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc solo para esta vista.';
       } else if (usingViewOnly) {
-        note.innerHTML = `ETc en esta vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong> (Kc de vista). El Kc registrado sigue siendo <strong>${Number(savedKc).toFixed(2)}</strong> y es el que usarán tus alertas.`;
+        note.innerHTML = `ETc vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Kc guardado: <strong>${Number(savedKc).toFixed(2)}</strong> (alertas).`;
       } else {
-        note.innerHTML = `ETc (evapotranspiración del cultivo) = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Si cambias el Kc aquí, se recalcula solo en esta vista; tus alertas siguen con el Kc registrado.`;
+        note.innerHTML = `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Cambio aquí = solo esta vista.`;
       }
     }
     const wa = $('agro-kc-whatsapp');
@@ -371,12 +371,12 @@
       if (first) firstForecast = false;
       return `<tr class="${r.kind}${first ? ' first-forecast' : ''}">
         <td class="agro-date-col">${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${r.kind === 'history' ? 'Histórico' : 'Pronóstico'}</span></td>
-        <td class="col-atm">${fmt(r.tempMin, 1)}</td><td class="col-atm">${fmt(r.tempMax, 1)}</td>
-        <td class="col-atm">${fmt(r.humidityMin, 0)}</td><td class="col-atm">${fmt(r.humidityMax, 0)}</td>
-        <td class="col-atm">${fmt(r.dewMin, 1)}</td><td class="col-atm col-end-atm">${fmt(r.dewMax, 1)}</td>
-        <td class="col-vpd">${fmt(r.radiationMax, 0)}</td>
-        <td class="col-vpd">${fmt(r.vpdMin, 2)}</td><td class="col-vpd col-end-vpd">${fmt(r.vpdMax, 2)}</td>
-        <td class="col-water">${fmt(r.et0, 1)}</td><td class="col-water">${fmt(r.etc, 1)}</td><td class="col-water">${fmt(r.rain, 1)}</td>
+        <td class="col-atm col-temp">${fmt(r.tempMin, 1)}</td><td class="col-atm col-temp">${fmt(r.tempMax, 1)}</td>
+        <td class="col-atm col-rh">${fmt(r.humidityMin, 0)}</td><td class="col-atm col-rh">${fmt(r.humidityMax, 0)}</td>
+        <td class="col-atm col-dew">${fmt(r.dewMin, 1)}</td><td class="col-atm col-dew col-end-atm">${fmt(r.dewMax, 1)}</td>
+        <td class="col-vpd col-rad">${fmt(r.radiationMax, 0)}</td>
+        <td class="col-vpd col-vpdval">${fmt(r.vpdMin, 2)}</td><td class="col-vpd col-vpdval col-end-vpd">${fmt(r.vpdMax, 2)}</td>
+        <td class="col-water col-eto">${fmt(r.et0, 1)}</td><td class="col-water col-etc">${fmt(r.etc, 1)}</td><td class="col-water col-rain">${fmt(r.rain, 1)}</td>
       </tr>`;
     }).join('');
     return `<table class="agro-table"><thead>
@@ -387,12 +387,12 @@
         <th class="group-water" colspan="3">Agua</th>
       </tr>
       <tr class="agro-metric-row">
-        <th class="col-atm">T mín °C</th><th class="col-atm">T máx °C</th>
-        <th class="col-atm">HR mín %</th><th class="col-atm">HR máx %</th>
-        <th class="col-atm">Rocío mín °C</th><th class="col-atm col-end-atm">Rocío máx °C</th>
-        <th class="col-vpd">Rad máx W/m²</th>
-        <th class="col-vpd">VPD mín</th><th class="col-vpd col-end-vpd">VPD máx</th>
-        <th class="col-water">ETo mm</th><th class="col-water">ETc mm${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water">Lluvia mm</th>
+        <th class="col-atm col-temp">T mín °C</th><th class="col-atm col-temp">T máx °C</th>
+        <th class="col-atm col-rh">HR mín %</th><th class="col-atm col-rh">HR máx %</th>
+        <th class="col-atm col-dew">Rocío mín °C</th><th class="col-atm col-dew col-end-atm">Rocío máx °C</th>
+        <th class="col-vpd col-rad">Rad máx W/m²</th>
+        <th class="col-vpd col-vpdval">VPD mín</th><th class="col-vpd col-vpdval col-end-vpd">VPD máx</th>
+        <th class="col-water col-eto">ETo mm</th><th class="col-water col-etc">ETc mm${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water col-rain">Lluvia mm</th>
       </tr>
     </thead><tbody>${body}</tbody></table>`;
   }
