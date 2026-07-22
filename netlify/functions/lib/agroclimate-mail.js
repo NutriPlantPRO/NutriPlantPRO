@@ -136,8 +136,12 @@ function createTransport() {
 async function sendAgroclimateEmail(input) {
   const { user, transporter } = createTransport();
   const content = buildEmail(input);
-  const fromEmail = String(process.env.AGROCLIMATE_EMAIL_FROM || user).trim();
-  const fromName = String(process.env.AGROCLIMATE_EMAIL_NAME || 'NutriPlant | Alertas Agroclimáticas').trim();
+  const fromEmail = String(
+    process.env.AGROCLIMATE_EMAIL_FROM || 'notifications@nutriplantpro.com'
+  ).trim();
+  const fromName = String(
+    process.env.AGROCLIMATE_EMAIL_NAME || 'NutriPlant | Alertas Agroclimáticas'
+  ).trim();
   const info = await transporter.sendMail({
     from: `"${fromName}" <${fromEmail}>`,
     to: input.subscriber.email,

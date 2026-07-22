@@ -22,7 +22,7 @@ El servicio también funcionará como entrada a NutriPlant PRO mediante una prom
 2. Máximo de un predio por usuario en esta primera versión.
 3. Un correo automático por usuario y ciclo de alerta.
 4. Un envío semanal los domingos a las 5:00 p. m. de la zona horaria del predio.
-5. Los correos saldrán desde `admin@nutriplantpro.com` mediante la configuración SMTP existente.
+5. Los correos saldrán desde `notifications@nutriplantpro.com` (buzón compartido), autenticando SMTP con la cuenta existente `admin@nutriplantpro.com`.
 6. Historial visible y almacenado durante 90 días.
 7. La página será pública en su acceso inicial, pero los datos personales y predios solo se consultarán mediante un token seguro.
 8. WhatsApp será manual mediante botones que abran el número y texto ya preparados; no se integrará Meta Cloud API en esta primera versión.
@@ -349,7 +349,7 @@ Editar el predio o dejar de recibir alertas:
 [enlace personal seguro]
 ```
 
-El correo se enviará desde `admin@nutriplantpro.com` en formato HTML adaptable a móvil, con una versión de texto plano. En HTML, el resumen se mostrará mediante tarjetas y el pronóstico diario mediante una tabla legible. El correo contendrá los días futuros; el histórico, la gráfica, el mapa y el PDF permanecerán en la página personal para evitar un mensaje excesivamente pesado.
+El correo se enviará desde `notifications@nutriplantpro.com` en formato HTML adaptable a móvil, con una versión de texto plano. En HTML, el resumen se mostrará mediante tarjetas y el pronóstico diario mediante una tabla legible. El correo contendrá los días futuros; el histórico, la gráfica, el mapa y el PDF permanecerán en la página personal para evitar un mensaje excesivamente pesado.
 
 La promoción breve de NutriPlant PRO podrá mostrarse al final del correo y dentro de la página.
 
@@ -683,7 +683,7 @@ Un proceso programado se ejecutará periódicamente y:
 3. Obtendrá los datos meteorológicos mediante un endpoint del servidor, nunca directamente desde el navegador para los envíos.
 4. Calculará VPD, ETo, ETc y totales.
 5. Guardará la fotografía del pronóstico.
-6. Enviará el correo desde `admin@nutriplantpro.com` mediante SMTP.
+6. Enviará el correo desde `notifications@nutriplantpro.com` mediante SMTP (autenticado con `admin@`).
 7. Guardará el identificador del correo y el resultado informado por el servidor SMTP.
 8. Reintentará únicamente errores temporales.
 
@@ -753,7 +753,7 @@ La capa de acceso meteorológico se diseñará como un adaptador para poder camb
 ### Fase 2: automatización
 
 - Programación por zona horaria.
-- Envío automático por SMTP desde `admin@nutriplantpro.com`.
+- Envío automático por SMTP desde `notifications@nutriplantpro.com`.
 - Botones de WhatsApp manual.
 - Historial de 90 días.
 - Baja automática.
@@ -805,7 +805,7 @@ La capa de acceso meteorológico se diseñará como un adaptador para poder camb
 
 ## 20. Pendientes antes de implementar
 
-1. Confirmar que `admin@nutriplantpro.com` permite autenticación SMTP para envíos automáticos.
+1. Confirmar SMTP de `admin@nutriplantpro.com` y permiso “Enviar como” hacia `notifications@nutriplantpro.com`.
 2. Confirmar sus límites diarios y configurar SPF, DKIM y DMARC para reducir correos no deseados.
 3. Aprobar el texto legal exacto de los consentimientos.
 4. Validar si el mínimo diario de VPD puede mostrarse negativo cuando exista condensación o si se presentará como 0 kPa con una nota de riesgo de condensación.

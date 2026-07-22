@@ -22,10 +22,12 @@ Ya utilizadas:
 Solo para alertas agroclimáticas (opcionales, recomendadas):
 
 - `NUTRIPLANT_SMTP_USER` / `NUTRIPLANT_SMTP_PASS` — si las pones, las alertas las usan; si no, reutilizan `PLAN_PRO_SMTP_*`
-- `AGROCLIMATE_EMAIL_FROM` (opcional; p. ej. `alertas@nutriplantpro.com`)
+- `AGROCLIMATE_EMAIL_FROM` (opcional; predeterminado `notifications@nutriplantpro.com`)
 - `AGROCLIMATE_EMAIL_NAME` (opcional; predeterminado `NutriPlant | Alertas Agroclimáticas`)
 - `AGROCLIMATE_TOKEN_SECRET`: secreto largo y aleatorio, mínimo 32 bytes.
 - `AGROCLIMATE_CRON_SECRET`: secreto para ejecuciones manuales de diagnóstico.
+
+SMTP autentica con `admin@` (`PLAN_PRO_SMTP_*`). El remitente visible de las alertas es `notifications@nutriplantpro.com`.
 
 No cambiar `AGROCLIMATE_TOKEN_SECRET` después de activar usuarios: invalidaría los
 enlaces que ya recibieron.
