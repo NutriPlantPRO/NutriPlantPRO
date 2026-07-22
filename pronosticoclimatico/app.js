@@ -489,17 +489,48 @@
             stacked: true,
             min: 0,
             max: 24,
-            title: { display: true, text: 'Horas VPD / día' },
-            ticks: { stepSize: 4 }
+            title: {
+              display: true,
+              text: 'Horas VPD · barras',
+              color: '#1d4ed8',
+              font: { weight: '700', size: 11 }
+            },
+            ticks: { stepSize: 4, color: '#1e40af' },
+            border: { color: '#93c5fd' },
+            grid: { color: 'rgba(147, 197, 253, 0.25)' }
           },
           yMm: {
             position: 'right',
             beginAtZero: true,
             grid: { drawOnChartArea: false },
-            title: { display: true, text: 'mm' }
+            title: {
+              display: true,
+              text: 'mm · líneas (lluvia / ETo / ETc)',
+              color: '#0f766e',
+              font: { weight: '700', size: 11 }
+            },
+            ticks: { color: '#0f766e' },
+            border: { color: '#5eead4' }
           }
         },
-        plugins: { legend: { display: false } }
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            itemSort(a, b) {
+              const rank = (label) => {
+                const s = String(label || '');
+                if (/VPD\s*>\s*1\.5/i.test(s)) return 1;
+                if (/VPD\s*0\.5/i.test(s)) return 2;
+                if (/VPD\s*<\s*0\.5/i.test(s)) return 3;
+                if (/Precip|Lluvia/i.test(s)) return 10;
+                if (/^ETo/i.test(s)) return 11;
+                if (/^ETc/i.test(s)) return 12;
+                return 20;
+              };
+              return rank(a.dataset.label) - rank(b.dataset.label);
+            }
+          }
+        }
       }
     });
   }
@@ -518,8 +549,13 @@
     syncKcBar();
     const chartNote = $('agro-chart-note');
     if (chartNote) {
-      const kcTxt = activeKc() == null ? 'ETc pendiente de Kc.' : `ETc con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc).`;
-      chartNote.textContent = `Barras (eje izq., 24 h): horas VPD <0.5 azul tenue, 0.5–1.5 verde tenue, >1.5 tinto. Líneas (eje der., mm): lluvia, ETo y ETc. ${kcTxt}`;
+      const kcTxt = activeKc() == null
+        ? 'ETc pendiente de Kc.'
+        : `ETc con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc).`;
+      chartNote.innerHTML =
+        `<strong>Eje izquierdo (azul):</strong> horas VPD de las barras (total 24 h/día). ` +
+        `<strong>Eje derecho (verde):</strong> mm de las líneas (lluvia, ETo y ETc). ` +
+        `Rangos VPD: azul &lt;0.5, verde 0.5–1.5, tinto &gt;1.5. ${kcTxt}`;
     }
     $('agro-table-wrap').innerHTML = tableHtml();
     $('agro-table-wrap').classList.add('open');

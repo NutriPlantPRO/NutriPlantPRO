@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260722j">
+  <link rel="stylesheet" href="./styles.css?v=20260722l">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -149,10 +149,22 @@
           </div>
           <div id="agro-chart-toggles" class="agro-chart-toggles"></div>
         </div>
+        <div class="agro-chart-axes-hint" aria-hidden="true">
+          <span class="agro-axis-left">← Eje izq.: horas VPD (barras)</span>
+          <span class="agro-axis-right">Eje der.: mm de las líneas →</span>
+        </div>
         <div class="agro-chart-box">
           <canvas id="agro-chart"></canvas>
         </div>
-        <p id="agro-chart-note" class="agro-chart-note">Barras: horas VPD del día (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Líneas: lluvia, ETo y ETc (mm).</p>
+        <div class="agro-chart-legend" aria-label="Leyenda de la gráfica">
+          <span><i class="swatch vpd-high"></i> VPD &gt; 1.5</span>
+          <span><i class="swatch vpd-opt"></i> VPD 0.5–1.5</span>
+          <span><i class="swatch vpd-low"></i> VPD &lt; 0.5</span>
+          <span><i class="swatch line-rain"></i> Lluvia</span>
+          <span><i class="swatch line-et0"></i> ETo</span>
+          <span><i class="swatch line-etc"></i> ETc</span>
+        </div>
+        <p id="agro-chart-note" class="agro-chart-note"><strong>Eje izquierdo (azul):</strong> horas VPD de las barras (24 h/día). <strong>Eje derecho (verde):</strong> mm de las líneas (lluvia, ETo y ETc).</p>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
@@ -331,6 +343,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260722j"></script>
+  <script src="./app.js?v=20260722m"></script>
 </body>
 </html>
