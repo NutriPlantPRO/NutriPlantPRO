@@ -14,6 +14,8 @@
   var lecturaPollTimer = null;
   var lecturaRefreshInFlight = false;
   var lecturaLastAutoRefreshAt = 0;
+  /** Firma de la tabla montada (evita parpadeo al solo actualizar métricas). */
+  var lecturaTableSig = '';
   var lecturaSeriesVis = {
     ndvi: true,
     ndmi: true,
@@ -466,7 +468,7 @@
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
             'por periodo elige <strong>1 sola pasada</strong> Sentinel (la más clara; sin mediana ni relleno entre fechas). Misma lógica de periodos (quincenal/mensual; quincena incompleta puede ampliar al mes). Si queda incompleto (&lt;~100% útiles) <strong>igual muestra la imagen</strong> y explica nubosidad + %; solo si no hay cobertura mínima (&lt;~15%) no hay imagen y solo el motivo. Clima/riego sí quedan. ' +
-            'Las imágenes se generan <strong>en la nube en segundo plano</strong> (igual que Pilot): puedes cerrar y luego pulsar «Mostrar NDVI/NDMI». ' +
+            'Las imágenes se generan <strong>en la nube en segundo plano</strong> (igual que Pilot): puedes cerrar y luego pulsar «Mostrar imágenes». ' +
             '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
@@ -741,10 +743,80 @@
     return days > 0 ? days : null;
   }
 
+  function lecturaTableSignature(state) {
+    if (!state || !state.rows || !state.rows.length) return '';
+    return (
+      String(state.activeRunId || '') +
+      '|' +
+      state.rows
+        .slice()
+        .sort(function (a, b) { return a.index - b.index; })
+        .map(function (r) {
+          return String(r.index) + ':' + String(r.date_start || '') + ':' + String(r.date_end || '');
+        })
+        .join(',')
+    );
+  }
+
+  function lecturaTableMounted(state) {
+    var wrap = document.getElementById('lecturaTableWrap');
+    if (!wrap || !state || !state.rows || !state.rows.length) return false;
+    if (wrap.getAttribute('data-lectura-sig') !== lecturaTableSignature(state)) return false;
+    return wrap.querySelectorAll('tbody tr[data-lectura-index]').length === state.rows.length;
+  }
+
+  function setLecturaFieldCell(tr, field, textOrHtml, asHtml) {
+    var cell = tr.querySelector('[data-field="' + field + '"]');
+    if (!cell) return;
+    if (asHtml) cell.innerHTML = textOrHtml;
+    else if (cell.textContent !== textOrHtml) cell.textContent = textOrHtml;
+  }
+
+  /** Actualiza NDVI/NDMI/NDRE/clima/estado sin reconstruir la tabla (sin parpadeo). */
+  function patchTableLive(state) {
+    var wrap = document.getElementById('lecturaTableWrap');
+    if (!wrap || !lecturaTableMounted(state)) {
+      renderTable(state);
+      return false;
+    }
+    if (state.franja_pct == null) state.franja_pct = suggestFranjaPct();
+    syncRiegoMmFromM3(state);
+    var iHa = irrigatedHa(state);
+    (state.rows || []).forEach(function (r) {
+      var tr = wrap.querySelector('tr[data-lectura-index="' + r.index + '"]');
+      if (!tr) return;
+      setLecturaFieldCell(tr, 'ndvi', fmtNum(r.ndvi_mean, 3), false);
+      setLecturaFieldCell(tr, 'ndmi', fmtNum(r.ndmi_mean, 3), false);
+      setLecturaFieldCell(tr, 'ndre', fmtNum(r.ndre_mean, 3), false);
+      setLecturaFieldCell(tr, 'vpd', fmtNum(r.vpd_mean, 2), false);
+      setLecturaFieldCell(tr, 'vpd_low', fmtNum(r.vpd_hours_low, 0), false);
+      setLecturaFieldCell(tr, 'vpd_opt', fmtNum(r.vpd_hours_opt, 0), false);
+      setLecturaFieldCell(tr, 'vpd_high', fmtNum(r.vpd_hours_high, 0), false);
+      setLecturaFieldCell(tr, 'et0', fmtNum(r.et0_sum, 1), false);
+      setLecturaFieldCell(tr, 'rain', fmtNum(r.rain_sum, 1), false);
+      setLecturaFieldCell(tr, 'status', statusBadge(r), true);
+      var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+      var mmInp = tr.querySelector('input[data-riego-mm-index="' + r.index + '"]');
+      var m3Inp = tr.querySelector('input[data-riego-m3-index="' + r.index + '"]');
+      if (mmInp && document.activeElement !== mmInp) {
+        mmInp.value = mmVal != null ? mmVal : '';
+      }
+      if (m3Inp && document.activeElement !== m3Inp) {
+        m3Inp.value = r.riego_m3 != null ? r.riego_m3 : '';
+      }
+    });
+    return true;
+  }
+
   function renderTable(state) {
     var wrap = document.getElementById('lecturaTableWrap');
     if (!wrap) return;
-    if (!state || !state.rows || !state.rows.length) { wrap.innerHTML = ''; return; }
+    if (!state || !state.rows || !state.rows.length) {
+      wrap.innerHTML = '';
+      wrap.removeAttribute('data-lectura-sig');
+      lecturaTableSig = '';
+      return;
+    }
     if (state.franja_pct == null) state.franja_pct = suggestFranjaPct();
     syncRiegoMmFromM3(state);
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
@@ -752,6 +824,7 @@
     var pct = getFranjaPct(state);
     var iHa = irrigatedHa(state);
     var inpStyle = 'width:72px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;text-align:right;';
+    var sig = lecturaTableSignature(state);
 
     var html = '<div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 10px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;">' +
       '<label style="display:flex;align-items:center;gap:6px;font-weight:700;color:#14532d;">' +
@@ -841,7 +914,7 @@
       var rowBg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fbff';
       var tip = expandedTip(r);
       var days = periodDaysCount(r);
-      html += '<tr style="background:' + rowBg + ';">' +
+      html += '<tr data-lectura-index="' + r.index + '" style="background:' + rowBg + ';">' +
         '<td style="padding:8px 10px;text-align:center;font-weight:800;color:#1e3a8a;border-top:1px solid #dbeafe;" title="ID del periodo">' +
           esc(periodIdLabel(r)) +
         '</td>' +
@@ -854,15 +927,15 @@
           (r.lookback_expanded
             ? ' <span title="' + esc(tip) + '" style="color:#b45309;cursor:help;">*</span>'
             : '') + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndre_mean, 3) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.et0_sum, 1) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.rain_sum, 1) + '</td>' +
+        '<td data-field="ndvi" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
+        '<td data-field="ndmi" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
+        '<td data-field="ndre" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndre_mean, 3) + '</td>' +
+        '<td data-field="vpd" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
+        '<td data-field="vpd_low" style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
+        '<td data-field="vpd_opt" style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
+        '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
+        '<td data-field="et0" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.et0_sum, 1) + '</td>' +
+        '<td data-field="rain" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.rain_sum, 1) + '</td>' +
         '<td style="' + riegoTdL + '" title="Mismo riego que m³ (lámina en franja)">' +
           '<input type="number" min="0" step="0.1" value="' + (mmVal != null ? esc(mmVal) : '') +
           '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Lámina en franja regada (mismo riego que m³)"' +
@@ -872,7 +945,7 @@
           '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
           '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total referido al polígono (' + haLabel + ') — mismo riego que mm">' +
         '</td>' +
-        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
+        '<td data-field="status" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
       '</tr>';
     });
     html += '</tbody></table>';
@@ -880,6 +953,8 @@
       (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
       '</div>';
     wrap.innerHTML = html;
+    wrap.setAttribute('data-lectura-sig', sig);
+    lecturaTableSig = sig;
 
     var franjaInp = document.getElementById('lecturaFranjaPct');
     if (franjaInp) {
@@ -961,6 +1036,7 @@
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-lectura-series');
         lecturaSeriesVis[key] = !lecturaSeriesVis[key];
+        renderChartToggles(state);
         renderChart(state);
       });
     });
@@ -1010,7 +1086,6 @@
       ensureChartJs(function () { renderChart(state); });
       return;
     }
-    renderChartToggles(state);
     // Mismo orden que las miniaturas: más reciente a la izquierda.
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
     var labels = rows.map(function (r) { return r.label; });
@@ -1177,6 +1252,35 @@
       });
     }
     wrap.style.display = 'block';
+    // Actualización suave: mismos periodos → solo datos (sin destruir la gráfica = sin parpadeo).
+    if (
+      lecturaChart &&
+      lecturaChart.data &&
+      Array.isArray(lecturaChart.data.labels) &&
+      lecturaChart.data.labels.join('|') === labels.join('|') &&
+      Array.isArray(lecturaChart.data.datasets) &&
+      lecturaChart.data.datasets.length === ds.length
+    ) {
+      lecturaChart.data.datasets.forEach(function (oldDs, i) {
+        var neu = ds[i];
+        if (!neu) return;
+        oldDs.data = neu.data;
+        oldDs.hidden = neu.hidden;
+        if (neu.label) oldDs.label = neu.label;
+      });
+      if (lecturaChart.options && lecturaChart.options.scales && lecturaChart.options.scales.yHours) {
+        lecturaChart.options.scales.yHours.max = hoursMax;
+      }
+      try {
+        lecturaChart.update('none');
+        var togglesBox = document.getElementById('lecturaChartToggles');
+        if (togglesBox && !togglesBox.children.length) renderChartToggles(state);
+        return;
+      } catch (e) {
+        /* cae a rebuild abajo */
+      }
+    }
+    renderChartToggles(state);
     if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
     lecturaChart = new Chart(canvas.getContext('2d'), {
       type: 'bar',
@@ -1520,7 +1624,20 @@
     refreshLectura();
   }
 
-  function renderAll(state) {
+  /**
+   * mode:
+   *  - 'full' (default): reconstruye selector + tabla + gráfica + galería
+   *  - 'live': parchea tabla/gráfica sin parpadeo; galería sí se refresca (imágenes)
+   */
+  function renderAll(state, mode) {
+    var live = mode === 'live';
+    if (!live) renderRunSelector(state);
+    if (live && lecturaTableMounted(state)) {
+      patchTableLive(state);
+      renderChart(state);
+      renderGallery(state);
+      return;
+    }
     renderRunSelector(state);
     renderTable(state);
     renderChart(state);
@@ -1605,7 +1722,7 @@
         var items = await fetchLecturaStatus(ids);
         mergeStatusIntoState(state, items);
         saveState(state);
-        renderAll(state);
+        renderAll(state, 'live');
         var pending = state.rows.filter(function (r) { return r.status === 'pending' || r.status === 'processing'; });
         var done = state.rows.filter(function (r) { return r.status === 'done'; });
         if (!pending.length) {
@@ -1617,7 +1734,7 @@
       } catch (e) {
         console.warn('Lectura poll:', e);
       }
-      if (attempts > 60) { stopPoll(); setStatus('El proceso está tardando más de lo normal. Pulsa «Mostrar NDVI/NDMI» en unos minutos.'); }
+      if (attempts > 60) { stopPoll(); setStatus('El proceso está tardando más de lo normal. Pulsa «Mostrar imágenes» en unos minutos.'); }
     }, 20000);
   }
 
@@ -1663,7 +1780,7 @@
     }
     state.updatedAt = new Date().toISOString();
     saveState(state);
-    renderAll(state);
+    renderAll(state, 'live');
     var cloudFails = state.rows.filter(function (r) {
       return (
         r.error_code === 'radar_low_coverage' ||
@@ -1698,7 +1815,7 @@
       setStatus(
         '✔ Histórico listo (' + okImg + ' con imagen). ' +
         nOther + ' periodo' + (nOther === 1 ? '' : 's') +
-        ' no se pudo generar (error técnico, no necesariamente nubes). Pulsa «Mostrar NDVI/NDMI» o vuelve a generar.'
+        ' no se pudo generar (error técnico, no necesariamente nubes). Pulsa «Mostrar imágenes» o vuelve a generar.'
       );
     } else if (nCloud && !nOther) {
       setStatus(
@@ -1706,7 +1823,7 @@
       );
     } else {
       setStatus(
-        '⚠ Histórico con errores técnicos al generar imágenes (no necesariamente nubosidad). Clima y riego pueden estar en la tabla. Prueba «Mostrar NDVI/NDMI» o vuelve a generar.'
+        '⚠ Histórico con errores técnicos al generar imágenes (no necesariamente nubosidad). Clima y riego pueden estar en la tabla. Prueba «Mostrar imágenes» o vuelve a generar.'
       );
     }
   }
@@ -1762,7 +1879,7 @@
         freq +
         ').\n\nCosto: ' +
         total +
-        ' créditos Radar por toda la consulta (no por periodo).\n\nLas imágenes se procesan en la nube en segundo plano (puedes cerrar NutriPlant). Luego pulsa «Mostrar NDVI/NDMI».\n\n¿Continuar?'
+        ' créditos Radar por toda la consulta (no por periodo).\n\nLas imágenes se procesan en la nube en segundo plano (puedes cerrar NutriPlant). Luego pulsa «Mostrar imágenes».\n\n¿Continuar?'
     ))
       return;
 
@@ -1870,7 +1987,7 @@
         '⏳ Histórico encolado en la nube (Sentinel-2 en segundo plano). ' +
         'Por el proveedor satelital puede tardar unos minutos. ' +
         '<strong>Se guardará aunque cierres NutriPlant</strong>. ' +
-        'Vuelve y pulsa «Mostrar NDVI/NDMI» para ver tablas e imágenes; el clima (VPD/ET₀/lluvia) se completa al refrescar.'
+        'Vuelve y pulsa «Mostrar imágenes» para ver tablas e imágenes; el clima (VPD/ET₀/lluvia) se completa al refrescar.'
       );
       pollUntilDone(state);
     } catch (e) {
@@ -1882,11 +1999,18 @@
     }
   }
 
-  async function refreshLectura() {
+  async function refreshLectura(opts) {
+    opts = opts || {};
     if (lecturaRefreshInFlight) return;
     var state = loadState();
     if (!state || !state.rows || !state.rows.length) { setStatus('Aún no hay histórico. Configura y pulsa «Generar histórico».'); return; }
-    renderAll(state);
+    // Si la tabla ya está en pantalla (p. ej. al entrar al tab), no la reconstruyas: evita parpadeo.
+    if (!opts.skipInitialPaint) {
+      if (lecturaTableMounted(state)) renderAll(state, 'live');
+      else renderAll(state);
+    } else if (!lecturaTableMounted(state)) {
+      renderAll(state);
+    }
     var ids = state.rows.map(function (r) { return r.request_id; }).filter(Boolean);
     if (!ids.length) return;
     lecturaRefreshInFlight = true;
@@ -1895,7 +2019,8 @@
       var items = await fetchLecturaStatus(ids);
       mergeStatusIntoState(state, items);
       saveState(state);
-      renderAll(state);
+      // Índices/estado llegan aquí: parchea celdas al instante; miniaturas siguen cargando.
+      renderAll(state, 'live');
       var pending = state.rows.filter(function (r) { return r.status === 'pending' || r.status === 'processing'; });
       if (pending.length) { setStatus('⏳ ' + pending.length + ' periodo(s) aún generándose…'); pollUntilDone(state); }
       else { await enrichClimateAndFinish(state); }
@@ -1916,7 +2041,8 @@
     var now = Date.now();
     if (now - lecturaLastAutoRefreshAt < 5000) return;
     lecturaLastAutoRefreshAt = now;
-    refreshLectura();
+    // La tabla/gráfica ya se pintó con caché; solo sincroniza en vivo.
+    refreshLectura({ skipInitialPaint: true });
   }
 
   // ---------- init ----------
