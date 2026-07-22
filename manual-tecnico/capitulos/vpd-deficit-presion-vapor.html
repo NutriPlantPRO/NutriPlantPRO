@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VPD, NDVI y NDMI — Manual NutriPlant PRO</title>
-  <meta name="description" content="VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura Satelital histórica, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.">
+  <meta name="description" content="VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura: 1 pasada más clara sin mediana, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "VPD, NDVI y NDMI",
-  "description": "VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura Satelital histórica, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.",
+  "description": "VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura: 1 pasada más clara sin mediana, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-07-19",
+  "dateModified": "2026-07-22",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -140,12 +140,12 @@
       <li><strong>NDVI</strong> — <strong>vigor relativo</strong> y actividad fotosintética dentro del lote.</li>
       <li><strong>NDMI</strong> — <strong>condición hídrica relativa del dosel/canopia</strong> (no es humedad volumétrica del suelo).</li>
       <li><strong>NDRE</strong> — <strong>clorofila / estado del dosel</strong> (banda red edge B05 + NIR).</li>
-      <li><strong>RGB</strong> — <strong>vista natural</strong> del predio (mismas pasadas Sentinel; útil para ubicar y contrastar con índices).
+      <li><strong>RGB</strong> — <strong>vista natural</strong> del predio (misma pasada Sentinel que los índices; útil para ubicar y contrastar).
         En RGB <strong>no</strong> aplica la escala Menor/Mayor de los índices: el <strong>verde</strong> suele ser planta viva;
         el <strong>rojo / café / rosado</strong> suele ser suelo desnudo o rastrojo (color natural de la tierra), no “bajo vigor”.</li>
     </ul>
     <p>
-      Las cuatro capas salen de la <strong>misma generación</strong> y las <strong>mismas pasadas</strong> (mediana por píxel + máscara SCL de nubes/sombra).
+      Las cuatro capas salen de la <strong>misma generación</strong> y la <strong>misma pasada</strong> Pilot (una sola fecha + máscara SCL de nubes/sombra; sin mezclar fechas).
       Orden en pantalla: NDVI → NDMI → NDRE → <strong>RGB</strong> (última).
       Los índices son <strong>relativos al predio y a la fecha</strong>; RGB es color natural (~10&nbsp;m por píxel en bandas visibles/NIR).
       No sustituyen diagnóstico por una sola mancha de color.
@@ -177,10 +177,10 @@
       con <strong>créditos Radar internos</strong>.
     </p>
     <ul>
-      <li><strong>Cómo se arma la imagen:</strong> junta hasta <strong>8 pasadas</strong> Sentinel (mediana por píxel) en ventanas
-        <strong>14 → 21 → 30 → 45 días</strong> para maximizar cobertura. Solo corta antes si llega ~<strong>100&nbsp;%</strong> de píxeles útiles;
+      <li><strong>Cómo se arma la imagen:</strong> elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio; sin mediana ni relleno entre fechas) en ventanas
+        <strong>14 → 21 → 30 → 45 días</strong>. Solo corta antes si llega ~<strong>100&nbsp;%</strong> de píxeles útiles;
         si no, sigue buscando y al final <strong>guarda lo mejor</strong> (ej. 89&nbsp;%). Tras filtrar nubes/sombra (SCL), si el predio queda
-        sin cobertura útil (&lt;~15&nbsp;%), <strong>no se guarda</strong> una imagen vacía. La meta muestra fechas satelitales y % útil.</li>
+        sin cobertura útil (&lt;~15&nbsp;%), <strong>no se guarda</strong> una imagen vacía. La meta muestra fecha satelital y % útil.</li>
       <li><strong>Generar / actualizar Pilot:</strong> calcula y guarda NDVI+NDMI+NDRE+RGB.</li>
       <li><strong>Ver en mapa:</strong> superpone la imagen guardada seleccionada; no genera una imagen nueva.</li>
       <li><strong>Capa:</strong> NDVI → NDMI → NDRE → RGB (misma generación).</li>
@@ -225,10 +225,10 @@
     </p>
     <h3>Satélite por periodo (distinto al Pilot de la pestaña 1)</h3>
     <ul>
-      <li>Hasta <strong>6 pasadas</strong> por periodo (mediana + SCL) para maximizar cobertura; solo para si ~100&nbsp;% útiles;
-        si no, guarda lo mejor. Quincena incompleta puede ampliar <strong>ese periodo</strong> al mes calendario
+      <li><strong>1 pasada</strong> por periodo (la más clara + SCL; sin mediana ni relleno entre fechas); solo para si ~100&nbsp;% útiles;
+        si no, guarda lo mejor (≥~15&nbsp;%). Quincena incompleta puede ampliar <strong>ese periodo</strong> al mes calendario
         (<code>lookback_expanded</code>, asterisco); clima/riego siguen en los 15 días.</li>
-      <li>Misma lógica de capas que Pilot: NDVI, NDMI, NDRE y RGB de las mismas pasadas.</li>
+      <li>Misma lógica de capas que Pilot: NDVI, NDMI, NDRE y RGB de la misma pasada.</li>
       <li>Cada periodo tiene su propio <code>date_start</code> / <code>date_end</code>; no reutiliza “últimos 45 días desde hoy”.</li>
     </ul>
     <h3>Créditos Lectura Satelital</h3>

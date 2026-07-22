@@ -465,7 +465,7 @@
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
-            'junta hasta <strong>6 pasadas</strong> Sentinel (mediana). Si el periodo queda incompleto (&lt;~100% útiles) <strong>igual muestra la imagen</strong> y explica nubosidad + % + pasadas; solo si no hay cobertura mínima (&lt;~15%) no hay imagen y solo el motivo. Clima/riego sí quedan. ' +
+            'por periodo elige <strong>1 sola pasada</strong> Sentinel (la más clara; sin mediana ni relleno entre fechas). Misma lógica de periodos (quincenal/mensual; quincena incompleta puede ampliar al mes). Si queda incompleto (&lt;~100% útiles) <strong>igual muestra la imagen</strong> y explica nubosidad + %; solo si no hay cobertura mínima (&lt;~15%) no hay imagen y solo el motivo. Clima/riego sí quedan. ' +
             'Las imágenes se generan <strong>en la nube en segundo plano</strong> (igual que Pilot): puedes cerrar y luego pulsar «Mostrar NDVI/NDMI». ' +
             '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
           '</div>' +

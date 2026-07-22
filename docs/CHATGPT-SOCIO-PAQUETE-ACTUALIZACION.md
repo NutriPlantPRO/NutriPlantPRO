@@ -22,7 +22,7 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza vers
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.07.4**: Radar Pilot/Lectura = 1 pasada más clara, sin mediana/relleno entre fechas)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.12: grafo relaciones apunte↔archivo/link)
 
@@ -65,6 +65,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 4. “¿Cómo funciona la calculadora gratis de solución nutritiva?” → Knowledge o `free_tools_catalog` hidro_solucion
 5. “¿Qué pestañas hay en Análisis?” → `lab_analyses_catalog`
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`
+6.1. **“¿Cómo se arma la imagen Radar / Pilot / Lectura?”** → Knowledge MANUAL §4.11 (**v2026.07.4**): **1 pasada** más clara, sin mediana/relleno; ≥~15% útiles
 7. **“¿Cómo calculamos kg/ha en fertilidad del suelo? Cita la URL pública”** → `manual_tecnico_catalog` chapter `analisis_suelo_fertilidad_kgha` o Knowledge MANUAL
 8. **“¿Cómo calcula NutriPlant el balance hídrico de riego?”** → `manual_tecnico_catalog` chapter `balance_hidrico_riego_clima` o Knowledge MANUAL §4.11b
 8.1. **“¿Qué aminoácidos ayudan más bajo estrés hídrico o salino?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` + `free_tools_catalog` tool `atlas_aminoacidos_vegetales`

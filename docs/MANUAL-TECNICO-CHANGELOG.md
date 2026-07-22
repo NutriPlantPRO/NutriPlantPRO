@@ -5,6 +5,15 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-07-22 — Radar pasada única + Knowledge GPT v2026.07.4
+
+### Actualizado
+
+- **Cómo se arma la imagen (Pilot y Lectura):** **1 sola pasada** Sentinel (la más clara sobre el predio) + SCL; **sin mediana** ni relleno entre fechas (evita costuras engañosas al comparar vigor dentro del lote).
+- Pilot: ventanas **14→21→30→45 d**; corta si ~100% útiles; si no guarda lo mejor **≥~15%**.
+- Lectura: misma regla de imagen (**1 pasada**/periodo); conserva periodos quincenal/mensual, clima/riego y ampliación quincena→mes.
+- `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §4.11 (**v2026.07.4**), `chat-simple.js`, `manual-tecnico-catalog.js`, `vpd-deficit-presion-vapor.html`, `dashboard.js`, `np-lectura-satelital.js`, admin assistant.
+
 ## 2026-07-18 — Radar NDRE/RGB + Knowledge GPT v2026.07.3
 
 ### Actualizado

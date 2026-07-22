@@ -2620,7 +2620,12 @@ function np_formatRadarSceneMetaHtml(snap) {
   const detail = [];
   if (Number.isFinite(lookback)) detail.push(lookback + ' d');
   if (Number.isFinite(scenes) && scenes > 0) {
-    detail.push(scenes + ' escena' + (scenes === 1 ? '' : 's') + (meta.composite || scenes > 1 ? ' · mediana' : ''));
+    detail.push(
+      scenes +
+        ' escena' +
+        (scenes === 1 ? '' : 's') +
+        (meta.composite || scenes > 1 ? ' · mediana' : ' · pasada única')
+    );
   }
   if (Number.isFinite(avgCloud)) detail.push('nubes ~' + avgCloud + '%');
   if (Number.isFinite(validPct)) {

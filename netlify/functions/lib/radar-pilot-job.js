@@ -47,9 +47,11 @@ const PILOT_LOOKBACK_TIERS = [
 
 /**
  * Solo se corta antes si el predio quedó prácticamente completo (~100%).
- * Si no, sigue juntando hasta 8 pasadas y ampliando 14→21→30→45 d; al final guarda lo mejor.
+ * Si no, prueba más candidatas / ventanas 14→21→30→45 d y guarda la mejor pasada sola (≥~15%).
  */
 const PILOT_TARGET_VALID_FRACTION = 0.995;
+/** Candidatas a probar una por una (no se mezclan fechas / mediana). */
+const PILOT_SINGLE_SCENE_CANDIDATES = 5;
 
 function isPilotCoverageFail(err) {
   return /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
@@ -71,30 +73,61 @@ function pilotSceneCount(bundle) {
   return 0;
 }
 
+function pilotSceneCloud(scene) {
+  const n = scene && scene.cloudCover != null ? Number(scene.cloudCover) : NaN;
+  return Number.isFinite(n) ? n : 999;
+}
+
+/** Empaqueta una sola pasada para meta/UI (sin mediana ni relleno entre fechas). */
+function bundleFromSingleScene(baseBundle, scene) {
+  const cloud = scene && scene.cloudCover != null && Number.isFinite(Number(scene.cloudCover))
+    ? Number(scene.cloudCover)
+    : null;
+  const date = scene && scene.datetime ? String(scene.datetime).slice(0, 10) : null;
+  return {
+    provider: baseBundle.provider,
+    bbox: baseBundle.bbox,
+    lookbackDays: baseBundle.lookbackDays,
+    maxCloudPct: baseBundle.maxCloudPct,
+    composite: false,
+    sceneCount: 1,
+    dateStart: date,
+    dateEnd: date,
+    sceneDates: date ? [date] : [],
+    cloudCovers: cloud != null ? [cloud] : [],
+    avgCloudCover: cloud,
+    scenes: [scene],
+    fallbackTier: scene.searchTier || baseBundle.fallbackTier || null
+  };
+}
+
 /**
- * Maximiza cobertura: hasta 8 pasadas por ventana (14 → 21 → 30 → 45 d).
- * Solo para si llega ~100%. Si no, prueba más nubes/pasadas y la siguiente ventana.
- * Al final guarda la MEJOR (ej. 89%), nunca vacío si ≥~15%.
+ * Pilot: UNA sola pasada Sentinel (la de mejor cobertura útil sobre el predio).
+ * No rellena con píxeles de otras fechas (evita costuras engañosas al comparar vigor).
+ * Ventanas 14 → 21 → 30 → 45 d; corta si ~100%; al final guarda lo mejor si ≥~15%.
  */
 async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierMessage) {
   let lastErr = null;
   let best = null;
   let bestScore = -1;
   let bestTierIndex = -1;
-  let bestScenes = -1;
-  const sceneCap = Math.min(Math.max(Number(maxScenes) || 8, 1), 8);
+  let bestCloud = 999;
+  const candidateCap = Math.min(
+    Math.max(Number(maxScenes) || PILOT_SINGLE_SCENE_CANDIDATES, 1),
+    PILOT_SINGLE_SCENE_CANDIDATES
+  );
 
-  const consider = (bundle, rendered, tierIndex) => {
+  const consider = (bundle, rendered, tierIndex, scene) => {
     const score = pilotCoverageScore(rendered);
-    const scenes = pilotSceneCount(bundle);
+    const cloud = pilotSceneCloud(scene);
     const better =
       score > bestScore + 0.0005 ||
-      (Math.abs(score - bestScore) <= 0.0005 && scenes > bestScenes);
+      (Math.abs(score - bestScore) <= 0.0005 && cloud < bestCloud - 0.05);
     if (better) {
       best = { bundle, rendered, lookbackExpanded: tierIndex > 0 };
       bestScore = score;
       bestTierIndex = tierIndex;
-      bestScenes = scenes;
+      bestCloud = cloud;
     }
     return score;
   };
@@ -102,34 +135,50 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
   for (let i = 0; i < PILOT_LOOKBACK_TIERS.length; i++) {
     const tier = PILOT_LOOKBACK_TIERS[i];
     const cloudAttempts = [
-      { maxCloud: tier.maxCloud, candidateLimit: Math.max(20, sceneCap * 3) },
-      // Si con el umbral estricto solo salieron 1–2 pasadas, abrir nubes para juntar hasta 8.
-      { maxCloud: 60, candidateLimit: Math.max(30, sceneCap * 5) }
+      { maxCloud: tier.maxCloud, candidateLimit: Math.max(20, candidateCap * 3) },
+      // Si las más claras no cubren el predio, abrir nubes y probar otras candidatas.
+      { maxCloud: 60, candidateLimit: Math.max(30, candidateCap * 5) }
     ];
 
     for (let ci = 0; ci < cloudAttempts.length; ci++) {
       const cloudOpts = cloudAttempts[ci];
       try {
         if (typeof onTierMessage === 'function') {
-          await onTierMessage(tier.days, sceneCap, ci > 0);
+          await onTierMessage(tier.days, 1, ci > 0);
         }
-        const bundle = await findSentinel2ScenesForComposite(polygon, {
-          maxScenes: sceneCap,
+        // Trae varias candidatas ordenadas por nubes; cada una se evalúa SOLA.
+        const pool = await findSentinel2ScenesForComposite(polygon, {
+          maxScenes: candidateCap,
           lookbackDays: tier.days,
           maxCloud: cloudOpts.maxCloud,
           maxLookbackDays: tier.days,
           candidateLimit: cloudOpts.candidateLimit
         });
-        const rendered = await renderNdviNdmiCompositePngs(
-          { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
-          { maxDim }
-        );
-        const score = consider(bundle, rendered, i);
-        if (score >= PILOT_TARGET_VALID_FRACTION) {
-          return { bundle, rendered, lookbackExpanded: i > 0 };
+        const candidates = Array.isArray(pool.scenes) ? pool.scenes : [];
+        for (let si = 0; si < candidates.length; si++) {
+          const scene = candidates[si];
+          try {
+            const bundle = bundleFromSingleScene(pool, scene);
+            const rendered = await renderNdviNdmiCompositePngs(
+              { scenes: [scene], bbox4326: pool.bbox, polygon },
+              { maxDim }
+            );
+            const score = consider(bundle, rendered, i, scene);
+            if (score >= PILOT_TARGET_VALID_FRACTION) {
+              return { bundle, rendered, lookbackExpanded: i > 0 };
+            }
+          } catch (e) {
+            lastErr = e;
+            if (!isPilotCoverageFail(e)) throw e;
+          }
         }
-        // Ya tenemos casi el tope de pasadas en esta ventana → pasar a 21/30/45 d.
-        if (pilotSceneCount(bundle) >= sceneCap) break;
+        // Ya hay una pasada casi completa → no hace falta abrir más nubes ni ventanas.
+        if (bestScore >= PILOT_TARGET_VALID_FRACTION) {
+          return {
+            ...best,
+            lookbackExpanded: bestTierIndex > 0
+          };
+        }
       } catch (e) {
         lastErr = e;
         if (!isPilotCoverageFail(e)) throw e;
@@ -143,7 +192,7 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
       lookbackExpanded: bestTierIndex > 0
     };
   }
-  throw lastErr || new Error('Pilot composite failed');
+  throw lastErr || new Error('Pilot single-scene selection failed');
 }
 
 const BUCKET = 'radar-ndvi';
@@ -506,8 +555,13 @@ async function processPilotJob(supabase, requestId, userId) {
   }
 
   const maxDim = Math.min(Math.max(Number(job.meta?.max_dim) || 512, 256), 2048);
-  // Hasta 8 pasadas en Pilot (Lectura suele pedir 6 vía meta.max_scenes).
-  const maxScenes = Math.min(Math.max(Number(job.meta?.max_scenes) || 8, 1), 8);
+  const isLectura = !!(job.meta && job.meta.lectura && job.meta.date_start && job.meta.date_end);
+  const frequency = job.meta?.frequency || null;
+  // Pilot y Lectura: candidatas a probar una por una (salida = 1 pasada por imagen).
+  const maxScenes = Math.min(
+    Math.max(Number(job.meta?.max_scenes) || PILOT_SINGLE_SCENE_CANDIDATES, 1),
+    PILOT_SINGLE_SCENE_CANDIDATES
+  );
   const creditCost = creditsForRow(job);
   const mk = job.month_key || monthKey();
 
@@ -521,9 +575,6 @@ async function processPilotJob(supabase, requestId, userId) {
     projectRow = proj;
   }
 
-  const isLectura = !!(job.meta && job.meta.lectura && job.meta.date_start && job.meta.date_end);
-  const frequency = job.meta?.frequency || null;
-
   try {
     let bundle;
     let rendered;
@@ -536,40 +587,32 @@ async function processPilotJob(supabase, requestId, userId) {
         /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
           String((err && err.message) || '')
         );
-      const renderRange = async (startIso, endIso, extraOpts) => {
-        const b = await findSentinel2ScenesForRange(polygon, {
-          dateStart: startIso,
-          dateEnd: endIso,
-          maxScenes,
-          ...(extraOpts || {})
-        });
-        const r = await renderNdviNdmiCompositePngs(
-          { scenes: b.scenes, bbox4326: b.bbox, polygon },
-          { maxDim }
-        );
-        return { b, r };
-      };
+      // Candidatas del periodo; cada una se evalúa SOLA (misma regla que Pilot: sin mediana).
+      const candidateCap = Math.min(
+        Math.max(Number(maxScenes) || PILOT_SINGLE_SCENE_CANDIDATES, 1),
+        PILOT_SINGLE_SCENE_CANDIDATES
+      );
 
-      // Igual que Pilot: juntar hasta 6 pasadas, meta ~100%; si no, ampliar y guardar lo mejor.
+      // Misma lógica de Lectura (periodo + ampliar quincena→mes), pero imagen = 1 pasada.
       // Quincenal incompleta → solo ESE periodo amplía al mes calendario (clima sigue en 15 d).
       let best = null;
       let bestScore = -1;
-      let bestScenes = -1;
+      let bestCloud = 999;
       let lastErr = null;
       let bestExpanded = false;
       let bestSearchStart = dateStart;
       let bestSearchEnd = dateEnd;
 
-      const consider = (out, expanded, searchStart, searchEnd) => {
+      const consider = (out, expanded, searchStart, searchEnd, scene) => {
         const score = pilotCoverageScore(out.r);
-        const scenes = pilotSceneCount(out.b);
+        const cloud = pilotSceneCloud(scene);
         const better =
           score > bestScore + 0.0005 ||
-          (Math.abs(score - bestScore) <= 0.0005 && scenes > bestScenes);
+          (Math.abs(score - bestScore) <= 0.0005 && cloud < bestCloud - 0.05);
         if (better) {
           best = out;
           bestScore = score;
-          bestScenes = scenes;
+          bestCloud = cloud;
           bestExpanded = !!expanded;
           bestSearchStart = searchStart;
           bestSearchEnd = searchEnd;
@@ -577,21 +620,43 @@ async function processPilotJob(supabase, requestId, userId) {
         return score;
       };
 
-      const looseExtra = { maxCloud: 60, candidateLimit: Math.max(30, maxScenes * 5) };
+      const tryRangeSingleScenes = async (startIso, endIso, extraOpts, expanded) => {
+        const pool = await findSentinel2ScenesForRange(polygon, {
+          dateStart: startIso,
+          dateEnd: endIso,
+          maxScenes: candidateCap,
+          ...(extraOpts || {})
+        });
+        const candidates = Array.isArray(pool.scenes) ? pool.scenes : [];
+        let localBest = 0;
+        for (let si = 0; si < candidates.length; si++) {
+          const scene = candidates[si];
+          try {
+            const b = bundleFromSingleScene(pool, scene);
+            const r = await renderNdviNdmiCompositePngs(
+              { scenes: [scene], bbox4326: pool.bbox, polygon },
+              { maxDim }
+            );
+            const score = consider({ b, r }, expanded, startIso, endIso, scene);
+            if (score > localBest) localBest = score;
+            if (score >= PILOT_TARGET_VALID_FRACTION) return score;
+          } catch (e) {
+            lastErr = e;
+            if (!isCoverageFail(e)) throw e;
+          }
+        }
+        return localBest;
+      };
+
+      const looseExtra = { maxCloud: 60, candidateLimit: Math.max(30, candidateCap * 5) };
       const attempts = [
         {
           start: dateStart,
           end: dateEnd,
-          extra: { candidateLimit: Math.max(20, maxScenes * 3) },
+          extra: { candidateLimit: Math.max(20, candidateCap * 3) },
           expanded: false,
           message:
-            'Juntando hasta ' +
-            maxScenes +
-            ' pasadas del periodo ' +
-            dateStart +
-            ' – ' +
-            dateEnd +
-            '…'
+            'Eligiendo la pasada más clara del periodo ' + dateStart + ' – ' + dateEnd + '…'
         },
         {
           start: dateStart,
@@ -600,8 +665,8 @@ async function processPilotJob(supabase, requestId, userId) {
           expanded: false,
           message:
             frequency === 'mensual'
-              ? 'Buscando más pasadas (hasta ' + maxScenes + ') con umbral de nubes más amplio…'
-              : 'Quincena: buscando más pasadas (hasta ' + maxScenes + ') para completar el predio…'
+              ? 'Buscando otra pasada más clara con umbral de nubes más amplio…'
+              : 'Quincena: buscando otra pasada más clara sobre el predio…'
         }
       ];
 
@@ -630,9 +695,7 @@ async function processPilotJob(supabase, requestId, userId) {
             monthWin.startIso +
             ' → ' +
             monthWin.endIso +
-            ' con hasta ' +
-            maxScenes +
-            ' pasadas (clima/riego siguen en ' +
+            ' para hallar una pasada más clara (clima/riego siguen en ' +
             dateStart +
             ' – ' +
             dateEnd +
@@ -652,8 +715,7 @@ async function processPilotJob(supabase, requestId, userId) {
               status_message: att.message
             });
           }
-          const out = await renderRange(att.start, att.end, att.extra);
-          const score = consider(out, att.expanded, att.start, att.end);
+          const score = await tryRangeSingleScenes(att.start, att.end, att.extra, att.expanded);
           if (score >= PILOT_TARGET_VALID_FRACTION) break;
         } catch (e) {
           lastErr = e;
@@ -676,23 +738,16 @@ async function processPilotJob(supabase, requestId, userId) {
         polygon,
         maxScenes,
         maxDim,
-        async (days, sceneCap, looseCloud) => {
-          const n = sceneCap != null ? sceneCap : 8;
+        async (days, _sceneCap, looseCloud) => {
           await patchJobMeta(supabase, requestId, userId, {
             status: 'processing',
             status_message: looseCloud
-              ? 'Buscando más pasadas (hasta ' +
-                n +
-                ') en ' +
-                days +
-                ' d con umbral de nubes más amplio…'
+              ? 'Buscando otra pasada más clara en ' + days + ' d (umbral de nubes más amplio)…'
               : days <= 14
-                ? 'Juntando hasta ' + n + ' pasadas en ' + days + ' días para maximizar cobertura…'
+                ? 'Eligiendo la pasada Sentinel más clara en ' + days + ' días (sin mezclar fechas)…'
                 : 'Predio incompleto: ampliando a ' +
                   days +
-                  ' días y juntando hasta ' +
-                  n +
-                  ' pasadas…'
+                  ' días para hallar una pasada más clara…'
           });
         }
       );
@@ -907,6 +962,7 @@ module.exports = {
   BUCKET,
   ACTIVE_STATUSES,
   JOB_STALE_MS,
+  PILOT_SINGLE_SCENE_CANDIDATES,
   monthKey,
   normalizePolygon,
   buildLocationSnapshot,
@@ -920,6 +976,7 @@ module.exports = {
   addDaysIso,
   triggerPilotBackground,
   processPilotJob,
+  renderPilotCompositeWithTiers,
   isActiveJobRow,
   jobStatus
 };

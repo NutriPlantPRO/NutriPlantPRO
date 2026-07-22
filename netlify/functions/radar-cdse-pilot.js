@@ -17,10 +17,10 @@ const {
   getActivePilotJob,
   createPendingPilotJob,
   createPendingLecturaJob,
-  triggerPilotBackground
+  triggerPilotBackground,
+  renderPilotCompositeWithTiers,
+  PILOT_SINGLE_SCENE_CANDIDATES
 } = require('./lib/radar-pilot-job');
-const { findSentinel2ScenesForComposite } = require('./lib/radar-pilot-stac');
-const { renderNdviNdmiCompositePngs } = require('./lib/radar-pilot-render');
 
 const BUCKET = 'radar-ndvi';
 
@@ -110,7 +110,12 @@ exports.handler = async (event) => {
   const projectId = body.project_id != null ? String(body.project_id).trim() : '';
   const useAsync = body.async !== false;
   const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
-  const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 8, 1), 8);
+  // Pilot y Lectura: candidatas a evaluar una por una (salida = 1 pasada por imagen).
+  const maxScenesPilot = Math.min(
+    Math.max(Number(body.max_scenes) || PILOT_SINGLE_SCENE_CANDIDATES, 1),
+    PILOT_SINGLE_SCENE_CANDIDATES
+  );
+  const maxScenesLectura = maxScenesPilot;
   const mk = monthKey();
   const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
@@ -231,7 +236,7 @@ exports.handler = async (event) => {
         creditCost: jobCost,
         creditsFromBonus: i === 0 ? charged.fromBonus : 0,
         maxDim,
-        maxScenes,
+        maxScenes: maxScenesLectura,
         mk,
         period
       });
@@ -313,7 +318,7 @@ exports.handler = async (event) => {
       creditCost,
       creditsFromBonus: charged.fromBonus,
       maxDim,
-      maxScenes,
+      maxScenes: maxScenesPilot,
       mk
     });
     if (!queued.ok) {
@@ -343,14 +348,11 @@ exports.handler = async (event) => {
     });
   }
 
-  // Modo sync legacy (async:false) — conservado para pruebas locales
+  // Modo sync legacy (async:false) — misma regla: 1 pasada más clara (sin mediana)
   try {
-    const maxScenesSync = maxScenes;
-    const bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes: maxScenesSync });
-    const rendered = await renderNdviNdmiCompositePngs(
-      { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
-      { maxDim }
-    );
+    const pilotOut = await renderPilotCompositeWithTiers(polygon, maxScenesPilot, maxDim);
+    const bundle = pilotOut.bundle;
+    const rendered = pilotOut.rendered;
 
     let ndviDataUrl = null;
     let ndmiDataUrl = null;
