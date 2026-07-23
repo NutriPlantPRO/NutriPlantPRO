@@ -558,18 +558,63 @@
     const canvas = $('agro-chart');
     if (!canvas) return;
     chart?.destroy();
+    const chartRows = rows.slice();
+    const firstForecastIdx = chartRows.findIndex((r) => r.kind === 'forecast');
+    const historyCount = chartRows.filter((r) => r.kind === 'history').length;
+    const forecastCount = chartRows.filter((r) => r.kind === 'forecast').length;
+    const historyForecastLine = {
+      id: 'historyForecastLine',
+      afterDatasetsDraw(chartInstance) {
+        if (firstForecastIdx <= 0) return;
+        const { ctx, chartArea, scales } = chartInstance;
+        const xScale = scales.x;
+        if (!xScale || !chartArea) return;
+        const x = xScale.getPixelForValue(firstForecastIdx - 0.5);
+        if (!Number.isFinite(x)) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#475569';
+        ctx.font = '700 10px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('← Histórico', x - 6, chartArea.top + 12);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#0369a1';
+        ctx.fillText('Pronóstico →', x + 6, chartArea.top + 12);
+        ctx.restore();
+      }
+    };
     chart = new Chart(canvas, {
       type: 'bar',
       data: {
-        labels: rows.map((r) => dateLabel(r.date, true)),
+        labels: chartRows.map((r) => dateLabel(r.date, true)),
         datasets: chartSets()
       },
+      plugins: [historyForecastLine],
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         scales: {
-          x: { stacked: true },
+          x: {
+            stacked: true,
+            ticks: {
+              autoSkip: false,
+              maxRotation: 60,
+              minRotation: 45,
+              font: { size: 9, weight: '700' },
+              color(ctx) {
+                const row = chartRows[ctx.index];
+                return row?.kind === 'history' ? '#64748b' : '#0369a1';
+              }
+            }
+          },
           yHours: {
             position: 'left',
             stacked: true,
@@ -602,6 +647,15 @@
         plugins: {
           legend: { display: false },
           tooltip: {
+            callbacks: {
+              title(items) {
+                const idx = items?.[0]?.dataIndex;
+                const row = chartRows[idx];
+                if (!row) return items?.[0]?.label || '';
+                const tag = row.kind === 'history' ? 'Histórico' : 'Pronóstico';
+                return `${dateLabel(row.date)} · ${tag}`;
+              }
+            },
             itemSort(a, b) {
               const rank = (label) => {
                 const s = String(label || '');
@@ -619,6 +673,10 @@
         }
       }
     });
+    const periodMeta = $('agro-chart-period');
+    if (periodMeta) {
+      periodMeta.textContent = `${historyCount} d histórico + ${forecastCount} d pronóstico`;
+    }
   }
 
   function renderToggles() {
@@ -635,12 +693,15 @@
     syncKcBar();
     const chartNote = $('agro-chart-note');
     if (chartNote) {
+      const histN = rows.filter((r) => r.kind === 'history').length;
+      const futN = rows.filter((r) => r.kind === 'forecast').length;
       const kcTxt = activeKc() == null
         ? 'ETc pendiente de Kc.'
         : `ETc con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc).`;
       chartNote.innerHTML =
+        `<strong>Periodo:</strong> ${histN} d histórico + ${futN} d pronóstico (línea punteada los separa). ` +
         `<strong>Eje izquierdo (azul):</strong> horas VPD de las barras (total 24 h/día). ` +
-        `<strong>Eje derecho (verde):</strong> mm de las líneas (lluvia, ETo y ETc). ` +
+        `<strong>Eje derecho (verde):</strong> mm diarios de las líneas (lluvia, ETo y ETc). ` +
         `Rangos VPD: azul &lt;0.5, verde 0.5–1.5, tinto &gt;1.5. ${kcTxt}`;
     }
     $('agro-table-wrap').innerHTML = tableHtml();

@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260722y">
+  <link rel="stylesheet" href="./styles.css?v=20260723c">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -138,6 +138,7 @@
           <div>
             <p class="agro-kicker">Comportamiento del periodo</p>
             <h2>Demanda atmosférica y agua</h2>
+            <p id="agro-chart-period" class="agro-chart-period">7 d histórico + 7 d pronóstico</p>
           </div>
           <div id="agro-chart-toggles" class="agro-chart-toggles"></div>
         </div>
@@ -156,7 +157,7 @@
           <span><i class="swatch line-et0"></i> ETo</span>
           <span><i class="swatch line-etc"></i> ETc</span>
         </div>
-        <p id="agro-chart-note" class="agro-chart-note"><strong>Eje izquierdo (azul):</strong> horas VPD de las barras (24 h/día). <strong>Eje derecho (verde):</strong> mm de las líneas (lluvia, ETo y ETc).</p>
+        <p id="agro-chart-note" class="agro-chart-note"><strong>Periodo:</strong> 7 días de histórico + 7 de pronóstico (línea punteada los separa). <strong>Eje izquierdo (azul):</strong> horas VPD de las barras (24 h/día). <strong>Eje derecho (verde):</strong> mm diarios de las líneas (lluvia, ETo y ETc).</p>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
@@ -335,7 +336,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260722z"></script>
+  <script src="./app.js?v=20260723a"></script>
 
   <!-- Modal Sobre Nosotros (misma estructura/estilos que login) -->
   <style>

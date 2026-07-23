@@ -14,6 +14,11 @@ function value(v, decimals = 1) {
   return Number.isFinite(n) ? n.toFixed(decimals) : '—';
 }
 
+function numberOrNull(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 function dateLabel(iso) {
   if (!iso) return '—';
   const [y, m, d] = String(iso).split('-').map(Number);
@@ -25,40 +30,87 @@ function dateLabel(iso) {
   }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
-function forecastTable(rows) {
-  const body = (rows || [])
-    .filter((row) => row.kind === 'forecast')
+function statsOf(rows, kind) {
+  const list = (rows || []).filter((row) => row.kind === kind);
+  const nums = (key) => list.map((row) => numberOrNull(row[key])).filter((n) => n != null);
+  const sum = (key) => {
+    const vals = nums(key);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+  };
+  const min = (key) => {
+    const vals = nums(key);
+    return vals.length ? Math.min(...vals) : null;
+  };
+  const max = (key) => {
+    const vals = nums(key);
+    return vals.length ? Math.max(...vals) : null;
+  };
+  return {
+    days: list.length,
+    tempMin: min('tempMin'),
+    tempMax: max('tempMax'),
+    vpdMin: min('vpdMin'),
+    vpdMax: max('vpdMax'),
+    et0Total: sum('et0'),
+    etcTotal: sum('etc'),
+    rainTotal: sum('rain')
+  };
+}
+
+function deltaLine(forecastVal, historyVal, decimals = 1, unit = '') {
+  const f = numberOrNull(forecastVal);
+  const h = numberOrNull(historyVal);
+  if (f == null || h == null) return 'Sin histórico comparable';
+  const diff = f - h;
+  const sign = diff > 0 ? '+' : '';
+  return `Histórico ${value(h, decimals)}${unit} · Δ ${sign}${value(diff, decimals)}${unit}`;
+}
+
+function forecastCompactTable(rows) {
+  const forecast = (rows || []).filter((row) => row.kind === 'forecast');
+  if (!forecast.length) return '<p style="color:#64748b;font-size:13px;">Sin días de pronóstico.</p>';
+  const th =
+    'padding:7px 4px;font-size:10px;font-weight:800;text-align:center;border:1px solid #93c5fd;background:#e0f2fe;color:#0c4a6e;line-height:1.25;';
+  const td =
+    'padding:7px 4px;font-size:11px;text-align:center;border:1px solid #bfdbfe;vertical-align:middle;line-height:1.3;color:#0f172a;';
+  const body = forecast
     .map(
       (row) => `<tr>
-        <td style="padding:8px;border:1px solid #dbeafe;font-weight:700;">${escapeHtml(dateLabel(row.date))}</td>
-        <td style="padding:8px;border:1px solid #dbeafe;text-align:center;">${value(row.tempMin)}–${value(row.tempMax)} °C</td>
-        <td style="padding:8px;border:1px solid #dbeafe;text-align:center;">${value(row.humidityMin, 0)}–${value(row.humidityMax, 0)} %</td>
-        <td style="padding:8px;border:1px solid #dbeafe;text-align:center;">${value(row.vpdMin, 2)}–${value(row.vpdMax, 2)}</td>
-        <td style="padding:8px;border:1px solid #dbeafe;text-align:center;">${value(row.et0)}</td>
-        <td style="padding:8px;border:1px solid #dbeafe;text-align:center;">${value(row.etc)}</td>
-        <td style="padding:8px;border:1px solid #dbeafe;text-align:center;">${value(row.rain)}</td>
+        <td style="${td}text-align:left;font-weight:800;color:#0c4a6e;white-space:nowrap;">${escapeHtml(dateLabel(row.date))}</td>
+        <td style="${td}"><span style="color:#ea580c;">${value(row.tempMin)}</span>–<span style="color:#c2410c;font-weight:800;">${value(row.tempMax)}</span></td>
+        <td style="${td}"><span style="color:#0284c7;">${value(row.humidityMin, 0)}</span>–<span style="color:#0369a1;font-weight:800;">${value(row.humidityMax, 0)}</span></td>
+        <td style="${td}"><span style="color:#7c3aed;">${value(row.vpdMin, 2)}</span>–<span style="color:#6d28d9;font-weight:800;">${value(row.vpdMax, 2)}</span></td>
+        <td style="${td}"><span style="color:#0f766e;font-weight:700;">${value(row.et0)}</span> / <span style="color:#15803d;font-weight:700;">${value(row.etc)}</span> / <span style="color:#1d4ed8;font-weight:800;">${value(row.rain)}</span></td>
       </tr>`
     )
     .join('');
-  return `<div style="overflow-x:auto;">
-    <table style="width:100%;min-width:680px;border-collapse:collapse;font:12px/1.4 Arial,sans-serif;">
-      <thead><tr style="background:#dbeafe;color:#1e3a8a;">
-        <th style="padding:8px;border:1px solid #93c5fd;text-align:left;">Día</th>
-        <th style="padding:8px;border:1px solid #93c5fd;">Temperatura</th>
-        <th style="padding:8px;border:1px solid #93c5fd;">Humedad</th>
-        <th style="padding:8px;border:1px solid #93c5fd;">VPD kPa</th>
-        <th style="padding:8px;border:1px solid #93c5fd;">ETo mm</th>
-        <th style="padding:8px;border:1px solid #93c5fd;">ETc mm</th>
-        <th style="padding:8px;border:1px solid #93c5fd;">Lluvia mm</th>
-      </tr></thead>
+  // Tabla angosta (5 cols) pensada para celular: rangos en una celda, agua en ETo/ETc/Lluvia.
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed;">
+      <thead>
+        <tr>
+          <th style="${th}width:22%;">Día · Pronóst.</th>
+          <th style="${th}width:18%;">T °C<br>mín–máx</th>
+          <th style="${th}width:16%;">HR %<br>mín–máx</th>
+          <th style="${th}width:18%;">VPD<br>mín–máx</th>
+          <th style="${th}width:26%;">mm<br>ETo / ETc / Lluvia</th>
+        </tr>
+      </thead>
       <tbody>${body}</tbody>
-    </table>
-  </div>`;
+    </table>`;
 }
 
 function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
-  const summary = snapshot.summary || {};
   const rows = snapshot.rows || [];
+  const forecast = statsOf(rows, 'forecast');
+  const history = statsOf(rows, 'history');
+  const summary = snapshot.summary || {};
+  const tempMin = forecast.tempMin ?? summary.tempMin;
+  const tempMax = forecast.tempMax ?? summary.tempMax;
+  const vpdMin = forecast.vpdMin ?? summary.vpdMin;
+  const vpdMax = forecast.vpdMax ?? summary.vpdMax;
+  const et0Total = forecast.et0Total ?? summary.et0Total;
+  const rainTotal = forecast.rainTotal ?? summary.rainTotal;
+
   const subject = `Pronóstico Agroclimático NutriPlant — ${plot.plot_name || 'Mi predio'}`;
   const plainDays = rows
     .filter((row) => row.kind === 'forecast')
@@ -72,14 +124,20 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
     .join('\n');
   const text =
     `Hola ${subscriber.full_name || ''},\n\n` +
-    `Este es el pronóstico agroclimático de tu predio (${plot.plot_name || 'Mi predio'}).\n\n` +
+    `PRONÓSTICO agroclimático de tu predio (${plot.plot_name || 'Mi predio'}) — próximos ${forecast.days || 7} días.\n\n` +
     `Ver reporte completo (tabla, gráfica, mapa y PDF):\n${reportUrl}\n\n` +
-    `Resumen del pronóstico: temperatura mín–máx ${value(summary.tempMin)}–${value(summary.tempMax)} °C; ` +
-    `VPD mín–máx ${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa; ` +
-    `ETo acumulada ${value(summary.et0Total)} mm; ETc acumulada ${value(summary.etcTotal)} mm; ` +
-    `lluvia acumulada ${value(summary.rainTotal)} mm.\n\n${plainDays}\n\n` +
+    `Resumen del PRONÓSTICO:\n` +
+    `- Temperatura mín–máx: ${value(tempMin)}–${value(tempMax)} °C (${deltaLine(tempMax, history.tempMax, 1, ' °C máx')})\n` +
+    `- VPD mín–máx: ${value(vpdMin, 2)}–${value(vpdMax, 2)} kPa\n` +
+    `- ETo acumulada: ${value(et0Total)} mm (${deltaLine(et0Total, history.et0Total, 1, ' mm')})\n` +
+    `- Lluvia acumulada: ${value(rainTotal)} mm (${deltaLine(rainTotal, history.rainTotal, 1, ' mm')})\n\n` +
+    `Comparación vs histórico reciente (${history.days || 0} d):\n` +
+    `- Histórico T: ${value(history.tempMin)}–${value(history.tempMax)} °C\n` +
+    `- Histórico lluvia acum.: ${value(history.rainTotal)} mm | ETo acum.: ${value(history.et0Total)} mm\n\n` +
+    `${plainDays}\n\n` +
     `Pronóstico estimado para las coordenadas registradas. Valida las condiciones en campo.\n\n` +
-    `Editar predio o dejar de recibir alertas:\n${reportUrl}\n\n` +
+    `Editar predio / Kc o dejar de recibir alertas:\n${reportUrl}\n` +
+    `Para dejar de recibir alertas: abre ese enlace y en la página usa el botón verde de WhatsApp («Dejar de recibir alertas») para enviarnos el mensaje.\n\n` +
     `NutriPlant PRO\nhttps://nutriplantpro.com/\n`;
 
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
@@ -95,31 +153,50 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
         <p style="text-align:center;margin:0 0 18px;">
           <a href="${escapeHtml(reportUrl)}" style="display:inline-block;padding:12px 18px;border-radius:9px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;">Ver reporte completo</a>
         </p>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px;">
-          <div style="padding:10px;border-radius:9px;background:#f0f9ff;">
-            <small style="color:#0369a1;font-weight:700;">Temperatura · mín–máx</small><br>
-            <strong style="font-size:16px;">${value(summary.tempMin)}–${value(summary.tempMax)} °C</strong><br>
-            <span style="font-size:11px;color:#64748b;">Rango del periodo de pronóstico</span>
-          </div>
-          <div style="padding:10px;border-radius:9px;background:#f5f3ff;">
-            <small style="color:#6d28d9;font-weight:700;">VPD · mín–máx</small><br>
-            <strong style="font-size:16px;">${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa</strong><br>
-            <span style="font-size:11px;color:#64748b;">Rango del periodo de pronóstico</span>
-          </div>
-          <div style="padding:10px;border-radius:9px;background:#ecfdf5;">
-            <small style="color:#0f766e;font-weight:700;">ETo · acumulada</small><br>
-            <strong style="font-size:16px;">${value(summary.et0Total)} mm</strong><br>
-            <span style="font-size:11px;color:#64748b;">Suma del periodo de pronóstico</span>
-          </div>
-          <div style="padding:10px;border-radius:9px;background:#f0fdf4;">
-            <small style="color:#166534;font-weight:700;">Lluvia · acumulada</small><br>
-            <strong style="font-size:16px;">${value(summary.rainTotal)} mm</strong><br>
-            <span style="font-size:11px;color:#64748b;">Suma del periodo de pronóstico</span>
-          </div>
+
+        <div style="margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#0c4a6e;text-align:center;">
+          <div style="font-size:20px;font-weight:900;color:#ffffff;letter-spacing:.02em;">PRONÓSTICO</div>
+          <div style="font-size:13px;font-weight:700;color:#ffffff;margin-top:4px;">Próximos ${forecast.days || 7} días · comparado vs histórico reciente (${history.days || 0} d)</div>
         </div>
-        ${forecastTable(rows)}
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 8px;margin:0 0 8px;">
+          <tr>
+            <td style="padding:12px;border-radius:9px;background:#f0f9ff;border:1px solid #bfdbfe;">
+              <div style="color:#0369a1;font-weight:800;font-size:12px;">Temperatura · mín–máx (PRONÓSTICO)</div>
+              <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(tempMin)}–${value(tempMax)} °C</div>
+              <div style="font-size:11px;color:#475569;">${escapeHtml(deltaLine(tempMax, history.tempMax, 1, ' °C máx'))}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-radius:9px;background:#f5f3ff;border:1px solid #ddd6fe;">
+              <div style="color:#6d28d9;font-weight:800;font-size:12px;">VPD · mín–máx (PRONÓSTICO)</div>
+              <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(vpdMin, 2)}–${value(vpdMax, 2)} kPa</div>
+              <div style="font-size:11px;color:#475569;">Histórico ${value(history.vpdMin, 2)}–${value(history.vpdMax, 2)} kPa</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-radius:9px;background:#ecfdf5;border:1px solid #a7f3d0;">
+              <div style="color:#0f766e;font-weight:800;font-size:12px;">ETo · acumulada (PRONÓSTICO)</div>
+              <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(et0Total)} mm</div>
+              <div style="font-size:11px;color:#475569;">${escapeHtml(deltaLine(et0Total, history.et0Total, 1, ' mm'))}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-radius:9px;background:#f0fdf4;border:1px solid #bbf7d0;">
+              <div style="color:#166534;font-weight:800;font-size:12px;">Lluvia · acumulada (PRONÓSTICO)</div>
+              <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(rainTotal)} mm</div>
+              <div style="font-size:11px;color:#475569;">${escapeHtml(deltaLine(rainTotal, history.rainTotal, 1, ' mm'))}</div>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:14px 0 8px;font-size:15px;font-weight:800;color:#0c4a6e;">Tabla del PRONÓSTICO (ajustada para celular)</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#64748b;">Tabla compacta en el correo. Gráfica, histórico completo y PDF → «Ver reporte completo».</p>
+        ${forecastCompactTable(rows)}
+
         <p style="margin:16px 0 0;color:#64748b;font-size:12px;line-height:1.5;">Pronóstico meteorológico estimado para las coordenadas registradas. La temperatura de hoja y el VPD son orientativos; valida el microclima en campo.</p>
-        <p style="margin:14px 0 0;font-size:12px;color:#64748b;"><a href="${escapeHtml(reportUrl)}" style="color:#0369a1;">Editar predio o dejar de recibir alertas</a></p>
+        <p style="margin:14px 0 0;font-size:13px;"><a href="${escapeHtml(reportUrl)}" style="color:#0369a1;font-weight:700;">Editar predio / Kc o dejar de recibir alertas</a></p>
+        <p style="margin:6px 0 0;font-size:12px;line-height:1.45;color:#64748b;">Para <strong>dejar de recibir alertas</strong>: abre el enlace, entra a tu reporte y envía el mensaje con el botón verde de <strong>WhatsApp</strong> («Dejar de recibir alertas»). El link del correo solo te lleva a la página; el aviso se manda desde ahí.</p>
         <hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0 16px;">
         <p style="margin:0;text-align:center;line-height:1.45;">
           <a href="https://nutriplantpro.com/" style="color:#1d4ed8;font-size:18px;font-weight:800;text-decoration:none;letter-spacing:.01em;">NutriPlant PRO</a><br>
