@@ -5,6 +5,7 @@
   const embed = ['login', 'dashboard'].includes(q.get('embed'));
   const demo = q.get('demo') === '1';
   const token = String(q.get('token') || '');
+  const snapshotParam = String(q.get('snapshot') || '').trim();
   const personal = demo || !!token;
   const $ = (id) => document.getElementById(id);
   const API = '/api/agroclimate';
@@ -874,7 +875,9 @@
       return render();
     }
     try {
-      const response = await fetch(`${API}?action=report&token=${encodeURIComponent(token)}`);
+      const reportQs = new URLSearchParams({ token });
+      if (snapshotParam) reportQs.set('snapshot', snapshotParam);
+      const response = await fetch(`${API}?action=report&${reportQs.toString()}`);
       const out = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(out.message || 'El enlace no está disponible.');
       report = out.subscriber || {};
@@ -902,6 +905,12 @@
       }
       render();
       if (reportGeneratedAt || lastReadingAt) setStatus(readingStatusText(), 'success');
+      if (out.historical_view && $('agro-report-meta') && !$('agro-report-meta').hidden) {
+        $('agro-report-meta').insertAdjacentHTML(
+          'beforeend',
+          '<br><span style="color:#b45309;font-weight:700;">Vista de reporte guardado (semana seleccionada)</span>'
+        );
+      }
     } catch (error) {
       $('agro-empty-note').innerHTML = `<strong>No se pudo abrir el reporte.</strong><span>${esc(error.message)}</span>`;
     }

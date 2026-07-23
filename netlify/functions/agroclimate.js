@@ -185,34 +185,58 @@ async function reportView(supabase, event) {
   if (!subscriber || ['rejected'].includes(subscriber.status)) return json(404, { ok: false, message: 'El reporte no está disponible.' });
   const plotResult = await supabase.from('climate_alert_plots').select('*').eq('subscriber_id', subscriber.id).maybeSingle();
   if (!plotResult.data) return json(404, { ok: false, message: 'No se encontró el predio.' });
-  const snapshotResult = await supabase
-    .from('climate_alert_snapshots')
-    .select('*')
-    .eq('subscriber_id', subscriber.id)
-    .order('generated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
+  const requestedSnapshotId = text(query.snapshot, 80);
+  const snapshotIdOk = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedSnapshotId);
+  let snapshotResult;
+  if (requestedSnapshotId && snapshotIdOk) {
+    snapshotResult = await supabase
+      .from('climate_alert_snapshots')
+      .select('*')
+      .eq('id', requestedSnapshotId)
+      .eq('subscriber_id', subscriber.id)
+      .maybeSingle();
+    if (snapshotResult.error) throw snapshotResult.error;
+    if (!snapshotResult.data) return json(404, { ok: false, message: 'Ese reporte semanal no existe.' });
+    if (snapshotResult.data.expires_at && new Date(snapshotResult.data.expires_at).getTime() < Date.now()) {
+      return json(410, { ok: false, message: 'Ese reporte ya caducó (~90 días).' });
+    }
+  } else {
+    snapshotResult = await supabase
+      .from('climate_alert_snapshots')
+      .select('*')
+      .eq('subscriber_id', subscriber.id)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+  }
+
+  const snapshot = snapshotResult.data;
   const now = new Date().toISOString();
-  await Promise.all([
+  const trackAsUserVisit = !requestedSnapshotId || !snapshotIdOk;
+  const tasks = [
     supabase.from('climate_alert_access_tokens').update({ last_used_at: now }).eq('id', access.id),
     supabase.from('climate_alert_access_events').insert({
       subscriber_id: subscriber.id,
-      snapshot_id: snapshotResult.data?.id || null,
+      snapshot_id: snapshot?.id || null,
       user_agent: text(event.headers?.['user-agent'], 500),
       referrer: text(event.headers?.referer || event.headers?.referrer, 500)
-    }),
-    supabase
-      .from('climate_alert_subscribers')
-      .update({
-        first_report_access_at: subscriber.first_report_access_at || now,
-        last_report_access_at: now,
-        report_access_count: Number(subscriber.report_access_count || 0) + 1
-      })
-      .eq('id', subscriber.id)
-  ]);
+    })
+  ];
+  if (trackAsUserVisit) {
+    tasks.push(
+      supabase
+        .from('climate_alert_subscribers')
+        .update({
+          first_report_access_at: subscriber.first_report_access_at || now,
+          last_report_access_at: now,
+          report_access_count: Number(subscriber.report_access_count || 0) + 1
+        })
+        .eq('id', subscriber.id)
+    );
+  }
+  await Promise.all(tasks);
 
-  const snapshot = snapshotResult.data;
   return json(200, {
     ok: true,
     subscriber: {
@@ -229,7 +253,10 @@ async function reportView(supabase, event) {
     },
     rows: snapshot?.rows || [],
     summary: snapshot?.summary || {},
-    generated_at: snapshot?.generated_at || null
+    generated_at: snapshot?.generated_at || null,
+    snapshot_id: snapshot?.id || null,
+    alert_type: snapshot?.alert_type || null,
+    historical_view: Boolean(requestedSnapshotId && snapshotIdOk)
   });
 }
 

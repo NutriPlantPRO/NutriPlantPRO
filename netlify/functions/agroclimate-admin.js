@@ -322,16 +322,31 @@ async function reportLink(supabase, event, body) {
   const id = text(body.subscriber_id, 80);
   const { subscriber } = await readSubscriber(supabase, id);
   const rawToken = await ensureReportToken(supabase, id);
-  const reportUrl = `${origin(event)}/pronosticoclimatico/?token=${encodeURIComponent(rawToken)}`;
+  const base = `${origin(event)}/pronosticoclimatico/?token=${encodeURIComponent(rawToken)}`;
+  const nowIso = new Date().toISOString();
+  const snaps = await supabase
+    .from('climate_alert_snapshots')
+    .select('id, alert_type, schedule_key, generated_at, historical_start, historical_end, forecast_start, forecast_end, expires_at')
+    .eq('subscriber_id', id)
+    .gt('expires_at', nowIso)
+    .order('generated_at', { ascending: false })
+    .limit(16);
+  if (snaps.error) throw snaps.error;
+  const snapshots = (snaps.data || []).map((row, index) => ({
+    ...row,
+    is_latest: index === 0,
+    reportUrl: `${base}&snapshot=${encodeURIComponent(row.id)}`
+  }));
   return json(200, {
     ok: true,
-    reportUrl,
+    reportUrl: base,
     subscriber_id: id,
     request_code: subscriber.request_code,
     status: subscriber.status,
     report_access_count: Number(subscriber.report_access_count || 0),
     first_report_access_at: subscriber.first_report_access_at || null,
-    last_report_access_at: subscriber.last_report_access_at || null
+    last_report_access_at: subscriber.last_report_access_at || null,
+    snapshots
   });
 }
 

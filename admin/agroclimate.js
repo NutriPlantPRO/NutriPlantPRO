@@ -302,6 +302,7 @@
     box.hidden = true;
     $('aa-report-url').value = '';
     $('aa-report-access-meta').textContent = '';
+    $('aa-report-history').innerHTML = '';
     const open = $('aa-report-open');
     open.removeAttribute('href');
     open.setAttribute('aria-disabled', 'true');
@@ -317,11 +318,46 @@
       `${count} visita${count === 1 ? '' : 's'} · último: ${dateTime(r.last_report_access_at)}`;
   }
 
+  function snapshotTypeLabel(type) {
+    if (type === 'weekly') return 'Semanal';
+    if (type === 'activation_partial') return 'Activación';
+    return type || 'Reporte';
+  }
+
+  function formatDay(value) {
+    if (!value) return '';
+    const d = new Date(`${value}T12:00:00`);
+    if (!Number.isFinite(d.getTime())) return String(value);
+    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(d);
+  }
+
+  function renderSnapshotHistory(snapshots) {
+    const host = $('aa-report-history');
+    if (!host) return;
+    const list = Array.isArray(snapshots) ? snapshots : [];
+    if (!list.length) {
+      host.innerHTML = '<p class="aa-report-history-empty">Todavía no hay reportes guardados para este usuario.</p>';
+      return;
+    }
+    host.innerHTML = list.map((s) => {
+      const range = [formatDay(s.historical_start), formatDay(s.forecast_end)].filter(Boolean).join(' → ');
+      const badge = s.is_latest ? ' · actual' : '';
+      return `<article class="aa-report-history-row">
+        <div>
+          <strong>${esc(snapshotTypeLabel(s.alert_type))}${badge}</strong>
+          <span>${esc(dateTime(s.generated_at))}${range ? ` · ${esc(range)}` : ''}</span>
+        </div>
+        <a class="aa-secondary-btn" href="${esc(s.reportUrl)}" target="_blank" rel="noopener">Abrir</a>
+      </article>`;
+    }).join('');
+  }
+
   async function loadReportLink(subscriberId, seed) {
     const box = $('aa-report-link-box');
     if (!box) return;
     box.hidden = false;
     $('aa-report-url').value = 'Cargando link…';
+    $('aa-report-history').innerHTML = '<p class="aa-report-history-empty">Cargando historial…</p>';
     if (seed) fillReportAccessMeta(seed);
     try {
       const out = await api('report_link', { subscriber_id: subscriberId });
@@ -330,9 +366,11 @@
       open.href = out.reportUrl || '#';
       open.removeAttribute('aria-disabled');
       fillReportAccessMeta(out);
+      renderSnapshotHistory(out.snapshots);
     } catch (error) {
       $('aa-report-url').value = '';
       $('aa-report-access-meta').textContent = error.message || 'No se pudo cargar el link';
+      $('aa-report-history').innerHTML = `<p class="aa-report-history-empty">${esc(error.message || 'Error')}</p>`;
     }
   }
 
