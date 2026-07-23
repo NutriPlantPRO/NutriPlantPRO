@@ -594,6 +594,7 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
   font-size: 11px;
   line-height: 1.4;
 }
+.agro-print-page1-fill { display: none; }
 
 .agro-register-cta, .agro-promo {
   display: flex;
@@ -888,22 +889,23 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   .agro-shell { width: 100%; padding: 8px 0 0; overflow: visible !important; }
   .agro-title-block {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     padding-right: 110px;
     break-after: avoid;
     page-break-after: avoid;
   }
   .agro-title-block h1,
-  .agro-page-title { font-size: 22px !important; margin: 4px 0; }
-  .agro-lead { margin: 4px 0 0; font-size: 11px; line-height: 1.35; }
+  .agro-page-title { font-size: 20px !important; margin: 2px 0; }
+  .agro-page-title img { width: 28px !important; height: 28px !important; }
+  .agro-lead { margin: 2px 0 0; font-size: 10px; line-height: 1.3; }
   .agro-report-meta {
-    margin-top: 8px;
-    padding: 8px 10px;
-    font-size: 12px;
+    margin-top: 6px;
+    padding: 7px 9px;
+    font-size: 11px;
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  /* Página 1: título + resumen. La tabla grande empieza en la hoja siguiente. */
+  /* Página 1: título + resumen + guía. La tabla sigue en la hoja 2. */
   .agro-results {
     break-inside: auto;
     page-break-inside: auto;
@@ -913,18 +915,43 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   .agro-summary-grid {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    margin: 8px 0 0;
+    gap: 8px;
+    margin: 6px 0 0;
     break-inside: avoid;
     page-break-inside: avoid;
   }
   .agro-summary-card {
-    padding: 8px 9px;
+    padding: 11px 12px;
+    min-height: 64px;
     break-inside: avoid;
   }
-  .agro-summary-card small { font-size: 9px; }
-  .agro-summary-card strong { font-size: 14px; }
-  .agro-summary-card span { font-size: 10px; }
+  .agro-summary-card small { font-size: 10px; }
+  .agro-summary-card strong { font-size: 16px; line-height: 1.2; }
+  .agro-summary-card span { font-size: 10px; line-height: 1.35; }
+  .agro-print-page1-fill {
+    display: block !important;
+    margin-top: 12px;
+    padding: 11px 12px;
+    border: 1px solid #bae6fd;
+    border-radius: 10px;
+    background: #f0f9ff;
+    color: #334155;
+    font-size: 11px;
+    line-height: 1.45;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .agro-print-page1-title { margin: 0 0 6px; font-size: 12px; color: #0c4a6e; }
+  .agro-print-page1-fill ul {
+    margin: 0;
+    padding: 0 0 0 1.15em;
+  }
+  .agro-print-page1-fill li { margin: 0 0 5px; }
+  .agro-print-page1-foot {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 10px;
+  }
   .agro-results > .agro-card:first-of-type {
     break-before: page;
     page-break-before: always;

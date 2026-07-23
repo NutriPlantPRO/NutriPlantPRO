@@ -60,10 +60,10 @@ function statsOf(rows, kind) {
 function deltaLine(forecastVal, historyVal, decimals = 1, unit = '') {
   const f = numberOrNull(forecastVal);
   const h = numberOrNull(historyVal);
-  if (f == null || h == null) return 'Sin histórico comparable';
+  if (f == null || h == null) return 'Sin histórico de la semana anterior';
   const diff = f - h;
   const sign = diff > 0 ? '+' : '';
-  return `Histórico ${value(h, decimals)}${unit} · Δ ${sign}${value(diff, decimals)}${unit}`;
+  return `Histórico, semana ant. ${value(h, decimals)}${unit} · Δ ${sign}${value(diff, decimals)}${unit}`;
 }
 
 function forecastCompactTable(rows) {
@@ -131,9 +131,9 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
     `- VPD mín–máx: ${value(vpdMin, 2)}–${value(vpdMax, 2)} kPa\n` +
     `- ETo acumulada: ${value(et0Total)} mm (${deltaLine(et0Total, history.et0Total, 1, ' mm')})\n` +
     `- Lluvia acumulada: ${value(rainTotal)} mm (${deltaLine(rainTotal, history.rainTotal, 1, ' mm')})\n\n` +
-    `Comparación vs histórico reciente (${history.days || 0} d):\n` +
-    `- Histórico T: ${value(history.tempMin)}–${value(history.tempMax)} °C\n` +
-    `- Histórico lluvia acum.: ${value(history.rainTotal)} mm | ETo acum.: ${value(history.et0Total)} mm\n\n` +
+    `Comparación vs histórico, semana anterior (${history.days || 0} d):\n` +
+    `- Histórico, semana ant. T: ${value(history.tempMin)}–${value(history.tempMax)} °C\n` +
+    `- Histórico, semana ant. lluvia acum.: ${value(history.rainTotal)} mm | ETo acum.: ${value(history.et0Total)} mm\n\n` +
     `${plainDays}\n\n` +
     `Pronóstico estimado para las coordenadas registradas. Valida las condiciones en campo.\n\n` +
     `Editar predio / Kc o dejar de recibir alertas:\n${reportUrl}\n` +
@@ -162,7 +162,7 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
 
         <div style="margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#0c4a6e;text-align:center;">
           <div style="font-size:20px;font-weight:900;color:#ffffff;letter-spacing:.02em;">PRONÓSTICO</div>
-          <div style="font-size:13px;font-weight:700;color:#ffffff;margin-top:4px;">Próximos ${forecast.days || 7} días · comparado vs histórico reciente (${history.days || 0} d)</div>
+          <div style="font-size:13px;font-weight:700;color:#ffffff;margin-top:4px;">Próximos ${forecast.days || 7} días · vs histórico, semana anterior (${history.days || 0} d)</div>
         </div>
 
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 8px;margin:0 0 8px;">
@@ -177,7 +177,7 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
             <td style="padding:12px;border-radius:9px;background:#f5f3ff;border:1px solid #ddd6fe;">
               <div style="color:#6d28d9;font-weight:800;font-size:12px;">VPD · mín–máx</div>
               <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(vpdMin, 2)}–${value(vpdMax, 2)} kPa</div>
-              <div style="font-size:11px;color:#475569;">Histórico ${value(history.vpdMin, 2)}–${value(history.vpdMax, 2)} kPa</div>
+              <div style="font-size:11px;color:#475569;">Histórico, semana ant. ${value(history.vpdMin, 2)}–${value(history.vpdMax, 2)} kPa</div>
             </td>
           </tr>
           <tr>

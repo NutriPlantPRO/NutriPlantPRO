@@ -450,23 +450,50 @@
     }
   }
 
+  function kindBadge(kind) {
+    return kind === 'history' ? 'Histórico, semana ant.' : 'Pronóstico';
+  }
+
+  function historyCmpLine(forecastVal, historyVal, decimals = 1, unit = '') {
+    const f = n(forecastVal);
+    const h = n(historyVal);
+    if (f == null || h == null) return 'Sin histórico, semana ant.';
+    const diff = round(f - h, decimals);
+    const sign = diff > 0 ? '+' : '';
+    return `Histórico, semana ant. ${fmt(h, decimals)}${unit} · Δ ${sign}${fmt(diff, decimals)}${unit}`;
+  }
+
   function summaryHtml(future) {
+    const history = rows.filter((r) => r.kind === 'history');
+    const fTempMax = extreme(future, 'tempMax', 'max');
+    const hTempMax = extreme(history, 'tempMax', 'max');
+    const fVpdMin = extreme(future, 'vpdMin', 'min');
+    const fVpdMax = extreme(future, 'vpdMax', 'max');
+    const hVpdMin = extreme(history, 'vpdMin', 'min');
+    const hVpdMax = extreme(history, 'vpdMax', 'max');
+    const fEt0 = sum(future, 'et0');
+    const hEt0 = sum(history, 'et0');
+    const fRain = sum(future, 'rain');
+    const hRain = sum(history, 'rain');
+    const vpdHist = (hVpdMin != null && hVpdMax != null)
+      ? `Histórico, semana ant. ${fmt(hVpdMin, 2)}–${fmt(hVpdMax, 2)} kPa`
+      : 'Sin histórico, semana ant.';
     const cards = [
-      ['Temperatura', `${fmt(extreme(future, 'tempMin', 'min'), 1)} a ${fmt(extreme(future, 'tempMax', 'max'), 1, ' °C')}`, 'Rango del pronóstico', ''],
-      ['VPD', `${fmt(extreme(future, 'vpdMin', 'min'), 2)} a ${fmt(extreme(future, 'vpdMax', 'max'), 2, ' kPa')}`, 'Mínimo y máximo', 'vpd'],
-      ['ETo acumulada', fmt(sum(future, 'et0'), 1, ' mm'), 'Demanda de referencia', 'et'],
+      ['Temperatura', `${fmt(extreme(future, 'tempMin', 'min'), 1)} a ${fmt(fTempMax, 1, ' °C')}`, historyCmpLine(fTempMax, hTempMax, 1, ' °C máx'), ''],
+      ['VPD', `${fmt(fVpdMin, 2)} a ${fmt(fVpdMax, 2, ' kPa')}`, vpdHist, 'vpd'],
+      ['ETo acumulada', fmt(fEt0, 1, ' mm'), historyCmpLine(fEt0, hEt0, 1, ' mm'), 'et'],
       ['ETc acumulada', fmt(sum(future, 'etc'), 1, ' mm'), activeKc() != null ? `Con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc)` : 'Ingresa Kc para calcular', 'et'],
-      ['Precipitación', fmt(sum(future, 'rain'), 1, ' mm'), 'Acumulada prevista', 'rain'],
+      ['Precipitación', fmt(fRain, 1, ' mm'), historyCmpLine(fRain, hRain, 1, ' mm'), 'rain'],
       ['Humedad', `${fmt(extreme(future, 'humidityMin', 'min'), 0)} a ${fmt(extreme(future, 'humidityMax', 'max'), 0, ' %')}`, 'Rango del pronóstico', ''],
       ['Rad máx', `${fmt(extreme(future, 'radiationMax', 'min'), 0)} a ${fmt(extreme(future, 'radiationMax', 'max'), 0, ' W/m²')}`, 'Rango del pronóstico', ''],
-      ['Periodo', `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, `${future.length} días`, '']
+      ['Periodo', `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, `${future.length} d pronóstico · vs semana ant.`, '']
     ];
     return cards.map((c) => `<article class="agro-summary-card ${c[3]}"><small>${c[0]}</small><strong>${c[1]}</strong><span>${c[2]}</span></article>`).join('');
   }
 
   function dayCardsHtml() {
     return rows.map((r) => `<article class="agro-day-card ${r.kind}">
-      <div class="agro-day-card-head"><strong>${esc(dateLabel(r.date))}</strong><span class="agro-day-badge ${r.kind}">${r.kind === 'history' ? 'Histórico' : 'Pronóstico'}</span></div>
+      <div class="agro-day-card-head"><strong>${esc(dateLabel(r.date))}</strong><span class="agro-day-badge ${r.kind}">${kindBadge(r.kind)}</span></div>
       <div class="agro-day-card-grid">
         <div class="agro-day-metric"><small>Temperatura</small><strong>${fmt(r.tempMin, 1)}–${fmt(r.tempMax, 1, ' °C')}</strong></div>
         <div class="agro-day-metric"><small>Humedad</small><strong>${fmt(r.humidityMin, 0)}–${fmt(r.humidityMax, 0, ' %')}</strong></div>
@@ -483,7 +510,7 @@
       const first = r.kind === 'forecast' && firstForecast;
       if (first) firstForecast = false;
       return `<tr class="${r.kind}${first ? ' first-forecast' : ''}">
-        <td class="agro-date-col">${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${r.kind === 'history' ? 'Histórico' : 'Pronóstico'}</span></td>
+        <td class="agro-date-col">${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${kindBadge(r.kind)}</span></td>
         <td class="col-atm col-temp-min">${fmt(r.tempMin, 1)}</td><td class="col-atm col-temp-max">${fmt(r.tempMax, 1)}</td>
         <td class="col-atm col-rh-min">${fmt(r.humidityMin, 0)}</td><td class="col-atm col-rh-max">${fmt(r.humidityMax, 0)}</td>
         <td class="col-atm col-dew-min">${fmt(r.dewMin, 1)}</td><td class="col-atm col-dew-max col-end-atm">${fmt(r.dewMax, 1)}</td>
@@ -612,7 +639,7 @@
         ctx.font = '700 10px Inter, system-ui, sans-serif';
         ctx.textAlign = 'right';
         ctx.fillStyle = '#475569';
-        ctx.fillText('← Histórico', x - 6, labelY);
+        ctx.fillText('← Histórico, semana ant.', x - 6, labelY);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#0369a1';
         ctx.fillText('Pronóstico →', x + 6, labelY);
@@ -684,7 +711,7 @@
                 const idx = items?.[0]?.dataIndex;
                 const row = chartRows[idx];
                 if (!row) return items?.[0]?.label || '';
-                const tag = row.kind === 'history' ? 'Histórico' : 'Pronóstico';
+                const tag = kindBadge(row.kind);
                 return `${dateLabel(row.date)} · ${tag}`;
               }
             },

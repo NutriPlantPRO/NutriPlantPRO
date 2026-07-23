@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260723j">
+  <link rel="stylesheet" href="./styles.css?v=20260723n">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -92,6 +92,16 @@
 
     <section id="agro-results" class="agro-results" hidden>
       <div class="agro-summary-grid" id="agro-summary-grid"></div>
+      <aside class="agro-print-page1-fill" aria-hidden="true">
+        <p class="agro-print-page1-title"><strong>Lectura rápida del pronóstico</strong> · comparado vs <strong>histórico, semana anterior</strong></p>
+        <ul>
+          <li><strong>VPD 0.5–1.5 kPa</strong>: confort habitual. <strong>&lt;0.5</strong>: baja demanda atmosférica (más humedad / riesgo foliar). <strong>&gt;1.5</strong>: alta demanda (revisar riego).</li>
+          <li><strong>ETo</strong>: demanda hídrica del clima. <strong>ETc = ETo × Kc</strong>: estimación del cultivo.</li>
+          <li><strong>Lluvia vs ETc</strong>: lluvia muy por encima → posible saturación; muy por debajo → déficit y priorizar riego.</li>
+          <li><strong>Rocío ≤ 0 °C</strong> con T mín baja → atención a heladas (revisar tabla).</li>
+        </ul>
+        <p class="agro-print-page1-foot">Orientación por coordenadas. Validar microclima y suelo en campo. Detalle diario → hoja siguiente.</p>
+      </aside>
 
       <section class="agro-card">
         <div class="agro-section-head">
@@ -100,7 +110,7 @@
             <h2>Histórico y pronóstico</h2>
           </div>
           <div class="agro-period-legend">
-            <span><i class="history"></i> Histórico</span>
+            <span><i class="history"></i> Histórico, semana ant.</span>
             <span><i class="forecast"></i> Pronóstico</span>
           </div>
         </div>
@@ -352,7 +362,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260723k"></script>
+  <script src="./app.js?v=20260723m"></script>
 
   <!-- Modal Sobre Nosotros (misma estructura/estilos que login) -->
   <style>
