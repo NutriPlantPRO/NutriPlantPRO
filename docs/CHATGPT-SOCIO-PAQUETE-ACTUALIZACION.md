@@ -20,7 +20,7 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza versiones viejas):
 
-1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
+1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Pronóstico agroclimático / alertas)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
 3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.07.4**: Radar Pilot/Lectura = 1 pasada más clara, sin mediana/relleno entre fechas)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
@@ -63,6 +63,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 2. “Análisis foliar del proyecto [nombre]” → `project_analyses` type foliar
 3. “Último análisis de suelo de [nombre] con kg/ha” → `project_analyses` suelo + `latest_only`
 4. “¿Cómo funciona la calculadora gratis de solución nutritiva?” → Knowledge o `free_tools_catalog` hidro_solucion
+4.1. **“¿Qué es el Pronóstico agroclimático / alertas semanales?”** → Knowledge HERRAMIENTAS § Pronóstico o `free_tools_catalog` tool `pronostico_agroclimatico` (admin: `agroclimate.html`)
 5. “¿Qué pestañas hay en Análisis?” → `lab_analyses_catalog`
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`
 6.1. **“¿Cómo se arma la imagen Radar / Pilot / Lectura?”** → Knowledge MANUAL §4.11 (**v2026.07.4**): **1 pasada** más clara, sin mediana/relleno; ≥~15% útiles

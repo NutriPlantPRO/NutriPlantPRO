@@ -85,6 +85,7 @@ URL: `https://nutriplantpro.com/manual-tecnico/capitulos/<slug>.html`
 - Cadena: **Dato → Interpretación → Ajuste → Programa → Seguimiento**.  
 - Flujo 5 pasos: diagnóstico (Análisis) → Enmiendas → Extracción → Fertirriego/Granular/Hidro → seguimiento (foliar, VPD/NDVI, campo).  
 - Tabla **módulo según objetivo** (Análisis, Enmiendas, Extracción, Fertirriego, Granular, Hidroponía, VPD, herramientas gratis).  
+- **Pronóstico agroclimático** (`/pronosticoclimatico/`, login/dashboard 🌤️): lectura gratis 7+7 d + opcional alerta semanal por correo (admin `agroclimate.html`). Ver Knowledge HERRAMIENTAS / `free_tools_catalog` `pronostico_agroclimatico`. No sustituye Clima PRO del proyecto.
 - **Errores comunes:** suelo ≠ enmiendas; % meq solución ≠ % CIC; CE ≠ composición iónica; gratis ≠ proyecto PRO; kg/ha/DOP/ICC no son receta; no neutralizar 100 % HCO₃; NDVI/VPD no sustituyen campo.
 
 ### 4.0b Autoría

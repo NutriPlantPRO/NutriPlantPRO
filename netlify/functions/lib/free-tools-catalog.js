@@ -4,9 +4,9 @@
  * Mantener alineado con docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-  version: '2026-06-23',
+  version: '2026-07-22',
   scope:
-    'Herramientas HTML en iframe/modal sin cuenta. Persistencia solo localStorage del navegador (no Supabase). Misma lógica en login.html y dashboard (iconos barra).',
+    'Herramientas HTML en iframe/modal sin cuenta (y Pronóstico agroclimático también como servicio de alertas semanales con registro). Persistencia de calculadoras: localStorage del navegador (no Supabase), salvo el flujo de alertas agroclimáticas aprobado. Misma lógica en login.html y dashboard (iconos barra).',
   persistence: {
     storage: 'localStorage',
     keyPrefix: 'nutriplant_free_',
@@ -68,13 +68,46 @@ module.exports = {
       summary:
         'Dureza (ppm CaCO₃, meq/L, °dH/°eH/°fH), Ca/Mg de laboratorio, neutralización con ácidos (HCO₃/CO₃, residual, volumen).'
     },
-    {
+      {
       id: 'vpd',
       title: 'Estimador de déficit de presión de vapor',
       file: 'vpd-free.html',
       lsKey: 'nutriplant_free_vpd_v1',
       summary:
         'Mapa (punto GPS), clima con respaldo satelital, VPD ambiental simple, VPD avanzado (T hoja manual o estimada por radiación). Rangos óptimo ~0.5–1.5 kPa.'
+    },
+    {
+      id: 'pronostico_agroclimatico',
+      title: 'Pronóstico agroclimático',
+      file: 'pronosticoclimatico/',
+      urls: [
+        '/pronosticoclimatico/',
+        '/pronosticoclimatico/?embed=login',
+        '/pronosticoclimatico/?embed=dashboard',
+        '/pronosticoclimatico/?view=registro',
+        '/pronosticoclimatico/?token=...'
+      ],
+      adminPanel: 'admin/agroclimate.html',
+      summary:
+        'Lectura gratuita por punto (mapa/GPS/coords) + Kc: ~7 d histórico + ~7 d pronóstico (T, HR, rocío, Rad máx W/m², VPD, ETo, ETc=ETo×Kc, lluvia; gráfica horas VPD + lluvia/ETo/ETc). Distinto de vpd-free y de Clima PRO. Opcional: solicitar alerta semanal (1 predio); folio WA → aprobación admin → correo domingo 17:00 TZ predio con enlace token + PDF. WA manual; no Meta API. Kc/coords permanentes vía WA/admin.',
+      metrics: [
+        'temp_min_max_C',
+        'humidity_min_max_pct',
+        'dew_min_max_C',
+        'radiation_max_Wm2',
+        'vpd_min_max_kPa',
+        'eto_mm',
+        'etc_mm',
+        'rain_mm',
+        'vpd_hours_bands_<0.5_0.5-1.5_>1.5'
+      ],
+      alertService: {
+        maxPlotsPerPerson: 1,
+        schedule: 'Sunday 17:00 plot timezone',
+        from: 'notifications@nutriplantpro.com',
+        approvalRequired: true,
+        statuses: ['pending_whatsapp', 'pending_review', 'active', 'paused', 'rejected', 'unsubscribed']
+      }
     },
     {
       id: 'enmienda',
@@ -218,8 +251,9 @@ module.exports = {
   gptRules: [
     'No inventar números que el usuario ve en pantalla: si no tienes su captura, explica fórmulas y criterios de la herramienta.',
     'Distinguir herramienta gratuita (local) vs módulo de proyecto suscriptor (guardado en Supabase).',
+    'Pronóstico agroclimático ≠ VPD gratis ≠ pestaña Clima PRO. Alertas semanales requieren aprobación en admin/agroclimate.html; no inventar folios/estados.',
     'Para datos de un cliente suscriptor usar Actions: project_detail, project_analyses, etc.',
     'Para “¿cómo funciona la calculadora de X?” usar este catálogo o action free_tools_catalog.',
-    'Persistencia gratuita: solo este navegador; no sustituye backup ni proyecto en nube.'
+    'Persistencia gratuita: solo este navegador; no sustituye backup ni proyecto en nube (excepto alertas agroclimáticas aprobadas en nube).'
   ]
 };

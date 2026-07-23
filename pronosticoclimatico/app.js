@@ -837,9 +837,25 @@
     }));
   }
 
+  function bindAboutModal() {
+    const modal = $('agro-about-modal');
+    const openBtn = $('agro-about-btn');
+    const closeBtn = $('agro-about-close');
+    if (!modal || !openBtn) return;
+    const open = () => { modal.hidden = false; };
+    const close = () => { modal.hidden = true; };
+    openBtn.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.hidden) close();
+    });
+  }
+
   function init() {
     setMode();
     bind();
+    bindAboutModal();
     if (personal) loadReport(); else initMap();
     sendResize();
   }

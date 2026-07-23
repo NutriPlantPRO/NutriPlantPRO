@@ -202,6 +202,7 @@
           <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" aria-label="Agua en suelo y textura">🪨</button>
           <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" aria-label="Lámina de riego y balance hídrico">🌧️</button>
           <button type="button" id="btn-vpd-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showVPDCalculator()" data-np-tooltip="Estimador de déficit de presión de vapor" aria-label="Estimador de déficit de presión de vapor">🌡️</button>
+          <button type="button" id="btn-agroclimate-forecast" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showAgroclimateForecast()" data-np-tooltip="Pronóstico agroclimático" aria-label="Pronóstico agroclimático">🌤️</button>
           <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" aria-label="Solubilidad e índice salino">🧂</button>
           <button type="button" id="btn-fertilizer-carbon-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCarbonCalculator()" data-np-tooltip="Huella de carbono de fertilizantes" aria-label="Huella de carbono de fertilizantes">🌍</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
@@ -411,7 +412,7 @@
   <script src="dashboard.js?v=202606243600"></script>
   <script src="fertirriego-program-functions.js?v=1760007400"></script>
   <script src="ai-knowledge-expansion.js"></script>
-  <script src="chat-simple.js?v=202606242300"></script>
+  <script src="chat-simple.js?v=202607221900"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
   <script src="map.js?v=202606231625"></script>
   <script src="assets/np-lectura-satelital.js?v=202607171330"></script>
@@ -5176,6 +5177,21 @@ CONTRATO:
     }
     window.closeVPDCalculator = closeVPDCalculator;
 
+    function showAgroclimateForecast() {
+      var modal = document.getElementById('agroclimateForecastModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showAgroclimateForecast = showAgroclimateForecast;
+
+    function closeAgroclimateForecast() {
+      var modal = document.getElementById('agroclimateForecastModal');
+      var frame = document.getElementById('agroclimateForecastFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeAgroclimateForecast = closeAgroclimateForecast;
+
     function showFertilizerSolubilitySaltTool() {
       var modal = document.getElementById('fertilizerSolubilitySaltModal');
       if (!modal) return;
@@ -7151,6 +7167,22 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=202606201700" title="Estimador de déficit de presión de vapor" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pronóstico agroclimático (herramienta gratuita + alertas) -->
+  <div id="agroclimateForecastModal" class="modal-overlay" onclick="if(event.target===this) closeAgroclimateForecast();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🌤️ Pronóstico agroclimático</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeAgroclimateForecast()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=dashboard&v=20260722q" title="Pronóstico agroclimático" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>

@@ -94,6 +94,34 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 - Mapa + Open-Meteo (lat/lng), VPD ambiental (T aire + HR), VPD avanzado (T hoja o estimada por radiación).
 - Rango orientativo óptimo **0,5–1,5 kPa** (misma lógica que dashboard VPD del proyecto).
 
+### 🌤️ Pronóstico agroclimático (`/pronosticoclimatico/`)
+
+**Qué es:** herramienta gratuita de lectura agroclimática por punto + (opcional) servicio de **alertas agroclimáticas semanales** por correo. **No** es el estimador VPD 🌡️ ni la pestaña **Clima** del proyecto PRO.
+
+**Dónde:**
+| Entrada | URL / UI |
+|---------|----------|
+| Página pública | `https://nutriplantpro.com/pronosticoclimatico/` |
+| Login (modal) | botón **Pronóstico agroclimático** → `?embed=login` |
+| Dashboard PRO (barra) | icono 🌤️ → `?embed=dashboard` |
+| Registro alerta | `?view=registro` |
+| Reporte personal (correo) | `?token=...` (enlace seguro; no lleva PII en el token) |
+| Admin | `admin/agroclimate.html` — solicitudes, mapa, aprobar/pausar, WA, envío manual |
+
+**Herramienta gratis (sin cuenta):** mapa Leaflet (GPS / clic / lat-lng), Kc manual o referencia FAO, generar lectura bajo demanda. Tabla ~**7 d histórico + 7 d pronóstico**: T mín/máx, HR mín/máx, rocío, **Rad máx W/m²**, VPD mín/máx, **ETo**, **ETc = ETo × Kc**, lluvia. Gráfica: barras de **horas VPD** por bandas (&lt;0,5 / 0,5–1,5 / &gt;1,5 kPa) + líneas lluvia/ETo/ETc. PDF en vista personal. Explorar el mapa **no** guarda predio en nube.
+
+**Alertas semanales (servicio aparte de la suscripción PRO):**
+1. Usuario solicita desde la herramienta (1 predio por persona).
+2. Folio alfanumérico 4 caracteres por WhatsApp → estados `pending_whatsapp` → `pending_review`.
+3. Admin aprueba en `agroclimate.html` → `active`.
+4. Domingo **17:00** (zona horaria del predio, Open-Meteo `timezone=auto`): correo desde `notifications@nutriplantpro.com` con resumen + link del reporte.
+5. WhatsApp = **manual** (botón admin: *«Hola {nombre}. Soy de NutriPlant PRO y te escribo sobre tu solicitud… folio {código}»*). Sin Meta Cloud API.
+6. Pausar / baja: admin o solicitud del usuario (enlace de baja abre WA). Cambios permanentes de **Kc o coordenadas**: WhatsApp o edición admin.
+
+**API Socio:** `free_tools_catalog` con `tool_id: "pronostico_agroclimatico"`.
+
+**Errores a evitar:** confundir con VPD gratis; asumir que generar lectura = ya hay alerta activa; inventar folio/estado de un solicitante sin panel admin; decir que es parte del plan $49/5 meses de NutriPlant PRO.
+
 ### 🚜 Enmiendas por CIC (`enmienda-free.html`)
 
 - Cationes iniciales y objetivo (%), CIC, densidad aparente, profundidad, pH, % de suelo a tratar.

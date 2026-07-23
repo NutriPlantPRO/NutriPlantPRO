@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260722p">
+  <link rel="stylesheet" href="./styles.css?v=20260722r">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -23,6 +23,9 @@
         </a>
       </nav>
       <div class="agro-social-links" aria-label="Redes sociales">
+        <button type="button" class="social-btn agro-about-btn" id="agro-about-btn" title="Sobre Nosotros" aria-label="Sobre Nosotros">
+          <span class="agro-about-icon" aria-hidden="true">👥</span>
+        </button>
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
           <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
         </a>
@@ -344,6 +347,55 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260722q"></script>
+  <script src="./app.js?v=20260722r"></script>
+
+  <!-- Modal Sobre Nosotros (mismo contenido que login) -->
+  <div id="agro-about-modal" class="agro-about-modal" hidden>
+    <div class="agro-about-dialog" role="dialog" aria-modal="true" aria-labelledby="agro-about-title">
+      <div class="agro-about-header">
+        <div class="agro-about-brand">
+          <img src="../assets/N_Hoja_Azul.png" alt="" width="32" height="32" decoding="async">
+          <div>
+            <h2 id="agro-about-title">Nosotros</h2>
+            <div class="agro-about-sub">NutriPlant PRO</div>
+          </div>
+        </div>
+        <button type="button" class="agro-about-close" id="agro-about-close" aria-label="Cerrar">×</button>
+      </div>
+      <div class="agro-about-body">
+        <div class="agro-about-intro">
+          <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
+        </div>
+        <div class="agro-about-grid">
+          <div class="agro-about-card">
+            <h3>🎯 Visión</h3>
+            <p>Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.</p>
+          </div>
+          <div class="agro-about-card">
+            <h3>🧩 Misión</h3>
+            <p>Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.</p>
+          </div>
+          <div class="agro-about-card">
+            <h3>✅ Valores</h3>
+            <ul>
+              <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
+              <li><strong>Respeto:</strong> Al cultivo, a las personas y al conocimiento en construcción.</li>
+              <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
+              <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="agro-about-links">
+          <a href="../manual-tecnico/index.html" target="_blank" rel="noopener noreferrer">Manual técnico</a>
+          <span>·</span>
+          <a href="../manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer">Autoría de NutriPlant PRO</a>
+          <span>·</span>
+          <a href="../politicas-privacidad.html" target="_blank" rel="noopener">Políticas de privacidad</a>
+          <span>·</span>
+          <a href="../terminos-condiciones.html" target="_blank" rel="noopener">Términos y Condiciones</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

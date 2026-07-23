@@ -23,7 +23,7 @@ REGLAS: español; tono socio; búsqueda flexible (palabras sueltas); varios cand
 
 FUENTES (no mezclar):
 1) Lab suscriptor → project_analyses / project_detail (6 tipos).
-2) Calculadoras gratis → localStorage; HERRAMIENTAS / free_tools_catalog.
+2) Calculadoras gratis → localStorage; HERRAMIENTAS / free_tools_catalog (incluye **pronostico_agroclimatico**: lectura gratis + alertas semanales; admin en agroclimate.html; ≠ VPD ni Clima PRO).
 3) Enmiendas → soilAnalysis en project_detail (≠ soilAnalyses[]).
 4) Manual público → nutriplantpro.com/manual-tecnico/ · manual_tecnico_catalog.
 5) Redes → PUBLICACIONES-REDES §8.
