@@ -560,37 +560,19 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 }
 .agro-kc-bar-grid {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 16px;
   align-items: end;
-}
-.agro-kc-saved-box {
-  display: grid;
-  gap: 1px;
-}
-.agro-kc-saved-box small {
-  color: #166534;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.agro-kc-saved-box strong {
-  font-size: 20px;
-  line-height: 1;
-  color: #14532d;
-  letter-spacing: -.03em;
-}
-.agro-kc-ref-label {
-  color: var(--slate-600);
-  font-size: 11px;
-  line-height: 1.25;
 }
 .agro-kc-view-box label {
   margin-bottom: 4px;
   color: var(--slate-700);
   font-size: 11px;
   font-weight: 750;
+}
+.agro-kc-view-hint {
+  font-weight: 600;
+  color: var(--slate-500);
 }
 .agro-kc-view-box { min-width: 0; }
 .agro-kc-view-actions {

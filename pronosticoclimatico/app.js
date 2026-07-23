@@ -98,13 +98,6 @@
       unsub.hidden = !fromEmailLink;
       unsub.style.display = fromEmailLink ? '' : 'none';
     }
-    const lock = $('agro-kc-personal-lock');
-    if (lock) lock.hidden = !personal;
-    if (personal) {
-      $('agro-kc').readOnly = true;
-      $('agro-kc').title = 'El Kc permanente se cambia por WhatsApp / administración';
-      $('agro-kc-reference-btn').hidden = true;
-    }
   }
 
   function activeKc() {
@@ -122,26 +115,33 @@
   function syncKcBar() {
     const bar = $('agro-kc-bar');
     if (!bar) return;
+    // Un solo Kc: junto al WhatsApp, arriba de la tabla (gratis y personal).
     bar.hidden = !rows.length;
+    if (bar.hidden) return;
     const kc = activeKc();
-    const usingViewOnly = viewKc != null && savedKc != null && Number(viewKc) !== Number(savedKc);
-    $('agro-kc-saved-value').textContent = savedKc == null ? '—' : Number(savedKc).toFixed(2);
-    $('agro-kc-ref-label').textContent = referenceKcLabel || (savedKc == null ? 'Sin Kc registrado' : 'Kc permanente de tu predio');
+    const usingViewOnly = personal && viewKc != null && savedKc != null && Number(viewKc) !== Number(savedKc);
+    const hint = $('agro-kc-view-hint');
+    if (hint) hint.textContent = personal ? '(solo esta vista)' : '';
     const viewInput = $('agro-kc-view');
-    if (document.activeElement !== viewInput) {
+    if (viewInput && document.activeElement !== viewInput) {
       viewInput.value = kc == null ? '' : Number(kc).toFixed(2);
     }
     const note = $('agro-kc-bar-note');
     if (note) {
       if (kc == null) {
-        note.textContent = 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc solo para esta vista.';
+        note.textContent = personal
+          ? 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc. Cambio permanente: WhatsApp.'
+          : 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc y pulsa Aplicar.';
       } else if (usingViewOnly) {
-        note.innerHTML = `ETc vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Kc guardado: <strong>${Number(savedKc).toFixed(2)}</strong> (alertas).`;
+        note.innerHTML = `ETc vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Kc permanente guardado: <strong>${Number(savedKc).toFixed(2)}</strong>.`;
       } else {
-        note.innerHTML = `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Cambio aquí = solo esta vista.`;
+        note.innerHTML = personal
+          ? `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Cambio aquí = solo esta vista; permanente por WhatsApp.`
+          : `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>.`;
       }
     }
     const wa = $('agro-kc-whatsapp');
+    if (!wa) return;
     const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
     const name = report?.full_name || report?.plot_name || '';
     const lat = report?.latitude ?? $('agro-lat')?.value;
@@ -149,12 +149,15 @@
     const coords = (lat != null && lat !== '' && lng != null && lng !== '')
       ? ` Coordenadas actuales: ${lat}, ${lng}.`
       : '';
-    const message =
-      `Hola NutriPlant. Quiero cambiar el Kc y/o las coordenadas de mi predio en alertas agroclimáticas.` +
-      `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
-      ` Kc actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
-      `${coords}` +
-      ` Cambio solicitado (Kc y/o nuevas coordenadas): `;
+    const message = personal
+      ? (`Hola NutriPlant. Quiero cambiar el Kc y/o las coordenadas de mi predio en alertas agroclimáticas.` +
+        `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
+        ` Kc actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
+        `${coords}` +
+        ` Cambio solicitado (Kc y/o nuevas coordenadas): `)
+      : (`Hola NutriPlant. Quiero ayuda con el Kc o las coordenadas de Pronóstico agroclimático.` +
+        `${coords}` +
+        ` Kc que estoy usando: ${kc == null ? 'sin definir' : kc}.`);
     wa.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
     wa.hidden = false;
   }
@@ -162,12 +165,14 @@
   function applyViewKc() {
     const next = n($('agro-kc-view').value);
     if (next != null && (next < 0 || next > 2.5)) {
-      setStatus('El Kc de vista debe estar entre 0 y 2.5.', 'error');
+      setStatus('El Kc debe estar entre 0 y 2.5.', 'error');
       return;
     }
     viewKc = next;
+    if (!personal) savedKc = next;
     applyEtcWithKc(activeKc());
     render();
+    if (!personal) saveInputs();
   }
 
   function saved() {
@@ -188,7 +193,7 @@
       localStorage.setItem(STORE, JSON.stringify({
         ...c,
         plotName: $('agro-plot-name').value,
-        kc: n($('agro-kc').value),
+        kc: savedKc != null ? savedKc : n($('agro-kc-view')?.value),
         timezone: timezone || prev.timezone || undefined,
         lastReadingAt: lastReadingAt || prev.lastReadingAt || undefined,
         rows: (Array.isArray(rows) && rows.length ? rows : prev.rows) || undefined,
@@ -203,7 +208,6 @@
     if (!prior) return;
     if (prior.plotName) $('agro-plot-name').value = prior.plotName;
     if (prior.kc != null) {
-      $('agro-kc').value = prior.kc;
       savedKc = n(prior.kc);
       viewKc = savedKc;
     }
@@ -248,7 +252,10 @@
     const initialLat = n(prior.latitude) ?? lat;
     const initialLng = n(prior.longitude) ?? lng;
     if (prior.plotName || prior.plot_name) $('agro-plot-name').value = prior.plotName || prior.plot_name || '';
-    if (prior.kc != null) $('agro-kc').value = prior.kc;
+    if (prior.kc != null) {
+      savedKc = n(prior.kc);
+      viewKc = savedKc;
+    }
     const mapEl = $('agro-map');
     if (!mapEl) return;
     map = L.map(mapEl, { scrollWheelZoom: true }).setView([initialLat, initialLng], personal ? 12 : 5);
@@ -365,7 +372,13 @@
       if (!response.ok) throw new Error(`Open-Meteo respondió ${response.status}`);
       const data = await response.json();
       timezone = data.timezone || '';
-      savedKc = personal ? (savedKc != null ? savedKc : n(report?.kc)) : n($('agro-kc').value);
+      if (personal) {
+        savedKc = savedKc != null ? savedKc : n(report?.kc);
+      } else {
+        const fromBar = n($('agro-kc-view')?.value);
+        if (fromBar != null) savedKc = fromBar;
+        else if (savedKc == null) savedKc = n(saved()?.kc);
+      }
       viewKc = savedKc;
       rows = weatherRows(data, activeKc());
       markReadingNow();
@@ -390,7 +403,6 @@
           longitude: c.lng,
           kc: savedKc
         };
-        $('agro-kc').value = savedKc ?? '';
         render();
         saveInputs();
         setStatus(readingStatusText(), 'success');
@@ -680,7 +692,7 @@
     form.elements.plot_name.value = $('agro-plot-name').value || report?.plot_name || '';
     form.elements.latitude.value = c?.lat ?? '';
     form.elements.longitude.value = c?.lng ?? '';
-    form.elements.kc.value = $('agro-kc').value || report?.kc || '';
+    form.elements.kc.value = activeKc() ?? report?.kc ?? '';
     $('agro-register-success').hidden = true;
     form.hidden = false;
     $('agro-register-modal').hidden = false;
@@ -745,7 +757,6 @@
       $('agro-plot-name').value = report.plot_name || '';
       $('agro-lat').value = report.latitude ?? '';
       $('agro-lng').value = report.longitude ?? '';
-      $('agro-kc').value = savedKc ?? '';
       if ((!rows.length || rows.some((r) => r.vpdHoursLow == null)) && report.latitude != null) {
         const weather = await fetch(weatherUrl(report.latitude, report.longitude)).then((r) => r.json());
         rows = weatherRows(weather, activeKc());
@@ -786,7 +797,6 @@
   function bind() {
     $('agro-geolocate-btn').addEventListener('click', geolocate);
     $('agro-generate-btn').addEventListener('click', generate);
-    $('agro-kc-reference-btn').addEventListener('click', () => kcModal('location'));
     $('agro-kc-view-ref-btn').addEventListener('click', () => kcModal('view'));
     $('agro-kc-view-apply-btn').addEventListener('click', applyViewKc);
     $('agro-kc-view').addEventListener('change', applyViewKc);
@@ -806,20 +816,10 @@
         viewKc = picked;
         referenceKcLabel = label;
         $('agro-kc-view').value = picked == null ? '' : picked;
+        if (!personal) savedKc = picked;
         applyEtcWithKc(activeKc());
         render();
-      } else if (!personal) {
-        savedKc = picked;
-        viewKc = picked;
-        referenceKcLabel = label;
-        $('agro-kc').value = picked ?? '';
-        const crop = $('agro-register-form').elements.crop;
-        if (crop && !crop.value) crop.value = btn.dataset.crop || '';
-        saveInputs();
-        if (rows.length) {
-          applyEtcWithKc(activeKc());
-          render();
-        }
+        if (!personal) saveInputs();
       }
       $('agro-kc-modal').hidden = true;
     });
@@ -882,7 +882,6 @@
       $('agro-generate-btn').textContent = personal
         ? '🌤️ Ver pronóstico en este punto (no guarda)'
         : '💾 Guardar ubicación y actualizar';
-      $('agro-kc').value = savedKc ?? '';
       if (personal) {
         setStatus('Puedes mover el marcador para explorar. Kc y coordenadas guardadas se cambian por WhatsApp.', '');
       }
@@ -890,11 +889,7 @@
       [80, 250, 600].forEach((ms) => setTimeout(() => map?.invalidateSize(), ms));
       $('agro-location-card').scrollIntoView({ behavior: 'smooth' });
     });
-    ['agro-lat', 'agro-lng', 'agro-kc', 'agro-plot-name'].forEach((id) => $(id).addEventListener('change', () => {
-      if (id === 'agro-kc' && !personal) {
-        savedKc = n($('agro-kc').value);
-        viewKc = savedKc;
-      }
+    ['agro-lat', 'agro-lng', 'agro-plot-name'].forEach((id) => $(id).addEventListener('change', () => {
       saveInputs();
     }));
   }
