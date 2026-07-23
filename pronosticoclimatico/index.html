@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260723g">
+  <link rel="stylesheet" href="./styles.css?v=20260723i">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -170,6 +170,10 @@
           </ul>
           <p class="agro-chart-tips-foot">Orientación meteorológica por coordenadas. La decisión final debe validarse con el microclima del dosel y las condiciones del suelo en campo.</p>
         </div>
+        <div id="agro-pdf-bar" class="agro-pdf-bar">
+          <button type="button" class="agro-btn primary agro-pdf-trigger">📥 Descargar reporte en PDF</button>
+          <p class="agro-pdf-bar-hint">En iPhone: Imprimir → <strong>Guardar en PDF</strong>. Si aparece la opción, usa documento/página completa (no solo la captura de pantalla).</p>
+        </div>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
@@ -178,7 +182,7 @@
           <h2>Guarda o administra tu pronóstico</h2>
         </div>
         <div class="agro-action-row">
-          <button id="agro-pdf-btn" type="button" class="agro-btn primary">📥 Descargar reporte en PDF</button>
+          <button id="agro-pdf-btn" type="button" class="agro-btn primary agro-pdf-trigger">📥 Descargar reporte en PDF</button>
           <button id="agro-edit-btn" type="button" class="agro-btn secondary">✏️ Editar predio</button>
           <a id="agro-unsubscribe-btn" class="agro-btn danger" href="#" target="_blank" rel="noopener noreferrer" hidden>🟢 Dejar de recibir alertas</a>
         </div>
@@ -348,7 +352,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260723e"></script>
+  <script src="./app.js?v=20260723i"></script>
 
   <!-- Modal Sobre Nosotros (misma estructura/estilos que login) -->
   <style>

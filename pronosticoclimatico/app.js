@@ -137,7 +137,7 @@
       } else {
         note.innerHTML = personal
           ? `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Aquí solo pruebas; el Kc/coordenadas <strong>guardados</strong> de tu alerta se piden por WhatsApp.`
-          : `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Puedes editar Kc aquí libremente.`;
+          : `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Puedes editar Kc aquí libremente (herramienta gratis; no hay alerta guardada).`;
       }
     }
     const wa = $('agro-kc-whatsapp');
@@ -182,6 +182,28 @@
     applyEtcWithKc(activeKc());
     render();
     if (!personal) saveInputs();
+  }
+
+  function downloadPdfReport() {
+    if (!rows.length) {
+      setStatus('Genera el pronóstico antes de descargar el PDF.', 'error');
+      return;
+    }
+    const root = document.documentElement;
+    root.classList.add('agro-printing');
+    window.scrollTo(0, 0);
+    const wrap = $('agro-table-wrap');
+    if (wrap) wrap.classList.add('open');
+    try { chart?.resize(); } catch (_) {}
+    const cleanup = () => root.classList.remove('agro-printing');
+    window.addEventListener('afterprint', cleanup, { once: true });
+    // iOS a veces no dispara afterprint.
+    setTimeout(cleanup, 3000);
+    // Dar tiempo a layout/scroll antes de abrir el diálogo (crítico en iPhone).
+    setTimeout(() => {
+      try { chart?.resize(); } catch (_) {}
+      window.print();
+    }, 400);
   }
 
   function saved() {
@@ -941,7 +963,9 @@
       renderToggles();
       drawChart();
     });
-    $('agro-pdf-btn').addEventListener('click', () => window.print());
+    document.querySelectorAll('.agro-pdf-trigger').forEach((btn) => {
+      btn.addEventListener('click', downloadPdfReport);
+    });
     $('agro-unsubscribe-btn')?.addEventListener('click', (e) => {
       if (!token) {
         e.preventDefault();

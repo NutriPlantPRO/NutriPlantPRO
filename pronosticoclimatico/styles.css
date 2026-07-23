@@ -580,6 +580,20 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
   color: #64748b;
   font-size: 11px;
 }
+.agro-pdf-bar {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+.agro-pdf-bar .agro-btn { width: 100%; max-width: 360px; }
+.agro-pdf-bar-hint {
+  margin: 0;
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.4;
+}
 
 .agro-register-cta, .agro-promo {
   display: flex;
@@ -695,6 +709,7 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 .agro-kc-wa span { display: block; }
 .agro-kc-wa span strong { color: #fff; font-weight: 900; }
 .agro-kc-wa:hover { background: #15803d; transform: translateY(-1px); }
+.agro-kc-wa[hidden] { display: none !important; }
 .agro-kc-bar-note {
   margin: 6px 0 0;
   color: var(--slate-600);
@@ -785,7 +800,17 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
 }
 
 @media print {
-  body { background: #fff; }
+  html, body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .agro-public-header {
+    position: static !important;
+  }
   .agro-public-header,
   #agro-about-modal,
   .agro-location-card,
@@ -799,10 +824,12 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   .agro-kc-wa,
   .agro-kc-bar-note,
   .agro-kc-view-box,
-  .agro-input-action .agro-btn { display: none !important; }
+  .agro-pdf-bar,
+  .agro-input-action .agro-btn,
+  #agro-map { display: none !important; }
   .agro-print-mark {
     display: block !important;
-    position: fixed;
+    position: absolute;
     top: 2mm;
     right: 3mm;
     width: 118px;
@@ -858,13 +885,28 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
     font-weight: 700;
     font-size: 11px;
   }
-  .agro-shell { width: 100%; padding: 8px 0 0; }
+  .agro-shell { width: 100%; padding: 8px 0 0; overflow: visible !important; }
   .agro-title-block { margin-bottom: 12px; padding-right: 120px; }
-  .agro-card { break-inside: avoid; box-shadow: none; }
+  .agro-card,
+  .agro-results,
+  .agro-table-shell,
+  .agro-table-wrap {
+    break-inside: avoid;
+    box-shadow: none;
+    overflow: visible !important;
+    max-height: none !important;
+  }
   .agro-kc-bar { border-color: #bbf7d0; }
-  .agro-table-wrap { display: block !important; overflow: visible; }
+  .agro-table-wrap { display: block !important; }
   .agro-table { min-width: 0; font-size: 8px; }
   .agro-table th, .agro-table td { position: static !important; padding: 4px; white-space: normal; box-shadow: none !important; }
+  .agro-date-col { position: static !important; left: auto !important; }
   .agro-mobile-days { display: none !important; }
-  .agro-chart-box { break-inside: avoid; }
+  .agro-chart-box {
+    break-inside: avoid;
+    height: 280px !important;
+    min-height: 260px !important;
+    overflow: visible !important;
+  }
+  .agro-chart-tips { break-inside: avoid; }
 }
