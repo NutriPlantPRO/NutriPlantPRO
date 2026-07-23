@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260723d">
+  <link rel="stylesheet" href="./styles.css?v=20260723g">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -158,6 +158,18 @@
           <span><i class="swatch line-etc"></i> ETc</span>
         </div>
         <p id="agro-chart-note" class="agro-chart-note"><strong>Periodo:</strong> 7 días de histórico + 7 de pronóstico (línea punteada los separa). <strong>Eje izquierdo (azul):</strong> horas VPD de las barras (24 h/día). <strong>Eje derecho (verde):</strong> mm diarios de las líneas (lluvia, ETo y ETc).</p>
+        <div class="agro-chart-tips" role="note">
+          <p><strong>Cómo interpretar (guía corta):</strong></p>
+          <ul>
+            <li><strong>VPD 0.5–1.5 kPa</strong> → rango habitual de confort. La planta suele mantener estomas abiertos y una transpiración equilibrada.</li>
+            <li><strong>VPD &lt; 0.5</strong> → baja demanda atmosférica de vapor: el aire está muy húmedo y el gradiente hoja–aire es pequeño. Baja la transpiración y el follaje tarda más en secarse → mayor atención a enfermedades foliares.</li>
+            <li><strong>VPD &gt; 1.5</strong> → alta demanda atmosférica: el aire seco aumenta la extracción de agua desde la hoja. Crece el riesgo de estrés hídrico y cierre estomático → revisa riego y evita aplicaciones foliares en las horas más críticas.</li>
+            <li><strong>ETo</strong> = evapotranspiración de referencia (demanda hídrica del clima). <strong>ETc</strong> = ETo × Kc: estimación de la demanda del cultivo según su coeficiente Kc.</li>
+            <li><strong>Lluvia frente a ETc</strong>: si la precipitación supera claramente a ETc, puede haber saturación o encharcamiento en suelos de drenaje lento. Si queda muy por debajo, hay déficit hídrico y conviene priorizar riego.</li>
+            <li><strong>Punto de rocío ≤ 0 °C</strong> (o muy cercano) con temperatura mínima baja → atención a <strong>heladas</strong>; revise esos días en la tabla.</li>
+          </ul>
+          <p class="agro-chart-tips-foot">Orientación meteorológica por coordenadas. La decisión final debe validarse con el microclima del dosel y las condiciones del suelo en campo.</p>
+        </div>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
@@ -336,7 +348,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260723d"></script>
+  <script src="./app.js?v=20260723e"></script>
 
   <!-- Modal Sobre Nosotros (misma estructura/estilos que login) -->
   <style>

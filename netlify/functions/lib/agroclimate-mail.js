@@ -88,7 +88,7 @@ function forecastCompactTable(rows) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed;">
       <thead>
         <tr>
-          <th style="${th}width:22%;">Día · Pronóst.</th>
+          <th style="${th}width:22%;">Día</th>
           <th style="${th}width:18%;">T °C<br>mín–máx</th>
           <th style="${th}width:16%;">HR %<br>mín–máx</th>
           <th style="${th}width:18%;">VPD<br>mín–máx</th>
@@ -168,35 +168,35 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 8px;margin:0 0 8px;">
           <tr>
             <td style="padding:12px;border-radius:9px;background:#f0f9ff;border:1px solid #bfdbfe;">
-              <div style="color:#0369a1;font-weight:800;font-size:12px;">Temperatura · mín–máx (PRONÓSTICO)</div>
+              <div style="color:#0369a1;font-weight:800;font-size:12px;">Temperatura · mín–máx</div>
               <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(tempMin)}–${value(tempMax)} °C</div>
               <div style="font-size:11px;color:#475569;">${escapeHtml(deltaLine(tempMax, history.tempMax, 1, ' °C máx'))}</div>
             </td>
           </tr>
           <tr>
             <td style="padding:12px;border-radius:9px;background:#f5f3ff;border:1px solid #ddd6fe;">
-              <div style="color:#6d28d9;font-weight:800;font-size:12px;">VPD · mín–máx (PRONÓSTICO)</div>
+              <div style="color:#6d28d9;font-weight:800;font-size:12px;">VPD · mín–máx</div>
               <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(vpdMin, 2)}–${value(vpdMax, 2)} kPa</div>
               <div style="font-size:11px;color:#475569;">Histórico ${value(history.vpdMin, 2)}–${value(history.vpdMax, 2)} kPa</div>
             </td>
           </tr>
           <tr>
             <td style="padding:12px;border-radius:9px;background:#ecfdf5;border:1px solid #a7f3d0;">
-              <div style="color:#0f766e;font-weight:800;font-size:12px;">ETo · acumulada (PRONÓSTICO)</div>
+              <div style="color:#0f766e;font-weight:800;font-size:12px;">ETo · acumulada</div>
               <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(et0Total)} mm</div>
               <div style="font-size:11px;color:#475569;">${escapeHtml(deltaLine(et0Total, history.et0Total, 1, ' mm'))}</div>
             </td>
           </tr>
           <tr>
             <td style="padding:12px;border-radius:9px;background:#f0fdf4;border:1px solid #bbf7d0;">
-              <div style="color:#166534;font-weight:800;font-size:12px;">Lluvia · acumulada (PRONÓSTICO)</div>
+              <div style="color:#166534;font-weight:800;font-size:12px;">Lluvia · acumulada</div>
               <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(rainTotal)} mm</div>
               <div style="font-size:11px;color:#475569;">${escapeHtml(deltaLine(rainTotal, history.rainTotal, 1, ' mm'))}</div>
             </td>
           </tr>
         </table>
 
-        <p style="margin:14px 0 8px;font-size:15px;font-weight:800;color:#0c4a6e;">Tabla del PRONÓSTICO (ajustada para celular)</p>
+        <p style="margin:14px 0 8px;font-size:15px;font-weight:800;color:#0c4a6e;">Tabla del PRONÓSTICO</p>
         <p style="margin:0 0 10px;font-size:12px;color:#64748b;">Tabla compacta en el correo. Gráfica, histórico completo y PDF → «Ver reporte completo».</p>
         ${forecastCompactTable(rows)}
 

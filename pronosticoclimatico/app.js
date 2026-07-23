@@ -580,13 +580,15 @@
         ctx.lineTo(x, chartArea.bottom);
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = '#475569';
+        // Etiquetas arriba de la gráfica (fuera del área de líneas/barras).
+        const labelY = Math.max(10, chartArea.top - 8);
         ctx.font = '700 10px Inter, system-ui, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText('← Histórico', x - 6, chartArea.top + 12);
+        ctx.fillStyle = '#475569';
+        ctx.fillText('← Histórico', x - 6, labelY);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#0369a1';
-        ctx.fillText('Pronóstico →', x + 6, chartArea.top + 12);
+        ctx.fillText('Pronóstico →', x + 6, labelY);
         ctx.restore();
       }
     };
@@ -600,6 +602,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { top: 22 } },
         interaction: { mode: 'index', intersect: false },
         scales: {
           x: {
@@ -633,6 +636,8 @@
           yMm: {
             position: 'right',
             beginAtZero: true,
+            grace: '12%',
+            suggestedMax: 1,
             grid: { drawOnChartArea: false },
             title: {
               display: true,

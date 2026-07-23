@@ -559,6 +559,27 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 .agro-chart-legend .swatch.line-etc { background: #64748b; }
 .agro-chart-note { margin: 8px 0 0; color: var(--slate-600); font-size: 12px; line-height: 1.45; }
 .agro-chart-note strong { color: var(--slate-800); }
+.agro-chart-tips {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f0f9ff 0%, #f8fafc 100%);
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.agro-chart-tips p { margin: 0; }
+.agro-chart-tips ul {
+  margin: 6px 0 0;
+  padding: 0 0 0 1.1em;
+}
+.agro-chart-tips li { margin: 0 0 4px; }
+.agro-chart-tips-foot {
+  margin-top: 7px !important;
+  color: #64748b;
+  font-size: 11px;
+}
 
 .agro-register-cta, .agro-promo {
   display: flex;
