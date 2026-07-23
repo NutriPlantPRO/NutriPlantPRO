@@ -286,6 +286,7 @@
     form.elements.timezone.value = '';
     $('aa-status-field').hidden = false;
     $('aa-delete-btn').hidden = true;
+    resetReportLinkBox();
     $('aa-edit-kicker').textContent = 'Alta manual';
     $('aa-edit-title').textContent = 'Nuevo usuario de alertas';
     $('aa-edit-status').textContent = 'Se guardará directo en Supabase.';
@@ -293,6 +294,46 @@
     $('aa-timezone-hint').textContent = '';
     form.querySelector('[type="submit"]').textContent = 'Crear usuario';
     $('aa-edit-modal').hidden = false;
+  }
+
+  function resetReportLinkBox() {
+    const box = $('aa-report-link-box');
+    if (!box) return;
+    box.hidden = true;
+    $('aa-report-url').value = '';
+    $('aa-report-access-meta').textContent = '';
+    const open = $('aa-report-open');
+    open.removeAttribute('href');
+    open.setAttribute('aria-disabled', 'true');
+  }
+
+  function fillReportAccessMeta(r) {
+    const count = Number(r.report_access_count || 0);
+    if (!count) {
+      $('aa-report-access-meta').textContent = 'Aún no ha abierto el reporte';
+      return;
+    }
+    $('aa-report-access-meta').textContent =
+      `${count} visita${count === 1 ? '' : 's'} · último: ${dateTime(r.last_report_access_at)}`;
+  }
+
+  async function loadReportLink(subscriberId, seed) {
+    const box = $('aa-report-link-box');
+    if (!box) return;
+    box.hidden = false;
+    $('aa-report-url').value = 'Cargando link…';
+    if (seed) fillReportAccessMeta(seed);
+    try {
+      const out = await api('report_link', { subscriber_id: subscriberId });
+      $('aa-report-url').value = out.reportUrl || '';
+      const open = $('aa-report-open');
+      open.href = out.reportUrl || '#';
+      open.removeAttribute('aria-disabled');
+      fillReportAccessMeta(out);
+    } catch (error) {
+      $('aa-report-url').value = '';
+      $('aa-report-access-meta').textContent = error.message || 'No se pudo cargar el link';
+    }
   }
 
   function showEdit(id) {
@@ -319,6 +360,21 @@
     $('aa-edit-status').style.color = '';
     form.querySelector('[type="submit"]').textContent = 'Guardar todos los cambios';
     $('aa-edit-modal').hidden = false;
+    loadReportLink(r.id, r);
+  }
+
+  async function copyReportLink() {
+    const url = $('aa-report-url').value.trim();
+    if (!url || url === 'Cargando link…') return;
+    try {
+      await navigator.clipboard.writeText(url);
+      $('aa-edit-status').textContent = 'Link copiado.';
+      $('aa-edit-status').style.color = '';
+    } catch (_) {
+      $('aa-report-url').select();
+      $('aa-edit-status').textContent = 'Selecciona y copia el link manualmente.';
+      $('aa-edit-status').style.color = '';
+    }
   }
 
   async function saveEdit(event) {
@@ -478,6 +534,7 @@
     });
     $('aa-edit-form').addEventListener('submit', saveEdit);
     $('aa-delete-btn').addEventListener('click', deleteSubscriber);
+    $('aa-report-copy').addEventListener('click', copyReportLink);
     ['country', 'region', 'latitude', 'longitude'].forEach((name) => {
       const field = $('aa-edit-form').elements[name];
       if (field) field.addEventListener('change', () => refreshTimezoneSuggestion(true));

@@ -6,7 +6,7 @@
   <title>Alertas agroclimáticas | Admin NutriPlant</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./agroclimate.css?v=20260722f">
+  <link rel="stylesheet" href="./agroclimate.css?v=20260723a">
 </head>
 <body>
   <header class="aa-header">
@@ -169,6 +169,18 @@
           </label>
           <label class="span-2">Notas administrativas<textarea name="admin_notes" rows="3"></textarea></label>
         </div>
+        <div id="aa-report-link-box" class="aa-report-link" hidden>
+          <div class="aa-report-link-head">
+            <strong>Link del reporte personal</strong>
+            <small id="aa-report-access-meta"></small>
+          </div>
+          <input id="aa-report-url" type="text" readonly value="">
+          <div class="aa-report-link-actions">
+            <button type="button" id="aa-report-copy" class="aa-secondary-btn">Copiar link</button>
+            <a id="aa-report-open" class="aa-secondary-btn" href="#" target="_blank" rel="noopener">Abrir reporte</a>
+          </div>
+          <small class="aa-cell-sub">El link es estable (mismo token que el correo). Los snapshots guardados caducan ~90 días; al abrir se ve el último disponible.</small>
+        </div>
         <p id="aa-edit-status" class="aa-status-line"></p>
         <div class="aa-edit-actions">
           <button class="aa-primary" type="submit">Guardar todos los cambios</button>
@@ -179,6 +191,6 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./agroclimate.js?v=20260722g"></script>
+  <script src="./agroclimate.js?v=20260723a"></script>
 </body>
 </html>

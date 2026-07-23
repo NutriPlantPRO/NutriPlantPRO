@@ -318,6 +318,23 @@ async function ensureReportToken(supabase, subscriberId) {
   return raw;
 }
 
+async function reportLink(supabase, event, body) {
+  const id = text(body.subscriber_id, 80);
+  const { subscriber } = await readSubscriber(supabase, id);
+  const rawToken = await ensureReportToken(supabase, id);
+  const reportUrl = `${origin(event)}/pronosticoclimatico/?token=${encodeURIComponent(rawToken)}`;
+  return json(200, {
+    ok: true,
+    reportUrl,
+    subscriber_id: id,
+    request_code: subscriber.request_code,
+    status: subscriber.status,
+    report_access_count: Number(subscriber.report_access_count || 0),
+    first_report_access_at: subscriber.first_report_access_at || null,
+    last_report_access_at: subscriber.last_report_access_at || null
+  });
+}
+
 async function deliver(supabase, event, subscriber, plot, snapshot, rawToken) {
   const reportUrl = `${origin(event)}/pronosticoclimatico/?token=${encodeURIComponent(rawToken)}`;
   const delivery = await supabase.from('climate_alert_deliveries').insert({
@@ -416,6 +433,7 @@ exports.handler = async function handler(event) {
     if (action === 'status') return setStatus(supabase, body, auth.adminId);
     if (action === 'approve') return approve(supabase, event, body, auth.adminId);
     if (action === 'send_now') return sendNow(supabase, event, body);
+    if (action === 'report_link') return reportLink(supabase, event, body);
     return json(404, { ok: false, message: 'Acción no encontrada.' });
   } catch (error) {
     console.error('agroclimate-admin:', error);
