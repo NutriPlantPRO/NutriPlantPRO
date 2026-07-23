@@ -886,17 +886,59 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
     font-size: 11px;
   }
   .agro-shell { width: 100%; padding: 8px 0 0; overflow: visible !important; }
-  .agro-title-block { margin-bottom: 12px; padding-right: 120px; }
+  .agro-title-block {
+    display: block;
+    margin-bottom: 8px;
+    padding-right: 110px;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .agro-title-block h1,
+  .agro-page-title { font-size: 22px !important; margin: 4px 0; }
+  .agro-lead { margin: 4px 0 0; font-size: 11px; line-height: 1.35; }
+  .agro-report-meta {
+    margin-top: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Página 1: título + resumen. La tabla grande empieza en la hoja siguiente. */
+  .agro-results {
+    break-inside: auto;
+    page-break-inside: auto;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .agro-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 0 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .agro-summary-card {
+    padding: 8px 9px;
+    break-inside: avoid;
+  }
+  .agro-summary-card small { font-size: 9px; }
+  .agro-summary-card strong { font-size: 14px; }
+  .agro-summary-card span { font-size: 10px; }
+  .agro-results > .agro-card:first-of-type {
+    break-before: page;
+    page-break-before: always;
+  }
   .agro-card,
-  .agro-results,
   .agro-table-shell,
   .agro-table-wrap {
-    break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
     box-shadow: none;
     overflow: visible !important;
     max-height: none !important;
   }
-  .agro-kc-bar { border-color: #bbf7d0; }
+  .agro-kc-bar { border-color: #bbf7d0; display: none !important; }
   .agro-table-wrap { display: block !important; }
   .agro-table { min-width: 0; font-size: 8px; }
   .agro-table th, .agro-table td { position: static !important; padding: 4px; white-space: normal; box-shadow: none !important; }
@@ -904,9 +946,10 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   .agro-mobile-days { display: none !important; }
   .agro-chart-box {
     break-inside: avoid;
-    height: 280px !important;
-    min-height: 260px !important;
+    page-break-inside: avoid;
+    height: 260px !important;
+    min-height: 240px !important;
     overflow: visible !important;
   }
-  .agro-chart-tips { break-inside: avoid; }
+  .agro-chart-tips { break-inside: avoid; page-break-inside: avoid; }
 }

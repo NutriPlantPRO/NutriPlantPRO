@@ -16,6 +16,7 @@
   let rows = [];
   let timezone = '';
   let lastReadingAt = null;
+  let reportGeneratedAt = null;
   let report = null;
   let savedKc = null;
   let viewKc = null;
@@ -76,13 +77,17 @@
   }
 
   function readingStatusText(extra) {
-    const when = lastReadingAt ? formatReadingAt(lastReadingAt) : '';
-    const base = when ? `Última lectura: ${when}` : 'Lectura actualizada';
+    const ts = (personal && reportGeneratedAt) ? reportGeneratedAt : lastReadingAt;
+    const when = ts ? formatReadingAt(ts) : '';
+    const base = when
+      ? (personal ? `Pronóstico generado: ${when}` : `Última lectura: ${when}`)
+      : (personal ? 'Reporte listo' : 'Lectura actualizada');
     return extra ? `${base}. ${extra}` : `${base}.`;
   }
 
   function markReadingNow() {
     lastReadingAt = Date.now();
+    reportGeneratedAt = lastReadingAt;
   }
 
   function setMode() {
@@ -741,8 +746,10 @@
     syncUnsubscribeLink();
     $('agro-report-meta').hidden = !personal;
     if (personal) {
-      const when = lastReadingAt ? formatReadingAt(lastReadingAt) : '';
-      $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || 'Predio')}</strong>${when ? `<br>Última lectura: ${esc(when)}` : ''}${report?.request_code ? `<br>Folio ${esc(report.request_code)}` : ''}`;
+      const when = reportGeneratedAt || lastReadingAt
+        ? formatReadingAt(reportGeneratedAt || lastReadingAt)
+        : '';
+      $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || 'Predio')}</strong>${when ? `<br>Pronóstico generado: ${esc(when)}` : ''}${report?.request_code ? `<br>Folio ${esc(report.request_code)}` : ''}`;
     }
     renderToggles();
     requestAnimationFrame(() => {
@@ -860,10 +867,14 @@
         markReadingNow();
       } else if (rows.length) {
         applyEtcWithKc(activeKc());
-        if (!lastReadingAt) markReadingNow();
+        if (out.generated_at) {
+          const parsed = Date.parse(out.generated_at);
+          reportGeneratedAt = Number.isFinite(parsed) ? parsed : null;
+        }
+        if (reportGeneratedAt) lastReadingAt = reportGeneratedAt;
       }
       render();
-      if (lastReadingAt) setStatus(readingStatusText(), 'success');
+      if (reportGeneratedAt || lastReadingAt) setStatus(readingStatusText(), 'success');
     } catch (error) {
       $('agro-empty-note').innerHTML = `<strong>No se pudo abrir el reporte.</strong><span>${esc(error.message)}</span>`;
     }
