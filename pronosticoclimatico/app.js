@@ -451,16 +451,16 @@
   }
 
   function kindBadge(kind) {
-    return kind === 'history' ? 'Histórico, semana ant.' : 'Pronóstico';
+    return kind === 'history' ? 'Histórico' : 'Pronóstico';
   }
 
   function historyCmpLine(forecastVal, historyVal, decimals = 1, unit = '') {
     const f = n(forecastVal);
     const h = n(historyVal);
-    if (f == null || h == null) return 'Sin histórico, semana ant.';
+    if (f == null || h == null) return 'Sin histórico, semana anterior';
     const diff = round(f - h, decimals);
     const sign = diff > 0 ? '+' : '';
-    return `Histórico, semana ant. ${fmt(h, decimals)}${unit} · Δ ${sign}${fmt(diff, decimals)}${unit}`;
+    return `Histórico, semana anterior ${fmt(h, decimals)}${unit} · Δ ${sign}${fmt(diff, decimals)}${unit}`;
   }
 
   function summaryHtml(future) {
@@ -476,8 +476,8 @@
     const fRain = sum(future, 'rain');
     const hRain = sum(history, 'rain');
     const vpdHist = (hVpdMin != null && hVpdMax != null)
-      ? `Histórico, semana ant. ${fmt(hVpdMin, 2)}–${fmt(hVpdMax, 2)} kPa`
-      : 'Sin histórico, semana ant.';
+      ? `Histórico, semana anterior ${fmt(hVpdMin, 2)}–${fmt(hVpdMax, 2)} kPa`
+      : 'Sin histórico, semana anterior';
     const cards = [
       ['Temperatura', `${fmt(extreme(future, 'tempMin', 'min'), 1)} a ${fmt(fTempMax, 1, ' °C')}`, historyCmpLine(fTempMax, hTempMax, 1, ' °C máx'), ''],
       ['VPD', `${fmt(fVpdMin, 2)} a ${fmt(fVpdMax, 2, ' kPa')}`, vpdHist, 'vpd'],
@@ -486,7 +486,7 @@
       ['Precipitación', fmt(fRain, 1, ' mm'), historyCmpLine(fRain, hRain, 1, ' mm'), 'rain'],
       ['Humedad', `${fmt(extreme(future, 'humidityMin', 'min'), 0)} a ${fmt(extreme(future, 'humidityMax', 'max'), 0, ' %')}`, 'Rango del pronóstico', ''],
       ['Rad máx', `${fmt(extreme(future, 'radiationMax', 'min'), 0)} a ${fmt(extreme(future, 'radiationMax', 'max'), 0, ' W/m²')}`, 'Rango del pronóstico', ''],
-      ['Periodo', `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, `${future.length} d pronóstico · vs semana ant.`, '']
+      ['Periodo', `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, `${future.length} d pronóstico · vs semana anterior`, '']
     ];
     return cards.map((c) => `<article class="agro-summary-card ${c[3]}"><small>${c[0]}</small><strong>${c[1]}</strong><span>${c[2]}</span></article>`).join('');
   }
@@ -639,7 +639,7 @@
         ctx.font = '700 10px Inter, system-ui, sans-serif';
         ctx.textAlign = 'right';
         ctx.fillStyle = '#475569';
-        ctx.fillText('← Histórico, semana ant.', x - 6, labelY);
+        ctx.fillText('← Histórico', x - 6, labelY);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#0369a1';
         ctx.fillText('Pronóstico →', x + 6, labelY);

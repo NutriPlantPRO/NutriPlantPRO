@@ -63,7 +63,7 @@ function deltaLine(forecastVal, historyVal, decimals = 1, unit = '') {
   if (f == null || h == null) return 'Sin histórico de la semana anterior';
   const diff = f - h;
   const sign = diff > 0 ? '+' : '';
-  return `Histórico, semana ant. ${value(h, decimals)}${unit} · Δ ${sign}${value(diff, decimals)}${unit}`;
+  return `Histórico, semana anterior ${value(h, decimals)}${unit} · Δ ${sign}${value(diff, decimals)}${unit}`;
 }
 
 function forecastCompactTable(rows) {
@@ -132,8 +132,8 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
     `- ETo acumulada: ${value(et0Total)} mm (${deltaLine(et0Total, history.et0Total, 1, ' mm')})\n` +
     `- Lluvia acumulada: ${value(rainTotal)} mm (${deltaLine(rainTotal, history.rainTotal, 1, ' mm')})\n\n` +
     `Comparación vs histórico, semana anterior (${history.days || 0} d):\n` +
-    `- Histórico, semana ant. T: ${value(history.tempMin)}–${value(history.tempMax)} °C\n` +
-    `- Histórico, semana ant. lluvia acum.: ${value(history.rainTotal)} mm | ETo acum.: ${value(history.et0Total)} mm\n\n` +
+    `- Histórico, semana anterior T: ${value(history.tempMin)}–${value(history.tempMax)} °C\n` +
+    `- Histórico, semana anterior lluvia acum.: ${value(history.rainTotal)} mm | ETo acum.: ${value(history.et0Total)} mm\n\n` +
     `${plainDays}\n\n` +
     `Pronóstico estimado para las coordenadas registradas. Valida las condiciones en campo.\n\n` +
     `Editar predio / Kc o dejar de recibir alertas:\n${reportUrl}\n` +
@@ -177,7 +177,7 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
             <td style="padding:12px;border-radius:9px;background:#f5f3ff;border:1px solid #ddd6fe;">
               <div style="color:#6d28d9;font-weight:800;font-size:12px;">VPD · mín–máx</div>
               <div style="font-size:20px;font-weight:800;margin:4px 0;">${value(vpdMin, 2)}–${value(vpdMax, 2)} kPa</div>
-              <div style="font-size:11px;color:#475569;">Histórico, semana ant. ${value(history.vpdMin, 2)}–${value(history.vpdMax, 2)} kPa</div>
+              <div style="font-size:11px;color:#475569;">Histórico, semana anterior ${value(history.vpdMin, 2)}–${value(history.vpdMax, 2)} kPa</div>
             </td>
           </tr>
           <tr>
