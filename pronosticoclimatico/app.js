@@ -157,7 +157,7 @@
       ? ` Coordenadas guardadas actuales: ${lat}, ${lng}.`
       : '';
     const message =
-      `Hola NutriPlant. Quiero cambiar el Kc y/o las coordenadas GUARDADOS de mi alerta agroclimática (valores por defecto del predio, no solo de una vista).` +
+      `Hola NutriPlant PRO. Quiero cambiar el Kc y/o las coordenadas GUARDADOS de mi alerta agroclimática (valores por defecto del predio, no solo de una vista).` +
       `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
       ` Kc guardado actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
       `${coords}` +
@@ -795,7 +795,7 @@
       form.hidden = true;
       $('agro-register-success').hidden = false;
       $('agro-request-code').textContent = out.request_code;
-      const message = `Hola NutriPlant. Me interesa registrarme para recibir Alertas Agroclimáticas.\nNombre: ${data.full_name}\nFolio: ${out.request_code}`;
+      const message = `Hola NutriPlant PRO. Me interesa registrarme para recibir Alertas Agroclimáticas.\nNombre: ${data.full_name}\nFolio: ${out.request_code}`;
       $('agro-whatsapp-link').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
     } catch (error) {
       setStatus(error.message, 'error', true);
@@ -845,7 +845,7 @@
   function unsubscribeWhatsAppHref() {
     const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
     const name = report?.full_name || '';
-    const message = `Hola NutriPlant. Quiero dejar de recibir las alertas agroclimáticas.${folio}${name ? ` Nombre: ${name}.` : ''} Por favor páusenme desde administración.`;
+    const message = `Hola NutriPlant PRO. Quiero dejar de recibir las alertas agroclimáticas.${folio}${name ? ` Nombre: ${name}.` : ''} Por favor páusenme desde administración.`;
     return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
   }
 

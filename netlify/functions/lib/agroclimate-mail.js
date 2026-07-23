@@ -140,9 +140,15 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
     `Para dejar de recibir alertas: abre ese enlace y en la página usa el botón verde de WhatsApp («Dejar de recibir alertas») para enviarnos el mensaje.\n\n` +
     `NutriPlant PRO\nhttps://nutriplantpro.com/\n`;
 
+  const logoWhite = 'https://nutriplantpro.com/assets/NutriPlant_PRO_white.png';
+  const logoBlue = 'https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png';
+
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
     <div style="max-width:820px;margin:0 auto;padding:18px;">
       <div style="background:#0c4a6e;padding:22px;border-radius:14px 14px 0 0;">
+        <a href="https://nutriplantpro.com/" style="text-decoration:none;">
+          <img src="${logoWhite}" alt="NutriPlant PRO" width="200" height="48" style="display:block;height:48px;width:auto;max-width:220px;margin:0 0 14px;border:0;outline:none;">
+        </a>
         <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#ffffff;font-weight:800;">NutriPlant PRO</div>
         <h1 style="margin:6px 0 4px;font-size:25px;color:#ffffff;font-weight:800;">Pronóstico agroclimático</h1>
         <p style="margin:0;color:#ffffff;font-size:15px;font-weight:700;">${escapeHtml(plot.plot_name || 'Mi predio')}</p>
@@ -199,7 +205,10 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
         <p style="margin:6px 0 0;font-size:12px;line-height:1.45;color:#64748b;">Para <strong>dejar de recibir alertas</strong>: abre el enlace, entra a tu reporte y envía el mensaje con el botón verde de <strong>WhatsApp</strong> («Dejar de recibir alertas»). El link del correo solo te lleva a la página; el aviso se manda desde ahí.</p>
         <hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0 16px;">
         <p style="margin:0;text-align:center;line-height:1.45;">
-          <a href="https://nutriplantpro.com/" style="color:#1d4ed8;font-size:18px;font-weight:800;text-decoration:none;letter-spacing:.01em;">NutriPlant PRO</a><br>
+          <a href="https://nutriplantpro.com/" style="text-decoration:none;">
+            <img src="${logoBlue}" alt="NutriPlant PRO" width="160" height="38" style="display:inline-block;height:38px;width:auto;max-width:180px;margin:0 0 8px;border:0;outline:none;">
+          </a><br>
+          <a href="https://nutriplantpro.com/" style="color:#1d4ed8;font-size:16px;font-weight:800;text-decoration:none;letter-spacing:.01em;">NutriPlant PRO</a><br>
           <a href="https://nutriplantpro.com/" style="color:#2563eb;font-size:13px;font-weight:600;text-decoration:none;">https://nutriplantpro.com/</a>
         </p>
       </div>
