@@ -15,6 +15,7 @@
   let chart;
   let rows = [];
   let timezone = '';
+  let lastReadingAt = null;
   let report = null;
   let savedKc = null;
   let viewKc = null;
@@ -60,6 +61,28 @@
     if (!node) return;
     node.textContent = text || '';
     node.className = `agro-status${type ? ` ${type}` : ''}`;
+  }
+
+  function formatReadingAt(ts) {
+    const d = ts instanceof Date ? ts : new Date(ts);
+    if (!Number.isFinite(d.getTime())) return '';
+    return new Intl.DateTimeFormat('es-MX', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    }).format(d);
+  }
+
+  function readingStatusText(extra) {
+    const when = lastReadingAt ? formatReadingAt(lastReadingAt) : '';
+    const base = when ? `Última lectura: ${when}` : 'Lectura actualizada';
+    return extra ? `${base}. ${extra}` : `${base}.`;
+  }
+
+  function markReadingNow() {
+    lastReadingAt = Date.now();
   }
 
   function setMode() {
@@ -161,13 +184,45 @@
     const c = coords();
     if (!c) return;
     try {
+      const prev = saved() || {};
       localStorage.setItem(STORE, JSON.stringify({
         ...c,
         plotName: $('agro-plot-name').value,
         kc: n($('agro-kc').value),
+        timezone: timezone || prev.timezone || undefined,
+        lastReadingAt: lastReadingAt || prev.lastReadingAt || undefined,
+        rows: (Array.isArray(rows) && rows.length ? rows : prev.rows) || undefined,
         updatedAt: Date.now()
       }));
     } catch (_) {}
+  }
+
+  function restoreLastReading() {
+    if (personal) return;
+    const prior = saved();
+    if (!prior) return;
+    if (prior.plotName) $('agro-plot-name').value = prior.plotName;
+    if (prior.kc != null) {
+      $('agro-kc').value = prior.kc;
+      savedKc = n(prior.kc);
+      viewKc = savedKc;
+    }
+    if (prior.timezone) timezone = prior.timezone;
+    if (prior.lastReadingAt) lastReadingAt = Number(prior.lastReadingAt) || Date.parse(prior.lastReadingAt) || null;
+    if (Array.isArray(prior.rows) && prior.rows.length) {
+      rows = prior.rows;
+      report = {
+        plot_name: prior.plotName || 'Ubicación seleccionada',
+        latitude: n(prior.lat) ?? n(prior.latitude),
+        longitude: n(prior.lng) ?? n(prior.longitude),
+        kc: savedKc
+      };
+      applyEtcWithKc(activeKc());
+      render();
+      if (lastReadingAt) setStatus(readingStatusText(), 'success');
+    } else if (lastReadingAt) {
+      setStatus(readingStatusText('Genera de nuevo para actualizar los datos.'), '');
+    }
   }
 
   function applyCoords(lat, lng, pan) {
@@ -313,6 +368,7 @@
       savedKc = personal ? (savedKc != null ? savedKc : n(report?.kc)) : n($('agro-kc').value);
       viewKc = savedKc;
       rows = weatherRows(data, activeKc());
+      markReadingNow();
       if (personal) {
         report = {
           ...(report || {}),
@@ -323,7 +379,7 @@
         };
         render();
         setStatus(
-          `Lectura de esta vista actualizada${timezone ? ` · ${timezone}` : ''}. Para cambiar Kc o coordenadas guardadas, usa WhatsApp.`,
+          readingStatusText('Para cambiar Kc o coordenadas guardadas, usa WhatsApp.'),
           'success'
         );
       } else {
@@ -337,7 +393,7 @@
         $('agro-kc').value = savedKc ?? '';
         render();
         saveInputs();
-        setStatus(`Lectura actualizada${timezone ? ` · ${timezone}` : ''}.`, 'success');
+        setStatus(readingStatusText(), 'success');
       }
     } catch (error) {
       setStatus(`No se pudo generar el pronóstico. ${error.message || ''}`, 'error');
@@ -575,7 +631,10 @@
     $('agro-personal-actions').hidden = !personal;
     syncUnsubscribeLink();
     $('agro-report-meta').hidden = !personal;
-    if (personal) $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || 'Predio')}</strong><br>${esc(timezone || report?.timezone || '')}${report?.request_code ? `<br>Folio ${esc(report.request_code)}` : ''}`;
+    if (personal) {
+      const when = lastReadingAt ? formatReadingAt(lastReadingAt) : '';
+      $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || 'Predio')}</strong>${when ? `<br>Última lectura: ${esc(when)}` : ''}${report?.request_code ? `<br>Folio ${esc(report.request_code)}` : ''}`;
+    }
     renderToggles();
     requestAnimationFrame(() => {
       drawChart();
@@ -690,10 +749,13 @@
       if ((!rows.length || rows.some((r) => r.vpdHoursLow == null)) && report.latitude != null) {
         const weather = await fetch(weatherUrl(report.latitude, report.longitude)).then((r) => r.json());
         rows = weatherRows(weather, activeKc());
+        markReadingNow();
       } else if (rows.length) {
         applyEtcWithKc(activeKc());
+        if (!lastReadingAt) markReadingNow();
       }
       render();
+      if (lastReadingAt) setStatus(readingStatusText(), 'success');
     } catch (error) {
       $('agro-empty-note').innerHTML = `<strong>No se pudo abrir el reporte.</strong><span>${esc(error.message)}</span>`;
     }
@@ -842,13 +904,13 @@
     const openBtn = $('agro-about-btn');
     const closeBtn = $('agro-about-close');
     if (!modal || !openBtn) return;
-    const open = () => { modal.hidden = false; };
-    const close = () => { modal.hidden = true; };
+    const open = () => { modal.classList.add('show'); modal.style.display = 'flex'; };
+    const close = () => { modal.classList.remove('show'); modal.style.display = 'none'; };
     openBtn.addEventListener('click', open);
     closeBtn?.addEventListener('click', close);
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !modal.hidden) close();
+      if (e.key === 'Escape' && modal.classList.contains('show')) close();
     });
   }
 
@@ -856,7 +918,11 @@
     setMode();
     bind();
     bindAboutModal();
-    if (personal) loadReport(); else initMap();
+    if (personal) loadReport();
+    else {
+      initMap();
+      restoreLastReading();
+    }
     sendResize();
   }
 

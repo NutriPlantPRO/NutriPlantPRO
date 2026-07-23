@@ -7,7 +7,7 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260722r">
+  <link rel="stylesheet" href="./styles.css?v=20260722t">
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -347,52 +347,79 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260722r"></script>
+  <script src="./app.js?v=20260722t"></script>
 
-  <!-- Modal Sobre Nosotros (mismo contenido que login) -->
-  <div id="agro-about-modal" class="agro-about-modal" hidden>
-    <div class="agro-about-dialog" role="dialog" aria-modal="true" aria-labelledby="agro-about-title">
-      <div class="agro-about-header">
-        <div class="agro-about-brand">
-          <img src="../assets/N_Hoja_Azul.png" alt="" width="32" height="32" decoding="async">
-          <div>
-            <h2 id="agro-about-title">Nosotros</h2>
-            <div class="agro-about-sub">NutriPlant PRO</div>
+  <!-- Modal Sobre Nosotros (misma estructura/estilos que login) -->
+  <style>
+    #agro-about-modal.show { display: flex !important; justify-content: center !important; align-items: center !important; }
+  </style>
+  <div id="agro-about-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); z-index: 10000; backdrop-filter: blur(6px);">
+    <div class="modal" style="background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25); max-width: 520px; width: calc(100% - 32px); max-height: 90vh; overflow-y: auto; position: relative; z-index: 10001; border: 1px solid rgba(148, 163, 184, 0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <div class="modal-content" style="padding: 24px; box-sizing: border-box; width: 100%;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e5e7eb;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="np-about-us-logo" aria-hidden="true">
+              <img src="../assets/N_Hoja_Azul.png" alt="" width="32" height="32" decoding="async">
+            </span>
+            <div>
+              <h2 id="agro-about-title" style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;">Nosotros</h2>
+              <div style="color:#1d4ed8; font-size:12px; font-weight: 700;">NutriPlant PRO</div>
+            </div>
           </div>
+          <button type="button" id="agro-about-close" aria-label="Cerrar" style="
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            font-size: 18px;
+            color: #334155;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.background='#e2e8f0'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#f1f5f9'; this.style.transform='none'">
+            ×
+          </button>
         </div>
-        <button type="button" class="agro-about-close" id="agro-about-close" aria-label="Cerrar">×</button>
-      </div>
-      <div class="agro-about-body">
-        <div class="agro-about-intro">
-          <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
-        </div>
-        <div class="agro-about-grid">
-          <div class="agro-about-card">
-            <h3>🎯 Visión</h3>
-            <p>Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.</p>
+        <div style="display: grid; gap: 16px; width: 100%; max-width: 100%; min-width: 0;">
+          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
+            <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
           </div>
-          <div class="agro-about-card">
-            <h3>🧩 Misión</h3>
-            <p>Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🎯 Visión</h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;">
+                Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.
+              </p>
+            </div>
+            <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🧩 Misión</h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;">
+                Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.
+              </p>
+            </div>
+            <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">✅ Valores</h3>
+              <ul style="margin: 0; padding-left: 18px; color: #334155; line-height: 1.6;">
+                <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
+                <li><strong>Respeto:</strong> Al cultivo, a las personas y al conocimiento en construcción.</li>
+                <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
+                <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
+              </ul>
+            </div>
           </div>
-          <div class="agro-about-card">
-            <h3>✅ Valores</h3>
-            <ul>
-              <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
-              <li><strong>Respeto:</strong> Al cultivo, a las personas y al conocimiento en construcción.</li>
-              <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
-              <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
-            </ul>
+          <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <a href="../manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Manual técnico</a>
+            <span style="margin: 0 8px; color: #94a3b8;">·</span>
+            <a href="../manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Autoría de NutriPlant PRO</a>
+            <span style="margin: 0 8px; color: #94a3b8;">·</span>
+            <a href="../politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Políticas de privacidad</a>
+            <span style="margin: 0 8px; color: #94a3b8;">·</span>
+            <a href="../terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Términos y Condiciones</a>
           </div>
-        </div>
-        <div class="agro-about-links">
-          <a href="../manual-tecnico/index.html" target="_blank" rel="noopener noreferrer">Manual técnico</a>
-          <span>·</span>
-          <a href="../manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer">Autoría de NutriPlant PRO</a>
-          <span>·</span>
-          <a href="../politicas-privacidad.html" target="_blank" rel="noopener">Políticas de privacidad</a>
-          <span>·</span>
-          <a href="../terminos-condiciones.html" target="_blank" rel="noopener">Términos y Condiciones</a>
         </div>
       </div>
     </div>

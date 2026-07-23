@@ -154,128 +154,6 @@ a { color: var(--blue-dark); }
 .agro-social-links .social-btn[data-social="whatsapp"]:hover { color: #25d366; }
 .agro-social-links .social-icon { width: 20px; height: 20px; }
 
-.agro-about-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(6px);
-}
-.agro-about-modal[hidden] { display: none !important; }
-.agro-about-dialog {
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
-  max-width: 520px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-}
-.agro-about-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 24px 14px;
-  border-bottom: 1px solid #e5e7eb;
-}
-.agro-about-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.agro-about-brand h2 {
-  margin: 0;
-  color: #0b2a5b;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-}
-.agro-about-sub {
-  color: #1d4ed8;
-  font-size: 12px;
-  font-weight: 700;
-}
-.agro-about-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: #f1f5f9;
-  color: #334155;
-  font-size: 18px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background .2s ease, transform .2s ease;
-}
-.agro-about-close:hover {
-  background: #e2e8f0;
-  transform: translateY(-1px);
-}
-.agro-about-body {
-  padding: 18px 24px 24px;
-  display: grid;
-  gap: 16px;
-}
-.agro-about-intro {
-  background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
-  border: 1px solid #bfdbfe;
-  border-radius: 14px;
-  padding: 16px;
-  color: #1f2937;
-  line-height: 1.6;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
-}
-.agro-about-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-}
-.agro-about-card {
-  background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%);
-  border: 1px solid #bbf7d0;
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);
-}
-.agro-about-card h3 {
-  margin: 0 0 10px;
-  color: #166534;
-  font-size: 16px;
-}
-.agro-about-card p,
-.agro-about-card ul {
-  margin: 0;
-  color: #334155;
-  line-height: 1.6;
-  font-size: 14px;
-}
-.agro-about-card ul {
-  padding-left: 18px;
-}
-.agro-about-links {
-  margin-top: 4px;
-  padding-top: 14px;
-  border-top: 1px solid #e5e7eb;
-  text-align: center;
-  font-size: 13px;
-  line-height: 1.7;
-}
-.agro-about-links a {
-  color: #2563eb;
-  font-weight: 600;
-  text-decoration: none;
-}
-.agro-about-links a:hover { text-decoration: underline; }
-.agro-about-links span { margin: 0 6px; color: #94a3b8; }
-
 .agro-shell { width: min(1220px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 60px; }
 .agro-title-block {
   display: flex;
@@ -408,7 +286,11 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 .agro-btn.wide { width: 100%; }
 .agro-status { min-height: 18px; margin: 7px 0; color: var(--slate-600); font-size: 12px; line-height: 1.45; }
 .agro-status.error { color: #b91c1c; }
-.agro-status.success { color: #166534; }
+.agro-status.success {
+  color: #166534;
+  font-size: 13px;
+  font-weight: 700;
+}
 
 #agro-map {
   width: 100%;
@@ -842,7 +724,7 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
 @media print {
   body { background: #fff; }
   .agro-public-header,
-  .agro-about-modal,
+  #agro-about-modal,
   .agro-location-card,
   .agro-register-cta,
   .agro-promo,
