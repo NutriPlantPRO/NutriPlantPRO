@@ -102,7 +102,7 @@
       showEdit(id);
       return;
     }
-    const message = `Hola ${r.full_name}. Soy de NutriPlant y te escribo sobre tu solicitud de alertas agroclimáticas, folio ${r.request_code}.`;
+    const message = `Hola ${r.full_name}. Soy de NutriPlant PRO y te escribo sobre tu solicitud de alertas agroclimáticas, folio ${r.request_code}.`;
     window.open(`https://wa.me/${usable}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
   }
 

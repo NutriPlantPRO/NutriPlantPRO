@@ -121,7 +121,17 @@
     const wa = $('agro-kc-whatsapp');
     const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
     const name = report?.full_name || report?.plot_name || '';
-    const message = `Hola NutriPlant. Quiero cambiar el Kc permanente de mis alertas agroclimáticas.${folio}${name ? ` Predio/nombre: ${name}.` : ''} Kc actual: ${savedKc == null ? 'sin definir' : savedKc}. Nuevo Kc deseado: `;
+    const lat = report?.latitude ?? $('agro-lat')?.value;
+    const lng = report?.longitude ?? $('agro-lng')?.value;
+    const coords = (lat != null && lat !== '' && lng != null && lng !== '')
+      ? ` Coordenadas actuales: ${lat}, ${lng}.`
+      : '';
+    const message =
+      `Hola NutriPlant. Quiero cambiar el Kc y/o las coordenadas de mi predio en alertas agroclimáticas.` +
+      `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
+      ` Kc actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
+      `${coords}` +
+      ` Cambio solicitado (Kc y/o nuevas coordenadas): `;
     wa.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
     wa.hidden = false;
   }
@@ -303,33 +313,32 @@
       savedKc = personal ? (savedKc != null ? savedKc : n(report?.kc)) : n($('agro-kc').value);
       viewKc = savedKc;
       rows = weatherRows(data, activeKc());
-      report = {
-        ...(report || {}),
-        plot_name: $('agro-plot-name').value || report?.plot_name || 'Ubicación seleccionada',
-        latitude: c.lat,
-        longitude: c.lng,
-        kc: savedKc
-      };
-      if (!personal) $('agro-kc').value = savedKc ?? '';
-      if (personal && token) {
-        const saveResponse = await fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update_plot',
-            token,
-            plot_name: report.plot_name,
-            latitude: report.latitude,
-            longitude: report.longitude,
-            kc: savedKc
-          })
-        });
-        const savedPlot = await saveResponse.json().catch(() => ({}));
-        if (!saveResponse.ok) throw new Error(savedPlot.message || 'No se pudo guardar el predio.');
+      if (personal) {
+        report = {
+          ...(report || {}),
+          plot_name: $('agro-plot-name').value || report?.plot_name || 'Ubicación seleccionada',
+          latitude: n(report?.latitude) != null ? n(report.latitude) : c.lat,
+          longitude: n(report?.longitude) != null ? n(report.longitude) : c.lng,
+          kc: savedKc
+        };
+        render();
+        setStatus(
+          `Lectura de esta vista actualizada${timezone ? ` · ${timezone}` : ''}. Para cambiar Kc o coordenadas guardadas, usa WhatsApp.`,
+          'success'
+        );
+      } else {
+        report = {
+          ...(report || {}),
+          plot_name: $('agro-plot-name').value || 'Ubicación seleccionada',
+          latitude: c.lat,
+          longitude: c.lng,
+          kc: savedKc
+        };
+        $('agro-kc').value = savedKc ?? '';
+        render();
+        saveInputs();
+        setStatus(`Lectura actualizada${timezone ? ` · ${timezone}` : ''}.`, 'success');
       }
-      render();
-      saveInputs();
-      setStatus(`Lectura actualizada${timezone ? ` · ${timezone}` : ''}.`, 'success');
     } catch (error) {
       setStatus(`No se pudo generar el pronóstico. ${error.message || ''}`, 'error');
     } finally {
@@ -371,11 +380,11 @@
       if (first) firstForecast = false;
       return `<tr class="${r.kind}${first ? ' first-forecast' : ''}">
         <td class="agro-date-col">${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${r.kind === 'history' ? 'Histórico' : 'Pronóstico'}</span></td>
-        <td class="col-atm col-temp">${fmt(r.tempMin, 1)}</td><td class="col-atm col-temp">${fmt(r.tempMax, 1)}</td>
-        <td class="col-atm col-rh">${fmt(r.humidityMin, 0)}</td><td class="col-atm col-rh">${fmt(r.humidityMax, 0)}</td>
-        <td class="col-atm col-dew">${fmt(r.dewMin, 1)}</td><td class="col-atm col-dew col-end-atm">${fmt(r.dewMax, 1)}</td>
+        <td class="col-atm col-temp-min">${fmt(r.tempMin, 1)}</td><td class="col-atm col-temp-max">${fmt(r.tempMax, 1)}</td>
+        <td class="col-atm col-rh-min">${fmt(r.humidityMin, 0)}</td><td class="col-atm col-rh-max">${fmt(r.humidityMax, 0)}</td>
+        <td class="col-atm col-dew-min">${fmt(r.dewMin, 1)}</td><td class="col-atm col-dew-max col-end-atm">${fmt(r.dewMax, 1)}</td>
         <td class="col-vpd col-rad">${fmt(r.radiationMax, 0)}</td>
-        <td class="col-vpd col-vpdval">${fmt(r.vpdMin, 2)}</td><td class="col-vpd col-vpdval col-end-vpd">${fmt(r.vpdMax, 2)}</td>
+        <td class="col-vpd col-vpd-min">${fmt(r.vpdMin, 2)}</td><td class="col-vpd col-vpd-max col-end-vpd">${fmt(r.vpdMax, 2)}</td>
         <td class="col-water col-eto">${fmt(r.et0, 1)}</td><td class="col-water col-etc">${fmt(r.etc, 1)}</td><td class="col-water col-rain">${fmt(r.rain, 1)}</td>
       </tr>`;
     }).join('');
@@ -387,11 +396,11 @@
         <th class="group-water" colspan="3">Agua</th>
       </tr>
       <tr class="agro-metric-row">
-        <th class="col-atm col-temp">T mín °C</th><th class="col-atm col-temp">T máx °C</th>
-        <th class="col-atm col-rh">HR mín %</th><th class="col-atm col-rh">HR máx %</th>
-        <th class="col-atm col-dew">Rocío mín °C</th><th class="col-atm col-dew col-end-atm">Rocío máx °C</th>
+        <th class="col-atm col-temp-min">T mín °C</th><th class="col-atm col-temp-max">T máx °C</th>
+        <th class="col-atm col-rh-min">HR mín %</th><th class="col-atm col-rh-max">HR máx %</th>
+        <th class="col-atm col-dew-min">Rocío mín °C</th><th class="col-atm col-dew-max col-end-atm">Rocío máx °C</th>
         <th class="col-vpd col-rad">Rad máx W/m²</th>
-        <th class="col-vpd col-vpdval">VPD mín</th><th class="col-vpd col-vpdval col-end-vpd">VPD máx</th>
+        <th class="col-vpd col-vpd-min">VPD mín</th><th class="col-vpd col-vpd-max col-end-vpd">VPD máx</th>
         <th class="col-water col-eto">ETo mm</th><th class="col-water col-etc">ETc mm${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water col-rain">Lluvia mm</th>
       </tr>
     </thead><tbody>${body}</tbody></table>`;
@@ -808,8 +817,13 @@
     });
     $('agro-edit-btn').addEventListener('click', () => {
       $('agro-location-card').hidden = false;
-      $('agro-generate-btn').textContent = '💾 Guardar ubicación y actualizar';
+      $('agro-generate-btn').textContent = personal
+        ? '🌤️ Ver pronóstico en este punto (no guarda)'
+        : '💾 Guardar ubicación y actualizar';
       $('agro-kc').value = savedKc ?? '';
+      if (personal) {
+        setStatus('Puedes mover el marcador para explorar. Kc y coordenadas guardadas se cambian por WhatsApp.', '');
+      }
       initMap(true);
       [80, 250, 600].forEach((ms) => setTimeout(() => map?.invalidateSize(), ms));
       $('agro-location-card').scrollIntoView({ behavior: 'smooth' });
