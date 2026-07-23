@@ -115,7 +115,7 @@
   function syncKcBar() {
     const bar = $('agro-kc-bar');
     if (!bar) return;
-    // Un solo Kc: junto al WhatsApp, arriba de la tabla (gratis y personal).
+    // Un solo Kc arriba de la tabla (gratis y personal).
     bar.hidden = !rows.length;
     if (bar.hidden) return;
     const kc = activeKc();
@@ -130,36 +130,45 @@
     if (note) {
       if (kc == null) {
         note.textContent = personal
-          ? 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc. Cambio permanente: WhatsApp.'
+          ? 'Sin Kc no hay ETc. Puedes probar un Kc aquí. El valor guardado de tu alerta se cambia por WhatsApp.'
           : 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc y pulsa Aplicar.';
       } else if (usingViewOnly) {
-        note.innerHTML = `ETc vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Kc permanente guardado: <strong>${Number(savedKc).toFixed(2)}</strong>.`;
+        note.innerHTML = `ETc de esta vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Valor <strong>guardado</strong> de tu alerta: <strong>${Number(savedKc).toFixed(2)}</strong> (cámbialo por WhatsApp).`;
       } else {
         note.innerHTML = personal
-          ? `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Cambio aquí = solo esta vista; permanente por WhatsApp.`
-          : `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>.`;
+          ? `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Aquí solo pruebas; el Kc/coordenadas <strong>guardados</strong> de tu alerta se piden por WhatsApp.`
+          : `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Puedes editar Kc aquí libremente.`;
       }
     }
     const wa = $('agro-kc-whatsapp');
     if (!wa) return;
+    // WhatsApp solo en reporte personal (link del correo), no en herramienta gratuita.
+    if (!personal) {
+      wa.hidden = true;
+      bar.classList.toggle('no-wa', true);
+      return;
+    }
+    bar.classList.toggle('no-wa', false);
     const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
     const name = report?.full_name || report?.plot_name || '';
     const lat = report?.latitude ?? $('agro-lat')?.value;
     const lng = report?.longitude ?? $('agro-lng')?.value;
     const coords = (lat != null && lat !== '' && lng != null && lng !== '')
-      ? ` Coordenadas actuales: ${lat}, ${lng}.`
+      ? ` Coordenadas guardadas actuales: ${lat}, ${lng}.`
       : '';
-    const message = personal
-      ? (`Hola NutriPlant. Quiero cambiar el Kc y/o las coordenadas de mi predio en alertas agroclimáticas.` +
-        `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
-        ` Kc actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
-        `${coords}` +
-        ` Cambio solicitado (Kc y/o nuevas coordenadas): `)
-      : (`Hola NutriPlant. Quiero ayuda con el Kc o las coordenadas de Pronóstico agroclimático.` +
-        `${coords}` +
-        ` Kc que estoy usando: ${kc == null ? 'sin definir' : kc}.`);
+    const message =
+      `Hola NutriPlant. Quiero cambiar el Kc y/o las coordenadas GUARDADOS de mi alerta agroclimática (valores por defecto del predio, no solo de una vista).` +
+      `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
+      ` Kc guardado actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
+      `${coords}` +
+      ` Nuevo Kc y/o nuevas coordenadas que solicito: `;
     wa.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
     wa.hidden = false;
+    const waLabel = wa.querySelector('span');
+    if (waLabel) {
+      waLabel.innerHTML = 'Cambiar Kc o coordenadas <strong>guardados</strong> (alerta) · WhatsApp';
+    }
+    wa.title = 'Pedir cambio del Kc o coordenadas guardados de tu alerta (valores permanentes)';
   }
 
   function applyViewKc() {
@@ -615,7 +624,7 @@
   function renderToggles() {
     const labels = { vpdHours: 'Horas VPD', rain: 'Lluvia', et0: 'ETo', etc: 'ETc' };
     $('agro-chart-toggles').innerHTML = Object.keys(labels).map((key) =>
-      `<button type="button" class="agro-chart-toggle${visible[key] ? '' : ' off'}" data-series="${key}">${labels[key]}</button>`).join('');
+      `<button type="button" class="agro-chart-toggle series-${key}${visible[key] ? '' : ' off'}" data-series="${key}">${labels[key]}</button>`).join('');
   }
 
   function render() {
@@ -774,8 +783,8 @@
 
   function unsubscribeWhatsAppHref() {
     const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
-    const name = report?.full_name || report?.plot_name || '';
-    const message = `Hola NutriPlant. Quiero dejar de recibir las alertas agroclimáticas.${folio}${name ? ` Nombre/predio: ${name}.` : ''} Por favor páusenme desde administración.`;
+    const name = report?.full_name || '';
+    const message = `Hola NutriPlant. Quiero dejar de recibir las alertas agroclimáticas.${folio}${name ? ` Nombre: ${name}.` : ''} Por favor páusenme desde administración.`;
     return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
   }
 

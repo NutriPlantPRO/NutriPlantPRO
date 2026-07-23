@@ -74,20 +74,20 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
     `Hola ${subscriber.full_name || ''},\n\n` +
     `Este es el pronóstico agroclimático de tu predio (${plot.plot_name || 'Mi predio'}).\n\n` +
     `Ver reporte completo (tabla, gráfica, mapa y PDF):\n${reportUrl}\n\n` +
-    `Resumen: temperatura ${value(summary.tempMin)}–${value(summary.tempMax)} °C; ` +
-    `VPD ${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa; ` +
-    `ETo ${value(summary.et0Total)} mm; ETc ${value(summary.etcTotal)} mm; ` +
-    `lluvia ${value(summary.rainTotal)} mm.\n\n${plainDays}\n\n` +
+    `Resumen del pronóstico: temperatura mín–máx ${value(summary.tempMin)}–${value(summary.tempMax)} °C; ` +
+    `VPD mín–máx ${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa; ` +
+    `ETo acumulada ${value(summary.et0Total)} mm; ETc acumulada ${value(summary.etcTotal)} mm; ` +
+    `lluvia acumulada ${value(summary.rainTotal)} mm.\n\n${plainDays}\n\n` +
     `Pronóstico estimado para las coordenadas registradas. Valida las condiciones en campo.\n\n` +
     `Editar predio o dejar de recibir alertas:\n${reportUrl}\n\n` +
     `NutriPlant PRO\nhttps://nutriplantpro.com/\n`;
 
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
     <div style="max-width:820px;margin:0 auto;padding:18px;">
-      <div style="background:linear-gradient(125deg,#075985,#0284c7 60%,#0d9488);padding:22px;border-radius:14px 14px 0 0;color:#fff;">
-        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#bae6fd;">NutriPlant PRO</div>
-        <h1 style="margin:6px 0 4px;font-size:25px;">Pronóstico agroclimático</h1>
-        <p style="margin:0;color:#e0f2fe;">${escapeHtml(plot.plot_name || 'Mi predio')}</p>
+      <div style="background:#0c4a6e;padding:22px;border-radius:14px 14px 0 0;">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#ffffff;font-weight:800;">NutriPlant PRO</div>
+        <h1 style="margin:6px 0 4px;font-size:25px;color:#ffffff;font-weight:800;">Pronóstico agroclimático</h1>
+        <p style="margin:0;color:#ffffff;font-size:15px;font-weight:700;">${escapeHtml(plot.plot_name || 'Mi predio')}</p>
       </div>
       <div style="background:#fff;padding:20px;border:1px solid #dbeafe;border-top:0;border-radius:0 0 14px 14px;">
         <p style="margin:0 0 10px;font-size:15px;line-height:1.5;">Hola <strong>${escapeHtml(subscriber.full_name)}</strong>, aquí tienes el pronóstico de tu predio para los próximos días.</p>
@@ -95,10 +95,27 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
         <p style="text-align:center;margin:0 0 18px;">
           <a href="${escapeHtml(reportUrl)}" style="display:inline-block;padding:12px 18px;border-radius:9px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;">Ver reporte completo</a>
         </p>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
-          <div style="padding:10px;border-radius:9px;background:#f0f9ff;"><small>Temperatura</small><br><strong>${value(summary.tempMin)}–${value(summary.tempMax)} °C</strong></div>
-          <div style="padding:10px;border-radius:9px;background:#f5f3ff;"><small>VPD</small><br><strong>${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa</strong></div>
-          <div style="padding:10px;border-radius:9px;background:#f0fdf4;"><small>Lluvia</small><br><strong>${value(summary.rainTotal)} mm</strong></div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px;">
+          <div style="padding:10px;border-radius:9px;background:#f0f9ff;">
+            <small style="color:#0369a1;font-weight:700;">Temperatura · mín–máx</small><br>
+            <strong style="font-size:16px;">${value(summary.tempMin)}–${value(summary.tempMax)} °C</strong><br>
+            <span style="font-size:11px;color:#64748b;">Rango del periodo de pronóstico</span>
+          </div>
+          <div style="padding:10px;border-radius:9px;background:#f5f3ff;">
+            <small style="color:#6d28d9;font-weight:700;">VPD · mín–máx</small><br>
+            <strong style="font-size:16px;">${value(summary.vpdMin, 2)}–${value(summary.vpdMax, 2)} kPa</strong><br>
+            <span style="font-size:11px;color:#64748b;">Rango del periodo de pronóstico</span>
+          </div>
+          <div style="padding:10px;border-radius:9px;background:#ecfdf5;">
+            <small style="color:#0f766e;font-weight:700;">ETo · acumulada</small><br>
+            <strong style="font-size:16px;">${value(summary.et0Total)} mm</strong><br>
+            <span style="font-size:11px;color:#64748b;">Suma del periodo de pronóstico</span>
+          </div>
+          <div style="padding:10px;border-radius:9px;background:#f0fdf4;">
+            <small style="color:#166534;font-weight:700;">Lluvia · acumulada</small><br>
+            <strong style="font-size:16px;">${value(summary.rainTotal)} mm</strong><br>
+            <span style="font-size:11px;color:#64748b;">Suma del periodo de pronóstico</span>
+          </div>
         </div>
         ${forecastTable(rows)}
         <p style="margin:16px 0 0;color:#64748b;font-size:12px;line-height:1.5;">Pronóstico meteorológico estimado para las coordenadas registradas. La temperatura de hoja y el VPD son orientativos; valida el microclima en campo.</p>

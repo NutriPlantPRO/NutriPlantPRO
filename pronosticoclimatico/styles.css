@@ -262,6 +262,16 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 .span-2 { grid-column: span 2; }
 
 .agro-map-actions, .agro-action-row { display: flex; flex-wrap: wrap; gap: 9px; margin: 14px 0 8px; }
+.agro-coords-grid > .agro-map-actions {
+  margin: 0;
+  align-self: end;
+  align-items: stretch;
+  min-height: 42px;
+}
+.agro-coords-grid > .agro-map-actions .agro-btn {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
 .agro-btn {
   display: inline-flex;
   align-items: center;
@@ -451,8 +461,44 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 .agro-mobile-days { display: none !important; }
 
 .agro-chart-toggles { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.agro-chart-toggle { min-height: 32px; padding: 5px 8px; border: 1px solid var(--slate-300); border-radius: 8px; background: #fff; color: var(--slate-700); cursor: pointer; font-size: 10px; font-weight: 800; }
-.agro-chart-toggle.off { opacity: .45; filter: grayscale(1); }
+.agro-chart-toggle {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1.5px solid var(--slate-300);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--slate-700);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  transition: opacity .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+.agro-chart-toggle.series-vpdHours {
+  color: #1e3a8a;
+  border-color: #93c5fd;
+  background: linear-gradient(90deg, rgba(29, 78, 216, 0.22), rgba(22, 163, 74, 0.18), rgba(127, 29, 29, 0.2));
+  box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.12);
+}
+.agro-chart-toggle.series-rain {
+  color: #075985;
+  border-color: #7dd3fc;
+  background: rgba(2, 132, 199, 0.14);
+}
+.agro-chart-toggle.series-et0 {
+  color: #115e59;
+  border-color: #5eead4;
+  background: rgba(15, 118, 110, 0.14);
+}
+.agro-chart-toggle.series-etc {
+  color: #334155;
+  border-color: #94a3b8;
+  background: rgba(100, 116, 139, 0.16);
+}
+.agro-chart-toggle.off {
+  opacity: .4;
+  filter: grayscale(1);
+  box-shadow: none;
+}
 .agro-chart-axes-hint {
   display: flex;
   justify-content: space-between;
@@ -564,6 +610,9 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
   gap: 8px 16px;
   align-items: end;
 }
+.agro-kc-bar.no-wa .agro-kc-bar-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
 .agro-kc-view-box label {
   margin-bottom: 4px;
   color: var(--slate-700);
@@ -612,11 +661,13 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
   font-weight: 750;
   line-height: 1.25;
   text-align: left;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 280px;
   transition: transform .16s ease, background .16s ease;
 }
 .agro-kc-wa svg { flex: 0 0 14px; }
 .agro-kc-wa span { display: block; }
+.agro-kc-wa span strong { color: #fff; font-weight: 900; }
 .agro-kc-wa:hover { background: #15803d; transform: translateY(-1px); }
 .agro-kc-bar-note {
   margin: 6px 0 0;
@@ -682,6 +733,10 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   .agro-card { padding: 14px; border-radius: 13px; }
   .agro-coords-grid, .agro-form-grid { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
+  .agro-coords-grid > .agro-map-actions {
+    grid-column: 1;
+    margin-top: 2px;
+  }
   .agro-input-action {
     grid-template-columns: 1fr;
   }
