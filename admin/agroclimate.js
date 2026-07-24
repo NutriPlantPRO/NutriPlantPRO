@@ -134,7 +134,40 @@
     if (!$('aa-map-view').hidden) renderMap();
   }
 
+  let refreshFeedbackTimer = null;
+
+  function setRefreshButtonState(state) {
+    const btn = $('aa-refresh');
+    if (!btn) return;
+    if (refreshFeedbackTimer) {
+      clearTimeout(refreshFeedbackTimer);
+      refreshFeedbackTimer = null;
+    }
+    btn.classList.remove('is-loading', 'is-ok', 'is-error');
+    if (state === 'loading') {
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+      btn.textContent = 'Actualizando…';
+      return;
+    }
+    btn.disabled = false;
+    if (state === 'ok') {
+      btn.classList.add('is-ok');
+      btn.textContent = 'Actualizado';
+      refreshFeedbackTimer = setTimeout(() => setRefreshButtonState('idle'), 2200);
+      return;
+    }
+    if (state === 'error') {
+      btn.classList.add('is-error');
+      btn.textContent = 'Error';
+      refreshFeedbackTimer = setTimeout(() => setRefreshButtonState('idle'), 2800);
+      return;
+    }
+    btn.textContent = 'Actualizar';
+  }
+
   async function load() {
+    setRefreshButtonState('loading');
     setStatus('Consultando solicitudes…');
     try {
       const out = await api('list');
@@ -142,8 +175,10 @@
       renderMetrics();
       applyFilters();
       setStatus(`${records.length} registros actualizados.`);
+      setRefreshButtonState('ok');
     } catch (error) {
       setStatus(error.message, true);
+      setRefreshButtonState('error');
     }
   }
 
@@ -303,6 +338,8 @@
     $('aa-report-url').value = '';
     $('aa-report-access-meta').textContent = '';
     $('aa-report-history').innerHTML = '';
+    $('aa-report-history-count').textContent = 'Sin cargar';
+    setReportHistoryOpen(false);
     const open = $('aa-report-open');
     open.removeAttribute('href');
     open.setAttribute('aria-disabled', 'true');
@@ -331,12 +368,35 @@
     return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(d);
   }
 
+  function setReportHistoryOpen(open) {
+    const panel = $('aa-report-history-panel');
+    const toggle = $('aa-report-history-toggle');
+    const label = $('aa-report-history-toggle-label');
+    if (!panel || !toggle || !label) return;
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    label.textContent = open ? 'Minimizar' : 'Mostrar';
+  }
+
+  function toggleReportHistory() {
+    const panel = $('aa-report-history-panel');
+    if (!panel) return;
+    setReportHistoryOpen(panel.hidden);
+  }
+
   function renderSnapshotHistory(snapshots) {
     const host = $('aa-report-history');
+    const countEl = $('aa-report-history-count');
     if (!host) return;
     const list = Array.isArray(snapshots) ? snapshots : [];
+    if (countEl) {
+      countEl.textContent = list.length
+        ? `${list.length} reporte${list.length === 1 ? '' : 's'} · toca para ver o minimizar`
+        : 'Sin reportes guardados aún';
+    }
     if (!list.length) {
       host.innerHTML = '<p class="aa-report-history-empty">Todavía no hay reportes guardados para este usuario.</p>';
+      setReportHistoryOpen(false);
       return;
     }
     host.innerHTML = list.map((s) => {
@@ -350,6 +410,8 @@
         <a class="aa-secondary-btn" href="${esc(s.reportUrl)}" target="_blank" rel="noopener">Abrir</a>
       </article>`;
     }).join('');
+    // Con muchos (p. ej. 15–16) arranca minimizado; con pocos se puede abrir igual al toque.
+    setReportHistoryOpen(false);
   }
 
   async function loadReportLink(subscriberId, seed) {
@@ -358,6 +420,8 @@
     box.hidden = false;
     $('aa-report-url').value = 'Cargando link…';
     $('aa-report-history').innerHTML = '<p class="aa-report-history-empty">Cargando historial…</p>';
+    $('aa-report-history-count').textContent = 'Cargando…';
+    setReportHistoryOpen(false);
     if (seed) fillReportAccessMeta(seed);
     try {
       const out = await api('report_link', { subscriber_id: subscriberId });
@@ -370,7 +434,9 @@
     } catch (error) {
       $('aa-report-url').value = '';
       $('aa-report-access-meta').textContent = error.message || 'No se pudo cargar el link';
+      $('aa-report-history-count').textContent = 'No se pudo cargar';
       $('aa-report-history').innerHTML = `<p class="aa-report-history-empty">${esc(error.message || 'Error')}</p>`;
+      setReportHistoryOpen(false);
     }
   }
 
@@ -573,6 +639,7 @@
     $('aa-edit-form').addEventListener('submit', saveEdit);
     $('aa-delete-btn').addEventListener('click', deleteSubscriber);
     $('aa-report-copy').addEventListener('click', copyReportLink);
+    $('aa-report-history-toggle').addEventListener('click', toggleReportHistory);
     ['country', 'region', 'latitude', 'longitude'].forEach((name) => {
       const field = $('aa-edit-form').elements[name];
       if (field) field.addEventListener('change', () => refreshTimezoneSuggestion(true));

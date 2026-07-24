@@ -7,7 +7,29 @@ button,input,select,textarea { font:inherit; }
 .aa-header img { width:38px; height:38px; object-fit:contain; }
 .aa-header div { display:grid; text-align:center; }
 .aa-header small { color:#bae6fd; font-size:11px; }
-.aa-header button { justify-self:end; padding:8px 12px; border:1px solid #7dd3fc; border-radius:8px; color:#fff; background:#0369a1; cursor:pointer; }
+.aa-header button { justify-self:end; padding:8px 12px; border:1px solid #7dd3fc; border-radius:8px; color:#fff; background:#0369a1; cursor:pointer; transition:border-color .2s, background .2s, color .2s, box-shadow .2s; }
+.aa-header button:disabled { cursor:wait; opacity:.95; }
+.aa-header button.is-loading {
+  border-color:#facc15;
+  border-width:2px;
+  color:#fef9c3;
+  background:#854d0e;
+  box-shadow:0 0 0 2px #facc1544;
+}
+.aa-header button.is-ok {
+  border-color:#4ade80;
+  border-width:2px;
+  color:#dcfce7;
+  background:#166534;
+  box-shadow:0 0 0 2px #4ade8044;
+}
+.aa-header button.is-error {
+  border-color:#f87171;
+  border-width:2px;
+  color:#fee2e2;
+  background:#991b1b;
+  box-shadow:0 0 0 2px #f8717144;
+}
 .aa-shell { width:min(1450px,calc(100% - 26px)); margin:18px auto 50px; }
 .aa-metrics { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:13px; }
 .aa-metric { padding:14px; border:1px solid var(--line); border-radius:11px; background:#fff; box-shadow:0 4px 14px #0f172a0a; }
@@ -132,16 +154,40 @@ label { display:grid; gap:5px; color:#334155; font-size:11px; font-weight:750; }
   cursor:pointer;
 }
 .aa-secondary-btn:hover { filter:brightness(.98); }
-.aa-report-history-head {
+.aa-report-history-block { margin-top:4px; display:grid; gap:6px; }
+.aa-report-history-toggle {
   display:flex;
-  flex-wrap:wrap;
+  width:100%;
+  align-items:center;
   justify-content:space-between;
-  gap:4px;
-  align-items:baseline;
-  margin-top:4px;
+  gap:10px;
+  padding:9px 11px;
+  border:1px solid #bfdbfe;
+  border-radius:8px;
+  background:#eff6ff;
+  color:#0f3d6e;
+  cursor:pointer;
+  text-align:left;
+  font:inherit;
 }
-.aa-report-history-head strong { color:#0f3d6e; font-size:12px; }
-.aa-report-history-head small { color:#64748b; font-size:11px; font-weight:600; }
+.aa-report-history-toggle:hover { filter:brightness(.98); }
+.aa-report-history-toggle-main { display:grid; gap:2px; min-width:0; }
+.aa-report-history-toggle-main strong { font-size:12px; }
+.aa-report-history-toggle-main small { color:#64748b; font-size:11px; font-weight:650; }
+.aa-report-history-toggle-label {
+  flex:none;
+  min-width:72px;
+  padding:5px 8px;
+  border-radius:6px;
+  background:#fff;
+  border:1px solid #bfdbfe;
+  color:#1d4ed8;
+  font-size:11px;
+  font-weight:800;
+  text-align:center;
+}
+.aa-report-history-panel[hidden] { display:none; }
+.aa-report-history-panel { display:grid; gap:6px; }
 .aa-report-history {
   display:grid;
   gap:6px;

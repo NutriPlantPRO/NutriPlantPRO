@@ -1241,13 +1241,26 @@
       overflow: auto;
       margin-bottom: 10px;
       padding-right: 4px;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+    .np-nutri-folder-tree .np-nutri-folder-wrap,
+    .np-nutri-folder-tree .np-nutri-folder-children,
+    .np-nutri-folder-tree .np-nutri-folder-children-inner {
+      width: max-content;
+      min-width: 100%;
+      box-sizing: border-box;
     }
     .np-nutri-folder-row {
       position: relative;
       display: flex;
       align-items: center;
       gap: 6px;
-      width: 100%;
+      width: auto;
+      min-width: 100%;
+      box-sizing: border-box;
       padding: 8px 10px 8px 14px;
       margin-bottom: 4px;
       border: 0;
@@ -1358,26 +1371,26 @@
       box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.1);
     }
     .np-nutri-folder-label {
-      flex: 1;
+      flex: 0 0 auto;
       min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
+      text-overflow: clip;
       white-space: nowrap;
     }
     .np-nutri-folder-meta {
-      flex-shrink: 1;
+      flex-shrink: 0;
       min-width: 0;
       margin-left: auto;
-      padding-left: 4px;
+      padding-left: 8px;
       font-size: 9px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       color: #94a3b8;
       letter-spacing: 0.02em;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 34%;
+      overflow: visible;
+      text-overflow: clip;
+      max-width: none;
       opacity: 0.52;
       line-height: 1.2;
       transition: opacity 0.12s ease;
@@ -1485,6 +1498,66 @@
       color: #64748b;
       font-variant-numeric: tabular-nums;
     }
+    #npNutriHeaviestModal.np-modal-overlay {
+      z-index: 16845;
+    }
+    .np-nutri-heaviest-hint {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .np-nutri-heaviest-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+      max-height: min(62vh, 520px);
+      overflow: auto;
+    }
+    .np-nutri-heaviest-item {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(248, 250, 252, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+    }
+    .np-nutri-heaviest-main {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+    .np-nutri-heaviest-name {
+      font-size: 13px;
+      font-weight: 650;
+      color: #0f172a;
+      word-break: break-word;
+    }
+    .np-nutri-heaviest-path {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .np-nutri-heaviest-size {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #b45309;
+      font-variant-numeric: tabular-nums;
+    }
+    .np-nutri-heaviest-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+    }
     .np-nutri-folders-sidebar .np-color-edit-bar {
       margin-top: 0;
       margin-bottom: 10px;
@@ -1497,8 +1570,8 @@
       margin-bottom: 4px;
     }
     .np-nutri-folder-wrap .np-nutri-folder-row {
-      flex: 1;
-      min-width: 0;
+      flex: 1 0 auto;
+      min-width: auto;
       margin-bottom: 0;
     }
     .np-nutri-folder-wrap .np-tree-menu-wrap {
@@ -10858,7 +10931,7 @@
             <span class="np-storage-usage-num" id="npStorageUsageNum">…</span>
             <span class="np-storage-usage-sub" id="npStorageUsageSub">NutriPlant nube</span>
           </button>
-          <button type="button" class="np-cloud-sync-btn" id="npCloudSyncBtn" data-state="idle" aria-live="polite" aria-label="Estado de sincronización con la nube" title="Sincronización con la nube">
+          <button type="button" class="np-cloud-sync-btn" id="npCloudSyncBtn" data-state="idle" aria-live="polite" aria-label="Actualizar desde la nube" title="Clic: subir pendientes y actualizar desde la nube">
             <svg class="np-cloud-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
             </svg>
@@ -11336,6 +11409,7 @@
                         <option value="title">Nombre A–Z</option>
                         <option value="date">Más reciente</option>
                       </select>
+                      <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriBtnHeaviest" title="Ver los archivos más pesados de toda la bóveda">Más pesados</button>
                       <input type="file" id="npNutriFileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.xml,.rtf,.odt,.ods,.odp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.svg,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/xml,text/xml" aria-hidden="true" tabindex="-1" />
                       <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriBtnPickFiles">Elegir archivos</button>
                       <button type="button" class="btn btn-primary" id="npNutriBtnUpload" disabled>Subir</button>
@@ -11639,6 +11713,16 @@
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriFolderStatsClose" style="flex-shrink:0;">Cerrar</button>
       </div>
       <div id="npNutriFolderStatsBody" class="np-modal-body" style="padding-top:8px;"></div>
+    </div>
+  </div>
+
+  <div id="npNutriHeaviestModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel" role="dialog" aria-labelledby="npNutriHeaviestTitle" style="max-width:640px;">
+      <div class="np-modal-head">
+        <h3 id="npNutriHeaviestTitle" style="margin:0;font-size:1rem;">Archivos más pesados</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriHeaviestClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div id="npNutriHeaviestBody" class="np-modal-body" style="padding-top:8px;"></div>
     </div>
   </div>
 
@@ -12024,6 +12108,7 @@
     lastError: null,
     queuedCount: 0,
     flushing: false,
+    pulling: false,
     online: typeof navigator !== 'undefined' ? navigator.onLine !== false : true,
     sessionReady: false
   };
@@ -12055,51 +12140,59 @@
     if (!btn) return;
     if (!state || !state.client || !$('npHeaderLogged') || $('npHeaderLogged').classList.contains('np-hide')) {
       btn.setAttribute('data-state', 'idle');
-      btn.setAttribute('aria-label', 'Sincronización con la nube');
-      btn.title = 'Sincronización con la nube';
+      btn.setAttribute('aria-label', 'Actualizar desde la nube');
+      btn.title = 'Clic: subir pendientes y actualizar desde la nube';
       return;
     }
     var stateName;
     var label;
     var title;
+    var clickHint = ' · Clic para actualizar desde la nube';
     if (!npCloudSync.online) {
       stateName = 'offline';
       label = npCloudSync.queuedCount
         ? 'Sin conexión: ' + npCloudSync.queuedCount + ' cambio(s) guardado(s) en este equipo'
         : 'Sin conexión: no se puede sincronizar con la nube';
       title = label;
-    } else if (npCloudSync.inFlight > 0) {
+    } else if (npCloudSync.pulling) {
+      stateName = 'saving';
+      label = 'Actualizando desde la nube…';
+      title = label;
+    } else if (npCloudSync.inFlight > 0 || npCloudSync.flushing) {
       stateName = 'saving';
       label = 'Guardando en la nube…';
       title = label;
     } else if (npCloudSync.queuedCount > 0) {
       stateName = 'pending';
       label = npCloudSync.queuedCount + ' cambio(s) local(es) pendiente(s) de subir';
-      title = label;
+      title = label + clickHint;
     } else if (npCloudHasPendingEdits()) {
       stateName = 'pending';
       label = 'Cambios pendientes: se subirán en unos segundos';
-      title = label;
+      title = label + clickHint;
     } else if (npCloudSync.lastError) {
       stateName = 'error';
-      label = 'Error al guardar en la nube: ' + npCloudSync.lastError;
-      title = label;
+      label = 'Error de nube: ' + npCloudSync.lastError;
+      title = label + clickHint;
     } else if (npCloudSync.sessionReady || npCloudSync.lastOkAt) {
       stateName = 'synced';
       if (npCloudSync.lastOkAt) {
         try {
-          title = 'Guardado en la nube · ' + new Date(npCloudSync.lastOkAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+          title =
+            'Sincronizado · ' +
+            new Date(npCloudSync.lastOkAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) +
+            clickHint;
         } catch (e) {
-          title = 'Guardado en la nube';
+          title = 'Sincronizado con la nube' + clickHint;
         }
       } else {
-        title = 'Conectado · datos en la nube';
+        title = 'Conectado · clic para actualizar desde la nube';
       }
       label = title;
     } else {
       stateName = 'synced';
       label = 'Conectado a la nube';
-      title = label;
+      title = label + clickHint;
     }
     btn.setAttribute('data-state', stateName);
     btn.setAttribute('aria-label', label);
@@ -13380,6 +13473,23 @@
     return didFlush;
   }
 
+  async function npCloudPullFromCloud() {
+    await loadLookups();
+    await loadItems();
+    await loadPlanProLocationFavorites();
+    await loadNutriProVault();
+    if (state.nutriProAppMode === 'mapa' && typeof scheduleRenderPlanProMapa === 'function') {
+      scheduleRenderPlanProMapa();
+    }
+    var detailModal = $('npDetailModal');
+    if (detailModal && detailModal.classList.contains('np-modal-open') && state.detailItemId) {
+      var fresh = await fetchPlanProItemForDetail(state.detailItemId);
+      if (fresh) await openItemDetail(fresh);
+    }
+    if (typeof prefetchCalOverlayEntries === 'function') prefetchCalOverlayEntries();
+    refreshPlanProStorageUsage({ force: true });
+  }
+
   async function npCloudManualSyncNow() {
     if (!state || !state.client) return;
     npCloudOfflineLoadCount();
@@ -13392,24 +13502,31 @@
       );
       return;
     }
-    if (npCloudSync.flushing || npCloudSync.inFlight > 0) {
+    if (npCloudSync.flushing || npCloudSync.pulling || npCloudSync.inFlight > 0) {
       showToast('Ya se está sincronizando con la nube.');
       return;
     }
 
-    var hadPending = await npCloudFlushPendingEdits();
-    npCloudOfflineLoadCount();
-    var hadQueue = npCloudSync.queuedCount > 0;
-    if (hadQueue) {
-      await npCloudOfflineFlushQueue();
-      return;
-    }
-    if (!hadPending && !npCloudHasPendingEdits() && !npCloudSync.lastError) {
-      showToast('Todo está guardado en la nube.');
-      return;
-    }
-    if (!npCloudSync.lastError && npCloudSync.queuedCount === 0) {
-      showToast('Sincronización manual completada.');
+    try {
+      await npCloudFlushPendingEdits();
+      npCloudOfflineLoadCount();
+      if (npCloudSync.queuedCount > 0) {
+        await npCloudOfflineFlushQueue();
+      }
+
+      npCloudSync.pulling = true;
+      npCloudSyncRender();
+      showToast('Actualizando desde la nube…');
+      await npCloudPullFromCloud();
+      npCloudSync.lastOkAt = Date.now();
+      npCloudSync.lastError = null;
+      showToast('Actualizado desde la nube.');
+    } catch (e) {
+      npCloudSync.lastError = (e && e.message) || String(e);
+      showToast('No se pudo actualizar desde la nube: ' + npCloudSync.lastError, true);
+    } finally {
+      npCloudSync.pulling = false;
+      npCloudSyncRender();
     }
   }
 
@@ -31878,6 +31995,87 @@
     modal.setAttribute('aria-hidden', 'false');
   }
 
+  function closeNutriProHeaviestModal() {
+    var modal = $('npNutriHeaviestModal');
+    if (!modal) return;
+    modal.classList.remove('np-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  async function openNutriProHeaviestFilesModal() {
+    var modal = $('npNutriHeaviestModal');
+    var body = $('npNutriHeaviestBody');
+    var titleEl = $('npNutriHeaviestTitle');
+    if (!modal || !body || !state.client) return;
+    if (titleEl) titleEl.textContent = 'Archivos más pesados';
+    body.innerHTML = '<p class="np-muted" style="margin:0;">Cargando…</p>';
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    try {
+      if (!(state.nutriProFolders || []).length) await loadNutriProFolders();
+      var res = await state.client
+        .from('plan_pro_nutri_files')
+        .select('id,folder_id,title,original_name,size_bytes')
+        .order('size_bytes', { ascending: false })
+        .limit(40);
+      if (res.error) throw res.error;
+      var rows = res.data || [];
+      if (!rows.length) {
+        body.innerHTML =
+          '<p class="np-muted" style="margin:0;">Aún no hay archivos en Nutri PRO.</p>';
+        return;
+      }
+      var html =
+        '<p class="np-nutri-heaviest-hint">Top ' +
+        rows.length +
+        ' por peso en toda la bóveda. Usa <strong>Ir</strong> para abrir la carpeta y ubicar el archivo (ahí puedes borrarlo si quieres).</p><ul class="np-nutri-heaviest-list">';
+      rows.forEach(function (f, idx) {
+        var name = f.original_name || f.title || 'Archivo';
+        var path = nutriProFolderDisplayPath(f.folder_id || null);
+        var sizeLabel = formatPlanProStorageSize(f.size_bytes || 0);
+        html +=
+          '<li class="np-nutri-heaviest-item">' +
+          '<div class="np-nutri-heaviest-main">' +
+          '<div class="np-nutri-heaviest-name">' +
+          (idx + 1) +
+          '. ' +
+          escapeHtmlText(name) +
+          '</div>' +
+          '<div class="np-nutri-heaviest-path">📁 ' +
+          escapeHtmlText(path) +
+          '</div>' +
+          '<div class="np-nutri-heaviest-size">' +
+          escapeHtmlText(sizeLabel) +
+          '</div>' +
+          '</div>' +
+          '<div class="np-nutri-heaviest-actions">' +
+          '<button type="button" class="btn btn-ghost btn-ghost-blue" data-np-heaviest-go="' +
+          escapeHtmlText(f.id) +
+          '" data-np-heaviest-folder="' +
+          escapeHtmlText(f.folder_id || '') +
+          '">Ir</button>' +
+          '</div>' +
+          '</li>';
+      });
+      html += '</ul>';
+      body.innerHTML = html;
+      body.querySelectorAll('[data-np-heaviest-go]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var fid = btn.getAttribute('data-np-heaviest-go');
+          var folderAttr = btn.getAttribute('data-np-heaviest-folder');
+          var folderId = folderAttr ? folderAttr : null;
+          closeNutriProHeaviestModal();
+          openNutriProFileFromSearch(fid, folderId);
+        });
+      });
+    } catch (err) {
+      body.innerHTML =
+        '<p class="np-muted" style="margin:0;color:#b91c1c;">No se pudo cargar: ' +
+        escapeHtmlText((err && err.message) || String(err)) +
+        '</p>';
+    }
+  }
+
   function patchNutriProFolderTreeMeta() {
     var mount = $('npNutriFolderTree');
     if (mount) {
@@ -33333,6 +33531,7 @@
     var lbl = document.createElement('span');
     lbl.className = 'np-nutri-folder-label';
     lbl.textContent = f.title || '(Sin nombre)';
+    lbl.title = f.title || '(Sin nombre)';
     btn.appendChild(sw);
     btn.appendChild(lbl);
     var meta = document.createElement('span');
@@ -35505,6 +35704,25 @@
       nutriStatsModal.dataset.npWired = '1';
       nutriStatsModal.addEventListener('click', function (e) {
         if (e.target === nutriStatsModal) closeNutriProFolderStatsModal();
+      });
+    }
+    var heaviestBtn = $('npNutriBtnHeaviest');
+    if (heaviestBtn && heaviestBtn.dataset.npWired !== '1') {
+      heaviestBtn.dataset.npWired = '1';
+      heaviestBtn.addEventListener('click', function () {
+        openNutriProHeaviestFilesModal();
+      });
+    }
+    var heaviestClose = $('npNutriHeaviestClose');
+    if (heaviestClose && heaviestClose.dataset.npWired !== '1') {
+      heaviestClose.dataset.npWired = '1';
+      heaviestClose.addEventListener('click', closeNutriProHeaviestModal);
+    }
+    var heaviestModal = $('npNutriHeaviestModal');
+    if (heaviestModal && heaviestModal.dataset.npWired !== '1') {
+      heaviestModal.dataset.npWired = '1';
+      heaviestModal.addEventListener('click', function (e) {
+        if (e.target === heaviestModal) closeNutriProHeaviestModal();
       });
     }
     wireNutriProExtractTextModals();
