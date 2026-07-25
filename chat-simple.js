@@ -863,7 +863,7 @@ class NutriPlantChat {
     }, 500);
   }
 
-  /** Actualiza en el header el texto de cuota por créditos (ej. 490/500). */
+  /** Actualiza en el header el texto de cuota por créditos (ej. 240/250). */
   updateChatQuotaDisplay() {
     const el = document.getElementById('chatQuotaDisplay');
     if (!el) return;
@@ -877,7 +877,7 @@ class NutriPlantChat {
       let limitRaw = user.chat_limit_monthly;
       const hasAccess = user.subscription_status === 'active' || (user.subscription_status === 'cancelled' && user.cancelled_by_admin !== true && user.next_payment_date && new Date() <= new Date(user.next_payment_date + 'T23:59:59'));
       const isActiveSubscriber = hasAccess;
-      if ((limitRaw == null || limitRaw === '' || limitRaw === -1) && isActiveSubscriber) limitRaw = 500;
+      if ((limitRaw == null || limitRaw === '' || limitRaw === -1) && isActiveSubscriber) limitRaw = 250;
       const now = new Date();
       const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
       let used = user.chat_usage_current_month;
@@ -940,7 +940,7 @@ class NutriPlantChat {
       if (user.chat_blocked === true) return { allowed: false, message: 'El chat con la IA está deshabilitado para tu cuenta. Contacta al administrador si necesitas activarlo.' };
       const hasAccess = user.subscription_status === 'active' || (user.subscription_status === 'cancelled' && user.cancelled_by_admin !== true && user.next_payment_date && new Date() <= new Date(user.next_payment_date + 'T23:59:59'));
       let rawLimit = user.chat_limit_monthly;
-      if ((rawLimit == null || rawLimit === '' || rawLimit === -1) && hasAccess) rawLimit = 500;
+      if ((rawLimit == null || rawLimit === '' || rawLimit === -1) && hasAccess) rawLimit = 250;
       if (rawLimit === -1 || rawLimit == null || rawLimit === '') return { allowed: true };
       const limit = parseInt(rawLimit, 10);
       if (limit === 0) return { allowed: false, message: 'No tienes chats disponibles este mes. Contacta al administrador si necesitas activarlo.' };

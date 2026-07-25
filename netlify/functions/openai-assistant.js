@@ -62,7 +62,7 @@ function buildChatCompletionsPayload({ model, messages, maxTokens, temperature, 
   if (toolChoice) payload.tool_choice = toolChoice;
   return payload;
 }
-const DEFAULT_MONTHLY_CREDITS = 500;
+const DEFAULT_MONTHLY_CREDITS = 250;
 const CREDITS_TEXT_MESSAGE = 1;
 const CREDITS_IMAGE_MESSAGE = 3; // 1 imagen por mensaje
 const CREDITS_WEB_SEARCH = 2; // cuando el asistente consulta la web en esta petición

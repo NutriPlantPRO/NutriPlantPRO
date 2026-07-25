@@ -182,9 +182,9 @@ Si el chat en el dominio sigue sin responder, revisa en Netlify que la variable 
 
 ---
 
-## PASO 5c — Límite mensual de chat por usuario (1 USD) en el dominio
+## PASO 5c — Límite mensual de chat por usuario (créditos) en el dominio
 
-En el dominio, el **límite de 1 USD/mes por usuario** que configuras en el panel de admin se aplica igual que en local: la función de Netlify lee y actualiza el uso en **Supabase**.
+En el dominio, el **límite de créditos/mes por usuario** (default **250** si está vacío; ≈ **$0.25–0.50 USD** con gpt-4o-mini) se aplica igual que en local: la función de Netlify lee y actualiza el uso en **Supabase**.
 
 ### Variables de entorno en Netlify (obligatorias para la cuota)
 
@@ -201,8 +201,8 @@ Después de añadirlas, haz **Deploy** para que la función las use.
 
 La función usa estas columnas en la tabla **profiles** (el panel de admin ya las usa):
 
-- **chat_limit_monthly** — Límite en USD por mes. `-1` o vacío = sin límite. Ej: `1` = 1 USD/mes.
-- **chat_usage_current_month** — Uso en USD del mes actual (lo actualiza la función tras cada respuesta del chat).
+- **chat_limit_monthly** — Límite en **créditos** por mes. Vacío/`null` = **250** si es suscriptor activo. `0` = sin chats. `-1` = ilimitado.
+- **chat_usage_current_month** — Créditos usados del mes actual (lo actualiza la función tras cada respuesta del chat).
 - **chat_usage_month** — Mes al que corresponde el uso (ej. `2025-02`). Si el mes cambia, la función resetea el uso.
 
 Si en tu proyecto Supabase la tabla `profiles` no tiene esas columnas, créalas en **Table Editor** → **profiles** → **Add column**: tipo numérico para `chat_limit_monthly` y `chat_usage_current_month`, y texto para `chat_usage_month`.
