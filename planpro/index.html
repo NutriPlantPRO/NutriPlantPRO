@@ -31759,7 +31759,7 @@
       if (state.nutriProReady) {
         var res = await state.client
           .from('plan_pro_nutri_files')
-          .select('id,folder_id,title,original_name,description,mime_type,updated_at')
+          .select('id,folder_id,title,original_name,description,mime_type,storage_path,updated_at')
           .order('title', { ascending: true })
           .limit(500);
         if (gen !== state.nutriProSearchGen) return;
@@ -34928,6 +34928,21 @@
   }
 
   async function openNutriProFile(fileRec, forceDownload) {
+    // Desde búsqueda a veces llega el hit sin storage_path: completar desde nube.
+    if (fileRec && fileRec.id && !fileRec.storage_path && state.client) {
+      try {
+        var full = await state.client
+          .from('plan_pro_nutri_files')
+          .select('id,folder_id,title,original_name,description,mime_type,storage_path,updated_at')
+          .eq('id', fileRec.id)
+          .maybeSingle();
+        if (full && full.data) fileRec = Object.assign({}, fileRec, full.data);
+      } catch (e) {}
+    }
+    if (!fileRec || !fileRec.storage_path) {
+      showToast('No se pudo abrir: falta la ruta del archivo en la nube.', true);
+      return;
+    }
     var url = await nutriProFileSignedUrl(fileRec);
     if (!url) return;
     if (forceDownload) {

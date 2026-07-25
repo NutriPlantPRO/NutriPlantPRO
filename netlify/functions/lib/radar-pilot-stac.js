@@ -496,7 +496,8 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
         : MAX_LOOKBACK_DAYS;
   const lookbackDays = clampLookbackDays(opts?.lookbackDays || COMPOSITE_LOOKBACK_DAYS);
   const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
-  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 48);
+  // Solo resolver assets de las N más claras (no 40+ COGs: eso tumba el worker).
+  const tryBudget = Math.min(Math.max(Number(opts?.candidateLimit) || maxScenes * 3, maxScenes), 12);
 
   let features = [];
   let searchErr = null;
@@ -514,7 +515,11 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
 
   const resolved = [];
   let lastErr = searchErr;
-  for (const item of features.slice(0, candidateLimit)) {
+  let tried = 0;
+  for (const item of features) {
+    if (resolved.length >= maxScenes) break;
+    if (tried >= tryBudget) break;
+    tried += 1;
     try {
       const bandUrls = await resolveSceneAssets(item, activeProvider, activeToken);
       resolved.push(sceneFromItem(item, activeProvider, bbox, bandUrls));
@@ -589,7 +594,8 @@ async function findSentinel2ScenesForRange(polygon, opts) {
   }
   const maxScenes = Math.min(Math.max(Number(opts?.maxScenes) || COMPOSITE_MAX_SCENES, 1), COMPOSITE_MAX_SCENES);
   const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
-  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 48);
+  // Presupuesto de firmas COG: pocas. Ordenamos por nubes y paramos al tener maxScenes.
+  const tryBudget = Math.min(Math.max(Number(opts?.candidateLimit) || maxScenes * 3, maxScenes), 12);
 
   async function collectScenes(cloudLimit) {
     let features = [];
@@ -604,11 +610,15 @@ async function findSentinel2ScenesForRange(polygon, opts) {
     } catch (e) {
       searchErr = e;
     }
-    // CRÍTICO: ordenar por nubes ANTES de recortar. Si no, el limit se come las claras.
+    // CRÍTICO: ordenar por nubes ANTES de firmar. Solo resolvemos las más claras.
     const ordered = sortFeaturesByCloud(features);
     const resolved = [];
     let lastErr = searchErr;
-    for (const item of ordered.slice(0, candidateLimit)) {
+    let tried = 0;
+    for (const item of ordered) {
+      if (resolved.length >= maxScenes) break;
+      if (tried >= tryBudget) break;
+      tried += 1;
       try {
         const bandUrls = await resolveSceneAssets(item, activeProvider, activeToken);
         resolved.push(sceneFromItem(item, activeProvider, bbox, bandUrls));

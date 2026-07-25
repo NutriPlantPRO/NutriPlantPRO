@@ -212,8 +212,27 @@ Cuando diga “sube a Nutri PRO” o “lo nuevo de 2Work JJAM”:
 
 ---
 
+## OCR / IA (Sol) — escaneados útiles
+
+Lista filtrada (sin viáticos/tickets): `docs/NUTRI-PRO-PENDIENTES-OCR-UTIL.csv` (~171 PDF + 2 PPTX + imágenes).
+
+```bash
+cd "/Users/jesusavila/Desktop/MI PROYECTO"
+export NUTRI_PRO_BULK_EMAIL="..."
+export NUTRI_PRO_BULK_PASSWORD="..."
+# Preferir Terminal.app (tarda; usa OpenAI vía Netlify nutri-pro-extract mode=ocr)
+node scripts/nutri-pro-bulk-ocr.mjs --pdf-only 2>&1 | tee -a scripts/nutri-pro-bulk-ocr.log
+```
+
+- State / resume: `scripts/nutri-pro-bulk-ocr-state.json`
+- Opciones: `--limit N`, `--dry-run`, `--all-types` (incluye no-PDF; OCR Sol está pensado para PDF)
+- PPTX e imágenes quedan fuera del lote `--pdf-only` por ahora
+
+---
+
 ## Referencias
 
-- Script: `scripts/nutri-pro-bulk-upload.mjs`
+- Script upload: `scripts/nutri-pro-bulk-upload.mjs`
+- Script OCR: `scripts/nutri-pro-bulk-ocr.mjs`
 - Bucket Storage: `plan-pro-nutri-pro`
 - UI Plan PRO → Nutri PRO: `planpro/index.html` (botón **Más pesados**, scroll lateral en carpetas)

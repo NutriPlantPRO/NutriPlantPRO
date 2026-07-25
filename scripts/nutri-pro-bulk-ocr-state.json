@@ -1,0 +1,564 @@
+{
+  "done": {
+    "Vehículo Yara (Prius, placa 12N779).pdf": {
+      "fileId": "773daae3-ebf8-41fe-9819-ec7e95bb279a",
+      "http": 504,
+      "status": null,
+      "chars": 0,
+      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
+      "at": "2026-07-25T19:18:04.977Z"
+    },
+    "Ejercicio M1.pdf": {
+      "fileId": "4fad9f8a-000d-4f32-868a-9439a3117a53",
+      "http": 200,
+      "status": "done",
+      "chars": 247,
+      "error": null,
+      "at": "2026-07-25T19:18:10.216Z"
+    },
+    "Brujula de las emociones DHD .pdf": {
+      "fileId": "9d005f6d-6c00-497f-a992-5753c7faf72c",
+      "http": 200,
+      "status": "done",
+      "chars": 1014,
+      "error": null,
+      "at": "2026-07-25T19:18:16.949Z"
+    },
+    "24.2.1 Fertirriego en frutillas (Garrocho).pdf": {
+      "fileId": "b78eea34-a1fa-48fd-acb7-6a390b0ec23e",
+      "http": 200,
+      "status": "done",
+      "chars": 1782,
+      "error": null,
+      "at": "2026-07-25T19:18:26.664Z"
+    },
+    "09. Fertirriego en Esparrago (Ramirez) (3).pdf": {
+      "fileId": "988764b1-9d66-4933-826b-ae50f5e76130",
+      "http": 200,
+      "status": "done",
+      "chars": 3574,
+      "error": null,
+      "at": "2026-07-25T19:18:38.089Z"
+    },
+    "Solucion nutritiva Tomate.pdf": {
+      "fileId": "14fc1932-23a0-4c00-9fc9-cb37f3c2b0a2",
+      "http": 200,
+      "status": "done",
+      "chars": 1350,
+      "error": null,
+      "at": "2026-07-25T19:18:44.285Z"
+    },
+    "Tabal periodica del Excel.pdf": {
+      "fileId": "7338a1d2-d7d2-479f-9862-d69a041855da",
+      "http": 200,
+      "status": "done",
+      "chars": 4346,
+      "error": null,
+      "at": "2026-07-25T19:19:12.379Z"
+    },
+    "Extraccion nutrimental agave.pdf": {
+      "fileId": "1dae8f80-0903-4b38-914c-09d88a18f599",
+      "http": 200,
+      "status": "done",
+      "chars": 303,
+      "error": null,
+      "at": "2026-07-25T19:19:18.593Z"
+    },
+    "Análisis de agua (RAS).pdf": {
+      "fileId": "3d20d1a5-417b-4178-b8e4-1d18d4e25832",
+      "http": 504,
+      "status": null,
+      "chars": 0,
+      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
+      "at": "2026-07-25T19:19:49.807Z"
+    },
+    "Interpretación CE en agua y equivalencias.pdf": {
+      "fileId": "fa40c702-957a-4100-b039-3b7c01f1e305",
+      "http": 200,
+      "status": "done",
+      "chars": 641,
+      "error": null,
+      "at": "2026-07-25T19:19:56.584Z"
+    },
+    "CIC de acuerdo a la textura de suelo.pdf": {
+      "fileId": "6688ecc5-a94c-4153-8bf1-e37ec7b12822",
+      "http": 200,
+      "status": "done",
+      "chars": 904,
+      "error": null,
+      "at": "2026-07-25T19:20:01.296Z"
+    },
+    "Clasificación de suelos.pdf": {
+      "fileId": "a0831e1c-fa30-460b-a66d-c5c21d06f083",
+      "http": 200,
+      "status": "done",
+      "chars": 125,
+      "error": null,
+      "at": "2026-07-25T19:20:05.395Z"
+    },
+    "Cálculos enmiendas.pdf": {
+      "fileId": "c77642b5-50da-44f3-a76c-bdadb7248264",
+      "http": 200,
+      "status": "done",
+      "chars": 3651,
+      "error": null,
+      "at": "2026-07-25T19:20:28.123Z"
+    },
+    "Clasificación y Taxonomía de suelo.pdf": {
+      "fileId": "afec1f85-830b-4440-86e3-c38213f860ee",
+      "http": 200,
+      "status": "done",
+      "chars": 2919,
+      "error": null,
+      "at": "2026-07-25T19:20:51.287Z"
+    },
+    "Interpretación análisis de suelo.pdf": {
+      "fileId": "dd62652c-4400-46fc-b35d-d6982c5f2096",
+      "http": 200,
+      "status": "done",
+      "chars": 4395,
+      "error": null,
+      "at": "2026-07-25T19:21:10.228Z"
+    },
+    "Mineralizacion e inmobilizacion del nitrógeno MO.pdf": {
+      "fileId": "39622a81-9799-473e-b243-ac5f8127051a",
+      "http": 200,
+      "status": "done",
+      "chars": 954,
+      "error": null,
+      "at": "2026-07-25T19:21:16.477Z"
+    },
+    "Rangos diferentes metodos de P.pdf": {
+      "fileId": "fd901409-f4c8-47de-aa0a-5d481f8c6986",
+      "http": 200,
+      "status": "done",
+      "chars": 478,
+      "error": null,
+      "at": "2026-07-25T19:21:21.740Z"
+    },
+    "Propiedades físicas y químicas del suelo.pdf": {
+      "fileId": "b4be46a5-0243-441e-b9a2-8f9194d39842",
+      "http": 504,
+      "status": null,
+      "chars": 0,
+      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
+      "at": "2026-07-25T19:21:52.675Z"
+    },
+    "Valores de referencia CIC meq100g por textura de suelo.pdf": {
+      "fileId": "780bc260-e4e3-48ae-a2cf-4ab31d37383e",
+      "http": 200,
+      "status": "done",
+      "chars": 383,
+      "error": null,
+      "at": "2026-07-25T19:21:56.856Z"
+    },
+    "pH en suelo _Michel Slota.pdf": {
+      "fileId": "03e1bace-8c78-490f-a463-70e4e3bc6f34",
+      "http": 200,
+      "status": "done",
+      "chars": 1971,
+      "error": null,
+      "at": "2026-07-25T19:22:05.890Z"
+    },
+    "pH en suelo.pdf": {
+      "fileId": "a56efdd0-355f-419a-8a9b-4ee7fcecafc8",
+      "http": 200,
+      "status": "done",
+      "chars": 2123,
+      "error": null,
+      "at": "2026-07-25T19:22:14.789Z"
+    },
+    "Determinación de eficiencia de absorción Foliar.pdf": {
+      "fileId": "ea5722cd-1dfd-48a5-94f9-33f033ac53f1",
+      "http": 200,
+      "status": "done",
+      "chars": 2177,
+      "error": null,
+      "at": "2026-07-25T19:22:23.454Z"
+    },
+    "Diagnostico Visual de Deficiencias Nutrimentales.pdf": {
+      "fileId": "dcf9d846-5f7b-47cf-96a7-aa1aa0cfc8ba",
+      "http": 200,
+      "status": "done",
+      "chars": 10015,
+      "error": null,
+      "at": "2026-07-25T19:22:52.314Z"
+    },
+    "Ejemplo evaluación foliar.pdf": {
+      "fileId": "1f4a939a-7ac0-417a-87f8-08d7fd68c0aa",
+      "http": 200,
+      "status": "done",
+      "chars": 438,
+      "error": null,
+      "at": "2026-07-25T19:23:00.010Z"
+    },
+    "Norma DOP Analisis foliar.pdf": {
+      "fileId": "18907591-d2bc-40be-9ab0-916b4eb5cbd9",
+      "http": 200,
+      "status": "done",
+      "chars": 2193,
+      "error": null,
+      "at": "2026-07-25T19:23:12.831Z"
+    },
+    "Superficie foliar y sus estructuras.pdf": {
+      "fileId": "6b082d67-ceaf-44d8-b409-be2fd206493f",
+      "http": 200,
+      "status": "done",
+      "chars": 667,
+      "error": null,
+      "at": "2026-07-25T19:23:19.977Z"
+    },
+    "Congreso Aguacate (programa de nutrición).pdf": {
+      "fileId": "2d7d8412-a305-4d0f-b53f-cd9407c6c699",
+      "http": 504,
+      "status": null,
+      "chars": 0,
+      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
+      "at": "2026-07-25T19:23:51.105Z"
+    },
+    "03. Revolucionando formas antiguas de expresion de la fertilizacion.pdf": {
+      "fileId": "771dfc13-e4d3-4758-8fd7-2dcab755cf25",
+      "http": 200,
+      "status": "done",
+      "chars": 8484,
+      "error": null,
+      "at": "2026-07-25T19:24:12.408Z"
+    },
+    "Curva de extracción berries.pdf": {
+      "fileId": "f5d7862e-3b2d-424e-94d2-12fb0936fae6",
+      "http": 200,
+      "status": "done",
+      "chars": 1620,
+      "error": null,
+      "at": "2026-07-25T19:24:21.744Z"
+    },
+    "Curvas de extracción caña.pdf": {
+      "fileId": "c559270f-f2e7-46e8-8b7f-1cacbccd039d",
+      "http": 200,
+      "status": "done",
+      "chars": 1817,
+      "error": null,
+      "at": "2026-07-25T19:24:31.863Z"
+    },
+    "Distribución de nutrientes en Maíz.pdf": {
+      "fileId": "6eda9f00-818c-4029-bec9-1e11dba4b376",
+      "http": 200,
+      "status": "done",
+      "chars": 942,
+      "error": null,
+      "at": "2026-07-25T19:24:39.698Z"
+    },
+    "Etapas y extracción de aplicación en Maíz .pdf": {
+      "fileId": "c9f8425d-c2c9-445a-841a-227037ac185f",
+      "http": 200,
+      "status": "done",
+      "chars": 976,
+      "error": null,
+      "at": "2026-07-25T19:24:48.404Z"
+    },
+    "Extraccion Arroz.pdf": {
+      "fileId": "9a63d8ff-e55c-4982-89be-d532bb94523a",
+      "http": 200,
+      "status": "done",
+      "chars": 574,
+      "error": null,
+      "at": "2026-07-25T19:24:59.006Z"
+    },
+    "Extraccion aguacate.pdf": {
+      "fileId": "89af0ae0-68bd-496f-9d34-d07408b20422",
+      "http": 200,
+      "status": "done",
+      "chars": 426,
+      "error": null,
+      "at": "2026-07-25T19:25:05.616Z"
+    },
+    "Ejercicios de ácidos para neutralizar bicarbonatos.pdf": {
+      "fileId": "0271ba35-178f-4317-a50f-79719a0649ed",
+      "http": 200,
+      "status": "done",
+      "chars": 2570,
+      "error": null,
+      "at": "2026-07-25T19:25:16.203Z"
+    },
+    "Ejercicio enmienda Yeso, Cal y S .pdf": {
+      "fileId": "e72a27dd-76ed-44f1-a8ca-89bfdff908ff",
+      "http": 200,
+      "status": "done",
+      "chars": 5726,
+      "error": null,
+      "at": "2026-07-25T19:25:35.302Z"
+    },
+    "Ejercicios enmiendas S, Cal y Yeso.pdf": {
+      "fileId": "e4e2791d-d205-4463-b403-023fb72bb1ff",
+      "http": 200,
+      "status": "done",
+      "chars": 9399,
+      "error": null,
+      "at": "2026-07-25T19:26:02.432Z"
+    },
+    "Neutralizar Bicarbonatos en suelo con Azufre.pdf": {
+      "fileId": "123c645d-5205-4c59-ba5f-9df60110c74b",
+      "http": 200,
+      "status": "done",
+      "chars": 747,
+      "error": null,
+      "at": "2026-07-25T19:26:08.053Z"
+    },
+    "pH de suelo.pdf": {
+      "fileId": "8aac0e6f-0c53-466b-9ad8-f46099f46d2b",
+      "http": 200,
+      "status": "done",
+      "chars": 2106,
+      "error": null,
+      "at": "2026-07-25T19:26:19.285Z"
+    },
+    "Ciclo hormonal de las plantas.pdf": {
+      "fileId": "f42c429a-274d-4850-a2a2-7d5116b2844f",
+      "http": 200,
+      "status": "done",
+      "chars": 666,
+      "error": null,
+      "at": "2026-07-25T19:26:26.765Z"
+    },
+    "Hormonas Vegetales en estres.pdf": {
+      "fileId": "ef23ef23-799c-495b-b2d2-e57a7ad1e951",
+      "http": 200,
+      "status": "done",
+      "chars": 3949,
+      "error": null,
+      "at": "2026-07-25T19:26:42.732Z"
+    },
+    "Hormonas y Nutrientes en plantas (Notas Tecnicas Agronomicas).pdf": {
+      "fileId": "3a20b63c-5a02-47b8-bd3f-86a44ec84f54",
+      "http": 200,
+      "status": "done",
+      "chars": 3273,
+      "error": null,
+      "at": "2026-07-25T19:26:52.734Z"
+    },
+    "Manejo hormonal uva.pdf": {
+      "fileId": "069f62a1-fee9-4129-99d6-dc6be36f7c51",
+      "http": 200,
+      "status": "done",
+      "chars": 450,
+      "error": null,
+      "at": "2026-07-25T19:26:57.094Z"
+    },
+    "Nutrientes en Balance hormonal en plantas.pdf": {
+      "fileId": "3c4a66ed-c1ee-4d22-b944-7b1ca01eb0d2",
+      "http": 200,
+      "status": "done",
+      "chars": 663,
+      "error": null,
+      "at": "2026-07-25T19:27:04.812Z"
+    },
+    "Aporte de nutrientes rastrojo de maíz .pdf": {
+      "fileId": "5668c3ca-c0d1-47fd-8344-742f9634c38d",
+      "http": 200,
+      "status": "done",
+      "chars": 345,
+      "error": null,
+      "at": "2026-07-25T19:27:09.073Z"
+    },
+    "Calcio a nivel celular en la planta .pdf": {
+      "fileId": "5b58d3c9-a2f2-4cbd-aec6-78cba7a6e812",
+      "http": 200,
+      "status": "done",
+      "chars": 5044,
+      "error": null,
+      "at": "2026-07-25T19:27:28.449Z"
+    },
+    "Calcio a nivel celular en la planta.pdf": {
+      "fileId": "16b95a86-5301-4907-a028-aaf566114c78",
+      "http": 200,
+      "status": "done",
+      "chars": 4457,
+      "error": null,
+      "at": "2026-07-25T19:27:50.519Z"
+    },
+    "Claves de la relación nitrógeno-calcio AGUACATE.pdf": {
+      "fileId": "b53be95f-6d70-4294-8514-f822ac894cff",
+      "http": 200,
+      "status": "done",
+      "chars": 5825,
+      "error": null,
+      "at": "2026-07-25T19:28:10.921Z"
+    },
+    "Conoce el efecto de la fertilización en el pH.pdf": {
+      "fileId": "a9d68cd3-cc79-40d0-8b5d-8007dab8e2e0",
+      "http": 200,
+      "status": "done",
+      "chars": 1235,
+      "error": null,
+      "at": "2026-07-25T19:28:20.320Z"
+    },
+    "Cómo determinar el coeficiente de uniformidad de caudales.pdf": {
+      "fileId": "d7befe10-43f7-4487-9492-d7fbc2aed420",
+      "http": 200,
+      "status": "done",
+      "chars": 1659,
+      "error": null,
+      "at": "2026-07-25T19:28:27.651Z"
+    },
+    "Efecto salinidad en Berries .pdf": {
+      "fileId": "296c046b-a9cc-47a6-8421-6602162af241",
+      "http": 200,
+      "status": "done",
+      "chars": 431,
+      "error": null,
+      "at": "2026-07-25T19:28:31.551Z"
+    },
+    "Ejemplo solubilidad de sales.pdf": {
+      "fileId": "c0ee6c59-cbe4-46a5-a557-b3f3f8895ce3",
+      "http": 200,
+      "status": "done",
+      "chars": 2412,
+      "error": null,
+      "at": "2026-07-25T19:28:40.495Z"
+    },
+    "Factores de la hidrólisis de Urea.pdf": {
+      "fileId": "53dcb1b6-b14a-4287-b0e2-d3a77ef15fb5",
+      "http": 200,
+      "status": "done",
+      "chars": 1665,
+      "error": null,
+      "at": "2026-07-25T19:28:49.283Z"
+    },
+    "Macro y micro nutrientes en arándanos.pdf": {
+      "fileId": "57bd8cb6-2786-4ad3-a9df-489e8ff2ee01",
+      "http": 200,
+      "status": "done",
+      "chars": 685,
+      "error": null,
+      "at": "2026-07-25T19:28:54.317Z"
+    },
+    "Niveles de referencia Hoja Banano.pdf": {
+      "fileId": "c905937e-0bd3-48cc-9999-561f9a9a2e3e",
+      "http": 200,
+      "status": "done",
+      "chars": 1055,
+      "error": null,
+      "at": "2026-07-25T19:29:05.711Z"
+    },
+    "Orden de quelatos de acuerdo a su estabilidad.pdf": {
+      "fileId": "7926855d-3bae-49e8-99ce-0f92f687caad",
+      "http": 200,
+      "status": "done",
+      "chars": 425,
+      "error": null,
+      "at": "2026-07-25T19:29:10.498Z"
+    },
+    "Porcentaje y ppm de nutrientes en planta.pdf": {
+      "fileId": "1a8b5fdb-3a34-4c89-a0e3-8604d88e21ba",
+      "http": 200,
+      "status": "done",
+      "chars": 1469,
+      "error": null,
+      "at": "2026-07-25T19:29:18.461Z"
+    },
+    "Rango foliares en ppm de elementos en cultivos.pdf": {
+      "fileId": "2c856d31-dde7-4a58-8528-1c5709c892e0",
+      "http": 200,
+      "status": "done",
+      "chars": 11862,
+      "error": null,
+      "at": "2026-07-25T19:29:46.207Z"
+    },
+    "Relación de hormonas y microorganismo.pdf": {
+      "fileId": "9f424733-52dc-4a9a-a41b-4659f153debb",
+      "http": 200,
+      "status": "done",
+      "chars": 2660,
+      "error": null,
+      "at": "2026-07-25T19:30:04.262Z"
+    },
+    "Regulación hormonal y Nutrientes para inducir.pdf": {
+      "fileId": "e09a8456-dfc2-4664-9280-c54522f338a5",
+      "http": 200,
+      "status": "done",
+      "chars": 1220,
+      "error": null,
+      "at": "2026-07-25T19:30:13.294Z"
+    },
+    "Síntesis de proteína .pdf": {
+      "fileId": "d2a901a7-9e97-498d-86f8-ec8dc53e7b19",
+      "http": 200,
+      "status": "done",
+      "chars": 878,
+      "error": null,
+      "at": "2026-07-25T19:30:28.644Z"
+    },
+    "Salinidad y CE de los fertilizantes.pdf": {
+      "fileId": "5702e969-3964-43b0-b1c3-30852fdcc338",
+      "http": 200,
+      "status": "done",
+      "chars": 4370,
+      "error": null,
+      "at": "2026-07-25T19:30:50.850Z"
+    },
+    "Síntesis y funcion de las proteínas en las plantas.pdf": {
+      "fileId": "0bee9960-5e2c-4a2a-8998-24c34014e534",
+      "http": 200,
+      "status": "done",
+      "chars": 792,
+      "error": null,
+      "at": "2026-07-25T19:31:01.311Z"
+    },
+    "Volumen de transpiración en base absorción de Ca.pdf": {
+      "fileId": "6d270034-3892-4a8e-a9dd-f1571080a24e",
+      "http": 200,
+      "status": "done",
+      "chars": 849,
+      "error": null,
+      "at": "2026-07-25T19:31:09.255Z"
+    },
+    "Índice salino de los fertilizantes .pdf": {
+      "fileId": "549b17f6-a34b-4b30-9862-3d7ad1940661",
+      "http": 200,
+      "status": "done",
+      "chars": 1071,
+      "error": null,
+      "at": "2026-07-25T19:31:19.333Z"
+    },
+    "Ecuación de liberación NLC.pdf": {
+      "fileId": "99dfdc4c-f573-41a2-8871-eb35c62556c5",
+      "http": 200,
+      "status": "done",
+      "chars": 697,
+      "error": null,
+      "at": "2026-07-25T19:31:24.067Z"
+    },
+    "04. Ammonium on potassium interaction. Xu et al. 2002.pdf": {
+      "fileId": "d70abdc1-9324-4b30-a2d1-6f57a69b3be3",
+      "http": 504,
+      "status": null,
+      "chars": 0,
+      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
+      "at": "2026-07-25T19:31:54.792Z"
+    },
+    "6 retos de liderazgo.pdf": {
+      "fileId": "01f9501c-e4d3-4b29-b43c-fd80d51b465f",
+      "http": 200,
+      "status": "done",
+      "chars": 817,
+      "error": null,
+      "at": "2026-07-25T19:32:00.120Z"
+    },
+    "Brix en raíz de aguacate.pdf": {
+      "fileId": "1aaa41b3-1923-4d22-b08a-f456147ec822",
+      "http": 200,
+      "status": "done",
+      "chars": 234,
+      "error": null,
+      "at": "2026-07-25T19:32:03.317Z"
+    },
+    "Crecimiento del fruto del tomate _240310_133825.pdf": {
+      "fileId": "6ef4f6dd-21f5-4a33-bf2c-795746e72342",
+      "http": 200,
+      "status": "done",
+      "chars": 433,
+      "error": null,
+      "at": "2026-07-25T19:32:09.938Z"
+    }
+  }
+}

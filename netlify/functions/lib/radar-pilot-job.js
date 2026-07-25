@@ -51,11 +51,13 @@ const PILOT_LOOKBACK_TIERS = [
 
 /**
  * Solo se corta antes si el predio quedó prácticamente completo (~100%).
- * Si no, prueba más candidatas / ventanas 14→21→30→45 d y guarda la mejor pasada sola (≥~5%).
+ * Si no, prueba pocas candidatas / ventanas 14→21→30→45 d y guarda la mejor pasada sola (≥~5%).
  */
 const PILOT_TARGET_VALID_FRACTION = 0.995;
-/** Candidatas a probar una por una (no se mezclan fechas / mediana). */
-const PILOT_SINGLE_SCENE_CANDIDATES = 8;
+/** Con ≥50% útiles ya no vale la pena seguir quemando tiempo en más pasadas. */
+const PILOT_GOOD_ENOUGH_FRACTION = 0.5;
+/** Candidatas a renderizar UNA por una (tope bajo: cada render baja bandas COG). */
+const PILOT_SINGLE_SCENE_CANDIDATES = 3;
 
 function lowCoverageError(bestScore) {
   const pct =
@@ -152,25 +154,27 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
 
   for (let i = 0; i < PILOT_LOOKBACK_TIERS.length; i++) {
     const tier = PILOT_LOOKBACK_TIERS[i];
+    // Ya con ≥50% no ampliamos ventana: 1 pasada útil basta (sin mezclar fechas).
+    if (bestScore >= PILOT_GOOD_ENOUGH_FRACTION) break;
     const cloudAttempts = [
-      { maxCloud: tier.maxCloud, candidateLimit: Math.max(20, candidateCap * 3) },
-      // Si las más claras no cubren el predio, abrir nubes y probar otras candidatas.
-      { maxCloud: 80, candidateLimit: Math.max(40, candidateCap * 5) }
+      { maxCloud: tier.maxCloud, tryBudget: candidateCap * 3 },
+      { maxCloud: 80, tryBudget: candidateCap * 4 }
     ];
 
     for (let ci = 0; ci < cloudAttempts.length; ci++) {
       const cloudOpts = cloudAttempts[ci];
+      if (bestScore >= PILOT_GOOD_ENOUGH_FRACTION) break;
       try {
         if (typeof onTierMessage === 'function') {
           await onTierMessage(tier.days, 1, ci > 0);
         }
-        // Trae varias candidatas ordenadas por nubes; cada una se evalúa SOLA.
+        // Trae solo las N más claras; cada una se evalúa SOLA (sin mediana).
         const pool = await findSentinel2ScenesForComposite(polygon, {
           maxScenes: candidateCap,
           lookbackDays: tier.days,
           maxCloud: cloudOpts.maxCloud,
           maxLookbackDays: tier.days,
-          candidateLimit: cloudOpts.candidateLimit
+          candidateLimit: cloudOpts.tryBudget
         });
         const candidates = Array.isArray(pool.scenes) ? pool.scenes : [];
         for (let si = 0; si < candidates.length; si++) {
@@ -182,20 +186,13 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
               { maxDim }
             );
             const score = consider(bundle, rendered, i, scene);
-            if (score >= PILOT_TARGET_VALID_FRACTION) {
+            if (score >= PILOT_TARGET_VALID_FRACTION || score >= PILOT_GOOD_ENOUGH_FRACTION) {
               return { bundle, rendered, lookbackExpanded: i > 0 };
             }
           } catch (e) {
             lastErr = e;
             if (!isPilotCoverageFail(e)) throw e;
           }
-        }
-        // Ya hay una pasada casi completa → no hace falta abrir más nubes ni ventanas.
-        if (bestScore >= PILOT_TARGET_VALID_FRACTION) {
-          return {
-            ...best,
-            lookbackExpanded: bestTierIndex > 0
-          };
         }
       } catch (e) {
         lastErr = e;
@@ -657,7 +654,10 @@ async function processPilotJob(supabase, requestId, userId) {
             );
             const score = consider({ b, r }, expanded, startIso, endIso, scene);
             if (score > localBest) localBest = score;
-            if (score >= PILOT_TARGET_VALID_FRACTION) return score;
+            // 1 pasada con cobertura decente → listo (sin mezclar fechas ni seguir eternamente).
+            if (score >= PILOT_TARGET_VALID_FRACTION || score >= PILOT_GOOD_ENOUGH_FRACTION) {
+              return score;
+            }
           } catch (e) {
             lastErr = e;
             if (!isCoverageFail(e)) throw e;
@@ -666,13 +666,13 @@ async function processPilotJob(supabase, requestId, userId) {
         return localBest;
       };
 
-      const looseExtra = { maxCloud: 100, candidateLimit: Math.max(40, candidateCap * 5) };
+      const looseExtra = { maxCloud: 100, candidateLimit: candidateCap * 4 };
       const attempts = [
         {
           start: dateStart,
           end: dateEnd,
-          // Empezar ya con umbral amplio: el % de nubes del TILE engaña; el predio puede estar claro.
-          extra: { maxCloud: 80, candidateLimit: Math.max(30, candidateCap * 4) },
+          // Umbral amplio de tile: el % de nubes del TILE engaña; el predio puede estar claro.
+          extra: { maxCloud: 80, candidateLimit: candidateCap * 3 },
           expanded: false,
           message:
             'Eligiendo la pasada más clara del periodo ' + dateStart + ' – ' + dateEnd + '…'
@@ -724,9 +724,10 @@ async function processPilotJob(supabase, requestId, userId) {
 
       for (let ai = 0; ai < attempts.length; ai++) {
         const att = attempts[ai];
-        // Solo deja de ampliar si ya está ~100% completo.
-        if (att.expanded && bestScore >= PILOT_TARGET_VALID_FRACTION) break;
-        if (ai === 1 && bestScore >= PILOT_TARGET_VALID_FRACTION) continue;
+        // Con una pasada ya usable (≥50%) no ampliamos ni reintentamos.
+        if (bestScore >= PILOT_GOOD_ENOUGH_FRACTION) break;
+        if (att.expanded && bestScore >= PILOT_GOOD_ENOUGH_FRACTION) break;
+        if (ai === 1 && bestScore >= PILOT_GOOD_ENOUGH_FRACTION) continue;
         try {
           if (att.message) {
             await patchJobMeta(supabase, requestId, userId, {
@@ -735,7 +736,7 @@ async function processPilotJob(supabase, requestId, userId) {
             });
           }
           const score = await tryRangeSingleScenes(att.start, att.end, att.extra, att.expanded);
-          if (score >= PILOT_TARGET_VALID_FRACTION) break;
+          if (score >= PILOT_TARGET_VALID_FRACTION || score >= PILOT_GOOD_ENOUGH_FRACTION) break;
         } catch (e) {
           lastErr = e;
           if (!isCoverageFail(e)) throw e;
