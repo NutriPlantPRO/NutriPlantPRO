@@ -26773,13 +26773,24 @@
       return lines.join('\n');
     }
 
+    /** Cuándo inyectar búsqueda de texto indexado Nutri PRO al chat. */
     function planProQuestionLooksNutriDoc(text) {
-      var t = String(text || '').toLowerCase();
-      if (!t || t.length < 4) return false;
-      if (/nutri\s*pro|📎|bóveda|boveda/.test(t)) return true;
-      if (/\b(pdf|excel|xlsx|word|docx|powerpoint|pptx|documento|archivo|hoja|celda|tabla)\b/.test(t)) return true;
+      var t = String(text || '').toLowerCase().trim();
+      if (!t || t.length < 3) return false;
+      // Saludos / confirmaciones cortas: no gastar búsqueda
+      if (/^(hola|hey|ok|vale|gracias|si|sí|no|listo|perfecto|buen[oa]s?\s*(d[ií]as?|tardes?|noches?)?)\.?$/.test(t)) {
+        return false;
+      }
+      if (/nutri\s*pro|📎|bóveda|boveda|indexad|extracto|ocr|reindex/.test(t)) return true;
       if (
-        /(qué dice|que dice|qué pone|que pone|cuánto|cuanto|dónde dice|donde dice|en (mi|el|la) (archivo|excel|pdf|documento|hoja|presentación|presentacion))/.test(
+        /\b(pdf|excel|xlsx|xls|csv|word|docx|powerpoint|pptx|documento|archivo|archivos|hoja|celda|tabla|carpeta|carpetas|bóveda|boveda)\b/.test(
+          t
+        )
+      ) {
+        return true;
+      }
+      if (
+        /(qué dice|que dice|qué pone|que pone|cuánto|cuanto|dónde dice|donde dice|busca(r)? en|en (mi|el|la|los|las) (archivo|excel|pdf|documento|hoja|presentación|presentacion|carpeta|bóveda|boveda)|texto indexado|datos de nutri)/.test(
           t
         )
       ) {
@@ -26789,32 +26800,128 @@
         return it.nutri_refs && it.nutri_refs.length;
       });
       if (hasNutriRef && /(apunte|nota|vinculado|enlazado|documento|archivo|vincula|enlaza)/.test(t)) return true;
+      // Preguntas con sustancia: siempre intentar bóveda (Sol no debe inventar “no tengo acceso”)
+      if (t.length >= 12) return true;
       return false;
     }
 
     function formatNutriAskForAssistant(data) {
-      if (!data || !data.ok) return '';
-      if (data.error) return '--- NUTRI PRO (sin datos) ---\n' + data.error;
-      var lines = ['--- NUTRI PRO (búsqueda automática) ---', 'Pregunta: ' + (data.question || '')];
-      (data.unified_citations || []).forEach(function (c, i) {
-        lines.push(i + 1 + '. ' + (c.line || c.file || ''));
-      });
-      if (!(data.unified_citations && data.unified_citations.length)) {
-        (data.sources || []).forEach(function (s) {
-          lines.push('- ' + (s.citation || s.short_path || s.title));
-          (s.snippets || []).forEach(function (sn) {
-            lines.push('  «' + (sn.snippet || '') + '»');
-          });
+      if (data == null) {
+        return (
+          '--- BÚSQUEDA PLAN PRO ---\n' +
+          'No se pudo consultar (sesión o red). No digas que “no tienes acceso” como limitación permanente: pide reintentar o revisar login admin.'
+        );
+      }
+      if (data.error && data.ok === false && !data.nutri && !data.notebook) {
+        return '--- BÚSQUEDA PLAN PRO (error) ---\n' + data.error;
+      }
+
+      var lines = [
+        '--- BÚSQUEDA UNIFICADA (Notebook PRO + Nutri PRO + Neuron) ---',
+        'Pregunta: ' + (data.question || data.q || '')
+      ];
+      if (data.summary) {
+        lines.push(
+          'Resumen hits: Notebook ' +
+            (data.summary.notebook_hits || 0) +
+            ' · Nutri ' +
+            (data.summary.nutri_hits || 0) +
+            ' · rutas ' +
+            (data.summary.route_count || 0)
+        );
+      }
+
+      var routes = data.routes || [];
+      if (routes.length) {
+        lines.push('');
+        lines.push('=== RUTAS (díselas al usuario con claridad) ===');
+        routes.slice(0, 20).forEach(function (r, i) {
+          var mod = r.module || r.kind || '';
+          var idxLabel = r.indexed_label ? ' · ' + r.indexed_label : '';
+          lines.push(i + 1 + '. [' + mod + '] ' + (r.route || '') + idxLabel);
+          if (r.apunte_id) lines.push('   apunte_id=' + r.apunte_id);
+          if (r.nutri_file_id) lines.push('   nutri_file_id=' + r.nutri_file_id);
+          if (r.aviso) lines.push('   aviso: ' + r.aviso);
+          if (r.kind === 'nutri' && r.text_indexed === false) {
+            lines.push(
+              '   → Di al usuario: el título encaja, pero AÚN NO hay texto indexado; puede tener info tras Reindexar/OCR.'
+            );
+          }
         });
       }
-      (data.link_gap_suggestions || []).forEach(function (s) {
-        lines.push('Sugerencia enlace: ' + s);
-      });
-      (data.suggestions || []).forEach(function (s) {
-        lines.push('Nota: ' + s);
-      });
+
+      var notebook = data.notebook || null;
+      var nItems = (notebook && notebook.items) || [];
+      if (nItems.length) {
+        lines.push('');
+        lines.push('=== NOTEBOOK PRO (apuntes) ===');
+        nItems.slice(0, 10).forEach(function (it, i) {
+          lines.push(
+            i +
+              1 +
+              '. ' +
+              (it.area || '—') +
+              ' › ' +
+              (it.category || '—') +
+              ' › ' +
+              (it.title || '(sin título)')
+          );
+          if (it.preview) lines.push('   preview: ' + String(it.preview).replace(/\n/g, ' ').slice(0, 220));
+          if (it.id) lines.push('   apunte_id=' + it.id);
+        });
+      } else if (notebook && notebook.error) {
+        lines.push('');
+        lines.push('=== NOTEBOOK PRO ===');
+        lines.push(notebook.error);
+      }
+
+      var nutri = data.nutri || data;
+      var nCite = ((nutri && nutri.unified_citations) || []).length;
+      var nSrc = ((nutri && nutri.sources) || []).length;
+      if (nCite || nSrc || (nutri && nutri.error)) {
+        lines.push('');
+        lines.push('=== NUTRI PRO (texto indexado) ===');
+        if (nutri.error && !nCite && !nSrc) lines.push(nutri.error);
+        (nutri.unified_citations || []).forEach(function (c, i) {
+          lines.push(i + 1 + '. ' + (c.line || c.file || ''));
+        });
+        if (!nCite) {
+          (nutri.sources || []).forEach(function (s) {
+            var idx =
+              s.text_indexed === true
+                ? ' ✓ indexado'
+                : s.text_indexed === false
+                  ? ' ✗ sin indexar'
+                  : '';
+            lines.push('- ' + (s.citation || s.short_path || s.title) + idx);
+            (s.snippets || []).forEach(function (sn) {
+              lines.push('  «' + (sn.snippet || '') + '»');
+            });
+            if (s.aviso) lines.push('  aviso: ' + s.aviso);
+          });
+        }
+        (nutri.link_gap_suggestions || []).forEach(function (s) {
+          lines.push('Sugerencia enlace: ' + s);
+        });
+        (nutri.suggestions || []).forEach(function (s) {
+          lines.push('Nota: ' + s);
+        });
+      }
+
+      if (!routes.length && !nItems.length && !nCite && !nSrc) {
+        lines.push('');
+        lines.push(
+          'Sin coincidencias en Notebook/Nutri para esta pregunta. ' +
+            'Dilo así: prueba otras palabras, nombre de archivo/apunte, o OCR/reindex. ' +
+            'NO digas que no puedes ver Plan PRO / Nutri / Notebook en general.'
+        );
+      }
+
+      lines.push('');
       lines.push(
-        'Usa estos fragmentos para responder; cita 📎 y 📝 cuando aplique. No inventes cifras fuera de las citas.'
+        'Instrucciones de respuesta: 1) Si pide dónde está algo, empieza por las RUTAS. ' +
+          '2) Si pide información, resume con snippets/previews y cita la ruta. ' +
+          '3) No inventes rutas ni cifras fuera de este bloque.'
       );
       return lines.join('\n');
     }
@@ -26826,34 +26933,53 @@
         sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token
           ? sessRes.data.session.access_token
           : '';
-      if (!token) return null;
+      if (!token) return { ok: false, error: 'Sin sesión admin (token). Recarga Plan PRO e inicia sesión.' };
       var base = nutriProApiBase();
       try {
+        var body = { q: q };
+        // Sin folder_id/area_id: búsqueda global en bóveda + todas las plantas.
         var res = await fetch(base + '/api/plan-pro-nutri-ask', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: 'Bearer ' + token
           },
-          body: JSON.stringify({ q: q })
+          body: JSON.stringify(body)
         });
-        return await res.json();
+        var json = await res.json().catch(function () {
+          return null;
+        });
+        if (!res.ok) {
+          return {
+            ok: false,
+            error:
+              (json && (json.error || json.message)) ||
+              'Error HTTP ' + res.status + ' al consultar Plan PRO.'
+          };
+        }
+        return json;
       } catch (eAsk) {
-        return null;
+        return {
+          ok: false,
+          error: 'Error de red al consultar Plan PRO: ' + ((eAsk && eAsk.message) || 'desconocido')
+        };
       }
     }
 
     function getPlanProAssistantSystemPrompt(extraNutriBlock) {
       var data = getPlanProAssistantContext();
       var base =
-        'Eres el asistente de Plan PRO (NutriPlant PRO – Cerebro Digital). El usuario administra plantas (pilares), ramas jerárquicas y apuntes con nota enriquecida y bloques (tablas de seguimiento, tareas, tabla libre, montos, etc.) en body_blocks. ' +
-        'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa, favoritos de ubicación y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, ubicación Maps si existe, extracto de nota). ' +
-        'En cada apunte, si hay rutas cortas insertadas en la libreta, aparecen en «rutas/enlaces en la nota»: 📎 Carpeta/archivo con nutri_file_id (archivo en Nutri PRO) o 📝 ruta de otro apunte con apunte_id. ' +
-        'Si la pregunta es sobre documentos (PDF, Excel, Word…), puede incluirse un bloque NUTRI PRO con fragmentos citados y sugerencias de enlace apunte↔archivo: úsalo como fuente principal para cifras y párrafos. ' +
-        'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos. Responde siempre en español. ' +
-        'Guardar en Nutri PRO: si el usuario pide guardar algo («guárdalo en work», «sube a Nutri PRO › Personal»), genera el contenido útil (tablas en markdown, CSV en bloque ```csv, texto estructurado) y confirma la carpeta sugerida; la app mostrará un panel de confirmación para subir el archivo (tú no subes directamente). ' +
-        'Si adjunta imagen, léela; si adjunta PDF/Excel/Word, indica que puede guardarlo en Nutri PRO desde el panel de confirmación (aún no lo analizas hasta que esté en la bóveda). ' +
-        'Si adjunta una imagen (factura, ticket, CFDI impreso, captura de pantalla), lee el texto visible: si pide extraer folio, RFC, razón social o nombre, UUID del timbre, total, fecha de emisión, etc., devuélvelo de forma clara; si no consta, dilo. ' +
+        'Eres el asistente de Plan PRO (NutriPlant PRO – Cerebro Digital). El usuario puede estar en Notebook PRO, Nutri PRO o Neuron PRO: da igual la pestaña; tú buscas en toda la data. ' +
+        'Recibes un resumen de la vista actual (plantas, ramas, favoritos, apuntes visibles) Y, en casi cada pregunta, un bloque «BÚSQUEDA UNIFICADA» con rutas y fragmentos. ' +
+        'IMPORTANTE: Cuando el usuario pida “dónde está”, “ruta”, “archivo”, “apunte”, “nota” o información de algo que tiene guardado, USA las RUTAS del bloque unificado y respóndele rápido con la ruta clara, por ejemplo: ' +
+        '«Notebook PRO › Planta X › Rama Y › Título del apunte» o «Nutri PRO › Carpeta › archivo.pdf». ' +
+        'Si pide contenido/información, resume con snippets/previews y termina citando la ruta. ' +
+        'NUNCA digas que no puedes ver Nutri PRO, Notebook PRO, Neuron PRO o textos indexados como limitación permanente. ' +
+        'Si el bloque dice sin coincidencias, dilo y sugiere otras palabras / OCR — no inventes. ' +
+        'Neuron PRO = cruces apunte↔archivo cuando aparecen en rutas kind=neuron. ' +
+        'Ayuda a priorizar, redactar, resumir y sugerir siguientes pasos. Responde siempre en español. ' +
+        'Guardar en Nutri PRO: si pide guardar algo, genera contenido útil y confirma carpeta; la app muestra panel de confirmación. ' +
+        'Si adjunta imagen, léela. Si adjunta PDF/Excel/Word, indícale guardarlo en Nutri PRO desde el panel. ' +
         'Datos en pantalla:\n\n' +
         data;
       if (extraNutriBlock) base += '\n\n' + extraNutriBlock;
