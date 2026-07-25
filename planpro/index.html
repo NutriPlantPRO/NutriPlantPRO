@@ -11649,6 +11649,14 @@
       </div>
       <div id="planProChatMessages" class="np-planpro-chat-messages"></div>
       <div id="planProChatInputArea" class="np-planpro-chat-input-area">
+        <div class="np-planpro-chat-model-row" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <label for="planProChatModelSelect" style="font-size:11px;color:#64748b;white-space:nowrap;">Modelo</label>
+          <select id="planProChatModelSelect" title="Luna barato · Terra equilibrado (default) · Sol más capaz" style="flex:1;padding:6px 8px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;color:#0f172a;">
+            <option value="gpt-5.6-luna">Luna · más barato</option>
+            <option value="gpt-5.6-terra" selected>Terra · equilibrado</option>
+            <option value="gpt-5.6-sol">Sol · más capaz</option>
+          </select>
+        </div>
         <div id="planProChatImagePreviewWrap" class="np-planpro-chat-img-preview-wrap" style="display: none;">
           <div id="planProChatImagePreview" class="np-planpro-chat-img-preview"></div>
           <button type="button" id="planProChatImageRemove" class="np-planpro-chat-img-remove" title="Quitar imagen">×</button>
@@ -26380,6 +26388,27 @@
   }
 
   var PLAN_PRO_CHAT_STORAGE_KEY = 'nutriplant_planpro_chat_history_v1';
+  var PLAN_PRO_CHAT_MODEL_KEY = 'nutriplant_admin_chat_model';
+  var PLAN_PRO_CHAT_DEFAULT_MODEL = 'gpt-5.6-terra';
+  var PLAN_PRO_CHAT_ALLOWED_MODELS = {
+    'gpt-5.6-luna': true,
+    'gpt-5.6-terra': true,
+    'gpt-5.6-sol': true
+  };
+  function getPlanProChatModel() {
+    try {
+      var m = localStorage.getItem(PLAN_PRO_CHAT_MODEL_KEY) || '';
+      if (PLAN_PRO_CHAT_ALLOWED_MODELS[m]) return m;
+    } catch (e) {}
+    return PLAN_PRO_CHAT_DEFAULT_MODEL;
+  }
+  function setPlanProChatModel(model) {
+    var m = PLAN_PRO_CHAT_ALLOWED_MODELS[model] ? model : PLAN_PRO_CHAT_DEFAULT_MODEL;
+    try {
+      localStorage.setItem(PLAN_PRO_CHAT_MODEL_KEY, m);
+    } catch (e) {}
+    return m;
+  }
   var PLAN_PRO_CHAT_MAX_MESSAGES = 200;
   var PLAN_PRO_CHAT_CONTEXT_LIMIT = 20;
   var PLAN_PRO_CHAT_SEND_COOLDOWN_MS = 1500;
@@ -26398,6 +26427,7 @@
     var imgRemove = $('planProChatImageRemove');
     var attachBtn = $('planProChatAttachBtn');
     var inputArea = $('planProChatInputArea');
+    var modelSelect = $('planProChatModelSelect');
     if (!bubble || !panel || !messagesEl || !input || !sendBtn || !closeBtn) return;
     if (bubble.getAttribute('data-np-ready') === '1') {
       bubble.style.display = 'flex';
@@ -26407,6 +26437,12 @@
     bubble.setAttribute('data-np-ready', '1');
     bubble.style.display = 'flex';
     if (wrap) wrap.setAttribute('aria-hidden', 'false');
+    if (modelSelect) {
+      modelSelect.value = getPlanProChatModel();
+      modelSelect.addEventListener('change', function () {
+        setPlanProChatModel(modelSelect.value);
+      });
+    }
 
     var pendingAttachment = null;
     var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -27204,7 +27240,7 @@
             (window.location && window.location.origin) ||
             'http://localhost:8000';
           var body = {
-            model: 'gpt-5.6-sol',
+            model: getPlanProChatModel(),
             messages: messagesForApi,
             max_tokens: 1400,
             temperature: 0.45,

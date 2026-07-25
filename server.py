@@ -53,7 +53,14 @@ MODEL_PRICING_USD_PER_1M = {
 }
 
 DEFAULT_PUBLIC_MODEL = 'gpt-4o-mini'
-DEFAULT_ADMIN_MODEL = 'gpt-5.6-sol'
+DEFAULT_ADMIN_MODEL = 'gpt-5.6-terra'
+ALLOWED_ADMIN_MODELS = {
+    'gpt-5.6-luna',
+    'gpt-5.6-terra',
+    'gpt-5.6-sol',
+    'gpt-5.6',
+    'gpt-4o-mini',
+}
 
 class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -532,8 +539,14 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         out_cost = (max(completion_tokens, 0) / 1_000_000.0) * pricing['output']
         return in_cost + out_cost
 
-    def _resolve_admin_model(self):
-        return (os.environ.get('OPENAI_ADMIN_MODEL') or '').strip() or DEFAULT_ADMIN_MODEL
+    def _resolve_admin_model(self, requested=None):
+        req = (requested or '').strip()
+        if req in ALLOWED_ADMIN_MODELS:
+            return req
+        env = (os.environ.get('OPENAI_ADMIN_MODEL') or '').strip()
+        if env in ALLOWED_ADMIN_MODELS:
+            return env
+        return DEFAULT_ADMIN_MODEL
 
     def _build_chat_completions_payload(self, model, messages, max_tokens, temperature):
         payload = {'model': model, 'messages': messages}
@@ -611,7 +624,7 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             scope_admin = data.get('scope') == 'admin' or user_id == '__admin__'
             if scope_admin:
                 user_id = '__admin__'
-                model = self._resolve_admin_model()
+                model = self._resolve_admin_model(data.get('model'))
                 max_tokens = min(max(max_tokens, 1), 4000)
             else:
                 model = DEFAULT_PUBLIC_MODEL

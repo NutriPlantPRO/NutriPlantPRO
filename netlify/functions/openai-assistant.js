@@ -15,11 +15,18 @@
  * en Netlify, el modelo puede usar la herramienta search_web; cuando la use, se cobran 2 créditos.
  * Sin SERPER_API_KEY la herramienta no se ofrece. Obtener API key en https://serper.dev
  *
- * Público (suscriptores): gpt-4o-mini. Admin (scope=admin / userId=__admin__): OPENAI_ADMIN_MODEL.
+ * Público (suscriptores): gpt-4o-mini. Admin (scope=admin): elige Luna/Terra/Sol (default Terra).
  */
 
 const DEFAULT_PUBLIC_MODEL = 'gpt-4o-mini';
-const DEFAULT_ADMIN_MODEL = 'gpt-5.6-sol';
+const DEFAULT_ADMIN_MODEL = 'gpt-5.6-terra';
+const ALLOWED_ADMIN_MODELS = new Set([
+  'gpt-5.6-luna',
+  'gpt-5.6-terra',
+  'gpt-5.6-sol',
+  'gpt-5.6',
+  'gpt-4o-mini'
+]);
 
 const MODEL_PRICING_USD_PER_1M = {
   'gpt-4o-mini': { input: 0.15, output: 0.60 },
@@ -30,9 +37,12 @@ const MODEL_PRICING_USD_PER_1M = {
   'gpt-5.6': { input: 5.0, output: 30.0 }
 };
 
-function resolveAdminModel() {
+function resolveAdminModel(requested) {
+  const req = String(requested || '').trim();
+  if (req && ALLOWED_ADMIN_MODELS.has(req)) return req;
   const fromEnv = (process.env.OPENAI_ADMIN_MODEL || '').trim();
-  return fromEnv || DEFAULT_ADMIN_MODEL;
+  if (fromEnv && ALLOWED_ADMIN_MODELS.has(fromEnv)) return fromEnv;
+  return DEFAULT_ADMIN_MODEL;
 }
 
 function isGpt56Family(model) {
@@ -274,9 +284,9 @@ exports.handler = async (event, context) => {
   let userId = String(body.userId || body.user_id || 'anonymous');
   const scopeAdmin = body.scope === 'admin' || userId === '__admin__';
   if (scopeAdmin) userId = '__admin__';
-  // Público: mini. Admin: Sol (o OPENAI_ADMIN_MODEL). El cliente no puede forzar Sol en chat de usuarios.
+  // Público: mini. Admin: Luna/Terra/Sol (elige el cliente; default Terra).
   const model = scopeAdmin
-    ? resolveAdminModel()
+    ? resolveAdminModel(body.model)
     : DEFAULT_PUBLIC_MODEL;
   let messages = Array.isArray(body.messages) ? [...body.messages] : [];
   const maxCap = scopeAdmin ? 4000 : 2000;

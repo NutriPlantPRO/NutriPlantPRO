@@ -914,6 +914,14 @@
                     </div>
                     <div id="adminChatMessages" style="flex: 1; overflow-y: auto; padding: 12px; font-size: 14px; min-height: 0; background: #f8fafc;"></div>
                     <div id="adminChatInputArea" style="padding: 12px; border-top: 1px solid #e5e7eb; background: #fff; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <label for="adminChatModelSelect" style="font-size:11px;color:#64748b;white-space:nowrap;">Modelo</label>
+                            <select id="adminChatModelSelect" title="Luna barato · Terra equilibrado (default) · Sol más capaz" style="flex:1;padding:6px 8px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;color:#0f172a;">
+                                <option value="gpt-5.6-luna">Luna · más barato</option>
+                                <option value="gpt-5.6-terra" selected>Terra · equilibrado</option>
+                                <option value="gpt-5.6-sol">Sol · más capaz</option>
+                            </select>
+                        </div>
                         <div id="adminChatImagePreviewWrap" style="display: none; align-items: flex-start; gap: 8px;">
                             <div id="adminChatImagePreview" style="width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; background: #f1f5f9;"></div>
                             <button type="button" id="adminChatImageRemove" style="width: 24px; height: 24px; border: none; background: #e2e8f0; color: #64748b; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">×</button>
@@ -2095,6 +2103,25 @@
         // 🤖 Chat IA del panel de admin: misma API key, no consume cuota de usuarios; historial en localStorage y en Supabase (admin_chat_threads)
         const NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY = 'nutriplant_admin_chat_history';
         const NUTRIPLANT_ADMIN_CHAT_USAGE_KEY = 'nutriplant_admin_chat_usage';
+        const NUTRIPLANT_ADMIN_CHAT_MODEL_KEY = 'nutriplant_admin_chat_model';
+        const ADMIN_CHAT_DEFAULT_MODEL = 'gpt-5.6-terra';
+        const ADMIN_CHAT_ALLOWED_MODELS = {
+            'gpt-5.6-luna': true,
+            'gpt-5.6-terra': true,
+            'gpt-5.6-sol': true
+        };
+        function getAdminChatModel() {
+            try {
+                var m = localStorage.getItem(NUTRIPLANT_ADMIN_CHAT_MODEL_KEY) || '';
+                if (ADMIN_CHAT_ALLOWED_MODELS[m]) return m;
+            } catch (e) {}
+            return ADMIN_CHAT_DEFAULT_MODEL;
+        }
+        function setAdminChatModel(model) {
+            var m = ADMIN_CHAT_ALLOWED_MODELS[model] ? model : ADMIN_CHAT_DEFAULT_MODEL;
+            try { localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_MODEL_KEY, m); } catch (e) {}
+            return m;
+        }
         var ADMIN_CHAT_USD_PER_REQUEST = 0.001;
         function getAdminChatUsageLocal() {
             try {
@@ -2133,6 +2160,13 @@
             var adminImageRemove = document.getElementById('adminChatImageRemove');
             var adminAttachBtn = document.getElementById('adminChatAttachBtn');
             var adminInputArea = document.getElementById('adminChatInputArea');
+            var adminModelSelect = document.getElementById('adminChatModelSelect');
+            if (adminModelSelect) {
+                adminModelSelect.value = getAdminChatModel();
+                adminModelSelect.addEventListener('change', function() {
+                    setAdminChatModel(adminModelSelect.value);
+                });
+            }
             if (!bubble || !panel || !messagesEl || !input) return;
             bubble.style.display = 'flex';
             var adminPendingImage = null;
@@ -2452,7 +2486,7 @@
                 var messagesForApi = [{ role: 'system', content: systemContent }].concat(historyForApi).concat([{ role: 'user', content: lastUserContent }]);
                 var base = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) || (window.location && window.location.origin) || 'http://localhost:8000';
                 var body = {
-                    model: 'gpt-5.6-sol',
+                    model: getAdminChatModel(),
                     messages: messagesForApi,
                     max_tokens: 1400,
                     temperature: 0.5,

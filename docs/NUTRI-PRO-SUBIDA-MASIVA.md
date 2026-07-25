@@ -38,11 +38,34 @@ Script: `scripts/nutri-pro-bulk-upload.mjs`
 
 ---
 
+## Dónde correr la subida (importante)
+
+**Usa Terminal.app de la Mac**, no el terminal de fondo de Cursor.
+
+| Dónde | Qué pasa |
+|-------|----------|
+| **Terminal.app** | Estable. Sigue aunque cierres o reinicies el chat de Cursor. |
+| Cursor (proceso de fondo) | A veces **aborta** tandas largas; por eso se cortaba a mitad. |
+
+El script es el mismo (`scripts/nutri-pro-bulk-upload.mjs`). Solo cambia **dónde** lo ejecutas.
+
+1. Abre **Terminal** (Aplicaciones → Utilidades → Terminal).
+2. Pega el bloque de comandos de abajo (solo el código, sin texto extra).
+3. Deja esa ventana abierta hasta que diga `Listo:`.
+4. Opcional, en **otra** ventana de Terminal, mira el log:
+   ```bash
+   tail -f "/Users/jesusavila/Desktop/MI PROYECTO/scripts/nutri-pro-bulk-2work-jjama.log"
+   ```
+
+El agente en Cursor puede **ayudarte a armar el comando** o abrirte Terminal, pero la corrida larga debe vivir en **Terminal.app**.
+
+---
+
 ## Carpeta grande (primera vez) — como `2Work JJAM`
 
 Recomendado: **primero subir sin indexar** (más rápido), **después indexar**.
 
-### 1) Subir (sin indexar)
+### 1) Subir (sin indexar) — en Terminal.app
 
 ```bash
 cd "/Users/jesusavila/Desktop/MI PROYECTO"
@@ -58,7 +81,8 @@ node scripts/nutri-pro-bulk-upload.mjs \
   --resume \
   --skip-existing \
   --concurrency 3 \
-  --no-index
+  --no-index \
+  2>&1 | tee -a "/Users/jesusavila/Desktop/MI PROYECTO/scripts/nutri-pro-bulk-2work-jjama.log"
 ```
 
 ### 2) Indexar (cuando ya terminó la subida)
@@ -130,16 +154,16 @@ O pídele al socio/agente en Cursor: *“sube lo nuevo de 2Work JJAM a Nutri PRO
 ## Si se corta a mitad
 
 1. No borres `.nutri-pro-upload-state.json` en la carpeta local raíz (`2Work JJAM`).
-2. Vuelve a correr el **mismo** comando con `--resume` y `--skip-existing`.
-3. En Cursor a veces el proceso de fondo se aborta; lo más estable es pegar el comando en **Terminal.app**.
+2. Abre **Terminal.app** y vuelve a pegar el **mismo** comando con `--resume` y `--skip-existing`.
+3. No hace falta volver a subir lo ya hecho: el state + `--skip-existing` continúan.
 
-Ver avance (si guardaste log):
+Ver avance:
 
 ```bash
 tail -f "/Users/jesusavila/Desktop/MI PROYECTO/scripts/nutri-pro-bulk-2work-jjama.log"
 ```
 
-Contar subidos en el state:
+Contar subidos:
 
 ```bash
 python3 -c "import json; d=json.load(open('/Users/jesusavila/Documents/2Work JJAM/.nutri-pro-upload-state.json')); print(len(d.get('uploaded',{})))"
@@ -179,11 +203,12 @@ Si antes subiste carpetas **sueltas en la raíz** y luego la misma estructura **
 Cuando diga “sube a Nutri PRO” o “lo nuevo de 2Work JJAM”:
 
 1. Confirmar ruta local (`Documents/2Work JJAM` u otra).
-2. Correr con `--recursive --reuse-folder --resume --skip-existing`.
-3. Tanda grande → `--no-index` primero.
-4. Al terminar → recordar y ofrecer / ejecutar `--index-only`.
-5. Reportar errores `✗` y omitidos; reintentar pesados si el límite de Supabase ya está alto.
-6. No poner contraseñas en commits ni en docs del repo.
+2. **Preferir Terminal.app** (osascript / comando listo para pegar). Evitar tandas de horas solo en shell de fondo de Cursor.
+3. Correr con `--recursive --reuse-folder --resume --skip-existing`.
+4. Tanda grande → `--no-index` primero.
+5. Al terminar → recordar y ofrecer / ejecutar `--index-only` (texto local; OCR/IA Sol aparte para escaneados).
+6. Reportar errores `✗` y omitidos; reintentar pesados si el límite de Supabase ya está alto.
+7. No poner contraseñas en commits ni en docs del repo.
 
 ---
 

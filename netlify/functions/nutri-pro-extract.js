@@ -16,7 +16,7 @@ const { extractNutriProText } = require('./lib/nutri-pro-text-extract');
 
 const NUTRI_BUCKET = 'plan-pro-nutri-pro';
 const OCR_IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
-const DEFAULT_ADMIN_MODEL = 'gpt-5.6-sol';
+const DEFAULT_ADMIN_MODEL = 'gpt-5.6-terra';
 
 function resolveAdminOcrModel() {
   return (
