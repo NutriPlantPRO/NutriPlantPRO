@@ -1,0 +1,74 @@
+{
+  "done": {
+    "773daae3-ebf8-41fe-9819-ec7e95bb279a": {
+      "ok": true,
+      "name": "Vehículo Yara (Prius, placa 12N779).pdf",
+      "chars": 19257,
+      "at": "2026-07-25T20:15:15.818Z"
+    },
+    "3d20d1a5-417b-4178-b8e4-1d18d4e25832": {
+      "ok": true,
+      "name": "Análisis de agua (RAS).pdf",
+      "chars": 11678,
+      "at": "2026-07-25T20:17:05.736Z"
+    },
+    "b4be46a5-0243-441e-b9a2-8f9194d39842": {
+      "ok": true,
+      "name": "Propiedades físicas y químicas del suelo.pdf",
+      "chars": 11553,
+      "at": "2026-07-25T20:19:09.623Z"
+    },
+    "2d7d8412-a305-4d0f-b53f-cd9407c6c699": {
+      "ok": false,
+      "error": "Failed to download file. File urls cannot be larger than 32MB.",
+      "at": "2026-07-25T20:21:26.866Z"
+    },
+    "14a79a8d-d199-4e32-bc3e-3867d454c40f": {
+      "ok": true,
+      "name": "Nutrientes y extracción en Agave.pdf",
+      "chars": 8686,
+      "at": "2026-07-25T20:23:22.604Z"
+    },
+    "5fb07496-9147-4062-809a-644def7ecfb3": {
+      "ok": false,
+      "error": "Failed to download file. File urls cannot be larger than 32MB.",
+      "at": "2026-07-25T20:25:31.614Z"
+    },
+    "aadd4264-2a63-4448-a2fb-2a0b66d339da": {
+      "ok": true,
+      "name": "Programa de nutricion y calculos ARANDANO.pdf",
+      "chars": 11795,
+      "at": "2026-07-25T20:27:20.930Z"
+    },
+    "d4897e09-524e-4f89-81f4-7b0a870c6e9b": {
+      "ok": true,
+      "name": "Calculo de Solucion nutritiva y porcentajes por etapa .pdf",
+      "chars": 12713,
+      "at": "2026-07-25T20:29:36.204Z"
+    },
+    "80349511-fcac-4b70-92ed-bbc91a15c8c1": {
+      "ok": true,
+      "name": "Calculo solucon nutritiva Isaosa.pdf",
+      "chars": 11865,
+      "at": "2026-07-25T20:32:06.408Z"
+    },
+    "9dd94d45-79a7-4dbf-8063-895ca94ca69d": {
+      "ok": true,
+      "name": "Elementos químicos Meq y concentraciones .pdf",
+      "chars": 11782,
+      "at": "2026-07-25T20:33:55.564Z"
+    },
+    "d70abdc1-9324-4b30-a2d1-6f57a69b3be3": {
+      "ok": true,
+      "name": "04. Ammonium on potassium interaction. Xu et al. 2002.pdf",
+      "chars": 32799,
+      "at": "2026-07-25T20:35:43.442Z"
+    },
+    "e9fe6b7c-b592-4a32-bb58-77e5a7710774": {
+      "ok": true,
+      "name": "Interacción de nutrientes dentro y fuera de raiz .pdf",
+      "chars": 1455,
+      "at": "2026-07-25T20:36:44.749Z"
+    }
+  }
+}

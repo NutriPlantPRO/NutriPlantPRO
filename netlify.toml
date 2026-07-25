@@ -32,6 +32,10 @@
   timeout = 60
   external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
 
+[functions."nutri-pro-extract-background"]
+  timeout = 900
+  external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
+
 [functions."nutriplant-admin-assistant"]
   timeout = 26
 

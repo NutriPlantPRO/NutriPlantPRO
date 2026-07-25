@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.12.0",
-    "description": "v2.12.0 — ChatGPT: plan_pro_item trae relations_* (apuntes) + nutri_graph_* (archivo/link). nutri_pro_file_text trae relations_* Nutri. Una sola Action nutriplantAdminQuery."
+    "version": "2.13.0",
+    "description": "v2.13.0 — nutri_pro_file_inspect: abre archivo vivo en Supabase (extract local, sin OCR API) cuando el índice no alcanza. Una sola Action nutriplantAdminQuery."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. plan_pro_item (relations + nutri_graph + hops), nutri_pro_file_text (relations Nutri), describe_api. Verifica describe_api → version 2.12.0.",
+        "description": "Única Action ChatGPT. Body: action + params. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. Verifica describe_api → version 2.13.0.",
         "requestBody": {
           "required": true,
           "content": {
@@ -69,6 +69,7 @@
               "nutri_pro_search",
               "nutri_pro_ask",
               "nutri_pro_file_text",
+              "nutri_pro_file_inspect",
               "nutri_pro_reindex",
               "nutri_pro_set_text",
               "nutri_pro_save",
@@ -100,7 +101,10 @@
               },
               "email": { "type": "string" },
               "crop": { "type": "string" },
-              "q": { "type": "string", "description": "Búsqueda o pregunta (apuntes, Nutri PRO; nutri_pro_ask)" },
+              "q": {
+                "type": "string",
+                "description": "Búsqueda/pregunta; en nutri_pro_file_inspect filtra filas/fragmentos del archivo vivo"
+              },
               "question": { "type": "string", "description": "nutri_pro_ask: alias de q" },
               "include_snippets": { "type": "boolean", "description": "nutri_pro_search: devolver fragmentos de texto" },
               "snippet_chars": { "type": "integer", "description": "nutri_pro_ask: longitud máx. por fragmento (default 320)" },
@@ -113,11 +117,15 @@
               "file_id": { "type": "string", "description": "Alias de nutri_file_id" },
               "open_url": {
                 "type": "string",
-                "description": "Link permanente /api/nutri-pro-file-open?fid=… (alternativa a nutri_file_id para file_text/reindex)"
+                "description": "Link permanente /api/nutri-pro-file-open?fid=… (alternativa a nutri_file_id para file_text/inspect/reindex)"
               },
               "force": {
                 "type": "boolean",
                 "description": "nutri_pro_reindex: forzar reextracción (default true)"
+              },
+              "update_index": {
+                "type": "boolean",
+                "description": "nutri_pro_file_inspect: actualizar índice si el extract live es mejor (default true)"
               },
               "folder_id": { "type": "string", "description": "UUID carpeta Nutri PRO (filtro o nutri_pro_save)" },
               "folder_path": { "type": "string", "description": "nutri_pro_save: ruta carpeta ej. work / Personal" },
@@ -164,8 +172,14 @@
               "days_ahead": { "type": "integer" },
               "include_overdue": { "type": "boolean" },
               "limit": { "type": "integer" },
-              "max_chars": { "type": "integer", "description": "nutri_pro_file_text: tamaño del fragmento (default 12000, max 50000)" },
-              "offset": { "type": "integer", "description": "nutri_pro_file_text: desplazamiento en el texto extraído" },
+              "max_chars": {
+                "type": "integer",
+                "description": "nutri_pro_file_text / nutri_pro_file_inspect: tamaño del content (inspect default 20000, max 60000)"
+              },
+              "offset": {
+                "type": "integer",
+                "description": "nutri_pro_file_text / nutri_pro_file_inspect: desplazamiento en el texto"
+              },
               "include_favorites": { "type": "boolean", "description": "plan_pro_locations: incluir favoritos de ubicación" },
               "include_items": { "type": "boolean", "description": "plan_pro_locations: incluir apuntes con ubicación Maps" },
               "tool_id": { "type": "string" },

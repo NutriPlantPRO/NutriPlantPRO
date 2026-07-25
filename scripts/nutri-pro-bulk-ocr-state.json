@@ -2,11 +2,12 @@
   "done": {
     "Vehículo Yara (Prius, placa 12N779).pdf": {
       "fileId": "773daae3-ebf8-41fe-9819-ec7e95bb279a",
-      "http": 504,
-      "status": null,
-      "chars": 0,
-      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
-      "at": "2026-07-25T19:18:04.977Z"
+      "http": 200,
+      "status": "done",
+      "chars": 19257,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:15:15.818Z"
     },
     "Ejercicio M1.pdf": {
       "fileId": "4fad9f8a-000d-4f32-868a-9439a3117a53",
@@ -66,11 +67,12 @@
     },
     "Análisis de agua (RAS).pdf": {
       "fileId": "3d20d1a5-417b-4178-b8e4-1d18d4e25832",
-      "http": 504,
-      "status": null,
-      "chars": 0,
-      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
-      "at": "2026-07-25T19:19:49.807Z"
+      "http": 200,
+      "status": "done",
+      "chars": 11678,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:17:05.736Z"
     },
     "Interpretación CE en agua y equivalencias.pdf": {
       "fileId": "fa40c702-957a-4100-b039-3b7c01f1e305",
@@ -138,11 +140,12 @@
     },
     "Propiedades físicas y químicas del suelo.pdf": {
       "fileId": "b4be46a5-0243-441e-b9a2-8f9194d39842",
-      "http": 504,
-      "status": null,
-      "chars": 0,
-      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
-      "at": "2026-07-25T19:21:52.675Z"
+      "http": 200,
+      "status": "done",
+      "chars": 11553,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:19:09.623Z"
     },
     "Valores de referencia CIC meq100g por textura de suelo.pdf": {
       "fileId": "780bc260-e4e3-48ae-a2cf-4ab31d37383e",
@@ -528,14 +531,6 @@
       "error": null,
       "at": "2026-07-25T19:31:24.067Z"
     },
-    "04. Ammonium on potassium interaction. Xu et al. 2002.pdf": {
-      "fileId": "d70abdc1-9324-4b30-a2d1-6f57a69b3be3",
-      "http": 504,
-      "status": null,
-      "chars": 0,
-      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
-      "at": "2026-07-25T19:31:54.792Z"
-    },
     "6 retos de liderazgo.pdf": {
       "fileId": "01f9501c-e4d3-4b29-b43c-fd80d51b465f",
       "http": 200,
@@ -559,6 +554,829 @@
       "chars": 433,
       "error": null,
       "at": "2026-07-25T19:32:09.938Z"
+    },
+    "Nutrientes y extracción en Agave.pdf": {
+      "fileId": "14a79a8d-d199-4e32-bc3e-3867d454c40f",
+      "http": 200,
+      "status": "done",
+      "chars": 8686,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:23:22.604Z"
+    },
+    "Seguimiento nutrición Arándano (ejemplo).pdf": {
+      "fileId": "6bfc7f4b-8c11-4b29-979e-05bade73ea88",
+      "http": 200,
+      "status": "done",
+      "chars": 1053,
+      "error": null,
+      "at": "2026-07-25T19:32:50.457Z"
+    },
+    "Calculo de disponibilidad de agua en suelo.pdf": {
+      "fileId": "eb50bdd6-1e4d-4bab-a3b7-ccb375a465ff",
+      "http": 200,
+      "status": "done",
+      "chars": 1520,
+      "error": null,
+      "at": "2026-07-25T19:33:01.311Z"
+    },
+    "Clave para identificar deficiencias.pdf": {
+      "fileId": "b84c7dd4-9ffa-41e0-82bf-080166853ba7",
+      "http": 200,
+      "status": "done",
+      "chars": 838,
+      "error": null,
+      "at": "2026-07-25T19:33:10.422Z"
+    },
+    "Extraccion de nutrientes _VARIOS CULTIVOS.pdf": {
+      "fileId": "c5883b10-a445-48a9-83e0-dc987cd5c6aa",
+      "http": 200,
+      "status": "done",
+      "chars": 1764,
+      "error": null,
+      "at": "2026-07-25T19:33:19.435Z"
+    },
+    "Factires de convercion de meq a ppm y miligramos.pdf": {
+      "fileId": "ec12cc27-4742-4543-ab42-e80097d562f6",
+      "http": 200,
+      "status": "done",
+      "chars": 1665,
+      "error": null,
+      "at": "2026-07-25T19:33:31.623Z"
+    },
+    "MANUAL DE AGRONOMIA 2.pdf": {
+      "fileId": "3af6731e-f188-486f-b284-c6aedebd8ab8",
+      "http": 200,
+      "status": "done",
+      "chars": 10443,
+      "error": null,
+      "at": "2026-07-25T19:34:31.581Z"
+    },
+    "Nivel de cationes de acuerdo a la CIC.pdf": {
+      "fileId": "4c024870-2e8a-4466-bf78-0749868da8a8",
+      "http": 200,
+      "status": "done",
+      "chars": 649,
+      "error": null,
+      "at": "2026-07-25T19:34:36.694Z"
+    },
+    "Tabla Periodica de Herbicidas.pdf": {
+      "fileId": "e8a198ae-0ebf-43a7-b61e-3535ccbc349b",
+      "http": 200,
+      "status": "done",
+      "chars": 1623,
+      "error": null,
+      "at": "2026-07-25T19:34:51.368Z"
+    },
+    "Tabla Periódica Electronegatividad radio atomico.pdf": {
+      "fileId": "53f3ebbe-26a8-4978-8210-3acbc4e65fe8",
+      "http": 200,
+      "status": "done",
+      "chars": 4913,
+      "error": null,
+      "at": "2026-07-25T19:35:09.819Z"
+    },
+    "Tabla periodica Electrones de Valencia y Radio Atomico.pdf": {
+      "fileId": "75ba9c1d-c8ac-42d2-8866-a832edd9aa36",
+      "http": 200,
+      "status": "done",
+      "chars": 1601,
+      "error": null,
+      "at": "2026-07-25T19:35:22.042Z"
+    },
+    "Tabla periodica.pdf": {
+      "fileId": "e1337bf7-2612-4a81-baa3-e4f7307f926b",
+      "http": 200,
+      "status": "done",
+      "chars": 3715,
+      "error": null,
+      "at": "2026-07-25T19:36:21.393Z"
+    },
+    "Triángulo de texturas de suelo.pdf": {
+      "fileId": "3d1231f6-8d91-4098-b9c4-f7565e7e7376",
+      "http": 200,
+      "status": "done",
+      "chars": 1545,
+      "error": null,
+      "at": "2026-07-25T19:36:29.714Z"
+    },
+    "Microorganismos solubilizadores de fosforo_240310_133024.pdf": {
+      "fileId": "06b11782-2b00-46ed-91e1-329bca6ad64c",
+      "http": 200,
+      "status": "done",
+      "chars": 1110,
+      "error": null,
+      "at": "2026-07-25T19:36:37.505Z"
+    },
+    "Microbilogicos en suelo y niveles.pdf": {
+      "fileId": "43cf478c-f0bd-45dc-99aa-56b2a775f5c0",
+      "http": 200,
+      "status": "done",
+      "chars": 7287,
+      "error": null,
+      "at": "2026-07-25T19:37:06.052Z"
+    },
+    "CE (% de perdida de rendimiento).pdf": {
+      "fileId": "1eb5ccc1-1fe3-4596-b156-9daa272b54fa",
+      "http": 200,
+      "status": "done",
+      "chars": 438,
+      "error": null,
+      "at": "2026-07-25T19:37:11.097Z"
+    },
+    "Niveles de humedad en suelo PROAIN.pdf": {
+      "fileId": "4878021b-e1b7-46fc-9a0b-e181de1f5564",
+      "http": 200,
+      "status": "done",
+      "chars": 780,
+      "error": null,
+      "at": "2026-07-25T19:37:47.281Z"
+    },
+    "Absorción, transporte y asimilación den nitrógeno.pdf": {
+      "fileId": "87989268-00fa-404c-88b2-01f10f4599ec",
+      "http": 200,
+      "status": "done",
+      "chars": 2833,
+      "error": null,
+      "at": "2026-07-25T19:38:03.578Z"
+    },
+    "Antagonismo K y NH4.pdf": {
+      "fileId": "f7908c9c-8654-444a-a2e9-c111e64551b6",
+      "http": 200,
+      "status": "done",
+      "chars": 1258,
+      "error": null,
+      "at": "2026-07-25T19:38:12.712Z"
+    },
+    "Boro en aguacate.pdf": {
+      "fileId": "667b3186-0ffe-4f86-9810-ac8985bf10ac",
+      "http": 200,
+      "status": "done",
+      "chars": 1134,
+      "error": null,
+      "at": "2026-07-25T19:38:24.776Z"
+    },
+    "Calcio en las células vegetales.pdf": {
+      "fileId": "93b4a1e1-bff7-4668-85cf-6f70d1e5245d",
+      "http": 200,
+      "status": "done",
+      "chars": 1583,
+      "error": null,
+      "at": "2026-07-25T19:38:30.408Z"
+    },
+    "Calcio y Boro en las plantas.pdf": {
+      "fileId": "afc7a5cd-af7f-4f54-84a4-66f25f513044",
+      "http": 200,
+      "status": "done",
+      "chars": 4009,
+      "error": null,
+      "at": "2026-07-25T19:38:46.704Z"
+    },
+    "Contenido de calcio en fruta de Aguacate.pdf": {
+      "fileId": "82410aec-a08c-4836-9f01-725469f5eac2",
+      "http": 200,
+      "status": "done",
+      "chars": 1055,
+      "error": null,
+      "at": "2026-07-25T19:38:53.836Z"
+    },
+    "Demanda de K y Ca después del cuajado en fruta.pdf": {
+      "fileId": "e86472ad-4f3a-4006-8be7-5cce7bf368d9",
+      "http": 200,
+      "status": "done",
+      "chars": 554,
+      "error": null,
+      "at": "2026-07-25T19:39:00.690Z"
+    },
+    "Dinamica de K en suelo.pdf": {
+      "fileId": "568fd911-5fc0-43e6-94cf-b7b8a01350c9",
+      "http": 200,
+      "status": "done",
+      "chars": 1936,
+      "error": null,
+      "at": "2026-07-25T19:39:10.958Z"
+    },
+    "Disponibilidad de micros en suelo por efecto de pH.pdf": {
+      "fileId": "c0da63f4-2277-49a9-b563-f7ba85021132",
+      "http": 200,
+      "status": "done",
+      "chars": 273,
+      "error": null,
+      "at": "2026-07-25T19:39:14.311Z"
+    },
+    "El Sulfato después de la absorción de la raíz.pdf": {
+      "fileId": "f92aada0-6f8a-46d0-b5c6-2cb96f520eca",
+      "http": 200,
+      "status": "done",
+      "chars": 2137,
+      "error": null,
+      "at": "2026-07-25T19:39:25.192Z"
+    },
+    "Estrategia para tomar Fósforo.pdf": {
+      "fileId": "420d9ebe-86c1-44c4-beb0-36584ad4b38a",
+      "http": 200,
+      "status": "done",
+      "chars": 1827,
+      "error": null,
+      "at": "2026-07-25T19:39:37.434Z"
+    },
+    "Factores que afectan disponibilidad del fosforo.pdf": {
+      "fileId": "de9235f4-07f8-49ff-8574-f014aef1c81d",
+      "http": 200,
+      "status": "done",
+      "chars": 1571,
+      "error": null,
+      "at": "2026-07-25T19:39:51.903Z"
+    },
+    "Funciones de los nutrientes en plantas (Grafico).pdf": {
+      "fileId": "1488a957-2c61-4b25-be81-469455af1b28",
+      "http": 200,
+      "status": "done",
+      "chars": 2010,
+      "error": null,
+      "at": "2026-07-25T19:40:02.833Z"
+    },
+    "Factores que afectan la disponibilidad de nutrientes.pdf": {
+      "fileId": "f01bb0b9-a725-430e-b41b-45443589aaf8",
+      "http": 200,
+      "status": "done",
+      "chars": 419,
+      "error": null,
+      "at": "2026-07-25T19:40:08.074Z"
+    },
+    "Fósforo en las plantas.pdf": {
+      "fileId": "b516fdc5-902c-4b96-97f3-752f956addff",
+      "http": 200,
+      "status": "done",
+      "chars": 4212,
+      "error": null,
+      "at": "2026-07-25T19:40:26.191Z"
+    },
+    "Interacción entre K y Mg en las plantas.pdf": {
+      "fileId": "5d8db242-a3bc-43ce-93e0-c58de6c502dc",
+      "http": 200,
+      "status": "done",
+      "chars": 2586,
+      "error": null,
+      "at": "2026-07-25T19:40:35.961Z"
+    },
+    "Magnesio en las plantas .pdf": {
+      "fileId": "eaa8f49a-c4c6-456c-964f-be567556e737",
+      "http": 200,
+      "status": "done",
+      "chars": 1854,
+      "error": null,
+      "at": "2026-07-25T19:40:43.119Z"
+    },
+    "Movilidad de los nutrientes es suelo y planta.pdf": {
+      "fileId": "0aa0a1f1-21dc-4347-8b33-13259dd8b7ac",
+      "http": 200,
+      "status": "done",
+      "chars": 945,
+      "error": null,
+      "at": "2026-07-25T19:40:49.060Z"
+    },
+    "Movilidad y toma de nutrientes de las plantas.pdf": {
+      "fileId": "52f51ca6-2430-4d30-8ba8-99dfa96c97c1",
+      "http": 200,
+      "status": "done",
+      "chars": 2277,
+      "error": null,
+      "at": "2026-07-25T19:41:01.900Z"
+    },
+    "Nitrógeno en las plantas.pdf": {
+      "fileId": "3100bd31-386a-4b36-aacc-b675f5ed72bb",
+      "http": 200,
+      "status": "done",
+      "chars": 4614,
+      "error": null,
+      "at": "2026-07-25T19:41:19.060Z"
+    },
+    "Potasio en las plantas.pdf": {
+      "fileId": "b8473969-788c-4fde-8c32-70eb6ee88680",
+      "http": 200,
+      "status": "done",
+      "chars": 6964,
+      "error": null,
+      "at": "2026-07-25T19:41:41.511Z"
+    },
+    "Reacción de nitrógeno en suelo.pdf": {
+      "fileId": "749a1797-f07e-4bdf-bb8f-722e5b2e1cc4",
+      "http": 200,
+      "status": "done",
+      "chars": 711,
+      "error": null,
+      "at": "2026-07-25T19:41:49.041Z"
+    },
+    "Zinc en las plantas.pdf": {
+      "fileId": "7990ec90-b02e-4d08-93c0-ce7bef78ca97",
+      "http": 200,
+      "status": "done",
+      "chars": 1335,
+      "error": null,
+      "at": "2026-07-25T19:41:59.102Z"
+    },
+    "Aguacate Compo.pdf": {
+      "fileId": "0f77d7df-23c9-429a-86c8-c887490e6195",
+      "http": 200,
+      "status": "done",
+      "chars": 5860,
+      "error": null,
+      "at": "2026-07-25T19:42:23.474Z"
+    },
+    "Calculo enmiendas.pdf": {
+      "fileId": "471cf14e-f027-4c45-98c5-2d4c171bb358",
+      "http": 200,
+      "status": "done",
+      "chars": 4200,
+      "error": null,
+      "at": "2026-07-25T19:42:40.677Z"
+    },
+    "Diagrama para elaboración programa de Fertirriego.pdf": {
+      "fileId": "1b07fc12-7e80-46cd-a2b9-4e3c50fbd861",
+      "http": 200,
+      "status": "done",
+      "chars": 362,
+      "error": null,
+      "at": "2026-07-25T19:42:44.720Z"
+    },
+    "Efecto de CE en berries.pdf": {
+      "fileId": "a3633dc1-6514-4250-a915-1ca0056ac6ea",
+      "http": 200,
+      "status": "done",
+      "chars": 825,
+      "error": null,
+      "at": "2026-07-25T19:42:50.256Z"
+    },
+    "Eficiencias de fertilizantes (riego-edafico).pdf": {
+      "fileId": "c88068f1-29f7-4c57-971a-f0cfa1669e74",
+      "http": 200,
+      "status": "done",
+      "chars": 334,
+      "error": null,
+      "at": "2026-07-25T19:42:57.167Z"
+    },
+    "Elaboracion d eporgramas de nutricion Mateo ICL (FRESA Y JITOMATE).pdf": {
+      "fileId": "5fb07496-9147-4062-809a-644def7ecfb3",
+      "http": 504,
+      "status": null,
+      "chars": 0,
+      "error": "<HTML>\n<HEAD>\n<TITLE>Inactivity Timeout</TITLE>\n</HEAD>\n\n<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n<H1>Inactivity Timeout</H1>\n<HR>\n\n<FONT FACE=\"Helvetica,Arial\"><B>\nDescription: Too much time has passed without sending any data for document.\n</B></FONT>\n<HR>\n</BODY>\n",
+      "at": "2026-07-25T19:43:27.678Z"
+    },
+    "Extraccion Chile serrano.pdf": {
+      "fileId": "a51ec309-5bb8-49e6-8b42-bf84ca8814aa",
+      "http": 200,
+      "status": "done",
+      "chars": 887,
+      "error": null,
+      "at": "2026-07-25T19:43:33.069Z"
+    },
+    "Extraccion nutrimental Aguacate (ICL).pdf": {
+      "fileId": "d3ecd371-127e-4cd0-b681-088aa6392a00",
+      "http": 200,
+      "status": "done",
+      "chars": 1380,
+      "error": null,
+      "at": "2026-07-25T19:43:41.540Z"
+    },
+    "Fenologia del cultivo de aguacate.pdf": {
+      "fileId": "f24dd698-15d1-4570-9e78-c0877cb7ab86",
+      "http": 200,
+      "status": "done",
+      "chars": 1029,
+      "error": null,
+      "at": "2026-07-25T19:43:48.739Z"
+    },
+    "Kghadía tómate en invernadero.pdf": {
+      "fileId": "ca44593f-ffc7-4ec5-846d-4ff90992bbb5",
+      "http": 200,
+      "status": "done",
+      "chars": 466,
+      "error": null,
+      "at": "2026-07-25T19:43:53.586Z"
+    },
+    "Porcentaje de eficiencia por fertilización.pdf": {
+      "fileId": "0846eeaa-c806-4aab-8706-a0d601727475",
+      "http": 200,
+      "status": "done",
+      "chars": 463,
+      "error": null,
+      "at": "2026-07-25T19:43:58.194Z"
+    },
+    "Programa de nutricion y calculos ARANDANO.pdf": {
+      "fileId": "aadd4264-2a63-4448-a2fb-2a0b66d339da",
+      "http": 200,
+      "status": "done",
+      "chars": 11795,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:27:20.930Z"
+    },
+    "Programa de nutrición Fresa.pdf": {
+      "fileId": "72e9a0c5-ee4b-4348-b8a4-9e8675d9c98a",
+      "http": 200,
+      "status": "done",
+      "chars": 5440,
+      "error": null,
+      "at": "2026-07-25T19:44:53.161Z"
+    },
+    "Programa nutricion en Aguacate (yara).pdf": {
+      "fileId": "5e68619a-9139-4f99-9b85-145bebd6b2be",
+      "http": 200,
+      "status": "done",
+      "chars": 6319,
+      "error": null,
+      "at": "2026-07-25T19:45:20.320Z"
+    },
+    "Log estabilidad agentes quelantes.pdf": {
+      "fileId": "cda8730f-8c0e-45cc-8825-f9ef9a4d3422",
+      "http": 200,
+      "status": "done",
+      "chars": 1423,
+      "error": null,
+      "at": "2026-07-25T19:45:31.009Z"
+    },
+    "Desarrollo de raiz de acuerdo a omisión de Nutrientes .pdf": {
+      "fileId": "2de4139f-4fbc-4bf1-9d1e-aa9ab97e97f8",
+      "http": 200,
+      "status": "done",
+      "chars": 548,
+      "error": null,
+      "at": "2026-07-25T19:45:37.478Z"
+    },
+    "Exudado de raiz.pdf": {
+      "fileId": "1caaf2d3-47c2-4233-891b-a4dc1f4a79cf",
+      "http": 200,
+      "status": "done",
+      "chars": 5070,
+      "error": null,
+      "at": "2026-07-25T19:45:52.517Z"
+    },
+    "Ejemplo sistema de riego.pdf": {
+      "fileId": "996846c6-60e7-4d37-8d4c-ea6752486181",
+      "http": 200,
+      "status": "done",
+      "chars": 980,
+      "error": null,
+      "at": "2026-07-25T19:46:00.685Z"
+    },
+    "Diseño de sistema de riego.pdf": {
+      "fileId": "cb27670a-65c3-481b-a926-a26492dc0190",
+      "http": 200,
+      "status": "done",
+      "chars": 314,
+      "error": null,
+      "at": "2026-07-25T19:46:06.778Z"
+    },
+    "Monitoreo de humedad con tensiometro.pdf": {
+      "fileId": "93026765-8edc-4593-a2b0-9c0ca2ea4b07",
+      "http": 200,
+      "status": "done",
+      "chars": 1403,
+      "error": null,
+      "at": "2026-07-25T19:46:15.502Z"
+    },
+    "Riego en Aguacate.pdf": {
+      "fileId": "aa334599-9530-47ae-a26d-959dc5e7d371",
+      "http": 200,
+      "status": "done",
+      "chars": 236,
+      "error": null,
+      "at": "2026-07-25T19:46:20.958Z"
+    },
+    "Uniformidad y eficiencia sistemas de riego.pdf": {
+      "fileId": "0e4dd466-1703-4ff6-b0f8-41363bf7a561",
+      "http": 200,
+      "status": "done",
+      "chars": 666,
+      "error": null,
+      "at": "2026-07-25T19:46:27.433Z"
+    },
+    "Calcio Soluciones Nutritivas (Notas Tecnicas).pdf": {
+      "fileId": "c7f9c543-0249-4a36-8aa8-439dead7b559",
+      "http": 200,
+      "status": "done",
+      "chars": 4859,
+      "error": null,
+      "at": "2026-07-25T19:46:51.365Z"
+    },
+    "Calculo de Solucion nutritiva y porcentajes por etapa .pdf": {
+      "fileId": "d4897e09-524e-4f89-81f4-7b0a870c6e9b",
+      "http": 200,
+      "status": "done",
+      "chars": 12713,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:29:36.204Z"
+    },
+    "Calculo de acido para neutralizar HCO3 Greenhow.pdf": {
+      "fileId": "ae48006d-4bed-476e-a4d4-039f8dc06c2a",
+      "http": 200,
+      "status": "done",
+      "chars": 2252,
+      "error": null,
+      "at": "2026-07-25T19:47:35.727Z"
+    },
+    "Calculo solucon nutritiva Isaosa.pdf": {
+      "fileId": "80349511-fcac-4b70-92ed-bbc91a15c8c1",
+      "http": 200,
+      "status": "done",
+      "chars": 11865,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:32:06.408Z"
+    },
+    "Cantidad de acido para neutralizar bicarbonatos.pdf": {
+      "fileId": "e14e1f17-425e-4952-9143-b2e9311405d0",
+      "http": 200,
+      "status": "done",
+      "chars": 969,
+      "error": null,
+      "at": "2026-07-25T19:48:18.550Z"
+    },
+    "Comportamiento de pH en fertirriego.pdf": {
+      "fileId": "25fc9c1e-9844-4170-9ac6-7b0867f65aa7",
+      "http": 200,
+      "status": "done",
+      "chars": 1165,
+      "error": null,
+      "at": "2026-07-25T19:48:25.247Z"
+    },
+    "Concentración de la solucion (Notas Tecnicas Agronomicas).pdf": {
+      "fileId": "de71822b-31dc-467d-abd7-e3f8dddc8563",
+      "http": 200,
+      "status": "done",
+      "chars": 1820,
+      "error": null,
+      "at": "2026-07-25T19:48:38.447Z"
+    },
+    "Convertir meqL - ppm (ejemplo).pdf": {
+      "fileId": "6ac73e5d-3b99-4b89-a7a5-75824fdb3a52",
+      "http": 200,
+      "status": "done",
+      "chars": 4372,
+      "error": null,
+      "at": "2026-07-25T19:48:55.363Z"
+    },
+    "Determinación de concentración de soluciones nutritiva.pdf": {
+      "fileId": "aa310ee3-97da-4778-aa9d-d8a8994d4c8a",
+      "http": 200,
+      "status": "done",
+      "chars": 5213,
+      "error": null,
+      "at": "2026-07-25T19:49:15.661Z"
+    },
+    "Determinación de concentración en solución (Notas Tecnicas Agronomicas).pdf": {
+      "fileId": "2377eafa-8bf5-4956-be1a-027dd111052f",
+      "http": 200,
+      "status": "done",
+      "chars": 1472,
+      "error": null,
+      "at": "2026-07-25T19:49:30.551Z"
+    },
+    "Ejemplos Calculo solucion nutritiva.pdf": {
+      "fileId": "546d0bce-c93a-4f95-9ffb-78447de77b8a",
+      "http": 200,
+      "status": "done",
+      "chars": 7230,
+      "error": null,
+      "at": "2026-07-25T19:49:57.299Z"
+    },
+    "Elementos químicos Meq y concentraciones .pdf": {
+      "fileId": "9dd94d45-79a7-4dbf-8063-895ca94ca69d",
+      "http": 200,
+      "status": "done",
+      "chars": 11782,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:33:55.564Z"
+    },
+    "Estimado de CE en mezcla de SM y agua de riego.pdf": {
+      "fileId": "9c111fb7-bcc9-48ef-ab67-2f205c0c0a6b",
+      "http": 200,
+      "status": "done",
+      "chars": 1047,
+      "error": null,
+      "at": "2026-07-25T19:50:36.602Z"
+    },
+    "Nutrición e información Arandano Frambuesa y Fresa.pdf": {
+      "fileId": "1287daa2-882e-4db1-be29-51520211be06",
+      "http": 200,
+      "status": "done",
+      "chars": 5272,
+      "error": null,
+      "at": "2026-07-25T19:51:00.497Z"
+    },
+    "Parámetros de calidad del agua .pdf": {
+      "fileId": "ca88eda4-43d8-44a1-a678-2049656e01a2",
+      "http": 200,
+      "status": "done",
+      "chars": 1509,
+      "error": null,
+      "at": "2026-07-25T19:51:08.704Z"
+    },
+    "Pesos equivalente y meq de Fertilizantes.pdf": {
+      "fileId": "ed96a7ab-79cf-4a90-b291-a808aa311b3a",
+      "http": 200,
+      "status": "done",
+      "chars": 2394,
+      "error": null,
+      "at": "2026-07-25T19:51:20.404Z"
+    },
+    "Que es el pH (intagri).pdf": {
+      "fileId": "dcbb5e26-3f8c-4cda-8817-d71c0d2eb16e",
+      "http": 200,
+      "status": "done",
+      "chars": 505,
+      "error": null,
+      "at": "2026-07-25T19:51:25.144Z"
+    },
+    "Solucion nutritiva Arándano _240728_111554.pdf": {
+      "fileId": "739a110f-6a9c-470d-927f-78d5016f5f08",
+      "http": 200,
+      "status": "done",
+      "chars": 944,
+      "error": null,
+      "at": "2026-07-25T19:51:34.121Z"
+    },
+    "Solucion nutritiva Notas Agrícolas.pdf": {
+      "fileId": "21dc4b71-38f4-4300-a9b8-266cf0e8d1ab",
+      "http": 200,
+      "status": "done",
+      "chars": 8457,
+      "error": null,
+      "at": "2026-07-25T19:51:57.318Z"
+    },
+    "Soluciones nutritivas (Notas Tecnicas Agronomicas).pdf": {
+      "fileId": "86362fb6-2f3e-4212-8e29-d4227e0506ca",
+      "http": 200,
+      "status": "done",
+      "chars": 5079,
+      "error": null,
+      "at": "2026-07-25T19:52:15.758Z"
+    },
+    "Soluciones nutritivas con micros en cultivos.pdf": {
+      "fileId": "c407768e-c7c5-40b0-b212-6f86bb3d5525",
+      "http": 200,
+      "status": "done",
+      "chars": 2204,
+      "error": null,
+      "at": "2026-07-25T19:53:02.862Z"
+    },
+    "Solución Nutritiva fresa.pdf": {
+      "fileId": "eb5d6860-cf5c-4c27-8e7c-8ee5520d33ad",
+      "http": 200,
+      "status": "done",
+      "chars": 1485,
+      "error": null,
+      "at": "2026-07-25T19:53:13.945Z"
+    },
+    "Kyallo.pdf": {
+      "fileId": "c28c02a7-cbaf-4938-aeed-846851228428",
+      "http": 200,
+      "status": "skipped",
+      "chars": 0,
+      "error": "OCR/IA no encontró texto legible en el PDF.",
+      "at": "2026-07-25T19:53:16.657Z"
+    },
+    "certificate_tmp_f0216f15-2348-450b-a92b-41789064f263--1221537694.pdf": {
+      "fileId": "1953e772-60d3-436f-aa96-ecd3000e8289",
+      "http": 200,
+      "status": "done",
+      "chars": 282,
+      "error": null,
+      "at": "2026-07-25T19:53:19.798Z"
+    },
+    "Protocolo Frutas Selectas de Jalisco_Aguacate.pdf": {
+      "fileId": "8dbc2fda-ecd9-497f-89a8-3dd850c4d5ae",
+      "http": 200,
+      "status": "done",
+      "chars": 8864,
+      "error": null,
+      "at": "2026-07-25T19:53:46.986Z"
+    },
+    "Propuesta L10-M Framenco_240308_111633.pdf": {
+      "fileId": "44f40030-b2f4-4646-b818-67eaf388622b",
+      "http": 200,
+      "status": "done",
+      "chars": 2442,
+      "error": null,
+      "at": "2026-07-25T19:53:58.451Z"
+    },
+    "Propuesta L10-M Mariachi_240308_112249.pdf": {
+      "fileId": "3c2f7e01-d90a-420b-81ee-56f7481d1074",
+      "http": 200,
+      "status": "done",
+      "chars": 2338,
+      "error": null,
+      "at": "2026-07-25T19:54:09.588Z"
+    },
+    "Propuesta L4-B Mariachi_240308_112146.pdf": {
+      "fileId": "225f86e6-44ae-4857-a278-3fde4ea9a77b",
+      "http": 200,
+      "status": "done",
+      "chars": 2336,
+      "error": null,
+      "at": "2026-07-25T19:54:23.377Z"
+    },
+    "Propuesta L7-B Framenco_240308_111724.pdf": {
+      "fileId": "03a0465f-a912-4e63-bc9f-3d3449bb1070",
+      "http": 200,
+      "status": "done",
+      "chars": 2361,
+      "error": null,
+      "at": "2026-07-25T19:54:34.399Z"
+    },
+    "Vacaciones Jesús Avila Mendoza.pdf": {
+      "fileId": "be0a63a5-185d-44ca-ba73-f31a7354ad9d",
+      "http": 200,
+      "status": "done",
+      "chars": 929,
+      "error": null,
+      "at": "2026-07-25T19:54:42.486Z"
+    },
+    "Seguro Camioneta L200 y tarjeta de circulación .pdf": {
+      "fileId": "32b569d9-9dc0-4a1d-ba35-f4901a639c4b",
+      "http": 200,
+      "status": "done",
+      "chars": 5625,
+      "error": null,
+      "at": "2026-07-25T19:55:12.183Z"
+    },
+    "Quelatos EDTA y EDDHA DIOSOL.pdf": {
+      "fileId": "e873dd76-21e8-4549-aebe-d77b2385e447",
+      "http": 200,
+      "status": "done",
+      "chars": 6322,
+      "error": null,
+      "at": "2026-07-25T19:55:33.073Z"
+    },
+    "RAZONES SOCIALES 2024 BECEMEX_241126_141208.pdf": {
+      "fileId": "7a4a327f-fd8e-4631-8748-39a6709e3bc2",
+      "http": 200,
+      "status": "done",
+      "chars": 2158,
+      "error": null,
+      "at": "2026-07-25T19:55:44.817Z"
+    },
+    "Negociación especial Elixir AgroChaver.pdf": {
+      "fileId": "72b7b9ae-3ebf-4e60-939d-726d45771190",
+      "http": 200,
+      "status": "done",
+      "chars": 3230,
+      "error": null,
+      "at": "2026-07-25T19:55:53.348Z"
+    },
+    "FACTURA SERVICIO .pdf": {
+      "fileId": "a49800ed-3889-42f8-aa44-5d366e847324",
+      "http": 200,
+      "status": "done",
+      "chars": 6341,
+      "error": null,
+      "at": "2026-07-25T19:56:15.262Z"
+    },
+    "04. Ammonium on potassium interaction. Xu et al. 2002.pdf": {
+      "fileId": "d70abdc1-9324-4b30-a2d1-6f57a69b3be3",
+      "http": 200,
+      "status": "done",
+      "chars": 32799,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:35:43.442Z"
+    },
+    "Interacción de nutrientes dentro y fuera de raiz .pdf": {
+      "fileId": "e9fe6b7c-b592-4a32-bb58-77e5a7710774",
+      "http": 200,
+      "status": "done",
+      "chars": 1455,
+      "error": null,
+      "via": "direct",
+      "at": "2026-07-25T20:36:44.749Z"
+    },
+    "Tabla periodica de los fungicidas.pdf": {
+      "fileId": "54e86531-b75d-454b-bfbb-14f4c0184cd7",
+      "http": 200,
+      "status": "done",
+      "chars": 3299,
+      "error": null,
+      "at": "2026-07-25T20:09:12.323Z"
+    },
+    "Monitoreo vegetal pH, CE y Brix con equipos.pdf": {
+      "fileId": "a86534c8-33d4-44d3-8f30-ef62270d3c27",
+      "http": 200,
+      "status": "done",
+      "chars": 8619,
+      "error": null,
+      "at": "2026-07-25T20:09:42.320Z"
+    },
+    "Soluciones Nutritiva aguacate.pdf": {
+      "fileId": "2be1d3c9-840c-47fe-99dc-f4835c87c53d",
+      "http": 200,
+      "status": "done",
+      "chars": 5892,
+      "error": null,
+      "at": "2026-07-25T20:10:07.567Z"
     }
   }
 }

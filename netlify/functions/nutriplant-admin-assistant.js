@@ -2980,7 +2980,7 @@ function mapNutriProFileRow(file, foldersById, extractByFileId) {
   }
   if (!row.text_indexed) {
     row.reindex_hint =
-      'Sin texto útil indexado. Usa nutri_pro_reindex con nutri_file_id (mode=text o mode=ocr para PDF escaneado/imagen). Luego nutri_pro_file_text o nutri_pro_ask.';
+      'Sin texto útil indexado. Usa nutri_pro_file_inspect (archivo vivo, sin OCR API) o nutri_pro_reindex (mode=text|ocr). Luego nutri_pro_file_text o nutri_pro_ask.';
   }
   return row;
 }
@@ -3506,9 +3506,252 @@ async function handleNutriProAsk(supabase, params) {
     suggestions,
     link_gap_suggestions: linkGapSuggestions,
     gpt_usage:
-      'Fase 4: usa unified_citations (apunte ↔ archivo ↔ fragmento). Cita line tal cual. link_gap_suggestions = apunte sin 📎 pero documentos existentes. Más texto: nutri_pro_file_text. No inventes cifras fuera de snippets.',
+      'Fase 4: usa unified_citations (apunte ↔ archivo ↔ fragmento). Cita line tal cual. link_gap_suggestions = apunte sin 📎 pero documentos existentes. Más texto: nutri_pro_file_text. Si snippets no bastan para cifras/tablas: nutri_pro_file_inspect (abre archivo vivo en Supabase, sin OCR API). No inventes cifras fuera de snippets/inspect.',
     gpt_citation_format:
       '📝 [Apunte] ↔ 📎 [ruta archivo]: «fragmento» — responde integrando apunte + documento cuando unified_citations lo permita.'
+  };
+}
+
+/**
+ * Filtra texto vivo por q (líneas que matchean + encabezados ##).
+ * Si no hay matches útiles, devuelve el inicio del documento.
+ */
+function buildNutriProInspectContent(fullText, q, maxChars) {
+  const text = String(fullText || '');
+  const terms = nutriContentSearch.tokenizeQuery(q || '');
+  if (!terms.length || !text) {
+    const content = text.slice(0, maxChars);
+    return {
+      content,
+      filtered: false,
+      match_line_count: 0,
+      total_chars: text.length,
+      has_more: content.length < text.length,
+      terms
+    };
+  }
+
+  const lines = text.split(/\r?\n/);
+  const keepIdx = new Set();
+  let matchLineCount = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isHeader = /^##\s/.test(line);
+    const norm = nutriContentSearch.normalizeForSearch(line);
+    const hit = terms.some((t) => norm.includes(t));
+    if (hit) {
+      matchLineCount++;
+      keepIdx.add(i);
+      if (i > 0) keepIdx.add(i - 1);
+      if (i + 1 < lines.length) keepIdx.add(i + 1);
+    } else if (isHeader) {
+      keepIdx.add(i);
+    }
+  }
+
+  let content;
+  let filtered;
+  if (matchLineCount === 0) {
+    content = text.slice(0, maxChars);
+    filtered = false;
+  } else {
+    const ordered = Array.from(keepIdx).sort((a, b) => a - b);
+    const parts = [];
+    let prev = -2;
+    for (const i of ordered) {
+      if (prev >= 0 && i > prev + 1) parts.push('…');
+      parts.push(lines[i]);
+      prev = i;
+    }
+    const joined = parts.join('\n');
+    content = joined.slice(0, maxChars);
+    filtered = true;
+  }
+
+  return {
+    content,
+    filtered,
+    match_line_count: matchLineCount,
+    total_chars: text.length,
+    has_more: content.length < (filtered ? text.length : text.length) && content.length >= maxChars,
+    terms
+  };
+}
+
+/**
+ * Abre el archivo real en Supabase Storage, extrae texto local (sin OCR OpenAI)
+ * y lo entrega al GPT para razonar cuando el índice no alcanza.
+ */
+async function handleNutriProFileInspect(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const fileId = resolveNutriProFileId(params);
+  if (!fileId) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Indica params.nutri_file_id, params.file_id o params.open_url.'
+    };
+  }
+
+  const q = String(params.q || params.query || params.question || '').trim();
+  const maxChars = Math.min(Math.max(parseInt(params.max_chars, 10) || 20000, 1000), 60000);
+  const offset = Math.max(parseInt(params.offset, 10) || 0, 0);
+  const updateIndex =
+    params.update_index === true ||
+    params.update_index === 'true' ||
+    params.update_index === 1 ||
+    params.update_index === '1' ||
+    params.update_index == null ||
+    params.update_index === '';
+
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      available: false,
+      error: 'Nutri PRO no instalado.',
+      setup_sql: foldersRes.setup
+    };
+  }
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+
+  const { data: fileRec, error: fileErr } = await supabase
+    .from('plan_pro_nutri_files')
+    .select('id,owner_id,folder_id,title,original_name,description,mime_type,size_bytes,storage_path,updated_at')
+    .eq('owner_id', ownerId)
+    .eq('id', fileId)
+    .maybeSingle();
+  if (fileErr) throw new Error('nutri_pro_file_inspect file: ' + fileErr.message);
+  if (!fileRec) {
+    return { ok: true, domain: 'nutri_pro', found: false, message: 'Archivo no encontrado.' };
+  }
+
+  const { data: existingExtract } = await supabase
+    .from('plan_pro_nutri_file_extracts')
+    .select('status,format_kind,text_plain,meta_json,error_message,extracted_at')
+    .eq('file_id', fileId)
+    .maybeSingle();
+  const indexedChars = ((existingExtract && existingExtract.text_plain) || '').length;
+
+  const { data: blob, error: dlErr } = await supabase.storage
+    .from(NUTRI_PRO_STORAGE_BUCKET)
+    .download(fileRec.storage_path);
+  if (dlErr || !blob) {
+    return {
+      ok: false,
+      domain: 'nutri_pro',
+      action: 'nutri_pro_file_inspect',
+      found: true,
+      error: (dlErr && dlErr.message) || 'No se pudo descargar el archivo de Supabase Storage.',
+      file: mapNutriProFileRow(fileRec, foldersById, existingExtract ? { [fileId]: existingExtract } : {})
+    };
+  }
+
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  const extracted = await extractNutriProText(buffer, fileRec.original_name, fileRec.mime_type);
+  const liveText = String(extracted.text_plain || '');
+  const liveChars = liveText.length;
+  const needsVisionOrOcr =
+    extracted.status === 'skipped' ||
+    extracted.status === 'error' ||
+    liveChars < 40 ||
+    /escaneado|imagen|OCR|solo imágenes/i.test(String(extracted.error_message || ''));
+
+  let indexUpdated = false;
+  if (
+    updateIndex &&
+    extracted.status === 'done' &&
+    liveChars > 0 &&
+    (liveChars > indexedChars * 1.1 || indexedChars < 200)
+  ) {
+    const row = {
+      file_id: fileId,
+      owner_id: ownerId,
+      status: 'done',
+      format_kind: extracted.format_kind || null,
+      text_plain: liveText,
+      meta_json: {
+        ...(extracted.meta_json || {}),
+        char_count: liveChars,
+        via: 'file_inspect_live',
+        previous_indexed_chars: indexedChars
+      },
+      error_message: null,
+      extracted_at: new Date().toISOString()
+    };
+    const { error: upsertErr } = await supabase.from('plan_pro_nutri_file_extracts').upsert(row, {
+      onConflict: 'file_id'
+    });
+    if (!upsertErr) indexUpdated = true;
+  }
+
+  const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, [fileId]);
+  const mapped = mapNutriProFileRow(fileRec, foldersById, extractMap);
+
+  if (needsVisionOrOcr && liveChars < 40) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      action: 'nutri_pro_file_inspect',
+      found: true,
+      live_extract: true,
+      used_openai_ocr: false,
+      needs_vision_or_ocr: true,
+      extract_status: extracted.status,
+      format_kind: extracted.format_kind || null,
+      error_message: extracted.error_message || null,
+      indexed_chars: indexedChars,
+      live_chars: liveChars,
+      index_updated: indexUpdated,
+      content: null,
+      file: mapped,
+      open_url: mapped.open_url || null,
+      gpt_usage:
+        'Archivo sin texto extraíble local (escaneado/imagen). NO uses OCR API salvo que Jesús lo pida. Opciones: 1) Jesús adjunta el archivo en el chat y tú usas nutri_pro_set_text; 2) nutri_pro_reindex mode=ocr (cobra API). Comparte open_url para que él abra el archivo.'
+    };
+  }
+
+  const slicedFull = offset > 0 ? liveText.slice(offset) : liveText;
+  const built = buildNutriProInspectContent(slicedFull, q, maxChars);
+  // Si filtramos por q sobre slice con offset, total_chars debe ser del vivo completo
+  built.total_chars = liveChars;
+  if (offset > 0) {
+    built.offset = offset;
+    built.has_more = offset + built.content.length < liveText.length || built.has_more;
+  }
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    action: 'nutri_pro_file_inspect',
+    found: true,
+    live_extract: true,
+    used_openai_ocr: false,
+    needs_vision_or_ocr: false,
+    extract_status: extracted.status,
+    format_kind: extracted.format_kind || null,
+    meta: extracted.meta_json || {},
+    q: q || null,
+    terms: built.terms,
+    filtered: built.filtered,
+    match_line_count: built.match_line_count,
+    indexed_chars: indexedChars,
+    live_chars: liveChars,
+    index_updated: indexUpdated,
+    offset,
+    max_chars: maxChars,
+    content: built.content,
+    content_chars: built.content.length,
+    has_more: !!built.has_more,
+    file: mapped,
+    open_url: mapped.open_url || null,
+    gpt_usage:
+      'Este content es el archivo VIVO de Supabase (extracción local, sin tu API OCR). Responde cifras/tablas SOLO con este content. Cita 📎 short_path. Si has_more y falta dato: vuelve a llamar con offset o q más específico. open_url es para que Jesús abra el archivo; no sustituye a inspect.'
   };
 }
 
@@ -6297,8 +6540,8 @@ async function handleNutritionCatalogs(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.12.0',
-    openapi_version: '2.12.0',
+    version: '2.13.0',
+    openapi_version: '2.13.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
@@ -6309,6 +6552,10 @@ async function handleDescribeApi() {
         action: 'plan_pro_item',
         params: { q: 'calcio limón', hops: 2 }
       },
+      example_nutri_pro_file_inspect: {
+        action: 'nutri_pro_file_inspect',
+        params: { nutri_file_id: 'UUID', q: 'Yara junio' }
+      },
       example_nutri_pro_reindex: {
         action: 'nutri_pro_reindex',
         params: { nutri_file_id: 'UUID', mode: 'ocr' }
@@ -6317,7 +6564,7 @@ async function handleDescribeApi() {
         action: 'nutri_pro_set_text',
         params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
       },
-      verify: 'Si describe_api devuelve version 2.12.0, el GPT tiene schema y token correctos.'
+      verify: 'Si describe_api devuelve version 2.13.0, el GPT tiene schema y token correctos.'
     },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
@@ -6349,6 +6596,7 @@ async function handleDescribeApi() {
         'nutri_pro_search',
         'nutri_pro_ask',
         'nutri_pro_file_text',
+        'nutri_pro_file_inspect',
         'nutri_pro_reindex',
         'nutri_pro_set_text',
         'nutri_pro_save',
@@ -6368,7 +6616,7 @@ async function handleDescribeApi() {
     climate_gpt:
       'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot con lluvia/ET₀ mensual hasta 4 años en rainfall.years y et0.years; tiempo actual con rain_today_mm y et0_today_mm; rolling 1/7/30 d; calculadora balance). mode=live → tiempo_actual_ahora + lluvia/ET₀ del día. mode=rainfall_refresh → lluvia_et0_ahora (4 años en vivo). mode=rolling o all → rolling_windows_ahora + irrigation_quick_calc_live. Si preguntan por histórico mensual o gráficas, usa climate_saved.rainfall.years / et0.years. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
-      'Archivos traen open_url. Preguntas: nutri_pro_ask. Leer: nutri_pro_file_text. OCR automático: nutri_pro_reindex mode=ocr. Corregir texto del MISMO archivo (sin crear otro): nutri_pro_set_text + nutri_file_id + content. Texto NUEVO: nutri_pro_save. Binario: nutri_pro_upload_link. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+      'Archivos traen open_url. Preguntas: nutri_pro_ask. Si snippets no bastan: nutri_pro_file_inspect (archivo vivo Supabase, sin OCR API). Leer índice: nutri_pro_file_text. OCR API: nutri_pro_reindex mode=ocr. Corregir: nutri_pro_set_text. Texto NUEVO: nutri_pro_save. Binario: nutri_pro_upload_link. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -6401,6 +6649,7 @@ const HANDLERS = {
   nutri_pro_search: (sb, p) => handleNutriProSearch(sb, p),
   nutri_pro_ask: (sb, p) => handleNutriProAsk(sb, p),
   nutri_pro_file_text: (sb, p) => handleNutriProFileText(sb, p),
+  nutri_pro_file_inspect: (sb, p) => handleNutriProFileInspect(sb, p),
   nutri_pro_reindex: (sb, p) => handleNutriProReindex(sb, p),
   nutri_pro_set_text: (sb, p) => handleNutriProSetText(sb, p),
   nutri_pro_save: (sb, p) => handleNutriProSave(sb, p),
@@ -6422,9 +6671,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.12.0',
+      version: '2.13.0',
       description:
-        'v2.12.0 — ChatGPT: plan_pro_item trae relations_* (apuntes) + nutri_graph_* (archivo/link). nutri_pro_file_text trae relations_* Nutri.'
+        'v2.13.0 — nutri_pro_file_inspect: abre archivo vivo en Supabase (extract local, sin OCR API) cuando el índice no alcanza.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -6433,7 +6682,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, plan_pro_item (relations + hops), nutri_pro_reindex, nutri_pro_set_text, describe_api. Verifica describe_api → version 2.11.0.',
+            'Única Action ChatGPT. Body: action + params. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.13.0.',
           requestBody: {
             required: true,
             content: {
@@ -6494,6 +6743,19 @@ function getOpenApiSpec() {
                 force: {
                   type: 'boolean',
                   description: 'nutri_pro_reindex: forzar reextracción (default true)'
+                },
+                max_chars: {
+                  type: 'integer',
+                  description: 'nutri_pro_file_text / nutri_pro_file_inspect: tamaño del content (inspect default 20000, max 60000)'
+                },
+                offset: {
+                  type: 'integer',
+                  description: 'nutri_pro_file_text / nutri_pro_file_inspect: desplazamiento en el texto'
+                },
+                update_index: {
+                  type: 'boolean',
+                  description:
+                    'nutri_pro_file_inspect: si el extract live es mejor, actualizar plan_pro_nutri_file_extracts (default true)'
                 },
                 section: {
                   type: 'string',

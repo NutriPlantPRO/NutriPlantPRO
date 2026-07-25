@@ -1,4 +1,4 @@
-# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.12)
+# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.13)
 
 ## Acción principal: `nutri_pro_ask`
 
@@ -33,7 +33,14 @@ Ejemplo de tono:
 > En 📎 Fertirriego/costos.xlsx aparece: «Potasio K2O 120 ppm…». Tu apunte «Costos temporada» ya lo enlaza.  
 > *(o)* El apunte «Fertirriego sandía» habla del tema pero no tiene archivo 📎; hay 2 Excel en Nutri PRO que podrías enlazar.
 
-## Red neuronal / grafo (v2.12)
+### Si el índice no alcanza (cifras / tablas)
+
+Ejemplo: *«¿cuánto vendió Yara en junio?»* → `nutri_pro_ask` encuentra el Excel, pero snippets cortos.
+
+**Siguiente paso:** `nutri_pro_file_inspect` con `nutri_file_id` del source + la misma `q`.  
+`open_url` es para que Jesús abra el archivo; **no** sustituye a `file_inspect`.
+
+## Red neuronal / grafo (v2.13)
 
 Además de chips 📎 en el cuerpo del apunte, existe grafo tipado en BD:
 
@@ -63,11 +70,35 @@ Cada archivo en `nutri_pro_catalog` / `nutri_pro_search` / `nutri_pro_ask` / `nu
 | `text_indexed` | Si hay texto útil en la bóveda |
 | `reindex_hint` | Si no está indexado: qué hacer |
 
-**ChatGPT no descarga el PDF binario.** Lee el **texto indexado**. Si Jesús pega un `open_url`, úsalo en `nutri_pro_file_text` o `nutri_pro_reindex` (aceptan `open_url`).
+**ChatGPT no descarga el PDF binario con el solo `open_url`.** Lee el **texto indexado** (`nutri_pro_ask` / `nutri_pro_file_text`) o el **archivo vivo** con `nutri_pro_file_inspect`. Si Jesús pega un `open_url`, úsalo en `nutri_pro_file_text`, `nutri_pro_file_inspect` o `nutri_pro_reindex`.
 
 ```json
 { "action": "nutri_pro_file_text", "params": { "open_url": "https://nutriplantpro.com/api/nutri-pro-file-open?fid=…&t=…" } }
 ```
+
+## Abrir archivo vivo: `nutri_pro_file_inspect`
+
+Cuando `nutri_pro_ask` / `nutri_pro_file_text` no traen suficiente contexto (cifras, tablas Excel, índice pobre):
+
+```json
+{
+  "action": "nutri_pro_file_inspect",
+  "params": {
+    "nutri_file_id": "UUID",
+    "q": "Yara junio",
+    "max_chars": 20000
+  }
+}
+```
+
+| Campo respuesta | Uso |
+|-----------------|-----|
+| `content` | Texto vivo del archivo (filtrado por `q` si aplica) — **úsalo para responder** |
+| `used_openai_ocr` | Siempre `false` en inspect (extract local) |
+| `needs_vision_or_ocr` | `true` si es escaneado/imagen sin texto |
+| `index_updated` | Si mejoró el índice en `plan_pro_nutri_file_extracts` |
+| `has_more` | Pide otra llamada con `offset` o `q` más específico |
+| `open_url` | Para que Jesús abra el archivo; no reemplaza a inspect |
 
 ## Reindexar / OCR: `nutri_pro_reindex`
 
@@ -113,7 +144,8 @@ Además de archivos, Nutri PRO guarda **links** con título, **descripción**, U
 | «¿Qué enlaces tengo?» / inventario | `nutri_pro_catalog` → array `links[]` |
 | «¿Tengo algún link sobre X?» | `nutri_pro_search` con `q` |
 | Solo enlaces (sin archivos) | `nutri_pro_search` con `kind: "links"` |
-| «¿Qué dice el PDF / Excel?» | `nutri_pro_ask` (archivos indexados, **no** links web) |
+| «¿Qué dice el PDF / Excel?» | `nutri_pro_ask` → si falta cifra/tabla: `nutri_pro_file_inspect` |
+| «Abre / mira el archivo vivo» | `nutri_pro_file_inspect` (+ `q`) |
 | «Reindexa / OCR este archivo» | `nutri_pro_reindex` |
 | «Corrige el texto indexado de ESTE archivo» | `nutri_pro_set_text` (mismo `nutri_file_id`, NO `nutri_pro_save`) |
 
@@ -216,8 +248,9 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 |--------|--------|
 | `nutri_pro_search` | Buscar archivos **y** enlaces por palabra (`kind`: `all`, `files`, `links`) |
 | `nutri_pro_catalog` | Inventario: carpetas, archivos (`description` = nota breve) y `links[]` |
-| `nutri_pro_file_text` | Más texto de archivo (`offset` para paginar; acepta `open_url`) |
-| `nutri_pro_reindex` | Reindexar / OCR (`mode`: `text`\|`ocr`) |
+| `nutri_pro_file_text` | Más texto **indexado** (`offset` para paginar; acepta `open_url`) |
+| `nutri_pro_file_inspect` | **Abrir archivo vivo** en Supabase (extract local, sin OCR API; filtrar con `q`) |
+| `nutri_pro_reindex` | Reindexar / OCR (`mode`: `text`\|`ocr`) — OCR usa API |
 | `nutri_pro_set_text` | **Corregir** texto indexado del mismo archivo (`content`) — no crea otro doc |
 | `nutri_pro_save` | **Guardar** texto generado NUEVO (content) en carpeta |
 | `nutri_pro_upload_link` | **Enlace móvil** para subir PDF/Excel real |
@@ -227,13 +260,14 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 ## Reglas
 
 - **No pidas título exacto** — Jesús recuerda a medias (nombre, apellido, tema). Usa `plan_pro_search` / `nutri_pro_search` / `nutri_pro_ask` con **palabras sueltas**; si hay varios candidatos, muéstralos y pregunta cuál.
-- **No inventes** cifras fuera de `snippets` / `unified_citations`.
+- **No inventes** cifras fuera de `snippets` / `unified_citations` / `nutri_pro_file_inspect.content`.
 - **No inventes** URLs ni contenido de páginas web; enlaces web guardados = solo metadatos. `open_url` de archivos sí existe en la respuesta API — úsalo tal cual.
-- Si `text_indexed=false` o el texto es pobre → ofrece `nutri_pro_reindex` (ocr si es escaneado).
+- Si snippets de `ask` no bastan para responder → **`nutri_pro_file_inspect`** (no digas “no tengo el dato” sin intentar inspect).
+- Si `text_indexed=false` o el texto es pobre → `nutri_pro_file_inspect` primero; OCR (`reindex mode=ocr`) solo si Jesús lo pide o `needs_vision_or_ocr`.
 - Siempre cita `📎 ruta` (archivos) y `📝 apunte` cuando existan; enlaces con `🔗` + `folder_path` + URL.
 - Propón enlazar apunte↔archivo cuando `link_gap_suggestions` lo indique.
 - Para contexto de red / investigación: sigue `relations_*` y `nutri_graph_*` (no solo búsqueda de texto).
 
 ## Deploy
 
-OpenAPI **v2.12.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy. Import URL: `https://nutriplantpro.com/api/admin-assistant/openapi.json`.
+OpenAPI **v2.13.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy. Import URL: `https://nutriplantpro.com/api/admin-assistant/openapi.json`. Verifica `describe_api` → `version: 2.13.0`.

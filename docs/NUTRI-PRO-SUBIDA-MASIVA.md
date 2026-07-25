@@ -228,6 +228,19 @@ node scripts/nutri-pro-bulk-ocr.mjs --pdf-only 2>&1 | tee -a scripts/nutri-pro-b
 - Opciones: `--limit N`, `--dry-run`, `--all-types` (incluye no-PDF; OCR Sol está pensado para PDF)
 - PPTX e imágenes quedan fuera del lote `--pdf-only` por ahora
 
+### Reintento sin Netlify (PDFs que dieron 504)
+
+Necesitas `OPENAI_API_KEY` (la misma del panel de Netlify):
+
+```bash
+export OPENAI_API_KEY="sk-..."
+export NUTRI_PRO_BULK_EMAIL="..."
+export NUTRI_PRO_BULK_PASSWORD="..."
+node scripts/nutri-pro-bulk-ocr-direct.mjs 2>&1 | tee -a scripts/nutri-pro-bulk-ocr-direct.log
+```
+
+También hay función background (tras deploy): `nutri-pro-extract-background` (timeout 900s).
+
 ---
 
 ## Referencias

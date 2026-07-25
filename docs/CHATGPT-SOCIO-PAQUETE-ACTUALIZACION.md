@@ -8,6 +8,7 @@ Sigue estos pasos en orden. Incluye **calculadoras gratuitas** + **análisis de 
 
 Sube el repo (o deploy manual) para que existan en producción:
 
+- `nutri_pro_file_inspect` ← **nuevo v2.13** (archivo vivo Supabase sin OCR API)
 - `free_tools_catalog`
 - `lab_analyses_catalog`
 - `manual_tecnico_catalog` ← **nuevo**
@@ -24,9 +25,9 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza vers
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
 3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.07.4**: Radar Pilot/Lectura = 1 pasada más clara, sin mediana/relleno entre fechas)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
-5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.12: grafo relaciones apunte↔archivo/link)
+5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 
-También pega de nuevo el bloque Instructions de `docs/CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` (pide describe_api → **2.12.0**).
+También pega de nuevo el bloque Instructions de `docs/CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` (pide describe_api → **2.13.0**).
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
 
@@ -44,9 +45,9 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Preferible Import URL `https://nutriplantpro.com/api/admin-assistant/openapi.json` (o sube `docs/openapi-nutriplant-admin.json` **v2.12.0**). Una sola Action `nutriplantAdminQuery`.
+2. Preferible Import URL `https://nutriplantpro.com/api/admin-assistant/openapi.json` (o sube `docs/openapi-nutriplant-admin.json` **v2.13.0**). Una sola Action `nutriplantAdminQuery`.
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
-4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.12.0**. Si dice «action no disponible», reimporta schema o revisa token.
+4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.13.0**. Si dice «action no disponible», reimporta schema o revisa token.
 
 ---
 
@@ -78,6 +79,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 13. **“Lista mis programas GPT personales”** → `my_program_project_list`
 14. **“Redacta un post LinkedIn sobre % meq que no suman 100”** → PUBLICACIONES-REDES + capítulo FAQ + URL manual
 15. **“¿Qué capítulos tenemos para publicar esta semana?”** → `manual_tecnico_catalog` + pilar G `publicaciones_redes_sociales`
+16. **“¿Cuánto vendió Yara en junio?”** (o cifra en un Excel) → `nutri_pro_ask` y si snippets no bastan → `nutri_pro_file_inspect` con `q`
 
 **Redes en el día a día:** cuando publiques algo nuevo, pega el link al Socio en ChatGPT y redactáis juntos (ver flujo en `PUBLICACIONES-REDES` intro y en Instructions § fuente 5). Para que lo recuerde en futuros chats: añade la fila en §8 y re-sube el Knowledge #4 (o actualiza en Cursor y vuelve a subir).
 
@@ -89,6 +91,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 
 | Action | Para qué |
 |--------|----------|
+| `nutri_pro_file_inspect` | **v2.13** Abrir archivo vivo en Supabase (extract local, sin OCR API) cuando ask no alcanza |
 | `project_analyses` | **Valores reales** guardados (6 tipos) |
 | `lab_analyses_catalog` | Flujo, criterios, claves JSON |
 | `free_tools_catalog` | Calculadoras gratis (sin nube) |
