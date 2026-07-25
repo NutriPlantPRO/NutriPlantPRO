@@ -3,7 +3,11 @@
  * Créditos reservados mientras pending/processing (sin image_storage_path).
  */
 const { findSentinel2ScenesForComposite, findSentinel2ScenesForRange } = require('./radar-pilot-stac');
-const { renderNdviNdmiCompositePngs } = require('./radar-pilot-render');
+const {
+  renderNdviNdmiCompositePngs,
+  hasAcceptableCoverage,
+  SOFT_MIN_VALID_FRACTION
+} = require('./radar-pilot-render');
 const radarCredits = require('./radar-credits');
 
 function addDaysIso(isoDate, days) {
@@ -47,11 +51,25 @@ const PILOT_LOOKBACK_TIERS = [
 
 /**
  * Solo se corta antes si el predio quedó prácticamente completo (~100%).
- * Si no, prueba más candidatas / ventanas 14→21→30→45 d y guarda la mejor pasada sola (≥~15%).
+ * Si no, prueba más candidatas / ventanas 14→21→30→45 d y guarda la mejor pasada sola (≥~5%).
  */
 const PILOT_TARGET_VALID_FRACTION = 0.995;
 /** Candidatas a probar una por una (no se mezclan fechas / mediana). */
-const PILOT_SINGLE_SCENE_CANDIDATES = 5;
+const PILOT_SINGLE_SCENE_CANDIDATES = 8;
+
+function lowCoverageError(bestScore) {
+  const pct =
+    Number.isFinite(bestScore) && bestScore >= 0
+      ? Math.round(bestScore * 1000) / 10
+      : null;
+  return new Error(
+    'Sin cobertura satelital útil en el predio: solo ' +
+      (pct != null ? pct : 0) +
+      '% de píxeles válidos tras filtrar nubes/sombra (mínimo ~' +
+      Math.round(SOFT_MIN_VALID_FRACTION * 100) +
+      '%). Probamos las pasadas Sentinel disponibles; ninguna quedó lo bastante despejada sobre este lote. Código: radar_low_coverage'
+  );
+}
 
 function isPilotCoverageFail(err) {
   return /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
@@ -104,7 +122,7 @@ function bundleFromSingleScene(baseBundle, scene) {
 /**
  * Pilot: UNA sola pasada Sentinel (la de mejor cobertura útil sobre el predio).
  * No rellena con píxeles de otras fechas (evita costuras engañosas al comparar vigor).
- * Ventanas 14 → 21 → 30 → 45 d; corta si ~100%; al final guarda lo mejor si ≥~15%.
+ * Ventanas 14 → 21 → 30 → 45 d; corta si ~100%; al final guarda lo mejor si ≥~5%.
  */
 async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierMessage) {
   let lastErr = null;
@@ -137,7 +155,7 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
     const cloudAttempts = [
       { maxCloud: tier.maxCloud, candidateLimit: Math.max(20, candidateCap * 3) },
       // Si las más claras no cubren el predio, abrir nubes y probar otras candidatas.
-      { maxCloud: 60, candidateLimit: Math.max(30, candidateCap * 5) }
+      { maxCloud: 80, candidateLimit: Math.max(40, candidateCap * 5) }
     ];
 
     for (let ci = 0; ci < cloudAttempts.length; ci++) {
@@ -186,13 +204,13 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
     }
   }
 
-  if (best) {
+  if (best && hasAcceptableCoverage(best.rendered && best.rendered.coverage)) {
     return {
       ...best,
       lookbackExpanded: bestTierIndex > 0
     };
   }
-  throw lastErr || new Error('Pilot single-scene selection failed');
+  throw lastErr || lowCoverageError(bestScore);
 }
 
 const BUCKET = 'radar-ndvi';
@@ -648,12 +666,13 @@ async function processPilotJob(supabase, requestId, userId) {
         return localBest;
       };
 
-      const looseExtra = { maxCloud: 60, candidateLimit: Math.max(30, candidateCap * 5) };
+      const looseExtra = { maxCloud: 100, candidateLimit: Math.max(40, candidateCap * 5) };
       const attempts = [
         {
           start: dateStart,
           end: dateEnd,
-          extra: { candidateLimit: Math.max(20, candidateCap * 3) },
+          // Empezar ya con umbral amplio: el % de nubes del TILE engaña; el predio puede estar claro.
+          extra: { maxCloud: 80, candidateLimit: Math.max(30, candidateCap * 4) },
           expanded: false,
           message:
             'Eligiendo la pasada más clara del periodo ' + dateStart + ' – ' + dateEnd + '…'
@@ -723,7 +742,9 @@ async function processPilotJob(supabase, requestId, userId) {
         }
       }
 
-      if (!best) throw lastErr || new Error('Lectura satelital: sin cobertura útil');
+      if (!best || !hasAcceptableCoverage(best.r && best.r.coverage)) {
+        throw lastErr || lowCoverageError(bestScore);
+      }
       bundle = best.b;
       rendered = best.r;
       lookbackExpanded = bestExpanded;
@@ -779,10 +800,9 @@ async function processPilotJob(supabase, requestId, userId) {
       rendered.coverage?.valid_pct != null ? Number(rendered.coverage.valid_pct) : null;
     const sceneCount = Number(bundle.sceneCount) || (Array.isArray(bundle.scenes) ? bundle.scenes.length : 0);
     const coverageScore = pilotCoverageScore(rendered);
-    // Lectura: si no está ~completa, igual publica la imagen (mejor esfuerzo) y explica el porqué.
-    const lecturaIncomplete =
-      isLectura && coverageScore < PILOT_TARGET_VALID_FRACTION;
-    const incompleteReason = lecturaIncomplete
+    // Pilot y Lectura: si no está ~completa, igual publica la imagen (1 pasada) y explica el porqué.
+    const imageIncomplete = coverageScore < PILOT_TARGET_VALID_FRACTION;
+    const incompleteReason = imageIncomplete
       ? 'Imagen incompleta por nubosidad — útiles ' +
         (Number.isFinite(validPct) ? validPct : Math.round(coverageScore * 1000) / 10) +
         '% con ' +
@@ -798,7 +818,7 @@ async function processPilotJob(supabase, requestId, userId) {
       engine: 'cdse_pilot',
       async: true,
       status: 'done',
-      status_message: lecturaIncomplete
+      status_message: imageIncomplete
         ? incompleteReason
         : isLectura
           ? lookbackExpanded
@@ -850,7 +870,7 @@ async function processPilotJob(supabase, requestId, userId) {
       rgb_vis: { style: 'true_color_p2_p98', scale: 'predio' },
       vis: rendered.vis,
       image_omitted: false,
-      image_incomplete: !!lecturaIncomplete,
+      image_incomplete: !!imageIncomplete,
       incomplete_reason: incompleteReason,
       omit_reason: null,
       error_code: null,

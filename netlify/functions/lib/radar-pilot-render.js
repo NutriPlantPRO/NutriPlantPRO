@@ -116,8 +116,14 @@ function percentile(sortedValues, p) {
   return sortedValues[lo] * (1 - frac) + sortedValues[hi] * frac;
 }
 
-/** Mínimo de cobertura útil dentro del predio tras SCL (nubes/sombra). */
+/**
+ * Cobertura "cómoda" (meta de calidad). El corte duro de aceptación es más bajo
+ * (SOFT): con 1 sola pasada a menudo no se llega a 15% y aún así conviene mostrar
+ * lo que Sentinel sí dio sobre el predio.
+ */
 const MIN_VALID_FRACTION = 0.15;
+/** Piso para guardar imagen: mejor pasada disponible, aunque incompleta. */
+const SOFT_MIN_VALID_FRACTION = 0.05;
 const MIN_VALID_PIXELS = 20;
 
 function measurePolygonCoverage(indexValues, width, height, polygon, bbox4326) {
@@ -159,19 +165,29 @@ function meanPolygonValid(indexValues, width, height, polygon, bbox4326) {
   return Math.round((sum / count) * 1000) / 1000;
 }
 
+function hasAcceptableCoverage(coverage) {
+  if (!coverage) return false;
+  const frac = Number(coverage.valid_fraction);
+  const px = Number(coverage.valid_pixels);
+  return (
+    Number.isFinite(px) &&
+    px >= MIN_VALID_PIXELS &&
+    Number.isFinite(frac) &&
+    frac >= SOFT_MIN_VALID_FRACTION
+  );
+}
+
 function assertEnoughValidCoverage(coverage, label) {
-  const ok =
-    coverage.valid_pixels >= MIN_VALID_PIXELS && coverage.valid_fraction >= MIN_VALID_FRACTION;
-  if (ok) return;
-  const pct = coverage.valid_pct != null ? coverage.valid_pct : 0;
+  if (hasAcceptableCoverage(coverage)) return;
+  const pct = coverage && coverage.valid_pct != null ? coverage.valid_pct : 0;
   throw new Error(
     'Sin cobertura satelital útil en el predio' +
       (label ? ' (' + label + ')' : '') +
       ': solo ' +
       pct +
-      '% de píxeles válidos tras filtrar nubes/sombra (mínimo ' +
-      Math.round(MIN_VALID_FRACTION * 100) +
-      '%). En los últimos 45 días no hubo pasada Sentinel despejada sobre este lote. Código: radar_low_coverage'
+      '% de píxeles válidos tras filtrar nubes/sombra (mínimo ~' +
+      Math.round(SOFT_MIN_VALID_FRACTION * 100) +
+      '%). Probamos las pasadas Sentinel disponibles; ninguna quedó lo bastante despejada sobre este lote. Código: radar_low_coverage'
   );
 }
 
@@ -524,9 +540,10 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
   const rgbG = scenes.length === 1 ? rgbGLayers[0] : medianPerPixel(rgbGLayers);
   const rgbB = scenes.length === 1 ? rgbBLayers[0] : medianPerPixel(rgbBLayers);
 
-  // Validar cobertura con NDVI (misma máscara SCL aplica a NDMI/NDRE/RGB).
+  // No cortar aquí por cobertura: el job elige la mejor pasada y aplica el piso suave.
+  // Misma máscara SCL aplica a NDMI/NDRE/RGB.
   const ndviRendered = await indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, bbox4326, {
-    requireCoverage: true,
+    requireCoverage: false,
     label: 'NDVI'
   });
   const ndmiRendered = await indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, bbox4326, {
@@ -574,7 +591,10 @@ module.exports = {
   renderNdviNdmiCompositePngs,
   measurePolygonCoverage,
   meanPolygonValid,
+  hasAcceptableCoverage,
+  assertEnoughValidCoverage,
   MIN_VALID_FRACTION,
+  SOFT_MIN_VALID_FRACTION,
   MIN_VALID_PIXELS,
   NDVI_VIS,
   NDMI_VIS,

@@ -161,28 +161,61 @@ function clampLookbackDays(days) {
   return Math.min(Math.max(Math.floor(n), 1), MAX_LOOKBACK_DAYS);
 }
 async function searchPlanetaryComputer(bbox, lookbackDays, maxCloud) {
-  const body = {
+  const base = {
     collections: ['sentinel-2-l2a'],
     bbox,
     datetime: isoDaysAgo(lookbackDays) + '/' + new Date().toISOString(),
     query: { 'eo:cloud_cover': { lt: maxCloud } },
-    sort: [{ field: 'datetime', direction: 'desc' }],
-    limit: 20
+    limit: 100
   };
-  return stacSearch(PC_STAC, body);
+  try {
+    return await stacSearch(PC_STAC, {
+      ...base,
+      sort: [
+        { field: 'eo:cloud_cover', direction: 'asc' },
+        { field: 'datetime', direction: 'desc' }
+      ]
+    });
+  } catch (e) {
+    return stacSearch(PC_STAC, {
+      ...base,
+      sort: [{ field: 'datetime', direction: 'desc' }]
+    });
+  }
 }
 
 async function searchCdse(bbox, lookbackDays, maxCloud, token) {
-  const body = {
+  const base = {
     collections: ['sentinel-2-l2a'],
     bbox,
     datetime: isoDaysAgo(lookbackDays) + '/' + new Date().toISOString(),
     filter: { op: '<', args: [{ property: 'eo:cloud_cover' }, maxCloud] },
     'filter-lang': 'cql2-json',
-    sort: [{ field: 'properties.datetime', direction: 'desc' }],
-    limit: 20
+    limit: 100
   };
-  return stacSearch(CDSE_STAC, body, { Authorization: 'Bearer ' + token });
+  const headers = { Authorization: 'Bearer ' + token };
+  try {
+    return await stacSearch(
+      CDSE_STAC,
+      {
+        ...base,
+        sort: [
+          { field: 'properties.eo:cloud_cover', direction: 'asc' },
+          { field: 'properties.datetime', direction: 'desc' }
+        ]
+      },
+      headers
+    );
+  } catch (e) {
+    return stacSearch(
+      CDSE_STAC,
+      {
+        ...base,
+        sort: [{ field: 'properties.datetime', direction: 'desc' }]
+      },
+      headers
+    );
+  }
 }
 
 function rangeDatetime(startIso, endIso) {
@@ -190,28 +223,62 @@ function rangeDatetime(startIso, endIso) {
 }
 
 async function searchPlanetaryComputerRange(bbox, startIso, endIso, maxCloud) {
-  const body = {
+  const base = {
     collections: ['sentinel-2-l2a'],
     bbox,
     datetime: rangeDatetime(startIso, endIso),
     query: { 'eo:cloud_cover': { lt: maxCloud } },
-    sort: [{ field: 'datetime', direction: 'desc' }],
-    limit: 20
+    limit: 100
   };
-  return stacSearch(PC_STAC, body);
+  try {
+    return await stacSearch(PC_STAC, {
+      ...base,
+      sort: [
+        { field: 'eo:cloud_cover', direction: 'asc' },
+        { field: 'datetime', direction: 'desc' }
+      ]
+    });
+  } catch (e) {
+    // Algunos STAC no aceptan sort por eo:cloud_cover; igual ordenamos en cliente.
+    return stacSearch(PC_STAC, {
+      ...base,
+      sort: [{ field: 'datetime', direction: 'desc' }]
+    });
+  }
 }
 
 async function searchCdseRange(bbox, startIso, endIso, maxCloud, token) {
-  const body = {
+  const base = {
     collections: ['sentinel-2-l2a'],
     bbox,
     datetime: rangeDatetime(startIso, endIso),
     filter: { op: '<', args: [{ property: 'eo:cloud_cover' }, maxCloud] },
     'filter-lang': 'cql2-json',
-    sort: [{ field: 'properties.datetime', direction: 'desc' }],
-    limit: 20
+    limit: 100
   };
-  return stacSearch(CDSE_STAC, body, { Authorization: 'Bearer ' + token });
+  const headers = { Authorization: 'Bearer ' + token };
+  try {
+    return await stacSearch(
+      CDSE_STAC,
+      {
+        ...base,
+        sort: [
+          { field: 'properties.eo:cloud_cover', direction: 'asc' },
+          { field: 'properties.datetime', direction: 'desc' }
+        ]
+      },
+      headers
+    );
+  } catch (e) {
+    return stacSearch(
+      CDSE_STAC,
+      {
+        ...base,
+        sort: [{ field: 'properties.datetime', direction: 'desc' }]
+      },
+      headers
+    );
+  }
 }
 
 async function searchScenesForRange(bbox, startIso, endIso, maxCloud, provider, cdseToken) {
@@ -429,7 +496,7 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
         : MAX_LOOKBACK_DAYS;
   const lookbackDays = clampLookbackDays(opts?.lookbackDays || COMPOSITE_LOOKBACK_DAYS);
   const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
-  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 40);
+  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 48);
 
   let features = [];
   let searchErr = null;
@@ -522,7 +589,7 @@ async function findSentinel2ScenesForRange(polygon, opts) {
   }
   const maxScenes = Math.min(Math.max(Number(opts?.maxScenes) || COMPOSITE_MAX_SCENES, 1), COMPOSITE_MAX_SCENES);
   const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
-  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 40);
+  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 48);
 
   async function collectScenes(cloudLimit) {
     let features = [];
@@ -537,9 +604,11 @@ async function findSentinel2ScenesForRange(polygon, opts) {
     } catch (e) {
       searchErr = e;
     }
+    // CRÍTICO: ordenar por nubes ANTES de recortar. Si no, el limit se come las claras.
+    const ordered = sortFeaturesByCloud(features);
     const resolved = [];
     let lastErr = searchErr;
-    for (const item of features.slice(0, candidateLimit)) {
+    for (const item of ordered.slice(0, candidateLimit)) {
       try {
         const bandUrls = await resolveSceneAssets(item, activeProvider, activeToken);
         resolved.push(sceneFromItem(item, activeProvider, bbox, bandUrls));
@@ -547,22 +616,17 @@ async function findSentinel2ScenesForRange(polygon, opts) {
         lastErr = e;
       }
     }
-    // Preferir menor nubosidad; empate → más reciente.
-    resolved.sort((a, b) => {
-      const ca = Number.isFinite(Number(a.cloudCover)) ? Number(a.cloudCover) : 999;
-      const cb = Number.isFinite(Number(b.cloudCover)) ? Number(b.cloudCover) : 999;
-      if (ca !== cb) return ca - cb;
-      const da = a.datetime ? String(a.datetime) : '';
-      const db = b.datetime ? String(b.datetime) : '';
-      return db.localeCompare(da);
-    });
-    return { scenes: resolved.slice(0, maxScenes), allResolved: resolved, lastErr };
+    const sortedScenes = sortScenesByCloud(resolved);
+    return { scenes: sortedScenes.slice(0, maxScenes), allResolved: sortedScenes, lastErr };
   }
 
   let picked = await collectScenes(maxCloud);
-  // Si no hay escenas con el umbral normal, reintenta con umbral más amplio dentro del MISMO rango.
-  if (!picked.scenes.length && maxCloud < 60) {
-    picked = await collectScenes(60);
+  // Ampliar umbral de nubes del tile (el predio puede estar despejado aunque el tile diga 40–90%).
+  if (!picked.scenes.length && maxCloud < 80) {
+    picked = await collectScenes(Math.max(maxCloud, 80));
+  }
+  if (!picked.scenes.length && maxCloud < 100) {
+    picked = await collectScenes(100);
   }
 
   if (!picked.scenes.length) {
@@ -570,7 +634,7 @@ async function findSentinel2ScenesForRange(polygon, opts) {
       picked.lastErr ||
       new Error(
         'No hay escenas Sentinel-2 L2A con ≤' +
-          Math.max(maxCloud, 60) +
+          Math.max(maxCloud, 100) +
           '% de nubes entre ' +
           dateStart +
           ' y ' +
