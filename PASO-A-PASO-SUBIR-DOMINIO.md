@@ -174,6 +174,8 @@ Para que el **chat con IA** funcione en nutriplantpro.com (y no solo en local co
    **Value:** tu clave de OpenAI (empieza por `sk-proj-...` o `sk-...`). La ves en [platform.openai.com](https://platform.openai.com) → API keys.
 5. Guarda. Si Netlify te pregunta “Redeploy?”, haz **Deploy** para que la función use la nueva variable.
 
+**Opcional — chat admin / Plan PRO con GPT-5.6 Sol:** añade también `OPENAI_ADMIN_MODEL` = `gpt-5.6-sol` (si no la pones, el código ya usa Sol por defecto solo para admin; el chat de suscriptores sigue en `gpt-4o-mini`).
+
 El proyecto ya incluye una **función serverless** (`netlify/functions/openai-assistant.js`) que hace de proxy: el navegador llama a `tu-dominio.com/api/openai-assistant` y Netlify ejecuta esa función usando `OPENAI_API_KEY` por detrás. La clave nunca se envía al navegador.
 
 Si el chat en el dominio sigue sin responder, revisa en Netlify que la variable se llame exactamente `OPENAI_API_KEY` y que hayas hecho un deploy después de añadirla.

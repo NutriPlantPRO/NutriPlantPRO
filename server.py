@@ -33,8 +33,27 @@ MODEL_PRICING_USD_PER_1M = {
     'gpt-4o': {
         'input': float(os.environ.get('OPENAI_PRICE_GPT4O_INPUT_PER_1M', '5.0')),
         'output': float(os.environ.get('OPENAI_PRICE_GPT4O_OUTPUT_PER_1M', '15.0')),
-    }
+    },
+    'gpt-5.6-sol': {
+        'input': float(os.environ.get('OPENAI_PRICE_GPT56_SOL_INPUT_PER_1M', '5.0')),
+        'output': float(os.environ.get('OPENAI_PRICE_GPT56_SOL_OUTPUT_PER_1M', '30.0')),
+    },
+    'gpt-5.6-terra': {
+        'input': float(os.environ.get('OPENAI_PRICE_GPT56_TERRA_INPUT_PER_1M', '2.5')),
+        'output': float(os.environ.get('OPENAI_PRICE_GPT56_TERRA_OUTPUT_PER_1M', '15.0')),
+    },
+    'gpt-5.6-luna': {
+        'input': float(os.environ.get('OPENAI_PRICE_GPT56_LUNA_INPUT_PER_1M', '1.0')),
+        'output': float(os.environ.get('OPENAI_PRICE_GPT56_LUNA_OUTPUT_PER_1M', '6.0')),
+    },
+    'gpt-5.6': {
+        'input': float(os.environ.get('OPENAI_PRICE_GPT56_SOL_INPUT_PER_1M', '5.0')),
+        'output': float(os.environ.get('OPENAI_PRICE_GPT56_SOL_OUTPUT_PER_1M', '30.0')),
+    },
 }
+
+DEFAULT_PUBLIC_MODEL = 'gpt-4o-mini'
+DEFAULT_ADMIN_MODEL = 'gpt-5.6-sol'
 
 class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -504,10 +523,26 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return f"{now.year}-{str(now.month).zfill(2)}"
 
     def _token_cost_usd(self, model, prompt_tokens, completion_tokens):
-        pricing = MODEL_PRICING_USD_PER_1M.get(model) or MODEL_PRICING_USD_PER_1M.get('gpt-4o-mini')
+        pricing = MODEL_PRICING_USD_PER_1M.get(model)
+        if not pricing and str(model or '').startswith('gpt-5.6'):
+            pricing = MODEL_PRICING_USD_PER_1M.get('gpt-5.6-sol')
+        if not pricing:
+            pricing = MODEL_PRICING_USD_PER_1M.get(DEFAULT_PUBLIC_MODEL)
         in_cost = (max(prompt_tokens, 0) / 1_000_000.0) * pricing['input']
         out_cost = (max(completion_tokens, 0) / 1_000_000.0) * pricing['output']
         return in_cost + out_cost
+
+    def _resolve_admin_model(self):
+        return (os.environ.get('OPENAI_ADMIN_MODEL') or '').strip() or DEFAULT_ADMIN_MODEL
+
+    def _build_chat_completions_payload(self, model, messages, max_tokens, temperature):
+        payload = {'model': model, 'messages': messages}
+        if str(model or '').startswith('gpt-5.6'):
+            payload['max_completion_tokens'] = max_tokens
+        else:
+            payload['max_tokens'] = max_tokens
+            payload['temperature'] = temperature
+        return payload
 
     def _count_inline_images(self, messages):
         if not isinstance(messages, list):
@@ -566,7 +601,7 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data.decode('utf-8'))
 
-            model = data.get('model', 'gpt-4o-mini')
+            model = data.get('model', DEFAULT_PUBLIC_MODEL)
             messages = list(data.get('messages', []))
             max_tokens = int(data.get('max_tokens', 600))
             temperature = float(data.get('temperature', 0.4))
@@ -576,6 +611,11 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             scope_admin = data.get('scope') == 'admin' or user_id == '__admin__'
             if scope_admin:
                 user_id = '__admin__'
+                model = self._resolve_admin_model()
+                max_tokens = min(max(max_tokens, 1), 4000)
+            else:
+                model = DEFAULT_PUBLIC_MODEL
+                max_tokens = min(max(max_tokens, 1), 2000)
 
             image_base64 = (data.get('imageBase64') or '').strip() or None
             image_content_type = (data.get('imageContentType') or '').strip() or 'image/jpeg'
@@ -629,12 +669,9 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 }, 429)
                 return
 
-            request_data = {
-                'model': model,
-                'messages': messages,
-                'max_tokens': max_tokens,
-                'temperature': temperature
-            }
+            request_data = self._build_chat_completions_payload(
+                model, messages, max_tokens, temperature
+            )
 
             cache_db = self._read_json_file(CHAT_CACHE_FILE, {'entries': {}})
             entries = cache_db.setdefault('entries', {})

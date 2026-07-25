@@ -1,7 +1,9 @@
 /**
  * Netlify Function: extrae texto de archivos Nutri PRO tras subida.
  *
- * Variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * Variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+ *   OPENAI_API_KEY, OPENAI_ADMIN_MODEL (OCR/IA admin; default gpt-5.6-sol),
+ *   OPENAI_OCR_MODEL (override legacy solo OCR; si no hay ADMIN, se usa este)
  *
  * POST { file_id, force?: boolean }
  * Authorization: Bearer <supabase access_token> (admin)
@@ -14,6 +16,19 @@ const { extractNutriProText } = require('./lib/nutri-pro-text-extract');
 
 const NUTRI_BUCKET = 'plan-pro-nutri-pro';
 const OCR_IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
+const DEFAULT_ADMIN_MODEL = 'gpt-5.6-sol';
+
+function resolveAdminOcrModel() {
+  return (
+    (process.env.OPENAI_ADMIN_MODEL || '').trim() ||
+    (process.env.OPENAI_OCR_MODEL || '').trim() ||
+    DEFAULT_ADMIN_MODEL
+  );
+}
+
+function isGpt56Family(model) {
+  return /^gpt-5\.6/i.test(String(model || ''));
+}
 
 function corsHeaders() {
   return {
@@ -73,7 +88,7 @@ async function extractPdfTextWithOpenAI(buffer, fileRec) {
     };
   }
 
-  const model = process.env.OPENAI_OCR_MODEL || 'gpt-4o-mini';
+  const model = resolveAdminOcrModel();
   const payload = {
     model,
     input: [
@@ -173,10 +188,9 @@ async function extractImageTextWithOpenAI(buffer, fileRec) {
 
   const contentType = allowedMime ? mime : ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
   const dataUrl = `data:${contentType};base64,${buffer.toString('base64')}`;
+  const model = resolveAdminOcrModel();
   const payload = {
-    model: process.env.OPENAI_OCR_MODEL || 'gpt-4o-mini',
-    temperature: 0,
-    max_tokens: 4000,
+    model,
     messages: [
       {
         role: 'system',
@@ -196,6 +210,12 @@ async function extractImageTextWithOpenAI(buffer, fileRec) {
       }
     ]
   };
+  if (isGpt56Family(model)) {
+    payload.max_completion_tokens = 4000;
+  } else {
+    payload.temperature = 0;
+    payload.max_tokens = 4000;
+  }
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

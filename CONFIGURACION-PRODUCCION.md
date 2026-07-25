@@ -41,6 +41,8 @@ El backend lee todo por variables de entorno; no hace falta tocar código.
 | Variable | Uso | Producción |
 |---------|-----|------------|
 | `OPENAI_API_KEY` | API Key de OpenAI para el chat | Tu key real (nunca en el repo) |
+| `OPENAI_ADMIN_MODEL` | Modelo **solo** para chat admin / Plan PRO / OCR Nutri PRO (default `gpt-5.6-sol`). El chat de suscriptores sigue en `gpt-4o-mini` | Opcional; en Netlify: Site → Environment variables |
+| `OPENAI_OCR_MODEL` | Override legacy solo OCR si no defines `OPENAI_ADMIN_MODEL` | Opcional |
 | `OPENWEATHER_API_KEY` | Clima en mapa/ubicación | Key de OpenWeatherMap |
 | `NUTRIPLANT_CHAT_MONTHLY_LIMIT_USD` | Límite USD/usuario/mes (default 1.0) | Opcional; dejar o ajustar |
 | `NUTRIPLANT_CHAT_CACHE_TTL_SECONDS` | Caché de respuestas (default 3600) | Opcional |

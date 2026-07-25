@@ -4,6 +4,7 @@
  *
  * Variables de entorno en Netlify:
  *   OPENAI_API_KEY      - Clave de OpenAI (obligatoria)
+ *   OPENAI_ADMIN_MODEL  - Modelo solo para chat admin / Plan PRO (default: gpt-5.6-sol)
  *   SUPABASE_URL        - URL del proyecto Supabase (para cuota por usuario)
  *   SUPABASE_SERVICE_ROLE_KEY - Service role key (para leer/actualizar profiles)
  *
@@ -13,12 +14,44 @@
  * Búsqueda web (opcional): si el body envía allowWebSearch: true y está definida SERPER_API_KEY
  * en Netlify, el modelo puede usar la herramienta search_web; cuando la use, se cobran 2 créditos.
  * Sin SERPER_API_KEY la herramienta no se ofrece. Obtener API key en https://serper.dev
+ *
+ * Público (suscriptores): gpt-4o-mini. Admin (scope=admin / userId=__admin__): OPENAI_ADMIN_MODEL.
  */
+
+const DEFAULT_PUBLIC_MODEL = 'gpt-4o-mini';
+const DEFAULT_ADMIN_MODEL = 'gpt-5.6-sol';
 
 const MODEL_PRICING_USD_PER_1M = {
   'gpt-4o-mini': { input: 0.15, output: 0.60 },
-  'gpt-4o': { input: 5.0, output: 15.0 }
+  'gpt-4o': { input: 5.0, output: 15.0 },
+  'gpt-5.6-sol': { input: 5.0, output: 30.0 },
+  'gpt-5.6-terra': { input: 2.5, output: 15.0 },
+  'gpt-5.6-luna': { input: 1.0, output: 6.0 },
+  'gpt-5.6': { input: 5.0, output: 30.0 }
 };
+
+function resolveAdminModel() {
+  const fromEnv = (process.env.OPENAI_ADMIN_MODEL || '').trim();
+  return fromEnv || DEFAULT_ADMIN_MODEL;
+}
+
+function isGpt56Family(model) {
+  return /^gpt-5\.6/i.test(String(model || ''));
+}
+
+/** Chat Completions payload: GPT-5.6 usa max_completion_tokens y no fuerza temperature. */
+function buildChatCompletionsPayload({ model, messages, maxTokens, temperature, tools, toolChoice }) {
+  const payload = { model, messages };
+  if (isGpt56Family(model)) {
+    payload.max_completion_tokens = maxTokens;
+  } else {
+    payload.max_tokens = maxTokens;
+    if (typeof temperature === 'number') payload.temperature = temperature;
+  }
+  if (tools) payload.tools = tools;
+  if (toolChoice) payload.tool_choice = toolChoice;
+  return payload;
+}
 const DEFAULT_MONTHLY_CREDITS = 500;
 const CREDITS_TEXT_MESSAGE = 1;
 const CREDITS_IMAGE_MESSAGE = 3; // 1 imagen por mensaje
@@ -30,7 +63,11 @@ function monthKey() {
 }
 
 function tokenCostUsd(model, promptTokens, completionTokens) {
-  const pricing = MODEL_PRICING_USD_PER_1M[model] || MODEL_PRICING_USD_PER_1M['gpt-4o-mini'];
+  const key = String(model || '');
+  const pricing =
+    MODEL_PRICING_USD_PER_1M[key] ||
+    (isGpt56Family(key) ? MODEL_PRICING_USD_PER_1M['gpt-5.6-sol'] : null) ||
+    MODEL_PRICING_USD_PER_1M[DEFAULT_PUBLIC_MODEL];
   const inCost = (Math.max(promptTokens, 0) / 1e6) * pricing.input;
   const outCost = (Math.max(completionTokens, 0) / 1e6) * pricing.output;
   return inCost + outCost;
@@ -153,14 +190,19 @@ async function addUsageInSupabase(supabase, userId, creditsToAdd) {
   if (updateErr) console.warn('Supabase update usage error:', updateErr.message);
 }
 
-/** Mismo criterio que usuarios: estimado USD por petición. Cuenta en todos los equipos (Supabase). */
+/** Fallback si OpenAI no devuelve usage (estimado bajo; preferir costo real por tokens). */
 const ADMIN_CHAT_USD_PER_REQUEST = 0.001;
 const ADMIN_CHAT_USD_PER_IMAGE = 0.003;
 
-async function addAdminUsageInSupabase(supabase, hasImage) {
+async function addAdminUsageInSupabase(supabase, hasImage, costUsd) {
   if (!supabase) return;
   const currentMonth = monthKey();
-  const cost = hasImage ? ADMIN_CHAT_USD_PER_IMAGE : ADMIN_CHAT_USD_PER_REQUEST;
+  const cost =
+    typeof costUsd === 'number' && costUsd > 0
+      ? costUsd
+      : hasImage
+        ? ADMIN_CHAT_USD_PER_IMAGE
+        : ADMIN_CHAT_USD_PER_REQUEST;
   const { data: row, error: selectErr } = await supabase
     .from('admin_chat_usage')
     .select('total_requests, total_usd_est, month_key, month_requests, month_usd_est')
@@ -229,13 +271,17 @@ exports.handler = async (event, context) => {
     return jsonResponse(400, { error: 'JSON inválido' });
   }
 
-  const model = body.model || 'gpt-4o-mini';
-  let messages = Array.isArray(body.messages) ? [...body.messages] : [];
-  const max_tokens = Math.min(Math.max(Number(body.max_tokens) || 600, 1), 2000);
-  const temperature = Math.max(0, Math.min(1, Number(body.temperature) || 0.4));
   let userId = String(body.userId || body.user_id || 'anonymous');
   const scopeAdmin = body.scope === 'admin' || userId === '__admin__';
   if (scopeAdmin) userId = '__admin__';
+  // Público: mini. Admin: Sol (o OPENAI_ADMIN_MODEL). El cliente no puede forzar Sol en chat de usuarios.
+  const model = scopeAdmin
+    ? resolveAdminModel()
+    : DEFAULT_PUBLIC_MODEL;
+  let messages = Array.isArray(body.messages) ? [...body.messages] : [];
+  const maxCap = scopeAdmin ? 4000 : 2000;
+  const max_tokens = Math.min(Math.max(Number(body.max_tokens) || (scopeAdmin ? 1400 : 600), 1), maxCap);
+  const temperature = Math.max(0, Math.min(1, Number(body.temperature) || 0.4));
 
   const imageBase64 = (body.imageBase64 && String(body.imageBase64).trim()) ? String(body.imageBase64).trim() : null;
   const imageContentType = (body.imageContentType && String(body.imageContentType).trim()) ? String(body.imageContentType).trim() : 'image/jpeg';
@@ -337,11 +383,14 @@ exports.handler = async (event, context) => {
 
   let usedWebSearch = false;
   let currentMessages = [...messages];
-  let payload = { model, messages: currentMessages, max_tokens, temperature };
-  if (webSearchEnabled) {
-    payload.tools = [WEB_SEARCH_TOOL];
-    payload.tool_choice = 'auto';
-  }
+  let payload = buildChatCompletionsPayload({
+    model,
+    messages: currentMessages,
+    maxTokens: max_tokens,
+    temperature,
+    tools: webSearchEnabled ? [WEB_SEARCH_TOOL] : undefined,
+    toolChoice: webSearchEnabled ? 'auto' : undefined
+  });
 
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -380,7 +429,12 @@ exports.handler = async (event, context) => {
           tool_call_id: searchCall.id,
           content: searchResult.slice(0, 4000)
         });
-        const secondPayload = { model, messages: currentMessages, max_tokens, temperature };
+        const secondPayload = buildChatCompletionsPayload({
+          model,
+          messages: currentMessages,
+          maxTokens: max_tokens,
+          temperature
+        });
         const res2 = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -411,13 +465,22 @@ exports.handler = async (event, context) => {
         data._nutriplant.estimated_cost_usd = Math.round(costUsd * 1e8) / 1e8;
       }
     }
+    let adminCostUsd = 0;
+    if (res.ok && data.usage) {
+      const pt = Number(data.usage.prompt_tokens) || 0;
+      const ct = Number(data.usage.completion_tokens) || 0;
+      adminCostUsd = Math.round(tokenCostUsd(model, pt, ct) * 1e8) / 1e8;
+    }
     if (res.ok && supabase && scopeAdmin) {
-      await addAdminUsageInSupabase(supabase, totalImageCount > 0);
+      await addAdminUsageInSupabase(supabase, totalImageCount > 0, adminCostUsd);
     }
     if (!data._nutriplant) data._nutriplant = {};
+    data._nutriplant.model = model;
+    data._nutriplant.scope = scopeAdmin ? 'admin' : 'user';
     data._nutriplant.image_received = totalImageCount > 0;
     data._nutriplant.image_count = totalImageCount;
     data._nutriplant.used_web_search = usedWebSearch;
+    if (adminCostUsd > 0) data._nutriplant.estimated_cost_usd = adminCostUsd;
 
     const hasContent = data.choices && data.choices[0] && data.choices[0].message;
     return {
