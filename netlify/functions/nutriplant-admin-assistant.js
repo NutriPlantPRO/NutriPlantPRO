@@ -2930,6 +2930,58 @@ async function fetchNutriProFiles(supabase, ownerId, opts) {
   return { ok: true, rows: data || [] };
 }
 
+/** Busca archivos por nombre/título/descripción en TODA la bóveda (no solo los primeros 500). */
+async function fetchNutriProFilesByMetaQuery(supabase, ownerId, qRaw, opts) {
+  opts = opts || {};
+  const terms = nutriContentSearch.tokenizeQuery(qRaw);
+  const needles = [];
+  terms.slice(0, 8).forEach((t) => needles.push(t));
+  const raw = String(qRaw || '').trim();
+  if (raw.length >= 3 && raw.length <= 80) needles.push(raw);
+  // variantes sin acento
+  needles.slice().forEach((n) => {
+    const strip = nutriContentSearch.normalizeForSearch(n);
+    if (strip && strip !== n.toLowerCase()) needles.push(strip);
+  });
+  const byId = {};
+  const seenNeedle = new Set();
+  for (const needle of needles) {
+    const n = String(needle || '')
+      .replace(/[%_,]/g, ' ')
+      .trim()
+      .slice(0, 80);
+    if (n.length < 2) continue;
+    const key = n.toLowerCase();
+    if (seenNeedle.has(key)) continue;
+    seenNeedle.add(key);
+    let q = supabase
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,description,mime_type,size_bytes,storage_path,created_at,updated_at')
+      .eq('owner_id', ownerId)
+      .or(`original_name.ilike.%${n}%,title.ilike.%${n}%,description.ilike.%${n}%`)
+      .limit(50);
+    if (opts.folder_id) q = q.eq('folder_id', opts.folder_id);
+    const { data, error } = await q;
+    if (error) continue;
+    (data || []).forEach((f) => {
+      if (f && f.id) byId[f.id] = f;
+    });
+  }
+  return Object.values(byId);
+}
+
+async function fetchNutriProFilesByIds(supabase, ownerId, ids) {
+  const uniq = Array.from(new Set((ids || []).filter(Boolean))).slice(0, 120);
+  if (!uniq.length) return [];
+  const { data, error } = await supabase
+    .from('plan_pro_nutri_files')
+    .select('id,folder_id,title,original_name,description,mime_type,size_bytes,storage_path,created_at,updated_at')
+    .eq('owner_id', ownerId)
+    .in('id', uniq);
+  if (error) return [];
+  return data || [];
+}
+
 async function fetchNutriProLinks(supabase, ownerId, opts) {
   opts = opts || {};
   let q = supabase
@@ -3120,8 +3172,21 @@ async function handleNutriProCatalog(supabase, params) {
     };
   }
 
-  const filesRes = await fetchNutriProFiles(supabase, ownerId, { limit: (params && params.limit) || 400 });
-  const linksRes = await fetchNutriProLinks(supabase, ownerId, { limit: (params && params.limit) || 400 });
+  const summaryOnly =
+    params &&
+    (params.summary_only === true ||
+      params.summary_only === 'true' ||
+      params.summary === true ||
+      params.summary === 'true' ||
+      String(params.mode || '').toLowerCase() === 'summary');
+  const catalogLimit = Math.min(parseInt(params && params.limit, 10) || (summaryOnly ? 0 : 60), 100);
+
+  const filesRes = summaryOnly
+    ? { ok: true, rows: [] }
+    : await fetchNutriProFiles(supabase, ownerId, { limit: catalogLimit });
+  const linksRes = await fetchNutriProLinks(supabase, ownerId, {
+    limit: summaryOnly ? 40 : catalogLimit
+  });
   const foldersById = nutriFolderMapById(foldersRes.rows);
 
   const folders = foldersRes.rows.map((f) => ({
@@ -3144,24 +3209,39 @@ async function handleNutriProCatalog(supabase, params) {
   const bytesTotal = files.reduce((s, f) => s + (f.size_bytes || 0), 0);
   const indexedCount = files.filter((f) => f.text_indexed).length;
 
+  // conteo real de archivos (bóveda completa)
+  let filesTotalHint = files.length;
+  try {
+    const { count } = await supabase
+      .from('plan_pro_nutri_files')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', ownerId);
+    if (typeof count === 'number') filesTotalHint = count;
+  } catch (_e) {
+    /* ignore */
+  }
+
   return {
     ok: true,
     domain: 'nutri_pro',
     available: true,
+    summary_only: !!summaryOnly,
+    truncated: !summaryOnly && filesTotalHint > files.length,
     counts: {
       folders: folders.length,
       files: files.length,
+      files_total_in_vault: filesTotalHint,
       links: links.length,
       storage_bytes: bytesTotal,
       files_text_indexed: indexedCount
     },
-    folders,
+    folders: summaryOnly ? folders.slice(0, 80) : folders,
     files,
     links,
     gpt_usage:
-      'Lista tu bóveda Nutri PRO. Cada archivo trae open_url (link permanente). nutri_pro_ask responde con fragmentos. nutri_pro_file_text lee texto. nutri_pro_reindex reindexa/OCR. nutri_pro_save guarda content en folder_path.',
+      'NO listes toda la bóveda (hay miles de archivos → ResponseTooLargeError). Para encontrar un libro: nutri_pro_search o nutri_pro_ask con palabras (autor, tema). Catalog: mode=summary o limit bajo. Abrir vivo: nutri_pro_file_inspect.',
     lectura_archivos:
-      'Formatos indexados: PDF, .docx, .xlsx/.xls/.csv, .pptx, .txt/.rtf, OpenDocument (.odt/.ods/.odp). Imágenes y .doc/.ppt antiguos: sin texto aún. Preguntas: nutri_pro_ask.'
+      'Formatos indexados: PDF, .docx, .xlsx/.xls/.csv, .pptx, .txt/.rtf, OpenDocument (.odt/.ods/.odp). Preguntas: nutri_pro_ask; si falta cifra: nutri_pro_file_inspect.'
   };
 }
 
@@ -3212,8 +3292,16 @@ async function handleNutriProSearch(supabase, params) {
 
   if (kind !== 'links') {
     const filesRes = await fetchNutriProFiles(supabase, ownerId, fileOpts);
-    const fileIds = (filesRes.rows || []).map((f) => f.id);
-    const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, fileIds);
+    const metaHits = await fetchNutriProFilesByMetaQuery(supabase, ownerId, qRaw, {
+      folder_id: folderId || undefined
+    });
+    const byId = {};
+    (filesRes.rows || []).forEach((f) => {
+      if (f && f.id) byId[f.id] = f;
+    });
+    metaHits.forEach((f) => {
+      if (f && f.id) byId[f.id] = f;
+    });
 
     const contentRows = await fetchNutriProIndexedExtracts(supabase, ownerId, {
       ilike_term: dbTerm || q,
@@ -3222,6 +3310,18 @@ async function handleNutriProSearch(supabase, params) {
     contentRows.forEach((row) => {
       if (row && row.file_id) extractTextByFileId[row.file_id] = row.text_plain || '';
     });
+
+    const contentIdsMissing = Object.keys(extractTextByFileId).filter((id) => !byId[id]);
+    if (contentIdsMissing.length) {
+      const moreFiles = await fetchNutriProFilesByIds(supabase, ownerId, contentIdsMissing);
+      moreFiles.forEach((f) => {
+        if (f && f.id) byId[f.id] = f;
+      });
+    }
+
+    const mergedRows = Object.values(byId);
+    const fileIds = mergedRows.map((f) => f.id);
+    const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, fileIds);
 
     const missingTextIds = fileIds.filter(
       (id) => extractMap[id] && extractMap[id].status === 'done' && !extractTextByFileId[id]
@@ -3241,7 +3341,7 @@ async function handleNutriProSearch(supabase, params) {
     }
 
     const ranked = nutriContentSearch.rankNutriHits(
-      (filesRes.rows || []).map((f) => ({
+      mergedRows.map((f) => ({
         ...mapNutriProFileRow(f, foldersById, extractMap),
         text_plain: extractTextByFileId[f.id] || ''
       })),
@@ -3252,7 +3352,10 @@ async function handleNutriProSearch(supabase, params) {
 
     files = ranked
       .filter((f) => {
-        const hay = [f.title, f.original_name, f.description, f.short_path, f.mime_type].filter(Boolean).join(' ').toLowerCase();
+        const hay = [f.title, f.original_name, f.description, f.short_path, f.mime_type]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
         return hay.includes(q) || extractTextByFileId[f.id] || f.matched_in_content || f.score > 0;
       })
       .map((f) => {
@@ -3370,7 +3473,24 @@ async function handleNutriProAsk(supabase, params) {
       if (row && row.file_id) extractTextByFileId[row.file_id] = row.text_plain || '';
     });
     const filesRes = await fetchNutriProFiles(supabase, ownerId, fileOpts);
-    candidateFiles = filesRes.rows || [];
+    const metaHits = await fetchNutriProFilesByMetaQuery(supabase, ownerId, qRaw, {
+      folder_id: folderId || undefined
+    });
+    const byId = {};
+    (filesRes.rows || []).forEach((f) => {
+      if (f && f.id) byId[f.id] = f;
+    });
+    metaHits.forEach((f) => {
+      if (f && f.id) byId[f.id] = f;
+    });
+    const missingContent = Object.keys(extractTextByFileId).filter((id) => !byId[id]);
+    if (missingContent.length) {
+      const more = await fetchNutriProFilesByIds(supabase, ownerId, missingContent);
+      more.forEach((f) => {
+        if (f && f.id) byId[f.id] = f;
+      });
+    }
+    candidateFiles = Object.values(byId);
   }
 
   const extractMap = await fetchNutriProExtractsMap(
@@ -3417,7 +3537,7 @@ async function handleNutriProAsk(supabase, params) {
         !hit.text_indexed && hit.extract_note
           ? hit.extract_note
           : !hit.text_indexed
-            ? 'Sin texto indexado en este archivo. Ofrece nutri_pro_reindex (mode=text|ocr).'
+            ? 'Sin texto indexado en este archivo. Usa nutri_pro_file_inspect o nutri_pro_reindex (mode=text|ocr).'
             : null
     };
   });

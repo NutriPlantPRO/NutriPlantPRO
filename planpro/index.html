@@ -17018,16 +17018,34 @@
 
   function filterCrossLinkPickerRows(q) {
     if (!crossLinkPickerCache) return [];
-    var needle = String(q || '')
-      .trim()
-      .toLowerCase();
-    if (!needle) return crossLinkPickerCache.slice();
-    return crossLinkPickerCache.filter(function (row) {
-      return (
-        String(row.search || '')
-          .toLowerCase()
-          .indexOf(needle) !== -1
-      );
+    var needleRaw = String(q || '').trim();
+    if (!needleRaw) return crossLinkPickerCache.slice();
+    var scored = [];
+    crossLinkPickerCache.forEach(function (row) {
+      var hay = row.search || row.title || '';
+      if (!planSearchTokensMatch(hay, needleRaw)) return;
+      var hayN = normalizePlanSearchText(hay);
+      var qN = normalizePlanSearchText(needleRaw);
+      var score = 0;
+      if (hayN.indexOf(qN) !== -1) score += 20;
+      qN.split(/[^a-z0-9]+/)
+        .filter(function (t) {
+          return t.length >= 2;
+        })
+        .forEach(function (t) {
+          var idx = hayN.indexOf(t);
+          if (idx === -1) return;
+          score += 10;
+          if (idx === 0) score += 4;
+          else if (idx < 12) score += 2;
+        });
+      scored.push({ row: row, score: score });
+    });
+    scored.sort(function (a, b) {
+      return b.score - a.score;
+    });
+    return scored.map(function (x) {
+      return x.row;
     });
   }
 
@@ -24359,6 +24377,23 @@
       .trim();
   }
 
+  /** Todas las palabras (≥2) deben aparecer en hay (sin acentos). No exige el título desde el inicio. */
+  function planSearchTokensMatch(hayRaw, queryRaw) {
+    var hay = normalizePlanSearchText(hayRaw);
+    var q = normalizePlanSearchText(queryRaw);
+    if (!q) return true;
+    if (!hay) return false;
+    if (hay.indexOf(q) !== -1) return true;
+    var tokens = q.split(/[^a-z0-9]+/).filter(function (t) {
+      return t.length >= 2;
+    });
+    if (!tokens.length) return hay.indexOf(q) !== -1;
+    for (var i = 0; i < tokens.length; i++) {
+      if (hay.indexOf(tokens[i]) === -1) return false;
+    }
+    return true;
+  }
+
   function planProExpandCategoryAncestors(catId) {
     if (!catId) return;
     var pid = catId;
@@ -24683,7 +24718,7 @@
     renderPlanFlowSearchResults([], 'Buscando flujo…');
     var results = [];
     state.areas.filter(function (a) {
-      return !a.archived_at && normalizePlanSearchText(a.title || a.slug).indexOf(q) >= 0;
+      return !a.archived_at && planSearchTokensMatch(a.title || a.slug || '', queryRaw);
     }).forEach(function (a) {
       results.push({
         hitType: 'area',
@@ -24693,7 +24728,7 @@
       });
     });
     state.categories.filter(function (c) {
-      return !c.archived_at && normalizePlanSearchText(c.title).indexOf(q) >= 0;
+      return !c.archived_at && planSearchTokensMatch(c.title || '', queryRaw);
     }).forEach(function (c) {
       results.push({
         hitType: 'category',
@@ -24713,15 +24748,13 @@
       if (gen !== state.flowSearchGen) return;
       if (res.error) throw res.error;
       (res.data || []).forEach(function (r) {
-        var haystack = normalizePlanSearchText(
-          [
-            r.title || '',
-            r.body_plain || '',
-            r.category_id ? getCategoryPath(r.category_id) : '',
-            getPlanAreaTitle(r.area_id)
-          ].join(' ')
-        );
-        if (haystack.indexOf(q) < 0) return;
+        var haystack = [
+          r.title || '',
+          r.body_plain || '',
+          r.category_id ? getCategoryPath(r.category_id) : '',
+          getPlanAreaTitle(r.area_id)
+        ].join(' ');
+        if (!planSearchTokensMatch(haystack, queryRaw)) return;
         var preview = notePreviewText(r, 90);
         results.push({
           hitType: 'item',
