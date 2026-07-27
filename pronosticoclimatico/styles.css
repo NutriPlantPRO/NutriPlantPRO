@@ -1138,15 +1138,22 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   line-height: 1.45;
 }
 .agro-pdf-export-host .agro-pdf-table-section {
-  break-before: page !important;
-  page-break-before: always !important;
+  break-before: auto !important;
+  page-break-before: auto !important;
 }
 .agro-pdf-export-host .agro-pdf-chart-section {
-  break-before: page !important;
-  page-break-before: always !important;
+  break-before: auto !important;
+  page-break-before: auto !important;
   break-inside: avoid !important;
   page-break-inside: avoid !important;
   padding: 16px !important;
+}
+.agro-pdf-export-host .agro-pdf-hard-break {
+  display: block !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  clear: both !important;
 }
 .agro-pdf-export-host .agro-table-wrap {
   display: block !important;
@@ -1223,6 +1230,46 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
 }
 .agro-pdf-export-host .agro-chart-tips-foot {
   font-size: 8px !important;
+}
+.agro-pdf-export-host .agro-pdf-final-qr {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  margin-top: 8px !important;
+  padding-top: 7px !important;
+  border-top: 1px solid #dbe4ee !important;
+  color: #334155 !important;
+  font-size: 8px !important;
+  text-align: center !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+.agro-pdf-export-host .agro-pdf-final-qr > strong {
+  color: #0b2a5b !important;
+  font-size: 9px !important;
+}
+.agro-pdf-export-host .agro-pdf-final-qr > span {
+  color: #64748b !important;
+}
+.agro-pdf-export-host .agro-pdf-final-qr .agro-print-footer-qr {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  margin: 2px 0 0 !important;
+}
+.agro-pdf-export-host .agro-pdf-final-qr img {
+  display: block !important;
+  width: 48px !important;
+  height: 48px !important;
+  object-fit: contain !important;
+}
+.agro-pdf-export-host .agro-pdf-final-qr .agro-print-footer-qr span {
+  color: #0369a1 !important;
+  font-size: 7px !important;
+  font-weight: 700 !important;
 }
 .agro-pdf-export-host .agro-card,
 .agro-pdf-export-host .agro-table-shell {

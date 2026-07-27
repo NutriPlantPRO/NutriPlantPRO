@@ -14300,6 +14300,36 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           color: #334155;
           font-weight: 700;
         }
+        /* Lectura Satelital: 11 columnas dentro del ancho A4/iPhone. */
+        .report-lectura-table-wrap {
+          width: 100%;
+          max-width: 100%;
+          overflow: visible;
+        }
+        .report-lectura-table {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          table-layout: fixed !important;
+          font-size: 7.4px !important;
+        }
+        .report-lectura-table th,
+        .report-lectura-table td {
+          min-width: 0 !important;
+          max-width: none !important;
+          padding: 3px 2px !important;
+          white-space: normal !important;
+          overflow-wrap: anywhere !important;
+          word-break: normal !important;
+          line-height: 1.2 !important;
+          vertical-align: middle !important;
+        }
+        .report-lectura-table th:nth-child(10),
+        .report-lectura-table th:nth-child(11),
+        .report-lectura-table td:nth-child(10),
+        .report-lectura-table td:nth-child(11) {
+          font-weight: 700;
+        }
         .report-admin-table.report-vpd-wide-table {
           table-layout: fixed;
           width: 100%;
@@ -15254,6 +15284,20 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
             font-size: 7.2px;
           }
+          .report-lectura-table {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed !important;
+            font-size: 6.8px !important;
+          }
+          .report-lectura-table th,
+          .report-lectura-table td {
+            padding: 2px 1.5px !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            line-height: 1.15 !important;
+          }
           /* Radar / Lectura: flujo corrido; no forzar bloques grandes a página nueva (evita hojas en blanco) */
           .report-keep-together {
             break-inside: auto;
@@ -15875,7 +15919,13 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       : rtSafe('Riego m³', 'Irrigation m³');
 
   const table =
-    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
+    '<div class="report-lectura-table-wrap">' +
+    '<table class="report-lectura-table" style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
+    '<colgroup>' +
+    '<col style="width:5%"><col style="width:5%"><col style="width:19%">' +
+    '<col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%">' +
+    '<col style="width:9%"><col style="width:9%"><col style="width:12.5%"><col style="width:12.5%">' +
+    '</colgroup>' +
     '<thead><tr style="background:#dbeafe;color:#1e3a8a;">' +
     [
       { h: 'ID', st: '' },
@@ -15908,7 +15958,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       .join('') +
     '</tr></thead><tbody>' +
     tableRows +
-    '</tbody></table>';
+    '</tbody></table></div>';
 
   let chartBlock = '';
   if (lectura.chartDataUrl) {

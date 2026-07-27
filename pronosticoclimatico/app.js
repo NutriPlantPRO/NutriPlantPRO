@@ -335,8 +335,29 @@
     if (results) {
       results.hidden = false;
       const reportCards = results.querySelectorAll(':scope > .agro-card');
-      if (reportCards[0]) reportCards[0].classList.add('agro-pdf-table-section');
-      if (reportCards[1]) reportCards[1].classList.add('agro-pdf-chart-section');
+      if (reportCards[0]) {
+        reportCards[0].classList.add('agro-pdf-table-section');
+        const tableBreak = document.createElement('div');
+        tableBreak.className = 'html2pdf__page-break agro-pdf-hard-break';
+        tableBreak.setAttribute('aria-hidden', 'true');
+        reportCards[0].parentNode.insertBefore(tableBreak, reportCards[0]);
+      }
+      if (reportCards[1]) {
+        reportCards[1].classList.add('agro-pdf-chart-section');
+        const chartBreak = document.createElement('div');
+        chartBreak.className = 'html2pdf__page-break agro-pdf-hard-break';
+        chartBreak.setAttribute('aria-hidden', 'true');
+        reportCards[1].parentNode.insertBefore(chartBreak, reportCards[1]);
+
+        const sourceQr = document.querySelector('#agro-print-footer .agro-print-footer-qr');
+        if (sourceQr) {
+          const finalQr = document.createElement('div');
+          finalQr.className = 'agro-pdf-final-qr';
+          finalQr.innerHTML = '<strong>NutriPlant PRO</strong><span>Escanea para visitar la plataforma</span>';
+          finalQr.appendChild(sourceQr.cloneNode(true));
+          reportCards[1].appendChild(finalQr);
+        }
+      }
     }
 
     const tw = clone.querySelector('.agro-table-wrap');
