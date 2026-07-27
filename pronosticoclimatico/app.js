@@ -283,6 +283,91 @@
     }, 400);
   }
 
+  function preparePdfExportClone() {
+    // Ancho fijo tipo hoja carta (~96 dpi) para que en iPhone no capture el layout angosto del celular.
+    const PDF_WIDTH = 794;
+    const shell = document.querySelector('.agro-shell');
+    if (!shell) throw new Error('No hay contenido para exportar');
+
+    const wrap = $('agro-table-wrap');
+    if (wrap) wrap.classList.add('open');
+    try { chart?.resize(); } catch (_) {}
+
+    const host = document.createElement('div');
+    host.className = 'agro-pdf-export-host';
+    host.setAttribute('aria-hidden', 'true');
+    host.style.cssText = [
+      'position:fixed',
+      'left:-16000px',
+      'top:0',
+      `width:${PDF_WIDTH}px`,
+      'max-width:' + PDF_WIDTH + 'px',
+      'background:#fff',
+      'z-index:-1',
+      'pointer-events:none',
+      'overflow:visible',
+      'box-sizing:border-box'
+    ].join(';');
+
+    const mark = document.querySelector('.agro-print-mark');
+    if (mark) host.appendChild(mark.cloneNode(true));
+
+    const clone = shell.cloneNode(true);
+    clone.style.width = PDF_WIDTH + 'px';
+    clone.style.maxWidth = PDF_WIDTH + 'px';
+    clone.style.margin = '0';
+    clone.style.padding = '12px 16px 24px';
+    clone.style.boxSizing = 'border-box';
+    clone.style.overflow = 'visible';
+
+    const hideSel = [
+      '.agro-public-header', '#agro-about-modal', '.agro-location-card',
+      '.agro-register-cta', '.agro-promo', '.agro-personal-actions',
+      '.agro-empty-note', '.agro-chart-toggles', '.agro-table-toggle',
+      '.agro-table-scroll-hint', '.agro-kc-wa', '.agro-kc-bar-note',
+      '.agro-kc-view-box', '.agro-pdf-bar', '.agro-input-action .agro-btn',
+      '#agro-map', '.agro-mobile-days', '.agro-kc-bar'
+    ].join(',');
+    clone.querySelectorAll(hideSel).forEach((el) => el.remove());
+
+    const results = clone.querySelector('#agro-results');
+    if (results) results.hidden = false;
+
+    const tw = clone.querySelector('.agro-table-wrap');
+    if (tw) {
+      tw.classList.add('open');
+      tw.style.display = 'block';
+      tw.style.overflow = 'visible';
+      tw.style.maxHeight = 'none';
+      tw.style.width = '100%';
+    }
+
+    const liveCanvas = $('agro-chart');
+    const cloneCanvas = clone.querySelector('#agro-chart');
+    if (liveCanvas && cloneCanvas && typeof liveCanvas.toDataURL === 'function') {
+      try {
+        const img = document.createElement('img');
+        img.className = 'agro-chart-pdf-img';
+        img.alt = 'Gráfica del pronóstico';
+        img.src = liveCanvas.toDataURL('image/png');
+        img.style.cssText = 'width:100%;max-width:100%;height:auto;display:block;';
+        cloneCanvas.replaceWith(img);
+      } catch (_) {
+        cloneCanvas.remove();
+      }
+    }
+
+    ['agro-print-footer', 'agro-print-page1-fill', 'agro-print-mark'].forEach((cls) => {
+      clone.querySelectorAll('.' + cls).forEach((el) => {
+        el.style.display = 'block';
+      });
+    });
+
+    host.appendChild(clone);
+    document.body.appendChild(host);
+    return { host, clone, width: PDF_WIDTH };
+  }
+
   async function downloadPdfAsFile(triggerBtn) {
     const previousLabel = triggerBtn ? triggerBtn.textContent : '';
     const buttons = Array.from(document.querySelectorAll('.agro-pdf-trigger'));
@@ -291,63 +376,31 @@
       btn.textContent = 'Generando PDF…';
     });
     setPdfHint('Generando el PDF… un momento.', '');
-    let chartSwap = null;
-    let cleanup = () => {};
+    let exportPack = null;
     try {
       await ensureHtml2PdfLoaded();
-      cleanup = preparePrintLayout();
-      document.documentElement.classList.add('agro-pdf-file');
-      await new Promise((r) => setTimeout(r, 350));
-      try { chart?.resize(); } catch (_) {}
-
-      const canvas = $('agro-chart');
-      if (canvas && typeof canvas.toDataURL === 'function' && canvas.parentNode) {
-        try {
-          const img = document.createElement('img');
-          img.className = 'agro-chart-pdf-img';
-          img.alt = 'Gráfica del pronóstico';
-          img.src = canvas.toDataURL('image/png');
-          img.style.cssText = 'width:100%;height:auto;display:block;';
-          canvas.style.display = 'none';
-          canvas.parentNode.insertBefore(img, canvas);
-          chartSwap = { canvas, img };
-        } catch (_) {}
-      }
+      window.scrollTo(0, 0);
+      await new Promise((r) => setTimeout(r, 200));
+      exportPack = preparePdfExportClone();
+      // Esperar a que el layout del clon (y la imagen de la gráfica) asienten.
+      await new Promise((r) => setTimeout(r, 120));
 
       const filename = pdfFilename();
-      const source = document.querySelector('.agro-shell') || document.body;
+      const { clone, width } = exportPack;
       const blob = await html2pdf()
         .set({
-          margin: [8, 8, 10, 8],
+          margin: [10, 10, 12, 10],
           filename,
-          image: { type: 'jpeg', quality: 0.92 },
+          image: { type: 'jpeg', quality: 0.93 },
           html2canvas: {
-            scale: Math.min(2, window.devicePixelRatio || 2),
+            scale: 2,
             useCORS: true,
             logging: false,
+            scrollX: 0,
             scrollY: 0,
-            windowWidth: Math.max(900, source.scrollWidth || 900),
-            onclone: (clonedDoc) => {
-              clonedDoc.documentElement.classList.add('agro-printing', 'agro-pdf-file');
-              const hideSel = [
-                '.agro-public-header', '#agro-about-modal', '.agro-location-card',
-                '.agro-register-cta', '.agro-promo', '.agro-personal-actions',
-                '.agro-empty-note', '.agro-chart-toggles', '.agro-table-toggle',
-                '.agro-table-scroll-hint', '.agro-kc-wa', '.agro-kc-bar-note',
-                '.agro-kc-view-box', '.agro-pdf-bar', '.agro-input-action .agro-btn',
-                '#agro-map', '.agro-mobile-days', '.agro-kc-bar'
-              ].join(',');
-              clonedDoc.querySelectorAll(hideSel).forEach((el) => {
-                el.style.setProperty('display', 'none', 'important');
-              });
-              ['agro-print-mark', 'agro-print-footer', 'agro-print-page1-fill'].forEach((cls) => {
-                clonedDoc.querySelectorAll('.' + cls).forEach((el) => {
-                  el.style.setProperty('display', 'block', 'important');
-                });
-              });
-              const tw = clonedDoc.querySelector('.agro-table-wrap');
-              if (tw) tw.style.setProperty('display', 'block', 'important');
-            }
+            width,
+            windowWidth: width,
+            backgroundColor: '#ffffff'
           },
           jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' },
           pagebreak: {
@@ -355,7 +408,7 @@
             avoid: ['.agro-summary-card', '.agro-chart-box', '.agro-print-page1-fill', '.agro-report-meta']
           }
         })
-        .from(source)
+        .from(clone)
         .output('blob');
 
       const result = await shareOrSavePdfBlob(blob, filename);
@@ -373,11 +426,9 @@
       setPdfHint('No se pudo crear el archivo PDF. Abriendo la vista de impresión…', 'error');
       downloadPdfViaPrint();
     } finally {
-      if (chartSwap) {
-        try { chartSwap.img.remove(); } catch (_) {}
-        if (chartSwap.canvas) chartSwap.canvas.style.display = '';
+      if (exportPack && exportPack.host && exportPack.host.parentNode) {
+        exportPack.host.parentNode.removeChild(exportPack.host);
       }
-      cleanup();
       buttons.forEach((btn) => {
         btn.disabled = false;
         btn.textContent = previousLabel || '📥 Descargar reporte en PDF';
