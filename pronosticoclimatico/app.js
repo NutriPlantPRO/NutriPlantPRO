@@ -190,26 +190,218 @@
     if (!personal) saveInputs();
   }
 
-  function downloadPdfReport() {
-    if (!rows.length) {
-      setStatus('Genera el pronóstico antes de descargar el PDF.', 'error');
-      return;
+  function isIOSLikeDevice() {
+    const ua = navigator.userAgent || '';
+    const platform = navigator.platform || '';
+    return /iPhone|iPad|iPod/i.test(ua) ||
+      /iPhone|iPad|iPod/i.test(platform) ||
+      (/Mac/i.test(platform) && 'ontouchend' in document);
+  }
+
+  function setPdfHint(text, type) {
+    const hint = document.querySelector('.agro-pdf-bar-hint');
+    if (!hint) return;
+    hint.textContent = text || '';
+    hint.classList.toggle('is-error', type === 'error');
+    hint.classList.toggle('is-ok', type === 'ok' || type === 'success');
+  }
+
+  function pdfFilename() {
+    return `Pronostico_agroclimatico_NutriPlant_${new Date().toISOString().slice(0, 10)}.pdf`;
+  }
+
+  let html2pdfLoadPromise = null;
+  function ensureHtml2PdfLoaded() {
+    if (typeof html2pdf !== 'undefined') return Promise.resolve();
+    if (html2pdfLoadPromise) return html2pdfLoadPromise;
+    html2pdfLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js';
+      s.async = true;
+      s.onload = () => (typeof html2pdf !== 'undefined'
+        ? resolve()
+        : reject(new Error('html2pdf no disponible')));
+      s.onerror = () => reject(new Error('No se pudo cargar el generador de PDF'));
+      document.head.appendChild(s);
+    });
+    return html2pdfLoadPromise;
+  }
+
+  async function shareOrSavePdfBlob(blob, filename) {
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Pronóstico agroclimático NutriPlant',
+          text: 'Reporte PDF NutriPlant'
+        });
+        return 'shared';
+      } catch (err) {
+        if (err && err.name === 'AbortError') return 'aborted';
+      }
     }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // En iPhone el atributo download suele ignorarse: abrir el PDF en pestaña.
+    setTimeout(() => {
+      try {
+        const w = window.open(url, '_blank');
+        if (!w) location.href = url;
+      } catch (_) {
+        location.href = url;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 90000);
+    }, 200);
+    return 'opened';
+  }
+
+  function preparePrintLayout() {
     const root = document.documentElement;
     root.classList.add('agro-printing');
     window.scrollTo(0, 0);
     const wrap = $('agro-table-wrap');
     if (wrap) wrap.classList.add('open');
     try { chart?.resize(); } catch (_) {}
-    const cleanup = () => root.classList.remove('agro-printing');
+    return () => root.classList.remove('agro-printing', 'agro-pdf-file');
+  }
+
+  function downloadPdfViaPrint() {
+    const cleanup = preparePrintLayout();
     window.addEventListener('afterprint', cleanup, { once: true });
     // iOS a veces no dispara afterprint.
-    setTimeout(cleanup, 3000);
-    // Dar tiempo a layout/scroll antes de abrir el diálogo (crítico en iPhone).
+    setTimeout(cleanup, 4000);
     setTimeout(() => {
       try { chart?.resize(); } catch (_) {}
       window.print();
     }, 400);
+  }
+
+  async function downloadPdfAsFile(triggerBtn) {
+    const previousLabel = triggerBtn ? triggerBtn.textContent : '';
+    const buttons = Array.from(document.querySelectorAll('.agro-pdf-trigger'));
+    buttons.forEach((btn) => {
+      btn.disabled = true;
+      btn.textContent = 'Generando PDF…';
+    });
+    setPdfHint('Generando el PDF… un momento.', '');
+    let chartSwap = null;
+    let cleanup = () => {};
+    try {
+      await ensureHtml2PdfLoaded();
+      cleanup = preparePrintLayout();
+      document.documentElement.classList.add('agro-pdf-file');
+      await new Promise((r) => setTimeout(r, 350));
+      try { chart?.resize(); } catch (_) {}
+
+      const canvas = $('agro-chart');
+      if (canvas && typeof canvas.toDataURL === 'function' && canvas.parentNode) {
+        try {
+          const img = document.createElement('img');
+          img.className = 'agro-chart-pdf-img';
+          img.alt = 'Gráfica del pronóstico';
+          img.src = canvas.toDataURL('image/png');
+          img.style.cssText = 'width:100%;height:auto;display:block;';
+          canvas.style.display = 'none';
+          canvas.parentNode.insertBefore(img, canvas);
+          chartSwap = { canvas, img };
+        } catch (_) {}
+      }
+
+      const filename = pdfFilename();
+      const source = document.querySelector('.agro-shell') || document.body;
+      const blob = await html2pdf()
+        .set({
+          margin: [8, 8, 10, 8],
+          filename,
+          image: { type: 'jpeg', quality: 0.92 },
+          html2canvas: {
+            scale: Math.min(2, window.devicePixelRatio || 2),
+            useCORS: true,
+            logging: false,
+            scrollY: 0,
+            windowWidth: Math.max(900, source.scrollWidth || 900),
+            onclone: (clonedDoc) => {
+              clonedDoc.documentElement.classList.add('agro-printing', 'agro-pdf-file');
+              const hideSel = [
+                '.agro-public-header', '#agro-about-modal', '.agro-location-card',
+                '.agro-register-cta', '.agro-promo', '.agro-personal-actions',
+                '.agro-empty-note', '.agro-chart-toggles', '.agro-table-toggle',
+                '.agro-table-scroll-hint', '.agro-kc-wa', '.agro-kc-bar-note',
+                '.agro-kc-view-box', '.agro-pdf-bar', '.agro-input-action .agro-btn',
+                '#agro-map', '.agro-mobile-days', '.agro-kc-bar'
+              ].join(',');
+              clonedDoc.querySelectorAll(hideSel).forEach((el) => {
+                el.style.setProperty('display', 'none', 'important');
+              });
+              ['agro-print-mark', 'agro-print-footer', 'agro-print-page1-fill'].forEach((cls) => {
+                clonedDoc.querySelectorAll('.' + cls).forEach((el) => {
+                  el.style.setProperty('display', 'block', 'important');
+                });
+              });
+              const tw = clonedDoc.querySelector('.agro-table-wrap');
+              if (tw) tw.style.setProperty('display', 'block', 'important');
+            }
+          },
+          jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' },
+          pagebreak: {
+            mode: ['css', 'legacy'],
+            avoid: ['.agro-summary-card', '.agro-chart-box', '.agro-print-page1-fill', '.agro-report-meta']
+          }
+        })
+        .from(source)
+        .output('blob');
+
+      const result = await shareOrSavePdfBlob(blob, filename);
+      if (result === 'aborted') {
+        setPdfHint('Descarga cancelada. Vuelve a pulsar si quieres el PDF.', '');
+      } else if (result === 'shared') {
+        setPdfHint('PDF listo. En el menú elige Guardar en Archivos o compartirlo.', 'ok');
+        setStatus(readingStatusText('PDF generado'), 'success');
+      } else {
+        setPdfHint('PDF generado. Si no se descargó, ábrelo y usa Compartir → Guardar en Archivos.', 'ok');
+        setStatus(readingStatusText('PDF generado'), 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      setPdfHint('No se pudo crear el archivo PDF. Abriendo la vista de impresión…', 'error');
+      downloadPdfViaPrint();
+    } finally {
+      if (chartSwap) {
+        try { chartSwap.img.remove(); } catch (_) {}
+        if (chartSwap.canvas) chartSwap.canvas.style.display = '';
+      }
+      cleanup();
+      buttons.forEach((btn) => {
+        btn.disabled = false;
+        btn.textContent = previousLabel || '📥 Descargar reporte en PDF';
+      });
+    }
+  }
+
+  function downloadPdfReport(ev) {
+    if (!rows.length) {
+      setStatus('Genera el pronóstico antes de descargar el PDF.', 'error');
+      setPdfHint('Primero genera el pronóstico y luego descarga el PDF.', 'error');
+      return;
+    }
+    const triggerBtn = ev && ev.currentTarget instanceof HTMLButtonElement
+      ? ev.currentTarget
+      : document.querySelector('.agro-pdf-trigger');
+    // En iPhone, window.print() solo abre «Opciones» de impresión (confunde).
+    // Generamos un PDF real y lo ofrecemos con Compartir / Guardar en Archivos.
+    if (isIOSLikeDevice()) {
+      downloadPdfAsFile(triggerBtn);
+      return;
+    }
+    setPdfHint('Se abrirá la impresión del navegador: elige Guardar como PDF.', '');
+    downloadPdfViaPrint();
   }
 
   function saved() {

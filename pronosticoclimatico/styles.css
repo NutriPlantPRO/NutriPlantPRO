@@ -594,6 +594,8 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
   font-size: 11px;
   line-height: 1.4;
 }
+.agro-pdf-bar-hint.is-ok { color: #047857; font-weight: 650; }
+.agro-pdf-bar-hint.is-error { color: #b91c1c; font-weight: 650; }
 .agro-print-page1-fill { display: none; }
 
 .agro-register-cta, .agro-promo {
@@ -979,4 +981,149 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
     overflow: visible !important;
   }
   .agro-chart-tips { break-inside: avoid; page-break-inside: avoid; }
+}
+
+/* Exportación a archivo PDF (html2pdf en iPhone): mismos ocultamientos que @media print */
+html.agro-pdf-file,
+html.agro-pdf-file body {
+  background: #fff !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+html.agro-pdf-file .agro-public-header,
+html.agro-pdf-file #agro-about-modal,
+html.agro-pdf-file .agro-location-card,
+html.agro-pdf-file .agro-register-cta,
+html.agro-pdf-file .agro-promo,
+html.agro-pdf-file .agro-personal-actions,
+html.agro-pdf-file .agro-empty-note,
+html.agro-pdf-file .agro-chart-toggles,
+html.agro-pdf-file .agro-table-toggle,
+html.agro-pdf-file .agro-table-scroll-hint,
+html.agro-pdf-file .agro-kc-wa,
+html.agro-pdf-file .agro-kc-bar-note,
+html.agro-pdf-file .agro-kc-view-box,
+html.agro-pdf-file .agro-pdf-bar,
+html.agro-pdf-file .agro-input-action .agro-btn,
+html.agro-pdf-file #agro-map,
+html.agro-pdf-file .agro-mobile-days,
+html.agro-pdf-file .agro-kc-bar {
+  display: none !important;
+}
+html.agro-pdf-file .agro-print-mark {
+  display: block !important;
+  position: absolute;
+  top: 2mm;
+  right: 3mm;
+  width: 118px;
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 50;
+}
+html.agro-pdf-file .agro-print-footer {
+  display: block !important;
+  margin-top: 22px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 11px;
+}
+html.agro-pdf-file .agro-print-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+html.agro-pdf-file .agro-print-footer-legal {
+  text-align: left;
+  line-height: 1.35;
+  color: #374151;
+}
+html.agro-pdf-file .agro-print-footer-by {
+  text-align: right;
+  color: #1f2937;
+  white-space: nowrap;
+}
+html.agro-pdf-file .agro-print-footer-leaf {
+  display: block;
+  width: 56px;
+  margin: 10px auto 4px;
+  opacity: 0.16;
+}
+html.agro-pdf-file .agro-print-footer-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+html.agro-pdf-file .agro-print-footer-qr img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+html.agro-pdf-file .agro-shell {
+  width: 100%;
+  padding: 8px 0 0;
+  overflow: visible !important;
+}
+html.agro-pdf-file .agro-title-block {
+  display: block;
+  margin-bottom: 6px;
+  padding-right: 110px;
+}
+html.agro-pdf-file .agro-title-block h1,
+html.agro-pdf-file .agro-page-title { font-size: 20px !important; margin: 2px 0; }
+html.agro-pdf-file .agro-page-title img { width: 28px !important; height: 28px !important; }
+html.agro-pdf-file .agro-lead { margin: 2px 0 0; font-size: 10px; line-height: 1.3; }
+html.agro-pdf-file .agro-report-meta {
+  margin-top: 6px;
+  padding: 7px 9px;
+  font-size: 11px;
+}
+html.agro-pdf-file .agro-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 6px 0 0;
+}
+html.agro-pdf-file .agro-summary-card {
+  padding: 11px 12px;
+  min-height: 64px;
+}
+html.agro-pdf-file .agro-print-page1-fill {
+  display: block !important;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  background: #f0f9ff;
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.45;
+}
+html.agro-pdf-file .agro-table-wrap {
+  display: block !important;
+  overflow: visible !important;
+  max-height: none !important;
+}
+html.agro-pdf-file .agro-table { min-width: 0; font-size: 8px; }
+html.agro-pdf-file .agro-table th,
+html.agro-pdf-file .agro-table td {
+  position: static !important;
+  padding: 4px;
+  white-space: normal;
+  box-shadow: none !important;
+}
+html.agro-pdf-file .agro-date-col { position: static !important; left: auto !important; }
+html.agro-pdf-file .agro-chart-box {
+  height: auto !important;
+  min-height: 180px !important;
+  overflow: visible !important;
+}
+html.agro-pdf-file .agro-card,
+html.agro-pdf-file .agro-table-shell {
+  box-shadow: none;
+  overflow: visible !important;
+  max-height: none !important;
 }
