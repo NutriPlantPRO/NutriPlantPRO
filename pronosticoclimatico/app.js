@@ -331,7 +331,12 @@
     clone.querySelectorAll(hideSel).forEach((el) => el.remove());
 
     const results = clone.querySelector('#agro-results');
-    if (results) results.hidden = false;
+    if (results) {
+      results.hidden = false;
+      const reportCards = results.querySelectorAll(':scope > .agro-card');
+      if (reportCards[0]) reportCards[0].classList.add('agro-pdf-table-section');
+      if (reportCards[1]) reportCards[1].classList.add('agro-pdf-chart-section');
+    }
 
     const tw = clone.querySelector('.agro-table-wrap');
     if (tw) {
@@ -350,7 +355,7 @@
         img.className = 'agro-chart-pdf-img';
         img.alt = 'Gráfica del pronóstico';
         img.src = liveCanvas.toDataURL('image/png');
-        img.style.cssText = 'width:100%;max-width:100%;height:auto;display:block;';
+        img.style.cssText = 'width:100%;max-width:100%;height:270px;object-fit:contain;display:block;';
         cloneCanvas.replaceWith(img);
       } catch (_) {
         cloneCanvas.remove();

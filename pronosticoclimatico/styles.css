@@ -1137,6 +1137,17 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   font-size: 11px;
   line-height: 1.45;
 }
+.agro-pdf-export-host .agro-pdf-table-section {
+  break-before: page !important;
+  page-break-before: always !important;
+}
+.agro-pdf-export-host .agro-pdf-chart-section {
+  break-before: page !important;
+  page-break-before: always !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  padding: 16px !important;
+}
 .agro-pdf-export-host .agro-table-wrap {
   display: block !important;
   overflow: visible !important;
@@ -1166,10 +1177,52 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   width: 11% !important;
 }
 .agro-pdf-export-host .agro-chart-box {
-  height: auto !important;
-  min-height: 180px !important;
-  overflow: visible !important;
+  display: block !important;
+  height: 270px !important;
+  min-height: 270px !important;
+  max-height: 270px !important;
+  overflow: hidden !important;
   max-width: 100% !important;
+  margin: 0 !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+.agro-pdf-export-host .agro-chart-pdf-img {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 270px !important;
+  max-height: 270px !important;
+  object-fit: contain !important;
+}
+.agro-pdf-export-host .agro-chart-legend {
+  margin-top: 6px !important;
+  padding: 6px 8px !important;
+  font-size: 9px !important;
+  break-inside: avoid !important;
+}
+.agro-pdf-export-host .agro-chart-note {
+  margin-top: 5px !important;
+  font-size: 9px !important;
+  line-height: 1.3 !important;
+  break-inside: avoid !important;
+}
+.agro-pdf-export-host .agro-chart-tips {
+  position: static !important;
+  display: block !important;
+  clear: both !important;
+  margin-top: 7px !important;
+  padding: 8px 10px !important;
+  font-size: 9px !important;
+  line-height: 1.3 !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+.agro-pdf-export-host .agro-chart-tips li {
+  margin-bottom: 2px !important;
+}
+.agro-pdf-export-host .agro-chart-tips-foot {
+  font-size: 8px !important;
 }
 .agro-pdf-export-host .agro-card,
 .agro-pdf-export-host .agro-table-shell {
