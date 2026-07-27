@@ -310,6 +310,9 @@
     ].join(';');
 
     const clone = shell.cloneNode(true);
+    // html2pdf mueve este nodo fuera del host; conservar la clase garantiza
+    // que los estilos de tabla/paginación sigan aplicando durante la captura.
+    clone.classList.add('agro-pdf-export-host');
     clone.style.width = PDF_WIDTH + 'px';
     clone.style.maxWidth = PDF_WIDTH + 'px';
     clone.style.margin = '0';
@@ -381,7 +384,7 @@
       canvas.height = source.naturalHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
-      ctx.globalAlpha = 0.075;
+      ctx.globalAlpha = 0.14;
       ctx.drawImage(source, 0, 0);
       return {
         dataUrl: canvas.toDataURL('image/png'),
@@ -402,13 +405,13 @@
     for (let page = 1; page <= pages; page += 1) {
       pdf.setPage(page);
       if (watermarkDataUrl && watermarkDataUrl.dataUrl) {
-        const watermarkWidth = 74;
+        const watermarkWidth = 32;
         const watermarkHeight = watermarkWidth / Math.max(0.5, watermarkDataUrl.aspect || 1);
         pdf.addImage(
           watermarkDataUrl.dataUrl,
           'PNG',
-          (pageWidth - watermarkWidth) / 2,
-          (pageHeight - watermarkHeight) / 2 - 5,
+          pageWidth - watermarkWidth - 10,
+          8,
           watermarkWidth,
           watermarkHeight,
           undefined,
