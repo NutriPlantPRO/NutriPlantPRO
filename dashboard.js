@@ -13981,6 +13981,10 @@ function generatePDFContent(selectedSections) {
 function createReportHTML(selectedSections, chartImages, reportLanguage) {
   const lang = (reportLanguage === 'en') ? 'en' : 'es';
   const isEn = lang === 'en';
+  const reportIOSClass =
+    typeof isIOSLikeTouchDevice === 'function' && isIOSLikeTouchDevice()
+      ? ' report-ios'
+      : '';
   const rt = function(es, en) { return isEn ? en : es; };
   const currentDate = new Date().toLocaleDateString(isEn ? 'en-US' : 'es-ES');
   const projectName = currentProject.name || 'Proyecto NutriPlant';
@@ -15284,6 +15288,44 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
             font-size: 7.2px;
           }
+          body.report-ios .report-climate-monthly-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+          }
+          body.report-ios .report-climate-monthly-table {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed !important;
+            font-size: 6.2px !important;
+          }
+          body.report-ios .report-climate-monthly-table col.report-climate-col-year {
+            width: 15% !important;
+          }
+          body.report-ios .report-climate-monthly-table col.report-climate-col-acum {
+            width: 11% !important;
+          }
+          body.report-ios .report-climate-monthly-table col.report-climate-col-month {
+            width: 6.166% !important;
+          }
+          body.report-ios .report-climate-monthly-table th,
+          body.report-ios .report-climate-monthly-table td {
+            min-width: 0 !important;
+            padding: 3px 1px !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: normal !important;
+            line-height: 1.15 !important;
+          }
+          body.report-ios .report-climate-monthly-table thead th {
+            font-size: 6.1px !important;
+            padding: 4px 1px !important;
+          }
+          body.report-ios .report-climate-monthly-table .report-climate-col-year {
+            padding-left: 3px !important;
+            padding-right: 2px !important;
+          }
           .report-lectura-table {
             width: 100% !important;
             max-width: 100% !important;
@@ -15320,7 +15362,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         }
       </style>
     </head>
-    <body class="notranslate" translate="no">
+    <body class="notranslate${reportIOSClass}" translate="no">
       <img src="${reportAssetBase}NutriPlant_PRO_blue.png" alt="" class="report-watermark-corner" aria-hidden="true">
       <div class="report-main">
         <div class="header">

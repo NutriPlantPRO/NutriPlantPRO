@@ -1138,12 +1138,12 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   line-height: 1.45;
 }
 .agro-pdf-export-host .agro-pdf-table-section {
-  break-before: auto !important;
-  page-break-before: auto !important;
+  break-before: always !important;
+  page-break-before: always !important;
 }
 .agro-pdf-export-host .agro-pdf-chart-section {
-  break-before: auto !important;
-  page-break-before: auto !important;
+  break-before: always !important;
+  page-break-before: always !important;
   break-inside: avoid !important;
   page-break-inside: avoid !important;
   padding: 16px !important;
