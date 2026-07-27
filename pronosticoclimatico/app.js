@@ -309,9 +309,6 @@
       'box-sizing:border-box'
     ].join(';');
 
-    const mark = document.querySelector('.agro-print-mark');
-    if (mark) host.appendChild(mark.cloneNode(true));
-
     const clone = shell.cloneNode(true);
     clone.style.width = PDF_WIDTH + 'px';
     clone.style.maxWidth = PDF_WIDTH + 'px';
@@ -326,7 +323,8 @@
       '.agro-empty-note', '.agro-chart-toggles', '.agro-table-toggle',
       '.agro-table-scroll-hint', '.agro-kc-wa', '.agro-kc-bar-note',
       '.agro-kc-view-box', '.agro-pdf-bar', '.agro-input-action .agro-btn',
-      '#agro-map', '.agro-mobile-days', '.agro-kc-bar'
+      '#agro-map', '.agro-mobile-days', '.agro-kc-bar',
+      '.agro-print-footer', '.agro-print-mark'
     ].join(',');
     clone.querySelectorAll(hideSel).forEach((el) => el.remove());
 
@@ -362,7 +360,7 @@
       }
     }
 
-    ['agro-print-footer', 'agro-print-page1-fill', 'agro-print-mark'].forEach((cls) => {
+    ['agro-print-page1-fill'].forEach((cls) => {
       clone.querySelectorAll('.' + cls).forEach((el) => {
         el.style.display = 'block';
       });
@@ -371,6 +369,62 @@
     host.appendChild(clone);
     document.body.appendChild(host);
     return { host, clone, width: PDF_WIDTH };
+  }
+
+  function buildPdfWatermarkDataUrl() {
+    const source = document.querySelector('.agro-print-mark') ||
+      document.querySelector('.agro-page-title img');
+    if (!source || !source.complete || !source.naturalWidth) return null;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = source.naturalWidth;
+      canvas.height = source.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.globalAlpha = 0.075;
+      ctx.drawImage(source, 0, 0);
+      return {
+        dataUrl: canvas.toDataURL('image/png'),
+        aspect: source.naturalWidth / source.naturalHeight
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function decoratePdfPages(pdf, watermarkDataUrl) {
+    if (!pdf || !pdf.internal) return;
+    const pages = pdf.internal.getNumberOfPages();
+    const pageSize = pdf.internal.pageSize;
+    const pageWidth = pageSize.getWidth();
+    const pageHeight = pageSize.getHeight();
+
+    for (let page = 1; page <= pages; page += 1) {
+      pdf.setPage(page);
+      if (watermarkDataUrl && watermarkDataUrl.dataUrl) {
+        const watermarkWidth = 74;
+        const watermarkHeight = watermarkWidth / Math.max(0.5, watermarkDataUrl.aspect || 1);
+        pdf.addImage(
+          watermarkDataUrl.dataUrl,
+          'PNG',
+          (pageWidth - watermarkWidth) / 2,
+          (pageHeight - watermarkHeight) / 2 - 5,
+          watermarkWidth,
+          watermarkHeight,
+          undefined,
+          'FAST'
+        );
+      }
+
+      pdf.setDrawColor(218, 226, 236);
+      pdf.setLineWidth(0.2);
+      pdf.line(10, pageHeight - 8.5, pageWidth - 10, pageHeight - 8.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('© 2026 NutriPlant PRO · Todos los derechos reservados', 10, pageHeight - 5);
+      pdf.text(`Página ${page} de ${pages}`, pageWidth - 10, pageHeight - 5, { align: 'right' });
+    }
   }
 
   async function downloadPdfAsFile(triggerBtn) {
@@ -392,7 +446,8 @@
 
       const filename = pdfFilename();
       const { clone, width } = exportPack;
-      const blob = await html2pdf()
+      const watermarkDataUrl = buildPdfWatermarkDataUrl();
+      const worker = html2pdf()
         .set({
           margin: [10, 10, 12, 10],
           filename,
@@ -414,7 +469,10 @@
           }
         })
         .from(clone)
-        .output('blob');
+        .toPdf();
+      const pdf = await worker.get('pdf');
+      decoratePdfPages(pdf, watermarkDataUrl);
+      const blob = pdf.output('blob');
 
       const result = await shareOrSavePdfBlob(blob, filename);
       if (result === 'aborted') {
