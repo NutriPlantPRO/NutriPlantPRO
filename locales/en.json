@@ -230,10 +230,18 @@
     "tool_irrigation": "Irrigation depth and water balance",
     "tool_vpd": "Vapor pressure deficit estimator",
     "tool_weather": "Agroclimatic forecast",
+    "tool_amendment": "CEC amendment balance",
+    "tool_granular_mix": "Granular fertilizer blend formulation",
     "tool_extraction_stage": "Nutrient distribution by stage (%)",
     "tool_fertilizer_composition": "Fertilizer composition (%)",
+    "tool_periodic": "Periodic Table (Essential Nutrients)",
+    "tool_atlas": "Plant Physiology Atlas",
+    "tool_compatibility": "Fertilizer compatibility",
+    "tool_interactions": "Nutrient interactions and mobility",
     "tool_solubility_salt": "Solubility and salt index",
     "tool_fertilizer_carbon": "Fertilizer carbon footprint",
+    "tool_measure_units": "Physical quantity converter",
+    "tool_simple_calculator": "Calculator",
     "tool_notes": "Notes",
     "tool_user": "User information"
   }

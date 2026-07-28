@@ -230,10 +230,18 @@
     "tool_irrigation": "Lámina de riego y balance hídrico",
     "tool_vpd": "Estimador de déficit de presión de vapor",
     "tool_weather": "Pronóstico agroclimático",
+    "tool_amendment": "Balance de enmiendas por CIC",
+    "tool_granular_mix": "Formulación de mezclas granulares",
     "tool_extraction_stage": "Distribución nutrimental por etapa (%)",
     "tool_fertilizer_composition": "Composición de fertilizantes (%)",
+    "tool_periodic": "Tabla Periódica (Nutrientes Esenciales)",
+    "tool_atlas": "Atlas Fisiológico Vegetal",
+    "tool_compatibility": "Compatibilidad de fertilizantes",
+    "tool_interactions": "Interacciones y movilidad nutrimental",
     "tool_solubility_salt": "Solubilidad e índice salino",
     "tool_fertilizer_carbon": "Huella de carbono de fertilizantes",
+    "tool_measure_units": "Conversor de magnitudes físicas",
+    "tool_simple_calculator": "Calculadora simple",
     "tool_notes": "Bloque de notas",
     "tool_user": "Información de usuario"
   }

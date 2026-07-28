@@ -6,7 +6,7 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=2"></script>
+  <script defer src="assets/np-i18n.js?v=3"></script>
   <script defer src="assets/np-units-core.js?v=20260728g"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
@@ -322,47 +322,47 @@
         <div class="login-tools-scroll">
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showConversionCalculator()">
           <span class="calculator-icon">🧮</span>
-          <span class="button-text">Conversor Óxido ↔ Elemental</span>
+          <span class="button-text" data-i18n="dashboard.tool_oxide">Conversor Óxido ↔ Elemental</span>
         </button>
         
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🧪</span>
-          <span class="button-text">Conversor de unidades (ppm/mmol/meq)</span>
+          <span class="button-text" data-i18n="dashboard.tool_units">Conversor de unidades (ppm/mmol/meq)</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showMeasureUnitsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">📐</span>
-          <span class="button-text">Conversor de magnitudes físicas</span>
+          <span class="button-text" data-i18n="dashboard.tool_measure_units">Conversor de magnitudes físicas</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroSolutionCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">💧</span>
-          <span class="button-text">Diseño de solución nutritiva</span>
+          <span class="button-text" data-i18n="dashboard.tool_hydro">Diseño de solución nutritiva</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">💦</span>
-          <span class="button-text">Diagnóstico de agua y acondicionamiento</span>
+          <span class="button-text" data-i18n="dashboard.tool_water">Diagnóstico de agua y acondicionamiento</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌡️</span>
-          <span class="button-text">Estimador de déficit de presión de vapor</span>
+          <span class="button-text" data-i18n="dashboard.tool_vpd">Estimador de déficit de presión de vapor</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showAgroclimateForecast()" style="margin-top: 12px;">
           <span class="calculator-icon">🌤️</span>
-          <span class="button-text">Pronóstico agroclimático</span>
+          <span class="button-text" data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🚜</span>
-          <span class="button-text">Balance de enmiendas por CIC</span>
+          <span class="button-text" data-i18n="dashboard.tool_amendment">Balance de enmiendas por CIC</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showGranularMixCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">📦</span>
-          <span class="button-text">Formulación de mezclas granulares</span>
+          <span class="button-text" data-i18n="dashboard.tool_granular_mix">Formulación de mezclas granulares</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()" style="margin-top: 12px;">
@@ -377,22 +377,22 @@
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">⚛️</span>
-          <span class="button-text">Tabla Periódica (Nutrientes Esenciales)</span>
+          <span class="button-text" data-i18n="dashboard.tool_periodic">Tabla Periódica (Nutrientes Esenciales)</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showAminoAcidsAtlasTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🧬</span>
-          <span class="button-text">Atlas Fisiológico Vegetal</span>
+          <span class="button-text" data-i18n="dashboard.tool_atlas">Atlas Fisiológico Vegetal</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🔺</span>
-          <span class="button-text">Compatibilidad de fertilizantes</span>
+          <span class="button-text" data-i18n="dashboard.tool_compatibility">Compatibilidad de fertilizantes</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientInteractionsTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🔗</span>
-          <span class="button-text">Interacciones y movilidad nutrimental</span>
+          <span class="button-text" data-i18n="dashboard.tool_interactions">Interacciones y movilidad nutrimental</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
@@ -402,12 +402,12 @@
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🪨</span>
-          <span class="button-text">Agua en suelo y textura</span>
+          <span class="button-text" data-i18n="dashboard.tool_soil_water">Agua en suelo y textura</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showLaminaRiegoTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🌧️</span>
-          <span class="button-text">Lámina de riego y balance hídrico</span>
+          <span class="button-text" data-i18n="dashboard.tool_irrigation">Lámina de riego y balance hídrico</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
@@ -2667,14 +2667,14 @@
   <div id="periodicTableNutrientsModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition modal-free-tool-tall">
       <div class="modal-header">
-        <h2 class="modal-title">⚛️ Tabla Periódica (Nutrientes Esenciales)</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_periodic">Tabla Periódica (Nutrientes Esenciales)</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260709" title="Tabla Periódica (Nutrientes Esenciales)"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260709" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic"></iframe>
       </div>
     </div>
   </div>
@@ -2683,14 +2683,14 @@
   <div id="aminoAcidsAtlasModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition modal-free-tool-tall">
       <div class="modal-header">
-        <h2 class="modal-title">🧬 Atlas Fisiológico Vegetal</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_atlas">Atlas Fisiológico Vegetal</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeAminoAcidsAtlasTool()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260717" title="Atlas Fisiológico Vegetal"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260717" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas"></iframe>
       </div>
     </div>
   </div>
@@ -2699,14 +2699,14 @@
   <div id="fertilizerCompatibilityModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">🔺 Compatibilidad de fertilizantes</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_compatibility">Compatibilidad de fertilizantes</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerCompatibilityCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes"></iframe>
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility"></iframe>
       </div>
     </div>
   </div>
@@ -2715,14 +2715,14 @@
   <div id="nutrientInteractionsToolModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">🔗 Interacciones y movilidad nutrimental</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_interactions">Interacciones y movilidad nutrimental</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeNutrientInteractionsTool()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones y movilidad nutrimental"></iframe>
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions"></iframe>
       </div>
     </div>
   </div>
