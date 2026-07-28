@@ -167,17 +167,27 @@
 }
 
 .auth-preferences-bar {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 6px 12px;
+  padding: 9px 12px 8px;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #bfdbfe;
-  border-radius: 11px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+}
+
+.auth-preferences-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb 0%, #16a34a 100%);
 }
 
 .auth-preferences-bar__intro {
@@ -186,10 +196,12 @@
 
 .auth-preferences-bar__title {
   margin: 0;
-  color: #0f172a;
+  padding-left: 8px;
+  color: #172554;
   font-size: 12px;
   font-weight: 800;
   line-height: 1.2;
+  border-left: 3px solid #2563eb;
 }
 
 .auth-preferences-bar__controls {
@@ -203,6 +215,11 @@
 
 .auth-preference-field {
   min-width: 0;
+  padding: 5px 6px 6px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .auth-preference-field label,
@@ -211,24 +228,27 @@
 }
 
 .auth-preference-field label {
-  margin-bottom: 2px;
-  color: #334155;
-  font-size: 10px;
-  font-weight: 700;
+  margin: 0 3px 4px;
+  color: #475569;
+  font-size: 9px;
+  font-weight: 800;
   line-height: 1.15;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
 }
 
 .auth-preference-field select {
   width: 100%;
-  height: 34px;
-  min-height: 34px;
+  height: 32px;
+  min-height: 32px;
   padding: 4px 30px 4px 9px;
   color: #0f172a;
   font: inherit;
   font-size: 13px;
-  background-color: #f8fafc;
+  font-weight: 600;
+  background-color: #fff;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: 7px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
@@ -246,24 +266,15 @@
 }
 
 .auth-preference-field small {
-  margin-top: 3px;
-  color: #64748b;
-  font-size: 10px;
-  line-height: 1.2;
-}
-
-@media (min-width: 621px) {
-  .auth-preference-field small {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .registration-preferences-slot {
@@ -286,13 +297,13 @@
   .auth-preferences-bar {
     align-items: stretch;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px;
+    gap: 7px;
+    padding: 11px 9px 9px;
     border-radius: 12px;
   }
 
   .auth-preferences-bar__title {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .auth-preferences-bar__controls {
@@ -303,26 +314,14 @@
   }
 
   .auth-preference-field label {
-    margin-bottom: 4px;
-    font-size: 11px;
+    margin-bottom: 3px;
+    font-size: 9px;
   }
 
   .auth-preference-field select {
-    height: 44px;
-    min-height: 44px;
-    font-size: 16px;
-  }
-
-  .auth-preference-field small {
-    position: static;
-    width: auto;
-    height: auto;
-    padding: 0;
-    margin: 3px 0 0;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
-    border: 0;
+    height: 40px;
+    min-height: 40px;
+    font-size: 14px;
   }
 
   .registration-preferences-slot {
@@ -1085,8 +1084,8 @@
   }
   
   .auth-main {
-    padding: 20px 16px;
-    margin-top: 96px;
+    padding: 12px 16px 20px;
+    margin-top: 60px;
   }
   
   .auth-card {
