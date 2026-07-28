@@ -2496,12 +2496,23 @@ const RADAR_INDEX_CONFIG = {
     gradient: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
     shownText: 'RGB en mapa.',
     loadingText: 'Cargando imagen RGB en el mapa...'
+  },
+  clouds: {
+    label: 'Nubes',
+    busyLabel: 'Nubes',
+    title: 'Máscara de nubes Sentinel-2',
+    low: 'Morado = sombra',
+    high: 'Blanco = nube',
+    help: 'Máscara SCL: blanco/gris = nubes, morado = sombra y azul = agua. Las zonas transparentes quedaron despejadas.',
+    gradient: 'linear-gradient(90deg,#7c3aed,#64748b,#cbd5e1,#ffffff)',
+    shownText: 'Nubes y sombras en mapa.',
+    loadingText: 'Cargando máscara de nubes en el mapa...'
   }
 };
 
 function np_normalizeRadarIndex(value) {
   const v = String(value || '').toLowerCase();
-  if (v === 'ndmi' || v === 'ndre' || v === 'rgb') return v;
+  if (v === 'ndmi' || v === 'ndre' || v === 'rgb' || v === 'clouds') return v;
   return 'ndvi';
 }
 
@@ -2559,6 +2570,9 @@ function np_getRadarSignedUrl(data, index) {
   }
   if (idx === 'rgb') {
     return snap.rgb_signed_url || snap.images?.rgb?.signed_url || '';
+  }
+  if (idx === 'clouds') {
+    return snap.cloud_mask_signed_url || snap.images?.clouds?.signed_url || '';
   }
   return snap.signed_url || snap.images?.ndvi?.signed_url || '';
 }
@@ -3226,12 +3240,12 @@ function np_updatePilotLayerButtonUi() {
   const idx = np_getPilotRadarIndex();
   const cfg = np_getRadarIndexConfig(idx);
   btn.textContent = cfg.label;
-  btn.title = 'Pilot: mostrando ' + cfg.label + ' (clic para ciclar NDVI → NDMI → NDRE → RGB)';
+  btn.title = 'Pilot: mostrando ' + cfg.label + ' (clic para ciclar NDVI → NDMI → NDRE → RGB → Nubes)';
   btn.setAttribute('aria-pressed', idx !== 'ndvi' ? 'true' : 'false');
 }
 
 async function np_togglePilotRadarLayer() {
-  const order = ['ndvi', 'ndmi', 'ndre', 'rgb'];
+  const order = ['ndvi', 'ndmi', 'ndre', 'rgb', 'clouds'];
   const cur = np_getPilotRadarIndex();
   const next = order[(order.indexOf(cur) + 1) % order.length];
   np_setPilotRadarIndex(next);
@@ -3245,7 +3259,7 @@ async function np_togglePilotRadarLayer() {
   const cfg = np_getRadarIndexConfig(next);
   if (hint) {
     hint.textContent =
-      'Capa ' + cfg.label + ' activa. Cambia NDVI/NDMI/NDRE/RGB desde el selector.';
+      'Capa ' + cfg.label + ' activa. Cambia NDVI/NDMI/NDRE/RGB/Nubes desde el selector.';
   }
 }
 
@@ -3304,6 +3318,9 @@ function np_getRadarPilotDataUrl(index) {
   }
   if (idx === 'rgb') {
     return pilot.rgb_signed_url || pilot.images?.rgb?.signed_url || pilot.rgb_data_url || pilot.images?.rgb?.data_url || '';
+  }
+  if (idx === 'clouds') {
+    return pilot.cloud_mask_signed_url || pilot.images?.clouds?.signed_url || pilot.cloud_mask_data_url || pilot.images?.clouds?.data_url || '';
   }
   return pilot.signed_url || pilot.images?.ndvi?.signed_url || pilot.ndvi_data_url || pilot.images?.ndvi?.data_url || '';
 }
@@ -3617,7 +3634,7 @@ async function np_applyRadarPilotOverlay(url, index) {
   }
   np_setRadarPolygonMask(false);
   np_updateRadarScaleUi(idx);
-  np_showRadarOverlay(url, bounds, 0.98, { pilot: true, index: idx });
+  np_showRadarOverlay(url, bounds, idx === 'clouds' ? 0.82 : 0.98, { pilot: true, index: idx });
   np_setRadarPolygonMask(true, null);
   np_showRadarLegend(true);
   if (nutriPlantMap && nutriPlantMap.map && bounds) {
@@ -3643,7 +3660,11 @@ async function np_applyRadarOverlay(url, snap, index) {
   np_setRadarPolygonMask(false);
   np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
   const isPilotSnapshot = !!(snap && snap.meta && snap.meta.pilot);
-  np_showRadarOverlay(url, bounds, 0.98, { pilot: isPilotSnapshot, index: index || np_getSelectedRadarIndex() });
+  const selectedIndex = index || np_getSelectedRadarIndex();
+  np_showRadarOverlay(url, bounds, selectedIndex === 'clouds' ? 0.82 : 0.98, {
+    pilot: isPilotSnapshot,
+    index: selectedIndex
+  });
   np_setRadarPolygonMask(
     true,
     overlayCtx.fromSnapshot ? overlayCtx.polygon : null
@@ -4074,6 +4095,8 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       ndmi_signed_url: data.ndmi_signed_url || data.images?.ndmi?.signed_url,
       ndre_signed_url: data.ndre_signed_url || data.images?.ndre?.signed_url,
       rgb_signed_url: data.rgb_signed_url || data.images?.rgb?.signed_url,
+      cloud_mask_signed_url: data.cloud_mask_signed_url || data.images?.clouds?.signed_url,
+      cloud_mask_data_url: data.cloud_mask_data_url || data.images?.clouds?.data_url,
       ndvi_data_url: data.ndvi_data_url || data.images?.ndvi?.data_url,
       ndmi_data_url: data.ndmi_data_url || data.images?.ndmi?.data_url,
       ndre_data_url: data.ndre_data_url || data.images?.ndre?.data_url,

@@ -346,19 +346,29 @@ function historyItemFromRow(row) {
 
 async function signRadarRow(supabase, row) {
   if (!row?.image_storage_path) {
-    return { ndviSignedUrl: null, ndmiSignedUrl: null, ndreSignedUrl: null, rgbSignedUrl: null };
+    return {
+      ndviSignedUrl: null,
+      ndmiSignedUrl: null,
+      ndreSignedUrl: null,
+      rgbSignedUrl: null,
+      cloudMaskSignedUrl: null
+    };
   }
   const meta = row.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
   const ndrePath = meta.ndre_storage_path || meta.images?.ndre?.storage_path || null;
   const rgbPath = meta.rgb_storage_path || meta.images?.rgb?.storage_path || null;
-  const [ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl] = await Promise.all([
+  const cloudMaskPath =
+    meta.cloud_mask_storage_path || meta.images?.clouds?.storage_path || null;
+  const [ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl, cloudMaskSignedUrl] =
+    await Promise.all([
     signedUrlForPath(supabase, row.image_storage_path),
     signedUrlForPath(supabase, ndmiPath),
     signedUrlForPath(supabase, ndrePath),
-    signedUrlForPath(supabase, rgbPath)
+    signedUrlForPath(supabase, rgbPath),
+    signedUrlForPath(supabase, cloudMaskPath)
   ]);
-  return { ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl };
+  return { ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl, cloudMaskSignedUrl };
 }
 
 async function signedUrlForPath(supabase, path, ttlSec = 3600) {
@@ -465,6 +475,7 @@ function scrubRequestIdFromProjectData(projectData, requestId) {
       delete next.ndmi_signed_url;
       delete next.ndre_signed_url;
       delete next.rgb_signed_url;
+      delete next.cloud_mask_signed_url;
       next.status = 'deleted';
       next.error_code = 'admin_deleted';
       next.error_message = 'Imagen eliminada por administrador';
@@ -495,9 +506,14 @@ async function deleteRadarStorageFiles(supabase, row) {
   const ndmiPath = meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path) || null;
   const ndrePath = meta.ndre_storage_path || (meta.images && meta.images.ndre && meta.images.ndre.storage_path) || null;
   const rgbPath = meta.rgb_storage_path || (meta.images && meta.images.rgb && meta.images.rgb.storage_path) || null;
+  const cloudMaskPath =
+    meta.cloud_mask_storage_path ||
+    (meta.images && meta.images.clouds && meta.images.clouds.storage_path) ||
+    null;
   if (ndmiPath) paths.push(String(ndmiPath));
   if (ndrePath) paths.push(String(ndrePath));
   if (rgbPath) paths.push(String(rgbPath));
+  if (cloudMaskPath) paths.push(String(cloudMaskPath));
   if (!paths.length) return { ok: true, removed: [] };
   const { error } = await supabase.storage.from(BUCKET).remove(paths);
   if (error) {
@@ -507,12 +523,21 @@ async function deleteRadarStorageFiles(supabase, row) {
   return { ok: true, removed: paths };
 }
 
-function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl) {
+function latestResponse(
+  latest,
+  ndviSignedUrl,
+  ndmiSignedUrl,
+  ndreSignedUrl,
+  rgbSignedUrl,
+  cloudMaskSignedUrl
+) {
   if (!latest) return null;
   const meta = latest.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
   const ndrePath = meta.ndre_storage_path || meta.images?.ndre?.storage_path || null;
   const rgbPath = meta.rgb_storage_path || meta.images?.rgb?.storage_path || null;
+  const cloudMaskPath =
+    meta.cloud_mask_storage_path || meta.images?.clouds?.storage_path || null;
   return {
     id: latest.id,
     created_at: latest.created_at,
@@ -521,11 +546,13 @@ function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgb
     ndmi_storage_path: ndmiPath,
     ndre_storage_path: ndrePath,
     rgb_storage_path: rgbPath,
+    cloud_mask_storage_path: cloudMaskPath,
     meta,
     signed_url: ndviSignedUrl,
     ndmi_signed_url: ndmiSignedUrl,
     ndre_signed_url: ndreSignedUrl || null,
     rgb_signed_url: rgbSignedUrl || null,
+    cloud_mask_signed_url: cloudMaskSignedUrl || null,
     images: {
       ndvi: {
         storage_path: latest.image_storage_path,
@@ -542,6 +569,10 @@ function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgb
       rgb: {
         storage_path: rgbPath,
         signed_url: rgbSignedUrl || null
+      },
+      clouds: {
+        storage_path: cloudMaskPath,
+        signed_url: cloudMaskSignedUrl || null
       }
     }
   };
@@ -634,12 +665,14 @@ exports.handler = async (event) => {
     let sigNdmi = null;
     let sigNdre = null;
     let sigRgb = null;
+    let sigCloudMask = null;
     if (viewRowAdm?.image_storage_path) {
       const signed = await signRadarRow(supabase, viewRowAdm);
       sigNdvi = signed.ndviSignedUrl;
       sigNdmi = signed.ndmiSignedUrl;
       sigNdre = signed.ndreSignedUrl;
       sigRgb = signed.rgbSignedUrl;
+      sigCloudMask = signed.cloudMaskSignedUrl;
     }
 
     return jsonResponse(200, {
@@ -647,7 +680,7 @@ exports.handler = async (event) => {
       admin: true,
       project_id: projectIdAdm,
       owner_user_id: ownerUserId,
-      latest: latestResponse(viewRowAdm, sigNdvi, sigNdmi, sigNdre, sigRgb),
+      latest: latestResponse(viewRowAdm, sigNdvi, sigNdmi, sigNdre, sigRgb, sigCloudMask),
       history: historyAdm,
       history_count: historyAdm.length,
       view_request_id: viewRowAdm ? viewRowAdm.id : null,
@@ -706,12 +739,14 @@ exports.handler = async (event) => {
       let ndmiSignedUrl = null;
       let ndreSignedUrl = null;
       let rgbSignedUrl = null;
+      let cloudMaskSignedUrl = null;
       if (row.image_storage_path) {
         const signed = await signRadarRow(supabase, row);
         signedUrl = signed.ndviSignedUrl;
         ndmiSignedUrl = signed.ndmiSignedUrl;
         ndreSignedUrl = signed.ndreSignedUrl;
         rgbSignedUrl = signed.rgbSignedUrl;
+        cloudMaskSignedUrl = signed.cloudMaskSignedUrl;
       }
       itemsLect.push({
         id,
@@ -736,7 +771,9 @@ exports.handler = async (event) => {
         signed_url: signedUrl,
         ndmi_signed_url: ndmiSignedUrl,
         ndre_signed_url: ndreSignedUrl,
-        rgb_signed_url: rgbSignedUrl
+        rgb_signed_url: rgbSignedUrl,
+        cloud_mask_signed_url: cloudMaskSignedUrl,
+        cloud_stats: meta.cloud_stats || null
       });
     }
     const locSnap =
@@ -916,9 +953,15 @@ exports.handler = async (event) => {
         ndmi_signed_url: signed.ndmiSignedUrl,
         ndre_signed_url: signed.ndreSignedUrl,
         rgb_signed_url: signed.rgbSignedUrl,
+        cloud_mask_signed_url: signed.cloudMaskSignedUrl,
+        cloud_stats: meta.cloud_stats || null,
         has_ndmi: !!(meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path)),
         has_ndre: !!(meta.ndre_storage_path || (meta.images && meta.images.ndre && meta.images.ndre.storage_path)),
-        has_rgb: !!(meta.rgb_storage_path || (meta.images && meta.images.rgb && meta.images.rgb.storage_path))
+        has_rgb: !!(meta.rgb_storage_path || (meta.images && meta.images.rgb && meta.images.rgb.storage_path)),
+        has_cloud_mask: !!(
+          meta.cloud_mask_storage_path ||
+          (meta.images && meta.images.clouds && meta.images.clouds.storage_path)
+        )
       });
     }
 
@@ -1065,12 +1108,14 @@ exports.handler = async (event) => {
     let lastNdmiSignedUrl = null;
     let lastNdreSignedUrl = null;
     let lastRgbSignedUrl = null;
+    let lastCloudMaskSignedUrl = null;
     if (latest?.image_storage_path) {
       const signed = await signRadarRow(supabase, latest);
       lastSignedUrl = signed.ndviSignedUrl;
       lastNdmiSignedUrl = signed.ndmiSignedUrl;
       lastNdreSignedUrl = signed.ndreSignedUrl;
       lastRgbSignedUrl = signed.rgbSignedUrl;
+      lastCloudMaskSignedUrl = signed.cloudMaskSignedUrl;
     }
     const pendingJob = await getPendingPilotJobForStatus(supabase, userId, projectId);
     const lastFailedJob = pendingJob
@@ -1083,7 +1128,14 @@ exports.handler = async (event) => {
       month_key: mk,
       credits: radarCredits.creditsApiPayload(creditsView),
       pricing,
-      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl, lastNdreSignedUrl, lastRgbSignedUrl),
+      latest: latestResponse(
+        latest,
+        lastSignedUrl,
+        lastNdmiSignedUrl,
+        lastNdreSignedUrl,
+        lastRgbSignedUrl,
+        lastCloudMaskSignedUrl
+      ),
       pending_job: pendingJob,
       last_failed_job: lastFailedJob,
       history
@@ -1116,7 +1168,8 @@ exports.handler = async (event) => {
         signed.ndviSignedUrl,
         signed.ndmiSignedUrl,
         signed.ndreSignedUrl,
-        signed.rgbSignedUrl
+        signed.rgbSignedUrl,
+        signed.cloudMaskSignedUrl
       )
     });
   }
@@ -1142,12 +1195,14 @@ exports.handler = async (event) => {
       let ndmiSignedUrl = null;
       let ndreSignedUrl = null;
       let rgbSignedUrl = null;
+      let cloudMaskSignedUrl = null;
       if (row.image_storage_path) {
         const signed = await signRadarRow(supabase, row);
         signedUrl = signed.ndviSignedUrl;
         ndmiSignedUrl = signed.ndmiSignedUrl;
         ndreSignedUrl = signed.ndreSignedUrl;
         rgbSignedUrl = signed.rgbSignedUrl;
+        cloudMaskSignedUrl = signed.cloudMaskSignedUrl;
       }
       const lowCoverage = /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
         String(meta.error_message || '')
@@ -1203,7 +1258,9 @@ exports.handler = async (event) => {
         signed_url: signedUrl,
         ndmi_signed_url: ndmiSignedUrl,
         ndre_signed_url: ndreSignedUrl,
-        rgb_signed_url: rgbSignedUrl
+        rgb_signed_url: rgbSignedUrl,
+        cloud_mask_signed_url: cloudMaskSignedUrl,
+        cloud_stats: meta.cloud_stats || null
       });
     }
     return jsonResponse(200, { ok: true, items });
@@ -1217,12 +1274,14 @@ exports.handler = async (event) => {
   let lastNdmiSignedUrl = null;
   let lastNdreSignedUrl = null;
   let lastRgbSignedUrl = null;
+  let lastCloudMaskSignedUrl = null;
   if (latest?.image_storage_path) {
     const signedLatest = await signRadarRow(supabase, latest);
     lastSignedUrl = signedLatest.ndviSignedUrl;
     lastNdmiSignedUrl = signedLatest.ndmiSignedUrl;
     lastNdreSignedUrl = signedLatest.ndreSignedUrl;
     lastRgbSignedUrl = signedLatest.rgbSignedUrl;
+    lastCloudMaskSignedUrl = signedLatest.cloudMaskSignedUrl;
   }
 
   const polygon = proj.data?.location?.polygon;
@@ -1277,11 +1336,19 @@ exports.handler = async (event) => {
       error: 'already_generated_this_month',
       message: 'Este mes ya hay un Radar para este proyecto. Usa «Ver última» o reintenta con force si debes regenerar.',
       pricing,
-      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl, lastNdreSignedUrl, lastRgbSignedUrl) || {
+      latest: latestResponse(
+        latest,
+        lastSignedUrl,
+        lastNdmiSignedUrl,
+        lastNdreSignedUrl,
+        lastRgbSignedUrl,
+        lastCloudMaskSignedUrl
+      ) || {
         signed_url: lastSignedUrl,
         ndmi_signed_url: lastNdmiSignedUrl,
         ndre_signed_url: lastNdreSignedUrl,
         rgb_signed_url: lastRgbSignedUrl,
+        cloud_mask_signed_url: lastCloudMaskSignedUrl,
         month_key: mk
       }
     });

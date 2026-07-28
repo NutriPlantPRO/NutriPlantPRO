@@ -786,6 +786,7 @@ async function processPilotJob(supabase, requestId, userId) {
     const ndmiStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndmi.png`;
     const ndreStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndre.png`;
     const rgbStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_rgb.png`;
+    const cloudMaskStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_clouds.png`;
 
     const periodStartMeta = isLectura ? String(job.meta.date_start).slice(0, 10) : null;
     const periodEndMeta = isLectura ? String(job.meta.date_end).slice(0, 10) : null;
@@ -863,6 +864,7 @@ async function processPilotJob(supabase, requestId, userId) {
       ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
       ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
       ndre_mean: rendered.ndreMean != null ? rendered.ndreMean : null,
+      cloud_stats: rendered.cloudStats || null,
       lookback_expanded: lookbackExpanded,
       expanded_to: isLectura && lookbackExpanded ? 'mensual' : null,
       search_date_start: searchStartMeta,
@@ -887,6 +889,7 @@ async function processPilotJob(supabase, requestId, userId) {
       ndmi_storage_path: ndmiStoragePath,
       ndre_storage_path: ndreStoragePath,
       rgb_storage_path: rgbStoragePath,
+      cloud_mask_storage_path: cloudMaskStoragePath,
       completed_at: new Date().toISOString(),
       images: {
         ndvi: {
@@ -908,11 +911,16 @@ async function processPilotJob(supabase, requestId, userId) {
           storage_path: rgbStoragePath,
           label: 'RGB',
           description: 'Pilot Copernicus · vista natural del predio'
+        },
+        clouds: {
+          storage_path: cloudMaskStoragePath,
+          label: 'Nubes',
+          description: 'Máscara SCL · nubes, sombras y píxeles no despejados'
         }
       }
     };
 
-    const [upNdvi, upNdmi, upNdre, upRgb] = await Promise.all([
+    const [upNdvi, upNdmi, upNdre, upRgb, upCloudMask] = await Promise.all([
       supabase.storage.from(BUCKET).upload(storagePath, rendered.ndviPng, {
         contentType: 'image/png',
         upsert: true
@@ -928,12 +936,17 @@ async function processPilotJob(supabase, requestId, userId) {
       supabase.storage.from(BUCKET).upload(rgbStoragePath, rendered.rgbPng, {
         contentType: 'image/png',
         upsert: true
+      }),
+      supabase.storage.from(BUCKET).upload(cloudMaskStoragePath, rendered.cloudMaskPng, {
+        contentType: 'image/png',
+        upsert: true
       })
     ]);
     if (upNdvi.error) throw new Error(upNdvi.error.message || 'storage_upload_failed');
     if (upNdmi.error) throw new Error(upNdmi.error.message || 'storage_upload_failed');
     if (upNdre.error) throw new Error(upNdre.error.message || 'storage_upload_failed');
     if (upRgb.error) throw new Error(upRgb.error.message || 'storage_upload_failed');
+    if (upCloudMask.error) throw new Error(upCloudMask.error.message || 'storage_upload_failed');
 
     const { error: updErr } = await supabase
       .from('radar_requests')
@@ -946,9 +959,10 @@ async function processPilotJob(supabase, requestId, userId) {
 
     if (updErr) throw new Error(updErr.message || 'db_update_failed');
 
-    const [signedNdvi, signedNdmi] = await Promise.all([
+    const [signedNdvi, signedNdmi, signedCloudMask] = await Promise.all([
       supabase.storage.from(BUCKET).createSignedUrl(storagePath, 3600),
-      supabase.storage.from(BUCKET).createSignedUrl(ndmiStoragePath, 3600)
+      supabase.storage.from(BUCKET).createSignedUrl(ndmiStoragePath, 3600),
+      supabase.storage.from(BUCKET).createSignedUrl(cloudMaskStoragePath, 3600)
     ]);
 
     return {
@@ -957,6 +971,7 @@ async function processPilotJob(supabase, requestId, userId) {
       storage_path: storagePath,
       signed_url: signedNdvi.data?.signedUrl || null,
       ndmi_signed_url: signedNdmi.data?.signedUrl || null,
+      cloud_mask_signed_url: signedCloudMask.data?.signedUrl || null,
       provider: bundle.provider,
       scene: {
         id: latestScene.itemId,

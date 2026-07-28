@@ -1484,10 +1484,11 @@
       if (key === 'ndmi') return r.ndmi_signed_url || null;
       if (key === 'ndre') return r.ndre_signed_url || null;
       if (key === 'rgb') return r.rgb_signed_url || null;
+      if (key === 'clouds') return r.cloud_mask_signed_url || null;
       return null;
     }
     function miniCard(r, key, label, color) {
-      var omitted = !!r.image_omitted && !(r.signed_url || r.ndmi_signed_url || r.ndre_signed_url || r.rgb_signed_url);
+      var omitted = !!r.image_omitted && !(r.signed_url || r.ndmi_signed_url || r.ndre_signed_url || r.rgb_signed_url || r.cloud_mask_signed_url);
       var incomplete = !omitted && !!(r.image_incomplete || r.error_code === 'radar_incomplete_coverage');
       var url = omitted ? null : miniCardUrl(r, key);
       var metaParts = [];
@@ -1560,6 +1561,11 @@
         scaleLegend('rgb') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'rgb', 'RGB', '#334155'); }).join('') +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#6d28d9;margin:14px 0 4px;">☁️ Nubes y sombras — máscara SCL</div>' +
+        '<div style="font-size:10.5px;color:#64748b;margin:0 0 6px;">Blanco/gris = nubes · morado = sombras · transparente = zona despejada.</div>' +
+        '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
+          rows.map(function (r) { return miniCard(r, 'clouds', 'Nubes SCL', '#6d28d9'); }).join('') +
         '</div>' +
         '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* mes = quincena ampliada al mes calendario solo para la imagen (clima/riego = periodo de 15 d). El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.' +
           (skippedCount
@@ -1700,11 +1706,13 @@
       if (it.ndmi_signed_url) row.ndmi_signed_url = it.ndmi_signed_url;
       if (it.ndre_signed_url) row.ndre_signed_url = it.ndre_signed_url;
       if (it.rgb_signed_url) row.rgb_signed_url = it.rgb_signed_url;
+      if (it.cloud_mask_signed_url) row.cloud_mask_signed_url = it.cloud_mask_signed_url;
       if (row.image_omitted) {
         row.signed_url = null;
         row.ndmi_signed_url = null;
         row.ndre_signed_url = null;
         row.rgb_signed_url = null;
+        row.cloud_mask_signed_url = null;
       }
       if (it.error_message) row.error_message = it.error_message;
       if (it.error_code) row.error_code = it.error_code;

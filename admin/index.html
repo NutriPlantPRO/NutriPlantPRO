@@ -13349,6 +13349,7 @@
                     var ndmiUrl = it.ndmi_signed_url || '';
                     var ndreUrl = it.ndre_signed_url || '';
                     var rgbUrl = it.rgb_signed_url || '';
+                    var cloudUrl = it.cloud_mask_signed_url || '';
                     var thumb =
                         ndviUrl
                             ? '<img src="' +
@@ -13385,7 +13386,8 @@
                     var layerBtns =
                         layerBtn(ndmiUrl, 'NDMI', '#bae6fd', '#f0f9ff', '#0369a1') +
                         layerBtn(ndreUrl, 'NDRE', '#99f6e4', '#f0fdfa', '#0f766e') +
-                        layerBtn(rgbUrl, 'RGB', '#cbd5e1', '#f8fafc', '#334155');
+                        layerBtn(rgbUrl, 'RGB', '#cbd5e1', '#f8fafc', '#334155') +
+                        layerBtn(cloudUrl, '☁️ Nubes', '#ddd6fe', '#f5f3ff', '#6d28d9');
 
                     return (
                         '<article style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;display:flex;flex-direction:column;gap:8px;min-width:0;">' +
@@ -13581,6 +13583,9 @@
             var rgb = latest && (latest.rgb_signed_url || (latest.images && latest.images.rgb && latest.images.rgb.signed_url))
                 ? (latest.rgb_signed_url || latest.images.rgb.signed_url)
                 : '';
+            var cloudMask = latest && (latest.cloud_mask_signed_url || (latest.images && latest.images.clouds && latest.images.clouds.signed_url))
+                ? (latest.cloud_mask_signed_url || latest.images.clouds.signed_url)
+                : '';
             var locationSnapshot = meta.location_snapshot && typeof meta.location_snapshot === 'object'
                 ? meta.location_snapshot
                 : null;
@@ -13590,6 +13595,7 @@
                 location: locationSnapshot,
                 footprints: sceneFootprints,
                 ndviUrl: ndvi,
+                cloudMaskUrl: cloudMask,
                 sceneDates: Array.isArray(meta.scene_dates) ? meta.scene_dates : [],
                 dateStart: meta.date_start || null,
                 dateEnd: meta.date_end || null,
@@ -13657,6 +13663,15 @@
                   rgb.replace(/"/g, '&quot;') +
                   '" alt="RGB" data-full-src="' + rgb.replace(/"/g, '&quot;') + '" data-zoom-title="RGB — vista natural" data-zoom-sub="Radar del cultivo · clic en ✕ o fuera para cerrar" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
                 : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#334155;margin-bottom:6px;font-size:13px;">RGB — natural</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen RGB (regenere Pilot para capas nuevas).</p></div>';
+            var cloudStats = meta.cloud_stats || {};
+            var cloudStatsLabel = cloudStats.cloud_pct != null
+                ? ' · ' + esc(String(cloudStats.cloud_pct)) + '% de nube sobre el predio'
+                : '';
+            var blockCloud = cloudMask
+                ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#6d28d9;margin-bottom:6px;font-size:13px;">☁️ Nubes SCL' + cloudStatsLabel + '</div><img src="' +
+                  cloudMask.replace(/"/g, '&quot;') +
+                  '" alt="Máscara de nubes SCL" data-full-src="' + cloudMask.replace(/"/g, '&quot;') + '" data-zoom-title="Nubes y sombras SCL" data-zoom-sub="Blanco/gris = nubes · morado = sombra" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #ddd6fe;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
+                : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#6d28d9;margin-bottom:6px;font-size:13px;">☁️ Nubes SCL</div><p style="color:#94a3b8;font-size:13px;margin:0;">Disponible en nuevas generaciones Sentinel.</p></div>';
 
             modal.innerHTML =
                 '<div style="background:#fff;border-radius:12px;width:100%;max-width:960px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">' +
@@ -13674,6 +13689,7 @@
                 blockNdmi +
                 blockNdre +
                 blockRgb +
+                blockCloud +
                 '</div>' +
                 owner +
                 '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">' + esc(String(sourceLabel)) + '. Valores relativos al polígono (RGB = color natural).</p></div></div>';
@@ -13865,6 +13881,13 @@
                         [Number(b.north), Number(b.east)]
                     ], { opacity: 0.72, interactive: true }).addTo(__radarSentinelMap);
                     overlays['NDVI'] = ndviLayer;
+                }
+                if (view.cloudMaskUrl && [b.south, b.west, b.north, b.east].every(function(n) { return Number.isFinite(Number(n)); })) {
+                    var cloudMaskLayer = L.imageOverlay(view.cloudMaskUrl, [
+                        [Number(b.south), Number(b.west)],
+                        [Number(b.north), Number(b.east)]
+                    ], { opacity: 0.82, interactive: true });
+                    overlays['☁️ Nubes SCL'] = cloudMaskLayer;
                 }
                 L.control.layers({ 'Calles': streets, 'Satélite': satellite }, overlays, { collapsed: false }).addTo(__radarSentinelMap);
                 var initialLayer = __radarSentinelFootprintLayer || __radarSentinelProjectLayer;
@@ -15028,6 +15051,7 @@
                     const loc = meta.location_snapshot || {};
                     const footprints = Array.isArray(meta.scene_footprints) ? meta.scene_footprints : [];
                     const ndviUrl = latest.signed_url || '';
+                    const cloudMaskUrl = latest.cloud_mask_signed_url || '';
                     const layers = L.featureGroup();
                     const bounds = loc.bounds || {};
 
@@ -15039,6 +15063,16 @@
                             [Number(bounds.north), Number(bounds.east)]
                         ], { opacity: 0.72, interactive: true })
                             .bindPopup('<strong>NDVI Sentinel‑2</strong><br>Última imagen procesada del predio')
+                            .addTo(layers);
+                    }
+                    if (cloudMaskUrl && [bounds.south, bounds.west, bounds.north, bounds.east].every(function(n) {
+                        return Number.isFinite(Number(n));
+                    })) {
+                        L.imageOverlay(cloudMaskUrl, [
+                            [Number(bounds.south), Number(bounds.west)],
+                            [Number(bounds.north), Number(bounds.east)]
+                        ], { opacity: 0.82, interactive: true })
+                            .bindPopup('<strong>Nubes SCL</strong><br>Blanco/gris: nubes · Morado: sombras')
                             .addTo(layers);
                     }
 
@@ -15084,6 +15118,7 @@
                         ? view.sceneDates.map(function(d) { return String(d).slice(0, 10); }).join(', ')
                         : ([view.dateStart, view.dateEnd].filter(Boolean).join(' → ') || 'No disponible');
                     const estimated = getEstimatedSentinelPassDates(view, 4);
+                    const cloudStats = meta.cloud_stats || {};
                     globalMapSentinelInfoControl = L.control({ position: 'topright' });
                     globalMapSentinelInfoControl.onAdd = function() {
                         const panel = L.DomUtil.create('div');
@@ -15093,6 +15128,9 @@
                             '<strong style="color:#1d4ed8;">🛰️ Sentinel‑2 · predio seleccionado</strong>' +
                             '<button type="button" onclick="clearSentinelFromGlobalMap()" style="border:0;background:#e2e8f0;border-radius:5px;cursor:pointer;color:#475569;">✕</button></div>' +
                             '<div style="margin-top:5px;"><strong>Captura:</strong> ' + escRadarAdminHtml(captures) + '</div>' +
+                            (cloudStats.cloud_pct != null
+                                ? '<div style="margin-top:4px;color:#6d28d9;"><strong>Nubes sobre el predio:</strong> ' + escRadarAdminHtml(String(cloudStats.cloud_pct)) + '% · sombras ' + escRadarAdminHtml(String(cloudStats.shadow_pct || 0)) + '%</div>'
+                                : '') +
                             (estimated.length
                                 ? '<div style="margin-top:4px;color:#92400e;"><strong>Próximas estimadas:</strong><br>' +
                                   estimated.map(function(p) { return escRadarAdminHtml(p.label); }).join(' · ') + '</div>'

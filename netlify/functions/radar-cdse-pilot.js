@@ -358,16 +358,19 @@ exports.handler = async (event) => {
     let ndmiDataUrl = null;
     let ndreDataUrl = null;
     let rgbDataUrl = null;
+    let cloudMaskDataUrl = null;
     const latestScene = bundle.scenes[0] || {};
     let request = null;
     let storagePath = null;
     let ndmiStoragePath = null;
     let ndreStoragePath = null;
     let rgbStoragePath = null;
+    let cloudMaskStoragePath = null;
     let signedUrl = null;
     let ndmiSignedUrl = null;
     let ndreSignedUrl = null;
     let rgbSignedUrl = null;
+    let cloudMaskSignedUrl = null;
     const locationSnapshot = buildLocationSnapshot(projectRow?.data?.location, polygon);
     const meta = {
       pilot: true,
@@ -385,11 +388,21 @@ exports.handler = async (event) => {
       cloud_covers: bundle.cloudCovers || null,
       avg_cloud_cover: bundle.avgCloudCover != null ? bundle.avgCloudCover : null,
       scene_dates: bundle.sceneDates || null,
+      scene_footprints: Array.isArray(bundle.scenes)
+        ? bundle.scenes.map((scene) => ({
+            id: scene.itemId || null,
+            datetime: scene.datetime || null,
+            cloud_cover: scene.cloudCover != null ? Number(scene.cloudCover) : null,
+            bbox: Array.isArray(scene.footprintBbox) ? scene.footprintBbox : null,
+            geometry: scene.footprintGeometry || null
+          }))
+        : null,
       coverage: rendered.coverage || null,
       valid_pct: rendered.coverage?.valid_pct != null ? rendered.coverage.valid_pct : null,
       ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
       ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
       ndre_mean: rendered.ndreMean != null ? rendered.ndreMean : null,
+      cloud_stats: rendered.cloudStats || null,
       scl_masked: true,
       fallback_tier: bundle.fallbackTier || null,
       location_snapshot: locationSnapshot,
@@ -408,21 +421,25 @@ exports.handler = async (event) => {
       ndmiStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_ndmi.png`;
       ndreStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_ndre.png`;
       rgbStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_rgb.png`;
+      cloudMaskStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_clouds.png`;
       meta.ndmi_storage_path = ndmiStoragePath;
       meta.ndre_storage_path = ndreStoragePath;
       meta.rgb_storage_path = rgbStoragePath;
+      meta.cloud_mask_storage_path = cloudMaskStoragePath;
       meta.images = {
         ndvi: { storage_path: storagePath, label: 'NDVI', description: 'Pilot Copernicus · vigor relativo del predio' },
         ndmi: { storage_path: ndmiStoragePath, label: 'NDMI', description: 'Pilot Copernicus · humedad relativa del dosel' },
         ndre: { storage_path: ndreStoragePath, label: 'NDRE', description: 'Pilot Copernicus · clorofila y estado del dosel' },
-        rgb: { storage_path: rgbStoragePath, label: 'RGB', description: 'Pilot Copernicus · vista natural del predio' }
+        rgb: { storage_path: rgbStoragePath, label: 'RGB', description: 'Pilot Copernicus · vista natural del predio' },
+        clouds: { storage_path: cloudMaskStoragePath, label: 'Nubes', description: 'Máscara SCL · nubes y sombras' }
       };
 
-      const [upNdvi, upNdmi, upNdre, upRgb] = await Promise.all([
+      const [upNdvi, upNdmi, upNdre, upRgb, upCloudMask] = await Promise.all([
         supabase.storage.from(BUCKET).upload(storagePath, rendered.ndviPng, { contentType: 'image/png', upsert: true }),
         supabase.storage.from(BUCKET).upload(ndmiStoragePath, rendered.ndmiPng, { contentType: 'image/png', upsert: true }),
         supabase.storage.from(BUCKET).upload(ndreStoragePath, rendered.ndrePng, { contentType: 'image/png', upsert: true }),
-        supabase.storage.from(BUCKET).upload(rgbStoragePath, rendered.rgbPng, { contentType: 'image/png', upsert: true })
+        supabase.storage.from(BUCKET).upload(rgbStoragePath, rendered.rgbPng, { contentType: 'image/png', upsert: true }),
+        supabase.storage.from(BUCKET).upload(cloudMaskStoragePath, rendered.cloudMaskPng, { contentType: 'image/png', upsert: true })
       ]);
       if (upNdvi.error) {
         return jsonResponse(500, { error: 'storage_upload_failed', message: upNdvi.error.message });
@@ -435,6 +452,9 @@ exports.handler = async (event) => {
       }
       if (upRgb.error) {
         return jsonResponse(500, { error: 'storage_upload_failed', message: upRgb.error.message });
+      }
+      if (upCloudMask.error) {
+        return jsonResponse(500, { error: 'storage_upload_failed', message: upCloudMask.error.message });
       }
 
       const { data: insRow, error: insErr } = await supabase
@@ -467,22 +487,25 @@ exports.handler = async (event) => {
         meta.credits_from_bonus = chargedSync.fromBonus;
       }
 
-      const [signedNdvi, signedNdmi, signedNdre, signedRgb] = await Promise.all([
+      const [signedNdvi, signedNdmi, signedNdre, signedRgb, signedCloudMask] = await Promise.all([
         supabase.storage.from(BUCKET).createSignedUrl(storagePath, 3600),
         supabase.storage.from(BUCKET).createSignedUrl(ndmiStoragePath, 3600),
         supabase.storage.from(BUCKET).createSignedUrl(ndreStoragePath, 3600),
-        supabase.storage.from(BUCKET).createSignedUrl(rgbStoragePath, 3600)
+        supabase.storage.from(BUCKET).createSignedUrl(rgbStoragePath, 3600),
+        supabase.storage.from(BUCKET).createSignedUrl(cloudMaskStoragePath, 3600)
       ]);
       signedUrl = signedNdvi.data?.signedUrl || null;
       ndmiSignedUrl = signedNdmi.data?.signedUrl || null;
       ndreSignedUrl = signedNdre.data?.signedUrl || null;
       rgbSignedUrl = signedRgb.data?.signedUrl || null;
+      cloudMaskSignedUrl = signedCloudMask.data?.signedUrl || null;
     } else {
       meta.note = 'Mediana 45 d + SCL; no guardado porque no se envió project_id.';
       ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
       ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
       ndreDataUrl = 'data:image/png;base64,' + rendered.ndrePng.toString('base64');
       rgbDataUrl = 'data:image/png;base64,' + rendered.rgbPng.toString('base64');
+      cloudMaskDataUrl = 'data:image/png;base64,' + rendered.cloudMaskPng.toString('base64');
     }
 
     return jsonResponse(200, {
@@ -499,10 +522,12 @@ exports.handler = async (event) => {
       ndmi_signed_url: ndmiSignedUrl,
       ndre_signed_url: ndreSignedUrl,
       rgb_signed_url: rgbSignedUrl,
+      cloud_mask_signed_url: cloudMaskSignedUrl,
       ndvi_data_url: ndviDataUrl,
       ndmi_data_url: ndmiDataUrl,
       ndre_data_url: ndreDataUrl,
       rgb_data_url: rgbDataUrl,
+      cloud_mask_data_url: cloudMaskDataUrl,
       meta
     });
   } catch (e) {

@@ -352,7 +352,7 @@ async function readSceneIndices(bandUrls, bbox4326, outW, outH) {
     g: reflectanceLayer(b03, scl.data, scl.noData),
     b: reflectanceLayer(b02, scl.data, scl.noData)
   };
-  return { ndvi, ndmi, ndre, rgb };
+  return { ndvi, ndmi, ndre, rgb, scl };
 }
 
 function stretchChannelToByte(values, width, height, polygon, bbox4326) {
@@ -426,6 +426,91 @@ async function rgbToPngBuffer(rLayer, gLayer, bLayer, width, height, polygon, bb
   }
   const buffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
   return { buffer, coverage, vis: { style: 'true_color_p2_p98', scale: 'predio' } };
+}
+
+function aggregateSclClassAtPixel(sclLayers, index) {
+  const classes = [];
+  for (const layer of sclLayers) {
+    const raw = layer?.data?.[index];
+    if (raw == null || !Number.isFinite(raw) || raw === layer.noData) continue;
+    const value = Math.round(raw);
+    if (!SCL_BAD.has(value)) return 0;
+    classes.push(value);
+  }
+  if (!classes.length) return 1;
+  if (classes.includes(9)) return 9;
+  if (classes.includes(8)) return 8;
+  if (classes.includes(10)) return 10;
+  if (classes.includes(3)) return 3;
+  if (classes.includes(11)) return 11;
+  if (classes.includes(6)) return 6;
+  return classes[0];
+}
+
+async function sclCloudMaskToPngBuffer(sclLayers, width, height, polygon, bbox4326) {
+  const rgba = Buffer.alloc(width * height * 4);
+  const stats = {
+    polygon_pixels: 0,
+    clear_pixels: 0,
+    cloud_pixels: 0,
+    shadow_pixels: 0,
+    snow_pixels: 0,
+    other_masked_pixels: 0
+  };
+  const colors = {
+    3: [124, 58, 237, 205],
+    6: [37, 99, 235, 165],
+    8: [203, 213, 225, 205],
+    9: [255, 255, 255, 230],
+    10: [148, 163, 184, 190],
+    11: [34, 211, 238, 210],
+    other: [71, 85, 105, 180]
+  };
+
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const o = i * 4;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      stats.polygon_pixels += 1;
+      const sclClass = aggregateSclClassAtPixel(sclLayers, i);
+      if (sclClass === 0) {
+        stats.clear_pixels += 1;
+        continue;
+      }
+      let color = colors.other;
+      if (sclClass === 8 || sclClass === 9 || sclClass === 10) {
+        stats.cloud_pixels += 1;
+        color = colors[sclClass];
+      } else if (sclClass === 3) {
+        stats.shadow_pixels += 1;
+        color = colors[3];
+      } else if (sclClass === 11) {
+        stats.snow_pixels += 1;
+        color = colors[11];
+      } else {
+        stats.other_masked_pixels += 1;
+        color = colors[sclClass] || colors.other;
+      }
+      rgba[o] = color[0];
+      rgba[o + 1] = color[1];
+      rgba[o + 2] = color[2];
+      rgba[o + 3] = color[3];
+    }
+  }
+
+  const total = Math.max(stats.polygon_pixels, 1);
+  stats.cloud_pct = Math.round((stats.cloud_pixels / total) * 1000) / 10;
+  stats.shadow_pct = Math.round((stats.shadow_pixels / total) * 1000) / 10;
+  stats.obscured_pct =
+    Math.round(
+      ((stats.cloud_pixels + stats.shadow_pixels + stats.snow_pixels + stats.other_masked_pixels) /
+        total) *
+        1000
+    ) / 10;
+  const buffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  return { buffer, stats };
 }
 
 function pointInPolygon(lat, lng, polygon) {
@@ -519,18 +604,20 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
   const rgbRLayers = [];
   const rgbGLayers = [];
   const rgbBLayers = [];
+  const sclLayers = [];
 
   for (const scene of scenes) {
     if (!scene.bandUrls) {
       throw new Error('Escena sin bandUrls');
     }
-    const { ndvi, ndmi, ndre, rgb } = await readSceneIndices(scene.bandUrls, bbox4326, outW, outH);
+    const { ndvi, ndmi, ndre, rgb, scl } = await readSceneIndices(scene.bandUrls, bbox4326, outW, outH);
     ndviLayers.push(ndvi);
     ndmiLayers.push(ndmi);
     ndreLayers.push(ndre);
     rgbRLayers.push(rgb.r);
     rgbGLayers.push(rgb.g);
     rgbBLayers.push(rgb.b);
+    sclLayers.push(scl);
   }
 
   const ndvi = scenes.length === 1 ? ndviLayers[0] : medianPerPixel(ndviLayers);
@@ -558,6 +645,13 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
     requireCoverage: false,
     label: 'RGB'
   });
+  const cloudMaskRendered = await sclCloudMaskToPngBuffer(
+    sclLayers,
+    outW,
+    outH,
+    polygon,
+    bbox4326
+  );
 
   const ndviMean = meanPolygonValid(ndvi, outW, outH, polygon, bbox4326);
   const ndmiMean = meanPolygonValid(ndmi, outW, outH, polygon, bbox4326);
@@ -570,6 +664,8 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
     ndmiPng: ndmiRendered.buffer,
     ndrePng: ndreRendered.buffer,
     rgbPng: rgbRendered.buffer,
+    cloudMaskPng: cloudMaskRendered.buffer,
+    cloudStats: cloudMaskRendered.stats,
     sceneCount: scenes.length,
     sclMasked: true,
     composite: scenes.length > 1,

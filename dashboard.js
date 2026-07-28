@@ -1674,6 +1674,7 @@ function sectionTemplate(name) {
               <option value="ndmi">NDMI humedad del dosel</option>
               <option value="ndre">NDRE clorofila / dosel</option>
               <option value="rgb">RGB vista natural</option>
+              <option value="clouds">☁️ Nubes y sombras</option>
             </select>
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
