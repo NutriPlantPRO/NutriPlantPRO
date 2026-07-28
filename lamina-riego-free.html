@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260728g"></script>
+  <script src="assets/np-units-core.js?v=20260728g"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728g"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260728a"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Lámina de riego y balance hídrico — NutriPlant PRO</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -225,14 +231,14 @@
           <div class="field-box">
             <label class="irr-manual-opt" id="irr-label-manual-et0" for="irr-use-manual-et0">
               <input type="checkbox" id="irr-use-manual-et0" onchange="irrFreeUpdate()" />
-              <span>Usar mi ETo del periodo (mm)</span>
+              <span>Usar mi ETo del periodo (<span data-np-unit-label="water_depth">mm</span>)</span>
             </label>
             <input type="number" id="irr-et0-manual" min="0" step="0.1" placeholder="Acumulado del periodo" oninput="irrFreeUpdate()" />
           </div>
           <div class="field-box">
             <label class="irr-manual-opt" id="irr-label-manual-rain" for="irr-use-manual-rain">
               <input type="checkbox" id="irr-use-manual-rain" onchange="irrFreeUpdate()" />
-              <span>Usar mi lluvia (mm)</span>
+              <span>Usar mi lluvia (<span data-np-unit-label="water_depth">mm</span>)</span>
             </label>
             <input type="number" id="irr-rain-manual" min="0" step="0.1" placeholder="Acumulado del periodo" oninput="irrFreeUpdate()" />
             <label class="irr-manual-opt irr-manual-opt--sub" id="irr-label-macro-tunnel" for="irr-macro-tunnel">
@@ -260,18 +266,18 @@
             <label>Riego en franja regada (periodo)</label>
             <div class="irr-riego-row">
               <input id="irr-applied" type="number" min="0" step="0.1" placeholder="Volumen en franja" oninput="irrFreeUpdate()" aria-label="Riego aplicado en franja (m³)" />
-              <span class="irr-unit-badge" aria-hidden="true">m³</span>
+              <span class="irr-unit-badge" data-np-unit-label="volume" aria-hidden="true">m³</span>
               <input type="hidden" id="irr-unit" value="m3" />
             </div>
             <p class="field-hint">Volumen total aplicado en la <strong>zona humedecida</strong> (1 o 7 días). Indica <strong>Superficie regada</strong> para el balance; la app calcula la lámina en mm en los resultados.</p>
           </div>
           <div class="field-box">
-            <label>Superficie del cultivo (ha)</label>
+            <label>Superficie del cultivo (<span data-np-unit-label="area">ha</span>)</label>
             <input id="irr-crop-area" type="number" min="0" step="0.01" value="1" oninput="irrFreeUpdate()" />
             <p class="field-hint">Área total del cultivo (ETc / m³).</p>
           </div>
           <div class="field-box field-box--green">
-            <label>Superficie regada (ha)</label>
+            <label>Superficie regada (<span data-np-unit-label="area">ha</span>)</label>
             <input id="irr-area" type="number" min="0" step="0.01" placeholder="Franja humedecida" oninput="irrFreeUpdate()" />
             <p class="field-hint">Zona humedecida (goteo/macrotúnel). Vacío = misma que cultivo.</p>
           </div>
@@ -315,9 +321,23 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=202606242300"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=20260728a"></script>
   <script src="assets/np-soil-water-bridge.js?v=202606242400"></script>
   <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    window.NpWaterClimateUI.init({
+      fields: {
+        'irr-et0-manual': 'water_depth',
+        'irr-rain-manual': 'water_depth',
+        'irr-applied': 'volume',
+        'irr-crop-area': 'area',
+        'irr-area': 'area'
+      },
+      refresh: function () {
+        if (typeof irrFreeUpdate === 'function') irrFreeUpdate();
+      }
+    });
+  </script>
   <script>
     var irrRolling = null;
     var irrPeriodDays = 1;
@@ -366,7 +386,7 @@
     }
 
     function irrFreeGetPersistState() {
-      var o = window.NpFreePersist.collectIds(IRR_PERSIST_IDS);
+      var o = window.NpWaterClimateUI.snapshot(IRR_PERSIST_IDS);
       o.periodDays = irrPeriodDays;
       if (irrRolling) o.rolling = irrRolling;
       return o;
@@ -376,7 +396,9 @@
       var modeEl = document.getElementById('irr-soil-mode');
       var m3El = document.getElementById('irr-soil-m3');
       var mode = modeEl && modeEl.value ? modeEl.value : null;
-      var m3 = m3El && m3El.value !== '' ? parseFloat(m3El.value) : null;
+      var m3 = m3El && m3El.value !== ''
+        ? window.NpWaterClimateUI.read(m3El, 'volume')
+        : null;
       return {
         soilStorageMode: mode === 'deficit' || mode === 'surplus' ? mode : null,
         soilStorageM3: Number.isFinite(m3) && m3 > 0 ? m3 : null
@@ -394,6 +416,9 @@
           mode: soil.soilStorageMode || '',
           m3: soil.soilStorageM3
         });
+      }
+      if (window.NpWaterClimateUI && document.getElementById('irr-soil-m3')) {
+        window.NpWaterClimateUI.bindFields({ 'irr-soil-m3': 'volume' });
       }
     }
 
@@ -428,8 +453,20 @@
 
     function irrFreeApplyPersistState(d) {
       if (!d) return;
-      window.NpFreePersist.applyIds(d, IRR_PERSIST_IDS);
-      irrFreeMigrateLegacyIrrigationUnit();
+      if (d['irr-unit'] === 'mm' && window.NpIrrBalance) {
+        var cropLegacy = Number(d['irr-crop-area']) || 1;
+        var stripLegacy = Number(d['irr-area']) || cropLegacy;
+        d['irr-applied'] = window.NpIrrBalance.migrateIrrigationValueToM3(
+          d['irr-applied'],
+          'mm',
+          stripLegacy,
+          cropLegacy
+        );
+        d['irr-unit'] = 'm3';
+      }
+      window.NpWaterClimateUI.applySnapshot(d, IRR_PERSIST_IDS);
+      var persistedUnit = document.getElementById('irr-unit');
+      if (persistedUnit) persistedUnit.value = 'm3';
       if (d.rolling && typeof d.rolling === 'object') {
         irrRolling = d.rolling;
         irrRestoreClimateMeta();
@@ -534,15 +571,15 @@
         cropName: (document.getElementById('irr-crop').value || '').trim(),
         kc: Number.isFinite(kc) ? kc : null,
         periodDays: irrPeriodDays,
-        irrigationValue: document.getElementById('irr-applied').value !== '' ? parseFloat(document.getElementById('irr-applied').value) : null,
+        irrigationValue: window.NpWaterClimateUI.read('irr-applied', 'volume'),
         irrigationUnit: 'm3',
-        cropAreaHa: document.getElementById('irr-crop-area').value !== '' ? parseFloat(document.getElementById('irr-crop-area').value) : 1,
-        irrigatedAreaHa: document.getElementById('irr-area').value !== '' ? parseFloat(document.getElementById('irr-area').value) : null,
+        cropAreaHa: window.NpWaterClimateUI.read('irr-crop-area', 'area') || 1,
+        irrigatedAreaHa: window.NpWaterClimateUI.read('irr-area', 'area'),
         rootReachPct: document.getElementById('irr-root-reach').value !== '' ? parseFloat(document.getElementById('irr-root-reach').value) : null,
         useManualEt0: document.getElementById('irr-use-manual-et0').checked,
-        manualEt0: document.getElementById('irr-et0-manual').value !== '' ? parseFloat(document.getElementById('irr-et0-manual').value) : null,
+        manualEt0: window.NpWaterClimateUI.read('irr-et0-manual', 'water_depth'),
         useManualRain: document.getElementById('irr-use-manual-rain').checked,
-        manualRain: document.getElementById('irr-rain-manual').value !== '' ? parseFloat(document.getElementById('irr-rain-manual').value) : null,
+        manualRain: window.NpWaterClimateUI.read('irr-rain-manual', 'water_depth'),
         macroTunnelNoRain: document.getElementById('irr-macro-tunnel').checked,
         soilStorageMode: soil.soilStorageMode,
         soilStorageM3: soil.soilStorageM3
@@ -555,7 +592,7 @@
       if (reach == null || reach < 10) { alert('Indica % raíces en superficie (10–100).'); return; }
       var cropHa = st.cropAreaHa || 1;
       var suggested = Math.round(cropHa * (reach / 100) * 100) / 100;
-      document.getElementById('irr-area').value = String(suggested);
+      window.NpWaterClimateUI.write('irr-area', suggested, 'area');
       irrFreeUpdate();
     }
 
@@ -582,11 +619,11 @@
 
       document.getElementById('irr-metric-et0').innerHTML =
         '<div style="font-size:12px;color:#64748b;">ETo activa (' + periodLabel + ')</div>' +
-        '<div style="font-size:18px;font-weight:700;">' + (res.et0 != null ? NB.fmtMm(res.et0) + (res.periodDays === 1 ? ' mm/día' : ' mm') : '—') +
+        '<div style="font-size:18px;font-weight:700;">' + (res.et0 != null ? window.NpWaterClimateUI.resultFromSI(res.et0, 'water_depth', 2) + (res.periodDays === 1 ? '/' + window.NpWaterClimateUI.t('día', 'day') : '') : '—') +
         NB.sourceBadge(res.et0Source) + '</div>';
       document.getElementById('irr-metric-rain').innerHTML =
         '<div style="font-size:12px;color:#64748b;">Lluvia activa (' + periodLabel + ')</div>' +
-        '<div style="font-size:18px;font-weight:700;">' + (res.rain != null ? NB.fmtMm(res.rain) + ' mm' : '—') +
+        '<div style="font-size:18px;font-weight:700;">' + (res.rain != null ? window.NpWaterClimateUI.resultFromSI(res.rain, 'water_depth', 2) : '—') +
         NB.sourceBadge(res.rainSource) + '</div>';
 
       var manualHint = document.getElementById('irr-manual-block-hint');

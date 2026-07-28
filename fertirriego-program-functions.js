@@ -2,6 +2,15 @@
 // FERTIRRIEGO - PROGRAMA SEMANAL (Resumen + Semanas)
 // =====================================================
 
+function fertProgUI() { return window.NpFertigationUI || null; }
+function fertProgT(key, es) { const ui = fertProgUI(); return ui ? ui.t(key, es) : es; }
+function fertProgUnit(kind, fallback) { const ui = fertProgUI(); return ui ? ui.unit(kind) : fallback; }
+function fertProgInputFromSI(value, kind) { const ui = fertProgUI(); return ui ? ui.inputFromSI(value, kind) : String(value); }
+function fertProgResultFromSI(value, kind) { const ui = fertProgUI(); return ui ? ui.resultFromSI(value, kind) : fertiNum(value); }
+function fertProgToSI(value, kind) { const ui = fertProgUI(); return ui ? ui.toSI(value, kind) : Number(value); }
+function fertProgStage(name) { const ui = fertProgUI(); return ui ? ui.stageName(name) : name; }
+function fertProgMaterial(name) { const ui = fertProgUI(); return ui ? ui.materialName(name) : name; }
+
 // DB básica de fertilizantes solubles (porcentaje en masa)
 // Nota: En sulfatos use SO4 = % masa del ion SO₄²⁻ en el producto; en hidroponía S elemental = SO4/3 (32/96).
 const FERT_SOLUBLES_DB = [
@@ -116,6 +125,16 @@ function fertiUnifiedMerge(updater){
   } catch(e){ console.warn('fertiUnifiedMerge error', e); }
 }
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('np:prefs-changed', function () {
+    // fertiWeeks, waterContribution y chartWaterByStage permanecen en SI;
+    // solo se vuelve a proyectar la presentación.
+    try { renderFertiWeeks(); } catch {}
+    try { updateFertiSummary(); } catch {}
+    try { renderFertiChartWaterByStageInputs(); renderFertiChartsInsights(); } catch {}
+  });
+}
+
 function isFertiMicroNutrient(key) { return ['Fe','Mn','B','Zn','Cu','Mo','Si','SiO2'].indexOf(key) !== -1; }
 
 /** Una sola columna azufre: óxido = kg SO₄ eq.; elemental = kg S (S + SO₄/ factor). */
@@ -202,11 +221,15 @@ function setFertiNutrientView(view) {
 function updateFertiProgramTimeTitle() {
   const titleEl = document.getElementById('fertiProgramTitle');
   if (titleEl) {
-    titleEl.textContent = `📅 Programa ${fertiTimeUnit === 'mes' ? 'Mensual' : 'Semanal'}`;
+    titleEl.textContent = fertiTimeUnit === 'mes'
+      ? fertProgT('monthly_program', '📅 Programa Mensual')
+      : fertProgT('weekly_program', '📅 Programa Semanal');
   }
   const countLabelEl = document.getElementById('fertiTotalApplicationsLabel');
   if (countLabelEl) {
-    countLabelEl.textContent = fertiTimeUnit === 'mes' ? 'Número de Meses:' : 'Número de Semanas:';
+    countLabelEl.textContent = fertiTimeUnit === 'mes'
+      ? fertProgT('months', 'Número de Meses:')
+      : fertProgT('weeks', 'Número de Semanas:');
   }
 }
 
@@ -682,7 +705,7 @@ function onFertiColumnMaterialChange(colId, materialId) {
 function onWeekKgInput(weekId, colId, kg) {
   const week = fertiWeeks.find(w => w.id === weekId); if (!week) return;
   if (!week.kgByCol) week.kgByCol = {};
-  week.kgByCol[colId] = parseFloat(kg) || 0;
+  week.kgByCol[colId] = fertProgToSI(parseFloat(kg) || 0, 'dose_mass_area');
   computeWeekTotals(week);
   updateFertiSummary();
   markFertiProgDirty();
@@ -707,7 +730,7 @@ function syncFertiProgramFromDOM() {
     const week = fertiWeeks.find(w => w.id === weekId);
     if (!week) return;
     if (!week.kgByCol) week.kgByCol = {};
-    week.kgByCol[colId] = parseFloat(input.value) || 0;
+    week.kgByCol[colId] = fertProgToSI(parseFloat(input.value) || 0, 'dose_mass_area');
     touchedWeeks.add(weekId);
   });
   touchedWeeks.forEach(weekId => {
@@ -764,7 +787,7 @@ function renderFertiWeeks() {
   // Encabezados de columnas de fertilizante (select compacto + botón X)
   const fertColsHeader = fertiColumns.map(c => {
     const m = materials.find(m => m.id === c.materialId);
-    const currentName = (m?.name) || 'Selecciona…';
+    const currentName = fertProgMaterial((m?.name) || fertProgT('select', 'Selecciona…'));
     const displayNamePlain = currentName + (m && m.unit === 'L' ? ' (L/ha)' : '');
     const displayNameHtml = currentName + (m && m.unit === 'L' ? ' <span class="unit-lha">(L/ha)</span>' : '');
     return `
@@ -772,7 +795,7 @@ function renderFertiWeeks() {
             <button title="Eliminar columna" class="ferti-col-remove-btn" onclick="removeFertiColumn('${c.id}')">✕</button>
             <div class="fert-col-title" title="${displayNamePlain}">${displayNameHtml}</div>
             <select class="ferti-col-select" onchange="onFertiColumnMaterialChange('${c.id}', this.value)">
-              <option value="">Selecciona…</option>
+              <option value="">${fertProgT('select', 'Selecciona…')}</option>
               ${buildOptions(c.materialId)}
             </select>
           </th>`;
@@ -796,23 +819,23 @@ function renderFertiWeeks() {
             <td class="ferti-stage-cell">
               <div style="display:flex; align-items:center; gap:6px;">
                 <select onchange="window.onChangeFertiStage && window.onChangeFertiStage('${week.id}', this.value)">
-                ${['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'].map(st => `<option ${st===week.stage?'selected':''}>${st}</option>`).join('')}
+                ${['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'].map(st => `<option value="${st}" ${st===week.stage?'selected':''}>${fertProgStage(st)}</option>`).join('')}
                 </select>
                 <button title="Eliminar semana" class="ferti-week-remove-btn" onclick="removeFertiWeek('${week.id}')">✕</button>
               </div>
             </td>
             <td class="ferti-week-num-cell" style="text-align:center;">${idx+1}</td>
             ${fertiColumns.map(c => `
-              <td><input type="number" step="0.01" value="${week.kgByCol?.[c.id]||0}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
+              <td><input type="number" step="0.0001" value="${fertProgInputFromSI(week.kgByCol?.[c.id]||0, 'dose_mass_area')}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
             `).join('')}
             ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgFormat(week.totals?.[n]||0, n, n === 'SO4' ? (week.totals?.S || 0) : undefined)}</td>`).join('')}
           </tr>
         `).join('');
   const totalsRowHtml = `
           <tr class="total-row">
-            <td colspan="2" style="text-align:left;font-weight:700;">TOTAL</td>
-            ${fertiColumns.map((c,i)=>`<td><div class="total-value">${fertiProgFormat(fertColTotals[i])}</div><div class="total-label-sm" title="${fertColNames[i]||''}">${(fertColNames[i]||'').slice(0,14)}</div></td>`).join('')}
-            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertiProgFormat(nutTotals[n]||0, n, n === 'SO4' ? (nutTotals.S || 0) : undefined)}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
+            <td colspan="2" style="text-align:left;font-weight:700;">${fertProgT('total', 'TOTAL')}</td>
+            ${fertiColumns.map((c,i)=>`<td><div class="total-value">${fertProgResultFromSI(fertColTotals[i], 'dose_mass_area')}</div><div class="total-label-sm" title="${fertColNames[i]||''}">${(fertColNames[i]||'').slice(0,14)}</div></td>`).join('')}
+            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertProgResultFromSI(fertProgElementalMode ? fertProgFormat(nutTotals[n]||0, n, n === 'SO4' ? (nutTotals.S || 0) : undefined) : (nutTotals[n]||0), 'dose_mass_area')}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
           </tr>`;
 
   const timeSelectHtml = `
@@ -820,7 +843,7 @@ function renderFertiWeeks() {
       <option value="semana" ${fertiTimeUnit==='semana'?'selected':''}>Semana</option>
       <option value="mes" ${fertiTimeUnit==='mes'?'selected':''}>Mes</option>
     </select>`;
-  const kgHeader = fertiTimeUnit === 'mes' ? 'Kg/ha/mes' : 'Kg/ha/sem';
+  const kgHeader = fertProgUnit('dose_mass_area', 'kg/ha') + (fertiTimeUnit === 'mes' ? '/mes' : '/sem');
   const kgHeaderStyle = fertiTimeUnit === 'mes'
     ? 'text-align:center;background:#f0fdf4;color:#166534;border-top:1px solid #bbf7d0;border-bottom:1px solid #bbf7d0;'
     : 'text-align:center;background:#eff6ff;color:#1e3a8a;border-top:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe;';
@@ -830,7 +853,7 @@ function renderFertiWeeks() {
     <table class="materials-table">
       <thead>
         <tr>
-          <th class="ferti-stage-header">Etapa</th>
+          <th class="ferti-stage-header">${fertProgT('stage', 'Etapa')}</th>
           <th class="ferti-week-header" style="text-align:center;">${timeSelectHtml}</th>
           ${fertColsHeader}
           ${cols.map((c,i)=>`<th class="nut-col ${i===0?'nut-start':''}" style="min-width:60px;width:60px;">${headerMap[c]||c}</th>`).join('')}
@@ -845,9 +868,9 @@ function renderFertiWeeks() {
       </tbody>
     </table>
     <div style="margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="btn btn-secondary btn-sm" onclick="addFertiColumn()">➕ Agregar fertilizante</button>
+      <button class="btn btn-secondary btn-sm" onclick="addFertiColumn()">➕ ${fertProgT('add_fertilizer', 'Agregar fertilizante')}</button>
       <button class="btn btn-secondary btn-sm" onclick="addFertiWeek()">➕ ${addTimeLabel}</button>
-      <button class="btn btn-info btn-sm" onclick="openFertiNewMaterialModal()">📋 Gestionar catálogo de fertilizantes</button>
+      <button class="btn btn-info btn-sm" onclick="openFertiNewMaterialModal()">📋 ${fertProgT('manage_catalog', 'Gestionar catálogo de fertilizantes')}</button>
     </div>
   `;
 }
@@ -1017,13 +1040,13 @@ function updateFertiSummary() {
   } catch(e){ console.warn('Req load error', e); }
 
   // Mostrar en el resumen del DOM (ids prefijados con ferti...)
-  function set(id, value){ const el = document.getElementById(id); if (el) el.textContent = fertiProgFormat(value); }
+  function set(id, value){ const el = document.getElementById(id); if (el) el.textContent = fertProgResultFromSI(value, 'dose_mass_area'); }
   function setFertiDiff(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
     const n = parseFloat(value);
     const num = isNaN(n) ? 0 : n;
-    el.textContent = fertiProgFormat(value);
+    el.textContent = fertProgResultFromSI(value, 'dose_mass_area');
     el.classList.remove('nutrient-diff--deficit', 'nutrient-diff--surplus', 'nutrient-diff--balanced');
     const item = el.closest('.nutrient-item');
     if (item) {
@@ -1045,11 +1068,11 @@ function updateFertiSummary() {
     const el = document.getElementById(id);
     if (!el) return;
     if (el === document.activeElement) return;
-    el.value = fertiProgFormat(value);
+    el.value = fertProgInputFromSI(value, 'dose_mass_area');
   }
   // Aporte total (mostramos por defecto óxidos más N fraccionado)
   const appsEl = document.getElementById('fertiTotalApplications'); if (appsEl) appsEl.textContent = String(fertiWeeks.length || 0);
-  const doseEl = document.getElementById('fertiTotalDoseKgHa'); if (doseEl) doseEl.textContent = fertiProgFormat(totalKg);
+  const doseEl = document.getElementById('fertiTotalDoseKgHa'); if (doseEl) doseEl.textContent = fertProgResultFromSI(totalKg, 'dose_mass_area');
   set('fertiProgTotalN_NO3', totals.N_NO3); set('fertiProgTotalN_NH4', totals.N_NH4);
   set('fertiProgTotalP2O5', toElemental('P2O5', totals.P2O5)); set('fertiProgTotalK2O', toElemental('K2O', totals.K2O)); set('fertiProgTotalCaO', toElemental('CaO', totals.CaO)); set('fertiProgTotalMgO', toElemental('MgO', totals.MgO));
   set('fertiProgTotalS', totals.S);
@@ -1166,6 +1189,7 @@ function initFertiWaterInputs() {
     if (!key) return;
     let v = parseFloat(el.value);
     if (isNaN(v)) v = 0;
+    v = fertProgToSI(v, 'dose_mass_area');
     const oxideVal = fertiWaterToOxide(key, v);
     if (fertiWaterContributionOxide[key] !== oxideVal) {
       fertiWaterContributionOxide[key] = oxideVal;
@@ -1191,7 +1215,7 @@ function fertiNormalizeChartWaterByStage() {
 }
 
 function fertiStageSlotLabel(i) {
-  const unit = fertiTimeUnit === 'mes' ? 'Mes' : 'Semana';
+  const unit = fertiTimeUnit === 'mes' ? fertProgT('month', 'Mes') : fertProgT('week', 'Semana');
   return `${unit} ${i + 1}`;
 }
 
@@ -1203,7 +1227,7 @@ function fertiNum(v, d = 2) {
 
 function onFertiChartWaterByStageInput(idx, rawVal) {
   fertiNormalizeChartWaterByStage();
-  fertiChartWaterByStageM3ha[idx] = Math.max(0, parseFloat(rawVal) || 0);
+  fertiChartWaterByStageM3ha[idx] = Math.max(0, fertProgToSI(parseFloat(rawVal) || 0, 'volume_area'));
   renderFertiChartsInsights();
   markFertiProgDirty();
 }
@@ -1222,14 +1246,14 @@ function renderFertiChartWaterByStageInputs() {
   if (!fertiWeeks.length) { wrap.innerHTML = ''; return; }
   const rows = fertiWeeks.map((w, i) => `
     <div class="ferti-charts-water-item">
-      <label>${fertiStageSlotLabel(i)} · m³/ha</label>
-      <input type="number" step="0.01" min="0" value="${fertiNum(fertiChartWaterByStageM3ha[i], 2)}" oninput="onFertiChartWaterByStageInput(${i}, this.value)">
+      <label>${fertiStageSlotLabel(i)} · ${fertProgUnit('volume_area', 'm³/ha')}</label>
+      <input type="number" step="0.0001" min="0" value="${fertProgInputFromSI(fertiChartWaterByStageM3ha[i], 'volume_area')}" oninput="onFertiChartWaterByStageInput(${i}, this.value)">
     </div>
   `).join('');
   wrap.innerHTML = `
     <div class="ferti-charts-water-head">
-      <p class="ferti-charts-water-title">💧 Lámina de riego por etapa (m³/ha)</p>
-      <p class="ferti-charts-water-note">Se usa para convertir aporte del programa de kg/ha a ppm y meq/L.</p>
+      <p class="ferti-charts-water-title">${fertProgT('irrigation_by_stage', '💧 Lámina de riego por etapa')} (${fertProgUnit('volume_area', 'm³/ha')})</p>
+      <p class="ferti-charts-water-note">${fertProgT('irrigation_help', 'Se usa para convertir aporte del programa de kg/ha a ppm y meq/L.')}</p>
     </div>
     <div class="ferti-charts-water-grid">${rows}</div>
   `;
@@ -1353,41 +1377,41 @@ function renderFertiMacroIonicTableHtml(summary) {
           <span class="ferti-insight-meq-sums notranslate" translate="no" title="Σ aniones = N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ + Cl⁻ (balance iónico). Los % del cuadrado ternario siguen siendo solo los tres primeros. Σ cationes = K⁺ + Ca²⁺ + Mg²⁺ + N-NH₄⁺"> · Σ aniones ${fertiNum(summary.sumAnionsMeq, 2)} meq/L · Σ cationes ${fertiNum(summary.sumCationsMeq, 2)} meq/L</span>
         </div>
         <table class="ferti-insight-table ferti-insight-table--macro-ionic">
-          <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th><th>meq/L</th><th>% grupo <span class="ferti-pct-col-hint" title="Aniones del triángulo: suma 100% entre NO₃+H₂PO₄+SO₄. Cl⁻ y NH₄⁺: % sobre el total ampliado (ver nota). Cationes K+Ca+Mg: 100% en el triángulo.">ⓘ</span></th></tr></thead>
+          <thead><tr><th>${fertProgT('nutrient', 'Nutriente')}</th><th>${fertProgT('program_supply', 'Dosis')} (${fertProgUnit('dose_mass_area', 'kg/ha')})</th><th>${fertProgT('concentration_notice', 'Concentración')} (ppm)</th><th>meq/L</th><th>${fertProgT('group_pct', '% grupo')} <span class="ferti-pct-col-hint" title="Aniones del triángulo: suma 100% entre NO₃+H₂PO₄+SO₄. Cl⁻ y NH₄⁺: % sobre el total ampliado (ver nota). Cationes K+Ca+Mg: 100% en el triángulo.">ⓘ</span></th></tr></thead>
           <tbody>
             <tr>
-              <td>N-NO₃⁻</td><td>${fertiNum(summary.kg.N_NO3)}</td><td>${fertiNum(summary.ppm.N_NO3, 1)}</td><td>${fertiNum(summary.meq.N_NO3, 2)}</td>
+              <td>N-NO₃⁻</td><td>${fertProgResultFromSI(summary.kg.N_NO3, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.N_NO3, 1)}</td><td>${fertiNum(summary.meq.N_NO3, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--top" title="Suma 100% entre estos tres aniones."><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.N_NO3, 1)}</span></td>
             </tr>
             <tr>
-              <td>P-H₂PO₄⁻</td><td>${fertiNum(summary.kg.P)}</td><td>${fertiNum(summary.ppm.P, 1)}</td><td>${fertiNum(summary.meq.P, 2)}</td>
+              <td>P-H₂PO₄⁻</td><td>${fertProgResultFromSI(summary.kg.P, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.P, 1)}</td><td>${fertiNum(summary.meq.P, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--mid"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.P, 1)}</span></td>
             </tr>
             <tr title="Columnas kg/ha, ppm y meq/L en base azufre elemental (S): SO₄ del programa × 32/96 + S directo del catálogo.">
-              <td>S-SO₄²⁻</td><td>${fertiNum(summary.kg.SO4)}</td><td>${fertiNum(summary.ppm.SO4, 1)}</td><td>${fertiNum(summary.meq.SO4, 2)}</td>
+              <td>S-SO₄²⁻</td><td>${fertProgResultFromSI(summary.kg.SO4, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.SO4, 1)}</td><td>${fertiNum(summary.meq.SO4, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.SO4, 1)}</span></td>
             </tr>
             <tr class="ferti-macro-row-cl" title="Cl⁻ en % masa del catálogo (p. ej. KCl, CaCl₂·2H₂O); meq/L = ppm Cl / 35,45.">
-              <td>Cl⁻</td><td>${fertiNum(summary.kg.Cl)}</td><td>${fertiNum(summary.ppm.Cl, 1)}</td><td>${fertiNum(summary.meq.Cl, 2)}</td>
+              <td>Cl⁻</td><td>${fertProgResultFromSI(summary.kg.Cl, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.Cl, 1)}</td><td>${fertiNum(summary.meq.Cl, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cl-cell">
                 <span class="ferti-pct-cl notranslate" translate="no" title="% sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); no entra al triángulo N-P-S.">${fertiNum(summary.pct.Cl, 1)}</span>
               </td>
             </tr>
             <tr class="ferti-macro-ion-split" aria-hidden="true"><td colspan="5"><span class="ferti-macro-ion-split-line" title="Aniones arriba · Cationes abajo"></span></td></tr>
             <tr class="ferti-macro-cation-start">
-              <td>K⁺</td><td>${fertiNum(summary.kg.K)}</td><td>${fertiNum(summary.ppm.K, 1)}</td><td>${fertiNum(summary.meq.K, 2)}</td>
+              <td>K⁺</td><td>${fertProgResultFromSI(summary.kg.K, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.K, 1)}</td><td>${fertiNum(summary.meq.K, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cat ferti-pct-cat--top" title="Suma 100% entre K⁺+Ca²⁺+Mg²⁺ (triángulo; sin NH₄)."><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.K, 1)}</span></td>
             </tr>
             <tr>
-              <td>Ca²⁺</td><td>${fertiNum(summary.kg.Ca)}</td><td>${fertiNum(summary.ppm.Ca, 1)}</td><td>${fertiNum(summary.meq.Ca, 2)}</td>
+              <td>Ca²⁺</td><td>${fertProgResultFromSI(summary.kg.Ca, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.Ca, 1)}</td><td>${fertiNum(summary.meq.Ca, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cat ferti-pct-cat--mid"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.Ca, 1)}</span></td>
             </tr>
             <tr>
-              <td>Mg²⁺</td><td>${fertiNum(summary.kg.Mg)}</td><td>${fertiNum(summary.ppm.Mg, 1)}</td><td>${fertiNum(summary.meq.Mg, 2)}</td>
+              <td>Mg²⁺</td><td>${fertProgResultFromSI(summary.kg.Mg, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.Mg, 1)}</td><td>${fertiNum(summary.meq.Mg, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cat ferti-pct-cat--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.Mg, 1)}</span></td>
             </tr>
             <tr class="ferti-macro-row-nh4">
-              <td>N-NH₄⁺</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td>
+              <td>N-NH₄⁺</td><td>${fertProgResultFromSI(summary.kg.N_NH4, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-nh4-cell">
                 <span class="ferti-pct-nh4 notranslate" translate="no" title="% sobre cationes totales (K+Ca+Mg+NH₄); ver nota al pie.">${fertiNum(summary.pct.N_NH4, 1)}</span>
               </td>
@@ -1401,10 +1425,10 @@ const FERTI_MICRO_INSIGHT_NUTRIENTS = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
 function renderFertiMicroTableHtml(summary) {
   if (!summary || !summary.kg) return '';
   const rows = FERTI_MICRO_INSIGHT_NUTRIENTS.map(n => `
-            <tr><td>${n}</td><td>${fertiNum(summary.kg[n], 3)}</td><td>${fertiNum(summary.ppm[n], 2)}</td></tr>`).join('');
+            <tr><td>${n}</td><td>${fertProgResultFromSI(summary.kg[n], 'dose_mass_area')}</td><td>${fertiNum(summary.ppm[n], 2)}</td></tr>`).join('');
   return `
         <table class="ferti-insight-table ferti-insight-table--micro">
-          <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th></tr></thead>
+          <thead><tr><th>${fertProgT('nutrient', 'Nutriente')}</th><th>${fertProgUnit('dose_mass_area', 'kg/ha')}</th><th>ppm</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
 }
@@ -1421,7 +1445,7 @@ function renderFertiChartsInsights() {
   const options = fertiWeeks.map((w, i) => `<option value="${i}" ${i === idx ? 'selected' : ''}>${fertiStageSlotLabel(i)} · ${w.stage || ''}</option>`).join('');
   let body = '';
   if (!summaryFert || summaryFert.m3ha <= 0) {
-    body = `<div class="ferti-insight-alert">Ingresa <strong>m³/ha</strong> en la lámina de riego de ${fertiStageSlotLabel(idx)} para calcular ppm y meq.</div>`;
+    body = `<div class="ferti-insight-alert">${fertProgT('enter_water', 'Ingresa agua aplicada para esta etapa para calcular ppm y meq/L.')} <strong>${fertProgUnit('volume_area', 'm³/ha')}</strong></div>`;
   } else {
     const stageLabel = summaryFert.stage.stage || 'Etapa';
     body = `
@@ -1429,11 +1453,11 @@ function renderFertiChartsInsights() {
         <h5>Macro resumen · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
         <div class="ferti-macro-dual-grid">
           <div class="ferti-macro-dual-col">
-            <h6 class="ferti-macro-dual-title">Aporte de fertilizante</h6>
+            <h6 class="ferti-macro-dual-title">${fertProgT('fertilizer_supply', 'Aporte de fertilizante')}</h6>
             ${renderFertiMacroIonicTableHtml(summaryFert)}
           </div>
           <div class="ferti-macro-dual-col">
-            <h6 class="ferti-macro-dual-title">Fertilizante más aporte de agua</h6>
+            <h6 class="ferti-macro-dual-title">${fertProgT('fertilizer_water_supply', 'Fertilizante más aporte de agua')}</h6>
             ${renderFertiMacroIonicTableHtml(summaryWithWater)}
           </div>
         </div>
@@ -1903,6 +1927,18 @@ function buildFertiChartsInsightsCompactHtmlForReport(program, waterOx, stageInd
   return html;
 }
 
+function fertiReportDose(value, digits) {
+  const ui = fertProgUI();
+  const shown = ui ? ui.fromSI(value, 'dose_mass_area') : Number(value || 0);
+  return fertiNum(shown, digits == null ? 2 : digits) + ' ' + (ui ? ui.unit('dose_mass_area') : 'kg/ha');
+}
+
+function fertiReportWater(value) {
+  const ui = fertProgUI();
+  const shown = ui ? ui.fromSI(value, 'volume_area') : Number(value || 0);
+  return fertiNum(shown, 2) + ' ' + (ui ? ui.unit('volume_area') : 'm³/ha');
+}
+
 function renderFertiMacroIonicTableHtmlForReport(summary) {
   if (!summary || !summary.ppm) return '';
   const th = 'padding:6px 8px;border:1px solid #cbd5e1;background:#e2e8f0;font-size:11px;text-align:center;';
@@ -1910,15 +1946,15 @@ function renderFertiMacroIonicTableHtmlForReport(summary) {
   const tdL = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:left;';
   const s = summary;
   return '<table style="width:100%;border-collapse:collapse;margin-top:6px;">' +
-    '<thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th><th style="' + th + '">meq/L</th><th style="' + th + '">% grupo</th></tr></thead><tbody>' +
-    '<tr><td style="' + tdL + '">N-NO₃⁻</td><td style="' + td + '">' + fertiNum(s.kg.N_NO3) + '</td><td style="' + td + '">' + fertiNum(s.ppm.N_NO3, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.N_NO3, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.N_NO3, 1) + '</td></tr>' +
-    '<tr><td style="' + tdL + '">P-H₂PO₄⁻</td><td style="' + td + '">' + fertiNum(s.kg.P) + '</td><td style="' + td + '">' + fertiNum(s.ppm.P, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.P, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.P, 1) + '</td></tr>' +
-    '<tr><td style="' + tdL + '">S-SO₄²⁻</td><td style="' + td + '">' + fertiNum(s.kg.SO4) + '</td><td style="' + td + '">' + fertiNum(s.ppm.SO4, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.SO4, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.SO4, 1) + '</td></tr>' +
-    '<tr><td style="' + tdL + '">Cl⁻</td><td style="' + td + '">' + fertiNum(s.kg.Cl) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Cl, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.Cl, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.Cl, 1) + '</td></tr>' +
-    '<tr style="background:#f8fafc;"><td style="' + tdL + 'font-weight:600;">K⁺</td><td style="' + td + '">' + fertiNum(s.kg.K) + '</td><td style="' + td + '">' + fertiNum(s.ppm.K, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.K, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.K, 1) + '</td></tr>' +
-    '<tr><td style="' + tdL + '">Ca²⁺</td><td style="' + td + '">' + fertiNum(s.kg.Ca) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Ca, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.Ca, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.Ca, 1) + '</td></tr>' +
-    '<tr><td style="' + tdL + '">Mg²⁺</td><td style="' + td + '">' + fertiNum(s.kg.Mg) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Mg, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.Mg, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.Mg, 1) + '</td></tr>' +
-    '<tr><td style="' + tdL + '">N-NH₄⁺</td><td style="' + td + '">' + fertiNum(s.kg.N_NH4) + '</td><td style="' + td + '">' + fertiNum(s.ppm.N_NH4, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.N_NH4, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.N_NH4, 1) + '</td></tr>' +
+    '<thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">Dosis</th><th style="' + th + '">ppm</th><th style="' + th + '">meq/L</th><th style="' + th + '">% grupo</th></tr></thead><tbody>' +
+    '<tr><td style="' + tdL + '">N-NO₃⁻</td><td style="' + td + '">' + fertiReportDose(s.kg.N_NO3) + '</td><td style="' + td + '">' + fertiNum(s.ppm.N_NO3, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.N_NO3, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.N_NO3, 1) + ' %</td></tr>' +
+    '<tr><td style="' + tdL + '">P-H₂PO₄⁻</td><td style="' + td + '">' + fertiReportDose(s.kg.P) + '</td><td style="' + td + '">' + fertiNum(s.ppm.P, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.P, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.P, 1) + ' %</td></tr>' +
+    '<tr><td style="' + tdL + '">S-SO₄²⁻</td><td style="' + td + '">' + fertiReportDose(s.kg.SO4) + '</td><td style="' + td + '">' + fertiNum(s.ppm.SO4, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.SO4, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.SO4, 1) + ' %</td></tr>' +
+    '<tr><td style="' + tdL + '">Cl⁻</td><td style="' + td + '">' + fertiReportDose(s.kg.Cl) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Cl, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.Cl, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.Cl, 1) + ' %</td></tr>' +
+    '<tr style="background:#f8fafc;"><td style="' + tdL + 'font-weight:600;">K⁺</td><td style="' + td + '">' + fertiReportDose(s.kg.K) + '</td><td style="' + td + '">' + fertiNum(s.ppm.K, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.K, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.K, 1) + ' %</td></tr>' +
+    '<tr><td style="' + tdL + '">Ca²⁺</td><td style="' + td + '">' + fertiReportDose(s.kg.Ca) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Ca, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.Ca, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.Ca, 1) + ' %</td></tr>' +
+    '<tr><td style="' + tdL + '">Mg²⁺</td><td style="' + td + '">' + fertiReportDose(s.kg.Mg) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Mg, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.Mg, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.Mg, 1) + ' %</td></tr>' +
+    '<tr><td style="' + tdL + '">N-NH₄⁺</td><td style="' + td + '">' + fertiReportDose(s.kg.N_NH4) + '</td><td style="' + td + '">' + fertiNum(s.ppm.N_NH4, 1) + ' ppm</td><td style="' + td + '">' + fertiNum(s.meq.N_NH4, 2) + ' meq/L</td><td style="' + td + '">' + fertiNum(s.pct.N_NH4, 1) + ' %</td></tr>' +
     '</tbody></table>' +
     '<div style="margin-top:8px;font-size:11px;color:#64748b;">N: NO₃ ' + fertiNum(s.nSplit.NO3, 1) + '% · NH₄ ' + fertiNum(s.nSplit.NH4, 1) + '% · Σ aniones ' + fertiNum(s.sumAnionsMeq, 2) + ' meq/L · Σ cationes ' + fertiNum(s.sumCationsMeq, 2) + ' meq/L</div>';
 }
@@ -1929,9 +1965,9 @@ function renderFertiMicroTableHtmlForReport(summary) {
   const td = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:right;';
   const tdL = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:left;';
   const rows = FERTI_MICRO_INSIGHT_NUTRIENTS.map(n =>
-    '<tr><td style="' + tdL + '">' + n + '</td><td style="' + td + '">' + fertiNum(summary.kg[n], 3) + '</td><td style="' + td + '">' + fertiNum(summary.ppm && summary.ppm[n], 2) + '</td></tr>'
+    '<tr><td style="' + tdL + '">' + n + '</td><td style="' + td + '">' + fertiReportDose(summary.kg[n], 2) + '</td><td style="' + td + '">' + fertiNum(summary.ppm && summary.ppm[n], 2) + ' ppm</td></tr>'
   ).join('');
-  return '<table style="width:100%;border-collapse:collapse;margin-top:6px;"><thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  return '<table style="width:100%;border-collapse:collapse;margin-top:6px;"><thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">Dosis</th><th style="' + th + '">Concentración</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
 function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3ha) {
@@ -1944,7 +1980,7 @@ function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3h
     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #cbd5e1;">
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:10px;">
         <strong style="color:#0f766e;font-size:14px;">${slotLabel} · ${stageName}</strong>
-        <span style="font-size:12px;color:#64748b;">Lámina: <strong>${fertiNum(m3ha, 2)} m³/ha</strong></span>
+        <span style="font-size:12px;color:#64748b;">Lámina: <strong>${fertiReportWater(m3ha)}</strong></span>
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:12px;">
         <div style="font-weight:600;color:#166534;margin-bottom:10px;">Macro resumen</div>
@@ -1999,7 +2035,7 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
       </div>`;
   }
   const waterSummary = stageIndexes.map(i =>
-    `${fertiStageSlotLabelFromProgram(program, i)}: <strong>${fertiNum(waterArr[i], 2)} m³/ha</strong>`
+    `${fertiStageSlotLabelFromProgram(program, i)}: <strong>${fertiReportWater(waterArr[i])}</strong>`
   ).join(' · ');
   const useCompact = stageIndexes.length >= FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD;
   const stageBlocks = useCompact

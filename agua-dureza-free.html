@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260728g"></script>
+  <script src="assets/np-units-core.js?v=20260728g"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728g"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260728a"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>💦 Diagnóstico de agua y acondicionamiento</title>
   <style>
@@ -576,6 +582,9 @@
     };
 
     const hardnessFields = { ppm: el.ppm, meq: el.meq, dh: el.dh, eh: el.eh, fh: el.fh };
+    const waterUI = window.NpWaterClimateUI;
+
+    function wt(es, en) { return waterUI ? waterUI.t(es, en) : es; }
 
     function n(v) { return Math.max(0, parseFloat(String(v).replace(',', '.')) || 0); }
     function f(v, d = 2) { return (parseFloat(v) || 0).toFixed(d); }
@@ -681,9 +690,28 @@
       const unit = el.volumeUnit ? el.volumeUnit.value : 'L';
       if (raw === '') return { raw, unit, inputValue: NaN, volL: NaN, volM3: NaN };
       const inputValue = n(raw);
-      const volM3 = unit === 'm3' ? inputValue : inputValue / 1000;
-      const volL = unit === 'm3' ? inputValue * 1000 : inputValue;
+      const volM3 = unit === 'm3'
+        ? inputValue
+        : unit === 'US gal'
+          ? window.NpUnits.convert(inputValue, 'US gal', 'm3')
+          : inputValue / 1000;
+      const volL = volM3 * 1000;
       return { raw, unit, inputValue, volL, volM3 };
+    }
+
+    function applyWaterVolumeSystem(preserve) {
+      if (!el.volumeUnit) return;
+      const previous = preserve ? getAcidVolume() : null;
+      const us = waterUI.prefs().unit_system === 'us_customary';
+      el.volumeUnit.innerHTML = us
+        ? '<option value="US gal">US gal</option>'
+        : '<option value="L">L</option><option value="m3">m³</option>';
+      if (previous && Number.isFinite(previous.volM3)) {
+        el.volumeL.value = us
+          ? waterUI.inputFromSI(previous.volM3, 'volume')
+          : f(previous.volM3 * 1000, 4);
+      }
+      updateVolumePlaceholder();
     }
 
     /**
@@ -774,7 +802,9 @@
       }
 
       if (el.volM3Equiv) {
-        el.volM3Equiv.innerHTML = '<span class="muted">Volumen usado: <strong>' + f(vol.inputValue, 3) + ' ' + (vol.unit === 'm3' ? 'm³' : 'L') + '</strong> = <strong>' + f(volM3, 3) + '</strong> m³ = <strong>' + f(volL, 2) + '</strong> L.</span>';
+        el.volM3Equiv.innerHTML = '<span class="muted">' + wt('Volumen usado:', 'Volume used:') + ' <strong>' +
+          f(vol.inputValue, 3) + ' ' + vol.unit.replace('m3', 'm³') + '</strong> = <strong>' +
+          waterUI.resultFromSI(volM3, 'volume', 2) + '</strong>.</span>';
       }
 
       const hco3 = n(el.hco3.value);
@@ -790,11 +820,15 @@
       const kgPerM3Water = (mlPerM3 / 1000) * rho;
       const kgTotal = totalLAcid * rho;
 
+      const doseText = waterUI.resultFromSI(mlPerM3, 'acid_dose_volume_volume', 2);
+      const totalAcidText = waterUI.prefs().unit_system === 'us_customary'
+        ? window.NpUnits.formatQuantity(window.NpUnits.convert(totalLAcid / 1000, 'm3', 'US fl oz'), 'US fl oz', waterUI.prefs().locale, 2)
+        : f(totalLAcid, 3) + ' L (' + f(totalMl, 1) + ' mL)';
       el.acidResult.innerHTML = `
-        <strong>Resultado con ${acid.name}:</strong><br>
-        Meq/L a neutralizar = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
-        Dosis = <strong>${f(mlPerM3, 2)} mL/m³</strong> de ácido <span class="muted">(${f(kgPerM3Water, 3)} kg de ácido / m³ de agua, aprox.)</span><br>
-        Para <strong>${f(vol.inputValue, vol.unit === 'm3' ? 3 : 2)} ${vol.unit === 'm3' ? 'm³' : 'L'}</strong> de agua (${f(volM3, 3)} m³ / ${f(volL, 2)} L): <strong>${f(totalLAcid, 3)} L</strong> de ácido (${f(totalMl, 1)} mL) · aprox. <strong>${f(kgTotal, 3)} kg</strong>
+        <strong>${wt('Resultado con', 'Result with')} ${waterUI.translateString(acid.name)}:</strong><br>
+        ${wt('Meq/L a neutralizar', 'meq/L to neutralize')} = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
+        ${wt('Dosis', 'Dose')} = <strong>${doseText}</strong> ${wt('de ácido', 'of acid')}<br>
+        ${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${totalAcidText}</strong> ${wt('de ácido', 'of acid')} · ${wt('aprox.', 'approx.')} <strong>${f(kgTotal, 3)} kg</strong>
       `;
     }
 
@@ -811,11 +845,21 @@
 
     function updateVolumePlaceholder() {
       if (!el.volumeL || !el.volumeUnit) return;
-      el.volumeL.placeholder = el.volumeUnit.value === 'm3' ? 'ej. 0.2' : 'ej. 200';
+      el.volumeL.placeholder = el.volumeUnit.value === 'm3'
+        ? wt('ej. 0.2', 'e.g. 0.2')
+        : el.volumeUnit.value === 'US gal' ? wt('ej. 50', 'e.g. 50') : wt('ej. 200', 'e.g. 200');
       updateAcidCalc();
     }
 
     fillAcids();
+    window.NpWaterClimateUI.init({
+      refresh: function () {
+        fillAcids();
+        updateLabCalc();
+        updateAcidCalc();
+      }
+    });
+    applyWaterVolumeSystem(false);
     setHardnessEmptyUI();
     setLabEmptyUI();
     setAcidPlaceholderUI();
@@ -832,6 +876,11 @@
       node.addEventListener('focusout', normalizeAcidInputBlur);
     });
     if (el.volumeUnit) el.volumeUnit.addEventListener('change', updateVolumePlaceholder);
+    window.addEventListener('np:prefs-changed', function (event) {
+      if (event && event.detail && event.detail.changed && event.detail.changed.indexOf('unit_system') >= 0) {
+        applyWaterVolumeSystem(true);
+      }
+    });
     el.acid.addEventListener('change', updateAcidCalc);
 
     [el.caLab, el.mgLab].forEach((node) => {
@@ -845,10 +894,13 @@
     });
 
     function snapshotAcidHardness() {
+      const acidVolume = getAcidVolume();
       return {
+        __np_si: true,
         ppm: el.ppm.value, meq: el.meq.value, dh: el.dh.value, eh: el.eh.value, fh: el.fh.value,
         caLab: el.caLab.value, mgLab: el.mgLab.value, caLabU: el.caLabU.value, mgLabU: el.mgLabU.value,
         hco3: el.hco3.value, co3: el.co3.value, residual: el.residual.value,
+        volumeM3: Number.isFinite(acidVolume.volM3) ? acidVolume.volM3 : '',
         volumeL: el.volumeL.value, volumeUnit: el.volumeUnit.value, acid: el.acid.value
       };
     }
@@ -859,7 +911,19 @@
       });
       if (d.caLabU != null) el.caLabU.value = d.caLabU;
       if (d.mgLabU != null) el.mgLabU.value = d.mgLabU;
-      if (d.volumeUnit != null) el.volumeUnit.value = d.volumeUnit;
+      if (d.volumeM3 !== undefined && d.volumeM3 !== '') {
+        el.volumeL.value = waterUI.prefs().unit_system === 'us_customary'
+          ? waterUI.inputFromSI(Number(d.volumeM3), 'volume')
+          : f(Number(d.volumeM3) * 1000, 4);
+      } else if (d.volumeUnit === 'm3') {
+        el.volumeL.value = waterUI.prefs().unit_system === 'us_customary'
+          ? waterUI.inputFromSI(Number(d.volumeL) || 0, 'volume')
+          : f((Number(d.volumeL) || 0) * 1000, 4);
+      } else if (d.volumeUnit === 'L') {
+        el.volumeL.value = waterUI.prefs().unit_system === 'us_customary'
+          ? waterUI.inputFromSI((Number(d.volumeL) || 0) / 1000, 'volume')
+          : f(Number(d.volumeL) || 0, 4);
+      }
       if (d.acid != null) el.acid.value = d.acid;
       if (String(el.ppm.value || '').trim()) onHardnessInput('ppm');
       else setHardnessEmptyUI();

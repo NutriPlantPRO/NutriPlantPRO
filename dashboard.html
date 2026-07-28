@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Panel — NutriPlant Pro</title>
+  <title data-i18n="dashboard.document_title">Panel — NutriPlant Pro</title>
   
   <!-- ===== NUTRIPLANT PRO BRANDING ===== -->
   <meta name="description" content="Panel de control para nutrición vegetal y fertirriego - NutriPlant Pro" />
@@ -11,8 +11,13 @@
   <meta name="theme-color" content="#2563eb" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js"></script>
-  <script src="assets/np-units-core.js"></script>
+  <script src="assets/np-i18n.js?v=20260728f"></script>
+  <script src="assets/np-units-core.js?v=20260728g"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728g"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260728a"></script>
+  <script src="assets/np-fertigation-ui.js?v=20260728f"></script>
+  <script src="assets/np-granular-ui.js?v=20260728b"></script>
+  <script src="assets/np-amendment-ui.js?v=20260728b"></script>
   <script>
     (function () {
       function applyPreferences(prefs) {
@@ -25,6 +30,11 @@
       applyPreferences(window.NpPrefs ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' });
       window.addEventListener('np:prefs-changed', function (event) {
         applyPreferences(event && event.detail && event.detail.prefs);
+        if (typeof window.npHandleDashboardPreferencesChanged === 'function') {
+          window.requestAnimationFrame(function () {
+            window.npHandleDashboardPreferencesChanged(event && event.detail && event.detail.prefs);
+          });
+        }
       });
     })();
   </script>
@@ -109,10 +119,10 @@
   <header class="site-header">
     <div class="brandline">
       <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="brand-logo">
-      <a href="manual-tecnico/index.html" class="auth-header-manual-link" target="_blank" rel="noopener noreferrer" title="Abrir manual técnico en una pestaña nueva" aria-label="Manual técnico" style="margin-left:auto;margin-right:12px;">
+      <a href="manual-tecnico/index.html" class="auth-header-manual-link" target="_blank" rel="noopener noreferrer" title="Abrir manual técnico en una pestaña nueva" aria-label="Manual técnico" data-i18n-title="auth.manual_aria" data-i18n-aria-label="auth.manual_aria" style="margin-left:auto;margin-right:12px;">
         <img src="assets/N_Hoja_Azul.png" alt="" class="auth-header-manual-link__icon" width="16" height="16" decoding="async">
-        <span class="auth-header-manual-link__label-long">Manual técnico</span>
-        <span class="auth-header-manual-link__label-short">Manual</span>
+        <span class="auth-header-manual-link__label-long" data-i18n="dashboard.manual">Manual técnico</span>
+        <span class="auth-header-manual-link__label-short" data-i18n="auth.manual">Manual</span>
       </a>
       <div class="social-links">
         <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" aria-label="Sobre Nosotros" type="button" style="
@@ -176,7 +186,7 @@
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
     <!-- Botón de toggle para móvil -->
-    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú">
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú" data-i18n-aria-label="dashboard.open_menu">
       <span class="hamburger">
         <span></span>
         <span></span>
@@ -189,7 +199,7 @@
       <div class="sidebar-brand">
         <img src="assets/N_Hoja_Blanca.png" alt="NutriPlant Pro" class="sidebar-logo">
         <!-- Botón de cerrar para móvil -->
-        <button class="sidebar-close" id="sidebar-close" aria-label="Cerrar menú">
+        <button class="sidebar-close" id="sidebar-close" aria-label="Cerrar menú" data-i18n-aria-label="dashboard.close_menu">
           <span>×</span>
         </button>
       </div>
@@ -201,44 +211,44 @@
       <div id="sbStack" class="sb-stack"><!-- se llena por JS --></div>
 
       <!-- Cerrar sesión pegado abajo (icono SVG para que se vea igual en Mac, iPhone y Android) -->
-      <button id="logoutBtn" class="logout" title="Cerrar sesión">
+      <button id="logoutBtn" class="logout" title="Cerrar sesión" data-i18n-title="dashboard.logout">
         <span class="logout-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 2v10M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg></span>
-        <span class="logout-text">Cerrar sesión</span>
+        <span class="logout-text" data-i18n="dashboard.logout">Cerrar sesión</span>
       </button>
     </aside>
 
     <!-- Contenido principal -->
     <main class="content">
       <header class="top">
-        <h1 id="sectionTitle">Inicio</h1>
+        <h1 id="sectionTitle" data-np-section="Inicio">Inicio</h1>
         <div class="header-buttons">
-        <button id="btn-new-nutriplant" class="btn btn-pill btn-primary" type="button" title="Crear un nuevo proyecto NutriPlant" onclick="window.showNewProjectModal()">+ Nuevo NutriPlant</button>
-          <button type="button" id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showConversionCalculator()" data-np-tooltip="Conversor Óxido ↔ Elemental" aria-label="Conversor Óxido ↔ Elemental">🧮</button>
-          <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Conversor de unidades (ppm/mmol/meq)" aria-label="Conversor de unidades (ppm/mmol/meq)">🧪</button>
-          <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" aria-label="Diseño de solución nutritiva">💧</button>
-          <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" aria-label="Estimación de N mineralizable">🌱</button>
-          <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
-          <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" aria-label="Agua en suelo y textura">🪨</button>
-          <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" aria-label="Lámina de riego y balance hídrico">🌧️</button>
-          <button type="button" id="btn-vpd-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showVPDCalculator()" data-np-tooltip="Estimador de déficit de presión de vapor" aria-label="Estimador de déficit de presión de vapor">🌡️</button>
-          <button type="button" id="btn-agroclimate-forecast" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showAgroclimateForecast()" data-np-tooltip="Pronóstico agroclimático" aria-label="Pronóstico agroclimático">🌤️</button>
-          <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" aria-label="Solubilidad e índice salino">🧂</button>
-          <button type="button" id="btn-fertilizer-carbon-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCarbonCalculator()" data-np-tooltip="Huella de carbono de fertilizantes" aria-label="Huella de carbono de fertilizantes">🌍</button>
-          <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
+        <button id="btn-new-nutriplant" class="btn btn-pill btn-primary" type="button" title="Crear un nuevo proyecto NutriPlant" data-i18n="dashboard.new_project" data-i18n-title="dashboard.new_project_title" onclick="window.showNewProjectModal()">+ Nuevo NutriPlant</button>
+          <button type="button" id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showConversionCalculator()" data-np-tooltip="Conversor Óxido ↔ Elemental" data-i18n-title="dashboard.tool_oxide" data-i18n-aria-label="dashboard.tool_oxide" aria-label="Conversor Óxido ↔ Elemental">🧮</button>
+          <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Conversor de unidades (ppm/mmol/meq)" data-i18n-title="dashboard.tool_units" data-i18n-aria-label="dashboard.tool_units" aria-label="Conversor de unidades (ppm/mmol/meq)">🧪</button>
+          <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" data-i18n-title="dashboard.tool_hydro" data-i18n-aria-label="dashboard.tool_hydro" aria-label="Diseño de solución nutritiva">💧</button>
+          <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" data-i18n-aria-label="dashboard.tool_n" aria-label="Estimación de N mineralizable">🌱</button>
+          <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" data-i18n-aria-label="dashboard.tool_water" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
+          <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" data-i18n-aria-label="dashboard.tool_soil_water" aria-label="Agua en suelo y textura">🪨</button>
+          <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" data-i18n-aria-label="dashboard.tool_irrigation" aria-label="Lámina de riego y balance hídrico">🌧️</button>
+          <button type="button" id="btn-vpd-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showVPDCalculator()" data-np-tooltip="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" data-i18n-aria-label="dashboard.tool_vpd" aria-label="Estimador de déficit de presión de vapor">🌡️</button>
+          <button type="button" id="btn-agroclimate-forecast" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showAgroclimateForecast()" data-np-tooltip="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" data-i18n-aria-label="dashboard.tool_weather" aria-label="Pronóstico agroclimático">🌤️</button>
+          <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" data-i18n-aria-label="dashboard.tool_solubility_salt" aria-label="Solubilidad e índice salino">🧂</button>
+          <button type="button" id="btn-fertilizer-carbon-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCarbonCalculator()" data-np-tooltip="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" data-i18n-aria-label="dashboard.tool_fertilizer_carbon" aria-label="Huella de carbono de fertilizantes">🌍</button>
+          <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" data-i18n-title="dashboard.tool_extraction_stage" data-i18n-aria-label="dashboard.tool_extraction_stage" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla Periódica (Nutrientes Esenciales)" aria-label="Tabla Periódica (Nutrientes Esenciales)">⚛️</button>
           <button type="button" id="btn-amino-acids-atlas" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showAminoAcidsAtlasTool()" data-np-tooltip="Atlas Fisiológico Vegetal" aria-label="Atlas Fisiológico Vegetal">🧬</button>
           <button type="button" id="btn-nutrient-interactions-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientInteractionsTool()" data-np-tooltip="Interacciones y movilidad nutrimental" aria-label="Interacciones y movilidad nutrimental">🔗</button>
           <button type="button" id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompatibilityCalculator()" data-np-tooltip="Compatibilidad de fertilizantes" aria-label="Compatibilidad de fertilizantes">🔺</button>
           <button type="button" id="btn-granular-mix-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showGranularMixCalculator()" data-np-tooltip="Formulación de mezclas granulares" aria-label="Formulación de mezclas granulares">📦</button>
-          <button type="button" id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompositionCalculator()" data-np-tooltip="Composición de fertilizantes (%)" aria-label="Composición de fertilizantes (porcentaje)">⚗️</button>
+          <button type="button" id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompositionCalculator()" data-np-tooltip="Composición de fertilizantes (%)" data-i18n-title="dashboard.tool_fertilizer_composition" data-i18n-aria-label="dashboard.tool_fertilizer_composition" aria-label="Composición de fertilizantes (porcentaje)">⚗️</button>
           <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Conversor de magnitudes físicas" aria-label="Conversor de magnitudes físicas">📐</button>
           <button type="button" id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSimpleCalculator()" data-np-tooltip="Calculadora simple" aria-label="Calculadora simple">
             <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
           </button>
-          <button type="button" id="btn-notes-block" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNotesBlockModal()" data-np-tooltip="Bloque de notas" aria-label="Bloque de notas">
+          <button type="button" id="btn-notes-block" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNotesBlockModal()" data-np-tooltip="Bloque de notas" data-i18n-title="dashboard.tool_notes" data-i18n-aria-label="dashboard.tool_notes" aria-label="Bloque de notas">
             <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
           </button>
-          <button type="button" id="btn-user-info" class="btn btn-pill btn-user np-dash-tooltip" onclick="window.showUserInfoModal()" data-np-tooltip="Información de usuario" aria-label="Información de usuario">
+          <button type="button" id="btn-user-info" class="btn btn-pill btn-user np-dash-tooltip" onclick="window.showUserInfoModal()" data-np-tooltip="Información de usuario" data-i18n-title="dashboard.tool_user" data-i18n-aria-label="dashboard.tool_user" aria-label="Información de usuario">
             <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -250,20 +260,20 @@
 
       <section id="view" class="view">
         <!-- Inicio por defecto (JS lo rellena) -->
-        <p>Bienvenido. Selecciona una sección del menú izquierdo.</p>
+        <p data-i18n="dashboard.welcome">Bienvenido. Selecciona una sección del menú izquierdo.</p>
       </section>
 
       <footer class="site-footer">
         <div class="footer-content">
           <div class="footer-info">
-        <strong>© 2026 NutriPlant PRO®</strong>. Marca registrada. Todos los derechos reservados.
-            <p class="footer-disclaimer">Herramienta de apoyo técnico,<br>y responsabilidad final del técnico/usuario con validación en campo.</p>
+        <strong>© 2026 NutriPlant PRO®</strong>. <span data-i18n="dashboard.footer_rights">Marca registrada. Todos los derechos reservados.</span>
+            <p class="footer-disclaimer" data-i18n="dashboard.footer_disclaimer">Herramienta de apoyo técnico y responsabilidad final del técnico/usuario con validación en campo.</p>
             <nav class="footer-legal-links" aria-label="Enlaces legales y manual">
-              <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer">Manual técnico</a>
+              <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" data-i18n="dashboard.manual">Manual técnico</a>
               <span class="sep" aria-hidden="true">·</span>
-              <a href="politicas-privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+              <a href="politicas-privacidad.html" target="_blank" rel="noopener" data-i18n="dashboard.privacy">Privacidad</a>
               <span class="sep" aria-hidden="true">·</span>
-              <a href="terminos-condiciones.html" target="_blank" rel="noopener">Términos</a>
+              <a href="terminos-condiciones.html" target="_blank" rel="noopener" data-i18n="dashboard.terms">Términos</a>
             </nav>
           </div>
           <div class="footer-contact">
@@ -418,18 +428,18 @@
   <script src="ai-knowledge-base/ai-knowledge-base-complete.js"></script>
   <script src="ai-knowledge-base.js"></script>
   <script src="test-verification.js"></script>
-  <script src="fertirriego-functions.js?v=1760007400"></script>
-  <script src="nutricion-granular-functions.js?v=1760008100"></script>
-  <script src="nutricion-granular-requerimiento-functions.js?v=1760008300"></script>
-  <script src="hidroponia-functions.js"></script>
+  <script src="fertirriego-functions.js?v=20260728f"></script>
+  <script src="nutricion-granular-functions.js?v=20260728b"></script>
+  <script src="nutricion-granular-requerimiento-functions.js?v=20260728b"></script>
+  <script src="hidroponia-functions.js?v=20260728b"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=202606242300"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=20260728a"></script>
   <script src="assets/np-soil-water-bridge.js?v=202606242400"></script>
-  <script src="climate-functions.js?v=202606242300"></script>
+  <script src="climate-functions.js?v=20260728a"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
   <script src="assets/np-vpd-range-charts.js?v=202606243700"></script>
-  <script src="dashboard.js?v=20260727b"></script>
-  <script src="fertirriego-program-functions.js?v=1760007400"></script>
+  <script src="dashboard.js?v=20260728g"></script>
+  <script src="fertirriego-program-functions.js?v=20260728f"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=202607221900"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
@@ -5088,10 +5098,10 @@ CONTRATO:
       if (frame && needsFullReload) {
         try {
           var pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260728b' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         } catch (e) {
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260728b&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         }
       }
@@ -7098,14 +7108,14 @@ CONTRATO:
   <div id="extraccionEtapaCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeExtraccionEtapaCalculator();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">📊 Distribución nutrimental por etapa (%)</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_extraction_stage">📊 Distribución nutrimental por etapa (%)</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard" title="Distribución nutrimental por etapa" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260728b" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7130,14 +7140,14 @@ CONTRATO:
   <div id="waterHardnessCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeWaterHardnessCalculator();">
     <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
-        <h2 class="modal-title">💦 Diagnóstico de agua y acondicionamiento</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_water">💦 Diagnóstico de agua y acondicionamiento</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeWaterHardnessCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=1764880001" title="Diagnóstico de agua y acondicionamiento" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260728a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7146,14 +7156,14 @@ CONTRATO:
   <div id="nMineralizableMoCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeNMineralizableMoCalculator();">
     <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
-        <h2 class="modal-title">🌱 Estimación de N mineralizable</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_n">🌱 Estimación de N mineralizable</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard" title="Estimación de N mineralizable" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260728b" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7178,14 +7188,14 @@ CONTRATO:
   <div id="soilWaterTextureToolModal" class="modal-overlay" onclick="if(event.target===this) closeSoilWaterTextureTool();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">🪨 Agua en suelo y textura</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_soil_water">🪨 Agua en suelo y textura</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=202606241800" title="Agua en suelo y textura" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260728a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7194,14 +7204,14 @@ CONTRATO:
   <div id="vpdCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeVPDCalculator();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">🌡️ Estimador de déficit de presión de vapor</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_vpd">🌡️ Estimador de déficit de presión de vapor</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeVPDCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=202606201700" title="Estimador de déficit de presión de vapor" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=20260728a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7226,14 +7236,14 @@ CONTRATO:
   <div id="laminaRiegoToolModal" class="modal-overlay" onclick="if(event.target===this) closeLaminaRiegoTool();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">🌧️ Lámina de riego y balance hídrico</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_irrigation">🌧️ Lámina de riego y balance hídrico</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=202606201700" title="Lámina de riego y balance hídrico" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260728a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7242,14 +7252,14 @@ CONTRATO:
   <div id="fertilizerSolubilitySaltModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerSolubilitySaltTool();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">🧂 Solubilidad e índice salino</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_solubility_salt">🧂 Solubilidad e índice salino</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260728b" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7258,14 +7268,14 @@ CONTRATO:
   <div id="fertilizerCarbonCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCarbonCalculator();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">🌍 Huella de carbono de fertilizantes</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_fertilizer_carbon">🌍 Huella de carbono de fertilizantes</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerCarbonCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260629" title="Huella de carbono de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260728b" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7306,14 +7316,14 @@ CONTRATO:
   <div id="fertilizerCompositionCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCompositionCalculator();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">⚗️ Composición de fertilizantes (%)</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_fertilizer_composition">⚗️ Composición de fertilizantes (%)</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260523" title="Composición de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260728b" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7414,25 +7424,25 @@ CONTRATO:
 <div id="customCropModal" class="modal-overlay">
   <div class="modal-content" style="max-width: 800px;">
   <div class="modal-header">
-      <h3 id="customCropModalTitle">➕ Agregar Cultivo Personalizado</h3>
+      <h3 id="customCropModalTitle" data-i18n="granular.custom_crop_add">➕ Agregar Cultivo Personalizado</h3>
       <button class="btn btn-sm btn-danger" onclick="closeCustomCropModalGlobal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group" style="margin-bottom: 20px;">
-        <label for="customCropName"><strong>Nombre del Cultivo:</strong></label>
-        <input type="text" id="customCropName" class="form-control" placeholder="Ej: Mango, Mora, etc." style="width: 100%; padding: 10px;">
+        <label for="customCropName"><strong data-i18n="granular.crop_name">Nombre del Cultivo:</strong></label>
+        <input type="text" id="customCropName" class="form-control" placeholder="Ej: Mango, Mora, etc." data-i18n-placeholder="granular.crop_placeholder" style="width: 100%; padding: 10px;">
       </div>
       
       <div style="margin-bottom: 20px;">
         <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
-          <strong>📊 Ingrese la extracción por tonelada (kg/ton) para cada nutriente:</strong>
+          <strong id="granularCustomCropExtractionHelp">📊 Ingrese la extracción por tonelada (kg/t) para cada nutriente:</strong>
         </p>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
           <thead>
             <tr style="background: #0369a1; color: white;">
-              <th style="padding: 8px; text-align: center; font-size: 12px;">Nutriente</th>
-              <th style="padding: 8px; text-align: center; font-size: 12px;">Extracción (kg/ton)</th>
+              <th style="padding: 8px; text-align: center; font-size: 12px;" data-i18n="granular.nutrient">Nutriente</th>
+              <th id="granularCustomCropExtractionHeader" style="padding: 8px; text-align: center; font-size: 12px;">Extracción (kg/t)</th>
             </tr>
           </thead>
           <tbody id="customCropInputs">
@@ -7494,14 +7504,14 @@ CONTRATO:
 
       <div id="granularCustomCropsSection" style="margin-top: 12px;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
-          <h4 style="margin:0; color:#1f2937; font-size: 14px;">🌱 Mis cultivos personalizados</h4>
+          <h4 style="margin:0; color:#1f2937; font-size: 14px;" data-i18n="granular.my_custom_crops">🌱 Mis cultivos personalizados</h4>
         </div>
         <div id="granularCustomCropsList" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px;"></div>
       </div>
       
       <div class="modal-footer" style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn btn-secondary" onclick="closeCustomCropModalGlobal()">Cancelar</button>
-        <button id="customCropModalSaveBtn" class="btn btn-success" onclick="addCustomCropGlobal()">Agregar Cultivo</button>
+        <button class="btn btn-secondary" onclick="closeCustomCropModalGlobal()" data-i18n="common.cancel">Cancelar</button>
+        <button id="customCropModalSaveBtn" class="btn btn-success" onclick="addCustomCropGlobal()" data-i18n="granular.add_crop">Agregar Cultivo</button>
       </div>
     </div>
   </div>

@@ -39,6 +39,149 @@ const ICONS = {
 /** Nombre de sección Clima (antes VPD). */
 const CLIMATE_SECTION = 'Análisis: Clima';
 const LEGACY_CLIMATE_SECTION = 'Análisis: Déficit de Presión de Vapor';
+let currentSectionName = 'Inicio';
+
+function dashboardT(key, fallback) {
+  try {
+    if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+      const translated = window.NpI18n.t(key);
+      if (translated !== key) return translated;
+    }
+  } catch (e) {}
+  return fallback;
+}
+
+function granularT(key, fallback) {
+  try {
+    if (window.NpGranularUI) return window.NpGranularUI.t(key, fallback);
+  } catch (e) {}
+  return fallback;
+}
+
+function granularUnit(kind, fallback) {
+  try {
+    if (window.NpGranularUI) return window.NpGranularUI.unit(kind);
+  } catch (e) {}
+  return fallback;
+}
+
+function granularInputToSI(value, kind) {
+  const number = parseFloat(value);
+  if (!Number.isFinite(number)) return 0;
+  try {
+    if (window.NpGranularUI) return window.NpGranularUI.toSI(number, kind);
+  } catch (e) {}
+  return number;
+}
+
+function amendmentT(key, fallback, params) {
+  try {
+    if (window.NpAmendmentUI) return window.NpAmendmentUI.t(key, fallback, params);
+  } catch (e) {}
+  return fallback;
+}
+
+function amendmentUnit(kind, fallback) {
+  try {
+    if (window.NpAmendmentUI) return window.NpAmendmentUI.unit(kind);
+  } catch (e) {}
+  return fallback;
+}
+
+function amendmentInputToSI(element, kind, fallback) {
+  try {
+    if (window.NpAmendmentUI && element) return window.NpAmendmentUI.readSIInput(element, kind);
+  } catch (e) {}
+  const value = parseFloat(element?.value);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function amendmentSetSIInput(element, value, kind) {
+  if (!element) return;
+  try {
+    if (window.NpAmendmentUI) {
+      window.NpAmendmentUI.setSIInput(element, value, kind);
+      return;
+    }
+  } catch (e) {}
+  element.value = value;
+}
+
+function amendmentQuantity(value, kind) {
+  try {
+    if (window.NpAmendmentUI) return window.NpAmendmentUI.quantityFromSI(value, kind);
+  } catch (e) {}
+  return `${formatNumber(value)} ${kind === 'dose_mass_area' ? 'kg/ha' : ''}`.trim();
+}
+
+function amendmentMaterialName(id, name) {
+  try {
+    if (window.NpAmendmentUI) return window.NpAmendmentUI.materialName(id, name);
+  } catch (e) {}
+  return name;
+}
+
+function granularCanonicalNutrientInput(nutrient, value, quantityKind, elementalMode) {
+  let number = granularInputToSI(value, quantityKind);
+  if (!elementalMode) return number;
+  const factors = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SO4: 96.062 / 32.065, SiO2: 2.139 };
+  return factors[nutrient] ? number * factors[nutrient] : number;
+}
+
+function refreshGranularDashboardChrome() {
+  const root = document.querySelector('.nutricion-granular-container');
+  if (!root) return;
+  const tabs = root.querySelectorAll('.tab-navigation .tab-button');
+  if (tabs[0]) tabs[0].textContent = granularT('requirements_tab', '📋 Requerimiento Nutricional');
+  if (tabs[1]) tabs[1].textContent = granularT('program_tab', '🌱 Programa Granular');
+  const reqTitle = root.querySelector('#granularRequerimiento h3');
+  if (reqTitle) reqTitle.textContent = granularT('requirements_title', '📋 Requerimiento Nutricional');
+  const cropLabel = root.querySelector('label[for="granularRequerimientoCropType"]');
+  if (cropLabel) cropLabel.textContent = granularT('crop', 'Cultivo:');
+  const yieldLabel = root.querySelector('label[for="granularRequerimientoTargetYield"]');
+  if (yieldLabel) {
+    yieldLabel.textContent = granularT('target_yield', 'Rendimiento Objetivo') +
+      ' (' + granularUnit('yield_mass_area', 't/ha') + '):';
+  }
+  const cropSelect = root.querySelector('#granularRequerimientoCropType');
+  if (cropSelect && window.NpGranularUI) {
+    const cropLabelsEs = {
+      maiz: 'Maíz', cana: 'Caña', aguacate: 'Aguacate', limon: 'Limón',
+      banano: 'Banano', trigo: 'Trigo', sorgo: 'Sorgo', arroz: 'Arroz', cebada: 'Cebada'
+    };
+    Array.from(cropSelect.options).forEach(function(option) {
+      const fallback = cropLabelsEs[option.value] || option.dataset.npOriginalLabel || option.textContent;
+      if (!option.dataset.npOriginalLabel) option.dataset.npOriginalLabel = fallback;
+      option.textContent = window.NpGranularUI.cropName(option.value, fallback);
+    });
+  }
+  const customCropButton = root.querySelector('button[onclick="showCustomGranularCropModal()"]');
+  if (customCropButton) customCropButton.textContent = granularT('add_custom_crop', '➕ Agregar Cultivo Personalizado');
+  const programTitle = root.querySelector('#granularPrograma h2');
+  if (programTitle) programTitle.textContent = granularT('program_title', '⚪ Nutrición Granular - Programa');
+  const summaryTitle = root.querySelector('#granularPrograma .summary-title');
+  if (summaryTitle) summaryTitle.textContent = granularT('cycle_summary', '📊 Resumen Total del Ciclo');
+  const summaryLabels = root.querySelectorAll('#granularPrograma .summary-grid .summary-label');
+  if (summaryLabels[0]) summaryLabels[0].textContent = granularT('application_count', 'Número de Aplicaciones:');
+  if (summaryLabels[1]) {
+    summaryLabels[1].textContent = granularT('total_dose', 'Dosis Total') +
+      ' (' + granularUnit('dose_mass_area', 'kg/ha') + '):';
+  }
+  const summaryHeadings = root.querySelectorAll('#granularPrograma .summary-nutrients > h4');
+  const doseUnit = granularUnit('dose_mass_area', 'kg/ha');
+  if (summaryHeadings[0]) summaryHeadings[0].textContent = granularT('total_supply', '💡 Aporte Total de Nutrientes') + ' (' + doseUnit + '):';
+  if (summaryHeadings[1]) summaryHeadings[1].textContent = granularT('real_requirement', '🎯 Requerimiento Real') + ' (' + doseUnit + '):';
+  if (summaryHeadings[2]) summaryHeadings[2].textContent = granularT('difference', '➖ Diferencia (Aporte - Requerimiento)') + ' (' + doseUnit + '):';
+  const addButton = root.querySelector('#addApplicationBtn');
+  if (addButton) addButton.textContent = granularT('add_application', '➕ Agregar Nueva Aplicación Granular');
+}
+
+const DASHBOARD_SECTION_KEYS = {
+  'Inicio': 'dashboard.home',
+  'Hidroponia': 'dashboard.hydroponics',
+  'Fertirriego': 'dashboard.fertigation',
+  'Reporte': 'dashboard.report'
+};
 
 function normalizeClimateSectionName(name) {
   if (name === LEGACY_CLIMATE_SECTION) return CLIMATE_SECTION;
@@ -47,12 +190,14 @@ function normalizeClimateSectionName(name) {
 
 /** Nombre visible en UI (el id interno puede seguir siendo «Ubicación»). */
 function getSectionDisplayName(name) {
-  if (name === 'Ubicación') return 'Radar Satelital';
-  return name;
+  const fallback = name === 'Ubicación' ? 'Radar Satelital' : name;
+  const key = DASHBOARD_SECTION_KEYS[name];
+  return key ? dashboardT(key, fallback) : fallback;
 }
 
 /** Si el título visible es el display name, devolver el id interno de sección. */
 function getSectionInternalName(displayOrInternal) {
+  if (title && title.dataset && title.dataset.npSection) return title.dataset.npSection;
   if (displayOrInternal === 'Radar Satelital') return 'Ubicación';
   return displayOrInternal;
 }
@@ -662,6 +807,16 @@ function sectionTemplate(name) {
   }
 
   if (name === "Fertirriego") {
+    const fertiUI = window.NpFertigationUI;
+    const ft = (key, es) => fertiUI ? fertiUI.t(key, es) : es;
+    const fUnit = (kind, fallback) => fertiUI ? fertiUI.unit(kind) : fallback;
+    const fInput = (value, kind) => fertiUI ? fertiUI.inputFromSI(value, kind) : value;
+    const fertiCrops = [
+      ['aguacate','Aguacate'],['arandano','Arándano'],['banano','Banano'],['cana','Caña'],
+      ['cebolla','Cebolla'],['chile','Chile Verde'],['fresa','Fresa'],['frambuesa','Frambuesa'],
+      ['lechuga','Lechuga'],['limon','Limón'],['maiz','Maiz'],['melon','Melon'],['papaya','Papaya'],
+      ['pepino','Pepino'],['pimiento','Pimiento'],['sandia','Sandia'],['tomate','Tomate']
+    ];
     return `
       <div class="fertirriego-container">
         <!-- Header -->
@@ -674,15 +829,15 @@ function sectionTemplate(name) {
         <div class="fertirriego-tabs">
           <button class="tab-button active" data-tab="extraccion">
             <span class="tab-icon">📋</span>
-            <span class="tab-text">Requerimiento Nutricional</span>
+            <span class="tab-text">${ft('requirements_tab', 'Requerimiento Nutricional')}</span>
           </button>
           <button class="tab-button" data-tab="programa">
             <span class="tab-icon">🌱</span>
-            <span class="tab-text">Programa de Nutrición</span>
+            <span class="tab-text">${ft('program_tab', 'Programa de Nutrición')}</span>
           </button>
           <button class="tab-button" data-tab="graficas">
             <span class="tab-icon">📈</span>
-            <span class="tab-text">Gráficas</span>
+            <span class="tab-text">${ft('charts_tab', 'Gráficas')}</span>
           </button>
         </div>
 
@@ -692,45 +847,29 @@ function sectionTemplate(name) {
           <div class="tab-content active" id="extraccion">
             <div class="fertirriego-requirement-container">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #0369a1; font-size: 1.5rem; margin: 0;">📋 Requerimiento Nutricional</h3>
+                <h3 style="color: #0369a1; font-size: 1.5rem; margin: 0;">${ft('requirements_title', '📋 Requerimiento Nutricional')}</h3>
                 <div style="display: flex; gap: 10px; align-items: center;">
                   <button class="btn btn-info btn-sm" onclick="toggleFertirriegoOxideElemental()" id="toggleFertirriegoOxideElementalBtn">
-                    🔄 Ver en Elemental
+                    ${ft('elemental', '🔄 Ver en Elemental')}
                   </button>
                 </div>
               </div>
               
               <div class="fertirriego-inputs">
                 <div class="form-group">
-                  <label for="fertirriegoCropType">Cultivo:</label>
+                  <label for="fertirriegoCropType">${ft('crop', 'Cultivo:')}</label>
                   <select id="fertirriegoCropType">
-                    <option value="aguacate">Aguacate</option>
-                    <option value="arandano">Arándano</option>
-                    <option value="banano">Banano</option>
-                    <option value="cana">Caña</option>
-                    <option value="cebolla">Cebolla</option>
-                    <option value="chile">Chile Verde</option>
-                    <option value="fresa">Fresa</option>
-                    <option value="frambuesa">Frambuesa</option>
-                    <option value="lechuga">Lechuga</option>
-                    <option value="limon">Limón</option>
-                    <option value="maiz">Maiz</option>
-                    <option value="melon">Melon</option>
-                    <option value="papaya">Papaya</option>
-                    <option value="pepino">Pepino</option>
-                    <option value="pimiento">Pimiento</option>
-                    <option value="sandia">Sandia</option>
-                    <option value="tomate">Tomate</option>
+                    ${fertiCrops.map(([id,label]) => `<option value="${id}">${fertiUI ? fertiUI.cropName(id, label) : label}</option>`).join('')}
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="fertirriegoTargetYield">Rendimiento Objetivo (ton/ha):</label>
-                  <input type="number" id="fertirriegoTargetYield" step="0.1" min="1" value="25">
+                  <label for="fertirriegoTargetYield">${ft('target_yield', 'Rendimiento Objetivo')} (${fUnit('yield_mass_area', 't/ha')}):</label>
+                  <input type="number" id="fertirriegoTargetYield" step="0.0001" min="0" value="${fInput(25, 'yield_mass_area')}">
                 </div>
                 <div class="form-group" style="min-width: 280px;">
                   <label style="visibility: hidden;">Botón</label>
                   <button type="button" class="btn btn-success" onclick="showCustomCropModal()" style="width: 100%; padding: 10px; cursor: pointer;">
-                    ➕ Agregar Cultivo Personalizado
+                    ${ft('add_custom_crop', '➕ Agregar Cultivo Personalizado')}
                   </button>
                 </div>
               </div>
@@ -745,29 +884,29 @@ function sectionTemplate(name) {
           <div class="tab-content" id="programa">
             <div class="card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 class="summary-title">📘 Programa de Nutrición - Fertirriego</h3>
+                <h3 class="summary-title">${ft('program_title', '📘 Programa de Nutrición - Fertirriego')}</h3>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                  <button class="btn btn-info btn-sm" onclick="toggleFertiProgramOxideElemental()" id="toggleFertiProgramOxideElementalBtn">🔄 Ver en Elemental</button>
+                  <button class="btn btn-info btn-sm" onclick="toggleFertiProgramOxideElemental()" id="toggleFertiProgramOxideElementalBtn">${ft('elemental', '🔄 Ver en Elemental')}</button>
               </div>
               </div>
 
               <div class="nutrition-summary">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <h3 class="summary-title">📊 Resumen Total del Ciclo</h3>
+                  <h3 class="summary-title">${ft('cycle_summary', '📊 Resumen Total del Ciclo')}</h3>
                 </div>
                 <div class="summary-grid">
                   <div class="summary-item">
-                    <span class="summary-label" id="fertiTotalApplicationsLabel">Número de Semanas:</span>
+                    <span class="summary-label" id="fertiTotalApplicationsLabel">${ft('weeks', 'Número de Semanas:')}</span>
                     <span class="summary-value" id="fertiTotalApplications">0</span>
                   </div>
                   <div class="summary-item">
-                    <span class="summary-label">Dosis Total Kg/Ha:</span>
+                    <span class="summary-label">${ft('total_dose', 'Dosis Total')} (${fUnit('dose_mass_area', 'kg/ha')}):</span>
                     <span class="summary-value" id="fertiTotalDoseKgHa">0</span>
                   </div>
                 </div>
 
                 <div class="summary-nutrients">
-                  <h4>💡 Aporte del programa de nutrición (Kg/Ha):</h4>
+                  <h4>${ft('program_supply', '💡 Aporte del programa de nutrición')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N(NO₃):</span><span class="nutrient-value" id="fertiProgTotalN_NO3">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N(NH₄):</span><span class="nutrient-value" id="fertiProgTotalN_NH4">0.0</span></div>
@@ -789,7 +928,7 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
-                  <h4>💧 Aporte por agua (Kg/Ha):</h4>
+                  <h4>${ft('water_supply', '💧 Aporte por agua')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelN">N-NO₃⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
@@ -810,7 +949,7 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
-                  <h4>📦 Aporte total (programa + agua) (Kg/Ha):</h4>
+                  <h4>${ft('total_supply', '📦 Aporte total (programa + agua)')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiTotalWithWaterN">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiTotalWithWaterP2O5">0.0</span></div>
@@ -831,7 +970,7 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
-                  <h4>🎯 Requerimiento Real (Kg/Ha):</h4>
+                  <h4>🎯 ${ft('actual_requirement', 'Requerimiento Real')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiReqN">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiReqP2O5">0.0</span></div>
@@ -851,7 +990,7 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients summary-nutrients--granular-diff" style="margin-top: 16px;">
-                  <h4>➖ Diferencia (Aporte total - Requerimiento) (Kg/Ha):</h4>
+                  <h4>${ft('difference', '➖ Diferencia (Aporte total - Requerimiento)')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid nutrients-grid--diff">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiDiffN">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiDiffP2O5">0.0</span></div>
@@ -1294,44 +1433,44 @@ function sectionTemplate(name) {
     return `
       <div class="nutricion-granular-container">
         <div class="tab-navigation">
-          <button class="tab-button active" onclick="selectGranularSubTab('requerimiento')">📋 Requerimiento Nutricional</button>
-          <button class="tab-button" onclick="selectGranularSubTab('programa')">🌱 Programa Granular</button>
+          <button class="tab-button active" onclick="selectGranularSubTab('requerimiento')">${granularT('requirements_tab', '📋 Requerimiento Nutricional')}</button>
+          <button class="tab-button" onclick="selectGranularSubTab('programa')">${granularT('program_tab', '🌱 Programa Granular')}</button>
         </div>
 
         <div class="tab-content active" id="granularRequerimiento">
           <div class="fertirriego-requirement-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <h3 style="color: #0369a1; font-size: 1.5rem; margin: 0;">📋 Requerimiento Nutricional</h3>
+              <h3 style="color: #0369a1; font-size: 1.5rem; margin: 0;">${granularT('requirements_title', '📋 Requerimiento Nutricional')}</h3>
               <div style="display: flex; gap: 10px; align-items: center;">
                 <button class="btn btn-info btn-sm" onclick="toggleGranularRequerimientoOxideElemental()" id="toggleGranularRequerimientoOxideElementalBtn">
-                  🔄 Ver en Elemental
+                  ${granularT('elemental', '🔄 Ver en Elemental')}
                 </button>
               </div>
             </div>
             
             <div class="fertirriego-inputs">
               <div class="form-group">
-                <label for="granularRequerimientoCropType">Cultivo:</label>
+                <label for="granularRequerimientoCropType">${granularT('crop', 'Cultivo:')}</label>
                 <select id="granularRequerimientoCropType" onchange="calculateGranularNutrientRequirements(); window.scheduleSaveGranularRequirements && window.scheduleSaveGranularRequirements();">
-                  <option value="maiz">Maíz</option>
-                  <option value="cana">Caña</option>
-                  <option value="aguacate">Aguacate</option>
-                  <option value="limon">Limón</option>
-                  <option value="banano">Banano</option>
-                  <option value="trigo">Trigo</option>
-                  <option value="sorgo">Sorgo</option>
-                  <option value="arroz">Arroz</option>
-                  <option value="cebada">Cebada</option>
+                  <option value="maiz">${window.NpGranularUI ? window.NpGranularUI.cropName('maiz', 'Maíz') : 'Maíz'}</option>
+                  <option value="cana">${window.NpGranularUI ? window.NpGranularUI.cropName('cana', 'Caña') : 'Caña'}</option>
+                  <option value="aguacate">${window.NpGranularUI ? window.NpGranularUI.cropName('aguacate', 'Aguacate') : 'Aguacate'}</option>
+                  <option value="limon">${window.NpGranularUI ? window.NpGranularUI.cropName('limon', 'Limón') : 'Limón'}</option>
+                  <option value="banano">${window.NpGranularUI ? window.NpGranularUI.cropName('banano', 'Banano') : 'Banano'}</option>
+                  <option value="trigo">${window.NpGranularUI ? window.NpGranularUI.cropName('trigo', 'Trigo') : 'Trigo'}</option>
+                  <option value="sorgo">${window.NpGranularUI ? window.NpGranularUI.cropName('sorgo', 'Sorgo') : 'Sorgo'}</option>
+                  <option value="arroz">${window.NpGranularUI ? window.NpGranularUI.cropName('arroz', 'Arroz') : 'Arroz'}</option>
+                  <option value="cebada">${window.NpGranularUI ? window.NpGranularUI.cropName('cebada', 'Cebada') : 'Cebada'}</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="granularRequerimientoTargetYield">Rendimiento Objetivo (ton/ha):</label>
-                <input type="number" id="granularRequerimientoTargetYield" step="0.1" min="1" value="10" onchange="calculateGranularNutrientRequirements(); window.scheduleSaveGranularRequirements && window.scheduleSaveGranularRequirements();">
+                <label for="granularRequerimientoTargetYield">${granularT('target_yield', 'Rendimiento Objetivo')} (${granularUnit('yield_mass_area', 't/ha')}):</label>
+                <input type="number" id="granularRequerimientoTargetYield" step="0.0001" min="0" value="${window.NpGranularUI ? window.NpGranularUI.inputFromSI(10, 'yield_mass_area') : '10'}" onchange="calculateGranularNutrientRequirements(); window.scheduleSaveGranularRequirements && window.scheduleSaveGranularRequirements();">
               </div>
               <div class="form-group" style="min-width: 280px;">
                 <label style="visibility: hidden;">Botón</label>
                 <button type="button" class="btn btn-success" onclick="showCustomGranularCropModal()" style="width: 100%; padding: 10px; cursor: pointer;">
-                  ➕ Agregar Cultivo Personalizado
+                  ${granularT('add_custom_crop', '➕ Agregar Cultivo Personalizado')}
                 </button>
               </div>
             </div>
@@ -1345,10 +1484,10 @@ function sectionTemplate(name) {
         <div class="tab-content" id="granularPrograma">
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <h2 class="text-xl">⚪ Nutrición Granular - Programa</h2>
+              <h2 class="text-xl">${granularT('program_title', '⚪ Nutrición Granular - Programa')}</h2>
               <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                 <button class="btn btn-info btn-sm" onclick="toggleOxideElemental()" id="toggleOxideElementalBtn">
-                  🔄 Ver en Elemental
+                  ${granularT('elemental', '🔄 Ver en Elemental')}
                 </button>
               </div>
         </div>
@@ -1356,21 +1495,21 @@ function sectionTemplate(name) {
             <!-- RESUMEN TOTAL DEL CICLO -->
             <div class="nutrition-summary">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="summary-title">📊 Resumen Total del Ciclo</h3>
+                <h3 class="summary-title">${granularT('cycle_summary', '📊 Resumen Total del Ciclo')}</h3>
               </div>
               <div class="summary-grid">
                 <div class="summary-item">
-                  <span class="summary-label">Número de Aplicaciones:</span>
+                  <span class="summary-label">${granularT('application_count', 'Número de Aplicaciones:')}</span>
                   <span class="summary-value" id="totalApplications">0</span>
                 </div>
                 <div class="summary-item">
-                  <span class="summary-label">Dosis Total Kg/Ha:</span>
+                  <span class="summary-label">${granularT('total_dose', 'Dosis Total')} (${granularUnit('dose_mass_area', 'kg/ha')}):</span>
                   <span class="summary-value" id="totalDoseKgHa">0</span>
                 </div>
               </div>
               
               <div class="summary-nutrients">
-                <h4>💡 Aporte Total de Nutrientes (Kg/Ha):</h4>
+                <h4>${granularT('total_supply', '💡 Aporte Total de Nutrientes')} (${granularUnit('dose_mass_area', 'kg/ha')}):</h4>
                      <div class="nutrients-grid">
                        <div class="nutrient-item">
                          <span class="nutrient-label notranslate" translate="no">N:</span>
@@ -1427,7 +1566,7 @@ function sectionTemplate(name) {
                      </div>
 
               <div class="summary-nutrients" style="margin-top: 16px;">
-                <h4>🎯 Requerimiento Real (Kg/Ha):</h4>
+                <h4>${granularT('real_requirement', '🎯 Requerimiento Real')} (${granularUnit('dose_mass_area', 'kg/ha')}):</h4>
                 <div class="nutrients-grid">
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="reqN">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="reqP2O5">0.0</span></div>
@@ -1446,7 +1585,7 @@ function sectionTemplate(name) {
               </div>
 
               <div class="summary-nutrients summary-nutrients--granular-diff" style="margin-top: 16px;">
-                <h4>➖ Diferencia (Aporte - Requerimiento) (Kg/Ha):</h4>
+                <h4>${granularT('difference', '➖ Diferencia (Aporte - Requerimiento)')} (${granularUnit('dose_mass_area', 'kg/ha')}):</h4>
                 <div class="nutrients-grid nutrients-grid--diff">
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="diffN">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="diffP2O5">0.0</span></div>
@@ -1474,7 +1613,7 @@ function sectionTemplate(name) {
             <!-- BOTÓN PARA AGREGAR NUEVA APLICACIÓN -->
             <div class="add-application-section">
               <button id="addApplicationBtn" class="btn btn-primary" onclick="addGranularApplication()">
-                ➕ Agregar Nueva Aplicación Granular
+                ${granularT('add_application', '➕ Agregar Nueva Aplicación Granular')}
               </button>
             </div>
           </div>
@@ -1490,11 +1629,11 @@ function sectionTemplate(name) {
         <div class="hydroponia-tabs">
           <button class="tab-button active" data-tab="hidro-solucion">
             <span class="tab-icon">🧪</span>
-            <span class="tab-text">Solución por etapa</span>
+            <span class="tab-text">${hydroT('Solución por etapa', 'Solution by stage')}</span>
           </button>
           <button class="tab-button" data-tab="hidro-calculo">
             <span class="tab-icon">⚙️</span>
-            <span class="tab-text">Cálculo de fertilizantes</span>
+            <span class="tab-text">${hydroT('Cálculo de fertilizantes', 'Fertilizer calculation')}</span>
           </button>
         </div>
 
@@ -1502,7 +1641,7 @@ function sectionTemplate(name) {
           <div class="tab-content active" id="hidro-solucion">
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>🧪 Solución nutritiva por etapa</h3>
+                <h3>🧪 ${hydroT('Solución nutritiva por etapa', 'Nutrient solution by stage')}</h3>
                 
                 <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
               </div>
@@ -1516,9 +1655,9 @@ function sectionTemplate(name) {
                 <img src="assets/NutriPlant_PRO_blue.png" alt="">
               </div>
               <div class="hydro-card-header">
-                <h3>📐 Diagrama ternario (aniones + cationes)</h3>
+                <h3>📐 ${hydroT('Diagrama ternario (aniones + cationes)', 'Ternary diagram (anions + cations)')}</h3>
                 <div class="hydro-muted">
-                  <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70. Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40. Fuera de estos mín/máx puede haber antagonismos y precipitados. El % de NH₄⁺ se calcula sobre el total de cationes (K+Ca+Mg+NH₄⁺) y no entra en el triángulo.
+                  <strong>${hydroT('Rangos por elemento (%).', 'Ranges by element (%).')}</strong> ${hydroT('Aniones', 'Anions')}: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70. ${hydroT('Cationes', 'Cations')}: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40. ${hydroT('Fuera de estos rangos puede haber antagonismos y precipitados.', 'Outside these ranges, antagonisms and precipitates may occur.')}
                 </div>
               </div>
               <div id="hydroTriangleInfoCombined" class="hydro-muted" style="margin-bottom:8px;"></div>
@@ -1529,33 +1668,33 @@ function sectionTemplate(name) {
           <div class="tab-content" id="hidro-calculo">
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>🎯 Objetivo de solución (ppm)</h3>
-                <div class="hydro-muted">Se toma de la etapa seleccionada en la pestaña anterior.</div>
+                <h3>🎯 ${hydroT('Objetivo de solución (ppm)', 'Solution target (ppm)')}</h3>
+                <div class="hydro-muted">${hydroT('Se toma de la etapa seleccionada en la pestaña anterior.', 'Uses the stage selected in the previous tab.')}</div>
               </div>
               <div id="hydroObjectiveGrid" class="hydro-grid"></div>
             </div>
 
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>💧 Análisis de agua (ppm)</h3>
-                <div class="hydro-muted">Ingresa los aportes del agua para calcular el faltante.</div>
+                <h3>💧 ${hydroT('Análisis de agua (ppm)', 'Water analysis (ppm)')}</h3>
+                <div class="hydro-muted">${hydroT('Ingresa los aportes del agua para calcular el faltante.', 'Enter water contributions to calculate the remaining requirement.')}</div>
               </div>
               <div id="hydroWaterGrid" class="hydro-grid"></div>
             </div>
 
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>📉 Requerimiento total (ppm)</h3>
+                <h3>📉 ${hydroT('Requerimiento total (ppm)', 'Total requirement (ppm)')}</h3>
               </div>
               <div id="hydroMissingGrid" class="hydro-grid"></div>
             </div>
 
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>🧮 Fertilizantes disponibles (elemental)</h3>
+                <h3>🧮 ${hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)')}</h3>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                  <button class="btn btn-secondary btn-sm" id="hydroAddFertBtn">➕ Agregar fertilizante</button>
-                  <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="Ver, editar o eliminar fertilizantes personalizados">Gestionar catálogo de fertilizantes</button>
+                  <button class="btn btn-secondary btn-sm" id="hydroAddFertBtn">➕ ${hydroT('Agregar fertilizante', 'Add fertilizer')}</button>
+                  <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="${hydroT('Ver, editar o eliminar fertilizantes personalizados', 'View, edit, or delete custom fertilizers')}">${hydroT('Gestionar catálogo de fertilizantes', 'Manage fertilizer catalog')}</button>
                 </div>
               </div>
               <div id="hydroVolumeCard" class="hydro-volume-card" style="margin-bottom:14px;"></div>
@@ -1805,7 +1944,8 @@ function selectSection(name, el) {
   } catch {}
   
   // Preservar posición de scroll de la sección actual antes de cambiar (para restaurar al regresar)
-  var previousSection = title ? getSectionInternalName(title.textContent.trim()) : '';
+  var previousSection = title && title.dataset ? (title.dataset.npSection || currentSectionName) : currentSectionName;
+  currentSectionName = name;
   if (previousSection) {
     var subTab = getCurrentSubTabForSection(previousSection);
     var scrollKey = subTab ? previousSection + '|' + subTab : previousSection;
@@ -1995,7 +2135,10 @@ function selectSection(name, el) {
     }
   }
 
-  if (title) title.textContent = getSectionDisplayName(name);
+  if (title) {
+    title.dataset.npSection = name;
+    title.textContent = getSectionDisplayName(name);
+  }
   var reusedCachedDom = false;
   if (view) {
     var currentCacheKey = getSectionCacheKey(name);
@@ -2418,8 +2561,8 @@ function renderMenu() {
     const a = document.createElement("a");
     a.href = "#";
     a.dataset.section = name.toLowerCase();
-    a.innerHTML = `<span class="icon">📊</span><span class="label">${name}</span>`;
-    if (idx === 0) a.classList.add("active");
+    a.innerHTML = `<span class="icon">📊</span><span class="label">${getSectionDisplayName(name)}</span>`;
+    if (name === currentSectionName || (idx === 0 && !currentSectionName)) a.classList.add("active");
     a.addEventListener("click", (e) => { e.preventDefault(); selectSection(name, a); });
     menu.appendChild(a);
   });
@@ -2429,6 +2572,30 @@ function renderMenu() {
   // Ejecutar después de renderizar el menú
   setTimeout(() => handleSidebarTextVisibility(), 0);
 }
+
+window.npHandleDashboardPreferencesChanged = function () {
+  if (window.NpI18n) window.NpI18n.apply(document);
+  document.querySelectorAll('[data-i18n-title][data-np-tooltip]').forEach(function (el) {
+    el.setAttribute('data-np-tooltip', el.getAttribute('title') || el.getAttribute('aria-label') || '');
+  });
+  if (title) {
+    title.dataset.npSection = currentSectionName;
+    title.textContent = getSectionDisplayName(currentSectionName);
+  }
+  renderMenu();
+  refreshGranularDashboardChrome();
+  if (window.NpAmendmentUI) {
+    window.NpAmendmentUI.refresh(document);
+    renderAmendmentsTableBody();
+    restoreAmendmentUIState(selectedAmendments, getSoilReachPercent({ mutate: false }) || 100);
+    updatePHIndicator();
+    if (window.lastAmendmentCalc?.details) updateSoilReachAdjustment({ mutate: false });
+  }
+  if (currentSectionName === CLIMATE_SECTION) {
+    sectionDomCache = {};
+    requestAnimationFrame(function () { selectSection(CLIMATE_SECTION); });
+  }
+};
 
 // ==========================
 // 4.1) Tarjetas del sidebar
@@ -2450,13 +2617,13 @@ function renderSidebarCards(){
     noProjectCard.innerHTML = `
       <div class="title">
         <div class="t">
-          <span class="info-icon" data-icon="ℹ️" title="Proyecto">ℹ️</span>
-          <span class="text">Proyecto</span>
+          <span class="info-icon" data-icon="ℹ️" title="${dashboardT('dashboard.project', 'Proyecto')}">ℹ️</span>
+          <span class="text">${dashboardT('dashboard.project', 'Proyecto')}</span>
         </div>
       </div>
       <div class="sb-chiprow">
         <div class="no-project-message">
-          <p>📁 Selecciona un proyecto desde la página de inicio para comenzar</p>
+          <p>📁 ${dashboardT('dashboard.select_project', 'Selecciona un proyecto desde la página de inicio para comenzar')}</p>
         </div>
       </div>
     `;
@@ -2490,17 +2657,17 @@ function renderProjectCards(p) {
   card1.innerHTML = `
     <div class="title">
       <div class="t">
-        <span class="info-icon" data-icon="ℹ️" title="Proyecto">ℹ️</span>
-        <span class="text">Proyecto</span>
+        <span class="info-icon" data-icon="ℹ️" title="${dashboardT('dashboard.project', 'Proyecto')}">ℹ️</span>
+        <span class="text">${dashboardT('dashboard.project', 'Proyecto')}</span>
       </div>
     </div>
     <div class="sb-chiprow">
-      <button class="sb-chip" data-section="ubicacion">🛰️ <span class="text">Radar Satelital</span></button>
-      <button class="sb-chip" data-section="enmienda">🚜 <span class="text">Enmienda</span></button>
-      <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">Nutrición Granular</span></button>
-      <button class="sb-chip" data-section="fertirriego">📈 <span class="text">Fertirriego</span></button>
-      <button class="sb-chip" data-section="hidroponia">💧 <span class="text">Hidroponia</span></button>
-      <button class="sb-chip" data-section="reporte">📄 <span class="text">Reporte</span></button>
+      <button class="sb-chip" data-section="ubicacion">🛰️ <span class="text">${dashboardT('dashboard.radar', 'Radar Satelital')}</span></button>
+      <button class="sb-chip" data-section="enmienda">🚜 <span class="text">${dashboardT('dashboard.amendment', 'Enmienda')}</span></button>
+      <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">${dashboardT('dashboard.granular', 'Nutrición Granular')}</span></button>
+      <button class="sb-chip" data-section="fertirriego">📈 <span class="text">${dashboardT('dashboard.fertigation', 'Fertirriego')}</span></button>
+      <button class="sb-chip" data-section="hidroponia">💧 <span class="text">${dashboardT('dashboard.hydroponics', 'Hidroponía')}</span></button>
+      <button class="sb-chip" data-section="reporte">📄 <span class="text">${dashboardT('dashboard.report', 'Reporte')}</span></button>
     </div>
   `;
   sbStack.appendChild(card1);
@@ -2509,15 +2676,15 @@ function renderProjectCards(p) {
 card2.className = "sb-card";
 card2.innerHTML = `
   <div class="title">
-    <div class="t"><span class="analysis-icon" data-icon="🔬" title="Análisis">🔬</span><span class="text">Análisis</span></div>
+    <div class="t"><span class="analysis-icon" data-icon="🔬" title="${dashboardT('dashboard.analysis', 'Análisis')}">🔬</span><span class="text">${dashboardT('dashboard.analysis', 'Análisis')}</span></div>
   </div>
   <div class="sb-chiprow">
-    <button class="sb-chip" data-section="suelo">🟤 <span class="text">Suelo</span></button>
-            <button class="sb-chip" data-section="extracto">🧪 <span class="text">Solución Nutritiva</span></button>
-    <button class="sb-chip" data-section="pasta">📋 <span class="text">Extracto de Pasta</span></button>
-    <button class="sb-chip" data-section="agua">💧 <span class="text">Agua</span></button>
-    <button class="sb-chip" data-section="foliar">🍃 <span class="text">Foliar</span></button>
-    <button class="sb-chip" data-section="fruta">🍎 <span class="text">Fruta</span></button>
+    <button class="sb-chip" data-section="suelo">🟤 <span class="text">${dashboardT('dashboard.soil', 'Suelo')}</span></button>
+            <button class="sb-chip" data-section="extracto">🧪 <span class="text">${dashboardT('dashboard.nutrient_solution', 'Solución Nutritiva')}</span></button>
+    <button class="sb-chip" data-section="pasta">📋 <span class="text">${dashboardT('dashboard.paste_extract', 'Extracto de Pasta')}</span></button>
+    <button class="sb-chip" data-section="agua">💧 <span class="text">${dashboardT('dashboard.water', 'Agua')}</span></button>
+    <button class="sb-chip" data-section="foliar">🍃 <span class="text">${dashboardT('dashboard.leaf', 'Foliar')}</span></button>
+    <button class="sb-chip" data-section="fruta">🍎 <span class="text">${dashboardT('dashboard.fruit', 'Fruta')}</span></button>
   </div>
 `;
   sbStack.appendChild(card2);
@@ -2527,7 +2694,7 @@ card2.innerHTML = `
   vpdCard.className = "sb-card sb-vpd-card";
   vpdCard.innerHTML = `
     <div class="sb-chiprow">
-      <button class="sb-chip" data-section="clima">🌤️ <span class="text">Clima</span></button>
+      <button class="sb-chip" data-section="clima">🌤️ <span class="text">${dashboardT('dashboard.climate', 'Clima')}</span></button>
     </div>
   `;
   sbStack.appendChild(vpdCard);
@@ -2563,6 +2730,7 @@ function initializeEnmiendaCalculator() {
   const resetBtn = document.getElementById('reset-amendment');
   const resultsSectionInit = document.getElementById('amendment-results');
   const soilReachInput = document.getElementById('soil-reach-percent');
+  if (window.NpAmendmentUI) window.NpAmendmentUI.refresh(document);
   // Ocultar resultados al iniciar, a menos que haya resultados guardados visibles
   try {
     const hasSavedVisible = !!(currentProject && currentProject.amendments && currentProject.amendments.results && (currentProject.amendments.results.isVisible || currentProject.amendments.results.detailedHTML));
@@ -3206,22 +3374,28 @@ function calcularEstrategiaEnmiendas(enmiendasSeleccionadas, necesidades) {
 
 // Función auxiliar para convertir kg/ha a meq/100g
 function convertKgHaToMeq(kgHa, pesoMolecular) {
-  // Obtener valores del formulario
-  const densidadAparente = parseFloat(document.getElementById('soil-density')?.value || 1.1);
-  const profundidad = parseFloat(document.getElementById('soil-depth')?.value || 30) / 100; // convertir cm a m
+  // Volver siempre a SI antes del cálculo físico.
+  const densidadAparente = amendmentInputToSI(document.getElementById('soil-density'), 'bulk_density', 1.1);
+  const profundidad = amendmentInputToSI(document.getElementById('soil-depth'), 'depth', 30) / 100;
   
   // Conversión inversa: kg/ha → meq/100g
   // Factor: kgHa / (pesoMolecular × 10 × (100 × 100 × profundidadEnMetros × densidadAparente) / 1,000)
+  if (window.NpAmendmentUI) {
+    return window.NpAmendmentUI.kgHaToMeq(kgHa, pesoMolecular, profundidad * 100, densidadAparente);
+  }
   return kgHa / (pesoMolecular * 10 * (100 * 100 * profundidad * densidadAparente) / 1000);
 }
 
 // Función auxiliar para convertir meq/100g a kg/ha
 function convertMeqToKgHa(meq, pesoEquivalente) {
-  // Obtener valores del formulario
-  const densidadAparente = parseFloat(document.getElementById('soil-density')?.value || 1.1);
-  const profundidad = parseFloat(document.getElementById('soil-depth')?.value || 30) / 100; // convertir cm a m
+  // meq/100g solo se lleva a masa/área con profundidad y densidad canónicas.
+  const densidadAparente = amendmentInputToSI(document.getElementById('soil-density'), 'bulk_density', 1.1);
+  const profundidad = amendmentInputToSI(document.getElementById('soil-depth'), 'depth', 30) / 100;
   
   // Fórmula correcta: meq × pesoEquivalente × 10 × (100 × 100 × profundidadEnMetros × densidadAparente) / 1,000
+  if (window.NpAmendmentUI) {
+    return window.NpAmendmentUI.meqToKgHa(meq, pesoEquivalente, profundidad * 100, densidadAparente);
+  }
   return meq * pesoEquivalente * 10 * (100 * 100 * profundidad * densidadAparente) / 1000;
 }
 
@@ -3301,8 +3475,8 @@ function calculateAmendment() {
   const alTarget = parseFloat(document.getElementById('al-target')?.value || 0);
   
   // Obtener propiedades del suelo
-  const soilDensity = parseFloat(document.getElementById('soil-density')?.value || 1.4);
-  const soilDepth = parseFloat(document.getElementById('soil-depth')?.value || 30);
+  const soilDensity = amendmentInputToSI(document.getElementById('soil-density'), 'bulk_density', 1.4);
+  const soilDepth = amendmentInputToSI(document.getElementById('soil-depth'), 'depth', 30);
   
   // Obtener enmiendas seleccionadas
   const selectedAmendments = getSelectedAmendments();
@@ -3312,7 +3486,7 @@ function calculateAmendment() {
   // Verificar que hay enmiendas seleccionadas
   if (selectedAmendments.length === 0) {
     console.log('No hay enmiendas seleccionadas');
-    alert('Por favor selecciona al menos una enmienda antes de calcular');
+    alert(amendmentT('select_required', 'Por favor selecciona al menos una enmienda antes de calcular'));
     return;
   }
   
@@ -3473,7 +3647,7 @@ function calculateAmendment() {
     if (neededKKgHa > 0 && kContribution > neededKKgHa * TOLERANCIA_EXCESO) overContrib.push('K');
     const advertencia = overContrib.length > 0;
     const advertenciaMensaje = advertencia
-      ? `Excede objetivo de ${overContrib.join(', ')} por la composición de la enmienda`
+      ? amendmentT('exceeds_target', 'Excede objetivo de {elements} por la composición de la enmienda', { elements: overContrib.join(', ') })
       : '';
     
     console.log(`🧮 Aportes calculados:`, {
@@ -3495,6 +3669,7 @@ function calculateAmendment() {
     // Guardar detalles de esta enmienda
     if (amendmentAmount > 0) {
       amendmentDetails.push({
+        id: amendment.id,
         name: amendment.name,
         amount: amendmentAmount,
         ca: caContribution,
@@ -3506,7 +3681,7 @@ function calculateAmendment() {
         razon: strategy.razon,
         elementoLimitante: strategy.elementoLimitante,
         advertencia: strategy.advertencia || advertencia || false,
-        advertenciaMensaje: strategy.advertencia ? 'pH alto: cal no recomendada' : advertenciaMensaje
+        advertenciaMensaje: strategy.advertencia ? amendmentT('high_ph_lime', 'pH alto: cal no recomendada') : advertenciaMensaje
       });
     }
   });
@@ -3556,10 +3731,10 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
   }));
   
   let html = `<div class="np-amend-results-pro">`;
-  html += `<h3 class="np-amend-results-title">📊 Resultados del Cálculo de Enmiendas</h3>`;
+  html += `<h3 class="np-amend-results-title">${amendmentT('results', '📊 Resultados del Cálculo de Enmiendas')}</h3>`;
   
   if (adjustedDetails.length === 0) {
-    html += '<p class="np-amend-results-empty">No se requieren enmiendas con las seleccionadas actuales.</p>';
+    html += `<p class="np-amend-results-empty">${amendmentT('no_results', 'No se requieren enmiendas con las seleccionadas actuales.')}</p>`;
   } else {
     // Calcular totales reales de todos los nutrientes
     let totalKReal = 0, totalCaReal = 0, totalMgReal = 0, totalSo4Real = 0, totalSiReal = 0;
@@ -3573,37 +3748,38 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     });
     
     html += '<div class="amendment-summary">';
-    html += '<h4>🎯 Aportes Totales:</h4>';
+    html += `<h4>${amendmentT('total_contributions', '🎯 Aportes Totales:')}</h4>`;
     html += '<ul>';
-    if (totalKReal > 0) html += `<li><strong>Potasio (<span class="notranslate" translate="no">K⁺</span>):</strong> ${formatNumber(totalKReal)} kg/ha</li>`;
-    if (totalCaReal > 0) html += `<li><strong>Calcio (<span class="notranslate" translate="no">Ca²⁺</span>):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
-    if (totalMgReal > 0) html += `<li><strong>Magnesio (<span class="notranslate" translate="no">Mg²⁺</span>):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
-    if (totalSo4Real > 0) html += `<li><strong>Sulfato (<span class="notranslate" translate="no">SO₄²⁻</span>):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
-    if (totalSiReal > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
+    if (totalKReal > 0) html += `<li><strong>${amendmentT('potassium', 'Potasio')} (<span class="notranslate" translate="no">K⁺</span>):</strong> ${amendmentQuantity(totalKReal, 'dose_mass_area')}</li>`;
+    if (totalCaReal > 0) html += `<li><strong>${amendmentT('calcium', 'Calcio')} (<span class="notranslate" translate="no">Ca²⁺</span>):</strong> ${amendmentQuantity(totalCaReal, 'dose_mass_area')}</li>`;
+    if (totalMgReal > 0) html += `<li><strong>${amendmentT('magnesium', 'Magnesio')} (<span class="notranslate" translate="no">Mg²⁺</span>):</strong> ${amendmentQuantity(totalMgReal, 'dose_mass_area')}</li>`;
+    if (totalSo4Real > 0) html += `<li><strong>${amendmentT('sulfate', 'Sulfato')} (<span class="notranslate" translate="no">SO₄²⁻</span>):</strong> ${amendmentQuantity(totalSo4Real, 'dose_mass_area')}</li>`;
+    if (totalSiReal > 0) html += `<li><strong>${amendmentT('silicon', 'Silicio')} (<span class="notranslate" translate="no">Si</span>):</strong> ${amendmentQuantity(totalSiReal, 'dose_mass_area')}</li>`;
     html += '</ul>';
-    html += `<div class="np-amend-reach-note">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
+    html += `<div class="np-amend-reach-note">${amendmentT('reach_note', '% del volumen de suelo explorado por raíces')} (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
     
     html += '<div class="amendment-details">';
-    html += '<h4>📋 Detalles por Enmienda:</h4>';
+    html += `<h4>${amendmentT('details', '📋 Detalles por Enmienda:')}</h4>`;
     html += '<div class="np-amend-table-wrap"><table class="results-table">';
-    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th><span class="notranslate" translate="no">K⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">Ca²⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">Mg²⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">SO₄²⁻</span> (kg/ha)</th><th><span class="notranslate" translate="no">Si</span> (kg/ha)</th></tr></thead>';
+    const doseUnit = amendmentUnit('dose_mass_area', 'kg/ha');
+    html += `<thead><tr><th>${amendmentT('amendment', 'Enmienda')}</th><th>${amendmentT('quantity', 'Cantidad')} (${doseUnit})</th><th><span class="notranslate" translate="no">K⁺</span> (${doseUnit})</th><th><span class="notranslate" translate="no">Ca²⁺</span> (${doseUnit})</th><th><span class="notranslate" translate="no">Mg²⁺</span> (${doseUnit})</th><th><span class="notranslate" translate="no">SO₄²⁻</span> (${doseUnit})</th><th><span class="notranslate" translate="no">Si</span> (${doseUnit})</th></tr></thead>`;
     html += '<tbody>';
     
     adjustedDetails.forEach(amendment => {
       html += '<tr>';
       if (amendment.advertencia) {
-        const warnMsg = amendment.advertenciaMensaje ? amendment.advertenciaMensaje : 'Posible sobreaporte por composición';
-        html += `<td style="color: #dc2626; font-weight: bold;" title="${warnMsg}">⚠️ ${amendment.name}</td>`;
+        const warnMsg = amendment.advertenciaMensaje ? amendment.advertenciaMensaje : amendmentT('warning', 'Posible sobreaporte por composición');
+        html += `<td style="color: #dc2626; font-weight: bold;" title="${warnMsg}">⚠️ ${amendmentMaterialName(amendment.id, amendment.name)}</td>`;
       } else {
-      html += `<td>${amendment.name}</td>`;
+      html += `<td>${amendmentMaterialName(amendment.id, amendment.name)}</td>`;
       }
-      html += `<td>${formatNumber(amendment.amount)}</td>`;
-      html += `<td>${amendment.k > 0 ? formatNumber(amendment.k) : '-'}</td>`;
-      html += `<td>${amendment.ca > 0 ? formatNumber(amendment.ca) : '-'}</td>`;
-      html += `<td>${amendment.mg > 0 ? formatNumber(amendment.mg) : '-'}</td>`;
-      html += `<td>${amendment.so4 > 0 ? formatNumber(amendment.so4) : '-'}</td>`;
-      html += `<td>${amendment.si > 0 ? formatNumber(amendment.si) : '-'}</td>`;
+      html += `<td>${window.NpAmendmentUI ? window.NpAmendmentUI.resultFromSI(amendment.amount, 'dose_mass_area') : formatNumber(amendment.amount)}</td>`;
+      html += `<td>${amendment.k > 0 ? (window.NpAmendmentUI ? window.NpAmendmentUI.resultFromSI(amendment.k, 'dose_mass_area') : formatNumber(amendment.k)) : '-'}</td>`;
+      html += `<td>${amendment.ca > 0 ? (window.NpAmendmentUI ? window.NpAmendmentUI.resultFromSI(amendment.ca, 'dose_mass_area') : formatNumber(amendment.ca)) : '-'}</td>`;
+      html += `<td>${amendment.mg > 0 ? (window.NpAmendmentUI ? window.NpAmendmentUI.resultFromSI(amendment.mg, 'dose_mass_area') : formatNumber(amendment.mg)) : '-'}</td>`;
+      html += `<td>${amendment.so4 > 0 ? (window.NpAmendmentUI ? window.NpAmendmentUI.resultFromSI(amendment.so4, 'dose_mass_area') : formatNumber(amendment.so4)) : '-'}</td>`;
+      html += `<td>${amendment.si > 0 ? (window.NpAmendmentUI ? window.NpAmendmentUI.resultFromSI(amendment.si, 'dose_mass_area') : formatNumber(amendment.si)) : '-'}</td>`;
       html += '</tr>';
     });
     
@@ -3657,13 +3833,13 @@ function toggleAmendmentSelection(amendmentId) {
   if (isSelected) {
     // Deseleccionar
     button.classList.remove('selected');
-    button.textContent = 'Seleccionar';
+    button.textContent = amendmentT('select', 'Seleccionar');
     button.style.backgroundColor = '';
     button.style.color = '';
   } else {
     // Seleccionar
     button.classList.add('selected');
-    button.textContent = 'Seleccionado';
+    button.textContent = amendmentT('selected', 'Seleccionado');
     button.style.backgroundColor = '#10b981'; // Verde
     button.style.color = 'white';
   }
@@ -3680,7 +3856,7 @@ function restoreAmendmentUIState(selectedIds, reachPercent) {
     const button = document.getElementById('btn-select-' + amendmentId);
     if (!button) return;
     button.classList.add('selected');
-    button.textContent = 'Seleccionado';
+    button.textContent = amendmentT('selected', 'Seleccionado');
     button.style.backgroundColor = '#10b981';
     button.style.color = 'white';
   });
@@ -4066,8 +4242,8 @@ function resetAmendmentForm() {
   calculateTotalPercent();
   
   // Resetear propiedades del suelo
-  document.getElementById('soil-density').value = '';
-  document.getElementById('soil-depth').value = '30';
+  amendmentSetSIInput(document.getElementById('soil-density'), 1.1, 'bulk_density');
+  amendmentSetSIInput(document.getElementById('soil-depth'), 30, 'depth');
   document.getElementById('soil-ph').value = '';
   const soilReachEl = document.getElementById('soil-reach-percent');
   if (soilReachEl) soilReachEl.value = '100';
@@ -6957,19 +7133,19 @@ function updatePHIndicator() {
   const ph = parseFloat(phInput.value);
   
   if (isNaN(ph) || phInput.value === '') {
-    phIndicator.innerHTML = '⚪ Ingrese pH';
+    phIndicator.textContent = amendmentT('ph_enter', '⚪ Ingrese pH');
     phIndicator.className = 'ph-indicator ph-empty';
   } else if (ph < 5.5) {
-    phIndicator.innerHTML = '🔴 Ácido';
+    phIndicator.textContent = amendmentT('ph_acid', '🔴 Ácido');
     phIndicator.className = 'ph-indicator ph-acid';
   } else if (ph < 6.0) {
-    phIndicator.innerHTML = '🟡 Ligeramente ácido';
+    phIndicator.textContent = amendmentT('ph_acid', '🟡 Ligeramente ácido');
     phIndicator.className = 'ph-indicator ph-slightly-acid';
   } else if (ph >= 6.0 && ph <= 7.5) {
-    phIndicator.innerHTML = '🟢 Neutro';
+    phIndicator.textContent = amendmentT('ph_neutral', '🟢 Neutro');
     phIndicator.className = 'ph-indicator ph-neutral';
   } else if (ph > 7.5) {
-    phIndicator.innerHTML = '🔵 Alcalino';
+    phIndicator.textContent = amendmentT('ph_alkaline', '🔵 Alcalino');
     phIndicator.className = 'ph-indicator ph-alkaline';
   }
 }
@@ -7280,7 +7456,7 @@ function renderAmendmentsTableBody() {
     const row = document.createElement('tr');
     row.className = 'amendment-row';
     row.innerHTML = `
-      <td>${amendment.name}</td>
+      <td>${amendmentMaterialName(amendment.id, amendment.name)}</td>
       <td>${amendment.formula}</td>
       <td>${amendment.molecularWeight}</td>
       <td>${amendment.k > 0 ? amendment.k + '%' : '-'}</td>
@@ -7292,9 +7468,9 @@ function renderAmendmentsTableBody() {
       <td>${amendment.si > 0 ? amendment.si + '%' : '-'}</td>
       <td>
         <button class="btn-select-amendment" id="btn-select-${amendment.id}" onclick="toggleAmendmentSelection('${amendment.id}')">
-          Seleccionar
+          ${amendmentT('select', 'Seleccionar')}
         </button>
-        <button class="btn-edit-amendment" onclick="editAmendment('${amendment.id}')" title="Editar composición">
+        <button class="btn-edit-amendment" onclick="editAmendment('${amendment.id}')" title="${amendmentT('edit_composition', 'Editar composición')}">
           ✏️
         </button>
       </td>
@@ -7324,12 +7500,12 @@ function renderAmendmentsTableBody() {
       <td>${amendment.si > 0 ? amendment.si + '%' : '-'}</td>
       <td>
         <button id="btn-select-${amendment.id}" class="btn-select-amendment" onclick="toggleAmendmentSelection('${amendment.id}')">
-          Seleccionar
+          ${amendmentT('select', 'Seleccionar')}
         </button>
-        <button class="btn-edit-amendment" onclick="editAmendment('${amendment.id}')" title="Editar composición">
+        <button class="btn-edit-amendment" onclick="editAmendment('${amendment.id}')" title="${amendmentT('edit_composition', 'Editar composición')}">
           ✏️
         </button>
-        <button class="btn-delete-amendment-small" onclick="deleteAmendment('${amendment.id}')" title="Eliminar enmienda personalizada">
+        <button class="btn-delete-amendment-small" onclick="deleteAmendment('${amendment.id}')" title="${amendmentT('delete_custom', 'Eliminar enmienda personalizada')}">
           🗑️
         </button>
       </td>
@@ -7341,9 +7517,9 @@ function renderAmendmentsTableBody() {
   const newRow = document.createElement('tr');
   newRow.id = 'new-amendment-row';
   newRow.innerHTML = `
-    <td><input type="text" id="new-amendment-name" placeholder="Nombre de la enmienda" class="amendment-input"></td>
-    <td><input type="text" id="new-amendment-formula" placeholder="Fórmula química" class="amendment-input"></td>
-    <td><input type="number" id="new-amendment-molecular" placeholder="Peso molecular" class="amendment-input" step="0.01"></td>
+    <td><input type="text" id="new-amendment-name" placeholder="${amendmentT('custom_name', 'Nombre de la enmienda')}" class="amendment-input"></td>
+    <td><input type="text" id="new-amendment-formula" placeholder="${amendmentT('chemical_formula', 'Fórmula química')}" class="amendment-input"></td>
+    <td><input type="number" id="new-amendment-molecular" placeholder="${amendmentT('molecular_weight', 'Peso molecular')}" class="amendment-input" step="0.01"></td>
     <td><input type="number" id="new-amendment-k" placeholder="%K" class="amendment-input" step="0.01" min="0" max="100"></td>
     <td><input type="number" id="new-amendment-ca" placeholder="%Ca" class="amendment-input" step="0.01" min="0" max="100"></td>
     <td><input type="number" id="new-amendment-mg" placeholder="%Mg" class="amendment-input" step="0.01" min="0" max="100"></td>
@@ -7376,9 +7552,9 @@ function updateSelectionIndicator() {
   const sectionTitle = document.querySelector('.amendments-section h3');
   if (sectionTitle) {
     if (count > 0) {
-      sectionTitle.innerHTML = `🧪 Enmiendas Disponibles <span class="selection-count">(${count} seleccionada${count > 1 ? 's' : ''})</span>`;
+      sectionTitle.innerHTML = `${amendmentT('available', '🧪 Enmiendas Disponibles')} <span class="selection-count">(${count})</span>`;
     } else {
-      sectionTitle.innerHTML = '🧪 Enmiendas Disponibles';
+      sectionTitle.innerHTML = amendmentT('available', '🧪 Enmiendas Disponibles');
     }
   }
 }
@@ -7390,7 +7566,7 @@ async function saveNewAmendment() {
   const molecularWeight = parseFloat(document.getElementById('new-amendment-molecular').value);
   
   if (!name || !formula || isNaN(molecularWeight)) {
-    showMessage('❌ Por favor completa al menos: Nombre, Fórmula y Peso Molecular', 'error');
+    showMessage(amendmentT('required_custom', '❌ Por favor completa al menos: Nombre, Fórmula y Peso Molecular'), 'error');
     return;
   }
   
@@ -7432,7 +7608,7 @@ async function saveNewAmendment() {
   
   clearNewAmendmentRow();
   loadAmendmentsTable();
-  showMessage(`✅ Enmienda "${name}" guardada exitosamente`, 'success');
+  showMessage(`✅ ${amendmentT('amendment', 'Enmienda')} "${name}" ${amendmentT('custom_saved', 'guardada exitosamente')}`, 'success');
   console.log('✅ Enmienda personalizada guardada (local y nube)');
 }
 
@@ -7454,11 +7630,11 @@ function clearNewAmendmentRow() {
 async function deleteAmendment(amendmentId) {
   const amendment = amendmentsDatabase.find(a => a.id === amendmentId);
   if (!amendment || amendment.type !== 'custom') {
-    showMessage('❌ Solo se pueden eliminar enmiendas personalizadas', 'error');
+    showMessage(amendmentT('custom_only_delete', '❌ Solo se pueden eliminar enmiendas personalizadas'), 'error');
     return;
   }
   
-  if (confirm(`¿Estás seguro de que quieres eliminar "${amendment.name}"?`)) {
+  if (confirm(`${amendmentT('confirm_delete', '¿Estás seguro de que quieres eliminar')} "${amendment.name}"?`)) {
     const index = amendmentsDatabase.findIndex(a => a.id === amendmentId);
     amendmentsDatabase.splice(index, 1);
     
@@ -7999,6 +8175,7 @@ function np_logDashboardVisit() {
 }
 
 async function initializeDashboard() {
+  if (window.NpI18n) window.NpI18n.apply(document);
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
   
@@ -8064,6 +8241,9 @@ async function initializeDashboard() {
   // 4. Seleccionar primera sección (Inicio)
   const first = menu?.querySelector("a");
   if (first) selectSection("Inicio", first);
+  document.querySelectorAll('[data-i18n-title][data-np-tooltip]').forEach(function (el) {
+    el.setAttribute('data-np-tooltip', el.getAttribute('title') || el.getAttribute('aria-label') || '');
+  });
   if (isSupabaseUser) {
     np_setProjectSyncStatus('syncing', 'Sincronizando proyectos...');
     np_syncLocalProjectsAtStartup();
@@ -8171,7 +8351,7 @@ window.editAmendment = function(amendmentId) {
   
   if (!amendment) {
     console.log('❌ Enmienda no encontrada');
-    alert('Enmienda no encontrada');
+    alert(amendmentT('not_found', 'Enmienda no encontrada'));
     return;
   }
   
@@ -8182,7 +8362,7 @@ window.editAmendment = function(amendmentId) {
   modal.className = 'edit-modal';
   modal.innerHTML = `
     <div class="modal-content">
-      <h3>✏️ Editar Composición: ${amendment.name}</h3>
+      <h3>${amendmentT('edit_title', '✏️ Editar Composición:')} ${amendment.name}</h3>
       <form id="edit-amendment-form">
         <div class="form-group">
           <label>Peso Molecular:</label>
@@ -8217,8 +8397,8 @@ window.editAmendment = function(amendmentId) {
           <input type="number" id="edit-si" value="${amendment.si}" step="0.1" class="notranslate" translate="no">
         </div>
         <div class="modal-buttons">
-          <button type="button" onclick="saveAmendmentEdit('${amendment.id}')" class="btn-save">💾 Guardar</button>
-          <button type="button" onclick="closeEditModal()" class="btn-cancel">❌ Cancelar</button>
+          <button type="button" onclick="saveAmendmentEdit('${amendment.id}')" class="btn-save">${amendmentT('save', '💾 Guardar')}</button>
+          <button type="button" onclick="closeEditModal()" class="btn-cancel">${amendmentT('cancel', '❌ Cancelar')}</button>
         </div>
       </form>
     </div>
@@ -8806,7 +8986,7 @@ async function fetchLecturaSatelitalForReport() {
 }
 
 /** Combina gráficas de fertirriego, Radar, distribución por etapa, clima, etc. para el PDF. */
-function loadChartImagesForReport(selectedSections, callback) {
+function loadChartImagesForReport(selectedSections, callback, reportOptions) {
   const needFerti =
     selectedSections.indexOf('fertigation') >= 0 &&
     typeof window.getFertiChartsDataUrlsForReport === 'function';
@@ -8857,7 +9037,7 @@ function loadChartImagesForReport(selectedSections, callback) {
         getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
           if (imgs && (imgs.macro || imgs.micro)) finalOut.extraccionEtapa = imgs;
           appendVpdCharts(finalOut, callback);
-        });
+        }, reportOptions || {});
       } catch (e) {
         console.warn('loadChartImagesForReport extraccionEtapa:', e);
         appendVpdCharts(finalOut, callback);
@@ -8961,10 +9141,14 @@ async function buildReportHtmlSnapshotForShare(report) {
     return rawHtml || '';
   }
   const lang = (report && report.reportLanguage === 'en') ? 'en' : 'es';
+  const unitSystem =
+    report && (report.unit_system === 'us_customary' || report.unitSystem === 'us_customary')
+      ? 'us_customary'
+      : 'metric';
   return new Promise(function(resolve) {
     loadChartImagesForReport(selectedSections, function(chartImages) {
-      resolve(createReportHTML(selectedSections, chartImages || {}, lang));
-    });
+      resolve(createReportHTML(selectedSections, chartImages || {}, lang, unitSystem));
+    }, { language: lang, unit_system: unitSystem });
   });
 }
 
@@ -9365,20 +9549,38 @@ function extraccionEtapaSumPct(nutrientId, state) {
   return arr.reduce(function(acc, v) { return acc + (Number(v) || 0); }, 0);
 }
 
-function buildExtraccionEtapaChartDatasets(state, group) {
+function extraccionEtapaReportValue(valueKgHa, unitSystem) {
+  if (unitSystem !== 'us_customary' || !window.NpUnits) return Number(valueKgHa) || 0;
+  return window.NpUnits.convert(Number(valueKgHa) || 0, 'kg/ha', 'lb/acre');
+}
+
+function extraccionEtapaReportStage(stage, language) {
+  if (language !== 'en') return stage;
+  const names = {
+    'Brotación': 'Bud break', 'Vegetativo': 'Vegetative', 'Floración': 'Flowering',
+    'Llenado': 'Filling', 'Maduración': 'Maturity', 'Mes 1': 'Month 1',
+    'Mes 2': 'Month 2', 'Mes 3': 'Month 3', 'Inicio de ciclo': 'Cycle start',
+    'Desarrollo': 'Development', 'Cosecha': 'Harvest', 'Nueva etapa': 'New stage'
+  };
+  return names[stage] || stage;
+}
+
+function buildExtraccionEtapaChartDatasets(state, group, unitSystem) {
   const idMap = group === 'macro' ? EXTRACTION_ETAPA_MACRO_IDS : EXTRACTION_ETAPA_MICRO_IDS;
   const filtered = (state.nutrients || []).filter(function(n) { return idMap[n.id]; });
   return filtered.map(function(n) {
     const idx = (state.nutrients || []).findIndex(function(x) { return x.id === n.id; });
     return {
       label: n.label,
-      data: (state.stages || []).map(function(_, ri) { return extraccionEtapaKgHa(n, ri, state); }),
+      data: (state.stages || []).map(function(_, ri) {
+        return extraccionEtapaReportValue(extraccionEtapaKgHa(n, ri, state), unitSystem);
+      }),
       color: EXTRACTION_ETAPA_CHART_COLORS[(idx >= 0 ? idx : 0) % EXTRACTION_ETAPA_CHART_COLORS.length]
     };
   });
 }
 
-function getExtraccionEtapaChartsDataUrlsForReport(state, callback) {
+function getExtraccionEtapaChartsDataUrlsForReport(state, callback, reportOptions) {
   if (!state || !Array.isArray(state.stages) || !state.stages.length) {
     if (typeof callback === 'function') callback({});
     return;
@@ -9388,9 +9590,12 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback) {
       if (typeof callback === 'function') callback({});
       return;
     }
-    const labels = state.stages.slice();
-    const macroSets = buildExtraccionEtapaChartDatasets(state, 'macro');
-    const microSets = buildExtraccionEtapaChartDatasets(state, 'micro');
+    const language = reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
+    const unitSystem = reportOptions && reportOptions.unit_system === 'us_customary' ? 'us_customary' : 'metric';
+    const unitLabel = unitSystem === 'us_customary' ? 'lb/acre' : 'kg/ha';
+    const labels = state.stages.map(function(stage) { return extraccionEtapaReportStage(stage, language); });
+    const macroSets = buildExtraccionEtapaChartDatasets(state, 'macro', unitSystem);
+    const microSets = buildExtraccionEtapaChartDatasets(state, 'micro', unitSystem);
     const W = 640;
     const H = 320;
     const result = {};
@@ -9436,7 +9641,7 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback) {
                 title: { display: true, text: yTitle }
               },
               x: {
-                title: { display: true, text: 'Etapa' },
+                title: { display: true, text: language === 'en' ? 'Stage' : 'Etapa' },
                 ticks: { maxRotation: 45, minRotation: 0 }
               }
             }
@@ -9452,8 +9657,8 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback) {
       }
     }
 
-    if (macroSets.length) result.macro = renderOne(document.createElement('canvas'), macroSets, 'kg/ha extraídos');
-    if (microSets.length) result.micro = renderOne(document.createElement('canvas'), microSets, 'kg/ha extraídos');
+    if (macroSets.length) result.macro = renderOne(document.createElement('canvas'), macroSets, unitLabel);
+    if (microSets.length) result.micro = renderOne(document.createElement('canvas'), microSets, unitLabel);
     if (typeof callback === 'function') callback(result);
   });
 }
@@ -10195,15 +10400,19 @@ window.downloadReport = function(reportId) {
     function openReportWithCharts(chartImages) {
       chartImages = chartImages || {};
       var requestedLang = (report.reportLanguage === 'en') ? 'en' : 'es';
+      var requestedUnitSystem =
+        report.unit_system === 'us_customary' || report.unitSystem === 'us_customary'
+          ? 'us_customary'
+          : 'metric';
       var effectiveLang = requestedLang;
       var reportHTML = '';
       try {
-        reportHTML = createReportHTML(printableSections, chartImages, requestedLang);
+        reportHTML = createReportHTML(printableSections, chartImages, requestedLang, requestedUnitSystem);
       } catch (e) {
         if (requestedLang === 'en') {
           console.warn('⚠️ Falló reporte en inglés. Fallback a español:', e && e.message ? e.message : e);
           effectiveLang = 'es';
-          reportHTML = createReportHTML(printableSections, chartImages, 'es');
+          reportHTML = createReportHTML(printableSections, chartImages, 'es', requestedUnitSystem);
           showMessage('⚠️ No se pudo generar en inglés. Se abrió en español.', 'warning');
         } else {
           throw e;
@@ -10221,7 +10430,11 @@ window.downloadReport = function(reportId) {
       printWindow.focus();
       scheduleReportPrintWhenReady(printWindow);
     }
-    loadChartImagesForReport(printableSections, openReportWithCharts);
+    loadChartImagesForReport(printableSections, openReportWithCharts, {
+      language: report.reportLanguage === 'en' ? 'en' : 'es',
+      unit_system: report.unit_system === 'us_customary' || report.unitSystem === 'us_customary'
+        ? 'us_customary' : 'metric'
+    });
     return;
   }
 
@@ -10593,9 +10806,9 @@ function saveProjectData(options = {}) {
       // Propiedades
       if (phElement) sectionData.soilAnalysis.properties.ph = parseFloat(phElement.value) || 0;
       const densityEl = document.getElementById('soil-density');
-      if (densityEl) sectionData.soilAnalysis.properties.density = parseFloat(densityEl.value) || 0;
+      if (densityEl) sectionData.soilAnalysis.properties.density = amendmentInputToSI(densityEl, 'bulk_density', 0);
       const depthEl = document.getElementById('soil-depth');
-      if (depthEl) sectionData.soilAnalysis.properties.depth = parseFloat(depthEl.value) || 0;
+      if (depthEl) sectionData.soilAnalysis.properties.depth = amendmentInputToSI(depthEl, 'depth', 0);
       
       // Ajustes - RECOPILAR TODOS
       const kTargetEl = document.getElementById('k-target');
@@ -10918,8 +11131,8 @@ function collectCurrentData() {
     const densityEl = document.getElementById('soil-density');
     const depthEl = document.getElementById('soil-depth');
     if (phEl) currentProject.soilAnalysis.properties.ph = parseFloat(phEl.value) || 0;
-    if (densityEl) currentProject.soilAnalysis.properties.density = parseFloat(densityEl.value) || 0;
-    if (depthEl) currentProject.soilAnalysis.properties.depth = parseFloat(depthEl.value) || 0;
+    if (densityEl) currentProject.soilAnalysis.properties.density = amendmentInputToSI(densityEl, 'bulk_density', 0);
+    if (depthEl) currentProject.soilAnalysis.properties.depth = amendmentInputToSI(depthEl, 'depth', 0);
     
     // Ajustes
     const kTargetEl = document.getElementById('k-target');
@@ -11050,7 +11263,7 @@ function collectCurrentData() {
     }
     
     if (gCrop) currentProject.granular.requirements.cropType = gCrop.value;
-    if (gYield) currentProject.granular.requirements.targetYield = parseFloat(gYield.value) || 10;
+    if (gYield) currentProject.granular.requirements.targetYield = granularInputToSI(gYield.value, 'yield_mass_area') || 10;
     
     const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2','Cl'];
     const existingGranularAdj = currentProject.granular.requirements.adjustment || {};
@@ -11061,7 +11274,12 @@ function collectCurrentData() {
     nutrients.forEach(n => {
       const adj = document.getElementById(`granular-adj-${n}`);
       const eff = document.getElementById(`granular-eff-${n}`);
-      if (adj) currentProject.granular.requirements.adjustment[n] = parseFloat(adj.value) || 0;
+      if (adj) currentProject.granular.requirements.adjustment[n] = granularCanonicalNutrientInput(
+        n,
+        adj.value,
+        'dose_mass_area',
+        !!window.isGranularRequerimientoElementalMode
+      );
       if (eff) currentProject.granular.requirements.efficiency[n] = parseFloat(eff.value) || 0;
     });
     
@@ -11212,7 +11430,12 @@ function getGranularDataForSave(existingGranular = {}) {
       if (extInput && extInput.value) {
         const extValue = parseFloat(extInput.value);
         if (!isNaN(extValue)) {
-          currentExtraction[n] = extValue;
+          currentExtraction[n] = granularCanonicalNutrientInput(
+            n,
+            extValue,
+            'extraction_mass_yield',
+            !!window.isGranularRequerimientoElementalMode
+          );
           hasModifiedExtraction = true;
         }
       }
@@ -11231,7 +11454,7 @@ function getGranularDataForSave(existingGranular = {}) {
   // Recopilar datos actuales del DOM
   const requirements = {
     cropType: gCrop.value,
-    targetYield: parseFloat(gYield.value) || 10,
+    targetYield: granularInputToSI(gYield.value, 'yield_mass_area') || 10,
     extractionOverrides: extractionOverrides, // 🚀 CRÍTICO: Preservar y actualizar extractionOverrides
     adjustment: {},
     efficiency: {},
@@ -11243,7 +11466,12 @@ function getGranularDataForSave(existingGranular = {}) {
   nutrients.forEach(n => {
     const adj = document.getElementById(`granular-adj-${n}`);
     const eff = document.getElementById(`granular-eff-${n}`);
-    if (adj) requirements.adjustment[n] = parseFloat(adj.value) || 0;
+    if (adj) requirements.adjustment[n] = granularCanonicalNutrientInput(
+      n,
+      adj.value,
+      'dose_mass_area',
+      !!window.isGranularRequerimientoElementalMode
+    );
     if (eff) requirements.efficiency[n] = parseFloat(eff.value) || 0;
   });
   
@@ -11885,12 +12113,12 @@ function applyProjectDataToUI() {
       
       const densityElement = document.getElementById('soil-density');
       if (densityElement && currentProject.soilAnalysis.properties.density !== undefined && currentProject.soilAnalysis.properties.density > 0) {
-        densityElement.value = currentProject.soilAnalysis.properties.density;
+        amendmentSetSIInput(densityElement, currentProject.soilAnalysis.properties.density, 'bulk_density');
       }
       
       const depthElement = document.getElementById('soil-depth');
       if (depthElement && currentProject.soilAnalysis.properties.depth !== undefined && currentProject.soilAnalysis.properties.depth > 0) {
-        depthElement.value = currentProject.soilAnalysis.properties.depth;
+        amendmentSetSIInput(depthElement, currentProject.soilAnalysis.properties.depth, 'depth');
       }
     }
   }
@@ -11943,7 +12171,7 @@ function applyProjectDataToUI() {
       const button = document.getElementById(`btn-select-${amendmentId}`);
       if (button) {
         button.classList.add('selected');
-        button.textContent = 'Seleccionado';
+        button.textContent = amendmentT('selected', 'Seleccionado');
         button.style.backgroundColor = '#10b981'; // Verde
         button.style.color = 'white';
       }
@@ -12293,13 +12521,18 @@ function np_snapshotGranularRequirements() {
     const target = document.getElementById('granularRequerimientoTargetYield');
     if (!select || !target) return; // no UI visible; dejar que los guardados normales se encarguen
     const cropType = select.value || '';
-    const targetYield = parseFloat(target.value) || 10;
+    const targetYield = granularInputToSI(target.value, 'yield_mass_area') || 10;
     const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const adjustment = {}; const efficiency = {};
     nutrients.forEach(n => {
       const adj = document.getElementById(`granular-adj-${n}`);
       const eff = document.getElementById(`granular-eff-${n}`);
-      if (adj) adjustment[n] = parseFloat(adj.value) || 0;
+      if (adj) adjustment[n] = granularCanonicalNutrientInput(
+        n,
+        adj.value,
+        'dose_mass_area',
+        !!window.isGranularRequerimientoElementalMode
+      );
       if (eff) efficiency[n] = parseFloat(eff.value) || 0;
     });
     const isElementalMode = !!(window.isGranularRequerimientoElementalMode);
@@ -12448,7 +12681,7 @@ function saveBeforeTabChange() {
         // lastUI
         unified.granular.lastUI = unified.granular.lastUI || {};
         if (gCrop) unified.granular.lastUI.cropType = gCrop.value;
-        if (gYield) unified.granular.lastUI.targetYield = parseFloat(gYield.value) || 0;
+        if (gYield) unified.granular.lastUI.targetYield = granularInputToSI(gYield.value, 'yield_mass_area');
         // requirements merge
         const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         const adjustment = {}; const efficiency = {};
@@ -12456,9 +12689,18 @@ function saveBeforeTabChange() {
         nutrients.forEach(n => {
           const a = document.getElementById(`granular-adj-${n}`);
           const e = document.getElementById(`granular-eff-${n}`);
-          if (a) { adjustment[n] = parseFloat(a.value) || 0; anyAdj = true; }
+          if (a) {
+            adjustment[n] = granularCanonicalNutrientInput(
+              n,
+              a.value,
+              'dose_mass_area',
+              !!window.isGranularRequerimientoElementalMode
+            );
+            anyAdj = true;
+          }
           if (e) { efficiency[n] = parseFloat(e.value) || 0; anyEff = true; }
         });
+        const req = unified.granular.requirements || {};
         const isElemBtn = document.getElementById('toggleGranularRequerimientoOxideElementalBtn');
         const hasLoadedMode = window.granularElementalModeLoaded === true;
         const isElem = (function(){
@@ -12474,9 +12716,8 @@ function saveBeforeTabChange() {
             return typeof req.isElementalMode === 'boolean' ? req.isElementalMode : false;
           }
         })();
-        const req = unified.granular.requirements || {};
         const cropType = gCrop ? gCrop.value : (req.cropType || '');
-        const targetYield = gYield ? (parseFloat(gYield.value) || req.targetYield || 0) : (req.targetYield || 0);
+        const targetYield = gYield ? (granularInputToSI(gYield.value, 'yield_mass_area') || req.targetYield || 0) : (req.targetYield || 0);
         // Capturar extracción por tonelada si fue editada
         const extractionOverrides = req.extractionOverrides || {};
         if (cropType) {
@@ -12486,7 +12727,12 @@ function saveBeforeTabChange() {
           nutrients.forEach(n => {
             const ext = document.getElementById(`granular-extract-${n}`);
             if (ext && ext.value) {
-              extraction[n] = parseFloat(ext.value) || 0;
+              extraction[n] = granularCanonicalNutrientInput(
+                n,
+                ext.value,
+                'extraction_mass_yield',
+                isElem
+              );
               anyExtraction = true;
             }
           });
@@ -13634,6 +13880,9 @@ window.generatePDFReport = function() {
   
   const selectedSections = normalizeReportSections(getSelectedReportSections());
   const reportLanguage = getSelectedReportLanguage();
+  const reportUnitSystem = window.NpPrefs && window.NpPrefs.get().unit_system === 'us_customary'
+    ? 'us_customary'
+    : 'metric';
   if (!selectedSections.length) {
     showMessage('⚠️ Selecciona al menos una sección para el reporte.', 'warning');
     return;
@@ -13665,12 +13914,12 @@ window.generatePDFReport = function() {
       var effectiveLanguage = reportLanguage;
       var reportHTML = '';
       try {
-        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage, reportUnitSystem);
       } catch (renderErr) {
         if (reportLanguage === 'en') {
           console.warn('⚠️ Falló generación en inglés. Fallback a español:', renderErr && renderErr.message ? renderErr.message : renderErr);
           effectiveLanguage = 'es';
-          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es');
+          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es', reportUnitSystem);
           showMessage('⚠️ No se pudo generar en inglés. Se generó en español.', 'warning');
         } else {
           throw renderErr;
@@ -13682,6 +13931,7 @@ window.generatePDFReport = function() {
         projectName: currentProject?.name || 'Proyecto NutriPlant',
         selectedSections: selectedSections.slice(0),
         reportLanguage: effectiveLanguage,
+        unit_system: reportUnitSystem,
         reportHTML
       });
       printWindow.document.open();
@@ -13697,7 +13947,10 @@ window.generatePDFReport = function() {
     }
   }
 
-  loadChartImagesForReport(selectedSections, finishPdf);
+  loadChartImagesForReport(selectedSections, finishPdf, {
+    language: reportLanguage,
+    unit_system: reportUnitSystem
+  });
 };
 
 /** Admin: genera PDF con datos del proyecto del usuario sin guardar ni modificar nada suyo.
@@ -13718,6 +13971,10 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
     return;
   }
   const reportLanguage = job.reportLanguage === 'en' ? 'en' : 'es';
+  const reportUnitSystem =
+    job.unitSystem === 'us_customary' || job.unit_system === 'us_customary'
+      ? 'us_customary'
+      : 'metric';
   const wantShare = !!job.shareLink;
   const prevProject = (typeof currentProject !== 'undefined') ? currentProject : null;
   window._nutriplantAdminReadOnlyReport = true;
@@ -13817,10 +14074,10 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
       setStatus('Armando HTML del reporte…');
       let reportHTML = '';
       try {
-        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage, reportUnitSystem);
       } catch (renderErr) {
         if (reportLanguage === 'en') {
-          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es');
+          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es', reportUnitSystem);
         } else {
           throw renderErr;
         }
@@ -13883,6 +14140,7 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
           share_html_path: prep.share_html_path,
           selected_sections: selectedSections,
           report_language: reportLanguage,
+          unit_system: reportUnitSystem,
           project_name: projectName,
           admin_author_name: job.adminAuthorName || 'Consulta Admin NutriPlant PRO'
         })
@@ -13911,10 +14169,10 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
       setStatus('Abriendo vista de impresión…');
       let reportHTML = '';
       try {
-        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage, reportUnitSystem);
       } catch (renderErr) {
         if (reportLanguage === 'en') {
-          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es');
+          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es', reportUnitSystem);
         } else {
           throw renderErr;
         }
@@ -13935,7 +14193,10 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
   }
 
   setStatus(wantShare ? 'Calculando gráficas y secciones para el link…' : 'Calculando gráficas y secciones…');
-  loadChartImagesForReport(selectedSections, wantShare ? finishShare : finishPdf);
+  loadChartImagesForReport(selectedSections, wantShare ? finishShare : finishPdf, {
+    language: reportLanguage,
+    unit_system: reportUnitSystem
+  });
 };
 
 // Función para generar el contenido del PDF
@@ -13944,7 +14205,12 @@ function generatePDFContent(selectedSections) {
   
   try {
     // Crear contenido HTML para el reporte
-    let reportHTML = createReportHTML(selectedSections, null, getSelectedReportLanguage());
+    let reportHTML = createReportHTML(
+      selectedSections,
+      null,
+      getSelectedReportLanguage(),
+      window.NpPrefs && window.NpPrefs.get().unit_system === 'us_customary' ? 'us_customary' : 'metric'
+    );
     
     // Obtener el área de contenido principal
     const contentArea = document.querySelector('.content');
@@ -13979,8 +14245,9 @@ function generatePDFContent(selectedSections) {
 }
 
 // Función para crear el HTML del reporte (chartImages opcional: { macro, micro } data URLs para gráficas de fertirriego)
-function createReportHTML(selectedSections, chartImages, reportLanguage) {
+function createReportHTML(selectedSections, chartImages, reportLanguage, reportUnitSystem) {
   const lang = (reportLanguage === 'en') ? 'en' : 'es';
+  const unitSystem = reportUnitSystem === 'us_customary' ? 'us_customary' : 'metric';
   const isEn = lang === 'en';
   const reportIOSClass =
     typeof isIOSLikeTouchDevice === 'function' && isIOSLikeTouchDevice()
@@ -15411,9 +15678,14 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
   
   // Secciones de corrida (sin salto de página forzado entre Radar, Clima, etc.)
   const chartImgs = chartImages || {};
-  selectedSections.forEach((sectionId) => {
-    html += createSectionHTML(sectionId, chartImgs, lang);
-  });
+  const renderSections = function () {
+    return selectedSections.map(function (sectionId) {
+      return createSectionHTML(sectionId, chartImgs, lang, unitSystem);
+    }).join('');
+  };
+  html += window.NpWaterClimateUI
+    ? window.NpWaterClimateUI.withUnitSystem(unitSystem, renderSections)
+    : renderSections();
   
   html += `
       <div class="footer">
@@ -15441,7 +15713,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
 }
 
 // Función para crear HTML de cada sección (chartImages opcional para fertirriego y radar en ubicación)
-function createSectionHTML(sectionId, chartImages, reportLanguage) {
+function createSectionHTML(sectionId, chartImages, reportLanguage, reportUnitSystem) {
   let html = '';
   const lang = reportLanguage === 'en' ? 'en' : 'es';
   const rt = function(es, en) {
@@ -15453,26 +15725,26 @@ function createSectionHTML(sectionId, chartImages, reportLanguage) {
       html += createLocationSectionHTML(chartImages, rt, lang);
       break;
     case 'amendments':
-      html += createAmendmentsSectionHTML();
+      html += createAmendmentsSectionHTML(lang);
       break;
     case 'fertigation':
-      html += createFertigationSectionHTML(chartImages);
+      html += createFertigationSectionHTML(chartImages, lang);
       break;
     case 'analysis':
       html += createAnalysisSectionHTML();
       break;
     case 'vpd':
-      html += createVPDReportSectionHTML(chartImages);
-      html += createClimateReportSectionHTML(chartImages);
+      html += createVPDReportSectionHTML(chartImages, lang, reportUnitSystem);
+      html += createClimateReportSectionHTML(chartImages, lang, reportUnitSystem);
       break;
     case 'granular':
-      html += createGranularSectionHTML();
+      html += createGranularSectionHTML(lang);
       break;
     case 'hidroponia':
       html += createHidroponiaSectionHTML();
       break;
     case 'extraccionEtapa':
-      html += createExtraccionEtapaSectionHTML(chartImages);
+      html += createExtraccionEtapaSectionHTML(chartImages, lang, reportUnitSystem);
       break;
     case 'soil_analyses':
       html += createAnalysesListSectionHTML('🟫 Análisis: Suelo (reportes)', currentProject.soilAnalyses);
@@ -16183,101 +16455,137 @@ function createLocationSectionHTML(chartImages, rt, lang) {
 }
 
 // Función para crear sección de enmiendas
-function createAmendmentsSectionHTML() {
+function createAmendmentsSectionHTML(reportLanguage) {
   const amendments = currentProject.amendments || {};
   const soil = currentProject.soilAnalysis || {};
   const initial = soil.initial || {};
   const properties = soil.properties || {};
   const adjustments = soil.adjustments || {};
   const results = amendments.results || {};
-  const rawTotals = results.rawTotals || results.totals || {};
-  const detailedHTML = stripAmendmentWatermark(typeof results.detailedHTML === 'string' ? results.detailedHTML.trim() : '');
-  const selected = Array.isArray(amendments.selected) ? amendments.selected : (Array.isArray(amendments.selectedAmendments) ? amendments.selectedAmendments : []);
+  const rawDetails = Array.isArray(results.rawDetails) ? results.rawDetails : [];
+  const reach = Number(amendments.soilReachPercent) || 100;
+  const factor = reach / 100;
+  const lang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = function (es, en) { return lang === 'en' ? en : es; };
+  const reportUnit = function (kind, fallback) {
+    try { return window.NpAmendmentUI ? window.NpAmendmentUI.unit(kind) : fallback; } catch (e) { return fallback; }
+  };
+  const reportValue = function (value, kind, digits) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '—';
+    try {
+      if (window.NpAmendmentUI) return reportNum(window.NpAmendmentUI.fromSI(n, kind), digits);
+    } catch (e) {}
+    return reportNum(n, digits);
+  };
+  const doseUnit = reportUnit('dose_mass_area', 'kg/ha');
+  const densityUnit = reportUnit('bulk_density', 'g/cm3');
+  const depthUnit = reportUnit('depth', 'cm');
+  const adjusted = rawDetails.map(function (item) {
+    return {
+      id: item.id,
+      name: item.name,
+      amount: (Number(item.amount) || 0) * factor,
+      k: (Number(item.k) || 0) * factor,
+      ca: (Number(item.ca) || 0) * factor,
+      mg: (Number(item.mg) || 0) * factor,
+      so4: (Number(item.so4) || 0) * factor,
+      si: (Number(item.si) || 0) * factor
+    };
+  });
+  const totals = adjusted.reduce(function (sum, item) {
+    ['k', 'ca', 'mg', 'so4', 'si'].forEach(function (key) { sum[key] += item[key]; });
+    return sum;
+  }, { k: 0, ca: 0, mg: 0, so4: 0, si: 0 });
+  const displayName = function (item) {
+    try {
+      return window.NpAmendmentUI
+        ? window.NpAmendmentUI.materialName(item.id, item.name || item.id, lang)
+        : (item.name || item.id);
+    } catch (e) { return item.name || item.id; }
+  };
   
   return `
     <div class="section">
-      <h2 class="section-title">🚜 Enmiendas</h2>
+      <h2 class="section-title">${rt('🚜 Enmiendas', '🚜 Amendments')}</h2>
       <div class="report-block" style="border-color:#fde68a;background:#fffbeb;">
-        <div class="report-block-title">🔬 Datos de Análisis de Suelo (para cálculo de enmiendas)</div>
+        <div class="report-block-title">${rt('🔬 Datos de Análisis de Suelo (para cálculo de enmiendas)', '🔬 Soil Analysis Data (for amendment calculation)')}</div>
         <div style="background:#fff;padding:10px;border:1px solid #fde68a;border-radius:8px;margin-bottom:10px;">
-          <strong>Elementos Iniciales (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>):</strong>
+          <strong>${rt('Elementos Iniciales', 'Initial Elements')} (<span class="notranslate" translate="no">meq/100g or cmol⁺/kg</span>):</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px;font-size:13px;">
-            <div><strong>K:</strong> ${reportNum(initial.k, 2)}</div>
-            <div><strong>Ca:</strong> ${reportNum(initial.ca, 2)}</div>
-            <div><strong>Mg:</strong> ${reportNum(initial.mg, 2)}</div>
-            <div><strong>H:</strong> ${reportNum(initial.h, 2)}</div>
-            <div><strong>Na:</strong> ${reportNum(initial.na, 2)}</div>
-            <div><strong>Al:</strong> ${reportNum(initial.al, 2)}</div>
-            <div><strong>CIC:</strong> ${reportNum(initial.cic, 2)}</div>
+            <div><strong>K:</strong> ${reportNum(initial.k, 2)} meq/100g</div>
+            <div><strong>Ca:</strong> ${reportNum(initial.ca, 2)} meq/100g</div>
+            <div><strong>Mg:</strong> ${reportNum(initial.mg, 2)} meq/100g</div>
+            <div><strong>H:</strong> ${reportNum(initial.h, 2)} meq/100g</div>
+            <div><strong>Na:</strong> ${reportNum(initial.na, 2)} meq/100g</div>
+            <div><strong>Al:</strong> ${reportNum(initial.al, 2)} meq/100g</div>
+            <div><strong>CEC:</strong> ${reportNum(initial.cic, 2)} cmol(+)/kg</div>
           </div>
         </div>
         <div style="background:#fff;padding:10px;border:1px solid #fde68a;border-radius:8px;margin-bottom:10px;">
-          <strong>Propiedades del Suelo:</strong>
+          <strong>${rt('Propiedades del Suelo:', 'Soil Properties:')}</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:6px;font-size:13px;">
             <div><strong>pH:</strong> ${reportNum(properties.ph, 2)}</div>
-            <div><strong>Densidad:</strong> ${reportNum(properties.density, 2)} g/cm³</div>
-            <div><strong>Profundidad:</strong> ${reportNum(properties.depth, 2)} cm</div>
+            <div><strong>${rt('Densidad', 'Bulk density')}:</strong> ${reportValue(properties.density, 'bulk_density', 3)} ${densityUnit}</div>
+            <div><strong>${rt('Profundidad', 'Depth')}:</strong> ${reportValue(properties.depth, 'depth', 2)} ${depthUnit}</div>
           </div>
         </div>
         <div style="background:#fff;padding:10px;border:1px solid #fde68a;border-radius:8px;">
-          <strong>Ajustes Requeridos (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>):</strong>
+          <strong>${rt('Ajustes Requeridos', 'Required Adjustments')} (<span class="notranslate" translate="no">meq/100g or cmol⁺/kg</span>):</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px;font-size:13px;">
-            <div><strong>K:</strong> ${reportNum(adjustments.k, 2)}</div>
-            <div><strong>Ca:</strong> ${reportNum(adjustments.ca, 2)}</div>
-            <div><strong>Mg:</strong> ${reportNum(adjustments.mg, 2)}</div>
-            <div><strong>H:</strong> ${reportNum(adjustments.h, 2)}</div>
-            <div><strong>Na:</strong> ${reportNum(adjustments.na, 2)}</div>
-            <div><strong>Al:</strong> ${reportNum(adjustments.al, 2)}</div>
+            <div><strong>K:</strong> ${reportNum(adjustments.k, 2)} meq/100g</div>
+            <div><strong>Ca:</strong> ${reportNum(adjustments.ca, 2)} meq/100g</div>
+            <div><strong>Mg:</strong> ${reportNum(adjustments.mg, 2)} meq/100g</div>
+            <div><strong>H:</strong> ${reportNum(adjustments.h, 2)} meq/100g</div>
+            <div><strong>Na:</strong> ${reportNum(adjustments.na, 2)} meq/100g</div>
+            <div><strong>Al:</strong> ${reportNum(adjustments.al, 2)} meq/100g</div>
           </div>
         </div>
       </div>
       <div class="report-block" style="border-color:#fde68a;background:#fffef3;">
-        <div class="report-block-title">📊 Resultados del Cálculo de Enmiendas</div>
-        ${detailedHTML ? `
-          <div class="report-amend-results-wrap report-amend-results-pro">
-            ${detailedHTML}
-          </div>
-        ` : `
+        <div class="report-block-title">${rt('📊 Resultados del Cálculo de Enmiendas', '📊 Amendment Calculation Results')}</div>
           <div class="report-amend-results-wrap report-amend-results-pro report-amend-results-fallback">
             <div class="np-amend-fallback-summary">
-            <div class="np-amend-fallback-summary-title">🎯 Aportes Totales</div>
+            <div class="np-amend-fallback-summary-title">${rt('🎯 Aportes Totales', '🎯 Total Contributions')}</div>
             <ul class="report-list" style="margin-bottom:8px;">
-              <li><strong>Calcio (Ca²⁺):</strong> ${reportNum(rawTotals.totalCa, 2)} kg/ha</li>
-              <li><strong>Magnesio (Mg²⁺):</strong> ${reportNum(rawTotals.totalMg, 2)} kg/ha</li>
-              <li><strong>Potasio (K⁺):</strong> ${reportNum(rawTotals.totalK, 2)} kg/ha</li>
-              <li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${reportNum(rawTotals.totalSi, 2)} kg/ha</li>
+              <li><strong>${rt('Calcio', 'Calcium')} (Ca²⁺):</strong> ${reportValue(totals.ca, 'dose_mass_area', 2)} ${doseUnit}</li>
+              <li><strong>${rt('Magnesio', 'Magnesium')} (Mg²⁺):</strong> ${reportValue(totals.mg, 'dose_mass_area', 2)} ${doseUnit}</li>
+              <li><strong>${rt('Potasio', 'Potassium')} (K⁺):</strong> ${reportValue(totals.k, 'dose_mass_area', 2)} ${doseUnit}</li>
+              <li><strong>${rt('Sulfato', 'Sulfate')} (SO₄²⁻):</strong> ${reportValue(totals.so4, 'dose_mass_area', 2)} ${doseUnit}</li>
+              <li><strong>${rt('Silicio', 'Silicon')} (<span class="notranslate" translate="no">Si</span>):</strong> ${reportValue(totals.si, 'dose_mass_area', 2)} ${doseUnit}</li>
             </ul>
+            <div>${rt('Suelo explorado por raíces', 'Soil explored by roots')}: ${reportNum(reach, 0)} %</div>
             </div>
             <div class="np-amend-fallback-details">
-            <div class="np-amend-fallback-details-title">🧾 Detalles por Enmienda</div>
+            <div class="np-amend-fallback-details-title">${rt('🧾 Detalles por Enmienda', '🧾 Amendment Details')}</div>
             <div class="np-amend-table-wrap"><table class="report-admin-table results-table">
               <thead>
                 <tr>
-                  <th>Enmienda</th>
-                  <th>Cantidad (kg/ha)</th>
-                  <th class="notranslate" translate="no">Ca (%)</th>
-                  <th class="notranslate" translate="no">Mg (%)</th>
-                  <th class="notranslate" translate="no">K (%)</th>
-                  <th class="notranslate" translate="no">Si (%)</th>
+                  <th>${rt('Enmienda', 'Amendment')}</th>
+                  <th>${rt('Cantidad', 'Quantity')} (${doseUnit})</th>
+                  <th>Ca²⁺ (${doseUnit})</th>
+                  <th>Mg²⁺ (${doseUnit})</th>
+                  <th>K⁺ (${doseUnit})</th>
+                  <th>SO₄²⁻ (${doseUnit})</th>
+                  <th>Si (${doseUnit})</th>
                 </tr>
               </thead>
               <tbody>
-                ${selected.length ? selected.map(function (item) {
-                  const comp = item.composition || {};
+                ${adjusted.length ? adjusted.map(function (item) {
                   return `<tr>
-                    <td>${reportEscapeHtml(item.name || item.id || 'Enmienda')}</td>
-                    <td>${reportNum(item.amountKgHa || item.amount || item.doseKgHa || 0, 2)}</td>
-                    <td>${reportNum(comp.ca, 2)}</td>
-                    <td>${reportNum(comp.mg, 2)}</td>
-                    <td>${reportNum(comp.k, 2)}</td>
-                    <td>${reportNum(comp.si, 2)}</td>
+                    <td>${reportEscapeHtml(displayName(item))}</td>
+                    <td>${reportValue(item.amount, 'dose_mass_area', 2)}</td>
+                    <td>${reportValue(item.ca, 'dose_mass_area', 2)}</td>
+                    <td>${reportValue(item.mg, 'dose_mass_area', 2)}</td>
+                    <td>${reportValue(item.k, 'dose_mass_area', 2)}</td>
+                    <td>${reportValue(item.so4, 'dose_mass_area', 2)}</td>
+                    <td>${reportValue(item.si, 'dose_mass_area', 2)}</td>
                   </tr>`;
-                }).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;">No hay enmiendas seleccionadas.</td></tr>'}
+                }).join('') : `<tr><td colspan="7" style="text-align:center;color:#64748b;">${rt('No hay resultados calculados.', 'No calculated results.')}</td></tr>`}
               </tbody>
             </table></div>
             </div>
           </div>
-        `}
       </div>
     </div>
   `;
@@ -16474,7 +16782,27 @@ function createAdminMirrorBlock(title, source, maxItems) {
   `;
 }
 
-function createGranularSectionHTML() {
+function createGranularSectionHTML(reportLanguage) {
+  const reportLang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = function(es, en) { return reportLang === 'en' ? en : es; };
+  const granularUI = window.NpGranularUI;
+  const doseUnit = granularUI ? granularUI.unit('dose_mass_area') : 'kg/ha';
+  const yieldUnit = granularUI ? granularUI.unit('yield_mass_area') : 't/ha';
+  const extractionUnit = granularUI ? granularUI.unit('extraction_mass_yield') : 'kg/t';
+  const doseValue = function(value) {
+    return granularUI ? granularUI.fromSI(toNumber(value), 'dose_mass_area') : toNumber(value);
+  };
+  const yieldValue = function(value) {
+    return granularUI ? granularUI.fromSI(toNumber(value), 'yield_mass_area') : toNumber(value);
+  };
+  const extractionValue = function(value) {
+    return granularUI ? granularUI.fromSI(toNumber(value), 'extraction_mass_yield') : toNumber(value);
+  };
+  const convertNutrientMap = function(source, converter) {
+    const output = {};
+    Object.keys(source || {}).forEach(function(key) { output[key] = converter(source[key]); });
+    return output;
+  };
   function isNonEmptyObject(v) {
     return !!(v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0);
   }
@@ -16525,7 +16853,9 @@ function createGranularSectionHTML() {
   );
   const reqModeIsElemental = !!req.isElementalMode;
   const programModeIsElemental = !!program.mode;
-  const crop = req.cropType || program?.cropSnapshot?.cropLabel || 'N/D';
+  const cropId = req.cropType || program?.cropSnapshot?.cropType || '';
+  const cropFallback = program?.cropSnapshot?.cropLabel || cropId || rt('N/D', 'N/A');
+  const crop = granularUI ? granularUI.cropName(cropId, cropFallback, reportLang) : cropFallback;
   const yieldTarget = req.targetYield != null && req.targetYield !== '' ? Number(req.targetYield) : 0;
 
   /** kg SO₄ por kg S (misma base que nutricion-granular-requerimiento-functions.js) */
@@ -16674,7 +17004,7 @@ function createGranularSectionHTML() {
     const materials = Array.isArray(app.materials) ? app.materials : [];
     const rows = materials.map(material => `
       <tr>
-        <td class="report-granular-material-name">${reportEscapeHtml(material.name || '—')}</td>
+        <td class="report-granular-material-name">${reportEscapeHtml(granularUI ? granularUI.materialName(material.name || '—', reportLang) : (material.name || '—'))}</td>
         <td class="report-granular-pct">${toNumber(material.percentage).toFixed(1)}</td>
         ${NUTRIENTS.map(nutrient => {
           const v = toDisplayValue(nutrient, granularMatOxideVal(material, nutrient), programModeIsElemental);
@@ -16686,7 +17016,7 @@ function createGranularSectionHTML() {
     const composition = app.composition || {};
     const totalRow = `
       <tr class="total-row">
-        <td>TOTAL</td>
+        <td>${rt('TOTAL', 'TOTAL')}</td>
         <td class="report-granular-pct">100.0</td>
         ${NUTRIENTS.map(nutrient => {
           const v = toDisplayValue(nutrient, granularMatOxideVal(composition, nutrient), programModeIsElemental);
@@ -16700,13 +17030,13 @@ function createGranularSectionHTML() {
       <table class="report-app-table">
         <thead>
           <tr>
-            <th>Material</th>
+            <th>${rt('Material', 'Material')}</th>
             <th>%</th>
             ${NUTRIENTS.map(nutrient => `<th>${nutrientLabel(nutrient, programModeIsElemental)}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
-          ${rows || `<tr><td colspan="${NUTRIENTS.length + 2}" style="text-align:center;color:#64748b;">No hay materiales en esta aplicación.</td></tr>`}
+          ${rows || `<tr><td colspan="${NUTRIENTS.length + 2}" style="text-align:center;color:#64748b;">${rt('No hay materiales en esta aplicación.', 'No materials in this application.')}</td></tr>`}
           ${totalRow}
         </tbody>
       </table>
@@ -16715,7 +17045,7 @@ function createGranularSectionHTML() {
   }
 
   function reportGranularAppTitle(app, idx) {
-    const fallback = `${idx + 1}ª Aplicación Granular`;
+    const fallback = granularUI ? granularUI.autoApplicationTitle(idx + 1, reportLang) : `${idx + 1}ª Aplicación Granular`;
     const raw = app && typeof app.title === 'string' ? app.title.trim() : '';
     if (!raw) return fallback;
     // Si es el formato automático, renumerar corrido para evitar saltos (1,2,3,5 -> 1,2,3,4).
@@ -16725,50 +17055,50 @@ function createGranularSectionHTML() {
 
   return `
     <div class="section">
-      <h2 class="section-title">🌾 Nutrición Granular</h2>
+      <h2 class="section-title">${rt('🌾 Nutrición Granular', '🌾 Granular Nutrition')}</h2>
       <div class="report-block">
-        <div class="report-block-title">🧮 Requerimiento Nutricional <span class="report-mode-badge">${reqModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
+        <div class="report-block-title">${rt('🧮 Requerimiento Nutricional', '🧮 Nutrient Requirements')} <span class="report-mode-badge">${reqModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
         <div class="report-kv">
-          <div class="report-kv-item"><div class="data-label">Cultivo</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
-          <div class="report-kv-item"><div class="data-label">Rendimiento objetivo</div><div class="data-value">${yieldTarget > 0 ? reportEscapeHtml(yieldTarget) + ' ton/ha' : 'N/D'}</div></div>
+          <div class="report-kv-item"><div class="data-label">${rt('Cultivo', 'Crop')}</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
+          <div class="report-kv-item"><div class="data-label">${rt('Rendimiento objetivo', 'Target yield')}</div><div class="data-value">${yieldTarget > 0 ? yieldValue(yieldTarget).toFixed(2) + ' ' + yieldUnit : rt('N/D', 'N/A')}</div></div>
         </div>
-        <div class="report-subtitle">Extracción por Tonelada (kg/ton):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(extraction, reqModeIsElemental, false)}</div>
-        <div class="report-subtitle">Extracción Total (kg/ha):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(totalExtraction, reqModeIsElemental, false)}</div>
-        <div class="report-subtitle">Ajuste por Niveles en Suelo (kg/ha):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(adjustment, reqModeIsElemental, false)}</div>
-        <div class="report-subtitle">Eficiencia (%):</div>
+        <div class="report-subtitle">${rt('Extracción por tonelada', 'Removal per unit yield')} (${extractionUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(extraction, extractionValue), reqModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Extracción total', 'Total removal')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(totalExtraction, doseValue), reqModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Ajuste por niveles en suelo', 'Soil-level adjustment')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(adjustment, doseValue), reqModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Eficiencia', 'Efficiency')} (%):</div>
         <div class="report-nutrient-wrap">${renderNutrientPills(efficiency, false, false)}</div>
-        <div class="report-subtitle">Requerimiento Real (kg/ha):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(realRequirement, reqModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Requerimiento real', 'Actual requirement')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(realRequirement, doseValue), reqModeIsElemental, false)}</div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">🌱 Programa Granular <span class="report-mode-badge">${programModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
-        <div class="report-subtitle">Aporte Total (kg/ha):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(totalProgram, programModeIsElemental, false)}</div>
-        <div class="report-subtitle">Requerimiento Real (kg/ha):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(realRequirement, programModeIsElemental, false)}</div>
-        <div class="report-subtitle">Diferencia (Aporte - Requerimiento) (kg/ha):</div>
-        <div class="report-nutrient-wrap">${renderNutrientPills(diffProgram, programModeIsElemental, true)}</div>
+        <div class="report-block-title">${rt('🌱 Programa Granular', '🌱 Granular Program')} <span class="report-mode-badge">${programModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
+        <div class="report-subtitle">${rt('Aporte total', 'Total supply')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(totalProgram, doseValue), programModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Requerimiento real', 'Actual requirement')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(realRequirement, doseValue), programModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Diferencia (Aporte - Requerimiento)', 'Difference (Supply − Requirement)')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(diffProgram, doseValue), programModeIsElemental, true)}</div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Aplicaciones configuradas (${applications.length})</div>
+        <div class="report-block-title">${rt('Aplicaciones configuradas', 'Configured applications')} (${applications.length})</div>
         ${applications.length ? applications.map(function(app, idx) {
           const appContribution = getAppContribution(app);
           return `
             <div class="report-card" style="margin-top:10px;">
               <div class="report-card-head">
                 <span>${reportEscapeHtml(reportGranularAppTitle(app, idx))}</span>
-                <span class="report-card-meta">Dosis: ${toNumber(app.doseKgHa).toFixed(2)} kg/ha</span>
+                <span class="report-card-meta">${rt('Dosis', 'Dose')}: ${doseValue(app.doseKgHa).toFixed(2)} ${doseUnit}</span>
               </div>
-              <div class="report-subtitle">Aporte de esta aplicación (kg/ha):</div>
-              <div class="report-nutrient-wrap">${renderNutrientPills(appContribution, programModeIsElemental, false)}</div>
+              <div class="report-subtitle">${rt('Aporte de esta aplicación', 'Supply from this application')} (${doseUnit}):</div>
+              <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(appContribution, doseValue), programModeIsElemental, false)}</div>
               ${renderMaterialsTable(app)}
             </div>
           `;
         }).join('') : `
-          <div class="report-note">No hay aplicaciones guardadas en el programa granular.</div>
+          <div class="report-note">${rt('No hay aplicaciones guardadas en el programa granular.', 'No applications are saved in the granular program.')}</div>
         `}
         </div>
       </div>
@@ -16784,7 +17114,15 @@ function reportEscapeHtml(s) {
   return div.innerHTML;
 }
 
-function createFertigationSectionHTML(chartImages) {
+function createFertigationSectionHTML(chartImages, reportLanguage) {
+  const reportLang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = (es, en) => reportLang === 'en' ? en : es;
+  const fertiUI = window.NpFertigationUI || null;
+  const doseUnit = fertiUI ? fertiUI.unit('dose_mass_area') : 'kg/ha';
+  const yieldUnit = fertiUI ? fertiUI.unit('yield_mass_area') : 't/ha';
+  const extractionUnit = fertiUI ? fertiUI.unit('extraction_mass_yield') : 'kg/t';
+  const fromSI = (value, kind) => fertiUI ? fertiUI.fromSI(value, kind) : Number(value);
+  const q = (value, kind, unit) => `${reportNum(fromSI(value, kind), 2)} ${unit}`;
   function isNonEmptyObject(v) {
     return !!(v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0);
   }
@@ -16826,7 +17164,8 @@ function createFertigationSectionHTML(chartImages) {
       : (storageF.program && typeof storageF.program === 'object' && Object.keys(storageF.program).length > 0)
         ? storageF.program
         : (currentProject.fertirriegoProgram && typeof currentProject.fertirriegoProgram === 'object' ? currentProject.fertirriegoProgram : {});
-  const crop = req.cropType || 'N/D';
+  const cropId = req.cropType || '';
+  const crop = fertiUI ? fertiUI.cropName(cropId, cropId || rt('N/D', 'N/A'), reportLang) : (cropId || rt('N/D', 'N/A'));
   const hasCharts = !!(chartImages && (chartImages.macro || chartImages.micro));
   const targetYield = Number(req.targetYield) || 0;
   const reqModeIsElemental = !!req.isElementalMode;
@@ -16862,11 +17201,12 @@ function createFertigationSectionHTML(chartImages) {
     return raw / conv[n];
   }
   function d(n) { return ['Fe','Mn','B','Zn','Cu','Mo','SiO2'].includes(n) ? 3 : 2; }
-  function nutrientGrid(values, elemental, cls, opts) {
+  function nutrientGrid(values, elemental, cls, opts, kind) {
     const pills = nutrients.map(n => {
       const v = display(n, values ? values[n] : null, elemental);
       const extra = (v !== null && cls && v < 0) ? ' negative' : '';
-      const text = v === null ? '—' : v.toFixed(d(n));
+      const shown = v === null ? null : (kind ? fromSI(v, kind) : v);
+      const text = shown === null ? '—' : `${shown.toFixed(d(n))}${kind ? ` ${kind === 'extraction_mass_yield' ? extractionUnit : doseUnit}` : (opts && opts.unit ? ` ${opts.unit}` : '')}`;
       return `<span class="report-nutrient-pill${extra}"><strong>${label(n, elemental, opts)}:</strong> ${text}</span>`;
     }).join('');
     return pills || '<span class="report-note-inline">Sin datos disponibles.</span>';
@@ -16964,12 +17304,12 @@ function createFertigationSectionHTML(chartImages) {
   function fertiNutrientTd(n, totals, dividerClass) {
     const v = display(n, fertiNutrientRaw(n, totals), programModeIsElemental);
     const cls = dividerClass ? ` class="${dividerClass}"` : '';
-    return `<td${cls}>${v === null ? '—' : v.toFixed(d(n))}</td>`;
+    return `<td${cls}>${v === null ? '—' : `${fromSI(v, 'dose_mass_area').toFixed(d(n))} ${doseUnit}`}</td>`;
   }
   function fertiNutrientTdVal(n, rawVal, dividerClass) {
     const v = display(n, rawVal, programModeIsElemental);
     const cls = dividerClass ? ` class="${dividerClass}"` : '';
-    return `<td${cls}>${v === null ? '—' : v.toFixed(d(n))}</td>`;
+    return `<td${cls}>${v === null ? '—' : `${fromSI(v, 'dose_mass_area').toFixed(d(n))} ${doseUnit}`}</td>`;
   }
   const reportFertiIsMes = prog.timeUnit === 'mes';
 
@@ -17069,7 +17409,7 @@ function createFertigationSectionHTML(chartImages) {
     <tr>
       ${fertiReportEtapaTd(w?.stage)}
       ${fertiReportNumTd(idx + 1)}
-      ${programDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
+      ${programDoseColumns.map(c => `<td>${q(toNum(w?.kgByCol?.[c.id]), 'dose_mass_area', doseUnit)}</td>`).join('')}
     </tr>
   `).join('');
   const nutrientAporteRows = weeks.map((w, idx) => `
@@ -17144,46 +17484,46 @@ function createFertigationSectionHTML(chartImages) {
       </div>
   ` : '';
   const fertiInsightsBlock = (weeks.length > 0 && typeof window.buildFertiChartsInsightsHtmlForReport === 'function')
-    ? window.buildFertiChartsInsightsHtmlForReport(prog, waterContribution)
+    ? window.buildFertiChartsInsightsHtmlForReport(prog, waterContribution, { language: reportLang })
     : '';
 
   return `
     <div class="section">
-      <h2 class="section-title">💧 Fertirriego</h2>
+      <h2 class="section-title">💧 ${rt('Fertirriego', 'Fertigation')}</h2>
       <div class="report-block" style="border-color:#99f6e4;background:#ecfeff;">
-        <div class="report-block-title">📋 Requerimiento Nutricional <span class="report-mode-badge">${reqModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
+        <div class="report-block-title">📋 ${rt('Requerimiento Nutricional', 'Nutrient Requirements')} <span class="report-mode-badge">${reqModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
         <div class="report-kv">
-          <div class="report-kv-item"><div class="data-label">Cultivo</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
-          <div class="report-kv-item"><div class="data-label">Rendimiento Objetivo</div><div class="data-value">${targetYield > 0 ? `${reportNum(targetYield, 2)} ton/ha` : 'N/D'}</div></div>
+          <div class="report-kv-item"><div class="data-label">${rt('Cultivo', 'Crop')}</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
+          <div class="report-kv-item"><div class="data-label">${rt('Rendimiento Objetivo', 'Target Yield')}</div><div class="data-value">${targetYield > 0 ? q(targetYield, 'yield_mass_area', yieldUnit) : rt('N/D', 'N/A')}</div></div>
         </div>
-        <div class="report-subtitle">Extracción por Tonelada (kg/ton):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(extraction, reqModeIsElemental, false)}</div>
-        <div class="report-subtitle">Extracción Total (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(totalExtraction, reqModeIsElemental, false)}</div>
-        <div class="report-subtitle">Ajuste por Niveles en Suelo (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(adjustment, reqModeIsElemental, false)}</div>
+        <div class="report-subtitle">${rt('Extracción por unidad de rendimiento', 'Removal per unit yield')}:</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(extraction, reqModeIsElemental, false, null, 'extraction_mass_yield')}</div>
+        <div class="report-subtitle">${rt('Extracción Total', 'Total Removal')}:</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(totalExtraction, reqModeIsElemental, false, null, 'dose_mass_area')}</div>
+        <div class="report-subtitle">${rt('Ajuste por Niveles en Suelo', 'Soil-Level Adjustment')}:</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(adjustment, reqModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">Eficiencia (%):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(efficiency, false, false)}</div>
-        <div class="report-subtitle">Requerimiento Real (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(required, reqModeIsElemental, false)}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(efficiency, false, false, { unit: '%' })}</div>
+        <div class="report-subtitle">${rt('Requerimiento Real', 'Actual Requirement')}:</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(required, reqModeIsElemental, false, null, 'dose_mass_area')}</div>
       </div>
       <div class="report-block" style="border-color:#99f6e4;background:#f0fdfa;">
-        <div class="report-block-title">💧 Programa de Fertirriego <span class="report-mode-badge">${programModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
+        <div class="report-block-title">💧 ${rt('Programa de Fertirriego', 'Fertigation Program')} <span class="report-mode-badge">${programModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
         ${!hasWeekTotals ? `<div class="report-note" style="margin-bottom:8px;">Sin totales guardados por ${reportFertiIsMes ? 'mes' : 'semana'}. El reporte no recalcula con catálogo interno.</div>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
           <div><strong>${reportFertiIsMes ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
-          <div><strong>Dosis total Kg/Ha:</strong> ${totalDose.toFixed(2)}</div>
+          <div><strong>${rt('Dosis total', 'Total rate')}:</strong> ${q(totalDose, 'dose_mass_area', doseUnit)}</div>
         </div>
         <div class="report-subtitle">Aporte del programa de nutrición (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false)}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">Aporte por agua (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true })}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true }, 'dose_mass_area')}</div>
         <div class="report-subtitle">Aporte total (programa + agua) (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(totalWithWater, programModeIsElemental, false)}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(totalWithWater, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">Requerimiento Real (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(required, programModeIsElemental, false)}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(required, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">Diferencia (Aporte total - Requerimiento) (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(diff, programModeIsElemental, true)}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(diff, programModeIsElemental, true, null, 'dose_mass_area')}</div>
       </div>
       <div class="report-block">
         <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} — Fertilizantes <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
@@ -17204,7 +17544,7 @@ function createFertigationSectionHTML(chartImages) {
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
-              ${programDoseColumnTotals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}
+              ${programDoseColumnTotals.map(v => `<td>${q(v, 'dose_mass_area', doseUnit)}</td>`).join('')}
             </tr>
           </tbody>
         </table>
@@ -17439,6 +17779,12 @@ function createHidroponiaSectionHTML() {
   const volumeWaterM3 = Number.isFinite(volumeWaterM3Raw) && volumeWaterM3Raw > 0 ? volumeWaterM3Raw : null;
   const tankVolumeL = Number.isFinite(tankVolumeLRaw) && tankVolumeLRaw > 0 ? tankVolumeLRaw : null;
   const injectionRateLperM3 = Number.isFinite(injectionRateRaw) && injectionRateRaw > 0 ? injectionRateRaw : null;
+  const hydroUnits = window.NpHydroUnits || null;
+  const reportWaterValue = volumeWaterM3 === null ? null : (hydroUnits ? hydroUnits.fromSI(volumeWaterM3, 'water_volume') : volumeWaterM3);
+  const reportWaterUnit = hydroUnits ? hydroUnitLabel(hydroUnits.unit('water_volume')) : 'm³';
+  const reportTankValue = tankVolumeL === null ? null : (hydroUnits ? hydroUnits.fromSI(tankVolumeL / 1000, 'liquid_volume') : tankVolumeL);
+  const reportTankUnit = hydroUnits ? hydroUnits.unit('liquid_volume') : 'L';
+  const reportRateUnit = hydroUnits ? hydroUnitLabel(hydroUnits.unit('injection_rate')) : 'L/m³';
   const injectionRatio = injectionRateLperM3 ? Math.round(1000 / injectionRateLperM3) : null;
   const recargas = (tankVolumeL && volumeWaterM3 && injectionRateLperM3)
     ? Math.ceil((volumeWaterM3 * injectionRateLperM3) / tankVolumeL)
@@ -17698,13 +18044,13 @@ function createHidroponiaSectionHTML() {
         </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">📦 Cálculo por volumen de agua</div>
+        <div class="report-block-title">📦 ${hydroT('Cálculo por volumen de agua', 'Calculation by water volume')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
-          <div><strong>Volumen de agua:</strong> ${volumeWaterM3 !== null ? reportNum(volumeWaterM3, 2) + ' m³' : 'Sin dato'}</div>
-          <div><strong>Volumen tanque:</strong> ${tankVolumeL !== null ? reportNum(tankVolumeL, 0) + ' L' : 'Sin dato'}</div>
-          <div><strong>Tasa inyección:</strong> ${injectionRateLperM3 !== null ? reportNum(injectionRateLperM3, 2) + ' L/m³' : 'Sin dato'}</div>
-          <div><strong>Relación de inyección:</strong> ${injectionRatio ? `1:${injectionRatio}` : 'Sin dato'}</div>
-          <div><strong>Recargas estimadas:</strong> ${recargas !== null ? recargas : 'Sin dato'}</div>
+          <div><strong>${hydroT('Volumen de agua', 'Water volume')}:</strong> ${reportWaterValue !== null ? reportNum(reportWaterValue, 2) + ' ' + reportWaterUnit : hydroT('Sin dato', 'No data')}</div>
+          <div><strong>${hydroT('Volumen tanque', 'Tank volume')}:</strong> ${reportTankValue !== null ? reportNum(reportTankValue, 2) + ' ' + reportTankUnit : hydroT('Sin dato', 'No data')}</div>
+          <div><strong>${hydroT('Tasa inyección', 'Injection rate')}:</strong> ${injectionRateLperM3 !== null ? reportNum(injectionRateLperM3, 2) + ' ' + reportRateUnit : hydroT('Sin dato', 'No data')}</div>
+          <div><strong>${hydroT('Relación de inyección', 'Injection ratio')}:</strong> ${injectionRatio ? `1:${injectionRatio}` : hydroT('Sin dato', 'No data')}</div>
+          <div><strong>${hydroT('Recargas estimadas', 'Estimated fills')}:</strong> ${recargas !== null ? recargas : hydroT('Sin dato', 'No data')}</div>
         </div>
       </div>
       <div class="report-block">
@@ -17820,7 +18166,7 @@ function createHidroponiaSectionHTML() {
   `;
 }
 
-function createVPDReportSectionHTML(chartImages) {
+function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
   const vpd = currentProject.vpdAnalysis || {};
   const env = vpd.environmental || {};
   const adv = vpd.advanced || {};
@@ -17834,6 +18180,11 @@ function createVPDReportSectionHTML(chartImages) {
   const envUsesSolar = env.environmentalVpdUsesSolar === true;
   const envSolar = Number.isFinite(Number(env.shortwaveRadiationWm2)) ? Number(env.shortwaveRadiationWm2) : null;
   const envLeaf = Number.isFinite(Number(env.leafTemperature)) ? Number(env.leafTemperature) : null;
+  const tempQ = function (value) {
+    return value != null && Number.isFinite(Number(value))
+      ? waterClimateResult(Number(value), 'temperature', 2)
+      : '—';
+  };
   const historyRows = history.slice().reverse().slice(0, 20).map(item => `
     <tr>
       <td>${item.type === 'advanced' ? 'Avanzada' : 'Ambiental'}</td>
@@ -17881,7 +18232,7 @@ function createVPDReportSectionHTML(chartImages) {
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">📊 Estimador ambiental simple</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-          <div><strong>Temperatura:</strong> ${reportNum(env.temperature, 2)} °C</div>
+          <div><strong>Temperatura:</strong> ${tempQ(env.temperature)}</div>
           <div><strong>Humedad Relativa:</strong> ${reportNum(env.humidity, 2)} %</div>
           ${envUsesSolar ? `<div><strong>Radiación:</strong> ${envSolar != null ? reportNum(envSolar, 0) + ' W/m²' : '—'}</div>` : ''}
           <div><strong>VPD:</strong> <span class="badge-ok">${reportNum(envVpd, 2)} kPa</span></div>
@@ -17893,9 +18244,9 @@ function createVPDReportSectionHTML(chartImages) {
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">🔬 Estimador avanzado</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-          <div><strong>Temperatura Aire:</strong> ${reportNum(adv.airTemperature, 2)} °C</div>
+          <div><strong>Temperatura Aire:</strong> ${tempQ(adv.airTemperature)}</div>
           <div><strong>Humedad Relativa:</strong> ${reportNum(adv.airHumidity, 2)} %</div>
-          <div><strong>Temp. Hoja:</strong> ${reportNum(adv.leafTemperature, 2)} °C</div>
+          <div><strong>Temp. Hoja:</strong> ${tempQ(adv.leafTemperature != null ? adv.leafTemperature : adv.calculatedLeafTemp)}</div>
           <div><strong>VPD:</strong> <span class="badge-ok">${reportNum(advVpd, 2)} kPa</span></div>
           <div><strong>HD:</strong> ${reportNum(adv.hd, 2)} g/m³</div>
           ${adv.calculatedAt ? `<div><strong>Calculado:</strong> ${reportEscapeHtml(new Date(adv.calculatedAt).toLocaleString('es-MX'))}</div>` : ''}
@@ -17990,13 +18341,21 @@ function createVPDReportSectionHTML(chartImages) {
   `;
 }
 
-function createClimateReportSectionHTML(chartImages) {
+function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
   const ca = currentProject.climateAnalysis || {};
   const rain = ca.rainfall;
   const et0 = ca.et0;
   const live = ca.lastReading;
   const climateCharts = chartImages && chartImages.climate ? chartImages.climate : {};
   const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const depthUnit = window.NpWaterClimateUI ? window.NpWaterClimateUI.unit('water_depth') : 'mm';
+  function reportDepthNumber(value, digits) {
+    if (value == null || !Number.isFinite(Number(value))) return '—';
+    var converted = window.NpWaterClimateUI
+      ? window.NpWaterClimateUI.fromSI(Number(value), 'water_depth')
+      : Number(value);
+    return reportNum(converted, digits == null ? 1 : digits);
+  }
   function getClimateYearEntriesForReport(block) {
     if (typeof window.getClimateYearEntries === 'function') return window.getClimateYearEntries(block);
     if (!block) return [];
@@ -18032,13 +18391,13 @@ function createClimateReportSectionHTML(chartImages) {
     var annual = sumClimateMonthsTotal(obj, maxM);
     var totalCell =
       '<td class="report-climate-col-acum">' +
-      (annual != null ? annual.toFixed(1) : '—') +
+      reportDepthNumber(annual, 1) +
       '</td>';
     var cells = monthLabels.map(function (_, i) {
       var key = String(i + 1).padStart(2, '0');
       if (maxM != null && i + 1 > maxM) return '<td class="report-climate-cell-empty">—</td>';
       var v = obj[key];
-      return '<td>' + (v != null && Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
+      return '<td>' + reportDepthNumber(v, 1) + '</td>';
     }).join('');
     var trClass = isDiff ? ' class="report-climate-row-diff"' : '';
     return '<tr' + trClass + '><td class="report-climate-col-year">' + reportEscapeHtml(label) + '</td>' + totalCell + cells + '</tr>';
@@ -18053,7 +18412,7 @@ function createClimateReportSectionHTML(chartImages) {
     monthColgroup +
     '<thead><tr>' +
     '<th class="report-climate-col-year">Año</th>' +
-    '<th class="report-climate-col-acum">Acum.<br>anual (mm)</th>' +
+    '<th class="report-climate-col-acum">Acum.<br>anual (' + depthUnit + ')</th>' +
     monthLabels.map(function (l) { return '<th class="report-climate-col-month">' + l + '</th>'; }).join('') +
     '</tr></thead>';
   function wrapClimateMonthlyTable(variant, bodyRows) {
@@ -18128,19 +18487,22 @@ function createClimateReportSectionHTML(chartImages) {
     liveBlock =
       liveWhen +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:13px;">' +
-      '<div><strong>T:</strong> ' + reportNum(live.temperature, 1) + ' °C</div>' +
+      '<div><strong>T:</strong> ' + waterClimateResult(live.temperature, 'temperature', 1) + '</div>' +
       '<div><strong>HR:</strong> ' + reportNum(live.humidity, 0) + ' %</div>' +
       '<div><strong>Radiación:</strong> ' + (live.shortwaveRadiation != null ? Math.round(live.shortwaveRadiation) + ' W/m²' : '—') + '</div>' +
       '<div><strong>UV:</strong> ' + reportNum(live.uvIndex, 1) + '</div>' +
-      '<div><strong>Rocío:</strong> ' + reportNum(live.dewPoint, 1) + ' °C</div>' +
-      '<div><strong>Viento:</strong> ' + reportNum(live.windSpeedKmh, 1) + ' km/h</div>' +
-      '<div><strong>Lluvia (hoy):</strong> ' + (liveRain != null ? reportNum(liveRain, 1) + ' mm' : '—') + '</div>' +
-      '<div><strong>ET₀ (hoy):</strong> ' + (liveEt0 != null ? reportNum(liveEt0, 1) + ' mm' : '—') + '</div>' +
+      '<div><strong>Rocío:</strong> ' + waterClimateResult(live.dewPoint, 'temperature', 1) + '</div>' +
+      '<div><strong>Viento:</strong> ' + waterClimateResult(live.windSpeedKmh, 'speed', 1) + '</div>' +
+      '<div><strong>Lluvia (hoy):</strong> ' + (liveRain != null ? waterClimateResult(liveRain, 'water_depth', 1) : '—') + '</div>' +
+      '<div><strong>ET₀ (hoy):</strong> ' + (liveEt0 != null ? waterClimateResult(liveEt0, 'water_depth', 1) : '—') + '</div>' +
       '</div>';
   }
   var irrBlock = '';
   if (typeof window.getClimateIrrigationQuickCalcReportHtml === 'function') {
-    irrBlock = window.getClimateIrrigationQuickCalcReportHtml(reportEscapeHtml);
+    irrBlock = window.getClimateIrrigationQuickCalcReportHtml(reportEscapeHtml, {
+      language: reportLanguage,
+      unit_system: reportUnitSystem
+    });
   }
   var soilWaterBlock = '';
   if (window.NpSoilWaterBridge && typeof window.NpSoilWaterBridge.buildReportHtml === 'function') {
@@ -18154,8 +18516,8 @@ function createClimateReportSectionHTML(chartImages) {
     '<div class="section">' +
     '<h2 class="section-title" style="margin-top:24px;">🌧️ Clima — Lluvia, ET₀ y tiempo actual</h2>' +
     satNote +
-    (rainTable ? '<div class="report-block"><div class="report-block-title">Precipitación (mm/mes)</div>' + rainTable + '</div>' : '') +
-    (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (mm/mes, suma diaria)</div>' + et0Table + '</div>' : '') +
+    (rainTable ? '<div class="report-block"><div class="report-block-title">Precipitación (' + depthUnit + '/mes)</div>' + rainTable + '</div>' : '') +
+    (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (' + depthUnit + '/mes, suma diaria)</div>' + et0Table + '</div>' : '') +
     (combinedChartBlock || '') +
     (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
     (irrBlock || '') +
@@ -18164,9 +18526,11 @@ function createClimateReportSectionHTML(chartImages) {
   );
 }
 
-function createExtraccionEtapaSectionHTML(chartImages) {
+function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
   const state = getExtraccionEtapaStateForReport();
   const imgs = (chartImages && chartImages.extraccionEtapa) ? chartImages.extraccionEtapa : {};
+  const unitSystem = reportUnitSystem === 'us_customary' ? 'us_customary' : 'metric';
+  const massAreaUnit = unitSystem === 'us_customary' ? 'lb/acre' : 'kg/ha';
   if (!state) {
     return `
     <div class="section">
@@ -18181,7 +18545,8 @@ function createExtraccionEtapaSectionHTML(chartImages) {
   const stages = state.stages || [];
 
   const totalsRow = nutrients.map(function(n) {
-    return '<td class="report-ferti-stage-num">' + reportNum(n.total, 2) + '</td>';
+    return '<td class="report-ferti-stage-num">' +
+      reportNum(extraccionEtapaReportValue(n.total, unitSystem), 2) + ' ' + massAreaUnit + '</td>';
   }).join('');
 
   const pctHead = nutrients.map(function(n) {
@@ -18192,7 +18557,8 @@ function createExtraccionEtapaSectionHTML(chartImages) {
       const val = (state.pct[n.id] && state.pct[n.id][ri]) != null ? state.pct[n.id][ri] : 0;
       return '<td>' + reportNum(val, 1) + '</td>';
     }).join('');
-    return '<tr><td class="report-ferti-stage-cell">' + reportEscapeHtml(st) + '</td>' + cells + '</tr>';
+    return '<tr><td class="report-ferti-stage-cell">' +
+      reportEscapeHtml(extraccionEtapaReportStage(st, reportLanguage)) + '</td>' + cells + '</tr>';
   }).join('');
   const pctFoot = nutrients.map(function(n) {
     const sum = extraccionEtapaSumPct(n.id, state);
@@ -18201,13 +18567,16 @@ function createExtraccionEtapaSectionHTML(chartImages) {
   }).join('');
 
   const kgHead = nutrients.map(function(n) {
-    return '<th>' + reportEscapeHtml(n.label) + ' (kg/ha)</th>';
+    return '<th>' + reportEscapeHtml(n.label) + ' (' + massAreaUnit + ')</th>';
   }).join('');
   const kgRows = stages.map(function(st, ri) {
     const cells = nutrients.map(function(n) {
-      return '<td class="report-ferti-stage-num">' + reportNum(extraccionEtapaKgHa(n, ri, state), 2) + '</td>';
+      return '<td class="report-ferti-stage-num">' +
+        reportNum(extraccionEtapaReportValue(extraccionEtapaKgHa(n, ri, state), unitSystem), 2) +
+        ' ' + massAreaUnit + '</td>';
     }).join('');
-    return '<tr><td class="report-ferti-stage-cell">' + reportEscapeHtml(st) + '</td>' + cells + '</tr>';
+    return '<tr><td class="report-ferti-stage-cell">' +
+      reportEscapeHtml(extraccionEtapaReportStage(st, reportLanguage)) + '</td>' + cells + '</tr>';
   }).join('');
 
   const macroImg = imgs.macro
@@ -18221,10 +18590,10 @@ function createExtraccionEtapaSectionHTML(chartImages) {
     <div class="section">
       <h2 class="section-title">📊 Extracción nutrimental por etapa (%)</h2>
       <p class="report-note" style="margin-top:0;">
-        Datos del proyecto activo: extracción total (kg/ha), reparto % por etapa fenológica y curvas de kg/ha extraídos. Los cálculos son una guía y deben validarse en campo.
+        Datos del proyecto activo: extracción total (${massAreaUnit}), reparto % por etapa fenológica y curvas de ${massAreaUnit}. Los cálculos son una guía y deben validarse en campo.
       </p>
       <div class="report-block" style="border-color:#bfdbfe;background:#eff6ff;">
-        <div class="report-block-title">Extracción total por nutriente (kg/ha)</div>
+        <div class="report-block-title">Extracción total por nutriente (${massAreaUnit})</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
             <thead><tr><th>Nutriente</th>${nutrients.map(function(n) { return '<th>' + reportEscapeHtml(n.label) + '</th>'; }).join('')}</tr></thead>
@@ -18243,7 +18612,7 @@ function createExtraccionEtapaSectionHTML(chartImages) {
         </div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Resultado kg/ha por etapa</div>
+        <div class="report-block-title">Resultado ${massAreaUnit} por etapa</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
             <thead><tr><th>Etapa</th>${kgHead}</tr></thead>
@@ -18252,7 +18621,7 @@ function createExtraccionEtapaSectionHTML(chartImages) {
         </div>
       </div>
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
-        <div class="report-block-title">Gráficas kg/ha por etapa</div>
+        <div class="report-block-title">Gráficas ${massAreaUnit} por etapa</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
           <div>
             <div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes (N, P, K, Ca, Mg, S)</div>
@@ -21741,6 +22110,26 @@ function createClimateSectionHTML() {
 }
 window.createClimateSectionHTML = createClimateSectionHTML;
 
+function waterClimateInput(valueSI, kind) {
+  if (valueSI === null || valueSI === undefined || valueSI === '') return '';
+  return window.NpWaterClimateUI
+    ? window.NpWaterClimateUI.inputFromSI(Number(valueSI), kind)
+    : valueSI;
+}
+
+function waterClimateRead(id, kind) {
+  return window.NpWaterClimateUI
+    ? window.NpWaterClimateUI.read(id, kind)
+    : parseFloat((document.getElementById(id) || {}).value);
+}
+
+function waterClimateResult(valueSI, kind, digits) {
+  if (valueSI === null || valueSI === undefined || valueSI === '' || !Number.isFinite(Number(valueSI))) return '—';
+  return window.NpWaterClimateUI
+    ? window.NpWaterClimateUI.resultFromSI(valueSI, kind, digits)
+    : Number(valueSI).toFixed(digits == null ? 2 : digits) + (kind === 'temperature' ? ' °C' : '');
+}
+
 function createVPDSectionHTML() {
   ensureVPDAnalysisStructures();
   // Usar el proyecto más actualizado para evitar mostrar "agrega polígono" cuando sí hay polígono (race/caché)
@@ -21777,7 +22166,7 @@ function createVPDSectionHTML() {
   const vpdLocation = getVPDLocation(dataProject);
   const hasPolygon = vpdLocation && vpdLocation.lat != null && vpdLocation.lng != null;
   
-  return `
+  const sectionHTML = `
     <div class="card soil-analysis-watermark-wrap">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -21808,13 +22197,13 @@ function createVPDSectionHTML() {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
             <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
               <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">
-                🌡️ Temperatura del Aire (°C)
+                🌡️ Temperatura del Aire (${window.NpWaterClimateUI ? window.NpWaterClimateUI.unit('temperature') === 'F' ? '°F' : '°C' : '°C'})
               </label>
               <input 
                 type="number" 
                 id="vpd-env-temp" 
                 step="0.1" 
-                value="${envData.temperature || ''}"
+                value="${waterClimateInput(envData.temperature, 'temperature')}"
                 onchange="calculateEnvironmentalVPD()"
                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
                 placeholder="Ej: 20.5"
@@ -21902,13 +22291,13 @@ function createVPDSectionHTML() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
           <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
             <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">
-              🌡️ Temperatura del Aire (°C)
+              🌡️ Temperatura del Aire (${window.NpWaterClimateUI ? window.NpWaterClimateUI.unit('temperature') === 'F' ? '°F' : '°C' : '°C'})
             </label>
             <input 
               type="number" 
               id="vpd-adv-air-temp" 
               step="0.1" 
-              value="${advData.airTemperature || ''}"
+              value="${waterClimateInput(advData.airTemperature, 'temperature')}"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
               placeholder="Ej: 25"
             />
@@ -21952,10 +22341,11 @@ function createVPDSectionHTML() {
                 type="number" 
                 id="vpd-leaf-temp" 
                 step="0.1" 
-                value="${advData.leafTemperature || advData.calculatedLeafTemp || ''}"
+                value="${waterClimateInput(advData.leafTemperature || advData.calculatedLeafTemp, 'temperature')}"
                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
                 placeholder="Ej: 27.4"
               />
+              <p style="margin:6px 0 0;font-size:12px;color:#64748b;">Unidad: ${window.NpWaterClimateUI && window.NpWaterClimateUI.unit('temperature') === 'F' ? '°F' : '°C'}</p>
             </div>
           </div>
           
@@ -22039,6 +22429,7 @@ function createVPDSectionHTML() {
       ` : ''}
     </div>
   `;
+  return window.NpWaterClimateUI ? window.NpWaterClimateUI.translateString(sectionHTML) : sectionHTML;
 }
 
 // Función para cargar resultados guardados de VPD después de renderizar
@@ -22119,7 +22510,8 @@ async function getEnvironmentalWeatherData(ev) {
     const tempInput = document.getElementById('vpd-env-temp');
     const humidityInput = document.getElementById('vpd-env-humidity');
     
-    if (tempInput) tempInput.value = weatherData.temperature.toFixed(1);
+    if (tempInput && window.NpWaterClimateUI) window.NpWaterClimateUI.write(tempInput, weatherData.temperature, 'temperature');
+    else if (tempInput) tempInput.value = weatherData.temperature.toFixed(1);
     if (humidityInput) humidityInput.value = weatherData.humidity;
     
     var rad = weatherData.shortwaveRadiation;
@@ -22199,7 +22591,7 @@ function calculateEnvironmentalVPD() {
     return;
   }
   
-  const temperature = parseFloat(tempInput.value);
+  const temperature = waterClimateRead('vpd-env-temp', 'temperature');
   const humidity = parseFloat(humidityInput.value);
   
   // Validar valores
@@ -22304,7 +22696,7 @@ function calculateAdvancedVPD() {
     return;
   }
   
-  const airTemp = parseFloat(airTempInput.value);
+  const airTemp = waterClimateRead('vpd-adv-air-temp', 'temperature');
   const airHumidity = parseFloat(humidityInput.value);
   const mode = modeRadio.value;
   
@@ -22326,7 +22718,7 @@ function calculateAdvancedVPD() {
       return;
     }
     
-    leafTemp = parseFloat(leafTempInput.value);
+    leafTemp = waterClimateRead('vpd-leaf-temp', 'temperature');
     if (isNaN(leafTemp)) {
       alert('⚠️ Por favor ingresa la temperatura de hoja');
       return;
@@ -22401,7 +22793,7 @@ function calculateAdvancedVPD() {
         ${calculatedLeafTemp ? `
           <div style="margin-bottom: 16px; padding: 12px; background: #f0fdf4; border-radius: 6px; border: 1px solid #86efac;">
             <div style="color: #15803d; font-size: 14px; margin-bottom: 4px;">🌿 Temperatura de Hoja Calculada:</div>
-            <div style="font-size: 20px; font-weight: 700; color: #15803d;">${calculatedLeafTemp} °C</div>
+            <div style="font-size: 20px; font-weight: 700; color: #15803d;">${waterClimateResult(calculatedLeafTemp, 'temperature', 1)}</div>
           </div>
         ` : ''}
         ${createVPDRangeChart(results.vpd)}

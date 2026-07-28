@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260728b"></script>
+  <script src="assets/np-units-core.js?v=20260728b"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
+  <script src="assets/np-granular-ui.js?v=20260728b"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
   <title>Formulación de mezclas granulares</title>
@@ -44,12 +50,29 @@
     .custom-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     select.gm-select { max-width: 220px; width: 100%; padding: 4px 6px; border-radius: 4px; border: 1px solid #cbd5e1; }
+    .gm-pref-bar { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin:0 0 10px; }
+    .gm-pref-bar label { display:inline-flex; align-items:center; gap:5px; color:#475569; }
+    .gm-pref-bar select { padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; background:#fff; }
   </style>
 </head>
 <body>
+  <div class="gm-pref-bar" aria-label="Preferencias de idioma y unidades">
+    <label><span data-gm-es="Idioma" data-gm-en="Language">Idioma</span>
+      <select id="gmLanguageSelect">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+    <label><span data-gm-es="Unidades" data-gm-en="Units">Unidades</span>
+      <select id="gmUnitSystemSelect">
+        <option value="metric">Métrico</option>
+        <option value="us_customary">US customary</option>
+      </select>
+    </label>
+  </div>
   <div class="gm-header">
     <div class="np-free-tool-head" style="margin-bottom:0;flex:1;min-width:0;">
-      <h1 class="gm-title np-free-tool-title">📦 Formulación de mezclas granulares</h1>
+      <h1 class="gm-title np-free-tool-title" data-gm-es="📦 Formulación de mezclas granulares" data-gm-en="📦 Granular Blend Formulation">📦 Formulación de mezclas granulares</h1>
       <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
     </div>
     <div class="npk-badge" id="npkDisplay">Relación N–P₂O₅–K₂O: —</div>
@@ -59,8 +82,8 @@
     <table class="gm-table" id="mixTable">
       <thead>
         <tr>
-          <th>Material</th>
-          <th>% por TM</th>
+          <th data-gm-es="Material" data-gm-en="Material">Material</th>
+          <th data-gm-es="% por TM" data-gm-en="% of blend">% por TM</th>
           <th>N</th>
           <th>P₂O₅</th>
           <th>K₂O</th>
@@ -74,21 +97,21 @@
           <th>Cu</th>
           <th>Mo</th>
           <th>SiO₂</th>
-          <th>Acción</th>
+          <th data-gm-es="Acción" data-gm-en="Action">Acción</th>
         </tr>
       </thead>
       <tbody id="mixRows"></tbody>
     </table>
   </div>
 
-  <button type="button" class="btn-add" onclick="addRow()">+ Agregar fertilizante</button>
-  <button type="button" class="btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
-  <button type="button" class="btn-clear" onclick="clearMix()" style="margin-left:8px;">Eliminar mezcla</button>
+  <button type="button" class="btn-add" onclick="addRow()" data-gm-es="+ Agregar fertilizante" data-gm-en="+ Add fertilizer">+ Agregar fertilizante</button>
+  <button type="button" class="btn-cat" onclick="openCatalog()" data-gm-es="Gestionar catálogo" data-gm-en="Manage catalog">Gestionar catálogo</button>
+  <button type="button" class="btn-clear" onclick="clearMix()" style="margin-left:8px;" data-gm-es="Eliminar mezcla" data-gm-en="Clear blend">Eliminar mezcla</button>
 
   <div class="dose-row">
-    <label>Dosis kg/ha (mezcla): <input type="number" id="doseKgHa" min="0" step="1" value="500" oninput="recalc()" /></label>
+    <label><span id="gmDoseLabel">Dosis kg/ha (mezcla):</span> <input type="number" id="doseKgHa" min="0" step="0.0001" value="500" oninput="onDoseInput()" /></label>
   </div>
-  <p style="margin:8px 0 0;font-size:12px;color:#64748b;">Aporte por hectárea según la dosis (kg de nutriente óxido / ha):</p>
+  <p id="gmSupplyHelp" style="margin:8px 0 0;font-size:12px;color:#64748b;">Aporte por hectárea según la dosis (kg de nutriente óxido / ha):</p>
   <div class="gm-wrap" style="margin-top:6px;">
     <table class="gm-table" id="kghaTable">
       <thead>
@@ -116,10 +139,10 @@
   <!-- Modal catálogo -->
   <div class="modal-overlay-gm" id="catalogModal" onclick="if(event.target===this)closeCatalog()">
     <div class="modal-gm" onclick="event.stopPropagation()">
-      <h3>Gestionar catálogo (gratuito)</h3>
-      <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Puedes añadir hasta <strong>3</strong> fertilizantes personalizados. Se guardan solo en este equipo para esta herramienta.</p>
+      <h3 data-gm-es="Gestionar catálogo (gratuito)" data-gm-en="Manage catalog (free)">Gestionar catálogo (gratuito)</h3>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px;" data-gm-es="Puedes añadir hasta 3 fertilizantes personalizados. Se guardan solo en este equipo para esta herramienta." data-gm-en="You may add up to 3 custom fertilizers. They are stored only on this device for this tool.">Puedes añadir hasta <strong>3</strong> fertilizantes personalizados. Se guardan solo en este equipo para esta herramienta.</p>
       <div class="custom-list" id="customListEl"></div>
-      <h4 style="margin:12px 0 8px;font-size:14px;">Nuevo personalizado</h4>
+      <h4 style="margin:12px 0 8px;font-size:14px;" data-gm-es="Nuevo personalizado" data-gm-en="New custom fertilizer">Nuevo personalizado</h4>
       <div class="form-grid">
         <label>Nombre <input type="text" id="newName" placeholder="Ej. Mi mezcla 20-10-10" /></label>
         <label>N % <input type="number" id="newN" step="0.01" min="0" value="0" /></label>
@@ -137,8 +160,8 @@
         <label>SiO₂ % <input type="number" id="newSiO2" step="0.01" min="0" value="0" /></label>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn-add" onclick="saveCustomMaterial()">Guardar personalizado</button>
-        <button type="button" class="btn-clear" onclick="closeCatalog()">Cerrar</button>
+        <button type="button" class="btn-add" onclick="saveCustomMaterial()" data-gm-es="Guardar personalizado" data-gm-en="Save custom fertilizer">Guardar personalizado</button>
+        <button type="button" class="btn-clear" onclick="closeCatalog()" data-gm-es="Cerrar" data-gm-en="Close">Cerrar</button>
       </div>
     </div>
   </div>
@@ -146,6 +169,47 @@
   <script>
     const LS_CUSTOM = 'np_login_granular_mix_customs_v1';
     const KEYS = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    let doseKgHaSI = 500;
+
+    function gmPrefs() {
+      return window.NpPrefs && window.NpPrefs.get ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' };
+    }
+    function gmDoseUnit() {
+      return window.NpGranularUI ? window.NpGranularUI.unit('dose_mass_area') : 'kg/ha';
+    }
+    function gmDoseFromSI(value, input) {
+      if (!window.NpGranularUI) return input ? String(value) : Number(value).toFixed(2);
+      return input
+        ? window.NpGranularUI.inputFromSI(value, 'dose_mass_area')
+        : window.NpGranularUI.resultFromSI(value, 'dose_mass_area');
+    }
+    function gmDoseToSI(value) {
+      return window.NpGranularUI ? window.NpGranularUI.toSI(value, 'dose_mass_area') : Number(value);
+    }
+    function onDoseInput() {
+      doseKgHaSI = gmDoseToSI(parseFloat(document.getElementById('doseKgHa').value) || 0);
+      recalc();
+    }
+    function applyGmPreferences() {
+      const p = gmPrefs();
+      document.documentElement.lang = p.language;
+      document.documentElement.setAttribute('data-np-unit-system', p.unit_system);
+      document.querySelectorAll('[data-gm-es]').forEach(el => {
+        el.textContent = p.language === 'en' ? el.getAttribute('data-gm-en') : el.getAttribute('data-gm-es');
+      });
+      const language = document.getElementById('gmLanguageSelect');
+      const units = document.getElementById('gmUnitSystemSelect');
+      if (language) language.value = p.language;
+      if (units) units.value = p.unit_system;
+      const doseInput = document.getElementById('doseKgHa');
+      if (doseInput) doseInput.value = gmDoseFromSI(doseKgHaSI, true);
+      const unit = gmDoseUnit();
+      document.getElementById('gmDoseLabel').textContent = (p.language === 'en' ? 'Blend dose' : 'Dosis de mezcla') + ' (' + unit + '):';
+      document.getElementById('gmSupplyHelp').textContent = (p.language === 'en'
+        ? 'Nutrient supply at the selected dose (oxide nutrient, '
+        : 'Aporte según la dosis (nutriente óxido, ') + unit + '):';
+      renderRows();
+    }
     const MATERIAL_NAME_EN = {
       'Fosfonitrato 33-03-00': 'Nitrophosphate 33-03-00',
       'Sulfato de Amonio Granular': 'Granular Ammonium Sulfate',
@@ -269,9 +333,8 @@
           '<tr class="total-row"><td><strong>TOTAL</strong></td><td id="totalPctCell">0.00</td>' +
           KEYS.map(k => `<td id="tot_${k}">0.00</td>`).join('') + '<td></td></tr>';
         document.getElementById('npkDisplay').textContent = isEnglishUI() ? 'N–P₂O₅–K₂O ratio: —' : 'Relación N–P₂O₅–K₂O: —';
-        const dose = parseFloat(document.getElementById('doseKgHa').value) || 0;
         const kr = document.getElementById('kghaRow');
-        kr.innerHTML = '<td><strong>Kg/ha</strong></td>' + KEYS.map(() => '<td>0</td>').join('');
+        kr.innerHTML = '<td><strong>' + gmDoseUnit() + '</strong></td>' + KEYS.map(() => '<td>0</td>').join('');
         return;
       }
       tb.innerHTML = rows.map(r => {
@@ -359,14 +422,14 @@
           : (isEnglishUI() ? 'N–P₂O₅–K₂O ratio: —' : 'Relación N–P₂O₅–K₂O: —');
       }
 
-      const dose = parseFloat(document.getElementById('doseKgHa').value) || 0;
       const kr = document.getElementById('kghaRow');
       const fmtKg = v => {
-        const x = dose * (Number(v) || 0) / 100;
+        const xSI = doseKgHaSI * (Number(v) || 0) / 100;
+        const x = window.NpGranularUI ? window.NpGranularUI.fromSI(xSI, 'dose_mass_area') : xSI;
         if (x <= 0 && (Number(v) || 0) <= 0) return '0';
-        return x < 0.01 ? x.toFixed(4) : x < 1 ? x.toFixed(3) : x.toFixed(2);
+        return x.toFixed(2);
       };
-      kr.innerHTML = '<td><strong>Kg/ha</strong></td>' + KEYS.map(k =>
+      kr.innerHTML = '<td><strong>' + gmDoseUnit() + '</strong></td>' + KEYS.map(k =>
         '<td>' + fmtKg(totals[k]) + '</td>'
       ).join('');
     }
@@ -451,7 +514,7 @@
     function snapshotMix() {
       return {
         rowId: rowId,
-        dose: document.getElementById('doseKgHa').value,
+        doseKgHa: doseKgHaSI,
         rows: rows.map(function (r) { return { name: r.name, pct: r.pct }; })
       };
     }
@@ -462,7 +525,9 @@
       d.rows.forEach(function (r) {
         rows.push({ id: ++rowId, name: r.name || '', pct: r.pct != null ? r.pct : '' });
       });
-      if (d.dose != null) document.getElementById('doseKgHa').value = d.dose;
+      if (d.doseKgHa != null) doseKgHaSI = Number(d.doseKgHa) || 0;
+      else if (d.dose != null) doseKgHaSI = Number(d.dose) || 0;
+      document.getElementById('doseKgHa').value = gmDoseFromSI(doseKgHaSI, true);
       renderRows();
     }
   </script>
@@ -472,6 +537,16 @@
       var loaded = window.NpFreePersist.load('granular_mix');
       if (loaded && loaded.rows && loaded.rows.length) applyMix(loaded);
       else renderRows();
+      var language = document.getElementById('gmLanguageSelect');
+      var units = document.getElementById('gmUnitSystemSelect');
+      if (language) language.addEventListener('change', function () {
+        window.NpPrefs.set({ language: language.value }, { explicit: true });
+      });
+      if (units) units.addEventListener('change', function () {
+        window.NpPrefs.set({ unit_system: units.value }, { explicit: true });
+      });
+      window.addEventListener('np:prefs-changed', applyGmPreferences);
+      applyGmPreferences();
       window.NpFreePersist.bind('granular_mix', snapshotMix, applyMix);
     })();
   </script>

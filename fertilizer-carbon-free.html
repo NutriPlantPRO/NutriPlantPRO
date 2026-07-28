@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js?v=20260728b"></script>
+  <script src="assets/np-prefs.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260728b"></script>
+  <script src="assets/np-units-core.js?v=20260728b"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260728b"></script>
   <title>Huella de carbono de fertilizantes — NutriPlant PRO</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
@@ -925,6 +931,46 @@
   <script>
     var LS_KEY = 'nutriplant_free_fertilizer_carbon_v2';
 
+    function fcUI() { return window.NpFreeNutritionUI; }
+    function fcFromSI(value, kind) { return fcUI().fromSI(Number(value) || 0, kind); }
+    function fcToSI(value, kind) { return fcUI().toSI(Number(value) || 0, kind); }
+    function fcInput(value, kind) { return fcUI().input(Number(value) || 0, kind); }
+    function fcDistance(value) { return fcUI().quantity(Number(value) || 0, 'distance', 2); }
+    function fcCo2e(value) { return fcUI().formatCo2e(Number(value) || 0, false); }
+    function fcCo2eArea(value) { return fcUI().formatCo2e(Number(value) || 0, true); }
+    function fcDoseKind(sc) { return (sc && sc.dose_unit) === 'total_kg' ? 'mass' : 'dose_mass_area'; }
+    function fcDoseUnitLabel(sc) { return fcUI().unit(fcDoseKind(sc)); }
+    function refreshCarbonUnitLabels() {
+      var distanceUnit = fcUI().unit('distance');
+      var areaUnit = fcUI().unit('area');
+      var doseUnit = fcUI().unit('dose_mass_area');
+      var massUnit = fcUI().unit('mass');
+      [
+        ['transportOriginKm', '🚛', 'Origen'], ['transportSeaKm', '⛴️', 'Marítimo'],
+        ['transportKm', '🌾', 'Campo']
+      ].forEach(function (item) {
+        var label = document.querySelector('label[for="' + item[0] + '"]');
+        if (label) label.innerHTML = '<span class="fc-lbl-icon">' + item[1] + '</span> ' +
+          fcUI().translate(item[2]) + ' (' + distanceUnit + ')';
+      });
+      var areaLabel = document.querySelector('label[for="areaHa"]');
+      if (areaLabel) areaLabel.innerHTML = '<span class="fc-lbl-icon">📐</span> ' +
+        fcUI().translate('Superficie') + ' (' + areaUnit + ')';
+      var areaHint = document.getElementById('areaHa') && document.getElementById('areaHa').parentElement.querySelector('.hint');
+      if (areaHint) areaHint.textContent = fcUI().translate('Para convertir dosis total') + ' → ' + doseUnit;
+      var feSummary = document.querySelector('#feReferencePanel summary');
+      if (feSummary) feSummary.textContent = '📊 ' +
+        fcUI().translate('Calibración vs Fertilizers Europe') + ' (EU, ' +
+        fcUI().translate('Fabricación').toLowerCase() + ' ' + fcUI().unit('carbon_intensity') + ')';
+      var cmpLabel = document.querySelector('label[for="cmpDose"]');
+      if (cmpLabel) cmpLabel.textContent = fcUI().translate('Dosis') + ' (' + doseUnit + ')';
+      var select = document.getElementById('doseUnit');
+      if (select && select.options.length >= 2) {
+        select.options[0].textContent = doseUnit;
+        select.options[1].textContent = massUnit + ' ' + fcUI().translate('Total').toLowerCase();
+      }
+    }
+
     function blankRow(fromRow, sc) {
       var base = {
         fertilizer_id: 'urea',
@@ -1093,7 +1139,7 @@
       var mfg = NpFertilizerCarbon.originGroupLabel(normalizeManufacturingGroup(row.origin_country_iso || 'GLOBAL'));
       var dest = applicationCountryName(row.application_country_iso || 'MX');
       var km = (Number(row.transport_sea_km) || 0) + (Number(row.transport_km) || 0) + (Number(row.transport_origin_km) || 0);
-      return mfg + ' → ' + dest + (km > 0 ? ' · ' + km.toLocaleString('es') + ' km' : '');
+      return mfg + ' → ' + dest + (km > 0 ? ' · ' + fcDistance(km) : '');
     }
 
     function updateActiveRouteTitle() {
@@ -1138,9 +1184,9 @@
       var entryEl = document.getElementById('entryPointSelect');
       row.entry_point_id = (entryPointFieldActive() && entryEl)
         ? entryEl.value : (row.entry_point_id || null);
-      row.transport_origin_km = Number(document.getElementById('transportOriginKm').value) || 0;
-      row.transport_sea_km = Number(document.getElementById('transportSeaKm').value) || 0;
-      row.transport_km = Number(document.getElementById('transportKm').value) || 0;
+      row.transport_origin_km = fcToSI(document.getElementById('transportOriginKm').value, 'distance');
+      row.transport_sea_km = fcToSI(document.getElementById('transportSeaKm').value, 'distance');
+      row.transport_km = fcToSI(document.getElementById('transportKm').value, 'distance');
       fixRowFertilizerForOrigin(row);
     }
 
@@ -1149,9 +1195,9 @@
       document.getElementById('originCountry').value = normalizeManufacturingGroup(row.origin_country_iso || 'GLOBAL');
       document.getElementById('applicationCountry').value = row.application_country_iso || 'MX';
       syncEntryPointField(row.application_country_iso || 'MX', row.entry_point_id);
-      document.getElementById('transportOriginKm').value = row.transport_origin_km != null ? row.transport_origin_km : 0;
-      document.getElementById('transportSeaKm').value = row.transport_sea_km != null ? row.transport_sea_km : 0;
-      document.getElementById('transportKm').value = row.transport_km != null ? row.transport_km : 0;
+      document.getElementById('transportOriginKm').value = fcInput(row.transport_origin_km != null ? row.transport_origin_km : 0, 'distance');
+      document.getElementById('transportSeaKm').value = fcInput(row.transport_sea_km != null ? row.transport_sea_km : 0, 'distance');
+      document.getElementById('transportKm').value = fcInput(row.transport_km != null ? row.transport_km : 0, 'distance');
       updateActiveRouteTitle();
     }
 
@@ -1202,7 +1248,7 @@
     function factorModeOptions(selected) {
       var modes = [
         { id: 'estimated', label: 'Estimado' },
-        { id: 'custom_per_kg', label: 'Propio kg/kg' },
+        { id: 'custom_per_kg', label: 'Propio ' + fcUI().unit('carbon_intensity') },
         { id: 'custom_total_mfg', label: 'Propio total' }
       ];
       return modes.map(function (m) {
@@ -1212,13 +1258,14 @@
 
     function customValuePlaceholder(mode) {
       if (mode === 'custom_per_kg') return 'ej. 1.2';
-      if (mode === 'custom_total_mfg') return 'kg CO₂e';
+      if (mode === 'custom_total_mfg') return fcUI().unit('mass') + ' CO₂e';
       return '—';
     }
 
     function customValueForRow(row) {
       if (row.factor_source === 'custom_per_kg') return row.custom_factor != null ? row.custom_factor : '';
-      if (row.factor_source === 'custom_total_mfg') return row.custom_mfg_total_kg_co2e != null ? row.custom_mfg_total_kg_co2e : '';
+      if (row.factor_source === 'custom_total_mfg') return row.custom_mfg_total_kg_co2e != null
+        ? fcInput(row.custom_mfg_total_kg_co2e, 'mass') : '';
       return '';
     }
 
@@ -1244,10 +1291,10 @@
     function persistForm() {
       persistRouteFromForm();
       var sc = activeScenario();
-      sc.area_ha = Number(document.getElementById('areaHa').value) || 0;
+      sc.area_ha = fcToSI(document.getElementById('areaHa').value, 'area');
       sc.dose_unit = document.getElementById('doseUnit').value;
       state.cmp_fert = document.getElementById('cmpFert').value;
-      state.cmp_dose = Number(document.getElementById('cmpDose').value) || 0;
+      state.cmp_dose = fcToSI(document.getElementById('cmpDose').value, 'dose_mass_area');
       state.cmp_origin_a = document.getElementById('cmpOriginA').value;
       state.cmp_origin_b = document.getElementById('cmpOriginB').value;
       saveState();
@@ -1257,10 +1304,10 @@
       var sc = activeScenario();
       migrateScenarioRows(sc);
       loadRouteToForm(activeRow());
-      document.getElementById('areaHa').value = sc.area_ha != null ? sc.area_ha : 1;
+      document.getElementById('areaHa').value = fcInput(sc.area_ha != null ? sc.area_ha : 1, 'area');
       document.getElementById('doseUnit').value = sc.dose_unit || 'kg_ha';
       if (state.cmp_fert) document.getElementById('cmpFert').value = state.cmp_fert;
-      if (state.cmp_dose != null) document.getElementById('cmpDose').value = state.cmp_dose;
+      if (state.cmp_dose != null) document.getElementById('cmpDose').value = fcInput(state.cmp_dose, 'dose_mass_area');
       if (state.cmp_origin_a) document.getElementById('cmpOriginA').value = state.cmp_origin_a;
       if (state.cmp_origin_b) document.getElementById('cmpOriginB').value = state.cmp_origin_b;
       document.getElementById('activeScenarioTitle').textContent =
@@ -1401,9 +1448,9 @@
       var est = NpFertilizerCarbon.estimateTransportRoute(buildEstimateInputFromRow(row));
       if (!est || !est.ok) return;
       if (est.maritime_km == null && est.road_km == null && est.origin_km == null) return;
-      var originTxt = est.origin_km != null ? est.origin_km.toLocaleString('es') + ' km 🚛 origen' : '—';
-      var seaTxt = est.maritime_km != null ? est.maritime_km.toLocaleString('es') + ' km ⛴️' : '—';
-      var roadTxt = est.road_km != null ? est.road_km.toLocaleString('es') + ' km 🚛 destino' : '—';
+      var originTxt = est.origin_km != null ? fcDistance(est.origin_km) + ' 🚛 origen' : '—';
+      var seaTxt = est.maritime_km != null ? fcDistance(est.maritime_km) + ' ⛴️' : '—';
+      var roadTxt = est.road_km != null ? fcDistance(est.road_km) + ' 🚛 destino' : '—';
       hint.innerHTML =
         'Referencia <strong>' + est.manufacturing_group_label + ' → ' + est.destination_country_name + '</strong>' +
         (est.entry_point_label ? ' · <em>' + est.entry_point_label + '</em>' : '') + ': ' +
@@ -1419,15 +1466,15 @@
       var est = NpFertilizerCarbon.estimateTransportRoute(buildEstimateInputFromRow(row));
       if (!est || !est.ok) return;
       if (est.origin_km != null) {
-        document.getElementById('transportOriginKm').value = est.origin_km;
+        document.getElementById('transportOriginKm').value = fcInput(est.origin_km, 'distance');
         row.transport_origin_km = est.origin_km;
       }
       if (est.maritime_km != null) {
-        document.getElementById('transportSeaKm').value = est.maritime_km;
+        document.getElementById('transportSeaKm').value = fcInput(est.maritime_km, 'distance');
         row.transport_sea_km = est.maritime_km;
       }
       if (est.road_km != null) {
-        document.getElementById('transportKm').value = est.road_km;
+        document.getElementById('transportKm').value = fcInput(est.road_km, 'distance');
         row.transport_km = est.road_km;
       }
       saveState();
@@ -1438,11 +1485,11 @@
         hint.innerHTML =
           '✓ Aplicado: <strong>' + est.manufacturing_group_label + ' → ' + est.destination_country_name + '</strong>' +
           (est.entry_point_label ? ' · ' + est.entry_point_label : '') + ' — ' +
-          (est.origin_km != null ? est.origin_km.toLocaleString('es') + ' km origen' : '') +
+          (est.origin_km != null ? fcDistance(est.origin_km) + ' origen' : '') +
           (est.origin_km != null && est.maritime_km != null ? ' + ' : '') +
-          (est.maritime_km != null ? est.maritime_km.toLocaleString('es') + ' km marítimo' : '') +
+          (est.maritime_km != null ? fcDistance(est.maritime_km) + ' marítimo' : '') +
           (est.maritime_km != null && est.road_km != null ? ' + ' : '') +
-          (est.road_km != null ? est.road_km.toLocaleString('es') + ' km a campo' : '') +
+          (est.road_km != null ? fcDistance(est.road_km) + ' a campo' : '') +
           '. <span style="color:#64748b;">' + est.disclaimer + ' Ajusta si tienes dato real.</span>';
       }
     }
@@ -1465,21 +1512,21 @@
         : (row && row.entry_point_id);
       var originEl = document.getElementById('flowOriginLabel');
       var originKm = document.getElementById('transportOriginKm')
-        ? Number(document.getElementById('transportOriginKm').value) || 0
+        ? fcToSI(document.getElementById('transportOriginKm').value, 'distance')
         : ((row && Number(row.transport_origin_km)) || 0);
       var seaKm = document.getElementById('transportSeaKm')
-        ? Number(document.getElementById('transportSeaKm').value) || 0
+        ? fcToSI(document.getElementById('transportSeaKm').value, 'distance')
         : ((row && Number(row.transport_sea_km)) || 0);
       var roadKm = document.getElementById('transportKm')
-        ? Number(document.getElementById('transportKm').value) || 0
+        ? fcToSI(document.getElementById('transportKm').value, 'distance')
         : ((row && Number(row.transport_km)) || 0);
 
       mfgEl.textContent = NpFertilizerCarbon.originGroupLabel(mfgGroup);
       if (originEl) {
         originEl.textContent = originKm > 0
-          ? originKm + ' km → puerto exp.'
+          ? fcDistance(originKm) + ' → puerto exp.'
           : (NpFertilizerCarbon.estimateOriginFactoryToPortKm(mfgGroup) != null
-            ? '~' + NpFertilizerCarbon.estimateOriginFactoryToPortKm(mfgGroup) + ' km ref.'
+            ? '~' + fcDistance(NpFertilizerCarbon.estimateOriginFactoryToPortKm(mfgGroup)) + ' ref.'
             : 'Sin km origen');
       }
       portEl.textContent = (function () {
@@ -1493,11 +1540,11 @@
       var seaEl = document.getElementById('flowSeaLabel');
       if (seaEl) {
         seaEl.textContent = seaKm > 0
-          ? seaKm + ' km (→ ' + applicationCountryName(appIso) + ')'
+          ? fcDistance(seaKm) + ' (→ ' + applicationCountryName(appIso) + ')'
           : 'Sin km marítimo';
       }
       fieldEl.textContent = roadKm > 0
-        ? '🚛 ' + roadKm + ' km a finca'
+        ? '🚛 ' + fcDistance(roadKm) + ' a finca'
         : 'Sin km terrestre';
     }
 
@@ -1512,8 +1559,8 @@
       var oh = document.getElementById('transportOriginHint');
       var refOrigin = NpFertilizerCarbon.estimateOriginFactoryToPortKm(groupId);
       if (oh && refOrigin != null) {
-        oh.textContent = 'Ref. ~' + refOrigin + ' km (' + groupLbl + ')';
-        oh.title = 'Fábrica → puerto exportación: referencia ~' + refOrigin + ' km para ' + groupLbl;
+        oh.textContent = 'Ref. ~' + fcDistance(refOrigin) + ' (' + groupLbl + ')';
+        oh.title = 'Fábrica → puerto exportación: referencia ~' + fcDistance(refOrigin) + ' para ' + groupLbl;
       }
       updateSupplyChainFlow();
       updateTransportEstimateHint();
@@ -1530,7 +1577,7 @@
       ensureRowRoutes(rows, sc);
       var tbody = document.getElementById('rowsBody');
       var doseUnit = document.getElementById('doseUnit').value;
-      var unitLabel = doseUnit === 'total_kg' ? 'kg total' : 'kg/ha';
+      var unitLabel = fcDoseUnitLabel(sc);
       var selIdx = getActiveRowIndex();
       tbody.innerHTML = rows.map(function (row, i) {
         var mode = row.factor_source || 'estimated';
@@ -1541,7 +1588,7 @@
           '<td class="left" onclick="event.stopPropagation()"><select class="fert" onchange="onRowChange(' + i + ',\'fertilizer_id\',this.value)">' +
           fertOptionsHtml(row.fertilizer_id, row.origin_country_iso) + '</select></td>' +
           '<td class="left fc-route-cell">' + routeSummaryShort(row) + '</td>' +
-          '<td onclick="event.stopPropagation()"><input class="dose" type="number" min="0" step="1" value="' + (row.dose !== '' && row.dose != null ? row.dose : '') + '" oninput="onRowChange(' + i + ',\'dose\',this.value)" onblur="onDoseBlur(' + i + ',this.value)" /> ' + unitLabel + '</td>' +
+          '<td onclick="event.stopPropagation()"><input class="dose" type="number" min="0" step="any" value="' + (row.dose !== '' && row.dose != null ? fcInput(row.dose, fcDoseKind(sc)) : '') + '" oninput="onRowChange(' + i + ',\'dose\',this.value)" onblur="onDoseBlur(' + i + ',this.value)" /> ' + unitLabel + '</td>' +
           '<td onclick="event.stopPropagation()"><select class="factor-mode" onchange="onFactorModeChange(' + i + ',this.value)">' +
           factorModeOptions(mode) + '</select></td>' +
           '<td onclick="event.stopPropagation()"><input class="custom-val" type="number" min="0" step="0.001" value="' + customVal + '" placeholder="' + customValuePlaceholder(mode) + '"' + customDisabled +
@@ -1572,7 +1619,7 @@
       if (!rows[idx]) return;
       var mode = rows[idx].factor_source || 'estimated';
       if (mode === 'custom_per_kg') rows[idx].custom_factor = val;
-      else if (mode === 'custom_total_mfg') rows[idx].custom_mfg_total_kg_co2e = val;
+      else if (mode === 'custom_total_mfg') rows[idx].custom_mfg_total_kg_co2e = fcToSI(val, 'mass');
       saveState();
       recalc(true);
     }
@@ -1581,7 +1628,7 @@
       var rows = activeScenario().rows;
       if (!rows[idx]) return;
       if (key === 'dose') {
-        rows[idx][key] = (val === '' || val == null) ? '' : Number(val);
+        rows[idx][key] = (val === '' || val == null) ? '' : fcToSI(val, fcDoseKind(activeScenario()));
       } else {
         rows[idx][key] = val;
       }
@@ -1600,7 +1647,7 @@
     function onDoseBlur(idx, val) {
       var rows = activeScenario().rows;
       if (!rows[idx]) return;
-      var n = Number(val);
+      var n = fcToSI(val, fcDoseKind(activeScenario()));
       rows[idx].dose = Number.isFinite(n) && n >= 0 ? n : 0;
       saveState();
       recalc(true);
@@ -1679,7 +1726,8 @@
     function programSummaryHtml(label, sc, result) {
       if (!result || !result.ok) return '<div class="fc-prog-summary-box"><h4>' + label + '</h4><p>—</p></div>';
       var lines = result.rows.filter(function (r) { return r.ok; }).map(function (r) {
-        var doseTxt = r.dose + (r.dose_unit === 'total_kg' ? ' kg total' : ' kg/ha');
+        var doseKind = r.dose_unit === 'total_kg' ? 'mass' : 'dose_mass_area';
+        var doseTxt = fcUI().quantity(r.dose, doseKind, 2);
         return '<li><strong>' + r.fertilizer_name + '</strong> · ' + doseTxt + ' · ' + r.origin_group_label +
           ' → ' + applicationCountryName(r.application_country_iso || 'MX') +
           ' · ' + NpFertilizerCarbon.formatCo2e(r.total_kg_co2e) + '</li>';
@@ -1767,6 +1815,10 @@
       var kmB = NpFertilizerCarbon.co2eToPickupKm(rB.totals.total_kg_co2e);
       var kmDiff = kmB - kmA;
       var factor = eq.kg_co2e_per_km || 0.254;
+      var factorDisplay = fcUI().prefs().unit_system === 'us_customary'
+        ? fcFromSI(factor, 'mass') / fcFromSI(1, 'distance')
+        : factor;
+      var factorUnit = fcUI().prefs().unit_system === 'us_customary' ? 'lb CO₂e/mi' : 'kg CO₂e/km';
       var diffClass = kmDiff < -0.5 ? ' is-diff' : '';
       var diffLabel = kmDiff < -0.5
         ? 'Menos km equivalentes'
@@ -1786,7 +1838,7 @@
             '<span class="km-val">' + diffSign + NpFertilizerCarbon.formatPickupKm(Math.abs(kmDiff)).replace('~', '') + '</span>' +
             '<span class="km-sub">' + (diff >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diff) + '</span></div>' +
         '</div>' +
-        '<p class="fc-pickup-equiv-foot">Factor referencia: ' + factor + ' kg CO₂e/km (' + (eq.source || 'DESNZ/DEFRA') + '). ' +
+        '<p class="fc-pickup-equiv-foot">Factor referencia: ' + fcUI().number(factorDisplay, 3) + ' ' + factorUnit + ' (' + (eq.source || 'DESNZ/DEFRA') + '). ' +
         (eq.disclaimer || 'Ilustración didáctica — no compensación de carbono.') + '</p>';
     }
 
@@ -1811,7 +1863,7 @@
         '<div class="fc-compare-card"><strong>B − A (diferencia)</strong><span class="val">' +
         (diff >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diff) + '</span>' +
         '<span style="font-size:11px;color:#64748b;">' + (pct >= 0 ? '+' : '') + pct + '% vs Programa A' +
-        (diffHa != null ? ' · ' + (diffHa >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diffHa) + '/ha' : '') +
+        (diffHa != null ? ' · ' + (diffHa >= 0 ? '+' : '') + fcCo2eArea(diffHa) : '') +
         '</span></div>';
 
       renderPickupEquivalence(rA, rB, diff);
@@ -1990,7 +2042,7 @@
           : '');
       document.getElementById('fieldTotal').textContent = NpFertilizerCarbon.formatCo2e(result.totals.field_kg_co2e);
       document.getElementById('perHaTotal').textContent = result.totals.per_ha_kg_co2e != null
-        ? NpFertilizerCarbon.formatCo2e(result.totals.per_ha_kg_co2e) + '/ha'
+        ? fcCo2eArea(result.totals.per_ha_kg_co2e)
         : '—';
 
       var meta = result.methodology || {};
@@ -2015,8 +2067,9 @@
           ? '<strong>Seleccionado:</strong> ' + activeRowResult.fertilizer_name + ' · ' +
             activeRowResult.origin_group_label + ' → ' +
             applicationCountryName(activeRowResult.application_country_iso || 'MX') +
-            ' · 🚛 ' + (activeRowResult.transport_origin_km || 0) + ' + ⛴️ ' +
-            (activeRowResult.transport_sea_km || 0) + ' + 🌾 ' + (activeRowResult.transport_km || 0) + ' km<br>'
+            ' · 🚛 ' + fcDistance(activeRowResult.transport_origin_km || 0) + ' + ⛴️ ' +
+            fcDistance(activeRowResult.transport_sea_km || 0) + ' + 🌾 ' +
+            fcDistance(activeRowResult.transport_km || 0) + '<br>'
           : '') +
         '<strong>Metodología:</strong> ' + (meta.manufacturing || '') + '<br>' +
         '<strong>Suelo:</strong> ' + (meta.field || '') + '<br>' +
@@ -2059,13 +2112,15 @@
     function recalcCompare() {
       refreshCompareFertOptions();
       var fertId = document.getElementById('cmpFert').value;
-      var dose = Number(document.getElementById('cmpDose').value) || 0;
+      var dose = state.cmp_dose != null ? Number(state.cmp_dose) || 0
+        : fcToSI(document.getElementById('cmpDose').value, 'dose_mass_area');
       var isoA = normalizeManufacturingGroup(document.getElementById('cmpOriginA').value || 'CN');
       var isoB = normalizeManufacturingGroup(document.getElementById('cmpOriginB').value || 'EU');
-      var transportOriginKm = Number(document.getElementById('transportOriginKm').value) || 0;
-      var transportKm = Number(document.getElementById('transportKm').value) || 0;
-      var transportSeaKm = Number(document.getElementById('transportSeaKm').value) || 0;
-      var areaHa = Number(document.getElementById('areaHa').value) || 1;
+      var routeRow = activeRow() || {};
+      var transportOriginKm = Number(routeRow.transport_origin_km) || 0;
+      var transportKm = Number(routeRow.transport_km) || 0;
+      var transportSeaKm = Number(routeRow.transport_sea_km) || 0;
+      var areaHa = Number(activeScenario().area_ha) || 1;
 
       function calcFor(iso) {
         return NpFertilizerCarbon.calculate({
@@ -2121,6 +2176,10 @@
 
     function init() {
       loadState();
+      NpFertilizerCarbon.formatCo2e = fcCo2e;
+      NpFertilizerCarbon.formatPickupKm = function (km) {
+        return '~' + fcDistance(Math.abs(Number(km) || 0));
+      };
       NpFertilizerCarbon.loadFactors('assets/emission-factors-by-country.json?v=20260626').then(function (data) {
         renderCitationsFull();
         renderFeReferenceTable();
@@ -2141,6 +2200,15 @@
         ensureRowRoutes(activeScenario().rows);
         renderRows();
         bindEvents();
+        window.NpFreeNutritionUI.init({
+          refresh: function () {
+            refreshCarbonUnitLabels();
+            restoreForm();
+            renderRows();
+            recalc(true);
+          }
+        });
+        refreshCarbonUnitLabels();
         recalc(true);
       }).catch(function (err) {
         document.getElementById('resultsPanel').innerHTML = '<p style="color:#dc2626;">Error al cargar factores: ' + err.message + '</p>';

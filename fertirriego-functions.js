@@ -3,6 +3,16 @@
 // =====================================================
 console.log('📦 fertirriego-functions.js cargado (v1758360000)');
 
+function fertiUI() { return window.NpFertigationUI || null; }
+function fertiT(key, es) { const ui = fertiUI(); return ui ? ui.t(key, es) : es; }
+function fertiUnit(kind, fallback) { const ui = fertiUI(); return ui ? ui.unit(kind) : fallback; }
+function fertiInputFromSI(value, kind) { const ui = fertiUI(); return ui ? ui.inputFromSI(value, kind) : String(value); }
+function fertiResultFromSI(value, kind) { const ui = fertiUI(); return ui ? ui.resultFromSI(value, kind) : Number(value || 0).toFixed(2); }
+function fertiInputToSI(value, kind) { const ui = fertiUI(); return ui ? ui.toSI(value, kind) : Number(value); }
+function fertiExtractionInput(nutrient, value) {
+  updateExtractionPerTon(nutrient, fertiInputToSI(value, 'extraction_mass_yield'));
+}
+
 // 🚀 CRÍTICO: Exponer stubs inmediatamente para evitar errores de "no disponible"
 // Estas funciones se reemplazarán con las implementaciones reales más adelante
 // NOTA: Los stubs son funciones muy cortas (< 200 caracteres) para que dashboard.js pueda distinguirlas de las funciones reales
@@ -721,14 +731,14 @@ calculateNutrientRequirements = function(opts) {
     // Usar opts.targetYield ?? parseFloat(targetYieldEl.value) || 25 (igual que Granular líneas 182-185)
     let targetYield = opts?.targetYield;
     if (typeof targetYield !== 'number' || Number.isNaN(targetYield)) {
-      targetYield = parseFloat(targetYieldEl?.value) || 25;
+      targetYield = fertiInputToSI(parseFloat(targetYieldEl?.value) || 25, 'yield_mass_area');
     }
     
     // Si opts.targetYield existe y es diferente del DOM, actualizar DOM (igual que Granular líneas 186-191)
-    if (opts?.targetYield != null && targetYieldEl && parseFloat(targetYieldEl.value) !== opts.targetYield) {
+    if (opts?.targetYield != null && targetYieldEl && Math.abs(fertiInputToSI(parseFloat(targetYieldEl.value), 'yield_mass_area') - opts.targetYield) > 1e-8) {
       const prev = targetYieldEl.getAttribute('onchange');
       targetYieldEl.removeAttribute('onchange');
-      targetYieldEl.value = opts.targetYield;
+      targetYieldEl.value = fertiInputFromSI(opts.targetYield, 'yield_mass_area');
       if (prev) targetYieldEl.setAttribute('onchange', prev);
     }
     
@@ -1168,39 +1178,39 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
     <table class="fertirriego-requirement-table">
       <thead>
         <tr>
-          <th rowspan="2">Concepto</th>
+          <th rowspan="2">${fertiT('concept', 'Concepto')}</th>
           ${nutrients.map(n => `<th id="fertirriego-header-${n}"><span class="notranslate" translate="no">${getLabel(n)}</span></th>`).join('')}
         </tr>
       </thead>
       <tbody>
         <!-- Fila 1: Extracción por tonelada -->
         <tr>
-          <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-extract-${n}" value="${getConvertedValue(n, extraction[n])}" step="0.01" onchange="updateExtractionPerTon('${n}', this.value)"></td>`).join('')}
+          <td><strong>${fertiT('extraction_per_yield', 'Extracción por tonelada')}<br>(${fertiUnit('extraction_mass_yield', 'kg/t')})</strong></td>
+          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-extract-${n}" value="${fertiInputFromSI(getConvertedValue(n, extraction[n]), 'extraction_mass_yield')}" step="0.0001" onchange="fertiExtractionInput('${n}', this.value)"></td>`).join('')}
         </tr>
         
         <!-- Fila 2: Extracción total -->
         <tr>
-          <td><strong>Extracción total<br>(kg/ha)</strong></td>
-          ${nutrients.map(n => `<td id="extraccion-total-${n}">${getConvertedValue(n, totalExtraction[n])}</td>`).join('')}
+          <td><strong>${fertiT('total_extraction', 'Extracción total')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong></td>
+          ${nutrients.map(n => `<td id="extraccion-total-${n}">${fertiResultFromSI(getConvertedValue(n, totalExtraction[n]), 'dose_mass_area')}</td>`).join('')}
         </tr>
         
         <!-- Fila 3: Ajuste por niveles en suelo -->
         <tr>
-          <td><strong>Ajuste por niveles<br>en suelo</strong></td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${getConvertedValue(n, adjustment[n])}" step="0.01" onchange="updateAdjustment('${n}', this.value)"></td>`).join('')}
+          <td><strong>${fertiT('soil_adjustment', 'Ajuste por niveles')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong></td>
+          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${fertiInputFromSI(getConvertedValue(n, adjustment[n]), 'dose_mass_area')}" step="0.0001" onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`).join('')}
         </tr>
         
         <!-- Fila 4: Eficiencia -->
         <tr>
-          <td><strong>Eficiencia<br>(%)</strong></td>
+          <td><strong>${fertiT('efficiency', 'Eficiencia')}<br>(%)</strong></td>
           ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-eff-${n}" value="${efficiency[n]}" step="0.1" min="1" max="100" onchange="updateEfficiency('${n}', this.value)"></td>`).join('')}
         </tr>
         
         <!-- Fila 5: Requerimiento Real -->
         <tr class="requirement-real-row">
-          <td><strong>Requerimiento Real<br>(kg/ha)</strong></td>
-          ${nutrients.map(n => `<td id="ferti-req-${n}">${getConvertedValue(n, realRequirement[n])}</td>`).join('')}
+          <td><strong>${fertiT('actual_requirement', 'Requerimiento Real')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong></td>
+          ${nutrients.map(n => `<td id="ferti-req-${n}">${fertiResultFromSI(getConvertedValue(n, realRequirement[n]), 'dose_mass_area')}</td>`).join('')}
         </tr>
       </tbody>
     </table>
@@ -1275,7 +1285,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
     nutrients.forEach(nutrient => {
       const extractInput = document.getElementById(`ferti-extract-${nutrient}`);
       if (extractInput && extraction[nutrient] !== undefined) {
-        const displayValue = getConvertedValue(nutrient, extraction[nutrient]);
+        const displayValue = fertiInputFromSI(getConvertedValue(nutrient, extraction[nutrient]), 'extraction_mass_yield');
         const currentValue = parseFloat(extractInput.value) || 0;
         const targetValue = parseFloat(displayValue) || 0;
         // Aplicar SIEMPRE si el valor es diferente (incluso si es 0)
@@ -1307,7 +1317,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
       // Aplicar ajuste - EXACTAMENTE IGUAL QUE GRANULAR
       const adjInput = document.getElementById(`ferti-adj-${nutrient}`);
       if (adjInput && adjustment[nutrient] !== undefined) {
-        const displayValue = getConvertedValue(nutrient, adjustment[nutrient]);
+        const displayValue = fertiInputFromSI(getConvertedValue(nutrient, adjustment[nutrient]), 'dose_mass_area');
         const currentValue = parseFloat(adjInput.value) || 0;
         const targetValue = parseFloat(displayValue) || 0;
         // Aplicar SIEMPRE si el valor es diferente (incluso si es 0)
@@ -1429,7 +1439,7 @@ updateExtractionPerTon = function(nutrient, value) {
     window.savedFertiExtractionOverrides[cropType][nutrientKey] = extractionValue;
     console.log('✅ Extracción guardada en variable global (SIEMPRE en formato ÓXIDO):', { cropType, nutrient: nutrientKey, value: extractionValue });
     
-    const targetYield = parseFloat(document.getElementById('fertirriegoTargetYield').value) || 25;
+    const targetYield = fertiInputToSI(parseFloat(document.getElementById('fertirriegoTargetYield').value) || 25, 'yield_mass_area');
     
     // Calcular extracción total (multiplicar por toneladas objetivo) - SIEMPRE EN ÓXIDO
     const totalExtraction = (extractionValue * targetYield).toFixed(2);
@@ -1439,14 +1449,16 @@ updateExtractionPerTon = function(nutrient, value) {
     // Actualizar la celda de extracción total (mostrar en modo actual)
     const totalCell = document.querySelector(`#extraccion-total-${nutrient}`);
     if (totalCell) {
-      totalCell.textContent = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
+      const shownTotal = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
+      totalCell.textContent = fertiResultFromSI(shownTotal, 'dose_mass_area');
     }
     
     // Actualizar el ajuste (por defecto igual a extracción total)
     const adjInput = document.getElementById(`ferti-adj-${nutrient}`);
     if (adjInput) {
       // Mostrar en el formato actual (elemental u óxido)
-      adjInput.value = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
+      const shownAdjustment = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
+      adjInput.value = fertiInputFromSI(shownAdjustment, 'dose_mass_area');
       
       // Recalcular requerimiento real - SIEMPRE usar valores en óxido
       const efficiencyValue = parseFloat(document.getElementById(`ferti-eff-${nutrient}`).value) || 1;
@@ -1455,7 +1467,8 @@ updateExtractionPerTon = function(nutrient, value) {
       
       const reqCell = document.getElementById(`ferti-req-${nutrient}`);
       if (reqCell) {
-        reqCell.textContent = isFertirriegoElementalMode ? getConvertedValue(nutrient, realRequirement) : realRequirement;
+        const shownRequirement = isFertirriegoElementalMode ? getConvertedValue(nutrient, realRequirement) : realRequirement;
+        reqCell.textContent = fertiResultFromSI(shownRequirement, 'dose_mass_area');
       }
       try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch {}
     }
@@ -1502,7 +1515,7 @@ updateAdjustment = function(nutrient, value) {
     
     const reqCell = document.getElementById(`ferti-req-${nutrient}`);
     if (reqCell) {
-      reqCell.textContent = getConvertedValue(nutrient, realRequirement);
+      reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area');
       console.log(`✅ Requerimiento Real ${nutrient} actualizado: ${reqCell.textContent} (ajuste: ${adjValue}, eficiencia: ${efficiencyValue}%)`);
     } else {
       console.warn(`⚠️ No se encontró celda req-${nutrient} para actualizar`);
@@ -1542,7 +1555,9 @@ updateEfficiency = function(nutrient, value) {
     console.log('🔄 updateEfficiency (Fertirriego) llamado:', { nutrient, value });
     
     const adjustmentInput = document.getElementById(`ferti-adj-${nutrient}`);
-    const adjustmentValue = adjustmentInput ? (parseFloat(adjustmentInput.value) || 0) : 0;
+    const adjustmentValue = adjustmentInput
+      ? fertiInputToSI(parseFloat(adjustmentInput.value) || 0, 'dose_mass_area')
+      : 0;
     const efficiencyValue = parseFloat(value) || 1;
     const adjOxide = isFertirriegoElementalMode
       ? convertFromElementalToOxide(nutrient, adjustmentValue)
@@ -1552,7 +1567,7 @@ updateEfficiency = function(nutrient, value) {
     // CRÍTICO: Usar getConvertedValue igual que en updateAdjustment (EXACTAMENTE IGUAL QUE GRANULAR)
     const reqCell = document.getElementById(`ferti-req-${nutrient}`);
     if (reqCell) {
-      reqCell.textContent = getConvertedValue(nutrient, realRequirement);
+      reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area');
       console.log(`✅ Requerimiento Real ${nutrient} actualizado: ${reqCell.textContent} (ajuste: ${adjustmentValue}, eficiencia: ${efficiencyValue}%)`);
     } else {
       console.warn(`⚠️ No se encontró celda req-${nutrient} para actualizar`);
@@ -1607,7 +1622,7 @@ function rememberFertirriegoUIState() {
       return;
     }
     const cropType = cropEl.value || '';
-    const targetYield = parseFloat(yieldEl.value) || 25;
+    const targetYield = fertiInputToSI(parseFloat(yieldEl.value) || 25, 'yield_mass_area');
     // Persistir SIEMPRE en localStorage del proyecto para evitar depender de métodos inexistentes
     // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
     const k = `nutriplant_project_${pid}`; const pd = JSON.parse(localStorage.getItem(k) || '{}');
@@ -1679,7 +1694,7 @@ function applyFertirriegoUIState() {
         // CRÍTICO: Quitar onchange antes de establecer valor para evitar recálculo prematuro
         const oldOnChange = ty.getAttribute('onchange');
         ty.removeAttribute('onchange');
-        ty.value = st.targetYield;
+        ty.value = fertiInputFromSI(st.targetYield, 'yield_mass_area');
         if (oldOnChange) ty.setAttribute('onchange', oldOnChange);
       }
     }
@@ -1731,7 +1746,7 @@ function saveFertirriegoRequirements(options = {}) {
     const hasUI = !!cropTypeEl && !!targetYieldEl && !!tableContainer;
     
     const cropType = cropTypeEl?.value || '';
-    const targetYield = parseFloat(targetYieldEl?.value) || 25;
+    const targetYield = fertiInputToSI(parseFloat(targetYieldEl?.value) || 25, 'yield_mass_area');
 
     const nutrients = FERTIRRIEGO_NUTRIENTS;
     
@@ -1805,7 +1820,7 @@ function saveFertirriegoRequirements(options = {}) {
       // PRIORIDAD 1: Si el input existe (aunque esté oculto), leer su valor - EXACTAMENTE IGUAL QUE GRANULAR
       const adjInput = document.getElementById(`ferti-adj-${n}`);
       if (adjInput && adjInput.value !== undefined && adjInput.value !== '') {
-        let adjValue = parseFloat(adjInput.value) || 0;
+        let adjValue = fertiInputToSI(parseFloat(adjInput.value) || 0, 'dose_mass_area');
         // CRÍTICO: Si estamos en modo elemental, el valor en el input está en elemental
         // Necesitamos convertirlo a óxido para guardarlo consistentemente
         if (isElementalMode && adjValue > 0) {
@@ -1953,7 +1968,7 @@ function saveFertirriegoRequirements(options = {}) {
         nutrients.forEach(n => {
           const extInput = document.getElementById(`ferti-extract-${n}`);
           if (extInput && extInput.value !== undefined && extInput.value !== '') {
-            let extValue = parseFloat(extInput.value) || 0;
+            let extValue = fertiInputToSI(parseFloat(extInput.value) || 0, 'extraction_mass_yield');
             // Si estamos en modo elemental, convertir a óxido para guardar consistentemente
             if (isElementalMode && extValue > 0) {
               const factor = {
@@ -2757,7 +2772,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
             // CRÍTICO: Establecer valor SIN disparar eventos que recalculen sin valores guardados
             const oldOnChange = targetYieldInput.getAttribute('onchange');
             targetYieldInput.removeAttribute('onchange');
-            targetYieldInput.value = data.targetYield;
+            targetYieldInput.value = fertiInputFromSI(data.targetYield, 'yield_mass_area');
             // 🚀 CRÍTICO: Actualizar lastFertiTargetYield para que calculateNutrientRequirements no lo sobrescriba
             lastFertiTargetYield = savedValue;
             if (oldOnChange) targetYieldInput.setAttribute('onchange', oldOnChange);
@@ -2769,7 +2784,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
           // Si no hay targetYield guardado pero hay un valor en el DOM, mantenerlo
           const currentValue = parseFloat(targetYieldInput.value);
           if (!isNaN(currentValue) && currentValue > 0) {
-            lastFertiTargetYield = currentValue;
+            lastFertiTargetYield = fertiInputToSI(currentValue, 'yield_mass_area');
             console.log('ℹ️ targetYield no guardado, manteniendo valor del DOM:', currentValue);
           }
         }
@@ -3069,6 +3084,20 @@ window.updateAdjustment = updateAdjustment;
 window.updateEfficiency = updateEfficiency;
 window.updateExtractionPerTon = updateExtractionPerTon;
 window.loadCustomFertirriegoCrops = loadCustomFertirriegoCrops;
+window.addEventListener('np:prefs-changed', function () {
+  try {
+    const crop = document.getElementById('fertirriegoCropType');
+    const canonicalYield = Number.isFinite(lastFertiTargetYield) ? lastFertiTargetYield : 25;
+    calculateNutrientRequirements({
+      _isLoading: true,
+      cropType: crop ? crop.value : undefined,
+      targetYield: canonicalYield,
+      extractionOverrides: window.savedFertiExtractionOverrides || {}
+    });
+  } catch (error) {
+    console.warn('Fertirriego: no se pudo actualizar la presentación de unidades.', error);
+  }
+});
 
 // Inicializar cuando se carga la sección
 document.addEventListener('DOMContentLoaded', function() {
@@ -3107,7 +3136,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // 🚀 CRÍTICO: Actualizar lastFertiTargetYield con el NUEVO valor antes de recalcular
       // para que calculateNutrientRequirements no lo sobrescriba
       if (id === 'fertirriegoTargetYield') {
-        const newValue = parseFloat(e.target.value);
+        const newValue = fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area');
         if (!isNaN(newValue)) {
           lastFertiTargetYield = newValue;
         }
@@ -3119,7 +3148,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Recalcular inmediatamente (pero NO restaurar valores guardados - usar el valor que el usuario acaba de poner)
       if (typeof window.calculateNutrientRequirements === 'function' && window.calculateNutrientRequirements._isRealFunction === true) {
         // Pasar el valor actual del input para que NO lo sobrescriba
-        const currentValue = id === 'fertirriegoTargetYield' ? parseFloat(e.target.value) : undefined;
+        const currentValue = id === 'fertirriegoTargetYield' ? fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area') : undefined;
         const currentCrop = id === 'fertirriegoCropType' ? e.target.value : undefined;
         window.calculateNutrientRequirements({
           _isLoading: false,
@@ -3167,7 +3196,7 @@ document.addEventListener('DOMContentLoaded', function() {
       userIsChangingValue = true;
       
       // Actualizar lastFertiTargetYield con el valor que el usuario está escribiendo
-      const newValue = parseFloat(e.target.value);
+      const newValue = fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area');
       if (!isNaN(newValue)) {
         lastFertiTargetYield = newValue;
       }
@@ -3176,7 +3205,7 @@ document.addEventListener('DOMContentLoaded', function() {
       window.fertirriegoRecalcTimer = setTimeout(() => {
         if (typeof window.calculateNutrientRequirements === 'function' && window.calculateNutrientRequirements._isRealFunction === true) {
           // Pasar el valor actual para que NO lo sobrescriba
-          const currentValue = parseFloat(e.target.value);
+          const currentValue = fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area');
           window.calculateNutrientRequirements({
             _isLoading: false,
             _userChanged: true,

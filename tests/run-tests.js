@@ -3,7 +3,14 @@
 var suites = [
   require('./preferences.test.js'),
   require('./units.test.js'),
-  require('./hydro-units.test.js')
+  require('./agronomic-units.test.js'),
+  require('./granular-ui.test.js'),
+  require('./fertigation-ui.test.js'),
+  require('./amendment-ui.test.js'),
+  require('./hydro-units.test.js'),
+  require('./i18n.test.js'),
+  require('./water-climate-ui.test.js'),
+  require('./free-nutrition-ui.test.js')
 ];
 
 (async function () {

@@ -7,7 +7,7 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
   <script defer src="assets/np-i18n.js?v=2"></script>
-  <script defer src="assets/np-units-core.js"></script>
+  <script defer src="assets/np-units-core.js?v=20260728g"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
   <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=22" />
+  <link rel="stylesheet" href="auth.css?v=23" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -367,12 +367,12 @@
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">⚗️</span>
-          <span class="button-text">Composición de fertilizantes (%)</span>
+          <span class="button-text" data-i18n="dashboard.tool_fertilizer_composition">Composición de fertilizantes (%)</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showExtraccionEtapaCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">📊</span>
-          <span class="button-text">Distribución nutrimental por etapa (%)</span>
+          <span class="button-text" data-i18n="dashboard.tool_extraction_stage">Distribución nutrimental por etapa (%)</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
@@ -397,7 +397,7 @@
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌱</span>
-          <span class="button-text">Estimación de N mineralizable</span>
+          <span class="button-text" data-i18n="dashboard.tool_n">Estimación de N mineralizable</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
@@ -412,12 +412,12 @@
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🧂</span>
-          <span class="button-text">Solubilidad e índice salino</span>
+          <span class="button-text" data-i18n="dashboard.tool_solubility_salt">Solubilidad e índice salino</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌍</span>
-          <span class="button-text">Huella de carbono de fertilizantes</span>
+          <span class="button-text" data-i18n="dashboard.tool_fertilizer_carbon">Huella de carbono de fertilizantes</span>
         </button>
         </div>
       </div>
@@ -561,7 +561,7 @@
   <div id="conversionCalculatorModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title">
+        <h2 class="modal-title" data-i18n="dashboard.tool_water">
           🧮 Conversor Óxido ↔ Elemental
         </h2>
         <div class="modal-header-trailing">
@@ -2558,7 +2558,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=1764880001" title="Diagnóstico de agua y acondicionamiento"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260728a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>
@@ -2567,7 +2567,7 @@
   <div id="vpdCalculatorModal" class="modal-overlay">
     <div class="modal modal-vpd">
       <div class="modal-header">
-        <h2 class="modal-title">
+        <h2 class="modal-title" data-i18n="dashboard.tool_vpd">
           🌡️ Estimador de déficit de presión de vapor
         </h2>
         <div class="modal-header-trailing">
@@ -2576,7 +2576,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=202606201700" title="Estimador de déficit de presión de vapor" allow="geolocation 'self'"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=20260728a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2635,14 +2635,14 @@
   <div id="fertilizerCompositionCalculatorModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">⚗️ Composición de fertilizantes (%)</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_fertilizer_composition">⚗️ Composición de fertilizantes (%)</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260523" title="Composición de fertilizantes"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260728b" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition"></iframe>
       </div>
     </div>
   </div>
@@ -2651,14 +2651,14 @@
   <div id="extraccionEtapaCalculatorModal" class="modal-overlay">
     <div class="modal modal-extraccion-etapa">
       <div class="modal-header">
-        <h2 class="modal-title">📊 Distribución nutrimental por etapa (%)</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_extraction_stage">📊 Distribución nutrimental por etapa (%)</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html" title="Distribución nutrimental por etapa"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260728b" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
       </div>
     </div>
   </div>
@@ -2731,14 +2731,14 @@
   <div id="nMineralizableMoCalculatorModal" class="modal-overlay">
     <div class="modal modal-n-mineralizable-mo modal-tool-iframe-fit">
       <div class="modal-header">
-        <h2 class="modal-title">🌱 Estimación de N mineralizable</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_n">🌱 Estimación de N mineralizable</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard" title="Estimación de N mineralizable"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260728b" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
       </div>
     </div>
   </div>
@@ -2747,14 +2747,14 @@
   <div id="soilWaterTextureToolModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">🪨 Agua en suelo y textura</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_soil_water">🪨 Agua en suelo y textura</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=202606241800" title="Agua en suelo y textura"></iframe>
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260728a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water"></iframe>
       </div>
     </div>
   </div>
@@ -2763,14 +2763,14 @@
   <div id="laminaRiegoToolModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">🌧️ Lámina de riego y balance hídrico</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_irrigation">🌧️ Lámina de riego y balance hídrico</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login&v=202606201700" title="Lámina de riego y balance hídrico" allow="geolocation 'self'"></iframe>
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login&v=20260728a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2778,14 +2778,14 @@
   <div id="fertilizerSolubilitySaltModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">🧂 Solubilidad e índice salino</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_solubility_salt">🧂 Solubilidad e índice salino</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino"></iframe>
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260728b" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt"></iframe>
       </div>
     </div>
   </div>
@@ -2794,14 +2794,14 @@
   <div id="fertilizerCarbonCalculatorModal" class="modal-overlay">
     <div class="modal modal-fertilizer-composition">
       <div class="modal-header">
-        <h2 class="modal-title">🌍 Huella de carbono de fertilizantes</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_fertilizer_carbon">🌍 Huella de carbono de fertilizantes</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeFertilizerCarbonCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260629" title="Huella de carbono de fertilizantes"></iframe>
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260728b" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon"></iframe>
       </div>
     </div>
   </div>

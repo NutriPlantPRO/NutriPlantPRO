@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260728g"></script>
+  <script src="assets/np-units-core.js?v=20260728g"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728g"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260728a"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Agua en suelo y textura — NutriPlant PRO</title>
   <style>
@@ -567,11 +573,11 @@
         <input class="in" type="number" id="pmp" min="0" max="50" step="0.1" value="20" />
       </div>
       <div class="field-stack field-stack--geom">
-        <label class="f" for="depth">Profundidad de suelo (cm)</label>
+        <label class="f" for="depth">Profundidad de suelo (<span data-np-unit-label="depth">cm</span>)</label>
         <input class="in" type="number" id="depth" min="1" max="200" step="1" value="30" />
       </div>
       <div class="field-stack field-stack--geom">
-        <label class="f" for="areaHa">Área (ha)</label>
+        <label class="f" for="areaHa">Área (<span data-np-unit-label="area">ha</span>)</label>
         <input class="in" type="number" id="areaHa" min="0.01" max="10000" step="0.01" value="1" />
       </div>
       <div class="field-stack field-stack--radical">
@@ -685,24 +691,24 @@
             <thead>
               <tr>
                 <th>Partícula</th>
-                <th>Diámetro (mm)</th>
+                <th>Diámetro (<span id="particleUnit">mm</span>)</th>
                 <th>vs arcilla</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td>Arcilla</td>
-                <td>&lt; 0,002</td>
+                <td id="particleClay">&lt; 0,002</td>
                 <td>Base (1×)</td>
               </tr>
               <tr>
                 <td>Limo</td>
-                <td>0,002 – 0,05</td>
+                <td id="particleSilt">0,002 – 0,05</td>
                 <td><em>1 a 25×</em> más grande</td>
               </tr>
               <tr>
                 <td>Arena</td>
-                <td>0,05 – 2,0</td>
+                <td id="particleSand">0,05 – 2,0</td>
                 <td><em>25 a 1.000×</em> más grande</td>
               </tr>
             </tbody>
@@ -726,7 +732,36 @@
   <script src="assets/np-free-local-persist.js"></script>
   <script src="assets/np-soil-water-bridge.js?v=202606241500"></script>
   <script>
+    function refreshParticleSizes() {
+      var UI = window.NpWaterClimateUI;
+      var us = UI.prefs().unit_system === 'us_customary';
+      var values = us
+        ? {
+            unit: 'in',
+            clay: '&lt; ' + UI.inputFromSI(0.002, 'water_depth'),
+            silt: UI.inputFromSI(0.002, 'water_depth') + ' – ' + UI.inputFromSI(0.05, 'water_depth'),
+            sand: UI.inputFromSI(0.05, 'water_depth') + ' – ' + UI.inputFromSI(2, 'water_depth')
+          }
+        : { unit: 'mm', clay: '&lt; 0.002', silt: '0.002 – 0.05', sand: '0.05 – 2.0' };
+      document.getElementById('particleUnit').textContent = values.unit;
+      document.getElementById('particleClay').innerHTML = values.clay;
+      document.getElementById('particleSilt').textContent = values.silt;
+      document.getElementById('particleSand').textContent = values.sand;
+    }
+    window.NpWaterClimateUI.init({
+      fields: { depth: 'depth', areaHa: 'area' },
+      refresh: function () {
+        refreshParticleSizes();
+        if (typeof updateWater === 'function') updateWater();
+      }
+    });
+    refreshParticleSizes();
+  </script>
+  <script>
 (function () {
+  function soilQ(value, kind, digits) {
+    return window.NpWaterClimateUI.resultFromSI(value, kind, digits == null ? 2 : digits);
+  }
   /* —— Tabs —— */
   var tabs = document.querySelectorAll('.tabs button[role="tab"]');
   var panels = { tab1: document.getElementById('panel1'), tab2: document.getElementById('panel2') };
@@ -815,8 +850,8 @@
   function updateWater() {
     var cc = parseFloat(document.getElementById('cc').value) || 0;
     var pmp = parseFloat(document.getElementById('pmp').value) || 0;
-    var depth = parseFloat(document.getElementById('depth').value) || 30;
-    var areaHa = parseFloat(document.getElementById('areaHa').value) || 1;
+    var depth = window.NpWaterClimateUI.read('depth', 'depth') || 30;
+    var areaHa = window.NpWaterClimateUI.read('areaHa', 'area') || 1;
     var rootEff = parseFloat(document.getElementById('rootEff').value) || 100;
     var effAreaHa = areaHa * (rootEff / 100);
     var hasSplitArea = rootEff < 99.5 && areaHa > 0;
@@ -833,8 +868,8 @@
     var spans = [];
     spans.push(
       '<span class="calc-metric calc-metric--geom"><strong>Volumen de suelo</strong> (área × profundidad): <strong>' +
-        volSoilM3.toFixed(0) +
-        ' m³</strong></span>'
+        soilQ(volSoilM3, 'volume', 2) +
+        '</strong></span>'
     );
     spans.push(
       '<span class="calc-metric calc-metric--pmp-band"><strong>Potencial de agua útil</strong> (referencia CC − PMP · no es tu humedad hoy): <strong>' +
@@ -843,26 +878,26 @@
     );
     spans.push(
       '<span class="calc-metric calc-metric--pmp-band"><strong>Volumen de ese potencial</strong> en el perfil: <strong>' +
-        adM3.toFixed(0) +
-        ' m³</strong></span>'
+        soilQ(adM3, 'volume', 2) +
+        '</strong></span>'
     );
     if (hasSplitArea) {
       spans.push(
         '<span class="calc-metric calc-metric--radical"><strong>Potencial × superficie explorada</strong> (<strong>' +
           rootEff +
           '%</strong> · <strong>' +
-          effAreaHa.toFixed(2) +
-          ' ha</strong> franja): <strong>' +
-          realM3.toFixed(0) +
-          ' m³</strong></span>'
+          soilQ(effAreaHa, 'area', 2) +
+          '</strong> franja): <strong>' +
+          soilQ(realM3, 'volume', 2) +
+          '</strong></span>'
       );
     } else {
       spans.push(
         '<span class="calc-metric calc-metric--radical"><strong>Potencial en superficie explorada</strong> (<strong>' +
           rootEff +
           '%</strong>): <strong>' +
-          realM3.toFixed(0) +
-          ' m³</strong></span>'
+          soilQ(realM3, 'volume', 2) +
+          '</strong></span>'
       );
     }
 
@@ -885,17 +920,17 @@
             '<p class="calc-hero-result__eyebrow">⚠️ Exceso sobre CC — no reponer suelo</p>' +
             '<div class="calc-hero-result__values">' +
             '<span class="calc-hero-result__m3">' +
-            lamM3Surplus.toFixed(0) +
-            '<span class="calc-hero-result__m3-unit">m³</span></span>' +
+            soilQ(lamM3Surplus, 'volume', 2) +
+            '</span>' +
             (hasSplitArea
               ? '<span class="calc-hero-result__sep">·</span><span class="calc-hero-result__mm">≈ ' +
-                ((Math.max(0, thetaVal - cc) / 100) * depth * 10).toFixed(1) +
-                '<span class="calc-hero-result__mm-unit">mm</span></span>'
+                soilQ((Math.max(0, thetaVal - cc) / 100) * depth * 10, 'water_depth', 2) +
+                '</span>'
               : '') +
             '</div>' +
             '<p class="calc-hero-result__sub">Humedad por encima de CC en franja (<strong>' +
-            effAreaHa.toFixed(2) +
-            ' ha</strong>) — riesgo de encharcamiento.</p>';
+            soilQ(effAreaHa, 'area', 2) +
+            '</strong>) — riesgo de encharcamiento.</p>';
         } else if (deficitToCc <= 0.05) {
           heroEl.classList.add('is-visible');
           heroEl.innerHTML =
@@ -906,7 +941,7 @@
           var heroMm = hasSplitArea ? lamMmFranja : lamMmTot;
           var heroM3 = hasSplitArea ? lamM3Active : lamM3Tot;
           var heroEyebrow = hasSplitArea
-            ? '📍 Resultado para riego · franja ' + effAreaHa.toFixed(2) + ' ha (' + rootEff + '% superficie)'
+            ? '📍 Resultado para riego · franja ' + soilQ(effAreaHa, 'area', 2) + ' (' + rootEff + '% superficie)'
             : '📍 Lámina hasta CC · toda el área';
           heroEl.innerHTML =
             '<p class="calc-hero-result__eyebrow">' +
@@ -914,32 +949,32 @@
             '</p>' +
             '<div class="calc-hero-result__values">' +
             '<span class="calc-hero-result__m3">' +
-            heroM3.toFixed(0) +
-            '<span class="calc-hero-result__m3-unit">m³</span></span>' +
+            soilQ(heroM3, 'volume', 2) +
+            '</span>' +
             '<span class="calc-hero-result__sep">·</span>' +
             '<span class="calc-hero-result__mm">' +
-            heroMm.toFixed(1) +
-            '<span class="calc-hero-result__mm-unit">mm</span></span>' +
+            soilQ(heroMm, 'water_depth', 2) +
+            '</span>' +
             '</div>' +
             (hasSplitArea
               ? '<p class="calc-hero-result__sub"><strong>Aplica ' +
-                heroM3.toFixed(0) +
-                ' m³</strong> en la franja regada (<strong>' +
-                effAreaHa.toFixed(2) +
-                ' ha</strong>) — eso son <strong>' +
-                heroMm.toFixed(1) +
-                ' mm</strong> de lámina en esa zona. No son dos riegos: <strong>m³ = lo que riegas</strong>; mm = la misma agua en profundidad. Sobre toda la ha cultivo (<strong>' +
-                areaHa.toFixed(2) +
-                ' ha</strong>) equivalen a <strong>' +
-                lamMmCropRef.toFixed(1) +
-                ' mm</strong> (mismos ' +
-                heroM3.toFixed(0) +
-                ' m³).</p>'
+                soilQ(heroM3, 'volume', 2) +
+                '</strong> en la franja regada (<strong>' +
+                soilQ(effAreaHa, 'area', 2) +
+                '</strong>) — eso son <strong>' +
+                soilQ(heroMm, 'water_depth', 2) +
+                '</strong> de lámina en esa zona. No son dos riegos: volumen y lámina representan la misma agua. Sobre toda el área del cultivo (<strong>' +
+                soilQ(areaHa, 'area', 2) +
+                '</strong>) equivalen a <strong>' +
+                soilQ(lamMmCropRef, 'water_depth', 2) +
+                '</strong> (mismos ' +
+                soilQ(heroM3, 'volume', 2) +
+                ').</p>'
               : '<p class="calc-hero-result__sub">Aplica <strong>' +
-                heroM3.toFixed(0) +
-                ' m³</strong> (≈ <strong>' +
-                heroMm.toFixed(1) +
-                ' mm</strong> de lámina en el perfil) para reponer hasta CC.</p>');
+                soilQ(heroM3, 'volume', 2) +
+                '</strong> (≈ <strong>' +
+                soilQ(heroMm, 'water_depth', 2) +
+                '</strong> de lámina en el perfil) para reponer hasta CC.</p>');
         }
       }
 
@@ -959,10 +994,10 @@
       );
       spans.push(
         '<span class="calc-metric calc-metric--lamina"><strong>Lámina hasta CC</strong> (perfil · toda el área): <strong>' +
-          lamMmTot.toFixed(1) +
-          ' mm</strong> · <strong>' +
-          lamM3Tot.toFixed(0) +
-          ' m³</strong></span>'
+          soilQ(lamMmTot, 'water_depth', 2) +
+          '</strong> · <strong>' +
+          soilQ(lamM3Tot, 'volume', 2) +
+          '</strong></span>'
       );
       var SB = window.NpSoilWaterBridge;
       var objZone = SB && typeof SB.computeObjectiveZone === 'function' ? SB.computeObjectiveZone(cc, pmp) : null;
@@ -983,9 +1018,9 @@
             '<span class="calc-metric calc-metric--objective"><strong>Lámina hasta objetivo</strong> (hasta ' +
               objZone.highPctVol +
               '% vol. · 60% AU): <strong>' +
-              lamMmObj.toFixed(1) +
-              ' mm</strong> · <strong>' +
-              (hasSplitArea ? lamM3ObjFranja.toFixed(0) + ' m³ franja' : lamM3ObjTot.toFixed(0) + ' m³') +
+              soilQ(lamMmObj, 'water_depth', 2) +
+              '</strong> · <strong>' +
+              (hasSplitArea ? soilQ(lamM3ObjFranja, 'volume', 2) + ' franja' : soilQ(lamM3ObjTot, 'volume', 2)) +
               '</strong></span>'
           );
         } else if (thetaVal >= objZone.lowPctVol - 0.05 && thetaVal <= objZone.highPctVol + 0.05) {
@@ -1008,19 +1043,19 @@
               '<p class="calc-hero-result__eyebrow">🎯 Riego hasta nivel objetivo (60% agua útil)</p>' +
               '<div class="calc-hero-result__values">' +
               '<span class="calc-hero-result__m3">' +
-              (hasSplitArea ? lamM3ObjH : volSoilM3 * (defObjPctHero / 100)).toFixed(0) +
-              '<span class="calc-hero-result__m3-unit">m³</span></span>' +
+              soilQ((hasSplitArea ? lamM3ObjH : volSoilM3 * (defObjPctHero / 100)), 'volume', 2) +
+              '</span>' +
               '<span class="calc-hero-result__sep">·</span>' +
               '<span class="calc-hero-result__mm">' +
-              lamMmObjH.toFixed(1) +
-              '<span class="calc-hero-result__mm-unit">mm</span></span></div>' +
+              soilQ(lamMmObjH, 'water_depth', 2) +
+              '</span></div>' +
               '<p class="calc-hero-result__sub">Zona objetivo <strong>' +
               objZone.lowPctVol +
               '–' +
               objZone.highPctVol +
               '% vol.</strong> (40–60% entre PMP y CC). Hasta CC serían <strong>' +
-              (hasSplitArea ? lamM3Active : lamM3Tot).toFixed(0) +
-              ' m³</strong> — referencia máxima, no siempre necesaria.</p>';
+              soilQ((hasSplitArea ? lamM3Active : lamM3Tot), 'volume', 2) +
+              '</strong> — referencia máxima, no siempre necesaria.</p>';
           } else if (thetaVal >= objZone.lowPctVol - 0.05) {
             heroObjEl.classList.add('is-visible');
             heroObjEl.innerHTML =
@@ -1397,7 +1432,7 @@
     var volSoilM3Chart = areaHa * 10000 * (depthCm / 100);
     function chartMmM3Line(mmVal, haForM3) {
       var m3 = Math.round(mmVal * haForM3 * 10);
-      return '≈ ' + mmVal.toFixed(1) + ' mm · ' + m3 + ' m³';
+      return '≈ ' + soilQ(mmVal, 'water_depth', 2) + ' · ' + soilQ(m3, 'volume', 2);
     }
     function chartPctToMmM3(pct) {
       var mmV = (pct / 100) * depthCm * 10;
@@ -1413,8 +1448,8 @@
         '% vol. · ' +
         chartPctToMmM3(oP) +
         ' en ' +
-        depthCm +
-        ' cm</text>'
+        soilQ(depthCm, 'depth', 2) +
+        '</text>'
     );
     parts.push(
       '<text x="' +
@@ -1455,14 +1490,13 @@
           '–' +
           objZone.highPctVol +
           '% vol. · ≈ ' +
-          mmObjLo.toFixed(1) +
+          soilQ(mmObjLo, 'water_depth', 2) +
           '–' +
-          mmObjHi.toFixed(1) +
-          ' mm · ' +
-          m3ObjLo +
+          soilQ(mmObjHi, 'water_depth', 2) +
+          ' · ' +
+          soilQ(m3ObjLo, 'volume', 2) +
           '–' +
-          m3ObjHi +
-          ' m³' +
+          soilQ(m3ObjHi, 'volume', 2) +
           (hasSplitArea ? ' franja' : '') +
           ' (' +
           objZone.labelShort +
@@ -1491,14 +1525,14 @@
       if (hasSplitArea) {
         lamLine +=
           ' · ref. cultivo (' +
-          areaHa.toFixed(2) +
-          ' ha): ' +
+          soilQ(areaHa, 'area', 2) +
+          '): ' +
           chartMmM3Line(lamMmCropRef, areaHa) +
           ' (mismos ' +
-          lamM3Active.toFixed(0) +
-          ' m³)';
+          soilQ(lamM3Active, 'volume', 2) +
+          ')';
       } else if (lamM3Full !== Math.round(lamM3Active)) {
-        lamLine += ' · total perfil: ' + lamM3Full + ' m³';
+        lamLine += ' · total perfil: ' + soilQ(lamM3Full, 'volume', 2);
       }
       parts.push('<text x="' + barX + '" y="' + lamStatY + '" fill="#0d9488">' + lamLine + '</text>');
       if (objZone) {
@@ -1969,12 +2003,12 @@
   var TEX_IDS = ['cc', 'pmp', 'depth', 'areaHa', 'rootEff', 'thetaVol', 'presetTex', 'pctSand', 'pctSilt', 'pctClay'];
   function snapTexSoil() {
     var tabBtn = document.querySelector('.tabs button[role="tab"][aria-selected="true"]');
-    return { fields: window.NpFreePersist.collectIds(TEX_IDS), tab: tabBtn ? tabBtn.id : 'tab1' };
+    return { fields: window.NpWaterClimateUI.snapshot(TEX_IDS), tab: tabBtn ? tabBtn.id : 'tab1' };
   }
   function applyTexSoil(d) {
     if (!d) return;
     var f = d.fields || d;
-    window.NpFreePersist.applyIds(f, TEX_IDS);
+    window.NpWaterClimateUI.applySnapshot(f, TEX_IDS);
     if (d.tab === 'tab2') {
       var t2 = document.getElementById('tab2');
       if (t2) t2.click();

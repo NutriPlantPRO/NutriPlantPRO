@@ -60,6 +60,40 @@ const GRANULAR_CONVERSION_FACTORS = {
   S_TO_SO4: 96.062 / 32.065
 };
 
+function granularUI() {
+  return typeof window !== 'undefined' ? window.NpGranularUI : null;
+}
+
+function granularReqT(key, fallback) {
+  const ui = granularUI();
+  return ui ? ui.t(key, fallback) : fallback;
+}
+
+function granularReqUnit(kind, fallback) {
+  const ui = granularUI();
+  return ui ? ui.unit(kind) : fallback;
+}
+
+function granularReqFromSI(value, kind, input) {
+  const ui = granularUI();
+  if (!ui) return Number(value);
+  return input ? ui.inputFromSI(value, kind) : ui.resultFromSI(value, kind);
+}
+
+function granularReqToSI(value, kind) {
+  const ui = granularUI();
+  return ui ? ui.toSI(value, kind) : Number(value);
+}
+
+function granularReadYieldSI(input) {
+  const value = parseFloat(input && input.value);
+  return Number.isFinite(value) ? granularReqToSI(value, 'yield_mass_area') : 10;
+}
+
+function granularSetYieldFromSI(input, value) {
+  if (input && value != null) input.value = granularReqFromSI(value, 'yield_mass_area', true);
+}
+
 // ====== Autosave y estado sucio (dirty) ======
 let granularReqDirty = false;
 let granularReqAutosaveInterval = null;
@@ -113,7 +147,9 @@ function toggleGranularRequerimientoOxideElemental() {
   window.granularElementalModeLoaded = true;
   const btn = document.getElementById('toggleGranularRequerimientoOxideElementalBtn');
   if (btn) {
-    btn.textContent = isGranularRequerimientoElementalMode ? '🔄 Ver en Óxido' : '🔄 Ver en Elemental';
+    btn.textContent = isGranularRequerimientoElementalMode
+      ? granularReqT('oxide', '🔄 Ver en Óxido')
+      : granularReqT('elemental', '🔄 Ver en Elemental');
   }
   calculateGranularNutrientRequirements();
   if (typeof window.saveGranularRequirementsImmediate === 'function') {
@@ -138,9 +174,12 @@ function getGranularLabel(nutrient) {
 }
 
 // Función para convertir valor para visualización
-function getGranularConvertedValue(nutrient, value) {
+function getGranularConvertedValue(nutrient, value, quantityKind) {
+  let converted = parseFloat(value);
+  if (!Number.isFinite(converted)) converted = 0;
   if (!isGranularRequerimientoElementalMode) {
-    return parseFloat(value).toFixed(2);
+    if (quantityKind) return granularReqFromSI(converted, quantityKind, false);
+    return converted.toFixed(2);
   }
   const factor = {
     'P2O5': GRANULAR_CONVERSION_FACTORS.P2O5_TO_P,
@@ -151,9 +190,10 @@ function getGranularConvertedValue(nutrient, value) {
     'SO4': GRANULAR_CONVERSION_FACTORS.S_TO_SO4
   }[nutrient];
   if (factor) {
-    return (parseFloat(value) / factor).toFixed(2);
+    converted /= factor;
   }
-  return parseFloat(value).toFixed(2);
+  if (quantityKind) return granularReqFromSI(converted, quantityKind, false);
+  return converted.toFixed(2);
 }
 
 // FUNCIÓN DUPLICADA ELIMINADA - Usar la función calculateGranularNutrientRequirements de la línea 1109 que es más completa
@@ -166,6 +206,7 @@ let savedGranularAdjustmentsAuto = true;
 let lastGranularCalculatedCrop = null;
 let lastGranularCalculatedYield = null;
 let lastGranularProjectIdLoaded = null;
+let granularReqLastUnitSystem = granularUI() ? granularUI().getPrefs().unit_system : 'metric';
 
 function resetGranularRuntimeState() {
   savedGranularAdjustments = null;
@@ -205,12 +246,12 @@ function calculateGranularNutrientRequirements(options = {}) {
 
     let targetYield = options.targetYield;
     if (typeof targetYield !== 'number' || Number.isNaN(targetYield)) {
-      targetYield = parseFloat(yieldInput.value) || 10;
+      targetYield = granularReadYieldSI(yieldInput);
     }
-    if (options.targetYield != null && parseFloat(yieldInput.value) !== options.targetYield) {
+    if (options.targetYield != null) {
       const prev = yieldInput.getAttribute('onchange');
       yieldInput.removeAttribute('onchange');
-      yieldInput.value = options.targetYield;
+      granularSetYieldFromSI(yieldInput, options.targetYield);
       if (prev) yieldInput.setAttribute('onchange', prev);
     }
 
@@ -459,32 +500,32 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
     <table class="fertirriego-requirement-table">
       <thead>
         <tr>
-          <th rowspan="2">Concepto</th>
+          <th rowspan="2">${granularReqT('concept', 'Concepto')}</th>
           ${nutrients.map(n => `<th id="granular-header-${n}"><span class="notranslate" translate="no">${getGranularLabel(n)}</span></th>`).join('')}
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="granular-extract-${n}" value="${getGranularConvertedValue(n, (extraction[n] ?? 0))}" step="0.01" onchange="updateGranularExtractionPerTon('${n}', this.value)"></td>`).join('')}
+          <td><strong>${granularReqT('extraction_per_ton', 'Extracción por tonelada')}<br>(${granularReqUnit('extraction_mass_yield', 'kg/t')})</strong></td>
+          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="granular-extract-${n}" value="${getGranularConvertedValue(n, (extraction[n] ?? 0), 'extraction_mass_yield')}" step="0.0001" onchange="updateGranularExtractionPerTon('${n}', this.value)"></td>`).join('')}
         </tr>
         <tr>
-          <td><strong>Extracción total<br>(kg/ha)</strong></td>
-          ${nutrients.map(n => `<td id="granular-extraccion-total-${n}">${getGranularConvertedValue(n, totalExtraction[n])}</td>`).join('')}
+          <td><strong>${granularReqT('total_extraction', 'Extracción total')}<br>(${granularReqUnit('dose_mass_area', 'kg/ha')})</strong></td>
+          ${nutrients.map(n => `<td id="granular-extraccion-total-${n}">${getGranularConvertedValue(n, totalExtraction[n], 'dose_mass_area')}</td>`).join('')}
         </tr>
         <tr>
-          <td><strong>Ajuste por niveles<br>en suelo</strong></td>
+          <td><strong>${granularReqT('soil_adjustment', 'Ajuste por niveles en suelo')}<br>(${granularReqUnit('dose_mass_area', 'kg/ha')})</strong></td>
           ${nutrients.map(n => {
             // CRÍTICO: Usar SIEMPRE el valor pasado como parámetro (incluso si es 0)
             // Estos valores YA vienen de los datos guardados o calculados correctamente
             const adjValue = adjustment[n] ?? 0;
-            const displayValue = getGranularConvertedValue(n, adjValue);
+            const displayValue = getGranularConvertedValue(n, adjValue, 'dose_mass_area');
             console.log(`🎨 Renderizando ajuste ${n}: valor guardado=${adjValue}, valor mostrado=${displayValue}, modo elemental=${isGranularRequerimientoElementalMode}`);
-            return `<td><input type="number" class="fertirriego-input" id="granular-adj-${n}" value="${displayValue}" step="0.01" onchange="updateGranularAdjustment('${n}', this.value)"></td>`;
+            return `<td><input type="number" class="fertirriego-input" id="granular-adj-${n}" value="${displayValue}" step="0.0001" onchange="updateGranularAdjustment('${n}', this.value)"></td>`;
           }).join('')}
         </tr>
         <tr>
-          <td><strong>Eficiencia<br>(%)</strong></td>
+          <td><strong>${granularReqT('efficiency', 'Eficiencia')}<br>(%)</strong></td>
           ${nutrients.map(n => {
             // CRÍTICO: Usar SIEMPRE el valor pasado como parámetro (incluso si es 0 o muy pequeño)
             // Estos valores YA vienen de los datos guardados o calculados correctamente
@@ -496,8 +537,8 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
           }).join('')}
         </tr>
         <tr class="requirement-real-row">
-          <td><strong>Requerimiento Real<br>(kg/ha)</strong></td>
-          ${nutrients.map(n => `<td id="granular-req-${n}">${getGranularConvertedValue(n, realRequirement[n])}</td>`).join('')}
+          <td><strong>${granularReqT('real_requirement', 'Requerimiento Real')}<br>(${granularReqUnit('dose_mass_area', 'kg/ha')})</strong></td>
+          ${nutrients.map(n => `<td id="granular-req-${n}">${getGranularConvertedValue(n, realRequirement[n], 'dose_mass_area')}</td>`).join('')}
         </tr>
       </tbody>
     </table>
@@ -522,9 +563,10 @@ function granularOxideFactorForNutrient(nutrient) {
   }[nutrient];
 }
 
-function granularNormalizeToOxide(nutrient, rawValue) {
+function granularNormalizeToOxide(nutrient, rawValue, quantityKind) {
   let value = parseFloat(rawValue);
   if (isNaN(value)) value = 0;
+  if (quantityKind) value = granularReqToSI(value, quantityKind);
   if (isGranularRequerimientoElementalMode) {
     const factor = granularOxideFactorForNutrient(nutrient);
     if (factor) value = value * factor;
@@ -557,7 +599,7 @@ function updateGranularExtractionPerTon(nutrient, value, options = {}) {
     
     const cropType = document.getElementById('granularRequerimientoCropType').value;
     const nutrientKey = nutrient;
-    const numValue = granularNormalizeToOxide(nutrientKey, value);
+    const numValue = granularNormalizeToOxide(nutrientKey, value, 'extraction_mass_yield');
     
     console.log('🔄 updateGranularExtractionPerTon llamado:', { cropType, nutrient: nutrientKey, value: numValue, modoElemental: isGranularRequerimientoElementalMode });
     
@@ -591,10 +633,10 @@ function updateGranularAdjustment(nutrient, value, options = {}) {
     savedGranularAdjustmentsAuto = false;
     
     const nutrientKey = nutrient;
-    const convertedValue = granularNormalizeToOxide(nutrientKey, value);
+    const convertedValue = granularNormalizeToOxide(nutrientKey, value, 'dose_mass_area');
     const efficiencyValue = parseFloat(document.getElementById(`granular-eff-${nutrientKey}`).value) || 1;
     const realRequirement = (convertedValue / (efficiencyValue / 100)).toFixed(2);
-    document.getElementById(`granular-req-${nutrientKey}`).textContent = getGranularConvertedValue(nutrientKey, realRequirement);
+    document.getElementById(`granular-req-${nutrientKey}`).textContent = getGranularConvertedValue(nutrientKey, realRequirement, 'dose_mass_area');
 
     if (!savedGranularAdjustments) savedGranularAdjustments = {};
     savedGranularAdjustments[nutrientKey] = convertedValue;
@@ -618,12 +660,12 @@ function updateGranularEfficiency(nutrient, value, options = {}) {
     console.log('🔄 updateGranularEfficiency llamado:', { nutrient, value });
     
     const adjustmentInput = document.getElementById(`granular-adj-${nutrient}`);
-    const adjustmentValue = adjustmentInput ? granularNormalizeToOxide(nutrient, adjustmentInput.value) : 0;
+    const adjustmentValue = adjustmentInput ? granularNormalizeToOxide(nutrient, adjustmentInput.value, 'dose_mass_area') : 0;
     const efficiencyValue = parseFloat(value) || 1;
     const realRequirement = (adjustmentValue / (efficiencyValue / 100)).toFixed(2);
     const reqCell = document.getElementById(`granular-req-${nutrient}`);
     if (reqCell) {
-      reqCell.textContent = getGranularConvertedValue(nutrient, realRequirement);
+      reqCell.textContent = getGranularConvertedValue(nutrient, realRequirement, 'dose_mass_area');
       console.log(`✅ Requerimiento Real ${nutrient} actualizado: ${reqCell.textContent} (ajuste: ${adjustmentValue}, eficiencia: ${efficiencyValue}%)`);
     } else {
       console.warn(`⚠️ No se encontró celda granular-req-${nutrient} para actualizar`);
@@ -659,12 +701,12 @@ function setGranularCustomCropModalMode(mode) {
   const saveBtn = getCustomCropModalSaveBtn();
   if (!titleEl || !saveBtn) return;
   if (mode === 'edit') {
-    titleEl.textContent = '✏️ Editar Cultivo Personalizado';
-    saveBtn.textContent = 'Guardar cambios';
+    titleEl.textContent = granularReqT('custom_crop_edit', '✏️ Editar Cultivo Personalizado');
+    saveBtn.textContent = granularReqT('save_changes', 'Guardar cambios');
     saveBtn.setAttribute('onclick', 'saveEditedCustomGranularCrop()');
   } else {
-    titleEl.textContent = '➕ Agregar Cultivo Personalizado';
-    saveBtn.textContent = 'Agregar Cultivo';
+    titleEl.textContent = granularReqT('add_custom_crop', '➕ Agregar Cultivo Personalizado');
+    saveBtn.textContent = granularReqT('add_crop', 'Agregar Cultivo');
     saveBtn.setAttribute('onclick', 'addCustomCropGlobal()');
   }
 }
@@ -824,23 +866,27 @@ function np_removeUserCustomGranularCrop(cropId) {
 
 function readCustomCropExtractionFromModal() {
   var sLegacyEl = document.getElementById('customCropS');
-  var sLegacy = sLegacyEl ? (parseFloat(sLegacyEl.value) || 0) : 0;
-  var so4Merged = (parseFloat(document.getElementById('customCropSO4').value) || 0) + sLegacy * GRANULAR_CONVERSION_FACTORS.S_TO_SO4;
+  var readExtraction = function(id) {
+    var element = document.getElementById(id);
+    return granularReqToSI(parseFloat(element && element.value) || 0, 'extraction_mass_yield');
+  };
+  var sLegacy = sLegacyEl ? readExtraction('customCropS') : 0;
+  var so4Merged = readExtraction('customCropSO4') + sLegacy * GRANULAR_CONVERSION_FACTORS.S_TO_SO4;
   return {
-    N: parseFloat(document.getElementById('customCropN').value) || 0,
-    P2O5: parseFloat(document.getElementById('customCropP2O5').value) || 0,
-    K2O: parseFloat(document.getElementById('customCropK2O').value) || 0,
-    CaO: parseFloat(document.getElementById('customCropCaO').value) || 0,
-    MgO: parseFloat(document.getElementById('customCropMgO').value) || 0,
+    N: readExtraction('customCropN'),
+    P2O5: readExtraction('customCropP2O5'),
+    K2O: readExtraction('customCropK2O'),
+    CaO: readExtraction('customCropCaO'),
+    MgO: readExtraction('customCropMgO'),
     S: 0,
     SO4: so4Merged,
-    Fe: parseFloat(document.getElementById('customCropFe').value) || 0,
-    Mn: parseFloat(document.getElementById('customCropMn').value) || 0,
-    B: parseFloat(document.getElementById('customCropB').value) || 0,
-    Zn: parseFloat(document.getElementById('customCropZn').value) || 0,
-    Cu: parseFloat(document.getElementById('customCropCu').value) || 0,
-    Mo: parseFloat(document.getElementById('customCropMo').value) || 0,
-    SiO2: parseFloat(document.getElementById('customCropSiO2').value) || 0
+    Fe: readExtraction('customCropFe'),
+    Mn: readExtraction('customCropMn'),
+    B: readExtraction('customCropB'),
+    Zn: readExtraction('customCropZn'),
+    Cu: readExtraction('customCropCu'),
+    Mo: readExtraction('customCropMo'),
+    SiO2: readExtraction('customCropSiO2')
   };
 }
 
@@ -868,7 +914,7 @@ function renderGranularCustomCropsList() {
   const custom = normalizeCustomCropMap(customRaw);
   const cropIds = Object.keys(custom);
   if (cropIds.length === 0) {
-    container.innerHTML = '<div style="color:#6b7280;">Sin cultivos personalizados.</div>';
+    container.innerHTML = `<div style="color:#6b7280;">${granularReqT('no_custom_crops', 'Sin cultivos personalizados.')}</div>`;
     return;
   }
   container.innerHTML = cropIds.map(cropId => {
@@ -878,8 +924,8 @@ function renderGranularCustomCropsList() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
         <span>${safeName}</span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditCustomGranularCrop('${cropId}')">Editar</button>
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeUserCustomGranularCrop('${cropId}')">Eliminar</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditCustomGranularCrop('${cropId}')">${granularReqT('edit', 'Editar')}</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeUserCustomGranularCrop('${cropId}')">${granularReqT('remove', 'Eliminar')}</button>
         </div>
       </div>
     `;
@@ -890,7 +936,7 @@ function openEditCustomGranularCrop(cropId) {
   const custom = normalizeCustomCropMap(np_getUserCustomGranularCrops());
   const entry = custom[cropId];
   if (!entry) {
-    alert('No se encontró el cultivo personalizado');
+    alert(granularReqT('custom_crop_not_found', 'No se encontró el cultivo personalizado'));
     return;
   }
   granularCustomCropEditId = cropId;
@@ -901,30 +947,34 @@ function openEditCustomGranularCrop(cropId) {
   const nameEl = document.getElementById('customCropName');
   if (nameEl) nameEl.value = entry.name || formatCustomCropName(cropId);
   const extraction = entry.extraction || {};
-  document.getElementById('customCropN').value = extraction.N ?? 0;
-  document.getElementById('customCropP2O5').value = extraction.P2O5 ?? 0;
-  document.getElementById('customCropK2O').value = extraction.K2O ?? 0;
-  document.getElementById('customCropCaO').value = extraction.CaO ?? 0;
-  document.getElementById('customCropMgO').value = extraction.MgO ?? 0;
+  const showExtraction = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = granularReqFromSI(value ?? 0, 'extraction_mass_yield', true);
+  };
+  showExtraction('customCropN', extraction.N);
+  showExtraction('customCropP2O5', extraction.P2O5);
+  showExtraction('customCropK2O', extraction.K2O);
+  showExtraction('customCropCaO', extraction.CaO);
+  showExtraction('customCropMgO', extraction.MgO);
   var sOldG = parseFloat(extraction.S) || 0;
   var so4OldG = parseFloat(extraction.SO4) || 0;
-  document.getElementById('customCropSO4').value = so4OldG + sOldG * GRANULAR_CONVERSION_FACTORS.S_TO_SO4;
+  showExtraction('customCropSO4', so4OldG + sOldG * GRANULAR_CONVERSION_FACTORS.S_TO_SO4);
   var sElG = document.getElementById('customCropS');
   if (sElG) sElG.value = '0';
-  document.getElementById('customCropFe').value = extraction.Fe ?? 0;
-  document.getElementById('customCropMn').value = extraction.Mn ?? 0;
-  document.getElementById('customCropB').value = extraction.B ?? 0;
-  document.getElementById('customCropZn').value = extraction.Zn ?? 0;
-  document.getElementById('customCropCu').value = extraction.Cu ?? 0;
-  document.getElementById('customCropMo').value = extraction.Mo ?? 0;
-  document.getElementById('customCropSiO2').value = extraction.SiO2 ?? 0;
+  showExtraction('customCropFe', extraction.Fe);
+  showExtraction('customCropMn', extraction.Mn);
+  showExtraction('customCropB', extraction.B);
+  showExtraction('customCropZn', extraction.Zn);
+  showExtraction('customCropCu', extraction.Cu);
+  showExtraction('customCropMo', extraction.Mo);
+  showExtraction('customCropSiO2', extraction.SiO2);
   if (modal) modal.classList.add('show');
 }
 
 function saveEditedCustomGranularCrop() {
   if (!granularCustomCropEditId) return;
   const cropName = document.getElementById('customCropName').value.trim();
-  if (!cropName) { alert('Por favor ingrese el nombre del cultivo'); return; }
+  if (!cropName) { alert(granularReqT('crop_name_required', 'Por favor ingrese el nombre del cultivo')); return; }
   const newCropId = cropName.toLowerCase().replace(/\s+/g, '_');
   const extraction = readCustomCropExtractionFromModal();
 
@@ -949,7 +999,7 @@ function saveEditedCustomGranularCrop() {
 function removeUserCustomGranularCrop(cropId) {
   const custom = normalizeCustomCropMap(np_getUserCustomGranularCrops());
   if (!custom[cropId]) return;
-  if (!confirm(`¿Eliminar "${custom[cropId].name}" del catálogo personal?`)) return;
+  if (!confirm(granularReqT('confirm_remove_catalog_item', `¿Eliminar "${custom[cropId].name}" del catálogo personal?`))) return;
   np_removeUserCustomGranularCrop(cropId);
   // Evitar "resurrección" en siguiente login:
   // purgar también del legado por proyecto (requirements.customCrops)
@@ -1001,7 +1051,7 @@ function removeUserCustomGranularCrop(cropId) {
 // Función para agregar cultivo personalizado a granulares
 function addCustomGranularCrop() {
   const cropName = document.getElementById('customCropName').value.trim();
-  if (!cropName) { alert('Por favor ingrese el nombre del cultivo'); return; }
+  if (!cropName) { alert(granularReqT('crop_name_required', 'Por favor ingrese el nombre del cultivo')); return; }
   const cropId = cropName.toLowerCase().replace(/\s+/g, '_');
   const extraction = readCustomCropExtractionFromModal();
   
@@ -1071,7 +1121,7 @@ function rememberGranularUIState() {
   try {
     const pid = getCurrentProjectId(); if (!pid) return;
     const cropType = document.getElementById('granularRequerimientoCropType')?.value || '';
-    const targetYield = parseFloat(document.getElementById('granularRequerimientoTargetYield')?.value) || 10;
+    const targetYield = granularReadYieldSI(document.getElementById('granularRequerimientoTargetYield'));
     // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
     const k = `nutriplant_project_${pid}`; const pd = JSON.parse(localStorage.getItem(k) || '{}');
     pd.granularLastUI = { cropType, targetYield }; localStorage.setItem(k, JSON.stringify(pd));
@@ -1111,7 +1161,8 @@ function applyGranularUIState() {
       }
       select.value = st.cropType;
     }
-    const ty = document.getElementById('granularRequerimientoTargetYield'); if (ty && st.targetYield!=null) ty.value = st.targetYield;
+    const ty = document.getElementById('granularRequerimientoTargetYield');
+    if (ty && st.targetYield != null) granularSetYieldFromSI(ty, st.targetYield);
   } catch {}
 }
 
@@ -1143,7 +1194,7 @@ function saveGranularRequirements(options = {}) {
     }
 
     const cropType = cropEl.value || '';
-    const targetYield = parseFloat(yieldEl.value) || 10;
+    const targetYield = granularReadYieldSI(yieldEl);
     
     const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
     const adjustment = {};
@@ -1230,7 +1281,7 @@ function saveGranularRequirements(options = {}) {
             console.log(`🔄 Convertido ${nutrient} de elemental a óxido:`, adjValue);
           }
         }
-        adjustment[nutrient] = adjValue;
+        adjustment[nutrient] = granularReqToSI(adjValue, 'dose_mass_area');
         console.log(`✅ Ajuste ${nutrient} capturado del DOM (guardado en óxido):`, adjValue);
       } else if (existingData && existingData.adjustment && typeof existingData.adjustment[nutrient] === 'number') {
         // PRIORIDAD 2: Input no existe pero hay valor guardado - mantenerlo
@@ -1339,7 +1390,7 @@ function saveGranularRequirements(options = {}) {
                   console.log(`🔄 Extracción ${n} convertida de elemental a óxido:`, extInput.value, '→', extValue.toFixed(2));
                 }
               }
-              extraction[n] = extValue;
+              extraction[n] = granularReqToSI(extValue, 'extraction_mass_yield');
               hasExtractionValues = true;
               console.log(`🔍 Extracción ${n} leída del DOM (raw):`, extInput.value, '→ guardado en ÓXIDO:', extraction[n]);
             }
@@ -1820,7 +1871,7 @@ function doLoadCustomGranularCrops() {
     const hasSelectedCropData = !!(selectedCrop && GRANULAR_CROP_EXTRACTION_DB[selectedCrop]);
     if (hasSelectedCropData && typeof window.calculateGranularNutrientRequirements === 'function') {
       const targetYieldEl = document.getElementById('granularRequerimientoTargetYield');
-      const currentYield = targetYieldEl ? parseFloat(targetYieldEl.value) : NaN;
+      const currentYield = targetYieldEl ? granularReadYieldSI(targetYieldEl) : NaN;
       window.calculateGranularNutrientRequirements({
         _isLoading: true,
         cropType: selectedCrop,
@@ -1839,6 +1890,18 @@ window.loadCustomGranularCrops = loadCustomGranularCrops;
 // Inicializar cuando se carga la sección
 document.addEventListener('DOMContentLoaded', function() {
   console.log('⚪ Nutrición Granular - Requerimiento functions cargado');
+  const initialExtractionUnit = granularReqUnit('extraction_mass_yield', 'kg/t');
+  const initialHelp = document.getElementById('granularCustomCropExtractionHelp');
+  const initialHeader = document.getElementById('granularCustomCropExtractionHeader');
+  if (initialHelp) {
+    initialHelp.textContent = granularReqT(
+      'custom_crop_extraction_help',
+      '📊 Ingrese la extracción por unidad de rendimiento para cada nutriente:'
+    ) + ' (' + initialExtractionUnit + ')';
+  }
+  if (initialHeader) {
+    initialHeader.textContent = granularReqT('extraction_per_ton', 'Extracción') + ' (' + initialExtractionUnit + ')';
+  }
   setTimeout(() => loadCustomGranularCrops(), 100);
   // ✅ OPTIMIZADO: Los inputs principales (cultivo y rendimiento) ya tienen onchange inline en el HTML
   // Solo escuchar cambios en inputs dinámicos (extracción, ajuste, eficiencia) que no tienen onchange inline
@@ -1880,7 +1943,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (id === 'granularRequerimientoTargetYield') {
       clearTimeout(window.granularRecalcTimer);
       window.granularRecalcTimer = setTimeout(() => {
-        const currentValue = parseFloat(e.target.value);
+        const currentValue = granularReqToSI(parseFloat(e.target.value), 'yield_mass_area');
         if (typeof window.calculateGranularNutrientRequirements === 'function') {
           window.calculateGranularNutrientRequirements({
             _isLoading: false,
@@ -1906,6 +1969,44 @@ document.addEventListener('DOMContentLoaded', function() {
   // Guardar al ocultar página (más confiable en móviles/iOS)
   window.addEventListener('pagehide', () => {
     try { flushGranularRequirementsIfDirty(); } catch {}
+  });
+  window.addEventListener('np:prefs-changed', () => {
+    try {
+      const nextUnitSystem = granularUI() ? granularUI().getPrefs().unit_system : 'metric';
+      if (nextUnitSystem !== granularReqLastUnitSystem) {
+        ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'].forEach(key => {
+          const input = document.getElementById('customCrop' + key);
+          if (!input || input.value === '') return;
+          let canonical = parseFloat(input.value) || 0;
+          if (granularReqLastUnitSystem === 'us_customary') canonical /= 2;
+          input.value = (nextUnitSystem === 'us_customary' ? canonical * 2 : canonical)
+            .toFixed(4).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+        });
+      }
+      granularReqLastUnitSystem = nextUnitSystem;
+      const extractionUnit = granularReqUnit('extraction_mass_yield', 'kg/t');
+      const help = document.getElementById('granularCustomCropExtractionHelp');
+      const header = document.getElementById('granularCustomCropExtractionHeader');
+      if (help) {
+        help.textContent = granularReqT(
+          'custom_crop_extraction_help',
+          '📊 Ingrese la extracción por unidad de rendimiento para cada nutriente:'
+        ) + ' (' + extractionUnit + ')';
+      }
+      if (header) {
+        header.textContent = granularReqT('extraction_per_ton', 'Extracción') + ' (' + extractionUnit + ')';
+      }
+      const crop = document.getElementById('granularRequerimientoCropType');
+      const target = document.getElementById('granularRequerimientoTargetYield');
+      if (!crop || !target) return;
+      calculateGranularNutrientRequirements({
+        _isLoading: true,
+        cropType: crop.value,
+        targetYield: Number.isFinite(lastGranularCalculatedYield) ? lastGranularCalculatedYield : 10
+      });
+    } catch (error) {
+      console.warn('No se pudo refrescar la presentación granular:', error);
+    }
   });
   document.addEventListener('projectChanged', () => {
     try { resetGranularRuntimeState(); } catch {}
@@ -2179,7 +2280,7 @@ function loadGranularRequirements(retryCount = 0) {
         // CRÍTICO: Establecer valor SIN disparar eventos que recalculen sin valores guardados
         const oldOnChange = targetYieldInput.getAttribute('onchange');
         targetYieldInput.removeAttribute('onchange');
-        targetYieldInput.value = requirementData.targetYield;
+        granularSetYieldFromSI(targetYieldInput, requirementData.targetYield);
         if (oldOnChange) targetYieldInput.setAttribute('onchange', oldOnChange);
       }
       
@@ -2205,7 +2306,11 @@ function loadGranularRequirements(retryCount = 0) {
       window.isGranularRequerimientoElementalMode = isGranularRequerimientoElementalMode;
       window.granularElementalModeLoaded = true;
       const btn = document.getElementById('toggleGranularRequerimientoOxideElementalBtn');
-      if (btn) { btn.textContent = isGranularRequerimientoElementalMode ? '🔄 Ver en Óxido' : '🔄 Ver en Elemental'; }
+      if (btn) {
+        btn.textContent = isGranularRequerimientoElementalMode
+          ? granularReqT('oxide', '🔄 Ver en Óxido')
+          : granularReqT('elemental', '🔄 Ver en Elemental');
+      }
     } else {
       window.isGranularRequerimientoElementalMode = isGranularRequerimientoElementalMode || false;
       window.granularElementalModeLoaded = true;
@@ -2217,7 +2322,7 @@ function loadGranularRequirements(retryCount = 0) {
     // IMPORTANTE: Los extractionOverrides ya se aplicaron arriba a GRANULAR_CROP_EXTRACTION_DB,
     // por lo que calculateGranularNutrientRequirements() usará los valores correctos
     const currentCropType = cropTypeEl ? cropTypeEl.value : null;
-    const currentTargetYield = targetYieldEl ? parseFloat(targetYieldEl.value) : null;
+    const currentTargetYield = targetYieldEl ? granularReadYieldSI(targetYieldEl) : null;
     
     if (requirementData) {
       if (typeof requirementData.adjustmentsAuto === 'boolean') {
@@ -2494,7 +2599,7 @@ window.testGranularSaveLoad = function() {
     window.saveGranularRequirements({ force: true });
     console.log('💾 Valores guardados (método normal)');
   } else {
-    alert('❌ Error: No se puede guardar - función no disponible');
+    alert(granularReqT('save_unavailable', '❌ Error: No se puede guardar - función no disponible'));
     return;
   }
   
@@ -2505,7 +2610,7 @@ window.testGranularSaveLoad = function() {
       window.loadGranularRequirements();
       console.log('🔄 Valores cargados');
     } else {
-      alert('❌ Error: No se puede cargar - función no disponible');
+      alert(granularReqT('load_unavailable', '❌ Error: No se puede cargar - función no disponible'));
     return;
   }
   

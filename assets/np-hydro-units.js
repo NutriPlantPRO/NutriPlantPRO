@@ -2,8 +2,9 @@
  * NutriPlant — adaptador de presentación para el piloto hidropónico.
  *
  * El estado y la persistencia permanecen en SI. Este módulo solo convierte
- * entradas/salidas inequívocas: volumen, masa y masa/volumen. No acepta dosis
- * por superficie y no convierte ppm, meq/L, mmol/L, pH, EC ni L/m³.
+ * entradas/salidas inequívocas: volumen, masa, masa/volumen y tasa de
+ * inyección. No acepta dosis por superficie y no convierte ppm, meq/L,
+ * mmol/L, pH ni EC.
  */
 (function (root, factory) {
   'use strict';
@@ -34,6 +35,13 @@
     if (kind === 'water_volume') return { canonical: 'm3', display: us ? 'US gal' : 'm3' };
     if (kind === 'liquid_volume') return { canonical: 'm3', display: us ? 'US gal' : 'L' };
     if (kind === 'mass') return { canonical: 'kg', display: us ? 'lb' : 'kg' };
+    if (kind === 'injection_rate') {
+      return {
+        canonical: 'L/m3',
+        display: us ? 'US gal/1,000 US gal' : 'L/m3',
+        identity: true
+      };
+    }
     if (kind === 'concentration') {
       return {
         canonical: 'kg/m3',
@@ -45,11 +53,13 @@
 
   function fromSI(value, kind, options) {
     var d = definition(kind, options);
+    if (d.identity) return Number(value);
     return unitsApi().convert(Number(value), d.canonical, d.display);
   }
 
   function toSI(value, kind, options) {
     var d = definition(kind, options);
+    if (d.identity) return Number(value);
     return unitsApi().convert(Number(value), d.display, d.canonical);
   }
 

@@ -47,8 +47,51 @@ Object.keys(MATERIALS_DB).forEach(name => {
 let applications = [];
 let appCounter = 1;
 
+function granularProgramUI() {
+  return typeof window !== 'undefined' ? window.NpGranularUI : null;
+}
+
+function granularProgramT(key, fallback) {
+  const ui = granularProgramUI();
+  return ui ? ui.t(key, fallback) : fallback;
+}
+
+function granularProgramUnit(kind, fallback) {
+  const ui = granularProgramUI();
+  return ui ? ui.unit(kind) : fallback;
+}
+
+function granularProgramInputFromSI(value, kind) {
+  const ui = granularProgramUI();
+  return ui ? ui.inputFromSI(value, kind) : String(value);
+}
+
+function granularProgramResultFromSI(value, kind) {
+  const ui = granularProgramUI();
+  return ui ? ui.resultFromSI(value, kind) : (parseFloat(value) || 0).toFixed(2);
+}
+
+function granularProgramToSI(value, kind) {
+  const ui = granularProgramUI();
+  return ui ? ui.toSI(value, kind) : Number(value);
+}
+
+function granularMaterialDisplayName(name) {
+  const ui = granularProgramUI();
+  return ui ? ui.materialName(name) : name;
+}
+
 function isAutoGranularAppTitle(title) {
-  return typeof title === 'string' && /^\d+\s*ª\s*Aplicación\s+Granular$/i.test(title.trim());
+  return typeof title === 'string' && (
+    /^\d+\s*ª\s*Aplicación\s+Granular$/i.test(title.trim()) ||
+    /^Granular Application\s+\d+$/i.test(title.trim())
+  );
+}
+
+function granularApplicationDisplayTitle(app) {
+  if (!app) return '';
+  const ui = granularProgramUI();
+  return isAutoGranularAppTitle(app.title) && ui ? ui.autoApplicationTitle(app.number) : app.title;
 }
 
 function normalizeGranularApplicationTitles() {
@@ -178,7 +221,7 @@ function saveUserCustomMaterial(name, composition) {
 }
 
 function clearUserCustomMaterials() {
-  if (!confirm('¿Eliminar todo el catálogo personal de materias primas?')) return;
+  if (!confirm(granularProgramT('confirm_clear_catalog', '¿Eliminar todo el catálogo personal de materias primas?'))) return;
   const userId = getCurrentUserId();
   const custom = getUserCustomMaterialsMap();
   Object.keys(custom).forEach(name => {
@@ -195,7 +238,7 @@ function clearUserCustomMaterials() {
   }
   renderApplications();
   renderUserCustomMaterialsList();
-  alert('✅ Catálogo personal limpiado');
+  alert(granularProgramT('catalog_cleared', '✅ Catálogo personal limpiado'));
 }
 
 function renderUserCustomMaterialsList() {
@@ -204,7 +247,7 @@ function renderUserCustomMaterialsList() {
   const custom = getUserCustomMaterialsMap();
   const names = Object.keys(custom);
   if (names.length === 0) {
-    container.innerHTML = '<div style="color:#6b7280;">Sin materias primas personalizadas.</div>';
+    container.innerHTML = `<div style="color:#6b7280;">${granularProgramT('no_custom_fertilizers', 'Sin materias primas personalizadas.')}</div>`;
     return;
   }
   container.innerHTML = names.map(name => {
@@ -213,8 +256,8 @@ function renderUserCustomMaterialsList() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
         <span>${name}</span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditCustomMaterial('${encoded}')">Editar</button>
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeUserCustomMaterial('${encoded}')">Eliminar</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditCustomMaterial('${encoded}')">${granularProgramT('edit', 'Editar')}</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeUserCustomMaterial('${encoded}')">${granularProgramT('remove', 'Eliminar')}</button>
         </div>
       </div>
     `;
@@ -224,7 +267,7 @@ function renderUserCustomMaterialsList() {
 function removeUserCustomMaterial(encodedName) {
   const name = decodeURIComponent(encodedName || '');
   if (!name) return;
-  if (!confirm(`¿Eliminar "${name}" del catálogo personal?`)) return;
+  if (!confirm(granularProgramT('confirm_remove_catalog_item', `¿Eliminar "${name}" del catálogo personal?`))) return;
   const userId = getCurrentUserId();
   if (userId) {
     const profile = loadUserProfile() || {};
@@ -261,11 +304,11 @@ function openEditCustomMaterial(encodedName) {
   const modal = document.querySelector('.material-modal-overlay');
   if (!modal) return;
   const header = modal.querySelector('.material-modal-header h3');
-  if (header) header.textContent = '✏️ Editar Materia Prima Personalizada';
+  if (header) header.textContent = granularProgramT('custom_fertilizer_edit', '✏️ Editar Materia Prima Personalizada');
   modal.dataset.editName = name;
   const saveBtn = modal.querySelector('#newMaterialSaveBtn');
   if (saveBtn) {
-    saveBtn.textContent = 'Guardar cambios';
+    saveBtn.textContent = granularProgramT('save_changes', 'Guardar cambios');
     saveBtn.setAttribute('onclick', 'saveEditedCustomMaterial()');
   }
   document.getElementById('newMaterialName').value = name;
@@ -292,7 +335,7 @@ function saveEditedCustomMaterial() {
   if (!originalName) return;
   const name = document.getElementById('newMaterialName').value.trim();
   if (!name) {
-    alert('⚠️ Por favor ingresa el nombre de la materia prima');
+    alert(granularProgramT('material_name_required', '⚠️ Por favor ingresa el nombre de la materia prima'));
     return;
   }
   const composition = {
@@ -350,7 +393,7 @@ function saveEditedCustomMaterial() {
   renderApplications();
   renderUserCustomMaterialsList();
   closeNewMaterialModal();
-  alert(`✅ Materia prima "${name}" actualizada`);
+  alert(granularProgramT('material_updated', `✅ Materia prima "${name}" actualizada`));
 }
 
 function getProgramNutrientLabel(nutrient) {
@@ -376,7 +419,7 @@ function getProgramNutrientLabel(nutrient) {
   return oxideLabels[nutrient] || nutrient;
 }
 
-function formatProgramValue(nutrient, value, decimals) {
+function formatProgramValue(nutrient, value, decimals, quantityKind) {
   let v = parseFloat(value);
   if (isNaN(v)) v = 0;
   if (isElementalMode) {
@@ -389,6 +432,10 @@ function formatProgramValue(nutrient, value, decimals) {
       case 'SO4': v = convertOxideToElemental(v, CONVERSION_FACTORS.S_TO_SO4); break;
       default: break;
     }
+  }
+  if (quantityKind) {
+    v = granularProgramUI() ? granularProgramUI().fromSI(v, quantityKind) : v;
+    decimals = Math.min(decimals, 2);
   }
   return v.toFixed(decimals);
 }
@@ -462,22 +509,22 @@ function renderApplications() {
       <div class="granular-application" id="${app.id}">
         <div class="application-header">
           <div>
-            <input type="text" class="application-title" value="${app.title}" data-app-id="${app.id}"
+            <input type="text" class="application-title" value="${granularApplicationDisplayTitle(app)}" data-app-id="${app.id}" data-auto-title="${isAutoGranularAppTitle(app.title) ? 'true' : 'false'}"
                    oninput="updateAppTitleLive('${app.id}', this.value)" onchange="updateAppTitle('${app.id}', this.value)">
             <div class="application-npk">
-              Relación NPK: <span id="npk_${app.id}">-:-:-</span>
+              ${granularProgramT('npk_ratio', 'Relación NPK:')} <span id="npk_${app.id}">-:-:-</span>
             </div>
           </div>
           <button class="remove-application-btn" onclick="removeApp('${app.id}')">
-            🗑️ Eliminar
+            ${granularProgramT('remove', '🗑️ Eliminar')}
           </button>
         </div>
         
         <table class="materials-table">
           <thead>
             <tr>
-              <th>Material</th>
-              <th>% por TM</th>
+              <th>${granularProgramT('material', 'Material')}</th>
+              <th>${granularProgramT('per_metric_ton', '% por TM')}</th>
               <th class="notranslate" translate="no">N</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('P2O5')}</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('K2O')}</th>
@@ -491,7 +538,7 @@ function renderApplications() {
               <th class="notranslate" translate="no">Cu</th>
               <th class="notranslate" translate="no">Mo</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('SiO2')}</th>
-              <th>Acción</th>
+              <th>${granularProgramT('action', 'Acción')}</th>
             </tr>
           </thead>
           <tbody id="materials_${app.id}">
@@ -501,17 +548,17 @@ function renderApplications() {
         
         <div class="add-material-buttons">
           <button class="add-material-btn" onclick="addMaterial('${app.id}')">
-            ➕ Agregar fertilizante
+            ${granularProgramT('add_fertilizer', '➕ Agregar fertilizante')}
           </button>
           <button class="add-custom-material-btn btn btn-info btn-sm" onclick="showNewMaterialModal('${app.id}')">
-            📋 Gestionar catálogo de fertilizante
+            ${granularProgramT('manage_catalog', '📋 Gestionar catálogo de fertilizante')}
           </button>
         </div>
         
         <div class="dose-section">
           <div class="dose-input-group">
-            <label class="dose-label">Dosis Kg/Ha:</label>
-            <input type="number" class="dose-input" value="${app.doseKgHa}" data-app-id="${app.id}"
+            <label class="dose-label">${granularProgramT('dose', 'Dosis')} ${granularProgramUnit('dose_mass_area', 'kg/ha')}:</label>
+            <input type="number" class="dose-input" step="0.0001" value="${granularProgramInputFromSI(app.doseKgHa, 'dose_mass_area')}" data-app-id="${app.id}"
                    oninput="updateDoseLive('${app.id}', this.value)" onchange="updateDose('${app.id}', this.value)">
           </div>
         </div>
@@ -534,16 +581,16 @@ function renderApplications() {
 // Función para renderizar materiales
 function renderMaterials(app) {
   if (!app.materials || app.materials.length === 0) {
-    return '<tr><td colspan="16" style="text-align: center; color: #6b7280;">No hay materias primas</td></tr>';
+    return `<tr><td colspan="16" style="text-align: center; color: #6b7280;">${granularProgramT('no_materials', 'No hay materias primas')}</td></tr>`;
   }
   
   const rows = app.materials.map((material, index) => `
     <tr>
       <td class="material-name">
         <select class="material-select" onchange="updateMaterial('${app.id}', ${index}, this.value)">
-          <option value="">Seleccionar...</option>
+          <option value="">${granularProgramT('select', 'Seleccionar...')}</option>
           ${Object.keys(MATERIALS_DB).map(name => `
-            <option value="${name}" ${material.name === name ? 'selected' : ''}>${name}</option>
+            <option value="${name}" ${material.name === name ? 'selected' : ''}>${granularMaterialDisplayName(name)}</option>
           `).join('')}
         </select>
       </td>
@@ -571,7 +618,7 @@ function renderMaterials(app) {
   const totals = calculateTotals(app);
   const totalRow = `
     <tr class="total-row">
-      <td class="material-name">TOTAL</td>
+      <td class="material-name">${granularProgramT('total', 'TOTAL')}</td>
       <td>${app.materials.reduce((sum, m) => sum + (parseFloat(m.percentage) || 0), 0).toFixed(2)}%</td>
       <td>${formatProgramValue('N', totals.N, 2)}</td>
       <td>${formatProgramValue('P2O5', totals.P2O5, 2)}</td>
@@ -593,21 +640,21 @@ function renderMaterials(app) {
   const contribution = getGranularAppContribution(app);
   const contributionRow = `
     <tr class="application-contribution-row">
-      <td class="material-name">Dosis Kg/Ha:</td>
-      <td class="application-dose-cell">${(parseFloat(app.doseKgHa) || 0).toFixed(2)}</td>
-      <td>${formatProgramValue('N', contribution.N, 2)}</td>
-      <td>${formatProgramValue('P2O5', contribution.P2O5, 2)}</td>
-      <td>${formatProgramValue('K2O', contribution.K2O, 2)}</td>
-      <td>${formatProgramValue('CaO', contribution.CaO, 2)}</td>
-      <td>${formatProgramValue('MgO', contribution.MgO, 2)}</td>
-      <td>${formatProgramValue('SO4', granularFoldSToSo4(contribution), 2)}</td>
-      <td>${formatProgramValue('Fe', contribution.Fe, 3)}</td>
-      <td>${formatProgramValue('Mn', contribution.Mn, 3)}</td>
-      <td>${formatProgramValue('B', contribution.B, 3)}</td>
-      <td>${formatProgramValue('Zn', contribution.Zn, 3)}</td>
-      <td>${formatProgramValue('Cu', contribution.Cu, 3)}</td>
-      <td>${formatProgramValue('Mo', contribution.Mo, 3)}</td>
-      <td>${formatProgramValue('SiO2', contribution.SiO2, 2)}</td>
+      <td class="material-name">${granularProgramT('dose', 'Dosis')} ${granularProgramUnit('dose_mass_area', 'kg/ha')}:</td>
+      <td class="application-dose-cell">${granularProgramResultFromSI(app.doseKgHa, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('N', contribution.N, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('P2O5', contribution.P2O5, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('K2O', contribution.K2O, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('CaO', contribution.CaO, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('MgO', contribution.MgO, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('SO4', granularFoldSToSo4(contribution), 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('Fe', contribution.Fe, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('Mn', contribution.Mn, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('B', contribution.B, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('Zn', contribution.Zn, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('Cu', contribution.Cu, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('Mo', contribution.Mo, 2, 'dose_mass_area')}</td>
+      <td>${formatProgramValue('SiO2', contribution.SiO2, 2, 'dose_mass_area')}</td>
       <td></td>
     </tr>
   `;
@@ -641,18 +688,18 @@ function showNewMaterialModal(appId) {
   modal.innerHTML = `
     <div class="material-modal">
       <div class="material-modal-header">
-        <h3>📋 Gestionar catálogo de fertilizante</h3>
+        <h3>${granularProgramT('manage_catalog', '📋 Gestionar catálogo de fertilizante')}</h3>
         <button class="material-modal-close" onclick="closeNewMaterialModal()">×</button>
       </div>
       
       <div class="material-modal-body">
         <div class="form-group">
-          <label>Nombre de la Materia Prima:</label>
+          <label>${granularProgramT('fertilizer_name', 'Nombre de la Materia Prima:')}</label>
           <input type="text" id="newMaterialName" placeholder="Ej: Superfosfato Triple" maxlength="50">
         </div>
         
         <div class="form-group">
-          <label>Concentración de Nutrientes (%):</label>
+          <label>${granularProgramT('nutrient_concentration', 'Concentración de Nutrientes (%):')}</label>
           <div class="nutrient-inputs-grid">
             <div class="nutrient-input">
               <label>N:</label>
@@ -710,17 +757,17 @@ function showNewMaterialModal(appId) {
         </div>
         
         <div class="form-group" style="margin-top: 12px;">
-          <label>Fertilizantes granular personalizados:</label>
+          <label>${granularProgramT('custom_fertilizers', 'Fertilizantes granular personalizados:')}</label>
           <div id="customMaterialsList"></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn btn-info btn-sm" onclick="openGranularPreloadedCatalogModal()" title="Consultar concentraciones de fertilizantes precargados">📋 Ver fertilizantes disponibles</button>
-            <button class="btn btn-secondary btn-sm" onclick="clearUserCustomMaterials()">🧹 Limpiar catálogo</button>
+            <button class="btn btn-info btn-sm" onclick="openGranularPreloadedCatalogModal()">${granularProgramT('view_available', '📋 Ver fertilizantes disponibles')}</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearUserCustomMaterials()">${granularProgramT('clear_catalog', '🧹 Limpiar catálogo')}</button>
           </div>
         </div>
         
         <div class="material-modal-actions">
-          <button class="btn btn-secondary" onclick="closeNewMaterialModal()">Cancelar</button>
-          <button class="btn btn-primary" id="newMaterialSaveBtn" data-app-id="${appId}" onclick="addCustomMaterial('${appId}')">Agregar fertilizante</button>
+          <button class="btn btn-secondary" onclick="closeNewMaterialModal()">${granularProgramT('cancel', 'Cancelar')}</button>
+          <button class="btn btn-primary" id="newMaterialSaveBtn" data-app-id="${appId}" onclick="addCustomMaterial('${appId}')">${granularProgramT('add_fertilizer', 'Agregar fertilizante').replace('➕ ', '')}</button>
         </div>
       </div>
     </div>
@@ -758,7 +805,7 @@ function openGranularPreloadedCatalogModal() {
   const list = getBaseGranularMaterials();
   const rows = list.map(mat => {
     const cells = [
-      (mat.name || '').replace(/</g, '&lt;'),
+      granularMaterialDisplayName(mat.name || '').replace(/</g, '&lt;'),
       ...GRANULAR_CATALOG_COLS.map(k => {
         const v = k === 'SO4' ? granularFoldSToSo4(mat) : (parseFloat(mat[k]) || 0);
         return v.toFixed(2);
@@ -772,20 +819,20 @@ function openGranularPreloadedCatalogModal() {
   overlay.innerHTML = `
     <div class="material-modal" style="max-width:95%;width:920px;max-height:85vh;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
       <div class="modal-header" style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="margin:0;font-size:1.1rem;color:#1e293b;">📋 Fertilizantes disponibles (concentración %)</h3>
+        <h3 style="margin:0;font-size:1.1rem;color:#1e293b;">${granularProgramT('available_fertilizers', '📋 Fertilizantes disponibles (concentración %)')}</h3>
         <button class="btn btn-secondary btn-sm" type="button" data-close-granular-preloaded>✕</button>
       </div>
       <div style="padding:14px 18px;overflow:auto;flex:1;">
-        <p style="margin:0 0 12px 0;font-size:0.9rem;color:#64748b;">Consulta de concentraciones de los fertilizantes precargados. Valores en % (óxidos donde aplica).</p>
+        <p style="margin:0 0 12px 0;font-size:0.9rem;color:#64748b;">${granularProgramT('available_help', 'Consulta de concentraciones de los fertilizantes precargados. Valores en % (óxidos donde aplica).')}</p>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
             <thead>
               <tr style="background:#f1f5f9;">
-                <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">Nombre</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">${granularProgramT('material', 'Nombre')}</th>
                 ${GRANULAR_CATALOG_COLS.map(k => `<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${granularCatalogColLabel(k)}</th>`).join('')}
               </tr>
             </thead>
-            <tbody>${rows || '<tr><td colspan="' + (1 + GRANULAR_CATALOG_COLS.length) + '" style="padding:12px;color:#64748b;">Sin fertilizantes precargados.</td></tr>'}</tbody>
+            <tbody>${rows || '<tr><td colspan="' + (1 + GRANULAR_CATALOG_COLS.length) + '" style="padding:12px;color:#64748b;">' + granularProgramT('no_preloaded_fertilizers', 'Sin fertilizantes precargados.') + '</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -801,7 +848,7 @@ function addCustomMaterial(appId) {
   try {
     const name = document.getElementById('newMaterialName').value.trim();
     if (!name) {
-      alert('⚠️ Por favor ingresa el nombre de la materia prima');
+      alert(granularProgramT('material_name_required', '⚠️ Por favor ingresa el nombre de la materia prima'));
       return;
     }
     
@@ -850,11 +897,11 @@ function addCustomMaterial(appId) {
     renderApplications();
     renderUserCustomMaterialsList();
     
-    alert(`✅ Materia prima "${name}" agregada exitosamente`);
+    alert(granularProgramT('material_added', `✅ Materia prima "${name}" agregada exitosamente`));
     
   } catch (error) {
     console.error('❌ Error agregando materia prima personalizada:', error);
-    alert('❌ Error al agregar la materia prima. Revisa la consola para más detalles.');
+    alert(granularProgramT('material_add_error', '❌ Error al agregar la materia prima. Revisa la consola para más detalles.'));
   }
 }
 
@@ -941,7 +988,7 @@ function syncGranularProgramFromDOM() {
     if (!appId) return;
     const app = applications.find(a => a.id === appId);
     if (!app) return;
-    app.doseKgHa = parseFloat(input.value) || 0;
+    app.doseKgHa = granularProgramToSI(parseFloat(input.value) || 0, 'dose_mass_area');
   });
   const titleInputs = container.querySelectorAll('input.application-title[data-app-id]');
   titleInputs.forEach(input => {
@@ -949,6 +996,7 @@ function syncGranularProgramFromDOM() {
     if (!appId) return;
     const app = applications.find(a => a.id === appId);
     if (!app) return;
+    if (input.getAttribute('data-auto-title') === 'true') return;
     app.title = input.value || '';
   });
   const percentageInputs = container.querySelectorAll('input.material-input[data-app-id][data-material-index]');
@@ -1096,7 +1144,7 @@ function updateDose(appId, dose) {
     const app = applications.find(a => a.id === appId);
     if (!app) return;
     
-    app.doseKgHa = parseFloat(dose) || 0;
+    app.doseKgHa = granularProgramToSI(parseFloat(dose) || 0, 'dose_mass_area');
     calculateAppTotals(appId); // Esto ya llama a updateSummary()
     renderApplications();
   } catch (error) {
@@ -1108,7 +1156,7 @@ function updateDoseLive(appId, dose) {
   try {
     const app = applications.find(a => a.id === appId);
     if (!app) return;
-    app.doseKgHa = parseFloat(dose) || 0;
+    app.doseKgHa = granularProgramToSI(parseFloat(dose) || 0, 'dose_mass_area');
     calculateAppTotals(appId);
   } catch (error) {
     console.error('❌ Error actualizando dosis (live):', error);
@@ -1137,7 +1185,7 @@ function removeApp(appId) {
     const index = applications.findIndex(a => a.id === appId);
     if (index === -1) return;
     
-    if (confirm('¿Estás seguro de eliminar esta aplicación?')) {
+    if (confirm(granularProgramT('confirm_remove_application', '¿Estás seguro de eliminar esta aplicación?'))) {
       applications.splice(index, 1);
       renderApplications();
       updateSummary();
@@ -1193,7 +1241,9 @@ function toggleOxideElemental() {
   isElementalMode = !isElementalMode;
   const btn = document.getElementById('toggleOxideElementalBtn');
   if (btn) {
-    btn.textContent = isElementalMode ? '🔄 Ver en Óxido' : '🔄 Ver en Elemental';
+    btn.textContent = isElementalMode
+      ? granularProgramT('oxide', '🔄 Ver en Óxido')
+      : granularProgramT('elemental', '🔄 Ver en Elemental');
   }
   
   // Actualizar todos los valores visibles
@@ -1266,14 +1316,16 @@ function updateSummary(options = {}) {
 
     const btn = document.getElementById('toggleOxideElementalBtn');
     if (btn) {
-      btn.textContent = isElementalMode ? '🔄 Ver en Óxido' : '🔄 Ver en Elemental';
+      btn.textContent = isElementalMode
+        ? granularProgramT('oxide', '🔄 Ver en Óxido')
+        : granularProgramT('elemental', '🔄 Ver en Elemental');
     }
     
     // Calcular dosis total
     const totalDose = applications.reduce((sum, app) => sum + (parseFloat(app.doseKgHa) || 0), 0);
     const totalDoseElement = document.getElementById('totalDoseKgHa');
     if (totalDoseElement) {
-      totalDoseElement.textContent = formatNumberWithCommas(totalDose);
+      totalDoseElement.textContent = granularProgramResultFromSI(totalDose, 'dose_mass_area');
     }
     
     // Calcular totales de nutrientes REALES (Kg/Ha) de todas las aplicaciones
@@ -1329,7 +1381,7 @@ function updateSummary(options = {}) {
               default: /* N, micros no requieren conversión */ break;
             }
           }
-          reqOxide[n] = v;
+          reqOxide[n] = granularProgramToSI(v, 'dose_mass_area');
           hasLiveReq = true;
         }
       }
@@ -1440,11 +1492,13 @@ function updateSummary(options = {}) {
           }
         }
         
-        element.textContent = formatNumberWithCommas(displayValue);
-        if (reqEl) reqEl.textContent = formatNumberWithCommas(reqDisplay);
+        displayValue = granularProgramUI() ? granularProgramUI().fromSI(displayValue, 'dose_mass_area') : displayValue;
+        reqDisplay = granularProgramUI() ? granularProgramUI().fromSI(reqDisplay, 'dose_mass_area') : reqDisplay;
+        element.textContent = Number(displayValue).toFixed(2);
+        if (reqEl) reqEl.textContent = Number(reqDisplay).toFixed(2);
         if (diffEl) {
           var diffNum = (parseFloat(displayValue) || 0) - (parseFloat(reqDisplay) || 0);
-          diffEl.textContent = formatNumberWithCommas(diffNum);
+          diffEl.textContent = Number(diffNum).toFixed(2);
           diffEl.classList.remove('nutrient-diff--deficit', 'nutrient-diff--surplus', 'nutrient-diff--balanced');
           var diffItem = diffEl.closest('.nutrient-item');
           if (diffItem) {
@@ -2141,6 +2195,17 @@ document.addEventListener('visibilitychange', function() {
 });
 window.addEventListener('pagehide', function() {
   try { saveApplications({ force: true }); } catch (e) {}
+});
+
+window.addEventListener('np:prefs-changed', function() {
+  try {
+    if (document.getElementById('granularApplications')) {
+      renderApplications();
+      updateSummary({ _skipModeSync: true });
+    }
+  } catch (e) {
+    console.warn('No se pudo refrescar el programa granular:', e);
+  }
 });
 
 function resetGranularProgramRuntimeState() {

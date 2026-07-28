@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js?v=20260728b"></script>
+  <script src="assets/np-prefs.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260728b"></script>
+  <script src="assets/np-units-core.js?v=20260728b"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260728b"></script>
   <title>Distribución nutrimental por etapa (%)</title>
   <style>
     :root {
@@ -1024,7 +1030,7 @@
 
   /** kg/ha legible: pocos decimales y sin basura de float */
   function formatKgHa(v) {
-    var x = Number(v);
+    var x = window.NpFreeNutritionUI.fromSI(Number(v), 'dose_mass_area');
     if (!isFinite(x)) return '0';
     x = Math.round(x * 1e6) / 1e6;
     var a = Math.abs(x);
@@ -1047,15 +1053,15 @@
       var wrap = document.createElement('div');
       wrap.className = 'nut-wrap' + (n.optional ? ' optional' : '');
       var lab = document.createElement('label');
-      lab.textContent = n.label + ' (kg/ha)';
+      lab.appendChild(document.createTextNode(n.label + ' (' + window.NpFreeNutritionUI.unit('dose_mass_area') + ')'));
       var inp = document.createElement('input');
       inp.type = 'number';
       inp.step = 'any';
       inp.min = '0';
-      inp.value = n.total;
+      inp.value = window.NpFreeNutritionUI.input(n.total, 'dose_mass_area');
       inp.dataset.nutId = n.id;
       inp.addEventListener('input', function () {
-        n.total = parseFloat(inp.value) || 0;
+        n.total = window.NpFreeNutritionUI.toSI(parseFloat(inp.value) || 0, 'dose_mass_area');
         updateKgAndChart();
       });
       lab.appendChild(inp);
@@ -1120,14 +1126,14 @@
       sin.type = 'text';
       sin.className = 'stage-in';
       sin.setAttribute('list', 'stagePresets');
-      sin.value = st;
+      sin.value = window.NpFreeNutritionUI.stageLabel(st);
       sin.dataset.stageIndex = String(ri);
       sin.addEventListener('change', function () {
-        stages[ri] = sin.value.trim() || ('Etapa ' + (ri + 1));
+        stages[ri] = window.NpFreeNutritionUI.canonicalStage(sin.value.trim()) || ('Etapa ' + (ri + 1));
         updateKgAndChart();
       });
       sin.addEventListener('input', function () {
-        stages[ri] = sin.value;
+        stages[ri] = window.NpFreeNutritionUI.canonicalStage(sin.value);
         updateKgAndChart();
       });
       td0.appendChild(sin);
@@ -1220,7 +1226,7 @@
     trh.appendChild(h0);
     nutrients.forEach(function (n) {
       var th = document.createElement('th');
-      th.textContent = n.label + ' (kg/ha)';
+      th.textContent = n.label + ' (' + window.NpFreeNutritionUI.unit('dose_mass_area') + ')';
       trh.appendChild(th);
     });
     thead.appendChild(trh);
@@ -1228,7 +1234,7 @@
     stages.forEach(function (st, ri) {
       var tr = document.createElement('tr');
       var td0 = document.createElement('td');
-      td0.textContent = st;
+      td0.textContent = window.NpFreeNutritionUI.stageLabel(st);
       tr.appendChild(td0);
       nutrients.forEach(function (n) {
         var td = document.createElement('td');
@@ -1272,7 +1278,7 @@
     var canvas = document.getElementById('extChart');
     var emptyEl = document.getElementById('chartEmpty');
     var wrapEl = document.getElementById('chartWrap');
-    var labels = stages.slice();
+    var labels = stages.map(window.NpFreeNutritionUI.stageLabel);
     var filtered = chartFilteredNutrients();
 
     if (typeof Chart === 'undefined') return;
@@ -1300,7 +1306,7 @@
       var data = stages.map(function (_, ri) {
         var total = parseFloat(n.total) || 0;
         var p = (parseFloat(pct[n.id][ri]) || 0) / 100;
-        return round1(total * p * 100) / 100;
+        return window.NpFreeNutritionUI.fromSI(round1(total * p * 100) / 100, 'dose_mass_area');
       });
       return {
         label: n.label,
@@ -1330,7 +1336,7 @@
             callbacks: {
               label: function (ctx) {
                 var y = ctx.parsed && typeof ctx.parsed.y === 'number' ? ctx.parsed.y : ctx.raw;
-                return ctx.dataset.label + ': ' + formatKgHa(y) + ' kg/ha';
+                return ctx.dataset.label + ': ' + window.NpFreeNutritionUI.number(y, 4) + ' ' + window.NpFreeNutritionUI.unit('dose_mass_area');
               }
             }
           }
@@ -1342,10 +1348,10 @@
           },
           y: {
             beginAtZero: true,
-            title: { display: true, text: 'kg/ha extraídos' },
+            title: { display: true, text: window.NpFreeNutritionUI.unit('dose_mass_area') + ' ' + window.NpFreeNutritionUI.translate('extraídos') },
             ticks: {
               callback: function (value) {
-                return formatKgHa(value);
+                return window.NpFreeNutritionUI.number(value, 4);
               }
             }
           }
@@ -1461,6 +1467,7 @@
     setupPresetBar();
     await hydratePresets();
     wirePresetDirtyDetection();
+    window.NpFreeNutritionUI.init({ refresh: renderAll });
     finishBootReveal();
   }
 

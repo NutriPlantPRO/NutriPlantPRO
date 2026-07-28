@@ -29,6 +29,9 @@ module.exports = [
       assert.equal(hydro.unit('water_volume'), 'US gal');
       assert.equal(hydro.unit('mass'), 'lb');
       assert.equal(hydro.unit('concentration'), 'lb/1000 US gal');
+      assert.equal(hydro.unit('injection_rate'), 'US gal/1,000 US gal');
+      close(hydro.fromSI(10, 'injection_rate'), 10);
+      close(hydro.toSI(10, 'injection_rate'), 10);
     }
   },
   {
@@ -63,6 +66,7 @@ module.exports = [
       close(hydro.fromSI(5, 'mass'), 5);
       close(hydro.fromSI(2.5, 'concentration'), 2.5);
       assert.equal(hydro.unit('concentration'), 'g/L');
+      assert.equal(hydro.unit('injection_rate'), 'L/m3');
     }
   }
 ];

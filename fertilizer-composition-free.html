@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js?v=20260728b"></script>
+  <script src="assets/np-prefs.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260728b"></script>
+  <script src="assets/np-units-core.js?v=20260728b"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260728b"></script>
   <title>Composición de fertilizantes (%)</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
@@ -531,13 +537,13 @@
     function fmt(n, d) {
       const x = num(n);
       if (Math.abs(x) < 1e-8) return '—';
-      return x.toFixed(d != null ? d : 2);
+      return window.NpFreeNutritionUI.number(x, d != null ? d : 2);
     }
 
     function fmtOx(x) {
       const v = num(x);
-      if (v < 1e-8) return '0,00';
-      return v.toFixed(2).replace('.', ',');
+      if (v < 1e-8) return window.NpFreeNutritionUI.number(0, 2);
+      return window.NpFreeNutritionUI.number(v, 2);
     }
 
     function nutCard(title, elemPct, subLine, showElementalWord, isNutrient) {
@@ -792,6 +798,12 @@
       if (loaded && loaded.rows && loaded.rows.length) applyBlend(loaded);
       else addBlendRow('', '100');
       window.NpFreePersist.bind('fertilizer_composition', snapshotBlend, applyBlend);
+      window.NpFreeNutritionUI.init({
+        refresh: function () {
+          renderBlend();
+          recalcBlend();
+        }
+      });
     })();
   </script>
 </body>

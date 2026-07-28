@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js?v=20260728b"></script>
+  <script src="assets/np-prefs.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260728b"></script>
+  <script src="assets/np-units-core.js?v=20260728b"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260728b"></script>
   <title>Solubilidad e índice salino — NutriPlant PRO</title>
   <style>
     :root {
@@ -323,9 +329,9 @@
   </p>
 
   <div class="legend" aria-label="Leyenda de solubilidad">
-    <span class="leg-item"><span class="dot dot-hi" aria-hidden="true"></span> Alta (&gt; 500 g/L)</span>
-    <span class="leg-item"><span class="dot dot-mid" aria-hidden="true"></span> Media (100–500 g/L)</span>
-    <span class="leg-item"><span class="dot dot-lo" aria-hidden="true"></span> Baja (&lt; 100 g/L)</span>
+    <span class="leg-item"><span class="dot dot-hi" aria-hidden="true"></span> <span id="legendHi">Alta (&gt; 500 g/L)</span></span>
+    <span class="leg-item"><span class="dot dot-mid" aria-hidden="true"></span> <span id="legendMid">Media (100–500 g/L)</span></span>
+    <span class="leg-item"><span class="dot dot-lo" aria-hidden="true"></span> <span id="legendLo">Baja (&lt; 100 g/L)</span></span>
     <span class="leg-item muted" style="margin-left:auto;">Índice salino: barras proporcionadas al valor IS (referencia tabla).</span>
   </div>
 
@@ -340,7 +346,7 @@
         <tr>
           <th data-k="name" data-type="str">Fertilizante</th>
           <th data-k="formula" data-type="str">Fórmula</th>
-          <th data-k="sol" data-type="num">Solubilidad g/L<br><span style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">(aprox., 20–25 °C)</span></th>
+          <th data-k="sol" data-type="num">Solubilidad <span id="solUnit">g/L</span><br><span id="solTemp" style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">(aprox., 20–25 °C)</span></th>
           <th data-k="cat" data-type="num">Clase<br><span style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">solubilidad</span></th>
           <th data-k="is" data-type="num">IS<br><span style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">(NaNO₃=100)</span></th>
           <th style="cursor:default">IS visual</th>
@@ -460,10 +466,10 @@
       var tr = document.createElement('tr');
       var barW = r.is != null ? Math.round((r.is / maxIs) * 100) : 0;
       tr.innerHTML =
-        '<td><strong>' + escapeHtml(r.name) + '</strong>' + (r.note ? '<span class="row-note">' + escapeHtml(r.note) + '</span>' : '') + '</td>' +
+        '<td><strong>' + escapeHtml(window.NpFreeNutritionUI.translate(r.name)) + '</strong>' + (r.note ? '<span class="row-note">' + escapeHtml(window.NpFreeNutritionUI.translate(r.note)) + '</span>' : '') + '</td>' +
         '<td class="formula">' + escapeHtml(r.formula) + '</td>' +
         '<td class="sol-cell">' + formatRange(r.solLo, r.solHi) + '</td>' +
-        '<td><span class="sol-dot ' + cl.cls + '" aria-hidden="true"></span>' + escapeHtml(cl.label) + '</td>' +
+        '<td><span class="sol-dot ' + cl.cls + '" aria-hidden="true"></span>' + escapeHtml(window.NpFreeNutritionUI.translate(cl.label)) + '</td>' +
         '<td class="sol-cell">' + formatIS(r) + '</td>' +
         '<td>' +
           (r.is != null
@@ -485,8 +491,10 @@
   }
 
   function formatRange(lo, hi) {
-    if (hi >= 10) return '≈ ' + Math.round(lo) + ' – ' + Math.round(hi);
-    return '≈ ' + lo + ' – ' + hi;
+    var a = window.NpFreeNutritionUI.fromSI(lo, 'solubility');
+    var b = window.NpFreeNutritionUI.fromSI(hi, 'solubility');
+    return '≈ ' + window.NpFreeNutritionUI.number(a, b >= 10 ? 0 : 2) +
+      ' – ' + window.NpFreeNutritionUI.number(b, b >= 10 ? 0 : 2);
   }
 
   function formatIS(r) {
@@ -500,6 +508,7 @@
     return ROWS.filter(function (r) {
       return (
         r.name.toLowerCase().indexOf(q) !== -1 ||
+        window.NpFreeNutritionUI.translate(r.name).toLowerCase().indexOf(q) !== -1 ||
         r.formula.toLowerCase().indexOf(q) !== -1 ||
         (r.note && String(r.note).toLowerCase().indexOf(q) !== -1)
       );
@@ -538,6 +547,15 @@
     var q = document.getElementById('filterInput').value;
     var list = sortList(filterList(q), sortState.k, '', sortState.dir);
     tbodyFill(list);
+  }
+
+  function refreshTechnicalLabels() {
+    var u = window.NpFreeNutritionUI.unit('solubility');
+    var lo = window.NpFreeNutritionUI.number(window.NpFreeNutritionUI.fromSI(100, 'solubility'), 2);
+    var hi = window.NpFreeNutritionUI.number(window.NpFreeNutritionUI.fromSI(500, 'solubility'), 2);
+    document.getElementById('legendHi').textContent = window.NpFreeNutritionUI.translate('Alta') + ' (> ' + hi + ' ' + u + ')';
+    document.getElementById('legendMid').textContent = window.NpFreeNutritionUI.translate('Media') + ' (' + lo + '–' + hi + ' ' + u + ')';
+    document.getElementById('legendLo').textContent = window.NpFreeNutritionUI.translate('Baja') + ' (< ' + lo + ' ' + u + ')';
   }
 
   document.getElementById('filterInput').addEventListener('input', render);
@@ -589,6 +607,19 @@
   }
 
   window.NpFreePersist.bind('solubilidad_is', snapSol, applySol);
+  window.NpFreeNutritionUI.init({
+    refresh: function () {
+      document.getElementById('solUnit').textContent = window.NpFreeNutritionUI.unit('solubility');
+      document.getElementById('solTemp').textContent = window.NpFreeNutritionUI.prefs().unit_system === 'us_customary'
+        ? '(approx., 68–77 °F)' : '(aprox., 20–25 °C)';
+      refreshTechnicalLabels();
+      render();
+    }
+  });
+  document.getElementById('solUnit').textContent = window.NpFreeNutritionUI.unit('solubility');
+  document.getElementById('solTemp').textContent = window.NpFreeNutritionUI.prefs().unit_system === 'us_customary'
+    ? '(approx., 68–77 °F)' : '(aprox., 20–25 °C)';
+  refreshTechnicalLabels();
   render();
 })();
   </script>

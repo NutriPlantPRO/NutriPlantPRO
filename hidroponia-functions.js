@@ -13,6 +13,15 @@ const HYDRO_N_SPLIT = { NO3: 95, NH4: 5 };
 // Conversión óxido → elemental (para materiales de fertirriego usados en hidroponía)
 const HYDRO_OXIDE_TO_ELEMENTAL = { P2O5_TO_P: 2.291, K2O_TO_K: 1.204, CaO_TO_Ca: 1.399, MgO_TO_Mg: 1.658 };
 const HYDRO_STAGE_OPTIONS = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
+const HYDRO_STAGE_EN = {
+  Establecimiento: 'Establishment',
+  Vegetativo: 'Vegetative',
+  Prefloración: 'Pre-flowering',
+  Floración: 'Flowering',
+  Amarre: 'Fruit set',
+  Llenado: 'Filling',
+  Cosecha: 'Harvest'
+};
 
 /*
  * Carga no bloqueante para el dashboard legado (no requiere editar dashboard.html).
@@ -23,7 +32,7 @@ function hydroEnsurePresentationAssets() {
   const queue = [
     ['NpPrefs', 'assets/np-prefs.js'],
     ['NpUnits', 'assets/np-units-core.js'],
-    ['NpHydroUnits', 'assets/np-hydro-units.js']
+    ['NpHydroUnits', 'assets/np-hydro-units.js?v=20260728a']
   ];
   const loadNext = function () {
     const next = queue.shift();
@@ -50,6 +59,20 @@ function hydroPresentation() {
   return (typeof window !== 'undefined' && window.NpHydroUnits) || null;
 }
 
+function hydroT(es, en) {
+  let language = 'es';
+  try {
+    const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+    language = prefs && prefs.language ? prefs.language :
+      (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' ? window.NpI18n.getLanguage() : 'es');
+  } catch (e) {}
+  return language === 'en' ? en : es;
+}
+
+function hydroStageLabel(stageName) {
+  return hydroT(stageName, HYDRO_STAGE_EN[stageName] || stageName);
+}
+
 function hydroDisplayFromSI(value, kind, options) {
   const api = hydroPresentation();
   return api ? api.fromSI(value, kind, options) : Number(value);
@@ -62,6 +85,13 @@ function hydroInputToSI(value, kind, options) {
   return api ? api.toSI(n, kind, options) : n;
 }
 
+/** Redondeo solo visual; el estado y los cálculos conservan precisión SI completa. */
+function hydroDisplayInputValue(value, decimals = 4) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Number(n.toFixed(decimals));
+}
+
 function hydroDisplayUnit(kind, options) {
   const api = hydroPresentation();
   if (api) return api.unit(kind, options);
@@ -69,7 +99,7 @@ function hydroDisplayUnit(kind, options) {
 }
 
 function hydroUnitLabel(unit) {
-  return unit === 'm3' ? 'm³' : (unit === 'kg/m3' ? 'kg/m³' : unit);
+  return unit === 'm3' ? 'm³' : (unit === 'kg/m3' ? 'kg/m³' : (unit === 'L/m3' ? 'L/m³' : unit));
 }
 
 function hydroDisplayMassKg(kg) {
@@ -585,7 +615,7 @@ function renderHydroStageTable() {
       <tr data-stage-id="${stage.id}">
         <td>
           <select class="hydro-input hydro-stage-select" data-stage-id="${stage.id}" data-field="name">
-            ${HYDRO_STAGE_OPTIONS.map(opt => `<option ${opt === stage.name ? 'selected' : ''}>${opt}</option>`).join('')}
+            ${HYDRO_STAGE_OPTIONS.map(opt => `<option value="${opt}" ${opt === stage.name ? 'selected' : ''}>${hydroStageLabel(opt)}</option>`).join('')}
           </select>
         </td>
         <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
@@ -602,7 +632,7 @@ function renderHydroStageTable() {
       <table class="hydro-table hydro-table-colored">
         <thead>
           <tr>
-            <th>Etapa</th>
+            <th>${hydroT('Etapa', 'Stage')}</th>
             <th>CE (dS/m)</th>
             ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
           </tr>
@@ -619,7 +649,7 @@ function renderHydroStageTable() {
     stage.ppm = { ...stage.ppm, ...macroPpm };
     return `
       <tr data-stage-id="${stage.id}">
-        <td>${stage.name || ''}</td>
+        <td>${hydroStageLabel(stage.name || '')}</td>
         <td>${stage.ce ?? ''}</td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => {
           const useLive = hydroPpmTyping && hydroPpmTyping.stageId === stage.id && hydroPpmTyping.nutrient === n;
@@ -639,7 +669,7 @@ function renderHydroStageTable() {
       <table class="hydro-table hydro-table-colored">
         <thead>
           <tr>
-            <th>Etapa</th>
+            <th>${hydroT('Etapa', 'Stage')}</th>
             <th>CE (dS/m)</th>
             ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
             ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
@@ -669,7 +699,7 @@ function renderHydroStageTable() {
     });
     return `
       <tr>
-        <td>${stage.name || ''}</td>
+        <td>${hydroStageLabel(stage.name || '')}</td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
       </tr>
     `;
@@ -680,7 +710,7 @@ function renderHydroStageTable() {
       <table class="hydro-table hydro-table-colored">
         <thead>
           <tr>
-            <th>Etapa</th>
+            <th>${hydroT('Etapa', 'Stage')}</th>
             ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
           </tr>
         </thead>
@@ -937,7 +967,7 @@ function renderHydroTriangle() {
 
   if (!container) return;
   if (!stage) {
-    container.innerHTML = '<div class="hydro-muted">Selecciona una etapa para ver el diagrama.</div>';
+    container.innerHTML = `<div class="hydro-muted">${hydroT('Selecciona una etapa para ver el diagrama.', 'Select a stage to view the diagram.')}</div>`;
     if (info) info.textContent = '';
     return;
   }
@@ -962,7 +992,7 @@ function renderHydroTriangle() {
   });
 
   if (info) {
-    info.textContent = `Aniones: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}% | Cationes: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}% (N-NH₄⁺ fuera del triángulo).`;
+    info.textContent = `${hydroT('Aniones', 'Anions')}: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}% | ${hydroT('Cationes', 'Cations')}: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}%`;
   }
 }
 
@@ -971,7 +1001,7 @@ function renderHydroObjective() {
   const stage = hydroGetActiveStage();
   if (!grid) return;
   if (!stage) {
-    grid.innerHTML = '<div class="hydro-muted">No hay etapa seleccionada</div>';
+    grid.innerHTML = `<div class="hydro-muted">${hydroT('No hay etapa seleccionada', 'No stage selected')}</div>`;
     return;
   }
   grid.innerHTML = HYDRO_PPM_NUTRIENTS.map((n) => {
@@ -1004,7 +1034,7 @@ function renderHydroMissing() {
   const stage = hydroGetActiveStage();
   if (!grid) return;
   if (!stage) {
-    grid.innerHTML = '<div class="hydro-muted">No hay etapa seleccionada</div>';
+    grid.innerHTML = `<div class="hydro-muted">${hydroT('No hay etapa seleccionada', 'No stage selected')}</div>`;
     return;
   }
   grid.innerHTML = HYDRO_PPM_NUTRIENTS.map(n => {
@@ -1126,7 +1156,7 @@ function hydroBuildFertMeqContributionHtml(totals) {
     return '—';
   };
   const meqGrid = `
-    <div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;margin-top:4px;">Aporte total estimado (meq/L):</div>
+    <div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;margin-top:4px;">${hydroT('Aporte total estimado (meq/L):', 'Estimated total contribution (meq/L):')}</div>
     ${HYDRO_PPM_NUTRIENTS.map(n => {
       let extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : (n === 'Cl' ? ' hydro-grid-item-cl hydro-grid-item-cl-tail' : ''));
       return `<div class="hydro-grid-item${extraClass}"><span class="hydro-grid-label">${hydroLabelHtml(n)}</span><span class="hydro-grid-value">${meqDisplay(n)}</span></div>`;
@@ -1134,7 +1164,7 @@ function hydroBuildFertMeqContributionHtml(totals) {
   `;
   const pctTable = `
     <div class="hydro-fert-meq-pct-wrap">
-      <p class="hydro-muted hydro-fert-meq-pct-note">% sobre meq/L aportado (misma lógica que «Solución nutritiva por etapa»): aniones N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ = 100%; cationes K⁺ + Ca²⁺ + Mg²⁺ = 100%; N-NH₄⁺ sobre el total catiónico (K+Ca+Mg+NH₄).</p>
+      <p class="hydro-muted hydro-fert-meq-pct-note">${hydroT('% sobre meq/L aportado: aniones N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ = 100%; cationes K⁺ + Ca²⁺ + Mg²⁺ = 100%.', '% of contributed meq/L: anions N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ = 100%; cations K⁺ + Ca²⁺ + Mg²⁺ = 100%.')}</p>
       <div class="hydro-table-scroll hydro-table-colored">
         <table class="hydro-table hydro-table-colored hydro-table-compact">
           <thead><tr>
@@ -1249,13 +1279,13 @@ function renderHydroFertTable() {
   var scrollEl = wrap.querySelector && wrap.querySelector('.hydro-table-scroll');
   var savedFertScroll = (scrollEl && typeof scrollEl.scrollLeft === 'number') ? scrollEl.scrollLeft : 0;
   const materials = getAllHydroMaterials();
-  const optNew = '<option value="__hydro_new__">➕ Agregar nuevo…</option>';
+  const optNew = `<option value="__hydro_new__">➕ ${hydroT('Agregar nuevo…', 'Add new…')}</option>`;
   const options = (selectedId) =>
     optNew + materials.map(m =>
       `<option value="${(m.id || '').replace(/"/g, '&quot;')}" ${m.id === selectedId ? 'selected' : ''}>${(m.name || m.id || '').replace(/</g, '&lt;')}</option>`
     ).join('');
   const tankOptions = (sel) => HYDRO_TANQUES.map(t =>
-    `<option value="${t}" ${t === (sel || 'A') ? 'selected' : ''}>Tanque ${t}</option>`
+    `<option value="${t}" ${t === (sel || 'A') ? 'selected' : ''}>${hydroT('Tanque', 'Tank')} ${t}</option>`
   ).join('');
 
   const rows = hydroState.fertilizers.map(f => {
@@ -1273,7 +1303,7 @@ function renderHydroFertTable() {
       }).join('');
       return `
     <tr data-fert-id="${f.id}" data-legacy="1">
-      <td><input class="hydro-input" data-fert-id="${f.id}" data-fert-field="name" value="${(f.name || '').replace(/"/g, '&quot;')}" placeholder="Nombre"></td>
+      <td><input class="hydro-input" data-fert-id="${f.id}" data-fert-field="name" value="${(f.name || '').replace(/"/g, '&quot;')}" placeholder="${hydroT('Nombre', 'Name')}"></td>
       <td class="hydro-dose-readonly">${(parseFloat(f.dose || 0) > 0 ? parseFloat(f.dose).toFixed(1) : '—')}</td>
       ${contribCells}
       <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank">${tankOptions(tank)}</select></td>
@@ -1297,7 +1327,7 @@ function renderHydroFertTable() {
     const liquidDisplay = hydroDisplayLiquidL(liquidInputValue);
     const totalCell = isLiquid
       ? `<div style="display:flex;align-items:center;gap:6px;">
-          <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.01" min="0" value="${liquidDisplay.value > 0 ? liquidDisplay.value.toFixed(2) : ''}" placeholder="${liquidDisplay.unit} total" title="Volumen total del producto para el volumen de agua">
+          <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.01" min="0" value="${liquidDisplay.value > 0 ? liquidDisplay.value.toFixed(2) : ''}" placeholder="${liquidDisplay.unit} ${hydroT('total', 'total')}" title="${hydroT('Volumen total del producto para el volumen de agua', 'Total product volume for the configured water volume')}">
           <span class="hydro-muted" style="white-space:nowrap;">${liquidDisplay.unit}</span>
         </div>`
       : `${totalDisplay.value > 0 ? `${totalDisplay.value.toFixed(2)} ${totalDisplay.unit}` : '—'}`;
@@ -1305,13 +1335,13 @@ function renderHydroFertTable() {
     <tr data-fert-id="${f.id}">
       <td>
         <select class="hydro-input hydro-fert-select" data-fert-id="${f.id}" data-fert-field="materialId">
-          <option value="">Selecciona…</option>
+          <option value="">${hydroT('Selecciona…', 'Select…')}</option>
           ${options(f.materialId)}
         </select>
       </td>
       <td class="hydro-dose-readonly">${(dose > 0 ? dose.toFixed(1) : '—')}</td>
       ${contribCells}
-      <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank" title="Tanque">${tankOptions(tank)}</select></td>
+      <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank" title="${hydroT('Tanque', 'Tank')}">${tankOptions(tank)}</select></td>
       <td class="hydro-kg-readonly">${totalCell}</td>
       <td><button class="btn btn-secondary btn-sm hydro-remove-fert" data-fert-id="${f.id}">✕</button></td>
     </tr>`;
@@ -1319,17 +1349,17 @@ function renderHydroFertTable() {
 
   const headerCells = HYDRO_PPM_NUTRIENTS.map(n => `<th class="hydro-contrib-th ${thClass(n)}">${hydroLabelHtml(n)}</th>`).join('');
   wrap.innerHTML = `
-    <p class="hydro-legend-elemental" style="margin:0 0 8px 0;font-size:0.9rem;color:#64748b;">Concentración elemental (%). Puedes trabajar por ppm de un elemento (flujo tradicional) o, en líquidos, escribir el total de producto (L) para calcular ppm aportadas.</p>
+    <p class="hydro-legend-elemental" style="margin:0 0 8px 0;font-size:0.9rem;color:#64748b;">${hydroT('Concentración elemental (%). Puedes trabajar por ppm de un elemento (flujo tradicional) o, en líquidos, escribir el total de producto (L) para calcular ppm aportadas.', 'Elemental concentration (%). Work from an element target in ppm, or enter the total liquid product volume to calculate contributed ppm.')}</p>
     <div class="hydro-table-scroll hydro-table-colored">
       <table class="hydro-table hydro-table-colored hydro-fert-contrib-table">
         <thead>
           <tr>
-            <th>Fertilizante</th>
-            <th>Dosis (ppm producto)</th>
+            <th>${hydroT('Fertilizante', 'Fertilizer')}</th>
+            <th>${hydroT('Dosis (ppm producto)', 'Dose (product ppm)')}</th>
             ${headerCells}
-            <th>Tanque</th>
-            <th>Total producto</th>
-            <th>Acción</th>
+            <th>${hydroT('Tanque', 'Tank')}</th>
+            <th>${hydroT('Total producto', 'Total product')}</th>
+            <th>${hydroT('Acción', 'Action')}</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -1346,7 +1376,7 @@ function renderHydroFertTotals() {
   const stage = hydroGetActiveStage();
   if (!grid) return;
   const totals = hydroGetFertTotalsPpm();
-  const titleHtml = stage ? '<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;">Aporte total estimado (ppm):</div>' : '';
+  const titleHtml = stage ? `<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;">${hydroT('Aporte total estimado (ppm):', 'Estimated total contribution (ppm):')}</div>` : '';
   grid.innerHTML = titleHtml + HYDRO_PPM_NUTRIENTS.map(n => {
     let extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : (n === 'Cl' ? ' hydro-grid-item-cl hydro-grid-item-cl-tail' : ''));
     if (stage && n !== 'N_NH4') {
@@ -1389,7 +1419,7 @@ function renderHydroFertTotals() {
   `;
     }).join('');
     remainingEl.innerHTML =
-      '<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:4px;font-size:0.9rem;">📉 Pendiente por cubrir (ppm): Faltante − Aporte</div>' + remainingHtml +
+      `<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:4px;font-size:0.9rem;">📉 ${hydroT('Pendiente por cubrir (ppm): Faltante − Aporte', 'Remaining to cover (ppm): Requirement − Contribution')}</div>` + remainingHtml +
       hydroBuildFertContributionRatioLegendHtml(totals, hydroState.water || {});
   } else if (remainingEl) {
     remainingEl.innerHTML = '';
@@ -1403,16 +1433,23 @@ function renderHydroFertTotals() {
   const validationEl = document.getElementById('hydroValidationNote');
   if (validationEl) {
     const vol = parseFloat(hydroState.volumeWaterM3) || 100;
+    const waterShown = hydroDisplayFromSI(vol, 'water_volume');
+    const waterUnit = hydroUnitLabel(hydroDisplayUnit('water_volume'));
+    const massUnit = hydroDisplayUnit('mass');
+    const liquidUnit = hydroDisplayUnit('liquid_volume');
+    const usUnits = hydroPresentation() && hydroPresentation().getPrefs().unit_system === 'us_customary';
+    const productFormula = usUnits
+      ? `• <strong>${hydroT('Producto sólido', 'Solid product')} (${massUnit})</strong> = ${hydroT('dosis (ppm producto) × volumen de agua (US gal) × 0.0000083454', 'dose (product ppm) × water volume (US gal) × 0.0000083454')}.<br>
+        • <strong>${hydroT('Producto líquido', 'Liquid product')} (${liquidUnit})</strong> = ${hydroT('masa equivalente ÷ densidad en lb/US gal', 'equivalent mass ÷ density in lb/US gal')}.<br>`
+      : `• <strong>${hydroT('Producto sólido (kg)', 'Solid product (kg)')}</strong> = ${hydroT('dosis (ppm producto) × volumen de agua (m³) ÷ 1000', 'dose (product ppm) × water volume (m³) ÷ 1000')}.<br>
+        • <strong>${hydroT('Producto líquido (L)', 'Liquid product (L)')}</strong> = ${hydroT('kg equivalente ÷ densidad (kg/L)', 'equivalent kg ÷ density (kg/L)')}.<br>`;
     validationEl.innerHTML = `
       <div class="hydro-validation-box" style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:0.8rem;color:#166534;line-height:1.5;">
-        <strong>✓ Validación del cálculo (solución nutritiva)</strong><br>
-        Todas las ppm son concentraciones en la <strong>solución final</strong> (mg/L en el agua de riego).<br>
-        • <strong>Aporte total (ppm)</strong> = suma por nutriente de: dosis (ppm producto) × concentración elemental (%) ÷ 100.<br>
-        • <strong>Producto sólido (kg)</strong> = dosis (ppm producto) × volumen de agua (m³) ÷ 1000.<br>
-        • <strong>Producto líquido (L)</strong> = kg equivalente ÷ densidad (kg/L).<br>
-        Debajo del aporte en ppm verás el <strong>aporte en meq/L</strong> y la tabla <strong>% meq</strong> (aniones sin Cl; cationes K+Ca+Mg sin NH₄), igual que en Solución nutritiva por etapa.<br>
-        La leyenda bajo «Pendiente por cubrir» expresa <strong>% sobre meq/L</strong> (desde las ppm aportadas: N-NO₃⁻/N-NH₄⁺ a 14 mg/meq, Cl⁻ a 35,45 mg/meq), alineado con la tabla meq/L de etapas.<br>
-        Para <strong>${vol} m³</strong> de agua, los totales mostrados por tanque (total y por recarga) producen exactamente las ppm del «Aporte total estimado» en toda la solución.
+        <strong>✓ ${hydroT('Validación del cálculo (solución nutritiva)', 'Calculation validation (nutrient solution)')}</strong><br>
+        ${hydroT('Todas las ppm son concentraciones en la', 'All ppm values are concentrations in the')} <strong>${hydroT('solución final', 'final solution')}</strong>.<br>
+        • <strong>${hydroT('Aporte total (ppm)', 'Total contribution (ppm)')}</strong> = ${hydroT('suma por nutriente de: dosis (ppm producto) × concentración elemental (%) ÷ 100', 'sum by nutrient of: dose (product ppm) × elemental concentration (%) ÷ 100')}.<br>
+        ${productFormula}
+        ${hydroT('Para', 'For')} <strong>${waterShown.toFixed(2)} ${waterUnit}</strong> ${hydroT('de agua, los totales mostrados por tanque producen exactamente las ppm del aporte total estimado.', 'of water, the totals shown by tank produce exactly the ppm in the estimated total contribution.')}
       </div>`;
   }
 }
@@ -1427,6 +1464,9 @@ function renderHydroVolumeCard() {
   const vDisplay = hydroDisplayFromSI(v, 'water_volume');
   const vUnit = hydroUnitLabel(hydroDisplayUnit('water_volume'));
   const tDisplay = hydroDisplayLiquidL(t);
+  const vInputDisplay = hydroDisplayInputValue(vDisplay, 4);
+  const tInputDisplay = hydroDisplayInputValue(tDisplay.value, 4);
+  const rateUnit = hydroUnitLabel(hydroDisplayUnit('injection_rate'));
   const byTank = {};
   HYDRO_TANQUES.forEach(tq => { byTank[tq] = { totalKg: 0, totalL: 0, items: [] }; });
   hydroState.fertilizers.forEach(f => {
@@ -1446,8 +1486,8 @@ function renderHydroVolumeCard() {
   const concentradoDisplay = hydroDisplayLiquidL(concentradoL);
   const recargas = t > 0 ? Math.ceil(concentradoL / t) : 0;
   const recargasText = recargas <= 1
-    ? '1 recarga (tu tanque alcanza).'
-    : `${recargas} recargas de tanque necesarias.`;
+    ? hydroT('1 recarga (tu tanque alcanza).', '1 tank fill (your tank is sufficient).')
+    : `${recargas} ${hydroT('recargas de tanque necesarias.', 'tank fills required.')}`;
 
   const tankBlocks = HYDRO_TANQUES.map(tq => {
     const data = byTank[tq];
@@ -1462,7 +1502,7 @@ function renderHydroVolumeCard() {
       const perRecParts = [];
       if (data.totalKg > 0) perRecParts.push(`${(massTotal.value / recargas).toFixed(2)} ${massTotal.unit}`);
       if (data.totalL > 0) perRecParts.push(`${(liquidTotal.value / recargas).toFixed(2)} ${liquidTotal.unit}`);
-      perRecargaLine = ` <span class="hydro-muted" style="font-size:0.9rem;">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`;
+      perRecargaLine = ` <span class="hydro-muted" style="font-size:0.9rem;">(${perRecParts.join(' + ')} ${hydroT(`por recarga si son ${recargas} recargas`, `per fill for ${recargas} fills`)})</span>`;
     }
     const itemsHtml = data.items.map(i => {
       const shown = i.unit === 'L' ? hydroDisplayLiquidL(i.value) : hydroDisplayMassKg(i.value);
@@ -1473,13 +1513,13 @@ function renderHydroVolumeCard() {
     }).join('');
     return `
       <div class="hydro-tank-block" data-tank="${tq}">
-        <strong class="hydro-tank-block-title">${hydroTankBlockIconHtml()}<span class="hydro-tank-block-title-text">Tanque ${tq}: ${totalParts.join(' + ')} total${perRecargaLine}</span></strong>
+        <strong class="hydro-tank-block-title">${hydroTankBlockIconHtml()}<span class="hydro-tank-block-title-text">${hydroT('Tanque', 'Tank')} ${tq}: ${totalParts.join(' + ')} ${hydroT('total', 'total')}${perRecargaLine}</span></strong>
         <div class="hydro-tank-block-items">${itemsHtml}</div>
       </div>
     `;
   }).filter(Boolean).join('');
 
-  const porTanqueLegend = `<p class="hydro-muted" style="margin:0 0 6px 0;font-size:0.85rem;">Las cantidades son el <strong>total</strong> para todo el volumen de agua indicado (sólidos en ${hydroDisplayUnit('mass')} y líquidos en ${hydroDisplayUnit('liquid_volume')}). Si necesitas varias recargas, en cada llenada usa la cantidad "por recarga".</p>`;
+  const porTanqueLegend = `<p class="hydro-muted" style="margin:0 0 6px 0;font-size:0.85rem;">${hydroT(`Las cantidades son el total para todo el volumen de agua indicado (sólidos en ${hydroDisplayUnit('mass')} y líquidos en ${hydroDisplayUnit('liquid_volume')}). Si necesitas varias recargas, usa la cantidad por recarga.`, `Amounts are totals for the full water volume (solids in ${hydroDisplayUnit('mass')} and liquids in ${hydroDisplayUnit('liquid_volume')}). For multiple fills, use the per-fill amount.`)}</p>`;
 
   // Relación de inyección: 1:(1000/tasa). Ej: tasa 10 → 1:100; tasa 15 → 1:66.7
   const ratioVal = r > 0 ? 1000 / r : NaN;
@@ -1490,26 +1530,25 @@ function renderHydroVolumeCard() {
     <div class="hydro-volume-inputs">
       <div class="hydro-volume-intro">
         <img src="assets/NutriPlant_PRO_blue.png" alt="" class="hydro-volume-watermark" aria-hidden="true">
-        <h4 style="margin:0 0 10px 0;font-size:1rem;">📦 Cálculo por volumen de agua</h4>
-        <p class="hydro-muted" style="margin:0 0 10px 0;font-size:0.9rem;">Volumen de agua a fertirrigar, capacidad del tanque y tasa de inyección. Con esto se calculan los totales por fertilizante (kg en sólidos y L en líquidos), el volumen de concentrado y las recargas de tanque.</p>
+        <h4 style="margin:0 0 10px 0;font-size:1rem;">📦 ${hydroT('Cálculo por volumen de agua', 'Calculation by water volume')}</h4>
+        <p class="hydro-muted" style="margin:0 0 10px 0;font-size:0.9rem;">${hydroT('Volumen de agua a fertirrigar, capacidad del tanque y tasa de inyección. Con esto se calculan los totales por fertilizante, el volumen de concentrado y las recargas de tanque.', 'Water volume to fertigate, tank capacity, and injection rate. These values calculate fertilizer totals, concentrate volume, and tank fills.')}</p>
       </div>
       <div class="hydro-volume-row">
-        <label>Volumen de agua (${vUnit}):</label>
-        <input type="number" id="hydroVolumeWaterM3" class="hydro-input" min="0.1" step="1" value="${vDisplay}" title="${vUnit} de agua a inyectar">
-        <label>Volumen del tanque (${tDisplay.unit}):</label>
-        <input type="number" id="hydroTankVolumeL" class="hydro-input" min="1" step="1" value="${tDisplay.value}" title="${tDisplay.unit} de solución concentrada">
-        <!-- L/m³ se conserva: es una tasa técnica, no un volumen simple inequívoco. -->
-        <label>Tasa de inyección (L/m³):</label>
-        <input type="number" id="hydroInjectionRate" class="hydro-input" min="0.1" step="0.5" value="${r}" title="L de concentrado por m³ de agua">
+        <label>${hydroT('Volumen de agua', 'Water volume')} (${vUnit}):</label>
+        <input type="number" id="hydroVolumeWaterM3" class="hydro-input" min="0.1" step="1" value="${vInputDisplay}" title="${hydroT('Volumen de agua a inyectar', 'Water volume to inject')} (${vUnit})">
+        <label>${hydroT('Volumen del tanque', 'Tank volume')} (${tDisplay.unit}):</label>
+        <input type="number" id="hydroTankVolumeL" class="hydro-input" min="1" step="1" value="${tInputDisplay}" title="${hydroT('Volumen de solución concentrada', 'Concentrated solution volume')} (${tDisplay.unit})">
+        <label>${hydroT('Tasa de inyección', 'Injection rate')} (${rateUnit}):</label>
+        <input type="number" id="hydroInjectionRate" class="hydro-input" min="0.1" step="0.5" value="${r}" title="${hydroT('Concentrado por volumen de agua', 'Concentrate per water volume')} (${rateUnit})">
       </div>
       <div class="hydro-volume-row" style="margin-top:6px;">
-        <label>Relación de inyección:</label>
-        <span id="hydroInjectionRatio" style="display:inline-block;min-width:4em;font-weight:500;" title="1:(1000 ÷ tasa)">${ratioDisplay}</span>
+        <label>${hydroT('Relación de inyección', 'Injection ratio')}:</label>
+        <span id="hydroInjectionRatio" style="display:inline-block;min-width:4em;font-weight:500;" title="${hydroT('1:(1000 ÷ tasa)', '1:(1000 ÷ rate)')}">${ratioDisplay}</span>
       </div>
       <div class="hydro-volume-result" style="margin-top:10px;padding:8px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;">
-        <strong>Volumen de concentrado necesario:</strong> ${concentradoDisplay.value.toFixed(1)} ${concentradoDisplay.unit} (${vDisplay} ${vUnit} × ${r} L/m³). <span class="hydro-muted">Con tu tanque de ${tDisplay.value} ${tDisplay.unit}:</span> ${recargasText}
+        <strong>${hydroT('Volumen de concentrado necesario', 'Required concentrate volume')}:</strong> ${concentradoDisplay.value.toFixed(2)} ${concentradoDisplay.unit} (${vInputDisplay} ${vUnit} × ${hydroDisplayInputValue(r, 4)} ${rateUnit}${rateUnit === 'US gal/1,000 US gal' ? ' ÷ 1,000' : ''}). <span class="hydro-muted">${hydroT('Con tu tanque de', 'With your tank of')} ${tDisplay.value.toFixed(2)} ${tDisplay.unit}:</span> ${recargasText}
       </div>
-      ${tankBlocks ? `<div class="hydro-tank-summary" style="margin-top:12px;">${porTanqueLegend}<strong>Por tanque (A, B, C):</strong><div class="hydro-tank-blocks">${tankBlocks}</div></div>` : ''}
+      ${tankBlocks ? `<div class="hydro-tank-summary" style="margin-top:12px;">${porTanqueLegend}<strong>${hydroT('Por tanque (A, B, C)', 'By tank (A, B, C)')}:</strong><div class="hydro-tank-blocks">${tankBlocks}</div></div>` : ''}
     </div>
   `;
 }
@@ -1527,7 +1566,7 @@ function renderHydroNitrogenSummary() {
   const nTotal = nNo3 + nNh4;
   const pctNo3 = nTotal > 0 ? (nNo3 / nTotal) * 100 : 0;
   const pctNh4 = nTotal > 0 ? (nNh4 / nTotal) * 100 : 0;
-  const stageName = stage.name || 'Etapa';
+  const stageName = hydroStageLabel(stage.name || hydroT('Etapa', 'Stage'));
   infoEl.textContent = `${stageName} · Suma de N (meq/L): ${nTotal.toFixed(2)} · % Nitrato: ${pctNo3.toFixed(1)}% · % Amonio: ${pctNh4.toFixed(1)}%.`;
 }
 
@@ -1543,13 +1582,45 @@ function renderHydroAll() {
   renderHydroFertTotals();
 }
 
+function hydroApplyStaticTranslations() {
+  const container = document.querySelector('.hydroponia-container');
+  if (!container) return;
+  const setText = (selector, text) => {
+    const el = container.querySelector(selector);
+    if (el) el.textContent = text;
+  };
+  setText('[data-tab="hidro-solucion"] .tab-text', hydroT('Solución por etapa', 'Solution by stage'));
+  setText('[data-tab="hidro-calculo"] .tab-text', hydroT('Cálculo de fertilizantes', 'Fertilizer calculation'));
+  setText('#hidro-solucion .hydro-card:first-child h3', '🧪 ' + hydroT('Solución nutritiva por etapa', 'Nutrient solution by stage'));
+  const ternaryHelp = container.querySelector('.hydro-card-ternary-wrap .hydro-card-header .hydro-muted');
+  if (ternaryHelp) {
+    ternaryHelp.innerHTML = `<strong>${hydroT('Rangos por elemento (%).', 'Ranges by element (%).')}</strong> ${hydroT('Aniones', 'Anions')}: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70. ${hydroT('Cationes', 'Cations')}: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40. ${hydroT('Fuera de estos rangos puede haber antagonismos y precipitados.', 'Outside these ranges, antagonisms and precipitates may occur.')}`;
+  }
+  setText('#hidro-calculo .hydro-card:nth-child(1) h3', '🎯 ' + hydroT('Objetivo de solución (ppm)', 'Solution target (ppm)'));
+  setText('#hidro-calculo .hydro-card:nth-child(1) .hydro-muted', hydroT('Se toma de la etapa seleccionada en la pestaña anterior.', 'Uses the stage selected in the previous tab.'));
+  setText('#hidro-calculo .hydro-card:nth-child(2) h3', '💧 ' + hydroT('Análisis de agua (ppm)', 'Water analysis (ppm)'));
+  setText('#hidro-calculo .hydro-card:nth-child(2) .hydro-muted', hydroT('Ingresa los aportes del agua para calcular el faltante.', 'Enter water contributions to calculate the remaining requirement.'));
+  setText('#hidro-calculo .hydro-card:nth-child(3) h3', '📉 ' + hydroT('Requerimiento total (ppm)', 'Total requirement (ppm)'));
+  setText('#hidro-calculo .hydro-card:nth-child(4) h3', '🧮 ' + hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)'));
+  setText('#hydroAddFertBtn', '➕ ' + hydroT('Agregar fertilizante', 'Add fertilizer'));
+  setText('#hydroManageCatalogBtn', hydroT('Gestionar catálogo de fertilizantes', 'Manage fertilizer catalog'));
+  const manage = container.querySelector('#hydroManageCatalogBtn');
+  if (manage) manage.title = hydroT('Ver, editar o eliminar fertilizantes personalizados', 'View, edit, or delete custom fertilizers');
+}
+
+function rerenderHydroForPreferences() {
+  // hydroState siempre permanece en SI; estas funciones solo recalculan la presentación.
+  hydroApplyStaticTranslations();
+  renderHydroAll();
+}
+
 // ---------- Modal: fertilizante soluble (concentración elemental) ----------
 function renderHydroCustomMaterialsList() {
   const container = document.getElementById('hydroCustomMaterialsList');
   if (!container) return;
   const list = Array.isArray(hydroCustomMaterialsUser) ? hydroCustomMaterialsUser : [];
   if (list.length === 0) {
-    container.innerHTML = '<div style="color:#6b7280;">Sin fertilizantes personalizados.</div>';
+    container.innerHTML = `<div style="color:#6b7280;">${hydroT('Sin fertilizantes personalizados.', 'No custom fertilizers.')}</div>`;
     return;
   }
   container.innerHTML = list.map(mat => {
@@ -1558,8 +1629,8 @@ function renderHydroCustomMaterialsList() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
         <span>${(mat.name || mat.id || '').replace(/</g, '&lt;')}</span>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditHydroCustomMaterial('${key.replace(/'/g, "\\'")}')">Editar</button>
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeHydroCustomMaterial('${key.replace(/'/g, "\\'")}')">Eliminar</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditHydroCustomMaterial('${key.replace(/'/g, "\\'")}')">${hydroT('Editar', 'Edit')}</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeHydroCustomMaterial('${key.replace(/'/g, "\\'")}')">${hydroT('Eliminar', 'Delete')}</button>
         </div>
       </div>
     `;
@@ -1631,20 +1702,20 @@ function openHydroPreloadedCatalogModal() {
   overlay.innerHTML = `
     <div class="material-modal" style="max-width:95%;width:900px;max-height:85vh;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
       <div class="modal-header" style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="margin:0;font-size:1.1rem;color:#1e293b;">📋 Fertilizantes disponibles (concentración elemental %)</h3>
+        <h3 style="margin:0;font-size:1.1rem;color:#1e293b;">📋 ${hydroT('Fertilizantes disponibles (concentración elemental %)', 'Available fertilizers (elemental concentration %)')}</h3>
         <button class="btn btn-secondary btn-sm" type="button" data-close-preloaded>✕</button>
       </div>
       <div style="padding:14px 18px;overflow:auto;flex:1;">
-        <p style="margin:0 0 12px 0;font-size:0.9rem;color:#64748b;">Consulta de concentraciones de los fertilizantes precargados. Valores en % del elemento.</p>
+        <p style="margin:0 0 12px 0;font-size:0.9rem;color:#64748b;">${hydroT('Consulta de concentraciones de los fertilizantes precargados. Valores en % del elemento.', 'Reference concentrations for preloaded fertilizers. Values are elemental percentages.')}</p>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
             <thead>
               <tr style="background:#f1f5f9;">
-                <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">Nombre</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">${hydroT('Nombre', 'Name')}</th>
                 ${HYDRO_PPM_NUTRIENTS.map(n => `<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${hydroLabelHtml(n)} <span class="notranslate" translate="no">%</span></th>`).join('')}
               </tr>
             </thead>
-            <tbody>${rows || '<tr><td colspan="' + (1 + HYDRO_PPM_NUTRIENTS.length) + '" style="padding:12px;color:#64748b;">Sin fertilizantes precargados.</td></tr>'}</tbody>
+            <tbody>${rows || '<tr><td colspan="' + (1 + HYDRO_PPM_NUTRIENTS.length) + '" style="padding:12px;color:#64748b;">' + hydroT('Sin fertilizantes precargados.', 'No preloaded fertilizers.') + '</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -1688,31 +1759,31 @@ function openHydroNewMaterialModal() {
   overlay.innerHTML = `
     <div class="material-modal">
       <div class="modal-header">
-        <h3 style="margin:0;display:flex;align-items:center;gap:8px;">➕ Nueva materia prima (hidroponía)</h3>
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px;">➕ ${hydroT('Nueva materia prima (hidroponía)', 'New raw material (hydroponics)')}</h3>
         <button class="btn btn-secondary btn-sm" onclick="this.closest('.hydro-material-modal-overlay').remove()">✕</button>
       </div>
       <div class="material-modal-body">
-        <p class="hydro-legend-elemental" style="margin:0 0 10px 0;font-size:0.9rem;color:#64748b;">Concentración elemental (%). Todos los valores en % del elemento.</p>
+        <p class="hydro-legend-elemental" style="margin:0 0 10px 0;font-size:0.9rem;color:#64748b;">${hydroT('Concentración elemental (%). Todos los valores en % del elemento.', 'Elemental concentration (%). All values are elemental percentages.')}</p>
         <div class="form-group">
-          <label>Nombre del fertilizante:</label>
+          <label>${hydroT('Nombre del fertilizante', 'Fertilizer name')}:</label>
           <input type="text" id="hydroCustom_name" placeholder="Ej: MKP">
         </div>
         <div class="form-group">
-          <label>Concentración de nutrientes (% elemental):</label>
+          <label>${hydroT('Concentración de nutrientes (% elemental)', 'Nutrient concentration (% elemental)')}:</label>
           <p class="hydro-legend-elemental" style="margin:4px 0 8px 0;font-size:0.85rem;color:#64748b;">Ej: MKP 0-22.67-28.22 (P y K en elemental, no como P₂O₅ ni K₂O).</p>
           <div class="nutrient-inputs-grid">${nutrientInputs}</div>
         </div>
         <div class="form-group">
-          <label>Fertilizantes solubles personalizados (hidroponía):</label>
+          <label>${hydroT('Fertilizantes solubles personalizados (hidroponía)', 'Custom soluble fertilizers (hydroponics)')}:</label>
           <div id="hydroCustomMaterialsList" style="margin-top:6px;"></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn btn-info btn-sm" onclick="openHydroPreloadedCatalogModal()" title="Consultar concentraciones elementales de fertilizantes precargados">📋 Ver fertilizantes disponibles</button>
-            <button class="btn btn-secondary btn-sm" onclick="clearHydroCustomMaterials()">🧹 Limpiar catálogo</button>
+            <button class="btn btn-info btn-sm" onclick="openHydroPreloadedCatalogModal()" title="${hydroT('Consultar concentraciones elementales de fertilizantes precargados', 'View elemental concentrations of preloaded fertilizers')}">📋 ${hydroT('Ver fertilizantes disponibles', 'View available fertilizers')}</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearHydroCustomMaterials()">🧹 ${hydroT('Limpiar catálogo', 'Clear catalog')}</button>
           </div>
         </div>
         <div class="material-modal-actions">
-          <button class="btn btn-secondary" onclick="this.closest('.hydro-material-modal-overlay').remove()">Cancelar</button>
-          <button class="btn btn-primary" id="hydroCustom_saveBtn">Agregar Materia Prima</button>
+          <button class="btn btn-secondary" onclick="this.closest('.hydro-material-modal-overlay').remove()">${hydroT('Cancelar', 'Cancel')}</button>
+          <button class="btn btn-primary" id="hydroCustom_saveBtn">${hydroT('Agregar Materia Prima', 'Add raw material')}</button>
         </div>
       </div>
     </div>
@@ -2197,6 +2268,7 @@ function initHydroponiaUI() {
   hydroLoadCustomMaterials();
   initHydroponiaTabs();
   hydroRestoreLastTab();
+  hydroApplyStaticTranslations();
   renderHydroAll();
   bindHydroEvents(container);
 }
@@ -2212,13 +2284,15 @@ window.hydroBuildFertMeqContributionHtml = hydroBuildFertMeqContributionHtml;
 window.hydroGetFertTotalsPpm = hydroGetFertTotalsPpm;
 window.hydroFertTotalsPpmToMeq = hydroFertTotalsPpmToMeq;
 window.hydroComputePctMeqFromMeq = hydroComputePctMeqFromMeq;
+window.hydroT = hydroT;
+window.rerenderHydroForPreferences = rerenderHydroForPreferences;
 
 if (typeof window !== 'undefined' && !window.__npHydroPrefsBound) {
   window.__npHydroPrefsBound = true;
   window.addEventListener('np:prefs-changed', function () {
     // El estado sigue en SI: solo se vuelve a presentar, sin convertirlo otra vez.
     try {
-      if (document.querySelector('.hydroponia-container')) renderHydroAll();
+      if (document.querySelector('.hydroponia-container')) rerenderHydroForPreferences();
     } catch (e) { /* La vista puede estar cerrada. */ }
   });
 }

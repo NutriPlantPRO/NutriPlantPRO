@@ -5,6 +5,25 @@
 (function () {
   'use strict';
 
+  function wcRead(id, kind) {
+    return window.NpWaterClimateUI
+      ? window.NpWaterClimateUI.read(id, kind)
+      : parseFloat((document.getElementById(id) || {}).value);
+  }
+
+  function wcWrite(id, value, kind) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (window.NpWaterClimateUI) window.NpWaterClimateUI.write(el, value, kind);
+    else el.value = value == null ? '' : String(value);
+  }
+
+  function wcResult(value, kind, digits) {
+    return window.NpWaterClimateUI
+      ? window.NpWaterClimateUI.resultFromSI(value, kind, digits == null ? 2 : digits)
+      : String(value) + (kind === 'water_depth' ? ' mm' : '');
+  }
+
   var MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   var CLIMATE_HISTORY_YEARS = 4;
   var CLIMATE_RAIN_COLORS = ['#1e3a8a', '#2563eb', '#38bdf8', '#7dd3fc'];
@@ -131,7 +150,9 @@
     var modeEl = document.getElementById(prefix + '-soil-mode');
     var m3El = document.getElementById(prefix + '-soil-m3');
     var mode = modeEl && modeEl.value ? modeEl.value : null;
-    var m3 = m3El && m3El.value !== '' ? parseFloat(m3El.value) : null;
+    var m3 = m3El && m3El.value !== ''
+      ? (window.NpWaterClimateUI ? window.NpWaterClimateUI.read(m3El, 'volume') : parseFloat(m3El.value))
+      : null;
     return {
       soilStorageMode: mode === 'deficit' || mode === 'surplus' ? mode : null,
       soilStorageM3: Number.isFinite(m3) && m3 > 0 ? m3 : null
@@ -149,6 +170,7 @@
       mode: state.soilStorageMode || '',
       m3: state.soilStorageM3
     });
+    if (window.NpWaterClimateUI) window.NpWaterClimateUI.bindFields({ 'climate-soil-m3': 'volume' });
   }
 
   function applyClimateSoilBridgeSuggestion(target) {
@@ -476,12 +498,12 @@
     var macroEl = document.getElementById('climate-irr-macro-tunnel');
     if (cropEl) cropEl.value = state.cropName || '';
     if (kcEl) kcEl.value = state.kc != null ? String(state.kc) : '';
-    if (irrEl) irrEl.value = state.irrigationValue != null ? String(state.irrigationValue) : '';
-    if (cropAreaEl) cropAreaEl.value = state.cropAreaHa != null ? String(state.cropAreaHa) : '';
-    if (areaEl) areaEl.value = state.irrigatedAreaHa != null ? String(state.irrigatedAreaHa) : '';
+    if (irrEl) state.irrigationValue != null ? wcWrite('climate-irr-applied', state.irrigationValue, 'volume') : irrEl.value = '';
+    if (cropAreaEl) state.cropAreaHa != null ? wcWrite('climate-irr-crop-area', state.cropAreaHa, 'area') : cropAreaEl.value = '';
+    if (areaEl) state.irrigatedAreaHa != null ? wcWrite('climate-irr-area', state.irrigatedAreaHa, 'area') : areaEl.value = '';
     if (reachEl) reachEl.value = state.rootReachPct != null ? String(state.rootReachPct) : '';
-    if (et0ManualEl) et0ManualEl.value = state.manualEt0 != null ? String(state.manualEt0) : '';
-    if (rainManualEl) rainManualEl.value = state.manualRain != null ? String(state.manualRain) : '';
+    if (et0ManualEl) state.manualEt0 != null ? wcWrite('climate-irr-et0-manual', state.manualEt0, 'water_depth') : et0ManualEl.value = '';
+    if (rainManualEl) state.manualRain != null ? wcWrite('climate-irr-rain-manual', state.manualRain, 'water_depth') : rainManualEl.value = '';
     if (useEt0El) useEt0El.checked = state.useManualEt0;
     if (useRainEl) useRainEl.checked = state.useManualRain;
     if (macroEl) macroEl.checked = state.macroTunnelNoRain;
@@ -543,20 +565,20 @@
       st.periodDays = pd === 1 || pd === 30 ? pd : 7;
     }
     if (irrEl && irrEl.value !== '') {
-      var iv = parseFloat(irrEl.value);
+      var iv = wcRead('climate-irr-applied', 'volume');
       st.irrigationValue = Number.isFinite(iv) ? iv : null;
     } else {
       st.irrigationValue = null;
     }
     st.irrigationUnit = 'm3';
     if (cropAreaEl && cropAreaEl.value !== '') {
-      var ch = parseFloat(cropAreaEl.value);
+      var ch = wcRead('climate-irr-crop-area', 'area');
       st.cropAreaHa = Number.isFinite(ch) && ch > 0 ? ch : null;
     } else {
       st.cropAreaHa = null;
     }
     if (areaEl && areaEl.value !== '') {
-      var ah = parseFloat(areaEl.value);
+      var ah = wcRead('climate-irr-area', 'area');
       st.irrigatedAreaHa = Number.isFinite(ah) && ah > 0 ? ah : null;
     } else {
       st.irrigatedAreaHa = null;
@@ -570,13 +592,13 @@
     st.macroTunnelNoRain = !!(macroEl && macroEl.checked);
     st.useManualRain = !!(useRainEl && useRainEl.checked && !st.macroTunnelNoRain);
     if (et0ManualEl && et0ManualEl.value !== '' && st.useManualEt0) {
-      var me = parseFloat(et0ManualEl.value);
+      var me = wcRead('climate-irr-et0-manual', 'water_depth');
       st.manualEt0 = Number.isFinite(me) ? me : null;
     } else {
       st.manualEt0 = null;
     }
     if (rainManualEl && rainManualEl.value !== '' && st.useManualRain) {
-      var mr = parseFloat(rainManualEl.value);
+      var mr = wcRead('climate-irr-rain-manual', 'water_depth');
       st.manualRain = Number.isFinite(mr) ? mr : null;
     } else {
       st.manualRain = null;
@@ -709,10 +731,7 @@
         '<div style="font-size:12px;color:#64748b;margin-bottom:4px;">ETo activa (' +
         periodLabel +
         ')</div><div style="font-size:18px;font-weight:700;color:#0f172a;">' +
-        (res.et0 != null ? fmtMm(res.et0) : '—') +
-        (res.et0 != null
-          ? ' <span style="font-size:13px;font-weight:500;color:#64748b;">' + (res.periodDays === 1 ? 'mm/día' : 'mm') + '</span>'
-          : '') +
+        (res.et0 != null ? wcResult(res.et0, 'water_depth', 2) + (res.periodDays === 1 ? '/día' : '') : '—') +
         sourceBadge(res.et0Source) +
         '</div>';
     }
@@ -721,20 +740,20 @@
         '<div style="font-size:12px;color:#64748b;margin-bottom:4px;">Lluvia activa (' +
         periodLabel +
         ')</div><div style="font-size:18px;font-weight:700;color:#0f172a;">' +
-        (res.rain != null ? fmtMm(res.rain) + ' <span style="font-size:13px;font-weight:500;color:#64748b;">mm</span>' : '—') +
+        (res.rain != null ? wcResult(res.rain, 'water_depth', 2) : '—') +
         sourceBadge(res.rainSource) +
         '</div>';
     }
     if (!state.useManualEt0 && satWindow.et0 != null) {
       var et0Hint = document.getElementById('climate-irr-et0-sat-hint');
-      if (et0Hint) et0Hint.textContent = 'Satélite: ' + fmtMm(satWindow.et0) + (res.periodDays === 1 ? ' mm/día' : ' mm');
+      if (et0Hint) et0Hint.textContent = 'Satélite: ' + wcResult(satWindow.et0, 'water_depth', 2) + (res.periodDays === 1 ? '/día' : '');
     } else {
       var et0Hint2 = document.getElementById('climate-irr-et0-sat-hint');
       if (et0Hint2) et0Hint2.textContent = '';
     }
     if (!state.useManualRain && !state.macroTunnelNoRain && satWindow.rain != null) {
       var rainHint = document.getElementById('climate-irr-rain-sat-hint');
-      if (rainHint) rainHint.textContent = 'Satélite: ' + fmtMm(satWindow.rain) + ' mm';
+      if (rainHint) rainHint.textContent = 'Satélite: ' + wcResult(satWindow.rain, 'water_depth', 2);
     } else {
       var rainHint2 = document.getElementById('climate-irr-rain-sat-hint');
       if (rainHint2) rainHint2.textContent = state.macroTunnelNoRain ? 'Lluvia fijada en 0 (macrotúnel)' : '';
@@ -775,6 +794,8 @@
     if (summary) {
       summary.innerHTML = summaryBody || '';
     }
+    var quickRoot = document.getElementById('climate-irrigation-quick');
+    if (quickRoot && window.NpWaterClimateUI) window.NpWaterClimateUI.applyLanguage(quickRoot);
   }
 
   function renderIrrigationQuickCalc() {
@@ -813,10 +834,10 @@
         '<h4 style="margin:0 0 6px 0;font-size:14px;color:#0f172a;">📋 Mis valores de agua (calculadora)</h4>' +
         '<p id="climate-irr-manual-block-hint" style="margin:0 0 12px;font-size:12px;line-height:1.45;color:#64748b;">ETo, lluvia y riego de esta caja corresponden al <strong>periodo seleccionado arriba</strong>. Si usas valores de campo, ingresa el <strong>acumulado de esos mismos días</strong> (satélite o manual).</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px;">' +
-        '<div><label id="climate-irr-label-manual-et0" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;cursor:pointer;"><input type="checkbox" id="climate-irr-use-manual-et0" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Usar mi ETo del periodo (mm)</span></label>' +
+        '<div><label id="climate-irr-label-manual-et0" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;cursor:pointer;"><input type="checkbox" id="climate-irr-use-manual-et0" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Usar mi ETo del periodo (<span data-np-unit-label="water_depth">mm</span>)</span></label>' +
         '<input type="number" id="climate-irr-et0-manual" min="0" step="0.1" placeholder="Acumulado del periodo" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         '<p id="climate-irr-et0-sat-hint" style="margin:6px 0 0;font-size:12px;color:#64748b;"></p></div>' +
-        '<div><label id="climate-irr-label-manual-rain" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;cursor:pointer;"><input type="checkbox" id="climate-irr-use-manual-rain" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Usar mi lluvia (pluviómetro, mm)</span></label>' +
+        '<div><label id="climate-irr-label-manual-rain" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;cursor:pointer;"><input type="checkbox" id="climate-irr-use-manual-rain" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Usar mi lluvia (pluviómetro, <span data-np-unit-label="water_depth">mm</span>)</span></label>' +
         '<input type="number" id="climate-irr-rain-manual" min="0" step="0.1" placeholder="Acumulado del periodo" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         '<p id="climate-irr-rain-sat-hint" style="margin:6px 0 0;font-size:12px;color:#64748b;"></p>' +
         '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#475569;cursor:pointer;"><input type="checkbox" id="climate-irr-macro-tunnel" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Macrotúnel / invernadero (sin lluvia → 0 mm)</span></label></div>' +
@@ -840,9 +861,9 @@
         '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Riego en franja regada (periodo)</label>' +
         '<div class="np-irr-value-unit"><input type="number" id="climate-irr-applied" min="0" step="0.1" placeholder="Volumen en franja (m³)" value="' +
         (state.irrigationValue != null ? state.irrigationValue : '') +
-        '" aria-label="Riego aplicado en franja (m³)"><span class="np-irr-unit-badge" aria-hidden="true">m³</span></div>' +
+        '" aria-label="Riego aplicado en franja"><span class="np-irr-unit-badge" data-np-unit-label="volume" aria-hidden="true">m³</span></div>' +
         '<p style="margin:6px 0 0;font-size:12px;color:#64748b;">Volumen total aplicado en la <strong>zona humedecida</strong> del periodo. Indica <strong>Superficie regada</strong>; la lámina en mm aparece en los resultados.</p></div>' +
-        '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Superficie del cultivo (ha)</label>' +
+        '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Superficie del cultivo (<span data-np-unit-label="area">ha</span>)</label>' +
         '<input type="number" id="climate-irr-crop-area" min="0" step="0.01" placeholder="' +
         cropPlaceholder +
         '" value="' +
@@ -850,7 +871,7 @@
         '" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         '<p style="margin:6px 0 0;font-size:12px;color:#64748b;">Área donde está el cultivo (demanda ETc / m³ total).</p></div>' +
         '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;">' +
-        '<label style="display:block;font-size:13px;color:#166534;margin-bottom:6px;font-weight:600;">Superficie regada (ha)</label>' +
+        '<label style="display:block;font-size:13px;color:#166534;margin-bottom:6px;font-weight:600;">Superficie regada (<span data-np-unit-label="area">ha</span>)</label>' +
         '<input type="number" id="climate-irr-area" min="0" step="0.01" placeholder="' +
         irrPlaceholder +
         '" value="' +
@@ -895,6 +916,16 @@
             ? window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'climate' })
             : '<details id="climate-fao-kc-details" style="border:1px solid #e2e8f0;border-radius:8px;padding:0;background:#fff;"><summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#0f172a;font-size:14px;">📋 Tabla de referencia Kc (FAO-56)</summary><div style="padding:0 14px 14px;"><input type="search" id="climate-fao-kc-search" placeholder="Buscar cultivo…" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;"><div style="max-height:280px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f1f5f9;position:sticky;top:0;"><th style="padding:8px;text-align:left;">Cultivo</th><th style="padding:8px;text-align:left;">Etapa</th><th style="padding:8px;text-align:center;">Kc (rango FAO)</th></tr></thead><tbody id="climate-fao-kc-tbody"></tbody></table></div></div></details>');
       root.setAttribute('data-np-irr-rendered', '1');
+      if (window.NpWaterClimateUI) {
+        window.NpWaterClimateUI.bindFields({
+          'climate-irr-applied': 'volume',
+          'climate-irr-crop-area': 'area',
+          'climate-irr-area': 'area',
+          'climate-irr-et0-manual': 'water_depth',
+          'climate-irr-rain-manual': 'water_depth'
+        });
+        window.NpWaterClimateUI.refreshUnitLabels();
+      }
       syncIrrigationInputsFromState();
       bindIrrigationQuickCalcEvents(root);
       renderFaoKcReferenceTable('');

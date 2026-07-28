@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-units-core.js?v=20260728b"></script>
+  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
+  <script src="assets/np-amendment-ui.js?v=20260728b"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Balance de enmiendas por CIC</title>
   <link rel="stylesheet" href="dashboard.css" />
@@ -282,12 +287,12 @@
 
     function formatNumber(value, decimals = 2) {
       const n = Number(value || 0);
-      return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+      const locale = window.NpAmendmentUI?.getPrefs().locale || 'es-MX';
+      return n.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
 
     function isEnglishUI() {
-      const title = (document.querySelector('h2.section-title') || document.querySelector('.section-title') || document.querySelector('h2') || {}).textContent || '';
-      return /\b(Amendment|Calculator|Adjust|Results|Soil)\b/i.test(title);
+      return window.NpAmendmentUI?.getPrefs().language === 'en';
     }
 
     function t(es, en) {
@@ -376,13 +381,13 @@
       const phIndicator = document.getElementById('ph-indicator');
       const ph = parseFloat(phInput.value || 0);
       if (!ph) {
-        phIndicator.textContent = '⚪ Ingrese pH';
+        phIndicator.textContent = t('⚪ Ingrese pH', '⚪ Enter pH');
         phIndicator.className = 'ph-indicator';
         return;
       }
-      if (ph < 6.5) { phIndicator.textContent = '🔴 Ácido'; phIndicator.className = 'ph-indicator ph-acid'; }
-      else if (ph <= 7.2) { phIndicator.textContent = '🟢 Neutro'; phIndicator.className = 'ph-indicator ph-neutral'; }
-      else { phIndicator.textContent = '🟡 Alcalino'; phIndicator.className = 'ph-indicator ph-alkaline'; }
+      if (ph < 6.5) { phIndicator.textContent = t('🔴 Ácido', '🔴 Acidic'); phIndicator.className = 'ph-indicator ph-acid'; }
+      else if (ph <= 7.2) { phIndicator.textContent = t('🟢 Neutro', '🟢 Neutral'); phIndicator.className = 'ph-indicator ph-neutral'; }
+      else { phIndicator.textContent = t('🟡 Alcalino', '🟡 Alkaline'); phIndicator.className = 'ph-indicator ph-alkaline'; }
     }
 
     function loadAmendmentsTable() {
@@ -393,7 +398,7 @@
         const row = document.createElement('tr');
         row.className = 'amendment-row';
         row.innerHTML = `
-          <td>${a.name}</td>
+          <td>${window.NpAmendmentUI.materialName(a.id, a.name)}</td>
           <td>${a.formula}</td>
           <td>${a.molecularWeight}</td>
           <td>${a.k > 0 ? a.k + '%' : '-'}</td>
@@ -404,8 +409,8 @@
           <td>${a.h2o > 0 ? a.h2o + '%' : '-'}</td>
           <td>${a.si > 0 ? a.si + '%' : '-'}</td>
           <td>
-            <button class="btn-select-amendment ${selectedAmendments.includes(a.id) ? 'selected' : ''}" id="btn-select-${a.id}" onclick="toggleAmendmentSelection('${a.id}')">${selectedAmendments.includes(a.id) ? 'Seleccionado' : 'Seleccionar'}</button>
-            <button class="btn-edit-amendment" onclick="editAmendment('${a.id}')" title="Editar composición">✏️</button>
+            <button class="btn-select-amendment ${selectedAmendments.includes(a.id) ? 'selected' : ''}" id="btn-select-${a.id}" onclick="toggleAmendmentSelection('${a.id}')">${selectedAmendments.includes(a.id) ? t('Seleccionado', 'Selected') : t('Seleccionar', 'Select')}</button>
+            <button class="btn-edit-amendment" onclick="editAmendment('${a.id}')" title="${t('Editar composición', 'Edit composition')}">✏️</button>
           </td>
         `;
         tbody.appendChild(row);
@@ -465,7 +470,7 @@
       modal.className = 'edit-modal';
       modal.innerHTML = `
         <div class="modal-content">
-          <h3>✏️ Editar Composición: ${a.name}</h3>
+          <h3>${t('✏️ Editar Composición:', '✏️ Edit Composition:')} ${a.name}</h3>
           <form id="edit-amendment-form">
             <div class="form-group"><label>Peso Molecular:</label><input type="number" id="edit-molecular" value="${a.molecularWeight}" step="0.1"></div>
             <div class="form-group"><label>%K:</label><input type="number" id="edit-k" value="${a.k}" step="0.1"></div>
@@ -476,8 +481,8 @@
             <div class="form-group"><label>%H2O:</label><input type="number" id="edit-h2o" value="${a.h2o}" step="0.1"></div>
             <div class="form-group"><label class="notranslate" translate="no">%Si:</label><input type="number" id="edit-si" value="${a.si}" step="0.1" class="notranslate" translate="no"></div>
             <div class="modal-buttons">
-              <button type="button" onclick="saveAmendmentEdit('${a.id}')" class="btn-save">💾 Guardar</button>
-              <button type="button" onclick="closeEditModal()" class="btn-cancel">❌ Cancelar</button>
+              <button type="button" onclick="saveAmendmentEdit('${a.id}')" class="btn-save">${t('💾 Guardar', '💾 Save')}</button>
+              <button type="button" onclick="closeEditModal()" class="btn-cancel">${t('❌ Cancelar', '❌ Cancel')}</button>
             </div>
           </form>
         </div>`;
@@ -505,15 +510,15 @@
     }
 
     function convertMeqToKgHa(meq, pesoEquivalente) {
-      const densidadAparente = parseFloat(document.getElementById('soil-density').value || 1.1);
-      const profundidad = parseFloat(document.getElementById('soil-depth').value || 30) / 100;
-      return meq * pesoEquivalente * 10 * (100 * 100 * profundidad * densidadAparente) / 1000;
+      const densidadAparente = window.NpAmendmentUI.readSIInput(document.getElementById('soil-density'), 'bulk_density') || 1.1;
+      const profundidad = (window.NpAmendmentUI.readSIInput(document.getElementById('soil-depth'), 'depth') || 30) / 100;
+      return window.NpAmendmentUI.meqToKgHa(meq, pesoEquivalente, profundidad * 100, densidadAparente);
     }
 
     function convertKgHaToMeq(kgHa, pesoMolecular) {
-      const densidadAparente = parseFloat(document.getElementById('soil-density').value || 1.1);
-      const profundidad = parseFloat(document.getElementById('soil-depth').value || 30) / 100;
-      return kgHa / (pesoMolecular * 10 * (100 * 100 * profundidad * densidadAparente) / 1000);
+      const densidadAparente = window.NpAmendmentUI.readSIInput(document.getElementById('soil-density'), 'bulk_density') || 1.1;
+      const profundidad = (window.NpAmendmentUI.readSIInput(document.getElementById('soil-depth'), 'depth') || 30) / 100;
+      return window.NpAmendmentUI.kgHaToMeq(kgHa, pesoMolecular, profundidad * 100, densidadAparente);
     }
 
     function getSoilReachPercent() {
@@ -618,17 +623,20 @@
 
       let html = `<h3>📊 ${t('Resultados del Cálculo de Enmiendas', 'Amendment Calculation Results')}</h3>`;
       html += `<div class="amendment-summary"><h4>🎯 ${t('Aportes Totales:', 'Total Contributions:')}</h4><ul>`;
-      if (totals.k > 0) html += `<li><strong>${t('Potasio', 'Potassium')} (K⁺):</strong> ${formatNumber(totals.k)} kg/ha</li>`;
-      if (totals.ca > 0) html += `<li><strong>${t('Calcio', 'Calcium')} (Ca²⁺):</strong> ${formatNumber(totals.ca)} kg/ha</li>`;
-      if (totals.mg > 0) html += `<li><strong>${t('Magnesio', 'Magnesium')} (Mg²⁺):</strong> ${formatNumber(totals.mg)} kg/ha</li>`;
-      if (totals.so4 > 0) html += `<li><strong>${t('Sulfato', 'Sulfate')} (SO₄²⁻):</strong> ${formatNumber(totals.so4)} kg/ha</li>`;
-      if (totals.si > 0) html += `<li><strong>${t('Silicio', 'Silicon')} (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totals.si)} kg/ha</li>`;
+      const quantity = value => window.NpAmendmentUI.quantityFromSI(value, 'dose_mass_area');
+      const displayDose = value => window.NpAmendmentUI.resultFromSI(value, 'dose_mass_area');
+      const doseUnit = window.NpAmendmentUI.unit('dose_mass_area');
+      if (totals.k > 0) html += `<li><strong>${t('Potasio', 'Potassium')} (K⁺):</strong> ${quantity(totals.k)}</li>`;
+      if (totals.ca > 0) html += `<li><strong>${t('Calcio', 'Calcium')} (Ca²⁺):</strong> ${quantity(totals.ca)}</li>`;
+      if (totals.mg > 0) html += `<li><strong>${t('Magnesio', 'Magnesium')} (Mg²⁺):</strong> ${quantity(totals.mg)}</li>`;
+      if (totals.so4 > 0) html += `<li><strong>${t('Sulfato', 'Sulfate')} (SO₄²⁻):</strong> ${quantity(totals.so4)}</li>`;
+      if (totals.si > 0) html += `<li><strong>${t('Silicio', 'Silicon')} (<span class="notranslate" translate="no">Si</span>):</strong> ${quantity(totals.si)}</li>`;
       html += '</ul>';
       html += `<div style="font-size:12px;color:#64748b;margin-top:6px;">${t('% del volumen de suelo explorado por raíces', '% of soil volume explored by roots')} (${formatNumber(reachPercent,0)}%).</div>`;
       html += '</div>';
-      html += `<div class="amendment-details"><h4>📋 ${t('Detalles por Enmienda:', 'Amendment Details:')}</h4><table class="results-table"><thead><tr><th>${t('Enmienda', 'Amendment')}</th><th>${t('Cantidad', 'Quantity')} (kg/ha)</th><th>K⁺</th><th>Ca²⁺</th><th>Mg²⁺</th><th>SO₄²⁻</th><th><span class="notranslate" translate="no">Si</span></th></tr></thead><tbody>`;
+      html += `<div class="amendment-details"><h4>📋 ${t('Detalles por Enmienda:', 'Amendment Details:')}</h4><table class="results-table"><thead><tr><th>${t('Enmienda', 'Amendment')}</th><th>${t('Cantidad', 'Quantity')} (${doseUnit})</th><th>K⁺ (${doseUnit})</th><th>Ca²⁺ (${doseUnit})</th><th>Mg²⁺ (${doseUnit})</th><th>SO₄²⁻ (${doseUnit})</th><th><span class="notranslate" translate="no">Si</span> (${doseUnit})</th></tr></thead><tbody>`;
       adjusted.forEach(a => {
-        html += `<tr><td>${a.name}</td><td>${formatNumber(a.amount)}</td><td>${a.k > 0 ? formatNumber(a.k) : '-'}</td><td>${a.ca > 0 ? formatNumber(a.ca) : '-'}</td><td>${a.mg > 0 ? formatNumber(a.mg) : '-'}</td><td>${a.so4 > 0 ? formatNumber(a.so4) : '-'}</td><td>${a.si > 0 ? formatNumber(a.si) : '-'}</td></tr>`;
+        html += `<tr><td>${window.NpAmendmentUI.materialName(a.id, a.name)}</td><td>${displayDose(a.amount)}</td><td>${a.k > 0 ? displayDose(a.k) : '-'}</td><td>${a.ca > 0 ? displayDose(a.ca) : '-'}</td><td>${a.mg > 0 ? displayDose(a.mg) : '-'}</td><td>${a.so4 > 0 ? displayDose(a.so4) : '-'}</td><td>${a.si > 0 ? displayDose(a.si) : '-'}</td></tr>`;
       });
       html += '</tbody></table></div>';
       resultsSection.innerHTML = html;
@@ -664,7 +672,7 @@
         const k = amount * ((a?.k || 0) / 100);
         const so4 = amount * ((a?.so4 || 0) / 100);
         const si = amount * ((a?.si || 0) / 100);
-        return { name: a?.name || s.tipo, amount, ca, mg, k, so4, si };
+        return { id: a?.id || s.tipo, name: a?.name || s.tipo, amount, ca, mg, k, so4, si };
       });
 
       showCombinedAmendmentResults(details, reachPercent);
@@ -674,8 +682,8 @@
       ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'].forEach(id => document.getElementById(id).value = '0.00');
       ['k-target','ca-target','mg-target','h-target','na-target','al-target'].forEach(id => document.getElementById(id).value = '0.00');
       document.getElementById('cic-total').value = '0.00';
-      document.getElementById('soil-density').value = '1.1';
-      document.getElementById('soil-depth').value = '30';
+      window.NpAmendmentUI.setSIInput(document.getElementById('soil-density'), 1.1, 'bulk_density');
+      window.NpAmendmentUI.setSIInput(document.getElementById('soil-depth'), 30, 'depth');
       document.getElementById('soil-ph').value = '';
       document.getElementById('soil-reach-percent').value = '100';
       document.getElementById('amendment-results').style.display = 'none';
@@ -684,6 +692,7 @@
     }
 
     function boot() {
+      window.NpAmendmentUI.refresh(document);
       loadAmendmentsTable();
       updatePHIndicator();
       ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'].forEach(id => {
@@ -692,6 +701,12 @@
       document.getElementById('soil-ph').addEventListener('input', updatePHIndicator);
       document.getElementById('calculate-amendment').addEventListener('click', calculateAmendment);
       document.getElementById('reset-amendment').addEventListener('click', resetAmendmentForm);
+      window.addEventListener('np:prefs-changed', function () {
+        window.NpAmendmentUI.refresh(document);
+        loadAmendmentsTable();
+        updatePHIndicator();
+        if (document.getElementById('amendment-results').style.display !== 'none') calculateAmendment();
+      });
     }
 
     document.addEventListener('DOMContentLoaded', boot);
@@ -708,13 +723,25 @@
         'cic-total', 'soil-density', 'soil-depth', 'soil-ph', 'soil-reach-percent'
       ];
       function apply(d) {
+        if (d && d['soil-density'] !== undefined) {
+          window.NpAmendmentUI.setSIInput(document.getElementById('soil-density'), d['soil-density'], 'bulk_density');
+          delete d['soil-density'];
+        }
+        if (d && d['soil-depth'] !== undefined) {
+          window.NpAmendmentUI.setSIInput(document.getElementById('soil-depth'), d['soil-depth'], 'depth');
+          delete d['soil-depth'];
+        }
         window.NpFreePersist.applyIds(d, IDS);
+        window.NpAmendmentUI.renderSoilInputs(document);
         if (typeof calculateCIC === 'function') calculateCIC();
         if (typeof updatePHIndicator === 'function') updatePHIndicator();
       }
       document.addEventListener('DOMContentLoaded', function () {
         window.NpFreePersist.bind('enmienda', function () {
-          return window.NpFreePersist.collectIds(IDS);
+          var data = window.NpFreePersist.collectIds(IDS);
+          data['soil-density'] = window.NpAmendmentUI.readSIInput(document.getElementById('soil-density'), 'bulk_density');
+          data['soil-depth'] = window.NpAmendmentUI.readSIInput(document.getElementById('soil-depth'), 'depth');
+          return data;
         }, apply);
       });
     })();

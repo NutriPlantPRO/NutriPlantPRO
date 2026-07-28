@@ -17,6 +17,15 @@
     return round1(v).toFixed(1);
   }
 
+  function wcQuantity(value, kind, digits) {
+    if (value == null || !Number.isFinite(Number(value))) return '—';
+    if (w.NpWaterClimateUI) return w.NpWaterClimateUI.resultFromSI(Number(value), kind, digits == null ? 2 : digits);
+    if (kind === 'water_depth') return fmtMm(value) + ' mm';
+    if (kind === 'area') return round2(value) + ' ha';
+    if (kind === 'volume_area') return round1(value) + ' m³/ha';
+    return round1(value) + ' m³';
+  }
+
   /** Positivo = falta agua; negativo = superávit (lluvia > demanda). */
   function waterGapKind(mmVal) {
     if (mmVal == null || !Number.isFinite(Number(mmVal))) return 'neutral';
@@ -28,9 +37,9 @@
   function fmtWaterGapMm(mmVal) {
     if (mmVal == null || !Number.isFinite(Number(mmVal))) return '—';
     var n = round1(mmVal);
-    if (n === 0) return '0 mm';
-    var abs = fmtMm(Math.abs(n));
-    return n > 0 ? abs + ' mm' : abs + ' mm superávit';
+    if (n === 0) return wcQuantity(0, 'water_depth', 2);
+    var abs = wcQuantity(Math.abs(n), 'water_depth', 2);
+    return n > 0 ? abs : abs + ' superávit';
   }
 
   function fmtWaterGapVolSuffix(vol, mmVal) {
@@ -39,8 +48,8 @@
     var total = vol.total != null ? Math.abs(vol.total) : null;
     var tag = waterGapKind(mmVal) === 'surplus' ? ' superávit' : '';
     return {
-      volText: perHa != null ? ' → ' + perHa + ' m³/ha cultivo' + tag : '',
-      totalText: total != null ? ' (' + total + ' m³ total' + tag + ')' : ''
+      volText: perHa != null ? ' → ' + wcQuantity(perHa, 'volume_area', 2) + ' cultivo' + tag : '',
+      totalText: total != null ? ' (' + wcQuantity(total, 'volume', 2) + ' total' + tag + ')' : ''
     };
   }
 
@@ -498,6 +507,8 @@
     if (targetMm == null) return '';
     var mmAbs = Math.abs(targetMm);
     var m3Abs = targetVol && targetVol.total != null ? Math.abs(targetVol.total) : round1(mmAbs * 10 * res.irrigatedHa);
+    var mmAbsText = wcQuantity(mmAbs, 'water_depth', 2);
+    var m3AbsText = wcQuantity(m3Abs, 'volume', 2);
     var cropRefMm = res.balance != null ? res.balance : res.deficitCrop;
     /* Positivo = ETc > lluvia (falta agua); negativo = superávit hídrico */
     var isDeficit = targetMm > 0;
@@ -522,8 +533,8 @@
       ? 'Riego sugerido: <strong style="color:' +
         accent +
         ';font-size:18px;">' +
-        m3Abs +
-        ' m³</strong> para cubrir ' +
+        m3AbsText +
+        '</strong> para cubrir ' +
         coverWhat +
         ' ' +
         periodText +
@@ -531,8 +542,8 @@
       : 'No requiere riego de reposición — superávit de <strong style="color:' +
         accent +
         ';">' +
-        m3Abs +
-        ' m³</strong> ' +
+        m3AbsText +
+        '</strong> ' +
         periodText;
     return (
       '<div style="margin:16px 0 4px 0;padding:18px 20px;border:2px solid ' +
@@ -549,12 +560,12 @@
       suggestedLine +
       '</p>' +
       '<p style="margin:0 0 14px 0;font-size:13px;line-height:1.5;color:#334155;">El cultivo (<strong>' +
-      fmtMm(res.cropHa) +
-      ' ha</strong>) tiene un ' +
+      wcQuantity(res.cropHa, 'area', 2) +
+      '</strong>) tiene un ' +
       (isDeficit ? 'déficit' : 'superávit') +
       ' de referencia; en la <strong>franja regada (' +
-      fmtMm(res.irrigatedHa) +
-      ' ha)</strong> ese volumen se concentra en <strong>más mm</strong>, no en menos m³.</p>' +
+      wcQuantity(res.irrigatedHa, 'area', 2) +
+      ')</strong> ese volumen se concentra en <strong>más mm</strong>, no en menos m³.</p>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
       '<div style="background:rgba(255,255,255,0.75);border-radius:10px;padding:12px 14px;text-align:center;">' +
       '<div style="font-size:12px;color:#64748b;margin-bottom:4px;">Lámina en franja (' +
@@ -563,9 +574,9 @@
       '<div style="font-size:28px;font-weight:800;color:' +
       accent +
       ';line-height:1.1;">' +
-      fmtMm(mmAbs) +
+      mmAbsText +
       (isDeficit ? '' : ' <span style="font-size:14px;font-weight:700;">superávit</span>') +
-      ' <span style="font-size:16px;font-weight:700;">mm</span></div>' +
+      '</div>' +
       '</div>' +
       '<div style="background:rgba(255,255,255,0.75);border-radius:10px;padding:12px 14px;text-align:center;">' +
       '<div style="font-size:12px;color:#64748b;margin-bottom:4px;">' +
@@ -574,36 +585,36 @@
       '<div style="font-size:28px;font-weight:800;color:' +
       accent +
       ';line-height:1.1;">' +
-      m3Abs +
-      ' <span style="font-size:16px;font-weight:700;">m³</span></div>' +
+      m3AbsText +
+      '</div>' +
       '<div style="font-size:11px;color:#64748b;margin-top:4px;">en ' +
-      fmtMm(res.irrigatedHa) +
-      ' ha regadas</div>' +
+      wcQuantity(res.irrigatedHa, 'area', 2) +
+      ' regadas</div>' +
       '</div></div>' +
       '<p style="margin:0;font-size:12px;line-height:1.5;color:#475569;">Referencia cultivo: <strong>' +
       fmtWaterGapMm(cropRefMm) +
       '</strong> sobre ' +
-      fmtMm(res.cropHa) +
-      ' ha ≈ <strong>' +
-      m3Abs +
-      ' m³</strong> totales' +
+      wcQuantity(res.cropHa, 'area', 2) +
+      ' ≈ <strong>' +
+      m3AbsText +
+      '</strong> totales' +
       (isDeficit ? '' : ' de superávit') +
       '. ' +
       (isDeficit
         ? '<strong>En goteo/microaspersor aplicas esos ' +
-          m3Abs +
-          ' m³</strong> en la franja de ' +
-          fmtMm(res.irrigatedHa) +
-          ' ha (<strong>' +
-          fmtMm(mmAbs) +
-          ' mm</strong> en zona humedecida).'
+          m3AbsText +
+          '</strong> en la franja de ' +
+          wcQuantity(res.irrigatedHa, 'area', 2) +
+          ' (<strong>' +
+          mmAbsText +
+          '</strong> en zona humedecida).'
         : 'La lluvia cubrió más que la ETc del periodo; <strong>no necesitas regar para cubrir déficit</strong> (superávit de ' +
-          m3Abs +
-          ' m³ en franja de ' +
-          fmtMm(res.irrigatedHa) +
-          ' ha, <strong>' +
-          fmtMm(mmAbs) +
-          ' mm superávit</strong> en zona humedecida).') +
+          m3AbsText +
+          ' en franja de ' +
+          wcQuantity(res.irrigatedHa, 'area', 2) +
+          ', <strong>' +
+          mmAbsText +
+          ' superávit</strong> en zona humedecida).') +
       '</p></div>'
     );
   }
@@ -611,9 +622,9 @@
   function buildSummaryHtml(res) {
     var periodLabel = res.periodDays === 1 ? '1 día' : res.periodDays === 30 ? '30 días' : '7 días';
     function summaryLine(label, mmVal, vol) {
-      var mmText = mmVal != null ? fmtMm(mmVal) + ' mm' : '—';
-      var volText = vol && vol.perHa != null ? ' → ' + vol.perHa + ' m³/ha cultivo' : '';
-      var totalText = vol && vol.total != null ? ' (' + vol.total + ' m³ total)' : '';
+      var mmText = mmVal != null ? wcQuantity(mmVal, 'water_depth', 2) : '—';
+      var volText = vol && vol.perHa != null ? ' → ' + wcQuantity(vol.perHa, 'volume_area', 2) + ' cultivo' : '';
+      var totalText = vol && vol.total != null ? ' (' + wcQuantity(vol.total, 'volume', 2) + ' total)' : '';
       return (
         '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:14px;">' +
         '<span style="color:#475569;">' + label + '</span>' +
@@ -645,10 +656,10 @@
         '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0 6px 12px;border-bottom:1px dashed #e2e8f0;font-size:13px;color:' +
         (waterGapKind(mmVal) === 'surplus' ? '#0f766e' : '#0369a1') +
         ';">' +
-        '<span>↳ ' + label + ' en franja regada (' + fmtMm(res.irrigatedHa) + ' ha)</span>' +
+        '<span>↳ ' + label + ' en franja regada (' + wcQuantity(res.irrigatedHa, 'area', 2) + ')</span>' +
         '<span style="font-weight:600;text-align:right;">' +
         fmtWaterGapMm(mmVal) +
-        (m3 != null ? ' (mismos ' + m3 + ' m³)' : '') +
+        (m3 != null ? ' (mismos ' + wcQuantity(m3, 'volume', 2) + ')' : '') +
         '</span></div>'
       );
     }
@@ -671,9 +682,9 @@
       ')</h4>' +
       (res.cropHa != null
         ? '<p style="margin:0 0 10px 0;font-size:12px;color:#64748b;">Referencia cultivo: <strong>' +
-          fmtMm(res.cropHa) +
-          ' ha</strong>' +
-          (res.hasSplitArea ? ' · Franja regada: <strong>' + fmtMm(res.irrigatedHa) + ' ha</strong>' : '') +
+          wcQuantity(res.cropHa, 'area', 2) +
+          '</strong>' +
+          (res.hasSplitArea ? ' · Franja regada: <strong>' + wcQuantity(res.irrigatedHa, 'area', 2) + '</strong>' : '') +
           '</p>'
         : '') +
       summaryLine('ETo' + (res.et0Source ? ' (' + res.et0Source + ')' : ''), res.et0, null) +
