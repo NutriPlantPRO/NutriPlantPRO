@@ -14815,8 +14815,21 @@
                         e.stopPropagation();
                         const id = btn.getAttribute('data-project-id');
                         if (id) {
-                            closeGlobalMapModal();
-                            viewProjectDetails(id, 'showAllProjects', []);
+                            const originalText = btn.textContent;
+                            btn.disabled = true;
+                            btn.textContent = 'Abriendo proyecto…';
+                            Promise.resolve(viewProjectDetails(id, 'showAllProjects', []))
+                                .then(function() {
+                                    closeGlobalMapModal();
+                                })
+                                .catch(function(error) {
+                                    console.error('Mapa global → detalle:', error);
+                                    alert('No se pudo abrir el proyecto: ' + ((error && error.message) || error));
+                                })
+                                .finally(function() {
+                                    btn.disabled = false;
+                                    btn.textContent = originalText;
+                                });
                         }
                     }
                 });
