@@ -13363,16 +13363,16 @@
                               '" onclick="openAdminRadarLightboxFromEl(this)" ' +
                               'style="width:100%;height:140px;object-fit:cover;border-radius:8px;background:#f1f5f9;cursor:zoom-in;border:1px solid #e2e8f0;" title="Ver grande" />'
                             : '<div style="height:140px;border-radius:8px;background:#f8fafc;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;">Sin NDVI</div>';
-                    function layerBtn(url, label, border, bg, color) {
+                    function layerBtn(url, label, border, bg, color, subtitle) {
                         if (!url) return '';
                         return (
-                            '<button type="button" onclick="openAdminRadarLightbox(' +
-                            JSON.stringify(url) +
-                            ', ' +
-                            JSON.stringify(label + ' · ' + badge) +
-                            ', ' +
-                            JSON.stringify(String(projLine)) +
-                            ')" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid ' +
+                            '<button type="button" data-full-src="' +
+                            escapeHtmlAttr(url) +
+                            '" data-zoom-title="' +
+                            escapeHtmlAttr(label + ' · ' + badge) +
+                            '" data-zoom-sub="' +
+                            escapeHtmlAttr(subtitle || String(projLine)) +
+                            '" onclick="openAdminRadarLightboxFromEl(this)" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid ' +
                             border +
                             ';background:' +
                             bg +
@@ -13387,7 +13387,16 @@
                         layerBtn(ndmiUrl, 'NDMI', '#bae6fd', '#f0f9ff', '#0369a1') +
                         layerBtn(ndreUrl, 'NDRE', '#99f6e4', '#f0fdfa', '#0f766e') +
                         layerBtn(rgbUrl, 'RGB', '#cbd5e1', '#f8fafc', '#334155') +
-                        layerBtn(cloudUrl, '☁️ Nubes', '#ddd6fe', '#f5f3ff', '#6d28d9');
+                        layerBtn(
+                            cloudUrl,
+                            '☁️ Nubes',
+                            '#ddd6fe',
+                            '#f5f3ff',
+                            '#6d28d9',
+                            it.cloud_stats && it.cloud_stats.cloud_pct != null
+                                ? 'Nubes sobre el predio: ' + it.cloud_stats.cloud_pct + '% · sombras: ' + (it.cloud_stats.shadow_pct || 0) + '%. Si la imagen queda transparente, el predio estuvo despejado.'
+                                : 'Blanco/gris = nubes · morado = sombras · transparente = predio despejado.'
+                        );
 
                     return (
                         '<article style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;display:flex;flex-direction:column;gap:8px;min-width:0;">' +
@@ -14220,7 +14229,8 @@
                 var ndmiUrl = (it && it.ndmi_signed_url) || r.ndmi_signed_url || '';
                 var ndreUrl = (it && it.ndre_signed_url) || r.ndre_signed_url || '';
                 var rgbUrl = (it && it.rgb_signed_url) || r.rgb_signed_url || '';
-                if (!ndviUrl && !ndmiUrl && !ndreUrl && !rgbUrl) return;
+                var cloudUrl = (it && it.cloud_mask_signed_url) || r.cloud_mask_signed_url || '';
+                if (!ndviUrl && !ndmiUrl && !ndreUrl && !rgbUrl && !cloudUrl) return;
                 withImg.push({
                     r: r,
                     it: it,
@@ -14228,6 +14238,7 @@
                     ndmiUrl: ndmiUrl,
                     ndreUrl: ndreUrl,
                     rgbUrl: rgbUrl,
+                    cloudUrl: cloudUrl,
                     expanded: !!(it && it.lookback_expanded) || !!r.lookback_expanded
                 });
             });
@@ -14256,6 +14267,7 @@
                 var ndmiRow = withImg.map(function (item) { return miniCard(item, item.ndmiUrl, 'NDMI', '#0369a1'); }).join('');
                 var ndreRow = withImg.map(function (item) { return miniCard(item, item.ndreUrl, 'NDRE', '#0f766e'); }).join('');
                 var rgbRow = withImg.map(function (item) { return miniCard(item, item.rgbUrl, 'RGB', '#334155'); }).join('');
+                var cloudRow = withImg.map(function (item) { return miniCard(item, item.cloudUrl, 'Nubes SCL', '#6d28d9'); }).join('');
                 function adminScaleLegend(kind) {
                     var cfg = {
                         ndvi: {
@@ -14288,7 +14300,7 @@
                         '<span style="color:#64748b;line-height:1.35;">' + c.tip + '</span></div>';
                 }
                 gallery =
-                    '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI / NDRE / RGB</div>' +
+                    '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI / NDRE / RGB / Nubes</div>' +
                     '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * quincena ampliada al mes calendario solo para la imagen.</p>' +
                     '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px;">NDVI — vigor vegetativo</div>' +
                     adminScaleLegend('ndvi') +
@@ -14301,7 +14313,10 @@
                     '<div style="' + grid + '">' + ndreRow + '</div>' +
                     '<div style="font-size:12px;font-weight:700;color:#334155;margin:12px 0 4px;">RGB — vista natural</div>' +
                     adminScaleLegend('rgb') +
-                    '<div style="' + grid + '">' + rgbRow + '</div>';
+                    '<div style="' + grid + '">' + rgbRow + '</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#6d28d9;margin:12px 0 4px;">☁️ Nubes y sombras — máscara SCL</div>' +
+                    '<div style="font-size:11px;color:#64748b;margin:0 0 8px;">Blanco/gris = nubes · morado = sombras · transparente = despejado. “—” indica una generación histórica sin máscara guardada.</div>' +
+                    '<div style="' + grid + '">' + cloudRow + '</div>';
             }
 
             var apiWarn = '';
