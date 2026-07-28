@@ -14706,6 +14706,8 @@
         let globalMapSentinelInfoControl = null;
         let globalMapRegionalCloudLayer = null;
         let globalMapSentinelSelection = null;
+        let globalMapNdviLayer = null;
+        let globalMapFieldCloudLayer = null;
         
         function showGlobalMap() {
             // En admin preferimos fuente nube para consistencia entre dispositivos.
@@ -15050,6 +15052,8 @@
             globalMapSentinelInfoControl = null;
             globalMapRegionalCloudLayer = null;
             globalMapSentinelSelection = null;
+            globalMapNdviLayer = null;
+            globalMapFieldCloudLayer = null;
         }
         window.clearSentinelFromGlobalMap = clearSentinelFromGlobalMap;
 
@@ -15073,24 +15077,30 @@
                     const cloudMaskUrl = latest.cloud_mask_signed_url || '';
                     const layers = L.featureGroup();
                     const bounds = loc.bounds || {};
+                    let satelliteDataPane = globalMapInstance.getPane('globalSatelliteDataPane');
+                    if (!satelliteDataPane) {
+                        satelliteDataPane = globalMapInstance.createPane('globalSatelliteDataPane');
+                    }
+                    satelliteDataPane.style.zIndex = '450';
+                    satelliteDataPane.style.pointerEvents = 'none';
 
                     if (ndviUrl && [bounds.south, bounds.west, bounds.north, bounds.east].every(function(n) {
                         return Number.isFinite(Number(n));
                     })) {
-                        L.imageOverlay(ndviUrl, [
+                        globalMapNdviLayer = L.imageOverlay(ndviUrl, [
                             [Number(bounds.south), Number(bounds.west)],
                             [Number(bounds.north), Number(bounds.east)]
-                        ], { opacity: 0.72, interactive: true })
+                        ], { opacity: 0.72, interactive: false, pane: 'globalSatelliteDataPane' })
                             .bindPopup('<strong>NDVI Sentinel‑2</strong><br>Última imagen procesada del predio')
                             .addTo(layers);
                     }
                     if (cloudMaskUrl && [bounds.south, bounds.west, bounds.north, bounds.east].every(function(n) {
                         return Number.isFinite(Number(n));
                     })) {
-                        L.imageOverlay(cloudMaskUrl, [
+                        globalMapFieldCloudLayer = L.imageOverlay(cloudMaskUrl, [
                             [Number(bounds.south), Number(bounds.west)],
                             [Number(bounds.north), Number(bounds.east)]
-                        ], { opacity: 0.82, interactive: true })
+                        ], { opacity: 0.82, interactive: false, pane: 'globalSatelliteDataPane' })
                             .bindPopup('<strong>Nubes SCL</strong><br>Blanco/gris: nubes · Morado: sombras')
                             .addTo(layers);
                     }
@@ -15159,7 +15169,10 @@
                                   estimated.map(function(p) { return escRadarAdminHtml(p.label); }).join(' · ') + '</div>'
                                 : '') +
                             '<button type="button" id="globalMapRegionalCloudBtn" onclick="showRegionalCloudsOnGlobalMap()" style="width:100%;margin-top:8px;padding:7px 9px;border:1px solid #7c3aed;background:#f5f3ff;color:#6d28d9;border-radius:7px;font-size:11px;font-weight:800;cursor:pointer;">☁️ Generar nubosidad regional</button>' +
+                            '<button type="button" onclick="bringGlobalSatelliteLayersToFront()" style="width:100%;margin-top:5px;padding:6px 9px;border:1px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer;">⬆ Capas satelitales al frente</button>' +
                             '<div id="globalMapRegionalCloudStatus" style="margin-top:4px;color:#64748b;font-size:10px;">Vista de 10 × 10 km · archivo temporal por 5 días.</div>' +
+                            '<div style="display:flex;align-items:center;gap:5px;margin-top:6px;color:#64748b;font-size:9px;"><span>Morado: sombra</span><span style="flex:1;min-width:60px;height:7px;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#64748b,#cbd5e1,#ffffff);border:1px solid #e2e8f0;"></span><span>Blanco: nube</span></div>' +
+                            '<div style="margin-top:2px;color:#64748b;font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#2563eb;margin-right:4px;"></span>Azul: agua · transparente: despejado</div>' +
                             '<div style="margin-top:5px;color:#64748b;font-size:10px;">Azul: huella · Color NDVI: imagen procesada · Estimación nominal cada 5 días.</div>';
                         L.DomEvent.disableClickPropagation(panel);
                         return panel;
@@ -15178,6 +15191,20 @@
                 });
         }
         window.showSentinelOnGlobalMap = showSentinelOnGlobalMap;
+
+        function bringGlobalSatelliteLayersToFront() {
+            if (!globalMapInstance) return;
+            const pane = globalMapInstance.getPane('globalSatelliteDataPane');
+            if (pane) pane.style.zIndex = '450';
+            [globalMapNdviLayer, globalMapFieldCloudLayer, globalMapRegionalCloudLayer].forEach(function(layer) {
+                if (layer && layer.bringToFront) layer.bringToFront();
+            });
+            const status = document.getElementById('globalMapRegionalCloudStatus');
+            if (status) {
+                status.textContent = 'Capas NDVI, nubes y sombras colocadas por encima de la huella azul.';
+            }
+        }
+        window.bringGlobalSatelliteLayersToFront = bringGlobalSatelliteLayersToFront;
 
         function showRegionalCloudsOnGlobalMap() {
             if (!globalMapInstance || !globalMapSentinelLayers || !globalMapSentinelSelection) {
@@ -15231,19 +15258,24 @@
                     globalMapRegionalCloudLayer = L.imageOverlay(data.signed_url, [
                         [Number(b.south), Number(b.west)],
                         [Number(b.north), Number(b.east)]
-                    ], { opacity: 0.82, interactive: true });
+                    ], {
+                        opacity: 0.82,
+                        interactive: false,
+                        pane: 'globalSatelliteDataPane'
+                    });
                     const stats = data.stats || {};
                     globalMapRegionalCloudLayer.bindPopup(
                         '<strong>☁️ Nubosidad regional Sentinel‑2</strong>' +
                         '<br>Captura: ' + escRadarAdminHtml(data.scene_date || '—') +
                         (stats.cloud_pct != null
-                            ? '<br>Nubes regionales: ' + escRadarAdminHtml(String(stats.cloud_pct)) + '% · sombras ' + escRadarAdminHtml(String(stats.shadow_pct || 0)) + '%'
+                            ? '<br>Nubosidad regional (cuadro 10 × 10 km): ' + escRadarAdminHtml(String(stats.cloud_pct)) + '% · sombras ' + escRadarAdminHtml(String(stats.shadow_pct || 0)) + '%'
                             : '') +
                         '<br><small>Vista histórica de 10 × 10 km; no representa nubes en vivo.</small>'
                     );
                     globalMapSentinelLayers.addLayer(globalMapRegionalCloudLayer);
+                    bringGlobalSatelliteLayersToFront();
                     globalMapPolygonLayers.forEach(function(layer) {
-                        if (layer && layer.bringToFront) layer.bringToFront();
+                        if (layer && layer.setStyle) layer.setStyle({ weight: 2 });
                     });
                     globalMapInstance.fitBounds([
                         [Number(b.south), Number(b.west)],
@@ -15256,7 +15288,9 @@
                         status.textContent =
                             (data.reused ? 'Vista temporal reutilizada' : 'Vista regional generada') +
                             ' · caduca ' + expiry +
-                            (stats.cloud_pct != null ? ' · nubes ' + stats.cloud_pct + '%' : '');
+                            (stats.cloud_pct != null
+                                ? ' · nubosidad en todo el cuadro 10 × 10 km: ' + stats.cloud_pct + '%'
+                                : ' · porcentaje referido al cuadro regional, no solo al predio');
                     }
                 })
                 .catch(function(error) {
