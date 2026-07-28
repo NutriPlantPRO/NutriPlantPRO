@@ -13581,6 +13581,29 @@
             var rgb = latest && (latest.rgb_signed_url || (latest.images && latest.images.rgb && latest.images.rgb.signed_url))
                 ? (latest.rgb_signed_url || latest.images.rgb.signed_url)
                 : '';
+            var locationSnapshot = meta.location_snapshot && typeof meta.location_snapshot === 'object'
+                ? meta.location_snapshot
+                : null;
+            var sceneFootprints = Array.isArray(meta.scene_footprints) ? meta.scene_footprints : [];
+            window.__radarSentinelAdminView = {
+                projectId: String(projectId || ''),
+                location: locationSnapshot,
+                footprints: sceneFootprints,
+                ndviUrl: ndvi,
+                sceneDates: Array.isArray(meta.scene_dates) ? meta.scene_dates : [],
+                dateStart: meta.date_start || null,
+                dateEnd: meta.date_end || null,
+                source: sourceLabel
+            };
+            var estimatedPasses = getEstimatedSentinelPassDates(window.__radarSentinelAdminView, 4);
+            var sentinelMapButton = locationSnapshot
+                ? '<button type="button" onclick="openRadarSentinelMapAdmin()" style="margin:0 0 14px 0;padding:9px 13px;border-radius:8px;border:1px solid #1d4ed8;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:800;cursor:pointer;">🗺️ Ver pasada Sentinel en el mapa</button>'
+                : '';
+            var estimatedPassesPanel = estimatedPasses.length
+                ? '<div style="margin:0 0 14px 0;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:9px;color:#92400e;font-size:12px;line-height:1.5;"><strong>Próximas pasadas estimadas:</strong> ' +
+                  estimatedPasses.map(function(p) { return esc(p.label); }).join(' · ') +
+                  '<br><span style="font-size:10.5px;color:#a16207;">Cálculo orientativo con revisita nominal de 5 días; la adquisición efectiva y una imagen útil dependen de la planificación y las nubes.</span></div>'
+                : '';
 
             if (!history.length && !ndvi && !ndmi && !ndre && !rgb) {
                 modal.innerHTML =
@@ -13644,6 +13667,8 @@
                 selectHtml +
                 creditsPanel +
                 '<p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Mostrando generación del <strong>' + esc(created) + '</strong> · ' + esc(String(sourceLabel)) + periodLabel + selectedCreditsLabel + '</p>' +
+                estimatedPassesPanel +
+                sentinelMapButton +
                 '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
                 blockNdvi +
                 blockNdmi +
@@ -13653,6 +13678,206 @@
                 owner +
                 '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">' + esc(String(sourceLabel)) + '. Valores relativos al polígono (RGB = color natural).</p></div></div>';
         }
+
+        var __radarSentinelMap = null;
+        var __radarSentinelProjectLayer = null;
+        var __radarSentinelFootprintLayer = null;
+
+        function getEstimatedSentinelPassDates(view, count) {
+            var sourceDates = [];
+            if (view && Array.isArray(view.sceneDates)) sourceDates = sourceDates.concat(view.sceneDates);
+            if (view && view.dateEnd) sourceDates.push(view.dateEnd);
+            if (view && view.dateStart) sourceDates.push(view.dateStart);
+            var timestamps = sourceDates.map(function(value) {
+                var day = String(value || '').slice(0, 10);
+                var parsed = Date.parse(day + 'T12:00:00Z');
+                return Number.isFinite(parsed) ? parsed : null;
+            }).filter(function(value) { return value != null; });
+            if (!timestamps.length) return [];
+
+            var stepMs = 5 * 24 * 60 * 60 * 1000;
+            var next = Math.max.apply(Math, timestamps) + stepMs;
+            var today = new Date();
+            var todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0);
+            while (next <= todayUtc) next += stepMs;
+
+            var result = [];
+            var total = Math.max(1, Number(count) || 4);
+            for (var i = 0; i < total; i += 1) {
+                var date = new Date(next + (i * stepMs));
+                result.push({
+                    iso: date.toISOString().slice(0, 10),
+                    label: date.toLocaleDateString('es-MX', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        timeZone: 'UTC'
+                    })
+                });
+            }
+            return result;
+        }
+
+        function ensureAdminLeafletLoaded() {
+            if (window.L) return Promise.resolve(window.L);
+            return new Promise(function(resolve, reject) {
+                if (!document.querySelector('link[href*="leaflet@1.9.4/dist/leaflet.css"]')) {
+                    var css = document.createElement('link');
+                    css.rel = 'stylesheet';
+                    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                    css.crossOrigin = '';
+                    document.head.appendChild(css);
+                }
+                var existing = document.querySelector('script[src*="leaflet@1.9.4/dist/leaflet.js"]');
+                var script = existing || document.createElement('script');
+                var done = function() {
+                    if (window.L) resolve(window.L);
+                    else reject(new Error('Leaflet no quedó disponible'));
+                };
+                script.addEventListener('load', done, { once: true });
+                script.addEventListener('error', function() {
+                    reject(new Error('No se pudo cargar Leaflet'));
+                }, { once: true });
+                if (!existing) {
+                    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                    script.crossOrigin = '';
+                    document.head.appendChild(script);
+                }
+            });
+        }
+
+        function closeRadarSentinelMapAdmin() {
+            if (__radarSentinelMap) {
+                __radarSentinelMap.remove();
+                __radarSentinelMap = null;
+            }
+            __radarSentinelProjectLayer = null;
+            __radarSentinelFootprintLayer = null;
+            var modal = document.getElementById('radarSentinelMapAdminModal');
+            if (modal) modal.remove();
+        }
+        window.closeRadarSentinelMapAdmin = closeRadarSentinelMapAdmin;
+
+        function focusRadarSentinelMapAdmin(target) {
+            if (!__radarSentinelMap) return;
+            var layer = target === 'footprint'
+                ? __radarSentinelFootprintLayer
+                : __radarSentinelProjectLayer;
+            if (layer && layer.getBounds && layer.getBounds().isValid()) {
+                __radarSentinelMap.fitBounds(layer.getBounds(), { padding: [28, 28] });
+            }
+        }
+        window.focusRadarSentinelMapAdmin = focusRadarSentinelMapAdmin;
+
+        function openRadarSentinelMapAdmin() {
+            var view = window.__radarSentinelAdminView || {};
+            var loc = view.location || {};
+            var polygon = normalizeAdminPolygonVertices(loc.polygon);
+            if (polygon.length < 3) {
+                alert('Esta generación no tiene un polígono guardado para mostrar.');
+                return;
+            }
+
+            closeRadarSentinelMapAdmin();
+            var modal = document.createElement('div');
+            modal.id = 'radarSentinelMapAdminModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.78);z-index:58000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+            var dates = Array.isArray(view.sceneDates) && view.sceneDates.length
+                ? view.sceneDates.map(function(d) { return String(d).slice(0, 10); }).join(', ')
+                : ([view.dateStart, view.dateEnd].filter(Boolean).join(' → ') || 'fecha no disponible');
+            var futurePasses = getEstimatedSentinelPassDates(view, 4);
+            var futurePassesText = futurePasses.map(function(p) { return p.label; }).join(' · ');
+            var hasFootprint = Array.isArray(view.footprints) && view.footprints.some(function(fp) {
+                return fp && (fp.geometry || (Array.isArray(fp.bbox) && fp.bbox.length === 4));
+            });
+            modal.innerHTML =
+                '<div style="background:#fff;border-radius:12px;width:min(1080px,100%);height:min(86vh,760px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.4);">' +
+                '<div style="padding:13px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
+                '<div><h2 style="margin:0;color:#0f172a;font-size:18px;">🛰️ Pasada Sentinel‑2</h2>' +
+                '<div style="margin-top:4px;color:#64748b;font-size:12px;">Captura: <strong>' + escRadarAdminHtml(dates) + '</strong>' +
+                (hasFootprint ? ' · huella STAC exacta' : ' · registro histórico sin huella STAC') + '</div>' +
+                (futurePassesText ? '<div style="margin-top:3px;color:#92400e;font-size:11px;"><strong>Próximas estimadas:</strong> ' + escRadarAdminHtml(futurePassesText) + '</div>' : '') +
+                '</div>' +
+                '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">' +
+                (hasFootprint ? '<button type="button" onclick="focusRadarSentinelMapAdmin(\'footprint\')" style="padding:7px 10px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;border-radius:7px;font-weight:700;cursor:pointer;">Ver huella</button>' : '') +
+                '<button type="button" onclick="focusRadarSentinelMapAdmin(\'project\')" style="padding:7px 10px;border:1px solid #86efac;background:#f0fdf4;color:#166534;border-radius:7px;font-weight:700;cursor:pointer;">Acercar al predio</button>' +
+                '<button type="button" onclick="closeRadarSentinelMapAdmin()" style="border:0;background:#e2e8f0;color:#334155;border-radius:7px;padding:7px 11px;font-weight:700;cursor:pointer;">✕ Cerrar</button>' +
+                '</div></div>' +
+                '<div id="radarSentinelMapAdminCanvas" style="flex:1;min-height:360px;background:#e2e8f0;"></div>' +
+                '<div style="padding:8px 14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:11px;">Azul: huella de la escena Sentinel · Verde: predio · NDVI superpuesto. Fechas futuras orientativas según revisita nominal de 5 días.</div>' +
+                '</div>';
+            document.body.appendChild(modal);
+
+            ensureAdminLeafletLoaded().then(function() {
+                var canvas = document.getElementById('radarSentinelMapAdminCanvas');
+                if (!canvas) return;
+                var center = loc.center && Number.isFinite(Number(loc.center.lat)) && Number.isFinite(Number(loc.center.lng))
+                    ? [Number(loc.center.lat), Number(loc.center.lng)]
+                    : polygon[0];
+                __radarSentinelMap = L.map(canvas, { zoomControl: true }).setView(center, 13);
+                var streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 19
+                }).addTo(__radarSentinelMap);
+                var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri',
+                    maxZoom: 19
+                });
+                __radarSentinelProjectLayer = L.polygon(polygon, {
+                    color: '#16a34a',
+                    fillColor: '#22c55e',
+                    fillOpacity: 0.18,
+                    weight: 3
+                }).addTo(__radarSentinelMap).bindPopup('<strong>Predio procesado</strong><br>Proyecto ' + escRadarAdminHtml(view.projectId));
+
+                var footprintGroup = L.featureGroup();
+                (view.footprints || []).forEach(function(fp) {
+                    if (!fp) return;
+                    var layer = null;
+                    if (fp.geometry) {
+                        layer = L.geoJSON(fp.geometry, {
+                            style: { color: '#2563eb', fillColor: '#60a5fa', fillOpacity: 0.10, weight: 2 }
+                        });
+                    } else if (Array.isArray(fp.bbox) && fp.bbox.length === 4) {
+                        layer = L.rectangle([[fp.bbox[1], fp.bbox[0]], [fp.bbox[3], fp.bbox[2]]], {
+                            color: '#2563eb', fillColor: '#60a5fa', fillOpacity: 0.10, weight: 2
+                        });
+                    }
+                    if (layer) {
+                        var label = '<strong>Escena Sentinel‑2</strong>' +
+                            (fp.datetime ? '<br>' + escRadarAdminHtml(String(fp.datetime)) : '') +
+                            (fp.id ? '<br><small>' + escRadarAdminHtml(String(fp.id)) + '</small>' : '');
+                        layer.bindPopup(label);
+                        footprintGroup.addLayer(layer);
+                    }
+                });
+                if (footprintGroup.getLayers().length) {
+                    footprintGroup.addTo(__radarSentinelMap);
+                    __radarSentinelFootprintLayer = footprintGroup;
+                }
+
+                var overlays = { 'Predio': __radarSentinelProjectLayer };
+                if (__radarSentinelFootprintLayer) overlays['Huella Sentinel'] = __radarSentinelFootprintLayer;
+                var b = loc.bounds || {};
+                if (view.ndviUrl && [b.south, b.west, b.north, b.east].every(function(n) { return Number.isFinite(Number(n)); })) {
+                    var ndviLayer = L.imageOverlay(view.ndviUrl, [
+                        [Number(b.south), Number(b.west)],
+                        [Number(b.north), Number(b.east)]
+                    ], { opacity: 0.72, interactive: true }).addTo(__radarSentinelMap);
+                    overlays['NDVI'] = ndviLayer;
+                }
+                L.control.layers({ 'Calles': streets, 'Satélite': satellite }, overlays, { collapsed: false }).addTo(__radarSentinelMap);
+                var initialLayer = __radarSentinelFootprintLayer || __radarSentinelProjectLayer;
+                __radarSentinelMap.fitBounds(initialLayer.getBounds(), { padding: [28, 28] });
+                setTimeout(function() {
+                    if (__radarSentinelMap) __radarSentinelMap.invalidateSize();
+                }, 80);
+            }).catch(function(err) {
+                var canvas = document.getElementById('radarSentinelMapAdminCanvas');
+                if (canvas) canvas.innerHTML = '<div style="padding:24px;color:#b91c1c;">No se pudo cargar el mapa: ' + escRadarAdminHtml(err.message || err) + '</div>';
+            });
+        }
+        window.openRadarSentinelMapAdmin = openRadarSentinelMapAdmin;
 
         function fetchRadarAdminData(projectId, requestId) {
             var adminKey = getAdminPanelAccessKey();
@@ -14439,6 +14664,8 @@
         let globalMapPolygonLayers = [];
         let globalMapMarkerCluster = null;
         let globalMapSatelliteView = false;
+        let globalMapSentinelLayers = null;
+        let globalMapSentinelInfoControl = null;
         
         function showGlobalMap() {
             // En admin preferimos fuente nube para consistencia entre dispositivos.
@@ -14512,6 +14739,14 @@
                 globalMapModal.id = 'globalMapModal';
                 globalMapModal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:56000; justify-content:center; align-items:center;';
                 globalMapModal.addEventListener('click', function(e) {
+                    const sentinelBtn = e.target.closest('.global-map-sentinel-project');
+                    if (sentinelBtn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const id = sentinelBtn.getAttribute('data-project-id');
+                        if (id) showSentinelOnGlobalMap(id, sentinelBtn);
+                        return;
+                    }
                     const radarBtn = e.target.closest('.global-map-radar-project');
                     if (radarBtn) {
                         e.preventDefault();
@@ -14694,8 +14929,10 @@
                             <strong style="color: #1e293b;">🌱 Cultivo:</strong> ${escapeHtml(String(crop))}${variety ? ' / ' + escapeHtml(String(variety)) : ''}<br>
                             <strong style="color: #1e293b;">📐 Área:</strong> ${escapeHtml(areaText)}<br>
                             <strong style="color: #1e293b;">🆔 ID:</strong> <code style="font-size: 11px;">${escapeHtml(projectId)}</code><br>
+                            <div style="margin-top:7px;padding:6px 8px;border-radius:6px;background:#eff6ff;color:#1e40af;font-size:11px;">🛰️ Selecciona “Pasada Sentinel” para colocar la huella y el NDVI directamente sobre este mapa.</div>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
                                 <button type="button" class="global-map-open-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #10b981; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;">Ver detalle del proyecto</button>
+                                <button type="button" class="global-map-sentinel-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background:#1d4ed8;color:white;border:none;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;" title="Superponer la última huella Sentinel y NDVI en el mapa global">🛰️ Pasada Sentinel</button>
                                 <button type="button" class="global-map-radar-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #059669; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver imágenes NDVI/NDMI/NDRE/RGB (Pilot) de este predio">🛰️ Radar</button>
                                 <button type="button" class="global-map-lectura-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #0f766e; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver serie Lectura Satelital (periodos con fechas) de este predio">📈 Lectura Satelital</button>
                             </div>
@@ -14761,6 +14998,123 @@
             }
         }
         window.showGlobalMap = showGlobalMap;
+
+        function clearSentinelFromGlobalMap() {
+            if (globalMapInstance && globalMapSentinelLayers) {
+                try { globalMapInstance.removeLayer(globalMapSentinelLayers); } catch (e) {}
+            }
+            if (globalMapInstance && globalMapSentinelInfoControl) {
+                try { globalMapInstance.removeControl(globalMapSentinelInfoControl); } catch (e) {}
+            }
+            globalMapSentinelLayers = null;
+            globalMapSentinelInfoControl = null;
+        }
+        window.clearSentinelFromGlobalMap = clearSentinelFromGlobalMap;
+
+        function showSentinelOnGlobalMap(projectId, button) {
+            if (!globalMapInstance || !window.L) return;
+            const originalText = button ? button.textContent : '';
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Cargando…';
+            }
+            fetchRadarAdminData(projectId)
+                .then(function(res) {
+                    if (!res.ok || !res.j || !res.j.ok || !res.j.latest) {
+                        throw new Error((res.j && (res.j.message || res.j.error)) || 'Este predio todavía no tiene una imagen Radar.');
+                    }
+                    const latest = res.j.latest;
+                    const meta = latest.meta || {};
+                    const loc = meta.location_snapshot || {};
+                    const footprints = Array.isArray(meta.scene_footprints) ? meta.scene_footprints : [];
+                    const ndviUrl = latest.signed_url || '';
+                    const layers = L.featureGroup();
+                    const bounds = loc.bounds || {};
+
+                    if (ndviUrl && [bounds.south, bounds.west, bounds.north, bounds.east].every(function(n) {
+                        return Number.isFinite(Number(n));
+                    })) {
+                        L.imageOverlay(ndviUrl, [
+                            [Number(bounds.south), Number(bounds.west)],
+                            [Number(bounds.north), Number(bounds.east)]
+                        ], { opacity: 0.72, interactive: true })
+                            .bindPopup('<strong>NDVI Sentinel‑2</strong><br>Última imagen procesada del predio')
+                            .addTo(layers);
+                    }
+
+                    footprints.forEach(function(fp) {
+                        if (!fp) return;
+                        let footprintLayer = null;
+                        if (fp.geometry) {
+                            footprintLayer = L.geoJSON(fp.geometry, {
+                                style: { color: '#2563eb', fillColor: '#60a5fa', fillOpacity: 0.08, weight: 2 }
+                            });
+                        } else if (Array.isArray(fp.bbox) && fp.bbox.length === 4) {
+                            footprintLayer = L.rectangle([
+                                [Number(fp.bbox[1]), Number(fp.bbox[0])],
+                                [Number(fp.bbox[3]), Number(fp.bbox[2])]
+                            ], { color: '#2563eb', fillColor: '#60a5fa', fillOpacity: 0.08, weight: 2 });
+                        }
+                        if (footprintLayer) {
+                            footprintLayer.bindPopup(
+                                '<strong>Huella Sentinel‑2</strong>' +
+                                (fp.datetime ? '<br>' + escRadarAdminHtml(String(fp.datetime)) : '') +
+                                (fp.id ? '<br><small>' + escRadarAdminHtml(String(fp.id)) + '</small>' : '')
+                            );
+                            footprintLayer.addTo(layers);
+                        }
+                    });
+
+                    if (!layers.getLayers().length) {
+                        throw new Error('La generación seleccionada no tiene huella ni límites NDVI guardados.');
+                    }
+
+                    clearSentinelFromGlobalMap();
+                    globalMapSentinelLayers = layers.addTo(globalMapInstance);
+                    globalMapPolygonLayers.forEach(function(layer) {
+                        if (layer && layer.bringToFront) layer.bringToFront();
+                    });
+
+                    const view = {
+                        sceneDates: Array.isArray(meta.scene_dates) ? meta.scene_dates : [],
+                        dateStart: meta.date_start || null,
+                        dateEnd: meta.date_end || null
+                    };
+                    const captures = view.sceneDates.length
+                        ? view.sceneDates.map(function(d) { return String(d).slice(0, 10); }).join(', ')
+                        : ([view.dateStart, view.dateEnd].filter(Boolean).join(' → ') || 'No disponible');
+                    const estimated = getEstimatedSentinelPassDates(view, 4);
+                    globalMapSentinelInfoControl = L.control({ position: 'topright' });
+                    globalMapSentinelInfoControl.onAdd = function() {
+                        const panel = L.DomUtil.create('div');
+                        panel.style.cssText = 'max-width:290px;background:rgba(255,255,255,.96);padding:10px 12px;border:1px solid #bfdbfe;border-radius:9px;box-shadow:0 4px 16px rgba(15,23,42,.2);color:#1e293b;font:12px/1.45 system-ui,sans-serif;';
+                        panel.innerHTML =
+                            '<div style="display:flex;justify-content:space-between;gap:10px;align-items:start;">' +
+                            '<strong style="color:#1d4ed8;">🛰️ Sentinel‑2 · predio seleccionado</strong>' +
+                            '<button type="button" onclick="clearSentinelFromGlobalMap()" style="border:0;background:#e2e8f0;border-radius:5px;cursor:pointer;color:#475569;">✕</button></div>' +
+                            '<div style="margin-top:5px;"><strong>Captura:</strong> ' + escRadarAdminHtml(captures) + '</div>' +
+                            (estimated.length
+                                ? '<div style="margin-top:4px;color:#92400e;"><strong>Próximas estimadas:</strong><br>' +
+                                  estimated.map(function(p) { return escRadarAdminHtml(p.label); }).join(' · ') + '</div>'
+                                : '') +
+                            '<div style="margin-top:5px;color:#64748b;font-size:10px;">Azul: huella · Color NDVI: imagen procesada · Estimación nominal cada 5 días.</div>';
+                        L.DomEvent.disableClickPropagation(panel);
+                        return panel;
+                    };
+                    globalMapSentinelInfoControl.addTo(globalMapInstance);
+                    globalMapInstance.fitBounds(layers.getBounds(), { padding: [40, 40], maxZoom: 15 });
+                })
+                .catch(function(err) {
+                    alert('Sentinel: ' + ((err && err.message) || err));
+                })
+                .finally(function() {
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = originalText || '🛰️ Pasada Sentinel';
+                    }
+                });
+        }
+        window.showSentinelOnGlobalMap = showSentinelOnGlobalMap;
         
         function toggleGlobalMapView() {
             if (!globalMapInstance || !globalMapStreetLayer || !globalMapSatelliteLayer) return;
@@ -14794,6 +15148,7 @@
         function closeGlobalMapModal() {
             const modal = document.getElementById('globalMapModal');
             if (modal) modal.style.display = 'none';
+            clearSentinelFromGlobalMap();
             if (globalMapInstance) {
                 if (globalMapMarkerCluster) {
                     try { globalMapInstance.removeLayer(globalMapMarkerCluster); } catch (e) {}

@@ -406,6 +406,11 @@ function sceneFromItem(item, provider, bbox, bandUrls, extra) {
     datetime: props.datetime || null,
     cloudCover: props['eo:cloud_cover'] ?? props.eo_cloud_cover ?? null,
     bbox,
+    footprintBbox: Array.isArray(item.bbox) ? item.bbox : null,
+    footprintGeometry:
+      item.geometry && (item.geometry.type === 'Polygon' || item.geometry.type === 'MultiPolygon')
+        ? item.geometry
+        : null,
     bandUrls,
     collection: provider === 'cdse' ? 'sentinel-2-l2a' : 'planetary-sentinel-2-l2a',
     ...(extra || {})

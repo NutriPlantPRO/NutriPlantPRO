@@ -849,6 +849,15 @@ async function processPilotJob(supabase, requestId, userId) {
       cloud_covers: bundle.cloudCovers || null,
       avg_cloud_cover: bundle.avgCloudCover != null ? bundle.avgCloudCover : null,
       scene_dates: bundle.sceneDates || null,
+      scene_footprints: Array.isArray(bundle.scenes)
+        ? bundle.scenes.map((scene) => ({
+            id: scene.itemId || null,
+            datetime: scene.datetime || null,
+            cloud_cover: scene.cloudCover != null ? Number(scene.cloudCover) : null,
+            bbox: Array.isArray(scene.footprintBbox) ? scene.footprintBbox : null,
+            geometry: scene.footprintGeometry || null
+          }))
+        : null,
       coverage: rendered.coverage || null,
       valid_pct: validPct,
       ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
