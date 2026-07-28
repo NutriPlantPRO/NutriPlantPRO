@@ -44,6 +44,26 @@ function npSafeSetItem(key, value) {
   }
 }
 
+async function npApplyLocalAuthPreferences(profile) {
+  if (!profile || typeof profile !== 'object') return profile;
+  let prefsApi = window.NpPrefs || null;
+  if (!prefsApi && typeof window.npEnsurePrefs === 'function') {
+    try { prefsApi = await window.npEnsurePrefs(); } catch (e) {}
+  }
+  let resolved = {
+    language: profile.language === 'en' ? 'en' : 'es',
+    unit_system: profile.unit_system === 'us_customary' ? 'us_customary' : 'metric',
+    locale: profile.locale === null || typeof profile.locale === 'string' ? profile.locale : null
+  };
+  if (prefsApi && typeof prefsApi.resolve === 'function') {
+    resolved = prefsApi.resolve(profile);
+  }
+  profile.language = resolved.language;
+  profile.unit_system = resolved.unit_system;
+  profile.locale = resolved.locale;
+  return profile;
+}
+
 function readLoginGuardState() {
   try {
     const raw = localStorage.getItem(LOGIN_GUARD_KEY);
@@ -266,6 +286,7 @@ if (form) {
       } catch (e) { console.error('Error reading admin user data:', e); }
       if (!adminUserData) {
         adminUserData = { email, name: 'Administrador NutriPlant', userId: adminUserId, password: 'npja1502', isAdmin: true, subscription_status: 'active', subscription_amount: 0, created_at: new Date().toISOString() };
+        await npApplyLocalAuthPreferences(adminUserData);
         if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData)) || !npSafeSetItem(`nutriplant_user_email_${email}`, adminUserId)) {
           showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
           resetButton(submitBtn, originalText);
@@ -274,6 +295,7 @@ if (form) {
       } else {
         adminUserData.isAdmin = true;
         adminUserData.subscription_status = 'active';
+        await npApplyLocalAuthPreferences(adminUserData);
         if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData))) {
           showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
           resetButton(submitBtn, originalText);
@@ -392,6 +414,9 @@ if (form) {
       resetButton(submitBtn, originalText);
       return;
     }
+
+    // Resolver selección explícita contra el perfil local y persistir el resultado.
+    await npApplyLocalAuthPreferences(userFound);
     
     // ✅ USUARIO Y CONTRASEÑA VÁLIDOS - Establecer sesión
     if (!userId) {

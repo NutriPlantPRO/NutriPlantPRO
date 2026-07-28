@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NutriPlant PRO — Iniciar sesión</title>
+  <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script defer src="assets/np-prefs.js"></script>
+  <script defer src="assets/np-i18n.js?v=2"></script>
+  <script defer src="assets/np-units-core.js"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
   <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
@@ -28,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=21" />
+  <link rel="stylesheet" href="auth.css?v=22" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -114,6 +118,43 @@
   <!-- Contenido principal de autenticación -->
   <main class="auth-main">
     <div class="auth-container">
+      <div id="authPreferencesHome">
+        <section id="authPreferencesBar" class="auth-preferences-bar" aria-labelledby="authPreferencesTitle">
+          <div class="auth-preferences-bar__intro">
+            <h2 id="authPreferencesTitle" class="auth-preferences-bar__title" data-i18n="auth.preferences">Preferencias</h2>
+          </div>
+          <div class="auth-preferences-bar__controls">
+            <div class="auth-preference-field">
+              <label for="authLanguage" data-i18n="profile.language">Idioma</label>
+              <select id="authLanguage" name="language" aria-describedby="authLanguageHelp">
+                <option value="es" data-i18n="selector.spanish">Español</option>
+                <option value="en" data-i18n="selector.english">Inglés</option>
+              </select>
+              <small id="authLanguageHelp">
+                <span data-i18n="selector.spanish">Español</span> / <span data-i18n="selector.english">Inglés</span>
+              </small>
+            </div>
+            <div class="auth-preference-field">
+              <label for="authUnitSystem" data-i18n="profile.unit_system">Sistema de unidades</label>
+              <select id="authUnitSystem" name="unit_system" aria-describedby="authUnitSystemHelp">
+                <option value="metric" data-i18n="selector.metric">Métrico</option>
+                <option value="us_customary" data-i18n="selector.us_customary">Estadounidense</option>
+              </select>
+              <small id="authUnitSystemHelp">
+                <span data-i18n="selector.metric">Métrico</span> / <span data-i18n="selector.us_customary">Estadounidense</span>
+              </small>
+            </div>
+          </div>
+        </section>
+      </div>
+      <script>
+        (function applyBootstrappedPreferences() {
+          var prefs = window.NP_PREFS_BOOTSTRAP;
+          if (!prefs) return;
+          document.getElementById('authLanguage').value = prefs.language;
+          document.getElementById('authUnitSystem').value = prefs.unit_system;
+        })();
+      </script>
       <div class="login-split">
       <div class="login-split__left">
       <div class="auth-card login-split__login">
@@ -121,12 +162,12 @@
           <div class="auth-logo-container">
             <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="auth-card-logo" />
           </div>
-          <h1 class="auth-title">Bienvenido a NutriPlant PRO</h1>
-          <p style="margin: 8px 0 0; font-size: 15px; color: #475569; font-weight: 500; text-align: center;">Diseña, ajusta y nutre con criterio técnico</p>
-          <div class="auth-portal-ctas" role="navigation" aria-label="Manual técnico público">
-            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual" target="_blank" rel="noopener noreferrer" title="Abrir manual técnico en una pestaña nueva">
+          <h1 class="auth-title" data-i18n="auth.login_title">Iniciar sesión</h1>
+          <p style="margin: 8px 0 0; font-size: 15px; color: #475569; font-weight: 500; text-align: center;" data-i18n="auth.tagline">Diseña, ajusta y nutre con criterio técnico</p>
+          <div class="auth-portal-ctas" role="navigation" aria-label="Manual técnico público" data-i18n-aria-label="auth.manual_aria">
+            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual" target="_blank" rel="noopener noreferrer" title="Manual técnico público" data-i18n-title="auth.manual_aria">
               <img src="assets/N_Hoja_Azul.png" alt="" class="auth-portal-cta__icon" width="18" height="18" decoding="async">
-              <span>Manual Técnico</span>
+              <span data-i18n="auth.manual">Manual Técnico</span>
             </a>
           </div>
         </div>
@@ -142,7 +183,7 @@
           margin-bottom: 8px;
         ">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
-            <span style="color: #64748b; font-weight: 500;">Contáctanos:</span>
+            <span style="color: #64748b; font-weight: 500;" data-i18n="auth.contact_us">Contáctanos:</span>
             <a href="mailto:admin@nutriplantpro.com" style="
               display: inline-flex;
               align-items: center;
@@ -187,28 +228,29 @@
 
         <!-- Mensaje de bienvenida tras completar suscripción con PayPal (se muestra por JS) -->
         <div id="paypalSuccessWelcome" style="display: none; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
-          <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #065f46;">¡Bienvenido a NutriPlant PRO!</h2>
-          <p style="margin: 0 0 12px 0; font-size: 15px; color: #047857;">Tu cuenta y suscripción están activas. Inicia sesión con tu correo y contraseña.</p>
-          <p style="margin: 0 0 12px 0; font-size: 14px; color: #047857;">Tu suscripción es de <strong>$49 USD</strong> <span style="background: #065f46; color: #fff; font-weight: 700; padding: 2px 8px; border-radius: 6px;">cada 5 meses</span>. Puedes cancelarla cuando quieras desde PayPal.</p>
-          <p style="margin: 0; font-size: 13px; color: #059669;">Redirigiendo al panel en unos segundos… Si no eres redirigido, usa el formulario de abajo.</p>
+          <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #065f46;" data-i18n="auth.welcome_title">¡Bienvenido a NutriPlant PRO!</h2>
+          <p style="margin: 0 0 12px 0; font-size: 15px; color: #047857;" data-i18n="auth.welcome_active">Tu cuenta y suscripción están activas. Inicia sesión con tu correo y contraseña.</p>
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #047857;" data-i18n="auth.welcome_subscription">Tu suscripción es de $49 USD cada 5 meses. Puedes cancelarla cuando quieras desde PayPal.</p>
+          <p style="margin: 0; font-size: 13px; color: #059669;" data-i18n="auth.welcome_redirect">Redirigiendo al panel en unos segundos… Si no eres redirigido, usa el formulario de abajo.</p>
         </div>
 
         <!-- Inicio de sesión: correo, contraseña y registro -->
         <form id="loginForm" class="auth-form">
           <div class="form-group">
-            <label for="email" class="form-label">Correo electrónico</label>
+            <label for="email" class="form-label" data-i18n="auth.email">Correo electrónico</label>
             <input 
               type="email" 
               id="email"
               name="email" 
-              placeholder="tu@correo.com" 
+              placeholder="tu@correo.com"
+              data-i18n-placeholder="auth.email_placeholder"
               required 
               class="form-input"
             />
           </div>
           
           <div class="form-group">
-            <label for="password" class="form-label">Contraseña</label>
+            <label for="password" class="form-label" data-i18n="auth.password">Contraseña</label>
             <input 
               type="password" 
               id="password"
@@ -220,7 +262,7 @@
           </div>
           
           <button type="submit" class="auth-button">
-            <span class="button-text">Iniciar Sesión</span>
+            <span class="button-text" data-i18n="auth.login_action">Iniciar Sesión</span>
             <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
@@ -229,29 +271,29 @@
 
         <!-- Panel para definir nueva contraseña (tras clic en enlace de recuperación) -->
         <div id="recoveryPasswordPanel" style="display: none;">
-          <p style="color: #0f172a; font-size: 15px; font-weight: 600; margin-bottom: 12px;">Define tu nueva contraseña</p>
+          <p style="color: #0f172a; font-size: 15px; font-weight: 600; margin-bottom: 12px;" data-i18n="auth.recovery_title">Define tu nueva contraseña</p>
           <form id="recoveryPasswordForm" onsubmit="return submitRecoveryPassword(event);">
             <div class="form-group">
-              <label for="newPassword" class="form-label">Nueva contraseña</label>
+              <label for="newPassword" class="form-label" data-i18n="auth.new_password">Nueva contraseña</label>
               <input type="password" id="newPassword" name="newPassword" placeholder="••••••••" minlength="6" required class="form-input" />
             </div>
             <div class="form-group">
-              <label for="newPasswordConfirm" class="form-label">Confirmar contraseña</label>
+              <label for="newPasswordConfirm" class="form-label" data-i18n="auth.confirm_password">Confirmar contraseña</label>
               <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" placeholder="••••••••" minlength="6" required class="form-input" />
             </div>
             <div id="recoveryPasswordMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
             <button type="submit" class="auth-button" style="width: 100%;">
-              <span class="button-text">Guardar y entrar</span>
+              <span class="button-text" data-i18n="auth.recovery_action">Guardar y entrar</span>
             </button>
           </form>
         </div>
         
         <div id="loginFormFooter" style="text-align: center; margin-top: 16px;">
           <p style="color: #64748b; font-size: 14px; margin: 0;" id="loginFooterText">
-            ¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>
+            <span data-i18n="auth.no_account">¿No tienes una cuenta?</span> <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;" data-i18n="auth.register_link">Crear Nueva Cuenta</a>
           </p>
-          <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;">Suscripción: $49 USD cada 5 meses. Cancela cuando quieras desde PayPal.</p>
-          <p style="color: #64748b; font-size: 13px; margin: 10px 0 0 0; line-height: 1.45;">Activa la suscripción para comenzar tu <span style="font-weight: 700; color: #166534; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">prueba gratuita de 10 días</span>.<br>Puedes cancelar en cualquier momento antes de que termine el periodo y no se realizará ningún cargo.</p>
+          <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;" data-i18n="auth.login_subscription">Suscripción: $49 USD cada 5 meses. Cancela cuando quieras desde PayPal.</p>
+          <p style="color: #64748b; font-size: 13px; margin: 10px 0 0 0; line-height: 1.45;" data-i18n="auth.login_trial">Activa la suscripción para comenzar tu prueba gratuita de 10 días. Puedes cancelar antes de que termine el periodo y no se realizará ningún cargo.</p>
         </div>
       </div>
       </div>
@@ -2769,19 +2811,19 @@
   <div id="forgotPasswordModal" class="modal-overlay" style="display: none;">
     <div class="modal" style="max-width: 420px;">
       <div class="modal-header">
-        <h2 class="modal-title">Recuperar contraseña</h2>
-        <button class="modal-close" onclick="closeForgotPasswordModal()">×</button>
+        <h2 class="modal-title" data-i18n="auth.forgot_password">Recuperar contraseña</h2>
+        <button class="modal-close" onclick="closeForgotPasswordModal()" aria-label="Cerrar ventana" data-i18n-aria-label="auth.close_dialog">×</button>
       </div>
       <div class="modal-body">
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;" data-i18n="auth.recovery_intro">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
         <form id="forgotPasswordForm" onsubmit="return submitForgotPassword(event);">
           <div class="form-group">
-            <label for="forgotEmail" class="form-label">Correo electrónico</label>
-            <input type="email" id="forgotEmail" name="email" placeholder="tu@correo.com" required class="form-input" />
+            <label for="forgotEmail" class="form-label" data-i18n="auth.email">Correo electrónico</label>
+            <input type="email" id="forgotEmail" name="email" placeholder="tu@correo.com" data-i18n-placeholder="auth.email_placeholder" required class="form-input" />
           </div>
           <div id="forgotPasswordMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
           <button type="submit" class="auth-button" style="width: 100%; margin-top: 8px;">
-            <span class="button-text">Enviar enlace</span>
+            <span class="button-text" data-i18n="auth.send_link">Enviar enlace</span>
           </button>
         </form>
       </div>
@@ -2792,19 +2834,19 @@
   <div id="resendConfirmModal" class="modal-overlay" style="display: none;">
     <div class="modal" style="max-width: 420px;">
       <div class="modal-header">
-        <h2 class="modal-title">Reenviar correo de confirmación</h2>
-        <button class="modal-close" onclick="closeResendConfirmModal()">×</button>
+        <h2 class="modal-title" data-i18n="auth.resend_title">Reenviar correo de confirmación</h2>
+        <button class="modal-close" onclick="closeResendConfirmModal()" aria-label="Cerrar ventana" data-i18n-aria-label="auth.close_dialog">×</button>
       </div>
       <div class="modal-body">
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Si te registraste y no te llegó el correo para confirmar tu cuenta, ingresa tu correo y te lo reenviamos. Revisa también spam o correo no deseado.</p>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;" data-i18n="auth.resend_intro">Si te registraste y no te llegó el correo para confirmar tu cuenta, ingresa tu correo y te lo reenviamos. Revisa también spam o correo no deseado.</p>
         <form id="resendConfirmForm" onsubmit="return submitResendConfirm(event);">
           <div class="form-group">
-            <label for="resendConfirmEmail" class="form-label">Correo electrónico</label>
-            <input type="email" id="resendConfirmEmail" name="email" placeholder="tu@correo.com" required class="form-input" />
+            <label for="resendConfirmEmail" class="form-label" data-i18n="auth.email">Correo electrónico</label>
+            <input type="email" id="resendConfirmEmail" name="email" placeholder="tu@correo.com" data-i18n-placeholder="auth.email_placeholder" required class="form-input" />
           </div>
           <div id="resendConfirmMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
           <button type="submit" class="auth-button" style="width: 100%; margin-top: 8px;">
-            <span class="button-text">Reenviar correo</span>
+            <span class="button-text" data-i18n="auth.resend_action">Reenviar correo</span>
           </button>
         </form>
       </div>
@@ -2814,63 +2856,64 @@
   <div id="registrationModal" class="modal-overlay" style="display: none;">
     <div class="modal" style="max-width: 600px;">
       <div class="modal-header">
-        <h2 class="modal-title">Crear Nueva Cuenta</h2>
-        <button class="modal-close" onclick="closeRegistrationModal()">×</button>
+        <h2 class="modal-title" data-i18n="auth.register_title">Crear Nueva Cuenta</h2>
+        <button class="modal-close" onclick="closeRegistrationModal()" aria-label="Cerrar ventana" data-i18n-aria-label="auth.close_dialog">×</button>
       </div>
+      <div id="registrationPreferencesSlot" class="registration-preferences-slot"></div>
       <div class="modal-body">
         <!-- Mensaje cuando el registro está cerrado (solo calculadoras gratis) -->
         <div id="registrationClosedMessage" style="display: none; text-align: center; padding: 24px 16px;">
-          <p style="font-size: 16px; color: #1e293b; margin: 0 0 12px 0; font-weight: 600;">Registro temporalmente cerrado</p>
-          <p style="font-size: 14px; color: #64748b; margin: 0 0 20px 0;">Estamos preparando todo. Mientras tanto, puedes usar <strong>todas las calculadoras gratis</strong> en esta misma página — no necesitas cuenta.</p>
-          <button type="button" class="auth-button" onclick="closeRegistrationModal()" style="padding: 10px 24px;">Cerrar</button>
+          <p style="font-size: 16px; color: #1e293b; margin: 0 0 12px 0; font-weight: 600;" data-i18n="auth.register_closed_title">Registro temporalmente cerrado</p>
+          <p style="font-size: 14px; color: #64748b; margin: 0 0 20px 0;" data-i18n="auth.register_closed_body">Estamos preparando todo. Mientras tanto, puedes usar todas las calculadoras gratis en esta misma página — no necesitas cuenta.</p>
+          <button type="button" class="auth-button" onclick="closeRegistrationModal()" style="padding: 10px 24px;" data-i18n="auth.close">Cerrar</button>
         </div>
         <div id="registrationFormWrap">
         <!-- Indicador de Pasos -->
         <div class="registration-steps" style="display: flex; justify-content: space-between; margin-bottom: 24px; padding: 0 20px;">
           <div class="step-indicator" data-step="1" style="flex: 1; text-align: center; position: relative;">
             <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">1</div>
-            <div class="step-label" style="font-size: 12px; color: #2563eb; font-weight: 600;">Información</div>
+            <div class="step-label" style="font-size: 12px; color: #2563eb; font-weight: 600;" data-i18n="auth.step_information">Información</div>
             <div class="step-line" style="position: absolute; top: 20px; left: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1;"></div>
           </div>
           <div class="step-indicator" data-step="2" style="flex: 1; text-align: center; position: relative;">
             <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">2</div>
-            <div class="step-label" style="font-size: 12px; color: #64748b;">Profesión</div>
+            <div class="step-label" style="font-size: 12px; color: #64748b;" data-i18n="auth.step_profession">Profesión</div>
             <div class="step-line" style="position: absolute; top: 20px; right: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1;"></div>
           </div>
           <div class="step-indicator" data-step="3" style="flex: 1; text-align: center; position: relative;">
             <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">3</div>
-            <div class="step-label" style="font-size: 12px; color: #64748b;">Contraseña</div>
+            <div class="step-label" style="font-size: 12px; color: #64748b;" data-i18n="auth.step_password">Contraseña</div>
             <div class="step-line" style="position: absolute; top: 20px; right: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1;"></div>
           </div>
           <div class="step-indicator" data-step="4" style="flex: 1; text-align: center;">
             <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">4</div>
-            <div class="step-label" style="font-size: 12px; color: #64748b;">Suscripción</div>
+            <div class="step-label" style="font-size: 12px; color: #64748b;" data-i18n="auth.step_subscription">Suscripción</div>
           </div>
         </div>
 
         <form id="registrationForm">
           <!-- PASO 1: Información Personal -->
           <div class="registration-step" id="step-1" style="display: block;">
-            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">📋 Paso 1: Información Personal</h3>
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;" data-i18n="auth.step1_title">📋 Paso 1: Información Personal</h3>
             
             <!-- Nombre y Apellido -->
             <div class="form-group">
-              <label class="form-label">Nombre *</label>
+              <label class="form-label"><span data-i18n="auth.first_and_last_name">Nombre y apellido</span> *</label>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <input type="text" id="reg-firstname" name="firstname" class="form-input" placeholder="Nombre" required>
-                <input type="text" id="reg-lastname" name="lastname" class="form-input" placeholder="Apellido" required>
+                <input type="text" id="reg-firstname" name="firstname" class="form-input" placeholder="Nombre" data-i18n-placeholder="auth.first_name" required>
+                <input type="text" id="reg-lastname" name="lastname" class="form-input" placeholder="Apellido" data-i18n-placeholder="auth.last_name" required>
               </div>
             </div>
 
             <!-- Email -->
             <div class="form-group">
-              <label for="reg-email" class="form-label">Correo Electrónico *</label>
+              <label for="reg-email" class="form-label"><span data-i18n="auth.email">Correo Electrónico</span> *</label>
               <input type="email" id="reg-email" name="email" class="form-input" required>
             </div>
 
             <!-- Teléfono con código de país -->
             <div class="form-group">
-              <label for="reg-phone-code" class="form-label">Teléfono *</label>
+              <label for="reg-phone-code" class="form-label"><span data-i18n="auth.phone">Teléfono</span> *</label>
               <div style="display: flex; gap: 8px;">
                 <select id="reg-phone-code" name="phone_code" style="flex: 0 0 120px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
                   <option value="+1">+1 (USA/Can)</option>
@@ -2881,146 +2924,146 @@
                   <option value="+57">+57 (Colombia)</option>
                   <option value="+51">+51 (Perú)</option>
                   <option value="+56">+56 (Chile)</option>
-                  <option value="other">Otro</option>
+                  <option value="other" data-i18n="auth.other">Otro</option>
                 </select>
-                <input type="tel" id="reg-phone-custom-code" name="phone_custom_code" placeholder="Código" style="flex: 0 0 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; display: none; font-size: 14px;">
-                <input type="tel" id="reg-phone" name="phone" class="form-input" placeholder="Número de teléfono" style="flex: 1;" required>
+                <input type="tel" id="reg-phone-custom-code" name="phone_custom_code" placeholder="Código" data-i18n-placeholder="auth.custom_code" style="flex: 0 0 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; display: none; font-size: 14px;">
+                <input type="tel" id="reg-phone" name="phone" class="form-input" placeholder="Número de teléfono" data-i18n-placeholder="auth.phone_number" style="flex: 1;" required>
               </div>
             </div>
 
             <!-- Ubicación -->
             <div class="form-group">
-              <label class="form-label">Ubicación *</label>
+              <label class="form-label"><span data-i18n="auth.location">Ubicación</span> *</label>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <input type="text" id="reg-country" name="country" class="form-input" placeholder="País" required>
-                <input type="text" id="reg-state" name="state" class="form-input" placeholder="Estado/Provincia" required>
+                <input type="text" id="reg-country" name="country" class="form-input" placeholder="País" data-i18n-placeholder="auth.country" required>
+                <input type="text" id="reg-state" name="state" class="form-input" placeholder="Estado/Provincia" data-i18n-placeholder="auth.state" required>
               </div>
               <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
-                <input type="text" id="reg-city" name="city" class="form-input" placeholder="Ciudad" required>
-                <input type="text" id="reg-postal" name="postal" class="form-input" placeholder="Código Postal (ZIP)">
+                <input type="text" id="reg-city" name="city" class="form-input" placeholder="Ciudad" data-i18n-placeholder="auth.city" required>
+                <input type="text" id="reg-postal" name="postal" class="form-input" placeholder="Código Postal (ZIP)" data-i18n-placeholder="auth.postal_code">
               </div>
             </div>
 
             <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <button type="button" class="btn btn-secondary" onclick="closeRegistrationModal()">Cancelar</button>
-              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()">Siguiente →</button>
+              <button type="button" class="btn btn-secondary" onclick="closeRegistrationModal()" data-i18n="common.cancel">Cancelar</button>
+              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()" data-i18n="auth.next">Siguiente →</button>
             </div>
           </div>
 
           <!-- PASO 2: Profesión y Cultivos -->
           <div class="registration-step" id="step-2" style="display: none;">
-            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">💼 Paso 2: Profesión y Cultivos</h3>
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;" data-i18n="auth.step2_title">💼 Paso 2: Profesión y Cultivos</h3>
             
             <!-- Profesión -->
             <div class="form-group">
-              <label for="reg-profession" class="form-label">Profesión *</label>
+              <label for="reg-profession" class="form-label"><span data-i18n="auth.profession">Profesión</span> *</label>
               <select id="reg-profession" name="profession" class="form-input" required>
-                <option value="">Selecciona una profesión</option>
-                <option value="Agrónomo">Agrónomo</option>
-                <option value="Ingeniero Agrónomo">Ingeniero Agrónomo</option>
-                <option value="Técnico Agrícola">Técnico Agrícola</option>
-                <option value="Productor">Productor</option>
-                <option value="Asesor">Asesor</option>
-                <option value="Investigador">Investigador</option>
-                <option value="Estudiante">Estudiante</option>
-                <option value="Otro">Otro</option>
+                <option value="" data-i18n="auth.select_profession">Selecciona una profesión</option>
+                <option value="Agrónomo" data-i18n="auth.profession_agronomist">Agrónomo</option>
+                <option value="Ingeniero Agrónomo" data-i18n="auth.profession_agricultural_engineer">Ingeniero Agrónomo</option>
+                <option value="Técnico Agrícola" data-i18n="auth.profession_agricultural_technician">Técnico Agrícola</option>
+                <option value="Productor" data-i18n="auth.profession_grower">Productor</option>
+                <option value="Asesor" data-i18n="auth.profession_consultant">Asesor</option>
+                <option value="Investigador" data-i18n="auth.profession_researcher">Investigador</option>
+                <option value="Estudiante" data-i18n="auth.profession_student">Estudiante</option>
+                <option value="Otro" data-i18n="auth.other">Otro</option>
               </select>
             </div>
 
             <!-- Cultivos -->
             <div class="form-group">
-              <label class="form-label">Cultivos de Interés *</label>
+              <label class="form-label"><span data-i18n="auth.crops_interest">Cultivos de Interés</span> *</label>
               <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 8px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Aguacate" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🥑 Aguacate</span>
+                  <span data-i18n="auth.crop_avocado">🥑 Aguacate</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Tomate" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🍅 Tomate</span>
+                  <span data-i18n="auth.crop_tomato">🍅 Tomate</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Pimiento" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🌶️ Pimiento</span>
+                  <span data-i18n="auth.crop_pepper">🌶️ Pimiento</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Pepino" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🥒 Pepino</span>
+                  <span data-i18n="auth.crop_cucumber">🥒 Pepino</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Fresa" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🍓 Fresa</span>
+                  <span data-i18n="auth.crop_strawberry">🍓 Fresa</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Lechuga" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🥬 Lechuga</span>
+                  <span data-i18n="auth.crop_lettuce">🥬 Lechuga</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Cítricos" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🍊 Cítricos</span>
+                  <span data-i18n="auth.crop_citrus">🍊 Cítricos</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Uva" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🍇 Uva</span>
+                  <span data-i18n="auth.crop_grape">🍇 Uva</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Maíz" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🌽 Maíz</span>
+                  <span data-i18n="auth.crop_corn">🌽 Maíz</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                   <input type="checkbox" name="crops" value="Otro" style="width: 18px; height: 18px; cursor: pointer;">
-                  <span>🌾 Otro</span>
+                  <span data-i18n="auth.crop_other">🌾 Otro</span>
                 </label>
               </div>
-              <small style="color: #64748b; display: block; margin-top: 8px;">Selecciona al menos un cultivo</small>
+              <small style="color: #64748b; display: block; margin-top: 8px;" data-i18n="auth.select_crop_help">Selecciona al menos un cultivo</small>
             </div>
 
             <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()">← Anterior</button>
-              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()">Siguiente →</button>
+              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()" data-i18n="auth.previous">← Anterior</button>
+              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()" data-i18n="auth.next">Siguiente →</button>
             </div>
           </div>
 
           <!-- PASO 3: Contraseña -->
           <div class="registration-step" id="step-3" style="display: none;">
-            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🔐 Paso 3: Contraseña</h3>
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;" data-i18n="auth.step3_title">🔐 Paso 3: Contraseña</h3>
             
             <!-- Contraseña -->
             <div class="form-group">
-              <label for="reg-password" class="form-label">Contraseña *</label>
+              <label for="reg-password" class="form-label"><span data-i18n="auth.password">Contraseña</span> *</label>
               <input type="password" id="reg-password" name="password" class="form-input" required minlength="6">
-              <small style="color: #64748b; display: block; margin-top: 4px;">Mínimo 6 caracteres</small>
+              <small style="color: #64748b; display: block; margin-top: 4px;" data-i18n="auth.password_help">Mínimo 6 caracteres</small>
             </div>
 
             <!-- Confirmar Contraseña -->
             <div class="form-group">
-              <label for="reg-password-confirm" class="form-label">Confirmar Contraseña *</label>
+              <label for="reg-password-confirm" class="form-label"><span data-i18n="auth.confirm_password">Confirmar Contraseña</span> *</label>
               <input type="password" id="reg-password-confirm" name="password_confirm" class="form-input" required>
-              <div id="password-match-error" style="color: #dc2626; font-size: 12px; margin-top: 4px; display: none;">Las contraseñas no coinciden</div>
+              <div id="password-match-error" style="color: #dc2626; font-size: 12px; margin-top: 4px; display: none;" data-i18n="auth.password_mismatch">Las contraseñas no coinciden</div>
             </div>
 
             <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()">← Anterior</button>
-              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()">Siguiente →</button>
+              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()" data-i18n="auth.previous">← Anterior</button>
+              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()" data-i18n="auth.next">Siguiente →</button>
             </div>
           </div>
 
           <!-- PASO 4: Suscripción PayPal -->
           <div class="registration-step" id="step-4" style="display: none;">
-            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">💳 Paso 4: Suscripción</h3>
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;" data-i18n="auth.step4_title">💳 Paso 4: Suscripción</h3>
             
             <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 20px;">
-              <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">✨ Acceso Completo a NutriPlant PRO</h4>
-              <p style="margin: 0 0 16px 0; color: #475569; line-height: 1.6;">
+              <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;" data-i18n="auth.subscription_full_access">✨ Acceso Completo a NutriPlant PRO</h4>
+              <p style="margin: 0 0 16px 0; color: #475569; line-height: 1.6;" data-i18n="auth.subscription_intro">
                 Activa tu suscripción para acceder a todas las funcionalidades de NutriPlant PRO:
               </p>
               <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #475569; line-height: 1.8;">
-                <li>📊 Análisis completo de suelos y enmiendas</li>
-                <li>🌱 Programas de nutrición granular y fertirriego</li>
-                <li>💧 Análisis de agua y extractos</li>
-                <li>🤖 Asistente de IA especializado en agronomía</li>
-                <li>📋 Gestión ilimitada de proyectos</li>
-                <li>💬 Chat con experto agronómico</li>
+                <li data-i18n="auth.feature_soil">📊 Análisis completo de suelos y enmiendas</li>
+                <li data-i18n="auth.feature_nutrition">🌱 Programas de nutrición granular y fertirriego</li>
+                <li data-i18n="auth.feature_water">💧 Análisis de agua y extractos</li>
+                <li data-i18n="auth.feature_ai">🤖 Asistente de IA especializado en agronomía</li>
+                <li data-i18n="auth.feature_projects">📋 Gestión ilimitada de proyectos</li>
+                <li data-i18n="auth.feature_chat">💬 Chat con experto agronómico</li>
               </ul>
             </div>
 
@@ -3030,17 +3073,17 @@
                   <div style="font-size: 24px; font-weight: bold; color: #1e293b;">
                     $<span id="subscription-amount-display">49.00</span> USD
                   </div>
-                  <div style="font-size: 14px; color: #64748b; margin-top: 4px;">
+                  <div style="font-size: 14px; color: #64748b; margin-top: 4px;" data-i18n="auth.every_five_months">
                     cada 5 meses
                   </div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 12px; color: #64748b;">Pago seguro con</div>
+                  <div style="font-size: 12px; color: #64748b;" data-i18n="auth.secure_payment">Pago seguro con</div>
                   <div style="font-size: 18px; font-weight: 600; color: #003087;">PayPal</div>
                 </div>
               </div>
-              <p style="margin: 12px 0 0 0; padding-top: 12px; border-top: 1px solid #fde68a; font-size: 13px; color: #92400e;">
-                <strong>10 días de prueba gratis.</strong> Puedes cancelar en cualquier momento desde tu cuenta de PayPal → Suscripciones.
+              <p style="margin: 12px 0 0 0; padding-top: 12px; border-top: 1px solid #fde68a; font-size: 13px; color: #92400e;" data-i18n="auth.trial_cancel">
+                10 días de prueba gratis. Puedes cancelar en cualquier momento desde tu cuenta de PayPal → Suscripciones.
               </p>
             </div>
 
@@ -3050,20 +3093,22 @@
                      onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#f8fafc'">
                 <input type="checkbox" id="reg-activate-subscription" name="activate_subscription" value="yes" checked
                        onchange="if(!this.checked){this.checked=true;}"
-                       style="width: 20px; height: 20px; cursor: default;" title="La suscripción con PayPal es obligatoria para crear cuenta.">
+                       style="width: 20px; height: 20px; cursor: default;" title="La suscripción con PayPal es obligatoria para crear cuenta."
+                       aria-label="La suscripción con PayPal es obligatoria para crear cuenta." data-i18n-aria-label="auth.paypal_required"
+                       data-i18n-title="auth.paypal_required">
                 <div>
-                  <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">Activar suscripción ahora con PayPal</div>
-                  <div style="font-size: 13px; color: #64748b;">Serás redirigido a PayPal para completar el pago seguro</div>
+                  <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;" data-i18n="auth.activate_paypal">Activar suscripción ahora con PayPal</div>
+                  <div style="font-size: 13px; color: #64748b;" data-i18n="auth.paypal_redirect">Serás redirigido a PayPal para completar el pago seguro</div>
                 </div>
               </label>
-              <p style="margin: 8px 0 0 0; font-size: 12px; color: #0369a1; background: #e0f2fe; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #0284c7;">
-                <strong>Resumen:</strong> $49 USD cada 5 meses · 10 días de prueba gratis · Cancela cuando quieras desde PayPal → Suscripciones.
+              <p style="margin: 8px 0 0 0; font-size: 12px; color: #0369a1; background: #e0f2fe; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #0284c7;" data-i18n="auth.subscription_summary">
+                Resumen: $49 USD cada 5 meses · 10 días de prueba gratis · Cancela cuando quieras desde PayPal → Suscripciones.
               </p>
             </div>
 
             <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()">← Anterior</button>
-              <button type="submit" class="btn btn-primary">Crear Cuenta</button>
+              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()" data-i18n="auth.previous">← Anterior</button>
+              <button type="submit" class="btn btn-primary" data-i18n="auth.register_action">Crear Cuenta</button>
             </div>
           </div>
         </form>
@@ -3073,6 +3118,53 @@
   </div>
 
   <script>
+    (function initAuthPreferences() {
+      var bar = document.getElementById('authPreferencesBar');
+      var home = document.getElementById('authPreferencesHome');
+      var registrationSlot = document.getElementById('registrationPreferencesSlot');
+
+      window.moveAuthPreferences = function(destination) {
+        var target = destination === 'registration' ? registrationSlot : home;
+        if (bar && target && bar.parentNode !== target) target.appendChild(bar);
+      };
+
+      document.addEventListener('DOMContentLoaded', function() {
+        if (!bar || !window.NpPrefs || !window.NpI18n) return;
+        var languageSelect = document.getElementById('authLanguage');
+        var unitSystemSelect = document.getElementById('authUnitSystem');
+        var prefs = window.NpPrefs.get();
+
+        languageSelect.value = prefs.language;
+        unitSystemSelect.value = prefs.unit_system;
+        window.NpI18n.setLanguage(prefs.language, { persist: false });
+
+        languageSelect.addEventListener('change', function() {
+          window.NpPrefs.set({ language: this.value }, { explicit: true });
+          window.NpI18n.setLanguage(this.value, { persist: false });
+        });
+
+        unitSystemSelect.addEventListener('change', function() {
+          window.NpPrefs.set({ unit_system: this.value }, { explicit: true });
+        });
+
+        window.addEventListener('np:prefs-changed', function(event) {
+          var next = event.detail && event.detail.prefs;
+          if (!next) return;
+          languageSelect.value = next.language;
+          unitSystemSelect.value = next.unit_system;
+          document.documentElement.setAttribute('data-np-unit-system', next.unit_system);
+        });
+      });
+    })();
+  </script>
+
+  <script>
+    function authText(key) {
+      return window.NpI18n && typeof window.NpI18n.t === 'function'
+        ? window.NpI18n.t('auth.' + key)
+        : key;
+    }
+
     // Registro de cuentas nuevas: false = no mostrar opción de registro (solo login y calculadoras); true = mostrar "Crear Nueva Cuenta"
     // Cuando des luz verde a los registros, cambia a true.
     window.NUTRIPLANT_REGISTRATION_OPEN = true;
@@ -3102,6 +3194,7 @@
           var closedMsg = document.getElementById('registrationClosedMessage');
           if (formWrap) formWrap.style.display = 'none';
           if (closedMsg) closedMsg.style.display = 'block';
+          if (window.moveAuthPreferences) window.moveAuthPreferences('registration');
         }
         return;
       }
@@ -3111,6 +3204,7 @@
         var closedMsg = document.getElementById('registrationClosedMessage');
         if (formWrap) formWrap.style.display = 'block';
         if (closedMsg) closedMsg.style.display = 'none';
+        if (window.moveAuthPreferences) window.moveAuthPreferences('registration');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         currentRegistrationStep = 1;
@@ -3128,7 +3222,7 @@
           footerBlock.style.display = 'none';
         } else {
           footerBlock.style.display = 'block';
-          if (footer) footer.innerHTML = '¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>';
+          if (footer) footer.innerHTML = '<span data-i18n="auth.no_account">¿No tienes una cuenta?</span> <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;" data-i18n="auth.register_link">Crear Nueva Cuenta</a>';
         }
       }
     }
@@ -3148,6 +3242,7 @@
         if (err) err.style.display = 'none';
         var code = document.getElementById('reg-phone-custom-code');
         if (code) code.style.display = 'none';
+        if (window.moveAuthPreferences) window.moveAuthPreferences('home');
         currentRegistrationStep = 1;
         updateRegistrationStepDisplay();
       }
@@ -3204,7 +3299,7 @@
       if (!email) return false;
       const supabaseAuth = window.nutriplantSupabaseAuth;
       if (!supabaseAuth || !supabaseAuth.isAvailable || !supabaseAuth.isAvailable()) {
-        msgEl.textContent = 'Reenvío de correo no disponible. Contáctanos: admin@nutriplantpro.com';
+        msgEl.textContent = authText('resend_unavailable');
         msgEl.style.display = 'block';
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
@@ -3214,7 +3309,7 @@
       const result = await supabaseAuth.resendConfirmationEmail(email);
       msgEl.style.display = 'block';
       if (result.ok) {
-        msgEl.textContent = 'Listo. Revisa tu correo (y la carpeta de spam) y haz clic en el enlace para confirmar tu cuenta.';
+        msgEl.textContent = authText('resend_success');
         msgEl.style.background = '#f0fdf4';
         msgEl.style.color = '#16a34a';
         msgEl.style.border = '1px solid #bbf7d0';
@@ -3222,9 +3317,9 @@
       } else {
         var errMsg = result.error || '';
         if (errMsg.toLowerCase().indexOf('rate limit') !== -1) {
-          msgEl.textContent = 'Se enviaron demasiados correos en poco tiempo. Espera unos 15-30 minutos y vuelve a intentar, o revisa tu bandeja (y spam) por si ya llegó un correo anterior.';
+          msgEl.textContent = authText('resend_rate_limit');
         } else {
-          msgEl.textContent = errMsg || 'No se pudo reenviar el correo. Si ya confirmaste tu cuenta, inicia sesión con tu contraseña.';
+          msgEl.textContent = errMsg || authText('resend_failed');
         }
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
@@ -3241,7 +3336,7 @@
       if (!email) return false;
       const supabaseAuth = window.nutriplantSupabaseAuth;
       if (!supabaseAuth || !supabaseAuth.isAvailable || !supabaseAuth.isAvailable()) {
-        msgEl.textContent = 'Recuperación por correo no disponible. Contáctanos: admin@nutriplantpro.com';
+        msgEl.textContent = authText('recovery_unavailable');
         msgEl.style.display = 'block';
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
@@ -3251,13 +3346,13 @@
       const result = await supabaseAuth.resetPasswordForEmail(email);
       msgEl.style.display = 'block';
       if (result.ok) {
-        msgEl.textContent = 'Listo. Revisa tu correo y usa el enlace para crear una nueva contraseña. Si no lo ves, revisa la carpeta de correo no deseado o spam.';
+        msgEl.textContent = authText('recovery_success');
         msgEl.style.background = '#f0fdf4';
         msgEl.style.color = '#16a34a';
         msgEl.style.border = '1px solid #bbf7d0';
         setTimeout(closeForgotPasswordModal, 3000);
       } else {
-        msgEl.textContent = result.error || 'Error al enviar el enlace.';
+        msgEl.textContent = result.error || authText('send_failed');
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
         msgEl.style.border = '1px solid #fecaca';
@@ -3271,14 +3366,14 @@
       const confirmP = document.getElementById('newPasswordConfirm') && document.getElementById('newPasswordConfirm').value;
       const msgEl = document.getElementById('recoveryPasswordMessage');
       if (newP !== confirmP) {
-        msgEl.textContent = 'Las contraseñas no coinciden.';
+        msgEl.textContent = authText('password_mismatch');
         msgEl.style.display = 'block';
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
         return false;
       }
       if (!newP || newP.length < 6) {
-        msgEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+        msgEl.textContent = authText('password_length_error');
         msgEl.style.display = 'block';
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
@@ -3286,7 +3381,7 @@
       }
       const supabaseAuth = window.nutriplantSupabaseAuth;
       if (!supabaseAuth || !supabaseAuth.updatePassword) {
-        msgEl.textContent = 'Error de configuración. Contáctanos: admin@nutriplantpro.com';
+        msgEl.textContent = authText('configuration_error');
         msgEl.style.display = 'block';
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
@@ -3294,14 +3389,14 @@
       }
       const result = await supabaseAuth.updatePassword(newP);
       if (result.ok) {
-        msgEl.textContent = 'Contraseña actualizada. Redirigiendo...';
+        msgEl.textContent = authText('password_updated');
         msgEl.style.display = 'block';
         msgEl.style.background = '#f0fdf4';
         msgEl.style.color = '#16a34a';
         window.location.hash = '';
         setTimeout(function() { window.location.href = 'dashboard.html'; }, 1000);
       } else {
-        msgEl.textContent = result.error || 'No se pudo actualizar la contraseña.';
+        msgEl.textContent = result.error || authText('password_update_failed');
         msgEl.style.display = 'block';
         msgEl.style.background = '#fef2f2';
         msgEl.style.color = '#dc2626';
@@ -3419,14 +3514,14 @@
         const city = document.getElementById('reg-city').value.trim();
 
         if (!firstname || !lastname || !email || !phone || !country || !state || !city) {
-          alert('Por favor, completa todos los campos obligatorios del Paso 1.');
+          alert(authText('required_step1'));
           return;
         }
 
         // Validar email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-          alert('Por favor, ingresa un correo electrónico válido.');
+          alert(authText('invalid_email'));
           return;
         }
       } else if (currentRegistrationStep === 2) {
@@ -3435,12 +3530,12 @@
         const selectedCrops = Array.from(document.querySelectorAll('input[name="crops"]:checked'));
 
         if (!profession) {
-          alert('Por favor, selecciona una profesión.');
+          alert(authText('profession_required'));
           return;
         }
 
         if (selectedCrops.length === 0) {
-          alert('Por favor, selecciona al menos un cultivo de interés.');
+          alert(authText('crop_required'));
           return;
         }
       } else if (currentRegistrationStep === 3) {
@@ -3449,12 +3544,12 @@
         const confirm = document.getElementById('reg-password-confirm').value;
 
         if (!password || password.length < 6) {
-          alert('La contraseña debe tener al menos 6 caracteres.');
+          alert(authText('password_length_error'));
           return;
         }
 
         if (password !== confirm) {
-          alert('Las contraseñas no coinciden.');
+          alert(authText('password_mismatch'));
           document.getElementById('password-match-error').style.display = 'block';
           return;
         }
@@ -3498,7 +3593,7 @@
       
       if (confirm && password !== confirm) {
         errorDiv.style.display = 'block';
-        this.setCustomValidity('Las contraseñas no coinciden');
+        this.setCustomValidity(authText('password_mismatch'));
       } else {
         errorDiv.style.display = 'none';
         this.setCustomValidity('');
@@ -3528,7 +3623,7 @@
       const selectedCrops = Array.from(document.querySelectorAll('input[name="crops"]:checked')).map(cb => cb.value);
       
       if (selectedCrops.length === 0) {
-        alert('Por favor, selecciona al menos un cultivo de interés.');
+        alert(authText('crop_required'));
         return;
       }
 
@@ -3537,6 +3632,11 @@
       const lastname = formData.get('lastname') || '';
       const fullName = `${firstname} ${lastname}`.trim();
       const email = formData.get('email');
+      const registrationPrefs = window.NpPrefs ? window.NpPrefs.get() : {
+        language: document.documentElement.lang === 'en' ? 'en' : 'es',
+        unit_system: document.documentElement.getAttribute('data-np-unit-system') || 'metric',
+        locale: (window.navigator && window.navigator.language) || 'es-MX'
+      };
 
       // Ubicación como texto para guardar en perfil
       const locationStr = [formData.get('city'), formData.get('state'), formData.get('country')].filter(Boolean).join(', ');
@@ -3550,19 +3650,22 @@
             profession: formData.get('profession'),
             location: locationStr,
             crops: selectedCrops,
+            language: registrationPrefs.language,
+            unit_system: registrationPrefs.unit_system,
+            locale: registrationPrefs.locale,
             subscription_status: 'pending',
             subscription_amount: 49.00
           });
           if (result.ok) {
             const activateSubscriptionNow = document.getElementById('reg-activate-subscription')?.checked || false;
             if (result.needsConfirmation) {
-              alert((result.message || '¡Revisa tu correo para confirmar tu cuenta!') + ' Si no lo ves, revisa correo no deseado o spam.');
+              alert((result.message || authText('confirm_email')) + authText('check_spam_suffix'));
               closeRegistrationModal();
               return;
             }
 
             if (activateSubscriptionNow) {
-              alert('¡Cuenta creada exitosamente! Redirigiendo a PayPal para activar tu suscripción...');
+              alert(authText('account_created_redirect'));
               closeRegistrationModal();
               setTimeout(async () => {
                 try {
@@ -3570,11 +3673,11 @@
                   await activatePayPalSubscription(email, supabaseUserId);
                 } catch (error) {
                   console.error('Error activando suscripción (Supabase):', error);
-                  alert('⚠️ Tu cuenta se creó, pero PayPal no se abrió/completó. Vuelve a intentar la activación desde el login. Si no puedes entrar, contacta al administrador para que te asigne una contraseña.');
+                  alert(authText('paypal_launch_failed_admin'));
                 }
               }, 500);
             } else {
-              alert('✅ Cuenta creada en estado pendiente. No tendrás acceso hasta activar PayPal o ser activado por admin.');
+              alert(authText('account_pending'));
               closeRegistrationModal();
             }
             return;
@@ -3582,7 +3685,7 @@
           if (result.error) {
             var err = String(result.error || '').toLowerCase();
             if (err.indexOf('already') !== -1 || err.indexOf('registered') !== -1 || err.indexOf('exist') !== -1) {
-              alert('Este correo ya está registrado. Inicia sesión con tu contraseña y, si quieres volver a suscribirte, pulsa "Activar con PayPal".');
+              alert(authText('already_registered'));
             } else {
               alert('Error: ' + result.error);
             }
@@ -3590,7 +3693,7 @@
           }
         } catch (err) {
           console.error('Supabase signUp error:', err);
-          alert('Error al registrar. Intenta de nuevo.');
+          alert(authText('signup_failed'));
           return;
         }
       }
@@ -3649,7 +3752,7 @@
         sessionStorage.setItem('pending_user_id', userId);
         sessionStorage.setItem('pending_user_email', userData.email);
         
-        alert('¡Cuenta creada exitosamente! Redirigiendo a PayPal para activar tu suscripción...');
+        alert(authText('account_created_redirect'));
         closeRegistrationModal();
         
         // Activar suscripción de PayPal
@@ -3658,12 +3761,12 @@
             await activatePayPalSubscription(userData.email, userId);
           } catch (error) {
             console.error('Error activando suscripción:', error);
-            alert('⚠️ Tu cuenta se creó, pero PayPal no se abrió/completó. Vuelve a intentar la activación desde el login.');
+            alert(authText('paypal_launch_failed'));
           }
         }, 500);
       } else {
         // Si no quiere activar ahora, solo crear la cuenta
-        alert('✅ Cuenta creada en estado pendiente. No tendrás acceso hasta activar PayPal o ser activado por admin.');
+        alert(authText('account_pending'));
         closeRegistrationModal();
       }
     });
@@ -3704,17 +3807,17 @@
         const asText = (err && (err.message || err.toString())) ? String(err.message || err.toString()) : '';
         const lower = asText.toLowerCase();
         if (lower.includes('invalid_resource_id') || lower.includes('resource not found') || lower.includes('plan')) {
-          return 'PayPal rechazó el plan de suscripción. Revisa que CLIENT_ID y PLAN_ID sean del mismo modo (sandbox o live).';
+          return authText('paypal_plan_error');
         }
         if (lower.includes('popup') || lower.includes('blocked')) {
-          return 'El navegador bloqueó la ventana de PayPal. Permite pop-ups para localhost:8000 e intenta de nuevo.';
+          return authText('paypal_popup_error');
         }
         if (lower.includes('cancel')) {
-          return 'Pago cancelado por el usuario.';
+          return authText('paypal_cancelled');
         }
         if (asText) return asText;
       } catch (e) {}
-      return 'No se completó PayPal en este momento.';
+      return authText('paypal_failed');
     }
 
     function loadPayPalSdk(clientId) {
@@ -3749,10 +3852,10 @@
         overlay.innerHTML = `
           <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 40px rgba(0,0,0,.25);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-              <h3 style="margin:0;font-size:20px;color:#0f172a;">💳 Activar suscripción</h3>
-              <button id="closePayPalSubscribeModalBtn" style="border:none;background:#f1f5f9;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;">×</button>
+              <h3 style="margin:0;font-size:20px;color:#0f172a;" data-i18n="auth.paypal_modal_title">💳 Activar suscripción</h3>
+              <button id="closePayPalSubscribeModalBtn" style="border:none;background:#f1f5f9;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;" aria-label="Cerrar ventana" data-i18n-aria-label="auth.close_dialog">×</button>
             </div>
-            <p style="margin:0 0 12px 0;color:#475569;font-size:14px;line-height:1.5;">
+            <p style="margin:0 0 12px 0;color:#475569;font-size:14px;line-height:1.5;" data-i18n="auth.paypal_modal_intro">
               Prueba gratis 10 días. Luego $49 USD cada 5 meses. Puedes cancelar en cualquier momento desde PayPal.
             </p>
             <div id="paypal-subscription-button-container"></div>
@@ -3760,6 +3863,7 @@
           </div>
         `;
         document.body.appendChild(overlay);
+        if (window.NpI18n) window.NpI18n.apply(overlay);
       } else {
         overlay.style.display = 'flex';
       }
@@ -3857,7 +3961,7 @@
                 if (!subscriptionId) throw new Error('PayPal no devolvió subscriptionID');
                 await markSubscriptionActive(userId, subscriptionId);
                 hidePayPalSubscribeModal();
-                alert('✅ ¡Suscripción activada exitosamente! ID: ' + subscriptionId);
+                alert(authText('subscription_activated') + ' ID: ' + subscriptionId);
                 resolve(subscriptionId);
               } catch (e) {
                 reject(e);
@@ -3890,7 +3994,7 @@
         });
       } catch (error) {
         console.error('Error activando suscripción PayPal:', error);
-        alert('⚠️ ' + getPayPalErrorMessage(error) + '\n\nTu cuenta fue creada y puedes activar la suscripción después.');
+        alert('⚠️ ' + getPayPalErrorMessage(error) + '\n\n' + authText('activation_later'));
         throw error;
       }
     }
@@ -3921,17 +4025,17 @@
           var email = emailEl ? (emailEl.value || '').trim() : '';
           var userId = localStorage.getItem('nutriplant_user_id');
           if (!userId) {
-            alert('Sesión no encontrada. Vuelve a iniciar sesión y pulsa de nuevo "Activar con PayPal".');
+            alert(authText('session_not_found'));
             return;
           }
           if (!email) {
-            alert('Indica tu correo en el formulario.');
+            alert(authText('email_required'));
             return;
           }
           btn.disabled = true;
           btn.innerHTML = '<span class="button-text">Abriendo PayPal...</span>';
           activatePayPalSubscription(email, userId).then(function() {
-            alert('¡Suscripción activada! Redirigiendo...');
+            alert(authText('subscription_redirect'));
             window.location.href = 'dashboard.html';
           }).catch(function() {
             btn.disabled = false;

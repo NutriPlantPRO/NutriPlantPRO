@@ -6,6 +6,7 @@
     "build": "echo \"NutriPlant: sitio estático, sin paso de build\"",
     "start": "npx http-server -p 8000 -c-1 --cors",
     "dev": "npx http-server -p 8000 -c-1 --cors -o",
+    "test": "node tests/run-tests.js",
     "nutri-pro:upload": "node scripts/nutri-pro-bulk-upload.mjs"
   },
   "dependencies": {

@@ -9,6 +9,25 @@
   <meta name="description" content="Panel de control para nutrición vegetal y fertirriego - NutriPlant Pro" />
   <meta name="author" content="NutriPlant Pro" />
   <meta name="theme-color" content="#2563eb" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js"></script>
+  <script src="assets/np-units-core.js"></script>
+  <script>
+    (function () {
+      function applyPreferences(prefs) {
+        if (!prefs) return;
+        document.documentElement.lang = prefs.language || 'es';
+        document.documentElement.setAttribute('data-np-language', prefs.language || 'es');
+        document.documentElement.setAttribute('data-np-unit-system', prefs.unit_system || 'metric');
+        if (window.NpI18n) window.NpI18n.setLanguage(prefs.language || 'es', { persist: false });
+      }
+      applyPreferences(window.NpPrefs ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' });
+      window.addEventListener('np:prefs-changed', function (event) {
+        applyPreferences(event && event.detail && event.detail.prefs);
+      });
+    })();
+  </script>
   
   <!-- Favicon + PWA / acceso directo móvil (Chrome usa manifest.icons) -->
   <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
@@ -977,6 +996,7 @@
       constructor() {
         this.userId = this.getOrCreateUserId();
         this.currentProjectId = null;
+        this.lastProfileSync = Promise.resolve({ error: null });
       }
       
       // 👤 GESTIÓN DE USUARIOS
@@ -1014,6 +1034,9 @@
           created_at: new Date().toISOString(),
           last_login: new Date().toISOString(),
           projects: [],
+          language: 'es',
+          unit_system: 'metric',
+          locale: null,
           preferences: {
             theme: 'light',
             language: 'es',
@@ -1039,14 +1062,25 @@
           const loc = updatedProfile.location && typeof updatedProfile.location === 'object'
             ? [updatedProfile.location.city, updatedProfile.location.state, updatedProfile.location.country].filter(Boolean).join(', ')
             : (updatedProfile.location || '');
-          client.from('profiles').update({
+          this.lastProfileSync = client.from('profiles').update({
             name: updatedProfile.name || null,
             phone: updatedProfile.phone || null,
             profession: updatedProfile.profession || null,
             location: loc || null,
             crops: Array.isArray(updatedProfile.crops) ? updatedProfile.crops : null,
+            language: updatedProfile.language === 'en' ? 'en' : 'es',
+            unit_system: updatedProfile.unit_system === 'us_customary' ? 'us_customary' : 'metric',
+            locale: updatedProfile.locale === null || typeof updatedProfile.locale === 'string' ? updatedProfile.locale : null,
             updated_at: new Date().toISOString()
-          }).eq('id', this.userId).then(function(r) { if (r && r.error) console.warn('Sync perfil a nube:', r.error.message); });
+          }).eq('id', this.userId).then(function(r) {
+            if (r && r.error) console.warn('Sync perfil a nube:', r.error.message);
+            return r || { error: null };
+          }).catch(function(error) {
+            console.warn('Sync perfil a nube:', error && error.message ? error.message : error);
+            return { error: error };
+          });
+        } else {
+          this.lastProfileSync = Promise.resolve({ error: null });
         }
         return updatedProfile;
       }
@@ -1339,6 +1373,7 @@
     
     // Inicializar sistema de almacenamiento
     const nutriPlantStorage = new NutriPlantStorage();
+    window.nutriPlantStorage = nutriPlantStorage;
     
     // 🚀 FUNCIONES DE INTERFAZ PARA PROYECTOS
     function showUserProjects() {
@@ -7787,7 +7822,7 @@ CONTRATO:
             if (client) {
               const { data: cloudProfile, error: cloudErr } = await client
                 .from('profiles')
-                .select('subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, name, phone, location')
+                .select('subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, name, phone, location, language, unit_system, locale')
                 .eq('id', userId)
                 .maybeSingle();
               if (!cloudErr && cloudProfile) {
@@ -7801,7 +7836,10 @@ CONTRATO:
                   paypal_subscription_id: cloudProfile.paypal_subscription_id || userData.paypal_subscription_id || null,
                   name: cloudProfile.name || userData.name,
                   phone: cloudProfile.phone || userData.phone,
-                  location: cloudProfile.location != null && cloudProfile.location !== '' ? cloudProfile.location : (userData.location || null)
+                  location: cloudProfile.location != null && cloudProfile.location !== '' ? cloudProfile.location : (userData.location || null),
+                  language: cloudProfile.language || userData.language,
+                  unit_system: cloudProfile.unit_system || userData.unit_system,
+                  locale: cloudProfile.locale === null || typeof cloudProfile.locale === 'string' ? cloudProfile.locale : userData.locale
                 };
                 try { localStorage.setItem(userKey, JSON.stringify(userData)); } catch (_) {}
               }
@@ -7853,6 +7891,11 @@ CONTRATO:
 
         const relevantDate = getRelevantDate(userData);
         const subscriptionAmount = userData.subscription_amount || 49.00;
+        const currentPrefs = window.NpPrefs ? window.NpPrefs.get() : {
+          language: userData.language === 'en' ? 'en' : 'es',
+          unit_system: userData.unit_system === 'us_customary' ? 'us_customary' : 'metric',
+          locale: userData.locale || null
+        };
 
         // Construir HTML
         const html = `
@@ -7883,6 +7926,35 @@ CONTRATO:
                       return 'No especificado';
                     })()}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Idioma y unidades -->
+            <div style="background: #f5f3ff; padding: 20px; border-radius: 12px; border-left: 4px solid #7c3aed; width: 100%; box-sizing: border-box;">
+              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🌐 Idioma y unidades</h3>
+              <div style="display: grid; gap: 12px;">
+                <label style="display:grid; gap:6px; color:#475569; font-weight:600;">
+                  Idioma
+                  <select id="profileLanguage" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+                    <option value="es" ${currentPrefs.language === 'es' ? 'selected' : ''}>Español</option>
+                    <option value="en" ${currentPrefs.language === 'en' ? 'selected' : ''}>English</option>
+                  </select>
+                </label>
+                <label style="display:grid; gap:6px; color:#475569; font-weight:600;">
+                  Sistema de unidades
+                  <select id="profileUnitSystem" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+                    <option value="metric" ${currentPrefs.unit_system === 'metric' ? 'selected' : ''}>Métrico</option>
+                    <option value="us_customary" ${currentPrefs.unit_system === 'us_customary' ? 'selected' : ''}>Estadounidense</option>
+                  </select>
+                </label>
+                <label style="display:grid; gap:6px; color:#475569; font-weight:600;">
+                  Formato regional
+                  <input id="profileLocale" type="text" value="${currentPrefs.locale || ''}" placeholder="es-MX" maxlength="35" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box;">
+                </label>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <button type="button" onclick="window.saveUserPreferences()" style="background:#7c3aed; color:white; border:0; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:600;">Guardar preferencias</button>
+                  <span id="profilePreferencesMessage" style="font-size:14px; color:#166534;"></span>
                 </div>
               </div>
             </div>
@@ -7954,6 +8026,35 @@ CONTRATO:
         contentDiv.innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">Error al cargar la información del usuario.</p>';
       }
     }
+
+    async function saveUserPreferences() {
+      const message = document.getElementById('profilePreferencesMessage');
+      try {
+        const prefs = {
+          language: document.getElementById('profileLanguage').value,
+          unit_system: document.getElementById('profileUnitSystem').value,
+          locale: document.getElementById('profileLocale').value.trim() || null
+        };
+        const resolved = window.NpPrefs.set(prefs, { explicit: true });
+        if (window.NpI18n) window.NpI18n.setLanguage(resolved.language, { persist: false });
+        document.documentElement.setAttribute('data-np-unit-system', resolved.unit_system);
+        const storage = window.nutriPlantStorage;
+        if (!storage) throw new Error('Almacenamiento de perfil no disponible');
+        storage.updateUserProfile(resolved);
+        const cloudResult = await storage.lastProfileSync;
+        if (cloudResult && cloudResult.error) throw cloudResult.error;
+        if (message) {
+          message.style.color = '#166534';
+          message.textContent = 'Preferencias guardadas';
+        }
+      } catch (error) {
+        if (message) {
+          message.style.color = '#dc2626';
+          message.textContent = 'Guardado local; no se pudo sincronizar: ' + (error.message || error);
+        }
+      }
+    }
+    window.saveUserPreferences = saveUserPreferences;
 
     function showChangePasswordModal() {
       const modal = document.getElementById('changePasswordModal');

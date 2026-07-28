@@ -13,6 +13,80 @@ const HYDRO_N_SPLIT = { NO3: 95, NH4: 5 };
 // Conversión óxido → elemental (para materiales de fertirriego usados en hidroponía)
 const HYDRO_OXIDE_TO_ELEMENTAL = { P2O5_TO_P: 2.291, K2O_TO_K: 1.204, CaO_TO_Ca: 1.399, MgO_TO_Mg: 1.658 };
 const HYDRO_STAGE_OPTIONS = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
+
+/*
+ * Carga no bloqueante para el dashboard legado (no requiere editar dashboard.html).
+ * Durante la carga el fallback es ES+metric, idéntico al comportamiento histórico.
+ */
+function hydroEnsurePresentationAssets() {
+  if (typeof document === 'undefined') return;
+  const queue = [
+    ['NpPrefs', 'assets/np-prefs.js'],
+    ['NpUnits', 'assets/np-units-core.js'],
+    ['NpHydroUnits', 'assets/np-hydro-units.js']
+  ];
+  const loadNext = function () {
+    const next = queue.shift();
+    if (!next) {
+      try {
+        if (document.querySelector('.hydroponia-container')) renderHydroAll();
+      } catch (e) { /* La UI puede no estar inicializada todavía. */ }
+      return;
+    }
+    if (window[next[0]]) {
+      loadNext();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = next[1];
+    script.onload = loadNext;
+    script.onerror = loadNext;
+    document.head.appendChild(script);
+  };
+  loadNext();
+}
+
+function hydroPresentation() {
+  return (typeof window !== 'undefined' && window.NpHydroUnits) || null;
+}
+
+function hydroDisplayFromSI(value, kind, options) {
+  const api = hydroPresentation();
+  return api ? api.fromSI(value, kind, options) : Number(value);
+}
+
+function hydroInputToSI(value, kind, options) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return 0;
+  const api = hydroPresentation();
+  return api ? api.toSI(n, kind, options) : n;
+}
+
+function hydroDisplayUnit(kind, options) {
+  const api = hydroPresentation();
+  if (api) return api.unit(kind, options);
+  return kind === 'water_volume' ? 'm3' : (kind === 'liquid_volume' ? 'L' : (kind === 'mass' ? 'kg' : 'g/L'));
+}
+
+function hydroUnitLabel(unit) {
+  return unit === 'm3' ? 'm³' : (unit === 'kg/m3' ? 'kg/m³' : unit);
+}
+
+function hydroDisplayMassKg(kg) {
+  return { value: hydroDisplayFromSI(kg, 'mass'), unit: hydroDisplayUnit('mass') };
+}
+
+function hydroDisplayLiquidL(litres) {
+  return { value: hydroDisplayFromSI((parseFloat(litres) || 0) / 1000, 'liquid_volume'), unit: hydroDisplayUnit('liquid_volume') };
+}
+
+function hydroInputLiquidToL(value) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return 0;
+  return hydroPresentation() ? hydroInputToSI(n, 'liquid_volume') * 1000 : n;
+}
+
+hydroEnsurePresentationAssets();
 const HYDRO_EQ_WEIGHTS = {
   N_NO3: 14.0,   // NO3- equiv.
   N_NH4: 14.0,   // NH4+ equiv.
@@ -1188,6 +1262,9 @@ function renderHydroFertTable() {
     const legacy = !f.materialId && (f.name != null || f.dose != null);
     const tank = f.tank || 'A';
     const total = hydroFertRowProductTotal(f, materials);
+    const totalDisplay = total.unit === 'L'
+      ? hydroDisplayLiquidL(total.value)
+      : hydroDisplayMassKg(total.value);
     if (legacy) {
       const contrib = hydroFertRowContributionsLegacy(f);
       const contribCells = HYDRO_PPM_NUTRIENTS.map(n => {
@@ -1200,7 +1277,7 @@ function renderHydroFertTable() {
       <td class="hydro-dose-readonly">${(parseFloat(f.dose || 0) > 0 ? parseFloat(f.dose).toFixed(1) : '—')}</td>
       ${contribCells}
       <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank">${tankOptions(tank)}</select></td>
-      <td class="hydro-kg-readonly">${total.value > 0 ? `${total.value.toFixed(2)} ${total.unit}` : '—'}</td>
+      <td class="hydro-kg-readonly">${totalDisplay.value > 0 ? `${totalDisplay.value.toFixed(2)} ${totalDisplay.unit}` : '—'}</td>
       <td><button class="btn btn-secondary btn-sm hydro-remove-fert" data-fert-id="${f.id}">✕</button></td>
     </tr>`;
     }
@@ -1217,12 +1294,13 @@ function renderHydroFertTable() {
     const liquidInputValue = (f && f.calcMode === 'product')
       ? (parseFloat(f.productTotalL) || 0)
       : total.value;
+    const liquidDisplay = hydroDisplayLiquidL(liquidInputValue);
     const totalCell = isLiquid
       ? `<div style="display:flex;align-items:center;gap:6px;">
-          <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.01" min="0" value="${liquidInputValue > 0 ? liquidInputValue.toFixed(2) : ''}" placeholder="L total" title="Litros totales del producto para el volumen de agua">
-          <span class="hydro-muted" style="white-space:nowrap;">L</span>
+          <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.01" min="0" value="${liquidDisplay.value > 0 ? liquidDisplay.value.toFixed(2) : ''}" placeholder="${liquidDisplay.unit} total" title="Volumen total del producto para el volumen de agua">
+          <span class="hydro-muted" style="white-space:nowrap;">${liquidDisplay.unit}</span>
         </div>`
-      : `${total.value > 0 ? `${total.value.toFixed(2)} ${total.unit}` : '—'}`;
+      : `${totalDisplay.value > 0 ? `${totalDisplay.value.toFixed(2)} ${totalDisplay.unit}` : '—'}`;
     return `
     <tr data-fert-id="${f.id}">
       <td>
@@ -1346,6 +1424,9 @@ function renderHydroVolumeCard() {
   const v = parseFloat(hydroState.volumeWaterM3) || 100;
   const t = parseFloat(hydroState.tankVolumeL) || 1000;
   const r = parseFloat(hydroState.injectionRateLperM3) || 10;
+  const vDisplay = hydroDisplayFromSI(v, 'water_volume');
+  const vUnit = hydroUnitLabel(hydroDisplayUnit('water_volume'));
+  const tDisplay = hydroDisplayLiquidL(t);
   const byTank = {};
   HYDRO_TANQUES.forEach(tq => { byTank[tq] = { totalKg: 0, totalL: 0, items: [] }; });
   hydroState.fertilizers.forEach(f => {
@@ -1362,6 +1443,7 @@ function renderHydroVolumeCard() {
   });
   // Volumen de concentrado necesario = agua (m³) × tasa (L/m³). Recargas = ese volumen ÷ capacidad del tanque.
   const concentradoL = v * r;
+  const concentradoDisplay = hydroDisplayLiquidL(concentradoL);
   const recargas = t > 0 ? Math.ceil(concentradoL / t) : 0;
   const recargasText = recargas <= 1
     ? '1 recarga (tu tanque alcanza).'
@@ -1371,19 +1453,23 @@ function renderHydroVolumeCard() {
     const data = byTank[tq];
     if (data.totalKg <= 0 && data.totalL <= 0) return '';
     const totalParts = [];
-    if (data.totalKg > 0) totalParts.push(`${data.totalKg.toFixed(2)} kg`);
-    if (data.totalL > 0) totalParts.push(`${data.totalL.toFixed(2)} L`);
+    const massTotal = hydroDisplayMassKg(data.totalKg);
+    const liquidTotal = hydroDisplayLiquidL(data.totalL);
+    if (data.totalKg > 0) totalParts.push(`${massTotal.value.toFixed(2)} ${massTotal.unit}`);
+    if (data.totalL > 0) totalParts.push(`${liquidTotal.value.toFixed(2)} ${liquidTotal.unit}`);
     let perRecargaLine = '';
     if (recargas > 1) {
       const perRecParts = [];
-      if (data.totalKg > 0) perRecParts.push(`${(data.totalKg / recargas).toFixed(2)} kg`);
-      if (data.totalL > 0) perRecParts.push(`${(data.totalL / recargas).toFixed(2)} L`);
+      if (data.totalKg > 0) perRecParts.push(`${(massTotal.value / recargas).toFixed(2)} ${massTotal.unit}`);
+      if (data.totalL > 0) perRecParts.push(`${(liquidTotal.value / recargas).toFixed(2)} ${liquidTotal.unit}`);
       perRecargaLine = ` <span class="hydro-muted" style="font-size:0.9rem;">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`;
     }
     const itemsHtml = data.items.map(i => {
-      const itemPerRec = recargas > 1 ? `${(i.value / recargas).toFixed(2)} ${i.unit}` : null;
-      const eqText = i.unit === 'L' ? ` <span class="hydro-muted">(≈ ${i.kgEquivalent.toFixed(2)} kg eq)</span>` : '';
-      return `<span class="hydro-tank-item">${(i.name || '').replace(/</g, '&lt;')}: ${i.value.toFixed(2)} ${i.unit}${eqText}${itemPerRec != null ? ` <span class="hydro-muted">(${itemPerRec} por recarga)</span>` : ''}</span>`;
+      const shown = i.unit === 'L' ? hydroDisplayLiquidL(i.value) : hydroDisplayMassKg(i.value);
+      const eq = hydroDisplayMassKg(i.kgEquivalent);
+      const itemPerRec = recargas > 1 ? `${(shown.value / recargas).toFixed(2)} ${shown.unit}` : null;
+      const eqText = i.unit === 'L' ? ` <span class="hydro-muted">(≈ ${eq.value.toFixed(2)} ${eq.unit} eq)</span>` : '';
+      return `<span class="hydro-tank-item">${(i.name || '').replace(/</g, '&lt;')}: ${shown.value.toFixed(2)} ${shown.unit}${eqText}${itemPerRec != null ? ` <span class="hydro-muted">(${itemPerRec} por recarga)</span>` : ''}</span>`;
     }).join('');
     return `
       <div class="hydro-tank-block" data-tank="${tq}">
@@ -1393,7 +1479,7 @@ function renderHydroVolumeCard() {
     `;
   }).filter(Boolean).join('');
 
-  const porTanqueLegend = '<p class="hydro-muted" style="margin:0 0 6px 0;font-size:0.85rem;">Las cantidades son el <strong>total</strong> para todo el volumen de agua indicado (sólidos en kg y líquidos en L). Si necesitas varias recargas, en cada llenada usa la cantidad "por recarga".</p>';
+  const porTanqueLegend = `<p class="hydro-muted" style="margin:0 0 6px 0;font-size:0.85rem;">Las cantidades son el <strong>total</strong> para todo el volumen de agua indicado (sólidos en ${hydroDisplayUnit('mass')} y líquidos en ${hydroDisplayUnit('liquid_volume')}). Si necesitas varias recargas, en cada llenada usa la cantidad "por recarga".</p>`;
 
   // Relación de inyección: 1:(1000/tasa). Ej: tasa 10 → 1:100; tasa 15 → 1:66.7
   const ratioVal = r > 0 ? 1000 / r : NaN;
@@ -1408,10 +1494,11 @@ function renderHydroVolumeCard() {
         <p class="hydro-muted" style="margin:0 0 10px 0;font-size:0.9rem;">Volumen de agua a fertirrigar, capacidad del tanque y tasa de inyección. Con esto se calculan los totales por fertilizante (kg en sólidos y L en líquidos), el volumen de concentrado y las recargas de tanque.</p>
       </div>
       <div class="hydro-volume-row">
-        <label>Volumen de agua (m³):</label>
-        <input type="number" id="hydroVolumeWaterM3" class="hydro-input" min="0.1" step="1" value="${v}" title="m³ de agua a inyectar">
-        <label>Volumen del tanque (L):</label>
-        <input type="number" id="hydroTankVolumeL" class="hydro-input" min="1" step="1" value="${t}" title="Litros de solución concentrada">
+        <label>Volumen de agua (${vUnit}):</label>
+        <input type="number" id="hydroVolumeWaterM3" class="hydro-input" min="0.1" step="1" value="${vDisplay}" title="${vUnit} de agua a inyectar">
+        <label>Volumen del tanque (${tDisplay.unit}):</label>
+        <input type="number" id="hydroTankVolumeL" class="hydro-input" min="1" step="1" value="${tDisplay.value}" title="${tDisplay.unit} de solución concentrada">
+        <!-- L/m³ se conserva: es una tasa técnica, no un volumen simple inequívoco. -->
         <label>Tasa de inyección (L/m³):</label>
         <input type="number" id="hydroInjectionRate" class="hydro-input" min="0.1" step="0.5" value="${r}" title="L de concentrado por m³ de agua">
       </div>
@@ -1420,7 +1507,7 @@ function renderHydroVolumeCard() {
         <span id="hydroInjectionRatio" style="display:inline-block;min-width:4em;font-weight:500;" title="1:(1000 ÷ tasa)">${ratioDisplay}</span>
       </div>
       <div class="hydro-volume-result" style="margin-top:10px;padding:8px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;">
-        <strong>Volumen de concentrado necesario:</strong> ${concentradoL.toFixed(1)} L (${v} m³ × ${r} L/m³). <span class="hydro-muted">Con tu tanque de ${t} L:</span> ${recargasText}
+        <strong>Volumen de concentrado necesario:</strong> ${concentradoDisplay.value.toFixed(1)} ${concentradoDisplay.unit} (${vDisplay} ${vUnit} × ${r} L/m³). <span class="hydro-muted">Con tu tanque de ${tDisplay.value} ${tDisplay.unit}:</span> ${recargasText}
       </div>
       ${tankBlocks ? `<div class="hydro-tank-summary" style="margin-top:12px;">${porTanqueLegend}<strong>Por tanque (A, B, C):</strong><div class="hydro-tank-blocks">${tankBlocks}</div></div>` : ''}
     </div>
@@ -1698,11 +1785,11 @@ function bindHydroEvents(container) {
     const input = e.target;
     // Solo actualizar estado en volumen/tanque/inyección; NO re-renderizar para no perder foco al escribir
     if (input.id === 'hydroVolumeWaterM3') {
-      hydroState.volumeWaterM3 = parseFloat(input.value) || 100;
+      hydroState.volumeWaterM3 = hydroInputToSI(input.value, 'water_volume') || 100;
       return;
     }
     if (input.id === 'hydroTankVolumeL') {
-      hydroState.tankVolumeL = parseFloat(input.value) || 1000;
+      hydroState.tankVolumeL = hydroInputLiquidToL(input.value) || 1000;
       return;
     }
     if (input.id === 'hydroInjectionRate') {
@@ -1783,7 +1870,7 @@ function bindHydroEvents(container) {
       if (field === 'targetPpm') fert.targetPpm = parseFloat(input.value) || 0;
       if (field === 'productTotalL') {
         fert.calcMode = 'product';
-        fert.productTotalL = parseFloat(input.value) || 0;
+        fert.productTotalL = hydroInputLiquidToL(input.value);
       }
       // En celdas de aporte (ppm de elemento) el usuario teclea aquí;
       // actualizar el modo/objetivo al instante (antes solo se hacía en "change").
@@ -1855,7 +1942,7 @@ function bindHydroEvents(container) {
 
     // Al salir del campo (blur/Enter): actualizar tarjeta de volumen y recalcular
     if (target.id === 'hydroVolumeWaterM3') {
-      hydroState.volumeWaterM3 = parseFloat(target.value) || 100;
+      hydroState.volumeWaterM3 = hydroInputToSI(target.value, 'water_volume') || 100;
       renderHydroVolumeCard();
       renderHydroFertTable();
       renderHydroFertTotals();
@@ -1863,7 +1950,7 @@ function bindHydroEvents(container) {
       return;
     }
     if (target.id === 'hydroTankVolumeL') {
-      hydroState.tankVolumeL = parseFloat(target.value) || 1000;
+      hydroState.tankVolumeL = hydroInputLiquidToL(target.value) || 1000;
       renderHydroVolumeCard();
       hydroScheduleSave();
       return;
@@ -1913,7 +2000,7 @@ function bindHydroEvents(container) {
       const fert = hydroState.fertilizers.find(f => f.id === fertId);
       if (fert) {
         fert.calcMode = 'product';
-        fert.productTotalL = parseFloat(target.value) || 0;
+        fert.productTotalL = hydroInputLiquidToL(target.value);
         renderHydroVolumeCard();
         renderHydroFertTable();
         renderHydroFertTotals();
@@ -2125,3 +2212,13 @@ window.hydroBuildFertMeqContributionHtml = hydroBuildFertMeqContributionHtml;
 window.hydroGetFertTotalsPpm = hydroGetFertTotalsPpm;
 window.hydroFertTotalsPpmToMeq = hydroFertTotalsPpmToMeq;
 window.hydroComputePctMeqFromMeq = hydroComputePctMeqFromMeq;
+
+if (typeof window !== 'undefined' && !window.__npHydroPrefsBound) {
+  window.__npHydroPrefsBound = true;
+  window.addEventListener('np:prefs-changed', function () {
+    // El estado sigue en SI: solo se vuelve a presentar, sin convertirlo otra vez.
+    try {
+      if (document.querySelector('.hydroponia-container')) renderHydroAll();
+    } catch (e) { /* La vista puede estar cerrada. */ }
+  });
+}

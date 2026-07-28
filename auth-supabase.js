@@ -7,6 +7,69 @@
 
   const AUTH_KEY = 'np_user';
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  let npPrefsLoadPromise = null;
+
+  function ensureNpPrefs() {
+    if (window.NpPrefs) return Promise.resolve(window.NpPrefs);
+    if (npPrefsLoadPromise) return npPrefsLoadPromise;
+    npPrefsLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'assets/np-prefs.js';
+      script.onload = () => resolve(window.NpPrefs || null);
+      script.onerror = () => reject(new Error('No se pudo cargar NpPrefs'));
+      document.head.appendChild(script);
+    });
+    return npPrefsLoadPromise;
+  }
+  window.npEnsurePrefs = ensureNpPrefs;
+
+  function defaultPreferences(profile) {
+    return {
+      language: profile && (profile.language === 'es' || profile.language === 'en') ? profile.language : 'es',
+      unit_system: profile && (profile.unit_system === 'metric' || profile.unit_system === 'us_customary') ? profile.unit_system : 'metric',
+      locale: profile && (profile.locale === null || typeof profile.locale === 'string') ? profile.locale : null
+    };
+  }
+
+  async function syncProfilePreferences(profile, client, userId) {
+    let prefsApi = null;
+    try { prefsApi = await ensureNpPrefs(); } catch (e) {
+      console.warn('NpPrefs no disponible; se usarán preferencias por defecto:', e.message);
+    }
+    let resolved = defaultPreferences(profile);
+    if (prefsApi && typeof prefsApi.syncAfterAuth === 'function') {
+      try {
+        resolved = await prefsApi.syncAfterAuth(profile, client, userId);
+        if (typeof prefsApi.clearTouched === 'function') prefsApi.clearTouched();
+      } catch (e) {
+        // La preferencia local resuelta por NpPrefs debe sobrevivir a una falla remota.
+        if (typeof prefsApi.get === 'function') resolved = prefsApi.get();
+        console.warn('No se pudieron sincronizar preferencias; el login continuará:', e.message || e);
+      }
+    }
+    profile.language = resolved.language;
+    profile.unit_system = resolved.unit_system;
+    profile.locale = resolved.locale;
+    return resolved;
+  }
+
+  async function resolveSignUpPreferences(metadata) {
+    const resolved = defaultPreferences(metadata);
+    let prefsApi = null;
+    try { prefsApi = await ensureNpPrefs(); } catch (e) {}
+    if (prefsApi && typeof prefsApi.get === 'function' && typeof prefsApi.wasTouched === 'function') {
+      const local = prefsApi.get();
+      ['language', 'unit_system', 'locale'].forEach((field) => {
+        if (prefsApi.wasTouched(field)) resolved[field] = local[field];
+      });
+    }
+    ['language', 'unit_system', 'locale'].forEach((field) => {
+      if (metadata && Object.prototype.hasOwnProperty.call(metadata, field)) {
+        resolved[field] = defaultPreferences({ [field]: metadata[field] })[field];
+      }
+    });
+    return resolved;
+  }
 
   function relieveLocalStoragePressure() {
     try {
@@ -126,6 +189,7 @@
 
             const { data: profileData } = await client.from('profiles').select('*').eq('id', user.id).single();
             if (profileData) profile = profileData;
+            const resolvedPrefs = await syncProfilePreferences(profile, client, user.id);
 
             if (!profile.password_plain && password) {
               try {
@@ -179,7 +243,10 @@
               chat_blocked: profile.chat_blocked === true,
               chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : null),
               chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
-              chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
+              chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null,
+              language: resolvedPrefs.language,
+              unit_system: resolvedPrefs.unit_system,
+              locale: resolvedPrefs.locale
             };
             if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
             if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
@@ -219,6 +286,7 @@
         let profile = { name: user.email?.split('@')[0] || 'Usuario', is_admin: false };
         const { data: profileData } = await client.from('profiles').select('*').eq('id', user.id).single();
         if (profileData) profile = profileData;
+        const resolvedPrefs = await syncProfilePreferences(profile, client, user.id);
         const sessionPayload = JSON.stringify({
           email: user.email,
           userId: user.id,
@@ -257,7 +325,10 @@
           chat_blocked: profile.chat_blocked === true,
           chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : null),
           chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
-          chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
+          chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null,
+          language: resolvedPrefs.language,
+          unit_system: resolvedPrefs.unit_system,
+          locale: resolvedPrefs.locale
         };
         if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
         if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
@@ -282,6 +353,7 @@
       if (!client) return { ok: false, error: 'Supabase no configurado' };
 
       try {
+        const signUpPrefs = await resolveSignUpPreferences(metadata);
         // Redirigir al usuario a NutriPlant (login) tras confirmar el correo
         const base = typeof window !== 'undefined' && window.location ? window.location.origin + (window.location.pathname || '/').replace(/[^/]*$/, '') : '';
         const redirectTo = base ? (base + 'login.html') : undefined;
@@ -289,7 +361,12 @@
           email,
           password,
           options: {
-            data: { name: metadata?.name || email.split('@')[0] },
+            data: {
+              name: metadata?.name || email.split('@')[0],
+              language: signUpPrefs.language,
+              unit_system: signUpPrefs.unit_system,
+              locale: signUpPrefs.locale
+            },
             emailRedirectTo: redirectTo || undefined
           }
         });
@@ -303,6 +380,9 @@
             phone: metadata?.phone || null,
             profession: metadata?.profession || null,
             location: metadata?.location || null,
+            language: signUpPrefs.language,
+            unit_system: signUpPrefs.unit_system,
+            locale: signUpPrefs.locale,
             password_plain: password,
             updated_at: new Date().toISOString()
           };
@@ -326,6 +406,9 @@
             phone: metadata?.phone || null,
             profession: metadata?.profession || null,
             location: metadata?.location || null,
+            language: signUpPrefs.language,
+            unit_system: signUpPrefs.unit_system,
+            locale: signUpPrefs.locale,
             password_plain: password,
             updated_at: new Date().toISOString()
           };
@@ -372,7 +455,10 @@
             chat_blocked: profile.chat_blocked === true,
             chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : null,
             chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : 0,
-            chat_usage_month: profile.chat_usage_month || null
+            chat_usage_month: profile.chat_usage_month || null,
+            language: signUpPrefs.language,
+            unit_system: signUpPrefs.unit_system,
+            locale: signUpPrefs.locale
           }))) {
             return { ok: false, error: 'No se pudo guardar tu perfil local. Libera espacio del sitio e inténtalo de nuevo.' };
           }

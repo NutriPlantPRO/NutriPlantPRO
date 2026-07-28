@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js"></script>
+  <script src="assets/np-units-core.js"></script>
+  <script src="assets/np-hydro-units.js"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
   <title>Diseño de solución nutritiva</title>
@@ -1096,6 +1101,15 @@
     .fert-aporte-btn--calc { background: #2563eb; color: #fff; }
     .fert-aporte-btn--save { background: #16a34a; color: #fff; }
     .fert-aporte-btn--mini { padding: 4px 8px; font-size: 11px; }
+    .hydro-pref-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+    }
+    .hydro-pref-bar label { display: inline-flex; align-items: center; gap: 4px; color: #475569; }
+    .hydro-pref-bar select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
   </style>
   <script>
     (function () {
@@ -1109,6 +1123,20 @@
   <div class="np-free-tool-head">
     <h1 class="np-free-tool-title">💧 Diseño de solución nutritiva</h1>
     <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+  </div>
+  <div class="hydro-pref-bar" aria-label="Preferencias de idioma y unidades">
+    <label><span>Idioma</span>
+      <select id="hydroLanguageSelect">
+        <option value="es" data-i18n="selector.spanish">Español</option>
+        <option value="en" data-i18n="selector.english">English</option>
+      </select>
+    </label>
+    <label><span>Unidades</span>
+      <select id="hydroUnitSystemSelect">
+        <option value="metric" data-i18n="selector.metric">Métrico</option>
+        <option value="us_customary" data-i18n="selector.us_customary">US customary</option>
+      </select>
+    </label>
   </div>
   <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
@@ -1209,6 +1237,23 @@
     // En la versión gratuita no se muestran micros en ppm.
     const HYDRO_MICROS = [];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
+
+    /*
+     * La dosis se persiste siempre como kg/m³ (numéricamente igual a g/L).
+     * ppm, meq/L, pH y EC son unidades técnicas compartidas y no se convierten.
+     */
+    function hydroFreeDoseUnit() {
+      return window.NpHydroUnits ? window.NpHydroUnits.unit('concentration') : 'g/L';
+    }
+    function hydroFreeDoseFromSI(value) {
+      return window.NpHydroUnits
+        ? window.NpHydroUnits.fromSI(parseFloat(value) || 0, 'concentration')
+        : (parseFloat(value) || 0);
+    }
+    function hydroFreeDoseToSI(value) {
+      var n = fertAporteParseDose(value);
+      return window.NpHydroUnits ? window.NpHydroUnits.toSI(n, 'concentration') : n;
+    }
 
     const HYDRO_LS_KEY = 'nutriplant_hydro_solucion_free_v1';
     const HYDRO_LS_VERSION = 3;
@@ -2916,6 +2961,7 @@
         return;
       }
       var cat = window.HydroFertAporteCatalog;
+      var doseUnit = hydroFreeDoseUnit();
       fertAporteRecalcRows();
       host.innerHTML = fertAporteState.rows.map(function (row) {
         var entry = cat.getById(row.materialId);
@@ -2939,8 +2985,8 @@
             '<div class="fert-aporte-field fert-aporte-field--formula"><label>Fórmula</label>' +
               '<input type="text" data-fert-row="' + row.id + '" data-fert-field="formula" value="' + String(formulaVal).replace(/"/g, '&quot;') + '"' + (formulaReadonly ? ' readonly' : '') + '></div>' +
             calcBtn +
-            '<div class="fert-aporte-field fert-aporte-field--dose"><label>Dosis <span class="fert-aporte-dose-hint">· g/L = kg/m³</span></label>' +
-              '<input type="text" inputmode="decimal" autocomplete="off" data-fert-row="' + row.id + '" data-fert-field="dose" value="' + (row.dose != null && row.dose !== '' ? String(row.dose) : '0') + '"></div>' +
+            '<div class="fert-aporte-field fert-aporte-field--dose"><label>Dosis <span class="fert-aporte-dose-hint">· ' + doseUnit + '</span></label>' +
+              '<input type="text" inputmode="decimal" autocomplete="off" data-fert-row="' + row.id + '" data-fert-field="dose" value="' + (row.dose != null && row.dose !== '' ? String(hydroFreeDoseFromSI(row.dose)) : '0') + '"></div>' +
             '</div>' +
             '<div class="fert-aporte-actions"><button type="button" class="fert-aporte-btn fert-aporte-btn--del fert-aporte-btn--del-row" data-fert-del="' + row.id + '" title="Quitar este producto de la mezcla">✕ Quitar</button></div>' +
           '</div>' +
@@ -3115,7 +3161,7 @@
           return;
         }
         if (t.getAttribute('data-fert-field') === 'dose') {
-          row.dose = fertAporteParseDose(t.value);
+          row.dose = hydroFreeDoseToSI(t.value);
           fertAporteRefreshCalcs();
           hydroScheduleSave();
           return;
@@ -3139,8 +3185,8 @@
           return;
         }
         if (t.getAttribute('data-fert-field') === 'dose') {
-          row.dose = fertAporteParseDose(t.value);
-          t.value = row.dose ? String(row.dose) : '0';
+          row.dose = hydroFreeDoseToSI(t.value);
+          t.value = row.dose ? String(hydroFreeDoseFromSI(row.dose)) : '0';
           fertAporteRefreshCalcs();
           hydroScheduleSave();
         }
@@ -3172,6 +3218,22 @@
 
     function boot() {
       hydroApplyLoadedState(hydroLoadLocal());
+      var prefs = window.NpPrefs && window.NpPrefs.get ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' };
+      var languageSelect = document.getElementById('hydroLanguageSelect');
+      var unitSelect = document.getElementById('hydroUnitSystemSelect');
+      if (languageSelect) languageSelect.value = prefs.language;
+      if (unitSelect) unitSelect.value = prefs.unit_system;
+      if (window.NpI18n) {
+        window.NpI18n.setLanguage(prefs.language, { persist: false });
+        window.NpI18n.apply(document);
+      }
+      if (languageSelect) languageSelect.addEventListener('change', function () {
+        window.NpPrefs.set({ language: languageSelect.value }, { explicit: true });
+        if (window.NpI18n) window.NpI18n.setLanguage(languageSelect.value, { persist: false });
+      });
+      if (unitSelect) unitSelect.addEventListener('change', function () {
+        window.NpPrefs.set({ unit_system: unitSelect.value }, { explicit: true });
+      });
       switchHydroMainTab(hydroActiveMainTab);
       renderHydroMeqTable();
       renderHydroDerivedTables();
@@ -3180,6 +3242,20 @@
       bindFertAporteEvents();
       setupTernaryDrag();
     }
+
+    window.addEventListener('np:prefs-changed', function (event) {
+      var next = event && event.detail && event.detail.prefs;
+      if (!next) return;
+      var languageSelect = document.getElementById('hydroLanguageSelect');
+      var unitSelect = document.getElementById('hydroUnitSystemSelect');
+      if (languageSelect) languageSelect.value = next.language;
+      if (unitSelect) unitSelect.value = next.unit_system;
+      if (window.NpI18n && window.NpI18n.getLanguage() !== next.language) {
+        window.NpI18n.setLanguage(next.language, { persist: false });
+      }
+      // La dosis almacenada sigue en SI; solo cambia su representación.
+      renderFertAporteAll();
+    });
 
     window.addEventListener('beforeunload', function () { hydroSaveLocal(); });
     document.addEventListener('DOMContentLoaded', boot);

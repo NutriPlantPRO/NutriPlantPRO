@@ -29,7 +29,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   custom_granular_crops JSONB DEFAULT '{}',
   custom_ferti_materials JSONB DEFAULT '{"items":[]}',
   custom_ferti_crops JSONB DEFAULT '{}',
-  custom_hydro_materials JSONB DEFAULT '{"items":[]}'
+  custom_hydro_materials JSONB DEFAULT '{"items":[]}',
+  language TEXT NOT NULL DEFAULT 'es' CHECK (language IN ('es', 'en')),
+  unit_system TEXT NOT NULL DEFAULT 'metric' CHECK (unit_system IN ('metric', 'us_customary')),
+  locale TEXT
 );
 -- Si la tabla ya existía, añadir columnas manualmente:
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS chat_history_no_project JSONB DEFAULT '[]';
@@ -39,6 +42,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS custom_ferti_materials JSONB DEFAULT '{"items":[]}';
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS custom_ferti_crops JSONB DEFAULT '{}';
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS custom_hydro_materials JSONB DEFAULT '{"items":[]}';
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'es' CHECK (language IN ('es', 'en'));
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS unit_system TEXT NOT NULL DEFAULT 'metric' CHECK (unit_system IN ('metric', 'us_customary'));
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS locale TEXT;
 
 -- 2. TABLA: projects (proyectos del usuario)
 -- data = JSON con todas las secciones (location, amendments, granular, fertirriego, etc.)
@@ -168,11 +174,22 @@ CREATE TRIGGER update_projects_updated_at
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, name)
+  INSERT INTO public.profiles (id, email, name, language, unit_system, locale)
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1))
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    CASE
+      WHEN NEW.raw_user_meta_data->>'language' IN ('es', 'en')
+        THEN NEW.raw_user_meta_data->>'language'
+      ELSE 'es'
+    END,
+    CASE
+      WHEN NEW.raw_user_meta_data->>'unit_system' IN ('metric', 'us_customary')
+        THEN NEW.raw_user_meta_data->>'unit_system'
+      ELSE 'metric'
+    END,
+    NULLIF(NEW.raw_user_meta_data->>'locale', '')
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
