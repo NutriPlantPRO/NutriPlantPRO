@@ -1611,7 +1611,7 @@ function sectionTemplate(name) {
     return `
       <div class="location-container radar-satelital-container">
         <div class="radar-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
-          <button type="button" class="radar-tab-button active" data-radartab="poligono" style="display:flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#dcfce7;color:#14532d;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">🗺️ Polígono / NDVI y NDMI</button>
+          <button type="button" class="radar-tab-button active" data-radartab="poligono" style="display:flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#dcfce7;color:#14532d;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">🗺️ Radar del cultivo</button>
           <button type="button" class="radar-tab-button" data-radartab="lectura" style="display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">📈 Lectura Satelital</button>
         </div>
         <div class="radar-tab-content active" id="radarTabPoligono">
@@ -1686,7 +1686,7 @@ function sectionTemplate(name) {
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;">Cómo se arma:</strong>
-            elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE y RGB. <strong>Máximo 250 ha</strong> por predio.
+            elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo 250 ha</strong> por predio.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>

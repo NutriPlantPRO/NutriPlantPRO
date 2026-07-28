@@ -398,6 +398,20 @@ async function resolveSceneAssets(item, provider, cdseToken) {
   };
 }
 
+async function resolveSceneSclAsset(item, provider, cdseToken) {
+  const scl = pickAssetHref(item?.assets || {}, ['SCL', 'scl']);
+  if (!scl) throw new Error('Escena sin banda SCL');
+  if (provider === 'cdse') {
+    const auth = cdseToken ? { Authorization: 'Bearer ' + cdseToken } : {};
+    const res = await fetch(scl, { method: 'HEAD', headers: auth });
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('CDSE: descarga SCL denegada (revisa OAuth client)');
+    }
+    return scl;
+  }
+  return signPcHref(scl);
+}
+
 function sceneFromItem(item, provider, bbox, bandUrls, extra) {
   const props = item.properties || {};
   return {
@@ -687,11 +701,43 @@ async function findSentinel2ScenesForRange(polygon, opts) {
   };
 }
 
+async function findSentinel2SceneSclById(polygon, opts) {
+  const bbox = bboxFromPolygon(polygon);
+  const { provider, cdseToken } = await resolveProviderContext(opts);
+  const date = String(opts?.date || '').slice(0, 10);
+  const itemId = String(opts?.itemId || '').trim();
+  if (!date) throw new Error('La fecha Sentinel es obligatoria para recuperar SCL');
+
+  const result = await searchScenesForRange(bbox, date, date, 101, provider, cdseToken);
+  const features = result.data.features || [];
+  const item =
+    (itemId && features.find((feature) => String(feature.id) === itemId)) ||
+    (!itemId ? sortFeaturesByCloud(features)[0] : null);
+  if (!item) {
+    throw new Error(
+      itemId
+        ? 'No se encontró la escena Sentinel guardada: ' + itemId
+        : 'No se encontró escena Sentinel para ' + date
+    );
+  }
+  return {
+    provider: result.provider,
+    itemId: item.id,
+    datetime: item.properties?.datetime || null,
+    cloudCover:
+      item.properties?.['eo:cloud_cover'] ?? item.properties?.eo_cloud_cover ?? null,
+    footprintBbox: Array.isArray(item.bbox) ? item.bbox : null,
+    footprintGeometry: item.geometry || null,
+    sclUrl: await resolveSceneSclAsset(item, result.provider, result.cdseToken)
+  };
+}
+
 module.exports = {
   bboxFromPolygon,
   findBestSentinel2Scene,
   findSentinel2ScenesForComposite,
   findSentinel2ScenesForRange,
+  findSentinel2SceneSclById,
   SCENE_SEARCH_TIERS,
   COMPOSITE_LOOKBACK_DAYS,
   COMPOSITE_MAX_SCENES,

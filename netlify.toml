@@ -28,6 +28,14 @@
   timeout = 900
   external_node_modules = ["geotiff", "sharp", "proj4"]
 
+[functions."radar-cloud-context"]
+  timeout = 60
+  external_node_modules = ["geotiff", "sharp", "proj4"]
+
+[functions."radar-cloud-context-cleanup"]
+  schedule = "17 4 * * *"
+  timeout = 60
+
 [functions."nutri-pro-extract"]
   timeout = 60
   external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
@@ -102,6 +110,12 @@
 [[redirects]]
   from = "/api/radar-cdse-pilot-background"
   to = "/.netlify/functions/radar-cdse-pilot-background"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/radar-cloud-context"
+  to = "/.netlify/functions/radar-cloud-context"
   status = 200
   force = true
 

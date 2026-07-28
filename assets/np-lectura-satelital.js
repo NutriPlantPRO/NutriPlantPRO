@@ -1464,18 +1464,28 @@
           color: '#334155',
           bar: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
           tip: 'Colores naturales del predio (bandas azul/verde/rojo de Sentinel-2).'
+        },
+        clouds: {
+          title: 'Máscara de nubes Sentinel-2',
+          color: '#6d28d9',
+          bar: 'linear-gradient(90deg,#7c3aed,#64748b,#cbd5e1,#ffffff)',
+          tip: 'Morado = sombra; blanco/gris = nube; transparente = superficie despejada.'
         }
       };
       var c = cfg[kind] || cfg.ndvi;
+      var isRgb = kind === 'rgb';
+      var isClouds = kind === 'clouds';
       return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:11px;color:#475569;">' +
         '<span style="font-weight:700;color:' + c.color + ';">' + c.title + '</span>' +
-        (kind === 'rgb' ? '' : '<span>Menor</span>') +
+        (isRgb ? '' : (isClouds ? '<span>Morado = sombra</span>' : '<span>Menor</span>')) +
         '<span style="width:140px;height:8px;border-radius:999px;background:' + c.bar + ';display:inline-block;" title="' + c.tip + '"></span>' +
-        (kind === 'rgb' ? '' : '<span>Mayor</span>') +
+        (isRgb ? '' : (isClouds ? '<span>Blanco = nube</span>' : '<span>Mayor</span>')) +
         '<span style="color:#64748b;line-height:1.35;">' +
-          (kind === 'rgb'
+          (isRgb
             ? 'Imagen en color natural del mismo predio/periodo (píxeles válidos dentro del polígono).'
-            : 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.') +
+            : (isClouds
+                ? 'Máscara SCL del mismo predio y periodo; las zonas transparentes quedaron despejadas.'
+                : 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.')) +
         '</span>' +
       '</div>';
     }
@@ -1563,7 +1573,7 @@
           rows.map(function (r) { return miniCard(r, 'rgb', 'RGB', '#334155'); }).join('') +
         '</div>' +
         '<div style="font-size:12px;font-weight:800;color:#6d28d9;margin:14px 0 4px;">☁️ Nubes y sombras — máscara SCL</div>' +
-        '<div style="font-size:10.5px;color:#64748b;margin:0 0 6px;">Blanco/gris = nubes · morado = sombras · transparente = zona despejada.</div>' +
+        scaleLegend('clouds') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'clouds', 'Nubes SCL', '#6d28d9'); }).join('') +
         '</div>' +

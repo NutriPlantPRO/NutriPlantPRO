@@ -513,6 +513,29 @@ async function sclCloudMaskToPngBuffer(sclLayers, width, height, polygon, bbox43
   return { buffer, stats };
 }
 
+async function renderRegionalSclCloudMaskPng(scene, bbox4326, opts) {
+  if (!scene?.sclUrl) throw new Error('Escena regional sin URL SCL');
+  if (!Array.isArray(bbox4326) || bbox4326.length !== 4) {
+    throw new Error('Límites regionales inválidos');
+  }
+  const maxDim = Math.min(Math.max(Number(opts?.maxDim) || 768, 256), 1024);
+  const { outW, outH } = computeOutputSize(bbox4326, maxDim);
+  const scl = await readBandCog(scene.sclUrl, bbox4326, outW, outH, { nearest: true });
+  const rendered = await sclCloudMaskToPngBuffer(
+    [scl],
+    outW,
+    outH,
+    null,
+    bbox4326
+  );
+  return {
+    width: outW,
+    height: outH,
+    png: rendered.buffer,
+    stats: rendered.stats
+  };
+}
+
 function pointInPolygon(lat, lng, polygon) {
   if (!polygon || polygon.length < 3) return true;
   let inside = false;
@@ -685,6 +708,7 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
 module.exports = {
   renderNdviNdmiPngs,
   renderNdviNdmiCompositePngs,
+  renderRegionalSclCloudMaskPng,
   measurePolygonCoverage,
   meanPolygonValid,
   hasAcceptableCoverage,

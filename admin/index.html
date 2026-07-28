@@ -14704,6 +14704,8 @@
         let globalMapSatelliteView = false;
         let globalMapSentinelLayers = null;
         let globalMapSentinelInfoControl = null;
+        let globalMapRegionalCloudLayer = null;
+        let globalMapSentinelSelection = null;
         
         function showGlobalMap() {
             // En admin preferimos fuente nube para consistencia entre dispositivos.
@@ -15046,6 +15048,8 @@
             }
             globalMapSentinelLayers = null;
             globalMapSentinelInfoControl = null;
+            globalMapRegionalCloudLayer = null;
+            globalMapSentinelSelection = null;
         }
         window.clearSentinelFromGlobalMap = clearSentinelFromGlobalMap;
 
@@ -15120,6 +15124,10 @@
 
                     clearSentinelFromGlobalMap();
                     globalMapSentinelLayers = layers.addTo(globalMapInstance);
+                    globalMapSentinelSelection = {
+                        projectId: String(projectId),
+                        requestId: String(latest.id || '')
+                    };
                     globalMapPolygonLayers.forEach(function(layer) {
                         if (layer && layer.bringToFront) layer.bringToFront();
                     });
@@ -15150,6 +15158,8 @@
                                 ? '<div style="margin-top:4px;color:#92400e;"><strong>Próximas estimadas:</strong><br>' +
                                   estimated.map(function(p) { return escRadarAdminHtml(p.label); }).join(' · ') + '</div>'
                                 : '') +
+                            '<button type="button" id="globalMapRegionalCloudBtn" onclick="showRegionalCloudsOnGlobalMap()" style="width:100%;margin-top:8px;padding:7px 9px;border:1px solid #7c3aed;background:#f5f3ff;color:#6d28d9;border-radius:7px;font-size:11px;font-weight:800;cursor:pointer;">☁️ Generar nubosidad regional</button>' +
+                            '<div id="globalMapRegionalCloudStatus" style="margin-top:4px;color:#64748b;font-size:10px;">Vista de 10 × 10 km · archivo temporal por 5 días.</div>' +
                             '<div style="margin-top:5px;color:#64748b;font-size:10px;">Azul: huella · Color NDVI: imagen procesada · Estimación nominal cada 5 días.</div>';
                         L.DomEvent.disableClickPropagation(panel);
                         return panel;
@@ -15168,6 +15178,100 @@
                 });
         }
         window.showSentinelOnGlobalMap = showSentinelOnGlobalMap;
+
+        function showRegionalCloudsOnGlobalMap() {
+            if (!globalMapInstance || !globalMapSentinelLayers || !globalMapSentinelSelection) {
+                alert('Primero selecciona un predio y abre su Pasada Sentinel.');
+                return;
+            }
+            const button = document.getElementById('globalMapRegionalCloudBtn');
+            const status = document.getElementById('globalMapRegionalCloudStatus');
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Generando vista regional…';
+                button.style.opacity = '.65';
+            }
+            if (status) status.textContent = 'Leyendo la banda SCL de la pasada Sentinel…';
+
+            const adminKey = getAdminPanelAccessKey();
+            const secret = getRadarAdminPanelSecret();
+            const headers = { 'Content-Type': 'application/json' };
+            if (secret) headers['X-Radar-Admin-Secret'] = secret;
+            const payload = {
+                project_id: globalMapSentinelSelection.projectId,
+                request_id: globalMapSentinelSelection.requestId || undefined,
+                admin_key: adminKey || undefined
+            };
+            const base = typeof window.getNutriPlantApiBase === 'function'
+                ? window.getNutriPlantApiBase()
+                : '';
+            fetch(String(base || '').replace(/\/$/, '') + '/api/radar-cloud-context', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            })
+                .then(function(response) {
+                    return response.json().then(function(data) {
+                        if (!response.ok || !data || !data.ok) {
+                            throw new Error((data && data.message) || ('HTTP ' + response.status));
+                        }
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    const b = data.bounds || {};
+                    if (!data.signed_url || ![b.south, b.west, b.north, b.east].every(function(n) {
+                        return Number.isFinite(Number(n));
+                    })) {
+                        throw new Error('La API regional no devolvió una imagen válida.');
+                    }
+                    if (globalMapRegionalCloudLayer) {
+                        try { globalMapSentinelLayers.removeLayer(globalMapRegionalCloudLayer); } catch (e) {}
+                    }
+                    globalMapRegionalCloudLayer = L.imageOverlay(data.signed_url, [
+                        [Number(b.south), Number(b.west)],
+                        [Number(b.north), Number(b.east)]
+                    ], { opacity: 0.82, interactive: true });
+                    const stats = data.stats || {};
+                    globalMapRegionalCloudLayer.bindPopup(
+                        '<strong>☁️ Nubosidad regional Sentinel‑2</strong>' +
+                        '<br>Captura: ' + escRadarAdminHtml(data.scene_date || '—') +
+                        (stats.cloud_pct != null
+                            ? '<br>Nubes regionales: ' + escRadarAdminHtml(String(stats.cloud_pct)) + '% · sombras ' + escRadarAdminHtml(String(stats.shadow_pct || 0)) + '%'
+                            : '') +
+                        '<br><small>Vista histórica de 10 × 10 km; no representa nubes en vivo.</small>'
+                    );
+                    globalMapSentinelLayers.addLayer(globalMapRegionalCloudLayer);
+                    globalMapPolygonLayers.forEach(function(layer) {
+                        if (layer && layer.bringToFront) layer.bringToFront();
+                    });
+                    globalMapInstance.fitBounds([
+                        [Number(b.south), Number(b.west)],
+                        [Number(b.north), Number(b.east)]
+                    ], { padding: [35, 35], maxZoom: 12 });
+                    if (status) {
+                        const expiry = data.expires_at
+                            ? new Date(data.expires_at).toLocaleDateString('es-MX', { dateStyle: 'medium' })
+                            : '5 días';
+                        status.textContent =
+                            (data.reused ? 'Vista temporal reutilizada' : 'Vista regional generada') +
+                            ' · caduca ' + expiry +
+                            (stats.cloud_pct != null ? ' · nubes ' + stats.cloud_pct + '%' : '');
+                    }
+                })
+                .catch(function(error) {
+                    if (status) status.textContent = 'No se pudo generar: ' + ((error && error.message) || error);
+                    alert('Nubosidad regional: ' + ((error && error.message) || error));
+                })
+                .finally(function() {
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = '☁️ Ver / actualizar nubosidad regional';
+                        button.style.opacity = '1';
+                    }
+                });
+        }
+        window.showRegionalCloudsOnGlobalMap = showRegionalCloudsOnGlobalMap;
         
         function toggleGlobalMapView() {
             if (!globalMapInstance || !globalMapStreetLayer || !globalMapSatelliteLayer) return;
