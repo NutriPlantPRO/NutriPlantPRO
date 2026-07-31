@@ -27,6 +27,7 @@
     total: 'TOTAL', irrigation_by_stage: '💧 Applied water by stage',
     irrigation_help: 'Used with the nutrient rate to calculate concentration (ppm and meq/L).',
     concentration_notice: 'Concentration (ppm, mg/L, meq/L) is shown separately from nutrient rate.',
+    concentration: 'Concentration', dose: 'Dose',
     enter_water: 'Enter applied water for this stage to calculate ppm and meq/L.',
     fertilizer_supply: 'Fertilizer supply', fertilizer_water_supply: 'Fertilizer plus water supply',
     nutrient: 'Nutrient', group_pct: '% of group', no_custom: 'No custom fertilizers.',
@@ -34,7 +35,25 @@
     save_changes: 'Save changes', name_required: 'Enter a name', remove_week: 'Remove period',
     remove_column: 'Remove column', establishment: 'Establishment', vegetative: 'Vegetative',
     preflowering: 'Pre-flowering', flowering: 'Flowering', fruit_set: 'Fruit set',
-    filling: 'Fruit filling', harvest: 'Harvest'
+    filling: 'Fruit filling', harvest: 'Harvest',
+    macronutrients: 'Macronutrients', micronutrients: 'Micronutrients',
+    chart_y_kg: 'Kg of nutrient', chart_y_lb: 'Lb of nutrient',
+    stage_to_analyze: 'Stage to analyze:', lamina: 'Water depth:', no_data: 'no data',
+    macro_summary: 'Macro summary', micros_summary: 'Micros',
+    n_relation_in_stage: 'N ratio in the stage:',
+    n_relation_suffix: '(of total N = NO₃ + NH₄).',
+    ternary_diagram: '📐 Ternary diagram (anions + cations)',
+    ternary_note: 'Based on <strong>fertilizer + water supply</strong> for the selected stage. Same logic as Hydroponics · Solution by stage: yellow square = anion balance among N-NO₃⁻, P-H₂PO₄⁻ and S-SO₄²⁻ only (100%); Cl⁻ adds to Σ anions and its separate %, without moving the triangle point. Red circle = K⁺, Ca²⁺, Mg²⁺ over K+Ca+Mg.',
+    macro_legend_nh4_cl: 'N-NH₄⁺: % of total cations (K+Ca+Mg+NH₄). Cation ranges ({cations}) apply to the K+Ca+Mg triangle (without NH₄). Cl⁻: % of total anions (NO₃+H₂PO₄+SO₄+Cl); the ternary diagram and {anions} still refer only to N-P-S (without Cl). Water supply comes from the Nutrition Program tab; if it is zero, both tables match.',
+    micros_legend: 'Micros ppm use the same irrigation depth ({unit}) for the stage. If water supply in the Nutrition Program tab is zero, both columns match.',
+    anions_triangle: 'Anions (triangle)',
+    cations_triangle: 'Cations (triangle)',
+    cl_outside_triangle: 'of total anions (outside the triangle)',
+    nh4_outside_triangle: 'of total cations (outside the triangle)',
+    anions_ranges: 'Anions: N-NO₃⁻ 20-80, P-H₂PO₄⁻ 1.25-10, S-SO₄²⁻ 10-70',
+    cations_ranges: 'Cations: K⁺ 10-65, Ca²⁺ 22.5-62.5, Mg²⁺ 0.5-40',
+    pct_col_hint: 'Triangle anions: 100% among NO₃+H₂PO₄+SO₄. Cl⁻ and NH₄⁺: % of the expanded total (see note). K+Ca+Mg cations: 100% in the triangle.',
+    per_week_abbr: '/wk', per_month_abbr: '/mo'
   };
   var CROPS_EN = {
     aguacate:'Avocado', arandano:'Blueberry', banano:'Banana', cana:'Sugarcane', cebolla:'Onion',
@@ -42,12 +61,51 @@
     maiz:'Corn', melon:'Melon', papaya:'Papaya', pepino:'Cucumber', pimiento:'Bell Pepper',
     sandia:'Watermelon', tomate:'Tomato'
   };
+  /* Solo nombres descriptivos precargados. Abreviaturas (MAP, MKP, SOP, DAP, NKS…) quedan igual. */
   var MATERIALS_EN = {
-    'Nitrato de Calcio':'Calcium Nitrate', 'Nitrato de Potasio':'Potassium Nitrate',
-    'Sulfato de Potasio':'Potassium Sulfate', 'Sulfato de Magnesio':'Magnesium Sulfate',
-    'Fosfato Monoamónico (MAP)':'Monoammonium Phosphate (MAP)',
-    'Fosfato Monopotásico (MKP)':'Monopotassium Phosphate (MKP)',
-    'Sulfato de Amonio':'Ammonium Sulfate', 'Urea':'Urea'
+    'Fosfonitrato': 'Phosphonitrate',
+    'Sulfato de Amonio Soluble': 'Soluble Ammonium Sulfate',
+    'Sulfato de amonio soluble': 'Soluble Ammonium Sulfate',
+    'KCl Soluble': 'Soluble KCl',
+    'KCl soluble': 'Soluble KCl',
+    'Cloruro de calcio (dihidratado)': 'Calcium Chloride (Dihydrate)',
+    'Cloruro de calcio (dih.)': 'Calcium Chloride (Dihydrate)',
+    'Nitrato de Calcio': 'Calcium Nitrate',
+    'Nitrato de calcio': 'Calcium Nitrate',
+    'Nitrato de calcio granular': 'Granular Calcium Nitrate',
+    'Nitrato de Calcio Cristal': 'Crystal Calcium Nitrate',
+    'Nitrato de calcio cristal': 'Crystal Calcium Nitrate',
+    'Nitrato de Magnesio': 'Magnesium Nitrate',
+    'Nitrato de magnesio': 'Magnesium Nitrate',
+    'Nitrato de Potasio': 'Potassium Nitrate',
+    'Nitrato de potasio': 'Potassium Nitrate',
+    'Sulfato de Potasio': 'Potassium Sulfate',
+    'Sulfato de potasio': 'Potassium Sulfate',
+    'Sulfato de Magnesio': 'Magnesium Sulfate',
+    'Sulfato de magnesio': 'Magnesium Sulfate',
+    'Sulfato de Amonio': 'Ammonium Sulfate',
+    'Sulfato de amonio': 'Ammonium Sulfate',
+    'Sulfato de Zinc': 'Zinc Sulfate',
+    'Sulfato de zinc': 'Zinc Sulfate',
+    'Sulfato de Manganeso': 'Manganese Sulfate',
+    'Sulfato de manganeso': 'Manganese Sulfate',
+    'Sulfato de Hierro': 'Iron Sulfate',
+    'Sulfato ferroso': 'Iron Sulfate',
+    'Mix Micros EDTA': 'Micros Mix EDTA',
+    'Mix micros EDTA': 'Micros Mix EDTA',
+    'Ácido Bórico': 'Boric Acid',
+    'Ácido bórico': 'Boric Acid',
+    'Molibdato de Sodio': 'Sodium Molybdate',
+    'Molibdato de sodio': 'Sodium Molybdate',
+    'Ácido Sulfúrico 98%': 'Sulfuric Acid 98%',
+    'Ácido sulfúrico 98%': 'Sulfuric Acid 98%',
+    'Ácido Fosfórico 75%': 'Phosphoric Acid 75%',
+    'Ácido fosfórico 75%': 'Phosphoric Acid 75%',
+    'Ácido Fosfórico 85%': 'Phosphoric Acid 85%',
+    'Ácido fosfórico 85%': 'Phosphoric Acid 85%',
+    'Ácido Nítrico 55%': 'Nitric Acid 55%',
+    'Ácido nítrico 55%': 'Nitric Acid 55%',
+    'Urea': 'Urea'
   };
   var STAGES = {
     Establecimiento:'establishment', Vegetativo:'vegetative', Prefloración:'preflowering',
@@ -87,6 +145,21 @@
   function stageName(name, language) {
     return (language || prefs().language) === 'en' && STAGES[name] ? EN[STAGES[name]] : name;
   }
+  /** Eje Y de gráficas de aporte: kg (métrico) o lb (US); valores canónicos = kg/ha. */
+  function chartYAxisTitle() {
+    return prefs().unit_system === 'us_customary'
+      ? t('chart_y_lb', 'Lb de nutriente')
+      : t('chart_y_kg', 'Kg de nutriente');
+  }
+  /** Convierte series canónicas kg/ha → unidad de presentación (lb/acre en US). */
+  function chartDoseSeries(values) {
+    var list = Array.isArray(values) ? values : [];
+    return list.map(function (v) {
+      var n = Number(v);
+      if (!Number.isFinite(n)) return 0;
+      return fromSI(n, 'dose_mass_area');
+    });
+  }
   function concentrationPpmFromDose(doseKgHa, waterM3Ha) {
     var dose = Number(doseKgHa);
     var water = Number(waterM3Ha);
@@ -108,6 +181,7 @@
     getPrefs:prefs, t:t, unit:unit, fromSI:fromSI, toSI:toSI,
     inputFromSI:inputFromSI, resultFromSI:resultFromSI, quantityFromSI:quantityFromSI,
     cropName:cropName, materialName:materialName, stageName:stageName,
+    chartYAxisTitle:chartYAxisTitle, chartDoseSeries:chartDoseSeries,
     concentrationPpmFromDose:concentrationPpmFromDose, doseFromConcentration:doseFromConcentration
   };
 });

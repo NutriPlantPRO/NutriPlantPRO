@@ -10,6 +10,15 @@ function fertProgResultFromSI(value, kind) { const ui = fertProgUI(); return ui 
 function fertProgToSI(value, kind) { const ui = fertProgUI(); return ui ? ui.toSI(value, kind) : Number(value); }
 function fertProgStage(name) { const ui = fertProgUI(); return ui ? ui.stageName(name) : name; }
 function fertProgMaterial(name) { const ui = fertProgUI(); return ui ? ui.materialName(name) : name; }
+function fertProgChartYAxisTitle() {
+  const ui = fertProgUI();
+  return ui && typeof ui.chartYAxisTitle === 'function' ? ui.chartYAxisTitle() : 'Kg de nutriente';
+}
+function fertProgChartDoseSeries(values) {
+  const ui = fertProgUI();
+  if (ui && typeof ui.chartDoseSeries === 'function') return ui.chartDoseSeries(values);
+  return Array.isArray(values) ? values.slice() : [];
+}
 
 // DB básica de fertilizantes solubles (porcentaje en masa)
 // Nota: En sulfatos use SO4 = % masa del ion SO₄²⁻ en el producto; en hidroponía S elemental = SO4/3 (32/96).
@@ -128,10 +137,12 @@ function fertiUnifiedMerge(updater){
 if (typeof window !== 'undefined') {
   window.addEventListener('np:prefs-changed', function () {
     // fertiWeeks, waterContribution y chartWaterByStage permanecen en SI;
-    // solo se vuelve a proyectar la presentación.
+    // solo se vuelve a proyectar la presentación (incl. gráficas kg/ha → lb/acre).
+    try { updateFertiProgramModeButtons(); } catch {}
+    try { updateFertiProgramTimeTitle(); } catch {}
     try { renderFertiWeeks(); } catch {}
     try { updateFertiSummary(); } catch {}
-    try { renderFertiChartWaterByStageInputs(); renderFertiChartsInsights(); } catch {}
+    try { updateFertiCharts(); } catch {}
   });
 }
 
@@ -161,7 +172,11 @@ let fertProgElementalMode = false;
 let fertiProgModeInitialized = false;
 function updateFertiProgramModeButtons() {
   const btns = document.querySelectorAll('#toggleFertiProgramOxideElementalBtn, #toggleFertiProgramOxideElementalBtnFerti');
-  btns.forEach(btn => { btn.textContent = fertProgElementalMode ? '🔄 Ver en Óxido' : '🔄 Ver en Elemental'; });
+  btns.forEach(btn => {
+    btn.textContent = fertProgElementalMode
+      ? fertProgT('oxide', '🔄 Ver en Óxido')
+      : fertProgT('elemental', '🔄 Ver en Elemental');
+  });
 }
 function toggleFertiProgramOxideElemental() {
   fertProgElementalMode = !fertProgElementalMode;
@@ -339,7 +354,7 @@ function renderFertiCustomMaterialsList() {
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span>${mat.name || mat.id}</span>
+          <span>${fertProgMaterial(mat.name || mat.id)}</span>
           <span style="font-size:12px;color:#64748b;border:1px solid #e2e8f0;border-radius:999px;padding:2px 8px;">${badge}</span>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
@@ -441,7 +456,7 @@ function openFertiPreloadedCatalogModal() {
   const list = getBaseFertiMaterials();
   const rows = list.map(mat => {
     const cells = [
-      (mat.name || mat.id || '').replace(/</g, '&lt;'),
+      (fertProgMaterial(mat.name || mat.id || '')).replace(/</g, '&lt;'),
       ...FERTI_CATALOG_COLS.map(k => {
         const v = k === 'SO4'
           ? ((parseFloat(mat.SO4) || 0) + (parseFloat(mat.S) || 0) * FERTI_CONV.SO4_TO_S)
@@ -779,7 +794,7 @@ function renderFertiWeeks() {
     if (mat && (mat.name || mat.id)) c.name = mat.name || mat.id;
   });
   const buildOptions = (selectedId) => materials
-    .map(m => `<option value="${m.id}" ${m.id===selectedId?'selected':''}>${m.name}</option>`)
+    .map(m => `<option value="${m.id}" ${m.id===selectedId?'selected':''}>${fertProgMaterial(m.name || m.id)}</option>`)
     .join('');
   const cols = getFertiProgramColumns();
   const headerMap = {N_NO3:'N(NO₃)',N_NH4:'N(NH₄)',P:'P',P2O5:'P₂O₅',K:'K',K2O:'K₂O',Ca:'Ca',CaO:'CaO',Mg:'Mg',MgO:'MgO',S:'S',SO4: fertProgElementalMode ? 'S' : 'SO₄',Fe:'Fe',Mn:'Mn',B:'B',Zn:'Zn',Cu:'Cu',Mo:'Mo',Si:'Si',SiO2:'SiO₂'};
@@ -840,10 +855,12 @@ function renderFertiWeeks() {
 
   const timeSelectHtml = `
     <select class="ferti-time-select" onchange="setFertiTimeUnit(this.value)">
-      <option value="semana" ${fertiTimeUnit==='semana'?'selected':''}>Semana</option>
-      <option value="mes" ${fertiTimeUnit==='mes'?'selected':''}>Mes</option>
+      <option value="semana" ${fertiTimeUnit==='semana'?'selected':''}>${fertProgT('week', 'Semana')}</option>
+      <option value="mes" ${fertiTimeUnit==='mes'?'selected':''}>${fertProgT('month', 'Mes')}</option>
     </select>`;
-  const kgHeader = fertProgUnit('dose_mass_area', 'kg/ha') + (fertiTimeUnit === 'mes' ? '/mes' : '/sem');
+  const kgHeader = fertProgUnit('dose_mass_area', 'kg/ha') + (fertiTimeUnit === 'mes'
+    ? fertProgT('per_month_abbr', '/mes')
+    : fertProgT('per_week_abbr', '/sem'));
   const kgHeaderStyle = fertiTimeUnit === 'mes'
     ? 'text-align:center;background:#f0fdf4;color:#166534;border-top:1px solid #bbf7d0;border-bottom:1px solid #bbf7d0;'
     : 'text-align:center;background:#eff6ff;color:#1e3a8a;border-top:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe;';
@@ -1201,8 +1218,13 @@ function initFertiWaterInputs() {
 
 // ===== Gráficas (Chart.js) =====
 const FERTI_ION_EQ_WEIGHTS = { N_NO3: 14.0, N_NH4: 14.0, P: 31.0, SO4: 16.03, Cl: 35.45, K: 39.1, Ca: 20.04, Mg: 12.15 };
-const FERTI_ANION_RANGES = 'Aniones: N-NO₃⁻ 20-80, P-H₂PO₄⁻ 1.25-10, S-SO₄²⁻ 10-70';
-const FERTI_CATION_RANGES = 'Cationes: K⁺ 10-65, Ca²⁺ 22.5-62.5, Mg²⁺ 0.5-40';
+
+function fertiAnionRangesText() {
+  return fertProgT('anions_ranges', 'Aniones: N-NO₃⁻ 20-80, P-H₂PO₄⁻ 1.25-10, S-SO₄²⁻ 10-70');
+}
+function fertiCationRangesText() {
+  return fertProgT('cations_ranges', 'Cationes: K⁺ 10-65, Ca²⁺ 22.5-62.5, Mg²⁺ 0.5-40');
+}
 
 function fertiNormalizeChartWaterByStage() {
   const n = Array.isArray(fertiWeeks) ? fertiWeeks.length : 0;
@@ -1373,11 +1395,11 @@ function renderFertiMacroIonicTableHtml(summary) {
   if (!summary || !summary.ppm) return '';
   return `
         <div class="ferti-insight-legend" style="margin:0 0 8px 0;">
-          Relación de N en la etapa: <strong>N-NO₃⁻ ${fertiNum(summary.nSplit.NO3, 1)}%</strong> · <strong>N-NH₄⁺ ${fertiNum(summary.nSplit.NH4, 1)}%</strong> (sobre N total = NO₃ + NH₄).
+          ${fertProgT('n_relation_in_stage', 'Relación de N en la etapa:')} <strong>N-NO₃⁻ ${fertiNum(summary.nSplit.NO3, 1)}%</strong> · <strong>N-NH₄⁺ ${fertiNum(summary.nSplit.NH4, 1)}%</strong> ${fertProgT('n_relation_suffix', '(sobre N total = NO₃ + NH₄).')}
           <span class="ferti-insight-meq-sums notranslate" translate="no" title="Σ aniones = N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ + Cl⁻ (balance iónico). Los % del cuadrado ternario siguen siendo solo los tres primeros. Σ cationes = K⁺ + Ca²⁺ + Mg²⁺ + N-NH₄⁺"> · Σ aniones ${fertiNum(summary.sumAnionsMeq, 2)} meq/L · Σ cationes ${fertiNum(summary.sumCationsMeq, 2)} meq/L</span>
         </div>
         <table class="ferti-insight-table ferti-insight-table--macro-ionic">
-          <thead><tr><th>${fertProgT('nutrient', 'Nutriente')}</th><th>${fertProgT('program_supply', 'Dosis')} (${fertProgUnit('dose_mass_area', 'kg/ha')})</th><th>${fertProgT('concentration_notice', 'Concentración')} (ppm)</th><th>meq/L</th><th>${fertProgT('group_pct', '% grupo')} <span class="ferti-pct-col-hint" title="Aniones del triángulo: suma 100% entre NO₃+H₂PO₄+SO₄. Cl⁻ y NH₄⁺: % sobre el total ampliado (ver nota). Cationes K+Ca+Mg: 100% en el triángulo.">ⓘ</span></th></tr></thead>
+          <thead><tr><th>${fertProgT('nutrient', 'Nutriente')}</th><th>${fertProgT('dose', 'Dosis')} (${fertProgUnit('dose_mass_area', 'kg/ha')})</th><th>${fertProgT('concentration', 'Concentración')} (ppm)</th><th>meq/L</th><th>${fertProgT('group_pct', '% grupo')} <span class="ferti-pct-col-hint" title="${fertProgT('pct_col_hint', 'Aniones del triángulo: suma 100% entre NO₃+H₂PO₄+SO₄. Cl⁻ y NH₄⁺: % sobre el total ampliado (ver nota). Cationes K+Ca+Mg: 100% en el triángulo.')}">ⓘ</span></th></tr></thead>
           <tbody>
             <tr>
               <td>N-NO₃⁻</td><td>${fertProgResultFromSI(summary.kg.N_NO3, 'dose_mass_area')}</td><td>${fertiNum(summary.ppm.N_NO3, 1)}</td><td>${fertiNum(summary.meq.N_NO3, 2)}</td>
@@ -1442,15 +1464,24 @@ function renderFertiChartsInsights() {
   const summaryFert = getFertiStageIonicSummary(idx);
   const summaryWithWater = getFertiStageIonicSummary(idx, { includeWater: true });
   const summaryTernary = (summaryWithWater && summaryWithWater.ppm) ? summaryWithWater : summaryFert;
-  const options = fertiWeeks.map((w, i) => `<option value="${i}" ${i === idx ? 'selected' : ''}>${fertiStageSlotLabel(i)} · ${w.stage || ''}</option>`).join('');
+  const options = fertiWeeks.map((w, i) => {
+    const stageRaw = w.stage || '';
+    const stageShown = stageRaw ? fertProgStage(stageRaw) : '';
+    return `<option value="${i}" ${i === idx ? 'selected' : ''}>${fertiStageSlotLabel(i)}${stageShown ? ' · ' + stageShown : ''}</option>`;
+  }).join('');
+  const macroLegend = fertProgT(
+    'macro_legend_nh4_cl',
+    'N-NH₄⁺: % sobre cationes totales (K+Ca+Mg+NH₄). Los rangos de cationes ({cations}) aplican al triángulo K+Ca+Mg (sin NH₄). Cl⁻: % sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); el diagrama ternario y {anions} siguen referidos solo a N-P-S (sin Cl). El aporte de agua proviene de la pestaña Programa de nutrición; si está en cero, ambas tablas coinciden.'
+  ).replace('{cations}', fertiCationRangesText()).replace('{anions}', fertiAnionRangesText());
   let body = '';
   if (!summaryFert || summaryFert.m3ha <= 0) {
     body = `<div class="ferti-insight-alert">${fertProgT('enter_water', 'Ingresa agua aplicada para esta etapa para calcular ppm y meq/L.')} <strong>${fertProgUnit('volume_area', 'm³/ha')}</strong></div>`;
   } else {
-    const stageLabel = summaryFert.stage.stage || 'Etapa';
+    const stageRaw = (summaryFert.stage && summaryFert.stage.stage) || '';
+    const stageLabel = stageRaw ? fertProgStage(stageRaw) : fertProgT('stage', 'Etapa');
     body = `
       <div class="ferti-insight-card ferti-insight-card--macro-dual">
-        <h5>Macro resumen · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
+        <h5>${fertProgT('macro_summary', 'Macro resumen')} · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
         <div class="ferti-macro-dual-grid">
           <div class="ferti-macro-dual-col">
             <h6 class="ferti-macro-dual-title">${fertProgT('fertilizer_supply', 'Aporte de fertilizante')}</h6>
@@ -1461,35 +1492,38 @@ function renderFertiChartsInsights() {
             ${renderFertiMacroIonicTableHtml(summaryWithWater)}
           </div>
         </div>
-        <div class="ferti-insight-legend">N-NH₄⁺: % sobre cationes totales (K+Ca+Mg+NH₄). Los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). Cl⁻: % sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); el diagrama ternario y ${FERTI_ANION_RANGES} siguen referidos solo a N-P-S (sin Cl). El aporte de agua proviene de la pestaña Programa de nutrición; si está en cero, ambas tablas coinciden.</div>
+        <div class="ferti-insight-legend">${macroLegend}</div>
       </div>
       <div class="ferti-insight-card ferti-insight-card--ternary">
-        <h5>📐 Diagrama ternario (aniones + cationes)</h5>
-        <p class="ferti-insight-ternary-note">Basado en <strong>fertilizante + aporte de agua</strong> de la etapa seleccionada. Misma lógica que en Hidroponía · Solución por etapa: cuadrado amarillo = balance aniónico solo entre N-NO₃⁻, P-H₂PO₄⁻ y S-SO₄²⁻ (100%); el Cl⁻ suma en Σ aniones y en su % aparte, sin mover el punto del triángulo. Círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg.</p>
+        <h5>${fertProgT('ternary_diagram', '📐 Diagrama ternario (aniones + cationes)')}</h5>
+        <p class="ferti-insight-ternary-note">${fertProgT('ternary_note', 'Basado en <strong>fertilizante + aporte de agua</strong> de la etapa seleccionada. Misma lógica que en Hidroponía · Solución por etapa: cuadrado amarillo = balance aniónico solo entre N-NO₃⁻, P-H₂PO₄⁻ y S-SO₄²⁻ (100%); el Cl⁻ suma en Σ aniones y en su % aparte, sin mover el punto del triángulo. Círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg.')}</p>
         <div id="fertiChartsTernaryInfo" class="ferti-insight-muted-ternary notranslate" translate="no"></div>
         <div id="fertiChartsTernaryPlot" class="ferti-charts-ternary-plot hydro-triangle notranslate" translate="no"></div>
       </div>
       <div class="ferti-insight-card ferti-insight-card--micro-dual">
-        <h5>Micros · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
+        <h5>${fertProgT('micros_summary', 'Micros')} · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
         <div class="ferti-macro-dual-grid ferti-micro-dual-grid">
           <div class="ferti-macro-dual-col">
-            <h6 class="ferti-macro-dual-title ferti-micro-dual-title">Aporte de fertilizante</h6>
+            <h6 class="ferti-macro-dual-title ferti-micro-dual-title">${fertProgT('fertilizer_supply', 'Aporte de fertilizante')}</h6>
             ${renderFertiMicroTableHtml(summaryFert)}
           </div>
           <div class="ferti-macro-dual-col">
-            <h6 class="ferti-macro-dual-title ferti-micro-dual-title ferti-micro-dual-title--water">Fertilizante más aporte de agua</h6>
+            <h6 class="ferti-macro-dual-title ferti-micro-dual-title ferti-micro-dual-title--water">${fertProgT('fertilizer_water_supply', 'Fertilizante más aporte de agua')}</h6>
             ${renderFertiMicroTableHtml(summaryWithWater)}
           </div>
         </div>
-        <p class="ferti-insight-legend" style="margin:10px 0 0;">Los ppm de micros usan la misma lámina de riego (m³/ha) de la etapa. Si el aporte de agua en Programa de nutrición está en cero, ambas columnas coinciden.</p>
+        <p class="ferti-insight-legend" style="margin:10px 0 0;">${fertProgT('micros_legend', 'Los ppm de micros usan la misma lámina de riego ({unit}) de la etapa. Si el aporte de agua en Programa de nutrición está en cero, ambas columnas coinciden.').replace('{unit}', fertProgUnit('volume_area', 'm³/ha'))}</p>
       </div>
     `;
   }
+  const laminaText = summaryFert && summaryFert.m3ha > 0
+    ? fertProgResultFromSI(summaryFert.m3ha, 'volume_area') + ' ' + fertProgUnit('volume_area', 'm³/ha')
+    : fertProgT('no_data', 'sin dato');
   wrap.innerHTML = `
     <div class="ferti-charts-insights-head">
-      <label for="fertiChartsStageSelect">Etapa a analizar:</label>
+      <label for="fertiChartsStageSelect">${fertProgT('stage_to_analyze', 'Etapa a analizar:')}</label>
       <select id="fertiChartsStageSelect" onchange="onFertiChartStageSelect(this.value)">${options}</select>
-      <span class="ferti-charts-water-note">Lámina: ${summaryFert && summaryFert.m3ha > 0 ? fertiNum(summaryFert.m3ha, 2) + ' m³/ha' : 'sin dato'}</span>
+      <span class="ferti-charts-water-note">${fertProgT('lamina', 'Lámina:')} ${laminaText}</span>
     </div>
     ${body}
   `;
@@ -1511,10 +1545,10 @@ function renderFertiChartsInsights() {
     });
     if (triInfo) {
       triInfo.textContent =
-        `Aniones (triángulo): N-NO₃⁻ ${fertiNum(summaryTernary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summaryTernary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summaryTernary.pct.SO4, 1)}% | ` +
-        `Cl⁻ ${fertiNum(summaryTernary.pct.Cl, 1)}% sobre aniones totales (fuera del triángulo) | ` +
-        `Cationes (triángulo): K⁺ ${fertiNum(summaryTernary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summaryTernary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summaryTernary.pct.Mg, 1)}% · ` +
-        `N-NH₄⁺ ${fertiNum(summaryTernary.pct.N_NH4, 1)}% sobre cationes totales (fuera del triángulo).`;
+        `${fertProgT('anions_triangle', 'Aniones (triángulo)')}: N-NO₃⁻ ${fertiNum(summaryTernary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summaryTernary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summaryTernary.pct.SO4, 1)}% | ` +
+        `Cl⁻ ${fertiNum(summaryTernary.pct.Cl, 1)}% ${fertProgT('cl_outside_triangle', 'sobre aniones totales (fuera del triángulo)')} | ` +
+        `${fertProgT('cations_triangle', 'Cationes (triángulo)')}: K⁺ ${fertiNum(summaryTernary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summaryTernary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summaryTernary.pct.Mg, 1)}% · ` +
+        `N-NH₄⁺ ${fertiNum(summaryTernary.pct.N_NH4, 1)}% ${fertProgT('nh4_outside_triangle', 'sobre cationes totales (fuera del triángulo)')}.`;
     }
   }
 }
@@ -1528,7 +1562,7 @@ function loadChartJs(callback){
 
 /** Eje X en gráficas: solo "Mes N" / "Semana N" (compacto; la etapa se ve en el selector y resumen). */
 function fertiChartSlotLabelAtIndex(timeUnit, index0) {
-  const slot = timeUnit === 'mes' ? 'Mes' : 'Semana';
+  const slot = timeUnit === 'mes' ? fertProgT('month', 'Mes') : fertProgT('week', 'Semana');
   return `${slot} ${index0 + 1}`;
 }
 
@@ -1593,7 +1627,7 @@ function updateFertiCharts(){
     const xLabelBottomPad = xTickRotation >= 90 ? 36 : (xTickRotation >= 50 ? 32 : 10);
     const makeDataset = (label, data, color) => ({
       label,
-      data,
+      data: fertProgChartDoseSeries(data),
       borderColor: color,
       backgroundColor: 'transparent',
       tension: 0.3,
@@ -1621,6 +1655,8 @@ function updateFertiCharts(){
       macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'S' };
     }
 
+    const yAxisTitle = fertProgChartYAxisTitle();
+    const xAxisTitle = fertProgT('stage', 'Etapa');
     const makeChartOptions = () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -1648,10 +1684,10 @@ function updateFertiCharts(){
         }
       },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'Kg de nutriente' } },
+        y: { beginAtZero: true, title: { display: true, text: yAxisTitle } },
         x: {
           type: 'category',
-          title: { display: true, text: 'Etapa' },
+          title: { display: true, text: xAxisTitle },
           ticks: { minRotation: xTickRotation, maxRotation: xTickRotation, autoSkip: xTickAutoSkip, autoSkipPadding: 4 }
         }
       }
@@ -1691,6 +1727,17 @@ function updateFertiCharts(){
       makeDataset('Cu', micros.Cu, microColors.Cu),
       makeDataset('Mo', micros.Mo, microColors.Mo)
     ];
+
+    const macroTitleEl = document.getElementById('fertiMacroChartTitle');
+    if (macroTitleEl) macroTitleEl.textContent = fertProgT('macronutrients', 'Macronutrientes');
+    const microTitleEl = document.getElementById('fertiMicroChartTitle');
+    if (microTitleEl) microTitleEl.textContent = fertProgT('micronutrients', 'Micronutrientes');
+    const chartsModeBtn = document.getElementById('toggleFertiChartsModeBtn');
+    if (chartsModeBtn) {
+      chartsModeBtn.textContent = fertiChartsElementalMode
+        ? fertProgT('oxide', '🔄 Ver en Óxido')
+        : fertProgT('elemental', '🔄 Ver en Elemental');
+    }
 
     const macroCtx = document.getElementById('fertiMacroChart');
     if (macroCtx) {
@@ -1808,7 +1855,7 @@ function fertiGetStageColLabelForPivot(program, stageIndex) {
   const week = program.weeks[stageIndex];
   const slot = fertiStageSlotLabelFromProgram(program, stageIndex);
   const name = week && (week.stage || week.label);
-  if (name) return slot + ' · ' + String(name);
+  if (name) return slot + ' · ' + String(fertProgStage(name));
   return slot;
 }
 
@@ -1973,37 +2020,38 @@ function renderFertiMicroTableHtmlForReport(summary) {
 function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3ha) {
   const week = program.weeks[stageIndex];
   const slotLabel = fertiStageSlotLabelFromProgram(program, stageIndex);
-  const stageName = String((week && (week.stage || week.label)) || 'Etapa').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const stageRaw = (week && (week.stage || week.label)) || '';
+  const stageName = String(stageRaw ? fertProgStage(stageRaw) : fertProgT('stage', 'Etapa')).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const summaryFert = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, { includeWater: false });
   const summaryWithWater = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, { includeWater: true });
   return `
     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #cbd5e1;">
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:10px;">
         <strong style="color:#0f766e;font-size:14px;">${slotLabel} · ${stageName}</strong>
-        <span style="font-size:12px;color:#64748b;">Lámina: <strong>${fertiReportWater(m3ha)}</strong></span>
+        <span style="font-size:12px;color:#64748b;">${fertProgT('lamina', 'Lámina:')} <strong>${fertiReportWater(m3ha)}</strong></span>
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:12px;">
-        <div style="font-weight:600;color:#166534;margin-bottom:10px;">Macro resumen</div>
+        <div style="font-weight:600;color:#166534;margin-bottom:10px;">${fertProgT('macro_summary', 'Macro resumen')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;">
           <div style="background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:10px;">
-            <div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">Aporte de fertilizante</div>
+            <div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">${fertProgT('fertilizer_supply', 'Aporte de fertilizante')}</div>
             ${renderFertiMacroIonicTableHtmlForReport(summaryFert)}
           </div>
           <div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:10px;">
-            <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">Fertilizante más aporte de agua</div>
+            <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">${fertProgT('fertilizer_water_supply', 'Fertilizante más aporte de agua')}</div>
             ${renderFertiMacroIonicTableHtmlForReport(summaryWithWater)}
           </div>
         </div>
       </div>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">
-        <div style="font-weight:600;color:#1d4ed8;margin-bottom:10px;">Micronutrientes</div>
+        <div style="font-weight:600;color:#1d4ed8;margin-bottom:10px;">${fertProgT('micronutrients', 'Micronutrientes')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;">
           <div style="background:#fff;border:1px solid #dbeafe;border-radius:8px;padding:10px;">
-            <div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">Aporte de fertilizante</div>
+            <div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">${fertProgT('fertilizer_supply', 'Aporte de fertilizante')}</div>
             ${renderFertiMicroTableHtmlForReport(summaryFert)}
           </div>
           <div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:10px;">
-            <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">Fertilizante más aporte de agua</div>
+            <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">${fertProgT('fertilizer_water_supply', 'Fertilizante más aporte de agua')}</div>
             ${renderFertiMicroTableHtmlForReport(summaryWithWater)}
           </div>
         </div>
@@ -2095,6 +2143,13 @@ function getFertiChartsDataUrlsForReport(program, callback) {
       };
       macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'S' };
     }
+    function present(series) { return fertProgChartDoseSeries(series); }
+    var yTitle = fertProgChartYAxisTitle();
+    var xTitle = fertProgT('stage', 'Etapa');
+    var reportScaleOpts = {
+      y: { beginAtZero: true, title: { display: true, text: yTitle } },
+      x: { type: 'category', title: { display: true, text: xTitle }, ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, autoSkipPadding: 4 } }
+    };
     var W = 480, H = 280;
     var macroCanvas = document.createElement('canvas');
     macroCanvas.width = W;
@@ -2114,13 +2169,13 @@ function getFertiChartsDataUrlsForReport(program, callback) {
         data: {
           labels: labels,
           datasets: [
-            { label: 'N(NO3)', data: macros.N_NO3, borderColor: macroColors.N_NO3, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'N(NH4)', data: macros.N_NH4, borderColor: macroColors.N_NH4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.P2O5, data: macros.P2O5, borderColor: macroColors.P2O5, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.K2O, data: macros.K2O, borderColor: macroColors.K2O, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.CaO, data: macros.CaO, borderColor: macroColors.CaO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.MgO, data: macros.MgO, borderColor: macroColors.MgO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.SO4, data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            { label: 'N(NO3)', data: present(macros.N_NO3), borderColor: macroColors.N_NO3, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'N(NH4)', data: present(macros.N_NH4), borderColor: macroColors.N_NH4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.P2O5, data: present(macros.P2O5), borderColor: macroColors.P2O5, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.K2O, data: present(macros.K2O), borderColor: macroColors.K2O, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.CaO, data: present(macros.CaO), borderColor: macroColors.CaO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.MgO, data: present(macros.MgO), borderColor: macroColors.MgO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.SO4, data: present(macros.SO4), borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
         options: {
@@ -2139,10 +2194,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
               }
             }
           },
-          scales: {
-            y: { beginAtZero: true },
-            x: { type: 'category', ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, autoSkipPadding: 4 } }
-          }
+          scales: reportScaleOpts
         }
       });
       chartMicro = new Chart(microCanvas.getContext('2d'), {
@@ -2150,12 +2202,12 @@ function getFertiChartsDataUrlsForReport(program, callback) {
         data: {
           labels: labels,
           datasets: [
-            { label: 'Fe', data: micros.Fe, borderColor: microColors.Fe, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Mn', data: micros.Mn, borderColor: microColors.Mn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'B', data: micros.B, borderColor: microColors.B, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Zn', data: micros.Zn, borderColor: microColors.Zn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Cu', data: micros.Cu, borderColor: microColors.Cu, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Mo', data: micros.Mo, borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            { label: 'Fe', data: present(micros.Fe), borderColor: microColors.Fe, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Mn', data: present(micros.Mn), borderColor: microColors.Mn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'B', data: present(micros.B), borderColor: microColors.B, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Zn', data: present(micros.Zn), borderColor: microColors.Zn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Cu', data: present(micros.Cu), borderColor: microColors.Cu, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Mo', data: present(micros.Mo), borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
         options: {
@@ -2174,10 +2226,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
               }
             }
           },
-          scales: {
-            y: { beginAtZero: true },
-            x: { type: 'category', ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, autoSkipPadding: 4 } }
-          }
+          scales: reportScaleOpts
         }
       });
       result.macro = (chartMacro && chartMacro.toBase64Image) ? chartMacro.toBase64Image() : macroCanvas.toDataURL('image/png');
@@ -2200,7 +2249,11 @@ window.FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD = FERTI_REPORT_INSIGHTS_COMPACT_T
 function toggleFertiChartsOxideElemental(){
   fertiChartsElementalMode = !fertiChartsElementalMode;
   const btn = document.getElementById('toggleFertiChartsModeBtn');
-  if (btn) btn.textContent = fertiChartsElementalMode ? '🔄 Ver en Óxido' : '🔄 Ver en Elemental';
+  if (btn) {
+    btn.textContent = fertiChartsElementalMode
+      ? fertProgT('oxide', '🔄 Ver en Óxido')
+      : fertProgT('elemental', '🔄 Ver en Elemental');
+  }
   updateFertiCharts();
 }
 

@@ -7,7 +7,7 @@
   <meta name="description" content="Conversión ppm, meq/L, mmol/L, µmol/L (micros) y cmol en suelo y solución; factores óxido-elemental en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro" target="_blank" rel="noopener" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar A · Unidades</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Unidades: ppm, meq/L y óxidos agronómicos</h1>
     <h2>Resumen</h2>
     <p>NutriPlant usa <strong>ppm</strong> del elemento, <strong>meq/L</strong> en solución y fertirriego, y <strong>meq/100 g</strong> (= cmol<sub>c</sub>/kg, misma cifra) en suelo. Los óxidos (P₂O₅, K₂O, CaO…) aparecen en programas granular/fertirriego según modo del usuario.</p>
@@ -163,10 +165,122 @@
     </table>
     <p>Herramienta gratis en login: Conversor óxido ↔ elemental (incluye también los factores inversos elemental → óxido).</p>
     <div class="mt-warn">No confundir meq/100 g (suelo) con cmol/L (solución): en solución hay factor 10 entre cmol/L y meq/L.</div>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Units: ppm, meq/L, and agronomic oxides</h1>
+    <h2>Summary</h2>
+    <p>NutriPlant uses <strong>ppm</strong> of the element, <strong>meq/L</strong> in solution and fertigation, and <strong>meq/100 g</strong> (= cmol<sub>c</sub>/kg, same figure) in soil. Oxides (P₂O₅, K₂O, CaO…) appear in granular/fertigation programs according to the user’s mode.</p>
+    <h2>Soil — CEC and cations</h2>
+    <div class="mt-formula">1 meq/100 g = 1 cmol<sub>c</sub>/kg (same figure, no ×10)</div>
+    <p>Conversion meq/100 g → ppm (approx.): K ×391 · Ca ×200.4 · Mg ×121.5 · Na ×230.</p>
+    <h2>Solution and water</h2>
+    <div class="mt-formula">meq/L = ppm ÷ equivalent weight of the element<br>1 cmol/L = 10 meq/L</div>
+    <p>mmol/L of monovalent ions (K⁺, NO₃⁻, Cl⁻): same number as meq/L.</p>
+    <p>Macros and solution ions in the calculator: <strong>mmol/L</strong>. Micronutrients in the same tool: <strong>µmol/L</strong> (see below).</p>
+
+    <h3>Element ppm, ionic form in solution</h3>
+    <p>
+      In NutriPlant, solution, fertigation, and hydroponics <strong>ppm</strong> values are always
+      <strong>mg/L of the element</strong> (N, P, S, K, Ca, Mg…), not of the compound or the full ion.
+      Tables and charts show the <strong>species in solution</strong> — N-NO₃⁻, N-NH₄⁺, P-H₂PO₄⁻,
+      S-SO₄²⁻ — because that is how the nutrient occurs and is taken up; but the ppm number is for the
+      <em>element</em>, the same as in the platform’s unit calculator.
+    </p>
+    <p>
+      To convert to <strong>meq/L</strong>, use the <strong>equivalent weight of the element</strong>, not the
+      molecular mass of the whole ion. NutriPlant rule:
+    </p>
+    <div class="mt-formula">
+      equivalent weight = atomic weight of the element ÷ valence with which it contributes charge in that form
+    </div>
+    <p>
+      This is the same general rule (equivalent mass = mass ÷ valence): when expressing ppm of the element,
+      the equivalent weight <strong>of the element</strong> is enough. It is equivalent to taking the ion’s molecular mass,
+      dividing by its valence, and multiplying by the element’s fraction in that ion — the result
+      matches atomic weight ÷ valence of the element.
+    </p>
+    <table class="mt-table">
+      <thead>
+        <tr><th>Form in solution (label)</th><th>ppm of</th><th>AW (g/mol)</th><th>Valence</th><th>NutriPlant eq. wt. (g/mol)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>N-NO₃⁻</td><td>N</td><td>14.01</td><td>1</td><td><strong>14.0</strong></td></tr>
+        <tr><td>N-NH₄⁺</td><td>N</td><td>14.01</td><td>1</td><td><strong>14.0</strong></td></tr>
+        <tr><td>P-H₂PO₄⁻</td><td>P</td><td>30.97</td><td>1</td><td><strong>31.0</strong></td></tr>
+        <tr><td>S-SO₄²⁻</td><td>S</td><td>32.07</td><td>2</td><td><strong>16.03</strong></td></tr>
+        <tr><td>K⁺</td><td>K</td><td>39.10</td><td>1</td><td>39.1</td></tr>
+        <tr><td>Ca²⁺</td><td>Ca</td><td>40.08</td><td>2</td><td>20.04</td></tr>
+        <tr><td>Mg²⁺</td><td>Mg</td><td>24.31</td><td>2</td><td>12.15</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Example:</strong> 140 ppm N-NO₃⁻ → meq/L = 140 ÷ 14 = <strong>10 meq/L</strong>.
+      31 ppm P-H₂PO₄⁻ → 31 ÷ 31 = <strong>1 meq/L</strong>.
+      48 ppm S-SO₄²⁻ → 48 ÷ 16.03 ≈ <strong>2.99 meq/L</strong>.
+    </p>
+
+    <h2>Micronutrients — µmol/L (free calculator)</h2>
+    <p>
+      In the <strong>ppm / meq</strong> converter on login and the dashboard, Fe, Mn, Zn, B, Cu, and Mo show
+      <strong>µmol/L</strong> instead of mmol/L. Typical concentrations are below 1 mmol/L;
+      expressing them in micromoles avoids many decimals. <strong>ppm remains of the element</strong>
+      (mg/L of Fe, Mo, etc.), the same as in NutriPlant analyses and programs.
+    </p>
+    <div class="mt-formula">
+      µmol/L = (ppm ÷ atomic weight of the element) × 1000<br>
+      mmol/L = µmol/L ÷ 1000<br>
+      meq/L = mmol/L × valence
+    </div>
+    <table class="mt-table">
+      <thead>
+        <tr><th>Form in calculator</th><th>ppm of</th><th>AW (g/mol)</th><th>Valence</th><th>Mole unit in app</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fe²⁺</td><td>Fe</td><td>55.85</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>Mn²⁺</td><td>Mn</td><td>54.94</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>Zn²⁺</td><td>Zn</td><td>65.38</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>Cu²⁺</td><td>Cu</td><td>63.55</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>H₃BO₃</td><td>B</td><td>10.81</td><td>1</td><td>µmol/L</td></tr>
+        <tr><td>MoO₄²⁻</td><td>Mo</td><td>95.95</td><td>2</td><td>µmol/L</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Fe example:</strong> 3.00 ppm Fe → µmol/L = (3.00 ÷ 55.85) × 1000 ≈ <strong>53.7</strong>;
+      mmol/L = 0.054; meq/L = 0.107.<br>
+      <strong>Mo:</strong> in solution it is taken up as molybdate <strong>MoO₄²⁻</strong> (valence 2), analogous to
+      S-SO₄²⁻ in the calculator; the reported ppm is <strong>elemental Mo</strong>.
+    </p>
+    <p>Tool: <strong>Unit converter (ppm/mmol/meq)</strong> on login and the dashboard.</p>
+
+    <h2>Oxide ↔ elemental (NutriPlant factors)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Oxide</th><th>× factor → elemental</th></tr></thead>
+      <tbody>
+        <tr><td>P₂O₅ → P</td><td>0.436</td></tr>
+        <tr><td>K₂O → K</td><td>0.830</td></tr>
+        <tr><td>CaO → Ca</td><td>0.715</td></tr>
+        <tr><td>MgO → Mg</td><td>0.603</td></tr>
+        <tr><td>SO₄ → S</td><td>0.333</td></tr>
+        <tr><td>SO₃ → S</td><td>0.400</td></tr>
+        <tr><td>Fe₂O₃ → Fe</td><td>0.699</td></tr>
+        <tr><td>MnO → Mn</td><td>0.775</td></tr>
+        <tr><td>B₂O₃ → B</td><td>0.311</td></tr>
+        <tr><td>ZnO → Zn</td><td>0.803</td></tr>
+        <tr><td>CuO → Cu</td><td>0.799</td></tr>
+        <tr><td>MoO₃ → Mo</td><td>0.667</td></tr>
+        <tr><td>SiO₂ → Si</td><td>0.467</td></tr>
+      </tbody>
+    </table>
+    <p>Free tool on login: Oxide ↔ elemental converter (also includes the inverse elemental → oxide factors).</p>
+    <div class="mt-warn">Do not confuse meq/100 g (soil) with cmol/L (solution): in solution there is a factor of 10 between cmol/L and meq/L.</div>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="porcentaje-meq-aniones-cationes.html">% meq →</a><a href="../index.html">Índice</a></nav>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

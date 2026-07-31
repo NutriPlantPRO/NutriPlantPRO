@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260728b"></script>
-  <script src="assets/np-units-core.js?v=20260728b"></script>
-  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
-  <script src="assets/np-granular-ui.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-units-core.js?v=20260730a"></script>
+  <script src="assets/np-agronomic-units.js?v=20260730a"></script>
+  <script src="assets/np-granular-ui.js?v=20260730c"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
   <title>Formulación de mezclas granulares</title>
@@ -65,7 +65,7 @@
     </label>
     <label><span data-gm-es="Unidades" data-gm-en="Units">Unidades</span>
       <select id="gmUnitSystemSelect">
-        <option value="metric">Métrico</option>
+        <option value="metric">Métrico (SI)</option>
         <option value="us_customary">US customary</option>
       </select>
     </label>
@@ -144,7 +144,7 @@
       <div class="custom-list" id="customListEl"></div>
       <h4 style="margin:12px 0 8px;font-size:14px;" data-gm-es="Nuevo personalizado" data-gm-en="New custom fertilizer">Nuevo personalizado</h4>
       <div class="form-grid">
-        <label>Nombre <input type="text" id="newName" placeholder="Ej. Mi mezcla 20-10-10" /></label>
+        <label><span data-gm-es="Nombre" data-gm-en="Name">Nombre</span> <input type="text" id="newName" placeholder="Ej. Mi mezcla 20-10-10" data-gm-placeholder-es="Ej. Mi mezcla 20-10-10" data-gm-placeholder-en="e.g. My blend 20-10-10" /></label>
         <label>N % <input type="number" id="newN" step="0.01" min="0" value="0" /></label>
         <label>P₂O₅ % <input type="number" id="newP" step="0.01" min="0" value="0" /></label>
         <label>K₂O % <input type="number" id="newK" step="0.01" min="0" value="0" /></label>
@@ -197,6 +197,9 @@
       document.querySelectorAll('[data-gm-es]').forEach(el => {
         el.textContent = p.language === 'en' ? el.getAttribute('data-gm-en') : el.getAttribute('data-gm-es');
       });
+      document.querySelectorAll('[data-gm-placeholder-es]').forEach(el => {
+        el.setAttribute('placeholder', p.language === 'en' ? el.getAttribute('data-gm-placeholder-en') : el.getAttribute('data-gm-placeholder-es'));
+      });
       const language = document.getElementById('gmLanguageSelect');
       const units = document.getElementById('gmUnitSystemSelect');
       if (language) language.value = p.language;
@@ -227,7 +230,10 @@
       'Sulfato de Zinc': 'Zinc Sulfate',
       'Boro Granular': 'Granular Boron',
       'Sulfato de Cobre': 'Copper Sulfate',
-      'Molibdato de Sodio': 'Sodium Molybdate'
+      'Molibdato de Sodio': 'Sodium Molybdate',
+      'Complejo 12-11-18': '12-11-18 Blend',
+      'Complejo 12-12-17': '12-12-17 Blend',
+      'Complejo Triple 16': 'Triple 16 Blend'
     };
 
     function isEnglishUI() {
@@ -239,6 +245,9 @@
     }
 
     function displayMaterialName(name) {
+      if (window.NpGranularUI && typeof window.NpGranularUI.materialName === 'function') {
+        return window.NpGranularUI.materialName(name);
+      }
       if (!isEnglishUI()) return name;
       return MATERIAL_NAME_EN[name] || name;
     }
@@ -445,7 +454,7 @@
       const list = loadCustoms();
       const el = document.getElementById('customListEl');
       if (!list.length) {
-        el.innerHTML = '<div style="color:#64748b;font-size:13px;">Sin personalizados. Máximo 3.</div>';
+        el.innerHTML = '<div style="color:#64748b;font-size:13px;">' + (isEnglishUI() ? 'No custom fertilizers. Maximum 3.' : 'Sin personalizados. Máximo 3.') + '</div>';
         return;
       }
       el.innerHTML = list.map((c, i) => `
@@ -468,20 +477,20 @@
     function saveCustomMaterial() {
       const list = loadCustoms();
       if (list.length >= 3) {
-        alert('Solo puedes tener 3 fertilizantes personalizados en la versión gratuita.');
+        alert(isEnglishUI() ? 'You can only have 3 custom fertilizers in the free version.' : 'Solo puedes tener 3 fertilizantes personalizados en la versión gratuita.');
         return;
       }
       const name = (document.getElementById('newName').value || '').trim();
       if (!name) {
-        alert('Escribe un nombre.');
+        alert(isEnglishUI() ? 'Enter a name.' : 'Escribe un nombre.');
         return;
       }
       if (BASE_MATERIALS[name]) {
-        alert('Ese nombre ya existe en el catálogo base. Usa otro nombre.');
+        alert(isEnglishUI() ? 'That name already exists in the base catalog. Use another name.' : 'Ese nombre ya existe en el catálogo base. Usa otro nombre.');
         return;
       }
       if (list.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-        alert('Ya tienes un personalizado con ese nombre.');
+        alert(isEnglishUI() ? 'You already have a custom fertilizer with that name.' : 'Ya tienes un personalizado con ese nombre.');
         return;
       }
       const comp = {
@@ -508,7 +517,7 @@
       });
       renderCustomList();
       renderRows();
-      alert('Personalizado guardado en este navegador.');
+      alert(isEnglishUI() ? 'Custom fertilizer saved in this browser.' : 'Personalizado guardado en este navegador.');
     }
 
     function snapshotMix() {

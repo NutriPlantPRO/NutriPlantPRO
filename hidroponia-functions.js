@@ -32,7 +32,7 @@ function hydroEnsurePresentationAssets() {
   const queue = [
     ['NpPrefs', 'assets/np-prefs.js'],
     ['NpUnits', 'assets/np-units-core.js'],
-    ['NpHydroUnits', 'assets/np-hydro-units.js?v=20260728a']
+    ['NpHydroUnits', 'assets/np-hydro-units.js?v=20260730c']
   ];
   const loadNext = function () {
     const next = queue.shift();
@@ -1210,27 +1210,51 @@ function hydroBuildFertContributionRatioLegendHtml(totals, water) {
   const fmt = (x) => (Number.isFinite(x) ? x.toFixed(1) : '0.0');
   const bitsF = [];
   if (nFer > 0) {
-    bitsF.push(`partición del N en <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
+    bitsF.push(hydroT(
+      `partición del N en <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`,
+      `N partition in <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`
+    ));
   }
   if (ncFer > 0) {
-    bitsF.push(`N-NO₃⁻ + Cl⁻ en <strong>meq/L</strong> (mismo aporte): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
+    bitsF.push(hydroT(
+      `N-NO₃⁻ + Cl⁻ en <strong>meq/L</strong> (mismo aporte): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`,
+      `N-NO₃⁻ + Cl⁻ in <strong>meq/L</strong> (same contribution): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`
+    ));
   } else if (mClF <= 0 && nFer > 0) {
-    bitsF.push('sin Cl⁻ en meq/L por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+    bitsF.push(hydroT(
+      'sin Cl⁻ en meq/L por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)',
+      'no Cl⁻ in meq/L from fertilizers (appears when using KCl, calcium chloride, etc.)'
+    ));
   }
   const lineFert = bitsF.length
-    ? `<strong>Aporte solo fertilizantes:</strong> porcentajes sobre <strong>meq/L</strong> calculados desde las ppm aportadas (N a 14 mg/meq, Cl⁻ a 35,45 mg/meq). ${bitsF.join('; ')}.`
+    ? hydroT(
+      `<strong>Aporte solo fertilizantes:</strong> porcentajes sobre <strong>meq/L</strong> calculados desde las ppm aportadas (N a 14 mg/meq, Cl⁻ a 35,45 mg/meq). ${bitsF.join('; ')}.`,
+      `<strong>Fertilizer-only contribution:</strong> percentages over <strong>meq/L</strong> calculated from contributed ppm (N at 14 mg/meq, Cl⁻ at 35.45 mg/meq). ${bitsF.join('; ')}.`
+    )
     : '';
   const bitsS = [];
   if (nSol > 0) {
-    bitsS.push(`partición del N total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
+    bitsS.push(hydroT(
+      `partición del N total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`,
+      `total N partition in <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`
+    ));
   }
   if (ncSol > 0) {
-    bitsS.push(`N-NO₃⁻ + Cl⁻ total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye agua si capturaste Cl⁻)`);
+    bitsS.push(hydroT(
+      `N-NO₃⁻ + Cl⁻ total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye agua si capturaste Cl⁻)`,
+      `total N-NO₃⁻ + Cl⁻ in <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (includes water if you entered Cl⁻)`
+    ));
   } else if (mClSol <= 0 && nSol > 0) {
-    bitsS.push('sin Cl⁻ en meq/L (fertilizantes ni agua) para el par N-NO₃⁻ + Cl⁻');
+    bitsS.push(hydroT(
+      'sin Cl⁻ en meq/L (fertilizantes ni agua) para el par N-NO₃⁻ + Cl⁻',
+      'no Cl⁻ in meq/L (fertilizers or water) for the N-NO₃⁻ + Cl⁻ pair'
+    ));
   }
   const lineSol = bitsS.length
-    ? `<strong>Solución final (fertilizantes + agua):</strong> mismos criterios en <strong>meq/L</strong>. ${bitsS.join('; ')}.`
+    ? hydroT(
+      `<strong>Solución final (fertilizantes + agua):</strong> mismos criterios en <strong>meq/L</strong>. ${bitsS.join('; ')}.`,
+      `<strong>Final solution (fertilizers + water):</strong> same criteria in <strong>meq/L</strong>. ${bitsS.join('; ')}.`
+    )
     : '';
   if (!lineFert && !lineSol) return '';
   return `<div class="hydro-fert-split-legend notranslate" translate="no">${lineFert}${lineFert && lineSol ? '<br>' : ''}${lineSol}</div>`;
@@ -1273,6 +1297,15 @@ function hydroFertRowProductTotal(f, materials) {
   return { value: kgEquivalent, unit: 'kg', kgEquivalent };
 }
 
+function hydroMaterialDisplayName(name) {
+  const ui = hydroPresentation();
+  if (ui && typeof ui.materialName === 'function') return ui.materialName(name);
+  if (window.NpFertigationUI && typeof window.NpFertigationUI.materialName === 'function') {
+    return window.NpFertigationUI.materialName(name);
+  }
+  return name == null ? '' : String(name);
+}
+
 function renderHydroFertTable() {
   const wrap = document.getElementById('hydroFertTableWrap');
   if (!wrap) return;
@@ -1281,9 +1314,10 @@ function renderHydroFertTable() {
   const materials = getAllHydroMaterials();
   const optNew = `<option value="__hydro_new__">➕ ${hydroT('Agregar nuevo…', 'Add new…')}</option>`;
   const options = (selectedId) =>
-    optNew + materials.map(m =>
-      `<option value="${(m.id || '').replace(/"/g, '&quot;')}" ${m.id === selectedId ? 'selected' : ''}>${(m.name || m.id || '').replace(/</g, '&lt;')}</option>`
-    ).join('');
+    optNew + materials.map(m => {
+      const label = hydroMaterialDisplayName(m.name || m.id || '');
+      return `<option value="${(m.id || '').replace(/"/g, '&quot;')}" ${m.id === selectedId ? 'selected' : ''}>${String(label).replace(/</g, '&lt;')}</option>`;
+    }).join('');
   const tankOptions = (sel) => HYDRO_TANQUES.map(t =>
     `<option value="${t}" ${t === (sel || 'A') ? 'selected' : ''}>${hydroT('Tanque', 'Tank')} ${t}</option>`
   ).join('');
@@ -1691,7 +1725,7 @@ function openHydroPreloadedCatalogModal() {
   const list = base.map(m => hydroMaterialToElemental(m)).filter(Boolean);
   const rows = list.map(mat => {
     const cells = [
-      (mat.name || mat.id || '').replace(/</g, '&lt;'),
+      hydroMaterialDisplayName(mat.name || mat.id || '').replace(/</g, '&lt;'),
       ...HYDRO_PPM_NUTRIENTS.map(n => (parseFloat(mat[n]) || 0).toFixed(2))
     ];
     return `<tr style="border-bottom:1px solid #e5e7eb;">${cells.map((c, i) => `<td style="padding:6px 10px;${i === 0 ? 'font-weight:600;' : 'text-align:right;'}">${c}</td>`).join('')}</tr>`;

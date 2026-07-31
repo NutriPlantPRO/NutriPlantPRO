@@ -7,7 +7,7 @@
   <meta name="description" content="Calculadora de balance hídrico: déficit ETc, riego en m³ en franja regada, puente con Agua en suelo, mm en resultados y % suelo explorado.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,13 +42,15 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
     </div>
   </div></header>
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-06</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-06</span>
     <h1>Balance hídrico y cálculo rápido de riego</h1>
     <h2>Resumen</h2>
     <p>
@@ -208,11 +210,176 @@
       <li><a href="n-mineralizable-agua-disponible-suelo.html">N mineralizable</a> — tabla orientativa % suelo explorado por sistema.</li>
       <li>Login/dashboard — <strong>Conversor de magnitudes físicas</strong> (alcance de raíz: copa o cama).</li>
     </ul>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-06</span>
+    <h1>Water balance and quick irrigation calculation</h1>
+    <h2>Summary</h2>
+    <p>
+      In the <strong>Climate → Rain and ET₀</strong> tab, NutriPlant includes a
+      <strong>water balance calculator</strong> to estimate deficits and water balance over periods of
+      <strong>1, 7 or 30 days</strong>. It combines ETo (satellite reference or field value), rain (satellite,
+      rain gauge or rain-free macrotunnel), crop coefficient <strong>Kc</strong> (manual) and cumulative
+      irrigation for the period. It complements <a href="vpd-deficit-presion-vapor.html">VPD and Radar</a>; it does not replace
+      tensiometers, soil sensors or the fertigation program.
+    </p>
+
+    <h2>Where it is in the app</h2>
+    <ul>
+      <li><strong>Dashboard PRO</strong> → <strong>Climate</strong> tab → <strong>Rain and ET₀</strong> subtab.</li>
+      <li><strong>«Water balance calculator»</strong> block, below the monthly rain and ET₀ tables.</li>
+      <li><strong>Free tool</strong> in login and dashboard: <strong>Irrigation depth and water balance</strong> (same logic).</li>
+      <li>Requirement for satellite data (PRO): polygon saved in <strong>Location</strong> (parcel center).</li>
+      <li>Cloud persistence (PRO): <code>projects.data.climateAnalysis.irrigationQuickCalc</code>.</li>
+    </ul>
+
+    <h2>Rain vs ET₀ chart (and ETc)</h2>
+    <p>
+      In the <strong>Charts · Rain and ET₀</strong> view, NutriPlant shows rain and ET₀ by year on the same scale (mm/month).
+      If the user enters a <strong>Kc</strong> (same value as the balance calculator), an additional line for the
+      <strong>current year</strong> appears: <strong>ETc = ET₀ × Kc</strong> (constant Kc). It is not a curve by phenological stage;
+      it serves as a visual reference of crop demand versus ET₀ and rain. It is also included in PDF and Admin panel when Kc is saved.
+    </p>
+
+    <h2>Period and ETo / rain sources</h2>
+    <table class="mt-table">
+      <thead><tr><th>Input</th><th>Options</th></tr></thead>
+      <tbody>
+        <tr><td>Period</td><td>1, 7 or 30 days (cumulative)</td></tr>
+        <tr><td>ETo</td><td>Satellite (Open-Meteo rolling windows) or <strong>manual</strong> (mm for the period)</td></tr>
+        <tr><td>Rain</td><td>Satellite, <strong>manual</strong> (rain gauge) or <strong>macrotunnel</strong> (rain = 0)</td></tr>
+        <tr><td>Kc</td><td>Entered by the user; FAO-56 table in the app is <strong>reference only</strong></td></tr>
+        <tr><td>Irrigation</td><td>In the <strong>irrigated strip</strong>: <strong>m³</strong> (total volume in that strip; requires irrigated area). Depth in mm is calculated in the results.</td></tr>
+      </tbody>
+    </table>
+    <p>Satellite estimates are a reference for the parcel point; they may differ from microclimate or the field.</p>
+
+    <h2>Formulas (same logic as the app)</h2>
+    <div class="mt-formula">
+      ETc = ETo × Kc<br>
+      Climate deficit = ETo − rain<br>
+      Crop deficit = ETc − rain<br>
+      Balance (m³) = crop deficit m³ − irrigation m³ in strip<br>
+      Balance (mm crop ref.) = balance m³ ÷ (10 × ha crop)
+    </div>
+    <p>The <strong>deficit</strong> is expressed in mm over the <strong>crop area</strong>; <strong>irrigation</strong> is always in the <strong>irrigated strip</strong>. The balance subtracts <strong>real volume</strong> (m³).</p>
+    <p>Volume conversion:</p>
+    <div class="mt-formula">1 mm over X ha = X × 10 m³ · total m³ = mm × 10 × ha</div>
+    <p>Irrigation in m³ (strip):</p>
+    <div class="mt-formula">mm in strip = m³ ÷ (irrigated area ha × 10)</div>
+
+    <h2>Crop area vs irrigated strip</h2>
+    <p>
+      <strong>Crop area (ha):</strong> area where the crop is; defines ETc demand and the
+      <strong>total m³</strong> of the balance.
+    </p>
+    <p>
+      <strong>Irrigated area (ha):</strong> wetted zone (drip, tape, macrotunnel). If smaller than the
+      crop area, <strong>mm are concentrated</strong> in the irrigated strip (the app shows sub-lines
+      «↳ in irrigated strip»). <strong>Total m³ is not divided</strong>: it remains referred to crop area.
+    </p>
+    <div class="mt-formula">
+      strip factor = crop area ÷ irrigated area<br>
+      mm in strip = mm over crop × strip factor
+    </div>
+    <p>Example: 8.9 mm deficit on 1 ha = 89 m³. Irrigation 20 m³ on strip 0.5 ha (= 4 mm in strip). Balance = 89 − 20 = <strong>69 m³</strong> (6.9 mm crop ref.; 13.8 mm in strip).</p>
+    <p>Example consistent with 🪨 Soil water: <strong>90 m³</strong> on strip 0.6 ha = <strong>15 mm</strong> in the wetted zone; the same amount = <strong>9 mm</strong> reference over 1 ha crop. The <strong>m³ does not change</strong>; only depth changes by reference area.</p>
+
+    <h2>Applied irrigation: m³ in strip only (2026-06)</h2>
+    <p>
+      The <strong>«Irrigation in irrigated strip (period)»</strong> input accepts only <strong>m³</strong> (total volume applied in the wetted zone for the 1, 7 or 30 day period).
+      The mm selector was removed from the UI to avoid confusion with result depth. Internally the app converts:
+    </p>
+    <div class="mt-formula">mm in strip = irrigation m³ ÷ (irrigated area ha × 10)</div>
+    <p>In the field, operations usually use <strong>m³</strong> (meter, well, fertigation); <strong>mm</strong> appear in the summary and in the “Important data — field irrigation” box.</p>
+
+    <h2>Soil store reference (bridge with 🪨 Soil water)</h2>
+    <p>
+      Below the irrigation inputs, manual block <strong>«🪨 Soil store reference»</strong>:
+      dropdown <strong>Deficit (+ irrigation)</strong> or <strong>Excess (− irrigation)</strong> + m³ in strip.
+      Only adds or subtracts from suggested irrigation if the user enters a value.
+      Button <strong>«Suggest from 🪨 soil»</strong> prefills from
+      <code>nutriplant_bridge_soil_water_v1</code> (prioritizes m³ up to <strong>60% available water target</strong> if θ is below the 40–60% AW zone; otherwise up to FC).
+    </p>
+    <ul>
+      <li><strong>Complements</strong> the climate balance (ETc − rain − irrigation) with the physical soil store (FC, PWP, θ).</li>
+      <li><strong>Does not replace</strong> the “Irrigation in irrigated strip” field — that is the volume <em>already applied</em> in the period.</li>
+      <li><strong>Deficit (+ irrigation):</strong> adds m³ to the integrated strip total; <strong>Excess (− irrigation):</strong> subtracts m³. No value → not considered.</li>
+      <li>The summary shows “Soil store adjustment” and “Integrated total (climate ± soil store)” when there is a manual adjustment.</li>
+      <li>The project PDF report can include the 🪨 soil reference from the browser session (target zone + suggested m³).</li>
+    </ul>
+
+    <h2>m³ vs mm in results</h2>
+    <div class="mt-formula">m³ = mm × ha × 10</div>
+    <p>
+      Prioritize <strong>m³ in strip</strong> to operate irrigation. Summary mm are the same water as depth;
+      when crop ha ≠ irrigated ha, the same m³ is expressed as more mm in strip and fewer mm reference over crop ha.
+      The “Important data — field irrigation” box uses m³ and mm in the irrigated strip.
+    </p>
+
+    <h2>Integrated total (climate + optional soil store)</h2>
+    <p>
+      By default the balance is <strong>ETc − rain − irrigation</strong> (climate demand for the period).
+      If the user enters a manual soil-store adjustment (deficit or excess in m³), the blue box and integrated-total lines
+      combine climate balance ± that m³. It is not automatic from 🪨 soil: the user chooses and confirms the value.
+    </p>
+
+    <h2>% soil explored by roots</h2>
+    <p>
+      Same NutriPlant criterion as in <a href="enmiendas-balance-cic.html">Amendments</a> and
+      <a href="analisis-suelo-fertilidad-kgha.html">Soil analysis → Fertility</a>
+      (<code>fertility.reachPct</code>). Here it <strong>only suggests the irrigated strip</strong>
+      (“Suggest irrigated strip” and “Use % from soil analysis” buttons in PRO); it <strong>does not alter the ETc deficit</strong>.
+    </p>
+    <div class="mt-formula">suggested strip (ha) = crop area × (% reach / 100)</div>
+    <p>
+      <strong>NutriPlant Criterion</strong> box, “View table” link to the expandable reference
+      <strong>% soil explored by system</strong> (avocado, berry, vegetable…). The same indicative table is in
+      <a href="../../n-mineralizable-mo-free.html">Mineralizable N (free tool)</a>.
+    </p>
+
+    <h2>Estimate % reach (Physical quantities converter)</h2>
+    <p>Login and dashboard → <strong>Physical quantities converter</strong>:</p>
+    <ul>
+      <li><strong>Root reach — canopy / plant:</strong> radius, canopy/root diameter or edge-to-edge spacing (m); plants/ha or row × in-row → % area (πr² × density).</li>
+      <li><strong>Root reach — bed or band:</strong> row spacing, bed width, % root in bed → % area.</li>
+    </ul>
+
+    <h2>Reference tables in the app</h2>
+    <p>
+      <strong>FAO-56 Kc table</strong> (reference; Kc is entered by the user) and
+      <strong>% soil explored by system</strong>. Green box <strong>«Important data — field irrigation»</strong>
+      when the strip differs: suggested m³, depth in strip (mm) and volume in the irrigated strip.
+    </p>
+
+    <h2>Limitations (app note)</h2>
+    <div class="mt-warn">
+      <p>The water balance is a <strong>quick estimate</strong>. It does not consider:</p>
+      <ul>
+        <li>Automatic integration of soil store into ETc (only optional manual adjustment via 🪨 block)</li>
+        <li>Surface runoff</li>
+        <li>Deep drainage</li>
+        <li>Nutrient leaching</li>
+      </ul>
+      <p><strong>Always validate in the field.</strong> Cross-check with VPD, NDMI, soil analysis, irrigation program and direct observation.</p>
+    </div>
+
+    <h2>Relation to other tools</h2>
+    <ul>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — vapor stress and irrigation timing.</li>
+      <li><a href="programa-fertirriego-etapas.html">Fertigation</a> — depth and program by stage (different from this quick balance).</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">Soil water</a> — FC−PWP, texture and m³ soil-store bridge (complement, not a substitute for the ETc balance).</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">Mineralizable N</a> — indicative % soil explored by system table.</li>
+      <li>Login/dashboard — <strong>Physical quantities converter</strong> (root reach: canopy or bed).</li>
+    </ul>
+    </div>
+
 
     <nav class="mt-chapter-nav"><a href="../index.html">Índice</a> · <a href="vpd-deficit-presion-vapor.html">VPD y Radar</a></nav>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

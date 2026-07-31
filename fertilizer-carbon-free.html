@@ -7,10 +7,10 @@
   <script src="assets/free-tools-embed.js"></script>
   <script src="assets/np-prefs-bootstrap.js?v=20260728b"></script>
   <script src="assets/np-prefs.js?v=20260728b"></script>
-  <script src="assets/np-i18n.js?v=20260728b"></script>
-  <script src="assets/np-units-core.js?v=20260728b"></script>
-  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-units-core.js?v=20260730a"></script>
+  <script src="assets/np-agronomic-units.js?v=20260730a"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
   <title>Huella de carbono de fertilizantes — NutriPlant PRO</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
@@ -932,6 +932,9 @@
     var LS_KEY = 'nutriplant_free_fertilizer_carbon_v2';
 
     function fcUI() { return window.NpFreeNutritionUI; }
+    function fcFertName(name) {
+      return fcUI() && typeof fcUI().materialName === 'function' ? fcUI().materialName(name) : name;
+    }
     function fcFromSI(value, kind) { return fcUI().fromSI(Number(value) || 0, kind); }
     function fcToSI(value, kind) { return fcUI().toSI(Number(value) || 0, kind); }
     function fcInput(value, kind) { return fcUI().input(Number(value) || 0, kind); }
@@ -1350,7 +1353,7 @@
           currentForm = form;
           html += '<optgroup label="' + NpFertilizerCarbon.fertilizerFormGroupLabel(form) + '">';
         }
-        html += '<option value="' + f.id + '"' + (f.id === selected ? ' selected' : '') + '>' + f.name + '</option>';
+        html += '<option value="' + f.id + '"' + (f.id === selected ? ' selected' : '') + '>' + fcFertName(f.name) + '</option>';
       });
       if (currentForm !== null) html += '</optgroup>';
       return html;
@@ -1728,7 +1731,7 @@
       var lines = result.rows.filter(function (r) { return r.ok; }).map(function (r) {
         var doseKind = r.dose_unit === 'total_kg' ? 'mass' : 'dose_mass_area';
         var doseTxt = fcUI().quantity(r.dose, doseKind, 2);
-        return '<li><strong>' + r.fertilizer_name + '</strong> · ' + doseTxt + ' · ' + r.origin_group_label +
+        return '<li><strong>' + fcFertName(r.fertilizer_name) + '</strong> · ' + doseTxt + ' · ' + r.origin_group_label +
           ' → ' + applicationCountryName(r.application_country_iso || 'MX') +
           ' · ' + NpFertilizerCarbon.formatCo2e(r.total_kg_co2e) + '</li>';
       }).join('');
@@ -1963,7 +1966,7 @@
       var oppsHtml = '';
       if (benchmark.opportunities && benchmark.opportunities.length) {
         oppsHtml = '<ul class="fc-efficiency-opps">' + benchmark.opportunities.slice(0, 3).map(function (o) {
-          return '<li><strong>' + o.fertilizer_name + '</strong>: hasta ' +
+          return '<li><strong>' + fcFertName(o.fertilizer_name) + '</strong>: hasta ' +
             NpFertilizerCarbon.formatCo2e(o.saving_kg_co2e) + ' menos en fabricación con origen ' +
             o.best_origin_group_label + ' (estimado)</li>';
         }).join('') + '</ul>';
@@ -2064,7 +2067,7 @@
       document.getElementById('metaBox').innerHTML =
         '<strong>🛣️ Rutas:</strong> ' + routeCount + ' distinta(s) — una por fertilizante<br>' +
         (activeRowResult && activeRowResult.ok
-          ? '<strong>Seleccionado:</strong> ' + activeRowResult.fertilizer_name + ' · ' +
+          ? '<strong>Seleccionado:</strong> ' + fcFertName(activeRowResult.fertilizer_name) + ' · ' +
             activeRowResult.origin_group_label + ' → ' +
             applicationCountryName(activeRowResult.application_country_iso || 'MX') +
             ' · 🚛 ' + fcDistance(activeRowResult.transport_origin_km || 0) + ' + ⛴️ ' +

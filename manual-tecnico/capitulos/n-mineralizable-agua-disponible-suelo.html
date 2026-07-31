@@ -7,7 +7,7 @@
   <meta name="description" content="Estimación de N mineralizable desde materia orgánica y agua útil CC−PMP con textura USDA en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,13 +42,15 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
     </div>
   </div></header>
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Suelo y agua</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>N mineralizable y agua disponible en suelo</h1>
     <h2>Resumen</h2>
     <p>Dos estimaciones de apoyo en suelo: <strong>aportes anuales de N desde la materia orgánica mineralizable</strong> y <strong>capacidad de almacenamiento hídrico</strong> (CC − PMP) con opción de lámina hasta capacidad de campo según humedad actual. Complementan <a href="analisis-suelo-fertilidad-kgha.html">fertilidad en kg/ha</a> y el manejo de riego, pero no reemplazan laboratorio ni sensores.</p>
@@ -174,11 +176,142 @@
       <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — demanda atmosférica del cultivo (complementa, no sustituye, agua en suelo).</li>
       <li><a href="interacciones-mulder-compatibilidad.html">Interacciones y compatibilidad</a> — fertilización cuando el suelo ya tiene agua y N disponibles limitados.</li>
     </ul>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Mineralizable N and available soil water</h1>
+    <h2>Summary</h2>
+    <p>Two supporting soil estimates: <strong>annual N supply from mineralizable organic matter</strong> and <strong>water-storage capacity</strong> (FC − PWP) with an option for depth to field capacity from current moisture. They complement <a href="analisis-suelo-fertilidad-kgha.html">fertility in kg/ha</a> and irrigation management, but do not replace the laboratory or sensors.</p>
+
+    <h2>Free tools (login)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Tool</th><th>File</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Mineralizable N estimate</td><td><code>n-mineralizable-mo-free.html</code></td><td>OM, depth, BD, root zone</td></tr>
+        <tr><td>Soil water and texture</td><td><code>agua-disponible-textura-suelo-free.html</code></td><td>FC, PWP, % surface/strip, target zone 40–60% AW, depth m³·mm, balance bridge; USDA triangle</td></tr>
+      </tbody>
+    </table>
+    <p>Persistence: <code>nutriplant_free_n_mineralizable_mo_v1</code>, <code>nutriplant_free_agua_disponible_textura_v1</code>.</p>
+
+    <h2>1. Mineralizable N (kg N/ha/year)</h2>
+    <p>Estimates the N that could be released by <strong>mineralization</strong> of organic matter in the root-explored layer, with an annual factor <strong>T_min</strong> (1–3 %, slider in the app).</p>
+    <h3>Inputs</h3>
+    <ul>
+      <li><strong>P</strong> — layer depth (cm)</li>
+      <li><strong>DA</strong> — bulk density (g/cm³)</li>
+      <li><strong>R</strong> — % of the profile explored by roots (1–100)</li>
+      <li><strong>MO</strong> — % organic matter</li>
+      <li><strong>N_MO</strong> — % N in the organic matter</li>
+      <li><strong>T_min</strong> — % mineralizable per year (1–3; conservative / medium / optimistic presets)</li>
+    </ul>
+    <h3>Calculation chain (same logic as the app)</h3>
+    <div class="mt-formula">
+      Layer soil mass (kg/ha) = 10 000 × (P/100) × DA × 1 000<br>
+      Effective mass = Mass × (R/100)<br>
+      OM (kg/ha) = Effective mass × (MO/100)<br>
+      Organic N (kg N/ha) = OM × (N_MO/100)<br>
+      <strong>Mineralizable N (kg N/ha/year) = Organic N × (T_min/100)</strong>
+    </div>
+    <p>Compact equivalent:</p>
+    <div class="mt-formula">N_min ≈ 10 000 × (P/100) × DA × 1 000 × (R/100) × (MO/100) × (N_MO/100) × (T_min/100)</div>
+    <div class="mt-note">
+      <p>It is an <strong>order of magnitude</strong> for planning nitrogen fertilization, not a replacement for mineralization trials or crop demand by stage (<a href="extraccion-nutrimental-por-etapa.html">extraction by stage</a>).</p>
+    </div>
+
+    <h2>2. Soil water (FC, PWP, irrigation depth)</h2>
+    <p><strong>Field capacity (FC)</strong> and <strong>permanent wilting point (PWP)</strong> are expressed as <strong>% volumetric</strong>. The band between them is the <strong>available-water potential</strong> (physical reference), not necessarily today’s moisture.</p>
+    <h3>Soil volume</h3>
+    <div class="mt-formula">Soil volume (m³) = area (ha) × 10 000 × (depth_cm / 100)</div>
+    <h3>Reference available water</h3>
+    <div class="mt-formula">
+      Available water (% vol.) = FC − PWP<br>
+      Available-water volume (m³) = Soil volume × (FC − PWP) / 100<br>
+      Explored-surface adjustment = Volume × (% surface / 100)
+    </div>
+    <p>The <strong>% soil explored</strong> is the fraction of the <strong>crop area</strong> with active roots or a wetted zone (irrigated strip under drip). <strong>It is not depth</strong> — same criterion as the water balance.</p>
+    <h3>Current moisture (θ) and depth to FC</h3>
+    <p>If you enter <strong>current volumetric moisture θ</strong> (% vol., same scale as FC/PWP):</p>
+    <div class="mt-formula">
+      Deficit to FC (% vol.) = max(0, FC − θ)<br>
+      Profile depth (mm) = (deficit / 100) × depth_cm × 10<br>
+      Strip volume (m³) = total volume × (% surface / 100)<br>
+      Strip depth (mm) = same profile depth (wetted soil)<br>
+      Crop-ha reference (mm) = strip_volume ÷ (crop_ha × 10)
+    </div>
+    <h3>Target irrigation zone (40–60% available water)</h3>
+    <p>
+      Between PWP and FC, NutriPlant marks a <strong>target zone</strong> on the horizontal bar:
+      <strong>40% and 60% of available water</strong> (not of absolute FC). In % volumetric:
+    </p>
+    <div class="mt-formula">
+      Available water (AW) = FC − PWP<br>
+      Low target = PWP + 0.40 × AW<br>
+      High target = PWP + 0.60 × AW<br>
+      Depth to target = max(0, high target − θ) × depth × 10 / 100
+    </div>
+    <p>
+      The <strong>violet</strong> band on the chart and the “Irrigate to target level” box show how much to irrigate
+      to reach <strong>60% available water</strong> (editable agronomic reference in the field). Depth to FC remains the
+      physical ceiling; it is not always advisable to irrigate that far.
+    </p>
+    <p>If θ &gt; FC, the app warns of waterlogging risk. The depth is an <strong>irrigation reference</strong>; validate with tensiometers, sensors, or a local agronomic method.</p>
+    <h3>Bar chart (FC · PWP · θ)</h3>
+    <p>
+      Horizontal bar with <strong>reference volumetric % scale (horizontal axis)</strong>, shown in the title next to
+      “Water proportion by state”. Colors: dark blue (PWP), green (available water / current moisture / deficit to FC),
+      amber line (current θ), <strong>violet</strong> band (target zone 40–60% AW) with marks and “Irrigation target” text under the numeric axis.
+    </p>
+    <p>
+      Under the chart, each row (PWP, FC, useful potential, target zone, current moisture, depth to FC/target) shows
+      <strong>mm and m³</strong> on the same line (<code>≈ X mm · Y m³</code>) so you can read in the preferred unit.
+    </p>
+    <h3>m³ vs mm — same water, different reference</h3>
+    <div class="mt-formula">m³ = mm × ha × 10</div>
+    <p>
+      In the field <strong>apply m³</strong> in the irrigated strip (meter, well, fertigation). The <strong>mm</strong> are the same quantity expressed as a depth (thickness).
+      With strip &lt; crop ha, the <strong>m³ do not change</strong> but the mm do, depending on the reference area:
+    </p>
+    <ul>
+      <li><strong>mm in strip</strong> = physical depth in wetted soil (e.g. 2% deficit in 10 cm → 2 mm).</li>
+      <li><strong>m³ in strip</strong> = volume to apply in the irrigated zone (e.g. 10 m³ on 0.5 ha).</li>
+      <li><strong>mm ref. crop ha</strong> = same m³ ÷ (crop ha × 10) — only for comparison with ETc balance, not the strip irrigation dose.</li>
+    </ul>
+    <p>Example: 10 m³ in a 0.5 ha strip = <strong>2 mm</strong> in the strip; over 1 crop ha they equal <strong>1 mm</strong> (same 10 m³).</p>
+    <h3>Highlighted result in the app</h3>
+    <p>
+      With current moisture θ, the tool shows a main <strong>blue box</strong> (m³ · mm in strip) to refill to FC,
+      with explicit text “Apply X m³… that is Y mm… not two irrigations”.
+      When applicable, an additional <strong>violet box</strong> indicates irrigation to the <strong>target level (60% available water)</strong>, less than to FC when θ is already near FC.
+      Other values remain as detail under the box and on the chart.
+    </p>
+    <h3>Bridge to water balance and PDF</h3>
+    <p>
+      Each recalculation publishes <code>nutriplant_bridge_soil_water_v1</code> (m³ to FC, m³ to 60% AW target, excess if θ &gt; FC, strip ha, mm, target zone).
+      The 🌧️ <strong>Irrigation depth and water balance</strong> calculator can <strong>suggest</strong> a manual deficit/excess with “Suggest from 🪨 soil”
+      (prioritizes m³ to target if θ is below the 40–60% AW zone; otherwise to FC). The user confirms in the dropdown + m³ before integrating into the total.
+      The project <strong>PDF report</strong> (Climate) can include a 🪨 soil block if data exist in the browser session.
+      See <a href="balance-hidrico-riego-clima.html">Water balance and quick irrigation calculation</a>.
+    </p>
+
+    <h2>3. USDA texture (Texture tab)</h2>
+    <p>With % sand, silt, and clay (ideal sum 100 %), the draggable triangle classifies texture (USDA / soiltexture). The app shows <strong>illustrative typical FC and PWP ranges</strong> by class — useful for loading reference values once on the Water tab; you can then edit them by hand.</p>
+    <p>Ranges vary with structure, organic matter, and the moisture-measurement method. Always combine with soil analysis and local judgment.</p>
+
+    <h2>Relationship to other chapters</h2>
+    <ul>
+      <li><a href="analisis-suelo-fertilidad-kgha.html">Soil analysis (kg/ha)</a> — nutrient adjustment vs ideal in the PRO project.</li>
+      <li><a href="balance-hidrico-riego-clima.html">Water balance</a> — climatic deficit and m³ bridge from this tool.</li>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — atmospheric crop demand (complements, does not replace, soil water).</li>
+      <li><a href="interacciones-mulder-compatibilidad.html">Interactions and compatibility</a> — fertilization when soil already has limited available water and N.</li>
+    </ul>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="interacciones-mulder-compatibilidad.html">← Mulder / compatibilidad</a><a href="analisis-suelo-fertilidad-kgha.html">Fertilidad suelo →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Parámetros CC/PMP y T_min son estimaciones educativas; calibrar con laboratorio y experiencia de campo.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

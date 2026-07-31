@@ -6,8 +6,8 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=3"></script>
-  <script defer src="assets/np-units-core.js?v=20260728g"></script>
+  <script defer src="assets/np-i18n.js?v=20260730l"></script>
+  <script defer src="assets/np-units-core.js?v=20260730a"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
   <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=23" />
+  <link rel="stylesheet" href="auth.css?v=25" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -60,7 +60,7 @@
         <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="brand-logo auth-logo" />
       </div>
       <div class="social-links">
-        <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" aria-label="Sobre Nosotros" type="button" style="
+        <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" aria-label="Sobre Nosotros" data-i18n-title="about.title_aria" data-i18n-aria-label="about.title_aria" type="button" style="
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -137,11 +137,11 @@
             <div class="auth-preference-field">
               <label for="authUnitSystem" data-i18n="profile.unit_system">Sistema de unidades</label>
               <select id="authUnitSystem" name="unit_system" aria-describedby="authUnitSystemHelp">
-                <option value="metric" data-i18n="selector.metric">Métrico</option>
-                <option value="us_customary" data-i18n="selector.us_customary">Estadounidense</option>
+                <option value="metric" data-i18n="selector.metric">Métrico (SI)</option>
+                <option value="us_customary" data-i18n="selector.us_customary">US customary</option>
               </select>
               <small id="authUnitSystemHelp">
-                <span data-i18n="selector.metric">Métrico</span> / <span data-i18n="selector.us_customary">Estadounidense</span>
+                <span data-i18n="selector.metric">Métrico (SI)</span> / <span data-i18n="selector.us_customary">US customary</span>
               </small>
             </div>
           </div>
@@ -196,12 +196,13 @@
               transition: all 0.2s ease;
               background: rgba(37, 99, 235, 0.05);
               border: 1px solid rgba(37, 99, 235, 0.1);
+              font-size: 13px;
             " onmouseover="this.style.background='rgba(37, 99, 235, 0.1)'; this.style.borderColor='rgba(37, 99, 235, 0.2)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(37, 99, 235, 0.15)'" onmouseout="this.style.background='rgba(37, 99, 235, 0.05)'; this.style.borderColor='rgba(37, 99, 235, 0.1)'; this.style.transform='none'; this.style.boxShadow='none'">
               <svg style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
-              admin@nutriplantpro.com
+              <span data-i18n="auth.contact_mail">Correo</span>
             </a>
           </div>
           <a href="https://wa.me/13868044542?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO" target="_blank" style="
@@ -313,8 +314,8 @@
             />
           </div>
           <p class="login-free-tools-banner__text">
-            Accede a estas herramientas gratuitas de NutriPlant PRO.<br />
-            Crea una cuenta para utilizar la plataforma completa.
+            <span data-i18n="auth.free_tools_line1">Accede a estas herramientas gratuitas de NutriPlant PRO.</span><br />
+            <span data-i18n="auth.free_tools_line2">Crea una cuenta para utilizar la plataforma completa.</span>
           </p>
         </div>
 
@@ -422,10 +423,10 @@
         </div>
       </div>
 
-      <aside class="login-social-panel auth-card" aria-label="Redes sociales NutriPlant PRO">
-        <h2 class="login-social-panel__title">Síguenos en redes</h2>
-        <p class="login-social-panel__subtitle">Contenido técnico, novedades y comunidad agronómica.</p>
-        <div class="login-social-tabs" role="tablist" aria-label="Seleccionar red social">
+      <aside class="login-social-panel auth-card" aria-label="Redes sociales NutriPlant PRO" data-i18n-aria-label="auth.social_aria">
+        <h2 class="login-social-panel__title" data-i18n="auth.social_title">Síguenos en redes</h2>
+        <p class="login-social-panel__subtitle" data-i18n="auth.social_subtitle">Contenido técnico, novedades y comunidad agronómica.</p>
+        <div class="login-social-tabs" role="tablist" aria-label="Seleccionar red social" data-i18n-aria-label="auth.social_tabs_aria">
           <button type="button" class="login-social-tab active" role="tab" id="social-tab-facebook" aria-selected="true" aria-controls="social-panel-facebook" data-social-tab="facebook" title="Facebook">
             <svg class="login-social-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             <span>Facebook</span>
@@ -457,21 +458,21 @@
             <div class="login-social-pane__body">
               <div class="login-social-pane__embed login-social-pane__embed--facebook" data-social-embed="facebook"></div>
             </div>
-            <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--facebook">Ver página en Facebook</a>
+            <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--facebook" data-i18n="auth.social_cta_facebook">Ver página en Facebook</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-instagram" aria-labelledby="social-tab-instagram" data-social-panel="instagram" hidden>
             <div class="login-social-pane__body">
               <div class="login-social-pane__embed login-social-pane__embed--instagram" data-social-embed="instagram"></div>
             </div>
-            <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--instagram">Ver perfil en Instagram</a>
+            <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--instagram" data-i18n="auth.social_cta_instagram">Ver perfil en Instagram</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-youtube" aria-labelledby="social-tab-youtube" data-social-panel="youtube" hidden>
             <div class="login-social-pane__body">
               <div class="login-social-pane__embed login-social-pane__embed--youtube" data-social-embed="youtube"></div>
             </div>
-            <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--youtube">Ver canal en YouTube</a>
+            <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--youtube" data-i18n="auth.social_cta_youtube">Ver canal en YouTube</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-linkedin" aria-labelledby="social-tab-linkedin" data-social-panel="linkedin" hidden>
@@ -480,12 +481,12 @@
                 <img src="assets/N_Hoja_Azul.png" alt="" width="48" height="48" decoding="async" />
                 <div>
                   <strong>NutriPlant PRO</strong>
-                  <span>Empresa · Nutrición vegetal y agronomía</span>
+                  <span data-i18n="auth.social_linkedin_role">Empresa · Nutrición vegetal y agronomía</span>
                 </div>
               </div>
               <div class="login-social-pane__embed login-social-pane__embed--linkedin" data-social-embed="linkedin"></div>
             </div>
-            <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--linkedin">Ver página en LinkedIn</a>
+            <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--linkedin" data-i18n="auth.social_cta_linkedin">Ver página en LinkedIn</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-tiktok" aria-labelledby="social-tab-tiktok" data-social-panel="tiktok" hidden>
@@ -498,7 +499,7 @@
               </blockquote>
             </div>
             </div>
-            <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--tiktok">Abrir perfil en TikTok</a>
+            <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--tiktok" data-i18n="auth.social_cta_tiktok">Abrir perfil en TikTok</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-whatsapp" aria-labelledby="social-tab-whatsapp" data-social-panel="whatsapp" hidden>
@@ -510,19 +511,19 @@
                   </div>
                   <div>
                     <strong>NutriPlant PRO</strong>
-                    <span>Canal oficial de WhatsApp</span>
+                    <span data-i18n="auth.social_whatsapp_channel">Canal oficial de WhatsApp</span>
                   </div>
                 </div>
-                <p class="login-social-whatsapp-card__tagline">Diseña, ajusta y nutre con criterio técnico · nutriplantpro.com</p>
+                <p class="login-social-whatsapp-card__tagline" data-i18n="auth.social_whatsapp_tagline">Diseña, ajusta y nutre con criterio técnico · nutriplantpro.com</p>
                 <ul class="login-social-whatsapp-card__list">
-                  <li>Novedades técnicas y agronómicas</li>
-                  <li>Actualizaciones de la plataforma</li>
-                  <li>Contenido directo en tu WhatsApp</li>
+                  <li data-i18n="auth.social_whatsapp_item1">Novedades técnicas y agronómicas</li>
+                  <li data-i18n="auth.social_whatsapp_item2">Actualizaciones de la plataforma</li>
+                  <li data-i18n="auth.social_whatsapp_item3">Contenido directo en tu WhatsApp</li>
                 </ul>
-                <p class="login-social-whatsapp-card__meta">Canal · Comunidad agronómica</p>
+                <p class="login-social-whatsapp-card__meta" data-i18n="auth.social_whatsapp_meta">Canal · Comunidad agronómica</p>
               </div>
             </div>
-            <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--whatsapp">Seguir canal en WhatsApp</a>
+            <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--whatsapp" data-i18n="auth.social_cta_whatsapp">Seguir canal en WhatsApp</a>
           </div>
         </div>
       </aside>
@@ -535,16 +536,16 @@
             font-size: 12px;
             line-height: 1.6;
           ">
-            <strong>© 2026 NutriPlant PRO®</strong>. Marca registrada. Todos los derechos reservados.
+            <strong>© 2026 NutriPlant PRO®</strong>. <span data-i18n="auth.footer_rights">Marca registrada. Todos los derechos reservados.</span>
           </div>
           <p style="margin: 12px auto 0; max-width: 620px; font-size: 11px; color: #64748b; line-height: 1.45;">
-            NutriPlant PRO es una herramienta de apoyo técnico para fortalecer el criterio agronómico en la interpretación y ajuste nutricional.<br>
-            Los cálculos son una guía y deben validarse en campo; la decisión final es responsabilidad del técnico o usuario.
+            <span data-i18n="auth.footer_disclaimer_1">NutriPlant PRO es una herramienta de apoyo técnico para fortalecer el criterio agronómico en la interpretación y ajuste nutricional.</span><br>
+            <span data-i18n="auth.footer_disclaimer_2">Los cálculos son una guía y deben validarse en campo; la decisión final es responsabilidad del técnico o usuario.</span>
           </p>
-          <nav class="login-public-footer-links" aria-label="Enlaces públicos">
-            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer">Manual técnico</a>
-            <a href="politicas-privacidad.html" target="_blank" rel="noopener">Privacidad</a>
-            <a href="terminos-condiciones.html" target="_blank" rel="noopener">Términos</a>
+          <nav class="login-public-footer-links" aria-label="Enlaces públicos" data-i18n-aria-label="auth.public_links_aria">
+            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" data-i18n="dashboard.manual">Manual técnico</a>
+            <a href="politicas-privacidad.html" target="_blank" rel="noopener" data-i18n="dashboard.privacy">Privacidad</a>
+            <a href="terminos-condiciones.html" target="_blank" rel="noopener" data-i18n="dashboard.terms">Términos</a>
           </nav>
         </div>
       </div>
@@ -1769,7 +1770,21 @@
 
     function showAgroclimateForecast() {
       const modal = document.getElementById('agroclimateForecastModal');
+      const frame = document.getElementById('agroclimateForecastFrame');
       if (!modal) return;
+      if (frame) {
+        try {
+          const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function'
+            ? window.NpPrefs.get()
+            : { language: 'es', unit_system: 'metric' };
+          const u = new URL(frame.getAttribute('src') || 'pronosticoclimatico/?embed=login', window.location.href);
+          u.searchParams.set('embed', 'login');
+          u.searchParams.set('lang', prefs.language === 'en' ? 'en' : 'es');
+          u.searchParams.set('units', prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric');
+          u.searchParams.set('v', '20260730b');
+          frame.src = u.pathname + u.search + u.hash;
+        } catch (e) { /* keep existing src */ }
+      }
       modal.style.display = 'flex';
     }
 
@@ -2540,7 +2555,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?v=20260540" title="Diseño de solución nutritiva"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?v=20260730a" title="Diseño de solución nutritiva"></iframe>
       </div>
     </div>
   </div>
@@ -2558,7 +2573,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260728a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260730a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>
@@ -2576,7 +2591,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=20260728a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" allow="geolocation 'self'"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=20260730a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2585,14 +2600,14 @@
   <div id="agroclimateForecastModal" class="modal-overlay">
     <div class="modal modal-vpd">
       <div class="modal-header">
-        <h2 class="modal-title">🌤️ Pronóstico agroclimático</h2>
+        <h2 class="modal-title">🌤️ <span data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeAgroclimateForecast()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260727h" title="Pronóstico agroclimático" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260730b" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2610,7 +2625,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=1764880010" title="Balance de enmiendas por CIC"></iframe>
+        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=20260730a" title="Balance de enmiendas por CIC"></iframe>
       </div>
     </div>
   </div>
@@ -2626,7 +2641,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html" title="Formulación de mezclas granulares"></iframe>
+        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?v=20260730a" title="Formulación de mezclas granulares"></iframe>
       </div>
     </div>
   </div>
@@ -2642,7 +2657,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260728b" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260730a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition"></iframe>
       </div>
     </div>
   </div>
@@ -2658,7 +2673,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260728b" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260730a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
       </div>
     </div>
   </div>
@@ -2674,7 +2689,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260709" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260730a" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic"></iframe>
       </div>
     </div>
   </div>
@@ -2690,7 +2705,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260717" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260730a" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas"></iframe>
       </div>
     </div>
   </div>
@@ -2706,7 +2721,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility"></iframe>
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260730a" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility"></iframe>
       </div>
     </div>
   </div>
@@ -2722,7 +2737,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions"></iframe>
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260730a" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions"></iframe>
       </div>
     </div>
   </div>
@@ -2738,7 +2753,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260728b" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260730a" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
       </div>
     </div>
   </div>
@@ -2754,7 +2769,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260728a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water"></iframe>
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260730a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water"></iframe>
       </div>
     </div>
   </div>
@@ -2770,7 +2785,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login&v=20260728a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" allow="geolocation 'self'"></iframe>
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login&v=20260730a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2785,7 +2800,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260728b" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt"></iframe>
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260730a" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt"></iframe>
       </div>
     </div>
   </div>
@@ -2801,7 +2816,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260728b" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon"></iframe>
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260730a" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon"></iframe>
       </div>
     </div>
   </div>
@@ -2854,7 +2869,7 @@
   </div>
 
   <div id="registrationModal" class="modal-overlay" style="display: none;">
-    <div class="modal" style="max-width: 600px;">
+    <div class="modal registration-modal" style="max-width: 600px;">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="auth.register_title">Crear Nueva Cuenta</h2>
         <button class="modal-close" onclick="closeRegistrationModal()" aria-label="Cerrar ventana" data-i18n-aria-label="auth.close_dialog">×</button>
@@ -3141,6 +3156,7 @@
         languageSelect.addEventListener('change', function() {
           window.NpPrefs.set({ language: this.value }, { explicit: true });
           window.NpI18n.setLanguage(this.value, { persist: false });
+          if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
 
         unitSystemSelect.addEventListener('change', function() {
@@ -3153,9 +3169,31 @@
           languageSelect.value = next.language;
           unitSystemSelect.value = next.unit_system;
           document.documentElement.setAttribute('data-np-unit-system', next.unit_system);
+          if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
+
+        if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
       });
     })();
+  </script>
+
+  <script>
+    window.npSyncManualLinksLang = function() {
+      try {
+        var lang = 'es';
+        if (window.NpPrefs && typeof window.NpPrefs.get === 'function') {
+          var prefs = window.NpPrefs.get();
+          if (prefs && prefs.language === 'en') lang = 'en';
+        }
+        document.querySelectorAll('a[href*="manual-tecnico"]').forEach(function(a) {
+          try {
+            var u = new URL(a.getAttribute('href'), window.location.href);
+            u.searchParams.set('lang', lang);
+            a.setAttribute('href', u.pathname + u.search + u.hash);
+          } catch (e) { /* ignore */ }
+        });
+      } catch (e2) { /* ignore */ }
+    };
   </script>
 
   <script>
@@ -4054,7 +4092,10 @@
     // Modal Nosotros (mismo comportamiento que en dashboard)
     function showAboutUsModal() {
       const modal = document.getElementById('aboutUsModal');
-      if (modal) modal.classList.add('show');
+      if (modal) {
+        if (window.NpI18n) window.NpI18n.apply(modal);
+        modal.classList.add('show');
+      }
     }
     window.showAboutUsModal = showAboutUsModal;
 
@@ -4120,7 +4161,7 @@
               <img src="assets/N_Hoja_Azul.png" alt="" width="32" height="32" decoding="async">
             </span>
             <div>
-              <h2 style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;">Nosotros</h2>
+              <h2 style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;" data-i18n="about.title">Nosotros</h2>
               <div style="color:#1d4ed8; font-size:12px; font-weight: 700;">NutriPlant PRO</div>
             </div>
           </div>
@@ -4143,40 +4184,40 @@
           </button>
         </div>
         <div style="display: grid; gap: 16px; width: 100%; max-width: 100%; min-width: 0;">
-          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
-            <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
+          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);" data-i18n="about.intro">
+            NutriPlant PRO es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🎯 Visión</h3>
-              <p style="margin: 0; color: #334155; line-height: 1.6;">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🎯 <span data-i18n="about.vision">Visión</span></h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;" data-i18n="about.vision_body">
                 Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.
               </p>
             </div>
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🧩 Misión</h3>
-              <p style="margin: 0; color: #334155; line-height: 1.6;">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🧩 <span data-i18n="about.mission">Misión</span></h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;" data-i18n="about.mission_body">
                 Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.
               </p>
             </div>
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">✅ Valores</h3>
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">✅ <span data-i18n="about.values">Valores</span></h3>
               <ul style="margin: 0; padding-left: 18px; color: #334155; line-height: 1.6;">
-                <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
-                <li><strong>Respeto:</strong> Al proceso, a las personas y al conocimiento en construcción.</li>
-                <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
-                <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
+                <li><strong data-i18n="about.value_criterion_label">Criterio:</strong> <span data-i18n="about.value_criterion">Pensar antes de aplicar. Decidir con fundamento.</span></li>
+                <li><strong data-i18n="about.value_respect_label">Respeto:</strong> <span data-i18n="about.value_respect">Al proceso, a las personas y al conocimiento en construcción.</span></li>
+                <li><strong data-i18n="about.value_honesty_label">Honestidad:</strong> <span data-i18n="about.value_honesty">Hablar claro, sin promesas vacías ni verdades a medias.</span></li>
+                <li><strong data-i18n="about.value_evolution_label">Evolución:</strong> <span data-i18n="about.value_evolution">Aprender, ajustar y mejorar de forma continua.</span></li>
               </ul>
             </div>
           </div>
           <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center;">
-            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Manual técnico</a>
+            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="dashboard.manual">Manual técnico</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Autoría de NutriPlant PRO</a>
+            <a href="manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="about.authorship">Autoría de NutriPlant PRO</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Políticas de privacidad</a>
+            <a href="politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="about.privacy_policy">Políticas de privacidad</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Términos y Condiciones</a>
+            <a href="terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="about.terms">Términos y Condiciones</a>
           </div>
         </div>
       </div>
@@ -4290,7 +4331,44 @@
         iframe.setAttribute('allowfullscreen', 'true');
         if (options && options.allow) iframe.setAttribute('allow', options.allow);
         if (options && options.scrolling) iframe.setAttribute('scrolling', options.scrolling);
+        if (options && options.width) {
+          iframe.style.width = options.width + 'px';
+          iframe.setAttribute('width', String(options.width));
+        }
+        if (options && options.height) {
+          iframe.style.height = options.height + 'px';
+          iframe.setAttribute('height', String(options.height));
+        }
         return iframe;
+      }
+
+      function facebookEmbedWidth(container) {
+        var width = Math.floor((container && container.clientWidth) || 0);
+        if (!width) width = Math.floor(root.clientWidth - 40);
+        if (!width || width < 180) width = 320;
+        return Math.max(180, Math.min(500, width));
+      }
+
+      function mountFacebookEmbed(container, force) {
+        if (!container) return;
+        var width = facebookEmbedWidth(container);
+        if (!force && container.dataset.fbWidth === String(width) && container.querySelector('iframe')) return;
+        container.dataset.fbWidth = String(width);
+        container.innerHTML = '';
+        var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
+        container.appendChild(createSocialIframe(
+          'https://www.facebook.com/plugins/page.php?href=' + fbHref +
+            '&tabs=timeline&width=' + width +
+            '&height=500&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=true',
+          'NutriPlant PRO en Facebook',
+          {
+            scrolling: 'no',
+            allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share',
+            width: width,
+            height: 500
+          }
+        ));
+        container.dataset.loaded = '1';
       }
 
       function loadTikTokEmbed() {
@@ -4311,18 +4389,15 @@
         var pane = root.querySelector('[data-social-panel="' + id + '"]');
         if (!pane) return;
         var container = pane.querySelector('[data-social-embed]');
-        if (!container || container.dataset.loaded === '1') return;
-        container.dataset.loaded = '1';
+        if (!container) return;
 
         if (id === 'facebook') {
-          var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
-          container.appendChild(createSocialIframe(
-            'https://www.facebook.com/plugins/page.php?href=' + fbHref + '&tabs=timeline&width=500&height=500&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=true',
-            'NutriPlant PRO en Facebook',
-            { scrolling: 'no', allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share' }
-          ));
+          mountFacebookEmbed(container, false);
           return;
         }
+
+        if (container.dataset.loaded === '1') return;
+        container.dataset.loaded = '1';
 
         if (id === 'instagram') {
           container.appendChild(createSocialIframe(
@@ -4352,17 +4427,23 @@
       function syncSocialPanelHeight() {
         if (window.innerWidth < 1024) {
           root.style.maxHeight = '';
-          return;
-        }
-        var tools = document.querySelector('.login-split__tools');
-        var login = document.querySelector('.login-split__login');
-        if (!tools || !login) return;
-        var available = tools.offsetHeight - login.offsetHeight - 16;
-        root.style.minHeight = '260px';
-        if (available > 200) {
-          root.style.maxHeight = available + 'px';
         } else {
-          root.style.maxHeight = '';
+          var tools = document.querySelector('.login-split__tools');
+          var login = document.querySelector('.login-split__login');
+          if (tools && login) {
+            var available = tools.offsetHeight - login.offsetHeight - 16;
+            root.style.minHeight = '260px';
+            if (available > 200) {
+              root.style.maxHeight = available + 'px';
+            } else {
+              root.style.maxHeight = '';
+            }
+          }
+        }
+        var fbPane = root.querySelector('[data-social-panel="facebook"]');
+        var fbContainer = fbPane && fbPane.querySelector('[data-social-embed="facebook"]');
+        if (fbContainer && fbPane && !fbPane.hidden) {
+          mountFacebookEmbed(fbContainer, false);
         }
       }
 

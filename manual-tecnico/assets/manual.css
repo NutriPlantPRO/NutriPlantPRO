@@ -184,26 +184,24 @@ body {
   white-space: nowrap;
   transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
-.mt-nav a:first-child,
 .mt-nav a[href$="index.html"] {
   color: #0284c7 !important;
   background: #f0f9ff;
   border-color: #bae6fd;
 }
-.mt-nav a:nth-child(2),
-.mt-nav a[href$="login.html"] {
+.mt-nav a[href$="login.html"],
+.mt-nav a:first-child {
   color: #16a34a !important;
   background: #f0fdf4;
   border-color: #bbf7d0;
 }
-.mt-nav a:first-child:hover,
 .mt-nav a[href$="index.html"]:hover {
   color: #075985 !important;
   background: #bae6fd;
   border-color: #38bdf8;
 }
-.mt-nav a:nth-child(2):hover,
-.mt-nav a[href$="login.html"]:hover {
+.mt-nav a[href$="login.html"]:hover,
+.mt-nav a:first-child:hover {
   color: #166534 !important;
   background: #bbf7d0;
   border-color: #4ade80;
@@ -658,6 +656,13 @@ body {
   object-fit: contain;
   flex-shrink: 0;
 }
+.mt-autoria-btn--cta__author-text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
 .mt-autoria-btn--cta__name {
   font-size: 14px;
   font-weight: 700;
@@ -665,8 +670,19 @@ body {
   line-height: 1.2;
   white-space: normal;
 }
+.mt-autoria-btn--cta__link {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mt-accent);
+  line-height: 1.2;
+}
 .mt-autoria-btn--cta:hover .mt-autoria-btn--cta__name {
   color: #075985;
+}
+.mt-autoria-btn--cta:hover .mt-autoria-btn--cta__link {
+  color: #075985;
+  text-decoration: underline;
 }
 .mt-hero__aside {
   margin: 14px 0 0;

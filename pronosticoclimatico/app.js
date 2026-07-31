@@ -11,6 +11,14 @@
   const API = '/api/agroclimate';
   const STORE = 'nutriplant_free_agroclimate_v1';
   const WHATSAPP = '13868044542';
+
+  const I = window.AgroI18n || null;
+  const t = (key, vars) => (I && typeof I.t === 'function' ? I.t(key, vars) : key);
+  const locale = () => (I && typeof I.getLocale === 'function' ? I.getLocale() : 'es-MX');
+  const prefs = () => (I && typeof I.getPrefs === 'function'
+    ? I.getPrefs()
+    : { language: 'es', unit_system: 'metric', locale: 'es-MX' });
+
   let map;
   let marker;
   let chart;
@@ -37,9 +45,39 @@
     const vals = list.map((r) => n(r[key])).filter((v) => v != null);
     return vals.length ? Math[kind](...vals) : null;
   };
+
+  function tempDigits() {
+    return prefs().unit_system === 'us_customary' ? 0 : 1;
+  }
+  function depthDigits() {
+    return prefs().unit_system === 'us_customary' ? 2 : 1;
+  }
+  function dispTemp(celsius, digits) {
+    if (!I) return fmt(celsius, digits != null ? digits : 1);
+    const v = I.convertTempFromC(celsius);
+    return v == null ? '—' : Number(v).toFixed(digits != null ? digits : tempDigits());
+  }
+  function dispDepth(mm, digits) {
+    if (!I) return fmt(mm, digits != null ? digits : 1);
+    const v = I.convertDepthFromMm(mm);
+    return v == null ? '—' : Number(v).toFixed(digits != null ? digits : depthDigits());
+  }
+  function showTemp(celsius, digits) {
+    return I ? I.fmtTemp(celsius, digits != null ? digits : tempDigits()) : fmt(celsius, 1, ' °C');
+  }
+  function showDepth(mm, digits) {
+    return I ? I.fmtDepth(mm, digits != null ? digits : depthDigits()) : fmt(mm, 1, ' mm');
+  }
+  function tempUnitLabel() {
+    return I ? I.tempUnit() : '°C';
+  }
+  function depthUnitLabel() {
+    return I ? I.depthUnit() : 'mm';
+  }
+
   const dateLabel = (iso, short) => {
     const p = String(iso).split('-').map(Number);
-    return new Intl.DateTimeFormat('es-MX', short
+    return new Intl.DateTimeFormat(locale(), short
       ? { weekday: 'short', day: '2-digit' }
       : { weekday: 'short', day: '2-digit', month: 'short' }).format(new Date(p[0], p[1] - 1, p[2]));
   };
@@ -50,11 +88,11 @@
     return d.toISOString().slice(0, 10);
   };
   const vpd = (temp, humidity, radiation) => {
-    const t = n(temp), h = n(humidity), rad = n(radiation);
-    if (t == null || h == null) return null;
-    const leaf = rad != null && rad > 200 ? t + ((rad - 200) * .6 / 100) : t;
+    const tAir = n(temp), h = n(humidity), rad = n(radiation);
+    if (tAir == null || h == null) return null;
+    const leaf = rad != null && rad > 200 ? tAir + ((rad - 200) * .6 / 100) : tAir;
     const esLeaf = .6108 * Math.exp(17.27 * leaf / (leaf + 237.3));
-    const esAir = .6108 * Math.exp(17.27 * t / (t + 237.3));
+    const esAir = .6108 * Math.exp(17.27 * tAir / (tAir + 237.3));
     return Math.max(0, esLeaf - esAir * h / 100);
   };
 
@@ -68,7 +106,7 @@
   function formatReadingAt(ts) {
     const d = ts instanceof Date ? ts : new Date(ts);
     if (!Number.isFinite(d.getTime())) return '';
-    return new Intl.DateTimeFormat('es-MX', {
+    return new Intl.DateTimeFormat(locale(), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -81,8 +119,8 @@
     const ts = (personal && reportGeneratedAt) ? reportGeneratedAt : lastReadingAt;
     const when = ts ? formatReadingAt(ts) : '';
     const base = when
-      ? (personal ? `Pronóstico generado: ${when}` : `Última lectura: ${when}`)
-      : (personal ? 'Reporte listo' : 'Lectura actualizada');
+      ? (personal ? t('forecast_generated', { when }) : t('last_reading', { when }))
+      : (personal ? t('report_ready') : t('reading_updated'));
     return extra ? `${base}. ${extra}` : `${base}.`;
   }
 
@@ -100,7 +138,6 @@
     $('agro-promo').hidden = !personal || embed;
     const unsub = $('agro-unsubscribe-btn');
     if (unsub) {
-      // Solo desde el link del correo (?token=...), no en herramienta libre ni demo.
       unsub.hidden = !fromEmailLink;
       unsub.style.display = fromEmailLink ? '' : 'none';
     }
@@ -121,13 +158,12 @@
   function syncKcBar() {
     const bar = $('agro-kc-bar');
     if (!bar) return;
-    // Un solo Kc arriba de la tabla (gratis y personal).
     bar.hidden = !rows.length;
     if (bar.hidden) return;
     const kc = activeKc();
     const usingViewOnly = personal && viewKc != null && savedKc != null && Number(viewKc) !== Number(savedKc);
     const hint = $('agro-kc-view-hint');
-    if (hint) hint.textContent = personal ? '(solo esta vista)' : '';
+    if (hint) hint.textContent = personal ? t('kc_view_only') : '';
     const viewInput = $('agro-kc-view');
     if (viewInput && document.activeElement !== viewInput) {
       viewInput.value = kc == null ? '' : Number(kc).toFixed(2);
@@ -135,52 +171,50 @@
     const note = $('agro-kc-bar-note');
     if (note) {
       if (kc == null) {
-        note.textContent = personal
-          ? 'Sin Kc no hay ETc. Puedes probar un Kc aquí. El valor guardado de tu alerta se cambia por WhatsApp.'
-          : 'Sin Kc no hay ETc. Usa Referencia FAO o escribe un Kc y pulsa Aplicar.';
+        note.textContent = personal ? t('kc_note_none_personal') : t('kc_note_none_free');
       } else if (usingViewOnly) {
-        note.innerHTML = `ETc de esta vista = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Valor <strong>guardado</strong> de tu alerta: <strong>${Number(savedKc).toFixed(2)}</strong> (cámbialo por WhatsApp).`;
+        note.innerHTML = t('kc_note_view_only_html', {
+          kc: Number(kc).toFixed(2),
+          saved: Number(savedKc).toFixed(2)
+        });
       } else {
         note.innerHTML = personal
-          ? `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Aquí solo pruebas; el Kc/coordenadas <strong>guardados</strong> de tu alerta se piden por WhatsApp.`
-          : `ETc = <strong>ETo × ${Number(kc).toFixed(2)}</strong>. Puedes editar Kc aquí libremente (herramienta gratis; no hay alerta guardada).`;
+          ? t('kc_note_personal_html', { kc: Number(kc).toFixed(2) })
+          : t('kc_note_free_html', { kc: Number(kc).toFixed(2) });
       }
     }
     const wa = $('agro-kc-whatsapp');
     if (!wa) return;
-    // WhatsApp solo en reporte personal (link del correo), no en herramienta gratuita.
     if (!personal) {
       wa.hidden = true;
       bar.classList.toggle('no-wa', true);
       return;
     }
     bar.classList.toggle('no-wa', false);
-    const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
+    const folio = report?.request_code ? t('wa_folio', { code: report.request_code }) : '';
     const name = report?.full_name || report?.plot_name || '';
     const lat = report?.latitude ?? $('agro-lat')?.value;
     const lng = report?.longitude ?? $('agro-lng')?.value;
     const coords = (lat != null && lat !== '' && lng != null && lng !== '')
-      ? ` Coordenadas guardadas actuales: ${lat}, ${lng}.`
+      ? t('wa_coords', { lat, lng })
       : '';
-    const message =
-      `Hola NutriPlant PRO. Quiero cambiar el Kc y/o las coordenadas GUARDADOS de mi alerta agroclimática (valores por defecto del predio, no solo de una vista).` +
-      `${folio}${name ? ` Predio/nombre: ${name}.` : ''}` +
-      ` Kc guardado actual: ${savedKc == null ? 'sin definir' : savedKc}.` +
-      `${coords}` +
-      ` Nuevo Kc y/o nuevas coordenadas que solicito: `;
+    const message = t('wa_change_kc', {
+      folio,
+      name: name ? t('wa_plot_name', { name }) : '',
+      kc: savedKc == null ? t('wa_undefined') : savedKc,
+      coords
+    });
     wa.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
     wa.hidden = false;
     const waLabel = wa.querySelector('span');
-    if (waLabel) {
-      waLabel.innerHTML = 'Cambiar Kc o coordenadas <strong>guardados</strong> (alerta) · WhatsApp';
-    }
-    wa.title = 'Pedir cambio del Kc o coordenadas guardados de tu alerta (valores permanentes)';
+    if (waLabel) waLabel.innerHTML = t('kc_wa_html');
+    wa.title = t('kc_wa_title_alert');
   }
 
   function applyViewKc() {
     const next = n($('agro-kc-view').value);
     if (next != null && (next < 0 || next > 2.5)) {
-      setStatus('El Kc debe estar entre 0 y 2.5.', 'error');
+      setStatus(t('kc_range_error'), 'error');
       return;
     }
     viewKc = next;
@@ -220,8 +254,8 @@
       s.async = true;
       s.onload = () => (typeof html2pdf !== 'undefined'
         ? resolve()
-        : reject(new Error('html2pdf no disponible')));
-      s.onerror = () => reject(new Error('No se pudo cargar el generador de PDF'));
+        : reject(new Error('html2pdf unavailable')));
+      s.onerror = () => reject(new Error('PDF loader failed'));
       document.head.appendChild(s);
     });
     return html2pdfLoadPromise;
@@ -233,8 +267,8 @@
       try {
         await navigator.share({
           files: [file],
-          title: 'Pronóstico agroclimático NutriPlant',
-          text: 'Reporte PDF NutriPlant'
+          title: t('pdf_share_title'),
+          text: t('pdf_share_text')
         });
         return 'shared';
       } catch (err) {
@@ -249,7 +283,6 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    // En iPhone el atributo download suele ignorarse: abrir el PDF en pestaña.
     setTimeout(() => {
       try {
         const w = window.open(url, '_blank');
@@ -275,7 +308,6 @@
   function downloadPdfViaPrint() {
     const cleanup = preparePrintLayout();
     window.addEventListener('afterprint', cleanup, { once: true });
-    // iOS a veces no dispara afterprint.
     setTimeout(cleanup, 4000);
     setTimeout(() => {
       try { chart?.resize(); } catch (_) {}
@@ -284,10 +316,9 @@
   }
 
   function preparePdfExportClone() {
-    // Ancho fijo tipo hoja carta (~96 dpi) para que en iPhone no capture el layout angosto del celular.
     const PDF_WIDTH = 794;
     const shell = document.querySelector('.agro-shell');
-    if (!shell) throw new Error('No hay contenido para exportar');
+    if (!shell) throw new Error('No export content');
 
     const wrap = $('agro-table-wrap');
     if (wrap) wrap.classList.add('open');
@@ -310,8 +341,6 @@
     ].join(';');
 
     const clone = shell.cloneNode(true);
-    // html2pdf mueve este nodo fuera del host; conservar la clase garantiza
-    // que los estilos de tabla/paginación sigan aplicando durante la captura.
     clone.classList.add('agro-pdf-export-host');
     clone.style.width = PDF_WIDTH + 'px';
     clone.style.maxWidth = PDF_WIDTH + 'px';
@@ -349,7 +378,7 @@
         if (sourceQr) {
           const finalQr = document.createElement('div');
           finalQr.className = 'agro-pdf-final-qr';
-          finalQr.innerHTML = '<strong>NutriPlant PRO</strong><span>Escanea para visitar la plataforma</span>';
+          finalQr.innerHTML = `<strong>NutriPlant PRO</strong><span>${esc(t('pdf_scan'))}</span>`;
           finalQr.appendChild(sourceQr.cloneNode(true));
           reportCards[1].appendChild(finalQr);
         }
@@ -371,7 +400,7 @@
       try {
         const img = document.createElement('img');
         img.className = 'agro-chart-pdf-img';
-        img.alt = 'Gráfica del pronóstico';
+        img.alt = t('chart_alt');
         img.src = liveCanvas.toDataURL('image/png');
         img.style.cssText = 'width:100%;max-width:100%;height:270px;object-fit:contain;display:block;';
         cloneCanvas.replaceWith(img);
@@ -442,8 +471,8 @@
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(7);
       pdf.setTextColor(71, 85, 105);
-      pdf.text('© 2026 NutriPlant PRO · Todos los derechos reservados', 10, pageHeight - 5);
-      pdf.text(`Página ${page} de ${pages}`, pageWidth - 10, pageHeight - 5, { align: 'right' });
+      pdf.text(t('pdf_footer_rights'), 10, pageHeight - 5);
+      pdf.text(t('pdf_page', { page, pages }), pageWidth - 10, pageHeight - 5, { align: 'right' });
     }
   }
 
@@ -452,16 +481,15 @@
     const buttons = Array.from(document.querySelectorAll('.agro-pdf-trigger'));
     buttons.forEach((btn) => {
       btn.disabled = true;
-      btn.textContent = 'Generando PDF…';
+      btn.textContent = t('pdf_generating_btn');
     });
-    setPdfHint('Generando el PDF… un momento.', '');
+    setPdfHint(t('pdf_generating_hint'), '');
     let exportPack = null;
     try {
       await ensureHtml2PdfLoaded();
       window.scrollTo(0, 0);
       await new Promise((r) => setTimeout(r, 200));
       exportPack = preparePdfExportClone();
-      // Esperar a que el layout del clon (y la imagen de la gráfica) asienten.
       await new Promise((r) => setTimeout(r, 120));
 
       const filename = pdfFilename();
@@ -496,17 +524,17 @@
 
       const result = await shareOrSavePdfBlob(blob, filename);
       if (result === 'aborted') {
-        setPdfHint('Descarga cancelada. Vuelve a pulsar si quieres el PDF.', '');
+        setPdfHint(t('pdf_cancelled'), '');
       } else if (result === 'shared') {
-        setPdfHint('PDF listo. En el menú elige Guardar en Archivos o compartirlo.', 'ok');
-        setStatus(readingStatusText('PDF generado'), 'success');
+        setPdfHint(t('pdf_shared_ok'), 'ok');
+        setStatus(readingStatusText(t('pdf_generated')), 'success');
       } else {
-        setPdfHint('PDF generado. Si no se descargó, ábrelo y usa Compartir → Guardar en Archivos.', 'ok');
-        setStatus(readingStatusText('PDF generado'), 'success');
+        setPdfHint(t('pdf_opened_ok'), 'ok');
+        setStatus(readingStatusText(t('pdf_generated')), 'success');
       }
     } catch (err) {
       console.error(err);
-      setPdfHint('No se pudo crear el archivo PDF. Abriendo la vista de impresión…', 'error');
+      setPdfHint(t('pdf_fallback_print'), 'error');
       downloadPdfViaPrint();
     } finally {
       if (exportPack && exportPack.host && exportPack.host.parentNode) {
@@ -514,27 +542,25 @@
       }
       buttons.forEach((btn) => {
         btn.disabled = false;
-        btn.textContent = previousLabel || '📥 Descargar reporte en PDF';
+        btn.textContent = previousLabel || t('pdf_download');
       });
     }
   }
 
   function downloadPdfReport(ev) {
     if (!rows.length) {
-      setStatus('Genera el pronóstico antes de descargar el PDF.', 'error');
-      setPdfHint('Primero genera el pronóstico y luego descarga el PDF.', 'error');
+      setStatus(t('pdf_need_forecast'), 'error');
+      setPdfHint(t('pdf_need_forecast_hint'), 'error');
       return;
     }
     const triggerBtn = ev && ev.currentTarget instanceof HTMLButtonElement
       ? ev.currentTarget
       : document.querySelector('.agro-pdf-trigger');
-    // En iPhone, window.print() solo abre «Opciones» de impresión (confunde).
-    // Generamos un PDF real y lo ofrecemos con Compartir / Guardar en Archivos.
     if (isIOSLikeDevice()) {
       downloadPdfAsFile(triggerBtn);
       return;
     }
-    setPdfHint('Se abrirá la impresión del navegador: elige Guardar como PDF.', '');
+    setPdfHint(t('pdf_print_hint'), '');
     downloadPdfViaPrint();
   }
 
@@ -553,6 +579,7 @@
     if (!c) return;
     try {
       const prev = saved() || {};
+      const p = prefs();
       localStorage.setItem(STORE, JSON.stringify({
         ...c,
         plotName: $('agro-plot-name').value,
@@ -560,6 +587,9 @@
         timezone: timezone || prev.timezone || undefined,
         lastReadingAt: lastReadingAt || prev.lastReadingAt || undefined,
         rows: (Array.isArray(rows) && rows.length ? rows : prev.rows) || undefined,
+        language: p.language,
+        unit_system: p.unit_system,
+        locale: p.locale,
         updatedAt: Date.now()
       }));
     } catch (_) {}
@@ -579,7 +609,7 @@
     if (Array.isArray(prior.rows) && prior.rows.length) {
       rows = prior.rows;
       report = {
-        plot_name: prior.plotName || 'Ubicación seleccionada',
+        plot_name: prior.plotName || t('selected_location'),
         latitude: n(prior.lat) ?? n(prior.latitude),
         longitude: n(prior.lng) ?? n(prior.longitude),
         kc: savedKc
@@ -588,7 +618,7 @@
       render();
       if (lastReadingAt) setStatus(readingStatusText(), 'success');
     } else if (lastReadingAt) {
-      setStatus(readingStatusText('Genera de nuevo para actualizar los datos.'), '');
+      setStatus(readingStatusText(t('regenerate_hint')), '');
     }
   }
 
@@ -603,7 +633,7 @@
 
   function initMap(force) {
     if (!window.L) {
-      setStatus('No se pudo cargar el mapa. Recarga la página.', 'error');
+      setStatus(t('map_load_error'), 'error');
       return;
     }
     if ((personal && !force) || map) {
@@ -623,7 +653,7 @@
     if (!mapEl) return;
     map = L.map(mapEl, { scrollWheelZoom: true }).setView([initialLat, initialLng], personal ? 12 : 5);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, attribution: 'Imágenes © Esri — Maxar, Earthstar Geographics'
+      maxZoom: 19, attribution: 'Esri — Maxar, Earthstar Geographics'
     }).addTo(map);
     marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
     marker.on('dragend', () => { const p = marker.getLatLng(); applyCoords(p.lat, p.lng); });
@@ -633,16 +663,16 @@
   }
 
   function geolocate() {
-    if (!navigator.geolocation) return setStatus('Tu navegador no permite geolocalización.', 'error');
+    if (!navigator.geolocation) return setStatus(t('geo_unsupported'), 'error');
     const btn = $('agro-geolocate-btn');
     btn.disabled = true;
-    setStatus('Solicitando ubicación…');
+    setStatus(t('geo_requesting'));
     navigator.geolocation.getCurrentPosition((p) => {
       applyCoords(p.coords.latitude, p.coords.longitude, true);
-      setStatus('Ubicación aplicada. Puedes mover el marcador para afinarla.', 'success');
+      setStatus(t('geo_applied'), 'success');
       btn.disabled = false;
     }, (err) => {
-      setStatus(err.code === 1 ? 'Permiso de ubicación denegado.' : 'No se pudo obtener la ubicación.', 'error');
+      setStatus(err.code === 1 ? t('geo_denied') : t('geo_failed'), 'error');
       btn.disabled = false;
     }, { enableHighAccuracy: true, timeout: 15000 });
   }
@@ -657,7 +687,7 @@
   }
 
   function weatherRows(data, kc) {
-    if (!data?.daily?.time?.length) throw new Error('La fuente no devolvió datos diarios.');
+    if (!data?.daily?.time?.length) throw new Error(t('no_daily_data'));
     const hourly = {};
     (data.hourly?.time || []).forEach((time, i) => {
       const day = time.slice(0, 10);
@@ -726,13 +756,13 @@
 
   async function generate() {
     const c = coords();
-    if (!c) return setStatus('Selecciona coordenadas válidas.', 'error');
+    if (!c) return setStatus(t('coords_invalid'), 'error');
     const btn = $('agro-generate-btn');
     btn.disabled = true;
-    setStatus('Consultando los últimos 7 días y el pronóstico…');
+    setStatus(t('fetching'));
     try {
       const response = await fetch(weatherUrl(c.lat, c.lng));
-      if (!response.ok) throw new Error(`Open-Meteo respondió ${response.status}`);
+      if (!response.ok) throw new Error(`Open-Meteo ${response.status}`);
       const data = await response.json();
       timezone = data.timezone || '';
       if (personal) {
@@ -748,20 +778,17 @@
       if (personal) {
         report = {
           ...(report || {}),
-          plot_name: $('agro-plot-name').value || report?.plot_name || 'Ubicación seleccionada',
+          plot_name: $('agro-plot-name').value || report?.plot_name || t('selected_location'),
           latitude: n(report?.latitude) != null ? n(report.latitude) : c.lat,
           longitude: n(report?.longitude) != null ? n(report.longitude) : c.lng,
           kc: savedKc
         };
         render();
-        setStatus(
-          readingStatusText('Para cambiar Kc o coordenadas guardadas, usa WhatsApp.'),
-          'success'
-        );
+        setStatus(readingStatusText(t('change_saved_wa')), 'success');
       } else {
         report = {
           ...(report || {}),
-          plot_name: $('agro-plot-name').value || 'Ubicación seleccionada',
+          plot_name: $('agro-plot-name').value || t('selected_location'),
           latitude: c.lat,
           longitude: c.lng,
           kc: savedKc
@@ -771,23 +798,37 @@
         setStatus(readingStatusText(), 'success');
       }
     } catch (error) {
-      setStatus(`No se pudo generar el pronóstico. ${error.message || ''}`, 'error');
+      setStatus(t('generate_error', { msg: error.message || '' }), 'error');
     } finally {
       btn.disabled = false;
     }
   }
 
   function kindBadge(kind) {
-    return kind === 'history' ? 'Histórico' : 'Pronóstico';
+    return kind === 'history' ? t('history') : t('forecast');
   }
 
-  function historyCmpLine(forecastVal, historyVal, decimals = 1, unit = '') {
-    const f = n(forecastVal);
-    const h = n(historyVal);
-    if (f == null || h == null) return 'Sin histórico, semana anterior';
+  function historyCmpLine(forecastVal, historyVal, decimals, mode) {
+    const convert = mode === 'temp'
+      ? (v) => (I ? I.convertTempFromC(v) : n(v))
+      : mode === 'depth'
+        ? (v) => (I ? I.convertDepthFromMm(v) : n(v))
+        : (v) => n(v);
+    const unit = mode === 'temp'
+      ? ` ${tempUnitLabel()}`
+      : mode === 'depth'
+        ? ` ${depthUnitLabel()}`
+        : '';
+    const suffix = mode === 'temp' ? t('max_suffix') : '';
+    const f = convert(forecastVal);
+    const h = convert(historyVal);
+    if (f == null || h == null) return t('no_history');
     const diff = round(f - h, decimals);
     const sign = diff > 0 ? '+' : '';
-    return `Histórico, semana anterior ${fmt(h, decimals)}${unit} · Δ ${sign}${fmt(diff, decimals)}${unit}`;
+    return t('history_cmp', {
+      val: `${fmt(h, decimals)}${unit}${suffix}`,
+      delta: `${sign}${fmt(diff, decimals)}${unit}${suffix}`
+    });
   }
 
   function summaryHtml(future) {
@@ -803,17 +844,17 @@
     const fRain = sum(future, 'rain');
     const hRain = sum(history, 'rain');
     const vpdHist = (hVpdMin != null && hVpdMax != null)
-      ? `Histórico, semana anterior ${fmt(hVpdMin, 2)}–${fmt(hVpdMax, 2)} kPa`
-      : 'Sin histórico, semana anterior';
+      ? t('history_vpd', { min: fmt(hVpdMin, 2), max: fmt(hVpdMax, 2) })
+      : t('no_history');
     const cards = [
-      ['Temperatura', `${fmt(extreme(future, 'tempMin', 'min'), 1)} a ${fmt(fTempMax, 1, ' °C')}`, historyCmpLine(fTempMax, hTempMax, 1, ' °C máx'), ''],
-      ['VPD', `${fmt(fVpdMin, 2)} a ${fmt(fVpdMax, 2, ' kPa')}`, vpdHist, 'vpd'],
-      ['ETo acumulada', fmt(fEt0, 1, ' mm'), historyCmpLine(fEt0, hEt0, 1, ' mm'), 'et'],
-      ['ETc acumulada', fmt(sum(future, 'etc'), 1, ' mm'), activeKc() != null ? `Con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc)` : 'Ingresa Kc para calcular', 'et'],
-      ['Precipitación', fmt(fRain, 1, ' mm'), historyCmpLine(fRain, hRain, 1, ' mm'), 'rain'],
-      ['Humedad', `${fmt(extreme(future, 'humidityMin', 'min'), 0)} a ${fmt(extreme(future, 'humidityMax', 'max'), 0, ' %')}`, 'Rango del pronóstico', ''],
-      ['Rad máx', `${fmt(extreme(future, 'radiationMax', 'min'), 0)} a ${fmt(extreme(future, 'radiationMax', 'max'), 0, ' W/m²')}`, 'Rango del pronóstico', ''],
-      ['Periodo', `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, `${future.length} d pronóstico · vs semana anterior`, '']
+      [t('card_temp'), t('temp_to', { min: dispTemp(extreme(future, 'tempMin', 'min')), max: showTemp(fTempMax) }), historyCmpLine(fTempMax, hTempMax, tempDigits(), 'temp'), ''],
+      ['VPD', t('temp_to', { min: fmt(fVpdMin, 2), max: fmt(fVpdMax, 2, ' kPa') }), vpdHist, 'vpd'],
+      [t('card_eto'), showDepth(fEt0), historyCmpLine(fEt0, hEt0, depthDigits(), 'depth'), 'et'],
+      [t('card_etc'), showDepth(sum(future, 'etc')), activeKc() != null ? t('with_kc', { kc: Number(activeKc()).toFixed(2) }) : t('enter_kc'), 'et'],
+      [t('card_rain'), showDepth(fRain), historyCmpLine(fRain, hRain, depthDigits(), 'depth'), 'rain'],
+      [t('card_humidity'), t('temp_to', { min: fmt(extreme(future, 'humidityMin', 'min'), 0), max: fmt(extreme(future, 'humidityMax', 'max'), 0, ' %') }), t('forecast_range'), ''],
+      [t('card_rad'), t('temp_to', { min: fmt(extreme(future, 'radiationMax', 'min'), 0), max: fmt(extreme(future, 'radiationMax', 'max'), 0, ' W/m²') }), t('forecast_range'), ''],
+      [t('card_period'), `${dateLabel(future[0]?.date, true)} – ${dateLabel(future.at(-1)?.date, true)}`, t('period_vs', { n: future.length }), '']
     ];
     return cards.map((c) => `<article class="agro-summary-card ${c[3]}"><small>${c[0]}</small><strong>${c[1]}</strong><span>${c[2]}</span></article>`).join('');
   }
@@ -822,12 +863,12 @@
     return rows.map((r) => `<article class="agro-day-card ${r.kind}">
       <div class="agro-day-card-head"><strong>${esc(dateLabel(r.date))}</strong><span class="agro-day-badge ${r.kind}">${kindBadge(r.kind)}</span></div>
       <div class="agro-day-card-grid">
-        <div class="agro-day-metric"><small>Temperatura</small><strong>${fmt(r.tempMin, 1)}–${fmt(r.tempMax, 1, ' °C')}</strong></div>
-        <div class="agro-day-metric"><small>Humedad</small><strong>${fmt(r.humidityMin, 0)}–${fmt(r.humidityMax, 0, ' %')}</strong></div>
+        <div class="agro-day-metric"><small>${t('day_temp')}</small><strong>${dispTemp(r.tempMin)}–${showTemp(r.tempMax)}</strong></div>
+        <div class="agro-day-metric"><small>${t('day_humidity')}</small><strong>${fmt(r.humidityMin, 0)}–${fmt(r.humidityMax, 0, ' %')}</strong></div>
         <div class="agro-day-metric"><small>VPD</small><strong>${fmt(r.vpdMin, 2)}–${fmt(r.vpdMax, 2, ' kPa')}</strong></div>
-        <div class="agro-day-metric"><small>ETo / ETc</small><strong>${fmt(r.et0, 1)} / ${fmt(r.etc, 1)} mm</strong></div>
-        <div class="agro-day-metric"><small>Lluvia</small><strong>${fmt(r.rain, 1, ' mm')}</strong></div>
-        <div class="agro-day-metric"><small>Rad máx</small><strong>${fmt(r.radiationMax, 0, ' W/m²')}</strong></div>
+        <div class="agro-day-metric"><small>${t('day_eto_etc')}</small><strong>${dispDepth(r.et0)} / ${dispDepth(r.etc)} ${depthUnitLabel()}</strong></div>
+        <div class="agro-day-metric"><small>${t('day_rain')}</small><strong>${showDepth(r.rain)}</strong></div>
+        <div class="agro-day-metric"><small>${t('day_rad')}</small><strong>${fmt(r.radiationMax, 0, ' W/m²')}</strong></div>
       </div></article>`).join('');
   }
 
@@ -838,30 +879,35 @@
       if (first) firstForecast = false;
       return `<tr class="${r.kind}${first ? ' first-forecast' : ''}">
         <td class="agro-date-col">${esc(dateLabel(r.date))}<span class="agro-day-badge ${r.kind}">${kindBadge(r.kind)}</span></td>
-        <td class="col-atm col-temp-min">${fmt(r.tempMin, 1)}</td><td class="col-atm col-temp-max">${fmt(r.tempMax, 1)}</td>
+        <td class="col-atm col-temp-min">${dispTemp(r.tempMin)}</td><td class="col-atm col-temp-max">${dispTemp(r.tempMax)}</td>
         <td class="col-atm col-rh-min">${fmt(r.humidityMin, 0)}</td><td class="col-atm col-rh-max">${fmt(r.humidityMax, 0)}</td>
-        <td class="col-atm col-dew-min">${fmt(r.dewMin, 1)}</td><td class="col-atm col-dew-max col-end-atm">${fmt(r.dewMax, 1)}</td>
+        <td class="col-atm col-dew-min">${dispTemp(r.dewMin)}</td><td class="col-atm col-dew-max col-end-atm">${dispTemp(r.dewMax)}</td>
         <td class="col-vpd col-rad">${fmt(r.radiationMax, 0)}</td>
         <td class="col-vpd col-vpd-min">${fmt(r.vpdMin, 2)}</td><td class="col-vpd col-vpd-max col-end-vpd">${fmt(r.vpdMax, 2)}</td>
-        <td class="col-water col-eto">${fmt(r.et0, 1)}</td><td class="col-water col-etc">${fmt(r.etc, 1)}</td><td class="col-water col-rain">${fmt(r.rain, 1)}</td>
+        <td class="col-water col-eto">${dispDepth(r.et0)}</td><td class="col-water col-etc">${dispDepth(r.etc)}</td><td class="col-water col-rain">${dispDepth(r.rain)}</td>
       </tr>`;
     }).join('');
     return `<table class="agro-table"><thead>
       <tr class="agro-group-row">
-        <th class="agro-date-col" rowspan="2">Fecha</th>
-        <th class="group-atmosphere" colspan="6">Ambiente</th>
-        <th class="group-vpd" colspan="3">Radiación y VPD</th>
-        <th class="group-water" colspan="3">Agua</th>
+        <th class="agro-date-col" rowspan="2">${t('th_date')}</th>
+        <th class="group-atmosphere" colspan="6">${t('th_atmosphere')}</th>
+        <th class="group-vpd" colspan="3">${t('th_rad_vpd')}</th>
+        <th class="group-water" colspan="3">${t('th_water')}</th>
       </tr>
       <tr class="agro-metric-row">
-        <th class="col-atm col-temp-min">T mín °C</th><th class="col-atm col-temp-max">T máx °C</th>
-        <th class="col-atm col-rh-min">HR mín %</th><th class="col-atm col-rh-max">HR máx %</th>
-        <th class="col-atm col-dew-min">Rocío mín °C</th><th class="col-atm col-dew-max col-end-atm">Rocío máx °C</th>
-        <th class="col-vpd col-rad">Rad máx W/m²</th>
-        <th class="col-vpd col-vpd-min">VPD mín</th><th class="col-vpd col-vpd-max col-end-vpd">VPD máx</th>
-        <th class="col-water col-eto">ETo mm</th><th class="col-water col-etc">ETc mm${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water col-rain">Lluvia mm</th>
+        <th class="col-atm col-temp-min">${t('th_tmin')}</th><th class="col-atm col-temp-max">${t('th_tmax')}</th>
+        <th class="col-atm col-rh-min">${t('th_rhmin')}</th><th class="col-atm col-rh-max">${t('th_rhmax')}</th>
+        <th class="col-atm col-dew-min">${t('th_dewmin')}</th><th class="col-atm col-dew-max col-end-atm">${t('th_dewmax')}</th>
+        <th class="col-vpd col-rad">${t('th_rad')}</th>
+        <th class="col-vpd col-vpd-min">${t('th_vpdmin')}</th><th class="col-vpd col-vpd-max col-end-vpd">${t('th_vpdmax')}</th>
+        <th class="col-water col-eto">${t('th_eto')}</th><th class="col-water col-etc">${t('th_etc')}${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water col-rain">${t('th_rain')}</th>
       </tr>
     </thead><tbody>${body}</tbody></table>`;
+  }
+
+  function chartDepth(v) {
+    const converted = I ? I.convertDepthFromMm(v) : n(v);
+    return converted == null ? null : converted;
   }
 
   function chartSets() {
@@ -870,7 +916,7 @@
       sets.push(
         {
           type: 'bar',
-          label: 'Horas VPD <0.5',
+          label: t('hours_vpd_low'),
           yAxisID: 'yHours',
           data: rows.map((r) => r.vpdHoursLow ?? 0),
           backgroundColor: 'rgba(29, 78, 216, 0.28)',
@@ -883,7 +929,7 @@
         },
         {
           type: 'bar',
-          label: 'Horas VPD 0.5–1.5',
+          label: t('hours_vpd_opt'),
           yAxisID: 'yHours',
           data: rows.map((r) => r.vpdHoursOpt ?? 0),
           backgroundColor: 'rgba(22, 163, 74, 0.22)',
@@ -896,7 +942,7 @@
         },
         {
           type: 'bar',
-          label: 'Horas VPD >1.5',
+          label: t('hours_vpd_high'),
           yAxisID: 'yHours',
           data: rows.map((r) => r.vpdHoursHigh ?? 0),
           backgroundColor: 'rgba(127, 29, 29, 0.28)',
@@ -910,7 +956,7 @@
       );
     }
     const lines = [
-      ['rain', 'Precipitación', '#0284c7', 'rain'],
+      ['rain', t('precipitation'), '#0284c7', 'rain'],
       ['et0', 'ETo', '#0f766e', 'et0'],
       ['etc', 'ETc', '#64748b', 'etc']
     ];
@@ -921,7 +967,7 @@
         borderColor: s[2],
         backgroundColor: 'transparent',
         yAxisID: 'yMm',
-        data: rows.map((r) => r[s[3]]),
+        data: rows.map((r) => chartDepth(r[s[3]])),
         borderWidth: 2.2,
         tension: .28,
         pointRadius: 2.5,
@@ -933,7 +979,7 @@
 
   function drawChart() {
     if (!window.Chart) {
-      setStatus('No se pudo cargar la gráfica. Recarga la página.', 'error');
+      setStatus(t('chart_load_error'), 'error');
       return;
     }
     const canvas = $('agro-chart');
@@ -961,15 +1007,14 @@
         ctx.lineTo(x, chartArea.bottom);
         ctx.stroke();
         ctx.setLineDash([]);
-        // Etiquetas arriba de la gráfica (fuera del área de líneas/barras).
         const labelY = Math.max(10, chartArea.top - 8);
         ctx.font = '700 10px Inter, system-ui, sans-serif';
         ctx.textAlign = 'right';
         ctx.fillStyle = '#475569';
-        ctx.fillText('← Histórico', x - 6, labelY);
+        ctx.fillText(t('chart_hist_arrow'), x - 6, labelY);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#0369a1';
-        ctx.fillText('Pronóstico →', x + 6, labelY);
+        ctx.fillText(t('chart_fc_arrow'), x + 6, labelY);
         ctx.restore();
       }
     };
@@ -1006,7 +1051,7 @@
             max: 24,
             title: {
               display: true,
-              text: 'Horas VPD · barras',
+              text: t('axis_hours'),
               color: '#1d4ed8',
               font: { weight: '700', size: 11 }
             },
@@ -1022,7 +1067,7 @@
             grid: { drawOnChartArea: false },
             title: {
               display: true,
-              text: 'mm · líneas (lluvia / ETo / ETc)',
+              text: t('axis_depth'),
               color: '#0f766e',
               font: { weight: '700', size: 11 }
             },
@@ -1048,7 +1093,7 @@
                 if (/VPD\s*>\s*1\.5/i.test(s)) return 1;
                 if (/VPD\s*0\.5/i.test(s)) return 2;
                 if (/VPD\s*<\s*0\.5/i.test(s)) return 3;
-                if (/Precip|Lluvia/i.test(s)) return 10;
+                if (/Precip|Lluvia|Rain/i.test(s)) return 10;
                 if (/^ETo/i.test(s)) return 11;
                 if (/^ETc/i.test(s)) return 12;
                 return 20;
@@ -1061,12 +1106,17 @@
     });
     const periodMeta = $('agro-chart-period');
     if (periodMeta) {
-      periodMeta.textContent = `${historyCount} d histórico + ${forecastCount} d pronóstico`;
+      periodMeta.textContent = t('chart_period', { h: historyCount, f: forecastCount });
     }
   }
 
   function renderToggles() {
-    const labels = { vpdHours: 'Horas VPD', rain: 'Lluvia', et0: 'ETo', etc: 'ETc' };
+    const labels = {
+      vpdHours: t('toggle_vpd_hours'),
+      rain: t('toggle_rain'),
+      et0: 'ETo',
+      etc: 'ETc'
+    };
     $('agro-chart-toggles').innerHTML = Object.keys(labels).map((key) =>
       `<button type="button" class="agro-chart-toggle series-${key}${visible[key] ? '' : ' off'}" data-series="${key}">${labels[key]}</button>`).join('');
   }
@@ -1082,13 +1132,9 @@
       const histN = rows.filter((r) => r.kind === 'history').length;
       const futN = rows.filter((r) => r.kind === 'forecast').length;
       const kcTxt = activeKc() == null
-        ? 'ETc pendiente de Kc.'
-        : `ETc con Kc ${Number(activeKc()).toFixed(2)} (ETo × Kc).`;
-      chartNote.innerHTML =
-        `<strong>Periodo:</strong> ${histN} d histórico + ${futN} d pronóstico (línea punteada los separa). ` +
-        `<strong>Eje izquierdo (azul):</strong> horas VPD de las barras (total 24 h/día). ` +
-        `<strong>Eje derecho (verde):</strong> mm diarios de las líneas (lluvia, ETo y ETc). ` +
-        `Rangos VPD: azul &lt;0.5, verde 0.5–1.5, tinto &gt;1.5. ${kcTxt}`;
+        ? t('etc_pending_kc')
+        : t('etc_with_kc', { kc: Number(activeKc()).toFixed(2) });
+      chartNote.innerHTML = t('chart_note_dynamic', { h: histN, f: futN, kc: kcTxt });
     }
     $('agro-table-wrap').innerHTML = tableHtml();
     $('agro-table-wrap').classList.add('open');
@@ -1103,7 +1149,7 @@
       const when = reportGeneratedAt || lastReadingAt
         ? formatReadingAt(reportGeneratedAt || lastReadingAt)
         : '';
-      $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || 'Predio')}</strong>${when ? `<br>Pronóstico generado: ${esc(when)}` : ''}${report?.request_code ? `<br>Folio ${esc(report.request_code)}` : ''}`;
+      $('agro-report-meta').innerHTML = `<strong>${esc(report?.plot_name || t('plot'))}</strong>${when ? `<br>${esc(t('forecast_generated', { when }))}` : ''}${report?.request_code ? `<br>${esc(t('folio', { code: report.request_code }))}` : ''}`;
     }
     renderToggles();
     requestAnimationFrame(() => {
@@ -1136,12 +1182,13 @@
   }
 
   function renderKc(filter) {
-    const query = String(filter || '').toLocaleLowerCase('es');
-    const data = (window.FAO_KC_REFERENCE || []).filter((x) => `${x.crop} ${x.stage}`.toLocaleLowerCase('es').includes(query));
+    const loc = locale();
+    const query = String(filter || '').toLocaleLowerCase(loc);
+    const data = (window.FAO_KC_REFERENCE || []).filter((x) => `${x.crop} ${x.stage}`.toLocaleLowerCase(loc).includes(query));
     $('agro-kc-list').innerHTML = data.length ? data.map((x) => {
       const suggested = round((Number(x.kcMin) + Number(x.kcMax)) / 2, 2);
-      return `<div class="agro-kc-row"><b>${esc(x.crop)}</b><span>${esc(x.stage)}</span><strong>${x.kcMin}–${x.kcMax}</strong><button type="button" class="agro-btn ghost" data-kc="${suggested}" data-crop="${esc(x.crop)}" data-range="${esc(`${x.kcMin}–${x.kcMax}`)}" data-stage="${esc(x.stage)}">Usar ${suggested}</button></div>`;
-    }).join('') : '<p>No se encontraron coincidencias.</p>';
+      return `<div class="agro-kc-row"><b>${esc(x.crop)}</b><span>${esc(x.stage)}</span><strong>${x.kcMin}–${x.kcMax}</strong><button type="button" class="agro-btn ghost" data-kc="${suggested}" data-crop="${esc(x.crop)}" data-range="${esc(`${x.kcMin}–${x.kcMax}`)}" data-stage="${esc(x.stage)}">${esc(t('use_kc', { kc: suggested }))}</button></div>`;
+    }).join('') : `<p>${esc(t('kc_none'))}</p>`;
   }
 
   function openRegister() {
@@ -1164,7 +1211,7 @@
       let custom = String(data.phone_country_code_other || '').trim();
       if (!custom.startsWith('+')) custom = `+${custom.replace(/[^\d]/g, '')}`;
       if (!/^\+\d{1,4}$/.test(custom)) {
-        setStatus('Escribe una lada válida, por ejemplo +212.', 'error', true);
+        setStatus(t('phone_code_error'), 'error', true);
         return;
       }
       data.phone_country_code = custom;
@@ -1173,31 +1220,47 @@
     data.accept_terms = !!form.elements.accept_terms.checked;
     data.email_consent = !!form.elements.email_consent.checked;
     data.whatsapp_consent = !!form.elements.whatsapp_consent.checked;
+    const p = prefs();
+    data.language = p.language;
+    data.unit_system = p.unit_system;
+    data.locale = p.locale;
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
-    setStatus('Guardando solicitud…', '', true);
+    setStatus(t('saving_request'), '', true);
     try {
       const response = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', ...data }) });
       const out = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(out.message || out.error || 'No se pudo guardar.');
+      if (!response.ok) throw new Error(out.message || out.error || t('save_failed'));
       form.hidden = true;
       $('agro-register-success').hidden = false;
       $('agro-request-code').textContent = out.request_code;
-      const message = `Hola NutriPlant PRO. Me interesa registrarme para recibir Alertas Agroclimáticas.\nNombre: ${data.full_name}\nFolio: ${out.request_code}`;
+      const message = t('wa_register_msg', { name: data.full_name, code: out.request_code });
       $('agro-whatsapp-link').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
     } catch (error) {
       setStatus(error.message, 'error', true);
     } finally { submit.disabled = false; }
   }
 
+  function applyReportDisplayPrefs(subscriber) {
+    if (!I || !subscriber) return;
+    if (subscriber.language || subscriber.unit_system || subscriber.locale) {
+      I.setReportPrefs({
+        language: subscriber.language,
+        unit_system: subscriber.unit_system,
+        locale: subscriber.locale
+      });
+      I.apply(document);
+    }
+  }
+
   async function loadReport() {
     if (demo) {
       rows = demoRows();
       timezone = 'America/Mexico_City';
-      report = { plot_name: 'Predio demostrativo', kc: .9, request_code: 'K7M2', latitude: 19.4326, longitude: -99.1332, full_name: 'Demo' };
+      report = { plot_name: t('demo_plot'), kc: .9, request_code: 'K7M2', latitude: 19.4326, longitude: -99.1332, full_name: 'Demo' };
       savedKc = .9;
       viewKc = .9;
-      referenceKcLabel = 'Referencia demo · 0.90';
+      referenceKcLabel = 'Demo · 0.90';
       return render();
     }
     try {
@@ -1205,8 +1268,9 @@
       if (snapshotParam) reportQs.set('snapshot', snapshotParam);
       const response = await fetch(`${API}?action=report&${reportQs.toString()}`);
       const out = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(out.message || 'El enlace no está disponible.');
+      if (!response.ok) throw new Error(out.message || t('link_unavailable'));
       report = out.subscriber || {};
+      applyReportDisplayPrefs(report);
       rows = out.rows || [];
       timezone = report.timezone || '';
       savedKc = n(report.kc);
@@ -1234,18 +1298,21 @@
       if (out.historical_view && $('agro-report-meta') && !$('agro-report-meta').hidden) {
         $('agro-report-meta').insertAdjacentHTML(
           'beforeend',
-          '<br><span style="color:#b45309;font-weight:700;">Vista de reporte guardado (semana seleccionada)</span>'
+          `<br><span style="color:#b45309;font-weight:700;">${esc(t('historical_view'))}</span>`
         );
       }
     } catch (error) {
-      $('agro-empty-note').innerHTML = `<strong>No se pudo abrir el reporte.</strong><span>${esc(error.message)}</span>`;
+      $('agro-empty-note').innerHTML = `<strong>${esc(t('open_report_error'))}</strong><span>${esc(error.message)}</span>`;
     }
   }
 
   function unsubscribeWhatsAppHref() {
-    const folio = report?.request_code ? ` Folio ${report.request_code}.` : '';
+    const folio = report?.request_code ? t('wa_folio', { code: report.request_code }) : '';
     const name = report?.full_name || '';
-    const message = `Hola NutriPlant PRO. Quiero dejar de recibir las alertas agroclimáticas.${folio}${name ? ` Nombre: ${name}.` : ''} Por favor páusenme desde administración.`;
+    const message = t('wa_unsubscribe', {
+      folio,
+      name: name ? t('wa_name', { name }) : ''
+    });
     return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
   }
 
@@ -1309,7 +1376,9 @@
     }
     $('agro-table-toggle').addEventListener('click', () => {
       $('agro-table-wrap').classList.toggle('open');
-      $('agro-table-toggle').textContent = $('agro-table-wrap').classList.contains('open') ? 'Ocultar tabla completa' : 'Ver tabla completa';
+      $('agro-table-toggle').textContent = $('agro-table-wrap').classList.contains('open')
+        ? t('table_toggle_hide')
+        : t('table_toggle_show');
       syncTableScrollHint();
     });
     const tableWrap = $('agro-table-wrap');
@@ -1345,17 +1414,17 @@
         return;
       }
       syncUnsubscribeLink();
-      if (!confirm('Se abrirá WhatsApp para pedir que pausemos tus alertas. ¿Continuar?')) {
+      if (!confirm(t('unsubscribe_confirm'))) {
         e.preventDefault();
       }
     });
     $('agro-edit-btn').addEventListener('click', () => {
       $('agro-location-card').hidden = false;
       $('agro-generate-btn').textContent = personal
-        ? '🌤️ Ver pronóstico en este punto (no guarda)'
-        : '💾 Guardar ubicación y actualizar';
+        ? t('generate_explore')
+        : t('generate_save');
       if (personal) {
-        setStatus('Puedes mover el marcador para explorar. Kc y coordenadas guardadas se cambian por WhatsApp.', '');
+        setStatus(t('edit_explore_hint'), '');
       }
       initMap(true);
       [80, 250, 600].forEach((ms) => setTimeout(() => map?.invalidateSize(), ms));
@@ -1382,6 +1451,7 @@
   }
 
   function init() {
+    if (I) I.apply(document);
     setMode();
     bind();
     bindAboutModal();

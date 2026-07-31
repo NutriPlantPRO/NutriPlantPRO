@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js"></script>
-  <script src="assets/np-units-core.js"></script>
-  <script src="assets/np-hydro-units.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-units-core.js?v=20260730a"></script>
+  <script src="assets/np-hydro-units.js?v=20260730a"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
   <title>Diseño de solución nutritiva</title>
@@ -1121,28 +1122,28 @@
 </head>
 <body>
   <div class="np-free-tool-head">
-    <h1 class="np-free-tool-title">💧 Diseño de solución nutritiva</h1>
+    <h1 class="np-free-tool-title" data-i18n="free_tools.hydro_title">💧 Diseño de solución nutritiva</h1>
     <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   </div>
-  <div class="hydro-pref-bar" aria-label="Preferencias de idioma y unidades">
-    <label><span>Idioma</span>
+  <div class="hydro-pref-bar" aria-label="Preferencias de idioma y unidades" data-i18n-aria-label="free_tools.prefs_aria">
+    <label><span data-i18n="profile.language">Idioma</span>
       <select id="hydroLanguageSelect">
         <option value="es" data-i18n="selector.spanish">Español</option>
         <option value="en" data-i18n="selector.english">English</option>
       </select>
     </label>
-    <label><span>Unidades</span>
+    <label><span data-i18n="profile.unit_system">Unidades</span>
       <select id="hydroUnitSystemSelect">
-        <option value="metric" data-i18n="selector.metric">Métrico</option>
+        <option value="metric" data-i18n="selector.metric">Métrico (SI)</option>
         <option value="us_customary" data-i18n="selector.us_customary">US customary</option>
       </select>
     </label>
   </div>
   <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
-      <div class="hydro-main-tabs" role="tablist" aria-label="Secciones solución nutritiva">
-        <button type="button" role="tab" id="hydroTabBtnDesign" aria-selected="true" aria-controls="hydroPanelDesign">1 · Diseño objetivo</button>
-        <button type="button" role="tab" id="hydroTabBtnFert" aria-selected="false" aria-controls="hydroPanelFert">2 · Aporte fertilizantes</button>
+      <div class="hydro-main-tabs" role="tablist" aria-label="Secciones solución nutritiva" data-i18n-aria-label="free_tools.hydro_tabs_aria">
+        <button type="button" role="tab" id="hydroTabBtnDesign" aria-selected="true" aria-controls="hydroPanelDesign" data-i18n="free_tools.hydro_tab_design">1 · Diseño objetivo</button>
+        <button type="button" role="tab" id="hydroTabBtnFert" aria-selected="false" aria-controls="hydroPanelFert" data-i18n="free_tools.hydro_tab_fert">2 · Aporte fertilizantes</button>
       </div>
 
       <div id="hydroPanelDesign" class="hydro-main-panel active" role="tabpanel" aria-labelledby="hydroTabBtnDesign">
@@ -2615,7 +2616,11 @@
       function opts(arr) {
         return arr.map(function (e) {
           var sel = e.id === selectedId ? ' selected' : '';
-          return '<option value="' + e.id + '"' + sel + '>' + e.name + '</option>';
+          var label = e.name;
+          if (!e.isUser && window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.materialName === 'function') {
+            label = window.NpFreeNutritionUI.materialName(e.name);
+          }
+          return '<option value="' + e.id + '"' + sel + '>' + label + '</option>';
         }).join('');
       }
       var html = '<optgroup label="Catálogo NutriPlant">' + opts(builtin) + '</optgroup>';
@@ -3227,6 +3232,17 @@
         window.NpI18n.setLanguage(prefs.language, { persist: false });
         window.NpI18n.apply(document);
       }
+      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
+        window.NpFreeNutritionUI.init({
+          refresh: function () {
+            if (window.NpI18n) window.NpI18n.apply(document);
+            renderFertAporteAll();
+            renderHydroMeqTable();
+            renderHydroDerivedTables();
+            renderHydroTriangle();
+          }
+        });
+      }
       if (languageSelect) languageSelect.addEventListener('change', function () {
         window.NpPrefs.set({ language: languageSelect.value }, { explicit: true });
         if (window.NpI18n) window.NpI18n.setLanguage(languageSelect.value, { persist: false });
@@ -3253,8 +3269,14 @@
       if (window.NpI18n && window.NpI18n.getLanguage() !== next.language) {
         window.NpI18n.setLanguage(next.language, { persist: false });
       }
+      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
+        window.NpFreeNutritionUI.applyLanguage();
+      }
       // La dosis almacenada sigue en SI; solo cambia su representación.
       renderFertAporteAll();
+      renderHydroMeqTable();
+      renderHydroDerivedTables();
+      renderHydroTriangle();
     });
 
     window.addEventListener('beforeunload', function () { hydroSaveLocal(); });

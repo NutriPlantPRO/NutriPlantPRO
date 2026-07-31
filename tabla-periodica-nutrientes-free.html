@@ -6,6 +6,11 @@
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="config-no-traducir-terminos.js"></script>
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <title>Tabla Periódica (Nutrientes Esenciales)</title>
   <style>
@@ -1796,5 +1801,12 @@
     if (first) first.click();
   </script>
   <script src="apply-no-traducir.js"></script>
+  <script>
+    (function () {
+      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
+        window.NpFreeNutritionUI.init();
+      }
+    })();
+  </script>
 </body>
 </html>

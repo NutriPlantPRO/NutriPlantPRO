@@ -11,13 +11,14 @@
   <meta name="theme-color" content="#2563eb" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260728g"></script>
-  <script src="assets/np-units-core.js?v=20260728g"></script>
-  <script src="assets/np-agronomic-units.js?v=20260728g"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260728a"></script>
-  <script src="assets/np-fertigation-ui.js?v=20260728f"></script>
-  <script src="assets/np-granular-ui.js?v=20260728b"></script>
-  <script src="assets/np-amendment-ui.js?v=20260728b"></script>
+  <script src="assets/np-i18n.js?v=20260730l"></script>
+  <script src="assets/np-units-core.js?v=20260730a"></script>
+  <script src="assets/np-agronomic-units.js?v=20260730a"></script>
+  <script src="assets/np-analysis-ui.js?v=20260730a"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260730f"></script>
+  <script src="assets/np-fertigation-ui.js?v=20260730d"></script>
+  <script src="assets/np-granular-ui.js?v=20260730c"></script>
+  <script src="assets/np-amendment-ui.js?v=20260730e"></script>
   <script>
     (function () {
       function applyPreferences(prefs) {
@@ -125,7 +126,7 @@
         <span class="auth-header-manual-link__label-short" data-i18n="auth.manual">Manual</span>
       </a>
       <div class="social-links">
-        <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" aria-label="Sobre Nosotros" type="button" style="
+        <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" aria-label="Sobre Nosotros" data-i18n-title="about.title_aria" data-i18n-aria-label="about.title_aria" type="button" style="
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -284,7 +285,7 @@
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                   </svg>
-                  admin@nutriplantpro.com
+                  <span data-i18n="auth.contact_mail">Correo</span>
                 </a>
               </div>
               <a href="https://wa.me/13868044542?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO" target="_blank" class="contact-whatsapp" style="
@@ -329,24 +330,24 @@
           <div class="ai-icon"><img src="assets/N_Hoja_Blanca.png" alt="" class="chat-header-hoja"></div>
           <span class="chat-title-text">NutriPlant PRO Assistant</span>
         </div>
-        <p class="chat-header-tip">💡 Guarda el proyecto antes de consultar al asistente.</p>
+        <p class="chat-header-tip" data-i18n="chat.header_tip">💡 Guarda el proyecto antes de consultar al asistente.</p>
         <div class="chat-quota-display" id="chatQuotaDisplay" style="display: none;"></div>
       </div>
       <div class="chat-controls">
-        <button class="chat-btn minimize-btn" onclick="minimizeChat()" title="Minimizar">−</button>
+        <button class="chat-btn minimize-btn" onclick="minimizeChat()" title="Minimizar" data-i18n-title="chat.minimize">−</button>
       </div>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area" id="chatInputArea">
       <div class="chat-image-preview-wrap" id="chatImagePreviewWrap" style="display: none;">
         <div class="chat-image-preview" id="chatImagePreview"></div>
-        <button type="button" class="chat-image-remove" id="chatImageRemove" title="Quitar imagen">×</button>
+        <button type="button" class="chat-image-remove" id="chatImageRemove" title="Quitar imagen" data-i18n-title="chat.remove_image">×</button>
       </div>
       <div class="chat-input-row">
         <input type="file" id="chatImageInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
-        <textarea class="chat-input" id="chatInput" placeholder="Preguntar a NutriPlant PRO" rows="1"></textarea>
-        <button type="button" class="chat-attach-btn" id="chatAttachBtn" title="Adjuntar imagen (máx. 5 MB)">📷</button>
-        <button class="chat-send" id="chatSendBtn" title="Enviar">➤</button>
+        <textarea class="chat-input" id="chatInput" placeholder="Preguntar a NutriPlant PRO" rows="1" data-i18n-placeholder="chat.placeholder"></textarea>
+        <button type="button" class="chat-attach-btn" id="chatAttachBtn" title="Adjuntar imagen (máx. 5 MB)" data-i18n-title="chat.attach">📷</button>
+        <button class="chat-send" id="chatSendBtn" title="Enviar" data-i18n-title="chat.send">➤</button>
       </div>
     </div>
   </div>
@@ -431,20 +432,20 @@
   <script src="fertirriego-functions.js?v=20260728f"></script>
   <script src="nutricion-granular-functions.js?v=20260728b"></script>
   <script src="nutricion-granular-requerimiento-functions.js?v=20260728b"></script>
-  <script src="hidroponia-functions.js?v=20260728b"></script>
+  <script src="hidroponia-functions.js?v=20260730a"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260728a"></script>
-  <script src="assets/np-soil-water-bridge.js?v=202606242400"></script>
-  <script src="climate-functions.js?v=20260728a"></script>
+  <script src="assets/np-soil-water-bridge.js?v=20260730e"></script>
+  <script src="climate-functions.js?v=20260730b"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
   <script src="assets/np-vpd-range-charts.js?v=202606243700"></script>
-  <script src="dashboard.js?v=20260728g"></script>
-  <script src="fertirriego-program-functions.js?v=20260728f"></script>
+  <script src="dashboard.js?v=20260730m"></script>
+  <script src="fertirriego-program-functions.js?v=20260730a"></script>
   <script src="ai-knowledge-expansion.js"></script>
-  <script src="chat-simple.js?v=202607221900"></script>
+  <script src="chat-simple.js?v=202607302100"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
-  <script src="map.js?v=202606231625"></script>
-  <script src="assets/np-lectura-satelital.js?v=202607171330"></script>
+  <script src="map.js?v=20260730d"></script>
+  <script src="assets/np-lectura-satelital.js?v=20260730e"></script>
   
   <!-- Verificación de carga de scripts -->
   <script>
@@ -1605,7 +1606,17 @@
     };
     // API Key configurada en chat.js
 
-    // Funciones básicas del chat - USAR SOLO chat.js (NutriPlantChat)
+    // Funciones básicas del chat - NutriPlantChat (chat-simple.js)
+    function chatT(key, params, fallback) {
+      try {
+        if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+          const translated = window.NpI18n.t(key, params || {});
+          if (translated && translated !== key) return translated;
+        }
+      } catch (e) { /* ignore */ }
+      return fallback || key;
+    }
+
     function toggleChat() {
       console.log('🔍 toggleChat() llamada');
       console.log('🔍 window.nutriPlantChat existe?', !!window.nutriPlantChat);
@@ -1627,15 +1638,15 @@
             window.nutriPlantChat.toggleChat();
           } else {
             console.error('❌ toggleChat no es una función después de inicializar');
-            alert('Error: El chat no se pudo inicializar correctamente. Por favor, recarga la página.');
+            alert(chatT('chat.init_error', null, 'Error: El chat no se pudo inicializar correctamente. Por favor, recarga la página.'));
           }
         } catch (error) {
           console.error('❌ Error al inicializar NutriPlantChat:', error);
           console.error('❌ Stack trace:', error.stack);
-          alert('Error al inicializar el chat: ' + error.message + '. Por favor, recarga la página.');
+          alert(chatT('chat.init_exception', { message: error.message }, 'Error al inicializar el chat: ' + error.message + '. Por favor, recarga la página.'));
         }
         } else {
-          console.error('❌ NutriPlantChat no está definido. Verificando carga de chat.js...');
+          console.error('❌ NutriPlantChat no está definido. Verificando carga de chat-simple.js...');
           // Intentar usar la función de inicialización si está disponible
           if (typeof window.initializeNutriPlantChat === 'function') {
             console.log('🔄 Usando función de inicialización...');
@@ -1643,7 +1654,7 @@
             if (chat && typeof chat.toggleChat === 'function') {
               chat.toggleChat();
             } else {
-              alert('El chat no se pudo inicializar. Por favor, recarga la página.');
+              alert(chatT('chat.init_failed', null, 'El chat no se pudo inicializar. Por favor, recarga la página.'));
             }
           } else {
             // Esperar un momento y volver a intentar (por si el script aún se está cargando)
@@ -1655,11 +1666,11 @@
                   window.nutriPlantChat.toggleChat();
                 } catch (error) {
                   console.error('❌ Error al inicializar después de esperar:', error);
-                  alert('Error al abrir el chat. Por favor, recarga la página.');
+                  alert(chatT('chat.open_error', null, 'Error al abrir el chat. Por favor, recarga la página.'));
                 }
               } else {
-                console.error('❌ chat.js no se ha cargado después de esperar');
-                alert('El chat no está disponible. El archivo chat.js no se ha cargado. Por favor, verifica la consola y recarga la página.');
+                console.error('❌ chat-simple.js no se ha cargado después de esperar');
+                alert(chatT('chat.unavailable', null, 'El chat no está disponible. El archivo chat.js no se ha cargado. Por favor, verifica la consola y recarga la página.'));
               }
             }, 500);
           }
@@ -5098,10 +5109,10 @@ CONTRATO:
       if (frame && needsFullReload) {
         try {
           var pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260728b' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260730a' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         } catch (e) {
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260728b&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260730a&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         }
       }
@@ -5224,7 +5235,21 @@ CONTRATO:
 
     function showAgroclimateForecast() {
       var modal = document.getElementById('agroclimateForecastModal');
+      var frame = document.getElementById('agroclimateForecastFrame');
       if (!modal) return;
+      if (frame) {
+        try {
+          var prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function'
+            ? window.NpPrefs.get()
+            : { language: 'es', unit_system: 'metric' };
+          var u = new URL(frame.getAttribute('src') || 'pronosticoclimatico/?embed=dashboard', window.location.href);
+          u.searchParams.set('embed', 'dashboard');
+          u.searchParams.set('lang', prefs.language === 'en' ? 'en' : 'es');
+          u.searchParams.set('units', prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric');
+          u.searchParams.set('v', '20260730b');
+          frame.src = u.pathname + u.search + u.hash;
+        } catch (e) { /* keep existing src */ }
+      }
       modal.classList.add('show');
     }
     window.showAgroclimateForecast = showAgroclimateForecast;
@@ -6130,10 +6155,10 @@ CONTRATO:
   <div id="reportModal" class="report-modal-overlay">
     <div class="report-modal">
       <div class="report-modal-header">
-        <h2 class="report-modal-title">
+        <h2 class="report-modal-title" data-i18n="dashboard.reports_modal_title">
           📄 Generar Reporte PDF
         </h2>
-        <button class="report-modal-close" onclick="closeReportModal()">
+        <button class="report-modal-close" onclick="closeReportModal()" data-i18n-aria-label="dashboard.reports_close">
           ×
         </button>
       </div>
@@ -6141,67 +6166,59 @@ CONTRATO:
       <div class="report-sections">
         <div class="report-section-item" onclick="toggleReportSection('location')" data-section="location">
           <div class="report-section-info">
-            <div class="report-section-title">🛰️ Radar Satelital</div>
-            <div class="report-section-description">Predio, polígono, Radar Pilot (NDVI/NDMI) y Lectura Satelital (histórico por periodos)</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_location_title">🛰️ Radar Satelital</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_location_desc">Predio, polígono, Radar Pilot (NDVI/NDMI) y Lectura Satelital (histórico por periodos)</div>
           </div>
         </div>
         
         <div class="report-section-item" onclick="toggleReportSection('amendments')" data-section="amendments">
           <div class="report-section-info">
-            <div class="report-section-title">🚜 Análisis de Enmiendas</div>
-            <div class="report-section-description">Análisis de suelo, recomendaciones de enmiendas y cálculos</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_amendments_title">🚜 Análisis de Enmiendas</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_amendments_desc">Análisis de suelo, recomendaciones de enmiendas y cálculos</div>
           </div>
         </div>
 
         <div class="report-section-item" onclick="toggleReportSection('granular')" data-section="granular">
           <div class="report-section-info">
-            <div class="report-section-title">🌾 Nutrición Granular</div>
-            <div class="report-section-description">Requerimientos, programa y resumen de nutrición granular</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_granular_title">🌾 Nutrición Granular</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_granular_desc">Requerimientos, programa y resumen de nutrición granular</div>
           </div>
         </div>
 
         <div class="report-section-item" onclick="toggleReportSection('fertigation')" data-section="fertigation">
           <div class="report-section-info">
-            <div class="report-section-title">📈 Fertirriego</div>
-            <div class="report-section-description">Programa de fertirriego y recomendaciones nutricionales</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_fertigation_title">📈 Fertirriego</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_fertigation_desc">Programa de fertirriego y recomendaciones nutricionales</div>
           </div>
         </div>
 
         <div class="report-section-item" onclick="toggleReportSection('hidroponia')" data-section="hidroponia">
           <div class="report-section-info">
-            <div class="report-section-title">💧 Hidroponía</div>
-            <div class="report-section-description">Configuración y resultados del programa hidropónico</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_hydro_title">💧 Hidroponía</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_hydro_desc">Configuración y resultados del programa hidropónico</div>
           </div>
         </div>
 
         <div class="report-section-item" onclick="toggleReportSection('vpd')" data-section="vpd">
           <div class="report-section-info">
-            <div class="report-section-title">🌤️ Clima</div>
-            <div class="report-section-description">VPD, lluvia acumulada, ET₀ y lectura meteorológica</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_climate_title">🌤️ Clima</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_climate_desc">VPD, lluvia acumulada, ET₀ y lectura meteorológica</div>
           </div>
         </div>
 
         <div class="report-section-item" onclick="toggleReportSection('extraccionEtapa')" data-section="extraccionEtapa">
           <div class="report-section-info">
-            <div class="report-section-title">📊 Extracción nutrimental por etapa (%)</div>
-            <div class="report-section-description">Extracción nutrimental por etapa fenológica (% y kg/ha) del proyecto activo</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_extract_title">📊 Extracción nutrimental por etapa (%)</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_extract_desc" data-i18n-params='{"dose_unit":"kg/ha"}'>Extracción nutrimental por etapa fenológica (% y kg/ha) del proyecto activo</div>
           </div>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 6px 0 10px;">
-        <label for="reportLanguageSelect" style="font-size: 13px; color: #475569; font-weight: 600;">Idioma PDF:</label>
-        <select id="reportLanguageSelect" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; color: #1f2937; background: #fff;">
-          <option value="es">Español</option>
-          <option value="en">English</option>
-        </select>
-      </div>
-      
       <div class="report-modal-actions">
-        <button class="report-modal-btn report-modal-btn-secondary" onclick="closeReportModal()">
+        <button class="report-modal-btn report-modal-btn-secondary" onclick="closeReportModal()" data-i18n="dashboard.reports_modal_cancel">
           Cancelar
         </button>
-        <button class="report-modal-btn report-modal-btn-primary" id="generateReportBtn" onclick="generatePDFReport()">
+        <button class="report-modal-btn report-modal-btn-primary" id="generateReportBtn" onclick="generatePDFReport()" data-i18n="dashboard.reports_modal_generate">
           📄 Generar Reporte PDF
         </button>
       </div>
@@ -7083,7 +7100,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=dashboard&v=20260709" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=dashboard&v=20260730a" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7099,7 +7116,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260717" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260730a" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7115,7 +7132,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260728b" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260730a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7131,7 +7148,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260730a" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7147,7 +7164,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260728a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260730a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7163,7 +7180,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260728b" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260730a" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7179,7 +7196,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260540" title="Diseño de solución nutritiva" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260730a" title="Diseño de solución nutritiva" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7195,7 +7212,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260728a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260730a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7211,7 +7228,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=20260728a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=20260730a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7220,14 +7237,14 @@ CONTRATO:
   <div id="agroclimateForecastModal" class="modal-overlay" onclick="if(event.target===this) closeAgroclimateForecast();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">🌤️ Pronóstico agroclimático</h2>
+        <h2 class="modal-title">🌤️ <span data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeAgroclimateForecast()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=dashboard&v=20260727h" title="Pronóstico agroclimático" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=dashboard&v=20260730b" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7243,7 +7260,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260728a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260730a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7259,7 +7276,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260728b" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260730a" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7275,7 +7292,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260728b" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260730a" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7291,7 +7308,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260730a" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7307,7 +7324,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=dashboard" title="Formulación de mezclas granulares" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=dashboard&v=20260730a" title="Formulación de mezclas granulares" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7323,7 +7340,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260728b" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260730a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7522,7 +7539,7 @@ CONTRATO:
     <div class="modal" style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); max-width: 520px; width: auto; min-width: 480px; max-height: 90vh; overflow-y: auto; position: relative; z-index: 10001;">
       <div class="about-modal-content" style="padding: 24px; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb;">
-          <h2 style="margin: 0; color: #1e293b; font-size: 22px; font-weight: 700;">👤 Información de Usuario</h2>
+          <h2 style="margin: 0; color: #1e293b; font-size: 22px; font-weight: 700;">👤 <span data-i18n="profile.user_info_title">Información de Usuario</span></h2>
           <button onclick="window.closeUserInfoModal()" style="
             background: none;
             border: none;
@@ -7552,26 +7569,26 @@ CONTRATO:
   <div id="changePasswordModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10002; justify-content: center; align-items: center;">
     <div class="modal" style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); max-width: 420px; width: 90%; padding: 24px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 700;">🔒 Cambiar contraseña</h2>
+        <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 700;">🔒 <span data-i18n="profile.change_password_title">Cambiar contraseña</span></h2>
         <button type="button" onclick="window.closeChangePasswordModal()" style="background: none; border: none; font-size: 22px; color: #64748b; cursor: pointer;">×</button>
       </div>
       <form id="changePasswordForm" onsubmit="return window.submitChangePassword(event);">
         <div style="margin-bottom: 14px;">
-          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Contraseña actual</label>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;" data-i18n="profile.current_password">Contraseña actual</label>
           <input type="password" id="changePasswordCurrent" required minlength="6" placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
         </div>
         <div style="margin-bottom: 14px;">
-          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Nueva contraseña</label>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;" data-i18n="profile.new_password">Nueva contraseña</label>
           <input type="password" id="changePasswordNew" required minlength="6" placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
         </div>
         <div style="margin-bottom: 18px;">
-          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Repetir nueva contraseña</label>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;" data-i18n="profile.confirm_password">Repetir nueva contraseña</label>
           <input type="password" id="changePasswordConfirm" required minlength="6" placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
         </div>
         <div id="changePasswordMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
-          <button type="button" onclick="window.closeChangePasswordModal()" style="padding: 10px 18px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; cursor: pointer; font-weight: 600;">Cancelar</button>
-          <button type="submit" style="padding: 10px 18px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; font-weight: 600;">Guardar</button>
+          <button type="button" onclick="window.closeChangePasswordModal()" style="padding: 10px 18px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; cursor: pointer; font-weight: 600;" data-i18n="common.cancel">Cancelar</button>
+          <button type="submit" style="padding: 10px 18px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; font-weight: 600;" data-i18n="common.save">Guardar</button>
         </div>
       </form>
     </div>
@@ -7587,7 +7604,7 @@ CONTRATO:
               <img src="assets/N_Hoja_Azul.png" alt="" width="32" height="32" decoding="async">
             </span>
             <div>
-              <h2 style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;">Nosotros</h2>
+              <h2 style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;" data-i18n="about.title">Nosotros</h2>
               <div style="color:#1d4ed8; font-size:12px; font-weight: 700;">NutriPlant PRO</div>
             </div>
           </div>
@@ -7610,38 +7627,38 @@ CONTRATO:
           </button>
         </div>
         <div style="display: grid; gap: 16px; width: 100%; max-width: 100%; min-width: 0;">
-          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
-            <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
+          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);" data-i18n="about.intro">
+            NutriPlant PRO es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🎯 Visión</h3>
-              <p style="margin: 0; color: #334155; line-height: 1.6;">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🎯 <span data-i18n="about.vision">Visión</span></h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;" data-i18n="about.vision_body">
                 Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.
               </p>
             </div>
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🧩 Misión</h3>
-              <p style="margin: 0; color: #334155; line-height: 1.6;">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🧩 <span data-i18n="about.mission">Misión</span></h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;" data-i18n="about.mission_body">
                 Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.
               </p>
             </div>
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">✅ Valores</h3>
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">✅ <span data-i18n="about.values">Valores</span></h3>
               <ul style="margin: 0; padding-left: 18px; color: #334155; line-height: 1.6;">
-                <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
-                <li><strong>Respeto:</strong> Al proceso, a las personas y al conocimiento en construcción.</li>
-                <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
-                <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
+                <li><strong data-i18n="about.value_criterion_label">Criterio:</strong> <span data-i18n="about.value_criterion">Pensar antes de aplicar. Decidir con fundamento.</span></li>
+                <li><strong data-i18n="about.value_respect_label">Respeto:</strong> <span data-i18n="about.value_respect">Al proceso, a las personas y al conocimiento en construcción.</span></li>
+                <li><strong data-i18n="about.value_honesty_label">Honestidad:</strong> <span data-i18n="about.value_honesty">Hablar claro, sin promesas vacías ni verdades a medias.</span></li>
+                <li><strong data-i18n="about.value_evolution_label">Evolución:</strong> <span data-i18n="about.value_evolution">Aprender, ajustar y mejorar de forma continua.</span></li>
               </ul>
             </div>
           </div>
           <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center;">
-            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Manual técnico</a>
+            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="dashboard.manual">Manual técnico</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Políticas de privacidad</a>
+            <a href="politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="about.privacy_policy">Políticas de privacidad</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Términos y Condiciones</a>
+            <a href="terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-i18n="about.terms">Términos y Condiciones</a>
           </div>
         </div>
       </div>
@@ -7657,6 +7674,7 @@ CONTRATO:
         console.log('🔍 Modal encontrado:', modal);
         if (modal) {
           console.log('🔍 Mostrando modal...');
+          if (window.NpI18n) window.NpI18n.apply(modal);
           // Agregar clase show para mostrar el modal (el CSS se encarga del centrado)
           modal.classList.add('show');
           console.log('🔍 Clase show agregada, display computado:', window.getComputedStyle(modal).display);
@@ -7678,6 +7696,7 @@ CONTRATO:
     function showAboutUsModal() {
       const modal = document.getElementById('aboutUsModal');
       if (modal) {
+        if (window.NpI18n) window.NpI18n.apply(modal);
         modal.classList.add('show');
       }
     }
@@ -7763,12 +7782,24 @@ CONTRATO:
     async function loadUserInfo() {
       const contentDiv = document.getElementById('userInfoContent');
       if (!contentDiv) return;
+      const t = function (key, fallback, params) {
+        try {
+          if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+            const translated = window.NpI18n.t(key, params);
+            if (translated !== key) return translated;
+          }
+        } catch (e) {}
+        if (fallback == null) return key;
+        return String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g, function (match, name) {
+          return params && params[name] !== undefined ? String(params[name]) : match;
+        });
+      };
 
       try {
         // Obtener datos de sesión
         const sessionData = localStorage.getItem('np_user');
         if (!sessionData) {
-          contentDiv.innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">No se encontró información de sesión.</p>';
+          contentDiv.innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">' + t('profile.no_session', 'No se encontró información de sesión.') + '</p>';
           return;
         }
 
@@ -7779,11 +7810,11 @@ CONTRATO:
         if (!userId) {
           contentDiv.innerHTML = `
             <div style="text-align: center; padding: 20px;">
-              <p style="color: #dc2626; margin-bottom: 16px;">❌ No se encontró ID de usuario.</p>
-              <p style="color: #64748b; margin-bottom: 20px;">Tu sesión ha expirado o el usuario no existe.</p>
+              <p style="color: #dc2626; margin-bottom: 16px;">❌ ${t('profile.no_user_id', 'No se encontró ID de usuario.')}</p>
+              <p style="color: #64748b; margin-bottom: 20px;">${t('profile.session_expired', 'Tu sesión ha expirado o el usuario no existe.')}</p>
               <button onclick="window.location.href='login.html'" 
                       style="background: #60a5fa; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                Ir a Iniciar Sesión
+                ${t('profile.go_to_login', 'Ir a Iniciar Sesión')}
               </button>
             </div>
           `;
@@ -7796,11 +7827,11 @@ CONTRATO:
         if (!userExists) {
           contentDiv.innerHTML = `
             <div style="text-align: center; padding: 20px;">
-              <p style="color: #dc2626; margin-bottom: 16px;">❌ Usuario no encontrado.</p>
-              <p style="color: #64748b; margin-bottom: 20px;">El usuario con ID ${userId} no existe en el sistema.</p>
+              <p style="color: #dc2626; margin-bottom: 16px;">❌ ${t('profile.user_not_found', 'Usuario no encontrado.')}</p>
+              <p style="color: #64748b; margin-bottom: 20px;">${t('profile.user_missing_id', 'El usuario con ID {id} no existe en el sistema.', { id: userId })}</p>
               <button onclick="window.location.href='login.html'" 
                       style="background: #60a5fa; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                Ir a Iniciar Sesión
+                ${t('profile.go_to_login', 'Ir a Iniciar Sesión')}
               </button>
             </div>
           `;
@@ -7859,44 +7890,56 @@ CONTRATO:
           console.warn('No se pudo refrescar suscripción desde Supabase:', e);
         }
 
+        const notSpecified = t('common.not_specified', 'No especificado');
+
         // Funciones auxiliares
         function formatDate(dateStr) {
-          if (!dateStr) return 'No especificado';
+          if (!dateStr) return notSpecified;
           try {
             const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return 'No especificado';
-            return date.toLocaleDateString('es-MX', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            if (isNaN(date.getTime())) return notSpecified;
+            const lang = window.NpI18n && window.NpI18n.getLanguage ? window.NpI18n.getLanguage() : 'es';
+            const locale = (window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().locale) || (lang === 'en' ? 'en-US' : 'es-MX');
+            return date.toLocaleDateString(locale, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
             });
           } catch (e) {
-            return 'No especificado';
+            return notSpecified;
           }
         }
 
         function formatSubscriptionStatus(status) {
           const statusMap = {
-            'active': '✅ Activa',
-            'cancelled': '❌ Cancelada',
-            'expired': '⏰ Expirada',
-            'pending': '⏳ Pendiente',
-            'suspended': '⏸️ Suspendida'
+            'active': t('profile.status_active', '✅ Activa'),
+            'cancelled': t('profile.status_cancelled', '❌ Cancelada'),
+            'expired': t('profile.status_expired', '⏰ Expirada'),
+            'pending': t('profile.status_pending', '⏳ Pendiente'),
+            'suspended': t('profile.status_suspended', '⏸️ Suspendida')
           };
-          return statusMap[status] || status || 'No especificado';
+          return statusMap[status] || status || notSpecified;
         }
 
         function getRelevantDate(userData) {
           if (userData.subscription_status === 'active' && userData.subscription_activated_at) {
-            return { label: 'Fecha de Activación', date: userData.subscription_activated_at };
+            return { label: t('profile.activation_date', 'Fecha de Activación'), date: userData.subscription_activated_at };
           } else if (userData.subscription_status === 'cancelled' && userData._cancelled_at) {
-            return { label: 'Fecha de Cancelación', date: userData._cancelled_at };
+            return { label: t('profile.cancellation_date', 'Fecha de Cancelación'), date: userData._cancelled_at };
           } else if (userData.subscription_status === 'expired' && userData._expired_at) {
-            return { label: 'Fecha de Expiración', date: userData._expired_at };
+            return { label: t('profile.expiration_date', 'Fecha de Expiración'), date: userData._expired_at };
           } else if (userData.subscription_status === 'pending' && userData._pending_at) {
-            return { label: 'Fecha Pendiente', date: userData._pending_at };
+            return { label: t('profile.pending_date', 'Fecha Pendiente'), date: userData._pending_at };
           }
-          return { label: 'Fecha de Suscripción', date: null };
+          return { label: t('profile.subscription_date', 'Fecha de Suscripción'), date: null };
+        }
+
+        function escapeUserText(value) {
+          return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
         }
 
         const relevantDate = getRelevantDate(userData);
@@ -7907,63 +7950,69 @@ CONTRATO:
           locale: userData.locale || null
         };
 
+        const displayName = userData.name ? escapeUserText(userData.name) : notSpecified;
+        const displayEmail = (userData.email || userEmail) ? escapeUserText(userData.email || userEmail) : notSpecified;
+        const displayPhone = userData.phone ? escapeUserText(userData.phone) : notSpecified;
+        const displayLocation = (function() {
+          const loc = userData.location;
+          if (typeof loc === 'string' && loc.trim()) return escapeUserText(loc.trim());
+          if (loc && typeof loc === 'object') {
+            const joined = [loc.city, loc.state, loc.country].filter(Boolean).join(', ');
+            return joined ? escapeUserText(joined) : notSpecified;
+          }
+          return notSpecified;
+        })();
+
         // Construir HTML
         const html = `
           <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; box-sizing: border-box; min-width: 0;">
             <!-- Información Personal -->
             <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; width: 100%; box-sizing: border-box;">
-              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">📋 Información Personal</h3>
+              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">📋 ${t('profile.personal_info', 'Información Personal')}</h3>
               <div style="display: grid; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Nombre:</span>
-                  <span style="color: #1e293b; font-weight: 600;">${userData.name || 'No especificado'}</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.name', 'Nombre')}:</span>
+                  <span style="color: #1e293b; font-weight: 600;">${displayName}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Correo Electrónico:</span>
-                  <span style="color: #1e293b; font-weight: 600;">${userData.email || userEmail || 'No especificado'}</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.email', 'Correo Electrónico')}:</span>
+                  <span style="color: #1e293b; font-weight: 600;">${displayEmail}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Teléfono:</span>
-                  <span style="color: #1e293b; font-weight: 600;">${userData.phone || 'No especificado'}</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.phone', 'Teléfono')}:</span>
+                  <span style="color: #1e293b; font-weight: 600;">${displayPhone}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                  <span style="color: #64748b; font-weight: 500;">Ubicación:</span>
-                  <span style="color: #1e293b; font-weight: 600; text-align: right;">
-                    ${(function() {
-                      const loc = userData.location;
-                      if (typeof loc === 'string' && loc.trim()) return loc.trim();
-                      if (loc && typeof loc === 'object') return [loc.city, loc.state, loc.country].filter(Boolean).join(', ') || 'No especificado';
-                      return 'No especificado';
-                    })()}
-                  </span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.location', 'Ubicación')}:</span>
+                  <span style="color: #1e293b; font-weight: 600; text-align: right;">${displayLocation}</span>
                 </div>
               </div>
             </div>
 
             <!-- Idioma y unidades -->
             <div style="background: #f5f3ff; padding: 20px; border-radius: 12px; border-left: 4px solid #7c3aed; width: 100%; box-sizing: border-box;">
-              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🌐 Idioma y unidades</h3>
+              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🌐 ${t('profile.language_units', 'Idioma y unidades')}</h3>
               <div style="display: grid; gap: 12px;">
                 <label style="display:grid; gap:6px; color:#475569; font-weight:600;">
-                  Idioma
+                  ${t('profile.language', 'Idioma')}
                   <select id="profileLanguage" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
-                    <option value="es" ${currentPrefs.language === 'es' ? 'selected' : ''}>Español</option>
-                    <option value="en" ${currentPrefs.language === 'en' ? 'selected' : ''}>English</option>
+                    <option value="es" ${currentPrefs.language === 'es' ? 'selected' : ''}>${t('selector.spanish', 'Español')}</option>
+                    <option value="en" ${currentPrefs.language === 'en' ? 'selected' : ''}>${t('selector.english', 'English')}</option>
                   </select>
                 </label>
                 <label style="display:grid; gap:6px; color:#475569; font-weight:600;">
-                  Sistema de unidades
+                  ${t('profile.unit_system', 'Sistema de unidades')}
                   <select id="profileUnitSystem" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
-                    <option value="metric" ${currentPrefs.unit_system === 'metric' ? 'selected' : ''}>Métrico</option>
-                    <option value="us_customary" ${currentPrefs.unit_system === 'us_customary' ? 'selected' : ''}>Estadounidense</option>
+                    <option value="metric" ${currentPrefs.unit_system === 'metric' ? 'selected' : ''}>${t('selector.metric', 'Métrico (SI)')}</option>
+                    <option value="us_customary" ${currentPrefs.unit_system === 'us_customary' ? 'selected' : ''}>${t('selector.us_customary', 'US customary')}</option>
                   </select>
                 </label>
                 <label style="display:grid; gap:6px; color:#475569; font-weight:600;">
-                  Formato regional
-                  <input id="profileLocale" type="text" value="${currentPrefs.locale || ''}" placeholder="es-MX" maxlength="35" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box;">
+                  ${t('profile.locale', 'Formato regional')}
+                  <input id="profileLocale" type="text" value="${escapeUserText(currentPrefs.locale || '')}" placeholder="${t('profile.locale_placeholder', 'es-MX')}" maxlength="35" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box;">
                 </label>
                 <div style="display:flex; align-items:center; gap:12px;">
-                  <button type="button" onclick="window.saveUserPreferences()" style="background:#7c3aed; color:white; border:0; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:600;">Guardar preferencias</button>
+                  <button type="button" onclick="window.saveUserPreferences()" style="background:#7c3aed; color:white; border:0; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:600;">${t('profile.save_preferences', 'Guardar preferencias')}</button>
                   <span id="profilePreferencesMessage" style="font-size:14px; color:#166534;"></span>
                 </div>
               </div>
@@ -7971,30 +8020,30 @@ CONTRATO:
 
             <!-- Información de Suscripción -->
             <div style="background: #f0fdf4; padding: 24px; border-radius: 12px; border-left: 4px solid #16a34a; width: 100%; box-sizing: border-box; max-width: 100%;">
-              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">💳 Información de Suscripción</h3>
+              <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">💳 ${t('profile.subscription_info', 'Información de Suscripción')}</h3>
               <div style="display: grid; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Estado de Suscripción:</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.subscription_status', 'Estado de Suscripción')}:</span>
                   <span style="color: #1e293b; font-weight: 600;">${formatSubscriptionStatus(userData.subscription_status)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Plan:</span>
-                  <span style="color: #1e293b; font-weight: 600;">Cada 5 meses</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.plan', 'Plan')}:</span>
+                  <span style="color: #1e293b; font-weight: 600;">${t('profile.plan_every_5_months', 'Cada 5 meses')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                   <span style="color: #64748b; font-weight: 500;">${relevantDate.label}:</span>
                   <span style="color: #1e293b; font-weight: 600;">${formatDate(relevantDate.date)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Fecha del Último Pago:</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.last_payment_date', 'Fecha del Último Pago')}:</span>
                   <span style="color: #1e293b; font-weight: 600;">${formatDate(userData.last_payment_date)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <span style="color: #64748b; font-weight: 500;">Fecha del Próximo Pago:</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.next_payment_date', 'Fecha del Próximo Pago')}:</span>
                   <span style="color: #1e293b; font-weight: 600;">${formatDate(userData.next_payment_date)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                  <span style="color: #64748b; font-weight: 500;">Monto:</span>
+                  <span style="color: #64748b; font-weight: 500;">${t('profile.amount', 'Monto')}:</span>
                   <span style="color: #1e293b; font-weight: 600; font-size: 18px;">$${subscriptionAmount.toFixed(2)} USD</span>
                 </div>
               </div>
@@ -8003,26 +8052,26 @@ CONTRATO:
             <!-- Cambiar contraseña (solo si Supabase está activo) -->
             ${window.nutriplantSupabaseAuth && window.nutriplantSupabaseAuth.isAvailable && window.nutriplantSupabaseAuth.isAvailable() ? `
             <div style="background: #eff6ff; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; width: 100%; box-sizing: border-box;">
-              <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🔒 Contraseña</h3>
-              <p style="margin: 0 0 12px 0; color: #64748b; font-size: 14px;">Si quieres cambiar tu contraseña de acceso, usa el botón siguiente.</p>
+              <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🔒 ${t('profile.password_section', 'Contraseña')}</h3>
+              <p style="margin: 0 0 12px 0; color: #64748b; font-size: 14px;">${t('profile.password_hint', 'Si quieres cambiar tu contraseña de acceso, usa el botón siguiente.')}</p>
               <button type="button" data-open-change-password onclick="window.showChangePasswordModal(); return false;" style="
                 background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;
               " onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-                Cambiar contraseña
+                ${t('profile.change_password', 'Cambiar contraseña')}
               </button>
             </div>
             ` : ''}
 
             <!-- Sección de Cancelación -->
             <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b; width: 100%; box-sizing: border-box;">
-              <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🚫 Cancelación de Suscripción</h3>
+              <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🚫 ${t('profile.cancel_subscription', 'Cancelación de Suscripción')}</h3>
               <p style="margin: 0 0 12px 0; color: #1e293b; line-height: 1.6; font-size: 14px;">
-                La cancelación de la suscripción se realiza directamente con PayPal, desde tu cuenta en la sección <strong>Pagos automáticos</strong>.
+                ${t('profile.cancel_subscription_body_before', 'La cancelación de la suscripción se realiza directamente con PayPal, desde tu cuenta en la sección')} <strong>${t('profile.cancel_subscription_body_strong', 'Pagos automáticos')}</strong>${t('profile.cancel_subscription_body_after', '.')}
               </p>
               <a href="https://www.paypal.com/myaccount/autopay/" target="_blank" rel="noopener noreferrer" style="
                 display: inline-flex; align-items: center; gap: 8px; background: #003087; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; cursor: pointer;
               " onmouseover="this.style.background='#001c5b'" onmouseout="this.style.background='#003087'">
-                PayPal — Abrir Pagos automáticos
+                ${t('profile.paypal_autopay', 'PayPal — Abrir Pagos automáticos')}
               </a>
             </div>
           </div>
@@ -8033,12 +8082,25 @@ CONTRATO:
         if (changePwdBtn) changePwdBtn.addEventListener('click', function() { window.showChangePasswordModal(); });
       } catch (error) {
         console.error('Error loading user info:', error);
-        contentDiv.innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">Error al cargar la información del usuario.</p>';
+        contentDiv.innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">' + t('profile.load_error', 'Error al cargar la información del usuario.') + '</p>';
       }
     }
+    window.loadUserInfo = loadUserInfo;
 
     async function saveUserPreferences() {
       const message = document.getElementById('profilePreferencesMessage');
+      const t = function (key, fallback, params) {
+        try {
+          if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+            const translated = window.NpI18n.t(key, params);
+            if (translated !== key) return translated;
+          }
+        } catch (e) {}
+        if (fallback == null) return key;
+        return String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g, function (match, name) {
+          return params && params[name] !== undefined ? String(params[name]) : match;
+        });
+      };
       try {
         const prefs = {
           language: document.getElementById('profileLanguage').value,
@@ -8055,12 +8117,20 @@ CONTRATO:
         if (cloudResult && cloudResult.error) throw cloudResult.error;
         if (message) {
           message.style.color = '#166534';
-          message.textContent = 'Preferencias guardadas';
+          message.textContent = t('profile.saved', 'Preferencias guardadas');
+        }
+        if (typeof window.npHandleDashboardPreferencesChanged === 'function') {
+          window.npHandleDashboardPreferencesChanged();
+        }
+        const userModal = document.getElementById('userInfoModal');
+        if (userModal && userModal.classList.contains('show')) {
+          if (window.NpI18n) window.NpI18n.apply(userModal);
+          loadUserInfo();
         }
       } catch (error) {
         if (message) {
           message.style.color = '#dc2626';
-          message.textContent = 'Guardado local; no se pudo sincronizar: ' + (error.message || error);
+          message.textContent = t('profile.saved_local_sync_fail', 'Guardado local; no se pudo sincronizar: {error}', { error: error.message || error });
         }
       }
     }
@@ -8074,6 +8144,7 @@ CONTRATO:
         document.getElementById('changePasswordConfirm').value = '';
         var msgEl = document.getElementById('changePasswordMessage');
         if (msgEl) { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+        if (window.NpI18n) window.NpI18n.apply(modal);
         modal.classList.add('show');
         modal.style.display = 'flex';
       }
@@ -8097,6 +8168,15 @@ CONTRATO:
 
     async function submitChangePassword(e) {
       e.preventDefault();
+      var t = function (key, fallback) {
+        try {
+          if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+            var translated = window.NpI18n.t(key);
+            if (translated !== key) return translated;
+          }
+        } catch (err) {}
+        return fallback;
+      };
       var current = document.getElementById('changePasswordCurrent').value.trim();
       var newPwd = document.getElementById('changePasswordNew').value.trim();
       var confirmPwd = document.getElementById('changePasswordConfirm').value.trim();
@@ -8106,18 +8186,18 @@ CONTRATO:
       msgEl.textContent = '';
       if (newPwd.length < 6) {
         msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-        msgEl.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
+        msgEl.textContent = t('profile.password_min_length', 'La nueva contraseña debe tener al menos 6 caracteres.');
         return false;
       }
       if (newPwd !== confirmPwd) {
         msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-        msgEl.textContent = 'La nueva contraseña y la repetición no coinciden.';
+        msgEl.textContent = t('profile.password_mismatch', 'La nueva contraseña y la repetición no coinciden.');
         return false;
       }
       var sessionData = localStorage.getItem('np_user');
       if (!sessionData) {
         msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-        msgEl.textContent = 'No hay sesión. Vuelve a iniciar sesión.';
+        msgEl.textContent = t('profile.password_no_session', 'No hay sesión. Vuelve a iniciar sesión.');
         return false;
       }
       var session = JSON.parse(sessionData);
@@ -8125,13 +8205,13 @@ CONTRATO:
       var userId = session.userId || session.user_id;
       if (!email || !userId) {
         msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-        msgEl.textContent = 'Sesión incompleta. Vuelve a iniciar sesión.';
+        msgEl.textContent = t('profile.password_incomplete_session', 'Sesión incompleta. Vuelve a iniciar sesión.');
         return false;
       }
       var auth = window.nutriplantSupabaseAuth;
       if (!auth || !auth.isAvailable || !auth.isAvailable()) {
         msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-        msgEl.textContent = 'No está disponible el cambio de contraseña en este momento.';
+        msgEl.textContent = t('profile.password_unavailable', 'No está disponible el cambio de contraseña en este momento.');
         return false;
       }
       var signIn = window.getSupabaseClient && window.getSupabaseClient();
@@ -8139,14 +8219,14 @@ CONTRATO:
         var check = await signIn.auth.signInWithPassword({ email: email, password: current });
         if (check.error) {
           msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-          msgEl.textContent = 'Contraseña actual incorrecta.';
+          msgEl.textContent = t('profile.password_wrong_current', 'Contraseña actual incorrecta.');
           return false;
         }
       }
       var result = await auth.updatePassword(newPwd);
       if (result && result.error) {
         msgEl.style.display = 'block'; msgEl.style.background = '#fef2f2'; msgEl.style.color = '#dc2626';
-        msgEl.textContent = result.error || 'No se pudo actualizar la contraseña.';
+        msgEl.textContent = result.error || t('profile.password_update_failed', 'No se pudo actualizar la contraseña.');
         return false;
       }
       var userKey = 'nutriplant_user_' + userId;
@@ -8159,7 +8239,7 @@ CONTRATO:
         }
       } catch (err) {}
       msgEl.style.display = 'block'; msgEl.style.background = '#f0fdf4'; msgEl.style.color = '#166534';
-      msgEl.textContent = 'Contraseña actualizada correctamente.';
+      msgEl.textContent = t('profile.password_updated', 'Contraseña actualizada correctamente.');
       setTimeout(function() {
         closeChangePasswordModal();
       }, 1500);

@@ -7,7 +7,7 @@
   <meta name="description" content="VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura: 1 pasada más clara sin mediana, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-07</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-07</span>
     <h1>VPD, NDVI y NDMI</h1>
     <h2>Resumen</h2>
     <p>
@@ -252,10 +254,211 @@
       (máx. 250 ha); (2) Lectura Satelital con tabla, gráfica y galería por periodos. Cruce recomendado: riego,
       textura/drenaje, análisis foliar/suelo, VPD y recorrido de zonas contrastantes en el mapa.
     </p>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-07</span>
+    <h1>VPD, NDVI and NDMI</h1>
+    <h2>Summary</h2>
+    <p>
+      <strong>VPD</strong> (vapor pressure deficit) measures the air’s “drying capacity” from
+      <strong>temperature and humidity</strong> (station climate or manual values). The
+      <strong>Satellite Radar</strong> module (formerly “Location”) shows <strong>NDVI</strong>,
+      <strong>NDMI</strong>, <strong>NDRE</strong> and <strong>RGB</strong> maps obtained by
+      <strong>multispectral satellite reading</strong> over the parcel
+      polygon (max. <strong>250 ha</strong>), with two internal tabs: <strong>Polygon / NDVI and NDMI</strong> (single Pilot image) and
+      <strong>Satellite Reading</strong> (historical by periods with climate and irrigation). They are
+      complementary tools: VPD = climate; satellite indices = vigor, canopy and natural view from above.
+    </p>
+
+    <h2>VPD — what it is and where the data come from</h2>
+    <p>
+      NutriPlant calculates VPD in the project <strong>Climate → VPD</strong> tab and in the free login tool
+      (<code>vpd-free.html</code>). With a polygon in <strong>Satellite Radar</strong>, “Get from Climate” and the
+      <strong>VPD Series by range</strong> use the parcel center coordinates to fetch current or
+      historical temperature and humidity from a <strong>weather service</strong> (not satellite). You can also
+      enter T and RH manually. In <strong>Satellite Reading</strong> the period average VPD is
+      calculated the same way (hourly Open-Meteo → advanced/simple formula) and shown in the historical table.
+    </p>
+
+    <h2>VPD — calculation (kPa)</h2>
+    <p>NutriPlant uses the <strong>Tetens / Magnus</strong> equation for saturation vapor pressure (kPa):</p>
+    <div class="mt-formula">
+      e<sub>s</sub> (kPa) = 0.6108 × exp(17.27 × T ÷ (T + 237.3)) &nbsp;&nbsp; (T in °C)
+    </div>
+
+    <h3>Environmental calculator (simple)</h3>
+    <p>Actual air vapor pressure and deficit relative to the air:</p>
+    <div class="mt-formula">
+      e<sub>a</sub> = e<sub>s</sub>(T air) × (RH ÷ 100)<br>
+      VPD = e<sub>s</sub>(T air) − e<sub>a</sub>
+    </div>
+    <p>
+      <strong>HD</strong> (absolute humidity deficit, g/m³) is also shown with the saturated humidity
+      curve of the air at that temperature.
+    </p>
+
+    <h3>Advanced calculator</h3>
+    <p>
+      The VPD that matters to the plant compares saturation pressure at the <strong>leaf</strong> with the
+      actual vapor pressure of the <strong>air</strong>:
+    </p>
+    <div class="mt-formula">
+      VPD = e<sub>s</sub>(T leaf) − e<sub>a</sub>(T air, RH)
+    </div>
+    <p>
+      <strong>T leaf</strong> can be entered directly or estimated from <strong>solar radiation</strong>
+      (W/m²): if radiation exceeds 200 W/m², NutriPlant adds 0.6 °C per each 100 W/m² above 200 to
+      air temperature; otherwise T leaf = T air.
+    </p>
+
+    <h2>Indicative VPD interpretation (kPa)</h2>
+    <table class="mt-table">
+      <thead><tr><th>VPD</th><th>General interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 0.4</td><td>Very humid air; limited transpiration</td></tr>
+        <tr><td>0.8 – 1.2</td><td>Useful range in many greenhouse crops</td></tr>
+        <tr><td>&gt; 1.5–2</td><td>High deficit; stress risk if it persists</td></tr>
+      </tbody>
+    </table>
+    <p>Depends on crop, stage and radiation. Validate in the field.</p>
+
+    <h2>NDVI, NDMI, NDRE and RGB — Satellite Radar</h2>
+    <p>
+      In <strong>Satellite Radar → Polygon / NDVI and NDMI</strong>, NutriPlant generates
+      <strong>Pilot Copernicus/Sentinel-2</strong> maps over the <strong>parcel polygon</strong> from
+      <strong>multispectral satellite images</strong>: sensors that measure reflectance in visible and
+      <strong>infrared</strong> bands (near NIR, red edge and, for NDMI, short-wave infrared SWIR).
+    </p>
+    <p>From those bands, <strong>normalized indices</strong> and a natural view are calculated:</p>
+    <div class="mt-formula">
+      NDVI ≈ (NIR − Red) ÷ (NIR + Red)<br>
+      NDMI ≈ (NIR − SWIR) ÷ (NIR + SWIR)<br>
+      NDRE ≈ (NIR − Red Edge) ÷ (NIR + Red Edge)<br>
+      RGB = natural color composite (blue + green + red)
+    </div>
+    <ul>
+      <li><strong>NDVI</strong> — <strong>relative vigor</strong> and photosynthetic activity within the lot.</li>
+      <li><strong>NDMI</strong> — <strong>relative canopy water condition</strong> (not volumetric soil moisture).</li>
+      <li><strong>NDRE</strong> — <strong>chlorophyll / canopy status</strong> (red edge band B05 + NIR).</li>
+      <li><strong>RGB</strong> — <strong>natural view</strong> of the parcel (same Sentinel pass as the indices; useful for locating and contrasting).
+        In RGB the Lower/Higher scale of the indices <strong>does not</strong> apply: <strong>green</strong> is usually live plant;
+        <strong>red / brown / pink</strong> is usually bare soil or residue (natural earth color), not “low vigor”.</li>
+    </ul>
+    <p>
+      All four layers come from the <strong>same generation</strong> and the <strong>same</strong> Pilot <strong>pass</strong> (a single date + SCL cloud/shadow mask; no date mixing).
+      On-screen order: NDVI → NDMI → NDRE → <strong>RGB</strong> (last).
+      Indices are <strong>relative to the parcel and the date</strong>; RGB is natural color (~10&nbsp;m per pixel in visible/NIR bands).
+      They do not replace diagnosis from a single color patch.
+    </p>
+    <h3>NutriPlant colorimetry — reference levels within the parcel</h3>
+    <p>
+      In NDVI/NDMI/NDRE, the color bar is adjusted to the <strong>internal parcel range</strong> (P10–P90 percentiles)
+      to reveal useful contrasts within the lot. It is not a universal scale: do not compare two parcels by color alone.
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>Visual level</th><th>Technical reading</th><th>Recommended use</th></tr></thead>
+      <tbody>
+        <tr><td>Red / orange</td><td>Lower relative level of the parcel (lower vigor, canopy moisture or chlorophyll versus the rest of the lot).</td><td>Prioritize scouting; check bare soil/shade, irrigation, drainage, root, salinity, nutrition, pests or stage.</td></tr>
+        <tr><td>Yellow / light green</td><td>Intermediate parcel level; transition zone or average behavior.</td><td>Compare with history, management and field conditions before deciding.</td></tr>
+        <tr><td>Deep green / teal / blue-green</td><td>Higher relative level (more vigor, canopy moisture or chlorophyll versus the rest of the lot).</td><td>Use as internal reference and validate in the field.</td></tr>
+        <tr><td>RGB</td><td>Natural colors: green ≈ vegetation; red/brown ≈ soil or dry residue (not “bad” by itself).</td><td>Locate the lot and visually contrast with the indices.</td></tr>
+      </tbody>
+    </table>
+    <div class="mt-warn">
+      Requirement: polygon saved and <strong>synced to the cloud</strong>.
+      <strong>Area limit:</strong> Radar accepts parcels up to <strong>250 ha</strong>. If the polygon is larger,
+      the message is: <em>«Radar máximo 250 ha; divide el polígono»</em> (no credit spent). For large ranches, draw lots separately.
+    </div>
+
+    <h2>Pilot Radar generation and history (NDVI + NDMI + NDRE + RGB)</h2>
+    <p>
+      Each <strong>Pilot generation</strong> produces the <strong>four layers</strong> in one operation, saves them in history
+      and lets you switch with the <strong>Layer</strong> selector. Current flow: Copernicus/Sentinel-2 (without Google Earth Engine as main control),
+      with internal <strong>Radar credits</strong>.
+    </p>
+    <ul>
+      <li><strong>How the image is built:</strong> chooses <strong>1 single</strong> Sentinel <strong>pass</strong> (the clearest over the parcel; no median or fill across dates) in windows
+        <strong>14 → 21 → 30 → 45 days</strong>. It only stops early if it reaches ~<strong>100&nbsp;%</strong> useful pixels;
+        otherwise it keeps searching and finally <strong>keeps the best</strong> (e.g. 89&nbsp;%). After filtering clouds/shadow (SCL), if the parcel has
+        no useful coverage (&lt;~15&nbsp;%), an empty image is <strong>not saved</strong>. The target shows satellite date and % useful.</li>
+      <li><strong>Generate / update Pilot:</strong> calculates and saves NDVI+NDMI+NDRE+RGB.</li>
+      <li><strong>View on map:</strong> overlays the selected saved image; does not generate a new image.</li>
+      <li><strong>Layer:</strong> NDVI → NDMI → NDRE → RGB (same generation).</li>
+      <li><strong>Area limit:</strong> maximum <strong>250 ha</strong> per generation.</li>
+      <li><strong>Monthly limit:</strong> 20 base Radar credits per account (+ admin bonus). Pilot cost: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 credits (all four layers together).</li>
+      <li><strong>Google Earth Engine:</strong> internal/standby backup; not the main visible control.</li>
+    </ul>
+
+    <h2>Satellite Reading (historical by periods)</h2>
+    <p>
+      The <strong>Satellite Radar → Satellite Reading</strong> tab builds a history of the <strong>same
+      parcel</strong> with <strong>2 to 6 periods</strong> backward from an end date, at
+      <strong>biweekly</strong> (15 days) or <strong>monthly</strong> (calendar month) frequency. Each period contributes
+      average NDVI/NDMI/NDRE, thumbnails (incl. RGB), VPD, ET₀, rain and irrigation.
+      Same limit: <strong>maximum 250 ha</strong>.
+    </p>
+    <h3>Controls</h3>
+    <ul>
+      <li><strong>Frequency:</strong> biweekly or monthly.</li>
+      <li><strong>Number of periods:</strong> 2, 3, 4, 5 or 6.</li>
+      <li><strong>End date</strong> of the analysis.</li>
+      <li>Labels with <strong>real dates</strong> backward (e.g. «1–15 Jul», «16–30 Jun»), not Q1/Q2.</li>
+    </ul>
+    <h3>Table by period</h3>
+    <table class="mt-table">
+      <thead><tr><th>Column</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Period (dates)</td><td>Calculated in the app backward from the end date</td></tr>
+        <tr><td>Average NDVI / NDMI / NDRE</td><td>Mean of valid pixels inside the polygon</td></tr>
+        <tr><td>Average VPD (kPa)</td><td>Hourly Open-Meteo → same Climate VPD logic → period average</td></tr>
+        <tr><td>ET₀ (mm)</td><td>Daily Open-Meteo <code>et0_fao_evapotranspiration</code> → <strong>sum</strong></td></tr>
+        <tr><td>Rain (mm)</td><td>Daily Open-Meteo <code>precipitation_sum</code> → <strong>sum</strong></td></tr>
+        <tr><td>Irrigation (m³ / mm)</td><td>Manual input; m³↔mm conversion with % irrigated strip</td></tr>
+        <tr><td>VPD hours</td><td>Hours in the period with VPD &lt;0.5 / 0.5–1.5 / &gt;1.5 kPa (Open-Meteo). On the chart, hovering each range shows <strong>hours and % of total period hours</strong> (e.g. 15 d ≈ 360 h).</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Below: <strong>chart</strong> (NDVI/NDMI/NDRE/ET₀/rain/irrigation lines + VPD-hour bars) and
+      <strong>NDVI | NDMI | NDRE | RGB thumbnails</strong> per period (click to enlarge). Also in PDF and admin panel.
+      If a <strong>Kc</strong> is saved in Climate (water balance), the chart adds
+      <strong>ETc = ET₀ × Kc</strong> per period (mm axis; constant Kc), to cross crop demand with indices, rain and irrigation.
+    </p>
+    <h3>Satellite per period (different from Pilot on tab 1)</h3>
+    <ul>
+      <li><strong>1 pass</strong> per period (clearest + SCL; no median or fill across dates); stops early only if ~100&nbsp;% useful;
+        otherwise keeps the best (≥~15&nbsp;%). An incomplete biweek may expand <strong>that period</strong> to the calendar month
+        (<code>lookback_expanded</code>, asterisk); climate/irrigation stay on the 15 days.</li>
+      <li>Same layer logic as Pilot: NDVI, NDMI, NDRE and RGB from the same pass.</li>
+      <li>Each period has its own <code>date_start</code> / <code>date_end</code>; it does not reuse “last 45 days from today”.</li>
+    </ul>
+    <h3>Satellite Reading credits</h3>
+    <p>
+      Cost is <strong>fixed for the whole query</strong> (not per period): <strong>3 Radar credits</strong> for a normal
+      parcel (≤30 ha) and <strong>4 credits</strong> for a parcel &gt;30 ha, whether you choose 2 or 6 periods.
+      Quota is validated <strong>before</strong> enqueueing; cost is reserved once when the query starts.
+      If the parcel exceeds <strong>250 ha</strong>, it is not enqueued: <em>«Radar máximo 250 ha; divide el polígono»</em>.
+    </p>
+    <div class="mt-warn">
+      Satellite Reading correlates satellite indices with climate and recorded irrigation; it <strong>does not replace</strong>
+      field scouting, soil/foliar analysis or single-cause diagnosis.
+    </div>
+
+    <h2>In the project</h2>
+    <p>
+      <strong>VPD:</strong> simple and advanced calculators, calculation history and series by day/week/month
+      (maxima by date). <strong>Rain and ET₀:</strong> monthly tables and
+      <a href="balance-hidrico-riego-clima.html">water balance calculator</a> (deficit and quick irrigation).
+      <strong>Satellite Radar:</strong> (1) Polygon / NDVI-NDMI-NDRE-RGB layers, “View on map” and Pilot history
+      (max. 250 ha); (2) Satellite Reading with table, chart and gallery by periods. Recommended cross-check: irrigation,
+      texture/drainage, foliar/soil analysis, VPD and scouting of contrasting zones on the map.
+    </p>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="../index.html">Índice</a></nav>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

@@ -890,7 +890,7 @@ class NutriPlantMap {
         const areaAcres = this.area * 0.000247105;
         areaDisplay.textContent = `${this.formatNumber(areaHectares)} ha (${this.formatNumber(areaAcres)} acres)`;
       } else {
-        areaDisplay.textContent = '0.00 ha (0.00 acres)';
+        areaDisplay.textContent = np_radarT('radar.area_zero', '0.00 ha (0.00 acres)');
       }
     }
 
@@ -914,9 +914,9 @@ class NutriPlantMap {
         }
         coordinatesDisplay.textContent = center
           ? `${Number(center.lat).toFixed(6)}, ${Number(center.lng).toFixed(6)}`
-          : 'No seleccionadas';
+          : np_radarT('radar.not_selected', 'No seleccionadas');
       } else {
-        coordinatesDisplay.textContent = 'No seleccionadas';
+        coordinatesDisplay.textContent = np_radarT('radar.not_selected', 'No seleccionadas');
       }
     }
 
@@ -924,7 +924,7 @@ class NutriPlantMap {
       if (shouldShowData && this.perimeter > 0 && belongsToCurrentProject) {
         perimeterDisplay.textContent = `${this.formatNumber(this.perimeter)} m`;
       } else {
-        perimeterDisplay.textContent = '0.00 m';
+        perimeterDisplay.textContent = np_radarT('radar.perimeter_zero', '0.00 m');
       }
     }
   }
@@ -1145,7 +1145,9 @@ class NutriPlantMap {
         coordinates: locationData.center ? `${locationData.center.lat.toFixed(6)}, ${locationData.center.lng.toFixed(6)}` : '',
         surface: `${this.formatNumber(locationData.areaHectares)} ha`,
         perimeterDisplay: `${this.formatNumber(locationData.perimeter)} m`,
-        elevationDisplay: Number.isFinite(locationData.elevationM) ? `${Math.round(locationData.elevationM)} msnm` : 'N/D'
+        elevationDisplay: Number.isFinite(locationData.elevationM)
+          ? `${Math.round(locationData.elevationM)} ${np_radarT('radar.unit_msl', 'msnm')}`
+          : np_radarT('radar.na', 'N/D')
       };
       const existingLoc =
         (typeof window.projectStorage !== 'undefined' && window.projectStorage.loadSection
@@ -2414,6 +2416,29 @@ class NutriPlantMap {
 // Inicializar el mapa cuando se carga la página
 let nutriPlantMap = null;
 
+function np_radarT(key, fallback, params) {
+  try {
+    if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+      const translated = window.NpI18n.t(key, params);
+      if (translated !== key) return translated;
+    }
+  } catch (e) {}
+  if (fallback == null) return key;
+  if (!params) return fallback;
+  return String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g, function (match, name) {
+    return params[name] !== undefined ? String(params[name]) : match;
+  });
+}
+
+function np_radarLocale() {
+  try {
+    if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' && window.NpI18n.getLanguage() === 'en') {
+      return 'en-US';
+    }
+  } catch (e) {}
+  return 'es-MX';
+}
+
 function np_projectIdsMatch(a, b) {
   if (a == null || b == null) return false;
   return String(a) === String(b);
@@ -2424,7 +2449,9 @@ function setLocationAltitudeDisplay(elevationM) {
   const altitudeEl = document.getElementById('altitudeDisplay');
   if (!altitudeEl) return;
   const meters = Number(elevationM);
-  altitudeEl.textContent = Number.isFinite(meters) ? `${Math.round(meters)} msnm` : 'N/D';
+  altitudeEl.textContent = Number.isFinite(meters)
+    ? `${Math.round(meters)} ${np_radarT('radar.unit_msl', 'msnm')}`
+    : np_radarT('radar.na', 'N/D');
 }
 
 function forceClearLocationDisplay() {
@@ -2434,13 +2461,13 @@ function forceClearLocationDisplay() {
   const perimeterEl = document.getElementById('perimeterDisplay');
   
   if (coordinatesEl) {
-    coordinatesEl.textContent = 'No seleccionadas';
+    coordinatesEl.textContent = np_radarT('radar.not_selected', 'No seleccionadas');
   }
   if (areaEl) {
-    areaEl.textContent = '0.00 ha (0.00 acres)';
+    areaEl.textContent = np_radarT('radar.area_zero', '0.00 ha (0.00 acres)');
   }
   if (perimeterEl) {
-    perimeterEl.textContent = '0.00 m';
+    perimeterEl.textContent = np_radarT('radar.perimeter_zero', '0.00 m');
   }
   setLocationAltitudeDisplay(null);
   console.log('✅ Elementos de ubicación limpiados');
@@ -2517,7 +2544,63 @@ function np_normalizeRadarIndex(value) {
 }
 
 function np_getRadarIndexConfig(index) {
-  return RADAR_INDEX_CONFIG[np_normalizeRadarIndex(index)] || RADAR_INDEX_CONFIG.ndvi;
+  const base = RADAR_INDEX_CONFIG[np_normalizeRadarIndex(index)] || RADAR_INDEX_CONFIG.ndvi;
+  const idx = np_normalizeRadarIndex(index);
+  const keys = {
+    ndvi: {
+      title: 'radar.scale_ndvi_title',
+      low: 'radar.scale_low',
+      high: 'radar.scale_high',
+      help: 'radar.scale_ndvi_help',
+      shownText: 'radar.shown_ndvi',
+      loadingText: 'radar.loading_ndvi'
+    },
+    ndmi: {
+      title: 'radar.scale_ndmi_title',
+      low: 'radar.scale_ndmi_low',
+      high: 'radar.scale_ndmi_high',
+      help: 'radar.scale_ndmi_help',
+      shownText: 'radar.shown_ndmi',
+      loadingText: 'radar.loading_ndmi'
+    },
+    ndre: {
+      title: 'radar.scale_ndre_title',
+      low: 'radar.scale_ndre_low',
+      high: 'radar.scale_ndre_high',
+      help: 'radar.scale_ndre_help',
+      shownText: 'radar.shown_ndre',
+      loadingText: 'radar.loading_ndre'
+    },
+    rgb: {
+      title: 'radar.scale_rgb_title',
+      low: 'radar.scale_rgb_low',
+      high: 'radar.scale_rgb_high',
+      help: 'radar.scale_rgb_help',
+      shownText: 'radar.shown_rgb',
+      loadingText: 'radar.loading_rgb'
+    },
+    clouds: {
+      label: 'radar.label_clouds',
+      title: 'radar.scale_clouds_title',
+      low: 'radar.scale_clouds_low',
+      high: 'radar.scale_clouds_high',
+      help: 'radar.scale_clouds_help',
+      shownText: 'radar.shown_clouds',
+      loadingText: 'radar.loading_clouds'
+    }
+  };
+  const k = keys[idx] || keys.ndvi;
+  return {
+    label: k.label ? np_radarT(k.label, base.label) : base.label,
+    busyLabel: base.busyLabel,
+    title: np_radarT(k.title, base.title),
+    low: np_radarT(k.low, base.low),
+    high: np_radarT(k.high, base.high),
+    help: np_radarT(k.help, base.help),
+    gradient: base.gradient,
+    shownText: np_radarT(k.shownText, base.shownText),
+    loadingText: np_radarT(k.loadingText, base.loadingText)
+  };
 }
 
 function np_getSelectedRadarIndex() {
@@ -2554,8 +2637,17 @@ function np_updateRadarActionLabels(indexOverride) {
   const cfg = np_getRadarIndexConfig(idx);
   const viewBtn = document.getElementById('radarBtnView');
   const hideBtn = document.getElementById('radarBtnHide');
-  if (viewBtn) viewBtn.textContent = '👁 Ver imagen ' + cfg.label;
-  if (hideBtn) hideBtn.textContent = '🙈 Ocultar capa';
+  const genBtn = document.getElementById('radarBtnGenerate');
+  const statusBtn = document.getElementById('radarBtnRefresh');
+  if (viewBtn) {
+    viewBtn.textContent = np_radarT('radar.btn_view', '👁 Ver imagen {label}', { label: cfg.label });
+  }
+  if (hideBtn) hideBtn.textContent = np_radarT('radar.btn_hide', '🙈 Ocultar capa');
+  if (genBtn && !genBtn.classList.contains('radar-loading')) {
+    genBtn.textContent = np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
+    genBtn.dataset.originalText = genBtn.textContent;
+  }
+  if (statusBtn) statusBtn.textContent = np_radarT('radar.btn_status', '🔄 Estado');
 }
 
 function np_getRadarSignedUrl(data, index) {
@@ -2580,20 +2672,20 @@ function np_getRadarSignedUrl(data, index) {
 function np_formatRadarDateTime(iso) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+    return new Date(iso).toLocaleString(np_radarLocale(), { dateStyle: 'medium', timeStyle: 'short' });
   } catch (e) {
     return String(iso);
   }
 }
 
 function np_formatRadarHistoryOption(item) {
-  if (!item) return 'Imagen Radar';
+  if (!item) return np_radarT('radar.image_radar', 'Imagen Radar');
   const gen = np_formatRadarDateTime(item.created_at);
   const sceneDates = Array.isArray(item.scene_dates)
     ? item.scene_dates.map((d) => String(d).slice(0, 10)).filter(Boolean)
     : [];
   if (sceneDates.length) {
-    return gen + ' · Datos ' + sceneDates.join(', ');
+    return gen + ' · ' + np_radarT('radar.data_prefix', 'Datos ') + sceneDates.join(', ');
   }
   const sp = item.sentinel_period || {};
   if (sp.from && sp.to) return gen + ' · Sentinel ' + sp.from + ' – ' + sp.to;
@@ -2612,12 +2704,12 @@ function np_formatRadarSceneMetaHtml(snap) {
   const to = meta.date_end || snap.sentinel_period?.to;
 
   if (sceneDates.length) {
-    bits.push('<strong>Fecha' + (sceneDates.length > 1 ? 's' : '') + ':</strong> ' + np_escapeHtml(sceneDates.join(', ')));
+    bits.push('<strong>' + np_escapeHtml(np_radarT(sceneDates.length > 1 ? 'radar.meta_dates' : 'radar.meta_date', sceneDates.length > 1 ? 'Fechas:' : 'Fecha:')) + '</strong> ' + np_escapeHtml(sceneDates.join(', ')));
   } else if (from && to) {
     bits.push(
       from === to
-        ? '<strong>Fecha:</strong> ' + np_escapeHtml(from)
-        : '<strong>Fechas:</strong> ' + np_escapeHtml(from) + ' – ' + np_escapeHtml(to)
+        ? '<strong>' + np_escapeHtml(np_radarT('radar.meta_date', 'Fecha:')) + '</strong> ' + np_escapeHtml(from)
+        : '<strong>' + np_escapeHtml(np_radarT('radar.meta_dates', 'Fechas:')) + '</strong> ' + np_escapeHtml(from) + ' – ' + np_escapeHtml(to)
     );
   }
 
@@ -2636,19 +2728,23 @@ function np_formatRadarSceneMetaHtml(snap) {
   if (Number.isFinite(scenes) && scenes > 0) {
     detail.push(
       scenes +
-        ' escena' +
-        (scenes === 1 ? '' : 's') +
-        (meta.composite || scenes > 1 ? ' · mediana' : ' · pasada única')
+        ' ' +
+        (scenes === 1
+          ? np_radarT('radar.scene_one', 'escena')
+          : np_radarT('radar.scene_many', 'escenas')) +
+        (meta.composite || scenes > 1
+          ? ' · ' + np_radarT('radar.median', 'mediana')
+          : ' · ' + np_radarT('radar.single_pass', 'pasada única'))
     );
   }
-  if (Number.isFinite(avgCloud)) detail.push('nubes ~' + avgCloud + '%');
+  if (Number.isFinite(avgCloud)) {
+    detail.push(np_radarT('radar.clouds_approx', 'nubes ~{pct}%', { pct: avgCloud }));
+  }
   if (Number.isFinite(validPct)) {
     const warn = validPct < 40;
     detail.push(
       (warn ? '<span style="color:#b45309">' : '') +
-        'útiles ' +
-        validPct +
-        '%' +
+        np_radarT('radar.useful_pct', 'útiles {pct}%', { pct: validPct }) +
         (warn ? '</span>' : '')
     );
   }
@@ -2756,7 +2852,7 @@ function np_populateRadarSnapshotSelect(history, preferredId) {
   if (!list.length) {
     const opt = document.createElement('option');
     opt.value = '';
-    opt.textContent = 'Sin imágenes Pilot guardadas';
+    opt.textContent = np_radarT('radar.no_pilot_images', 'Sin imágenes Pilot guardadas');
     sel.appendChild(opt);
     sel.disabled = true;
     return;
@@ -2764,7 +2860,7 @@ function np_populateRadarSnapshotSelect(history, preferredId) {
   list.forEach((item, idx) => {
     const opt = document.createElement('option');
     opt.value = String(item.id);
-    opt.textContent = (idx === 0 ? 'Más reciente · ' : '') + np_formatRadarHistoryOption(item);
+    opt.textContent = (idx === 0 ? np_radarT('radar.most_recent', 'Más reciente · ') : '') + np_formatRadarHistoryOption(item);
     sel.appendChild(opt);
   });
   sel.disabled = false;
@@ -2941,11 +3037,11 @@ function np_setRadarBusy(isBusy, message) {
 
   if (generateBtn) {
     if (isBusy) {
-      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar Pilot';
-      generateBtn.textContent = '⏳ Generando Pilot...';
+      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
+      generateBtn.textContent = np_radarT('radar.btn_generating', '⏳ Generando Pilot...');
       generateBtn.classList.add('radar-loading');
     } else {
-      generateBtn.textContent = generateBtn.dataset.originalText || '🛰 Generar / actualizar Pilot';
+      generateBtn.textContent = generateBtn.dataset.originalText || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
       generateBtn.classList.remove('radar-loading');
     }
   }
@@ -3138,13 +3234,13 @@ function np_setPilotPendingUi(isPending, messageKind) {
   if (generateBtn) {
     if (isPending) {
       if (!generateBtn.dataset.originalText) {
-        generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar Pilot';
+        generateBtn.dataset.originalText = generateBtn.textContent || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
       }
-      generateBtn.textContent = '⏳ Generando en la nube…';
+      generateBtn.textContent = np_radarT('radar.btn_generating_cloud', '⏳ Generando en la nube…');
       generateBtn.classList.add('radar-loading');
       generateBtn.disabled = true;
     } else {
-      generateBtn.textContent = generateBtn.dataset.originalText || '🛰 Generar / actualizar Pilot';
+      generateBtn.textContent = generateBtn.dataset.originalText || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
       generateBtn.classList.remove('radar-loading');
       generateBtn.disabled = false;
     }
@@ -3349,33 +3445,24 @@ function np_formatRadarCreditLine(pricing) {
   const ha = pricing.area_hectares;
   const cost = Number(pricing.credits_charged) || 1;
   const maxHa = Number(pricing.max_area_ha || pricing.pricing?.max_area_ha) || 250;
+  const s = cost === 1 ? '' : 's';
   if (ha != null && Number.isFinite(Number(ha)) && Number(ha) > maxHa) {
-    return (
-      Number(ha).toFixed(2) +
-      ' ha — Radar máximo ' +
-      maxHa +
-      ' ha; divide el polígono'
-    );
+    return np_radarT('radar.credit_line_over', '{ha} ha — Radar máximo {maxHa} ha; divide el polígono', {
+      ha: Number(ha).toFixed(2),
+      maxHa: maxHa
+    });
   }
   if (ha != null && Number.isFinite(Number(ha))) {
-    return (
-      Number(ha).toFixed(2) +
-      ' ha → ' +
-      cost +
-      ' crédito' +
-      (cost === 1 ? '' : 's') +
-      ' por generación (NDVI+NDMI+NDRE+RGB · máx. ' +
-      maxHa +
-      ' ha)'
+    return np_radarT(
+      'radar.credit_line_with_ha',
+      '{ha} ha → {cost} crédito{s} por generación (NDVI+NDMI+NDRE+RGB · máx. {maxHa} ha)',
+      { ha: Number(ha).toFixed(2), cost: cost, s: s, maxHa: maxHa }
     );
   }
-  return (
-    cost +
-    ' crédito' +
-    (cost === 1 ? '' : 's') +
-    ' por generación (NDVI+NDMI+NDRE+RGB · máx. ' +
-    maxHa +
-    ' ha)'
+  return np_radarT(
+    'radar.credit_line',
+    '{cost} crédito{s} por generación (NDVI+NDMI+NDRE+RGB · máx. {maxHa} ha)',
+    { cost: cost, s: s, maxHa: maxHa }
   );
 }
 
@@ -3412,11 +3499,10 @@ function np_getRadarAreaLimitFromStatus() {
     ha: ha,
     maxHa: maxHa,
     message:
-      'Radar máximo ' +
-      maxHa +
-      ' ha; divide el polígono. Este predio tiene ' +
-      (Math.round(ha * 100) / 100) +
-      ' ha.'
+      np_radarT('radar.area_limit', 'Radar máximo {maxHa} ha; divide el polígono. Este predio tiene {ha} ha.', {
+        maxHa: maxHa,
+        ha: Math.round(ha * 100) / 100
+      })
   };
 }
 
@@ -3686,11 +3772,11 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
   if (!label) return;
   if (!np_isCloudSupabaseUser()) {
     np_setRadarCreditsBadge({
-      value: 'Cuenta nube',
-      cost: 'Inicia sesión para ver créditos Radar',
+      value: '—',
+      cost: np_radarT('radar.credits_login', 'Inicia sesión para ver créditos Radar'),
       tone: 'warn'
     });
-    if (hint) hint.textContent = 'Inicia sesión con tu cuenta NutriPlant en la nube para usar Radar.';
+    if (hint) hint.textContent = np_radarT('radar.credits_login', 'Inicia sesión para ver créditos Radar');
     return;
   }
   const token = await np_getRadarAccessToken();
@@ -3803,8 +3889,11 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     else if (disponibles <= 3) tone = 'warn';
     const creditValue =
       bonusSafe > 0
-        ? disponibles + ' disponibles (bonus ' + bonusSafe + ')'
-        : disponibles + ' disponibles';
+        ? np_radarT('radar.credits_available_bonus', '{n} disponibles (bonus {bonus})', {
+            n: disponibles,
+            bonus: bonusSafe
+          })
+        : np_radarT('radar.credits_available', '{n} disponibles', { n: disponibles });
     np_setRadarCreditsBadge({
       value: creditValue,
       cost:
@@ -3856,8 +3945,8 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       } else {
         np_setRadarStatusHint(
           costLine
-            ? costLine + '. Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'
-            : 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.',
+            ? costLine + '. ' + np_radarT('radar.status_hint_first', 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.')
+            : np_radarT('radar.status_hint_first', 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'),
           { variant: 'info' }
         );
       }
@@ -3869,8 +3958,8 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     }
   } catch (e) {
     np_setRadarCreditsBadge({
-      value: 'Sin conexión',
-      cost: 'No se pudo leer el saldo Radar',
+      value: np_radarT('radar.credits_offline', 'Sin conexión'),
+      cost: np_radarT('radar.credits_offline_cost', 'No se pudo leer el saldo Radar'),
       tone: 'warn'
     });
   }

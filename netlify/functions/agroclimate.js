@@ -31,7 +31,31 @@ function text(value, max) {
   return String(value == null ? '' : value).trim().slice(0, max);
 }
 
+function requestLanguage(body) {
+  return String(body?.language || '').trim().toLowerCase() === 'en' ? 'en' : 'es';
+}
+
+function sanitizeLanguage(value) {
+  return String(value || '').trim().toLowerCase() === 'en' ? 'en' : 'es';
+}
+
+function sanitizeUnitSystem(value) {
+  return String(value || '').trim().toLowerCase() === 'us_customary' ? 'us_customary' : 'metric';
+}
+
+function sanitizeLocale(value) {
+  const raw = text(value, 32);
+  if (!raw) return null;
+  if (!/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(raw)) return null;
+  return raw;
+}
+
+function msg(lang, es, en) {
+  return lang === 'en' ? en : es;
+}
+
 function validateRegistration(body) {
+  const lang = requestLanguage(body);
   const required = [
     ['full_name', 120],
     ['email', 180],
@@ -50,25 +74,52 @@ function validateRegistration(body) {
   const clean = {};
   for (const [key, max] of required) {
     clean[key] = text(body[key], max);
-    if (!clean[key]) return { error: `El campo ${key} es obligatorio.` };
+    if (!clean[key]) {
+      return {
+        error: msg(lang, `El campo ${key} es obligatorio.`, `The field ${key} is required.`)
+      };
+    }
   }
   clean.email = clean.email.toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email)) return { error: 'El correo no es válido.' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email)) {
+    return { error: msg(lang, 'El correo no es válido.', 'The email address is not valid.') };
+  }
   clean.phone_e164 = normalizePhone(clean.phone_country_code, clean.phone_national);
-  if (!clean.phone_e164) return { error: 'El número de WhatsApp no es válido.' };
+  if (!clean.phone_e164) {
+    return { error: msg(lang, 'El número de WhatsApp no es válido.', 'The WhatsApp number is not valid.') };
+  }
   const occupations = ['Agrónomo', 'Técnico agrícola', 'Estudiante', 'Agricultor', 'Asesor', 'Otro'];
-  if (!occupations.includes(clean.occupation)) return { error: 'La ocupación no es válida.' };
+  if (!occupations.includes(clean.occupation)) {
+    return { error: msg(lang, 'La ocupación no es válida.', 'The occupation is not valid.') };
+  }
   clean.latitude = numberOrNull(body.latitude);
   clean.longitude = numberOrNull(body.longitude);
   clean.kc = body.kc === '' || body.kc == null ? null : numberOrNull(body.kc);
-  clean.plot_name = text(body.plot_name, 80) || 'Mi predio';
-  if (clean.latitude == null || clean.latitude < -90 || clean.latitude > 90) return { error: 'La latitud no es válida.' };
-  if (clean.longitude == null || clean.longitude < -180 || clean.longitude > 180) return { error: 'La longitud no es válida.' };
-  if (clean.kc != null && (clean.kc < 0 || clean.kc > 2.5)) return { error: 'El Kc debe estar entre 0 y 2.5.' };
-  if (!body.accept_terms || !body.email_consent) return { error: 'Debes aceptar términos y solicitar el envío por correo.' };
+  clean.plot_name = text(body.plot_name, 80) || (lang === 'en' ? 'My plot' : 'Mi predio');
+  if (clean.latitude == null || clean.latitude < -90 || clean.latitude > 90) {
+    return { error: msg(lang, 'La latitud no es válida.', 'Latitude is not valid.') };
+  }
+  if (clean.longitude == null || clean.longitude < -180 || clean.longitude > 180) {
+    return { error: msg(lang, 'La longitud no es válida.', 'Longitude is not valid.') };
+  }
+  if (clean.kc != null && (clean.kc < 0 || clean.kc > 2.5)) {
+    return { error: msg(lang, 'El Kc debe estar entre 0 y 2.5.', 'Kc must be between 0 and 2.5.') };
+  }
+  if (!body.accept_terms || !body.email_consent) {
+    return {
+      error: msg(
+        lang,
+        'Debes aceptar términos y solicitar el envío por correo.',
+        'You must accept the terms and request email delivery.'
+      )
+    };
+  }
   clean.email_consent = true;
   clean.whatsapp_consent = !!body.whatsapp_consent;
-  return { clean };
+  clean.language = sanitizeLanguage(body.language);
+  clean.unit_system = sanitizeUnitSystem(body.unit_system);
+  clean.locale = sanitizeLocale(body.locale);
+  return { clean, lang };
 }
 
 async function register(supabase, body) {
@@ -76,6 +127,7 @@ async function register(supabase, body) {
   const validation = validateRegistration(body);
   if (validation.error) return json(400, { ok: false, message: validation.error });
   const c = validation.clean;
+  const lang = validation.lang || c.language || 'es';
 
   const duplicateByEmail = await supabase
     .from('climate_alert_subscribers')
@@ -92,7 +144,11 @@ async function register(supabase, body) {
     return json(409, {
       ok: false,
       error: 'already_registered',
-      message: `Ya existe una solicitud con este correo o WhatsApp. Folio: ${duplicate.request_code}.`
+      message: msg(
+        lang,
+        `Ya existe una solicitud con este correo o WhatsApp. Folio: ${duplicate.request_code}.`,
+        `A request already exists with this email or WhatsApp. Reference: ${duplicate.request_code}.`
+      )
     });
   }
 
@@ -120,7 +176,10 @@ async function register(supabase, body) {
         decision_goal: c.decision_goal,
         email_consent: c.email_consent,
         whatsapp_consent: c.whatsapp_consent,
-        terms_accepted: true
+        terms_accepted: true,
+        language: c.language,
+        unit_system: c.unit_system,
+        locale: c.locale
       })
       .select('*')
       .single();
@@ -132,7 +191,10 @@ async function register(supabase, body) {
   }
   if (!subscriber) {
     console.error('agroclimate register subscriber:', insertError);
-    return json(502, { ok: false, message: 'No fue posible guardar la solicitud.' });
+    return json(502, {
+      ok: false,
+      message: msg(lang, 'No fue posible guardar la solicitud.', 'Could not save the request.')
+    });
   }
 
   const plotResult = await supabase.from('climate_alert_plots').insert({
@@ -146,14 +208,17 @@ async function register(supabase, body) {
   if (plotResult.error) {
     await supabase.from('climate_alert_subscribers').delete().eq('id', subscriber.id);
     console.error('agroclimate register plot:', plotResult.error);
-    return json(502, { ok: false, message: 'No fue posible guardar la ubicación.' });
+    return json(502, {
+      ok: false,
+      message: msg(lang, 'No fue posible guardar la ubicación.', 'Could not save the plot location.')
+    });
   }
 
   await supabase.from('climate_alert_events').insert({
     subscriber_id: subscriber.id,
     event_type: 'registration_created',
     actor_type: 'visitor',
-    metadata: { source: 'pronosticoclimatico' }
+    metadata: { source: 'pronosticoclimatico', language: c.language, unit_system: c.unit_system }
   });
   return json(201, { ok: true, request_code: subscriber.request_code, status: subscriber.status });
 }
@@ -178,7 +243,7 @@ async function reportView(supabase, event) {
 
   const subscriberResult = await supabase
     .from('climate_alert_subscribers')
-    .select('id, request_code, full_name, status, crop, crop_stage, first_report_access_at, last_report_access_at, report_access_count')
+    .select('id, request_code, full_name, status, crop, crop_stage, language, unit_system, locale, first_report_access_at, last_report_access_at, report_access_count')
     .eq('id', access.subscriber_id)
     .maybeSingle();
   const subscriber = subscriberResult.data;
@@ -237,6 +302,10 @@ async function reportView(supabase, event) {
   }
   await Promise.all(tasks);
 
+  const language = sanitizeLanguage(subscriber.language);
+  const unitSystem = sanitizeUnitSystem(subscriber.unit_system);
+  const locale = subscriber.locale || (language === 'en' ? 'en-US' : 'es-MX');
+
   return json(200, {
     ok: true,
     subscriber: {
@@ -245,6 +314,9 @@ async function reportView(supabase, event) {
       status: subscriber.status,
       crop: subscriber.crop,
       crop_stage: subscriber.crop_stage,
+      language,
+      unit_system: unitSystem,
+      locale,
       plot_name: plotResult.data.plot_name,
       latitude: plotResult.data.latitude,
       longitude: plotResult.data.longitude,

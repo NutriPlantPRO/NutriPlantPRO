@@ -7,23 +7,24 @@
   <title>Pronóstico agroclimático | NutriPlant PRO</title>
   <link rel="icon" href="../assets/N_Hoja_Azul.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./styles.css?v=20260727h">
+  <link rel="stylesheet" href="./styles.css?v=20260730b">
+  <script src="../assets/np-prefs-bootstrap.js"></script>
 </head>
 <body>
   <img class="agro-print-mark" src="../assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
   <header id="agro-public-header" class="agro-public-header">
-    <a class="agro-brand" href="../login.html" aria-label="NutriPlant PRO">
+    <a class="agro-brand" href="../login.html" data-agro-i18n-aria-label="brand_aria" aria-label="NutriPlant PRO">
       <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" height="36">
     </a>
     <div class="agro-header-right">
-      <nav class="agro-header-pills" aria-label="Accesos NutriPlant">
-        <a class="agro-pill agro-pill--platform" href="../login.html" title="Ir a NutriPlant PRO">
+      <nav class="agro-header-pills" data-agro-i18n-aria-label="nav_aria" aria-label="Accesos NutriPlant">
+        <a class="agro-pill agro-pill--platform" href="../login.html" data-agro-i18n-title="go_platform" title="Ir a NutriPlant PRO">
           <img src="../assets/N_Hoja_Azul.png" alt="" width="18" height="18">
           <span>NutriPlant PRO</span>
         </a>
       </nav>
-      <div class="agro-social-links" aria-label="Redes sociales">
-        <button type="button" class="social-btn agro-about-btn" id="agro-about-btn" title="Sobre Nosotros" aria-label="Sobre Nosotros">
+      <div class="agro-social-links" data-agro-i18n-aria-label="social_aria" aria-label="Redes sociales">
+        <button type="button" class="social-btn agro-about-btn" id="agro-about-btn" data-agro-i18n-title="about_us" data-agro-i18n-aria-label="about_us" title="Sobre Nosotros" aria-label="Sobre Nosotros">
           <span class="agro-about-icon" aria-hidden="true">👥</span>
         </button>
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
@@ -41,7 +42,7 @@
         <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
           <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
         </a>
-        <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="whatsapp" title="Canal de WhatsApp" aria-label="WhatsApp">
+        <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="whatsapp" data-agro-i18n-title="whatsapp_channel" title="Canal de WhatsApp" aria-label="WhatsApp">
           <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
         </a>
       </div>
@@ -51,12 +52,12 @@
   <main class="agro-shell">
     <section class="agro-title-block">
       <div>
-        <p class="agro-eyebrow">NutriPlant PRO · información meteorológica por coordenadas</p>
+        <p class="agro-eyebrow" data-agro-i18n="eyebrow">NutriPlant PRO · información meteorológica por coordenadas</p>
         <h1 class="agro-page-title">
           <img src="../assets/N_Hoja_Azul.png" alt="" width="42" height="42">
-          <span>Pronóstico agroclimático</span>
+          <span data-agro-i18n="title">Pronóstico agroclimático</span>
         </h1>
-        <p class="agro-lead">Consulta temperatura, humedad, punto de rocío, radiación, VPD, ETo, ETc y precipitación para tu ubicación.</p>
+        <p class="agro-lead" data-agro-i18n="lead">Consulta temperatura, humedad, punto de rocío, radiación, VPD, ETo, ETc y precipitación para tu ubicación.</p>
       </div>
       <div id="agro-report-meta" class="agro-report-meta" hidden></div>
     </section>
@@ -64,54 +65,54 @@
     <section id="agro-location-card" class="agro-card agro-location-card">
       <div class="agro-section-head">
         <div>
-          <p class="agro-kicker">Ubicación</p>
-          <h2>Selecciona el punto del predio</h2>
+          <p class="agro-kicker" data-agro-i18n="location_kicker">Ubicación</p>
+          <h2 data-agro-i18n="location_h2">Selecciona el punto del predio</h2>
         </div>
       </div>
-      <p class="agro-help">Usa tu ubicación, escribe coordenadas o mueve el marcador. La lectura representa un punto meteorológico y puede diferir del microclima dentro del dosel.</p>
+      <p class="agro-help" data-agro-i18n="location_help">Usa tu ubicación, escribe coordenadas o mueve el marcador. La lectura representa un punto meteorológico y puede diferir del microclima dentro del dosel.</p>
 
       <div class="agro-coords-grid">
-        <label>Latitud
+        <label><span data-agro-i18n="lat">Latitud</span>
           <input id="agro-lat" type="number" inputmode="decimal" step="any" placeholder="19.4326">
         </label>
-        <label>Longitud
+        <label><span data-agro-i18n="lng">Longitud</span>
           <input id="agro-lng" type="number" inputmode="decimal" step="any" placeholder="-99.1332">
         </label>
-        <label class="agro-plot-name-field">Nombre del predio
-          <input id="agro-plot-name" type="text" maxlength="80" placeholder="Mi predio">
+        <label class="agro-plot-name-field"><span data-agro-i18n="plot_name">Nombre del predio</span>
+          <input id="agro-plot-name" type="text" maxlength="80" data-agro-i18n-placeholder="plot_placeholder" placeholder="Mi predio">
         </label>
         <div class="agro-map-actions">
-          <button id="agro-geolocate-btn" type="button" class="agro-btn secondary">📍 Mi ubicación</button>
-          <button id="agro-generate-btn" type="button" class="agro-btn primary">🌤️ Generar pronóstico</button>
+          <button id="agro-geolocate-btn" type="button" class="agro-btn secondary" data-agro-i18n="my_location">📍 Mi ubicación</button>
+          <button id="agro-generate-btn" type="button" class="agro-btn primary" data-agro-i18n="generate">🌤️ Generar pronóstico</button>
         </div>
       </div>
 
       <p id="agro-location-status" class="agro-status" role="status" aria-live="polite"></p>
-      <div id="agro-map" aria-label="Mapa para seleccionar ubicación"></div>
+      <div id="agro-map" data-agro-i18n-aria-label="map_aria" aria-label="Mapa para seleccionar ubicación"></div>
     </section>
 
     <section id="agro-results" class="agro-results" hidden>
       <div class="agro-summary-grid" id="agro-summary-grid"></div>
       <aside class="agro-print-page1-fill" aria-hidden="true">
-        <p class="agro-print-page1-title"><strong>Lectura rápida del pronóstico</strong> · comparado vs <strong>histórico, semana anterior</strong></p>
+        <p class="agro-print-page1-title" data-agro-i18n-html="print_quick_title"><strong>Lectura rápida del pronóstico</strong> · comparado vs <strong>histórico, semana anterior</strong></p>
         <ul>
-          <li><strong>VPD 0.5–1.5 kPa</strong>: confort habitual. <strong>&lt;0.5</strong>: baja demanda atmosférica (más humedad / riesgo foliar). <strong>&gt;1.5</strong>: alta demanda (revisar riego).</li>
-          <li><strong>ETo</strong>: demanda hídrica del clima. <strong>ETc = ETo × Kc</strong>: estimación del cultivo.</li>
-          <li><strong>Lluvia vs ETc</strong>: lluvia muy por encima → posible saturación; muy por debajo → déficit y priorizar riego.</li>
-          <li><strong>Rocío ≤ 0 °C</strong> con T mín baja → atención a heladas (revisar tabla).</li>
+          <li data-agro-i18n-html="print_tip_vpd"><strong>VPD 0.5–1.5 kPa</strong>: confort habitual. <strong>&lt;0.5</strong>: baja demanda atmosférica (más humedad / riesgo foliar). <strong>&gt;1.5</strong>: alta demanda (revisar riego).</li>
+          <li data-agro-i18n-html="print_tip_eto"><strong>ETo</strong>: demanda hídrica del clima. <strong>ETc = ETo × Kc</strong>: estimación del cultivo.</li>
+          <li data-agro-i18n-html="print_tip_rain"><strong>Lluvia vs ETc</strong>: lluvia muy por encima → posible saturación; muy por debajo → déficit y priorizar riego.</li>
+          <li data-agro-i18n-html="print_tip_frost"><strong>Rocío ≤ 0 °C</strong> con T mín baja → atención a heladas (revisar tabla).</li>
         </ul>
-        <p class="agro-print-page1-foot">Orientación por coordenadas. Validar microclima y suelo en campo. Detalle diario → hoja siguiente.</p>
+        <p class="agro-print-page1-foot" data-agro-i18n="print_foot">Orientación por coordenadas. Validar microclima y suelo en campo. Detalle diario → hoja siguiente.</p>
       </aside>
 
       <section class="agro-card">
         <div class="agro-section-head">
           <div>
-            <p class="agro-kicker">Detalle diario</p>
-            <h2>Histórico y pronóstico</h2>
+            <p class="agro-kicker" data-agro-i18n="daily_kicker">Detalle diario</p>
+            <h2 data-agro-i18n="daily_h2">Histórico y pronóstico</h2>
           </div>
           <div class="agro-period-legend">
-            <span><i class="history"></i> Histórico</span>
-            <span><i class="forecast"></i> Pronóstico</span>
+            <span><i class="history"></i> <span data-agro-i18n="legend_history">Histórico</span></span>
+            <span><i class="forecast"></i> <span data-agro-i18n="legend_forecast">Pronóstico</span></span>
           </div>
         </div>
         <div id="agro-kc-bar" class="agro-kc-bar" hidden>
@@ -120,24 +121,24 @@
               <label for="agro-kc-view">Kc <span id="agro-kc-view-hint" class="agro-kc-view-hint"></span></label>
               <div class="agro-input-action agro-kc-view-actions">
                 <input id="agro-kc-view" type="number" min="0" max="2.5" step="0.01" placeholder="0.00">
-                <button id="agro-kc-view-ref-btn" type="button" class="agro-btn ghost">Referencia FAO</button>
-                <button id="agro-kc-view-apply-btn" type="button" class="agro-btn secondary">Aplicar</button>
+                <button id="agro-kc-view-ref-btn" type="button" class="agro-btn ghost" data-agro-i18n="fao_ref">Referencia FAO</button>
+                <button id="agro-kc-view-apply-btn" type="button" class="agro-btn secondary" data-agro-i18n="apply">Aplicar</button>
               </div>
             </div>
-            <a id="agro-kc-whatsapp" class="agro-kc-wa" href="#" target="_blank" rel="noopener noreferrer" title="Pedir cambio del Kc o coordenadas guardados (valores permanentes de tu alerta)" hidden>
+            <a id="agro-kc-whatsapp" class="agro-kc-wa" href="#" target="_blank" rel="noopener noreferrer" data-agro-i18n-title="kc_wa_title" title="Pedir cambio del Kc o coordenadas guardados (valores permanentes de tu alerta)" hidden>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-              <span>Cambiar Kc o coordenadas <strong>guardados</strong> (alerta) · WhatsApp</span>
+              <span data-agro-i18n-html="kc_wa_html">Cambiar Kc o coordenadas <strong>guardados</strong> (alerta) · WhatsApp</span>
             </a>
           </div>
-          <p id="agro-kc-bar-note" class="agro-kc-bar-note">ETc = ETo × Kc.</p>
+          <p id="agro-kc-bar-note" class="agro-kc-bar-note" data-agro-i18n="etc_note_default">ETc = ETo × Kc.</p>
         </div>
         <div id="agro-mobile-days" class="agro-mobile-days"></div>
-        <button id="agro-table-toggle" type="button" class="agro-btn ghost agro-table-toggle">Ver tabla completa</button>
+        <button id="agro-table-toggle" type="button" class="agro-btn ghost agro-table-toggle" data-agro-i18n="table_toggle_show">Ver tabla completa</button>
         <div class="agro-table-shell">
           <p id="agro-table-scroll-hint" class="agro-table-scroll-hint" hidden>
-            <button type="button" class="agro-table-scroll-btn" data-scroll-dir="-1" aria-label="Desplazar tabla a la izquierda">‹</button>
-            <span>Desliza a los lados para ver toda la tabla</span>
-            <button type="button" class="agro-table-scroll-btn" data-scroll-dir="1" aria-label="Desplazar tabla a la derecha">›</button>
+            <button type="button" class="agro-table-scroll-btn" data-scroll-dir="-1" data-agro-i18n-aria-label="scroll_left" aria-label="Desplazar tabla a la izquierda">‹</button>
+            <span data-agro-i18n="table_scroll">Desliza a los lados para ver toda la tabla</span>
+            <button type="button" class="agro-table-scroll-btn" data-scroll-dir="1" data-agro-i18n-aria-label="scroll_right" aria-label="Desplazar tabla a la derecha">›</button>
           </p>
           <div id="agro-table-wrap" class="agro-table-wrap"></div>
         </div>
@@ -146,88 +147,88 @@
       <section class="agro-card">
         <div class="agro-section-head chart-head">
           <div>
-            <p class="agro-kicker">Comportamiento del periodo</p>
-            <h2>Demanda atmosférica y agua</h2>
-            <p id="agro-chart-period" class="agro-chart-period">7 d histórico + 7 d pronóstico</p>
+            <p class="agro-kicker" data-agro-i18n="chart_kicker">Comportamiento del periodo</p>
+            <h2 data-agro-i18n="chart_h2">Demanda atmosférica y agua</h2>
+            <p id="agro-chart-period" class="agro-chart-period" data-agro-i18n="chart_period_default">7 d histórico + 7 d pronóstico</p>
           </div>
           <div id="agro-chart-toggles" class="agro-chart-toggles"></div>
         </div>
         <div class="agro-chart-axes-hint" aria-hidden="true">
-          <span class="agro-axis-left">← Eje izq.: horas VPD (barras)</span>
-          <span class="agro-axis-right">Eje der.: mm de las líneas →</span>
+          <span class="agro-axis-left" data-agro-i18n="axis_left">← Eje izq.: horas VPD (barras)</span>
+          <span class="agro-axis-right" data-agro-i18n="axis_right">Eje der.: mm de las líneas →</span>
         </div>
         <div class="agro-chart-box">
           <canvas id="agro-chart"></canvas>
         </div>
-        <div class="agro-chart-legend" aria-label="Leyenda de la gráfica">
+        <div class="agro-chart-legend" data-agro-i18n-aria-label="chart_legend_aria" aria-label="Leyenda de la gráfica">
           <span><i class="swatch vpd-high"></i> VPD &gt; 1.5</span>
           <span><i class="swatch vpd-opt"></i> VPD 0.5–1.5</span>
           <span><i class="swatch vpd-low"></i> VPD &lt; 0.5</span>
-          <span><i class="swatch line-rain"></i> Lluvia</span>
+          <span><i class="swatch line-rain"></i> <span data-agro-i18n="legend_rain">Lluvia</span></span>
           <span><i class="swatch line-et0"></i> ETo</span>
           <span><i class="swatch line-etc"></i> ETc</span>
         </div>
-        <p id="agro-chart-note" class="agro-chart-note"><strong>Periodo:</strong> 7 días de histórico + 7 de pronóstico (línea punteada los separa). <strong>Eje izquierdo (azul):</strong> horas VPD de las barras (24 h/día). <strong>Eje derecho (verde):</strong> mm diarios de las líneas (lluvia, ETo y ETc).</p>
+        <p id="agro-chart-note" class="agro-chart-note" data-agro-i18n-html="chart_note_static"><strong>Periodo:</strong> 7 días de histórico + 7 de pronóstico (línea punteada los separa). <strong>Eje izquierdo (azul):</strong> horas VPD de las barras (24 h/día). <strong>Eje derecho (verde):</strong> mm diarios de las líneas (lluvia, ETo y ETc).</p>
         <div class="agro-chart-tips" role="note">
-          <p><strong>Cómo interpretar (guía corta):</strong></p>
+          <p data-agro-i18n-html="tips_title"><strong>Cómo interpretar (guía corta):</strong></p>
           <ul>
-            <li><strong>VPD 0.5–1.5 kPa</strong> → rango habitual de confort. La planta suele mantener estomas abiertos y una transpiración equilibrada.</li>
-            <li><strong>VPD &lt; 0.5</strong> → baja demanda atmosférica de vapor: el aire está muy húmedo y el gradiente hoja–aire es pequeño. Baja la transpiración y el follaje tarda más en secarse → mayor atención a enfermedades foliares.</li>
-            <li><strong>VPD &gt; 1.5</strong> → alta demanda atmosférica: el aire seco aumenta la extracción de agua desde la hoja. Crece el riesgo de estrés hídrico y cierre estomático → revisa riego y evita aplicaciones foliares en las horas más críticas.</li>
-            <li><strong>ETo</strong> = evapotranspiración de referencia (demanda hídrica del clima). <strong>ETc</strong> = ETo × Kc: estimación de la demanda del cultivo según su coeficiente Kc.</li>
-            <li><strong>Lluvia frente a ETc</strong>: si la precipitación supera claramente a ETc, puede haber saturación o encharcamiento en suelos de drenaje lento. Si queda muy por debajo, hay déficit hídrico y conviene priorizar riego.</li>
-            <li><strong>Punto de rocío ≤ 0 °C</strong> (o muy cercano) con temperatura mínima baja → atención a <strong>heladas</strong>; revise esos días en la tabla.</li>
+            <li data-agro-i18n-html="tip_vpd_opt"><strong>VPD 0.5–1.5 kPa</strong> → rango habitual de confort. La planta suele mantener estomas abiertos y una transpiración equilibrada.</li>
+            <li data-agro-i18n-html="tip_vpd_low"><strong>VPD &lt; 0.5</strong> → baja demanda atmosférica de vapor: el aire está muy húmedo y el gradiente hoja–aire es pequeño. Baja la transpiración y el follaje tarda más en secarse → mayor atención a enfermedades foliares.</li>
+            <li data-agro-i18n-html="tip_vpd_high"><strong>VPD &gt; 1.5</strong> → alta demanda atmosférica: el aire seco aumenta la extracción de agua desde la hoja. Crece el riesgo de estrés hídrico y cierre estomático → revisa riego y evita aplicaciones foliares en las horas más críticas.</li>
+            <li data-agro-i18n-html="tip_eto_etc"><strong>ETo</strong> = evapotranspiración de referencia (demanda hídrica del clima). <strong>ETc</strong> = ETo × Kc: estimación de la demanda del cultivo según su coeficiente Kc.</li>
+            <li data-agro-i18n-html="tip_rain_etc"><strong>Lluvia frente a ETc</strong>: si la precipitación supera claramente a ETc, puede haber saturación o encharcamiento en suelos de drenaje lento. Si queda muy por debajo, hay déficit hídrico y conviene priorizar riego.</li>
+            <li data-agro-i18n-html="tip_frost"><strong>Punto de rocío ≤ 0 °C</strong> (o muy cercano) con temperatura mínima baja → atención a <strong>heladas</strong>; revise esos días en la tabla.</li>
           </ul>
-          <p class="agro-chart-tips-foot">Orientación meteorológica por coordenadas. La decisión final debe validarse con el microclima del dosel y las condiciones del suelo en campo.</p>
+          <p class="agro-chart-tips-foot" data-agro-i18n="tips_foot">Orientación meteorológica por coordenadas. La decisión final debe validarse con el microclima del dosel y las condiciones del suelo en campo.</p>
         </div>
         <div id="agro-pdf-bar" class="agro-pdf-bar">
-          <button type="button" class="agro-btn primary agro-pdf-trigger">📥 Descargar reporte en PDF</button>
-          <p class="agro-pdf-bar-hint">En iPhone se crea el archivo PDF y puedes <strong>Guardar en Archivos</strong> o compartirlo. En computadora se abre la impresión → Guardar como PDF.</p>
+          <button type="button" class="agro-btn primary agro-pdf-trigger" data-agro-i18n="pdf_download">📥 Descargar reporte en PDF</button>
+          <p class="agro-pdf-bar-hint" data-agro-i18n-html="pdf_hint">En iPhone se crea el archivo PDF y puedes <strong>Guardar en Archivos</strong> o compartirlo. En computadora se abre la impresión → Guardar como PDF.</p>
         </div>
       </section>
 
       <section id="agro-personal-actions" class="agro-card agro-personal-actions" hidden>
         <div>
-          <p class="agro-kicker">Tu reporte</p>
-          <h2>Administra tu pronóstico</h2>
+          <p class="agro-kicker" data-agro-i18n="your_report">Tu reporte</p>
+          <h2 data-agro-i18n="manage_h2">Administra tu pronóstico</h2>
         </div>
         <div class="agro-action-row">
-          <button id="agro-edit-btn" type="button" class="agro-btn secondary">✏️ Editar predio</button>
-          <a id="agro-unsubscribe-btn" class="agro-btn danger" href="#" target="_blank" rel="noopener noreferrer" hidden>🟢 Dejar de recibir alertas</a>
+          <button id="agro-edit-btn" type="button" class="agro-btn secondary" data-agro-i18n="edit_plot">✏️ Editar predio</button>
+          <a id="agro-unsubscribe-btn" class="agro-btn danger" href="#" target="_blank" rel="noopener noreferrer" hidden data-agro-i18n="unsubscribe">🟢 Dejar de recibir alertas</a>
         </div>
       </section>
 
       <section id="agro-register-cta" class="agro-register-cta">
         <div>
-          <p class="agro-kicker">Alerta semanal</p>
-          <h2>Recibe este pronóstico cada domingo</h2>
-          <p>Solicita tu alerta agroclimática semanal. Revisaremos personalmente tu registro antes de activarlo.</p>
+          <p class="agro-kicker" data-agro-i18n="weekly_kicker">Alerta semanal</p>
+          <h2 data-agro-i18n="weekly_h2">Recibe este pronóstico cada domingo</h2>
+          <p data-agro-i18n="weekly_lead">Solicita tu alerta agroclimática semanal. Revisaremos personalmente tu registro antes de activarlo.</p>
         </div>
-        <button id="agro-open-register-btn" type="button" class="agro-btn primary">Solicitar mi alerta agroclimática semanal</button>
+        <button id="agro-open-register-btn" type="button" class="agro-btn primary" data-agro-i18n="request_alert">Solicitar mi alerta agroclimática semanal</button>
       </section>
 
       <section id="agro-promo" class="agro-promo" hidden>
         <img src="../assets/N_Hoja_Azul.png" alt="" width="54" height="54">
         <div>
-          <h2>Lleva el seguimiento completo con NutriPlant PRO</h2>
-          <p>Integra clima, nutrición, riego, análisis y seguimiento agronómico en un solo lugar. Suscríbete y desbloquea la plataforma completa.</p>
+          <h2 data-agro-i18n="promo_h2">Lleva el seguimiento completo con NutriPlant PRO</h2>
+          <p data-agro-i18n="promo_lead">Integra clima, nutrición, riego, análisis y seguimiento agronómico en un solo lugar. Suscríbete y desbloquea la plataforma completa.</p>
         </div>
-        <a class="agro-btn primary" href="../login.html?mode=register">Suscribirme a NutriPlant PRO</a>
+        <a class="agro-btn primary" href="../login.html?mode=register" data-agro-i18n="promo_cta">Suscribirme a NutriPlant PRO</a>
       </section>
     </section>
 
     <section id="agro-empty-note" class="agro-empty-note">
-      <strong>Empieza seleccionando tu ubicación.</strong>
-      <span>Los datos se consultan únicamente al presionar “Generar pronóstico”.</span>
+      <strong data-agro-i18n="empty_strong">Empieza seleccionando tu ubicación.</strong>
+      <span data-agro-i18n="empty_span">Los datos se consultan únicamente al presionar “Generar pronóstico”.</span>
     </section>
 
     <footer id="agro-print-footer" class="agro-print-footer">
       <div class="agro-print-footer-row">
         <div class="agro-print-footer-legal">
           <strong>© 2026 NutriPlant PRO</strong><br>
-          Todos los derechos reservados • Marca registrada
+          <span data-agro-i18n="footer_rights">Todos los derechos reservados • Marca registrada</span>
         </div>
-        <div class="agro-print-footer-by">Generado por: <strong>NutriPlant PRO</strong></div>
+        <div class="agro-print-footer-by"><span data-agro-i18n="generated_by">Generado por:</span> <strong>NutriPlant PRO</strong></div>
       </div>
       <img class="agro-print-footer-leaf" src="../assets/N_Hoja_Azul.png" alt="" aria-hidden="true">
       <div class="agro-print-footer-qr">
@@ -241,12 +242,12 @@
     <div class="agro-modal-panel agro-kc-panel" role="dialog" aria-modal="true" aria-labelledby="agro-kc-title">
       <div class="agro-modal-head">
         <div>
-          <p class="agro-kicker">Referencia orientativa FAO-56</p>
-          <h2 id="agro-kc-title">Selecciona cultivo y etapa</h2>
+          <p class="agro-kicker" data-agro-i18n="kc_modal_kicker">Referencia orientativa FAO-56</p>
+          <h2 id="agro-kc-title" data-agro-i18n="kc_modal_title">Selecciona cultivo y etapa</h2>
         </div>
-        <button type="button" class="agro-icon-btn" data-close-modal="agro-kc-modal" aria-label="Cerrar">×</button>
+        <button type="button" class="agro-icon-btn" data-close-modal="agro-kc-modal" data-agro-i18n-aria-label="close" aria-label="Cerrar">×</button>
       </div>
-      <input id="agro-kc-search" type="search" placeholder="Buscar cultivo o etapa">
+      <input id="agro-kc-search" type="search" data-agro-i18n-placeholder="kc_search_ph" placeholder="Buscar cultivo o etapa">
       <div id="agro-kc-list" class="agro-kc-list"></div>
     </div>
   </div>
@@ -255,18 +256,18 @@
     <div class="agro-modal-panel agro-register-panel" role="dialog" aria-modal="true" aria-labelledby="agro-register-title">
       <div class="agro-modal-head">
         <div>
-          <p class="agro-kicker">Solicitud sujeta a aprobación</p>
-          <h2 id="agro-register-title">Alertas agroclimáticas</h2>
+          <p class="agro-kicker" data-agro-i18n="register_kicker">Solicitud sujeta a aprobación</p>
+          <h2 id="agro-register-title" data-agro-i18n="register_title">Alertas agroclimáticas</h2>
         </div>
-        <button type="button" class="agro-icon-btn" data-close-modal="agro-register-modal" aria-label="Cerrar">×</button>
+        <button type="button" class="agro-icon-btn" data-close-modal="agro-register-modal" data-agro-i18n-aria-label="close" aria-label="Cerrar">×</button>
       </div>
       <form id="agro-register-form">
         <div class="agro-form-grid">
-          <label>Nombre completo <input name="full_name" required maxlength="120"></label>
-          <label>Correo electrónico <input name="email" type="email" required maxlength="180"></label>
+          <label><span data-agro-i18n="full_name">Nombre completo</span> <input name="full_name" required maxlength="120"></label>
+          <label><span data-agro-i18n="email">Correo electrónico</span> <input name="email" type="email" required maxlength="180"></label>
           <label><span class="agro-whatsapp-label">🟢 WhatsApp</span>
             <div class="agro-phone-row">
-              <select id="agro-phone-code" name="phone_country_code" required aria-label="Lada">
+              <select id="agro-phone-code" name="phone_country_code" required data-agro-i18n-aria-label="phone_code" aria-label="Lada">
                 <option value="+52">🇲🇽 México +52</option>
                 <option value="+1">🇺🇸/🇨🇦 +1</option>
                 <option value="+54">🇦🇷 Argentina +54</option>
@@ -302,40 +303,50 @@
                 <option value="+254">🇰🇪 Kenia +254</option>
                 <option value="+225">🇨🇮 Costa de Marfil +225</option>
                 <option value="+221">🇸🇳 Senegal +221</option>
-                <option value="other">Otro (escribir lada)</option>
+                <option value="other" data-agro-i18n="phone_other">Otro (escribir lada)</option>
               </select>
               <input id="agro-phone-code-other" name="phone_country_code_other" type="text" inputmode="tel" maxlength="6" placeholder="+___" hidden>
-              <input name="phone_national" type="tel" inputmode="tel" required maxlength="24" placeholder="Número">
+              <input name="phone_national" type="tel" inputmode="tel" required maxlength="24" data-agro-i18n-placeholder="phone_number" placeholder="Número">
             </div>
           </label>
-          <label>Ocupación
+          <label><span data-agro-i18n="occupation">Ocupación</span>
             <select name="occupation" required>
-              <option value="">Seleccionar</option>
-              <option>Agrónomo</option><option>Técnico agrícola</option><option>Estudiante</option>
-              <option>Agricultor</option><option>Asesor</option><option>Otro</option>
+              <option value="" data-agro-i18n="select">Seleccionar</option>
+              <option value="Agrónomo" data-agro-i18n="occ_agronomist">Agrónomo</option>
+              <option value="Técnico agrícola" data-agro-i18n="occ_tech">Técnico agrícola</option>
+              <option value="Estudiante" data-agro-i18n="occ_student">Estudiante</option>
+              <option value="Agricultor" data-agro-i18n="occ_farmer">Agricultor</option>
+              <option value="Asesor" data-agro-i18n="occ_advisor">Asesor</option>
+              <option value="Otro" data-agro-i18n="occ_other">Otro</option>
             </select>
           </label>
-          <label>País <input name="country" required maxlength="80"></label>
-          <label>Estado, provincia o región <input name="region" required maxlength="100"></label>
-          <label>Código postal / ZIP <input name="postal_code" required maxlength="20"></label>
-          <label>Cultivo <input name="crop" required maxlength="100"></label>
-          <label>Superficie aproximada
+          <label><span data-agro-i18n="country">País</span> <input name="country" required maxlength="80"></label>
+          <label><span data-agro-i18n="region">Estado, provincia o región</span> <input name="region" required maxlength="100"></label>
+          <label><span data-agro-i18n="postal">Código postal / ZIP</span> <input name="postal_code" required maxlength="20"></label>
+          <label><span data-agro-i18n="crop">Cultivo</span> <input name="crop" required maxlength="100"></label>
+          <label><span data-agro-i18n="area">Superficie aproximada</span>
             <select name="area_range" required>
-              <option value="">Seleccionar</option>
-              <option>Menos de 1 ha</option><option>1 a 5 ha</option><option>5 a 20 ha</option>
-              <option>20 a 50 ha</option><option>Más de 50 ha</option>
+              <option value="" data-agro-i18n="select">Seleccionar</option>
+              <option value="Menos de 1 ha" data-agro-i18n="area_lt1">Menos de 1 ha</option>
+              <option value="1 a 5 ha" data-agro-i18n="area_1_5">1 a 5 ha</option>
+              <option value="5 a 20 ha" data-agro-i18n="area_5_20">5 a 20 ha</option>
+              <option value="20 a 50 ha" data-agro-i18n="area_20_50">20 a 50 ha</option>
+              <option value="Más de 50 ha" data-agro-i18n="area_gt50">Más de 50 ha</option>
             </select>
           </label>
-          <label>Etapa del cultivo <input name="crop_stage" required maxlength="100"></label>
-          <label>Uso principal
+          <label><span data-agro-i18n="crop_stage">Etapa del cultivo</span> <input name="crop_stage" required maxlength="100"></label>
+          <label><span data-agro-i18n="primary_use">Uso principal</span>
             <select name="primary_use" required>
-              <option value="">Seleccionar</option>
-              <option>Programación del riego</option><option>Seguimiento de VPD</option>
-              <option>Planeación de aplicaciones</option><option>Planeación de labores o cosecha</option>
-              <option>Prevención de riesgos climáticos</option><option>Otro</option>
+              <option value="" data-agro-i18n="select">Seleccionar</option>
+              <option value="Programación del riego" data-agro-i18n="use_irrigation">Programación del riego</option>
+              <option value="Seguimiento de VPD" data-agro-i18n="use_vpd">Seguimiento de VPD</option>
+              <option value="Planeación de aplicaciones" data-agro-i18n="use_apps">Planeación de aplicaciones</option>
+              <option value="Planeación de labores o cosecha" data-agro-i18n="use_labors">Planeación de labores o cosecha</option>
+              <option value="Prevención de riesgos climáticos" data-agro-i18n="use_risk">Prevención de riesgos climáticos</option>
+              <option value="Otro" data-agro-i18n="use_other">Otro</option>
             </select>
           </label>
-          <label class="span-2">¿Qué decisión deseas mejorar con estas alertas?
+          <label class="span-2"><span data-agro-i18n="decision_goal">¿Qué decisión deseas mejorar con estas alertas?</span>
             <textarea name="decision_goal" required maxlength="400" rows="3"></textarea>
           </label>
         </div>
@@ -343,17 +354,17 @@
         <input name="latitude" type="hidden">
         <input name="longitude" type="hidden">
         <input name="kc" type="hidden">
-        <label class="agro-check"><input name="accept_terms" type="checkbox" required> Acepto los <a href="../terminos-condiciones.html" target="_blank">términos</a> y la <a href="../politicas-privacidad.html" target="_blank">política de privacidad</a>.</label>
-        <label class="agro-check"><input name="whatsapp_consent" type="checkbox" required> 🟢 Acepto recibir por WhatsApp mensajes de NutriPlant relacionados con esta solicitud (preferido).</label>
-        <label class="agro-check"><input name="email_consent" type="checkbox" required> También solicito recibir el pronóstico agroclimático semanal por correo.</label>
+        <label class="agro-check"><input name="accept_terms" type="checkbox" required> <span data-agro-i18n-html="accept_terms_html">Acepto los <a href="../terminos-condiciones.html" target="_blank">términos</a> y la <a href="../politicas-privacidad.html" target="_blank">política de privacidad</a>.</span></label>
+        <label class="agro-check"><input name="whatsapp_consent" type="checkbox" required> <span data-agro-i18n="whatsapp_consent">🟢 Acepto recibir por WhatsApp mensajes de NutriPlant relacionados con esta solicitud (preferido).</span></label>
+        <label class="agro-check"><input name="email_consent" type="checkbox" required> <span data-agro-i18n="email_consent">También solicito recibir el pronóstico agroclimático semanal por correo.</span></label>
         <p id="agro-register-status" class="agro-status" role="status" aria-live="polite"></p>
-        <button type="submit" class="agro-btn primary wide">Guardar solicitud</button>
+        <button type="submit" class="agro-btn primary wide" data-agro-i18n="save_request">Guardar solicitud</button>
       </form>
       <div id="agro-register-success" class="agro-register-success" hidden>
-        <p class="agro-kicker">Solicitud guardada</p>
-        <h2>Tu folio es <strong id="agro-request-code">—</strong></h2>
-        <p>Para que podamos revisar tu solicitud, envía el mensaje preparado desde tu WhatsApp.</p>
-        <a id="agro-whatsapp-link" class="agro-btn whatsapp wide" href="#" target="_blank" rel="noopener">Enviar solicitud por WhatsApp</a>
+        <p class="agro-kicker" data-agro-i18n="request_saved">Solicitud guardada</p>
+        <h2><span data-agro-i18n="your_folio_is">Tu folio es</span> <strong id="agro-request-code">—</strong></h2>
+        <p data-agro-i18n="send_wa_help">Para que podamos revisar tu solicitud, envía el mensaje preparado desde tu WhatsApp.</p>
+        <a id="agro-whatsapp-link" class="agro-btn whatsapp wide" href="#" target="_blank" rel="noopener" data-agro-i18n="send_wa">Enviar solicitud por WhatsApp</a>
       </div>
     </div>
   </div>
@@ -361,7 +372,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="../climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="./app.js?v=20260727h"></script>
+  <script src="../assets/np-prefs.js"></script>
+  <script src="./agro-i18n.js?v=20260730b"></script>
+  <script src="./app.js?v=20260730b"></script>
 
   <!-- Modal Sobre Nosotros (misma estructura/estilos que login) -->
   <style>
@@ -376,11 +389,11 @@
               <img src="../assets/N_Hoja_Azul.png" alt="" width="32" height="32" decoding="async">
             </span>
             <div>
-              <h2 id="agro-about-title" style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;">Nosotros</h2>
+              <h2 id="agro-about-title" style="margin: 0; color: #0b2a5b; font-size: 20px; font-weight: 800; letter-spacing: 0.2px;" data-agro-i18n="about_title">Nosotros</h2>
               <div style="color:#1d4ed8; font-size:12px; font-weight: 700;">NutriPlant PRO</div>
             </div>
           </div>
-          <button type="button" id="agro-about-close" aria-label="Cerrar" style="
+          <button type="button" id="agro-about-close" data-agro-i18n-aria-label="close" aria-label="Cerrar" style="
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             font-size: 18px;
@@ -399,40 +412,40 @@
           </button>
         </div>
         <div style="display: grid; gap: 16px; width: 100%; max-width: 100%; min-width: 0;">
-          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
+          <div style="background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%); border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);" data-agro-i18n-html="about_body">
             <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🎯 Visión</h3>
-              <p style="margin: 0; color: #334155; line-height: 1.6;">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;" data-agro-i18n="vision">🎯 Visión</h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;" data-agro-i18n="vision_text">
                 Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.
               </p>
             </div>
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">🧩 Misión</h3>
-              <p style="margin: 0; color: #334155; line-height: 1.6;">
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;" data-agro-i18n="mission">🧩 Misión</h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;" data-agro-i18n="mission_text">
                 Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.
               </p>
             </div>
             <div style="background: linear-gradient(180deg, #f0fdf4 0%, #f7fff9 100%); border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);">
-              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;">✅ Valores</h3>
+              <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 16px;" data-agro-i18n="values">✅ Valores</h3>
               <ul style="margin: 0; padding-left: 18px; color: #334155; line-height: 1.6;">
-                <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
-                <li><strong>Respeto:</strong> Al cultivo, a las personas y al conocimiento en construcción.</li>
-                <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
-                <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
+                <li data-agro-i18n-html="value_judgment"><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
+                <li data-agro-i18n-html="value_respect"><strong>Respeto:</strong> Al cultivo, a las personas y al conocimiento en construcción.</li>
+                <li data-agro-i18n-html="value_honesty"><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
+                <li data-agro-i18n-html="value_evolution"><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
               </ul>
             </div>
           </div>
           <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center;">
-            <a href="../manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Manual técnico</a>
+            <a href="../manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-agro-i18n="tech_manual">Manual técnico</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="../manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Autoría de NutriPlant PRO</a>
+            <a href="../manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-agro-i18n="authorship">Autoría de NutriPlant PRO</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="../politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Políticas de privacidad</a>
+            <a href="../politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-agro-i18n="privacy">Políticas de privacidad</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="../terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Términos y Condiciones</a>
+            <a href="../terminos-condiciones.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;" data-agro-i18n="terms">Términos y Condiciones</a>
           </div>
         </div>
       </div>

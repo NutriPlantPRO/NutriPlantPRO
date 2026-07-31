@@ -41,14 +41,51 @@ const CLIMATE_SECTION = 'Análisis: Clima';
 const LEGACY_CLIMATE_SECTION = 'Análisis: Déficit de Presión de Vapor';
 let currentSectionName = 'Inicio';
 
-function dashboardT(key, fallback) {
+
+function analysisPresentHtml(html) {
+  return window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function'
+    ? window.NpAnalysisUI.translateString(html)
+    : html;
+}
+
+function analysisApplyUnits(root) {
+  try {
+    if (window.NpAnalysisUI && typeof window.NpAnalysisUI.applyUnitLabels === 'function') {
+      window.NpAnalysisUI.applyUnitLabels(root || document.getElementById('view') || document);
+    }
+  } catch (e) {}
+}
+
+function dashboardT(key, fallback, params) {
   try {
     if (window.NpI18n && typeof window.NpI18n.t === 'function') {
-      const translated = window.NpI18n.t(key);
+      const translated = window.NpI18n.t(key, params);
       if (translated !== key) return translated;
     }
   } catch (e) {}
-  return fallback;
+  if (fallback == null) return key;
+  if (!params) return fallback;
+  return String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g, function (match, name) {
+    return params[name] !== undefined ? String(params[name]) : match;
+  });
+}
+
+function analysisRefTitle(kind) {
+  const map = {
+    none: ['analysis.ref_none', 'Sin dato'],
+    ok: ['analysis.ref_in_range', 'Dentro'],
+    low: ['analysis.ref_low', 'Bajo'],
+    high: ['analysis.ref_high', 'Alto'],
+    ideal: ['analysis.ref_ideal', 'Ideal'],
+    risk: ['analysis.ref_risk', 'Riesgo'],
+    caution: ['analysis.ref_caution', 'Atención']
+  };
+  const pair = map[kind] || map.none;
+  return dashboardT(pair[0], pair[1]);
+}
+
+function radarT(key, fallback, params) {
+  return dashboardT(key, fallback, params);
 }
 
 function granularT(key, fallback) {
@@ -178,9 +215,17 @@ function refreshGranularDashboardChrome() {
 
 const DASHBOARD_SECTION_KEYS = {
   'Inicio': 'dashboard.home',
+  'Ubicación': 'dashboard.radar',
   'Hidroponia': 'dashboard.hydroponics',
   'Fertirriego': 'dashboard.fertigation',
-  'Reporte': 'dashboard.report'
+  'Reporte': 'dashboard.report',
+  'Análisis: Clima': 'dashboard.section_climate',
+  'Análisis: Suelo': 'dashboard.section_soil',
+  'Análisis: Solución Nutritiva': 'dashboard.section_nutrient_solution',
+  'Análisis: Extracto de Pasta': 'dashboard.section_paste_extract',
+  'Análisis: Agua': 'dashboard.section_water',
+  'Análisis: Foliar': 'dashboard.section_leaf',
+  'Análisis: Fruta': 'dashboard.section_fruit'
 };
 
 function normalizeClimateSectionName(name) {
@@ -198,7 +243,7 @@ function getSectionDisplayName(name) {
 /** Si el título visible es el display name, devolver el id interno de sección. */
 function getSectionInternalName(displayOrInternal) {
   if (title && title.dataset && title.dataset.npSection) return title.dataset.npSection;
-  if (displayOrInternal === 'Radar Satelital') return 'Ubicación';
+  if (displayOrInternal === 'Radar Satelital' || displayOrInternal === 'Satellite Radar') return 'Ubicación';
   return displayOrInternal;
 }
 
@@ -661,33 +706,37 @@ function isSidebarMinimized() {
 // ============================
 function sectionTemplate(name) {
   if (name === "Inicio") {
+    const yieldUnitPrimary = (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function')
+      ? window.NpAgronomicUnits.unit('yield_mass_area')
+      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'short ton/acre' : 't/ha');
+    const yieldUnitSecondary = (window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'lb/acre' : 'kg/ha';
     return `
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h2 class="text-xl">📊 Inicio</h2>
+          <h2 class="text-xl">📊 ${dashboardT('dashboard.home', 'Inicio')}</h2>
         </div>
 
         <section>
           <div class="row" style="justify-content:space-between; align-items:center; margin:6px 0 10px;">
-            <h3 class="text-xl" style="margin:0;">📁 Proyectos recientes</h3>
+            <h3 class="text-xl" style="margin:0;">📁 ${dashboardT('dashboard.recent_projects', 'Proyectos recientes')}</h3>
             <div id="np-sync-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <select id="np-project-sort" style="font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer;" title="Ordenar proyectos en esta vista">
-                <option value="updated_desc">🕒 Orden: Más recientes primero</option>
-                <option value="updated_asc">🕒 Orden: Más antiguos primero</option>
-                <option value="title_asc">🔤 Orden: A → Z</option>
-                <option value="title_desc">🔤 Orden: Z → A</option>
+              <select id="np-project-sort" style="font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer;" title="${dashboardT('dashboard.sort_title', 'Ordenar proyectos en esta vista')}">
+                <option value="updated_desc">🕒 ${dashboardT('dashboard.sort_newest', 'Orden: Más recientes primero')}</option>
+                <option value="updated_asc">🕒 ${dashboardT('dashboard.sort_oldest', 'Orden: Más antiguos primero')}</option>
+                <option value="title_asc">🔤 ${dashboardT('dashboard.sort_az', 'Orden: A → Z')}</option>
+                <option value="title_desc">🔤 ${dashboardT('dashboard.sort_za', 'Orden: Z → A')}</option>
               </select>
               <span id="np-sync-status" style="display:none; font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;"></span>
-              <button type="button" id="np-sync-refresh-btn" class="np-btn-cloud-refresh" style="display:none;">☁️ Actualizar con la nube</button>
+              <button type="button" id="np-sync-refresh-btn" class="np-btn-cloud-refresh" style="display:none;">☁️ ${dashboardT('dashboard.refresh_cloud', 'Actualizar con la nube')}</button>
               <span id="np-cloud-legend" style="display:none; font-size:12px; color:#475569;"></span>
             </div>
           </div>
           <div id="np-projects-list" class="grid-3"></div>
           <div id="np-select-project-hint" class="help" style="display:none;">
-            Hay proyectos disponibles. Selecciona uno con <b>Abrir</b> para comenzar.
+            ${dashboardT('dashboard.select_project_hint', 'Hay proyectos disponibles. Selecciona uno con Abrir para comenzar.')}
           </div>
           <div id="np-empty-state" class="help" style="display:none;">
-            Aún no hay proyectos. Crea tu primer <b>NUTRIPLANT</b>.
+            ${dashboardT('dashboard.empty_projects', 'Aún no hay proyectos. Crea tu primer NUTRIPLANT.')}
           </div>
         </section>
       </div>
@@ -695,55 +744,55 @@ function sectionTemplate(name) {
       <!-- Modal crear proyecto -->
       <dialog id="dlg-new-project" class="card" style="max-width:560px;">
         <form method="dialog" id="form-new-project">
-          <h3 class="text-xl" style="margin-bottom:12px;">📝 Nuevo NUTRIPLANT</h3>
+          <h3 class="text-xl" style="margin-bottom:12px;">📝 ${dashboardT('dashboard.new_nutriplant', 'Nuevo NUTRIPLANT')}</h3>
 
           <div class="row" style="gap:12px;">
             <div style="flex:1;">
-              <label>Título del proyecto *</label>
-              <input id="np-title" required placeholder="Ej. Aguacate Lote 3 Primavera 2026"
+              <label>${dashboardT('dashboard.project_title', 'Título del proyecto *')}</label>
+              <input id="np-title" required placeholder="${dashboardT('dashboard.project_title_placeholder', 'Ej. Aguacate Lote 3 Primavera 2026')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
           </div>
 
           <div class="row" style="gap:12px;margin-top:10px;">
             <div style="flex:1;">
-              <label>Campo / Sector / Finca</label>
-              <input id="np-campo" placeholder="Lote 3 / Finca San José"
+              <label>${dashboardT('dashboard.field_farm', 'Campo / Sector / Finca')}</label>
+              <input id="np-campo" placeholder="${dashboardT('dashboard.field_farm_placeholder', 'Lote 3 / Finca San José')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
             <div style="flex:1;">
-              <label>Cultivo</label>
-              <input id="np-cultivo" placeholder="Aguacate / Limón / ..."
-                     style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
-            </div>
-          </div>
-
-          <div class="row" style="gap:12px;margin-top:10px;">
-            <div style="flex:1;">
-              <label>Variedad</label>
-              <input id="np-variedad" placeholder="Ej. Hass, Mendez, etc."
+              <label>${dashboardT('dashboard.crop', 'Cultivo')}</label>
+              <input id="np-cultivo" placeholder="${dashboardT('dashboard.crop_placeholder', 'Aguacate / Limón / ...')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
           </div>
 
           <div class="row" style="gap:12px;margin-top:10px;">
             <div style="flex:1;">
-              <label>Rendimiento esperado</label>
-              <input id="np-rend" type="number" step="any" placeholder="Ej. 12"
+              <label>${dashboardT('dashboard.variety', 'Variedad')}</label>
+              <input id="np-variedad" placeholder="${dashboardT('dashboard.variety_placeholder', 'Ej. Hass, Mendez, etc.')}"
+                     style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
+            </div>
+          </div>
+
+          <div class="row" style="gap:12px;margin-top:10px;">
+            <div style="flex:1;">
+              <label>${dashboardT('dashboard.expected_yield', 'Rendimiento esperado')}</label>
+              <input id="np-rend" type="number" step="any" placeholder="${dashboardT('dashboard.expected_yield_placeholder', 'Ej. 12')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
             <div style="width:160px;">
-              <label>Unidad</label>
+              <label>${dashboardT('dashboard.unit', 'Unidad')}</label>
               <select id="np-unidad" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;">
-                <option value="t/ha">t/ha</option>
-                <option value="kg/ha">kg/ha</option>
+                <option value="${yieldUnitPrimary}">${yieldUnitPrimary}</option>
+                <option value="${yieldUnitSecondary}">${yieldUnitSecondary}</option>
               </select>
             </div>
           </div>
 
           <div class="row" style="justify-content:flex-end; margin-top:14px;">
-            <button type="button" class="btn btn-pill" id="btn-cancel-new">Cancelar</button>
-            <button type="submit" class="btn btn-pill btn-primary">Crear</button>
+            <button type="button" class="btn btn-pill" id="btn-cancel-new">${dashboardT('common.cancel', 'Cancelar')}</button>
+            <button type="submit" class="btn btn-pill btn-primary">${dashboardT('common.create', 'Crear')}</button>
           </div>
         </form>
       </dialog>
@@ -751,55 +800,55 @@ function sectionTemplate(name) {
       <!-- Modal editar proyecto -->
       <dialog id="dlg-edit-project" class="card" style="max-width:560px;">
         <form method="dialog" id="form-edit-project">
-          <h3 class="text-xl" style="margin-bottom:12px;">✏️ Editar NUTRIPLANT</h3>
+          <h3 class="text-xl" style="margin-bottom:12px;">✏️ ${dashboardT('dashboard.edit_nutriplant', 'Editar NUTRIPLANT')}</h3>
 
           <div class="row" style="gap:12px;">
             <div style="flex:1;">
-              <label>Título del proyecto *</label>
-              <input id="edit-np-title" required placeholder="Ej. Aguacate Lote 3 Primavera 2026"
+              <label>${dashboardT('dashboard.project_title', 'Título del proyecto *')}</label>
+              <input id="edit-np-title" required placeholder="${dashboardT('dashboard.project_title_placeholder', 'Ej. Aguacate Lote 3 Primavera 2026')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
           </div>
 
           <div class="row" style="gap:12px;margin-top:10px;">
             <div style="flex:1;">
-              <label>Campo / Sector / Finca</label>
-              <input id="edit-np-campo" placeholder="Lote 3 / Finca San José"
+              <label>${dashboardT('dashboard.field_farm', 'Campo / Sector / Finca')}</label>
+              <input id="edit-np-campo" placeholder="${dashboardT('dashboard.field_farm_placeholder', 'Lote 3 / Finca San José')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
             <div style="flex:1;">
-              <label>Cultivo</label>
-              <input id="edit-np-cultivo" placeholder="Aguacate / Limón / ..."
-                     style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
-            </div>
-          </div>
-
-          <div class="row" style="gap:12px;margin-top:10px;">
-            <div style="flex:1;">
-              <label>Variedad</label>
-              <input id="edit-np-variedad" placeholder="Ej. Hass, Mendez, etc."
+              <label>${dashboardT('dashboard.crop', 'Cultivo')}</label>
+              <input id="edit-np-cultivo" placeholder="${dashboardT('dashboard.crop_placeholder', 'Aguacate / Limón / ...')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
           </div>
 
           <div class="row" style="gap:12px;margin-top:10px;">
             <div style="flex:1;">
-              <label>Rendimiento esperado</label>
-              <input id="edit-np-rend" type="number" step="any" placeholder="Ej. 12"
+              <label>${dashboardT('dashboard.variety', 'Variedad')}</label>
+              <input id="edit-np-variedad" placeholder="${dashboardT('dashboard.variety_placeholder', 'Ej. Hass, Mendez, etc.')}"
+                     style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
+            </div>
+          </div>
+
+          <div class="row" style="gap:12px;margin-top:10px;">
+            <div style="flex:1;">
+              <label>${dashboardT('dashboard.expected_yield', 'Rendimiento esperado')}</label>
+              <input id="edit-np-rend" type="number" step="any" placeholder="${dashboardT('dashboard.expected_yield_placeholder', 'Ej. 12')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
             </div>
             <div style="width:160px;">
-              <label>Unidad</label>
+              <label>${dashboardT('dashboard.unit', 'Unidad')}</label>
               <select id="edit-np-unidad" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;">
-                <option value="t/ha">t/ha</option>
-                <option value="kg/ha">kg/ha</option>
+                <option value="${yieldUnitPrimary}">${yieldUnitPrimary}</option>
+                <option value="${yieldUnitSecondary}">${yieldUnitSecondary}</option>
               </select>
             </div>
           </div>
 
           <div class="row" style="justify-content:flex-end; margin-top:14px;">
-            <button type="button" class="btn btn-pill" id="btn-cancel-edit">Cancelar</button>
-            <button type="submit" class="btn btn-pill btn-primary">Guardar Cambios</button>
+            <button type="button" class="btn btn-pill" id="btn-cancel-edit">${dashboardT('common.cancel', 'Cancelar')}</button>
+            <button type="submit" class="btn btn-pill btn-primary">${dashboardT('dashboard.save_changes', 'Guardar Cambios')}</button>
           </div>
         </form>
       </dialog>
@@ -1029,7 +1078,7 @@ function sectionTemplate(name) {
           <div class="tab-content" id="graficas">
             <div class="charts-container">
               <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-                <button class="btn btn-info btn-sm" onclick="toggleFertiChartsOxideElemental()" id="toggleFertiChartsModeBtn">🔄 Ver en Elemental</button>
+                <button class="btn btn-info btn-sm" onclick="toggleFertiChartsOxideElemental()" id="toggleFertiChartsModeBtn">${ft('elemental', '🔄 Ver en Elemental')}</button>
               </div>
               <div id="fertiChartsWaterByStageWrap" class="ferti-charts-water-wrap"></div>
               <div class="fertirriego-graphs-watermark">
@@ -1037,11 +1086,11 @@ function sectionTemplate(name) {
               </div>
               <div class="charts-grid">
                 <div class="chart-container">
-                  <h4>Macronutrientes</h4>
+                  <h4 id="fertiMacroChartTitle">${ft('macronutrients', 'Macronutrientes')}</h4>
                   <canvas id="fertiMacroChart"></canvas>
                 </div>
                 <div class="chart-container">
-                  <h4>Micronutrientes</h4>
+                  <h4 id="fertiMicroChartTitle">${ft('micronutrients', 'Micronutrientes')}</h4>
                   <canvas id="fertiMicroChart"></canvas>
                 </div>
               </div>
@@ -1267,8 +1316,8 @@ function sectionTemplate(name) {
             
             <!-- Botones de Acción -->
             <div class="report-actions" style="margin-top: 20px; text-align: center;">
-              <button id="saveAmendmentDataBtn" class="btn btn-secondary" onclick="saveProject()" style="margin-right: 10px;">
-                💾 Guardar Datos
+              <button id="saveAmendmentDataBtn" class="btn btn-secondary" onclick="saveProject()" style="margin-right: 10px;" data-i18n="dashboard.save_data">
+                ${dashboardT('dashboard.save_data', '💾 Guardar Datos')}
               </button>
               <button id="showProjectCardBtn" class="btn btn-secondary" onclick="showProjectCard()" style="margin-right: 10px;">
                 🃏 Ver Tarjeta
@@ -1713,33 +1762,33 @@ function sectionTemplate(name) {
   if (name === "Reporte") {
     return `
       <div class="card">
-        <h2 class="text-xl">📄 Reportes Generados</h2>
+        <h2 class="text-xl">${dashboardT('dashboard.reports_title', '📄 Reportes Generados')}</h2>
         
         <!-- Botón para generar nuevo reporte -->
         <div class="report-header" style="margin-bottom: 20px;">
           <button id="generateNewReportBtn" class="btn btn-primary" onclick="openReportModal()">
-            📄 Generar Nuevo Reporte PDF
+            ${dashboardT('dashboard.reports_generate_new', '📄 Generar Nuevo Reporte PDF')}
           </button>
         </div>
         
         <!-- Lista de reportes generados -->
         <div id="reportsList" class="reports-list">
           <div class="loading-reports" style="text-align: center; padding: 40px; color: #666;">
-            <p>⏳ Cargando reportes del proyecto...</p>
+            <p>${dashboardT('dashboard.reports_loading', '⏳ Cargando reportes del proyecto...')}</p>
           </div>
         </div>
         
         <!-- Información sobre reportes -->
         <div class="report-info" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-          <h4>ℹ️ Información sobre los Reportes</h4>
+          <h4>${dashboardT('dashboard.reports_info_title', 'ℹ️ Información sobre los Reportes')}</h4>
           <ul style="margin: 10px 0; padding-left: 20px;">
-            <li>Ubicación del proyecto (coordenadas, área y polígono)</li>
-            <li>Enmiendas</li>
-            <li>Nutrición granular</li>
-            <li>Fertirriego</li>
-            <li>Hidroponía</li>
-            <li>Clima (VPD, lluvia, ET₀, tiempo actual)</li>
-            <li>La lista guarda <strong>metadatos</strong> (secciones, fecha, idioma); el PDF se genera al pulsar <strong>Descargar</strong>. Con cuenta en la nube se sincroniza el historial entre dispositivos.</li>
+            <li>${dashboardT('dashboard.reports_info_location', 'Ubicación del proyecto (coordenadas, área y polígono)')}</li>
+            <li>${dashboardT('dashboard.reports_info_amendments', 'Enmiendas')}</li>
+            <li>${dashboardT('dashboard.reports_info_granular', 'Nutrición granular')}</li>
+            <li>${dashboardT('dashboard.reports_info_fertigation', 'Fertirriego')}</li>
+            <li>${dashboardT('dashboard.reports_info_hydro', 'Hidroponía')}</li>
+            <li>${dashboardT('dashboard.reports_info_climate', 'Clima (VPD, lluvia, ET₀, tiempo actual)')}</li>
+            <li>${dashboardT('dashboard.reports_info_note', 'La lista guarda metadatos (secciones, fecha, idioma); el PDF se genera al pulsar Descargar. Con cuenta en la nube se sincroniza el historial entre dispositivos.')}</li>
           </ul>
         </div>
       </div>
@@ -1747,11 +1796,16 @@ function sectionTemplate(name) {
   }
 
   if (name === "Ubicación") {
+    const rt = radarT;
+    const coordsPh = rt(
+      'radar.coords_placeholder',
+      'Formato: lat,lng (una por línea)\nEjemplo:\n19.68090,-103.44290\n19.68120,-103.44180\n19.67990,-103.44120'
+    ).replace(/"/g, '&quot;');
     return `
       <div class="location-container radar-satelital-container">
         <div class="radar-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
-          <button type="button" class="radar-tab-button active" data-radartab="poligono" style="display:flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#dcfce7;color:#14532d;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">🗺️ Radar del cultivo</button>
-          <button type="button" class="radar-tab-button" data-radartab="lectura" style="display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">📈 Lectura Satelital</button>
+          <button type="button" class="radar-tab-button active" data-radartab="poligono" data-i18n="radar.tab_crop" style="display:flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#dcfce7;color:#14532d;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">${rt('radar.tab_crop', '🗺️ Radar del cultivo')}</button>
+          <button type="button" class="radar-tab-button" data-radartab="lectura" data-i18n="radar.tab_reading" style="display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">${rt('radar.tab_reading', '📈 Lectura Satelital')}</button>
         </div>
         <div class="radar-tab-content active" id="radarTabPoligono">
         <div class="location-header">
@@ -1759,87 +1813,87 @@ function sectionTemplate(name) {
             <div class="location-title-section">
               <button id="centerOnPolygon" class="location-title-button" type="button" onclick="if(window.np_centerOnPolygonFromUi){window.np_centerOnPolygonFromUi(event);}">
                 <span class="title-icon">🛰️</span>
-                <span class="title-text">Radar Satelital</span>
+                <span class="title-text" data-i18n="radar.title_button">${rt('radar.title_button', 'Radar Satelital')}</span>
                 <span class="title-arrow">→</span>
               </button>
             </div>
             <div class="location-stats">
               <div class="stat-item">
-                <span class="stat-label">Superficie:</span>
-                <span class="stat-value" id="areaDisplay">0.00 ha</span>
+                <span class="stat-label" data-i18n="radar.surface">${rt('radar.surface', 'Superficie:')}</span>
+                <span class="stat-value" id="areaDisplay">${rt('radar.area_zero', '0.00 ha (0.00 acres)')}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Perímetro:</span>
-                <span class="stat-value" id="perimeterDisplay">0.00 m</span>
+                <span class="stat-label" data-i18n="radar.perimeter">${rt('radar.perimeter', 'Perímetro:')}</span>
+                <span class="stat-value" id="perimeterDisplay">${rt('radar.perimeter_zero', '0.00 m')}</span>
               </div>
               <div class="stat-item coordinates">
-                <span class="stat-label">Centro:</span>
-                <span class="stat-value" id="coordinatesDisplay">No seleccionadas</span>
+                <span class="stat-label" data-i18n="radar.center">${rt('radar.center', 'Centro:')}</span>
+                <span class="stat-value" id="coordinatesDisplay">${rt('radar.not_selected', 'No seleccionadas')}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Altitud:</span>
-                <span class="stat-value" id="altitudeDisplay">N/D</span>
+                <span class="stat-label" data-i18n="radar.altitude">${rt('radar.altitude', 'Altitud:')}</span>
+                <span class="stat-value" id="altitudeDisplay">${rt('radar.na', 'N/D')}</span>
               </div>
             </div>
           </div>
           <div class="location-controls">
-            <button id="centerOnUserLocation" class="btn btn-primary" type="button" onclick="if(window.np_centerOnUserLocationFromUi){window.np_centerOnUserLocationFromUi(event);}">📍 Mi Ubicación</button>
-            <button id="toggleCoordinateInput" class="btn btn-secondary">✍️ Coordenadas</button>
-            <button id="clearPolygon" class="btn btn-secondary">Limpiar</button>
-            <button id="saveLocation" class="btn">Guardar Predio</button>
+            <button id="centerOnUserLocation" class="btn btn-primary" type="button" data-i18n="radar.my_location" onclick="if(window.np_centerOnUserLocationFromUi){window.np_centerOnUserLocationFromUi(event);}">${rt('radar.my_location', '📍 Mi Ubicación')}</button>
+            <button id="toggleCoordinateInput" class="btn btn-secondary" data-i18n="radar.coordinates">${rt('radar.coordinates', '✍️ Coordenadas')}</button>
+            <button id="clearPolygon" class="btn btn-secondary" data-i18n="radar.clear">${rt('radar.clear', 'Limpiar')}</button>
+            <button id="saveLocation" class="btn" data-i18n="radar.save_field">${rt('radar.save_field', 'Guardar Predio')}</button>
           </div>
         </div>
         <div id="coordinateInputPanel" style="display:none;margin:10px 0 0;padding:10px;border:1px dashed #bfdbfe;border-radius:10px;background:#f8fbff;">
-          <div style="font-weight:600;color:#1e40af;margin-bottom:6px;">Coordenadas del polígono</div>
-          <textarea id="polygonCoordinatesInput" rows="5" style="width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-family:monospace;font-size:12px;" placeholder="Formato: lat,lng (una por línea)&#10;Ejemplo:&#10;19.68090,-103.44290&#10;19.68120,-103.44180&#10;19.67990,-103.44120"></textarea>
+          <div style="font-weight:600;color:#1e40af;margin-bottom:6px;" data-i18n="radar.coords_panel_title">${rt('radar.coords_panel_title', 'Coordenadas del polígono')}</div>
+          <textarea id="polygonCoordinatesInput" rows="5" style="width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-family:monospace;font-size:12px;" data-i18n-placeholder="radar.coords_placeholder" placeholder="${coordsPh}"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            <button id="drawPolygonFromCoordinates" class="btn btn-primary" type="button">🗺️ Trazar polígono</button>
-            <button id="clearCoordinateInput" class="btn btn-secondary" type="button">🧹 Limpiar texto</button>
+            <button id="drawPolygonFromCoordinates" class="btn btn-primary" type="button" data-i18n="radar.draw_polygon">${rt('radar.draw_polygon', '🗺️ Trazar polígono')}</button>
+            <button id="clearCoordinateInput" class="btn btn-secondary" type="button" data-i18n="radar.clear_text">${rt('radar.clear_text', '🧹 Limpiar texto')}</button>
           </div>
-          <div style="margin-top:6px;font-size:12px;color:#475569;">Si ya hay predio guardado, aquí aparecen sus coordenadas. Puedes copiarlas, editarlas o pegar nuevas. Acepta decimal y grados/min/seg (ej. 19°40'51.2&quot;N, 103°26'34.0&quot;W). Mínimo 3 puntos.</div>
+          <div style="margin-top:6px;font-size:12px;color:#475569;" data-i18n="radar.coords_help">${rt('radar.coords_help', 'Si ya hay predio guardado, aquí aparecen sus coordenadas. Puedes copiarlas, editarlas o pegar nuevas. Acepta decimal y grados/min/seg. Mínimo 3 puntos.')}</div>
         </div>
 
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
-          <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo</div>
-          <div id="radarCreditsBadge" class="radar-credits-badge" title="Créditos Radar del mes (Pilot y Lectura Satelital)">
-            <span class="radar-credits-badge__kicker">Créditos Radar:</span>
+          <div style="font-weight: 600; color: #14532d;" data-i18n="radar.crop_title">${rt('radar.crop_title', '🛰️ Radar del cultivo')}</div>
+          <div id="radarCreditsBadge" class="radar-credits-badge" data-i18n-title="radar.credits_badge_title" title="${rt('radar.credits_badge_title', 'Créditos Radar del mes (Pilot y Lectura Satelital)')}">
+            <span class="radar-credits-badge__kicker" data-i18n="radar.credits_kicker">${rt('radar.credits_kicker', 'Créditos Radar:')}</span>
             <span id="radarCreditsLabel" class="radar-credits-badge__value">—</span>
             <span id="radarCreditsCost" class="radar-credits-badge__cost"></span>
           </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;">
-            Capa
+            <span data-i18n="radar.layer">${rt('radar.layer', 'Capa')}</span>
             <select id="radarIndexSelect" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:700;">
-              <option value="ndvi" selected>NDVI vigor</option>
-              <option value="ndmi">NDMI humedad del dosel</option>
-              <option value="ndre">NDRE clorofila / dosel</option>
-              <option value="rgb">RGB vista natural</option>
-              <option value="clouds">☁️ Nubes y sombras</option>
+              <option value="ndvi" selected data-i18n="radar.option_ndvi">${rt('radar.option_ndvi', 'NDVI vigor')}</option>
+              <option value="ndmi" data-i18n="radar.option_ndmi">${rt('radar.option_ndmi', 'NDMI humedad del dosel')}</option>
+              <option value="ndre" data-i18n="radar.option_ndre">${rt('radar.option_ndre', 'NDRE clorofila / dosel')}</option>
+              <option value="rgb" data-i18n="radar.option_rgb">${rt('radar.option_rgb', 'RGB vista natural')}</option>
+              <option value="clouds" data-i18n="radar.option_clouds">${rt('radar.option_clouds', '☁️ Nubes y sombras')}</option>
             </select>
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
-            Imagen
-            <select id="radarSnapshotSelect" disabled title="Imágenes Radar guardadas de este proyecto" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:600;min-width:160px;max-width:min(320px,100%);">
-              <option value="">Sin imágenes guardadas</option>
+            <span data-i18n="radar.image">${rt('radar.image', 'Imagen')}</span>
+            <select id="radarSnapshotSelect" disabled data-i18n-title="radar.snapshot_title" title="${rt('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto')}" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:600;min-width:160px;max-width:min(320px,100%);">
+              <option value="" data-i18n="radar.no_saved_images">${rt('radar.no_saved_images', 'Sin imágenes guardadas')}</option>
             </select>
           </label>
-          <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
+          <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
-            <strong style="color:#14532d;">Cómo se arma:</strong>
-            elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo 250 ha</strong> por predio.
+            <strong style="color:#14532d;" data-i18n="radar.how_built_label">${rt('radar.how_built_label', 'Cómo se arma:')}</strong>
+            <span>${rt('radar.how_built_html', 'elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo 250 ha</strong> por predio.')}</span>
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
-            <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
-            <span id="radarScaleLow">Menor nivel del predio</span>
+            <span id="radarScaleTitle" style="font-weight:600;color:#166534;">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
+            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
             <span id="radarScaleBar" style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);display:inline-block;"></span>
-            <span id="radarScaleHigh">Mayor nivel del predio</span>
-            <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.</span>
+            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
+            <span id="radarNdviHelp" style="color:#166534;">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
           </div>
           <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
-            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">🛰 Generar / actualizar Pilot</button>
-            <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
-            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver imagen NDVI</button>
-            <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Ocultar capa</button>
+            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar Pilot')}</button>
+            <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;" data-i18n="radar.btn_status">${rt('radar.btn_status', '🔄 Estado')}</button>
+            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
+            <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
           </div>
         </div>
         
@@ -1847,14 +1901,14 @@ function sectionTemplate(name) {
           <div id="map" class="map"></div>
           <div class="map-overlay">
             <div class="instructions">
-              <p>📍 Haz clic en el mapa para trazar tu parcela</p>
-              <p>🔄 Haz doble clic para cerrar el polígono</p>
+              <p data-i18n="radar.map_click">${rt('radar.map_click', '📍 Haz clic en el mapa para trazar tu parcela')}</p>
+              <p data-i18n="radar.map_dblclick">${rt('radar.map_dblclick', '🔄 Haz doble clic para cerrar el polígono')}</p>
             </div>
           </div>
         </div>
         </div>
         <div class="radar-tab-content" id="radarTabLectura" style="display:none;">
-          ${typeof window.createLecturaSatelitalHTML === 'function' ? window.createLecturaSatelitalHTML() : '<div class="card"><p>Cargando Lectura Satelital…</p></div>'}
+          ${typeof window.createLecturaSatelitalHTML === 'function' ? window.createLecturaSatelitalHTML() : '<div class="card"><p data-i18n="radar.loading_reading">' + rt('radar.loading_reading', 'Cargando Lectura Satelital…') + '</p></div>'}
         </div>
       </div>
     `;
@@ -2573,11 +2627,39 @@ function renderMenu() {
   setTimeout(() => handleSidebarTextVisibility(), 0);
 }
 
+function npSyncManualLinksLang() {
+  try {
+    var lang = 'es';
+    if (window.NpPrefs && typeof window.NpPrefs.get === 'function') {
+      var prefs = window.NpPrefs.get();
+      if (prefs && prefs.language === 'en') lang = 'en';
+    }
+    document.querySelectorAll('a[href*="manual-tecnico"]').forEach(function (a) {
+      try {
+        var u = new URL(a.getAttribute('href'), window.location.href);
+        u.searchParams.set('lang', lang);
+        a.setAttribute('href', u.pathname + u.search + u.hash);
+      } catch (e) { /* ignore */ }
+    });
+  } catch (e2) { /* ignore */ }
+}
+window.npSyncManualLinksLang = npSyncManualLinksLang;
+
 window.npHandleDashboardPreferencesChanged = function () {
   if (window.NpI18n) window.NpI18n.apply(document);
+  if (typeof npSyncManualLinksLang === 'function') npSyncManualLinksLang();
   document.querySelectorAll('[data-i18n-title][data-np-tooltip]').forEach(function (el) {
     el.setAttribute('data-np-tooltip', el.getAttribute('title') || el.getAttribute('aria-label') || '');
   });
+  var saveBtn = document.getElementById('globalSaveDataBtn');
+  if (saveBtn) {
+    saveBtn.textContent = dashboardT('dashboard.save_data', '💾 Guardar Datos');
+    saveBtn.title = dashboardT('dashboard.save_data_title', 'Guardar todos los datos del proyecto');
+  }
+  var amendSaveBtn = document.getElementById('saveAmendmentDataBtn');
+  if (amendSaveBtn) {
+    amendSaveBtn.textContent = dashboardT('dashboard.save_data', '💾 Guardar Datos');
+  }
   if (title) {
     title.dataset.npSection = currentSectionName;
     title.textContent = getSectionDisplayName(currentSectionName);
@@ -2591,10 +2673,46 @@ window.npHandleDashboardPreferencesChanged = function () {
     updatePHIndicator();
     if (window.lastAmendmentCalc?.details) updateSoilReachAdjustment({ mutate: false });
   }
+  if (currentSectionName === 'Inicio' && view) {
+    view.innerHTML = sectionTemplate('Inicio');
+    setTimeout(function () { if (typeof np_initInicio === 'function') np_initInicio(); }, 0);
+  }
+  var userInfoModal = document.getElementById('userInfoModal');
+  if (userInfoModal && userInfoModal.classList.contains('show') && typeof window.loadUserInfo === 'function') {
+    if (window.NpI18n) window.NpI18n.apply(userInfoModal);
+    window.loadUserInfo();
+  }
+  var changePwdModal = document.getElementById('changePasswordModal');
+  if (changePwdModal && changePwdModal.classList.contains('show') && window.NpI18n) {
+    window.NpI18n.apply(changePwdModal);
+  }
   if (currentSectionName === CLIMATE_SECTION) {
     sectionDomCache = {};
     requestAnimationFrame(function () { selectSection(CLIMATE_SECTION); });
   }
+  if (/^Análisis:/.test(String(currentSectionName || ''))) {
+    sectionDomCache = {};
+    requestAnimationFrame(function () {
+      selectSection(currentSectionName);
+      setTimeout(function () { analysisApplyUnits(); }, 50);
+    });
+  }
+  if (currentSectionName === 'Ubicación') {
+    requestAnimationFrame(function () { selectSection('Ubicación'); });
+  }
+  if (currentSectionName === 'Reporte') {
+    sectionDomCache = {};
+    requestAnimationFrame(function () {
+      selectSection('Reporte');
+      setTimeout(function () {
+        if (typeof updateReportsList === 'function') updateReportsList();
+      }, 50);
+    });
+  }
+  try {
+    var reportModal = document.getElementById('reportModal');
+    if (reportModal && window.NpI18n) window.NpI18n.apply(reportModal);
+  } catch (e) { /* ignore */ }
 };
 
 // ==========================
@@ -4473,14 +4591,24 @@ function np_applyProjectOpenButtonsState() {
     btn.style.opacity = blocked ? '0.65' : '1';
     btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
     if (act === 'open') {
-      btn.textContent = blocked ? '⏳ Cargando nube...' : 'Abrir';
-      btn.title = blocked ? 'Espera a que termine la actualización de la nube para abrir el proyecto.' : 'Abrir proyecto';
+      btn.textContent = blocked
+        ? ('⏳ ' + dashboardT('dashboard.loading_cloud', 'Cargando nube...'))
+        : dashboardT('common.open', 'Abrir');
+      btn.title = blocked
+        ? dashboardT('dashboard.wait_open', 'Espera a que termine la actualización de la nube para abrir el proyecto.')
+        : dashboardT('dashboard.open_project', 'Abrir proyecto');
     } else if (act === 'edit') {
-      btn.title = blocked ? 'Espera a que termine la actualización de la nube para editar.' : 'Editar';
+      btn.title = blocked
+        ? dashboardT('dashboard.wait_edit', 'Espera a que termine la actualización de la nube para editar.')
+        : dashboardT('common.edit', 'Editar');
     } else if (act === 'dup') {
-      btn.title = blocked ? 'Espera a que termine la actualización de la nube para duplicar.' : 'Duplicar';
+      btn.title = blocked
+        ? dashboardT('dashboard.wait_dup', 'Espera a que termine la actualización de la nube para duplicar.')
+        : dashboardT('common.duplicate', 'Duplicar');
     } else if (act === 'del') {
-      btn.title = blocked ? 'Espera a que termine la actualización de la nube para eliminar.' : 'Eliminar';
+      btn.title = blocked
+        ? dashboardT('dashboard.wait_del', 'Espera a que termine la actualización de la nube para eliminar.')
+        : dashboardT('common.delete', 'Eliminar');
     }
   });
 }
@@ -5753,7 +5881,17 @@ function np_openEditProjectModal(projectId) {
   if (cultivoInput) cultivoInput.value = projectData.cultivo || projectData.crop_type || '';
   if (variedadInput) variedadInput.value = projectData.variedad || '';
   if (rendInput) rendInput.value = projectData.rendimientoEsperado || '';
-  if (unidadInput) unidadInput.value = projectData.unidadRendimiento || 't/ha';
+  if (unidadInput) {
+    const savedUnit = projectData.unidadRendimiento || 't/ha';
+    const hasOption = Array.prototype.some.call(unidadInput.options, function (opt) { return opt.value === savedUnit; });
+    if (!hasOption) {
+      const opt = document.createElement('option');
+      opt.value = savedUnit;
+      opt.textContent = savedUnit;
+      unidadInput.appendChild(opt);
+    }
+    unidadInput.value = savedUnit;
+  }
   
   // Guardar el ID del proyecto en un atributo del formulario para usarlo al guardar
   const editForm = document.getElementById('form-edit-project');
@@ -6146,17 +6284,17 @@ function np_renderProjects(){
     let projectDetails = '';
     if (p.cultivo) {
       projectDetails += `<div class="text-sm" style="opacity:.8; margin-bottom:4px;">
-        <span style="font-weight:500;">🌾 Cultivo:</span> <span>${escapeHtml(p.cultivo)}</span>
+        <span style="font-weight:500;">🌾 ${dashboardT('dashboard.crop', 'Cultivo')}:</span> <span>${escapeHtml(p.cultivo)}</span>
       </div>`;
     }
     if (p.variedad) {
       projectDetails += `<div class="text-sm" style="opacity:.8; margin-bottom:4px;">
-        <span style="font-weight:500;">🧬 Variedad:</span> <span>${escapeHtml(p.variedad)}</span>
+        <span style="font-weight:500;">🧬 ${dashboardT('dashboard.variety', 'Variedad')}:</span> <span>${escapeHtml(p.variedad)}</span>
       </div>`;
     }
     if (p.campoOsector) {
       projectDetails += `<div class="text-sm" style="opacity:.8; margin-bottom:4px;">
-        <span style="font-weight:500;">📍 Campo o Sector:</span> <span>${escapeHtml(p.campoOsector)}</span>
+        <span style="font-weight:500;">📍 ${dashboardT('dashboard.field_sector', 'Campo o Sector')}:</span> <span>${escapeHtml(p.campoOsector)}</span>
       </div>`;
     }
     if (!p.cultivo && !p.variedad && !p.campoOsector) {
@@ -6167,13 +6305,13 @@ function np_renderProjects(){
       <div class="project-info">
         <div class="font-semibold" style="margin-bottom:8px;">${escapeHtml(p.title)}</div>
         ${projectDetails}
-        <div class="text-xs" style="opacity:.6; margin-top:8px;">Actualizado: ${new Date(p.updatedAt).toLocaleString()}</div>
+        <div class="text-xs" style="opacity:.6; margin-top:8px;">${dashboardT('dashboard.updated', 'Actualizado')}: ${new Date(p.updatedAt).toLocaleString()}</div>
       </div>
       <div class="actions" style="margin-top:8px; display:flex; gap:8px;">
-        <button class="btn" data-act="open" data-id="${encodedId}" title="Abrir proyecto">Abrir</button>
-        <button class="btn" data-act="edit" data-id="${encodedId}">Editar</button>
-        <button class="btn" data-act="dup" data-id="${encodedId}">Duplicar</button>
-        <button class="btn" data-act="del" data-id="${encodedId}">Eliminar</button>
+        <button class="btn" data-act="open" data-id="${encodedId}" title="${dashboardT('dashboard.open_project', 'Abrir proyecto')}">${dashboardT('common.open', 'Abrir')}</button>
+        <button class="btn" data-act="edit" data-id="${encodedId}">${dashboardT('common.edit', 'Editar')}</button>
+        <button class="btn" data-act="dup" data-id="${encodedId}">${dashboardT('common.duplicate', 'Duplicar')}</button>
+        <button class="btn" data-act="del" data-id="${encodedId}">${dashboardT('common.delete', 'Eliminar')}</button>
       </div>
     `;
     listEl.appendChild(card);
@@ -6390,7 +6528,7 @@ function np_renderProjects(){
     }
     if (act === "del") {
       const wasCurrent = (np_getCurrentProjectId() === id);
-      if (confirm("¿Eliminar este proyecto?")) {
+      if (confirm(dashboardT('dashboard.confirm_delete_project', '¿Eliminar este proyecto?'))) {
         np_deleteProject(id).then(function() {
           if (wasCurrent) {
             np_setCurrentProject("");
@@ -6725,17 +6863,20 @@ function addProjectIndicator(container) {
     <div class="project-indicator-content">
       <span class="project-icon">📁</span>
       <div class="project-info">
-        <span class="project-label">Proyecto Activo:</span>
-        <span class="project-name">${escapeHtml(projectName)}</span>
+        <span class="project-label" data-i18n="dashboard.active_project">${escapeHtml(dashboardT('dashboard.active_project', 'Proyecto Activo:'))}</span>
+        <span class="project-name" translate="no">${escapeHtml(projectName)}</span>
       </div>
-      <button id="globalSaveDataBtn" class="btn-save-data-global" onclick="window.saveProject()" title="Guardar todos los datos del proyecto">
-        💾 Guardar Datos
+      <button id="globalSaveDataBtn" class="btn-save-data-global" onclick="window.saveProject()" title="${escapeHtml(dashboardT('dashboard.save_data_title', 'Guardar todos los datos del proyecto'))}" data-i18n="dashboard.save_data" data-i18n-title="dashboard.save_data_title">
+        ${escapeHtml(dashboardT('dashboard.save_data', '💾 Guardar Datos'))}
       </button>
     </div>
   `;
 
   // Insertar al inicio del contenedor
   container.insertBefore(projectIndicator, container.firstChild);
+  if (window.NpI18n && typeof window.NpI18n.apply === 'function') {
+    try { window.NpI18n.apply(projectIndicator); } catch (e) {}
+  }
 }
 
 // ===== FERTIRRIEGO FUNCTIONALITY =====
@@ -7716,7 +7857,7 @@ window.forceLoadTable = function() {
         <button class="btn-select-amendment" onclick="selectAmendment('${enmienda.name}')">
           Seleccionar
         </button>
-        <button class="btn-edit-amendment" onclick="editAmendment('${enmienda.name}')" title="Editar composición">
+        <button class="btn-edit-amendment" onclick="editAmendment('${enmienda.name}')" title="${amendmentT('edit_composition', 'Editar composición')}">
           ✏️
         </button>
       </td>
@@ -7727,9 +7868,9 @@ window.forceLoadTable = function() {
   // Agregar fila en blanco
   const newRow = document.createElement('tr');
   newRow.innerHTML = `
-    <td><input type="text" id="new-amendment-name" placeholder="Nombre" class="amendment-input"></td>
-    <td><input type="text" id="new-amendment-formula" placeholder="Fórmula" class="amendment-input"></td>
-    <td><input type="number" id="new-amendment-molecular" placeholder="Peso" step="0.1" class="amendment-input"></td>
+    <td><input type="text" id="new-amendment-name" placeholder="${amendmentT('custom_name', 'Nombre de la enmienda')}" class="amendment-input"></td>
+    <td><input type="text" id="new-amendment-formula" placeholder="${amendmentT('chemical_formula', 'Fórmula química')}" class="amendment-input"></td>
+    <td><input type="number" id="new-amendment-molecular" placeholder="${amendmentT('molecular_weight', 'Peso molecular')}" step="0.1" class="amendment-input"></td>
     <td><input type="number" id="new-amendment-k" placeholder="%K" step="0.1" class="amendment-input"></td>
     <td><input type="number" id="new-amendment-ca" placeholder="%Ca" step="0.1" class="amendment-input"></td>
     <td><input type="number" id="new-amendment-mg" placeholder="%Mg" step="0.1" class="amendment-input"></td>
@@ -8176,6 +8317,7 @@ function np_logDashboardVisit() {
 
 async function initializeDashboard() {
   if (window.NpI18n) window.NpI18n.apply(document);
+  if (typeof npSyncManualLinksLang === 'function') npSyncManualLinksLang();
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
   
@@ -8679,7 +8821,7 @@ async function flushPendingReportSync(scope, opts) {
   }
   writePendingReportSyncList(scope, failed);
   if (!options.silent && failed.length) {
-    showMessage('⚠️ Algunos reportes aún pendientes de nube. Se reintentará automáticamente.', 'warning');
+    showMessage(dashboardT('dashboard.reports_pending_cloud', '⚠️ Algunos reportes aún pendientes de nube. Se reintentará automáticamente.'), 'warning');
   }
 }
 
@@ -9189,11 +9331,11 @@ function showReportViewShareModal(url, autoCopied) {
   header.className = 'modal-header';
   var title = document.createElement('h2');
   title.className = 'modal-title';
-  title.textContent = '🔗 Link de vista del reporte';
+  title.textContent = dashboardT('dashboard.reports_share_modal_title', '🔗 Link de vista del reporte');
   var closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'modal-close';
-  closeBtn.setAttribute('aria-label', 'Cerrar');
+  closeBtn.setAttribute('aria-label', dashboardT('dashboard.reports_close', 'Cerrar'));
   closeBtn.textContent = '×';
   closeBtn.addEventListener('click', closeReportViewShareModal);
   header.appendChild(title);
@@ -9207,8 +9349,8 @@ function showReportViewShareModal(url, autoCopied) {
   p.style.fontSize = '14px';
   p.style.lineHeight = '1.5';
   p.textContent = autoCopied
-    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). El link no caduca. Si vuelves a pulsar «Compartir vista», se actualiza el contenido pero se conserva el mismo enlace.'
-    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). El link no caduca; puedes volver a compartir para refrescar el contenido sin cambiar la URL.';
+    ? dashboardT('dashboard.reports_share_copied', 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). El link no caduca. Si vuelves a pulsar «Compartir vista», se actualiza el contenido pero se conserva el mismo enlace.')
+    : dashboardT('dashboard.reports_share_manual', 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). El link no caduca; puedes volver a compartir para refrescar el contenido sin cambiar la URL.');
   body.appendChild(p);
 
   var inp = document.createElement('input');
@@ -9228,13 +9370,13 @@ function showReportViewShareModal(url, autoCopied) {
   var btnCopy = document.createElement('button');
   btnCopy.type = 'button';
   btnCopy.className = 'btn btn-info';
-  btnCopy.textContent = 'Copiar de nuevo';
+  btnCopy.textContent = dashboardT('dashboard.reports_copy_again', 'Copiar de nuevo');
   btnCopy.addEventListener('click', function() {
     inp.focus();
     inp.select();
     inp.setSelectionRange(0, 99999);
     var done = function() {
-      if (typeof showMessage === 'function') showMessage('✅ Copiado al portapapeles.', 'success');
+      if (typeof showMessage === 'function') showMessage(dashboardT('dashboard.reports_copied_toast', '✅ Copiado al portapapeles.'), 'success');
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(done).catch(function() {
@@ -9253,7 +9395,7 @@ function showReportViewShareModal(url, autoCopied) {
   var btnClose = document.createElement('button');
   btnClose.type = 'button';
   btnClose.className = 'btn btn-secondary';
-  btnClose.textContent = 'Cerrar';
+  btnClose.textContent = dashboardT('dashboard.reports_close', 'Cerrar');
   btnClose.addEventListener('click', closeReportViewShareModal);
   footer.appendChild(btnCopy);
   footer.appendChild(btnClose);
@@ -9279,9 +9421,9 @@ function setShareViewButtonBusy(reportId, busy) {
     btn.disabled = !!busy;
     if (busy) {
       if (!btn.dataset.shareOriginalHtml) btn.dataset.shareOriginalHtml = btn.innerHTML;
-      btn.innerHTML = '⏳ Generando link…';
+      btn.innerHTML = dashboardT('dashboard.reports_generating_link', '⏳ Generando link…');
     } else {
-      btn.innerHTML = btn.dataset.shareOriginalHtml || '🔗 Compartir vista';
+      btn.innerHTML = btn.dataset.shareOriginalHtml || dashboardT('dashboard.reports_share_view', '🔗 Compartir vista');
       delete btn.dataset.shareOriginalHtml;
     }
   });
@@ -9292,7 +9434,7 @@ window.shareReportView = async function(reportId) {
   var reportIndex = generatedReports.findIndex(function(r) { return r && String(r.id) === rid; });
   var report = reportIndex >= 0 ? generatedReports[reportIndex] : null;
   if (!report) {
-    showMessage('⚠️ Reporte no encontrado para compartir.', 'warning');
+    showMessage(dashboardT('dashboard.reports_share_not_found', '⚠️ Reporte no encontrado para compartir.'), 'warning');
     return;
   }
   var scope = getCurrentReportScope();
@@ -9300,22 +9442,22 @@ window.shareReportView = async function(reportId) {
   var projectId = scope.projectId || '';
   var isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(userId));
   if (!isUuidUser || !projectId) {
-    showMessage('⚠️ Para compartir por link necesitas sesión activa en la nube y proyecto seleccionado.', 'warning');
+    showMessage(dashboardT('dashboard.reports_share_need_session', '⚠️ Para compartir por link necesitas sesión activa en la nube y proyecto seleccionado.'), 'warning');
     return;
   }
 
   if (shareReportViewInFlight[rid]) {
-    showMessage('⏳ Ya se está generando el link de este reporte. Espera un momento.', 'info');
+    showMessage(dashboardT('dashboard.reports_share_busy', '⏳ Ya se está generando el link de este reporte. Espera un momento.'), 'info');
     return;
   }
   shareReportViewInFlight[rid] = true;
   setShareViewButtonBusy(rid, true);
-  showMessage('⏳ Generando enlace de vista (puede tardar unos segundos: HTML, gráficas y subida a la nube)…', 'info');
+  showMessage(dashboardT('dashboard.reports_share_generating', '⏳ Generando enlace de vista (puede tardar unos segundos: HTML, gráficas y subida a la nube)…'), 'info');
 
   try {
     var persistedOk = persistReportSourceData();
     if (!persistedOk) {
-      showMessage('❌ No se pudo preparar la fuente antes de compartir.', 'error');
+      showMessage(dashboardT('dashboard.reports_share_prepare_fail', '❌ No se pudo preparar la fuente antes de compartir.'), 'error');
       return;
     }
 
@@ -9326,7 +9468,7 @@ window.shareReportView = async function(reportId) {
     var nowIso = new Date().toISOString();
     var htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
     if (!htmlSnapshot) {
-      showMessage('⚠️ No se pudo preparar la vista del reporte para compartir.', 'warning');
+      showMessage(dashboardT('dashboard.reports_share_view_fail', '⚠️ No se pudo preparar la vista del reporte para compartir.'), 'warning');
       return;
     }
 
@@ -9339,7 +9481,7 @@ window.shareReportView = async function(reportId) {
       typeof window.nutriplantSupabaseProjects !== 'undefined' &&
       typeof window.nutriplantSupabaseProjects.uploadReportShareHtml === 'function'
     ) {
-      showMessage('⏳ Subiendo vista a la nube (reportes con Radar son más pesados)…', 'info');
+      showMessage(dashboardT('dashboard.reports_share_uploading', '⏳ Subiendo vista a la nube (reportes con Radar son más pesados)…'), 'info');
       shareHtmlPath = await window.nutriplantSupabaseProjects.uploadReportShareHtml(
         userId,
         report.id,
@@ -9375,11 +9517,11 @@ window.shareReportView = async function(reportId) {
     if (typeof window.nutriplantSyncReportToCloud === 'function') {
       synced = await window.nutriplantSyncReportToCloud(userId, projectId, cloudPayload);
     } else {
-      showMessage('⚠️ No está disponible la sincronización a nube para compartir link.', 'warning');
+      showMessage(dashboardT('dashboard.reports_share_cloud_unavailable', '⚠️ No está disponible la sincronización a nube para compartir link.'), 'warning');
       return;
     }
     if (!synced) {
-      showMessage('❌ No se pudo guardar el reporte en la nube (sesión, red o tamaño). Cierra sesión y vuelve a entrar, o revisa la consola. Sin eso el link no abrirá.', 'error');
+      showMessage(dashboardT('dashboard.reports_share_cloud_fail', '❌ No se pudo guardar el reporte en la nube (sesión, red o tamaño). Cierra sesión y vuelve a entrar, o revisa la consola. Sin eso el link no abrirá.'), 'error');
       return;
     }
 
@@ -9410,7 +9552,7 @@ window.shareReportView = async function(reportId) {
     updateReportsList();
   } catch (e) {
     console.error('shareReportView:', e);
-    showMessage('❌ No se pudo generar el link de vista: ' + (e && e.message ? e.message : e), 'error');
+    showMessage(dashboardT('dashboard.reports_share_link_fail', '❌ No se pudo generar el link de vista: {error}', { error: (e && e.message ? e.message : e) }), 'error');
   } finally {
     delete shareReportViewInFlight[rid];
     setShareViewButtonBusy(rid, false);
@@ -10281,20 +10423,20 @@ function saveReportToList(reportData) {
           if (ok) {
             removePendingReportSync(scope, cloudReport.id);
             if (typeof showMessage === 'function') {
-              showMessage('☁️ Reporte guardado en la nube (visible en otros equipos).', 'success');
+              showMessage(dashboardT('dashboard.reports_saved_cloud', '☁️ Reporte guardado en la nube (visible en otros equipos).'), 'success');
             }
           } else {
             queuePendingReportSync(scope, cloudReport);
             console.warn('⚠️ Reporte en cola para reintento de sincronización:', cloudReport.id);
             if (typeof showMessage === 'function') {
-              showMessage('⚠️ El reporte quedó en este equipo; no se pudo subir a la nube aún. Se reintentará.', 'warning');
+              showMessage(dashboardT('dashboard.reports_local_retry', '⚠️ El reporte quedó en este equipo; no se pudo subir a la nube aún. Se reintentará.'), 'warning');
             }
           }
         })
         .catch(function() {
           queuePendingReportSync(scope, cloudReport);
           if (typeof showMessage === 'function') {
-            showMessage('⚠️ El reporte quedó en este equipo; error al subir a la nube. Se reintentará.', 'warning');
+            showMessage(dashboardT('dashboard.reports_local_error_retry', '⚠️ El reporte quedó en este equipo; error al subir a la nube. Se reintentará.'), 'warning');
           }
         });
     } catch (cloudErr) {
@@ -10313,22 +10455,44 @@ function getReportDisplayTimestamp(report) {
   return Number.isNaN(date.getTime()) ? new Date() : date;
 }
 
+function reportUiSectionLabel(sectionId) {
+  const id = String(sectionId || '').toLowerCase();
+  const map = {
+    location: ['dashboard.reports_section_location', 'Ubicación'],
+    amendments: ['dashboard.reports_section_amendments', 'Enmiendas'],
+    granular: ['dashboard.reports_section_granular', 'Nutrición granular'],
+    fertigation: ['dashboard.reports_section_fertigation', 'Fertirriego'],
+    hidroponia: ['dashboard.reports_section_hydro', 'Hidroponía'],
+    hydroponics: ['dashboard.reports_section_hydro', 'Hidroponía'],
+    vpd: ['dashboard.reports_section_climate', 'Clima'],
+    climate: ['dashboard.reports_section_climate', 'Clima'],
+    extraccionetapa: ['dashboard.reports_section_extract', 'Extracción por etapa'],
+    extraccion_etapa: ['dashboard.reports_section_extract', 'Extracción por etapa']
+  };
+  const pair = map[id] || map[id.replace(/[^a-z0-9]/g, '')];
+  if (pair) return dashboardT(pair[0], pair[1]);
+  return typeof reportFriendlyKey === 'function' ? reportFriendlyKey(sectionId) : String(sectionId || '');
+}
+
 function createReportMetaText(report) {
   const selectedSections = Array.isArray(report?.selectedSections) ? report.selectedSections : [];
   if (selectedSections.length > 0) {
     const sectionLabels = selectedSections
-      .map(section => (typeof reportFriendlyKey === 'function' ? reportFriendlyKey(section) : section))
+      .map(section => reportUiSectionLabel(section))
       .join(', ');
-    return `${selectedSections.length} secciones incluidas | ${sectionLabels}`;
+    return dashboardT('dashboard.reports_meta_sections', '{count} secciones incluidas | {labels}', {
+      count: selectedSections.length,
+      labels: sectionLabels
+    });
   }
 
   const cic = report?.initialAnalysis?.cic;
   const amendmentsCount = Array.isArray(report?.selectedAmendments) ? report.selectedAmendments.length : null;
   if (Number.isFinite(cic)) {
-    return `CIC: ${cic.toFixed(2)} meq/100g${amendmentsCount !== null ? ` | Enmiendas: ${amendmentsCount}` : ''}`;
+    return `CIC: ${cic.toFixed(2)} meq/100g${amendmentsCount !== null ? ` | ${dashboardT('dashboard.reports_section_amendments', 'Enmiendas')}: ${amendmentsCount}` : ''}`;
   }
 
-  return 'Reporte listo para descarga en PDF';
+  return dashboardT('dashboard.reports_meta_ready', 'Reporte listo para descarga en PDF');
 }
 
 // Actualizar lista de reportes en la UI
@@ -10339,8 +10503,8 @@ function updateReportsList() {
   if (generatedReports.length === 0) {
     reportsList.innerHTML = `
       <div class="no-reports" style="text-align: center; padding: 40px; color: #666;">
-        <p>📋 No hay reportes generados aún</p>
-        <p style="font-size: 14px; margin-top: 10px;">Pulsa «Generar Nuevo Reporte PDF» arriba. La lista se guarda en este navegador y, con cuenta en la nube, también en Supabase. «Descargar» regenera el PDF al momento. El link compartido no caduca.</p>
+        <p>${dashboardT('dashboard.reports_empty_title', '📋 No hay reportes generados aún')}</p>
+        <p style="font-size: 14px; margin-top: 10px;">${dashboardT('dashboard.reports_empty_body', 'Pulsa «Generar Nuevo Reporte PDF» arriba. La lista se guarda en este navegador y, con cuenta en la nube, también en Supabase. «Descargar» regenera el PDF al momento. El link compartido no caduca.')}</p>
       </div>
     `;
     return;
@@ -10350,26 +10514,26 @@ function updateReportsList() {
     <div class="report-item" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h4 style="margin: 0; color: #2563eb;">📄 ${report.project?.name || report.projectName || `Reporte ${index + 1}`}</h4>
+          <h4 style="margin: 0; color: #2563eb;">📄 ${report.project?.name || report.projectName || dashboardT('dashboard.reports_fallback_name', 'Reporte {n}', { n: index + 1 })}</h4>
           <p style="margin: 5px 0; color: #666; font-size: 14px;">
-            ${getReportDisplayTimestamp(report).toLocaleDateString('es-MX')} - ${getReportDisplayTimestamp(report).toLocaleTimeString('es-MX')}
+            ${getReportDisplayTimestamp(report).toLocaleDateString(typeof npUiLocaleTag === 'function' ? npUiLocaleTag() : 'es-MX')} - ${getReportDisplayTimestamp(report).toLocaleTimeString(typeof npUiLocaleTag === 'function' ? npUiLocaleTag() : 'es-MX')}
           </p>
           <p style="margin: 0; color: #666; font-size: 12px;">
             ${createReportMetaText(report)}
           </p>
           ${report.shareToken && report.shareEnabled !== false
-            ? '<p style="margin:4px 0 0;font-size:11px;color:#059669;">🔗 Link compartido activo (sin caducidad)</p>'
+            ? `<p style="margin:4px 0 0;font-size:11px;color:#059669;">${dashboardT('dashboard.reports_share_active', '🔗 Link compartido activo (sin caducidad)')}</p>`
             : ''}
         </div>
         <div>
           <button onclick="downloadReport('${report.id}')" class="btn btn-secondary" style="margin-right: 10px;">
-            📥 Descargar
+            ${dashboardT('dashboard.reports_download', '📥 Descargar')}
           </button>
           <button type="button" class="btn btn-info np-share-view-btn" data-rid="${String(report.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="if(this.disabled)return;shareReportView(this.getAttribute('data-rid'))" style="margin-right: 10px;">
-            🔗 Compartir vista
+            ${dashboardT('dashboard.reports_share_view', '🔗 Compartir vista')}
           </button>
           <button onclick="deleteReport('${report.id}')" class="btn btn-danger">
-            🗑️ Eliminar
+            ${dashboardT('dashboard.reports_delete', '🗑️ Eliminar')}
           </button>
         </div>
       </div>
@@ -10381,19 +10545,19 @@ function updateReportsList() {
 window.downloadReport = function(reportId) {
   const report = generatedReports.find(r => r.id === reportId);
   if (!report) {
-    alert('Reporte no encontrado');
+    alert(dashboardT('dashboard.reports_not_found', 'Reporte no encontrado'));
     return;
   }
 
   if (Array.isArray(report.selectedSections) && report.selectedSections.length > 0) {
     const persistedOk = persistReportSourceData();
     if (!persistedOk) {
-      showMessage('❌ No se pudo guardar el estado actual antes de descargar el reporte.', 'error');
+      showMessage(dashboardT('dashboard.reports_download_persist_fail', '❌ No se pudo guardar el estado actual antes de descargar el reporte.'), 'error');
       return;
     }
     const printableSections = normalizeReportSections(report.selectedSections);
     if (!printableSections.length) {
-      showMessage('⚠️ Este reporte no contiene secciones válidas para PDF.', 'warning');
+      showMessage(dashboardT('dashboard.reports_invalid_sections', '⚠️ Este reporte no contiene secciones válidas para PDF.'), 'warning');
       return;
     }
     // Gráficas de fertirriego: generarlas desde datos del proyecto (no dependen del DOM ni de haber abierto la pestaña Gráficas)
@@ -11086,7 +11250,7 @@ function saveProjectData(options = {}) {
   
   // Mostrar indicador de guardado
   if (!silent) {
-    showSaveIndicator('✅ Datos guardados');
+    showSaveIndicator(dashboardT('dashboard.data_saved', '✅ Datos guardados'));
   }
   
   // Actualizar indicador de tiempo de guardado
@@ -13200,14 +13364,21 @@ window.showMessage = function(message, type = 'success') {
 window.saveProject = async function() {
   const NP_MANUAL_SAVE_COOLDOWN_MS = 2500;
   if (window._npManualSaveInProgress === true) {
-    if (typeof window.showMessage === 'function') window.showMessage('⏳ Ya hay un guardado en curso...', 'warning');
+    if (typeof window.showMessage === 'function') {
+      window.showMessage(dashboardT('dashboard.save_in_progress', '⏳ Ya hay un guardado en curso...'), 'warning');
+    }
     return;
   }
   var lastManualSaveAt = typeof window._npManualSaveLastAt === 'number' ? window._npManualSaveLastAt : 0;
   var saveCooldownRemaining = Math.max(0, NP_MANUAL_SAVE_COOLDOWN_MS - (Date.now() - lastManualSaveAt));
   if (saveCooldownRemaining > 0) {
     if (typeof window.showMessage === 'function') {
-      window.showMessage('⏳ Espera ' + Math.ceil(saveCooldownRemaining / 1000) + 's antes de volver a guardar.', 'warning');
+      window.showMessage(
+        dashboardT('dashboard.save_wait_seconds', '⏳ Espera {seconds}s antes de volver a guardar.', {
+          seconds: Math.ceil(saveCooldownRemaining / 1000)
+        }),
+        'warning'
+      );
     }
     return;
   }
@@ -13216,7 +13387,9 @@ window.saveProject = async function() {
   
   try {
     if (!currentProject || !currentProject.id) {
-      if (typeof window.showMessage === 'function') window.showMessage('⚠️ No hay proyecto activo para guardar', 'warning');
+      if (typeof window.showMessage === 'function') {
+        window.showMessage(dashboardT('dashboard.no_active_project_save', '⚠️ No hay proyecto activo para guardar'), 'warning');
+      }
       return;
     }
     // Si el proyecto aún se está hidratando desde nube al abrir, bloquear guardado manual
@@ -13225,7 +13398,10 @@ window.saveProject = async function() {
       var hydrationMap = window._np_project_open_cloud_refresh_in_progress || null;
       if (hydrationMap && hydrationMap[currentProject.id] === true) {
         if (typeof window.showMessage === 'function') {
-          window.showMessage('⏳ Espera un momento: estamos terminando de cargar la versión de nube del proyecto.', 'info');
+          window.showMessage(
+            dashboardT('dashboard.save_wait_cloud', '⏳ Espera un momento: estamos terminando de cargar la versión de nube del proyecto.'),
+            'info'
+          );
         }
         return;
       }
@@ -13328,11 +13504,11 @@ window.saveProject = async function() {
     
     // Mostrar mensaje de confirmación al usuario
     if (typeof window.showMessage === 'function') {
-      window.showMessage('✅ Proyecto guardado exitosamente', 'success');
+      window.showMessage(dashboardT('dashboard.project_saved', '✅ Proyecto guardado exitosamente'), 'success');
     } else {
       // Fallback: usar showSaveIndicator si showMessage no está disponible
       if (typeof showSaveIndicator === 'function') {
-        showSaveIndicator('✅ Proyecto guardado exitosamente');
+        showSaveIndicator(dashboardT('dashboard.project_saved', '✅ Proyecto guardado exitosamente'));
       } else {
         console.log('✅ Proyecto guardado exitosamente');
       }
@@ -13342,9 +13518,9 @@ window.saveProject = async function() {
   } catch (error) {
     console.error('❌ Error al guardar proyecto:', error);
     if (typeof window.showMessage === 'function') {
-      window.showMessage('❌ Error al guardar el proyecto', 'error');
+      window.showMessage(dashboardT('dashboard.save_error', '❌ Error al guardar el proyecto'), 'error');
     } else {
-      alert('❌ Error al guardar el proyecto. Por favor, intenta de nuevo.');
+      alert(dashboardT('dashboard.save_error', '❌ Error al guardar el proyecto') + '.');
     }
   } finally {
     window._npManualSaveInProgress = false;
@@ -13670,12 +13846,23 @@ function openReportModal() {
   
   const modal = document.getElementById('reportModal');
   if (modal) {
-    const languageSelect = document.getElementById('reportLanguageSelect');
-    if (languageSelect) {
-      // Abrir SIEMPRE en Español por defecto (el usuario puede cambiarlo manualmente).
-      languageSelect.value = 'es';
-    }
-    // Mostrar modal
+    // Idioma y unidades del PDF = preferencias del usuario (sin selector aparte).
+    try {
+      var doseUnit = 'kg/ha';
+      if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function') {
+        doseUnit = window.NpAgronomicUnits.unit('dose_mass_area') || doseUnit;
+      } else if (window.NpPrefs && window.NpPrefs.get().unit_system === 'us_customary') {
+        doseUnit = 'lb/acre';
+      }
+      var extractDesc = modal.querySelector('[data-section="extraccionEtapa"] .report-section-description');
+      if (extractDesc) {
+        extractDesc.setAttribute('data-i18n-params', JSON.stringify({ dose_unit: doseUnit }));
+        extractDesc.setAttribute('data-i18n', 'dashboard.reports_sec_extract_desc');
+      }
+      if (window.NpI18n && typeof window.NpI18n.apply === 'function') {
+        window.NpI18n.apply(modal);
+      }
+    } catch (e) { /* ignore */ }
     modal.classList.add('active');
     
     // Cerrar modal al hacer clic fuera
@@ -13816,10 +14003,63 @@ function getSelectedReportSections() {
 }
 
 function getSelectedReportLanguage() {
-  const select = document.getElementById('reportLanguageSelect');
-  const lang = (select && select.value === 'en') ? 'en' : 'es';
-  try { localStorage.setItem('nutriplant-report-language', lang); } catch (e) {}
-  return lang;
+  // El PDF sigue el idioma de la app (NpPrefs), no un selector aparte.
+  try {
+    const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+    const lang = prefs && prefs.language === 'en' ? 'en' : 'es';
+    try { localStorage.setItem('nutriplant-report-language', lang); } catch (e) {}
+    return lang;
+  } catch (e) {
+    return 'es';
+  }
+}
+
+/** Locale BCP-47 para fechas/números en reportes y UI (en-US vs es-MX). */
+function reportLocaleTag(lang) {
+  try {
+    const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+    if (prefs && prefs.locale) return String(prefs.locale);
+    if (prefs && prefs.language === 'en') return 'en-US';
+  } catch (e) { /* ignore */ }
+  return lang === 'en' ? 'en-US' : 'es-MX';
+}
+
+function npUiLocaleTag() {
+  try {
+    const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+    if (prefs && prefs.locale) return String(prefs.locale);
+    return prefs && prefs.language === 'en' ? 'en-US' : 'es-MX';
+  } catch (e) {
+    return 'es-MX';
+  }
+}
+
+function reportFormatDateTime(value, lang) {
+  try {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString(reportLocaleTag(lang));
+  } catch (e) {
+    return '—';
+  }
+}
+
+function reportFormatDate(value, lang) {
+  try {
+    var d;
+    if (value instanceof Date) {
+      d = value;
+    } else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+      var parts = value.slice(0, 10).split('-');
+      d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    } else {
+      d = new Date(value);
+    }
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString(reportLocaleTag(lang));
+  } catch (e) {
+    return '—';
+  }
 }
 
 function persistReportSourceData() {
@@ -13884,7 +14124,7 @@ window.generatePDFReport = function() {
     ? 'us_customary'
     : 'metric';
   if (!selectedSections.length) {
-    showMessage('⚠️ Selecciona al menos una sección para el reporte.', 'warning');
+    showMessage(dashboardT('dashboard.reports_select_section', '⚠️ Selecciona al menos una sección para el reporte.'), 'warning');
     return;
   }
 
@@ -13896,14 +14136,14 @@ window.generatePDFReport = function() {
   }
   try {
     printWindow.document.open();
-    printWindow.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>NutriPlant PRO</title></head><body style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#475569;"><p style="padding:24px;margin:0;font-size:15px;">Generando reporte…</p></body></html>');
+    printWindow.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>NutriPlant PRO</title></head><body style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#475569;"><p style="padding:24px;margin:0;font-size:15px;">' + (reportLanguage === 'en' ? 'Generating report…' : 'Generando reporte…') + '</p></body></html>');
     printWindow.document.close();
   } catch (e0) { /* ignore */ }
 
   const persistedOk = persistReportSourceData();
   if (!persistedOk) {
     try { printWindow.close(); } catch (eClose) {}
-    showMessage('❌ No se pudo guardar el estado actual antes de generar el reporte.', 'error');
+    showMessage(dashboardT('dashboard.reports_persist_fail', '❌ No se pudo guardar el estado actual antes de generar el reporte.'), 'error');
     return;
   }
 
@@ -14233,14 +14473,14 @@ function generatePDFContent(selectedSections) {
       `;
       
       console.log('✅ Reporte mostrado en el panel');
-      showMessage('✅ Reporte generado exitosamente', 'success');
+      showMessage(dashboardT('dashboard.reports_generated_ok', '✅ Reporte generado exitosamente'), 'success');
     } else {
       showMessage('❌ Error: No se encontró el área de contenido', 'error');
     }
     
   } catch (error) {
     console.error('❌ Error generando el reporte:', error);
-    showMessage('❌ Error generando el reporte: ' + error.message, 'error');
+    showMessage(dashboardT('dashboard.reports_generate_error', '❌ Error generando el reporte: {error}', { error: error.message }), 'error');
   }
 }
 
@@ -14254,7 +14494,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       ? ' report-ios'
       : '';
   const rt = function(es, en) { return isEn ? en : es; };
-  const currentDate = new Date().toLocaleDateString(isEn ? 'en-US' : 'es-ES');
+  const currentDate = reportFormatDate(new Date(), lang);
   const projectName = currentProject.name || 'Proyecto NutriPlant';
   const projectCampoSector = currentProject.campoOsector || currentProject.campo_sector || rt('No especificado', 'Not specified');
   const projectCultivo = currentProject.cultivo || currentProject.crop_type || rt('No especificado', 'Not specified');
@@ -15722,7 +15962,7 @@ function createSectionHTML(sectionId, chartImages, reportLanguage, reportUnitSys
 
   switch (sectionId) {
     case 'location':
-      html += createLocationSectionHTML(chartImages, rt, lang);
+      html += createLocationSectionHTML(chartImages, rt, lang, reportUnitSystem);
       break;
     case 'amendments':
       html += createAmendmentsSectionHTML(lang);
@@ -15741,7 +15981,7 @@ function createSectionHTML(sectionId, chartImages, reportLanguage, reportUnitSys
       html += createGranularSectionHTML(lang);
       break;
     case 'hidroponia':
-      html += createHidroponiaSectionHTML();
+      html += createHidroponiaSectionHTML(lang);
       break;
     case 'extraccionEtapa':
       html += createExtraccionEtapaSectionHTML(chartImages, lang, reportUnitSystem);
@@ -15811,10 +16051,21 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['Generado por:', 'Generated by:'],
     ['No especificado', 'Not specified'],
     ['📍 Ubicación y Mapa', '📍 Location and Map'],
+    ['🛰️ Radar Satelital', '🛰️ Satellite Radar'],
+    ['Radar Satelital', 'Satellite Radar'],
+    ['🗺️ Predio y polígono', '🗺️ Field and polygon'],
+    ['Predio y polígono', 'Field and polygon'],
+    ['Altitud:', 'Altitude:'],
+    ['msnm', 'm ASL'],
+    ['Mostrando 6 de', 'Showing 6 of'],
+    ['vértices.', 'vertices.'],
     ['🚜 Análisis de Enmiendas', '🚜 Amendment Analysis'],
     ['🌾 Nutrición Granular', '🌾 Granular Nutrition'],
     ['📈 Fertirriego', '📈 Fertigation'],
     ['💧 Hidroponía', '💧 Hydroponics'],
+    ['🌱 Hidroponía', '🌱 Hydroponics'],
+    ['🌤️ Clima — VPD', '🌤️ Climate — VPD'],
+    ['🌧️ Clima — Lluvia, ET₀ y tiempo actual', '🌧️ Climate — Rain, ET₀ and current weather'],
     ['🌡️ Déficit de Presión de Vapor', '🌡️ Vapor Pressure Deficit'],
     ['🌡️ Déficit de Presión de Vapor (VPD)', '🌡️ Vapor Pressure Deficit (VPD)'],
     ['🗺️ Ubicación del Proyecto', '🗺️ Project Location'],
@@ -15828,6 +16079,19 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['vértices)', 'vertices)'],
     ['Sin polígono', 'No polygon'],
     ['No disponibles', 'Not available'],
+    ['Solución nutritiva por etapa (meq/L)', 'Nutrient solution by stage (meq/L)'],
+    ['Solución nutritiva por etapa (ppm)', 'Nutrient solution by stage (ppm)'],
+    ['Peso en % de meq (aniones y cationes K+Ca+Mg)', 'Weight in % meq (anions and K+Ca+Mg cations)'],
+    ['Diagrama ternario (% aniones y cationes)', 'Ternary diagram (% anions and cations)'],
+    ['Análisis de agua (ppm)', 'Water analysis (ppm)'],
+    ['Sin etapas configuradas.', 'No stages configured.'],
+    ['Sin fertilizantes guardados.', 'No fertilizers saved.'],
+    ['Precipitación', 'Precipitation'],
+    ['Última lectura', 'Latest reading'],
+    ['(parcial)', '(partial)'],
+    ['Diferencia', 'Difference'],
+    ['Nota:', 'Note:'],
+    ['estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.', 'estimates based on satellite information at the field; they may differ from on-site weather.'],
     ['📊 Estimador ambiental simple', '📊 Environmental Calculator'],
     ['🔬 Estimador avanzado', '🔬 Advanced Calculator'],
     ['📜 Historial de Cálculos', '📜 Calculation History'],
@@ -15903,7 +16167,8 @@ function translateReportHTMLStrings(html, reportLanguage) {
 }
 
 // Función para crear sección de ubicación
-function createLocationPolygonSVG(polygon) {
+function createLocationPolygonSVG(polygon, rt) {
+  const rtSafe = typeof rt === 'function' ? rt : function (es) { return es; };
   const points = (Array.isArray(polygon) ? polygon : [])
     .map(coord => {
       const lat = Array.isArray(coord) ? Number(coord[0]) : NaN;
@@ -15961,7 +16226,7 @@ function createLocationPolygonSVG(polygon) {
 
   return `
     <div class="report-keep-together" style="margin-top:10px;border:1px solid #bae6fd;background:#fff;border-radius:8px;padding:8px;">
-      <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;">Polígono del predio</div>
+      <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;">${rtSafe('Polígono del predio', 'Field polygon')}</div>
       <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
         <rect x="${pad}" y="${pad}" width="${drawW}" height="${drawH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-dasharray="3 3" />
         <polygon points="${pointsAttr}" fill="#86efac" fill-opacity="0.45" stroke="#0ea5e9" stroke-width="2" />
@@ -15970,7 +16235,7 @@ function createLocationPolygonSVG(polygon) {
         <polygon points="${northX},${(northY - 14)} ${northX - 5},${(northY - 5)} ${northX + 5},${(northY - 5)}" fill="#0f172a" />
         <text x="${(northX - 4)}" y="${(northY + 24)}" font-size="11" font-weight="700" fill="#0f172a">N</text>
       </svg>
-      <div class="report-note-inline" style="margin-top:6px;">Croquis proporcional en coordenadas geográficas (escala relativa).</div>
+      <div class="report-note-inline" style="margin-top:6px;">${rtSafe('Croquis proporcional en coordenadas geográficas (escala relativa).', 'Proportional sketch in geographic coordinates (relative scale).')}</div>
     </div>
   `;
 }
@@ -16383,22 +16648,50 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
   );
 }
 
-function createLocationSectionHTML(chartImages, rt, lang) {
-  const rtSafe = typeof rt === 'function' ? rt : function(es) {
-    return es;
+function createLocationSectionHTML(chartImages, rt, lang, reportUnitSystem) {
+  const rtSafe = typeof rt === 'function' ? rt : function(es, en) {
+    return lang === 'en' && en != null ? en : es;
   };
   const langSafe = lang === 'en' ? 'en' : 'es';
+  const us = reportUnitSystem === 'us_customary';
   const location = currentProject.location || {};
   const polygon = Array.isArray(location.polygon) ? location.polygon : [];
   const hasPolygon = polygon.length >= 3;
-  const areaValue = location.areaHectares != null ? `${reportNum(location.areaHectares, 2)} ha` : (location.surface || 'No disponible');
-  const perimeterValue = location.perimeterDisplay || (location.perimeter != null ? `${reportNum(location.perimeter, 2)} m` : 'No disponible');
-  const altitudeValue = Number.isFinite(Number(location.elevationM)) ? `${Math.round(Number(location.elevationM))} msnm` : 'No disponible';
+  const na = rtSafe('No disponible', 'Not available');
+  let areaValue = na;
+  if (location.areaHectares != null && Number.isFinite(Number(location.areaHectares))) {
+    const ha = Number(location.areaHectares);
+    if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.fromSI === 'function') {
+      areaValue = reportNum(window.NpAgronomicUnits.fromSI(ha, 'area'), 2) + ' ' + window.NpAgronomicUnits.unit('area');
+    } else {
+      areaValue = us ? (reportNum(ha * 2.47105381, 2) + ' acre') : (reportNum(ha, 2) + ' ha');
+    }
+  } else if (location.surface) {
+    areaValue = String(location.surface);
+  }
+  let perimeterValue = na;
+  const perimM = location.perimeter != null ? Number(location.perimeter) : NaN;
+  if (Number.isFinite(perimM)) {
+    perimeterValue = us
+      ? (reportNum(perimM * 3.280839895, 2) + ' ft')
+      : (reportNum(perimM, 2) + ' m');
+  } else if (location.perimeterDisplay) {
+    perimeterValue = String(location.perimeterDisplay);
+  }
+  let altitudeValue = na;
+  if (Number.isFinite(Number(location.elevationM))) {
+    const elevM = Number(location.elevationM);
+    if (us) {
+      altitudeValue = Math.round(elevM * 3.280839895) + ' ft ASL';
+    } else {
+      altitudeValue = Math.round(elevM) + (langSafe === 'en' ? ' m ASL' : ' msnm');
+    }
+  }
   const center =
     location.center && Number.isFinite(location.center.lat) && Number.isFinite(location.center.lng)
       ? `${reportNum(location.center.lat, 6)}, ${reportNum(location.center.lng, 6)}`
       : (function () {
-          if (!hasPolygon) return 'No disponible';
+          if (!hasPolygon) return na;
           let sLat = 0;
           let sLng = 0;
           let n = 0;
@@ -16410,7 +16703,7 @@ function createLocationSectionHTML(chartImages, rt, lang) {
             sLng += lng;
             n += 1;
           });
-          return n > 0 ? `${reportNum(sLat / n, 6)}, ${reportNum(sLng / n, 6)}` : 'No disponible';
+          return n > 0 ? `${reportNum(sLat / n, 6)}, ${reportNum(sLng / n, 6)}` : na;
         })();
   const compactCoordinates = hasPolygon
     ? polygon.slice(0, 6).map((coord, idx) => {
@@ -16426,32 +16719,39 @@ function createLocationSectionHTML(chartImages, rt, lang) {
     rtSafe,
     langSafe
   );
+  const statusText = hasPolygon
+    ? rtSafe('Polígono registrado (', 'Registered polygon (') + polygon.length + ' ' + rtSafe('vértices)', 'vertices)')
+    : rtSafe('Sin polígono', 'No polygon');
+  const coordsLabel = location.coordinates || rtSafe('No disponibles', 'Not available');
+  const showingMore = polygon.length > 6
+    ? `<div class="report-note-inline" style="margin-top:6px;">${rtSafe('Mostrando 6 de', 'Showing 6 of')} ${polygon.length} ${rtSafe('vértices.', 'vertices.')}</div>`
+    : '';
 
   return `
     <div class="section">
-      <h2 class="section-title">🛰️ Radar Satelital</h2>
+      <h2 class="section-title">🛰️ ${rtSafe('Radar Satelital', 'Satellite Radar')}</h2>
       <div class="report-block" style="border-color:#86efac;background:#f0fdf4;">
-        <div class="report-block-title">🗺️ Predio y polígono</div>
+        <div class="report-block-title">🗺️ ${rtSafe('Predio y polígono', 'Field and polygon')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
-          <div><strong>Área:</strong><br><span style="color:#059669;font-weight:700;">${reportEscapeHtml(areaValue)}</span></div>
-          <div><strong>Perímetro:</strong><br><span>${reportEscapeHtml(perimeterValue)}</span></div>
-          <div><strong>Altitud:</strong><br><span>${reportEscapeHtml(altitudeValue)}</span></div>
-          <div><strong>Centro:</strong><br><span style="font-family:monospace;">${reportEscapeHtml(center)}</span></div>
-          <div><strong>Estado:</strong><br><span>${hasPolygon ? `Polígono registrado (${polygon.length} vértices)` : 'Sin polígono'}</span></div>
+          <div><strong>${rtSafe('Área:', 'Area:')}</strong><br><span style="color:#059669;font-weight:700;">${reportEscapeHtml(areaValue)}</span></div>
+          <div><strong>${rtSafe('Perímetro:', 'Perimeter:')}</strong><br><span>${reportEscapeHtml(perimeterValue)}</span></div>
+          <div><strong>${rtSafe('Altitud:', 'Altitude:')}</strong><br><span>${reportEscapeHtml(altitudeValue)}</span></div>
+          <div><strong>${rtSafe('Centro:', 'Center:')}</strong><br><span style="font-family:monospace;">${reportEscapeHtml(center)}</span></div>
+          <div><strong>${rtSafe('Estado:', 'Status:')}</strong><br><span>${reportEscapeHtml(statusText)}</span></div>
         </div>
         <div style="margin-top:10px;padding:10px;border:1px solid #bbf7d0;background:#fff;border-radius:8px;">
-          <strong>Coordenadas:</strong> <span class="report-note-inline">${reportEscapeHtml(location.coordinates || 'No disponibles')}</span>
+          <strong>${rtSafe('Coordenadas:', 'Coordinates:')}</strong> <span class="report-note-inline">${reportEscapeHtml(coordsLabel)}</span>
           ${hasPolygon ? `
             <div class="report-nutrient-wrap" style="margin-top:6px;">${compactCoordinates}</div>
-            ${polygon.length > 6 ? `<div class="report-note-inline" style="margin-top:6px;">Mostrando 6 de ${polygon.length} vértices.</div>` : ''}
+            ${showingMore}
           ` : ''}
         </div>
-        ${hasPolygon ? createLocationPolygonSVG(polygon) : ''}
+        ${hasPolygon ? createLocationPolygonSVG(polygon, rtSafe) : ''}
         ${radarBlock}
         ${lecturaBlock}
       </div>
     </div>
-  `;
+`;
 }
 
 // Función para crear sección de enmiendas
@@ -17276,16 +17576,24 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
   const fertiById = new Map((Array.isArray(fertiMaterials) ? fertiMaterials : []).filter(m => m && m.id).map(m => [m.id, m]));
   const fertiCustomById = new Map((Array.isArray(fertiCustomItems) ? fertiCustomItems : []).filter(m => m && m.id).map(m => [m.id, m]));
   function fertiColumnName(c, idx) {
+    const isCustomCol = !!(c?.materialId && String(c.materialId).startsWith('custom_'));
     const explicit = (c && (c.name || c.label)) ? String(c.name || c.label).trim() : '';
-    if (explicit) return explicit;
+    if (explicit) {
+      if (isCustomCol) return explicit;
+      return fertiUI ? fertiUI.materialName(explicit, reportLang) : explicit;
+    }
     const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId);
     const matName = (mat && (mat.name || mat.label)) ? String(mat.name || mat.label).trim() : '';
-    if (matName) return matName;
-    if (c?.materialId && String(c.materialId).startsWith('custom_')) return `Personalizado ${idx + 1}`;
+    if (matName) {
+      const isCustom = isCustomCol || !!(mat && (String(mat.id || '').startsWith('custom_') || mat.isCustom || mat.custom));
+      if (isCustom) return matName;
+      return fertiUI ? fertiUI.materialName(matName, reportLang) : matName;
+    }
+    if (isCustomCol) return rt('Personalizado', 'Custom') + ' ' + (idx + 1);
     if (c?.materialId && !String(c.materialId).startsWith('col_')) {
       return String(c.materialId).replace(/_/g, ' ').trim();
     }
-    return `Fertilizante ${idx + 1}`;
+    return rt('Fertilizante', 'Fertilizer') + ' ' + (idx + 1);
   }
   const columnNames = columns.map((c, idx) => fertiColumnName(c, idx));
   const programDoseColumns = columns;
@@ -17766,10 +18074,36 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
     </svg></div>`;
 }
 
-function createHidroponiaSectionHTML() {
+function createHidroponiaSectionHTML(reportLanguage) {
+  const reportLang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = (es, en) => reportLang === 'en' ? en : es;
   const h = currentProject.hidroponia || {};
   const projectCrop = currentProject.cultivo || currentProject.crop_type || currentProject.cropType || currentProject.cultivoTipo || '';
-  const crop = h.cropType || h.cultivo || h.solutionName || projectCrop || 'N/D';
+  const crop = h.cropType || h.cultivo || h.solutionName || projectCrop || rt('N/D', 'N/A');
+  const stageEnMap = (typeof HYDRO_STAGE_EN !== 'undefined' && HYDRO_STAGE_EN) ? HYDRO_STAGE_EN : {};
+  function reportHydroStageName(name) {
+    const raw = String(name || '').trim();
+    if (!raw) return rt('Etapa', 'Stage');
+    if (reportLang === 'en') return stageEnMap[raw] || raw;
+    return raw;
+  }
+  function formatHydroProductQty(siValue, siUnit) {
+    if (!Number.isFinite(siValue) || siValue <= 0) return '—';
+    const hu = window.NpHydroUnits || null;
+    if (siUnit === 'L') {
+      const m3 = siValue / 1000;
+      const v = hu ? hu.fromSI(m3, 'liquid_volume') : siValue;
+      const u = hu ? (typeof hydroUnitLabel === 'function' ? hydroUnitLabel(hu.unit('liquid_volume')) : hu.unit('liquid_volume')) : 'L';
+      return reportNum(v, 2) + ' ' + u;
+    }
+    const v = hu ? hu.fromSI(siValue, 'mass') : siValue;
+    const u = hu ? hu.unit('mass') : 'kg';
+    return reportNum(v, 2) + ' ' + u;
+  }
+  const massUnitLabel = (window.NpHydroUnits ? window.NpHydroUnits.unit('mass') : 'kg');
+  const liquidUnitLabel = window.NpHydroUnits
+    ? (typeof hydroUnitLabel === 'function' ? hydroUnitLabel(window.NpHydroUnits.unit('liquid_volume')) : window.NpHydroUnits.unit('liquid_volume'))
+    : 'L';
   const stages = Array.isArray(h.stages) ? h.stages : [];
   const activeStage = stages.find(s => s && h.activeStageId && s.id === h.activeStageId) || stages[0] || null;
   const fertilizers = Array.isArray(h.fertilizers) ? h.fertilizers : [];
@@ -17810,13 +18144,19 @@ function createHidroponiaSectionHTML() {
     : (currentProject?.sections?.hidroponia?.customMaterials?.items || currentProject?.hidroponia?.customMaterials?.items || []);
   const hydroCustomById = new Map((Array.isArray(hydroCustomItems) ? hydroCustomItems : []).filter(m => m && m.id).map(m => [m.id, m]));
   function hydroFertName(fert) {
-    if (fert && fert.name && String(fert.name).trim()) return String(fert.name).trim();
+    const fertiUI = window.NpFertigationUI || null;
+    const translateName = (name) => fertiUI ? fertiUI.materialName(name, reportLang) : name;
+    if (fert && fert.name && String(fert.name).trim()) {
+      if (fert.materialId && String(fert.materialId).startsWith('custom_')) return String(fert.name).trim();
+      if (hydroCustomById.get(fert.materialId)) return String(fert.name).trim();
+      return translateName(String(fert.name).trim());
+    }
     const custom = hydroCustomById.get(fert?.materialId);
     if (custom && (custom.name || custom.label)) return String(custom.name || custom.label).trim();
     const mat = hydroById.get(fert?.materialId);
-    if (mat && (mat.name || mat.label)) return String(mat.name || mat.label).trim();
-    if (fert?.materialId && String(fert.materialId).startsWith('custom_')) return 'Personalizado';
-    return fert?.materialId || 'Fertilizante';
+    if (mat && (mat.name || mat.label)) return translateName(String(mat.name || mat.label).trim());
+    if (fert?.materialId && String(fert.materialId).startsWith('custom_')) return rt('Personalizado', 'Custom');
+    return fert?.materialId || rt('Fertilizante', 'Fertilizer');
   }
   function hydroDoseAndTotals(fert) {
     const mat = hydroById.get(fert?.materialId) || hydroCustomById.get(fert?.materialId) || {};
@@ -17856,12 +18196,14 @@ function createHidroponiaSectionHTML() {
   const activeNTotal = activeNNo3 + activeNNh4;
   const activePctNo3 = activeNTotal > 0 ? (activeNNo3 / activeNTotal) * 100 : 0;
   const activePctNh4 = activeNTotal > 0 ? (activeNNh4 / activeNTotal) * 100 : 0;
-  const activeStageName = activeStage ? reportEscapeHtml(activeStage.name || 'Etapa') : 'Etapa';
+  const activeStageName = activeStage
+    ? reportEscapeHtml(reportHydroStageName(activeStage.name || rt('Etapa', 'Stage')))
+    : reportEscapeHtml(rt('Etapa', 'Stage'));
   const stageRowsMeq = stages.map(stage => {
     const meq = stage.meq || {};
     const ce = meqNutrients.reduce((acc, n) => acc + toNum(meq[n]), 0) / 20;
     return `<tr>
-      <td>${reportEscapeHtml(stage.name || '')}</td>
+      <td>${reportEscapeHtml(reportHydroStageName(stage.name || ''))}</td>
       <td>${ce.toFixed(2)}</td>
       ${meqNutrients.map(n => `<td>${toNum(meq[n]).toFixed(1)}</td>`).join('')}
     </tr>`;
@@ -17881,7 +18223,7 @@ function createHidroponiaSectionHTML() {
       else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
     });
     return `<tr>
-      <td>${reportEscapeHtml(stage.name || '')}</td>
+      <td>${reportEscapeHtml(reportHydroStageName(stage.name || ''))}</td>
       ${meqNutrients.map(n => `<td>${pct[n].toFixed(1)}</td>`).join('')}
     </tr>`;
   }).join('');
@@ -17895,7 +18237,7 @@ function createHidroponiaSectionHTML() {
     const microCells = microNutrients.map(n => `<td>${toNum(ppm[n]).toFixed(2)}</td>`).join('');
     const clCell = `<td>${toNum(ppm.Cl).toFixed(1)}</td>`;
     return `<tr>
-      <td>${reportEscapeHtml(stage.name || '')}</td>
+      <td>${reportEscapeHtml(reportHydroStageName(stage.name || ''))}</td>
       ${macroCells}${microCells}${clCell}
     </tr>`;
   }).join('');
@@ -17919,10 +18261,10 @@ function createHidroponiaSectionHTML() {
     hydroNutrients.forEach(n => { reportPpmTotals[n] += toNum(c[n]); });
     return `<tr>
       <td>${reportEscapeHtml(hydroFertName(f))}</td>
-      <td>Tanque ${reportEscapeHtml(f.tank || 'A')}</td>
+      <td>${rt('Tanque', 'Tank')} ${reportEscapeHtml(f.tank || 'A')}</td>
       <td>${Number.isFinite(dose) && dose > 0 ? dose.toFixed(1) : '—'}</td>
       ${hydroNutrients.map(n => `<td>${toNum(c[n]).toFixed(2)}</td>`).join('')}
-      <td>${Number.isFinite(totalValue) && totalValue > 0 ? `${totalValue.toFixed(2)} ${totalUnit}` : '—'}</td>
+      <td>${Number.isFinite(totalValue) && totalValue > 0 ? formatHydroProductQty(totalValue, totalUnit) : '—'}</td>
     </tr>`;
   }).join('');
   const ppmTotals = hydroNutrients.some(n => toNum(reportPpmTotals[n]) > 0) ? reportPpmTotals : persistedPpmTotals;
@@ -17959,55 +18301,67 @@ function createHidroponiaSectionHTML() {
   const tankBlocksHtml = tankKeys.map(tq => {
     const data = byTank[tq];
     const totalParts = [];
-    if (data.totalKg > 0) totalParts.push(`${data.totalKg.toFixed(2)} kg`);
-    if (data.totalL > 0) totalParts.push(`${data.totalL.toFixed(2)} L`);
+    if (data.totalKg > 0) totalParts.push(formatHydroProductQty(data.totalKg, 'kg'));
+    if (data.totalL > 0) totalParts.push(formatHydroProductQty(data.totalL, 'L'));
     const perRecParts = [];
-    if (data.totalKg > 0) perRecParts.push(`${(recargas != null && recargas > 0 ? data.totalKg / recargas : data.totalKg).toFixed(2)} kg`);
-    if (data.totalL > 0) perRecParts.push(`${(recargas != null && recargas > 0 ? data.totalL / recargas : data.totalL).toFixed(2)} L`);
+    if (data.totalKg > 0) {
+      perRecParts.push(formatHydroProductQty(recargas != null && recargas > 0 ? data.totalKg / recargas : data.totalKg, 'kg'));
+    }
+    if (data.totalL > 0) {
+      perRecParts.push(formatHydroProductQty(recargas != null && recargas > 0 ? data.totalL / recargas : data.totalL, 'L'));
+    }
     const totalLineSuffix = (recargas != null && recargas > 1)
-      ? ` <span class="hydro-muted">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`
+      ? ` <span class="hydro-muted">(${perRecParts.join(' + ')} ${rt('por recarga si son', 'per fill if there are')} ${recargas} ${rt('recargas', 'fills')})</span>`
       : '';
     const itemsHtml = data.items.map(i => {
       const perRec = recargas != null && recargas > 0 ? (i.value / recargas) : i.value;
       const eq = i.unit === 'L' && Number.isFinite(i.kg) && i.kg > 0
-        ? ` <span class="hydro-muted">(≈ ${i.kg.toFixed(2)} kg eq)</span>`
+        ? ` <span class="hydro-muted">(≈ ${formatHydroProductQty(i.kg, 'kg')} ${rt('eq', 'eq')})</span>`
         : '';
       const perRecHtml = (recargas != null && recargas > 1)
-        ? ` <span class="hydro-muted">(${perRec.toFixed(2)} ${i.unit} por recarga)</span>`
+        ? ` <span class="hydro-muted">(${formatHydroProductQty(perRec, i.unit)} ${rt('por recarga', 'per fill')})</span>`
         : '';
-      return `<span class="hydro-tank-item">${reportEscapeHtml(i.name)}: ${i.value.toFixed(2)} ${i.unit}${eq}${perRecHtml}</span>`;
+      return `<span class="hydro-tank-item">${reportEscapeHtml(i.name)}: ${formatHydroProductQty(i.value, i.unit)}${eq}${perRecHtml}</span>`;
     }).join('');
     return `<div class="hydro-tank-block" data-tank="${reportEscapeHtml(tq)}">
-        <strong class="hydro-tank-block-title">${reportHydroTankIconHtml}<span class="hydro-tank-block-title-text">Tanque ${reportEscapeHtml(tq)}: ${totalParts.join(' + ')} total${totalLineSuffix}</span></strong>
+        <strong class="hydro-tank-block-title">${reportHydroTankIconHtml}<span class="hydro-tank-block-title-text">${rt('Tanque', 'Tank')} ${reportEscapeHtml(tq)}: ${totalParts.join(' + ')} ${rt('total', 'total')}${totalLineSuffix}</span></strong>
         <div class="hydro-tank-block-items">${itemsHtml}</div>
       </div>`;
   }).join('');
+  const noStages = rt('Sin etapas configuradas.', 'No stages configured.');
+  const solidsLiquidsNote = rt(
+    `sólidos en ${massUnitLabel} y líquidos en ${liquidUnitLabel}`,
+    `solids in ${massUnitLabel} and liquids in ${liquidUnitLabel}`
+  );
   return `
     <div class="section">
-      <h2 class="section-title">🌱 Hidroponía</h2>
+      <h2 class="section-title">🌱 ${rt('Hidroponía', 'Hydroponics')}</h2>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">✅ Solución nutritiva por etapa (meq/L)</div>
+        <div class="report-block-title">✅ ${rt('Solución nutritiva por etapa (meq/L)', 'Nutrient solution by stage (meq/L)')}</div>
         <div class="report-kv">
-          <div class="report-kv-item"><div class="data-label">Cultivo</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
+          <div class="report-kv-item"><div class="data-label">${rt('Cultivo', 'Crop')}</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
         </div>
         ${activeStage ? `
         <div class="report-note" style="margin:8px 0 10px 0;">
-          <strong>${activeStageName}</strong> · Suma de N (meq/L): <strong>${activeNTotal.toFixed(2)}</strong> · % Nitrato: <strong>${activePctNo3.toFixed(1)}%</strong> · % Amonio: <strong>${activePctNh4.toFixed(1)}%</strong>
+          <strong>${activeStageName}</strong> · ${rt('Suma de N (meq/L):', 'N sum (meq/L):')} <strong>${activeNTotal.toFixed(2)}</strong> · ${rt('% Nitrato:', '% Nitrate:')} <strong>${activePctNo3.toFixed(1)}%</strong> · ${rt('% Amonio:', '% Ammonium:')} <strong>${activePctNh4.toFixed(1)}%</strong>
         </div>` : ''}
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Etapa</th><th>CE (dS/m)</th>${meqNutrients.map(n => `<th>${label(n)} (meq/L)</th>`).join('')}</tr></thead>
-          <tbody>${stageRowsMeq || `<tr><td colspan="${meqNutrients.length + 2}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
+          <thead><tr><th>${rt('Etapa', 'Stage')}</th><th>CE (dS/m)</th>${meqNutrients.map(n => `<th>${label(n)} (meq/L)</th>`).join('')}</tr></thead>
+          <tbody>${stageRowsMeq || `<tr><td colspan="${meqNutrients.length + 2}" style="text-align:center;color:#64748b;">${noStages}</td></tr>`}</tbody>
         </table>
         </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">📊 Peso en % de meq (aniones y cationes K+Ca+Mg)</div>
-        <div class="report-note report-table-legend" style="margin-bottom:10px;">Aniones: % sobre el total N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻. Cationes K⁺, Ca²⁺, Mg²⁺: % sobre el total K+Ca+Mg (sin amonio). N-NH₄⁺: % sobre el total de cationes (K+Ca+Mg+NH₄⁺).</div>
+        <div class="report-block-title">📊 ${rt('Peso en % de meq (aniones y cationes K+Ca+Mg)', 'Weight in % meq (anions and K+Ca+Mg cations)')}</div>
+        <div class="report-note report-table-legend" style="margin-bottom:10px;">${rt(
+          'Aniones: % sobre el total N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻. Cationes K⁺, Ca²⁺, Mg²⁺: % sobre el total K+Ca+Mg (sin amonio). N-NH₄⁺: % sobre el total de cationes (K+Ca+Mg+NH₄⁺).',
+          'Anions: % of total N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻. Cations K⁺, Ca²⁺, Mg²⁺: % of total K+Ca+Mg (excluding ammonium). N-NH₄⁺: % of total cations (K+Ca+Mg+NH₄⁺).'
+        )}</div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} % meq</th>`).join('')}</tr></thead>
-          <tbody>${stageRowsPct || `<tr><td colspan="${meqNutrients.length + 1}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
+          <thead><tr><th>${rt('Etapa', 'Stage')}</th>${meqNutrients.map(n => `<th>${label(n)} % meq</th>`).join('')}</tr></thead>
+          <tbody>${stageRowsPct || `<tr><td colspan="${meqNutrients.length + 1}" style="text-align:center;color:#64748b;">${noStages}</td></tr>`}</tbody>
         </table>
         </div>
       </div>
@@ -18022,55 +18376,66 @@ function createHidroponiaSectionHTML() {
         const pCa = sumKCM > 0 ? (toNum(meq.Ca) / sumKCM) * 100 : 33.3;
         const pMg = sumKCM > 0 ? (toNum(meq.Mg) / sumKCM) * 100 : 33.3;
         return `<div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">📐 Diagrama ternario (% aniones y cationes)</div>
-        <div class="report-note" style="margin-bottom:8px;">Punto amarillo: aniones (N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻). Punto rojo: cationes (K⁺, Ca²⁺, Mg²⁺). Zona amarilla/roja: rangos de equilibrio.</div>
+        <div class="report-block-title">📐 ${rt('Diagrama ternario (% aniones y cationes)', 'Ternary diagram (% anions and cations)')}</div>
+        <div class="report-note" style="margin-bottom:8px;">${rt(
+          'Punto amarillo: aniones (N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻). Punto rojo: cationes (K⁺, Ca²⁺, Mg²⁺). Zona amarilla/roja: rangos de equilibrio.',
+          'Yellow point: anions (N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻). Red point: cations (K⁺, Ca²⁺, Mg²⁺). Yellow/red zones: equilibrium ranges.'
+        )}</div>
         ${buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg)}
       </div>`;
       })() : ''}
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">📐 Solución nutritiva por etapa (ppm)</div>
+        <div class="report-block-title">📐 ${rt('Solución nutritiva por etapa (ppm)', 'Nutrient solution by stage (ppm)')}</div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}<th>${label('Cl')} ppm</th></tr></thead>
-          <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 2}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
+          <thead><tr><th>${rt('Etapa', 'Stage')}</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}<th>${label('Cl')} ppm</th></tr></thead>
+          <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 2}" style="text-align:center;color:#64748b;">${noStages}</td></tr>`}</tbody>
         </table>
         </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">💧 Análisis de agua (ppm)</div>
-        <div class="report-note" style="margin-bottom:8px;">Aportes del agua para calcular el faltante (objetivo − agua).</div>
+        <div class="report-block-title">💧 ${rt('Análisis de agua (ppm)', 'Water analysis (ppm)')}</div>
+        <div class="report-note" style="margin-bottom:8px;">${rt(
+          'Aportes del agua para calcular el faltante (objetivo − agua).',
+          'Water contributions used to calculate the deficit (target − water).'
+        )}</div>
         <div class="report-nutrient-wrap report-hydro-nutrient-wrap">
           ${hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(h.water && h.water[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
-        <div class="report-block-title">📦 ${hydroT('Cálculo por volumen de agua', 'Calculation by water volume')}</div>
+        <div class="report-block-title">📦 ${rt('Cálculo por volumen de agua', 'Calculation by water volume')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
-          <div><strong>${hydroT('Volumen de agua', 'Water volume')}:</strong> ${reportWaterValue !== null ? reportNum(reportWaterValue, 2) + ' ' + reportWaterUnit : hydroT('Sin dato', 'No data')}</div>
-          <div><strong>${hydroT('Volumen tanque', 'Tank volume')}:</strong> ${reportTankValue !== null ? reportNum(reportTankValue, 2) + ' ' + reportTankUnit : hydroT('Sin dato', 'No data')}</div>
-          <div><strong>${hydroT('Tasa inyección', 'Injection rate')}:</strong> ${injectionRateLperM3 !== null ? reportNum(injectionRateLperM3, 2) + ' ' + reportRateUnit : hydroT('Sin dato', 'No data')}</div>
-          <div><strong>${hydroT('Relación de inyección', 'Injection ratio')}:</strong> ${injectionRatio ? `1:${injectionRatio}` : hydroT('Sin dato', 'No data')}</div>
-          <div><strong>${hydroT('Recargas estimadas', 'Estimated fills')}:</strong> ${recargas !== null ? recargas : hydroT('Sin dato', 'No data')}</div>
+          <div><strong>${rt('Volumen de agua', 'Water volume')}:</strong> ${reportWaterValue !== null ? reportNum(reportWaterValue, 2) + ' ' + reportWaterUnit : rt('Sin dato', 'No data')}</div>
+          <div><strong>${rt('Volumen tanque', 'Tank volume')}:</strong> ${reportTankValue !== null ? reportNum(reportTankValue, 2) + ' ' + reportTankUnit : rt('Sin dato', 'No data')}</div>
+          <div><strong>${rt('Tasa inyección', 'Injection rate')}:</strong> ${injectionRateLperM3 !== null ? reportNum(injectionRateLperM3, 2) + ' ' + reportRateUnit : rt('Sin dato', 'No data')}</div>
+          <div><strong>${rt('Relación de inyección', 'Injection ratio')}:</strong> ${injectionRatio ? `1:${injectionRatio}` : rt('Sin dato', 'No data')}</div>
+          <div><strong>${rt('Recargas estimadas', 'Estimated fills')}:</strong> ${recargas !== null ? recargas : rt('Sin dato', 'No data')}</div>
         </div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">🧮 Fertilizantes</div>
+        <div class="report-block-title">🧮 ${rt('Fertilizantes', 'Fertilizers')}</div>
         <div class="report-note report-table-legend" style="margin-bottom:10px;">
-          Los valores por elemento (N, P, K, Ca, Mg, Fe, etc.) se expresan en <strong>ppm</strong> del aporte en la solución final.
-          La columna <strong>Total producto</strong> corresponde a la cantidad total requerida para el volumen de agua configurado (sólidos en kg y líquidos en L).
+          ${rt(
+            `Los valores por elemento (N, P, K, Ca, Mg, Fe, etc.) se expresan en <strong>ppm</strong> del aporte en la solución final. La columna <strong>Total producto</strong> corresponde a la cantidad total requerida para el volumen de agua configurado (${solidsLiquidsNote}).`,
+            `Element values (N, P, K, Ca, Mg, Fe, etc.) are expressed as <strong>ppm</strong> contributed to the final solution. The <strong>Total product</strong> column is the total amount required for the configured water volume (${solidsLiquidsNote}).`
+          )}
         </div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Fertilizante</th><th>Tanque</th><th>Dosis (ppm)</th>${hydroNutrients.map(n => `<th>${label(n)}</th>`).join('')}<th>Total producto</th></tr></thead>
-          <tbody>${fertRows || `<tr><td colspan="${hydroNutrients.length + 4}" style="text-align:center;color:#64748b;">Sin fertilizantes guardados.</td></tr>`}</tbody>
+          <thead><tr><th>${rt('Fertilizante', 'Fertilizer')}</th><th>${rt('Tanque', 'Tank')}</th><th>${rt('Dosis (ppm)', 'Dose (ppm)')}</th>${hydroNutrients.map(n => `<th>${label(n)}</th>`).join('')}<th>${rt('Total producto', 'Total product')}</th></tr></thead>
+          <tbody>${fertRows || `<tr><td colspan="${hydroNutrients.length + 4}" style="text-align:center;color:#64748b;">${rt('Sin fertilizantes guardados.', 'No fertilizers saved.')}</td></tr>`}</tbody>
         </table>
         </div>
       </div>
       ${tankBlocksHtml ? `
       <div class="report-block">
-        <div class="report-block-title">📋 Por tanque (A, B, C...)</div>
+        <div class="report-block-title">📋 ${rt('Por tanque (A, B, C...)', 'By tank (A, B, C...)')}</div>
         <div class="report-note" style="margin-bottom:8px;">
-          Las cantidades son el total para todo el volumen de agua indicado (sólidos en kg y líquidos en L). Si necesitas varias recargas, en cada llenada usa la cantidad "por recarga".
+          ${rt(
+            `Las cantidades son el total para todo el volumen de agua indicado (${solidsLiquidsNote}). Si necesitas varias recargas, en cada llenada usa la cantidad "por recarga".`,
+            `Amounts are totals for the full water volume shown (${solidsLiquidsNote}). If you need several fills, use the "per fill" amount for each fill.`
+          )}
         </div>
         <div class="hydro-tank-blocks">
           ${tankBlocksHtml}
@@ -18085,15 +18450,21 @@ function createHidroponiaSectionHTML() {
           : '';
         return `
       <div class="report-block" style="border-color:#bae6fd;background:#f8fafc;">
-        <div class="report-block-title">📊 Aporte total estimado (fertilizantes)</div>
-        <div class="report-note" style="margin-bottom:8px;">Solo aporte de la tabla de fertilizantes. Debajo: meq/L y % meq (aniones sin Cl; cationes K+Ca+Mg sin NH₄).</div>
+        <div class="report-block-title">📊 ${rt('Aporte total estimado (fertilizantes)', 'Estimated total contribution (fertilizers)')}</div>
+        <div class="report-note" style="margin-bottom:8px;">${rt(
+          'Solo aporte de la tabla de fertilizantes. Debajo: meq/L y % meq (aniones sin Cl; cationes K+Ca+Mg sin NH₄).',
+          'Fertilizer table contribution only. Below: meq/L and % meq (anions without Cl; K+Ca+Mg cations without NH₄).'
+        )}</div>
         <div class="report-nutrient-wrap report-hydro-nutrient-wrap" style="margin-bottom:10px;">${ppmPills}</div>
         ${meqBlock ? `<div class="report-hydro-fert-meq-wrap">${meqBlock}</div>` : ''}
       </div>`;
       })()}
       <div class="report-block">
-        <div class="report-block-title">📊 PPM aportadas totales (solución nutritiva + agua)</div>
-        <div class="report-note" style="margin-bottom:8px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</div>
+        <div class="report-block-title">📊 ${rt('PPM aportadas totales (solución nutritiva + agua)', 'Total contributed PPM (nutrient solution + water)')}</div>
+        <div class="report-note" style="margin-bottom:8px;">${rt(
+          'Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.',
+          'Total per nutrient = fertilizer contribution in the nutrient solution + irrigation water contribution.'
+        )}</div>
         <div class="report-nutrient-wrap report-hydro-nutrient-wrap">
           ${hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
@@ -18133,32 +18504,56 @@ function createHidroponiaSectionHTML() {
         if (nFer <= 0 && ncFer <= 0 && nSol <= 0 && ncSol <= 0) return '';
         const bitsF = [];
         if (nFer > 0) {
-          bitsF.push(`partición del N en <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
+          bitsF.push(rt(
+            `partición del N en <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`,
+            `N partition in <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`
+          ));
         }
         if (ncFer > 0) {
-          bitsF.push(`N-NO₃⁻ + Cl⁻ en <strong>meq/L</strong> (mismo aporte): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
+          bitsF.push(rt(
+            `N-NO₃⁻ + Cl⁻ en <strong>meq/L</strong> (mismo aporte): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`,
+            `N-NO₃⁻ + Cl⁻ in <strong>meq/L</strong> (same contribution): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`
+          ));
         } else if (mClF <= 0 && nFer > 0) {
-          bitsF.push('sin Cl⁻ en meq/L por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+          bitsF.push(rt(
+            'sin Cl⁻ en meq/L por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)',
+            'no Cl⁻ in meq/L from fertilizers (appears when using KCl, calcium chloride, etc.)'
+          ));
         }
         const lineF = bitsF.length
-          ? `<strong>Aporte solo fertilizantes:</strong> porcentajes sobre <strong>meq/L</strong> desde las ppm aportadas (N a 14 mg/meq, Cl⁻ a 35,45 mg/meq). ${bitsF.join('; ')}.`
+          ? rt(
+            `<strong>Aporte solo fertilizantes:</strong> porcentajes sobre <strong>meq/L</strong> desde las ppm aportadas (N a 14 mg/meq, Cl⁻ a 35,45 mg/meq). ${bitsF.join('; ')}.`,
+            `<strong>Fertilizer-only contribution:</strong> percentages over <strong>meq/L</strong> from contributed ppm (N at 14 mg/meq, Cl⁻ at 35.45 mg/meq). ${bitsF.join('; ')}.`
+          )
           : '';
         const bitsS = [];
         if (nSol > 0) {
-          bitsS.push(`partición del N total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
+          bitsS.push(rt(
+            `partición del N total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`,
+            `total N partition in <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`
+          ));
         }
         if (ncSol > 0) {
-          bitsS.push(`N-NO₃⁻ + Cl⁻ total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye agua si capturaste Cl⁻)`);
+          bitsS.push(rt(
+            `N-NO₃⁻ + Cl⁻ total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye agua si capturaste Cl⁻)`,
+            `total N-NO₃⁻ + Cl⁻ in <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (includes water if you entered Cl⁻)`
+          ));
         } else if (mClSol <= 0 && nSol > 0) {
-          bitsS.push('sin Cl⁻ en meq/L (fertilizantes ni agua) para el par N-NO₃⁻ + Cl⁻');
+          bitsS.push(rt(
+            'sin Cl⁻ en meq/L (fertilizantes ni agua) para el par N-NO₃⁻ + Cl⁻',
+            'no Cl⁻ in meq/L (fertilizers or water) for the N-NO₃⁻ + Cl⁻ pair'
+          ));
         }
         const lineS = bitsS.length
-          ? `<strong>Solución final (fertilizantes + agua):</strong> mismos criterios en <strong>meq/L</strong>. ${bitsS.join('; ')}.`
+          ? rt(
+            `<strong>Solución final (fertilizantes + agua):</strong> mismos criterios en <strong>meq/L</strong>. ${bitsS.join('; ')}.`,
+            `<strong>Final solution (fertilizers + water):</strong> same criteria in <strong>meq/L</strong>. ${bitsS.join('; ')}.`
+          )
           : '';
         if (!lineF && !lineS) return '';
         return `
       <div class="report-block">
-        <div class="report-block-title">📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻ (sobre meq/L)</div>
+        <div class="report-block-title">${rt('📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻ (sobre meq/L)', '📎 N-NO₃⁻ / N-NH₄⁺ and N-NO₃⁻ / Cl⁻ ratio (over meq/L)')}</div>
         <div class="report-note" style="margin-bottom:0;line-height:1.5;">${lineF}${lineF && lineS ? '<br><br>' : ''}${lineS}</div>
       </div>`;
       })()}
@@ -18167,6 +18562,8 @@ function createHidroponiaSectionHTML() {
 }
 
 function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
+  const reportLang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = (es, en) => reportLang === 'en' ? en : es;
   const vpd = currentProject.vpdAnalysis || {};
   const env = vpd.environmental || {};
   const adv = vpd.advanced || {};
@@ -18187,10 +18584,10 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
   };
   const historyRows = history.slice().reverse().slice(0, 20).map(item => `
     <tr>
-      <td>${item.type === 'advanced' ? 'Avanzada' : 'Ambiental'}</td>
+      <td>${item.type === 'advanced' ? rt('Avanzada', 'Advanced') : rt('Ambiental', 'Environmental')}</td>
       <td>${reportNum(item.vpd, 2)}</td>
       <td>${reportNum(item.hd, 2)}</td>
-      <td>${reportEscapeHtml(item.timestamp ? new Date(item.timestamp).toLocaleString('es-MX') : (item.date || '—'))}</td>
+      <td>${reportEscapeHtml(item.timestamp ? reportFormatDateTime(item.timestamp, reportLang) : (item.date || '—'))}</td>
     </tr>
   `).join('');
   const criticalPrep = currentRangeTable
@@ -18215,9 +18612,9 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
     return `
       <tr>
         <td>${idx + 1}</td>
-        <td>${reportEscapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))}</td>
-        <td>${reportEscapeHtml(String(meta.startDate || '—'))}</td>
-        <td>${reportEscapeHtml(String(meta.endDate || '—'))}</td>
+        <td>${reportEscapeHtml(meta.granularity === 'weekly' ? rt('Semanal', 'Weekly') : (meta.granularity === 'monthly' ? rt('Mensual', 'Monthly') : rt('Diario', 'Daily')))}</td>
+        <td>${reportEscapeHtml(meta.startDate ? reportFormatDate(meta.startDate, reportLang) : '—')}</td>
+        <td>${reportEscapeHtml(meta.endDate ? reportFormatDate(meta.endDate, reportLang) : '—')}</td>
         <td>${rows.length}</td>
         <td>${reportEscapeHtml(mode)}</td>
         <td>${reportEscapeHtml(coverage)}</td>
@@ -18228,44 +18625,44 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
 
   return `
     <div class="section">
-      <h2 class="section-title">🌤️ Clima — VPD</h2>
+      <h2 class="section-title">🌤️ ${rt('Clima — VPD', 'Climate — VPD')}</h2>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">📊 Estimador ambiental simple</div>
+        <div class="report-block-title">📊 ${rt('Estimador ambiental simple', 'Simple environmental calculator')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-          <div><strong>Temperatura:</strong> ${tempQ(env.temperature)}</div>
-          <div><strong>Humedad Relativa:</strong> ${reportNum(env.humidity, 2)} %</div>
-          ${envUsesSolar ? `<div><strong>Radiación:</strong> ${envSolar != null ? reportNum(envSolar, 0) + ' W/m²' : '—'}</div>` : ''}
+          <div><strong>${rt('Temperatura:', 'Temperature:')}</strong> ${tempQ(env.temperature)}</div>
+          <div><strong>${rt('Humedad Relativa:', 'Relative Humidity:')}</strong> ${reportNum(env.humidity, 2)} %</div>
+          ${envUsesSolar ? `<div><strong>${rt('Radiación:', 'Radiation:')}</strong> ${envSolar != null ? reportNum(envSolar, 0) + ' W/m²' : '—'}</div>` : ''}
           <div><strong>VPD:</strong> <span class="badge-ok">${reportNum(envVpd, 2)} kPa</span></div>
           <div><strong>HD:</strong> ${reportNum(env.hd, 2)} g/m³</div>
-          ${env.calculatedAt ? `<div><strong>Calculado:</strong> ${reportEscapeHtml(new Date(env.calculatedAt).toLocaleString('es-MX'))}</div>` : ''}
-          ${env.source ? `<div><strong>Fuente:</strong> ${reportEscapeHtml(env.source === 'api' ? 'API Meteorológica' : 'Manual')}</div>` : ''}
+          ${env.calculatedAt ? `<div><strong>${rt('Calculado:', 'Calculated:')}</strong> ${reportEscapeHtml(reportFormatDateTime(env.calculatedAt, reportLang))}</div>` : ''}
+          ${env.source ? `<div><strong>${rt('Fuente:', 'Source:')}</strong> ${reportEscapeHtml(env.source === 'api' ? rt('API Meteorológica', 'Weather API') : rt('Manual', 'Manual'))}</div>` : ''}
         </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">🔬 Estimador avanzado</div>
+        <div class="report-block-title">🔬 ${rt('Estimador avanzado', 'Advanced calculator')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-          <div><strong>Temperatura Aire:</strong> ${tempQ(adv.airTemperature)}</div>
-          <div><strong>Humedad Relativa:</strong> ${reportNum(adv.airHumidity, 2)} %</div>
-          <div><strong>Temp. Hoja:</strong> ${tempQ(adv.leafTemperature != null ? adv.leafTemperature : adv.calculatedLeafTemp)}</div>
+          <div><strong>${rt('Temperatura Aire:', 'Air Temperature:')}</strong> ${tempQ(adv.airTemperature)}</div>
+          <div><strong>${rt('Humedad Relativa:', 'Relative Humidity:')}</strong> ${reportNum(adv.airHumidity, 2)} %</div>
+          <div><strong>${rt('Temp. Hoja:', 'Leaf Temp.:')}</strong> ${tempQ(adv.leafTemperature != null ? adv.leafTemperature : adv.calculatedLeafTemp)}</div>
           <div><strong>VPD:</strong> <span class="badge-ok">${reportNum(advVpd, 2)} kPa</span></div>
           <div><strong>HD:</strong> ${reportNum(adv.hd, 2)} g/m³</div>
-          ${adv.calculatedAt ? `<div><strong>Calculado:</strong> ${reportEscapeHtml(new Date(adv.calculatedAt).toLocaleString('es-MX'))}</div>` : ''}
+          ${adv.calculatedAt ? `<div><strong>${rt('Calculado:', 'Calculated:')}</strong> ${reportEscapeHtml(reportFormatDateTime(adv.calculatedAt, reportLang))}</div>` : ''}
         </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">📜 Historial de Cálculos (${history.length})</div>
+        <div class="report-block-title">📜 ${rt('Historial de Cálculos', 'Calculation History')} (${history.length})</div>
         <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-history-table">
           <thead>
             <tr>
-              <th>Tipo</th>
+              <th>${rt('Tipo', 'Type')}</th>
               <th>VPD (kPa)</th>
               <th>HD (g/m³)</th>
-              <th>Fecha/Hora</th>
+              <th>${rt('Fecha/Hora', 'Date/Time')}</th>
             </tr>
           </thead>
           <tbody>
-            ${historyRows || '<tr><td colspan="4" style="text-align:center;color:#64748b;">Sin historial de cálculos.</td></tr>'}
+            ${historyRows || `<tr><td colspan="4" style="text-align:center;color:#64748b;">${rt('Sin historial de cálculos.', 'No calculation history.')}</td></tr>`}
           </tbody>
         </table>
         </div>
@@ -18342,12 +18739,16 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
 }
 
 function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
+  const reportLang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = (es, en) => reportLang === 'en' ? en : es;
   const ca = currentProject.climateAnalysis || {};
   const rain = ca.rainfall;
   const et0 = ca.et0;
   const live = ca.lastReading;
   const climateCharts = chartImages && chartImages.climate ? chartImages.climate : {};
-  const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const monthLabels = reportLang === 'en'
+    ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    : ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const depthUnit = window.NpWaterClimateUI ? window.NpWaterClimateUI.unit('water_depth') : 'mm';
   function reportDepthNumber(value, digits) {
     if (value == null || !Number.isFinite(Number(value))) return '—';
@@ -18411,8 +18812,8 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
   var monthHead =
     monthColgroup +
     '<thead><tr>' +
-    '<th class="report-climate-col-year">Año</th>' +
-    '<th class="report-climate-col-acum">Acum.<br>anual (' + depthUnit + ')</th>' +
+    '<th class="report-climate-col-year">' + rt('Año', 'Year') + '</th>' +
+    '<th class="report-climate-col-acum">' + rt('Acum.<br>anual', 'Annual<br>accum.') + ' (' + depthUnit + ')</th>' +
     monthLabels.map(function (l) { return '<th class="report-climate-col-month">' + l + '</th>'; }).join('') +
     '</tr></thead>';
   function wrapClimateMonthlyTable(variant, bodyRows) {
@@ -18429,11 +18830,13 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
   var rainTable = '';
   if (rain && rain.monthsPrev) {
     var rainRows = getClimateYearEntriesForReport(rain).map(function (entry) {
-      var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+      var label = entry.partial
+        ? String(entry.year) + ' ' + rt('(parcial)', '(partial)')
+        : String(entry.year);
       return monthRow(label, entry.months, entry.partial ? maxMonth : 12, false);
     }).join('');
     if (rain.diff && Object.keys(rain.diff).length) {
-      rainRows += monthRow('Diferencia (' + currY + ' − ' + prevY + ')', rain.diff, maxMonth, true);
+      rainRows += monthRow(rt('Diferencia', 'Difference') + ' (' + currY + ' − ' + prevY + ')', rain.diff, maxMonth, true);
     }
     rainTable = wrapClimateMonthlyTable('rain', rainRows);
   }
@@ -18442,20 +18845,27 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
     var et0PrevY = et0.previousYear != null ? et0.previousYear : prevY;
     var et0CurrY = et0.currentYear != null ? et0.currentYear : currY;
     var et0Rows = getClimateYearEntriesForReport(et0).map(function (entry) {
-      var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+      var label = entry.partial
+        ? String(entry.year) + ' ' + rt('(parcial)', '(partial)')
+        : String(entry.year);
       return monthRow(label, entry.months, entry.partial ? maxMonth : 12, false);
     }).join('');
     if (et0.diff && Object.keys(et0.diff).length) {
-      et0Rows += monthRow('Diferencia (' + et0CurrY + ' − ' + et0PrevY + ')', et0.diff, maxMonth, true);
+      et0Rows += monthRow(rt('Diferencia', 'Difference') + ' (' + et0CurrY + ' − ' + et0PrevY + ')', et0.diff, maxMonth, true);
     }
     et0Table = wrapClimateMonthlyTable('et0', et0Rows);
   }
   var combinedChartBlock = '';
   if (climateCharts.combined) {
     combinedChartBlock =
-      '<div class="report-block"><div class="report-block-title">📊 Lluvia vs ET₀ (mm/mes)</div>' +
-      '<p style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; si hay Kc, <strong>punteada</strong> = ETc del año en curso (ET₀ × Kc constante).</p>' +
-      '<img src="' + climateCharts.combined + '" alt="Gráfica lluvia y ET0 mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
+      '<div class="report-block"><div class="report-block-title">📊 ' + rt('Lluvia vs ET₀', 'Rain vs ET₀') + ' (' + depthUnit + '/' + rt('mes', 'month') + ')</div>' +
+      '<p style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45;">' +
+      rt(
+        'Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; si hay Kc, <strong>punteada</strong> = ETc del año en curso (ET₀ × Kc constante).',
+        'Same scale to compare precipitation and reference evapotranspiration. <strong>Solid</strong> lines = rain; <strong>dashed</strong> = ET₀; if Kc is set, <strong>dotted</strong> = current-year ETc (ET₀ × constant Kc).'
+      ) +
+      '</p>' +
+      '<img src="' + climateCharts.combined + '" alt="' + rt('Gráfica lluvia y ET0 mensual', 'Monthly rain and ET0 chart') + '" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
   }
   var liveBlock = '';
   if (live && live.temperature != null) {
@@ -18465,8 +18875,8 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
       try {
         liveWhen =
           '<p style="margin:0 0 8px;font-size:12px;color:#64748b;">' +
-          '<strong>Lectura:</strong> ' +
-          reportEscapeHtml(new Date(liveTs).toLocaleString('es-MX')) +
+          '<strong>' + rt('Lectura:', 'Reading:') + '</strong> ' +
+          reportEscapeHtml(reportFormatDateTime(liveTs, reportLang)) +
           '</p>';
       } catch (e) {
         liveWhen = '';
@@ -18488,13 +18898,13 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
       liveWhen +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:13px;">' +
       '<div><strong>T:</strong> ' + waterClimateResult(live.temperature, 'temperature', 1) + '</div>' +
-      '<div><strong>HR:</strong> ' + reportNum(live.humidity, 0) + ' %</div>' +
-      '<div><strong>Radiación:</strong> ' + (live.shortwaveRadiation != null ? Math.round(live.shortwaveRadiation) + ' W/m²' : '—') + '</div>' +
+      '<div><strong>' + rt('HR:', 'RH:') + '</strong> ' + reportNum(live.humidity, 0) + ' %</div>' +
+      '<div><strong>' + rt('Radiación:', 'Radiation:') + '</strong> ' + (live.shortwaveRadiation != null ? Math.round(live.shortwaveRadiation) + ' W/m²' : '—') + '</div>' +
       '<div><strong>UV:</strong> ' + reportNum(live.uvIndex, 1) + '</div>' +
-      '<div><strong>Rocío:</strong> ' + waterClimateResult(live.dewPoint, 'temperature', 1) + '</div>' +
-      '<div><strong>Viento:</strong> ' + waterClimateResult(live.windSpeedKmh, 'speed', 1) + '</div>' +
-      '<div><strong>Lluvia (hoy):</strong> ' + (liveRain != null ? waterClimateResult(liveRain, 'water_depth', 1) : '—') + '</div>' +
-      '<div><strong>ET₀ (hoy):</strong> ' + (liveEt0 != null ? waterClimateResult(liveEt0, 'water_depth', 1) : '—') + '</div>' +
+      '<div><strong>' + rt('Rocío:', 'Dew point:') + '</strong> ' + waterClimateResult(live.dewPoint, 'temperature', 1) + '</div>' +
+      '<div><strong>' + rt('Viento:', 'Wind:') + '</strong> ' + waterClimateResult(live.windSpeedKmh, 'speed', 1) + '</div>' +
+      '<div><strong>' + rt('Lluvia (hoy):', 'Rain (today):') + '</strong> ' + (liveRain != null ? waterClimateResult(liveRain, 'water_depth', 1) : '—') + '</div>' +
+      '<div><strong>' + rt('ET₀ (hoy):', 'ET₀ (today):') + '</strong> ' + (liveEt0 != null ? waterClimateResult(liveEt0, 'water_depth', 1) : '—') + '</div>' +
       '</div>';
   }
   var irrBlock = '';
@@ -18511,15 +18921,20 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
   if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock && !soilWaterBlock) return '';
   var satNote =
     '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
-    '<strong>Nota:</strong> estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.</p>';
+    '<strong>' + rt('Nota:', 'Note:') + '</strong> ' +
+    rt(
+      'estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.',
+      'estimates based on satellite information at the field; they may differ from on-site weather.'
+    ) +
+    '</p>';
   return (
     '<div class="section">' +
-    '<h2 class="section-title" style="margin-top:24px;">🌧️ Clima — Lluvia, ET₀ y tiempo actual</h2>' +
+    '<h2 class="section-title" style="margin-top:24px;">🌧️ ' + rt('Clima — Lluvia, ET₀ y tiempo actual', 'Climate — Rain, ET₀ and current weather') + '</h2>' +
     satNote +
-    (rainTable ? '<div class="report-block"><div class="report-block-title">Precipitación (' + depthUnit + '/mes)</div>' + rainTable + '</div>' : '') +
-    (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (' + depthUnit + '/mes, suma diaria)</div>' + et0Table + '</div>' : '') +
+    (rainTable ? '<div class="report-block"><div class="report-block-title">' + rt('Precipitación', 'Precipitation') + ' (' + depthUnit + '/' + rt('mes', 'month') + ')</div>' + rainTable + '</div>' : '') +
+    (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (' + depthUnit + '/' + rt('mes', 'month') + ', ' + rt('suma diaria', 'daily sum') + ')</div>' + et0Table + '</div>' : '') +
     (combinedChartBlock || '') +
-    (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
+    (liveBlock ? '<div class="report-block"><div class="report-block-title">' + rt('Última lectura', 'Latest reading') + '</div>' + liveBlock + '</div>' : '') +
     (irrBlock || '') +
     (soilWaterBlock || '') +
     '</div>'
@@ -18713,7 +19128,7 @@ function createEmptySolucionNutritivaAnalysis() {
 }
 
 function createSolucionNutritivaTabHTML() {
-  return `
+  var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="solucion-nutritiva-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -18736,8 +19151,8 @@ function createSolucionNutritivaTabHTML() {
           </div>
           <div id="solucion-nutritiva-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <input type="text" id="sn-meta-title" placeholder="Título (ej. Agua Carrizalillo May 2025)" class="soil-input-inline" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('meta','title',this.value)">
-              <input type="text" id="sn-meta-date" placeholder="Fecha (ej. 2025-05-28)" class="soil-input-inline" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('meta','date',this.value)">
+              <input type="text" id="sn-meta-title" placeholder="${dashboardT('analysis.sn_meta_title_placeholder', 'Título (ej. Agua Carrizalillo May 2025)')}" data-i18n-placeholder="analysis.sn_meta_title_placeholder" class="soil-input-inline" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('meta','title',this.value)">
+              <input type="text" id="sn-meta-date" placeholder="${dashboardT('analysis.sn_meta_date_placeholder', 'Fecha (ej. 2025-05-28)')}" data-i18n-placeholder="analysis.sn_meta_date_placeholder" class="soil-input-inline" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentSolucionNutritivaAnalysis && window.deleteCurrentSolucionNutritivaAnalysis();">Eliminar</button>
             </div>
             <div class="soil-analysis-sections">
@@ -18801,6 +19216,7 @@ function createSolucionNutritivaTabHTML() {
       </div>
     </div>
   `;
+  return analysisPresentHtml(html);
 }
 
 window.getSolucionNutritivaAnalyses = function getSolucionNutritivaAnalyses() {
@@ -18905,7 +19321,7 @@ window.snUpdateMicroRef = function snUpdateMicroRef() {
     var refEl = document.getElementById('sn-ref-' + key);
     var diffEl = document.getElementById('sn-diff-' + key);
     var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
-    if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
+    if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
     if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = val - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
   });
 };
@@ -18924,11 +19340,11 @@ window.snUpdateMacroRef = function snUpdateMacroRef(group, key) {
   var diffEl = document.getElementById('sn-diff-' + key);
   var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
   if (refEl) {
-    if (isNaN(ppmVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; }
+    if (isNaN(ppmVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     else if (r) {
-      if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; }
+      if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; }
   }
   if (diffEl && !isNaN(idealVal) && !isNaN(ppmVal)) { var d = ppmVal - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
@@ -19071,7 +19487,7 @@ function createEmptyExtractoPastaAnalysis() {
 }
 
 function createExtractoPastaTabHTML() {
-  return `
+  var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="extracto-pasta-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -19094,8 +19510,8 @@ function createExtractoPastaTabHTML() {
           </div>
           <div id="extracto-pasta-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <input type="text" id="ep-meta-title" placeholder="Título (ej. Extracto pasta Ene 2025)" class="soil-input-inline" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('meta','title',this.value)">
-              <input type="text" id="ep-meta-date" placeholder="Fecha (ej. 2025-01-15)" class="soil-input-inline" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('meta','date',this.value)">
+              <input type="text" id="ep-meta-title" placeholder="${dashboardT('analysis.ep_meta_title_placeholder', 'Título (ej. Extracto pasta Ene 2025)')}" data-i18n-placeholder="analysis.ep_meta_title_placeholder" class="soil-input-inline" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('meta','title',this.value)">
+              <input type="text" id="ep-meta-date" placeholder="${dashboardT('analysis.ep_meta_date_placeholder', 'Fecha (ej. 2025-01-15)')}" data-i18n-placeholder="analysis.ep_meta_date_placeholder" class="soil-input-inline" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentExtractoPastaAnalysis && window.deleteCurrentExtractoPastaAnalysis();">Eliminar</button>
             </div>
             <div class="soil-analysis-sections">
@@ -19175,6 +19591,7 @@ function createExtractoPastaTabHTML() {
       </div>
     </div>
   `;
+  return analysisPresentHtml(html);
 }
 
 window.getExtractoPastaAnalyses = function getExtractoPastaAnalyses() {
@@ -19301,28 +19718,28 @@ window.epUpdateMacroRef = function epUpdateMacroRef(group, key) {
   }
 
   if (refEl) {
-    if (isNaN(ppmVal) && key !== 'co3') { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; }
+    if (isNaN(ppmVal) && key !== 'co3') { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     else if (key === 'co3') {
-      if (isNaN(meqVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (meqVal <= EP_REF_PPM.co3.maxMeq) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; }
+      if (isNaN(meqVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (meqVal <= EP_REF_PPM.co3.maxMeq) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     } else if (key === 'na' || key === 'cl' || key === 'hco3') {
       var th = EP_REF_PPM[key];
-      if (ppmVal <= th.idealMax) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Ideal"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal >= th.riskMin) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Riesgo"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Atención"></span>'; refEl.className = 'sn-ref-badge'; }
+      if (ppmVal <= th.idealMax) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ideal') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (ppmVal >= th.riskMin) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('risk') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('caution') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     } else if (key === 'po4') {
       var r = EP_P_REF;
-      if (isNaN(ppmVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; }
+      if (isNaN(ppmVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     } else {
       var r = EP_REF_PPM[key];
       if (!r || !Array.isArray(r)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
     }
   }
   if (diffEl && !isNaN(idealVal)) {
@@ -19348,7 +19765,7 @@ window.epUpdateMicroRef = function epUpdateMicroRef() {
     var refEl = document.getElementById('ep-ref-' + key);
     var diffEl = document.getElementById('ep-diff-' + key);
     var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
-    if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
+    if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
     if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = val - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
   });
 };
@@ -19369,9 +19786,9 @@ window.epUpdateRatiosRef = function epUpdateRatiosRef() {
     if (!range || isNaN(num) || isNaN(den) || den === 0) { valueEl.textContent = '—'; refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; return; }
     var ratio = num / den;
     valueEl.textContent = ratio.toFixed(2);
-    if (ratio >= range[0] && ratio <= range[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; }
-    else if (ratio < range[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; }
-    else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; }
+    if (ratio >= range[0] && ratio <= range[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+    else if (ratio < range[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+    else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
   }
   setRatio('no3_k', no3, k, 'ep-ratio-no3-k', 'ep-ref-ratio-no3-k', EP_RATIO_IDEAL.no3_k);
   setRatio('k_ca', k, ca, 'ep-ratio-k-ca', 'ep-ref-ratio-k-ca', EP_RATIO_IDEAL.k_ca);
@@ -19524,7 +19941,7 @@ function createEmptyAguaAnalysis() {
 
 function createAguaTabHTML() {
   var acidOptions = AGUA_ACIDS.map(function(ac){ return '<option value="'+ac.id+'">'+ac.name+'</option>'; }).join('');
-  return `
+  var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="agua-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -19549,9 +19966,9 @@ function createAguaTabHTML() {
           <div id="agua-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
               <label style="margin-right:8px;">m³ agua de riego:</label>
-              <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="ej. 100" style="width:80px;" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
-              <input type="text" id="aw-meta-title" placeholder="Título" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','title',this.value)">
-              <input type="text" id="aw-meta-date" placeholder="Fecha" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','date',this.value)">
+              <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" style="width:80px;" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
+              <input type="text" id="aw-meta-title" placeholder="${dashboardT('analysis.meta_title_simple', 'Título')}" data-i18n-placeholder="analysis.meta_title_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','title',this.value)">
+              <input type="text" id="aw-meta-date" placeholder="${dashboardT('analysis.meta_date_simple', 'Fecha')}" data-i18n-placeholder="analysis.meta_date_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentAguaAnalysis && window.deleteCurrentAguaAnalysis();">Eliminar</button>
             </div>
             <div class="soil-analysis-sections">
@@ -19635,6 +20052,7 @@ function createAguaTabHTML() {
       </div>
     </div>
   `;
+  return analysisPresentHtml(html);
 }
 
 window.getAguaAnalyses = function getAguaAnalyses() {
@@ -19693,7 +20111,14 @@ window.saveAguaField = function saveAguaField(group, valueOrField, value) {
   if (!id) return;
   var a = window.getAguaAnalyses().find(function(x) { return x.id === id; });
   if (!a) return;
-  if (group === 'm3Riego') { a.m3Riego = valueOrField; }
+  if (group === 'm3Riego') {
+    var siVol = valueOrField;
+    if (window.NpAnalysisUI && typeof window.NpAnalysisUI.volumeInputToSI === 'function' && valueOrField !== '' && valueOrField != null) {
+      var converted = window.NpAnalysisUI.volumeInputToSI(valueOrField);
+      siVol = Number.isFinite(converted) ? converted : valueOrField;
+    }
+    a.m3Riego = siVol;
+  }
   else if (group === 'meta') { a[valueOrField] = value; }
   else if (group === 'general' && a.general) { a.general[valueOrField] = value; }
   else if (group === 'acidId') { a.acidId = valueOrField; }
@@ -19750,7 +20175,13 @@ function awGetM3Riego(a) {
   var m = parseFloat(a && a.m3Riego);
   if (!isNaN(m) && m > 0) return m;
   var inp = document.getElementById('aw-m3-riego');
-  var fromDom = inp ? parseFloat(inp.value) : NaN;
+  if (!inp) return 0;
+  var fromDom;
+  if (window.NpAnalysisUI && typeof window.NpAnalysisUI.volumeInputToSI === 'function') {
+    fromDom = window.NpAnalysisUI.volumeInputToSI(inp.value);
+  } else {
+    fromDom = parseFloat(inp.value);
+  }
   if (!isNaN(fromDom) && fromDom > 0) return fromDom;
   return 0;
 }
@@ -19764,8 +20195,14 @@ window.awUpdateKgOxide = function awUpdateKgOxide() {
   function setKg(ppm, elKg, elOxide, factor) {
     var p = parseFloat(ppm); if (isNaN(p)) { if (elKg) elKg.textContent = '—'; if (elOxide) elOxide.textContent = '—'; return; }
     var kg = (p * m3) / 1000;
-    if (elKg) elKg.textContent = m3 ? kg.toFixed(2) : '—';
-    if (elOxide) elOxide.textContent = factor ? (m3 ? (kg * factor).toFixed(2) : '—') : '—';
+    var fmt = function (k, digits) {
+      if (!m3) return '—';
+      return window.NpAnalysisUI && typeof window.NpAnalysisUI.formatMassKg === 'function'
+        ? window.NpAnalysisUI.formatMassKg(k, digits)
+        : k.toFixed(digits) + ' kg';
+    };
+    if (elKg) elKg.textContent = fmt(kg, 2);
+    if (elOxide) elOxide.textContent = factor ? fmt(kg * factor, 2) : '—';
   }
   var c = a.cations; var an = a.anions;
   setKg(c && c.ca_ppm, document.getElementById('aw-kg-ca'), document.getElementById('aw-kg-cao'), AW_OXIDE_FACTORS.ca);
@@ -19778,8 +20215,8 @@ window.awUpdateKgOxide = function awUpdateKgOxide() {
   var elSO3 = document.getElementById('aw-kg-so3');
   if (!isNaN(so4Ppm) && m3) {
     var kgS = (so4Ppm * m3) / 1000;
-    if (elS) elS.textContent = kgS.toFixed(2);
-    if (elSO3) elSO3.textContent = (kgS * AW_S_TO_SO3).toFixed(2);
+    if (elS) elS.textContent = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kgS, 2) : kgS.toFixed(2);
+    if (elSO3) elSO3.textContent = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kgS * AW_S_TO_SO3, 2) : (kgS * AW_S_TO_SO3).toFixed(2);
   } else {
     if (elS) elS.textContent = '—';
     if (elSO3) elSO3.textContent = '—';
@@ -19790,16 +20227,17 @@ window.awUpdateKgOxide = function awUpdateKgOxide() {
   var elP2O5 = document.getElementById('aw-kg-p2o5');
   if (!isNaN(po4Ppm) && m3) {
     var kgP = (po4Ppm * m3) / 1000;
-    if (elP) elP.textContent = kgP.toFixed(2);
-    if (elP2O5) elP2O5.textContent = (kgP * AW_P_TO_P2O5).toFixed(2);
+    if (elP) elP.textContent = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kgP, 2) : kgP.toFixed(2);
+    if (elP2O5) elP2O5.textContent = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kgP * AW_P_TO_P2O5, 2) : (kgP * AW_P_TO_P2O5).toFixed(2);
   } else {
     if (elP) elP.textContent = '—';
     if (elP2O5) elP2O5.textContent = '—';
   }
   // N-NO3: la ppm es de N (elemento); kg N = ppm N × m³/1000 (el fertilizante se expresa como N)
   var no3Ppm = an && an.no3_ppm ? parseFloat(an.no3_ppm) : NaN;
-  if (!isNaN(no3Ppm) && m3) { var kgN = (no3Ppm * m3) / 1000; var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = kgN.toFixed(2); } else { var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = '—'; }
-  var micros = a.micros; if (micros) { ['b','fe','mn','zn','cu'].forEach(function(k){ var p = parseFloat(micros[k]); var el = document.getElementById('aw-kg-' + k); if (el) el.textContent = (m3 && !isNaN(p)) ? ((p * m3) / 1000).toFixed(3) : '—'; }); }
+  if (!isNaN(no3Ppm) && m3) { var kgN = (no3Ppm * m3) / 1000; var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kgN, 2) : kgN.toFixed(2); } else { var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = '—'; }
+  var micros = a.micros; if (micros) { ['b','fe','mn','zn','cu'].forEach(function(k){ var p = parseFloat(micros[k]); var el = document.getElementById('aw-kg-' + k); if (el) el.textContent = (m3 && !isNaN(p)) ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg((p * m3) / 1000, 3) : ((p * m3) / 1000).toFixed(3)) : '—'; }); }
+  analysisApplyUnits(document.getElementById('agua-tab-container'));
 };
 
 window.awUpdateAcid = function awUpdateAcid() {
@@ -19819,19 +20257,27 @@ window.awUpdateAcid = function awUpdateAcid() {
   var m3 = awGetM3Riego(a);
   var elResidualInput = document.getElementById('aw-acid-residual');
   if (elResidualInput && document.activeElement !== elResidualInput) elResidualInput.value = residualMeq.toFixed(2);
-  document.getElementById('aw-acid-m3-ref').textContent = m3 ? m3.toFixed(2) + ' m³' : '—';
+  document.getElementById('aw-acid-m3-ref').textContent = m3
+    ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
+    : '—';
   document.getElementById('aw-acid-hco3').textContent = !isNaN(parseFloat(a.anions && a.anions.hco3_meq)) ? parseFloat(a.anions.hco3_meq).toFixed(2) : '—';
   document.getElementById('aw-acid-co3').textContent = !isNaN(parseFloat(a.anions && a.anions.co3_meq)) ? parseFloat(a.anions.co3_meq).toFixed(2) : '—';
   document.getElementById('aw-acid-residual-ref').textContent = residualMeq.toFixed(2);
   document.getElementById('aw-acid-meq-needed').textContent = meqPerL > 0 ? meqPerL.toFixed(2) : '0';
-  /* Todos los ácidos de AGUA_ACIDS traen densityKgL; el respaldo solo evita NaN si faltara el campo. */
   var rho = typeof acid.densityKgL === 'number' && acid.densityKgL > 0 ? acid.densityKgL : 1.5;
   function awAcidKgSpan(kg) {
-    return ' <span style="font-size:0.8rem;color:#64748b;">(' + kg.toFixed(2) + ' kg)</span>';
+    var massTxt = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kg, 2) : (kg.toFixed(2) + ' kg');
+    return ' <span style="font-size:0.8rem;color:#64748b;">(' + massTxt + ')</span>';
   }
   if (meqPerL <= 0 || !acid.meqPerMl) {
-    document.getElementById('aw-acid-per-m3').innerHTML = meqPerL <= 0 ? '0.00 mL' + awAcidKgSpan(0) : '—';
-    document.getElementById('aw-acid-total').innerHTML = (meqPerL <= 0 && m3) ? '0.00 L' + awAcidKgSpan(0) : '—';
+    var zeroDose = window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidDoseMlPerM3(0, 2) : '0.00 mL';
+    var zeroTot = window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidTotalLiters(0, 2) : '0.00 L';
+    document.getElementById('aw-acid-per-m3').innerHTML = meqPerL <= 0 ? zeroDose + awAcidKgSpan(0) : '—';
+    document.getElementById('aw-acid-total').innerHTML = (meqPerL <= 0 && m3) ? zeroTot + awAcidKgSpan(0) : '—';
+    document.getElementById('aw-acid-m3-ref').textContent = m3
+      ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
+      : '—';
+    analysisApplyUnits(document.getElementById('agua-tab-container'));
     return;
   }
   var meqPerM3 = meqPerL * 1000;
@@ -19839,9 +20285,17 @@ window.awUpdateAcid = function awUpdateAcid() {
   var litersTotal = m3 ? (mlPerM3 * m3) / 1000 : 0;
   var kgPerM3Water = (mlPerM3 / 1000) * rho;
   var kgTotal = litersTotal * rho;
+  document.getElementById('aw-acid-m3-ref').textContent = m3
+    ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
+    : '—';
   /* Volumen 2 decimales; kg derivado de volumen × densidad típica del ácido comercial (aprox.). */
-  document.getElementById('aw-acid-per-m3').innerHTML = mlPerM3.toFixed(2) + ' mL' + awAcidKgSpan(kgPerM3Water);
-  document.getElementById('aw-acid-total').innerHTML = m3 ? (litersTotal.toFixed(2) + ' L' + awAcidKgSpan(kgTotal)) : '—';
+  document.getElementById('aw-acid-per-m3').innerHTML =
+    (window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidDoseMlPerM3(mlPerM3, 2) : mlPerM3.toFixed(2) + ' mL') +
+    awAcidKgSpan(kgPerM3Water);
+  document.getElementById('aw-acid-total').innerHTML = m3
+    ? ((window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidTotalLiters(litersTotal, 2) : litersTotal.toFixed(2) + ' L') + awAcidKgSpan(kgTotal))
+    : '—';
+  analysisApplyUnits(document.getElementById('agua-tab-container'));
 };
 
 window.selectAguaAnalysis = function selectAguaAnalysis(id) {
@@ -19860,7 +20314,10 @@ window.selectAguaAnalysis = function selectAguaAnalysis(id) {
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  document.getElementById('aw-m3-riego').value = a.m3Riego !== undefined && a.m3Riego !== '' ? a.m3Riego : '';
+  document.getElementById('aw-m3-riego').value = (a.m3Riego !== undefined && a.m3Riego !== '' && a.m3Riego != null)
+    ? (window.NpAnalysisUI ? window.NpAnalysisUI.volumeInputFromSI(a.m3Riego) : a.m3Riego)
+    : '';
+  analysisApplyUnits(document.getElementById('agua-tab-container'));
   document.getElementById('aw-meta-title').value = a.title || '';
   document.getElementById('aw-meta-date').value = a.date || '';
   if (a.general) { ['ce','ras','ph'].forEach(function(f) { var el = document.getElementById('aw-general-' + f); if (el) el.value = a.general[f] !== undefined && a.general[f] !== '' ? a.general[f] : ''; }); }
@@ -19986,7 +20443,11 @@ function foliarDOPIconStatus(dop) {
   if (dop === null || typeof dop !== 'number' || isNaN(dop)) return { icon: '—', status: '—' };
   var abs = Math.abs(dop);
   var icon = abs <= 10 ? '🟢' : abs <= 25 ? '🔶' : abs <= 50 ? '🟠' : '🔴';
-  var status = abs <= 10 ? 'Óptimo' : (dop < 0 ? (abs > 50 ? 'Muy bajo' : 'Bajo') : (abs > 50 ? 'Muy alto' : 'Alto'));
+  var status = abs <= 10
+    ? dashboardT('analysis.ref_ideal', 'Óptimo')
+    : (dop < 0
+      ? (abs > 50 ? dashboardT('analysis.status_very_low', 'Muy bajo') : dashboardT('analysis.ref_low', 'Bajo'))
+      : (abs > 50 ? dashboardT('analysis.status_very_high', 'Muy alto') : dashboardT('analysis.ref_high', 'Alto')));
   return { icon: icon, status: status };
 }
 
@@ -19997,7 +20458,7 @@ function createFoliarTabHTML() {
   var microRows = ['Fe','Mn','Zn','Cu','B','Mo'].map(function(n) {
     return '<tr><td class="notranslate" translate="no">' + n + '</td><td><input type="number" step="0.01" id="f-micro-' + n + '" class="fertirriego-input" data-f-nutrient="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'micros\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td><input type="number" step="0.01" id="f-opt-micro-' + n + '" class="fertirriego-input" style="width:70px;" data-f-opt="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'optimalMicro\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td id="f-dop-micro-' + n + '">—</td><td id="f-status-micro-' + n + '">—</td></tr>';
   }).join('');
-  return `
+  var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="foliar-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -20020,8 +20481,8 @@ function createFoliarTabHTML() {
           </div>
           <div id="foliar-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <input type="text" id="f-meta-title" placeholder="Título" class="soil-input-inline" onchange="window.saveFoliarField && window.saveFoliarField('meta','title',this.value)">
-              <input type="text" id="f-meta-date" placeholder="Fecha" class="soil-input-inline" onchange="window.saveFoliarField && window.saveFoliarField('meta','date',this.value)">
+              <input type="text" id="f-meta-title" placeholder="${dashboardT('analysis.meta_title_simple', 'Título')}" data-i18n-placeholder="analysis.meta_title_simple" class="soil-input-inline" onchange="window.saveFoliarField && window.saveFoliarField('meta','title',this.value)">
+              <input type="text" id="f-meta-date" placeholder="${dashboardT('analysis.meta_date_simple', 'Fecha')}" data-i18n-placeholder="analysis.meta_date_simple" class="soil-input-inline" onchange="window.saveFoliarField && window.saveFoliarField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentFoliarAnalysis && window.deleteCurrentFoliarAnalysis();">Eliminar</button>
             </div>
             <div class="soil-analysis-sections">
@@ -20054,6 +20515,7 @@ function createFoliarTabHTML() {
       </div>
     </div>
   `;
+  return analysisPresentHtml(html);
 }
 
 window.getFoliarAnalyses = function getFoliarAnalyses() {
@@ -20265,7 +20727,17 @@ var FRUTA_OPTIMAL_MICRO = { Fe: 80, Mn: 40, Zn: 35, Cu: 10, B: 50, Mo: 0.5 };
 var FRUTA_OPTIMAL_CALIDAD = { materiaSeca: 15, brix: 12, firmeza: 5, acidezTitulable: 0.5 };
 var FRUTA_OPTIMAL_CALCIO = { caTotal: 20, caSolublePct: 18, caLigadoPct: 25, caInsolublePct: 55 };
 var FRUTA_CALIDAD_LABELS = { materiaSeca: 'Materia Seca (%)', brix: '°Brix', firmeza: 'Firmeza (kg/cm²)', acidezTitulable: 'Acidez titulable (%)' };
+var FRUTA_CALIDAD_LABELS_EN = { materiaSeca: 'Dry matter (%)', brix: '°Brix', firmeza: 'Firmness (kg/cm²)', acidezTitulable: 'Titratable acidity (%)' };
 var FRUTA_CALCIO_LABELS = { caTotal: 'Ca total (mg/100 g MF)', caSolublePct: '% Ca soluble', caLigadoPct: '% Ca ligado', caInsolublePct: '% Ca insoluble' };
+var FRUTA_CALCIO_LABELS_EN = { caTotal: 'Total Ca (mg/100 g FW)', caSolublePct: '% soluble Ca', caLigadoPct: '% bound Ca', caInsolublePct: '% insoluble Ca' };
+
+function frutaLabel(mapEs, mapEn, key) {
+  var lang = 'es';
+  try {
+    if (window.NpPrefs && window.NpPrefs.get) lang = window.NpPrefs.get().language || 'es';
+  } catch (e) {}
+  return (lang === 'en' ? (mapEn[key] || mapEs[key]) : mapEs[key]) || key;
+}
 
 function createEmptyFrutaAnalysis() {
   return {
@@ -20287,7 +20759,11 @@ function frutaICCIconStatus(icc) {
   if (icc === null || typeof icc !== 'number' || isNaN(icc)) return { icon: '—', status: '—' };
   var abs = Math.abs(icc);
   var icon = abs <= 10 ? '🟢' : abs <= 25 ? '🔶' : abs <= 50 ? '🟠' : '🔴';
-  var status = abs <= 10 ? 'Óptimo' : (icc < 0 ? (abs > 50 ? 'Muy bajo' : 'Bajo') : (abs > 50 ? 'Muy alto' : 'Alto'));
+  var status = abs <= 10
+    ? dashboardT('analysis.ref_ideal', 'Óptimo')
+    : (icc < 0
+      ? (abs > 50 ? dashboardT('analysis.status_very_low', 'Muy bajo') : dashboardT('analysis.ref_low', 'Bajo'))
+      : (abs > 50 ? dashboardT('analysis.status_very_high', 'Muy alto') : dashboardT('analysis.ref_high', 'Alto')));
   return { icon: icon, status: status };
 }
 
@@ -20309,13 +20785,13 @@ function createFrutaTabHTML() {
   }).join('');
   var calidadKeys = ['materiaSeca','brix','firmeza','acidezTitulable'];
   var calidadRows = calidadKeys.map(function(k) {
-    return '<tr><td>' + FRUTA_CALIDAD_LABELS[k] + '</td><td><input type="number" step="0.01" id="fru-calidad-' + k + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'calidad\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.01" id="fru-opt-calidad-' + k + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalCalidad\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-icc-calidad-' + k + '">—</td><td id="fru-status-calidad-' + k + '">—</td></tr>';
+    return '<tr><td>' + frutaLabel(FRUTA_CALIDAD_LABELS, FRUTA_CALIDAD_LABELS_EN, k) + '</td><td><input type="number" step="0.01" id="fru-calidad-' + k + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'calidad\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.01" id="fru-opt-calidad-' + k + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalCalidad\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-icc-calidad-' + k + '">—</td><td id="fru-status-calidad-' + k + '">—</td></tr>';
   }).join('');
   var calcioKeys = ['caTotal','caSolublePct','caLigadoPct','caInsolublePct'];
   var calcioRows = calcioKeys.map(function(k) {
-    return '<tr><td>' + FRUTA_CALCIO_LABELS[k] + '</td><td><input type="number" step="0.01" id="fru-calcio-' + k + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'calcio\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.01" id="fru-opt-calcio-' + k + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalCalcio\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-status-calcio-' + k + '">—</td></tr>';
+    return '<tr><td>' + frutaLabel(FRUTA_CALCIO_LABELS, FRUTA_CALCIO_LABELS_EN, k) + '</td><td><input type="number" step="0.01" id="fru-calcio-' + k + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'calcio\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.01" id="fru-opt-calcio-' + k + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalCalcio\',\'' + k + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-status-calcio-' + k + '">—</td></tr>';
   }).join('');
-  return `
+  var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="fruta-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -20338,8 +20814,8 @@ function createFrutaTabHTML() {
           </div>
           <div id="fruta-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <input type="text" id="fru-meta-title" placeholder="Título" class="soil-input-inline" onchange="window.saveFrutaField && window.saveFrutaField('meta','title',this.value)">
-              <input type="text" id="fru-meta-date" placeholder="Fecha" class="soil-input-inline" onchange="window.saveFrutaField && window.saveFrutaField('meta','date',this.value)">
+              <input type="text" id="fru-meta-title" placeholder="${dashboardT('analysis.meta_title_simple', 'Título')}" data-i18n-placeholder="analysis.meta_title_simple" class="soil-input-inline" onchange="window.saveFrutaField && window.saveFrutaField('meta','title',this.value)">
+              <input type="text" id="fru-meta-date" placeholder="${dashboardT('analysis.meta_date_simple', 'Fecha')}" data-i18n-placeholder="analysis.meta_date_simple" class="soil-input-inline" onchange="window.saveFrutaField && window.saveFrutaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentFrutaAnalysis && window.deleteCurrentFrutaAnalysis();">Eliminar</button>
             </div>
             <div class="soil-analysis-sections">
@@ -20392,6 +20868,7 @@ function createFrutaTabHTML() {
       </div>
     </div>
   `;
+  return analysisPresentHtml(html);
 }
 
 window.getFrutaAnalyses = function getFrutaAnalyses() {
@@ -20628,7 +21105,7 @@ window.restoreFrutaUIState = function restoreFrutaUIState() {
 };
 
 function createSoilAnalysisTabHTML() {
-  return `
+  var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="soil-analysis-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
@@ -20650,15 +21127,15 @@ function createSoilAnalysisTabHTML() {
           </div>
           <div id="soil-analysis-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <input type="text" id="soil-meta-title" placeholder="Título (ej. Rancho Agrícola Junio 2025)" class="soil-input-inline" data-group="meta" data-field="title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('meta','title',this.value)" onblur="window.saveSoilAnalysisField && window.saveSoilAnalysisField('meta','title',this.value)">
-              <input type="text" id="soil-meta-date" placeholder="Fecha (ej. 2025-06-01)" class="soil-input-inline" data-group="meta" data-field="date" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('meta','date',this.value)">
+              <input type="text" id="soil-meta-title" placeholder="${dashboardT('analysis.meta_title_placeholder', 'Título (ej. Rancho Agrícola Junio 2025)')}" data-i18n-placeholder="analysis.meta_title_placeholder" class="soil-input-inline" data-group="meta" data-field="title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('meta','title',this.value)" onblur="window.saveSoilAnalysisField && window.saveSoilAnalysisField('meta','title',this.value)">
+              <input type="text" id="soil-meta-date" placeholder="${dashboardT('analysis.meta_date_placeholder', 'Fecha (ej. 2025-06-01)')}" data-i18n-placeholder="analysis.meta_date_placeholder" class="soil-input-inline" data-group="meta" data-field="date" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentSoilAnalysis && window.deleteCurrentSoilAnalysis();">Eliminar</button>
             </div>
             <div class="soil-analysis-sections">
               <details class="soil-section" data-soil-section="physical" open>
                 <summary>🌱 Propiedades físicas</summary>
                 <div class="soil-fields">
-                  <label>Clase textural <input type="text" id="soil-physical-texturalClass" data-group="physical" data-field="texturalClass" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','texturalClass',this.value)" placeholder="ej. Franco Arenoso"></label>
+                  <label>Clase textural <input type="text" id="soil-physical-texturalClass" data-group="physical" data-field="texturalClass" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','texturalClass',this.value)" placeholder="${dashboardT('analysis.textural_placeholder', 'ej. Franco Arenoso')}" data-i18n-placeholder="analysis.textural_placeholder"></label>
                   <label>Punto saturación % <input type="number" step="0.01" id="soil-physical-saturationPoint" data-group="physical" data-field="saturationPoint" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','saturationPoint',this.value)"></label>
                   <label>Capacidad de campo % <input type="number" step="0.01" id="soil-physical-fieldCapacity" data-group="physical" data-field="fieldCapacity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','fieldCapacity',this.value)"></label>
                   <label>Punto marchitamiento % <input type="number" step="0.01" id="soil-physical-wiltingPoint" data-group="physical" data-field="wiltingPoint" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','wiltingPoint',this.value)"></label>
@@ -20679,14 +21156,14 @@ function createSoilAnalysisTabHTML() {
                 <summary>🧪 Fertilidad del suelo</summary>
                 <div class="soil-fertility-params">
                   <div class="soil-fertility-params-row" style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
-                    <label title="Profundidad de la capa de suelo considerada en el análisis (ej. 0-20 cm)">Profundidad (cm) <input type="number" id="soil-fertility-depthCm" min="1" step="1" style="width:70px;" placeholder="ej. 20" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','depthCm',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
-                    <label title="Qué parte de esa capa de suelo es realmente explorada por las raíces del cultivo. 100% = toda la capa; 50% = solo la mitad (ej. riego por goteo).">Suelo explorado por raíces (%) <input type="number" id="soil-fertility-reachPct" min="0" max="100" step="1" style="width:70px;" placeholder="100" title="100 = toda la capa; 50 = mitad" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','reachPct',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
-                    <label title="CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual."><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span> <span id="soil-cic-params" class="soil-cic-display">—</span></label>
+                    <label title="${dashboardT('analysis.depth_title', 'Profundidad de la capa de suelo considerada en el análisis (ej. 0-20 cm)')}" data-i18n-title="analysis.depth_title">Profundidad (cm) <input type="number" id="soil-fertility-depthCm" min="1" step="1" style="width:70px;" placeholder="${dashboardT('analysis.depth_placeholder', 'ej. 20')}" data-i18n-placeholder="analysis.depth_placeholder" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','depthCm',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
+                    <label title="${dashboardT('analysis.reach_label_title', 'Qué parte de esa capa de suelo es realmente explorada por las raíces del cultivo. 100% = toda la capa; 50% = solo la mitad (ej. riego por goteo).')}" data-i18n-title="analysis.reach_label_title">Suelo explorado por raíces (%) <input type="number" id="soil-fertility-reachPct" min="0" max="100" step="1" style="width:70px;" placeholder="100" title="${dashboardT('analysis.reach_input_title', '100 = toda la capa; 50 = mitad')}" data-i18n-title="analysis.reach_input_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','reachPct',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
+                    <label title="${dashboardT('analysis.cic_params_title', 'CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual.')}" data-i18n-title="analysis.cic_params_title"><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span> <span id="soil-cic-params" class="soil-cic-display">—</span></label>
                   </div>
                   <div class="soil-fertility-params-hint">
                     <strong>Base técnica de ajuste.</strong><br><span class="soil-fertility-disclaimer">Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.</span>
                     <br>En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
-                    <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).">Recargar valores ideales de referencia</button>
+                    <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
                   </div>
                 </div>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
@@ -20753,7 +21230,7 @@ function createSoilAnalysisTabHTML() {
                         <td><input type="number" step="0.01" id="soil-fertility-ideal-al" class="fertirriego-input soil-fertility-input" onchange="window.saveSoilAnalysisIdealField && window.saveSoilAnalysisIdealField('al',this.value)" onblur="window.saveSoilAnalysisIdealField && window.saveSoilAnalysisIdealField('al',this.value)"></td>
                       </tr>
                       <tr class="soil-kgha-row">
-                        <td><strong title="Diferencia en kg/ha: lo que hay (laboratorio) menos lo ideal. Negativo = falta aportar; positivo = exceso.">kg/ha (diferencia)</strong><br><span style="font-weight:normal; font-size:10px; color:#64748b;"><span style="color:#0369a1;">−</span> falta, <span style="color:#0369a1;">+</span> exceso</span></td>
+                        <td><strong title="${dashboardT('analysis.kgha_diff_title', 'Diferencia en kg/ha: lo que hay (laboratorio) menos lo ideal. Negativo = falta aportar; positivo = exceso.')}" data-i18n-title="analysis.kgha_diff_title">kg/ha (diferencia)</strong><br><span style="font-weight:normal; font-size:10px; color:#64748b;"><span style="color:#0369a1;">−</span> falta, <span style="color:#0369a1;">+</span> exceso</span></td>
                         <td id="soil-kgha-mo"></td>
                         <td id="soil-kgha-nNo3"></td>
                         <td id="soil-kgha-p"></td>
@@ -20791,13 +21268,13 @@ function createSoilAnalysisTabHTML() {
                   <div class="soil-cations-pct-box">
                     <p class="soil-block-title soil-block-title-blue">CIC y saturación (%)</p>
                     <div class="soil-cations-pct-inner">
-                      <label class="soil-cic-label-blue notranslate" translate="no" title="Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)"><strong>CIC (meq/100g o cmol⁺/kg)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="Calculado: 100 × (Ca meq / CIC)">% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="Calculado: 100 × (Mg meq / CIC)">% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="Calculado: 100 × (K meq / CIC)">% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="Calculado: 100 × (Na meq / CIC)">% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="Calculado: 100 × (Al meq / CIC)">% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="Calculado: 100 × (H meq / CIC)">% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="soil-cic-label-blue notranslate" translate="no" title="${dashboardT('analysis.cic_sum_title', 'Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)')}" data-i18n-title="analysis.cic_sum_title"><strong>CIC (meq/100g o cmol⁺/kg)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Ca' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Ca"}'>% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Mg' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Mg"}'>% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'K' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"K"}'>% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Na' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Na"}'>% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Al' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Al"}'>% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'H' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"H"}'>% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
                     </div>
                   </div>
                 </div>
@@ -20820,6 +21297,7 @@ function createSoilAnalysisTabHTML() {
       </div>
     </div>
   `;
+  return analysisPresentHtml(html);
 }
 
 window.getSoilAnalyses = function getSoilAnalyses() {
@@ -20898,7 +21376,15 @@ window.saveSoilAnalysisField = function saveSoilAnalysisField(group, field, valu
     if (field === 'date') analysis.date = value;
   } else if (analysis[group]) {
     const num = parseFloat(value);
-    analysis[group][field] = (value !== '' && !isNaN(num)) ? num : value;
+    var stored = (value !== '' && !isNaN(num)) ? num : value;
+    if (window.NpAnalysisUI && value !== '' && !isNaN(num)) {
+      if (group === 'physical' && field === 'bulkDensity') {
+        stored = window.NpAnalysisUI.toSI(num, 'bulk_density');
+      } else if (group === 'fertility' && field === 'depthCm') {
+        stored = window.NpAnalysisUI.toSI(num, 'depth');
+      }
+    }
+    analysis[group][field] = stored;
   }
   window.saveSoilAnalysesToProject();
   if (group === 'cations') {
@@ -20948,8 +21434,14 @@ window.updateSoilFertilityKgHa = function updateSoilFertilityKgHa() {
     // kg/ha = (nivel lab − ideal) × factor → positivo = exceso, negativo = falta
     var diff = isNaN(idealVal) ? lab : (lab - idealVal);
     var kgHa = diff * factor;
-    el.textContent = kgHa.toFixed(2);
+    if (window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function') {
+      var shown = window.NpAnalysisUI.fromSI(kgHa, 'dose_mass_area');
+      el.textContent = Number(shown).toFixed(2);
+    } else {
+      el.textContent = kgHa.toFixed(2);
+    }
   });
+  analysisApplyUnits(document.getElementById('soil-analysis-tab-container'));
 };
 
 // Ideales K, Ca, Mg (ppm) desde CIC (meq/100g del análisis): meq ideal = CIC × fracción de saturación; ppm = meq × factor (peso equivalente × 10, base 100 g suelo).
@@ -21088,9 +21580,26 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
     Object.keys(analysis[group]).forEach(function (field) {
       if (group === 'fertility' && field === 'ideal') return;
       var el = document.getElementById('soil-' + group + '-' + field);
-      if (el) el.value = analysis[group][field] !== undefined && analysis[group][field] !== null ? analysis[group][field] : '';
+      if (!el) return;
+      var raw = analysis[group][field];
+      if (raw === undefined || raw === null || raw === '') {
+        el.value = '';
+        return;
+      }
+      if (window.NpAnalysisUI && typeof window.NpAnalysisUI.inputFromSI === 'function') {
+        if (group === 'physical' && field === 'bulkDensity') {
+          el.value = window.NpAnalysisUI.inputFromSI(raw, 'bulk_density');
+          return;
+        }
+        if (group === 'fertility' && field === 'depthCm') {
+          el.value = window.NpAnalysisUI.inputFromSI(raw, 'depth');
+          return;
+        }
+      }
+      el.value = raw;
     });
   });
+  analysisApplyUnits(document.getElementById('soil-analysis-tab-container'));
   if (analysis.fertility && analysis.fertility.ideal && typeof analysis.fertility.ideal === 'object') {
     Object.keys(analysis.fertility.ideal).forEach(function (f) {
       var el = document.getElementById('soil-fertility-ideal-' + f);
@@ -21859,7 +22368,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       buildUvSemaforoBadgeHtml(uv) +
       '</div>';
   }
-  return (
+  var html =
     '<div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">' +
       '<h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>' +
       legendHtml +
@@ -21885,8 +22394,8 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       'onmouseout="this.style.background=\'#10b981\'"' +
       '>💾 Guardar Cálculo</button>' +
       '</div>' +
-      '</div>'
-  );
+      '</div>';
+  return window.NpWaterClimateUI ? window.NpWaterClimateUI.translateString(html) : html;
 }
 
 // Función para guardar cálculo VPD en historial
@@ -22086,7 +22595,7 @@ function createClimateSectionHTML() {
     typeof window.climateSatelliteNoteHtml === 'function'
       ? window.climateSatelliteNoteHtml()
       : '';
-  return (
+  var html =
     '<div class="climate-container">' +
     satelliteNote +
     '<div class="climate-tabs hydroponia-tabs">' +
@@ -22105,8 +22614,8 @@ function createClimateSectionHTML() {
     liveTab +
     '</div>' +
     '</div>' +
-    '</div>'
-  );
+    '</div>';
+  return window.NpWaterClimateUI ? window.NpWaterClimateUI.translateString(html) : html;
 }
 window.createClimateSectionHTML = createClimateSectionHTML;
 
@@ -22408,7 +22917,7 @@ function createVPDSectionHTML() {
                     ${calc.type === 'environmental' ? '🌐 Ambiental' : '🔬 Avanzado'}
                   </div>
                   <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                    ${new Date(calc.timestamp).toLocaleString('es-MX')}
+                    ${new Date(calc.timestamp).toLocaleString(typeof npUiLocaleTag === 'function' ? npUiLocaleTag() : 'es-MX')}
                   </div>
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
@@ -22419,7 +22928,7 @@ function createVPDSectionHTML() {
                     HD: ${calc.hd} g/m³
                   </div>
                 </div>
-                <button type="button" onclick="window.deleteVPDHistoryEntry && window.deleteVPDHistoryEntry(${idx})" title="Eliminar esta lectura" style="flex-shrink: 0; width: 36px; height: 36px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;" onmouseover="this.style.background='#fef2f2'; this.style.color='#dc2626';" onmouseout="this.style.background='#fff'; this.style.color='#64748b';">
+                <button type="button" onclick="window.deleteVPDHistoryEntry && window.deleteVPDHistoryEntry(${idx})" title="${dashboardT('analysis.delete_vpd_reading', 'Eliminar esta lectura')}" data-i18n-title="analysis.delete_vpd_reading" style="flex-shrink: 0; width: 36px; height: 36px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;" onmouseover="this.style.background='#fef2f2'; this.style.color='#dc2626';" onmouseout="this.style.background='#fff'; this.style.color='#64748b';">
                   🗑️
                 </button>
               </div>
@@ -22646,7 +23155,7 @@ function saveEnvironmentalVPD() {
   
   const envData = currentProject.vpdAnalysis?.environmental;
   if (!envData || envData.vpd === null || envData.vpd === undefined) {
-    alert('⚠️ Primero debes obtener y calcular los datos del clima');
+    alert(dashboardT('dashboard.vpd_need_weather', '⚠️ Primero debes obtener y calcular los datos del clima'));
     return;
   }
   
@@ -22654,14 +23163,14 @@ function saveEnvironmentalVPD() {
   const saved = saveVPDCalculation('environmental', envData);
   
   if (saved) {
-    alert('✅ Cálculo ambiental guardado exitosamente');
+    alert(dashboardT('dashboard.vpd_env_saved', '✅ Cálculo ambiental guardado exitosamente'));
     // Recargar la sección para actualizar historial
     const title = document.getElementById('sectionTitle');
-    if (title && title.textContent.trim() === "Análisis: Clima") {
+    if (title && (title.textContent.trim() === "Análisis: Clima" || title.dataset.npSection === CLIMATE_SECTION)) {
       selectSection("Análisis: Clima");
     }
   } else {
-    alert('❌ Error al guardar el cálculo');
+    alert(dashboardT('dashboard.vpd_save_error', '❌ Error al guardar el cálculo'));
   }
 }
 
@@ -22776,7 +23285,7 @@ function calculateAdvancedVPD() {
   }
   
   try {
-    resultsDiv.innerHTML = `
+    var advancedResultsHtml = `
       <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
         <h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>
         <div class="vpd-results-metrics-grid" style="--vpd-metric-cols: 2;">
@@ -22809,6 +23318,9 @@ function calculateAdvancedVPD() {
         </div>
       </div>
     `;
+    resultsDiv.innerHTML = window.NpWaterClimateUI
+      ? window.NpWaterClimateUI.translateString(advancedResultsHtml)
+      : advancedResultsHtml;
   } catch (error) {
     console.error('❌ Error mostrando resultados:', error);
     alert('❌ Error al mostrar resultados: ' + error.message);
@@ -22827,7 +23339,7 @@ function saveAdvancedVPD() {
   
   const advData = currentProject.vpdAnalysis?.advanced;
   if (!advData || advData.vpd === null || advData.vpd === undefined) {
-    alert('⚠️ Primero debes calcular el VPD avanzado');
+    alert(dashboardT('dashboard.vpd_need_advanced', '⚠️ Primero debes calcular el VPD avanzado'));
     return;
   }
   
@@ -22835,14 +23347,14 @@ function saveAdvancedVPD() {
   const saved = saveVPDCalculation('advanced', advData);
   
   if (saved) {
-    alert('✅ Cálculo avanzado guardado exitosamente');
+    alert(dashboardT('dashboard.vpd_adv_saved', '✅ Cálculo avanzado guardado exitosamente'));
     // Recargar la sección para actualizar historial
     const title = document.getElementById('sectionTitle');
-    if (title && title.textContent.trim() === "Análisis: Clima") {
+    if (title && (title.textContent.trim() === "Análisis: Clima" || title.dataset.npSection === CLIMATE_SECTION)) {
       selectSection("Análisis: Clima");
     }
   } else {
-    alert('❌ Error al guardar el cálculo');
+    alert(dashboardT('dashboard.vpd_save_error', '❌ Error al guardar el cálculo'));
   }
 }
 
@@ -23248,7 +23760,7 @@ function renderSavedVPDRangeTableHtml(tbl) {
         </table>
       </div>
     </details>
-    <button type="button" title="Eliminar cuadro guardado" aria-label="Eliminar cuadro guardado" data-np-delete-vpd-range="${delAttrEnc}"
+    <button type="button" title="${dashboardT('analysis.delete_vpd_range', 'Eliminar cuadro guardado')}" aria-label="${dashboardT('analysis.delete_vpd_range', 'Eliminar cuadro guardado')}" data-i18n-title="analysis.delete_vpd_range" data-i18n-aria-label="analysis.delete_vpd_range" data-np-delete-vpd-range="${delAttrEnc}"
       style="flex-shrink:0;padding:6px 10px;font-size:12px;line-height:1.2;border-radius:6px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-weight:600;cursor:pointer;white-space:nowrap;align-self:start;margin-top:2px;">🗑️ Borrar</button>
     </div>
   `;
@@ -23479,13 +23991,13 @@ window.eliminarReporte = function() {
   if (confirm('¿Estás seguro de que quieres eliminar este reporte?')) {
     // Volver a la vista normal de reportes
     selectSection('reporte');
-    showMessage('🗑️ Reporte eliminado', 'info');
+    showMessage(dashboardT('dashboard.reports_deleted', '🗑️ Reporte eliminado'), 'info');
   }
 };
 
 // Función para descargar reporte como PDF
 window.descargarReporte = function() {
-  showMessage('🔄 Generando PDF para descarga...', 'info');
+  showMessage(dashboardT('dashboard.reports_downloading_pdf', '🔄 Generando PDF para descarga...'), 'info');
   
   // Aquí iría la lógica para generar y descargar el PDF real
   // Por ahora, mostrar mensaje

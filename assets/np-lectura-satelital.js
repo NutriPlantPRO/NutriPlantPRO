@@ -158,7 +158,9 @@
 
   function runLabel(run) {
     if (!run) return 'Bloque';
-    var freq = run.frequency === 'mensual' ? 'Mensual' : 'Quincenal';
+    var freq = run.frequency === 'mensual'
+      ? lecturaT('radar.monthly', 'Mensual')
+      : lecturaT('radar.biweekly', 'Quincenal');
     var n = (run.rows && run.rows.length) || run.periods || 0;
     var end = run.endDate ? String(run.endDate) : '—';
     var range = '';
@@ -449,68 +451,81 @@
     return out;
   }
 
+  function lecturaT(key, fallback, params) {
+    try {
+      if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+        var translated = window.NpI18n.t(key, params);
+        if (translated !== key) return translated;
+      }
+    } catch (e) {}
+    if (fallback == null) return key;
+    if (!params) return fallback;
+    return String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g, function (match, name) {
+      return params[name] !== undefined ? String(params[name]) : match;
+    });
+  }
+
   // ---------- HTML ----------
   function createLecturaSatelitalHTML() {
+    var t = lecturaT;
     return '' +
       '<div class="lectura-satelital-panel" style="padding:4px 2px;">' +
         '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px;">' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">' +
-            '<div style="font-weight:700;color:#14532d;font-size:15px;">📈 Lectura Satelital — histórico del predio</div>' +
-            '<div id="lecturaCreditsBadge" class="radar-credits-badge" title="Mismo saldo de créditos Radar que Pilot">' +
-              '<span class="radar-credits-badge__kicker">Créditos Radar:</span>' +
+            '<div style="font-weight:700;color:#14532d;font-size:15px;" data-i18n="radar.lectura_title">' + t('radar.lectura_title', '📈 Lectura Satelital — histórico del predio') + '</div>' +
+            '<div id="lecturaCreditsBadge" class="radar-credits-badge" data-i18n-title="radar.lectura_credits_title" title="' + t('radar.lectura_credits_title', 'Mismo saldo de créditos Radar que Pilot') + '">' +
+              '<span class="radar-credits-badge__kicker" data-i18n="radar.credits_kicker">' + t('radar.credits_kicker', 'Créditos Radar:') + '</span>' +
               '<span id="lecturaCreditsLabel" class="radar-credits-badge__value">—</span>' +
               '<span id="lecturaCreditsCost" class="radar-credits-badge__cost"></span>' +
             '</div>' +
           '</div>' +
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
-            'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja). Máximo <strong>250 ha</strong> por predio.' +
+            t('radar.lectura_intro_html', 'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja). Máximo <strong>250 ha</strong> por predio.') +
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
-            '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
-            'por periodo elige <strong>1 sola pasada</strong> Sentinel (la más clara; sin mediana ni relleno entre fechas). Misma lógica de periodos (quincenal/mensual; quincena incompleta puede ampliar al mes). Si queda incompleto (&lt;~100% útiles) <strong>igual muestra la imagen</strong> y explica nubosidad + %; solo si casi no hay cobertura (&lt;~5%) no hay imagen y solo el motivo. Clima/riego sí quedan. ' +
-            'Las imágenes se generan <strong>en la nube en segundo plano</strong> (igual que Pilot): puedes cerrar y luego pulsar «Mostrar imágenes». ' +
-            '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
+            '<strong style="color:#14532d;" data-i18n="radar.how_built_label">' + t('radar.how_built_label', 'Cómo se arma:') + '</strong> ' +
+            t('radar.lectura_how_built_html', 'por periodo elige <strong>1 sola pasada</strong> Sentinel (la más clara; sin mediana ni relleno entre fechas).') +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
-            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;">Frecuencia' +
+            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;"><span data-i18n="radar.frecuencia">' + t('radar.frecuencia', 'Frecuencia') + '</span>' +
               '<select id="lecturaFreq" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
-                '<option value="quincenal" selected>Quincenal (15 días)</option>' +
-                '<option value="mensual">Mensual (mes calendario)</option>' +
+                '<option value="quincenal" selected data-i18n="radar.freq_biweekly">' + t('radar.freq_biweekly', 'Quincenal (15 días)') + '</option>' +
+                '<option value="mensual" data-i18n="radar.freq_monthly">' + t('radar.freq_monthly', 'Mensual (mes calendario)') + '</option>' +
               '</select>' +
             '</label>' +
-            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;">Nº de periodos' +
+            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;"><span data-i18n="radar.periods_count">' + t('radar.periods_count', 'Nº de periodos') + '</span>' +
               '<select id="lecturaCount" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
                 '<option value="2">2</option><option value="3">3</option><option value="4">4</option>' +
                 '<option value="5">5</option><option value="6" selected>6</option>' +
               '</select>' +
             '</label>' +
-            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;">Fecha final' +
+            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;"><span data-i18n="radar.end_date">' + t('radar.end_date', 'Fecha final') + '</span>' +
               '<input type="date" id="lecturaEndDate" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
             '</label>' +
-            '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;">🛰 Generar histórico</button>' +
-            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Trae y muestra las imágenes NDVI/NDMI/NDRE/RGB guardadas, revisa periodos pendientes y completa clima si falta.">👁 Mostrar imágenes</button>' +
+            '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;" data-i18n="radar.btn_generate_history">' + t('radar.btn_generate_history', '🛰 Generar histórico') + '</button>' +
+            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" data-i18n="radar.btn_show_images" data-i18n-title="radar.btn_show_images_title" title="' + t('radar.btn_show_images_title', 'Trae y muestra las imágenes NDVI/NDMI/NDRE/RGB guardadas, revisa periodos pendientes y completa clima si falta.') + '">' + t('radar.btn_show_images', '👁 Mostrar imágenes') + '</button>' +
           '</div>' +
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaRunsWrap" style="margin-top:10px;display:none;">' +
             '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">' +
-              'Bloques guardados (lecturas / imágenes pasadas)' +
+              '<span data-i18n="radar.saved_blocks">' + t('radar.saved_blocks', 'Bloques guardados (lecturas / imágenes pasadas)') + '</span>' +
               '<select id="lecturaRunSelect" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;max-width:100%;"></select>' +
             '</label>' +
-            '<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;">Si generas otro bloque de periodos, el anterior queda aquí para seguir viendo su tabla e imágenes.</div>' +
+            '<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;" data-i18n="radar.saved_blocks_help">' + t('radar.saved_blocks_help', 'Si generas otro bloque de periodos, el anterior queda aquí para seguir viendo su tabla e imágenes.') + '</div>' +
           '</div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
         '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
         '<div id="lecturaChartWrap" style="margin-top:14px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;">' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
-            '<div style="font-weight:700;color:#0f172a;font-size:14px;">Gráfica por periodo</div>' +
+            '<div style="font-weight:700;color:#0f172a;font-size:14px;" data-i18n="radar.chart_by_period">' + t('radar.chart_by_period', 'Gráfica por periodo') + '</div>' +
             '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
           '</div>' +
           '<div style="position:relative;width:100%;height:240px;">' +
             '<canvas id="lecturaChart"></canvas>' +
           '</div>' +
-          '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">' +
-            'Izquierda: NDVI / NDMI / NDRE. Derecha: mm (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
+          '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;" data-i18n="radar.chart_help">' +
+            t('radar.chart_help', 'Izquierda: NDVI / NDMI / NDRE. Derecha: mm (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (<0.5 azul, 0.5–1.5 verde, >1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).') +
           '</div>' +
         '</div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
@@ -562,10 +577,9 @@
 
     if (credEl) {
       if (avail != null) {
-        credEl.textContent =
-          avail +
-          ' disponibles' +
-          (bonusN > 0 ? ' (bonus ' + bonusN + ')' : '');
+        credEl.textContent = bonusN > 0
+          ? lecturaT('radar.credits_available_bonus', '{n} disponibles (bonus {bonus})', { n: avail, bonus: bonusN })
+          : lecturaT('radar.credits_available', '{n} disponibles', { n: avail });
       } else {
         credEl.textContent = '—';
       }
@@ -575,40 +589,36 @@
       badge.classList.remove('is-low', 'is-warn');
       if (tone === 'low') badge.classList.add('is-low');
       else if (tone === 'warn') badge.classList.add('is-warn');
+      var over30 = total === 4 ? lecturaT('radar.over30', ' (>30 ha)') : '';
       if (overArea) {
-        badge.title =
-          'Máx. ' + maxHa + ' ha · este predio ' + (Math.round(ha * 100) / 100) + ' ha';
+        badge.title = lecturaT('radar.query_cost_over', 'Máx. {maxHa} ha · este predio {ha} ha', {
+          maxHa: maxHa,
+          ha: Math.round(ha * 100) / 100
+        });
       } else if (avail != null) {
-        badge.title =
-          'Esta consulta: ' +
-          total +
-          ' créd.' +
-          (total === 4 ? ' (>30 ha)' : '') +
-          ' · quedarían ' +
-          Math.max(0, avail - total);
+        badge.title = lecturaT('radar.query_cost_remain', 'Esta consulta: {total} créd.{over30} · quedarían {left}', {
+          total: total,
+          over30: over30,
+          left: Math.max(0, avail - total)
+        });
       } else {
-        badge.title =
-          'Esta consulta: ' + total + ' créditos' + (total === 4 ? ' (>30 ha)' : '');
+        badge.title = lecturaT('radar.query_cost', 'Esta consulta: {total} créditos{over30}', {
+          total: total,
+          over30: over30
+        });
       }
     }
     if (hint) {
       if (overArea) {
-        hint.textContent =
-          'Radar máximo ' +
-          maxHa +
-          ' ha; divide el polígono. Este predio tiene ' +
-          (Math.round(ha * 100) / 100) +
-          ' ha.';
+        hint.textContent = lecturaT('radar.max_area_hint', 'Radar máximo {maxHa} ha; divide el polígono. Este predio tiene {ha} ha.', {
+          maxHa: maxHa,
+          ha: Math.round(ha * 100) / 100
+        });
       } else {
-        hint.textContent =
-          'Costo de esta consulta: ' +
-          total +
-          ' créditos' +
-          (total === 4 ? ' (predio >30 ha)' : '') +
-          (avail != null ? ' · tras generar te quedarían ' + Math.max(0, avail - total) : '') +
-          ' · máx. ' +
-          maxHa +
-          ' ha. Mismo saldo que Pilot.';
+        hint.textContent = lecturaT('radar.cost_hint', 'Costo de esta consulta: {total} créditos{over30}.', {
+          total: total,
+          over30: total === 4 ? lecturaT('radar.over30', ' (>30 ha)') : ''
+        });
       }
     }
   }
@@ -915,7 +925,7 @@
       var tip = expandedTip(r);
       var days = periodDaysCount(r);
       html += '<tr data-lectura-index="' + r.index + '" style="background:' + rowBg + ';">' +
-        '<td style="padding:8px 10px;text-align:center;font-weight:800;color:#1e3a8a;border-top:1px solid #dbeafe;" title="ID del periodo">' +
+        '<td style="padding:8px 10px;text-align:center;font-weight:800;color:#1e3a8a;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.period_id_title', 'ID del periodo')) + '">' +
           esc(periodIdLabel(r)) +
         '</td>' +
         '<td style="padding:8px 10px;text-align:center;font-weight:700;color:#334155;border-top:1px solid #dbeafe;" title="' +
@@ -931,19 +941,19 @@
         '<td data-field="ndmi" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
         '<td data-field="ndre" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndre_mean, 3) + '</td>' +
         '<td data-field="vpd" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
-        '<td data-field="vpd_low" style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
-        '<td data-field="vpd_opt" style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
-        '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
+        '<td data-field="vpd_low" style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_low_title', 'Horas VPD bajo')) + '">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
+        '<td data-field="vpd_opt" style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_opt_title', 'Horas VPD óptimo')) + '">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
+        '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto')) + '">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
         '<td data-field="et0" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.et0_sum, 1) + '</td>' +
         '<td data-field="rain" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.rain_sum, 1) + '</td>' +
-        '<td style="' + riegoTdL + '" title="Mismo riego que m³ (lámina en franja)">' +
+        '<td style="' + riegoTdL + '" title="' + esc(lecturaT('radar.riego_mm_cell_title', 'Mismo riego que m³ (lámina en franja)')) + '">' +
           '<input type="number" min="0" step="0.1" value="' + (mmVal != null ? esc(mmVal) : '') +
-          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Lámina en franja regada (mismo riego que m³)"' +
+          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_mm_input_title', 'Lámina en franja regada (mismo riego que m³)')) + '"' +
           (iHa == null ? ' disabled' : '') + '>' +
         '</td>' +
-        '<td style="' + riegoTdR + '" title="Mismo riego que mm (volumen del polígono)">' +
+        '<td style="' + riegoTdR + '" title="' + esc(lecturaT('radar.riego_m3_cell_title', 'Mismo riego que mm (volumen del polígono)')) + '">' +
           '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
-          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total referido al polígono (' + haLabel + ') — mismo riego que mm">' +
+          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que mm', { ha: haLabel })) + '">' +
         '</td>' +
         '<td data-field="status" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
       '</tr>';
@@ -1029,7 +1039,7 @@
     );
     box.innerHTML = chips.map(function (c) {
       return '<button type="button" data-lectura-series="' + c.key + '" style="' +
-        chipStyle(!!lecturaSeriesVis[c.key], c.color) + '" title="Mostrar / ocultar ' + c.label + '">' +
+        chipStyle(!!lecturaSeriesVis[c.key], c.color) + '" title="' + esc(lecturaT('radar.toggle_series', 'Mostrar / ocultar {label}', { label: c.label })) + '">' +
         c.label + '</button>';
     }).join('');
     box.querySelectorAll('[data-lectura-series]').forEach(function (btn) {
@@ -1536,7 +1546,7 @@
         (url
           ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" data-lectura-zoom="1" data-zoom-title="' + esc(label + ' · ' + (r.label || '')) + '" data-zoom-sub="' + esc(tip) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;cursor:zoom-in;' +
             (incomplete ? 'outline:2px solid #f59e0b;' : '') +
-            '" title="' + esc(incomplete ? why : 'Toca para ver en grande') + '">'
+            '" title="' + esc(incomplete ? why : lecturaT('radar.tap_to_enlarge', 'Toca para ver en grande')) + '">'
           : '<div style="height:142px;display:flex;align-items:center;justify-content:center;text-align:center;color:#92400e;background:#fffbeb;border:1px dashed #f59e0b;border-radius:7px;font-size:10.5px;line-height:1.35;padding:8px;" title="' +
             esc(why || tip) +
             '">' +

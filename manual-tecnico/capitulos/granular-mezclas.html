@@ -7,7 +7,7 @@
   <meta name="description" content="Nutrición granular NutriPlant: requerimiento kg/ha, programa de aplicaciones (mezcla física o fertilizante al 100 %), relación N-P₂O₅-K₂O y aporte por dosis.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar D · Granular</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Granular: requerimiento, programa y mezclas</h1>
 
     <h2>Resumen</h2>
@@ -144,12 +146,105 @@
     <div class="mt-note">
       <strong>En la plataforma:</strong> Nutrición granular → Requerimiento (meta) · Programa (aplicaciones y dosis) · resumen inferior (aporte, requerimiento, diferencia).
     </div>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Granular: requirement, program, and blends</h1>
+
+    <h2>Summary</h2>
+    <p>
+      <strong>Granular nutrition</strong> in NutriPlant has two parts in the project:
+      <strong>Requirement</strong> (target in kg/ha) and <strong>Program</strong> (applications with
+      physical blend or fertilizer at 100 %). Each application defines materials, % in the blend, and
+      dose kg/ha; the app calculates composition, N–P₂O₅–K₂O ratio, and cumulative contribution per nutrient.
+      The free login tool covers only the <strong>blend formulation</strong> part.
+    </p>
+
+    <h2>Flow in NutriPlant</h2>
+    <ol>
+      <li><strong>Requirement</strong> — crop extraction → soil adjustment → efficiency → actual requirement (kg/ha).</li>
+      <li><strong>Program</strong> — one or more <strong>applications</strong>; in each, fertilizer blend (or a single product) + dose kg/ha → contribution per nutrient.</li>
+      <li><strong>Summary</strong> — sum of all applications vs requirement (difference per nutrient).</li>
+    </ol>
+    <p>Same requirement logic as fertigation; see also
+      <a href="programa-fertirriego-etapas.html">Fertigation program</a> and
+      <a href="extraccion-nutrimental-por-etapa.html">Extraction by stage</a>.</p>
+
+    <h2>1. Nutrient requirement</h2>
+    <p>Table under <strong>Dashboard → Granular nutrition → Requirement</strong>:</p>
+    <div class="mt-formula">
+      Total extraction (kg/ha) = extraction per ton (kg/ton) × target yield (ton/ha)<br>
+      Actual requirement (kg/ha) = Adjustment ÷ (Efficiency ÷ 100)
+    </div>
+    <p><strong>Total extraction</strong> — crop demand at the target yield (editable base per crop).</p>
+    <p><strong>Adjustment by soil levels</strong> — editable kg/ha per nutrient. By default equal to
+      total extraction; the agronomist <strong>raises or lowers</strong> kg according to soil reserves or deficit
+      (technical judgment, not mandatory from the laboratory report). Reference in
+      <a href="analisis-suelo-fertilidad-kgha.html">Soil analysis: fertility and kg/ha</a>.</p>
+    <p><strong>Efficiency (%)</strong> — expected fraction of applied fertilizer taken up
+      from the soil. In granular, default values are more conservative than in fertigation
+      (editable): N 65 %, P₂O₅ 40 %, K₂O 85 %, CaO/MgO/SO₄ 85 %, micros 80 %, SiO₂ 85 %.</p>
+    <p><strong>Example:</strong> P₂O₅ adjustment = 80 kg/ha, efficiency 40 % → actual P₂O₅ requirement = 80 ÷ 0.40 = <strong>200 kg/ha</strong>.</p>
+
+    <h2>2. Application program</h2>
+    <p>Under <strong>Program</strong>, numbered applications are created (1st, 2nd, 3rd…). Each application can be:</p>
+    <ul>
+      <li><strong>Fertilizer at 100 %</strong> — a single material with <strong>100 % per MT</strong> (metric tonne of the blend).</li>
+      <li><strong>Physical blend</strong> — several granules with % in the blend (usually sum to 100 %).</li>
+    </ul>
+    <p>Per application you enter:</p>
+    <ul>
+      <li>Material row(s) + <strong>% per MT</strong> (composition from the NutriPlant catalog).</li>
+      <li><strong>TOTAL</strong> row — % nutrient in the blend (weighted composition).</li>
+      <li><strong>Dose kg/ha</strong> — how many kg of that blend (or pure product) are applied in that visit.</li>
+    </ul>
+    <div class="mt-formula">
+      % nutrient in blend = Σ (% MT<sub>i</sub> / 100 × % nutrient in material<sub>i</sub> )<br>
+      Nutrient contribution (kg/ha) = Blend dose (kg/ha) × (% nutrient in blend / 100)
+    </div>
+    <p>
+      The application contribution appears in the results row under “Dose Kg/Ha”. The
+      <strong>program total</strong> is the <strong>sum</strong> of contributions from all
+      applications. In the lower summary: <strong>Total contribution</strong>, <strong>Requirement</strong>,
+      and <strong>Difference</strong> = contribution − requirement (negative = shortfall; positive = excess).
+      There is no water contribution as in fertigation.
+    </p>
+
+    <h2>3. Blend formulation (composition and N-P-K)</h2>
+    <p>Blend logic is the same in the project program and in the free tool
+      (<code>granular-mix-free.html</code>). For each row (material + % in blend):</p>
+    <div class="mt-formula">Nutrient contribution (%) = (% in blend / 100) × (% of nutrient in the material)<br>Total in blend = sum of contributions from all rows</div>
+    <p>Nutrients shown: N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂ (per material catalog composition).</p>
+    <h2>N–P₂O₅–K₂O ratio</h2>
+    <p>If N, P₂O₅, and K₂O in the blend are all &gt; 0, the ratio is normalized to the smallest of the three:</p>
+    <div class="mt-formula">Ratio a - b - c where a = N/m, b = P₂O₅/m, c = K₂O/m, m = min(N, P₂O₅, K₂O)</div>
+    <p>Example: totals 20-10-10 → ratio <strong>2 - 1 - 1</strong> (equivalent to a commercial 20-10-10 blend).</p>
+    <h2>kg/ha per nutrient (one application)</h2>
+    <div class="mt-formula">kg nutrient/ha = Blend dose (kg/ha) × (% nutrient in blend / 100)</div>
+    <p>Example: 20-10-10 blend (% in blend) applied at 500 kg/ha → 100 kg N/ha, 50 kg P₂O₅/ha, 50 kg K₂O/ha.</p>
+
+    <h2>In the project vs free tool</h2>
+    <ul>
+      <li><strong>Login</strong> — <code>granular-mix-free.html</code>: blend formulation and kg/ha by dose only; data in localStorage.</li>
+      <li><strong>Dashboard → Granular nutrition</strong> — requirement + application program, cloud-saved; contribution vs target summary.</li>
+    </ul>
+
+    <h2>Oxide or elemental mode</h2>
+    <p>The user chooses mode in requirement and program; tables and summary show P₂O₅/K₂O/CaO/MgO/SO₄/SiO₂ or P/K/Ca/Mg/S/Si. Same conversion logic as fertigation
+      (<a href="unidades-ppm-meq-oxidos.html">Units: oxide ↔ elemental</a>).</p>
+
+    <div class="mt-note">
+      <strong>In the platform:</strong> Granular nutrition → Requirement (target) · Program (applications and doses) · lower summary (contribution, requirement, difference).
+    </div>
+    </div>
+
 
     <nav class="mt-chapter-nav"><a href="extraccion-nutrimental-por-etapa.html">← Extracción</a><a href="programa-fertirriego-etapas.html">Fertirriego →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Verifique compatibilidad física de granulados y normativa de aplicación.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+
   <title>Interacciones y movilidad nutrimental</title>
   <style>
     :root {
@@ -2438,6 +2443,13 @@
   }
   window.NpFreePersist.bind('interacciones_absorcion', snapInteractions, applyInteractions);
 })();
+  </script>
+  <script>
+    (function () {
+      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
+        window.NpFreeNutritionUI.init();
+      }
+    })();
   </script>
 </body>
 </html>

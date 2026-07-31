@@ -58,8 +58,14 @@
     manual.appendChild(iconImg(base + 'assets/N_Hoja_Azul.png', 18));
     var span = document.createElement('span');
     span.className = 'mt-portal-btn__text';
-    span.textContent = 'Manual Técnico';
+    span.textContent = (window.NpManualI18n && window.NpManualI18n.t)
+      ? window.NpManualI18n.t('manual_tech')
+      : 'Manual Técnico';
     manual.appendChild(span);
+    if (window.NpManualI18n && window.NpManualI18n.withLang) {
+      manual.href = window.NpManualI18n.withLang(manualHref);
+    }
+    manual.title = span.textContent;
 
     var autoriaBtn = right.querySelector('.mt-autoria-btn');
     if (autoriaBtn) right.insertBefore(manual, autoriaBtn);
@@ -137,6 +143,9 @@
     insertManualBtn(base, flags);
     hideBrandSubtitle();
     upgradeAutoriaTitle(base, flags);
+    if (window.NpManualI18n && typeof window.NpManualI18n.apply === 'function') {
+      window.NpManualI18n.apply();
+    }
   }
 
   if (document.readyState === 'loading') {

@@ -7,7 +7,7 @@
   <meta name="description" content="Dureza del agua como CaCO₃, neutralización de bicarbonatos con ácido y referencia de solubilidad e índice salino (IS) en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
           <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="whatsapp" title="Canal de WhatsApp">
@@ -54,7 +54,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Agua y clima</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Dureza, acidificación y solubilidad del agua</h1>
     <h2>Resumen</h2>
     <p>Antes de diseñar una solución nutritiva conviene <strong>diagnosticar el agua</strong>: dureza (Ca + Mg), alcalinidad (bicarbonatos y carbonatos) y el impacto osmótico relativo de los fertilizantes que se disuelven. NutriPlant ofrece herramientas gratuitas alineadas con la pestaña <a href="analisis-agua-ras-sar.html">Análisis de agua</a> y con el manejo de fertirriego.</p>
@@ -128,11 +130,90 @@
       <li><a href="hidroponia-solucion-por-etapa.html">Hidroponía</a> — objetivo de solución vs calidad real del agua de relleno.</li>
       <li><a href="interacciones-mulder-compatibilidad.html">Mulder y compatibilidad de fertilizantes</a> (Pilar F).</li>
     </ul>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Water hardness, acidification and solubility</h1>
+    <h2>Summary</h2>
+    <p>Before designing a nutrient solution it is useful to <strong>diagnose the water</strong>: hardness (Ca + Mg), alkalinity (bicarbonates and carbonates) and the relative osmotic impact of the fertilizers that dissolve. NutriPlant offers free tools aligned with the <a href="analisis-agua-ras-sar.html">Water analysis</a> tab and with fertigation management.</p>
+    <h2>Free tools (login)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Tool</th><th>File</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Water diagnosis and conditioning</td><td><code>agua-dureza-free.html</code></td><td>Hardness, lab Ca/Mg, acid dose</td></tr>
+        <tr><td>Solubility and salt index</td><td><code>solubilidad-indice-salino-free.html</code></td><td>g/L table and SI (NaNO₃ = 100)</td></tr>
+      </tbody>
+    </table>
+    <p>Persistence: browser <code>localStorage</code> (<code>nutriplant_free_agua_dureza_v1</code>, <code>nutriplant_free_solubilidad_is_v1</code>). They do not replace a report saved in the PRO project.</p>
+
+    <h2>1. Water hardness</h2>
+    <p><strong>Total hardness</strong> is almost always expressed as <strong>mg/L or ppm equivalent to CaCO₃</strong> (even though it comes from Ca and Mg). In the NutriPlant tool you can convert between:</p>
+    <ul>
+      <li>ppm (mg/L) as CaCO₃</li>
+      <li>meq/L (÷ 50.043 ≈ equivalent weight of CaCO₃ in mg per meq)</li>
+      <li>°dH (German), °fH (French), °e (English Clark)</li>
+    </ul>
+    <div class="mt-formula">meq/L ≈ ppm (CaCO₃) ÷ 50.043</div>
+    <p><strong>Indicative classification</strong> (USGS reference, same table in the app):</p>
+    <table class="mt-table">
+      <thead><tr><th>Class</th><th>ppm CaCO₃</th></tr></thead>
+      <tbody>
+        <tr><td>Soft</td><td>&lt; 60</td></tr>
+        <tr><td>Moderately hard</td><td>60 – &lt; 120</td></tr>
+        <tr><td>Hard</td><td>120 – &lt; 180</td></tr>
+        <tr><td>Very hard</td><td>≥ 180</td></tr>
+      </tbody>
+    </table>
+    <h3>Hardness from laboratory Ca and Mg</h3>
+    <p>If the analysis reports Ca and Mg in ppm or meq/L, the app sums their contribution as CaCO₃ equivalent:</p>
+    <div class="mt-formula">Ca contribution (ppm CaCO₃) ≈ ppm Ca × (100.086 ÷ 40.078)<br>Mg contribution (ppm CaCO₃) ≈ ppm Mg × (100.086 ÷ 24.305)</div>
+    <p>High hardness implies greater <strong>precipitation</strong> risk when mixing with phosphates or sulfates in fertigation, and competition with chelated micronutrients if the water is not conditioned.</p>
+
+    <h2>2. Acidification and alkalinity (HCO₃⁻ and CO₃²⁻)</h2>
+    <p><strong>Bicarbonates and carbonates</strong> raise water alkalinity. In fertigation and concentrated mixes they can react with Ca²⁺, Mg²⁺, Fe or Zn and form precipitates. Therefore it is not enough to “lower pH”: part of the alkalinity should be neutralized with judgment.</p>
+    <h3>Logic in NutriPlant</h3>
+    <div class="mt-formula">meq acid per L of water = (HCO₃⁻ + CO₃²⁻) in meq/L − target residual (meq/L)</div>
+    <div class="mt-formula">mL of acid per m³ of water = (meq/L × 1000) ÷ meq per mL of the chosen acid</div>
+    <p>The <strong>target residual</strong> is the alkalinity buffer the technician decides to leave (e.g. 1 meq/L). Neutralizing 100 % by default is not recommended: validate final solution pH and program compatibility.</p>
+    <p><strong>Acids in the tool catalog</strong> (indicative meq/mL in the app): nitric 55 %, sulfuric 98 %, phosphoric 75 % and 85 %. Nitric acid contributes N-NO₃ to the mix; sulfuric contributes SO₄²⁻ — integrate it into the program balance.</p>
+    <div class="mt-note">
+      <p><strong>Example (same logic as NutriPlant publications):</strong> 3.7 meq/L alkalinity (HCO₃⁻ + CO₃²⁻), residual 1.0 meq/L → 2.7 meq/L are neutralized. With 55 % nitric acid (~11.6 meq/mL), ≈ 233 mL/m³ of water.</p>
+    </div>
+    <p>In project <strong>Analysis → Water</strong> you can record acid residual and acid type per report; the free tool replicates the calculation for the field without opening a project.</p>
+
+    <h2>3. Solubility and salt index (SI)</h2>
+    <p>The <strong>Solubility and salt index</strong> tool combines two distinct technical readings:</p>
+    <h3>Solubility (g/L in water, ~20–25 °C)</h3>
+    <ul>
+      <li>Indicates how readily a fertilizer dissolves in pure water at laboratory temperature.</li>
+      <li>Nitrates are usually highly soluble; sulfates and carbonates more limited; depends on product and purity.</li>
+      <li>In the field, temperature, other ions and the medium change real behavior.</li>
+    </ul>
+    <p>Solubility <strong>does not define whether a product is good or bad</strong>: it defines how easily you can work it in the tank and whether you need to split the mix.</p>
+    <h3>Salt index (SI)</h3>
+    <p>The <strong>SI</strong> compares the relative osmotic effect of a fertilizer against <strong>NaNO₃ = 100</strong> (classic reference in agronomic tables). A high SI (e.g. KCl, NH₄NO₃) implies more care in:</p>
+    <ul>
+      <li>concentrated stock solutions,</li>
+      <li>startup or sensitive seedlings,</li>
+      <li>low soil moisture or water stress.</li>
+    </ul>
+    <p>MKP or other low-SI products are not “better” by definition: they are less osmotic on the same comparison basis. Dose, available water and phenological timing govern.</p>
+
+    <h2>Relation to fertigation and analysis</h2>
+    <ul>
+      <li><a href="analisis-agua-ras-sar.html">Water analysis</a> — EC, pH, SAR, HCO₃⁻, acid residual in the cloud.</li>
+      <li><a href="programa-fertirriego-etapas.html">Fertigation program</a> — water contributes ions and conditions mix compatibility.</li>
+      <li><a href="hidroponia-solucion-por-etapa.html">Hydroponics</a> — solution target vs real makeup water quality.</li>
+      <li><a href="interacciones-mulder-compatibilidad.html">Mulder and fertilizer compatibility</a> (Pillar F).</li>
+    </ul>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="vpd-deficit-presion-vapor.html">← VPD</a><a href="interacciones-mulder-compatibilidad.html">Mulder / compatibilidad →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Manipule ácidos con EPP y normativa local. Verifique fichas técnicas del fabricante antes de formulaciones comerciales.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

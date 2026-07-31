@@ -65,10 +65,14 @@ module.exports = [
       setPrefs({ language: 'en', unit_system: 'us_customary', locale: 'en-US' });
       assert.equal(granular.cropName('maiz', 'Maíz'), 'Corn');
       assert.equal(granular.materialName('Sulfato de Potasio'), 'Potassium Sulfate');
+      assert.equal(granular.materialName('Nitrato de Calcio'), 'Calcium Nitrate');
+      assert.equal(granular.materialName('MAP'), 'MAP');
+      assert.equal(granular.materialName('DAP'), 'DAP');
       assert.equal(granular.materialName('Fertilizante X'), 'Fertilizante X');
       setPrefs({ language: 'es', unit_system: 'metric', locale: 'es-MX' });
       assert.equal(granular.cropName('maiz', 'Maíz'), 'Maíz');
       assert.equal(granular.unit('dose_mass_area'), 'kg/ha');
+      assert.equal(granular.materialName('Nitrato de Calcio'), 'Nitrato de Calcio');
       setPrefs({ language: 'en', unit_system: 'us_customary', locale: 'en-US' });
     }
   }

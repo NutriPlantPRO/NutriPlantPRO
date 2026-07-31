@@ -293,6 +293,136 @@
   box-shadow: 0 5px 16px rgba(15, 23, 42, 0.08);
 }
 
+/* Registro: preferencias compactas y botones siempre alcanzables */
+#registrationModal .modal {
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 92dvh);
+  overflow: hidden;
+}
+
+#registrationModal .modal-header {
+  flex: 0 0 auto;
+}
+
+#registrationModal .registration-preferences-slot {
+  position: static;
+  flex: 0 0 auto;
+  padding: 8px 16px 10px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+#registrationModal .registration-preferences-slot .auth-preferences-bar {
+  padding: 7px 8px 6px;
+  gap: 8px;
+  box-shadow: none;
+}
+
+#registrationModal .registration-preferences-slot .auth-preferences-bar__title {
+  font-size: 11px;
+}
+
+#registrationModal .registration-preferences-slot .auth-preference-field {
+  padding: 4px 5px 5px;
+}
+
+#registrationModal .registration-preferences-slot .auth-preference-field select {
+  height: 34px;
+  min-height: 34px;
+  font-size: 13px;
+}
+
+#registrationModal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 20px 20px;
+}
+
+#registrationModal .registration-steps {
+  margin-bottom: 16px !important;
+  padding: 0 4px !important;
+}
+
+#registrationModal .registration-step > .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-top: 16px !important;
+  margin-left: -20px;
+  margin-right: -20px;
+  margin-bottom: -20px;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, #ffffff 35%);
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.06);
+}
+
+@media (max-width: 620px) {
+  #registrationModal .modal {
+    width: calc(100% - 16px);
+    max-height: min(94vh, 94dvh);
+  }
+
+  #registrationModal .modal-header {
+    padding: 14px 16px;
+  }
+
+  #registrationModal .modal-title {
+    font-size: 1.2rem;
+  }
+
+  #registrationModal .registration-preferences-slot {
+    padding: 6px 12px 8px;
+  }
+
+  #registrationModal .registration-preferences-slot .auth-preferences-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  #registrationModal .registration-preferences-slot .auth-preferences-bar__intro {
+    display: none;
+  }
+
+  #registrationModal .registration-preferences-slot .auth-preferences-bar__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  #registrationModal .registration-preferences-slot .auth-preference-field select {
+    height: 36px;
+    min-height: 36px;
+    font-size: 14px;
+  }
+
+  #registrationModal .modal-body {
+    padding: 12px 14px 16px;
+  }
+
+  #registrationModal .registration-step > .modal-footer {
+    margin-left: -14px;
+    margin-right: -14px;
+    margin-bottom: -16px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #registrationModal .registration-steps .step-circle {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 13px;
+  }
+
+  #registrationModal .registration-steps .step-label {
+    font-size: 10px !important;
+  }
+}
+
 @media (max-width: 620px) {
   .auth-preferences-bar {
     align-items: stretch;
@@ -512,7 +642,18 @@
   background: #fff;
 }
 
+.login-social-pane__embed--facebook {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+  background: #fff;
+}
+
 .login-social-pane__embed--facebook iframe {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
   min-height: 420px;
 }
 

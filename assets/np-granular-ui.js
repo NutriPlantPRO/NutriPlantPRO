@@ -85,6 +85,7 @@
     banano: 'Banana', trigo: 'Wheat', sorgo: 'Sorghum', arroz: 'Rice', cebada: 'Barley'
   };
 
+  /* Solo nombres descriptivos precargados. MAP, DAP, MKP, SOP, Urea, Micro Mix quedan igual. */
   var MATERIALS_EN = {
     'Fosfonitrato 33-03-00': 'Nitrophosphate 33-03-00',
     'Sulfato de Amonio Granular': 'Granular Ammonium Sulfate',
@@ -103,7 +104,10 @@
     'Boro Granular': 'Granular Boron',
     'Sulfato de Cobre': 'Copper Sulfate',
     'Molibdato de Sodio': 'Sodium Molybdate',
-    'Complejo Triple 16': 'Triple 16 Blend'
+    'Complejo 12-11-18': '12-11-18 Blend',
+    'Complejo 12-12-17': '12-12-17 Blend',
+    'Complejo Triple 16': 'Triple 16 Blend',
+    'Urea': 'Urea'
   };
 
   function prefs() {

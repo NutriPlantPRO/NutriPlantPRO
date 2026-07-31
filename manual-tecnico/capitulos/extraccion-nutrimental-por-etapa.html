@@ -7,7 +7,7 @@
   <meta name="description" content="Extracción nutrimental por etapa: requerimiento en Fertirriego/Granular, herramienta 📊 de curvas kg/ha, biblioteca personal y reporte PDF en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar D · Programas</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Extracción y distribución nutrimental por etapa</h1>
     <h2>Resumen</h2>
     <p>En NutriPlant hay <strong>dos niveles</strong> relacionados con la extracción por etapa:</p>
@@ -135,11 +137,95 @@
 
     <h2>Límites</h2>
     <div class="mt-warn">Las extracciones por cultivo son <strong>referenciales</strong>: cambian por variedad, manejo, clima y rendimiento real. El requerimiento calculado es punto de partida, no dosis obligatoria.</div>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Nutrient extraction and distribution by stage</h1>
+    <h2>Summary</h2>
+    <p>In NutriPlant there are <strong>two levels</strong> related to extraction by stage:</p>
+    <ol>
+      <li><strong>Nutrient requirement</strong> (<a href="programa-fertirriego-etapas.html">Fertigation</a> and <a href="granular-mezclas.html">Granular</a> tabs) — how much nutrient the crop demands from extraction per tonne, yield, soil adjustment, and efficiency.</li>
+      <li><strong>Phenological curve 📊</strong> (“Nutrient distribution by stage” tool) — given total kg/ha already defined, allocates <strong>% by stage</strong> and shows kg/ha and demand charts over the cycle.</li>
+    </ol>
+    <p>The fertilization program (weeks/months, doses, fertilizers) lives in Fertigation/Granular. The 📊 tool documents and visualizes the <strong>extraction curve</strong>; it does not calculate doses or replace the program.</p>
+
+    <h2>Requirement in Fertigation and Granular</h2>
+    <h3>Input data</h3>
+    <ul>
+      <li><strong>Crop</strong> — extraction base kg/ton (NutriPlant reference, editable).</li>
+      <li><strong>Target yield</strong> — ton/ha.</li>
+      <li><strong>Adjustment</strong> — kg/ha per nutrient (may start from total extraction or from soil analysis).</li>
+      <li><strong>Efficiency %</strong> — per nutrient; different in granular vs fertigation (fertigation is usually higher for N and K).</li>
+    </ul>
+    <h3>Calculation</h3>
+    <div class="mt-formula">Total extraction (kg/ha) = extraction per ton × yield (ton/ha)<br>Actual requirement (kg/ha) = Adjustment ÷ (Efficiency / 100)</div>
+    <p>Usual table order: <strong>N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂</strong>. In fertigation, if the user enters elemental S, the app may add it to SO₄ with a conversion factor.</p>
+    <p>The <strong>time program</strong> (by week or month) distributes the requirement into concrete applications — see <a href="programa-fertirriego-etapas.html">fertigation program</a> and <a href="granular-mezclas.html">granular</a>.</p>
+
+    <h2>📊 Nutrient distribution by stage tool</h2>
+    <p>Global calculator (<code>extraccion-etapa-free.html</code>): starts from <strong>total kg/ha per nutrient</strong> (cycle demand) and lets you define <strong>phenological stages</strong> with allocation %. It does not ask for crop or yield on screen; the technician brings those totals from the project requirement, literature, or their own judgment.</p>
+
+    <h3>Where to open it</h3>
+    <ul>
+      <li><strong>Login (free)</strong> — 📊 button on the access screen. Saves to browser <strong>localStorage</strong>; useful for practice or drafts without a project.</li>
+      <li><strong>PRO Dashboard</strong> — 📊 button on the calculators bar. Day-to-day work is <strong>autosaved to the active project</strong> (cloud + local backup). That is where the <strong>My saved curves</strong> bar appears.</li>
+    </ul>
+
+    <h3>Steps in the tool</h3>
+    <ol>
+      <li><strong>Total extraction (kg/ha)</strong> — enter the cycle’s cumulative demand per nutrient. You can add micronutrients and secondary nutrients in addition to N, P, K, Ca, Mg.</li>
+      <li><strong>Distribution by stage (%)</strong> — name the stages (Bud break, Vegetative, Flowering… or free text). For each nutrient, the <strong>sum of % must be 100</strong>. You can add or remove stages according to the crop.</li>
+      <li><strong>Result (kg/ha per stage)</strong> — the app calculates automatically:<br>
+        <span class="mt-formula" style="display:inline-block;margin-top:8px;">kg/ha in stage = total extraction × (% / 100)</span></li>
+      <li><strong>Chart</strong> — kg/ha curves by stage and nutrient (X axis = stages). Separate view for macros and micros; updates when you edit the table.</li>
+    </ol>
+    <p>The % by stage is a <strong>technician decision</strong> (crop demand curve); NutriPlant does not impose a fixed universal curve.</p>
+
+    <h3>“My saved curves” library (dashboard only)</h3>
+    <ul>
+      <li>The library is <strong>per user</strong>, not per project: you can save several curves with a title (e.g. “Hass avocado · reference”) and reuse them.</li>
+      <li><strong>Save to my library</strong> — saves the current state (totals, stages, %, and kg/ha) with a title.</li>
+      <li><strong>Choose curve</strong> — loads a saved curve into the open project (overwrites what you have on screen).</li>
+      <li><strong>Delete selected</strong> — removes the curve from your personal library.</li>
+      <li>Synced in the user profile (cloud). If you delete a project, <strong>library curves are not lost</strong>.</li>
+      <li>The library <strong>does not auto-spread</strong> across projects: in each project you choose which curve to load from the dropdown.</li>
+    </ul>
+    <p><strong>Two data layers:</strong> (1) <em>personal library</em> = reusable templates; (2) <em>active project curve</em> = what remains saved in that project (autosave). The PDF report and GPT assistant use the <strong>active project</strong> curve, not the entire library.</p>
+
+    <h3>Recommended workflow for the technician</h3>
+    <ol>
+      <li>Calculate or review the cycle’s <strong>total kg/ha</strong> (from Requirement in Fertigation/Granular, literature, or your judgment).</li>
+      <li>Open 📊 in the project dashboard and enter those totals.</li>
+      <li>Define the crop’s phenological stages and allocate % according to the demand curve.</li>
+      <li>Validate the chart and the kg/ha-by-stage table.</li>
+      <li>If you will reuse the same curve in other fields or similar crops, <strong>save it to the library</strong> with a clear title.</li>
+      <li>Cross-check the curve with the same project’s <strong>fertigation or granular program</strong> (cross-reference; there is no automatic dose link).</li>
+      <li>To deliver to the client, include the <strong>Distribution by stage</strong> section in the project PDF report.</li>
+    </ol>
+
+    <h3>PDF report and assistant</h3>
+    <ul>
+      <li><strong>PDF report</strong> — “📊 Distribution by stage” section: tables and charts of the curve <strong>loaded in that project</strong> (enable in the report modal).</li>
+      <li><strong>GPT assistant</strong> — receives totals, %, and kg/ha by stage from the project curve and, if present, your library curves; it can interpret peaks and coherence with the program, but does not see the chart image.</li>
+    </ul>
+
+    <h3>What this tool does not do</h3>
+    <ul>
+      <li>It does not replace the <strong>fertilization program</strong> (weeks, months, product kg/ha).</li>
+      <li>It does not calculate <strong>fertilizer doses</strong> or blends.</li>
+      <li>It does not auto-sync % with Fertigation/Granular: it is documentation and a phenological demand guide.</li>
+    </ul>
+
+    <h2>Limits</h2>
+    <div class="mt-warn">Crop extractions are <strong>referential</strong>: they change with variety, management, climate, and actual yield. The calculated requirement is a starting point, not a mandatory dose.</div>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="programa-fertirriego-etapas.html">Programa fertirriego →</a><a href="granular-mezclas.html">Granular →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Valide con laboratorio, suelo y observación en campo.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

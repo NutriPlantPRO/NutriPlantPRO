@@ -7,7 +7,7 @@
   <meta name="description" content="Metodología NutriPlant PRO para ajuste de CIC: meq/100 g, saturación catiónica, meq a ajustar y cálculo de kg/ha de enmienda.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -50,7 +50,6 @@
           <span class="mt-autoria-btn__text">Autoría</span>
         </a>
         <nav class="mt-nav" aria-label="Enlaces">
-          <a href="../index.html">Índice</a>
           <a href="../../login.html">Plataforma</a>
         </nav>
         <div class="mt-social-links" aria-label="Redes sociales">
@@ -80,7 +79,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar B · Suelo y enmiendas</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Balance de enmiendas por CIC del suelo</h1>
 
     <h2>Resumen</h2>
@@ -162,12 +163,100 @@
       <a href="porcentaje-meq-aniones-cationes.html">← % meq</a>
       <a href="../index.html">Índice →</a>
     </nav>
-  </main>
+  
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Amendment balance by soil CEC</h1>
+
+    <h2>Summary</h2>
+    <p>
+      The <strong>Amendments</strong> module balances the soil’s cation exchange capacity (CEC)
+      expressed in <strong>meq/100 g</strong> (equivalent to <strong>cmol<sub>c</sub>/kg</strong> with the same figure).
+      From the initial analysis and the <strong>meq to adjust</strong> per cation, the platform estimates
+      amendment amounts in <strong>kg/ha</strong> according to product composition, depth, density, and
+      % of soil explored by roots.
+    </p>
+
+    <h2>Agronomic context</h2>
+    <p>
+      Soil fertility depends on which cation occupies the exchange sites: excess Na⁺ or Al³⁺,
+      deficit of Ca²⁺ or Mg²⁺, or K out of range affect availability and structure. Amendments (gypsum,
+      lime, dolomite, etc.) change the cation proportions on the CEC; the calculation quantifies how much to apply.
+    </p>
+
+    <h2>Input data</h2>
+    <ul>
+      <li><strong>Initial soil analysis</strong> — K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺, Al³⁺ in meq/100 g; total CEC (sum or laboratory value).</li>
+      <li><strong>Adjustment targets</strong> — “meq to adjust” fields per cation (editable; the app may suggest them).</li>
+      <li><strong>Profile properties</strong> — Depth (cm), bulk density (g/cm³), % soil explored by roots.</li>
+      <li><strong>Selected amendments</strong> — Catalog or custom products, with composition (% or meq supplied per tonne).</li>
+      <li><strong>Soil pH</strong> — Influences prioritization (e.g. gypsum vs lime).</li>
+    </ul>
+
+    <h2>CEC and saturation on screen</h2>
+    <div class="mt-formula">
+      CEC = K + Ca + Mg + H + Na + Al  (meq/100 g)<br>
+      Saturation (%) of a cation = (cation meq / CEC) × 100
+    </div>
+    <p>Interpretation ranges used in status icons (literature reference):</p>
+    <table class="mt-table">
+      <thead><tr><th>Cation</th><th>Typical range (% saturation)</th></tr></thead>
+      <tbody>
+        <tr><td>K⁺</td><td>3 – 7 %</td></tr>
+        <tr><td>Ca²⁺</td><td>65 – 75 %</td></tr>
+        <tr><td>Mg²⁺</td><td>10 – 15 %</td></tr>
+        <tr><td>Na⁺</td><td>0 – 1 %</td></tr>
+        <tr><td>Al³⁺</td><td>0 – 1 %</td></tr>
+        <tr><td>H⁺</td><td>0 – 10 %</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Meq to adjust</h2>
+    <p>
+      The target fields store the magnitude in <strong>meq/100 g to correct</strong> on the CEC
+      (same unit as the analysis). In the interface:
+      <strong>positive values = deficit</strong> (that cation must be supplied to the balance);
+      <strong>negative = excess</strong>.
+    </p>
+    <p>
+      The sum of target meq should match total CEC; the app highlights green if
+      |Σ target meq − CEC| &lt; 0.1 and red if it does not balance.
+    </p>
+
+    <h2>From meq to kg/ha of amendment</h2>
+    <p>Simplified calculation-engine flow:</p>
+    <ol>
+      <li>Take meq to adjust per cation (K, Ca, Mg, H, Na, Al).</li>
+      <li>Convert to meq/kg of soil: <code>meq/kg = meq/100g × 10</code>.</li>
+      <li>Convert to ppm (mg/kg) with equivalent weight: K ×39.1; Ca ×20.04; Mg ×12.15; H ×1.008; Na ×23; Al ×8.99.</li>
+      <li>Estimate soil mass per ha: volume (m³/ha) × density × 1000 → kg soil/ha.</li>
+      <li><code>kg element/ha = (ppm × kg soil/ha) / 1 000 000</code>, allocated by % soil explored.</li>
+      <li>Distribute needs across selected amendments (prioritization by pH, limiting Ca/Mg, gypsum, etc.).</li>
+    </ol>
+
+    <div class="mt-note">
+      <strong>Difference from Soil Analysis (reports):</strong> Amendments uses the project’s
+      <em>Initial soil analysis</em> block. Reports saved under Analysis are a different flow
+      (fertility kg/ha per report). Criteria may be aligned, but they are not the same screen.
+    </div>
+
+    <h2>In the platform</h2>
+    <p>Dashboard → project → <strong>Amendments</strong> tab: initial analysis, targets, product selection, and result in kg/ha.</p>
+
+    <nav class="mt-chapter-nav" aria-label="Chapters">
+      <a href="porcentaje-meq-aniones-cationes.html">← % meq</a>
+      <a href="../index.html">Index →</a>
+    </nav>
+  
+    </div>
+</main>
 
   <footer class="mt-footer">
     <p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p>
   </footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

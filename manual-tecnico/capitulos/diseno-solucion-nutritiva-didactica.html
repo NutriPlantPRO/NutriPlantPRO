@@ -7,7 +7,7 @@
   <meta name="description" content="Calculadora didáctica de solución nutritiva: CE objetivo, meq/L, triángulos iónicos, Cl y NH4. Distinta de hidroponía por proyecto.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Herramienta / Hidroponía</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Diseño didáctico de solución nutritiva (CE y triángulos)</h1>
     <h2>Resumen</h2>
     <p>La herramienta gratuita <strong>Diseño de solución nutritiva</strong> (login) y la pestaña <strong>Hidroponía → Solución por etapa</strong> del proyecto comparten lógica iónica, pero no guardan en el mismo sitio.</p>
@@ -71,10 +73,30 @@
     <p>Por etapa fenológica guardada en el proyecto; alimenta el cálculo de fertilizantes restando aporte del agua.</p>
     <h2>Rangos de referencia (tipo Steiner, orientativos)</h2>
     <p>Aniones N-NO₃⁻ 20–80 % · P 1,25–10 % · S 10–70 % del triángulo N-P-S. Cationes K 10–65 % · Ca 22,5–62,5 % · Mg 0,5–40 % del triángulo K-Ca-Mg.</p>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Didactic nutrient solution design (EC and triangles)</h1>
+    <h2>Summary</h2>
+    <p>The free <strong>Nutrient solution design</strong> tool (login) and the project tab <strong>Hydroponics → Solution by stage</strong> share ionic logic, but they do not store data in the same place.</p>
+    <h2>Free tool (didactic)</h2>
+    <ul>
+      <li>Target EC (dS/m) → meq/L and ppm calculation per ion.</li>
+      <li>Draggable N-P-S and K-Ca-Mg triangles; % meq with their own denominators.</li>
+      <li>Cl⁻ adds to EC; N-NH₄⁺ is outside the cationic triangle.</li>
+      <li>Persistence in the browser localStorage (<code>hidro-solucion-free.html</code>).</li>
+    </ul>
+    <h2>Project hydroponics (cloud)</h2>
+    <p>Per phenological stage saved in the project; feeds fertilizer calculation by subtracting water contribution.</p>
+    <h2>Reference ranges (Steiner-type, indicative)</h2>
+    <p>Anions N-NO₃⁻ 20–80 % · P 1.25–10 % · S 10–70 % of the N-P-S triangle. Cations K 10–65 % · Ca 22.5–62.5 % · Mg 0.5–40 % of the K-Ca-Mg triangle.</p>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="porcentaje-meq-aniones-cationes.html">% meq →</a><a href="../index.html">Índice</a></nav>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

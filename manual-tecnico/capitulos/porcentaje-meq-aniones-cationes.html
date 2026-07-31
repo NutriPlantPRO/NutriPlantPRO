@@ -7,7 +7,7 @@
   <meta name="description" content="Reglas NutriPlant PRO para porcentaje en meq/L: triángulos N-P-S y K-Ca-Mg, N-NH4 y Cl aparte, diferencias entre hidroponía y fertirriego.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -50,7 +50,6 @@
           <span class="mt-autoria-btn__text">Autoría</span>
         </a>
         <nav class="mt-nav" aria-label="Enlaces">
-          <a href="../index.html">Índice</a>
           <a href="../../login.html">Plataforma</a>
         </nav>
         <div class="mt-social-links" aria-label="Redes sociales">
@@ -80,7 +79,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar A / D · Balance iónico</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>% meq: triángulos aniónicos y catiónicos</h1>
 
     <h2>Resumen</h2>
@@ -143,12 +144,81 @@
       <a href="analisis-suelo-fertilidad-kgha.html">← Fertilidad kg/ha</a>
       <a href="enmiendas-balance-cic.html">Siguiente: Enmiendas →</a>
     </nav>
-  </main>
+  
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>% meq: anion and cation triangles</h1>
+
+    <h2>Summary</h2>
+    <p>
+      In nutrient solution (hydroponics) and in the ionic balance of fertigation, NutriPlant shows <strong>% meq</strong>
+      alongside meq/L and ternary diagrams. <strong>Not all percentages share the same denominator</strong>:
+      some triangles sum to 100%, and some ions are calculated separately.
+    </p>
+
+    <h2>General rule: three families of %</h2>
+    <ol>
+      <li><strong>Anion triangle</strong> — N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻: each % = ion meq ÷ (NO₃ + P + SO₄) × 100. <strong>The three sum to 100%.</strong> Cl⁻ is not in the triangle or that sum.</li>
+      <li><strong>Cation triangle</strong> — K⁺, Ca²⁺, Mg²⁺: each % = meq ÷ (K + Ca + Mg) × 100. <strong>The three sum to 100%.</strong> N-NH₄⁺ is not in the triangle.</li>
+      <li><strong>Separate ions</strong> — N-NH₄⁺ and Cl⁻ use a broader total (see module).</li>
+    </ol>
+
+    <h2>Hydroponics · Solution by stage</h2>
+    <p>The user enters <strong>meq/L</strong> by stage; the app calculates % meq and element ppm.</p>
+    <div class="mt-formula">
+      % anion (triangle) = meq_ion / (meq NO₃ + meq P + meq SO₄) × 100<br>
+      % cation (triangle) = meq_ion / (meq K + meq Ca + meq Mg) × 100<br>
+      % N-NH₄⁺ = meq NH₄ / (meq K + meq Ca + meq Mg + meq NH₄) × 100
+    </div>
+    <p>
+      The ternary diagram uses only the triangle percentages. Steiner-type reference ranges in the app:
+      anions N-NO₃⁻ 20–80%, P 1.25–10%, S 10–70%; cations K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%.
+    </p>
+    <p><strong>Total N (meq/L)</strong> = N-NO₃⁻ + N-NH₄⁺ (summary under the tables).</p>
+
+    <h2>Fertigation · Ionic charts</h2>
+    <p>Same triangle logic, with nuances:</p>
+    <ul>
+      <li><strong>Cl⁻</strong> — % = meq Cl ÷ (NO₃ + P + SO₄ + Cl) × 100 (over total anions including Cl), but <strong>Cl does not move the N-P-S triangle point</strong>.</li>
+      <li><strong>Irrigation-water N</strong> — Labeled N-NO₃⁻; in charts, water N is treated as nitrate (water NH₄ = 0).</li>
+      <li>Requires <strong>m³/ha of irrigation depth</strong> in the stage to express ppm/meq on charts.</li>
+    </ul>
+
+    <h2>Do not confuse with soil (Amendment)</h2>
+    <div class="mt-warn">
+      <strong>% CEC saturation</strong> in soil analysis (K, Ca, Mg over CEC in meq/100 g)
+      is a different concept. If the question is “% meq of the solution,” use this chapter’s rules, not CEC rules.
+    </div>
+
+    <h2>Frequent question: why doesn’t everything sum to 100%?</h2>
+    <p>Quick answer in <a href="faq-porcentajes-no-suman-100.html">% meq in hydroponics and fertigation</a>. Summary here:</p>
+    <ol>
+      <li>Identify the screen: hydroponics solution, hydroponics fertilizer calculation, fertigation charts, or amendment CEC.</li>
+      <li>Name the <strong>exact denominator</strong> (N-P-S triangle, K-Ca-Mg triangle, cationic with NH₄, anions with Cl in fertigation, etc.).</li>
+      <li>Do not mix the N/Cl legend from fertilizer calculation (hydroponics) with the % meq table of solution by stage.</li>
+    </ol>
+
+    <h2>Equivalent weights (ppm → meq/L)</h2>
+    <p>Same convention in the app: N-NO₃⁻ and N-NH₄⁺ → 14; P (as P in H₂PO₄⁻) → 31; S (as S in SO₄²⁻) → 16; K⁺ 39.1; Ca²⁺ 20.04; Mg²⁺ 12.15; Cl⁻ 35.45.</p>
+
+    <div class="mt-note">
+      <strong>In the platform:</strong> Hydroponics → Nutrient solution by stage; Fertigation → Charts → Macro ionic summary.
+    </div>
+
+    <nav class="mt-chapter-nav" aria-label="Chapters">
+      <a href="analisis-suelo-fertilidad-kgha.html">← Fertility kg/ha</a>
+      <a href="enmiendas-balance-cic.html">Next: Amendments →</a>
+    </nav>
+  
+    </div>
+</main>
 
   <footer class="mt-footer">
     <p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p>
   </footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

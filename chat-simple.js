@@ -89,13 +89,13 @@ CALCULADORAS PRO (iconos en barra del dashboard; material educativo NutriPlant �
 - 🧮 **Conversor Óxido ↔ Elemental** (login/dashboard): (1) Bloque superior = **óxidos de etiqueta** P₂O₅, K₂O, CaO, MgO, SO₃, micros en óxido (factores sección 7 del manual). (2) Recuadro verde **Elemental ↔ iones** = N↔NO₃, N↔NH₄, S↔SO₄ para **ionómetros y análisis iónicos** — **no confundir con óxidos**. N en fertilizante = elemental; equipos a veces reportan NO₃ o NH₄.
 - 📐 **Conversor magnitudes físicas:** longitud, área, volumen, masa, presión, concentración, carga iónica (meq/L, cmol/L, µmol/L). **Alcance de raíz — copa/planta** (círculo × plantas/ha) y **cama/banda** (surcos × ancho cama) → % superficie para balance hídrico / franja regada. Distinto de ppm↔meq por nutriente (usa calculadora 🧪).
 - 🔗 Interacciones y movilidad nutrimental: (1) Diagrama tipo Mulder — rojo = antagonismo/competencia (bidireccional); azul = sinergia solo según la ficha del ion tocado (no inflada por el otro). Referencias frecuentes: K⁺ vs Ca²⁺/Mg²⁺/NH₄⁺; P alto vs Zn/Fe/Cu/Mn/Ca; **Cu²⁺ ↔ Mn²⁺** competencia entre micros (línea roja bidireccional en la app); SO₄²⁻ vs Mo; NO₃⁻ vs Cl⁻. NO₃⁻ azul típico: K⁺, NH₄⁺, MoO₄²⁻. (2) Mecanismos hacia la raíz: flujo de masa, difusión, interceptación. (3) Movilidad y síntomas (orientativo): N,P,K,Mg móviles (síntoma en hoja vieja); Ca,B poco móviles (punta/hoja nueva); Fe,Mn,Zn,Cu según especie. (4) Disponibilidad vs pH: acidez → más Fe/Mn (y Al tóxico); alcalinidad → P, Fe, Zn, Cu, B, Mo más limitados.
-- 🪨 Agua en suelo y textura — pestaña Agua: CC y PMP (% volumétrico), profundidad (cm), área (ha), % suelo explorado — superficie/franja (%), humedad actual θ (% vol., opcional). Volumen de suelo (m³) = área_ha × profundidad_cm / 10. **Zona objetivo riego:** 40–60% del agua útil (entre PMP y CC), franja violeta en gráfica + recuadro «hasta objetivo (60% AU)» además de hasta CC. **Gráfica:** título con «% volumétrico de referencia (eje horizontal)»; renglones bajo barra con **mm · m³** juntos. Con θ: recuadro azul principal (m³·mm hasta CC) + texto «Aplica X m³… eso son Y mm — no son dos riegos»; recuadro violeta hasta objetivo cuando aplica. **m³ vs mm:** `m³ = mm × ha × 10`; en campo aplicar m³ en franja; mm ref. ha cultivo = mismos m³ ÷ (ha cultivo × 10). Publica puente `nutriplant_bridge_soil_water_v1` (m³ CC, m³ objetivo, exceso). 🌧️ balance: botones **«Sugerir hasta 60% AU»** / **«Sugerir hasta CC»**; si θ ≥ 60% AU no rellenan m³ (solo informan %). Pestaña Textura: triángulo USDA.
+- 🪨 Agua en suelo y textura — pestaña Agua: CC y PMP (% volumétrico), profundidad (cm), área (ha), % suelo explorado — superficie/franja (%), humedad actual θ (% vol., opcional). Volumen de suelo (m³) = área_ha × profundidad_cm / 10. **Zona objetivo riego:** 40–60% del agua útil (entre PMP y CC), franja violeta en gráfica + recuadro «hasta objetivo (60% AU)» además de hasta CC. **Gráfica:** título con «% volumétrico de referencia (eje horizontal)»; renglones bajo barra con **mm · m³** juntos. Con θ: recuadro azul principal (m³·mm hasta CC) + texto «Aplica X m³… eso son Y mm — no son dos riegos»; recuadro violeta hasta objetivo cuando aplica. **m³ vs mm:** \`m³ = mm × ha × 10\`; en campo aplicar m³ en franja; mm ref. ha cultivo = mismos m³ ÷ (ha cultivo × 10). Publica puente \`nutriplant_bridge_soil_water_v1\` (m³ CC, m³ objetivo, exceso). 🌧️ balance: botones **«Sugerir hasta 60% AU»** / **«Sugerir hasta CC»**; si θ ≥ 60% AU no rellenan m³ (solo informan %). Pestaña Textura: triángulo USDA.
 - 🌧️ Lámina de riego y balance hídrico (login/dashboard + Clima PRO): mapa/GPS, Open-Meteo ETo/lluvia, periodo 1/7 d (30 d solo PRO). **Riego en franja regada: solo m³** (volumen ya aplicado; mm solo en resultados). Balance m³ = déficit m³ cultivo − riego m³ franja. Bloque **🪨 Referencia almacén suelo:** desplegable Sin ajuste / Déficit (+ riego) / Exceso (− riego) + m³ manual; **«Sugerir hasta 60% AU»** o **«Sugerir hasta CC»** (si ≥ 60% AU sin exceso no rellena; si **exceso sobre CC** rellena Exceso − m³ y resta del total); **total integrado (clima ± almacén)** solo si hay m³. Recuadro azul «Dato importante — riego en campo»: m³ + mm en franja. Ej.: 10 m³ en 0,5 ha = 2 mm franja = 1 mm ref. 1 ha. PDF Clima puede incluir bloque 🪨 suelo. Tablas Kc FAO-56 y % suelo explorado.
 - 🧂 Solubilidad e índice salino: solubilidad (g/L, ~20–25 °C, agua relativamente pura) y IS (NaNO₃ = 100). Clases: Alta >500, Media 100–500, Baja <100 g/L. IS alto = mayor estrés osmótico relativo (cuidado en emergencia, solución madre muy concentrada, poco agua disponible); no significa “prohibido”. Nitratos y muchos potásicos muy solubles; yeso y varios fosfatos poco solubles. Antes de mezclar fertilizantes en tanque: revisar solubilidad y compatibilidad (precipitados, salting out K/NO₃ + sulfatos).
 - 💧 Diseño de solución nutritiva (herramienta didáctica global, distinta de la pestaña Hidroponía del proyecto): CE, meq/L, % meq y ppm; triángulos aniónico (NO₃/P/SO₄) y catiónico (K/Ca/Mg) arrastrables; Cl⁻ suma a CE pero no al triángulo N-P-S; N-NH₄⁺ fuera del triángulo K-Ca-Mg. Persistencia local en el navegador (no en proyecto Supabase).
 - 📊 Distribución nutrimental por etapa (%): calculadora global del dashboard (botón 📊). Extracción total kg/ha por nutriente + reparto % por etapa fenológica → kg/ha por etapa y curvas. **Biblioteca personal** «Mis curvas guardadas» (por usuario, con título); **curva activa** guardada en el proyecto activo. Los datos numéricos llegan al chat en el bloque EXTRACCIÓN POR ETAPA; no recibes la imagen de la gráfica pero sí tablas y números para interpretar.
 - 🧬 **Atlas de Aminoácidos Vegetales** (login/dashboard): biblioteca interactiva de los 20 aminoácidos proteinogénicos. Cada tarjeta incluye nombre, L-alpha (glicina no quiral), abreviaturas, fórmula, peso molecular, familia química, rutas vegetales, función fisiológica, beneficios agronómicos, fenología, estrés, precursores, categorías funcionales, evidencia Alta/Media/Baja y bibliografía base. Filtros: estrés, fenología, formulación nutricional, categoría funcional y evidencia. Modelo 3D con PubChem/3Dmol si hay conexión. Fuentes criterio: PubChem, KEGG, PlantCyc, Taiz/Zeiger, BMBP, Marschner y artículos. No recomendar dosis ni prometer efecto de campo solo por la ruta metabólica; depende de cultivo, fuente, dosis, mezcla, vía, estado nutricional, ambiente y validación.
-- 🌤️ **Pronóstico agroclimático** (login/dashboard, icono 🌤️; URL `/pronosticoclimatico/`): herramienta gratuita de lectura climática por punto (mapa/GPS/coords) + Kc (manual o FAO). Muestra ~7 d histórico + ~7 d pronóstico: T mín/máx, HR, rocío, Rad máx W/m², VPD mín/máx, ETo, ETc (= ETo×Kc), lluvia; gráfica con horas VPD por bandas (&lt;0.5 / 0.5–1.5 / &gt;1.5) + lluvia/ETo/ETc. **No es** la pestaña Clima del proyecto ni el VPD 🌡️. La consulta gratis no crea alerta automática. Desde la herramienta se puede **solicitar alerta agroclimática semanal** (1 predio/persona): folio WhatsApp → revisión admin → si se aprueba, correo dominical 17:00 zona del predio con enlace personal (`?token=`) a reporte + PDF. Cambios permanentes de Kc/coords: WhatsApp/admin (no autosave al explorar el mapa en modo personal). Distinto de suscripción NutriPlant PRO ($49/5 meses).
+- 🌤️ **Pronóstico agroclimático** (login/dashboard, icono 🌤️; URL \`/pronosticoclimatico/\`): herramienta gratuita de lectura climática por punto (mapa/GPS/coords) + Kc (manual o FAO). Muestra ~7 d histórico + ~7 d pronóstico: T mín/máx, HR, rocío, Rad máx W/m², VPD mín/máx, ETo, ETc (= ETo×Kc), lluvia; gráfica con horas VPD por bandas (&lt;0.5 / 0.5–1.5 / &gt;1.5) + lluvia/ETo/ETc. **No es** la pestaña Clima del proyecto ni el VPD 🌡️. La consulta gratis no crea alerta automática. Desde la herramienta se puede **solicitar alerta agroclimática semanal** (1 predio/persona): folio WhatsApp → revisión admin → si se aprueba, correo dominical 17:00 zona del predio con enlace personal (\`?token=\`) a reporte + PDF. Cambios permanentes de Kc/coords: WhatsApp/admin (no autosave al explorar el mapa en modo personal). Distinto de suscripción NutriPlant PRO ($49/5 meses).
 - 🌍 **Huella de carbono de fertilizantes** (login/dashboard, icono 🌍): **referencia global abierta** calibrada vs **Fertilizers Europe (2020)** en productos N (urea, AN, CAN, UAN — promedios regionales DNV). Tres bloques: fabricación + transporte 3 tramos (DESNZ) + N₂O suelo IPCC Tier 1. **Ruta propia por fertilizante** (clic en fila → panel 🏭→🌾). Programa A vs B con **equivalencia ilustrativa en km pick-up mediana 6 cil.** (0,254 kg CO₂e/km DESNZ; km para A, B y diferencia — no compensación). Disponibilidad regional por origen fab. **21 productos** (NK+Mg excluido: mezcla comercial — usar KNO₃ + Mg por separado). Panel calibración FE. ±25–40% fabricación. \`nutriplant_free_fertilizer_carbon_v2\`. T&C §7.
 - Las calculadoras gratis del login/dashboard guardan entradas en localStorage del navegador; no sustituyen datos guardados del proyecto del suscriptor.
 `;
@@ -337,12 +337,50 @@ class NutriPlantChat {
     console.log('🔧 init() - Buscando elementos del chat...');
     this.setupElements();
     this.bindEvents();
+    this.applyChatUiLanguage();
     this.loadChatHistory();
     this.bindContextEvents();
     this.refreshContextSnapshot('init');
     this.updateChatQuotaDisplay();
     this.refreshQuotaFromSupabase();
     // Sin mensaje de bienvenida: el chat permanece en silencio hasta que el usuario escriba (como en Cursor).
+  }
+
+  /** Preferencias de idioma / unidades del usuario (NpPrefs). */
+  getUserUiPrefs() {
+    try {
+      if (typeof window !== 'undefined' && window.NpPrefs && typeof window.NpPrefs.get === 'function') {
+        return window.NpPrefs.get();
+      }
+      if (typeof window !== 'undefined' && window.NP_PREFS_BOOTSTRAP) {
+        return window.NP_PREFS_BOOTSTRAP;
+      }
+    } catch (e) { /* ignore */ }
+    return { language: 'es', unit_system: 'metric', locale: 'es-MX' };
+  }
+
+  chatT(key, params, fallback) {
+    try {
+      if (typeof window !== 'undefined' && window.NpI18n && typeof window.NpI18n.t === 'function') {
+        const translated = window.NpI18n.t(key, params || {});
+        if (translated && translated !== key) return translated;
+      }
+    } catch (e) { /* ignore */ }
+    return fallback || key;
+  }
+
+  applyChatUiLanguage() {
+    const tip = this.panel && this.panel.querySelector('.chat-header-tip');
+    if (tip) tip.textContent = this.chatT('chat.header_tip', null, tip.textContent);
+    if (this.input) {
+      this.input.placeholder = this.chatT('chat.placeholder', null, 'Preguntar a NutriPlant PRO');
+    }
+    const minimizeBtn = this.panel && this.panel.querySelector('.minimize-btn');
+    if (minimizeBtn) minimizeBtn.title = this.chatT('chat.minimize', null, 'Minimizar');
+    if (this.chatAttachBtn) this.chatAttachBtn.title = this.chatT('chat.attach', null, 'Adjuntar imagen (máx. 5 MB)');
+    if (this.chatImageRemove) this.chatImageRemove.title = this.chatT('chat.remove_image', null, 'Quitar imagen');
+    if (this.sendBtn) this.sendBtn.title = this.chatT('chat.send', null, 'Enviar');
+    this.updateChatQuotaDisplay();
   }
 
   setupElements() {
@@ -364,7 +402,7 @@ class NutriPlantChat {
       return;
     }
     if (this.input) {
-      this.input.placeholder = 'Preguntar a NutriPlant PRO';
+      this.input.placeholder = this.chatT('chat.placeholder', null, 'Preguntar a NutriPlant PRO');
     }
     console.log('✅ Elementos del chat encontrados');
   }
@@ -502,6 +540,9 @@ class NutriPlantChat {
       if (event.key === `nutriplant_project_${projectId}` || event.key === 'nutriplant-current-project') {
         this.refreshContextSnapshot('storage-sync');
       }
+    });
+    window.addEventListener('np:prefs-changed', () => {
+      this.applyChatUiLanguage();
     });
   }
 
@@ -885,14 +926,18 @@ class NutriPlantChat {
       if (usageMonth !== currentMonth) used = 0;
       used = Number(used) || 0;
       if (limitRaw === -1 || (limitRaw == null || limitRaw === '')) {
-        el.textContent = 'Chat: Ilimitado';
+        el.textContent = this.chatT('chat.quota_unlimited', null, 'Chat: Ilimitado');
         el.style.display = 'block';
         return;
       }
       const limit = Math.max(0, Number(limitRaw));
       if (limit === 0) { el.style.display = 'none'; return; }
       const remaining = Math.max(0, Math.floor(limit - used));
-      el.textContent = `Chat: ${remaining}/${Math.floor(limit)} créditos mensuales`;
+      el.textContent = this.chatT(
+        'chat.quota_monthly',
+        { remaining: remaining, limit: Math.floor(limit) },
+        `Chat: ${remaining}/${Math.floor(limit)} créditos mensuales`
+      );
       el.style.display = 'block';
     } catch (e) {
       el.style.display = 'none';
@@ -951,7 +996,16 @@ class NutriPlantChat {
       const usageMonth = user.chat_usage_month || '';
       if (usageMonth !== currentMonth) { usage = 0; }
       const requiredCredits = hasImage ? 3 : 1;
-      if ((usage + requiredCredits) > limit) return { allowed: false, message: '⚠️ Has alcanzado el límite mensual de créditos. Se renuevan al inicio del próximo mes.' };
+      if ((usage + requiredCredits) > limit) {
+        return {
+          allowed: false,
+          message: this.chatT(
+            'chat.quota_reached',
+            null,
+            '⚠️ Has alcanzado el límite mensual de créditos. Se renuevan al inicio del próximo mes.'
+          )
+        };
+      }
       return { allowed: true };
     } catch (e) {
       return { allowed: true };
@@ -1208,7 +1262,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Calculadora Avanzada: además de Temperatura del Aire (°C) y Humedad Relativa (%), usa uno de dos modos: (1) Temperatura de Hoja: el usuario ingresa la temperatura de la hoja (°C) directamente; o (2) Radiación Solar: el usuario ingresa la radiación solar (W/m²) y la plataforma calcula la temperatura de la hoja a partir de ella. Con temp aire, humedad y temp hoja se calcula el VPD. El chat debe entender esta lógica para explicar al usuario o responder consultas sobre la calculadora avanzada.
 - Historial: se guardan cálculos ambientales y avanzados (fecha, VPD kPa, HD, etc.). Interpreta los datos guardados y las series de rangos cuando el usuario consulte.
 - Subpestaña Lluvia y ET₀: tablas mensuales de precipitación y ET₀ FAO (Open-Meteo en el centro del polígono; botón «Actualizar»). Incluye la **Calculadora de balance hídrico** (cálculo rápido para riego).
-- Calculadora de balance hídrico (Clima → Lluvia y ET₀): estimación rápida de déficit y balance para 1, 7 o 30 días. Fórmulas: ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja** (entrada de riego **solo m³** en franja regada; mm de lámina en resultados). Conversión: 1 mm sobre X ha = X × 10 m³. Déficit en mm sobre ha cultivo; si ha regada &lt; ha cultivo, los mm se concentran en franja (sub-línea «↳ en franja regada»); m³ totales no se dividen (ej. 90 m³ = 9 mm ref. cultivo 1 ha = 15 mm en franja 0,6 ha). Bloque **🪨 Referencia almacén suelo** lee m³ hasta CC desde herramienta Agua en suelo (`nutriplant_bridge_soil_water_v1`) — complementa, no sustituye riego aplicado. ETo/lluvia satélite o manual; macrotúnel = lluvia 0. Kc manual (tabla FAO consulta). % raíces sugiere franja, no altera déficit ETc. Tablas Kc y % suelo explorado por sistema; Criterio NutriPlant. Estimar %: Conversor magnitudes (copa circular o cama/banda). Datos en climateAnalysis.irrigationQuickCalc. Nota: no considera almacenamiento en suelo en el balance ETc (salvo bloque puente 🪨), escurrimiento, drenaje ni lixiviación; validar en campo.`,
+- Calculadora de balance hídrico (Clima → Lluvia y ET₀): estimación rápida de déficit y balance para 1, 7 o 30 días. Fórmulas: ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja** (entrada de riego **solo m³** en franja regada; mm de lámina en resultados). Conversión: 1 mm sobre X ha = X × 10 m³. Déficit en mm sobre ha cultivo; si ha regada &lt; ha cultivo, los mm se concentran en franja (sub-línea «↳ en franja regada»); m³ totales no se dividen (ej. 90 m³ = 9 mm ref. cultivo 1 ha = 15 mm en franja 0,6 ha). Bloque **🪨 Referencia almacén suelo** lee m³ hasta CC desde herramienta Agua en suelo (\`nutriplant_bridge_soil_water_v1\`) — complementa, no sustituye riego aplicado. ETo/lluvia satélite o manual; macrotúnel = lluvia 0. Kc manual (tabla FAO consulta). % raíces sugiere franja, no altera déficit ETc. Tablas Kc y % suelo explorado por sistema; Criterio NutriPlant. Estimar %: Conversor magnitudes (copa circular o cama/banda). Datos en climateAnalysis.irrigationQuickCalc. Nota: no considera almacenamiento en suelo en el balance ETc (salvo bloque puente 🪨), escurrimiento, drenaje ni lixiviación; validar en campo.`,
       ubicacion: `
 - Radar Satelital (interno Ubicación): el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a Radar Satelital y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
 - Pestaña 1 — Polígono / NDVI y NDMI (Pilot): Sentinel-2. Ventana **14 → 21 → 30 → 45 d**; **1 escena** (la más clara + SCL, sin mediana); ~100% o guarda lo mejor (≥~5%). Capas: NDVI, NDMI, NDRE, RGB (misma generación). RGB: verde≈planta, rojo/café≈suelo. **Máx. 250 ha**.
@@ -1288,7 +1342,23 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
     const modeGuidance = this.buildInteractionModeGuidance(userMessage);
     const isCalculationQuestion = this.isCalculationOrLogicQuestion(userMessage);
 
+    const uiPrefs = this.getUserUiPrefs();
+    const replyLanguage = uiPrefs.language === 'en' ? 'English' : 'Español';
+    const unitSystem = uiPrefs.unit_system === 'us_customary' ? 'us_customary' : 'metric';
+    const unitSystemLabel = unitSystem === 'us_customary'
+      ? 'US customary (lb/acre, acres, gal, inches, °F when relevant)'
+      : 'metric / SI (kg/ha, ha, m³, mm, °C when relevant)';
+
     const systemPrompt = `Eres el ASISTENTE EXPERTO de NutriPlant PRO. Tu objetivo es ayudar a tomar mejores decisiones agronómicas con base en datos reales del proyecto activo.
+
+IDIOMA Y SISTEMA DE UNIDADES DEL USUARIO (obligatorio):
+- Idioma de interfaz preferido: ${replyLanguage} (código: ${uiPrefs.language || 'es'}).
+- Sistema de unidades preferido: ${unitSystemLabel} (código: ${unitSystem}).
+- Responde SIEMPRE en ${replyLanguage}: mensajes, explicaciones, recomendaciones y narración de fórmulas. Si el usuario escribe en otro idioma, entiéndelo, pero responde en ${replyLanguage} salvo que pida explícitamente cambiar de idioma.
+- Cuando des dosis de campo, áreas, volúmenes de riego, rendimientos o clima, presenta los números en el sistema preferido (${unitSystem}). Si ayuda la claridad, puedes añadir el equivalente SI entre paréntesis.
+- Entiende cálculos en CUALQUIER sistema: lb/acre, acres, gallons, inches, °F, kg/ha, ha, m³, mm, °C, etc. Interpreta, convierte si hace falta y responde en el sistema preferido (salvo que el usuario pida unidades concretas).
+- Datos del proyecto en el contexto suelen estar en SI canónico (kg/ha, ha, m³, mm, °C). Al citarlos al usuario en conversación de campo, conviértelos al sistema preferido.
+- NO conviertas a imperial las unidades de laboratorio/solución: meq/L, ppm, %, meq/100g (= cmol_c/kg), µmol/L, CE (dS/m), RAS, DOP, etc. Esas se mantienen.
 
 CONTEXTO DE CONOCIMIENTO (qué tienes tú vs qué te pasamos):
 - TU CONOCIMIENTO (no hace falta que te lo den): Agronomía, nutrición vegetal, CIC, meq/L, ppm, rangos ideales, antagonismos, fórmulas (óxido/elemental, conversiones), diagnósticos integrados, mejores prácticas. Eso ya lo dominas por tu entrenamiento.
@@ -1457,7 +1527,11 @@ ESTILO DE RESPUESTA:
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       if (response.status === 429) {
-        const quotaMessage = data?.message || 'Has alcanzado el límite mensual de créditos. Se renuevan al inicio del próximo mes.';
+        const quotaMessage = data?.message || this.chatT(
+          'chat.quota_reached',
+          null,
+          'Has alcanzado el límite mensual de créditos. Se renuevan al inicio del próximo mes.'
+        );
         return `⚠️ ${quotaMessage}`;
       }
       if (response.status === 403) {

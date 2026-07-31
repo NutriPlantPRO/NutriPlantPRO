@@ -7,7 +7,7 @@
   <meta name="description" content="Solución nutritiva por etapa en hidroponía NutriPlant: meq/L, CE, triángulos, tanques A–E y cálculo de fertilizantes en proyecto.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/hidroponia-solucion-por-etapa.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar D · Hidroponía</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Hidroponía: solución nutritiva por etapa</h1>
     <h2>Resumen</h2>
     <p>
@@ -151,11 +153,111 @@
     </ul>
     <h2>Microelementos y Cl</h2>
     <p>Fe, Mn, B, Zn, Cu, Mo en ppm; Cl⁻ al final de la tabla, manual. Los óxidos de materiales (P₂O₅, K₂O…) se convierten a elemental con factores NutriPlant antes del balance.</p>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Hydroponics: nutrient solution by stage</h1>
+    <h2>Summary</h2>
+    <p>
+      In <strong>Dashboard → Hydroponics</strong>, each phenological stage defines the
+      <strong>target solution</strong> (ppm and meq/L). In <strong>Fertilizer calculation</strong>
+      the contribution of <strong>makeup water</strong> is subtracted, the shortfall is covered with soluble salts,
+      and, with the <strong>water volume (m³)</strong>, the app converts ppm to <strong>kg</strong> (or L for
+      liquids) per tank.
+    </p>
+
+    <h2>Flow in NutriPlant</h2>
+    <ol>
+      <li><strong>Solution by stage</strong> — target ppm/meq per stage (Establishment, Vegetative, Flowering…).</li>
+      <li><strong>Makeup water</strong> — ppm from the water analysis (macros, micros, Cl⁻).</li>
+      <li><strong>Shortfall</strong> = target − water (ppm per nutrient).</li>
+      <li><strong>Fertilizers</strong> — soluble materials, nutrient to cover and shortfall ppm → product dose ppm → kg or L by volume.</li>
+      <li><strong>Tanks A–E</strong> — allocation by tank, L/m³ rate and refills.</li>
+    </ol>
+
+    <h2>Target, water and shortfall (ppm)</h2>
+    <p>
+      All ppm values are concentration in the <strong>final solution</strong> (mg/L of the
+      <strong>element</strong>). The “Makeup water” block takes values from the project
+      <strong>water analysis</strong> (Analysis → Water tab). Per nutrient:
+    </p>
+    <div class="mt-formula">Shortfall (ppm) = Stage target (ppm) − Makeup water (ppm)</div>
+    <p>
+      In Fertilizer calculation each row selects a soluble material, the <strong>element to
+      cover</strong> (Ca, K, N-NO₃⁻, etc.) and the <strong>shortfall ppm</strong> of that nutrient.
+      The fertilizer also contributes other elements from its sheet (% in catalog): for
+      example calcium nitrate adds Ca and N-NO₃⁻ (and some N-NH₄⁺ depending on grade).
+    </p>
+
+    <h2>ppm ↔ meq/L</h2>
+    <p>
+      In hydroponics NutriPlant uses <strong>element</strong> ppm and converts to meq/L with the
+      <strong>equivalent weight of the element</strong> (not the full ion). Detail in
+      <a href="unidades-ppm-meq-oxidos.html">Units: ppm, meq/L and oxides</a>.
+    </p>
+    <div class="mt-formula">
+      meq/L = element ppm ÷ equivalent weight<br>
+      ppm = meq/L × equivalent weight
+    </div>
+    <p>NutriPlant equivalent weights (hydroponics): N-NO₃⁻ / N-NH₄⁺ → <strong>14</strong>; P → <strong>31</strong>; S → <strong>16.03</strong>; K⁺ → <strong>39.1</strong>; Ca²⁺ → <strong>20.04</strong>; Mg²⁺ → <strong>12.15</strong>; Cl⁻ → <strong>35.45</strong>.</p>
+    <p><strong>Ca example:</strong> target <strong>200 ppm Ca</strong> → meq/L = 200 ÷ 20.04 ≈ <strong>9.98 meq/L Ca²⁺</strong>. If water brings 40 ppm Ca, shortfall is 160 ppm ≈ <strong>7.98 meq/L</strong>.</p>
+
+    <h2>From ppm to kg of fertilizer (water volume)</h2>
+    <p>
+      You enter the <strong>water volume to fertigate (m³)</strong> — the working “depth” of the
+      lot or mixing tank. With the product dose in ppm (fertilizer concentration in
+      the final solution):
+    </p>
+    <div class="mt-formula">
+      Product dose (ppm) = element shortfall ppm × 100 ÷ (% elemental in the material)<br>
+      kg solid product = Dose (ppm) × Water volume (m³) ÷ 1 000<br>
+      L liquid product = equivalent kg ÷ density (kg/L)
+    </div>
+    <p>
+      <strong>Contribution ppm</strong> of each nutrient in the row = product dose × (% of the nutrient in
+      the material ÷ 100). “Estimated total contribution” is the sum of all rows; “Pending to
+      cover” = Shortfall − Contribution.
+    </p>
+
+    <h3>Example: Ca with calcium nitrate (granular or crystal)</h3>
+    <p>Stage with target <strong>200 ppm Ca</strong>. Makeup water <strong>40 ppm Ca</strong>.
+      Material: <strong>Calcium Nitrate</strong> (NutriPlant catalog, composition in elemental %
+      after conversion from the sheet: ~<strong>18.6 % Ca</strong>, ~14.4 % N-NO₃⁻, ~1.1 % N-NH₄⁺ in
+      granular grade). Volume: <strong>100 m³</strong>.</p>
+    <div class="mt-formula">
+      Ca shortfall = 200 − 40 = 160 ppm<br>
+      Calcium nitrate dose = 160 × 100 ÷ 18.6 ≈ 860 ppm product<br>
+      kg calcium nitrate ≈ 860 × 100 ÷ 1 000 = <strong>86 kg</strong>
+    </div>
+    <p>
+      That same product also contributes (approx.): N-NO₃⁻ ≈ 860 × 0.144 ≈ <strong>124 ppm</strong>;
+      N-NH₄⁺ ≈ 860 × 0.011 ≈ <strong>9 ppm</strong>. Review the N balance for the stage and
+      adjust other rows. The <strong>crystal</strong> grade has different % in the catalog (less N, different
+      Ca); the app uses the sheet of the selected material.
+    </p>
+
+    <h2>Relation to the didactic tool</h2>
+    <p>The free “Nutrient solution design” calculator at login shares ionic criteria (% meq, EC), but <strong>does not replace</strong> this module: here data are saved in the <strong>cloud project</strong> and feed material calculation. See chapter <a href="diseno-solucion-nutritiva-didactica.html">Didactic design</a>.</p>
+    <h2>EC and meq/L</h2>
+    <div class="mt-formula">EC (dS/m) ≈ (N-NO₃ + N-NH₄ + P + K + Ca + Mg + S) in meq/L ÷ 20<br>Cl⁻: ppm ↔ meq/L with weight 35.45; not included in the displayed EC sum</div>
+    <p>Typical N split: ~95 % N-NO₃⁻ and ~5 % N-NH₄⁺ (editable). Triangles: N-P-S and K-Ca-Mg (see <a href="porcentaje-meq-aniones-cationes.html">% meq</a>).</p>
+    <h2>Stages, water and tanks</h2>
+    <ul>
+      <li>Several <strong>stages</strong> with independent composition (editable ppm/meq; N-P-S and K-Ca-Mg triangles).</li>
+      <li><strong>Makeup water</strong> — ppm per nutrient from water analysis; subtracted from the active stage target.</li>
+      <li><strong>Water volume (m³)</strong> — basis to convert dose ppm → total kg/L for the program.</li>
+      <li><strong>Tanks A–E</strong> — capacity (L), injection rate (L/m³), materials per tank; concentrate volume and refills.</li>
+    </ul>
+    <h2>Micronutrients and Cl</h2>
+    <p>Fe, Mn, B, Zn, Cu, Mo in ppm; Cl⁻ at the end of the table, manual. Material oxides (P₂O₅, K₂O…) are converted to elemental with NutriPlant factors before the balance.</p>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="diseno-solucion-nutritiva-didactica.html">← Diseño didáctico</a><a href="porcentaje-meq-aniones-cationes.html">% meq →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Ajuste rangos según cultivo, sistema y calidad de agua.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

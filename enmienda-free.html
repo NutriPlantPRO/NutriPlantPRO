@@ -6,9 +6,9 @@
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-units-core.js?v=20260728b"></script>
-  <script src="assets/np-agronomic-units.js?v=20260728b"></script>
-  <script src="assets/np-amendment-ui.js?v=20260728b"></script>
+  <script src="assets/np-units-core.js?v=20260730a"></script>
+  <script src="assets/np-agronomic-units.js?v=20260730a"></script>
+  <script src="assets/np-amendment-ui.js?v=20260730a"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Balance de enmiendas por CIC</title>
   <link rel="stylesheet" href="dashboard.css" />
@@ -432,7 +432,7 @@
       const formula = document.getElementById('new-amendment-formula').value.trim();
       const molecularWeight = parseFloat(document.getElementById('new-amendment-molecular').value);
       if (!name || !formula || isNaN(molecularWeight)) {
-        alert('Completa al menos Nombre, Fórmula y Peso Molecular.');
+        alert(t('Completa al menos Nombre, Fórmula y Peso Molecular.', 'Complete at least Name, Formula, and Molecular Weight.'));
         return;
       }
       amendmentsDatabase.push({

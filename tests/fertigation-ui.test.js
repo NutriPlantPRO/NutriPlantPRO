@@ -63,6 +63,38 @@ module.exports = [
       assert.equal(ferti.t('program_tab', 'Programa de Nutrición'), 'Nutrition Program');
       assert.equal(ferti.cropName('tomate', 'Tomate'), 'Tomato');
       assert.equal(ferti.materialName('Fertilizante Personalizado'), 'Fertilizante Personalizado');
+      assert.equal(ferti.materialName('Nitrato de Calcio'), 'Calcium Nitrate');
+      assert.equal(ferti.materialName('MAP'), 'MAP');
+      assert.equal(ferti.materialName('MKP'), 'MKP');
+      assert.equal(ferti.materialName('SOP'), 'SOP');
+      assert.equal(ferti.materialName('Ácido Fosfórico 75%'), 'Phosphoric Acid 75%');
+      assert.equal(ferti.stageName('Establecimiento'), 'Establishment');
+      assert.equal(ferti.stageName('Vegetativo'), 'Vegetative');
+      assert.equal(ferti.stageName('Mi etapa custom'), 'Mi etapa custom');
+      assert.equal(ferti.t('macronutrients', 'Macronutrientes'), 'Macronutrients');
+      assert.equal(ferti.t('week', 'Semana'), 'Week');
+      assert.equal(ferti.t('stage_to_analyze', 'Etapa a analizar:'), 'Stage to analyze:');
+      assert.equal(ferti.t('macro_summary', 'Macro resumen'), 'Macro summary');
+    }
+  },
+  {
+    name: 'fertirriego: gráficas convierten kg/ha→lb/acre y eje Y usa lb en US',
+    run: function () {
+      global.NpPrefs = { get: function () { return prefs; } };
+      prefs.language = 'en';
+      prefs.unit_system = 'us_customary';
+      prefs.locale = 'en-US';
+      assert.match(ferti.chartYAxisTitle(), /lb/i);
+      var series = ferti.chartDoseSeries([10, 20]);
+      close(series[0], units.convert(10, 'kg/ha', 'lb/acre'), 1e-9);
+      close(series[1], units.convert(20, 'kg/ha', 'lb/acre'), 1e-9);
+      prefs.unit_system = 'metric';
+      assert.match(ferti.chartYAxisTitle(), /kg/i);
+      assert.deepEqual(ferti.chartDoseSeries([10, 20]), [10, 20]);
+      prefs.language = 'es';
+      assert.equal(ferti.chartYAxisTitle(), 'Kg de nutriente');
+      prefs.language = 'en';
+      prefs.unit_system = 'us_customary';
     }
   }
 ];

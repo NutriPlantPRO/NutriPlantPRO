@@ -7,7 +7,7 @@
   <meta name="description" content="Análisis de extracto de pasta saturada en NutriPlant: CE, pH, RAS, iones en ppm/meq y lectura de disponibilidad en rizósfera.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-extracto-pasta.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
           <a href="https://whatsapp.com/channel/0029Vb6sfX35Ui2YJzmmrI1M" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="whatsapp" title="Canal de WhatsApp">
@@ -54,7 +54,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar C · Extracto de pasta</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Extracto de pasta saturada (análisis de laboratorio)</h1>
     <h2>Resumen</h2>
     <p>El <strong>extracto de pasta saturada</strong> estima la composición de la solución del suelo en condición de saturación (agua añadida hasta pasta). En NutriPlant se registra en <strong>Análisis → Extracto de pasta</strong>, con la misma estructura iónica que solución nutritiva, pero con otro significado agronómico: <strong>disponibilidad en la rizósfera</strong>, no el licor del fertirriego.</p>
@@ -96,11 +98,58 @@
         <tr><td><a href="extraccion-nutrimental-por-etapa.html">Extracción por etapa</a></td><td>Demanda del cultivo frente a lo disponible en extracto.</td></tr>
       </tbody>
     </table>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Saturation paste extract (laboratory analysis)</h1>
+    <h2>Summary</h2>
+    <p>The <strong>saturation paste extract</strong> estimates soil-solution composition under saturation (water added to paste). In NutriPlant it is recorded under <strong>Analysis → Saturation paste extract</strong>, with the same ionic structure as nutrient solution, but a different agronomic meaning: <strong>availability in the rhizosphere</strong>, not fertigation liquor.</p>
+    <h2>Where it is in the app</h2>
+    <ul>
+      <li>Dashboard → <strong>Analysis</strong> → <strong>Saturation paste extract</strong> chip.</li>
+      <li>Storage: <code>extractoPastaAnalyses[]</code>.</li>
+      <li>Partner API: <code>type: "extracto_pasta"</code>.</li>
+    </ul>
+    <h2>What each report captures</h2>
+    <ul>
+      <li><strong>General:</strong> EC (dS/m), pH, SAR (manual).</li>
+      <li><strong>Cations and anions:</strong> meq/L and ppm with automatic sync (Ca, Mg, K, Na; NO₃, P, S, Cl, HCO₃, CO₃).</li>
+      <li><strong>Micronutrients</strong> in ppm and optional ideal row.</li>
+      <li><strong>References and difference:</strong> same indicative ranges and <em>lab − ideal</em> logic as nutrient solution.</li>
+    </ul>
+    <h2>Agronomic context</h2>
+    <p>Saturation paste approximates which nutrients and salts are in solution around the root at sampling time. It is useful to:</p>
+    <ul>
+      <li>Detect <strong>salt accumulation</strong> (high EC in extract vs crop expectation).</li>
+      <li>Observe <strong>Na or bicarbonates</strong> that condition uptake and soil structure.</li>
+      <li>Cross-check with <a href="analisis-suelo-fertilidad-kgha.html">soil analysis</a> (solid-soil reserves) and <a href="analisis-solucion-nutritiva-lab.html">nutrient solution</a> (what enters via irrigation).</li>
+    </ul>
+    <p>It is not the same as a total soil analysis: the extract reflects the <strong>soluble phase</strong> under saturation, not profile fertility kg/ha.</p>
+    <h2>Interpretation with judgment</h2>
+    <ul>
+      <li>High NO₃ or K in the extract may indicate recent over-fertilization or low leaching.</li>
+      <li>Elevated EC and Na suggest reviewing water quality, drainage, and amendments (see <a href="enmiendas-balance-cic.html">amendments and CEC</a>).</li>
+      <li>The sample depends on <strong>depth, moisture, and sampling time</strong>; a single point does not define the full cycle.</li>
+    </ul>
+    <h2>SAR and EC</h2>
+    <p>Extract EC is interpreted as salinity of the soil solution at paste; thresholds depend on crop and system (open field vs substrate). SAR: manual field; reference formula in <a href="analisis-agua-ras-sar.html">water analysis</a>.</p>
+    <h2>Relation to other chapters</h2>
+    <table class="mt-table">
+      <thead><tr><th>Chapter</th><th>Joint use</th></tr></thead>
+      <tbody>
+        <tr><td><a href="analisis-suelo-fertilidad-kgha.html">Soil kg/ha</a></td><td>Reserves and fertility adjustment in the profile.</td></tr>
+        <tr><td><a href="analisis-solucion-nutritiva-lab.html">Nutrient solution</a></td><td>Applied liquor vs rhizosphere condition.</td></tr>
+        <tr><td><a href="extraccion-nutrimental-por-etapa.html">Extraction by stage</a></td><td>Crop demand versus what is available in the extract.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="analisis-solucion-nutritiva-lab.html">← Solución nutritiva</a><a href="analisis-suelo-fertilidad-kgha.html">Suelo kg/ha →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Valide muestreo, método de laboratorio y condiciones locales antes de ajustar el programa.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>

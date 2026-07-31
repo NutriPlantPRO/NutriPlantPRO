@@ -9,13 +9,13 @@ const {
   sha256,
   summarize
 } = require('./lib/agroclimate-core');
-const { sendAgroclimateEmail } = require('./lib/agroclimate-mail');
+const { sendAgroclimateEmail, reportUrlWithPrefs } = require('./lib/agroclimate-mail');
 
 const SUBSCRIBER_FIELDS = new Set([
   'full_name', 'email', 'phone_country_code', 'phone_national', 'phone_e164',
   'occupation', 'country', 'region', 'postal_code', 'crop', 'area_range',
   'crop_stage', 'primary_use', 'decision_goal', 'admin_notes',
-  'email_consent', 'whatsapp_consent'
+  'email_consent', 'whatsapp_consent', 'language', 'unit_system', 'locale'
 ]);
 const PLOT_FIELDS = new Set(['plot_name', 'latitude', 'longitude', 'timezone', 'kc', 'kc_source', 'active']);
 const STATUS_VALUES = new Set(['pending_whatsapp', 'pending_review', 'active', 'paused', 'rejected', 'unsubscribed']);
@@ -322,7 +322,10 @@ async function reportLink(supabase, event, body) {
   const id = text(body.subscriber_id, 80);
   const { subscriber } = await readSubscriber(supabase, id);
   const rawToken = await ensureReportToken(supabase, id);
-  const base = `${origin(event)}/pronosticoclimatico/?token=${encodeURIComponent(rawToken)}`;
+  const base = reportUrlWithPrefs(
+    `${origin(event)}/pronosticoclimatico/?token=${encodeURIComponent(rawToken)}`,
+    subscriber
+  );
   const nowIso = new Date().toISOString();
   const snaps = await supabase
     .from('climate_alert_snapshots')
@@ -335,7 +338,7 @@ async function reportLink(supabase, event, body) {
   const snapshots = (snaps.data || []).map((row, index) => ({
     ...row,
     is_latest: index === 0,
-    reportUrl: `${base}&snapshot=${encodeURIComponent(row.id)}`
+    reportUrl: `${base}${base.includes('?') ? '&' : '?'}snapshot=${encodeURIComponent(row.id)}`
   }));
   return json(200, {
     ok: true,

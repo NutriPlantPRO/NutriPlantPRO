@@ -391,16 +391,32 @@
     return sug;
   }
 
+  function bridgeT(key, fallback) {
+    try {
+      if (w.NpI18n && typeof w.NpI18n.t === 'function') {
+        var translated = w.NpI18n.t(key);
+        if (translated !== key) return translated;
+      }
+    } catch (e) {}
+    return fallback;
+  }
+
   function buildSuggestButtonsHtml(prefix) {
     prefix = prefix || 'irr';
+    var t60 = bridgeT('analysis.soil_suggest_60_title', 'Prellena m³ hasta 60% agua útil (tope zona objetivo)');
+    var tCc = bridgeT('analysis.soil_suggest_cc_title', 'Prellena m³ hasta capacidad de campo (CC)');
     return (
       '<div class="np-soil-bridge-suggest-btns">' +
       '<button type="button" class="np-soil-bridge-suggest-btn" data-soil-prefix="' +
       prefix +
-      '" data-soil-target="objective60" title="Prellena m³ hasta 60% agua útil (tope zona objetivo)">Sugerir hasta 60% AU</button>' +
+      '" data-soil-target="objective60" title="' +
+      t60.replace(/"/g, '&quot;') +
+      '" data-i18n-title="analysis.soil_suggest_60_title">Sugerir hasta 60% AU</button>' +
       '<button type="button" class="np-soil-bridge-suggest-btn np-soil-bridge-suggest-btn--cc" data-soil-prefix="' +
       prefix +
-      '" data-soil-target="cc" title="Prellena m³ hasta capacidad de campo (CC)">Sugerir hasta CC</button>' +
+      '" data-soil-target="cc" title="' +
+      tCc.replace(/"/g, '&quot;') +
+      '" data-i18n-title="analysis.soil_suggest_cc_title">Sugerir hasta CC</button>' +
       '</div>'
     );
   }
@@ -440,7 +456,9 @@
       m3Id +
       '" min="0" step="0.1" value="' +
       m3Val +
-      '" placeholder="m³ franja" title="Volumen en m³ en la franja regada">' +
+      '" placeholder="m³ franja" title="' +
+      bridgeT('analysis.soil_m3_franja_title', 'Volumen en m³ en la franja regada').replace(/"/g, '&quot;') +
+      '" data-i18n-title="analysis.soil_m3_franja_title">' +
       '<span class="np-irr-unit-badge" aria-hidden="true">m³</span></div>' +
       '</div>' +
       '<p class="np-soil-bridge-help">Indica con <strong>tu criterio</strong> si el almacén está en déficit o exceso y cuántos m³ (franja regada). Puedes estimarlo en 🪨 <strong>Agua en suelo y textura</strong> según tu nivel objetivo (CC, depleción %, etc.). Si dejas vacío, <strong>no se considera</strong> en el riego sugerido.</p>' +

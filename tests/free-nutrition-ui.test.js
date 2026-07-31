@@ -128,6 +128,26 @@ module.exports = [
     }
   },
   {
+    name: 'nutrición free: nombres de fertilizantes respetan abreviaturas y personalizados',
+    run: function () {
+      withPrefs({ language: 'en', unit_system: 'metric', locale: 'en-US' }, function () {
+        assert.strictEqual(ui.materialName('Nitrato de calcio'), 'Calcium nitrate');
+        assert.strictEqual(ui.materialName('Sulfato de potasio'), 'Potassium sulfate');
+        assert.strictEqual(ui.materialName('Ácido fosfórico 75%'), 'Phosphoric acid 75%');
+        assert.strictEqual(ui.materialName('MAP'), 'MAP');
+        assert.strictEqual(ui.materialName('MKP'), 'MKP');
+        assert.strictEqual(ui.materialName('SOP'), 'SOP');
+        assert.strictEqual(ui.materialName('MAP (fosfato monoamónico)'), 'MAP');
+        assert.strictEqual(ui.materialName('Mi fertilizante X'), 'Mi fertilizante X');
+        assert.strictEqual(ui.translate('Nitrato de calcio'), 'Calcium nitrate');
+      });
+      withPrefs({ language: 'es', unit_system: 'metric', locale: 'es-MX' }, function () {
+        assert.strictEqual(ui.materialName('Nitrato de calcio'), 'Nitrato de calcio');
+        assert.strictEqual(ui.materialName('MAP'), 'MAP');
+      });
+    }
+  },
+  {
     name: 'nutrición free: rechaza conversiones dimensionalmente inválidas',
     run: function () {
       assert.throws(function () {

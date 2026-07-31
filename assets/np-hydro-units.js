@@ -30,6 +30,14 @@
     };
   }
 
+  /** Nombres descriptivos del catálogo hidrosoluble; abreviaturas y personalizados no se tocan. */
+  function materialName(name, language) {
+    if (w.NpFertigationUI && typeof w.NpFertigationUI.materialName === 'function') {
+      return w.NpFertigationUI.materialName(name, language);
+    }
+    return name == null ? name : String(name);
+  }
+
   function definition(kind, options) {
     var us = prefs().unit_system === 'us_customary';
     if (kind === 'water_volume') return { canonical: 'm3', display: us ? 'US gal' : 'm3' };
@@ -90,6 +98,7 @@
     toSI: toSI,
     unit: unit,
     formatFromSI: formatFromSI,
-    ppmMassVolumeEquivalent: ppmMassVolumeEquivalent
+    ppmMassVolumeEquivalent: ppmMassVolumeEquivalent,
+    materialName: materialName
   };
 });

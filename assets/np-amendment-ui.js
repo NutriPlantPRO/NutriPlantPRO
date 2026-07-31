@@ -67,7 +67,9 @@
     exceeds_target: 'Exceeds the {elements} target because of amendment composition',
     save_data: '💾 Save Data',
     view_card: '🃏 View Card',
-    generate_pdf: '📄 Generate PDF Report'
+    generate_pdf: '📄 Generate PDF Report',
+    ph_enter_placeholder: 'Enter pH',
+    ph_title: 'Soil pH (4.0 - 9.0)'
   };
 
   var NAMES_EN = {
@@ -219,6 +221,11 @@
     setText(container.querySelector('#saveAmendmentDataBtn'), t('save_data', '💾 Guardar Datos'));
     setText(container.querySelector('#showProjectCardBtn'), t('view_card', '🃏 Ver Tarjeta'));
     setText(container.querySelector('#generateReportFromAmendmentBtn'), t('generate_pdf', '📄 Generar Reporte PDF'));
+    var phInput = container.querySelector('#soil-ph');
+    if (phInput) {
+      phInput.placeholder = t('ph_enter_placeholder', 'Ingrese pH');
+      phInput.title = t('ph_title', 'pH del suelo (4.0 - 9.0)');
+    }
     return root;
   }
 

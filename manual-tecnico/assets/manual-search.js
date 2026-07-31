@@ -256,13 +256,21 @@
         li.dataset.index = String(idx);
 
         var link = document.createElement('a');
-        link.href = ch.href;
+        link.href = (window.NpManualI18n && window.NpManualI18n.withLang)
+          ? window.NpManualI18n.withLang(ch.href)
+          : ch.href;
         link.className = 'mt-search-item-link';
+        var title = (window.NpManualI18n && window.NpManualI18n.chapterTitle)
+          ? window.NpManualI18n.chapterTitle(ch.title)
+          : ch.title;
+        var pillar = (window.NpManualI18n && window.NpManualI18n.chapterTitle)
+          ? window.NpManualI18n.chapterTitle(ch.pillar)
+          : ch.pillar;
         link.innerHTML =
           '<span class="mt-search-item-icon" aria-hidden="true">' + ch.icon + '</span>' +
           '<span class="mt-search-item-body">' +
-            '<span class="mt-search-item-title">' + ch.title + '</span>' +
-            '<span class="mt-search-item-meta">' + ch.pillar + '</span>' +
+            '<span class="mt-search-item-title">' + title + '</span>' +
+            '<span class="mt-search-item-meta">' + pillar + '</span>' +
           '</span>';
 
         li.appendChild(link);

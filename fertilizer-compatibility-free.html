@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+
   <title>Compatibilidad de fertilizantes</title>
   <style>
     * { box-sizing: border-box; }
@@ -609,7 +614,14 @@
     return DETAIL_KEYS.default_c;
   }
 
-  function renderDetail(a, b, level) {
+    function fertDisplayName(name) {
+      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.materialName === 'function') {
+        return window.NpFreeNutritionUI.materialName(name);
+      }
+      return name;
+    }
+
+    function renderDetail(a, b, level) {
     const fa = byId[a];
     const fb = byId[b];
     const tmpl = detailTemplate(a, b, level);
@@ -618,7 +630,7 @@
 
     let html = '';
     html += '<span class="badge ' + L + '">' + badge + '</span>';
-    html += '<div class="names"><strong>' + fa.name + '</strong> + <strong>' + fb.name + '</strong></div>';
+    html += '<div class="names"><strong>' + fertDisplayName(fa.name) + '</strong> + <strong>' + fertDisplayName(fb.name) + '</strong></div>';
 
     html += '<div class="sec"><strong>Qué pasa</strong>' + tmpl.que + '</div>';
     html += '<div class="sec"><strong>Impacto</strong><ul>';
@@ -663,7 +675,7 @@
       }
     }
     const f = FERTILIZERS[k];
-    document.getElementById('detailTitle').textContent = 'Fertilizante: ' + f.name;
+    document.getElementById('detailTitle').textContent = 'Fertilizante: ' + fertDisplayName(f.name);
     document.getElementById('detailBody').innerHTML =
       '<div class="names">Resaltada la <strong>fila</strong> y la <strong>columna</strong> de este producto en la parte triangular. ' +
       'Pulsa una celda donde se cruce con otro para ver el detalle del par.</div>';
@@ -677,7 +689,7 @@
     };
     let thead = '<thead><tr><th class="corner" scope="col" title="Eje: filas = primera sustancia; columnas = segunda sustancia en el cruce."><span class="corner-title">Fertilizantes</span><span class="corner-sub">Mismo orden arriba y a la izquierda. Encabezados compactos (2 líneas máx.).</span></th>';
     for (let j = 0; j < n; j++) {
-      const nm = FERTILIZERS[j].name;
+      const nm = fertDisplayName(FERTILIZERS[j].name);
       thead += '<th scope="col" class="col-vlabel" data-j="' + j + '" title="' + esc(nm) + '"><span class="vlabel-inner">' + esc(nm) + '</span></th>';
     }
     thead += '</tr></thead>';
@@ -685,7 +697,8 @@
     let tbody = '<tbody>';
     for (let i = 0; i < n; i++) {
       tbody += '<tr>';
-      tbody += '<th scope="row" class="row-h" data-i="' + i + '" title="' + esc(FERTILIZERS[i].name) + '"><span class="row-num">' + (i + 1) + '.</span> ' + esc(FERTILIZERS[i].name) + '</th>';
+      const rowNm = fertDisplayName(FERTILIZERS[i].name);
+      tbody += '<th scope="row" class="row-h" data-i="' + i + '" title="' + esc(rowNm) + '"><span class="row-num">' + (i + 1) + '.</span> ' + esc(rowNm) + '</th>';
       for (let j = 0; j < n; j++) {
         if (j > i) {
           tbody += '<td class="empty-cell"></td>';
@@ -696,7 +709,7 @@
         const lev = inferLevel(ai, aj);
         const L = lev === 'C' ? 'c' : lev === 'R' ? 'r' : 'i';
         const sym = lev === 'C' ? 'C' : lev === 'R' ? 'R' : 'I';
-        const tipTxt = FERTILIZERS[i].name + ' ↔ ' + FERTILIZERS[j].name + ' — ' +
+        const tipTxt = fertDisplayName(FERTILIZERS[i].name) + ' ↔ ' + fertDisplayName(FERTILIZERS[j].name) + ' — ' +
           (sym === 'C' ? 'Compatible' : sym === 'R' ? 'Precaución' : 'Incompatible');
         tbody += '<td><button type="button" class="cell-btn l-' + L + '" data-i="' + i + '" data-j="' + j + '" data-a="' + ai + '" data-b="' + aj + '" aria-label="' + esc(tipTxt) + '" title="' + esc(tipTxt) + '">' + sym + '</button></td>';
       }
@@ -764,7 +777,26 @@
   document.getElementById('compatTable').addEventListener('click', function () {
     compatPersist.saveNow();
   });
+  window.addEventListener('np:prefs-changed', function () {
+    buildTable();
+    if (selectedPair && selectedPair.length === 2) {
+      renderDetail(FERTILIZERS[selectedPair[0]].id, FERTILIZERS[selectedPair[1]].id, inferLevel(FERTILIZERS[selectedPair[0]].id, FERTILIZERS[selectedPair[1]].id));
+    } else if (selectedFert != null) {
+      highlightFert(selectedFert);
+    }
+  });
 })();
+  </script>
+  <script>
+    (function () {
+      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
+        window.NpFreeNutritionUI.init({
+          refresh: function () {
+            if (typeof buildTable === 'function') buildTable();
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>

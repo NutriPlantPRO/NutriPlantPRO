@@ -7,7 +7,7 @@
   <meta name="description" content="Estructura del programa de fertirriego en NutriPlant: requerimiento, semanas o meses, lámina de riego, aporte por agua y kg/ha.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/programa-fertirriego-etapas.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,7 +42,7 @@
     <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
     <div class="mt-header-right">
       <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
-      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
       <div class="mt-social-links" aria-label="Redes sociales">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
@@ -56,7 +56,9 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar D · Fertirriego</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Programa de fertirriego por etapas</h1>
     <h2>Resumen</h2>
     <p>
@@ -183,10 +185,142 @@
 
     <h2>Modo óxido o elemental</h2>
     <p>El usuario elige modo; tablas y gráficas reflejan P₂O₅/K₂O/CaO/MgO o P/K/Ca/Mg. Misma lógica que nutrición granular.</p>
+    </div>
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+    <h1>Stage-based fertigation program</h1>
+    <h2>Summary</h2>
+    <p>
+      The Fertigation module joins <strong>nutrient requirement</strong> (target in kg/ha) with a
+      <strong>time-based program</strong> (weeks or months), materials, and doses. In the program
+      summary, the <strong>irrigation-water contribution</strong> is added (kg/ha per element, from the
+      water analysis) and compared against the requirement. Ionic charts convert kg/ha
+      to ppm and meq/L when there is an <strong>irrigation depth</strong> (m³/ha) per stage.
+    </p>
+
+    <h2>Flow in NutriPlant</h2>
+    <ol>
+      <li><strong>Requirement</strong> — from crop extraction to actual requirement (kg/ha).</li>
+      <li><strong>Program</strong> — fertilizers, dose per stage, and cumulative program contribution.</li>
+      <li><strong>Water contribution</strong> — kg/ha of elements supplied by irrigation water.</li>
+      <li><strong>Charts</strong> — contribution vs requirement; ionic balance (ppm/meq) with irrigation depth.</li>
+    </ol>
+
+    <h3>1. Nutrient requirement</h3>
+    <p>Table under <strong>Fertigation → Requirement</strong>. Same logic as granular and as
+      <a href="extraccion-nutrimental-por-etapa.html">Extraction by stage</a>:</p>
+    <div class="mt-formula">
+      Total extraction (kg/ha) = extraction per ton (kg/ton) × target yield (ton/ha)<br>
+      Actual requirement (kg/ha) = Adjustment ÷ (Efficiency ÷ 100)
+    </div>
+
+    <p><strong>Total extraction</strong> — how much nutrient the crop removes at the target yield,
+      according to the crop base (editable). Numeric starting point.</p>
+
+    <p><strong>Adjustment by soil levels</strong> — editable kg/ha column per nutrient. By
+      default it starts equal to total extraction; the agronomist can <strong>raise or lower</strong> those
+      kg according to the soil: if analysis or fertility indicates a <em>deficit</em>, increase the adjustment;
+      if there is usable <em>reserve or excess</em>, reduce it. It is not a mandatory automatic calculation
+      from the soil report: it is the net kg/ha the technician decides to fertilize before applying
+      efficiency. See the reference criterion in
+      <a href="analisis-suelo-fertilidad-kgha.html">Soil analysis: fertility and kg/ha</a>.</p>
+
+    <p><strong>Efficiency (%)</strong> — fraction of applied fertilizer expected to be used by the
+      plant (losses to leaching, fixation, volatilization, etc.). NutriPlant raises the
+      requirement when efficiency is lower. Default fertigation values (editable):
+      N 75 %, P₂O₅ 50 %, K₂O 90 %, CaO/MgO/S/SO₄ 90 %, micros 85–90 %.</p>
+
+    <p><strong>Requirement example:</strong> total K₂O extraction = 180 kg/ha; adjustment for low soil
+      → 200 kg/ha; K₂O efficiency 90 %:</p>
+    <div class="mt-formula">Actual K₂O requirement = 200 ÷ 0.90 = 222.2 kg/ha</div>
+
+    <h3>2. Nutrition program</h3>
+    <p>Table by <strong>week or month</strong> (phenological stage + period number). Per stage:</p>
+    <ul>
+      <li><strong>Fertilizer</strong> columns from the catalog (solids in kg/ha; liquids in L/ha
+        with density).</li>
+      <li>Each cell = dose of that product in that stage.</li>
+      <li>Nutrient columns = calculated contribution of that stage.</li>
+    </ul>
+    <div class="mt-formula">
+      Nutrient contribution (kg/ha) = product dose × (% of nutrient in the material ÷ 100)
+    </div>
+    <p>
+      A stage’s contribution is the <strong>sum</strong> of all products in that row. The
+      <strong>program total</strong> is the sum of all stages (total row). Those totals
+      feed the “Program contribution” summary and the Charts curves. The numbers come from the
+      materials catalog (% on the label or fertilizer sheet), not from a fixed external table.
+    </p>
+
+    <h3>3. Water contribution</h3>
+    <p>
+      Editable block under <strong>Nutrition program → Water contribution</strong>. It represents how many
+      <strong>kg/ha of each element</strong> irrigation water supplies over the cycle (project
+      reference), calculated from the <strong>water analysis</strong> (meq/L and ppm) and the reference water
+      volume (m³). Typical formula for macros/micros in ppm:
+    </p>
+    <div class="mt-formula">kg element/ha ≈ ppm × m³ water ÷ 1 000</div>
+    <p>
+      Water cations and anions are converted to kg of element or oxide according to the user’s mode.
+      <strong>Water N</strong> is counted as total nutrient and, in ionic charts, is
+      treated as <strong>N-NO₃⁻</strong>. The summary adds <strong>program + water</strong>; the
+      <strong>Difference</strong> = (program contribution + water contribution) − actual requirement (negative =
+      shortfall; positive = excess).
+    </p>
+
+    <h3>4. Charts</h3>
+    <p>
+      Cumulative contribution vs requirement curves per nutrient. The <strong>Ionic macro summary</strong>
+      and the ternary diagram (selected stage) require m³/ha depth — see the next section and
+      <a href="fertirriego-graficas-ionicas.html">Ionic charts</a>.
+    </p>
+
+    <h2>Irrigation depth (m³/ha)</h2>
+    <p>
+      Under <strong>Charts</strong>, for each week/month you enter the <strong>cumulative irrigation water
+      volume applied in that stage</strong> (m³/ha). Without depth &gt; 0 the platform shows only
+      program kg/ha; it does <em>not</em> calculate ppm, meq/L, or ionic % for that stage.
+    </p>
+    <p>With depth, the stage’s ionic contribution (fertilizer ± water per the table) is converted as follows:</p>
+    <div class="mt-formula">
+      element ppm = (kg element/ha × 1 000) ÷ m³/ha<br>
+      meq/L = ppm ÷ element equivalent weight
+    </div>
+    <p>
+      Equivalent weights are NutriPlant’s (N-NO₃⁻ / N-NH₄⁺ → 14; P-H₂PO₄⁻ → 31; S-SO₄²⁻ →
+      16.03; K⁺ → 39.1; Ca²⁺ → 20.04; Mg²⁺ → 12.15). Detail in
+      <a href="unidades-ppm-meq-oxidos.html">Units: ppm, meq/L, and oxides</a>.
+    </p>
+
+    <p><strong>Example kg → ppm → meq (one stage):</strong> in week 3 you accumulate 40 kg/ha of N
+      (program + water) and applied 2 000 m³/ha of depth:</p>
+    <div class="mt-formula">
+      ppm N = (40 × 1 000) ÷ 2 000 = 20 ppm<br>
+      meq/L N-NO₃⁻ = 20 ÷ 14 ≈ 1.43 meq/L
+    </div>
+
+    <p><strong>Same ionic ratio when split across several applications:</strong> if you divide the stage
+      into <strong>4 equal fertigations</strong> (same water amount and same fertilizer
+      each time), each application carries ¼ of the kg/ha and ¼ of the depth. Dividing numerator and denominator
+      by 4, <strong>ppm and meq/L do not change</strong>; neither do the <strong>% meq</strong> among
+      anions (N-P-S) nor among cations (K-Ca-Mg), because all concentrations scale equally with
+      depth. What does change between stages is the program’s cumulative kg/ha; the Charts
+      depth is that of the period you are analyzing.</p>
+
+    <div class="mt-note">
+      <strong>In the platform:</strong> Fertigation → Charts → “Irrigation depth by stage (m³/ha)”.
+      Two ionic tables: program fertilizer only vs fertilizer + water (the real mix).
+    </div>
+
+    <h2>Oxide or elemental mode</h2>
+    <p>The user chooses the mode; tables and charts reflect P₂O₅/K₂O/CaO/MgO or P/K/Ca/Mg. Same logic as granular nutrition.</p>
+    </div>
+
     <nav class="mt-chapter-nav"><a href="fertirriego-graficas-ionicas.html">Gráficas iónicas →</a><a href="../index.html">Índice</a></nav>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
-  <script src="../assets/manual-header.js"></script>
-  <script src="../assets/manual-nav.js"></script>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260730k"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
 </body>
 </html>
