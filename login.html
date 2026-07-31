@@ -1781,7 +1781,7 @@
           u.searchParams.set('embed', 'login');
           u.searchParams.set('lang', prefs.language === 'en' ? 'en' : 'es');
           u.searchParams.set('units', prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric');
-          u.searchParams.set('v', '20260730b');
+          u.searchParams.set('v', '20260730c');
           frame.src = u.pathname + u.search + u.hash;
         } catch (e) { /* keep existing src */ }
       }
@@ -2607,7 +2607,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260730b" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260730c" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2931,7 +2931,9 @@
               <label for="reg-phone-code" class="form-label"><span data-i18n="auth.phone">Teléfono</span> *</label>
               <div style="display: flex; gap: 8px;">
                 <select id="reg-phone-code" name="phone_code" style="flex: 0 0 min(42%, 200px); max-width: 220px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                  <option value="+1">🇺🇸/🇨🇦 +1</option>
+                  <option value="other" data-i18n="auth.other">Otro</option>
+                  <option value="+1" selected>🇺🇸 USA +1</option>
+                  <option value="+1">🇨🇦 Canada +1</option>
                   <option value="+52">🇲🇽 México +52</option>
                   <option value="+54">🇦🇷 Argentina +54</option>
                   <option value="+591">🇧🇴 Bolivia +591</option>
@@ -2966,7 +2968,6 @@
                   <option value="+254">🇰🇪 Kenia +254</option>
                   <option value="+225">🇨🇮 Costa de Marfil +225</option>
                   <option value="+221">🇸🇳 Senegal +221</option>
-                  <option value="other" data-i18n="auth.other">Otro</option>
                 </select>
                 <input type="tel" id="reg-phone-custom-code" name="phone_custom_code" placeholder="Código" data-i18n-placeholder="auth.custom_code" style="flex: 0 0 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; display: none; font-size: 14px;">
                 <input type="tel" id="reg-phone" name="phone" class="form-input" placeholder="Número de teléfono" data-i18n-placeholder="auth.phone_number" style="flex: 1;" required>

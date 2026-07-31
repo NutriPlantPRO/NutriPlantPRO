@@ -268,8 +268,10 @@
           <label><span class="agro-whatsapp-label">🟢 WhatsApp</span>
             <div class="agro-phone-row">
               <select id="agro-phone-code" name="phone_country_code" required data-agro-i18n-aria-label="phone_code" aria-label="Lada">
-                <option value="+52">🇲🇽 México +52</option>
-                <option value="+1">🇺🇸/🇨🇦 +1</option>
+                <option value="other" data-agro-i18n="phone_other">Otro (escribir lada)</option>
+                <option value="+1">🇺🇸 USA +1</option>
+                <option value="+1">🇨🇦 Canada +1</option>
+                <option value="+52" selected>🇲🇽 México +52</option>
                 <option value="+54">🇦🇷 Argentina +54</option>
                 <option value="+591">🇧🇴 Bolivia +591</option>
                 <option value="+55">🇧🇷 Brasil +55</option>
@@ -303,7 +305,6 @@
                 <option value="+254">🇰🇪 Kenia +254</option>
                 <option value="+225">🇨🇮 Costa de Marfil +225</option>
                 <option value="+221">🇸🇳 Senegal +221</option>
-                <option value="other" data-agro-i18n="phone_other">Otro (escribir lada)</option>
               </select>
               <input id="agro-phone-code-other" name="phone_country_code_other" type="text" inputmode="tel" maxlength="6" placeholder="+___" hidden>
               <input name="phone_national" type="tel" inputmode="tel" required maxlength="24" data-agro-i18n-placeholder="phone_number" placeholder="Número">
