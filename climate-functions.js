@@ -53,6 +53,47 @@
     } catch (e) { /* ignore */ }
     return 'es-MX';
   }
+  function climatePrefs() {
+    try {
+      var p = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+      return {
+        language: p && p.language === 'en' ? 'en' : 'es',
+        unit_system: p && p.unit_system === 'us_customary' ? 'us_customary' : 'metric',
+        locale: (p && p.locale) || (p && p.language === 'en' ? 'en-US' : 'es-MX')
+      };
+    } catch (e) {
+      return { language: 'es', unit_system: 'metric', locale: 'es-MX' };
+    }
+  }
+  function climateUsesInches() {
+    return climatePrefs().unit_system === 'us_customary';
+  }
+  function climateDepthUnit() {
+    return climateUsesInches() ? 'in' : 'mm';
+  }
+  function climateDepthPerMonthLabel() {
+    var u = climateDepthUnit();
+    return wcT(u + '/mes', u + '/month');
+  }
+  /** mm (SI) → display depth; store remains mm. */
+  function depthFromMm(mm) {
+    if (mm == null || !Number.isFinite(Number(mm))) return null;
+    var n = Number(mm);
+    if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.fromSI === 'function') {
+      try {
+        return window.NpWaterClimateUI.fromSI(n, 'water_depth');
+      } catch (e) { /* fall through */ }
+    }
+    return climateUsesInches() ? n / 25.4 : n;
+  }
+  function roundDepthDisplay(v) {
+    if (v == null || !Number.isFinite(Number(v))) return null;
+    var n = Number(v);
+    return climateUsesInches() ? Math.round(n * 100) / 100 : round1(n);
+  }
+  function climatePartialYearLabel(year) {
+    return String(year) + ' ' + wcT('(parcial)', '(partial)');
+  }
   var CLIMATE_HISTORY_YEARS = 4;
   var CLIMATE_RAIN_COLORS = ['#1e3a8a', '#2563eb', '#38bdf8', '#7dd3fc'];
   var CLIMATE_ET0_COLORS = ['#991b1b', '#c2410c', '#f97316', '#fbbf24'];
@@ -784,7 +825,7 @@
     }
     if (!state.useManualEt0 && satWindow.et0 != null) {
       var et0Hint = document.getElementById('climate-irr-et0-sat-hint');
-      if (et0Hint) et0Hint.textContent = wcT('Satélite: ', 'Satellite: ') + wcResult(satWindow.et0, 'water_depth', 2) + (res.periodDays === 1 ? '/día' : '');
+      if (et0Hint) et0Hint.textContent = wcT('Satélite: ', 'Satellite: ') + wcResult(satWindow.et0, 'water_depth', 2) + (res.periodDays === 1 ? wcT('/día', '/day') : '');
     } else {
       var et0Hint2 = document.getElementById('climate-irr-et0-sat-hint');
       if (et0Hint2) et0Hint2.textContent = '';
@@ -1297,7 +1338,11 @@
       renderClimateRainfallTables();
       renderIrrigationQuickCalc();
       if (status) {
-        status.textContent = (anyUnavailable ? '⚠️ Actualizado parcial ' : '✅ Actualizado ') + new Date().toLocaleString(climateLocaleTag());
+        status.textContent =
+          (anyUnavailable
+            ? wcT('⚠️ Actualizado parcial ', '⚠️ Partially updated ')
+            : wcT('✅ Actualizado ', '✅ Updated ')) +
+          new Date().toLocaleString(climateLocaleTag());
       }
     } catch (err) {
       console.error(err);
@@ -1309,9 +1354,20 @@
     }
   }
 
+  /** Generic 1-decimal number (temp, humidity, UV…). Not depth. */
   function fmtMm(v) {
     if (v == null || !Number.isFinite(Number(v))) return '—';
     return round1(v).toFixed(1);
+  }
+  /** Water depth from canonical mm → prefs unit (mm or in). */
+  function fmtDepth(mm) {
+    var v = roundDepthDisplay(depthFromMm(mm));
+    if (v == null) return '—';
+    return climateUsesInches() ? v.toFixed(2) : v.toFixed(1);
+  }
+  function fmtDepthWithUnit(mm) {
+    var s = fmtDepth(mm);
+    return s === '—' ? s : s + ' ' + climateDepthUnit();
   }
 
   function sumMonthsTotal(monthsObj, maxMonth) {
@@ -1378,23 +1434,30 @@
   }
 
   function climateMetricMeta(kind) {
+    var perMonth = climateDepthPerMonthLabel();
     if (kind === 'et0') {
       return {
-        title: '☀️ ET₀ — Evapotranspiración de referencia (mm/mes)',
+        title: wcT('☀️ ET₀ — Evapotranspiración de referencia (' + perMonth + ')', '☀️ ET₀ — Reference evapotranspiration (' + perMonth + ')'),
         titleColor: '#b45309',
         colors: CLIMATE_ET0_COLORS,
         canvasId: 'climate-et0-chart',
         metricKey: 'et0',
-        subtitle: 'Evapotranspiración de referencia (FAO). Selecciona los años a comparar.'
+        subtitle: wcT(
+          'Evapotranspiración de referencia (FAO). Selecciona los años a comparar.',
+          'Reference evapotranspiration (FAO). Select years to compare.'
+        )
       };
     }
     return {
-      title: '🌧️ Precipitación acumulada (mm/mes)',
+      title: wcT('🌧️ Precipitación acumulada (' + perMonth + ')', '🌧️ Cumulative precipitation (' + perMonth + ')'),
       titleColor: '#0369a1',
       colors: CLIMATE_RAIN_COLORS,
       canvasId: 'climate-rain-chart',
       metricKey: 'rain',
-      subtitle: 'Lluvia mensual acumulada. Selecciona los años a comparar.'
+      subtitle: wcT(
+        'Lluvia mensual acumulada. Selecciona los años a comparar.',
+        'Monthly cumulative rainfall. Select years to compare.'
+      )
     };
   }
 
@@ -1403,7 +1466,8 @@
       if (maxMonth != null && idx + 1 > maxMonth) return null;
       var key = String(idx + 1).padStart(2, '0');
       var v = monthsObj && monthsObj[key];
-      return v != null && Number.isFinite(Number(v)) ? round1(v) : null;
+      if (v == null || !Number.isFinite(Number(v))) return null;
+      return roundDepthDisplay(depthFromMm(Number(v)));
     });
   }
 
@@ -1508,9 +1572,9 @@
     var maxMonth = entry.partial || entry.year === currYear ? now.getMonth() + 1 : 12;
     var et0Series = monthsToChartSeries(entry.months, maxMonth);
     var etcSeries = et0Series.map(function (v) {
-      return v != null && Number.isFinite(v) ? round1(Number(v) * kc) : null;
+      return v != null && Number.isFinite(v) ? roundDepthDisplay(Number(v) * kc) : null;
     });
-    var yearLabel = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+    var yearLabel = entry.partial ? climatePartialYearLabel(entry.year) : String(entry.year);
     var kcLabel = Math.round(kc * 100) / 100;
     return makeClimateLineDataset(
       'ETc (Kc=' + kcLabel + ') · ' + yearLabel,
@@ -1525,15 +1589,21 @@
     var hint = document.getElementById('climate-chart-etc-hint');
     if (!hint) return;
     if (kc == null) {
-      hint.innerHTML =
-        'Sin Kc: solo se muestran lluvia y ET₀. Al indicar Kc aparece <strong>ETc = ET₀ × Kc</strong> del año en curso (Kc constante).';
+      hint.innerHTML = wcT(
+        'Sin Kc: solo se muestran lluvia y ET₀. Al indicar Kc aparece <strong>ETc = ET₀ × Kc</strong> del año en curso (Kc constante).',
+        'No Kc: only rainfall and ET₀ are shown. Entering Kc adds <strong>ETc = ET₀ × Kc</strong> for the current year (constant Kc).'
+      );
       return;
     }
     var kcLabel = Math.round(kc * 100) / 100;
-    hint.innerHTML =
+    hint.innerHTML = wcT(
       'Línea gris-azul punteada: <strong>ETc</strong> del año en curso con <strong>Kc = ' +
-      kcLabel +
-      '</strong> (constante). Mismo Kc que la calculadora de balance hídrico.';
+        kcLabel +
+        '</strong> (constante). Mismo Kc que la calculadora de balance hídrico.',
+      'Gray-blue dotted line: current-year <strong>ETc</strong> with <strong>Kc = ' +
+        kcLabel +
+        '</strong> (constant). Same Kc as the water-balance calculator.'
+    );
   }
 
   function refreshClimateCombinedChartIfVisible() {
@@ -1554,20 +1624,24 @@
         if (v != null && Number.isFinite(Number(v))) vals.push(Number(v));
       });
     });
+    var perMonth = climateDepthPerMonthLabel();
     var y = {
-      title: { display: true, text: 'mm/mes' },
+      title: { display: true, text: perMonth },
       ticks: { padding: 10, maxTicksLimit: 10 },
       beginAtZero: true
     };
     if (!vals.length) return y;
     var maxV = Math.max.apply(null, vals);
     if (maxV > 0) {
-      y.suggestedMax = Math.ceil((maxV * 1.12) / 10) * 10;
+      var step = climateUsesInches() ? 0.5 : 10;
+      y.suggestedMax = Math.ceil((maxV * 1.12) / step) * step;
     }
     return y;
   }
 
   function makeClimateChartOptions(yScale) {
+    var unit = climateDepthUnit();
+    var tipDigits = climateUsesInches() ? 2 : 1;
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -1601,16 +1675,16 @@
           callbacks: {
             label: function (ctx) {
               var v = ctx.parsed && ctx.parsed.y;
-              return (ctx.dataset.label || '') + ': ' + (v != null && Number.isFinite(v) ? v.toFixed(1) + ' mm' : '—');
+              return (ctx.dataset.label || '') + ': ' + (v != null && Number.isFinite(v) ? v.toFixed(tipDigits) + ' ' + unit : '—');
             }
           }
         }
       },
       scales: {
-        y: yScale || { beginAtZero: true, title: { display: true, text: 'mm/mes' } },
+        y: yScale || { beginAtZero: true, title: { display: true, text: climateDepthPerMonthLabel() } },
         x: {
           type: 'category',
-          title: { display: true, text: 'Mes' },
+          title: { display: true, text: wcT('Mes', 'Month') },
           ticks: { autoSkip: false }
         }
       }
@@ -1623,13 +1697,15 @@
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 ' +
       (marginBottom != null ? marginBottom : 12) +
       'px 0;">' +
-      '<span style="font-size:13px;color:#64748b;font-weight:600;">Años visibles:</span>' +
+      '<span style="font-size:13px;color:#64748b;font-weight:600;">' +
+      wcT('Años visibles:', 'Visible years:') +
+      '</span>' +
       entries
         .map(function (entry, idx) {
           var yearKey = String(entry.year);
           var on = climateChartYearsVisible[metricKey][yearKey] !== false;
           var color = colors[idx] || colors[colors.length - 1];
-          var label = entry.partial ? entry.year + ' (parcial)' : String(entry.year);
+          var label = entry.partial ? climatePartialYearLabel(entry.year) : String(entry.year);
           return (
             '<button type="button" class="climate-chart-year-btn" data-metric="' +
             metricKey +
@@ -1657,39 +1733,60 @@
     var rainEntries = getClimateYearEntries(rain);
     var et0Entries = getClimateYearEntries(et0);
     if (!rainEntries.length && !et0Entries.length) {
-      return '<p style="margin:0;color:#64748b;font-size:13px;">Sin datos para graficar.</p>';
+      return '<p style="margin:0;color:#64748b;font-size:13px;">' +
+        wcT('Sin datos para graficar.', 'No data to chart.') +
+        '</p>';
     }
     var lat = rain && rain.lat != null ? rain.lat : et0 && et0.lat;
     var lng = rain && rain.lng != null ? rain.lng : et0 && et0.lng;
     var notesHtml = '';
     if (rain && rain.notes) {
-      notesHtml += '<p style="margin:0 0 8px;font-size:12px;color:#b45309;">⚠️ Lluvia: ' + rain.notes + '</p>';
+      notesHtml += '<p style="margin:0 0 8px;font-size:12px;color:#b45309;">⚠️ ' +
+        wcT('Lluvia:', 'Rain:') + ' ' + rain.notes + '</p>';
     }
     if (et0 && et0.notes) {
       notesHtml += '<p style="margin:0 0 8px;font-size:12px;color:#b45309;">⚠️ ET₀: ' + et0.notes + '</p>';
     }
     var kc = getClimateChartKc();
     var kcVal = kc != null ? String(kc) : '';
+    var perMonth = climateDepthPerMonthLabel();
     return (
-      '<h4 style="margin:0 0 8px;color:#0f172a;font-size:16px;font-weight:700;">📊 Lluvia vs ET₀ (mm/mes)</h4>' +
-      '<p style="margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45;">Punto del predio: <strong>' +
+      '<h4 style="margin:0 0 8px;color:#0f172a;font-size:16px;font-weight:700;">📊 ' +
+      wcT('Lluvia vs ET₀ (' + perMonth + ')', 'Rain vs ET₀ (' + perMonth + ')') +
+      '</h4>' +
+      '<p style="margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45;">' +
+      wcT('Punto del predio:', 'Field point:') +
+      ' <strong>' +
       Number(lat).toFixed(5) +
       ', ' +
       Number(lng).toFixed(5) +
-      '</strong>. Misma escala para comparar lo llovido frente a la evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; <strong>punteada gris-azul</strong> = ETc del año en curso (si hay Kc).</p>' +
+      '</strong>. ' +
+      wcT(
+        'Misma escala para comparar lo llovido frente a la evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; <strong>punteada gris-azul</strong> = ETc del año en curso (si hay Kc).',
+        'Same scale to compare rainfall against reference evapotranspiration. <strong>Solid</strong> lines = rain; <strong>dashed</strong> = ET₀; <strong>gray-blue dotted</strong> = current-year ETc (if Kc is set).'
+      ) +
+      '</p>' +
       notesHtml +
       '<div style="margin-bottom:4px;">' +
-      '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#0369a1;">🌧️ Precipitación acumulada (mm/mes)</p>' +
+      '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#0369a1;">🌧️ ' +
+      wcT('Precipitación acumulada (' + perMonth + ')', 'Cumulative precipitation (' + perMonth + ')') +
+      '</p>' +
       buildClimateYearToggleHtml('rain', rainEntries, CLIMATE_RAIN_COLORS, 14) +
       '</div>' +
       '<div style="margin-bottom:12px;">' +
-      '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#b45309;">☀️ ET₀ — Evapotranspiración de referencia (mm/mes)</p>' +
+      '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#b45309;">☀️ ' +
+      wcT('ET₀ — Evapotranspiración de referencia (' + perMonth + ')', 'ET₀ — Reference evapotranspiration (' + perMonth + ')') +
+      '</p>' +
       buildClimateYearToggleHtml('et0', et0Entries, CLIMATE_ET0_COLORS, 0) +
       '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin:0 0 12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">' +
       '<div style="min-width:140px;">' +
-      '<label for="climate-chart-kc" style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Kc (año en curso → ETc)</label>' +
-      '<input id="climate-chart-kc" type="number" min="0" max="2" step="0.01" placeholder="Ej. 0.85" value="' +
+      '<label for="climate-chart-kc" style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">' +
+      wcT('Kc (año en curso → ETc)', 'Kc (current year → ETc)') +
+      '</label>' +
+      '<input id="climate-chart-kc" type="number" min="0" max="2" step="0.01" placeholder="' +
+      wcT('Ej. 0.85', 'e.g. 0.85') +
+      '" value="' +
       kcVal +
       '" style="width:110px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;color:#0f172a;background:#fff;" />' +
       '</div>' +
@@ -1719,7 +1816,9 @@
       ';">' +
       meta.title +
       '</h4>' +
-      '<p style="margin:0 0 10px 0;font-size:13px;color:#64748b;">Punto del predio: ' +
+      '<p style="margin:0 0 10px 0;font-size:13px;color:#64748b;">' +
+      wcT('Punto del predio:', 'Field point:') +
+      ' ' +
       Number(lat).toFixed(5) +
       ', ' +
       Number(lng).toFixed(5) +
@@ -1758,7 +1857,7 @@
         var colorIdx = entries.findIndex(function (e) { return e.year === entry.year; });
         var color = colors[colorIdx] != null ? colors[colorIdx] : colors[colors.length - 1];
         var maxMonth = entry.partial || entry.year === currYear ? now.getMonth() + 1 : 12;
-        var yearLabel = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+        var yearLabel = entry.partial ? climatePartialYearLabel(entry.year) : String(entry.year);
         var label = prefix ? prefix + ' ' + yearLabel : yearLabel;
         return makeClimateLineDataset(label, monthsToChartSeries(entry.months, maxMonth), color, dashed);
       });
@@ -1922,7 +2021,12 @@
         var chartsInner = document.getElementById('climate-rainfall-charts');
         if (chartsInner) {
           chartsInner.innerHTML =
-            '<p style="color:#64748b;margin:0;">Pulsa <strong>Obtener lluvia y ET₀</strong> para cargar las gráficas.</p>';
+            '<p style="color:#64748b;margin:0;">' +
+            wcT(
+              'Pulsa <strong>Obtener lluvia y ET₀</strong> para cargar las gráficas.',
+              'Press <strong>Get rainfall and ET₀</strong> to load the charts.'
+            ) +
+            '</p>';
         }
       }
       resizeClimateCharts();
@@ -1947,22 +2051,36 @@
   function buildClimateLocationNote(block) {
     if (!block) return '';
     return (
-      'Punto del predio: ' +
+      wcT('Punto del predio:', 'Field point:') +
+      ' ' +
       Number(block.lat).toFixed(5) +
       ', ' +
       Number(block.lng).toFixed(5) +
       '. ' +
       (block.partial
-        ? 'Consulta parcial: el proveedor histórico no respondió en algún año; se muestra la información disponible.'
-        : 'Histórico completo por año; año en curso hasta el mes actual.')
+        ? wcT(
+            'Consulta parcial: el proveedor histórico no respondió en algún año; se muestra la información disponible.',
+            'Partial query: the historical provider did not respond for some year; available data is shown.'
+          )
+        : wcT(
+            'Histórico completo por año; año en curso hasta el mes actual.',
+            'Full history by year; current year through the present month.'
+          ))
     );
   }
 
   function buildMonthlyTableHead() {
+    var unit = climateDepthUnit();
     return (
       '<thead><tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;">' +
-      '<th style="padding:8px;text-align:left;">Año</th>' +
-      '<th style="padding:8px;text-align:center;white-space:nowrap;" title="Suma de los meses mostrados en la fila">Acum. anual (mm)</th>' +
+      '<th style="padding:8px;text-align:left;">' +
+      wcT('Año', 'Year') +
+      '</th>' +
+      '<th style="padding:8px;text-align:center;white-space:nowrap;" title="' +
+      wcT('Suma de los meses mostrados en la fila', 'Sum of months shown in the row') +
+      '">' +
+      wcT('Acum. anual (' + unit + ')', 'Annual total (' + unit + ')') +
+      '</th>' +
       climateMonthLabels().map(function (l) {
         return '<th style="padding:8px;text-align:center;">' + l + '</th>';
       }).join('') +
@@ -1974,14 +2092,14 @@
     var annualTotal = sumMonthsTotal(monthsObj, maxMonth);
     var totalCell =
       '<td style="padding:8px;text-align:center;font-weight:700;background:#f8fafc;color:#0f172a;">' +
-      fmtMm(annualTotal) +
+      fmtDepth(annualTotal) +
       '</td>';
     var cells = climateMonthLabels().map(function (_, idx) {
       var m = String(idx + 1).padStart(2, '0');
       if (maxMonth != null && idx + 1 > maxMonth) {
         return '<td style="padding:8px;text-align:center;color:#94a3b8;">—</td>';
       }
-      return '<td style="padding:8px;text-align:center;">' + fmtMm(monthsObj && monthsObj[m]) + '</td>';
+      return '<td style="padding:8px;text-align:center;">' + fmtDepth(monthsObj && monthsObj[m]) + '</td>';
     }).join('');
     return (
       '<tr style="border-bottom:1px solid #e5e7eb;">' +
@@ -2005,10 +2123,20 @@
     var et0 = p && p.climateAnalysis && p.climateAnalysis.et0;
     if (!rain || !rain.monthsPrev) {
       tableWrap.innerHTML =
-        '<p style="color:#64748b;margin:0;">Pulsa <strong>Obtener lluvia y ET₀</strong> para cargar datos mensuales del punto del predio.</p>';
+        '<p style="color:#64748b;margin:0;">' +
+        wcT(
+          'Pulsa <strong>Obtener lluvia y ET₀</strong> para cargar datos mensuales del punto del predio.',
+          'Press <strong>Get rainfall and ET₀</strong> to load monthly data for the field point.'
+        ) +
+        '</p>';
       if (chartsWrap) {
         chartsWrap.innerHTML =
-          '<p style="color:#64748b;margin:0;">Pulsa <strong>Obtener lluvia y ET₀</strong> para cargar las gráficas.</p>';
+          '<p style="color:#64748b;margin:0;">' +
+          wcT(
+            'Pulsa <strong>Obtener lluvia y ET₀</strong> para cargar las gráficas.',
+            'Press <strong>Get rainfall and ET₀</strong> to load the charts.'
+          ) +
+          '</p>';
       }
       return;
     }
@@ -2019,21 +2147,25 @@
     var currY = rain.currentYear || now.getFullYear();
     var head = buildMonthlyTableHead();
     var rainEntries = getClimateYearEntries(rain);
+    var perMonth = climateDepthPerMonthLabel();
+    var diffLabel = wcT('Diferencia', 'Difference');
 
     var rainRows = rainEntries
       .map(function (entry) {
-        var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+        var label = entry.partial ? climatePartialYearLabel(entry.year) : String(entry.year);
         var maxM = entry.partial ? maxMonthCurr : 12;
         return buildMonthlyTableRow(label, entry.months, entry.year, maxM);
       })
       .join('');
     if (rain.diff && Object.keys(rain.diff).length) {
-      rainRows += buildMonthlyTableRow('Diferencia (' + currY + ' − ' + prevY + ')', rain.diff, null, maxMonthCurr);
+      rainRows += buildMonthlyTableRow(diffLabel + ' (' + currY + ' − ' + prevY + ')', rain.diff, null, maxMonthCurr);
     }
 
     var rainHtml =
       '<div style="margin-bottom:24px;">' +
-      '<h4 style="margin:0 0 10px 0;color:#0369a1;">🌧️ Precipitación acumulada (mm/mes)</h4>' +
+      '<h4 style="margin:0 0 10px 0;color:#0369a1;">🌧️ ' +
+      wcT('Precipitación acumulada (' + perMonth + ')', 'Cumulative precipitation (' + perMonth + ')') +
+      '</h4>' +
       '<p style="margin:0 0 10px 0;font-size:13px;color:#64748b;">' +
       buildClimateLocationNote(rain) +
       '</p>' +
@@ -2049,14 +2181,14 @@
       var et0Entries = getClimateYearEntries(et0);
       var et0Rows = et0Entries
         .map(function (entry) {
-          var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+          var label = entry.partial ? climatePartialYearLabel(entry.year) : String(entry.year);
           var maxM = entry.partial ? maxMonthCurr : 12;
           return buildMonthlyTableRow(label, entry.months, entry.year, maxM);
         })
         .join('');
       if (et0.diff && Object.keys(et0.diff).length) {
         et0Rows += buildMonthlyTableRow(
-          'Diferencia (' + et0.currentYear + ' − ' + et0.previousYear + ')',
+          diffLabel + ' (' + et0.currentYear + ' − ' + et0.previousYear + ')',
           et0.diff,
           null,
           maxMonthCurr
@@ -2064,7 +2196,12 @@
       }
       et0Html =
         '<div style="margin-bottom:8px;">' +
-        '<h4 style="margin:0 0 10px 0;color:#b45309;">☀️ ET₀ — Evapotranspiración de referencia (mm/mes, suma diaria)</h4>' +
+        '<h4 style="margin:0 0 10px 0;color:#b45309;">☀️ ' +
+        wcT(
+          'ET₀ — Evapotranspiración de referencia (' + perMonth + ', suma diaria)',
+          'ET₀ — Reference evapotranspiration (' + perMonth + ', daily sum)'
+        ) +
+        '</h4>' +
         '<p style="margin:0 0 10px 0;font-size:13px;color:#64748b;">' +
         buildClimateLocationNote(et0) +
         '</p>' +
@@ -2163,7 +2300,7 @@
     var grid = document.getElementById('climate-live-grid');
     if (!grid) return;
     if (!r) {
-      grid.innerHTML = '<p style="color:#64748b;">Sin lectura guardada.</p>';
+      grid.innerHTML = '<p style="color:#64748b;">' + wcT('Sin lectura guardada.', 'No saved reading.') + '</p>';
       return;
     }
     function card(label, value, icon) {
@@ -2182,18 +2319,20 @@
     var dayWater = resolveLiveDayRainEt0(r);
     grid.innerHTML =
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">' +
-      card('Temperatura', fmtMm(r.temperature) + ' °C', '🌡️') +
-      card('Humedad relativa', fmtMm(r.humidity) + ' %', '💧') +
-      card('Radiación solar', r.shortwaveRadiation != null ? Math.round(r.shortwaveRadiation) + ' W/m²' : '—', '☀️') +
-      card('Índice UV', r.uvIndex != null ? fmtMm(r.uvIndex) : '—', '🧴') +
-      card('Punto de rocío', r.dewPoint != null ? fmtMm(r.dewPoint) + ' °C' : '—', '🌫️') +
-      card('Viento', r.windSpeedKmh != null ? fmtMm(r.windSpeedKmh) + ' km/h' : '—', '💨') +
-      card('Dirección', windDirLabel(r.windDirection), '🧭') +
-      card('Nubosidad', r.cloudCover != null ? Math.round(r.cloudCover) + ' %' : '—', '☁️') +
-      card('Lluvia acumulada (hoy)', dayWater.rain != null ? fmtMm(dayWater.rain) + ' mm' : '—', '🌧️') +
-      card('ET₀ (hoy)', dayWater.et0 != null ? fmtMm(dayWater.et0) + ' mm' : '—', '💧') +
+      card(wcT('Temperatura', 'Temperature'), fmtMm(r.temperature) + ' °C', '🌡️') +
+      card(wcT('Humedad relativa', 'Relative humidity'), fmtMm(r.humidity) + ' %', '💧') +
+      card(wcT('Radiación solar', 'Solar radiation'), r.shortwaveRadiation != null ? Math.round(r.shortwaveRadiation) + ' W/m²' : '—', '☀️') +
+      card(wcT('Índice UV', 'UV index'), r.uvIndex != null ? fmtMm(r.uvIndex) : '—', '🧴') +
+      card(wcT('Punto de rocío', 'Dew point'), r.dewPoint != null ? fmtMm(r.dewPoint) + ' °C' : '—', '🌫️') +
+      card(wcT('Viento', 'Wind'), r.windSpeedKmh != null ? fmtMm(r.windSpeedKmh) + ' km/h' : '—', '💨') +
+      card(wcT('Dirección', 'Direction'), windDirLabel(r.windDirection), '🧭') +
+      card(wcT('Nubosidad', 'Cloud cover'), r.cloudCover != null ? Math.round(r.cloudCover) + ' %' : '—', '☁️') +
+      card(wcT('Lluvia acumulada (hoy)', 'Cumulative rainfall (today)'), dayWater.rain != null ? fmtDepthWithUnit(dayWater.rain) : '—', '🌧️') +
+      card(wcT('ET₀ (hoy)', 'ET₀ (today)'), dayWater.et0 != null ? fmtDepthWithUnit(dayWater.et0) : '—', '💧') +
       '</div>' +
-      '<p style="margin:12px 0 0;font-size:12px;color:#64748b;">Coordenadas: ' +
+      '<p style="margin:12px 0 0;font-size:12px;color:#64748b;">' +
+      wcT('Coordenadas:', 'Coordinates:') +
+      ' ' +
       Number(r.lat).toFixed(5) +
       ', ' +
       Number(r.lng).toFixed(5) +
@@ -2279,30 +2418,83 @@
     initIrrigationQuickCalc();
   }
 
+  function refreshClimateRainfallShellLabels() {
+    var h3 = document.getElementById('climate-rainfall-title');
+    if (h3) h3.textContent = '🌧️ ' + wcT('Lluvia acumulada y ET₀', 'Cumulative rainfall and ET₀');
+    var tableBtn = document.getElementById('climate-rainfall-view-table-btn');
+    if (tableBtn) tableBtn.textContent = '📋 ' + wcT('Tabla · Lluvia y ET₀', 'Table · Rainfall and ET₀');
+    var chartsBtn = document.getElementById('climate-rainfall-view-charts-btn');
+    if (chartsBtn) chartsBtn.textContent = '📈 ' + wcT('Gráficas · Lluvia y ET₀', 'Charts · Rainfall and ET₀');
+    var fetchBtn = document.getElementById('climate-btn-fetch-rainfall');
+    if (fetchBtn) fetchBtn.textContent = '⬇️ ' + wcT('Obtener lluvia y ET₀', 'Get rainfall and ET₀');
+    var intro = document.getElementById('climate-rainfall-intro');
+    if (intro) {
+      var lat = intro.getAttribute('data-lat');
+      var lng = intro.getAttribute('data-lng');
+      if (lat && lng) {
+        intro.innerHTML =
+          wcT('Punto:', 'Point:') +
+          ' <strong>' +
+          Number(lat).toFixed(5) +
+          ', ' +
+          Number(lng).toFixed(5) +
+          '</strong> ' +
+          wcT('(centro del polígono). Hasta', '(polygon center). Up to') +
+          ' ' +
+          CLIMATE_HISTORY_YEARS +
+          ' ' +
+          wcT('años.', 'years.');
+      }
+    }
+  }
+
   function createClimateRainfallTabHTML(hasPolygon, loc) {
     if (!hasPolygon) {
       return (
         '<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:16px;">' +
-        '<p style="margin:0;color:#92400e;">⚠️ Agrega un polígono en <strong>Ubicación</strong> para consultar lluvia y ET₀.</p></div>'
+        '<p style="margin:0;color:#92400e;">⚠️ ' +
+        wcT(
+          'Agrega un polígono en <strong>Ubicación</strong> para consultar lluvia y ET₀.',
+          'Add a polygon in <strong>Location</strong> to query rainfall and ET₀.'
+        ) +
+        '</p></div>'
       );
     }
     return (
       '<div class="card" style="padding:24px;">' +
       '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
-      '<h3 style="margin:0;color:#0369a1;">🌧️ Lluvia acumulada y ET₀</h3>' +
+      '<h3 id="climate-rainfall-title" style="margin:0;color:#0369a1;">🌧️ ' +
+      wcT('Lluvia acumulada y ET₀', 'Cumulative rainfall and ET₀') +
+      '</h3>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-      '<button type="button" id="climate-rainfall-view-table-btn" style="padding:8px 14px;border-radius:8px;border:2px solid #0284c7;background:#0284c7;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">📋 Tabla · Lluvia y ET₀</button>' +
-      '<button type="button" id="climate-rainfall-view-charts-btn" style="padding:8px 14px;border-radius:8px;border:2px solid #0284c7;background:#fff;color:#0284c7;font-weight:600;cursor:pointer;font-size:13px;">📈 Gráficas · Lluvia y ET₀</button>' +
+      '<button type="button" id="climate-rainfall-view-table-btn" style="padding:8px 14px;border-radius:8px;border:2px solid #0284c7;background:#0284c7;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">📋 ' +
+      wcT('Tabla · Lluvia y ET₀', 'Table · Rainfall and ET₀') +
+      '</button>' +
+      '<button type="button" id="climate-rainfall-view-charts-btn" style="padding:8px 14px;border-radius:8px;border:2px solid #0284c7;background:#fff;color:#0284c7;font-weight:600;cursor:pointer;font-size:13px;">📈 ' +
+      wcT('Gráficas · Lluvia y ET₀', 'Charts · Rainfall and ET₀') +
+      '</button>' +
       '</div></div>' +
-      '<p style="margin:0 0 16px 0;font-size:14px;color:#64748b;">Punto: <strong>' +
+      '<p id="climate-rainfall-intro" data-lat="' +
+      loc.lat +
+      '" data-lng="' +
+      loc.lng +
+      '" style="margin:0 0 16px 0;font-size:14px;color:#64748b;">' +
+      wcT('Punto:', 'Point:') +
+      ' <strong>' +
       loc.lat.toFixed(5) +
       ', ' +
       loc.lng.toFixed(5) +
-      '</strong> (centro del polígono). Hasta ' +
+      '</strong> ' +
+      wcT('(centro del polígono). Hasta', '(polygon center). Up to') +
+      ' ' +
       CLIMATE_HISTORY_YEARS +
-      ' años.</p>' +
+      ' ' +
+      wcT('años.', 'years.') +
+      '</p>' +
       '<button type="button" id="climate-btn-fetch-rainfall" onclick="window.fetchClimateRainfallAndET0 && window.fetchClimateRainfallAndET0(event)" ' +
-      'style="padding:12px 18px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:12px;">⬇️ Obtener lluvia y ET₀</button>' +
+      'style="padding:12px 18px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:12px;">⬇️ ' +
+      wcT('Obtener lluvia y ET₀', 'Get rainfall and ET₀') +
+      '</button>' +
       '<p id="climate-rainfall-status" style="margin:0 0 16px 0;font-size:13px;color:#64748b;"></p>' +
       '<div id="climate-rainfall-view-table"><div id="climate-rainfall-tables"></div></div>' +
       '<div id="climate-rainfall-view-charts" style="display:none;"><div id="climate-rainfall-charts"></div></div>' +
@@ -2356,7 +2548,7 @@
       getClimateYearEntries(block).forEach(function (entry, idx) {
         var color = colors[idx] != null ? colors[idx] : colors[colors.length - 1];
         var maxMonth = entry.partial ? maxMonthCurr : 12;
-        var yearLabel = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+        var yearLabel = entry.partial ? climatePartialYearLabel(entry.year) : String(entry.year);
         datasets.push(
           makeClimateLineDataset(
             prefix + ' ' + yearLabel,
@@ -2433,7 +2625,7 @@
             },
             scales: {
               y: computeClimateYScale(datasets),
-              x: { type: 'category', title: { display: true, text: 'Mes' }, ticks: { autoSkip: false } }
+              x: { type: 'category', title: { display: true, text: wcT('Mes', 'Month') }, ticks: { autoSkip: false } }
             }
           }
         });
@@ -2500,4 +2692,44 @@
     get: function () { return climateMonthLabels(); },
     configurable: true
   });
+
+  if (typeof window !== 'undefined' && !window.__npClimatePrefsBound) {
+    window.__npClimatePrefsBound = true;
+    window.addEventListener('np:prefs-changed', function (ev) {
+      var changed = (ev && ev.detail && ev.detail.changed) || [];
+      var langOrUnit =
+        !changed.length ||
+        changed.indexOf('language') >= 0 ||
+        changed.indexOf('unit_system') >= 0 ||
+        changed.indexOf('locale') >= 0;
+      if (!langOrUnit) return;
+      try {
+        refreshClimateRainfallShellLabels();
+        if (document.getElementById('climate-rainfall-tables')) {
+          renderClimateRainfallTables();
+        }
+        // Charts: rebuild whenever data exists (unit axis + converted series).
+        // If table view is active, destroy stale chart so a later soft-update cannot keep mm.
+        var pCharts = typeof getProject === 'function' ? getProject() : null;
+        var rainC = pCharts && pCharts.climateAnalysis && pCharts.climateAnalysis.rainfall;
+        var et0C = pCharts && pCharts.climateAnalysis && pCharts.climateAnalysis.et0;
+        if (rainC && rainC.monthsPrev && document.getElementById('climate-rainfall-charts')) {
+          if (climateRainfallViewMode === 'charts') {
+            renderClimateRainfallCharts(rainC, et0C);
+          } else if (typeof destroyClimateCharts === 'function') {
+            try { destroyClimateCharts(); } catch (eDestroy) {}
+          }
+        }
+        var p = typeof getProject === 'function' ? getProject() : null;
+        if (p && p.climateAnalysis && p.climateAnalysis.lastReading) {
+          renderClimateLiveReading(p.climateAnalysis.lastReading);
+        }
+        if (typeof renderIrrigationQuickCalc === 'function') {
+          try { renderIrrigationQuickCalc(); } catch (e2) {}
+        }
+      } catch (e) {
+        console.warn('climate prefs refresh', e);
+      }
+    });
+  }
 })();

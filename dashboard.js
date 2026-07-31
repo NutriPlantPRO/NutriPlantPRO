@@ -1824,7 +1824,7 @@ function sectionTemplate(name) {
               </div>
               <div class="stat-item">
                 <span class="stat-label" data-i18n="radar.perimeter">${rt('radar.perimeter', 'Perímetro:')}</span>
-                <span class="stat-value" id="perimeterDisplay">${rt('radar.perimeter_zero', '0.00 m')}</span>
+                <span class="stat-value" id="perimeterDisplay">${rt('radar.perimeter_zero', '0.00 m (0.00 ft)')}</span>
               </div>
               <div class="stat-item coordinates">
                 <span class="stat-label" data-i18n="radar.center">${rt('radar.center', 'Centro:')}</span>

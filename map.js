@@ -74,25 +74,45 @@ class NutriPlantMap {
     window.gm_authFailure = () => {
       console.error('❌ Google Maps rechazó la clave o el dominio actual');
       window.__nutriPlantGoogleMapsLoading = false;
-      this.showMapUnavailable('Google Maps no autorizó este dominio. Revisa la API Key y las restricciones de referencia en Google Cloud.');
+      this.showMapUnavailable(np_radarT(
+        'radar.map_unavailable_auth',
+        'Google Maps no autorizó este dominio. Revisa la API Key y las restricciones de referencia en Google Cloud.'
+      ));
     };
-    
+
+    // Maps UI labels (Map/Satellite) are fixed at script load via language=/region=.
+    // Changing NpPrefs language later cannot retarget those controls via map.setOptions — page reload required.
+    const mapsLocale = np_mapsLanguageAndRegion();
+    if (window.__npMapsLang && window.__npMapsLang !== mapsLocale.language) {
+      console.warn(
+        '🗺️ Google Maps ya cargó con language=' + window.__npMapsLang +
+        '; Map/Satellite labels need a page reload for ' + mapsLocale.language
+      );
+    }
+    window.__npMapsLang = mapsLocale.language;
+
     // Cargar la API de Google Maps
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry&callback=initNutriPlantMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry&language=${mapsLocale.language}&region=${mapsLocale.region}&callback=initNutriPlantMap`;
     script.async = true;
     script.defer = true;
     script.onerror = () => {
       console.error('❌ No se pudo cargar Google Maps');
       window.__nutriPlantGoogleMapsLoading = false;
-      this.showMapUnavailable('No se pudo cargar Google Maps. Revisa la conexión o la configuración de la API Key.');
+      this.showMapUnavailable(np_radarT(
+        'radar.map_unavailable_load',
+        'No se pudo cargar Google Maps. Revisa la conexión o la configuración de la API Key.'
+      ));
     };
     document.head.appendChild(script);
 
     setTimeout(() => {
       if (!this.map && (!window.google || !window.google.maps || !window.google.maps.Map)) {
         window.__nutriPlantGoogleMapsLoading = false;
-        this.showMapUnavailable('Google Maps tardó demasiado en responder. Recarga la página e inténtalo de nuevo.');
+        this.showMapUnavailable(np_radarT(
+          'radar.map_unavailable_timeout',
+          'Google Maps tardó demasiado en responder. Recarga la página e inténtalo de nuevo.'
+        ));
       }
     }, 12000);
   }
@@ -100,6 +120,7 @@ class NutriPlantMap {
   showMapUnavailable(message) {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
+    const title = np_radarT('radar.map_unavailable_title', 'Mapa no disponible');
 
     mapElement.innerHTML = `
       <div style="
@@ -117,7 +138,7 @@ class NutriPlantMap {
       ">
         <div style="max-width: 520px; background: rgba(255,255,255,0.92); border: 1px solid #dbeafe; border-radius: 16px; padding: 22px; box-shadow: 0 12px 28px rgba(15,23,42,0.10);">
           <div style="font-size: 36px; margin-bottom: 10px;">🗺️</div>
-          <h3 style="margin: 0 0 8px; color: #1e40af;">Mapa no disponible</h3>
+          <h3 style="margin: 0 0 8px; color: #1e40af;">${title}</h3>
           <p style="margin: 0; color: #475569; line-height: 1.45;">${message}</p>
         </div>
       </div>
@@ -127,6 +148,17 @@ class NutriPlantMap {
   showDemoMap() {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
+
+    const demoTitle = np_radarT('radar.demo_title', 'Mapa de Demostración');
+    const demoBody = np_radarT('radar.demo_body', 'Para usar el mapa real, configura tu API Key de Google Maps');
+    const demoSteps = np_radarT('radar.demo_steps', 'Pasos:');
+    const demoStep1 = np_radarT('radar.demo_step_1', '1. Ve a Google Cloud Console');
+    const demoStep2 = np_radarT('radar.demo_step_2', '2. Habilita Maps JavaScript API');
+    const demoStep3 = np_radarT('radar.demo_step_3', '3. Crea una API Key');
+    const demoStep4 = np_radarT('radar.demo_step_4', '4. Reemplaza en map.js');
+    const demoTry = np_radarT('radar.demo_try', 'Probar Funcionalidad');
+    const demoSimTitle = np_radarT('radar.demo_sim_title', '🎯 Haz clic para trazar tu parcela');
+    const demoSimBody = np_radarT('radar.demo_sim_body', 'Simulación de dibujo de polígono');
 
     // Crear mapa de demostración
     mapElement.innerHTML = `
@@ -152,9 +184,9 @@ class NutriPlantMap {
           max-width: 400px;
         ">
           <div style="font-size: 48px; margin-bottom: 20px;">🗺️</div>
-          <h3 style="margin: 0 0 15px 0; font-size: 24px;">Mapa de Demostración</h3>
+          <h3 style="margin: 0 0 15px 0; font-size: 24px;">${demoTitle}</h3>
           <p style="margin: 0 0 20px 0; opacity: 0.9;">
-            Para usar el mapa real, configura tu API Key de Google Maps
+            ${demoBody}
           </p>
           <div style="
             background: rgba(255,255,255,0.2);
@@ -164,13 +196,13 @@ class NutriPlantMap {
             font-size: 12px;
             margin-bottom: 20px;
           ">
-            <strong>Pasos:</strong><br>
-            1. Ve a Google Cloud Console<br>
-            2. Habilita Maps JavaScript API<br>
-            3. Crea una API Key<br>
-            4. Reemplaza en map.js
+            <strong>${demoSteps}</strong><br>
+            ${demoStep1}<br>
+            ${demoStep2}<br>
+            ${demoStep3}<br>
+            ${demoStep4}
           </div>
-          <button onclick="this.parentElement.parentElement.innerHTML='<div style=\'padding:20px;text-align:center;\'><h3>🎯 Haz clic para trazar tu parcela</h3><p>Simulación de dibujo de polígono</p></div>'" 
+          <button type="button" data-np-demo-try="1"
                   style="
                     background: rgba(255,255,255,0.2);
                     border: 1px solid rgba(255,255,255,0.3);
@@ -180,7 +212,7 @@ class NutriPlantMap {
                     cursor: pointer;
                     font-weight: 600;
                   ">
-            Probar Funcionalidad
+            ${demoTry}
           </button>
         </div>
         
@@ -206,12 +238,18 @@ class NutriPlantMap {
     `;
 
     // Configurar eventos de demostración
-    this.setupDemoEvents();
+    this.setupDemoEvents(demoSimTitle, demoSimBody);
   }
 
-  setupDemoEvents() {
-    // Las funciones reales se configuran en setupMapEvents()
-    // Esta función se mantiene para compatibilidad pero no interfiere
+  setupDemoEvents(demoSimTitle, demoSimBody) {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return;
+    const btn = mapElement.querySelector('[data-np-demo-try]');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      mapElement.innerHTML =
+        `<div style="padding:20px;text-align:center;"><h3>${demoSimTitle || ''}</h3><p>${demoSimBody || ''}</p></div>`;
+    });
   }
 
   initializeMap() {
@@ -378,7 +416,10 @@ class NutriPlantMap {
     this.calculatePolygonData();
     this.showPolygonCompleteMessage();
     
-    this.showMessage('✅ Polígono único creado - Puedes editarlo o guardar', 'success');
+    this.showMessage(
+      np_radarT('radar.msg_polygon_unique', '✅ Polígono único creado - Puedes editarlo o guardar'),
+      'success'
+    );
   }
 
   setupEventListeners() {
@@ -395,8 +436,18 @@ class NutriPlantMap {
         if (hasPolygonOnMap) {
           // Hay un polígono guardado - NO permitir dibujar nuevo
           // Mostrar mensaje al usuario
-          this.showMessage('⚠️ Ya hay un polígono guardado. Usa el botón "Limpiar" para eliminarlo antes de dibujar uno nuevo.', 'warning');
-          this.updateInstructions('⚠️ Ya hay un polígono guardado. Usa el botón "Limpiar" para eliminarlo.');
+          this.showMessage(
+            np_radarT(
+              'radar.msg_already_saved',
+              '⚠️ Ya hay un polígono guardado. Usa el botón "Limpiar" para eliminarlo antes de dibujar uno nuevo.'
+            ),
+            'warning'
+          );
+          this.setInstructionsKey(
+            'radar.instr_already_saved',
+            null,
+            '⚠️ Ya hay un polígono guardado. Usa el botón "Limpiar" para eliminarlo.'
+          );
           return; // NO permitir dibujar
         }
         
@@ -517,7 +568,12 @@ class NutriPlantMap {
 
   parseCoordinatesText(rawText) {
     const text = String(rawText || '').trim();
-    if (!text) return { points: [], error: 'Pega tus coordenadas primero.' };
+    if (!text) {
+      return {
+        points: [],
+        error: np_radarT('radar.msg_coords_paste_first', 'Pega tus coordenadas primero.')
+      };
+    }
     const lines = text
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -527,19 +583,41 @@ class NutriPlantMap {
       const src = lines[i].replace(/\t+/g, ' ').trim();
       const parts = this.splitCoordinatePair(src);
       if (!parts || parts.length < 2) {
-        return { points: [], error: `Línea ${i + 1} inválida. Usa: lat,lng` };
+        return {
+          points: [],
+          error: np_radarT('radar.msg_coords_line_invalid', 'Línea {n} inválida. Usa: lat,lng', { n: i + 1 })
+        };
       }
       const lat = this.parseCoordinateComponent(parts[0], 'lat');
       const lng = this.parseCoordinateComponent(parts[1], 'lng');
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        return { points: [], error: `Línea ${i + 1} inválida. Formato decimal o grados/min/seg.` };
+        return {
+          points: [],
+          error: np_radarT(
+            'radar.msg_coords_line_format',
+            'Línea {n} inválida. Formato decimal o grados/min/seg.',
+            { n: i + 1 }
+          )
+        };
       }
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        return { points: [], error: `Línea ${i + 1} fuera de rango. Verifica lat/lng.` };
+        return {
+          points: [],
+          error: np_radarT(
+            'radar.msg_coords_line_range',
+            'Línea {n} fuera de rango. Verifica lat/lng.',
+            { n: i + 1 }
+          )
+        };
       }
       points.push(new google.maps.LatLng(lat, lng));
     }
-    if (points.length < 3) return { points: [], error: 'Se requieren al menos 3 puntos.' };
+    if (points.length < 3) {
+      return {
+        points: [],
+        error: np_radarT('radar.msg_coords_min_points', 'Se requieren al menos 3 puntos.')
+      };
+    }
     return { points, error: '' };
   }
 
@@ -627,8 +705,19 @@ class NutriPlantMap {
     this.addPolygonEditListeners();
     this.calculateAreaAndPerimeter();
     this.centerOnPolygon();
-    this.updateInstructions('✅ Polígono trazado desde coordenadas. Puedes editarlo o guardar.');
-    this.showMessage(`✅ Polígono creado con ${polygonPath.length} puntos desde coordenadas`, 'success');
+    this.setInstructionsKey(
+      'radar.instr_coords_drawn',
+      null,
+      '✅ Polígono trazado desde coordenadas. Puedes editarlo o guardar.'
+    );
+    this.showMessage(
+      np_radarT(
+        'radar.msg_coords_created',
+        '✅ Polígono creado con {n} puntos desde coordenadas',
+        { n: polygonPath.length }
+      ),
+      'success'
+    );
   }
 
   startDrawing(latLng) {
@@ -652,7 +741,11 @@ class NutriPlantMap {
     // Crear marcador temporal para el primer punto
     this.createTempMarker(latLng);
     
-    this.updateInstructions('🔄 Continúa haciendo clic para trazar tu parcela');
+    this.setInstructionsKey(
+      'radar.instr_continue_click',
+      null,
+      '🔄 Continúa haciendo clic para trazar tu parcela'
+    );
   }
 
   addPoint(latLng) {
@@ -680,7 +773,11 @@ class NutriPlantMap {
       }
     }
     
-    this.updateInstructions(`📍 Punto ${this.polygonPath.length} - Haz clic cerca del inicio para cerrar o doble clic`);
+    this.setInstructionsKey(
+      'radar.instr_point_n',
+      { n: this.polygonPath.length },
+      '📍 Punto {n} - Haz clic cerca del inicio para cerrar o doble clic'
+    );
     
     // Mostrar botón de cerrar si hay al menos 3 puntos
     if (this.polygonPath.length >= 3) {
@@ -724,7 +821,11 @@ class NutriPlantMap {
     // Limpiar marcadores temporales
     this.clearTempMarkers();
 
-    this.updateInstructions('✅ Polígono completado - Puedes editarlo o guardar');
+    this.setInstructionsKey(
+      'radar.instr_polygon_done',
+      null,
+      '✅ Polígono completado - Puedes editarlo o guardar'
+    );
     console.log('✅ Nuevo polígono creado - es el ÚNICO en el mapa');
   }
 
@@ -761,10 +862,17 @@ class NutriPlantMap {
     this.calculateAreaAndPerimeter();
     
     // Mostrar mensaje de confirmación
-    this.updateInstructions('🔄 Polígono editado - Los datos se han actualizado automáticamente');
+    this.setInstructionsKey(
+      'radar.instr_polygon_edited',
+      null,
+      '🔄 Polígono editado - Los datos se han actualizado automáticamente'
+    );
     
     // Mostrar mensaje temporal de confirmación
-    this.showMessage('✅ Datos del polígono actualizados automáticamente', 'success');
+    this.showMessage(
+      np_radarT('radar.msg_polygon_updated', '✅ Datos del polígono actualizados automáticamente'),
+      'success'
+    );
   }
 
   createTempMarker(latLng) {
@@ -922,9 +1030,9 @@ class NutriPlantMap {
 
     if (perimeterDisplay) {
       if (shouldShowData && this.perimeter > 0 && belongsToCurrentProject) {
-        perimeterDisplay.textContent = `${this.formatNumber(this.perimeter)} m`;
+        perimeterDisplay.textContent = np_formatPerimeterDisplay(this.perimeter, (n) => this.formatNumber(n));
       } else {
-        perimeterDisplay.textContent = np_radarT('radar.perimeter_zero', '0.00 m');
+        perimeterDisplay.textContent = np_formatPerimeterDisplay(0);
       }
     }
   }
@@ -969,6 +1077,40 @@ class NutriPlantMap {
     }
   }
 
+  setInstructionsKey(key, params, fallback) {
+    this._instructionKey = key || null;
+    this._instructionParams = params || null;
+    const text = np_radarT(
+      key,
+      fallback != null ? fallback : key,
+      params || undefined
+    );
+    this.updateInstructions(text);
+  }
+
+  refreshInstructionsForLanguage() {
+    if (this._instructionKey) {
+      this.setInstructionsKey(this._instructionKey, this._instructionParams);
+      return;
+    }
+    const hasPolygon =
+      (this.polygon && this.polygon.getMap && this.polygon.getMap() === this.map) ||
+      (this.savedPolygon && this.savedPolygon.getMap && this.savedPolygon.getMap() === this.map);
+    if (hasPolygon) {
+      this.setInstructionsKey(
+        'radar.instr_plot_loaded',
+        null,
+        '✅ Predio cargado - Puedes editarlo o guardar cambios'
+      );
+    } else {
+      this.setInstructionsKey(
+        'radar.instr_click_draw',
+        null,
+        '📍 Haz clic en el mapa para trazar tu parcela'
+      );
+    }
+  }
+
   showCloseButton() {
     // Ya no mostramos botones adicionales, solo las instrucciones
     // El usuario puede usar el botón "Limpiar" de la interfaz principal
@@ -995,10 +1137,20 @@ class NutriPlantMap {
     console.log('🗑️ Actualizando interfaz...');
     forceClearLocationDisplay();
     this.updateDisplay();
-    this.updateInstructions('📍 Polígono eliminado - Haz clic en el mapa para trazar uno nuevo');
+    this.setInstructionsKey(
+      'radar.instr_polygon_cleared',
+      null,
+      '📍 Polígono eliminado - Haz clic en el mapa para trazar uno nuevo'
+    );
     
     // Mostrar mensaje de confirmación
-    this.showMessage('🗑️ Polígono eliminado correctamente - Puedes dibujar uno nuevo', 'success');
+    this.showMessage(
+      np_radarT(
+        'radar.msg_polygon_cleared',
+        '🗑️ Polígono eliminado correctamente - Puedes dibujar uno nuevo'
+      ),
+      'success'
+    );
     
     console.log('✅ Limpieza COMPLETA de polígono finalizada - listo para dibujar nuevo');
   }
@@ -1083,14 +1235,17 @@ class NutriPlantMap {
 
   async saveLocation() {
     if (!this.polygon || this.coordinates.length < 3) {
-      alert('Por favor, traza un polígono válido antes de guardar');
+      alert(np_radarT('radar.alert_draw_first', 'Por favor, traza un polígono válido antes de guardar'));
       return;
     }
 
     // Obtener el proyecto actual seleccionado
     const currentProject = this.getCurrentProject();
     if (!currentProject) {
-      alert('Por favor, selecciona un proyecto desde Inicio antes de guardar el predio');
+      alert(np_radarT(
+        'radar.alert_select_project',
+        'Por favor, selecciona un proyecto desde Inicio antes de guardar el predio'
+      ));
       return;
     }
 
@@ -1115,7 +1270,7 @@ class NutriPlantMap {
     // Guardar en el sistema unificado (nutriplant_project_<id>)
     const projectId = currentProject.id;
     if (!projectId) {
-      alert('Error: No hay proyecto seleccionado');
+      alert(np_radarT('radar.alert_no_project', 'Error: No hay proyecto seleccionado'));
       return;
     }
     
@@ -1144,7 +1299,7 @@ class NutriPlantMap {
         // DISPLAY (opcional, para mostrar en UI)
         coordinates: locationData.center ? `${locationData.center.lat.toFixed(6)}, ${locationData.center.lng.toFixed(6)}` : '',
         surface: `${this.formatNumber(locationData.areaHectares)} ha`,
-        perimeterDisplay: `${this.formatNumber(locationData.perimeter)} m`,
+        perimeterDisplay: np_formatPerimeterDisplay(locationData.perimeter, (n) => this.formatNumber(n)),
         elevationDisplay: Number.isFinite(locationData.elevationM)
           ? `${Math.round(locationData.elevationM)} ${np_radarT('radar.unit_msl', 'msnm')}`
           : np_radarT('radar.na', 'N/D')
@@ -1209,18 +1364,30 @@ class NutriPlantMap {
               });
               
               // Mostrar mensaje de éxito
-              this.showMessage('✅ Predio guardado correctamente', 'success');
+              this.showMessage(
+                np_radarT('radar.msg_saved_ok', '✅ Predio guardado correctamente'),
+                'success'
+              );
             } else {
               console.warn('⚠️ Polígono guardado pero sin coordenadas válidas (menos de 3 puntos)');
-              this.showMessage('⚠️ Polígono guardado pero inválido', 'warning');
+              this.showMessage(
+                np_radarT('radar.msg_saved_invalid', '⚠️ Polígono guardado pero inválido'),
+                'warning'
+              );
             }
           } else {
             console.warn('⚠️ No se pudo verificar el guardado');
-            this.showMessage('⚠️ No se pudo verificar el guardado', 'warning');
+            this.showMessage(
+              np_radarT('radar.msg_verify_failed', '⚠️ No se pudo verificar el guardado'),
+              'warning'
+            );
           }
         } else {
           console.error('❌ ERROR: No se pudo guardar usando sistema centralizado');
-          this.showMessage('❌ Error al guardar el predio', 'error');
+          this.showMessage(
+            np_radarT('radar.msg_save_error', '❌ Error al guardar el predio'),
+            'error'
+          );
         }
       } else {
         // Fallback: guardar directamente con REEMPLAZO COMPLETO
@@ -1288,21 +1455,38 @@ class NutriPlantMap {
       }
       
       // Mostrar confirmación
-      const message = `✅ Predio guardado para "${currentProject.name}"!\n\n` +
-                     `📏 Superficie: ${this.formatNumber(locationData.areaHectares)} ha (${this.formatNumber(locationData.areaAcres)} acres)\n` +
-                     `📐 Perímetro: ${this.formatNumber(locationData.perimeter)} m\n` +
-                     `📍 Coordenadas: ${this.formatNumber(locationData.center.lat)}, ${this.formatNumber(locationData.center.lng)}\n\n` +
-                     `🕒 Actualizado: ${new Date().toLocaleString()}`;
+      const message = np_radarT(
+        'radar.alert_saved_detail',
+        '✅ Predio guardado para "{name}"!\n\n📏 Superficie: {ha} ha ({acres} acres)\n📐 Perímetro: {perimeter}\n📍 Coordenadas: {lat}, {lng}\n\n🕒 Actualizado: {updated}',
+        {
+          name: currentProject.name,
+          ha: this.formatNumber(locationData.areaHectares),
+          acres: this.formatNumber(locationData.areaAcres),
+          perimeter: np_formatPerimeterDisplay(locationData.perimeter, (n) => this.formatNumber(n)),
+          lat: this.formatNumber(locationData.center.lat),
+          lng: this.formatNumber(locationData.center.lng),
+          updated: new Date().toLocaleString(np_radarLocale())
+        }
+      );
       
       alert(message);
-      this.showMessage('✅ Predio guardado exitosamente', 'success');
+      this.showMessage(
+        np_radarT('radar.msg_saved_success', '✅ Predio guardado exitosamente'),
+        'success'
+      );
       
       // 🚀 CRÍTICO: Actualizar instrucciones
-      this.updateInstructions('✅ Predio guardado - Puedes editarlo o guardar cambios');
+      this.setInstructionsKey(
+        'radar.instr_saved',
+        null,
+        '✅ Predio guardado - Puedes editarlo o guardar cambios'
+      );
       
     } catch (e) {
       console.error('❌ Error al guardar polígono:', e);
-      alert('Error al guardar el predio: ' + e.message);
+      alert(np_radarT('radar.alert_save_error', 'Error al guardar el predio: {message}', {
+        message: e.message
+      }));
     }
   }
 
@@ -1502,13 +1686,22 @@ class NutriPlantMap {
 
     if (!np_isLocationMapReady() || !this.map) {
       if (typeof initLocationMap === 'function') initLocationMap();
-      this.showMessage('🔄 Cargando mapa y polígono del predio…', 'info');
+      this.showMessage(
+        np_radarT('radar.msg_loading_map_polygon', '🔄 Cargando mapa y polígono del predio…'),
+        'info'
+      );
       this._centerOnPolygonAttempts = (this._centerOnPolygonAttempts || 0) + 1;
       if (this._centerOnPolygonAttempts <= 15) {
         setTimeout(() => this.centerOnPolygon(), 500);
       } else {
         this._centerOnPolygonAttempts = 0;
-        this.showMessage('⚠️ No se pudo cargar el mapa. Vuelve a entrar a Ubicación.', 'warning');
+        this.showMessage(
+          np_radarT(
+            'radar.msg_map_load_failed',
+            '⚠️ No se pudo cargar el mapa. Vuelve a entrar a Ubicación.'
+          ),
+          'warning'
+        );
       }
       return;
     }
@@ -1540,7 +1733,10 @@ class NutriPlantMap {
         this.refreshMapView('button-fit-polygon-delayed');
         this.map.fitBounds(bounds, { padding: 50 });
       }, 300);
-      this.showMessage('✅ Mapa centrado en el polígono', 'success');
+      this.showMessage(
+        np_radarT('radar.msg_centered_polygon', '✅ Mapa centrado en el polígono'),
+        'success'
+      );
     };
     
     // 🚀 PRIORIDAD 1: Verificar si hay polígono visible en el mapa
@@ -1610,14 +1806,20 @@ class NutriPlantMap {
             this.refreshMapView('button-fit-project-center');
             this.map.setCenter(center);
             this.map.setZoom(15);
-            this.showMessage('✅ Mapa centrado en el polígono guardado', 'success');
+            this.showMessage(
+              np_radarT('radar.msg_centered_saved', '✅ Mapa centrado en el polígono guardado'),
+              'success'
+            );
             return;
           }
         }
       }
     }
     
-    this.showMessage('⚠️ No hay polígono guardado o visible para centrar', 'warning');
+    this.showMessage(
+      np_radarT('radar.msg_no_polygon_center', '⚠️ No hay polígono guardado o visible para centrar'),
+      'warning'
+    );
   }
 
   centerOnUserLocation() {
@@ -1630,25 +1832,40 @@ class NutriPlantMap {
 
     if (!np_isLocationMapReady() || !this.map) {
       if (typeof initLocationMap === 'function') initLocationMap();
-      this.showMessage('🔄 Cargando mapa…', 'info');
+      this.showMessage(np_radarT('radar.msg_loading_map', '🔄 Cargando mapa…'), 'info');
       this._centerOnUserLocationAttempts = (this._centerOnUserLocationAttempts || 0) + 1;
       if (this._centerOnUserLocationAttempts <= 15) {
         setTimeout(() => this.centerOnUserLocation(), 500);
       } else {
         this._centerOnUserLocationAttempts = 0;
-        this.showMessage('⚠️ No se pudo cargar el mapa. Vuelve a entrar a Ubicación.', 'warning');
+        this.showMessage(
+          np_radarT(
+            'radar.msg_map_load_failed',
+            '⚠️ No se pudo cargar el mapa. Vuelve a entrar a Ubicación.'
+          ),
+          'warning'
+        );
       }
       return;
     }
     this._centerOnUserLocationAttempts = 0;
     
     if (!navigator.geolocation) {
-      this.showMessage('❌ La geolocalización no está disponible en este navegador', 'error');
+      this.showMessage(
+        np_radarT(
+          'radar.msg_geo_unavailable',
+          '❌ La geolocalización no está disponible en este navegador'
+        ),
+        'error'
+      );
       return;
     }
 
     console.log('📍 Obteniendo ubicación GPS del dispositivo...');
-    this.showMessage('🔄 Obteniendo tu ubicación...', 'info');
+    this.showMessage(
+      np_radarT('radar.msg_getting_location', '🔄 Obteniendo tu ubicación...'),
+      'info'
+    );
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -1671,19 +1888,31 @@ class NutriPlantMap {
         // Agregar marcador de la ubicación del usuario
         this.addUserLocationMarker(userLocation);
         
-        this.showMessage('📍 Centrado en tu ubicación actual', 'success');
+        this.showMessage(
+          np_radarT('radar.msg_centered_location', '📍 Centrado en tu ubicación actual'),
+          'success'
+        );
       },
       (error) => {
-        let errorMessage = '❌ Error al obtener tu ubicación';
+        let errorMessage = np_radarT('radar.msg_geo_error', '❌ Error al obtener tu ubicación');
         switch(error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = '❌ Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación en la configuración del navegador.';
+            errorMessage = np_radarT(
+              'radar.msg_geo_denied',
+              '❌ Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación en la configuración del navegador.'
+            );
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = '❌ Ubicación no disponible. Verifica que tu dispositivo tenga GPS activado.';
+            errorMessage = np_radarT(
+              'radar.msg_geo_position_unavailable',
+              '❌ Ubicación no disponible. Verifica que tu dispositivo tenga GPS activado.'
+            );
             break;
           case error.TIMEOUT:
-            errorMessage = '❌ Tiempo de espera agotado. Intenta de nuevo.';
+            errorMessage = np_radarT(
+              'radar.msg_geo_timeout',
+              '❌ Tiempo de espera agotado. Intenta de nuevo.'
+            );
             break;
         }
         console.error('❌ Error obteniendo ubicación GPS:', error);
@@ -1756,7 +1985,11 @@ class NutriPlantMap {
     
     if (!currentProject || !currentProject.id) {
       console.log('⚠️ No hay proyecto actual seleccionado o el proyecto no tiene ID');
-      this.updateInstructions('📍 Selecciona un proyecto y haz clic en el mapa para trazar tu parcela');
+      this.setInstructionsKey(
+        'radar.instr_select_project',
+        null,
+        '📍 Selecciona un proyecto y haz clic en el mapa para trazar tu parcela'
+      );
       // Limpiar si no hay proyecto
       this.forceRemoveAllPolygons();
       forceClearLocationDisplay();
@@ -2009,7 +2242,11 @@ class NutriPlantMap {
       this.forceRemoveAllPolygons();
       forceClearLocationDisplay();
       this.updateDisplay();
-      this.updateInstructions('📍 Haz clic en el mapa para trazar tu parcela');
+      this.setInstructionsKey(
+        'radar.instr_click_draw',
+        null,
+        '📍 Haz clic en el mapa para trazar tu parcela'
+      );
       return null;
     }
     
@@ -2124,14 +2361,22 @@ class NutriPlantMap {
         });
         // Limpiar display
         this.updateDisplay();
-        this.updateInstructions('📍 Haz clic en el mapa para trazar tu parcela');
+        this.setInstructionsKey(
+          'radar.instr_click_draw',
+          null,
+          '📍 Haz clic en el mapa para trazar tu parcela'
+        );
         return null;
       }
     } else {
       // No hay polígono válido - ya está todo limpio arriba
       console.log('ℹ️ No hay polígono válido para este proyecto');
       this.updateDisplay();
-      this.updateInstructions('📍 Haz clic en el mapa para trazar tu parcela');
+      this.setInstructionsKey(
+        'radar.instr_click_draw',
+        null,
+        '📍 Haz clic en el mapa para trazar tu parcela'
+      );
       return null;
     }
   }
@@ -2400,14 +2645,22 @@ class NutriPlantMap {
     // 🚀 CRÍTICO: Solo mostrar mensaje "Predio cargado" si realmente se cargó un polígono válido y visible
     // Validar una vez más que el polígono está en el mapa
     if (this.savedPolygon && this.savedPolygon.getMap() && this.savedPolygon.getMap() === this.map) {
-      this.updateInstructions('✅ Predio cargado - Puedes editarlo o guardar cambios');
+      this.setInstructionsKey(
+        'radar.instr_plot_loaded',
+        null,
+        '✅ Predio cargado - Puedes editarlo o guardar cambios'
+      );
       console.log('✅ UN solo polígono cargado y visible correctamente:', {
         points: polygonPath.length,
         projectId: locationData.projectId
       });
     } else {
       // Si no se pudo cargar el polígono, no mostrar mensaje confuso
-      this.updateInstructions('📍 Haz clic en el mapa para trazar tu parcela');
+      this.setInstructionsKey(
+        'radar.instr_click_draw',
+        null,
+        '📍 Haz clic en el mapa para trazar tu parcela'
+      );
       console.warn('⚠️ Polígono no se pudo cargar en el mapa');
     }
   }
@@ -2429,6 +2682,89 @@ function np_radarT(key, fallback, params) {
     return params[name] !== undefined ? String(params[name]) : match;
   });
 }
+
+/** Google Maps JS API language + region from NpPrefs / NpI18n (fixed at script load). */
+function np_mapsLanguageAndRegion() {
+  let language = 'es';
+  try {
+    if (window.NpPrefs && typeof window.NpPrefs.get === 'function') {
+      language = window.NpPrefs.get().language === 'en' ? 'en' : 'es';
+    } else if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function') {
+      language = window.NpI18n.getLanguage() === 'en' ? 'en' : 'es';
+    } else if (document.documentElement) {
+      const htmlLang =
+        document.documentElement.getAttribute('data-np-language') ||
+        document.documentElement.lang ||
+        'es';
+      language = String(htmlLang).toLowerCase().indexOf('en') === 0 ? 'en' : 'es';
+    }
+  } catch (e) {}
+  return { language: language, region: language === 'en' ? 'US' : 'MX' };
+}
+
+function np_radarUsesUsUnits() {
+  try {
+    if (window.NpPrefs && typeof window.NpPrefs.get === 'function') {
+      return window.NpPrefs.get().unit_system === 'us_customary';
+    }
+  } catch (e) {}
+  try {
+    return document.documentElement.getAttribute('data-np-unit-system') === 'us_customary';
+  } catch (e2) {}
+  return false;
+}
+
+/** Perimeter is stored in meters; convert for display from NpPrefs unit_system. */
+function np_formatPerimeterDisplay(meters, formatNumberFn) {
+  const fmt = typeof formatNumberFn === 'function'
+    ? formatNumberFn
+    : function (n) {
+        const num = Number(n);
+        if (!Number.isFinite(num)) return '0.00';
+        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+  const m = Number(meters);
+  if (!Number.isFinite(m) || m <= 0) {
+    return np_radarUsesUsUnits()
+      ? np_radarT('radar.perimeter_zero_ft', '0.00 ft (0.00 m)')
+      : np_radarT('radar.perimeter_zero', '0.00 m (0.00 ft)');
+  }
+  const ft = m * 3.280839895;
+  if (np_radarUsesUsUnits()) {
+    return `${fmt(ft)} ft (${fmt(m)} m)`;
+  }
+  return `${fmt(m)} m (${fmt(ft)} ft)`;
+}
+
+try {
+  window.addEventListener('np:prefs-changed', function (event) {
+    const changed = event && event.detail && event.detail.changed;
+    if (changed && changed.indexOf && changed.indexOf('unit_system') < 0 && changed.indexOf('language') < 0) {
+      return;
+    }
+    try {
+      if (nutriPlantMap && typeof nutriPlantMap.updateDisplay === 'function') {
+        nutriPlantMap.updateDisplay();
+      }
+    } catch (e) { /* ignore */ }
+    try {
+      if (changed && changed.indexOf && changed.indexOf('language') >= 0 && nutriPlantMap) {
+        if (typeof nutriPlantMap.refreshInstructionsForLanguage === 'function') {
+          nutriPlantMap.refreshInstructionsForLanguage();
+        }
+        // Maps Map/Satellite control labels are locked to the language= used when the
+        // Maps script first loaded; map.setOptions cannot switch them without reload.
+        const mapsLocale = np_mapsLanguageAndRegion();
+        if (window.__npMapsLang && window.__npMapsLang !== mapsLocale.language) {
+          console.warn(
+            '🗺️ Map/Satellite UI labels stay in ' + window.__npMapsLang +
+            ' until page reload (Maps API language= is fixed at script load).'
+          );
+        }
+      }
+    } catch (eLang) { /* ignore */ }
+  });
+} catch (eListen) { /* ignore */ }
 
 function np_radarLocale() {
   try {
@@ -2467,7 +2803,7 @@ function forceClearLocationDisplay() {
     areaEl.textContent = np_radarT('radar.area_zero', '0.00 ha (0.00 acres)');
   }
   if (perimeterEl) {
-    perimeterEl.textContent = np_radarT('radar.perimeter_zero', '0.00 m');
+    perimeterEl.textContent = np_formatPerimeterDisplay(0);
   }
   setLocationAltitudeDisplay(null);
   console.log('✅ Elementos de ubicación limpiados');
@@ -4571,7 +4907,13 @@ function np_centerOnCurrentProjectPolygonDirect(attempt = 0) {
     if (tries < 20) {
       setTimeout(() => np_centerOnCurrentProjectPolygonDirect(tries + 1), 350);
     } else {
-      np_showLocationMapMessage('⚠️ No se pudo cargar el mapa para centrar el predio.', 'warning');
+      np_showLocationMapMessage(
+        np_radarT(
+          'radar.msg_map_load_center_plot',
+          '⚠️ No se pudo cargar el mapa para centrar el predio.'
+        ),
+        'warning'
+      );
     }
     return;
   }
@@ -4581,7 +4923,13 @@ function np_centerOnCurrentProjectPolygonDirect(attempt = 0) {
   const location = np_loadCurrentProjectLocationForButton(projectId);
 
   if (!np_locationHasValidPolygonForProject(location, projectId)) {
-    np_showLocationMapMessage('⚠️ No hay polígono guardado para este proyecto.', 'warning');
+    np_showLocationMapMessage(
+      np_radarT(
+        'radar.msg_no_saved_polygon_project',
+        '⚠️ No hay polígono guardado para este proyecto.'
+      ),
+      'warning'
+    );
     return;
   }
 
@@ -4603,7 +4951,13 @@ function np_centerOnCurrentProjectPolygonDirect(attempt = 0) {
     });
 
     if (bounds.isEmpty && bounds.isEmpty()) {
-      np_showLocationMapMessage('⚠️ El polígono guardado no tiene coordenadas válidas.', 'warning');
+      np_showLocationMapMessage(
+        np_radarT(
+          'radar.msg_saved_polygon_invalid_coords',
+          '⚠️ El polígono guardado no tiene coordenadas válidas.'
+        ),
+        'warning'
+      );
       return;
     }
 
@@ -4615,10 +4969,16 @@ function np_centerOnCurrentProjectPolygonDirect(attempt = 0) {
         nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
       }
     }, 250);
-    np_showLocationMapMessage('✅ Mapa centrado en el polígono', 'success');
+    np_showLocationMapMessage(
+      np_radarT('radar.msg_centered_polygon', '✅ Mapa centrado en el polígono'),
+      'success'
+    );
   } catch (e) {
     console.warn('np_centerOnCurrentProjectPolygonDirect:', e);
-    np_showLocationMapMessage('⚠️ No se pudo centrar el mapa en el polígono.', 'warning');
+    np_showLocationMapMessage(
+      np_radarT('radar.msg_center_polygon_failed', '⚠️ No se pudo centrar el mapa en el polígono.'),
+      'warning'
+    );
   }
 }
 
@@ -4671,7 +5031,13 @@ function np_centerMapOnUserCoords(userLocation, attempt = 0) {
     if (tries < 20) {
       setTimeout(() => np_centerMapOnUserCoords(userLocation, tries + 1), 350);
     } else {
-      np_showLocationMapMessage('⚠️ No se pudo cargar el mapa para centrar tu ubicación.', 'warning');
+      np_showLocationMapMessage(
+        np_radarT(
+          'radar.msg_map_load_center_location',
+          '⚠️ No se pudo cargar el mapa para centrar tu ubicación.'
+        ),
+        'warning'
+      );
     }
     return;
   }
@@ -4688,22 +5054,40 @@ function np_centerMapOnUserCoords(userLocation, attempt = 0) {
     if (typeof nutriPlantMap.refreshMapView === 'function') {
       setTimeout(() => nutriPlantMap.refreshMapView('gps-direct-after'), 200);
     }
-    np_showLocationMapMessage('📍 Centrado en tu ubicación actual', 'success');
+    np_showLocationMapMessage(
+      np_radarT('radar.msg_centered_location', '📍 Centrado en tu ubicación actual'),
+      'success'
+    );
   } catch (e) {
     console.warn('np_centerMapOnUserCoords:', e);
-    np_showLocationMapMessage('⚠️ No se pudo centrar el mapa en tu ubicación.', 'warning');
+    np_showLocationMapMessage(
+      np_radarT(
+        'radar.msg_center_location_failed',
+        '⚠️ No se pudo centrar el mapa en tu ubicación.'
+      ),
+      'warning'
+    );
   }
 }
 
 function np_centerOnUserLocationDirect() {
   np_scrollLocationMapIntoView();
   if (!navigator.geolocation) {
-    np_showLocationMapMessage('❌ La geolocalización no está disponible en este navegador', 'error');
+    np_showLocationMapMessage(
+      np_radarT(
+        'radar.msg_geo_unavailable',
+        '❌ La geolocalización no está disponible en este navegador'
+      ),
+      'error'
+    );
     return;
   }
 
   // Pedir GPS inmediatamente en respuesta al click; luego se espera al mapa si hace falta.
-  np_showLocationMapMessage('🔄 Obteniendo tu ubicación...', 'info');
+  np_showLocationMapMessage(
+    np_radarT('radar.msg_getting_location', '🔄 Obteniendo tu ubicación...'),
+    'info'
+  );
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const userLocation = {
@@ -4713,16 +5097,25 @@ function np_centerOnUserLocationDirect() {
       np_centerMapOnUserCoords(userLocation);
     },
     (error) => {
-      let errorMessage = '❌ Error al obtener tu ubicación';
+      let errorMessage = np_radarT('radar.msg_geo_error', '❌ Error al obtener tu ubicación');
       switch (error.code) {
         case error.PERMISSION_DENIED:
-          errorMessage = '❌ Permiso de ubicación denegado. Permite acceso a ubicación en el navegador.';
+          errorMessage = np_radarT(
+            'radar.msg_geo_denied',
+            '❌ Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación en la configuración del navegador.'
+          );
           break;
         case error.POSITION_UNAVAILABLE:
-          errorMessage = '❌ Ubicación no disponible. Verifica que tu GPS esté activo.';
+          errorMessage = np_radarT(
+            'radar.msg_geo_position_unavailable',
+            '❌ Ubicación no disponible. Verifica que tu dispositivo tenga GPS activado.'
+          );
           break;
         case error.TIMEOUT:
-          errorMessage = '❌ Tiempo de espera agotado. Intenta de nuevo.';
+          errorMessage = np_radarT(
+            'radar.msg_geo_timeout',
+            '❌ Tiempo de espera agotado. Intenta de nuevo.'
+          );
           break;
       }
       console.error('❌ Error obteniendo ubicación GPS:', error);

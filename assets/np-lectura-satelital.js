@@ -9,8 +9,10 @@
 (function () {
   'use strict';
 
-  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var MESES_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var lecturaChart = null;
+  var lecturaChartPrefsFp = '';
   var lecturaPollTimer = null;
   var lecturaRefreshInFlight = false;
   var lecturaLastAutoRefreshAt = 0;
@@ -26,6 +28,93 @@
     rain: true,
     riego: true
   };
+
+  function lecturaPrefs() {
+    try {
+      var p = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+      return {
+        language: p && p.language === 'en' ? 'en' : 'es',
+        unit_system: p && p.unit_system === 'us_customary' ? 'us_customary' : 'metric'
+      };
+    } catch (e) {
+      return { language: 'es', unit_system: 'metric' };
+    }
+  }
+  function lecturaUsesInches() {
+    return lecturaPrefs().unit_system === 'us_customary';
+  }
+  function lecturaDepthUnit() {
+    return lecturaUsesInches() ? 'in' : 'mm';
+  }
+  function lecturaPrefsFingerprint() {
+    var p = lecturaPrefs();
+    return p.language + '|' + p.unit_system;
+  }
+  /** Canonical mm → display depth (in or mm). */
+  function depthFromMm(mm) {
+    if (mm == null || !Number.isFinite(Number(mm))) return null;
+    var n = Number(mm);
+    if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.fromSI === 'function') {
+      try {
+        return window.NpWaterClimateUI.fromSI(n, 'water_depth');
+      } catch (e) { /* fall through */ }
+    }
+    return lecturaUsesInches() ? n / 25.4 : n;
+  }
+  function depthDisplayToMm(display) {
+    if (display == null || !Number.isFinite(Number(display))) return null;
+    var n = Number(display);
+    if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.toSI === 'function') {
+      try {
+        return window.NpWaterClimateUI.toSI(n, 'water_depth');
+      } catch (e) { /* fall through */ }
+    }
+    return lecturaUsesInches() ? n * 25.4 : n;
+  }
+  function fmtDepth(mm, dec) {
+    var v = depthFromMm(mm);
+    if (v == null || !Number.isFinite(v)) return '—';
+    var d = dec != null ? dec : (lecturaUsesInches() ? 2 : 1);
+    return Number(v).toFixed(d);
+  }
+  function depthInputValue(mm) {
+    var v = depthFromMm(mm);
+    if (v == null || !Number.isFinite(v)) return '';
+    if (lecturaUsesInches()) return String(Math.round(v * 100) / 100);
+    return String(Math.round(v * 10) / 10);
+  }
+  /** Display depth (mm or in) → canonical mm SI for storage. */
+  function parseDepthInput(display) {
+    return depthDisplayToMm(display);
+  }
+  function roundDepthDisplay(v) {
+    if (v == null || !Number.isFinite(Number(v))) return null;
+    var n = Number(v);
+    return lecturaUsesInches() ? Math.round(n * 100) / 100 : Math.round(n * 10) / 10;
+  }
+  function depthSeriesFromMm(mm) {
+    var v = depthFromMm(mm);
+    return v == null ? null : roundDepthDisplay(v);
+  }
+  /** Chart.js needs a visible non-zero box; soft-update on a 0×0 canvas stays blank. */
+  function lecturaChartHostReady(canvas) {
+    if (!canvas || !canvas.isConnected) return false;
+    var host = canvas.parentElement;
+    if (!host) return false;
+    var w = host.clientWidth || canvas.clientWidth || 0;
+    var h = host.clientHeight || canvas.clientHeight || 0;
+    return w >= 40 && h >= 40;
+  }
+  function ensureLecturaChartHostSize(canvas) {
+    var parent = canvas && canvas.parentElement;
+    if (!parent) return;
+    if (!parent.style.height || parent.clientHeight < 40) {
+      parent.style.height = '240px';
+      parent.style.position = 'relative';
+      parent.style.width = '100%';
+      parent.style.minHeight = '240px';
+    }
+  }
 
   /** Kc desde Clima (balance) o override (PDF/admin). ETc = ET₀ × Kc. */
   function getClimateKcForLectura(overrideKc) {
@@ -46,7 +135,7 @@
     return (rows || []).map(function (r) {
       var et0 = r && r.et0_sum != null ? Number(r.et0_sum) : NaN;
       if (!Number.isFinite(et0)) return null;
-      return Math.round(et0 * kc * 10) / 10;
+      return depthSeriesFromMm(et0 * kc);
     });
   }
 
@@ -73,7 +162,8 @@
   function fmtDayMonth(iso) {
     var d = parseIso(iso);
     if (!d) return iso;
-    return d.getDate() + ' ' + MESES[d.getMonth()];
+    var meses = lecturaPrefs().language === 'en' ? MESES_EN : MESES_ES;
+    return d.getDate() + ' ' + meses[d.getMonth()];
   }
 
   /** Construye N periodos hacia atrás desde endIso (clamp a hoy). */
@@ -480,7 +570,7 @@
             '</div>' +
           '</div>' +
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
-            t('radar.lectura_intro_html', 'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja). Máximo <strong>250 ha</strong> por predio.') +
+            t('radar.lectura_intro_html', 'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ {unit} con % de franja). Máximo <strong>250 ha</strong> por predio.', { unit: lecturaDepthUnit() }) +
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;" data-i18n="radar.how_built_label">' + t('radar.how_built_label', 'Cómo se arma:') + '</strong> ' +
@@ -521,11 +611,11 @@
             '<div style="font-weight:700;color:#0f172a;font-size:14px;" data-i18n="radar.chart_by_period">' + t('radar.chart_by_period', 'Gráfica por periodo') + '</div>' +
             '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
           '</div>' +
-          '<div style="position:relative;width:100%;height:240px;">' +
+          '<div style="position:relative;width:100%;height:240px;min-height:240px;">' +
             '<canvas id="lecturaChart"></canvas>' +
           '</div>' +
-          '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;" data-i18n="radar.chart_help">' +
-            t('radar.chart_help', 'Izquierda: NDVI / NDMI / NDRE. Derecha: mm (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (<0.5 azul, 0.5–1.5 verde, >1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).') +
+          '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;" data-i18n="radar.chart_help" id="lecturaChartHelp">' +
+            t('radar.chart_help', 'Izquierda: NDVI / NDMI / NDRE. Derecha: {unit} (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (<0.5 azul, 0.5–1.5 verde, >1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).', { unit: lecturaDepthUnit() }) +
           '</div>' +
         '</div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
@@ -692,33 +782,37 @@
       var whyOnly =
         row.omit_reason ||
         row.error_message ||
-        'Sin imagen por cobertura insuficiente (nubosidad).';
+        lecturaT('radar.status_no_image_reason', 'Sin imagen por cobertura insuficiente (nubosidad).');
       return (
         '<span style="color:#b45309;font-weight:700;cursor:help;" title="' +
         esc(whyOnly) +
-        '">⚠ Sin imagen</span>'
+        '">' + lecturaT('radar.status_no_image', '⚠ Sin imagen') + '</span>'
       );
     }
     if (row.status === 'error') {
       return '<span style="color:#b45309;font-weight:700;" title="' + esc(row.error_message || '') + '">⚠ ' +
-        (row.error_code === 'radar_low_coverage' ? 'Nublado' : 'Error') + '</span>';
+        (row.error_code === 'radar_low_coverage'
+          ? lecturaT('radar.status_cloudy', 'Nublado')
+          : lecturaT('radar.status_error', 'Error')) + '</span>';
     }
     // Imagen publicada aunque incompleta: se muestra + porqué.
     if (hasImg && (row.image_incomplete || row.error_code === 'radar_incomplete_coverage')) {
       var whyInc =
         row.incomplete_reason ||
         row.error_message ||
-        'Imagen incompleta por nubosidad.';
+        lecturaT('radar.status_incomplete_reason', 'Imagen incompleta por nubosidad.');
       return (
-        '<span style="color:#166534;font-weight:700;">✔ Lista</span>' +
+        '<span style="color:#166534;font-weight:700;">' + lecturaT('radar.status_ready', '✔ Lista') + '</span>' +
         ' <span style="color:#b45309;font-weight:700;cursor:help;" title="' +
         esc(whyInc) +
-        '">· incompleta</span>'
+        '">' + lecturaT('radar.status_incomplete_suffix', '· incompleta') + '</span>'
       );
     }
-    if (row.status === 'done') return '<span style="color:#166534;font-weight:700;">✔ Lista</span>';
+    if (row.status === 'done') {
+      return '<span style="color:#166534;font-weight:700;">' + lecturaT('radar.status_ready', '✔ Lista') + '</span>';
+    }
     if (row.status === 'not_found') return '<span style="color:#94a3b8;">—</span>';
-    return '<span style="color:#0369a1;font-weight:700;">⏳ Generando…</span>';
+    return '<span style="color:#0369a1;font-weight:700;">' + lecturaT('radar.status_generating', '⏳ Generando…') + '</span>';
   }
   function incompleteImageReason(r) {
     if (r && (r.incomplete_reason || r.omit_reason || r.error_message)) {
@@ -757,6 +851,8 @@
     if (!state || !state.rows || !state.rows.length) return '';
     return (
       String(state.activeRunId || '') +
+      '|' +
+      lecturaPrefsFingerprint() +
       '|' +
       state.rows
         .slice()
@@ -802,14 +898,14 @@
       setLecturaFieldCell(tr, 'vpd_low', fmtNum(r.vpd_hours_low, 0), false);
       setLecturaFieldCell(tr, 'vpd_opt', fmtNum(r.vpd_hours_opt, 0), false);
       setLecturaFieldCell(tr, 'vpd_high', fmtNum(r.vpd_hours_high, 0), false);
-      setLecturaFieldCell(tr, 'et0', fmtNum(r.et0_sum, 1), false);
-      setLecturaFieldCell(tr, 'rain', fmtNum(r.rain_sum, 1), false);
+      setLecturaFieldCell(tr, 'et0', fmtDepth(r.et0_sum), false);
+      setLecturaFieldCell(tr, 'rain', fmtDepth(r.rain_sum), false);
       setLecturaFieldCell(tr, 'status', statusBadge(r), true);
       var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
       var mmInp = tr.querySelector('input[data-riego-mm-index="' + r.index + '"]');
       var m3Inp = tr.querySelector('input[data-riego-m3-index="' + r.index + '"]');
       if (mmInp && document.activeElement !== mmInp) {
-        mmInp.value = mmVal != null ? mmVal : '';
+        mmInp.value = depthInputValue(mmVal);
       }
       if (m3Inp && document.activeElement !== m3Inp) {
         m3Inp.value = r.riego_m3 != null ? r.riego_m3 : '';
@@ -844,19 +940,24 @@
       '</label>' +
       '<span>Predio: <strong>' + (cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '—') + '</strong></span>' +
       '<span>Franja: <strong>' + (iHa != null ? fmtNum(iHa, 2) + ' ha' : '—') + '</strong></span>' +
-      '<span style="color:#64748b;font-size:11px;">1 mm en franja = 10 m³ × ha franja · edita m³ o mm y se convierte solo</span>' +
+      '<span style="color:#64748b;font-size:11px;">1 ' +
+      lecturaDepthUnit() +
+      ' ' +
+      lecturaT('radar.franja_convert_hint', 'en franja = 10 m³ × ha franja · edita m³ o lámina y se convierte solo') +
+      '</span>' +
     '</div>';
 
     var unitBox =
       'display:inline-block;padding:1px 6px;margin:0 1px;border:1px solid #0f766e;border-radius:5px;' +
       'background:#ccfbf1;color:#115e59;font-weight:800;font-size:11px;line-height:1.35;';
     var haLabel = cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '— ha';
+    var depthU = lecturaDepthUnit();
     var riegoMmHeader =
-      'Riego <span style="' + unitBox + '">mm</span>';
+      lecturaT('radar.riego_depth_header', 'Riego') + ' <span style="' + unitBox + '">' + depthU + '</span>';
     var riegoM3Header =
-      'Riego <span style="' + unitBox + '">m³</span> / ' + haLabel;
+      lecturaT('radar.riego_m3_header', 'Riego') + ' <span style="' + unitBox + '">m³</span> / ' + haLabel;
 
-    // mm primero (junto a ET₀/lluvia); m³ después — mismo riego, dos unidades.
+    // lámina primero (junto a ET₀/lluvia); m³ después — mismo riego, dos unidades.
     var riegoThL =
       'padding:9px 10px;text-align:center;white-space:nowrap;background:#ecfdf5;color:#115e59;' +
       'border:1px solid #5eead4;border-left:3px solid #0d9488;font-weight:800;font-size:12px;';
@@ -871,9 +972,19 @@
       'border-right:3px solid #0d9488;';
 
     var headers = [
-      ['ID', 'Identificador del periodo (P1, P2…).', false, null],
-      ['Días', 'Cantidad de días del periodo (fecha inicio → fin, inclusive).', false, null],
-      ['Periodo', 'Rango de fechas del periodo analizado.', false, null],
+      ['ID', lecturaT('radar.period_id_title', 'Identificador del periodo (P1, P2…).'), false, null],
+      [
+        lecturaT('radar.col_days', 'Días'),
+        lecturaT('radar.col_days_title', 'Cantidad de días del periodo (fecha inicio → fin, inclusive).'),
+        false,
+        null
+      ],
+      [
+        lecturaT('radar.col_period', 'Periodo'),
+        lecturaT('radar.col_period_title', 'Rango de fechas del periodo analizado.'),
+        false,
+        null
+      ],
       ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
       ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
       ['NDRE prom', 'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.', false, null],
@@ -881,11 +992,36 @@
       ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
       ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
       ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false, null],
-      ['ET₀ acum (mm)', 'ET₀ acumulada durante todo el periodo.', false, null],
-      ['Lluvia acum (mm)', 'Lluvia acumulada durante todo el periodo.', false, null],
-      [riegoMmHeader, 'Lámina de riego en la franja (mm). Mismo dato que m³; se convierte solo.', true, 'riegoL'],
-      [riegoM3Header, 'Volumen de riego en m³ sobre el polígono (' + haLabel + '). Mismo dato que mm.', true, 'riegoR'],
-      ['Estado', 'Estado de la imagen satelital del periodo.', false, null]
+      [
+        lecturaT('radar.et0_acum_header', 'ET₀ acum ({unit})', { unit: depthU }),
+        lecturaT('radar.et0_acum_title', 'ET₀ acumulada durante todo el periodo.'),
+        false,
+        null
+      ],
+      [
+        lecturaT('radar.rain_acum_header', 'Lluvia acum ({unit})', { unit: depthU }),
+        lecturaT('radar.rain_acum_title', 'Lluvia acumulada durante todo el periodo.'),
+        false,
+        null
+      ],
+      [
+        riegoMmHeader,
+        lecturaT('radar.riego_mm_cell_title', 'Lámina de riego en la franja ({unit}). Mismo dato que m³; se convierte solo.', { unit: depthU }),
+        true,
+        'riegoL'
+      ],
+      [
+        riegoM3Header,
+        lecturaT('radar.riego_m3_cell_title', 'Volumen de riego en m³ sobre el polígono ({ha}). Mismo dato que {unit}.', { ha: haLabel, unit: depthU }),
+        true,
+        'riegoR'
+      ],
+      [
+        lecturaT('radar.col_status', 'Estado'),
+        lecturaT('radar.col_status_title', 'Estado de la imagen satelital del periodo.'),
+        false,
+        null
+      ]
     ];
     var thStyle =
       'padding:9px 10px;text-align:center;white-space:nowrap;background:#dbeafe;color:#1e3a8a;' +
@@ -944,23 +1080,33 @@
         '<td data-field="vpd_low" style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_low_title', 'Horas VPD bajo')) + '">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
         '<td data-field="vpd_opt" style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_opt_title', 'Horas VPD óptimo')) + '">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
         '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto')) + '">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
-        '<td data-field="et0" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.et0_sum, 1) + '</td>' +
-        '<td data-field="rain" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.rain_sum, 1) + '</td>' +
+        '<td data-field="et0" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtDepth(r.et0_sum) + '</td>' +
+        '<td data-field="rain" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtDepth(r.rain_sum) + '</td>' +
         '<td style="' + riegoTdL + '" title="' + esc(lecturaT('radar.riego_mm_cell_title', 'Mismo riego que m³ (lámina en franja)')) + '">' +
-          '<input type="number" min="0" step="0.1" value="' + (mmVal != null ? esc(mmVal) : '') +
+          '<input type="number" min="0" step="' + (lecturaUsesInches() ? '0.01' : '0.1') + '" value="' + esc(depthInputValue(mmVal)) +
           '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_mm_input_title', 'Lámina en franja regada (mismo riego que m³)')) + '"' +
           (iHa == null ? ' disabled' : '') + '>' +
         '</td>' +
         '<td style="' + riegoTdR + '" title="' + esc(lecturaT('radar.riego_m3_cell_title', 'Mismo riego que mm (volumen del polígono)')) + '">' +
           '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
-          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que mm', { ha: haLabel })) + '">' +
+          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que {unit}', { ha: haLabel, unit: depthU })) + '">' +
         '</td>' +
         '<td data-field="status" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
       '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego mm y m³</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
-      (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
+    html +=
+      '<div style="font-size:11px;color:#64748b;margin-top:6px;">' +
+      lecturaT(
+        'radar.table_footnote',
+        'ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego {unit} y m³</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).',
+        { unit: depthU }
+      ) +
+      (cropHa == null
+        ? ' <span style="color:#b45309;">' +
+          lecturaT('radar.need_ha_convert', 'Guarda el polígono con área (ha) para convertir m³ ↔ {unit}.', { unit: depthU }) +
+          '</span>'
+        : '') +
       '</div>';
     wrap.innerHTML = html;
     wrap.setAttribute('data-lectura-sig', sig);
@@ -987,7 +1133,7 @@
         row.riego_mm = m3ToMm(row.riego_m3, irrigatedHa(state));
         saveState(state);
         var mmInp = wrap.querySelector('input[data-riego-mm-index="' + idx + '"]');
-        if (mmInp) mmInp.value = row.riego_mm != null ? row.riego_mm : '';
+        if (mmInp) mmInp.value = depthInputValue(row.riego_mm);
         renderChart(state);
       });
     });
@@ -999,12 +1145,20 @@
         var v = parseFloat(inp.value);
         var iHaNow = irrigatedHa(state);
         if (iHaNow == null) {
-          alert('Guarda el polígono del predio (con área en ha) para convertir mm ↔ m³.');
+          alert(
+            lecturaT(
+              'radar.need_ha_convert',
+              'Guarda el polígono del predio (con área en ha) para convertir {unit} ↔ m³.',
+              { unit: lecturaDepthUnit() }
+            )
+          );
           return;
         }
-        row.riego_mm = Number.isFinite(v) ? round1(v) : null;
+        var mmSi = Number.isFinite(v) ? parseDepthInput(v) : null;
+        row.riego_mm = mmSi != null ? round1(mmSi) : null;
         row.riego_m3 = mmToM3(row.riego_mm, iHaNow);
         saveState(state);
+        inp.value = depthInputValue(row.riego_mm);
         var m3Inp = wrap.querySelector('input[data-riego-m3-index="' + idx + '"]');
         if (m3Inp) m3Inp.value = row.riego_m3 != null ? row.riego_m3 : '';
         renderChart(state);
@@ -1026,7 +1180,7 @@
       { key: 'ndvi', label: 'NDVI', color: '#16a34a' },
       { key: 'ndmi', label: 'NDMI', color: '#0369a1' },
       { key: 'ndre', label: 'NDRE', color: '#0f766e' },
-      { key: 'vpd', label: 'VPD horas', color: '#7f1d1d' },
+      { key: 'vpd', label: lecturaT('radar.vpd_hours_chip', 'VPD horas'), color: '#7f1d1d' },
       { key: 'et0', label: 'ET₀', color: '#a16207' }
     ];
     if (kc != null) {
@@ -1034,8 +1188,8 @@
       chips.push({ key: 'etc', label: 'ETc (Kc=' + kcLabel + ')', color: '#5f7a86' });
     }
     chips.push(
-      { key: 'rain', label: 'Lluvia', color: '#2563eb' },
-      { key: 'riego', label: 'Riego mm', color: '#7c3aed' }
+      { key: 'rain', label: lecturaT('radar.rain_chip', 'Lluvia'), color: '#2563eb' },
+      { key: 'riego', label: lecturaT('radar.riego_chip', 'Riego {unit}', { unit: lecturaDepthUnit() }), color: '#7c3aed' }
     );
     box.innerHTML = chips.map(function (c) {
       return '<button type="button" data-lectura-series="' + c.key + '" style="' +
@@ -1083,13 +1237,42 @@
     document.head.appendChild(s);
   }
 
+  function destroyLecturaChart() {
+    if (lecturaChart) {
+      try { lecturaChart.destroy(); } catch (e) {}
+      lecturaChart = null;
+    }
+    var canvas = document.getElementById('lecturaChart');
+    if (canvas && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+      try {
+        var existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
+      } catch (e2) {}
+    }
+  }
+
+  function lecturaChartIsAlive() {
+    if (!lecturaChart || !lecturaChart.canvas) return false;
+    try {
+      if (!lecturaChart.canvas.isConnected) return false;
+      if (typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+        var bound = Chart.getChart(lecturaChart.canvas);
+        if (bound && bound !== lecturaChart) return false;
+      }
+      return lecturaChartHostReady(lecturaChart.canvas);
+    } catch (e) {
+      return false;
+    }
+  }
+
   function renderChart(state) {
     var wrap = document.getElementById('lecturaChartWrap');
     var canvas = document.getElementById('lecturaChart');
     if (!wrap || !canvas) return;
     if (!state || !state.rows || !state.rows.length) {
       wrap.style.display = 'none';
-      if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
+      destroyLecturaChart();
+      lecturaChartPrefsFp = '';
       return;
     }
     if (typeof Chart === 'undefined') {
@@ -1100,6 +1283,9 @@
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
     var labels = rows.map(function (r) { return r.label; });
     var iHa = irrigatedHa(state);
+    var depthU = lecturaDepthUnit();
+    var prefsFp = lecturaPrefsFingerprint();
+    var forceRebuild = prefsFp !== lecturaChartPrefsFp || !lecturaChartIsAlive();
     var hoursMax = 24;
     rows.forEach(function (r) {
       var exp = r.vpd_hours_expected != null
@@ -1108,10 +1294,21 @@
       var sumH = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
       hoursMax = Math.max(hoursMax, exp || 0, sumH);
     });
+    var helpEl = document.getElementById('lecturaChartHelp');
+    if (helpEl) {
+      helpEl.textContent = lecturaT(
+        'radar.chart_help',
+        'Izquierda: NDVI / NDMI / NDRE. Derecha: {unit} (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (<0.5 azul, 0.5–1.5 verde, >1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).',
+        { unit: depthU }
+      );
+    }
+    var vpdLowLabel = lecturaT('radar.vpd_hours_low_label', 'Horas VPD <0.5');
+    var vpdOptLabel = lecturaT('radar.vpd_hours_opt_label', 'Horas VPD 0.5–1.5');
+    var vpdHighLabel = lecturaT('radar.vpd_hours_high_label', 'Horas VPD >1.5');
     var ds = [
       {
         type: 'bar',
-        label: 'Horas VPD <0.5',
+        label: vpdLowLabel,
         yAxisID: 'yHours',
         data: rows.map(function (r) { return r.vpd_hours_low; }),
         backgroundColor: 'rgba(29, 78, 216, 0.26)',
@@ -1125,7 +1322,7 @@
       },
       {
         type: 'bar',
-        label: 'Horas VPD 0.5–1.5',
+        label: vpdOptLabel,
         yAxisID: 'yHours',
         data: rows.map(function (r) { return r.vpd_hours_opt; }),
         backgroundColor: 'rgba(22, 163, 74, 0.18)',
@@ -1139,7 +1336,7 @@
       },
       {
         type: 'bar',
-        label: 'Horas VPD >1.5',
+        label: vpdHighLabel,
         yAxisID: 'yHours',
         data: rows.map(function (r) { return r.vpd_hours_high; }),
         backgroundColor: 'rgba(127, 29, 29, 0.26)',
@@ -1195,9 +1392,9 @@
       },
       {
         type: 'line',
-        label: 'ET₀ acum (mm)',
+        label: lecturaT('radar.et0_acum_header', 'ET₀ acum ({unit})', { unit: depthU }),
         yAxisID: 'yMm',
-        data: rows.map(function (r) { return r.et0_sum; }),
+        data: rows.map(function (r) { return depthSeriesFromMm(r.et0_sum); }),
         borderColor: '#a16207',
         backgroundColor: '#a16207',
         borderDash: [4, 3],
@@ -1210,9 +1407,9 @@
       },
       {
         type: 'line',
-        label: 'Lluvia acum (mm)',
+        label: lecturaT('radar.rain_acum_header', 'Lluvia acum ({unit})', { unit: depthU }),
         yAxisID: 'yMm',
-        data: rows.map(function (r) { return r.rain_sum; }),
+        data: rows.map(function (r) { return depthSeriesFromMm(r.rain_sum); }),
         borderColor: '#2563eb',
         backgroundColor: '#2563eb',
         borderDash: [2, 3],
@@ -1225,10 +1422,11 @@
       },
       {
         type: 'line',
-        label: 'Riego (mm)',
+        label: lecturaT('radar.riego_chip', 'Riego {unit}', { unit: depthU }),
         yAxisID: 'yMm',
         data: rows.map(function (r) {
-          return r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+          var mm = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+          return depthSeriesFromMm(mm);
         }),
         borderColor: '#7c3aed',
         backgroundColor: '#7c3aed',
@@ -1247,7 +1445,7 @@
       var kcLabel = Math.round(kc * 100) / 100;
       ds.splice(7, 0, {
         type: 'line',
-        label: 'ETc (Kc=' + kcLabel + ') mm',
+        label: 'ETc (Kc=' + kcLabel + ') ' + depthU,
         yAxisID: 'yMm',
         data: etcData,
         borderColor: '#5f7a86',
@@ -1262,9 +1460,14 @@
       });
     }
     wrap.style.display = 'block';
-    // Actualización suave: mismos periodos → solo datos (sin destruir la gráfica = sin parpadeo).
+    ensureLecturaChartHostSize(canvas);
+    var yMmTitle = depthU + ' (ET₀ / ETc / ' +
+      (lecturaPrefs().language === 'en' ? 'rain / irrigation)' : 'lluvia / riego)');
+
+    // Soft-update only when prefs unchanged AND canvas has a real size (not blank from hidden tab).
     if (
-      lecturaChart &&
+      !forceRebuild &&
+      lecturaChartIsAlive() &&
       lecturaChart.data &&
       Array.isArray(lecturaChart.data.labels) &&
       lecturaChart.data.labels.join('|') === labels.join('|') &&
@@ -1278,114 +1481,183 @@
         oldDs.hidden = neu.hidden;
         if (neu.label) oldDs.label = neu.label;
       });
-      if (lecturaChart.options && lecturaChart.options.scales && lecturaChart.options.scales.yHours) {
-        lecturaChart.options.scales.yHours.max = hoursMax;
+      if (lecturaChart.options && lecturaChart.options.scales) {
+        if (lecturaChart.options.scales.yHours) lecturaChart.options.scales.yHours.max = hoursMax;
+        if (lecturaChart.options.scales.yMm && lecturaChart.options.scales.yMm.title) {
+          lecturaChart.options.scales.yMm.title.text = yMmTitle;
+        }
       }
       try {
         lecturaChart.update('none');
         var togglesBox = document.getElementById('lecturaChartToggles');
         if (togglesBox && !togglesBox.children.length) renderChartToggles(state);
+        requestAnimationFrame(function () {
+          try {
+            if (lecturaChart) lecturaChart.resize();
+            // Soft path left blank (0×0 after update) → hard rebuild next tick.
+            if (lecturaChart && !lecturaChartHostReady(lecturaChart.canvas)) {
+              lecturaChartPrefsFp = '';
+              destroyLecturaChart();
+              renderChart(state);
+            }
+          } catch (eR) {}
+        });
         return;
       } catch (e) {
-        /* cae a rebuild abajo */
+        /* fall through to rebuild */
       }
     }
     renderChartToggles(state);
-    if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
-    lecturaChart = new Chart(canvas.getContext('2d'), {
-      type: 'bar',
-      data: { labels: labels, datasets: ds },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            itemSort: function (a, b) {
-              // Orden visual del stack: tinto arriba → verde → azul abajo
-              function vpdRank(label) {
-                var s = String(label || '');
-                if (/Horas VPD\s*>\s*1\.5/i.test(s)) return 1;
-                if (/Horas VPD\s*0\.5/i.test(s)) return 2;
-                if (/Horas VPD\s*<\s*0\.5/i.test(s)) return 3;
-                return null;
-              }
-              var ra = vpdRank(a.dataset && a.dataset.label);
-              var rb = vpdRank(b.dataset && b.dataset.label);
-              if (ra != null && rb != null) return ra - rb;
-              return (a.datasetIndex || 0) - (b.datasetIndex || 0);
-            },
-            callbacks: {
-              label: function (ctx) {
-                var label = (ctx.dataset && ctx.dataset.label) || '';
-                var raw = ctx.parsed && ctx.parsed.y != null ? ctx.parsed.y : ctx.raw;
-                if (raw == null || !Number.isFinite(Number(raw))) {
-                  return label ? label + ': —' : '—';
+    destroyLecturaChart();
+    wrap.style.display = 'block';
+    ensureLecturaChartHostSize(canvas);
+    // Tab still hidden (Radar Polígono): defer until host has size — avoid Chart.js blank canvas.
+    if (!lecturaChartHostReady(canvas)) {
+      lecturaChartPrefsFp = '';
+      if (!window.__lecturaChartDeferPending) {
+        window.__lecturaChartDeferPending = true;
+        var tries = 0;
+        var deferDraw = function () {
+          tries += 1;
+          var c = document.getElementById('lecturaChart');
+          var w = document.getElementById('lecturaChartWrap');
+          if (!c || !w || !state || !state.rows || !state.rows.length) {
+            window.__lecturaChartDeferPending = false;
+            return;
+          }
+          w.style.display = 'block';
+          ensureLecturaChartHostSize(c);
+          if (lecturaChartHostReady(c)) {
+            window.__lecturaChartDeferPending = false;
+            renderChart(state);
+            return;
+          }
+          if (tries > 40) {
+            // Still hidden (e.g. other Radar tab) — wait for tab switch hard rebuild.
+            window.__lecturaChartDeferPending = false;
+            return;
+          }
+          requestAnimationFrame(deferDraw);
+        };
+        requestAnimationFrame(deferDraw);
+      }
+      return;
+    }
+    try {
+      lecturaChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: { labels: labels, datasets: ds },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              itemSort: function (a, b) {
+                function vpdRank(label) {
+                  var s = String(label || '');
+                  if (!/VPD/i.test(s)) return null;
+                  if (/>\s*1\.5/i.test(s)) return 1;
+                  if (/0\.5\s*[–-]\s*1\.5/i.test(s)) return 2;
+                  if (/<\s*0\.5/i.test(s)) return 3;
+                  return null;
                 }
-                var v = Number(raw);
-                var text = label ? label + ': ' + v : String(v);
-                if (!/Horas VPD/i.test(label)) return text;
-                var i = ctx.dataIndex;
-                var r = rows[i];
-                if (!r) return text;
-                var den =
-                  r.vpd_hours_expected != null && Number(r.vpd_hours_expected) > 0
-                    ? Number(r.vpd_hours_expected)
-                    : periodHoursExpected(r.date_start, r.date_end);
-                if (!(den > 0)) {
-                  den =
-                    (Number(r.vpd_hours_low) || 0) +
-                    (Number(r.vpd_hours_opt) || 0) +
-                    (Number(r.vpd_hours_high) || 0);
-                }
-                if (!(den > 0)) return text;
-                var pct = Math.round((v / den) * 1000) / 10;
-                return text + ' (' + pct + '%)';
+                var ra = vpdRank(a.dataset && a.dataset.label);
+                var rb = vpdRank(b.dataset && b.dataset.label);
+                if (ra != null && rb != null) return ra - rb;
+                return (a.datasetIndex || 0) - (b.datasetIndex || 0);
               },
-              footer: function (items) {
-                if (!items || !items.length) return '';
-                var i = items[0].dataIndex;
-                var r = rows[i];
-                if (!r) return '';
-                var tot = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
-                var exp = r.vpd_hours_expected != null ? r.vpd_hours_expected : periodHoursExpected(r.date_start, r.date_end);
-                return 'Horas VPD: ' + tot + (exp != null ? ' / ' + exp + ' h del periodo' : ' h');
+              callbacks: {
+                label: function (ctx) {
+                  var label = (ctx.dataset && ctx.dataset.label) || '';
+                  var raw = ctx.parsed && ctx.parsed.y != null ? ctx.parsed.y : ctx.raw;
+                  if (raw == null || !Number.isFinite(Number(raw))) {
+                    return label ? label + ': —' : '—';
+                  }
+                  var v = Number(raw);
+                  var text = label ? label + ': ' + v : String(v);
+                  var isVpdHours = ctx.dataset && ctx.dataset.yAxisID === 'yHours';
+                  if (!isVpdHours) return text;
+                  var i = ctx.dataIndex;
+                  var r = rows[i];
+                  if (!r) return text;
+                  var den =
+                    r.vpd_hours_expected != null && Number(r.vpd_hours_expected) > 0
+                      ? Number(r.vpd_hours_expected)
+                      : periodHoursExpected(r.date_start, r.date_end);
+                  if (!(den > 0)) {
+                    den =
+                      (Number(r.vpd_hours_low) || 0) +
+                      (Number(r.vpd_hours_opt) || 0) +
+                      (Number(r.vpd_hours_high) || 0);
+                  }
+                  if (!(den > 0)) return text;
+                  var pct = Math.round((v / den) * 1000) / 10;
+                  return text + ' (' + pct + '%)';
+                },
+                footer: function (items) {
+                  if (!items || !items.length) return '';
+                  var i = items[0].dataIndex;
+                  var r = rows[i];
+                  if (!r) return '';
+                  var tot = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
+                  var exp = r.vpd_hours_expected != null ? r.vpd_hours_expected : periodHoursExpected(r.date_start, r.date_end);
+                  if (exp != null) {
+                    return lecturaT('radar.vpd_hours_footer', 'Horas VPD: {tot} / {exp} h del periodo', {
+                      tot: tot,
+                      exp: exp
+                    });
+                  }
+                  return lecturaT('radar.vpd_hours_footer_short', 'Horas VPD: {tot} h', { tot: tot });
+                }
               }
             }
-          }
-        },
-        scales: {
-          x: { stacked: true, ticks: { maxRotation: 40, font: { size: 10 } } },
-          yIdx: {
-            type: 'linear',
-            position: 'left',
-            min: 0,
-            max: 1,
-            title: { display: true, text: 'NDVI / NDMI / NDRE', font: { size: 11 } },
-            grid: { color: 'rgba(148,163,184,0.25)' },
-            ticks: { font: { size: 10 } }
           },
-          yMm: {
-            type: 'linear',
-            position: 'right',
-            min: 0,
-            title: { display: true, text: 'mm (ET₀ / ETc / lluvia / riego)', font: { size: 11 } },
-            grid: { drawOnChartArea: false },
-            ticks: { font: { size: 10 } }
-          },
-          yHours: {
-            type: 'linear',
-            position: 'right',
-            display: false,
-            min: 0,
-            max: hoursMax,
-            stacked: true,
-            grid: { drawOnChartArea: false }
+          scales: {
+            x: { stacked: true, ticks: { maxRotation: 40, font: { size: 10 } } },
+            yIdx: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 1,
+              title: { display: true, text: 'NDVI / NDMI / NDRE', font: { size: 11 } },
+              grid: { color: 'rgba(148,163,184,0.25)' },
+              ticks: { font: { size: 10 } }
+            },
+            yMm: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              title: { display: true, text: yMmTitle, font: { size: 11 } },
+              grid: { drawOnChartArea: false },
+              ticks: { font: { size: 10 } }
+            },
+            yHours: {
+              type: 'linear',
+              position: 'right',
+              display: false,
+              min: 0,
+              max: hoursMax,
+              stacked: true,
+              grid: { drawOnChartArea: false }
+            }
           }
         }
-      }
-    });
+      });
+      lecturaChartPrefsFp = prefsFp;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          try {
+            if (lecturaChart && typeof lecturaChart.resize === 'function') lecturaChart.resize();
+          } catch (e3) {}
+        });
+      });
+    } catch (err) {
+      console.warn('Lectura Satelital chart', err);
+      destroyLecturaChart();
+      lecturaChartPrefsFp = '';
+    }
   }
 
   // ---------- visor grande (lightbox) ----------
@@ -1535,7 +1807,10 @@
       var tip =
         (why ? why + ' ' : '') +
         (r.lookback_expanded
-          ? 'Periodo clima: ' + (r.date_start || '') + ' – ' + (r.date_end || '') + '. '
+          ? lecturaT('radar.period_climate_tip', 'Periodo clima: {start} – {end}. ', {
+              start: r.date_start || '',
+              end: r.date_end || ''
+            })
           : '') +
         meta;
       return '<figure style="margin:0;min-width:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:6px;">' +
@@ -1825,7 +2100,13 @@
     var nOther = otherFails.length;
 
     if (!nCloud && !nOther) {
-      setStatus('✔ Histórico completo. Edita el riego en m³ o mm (con % de franja arriba) para completar la correlación.');
+      setStatus(
+        lecturaT(
+          'radar.history_complete',
+          '✔ Histórico completo. Edita el riego en m³ o {unit} (con % de franja arriba) para completar la correlación.',
+          { unit: lecturaDepthUnit() }
+        )
+      );
     } else if (okImg > 0 && nCloud && !nOther) {
       var labels = cloudFails
         .map(function (r) { return r.label || ('#' + (r.index + 1)); })
@@ -2095,6 +2376,10 @@
         if (tab === 'lectura') {
           updateCostHint();
           var st = loadState();
+          // Force hard chart rebuild: init may have run while this tab was display:none (blank Chart.js).
+          lecturaChartPrefsFp = '';
+          destroyLecturaChart();
+          window.__lecturaChartDeferPending = false;
           if (st) renderAll(st);
           autoShowLecturaImages();
         } else if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap && nutriPlantMap.map && typeof google !== 'undefined') {
@@ -2142,6 +2427,27 @@
     if (runSel) {
       runSel.addEventListener('change', function () {
         switchLecturaRun(runSel.value);
+      });
+    }
+    if (!window.__npLecturaPrefsBound) {
+      window.__npLecturaPrefsBound = true;
+      window.addEventListener('np:prefs-changed', function (ev) {
+        var changed = (ev && ev.detail && ev.detail.changed) || [];
+        var langOrUnit =
+          !changed.length ||
+          changed.indexOf('language') >= 0 ||
+          changed.indexOf('unit_system') >= 0 ||
+          changed.indexOf('locale') >= 0;
+        if (!langOrUnit) return;
+        var st = loadState();
+        if (!st || !st.rows || !st.rows.length) return;
+        // Force full remount so headers/units/chart axis refresh (not soft live patch).
+        lecturaTableSig = '';
+        var wrap = document.getElementById('lecturaTableWrap');
+        if (wrap) wrap.removeAttribute('data-lectura-sig');
+        lecturaChartPrefsFp = '';
+        destroyLecturaChart();
+        renderAll(st);
       });
     }
   }
@@ -2246,9 +2552,9 @@
             },
             {
               type: 'line',
-              label: 'ET₀ acum (mm)',
+              label: lecturaT('radar.et0_acum_header', 'ET₀ acum ({unit})', { unit: lecturaDepthUnit() }),
               yAxisID: 'yMm',
-              data: sorted.map(function (r) { return r.et0_sum; }),
+              data: sorted.map(function (r) { return depthSeriesFromMm(r.et0_sum); }),
               borderColor: '#a16207',
               borderDash: [4, 3],
               tension: 0.3,
@@ -2259,9 +2565,9 @@
             },
             {
               type: 'line',
-              label: 'Lluvia acum (mm)',
+              label: lecturaT('radar.rain_acum_header', 'Lluvia acum ({unit})', { unit: lecturaDepthUnit() }),
               yAxisID: 'yMm',
-              data: sorted.map(function (r) { return r.rain_sum; }),
+              data: sorted.map(function (r) { return depthSeriesFromMm(r.rain_sum); }),
               borderColor: '#2563eb',
               borderDash: [2, 3],
               tension: 0.3,
@@ -2272,10 +2578,11 @@
             },
             {
               type: 'line',
-              label: 'Riego (mm)',
+              label: lecturaT('radar.riego_chip', 'Riego {unit}', { unit: lecturaDepthUnit() }),
               yAxisID: 'yMm',
               data: sorted.map(function (r) {
-                return r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+                var mm = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+                return depthSeriesFromMm(mm);
               }),
               borderColor: '#7c3aed',
               borderDash: [6, 3],
@@ -2292,7 +2599,7 @@
       var reportKcLabel = Math.round(reportKc * 100) / 100;
       reportDatasets.splice(7, 0, {
         type: 'line',
-        label: 'ETc (Kc=' + reportKcLabel + ') mm',
+        label: 'ETc (Kc=' + reportKcLabel + ') ' + lecturaDepthUnit(),
         yAxisID: 'yMm',
         data: reportEtc,
         borderColor: '#5f7a86',
@@ -2340,7 +2647,12 @@
               type: 'linear',
               position: 'right',
               min: 0,
-              title: { display: true, text: 'mm', font: { size: 10 } },
+              title: {
+                display: true,
+                text: lecturaDepthUnit() + ' (ET₀ / ETc / ' +
+                  (lecturaPrefs().language === 'en' ? 'rain / irrigation)' : 'lluvia / riego)'),
+                font: { size: 10 }
+              },
               grid: { drawOnChartArea: false },
               ticks: { font: { size: 9 } }
             },
