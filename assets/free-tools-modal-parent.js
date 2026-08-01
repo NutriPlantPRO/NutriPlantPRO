@@ -185,7 +185,19 @@
   }
 
   window.addEventListener('message', function (e) {
-    if (!e.data || e.data.type !== 'np-free-tool-resize') return;
+    if (!e.data || typeof e.data !== 'object') return;
+    // Pronóstico agroclimático: revelar iframe solo cuando i18n ya aplicó (sin flash).
+    if (e.data.type === 'np-agro-ready') {
+      var agroFrame = document.getElementById('agroclimateForecastFrame');
+      if (agroFrame && e.source === agroFrame.contentWindow) {
+        agroFrame.style.opacity = '1';
+        setTimeout(function () {
+          try { agroFrame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (err) { /* ignore */ }
+        }, 30);
+      }
+      return;
+    }
+    if (e.data.type !== 'np-free-tool-resize') return;
     if (typeof e.data.height !== 'number') return;
     Object.keys(FIT_FRAME_IDS).forEach(function (id) {
       var frame = document.getElementById(id);

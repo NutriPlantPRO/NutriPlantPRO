@@ -758,6 +758,8 @@
     applyCriticalChartLayout(null, canvas, layout);
     var useResponsive = opts.responsive !== false && !opts.layout;
     var animOn = opts.animation !== false;
+    var ink = opts.pdfExport ? '#334155' : '#7c2d12';
+    var gridTone = opts.pdfExport ? 'rgba(148, 163, 184, 0.35)' : 'rgba(254, 215, 170, 0.45)';
     return new w.Chart(canvas.getContext('2d'), {
       type: 'bar',
       data: {
@@ -781,46 +783,51 @@
           }
         },
         layout: {
-          padding: { left: 2, right: 12, top: 2, bottom: 0 }
+          padding: { left: 2, right: 12, top: 4, bottom: 0 }
         },
         plugins: {
           legend: {
             display: true,
             position: 'bottom',
-            labels: { usePointStyle: true, boxWidth: 10, font: { size: opts.legendFontSize || 10 } }
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              font: { size: opts.legendFontSize || 10 },
+              color: ink
+            }
           },
           title: {
             display: true,
             text: title,
             font: { size: opts.titleFontSize || 12, weight: '600' },
-            color: '#7c2d12'
+            color: ink
           },
           tooltip: criticalChartTooltipCallbacks(agg.items)
         },
         scales: {
           x: {
             stacked: true,
-            title: { display: true, text: chartT('Día', 'Day'), font: { size: 10 } },
-            ticks: { maxRotation: 45, font: { size: 9 } }
+            title: { display: true, text: chartT('Día', 'Day'), font: { size: 10 }, color: ink },
+            ticks: { maxRotation: 45, font: { size: 9 }, color: ink }
           },
           y: {
             stacked: true,
             position: 'left',
             min: 0,
             max: 24,
-            title: { display: true, text: chartT('Horas / día', 'Hours / day'), font: { size: 10 }, color: '#7c2d12' },
-            ticks: { stepSize: 4, precision: 0, font: { size: 9 }, color: '#7c2d12' },
-            grid: { color: 'rgba(254, 215, 170, 0.45)' }
+            title: { display: true, text: chartT('Horas / día', 'Hours / day'), font: { size: 10 }, color: ink },
+            ticks: { stepSize: 4, precision: 0, font: { size: 9 }, color: ink },
+            grid: { color: gridTone }
           },
           yVpd: {
             type: 'linear',
             position: 'right',
             min: 0,
             max: vpdAxisMax,
-            title: { display: true, text: 'VPD (kPa)', font: { size: 10 }, color: '#7c2d12' },
+            title: { display: true, text: 'VPD (kPa)', font: { size: 10 }, color: ink },
             ticks: {
               font: { size: 9 },
-              color: '#7c2d12',
+              color: ink,
               callback: function (v) {
                 return Number(v).toFixed(1);
               }
@@ -848,6 +855,29 @@
     document.head.appendChild(s);
   }
 
+  /** JPEG/PDF: el canvas transparente se ve negro; pintar fondo blanco antes de exportar. */
+  function canvasToOpaqueDataUrl(sourceCanvas, mime, quality) {
+    if (!sourceCanvas) return null;
+    var tmp = document.createElement('canvas');
+    tmp.width = sourceCanvas.width;
+    tmp.height = sourceCanvas.height;
+    var ctx = tmp.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tmp.width, tmp.height);
+    ctx.drawImage(sourceCanvas, 0, 0);
+    try {
+      if (mime === 'image/png') return tmp.toDataURL('image/png');
+      return tmp.toDataURL('image/jpeg', quality != null ? quality : 0.93);
+    } catch (e) {
+      try {
+        return tmp.toDataURL('image/png');
+      } catch (e2) {
+        return null;
+      }
+    }
+  }
+
   function chartToDataUrl(renderFn, width, height) {
     return new Promise(function (resolve) {
       loadChartJs(function () {
@@ -862,11 +892,16 @@
         canvas.height = H;
         // En viewport (opacity 0): left:-9999px a veces deja el canvas en blanco al exportar.
         canvas.style.cssText =
-          'position:fixed;left:0;top:0;width:' + W + 'px;height:' + H + 'px;opacity:0;pointer-events:none;z-index:-1;';
+          'position:fixed;left:0;top:0;width:' + W + 'px;height:' + H + 'px;opacity:0;pointer-events:none;z-index:-1;background:#fff;';
         document.body.appendChild(canvas);
         var chart = null;
         var url = null;
         try {
+          var pre = canvas.getContext('2d');
+          if (pre) {
+            pre.fillStyle = '#ffffff';
+            pre.fillRect(0, 0, W, H);
+          }
           chart = renderFn(canvas);
           if (!chart) {
             resolve(null);
@@ -877,17 +912,12 @@
             if (typeof chart.update === 'function') chart.update('none');
             if (typeof chart.draw === 'function') chart.draw();
           } catch (eDraw) { /* ignore */ }
-          if (chart.toBase64Image) {
+          url = canvasToOpaqueDataUrl(canvas, 'image/jpeg', 0.93);
+          if (!url && chart.toBase64Image) {
             try {
-              url = chart.toBase64Image('image/jpeg', 0.92);
-            } catch (eJpg) {
-              url = chart.toBase64Image();
-            }
-          } else {
-            try {
-              url = canvas.toDataURL('image/jpeg', 0.92);
+              url = chart.toBase64Image('image/png');
             } catch (ePng) {
-              url = canvas.toDataURL('image/png');
+              url = null;
             }
           }
           // Data URL minúscula = canvas vacío / fallido
@@ -940,11 +970,12 @@
         responsive: false,
         maintainAspectRatio: false,
         animation: false,
-        legendFontSize: 10,
-        titleFontSize: 11,
+        legendFontSize: 11,
+        titleFontSize: 12,
         summaryRows: summaryRows,
         granularity: meta && meta.granularity,
-        layout: layout
+        layout: layout,
+        pdfExport: true
       });
     }, layout.canvasWidth, layout.canvasHeight).then(function (url) {
       return { vpdCritical: url, criticalPrep: prep };

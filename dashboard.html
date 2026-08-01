@@ -436,7 +436,7 @@
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260801x"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
-  <script src="assets/np-vpd-range-charts.js?v=20260801af"></script>
+  <script src="assets/np-vpd-range-charts.js?v=20260801ag"></script>
   <script src="dashboard.js?v=20260801ae"></script>
   <script src="fertirriego-program-functions.js?v=20260801y"></script>
   <script src="ai-knowledge-expansion.js"></script>
@@ -5242,29 +5242,32 @@ CONTRATO:
             : { language: 'es', unit_system: 'metric' };
           var lang = prefs.language === 'en' ? 'en' : 'es';
           var units = prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric';
-          var u = new URL(frame.getAttribute('src') || 'pronosticoclimatico/?embed=dashboard', window.location.href);
-          u.searchParams.set('embed', 'dashboard');
-          u.searchParams.set('lang', lang);
-          u.searchParams.set('units', units);
-          u.searchParams.set('v', '20260801z');
-          var next = u.pathname + u.search + u.hash;
-          var absNext = new URL(next, window.location.href).href;
-          // No recargar el iframe si ya está cargado con las mismas prefs (evita parpadeo).
-          if (!frame.src || frame.src === 'about:blank' || frame.src !== absNext) {
-            var sameTool = /pronosticoclimatico/i.test(frame.src || '');
-            var sameLang = (frame.src || '').indexOf('lang=' + lang) >= 0;
-            var sameUnits = (frame.src || '').indexOf('units=' + units) >= 0;
-            if (!sameTool || !sameLang || !sameUnits) {
-              frame.src = next;
-            } else {
-              try {
-                frame.contentWindow.postMessage({ type: 'np-agro-prefs', language: lang, unit_system: units }, '*');
-              } catch (eMsg) { /* ignore */ }
-            }
+          var AGRO_V = '20260801ah';
+          var cur = String(frame.src || '');
+          var blank = !cur || cur === 'about:blank' || cur.indexOf('about:blank') === 0;
+          var sameTool = /pronosticoclimatico/i.test(cur);
+          var sameLang = cur.indexOf('lang=' + lang) >= 0;
+          var sameUnits = cur.indexOf('units=' + units) >= 0;
+          // Solo cargar/recargar si hace falta (about:blank o prefs distintas). Evita el parpadeo.
+          if (blank || !sameTool || !sameLang || !sameUnits) {
+            var base = frame.getAttribute('data-agro-src') || 'pronosticoclimatico/?embed=dashboard';
+            var u = new URL(base, window.location.href);
+            u.searchParams.set('embed', 'dashboard');
+            u.searchParams.set('lang', lang);
+            u.searchParams.set('units', units);
+            u.searchParams.set('v', AGRO_V);
+            frame.style.opacity = '0';
+            frame.src = u.pathname + u.search + u.hash;
+            setTimeout(function () {
+              if (frame && Number(frame.style.opacity || '0') < 1) frame.style.opacity = '1';
+            }, 2800);
+          } else {
+            frame.style.opacity = '1';
+            // Ya cargado: no apply i18n de nuevo; solo avisar al mapa.
+            setTimeout(function () {
+              try { frame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (e2) { /* ignore */ }
+            }, 40);
           }
-          setTimeout(function () {
-            try { frame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (e2) { /* ignore */ }
-          }, 60);
         } catch (e) { /* keep existing src */ }
       }
       modal.classList.add('show');
@@ -7255,7 +7258,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=dashboard&v=20260801ad" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="about:blank" data-agro-src="pronosticoclimatico/?embed=dashboard" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;opacity:0;transition:opacity .15s ease;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -8328,6 +8331,6 @@ CONTRATO:
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260726a"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260801ah"></script>
 </body>
 </html>

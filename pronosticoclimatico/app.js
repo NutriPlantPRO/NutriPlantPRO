@@ -1484,6 +1484,13 @@
     });
   }
 
+  function notifyParentReady() {
+    if (!embed || window.parent === window) return;
+    try {
+      window.parent.postMessage({ type: 'np-agro-ready' }, '*');
+    } catch (e) { /* ignore */ }
+  }
+
   function init() {
     if (I) {
       if (typeof I.applyAndReveal === 'function') I.applyAndReveal(document);
@@ -1500,19 +1507,22 @@
       restoreLastReading();
     }
     sendResize();
+    // Revelar al padre cuando i18n + mapa inicial ya corrieron (evita flash ES→EN).
+    setTimeout(notifyParentReady, 40);
     window.addEventListener('message', (ev) => {
       const data = ev && ev.data;
       if (!data || typeof data !== 'object') return;
       if (data.type === 'np-agro-shown') {
-        [80, 250, 600].forEach((ms) => setTimeout(() => { if (map) map.invalidateSize(); }, ms));
-        sendResize();
+        // Un solo invalidate: varios seguidos hacían parpadear el mapa al reabrir.
+        setTimeout(() => { if (map) map.invalidateSize(); sendResize(); }, 120);
         return;
       }
       if (data.type === 'np-agro-prefs' && I && typeof I.setReportPrefs === 'function') {
-        I.setReportPrefs({
-          language: data.language === 'en' ? 'en' : 'es',
-          unit_system: data.unit_system === 'us_customary' ? 'us_customary' : 'metric'
-        });
+        const prev = typeof I.getPrefs === 'function' ? I.getPrefs() : {};
+        const nextLang = data.language === 'en' ? 'en' : 'es';
+        const nextUnits = data.unit_system === 'us_customary' ? 'us_customary' : 'metric';
+        if (prev.language === nextLang && prev.unit_system === nextUnits) return;
+        I.setReportPrefs({ language: nextLang, unit_system: nextUnits });
         if (typeof I.applyAndReveal === 'function') I.applyAndReveal(document);
         else I.apply(document);
       }

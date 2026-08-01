@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=28" />
+  <link rel="stylesheet" href="auth.css?v=29" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -1777,25 +1777,30 @@
             : { language: 'es', unit_system: 'metric' };
           const lang = prefs.language === 'en' ? 'en' : 'es';
           const units = prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric';
-          const u = new URL(frame.getAttribute('src') || 'pronosticoclimatico/?embed=login', window.location.href);
-          u.searchParams.set('embed', 'login');
-          u.searchParams.set('lang', lang);
-          u.searchParams.set('units', units);
-          u.searchParams.set('v', '20260801z');
-          const next = u.pathname + u.search + u.hash;
-          const sameTool = /pronosticoclimatico/i.test(frame.src || '');
-          const sameLang = (frame.src || '').indexOf('lang=' + lang) >= 0;
-          const sameUnits = (frame.src || '').indexOf('units=' + units) >= 0;
-          if (!sameTool || !sameLang || !sameUnits) {
-            frame.src = next;
+          const AGRO_V = '20260801ah';
+          const cur = String(frame.src || '');
+          const blank = !cur || cur === 'about:blank' || cur.indexOf('about:blank') === 0;
+          const sameTool = /pronosticoclimatico/i.test(cur);
+          const sameLang = cur.indexOf('lang=' + lang) >= 0;
+          const sameUnits = cur.indexOf('units=' + units) >= 0;
+          if (blank || !sameTool || !sameLang || !sameUnits) {
+            const base = frame.getAttribute('data-agro-src') || 'pronosticoclimatico/?embed=login';
+            const u = new URL(base, window.location.href);
+            u.searchParams.set('embed', 'login');
+            u.searchParams.set('lang', lang);
+            u.searchParams.set('units', units);
+            u.searchParams.set('v', AGRO_V);
+            frame.style.opacity = '0';
+            frame.src = u.pathname + u.search + u.hash;
+            setTimeout(function () {
+              if (frame && Number(frame.style.opacity || '0') < 1) frame.style.opacity = '1';
+            }, 2800);
           } else {
-            try {
-              frame.contentWindow.postMessage({ type: 'np-agro-prefs', language: lang, unit_system: units }, '*');
-            } catch (eMsg) { /* ignore */ }
+            frame.style.opacity = '1';
+            setTimeout(function () {
+              try { frame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (e2) { /* ignore */ }
+            }, 40);
           }
-          setTimeout(function () {
-            try { frame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (e2) { /* ignore */ }
-          }, 60);
         } catch (e) { /* keep existing src */ }
       }
       modal.style.display = 'flex';
@@ -2615,7 +2620,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260801ad" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="about:blank" data-agro-src="pronosticoclimatico/?embed=login" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;opacity:0;transition:opacity .15s ease;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -4341,7 +4346,7 @@
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260726a"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260801ah"></script>
   <script src="apply-no-traducir.js"></script>
   <script>
     (function initLoginSocialPanel() {
@@ -4381,9 +4386,9 @@
       function facebookEmbedWidth(container) {
         var width = Math.floor((container && container.clientWidth) || 0);
         if (!width) width = Math.floor(root.clientWidth - 40);
-        // Ancho holgado: con el header grande, bajo ~380px Facebook comprime y corta “seguidores”.
-        if (!width || width < 380) width = 420;
-        return Math.max(380, Math.min(500, width));
+        if (!width) width = 340;
+        // Mismo ancho que la caja: si pedimos más (ej. 420 en caja de 340), FB comprime y tapa nombre/seguidores.
+        return Math.max(280, Math.min(500, width));
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4393,14 +4398,14 @@
         container.dataset.fbWidth = String(width);
         container.innerHTML = '';
         var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
-        // hide_cover=true: sin portada que tape el encabezado.
-        // small_header=true: el plugin deja nombre + seguidores sin que la barra Seguir/Compartir los recorte.
-        var fbHeight = 600;
-        container.appendChild(createSocialIframe(
+        // hide_cover=true: sin portada encima del encabezado.
+        // small_header=false + ancho = caja: se ve nombre y seguidores (sin forzar ancho mayor que el contenedor).
+        var fbHeight = 560;
+        var iframe = createSocialIframe(
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
             '&height=' + fbHeight +
-            '&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false',
+            '&small_header=false&adapt_container_width=false&hide_cover=true&show_facepile=false',
           'NutriPlant PRO en Facebook',
           {
             scrolling: 'no',
@@ -4408,7 +4413,12 @@
             width: width,
             height: fbHeight
           }
-        ));
+        );
+        // Evitar que CSS width:100% encoja el iframe respecto al width del plugin.
+        iframe.style.width = width + 'px';
+        iframe.style.maxWidth = '100%';
+        iframe.style.minHeight = fbHeight + 'px';
+        container.appendChild(iframe);
         container.dataset.loaded = '1';
       }
 

@@ -646,17 +646,20 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
   background: #fff;
-  min-height: 580px;
-  padding: 10px 0 0;
+  min-height: 540px;
+  padding: 8px 0 0;
 }
 
 .login-social-pane__embed--facebook iframe {
-  width: 100%;
+  /* El JS fija width en px = ancho del plugin; no forzar 100% (eso aplastaba el header). */
+  width: auto;
   max-width: 100%;
   margin: 0 auto;
-  min-height: 600px;
+  min-height: 560px;
+  flex: 0 0 auto;
 }
 
 .login-social-pane__embed--instagram iframe {
