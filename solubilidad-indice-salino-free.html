@@ -10,7 +10,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801s"></script>
   <title>Solubilidad e índice salino — NutriPlant PRO</title>
   <style>
     :root {
@@ -325,7 +325,7 @@
   <p class="disclaimer">Los valores de solubilidad son referencias en agua relativamente pura; en campo, temperatura, pH, otros iones y el propio medio pueden cambiar cuánto se disuelve y el impacto sobre la planta. El IS describe el efecto osmótico relativo — no clasifica solo un fertilizante como “bueno” o “malo”; importa la dosis, el agua disponible y el manejo del fertirriego.</p>
 
   <p class="table-scope">
-    <strong>Fertilizantes hidrosolubles</strong> de uso habitual en <strong>fertirriego</strong>, con excepción del <strong>sulfato de calcio</strong> y el <strong>carbonato de calcio</strong> (solo referencia, enmienda).
+    Fertilizantes hidrosolubles de uso habitual en fertirriego, con excepción del sulfato de calcio y el carbonato de calcio (solo referencia, enmienda).
   </p>
 
   <div class="legend" aria-label="Leyenda de solubilidad">
@@ -364,16 +364,16 @@
   <div id="panelA" class="section-panel active" role="tabpanel" aria-labelledby="tabA">
     <h2 class="section-h2">La solubilidad depende de</h2>
     <ul class="edu">
-      <li>🌡️ <strong>Temperatura</strong> — a mayor temperatura suele favorecerse romper la red del cristal y disolver.</li>
-      <li>📦 <strong>Pureza y grado</strong> del fertilizante (industrial vs. soluble, anticaking, rellenos).</li>
-      <li>💎 <strong>Forma cristalina / hidratación</strong> (p. ej. sulfato de magnesio en forma heptahidratada vs. otras).</li>
-      <li>🧪 <strong>Otros iones ya disueltos</strong> — el medio real no es siempre “agua pura” como en tabla de laboratorio.</li>
+      <li>🌡️ Temperatura — a mayor temperatura suele favorecerse romper la red del cristal y disolver.</li>
+      <li>📦 Pureza y grado del fertilizante (industrial vs. soluble, anticaking, rellenos).</li>
+      <li>💎 Forma cristalina / hidratación (p. ej. sulfato de magnesio en forma heptahidratada vs. otras).</li>
+      <li>🧪 Otros iones ya disueltos — el medio real no es siempre “agua pura” como en tabla de laboratorio.</li>
     </ul>
 
     <div class="salt-dissociation" aria-labelledby="dissocHeading">
       <h2 id="dissocHeading" class="section-h2" style="margin-bottom:8px;">Una sal se disuelve en iones en el agua</h2>
       <p class="salt-desc">
-        <strong>Una sal está compuesta por la unión de los iones</strong> que la forman el <em>cation</em> (carga positiva) y el <em>anion</em> (carga negativa) en proporción definida dentro del retículo cristalino. En el agua, la sal puede romper ese enlace — <strong>disociarse</strong> — liberando estos iones, que después quedan rodeados por las moléculas de agua (<em>hidratación / solvatación</em>).
+        Una sal está compuesta por la unión de los iones que la forman: el cation (carga positiva) y el anion (carga negativa) en proporción definida dentro del retículo cristalino. En el agua, la sal puede romper ese enlace — disociarse — liberando estos iones, que después quedan rodeados por las moléculas de agua (hidratación / solvatación).
       </p>
       <div class="ion-table" role="group" aria-label="Iones típicos de fertilizantes solubles">
         <div class="ion-col cations">
@@ -401,22 +401,22 @@
 
     <h2 class="section-h2">Principios químicos útiles</h2>
     <ul class="edu">
-      <li><strong>Mayor carga efectiva →</strong> a veces menor solubilidad aparente (red iónica más fuerte).</li>
-      <li><strong>Hidratación del ion →</strong> si el medio acuoso estabiliza bien los iones liberados (p. ej. nitratos muy solubles).</li>
-      <li><strong>Balanza energética →</strong> costo de romper la red vs. ganancia por solvataración.</li>
-      <li><strong>Densidad de carga y polarización →</strong> radios pequeños y cargas altas pueden reforzar enlace en sólido y dificultar disolver respecto de sales más “compatibles” con el agua.</li>
+      <li>Mayor carga efectiva → a veces menor solubilidad aparente (red iónica más fuerte).</li>
+      <li>Hidratación del ion → si el medio acuoso estabiliza bien los iones liberados (p. ej. nitratos muy solubles).</li>
+      <li>Balanza energética → costo de romper la red vs. ganancia por solvataración.</li>
+      <li>Densidad de carga y polarización → radios pequeños y cargas altas pueden reforzar enlace en sólido y dificultar disolver respecto de sales más “compatibles” con el agua.</li>
     </ul>
   </div>
 
   <div id="panelB" class="section-panel" role="tabpanel" aria-labelledby="tabB">
     <h2 class="section-h2">Qué significa el índice salino</h2>
-    <p style="margin:0 0 10px;color:#334155;font-size:13px;">El IS ordena fertilizantes según la <strong>fuerza relativa del impacto osmótico</strong> cuando se diluyen en una misma masa de nutriente aplicada (referencia clásica: nitrato de sodio NaNO₃ = 100). Un IS alto no prohibe usar el producto — indica vigilancia especial en síembras delicadas, baja humedad, altas concentraciones en solución madre o aplicaciones cercanas al tejido sensible.</p>
+    <p style="margin:0 0 10px;color:#334155;font-size:13px;">El IS ordena fertilizantes según la fuerza relativa del impacto osmótico cuando se diluyen en una misma masa de nutriente aplicada (referencia clásica: nitrato de sodio NaNO₃ = 100). Un IS alto no prohibe usar el producto — indica vigilancia especial en siembras delicadas, baja humedad, altas concentraciones en solución madre o aplicaciones cercanas al tejido sensible.</p>
     <ul class="edu">
-      <li><strong>Deshidratación radicular / estrés:</strong> el suelo muy salino puede “competir” por agua contra la planta.</li>
-      <li><strong>Emergencia y siembras:</strong> soluciones muy concentradas pueden dificultar la imbibición de la semilla.</li>
-      <li><strong>Costo energético:</strong> bajo estrés osmótico la planta gasta recurso tomando agua antes que creciendo.</li>
+      <li>Deshidratación radicular / estrés: el suelo muy salino puede “competir” por agua contra la planta.</li>
+      <li>Emergencia y siembras: soluciones muy concentradas pueden dificultar la imbibición de la semilla.</li>
+      <li>Costo energético: bajo estrés osmótico la planta gasta recurso tomando agua antes que creciendo.</li>
     </ul>
-    <p class="muted" style="margin-top:14px;"><strong>Escala IS en la tabla de arriba</strong>: cada barra muestra IS relativo dentro del mismo conjunto (máx. KCl sobre las filas de la tabla; productos sin dato práctico muestran “—”).</p>
+    <p class="muted" style="margin-top:14px;">Escala IS en la tabla de arriba: cada barra muestra IS relativo dentro del mismo conjunto (máx. KCl sobre las filas de la tabla; productos sin dato práctico muestran “—”).</p>
   </div>
 
   <p class="refs-foot">

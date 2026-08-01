@@ -233,18 +233,37 @@
     };
   }
 
-  function renderClimateSoilPanel(state) {
+  function renderClimateSoilPanel(state, force) {
     var panel = document.getElementById('climate-soil-bridge-panel');
     var SB = window.NpSoilWaterBridge;
     if (!panel || !SB || typeof SB.buildPanelHtml !== 'function') return;
-    if (document.getElementById('climate-soil-mode')) return;
     state = state || getIrrigationQuickCalcState();
+    if (!force && document.getElementById('climate-soil-mode')) {
+      // Keep existing values but refresh unit display if bound
+      if (window.NpWaterClimateUI && document.getElementById('climate-soil-m3') && state.soilStorageM3 != null) {
+        window.NpWaterClimateUI.write('climate-soil-m3', state.soilStorageM3, 'volume');
+      }
+      return;
+    }
+    var curM3 = null;
+    var curMode = state.soilStorageMode || '';
+    if (document.getElementById('climate-soil-m3') && window.NpWaterClimateUI) {
+      curM3 = window.NpWaterClimateUI.read('climate-soil-m3', 'volume');
+      var modeEl = document.getElementById('climate-soil-mode');
+      if (modeEl) curMode = modeEl.value || '';
+    }
+    if (curM3 == null) curM3 = state.soilStorageM3;
     panel.innerHTML = SB.buildPanelHtml({
       idPrefix: 'climate',
-      mode: state.soilStorageMode || '',
-      m3: state.soilStorageM3
+      mode: curMode || '',
+      m3: curM3
     });
-    if (window.NpWaterClimateUI) window.NpWaterClimateUI.bindFields({ 'climate-soil-m3': 'volume' });
+    if (window.NpWaterClimateUI) {
+      window.NpWaterClimateUI.bindFields({ 'climate-soil-m3': 'volume' });
+      if (curM3 != null && Number.isFinite(curM3)) {
+        window.NpWaterClimateUI.write('climate-soil-m3', curM3, 'volume');
+      }
+    }
   }
 
   function applyClimateSoilBridgeSuggestion(target) {
@@ -264,7 +283,9 @@
         var msgEl = document.getElementById('climate-soil-suggest-msg');
         if (msgEl) {
           msgEl.innerHTML =
-            'Datos de 🪨 suelo actualizados en otra pestaña. Pulsa <strong>Sugerir hasta 60% AU</strong> o <strong>hasta CC</strong> si quieres prellenar.';
+            (window.NpWaterClimateUI && window.NpWaterClimateUI.prefs().language === 'en')
+              ? '🪨 Soil data updated in another tab. Press <strong>Suggest to 60% AW</strong> or <strong>to FC</strong> if you want to prefills.'
+              : 'Datos de 🪨 suelo actualizados en otra pestaña. Pulsa <strong>Sugerir hasta 60% AU</strong> o <strong>hasta CC</strong> si quieres prellenar.';
         }
       }
     });
@@ -705,12 +726,30 @@
       if (cropEl && cropEl.value.trim()) cropFilter = cropEl.value.trim().toLowerCase();
     } catch (e) {}
     var html = '';
+    var lang =
+      window.NpI18n && typeof window.NpI18n.getLanguage === 'function'
+        ? window.NpI18n.getLanguage()
+        : 'es';
+    var emptyMsg =
+      lang === 'en' ? 'No matches in the FAO table.' : 'Sin coincidencias en la tabla FAO.';
     rows.forEach(function (row) {
-      var crop = String(row.crop || '');
-      var stage = String(row.stage || '');
-      var haystack = (crop + ' ' + stage).toLowerCase();
+      var labels =
+        typeof window.faoKcLabels === 'function'
+          ? window.faoKcLabels(row, lang)
+          : { crop: String(row.crop || ''), stage: String(row.stage || '') };
+      var crop = labels.crop;
+      var stage = labels.stage;
+      var haystack =
+        typeof window.faoKcSearchText === 'function'
+          ? window.faoKcSearchText(row).toLowerCase()
+          : (String(row.crop || '') + ' ' + String(row.stage || '')).toLowerCase();
       if (q && haystack.indexOf(q) < 0) return;
-      var highlight = cropFilter && crop.toLowerCase().indexOf(cropFilter) >= 0;
+      var highlight =
+        cropFilter &&
+        (crop.toLowerCase().indexOf(cropFilter) >= 0 ||
+          String(row.crop || '')
+            .toLowerCase()
+            .indexOf(cropFilter) >= 0);
       var style = highlight ? 'background:#ecfdf5;' : '';
       html +=
         '<tr style="border-bottom:1px solid #e5e7eb;' +
@@ -731,7 +770,9 @@
     });
     body.innerHTML =
       html ||
-      '<tr><td colspan="3" style="padding:12px;color:#64748b;text-align:center;">Sin coincidencias en la tabla FAO.</td></tr>';
+      '<tr><td colspan="3" style="padding:12px;color:#64748b;text-align:center;">' +
+      emptyMsg +
+      '</td></tr>';
   }
 
   var lastIrrigationPeriodSelected = null;
@@ -758,7 +799,9 @@
     if (satMeta) {
       if (rolling && rolling.fetchedAt) {
         satMeta.textContent =
-          'Referencia satélite disponible · actualizada ' + new Date(rolling.fetchedAt).toLocaleString(climateLocaleTag());
+          wcT('Referencia satélite disponible · actualizada', 'Satellite reference available · updated') +
+          ' ' +
+          new Date(rolling.fetchedAt).toLocaleString(climateLocaleTag());
         satMeta.style.display = 'block';
       } else {
         satMeta.style.display = 'none';
@@ -2291,7 +2334,9 @@
   function windDirLabel(deg) {
     var n = Number(deg);
     if (!Number.isFinite(n)) return '—';
-    var dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+    var dirsEs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+    var dirsEn = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    var dirs = climatePrefs().language === 'en' ? dirsEn : dirsEs;
     var idx = Math.round(n / 45) % 8;
     return dirs[idx] + ' (' + Math.round(n) + '°)';
   }
@@ -2319,12 +2364,12 @@
     var dayWater = resolveLiveDayRainEt0(r);
     grid.innerHTML =
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">' +
-      card(wcT('Temperatura', 'Temperature'), fmtMm(r.temperature) + ' °C', '🌡️') +
+      card(wcT('Temperatura', 'Temperature'), r.temperature != null ? wcResult(r.temperature, 'temperature', 1) : '—', '🌡️') +
       card(wcT('Humedad relativa', 'Relative humidity'), fmtMm(r.humidity) + ' %', '💧') +
       card(wcT('Radiación solar', 'Solar radiation'), r.shortwaveRadiation != null ? Math.round(r.shortwaveRadiation) + ' W/m²' : '—', '☀️') +
       card(wcT('Índice UV', 'UV index'), r.uvIndex != null ? fmtMm(r.uvIndex) : '—', '🧴') +
-      card(wcT('Punto de rocío', 'Dew point'), r.dewPoint != null ? fmtMm(r.dewPoint) + ' °C' : '—', '🌫️') +
-      card(wcT('Viento', 'Wind'), r.windSpeedKmh != null ? fmtMm(r.windSpeedKmh) + ' km/h' : '—', '💨') +
+      card(wcT('Punto de rocío', 'Dew point'), r.dewPoint != null ? wcResult(r.dewPoint, 'temperature', 1) : '—', '🌫️') +
+      card(wcT('Viento', 'Wind'), r.windSpeedKmh != null ? wcResult(r.windSpeedKmh, 'speed', 1) : '—', '💨') +
       card(wcT('Dirección', 'Direction'), windDirLabel(r.windDirection), '🧭') +
       card(wcT('Nubosidad', 'Cloud cover'), r.cloudCover != null ? Math.round(r.cloudCover) + ' %' : '—', '☁️') +
       card(wcT('Lluvia acumulada (hoy)', 'Cumulative rainfall (today)'), dayWater.rain != null ? fmtDepthWithUnit(dayWater.rain) : '—', '🌧️') +
@@ -2725,7 +2770,17 @@
           renderClimateLiveReading(p.climateAnalysis.lastReading);
         }
         if (typeof renderIrrigationQuickCalc === 'function') {
-          try { renderIrrigationQuickCalc(); } catch (e2) {}
+          try {
+            var soilState = typeof getIrrigationQuickCalcState === 'function' ? getIrrigationQuickCalcState() : null;
+            if (typeof renderClimateSoilPanel === 'function') {
+              renderClimateSoilPanel(soilState, true);
+            }
+            var btnWrap = document.getElementById('climate-soil-bridge-btns');
+            if (btnWrap && window.NpSoilWaterBridge && window.NpSoilWaterBridge.buildSuggestButtonsHtml) {
+              btnWrap.innerHTML = window.NpSoilWaterBridge.buildSuggestButtonsHtml('climate');
+            }
+            renderIrrigationQuickCalc();
+          } catch (e2) {}
         }
       } catch (e) {
         console.warn('climate prefs refresh', e);

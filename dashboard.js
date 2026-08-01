@@ -48,6 +48,23 @@ function analysisPresentHtml(html) {
     : html;
 }
 
+function analysisNewTitle(n) {
+  var base = window.NpAnalysisUI && typeof window.NpAnalysisUI.t === 'function'
+    ? window.NpAnalysisUI.t('Nuevo análisis', 'New analysis')
+    : 'Nuevo análisis';
+  return base + ' ' + n;
+}
+
+function analysisDisplayTitle(title) {
+  var raw = (title == null || title === '') ? 'Sin título' : String(title);
+  if (!window.NpAnalysisUI || typeof window.NpAnalysisUI.translateString !== 'function') return raw;
+  // Solo defaults automáticos; títulos personalizados se dejan tal cual.
+  if (raw === 'Sin título' || /^Nuevo análisis \d+$/i.test(raw.trim()) || /^New analysis \d+$/i.test(raw.trim())) {
+    return window.NpAnalysisUI.translateString(raw === 'Sin título' ? 'Sin título' : raw.replace(/^New analysis /i, 'Nuevo análisis '));
+  }
+  return raw;
+}
+
 function analysisApplyUnits(root) {
   try {
     var target = root || document.getElementById('view') || document;
@@ -4644,7 +4661,7 @@ function np_applyCloudLegend() {
   if (syncing) {
     legend.style.display = 'inline-flex';
     legend.style.color = '#92400e';
-    legend.textContent = 'Actualizando desde la nube...';
+    legend.textContent = dashboardT('dashboard.sync_updating', 'Actualizando desde la nube...');
     np_applyProjectOpenButtonsState();
     return;
   }
@@ -4723,7 +4740,7 @@ async function np_refreshFromCloud(options) {
   }
   window._npCloudRefreshInProgress = true;
   np_updateCloudRefreshButtonState();
-  np_setProjectSyncStatus('syncing', 'Sincronizando...');
+  np_setProjectSyncStatus('syncing', dashboardT('dashboard.sync_syncing', 'Sincronizando...'));
   // Bloquear acciones de tarjetas inmediatamente durante refresh manual cloud.
   np_applyProjectOpenButtonsState();
   try {
@@ -4756,16 +4773,16 @@ async function np_refreshFromCloud(options) {
         console.warn('loadProjectData tras refresh cloud:', loadErr);
       }
     }
-    np_setProjectSyncStatus('ok', 'Sincronizado');
+    np_setProjectSyncStatus('ok', dashboardT('dashboard.sync_synced', 'Sincronizado'));
   } catch (e) {
     console.warn('np_refreshFromCloud:', e);
     var msg = (e && e.message) ? String(e.message) : '';
     if (msg === 'NO_SESSION') {
-      np_setProjectSyncStatus('error', 'Sesión nube no lista');
+      np_setProjectSyncStatus('error', dashboardT('dashboard.sync_err_session', 'Sesión nube no lista'));
     } else if (msg === 'NO_CLIENT') {
-      np_setProjectSyncStatus('error', 'Cliente nube no disponible');
+      np_setProjectSyncStatus('error', dashboardT('dashboard.sync_err_client', 'Cliente nube no disponible'));
     } else {
-      np_setProjectSyncStatus('error', 'Error de conexión');
+      np_setProjectSyncStatus('error', dashboardT('dashboard.sync_err_connection', 'Error de conexión'));
     }
   } finally {
     window._npCloudRefreshInProgress = false;
@@ -8257,7 +8274,7 @@ async function np_syncLocalProjectsAtStartup() {
   if (!sp || !sp.syncAllLocalProjectsToCloud) return;
 
   window._npStartupSyncRunning = true;
-  np_setProjectSyncStatus('syncing', 'Cargando nube...');
+  np_setProjectSyncStatus('syncing', dashboardT('dashboard.sync_loading', 'Cargando nube...'));
   try {
     // Estrategia multi-equipo: al iniciar sesión, primero bajar nube (fuente de verdad).
     await np_loadProjectsFromCloud();
@@ -8270,13 +8287,13 @@ async function np_syncLocalProjectsAtStartup() {
 
     const synced = syncSummary && typeof syncSummary.synced === 'number' ? syncSummary.synced : 0;
     if (synced > 0) {
-      np_setProjectSyncStatus('ok', `Sincronizado (${synced})`);
+      np_setProjectSyncStatus('ok', dashboardT('dashboard.sync_synced_n', 'Sincronizado ({n})', { n: synced }));
     } else {
-      np_setProjectSyncStatus('ok', 'Sincronizado');
+      np_setProjectSyncStatus('ok', dashboardT('dashboard.sync_synced', 'Sincronizado'));
     }
   } catch (e) {
     console.warn('⚠️ np_syncLocalProjectsAtStartup:', e);
-    np_setProjectSyncStatus('error', 'Error de sincronización');
+    np_setProjectSyncStatus('error', dashboardT('dashboard.sync_err_generic', 'Error de sincronización'));
   } finally {
     window._npStartupSyncRunning = false;
     setTimeout(() => {
@@ -8391,7 +8408,7 @@ async function initializeDashboard() {
     el.setAttribute('data-np-tooltip', el.getAttribute('title') || el.getAttribute('aria-label') || '');
   });
   if (isSupabaseUser) {
-    np_setProjectSyncStatus('syncing', 'Sincronizando proyectos...');
+    np_setProjectSyncStatus('syncing', dashboardT('dashboard.sync_projects', 'Sincronizando proyectos...'));
     np_syncLocalProjectsAtStartup();
     // Registrar entrada al panel (métrica para admin: cuántas veces entran por mes). Throttle 1 por hora.
     np_logDashboardVisit();
@@ -8508,10 +8525,10 @@ window.editAmendment = function(amendmentId) {
   modal.className = 'edit-modal';
   modal.innerHTML = `
     <div class="modal-content">
-      <h3>${amendmentT('edit_title', '✏️ Editar Composición:')} ${amendment.name}</h3>
+      <h3>${amendmentT('edit_title', '✏️ Editar Composición:')} ${amendmentMaterialName(amendment.id, amendment.name)}</h3>
       <form id="edit-amendment-form">
         <div class="form-group">
-          <label>Peso Molecular:</label>
+          <label>${amendmentT('molecular_weight', 'Peso Molecular')}:</label>
           <input type="number" id="edit-molecular" value="${amendment.molecularWeight}" step="0.1">
         </div>
         <div class="form-group">
@@ -9154,12 +9171,31 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
         next(out);
         return;
       }
-      window.NpVpdRangeCharts.getReportChartUrls(
-        vpdTbl.summaryRows,
-        vpdTbl.criticalRows || [],
-        vpdTbl.meta || {},
-        vpdTbl.dailySummaryRows || []
-      ).then(function(res) {
+      var reportLangForCharts =
+        reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
+      var reportUnitForCharts =
+        reportOptions && reportOptions.unit_system === 'us_customary' ? 'us_customary' : 'metric';
+      var fetchUrls = function () {
+        return window.NpVpdRangeCharts.getReportChartUrls(
+          vpdTbl.summaryRows,
+          vpdTbl.criticalRows || [],
+          vpdTbl.meta || {},
+          vpdTbl.dailySummaryRows || []
+        );
+      };
+      var runCharts = fetchUrls;
+      if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.withLanguage === 'function') {
+        runCharts = function () {
+          return window.NpWaterClimateUI.withLanguage(reportLangForCharts, fetchUrls);
+        };
+      }
+      if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.withUnitSystem === 'function') {
+        var prevCharts = runCharts;
+        runCharts = function () {
+          return window.NpWaterClimateUI.withUnitSystem(reportUnitForCharts, prevCharts);
+        };
+      }
+      Promise.resolve(runCharts()).then(function(res) {
         if (res && res.vpdCritical) out.vpdCritical = res.vpdCritical;
         next(out);
       }).catch(function(e) {
@@ -9268,9 +9304,11 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
   if (needFerti) {
     try {
       const prog = getFertirriegoProgramForReport();
+      const fertiLang = reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
+      const fertiUnits = reportOptions && reportOptions.unit_system === 'us_customary' ? 'us_customary' : 'metric';
       window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
         afterRadar(chartImages || {});
-      });
+      }, { language: fertiLang, unit_system: fertiUnits });
     } catch (e) {
       console.warn('loadChartImagesForReport ferti:', e);
       afterRadar({});
@@ -15936,9 +15974,28 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       return createSectionHTML(sectionId, chartImgs, lang, unitSystem);
     }).join('');
   };
-  html += window.NpWaterClimateUI
-    ? window.NpWaterClimateUI.withUnitSystem(unitSystem, renderSections)
-    : renderSections();
+  // Forzar idioma + unidades del PDF en helpers (VPD, balance, fertirriego, alertas).
+  const runWithReportPrefs = function (fn) {
+    var run = fn;
+    if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.withUnitSystem === 'function') {
+      var prev = run;
+      run = function () { return window.NpWaterClimateUI.withUnitSystem(unitSystem, prev); };
+    }
+    if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.withLanguage === 'function') {
+      var prevLang = run;
+      run = function () { return window.NpWaterClimateUI.withLanguage(lang, prevLang); };
+    }
+    if (window.NpFertigationUI && typeof window.NpFertigationUI.withLanguage === 'function') {
+      var prevFertiLang = run;
+      run = function () { return window.NpFertigationUI.withLanguage(lang, prevFertiLang); };
+    }
+    if (window.NpFertigationUI && typeof window.NpFertigationUI.withUnitSystem === 'function') {
+      var prevFertiUnit = run;
+      run = function () { return window.NpFertigationUI.withUnitSystem(unitSystem, prevFertiUnit); };
+    }
+    return run();
+  };
+  html += runWithReportPrefs(renderSections);
   
   html += `
       <div class="footer">
@@ -16129,11 +16186,16 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['Sin horas fuera de rango.', 'No out-of-range hours.'],
     ['Modo VPD', 'VPD mode'],
     ['Cobertura solar', 'Solar coverage'],
-    ['Vista', 'View'],
+    ['Vista compacta', 'Compact view'],
     ['Inicio', 'Start'],
     ['Fin', 'End'],
     ['Periodos', 'Periods'],
     ['Tipo', 'Type'],
+    ['Muy alto', 'Very high'],
+    ['Muy bajo', 'Very low'],
+    ['Extremo', 'Extreme'],
+    ['Óptimo', 'Optimal'],
+    ['Moderado', 'Moderate'],
     ['Alto', 'High'],
     ['Bajo', 'Low'],
     ['Diario', 'Daily'],
@@ -16142,6 +16204,15 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['diario', 'daily'],
     ['semanal', 'weekly'],
     ['mensual', 'monthly'],
+    ['Calculadora de balance hídrico', 'Water balance calculator'],
+    ['Extracción nutrimental por etapa (%)', 'Nutrient extraction by stage (%)'],
+    ['Agua en suelo — referencia almacén (sesión navegador)', 'Soil water — store reference (browser session)'],
+    ['Programa Mensual — Fertilizantes', 'Monthly Program — Fertilizers'],
+    ['Programa Semanal — Fertilizantes', 'Weekly Program — Fertilizers'],
+    ['Programa Mensual — Aporte nutricional', 'Monthly Program — Nutrient contribution'],
+    ['Programa Semanal — Aporte nutricional', 'Weekly Program — Nutrient contribution'],
+    ['Relación ppm · meq/L · % (por lámina de riego)', 'ppm · meq/L · % relationship (by irrigation depth)'],
+    ['Relación ppm · meq/L · % (lámina de riego)', 'ppm · meq/L · % relationship (irrigation depth)'],
     ['Coordenadas', 'Coordinates'],
     ['Perímetro', 'Perimeter'],
     ['Superficie', 'Surface Area'],
@@ -17625,7 +17696,13 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
   const programDoseColumnNames = columnNames;
   const hasWeekTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
   function fertiReportEtapaTd(stage) {
-    return `<td class="report-ferti-stage-cell">${reportEscapeHtml(String(stage || ''))}</td>`;
+    var raw = String(stage || '');
+    var shown = raw;
+    try {
+      if (fertiUI && typeof fertiUI.stageName === 'function') shown = fertiUI.stageName(raw, reportLang) || raw;
+      else if (typeof fertProgStage === 'function') shown = fertProgStage(raw) || raw;
+    } catch (eStage) { shown = raw; }
+    return `<td class="report-ferti-stage-cell">${reportEscapeHtml(shown)}</td>`;
   }
   function fertiReportNumTd(n) {
     return `<td class="report-ferti-stage-num">${n}</td>`;
@@ -17754,7 +17831,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
     </tr>
   `).join('');
 
-  const chartLabels = weeks.map((w, i) => `${reportFertiIsMes ? 'Mes' : 'Semana'} ${i + 1}`);
+  const chartLabels = weeks.map((w, i) => `${reportFertiIsMes ? rt('Mes', 'Month') : rt('Semana', 'Week')} ${i + 1}`);
   const macroColors = { N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b' };
   const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
   let macroSeries = {
@@ -17799,18 +17876,18 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
 
   const chartsBlock = (hasCharts || (weeks.length > 0 && hasWeekTotals)) ? `
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
-        <div class="report-block-title">📈 Gráficas de Fertirriego</div>
+        <div class="report-block-title">📈 ${rt('Gráficas de Fertirriego', 'Fertigation Charts')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
           <div>
-            <div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes</div>
+            <div class="report-subtitle" style="margin-bottom:6px;">${rt('Macronutrientes', 'Macronutrients')}</div>
             ${hasCharts && chartImages.macro
-              ? `<img src="${chartImages.macro}" alt="Macronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" />`
+              ? `<img src="${chartImages.macro}" alt="${rt('Macronutrientes', 'Macronutrients')}" style="max-width:100%;height:auto;display:block;border-radius:8px;" />`
               : buildReportInlineSvgChart(chartLabels, macroDatasets)}
           </div>
           <div>
-            <div class="report-subtitle" style="margin-bottom:6px;">Micronutrientes</div>
+            <div class="report-subtitle" style="margin-bottom:6px;">${rt('Micronutrientes', 'Micronutrients')}</div>
             ${hasCharts && chartImages.micro
-              ? `<img src="${chartImages.micro}" alt="Micronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" />`
+              ? `<img src="${chartImages.micro}" alt="${rt('Micronutrientes', 'Micronutrients')}" style="max-width:100%;height:auto;display:block;border-radius:8px;" />`
               : buildReportInlineSvgChart(chartLabels, microDatasets)}
           </div>
         </div>
@@ -17842,38 +17919,38 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
       </div>
       <div class="report-block" style="border-color:#99f6e4;background:#f0fdfa;">
         <div class="report-block-title">💧 ${rt('Programa de Fertirriego', 'Fertigation Program')} <span class="report-mode-badge">${programModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
-        ${!hasWeekTotals ? `<div class="report-note" style="margin-bottom:8px;">Sin totales guardados por ${reportFertiIsMes ? 'mes' : 'semana'}. El reporte no recalcula con catálogo interno.</div>` : ''}
+        ${!hasWeekTotals ? `<div class="report-note" style="margin-bottom:8px;">${rt('Sin totales guardados por', 'No saved totals per')} ${reportFertiIsMes ? rt('mes', 'month') : rt('semana', 'week')}. ${rt('El reporte no recalcula con catálogo interno.', 'The report does not recalculate with an internal catalog.')}</div>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
-          <div><strong>${reportFertiIsMes ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
+          <div><strong>${reportFertiIsMes ? rt('Meses', 'Months') : rt('Semanas', 'Weeks')}:</strong> ${weeks.length}</div>
           <div><strong>${rt('Dosis total', 'Total rate')}:</strong> ${q(totalDose, 'dose_mass_area', doseUnit)}</div>
         </div>
-        <div class="report-subtitle">Aporte del programa de nutrición (kg/ha):</div>
+        <div class="report-subtitle">${rt('Aporte del programa de nutrición', 'Nutrition program supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false, null, 'dose_mass_area')}</div>
-        <div class="report-subtitle">Aporte por agua (kg/ha):</div>
+        <div class="report-subtitle">${rt('Aporte por agua', 'Water nutrient supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true }, 'dose_mass_area')}</div>
-        <div class="report-subtitle">Aporte total (programa + agua) (kg/ha):</div>
+        <div class="report-subtitle">${rt('Aporte total (programa + agua)', 'Total supply (program + water)')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalWithWater, programModeIsElemental, false, null, 'dose_mass_area')}</div>
-        <div class="report-subtitle">Requerimiento Real (kg/ha):</div>
+        <div class="report-subtitle">${rt('Requerimiento Real', 'Actual Requirement')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(required, programModeIsElemental, false, null, 'dose_mass_area')}</div>
-        <div class="report-subtitle">Diferencia (Aporte total - Requerimiento) (kg/ha):</div>
+        <div class="report-subtitle">${rt('Diferencia (Aporte total - Requerimiento)', 'Difference (total supply − requirement)')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(diff, programModeIsElemental, true, null, 'dose_mass_area')}</div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} — Fertilizantes <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
+        <div class="report-block-title">${rt('Programa', 'Program')} ${reportFertiIsMes ? rt('Mensual', 'Monthly') : rt('Semanal', 'Weekly')} — ${rt('Fertilizantes', 'Fertilizers')} <span style="font-weight:600;color:#64748b;">(${doseUnit})</span></div>
         <p class="report-note report-table-legend">
-          <strong>Leyenda:</strong> Dosis de cada fertilizante del programa por ${reportFertiIsMes ? 'mes' : 'semana'}. Use la misma <strong>Etapa</strong> y <strong>#</strong> para relacionar con la tabla de aportes.
+          <strong>${rt('Leyenda:', 'Legend:')}</strong> ${rt('Dosis de cada fertilizante del programa por', 'Dose of each fertilizer in the program per')} ${reportFertiIsMes ? rt('mes', 'month') : rt('semana', 'week')}. ${rt('Use la misma', 'Use the same')} <strong>${rt('Etapa', 'Stage')}</strong> ${rt('y', 'and')} <strong>#</strong> ${rt('para relacionar con la tabla de aportes.', 'to match the contribution table.')}
         </p>
         <div class="report-table-wrap report-pdf-compact-table">
         <table class="report-app-table">
           <thead>
             <tr>
-              <th>Etapa</th>
+              <th>${rt('Etapa', 'Stage')}</th>
               <th>#</th>
               ${programDoseColumnNames.map(name => `<th>${reportEscapeHtml(name)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${doseRows || `<tr><td colspan="${2 + programDoseColumns.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
+            ${doseRows || `<tr><td colspan="${2 + programDoseColumns.length}" style="text-align:center;color:#64748b;">${rt('Sin', 'No')} ${reportFertiIsMes ? rt('meses', 'months') : rt('semanas', 'weeks')} ${rt('configurados.', 'configured.')}</td></tr>`}
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
@@ -17884,22 +17961,22 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
         </div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} — Aporte nutricional <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
+        <div class="report-block-title">${rt('Programa', 'Program')} ${reportFertiIsMes ? rt('Mensual', 'Monthly') : rt('Semanal', 'Weekly')} — ${rt('Aporte nutricional', 'Nutrient contribution')} <span style="font-weight:600;color:#64748b;">(${doseUnit})</span></div>
         <p class="report-note report-table-legend">
-          <strong>Leyenda:</strong> Mismas filas (Etapa y #). Tras la línea: <strong>macros y micros</strong> aportados en esa ${reportFertiIsMes ? 'mes' : 'semana'} — un solo plan, no sumar tablas.
+          <strong>${rt('Leyenda:', 'Legend:')}</strong> ${rt('Mismas filas (Etapa y #). Tras la línea: macros y micros aportados en esa', 'Same rows (Stage and #). After the line: macros and micros supplied in that')} ${reportFertiIsMes ? rt('mes', 'month') : rt('semana', 'week')} — ${rt('un solo plan, no sumar tablas.', 'one plan; do not add the tables together.')}
         </p>
         <div class="report-table-wrap report-pdf-compact-table">
         <table class="report-app-table">
           <thead>
             <tr>
-              <th>Etapa</th>
+              <th>${rt('Etapa', 'Stage')}</th>
               <th>#</th>
               ${macroCols.map(n => `<th>${label(n, programModeIsElemental)}</th>`).join('')}
               ${microCols.map((n, i) => `<th class="${i === 0 ? 'report-divider-left' : ''}">${label(n, programModeIsElemental)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${nutrientAporteRows || `<tr><td colspan="${2 + macroCols.length + microCols.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
+            ${nutrientAporteRows || `<tr><td colspan="${2 + macroCols.length + microCols.length}" style="text-align:center;color:#64748b;">${rt('Sin', 'No')} ${reportFertiIsMes ? rt('meses', 'months') : rt('semanas', 'weeks')} ${rt('configurados.', 'configured.')}</td></tr>`}
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
@@ -18694,62 +18771,70 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
       </div>
       ${currentRangeTable ? `
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">🗓️ Serie VPD por Rango (Estrés)</div>
+        <div class="report-block-title">🗓️ ${rt('Serie VPD por Rango (Estrés)', 'VPD Range Series (Stress)')}</div>
         <div class="report-note" style="margin-bottom:8px;">
-          <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa ·
-          ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
-          (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
+          <strong>${rt('Rango Óptimo:', 'Optimal range:')}</strong> 0.5 - 1.5 kPa ·
+          ${reportEscapeHtml((function () {
+            var g = (currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario';
+            if (g === 'weekly' || g === 'semanal') return rt('Semanal', 'Weekly');
+            if (g === 'monthly' || g === 'mensual') return rt('Mensual', 'Monthly');
+            if (g === 'daily' || g === 'diario') return rt('Diario', 'Daily');
+            return String(g);
+          })())}
+          (${reportEscapeHtml(currentRangeTable.meta && currentRangeTable.meta.startDate ? reportFormatDate(currentRangeTable.meta.startDate, reportLang) : '—')}
+          ${rt('a', 'to')}
+          ${reportEscapeHtml(currentRangeTable.meta && currentRangeTable.meta.endDate ? reportFormatDate(currentRangeTable.meta.endDate, reportLang) : '—')})
           <div style="margin-top:8px;font-size:11px;color:#64748b;line-height:1.45;">
-            Tabla con VPD máx/mín, horas por zona y % estrés (sin gráfica de barras 24 h).
+            ${rt('Tabla con VPD máx/mín, horas por zona y % estrés (sin gráfica de barras 24 h).', 'Table with max/min VPD, hours by zone and % stress (no 24 h bar chart).')}
           </div>
         </div>
         <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-wide-table">
           <thead>
             <tr>
-              <th>Periodo</th>
-              <th>VPD máx</th>
-              <th>Hora máx</th>
-              <th>VPD mín</th>
-              <th>Hora mín</th>
-              <th>Horas &gt; 1.5</th>
-              <th>Horas &lt; 0.5</th>
-              <th>Horas óptimas</th>
-              <th>% estrés</th>
-              <th>UV máx</th>
+              <th>${rt('Periodo', 'Period')}</th>
+              <th>${rt('VPD máx', 'Max VPD')}</th>
+              <th>${rt('Hora máx', 'Max hour')}</th>
+              <th>${rt('VPD mín', 'Min VPD')}</th>
+              <th>${rt('Hora mín', 'Min hour')}</th>
+              <th>${rt('Horas', 'Hours')} &gt; 1.5</th>
+              <th>${rt('Horas', 'Hours')} &lt; 0.5</th>
+              <th>${rt('Horas óptimas', 'Optimal hours')}</th>
+              <th>${rt('% estrés', '% stress')}</th>
+              <th>${rt('UV máx', 'Max UV')}</th>
             </tr>
           </thead>
           <tbody>
-            ${vpdStressSummaryRowHtml(currentRangeTable.summaryRows) || '<tr><td colspan="10" style="text-align:center;color:#64748b;">Sin datos.</td></tr>'}
+            ${vpdStressSummaryRowHtml(currentRangeTable.summaryRows) || '<tr><td colspan="10" style="text-align:center;color:#64748b;">' + rt('Sin datos.', 'No data.') + '</td></tr>'}
           </tbody>
         </table>
         </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">⏱️ Horas críticas (${criticalPrep.rows.length}) · ${getVpdCriticalDisplayLabel()}${criticalPrep.windowStart && criticalPrep.windowEnd ? ' · ' + reportEscapeHtml(criticalPrep.windowStart) + ' a ' + reportEscapeHtml(criticalPrep.windowEnd) : ''}</div>
-        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)} Gráfica: barras tenues 24 h/día · línea azul VPD mín + hora · línea tinta VPD máx + hora.</div>` : ''}
+        <div class="report-block-title">⏱️ ${rt('Horas críticas', 'Critical hours')} (${criticalPrep.rows.length}) · ${getVpdCriticalDisplayLabel()}${criticalPrep.windowStart && criticalPrep.windowEnd ? ' · ' + reportEscapeHtml(reportFormatDate(criticalPrep.windowStart, reportLang)) + ' ' + rt('a', 'to') + ' ' + reportEscapeHtml(reportFormatDate(criticalPrep.windowEnd, reportLang)) : ''}</div>
+        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)} ${rt('Gráfica: barras tenues 24 h/día · línea azul VPD mín + hora · línea tinta VPD máx + hora.', 'Chart: faint 24 h/day bars · blue min VPD + time · ink max VPD + time.')}</div>` : ''}
         ${
           chartImages && chartImages.vpdCritical
-            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdCritical}" alt="Gráfica horas críticas VPD" style="display:block;width:100%;max-width:${window.NpVpdRangeCharts ? window.NpVpdRangeCharts.CRITICAL_CHART_PAGE_WIDTH : 680}px;margin:0 auto;max-height:320px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
-            : '<div class="report-note">Sin gráfica de distribución diaria (descarga la serie VPD en Clima antes del PDF).</div>'
+            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdCritical}" alt="${rt('Gráfica horas críticas VPD', 'VPD critical hours chart')}" style="display:block;width:100%;max-width:${window.NpVpdRangeCharts ? window.NpVpdRangeCharts.CRITICAL_CHART_PAGE_WIDTH : 680}px;margin:0 auto;max-height:320px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
+            : '<div class="report-note">' + rt('Sin gráfica de distribución diaria (descarga la serie VPD en Clima antes del PDF).', 'No daily distribution chart (download the VPD series in Climate before the PDF).') + '</div>'
         }
       </div>
       ` : ''}
       ${savedRangeTables.length ? `
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">💾 Cuadros guardados de VPD (${savedRangeTables.length})</div>
+        <div class="report-block-title">💾 ${rt('Cuadros guardados de VPD', 'Saved VPD tables')} (${savedRangeTables.length})</div>
         <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-saved-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Vista</th>
-              <th>Inicio</th>
-              <th>Fin</th>
-              <th>Periodos</th>
-              <th>Modo VPD</th>
-              <th>Cobertura solar</th>
-              <th>% estrés (prom.)</th>
+              <th>${rt('Vista', 'View')}</th>
+              <th>${rt('Inicio', 'Start')}</th>
+              <th>${rt('Fin', 'End')}</th>
+              <th>${rt('Periodos', 'Periods')}</th>
+              <th>${rt('Modo VPD', 'VPD mode')}</th>
+              <th>${rt('Cobertura solar', 'Solar coverage')}</th>
+              <th>${rt('% estrés (prom.)', '% stress (avg)')}</th>
             </tr>
           </thead>
           <tbody>
@@ -18971,12 +19056,17 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
   const imgs = (chartImages && chartImages.extraccionEtapa) ? chartImages.extraccionEtapa : {};
   const unitSystem = reportUnitSystem === 'us_customary' ? 'us_customary' : 'metric';
   const massAreaUnit = unitSystem === 'us_customary' ? 'lb/acre' : 'kg/ha';
+  const lang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = function (es, en) { return lang === 'en' ? en : es; };
   if (!state) {
     return `
     <div class="section">
-      <h2 class="section-title">📊 Extracción nutrimental por etapa (%)</h2>
+      <h2 class="section-title">📊 ${rt('Extracción nutrimental por etapa (%)', 'Nutrient extraction by stage (%)')}</h2>
       <div class="report-note">
-        No hay datos guardados para este proyecto. Configura la herramienta <strong>Extracción nutrimental por etapa (%)</strong> desde el botón 📊 del panel (con el proyecto activo) y vuelve a generar el reporte.
+        ${rt(
+          'No hay datos guardados para este proyecto. Configura la herramienta <strong>Extracción nutrimental por etapa (%)</strong> desde el botón 📊 del panel (con el proyecto activo) y vuelve a generar el reporte.',
+          'No data saved for this project. Set up the <strong>Nutrient extraction by stage (%)</strong> tool from the 📊 button on the panel (with the project active) and generate the report again.'
+        )}
       </div>
     </div>`;
   }
@@ -19020,39 +19110,42 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
   }).join('');
 
   const macroImg = imgs.macro
-    ? '<img src="' + imgs.macro + '" alt="Macros por etapa" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
-    : '<div class="report-note">Sin macronutrientes configurados para graficar.</div>';
+    ? '<img src="' + imgs.macro + '" alt="' + rt('Macros por etapa', 'Macros by stage') + '" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
+    : '<div class="report-note">' + rt('Sin macronutrientes configurados para graficar.', 'No macronutrients configured to chart.') + '</div>';
   const microImg = imgs.micro
-    ? '<img src="' + imgs.micro + '" alt="Micros por etapa" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
-    : '<div class="report-note">Sin micronutrientes en la lista (usa + Agregar nutriente en la herramienta).</div>';
+    ? '<img src="' + imgs.micro + '" alt="' + rt('Micros por etapa', 'Micros by stage') + '" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
+    : '<div class="report-note">' + rt('Sin micronutrientes en la lista (usa + Agregar nutriente en la herramienta).', 'No micronutrients in the list (use + Add nutrient in the tool).') + '</div>';
 
   return `
     <div class="section">
-      <h2 class="section-title">📊 Extracción nutrimental por etapa (%)</h2>
+      <h2 class="section-title">📊 ${rt('Extracción nutrimental por etapa (%)', 'Nutrient extraction by stage (%)')}</h2>
       <p class="report-note" style="margin-top:0;">
-        Datos del proyecto activo: extracción total (${massAreaUnit}), reparto % por etapa fenológica y curvas de ${massAreaUnit}. Los cálculos son una guía y deben validarse en campo.
+        ${rt(
+          'Datos del proyecto activo: extracción total (' + massAreaUnit + '), reparto % por etapa fenológica y curvas de ' + massAreaUnit + '. Los cálculos son una guía y deben validarse en campo.',
+          'Active project data: total extraction (' + massAreaUnit + '), % allocation by phenological stage and ' + massAreaUnit + ' curves. Figures are a guide and should be validated in the field.'
+        )}
       </p>
       <div class="report-block" style="border-color:#bfdbfe;background:#eff6ff;">
-        <div class="report-block-title">Extracción total por nutriente (${massAreaUnit})</div>
+        <div class="report-block-title">${rt('Extracción total por nutriente', 'Total extraction per nutrient')} (${massAreaUnit})</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
-            <thead><tr><th>Nutriente</th>${nutrients.map(function(n) { return '<th>' + reportEscapeHtml(n.label) + '</th>'; }).join('')}</tr></thead>
-            <tbody><tr><td>Total ciclo</td>${totalsRow}</tr></tbody>
+            <thead><tr><th>${rt('Nutriente', 'Nutrient')}</th>${nutrients.map(function(n) { return '<th>' + reportEscapeHtml(n.label) + '</th>'; }).join('')}</tr></thead>
+            <tbody><tr><td>${rt('Total ciclo', 'Cycle total')}</td>${totalsRow}</tr></tbody>
           </table>
         </div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Reparto por etapa (%)</div>
+        <div class="report-block-title">${rt('Reparto por etapa (%)', 'Allocation by stage (%)')}</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
-            <thead><tr><th>Etapa</th>${pctHead}</tr></thead>
+            <thead><tr><th>${rt('Etapa', 'Stage')}</th>${pctHead}</tr></thead>
             <tbody>${pctRows}</tbody>
             <tfoot><tr class="total-row"><td>Σ %</td>${pctFoot}</tr></tfoot>
           </table>
         </div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Resultado ${massAreaUnit} por etapa</div>
+        <div class="report-block-title">${rt('Resultado', 'Result')} ${massAreaUnit} ${rt('por etapa', 'by stage')}</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
             <thead><tr><th>Etapa</th>${kgHead}</tr></thead>
@@ -19254,7 +19347,7 @@ window.addNewSolucionNutritivaAnalysis = function addNewSolucionNutritivaAnalysi
   if (!currentProject.id) { alert('Selecciona un proyecto primero.'); return; }
   var list = window.getSolucionNutritivaAnalyses();
   var a = createEmptySolucionNutritivaAnalysis();
-  a.title = 'Nuevo análisis ' + (list.length + 1);
+  a.title = analysisNewTitle(list.length + 1);
   list.push(a);
   window.saveSolucionNutritivaAnalysesToProject();
   window.renderSolucionNutritivaList && window.renderSolucionNutritivaList();
@@ -19391,7 +19484,7 @@ window.selectSolucionNutritivaAnalysis = function selectSolucionNutritivaAnalysi
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  document.getElementById('sn-meta-title').value = a.title || '';
+  document.getElementById('sn-meta-title').value = analysisDisplayTitle(a.title || '');
   document.getElementById('sn-meta-date').value = a.date || '';
   if (a.general) { ['ce','ph','ras'].forEach(function(f) { var el = document.getElementById('sn-general-' + f); if (el) el.value = a.general[f] !== undefined && a.general[f] !== '' ? a.general[f] : ''; }); }
   function snFmt2(v) { if (v === undefined || v === '' || v === null) return ''; var n = parseFloat(v); return isNaN(n) ? '' : n.toFixed(2); }
@@ -19417,7 +19510,7 @@ window.renderSolucionNutritivaList = function renderSolucionNutritivaList() {
     var card = document.createElement('div');
     card.className = 'soil-analysis-card';
     card.setAttribute('data-id', a.id);
-    card.innerHTML = '<div class="soil-analysis-card-title">' + (a.title || 'Sin título') + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
+    card.innerHTML = '<div class="soil-analysis-card-title">' + analysisDisplayTitle(a.title) + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
     card.onclick = function() { window.selectSolucionNutritivaAnalysis(a.id); };
     listEl.appendChild(card);
   });
@@ -19629,7 +19722,7 @@ window.addNewExtractoPastaAnalysis = function addNewExtractoPastaAnalysis() {
   if (!currentProject.id) { alert('Selecciona un proyecto primero.'); return; }
   var list = window.getExtractoPastaAnalyses();
   var a = createEmptyExtractoPastaAnalysis();
-  a.title = 'Nuevo análisis ' + (list.length + 1);
+  a.title = analysisNewTitle(list.length + 1);
   list.push(a);
   window.saveExtractoPastaAnalysesToProject();
   window.renderExtractoPastaList && window.renderExtractoPastaList();
@@ -19838,7 +19931,7 @@ window.selectExtractoPastaAnalysis = function selectExtractoPastaAnalysis(id) {
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  document.getElementById('ep-meta-title').value = a.title || '';
+  document.getElementById('ep-meta-title').value = analysisDisplayTitle(a.title || '');
   document.getElementById('ep-meta-date').value = a.date || '';
   if (a.general) { ['cee','ras','phe'].forEach(function(f) { var el = document.getElementById('ep-general-' + f); if (el) el.value = a.general[f] !== undefined && a.general[f] !== '' ? a.general[f] : ''; }); }
   function epFmt2(v) { if (v === undefined || v === '' || v === null) return ''; var n = parseFloat(v); return isNaN(n) ? '' : n.toFixed(2); }
@@ -19863,7 +19956,7 @@ window.renderExtractoPastaList = function renderExtractoPastaList() {
     var card = document.createElement('div');
     card.className = 'soil-analysis-card';
     card.setAttribute('data-id', a.id);
-    card.innerHTML = '<div class="soil-analysis-card-title">' + (a.title || 'Sin título') + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
+    card.innerHTML = '<div class="soil-analysis-card-title">' + analysisDisplayTitle(a.title) + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
     card.onclick = function() { window.selectExtractoPastaAnalysis(a.id); };
     listEl.appendChild(card);
   });
@@ -19948,6 +20041,11 @@ var AGUA_ACIDS = [
   { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0, densityKgL: 1.57 },
   { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6, densityKgL: 1.69 }
 ];
+function aguaAcidLabel(name) {
+  return window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function'
+    ? window.NpAnalysisUI.translateString(name)
+    : name;
+}
 
 function createEmptyAguaAnalysis() {
   var id = 'aw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
@@ -19965,7 +20063,9 @@ function createEmptyAguaAnalysis() {
 }
 
 function createAguaTabHTML() {
-  var acidOptions = AGUA_ACIDS.map(function(ac){ return '<option value="'+ac.id+'">'+ac.name+'</option>'; }).join('');
+  var acidOptions = AGUA_ACIDS.map(function(ac){
+    return '<option value="' + ac.id + '" data-name-es="' + ac.name + '">' + aguaAcidLabel(ac.name) + '</option>';
+  }).join('');
   var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="agua-tab-container">
       <div class="soil-analysis-watermark" aria-hidden="true">
@@ -20090,7 +20190,7 @@ window.addNewAguaAnalysis = function addNewAguaAnalysis() {
   if (!currentProject.id) { alert('Selecciona un proyecto primero.'); return; }
   var list = window.getAguaAnalyses();
   var a = createEmptyAguaAnalysis();
-  a.title = 'Nuevo análisis ' + (list.length + 1);
+  a.title = analysisNewTitle(list.length + 1);
   list.push(a);
   window.saveAguaAnalysesToProject();
   window.renderAguaList && window.renderAguaList();
@@ -20343,7 +20443,7 @@ window.selectAguaAnalysis = function selectAguaAnalysis(id) {
     ? (window.NpAnalysisUI ? window.NpAnalysisUI.volumeInputFromSI(a.m3Riego) : a.m3Riego)
     : '';
   analysisApplyUnits(document.getElementById('agua-tab-container'));
-  document.getElementById('aw-meta-title').value = a.title || '';
+  document.getElementById('aw-meta-title').value = analysisDisplayTitle(a.title || '');
   document.getElementById('aw-meta-date').value = a.date || '';
   if (a.general) { ['ce','ras','ph'].forEach(function(f) { var el = document.getElementById('aw-general-' + f); if (el) el.value = a.general[f] !== undefined && a.general[f] !== '' ? a.general[f] : ''; }); }
   function awFmt(v) { if (v === undefined || v === '' || v === null) return ''; var n = parseFloat(v); return isNaN(n) ? '' : n.toFixed(2); }
@@ -20372,7 +20472,7 @@ window.renderAguaList = function renderAguaList() {
     var card = document.createElement('div');
     card.className = 'soil-analysis-card';
     card.setAttribute('data-id', a.id);
-    card.innerHTML = '<div class="soil-analysis-card-title">' + (a.title || 'Sin título') + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
+    card.innerHTML = '<div class="soil-analysis-card-title">' + analysisDisplayTitle(a.title) + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
     card.onclick = function() { window.selectAguaAnalysis(a.id); };
     listEl.appendChild(card);
   });
@@ -20553,7 +20653,7 @@ window.addNewFoliarAnalysis = function addNewFoliarAnalysis() {
   if (!currentProject.id) { alert('Selecciona un proyecto primero.'); return; }
   var list = window.getFoliarAnalyses();
   var a = createEmptyFoliarAnalysis();
-  a.title = 'Nuevo análisis ' + (list.length + 1);
+  a.title = analysisNewTitle(list.length + 1);
   list.push(a);
   window.saveFoliarAnalysesToProject();
   window.renderFoliarList && window.renderFoliarList();
@@ -20651,7 +20751,7 @@ window.selectFoliarAnalysis = function selectFoliarAnalysis(id) {
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  document.getElementById('f-meta-title').value = a.title || '';
+  document.getElementById('f-meta-title').value = analysisDisplayTitle(a.title || '');
   document.getElementById('f-meta-date').value = a.date || '';
   function fFmt(v) { if (v === undefined || v === '' || v === null) return ''; return String(v); }
   var macros = a.macros || {}; var micros = a.micros || {};
@@ -20677,7 +20777,7 @@ window.renderFoliarList = function renderFoliarList() {
     var card = document.createElement('div');
     card.className = 'soil-analysis-card';
     card.setAttribute('data-id', a.id);
-    card.innerHTML = '<div class="soil-analysis-card-title">' + (a.title || 'Sin título') + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
+    card.innerHTML = '<div class="soil-analysis-card-title">' + analysisDisplayTitle(a.title) + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
     card.onclick = function() { window.selectFoliarAnalysis(a.id); };
     listEl.appendChild(card);
   });
@@ -20755,12 +20855,39 @@ var FRUTA_CALIDAD_LABELS = { materiaSeca: 'Materia Seca (%)', brix: '°Brix', fi
 var FRUTA_CALIDAD_LABELS_EN = { materiaSeca: 'Dry matter (%)', brix: '°Brix', firmeza: 'Firmness (kg/cm²)', acidezTitulable: 'Titratable acidity (%)' };
 var FRUTA_CALCIO_LABELS = { caTotal: 'Ca total (mg/100 g MF)', caSolublePct: '% Ca soluble', caLigadoPct: '% Ca ligado', caInsolublePct: '% Ca insoluble' };
 var FRUTA_CALCIO_LABELS_EN = { caTotal: 'Total Ca (mg/100 g FW)', caSolublePct: '% soluble Ca', caLigadoPct: '% bound Ca', caInsolublePct: '% insoluble Ca' };
+/** 1 kgf/cm² ≈ 14.2233 psi — firmeza canónica en kg/cm² */
+var FRUTA_KGCM2_TO_PSI = 14.223343307;
+
+function frutaUsesPsi() {
+  try {
+    return !!(window.NpAnalysisUI && typeof window.NpAnalysisUI.isUS === 'function' && window.NpAnalysisUI.isUS());
+  } catch (e) { return false; }
+}
+
+function frutaFirmezaFromSI(v) {
+  if (v === undefined || v === null || v === '') return '';
+  var n = parseFloat(v);
+  if (!Number.isFinite(n)) return String(v);
+  if (!frutaUsesPsi()) return String(v);
+  return String(Number((n * FRUTA_KGCM2_TO_PSI).toFixed(1)));
+}
+
+function frutaFirmezaToSI(v) {
+  if (v === undefined || v === null || v === '') return v;
+  var n = parseFloat(String(v).replace(',', '.'));
+  if (!Number.isFinite(n)) return v;
+  if (!frutaUsesPsi()) return String(v);
+  return String(Number((n / FRUTA_KGCM2_TO_PSI).toFixed(4)));
+}
 
 function frutaLabel(mapEs, mapEn, key) {
   var lang = 'es';
   try {
     if (window.NpPrefs && window.NpPrefs.get) lang = window.NpPrefs.get().language || 'es';
   } catch (e) {}
+  if (key === 'firmeza' && frutaUsesPsi()) {
+    return lang === 'en' ? 'Firmness (psi)' : 'Firmeza (psi)';
+  }
   return (lang === 'en' ? (mapEn[key] || mapEs[key]) : mapEs[key]) || key;
 }
 
@@ -20906,7 +21033,7 @@ window.addNewFrutaAnalysis = function addNewFrutaAnalysis() {
   if (!currentProject.id) { alert('Selecciona un proyecto primero.'); return; }
   var list = window.getFrutaAnalyses();
   var a = createEmptyFrutaAnalysis();
-  a.title = 'Nuevo análisis ' + (list.length + 1);
+  a.title = analysisNewTitle(list.length + 1);
   list.push(a);
   window.saveFrutaAnalysesToProject();
   window.renderFrutaList && window.renderFrutaList();
@@ -20956,11 +21083,16 @@ window.saveFrutaField = function saveFrutaField(group, valueOrField, value) {
   if (group === 'meta') { a[valueOrField] = value; }
   else if (group === 'macros' && a.macros) { a.macros[valueOrField] = value; }
   else if (group === 'micros' && a.micros) { a.micros[valueOrField] = value; }
-  else if (group === 'calidad' && a.calidad) { a.calidad[valueOrField] = value; }
+  else if (group === 'calidad' && a.calidad) {
+    a.calidad[valueOrField] = valueOrField === 'firmeza' ? frutaFirmezaToSI(value) : value;
+  }
   else if (group === 'calcio' && a.calcio) { a.calcio[valueOrField] = value; }
   else if (group === 'optimalMacro') { if (!a.optimalMacro) a.optimalMacro = {}; a.optimalMacro[valueOrField] = value; }
   else if (group === 'optimalMicro') { if (!a.optimalMicro) a.optimalMicro = {}; a.optimalMicro[valueOrField] = value; }
-  else if (group === 'optimalCalidad') { if (!a.optimalCalidad) a.optimalCalidad = {}; a.optimalCalidad[valueOrField] = value; }
+  else if (group === 'optimalCalidad') {
+    if (!a.optimalCalidad) a.optimalCalidad = {};
+    a.optimalCalidad[valueOrField] = valueOrField === 'firmeza' ? frutaFirmezaToSI(value) : value;
+  }
   else if (group === 'optimalCalcio') { if (!a.optimalCalcio) a.optimalCalcio = {}; a.optimalCalcio[valueOrField] = value; }
   window.saveFrutaAnalysesToProject();
 };
@@ -21026,7 +21158,7 @@ window.selectFrutaAnalysis = function selectFrutaAnalysis(id) {
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  document.getElementById('fru-meta-title').value = a.title || '';
+  document.getElementById('fru-meta-title').value = analysisDisplayTitle(a.title || '');
   document.getElementById('fru-meta-date').value = a.date || '';
   function fFmt(v) { if (v === undefined || v === '' || v === null) return ''; return String(v); }
   var macros = a.macros || {}; var micros = a.micros || {}; var calidad = a.calidad || {}; var calcio = a.calcio || {};
@@ -21040,8 +21172,17 @@ window.selectFrutaAnalysis = function selectFrutaAnalysis(id) {
     var o = document.getElementById('fru-opt-micro-' + n); if (o) o.value = (optMicro[n] !== undefined && optMicro[n] !== '') ? fFmt(optMicro[n]) : (FRUTA_OPTIMAL_MICRO[n] % 1 === 0 ? FRUTA_OPTIMAL_MICRO[n] : FRUTA_OPTIMAL_MICRO[n].toFixed(2));
   });
   ['materiaSeca','brix','firmeza','acidezTitulable'].forEach(function(k) {
-    var r = document.getElementById('fru-calidad-' + k); if (r) r.value = fFmt(calidad[k]);
-    var o = document.getElementById('fru-opt-calidad-' + k); if (o) o.value = (optCalidad[k] !== undefined && optCalidad[k] !== '') ? fFmt(optCalidad[k]) : (FRUTA_OPTIMAL_CALIDAD[k] % 1 === 0 ? FRUTA_OPTIMAL_CALIDAD[k] : FRUTA_OPTIMAL_CALIDAD[k].toFixed(2));
+    var r = document.getElementById('fru-calidad-' + k);
+    var o = document.getElementById('fru-opt-calidad-' + k);
+    var rawVal = calidad[k];
+    var rawOpt = (optCalidad[k] !== undefined && optCalidad[k] !== '') ? optCalidad[k] : FRUTA_OPTIMAL_CALIDAD[k];
+    if (k === 'firmeza') {
+      if (r) r.value = frutaFirmezaFromSI(rawVal);
+      if (o) o.value = frutaFirmezaFromSI(rawOpt);
+    } else {
+      if (r) r.value = fFmt(rawVal);
+      if (o) o.value = (optCalidad[k] !== undefined && optCalidad[k] !== '') ? fFmt(optCalidad[k]) : (FRUTA_OPTIMAL_CALIDAD[k] % 1 === 0 ? FRUTA_OPTIMAL_CALIDAD[k] : FRUTA_OPTIMAL_CALIDAD[k].toFixed(2));
+    }
   });
   ['caTotal','caSolublePct','caLigadoPct','caInsolublePct'].forEach(function(k) {
     var r = document.getElementById('fru-calcio-' + k); if (r) r.value = fFmt(calcio[k]);
@@ -21060,7 +21201,7 @@ window.renderFrutaList = function renderFrutaList() {
     var card = document.createElement('div');
     card.className = 'soil-analysis-card';
     card.setAttribute('data-id', a.id);
-    card.innerHTML = '<div class="soil-analysis-card-title">' + (a.title || 'Sin título') + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
+    card.innerHTML = '<div class="soil-analysis-card-title">' + analysisDisplayTitle(a.title) + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
     card.onclick = function() { window.selectFrutaAnalysis(a.id); };
     listEl.appendChild(card);
   });
@@ -21335,7 +21476,7 @@ window.addNewSoilAnalysis = function addNewSoilAnalysis() {
   if (!currentProject.id) { alert('Selecciona un proyecto primero.'); return; }
   var list = window.getSoilAnalyses();
   var a = createEmptySoilAnalysis();
-  a.title = 'Nuevo análisis ' + (list.length + 1);
+  a.title = analysisNewTitle(list.length + 1);
   list.push(a);
   window.saveSoilAnalysesToProject();
   window.renderSoilAnalysesList && window.renderSoilAnalysesList();
@@ -21598,7 +21739,7 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  document.getElementById('soil-meta-title').value = analysis.title || '';
+  document.getElementById('soil-meta-title').value = analysisDisplayTitle(analysis.title || '');
   document.getElementById('soil-meta-date').value = analysis.date || '';
   ['physical','phSection','fertility','cations','ratios'].forEach(function (group) {
     if (!analysis[group]) return;
@@ -21767,7 +21908,7 @@ window.renderSoilAnalysesList = function renderSoilAnalysesList() {
     const card = document.createElement('div');
     card.className = 'soil-analysis-card';
     card.setAttribute('data-id', a.id);
-    card.innerHTML = '<div class="soil-analysis-card-title">' + (a.title || 'Sin título') + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
+    card.innerHTML = '<div class="soil-analysis-card-title">' + analysisDisplayTitle(a.title) + '</div><div class="soil-analysis-card-date">' + (a.date || '') + '</div>';
     card.onclick = function () { window.selectSoilAnalysis(a.id); };
     listEl.appendChild(card);
   });
@@ -21977,8 +22118,8 @@ function syncVPDFormDraftFromDOM() {
   if (t || h) {
     var env = Object.assign({}, currentProject.vpdAnalysis.environmental || {});
     if (t && t.value !== '') {
-      var pt = parseFloat(t.value);
-      if (!isNaN(pt)) env.temperature = pt;
+      var pt = waterClimateRead('vpd-env-temp', 'temperature');
+      if (pt != null && Number.isFinite(pt)) env.temperature = pt;
     }
     if (h && h.value !== '') {
       var ph = parseFloat(h.value);
@@ -21992,8 +22133,8 @@ function syncVPDFormDraftFromDOM() {
   if (at || ahu || modeRadio) {
     var adv = Object.assign({}, currentProject.vpdAnalysis.advanced || {});
     if (at && at.value !== '') {
-      var p = parseFloat(at.value);
-      if (!isNaN(p)) adv.airTemperature = p;
+      var p = waterClimateRead('vpd-adv-air-temp', 'temperature');
+      if (p != null && Number.isFinite(p)) adv.airTemperature = p;
     }
     if (ahu && ahu.value !== '') {
       var q = parseFloat(ahu.value);
@@ -22002,8 +22143,8 @@ function syncVPDFormDraftFromDOM() {
     if (modeRadio) adv.mode = modeRadio.value;
     var lt = document.getElementById('vpd-leaf-temp');
     if (lt && lt.value !== '') {
-      var plt = parseFloat(lt.value);
-      if (!isNaN(plt)) adv.leafTemperature = plt;
+      var plt = waterClimateRead('vpd-leaf-temp', 'temperature');
+      if (plt != null && Number.isFinite(plt)) adv.leafTemperature = plt;
     }
     var sr = document.getElementById('vpd-solar-radiation');
     if (sr && sr.value !== '') {
@@ -22109,12 +22250,18 @@ function getIsoWeekKey(isoDate) {
   return d.getFullYear() + '-W' + String(week).padStart(2, '0');
 }
 
+function vpdUiT(es, en) {
+  return window.NpWaterClimateUI && typeof window.NpWaterClimateUI.t === 'function'
+    ? window.NpWaterClimateUI.t(es, en)
+    : es;
+}
+
 function getVPDStatus(vpdValue) {
   var v = Number(vpdValue);
-  if (!Number.isFinite(v)) return 'N/D';
-  if (v < 0.5) return 'Bajo';
-  if (v <= 1.5) return 'Óptimo';
-  return 'Alto';
+  if (!Number.isFinite(v)) return vpdUiT('N/D', 'N/A');
+  if (v < 0.5) return vpdUiT('Bajo', 'Low');
+  if (v <= 1.5) return vpdUiT('Óptimo', 'Optimal');
+  return vpdUiT('Alto', 'High');
 }
 
 function formatUvIndexValue(value) {
@@ -22126,12 +22273,12 @@ function formatUvIndexValue(value) {
 
 function getUvSemaforoMeta(value) {
   var n = Number(value);
-  if (!Number.isFinite(n)) return { label: 'N/D', color: '#64748b', bg: '#f1f5f9' };
-  if (n <= 2) return { label: 'Bajo', color: '#166534', bg: '#dcfce7' };
-  if (n <= 5) return { label: 'Moderado', color: '#92400e', bg: '#fef3c7' };
-  if (n <= 7) return { label: 'Alto', color: '#b45309', bg: '#ffedd5' };
-  if (n <= 10) return { label: 'Muy alto', color: '#be123c', bg: '#ffe4e6' };
-  return { label: 'Extremo', color: '#6d28d9', bg: '#ede9fe' };
+  if (!Number.isFinite(n)) return { label: vpdUiT('N/D', 'N/A'), color: '#64748b', bg: '#f1f5f9' };
+  if (n <= 2) return { label: vpdUiT('Bajo', 'Low'), color: '#166534', bg: '#dcfce7' };
+  if (n <= 5) return { label: vpdUiT('Moderado', 'Moderate'), color: '#92400e', bg: '#fef3c7' };
+  if (n <= 7) return { label: vpdUiT('Alto', 'High'), color: '#b45309', bg: '#ffedd5' };
+  if (n <= 10) return { label: vpdUiT('Muy alto', 'Very high'), color: '#be123c', bg: '#ffe4e6' };
+  return { label: vpdUiT('Extremo', 'Extreme'), color: '#6d28d9', bg: '#ede9fe' };
 }
 
 function buildSemaforoBadgeHtml(meta) {
@@ -22146,12 +22293,12 @@ function buildUvSemaforoBadgeHtml(value) {
 
 function getVpdStressPctMeta(pct) {
   var n = Number(pct);
-  if (!Number.isFinite(n)) return { label: 'N/D', color: '#64748b', bg: '#f1f5f9' };
-  if (n <= 10) return { label: 'Bajo', color: '#166534', bg: '#dcfce7' };
-  if (n <= 30) return { label: 'Moderado', color: '#92400e', bg: '#fef3c7' };
-  if (n <= 60) return { label: 'Alto', color: '#b45309', bg: '#ffedd5' };
-  if (n <= 80) return { label: 'Muy alto', color: '#be123c', bg: '#ffe4e6' };
-  return { label: 'Extremo', color: '#6d28d9', bg: '#ede9fe' };
+  if (!Number.isFinite(n)) return { label: vpdUiT('N/D', 'N/A'), color: '#64748b', bg: '#f1f5f9' };
+  if (n <= 10) return { label: vpdUiT('Bajo', 'Low'), color: '#166534', bg: '#dcfce7' };
+  if (n <= 30) return { label: vpdUiT('Moderado', 'Moderate'), color: '#92400e', bg: '#fef3c7' };
+  if (n <= 60) return { label: vpdUiT('Alto', 'High'), color: '#b45309', bg: '#ffedd5' };
+  if (n <= 80) return { label: vpdUiT('Muy alto', 'Very high'), color: '#be123c', bg: '#ffe4e6' };
+  return { label: vpdUiT('Extremo', 'Extreme'), color: '#6d28d9', bg: '#ede9fe' };
 }
 
 function buildVpdStressPctBadgeHtml(pct) {
@@ -22203,9 +22350,9 @@ function buildVpdCriticalValueHtml(vpd) {
 }
 
 function getVpdTypeMeta(type) {
-  if (type === 'high') return { label: 'Alto', color: '#b91c1c', bg: '#fee2e2' };
-  if (type === 'low') return { label: 'Bajo', color: '#1d4ed8', bg: '#dbeafe' };
-  return { label: 'N/D', color: '#64748b', bg: '#f1f5f9' };
+  if (type === 'high') return { label: vpdUiT('Alto', 'High'), color: '#b91c1c', bg: '#fee2e2' };
+  if (type === 'low') return { label: vpdUiT('Bajo', 'Low'), color: '#1d4ed8', bg: '#dbeafe' };
+  return { label: vpdUiT('N/D', 'N/A'), color: '#64748b', bg: '#f1f5f9' };
 }
 
 function buildVpdTypeBadgeHtml(type) {
@@ -22242,7 +22389,7 @@ function vpdCriticalEventsRowHtml(rows) {
     return '<tr>' +
       '<td style="' + td + '">' + String(r.at || '—') + '</td>' +
       '<td style="' + td + '">' + buildVpdCriticalValueHtml(r.vpd) + '</td>' +
-      '<td style="' + td + '">' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
+      '<td style="' + td + '">' + waterClimateTempNumber(r.temperature, 1) + '</td>' +
       '<td style="' + td + '">' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
       '<td style="' + td + '">' + rad + '</td>' +
       '<td style="' + td + '">' + buildVpdTypeBadgeHtml(r.type) + '</td>' +
@@ -22533,14 +22680,16 @@ function createVPDRangeChart(vpdValue) {
   
   // Determinar color según valor
   let barColor = '#10b981'; // Verde (óptimo)
-  let status = 'Óptimo';
+  let status = getVPDStatus(1.0);
   
   if (vpdValue < optimalMin) {
     barColor = '#3b82f6'; // Azul (bajo)
-    status = 'Bajo';
+    status = getVPDStatus(0.2);
   } else if (vpdValue > optimalMax) {
     barColor = '#ef4444'; // Rojo (alto)
-    status = 'Alto';
+    status = getVPDStatus(2.0);
+  } else {
+    status = getVPDStatus(1.0);
   }
   
   // Calcular posición del valor en el rango completo (0-100%)
@@ -22563,8 +22712,8 @@ function createVPDRangeChart(vpdValue) {
   return `
     <div style="margin: 20px 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px;">
-        <span style="font-weight: 600; color: #1e293b;">Rango Óptimo: ${optimalMin} - ${optimalMax} kPa</span>
-        <span style="font-weight: 600; color: ${barColor};">Estado: ${status}</span>
+        <span style="font-weight: 600; color: #1e293b;">${vpdUiT('Rango Óptimo:', 'Optimal range:')} ${optimalMin} - ${optimalMax} kPa</span>
+        <span style="font-weight: 600; color: ${barColor};">${vpdUiT('Estado:', 'Status:')} ${status}</span>
       </div>
       <div style="position: relative; height: 50px; background: linear-gradient(to right, #3b82f6 0%, #3b82f6 ${blueEndPos * 0.85}%, #60a5fa ${blueEndPos * 0.92}%, #34d399 ${blueEndPos * 0.98}%, #22d3ee ${blueEndPos}%, #10b981 ${blueEndPos + (greenEndPos - blueEndPos) * 0.3}%, #10b981 ${greenEndPos * 0.85}%, #10b981 ${greenEndPos}%, #fbbf24 ${greenEndPos + (100 - greenEndPos) * 0.15}%, #fbbf24 ${greenEndPos + (100 - greenEndPos) * 0.35}%, #f59e0b ${greenEndPos + (100 - greenEndPos) * 0.5}%, #fb923c ${greenEndPos + (100 - greenEndPos) * 0.65}%, #f97316 ${greenEndPos + (100 - greenEndPos) * 0.78}%, #f87171 ${greenEndPos + (100 - greenEndPos) * 0.88}%, #ef4444 95%, #dc2626 100%); border-radius: 8px; overflow: visible; border: 2px solid #e5e7eb; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
         <!-- Marcadores del rango óptimo (líneas blancas) -->
@@ -22664,6 +22813,23 @@ function waterClimateResult(valueSI, kind, digits) {
     : Number(valueSI).toFixed(digits == null ? 2 : digits) + (kind === 'temperature' ? ' °C' : '');
 }
 
+function waterClimateTempNumber(valueSI, digits) {
+  if (valueSI === null || valueSI === undefined || valueSI === '' || !Number.isFinite(Number(valueSI))) return '—';
+  if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.fromSI === 'function') {
+    var n = window.NpWaterClimateUI.fromSI(Number(valueSI), 'temperature');
+    var d = digits == null ? 1 : digits;
+    return Number.isFinite(n) ? Number(n).toFixed(d) : '—';
+  }
+  return Number(valueSI).toFixed(digits == null ? 1 : digits);
+}
+
+function waterClimateTempUnitLabel() {
+  try {
+    if (window.NpWaterClimateUI && window.NpWaterClimateUI.unit('temperature') === 'F') return '°F';
+  } catch (e) {}
+  return '°C';
+}
+
 function createVPDSectionHTML() {
   ensureVPDAnalysisStructures();
   // Usar el proyecto más actualizado para evitar mostrar "agrega polígono" cuando sí hay polígono (race/caché)
@@ -22740,7 +22906,7 @@ function createVPDSectionHTML() {
                 value="${waterClimateInput(envData.temperature, 'temperature')}"
                 onchange="calculateEnvironmentalVPD()"
                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
-                placeholder="Ej: 20.5"
+                placeholder="${waterClimateTempUnitLabel() === '°F' ? 'e.g. 68.9' : 'Ej: 20.5'}"
               />
             </div>
             
@@ -22755,7 +22921,7 @@ function createVPDSectionHTML() {
                 value="${envData.humidity || ''}"
                 onchange="calculateEnvironmentalVPD()"
                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
-                placeholder="Ej: 85"
+                placeholder="${vpdUiT('Ej: 85', 'e.g. 85')}"
               />
             </div>
           </div>
@@ -22925,7 +23091,10 @@ function createVPDSectionHTML() {
       </div>
       
       <p style="margin: 0 0 8px 0; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #475569; line-height: 1.45;">
-        <strong>Ajuste manual:</strong> usa los mismos campos de <em>Estimador ambiental simple</em> arriba. No hay segundo botón de calcular: tras <em>Obtener del Clima</em> ya queda el VPD; si solo escribes o corrige T y HR, el resultado se actualiza al <strong>salir</strong> de cada campo (VPD simple con aire + humedad).
+        ${vpdUiT(
+          '<strong>Ajuste manual:</strong> usa los mismos campos de <em>Estimador ambiental simple</em> arriba. No hay segundo botón de calcular: tras <em>Obtener del Clima</em> ya queda el VPD; si solo escribes o corrige T y HR, el resultado se actualiza al <strong>salir</strong> de cada campo (VPD simple con aire + humedad).',
+          '<strong>Manual adjustment:</strong> use the same fields of the <em>Simple environmental estimator</em> above. There is no second calculate button: after <em>Get from Weather</em> the VPD is ready; if you only type or correct T and RH, the result updates when you <strong>leave</strong> each field (simple VPD with air + humidity).'
+        )}
       </p>
       
       <!-- HISTORIAL -->
@@ -23128,9 +23297,9 @@ function calculateEnvironmentalVPD() {
   const temperature = waterClimateRead('vpd-env-temp', 'temperature');
   const humidity = parseFloat(humidityInput.value);
   
-  // Validar valores
-  if (isNaN(temperature) || isNaN(humidity)) {
-    alert('⚠️ Por favor ingresa temperatura del aire y humedad relativa');
+  // Validar valores (null de read no pasa Number.isFinite)
+  if (temperature == null || !Number.isFinite(temperature) || !Number.isFinite(humidity)) {
+    alert(vpdUiT('⚠️ Por favor ingresa temperatura del aire y humedad relativa', '⚠️ Please enter air temperature and relative humidity'));
     return;
   }
   
@@ -23234,9 +23403,9 @@ function calculateAdvancedVPD() {
   const airHumidity = parseFloat(humidityInput.value);
   const mode = modeRadio.value;
   
-  // Validar valores
-  if (isNaN(airTemp) || isNaN(airHumidity)) {
-    alert('⚠️ Por favor ingresa temperatura del aire y humedad relativa');
+  // Validar valores (null de read no pasa Number.isFinite)
+  if (airTemp == null || !Number.isFinite(airTemp) || !Number.isFinite(airHumidity)) {
+    alert(vpdUiT('⚠️ Por favor ingresa temperatura del aire y humedad relativa', '⚠️ Please enter air temperature and relative humidity'));
     return;
   }
   
@@ -23637,36 +23806,37 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
     meta && meta.startDate
   );
   var critShown = critPrep.rows;
+  var tempHdr = vpdUiT('Temp', 'Temp') + ' (' + waterClimateTempUnitLabel() + ')';
   var summaryTableHtml =
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
     '<thead><tr style="background:#fff7ed;">' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Periodo</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD máx</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora máx</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD mín</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora mín</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &gt; 1.5</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &lt; 0.5</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas óptimas</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">% estrés</th>' +
-    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">UV máx</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Periodo', 'Period') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('VPD máx', 'Max VPD') + '</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Hora máx', 'Max time') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('VPD mín', 'Min VPD') + '</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Hora mín', 'Min time') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('Horas > 1.5', 'Hours > 1.5') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('Horas < 0.5', 'Hours < 0.5') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('Horas óptimas', 'Optimal hours') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('% estrés', '% stress') + '</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">' + vpdUiT('UV máx', 'Max UV') + '</th>' +
     '</tr></thead><tbody>' +
     vpdStressSummaryRowHtml(summaryRows) +
     '</tbody></table>';
   var criticalTableHtml =
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
     '<thead><tr style="background:#fff7ed;">' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Fecha/Hora</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Fecha/Hora', 'Date/Time') + '</th>' +
     '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">VPD</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Temp (°C)</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">HR (%)</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Radiación (W/m²)</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Tipo (VPD)</th>' +
-    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Índice UV</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + tempHdr + '</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('HR (%)', 'RH (%)') + '</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Radiación (W/m²)', 'Radiation (W/m²)') + '</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Tipo (VPD)', 'Type (VPD)') + '</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">' + vpdUiT('Índice UV', 'UV index') + '</th>' +
     '</tr></thead><tbody>' +
     (critShown.length
       ? vpdCriticalEventsRowHtml(critShown)
-      : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango en este tramo.</td></tr>') +
+      : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">' + vpdUiT('Sin horas fuera de rango en este tramo.', 'No out-of-range hours in this span.') + '</td></tr>') +
     '</tbody></table>';
   var blockShell = NPC
     ? NPC.buildInteractiveBlockShell({
@@ -23682,20 +23852,30 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
     '<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;">' +
     '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">' +
     '<strong style="color:#9a3412;">' +
-    (meta.granularity === 'weekly' ? 'Semanal' : meta.granularity === 'monthly' ? 'Mensual' : 'Diario') +
+    (meta.granularity === 'weekly'
+      ? vpdUiT('Semanal', 'Weekly')
+      : meta.granularity === 'monthly'
+        ? vpdUiT('Mensual', 'Monthly')
+        : vpdUiT('Diario', 'Daily')) +
     ' · ' +
     meta.startDate +
-    ' a ' +
+    ' ' + vpdUiT('a', 'to') + ' ' +
     meta.endDate +
     '</strong>' +
-    '<span style="font-size:12px;color:#7c2d12;">Periodos: ' +
+    '<span style="font-size:12px;color:#7c2d12;">' +
+    vpdUiT('Periodos:', 'Periods:') + ' ' +
     summaryRows.length +
-    ' · Eventos críticos (listados): ' +
+    ' · ' + vpdUiT('Eventos críticos (listados):', 'Critical events (listed):') + ' ' +
     critShown.length +
-    (critPrep.rangeTruncated && critPrep.totalAll > critShown.length ? ' / ' + critPrep.totalAll + ' en rango' : '') +
+    (critPrep.rangeTruncated && critPrep.totalAll > critShown.length
+      ? ' / ' + critPrep.totalAll + ' ' + vpdUiT('en rango', 'in range')
+      : '') +
     '</span></div>' +
     '<div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
-    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas críticas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio del periodo elegido).' +
+    vpdUiT(
+      '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas críticas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio del periodo elegido).',
+      '<strong>Optimal range:</strong> 0.5 - 1.5 kPa · Series by period: table only · Critical hours: <strong>Chart / Table</strong> (30 days from the start of the chosen period).'
+    ) +
     '</div>' +
     blockShell +
     '</div>';

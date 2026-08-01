@@ -11,12 +11,12 @@
   <meta name="theme-color" content="#2563eb" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260730s"></script>
+  <script src="assets/np-i18n.js?v=20260801v"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-analysis-ui.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260730f"></script>
-  <script src="assets/np-fertigation-ui.js?v=20260730d"></script>
+  <script src="assets/np-analysis-ui.js?v=20260801w"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
+  <script src="assets/np-fertigation-ui.js?v=20260801y"></script>
   <script src="assets/np-granular-ui.js?v=20260730c"></script>
   <script src="assets/np-amendment-ui.js?v=20260730e"></script>
   <script>
@@ -432,18 +432,18 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=20260728b"></script>
   <script src="hidroponia-functions.js?v=20260730a"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=20260728a"></script>
-  <script src="assets/np-soil-water-bridge.js?v=20260730e"></script>
-  <script src="climate-functions.js?v=20260730f"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=20260801y"></script>
+  <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
+  <script src="climate-functions.js?v=20260801x"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
-  <script src="assets/np-vpd-range-charts.js?v=202606243700"></script>
-  <script src="dashboard.js?v=20260730n"></script>
-  <script src="fertirriego-program-functions.js?v=20260730a"></script>
+  <script src="assets/np-vpd-range-charts.js?v=20260801y"></script>
+  <script src="dashboard.js?v=20260801y"></script>
+  <script src="fertirriego-program-functions.js?v=20260801y"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=202607302100"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
   <script src="map.js?v=20260730f"></script>
-  <script src="assets/np-lectura-satelital.js?v=20260730i"></script>
+  <script src="assets/np-lectura-satelital.js?v=20260801v"></script>
   
   <!-- Verificación de carga de scripts -->
   <script>
@@ -477,7 +477,7 @@
     });
   </script>
   
-  <script src="measure-units-calculator.js?v=202606201500"></script>
+  <script src="measure-units-calculator.js?v=20260801t"></script>
   
   <script>
     // Exponer funciones de calculadoras globalmente después de que todo se cargue
@@ -5107,10 +5107,10 @@ CONTRATO:
       if (frame && needsFullReload) {
         try {
           var pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260730a' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260801g' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         } catch (e) {
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260730a&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260801g&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         }
       }
@@ -5240,12 +5240,31 @@ CONTRATO:
           var prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function'
             ? window.NpPrefs.get()
             : { language: 'es', unit_system: 'metric' };
+          var lang = prefs.language === 'en' ? 'en' : 'es';
+          var units = prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric';
           var u = new URL(frame.getAttribute('src') || 'pronosticoclimatico/?embed=dashboard', window.location.href);
           u.searchParams.set('embed', 'dashboard');
-          u.searchParams.set('lang', prefs.language === 'en' ? 'en' : 'es');
-          u.searchParams.set('units', prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric');
-          u.searchParams.set('v', '20260730c');
-          frame.src = u.pathname + u.search + u.hash;
+          u.searchParams.set('lang', lang);
+          u.searchParams.set('units', units);
+          u.searchParams.set('v', '20260801z');
+          var next = u.pathname + u.search + u.hash;
+          var absNext = new URL(next, window.location.href).href;
+          // No recargar el iframe si ya está cargado con las mismas prefs (evita parpadeo).
+          if (!frame.src || frame.src === 'about:blank' || frame.src !== absNext) {
+            var sameTool = /pronosticoclimatico/i.test(frame.src || '');
+            var sameLang = (frame.src || '').indexOf('lang=' + lang) >= 0;
+            var sameUnits = (frame.src || '').indexOf('units=' + units) >= 0;
+            if (!sameTool || !sameLang || !sameUnits) {
+              frame.src = next;
+            } else {
+              try {
+                frame.contentWindow.postMessage({ type: 'np-agro-prefs', language: lang, unit_system: units }, '*');
+              } catch (eMsg) { /* ignore */ }
+            }
+          }
+          setTimeout(function () {
+            try { frame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (e2) { /* ignore */ }
+          }, 60);
         } catch (e) { /* keep existing src */ }
       }
       modal.classList.add('show');
@@ -5254,9 +5273,8 @@ CONTRATO:
 
     function closeAgroclimateForecast() {
       var modal = document.getElementById('agroclimateForecastModal');
-      var frame = document.getElementById('agroclimateForecastFrame');
       if (modal) modal.classList.remove('show');
-      if (frame) frame.src = frame.src;
+      // No reiniciar iframe al cerrar: evita parpadeo al volver a abrir.
     }
     window.closeAgroclimateForecast = closeAgroclimateForecast;
 
@@ -5639,6 +5657,15 @@ CONTRATO:
     }
     window.closeSimpleCalculator = closeSimpleCalculator;
 
+    function notesBlockT(key, fallback) {
+      try {
+        if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+          var v = window.NpI18n.t(key);
+          if (v && v !== key) return v;
+        }
+      } catch (e) {}
+      return fallback || key;
+    }
     // ——— Bloque de notas (máx. 2 hojas, guardado en segundo plano + nube) ———
     var NOTES_MAX_CHARS = 6000;
     var notesBlockSaveTimer = null;
@@ -5731,15 +5758,15 @@ CONTRATO:
       }
       notesBlockCloudSyncInFlight = true;
       var statusEl = document.getElementById('notesBlockCloudStatus');
-      if (statusEl) { statusEl.textContent = 'Sincronizando...'; statusEl.style.color = '#92400e'; }
+      if (statusEl) { statusEl.textContent = notesBlockT('tools.notes.syncing', 'Sincronizando...'); statusEl.style.color = '#92400e'; }
       var p = null;
       try { p = window.nutriplantSyncUserNotesToCloud(pending.userId, pending.html); } catch (err) { console.warn('Notes sync cloud:', err); }
       if (p && typeof p.then === 'function') {
         p.then(function() {
           notesBlockLastCloudSyncedByUser[key] = pending.html;
-          if (statusEl) { statusEl.textContent = 'Guardado en la nube'; statusEl.style.color = '#16a34a'; window.setTimeout(function() { statusEl.textContent = ''; }, 2500); }
+          if (statusEl) { statusEl.textContent = notesBlockT('tools.notes.saved_cloud', 'Guardado en la nube'); statusEl.style.color = '#16a34a'; window.setTimeout(function() { statusEl.textContent = ''; }, 2500); }
         }).catch(function() {
-          if (statusEl) { statusEl.textContent = 'Pendiente de nube'; statusEl.style.color = '#b45309'; }
+          if (statusEl) { statusEl.textContent = notesBlockT('tools.notes.pending_cloud', 'Pendiente de nube'); statusEl.style.color = '#b45309'; }
         }).finally(function() {
           notesBlockCloudSyncInFlight = false;
           if (notesBlockCloudPending && notesBlockCloudPending !== pending) {
@@ -6227,9 +6254,7 @@ CONTRATO:
   <div id="conversionCalculatorModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title">
-          🧮 Conversor Óxido ↔ Elemental
-        </h2>
+        <h2 class="modal-title">🧮 <span data-i18n="tools.oxide.title">Conversor Óxido ↔ Elemental</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeConversionCalculator()">
@@ -6241,7 +6266,7 @@ CONTRATO:
       <div class="modal-body">
         <div class="conversion-calculator">
           <div class="conversion-section">
-            <h3>📊 Conversiones Comunes</h3>
+            <h3>📊 <span data-i18n="tools.oxide.section_common">Conversiones Comunes</span></h3>
             <div class="conversion-grid">
               <!-- P -->
               <div class="conversion-item">
@@ -6452,8 +6477,8 @@ CONTRATO:
 
           <div class="conversion-section">
             <div class="conversion-ion-box">
-              <h3>⚗️ Elemental ↔ formas iónicas (equipos de medición)</h3>
-              <p class="conversion-ion-lead">Para ionómetros y análisis que reportan <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> en solución — no es conversión de óxidos de fertilizante.</p>
+              <h3>⚗️ <span data-i18n="tools.oxide.section_ions">Elemental ↔ formas iónicas (equipos de medición)</span></h3>
+              <p class="conversion-ion-lead" data-i18n="tools.oxide.ions_lead">Para ionómetros y análisis que reportan NO₃⁻, NH₄⁺ o SO₄²⁻ en solución — no es conversión de óxidos de fertilizante.</p>
               <div class="conversion-grid">
                 <div class="conversion-item conversion-item--ion">
                   <label>N → NO₃</label>
@@ -6508,10 +6533,10 @@ CONTRATO:
           </div>
           
           <div class="conversion-section">
-            <h3>ℹ️ Información</h3>
+            <h3>ℹ️ <span data-i18n="tools.oxide.info_title">Información</span></h3>
             <div class="info-box">
-              <p><strong>Factores de conversión (óxidos y formas de etiqueta):</strong></p>
-              <p class="info-sublead">P₂O₅, K₂O, CaO, MgO, SO₃ y óxidos de micros — formas habituales en <strong>fertilizantes</strong>. El N en etiqueta ya va como <strong>N elemental</strong> (no como óxido).</p>
+              <p><strong data-i18n="tools.oxide.factors_title">Factores de conversión (óxidos y formas de etiqueta):</strong></p>
+              <p class="info-sublead" data-i18n-html="tools.oxide.factors_sublead">P₂O₅, K₂O, CaO, MgO, SO₃ y óxidos de micros — formas habituales en <strong>fertilizantes</strong>. El N en etiqueta ya va como <strong>N elemental</strong> (no como óxido).</p>
               <ul>
                 <li><strong class="oxide-conv-label">P₂O₅ → P</strong>: 0.436 | <strong class="oxide-conv-label">P → P₂O₅</strong>: 2.291</li>
                 <li><strong class="oxide-conv-label">K₂O → K</strong>: 0.830 | <strong class="oxide-conv-label">K → K₂O</strong>: 1.205</li>
@@ -6527,13 +6552,13 @@ CONTRATO:
                 <li><strong class="oxide-conv-label">SiO₂ → Si</strong>: 0.467 | <strong class="oxide-conv-label">Si → SiO₂</strong>: 2.139</li>
               </ul>
               <div class="info-ion-box">
-                <p><strong>Elemental ↔ iones (equipos de medición y análisis):</strong></p>
+                <p><strong data-i18n="tools.oxide.ions_factors_title">Elemental ↔ iones (equipos de medición y análisis):</strong></p>
                 <ul>
                   <li><strong class="ion-conv-label">N → NO₃</strong>: 4.429 | <strong class="ion-conv-label">NO₃ → N</strong>: 0.226</li>
                   <li><strong class="ion-conv-label">N → NH₄</strong>: 1.286 | <strong class="ion-conv-label">NH₄ → N</strong>: 0.778</li>
                   <li><strong class="ion-conv-label">S → SO₄</strong>: 3.000 | <strong class="ion-conv-label">SO₄ → S</strong>: 0.333</li>
                 </ul>
-                <p class="info-ion-note">En <strong>fertilizantes</strong> el N no se expresa como óxido (a diferencia de P₂O₅ o K₂O): va en <strong>N elemental</strong>. En <strong>ionómetros</strong>, sensores de campo y algunos informes de solución o suelo, a veces el resultado aparece como <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> (anión o catión en solución). <strong>SO₄ tampoco es un óxido</strong> como SO₃ en etiqueta; aquí se usa el mismo criterio iónico. Usa el bloque superior para etiquetas agronómicas y el recuadro verde para cruzar con equipos y análisis iónicos.</p>
+                <p class="info-ion-note" data-i18n-html="tools.oxide.ions_note">En <strong>fertilizantes</strong> el N no se expresa como óxido (a diferencia de P₂O₅ o K₂O): va en <strong>N elemental</strong>. En <strong>ionómetros</strong>, sensores de campo y algunos informes de solución o suelo, a veces el resultado aparece como <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> (anión o catión en solución). <strong>SO₄ tampoco es un óxido</strong> como SO₃ en etiqueta; aquí se usa el mismo criterio iónico. Usa el bloque superior para etiquetas agronómicas y el recuadro verde para cruzar con equipos y análisis iónicos.</p>
               </div>
             </div>
           </div>
@@ -6541,12 +6566,8 @@ CONTRATO:
       </div>
       
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeConversionCalculator()">
-          Cerrar
-        </button>
-        <button class="btn btn-primary" onclick="clearConversionCalculator()">
-          Limpiar Todo
-        </button>
+        <button class="btn btn-secondary" onclick="closeConversionCalculator()" data-i18n="tools.close">Cerrar</button>
+        <button class="btn btn-primary" onclick="clearConversionCalculator()" data-i18n="tools.clear_all">Limpiar Todo</button>
       </div>
     </div>
   </div>
@@ -6555,9 +6576,7 @@ CONTRATO:
   <div id="nutrientUnitsCalculatorModal" class="modal-overlay">
     <div class="modal modal-wide">
       <div class="modal-header">
-        <h2 class="modal-title">
-          🧪 Conversor de unidades (ppm/mmol/meq)
-        </h2>
+        <h2 class="modal-title">🧪 <span data-i18n="tools.units.title">Conversor de unidades (ppm/mmol/meq)</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeNutrientUnitsCalculator()">
@@ -6569,9 +6588,9 @@ CONTRATO:
       <div class="modal-body">
         <div class="calculator-container">
           <div class="calculator-instructions">
-            <p><strong>Instrucciones:</strong> Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</p>
-            <p><em>Esta herramienta convierte entre ppm (mg/L), mmol/L (macronutrientes e iones) o <strong>µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo) y meq/L.</em></p>
-            <p><em><strong>Nota técnica:</strong><br>Las concentraciones se expresan en ppm del elemento (N, P, S).<br>Las especies químicas indicadas (NO₃⁻, NH₄⁺, H₂PO₄⁻, SO₄²⁻) representan la forma en que los nutrientes se encuentran y son absorbidos en solución, pero los cálculos se realizan con base en el peso atómico del elemento, no del ion.</em></p>
+            <p><strong data-i18n="tools.units.instructions_label">Instrucciones:</strong> <span data-i18n="tools.units.instructions_body">Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</span></p>
+            <p><em data-i18n-html="tools.units.intro">Esta herramienta convierte entre ppm (mg/L), mmol/L (macronutrientes e iones) o <strong>µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo) y meq/L.</em></p>
+            <p><em><strong data-i18n="tools.units.tech_note_label">Nota técnica:</strong><br><span data-i18n-html="tools.units.tech_note_body">Las concentraciones se expresan en ppm del elemento (N, P, S).<br>Las especies químicas indicadas (NO₃⁻, NH₄⁺, H₂PO₄⁻, SO₄²⁻) representan la forma en que los nutrientes se encuentran y son absorbidos en solución, pero los cálculos se realizan con base en el peso atómico del elemento, no del ion.</span></em></p>
           </div>
 
           <div class="nutrient-conversions-grid">
@@ -6841,15 +6860,15 @@ CONTRATO:
 
             <!-- Iones: PM del ión; meq/L por carga (un solo marco verde; los ácidos van aparte) -->
             <div class="nutrient-pm-block">
-              <h3 class="nutrient-species-frequent-title">Iones en solución</h3>
+              <h3 class="nutrient-species-frequent-title" data-i18n="tools.units.ions_title">Iones en solución</h3>
               <p class="nutrient-pm-block-caption">
-                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|).
+                <span data-i18n-html="tools.units.ions_caption">Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|).</span>
               </p>
               <div class="nutrient-pm-block-grid">
                 <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
-                    <strong>Ión bicarbonato <span class="notranslate" translate="no">(HCO₃⁻)</span></strong>
+                    <strong><span data-i18n="tools.units.ion_bicarbonate">Ión bicarbonato</span> <span class="notranslate" translate="no">(HCO₃⁻)</span></strong>
                     <span class="nutrient-info notranslate" translate="no">PM: 61.02 | Valencia: 1</span>
                   </div>
                   <div class="conversion-inputs">
@@ -6871,7 +6890,7 @@ CONTRATO:
                 <!-- Ión carbonato CO₃²⁻ -->
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
-                    <strong>Ión carbonato <span class="notranslate" translate="no">(CO₃²⁻)</span></strong>
+                    <strong><span data-i18n="tools.units.ion_carbonate">Ión carbonato</span> <span class="notranslate" translate="no">(CO₃²⁻)</span></strong>
                     <span class="nutrient-info notranslate" translate="no">PM: 60.01 | Valencia: 2</span>
                   </div>
                   <div class="conversion-inputs">
@@ -6950,10 +6969,10 @@ CONTRATO:
             </div>
 
             <!-- Ácidos: valencia = H⁺ contados por mol; aparte del criterio de iones -->
-            <div class="nutrient-pm-block" aria-label="Ácidos minerales">
-              <h3 class="nutrient-species-frequent-title">Ácidos minerales</h3>
+            <div class="nutrient-pm-block" aria-label="Ácidos minerales" data-i18n-aria-label="tools.units.acids_title">
+              <h3 class="nutrient-species-frequent-title" data-i18n="tools.units.acids_title">Ácidos minerales</h3>
               <p class="nutrient-pm-block-caption">
-                Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol).
+                <span data-i18n-html="tools.units.acids_caption">Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol).</span>
               </p>
               <div class="nutrient-pm-block-grid nutrient-pm-block-grid--3cols">
                 <div class="nutrient-conversion-group">
@@ -6994,15 +7013,15 @@ CONTRATO:
           </div>
 
           <div class="info-box" style="margin-top: 20px;">
-            <p><strong>Fórmulas de Conversión:</strong></p>
+            <p><strong data-i18n="tools.units.formulas_title">Fórmulas de Conversión:</strong></p>
             <ul>
-              <li><strong>ppm a mmol/L:</strong> mmol/L = ppm ÷ Peso Molecular o Atómico</li>
-              <li><strong>ppm a µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo): µmol/L = (ppm ÷ Peso Atómico) × 1000</li>
-              <li><strong>µmol/L a mmol/L:</strong> mmol/L = µmol/L ÷ 1000</li>
-              <li><strong>mmol/L a meq/L:</strong> meq/L = mmol/L × Valencia</li>
-              <li><strong>ppm a meq/L:</strong> meq/L = (ppm ÷ Peso Atómico/Molecular) × Valencia</li>
+              <li><span data-i18n-html="tools.units.f_ppm_mmol"><strong>ppm a mmol/L:</strong> mmol/L = ppm ÷ Peso Molecular o Atómico</span></li>
+              <li><span data-i18n-html="tools.units.f_ppm_umol"><strong>ppm a µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo): µmol/L = (ppm ÷ Peso Atómico) × 1000</span></li>
+              <li><span data-i18n-html="tools.units.f_umol_mmol"><strong>µmol/L a mmol/L:</strong> mmol/L = µmol/L ÷ 1000</span></li>
+              <li><span data-i18n-html="tools.units.f_mmol_meq"><strong>mmol/L a meq/L:</strong> meq/L = mmol/L × Valencia</span></li>
+              <li><span data-i18n-html="tools.units.f_ppm_meq"><strong>ppm a meq/L:</strong> meq/L = (ppm ÷ Peso Atómico/Molecular) × Valencia</span></li>
             </ul>
-            <p style="margin-top:10px;"><strong>Ejemplo macro (P-H₂PO₄⁻):</strong> se usa 30.97 porque el reporte es en ppm de P elemental (PA del P), no en masa total del ion H₂PO₄⁻.</p>
+            <p style="margin-top:10px;" data-i18n-html="tools.units.ex_macro"><strong>Ejemplo macro (P-H₂PO₄⁻):</strong> se usa 30.97 porque el reporte es en ppm de P elemental (PA del P), no en masa total del ion H₂PO₄⁻.</p>
             <p style="margin-top:6px;"><em>Si P = 61.94 ppm: mmol/L = 61.94 ÷ 30.97 = 2.00; meq/L = 2.00 × 1 = 2.00.</em></p>
             <p style="margin-top:10px;"><strong>Ejemplo micro (Fe²⁺):</strong> µmol/L evita decimales muy pequeños en mmol/L.</p>
             <p style="margin-top:6px;"><em>Si Fe = 3.00 ppm: µmol/L = (3.00 ÷ 55.85) × 1000 = 53.71; mmol/L = 0.054; meq/L = 0.107.</em></p>
@@ -7011,12 +7030,8 @@ CONTRATO:
       </div>
       
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeNutrientUnitsCalculator()">
-          Cerrar
-        </button>
-        <button class="btn btn-primary" onclick="clearNutrientUnitsCalculator()">
-          Limpiar Todo
-        </button>
+        <button class="btn btn-secondary" onclick="closeNutrientUnitsCalculator()" data-i18n="tools.close">Cerrar</button>
+        <button class="btn btn-primary" onclick="clearNutrientUnitsCalculator()" data-i18n="tools.clear_all">Limpiar Todo</button>
       </div>
     </div>
   </div>
@@ -7025,7 +7040,7 @@ CONTRATO:
   <div id="measureUnitsCalculatorModal" class="modal-overlay">
     <div class="modal modal-wide">
       <div class="modal-header">
-        <h2 class="modal-title">📐 Conversor de magnitudes físicas</h2>
+        <h2 class="modal-title">📐 <span data-i18n="tools.measure.title">Conversor de magnitudes físicas</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeMeasureUnitsCalculator()">×</button>
@@ -7033,25 +7048,23 @@ CONTRATO:
       </div>
       <div class="modal-body">
         <div class="calculator-container">
-          <p style="margin-bottom: 12px;"><em>Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión, concentración en agua (mg/L, ppm…) y <strong>carga iónica</strong> (meq / cmol en suelo o solución). Incluye estimación de <strong>% superficie con raíces</strong> (copa circular o camas).</em></p>
+          <p style="margin-bottom: 12px;"><em data-i18n-html="tools.measure.intro">Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión, concentración en agua (mg/L, ppm…) y <strong>carga iónica</strong> (meq / cmol en suelo o solución). Incluye estimación de <strong>% superficie con raíces</strong> (copa circular o camas).</em></p>
           <div class="form-group">
-            <label>Tipo de magnitud</label>
+            <label data-i18n="tools.measure.category_label">Tipo de magnitud</label>
             <select id="measure-category" onchange="updateMeasureUnitOptions()">
-              <option value="length">Longitud</option>
-              <option value="area">Área / Superficie</option>
-              <option value="volume">Volumen</option>
-              <option value="weight">Peso / Masa</option>
-              <option value="temperature">Temperatura</option>
-              <option value="pressure">Presión</option>
-              <option value="concentration">Concentración (agua)</option>
-              <option value="ionic">Carga iónica (meq / cmol)</option>
-              <option value="rootReachPlant">Alcance de raíz — copa / planta (círculo)</option>
-              <option value="rootReachBed">Alcance de raíz — cama o banda</option>
+              <option value="length" data-i18n="tools.measure.cat_length">Longitud</option>
+              <option value="area" data-i18n="tools.measure.cat_area">Área / Superficie</option>
+              <option value="volume" data-i18n="tools.measure.cat_volume">Volumen</option>
+              <option value="weight" data-i18n="tools.measure.cat_weight">Peso / Masa</option>
+              <option value="temperature" data-i18n="tools.measure.cat_temperature">Temperatura</option>
+              <option value="pressure" data-i18n="tools.measure.cat_pressure">Presión</option>
+              <option value="concentration" data-i18n="tools.measure.cat_concentration">Concentración (agua)</option>
+              <option value="ionic" data-i18n="tools.measure.cat_ionic">Carga iónica (meq / cmol)</option>
+              <option value="rootReachPlant" data-i18n="tools.measure.cat_root_plant">Alcance de raíz — copa / planta (círculo)</option>
+              <option value="rootReachBed" data-i18n="tools.measure.cat_root_bed">Alcance de raíz — cama o banda</option>
             </select>
           </div>
-          <p id="measure-ionic-hint" style="display:none; margin:10px 0 0; padding:10px 12px; font-size:12px; line-height:1.45; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
-            <strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L; 1000 µmol/L ≈ 1 meq/L (ión monovalente, igual que mmol/L). Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.
-          </p>
+          <p id="measure-ionic-hint" style="display:none; margin:10px 0 0; padding:10px 12px; font-size:12px; line-height:1.45; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;"><span data-i18n-html="tools.measure.ionic_hint"><strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L; 1000 µmol/L ≈ 1 meq/L (ión monovalente, igual que mmol/L). Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.</span></p>
           <div id="measure-special-panel" style="display:none; margin-top:16px;"></div>
           <div id="measure-special-result-wrap" style="display:none; margin-top:16px; padding:14px 16px; background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%); border:1px solid #86efac; border-radius:10px;">
             <div id="measure-special-result-label" style="font-size:13px;color:#166534;font-weight:600;">—</div>
@@ -7061,20 +7074,20 @@ CONTRATO:
           <div id="measure-standard-panel">
           <div class="measure-conversion-row" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
             <div class="form-group" style="flex: 1; min-width: 120px;">
-              <label>Valor</label>
+              <label data-i18n="tools.measure.value">Valor</label>
               <input type="number" id="measure-value" placeholder="0" step="any" oninput="convertMeasureUnits()">
             </div>
             <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>Desde</label>
+              <label data-i18n="tools.measure.from">Desde</label>
               <select id="measure-from" onchange="convertMeasureUnits()"></select>
             </div>
             <span style="align-self: center; font-size: 18px;">→</span>
             <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>A</label>
+              <label data-i18n="tools.measure.to">A</label>
               <select id="measure-to" onchange="convertMeasureUnits()"></select>
             </div>
             <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>Resultado</label>
+              <label data-i18n="tools.measure.result">Resultado</label>
               <input type="text" id="measure-result" readonly placeholder="—" style="background: #f0fdf4;">
             </div>
           </div>
@@ -7082,7 +7095,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeMeasureUnitsCalculator()">Cerrar</button>
+        <button class="btn btn-secondary" onclick="closeMeasureUnitsCalculator()" data-i18n="tools.close">Cerrar</button>
       </div>
     </div>
   </div>
@@ -7098,7 +7111,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=dashboard&v=20260730a" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=dashboard&v=20260801g" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7114,7 +7127,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260730a" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260801h" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7130,7 +7143,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260730a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260801g" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7146,7 +7159,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260730a" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260801h" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7162,7 +7175,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260730a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260801c" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7178,7 +7191,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260730a" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260801n" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7187,14 +7200,14 @@ CONTRATO:
   <div id="hydroSolutionCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeHydroSolutionCalculator();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">💧 Diseño de solución nutritiva</h2>
+        <h2 class="modal-title" data-i18n="dashboard.tool_hydro">💧 Diseño de solución nutritiva</h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeHydroSolutionCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260730a" title="Diseño de solución nutritiva" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260801b" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7210,7 +7223,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260730a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260801n" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7226,7 +7239,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=20260730a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=20260801d" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7242,7 +7255,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=dashboard&v=20260730c" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=dashboard&v=20260801z" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7258,7 +7271,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260730a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260801p" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -7274,7 +7287,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260730a" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260801s" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7290,7 +7303,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260730a" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260801s" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7306,7 +7319,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260730a" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260801h" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7315,14 +7328,14 @@ CONTRATO:
   <div id="granularMixCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeGranularMixCalculator();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
-        <h2 class="modal-title">📦 Formulación de mezclas granulares</h2>
+        <h2 class="modal-title">📦 <span data-i18n="dashboard.tool_granular_mix">Formulación de mezclas granulares</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeGranularMixCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=dashboard&v=20260730a" title="Formulación de mezclas granulares" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=dashboard&v=20260801f" title="Formulación de mezclas granulares" data-i18n-title="dashboard.tool_granular_mix" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7338,16 +7351,16 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260730a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260801a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
 
   <!-- Modal Calculadora simple (paleta NutriPlant: blanco + azul + verde) -->
-  <div id="simpleCalculatorModal" class="modal-overlay" role="dialog" aria-label="Calculadora" onclick="if(event.target===this) closeSimpleCalculator();">
+  <div id="simpleCalculatorModal" class="modal-overlay" role="dialog" aria-label="Calculadora" data-i18n-aria-label="tools.calc.title" onclick="if(event.target===this) closeSimpleCalculator();">
     <div class="modal" style="max-width: 320px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(12,74,110,0.22); border: 1px solid rgba(12,74,110,0.18);">
       <div class="modal-header" style="background: #f8fbff; border-bottom: 1px solid rgba(12,74,110,0.15);">
-        <h2 class="modal-title" style="color: #0c4a6e; font-size: 16px;">🧮 Calculadora</h2>
+        <h2 class="modal-title" style="color: #0c4a6e; font-size: 16px;">🧮 <span data-i18n="tools.calc.title">Calculadora</span></h2>
         <button class="modal-close" onclick="closeSimpleCalculator()" style="color: #0c4a6e;">×</button>
       </div>
       <div class="modal-body" style="padding: 16px; background: #ffffff;">
@@ -7357,7 +7370,7 @@ CONTRATO:
         </div>
         <div id="simpleCalcKeys" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; flex-shrink:0;">
           <!-- ⌫ borrar uno | C limpiar todo | ± % -->
-          <button type="button" class="simple-calc-btn simple-calc-op" data-action="backspace" title="Borrar último">⌫</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="backspace" title="Borrar último" data-i18n-title="tools.calc.backspace_title">⌫</button>
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="clear">C</button>
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="neg">±</button>
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="percent">%</button>
@@ -7393,30 +7406,30 @@ CONTRATO:
   <div id="notesBlockModal" class="modal-overlay">
     <div class="modal notes-block-modal" style="max-width: 640px; width: calc(100% - 24px); max-height: 85vh; display: flex; flex-direction: column; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden;">
       <div class="notes-block-header" style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #f8fafc;">
-        <h2 class="modal-title" style="margin: 0; font-size: 16px; color: #1e293b;">📝 Bloque de notas</h2>
+        <h2 class="modal-title" style="margin: 0; font-size: 16px; color: #1e293b;">📝 <span data-i18n="tools.notes.title">Bloque de notas</span></h2>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="notesBlockCharCount" style="font-size: 12px; color: #64748b;">0 / 6000</span>
           <span id="notesBlockCloudStatus" style="font-size: 11px; color: #64748b;"></span>
-          <button type="button" id="notesBlockSaveBtn" class="btn btn-sm btn-primary" style="padding: 6px 12px;" title="Guardar (también se guarda en segundo plano)">Guardar</button>
+          <button type="button" id="notesBlockSaveBtn" class="btn btn-sm btn-primary" style="padding: 6px 12px;" title="Guardar (también se guarda en segundo plano)" data-i18n="tools.notes.save" data-i18n-title="tools.notes.save_title">Guardar</button>
           <button class="modal-close" onclick="window.closeNotesBlockModal()" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #64748b; line-height: 1;">×</button>
         </div>
       </div>
       <div class="notes-block-toolbar" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; background: #f1f5f9;">
-        <button type="button" class="notes-tool-btn" data-cmd="bold" title="Negrita"><b>N</b></button>
-        <button type="button" class="notes-tool-btn" data-cmd="italic" title="Cursiva"><i>I</i></button>
-        <button type="button" class="notes-tool-btn" data-cmd="underline" title="Subrayado"><u>S</u></button>
-        <select id="notesBlockFontSize" class="notes-tool-select" title="Tamaño de letra" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-          <option value="1">Muy pequeño</option>
-          <option value="2">Pequeño</option>
-          <option value="3" selected>Normal</option>
-          <option value="4">Grande</option>
-          <option value="5">Muy grande</option>
+        <button type="button" class="notes-tool-btn" data-cmd="bold" title="Negrita" data-i18n-title="tools.notes.bold"><b>N</b></button>
+        <button type="button" class="notes-tool-btn" data-cmd="italic" title="Cursiva" data-i18n-title="tools.notes.italic"><i>I</i></button>
+        <button type="button" class="notes-tool-btn" data-cmd="underline" title="Subrayado" data-i18n-title="tools.notes.underline"><u>S</u></button>
+        <select id="notesBlockFontSize" class="notes-tool-select" title="Tamaño de letra" data-i18n-title="tools.notes.font_size" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+          <option value="1" data-i18n="tools.notes.size_xs">Muy pequeño</option>
+          <option value="2" data-i18n="tools.notes.size_sm">Pequeño</option>
+          <option value="3" selected data-i18n="tools.notes.size_md">Normal</option>
+          <option value="4" data-i18n="tools.notes.size_lg">Grande</option>
+          <option value="5" data-i18n="tools.notes.size_xl">Muy grande</option>
         </select>
         <span style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 2px;"></span>
-        <button type="button" class="notes-tool-btn" data-cmd="insertUnorderedList" title="Viñeta / lista con guión">• Lista</button>
-        <button type="button" class="notes-tool-btn" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button>
+        <button type="button" class="notes-tool-btn" data-cmd="insertUnorderedList" title="Viñeta / lista con guión" data-i18n="tools.notes.bullet" data-i18n-title="tools.notes.bullet_title">• Lista</button>
+        <button type="button" class="notes-tool-btn" data-cmd="insertOrderedList" title="Lista numerada" data-i18n="tools.notes.numbered" data-i18n-title="tools.notes.numbered_title">1. Lista</button>
       </div>
-      <div id="notesBlockEditor" contenteditable="true" class="notes-block-editor" style="flex: 1; min-height: 280px; padding: 16px; overflow-y: auto; background: #fff; font-size: 15px; line-height: 1.5; color: #1e293b; outline: none;" data-placeholder="Escribe aquí... (máx. 2 hojas, se guarda en la nube para verlo en cualquier equipo)."></div>
+      <div id="notesBlockEditor" contenteditable="true" class="notes-block-editor" style="flex: 1; min-height: 280px; padding: 16px; overflow-y: auto; background: #fff; font-size: 15px; line-height: 1.5; color: #1e293b; outline: none;" data-placeholder="Escribe aquí... (máx. 2 hojas, se guarda en la nube para verlo en cualquier equipo)." data-i18n-placeholder="tools.notes.placeholder"></div>
     </div>
   </div>
   <style>

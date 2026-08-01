@@ -4,25 +4,42 @@
  * Compartido por dashboard.html y login.html.
  */
 /* global document */
+
+function measureT(key, fallback) {
+  try {
+    if (typeof window !== 'undefined' && window.NpI18n && typeof window.NpI18n.t === 'function') {
+      var v = window.NpI18n.t(key);
+      if (v && v !== key) return v;
+    }
+  } catch (e) {}
+  return fallback != null ? fallback : key;
+}
+
+function measureUnitLabel(unit) {
+  if (!unit) return '';
+  if (unit.nameKey) return measureT(unit.nameKey, unit.name);
+  return unit.name;
+}
+
 var MEASURE_UNITS = {
   length: [
-    { id: 'm', name: 'm (metro)', toBase: 1 },
+    { id: 'm', name: 'm (metro)', nameKey: 'tools.measure.u_m', toBase: 1 },
     { id: 'km', name: 'km', toBase: 1000 },
     { id: 'cm', name: 'cm', toBase: 0.01 },
-    { id: 'ft', name: 'ft (pie)', toBase: 0.3048 },
-    { id: 'in', name: 'in (pulgada)', toBase: 0.0254 },
-    { id: 'yd', name: 'yd (yarda)', toBase: 0.9144 },
-    { id: 'mi', name: 'mi (milla)', toBase: 1609.344 }
+    { id: 'ft', name: 'ft (pie)', nameKey: 'tools.measure.u_ft', toBase: 0.3048 },
+    { id: 'in', name: 'in (pulgada)', nameKey: 'tools.measure.u_in', toBase: 0.0254 },
+    { id: 'yd', name: 'yd (yarda)', nameKey: 'tools.measure.u_yd', toBase: 0.9144 },
+    { id: 'mi', name: 'mi (milla)', nameKey: 'tools.measure.u_mi', toBase: 1609.344 }
   ],
   area: [
     { id: 'm2', name: 'm²', toBase: 1 },
-    { id: 'ha', name: 'ha (hectárea)', toBase: 10000 },
+    { id: 'ha', name: 'ha (hectárea)', nameKey: 'tools.measure.u_ha', toBase: 10000 },
     { id: 'acre', name: 'acre', toBase: 4046.86 },
     { id: 'ft2', name: 'ft²', toBase: 0.092903 },
     { id: 'km2', name: 'km²', toBase: 1e6 }
   ],
   volume: [
-    { id: 'L', name: 'L (litro)', toBase: 1 },
+    { id: 'L', name: 'L (litro)', nameKey: 'tools.measure.u_L', toBase: 1 },
     { id: 'mL', name: 'mL', toBase: 0.001 },
     { id: 'm3', name: 'm³', toBase: 1000 },
     { id: 'galUS', name: 'gal (US)', toBase: 3.78541 },
@@ -34,9 +51,9 @@ var MEASURE_UNITS = {
     { id: 'kg', name: 'kg', toBase: 1 },
     { id: 'g', name: 'g', toBase: 0.001 },
     { id: 'mg', name: 'mg', toBase: 0.000001 },
-    { id: 't', name: 't (tonelada)', toBase: 1000 },
-    { id: 'lb', name: 'lb (libra)', toBase: 0.453592 },
-    { id: 'oz', name: 'oz (onza)', toBase: 0.0283495 }
+    { id: 't', name: 't (tonelada)', nameKey: 'tools.measure.u_t', toBase: 1000 },
+    { id: 'lb', name: 'lb (libra)', nameKey: 'tools.measure.u_lb', toBase: 0.453592 },
+    { id: 'oz', name: 'oz (onza)', nameKey: 'tools.measure.u_oz', toBase: 0.0283495 }
   ],
   temperature: [
     { id: 'C', name: '°C', toBase: 1, isTemp: true },
@@ -52,23 +69,23 @@ var MEASURE_UNITS = {
   ],
   concentration: [
     { id: 'mgL', name: 'mg/L', toBase: 1 },
-    { id: 'ppm', name: 'ppm (≈ mg/L, agua diluida)', toBase: 1 },
+    { id: 'ppm', name: 'ppm (≈ mg/L, agua diluida)', nameKey: 'tools.measure.u_ppm', toBase: 1 },
     { id: 'ugL', name: 'µg/L (ppb)', toBase: 0.001 },
     { id: 'gm3', name: 'g/m³ (= mg/L)', toBase: 1 },
     { id: 'mgm3', name: 'mg/m³', toBase: 0.001 },
     { id: 'gL', name: 'g/L', toBase: 1000 },
     { id: 'kgm3', name: 'kg/m³', toBase: 1000 },
-    { id: 'lbMgalUS', name: 'lb / millón US gal (trat. agua, USA)', toBase: 0.1198264273 },
-    { id: 'lb100galUS', name: 'lb / 100 US gal (tanques, USA)', toBase: 1198.264273 },
-    { id: 'ozGalUSmass', name: 'oz masa / US gal (USA)', toBase: 7489.086034 }
+    { id: 'lbMgalUS', name: 'lb / millón US gal (trat. agua, USA)', nameKey: 'tools.measure.u_lb_mgal', toBase: 0.1198264273 },
+    { id: 'lb100galUS', name: 'lb / 100 US gal (tanques, USA)', nameKey: 'tools.measure.u_lb_100gal', toBase: 1198.264273 },
+    { id: 'ozGalUSmass', name: 'oz masa / US gal (USA)', nameKey: 'tools.measure.u_oz_gal', toBase: 7489.086034 }
   ],
   ionic: [
-    { id: 'meqL', name: 'meq/L (solución o agua)', toBase: 1, group: 'solution' },
-    { id: 'cmolL', name: 'cmol(+)/L (solución)', toBase: 10, group: 'solution' },
-    { id: 'mmolL', name: 'mmol/L (monovalente ≈ meq/L)', toBase: 1, group: 'solution' },
-    { id: 'umolL', name: 'µmol/L (monovalente; 1000 µmol/L ≈ 1 meq/L)', toBase: 0.001, group: 'solution' },
-    { id: 'meq100g', name: 'meq/100 g (suelo, CIC)', toBase: 1, group: 'soil' },
-    { id: 'cmolKg', name: 'cmolc/kg = cmol(+)/kg (suelo)', toBase: 1, group: 'soil' }
+    { id: 'meqL', name: 'meq/L (solución o agua)', nameKey: 'tools.measure.u_meqL', toBase: 1, group: 'solution' },
+    { id: 'cmolL', name: 'cmol(+)/L (solución)', nameKey: 'tools.measure.u_cmolL', toBase: 10, group: 'solution' },
+    { id: 'mmolL', name: 'mmol/L (monovalente ≈ meq/L)', nameKey: 'tools.measure.u_mmolL', toBase: 1, group: 'solution' },
+    { id: 'umolL', name: 'µmol/L (monovalente; 1000 µmol/L ≈ 1 meq/L)', nameKey: 'tools.measure.u_umolL', toBase: 0.001, group: 'solution' },
+    { id: 'meq100g', name: 'meq/100 g (suelo, CIC)', nameKey: 'tools.measure.u_meq100g', toBase: 1, group: 'soil' },
+    { id: 'cmolKg', name: 'cmolc/kg = cmol(+)/kg (suelo)', nameKey: 'tools.measure.u_cmolKg', toBase: 1, group: 'soil' }
   ]
 };
 
@@ -97,38 +114,38 @@ function renderMeasureSpecialPanel(cat) {
   panel.style.display = 'block';
   if (cat === 'rootReachPlant') {
     panel.innerHTML =
-      '<p style="margin:0 0 12px;font-size:12px;line-height:1.45;color:#475569;">Estima el <strong>% de superficie del cultivo</strong> con exploración radical activa (círculo por planta × densidad). Referencia para franja regada en balance hídrico.</p>' +
+      '<p style="margin:0 0 12px;font-size:12px;line-height:1.45;color:#475569;">' + measureT('tools.measure.rrp_intro', 'Estima el <strong>% de superficie del cultivo</strong> con exploración radical activa (círculo por planta × densidad). Referencia para franja regada en balance hídrico.') + '</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">' +
-      '<div class="form-group"><label>Zona radical (tipo)</label>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrp_zone_type', 'Zona radical (tipo)') + '</label>' +
       '<select id="measure-rrp-mode" onchange="calcMeasureSpecial()">' +
-      '<option value="radius">Radio (m)</option>' +
-      '<option value="diameter">Diámetro copa / raíz (m)</option>' +
-      '<option value="orilla">Separación orilla a orilla (m)</option>' +
+      '<option value="radius">' + measureT('tools.measure.rrp_radius', 'Radio (m)') + '</option>' +
+      '<option value="diameter">' + measureT('tools.measure.rrp_diameter', 'Diámetro copa / raíz (m)') + '</option>' +
+      '<option value="orilla">' + measureT('tools.measure.rrp_edge', 'Separación orilla a orilla (m)') + '</option>' +
       '</select></div>' +
-      '<div class="form-group"><label>Medida (m)</label>' +
-      '<input type="number" id="measure-rrp-size" min="0" step="0.01" placeholder="Ej. 1.2" oninput="calcMeasureSpecial()"></div>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrp_size', 'Medida (m)') + '</label>' +
+      '<input type="number" id="measure-rrp-size" min="0" step="0.01" placeholder="' + measureT('tools.measure.ph_ex_1_2', 'Ej. 1.2') + '" oninput="calcMeasureSpecial()"></div>' +
       '</div>' +
-      '<p style="margin:10px 0 8px;font-size:12px;color:#64748b;"><strong>Plantas por hectárea</strong> — ingresa densidad o calcula con separaciones:</p>' +
+      '<p style="margin:10px 0 8px;font-size:12px;color:#64748b;">' + measureT('tools.measure.rrp_plants_help', '<strong>Plantas por hectárea</strong> — ingresa densidad o calcula con separaciones:') + '</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">' +
-      '<div class="form-group"><label>Plantas / ha (directo)</label>' +
-      '<input type="number" id="measure-rrp-plants-ha" min="0" step="1" placeholder="Opcional" oninput="calcMeasureSpecial()"></div>' +
-      '<div class="form-group"><label>Separación surcos (m)</label>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrp_plants_ha', 'Plantas / ha (directo)') + '</label>' +
+      '<input type="number" id="measure-rrp-plants-ha" min="0" step="1" placeholder="' + measureT('tools.measure.ph_optional', 'Opcional') + '" oninput="calcMeasureSpecial()"></div>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrp_row', 'Separación surcos (m)') + '</label>' +
       '<input type="number" id="measure-rrp-row-m" min="0" step="0.01" placeholder="Ej. 3" oninput="calcMeasureSpecial()"></div>' +
-      '<div class="form-group"><label>Separación en surco (m)</label>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrp_inrow', 'Separación en surco (m)') + '</label>' +
       '<input type="number" id="measure-rrp-inrow-m" min="0" step="0.01" placeholder="Ej. 2" oninput="calcMeasureSpecial()"></div>' +
       '</div>';
   } else if (cat === 'rootReachBed') {
     panel.innerHTML =
-      '<p style="margin:0 0 12px;font-size:12px;line-height:1.45;color:#475569;">Estima el <strong>% de superficie</strong> ocupada por camas/bandas con raíces activas (surcos + ancho de cama).</p>' +
+      '<p style="margin:0 0 12px;font-size:12px;line-height:1.45;color:#475569;">' + measureT('tools.measure.rrb_intro', 'Estima el <strong>% de superficie</strong> ocupada por camas/bandas con raíces activas (surcos + ancho de cama).') + '</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">' +
-      '<div class="form-group"><label>Distancia entre surcos (m)</label>' +
-      '<input type="number" id="measure-rrb-row-m" min="0" step="0.01" placeholder="Centro a centro" oninput="calcMeasureSpecial()"></div>' +
-      '<div class="form-group"><label>Ancho de cama (m)</label>' +
-      '<input type="number" id="measure-rrb-bed-m" min="0" step="0.01" placeholder="Ej. 1.2" oninput="calcMeasureSpecial()"></div>' +
-      '<div class="form-group"><label>Raíz en cama (% del ancho)</label>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrb_row', 'Distancia entre surcos (m)') + '</label>' +
+      '<input type="number" id="measure-rrb-row-m" min="0" step="0.01" placeholder="' + measureT('tools.measure.ph_center', 'Centro a centro') + '" oninput="calcMeasureSpecial()"></div>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrb_bed', 'Ancho de cama (m)') + '</label>' +
+      '<input type="number" id="measure-rrb-bed-m" min="0" step="0.01" placeholder="' + measureT('tools.measure.ph_ex_1_2', 'Ej. 1.2') + '" oninput="calcMeasureSpecial()"></div>' +
+      '<div class="form-group"><label>' + measureT('tools.measure.rrb_reach', 'Raíz en cama (% del ancho)') + '</label>' +
       '<input type="number" id="measure-rrb-reach-pct" min="1" max="100" step="1" value="100" placeholder="100" oninput="calcMeasureSpecial()"></div>' +
       '</div>' +
-      '<p style="margin:8px 0 0;font-size:11px;color:#64748b;">100 % = toda la cama humedecida; baja si solo parte del ancho tiene raíces activas.</p>';
+      '<p style="margin:8px 0 0;font-size:11px;color:#64748b;">' + measureT('tools.measure.rrb_note', '100 % = toda la cama humedecida; baja si solo parte del ancho tiene raíces activas.') + '</p>';
   }
 }
 
@@ -146,7 +163,7 @@ function calcMeasureSpecial() {
   wrap.style.display = 'block';
   var pct = null;
   var detail = '';
-  var label = '% superficie con raíces (estimado)';
+  var label = measureT('tools.measure.result_label', '% superficie con raíces (estimado)');
 
   if (cat.value === 'rootReachPlant') {
     var modeEl = document.getElementById('measure-rrp-mode');
@@ -160,12 +177,12 @@ function calcMeasureSpecial() {
     }
     if (size == null || size <= 0) {
       resultEl.textContent = '—';
-      detailEl.textContent = 'Indica la medida (m) de la zona radical.';
+      detailEl.textContent = measureT('tools.measure.err_size', 'Indica la medida (m) de la zona radical.');
       return;
     }
     if (plantsHa == null || plantsHa <= 0) {
       resultEl.textContent = '—';
-      detailEl.textContent = 'Indica plantas/ha o separación surcos × en surco.';
+      detailEl.textContent = measureT('tools.measure.err_density', 'Indica plantas/ha o separación surcos × en surco.');
       return;
     }
     var radius = mode === 'radius' ? size : size / 2;
@@ -184,8 +201,8 @@ function calcMeasureSpecial() {
       ' plantas/ha → ' +
       measureRound(totalM2, 0) +
       ' m²/ha' +
-      (capped ? ' · <strong>Superposición:</strong> círculos suman más de 1 ha; se muestra 100 % máximo.' : '') +
-      ' · Usa este % en balance hídrico → raíces en superficie / franja regada.';
+      (capped ? ' · ' + measureT('tools.measure.detail_overlap', '<strong>Superposición:</strong> círculos suman más de 1 ha; se muestra 100 % máximo.') : '') +
+      ' · ' + measureT('tools.measure.detail_use_balance', 'Usa este % en balance hídrico → raíces en superficie / franja regada.');
   } else if (cat.value === 'rootReachBed') {
     var rowSpacing = measureParseNum('measure-rrb-row-m');
     var bedW = measureParseNum('measure-rrb-bed-m');
@@ -193,12 +210,12 @@ function calcMeasureSpecial() {
     if (reachPct == null) reachPct = 100;
     if (rowSpacing == null || rowSpacing <= 0 || bedW == null || bedW <= 0) {
       resultEl.textContent = '—';
-      detailEl.textContent = 'Indica distancia entre surcos y ancho de cama (m).';
+      detailEl.textContent = measureT('tools.measure.err_bed', 'Indica distancia entre surcos y ancho de cama (m).');
       return;
     }
     if (bedW > rowSpacing) {
       resultEl.textContent = '—';
-      detailEl.textContent = 'El ancho de cama no puede ser mayor que la distancia entre surcos.';
+      detailEl.textContent = measureT('tools.measure.err_bed_gt_row', 'El ancho de cama no puede ser mayor que la distancia entre surcos.');
       return;
     }
     var effectiveBed = bedW * (reachPct / 100);
@@ -258,7 +275,7 @@ function updateMeasureUnitOptions() {
     return;
   }
   from.innerHTML = list.map(function (u) {
-    return '<option value="' + u.id + '">' + u.name + '</option>';
+    return '<option value="' + u.id + '">' + measureUnitLabel(u) + '</option>';
   }).join('');
   to.innerHTML = from.innerHTML;
   from.value = list[0].id;
@@ -296,7 +313,7 @@ function convertMeasureUnits() {
   if (!fromUnit || !toUnit) return;
   if (cat.value === 'ionic' && fromUnit.group && toUnit.group && fromUnit.group !== toUnit.group) {
     resultEl.value = '—';
-    resultEl.title = 'No se puede convertir entre unidades de suelo y de solución. Elige unidades del mismo grupo.';
+    resultEl.title = measureT('tools.measure.err_soil_solution', 'No se puede convertir entre unidades de suelo y de solución. Elige unidades del mismo grupo.');
     return;
   }
   resultEl.title = '';

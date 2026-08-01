@@ -9,7 +9,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260730c"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260801c"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>💦 Diagnóstico de agua y acondicionamiento</title>
   <style>
@@ -606,9 +606,33 @@
       return Object.keys(hardnessFields).every((k) => String(hardnessFields[k].value).trim() === '');
     }
 
+    function hardnessClassLabel(ppm) {
+      const es = hardnessClassByPpm(ppm);
+      const en = ({
+        'Blanda': 'Soft',
+        'Moderadamente dura': 'Moderately hard',
+        'Dura': 'Hard',
+        'Muy dura': 'Very hard'
+      })[es] || es;
+      return wt(es, en);
+    }
+
     function setHardnessEmptyUI() {
-      el.hClass.textContent = 'Clasificación: —';
-      el.hSummary.innerHTML = '<span class="muted">Introduce dureza en cualquier unidad (ppm, meq/L, °dH, °e, °fH).</span>';
+      el.hClass.textContent = wt('Clasificación: —', 'Classification: —');
+      el.hSummary.innerHTML = '<span class="muted">' + wt(
+        'Introduce dureza en cualquier unidad (ppm, meq/L, °dH, °e, °fH).',
+        'Enter hardness in any unit (ppm, meq/L, °dH, °e, °fH).'
+      ) + '</span>';
+    }
+
+    function setLabEmptyUI() {
+      el.labClass.textContent = wt('Clasificación: —', 'Classification: —');
+      el.labOut.value = '';
+      el.labOut.placeholder = '—';
+      el.labSummary.innerHTML = '<span class="muted">' + wt(
+        'Introduce al menos un valor (Ca o Mg) del análisis.',
+        'Enter at least one value (Ca or Mg) from the analysis.'
+      ) + '</span>';
     }
 
     function isAllLabEmpty() {
@@ -622,13 +646,6 @@
     function caco3FromMgPpmOrMeq(v, unit) {
       if (unit === 'meq') return v * EQ_CACO3;
       return v * PPM_CACO3_PER_PPM_MG;
-    }
-
-    function setLabEmptyUI() {
-      el.labClass.textContent = 'Clasificación: —';
-      el.labOut.value = '';
-      el.labOut.placeholder = '—';
-      el.labSummary.innerHTML = '<span class="muted">Introduce al menos un valor (Ca o Mg) del análisis.</span>';
     }
 
     function updateLabCalc() {
@@ -646,19 +663,21 @@
       const partMg = caco3FromMgPpmOrMeq(vMg, uMg);
       const total = partCa + partMg;
       el.labOut.value = f(total, 2);
-      const cls = hardnessClassByPpm(total);
-      el.labClass.textContent = `Clasificación: ${cls}`;
+      const cls = hardnessClassLabel(total);
+      el.labClass.textContent = wt('Clasificación:', 'Classification:') + ' ' + cls;
 
       const lineA = caRaw === ''
-        ? 'Ca: no indicado (0 en la suma).'
-        : (uCa === 'meq' ? `Ca: <strong>${f(vCa, 2)}</strong> meq/L` : `Ca: <strong>${f(vCa, 2)}</strong> ppm`) + ` → <strong>${f(partCa, 1)}</strong> ppm eq. CaCO₃.`;
+        ? wt('Ca: no indicado (0 en la suma).', 'Ca: not entered (0 in the sum).')
+        : (uCa === 'meq' ? `Ca: <strong>${f(vCa, 2)}</strong> meq/L` : `Ca: <strong>${f(vCa, 2)}</strong> ppm`) +
+          ` → <strong>${f(partCa, 1)}</strong> ` + wt('ppm eq. CaCO₃.', 'ppm eq. CaCO₃.');
       const lineB = mgRaw === ''
-        ? 'Mg: no indicado (0 en la suma).'
-        : (uMg === 'meq' ? `Mg: <strong>${f(vMg, 2)}</strong> meq/L` : `Mg: <strong>${f(vMg, 2)}</strong> ppm`) + ` → <strong>${f(partMg, 1)}</strong> ppm eq. CaCO₃.`;
+        ? wt('Mg: no indicado (0 en la suma).', 'Mg: not entered (0 in the sum).')
+        : (uMg === 'meq' ? `Mg: <strong>${f(vMg, 2)}</strong> meq/L` : `Mg: <strong>${f(vMg, 2)}</strong> ppm`) +
+          ` → <strong>${f(partMg, 1)}</strong> ` + wt('ppm eq. CaCO₃.', 'ppm eq. CaCO₃.');
 
       el.labSummary.innerHTML = `
         ${lineA}<br>${lineB}<br>
-        <span class="muted">Suma durezas iónicas: ${f(partCa, 1)} + ${f(partMg, 1)} = <strong>${f(total, 2)} ppm</strong> como CaCO₃ · ${cls}.</span>
+        <span class="muted">${wt('Suma durezas iónicas:', 'Ionic hardness sum:')} ${f(partCa, 1)} + ${f(partMg, 1)} = <strong>${f(total, 2)} ppm</strong> ${wt('como CaCO₃', 'as CaCO₃')} · ${cls}.</span>
       `;
     }
 
@@ -679,9 +698,15 @@
     }
 
     function setAcidPlaceholderUI() {
-      el.acidResult.innerHTML = '<span class="muted">Completa alcalinidad (HCO₃⁻, CO₃²⁻), <strong>residual objetivo</strong> y <strong>volumen de preparación</strong> (tanque o volumen a acidificar, en L o m³) para ver la dosis de ácido.</span>';
+      el.acidResult.innerHTML = '<span class="muted">' + wt(
+        'Completa alcalinidad (HCO₃⁻, CO₃²⁻), <strong>residual objetivo</strong> y <strong>volumen de preparación</strong> (tanque o volumen a acidificar, en L o m³) para ver la dosis de ácido.',
+        'Complete alkalinity (HCO₃⁻, CO₃²⁻), <strong>target residual</strong> and <strong>preparation volume</strong> (tank or volume to acidify, in L or m³) to see the acid dose.'
+      ) + '</span>';
       if (el.volM3Equiv) {
-        el.volM3Equiv.innerHTML = '<span class="muted">Equivale a <strong>—</strong> m³ de agua (solo referencia).</span>';
+        el.volM3Equiv.innerHTML = '<span class="muted">' + wt(
+          'Equivale a <strong>—</strong> m³ de agua (solo referencia).',
+          'Equivalent to <strong>—</strong> m³ of water (reference only).'
+        ) + '</span>';
       }
     }
 
@@ -740,11 +765,11 @@
       if (skipKey !== 'eh') el.eh.value = f(eHv, 2);
       if (skipKey !== 'fh') el.fh.value = f(fHv, 2);
 
-      const cls = hardnessClassByPpm(ppm);
-      el.hClass.textContent = `Clasificación: ${cls}`;
+      const cls = hardnessClassLabel(ppm);
+      el.hClass.textContent = wt('Clasificación:', 'Classification:') + ' ' + cls;
       el.hSummary.innerHTML = `
-        <strong>Lectura rápida:</strong> ${cls} · ${f(ppm, 1)} ppm como CaCO₃.<br>
-        <span class="muted">Equivalente estimado: ${f(meq, 2)} meq/L · ${f(dHv, 2)} °dH · ${f(eHv, 2)} °e · ${f(fHv, 2)} °fH.</span>
+        <strong>${wt('Lectura rápida:', 'Quick reading:')}</strong> ${cls} · ${f(ppm, 1)} ppm ${wt('como CaCO₃', 'as CaCO₃')}.<br>
+        <span class="muted">${wt('Equivalente estimado:', 'Estimated equivalent:')} ${f(meq, 2)} meq/L · ${f(dHv, 2)} °dH · ${f(eHv, 2)} °e · ${f(fHv, 2)} °fH.</span>
       `;
     }
 
@@ -824,11 +849,15 @@
       const totalAcidText = waterUI.prefs().unit_system === 'us_customary'
         ? window.NpUnits.formatQuantity(window.NpUnits.convert(totalLAcid / 1000, 'm3', 'US fl oz'), 'US fl oz', waterUI.prefs().locale, 2)
         : f(totalLAcid, 3) + ' L (' + f(totalMl, 1) + ' mL)';
+      // Masa del ácido: kg en métrico; lb en US customary (misma masa física).
+      const massText = waterUI.prefs().unit_system === 'us_customary'
+        ? window.NpUnits.formatQuantity(window.NpUnits.convert(kgTotal, 'kg', 'lb'), 'lb', waterUI.prefs().locale, 3)
+        : f(kgTotal, 3) + ' kg';
       el.acidResult.innerHTML = `
         <strong>${wt('Resultado con', 'Result with')} ${waterUI.translateString(acid.name)}:</strong><br>
         ${wt('Meq/L a neutralizar', 'meq/L to neutralize')} = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
         ${wt('Dosis', 'Dose')} = <strong>${doseText}</strong> ${wt('de ácido', 'of acid')}<br>
-        ${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${totalAcidText}</strong> ${wt('de ácido', 'of acid')} · ${wt('aprox.', 'approx.')} <strong>${f(kgTotal, 3)} kg</strong>
+        ${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${totalAcidText}</strong> ${wt('de ácido', 'of acid')} · ${wt('aprox.', 'approx.')} <strong>${massText}</strong>
       `;
     }
 
@@ -855,8 +884,12 @@
     window.NpWaterClimateUI.init({
       refresh: function () {
         fillAcids();
+        if (typeof window.NpWaterClimateUI.applyLanguage === 'function') {
+          window.NpWaterClimateUI.applyLanguage();
+        }
         updateLabCalc();
         updateAcidCalc();
+        if (isAllHardnessEmpty()) setHardnessEmptyUI();
       }
     });
     applyWaterVolumeSystem(false);

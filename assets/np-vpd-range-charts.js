@@ -20,6 +20,17 @@
   var CHART_VIEWPORT_H = 228;
   var CHART_INNER_H = 200;
 
+  function chartT(es, en) {
+    if (w.NpWaterClimateUI && typeof w.NpWaterClimateUI.t === 'function') {
+      return w.NpWaterClimateUI.t(es, en);
+    }
+    try {
+      var p = w.NpPrefs && typeof w.NpPrefs.get === 'function' ? w.NpPrefs.get() : null;
+      if (p && p.language === 'en') return en || es;
+    } catch (e) {}
+    return es;
+  }
+
   function compareIsoDates(a, b) {
     if (!a || !b) return 0;
     return String(a).localeCompare(String(b));
@@ -51,7 +62,7 @@
   }
 
   function getCriticalDisplayLabel() {
-    return '1 mes (' + CRITICAL_DISPLAY_DAYS + ' días)';
+    return chartT('1 mes (' + CRITICAL_DISPLAY_DAYS + ' días)', '1 month (' + CRITICAL_DISPLAY_DAYS + ' days)');
   }
 
   function prepareCriticalRowsForDisplay(criticalRows, rangeEndDate, rangeStartDate) {
@@ -112,27 +123,25 @@
     if (!prep || !prep.windowStart || !prep.windowEnd) return '';
     var shown = prep.rows ? prep.rows.length : 0;
     var periodStart = prep.rangeStart || prep.windowStart;
-    var msg =
-      'Desde el <strong>inicio del periodo que elegiste</strong> (<strong>' +
-      periodStart +
-      '</strong>) se listan hasta <strong>' +
-      CRITICAL_DISPLAY_DAYS +
-      ' días</strong> de horas críticas (<strong>' +
-      prep.windowStart +
-      '</strong> al <strong>' +
-      prep.windowEnd +
-      '</strong>). En ese tramo: <strong>' +
-      shown +
-      '</strong> hora(s).';
+    var msg = chartT(
+      'Desde el <strong>inicio del periodo que elegiste</strong> (<strong>{start}</strong>) se listan hasta <strong>{days} días</strong> de horas críticas (<strong>{w0}</strong> al <strong>{w1}</strong>). En ese tramo: <strong>{n}</strong> hora(s).',
+      'From the <strong>start of the period you chose</strong> (<strong>{start}</strong>) up to <strong>{days} days</strong> of critical hours are listed (<strong>{w0}</strong> to <strong>{w1}</strong>). In that span: <strong>{n}</strong> hour(s).'
+    )
+      .replace('{start}', periodStart)
+      .replace('{days}', String(CRITICAL_DISPLAY_DAYS))
+      .replace('{w0}', prep.windowStart)
+      .replace('{w1}', prep.windowEnd)
+      .replace('{n}', String(shown));
     if (prep.rangeTruncated && prep.rangeEnd) {
       msg +=
-        ' El rango completo descargado en Clima (' +
-        periodStart +
-        ' a <strong>' +
-        prep.rangeEnd +
-        '</strong>) tiene <strong>' +
-        prep.totalAll +
-        '</strong> horas críticas. Acota fechas para ver otro tramo de 30 días.';
+        ' ' +
+        chartT(
+          'El rango completo descargado en Clima ({start} a <strong>{end}</strong>) tiene <strong>{total}</strong> horas críticas. Acota fechas para ver otro tramo de 30 días.',
+          'The full range downloaded in Climate ({start} to <strong>{end}</strong>) has <strong>{total}</strong> critical hours. Narrow the dates to see another 30-day window.'
+        )
+          .replace('{start}', periodStart)
+          .replace('{end}', prep.rangeEnd)
+          .replace('{total}', String(prep.totalAll));
     }
     return msg;
   }
@@ -287,7 +296,7 @@
   function rangeStackedDatasets(items) {
     return [
       {
-        label: 'VPD bajo (<0.5 kPa)',
+        label: chartT('VPD bajo (<0.5 kPa)', 'Low VPD (<0.5 kPa)'),
         data: items.map(function (i) {
           return i.low;
         }),
@@ -297,7 +306,7 @@
         stack: 'day24'
       },
       {
-        label: 'VPD óptimo (0.5–1.5 kPa)',
+        label: chartT('VPD óptimo (0.5–1.5 kPa)', 'Optimal VPD (0.5–1.5 kPa)'),
         data: items.map(function (i) {
           return i.optimal;
         }),
@@ -307,7 +316,7 @@
         stack: 'day24'
       },
       {
-        label: 'VPD alto (>1.5 kPa)',
+        label: chartT('VPD alto (>1.5 kPa)', 'High VPD (>1.5 kPa)'),
         data: items.map(function (i) {
           return i.high;
         }),
@@ -324,7 +333,7 @@
     var bars = [
       {
         type: 'bar',
-        label: 'Horas VPD bajo',
+        label: chartT('Horas VPD bajo', 'Low VPD hours'),
         yAxisID: 'y',
         data: items.map(function (i) {
           return i.low;
@@ -337,7 +346,7 @@
       },
       {
         type: 'bar',
-        label: 'Horas VPD óptimo',
+        label: chartT('Horas VPD óptimo', 'Optimal VPD hours'),
         yAxisID: 'y',
         data: items.map(function (i) {
           return i.optimal;
@@ -350,7 +359,7 @@
       },
       {
         type: 'bar',
-        label: 'Horas VPD alto',
+        label: chartT('Horas VPD alto', 'High VPD hours'),
         yAxisID: 'y',
         data: items.map(function (i) {
           return i.high;
@@ -365,7 +374,7 @@
     var lines = [
       {
         type: 'line',
-        label: 'VPD mín (kPa)',
+        label: chartT('VPD mín (kPa)', 'Min VPD (kPa)'),
         yAxisID: 'yVpd',
         data: items.map(function (i) {
           return Number.isFinite(i.minVpd) ? i.minVpd : null;
@@ -385,7 +394,7 @@
       },
       {
         type: 'line',
-        label: 'VPD máx (kPa)',
+        label: chartT('VPD máx (kPa)', 'Max VPD (kPa)'),
         yAxisID: 'yVpd',
         data: items.map(function (i) {
           return Number.isFinite(i.maxVpd) ? i.maxVpd : null;
@@ -427,49 +436,49 @@
           var row = metaItems[ctx.dataIndex];
           if (!row) return '';
           var dsLabel = String(ctx.dataset.label || '');
-          if (dsLabel.indexOf('VPD mín') >= 0) {
+          if (dsLabel.indexOf('VPD mín') >= 0 || dsLabel.indexOf('Min VPD') >= 0) {
             return (
-              'VPD mín: ' +
+              chartT('VPD mín:', 'Min VPD:') + ' ' +
               (Number.isFinite(row.minVpd) ? row.minVpd.toFixed(2) : '—') +
-              ' kPa · hora ' +
+              ' kPa · ' + chartT('hora', 'time') + ' ' +
               String(row.minAt || '—')
             );
           }
-          if (dsLabel.indexOf('VPD máx') >= 0) {
+          if (dsLabel.indexOf('VPD máx') >= 0 || dsLabel.indexOf('Max VPD') >= 0) {
             return (
-              'VPD máx: ' +
+              chartT('VPD máx:', 'Max VPD:') + ' ' +
               (Number.isFinite(row.maxVpd) ? row.maxVpd.toFixed(2) : '—') +
-              ' kPa · hora ' +
+              ' kPa · ' + chartT('hora', 'time') + ' ' +
               String(row.maxAt || '—')
             );
           }
           var h = ctx.raw;
           var pct = row.total > 0 ? Math.round((h / row.total) * 100) : 0;
-          return dsLabel + ': ' + h + ' h (' + pct + '% del día)';
+          return dsLabel + ': ' + h + ' h (' + pct + '% ' + chartT('del día', 'of the day') + ')';
         },
         afterBody: function (items) {
           var idx = items[0] && items[0].dataIndex;
           var row = idx != null ? metaItems[idx] : null;
           if (!row) return [];
           var lines = [
-            'VPD mín: ' +
+            chartT('VPD mín:', 'Min VPD:') + ' ' +
               (Number.isFinite(row.minVpd) ? row.minVpd.toFixed(2) : '—') +
               ' kPa @ ' +
               row.minAt,
-            'VPD máx: ' +
+            chartT('VPD máx:', 'Max VPD:') + ' ' +
               (Number.isFinite(row.maxVpd) ? row.maxVpd.toFixed(2) : '—') +
               ' kPa @ ' +
               row.maxAt
           ];
           if (row.total > 0) {
             lines.push(
-              'Horas: bajo ' +
+              chartT('Horas:', 'Hours:') + ' ' + chartT('bajo', 'low') + ' ' +
                 row.low +
-                ' + óptimo ' +
+                ' + ' + chartT('óptimo', 'optimal') + ' ' +
                 row.optimal +
-                ' + alto ' +
+                ' + ' + chartT('alto', 'high') + ' ' +
                 row.high +
-                (row.total < 24 ? ' · día incompleto' : '')
+                (row.total < 24 ? ' · ' + chartT('día incompleto', 'incomplete day') : '')
             );
           }
           return lines;
@@ -489,31 +498,31 @@
           var row = metaItems[ctx.dataIndex];
           var h = ctx.raw;
           var pct = row && row.total > 0 ? Math.round((h / row.total) * 100) : 0;
-          return ctx.dataset.label + ': ' + h + ' h (' + pct + '% del día)';
+          return ctx.dataset.label + ': ' + h + ' h (' + pct + '% ' + chartT('del día', 'of the day') + ')';
         },
         afterBody: function (items) {
           var idx = items[0] && items[0].dataIndex;
           var row = idx != null ? metaItems[idx] : null;
           if (!row) return [];
           return [
-            'VPD máx: ' +
+            chartT('VPD máx:', 'Max VPD:') + ' ' +
               (Number.isFinite(row.maxVpd) ? row.maxVpd.toFixed(2) : '—') +
               ' kPa @ ' +
               row.maxAt,
-            'VPD mín: ' +
+            chartT('VPD mín:', 'Min VPD:') + ' ' +
               (Number.isFinite(row.minVpd) ? row.minVpd.toFixed(2) : '—') +
               ' kPa @ ' +
               row.minAt,
-            'Horas contadas: ' +
+            chartT('Horas contadas:', 'Hours counted:') + ' ' +
             row.total +
-            ' (bajo ' +
+            ' (' + chartT('bajo', 'low') + ' ' +
             row.low +
-            ' + óptimo ' +
+            ' + ' + chartT('óptimo', 'optimal') + ' ' +
             row.optimal +
-            ' + alto ' +
+            ' + ' + chartT('alto', 'high') + ' ' +
             row.high +
             ')' +
-            (row.total < 24 ? ' · día incompleto en serie' : '')
+            (row.total < 24 ? ' · ' + chartT('día incompleto en serie', 'incomplete day in series') : '')
           ];
         }
       }
@@ -561,11 +570,15 @@
     if (!items.length) return null;
     var title =
       opts.title ||
-      ('Distribución horaria VPD · ' +
+      (chartT('Distribución horaria VPD', 'Hourly VPD distribution') +
+        ' · ' +
         (slice.truncated
-          ? 'últimos ' + items.length + ' de ' + slice.totalPeriods + ' periodos'
-          : items.length + ' periodos') +
-        ' (suma bajo+óptimo+alto = horas/día)');
+          ? chartT('últimos {n} de {total} periodos', 'last {n} of {total} periods')
+              .replace('{n}', String(items.length))
+              .replace('{total}', String(slice.totalPeriods))
+          : chartT('{n} periodos', '{n} periods').replace('{n}', String(items.length))) +
+        ' ' +
+        chartT('(suma bajo+óptimo+alto = horas/día)', '(low+optimal+high sum = hours/day)'));
     return new w.Chart(canvas.getContext('2d'), {
       type: 'bar',
       data: {
@@ -674,12 +687,14 @@
     var layout = opts.layout || computeCriticalChartLayout(agg.items.length);
     var vpdAxisMax = computeVpdAxisMax(agg.items);
     var title =
-      'Distribución VPD por día · ' +
+      chartT('Distribución VPD por día', 'Daily VPD distribution') +
+      ' · ' +
       getCriticalDisplayLabel() +
       (prep && prep.windowStart && prep.windowEnd
-        ? ' (' + prep.windowStart + ' a ' + prep.windowEnd + ')'
+        ? ' (' + prep.windowStart + ' ' + chartT('a', 'to') + ' ' + prep.windowEnd + ')'
         : '') +
-      ' · barras 24 h + VPD máx/mín';
+      ' · ' +
+      chartT('barras 24 h + VPD máx/mín', '24 h bars + max/min VPD');
     applyCriticalChartLayout(null, canvas, layout);
     var useResponsive = opts.responsive !== false && !opts.layout;
     return new w.Chart(canvas.getContext('2d'), {
@@ -724,7 +739,7 @@
         scales: {
           x: {
             stacked: true,
-            title: { display: true, text: 'Día', font: { size: 10 } },
+            title: { display: true, text: chartT('Día', 'Day'), font: { size: 10 } },
             ticks: { maxRotation: 45, font: { size: 9 } }
           },
           y: {
@@ -732,7 +747,7 @@
             position: 'left',
             min: 0,
             max: 24,
-            title: { display: true, text: 'Horas / día', font: { size: 10 }, color: '#7c2d12' },
+            title: { display: true, text: chartT('Horas / día', 'Hours / day'), font: { size: 10 }, color: '#7c2d12' },
             ticks: { stepSize: 4, precision: 0, font: { size: 9 }, color: '#7c2d12' },
             grid: { color: 'rgba(254, 215, 170, 0.45)' }
           },
@@ -870,10 +885,10 @@
       '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
       '<button type="button" id="' +
       prefix +
-      '-view-graph" style="padding:6px 12px;font-size:12px;font-weight:700;border-radius:8px;border:1px solid #fdba74;background:#ffedd5;color:#9a3412;cursor:pointer;">📈 Gráfica</button>' +
+      '-view-graph" style="padding:6px 12px;font-size:12px;font-weight:700;border-radius:8px;border:1px solid #fdba74;background:#ffedd5;color:#9a3412;cursor:pointer;">📈 ' + chartT('Gráfica', 'Chart') + '</button>' +
       '<button type="button" id="' +
       prefix +
-      '-view-table" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:8px;border:1px solid #fdba74;background:#fff7ed;color:#9a3412;cursor:pointer;">📋 Tabla</button>' +
+      '-view-table" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:8px;border:1px solid #fdba74;background:#fff7ed;color:#9a3412;cursor:pointer;">📋 ' + chartT('Tabla', 'Table') + '</button>' +
       '</div>'
     );
   }
@@ -961,26 +976,26 @@
     var critToggle = viewToggleButtonsHtml(prefix + '-critical');
     var granularityNote =
       cfg.granularity === 'weekly'
-        ? 'Vista semanal: máximos y mínimos por semana.'
+        ? chartT('Vista semanal: máximos y mínimos por semana.', 'Weekly view: maxima and minima per week.')
         : cfg.granularity === 'monthly'
-          ? 'Vista mensual: máximos y mínimos por mes.'
-          : 'Vista diaria: resumen por día.';
+          ? chartT('Vista mensual: máximos y mínimos por mes.', 'Monthly view: maxima and minima per month.')
+          : chartT('Vista diaria: resumen por día.', 'Daily view: summary per day.');
     var critTitle =
-      'Horas críticas (' +
+      chartT('Horas críticas', 'Critical hours') + ' (' +
       critCount +
       ') · ' +
       getCriticalDisplayLabel() +
       (critPrep.windowStart && critPrep.windowEnd
-        ? ' · ' + critPrep.windowStart + ' a ' + critPrep.windowEnd
+        ? ' · ' + critPrep.windowStart + ' ' + chartT('a', 'to') + ' ' + critPrep.windowEnd
         : '');
     return (
       '<div style="margin-top:10px;border-top:1px dashed #fed7aa;padding-top:10px;">' +
-      '<div style="margin-bottom:8px;"><strong style="color:#9a3412;font-size:13px;">Serie VPD por periodo (' +
+      '<div style="margin-bottom:8px;"><strong style="color:#9a3412;font-size:13px;">' + chartT('Serie VPD por periodo', 'VPD series by period') + ' (' +
       (cfg.summaryCount || 0) +
       ')</strong></div>' +
       '<div style="font-size:11px;color:#7c2d12;line-height:1.45;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;margin-bottom:8px;">' +
       granularityNote +
-      ' Tabla con VPD máx/mín, horas por zona y % estrés.' +
+      ' ' + chartT('Tabla con VPD máx/mín, horas por zona y % estrés.', 'Table with max/min VPD, hours by zone and % stress.') +
       '</div>' +
       '<div style="overflow:auto;max-height:240px;">' +
       (cfg.summaryTableHtml || '') +
@@ -995,7 +1010,10 @@
       (critPrep.windowStart
         ? '<div style="margin-bottom:6px;font-size:11px;color:#7c2d12;line-height:1.45;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
           buildCriticalScopeNoteHtml(critPrep) +
-          ' Gráfica: barras tenues = 24 h/día por zona VPD · línea <strong>azul</strong> = VPD mín + hora · línea <strong>tinta</strong> = VPD máx + hora (eje derecho). Tabla: solo horas fuera de rango.</div>'
+          ' ' + chartT(
+            'Gráfica: barras tenues = 24 h/día por zona VPD · línea <strong>azul</strong> = VPD mín + hora · línea <strong>tinta</strong> = VPD máx + hora (eje derecho). Tabla: solo horas fuera de rango.',
+            'Chart: faint bars = 24 h/day by VPD zone · <strong>blue</strong> line = min VPD + time · <strong>ink</strong> line = max VPD + time (right axis). Table: out-of-range hours only.'
+          ) + '</div>'
         : '') +
       '<div id="' +
       prefix +

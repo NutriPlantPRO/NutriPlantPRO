@@ -9,7 +9,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260730c"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260801p"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Lámina de riego y balance hídrico — NutriPlant PRO</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -269,12 +269,12 @@
               <span class="irr-unit-badge" data-np-unit-label="volume" aria-hidden="true">m³</span>
               <input type="hidden" id="irr-unit" value="m3" />
             </div>
-            <p class="field-hint">Volumen total aplicado en la <strong>zona humedecida</strong> (1 o 7 días). Indica <strong>Superficie regada</strong> para el balance; la app calcula la lámina en mm en los resultados.</p>
+            <p class="field-hint" id="irr-applied-hint">Volumen total aplicado en la <strong>zona humedecida</strong> (1 o 7 días). Indica <strong>Superficie regada</strong> para el balance; la app calcula la lámina en los resultados.</p>
           </div>
           <div class="field-box">
             <label>Superficie del cultivo (<span data-np-unit-label="area">ha</span>)</label>
             <input id="irr-crop-area" type="number" min="0" step="0.01" value="1" oninput="irrFreeUpdate()" />
-            <p class="field-hint">Área total del cultivo (ETc / m³).</p>
+            <p class="field-hint" id="irr-crop-area-hint">Área total del cultivo (ETc / volumen).</p>
           </div>
           <div class="field-box field-box--green">
             <label>Superficie regada (<span data-np-unit-label="area">ha</span>)</label>
@@ -321,8 +321,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=20260728a"></script>
-  <script src="assets/np-soil-water-bridge.js?v=202606242400"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=20260801p"></script>
+  <script src="assets/np-soil-water-bridge.js?v=20260801p"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
     window.NpWaterClimateUI.init({
@@ -334,6 +334,7 @@
         'irr-area': 'area'
       },
       refresh: function () {
+        if (typeof irrFreeRefreshChrome === 'function') irrFreeRefreshChrome();
         if (typeof irrFreeUpdate === 'function') irrFreeUpdate();
       }
     });
@@ -355,6 +356,12 @@
     function irrSetStatus(msg) {
       var el = document.getElementById('irr-geo-status');
       if (el) el.textContent = msg || '';
+    }
+    function irrEn() {
+      return !!(window.NpWaterClimateUI && window.NpWaterClimateUI.prefs().language === 'en');
+    }
+    function irrMsg(es, en) {
+      return irrEn() ? en : es;
     }
 
     function irrReadCoords() {
@@ -381,7 +388,12 @@
     function irrRestoreClimateMeta() {
       var meta = document.getElementById('irr-sat-meta');
       if (!meta || !irrRolling || !irrRolling.fetchedAt) return;
-      meta.textContent = 'Referencia satélite · actualizada ' + new Date(irrRolling.fetchedAt).toLocaleString('es-MX');
+      var UI = window.NpWaterClimateUI;
+      var en = UI && UI.prefs().language === 'en';
+      var locale = en ? 'en-US' : 'es-MX';
+      meta.textContent =
+        (en ? 'Satellite reference · updated ' : 'Referencia satélite · actualizada ') +
+        new Date(irrRolling.fetchedAt).toLocaleString(locale);
       meta.style.display = 'block';
     }
 
@@ -390,6 +402,79 @@
       o.periodDays = irrPeriodDays;
       if (irrRolling) o.rolling = irrRolling;
       return o;
+    }
+
+    function irrFreeRefreshChrome() {
+      var UI = window.NpWaterClimateUI;
+      if (!UI) return;
+      var en = UI.prefs().language === 'en';
+      var depthU = UI.unit('water_depth');
+      var volU = UI.unit('volume');
+      var appliedHint = document.getElementById('irr-applied-hint');
+      if (appliedHint) {
+        appliedHint.innerHTML = en
+          ? 'Total volume applied in the <strong>wetted zone</strong> (1 or 7 days). Enter <strong>Irrigated area</strong> for the balance; the app calculates depth in the results.'
+          : 'Volumen total aplicado en la <strong>zona humedecida</strong> (1 o 7 días). Indica <strong>Superficie regada</strong> para el balance; la app calcula la lámina en los resultados.';
+      }
+      var cropHint = document.getElementById('irr-crop-area-hint');
+      if (cropHint) {
+        cropHint.textContent = en
+          ? 'Total crop area (ETc / volume).'
+          : 'Área total del cultivo (ETc / volumen).';
+      }
+      var manualHint = document.getElementById('irr-manual-block-hint');
+      if (manualHint) {
+        manualHint.innerHTML = en
+          ? 'ETo, rainfall and irrigation in this box match the <strong>selected period</strong>. Field values = totals for those same days; the satellite reference above already uses that period.'
+          : 'ETo, lluvia y riego de esta caja corresponden al <strong>periodo seleccionado</strong>. Valores de campo = acumulado de esos mismos días; la referencia satélite de arriba ya usa ese periodo.';
+      }
+      var applied = document.getElementById('irr-applied');
+      if (applied) applied.setAttribute('aria-label', en ? 'Applied irrigation in strip (' + volU + ')' : 'Riego aplicado en franja (' + volU + ')');
+      irrFreeRebuildSoilPanel();
+      var soilBtnsWrap = document.getElementById('irr-soil-bridge-btns');
+      if (soilBtnsWrap && window.NpSoilWaterBridge && typeof window.NpSoilWaterBridge.buildSuggestButtonsHtml === 'function') {
+        soilBtnsWrap.innerHTML = window.NpSoilWaterBridge.buildSuggestButtonsHtml('irr');
+      }
+      var noteWrap = document.getElementById('irr-note-wrap');
+      if (noteWrap && window.NpIrrBalance) noteWrap.innerHTML = window.NpIrrBalance.getNoteHtml();
+      var kcWrap = document.getElementById('irr-kc-wrap');
+      if (kcWrap && window.NpIrrBalance) {
+        var openKc = false;
+        var openReach = false;
+        var prevKc = document.getElementById('irr-fao-kc-details');
+        var prevReach = document.getElementById('irr-root-reach-details');
+        if (prevKc) openKc = !!prevKc.open;
+        if (prevReach) openReach = !!prevReach.open;
+        kcWrap.innerHTML = window.NpIrrBalance.getReferenceTablesHtml({ idPrefix: 'irr' });
+        var nextKc = document.getElementById('irr-fao-kc-details');
+        var nextReach = document.getElementById('irr-root-reach-details');
+        if (nextKc) nextKc.open = openKc;
+        if (nextReach) nextReach.open = openReach;
+        window.NpIrrBalance.renderFaoKcTable(
+          'irr-fao-kc-tbody',
+          (document.getElementById('irr-fao-kc-search') || {}).value || '',
+          (document.getElementById('irr-crop') || {}).value || ''
+        );
+        var searchEl = document.getElementById('irr-fao-kc-search');
+        if (searchEl && !searchEl._npBound) {
+          searchEl._npBound = true;
+          searchEl.addEventListener('input', function () {
+            window.NpIrrBalance.renderFaoKcTable(
+              'irr-fao-kc-tbody',
+              searchEl.value,
+              document.getElementById('irr-crop').value
+            );
+          });
+        }
+      }
+      var reachHint = document.getElementById('irr-area-reach-hint');
+      if (reachHint && window.NpIrrBalance) {
+        reachHint.innerHTML = window.NpIrrBalance.getAreaCriterionScrollHintHtml('irr');
+      }
+      var kcHintWrap = document.getElementById('irr-kc-hint-wrap');
+      if (kcHintWrap && window.NpIrrBalance) {
+        kcHintWrap.innerHTML = window.NpIrrBalance.getKcFieldHintHtml('irr');
+      }
     }
 
     function irrFreeReadSoilStorageFromDom() {
@@ -405,21 +490,33 @@
       };
     }
 
-    function irrFreeInitSoilPanel() {
+    function irrFreeRebuildSoilPanel() {
       var panel = document.getElementById('irr-soil-bridge-panel');
       var SB = window.NpSoilWaterBridge;
       if (!panel || !SB || typeof SB.buildPanelHtml !== 'function') return;
       var soil = irrFreeReadSoilStorageFromDom();
-      if (!document.getElementById('irr-soil-mode')) {
-        panel.innerHTML = SB.buildPanelHtml({
-          idPrefix: 'irr',
-          mode: soil.soilStorageMode || '',
-          m3: soil.soilStorageM3
-        });
+      // Keep existing SI value if input already bound
+      if (document.getElementById('irr-soil-m3') && window.NpWaterClimateUI) {
+        var cur = window.NpWaterClimateUI.read('irr-soil-m3', 'volume');
+        if (Number.isFinite(cur) && cur > 0) soil.soilStorageM3 = cur;
+        var modeEl = document.getElementById('irr-soil-mode');
+        if (modeEl) soil.soilStorageMode = modeEl.value || null;
       }
+      panel.innerHTML = SB.buildPanelHtml({
+        idPrefix: 'irr',
+        mode: soil.soilStorageMode || '',
+        m3: soil.soilStorageM3
+      });
       if (window.NpWaterClimateUI && document.getElementById('irr-soil-m3')) {
         window.NpWaterClimateUI.bindFields({ 'irr-soil-m3': 'volume' });
+        if (soil.soilStorageM3 != null) {
+          window.NpWaterClimateUI.write('irr-soil-m3', soil.soilStorageM3, 'volume');
+        }
       }
+    }
+
+    function irrFreeInitSoilPanel() {
+      irrFreeRebuildSoilPanel();
     }
 
     function irrFreeSuggestSoilFromBridge(target) {
@@ -470,7 +567,11 @@
       if (d.rolling && typeof d.rolling === 'object') {
         irrRolling = d.rolling;
         irrRestoreClimateMeta();
-        irrSetStatus('✅ Clima y cálculo restaurados de este navegador.');
+        irrSetStatus(
+          (window.NpWaterClimateUI && window.NpWaterClimateUI.prefs().language === 'en')
+            ? '✅ Climate and calculation restored from this browser.'
+            : '✅ Clima y cálculo restaurados de este navegador.'
+        );
       }
       if (d.periodDays === 1 || d.periodDays === 7) {
         irrPeriodDays = d.periodDays;
@@ -510,21 +611,21 @@
     function irrFreeUseMyLocation() {
       var btn = document.getElementById('irr-btn-geo');
       if (btn) btn.disabled = true;
-      irrSetStatus('📍 Obteniendo ubicación…');
+      irrSetStatus(irrMsg('📍 Obteniendo ubicación…', '📍 Getting location…'));
       var geo = window.NpFreeGeo;
       if (!geo || typeof geo.requestLocation !== 'function') {
-        irrSetStatus('No se pudo leer GPS. Elige un punto en el mapa.');
+        irrSetStatus(irrMsg('No se pudo leer GPS. Elige un punto en el mapa.', 'Could not read GPS. Choose a point on the map.'));
         if (btn) btn.disabled = false;
         return;
       }
       geo.requestLocation({ retry: true }).then(
         function (pos) {
           irrApplyCoords(pos.coords.latitude, pos.coords.longitude, true);
-          irrSetStatus('Ubicación aplicada. Ajusta el punto en el mapa si quieres.');
+          irrSetStatus(irrMsg('Ubicación aplicada. Ajusta el punto en el mapa si quieres.', 'Location applied. Adjust the map point if needed.'));
           if (btn) btn.disabled = false;
         },
         function (err) {
-          irrSetStatus(err && err.message ? err.message : 'No se pudo leer GPS. Elige un punto en el mapa.');
+          irrSetStatus(err && err.message ? err.message : irrMsg('No se pudo leer GPS. Elige un punto en el mapa.', 'Could not read GPS. Choose a point on the map.'));
           if (btn) btn.disabled = false;
         }
       );
@@ -533,22 +634,22 @@
     async function irrFreeFetchClimate() {
       var c = irrReadCoords();
       if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) {
-        alert('Indica latitud y longitud o elige un punto en el mapa.');
+        alert(irrMsg('Indica latitud y longitud o elige un punto en el mapa.', 'Enter latitude and longitude or choose a map point.'));
         return;
       }
       var btn = document.getElementById('irr-btn-fetch');
       if (btn) btn.disabled = true;
-      irrSetStatus('🌧️ Consultando clima…');
+      irrSetStatus(irrMsg('🌧️ Consultando clima…', '🌧️ Fetching weather…'));
       try {
         irrRolling = await window.NpIrrBalance.fetchRollingOpenMeteo(c.lat, c.lng);
         irrRestoreClimateMeta();
-        irrSetStatus('✅ Clima cargado. Ajusta Kc y riego si hace falta.');
+        irrSetStatus(irrMsg('✅ Clima cargado. Ajusta Kc y riego si hace falta.', '✅ Weather loaded. Adjust Kc and irrigation if needed.'));
         irrFreeUpdate();
         if (irrPersist) irrPersist.saveNow();
       } catch (e) {
         console.warn(e);
-        irrSetStatus('⚠️ No se pudo obtener clima. Revisa conexión o coordenadas.');
-        alert('No se pudo obtener el clima en ese punto. Revisa la conexión o las coordenadas.');
+        irrSetStatus(irrMsg('⚠️ No se pudo obtener clima. Revisa conexión o coordenadas.', '⚠️ Could not fetch weather. Check connection or coordinates.'));
+        alert(irrMsg('No se pudo obtener el clima en ese punto. Revisa la conexión o las coordenadas.', 'Could not fetch weather for that point. Check connection or coordinates.'));
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -685,8 +786,9 @@
           if (e.key === window.NpSoilWaterBridge.BRIDGE_KEY) {
             var msgEl = document.getElementById('irr-soil-suggest-msg');
             if (msgEl) {
-              msgEl.innerHTML =
-                'Datos de 🪨 suelo actualizados en otra pestaña. Pulsa <strong>Sugerir hasta 60% AU</strong> o <strong>hasta CC</strong> si quieres prellenar.';
+              msgEl.innerHTML = (window.NpWaterClimateUI && window.NpWaterClimateUI.prefs().language === 'en')
+                ? '🪨 Soil data updated in another tab. Press <strong>Suggest to 60% AW</strong> or <strong>to FC</strong> if you want to prefills.'
+                : 'Datos de 🪨 suelo actualizados en otra pestaña. Pulsa <strong>Sugerir hasta 60% AU</strong> o <strong>hasta CC</strong> si quieres prellenar.';
             }
           }
         });
@@ -700,7 +802,9 @@
         if (st && st.parentNode) {
           var link = document.createElement('p');
           link.style.cssText = 'font-size:11px;color:#64748b;margin:0 0 8px;';
-          link.innerHTML = 'Si el GPS falla aquí: <a href="lamina-riego-free.html" target="_blank" rel="noopener" style="color:#2563eb;">abrir herramienta en página completa</a>.';
+          link.innerHTML = (window.NpWaterClimateUI && window.NpWaterClimateUI.prefs().language === 'en')
+            ? 'If GPS fails here: <a href="lamina-riego-free.html" target="_blank" rel="noopener" style="color:#2563eb;">open the tool in a full page</a>.'
+            : 'Si el GPS falla aquí: <a href="lamina-riego-free.html" target="_blank" rel="noopener" style="color:#2563eb;">abrir herramienta en página completa</a>.';
           st.parentNode.insertBefore(link, st.nextSibling);
         }
       }

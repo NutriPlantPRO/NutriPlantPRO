@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-i18n.js?v=20260801b"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-hydro-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801b"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
   <title>Diseño de solución nutritiva</title>
@@ -1239,6 +1239,22 @@
     const HYDRO_MICROS = [];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
 
+    function hydroUiT(es, en) {
+      try {
+        if (window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en') {
+          return en != null ? en : window.NpFreeNutritionUI.translate(es);
+        }
+      } catch (e) { /* fall through */ }
+      return es;
+    }
+    function hydroApplyI18n(root) {
+      try {
+        if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
+          window.NpFreeNutritionUI.applyLanguage(root || document);
+        }
+      } catch (e) { /* ignore */ }
+    }
+
     /*
      * La dosis se persiste siempre como kg/m³ (numéricamente igual a g/L).
      * ppm, meq/L, pH y EC son unidades técnicas compartidas y no se convierten.
@@ -1567,15 +1583,19 @@
       return '% meq';
     }
     function hydroTableGroupHeaderRow(ceCol) {
-      const ce = ceCol ? '<th rowspan="2" class="hydro-col-ce hydro-th-group--ce">CE (dS/m)</th>' : '';
+      const ce = ceCol
+        ? '<th rowspan="2" class="hydro-col-ce hydro-th-group--ce">' + hydroUiT('CE (dS/m)', 'EC (dS/m)') + '</th>'
+        : '';
       const anGroup =
         '<th colspan="3" class="hydro-th-group hydro-th-group--an">' +
-        '<span class="hydro-th-group-inner notranslate" translate="no">' +
-        '<span class="hydro-tern-marker hydro-tern-marker--sq" aria-hidden="true"></span> Aniones</span></th>';
+        '<span class="hydro-th-group-inner">' +
+        '<span class="hydro-tern-marker hydro-tern-marker--sq" aria-hidden="true"></span> ' +
+        hydroUiT('Aniones', 'Anions') + '</span></th>';
       const catGroup =
         '<th colspan="3" class="hydro-th-group hydro-th-group--cat hydro-ion-divide">' +
-        '<span class="hydro-th-group-inner notranslate" translate="no">' +
-        '<span class="hydro-tern-marker hydro-tern-marker--circ" aria-hidden="true"></span> Cationes</span></th>';
+        '<span class="hydro-th-group-inner">' +
+        '<span class="hydro-tern-marker hydro-tern-marker--circ" aria-hidden="true"></span> ' +
+        hydroUiT('Cationes', 'Cations') + '</span></th>';
       return `<tr class="hydro-ion-group-row">${ce}${anGroup}<th class="hydro-th-group hydro-th-group--cl notranslate" translate="no">Cl⁻</th>${catGroup}<th class="hydro-th-group hydro-th-group--nh4 notranslate" translate="no">N-NH₄⁺</th></tr>`;
     }
 
@@ -1831,7 +1851,10 @@
             <tbody>${pctRows}</tbody>
           </table>
         </div>
-        <p class="hydro-pct-meq-note">Aniones (N-P-S) y cationes (K-Ca-Mg) suman 100% entre sí. Cl⁻ y N-NH₄⁺ van aparte (% sobre el total meq).</p>
+        <p class="hydro-pct-meq-note">${hydroUiT(
+          'Aniones (N-P-S) y cationes (K-Ca-Mg) suman 100% entre sí. Cl⁻ y N-NH₄⁺ van aparte (% sobre el total meq).',
+          'Anions (N-P-S) and cations (K-Ca-Mg) each sum to 100%. Cl⁻ and N-NH₄⁺ are separate (% of total meq).'
+        )}</p>
       `;
 
       if (ppmWrap.firstElementChild) ppmWrap.firstElementChild.scrollLeft = savedPpmScroll;
@@ -2082,17 +2105,18 @@
       const ncPair = mNo3 + mCl;
       const pctNo3VsCl = ncPair > 0 ? (mNo3 / ncPair) * 100 : 0;
       const pctClVsCl = ncPair > 0 ? (mCl / ncPair) * 100 : 0;
-      summaryEl.title =
-        'N total: % NO₃⁻ y % NH₄⁺ sobre N-NO₃⁻ + N-NH₄⁺ (meq/L). ' +
-        'NO₃⁻ + Cl⁻: % NO₃⁻ y % Cl⁻ sobre N-NO₃⁻ + Cl⁻ (meq/L).';
+      summaryEl.title = hydroUiT(
+        'N total: % NO₃⁻ y % NH₄⁺ sobre N-NO₃⁻ + N-NH₄⁺ (meq/L). NO₃⁻ + Cl⁻: % NO₃⁻ y % Cl⁻ sobre N-NO₃⁻ + Cl⁻ (meq/L).',
+        'Total N: % NO₃⁻ and % NH₄⁺ of N-NO₃⁻ + N-NH₄⁺ (meq/L). NO₃⁻ + Cl⁻: % NO₃⁻ and % Cl⁻ of N-NO₃⁻ + Cl⁻ (meq/L).'
+      );
       summaryEl.innerHTML =
-        '<span class="hydro-n-sum-base">Suma de N (meq/L): <strong>' + nTotal.toFixed(2) + '</strong></span>' +
-        '<span class="hydro-n-sum-block" aria-label="Partición del nitrógeno">' +
-          '<span class="hydro-n-sum-block-label">Sobre N total</span>' +
+        '<span class="hydro-n-sum-base">' + hydroUiT('Suma de N (meq/L):', 'N sum (meq/L):') + ' <strong>' + nTotal.toFixed(2) + '</strong></span>' +
+        '<span class="hydro-n-sum-block" aria-label="' + hydroUiT('Partición del nitrógeno', 'Nitrogen partition') + '">' +
+          '<span class="hydro-n-sum-block-label">' + hydroUiT('Sobre N total', 'Of total N') + '</span>' +
           '<span class="hydro-n-pill hydro-n-pill--no3">NO₃⁻ <strong>' + pctNo3OnN.toFixed(1) + '%</strong></span>' +
           '<span class="hydro-n-pill hydro-n-pill--nh4">NH₄⁺ <strong>' + pctNh4OnN.toFixed(1) + '%</strong></span>' +
         '</span>' +
-        '<span class="hydro-n-sum-block" aria-label="Nitrato frente a cloro">' +
+        '<span class="hydro-n-sum-block" aria-label="' + hydroUiT('Nitrato frente a cloro', 'Nitrate vs chloride') + '">' +
           '<span class="hydro-n-sum-block-label">NO₃⁻ + Cl⁻</span>' +
           '<span class="hydro-n-pill hydro-n-pill--no3-nc">NO₃⁻ <strong>' + pctNo3VsCl.toFixed(1) + '%</strong></span>' +
           '<span class="hydro-n-pill hydro-n-pill--cl">Cl⁻ <strong>' + pctClVsCl.toFixed(1) + '%</strong></span>' +
@@ -2693,7 +2717,8 @@
     }
 
     function fertAporteBuildRowSummaryHtml(row) {
-      if (!row.totals) return '<span class="fert-aporte-aporte-empty">Sin aporte (dosis 0 o % en 0)</span>';
+      var emptyMsg = hydroUiT('Sin aporte (dosis 0 o % en 0)', 'No supply (dose 0 or % at 0)');
+      if (!row.totals) return '<span class="fert-aporte-aporte-empty">' + emptyMsg + '</span>';
       var t = row.totals;
       var chips = [];
       ['N_NO3', 'N_NH4', 'P', 'K', 'Ca', 'Mg', 'S', 'Cl'].forEach(function (k) {
@@ -2719,7 +2744,7 @@
           );
         }
       });
-      if (!chips.length) return '<span class="fert-aporte-aporte-empty">Sin aporte (dosis 0 o % en 0)</span>';
+      if (!chips.length) return '<span class="fert-aporte-aporte-empty">' + emptyMsg + '</span>';
       return (
         '<div class="fert-aporte-row-out-scroll">' +
           '<div class="fert-aporte-row-out-chips">' + chips.join('') + '</div>' +
@@ -2739,7 +2764,7 @@
         var p = t.ppm[k];
         if (p > 0.001) bits.push(fertAporteLabelNutrient(k) + ' ' + p.toFixed(2) + ' ppm');
       });
-      return bits.length ? bits.join(' · ') : 'Sin aporte (dosis 0 o % en 0)';
+      return bits.length ? bits.join(' · ') : hydroUiT('Sin aporte (dosis 0 o % en 0)', 'No supply (dose 0 or % at 0)');
     }
 
     function fertAporteRefreshCalcs() {
@@ -2750,7 +2775,7 @@
         var out = card.querySelector('.fert-aporte-row-out');
         if (out) {
           out.innerHTML =
-            '<div class="fert-aporte-row-out-head"><strong>Aporte fila</strong></div>' +
+            '<div class="fert-aporte-row-out-head"><strong>' + hydroUiT('Aporte fila', 'Row supply') + '</strong></div>' +
             fertAporteBuildRowSummaryHtml(row);
         }
       });
@@ -2826,17 +2851,22 @@
         var full = n >= max;
         btn.disabled = full;
         btn.classList.toggle('is-disabled', full);
-        btn.textContent = full ? ('Máximo ' + max + ' productos en la mezcla') : '+ Agregar fila al cálculo';
+        btn.textContent = full
+          ? hydroUiT('Máximo ' + max + ' productos en la mezcla', 'Maximum ' + max + ' products in the mix')
+          : hydroUiT('+ Agregar fila al cálculo', '+ Add row to calculation');
       }
       if (clearBtn) clearBtn.hidden = n === 0;
       if (hint) {
-        hint.textContent = n + '/' + max + ' productos · Edita meq, ppm o micros en totales para recalcular dosis.';
+        hint.textContent = hydroUiT(
+          n + '/' + max + ' productos · Edita meq, ppm o micros en totales para recalcular dosis.',
+          n + '/' + max + ' products · Edit meq, ppm or micros in totals to recalculate doses.'
+        );
       }
     }
 
     function fertAporteTryAddRow(materialId) {
       if (fertAporteState.rows.length >= FERT_APORTE_MAX_ROWS) {
-        fertCustomSetMsg('Máximo ' + FERT_APORTE_MAX_ROWS + ' productos por mezcla.', false);
+        fertCustomSetMsg(hydroUiT('Máximo ' + FERT_APORTE_MAX_ROWS + ' productos por mezcla.', 'Maximum ' + FERT_APORTE_MAX_ROWS + ' products per mix.'), false);
         return false;
       }
       fertAporteState.rows.push(fertAporteDefaultRow(materialId || 'mkp'));
@@ -2949,7 +2979,10 @@
         }).join('');
       }
       var note = kind === 'meq'
-        ? '<p class="fert-aporte-meq-pct-note">% meq sobre aniones (N-NO₃, P, S) o cationes (K, Ca, Mg), sin Cl⁻ ni N-NH₄⁺. Edita meq o ppm objetivo para recalcular dosis.</p>'
+        ? '<p class="fert-aporte-meq-pct-note">' + hydroUiT(
+          '% meq sobre aniones (N-NO₃, P, S) o cationes (K, Ca, Mg), sin Cl⁻ ni N-NH₄⁺. Edita meq o ppm objetivo para recalcular dosis.',
+          '% meq of anions (N-NO₃, P, S) or cations (K, Ca, Mg), without Cl⁻ or N-NH₄⁺. Edit target meq or ppm to recalculate doses.'
+        ) + '</p>'
         : '';
       wrap.innerHTML =
         '<div class="hydro-table-scroll hydro-table-colored">' +
@@ -2962,7 +2995,10 @@
       var host = document.getElementById('fertAporteRows');
       if (!host) return;
       if (!fertAporteState.rows.length) {
-        host.innerHTML = '<div class="fert-aporte-empty">Sin productos en la mezcla. Pulsa <strong>+ Agregar fila al cálculo</strong> para empezar.</div>';
+        host.innerHTML = '<div class="fert-aporte-empty">' + hydroUiT(
+          'Sin productos en la mezcla. Pulsa <strong>+ Agregar fila al cálculo</strong> para empezar.',
+          'No products in the mix. Press <strong>+ Add row to calculation</strong> to start.'
+        ) + '</div>';
         return;
       }
       var cat = window.HydroFertAporteCatalog;
@@ -2979,28 +3015,28 @@
         var formulaReadonly = !isInlineFormula && !(entry && entry.isUser && entry.kind === 'user_formula');
         var formulaVal = isInlinePct ? '' : (row.customFormula || (entry ? entry.formula : ''));
         var calcBtn = isInlineFormula
-          ? '<button type="button" class="fert-aporte-btn fert-aporte-btn--calc" data-fert-apply-formula="' + row.id + '">Calcular %</button>'
+          ? '<button type="button" class="fert-aporte-btn fert-aporte-btn--calc" data-fert-apply-formula="' + row.id + '">' + hydroUiT('Calcular %', 'Calculate %') + '</button>'
           : '';
         return (
           '<div class="fert-aporte-card" data-fert-card="' + row.id + '">' +
           '<div class="fert-aporte-card-head">' +
             '<div class="fert-aporte-card-head-main">' +
-            '<div class="fert-aporte-field fert-aporte-field--product"><label>Producto</label>' +
+            '<div class="fert-aporte-field fert-aporte-field--product"><label>' + hydroUiT('Producto', 'Product') + '</label>' +
               '<select data-fert-row="' + row.id + '" data-fert-field="material">' + fertAporteBuildSelectOptions(row.materialId) + '</select></div>' +
-            '<div class="fert-aporte-field fert-aporte-field--formula"><label>Fórmula</label>' +
+            '<div class="fert-aporte-field fert-aporte-field--formula"><label>' + hydroUiT('Fórmula', 'Formula') + '</label>' +
               '<input type="text" data-fert-row="' + row.id + '" data-fert-field="formula" value="' + String(formulaVal).replace(/"/g, '&quot;') + '"' + (formulaReadonly ? ' readonly' : '') + '></div>' +
             calcBtn +
-            '<div class="fert-aporte-field fert-aporte-field--dose"><label>Dosis <span class="fert-aporte-dose-hint">· ' + doseUnit + '</span></label>' +
+            '<div class="fert-aporte-field fert-aporte-field--dose"><label>' + hydroUiT('Dosis', 'Dose') + ' <span class="fert-aporte-dose-hint">· ' + doseUnit + '</span></label>' +
               '<input type="text" inputmode="decimal" autocomplete="off" data-fert-row="' + row.id + '" data-fert-field="dose" value="' + (row.dose != null && row.dose !== '' ? String(hydroFreeDoseFromSI(row.dose)) : '0') + '"></div>' +
             '</div>' +
-            '<div class="fert-aporte-actions"><button type="button" class="fert-aporte-btn fert-aporte-btn--del fert-aporte-btn--del-row" data-fert-del="' + row.id + '" title="Quitar este producto de la mezcla">✕ Quitar</button></div>' +
+            '<div class="fert-aporte-actions"><button type="button" class="fert-aporte-btn fert-aporte-btn--del fert-aporte-btn--del-row" data-fert-del="' + row.id + '" title="' + hydroUiT('Quitar este producto de la mezcla', 'Remove this product from the mix') + '">✕ ' + hydroUiT('Quitar', 'Remove') + '</button></div>' +
           '</div>' +
           note +
-          (isInlineFormula ? '<div class="fert-aporte-note">Escribe la fórmula y pulsa <strong>Calcular %</strong>. Luego ajusta % si tu producto difiere del teórico.</div>' : '') +
-          (isInlinePct ? '<div class="fert-aporte-note">Captura los <strong>% elementales</strong> de la ficha del proveedor (mezcla comercial). Todos los campos son editables.</div>' : '') +
+          (isInlineFormula ? '<div class="fert-aporte-note">' + hydroUiT('Escribe la fórmula y pulsa <strong>Calcular %</strong>. Luego ajusta % si tu producto difiere del teórico.', 'Type the formula and press <strong>Calculate %</strong>. Then adjust % if your product differs from theory.') + '</div>' : '') +
+          (isInlinePct ? '<div class="fert-aporte-note">' + hydroUiT('Captura los <strong>% elementales</strong> de la ficha del proveedor (mezcla comercial). Todos los campos son editables.', 'Enter the <strong>elemental %</strong> from the supplier sheet (commercial blend). All fields are editable.') + '</div>' : '') +
           compGrid +
           '<div class="fert-aporte-row-out">' +
-            '<div class="fert-aporte-row-out-head"><strong>Aporte fila</strong></div>' +
+            '<div class="fert-aporte-row-out-head"><strong>' + hydroUiT('Aporte fila', 'Row supply') + '</strong></div>' +
             fertAporteBuildRowSummaryHtml(row) +
           '</div>' +
           '</div>'
@@ -3207,7 +3243,7 @@
           if (fIn) row.customFormula = fIn.value;
           var err = fertAporteApplyFormulaToRow(row);
           if (err) fertCustomSetMsg(err, false);
-          else fertCustomSetMsg('Composición calculada desde fórmula.', true);
+          else fertCustomSetMsg(hydroUiT('Composición calculada desde fórmula.', 'Composition calculated from formula.'), true);
           renderFertAporteAll();
           hydroScheduleSave();
           return;

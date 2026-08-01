@@ -211,9 +211,12 @@ function npSharedReportPrint(){
   return out;
 }
 
-/** Página liviana: topbar + iframe al HTML en Storage (no pasa por el tope de Netlify). */
+/**
+ * Página liviana: topbar + reporte desde Storage.
+ * Usa fetch + srcdoc (no iframe src directo): si Storage sirve text/plain
+ * el navegador mostraría el HTML crudo; srcdoc siempre lo renderiza.
+ */
 function storageShellPage(signedUrl) {
-  const src = escapeHtml(signedUrl);
   const srcJson = JSON.stringify(String(signedUrl || ''));
   return `<!doctype html>
 <html lang="es" class="notranslate" translate="no">
@@ -232,8 +235,9 @@ function storageShellPage(signedUrl) {
     .np-shared-pdf-btn:hover{background:#0369a1}
     .np-shared-note{margin:0;padding:10px 16px;border-bottom:1px solid #bae6fd;background:#eff6ff;color:#0c4a6e;font:600 13px/1.35 system-ui,sans-serif}
     #np-share-frame{display:block;width:100%;height:calc(100vh - 96px);border:0;background:#fff}
+    .np-share-loading{padding:24px 16px;color:#64748b;font:14px/1.45 system-ui,sans-serif}
     @media print{
-      .np-shared-topbar,.np-shared-note{display:none!important}
+      .np-shared-topbar,.np-shared-note,.np-share-loading{display:none!important}
       #np-share-frame{height:100vh}
     }
   </style>
@@ -248,26 +252,80 @@ function storageShellPage(signedUrl) {
     </div>
   </header>
   <div class="np-shared-note">Vista compartida NutriPlant PRO. El enlace <strong>no caduca</strong>. Usa «Descargar PDF» (Imprimir → Guardar como PDF).</div>
-  <iframe id="np-share-frame" title="Reporte NutriPlant PRO" src="${src}"></iframe>
+  <p id="np-share-loading" class="np-share-loading">Cargando reporte…</p>
+  <iframe id="np-share-frame" title="Reporte NutriPlant PRO" hidden></iframe>
   <script>
   (function(){
     var url=${srcJson};
+    var frame=document.getElementById('np-share-frame');
+    var loading=document.getElementById('np-share-loading');
+    function showFrame(){
+      if(loading)loading.hidden=true;
+      if(frame)frame.hidden=false;
+    }
+    function loadViaSrcdoc(html){
+      if(!frame||!html)return false;
+      // Si por error el HTML llegó escapado (&lt;!DOCTYPE), deshacer una vez.
+      var trimmed=String(html).replace(/^\\uFEFF/,'').trim();
+      if(/^&lt;!DOCTYPE|^&lt;html/i.test(trimmed)){
+        try{
+          var ta=document.createElement('textarea');
+          ta.innerHTML=trimmed;
+          trimmed=ta.value;
+        }catch(e){}
+      }
+      if(!/^<!DOCTYPE|^<html/i.test(trimmed))return false;
+      frame.srcdoc=trimmed;
+      showFrame();
+      return true;
+    }
+    function loadViaSrc(){
+      if(!frame)return;
+      frame.removeAttribute('srcdoc');
+      frame.src=url;
+      showFrame();
+    }
+    fetch(url,{credentials:'omit',mode:'cors'})
+      .then(function(r){
+        if(!r.ok)throw new Error('fetch '+r.status);
+        return r.text();
+      })
+      .then(function(html){
+        if(!loadViaSrcdoc(html))loadViaSrc();
+      })
+      .catch(function(){ loadViaSrc(); });
+
     document.getElementById('np-share-print-btn').addEventListener('click',function(){
-      var pw=window.open(url,'_blank');
+      var pw=null;
+      try{
+        if(frame&&frame.contentDocument&&frame.contentDocument.documentElement){
+          pw=window.open('about:blank','_blank');
+          if(!pw){
+            alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');
+            return;
+          }
+          pw.document.open();
+          pw.document.write(frame.contentDocument.documentElement.outerHTML);
+          pw.document.close();
+        }
+      }catch(e){ pw=null; }
       if(!pw){
-        alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');
-        return;
+        pw=window.open(url,'_blank');
+        if(!pw){
+          alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');
+          return;
+        }
       }
       var fired=false;
       function doPrint(){
         if(fired)return;
         fired=true;
-        try{pw.focus();pw.print();}catch(e){}
+        try{pw.focus();pw.print();}catch(e2){}
       }
       try{
         pw.addEventListener('load',function(){setTimeout(doPrint,500);});
         setTimeout(doPrint,2000);
-      }catch(e){setTimeout(doPrint,800);}
+      }catch(e3){setTimeout(doPrint,800);}
     });
   })();
   </script>
@@ -333,6 +391,30 @@ exports.handler = async function(event) {
       if (!supabase) {
         return htmlResponse(500, errorPage('Configuración incompleta', 'No se pudo firmar la vista del reporte.'));
       }
+
+      // Preferir servir el HTML desde el servidor (Content-Type correcto).
+      // Si supera el tope de Netlify, usar shell + fetch/srcdoc.
+      try {
+        const { data: fileBlob, error: dlErr } = await supabase.storage
+          .from(SHARE_BUCKET)
+          .download(shareHtmlPath);
+        if (!dlErr && fileBlob && typeof fileBlob.text === 'function') {
+          const storedHtml = await fileBlob.text();
+          if (storedHtml && storedHtml.length && storedHtml.length <= MAX_INLINE_HTML_CHARS) {
+            const hInline = event.headers || {};
+            const xfProtoInline = (hInline['x-forwarded-proto'] || hInline['X-Forwarded-Proto'] || 'https').toString().split(',')[0].trim();
+            const xfHostInline = (hInline['x-forwarded-host'] || hInline['X-Forwarded-Host'] || hInline.host || hInline.Host || 'nutriplantpro.com').toString().split(',')[0].trim();
+            return htmlResponse(200, withSharedViewChrome(storedHtml, {
+              proto: xfProtoInline,
+              host: xfHostInline,
+              baseUrl: `${xfProtoInline}://${xfHostInline}/`
+            }));
+          }
+        }
+      } catch (dlCatch) {
+        console.warn('report-view download fallback to signed shell:', dlCatch && dlCatch.message);
+      }
+
       const { data: signed, error: signErr } = await supabase.storage
         .from(SHARE_BUCKET)
         .createSignedUrl(shareHtmlPath, SIGNED_TTL_SEC);

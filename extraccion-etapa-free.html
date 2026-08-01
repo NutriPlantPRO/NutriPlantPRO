@@ -10,7 +10,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801g"></script>
   <title>Distribución nutrimental por etapa (%)</title>
   <style>
     :root {
@@ -352,14 +352,11 @@
       <h1 class="np-free-tool-title">📊 Distribución nutrimental por etapa (%)</h1>
       <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
     </div>
-    <p class="tagline">
-      Define la <strong>extracción total</strong> por nutriente (kg/ha) y repártela en <strong>% por etapa fenológica</strong>.
-      La herramienta calcula los <strong>kg/ha por etapa</strong> y muestra una <strong>gráfica</strong> que se actualiza al editar.
-    </p>
+    <p class="tagline" id="extTagline"></p>
     <div class="legend-pills" aria-hidden="true">
-      <span class="pill pill--nut">Extracción total → kg/ha ciclo</span>
-      <span class="pill pill--info">% por etapa → debe sumar 100% / nutriente</span>
-      <span class="pill pill--warn">Valida en campo; curvas orientativas</span>
+      <span class="pill pill--nut" id="extPillNut"></span>
+      <span class="pill pill--info" id="extPillInfo"></span>
+      <span class="pill pill--warn" id="extPillWarn"></span>
     </div>
     <div class="preset-bar" id="presetBar" aria-label="Mis curvas guardadas (solo dashboard)">
       <label for="presetSelect">
@@ -383,11 +380,8 @@
   </header>
 
   <section class="panel" id="sec-totals">
-    <h2>1. Extracción total (kg/ha)</h2>
-    <p class="hint">
-      Ingresa la extracción total del cultivo por elemento. Representa la demanda acumulada en el ciclo.
-      Puedes <strong>agregar</strong> micronutrientes y secundarios cuando los necesites.
-    </p>
+    <h2 id="extH2Totals"></h2>
+    <p class="hint" id="extHintTotals"></p>
     <div class="totals-wrap" id="totalsRow"></div>
     <div class="btn-row">
       <button type="button" class="btn btn-primary" id="btnAddNut">+ Agregar nutriente</button>
@@ -397,11 +391,8 @@
   </section>
 
   <section class="panel" id="sec-pct">
-    <h2>2. Distribución por etapa (%)</h2>
-    <p class="hint">
-      Ajusta los <strong>%</strong> por etapa. Puedes cambiar el nombre de etapa (lista o texto libre). La <strong>suma por cada nutriente debe ser 100%</strong>.
-      Hay valores de ejemplo precargados; modifícalos a tu criterio. Usa <strong>+ Agregar etapa</strong> o <strong>Quitar</strong> según tu cultivo.
-    </p>
+    <h2 id="extH2Pct">2. Distribución por etapa (%)</h2>
+    <p class="hint" id="extHintPct"></p>
     <div class="scroll-x">
       <table class="data" id="pctTable">
         <thead id="pctHead"></thead>
@@ -416,8 +407,8 @@
   </section>
 
   <section class="panel" id="sec-kg">
-    <h2>3. Resultado (kg/ha por etapa)</h2>
-    <p class="hint">kg/ha en cada etapa = extracción total × (% / 100).</p>
+    <h2 id="extH2Kg"></h2>
+    <p class="hint" id="extHintKg"></p>
     <div class="scroll-x">
       <table class="data" id="kgTable">
         <thead id="kgHead"></thead>
@@ -427,8 +418,8 @@
   </section>
 
   <section class="panel" id="sec-chart">
-    <h2>4. Gráfica</h2>
-    <p class="hint">Curvas de kg/ha por etapa y nutriente (eje X = etapas). Se actualiza en tiempo real.</p>
+    <h2 id="extH2Chart">4. Gráfica</h2>
+    <p class="hint" id="extHintChart"></p>
     <div class="btn-row" style="margin-bottom: 4px;">
       <span style="font-size: 12px; font-weight: 700; color: #334155;">Vista:</span>
       <div class="chart-seg" role="group" aria-label="Macronutrientes o micronutrientes en la gráfica">
@@ -958,15 +949,80 @@
     renderAll();
   }
 
+  function extIsEn() {
+    try {
+      return window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en';
+    } catch (e) {
+      return false;
+    }
+  }
+  function extDoseUnit() {
+    try {
+      return window.NpFreeNutritionUI.unit('dose_mass_area');
+    } catch (e) {
+      return 'kg/ha';
+    }
+  }
+  function applyExtractionChrome() {
+    var en = extIsEn();
+    var u = extDoseUnit();
+    var setHtml = function (id, html) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    };
+    var setText = function (id, text) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+    setHtml(
+      'extTagline',
+      en
+        ? 'Set the <strong>total extraction</strong> per nutrient (' + u + ') and allocate it as <strong>% by phenological stage</strong>. The tool calculates <strong>' + u + ' per stage</strong> and shows a <strong>chart</strong> that updates as you edit.'
+        : 'Define la <strong>extracción total</strong> por nutriente (' + u + ') y repártela en <strong>% por etapa fenológica</strong>. La herramienta calcula los <strong>' + u + ' por etapa</strong> y muestra una <strong>gráfica</strong> que se actualiza al editar.'
+    );
+    setText('extPillNut', en ? 'Total extraction → ' + u + ' cycle' : 'Extracción total → ' + u + ' ciclo');
+    setText('extPillInfo', en ? '% by stage → must sum to 100% / nutrient' : '% por etapa → debe sumar 100% / nutriente');
+    setText('extPillWarn', en ? 'Validate in the field; indicative curves' : 'Valida en campo; curvas orientativas');
+    setText('extH2Totals', en ? '1. Total extraction (' + u + ')' : '1. Extracción total (' + u + ')');
+    setHtml(
+      'extHintTotals',
+      en
+        ? 'Enter total crop extraction per element. It represents cumulative demand over the cycle. You can <strong>add</strong> micronutrients and secondary nutrients when needed.'
+        : 'Ingresa la extracción total del cultivo por elemento. Representa la demanda acumulada en el ciclo. Puedes <strong>agregar</strong> micronutrientes y secundarios cuando los necesites.'
+    );
+    setText('extH2Pct', en ? '2. Distribution by stage (%)' : '2. Distribución por etapa (%)');
+    setHtml(
+      'extHintPct',
+      en
+        ? 'Adjust the <strong>%</strong> by stage. You can change the stage name (list or free text). The <strong>sum for each nutrient must be 100%</strong>. Example values are preloaded; edit them as needed. Use <strong>+ Add stage</strong> or <strong>Remove</strong> for your crop.'
+        : 'Ajusta los <strong>%</strong> por etapa. Puedes cambiar el nombre de etapa (lista o texto libre). La <strong>suma por cada nutriente debe ser 100%</strong>. Hay valores de ejemplo precargados; modifícalos a tu criterio. Usa <strong>+ Agregar etapa</strong> o <strong>Quitar</strong> según tu cultivo.'
+    );
+    setText('extH2Kg', en ? '3. Result (' + u + ' per stage)' : '3. Resultado (' + u + ' por etapa)');
+    setText(
+      'extHintKg',
+      en
+        ? u + ' in each stage = total extraction × (% / 100).'
+        : u + ' en cada etapa = extracción total × (% / 100).'
+    );
+    setText('extH2Chart', en ? '4. Chart' : '4. Gráfica');
+    setText(
+      'extHintChart',
+      en
+        ? u + ' curves by stage and nutrient (X axis = stages). Updates in real time.'
+        : 'Curvas de ' + u + ' por etapa y nutriente (eje X = etapas). Se actualiza en tiempo real.'
+    );
+  }
   function updateModeNote() {
     var el = document.getElementById('modeNote');
     if (!el) return;
     if (isDashboardMode) {
+      var en = extIsEn();
+      var u = extDoseUnit();
       el.style.display = '';
       el.removeAttribute('aria-hidden');
-      el.innerHTML =
-        '<strong>Modo dashboard:</strong> guardado automático local + proyecto en la nube. ' +
-        'Además puedes guardar <strong>curvas con título</strong> en tu biblioteca personal (kg/ha y %); las ves en todos tus proyectos y no se pierden si borras uno.';
+      el.innerHTML = en
+        ? '<strong>Dashboard mode:</strong> local autosave + cloud project. You can also save <strong>titled curves</strong> in your personal library (' + u + ' and %); you see them across all projects and they are not lost if you delete one.'
+        : '<strong>Modo dashboard:</strong> guardado automático local + proyecto en la nube. Además puedes guardar <strong>curvas con título</strong> en tu biblioteca personal (' + u + ' y %); las ves en todos tus proyectos y no se pierden si borras uno.';
     } else {
       el.style.display = 'none';
       el.setAttribute('aria-hidden', 'true');
@@ -1389,6 +1445,8 @@
   }
 
   function renderAll() {
+    applyExtractionChrome();
+    updateModeNote();
     ensurePct();
     renderTotals();
     renderPctTable();

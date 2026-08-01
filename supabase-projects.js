@@ -1282,10 +1282,12 @@
         }
         const safeId = String(reportId).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120);
         const path = String(userId) + '/' + safeId + '.html';
-        const blob = new Blob([raw], { type: 'text/html;charset=utf-8' });
+        // text/html (sin charset en contentType): algunos signed URLs de Storage
+        // servían text/plain y el navegador mostraba el código HTML crudo.
+        const blob = new Blob([raw], { type: 'text/html' });
         const { error } = await client.storage.from('report-shares').upload(path, blob, {
           upsert: true,
-          contentType: 'text/html;charset=utf-8',
+          contentType: 'text/html',
           cacheControl: '3600'
         });
         if (error) {

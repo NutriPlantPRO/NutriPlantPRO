@@ -1,5 +1,20 @@
 // Guard de sesión (simple para demo)
 const AUTH_KEY = "np_user";
+
+function authT(key, fallback, params) {
+  try {
+    if (window.NpI18n && typeof window.NpI18n.t === "function") {
+      var v = window.NpI18n.t(key, params);
+      if (v && v !== key) return v;
+    }
+  } catch (e) {}
+  if (fallback && params) {
+    return String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g, function (m, n) {
+      return params[n] !== undefined ? String(params[n]) : m;
+    });
+  }
+  return fallback != null ? fallback : key;
+}
 const LOGIN_GUARD_KEY = 'np_login_guard_v1';
 const LOGIN_THROTTLE_MS = 3000;
 const LOGIN_WINDOW_MS = 10 * 60 * 1000;
@@ -106,11 +121,11 @@ function checkLoginGuardBeforeAttempt() {
   const state = readLoginGuardState();
   const remLock = Math.max(0, (state.lockedUntil || 0) - now);
   if (remLock > 0) {
-    return { blocked: true, reason: `Demasiados intentos fallidos. Espera ${Math.ceil(remLock / 1000)}s e intenta de nuevo.` };
+    return { blocked: true, reason: authT("auth.err_too_many_attempts", "Demasiados intentos fallidos. Espera {seconds}s e intenta de nuevo.", { seconds: Math.ceil(remLock / 1000) }) };
   }
   const remThrottle = Math.max(0, LOGIN_THROTTLE_MS - (now - (state.lastAttemptAt || 0)));
   if (remThrottle > 0) {
-    return { blocked: true, reason: `Espera ${Math.ceil(remThrottle / 1000)}s antes de intentar nuevamente.` };
+    return { blocked: true, reason: authT("auth.err_throttle", "Espera {seconds}s antes de intentar nuevamente.", { seconds: Math.ceil(remThrottle / 1000) }) };
   }
   writeLoginGuardState({
     fails: (state.fails || []).filter((ts) => (now - ts) <= LOGIN_WINDOW_MS),
@@ -237,7 +252,7 @@ if (form) {
     submitBtn.disabled = true;
     submitBtn.classList.add('loading');
     submitBtn.innerHTML = `
-      <span class="button-text">Iniciando sesión...</span>
+      <span class="button-text">${authT('auth.signing_in', 'Iniciando sesión...')}</span>
       <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
       </svg>
@@ -249,13 +264,13 @@ if (form) {
     
     // Validación mejorada
     if (!email || !pass) {
-      showError("Por favor, ingresa tu correo electrónico y contraseña.");
+      showError(authT("auth.err_email_pass", "Por favor, ingresa tu correo electrónico y contraseña."));
       resetButton(submitBtn, originalText);
       return;
     }
     
     if (!isValidEmail(email)) {
-      showError("Por favor, ingresa un correo electrónico válido.");
+      showError(authT("auth.err_email_invalid", "Por favor, ingresa un correo electrónico válido."));
       resetButton(submitBtn, originalText);
       return;
     }
@@ -270,7 +285,7 @@ if (form) {
           if (result.ok && result.user) {
             // Admin existe en Supabase → sesión lista para cargar datos en el panel admin
             localStorage.removeItem('currentProjectId');
-            showSuccess("¡Bienvenido Administrador! Ingresando...");
+            showSuccess(authT("auth.welcome_admin", "¡Bienvenido Administrador! Ingresando..."));
             setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
             return;
           }
@@ -288,7 +303,7 @@ if (form) {
         adminUserData = { email, name: 'Administrador NutriPlant', userId: adminUserId, password: 'npja1502', isAdmin: true, subscription_status: 'active', subscription_amount: 0, created_at: new Date().toISOString() };
         await npApplyLocalAuthPreferences(adminUserData);
         if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData)) || !npSafeSetItem(`nutriplant_user_email_${email}`, adminUserId)) {
-          showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+          showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
           resetButton(submitBtn, originalText);
           return;
         }
@@ -297,19 +312,19 @@ if (form) {
         adminUserData.subscription_status = 'active';
         await npApplyLocalAuthPreferences(adminUserData);
         if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData))) {
-          showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+          showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
           resetButton(submitBtn, originalText);
           return;
         }
       }
       if (!npSafeSetItem('nutriplant_user_id', adminUserId) ||
           !npSafeSetItem(AUTH_KEY, JSON.stringify({ email, userId: adminUserId, ts: Date.now(), name: 'Administrador', isAdmin: true }))) {
-        showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+        showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
         resetButton(submitBtn, originalText);
         return;
       }
       localStorage.removeItem('currentProjectId');
-      showSuccess("¡Bienvenido Administrador! Ingresando...");
+      showSuccess(authT("auth.welcome_admin", "¡Bienvenido Administrador! Ingresando..."));
       setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
       return;
     }
@@ -331,7 +346,7 @@ if (form) {
             if (typeof window.showSubscriptionInactiveWithPayPalOption === 'function') {
               window.showSubscriptionInactiveWithPayPalOption('Tu suscripción está inactiva. Para volver a usar NutriPlant PRO, activa aquí con PayPal:');
             } else {
-              showError("❌ Tu suscripción no está activa. Contacta al administrador para activar tu cuenta.");
+              showError(authT("auth.err_sub_inactive", "❌ Tu suscripción no está activa. Contacta al administrador para activar tu cuenta."));
             }
             resetButton(submitBtn, originalText);
             return;
@@ -340,7 +355,7 @@ if (form) {
           localStorage.removeItem('currentProjectId');
           const name = result.user?.name || email.split('@')[0];
           clearLoginFailures();
-          showSuccess("¡Bienvenido, " + name + "! Ingresando...");
+          showSuccess(authT("auth.welcome_user", "¡Bienvenido, {name}! Ingresando...", { name: name }));
           setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
           return;
         }
@@ -402,7 +417,7 @@ if (form) {
     // 🔒 VALIDAR QUE EL USUARIO EXISTE
     if (!userFound) {
       registerLoginFailure();
-      showError("❌ El correo electrónico no está registrado. Por favor, crea una cuenta nueva.");
+      showError(authT("auth.err_email_unregistered", "❌ El correo electrónico no está registrado. Por favor, crea una cuenta nueva."));
       resetButton(submitBtn, originalText);
       return;
     }
@@ -410,7 +425,7 @@ if (form) {
     // 🔒 VALIDAR QUE LA CONTRASEÑA ES CORRECTA
     if (!userFound.password || userFound.password !== pass) {
       registerLoginFailure();
-      showError("❌ Contraseña incorrecta. Por favor, verifica tu contraseña.");
+      showError(authT("auth.err_bad_password", "❌ Contraseña incorrecta. Por favor, verifica tu contraseña."));
       resetButton(submitBtn, originalText);
       return;
     }
@@ -433,14 +448,14 @@ if (form) {
         email, userId, ts: Date.now(), name: userFound.name || email.split('@')[0], isAdmin: false
       }));
       if (!okProfile || !okUserId || !okAuth) {
-        showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+        showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
         resetButton(submitBtn, originalText);
         return;
       }
       if (typeof window.showSubscriptionInactiveWithPayPalOption === 'function') {
         window.showSubscriptionInactiveWithPayPalOption('Tu suscripción está inactiva. Para volver a usar NutriPlant PRO, activa aquí con PayPal:');
       } else {
-        showError("❌ Tu suscripción no está activa. Contacta al administrador para activar tu cuenta.");
+        showError(authT("auth.err_sub_inactive", "❌ Tu suscripción no está activa. Contacta al administrador para activar tu cuenta."));
       }
       resetButton(submitBtn, originalText);
       return;
@@ -451,7 +466,7 @@ if (form) {
     userFound.last_login = lastLoginIso;
     const userKey = `nutriplant_user_${userId}`;
     if (!npSafeSetItem(userKey, JSON.stringify(userFound))) {
-      showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+      showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
       resetButton(submitBtn, originalText);
       return;
     }
@@ -465,7 +480,7 @@ if (form) {
     
     // Establecer userId en localStorage
     if (!npSafeSetItem('nutriplant_user_id', userId)) {
-      showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+      showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
       resetButton(submitBtn, originalText);
       return;
     }
@@ -478,7 +493,7 @@ if (form) {
       name: userFound.name || email.split('@')[0],
       isAdmin: userFound.isAdmin || false
     }))) {
-      showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+      showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
       resetButton(submitBtn, originalText);
       return;
     }
@@ -490,7 +505,7 @@ if (form) {
     // Mostrar mensaje de éxito antes de redirigir
     const userName = userFound.name || email.split('@')[0];
     clearLoginFailures();
-    showSuccess("¡Bienvenido, " + userName + "! Ingresando...");
+    showSuccess(authT("auth.welcome_user", "¡Bienvenido, {name}! Ingresando...", { name: userName }));
     
     // Redirigir después de un breve delay
     setTimeout(() => {

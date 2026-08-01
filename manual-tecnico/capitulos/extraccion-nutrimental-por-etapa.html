@@ -7,7 +7,7 @@
   <meta name="description" content="Extracción nutrimental por etapa: requerimiento en Fertirriego/Granular, herramienta 📊 de curvas kg/ha, biblioteca personal y reporte PDF en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260801us">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -78,6 +78,11 @@
     </ul>
     <h3>Cálculo</h3>
     <div class="mt-formula">Extracción total (kg/ha) = extracción por ton × rendimiento (ton/ha)<br>Requerimiento real (kg/ha) = Ajuste ÷ (Eficiencia / 100)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (US customary)</span>
+      Extracción total (lb/acre) = extracción por short ton × rendimiento (short ton/acre)<br>
+      Requerimiento real (lb/acre) = Ajuste ÷ (Eficiencia / 100)
+    </div>
     <p>Orden habitual en tablas: <strong>N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂</strong>. En fertirriego, si el usuario captura S elemental, la app puede sumarlo a SO₄ con factor de conversión.</p>
     <p>El <strong>programa temporal</strong> (por semana o mes) reparte el requerimiento en aplicaciones concretas — ver <a href="programa-fertirriego-etapas.html">programa de fertirriego</a> y <a href="granular-mezclas.html">granular</a>.</p>
 
@@ -95,7 +100,11 @@
       <li><strong>Extracción total (kg/ha)</strong> — captura la demanda acumulada del ciclo por nutriente. Puedes agregar micronutrientes y secundarios además de N, P, K, Ca, Mg.</li>
       <li><strong>Distribución por etapa (%)</strong> — nombra las etapas (Brotación, Vegetativo, Floración… o texto libre). Por cada nutriente, la <strong>suma de % debe ser 100</strong>. Puedes agregar o quitar etapas según el cultivo.</li>
       <li><strong>Resultado (kg/ha por etapa)</strong> — la app calcula automáticamente:<br>
-        <span class="mt-formula" style="display:inline-block;margin-top:8px;">kg/ha en etapa = extracción total × (% / 100)</span></li>
+        <span class="mt-formula" style="display:inline-block;margin-top:8px;">kg/ha en etapa = extracción total × (% / 100)</span>
+        <div class="mt-formula-us" style="margin-top:8px;">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      lb/acre en etapa = extracción total (lb/acre) × (% / 100)
+    </div></li>
       <li><strong>Gráfica</strong> — curvas de kg/ha por etapa y nutriente (eje X = etapas). Vista separada para macros y micros; se actualiza al editar la tabla.</li>
     </ol>
     <p>Los % por etapa son <strong>decisión del técnico</strong> (curva de demanda del cultivo); NutriPlant no impone una curva fija universal.</p>
@@ -159,6 +168,11 @@
     </ul>
     <h3>Calculation</h3>
     <div class="mt-formula">Total extraction (kg/ha) = extraction per ton × yield (ton/ha)<br>Actual requirement (kg/ha) = Adjustment ÷ (Efficiency / 100)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      Total extraction (lb/acre) = extraction per short ton × yield (short ton/acre)<br>
+      Actual requirement (lb/acre) = Adjustment ÷ (Efficiency / 100)
+    </div>
     <p>Usual table order: <strong>N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂</strong>. In fertigation, if the user enters elemental S, the app may add it to SO₄ with a conversion factor.</p>
     <p>The <strong>time program</strong> (by week or month) distributes the requirement into concrete applications — see <a href="programa-fertirriego-etapas.html">fertigation program</a> and <a href="granular-mezclas.html">granular</a>.</p>
 
@@ -176,7 +190,11 @@
       <li><strong>Total extraction (kg/ha)</strong> — enter the cycle’s cumulative demand per nutrient. You can add micronutrients and secondary nutrients in addition to N, P, K, Ca, Mg.</li>
       <li><strong>Distribution by stage (%)</strong> — name the stages (Bud break, Vegetative, Flowering… or free text). For each nutrient, the <strong>sum of % must be 100</strong>. You can add or remove stages according to the crop.</li>
       <li><strong>Result (kg/ha per stage)</strong> — the app calculates automatically:<br>
-        <span class="mt-formula" style="display:inline-block;margin-top:8px;">kg/ha in stage = total extraction × (% / 100)</span></li>
+        <span class="mt-formula" style="display:inline-block;margin-top:8px;">kg/ha in stage = total extraction × (% / 100)</span>
+        <div class="mt-formula-us" style="margin-top:8px;">
+      <span class="mt-formula-us__label">US customary</span>
+      lb/acre in stage = total extraction (lb/acre) × (% / 100)
+    </div></li>
       <li><strong>Chart</strong> — kg/ha curves by stage and nutrient (X axis = stages). Separate view for macros and micros; updates when you edit the table.</li>
     </ol>
     <p>The % by stage is a <strong>technician decision</strong> (crop demand curve); NutriPlant does not impose a fixed universal curve.</p>

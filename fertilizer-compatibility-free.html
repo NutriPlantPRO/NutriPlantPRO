@@ -8,7 +8,8 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801h"></script>
+  <script src="assets/np-compat-detail-en.js?v=20260801h"></script>
 
   <title>Compatibilidad de fertilizantes</title>
   <style>
@@ -584,8 +585,19 @@
     }
   };
 
+  function localizedDetail(key) {
+    var es = DETAIL_KEYS[key];
+    try {
+      if (window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en') {
+        var en = window.NP_COMPAT_DETAIL_EN && window.NP_COMPAT_DETAIL_EN[key];
+        if (en) return en;
+      }
+    } catch (e) {}
+    return es;
+  }
+
   function detailTemplate(aid, bid, level) {
-    if (aid === bid) return DETAIL_KEYS.same;
+    if (aid === bid) return localizedDetail('same');
 
     const A = traits(aid);
     const B = traits(bid);
@@ -593,25 +605,25 @@
     const mapMkp = aid === 'map' || bid === 'map' || aid === 'mkp' || bid === 'mkp';
 
     if (level === 'I') {
-      if (mapMkp && ca && (A.po4 || B.po4)) return DETAIL_KEYS.ca_phosphate_mkp;
-      if (ca && (A.h3po4 || B.h3po4)) return DETAIL_KEYS.ca_acid_phosphoric;
-      if (ca && (A.h2so4 || B.h2so4)) return DETAIL_KEYS.ca_acid_sulfuric;
+      if (mapMkp && ca && (A.po4 || B.po4)) return localizedDetail('ca_phosphate_mkp');
+      if (ca && (A.h3po4 || B.h3po4)) return localizedDetail('ca_acid_phosphoric');
+      if (ca && (A.h2so4 || B.h2so4)) return localizedDetail('ca_acid_sulfuric');
       if (ca && (A.so4 || B.so4)) {
-        if ((A.nh4 && A.so4) || (B.nh4 && B.so4)) return DETAIL_KEYS.ca_sulfate;
-        if (aid === 'sop' || bid === 'sop' || aid === 'sulfato_magnesio' || bid === 'sulfato_magnesio' || aid === 'nks' || bid === 'nks') return DETAIL_KEYS.ca_sulfate;
+        if ((A.nh4 && A.so4) || (B.nh4 && B.so4)) return localizedDetail('ca_sulfate');
+        if (aid === 'sop' || bid === 'sop' || aid === 'sulfato_magnesio' || bid === 'sulfato_magnesio' || aid === 'nks' || bid === 'nks') return localizedDetail('ca_sulfate');
       }
-      if ((A.metal_sulfate || B.metal_sulfate) && (A.po4 || B.po4)) return DETAIL_KEYS.metal_sulfate_phosphate;
-      return DETAIL_KEYS.default_i;
+      if ((A.metal_sulfate || B.metal_sulfate) && (A.po4 || B.po4)) return localizedDetail('metal_sulfate_phosphate');
+      return localizedDetail('default_i');
     }
     if (level === 'R') {
-      if ((A.chelate || B.chelate) && (A.po4 || B.po4)) return DETAIL_KEYS.chelate_phosphate;
-      if ((aid === 'nks' || bid === 'nks' || aid === 'nk_mg' || bid === 'nk_mg') && ((A.nh4 && A.so4) || (B.nh4 && B.so4))) return DETAIL_KEYS.kno3_sulfate_salting;
-      if ((aid === 'sop' || bid === 'sop') && (aid === 'nks' || bid === 'nks')) return DETAIL_KEYS.kno3_sulfate_salting;
-      if (A.strong_acid && B.strong_acid) return DETAIL_KEYS.strong_acids;
-      if ((A.chelate || B.chelate) && (A.mg || B.mg) && (aid === 'nitrato_magnesio' || bid === 'nitrato_magnesio')) return DETAIL_KEYS.chelate_phosphate;
-      return DETAIL_KEYS.default_r;
+      if ((A.chelate || B.chelate) && (A.po4 || B.po4)) return localizedDetail('chelate_phosphate');
+      if ((aid === 'nks' || bid === 'nks' || aid === 'nk_mg' || bid === 'nk_mg') && ((A.nh4 && A.so4) || (B.nh4 && B.so4))) return localizedDetail('kno3_sulfate_salting');
+      if ((aid === 'sop' || bid === 'sop') && (aid === 'nks' || bid === 'nks')) return localizedDetail('kno3_sulfate_salting');
+      if (A.strong_acid && B.strong_acid) return localizedDetail('strong_acids');
+      if ((A.chelate || B.chelate) && (A.mg || B.mg) && (aid === 'nitrato_magnesio' || bid === 'nitrato_magnesio')) return localizedDetail('chelate_phosphate');
+      return localizedDetail('default_r');
     }
-    return DETAIL_KEYS.default_c;
+    return localizedDetail('default_c');
   }
 
     function fertDisplayName(name) {
@@ -626,21 +638,27 @@
     const fb = byId[b];
     const tmpl = detailTemplate(a, b, level);
     const L = level === 'C' ? 'c' : level === 'R' ? 'r' : 'i';
-    const badge = level === 'C' ? '🟢 Compatible' : level === 'R' ? '🟡 Precaución' : '🔴 Incompatible';
+    var en = false;
+    try { en = window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en'; } catch (e) {}
+    const badge = level === 'C'
+      ? (en ? '🟢 Compatible' : '🟢 Compatible')
+      : level === 'R'
+        ? (en ? '🟡 Caution' : '🟡 Precaución')
+        : (en ? '🔴 Incompatible' : '🔴 Incompatible');
 
     let html = '';
     html += '<span class="badge ' + L + '">' + badge + '</span>';
     html += '<div class="names"><strong>' + fertDisplayName(fa.name) + '</strong> + <strong>' + fertDisplayName(fb.name) + '</strong></div>';
 
-    html += '<div class="sec"><strong>Qué pasa</strong>' + tmpl.que + '</div>';
-    html += '<div class="sec"><strong>Impacto</strong><ul>';
+    html += '<div class="sec"><strong>' + (en ? 'What happens' : 'Qué pasa') + '</strong>' + tmpl.que + '</div>';
+    html += '<div class="sec"><strong>' + (en ? 'Impact' : 'Impacto') + '</strong><ul>';
     (tmpl.impacto || []).forEach(function (x) { html += '<li>' + x + '</li>'; });
     html += '</ul></div>';
-    html += '<div class="sec"><strong>Factor crítico</strong>' + tmpl.factor + '</div>';
-    html += '<div class="sec"><strong>Condición</strong><ul>';
+    html += '<div class="sec"><strong>' + (en ? 'Critical factor' : 'Factor crítico') + '</strong>' + tmpl.factor + '</div>';
+    html += '<div class="sec"><strong>' + (en ? 'Condition' : 'Condición') + '</strong><ul>';
     (tmpl.cond || []).forEach(function (x) { html += '<li>' + x + '</li>'; });
     html += '</ul></div>';
-    html += '<div class="sec"><strong>Acción recomendada</strong><ul>';
+    html += '<div class="sec"><strong>' + (en ? 'Recommended action' : 'Acción recomendada') + '</strong><ul>';
     (tmpl.accion || []).forEach(function (x) { html += '<li>' + x + '</li>'; });
     html += '</ul></div>';
 
@@ -675,10 +693,12 @@
       }
     }
     const f = FERTILIZERS[k];
-    document.getElementById('detailTitle').textContent = 'Fertilizante: ' + fertDisplayName(f.name);
-    document.getElementById('detailBody').innerHTML =
-      '<div class="names">Resaltada la <strong>fila</strong> y la <strong>columna</strong> de este producto en la parte triangular. ' +
-      'Pulsa una celda donde se cruce con otro para ver el detalle del par.</div>';
+    var en = false;
+    try { en = window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en'; } catch (e) {}
+    document.getElementById('detailTitle').textContent = (en ? 'Fertilizer: ' : 'Fertilizante: ') + fertDisplayName(f.name);
+    document.getElementById('detailBody').innerHTML = en
+      ? '<div class="names">The <strong>row</strong> and <strong>column</strong> of this product are highlighted in the triangular matrix. Tap a cell where it crosses another product to see the pair detail.</div>'
+      : '<div class="names">Resaltada la <strong>fila</strong> y la <strong>columna</strong> de este producto en la parte triangular. Pulsa una celda donde se cruce con otro para ver el detalle del par.</div>';
   }
 
   function buildTable() {

@@ -1183,11 +1183,19 @@
 
   function renderKc(filter) {
     const loc = locale();
+    const lang = prefs().language === 'en' ? 'en' : 'es';
     const query = String(filter || '').toLocaleLowerCase(loc);
-    const data = (window.FAO_KC_REFERENCE || []).filter((x) => `${x.crop} ${x.stage}`.toLocaleLowerCase(loc).includes(query));
+    const labelsOf = (x) => (typeof window.faoKcLabels === 'function'
+      ? window.faoKcLabels(x, lang)
+      : { crop: x.crop, stage: x.stage });
+    const searchOf = (x) => (typeof window.faoKcSearchText === 'function'
+      ? window.faoKcSearchText(x)
+      : `${x.crop} ${x.stage}`);
+    const data = (window.FAO_KC_REFERENCE || []).filter((x) => searchOf(x).toLocaleLowerCase(loc).includes(query));
     $('agro-kc-list').innerHTML = data.length ? data.map((x) => {
       const suggested = round((Number(x.kcMin) + Number(x.kcMax)) / 2, 2);
-      return `<div class="agro-kc-row"><b>${esc(x.crop)}</b><span>${esc(x.stage)}</span><strong>${x.kcMin}–${x.kcMax}</strong><button type="button" class="agro-btn ghost" data-kc="${suggested}" data-crop="${esc(x.crop)}" data-range="${esc(`${x.kcMin}–${x.kcMax}`)}" data-stage="${esc(x.stage)}">${esc(t('use_kc', { kc: suggested }))}</button></div>`;
+      const labels = labelsOf(x);
+      return `<div class="agro-kc-row"><b>${esc(labels.crop)}</b><span>${esc(labels.stage)}</span><strong>${x.kcMin}–${x.kcMax}</strong><button type="button" class="agro-btn ghost" data-kc="${suggested}" data-crop="${esc(labels.crop)}" data-range="${esc(`${x.kcMin}–${x.kcMax}`)}" data-stage="${esc(labels.stage)}">${esc(t('use_kc', { kc: suggested }))}</button></div>`;
     }).join('') : `<p>${esc(t('kc_none'))}</p>`;
   }
 
@@ -1451,7 +1459,12 @@
   }
 
   function init() {
-    if (I) I.apply(document);
+    if (I) {
+      if (typeof I.applyAndReveal === 'function') I.applyAndReveal(document);
+      else I.apply(document);
+    } else {
+      try { document.documentElement.classList.remove('agro-booting'); } catch (e) { /* ignore */ }
+    }
     setMode();
     bind();
     bindAboutModal();
@@ -1461,6 +1474,23 @@
       restoreLastReading();
     }
     sendResize();
+    window.addEventListener('message', (ev) => {
+      const data = ev && ev.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'np-agro-shown') {
+        [80, 250, 600].forEach((ms) => setTimeout(() => { if (map) map.invalidateSize(); }, ms));
+        sendResize();
+        return;
+      }
+      if (data.type === 'np-agro-prefs' && I && typeof I.setReportPrefs === 'function') {
+        I.setReportPrefs({
+          language: data.language === 'en' ? 'en' : 'es',
+          unit_system: data.unit_system === 'us_customary' ? 'us_customary' : 'metric'
+        });
+        if (typeof I.applyAndReveal === 'function') I.applyAndReveal(document);
+        else I.apply(document);
+      }
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

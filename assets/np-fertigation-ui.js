@@ -31,7 +31,29 @@
     enter_water: 'Enter applied water for this stage to calculate ppm and meq/L.',
     fertilizer_supply: 'Fertilizer supply', fertilizer_water_supply: 'Fertilizer plus water supply',
     nutrient: 'Nutrient', group_pct: '% of group', no_custom: 'No custom fertilizers.',
-    available_fertilizers: '📋 Available fertilizers (concentration %)', edit_custom: '✏️ Edit Custom Raw Material',
+    available_fertilizers: '📋 Available fertilizers (concentration %)',
+    available_fertilizers_help: 'Browse concentrations of preloaded soluble fertilizers. Values in % (oxides where applicable).',
+    name_col: 'Name',
+    no_preloaded: 'No preloaded fertilizers.',
+    edit_custom: '✏️ Edit Custom Raw Material',
+    new_material_title: '➕ New Custom Raw Material',
+    edit_material_title: '✏️ Edit Custom Raw Material',
+    material_name: 'Raw material name:',
+    material_name_ph: 'e.g. Calcium Nitrate',
+    nutrient_concentration: 'Nutrient concentration (%):',
+    custom_solubles: 'Custom soluble fertilizers:',
+    view_available: 'View available fertilizers',
+    view_available_title: 'Browse preloaded fertilizer concentrations',
+    clear_catalog: 'Clear catalog',
+    cancel: 'Cancel',
+    add_material: 'Add raw material',
+    user_badge: 'User',
+    project_badge: 'Project',
+    edit: 'Edit',
+    delete: 'Delete',
+    confirm_delete_one: 'Remove this fertilizer from the catalog?',
+    confirm_clear_catalog: 'Remove all custom soluble fertilizers from the catalog?',
+    fertilizer_added: '✅ Fertilizer added',
     save_changes: 'Save changes', name_required: 'Enter a name', remove_week: 'Remove period',
     remove_column: 'Remove column', establishment: 'Establishment', vegetative: 'Vegetative',
     preflowering: 'Pre-flowering', flowering: 'Flowering', fruit_set: 'Fruit set',
@@ -112,13 +134,59 @@
     Floración:'flowering', Amarre:'fruit_set', Llenado:'filling', Cosecha:'harvest'
   };
 
+  var languageOverride = null;
+  var unitSystemOverride = null;
+
   function prefs() {
     var p = w.NpPrefs && typeof w.NpPrefs.get === 'function' ? w.NpPrefs.get() : w.NP_PREFS_BOOTSTRAP;
+    var language = languageOverride === 'en' || languageOverride === 'es'
+      ? languageOverride
+      : (p && p.language === 'en' ? 'en' : 'es');
+    var unitSystem = unitSystemOverride === 'metric' || unitSystemOverride === 'us_customary'
+      ? unitSystemOverride
+      : (p && p.unit_system === 'us_customary' ? 'us_customary' : 'metric');
     return {
-      language: p && p.language === 'en' ? 'en' : 'es',
-      unit_system: p && p.unit_system === 'us_customary' ? 'us_customary' : 'metric',
-      locale: (p && p.locale) || (p && p.language === 'en' ? 'en-US' : 'es-MX')
+      language: language,
+      unit_system: unitSystem,
+      locale: (p && p.locale) || (language === 'en' ? 'en-US' : 'es-MX')
     };
+  }
+  function runWithOverride(assign, restore, callback) {
+    assign();
+    try {
+      var result = callback();
+      if (result && typeof result.then === 'function') {
+        return Promise.resolve(result).then(
+          function (value) { restore(); return value; },
+          function (err) { restore(); return Promise.reject(err); }
+        );
+      }
+      restore();
+      return result;
+    } catch (e) {
+      restore();
+      throw e;
+    }
+  }
+  function withLanguage(language, callback) {
+    if (language !== 'en' && language !== 'es') throw new TypeError('Idioma no soportado: ' + language);
+    var prev = languageOverride;
+    return runWithOverride(
+      function () { languageOverride = language; },
+      function () { languageOverride = prev; },
+      callback
+    );
+  }
+  function withUnitSystem(system, callback) {
+    if (system !== 'metric' && system !== 'us_customary') {
+      throw new TypeError('Sistema de unidades no soportado: ' + system);
+    }
+    var prev = unitSystemOverride;
+    return runWithOverride(
+      function () { unitSystemOverride = system; },
+      function () { unitSystemOverride = prev; },
+      callback
+    );
   }
   function t(key, spanish) { return prefs().language === 'en' && EN[key] ? EN[key] : spanish; }
   function agronomic() {
@@ -182,6 +250,8 @@
     inputFromSI:inputFromSI, resultFromSI:resultFromSI, quantityFromSI:quantityFromSI,
     cropName:cropName, materialName:materialName, stageName:stageName,
     chartYAxisTitle:chartYAxisTitle, chartDoseSeries:chartDoseSeries,
-    concentrationPpmFromDose:concentrationPpmFromDose, doseFromConcentration:doseFromConcentration
+    concentrationPpmFromDose:concentrationPpmFromDose, doseFromConcentration:doseFromConcentration,
+    withLanguage: withLanguage,
+    withUnitSystem: withUnitSystem
   };
 });

@@ -8,7 +8,8 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801h"></script>
+  <script src="assets/np-interactions-en.js?v=20260801h"></script>
 
   <title>Interacciones y movilidad nutrimental</title>
   <style>
@@ -1329,6 +1330,46 @@
 
   // ——— Datos sección 1 ———
   /** @type {Record<string, { ion: string, short: string, name: string, antagonists: string[], synergists: string[], functional: string[], shortTip: string }>} */
+  
+  function ixIsEn() {
+    try { return window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en'; } catch (e) { return false; }
+  }
+  function ixLabel(key, fallback) {
+    var bag = window.NP_INTERACTIONS_EN && window.NP_INTERACTIONS_EN.labels;
+    if (ixIsEn() && bag && bag[key]) return bag[key];
+    return fallback != null ? fallback : key;
+  }
+  function ixSpec(id) {
+    var base = SPEC[id];
+    if (!base || !ixIsEn()) return base;
+    var en = window.NP_INTERACTIONS_EN && window.NP_INTERACTIONS_EN.spec && window.NP_INTERACTIONS_EN.spec[id];
+    return en ? Object.assign({}, base, en) : base;
+  }
+  function ixArrival(item) {
+    if (!item || !ixIsEn()) return item;
+    var en = window.NP_INTERACTIONS_EN && window.NP_INTERACTIONS_EN.arrival && window.NP_INTERACTIONS_EN.arrival[item.id];
+    return en ? Object.assign({}, item, en) : item;
+  }
+  function ixMob(sym) {
+    var base = MOBILITY[sym];
+    if (!base || !ixIsEn()) return base;
+    var en = window.NP_INTERACTIONS_EN && window.NP_INTERACTIONS_EN.mobility && window.NP_INTERACTIONS_EN.mobility[sym];
+    if (!en) return base;
+    var out = Object.assign({}, base, en);
+    if (en.functions && base.functions) {
+      out.functions = base.functions.map(function (fn, i) {
+        return Object.assign({}, fn, en.functions[i] || {});
+      });
+    }
+    return out;
+  }
+  function ixPh(item) {
+    if (!item || !ixIsEn()) return item;
+    var key = item.id || item.sym || item.key;
+    var en = window.NP_INTERACTIONS_EN && window.NP_INTERACTIONS_EN.ph && (window.NP_INTERACTIONS_EN.ph[key] || window.NP_INTERACTIONS_EN.ph[item.el]);
+    return en ? Object.assign({}, item, en) : item;
+  }
+
   var SPEC = {
     no3: {
       ion: 'NO₃⁻',
@@ -1625,7 +1666,7 @@
   }
 
   function renderSingleDetail(id) {
-    var s = SPEC[id];
+    var s = ixSpec(id);
     detailTitle.textContent = s.ion + ' — ' + s.name;
     var ants = relationIdsFor(id, 'ant').map(function (tid) {
       return '<span class="tag tag-ant">' + SPEC[tid].ion + '</span>';
@@ -1637,13 +1678,13 @@
       return '<span class="tag tag-fun">' + t + '</span>';
     }).join(' ');
     detailBody.innerHTML =
-      '<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#475569;">Compite / antagoniza con (referencia):</p>' +
+      '<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#475569;">' + ixLabel('competeAntagonize', 'Compite / antagoniza con (referencia):') + '</p>' +
       (ants || '<span style="color:#64748b;font-size:13px;">—</span>') +
-      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">Sinergia / favorecimiento conjunto (desde este ion):</p>' +
+      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">' + ixLabel('synergy', 'Sinergia / favorecimiento conjunto (desde este ion):') + '</p>' +
       (syns || '<span style="color:#64748b;font-size:13px;">—</span>') +
-      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">Relaciones funcionales (conceptos):</p><div style="margin-top:4px;">' +
+      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">' + ixLabel('functionalRelations', 'Relaciones funcionales (conceptos):') + '</p><div style="margin-top:4px;">' +
       (fun || '—') + '</div>' +
-      '<div class="dato-corto"><strong>Dato corto:</strong> ' + s.shortTip + '</div>';
+      '<div class="dato-corto"><strong>' + ixLabel('datoCorto', 'Dato corto:') + '</strong> ' + s.shortTip + '</div>';
   }
 
   var diagramFocusId = null;
@@ -1771,13 +1812,14 @@
     selArrId = id;
     var row = ARRIVAL.find(function (r) { return r.id === id; });
     if (!row) return;
+    var v = ixArrival(row);
     renderArrivalBars();
-    fichaArrTitle.textContent = row.lab + ' — ' + row.name;
+    fichaArrTitle.textContent = v.lab + ' — ' + v.name;
     fichaArrBody.innerHTML =
-      '<p><span class="k">Vía dominante:</span> ' + row.dom + '</p>' +
-      '<p><span class="k">Qué significa:</span> ' + row.mean + '</p>' +
-      '<p><span class="k">Depende de:</span> ' + row.dep + '</p>' +
-      '<p><span class="k">Riesgo común:</span> ' + row.risk + '</p>';
+      '<p><span class="k">' + ixLabel('viaDominante', 'Vía dominante:') + '</span> ' + v.dom + '</p>' +
+      '<p><span class="k">' + ixLabel('queSignifica', 'Qué significa:') + '</span> ' + v.mean + '</p>' +
+      '<p><span class="k">' + ixLabel('dependeDe', 'Depende de:') + '</span> ' + v.dep + '</p>' +
+      '<p><span class="k">' + ixLabel('riesgoComun', 'Riesgo común:') + '</span> ' + v.risk + '</p>';
     requestAnimationFrame(function () {
       var el = ionBars.querySelector('.ion-bar-track.is-active');
       if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -2102,11 +2144,13 @@
   }
 
   function showMob(sym) {
-    var m = MOBILITY[sym];
+    var m = ixMob(sym);
     if (!m) return;
     mobSymActive = sym;
     setActiveMobSym(sym);
-    mobFichaTitle.textContent = sym + ' — ' + (EL_NAMES[sym] || '');
+    var elName = EL_NAMES[sym] || '';
+    if (ixIsEn() && window.NpFreeNutritionUI) elName = window.NpFreeNutritionUI.translate(elName);
+    mobFichaTitle.textContent = sym + ' — ' + elName;
     function esc(s) {
       return String(s)
         .replace(/&/g, '&amp;')
@@ -2117,7 +2161,7 @@
     var fnHtml = '';
     if (m.functions && m.functions.length) {
       fnHtml =
-        '<p class="mob-line" style="margin:10px 0 4px;font-weight:600;color:#14532d;">Funciones principales</p>' +
+        '<p class="mob-line" style="margin:10px 0 4px;font-weight:600;color:#14532d;">' + ixLabel('funcionesPrincipales', 'Funciones principales') + '</p>' +
         '<ul class="mob-fn-list">' +
         m.functions
           .map(function (item, idx) {
@@ -2139,14 +2183,14 @@
           .join('') +
         '</ul>';
     } else if (m.fn) {
-      fnHtml = '<p class="mob-line"><strong>Funciones principales:</strong> ' + esc(m.fn) + '</p>';
+      fnHtml = '<p class="mob-line"><strong>' + ixLabel('funcionesPrincipales', 'Funciones principales') + ':</strong> ' + esc(m.fn) + '</p>';
     }
     mobFichaBody.innerHTML =
-      '<p class="mob-line"><strong>Movilidad:</strong> ' + esc(m.mob) + '</p>' +
-      '<p class="mob-line"><strong>Dónde se ve primero:</strong> ' + esc(m.where) + '</p>' +
-      '<p class="mob-line"><strong>Síntoma común:</strong> ' + esc(m.sym) + '</p>' +
+      '<p class="mob-line"><strong>' + ixLabel('movilidad', 'Movilidad:') + '</strong> ' + esc(m.mob) + '</p>' +
+      '<p class="mob-line"><strong>' + ixLabel('dondePrimero', 'Dónde se ve primero:') + '</strong> ' + esc(m.where) + '</p>' +
+      '<p class="mob-line"><strong>' + ixLabel('sintomaComun', 'Síntoma común:') + '</strong> ' + esc(m.sym) + '</p>' +
       fnHtml +
-      '<p class="mob-line" style="margin-top:12px;padding-top:10px;border-top:1px solid #bbf7d0;"><strong>Tip:</strong> ' +
+      '<p class="mob-line" style="margin-top:12px;padding-top:10px;border-top:1px solid #bbf7d0;"><strong>' + ixLabel('tip', 'Tip:') + '</strong> ' +
       esc(m.tip) +
       '</p>';
     requestAnimationFrame(function () {
@@ -2329,14 +2373,13 @@
   var selPhId = null;
 
   function renderPhExplain(row) {
-    var h = '<span class="ph-tag">' + row.tag + '</span>';
-    h += '<p style="margin:0 0 6px">' + row.intro + '</p>';
-    if (row.bullets && row.bullets.length) {
-      h += '<ul>';
-      for (var b = 0; b < row.bullets.length; b++) {
-        h += '<li>' + row.bullets[b] + '</li>';
-      }
-      h += '</ul>';
+    var v = ixPh(row);
+    var h = '<span class="ph-tag">' + v.tag + '</span>';
+    h += '<p style="margin:0 0 6px">' + v.intro + '</p>';
+    if (v.bullets && v.bullets.length) {
+      h += '<ul style="margin:0;padding-left:18px;">' + v.bullets.map(function (b) {
+        return '<li style="margin:0 0 4px;">' + b + '</li>';
+      }).join('') + '</ul>';
     }
     return h;
   }
@@ -2396,7 +2439,8 @@
     renderPhRows();
     var row = PH_NUTRIENTS.find(function (r) { return r.id === id; });
     if (!row || !phFichaTitle || !phFichaBody) return;
-    phFichaTitle.textContent = row.lab + ' · ' + row.name;
+    var v = ixPh(row);
+    phFichaTitle.textContent = v.lab + ' · ' + v.name;
     phFichaBody.innerHTML = renderPhExplain(row);
     requestAnimationFrame(function () {
       if (phFichaEl) phFichaEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -2404,6 +2448,31 @@
   }
 
   renderPhRows();
+
+  function applyInteractionsChrome() {
+    var lead = document.querySelector('.lead');
+    if (lead) {
+      lead.innerHTML = ixIsEn()
+        ? (ixLabel('leadHtml', null) || ixLabel('lead', 'Teaching tool: (1) ion interactions, (2) pathways to the root, (3) mobility and plant symptoms, and (4) relative availability vs soil pH (indicative). Real behavior depends on crop, soil, texture, OM, water and management.'))
+        : 'Herramienta didáctica: (1) interacciones entre iones, (2) mecanismos hacia la raíz, (3) movilidad y síntomas en planta y (4) disponibilidad relativa frente al pH del suelo (orientativo).<br>El comportamiento real depende de cultivo, suelo, textura, MO, agua y manejo.';
+    }
+    var hint = document.querySelector('#panel-1 .hint');
+    if (hint) {
+      hint.innerHTML = ixIsEn()
+        ? (ixLabel('panel1Hint', 'Tap an icon in the circle: in red, <strong>antagonism/competition</strong> (two-way reference); in blue, <strong>synergy</strong> per the selected ion card.'))
+        : 'Toca un icono en el círculo: en rojo, <strong>antagonismo/competencia</strong> (referencia en ambos sentidos); en azul, <strong>sinergia</strong> según la ficha del ion seleccionado.';
+    }
+    var h2 = document.querySelector('#panel-1 .section-h2');
+    if (h2) h2.textContent = ixLabel('panel1Heading', 'Diagrama tipo Mulder (iones y formas frecuentes)');
+  }
+  window.refreshInteractionsUi = function () {
+    applyInteractionsChrome();
+    if (diagramFocusId) renderSingleDetail(diagramFocusId);
+    if (selArrId) selectArrival(selArrId);
+    if (mobSymActive) showMob(mobSymActive);
+    if (selPhId) selectPhNutrient(selPhId);
+  };
+  applyInteractionsChrome();
 
   // Tabs
   var tabBtns = document.querySelectorAll('[role="tab"]');
@@ -2447,7 +2516,11 @@
   <script>
     (function () {
       if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
-        window.NpFreeNutritionUI.init();
+        window.NpFreeNutritionUI.init({
+          refresh: function () {
+            if (typeof window.refreshInteractionsUi === 'function') window.refreshInteractionsUi();
+          }
+        });
       }
     })();
   </script>

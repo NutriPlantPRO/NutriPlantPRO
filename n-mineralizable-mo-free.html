@@ -10,7 +10,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801n"></script>
   <title>🌱 Estimación de N mineralizable | NutriPlant</title>
   <style>
     :root {
@@ -223,7 +223,7 @@
           <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
         </div>
         <p class="note">
-          Orden de magnitud anual de N que podría mineralizarse desde la MO del suelo, según profundidad, densidad, exploración radicular, contenido de N en la MO y tasa de mineralización. No sustituye ensayo de campo; usa tus datos de laboratorio y criterio agronómico.
+          Orden de magnitud anual de N que podría mineralizarse desde la MO del suelo, según profundidad, densidad, superficie de suelo considerada, contenido de N en la MO y tasa de mineralización. No sustituye ensayo de campo; usa tus datos de laboratorio y criterio agronómico.
         </p>
       </div>
     </div>
@@ -238,7 +238,7 @@
         <div class="field">
           <label for="inMO">Materia orgánica del suelo</label>
           <div class="field-inline">
-            <input id="inMO" type="number" step="0.01" min="0" max="100" value="2" placeholder="ej. 2" />
+            <input id="inMO" type="number" step="0.01" min="0" max="100" value="2" placeholder="ej. 2" data-ph-es="ej. 2" data-ph-en="e.g. 2" />
             <span class="unit">% (del análisis de suelo)</span>
           </div>
         </div>
@@ -261,7 +261,7 @@
         </div>
 
         <div class="field">
-          <label for="inR">Suelo explorado por raíces</label>
+          <label for="inR">Superficie de suelo considerada</label>
           <div class="field-inline">
             <input id="inR" type="number" step="1" min="1" max="100" value="70" />
             <span class="unit">%</span>
@@ -281,7 +281,7 @@
         </details>
 
         <div class="ref-box">
-          <h3>📌 Referencia: % suelo explorado por sistema</h3>
+          <h3>📌 Referencia: % superficie de suelo considerada por sistema</h3>
           <table class="ref-table">
             <thead><tr><th>Sistema</th><th>% sugerido</th></tr></thead>
             <tbody>
@@ -367,14 +367,10 @@
         </div>
 
         <div class="warn">
-          ⚠️ Resultado orientativo: sensible a DA, profundidad, % explorado y T<sub>min</sub>. Validar con observación en campo y experiencia local.
+          ⚠️ Resultado orientativo: sensible a DA, profundidad, % de superficie considerada y T<sub>min</sub>. Validar con observación en campo y experiencia local.
         </div>
 
-        <p class="formula-note">
-          <strong>Fórmula (misma cadena que en NutriPlant):</strong><br>
-          N<sub>min</sub> = 10&nbsp;000 × (P/100) × DA × 1&nbsp;000 × (R/100) × (MO/100) × (N<sub>MO</sub>/100) × (T<sub>min</sub>/100)<br>
-          <span style="color:#64748b;">con P en cm, DA en g/cm³; masas intermedias: suelo total → efectiva × R → MO × MO% → N<sub>org</sub> × N<sub>MO</sub>% → mineralización × T<sub>min</sub>.</span>
-        </p>
+        <p class="formula-note" id="formulaNote"></p>
       </div>
     </div>
     </div>
@@ -397,6 +393,29 @@
 
     function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
 
+    function updateFormulaNote() {
+      var el = document.getElementById('formulaNote');
+      if (!el || !window.NpFreeNutritionUI) return;
+      var en = window.NpFreeNutritionUI.prefs().language === 'en';
+      var us = window.NpFreeNutritionUI.prefs().unit_system === 'us_customary';
+      var head = en
+        ? 'Formula (same chain as in NutriPlant):'
+        : 'Fórmula (misma cadena que en NutriPlant):';
+      var chain =
+        'N<sub>min</sub> = 10&nbsp;000 × (P/100) × DA × 1&nbsp;000 × (R/100) × (MO/100) × (N<sub>MO</sub>/100) × (T<sub>min</sub>/100)';
+      var detail = en
+        ? 'with P in cm, BD (DA) in g/cm³; intermediate masses: total soil → effective × R → OM × OM% → N<sub>org</sub> × N<sub>OM</sub>% → mineralization × T<sub>min</sub>.'
+        : 'con P en cm, DA en g/cm³; masas intermedias: suelo total → efectiva × R → MO × MO% → N<sub>org</sub> × N<sub>MO</sub>% → mineralización × T<sub>min</sub>.';
+      var usNote = us
+        ? (en
+          ? ' The 10,000 factor is the SI hectare basis (10,000 m²). Results above are converted to lb/acre.'
+          : ' El factor 10&nbsp;000 es la base SI de 1 ha (10&nbsp;000 m²). Los resultados de arriba se convierten a lb/acre.')
+        : '';
+      el.innerHTML =
+        '<strong>' + head + '</strong><br>' + chain + '<br>' +
+        '<span style="color:#64748b;">' + detail + usNote + '</span>';
+    }
+
     function compute() {
       const P = window.NpFreeNutritionUI.toSI(parseNum(document.getElementById('inP'), 30), 'depth');
       const DA = window.NpFreeNutritionUI.toSI(parseNum(document.getElementById('inDA'), 1.2), 'bulk_density');
@@ -412,15 +431,22 @@
       const Norg = MOkg * (Nmo / 100);
       const Nmin = Norg * (Tmin / 100);
 
-      document.getElementById('outMtotal').textContent = fmt(Mtotal, 0);
-      document.getElementById('outMeff').textContent = fmt(Meff, 0);
-      document.getElementById('outMOkg').textContent = fmt(MOkg, 0);
-      document.getElementById('outNorg').textContent = fmt(Norg, 1);
-      document.getElementById('outNmin').textContent = fmt(Nmin, 2);
-      var resultUnit = window.NpFreeNutritionUI.unit('dose_mass_area');
+      var UI = window.NpFreeNutritionUI;
+      document.getElementById('outMtotal').textContent = fmt(UI.fromSI(Mtotal, 'dose_mass_area'), 0);
+      document.getElementById('outMeff').textContent = fmt(UI.fromSI(Meff, 'dose_mass_area'), 0);
+      document.getElementById('outMOkg').textContent = fmt(UI.fromSI(MOkg, 'dose_mass_area'), 0);
+      document.getElementById('outNorg').textContent = fmt(UI.fromSI(Norg, 'dose_mass_area'), 1);
+      document.getElementById('outNmin').textContent = fmt(UI.fromSI(Nmin, 'dose_mass_area'), 2);
+      var resultUnit = UI.unit('dose_mass_area');
+      var yearWord = UI.prefs().language === 'en' ? 'year' : 'año';
       document.querySelectorAll('.unit-suffix').forEach(function (el, i) {
-        el.textContent = resultUnit + (i === 4 ? ' / ' + window.NpFreeNutritionUI.translate('año') : '');
+        el.textContent = resultUnit + (i === 4 ? ' / ' + yearWord : '');
       });
+      var mo = document.getElementById('inMO');
+      if (mo && mo.getAttribute('data-ph-en')) {
+        mo.placeholder = UI.prefs().language === 'en' ? mo.getAttribute('data-ph-en') : (mo.getAttribute('data-ph-es') || 'ej. 2');
+      }
+      updateFormulaNote();
     }
 
     function syncTminFromSlider() {

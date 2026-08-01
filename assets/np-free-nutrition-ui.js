@@ -22,15 +22,26 @@
     'Solubilidad e índice salino': 'Solubility and salt index',
     'Huella de carbono de fertilizantes': 'Fertilizer carbon footprint',
     'Datos de entrada': 'Input data',
-    'Resultados': 'Results',
     'Resultado de referencia': 'Reference result',
     'Materia orgánica del suelo': 'Soil organic matter',
     'Densidad aparente': 'Bulk density',
     'Profundidad efectiva': 'Effective depth',
-    'Suelo explorado por raíces': 'Soil explored by roots',
+    'Suelo explorado por raíces': 'Considered soil surface',
+    'Superficie de suelo considerada': 'Considered soil surface',
+    'Referencia: % suelo explorado por sistema': 'Reference: % considered soil surface by system',
+    'Referencia: % superficie de suelo considerada por sistema': 'Reference: % considered soil surface by system',
+    'Sistema': 'System',
+    '% sugerido': '% suggested',
+    'Hortaliza en cama o surco': 'Vegetable on bed or furrow',
+    'Berry en cama': 'Berry on bed',
+    'Aguacate joven': 'Young avocado',
+    'Aguacate adulto': 'Mature avocado',
+    'ej. 2': 'e.g. 2',
+    'Resultado orientativo: sensible a DA, profundidad, % explorado y T': 'Indicative result: sensitive to BD, depth, considered surface % and T',
+    'Resultado orientativo: sensible a DA, profundidad, % de superficie considerada y T': 'Indicative result: sensitive to BD, depth, considered surface % and T',
     'Fracción de N en la materia orgánica': 'N fraction in organic matter',
     'Masa de suelo total evaluada': 'Total soil mass evaluated',
-    'Masa de suelo efectiva por raíz': 'Effective root-zone soil mass',
+    'Masa de suelo efectiva por raíz': 'Effective soil mass for considered surface',
     'Materia orgánica estimada': 'Estimated organic matter',
     'N orgánico total estimado': 'Estimated total organic N',
     'N potencialmente mineralizable': 'Potentially mineralizable N',
@@ -120,13 +131,33 @@
     'Otros': 'Other',
     'impurezas, antiapelmazantes': 'impurities, anticaking agents',
     'Nutriente total en el producto': 'Total nutrient in product',
+    'Nutriente total en el producto (ponderado)': 'Total nutrient in product (weighted)',
+    '(ponderado)': '(weighted)',
+    'ponderado': 'weighted',
     'Composición teórica': 'Theoretical composition',
     'Fórmula': 'Formula',
+    'Suma:': 'Sum:',
+    '— OK.': '— OK.',
+    '— Ajusta a 100% (ingredientes + Otros).': '— Adjust to 100% (ingredients + Other).',
+    'Ajusta a 100% (ingredientes + Otros).': 'Adjust to 100% (ingredients + Other).',
+    '% ponderado — forma elemental (todo lo que aporta)': '% weighted — elemental form (everything contributed)',
+    'Equivalente en óxido (P₂O₅, K₂O, CaO, MgO, SiO₂)': 'Oxide equivalent (P₂O₅, K₂O, CaO, MgO, SiO₂)',
+    'N como NO₃⁻ (aprox.)': 'N as NO₃⁻ (approx.)',
+    'N como NH₄⁺ (aprox.)': 'N as NH₄⁺ (approx.)',
+    'N como NO3 (aprox.)': 'N as NO3 (approx.)',
+    'N como NH4 (aprox.)': 'N as NH4 (approx.)',
+    'todos los % en forma elemental': 'all % in elemental form',
+    'fracciones de N si aplica': 'N fractions if applicable',
+    'micros y elementos de estructura': 'micros and structural elements',
     'en producto': 'in product',
-    'en masa': 'by mass',
+    '% en producto': '% in product',
+    '% en masa': '% by mass',
     'elemental': 'elemental',
     'Equivalente': 'Equivalent',
     'uso agronómico': 'agronomic use',
+    'referencia': 'reference',
+    'no aplica (análisis manual).': 'not applicable (manual analysis).',
+    'PM:': 'MW:',
     'Fósforo': 'Phosphorus',
     'Potasio': 'Potassium',
     'Calcio': 'Calcium',
@@ -179,12 +210,16 @@
     'Aviso legal': 'Legal notice',
     'Ver más': 'Show more',
     'Ocultar': 'Hide',
-    'Ruta': 'Route',
     'Puerto': 'Port',
     'país destino': 'destination country',
     'Estimar': 'Estimate',
-    'Selecciona': 'Select',
-    'Sin filas': 'No rows',
+        'Sin filas': 'No rows',
+    'Para convertir dosis total →': 'To convert total dose →',
+    ' total': ' total',
+    '📊 Calibración vs Fertilizers Europe (EU, fabricación kg CO₂e/kg producto)': '📊 Calibration vs Fertilizers Europe (EU, manufacturing kg CO₂e/kg product)',
+    '📊 Calibración vs Fertilizers Europe (EU, fabricación lb CO₂e/lb producto)': '📊 Calibration vs Fertilizers Europe (EU, manufacturing lb CO₂e/lb product)',
+    'Dosis (': 'Dose (',
+    'Superficie (': 'Area (',
     'Estimado': 'Estimated',
     'Propio': 'Custom',
     'Error al cargar factores': 'Error loading factors',
@@ -242,11 +277,8 @@
     'Nitrato calcio amónico': 'Calcium ammonium nitrate',
     'Fosfonitrato': 'Phosphonitrate',
     'Cloruro de calcio': 'Calcium chloride',
-    'soluble': 'soluble',
-    'granular': 'granular',
     'líquido': 'liquid',
     'Validar': 'Validate',
-    'validar': 'validate',
     'No sustituye': 'Does not replace',
     'no sustituye': 'does not replace',
     'año': 'year',
@@ -263,7 +295,8 @@
     '(aunque no esté en la lista). Una fila = un ingrediente; usa': '(even if it is not in the list). One row = one ingredient; use',
     'para mezclas (ej. NKS).': 'for blends (e.g. NKS).',
     '= inerte / aditivos / humedad.': '= inert / additives / moisture.',
-    'Las tarjetas bajo cada fila son la molécula': 'Cards under each row are the',
+    'Las tarjetas bajo cada fila son la molécula pura.': 'Cards under each row are the pure molecule.',
+    'Las tarjetas bajo cada fila son la molécula': 'Cards under each row are the molecule',
     'El recuadro azul: arriba': 'Blue box: top shows',
     'todo en elemental': 'everything as elemental',
     'la caja con borde =': 'bordered box =',
@@ -278,7 +311,6 @@
     'Etiqueta tipo N – P₂O₅ – K₂O (teórico, %):': 'N – P₂O₅ – K₂O style label (theoretical, %):',
     'Primer renglón:': 'First row:',
     'celda con marco': 'framed cell',
-    'en óxido': 'as oxide',
     'Distribución nutrimental por etapa (%)': 'Nutrient distribution by stage (%)',
     'Extracción total → kg/ha ciclo': 'Total extraction → kg/ha cycle',
     '% por etapa → debe sumar 100% / nutriente': '% by stage → must sum to 100% / nutrient',
@@ -316,15 +348,16 @@
     'No es posible guardar: espera que la tabla cargue o revisa valores.': 'Cannot save: wait for the table to load or check values.',
     'Modo dashboard: guardado automático local + proyecto en la nube.': 'Dashboard mode: local autosave + cloud project.',
     'extraídos': 'extracted',
-    'Orden de magnitud anual de N mineralizable desde la MO del suelo (profundidad, densidad, exploración radicular, N en MO y tasa). Orientativo; no sustituye ensayo de campo.': 'Order-of-magnitude annual mineralizable N from soil OM (depth, density, root exploration, N in OM and rate). Indicative; does not replace a field trial.',
-    'Orden de magnitud anual de N que podría mineralizarse desde la MO del suelo, según profundidad, densidad, exploración radicular, contenido de N en la MO y tasa de mineralización. No sustituye ensayo de campo; usa tus datos de laboratorio y criterio agronómico.': 'Order-of-magnitude annual N that could mineralize from soil OM, based on depth, density, root exploration, N content in OM and mineralization rate. Does not replace a field trial; use your lab data and agronomic judgment.',
+    'Orden de magnitud anual de N mineralizable desde la MO del suelo (profundidad, densidad, exploración radicular, N en MO y tasa). Orientativo; no sustituye ensayo de campo.': 'Order-of-magnitude annual mineralizable N from soil OM (depth, density, considered soil surface, N in OM and rate). Indicative; does not replace a field trial.',
+    'Orden de magnitud anual de N que podría mineralizarse desde la MO del suelo, según profundidad, densidad, exploración radicular, contenido de N en la MO y tasa de mineralización. No sustituye ensayo de campo; usa tus datos de laboratorio y criterio agronómico.': 'Annual order of magnitude of N that could mineralize from soil OM, based on depth, bulk density, considered soil surface, N content in OM and mineralization rate. Does not replace a field trial; use your lab data and agronomic judgment.',
+    'Orden de magnitud anual de N que podría mineralizarse desde la MO del suelo, según profundidad, densidad, superficie de suelo considerada, contenido de N en la MO y tasa de mineralización. No sustituye ensayo de campo; usa tus datos de laboratorio y criterio agronómico.': 'Annual order of magnitude of N that could mineralize from soil OM, based on depth, bulk density, considered soil surface, N content in OM and mineralization rate. Does not replace a field trial; use your lab data and agronomic judgment.',
     'Introduce porcentajes como números (ej. 2 para 2 %). Valores por defecto orientativos.': 'Enter percentages as numbers (e.g. 2 for 2%). Default values are indicative.',
     'Sugerido por defecto en NutriPlant:': 'NutriPlant default suggestion:',
     'Para frutales/aguacate suele usarse con frecuencia': 'For orchards/avocado it is often used at',
     'según sistema.': 'depending on the system.',
     'recomendación media agrícola': 'average agricultural recommendation',
     'Ajusta según temperatura, humedad, laboreo y actividad biológica.': 'Adjust for temperature, moisture, tillage and biological activity.',
-    'Referencia: % suelo explorado por sistema': 'Reference: % soil explored by system',
+    'Referencia: % superficie de suelo considerada por sistema': 'Reference: % considered soil surface by system',
     'Tasa según condición': 'Rate by condition',
     'Cultivo extensivo cerrado': 'Closed extensive crop',
     'Aguacate joven/adulto': 'Young/mature avocado',
@@ -334,7 +367,7 @@
     'Desliza o edita el valor': 'Slide or edit the value',
     '(del análisis de suelo)': '(from soil analysis)',
     '(típico ~5 %)': '(typical ~5%)',
-    'Resultado orientativo: sensible a DA, profundidad, % explorado y T': 'Indicative result: sensitive to BD, depth, explored % and T',
+    'Resultado orientativo: sensible a DA, profundidad, % de superficie considerada y T': 'Indicative result: sensitive to BD, depth, considered surface % and T',
     'A Datos de entrada': 'A Input data',
     'B Tasa anual de mineralización': 'B Annual mineralization rate',
     'C Resultados': 'C Results',
@@ -343,11 +376,42 @@
     'como base de comparación técnica.': 'as the technical comparison baseline.',
     'Los valores de solubilidad son referencias en agua relativamente pura; en campo, temperatura, pH, otros iones y el propio medio pueden cambiar cuánto se disuelve y el impacto sobre la planta. El IS describe el efecto osmótico relativo — no clasifica solo un fertilizante como “bueno” o “malo”; importa la dosis, el agua disponible y el manejo del fertirriego.': 'Solubility values are references in relatively pure water; in the field, temperature, pH, other ions and the medium can change how much dissolves and the plant impact. SI describes relative osmotic effect — it does not label a fertilizer as simply “good” or “bad”; dose, available water and fertigation management matter.',
     'Fertilizantes hidrosolubles de uso habitual en': 'Water-soluble fertilizers commonly used in',
+    'Fertilizantes hidrosolubles de uso habitual en fertirriego, con excepción del sulfato de calcio y el carbonato de calcio (solo referencia, enmienda).':
+      'Water-soluble fertilizers commonly used in fertigation, except calcium sulfate and calcium carbonate (reference only, amendment).',
     'con excepción del': 'except',
     '(solo referencia, enmienda).': '(reference only, amendment).',
     'Índice salino: barras proporcionadas al valor IS (referencia tabla).': 'Salt index: bars scaled to the SI value (table reference).',
+    'Temperatura — a mayor temperatura suele favorecerse romper la red del cristal y disolver.':
+      'Temperature — higher temperature usually helps break the crystal lattice and dissolve.',
+    'Pureza y grado del fertilizante (industrial vs. soluble, anticaking, rellenos).':
+      'Purity and grade of the fertilizer (industrial vs. soluble, anticaking, fillers).',
+    'Forma cristalina / hidratación (p. ej. sulfato de magnesio en forma heptahidratada vs. otras).':
+      'Crystal form / hydration (e.g. magnesium sulfate as heptahydrate vs. other forms).',
+    'Otros iones ya disueltos — el medio real no es siempre “agua pura” como en tabla de laboratorio.':
+      'Other ions already dissolved — the real medium is not always “pure water” as in a lab table.',
     'Una sal se disuelve en iones en el agua': 'A salt dissolves into ions in water',
+    'Una sal está compuesta por la unión de los iones que la forman: el cation (carga positiva) y el anion (carga negativa) en proporción definida dentro del retículo cristalino. En el agua, la sal puede romper ese enlace — disociarse — liberando estos iones, que después quedan rodeados por las moléculas de agua (hidratación / solvatación).':
+      'A salt is made of the ions that form it: the cation (positive charge) and the anion (negative charge) in a defined proportion within the crystal lattice. In water, the salt can break that bond — dissociate — releasing these ions, which are then surrounded by water molecules (hydration / solvation).',
     'Principios químicos útiles': 'Useful chemical principles',
+    'Mayor carga efectiva → a veces menor solubilidad aparente (red iónica más fuerte).':
+      'Higher effective charge → sometimes lower apparent solubility (stronger ionic lattice).',
+    'Hidratación del ion → si el medio acuoso estabiliza bien los iones liberados (p. ej. nitratos muy solubles).':
+      'Ion hydration → if the aqueous medium stabilizes the released ions well (e.g. highly soluble nitrates).',
+    'Balanza energética → costo de romper la red vs. ganancia por solvataración.':
+      'Energy balance → cost of breaking the lattice vs. gain from solvation.',
+    'Densidad de carga y polarización → radios pequeños y cargas altas pueden reforzar enlace en sólido y dificultar disolver respecto de sales más “compatibles” con el agua.':
+      'Charge density and polarization → small radii and high charges can strengthen the solid bond and make dissolving harder vs. salts more “compatible” with water.',
+    'Qué significa el índice salino': 'What the salt index means',
+    'El IS ordena fertilizantes según la fuerza relativa del impacto osmótico cuando se diluyen en una misma masa de nutriente aplicada (referencia clásica: nitrato de sodio NaNO₃ = 100). Un IS alto no prohibe usar el producto — indica vigilancia especial en siembras delicadas, baja humedad, altas concentraciones en solución madre o aplicaciones cercanas al tejido sensible.':
+      'SI ranks fertilizers by the relative strength of osmotic impact when diluted for the same applied nutrient mass (classic reference: sodium nitrate NaNO₃ = 100). A high SI does not ban the product — it means extra care in delicate plantings, low moisture, high stock-solution concentrations or applications near sensitive tissue.',
+    'Deshidratación radicular / estrés: el suelo muy salino puede “competir” por agua contra la planta.':
+      'Root dehydration / stress: very saline soil can “compete” with the plant for water.',
+    'Emergencia y siembras: soluciones muy concentradas pueden dificultar la imbibición de la semilla.':
+      'Emergence and plantings: highly concentrated solutions can hinder seed imbibition.',
+    'Costo energético: bajo estrés osmótico la planta gasta recurso tomando agua antes que creciendo.':
+      'Energy cost: under osmotic stress the plant spends resources taking up water before growing.',
+    'Escala IS en la tabla de arriba: cada barra muestra IS relativo dentro del mismo conjunto (máx. KCl sobre las filas de la tabla; productos sin dato práctico muestran “—”).':
+      'SI scale in the table above: each bar shows relative SI within the same set (max. KCl among table rows; products without practical data show “—”).',
     'Leyenda de solubilidad': 'Solubility legend',
     'Tabla solubilidad e índice salino': 'Solubility and salt index table',
     'Potasio — KCl, KNO₃…': 'Potassium — KCl, KNO₃…',
@@ -372,6 +436,148 @@
     'Escala IS en la tabla de arriba': 'SI scale in the table above',
     'fuerza relativa del impacto osmótico': 'relative strength of osmotic impact',
     'El IS ordena fertilizantes según la': 'SI ranks fertilizers by',
+    'Estimaciones de referencia, no mediciones certificadas ni declaraciones oficiales. Al usar aceptas la': 'Reference estimates, not certified measurements or official declarations. By using this you accept',
+    'sección 7 de los T&C': 'section 7 of the T&Cs',
+    'de NutriPlant PRO.': 'of NutriPlant PRO.',
+    'Texto legal completo:': 'Full legal text:',
+    'T&C — Sección 7 (Huella de carbono)': 'T&Cs — Section 7 (Carbon footprint)',
+    'NutriPlant PRO no asume responsabilidad por reclamaciones de terceros derivadas del uso de estos resultados.': 'NutriPlant PRO assumes no responsibility for third-party claims arising from use of these results.',
+    'Urea/UAN: valores excl. CO₂ capturado en producto (se emite al aplicar). PCF de planta concreta puede ser menor.': 'Urea/UAN: values excl. CO₂ captured in product (emitted on application). A specific plant PCF may be lower.',
+    'Selecciona un fertilizante en la tabla ↓. Cada producto tiene su propia ruta logística.': 'Select a fertilizer in the table ↓. Each product has its own logistics route.',
+    'Desliza horizontalmente para ver toda la ruta →': 'Swipe horizontally to see the full route →',
+    'Región LCA de fabricación': 'Manufacturing LCA region',
+    'Fábrica → puerto export.': 'Plant → export port',
+    'Fábrica → puerto de exportación': 'Plant → export port',
+    'Puerto exp. → puerto destino': 'Export port → destination port',
+    'Puerto exportación → puerto destino': 'Export port → destination port',
+    'País de llegada': 'Destination country',
+    'País donde entra el fertilizante': 'Country where the fertilizer enters',
+    'Puerto → campo': 'Port → field',
+    'Para convertir dosis total → kg/ha': 'To convert total dose → kg/ha',
+    '¿No sabes los km? Pulsa': 'Don’t know the km? Press',
+    'para el fertilizante seleccionado': 'for the selected fertilizer',
+    'Aproximado — ajústalo si conoces la ruta real.': 'Approximate — adjust if you know the real route.',
+    'Comparación de referencia entre dos listados completos (fertilizantes, dosis, orígenes y factores). Escenarios definidos por el usuario — no validada ni certificada. Ver T&C §7 .': 'Reference comparison between two full lists (fertilizers, doses, origins and factors). User-defined scenarios — not validated or certified. See T&Cs §7.',
+    'Duplicar al otro programa →': 'Duplicate to the other program →',
+    'Copia el programa que estás editando al otro escenario': 'Copy the program you are editing to the other scenario',
+    'Cadena logística y parámetros de ruta': 'Logistics chain and route parameters',
+    'Factor LCA regional de fabricación': 'Regional manufacturing LCA factor',
+    'Litoral o puerto más cercano': 'Nearest coast or port',
+    'Rellena km de referencia según región de fabricación y país destino': 'Fill reference km from manufacturing region and destination country',
+    'Referencia global NutriPlant:': 'NutriPlant global reference:',
+    'fabricación calibrada vs': 'calibrated manufacturing vs',
+    'Cada producto con su ruta': 'Each product with its route',
+    'Resumen ruta de este producto': 'Route summary for this product',
+    'Citas aplicadas a este cálculo': 'Citations applied to this calculation',
+    'Desglose por componente': 'Breakdown by component',
+    'Nivel de eficiencia por origen (referencia)': 'Efficiency level by origin (reference)',
+    'Comparar Programa A vs Programa B': 'Compare Program A vs Program B',
+    'Mínimo estimado': 'Estimated minimum',
+    'Máximo estimado': 'Estimated maximum',
+    'mínimo estimado': 'estimated minimum',
+    'Precisión estimada:': 'Estimated precision:',
+    'No es certificación:': 'Not a certification:',
+    'Validación en campo:': 'Field validation:',
+    'Decisión final:': 'Final decision:',
+    'Calibración sectorial:': 'Sector calibration:',
+    'Tu posición estimada': 'Your estimated position',
+    'Máximo (peores orígenes)': 'Maximum (worst origins)',
+    'Mínimo (mejores orígenes)': 'Minimum (best origins)',
+    'Mide tu huella y estima cuánto puedes reducir emisiones en fertilización':
+      'Measure your footprint and estimate how much you can cut fertilization emissions',
+    'Compara Programa A vs Programa B — dosis, productos y región de fabricación':
+      'Compare Program A vs Program B — dose, products and manufacturing region',
+    'Aviso legal — herramienta de referencia': 'Legal notice — reference tool',
+    'Ver más': 'Show more',
+    'Ocultar': 'Hide',
+    'Ver aviso legal completo': 'View full legal notice',
+    'Arma Programa A y Programa B: arriba configura la ruta del fertilizante seleccionado (🏭 → 🚛 → ⛴️ → 🚢 → 🌾); abajo agrega productos y dosis. Cada fila puede tener origen y km distintos.':
+      'Build Program A and Program B: above configure the selected fertilizer route (🏭 → 🚛 → ⛴️ → 🚢 → 🌾); below add products and doses. Each row can have a different origin and distance.',
+    'Arma Programa A y Programa B: arriba configura la': 'Build Program A and Program B: above configure the',
+    'del fertilizante seleccionado': 'of the selected fertilizer',
+    'abajo agrega productos y dosis. Cada fila puede tener origen y km distintos.':
+      'below add products and doses. Each row can have a different origin and distance.',
+    'Referencia global NutriPlant: fabricación calibrada vs Fertilizers Europe (2020) (promedios regionales DNV) + transporte DESNZ + N₂O suelo IPCC. 🏭 → 🚛 origen → ⛴️ mar → 🚛 campo. Sin marcas comerciales.':
+      'NutriPlant global reference: manufacturing calibrated vs Fertilizers Europe (2020) (regional DNV averages) + DESNZ transport + IPCC soil N₂O. 🏭 → 🚛 origin → ⛴️ sea → 🚛 field. No commercial brands.',
+    'Sin marcas comerciales.': 'No commercial brands.',
+    'Calibración vs Fertilizers Europe (EU, fabricación kg CO₂e/kg)':
+      'Calibration vs Fertilizers Europe (EU, manufacturing kg CO₂e/kg)',
+    'Calibración vs Fertilizers Europe': 'Calibration vs Fertilizers Europe',
+    'Ruta de:': 'Route for:',
+    'Ruta de': 'Route for',
+    'No es certificación: no sustituye auditoría, LCA certificado, EPD validado ni reportes regulatorios.':
+      'Not a certification: it does not replace an audit, certified LCA, validated EPD or regulatory reports.',
+    'Validación en campo: confirma los datos en tu contexto agronómico, comercial y legal antes de decidir.':
+      'Field validation: confirm the data in your agronomic, commercial and legal context before deciding.',
+    'Sin marcas ni proveedores: NutriPlant no avala ni compara empresas, formuladores ni productos comerciales.':
+      'No brands or suppliers: NutriPlant does not endorse or compare companies, formulators or commercial products.',
+    'Factores propios: si ingresas un factor manual, es tu responsabilidad; NutriPlant no lo verifica.':
+      'Custom factors: if you enter a manual factor, it is your responsibility; NutriPlant does not verify it.',
+    'Comparaciones A vs B: escenarios del usuario — no son ranking comercial.':
+      'A vs B comparisons: user scenarios — not a commercial ranking.',
+    'Calibración sectorial: productos N (urea, AN, CAN, UAN) usan promedios regionales Fertilizers Europe (2020); no sustituye PCF certificado por planta (Yara, Haifa, etc.).':
+      'Sector calibration: N products (urea, AN, CAN, UAN) use Fertilizers Europe (2020) regional averages; it does not replace a plant-certified PCF (Yara, Haifa, etc.).',
+    'Disponibilidad regional: el listado de productos se filtra según el origen de fabricación elegido; hidrosolubles no se ofrecen con origen MX, BR o LATAM si no hay producción local referenciada.':
+      'Regional availability: the product list is filtered by the chosen manufacturing origin; water-solubles are not offered with MX, BR or LATAM origin if there is no referenced local production.',
+    'Precisión estimada: incertidumbre típica ±25–40% en fabricación (±30–50% con transporte/campo genérico).':
+      'Estimated precision: typical uncertainty ±25–40% in manufacturing (±30–50% with generic transport/field).',
+    'Decisión final: comunicar o usar resultados externamente es responsabilidad exclusiva del usuario.':
+      'Final decision: communicating or using results externally is the user’s sole responsibility.',
+    'Estimación de referencia — validar antes de comunicar o decidir':
+      'Reference estimate — validate before communicating or deciding',
+    'Reducción estimada (Programa B vs A):': 'Estimated reduction (Program B vs A):',
+    'menos CO₂e': 'less CO₂e',
+    'menos en pick-up 6 cil.': 'less in 6-cyl pick-up.',
+    'más en pick-up 6 cil.': 'more in 6-cyl pick-up.',
+    'Programa B emitiría más:': 'Program B would emit more:',
+    'vs Programa A': 'vs Program A',
+    'Detalle Programa A': 'Program A detail',
+    'Detalle Programa B': 'Program B detail',
+    'B − A (diferencia)': 'B − A (difference)',
+    'Transp': 'Transp',
+    'Suelo': 'Soil',
+    'Error al cargar factores:': 'Error loading factors:',
+    'Sin referencias cargadas.': 'No references loaded.',
+    'no sustituye auditoría, LCA certificado, EPD validado ni reportes regulatorios.':
+      'it does not replace an audit, certified LCA, validated EPD or regulatory reports.',
+    'confirma los datos en tu contexto agronómico, comercial y legal antes de decidir.':
+      'confirm the data in your agronomic, commercial and legal context before deciding.',
+    'NutriPlant no avala ni compara empresas, formuladores ni productos comerciales.':
+      'NutriPlant does not endorse or compare companies, formulators or commercial products.',
+    'si ingresas un factor manual, es tu responsabilidad; NutriPlant no lo verifica.':
+      'if you enter a manual factor, it is your responsibility; NutriPlant does not verify it.',
+    'escenarios del usuario — no son ranking comercial.':
+      'user scenarios — not a commercial ranking.',
+    'productos N (urea, AN, CAN, UAN) usan promedios regionales':
+      'N products (urea, AN, CAN, UAN) use regional averages from',
+    'no sustituye PCF certificado por planta (Yara, Haifa, etc.).':
+      'it does not replace a plant-certified PCF (Yara, Haifa, etc.).',
+    'el listado de productos se filtra según el origen de fabricación elegido; hidrosolubles no se ofrecen con origen MX, BR o LATAM si no hay producción local referenciada.':
+      'the product list is filtered by the chosen manufacturing origin; water-solubles are not offered with MX, BR or LATAM origin if there is no referenced local production.',
+    'incertidumbre típica ±25–40% en fabricación (±30–50% con transporte/campo genérico).':
+      'typical uncertainty ±25–40% in manufacturing (±30–50% with generic transport/field).',
+    'comunicar o usar resultados externamente es responsabilidad exclusiva del usuario.':
+      'communicating or using results externally is the user’s sole responsibility.',
+    'Sin marcas ni proveedores:': 'No brands or suppliers:',
+    'Factores propios:': 'Custom factors:',
+    'Comparaciones A vs B:': 'A vs B comparisons:',
+    'Disponibilidad regional:': 'Regional availability:',
+    'Aviso legal de la herramienta': 'Tool legal notice',
+    'Fabricación': 'Manufacturing',
+    'Origen': 'Origin',
+    'Océano': 'Ocean',
+    'Puerto / país destino': 'Port / destination country',
+    'Campo': 'Field',
+    'Producto': 'Product',
+    'Dosis': 'Dose',
+    'Total': 'Total',
+    'Superficie': 'Area',
+    'Para convertir dosis total': 'To convert total dose',
+    'Estimaciones de referencia, no mediciones certificadas ni declaraciones oficiales.':
+      'Reference estimates, not certified measurements or official declarations.',
+    'Al usar aceptas la': 'By using this you accept',
+    'sección 7 de los T&C': 'section 7 of the T&Cs',
+    'de NutriPlant PRO.': 'of NutriPlant PRO.',
 'Estimaciones de referencia, no mediciones certificadas ni declaraciones oficiales. Al usar aceptas la': 'Reference estimates, not certified measurements or official declarations. By using this you accept',
     'sección 7 de los T&C': 'section 7 of the T&Cs',
     'de NutriPlant PRO.': 'of NutriPlant PRO.',
@@ -445,6 +651,53 @@
     'Ejemplos de moléculas:': 'Molecule examples:',
     'Peso molecular y composición elemental': 'Molecular weight and elemental composition',
     'Composición elemental (%)': 'Elemental composition (%)',
+    'Peso molecular (PM)': 'Molecular weight (MW)',
+    'Fórmula normalizada': 'Normalized formula',
+    'Peso equivalente (molécula)': 'Equivalent weight (molecule)',
+    'Criterio eq. molécula': 'Molecule eq. criterion',
+    'Fórmula calculada': 'Calculated formula',
+    'Calcular': 'Calculate',
+    'Elemento': 'Element',
+    'P. eq. meq (g/eq)': 'Eq. wt. meq (g/eq)',
+    'P. eq. meq = peso atómico ÷ valencia agronómica habitual (meq/L ↔ ppm elemental en NutriPlant). Peso equivalente de la molécula = PM ÷ n cuando se detecta ácido/base típico (H⁺ u OH⁻ intercambiables).': 'Eq. wt. meq = atomic weight ÷ usual agronomic valence (meq/L ↔ elemental ppm in NutriPlant). Molecule equivalent weight = MW ÷ n when a typical acid/base is detected (exchangeable H⁺ or OH⁻).',
+    'Peso molecular y composición': 'Molecular weight and composition',
+    'Peso atómico': 'Atomic weight',
+    'Valencia(s)': 'Valence(s)',
+    'Masa parcial': 'Partial mass',
+    '% PM': '% MW',
+    'Todos': 'All',
+    '1. Aniones / moléculas absorbidas': '1. Anions / absorbed molecules',
+    '2. Cationes absorbidos': '2. Absorbed cations',
+    '3. Quelatos': '3. Chelates',
+    '4. Sales fertilizantes': '4. Fertilizer salts',
+    '5. Precipitados / baja solubilidad': '5. Precipitates / low solubility',
+    'Anión': 'Anion',
+    'Catión': 'Cation',
+    'Molécula neutra': 'Neutral molecule',
+    'Complejo quelatado representativo': 'Representative chelate complex',
+    'Unidad mineral representativa': 'Representative mineral unit',
+    'Unidad iónica representativa': 'Representative ionic unit',
+    'Ion simple': 'Simple ion',
+    'Ion o molécula definida': 'Defined ion or molecule',
+    'Metal central coordinado por donadores N/O del ligando; la forma comercial exacta depende de isómero, sal, hidratación y pH.': 'Central metal coordinated by N/O donors of the ligand; the exact commercial form depends on isomer, salt, hydration and pH.',
+    'Conserva el anión definido y cationes asociados; el sólido real es una red cristalina, no una molécula aislada.': 'Keeps the defined anion and associated cations; the real solid is a crystal lattice, not an isolated molecule.',
+    'Muestra el anión real y los cationes asociados; en hidratos el agua se representa como agua de cristalización.': 'Shows the real anion and associated cations; in hydrates water is shown as crystallization water.',
+    'El átomo/ion se representa como esfera; sus datos químicos vienen de la tabla periódica.': 'The atom/ion is shown as a sphere; its chemical data come from the periodic table.',
+    'Geometría molecular de referencia cuando PubChem está disponible, o unidad NutriPlant ajustada a la geometría esperada.': 'Reference molecular geometry when PubChem is available, or a NutriPlant unit tuned to the expected geometry.',
+    'Representación visual de apoyo.': 'Supporting visual representation.',
+    'Modelo': 'Model',
+    'Quelato comercial: la fórmula exacta depende del isómero, sal acompañante y grado del proveedor. Se muestra el metal central; para % exacto usar etiqueta garantizada del producto.': 'Commercial chelate: the exact formula depends on isomer, accompanying salt and supplier grade. The central metal is shown; for exact % use the product guaranteed analysis.',
+    'No se pudo calcular PM para esta forma. Usa la pestaña Peso molecular con una fórmula exacta si deseas revisar una fuente específica.': 'MW could not be calculated for this form. Use the Molecular weight tab with an exact formula if you want to review a specific source.',
+    'Selecciona una molécula o forma iónica para cargar el modelo 3D si PubChem lo tiene disponible.': 'Select a molecule or ionic form to load the 3D model if PubChem has it available.',
+    'Fórmula': 'Formula',
+    'Limpiar': 'Clear',
+    'Vista:': 'View:',
+    'Siguiente:': 'Next:',
+    'Quitar etapa': 'Remove stage',
+    'Quitar nutriente': 'Remove nutrient',
+    '+ Agregar etapa': '+ Add stage',
+    '+ Agregar nutriente': '+ Add nutrient',
+    'Restaurar ejemplo': 'Restore example',
     'Selecciona un elemento': 'Select an element',
     'Selecciona una forma química': 'Select a chemical form',
     'Datos atómicos': 'Atomic data',
@@ -460,6 +713,21 @@
     'Átomo seleccionado:': 'Selected atom:',
     'Tipo de visualización': 'Visualization type',
     'Lectura del modelo:': 'Model reading:',
+    'Electronegatividad': 'Electronegativity',
+    'Nitrógeno': 'Nitrogen',
+    'Cloro': 'Chlorine',
+    'Sodio': 'Sodium',
+    'Aluminio': 'Aluminum',
+    'Cobalto': 'Cobalt',
+    'Níquel': 'Nickel',
+    'Selenio': 'Selenium',
+    'Titanio': 'Titanium',
+    'Vanadio': 'Vanadium',
+    'Peso molecular': 'Molecular weight',
+    'Ácido fosforoso (H/P)': 'Phosphorous acid (H/P)',
+    'Ácido bórico (H/B)': 'Boric acid (H/B)',
+    'Ácido clorhídrico': 'Hydrochloric acid',
+    'Hidróxido (OH⁻)': 'Hydroxide (OH⁻)',
     'Consulta formas químicas que la planta absorbe, fuentes fertilizantes, quelatos y precipitados frecuentes. El visor 3D usa PubChem + 3Dmol cuando hay estructura disponible; en iones simples o complejos grandes puede mostrarse solo la ficha.': 'Browse chemical forms plants take up, fertilizer sources, chelates and common precipitates. The 3D viewer uses PubChem + 3Dmol when a structure is available; for simple ions or large complexes only the card may show.',
     'PubChem = estructura 3D de referencia cuando está disponible. Modelo NutriPlant = representación didáctica que conserva composición y geometría general del ion/sal; en sales, hidratos y precipitados no sustituye una estructura cristalográfica exacta.': 'PubChem = reference 3D structure when available. NutriPlant model = teaching representation that keeps composition and general ion/salt geometry; for salts, hydrates and precipitates it does not replace an exact crystallographic structure.',
     'Pulsa un cuadro de la tabla para ver detalles.': 'Tap a table cell to see details.',
@@ -468,6 +736,50 @@
     'El visor 3D requiere conexión para cargar 3Dmol.js. La ficha técnica queda disponible.': 'The 3D viewer needs a connection to load 3Dmol.js. The technical card remains available.',
     'Lantánidos': 'Lanthanides',
     'Actínidos': 'Actinides',
+    'Impacto': 'Impact',
+    'Condición': 'Condition',
+    'Buscar': 'Search',
+    'Prolina, auxinas, clorofila...': 'Proline, auxins, chlorophyll...',
+    'Rutas metabólicas en plantas': 'Metabolic routes in plants',
+    'aminoácidos visibles': 'amino acids visible',
+    'Evidencia ': 'Evidence ',
+    'Evidencia': 'Evidence',
+    'Alta': 'High',
+    'Media': 'Medium',
+    'Baja': 'Low',
+    'Todos': 'All',
+    'Todas': 'All',
+    'Compite / antagoniza con (referencia):': 'Competes / antagonizes with (reference):',
+    'Sinergia / favorecimiento conjunto (desde este ion):': 'Synergy / joint favoring (from this ion):',
+    'Relaciones funcionales (conceptos):': 'Functional relationships (concepts):',
+    'Dato corto:': 'Quick note:',
+    'Dato corto': 'Quick note',
+    'Niveles hormonales': 'Hormone levels',
+    'Nutrientes claves / Co-factores / Hormonas': 'Key nutrients / Cofactors / Hormones',
+    'ETAPA': 'STAGE',
+    'Evento celular': 'Cellular event',
+    'EVENTO CELULAR': 'CELLULAR EVENT',
+    'Hormonas dominantes': 'Dominant hormones',
+    'HORMONAS DOMINANTES': 'DOMINANT HORMONES',
+    'Manejo nutricional': 'Nutritional management',
+    'MANEJO NUTRICIONAL': 'NUTRITIONAL MANAGEMENT',
+    'Nutrientes clave': 'Key nutrients',
+    'NUTRIENTES CLAVE': 'KEY NUTRIENTS',
+    'Citoquinina': 'Cytokinin',
+    'Auxina': 'Auxin',
+    'Ácido giberélico': 'Gibberellic acid',
+    'Etileno': 'Ethylene',
+    'Ácido abscísico': 'Abscisic acid',
+    'Giberelinas': 'Gibberellins',
+    'Fertilizantes': 'Fertilizers',
+    'Acción recomendada': 'Recommended action',
+    'Factor crítico': 'Critical factor',
+    'No compatible': 'Not compatible',
+    'Compatible (típico)': 'Compatible (typical)',
+    'Precaución': 'Caution',
+    'Incompatible': 'Incompatible',
+    'Mismo producto': 'Same product',
+    'Fertilizante:': 'Fertilizer:',
     'Atlas Fisiológico Vegetal': 'Plant Physiology Atlas',
     'Atlas Fisiológico Vegetal - NutriPlant PRO': 'Plant Physiology Atlas - NutriPlant PRO',
     'Aminoácidos': 'Amino acids',
@@ -530,7 +842,6 @@
     'Nota: herramienta de apoyo; la decisión final corresponde al técnico según agua, pH, temperatura, orden de disolución y concentración real.': 'Note: support tool; the final decision belongs to the technician based on water, pH, temperature, dissolution order and real concentration.',
     'Selecciona una celda': 'Select a cell',
     'Matriz de compatibilidad': 'Compatibility matrix',
-    'Qué pasa': 'What happens',
     'Factor crítico': 'Critical factor',
     'Acción recomendada': 'Recommended action',
     'Toca una intersección en la tabla triangular inferior para ver qué ocurre entre esos dos productos y qué hacer en campo.': 'Tap an intersection in the lower triangular table to see what happens between those two products and what to do in the field.',
@@ -589,6 +900,35 @@
     '2 · Aporte fertilizantes': '2 · Fertilizer supply',
     'Aporte de fertilizantes solubles': 'Soluble fertilizer supply',
     'Diagrama ternario (aniones + cationes)': 'Ternary diagram (anions + cations)',
+    'CE + triángulo, o edita': 'EC + triangle, or edit',
+    'Sin CE:': 'Without EC:',
+    'en el triángulo;': 'in the triangle;',
+    'Suma de N (meq/L):': 'N sum (meq/L):',
+    'Sobre N total': 'Of total N',
+    'Aniones (N-P-S) y cationes (K-Ca-Mg) suman 100% entre sí. Cl⁻ y N-NH₄⁺ van aparte (% sobre el total meq).': 'Anions (N-P-S) and cations (K-Ca-Mg) each sum to 100%. Cl⁻ and N-NH₄⁺ are separate (% of total meq).',
+    'Aniones': 'Anions',
+    'Cationes': 'Cations',
+    'CE (dS/m)': 'EC (dS/m)',
+    'Rangos por elemento (%).': 'Ranges by element (%).',
+    'Aniones:': 'Anions:',
+    'Cationes:': 'Cations:',
+    'El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico (no se asigna al arrastrar). El Cl⁻ suma a la': 'NH₄⁺ % is of total cations (K+Ca+Mg+NH₄⁺) and is not in the cation triangle (not assigned when dragging). Cl⁻ adds to',
+    'pero no al triángulo N-P-S; su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).': 'but not to the N-P-S triangle; its anion % is of NO₃+P+S+Cl. Drag the square (anions) or the circle (K-Ca-Mg cations).',
+    'por producto. Dosis': 'per product. Dose',
+    'Puedes usar el catálogo, escribir una': 'You can use the catalog, type a',
+    '% de mezcla del proveedor': 'supplier blend %',
+    'o guardar fertilizantes en': 'or save fertilizers in',
+    'caché del navegador': 'browser cache',
+    'Producto': 'Product',
+    'PRODUCTO': 'PRODUCT',
+    'Aporte fila': 'Row supply',
+    'APORTE FILA': 'ROW SUPPLY',
+    'Dosis': 'Dose',
+    'Sin aporte (dosis 0 o % en 0)': 'No supply (dose 0 or % at 0)',
+    'dosis 0 o % en 0': 'dose 0 or % at 0',
+    'Calcular %': 'Calculate %',
+    'COMPOSICIÓN · % ELEMENTAL': 'COMPOSITION · ELEMENTAL %',
+    'Composición · % elemental': 'Composition · elemental %',
     'Desde molécula': 'From molecule',
     'Desde % elemento': 'From element %',
     'Agregar fertilizante a mi lista': 'Add fertilizer to my list',
@@ -612,6 +952,8 @@
     'Uso puntual': 'One-off use',
     'Sin productos en la mezcla': 'No products in the mix',
     'Quitar': 'Remove',
+    'Quitar este producto de la mezcla': 'Remove this product from the mix',
+    'Con CE: arrastra el triángulo (actualiza % meq, meq/L y ppm). Sin CE al arrastrar: reparte 30 meq/L solo en N-P-S y K-Ca-Mg; NH₄⁺ no se autocompleta.': 'With EC: drag the triangle (updates % meq, meq/L and ppm). Without EC when dragging: splits 30 meq/L only among N-P-S and K-Ca-Mg; NH₄⁺ is not autofilled.',
     'Sin aporte': 'No supply',
     'Dosis ajustadas': 'Adjusted doses',
     'Motor de fórmulas no disponible.': 'Formula engine unavailable.',
@@ -633,6 +975,75 @@
     '% de mezcla del proveedor': 'supplier blend %',
     'o guardar fertilizantes en': 'or save fertilizers in',
     'caché del navegador': 'browser cache',
+    'Seleccionado:': 'Selected:',
+    'IS visual': 'SI visual',
+    'solubilidad': 'solubility',
+    '(aprox., 20–25 °C)': '(approx., 20–25 °C)',
+    'Total estimado CO₂e': 'Estimated total CO₂e',
+    'Equivalencia ilustrativa': 'Illustrative equivalence',
+    'Equivalencia ilustrativa —': 'Illustrative equivalence —',
+    '🛻 Equivalencia ilustrativa —': '🛻 Illustrative equivalence —',
+    'Menos km equivalentes': 'Fewer equivalent km',
+    'Más km equivalentes': 'More equivalent km',
+    'Misma equivalencia': 'Same equivalence',
+    'Tu programa actual': 'Your current program',
+    'Tu programa': 'Your program',
+    'distinta(s) — una por fertilizante': 'distinct — one per fertilizer',
+    'Mixta (estimado + factor propio del usuario)': 'Mixed (estimated + user-provided factor)',
+    'Los factores propios los ingresa el usuario; NutriPlant no los verifica.': 'Custom factors are entered by the user; NutriPlant does not verify them.',
+    'vs fabricación A': 'vs manufacturing A',
+    'PROPIO': 'CUSTOM',
+    '↗ imp.': '↗ imp.',
+    '— orig.': '— orig.',
+    'Fab ': 'Mfg ',
+    'Importación habitual — factor regional exportador': 'Typical import — exporter regional factor',
+    'Si todo el CO₂e del programa fuera comparable a la contaminación de esa pick-up recorriendo carretera, sería como conducir aproximadamente:': 'If all program CO₂e were comparable to that pick-up driving on the road, it would be like driving approximately:',
+    'Factor referencia:': 'Reference factor:',
+    'Ilustración didáctica — no compensación de carbono.': 'Educational illustration — not carbon offsetting.',
+    'Algunas filas usan factor propio; el rango solo aplica a filas con factor estimado por origen.': 'Some rows use a custom factor; the range only applies to rows with origin-estimated factors.',
+    'Posición de tu listado entre el mínimo y el máximo estimado según origen de fabricación (misma dosis).': 'Position of your list between the estimated min and max by manufacturing origin (same dose).',
+    'Estimaciones de referencia, no mediciones certificadas ni declaraciones oficiales. Al usar aceptas la sección 7 de los T&C de NutriPlant PRO.': 'Reference estimates, not certified measurements or official declarations. By using this you accept section 7 of the NutriPlant PRO T&Cs.',
+    'Urea/UAN: valores excl. CO₂ capturado en producto (se emite al aplicar). PCF de planta concreta puede ser menor.': 'Urea/UAN: values excl. CO₂ captured in product (emitted on application). A specific plant PCF may be lower.',
+    'lb CO₂e/lb producto': 'lb CO₂e/lb product',
+    'kg CO₂e/kg producto': 'kg CO₂e/kg product',
+    'Resultados del programa activo': 'Active program results',
+    'Resultado de referencia (requiere validación)': 'Reference result (requires validation)',
+    'Resultado de referencia': 'Reference result',
+    '+ Agregar fertilizante': '+ Add fertilizer',
+    'Agregar fertilizante': 'Add fertilizer',
+    'Por hectárea': 'Per hectare',
+    '🛣️ Ruta': '🛣️ Route',
+    'Citas y metodología': 'Citations and methodology',
+    '📚 Referencias y fuentes públicas': '📚 References and public sources',
+    'Referencias y fuentes públicas': 'References and public sources',
+    'Elige el litoral o puerto más cercano a tu campo.': 'Choose the nearest coast or port to your field.',
+    'Elige un fertilizante y dos países de fabricación para ver la diferencia estimada (misma dosis).': 'Pick one fertilizer and two manufacturing countries to see the estimated difference (same dose).',
+    '🔬 Comparar un producto, distinto origen (didáctico)': '🔬 Compare one product, different origin (teaching)',
+    'Comparar un producto, distinto origen (didáctico)': 'Compare one product, different origin (teaching)',
+    '🏭 Fabricación A': '🏭 Manufacturing A',
+    '🏭 Fabricación B': '🏭 Manufacturing B',
+    'Costa / puerto': 'Coast / port',
+    'Costa / puerto de llegada': 'Arrival coast / port',
+    '📍 Estimar km (referencia)': '📍 Estimate km (reference)',
+    'Estimar km (referencia)': 'Estimate km (reference)',
+    'para el fertilizante seleccionado (ej. China → Golfo MX ≈ 220 km origen + ~9.000 km mar + km a campo). Aproximado — ajústalo si conoces la ruta real.': 'for the selected fertilizer (e.g. China → MX Gulf ≈ 220 km origin + ~9,000 km sea + km to field). Approximate — adjust if you know the real route.',
+    '— referencias regionales validadas DNV. Campo: IPCC. Transporte: DESNZ/DEFRA. Sin datos de marca comercial.': '— regional references validated by DNV. Field: IPCC. Transport: DESNZ/DEFRA. No commercial brand data.',
+    'Nivel de eficiencia por origen (referencia)': 'Efficiency level by origin (reference)',
+    'Equivalencia pick-up (ilustrativa)': 'Pick-up equivalence (illustrative)',
+    'Detalle del cálculo': 'Calculation detail',
+    'Sin filas con dosis': 'No rows with dose',
+    'Sin filas': 'No rows',
+    'Qué pasa si': 'What if',
+    'Radio iónico': 'Ionic radius',
+    'Enmienda · no soluble en fertirriego (referencia).': 'Amendment · not soluble for fertigation (reference).',
+    'países distintos': 'different countries',
+    'Filas:': 'Rows:',
+    'Año factor:': 'Factor year:',
+    '🏭 Fabricación (regiones):': '🏭 Manufacturing (regions):',
+    '🛣️ Rutas:': '🛣️ Routes:',
+    'Reducción estimada (Programa B vs A):': 'Estimated reduction (Program B vs A):',
+    '↓ Reducción estimada (Programa B vs A):': '↓ Estimated reduction (Program B vs A):',
+    '↑ Programa B emitiría más:': '↑ Program B would emit more:',
   };
 
   var stageEsToEn = {
@@ -657,7 +1068,12 @@
   }
 
   function unit(kind) {
-    if (kind === 'carbon_intensity') return prefs().unit_system === 'us_customary' ? 'lb CO₂e/lb producto' : 'kg CO₂e/kg producto';
+    if (kind === 'carbon_intensity') {
+      var us = prefs().unit_system === 'us_customary';
+      var en = prefs().language === 'en';
+      if (us) return en ? 'lb CO₂e/lb product' : 'lb CO₂e/lb producto';
+      return en ? 'kg CO₂e/kg product' : 'kg CO₂e/kg producto';
+    }
     return agronomic().unit(kind);
   }
 
@@ -718,31 +1134,43 @@
     return value;
   }
 
+  function translateAttrs(el) {
+    if (!el || el.nodeType !== 1) return;
+    if (el.closest && el.closest('.notranslate,[translate="no"]')) return;
+    if (attrOriginals && !attrOriginals.has(el)) attrOriginals.set(el, {});
+    ['placeholder', 'title', 'aria-label', 'data-np-tooltip'].forEach(function (name) {
+      if (!el.hasAttribute || !el.hasAttribute(name)) return;
+      var bag = attrOriginals ? attrOriginals.get(el) : {};
+      if (bag[name] === undefined) bag[name] = el.getAttribute(name);
+      if (attrOriginals) attrOriginals.set(el, bag);
+      el.setAttribute(name, prefs().language === 'en' ? translate(bag[name]) : bag[name]);
+    });
+  }
+
+  function translateTextNode(node) {
+    if (!node || node.nodeType !== 3) return;
+    if (!String(node.nodeValue || '').trim()) return;
+    if (node.parentElement && node.parentElement.closest('.notranslate,[translate="no"],code,.formula,.ion-symbol')) return;
+    if (originals && !originals.has(node)) originals.set(node, node.nodeValue);
+    var original = originals ? originals.get(node) : node.nodeValue;
+    node.nodeValue = prefs().language === 'en' ? translate(original) : original;
+  }
+
   function translateNode(node) {
     if (!node || !w.document) return;
     if (node.nodeType === 3) {
-      if (!String(node.nodeValue || '').trim()) return;
-      if (node.parentElement && node.parentElement.closest('.notranslate,[translate="no"],code,.formula,.ion-symbol')) return;
-      if (originals && !originals.has(node)) originals.set(node, node.nodeValue);
-      var original = originals ? originals.get(node) : node.nodeValue;
-      node.nodeValue = prefs().language === 'en' ? translate(original) : original;
+      translateTextNode(node);
       return;
     }
     if (node.nodeType !== 1 && node.nodeType !== 9 && node.nodeType !== 11) return;
-    if (node.nodeType === 1) {
-      if (node.closest && node.closest('.notranslate,[translate="no"]')) return;
-      if (attrOriginals && !attrOriginals.has(node)) attrOriginals.set(node, {});
-      ['placeholder', 'title', 'aria-label', 'data-np-tooltip'].forEach(function (name) {
-        if (!node.hasAttribute || !node.hasAttribute(name)) return;
-        var bag = attrOriginals ? attrOriginals.get(node) : {};
-        if (bag[name] === undefined) bag[name] = node.getAttribute(name);
-        if (attrOriginals) attrOriginals.set(node, bag);
-        node.setAttribute(name, prefs().language === 'en' ? translate(bag[name]) : bag[name]);
-      });
-    }
-    var walker = w.document.createTreeWalker(node, 4);
+    if (node.nodeType === 1) translateAttrs(node);
+    // SHOW_ELEMENT | SHOW_TEXT — también traduce placeholder/title de inputs hijos
+    var walker = w.document.createTreeWalker(node, 5);
     var current;
-    while ((current = walker.nextNode())) translateNode(current);
+    while ((current = walker.nextNode())) {
+      if (current.nodeType === 3) translateTextNode(current);
+      else if (current.nodeType === 1) translateAttrs(current);
+    }
   }
 
   function applyLanguage(root) {

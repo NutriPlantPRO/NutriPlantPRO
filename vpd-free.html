@@ -9,7 +9,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260730c"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260801d"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Estimador de déficit de presión de vapor</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -187,16 +187,11 @@
       <h2 class="title np-free-tool-title">🌡️ Estimador de déficit de presión de vapor</h2>
       <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
     </div>
-    <p class="vpd-context-note" role="note">
-      <strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, NutriPlant toma en ese punto temperatura, humedad y radiación a partir de <strong>información meteorológica con respaldo satelital</strong>; en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación.
-      La T<sub>hoja</sub> manual o estimada por radiación es orientativa — <strong>valida en campo</strong>.
-    </p>
+    <p class="vpd-context-note" id="vpdContextNote" role="note"></p>
 
     <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:20px;margin-bottom:20px;">
       <h3 style="margin:0 0 8px;color:#854d0e;font-size:17px;font-weight:600;">🗺️ Clima en un punto (mapa o GPS)</h3>
-      <p style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;">
-        Elige un punto en el mapa o usa tu ubicación. NutriPlant obtiene la temperatura, humedad y radiación solar actuales en ese punto (<strong>información meteorológica con respaldo satelital</strong>); con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD.
-      </p>
+      <p id="vpdMapLead" style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;"></p>
       <div class="vpd-coord-row">
         <div>
           <label style="display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;">Latitud</label>
@@ -221,11 +216,11 @@
       <div class="vpd-grid-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
         <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">🌡️ Temperatura del Aire (<span data-np-unit-label="temperature">°C</span>)</label>
-          <input id="vpd-env-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 20.5" />
+          <input id="vpd-env-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="e.g. 20.5" data-ph-es="Ej: 20.5" data-ph-en="e.g. 20.5" />
         </div>
         <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">💧 Humedad Relativa (%)</label>
-          <input id="vpd-env-humidity" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 85" />
+          <input id="vpd-env-humidity" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="e.g. 85" data-ph-es="Ej: 85" data-ph-en="e.g. 85" />
         </div>
       </div>
 
@@ -243,11 +238,11 @@
       <div class="vpd-grid-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
         <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">🌡️ Temperatura del Aire (<span data-np-unit-label="temperature">°C</span>)</label>
-          <input id="vpd-adv-air-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 25" />
+          <input id="vpd-adv-air-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="e.g. 25" data-ph-es="Ej: 25" data-ph-en="e.g. 25" />
         </div>
         <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">💧 Humedad Relativa (%)</label>
-          <input id="vpd-adv-humidity" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 80" />
+          <input id="vpd-adv-humidity" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="e.g. 80" data-ph-es="Ej: 80" data-ph-en="e.g. 80" />
         </div>
       </div>
 
@@ -259,7 +254,7 @@
             <span style="font-weight:500;">🌿 Temperatura de Hoja</span>
           </label>
           <div id="vpd-leaf-input" style="margin-left:28px;margin-top:8px;">
-            <input id="vpd-leaf-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 27.4" />
+            <input id="vpd-leaf-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="e.g. 27.4" data-ph-es="Ej: 27.4" data-ph-en="e.g. 27.4" />
             <p style="margin:6px 0 0;font-size:12px;color:#64748b;">Unidad: <span data-np-unit-label="temperature">°C</span></p>
           </div>
         </div>
@@ -269,7 +264,7 @@
             <span style="font-weight:500;">☀️ Radiación Solar</span>
           </label>
           <div id="vpd-radiation-input" style="margin-left:28px;margin-top:8px;display:none;">
-            <input id="vpd-solar-radiation" type="number" step="1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 600 W/m²" />
+            <input id="vpd-solar-radiation" type="number" step="1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="e.g. 600 W/m²" data-ph-es="Ej: 600 W/m²" data-ph-en="e.g. 600 W/m²" />
             <p style="margin:8px 0 0;font-size:13px;color:#64748b;">La temperatura de hoja se calculará automáticamente</p>
           </div>
         </div>
@@ -751,6 +746,41 @@
     }
   </script>
   <script>
+    function vpdUiT(es, en) {
+      try {
+        if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.t === 'function') {
+          return window.NpWaterClimateUI.t(es, en);
+        }
+      } catch (e) { /* fall through */ }
+      return es;
+    }
+
+    function vpdApplyStaticCopy() {
+      var note = document.getElementById('vpdContextNote');
+      if (note) {
+        note.innerHTML = vpdUiT(
+          '<strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, NutriPlant toma en ese punto temperatura, humedad y radiación a partir de <strong>información meteorológica con respaldo satelital</strong>; en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación. La T<sub>hoja</sub> manual o estimada por radiación es orientativa — <strong>valida en campo</strong>.',
+          '<strong>Technical focus:</strong> VPD here is <strong>environmental</strong> (air at meteorological scale). If you use the map, NutriPlant takes temperature, humidity and radiation at that point from <strong>weather information with satellite support</strong>; in the crop the <strong>microclimate</strong> can vary with <strong>leaf area</strong>, canopy or ventilation. Manual or radiation-estimated T<sub>leaf</sub> is indicative — <strong>validate in the field</strong>.'
+        );
+      }
+      var lead = document.getElementById('vpdMapLead');
+      if (lead) {
+        lead.innerHTML = vpdUiT(
+          'Elige un punto en el mapa o usa tu ubicación. NutriPlant obtiene la temperatura, humedad y radiación solar actuales en ese punto (<strong>información meteorológica con respaldo satelital</strong>); con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD.',
+          'Pick a point on the map or use your location. NutriPlant gets current temperature, humidity and solar radiation at that point (<strong>weather information with satellite support</strong>); with radiation it estimates <strong>T<sub>leaf</sub></strong> and VPD.'
+        );
+      }
+      document.querySelectorAll('[data-ph-es][data-ph-en]').forEach(function (el) {
+        var en = el.getAttribute('data-ph-en');
+        var es = el.getAttribute('data-ph-es');
+        el.setAttribute('placeholder', vpdUiT(es, en));
+      });
+      var lat = document.getElementById('vpd-free-lat');
+      var lng = document.getElementById('vpd-free-lng');
+      if (lat) lat.setAttribute('placeholder', vpdUiT('ej. 19.4326', 'e.g. 19.4326'));
+      if (lng) lng.setAttribute('placeholder', vpdUiT('ej. -99.1332', 'e.g. -99.1332'));
+    }
+
     window.NpWaterClimateUI.init({
       fields: {
         'vpd-env-temp': 'temperature',
@@ -758,12 +788,14 @@
         'vpd-leaf-temp': 'temperature'
       },
       refresh: function () {
+        vpdApplyStaticCopy();
         var env = document.getElementById('vpd-environmental-results');
         var adv = document.getElementById('vpd-advanced-results');
         if (env && env.innerHTML.trim() && !vpdFreeEnvSimpleLockedAfterSatellite) calculateEnvironmentalVPDFree();
         if (adv && adv.innerHTML.trim()) calculateAdvancedVPDFree();
       }
     });
+    vpdApplyStaticCopy();
   </script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>

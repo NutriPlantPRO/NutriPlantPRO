@@ -470,9 +470,9 @@
       modal.className = 'edit-modal';
       modal.innerHTML = `
         <div class="modal-content">
-          <h3>${t('✏️ Editar Composición:', '✏️ Edit Composition:')} ${a.name}</h3>
+          <h3>${t('✏️ Editar Composición:', '✏️ Edit Composition:')} ${window.NpAmendmentUI.materialName(a.id, a.name)}</h3>
           <form id="edit-amendment-form">
-            <div class="form-group"><label>Peso Molecular:</label><input type="number" id="edit-molecular" value="${a.molecularWeight}" step="0.1"></div>
+            <div class="form-group"><label>${t('Peso Molecular', 'Molecular Weight')}:</label><input type="number" id="edit-molecular" value="${a.molecularWeight}" step="0.1"></div>
             <div class="form-group"><label>%K:</label><input type="number" id="edit-k" value="${a.k}" step="0.1"></div>
             <div class="form-group"><label>%Ca:</label><input type="number" id="edit-ca" value="${a.ca}" step="0.1"></div>
             <div class="form-group"><label>%Mg:</label><input type="number" id="edit-mg" value="${a.mg}" step="0.1"></div>

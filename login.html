@@ -6,7 +6,7 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=20260730n"></script>
+  <script defer src="assets/np-i18n.js?v=20260801u"></script>
   <script defer src="assets/np-units-core.js?v=20260730a"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=25" />
+  <link rel="stylesheet" href="auth.css?v=26" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -556,15 +556,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-supabase.js?v=1762793900"></script>
-  <script src="auth.js"></script>
+  <script src="auth.js?v=20260801t"></script>
   
   <!-- Modal de Calculadora de Conversión -->
   <div id="conversionCalculatorModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="dashboard.tool_water">
-          🧮 Conversor Óxido ↔ Elemental
-        </h2>
+        <h2 class="modal-title">🧮 <span data-i18n="tools.oxide.title">Conversor Óxido ↔ Elemental</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeConversionCalculator()">×</button>
@@ -574,7 +572,7 @@
       <div class="modal-body">
         <div class="conversion-calculator">
           <div class="conversion-section">
-            <h3>📊 Conversiones Comunes</h3>
+            <h3>📊 <span data-i18n="tools.oxide.section_common">Conversiones Comunes</span></h3>
             <div class="conversion-grid">
               <!-- P -->
               <div class="conversion-item">
@@ -785,8 +783,8 @@
 
           <div class="conversion-section">
             <div class="conversion-ion-box">
-              <h3>⚗️ Elemental ↔ formas iónicas (equipos de medición)</h3>
-              <p class="conversion-ion-lead">Para ionómetros y análisis que reportan <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> en solución — no es conversión de óxidos de fertilizante.</p>
+              <h3>⚗️ <span data-i18n="tools.oxide.section_ions">Elemental ↔ formas iónicas (equipos de medición)</span></h3>
+              <p class="conversion-ion-lead" data-i18n="tools.oxide.ions_lead">Para ionómetros y análisis que reportan NO₃⁻, NH₄⁺ o SO₄²⁻ en solución — no es conversión de óxidos de fertilizante.</p>
               <div class="conversion-grid">
                 <div class="conversion-item conversion-item--ion">
                   <label>N → NO₃</label>
@@ -841,10 +839,10 @@
           </div>
           
           <div class="conversion-section">
-            <h3>ℹ️ Información</h3>
+            <h3>ℹ️ <span data-i18n="tools.oxide.info_title">Información</span></h3>
             <div class="info-box">
-              <p><strong>Factores de conversión (óxidos y formas de etiqueta):</strong></p>
-              <p class="info-sublead">P₂O₅, K₂O, CaO, MgO, SO₃ y óxidos de micros — formas habituales en <strong>fertilizantes</strong>. El N en etiqueta ya va como <strong>N elemental</strong> (no como óxido).</p>
+              <p><strong data-i18n="tools.oxide.factors_title">Factores de conversión (óxidos y formas de etiqueta):</strong></p>
+              <p class="info-sublead" data-i18n-html="tools.oxide.factors_sublead">P₂O₅, K₂O, CaO, MgO, SO₃ y óxidos de micros — formas habituales en <strong>fertilizantes</strong>. El N en etiqueta ya va como <strong>N elemental</strong> (no como óxido).</p>
               <ul>
                 <li><strong class="oxide-conv-label">P₂O₅ → P</strong>: 0.436 | <strong class="oxide-conv-label">P → P₂O₅</strong>: 2.291</li>
                 <li><strong class="oxide-conv-label">K₂O → K</strong>: 0.830 | <strong class="oxide-conv-label">K → K₂O</strong>: 1.205</li>
@@ -860,13 +858,13 @@
                 <li><strong class="oxide-conv-label">SiO₂ → Si</strong>: 0.467 | <strong class="oxide-conv-label">Si → SiO₂</strong>: 2.139</li>
               </ul>
               <div class="info-ion-box">
-                <p><strong>Elemental ↔ iones (equipos de medición y análisis):</strong></p>
+                <p><strong data-i18n="tools.oxide.ions_factors_title">Elemental ↔ iones (equipos de medición y análisis):</strong></p>
                 <ul>
                   <li><strong class="ion-conv-label">N → NO₃</strong>: 4.429 | <strong class="ion-conv-label">NO₃ → N</strong>: 0.226</li>
                   <li><strong class="ion-conv-label">N → NH₄</strong>: 1.286 | <strong class="ion-conv-label">NH₄ → N</strong>: 0.778</li>
                   <li><strong class="ion-conv-label">S → SO₄</strong>: 3.000 | <strong class="ion-conv-label">SO₄ → S</strong>: 0.333</li>
                 </ul>
-                <p class="info-ion-note">En <strong>fertilizantes</strong> el N no se expresa como óxido (a diferencia de P₂O₅ o K₂O): va en <strong>N elemental</strong>. En <strong>ionómetros</strong>, sensores de campo y algunos informes de solución o suelo, a veces el resultado aparece como <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> (anión o catión en solución). <strong>SO₄ tampoco es un óxido</strong> como SO₃ en etiqueta; aquí se usa el mismo criterio iónico. Usa el bloque superior para etiquetas agronómicas y el recuadro verde para cruzar con equipos y análisis iónicos.</p>
+                <p class="info-ion-note" data-i18n-html="tools.oxide.ions_note">En <strong>fertilizantes</strong> el N no se expresa como óxido (a diferencia de P₂O₅ o K₂O): va en <strong>N elemental</strong>. En <strong>ionómetros</strong>, sensores de campo y algunos informes de solución o suelo, a veces el resultado aparece como <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> (anión o catión en solución). <strong>SO₄ tampoco es un óxido</strong> como SO₃ en etiqueta; aquí se usa el mismo criterio iónico. Usa el bloque superior para etiquetas agronómicas y el recuadro verde para cruzar con equipos y análisis iónicos.</p>
               </div>
             </div>
           </div>
@@ -1435,7 +1433,7 @@
     }
   </style>
   
-  <script src="measure-units-calculator.js?v=202606201500"></script>
+  <script src="measure-units-calculator.js?v=20260801t"></script>
   <script>
     // Funciones para la calculadora de conversión
     function showConversionCalculator() {
@@ -1777,12 +1775,27 @@
           const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function'
             ? window.NpPrefs.get()
             : { language: 'es', unit_system: 'metric' };
+          const lang = prefs.language === 'en' ? 'en' : 'es';
+          const units = prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric';
           const u = new URL(frame.getAttribute('src') || 'pronosticoclimatico/?embed=login', window.location.href);
           u.searchParams.set('embed', 'login');
-          u.searchParams.set('lang', prefs.language === 'en' ? 'en' : 'es');
-          u.searchParams.set('units', prefs.unit_system === 'us_customary' ? 'us_customary' : 'metric');
-          u.searchParams.set('v', '20260730c');
-          frame.src = u.pathname + u.search + u.hash;
+          u.searchParams.set('lang', lang);
+          u.searchParams.set('units', units);
+          u.searchParams.set('v', '20260801z');
+          const next = u.pathname + u.search + u.hash;
+          const sameTool = /pronosticoclimatico/i.test(frame.src || '');
+          const sameLang = (frame.src || '').indexOf('lang=' + lang) >= 0;
+          const sameUnits = (frame.src || '').indexOf('units=' + units) >= 0;
+          if (!sameTool || !sameLang || !sameUnits) {
+            frame.src = next;
+          } else {
+            try {
+              frame.contentWindow.postMessage({ type: 'np-agro-prefs', language: lang, unit_system: units }, '*');
+            } catch (eMsg) { /* ignore */ }
+          }
+          setTimeout(function () {
+            try { frame.contentWindow.postMessage({ type: 'np-agro-shown' }, '*'); } catch (e2) { /* ignore */ }
+          }, 60);
         } catch (e) { /* keep existing src */ }
       }
       modal.style.display = 'flex';
@@ -1790,9 +1803,8 @@
 
     function closeAgroclimateForecast() {
       const modal = document.getElementById('agroclimateForecastModal');
-      const frame = document.getElementById('agroclimateForecastFrame');
       if (modal) modal.style.display = 'none';
-      if (frame) frame.src = frame.src;
+      // No reiniciar iframe al cerrar: evita parpadeo al volver a abrir.
     }
 
     // Balance de enmiendas por CIC (gratis en login, sin persistencia)
@@ -2021,9 +2033,7 @@
   <div id="nutrientUnitsCalculatorModal" class="modal-overlay">
     <div class="modal modal-wide">
       <div class="modal-header">
-        <h2 class="modal-title">
-          🧪 Conversor de unidades (ppm/mmol/meq)
-        </h2>
+        <h2 class="modal-title">🧪 <span data-i18n="tools.units.title">Conversor de unidades (ppm/mmol/meq)</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeNutrientUnitsCalculator()">×</button>
@@ -2033,9 +2043,9 @@
       <div class="modal-body">
         <div class="calculator-container">
           <div class="calculator-instructions">
-            <p><strong>Instrucciones:</strong> Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</p>
-            <p><em>Esta herramienta convierte entre ppm (mg/L), mmol/L (macronutrientes e iones) o <strong>µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo) y meq/L.</em></p>
-            <p><em><strong>Nota técnica:</strong><br>Las concentraciones se expresan en ppm del elemento (N, P, S).<br>Las especies químicas indicadas (NO₃⁻, NH₄⁺, H₂PO₄⁻, SO₄²⁻) representan la forma en que los nutrientes se encuentran y son absorbidos en solución, pero los cálculos se realizan con base en el peso atómico del elemento, no del ion.</em></p>
+            <p><strong data-i18n="tools.units.instructions_label">Instrucciones:</strong> <span data-i18n="tools.units.instructions_body">Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</span></p>
+            <p><em data-i18n-html="tools.units.intro">Esta herramienta convierte entre ppm (mg/L), mmol/L (macronutrientes e iones) o <strong>µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo) y meq/L.</em></p>
+            <p><em><strong data-i18n="tools.units.tech_note_label">Nota técnica:</strong><br><span data-i18n-html="tools.units.tech_note_body">Las concentraciones se expresan en ppm del elemento (N, P, S).<br>Las especies químicas indicadas (NO₃⁻, NH₄⁺, H₂PO₄⁻, SO₄²⁻) representan la forma en que los nutrientes se encuentran y son absorbidos en solución, pero los cálculos se realizan con base en el peso atómico del elemento, no del ion.</span></em></p>
           </div>
 
           <div class="nutrient-conversions-grid">
@@ -2305,15 +2315,15 @@
 
             <!-- Iones: PM del ión; meq/L por carga (un solo marco verde; los ácidos van aparte) -->
             <div class="nutrient-pm-block">
-              <h3 class="nutrient-species-frequent-title">Iones en solución</h3>
+              <h3 class="nutrient-species-frequent-title" data-i18n="tools.units.ions_title">Iones en solución</h3>
               <p class="nutrient-pm-block-caption">
-                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|).
+                <span data-i18n-html="tools.units.ions_caption">Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|).</span>
               </p>
               <div class="nutrient-pm-block-grid">
                 <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
-                    <strong>Ión bicarbonato <span class="notranslate" translate="no">(HCO₃⁻)</span></strong>
+                    <strong><span data-i18n="tools.units.ion_bicarbonate">Ión bicarbonato</span> <span class="notranslate" translate="no">(HCO₃⁻)</span></strong>
                     <span class="nutrient-info notranslate" translate="no">PM: 61.02 | Valencia: 1</span>
                   </div>
                   <div class="conversion-inputs">
@@ -2335,7 +2345,7 @@
                 <!-- Ión carbonato CO₃²⁻ -->
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
-                    <strong>Ión carbonato <span class="notranslate" translate="no">(CO₃²⁻)</span></strong>
+                    <strong><span data-i18n="tools.units.ion_carbonate">Ión carbonato</span> <span class="notranslate" translate="no">(CO₃²⁻)</span></strong>
                     <span class="nutrient-info notranslate" translate="no">PM: 60.01 | Valencia: 2</span>
                   </div>
                   <div class="conversion-inputs">
@@ -2414,10 +2424,10 @@
             </div>
 
             <!-- Ácidos: valencia = H⁺ contados por mol; aparte del criterio de iones -->
-            <div class="nutrient-pm-block" aria-label="Ácidos minerales">
-              <h3 class="nutrient-species-frequent-title">Ácidos minerales</h3>
+            <div class="nutrient-pm-block" aria-label="Ácidos minerales" data-i18n-aria-label="tools.units.acids_title">
+              <h3 class="nutrient-species-frequent-title" data-i18n="tools.units.acids_title">Ácidos minerales</h3>
               <p class="nutrient-pm-block-caption">
-                Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol).
+                <span data-i18n-html="tools.units.acids_caption">Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol).</span>
               </p>
               <div class="nutrient-pm-block-grid nutrient-pm-block-grid--3cols">
                 <div class="nutrient-conversion-group">
@@ -2458,15 +2468,15 @@
           </div>
 
           <div class="info-box" style="margin-top: 20px;">
-            <p><strong>Fórmulas de Conversión:</strong></p>
+            <p><strong data-i18n="tools.units.formulas_title">Fórmulas de Conversión:</strong></p>
             <ul>
-              <li><strong>ppm a mmol/L:</strong> mmol/L = ppm ÷ Peso Molecular o Atómico</li>
-              <li><strong>ppm a µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo): µmol/L = (ppm ÷ Peso Atómico) × 1000</li>
-              <li><strong>µmol/L a mmol/L:</strong> mmol/L = µmol/L ÷ 1000</li>
-              <li><strong>mmol/L a meq/L:</strong> meq/L = mmol/L × Valencia</li>
-              <li><strong>ppm a meq/L:</strong> meq/L = (ppm ÷ Peso Atómico/Molecular) × Valencia</li>
+              <li><span data-i18n-html="tools.units.f_ppm_mmol"><strong>ppm a mmol/L:</strong> mmol/L = ppm ÷ Peso Molecular o Atómico</span></li>
+              <li><span data-i18n-html="tools.units.f_ppm_umol"><strong>ppm a µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo): µmol/L = (ppm ÷ Peso Atómico) × 1000</span></li>
+              <li><span data-i18n-html="tools.units.f_umol_mmol"><strong>µmol/L a mmol/L:</strong> mmol/L = µmol/L ÷ 1000</span></li>
+              <li><span data-i18n-html="tools.units.f_mmol_meq"><strong>mmol/L a meq/L:</strong> meq/L = mmol/L × Valencia</span></li>
+              <li><span data-i18n-html="tools.units.f_ppm_meq"><strong>ppm a meq/L:</strong> meq/L = (ppm ÷ Peso Atómico/Molecular) × Valencia</span></li>
             </ul>
-            <p style="margin-top:10px;"><strong>Ejemplo macro (P-H₂PO₄⁻):</strong> se usa 30.97 porque el reporte es en ppm de P elemental (PA del P), no en masa total del ion H₂PO₄⁻.</p>
+            <p style="margin-top:10px;" data-i18n-html="tools.units.ex_macro"><strong>Ejemplo macro (P-H₂PO₄⁻):</strong> se usa 30.97 porque el reporte es en ppm de P elemental (PA del P), no en masa total del ion H₂PO₄⁻.</p>
             <p style="margin-top:6px;"><em>Si P = 61.94 ppm: mmol/L = 61.94 ÷ 30.97 = 2.00; meq/L = 2.00 × 1 = 2.00.</em></p>
             <p style="margin-top:10px;"><strong>Ejemplo micro (Fe²⁺):</strong> µmol/L evita decimales muy pequeños en mmol/L.</p>
             <p style="margin-top:6px;"><em>Si Fe = 3.00 ppm: µmol/L = (3.00 ÷ 55.85) × 1000 = 53.71; mmol/L = 0.054; meq/L = 0.107.</em></p>
@@ -2480,7 +2490,7 @@
   <div id="measureUnitsCalculatorModal" class="modal-overlay">
     <div class="modal modal-wide">
       <div class="modal-header">
-        <h2 class="modal-title">📐 Conversor de magnitudes físicas</h2>
+        <h2 class="modal-title">📐 <span data-i18n="tools.measure.title">Conversor de magnitudes físicas</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeMeasureUnitsCalculator()">×</button>
@@ -2488,25 +2498,23 @@
       </div>
       <div class="modal-body">
         <div class="calculator-container">
-          <p style="margin-bottom: 12px;"><em>Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión, concentración en agua (mg/L, ppm…) y <strong>carga iónica</strong> (meq / cmol en suelo o solución). Incluye estimación de <strong>% superficie con raíces</strong> (copa circular o camas).</em></p>
+          <p style="margin-bottom: 12px;"><em data-i18n-html="tools.measure.intro">Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión, concentración en agua (mg/L, ppm…) y <strong>carga iónica</strong> (meq / cmol en suelo o solución). Incluye estimación de <strong>% superficie con raíces</strong> (copa circular o camas).</em></p>
           <div class="form-group">
-            <label>Tipo de magnitud</label>
+            <label data-i18n="tools.measure.category_label">Tipo de magnitud</label>
             <select id="measure-category" onchange="updateMeasureUnitOptions()">
-              <option value="length">Longitud</option>
-              <option value="area">Área / Superficie</option>
-              <option value="volume">Volumen</option>
-              <option value="weight">Peso / Masa</option>
-              <option value="temperature">Temperatura</option>
-              <option value="pressure">Presión</option>
-              <option value="concentration">Concentración (agua)</option>
-              <option value="ionic">Carga iónica (meq / cmol)</option>
-              <option value="rootReachPlant">Alcance de raíz — copa / planta (círculo)</option>
-              <option value="rootReachBed">Alcance de raíz — cama o banda</option>
+              <option value="length" data-i18n="tools.measure.cat_length">Longitud</option>
+              <option value="area" data-i18n="tools.measure.cat_area">Área / Superficie</option>
+              <option value="volume" data-i18n="tools.measure.cat_volume">Volumen</option>
+              <option value="weight" data-i18n="tools.measure.cat_weight">Peso / Masa</option>
+              <option value="temperature" data-i18n="tools.measure.cat_temperature">Temperatura</option>
+              <option value="pressure" data-i18n="tools.measure.cat_pressure">Presión</option>
+              <option value="concentration" data-i18n="tools.measure.cat_concentration">Concentración (agua)</option>
+              <option value="ionic" data-i18n="tools.measure.cat_ionic">Carga iónica (meq / cmol)</option>
+              <option value="rootReachPlant" data-i18n="tools.measure.cat_root_plant">Alcance de raíz — copa / planta (círculo)</option>
+              <option value="rootReachBed" data-i18n="tools.measure.cat_root_bed">Alcance de raíz — cama o banda</option>
             </select>
           </div>
-          <p id="measure-ionic-hint" style="display:none; margin:10px 0 0; padding:10px 12px; font-size:12px; line-height:1.45; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
-            <strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L; 1000 µmol/L ≈ 1 meq/L (ión monovalente, igual que mmol/L). Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.
-          </p>
+          <p id="measure-ionic-hint" style="display:none; margin:10px 0 0; padding:10px 12px; font-size:12px; line-height:1.45; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;"><span data-i18n-html="tools.measure.ionic_hint"><strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L; 1000 µmol/L ≈ 1 meq/L (ión monovalente, igual que mmol/L). Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.</span></p>
           <div id="measure-special-panel" style="display:none; margin-top:16px;"></div>
           <div id="measure-special-result-wrap" style="display:none; margin-top:16px; padding:14px 16px; background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%); border:1px solid #86efac; border-radius:10px;">
             <div id="measure-special-result-label" style="font-size:13px;color:#166534;font-weight:600;">—</div>
@@ -2516,20 +2524,20 @@
           <div id="measure-standard-panel">
             <div class="measure-conversion-row" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
             <div class="form-group" style="flex: 1; min-width: 120px;">
-              <label>Valor</label>
+              <label data-i18n="tools.measure.value">Valor</label>
               <input type="number" id="measure-value" placeholder="0" step="any" oninput="convertMeasureUnits()">
             </div>
             <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>Desde</label>
+              <label data-i18n="tools.measure.from">Desde</label>
               <select id="measure-from" onchange="convertMeasureUnits()"></select>
             </div>
             <span style="align-self: center; font-size: 18px;">→</span>
             <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>A</label>
+              <label data-i18n="tools.measure.to">A</label>
               <select id="measure-to" onchange="convertMeasureUnits()"></select>
             </div>
             <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label>Resultado</label>
+              <label data-i18n="tools.measure.result">Resultado</label>
               <input type="text" id="measure-result" readonly placeholder="—" style="background: #f0fdf4;">
             </div>
             </div>
@@ -2537,7 +2545,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeMeasureUnitsCalculator()">Cerrar</button>
+        <button class="btn btn-secondary" onclick="closeMeasureUnitsCalculator()" data-i18n="tools.close">Cerrar</button>
       </div>
     </div>
   </div>
@@ -2546,7 +2554,7 @@
   <div id="hydroSolutionCalculatorModal" class="modal-overlay">
     <div class="modal modal-hydro-solution">
       <div class="modal-header">
-        <h2 class="modal-title">
+        <h2 class="modal-title" data-i18n="dashboard.tool_hydro">
           💧 Diseño de solución nutritiva
         </h2>
         <div class="modal-header-trailing">
@@ -2555,7 +2563,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?v=20260730a" title="Diseño de solución nutritiva"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?v=20260801b" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro"></iframe>
       </div>
     </div>
   </div>
@@ -2564,7 +2572,7 @@
   <div id="waterHardnessCalculatorModal" class="modal-overlay">
     <div class="modal modal-water-hardness modal-tool-iframe-fit">
       <div class="modal-header">
-        <h2 class="modal-title">
+        <h2 class="modal-title" data-i18n="dashboard.tool_water">
           💦 Diagnóstico de agua y acondicionamiento
         </h2>
         <div class="modal-header-trailing">
@@ -2573,7 +2581,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260730a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260801c" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>
@@ -2591,7 +2599,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=20260730a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" allow="geolocation 'self'"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=20260801d" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2607,7 +2615,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260730c" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260801z" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2617,7 +2625,7 @@
     <div class="modal modal-enmienda">
       <div class="modal-header">
         <h2 class="modal-title">
-          🚜 Balance de enmiendas por CIC
+          🚜 <span data-i18n="dashboard.tool_amendment">Balance de enmiendas por CIC</span>
         </h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
@@ -2625,7 +2633,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=20260730a" title="Balance de enmiendas por CIC"></iframe>
+        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=20260801f" title="Balance de enmiendas por CIC" data-i18n-title="dashboard.tool_amendment"></iframe>
       </div>
     </div>
   </div>
@@ -2634,14 +2642,14 @@
   <div id="granularMixCalculatorModal" class="modal-overlay">
     <div class="modal modal-granular-mix">
       <div class="modal-header">
-        <h2 class="modal-title">📦 Formulación de mezclas granulares</h2>
+        <h2 class="modal-title">📦 <span data-i18n="dashboard.tool_granular_mix">Formulación de mezclas granulares</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeGranularMixCalculator()">×</button>
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?v=20260730a" title="Formulación de mezclas granulares"></iframe>
+        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=login&v=20260801f" title="Formulación de mezclas granulares" data-i18n-title="dashboard.tool_granular_mix"></iframe>
       </div>
     </div>
   </div>
@@ -2657,7 +2665,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260730a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260801a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition"></iframe>
       </div>
     </div>
   </div>
@@ -2673,7 +2681,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260730a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260801g" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
       </div>
     </div>
   </div>
@@ -2689,7 +2697,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260730a" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260801g" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic"></iframe>
       </div>
     </div>
   </div>
@@ -2705,7 +2713,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260730a" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260801h" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas"></iframe>
       </div>
     </div>
   </div>
@@ -2721,7 +2729,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260730a" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility"></iframe>
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260801h" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility"></iframe>
       </div>
     </div>
   </div>
@@ -2737,7 +2745,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260730a" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions"></iframe>
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260801h" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions"></iframe>
       </div>
     </div>
   </div>
@@ -2753,7 +2761,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260730a" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260801n" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
       </div>
     </div>
   </div>
@@ -2769,7 +2777,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260730a" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water"></iframe>
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260801n" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water"></iframe>
       </div>
     </div>
   </div>
@@ -2785,7 +2793,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login&v=20260730a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" allow="geolocation 'self'"></iframe>
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login&v=20260801p" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2800,7 +2808,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260730a" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt"></iframe>
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260801s" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt"></iframe>
       </div>
     </div>
   </div>
@@ -2816,7 +2824,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260730a" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon"></iframe>
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260801s" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon"></iframe>
       </div>
     </div>
   </div>
@@ -4373,8 +4381,9 @@
       function facebookEmbedWidth(container) {
         var width = Math.floor((container && container.clientWidth) || 0);
         if (!width) width = Math.floor(root.clientWidth - 40);
-        if (!width || width < 180) width = 320;
-        return Math.max(180, Math.min(500, width));
+        // Facebook Page Plugin: bajo ~280px el encabezado (nombre/seguidores) se comprime mal.
+        if (!width || width < 280) width = 320;
+        return Math.max(280, Math.min(500, width));
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4384,16 +4393,20 @@
         container.dataset.fbWidth = String(width);
         container.innerHTML = '';
         var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
+        // hide_cover=true: portadas angostas/recortadas ya no tapan nombre + seguidores.
+        // small_header=false: deja visible el encabezado de la página.
+        var fbHeight = 540;
         container.appendChild(createSocialIframe(
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
-            '&height=500&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=true',
+            '&height=' + fbHeight +
+            '&small_header=false&adapt_container_width=true&hide_cover=true&show_facepile=true',
           'NutriPlant PRO en Facebook',
           {
             scrolling: 'no',
             allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share',
             width: width,
-            height: 500
+            height: fbHeight
           }
         ));
         container.dataset.loaded = '1';

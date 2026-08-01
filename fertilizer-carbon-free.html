@@ -10,7 +10,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801s"></script>
   <title>Huella de carbono de fertilizantes — NutriPlant PRO</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
@@ -663,7 +663,7 @@
 
   <div class="fc-tagline" id="valueTagline">
     <p class="fc-tagline__main">Mide tu huella y estima cuánto puedes reducir emisiones en fertilización</p>
-    <p class="fc-tagline__sub">Compara <strong>Programa A</strong> vs <strong>Programa B</strong> — dosis, productos y región de fabricación</p>
+    <p class="fc-tagline__sub">Compara Programa A vs Programa B — dosis, productos y región de fabricación</p>
     <div class="fc-tagline__result" id="reductionBanner" aria-live="polite"></div>
   </div>
 
@@ -672,10 +672,8 @@
       <div class="fc-legal-notice__head-text">
         <p class="fc-legal-notice__title">⚠️ Aviso legal — herramienta de referencia</p>
         <p class="fc-legal-notice__lead">
-          Estimaciones de referencia, no mediciones certificadas ni declaraciones oficiales.
-          Al usar aceptas la
-          <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">sección 7 de los T&amp;C</a>
-          de NutriPlant PRO.
+          Estimaciones de referencia, no mediciones certificadas ni declaraciones oficiales. Al usar aceptas la sección 7 de los T&amp;C de NutriPlant PRO.
+          <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">T&amp;C — Sección 7 (Huella de carbono)</a>
         </p>
       </div>
       <button type="button" class="fc-legal-toggle" id="legalNoticeToggle" onclick="toggleLegalNotice()"
@@ -686,15 +684,15 @@
     </div>
     <div class="fc-legal-notice__body" id="legalNoticeBody" hidden>
       <ul>
-        <li><strong>No es certificación:</strong> no sustituye auditoría, LCA certificado, EPD validado ni reportes regulatorios.</li>
-        <li><strong>Validación en campo:</strong> confirma los datos en tu contexto agronómico, comercial y legal antes de decidir.</li>
-        <li><strong>Sin marcas ni proveedores:</strong> NutriPlant no avala ni compara empresas, formuladores ni productos comerciales.</li>
-        <li><strong>Factores propios:</strong> si ingresas un factor manual, es tu responsabilidad; NutriPlant no lo verifica.</li>
-        <li><strong>Comparaciones A vs B:</strong> escenarios del usuario — no son ranking comercial.</li>
-        <li><strong>Calibración sectorial:</strong> productos N (urea, AN, CAN, UAN) usan promedios regionales <strong>Fertilizers Europe (2020)</strong>; no sustituye PCF certificado por planta (Yara, Haifa, etc.).</li>
-        <li><strong>Disponibilidad regional:</strong> el listado de productos se filtra según el origen de fabricación elegido; hidrosolubles no se ofrecen con origen MX, BR o LATAM si no hay producción local referenciada.</li>
-        <li><strong>Precisión estimada:</strong> incertidumbre típica ±25–40% en fabricación (±30–50% con transporte/campo genérico).</li>
-        <li><strong>Decisión final:</strong> comunicar o usar resultados externamente es responsabilidad exclusiva del usuario.</li>
+        <li>No es certificación: no sustituye auditoría, LCA certificado, EPD validado ni reportes regulatorios.</li>
+        <li>Validación en campo: confirma los datos en tu contexto agronómico, comercial y legal antes de decidir.</li>
+        <li>Sin marcas ni proveedores: NutriPlant no avala ni compara empresas, formuladores ni productos comerciales.</li>
+        <li>Factores propios: si ingresas un factor manual, es tu responsabilidad; NutriPlant no lo verifica.</li>
+        <li>Comparaciones A vs B: escenarios del usuario — no son ranking comercial.</li>
+        <li>Calibración sectorial: productos N (urea, AN, CAN, UAN) usan promedios regionales Fertilizers Europe (2020); no sustituye PCF certificado por planta (Yara, Haifa, etc.).</li>
+        <li>Disponibilidad regional: el listado de productos se filtra según el origen de fabricación elegido; hidrosolubles no se ofrecen con origen MX, BR o LATAM si no hay producción local referenciada.</li>
+        <li>Precisión estimada: incertidumbre típica ±25–40% en fabricación (±30–50% con transporte/campo genérico).</li>
+        <li>Decisión final: comunicar o usar resultados externamente es responsabilidad exclusiva del usuario.</li>
       </ul>
       <p class="fc-legal-notice__footer">
         Texto legal completo:
@@ -705,8 +703,7 @@
   </aside>
 
   <p class="fc-intro">
-    Arma <strong>Programa A</strong> y <strong>Programa B</strong>: arriba configura la <strong>ruta</strong> del fertilizante seleccionado
-    (🏭 → 🚛 → ⛴️ → 🚢 → 🌾); abajo agrega productos y dosis. Cada fila puede tener origen y km distintos.
+    Arma Programa A y Programa B: arriba configura la ruta del fertilizante seleccionado (🏭 → 🚛 → ⛴️ → 🚢 → 🌾); abajo agrega productos y dosis. Cada fila puede tener origen y km distintos.
   </p>
 
   <div class="fc-scenario-bar">
@@ -716,9 +713,7 @@
   </div>
 
   <div class="fc-factor-info" id="factorInfoBox">
-    <strong>Referencia global NutriPlant:</strong>
-    fabricación calibrada vs <strong>Fertilizers Europe (2020)</strong> (promedios regionales DNV) + transporte DESNZ + N₂O suelo IPCC.
-    🏭 → 🚛 origen → ⛴️ mar → 🚛 campo. Sin marcas comerciales.
+    Referencia global NutriPlant: fabricación calibrada vs Fertilizers Europe (2020) (promedios regionales DNV) + transporte DESNZ + N₂O suelo IPCC. 🏭 → 🚛 origen → ⛴️ mar → 🚛 campo. Sin marcas comerciales.
   </div>
 
   <details class="fc-fe-ref" id="feReferencePanel">
@@ -932,6 +927,10 @@
     var LS_KEY = 'nutriplant_free_fertilizer_carbon_v2';
 
     function fcUI() { return window.NpFreeNutritionUI; }
+    function fcT(s) { return fcUI() && typeof fcUI().translate === 'function' ? fcUI().translate(s) : s; }
+    function fcApplyLang(root) {
+      if (fcUI() && typeof fcUI().applyLanguage === 'function') fcUI().applyLanguage(root || document.body);
+    }
     function fcFertName(name) {
       return fcUI() && typeof fcUI().materialName === 'function' ? fcUI().materialName(name) : name;
     }
@@ -948,29 +947,28 @@
       var areaUnit = fcUI().unit('area');
       var doseUnit = fcUI().unit('dose_mass_area');
       var massUnit = fcUI().unit('mass');
+      var intensityEs = fcUI().prefs().unit_system === 'us_customary'
+        ? 'lb CO₂e/lb producto' : 'kg CO₂e/kg producto';
       [
         ['transportOriginKm', '🚛', 'Origen'], ['transportSeaKm', '⛴️', 'Marítimo'],
         ['transportKm', '🌾', 'Campo']
       ].forEach(function (item) {
         var label = document.querySelector('label[for="' + item[0] + '"]');
         if (label) label.innerHTML = '<span class="fc-lbl-icon">' + item[1] + '</span> ' +
-          fcUI().translate(item[2]) + ' (' + distanceUnit + ')';
+          item[2] + ' (' + distanceUnit + ')';
       });
       var areaLabel = document.querySelector('label[for="areaHa"]');
-      if (areaLabel) areaLabel.innerHTML = '<span class="fc-lbl-icon">📐</span> ' +
-        fcUI().translate('Superficie') + ' (' + areaUnit + ')';
+      if (areaLabel) areaLabel.innerHTML = '<span class="fc-lbl-icon">📐</span> Superficie (' + areaUnit + ')';
       var areaHint = document.getElementById('areaHa') && document.getElementById('areaHa').parentElement.querySelector('.hint');
-      if (areaHint) areaHint.textContent = fcUI().translate('Para convertir dosis total') + ' → ' + doseUnit;
+      if (areaHint) areaHint.textContent = 'Para convertir dosis total → ' + doseUnit;
       var feSummary = document.querySelector('#feReferencePanel summary');
-      if (feSummary) feSummary.textContent = '📊 ' +
-        fcUI().translate('Calibración vs Fertilizers Europe') + ' (EU, ' +
-        fcUI().translate('Fabricación').toLowerCase() + ' ' + fcUI().unit('carbon_intensity') + ')';
+      if (feSummary) feSummary.textContent = '📊 Calibración vs Fertilizers Europe (EU, fabricación ' + intensityEs + ')';
       var cmpLabel = document.querySelector('label[for="cmpDose"]');
-      if (cmpLabel) cmpLabel.textContent = fcUI().translate('Dosis') + ' (' + doseUnit + ')';
+      if (cmpLabel) cmpLabel.textContent = 'Dosis (' + doseUnit + ')';
       var select = document.getElementById('doseUnit');
       if (select && select.options.length >= 2) {
         select.options[0].textContent = doseUnit;
-        select.options[1].textContent = massUnit + ' ' + fcUI().translate('Total').toLowerCase();
+        select.options[1].textContent = massUnit + ' total';
       }
     }
 
@@ -1154,8 +1152,14 @@
         return;
       }
       var fert = NpFertilizerCarbon.findFertilizer(row.fertilizer_id);
-      el.textContent = (fert ? fert.name : row.fertilizer_id) +
-        ' · fila ' + (getActiveRowIndex() + 1) + ' de ' + activeScenario().rows.length;
+      var name = fcFertName(fert ? fert.name : row.fertilizer_id);
+      var n = getActiveRowIndex() + 1;
+      var total = activeScenario().rows.length;
+      el.setAttribute('translate', 'no');
+      el.classList.add('notranslate');
+      el.textContent = fcUI().prefs().language === 'en'
+        ? (name + ' · row ' + n + ' of ' + total)
+        : (name + ' · fila ' + n + ' de ' + total);
     }
 
     function fixRowFertilizerForOrigin(row) {
@@ -2110,6 +2114,7 @@
       });
 
       recalcCompare();
+      fcApplyLang(document.body);
     }
 
     function recalcCompare() {
@@ -2174,7 +2179,7 @@
       box.classList.toggle('fc-legal-notice--expanded', open);
       body.hidden = !open;
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.querySelector('.fc-legal-toggle__label').textContent = open ? 'Ocultar' : 'Ver más';
+      btn.querySelector('.fc-legal-toggle__label').textContent = fcT(open ? 'Ocultar' : 'Ver más');
     }
 
     function init() {
@@ -2209,10 +2214,12 @@
             restoreForm();
             renderRows();
             recalc(true);
+            fcApplyLang(document.body);
           }
         });
         refreshCarbonUnitLabels();
         recalc(true);
+        fcApplyLang(document.body);
       }).catch(function (err) {
         document.getElementById('resultsPanel').innerHTML = '<p style="color:#dc2626;">Error al cargar factores: ' + err.message + '</p>';
       });

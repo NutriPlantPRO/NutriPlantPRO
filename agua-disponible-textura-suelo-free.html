@@ -9,7 +9,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260730c"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260801n"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Agua en suelo y textura — NutriPlant PRO</title>
   <style>
@@ -547,7 +547,7 @@
     <h1 class="np-free-tool-title">🪨 Agua en suelo y textura</h1>
     <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   </div>
-  <p class="lead">Referencia práctica NutriPlant PRO: <strong>capacidad útil CC − PMP</strong> por hectárea (no es tu humedad hoy si ya ingresaste medición), lámina hasta CC según humedad actual, y <strong>% de superficie explorada</strong> (franja regada — mismo criterio que balance hídrico); triángulo textual USDA en español.</p>
+  <p class="lead">Referencia práctica NutriPlant PRO: <strong>capacidad útil CC − PMP</strong> por hectárea (no es tu humedad hoy si ya ingresaste medición), lámina hasta CC según humedad actual, y <strong>% de superficie de suelo considerada</strong> (franja regada — mismo criterio que balance hídrico); triángulo textural USDA.</p>
 
   <div class="tabs" role="tablist">
     <button type="button" role="tab" id="tab1" aria-selected="true" aria-controls="panel1">1 · Agua en suelo</button>
@@ -581,7 +581,7 @@
         <input class="in" type="number" id="areaHa" min="0.01" max="10000" step="0.01" value="1" />
       </div>
       <div class="field-stack field-stack--radical">
-        <label class="f" for="rootEff" title="Fracción del área del cultivo con raíces activas o zona humedecida">% suelo explorado — superficie (franja)</label>
+        <label class="f" for="rootEff" title="Fracción del área del cultivo con raíces activas o zona humedecida">Superficie de suelo considerada (% · franja)</label>
         <input class="in" type="number" id="rootEff" min="1" max="100" step="1" value="60" title="Ej. 60 = 60% del área (franja regada); no es profundidad" />
       </div>
       <div class="field-stack field-stack--theta">
@@ -589,7 +589,7 @@
         <input class="in" type="number" id="thetaVol" min="0" max="55" step="0.1" value="" placeholder="Ej. 22" />
       </div>
     </div>
-    <p class="hint" style="margin-top:-4px;margin-bottom:14px;">El <strong>% suelo explorado</strong> es la fracción del <strong>área del cultivo</strong> con raíces activas o zona humedecida (goteo, surco). <strong>No es profundidad.</strong> Mismo criterio que «franja regada» en 🌧️ balance hídrico: los <strong>m³</strong> se reparten solo en esa superficie; los <strong>mm en franja</strong> son la lámina física en el suelo humedecido.</p>
+    <p class="hint" style="margin-top:-4px;margin-bottom:14px;">La <strong>superficie de suelo considerada</strong> es la fracción del <strong>área del cultivo</strong> con raíces activas o zona humedecida (goteo, surco). <strong>No es profundidad.</strong> Mismo criterio que «franja regada» en 🌧️ balance hídrico: el volumen se reparte solo en esa superficie; la lámina en franja es la lámina física en el suelo humedecido.</p>
 
     <div class="calc-box" id="waterResults">
       <h3>Resultados (actualizado al cambiar valores)</h3>
@@ -598,7 +598,7 @@
       <div class="calc-row" id="calcLines"></div>
       <div class="note-drop">
         <span aria-hidden="true" style="font-size:18px;">💧</span>
-        <span>Este bloque muestra cuánto almacén “útil entre PMP y CC” tienes como <strong>referencia de capacidad</strong>; con humedad actual se calculan aparte el <strong>déficit</strong> y la <strong>lámina</strong> hasta CC. Si el % explorado es &lt; 100, verás <strong>mm en franja regada</strong> (para regar) y la referencia sobre ha cultivo completa.</span>
+        <span>Este bloque muestra cuánto almacén “útil entre PMP y CC” tienes como <strong>referencia de capacidad</strong>; con humedad actual se calculan aparte el <strong>déficit</strong> y la <strong>lámina</strong> hasta CC. Si la superficie considerada es &lt; 100%, verás la lámina en franja regada (para regar) y la referencia sobre el área de cultivo completa.</span>
       </div>
     </div>
 
@@ -730,7 +730,7 @@
   </p>
 
   <script src="assets/np-free-local-persist.js"></script>
-  <script src="assets/np-soil-water-bridge.js?v=202606241500"></script>
+  <script src="assets/np-soil-water-bridge.js?v=20260801n"></script>
   <script>
     function refreshParticleSizes() {
       var UI = window.NpWaterClimateUI;
@@ -753,6 +753,8 @@
       refresh: function () {
         refreshParticleSizes();
         if (typeof updateWater === 'function') updateWater();
+        if (typeof drawTernary === 'function') drawTernary();
+        if (typeof refreshSoilChrome === 'function') refreshSoilChrome();
       }
     });
     refreshParticleSizes();
@@ -761,6 +763,47 @@
 (function () {
   function soilQ(value, kind, digits) {
     return window.NpWaterClimateUI.resultFromSI(value, kind, digits == null ? 2 : digits);
+  }
+  function soilIsEn() {
+    return window.NpWaterClimateUI.prefs().language === 'en';
+  }
+  function soilT(es, en) {
+    return window.NpWaterClimateUI.t(es, en);
+  }
+  function abbrFc() { return soilIsEn() ? 'FC' : 'CC'; }
+  function abbrPwp() { return soilIsEn() ? 'PWP' : 'PMP'; }
+  function stripWord() { return soilT('franja', 'strip'); }
+  var TEXTURE_LABEL_EN = {
+    'Arena': 'Sand',
+    'Arena franca': 'Loamy sand',
+    'Franco arenoso': 'Sandy loam',
+    'Franco': 'Loam',
+    'Franco limoso': 'Silt loam',
+    'Limo': 'Silt',
+    'Franco arcilloso': 'Clay loam',
+    'Franco arcilloso limoso': 'Silty clay loam',
+    'Franco arcilloso arenoso': 'Sandy clay loam',
+    'Arcilloso limoso': 'Silty clay',
+    'Arcilloso arenoso': 'Sandy clay',
+    'Arcilla': 'Clay'
+  };
+  function textureLabel(es) {
+    if (!es || es === '—') return es;
+    return soilIsEn() ? (TEXTURE_LABEL_EN[es] || es) : es;
+  }
+  function regionLabel(reg) {
+    return soilIsEn() ? (reg.labelEn || reg.label) : reg.label;
+  }
+  function refreshSoilChrome() {
+    var btn = document.getElementById('btnEjemplo');
+    if (btn) btn.textContent = soilT('Ejemplo 30 · 40 · 30', 'Example 30 · 40 · 30');
+    var vs = document.querySelector('.particle-ref th:last-child');
+    if (vs) vs.textContent = soilT('vs arcilla', 'vs clay');
+    var rows = document.querySelectorAll('.particle-ref tbody tr td:last-child');
+    if (rows[0]) rows[0].textContent = soilT('Base (1×)', 'Base (1×)');
+    if (rows[1]) rows[1].innerHTML = '<em>1 ' + soilT('a', 'to') + ' 25×</em> ' + soilT('más grande', 'larger');
+    if (rows[2]) rows[2].innerHTML = '<em>25 ' + soilT('a', 'to') + ' 1.000×</em> ' + soilT('más grande', 'larger');
+    if (typeof rebuildTexturePresetOptions === 'function') rebuildTexturePresetOptions();
   }
   /* —— Tabs —— */
   var tabs = document.querySelectorAll('.tabs button[role="tab"]');
@@ -784,6 +827,26 @@
     { label: 'Franco arcilloso', cc: 32, pmp: 17 },
     { label: 'Arcilla', cc: 38, pmp: 22 }
   ];
+  function rebuildTexturePresetOptions() {
+    var presetSel = document.getElementById('presetTex');
+    if (!presetSel) return;
+    var cur = presetSel.value;
+    presetSel.innerHTML = '';
+    var ph = document.createElement('option');
+    ph.value = '';
+    ph.textContent = soilT(
+      '— Elige textura ilustrativa para rellenar CC y PMP (una vez) —',
+      '— Choose an illustrative texture to fill FC and PWP (once) —'
+    );
+    presetSel.appendChild(ph);
+    TEXTURE_SERIES.forEach(function (t, i) {
+      var o = document.createElement('option');
+      o.value = String(i);
+      o.textContent = textureLabel(t.label) + ' (' + abbrFc() + ' ' + t.cc + '%, ' + abbrPwp() + ' ' + t.pmp + '%)';
+      presetSel.appendChild(o);
+    });
+    if (cur) presetSel.value = cur;
+  }
 
   /** Rangos típicos % vol. CC/PMP por clase USDA del triángulo (referencia ilustrativa, alineada con pestaña Agua). */
   var TEXTURE_CC_PMP_MAP = {
@@ -806,18 +869,24 @@
     var ccPmpEl = document.getElementById('textureCcPmpOut');
     if (!mainEl || !ccPmpEl) return;
     if (!sum || sum <= 0 || !outLabel || outLabel === '—') {
-      mainEl.textContent = 'Ingresa arena, limo y arcilla (o arrastra el punto) para estimar textura.';
+      mainEl.textContent = soilT(
+        'Ingresa arena, limo y arcilla (o arrastra el punto) para estimar textura.',
+        'Enter sand, silt and clay (or drag the point) to estimate texture.'
+      );
       ccPmpEl.hidden = true;
       ccPmpEl.textContent = '';
       return;
     }
-    mainEl.textContent = 'Textura estimada: ' + outLabel;
+    mainEl.textContent = soilT('Textura estimada:', 'Estimated texture:') + ' ' + textureLabel(outLabel);
     var ref = TEXTURE_CC_PMP_MAP[outLabel];
     if (ref) {
       ccPmpEl.innerHTML =
-        '<span><strong>CC</strong> típica ' + ref.ccLo + '–' + ref.ccHi + '% vol.</span> · ' +
-        '<span><strong>PMP</strong> típico ' + ref.pmpLo + '–' + ref.pmpHi + '% vol.</span>' +
-        '<span class="class-out__ref-note">Referencia ilustrativa (varía con MO, compactación y método). En «Agua en suelo» puedes cargar un valor puntual desde el desplegable.</span>';
+        '<span><strong>' + abbrFc() + '</strong> ' + soilT('típica', 'typical') + ' ' + ref.ccLo + '–' + ref.ccHi + '% vol.</span> · ' +
+        '<span><strong>' + abbrPwp() + '</strong> ' + soilT('típico', 'typical') + ' ' + ref.pmpLo + '–' + ref.pmpHi + '% vol.</span>' +
+        '<span class="class-out__ref-note">' + soilT(
+          'Referencia ilustrativa (varía con MO, compactación y método). En «Agua en suelo» puedes cargar un valor puntual desde el desplegable.',
+          'Illustrative reference (varies with OM, compaction and method). In “Soil water” you can load a point value from the dropdown.'
+        ) + '</span>';
       ccPmpEl.hidden = false;
     } else {
       ccPmpEl.hidden = true;
@@ -826,16 +895,7 @@
   }
 
   var presetSel = document.getElementById('presetTex');
-  var ph = document.createElement('option');
-  ph.value = '';
-  ph.textContent = '— Elige textura ilustrativa para rellenar CC y PMP (una vez) —';
-  presetSel.appendChild(ph);
-  TEXTURE_SERIES.forEach(function (t, i) {
-    var o = document.createElement('option');
-    o.value = String(i);
-    o.textContent = t.label + ' (CC ' + t.cc + '%, PMP ' + t.pmp + '%)';
-    presetSel.appendChild(o);
-  });
+  rebuildTexturePresetOptions();
   presetSel.addEventListener('change', function () {
     var idx = parseInt(presetSel.value, 10);
     if (isNaN(idx)) return;
@@ -855,6 +915,8 @@
     var rootEff = parseFloat(document.getElementById('rootEff').value) || 100;
     var effAreaHa = areaHa * (rootEff / 100);
     var hasSplitArea = rootEff < 99.5 && areaHa > 0;
+    var FC = abbrFc();
+    var PWP = abbrPwp();
 
     var thetaStr = document.getElementById('thetaVol').value;
     var hasTheta = thetaStr !== '' && !Number.isNaN(parseFloat(thetaStr));
@@ -867,33 +929,53 @@
 
     var spans = [];
     spans.push(
-      '<span class="calc-metric calc-metric--geom"><strong>Volumen de suelo</strong> (área × profundidad): <strong>' +
+      '<span class="calc-metric calc-metric--geom"><strong>' +
+        soilT('Volumen de suelo', 'Soil volume') +
+        '</strong> (' +
+        soilT('área × profundidad', 'area × depth') +
+        '): <strong>' +
         soilQ(volSoilM3, 'volume', 2) +
         '</strong></span>'
     );
     spans.push(
-      '<span class="calc-metric calc-metric--pmp-band"><strong>Potencial de agua útil</strong> (referencia CC − PMP · no es tu humedad hoy): <strong>' +
+      '<span class="calc-metric calc-metric--pmp-band"><strong>' +
+        soilT('Potencial de agua útil', 'Available water potential') +
+        '</strong> (' +
+        soilT('referencia', 'reference') +
+        ' ' + FC + ' − ' + PWP + ' · ' +
+        soilT('no es tu humedad hoy', 'not your current moisture') +
+        '): <strong>' +
         adPct.toFixed(1) +
         '% vol.</strong></span>'
     );
     spans.push(
-      '<span class="calc-metric calc-metric--pmp-band"><strong>Volumen de ese potencial</strong> en el perfil: <strong>' +
+      '<span class="calc-metric calc-metric--pmp-band"><strong>' +
+        soilT('Volumen de ese potencial', 'Volume of that potential') +
+        '</strong> ' +
+        soilT('en el perfil', 'in the profile') +
+        ': <strong>' +
         soilQ(adM3, 'volume', 2) +
         '</strong></span>'
     );
     if (hasSplitArea) {
       spans.push(
-        '<span class="calc-metric calc-metric--radical"><strong>Potencial × superficie explorada</strong> (<strong>' +
+        '<span class="calc-metric calc-metric--radical"><strong>' +
+          soilT('Potencial × superficie considerada', 'Potential × considered surface') +
+          '</strong> (<strong>' +
           rootEff +
           '%</strong> · <strong>' +
           soilQ(effAreaHa, 'area', 2) +
-          '</strong> franja): <strong>' +
+          '</strong> ' +
+          stripWord() +
+          '): <strong>' +
           soilQ(realM3, 'volume', 2) +
           '</strong></span>'
       );
     } else {
       spans.push(
-        '<span class="calc-metric calc-metric--radical"><strong>Potencial en superficie explorada</strong> (<strong>' +
+        '<span class="calc-metric calc-metric--radical"><strong>' +
+          soilT('Potencial en superficie considerada', 'Potential on considered surface') +
+          '</strong> (<strong>' +
           rootEff +
           '%</strong>): <strong>' +
           soilQ(realM3, 'volume', 2) +
@@ -917,7 +999,9 @@
         if (deficitPctRaw < -0.05) {
           heroEl.classList.add('is-visible', 'calc-hero-result--surplus');
           heroEl.innerHTML =
-            '<p class="calc-hero-result__eyebrow">⚠️ Exceso sobre CC — no reponer suelo</p>' +
+            '<p class="calc-hero-result__eyebrow">⚠️ ' +
+            soilT('Exceso sobre CC — no reponer suelo', 'Excess above FC — do not refill soil') +
+            '</p>' +
             '<div class="calc-hero-result__values">' +
             '<span class="calc-hero-result__m3">' +
             soilQ(lamM3Surplus, 'volume', 2) +
@@ -928,21 +1012,29 @@
                 '</span>'
               : '') +
             '</div>' +
-            '<p class="calc-hero-result__sub">Humedad por encima de CC en franja (<strong>' +
+            '<p class="calc-hero-result__sub">' +
+            soilT('Humedad por encima de CC en franja', 'Moisture above FC in strip') +
+            ' (<strong>' +
             soilQ(effAreaHa, 'area', 2) +
-            '</strong>) — riesgo de encharcamiento.</p>';
+            '</strong>) — ' +
+            soilT('riesgo de encharcamiento.', 'waterlogging risk.') +
+            '</p>';
         } else if (deficitToCc <= 0.05) {
           heroEl.classList.add('is-visible');
           heroEl.innerHTML =
-            '<p class="calc-hero-result__eyebrow">✓ Suelo cerca de CC</p>' +
-            '<p class="calc-hero-result__sub" style="margin:0;font-size:14px;color:#0f766e;font-weight:600;">Sin déficit de reposición hasta capacidad de campo.</p>';
+            '<p class="calc-hero-result__eyebrow">✓ ' +
+            soilT('Suelo cerca de CC', 'Soil near FC') +
+            '</p>' +
+            '<p class="calc-hero-result__sub" style="margin:0;font-size:14px;color:#0f766e;font-weight:600;">' +
+            soilT('Sin déficit de reposición hasta capacidad de campo.', 'No refill deficit to field capacity.') +
+            '</p>';
         } else {
           heroEl.classList.add('is-visible');
           var heroMm = hasSplitArea ? lamMmFranja : lamMmTot;
           var heroM3 = hasSplitArea ? lamM3Active : lamM3Tot;
           var heroEyebrow = hasSplitArea
-            ? '📍 Resultado para riego · franja ' + soilQ(effAreaHa, 'area', 2) + ' (' + rootEff + '% superficie)'
-            : '📍 Lámina hasta CC · toda el área';
+            ? '📍 ' + soilT('Resultado para riego · franja', 'Irrigation result · strip') + ' ' + soilQ(effAreaHa, 'area', 2) + ' (' + rootEff + '% ' + soilT('superficie', 'surface') + ')'
+            : '📍 ' + soilT('Lámina hasta CC · toda el área', 'Depth to FC · full area');
           heroEl.innerHTML =
             '<p class="calc-hero-result__eyebrow">' +
             heroEyebrow +
@@ -957,43 +1049,75 @@
             '</span>' +
             '</div>' +
             (hasSplitArea
-              ? '<p class="calc-hero-result__sub"><strong>Aplica ' +
+              ? '<p class="calc-hero-result__sub"><strong>' +
+                soilT('Aplica', 'Apply') +
+                ' ' +
                 soilQ(heroM3, 'volume', 2) +
-                '</strong> en la franja regada (<strong>' +
+                '</strong> ' +
+                soilT('en la franja regada', 'in the irrigated strip') +
+                ' (<strong>' +
                 soilQ(effAreaHa, 'area', 2) +
-                '</strong>) — eso son <strong>' +
+                '</strong>) — ' +
+                soilT('eso son', 'that is') +
+                ' <strong>' +
                 soilQ(heroMm, 'water_depth', 2) +
-                '</strong> de lámina en esa zona. No son dos riegos: volumen y lámina representan la misma agua. Sobre toda el área del cultivo (<strong>' +
+                '</strong> ' +
+                soilT('de lámina en esa zona. No son dos riegos: volumen y lámina representan la misma agua. Sobre toda el área del cultivo', 'of depth in that zone. Not two irrigations: volume and depth are the same water. Over the full crop area') +
+                ' (<strong>' +
                 soilQ(areaHa, 'area', 2) +
-                '</strong>) equivalen a <strong>' +
+                '</strong>) ' +
+                soilT('equivalen a', 'they equal') +
+                ' <strong>' +
                 soilQ(lamMmCropRef, 'water_depth', 2) +
-                '</strong> (mismos ' +
+                '</strong> (' +
+                soilT('mismos', 'same') +
+                ' ' +
                 soilQ(heroM3, 'volume', 2) +
                 ').</p>'
-              : '<p class="calc-hero-result__sub">Aplica <strong>' +
+              : '<p class="calc-hero-result__sub">' +
+                soilT('Aplica', 'Apply') +
+                ' <strong>' +
                 soilQ(heroM3, 'volume', 2) +
                 '</strong> (≈ <strong>' +
                 soilQ(heroMm, 'water_depth', 2) +
-                '</strong> de lámina en el perfil) para reponer hasta CC.</p>');
+                '</strong> ' +
+                soilT('de lámina en el perfil) para reponer hasta CC.', 'of profile depth) to refill to FC.') +
+                '</p>');
         }
       }
 
       spans.push(
-        '<span class="calc-metric calc-metric--theta"><strong>Humedad actual</strong> (volumétrica): <strong>' +
+        '<span class="calc-metric calc-metric--theta"><strong>' +
+          soilT('Humedad actual', 'Current moisture') +
+          '</strong> (' +
+          soilT('volumétrica', 'volumetric') +
+          '): <strong>' +
           thetaVal.toFixed(1) +
           '% vol.</strong></span>'
       );
       spans.push(
-        '<span class="calc-metric calc-metric--rep"><strong>Déficit hasta CC</strong> (tu CC − humedad actual): <strong>' +
+        '<span class="calc-metric calc-metric--rep"><strong>' +
+          soilT('Déficit hasta CC', 'Deficit to FC') +
+          '</strong> (' +
+          soilT('tu', 'your') +
+          ' ' + FC + ' − ' +
+          soilT('humedad actual', 'current moisture') +
+          '): <strong>' +
           deficitToCc.toFixed(1) +
           '% vol.</strong>' +
           (deficitPctRaw < -0.05
-            ? ' <em style="color:#b45309;font-style:normal;font-weight:700">· humedad por encima de CC (riesgo encharcamiento)</em>'
+            ? ' <em style="color:#b45309;font-style:normal;font-weight:700">· ' +
+              soilT('humedad por encima de CC (riesgo encharcamiento)', 'moisture above FC (waterlogging risk)') +
+              '</em>'
             : '') +
           '</span>'
       );
       spans.push(
-        '<span class="calc-metric calc-metric--lamina"><strong>Lámina hasta CC</strong> (perfil · toda el área): <strong>' +
+        '<span class="calc-metric calc-metric--lamina"><strong>' +
+          soilT('Lámina hasta CC', 'Depth to FC') +
+          '</strong> (' +
+          soilT('perfil · toda el área', 'profile · full area') +
+          '): <strong>' +
           soilQ(lamMmTot, 'water_depth', 2) +
           '</strong> · <strong>' +
           soilQ(lamM3Tot, 'volume', 2) +
@@ -1007,7 +1131,11 @@
         var lamM3ObjTot = volSoilM3 * (defObjPct / 100);
         var lamM3ObjFranja = lamM3ObjTot * (rootEff / 100);
         spans.push(
-          '<span class="calc-metric calc-metric--objective"><strong>Zona objetivo riego</strong> (40–60% agua útil): <strong>' +
+          '<span class="calc-metric calc-metric--objective"><strong>' +
+            soilT('Zona objetivo riego', 'Irrigation target zone') +
+            '</strong> (40–60% ' +
+            soilT('agua útil', 'available water') +
+            '): <strong>' +
             objZone.lowPctVol +
             '–' +
             objZone.highPctVol +
@@ -1015,17 +1143,27 @@
         );
         if (defObjPct > 0.05) {
           spans.push(
-            '<span class="calc-metric calc-metric--objective"><strong>Lámina hasta objetivo</strong> (hasta ' +
+            '<span class="calc-metric calc-metric--objective"><strong>' +
+              soilT('Lámina hasta objetivo', 'Depth to target') +
+              '</strong> (' +
+              soilT('hasta', 'up to') +
+              ' ' +
               objZone.highPctVol +
-              '% vol. · 60% AU): <strong>' +
+              '% vol. · 60% ' +
+              soilT('AU', 'AW') +
+              '): <strong>' +
               soilQ(lamMmObj, 'water_depth', 2) +
               '</strong> · <strong>' +
-              (hasSplitArea ? soilQ(lamM3ObjFranja, 'volume', 2) + ' franja' : soilQ(lamM3ObjTot, 'volume', 2)) +
+              (hasSplitArea ? soilQ(lamM3ObjFranja, 'volume', 2) + ' ' + stripWord() : soilQ(lamM3ObjTot, 'volume', 2)) +
               '</strong></span>'
           );
         } else if (thetaVal >= objZone.lowPctVol - 0.05 && thetaVal <= objZone.highPctVol + 0.05) {
           spans.push(
-            '<span class="calc-metric calc-metric--objective"><strong>Humedad en zona objetivo</strong> — no hace falta reponer hasta el 60% agua útil.</span>'
+            '<span class="calc-metric calc-metric--objective"><strong>' +
+              soilT('Humedad en zona objetivo', 'Moisture in target zone') +
+              '</strong> — ' +
+              soilT('no hace falta reponer hasta el 60% agua útil.', 'no need to refill to 60% available water.') +
+              '</span>'
           );
         }
       }
@@ -1040,7 +1178,9 @@
             var lamM3ObjH = volSoilM3 * (defObjPctHero / 100) * (rootEff / 100);
             heroObjEl.classList.add('is-visible');
             heroObjEl.innerHTML =
-              '<p class="calc-hero-result__eyebrow">🎯 Riego hasta nivel objetivo (60% agua útil)</p>' +
+              '<p class="calc-hero-result__eyebrow">🎯 ' +
+              soilT('Riego hasta nivel objetivo (60% agua útil)', 'Irrigation to target level (60% available water)') +
+              '</p>' +
               '<div class="calc-hero-result__values">' +
               '<span class="calc-hero-result__m3">' +
               soilQ((hasSplitArea ? lamM3ObjH : volSoilM3 * (defObjPctHero / 100)), 'volume', 2) +
@@ -1049,27 +1189,49 @@
               '<span class="calc-hero-result__mm">' +
               soilQ(lamMmObjH, 'water_depth', 2) +
               '</span></div>' +
-              '<p class="calc-hero-result__sub">Zona objetivo <strong>' +
+              '<p class="calc-hero-result__sub">' +
+              soilT('Zona objetivo', 'Target zone') +
+              ' <strong>' +
               objZone.lowPctVol +
               '–' +
               objZone.highPctVol +
-              '% vol.</strong> (40–60% entre PMP y CC). Hasta CC serían <strong>' +
+              '% vol.</strong> (40–60% ' +
+              soilT('entre', 'between') +
+              ' ' + PWP + ' ' +
+              soilT('y', 'and') +
+              ' ' + FC + '). ' +
+              soilT('Hasta CC serían', 'Up to FC would be') +
+              ' <strong>' +
               soilQ((hasSplitArea ? lamM3Active : lamM3Tot), 'volume', 2) +
-              '</strong> — referencia máxima, no siempre necesaria.</p>';
+              '</strong> — ' +
+              soilT('referencia máxima, no siempre necesaria.', 'maximum reference, not always needed.') +
+              '</p>';
           } else if (thetaVal >= objZone.lowPctVol - 0.05) {
             heroObjEl.classList.add('is-visible');
             heroObjEl.innerHTML =
-              '<p class="calc-hero-result__eyebrow">🎯 En zona objetivo de riego</p>' +
-              '<p class="calc-hero-result__sub" style="margin:0;font-size:14px;color:#6d28d9;font-weight:600;">Tu humedad está dentro del rango <strong>40–60% agua útil</strong> (' +
+              '<p class="calc-hero-result__eyebrow">🎯 ' +
+              soilT('En zona objetivo de riego', 'In irrigation target zone') +
+              '</p>' +
+              '<p class="calc-hero-result__sub" style="margin:0;font-size:14px;color:#6d28d9;font-weight:600;">' +
+              soilT('Tu humedad está dentro del rango', 'Your moisture is within the') +
+              ' <strong>40–60% ' +
+              soilT('agua útil', 'available water') +
+              '</strong> (' +
               objZone.lowPctVol +
               '–' +
               objZone.highPctVol +
-              '% vol.). Valora regar menos que hasta CC.</p>';
+              '% vol.). ' +
+              soilT('Valora regar menos que hasta CC.', 'Consider irrigating less than to FC.') +
+              '</p>';
           } else if (deficitToCc > 0.05) {
             heroObjEl.classList.add('is-visible');
             heroObjEl.innerHTML =
-              '<p class="calc-hero-result__eyebrow">🎯 Por encima de zona objetivo</p>' +
-              '<p class="calc-hero-result__sub" style="margin:0;font-size:13px;color:#475569;">Entre objetivo y CC — puedes ajustar el riego con criterio de campo (no siempre hace falta llenar hasta CC).</p>';
+              '<p class="calc-hero-result__eyebrow">🎯 ' +
+              soilT('Por encima de zona objetivo', 'Above target zone') +
+              '</p>' +
+              '<p class="calc-hero-result__sub" style="margin:0;font-size:13px;color:#475569;">' +
+              soilT('Entre objetivo y CC — puedes ajustar el riego con criterio de campo (no siempre hace falta llenar hasta CC).', 'Between target and FC — you can adjust irrigation with field judgment (filling to FC is not always needed).') +
+              '</p>';
           }
         }
       }
@@ -1088,15 +1250,31 @@
       var objZone0 = SB0 && typeof SB0.computeObjectiveZone === 'function' ? SB0.computeObjectiveZone(cc, pmp) : null;
       if (objZone0) {
         spans.push(
-          '<span class="calc-metric calc-metric--objective"><strong>Zona objetivo riego</strong> (40–60% agua útil): <strong>' +
+          '<span class="calc-metric calc-metric--objective"><strong>' +
+            soilT('Zona objetivo riego', 'Irrigation target zone') +
+            '</strong> (40–60% ' +
+            soilT('agua útil', 'available water') +
+            '): <strong>' +
             objZone0.lowPctVol +
             '–' +
             objZone0.highPctVol +
-            '% vol.</strong> — visible en la gráfica.</span>'
+            '% vol.</strong> — ' +
+            soilT('visible en la gráfica.', 'shown on the chart.') +
+            '</span>'
         );
       }
       spans.push(
-        '<span class="calc-metric calc-metric--muted"><strong>Humedad actual (% vol.)</strong>: sin dato · al ingresarlo se calculan <strong>déficit hasta CC</strong> y <strong>lámina</strong>.</span>'
+        '<span class="calc-metric calc-metric--muted"><strong>' +
+          soilT('Humedad actual (% vol.)', 'Current moisture (% vol.)') +
+          '</strong>: ' +
+          soilT('sin dato · al ingresarlo se calculan', 'no data · enter it to calculate') +
+          ' <strong>' +
+          soilT('déficit hasta CC', 'deficit to FC') +
+          '</strong> ' +
+          soilT('y', 'and') +
+          ' <strong>' +
+          soilT('lámina', 'depth') +
+          '</strong>.</span>'
       );
     }
 
@@ -1212,49 +1390,67 @@
     parts.push('</defs>');
     parts.push('<rect width="' + W + '" height="' + H + '" fill="#fafafa"/>');
 
+    var FC = abbrFc();
+    var PWP = abbrPwp();
     parts.push(
       '<text x="' + W / 2 + '" y="22" text-anchor="middle" font-size="13" font-weight="800" fill="#1e40af">' +
-        'Contenido hídrico según tus valores (CC, PMP' +
-        (hasTheta ? ' y humedad actual' : '') +
+        soilT('Contenido hídrico según tus valores', 'Soil water content from your values') +
+        ' (' + FC + ', ' + PWP +
+        (hasTheta ? soilT(' y humedad actual', ' and current moisture') : '') +
         ')</text>'
     );
     if (swapped) {
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="38" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">Tu PMP (&gt;) tu CC · la barra solo reordenó la referencia visual.</text>'
+          '" y="38" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">' +
+          soilT('Tu PMP (>) tu CC · la barra solo reordenó la referencia visual.', 'Your PWP (>) your FC · the bar only reordered the visual reference.') +
+          '</text>'
       );
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">Corrige los valores si fue un error.</text>'
+          '" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">' +
+          soilT('Corrige los valores si fue un error.', 'Correct the values if that was a mistake.') +
+          '</text>'
       );
     } else if (hasTheta) {
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="36" text-anchor="middle" font-size="10" fill="#64748b">Verde oscuro: humedad actual dentro de la banda entre PMP y CC.</text>'
+          '" y="36" text-anchor="middle" font-size="10" fill="#64748b">' +
+          soilT('Verde oscuro: humedad actual dentro de la banda entre PMP y CC.', 'Dark green: current moisture within the PWP–FC band.') +
+          '</text>'
       );
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="49" text-anchor="middle" font-size="10" fill="#64748b">Verde claro: agua por reponer hasta CC (base de la lámina).</text>'
+          '" y="49" text-anchor="middle" font-size="10" fill="#64748b">' +
+          soilT('Verde claro: agua por reponer hasta CC (base de la lámina).', 'Light green: water to refill to FC (depth basis).') +
+          '</text>'
       );
       parts.push(
-        '<text x="' + W / 2 + '" y="62" text-anchor="middle" font-size="10" fill="#64748b">Ámbar: tu % de humedad actual en el eje.</text>'
+        '<text x="' + W / 2 + '" y="62" text-anchor="middle" font-size="10" fill="#64748b">' +
+        soilT('Ámbar: tu % de humedad actual en el eje.', 'Amber: your current moisture % on the axis.') +
+        '</text>'
       );
     } else {
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="40" text-anchor="middle" font-size="10" fill="#64748b">La barra apila proporciones hasta ' +
+          '" y="40" text-anchor="middle" font-size="10" fill="#64748b">' +
+          soilT('La barra apila proporciones hasta', 'The bar stacks proportions up to') +
+          ' ' +
           maxScale +
-          '% volumétrico de referencia</text>'
+          soilT('% volumétrico de referencia', '% volumetric reference') +
+          '</text>'
       );
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="53" text-anchor="middle" font-size="10" fill="#64748b">(no es saturación máxima teórica del suelo).</text>'
+          '" y="53" text-anchor="middle" font-size="10" fill="#64748b">' +
+          soilT('(no es saturación máxima teórica del suelo).', '(not theoretical maximum soil saturation).') +
+          '</text>'
       );
     }
 
@@ -1263,7 +1459,11 @@
         barX +
         '" y="' +
         (barY - 12) +
-        '" font-size="11" fill="#334155"><tspan font-weight="700">Proporción de agua por estado (respecto a esta escala)</tspan><tspan font-weight="600" fill="#64748b"> · % volumétrico de referencia (eje horizontal)</tspan></text>'
+        '" font-size="11" fill="#334155"><tspan font-weight="700">' +
+        soilT('Proporción de agua por estado (respecto a esta escala)', 'Water proportion by state (relative to this scale)') +
+        '</tspan><tspan font-weight="600" fill="#64748b"> · ' +
+        soilT('% volumétrico de referencia (eje horizontal)', 'reference volumetric % (horizontal axis)') +
+        '</tspan></text>'
     );
 
     parts.push('<g clip-path="url(#clipMainBar)">');
@@ -1406,7 +1606,9 @@
           (xObjLo + (xObjHi - xObjLo) / 2) +
           '" y="' +
           objTitleY +
-          '" text-anchor="middle" font-size="9" font-weight="700" fill="#6d28d9">Objetivo riego · 40–60% agua útil</text>'
+          '" text-anchor="middle" font-size="9" font-weight="700" fill="#6d28d9">' +
+          soilT('Objetivo riego · 40–60% agua útil', 'Irrigation target · 40–60% available water') +
+          '</text>'
       );
       parts.push(
         '<text x="' +
@@ -1443,11 +1645,11 @@
         barX +
         '" y="' +
         statsY +
-        '" fill="#172554"><tspan font-weight="700">PMP:</tspan> ' +
+        '" fill="#172554"><tspan font-weight="700">' + PWP + ':</tspan> ' +
         oP.toFixed(1) +
         '% vol. · ' +
         chartPctToMmM3(oP) +
-        ' en ' +
+        ' ' + soilT('en', 'in') + ' ' +
         soilQ(depthCm, 'depth', 2) +
         '</text>'
     );
@@ -1456,20 +1658,22 @@
         barX +
         '" y="' +
         (statsY + 12) +
-        '" fill="#15803d"><tspan font-weight="700">CC:</tspan> ' +
+        '" fill="#15803d"><tspan font-weight="700">' + FC + ':</tspan> ' +
         oC.toFixed(1) +
         '% vol. · ' +
         chartPctToMmM3(oC) +
-        ' en ' +
-        depthCm +
-        ' cm</text>'
+        ' ' + soilT('en', 'in') + ' ' +
+        soilQ(depthCm, 'depth', 2) +
+        '</text>'
     );
     parts.push(
       '<text x="' +
         barX +
         '" y="' +
         (statsY + 24) +
-        '" fill="#0f766e"><tspan font-weight="700">Potencial útil (CC−PMP):</tspan> ' +
+        '" fill="#0f766e"><tspan font-weight="700">' +
+        soilT('Potencial útil', 'Available potential') +
+        ' (' + FC + '−' + PWP + '):</tspan> ' +
         Math.max(0, oC - oP).toFixed(1) +
         '% vol. · ' +
         chartMmM3Line(mmAd, areaHa) +
@@ -1485,7 +1689,7 @@
           barX +
           '" y="' +
           (statsY + 36) +
-          '" fill="#6d28d9"><tspan font-weight="700">Zona objetivo:</tspan> ' +
+          '" fill="#6d28d9"><tspan font-weight="700">' + soilT('Zona objetivo', 'Target zone') + ':</tspan> ' +
           objZone.lowPctVol +
           '–' +
           objZone.highPctVol +
@@ -1497,9 +1701,9 @@
           soilQ(m3ObjLo, 'volume', 2) +
           '–' +
           soilQ(m3ObjHi, 'volume', 2) +
-          (hasSplitArea ? ' franja' : '') +
+          (hasSplitArea ? ' ' + stripWord() : '') +
           ' (' +
-          objZone.labelShort +
+          soilT('40–60% agua útil', '40–60% available water') +
           ')</text>'
       );
     }
@@ -1510,7 +1714,7 @@
           barX +
           '" y="' +
           thetaStatY +
-          '" fill="#b45309"><tspan font-weight="700">Humedad actual:</tspan> ' +
+          '" fill="#b45309"><tspan font-weight="700">' + soilT('Humedad actual', 'Current moisture') + ':</tspan> ' +
           thetaVol.toFixed(1) +
           '% vol. · ' +
           chartPctToMmM3(thetaVol) +
@@ -1519,20 +1723,20 @@
       var lamStatY = thetaStatY + 12;
       var lamM3Full = Math.round(lamMmTot * areaHa * 10);
       var lamLine =
-        '<tspan font-weight="700">Lámina hasta CC:</tspan> ' +
+        '<tspan font-weight="700">' + soilT('Lámina hasta CC', 'Depth to FC') + ':</tspan> ' +
         chartMmM3Line(lamMmTot, hasSplitArea ? effAreaHa : areaHa) +
-        ' en perfil';
+        ' ' + soilT('en perfil', 'in profile');
       if (hasSplitArea) {
         lamLine +=
-          ' · ref. cultivo (' +
+          ' · ' + soilT('ref. cultivo', 'crop ref.') + ' (' +
           soilQ(areaHa, 'area', 2) +
           '): ' +
           chartMmM3Line(lamMmCropRef, areaHa) +
-          ' (mismos ' +
+          ' (' + soilT('mismos', 'same') + ' ' +
           soilQ(lamM3Active, 'volume', 2) +
           ')';
       } else if (lamM3Full !== Math.round(lamM3Active)) {
-        lamLine += ' · total perfil: ' + soilQ(lamM3Full, 'volume', 2);
+        lamLine += ' · ' + soilT('total perfil', 'profile total') + ': ' + soilQ(lamM3Full, 'volume', 2);
       }
       parts.push('<text x="' + barX + '" y="' + lamStatY + '" fill="#0d9488">' + lamLine + '</text>');
       if (objZone) {
@@ -1545,9 +1749,9 @@
               barX +
               '" y="' +
               (lamStatY + 12) +
-              '" fill="#7c3aed"><tspan font-weight="700">Lámina hasta objetivo:</tspan> ' +
+              '" fill="#7c3aed"><tspan font-weight="700">' + soilT('Lámina hasta objetivo', 'Depth to target') + ':</tspan> ' +
               chartMmM3Line(lamMmObjChart, hasSplitArea ? effAreaHa : areaHa) +
-              (hasSplitArea ? ' en franja' : '') +
+              (hasSplitArea ? ' ' + soilT('en franja', 'in strip') : '') +
               '</text>'
           );
         }
@@ -1559,12 +1763,12 @@
       if (pw < 28 || !txt) return;
       parts.push('<text x="' + (xLeft + pw / 2) + '" y="' + (barY + barH / 2 + 4) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#ffffff" style="paint-order: stroke; stroke:rgba(15,23,42,0.35);stroke-width:3">' + txt + '</text>');
     }
-    midLabel(barX, pxP, pxP >= 34 ? Math.round(oP) + '% PMP' : '');
+    midLabel(barX, pxP, pxP >= 34 ? Math.round(oP) + '% ' + PWP : '');
     if (hasTheta) {
-      midLabel(xGreen0, pxFilledGreen, pxFilledGreen >= 30 ? 'act. ' + thetaVol.toFixed(0) + '%' : '');
-      midLabel(xGreen0 + pxFilledGreen, pxNeedGreen, pxNeedGreen >= 28 ? '~' + deficitCanonBand.toFixed(0) + '% rep.' : '');
+      midLabel(xGreen0, pxFilledGreen, pxFilledGreen >= 30 ? soilT('act.', 'cur.') + ' ' + thetaVol.toFixed(0) + '%' : '');
+      midLabel(xGreen0 + pxFilledGreen, pxNeedGreen, pxNeedGreen >= 28 ? '~' + deficitCanonBand.toFixed(0) + '% ' + soilT('rep.', 'ref.') : '');
     } else {
-      midLabel(barX + pxP, pxA, pxA >= 34 ? '~' + Math.round(Math.max(0, oC - oP)) + '% útil CC−PMP' : '');
+      midLabel(barX + pxP, pxA, pxA >= 34 ? '~' + Math.round(Math.max(0, oC - oP)) + '% ' + soilT('útil', 'avail.') + ' ' + FC + '−' + PWP : '');
     }
 
     parts.push('<g font-size="9">');
@@ -1579,7 +1783,7 @@
         legendH +
         '" rx="10" fill="#fff" stroke="#94a3b8" stroke-width="1.25"/>'
     );
-    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 19) + '" r="5" fill="#172554"/><text x="' + (barX + 26) + '" y="' + (legY + 22) + '" fill="#334155"><tspan font-weight="700">Oscuro:</tspan> agua muy retenida (PMP).</text>');
+    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 19) + '" r="5" fill="#172554"/><text x="' + (barX + 26) + '" y="' + (legY + 22) + '" fill="#334155"><tspan font-weight="700">' + soilT('Oscuro', 'Dark') + ':</tspan> ' + soilT('agua muy retenida', 'tightly held water') + ' (' + PWP + ').</text>');
     if (objZone) {
       parts.push(
         '<rect x="' +
@@ -1590,7 +1794,7 @@
           (barX + 26) +
           '" y="' +
           (legY + 36) +
-          '" fill="#334155"><tspan font-weight="700">Violeta:</tspan> zona objetivo riego (40–60% agua útil).</text>'
+          '" fill="#334155"><tspan font-weight="700">' + soilT('Violeta', 'Violet') + ':</tspan> ' + soilT('zona objetivo riego (40–60% agua útil).', 'irrigation target zone (40–60% available water).') + '</text>'
       );
     }
     if (hasTheta) {
@@ -1598,19 +1802,19 @@
       parts.push(
         '<rect x="' + (barX + 9) + '" y="' + legThetaY + '" width="12" height="10" rx="2" fill="#0f766e"/><text x="' + (barX + 26) + '" y="' +
           (legThetaY + 8) +
-          '" fill="#334155"><tspan font-weight="700">Verde oscuro:</tspan> tramo hasta tu humedad actual.</text>'
+          '" fill="#334155"><tspan font-weight="700">' + soilT('Verde oscuro', 'Dark green') + ':</tspan> ' + soilT('tramo hasta tu humedad actual.', 'segment up to your current moisture.') + '</text>'
       );
-      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legThetaY + 22) + '" r="5" fill="#4ade80"/><text x="' + (barX + 26) + '" y="' + (legThetaY + 25) + '" fill="#334155"><tspan font-weight="700">Verde claro:</tspan> agua por reponer hasta CC.</text>');
-      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legThetaY + 36) + '" r="4" fill="#d97706" stroke="#fff" stroke-width="1"/><text x="' + (barX + 26) + '" y="' + (legThetaY + 39) + '" fill="#334155"><tspan font-weight="700">Ámbar:</tspan> marcador · tu % actual en el eje.</text>');
+      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legThetaY + 22) + '" r="5" fill="#4ade80"/><text x="' + (barX + 26) + '" y="' + (legThetaY + 25) + '" fill="#334155"><tspan font-weight="700">' + soilT('Verde claro', 'Light green') + ':</tspan> ' + soilT('agua por reponer hasta CC.', 'water to refill to FC.') + '</text>');
+      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legThetaY + 36) + '" r="4" fill="#d97706" stroke="#fff" stroke-width="1"/><text x="' + (barX + 26) + '" y="' + (legThetaY + 39) + '" fill="#334155"><tspan font-weight="700">' + soilT('Ámbar', 'Amber') + ':</tspan> ' + soilT('marcador · tu % actual en el eje.', 'marker · your current % on the axis.') + '</text>');
     } else {
       var legGreenY = legY + (objZone ? 50 : 36);
-      parts.push('<circle cx="' + (barX + 15) + '" cy="' + legGreenY + '" r="5" fill="#15803d"/><text x="' + (barX + 26) + '" y="' + (legGreenY + 3) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> potencial útil CC−PMP (referencia, no lámina).</text>');
+      parts.push('<circle cx="' + (barX + 15) + '" cy="' + legGreenY + '" r="5" fill="#15803d"/><text x="' + (barX + 26) + '" y="' + (legGreenY + 3) + '" fill="#334155"><tspan font-weight="700">' + soilT('Verde', 'Green') + ':</tspan> ' + soilT('potencial útil', 'available potential') + ' ' + FC + '−' + PWP + ' ' + soilT('(referencia, no lámina).', '(reference, not irrigation depth).') + '</text>');
     }
     var patBoxW = Math.min(120, Math.max(72, barW - 300));
     var patLegY = hasTheta ? legY + (objZone ? 78 : 64) : legY + (objZone ? 58 : 31);
     if (!hasTheta) {
       parts.push(
-        '<rect x="' + (barX + barW - patBoxW - 12) + '" y="' + patLegY + '" width="' + patBoxW + '" height="11" rx="3" fill="url(#patAirSalt)" stroke="#94a3b8"/><text x="' + (barX + barW - 14) + '" y="' + (patLegY + 8) + '" text-anchor="end" fill="#64748b">Resto (aire/es)</text>'
+        '<rect x="' + (barX + barW - patBoxW - 12) + '" y="' + patLegY + '" width="' + patBoxW + '" height="11" rx="3" fill="url(#patAirSalt)" stroke="#94a3b8"/><text x="' + (barX + barW - 14) + '" y="' + (patLegY + 8) + '" text-anchor="end" fill="#64748b">' + soilT('Resto (aire/es)', 'Remainder (air/etc.)') + '</text>'
       );
     } else {
       parts.push(
@@ -1740,18 +1944,18 @@
 
   /** Polígonos oficiales: índices 0-based a USDA_PTS_CSS (orden = soiltexture USDA.TT $tt.polygons). */
   var USDA_REGIONS = [
-    { key: 'Cl', label: 'Arcilla', ix: [23, 0, 4, 5, 1], fill: '#ebb0b0', fz: 8 },
-    { key: 'SiCl', label: 'Arcilloso limoso', ix: [1, 5, 6], fill: '#d9cee8', fz: 9 },
-    { key: 'SaCl', label: 'Arcilloso arenoso', ix: [0, 2, 3, 4], fill: '#6f7a82', fz: 8 },
-    { key: 'ClLo', label: 'Franco arcilloso', ix: [4, 3, 9, 10, 11, 5], fill: '#d4a068', fz: 8 },
-    { key: 'SiClLo', label: 'Franco arcilloso limoso', ix: [5, 11, 12, 6], fill: '#a8cce4', fz: 8 },
-    { key: 'SaClLo', label: 'Franco arcilloso arenoso', ix: [2, 7, 8, 9, 3], fill: '#a8b8cc', fz: 8 },
-    { key: 'Lo', label: 'Franco', ix: [9, 8, 15, 16, 10], fill: '#e6ddc8', fz: 8 },
-    { key: 'SiLo', label: 'Franco limoso', ix: [10, 16, 21, 22, 17, 18, 12, 11], fill: '#bfe4bc', fz: 8 },
-    { key: 'SaLo', label: 'Franco arenoso', ix: [7, 13, 20, 21, 16, 15, 8], fill: '#d4cce8', fz: 8 },
-    { key: 'Si', label: 'Limo', ix: [17, 22, 25, 18], fill: '#f7f4c8', fz: 8 },
-    { key: 'LoSa', label: 'Arena franca', ix: [13, 14, 19, 20], fill: '#e4d4a8', fz: 8 },
-    { key: 'Sa', label: 'Arena', ix: [14, 24, 19], fill: '#f2a848', fz: 9 }
+    { key: 'Cl', label: 'Arcilla', labelEn: 'Clay', ix: [23, 0, 4, 5, 1], fill: '#ebb0b0', fz: 8 },
+    { key: 'SiCl', label: 'Arcilloso limoso', labelEn: 'Silty clay', ix: [1, 5, 6], fill: '#d9cee8', fz: 9 },
+    { key: 'SaCl', label: 'Arcilloso arenoso', labelEn: 'Sandy clay', ix: [0, 2, 3, 4], fill: '#6f7a82', fz: 8 },
+    { key: 'ClLo', label: 'Franco arcilloso', labelEn: 'Clay loam', ix: [4, 3, 9, 10, 11, 5], fill: '#d4a068', fz: 8 },
+    { key: 'SiClLo', label: 'Franco arcilloso limoso', labelEn: 'Silty clay loam', ix: [5, 11, 12, 6], fill: '#a8cce4', fz: 8 },
+    { key: 'SaClLo', label: 'Franco arcilloso arenoso', labelEn: 'Sandy clay loam', ix: [2, 7, 8, 9, 3], fill: '#a8b8cc', fz: 8 },
+    { key: 'Lo', label: 'Franco', labelEn: 'Loam', ix: [9, 8, 15, 16, 10], fill: '#e6ddc8', fz: 8 },
+    { key: 'SiLo', label: 'Franco limoso', labelEn: 'Silt loam', ix: [10, 16, 21, 22, 17, 18, 12, 11], fill: '#bfe4bc', fz: 8 },
+    { key: 'SaLo', label: 'Franco arenoso', labelEn: 'Sandy loam', ix: [7, 13, 20, 21, 16, 15, 8], fill: '#d4cce8', fz: 8 },
+    { key: 'Si', label: 'Limo', labelEn: 'Silt', ix: [17, 22, 25, 18], fill: '#f7f4c8', fz: 8 },
+    { key: 'LoSa', label: 'Arena franca', labelEn: 'Loamy sand', ix: [13, 14, 19, 20], fill: '#e4d4a8', fz: 8 },
+    { key: 'Sa', label: 'Arena', labelEn: 'Sand', ix: [14, 24, 19], fill: '#f2a848', fz: 9 }
   ];
 
   function cssXY(row) {
@@ -1861,7 +2065,7 @@
     updateTextureClassPanel(outLabel, sum);
 
     if (sum > 0 && Math.abs(sum - 100) > 1) {
-      warn.textContent = 'La suma es ' + sum.toFixed(1) + '%. Usa «Normalizar a 100%» o ajusta los valores.';
+      warn.textContent = soilT('La suma es', 'The sum is') + ' ' + sum.toFixed(1) + '%. ' + soilT('Usa «Normalizar a 100%» o ajusta los valores.', 'Use “Normalize to 100%” or adjust the values.');
       warn.classList.add('visible');
     } else {
       warn.classList.remove('visible');
@@ -1895,7 +2099,7 @@
       var T = USDA_REGIONS[tj];
       var cPt = polyCentroid(T.ix);
       var fs = T.fz;
-      var ln = textureLabelTwoLines(T.label);
+      var ln = textureLabelTwoLines(regionLabel(T));
       var st = 'paint-order: stroke; stroke:rgba(248,250,252,0.92);stroke-width:2';
       if (ln.b) {
         var y1 = cPt.y - fs * 0.48;
@@ -1941,16 +2145,16 @@
 
     /* Nombres de ejes: arena abajo, arcilla izquierda, limo derecha (convención USDA en figuras). */
     h += '<g font-family="inherit">';
-    h += '<text x="270" y="468" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Arena (%)</text>';
-    h += '<text transform="translate(128,274) rotate(-60)" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Arcilla (%)</text>';
-    h += '<text transform="translate(422,274) rotate(60)" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Limo (%)</text>';
+    h += '<text x="270" y="468" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">' + soilT('Arena (%)', 'Sand (%)') + '</text>';
+    h += '<text transform="translate(128,274) rotate(-60)" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">' + soilT('Arcilla (%)', 'Clay (%)') + '</text>';
+    h += '<text transform="translate(422,274) rotate(60)" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">' + soilT('Limo (%)', 'Silt (%)') + '</text>';
     h += '</g>';
 
     /* Vértices 100 % (referencia rápida) */
     h += '<g fill="#475569" font-size="11" font-weight="700">';
-    h += '<text x="' + (BL.x - 12) + '" y="' + (BL.y + 28) + '" text-anchor="end">Arena 100</text>';
-    h += '<text x="' + (BR.x + 34) + '" y="' + (BR.y + 28) + '" text-anchor="start">Limo 100</text>';
-    h += '<text x="' + TP.x + '" y="' + (TP.y - 18) + '" text-anchor="middle">Arcilla 100</text>';
+    h += '<text x="' + (BL.x - 12) + '" y="' + (BL.y + 28) + '" text-anchor="end">' + soilT('Arena 100', 'Sand 100') + '</text>';
+    h += '<text x="' + (BR.x + 34) + '" y="' + (BR.y + 28) + '" text-anchor="start">' + soilT('Limo 100', 'Silt 100') + '</text>';
+    h += '<text x="' + TP.x + '" y="' + (TP.y - 18) + '" text-anchor="middle">' + soilT('Arcilla 100', 'Clay 100') + '</text>';
     h += '</g>';
 
     var colSand = '#2563eb';
@@ -1998,6 +2202,7 @@
   });
 
   setupTernaryDrag();
+  refreshSoilChrome();
   drawTernary();
 
   var TEX_IDS = ['cc', 'pmp', 'depth', 'areaHa', 'rootEff', 'thetaVol', 'presetTex', 'pctSand', 'pctSilt', 'pctClay'];

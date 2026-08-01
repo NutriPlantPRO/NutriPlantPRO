@@ -7,7 +7,7 @@
   <meta name="description" content="Estructura del programa de fertirriego en NutriPlant: requerimiento, semanas o meses, lámina de riego, aporte por agua y kg/ha.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/programa-fertirriego-etapas.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260801us">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -84,6 +84,8 @@
       Extracción total (kg/ha) = extracción por ton (kg/ton) × rendimiento objetivo (ton/ha)<br>
       Requerimiento real (kg/ha) = Ajuste ÷ (Eficiencia ÷ 100)
     </div>
+    <div class="mt-formula-us"><span class="mt-formula-us__label">Sistema inglés (US customary)</span>Extracción total (lb/acre) = extracción por short ton (lb/short ton) × rendimiento (short ton/acre)<br>
+      Requerimiento real (lb/acre) = Ajuste ÷ (Eficiencia ÷ 100)<span class="mt-formula-us__note">≈ 1 kg/ha ≈ 0,892 lb/acre · 1 ton/ha ≈ 0,446 short ton/acre · 1 kg/ton ≈ 2 lb/short ton.</span></div>
 
     <p><strong>Extracción total</strong> — cuánto nutriente retira el cultivo al rendimiento objetivo,
       según la base del cultivo (editable). Punto de partida numérico.</p>
@@ -104,6 +106,10 @@
     <p><strong>Ejemplo requerimiento:</strong> extracción total K₂O = 180 kg/ha; ajuste por suelo bajo
       → 200 kg/ha; eficiencia K₂O 90 %:</p>
     <div class="mt-formula">Requerimiento real K₂O = 200 ÷ 0,90 = 222,2 kg/ha</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      Requerimiento real K₂O ≈ 222,2 × 0,892 ≈ <strong>198 lb/acre</strong>
+    </div>
 
     <h3>2. Programa de nutrición</h3>
     <p>Tabla por <strong>semana o mes</strong> (etapa fenológica + número de periodo). Por etapa:</p>
@@ -115,6 +121,10 @@
     </ul>
     <div class="mt-formula">
       Aporte nutriente (kg/ha) = dosis producto × (% del nutriente en el material ÷ 100)
+    </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (US customary)</span>
+      Aporte nutriente (lb/acre) = dosis producto (lb/acre) × (% del nutriente ÷ 100)
     </div>
     <p>
       El aporte de una etapa es la <strong>suma</strong> de todos los productos de esa fila. El
@@ -131,6 +141,11 @@
       agua de referencia (m³). Fórmula típica para macros/micros en ppm:
     </p>
     <div class="mt-formula">kg elemento/ha ≈ ppm × m³ agua ÷ 1 000</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (US customary)</span>
+      lb elemento/acre ≈ ppm × (US gal agua/acre) ÷ 271 540
+      <span class="mt-formula-us__note">Equivalente: 1 mm sobre 1 ha = 10 m³; 1 in sobre 1 acre ≈ 27 154 US gal. Misma concentración ppm.</span>
+    </div>
     <p>
       Cationes y aniones del agua se convierten a kg de elemento u óxido según el modo del usuario.
       El <strong>N del agua</strong> se contabiliza como nutriente total y, en gráficas iónicas, se
@@ -157,6 +172,12 @@
       ppm elemento = (kg elemento/ha × 1 000) ÷ m³/ha<br>
       meq/L = ppm ÷ peso equivalente del elemento
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (US customary)</span>
+      ppm elemento = (lb elemento/acre × 271 540) ÷ (US gal/acre) ÷ 1 000<br>
+      meq/L = ppm ÷ peso equivalente (igual; ppm y meq/L no cambian de sistema)
+      <span class="mt-formula-us__note">O bien: convierte kg/ha→lb/acre y m³/ha→US gal/acre y aplica la misma relación de la app.</span>
+    </div>
     <p>
       Los pesos equivalentes son los de NutriPlant (N-NO₃⁻ / N-NH₄⁺ → 14; P-H₂PO₄⁻ → 31; S-SO₄²⁻ →
       16,03; K⁺ → 39,1; Ca²⁺ → 20,04; Mg²⁺ → 12,15). Detalle en
@@ -168,6 +189,11 @@
     <div class="mt-formula">
       ppm N = (40 × 1 000) ÷ 2 000 = 20 ppm<br>
       meq/L N-NO₃⁻ = 20 ÷ 14 ≈ 1,43 meq/L
+    </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (mismo ejemplo)</span>
+      40 kg/ha ≈ 35,7 lb/acre · 2 000 m³/ha ≈ 213 800 US gal/acre<br>
+      ppm N ≈ 20 ppm (igual) · meq/L ≈ 1,43 (igual)
     </div>
 
     <p><strong>Misma relación iónica al repartir en varias aplicaciones:</strong> si divides la etapa
@@ -213,6 +239,12 @@
       Total extraction (kg/ha) = extraction per ton (kg/ton) × target yield (ton/ha)<br>
       Actual requirement (kg/ha) = Adjustment ÷ (Efficiency ÷ 100)
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary (same logic)</span>
+      Total removal (lb/acre) = removal per short ton (lb/short ton) × target yield (short ton/acre)<br>
+      Actual requirement (lb/acre) = Adjustment ÷ (Efficiency ÷ 100)
+      <span class="mt-formula-us__note">≈ 1 kg/ha ≈ 0.892 lb/acre · 1 t/ha ≈ 0.446 short ton/acre · 1 kg/t ≈ 2 lb/short ton.</span>
+    </div>
 
     <p><strong>Total extraction</strong> — how much nutrient the crop removes at the target yield,
       according to the crop base (editable). Numeric starting point.</p>
@@ -233,6 +265,10 @@
     <p><strong>Requirement example:</strong> total K₂O extraction = 180 kg/ha; adjustment for low soil
       → 200 kg/ha; K₂O efficiency 90 %:</p>
     <div class="mt-formula">Actual K₂O requirement = 200 ÷ 0.90 = 222.2 kg/ha</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      Actual K₂O requirement ≈ 222.2 × 0.892 ≈ <strong>198 lb/acre</strong>
+    </div>
 
     <h3>2. Nutrition program</h3>
     <p>Table by <strong>week or month</strong> (phenological stage + period number). Per stage:</p>
@@ -244,6 +280,10 @@
     </ul>
     <div class="mt-formula">
       Nutrient contribution (kg/ha) = product dose × (% of nutrient in the material ÷ 100)
+    </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      Nutrient contribution (lb/acre) = product dose (lb/acre) × (% nutrient ÷ 100)
     </div>
     <p>
       A stage’s contribution is the <strong>sum</strong> of all products in that row. The
@@ -260,6 +300,11 @@
       volume (m³). Typical formula for macros/micros in ppm:
     </p>
     <div class="mt-formula">kg element/ha ≈ ppm × m³ water ÷ 1 000</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      lb element/acre ≈ ppm × (US gal water/acre) ÷ 271,540
+      <span class="mt-formula-us__note">Same ppm. 1 mm on 1 ha = 10 m³; 1 in on 1 acre ≈ 27,154 US gal.</span>
+    </div>
     <p>
       Water cations and anions are converted to kg of element or oxide according to the user’s mode.
       <strong>Water N</strong> is counted as total nutrient and, in ionic charts, is
@@ -286,6 +331,12 @@
       element ppm = (kg element/ha × 1 000) ÷ m³/ha<br>
       meq/L = ppm ÷ element equivalent weight
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      element ppm = (lb element/acre × 271,540) ÷ (US gal/acre) ÷ 1,000<br>
+      meq/L = ppm ÷ equivalent weight (unchanged)
+      <span class="mt-formula-us__note">Or convert kg/ha→lb/acre and m³/ha→US gal/acre, then use the app’s same ratio.</span>
+    </div>
     <p>
       Equivalent weights are NutriPlant’s (N-NO₃⁻ / N-NH₄⁺ → 14; P-H₂PO₄⁻ → 31; S-SO₄²⁻ →
       16.03; K⁺ → 39.1; Ca²⁺ → 20.04; Mg²⁺ → 12.15). Detail in
@@ -297,6 +348,11 @@
     <div class="mt-formula">
       ppm N = (40 × 1 000) ÷ 2 000 = 20 ppm<br>
       meq/L N-NO₃⁻ = 20 ÷ 14 ≈ 1.43 meq/L
+    </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary (same example)</span>
+      40 kg/ha ≈ 35.7 lb/acre · 2,000 m³/ha ≈ 213,800 US gal/acre<br>
+      ppm N ≈ 20 (same) · meq/L ≈ 1.43 (same)
     </div>
 
     <p><strong>Same ionic ratio when split across several applications:</strong> if you divide the stage

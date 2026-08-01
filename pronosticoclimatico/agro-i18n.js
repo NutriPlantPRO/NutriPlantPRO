@@ -725,6 +725,16 @@
     return resolvePrefs();
   }
 
+  function revealBoot() {
+    try { document.documentElement.classList.remove('agro-booting'); } catch (e) { /* ignore */ }
+    try { document.documentElement.classList.add('agro-i18n-ready'); } catch (e2) { /* ignore */ }
+  }
+
+  function applyAndReveal(root) {
+    apply(root);
+    revealBoot();
+  }
+
   w.AgroI18n = {
     getLanguage: getLanguage,
     getUnitSystem: getUnitSystem,
@@ -733,6 +743,8 @@
     setReportPrefs: setReportPrefs,
     t: t,
     apply: apply,
+    applyAndReveal: applyAndReveal,
+    revealBoot: revealBoot,
     fmtTemp: fmtTemp,
     fmtDepth: fmtDepth,
     tempUnit: tempUnit,
@@ -741,4 +753,9 @@
     convertDepthFromMm: convertDepthFromMm,
     DICT: DICT
   };
+
+  // Traducir en cuanto carga el script (antes de Chart/mapa) para acortar el flash.
+  if (w.document && w.document.body) {
+    try { applyAndReveal(w.document); } catch (eBoot) { revealBoot(); }
+  }
 })(typeof window !== 'undefined' ? window : globalThis);

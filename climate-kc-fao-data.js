@@ -153,4 +153,137 @@
     { crop: 'Zanahoria', stage: 'Medio (cobertura)', kcMin: 0.95, kcMax: 1.15 },
     { crop: 'Zanahoria', stage: 'Final (pre-cosecha)', kcMin: 0.90, kcMax: 1.00 }
   ];
+
+  var CROP_EN = {
+    'Alfalfa': 'Alfalfa',
+    'Algodón': 'Cotton',
+    'Aguacate': 'Avocado',
+    'Almendro': 'Almond',
+    'Arroz': 'Rice',
+    'Aspárrago': 'Asparagus',
+    'Avena': 'Oat',
+    'Banano / plátano': 'Banana / plantain',
+    'Berenjena': 'Eggplant',
+    'Cacahuate': 'Peanut',
+    'Café': 'Coffee',
+    'Caña de azúcar': 'Sugarcane',
+    'Cebada': 'Barley',
+    'Cebolla (seca)': 'Onion (dry)',
+    'Chile': 'Chili pepper',
+    'Cítricos (general)': 'Citrus (general)',
+    'Dátil': 'Date palm',
+    'Duraznero': 'Peach',
+    'Elote / maíz dulce': 'Sweet corn',
+    'Fresa': 'Strawberry',
+    'Frijol': 'Bean',
+    'Girasol': 'Sunflower',
+    'Lechuga': 'Lettuce',
+    'Limón': 'Lemon',
+    'Maíz (grano)': 'Maize (grain)',
+    'Mango': 'Mango',
+    'Manzano': 'Apple',
+    'Melón': 'Melon',
+    'Naranja': 'Orange',
+    'Nuez': 'Walnut',
+    'Olivo': 'Olive',
+    'Papa': 'Potato',
+    'Papaya': 'Papaya',
+    'Pasto bermuda': 'Bermudagrass',
+    'Pepino (invernadero)': 'Cucumber (greenhouse)',
+    'Pera': 'Pear',
+    'Pistacho': 'Pistachio',
+    'Piña': 'Pineapple',
+    'Remolacha azucarera': 'Sugar beet',
+    'Repollo': 'Cabbage',
+    'Sandía': 'Watermelon',
+    'Sorgo': 'Sorghum',
+    'Soya': 'Soybean',
+    'Tomate (campo abierto)': 'Tomato (open field)',
+    'Tomate (invernadero)': 'Tomato (greenhouse)',
+    'Trigo': 'Wheat',
+    'Uva (mesa, con riego)': 'Table grape (irrigated)',
+    'Uva (vinícola, sin riego)': 'Wine grape (rainfed)',
+    'Zanahoria': 'Carrot'
+  };
+
+  var STAGE_EN = {
+    'Inicial (brote)': 'Initial (sprout)',
+    'Después de cada corte (activo)': 'After each cutting (active)',
+    'Antes del corte (maduro)': 'Before cutting (mature)',
+    'Inicial': 'Initial',
+    'Medio (floración–capsulas)': 'Mid-season (flowering–bolls)',
+    'Final (apertura capsulas)': 'Late (boll opening)',
+    'Joven / desarrollo': 'Young / development',
+    'Plena producción': 'Full production',
+    'Post-cosecha / reposo': 'Post-harvest / dormancy',
+    'Medio (plena hoja)': 'Mid-season (full canopy)',
+    'Final (cosecha)': 'Late (harvest)',
+    'Inicial (arroz inundado)': 'Initial (flooded rice)',
+    'Medio (panículación)': 'Mid-season (panicle)',
+    'Final (maduración)': 'Late (maturity)',
+    'Medio (lanas activas)': 'Mid-season (active ferns)',
+    'Final (senescencia)': 'Late (senescence)',
+    'Medio': 'Mid-season',
+    'Final': 'Late',
+    'Medio (fructificación)': 'Mid-season (fruiting)',
+    'Medio (floración)': 'Mid-season (flowering)',
+    'Final (llenado vaina)': 'Late (pod filling)',
+    'Inicial (vivero–trasplante)': 'Initial (nursery–transplant)',
+    'Desarrollo (3–5 años)': 'Development (3–5 years)',
+    'Medio (crecimiento activo)': 'Mid-season (active growth)',
+    'Medio (bulbificación)': 'Mid-season (bulbing)',
+    'Inicial (copa joven)': 'Initial (young canopy)',
+    'Medio (copa plena, suelo desnudo)': 'Mid-season (full canopy, bare soil)',
+    'Final / post-cosecha': 'Late / post-harvest',
+    'Medio (floración–fruto)': 'Mid-season (flowering–fruit)',
+    'Medio (cobertura completa)': 'Mid-season (full cover)',
+    'Final (pre-cosecha)': 'Late (pre-harvest)',
+    'Post-cosecha': 'Post-harvest',
+    'Joven': 'Young',
+    'Medio (correr)': 'Mid-season (vining)',
+    'Medio (cobertura plena)': 'Mid-season (full cover)',
+    'Final (estresado)': 'Late (stressed)',
+    'Medio (desarrollo)': 'Mid-season (development)',
+    'Final (fructificación)': 'Late (fruiting)',
+    'Medio (cabeza)': 'Mid-season (heading)',
+    'Medio (cobertura activa)': 'Mid-season (active canopy)',
+    'Final (post-cosecha)': 'Late (post-harvest)',
+    'Medio (cobertura)': 'Mid-season (cover)'
+  };
+
+  function resolveFaoKcLang(lang) {
+    if (lang === 'en' || lang === 'es') return lang;
+    try {
+      if (window.AgroI18n && typeof window.AgroI18n.getLanguage === 'function') {
+        var agroLang = window.AgroI18n.getLanguage();
+        if (agroLang === 'en' || agroLang === 'es') return agroLang;
+      }
+    } catch (e) {}
+    try {
+      if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function') {
+        var npLang = window.NpI18n.getLanguage();
+        if (npLang === 'en' || npLang === 'es') return npLang;
+      }
+    } catch (e2) {}
+    return 'es';
+  }
+
+  /** Localized crop/stage labels for FAO Kc reference rows. */
+  window.faoKcLabels = function (row, lang) {
+    var crop = String((row && row.crop) || '');
+    var stage = String((row && row.stage) || '');
+    if (resolveFaoKcLang(lang) !== 'en') return { crop: crop, stage: stage };
+    return {
+      crop: CROP_EN[crop] || crop,
+      stage: STAGE_EN[stage] || stage
+    };
+  };
+
+  /** Haystack for search in both Spanish and English. */
+  window.faoKcSearchText = function (row) {
+    var esCrop = String((row && row.crop) || '');
+    var esStage = String((row && row.stage) || '');
+    var en = window.faoKcLabels(row, 'en');
+    return [esCrop, esStage, en.crop, en.stage].join(' ');
+  };
 })();

@@ -7,7 +7,7 @@
   <meta name="description" content="Cómo NutriPlant PRO calcula ideales de referencia y kg/ha de ajuste en Fertilidad del suelo a partir del análisis de laboratorio, profundidad, densidad y % de suelo explorado por raíces.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260801us">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -120,6 +120,8 @@
       factor = 0,1 × profundidad_cm × densidad_aparente × (suelo_explorado_% / 100)<br>
       kg/ha = (nivel_laboratorio − ideal) × factor
     </div>
+    <div class="mt-formula-us"><span class="mt-formula-us__label">Sistema inglés (US customary)</span>factor = 0,1 × (profundidad_in × 2,54) × densidad_aparente × (suelo_explorado_% / 100)<br>
+      lb/acre = (nivel_laboratorio − ideal) × factor × 0,892<span class="mt-formula-us__note">Misma lógica SI; la app muestra lb/acre y profundidad en pulgadas. ≈ 1 kg/ha ≈ 0,892 lb/acre.</span></div>
     <p>
       El factor convierte la diferencia en ppm (o % MO) a kg/ha en la capa indicada. En la columna kg/ha:
       <strong>valor negativo = déficit</strong> (falta aportar respecto al ideal);
@@ -156,6 +158,12 @@
     <div class="mt-formula">
       factor = 0,1 × 20 × 1,3 × 1 = 2,6<br>
       kg/ha P = (18 − 40) × 2,6 = −57,2 kg/ha (déficit)
+    </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (mismo ejemplo)</span>
+      factor = 0,1 × (7,87 × 2,54) × 1,3 × 1 ≈ 2,6<br>
+      lb/acre P ≈ −57,2 × 0,892 ≈ −51 lb/acre (déficit)
+      <span class="mt-formula-us__note">20 cm ≈ 7,87 in. El signo negativo sigue siendo déficit.</span>
     </div>
 
     <h2>Relación con otros módulos</h2>
@@ -214,6 +222,12 @@
       factor = 0.1 × depth_cm × bulk_density × (soil_explored_% / 100)<br>
       kg/ha = (lab_level − ideal) × factor
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary (same logic)</span>
+      factor = 0.1 × (depth_in × 2.54) × bulk_density × (soil_explored_% / 100)<br>
+      lb/acre = (lab_level − ideal) × factor × 0.892
+      <span class="mt-formula-us__note">SI logic unchanged; the app displays lb/acre and depth in inches. ≈ 1 kg/ha ≈ 0.892 lb/acre.</span>
+    </div>
     <p>
       The factor converts the difference in ppm (or % OM) to kg/ha in the indicated layer. In the kg/ha column:
       <strong>negative value = deficit</strong> (need to supply relative to the ideal);
@@ -250,6 +264,12 @@
     <div class="mt-formula">
       factor = 0.1 × 20 × 1.3 × 1 = 2.6<br>
       kg/ha P = (18 − 40) × 2.6 = −57.2 kg/ha (deficit)
+    </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary (same example)</span>
+      factor = 0.1 × (7.87 × 2.54) × 1.3 × 1 ≈ 2.6<br>
+      lb/acre P ≈ −57.2 × 0.892 ≈ −51 lb/acre (deficit)
+      <span class="mt-formula-us__note">20 cm ≈ 7.87 in. Negative still means deficit.</span>
     </div>
 
     <h2>Relationship to other modules</h2>

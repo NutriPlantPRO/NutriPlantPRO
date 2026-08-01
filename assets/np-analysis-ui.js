@@ -15,14 +15,14 @@
     'Solución Nutritiva': 'Nutrient Solution',
     'Extracto de Pasta': 'Saturated Paste Extract',
     'Análisis Foliar (DOP)': 'Leaf Analysis (DOP)',
-    'Análisis de Fruta (ICC)': 'Fruit Analysis (ICC)',
+    'Análisis de Fruta (ICC)': 'Fruit Analysis (CQI)',
     'Análisis de solución nutritiva o extracto de pasta saturada. Macros en meq/L y ppm (conversión automática). Rangos de referencia y diferencia vs ideal:': 'Nutrient solution or saturated paste extract analysis. Macros in meq/L and ppm (automatic conversion). Reference ranges and difference vs ideal:',
     'Análisis de extracto de pasta saturada. Datos generales, aniones, cationes, micronutrimentos y relación nutrimental. Referencias en ppm. Diferencia vs ideal:': 'Saturated paste extract analysis. General data, anions, cations, micronutrients and nutrient ratios. References in ppm. Difference vs ideal:',
     'DOP (Desviación del Óptimo Porcentual): DOP = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'DOP (Deviation from Optimum Percentage): DOP = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
-    'ICC (Índice Comparativo de Calidad): ICC = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'ICC (Comparative Quality Index): ICC = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
+    'ICC (Índice Comparativo de Calidad): ICC = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'CQI (Comparative Quality Index): CQI = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
     'Macronutrientes (% MS)': 'Macronutrients (% DM)',
     'Ingresa resultado del análisis y, si quieres, ajusta el óptimo.': 'Enter the lab result and, if you want, adjust the optimum.',
-    'Micronutrientes (mg/kg)': 'Micronutrients (mg/kg)',
+    'Micronutrientes (mg/kg)': 'Micronutrients (ppm)',
     'falta,': 'deficit,',
     'exceso': 'excess',
     'diferencia': 'difference',
@@ -71,7 +71,7 @@
     'Análisis de agua de riego.': 'Irrigation water analysis.',
     'Columnas': 'Columns',
     'y ppm con conversión automática; sumas de cationes y aniones; aporte por volumen (m³) en kg elemento y óxido; y cálculo de ácido para neutralizar bicarbonatos/carbonatos.': 'and ppm with automatic conversion; cation and anion sums; contribution by volume (m³) as kg element and oxide; and acid calc to neutralize bicarbonates/carbonates.',
-    'Los kilogramos en las tablas (elemento y óxido) son el aporte total para el volumen de agua de riego que indiques en cada reporte (campo m³ agua de riego).': 'Kilograms in the tables (element and oxide) are the total contribution for the irrigation water volume you enter in each report (irrigation water m³ field).',
+    'Los kilogramos en las tablas (elemento y óxido) son el aporte total para el volumen de agua de riego que indiques en cada reporte (campo m³ agua de riego).': 'Mass amounts in the tables (element and oxide) are the total contribution for the irrigation water volume you enter in each report (irrigation water volume field).',
     'm³ agua de riego:': 'Irrigation water m³:',
     'Agua de riego:': 'Irrigation water:',
     'CE, RAS y pH': 'EC, SAR and pH',
@@ -110,14 +110,35 @@
     'Título': 'Title',
     'Resultado (%)': 'Result (%)',
     'Óptimo (%)': 'Optimum (%)',
-    'Resultado (mg/kg)': 'Result (mg/kg)',
-    'Óptimo (mg/kg)': 'Optimum (mg/kg)',
+    'Resultado (mg/kg)': 'Result (ppm)',
+    'Óptimo (mg/kg)': 'Optimum (ppm)',
     'Resultado': 'Result',
     'Óptimo': 'Optimum',
     'Determinación': 'Determination',
     'Estado (semáforo)': 'Status (traffic light)',
     'Muy bajo': 'Very low',
     'Muy alto': 'Very high',
+    'Concentraciones (meq/100g o cmol⁺/kg)': 'Concentrations (meq/100g or cmol⁺/kg)',
+    'CIC (meq/100g o cmol⁺/kg)': 'CEC (meq/100g or cmol⁺/kg)',
+    'Relaciones entre cationes (calculadas desde': 'Cation ratios (calculated from',
+    'meq/100g o cmol⁺/kg': 'meq/100g or cmol⁺/kg',
+    'Valores de referencia:': 'Reference values:',
+    'meq/L o mmolc/L': 'meq/L or mmolc/L',
+    'meq/L<br>o mmolc/L': 'meq/L<br>or mmolc/L',
+    'ácido necesarios:': 'acid needed:',
+    'Ácido Nítrico 55%': 'Nitric Acid 55%',
+    'Ácido Sulfúrico 98%': 'Sulfuric Acid 98%',
+    'Ácido Fosfórico 75%': 'Phosphoric Acid 75%',
+    'Ácido Fosfórico 85%': 'Phosphoric Acid 85%',
+    'Macronutrientes en fruta (%)': 'Fruit macronutrients (%)',
+    'Calcio en Fruta (mg/100 g MF)': 'Fruit Calcium (mg/100 g FW)',
+    'Calidad de Fruta': 'Fruit Quality',
+    'Regla visual (fija):': 'Visual rule (fixed):',
+    'Regla visual igual que foliar:': 'Same visual rule as leaf:',
+    '|ICC|': '|CQI|',
+    '<th>ICC</th>': '<th>CQI</th>',
+    'Resultado en mL/m³ y litros totales según el volumen indicado.': 'Result in mL/m³ and total liters for the stated volume.',
+    'Resultado en fl oz/1000 gal y galones totales según el volumen indicado.': 'Result in fl oz/1000 gal and total gallons for the stated volume.',
   };
 
   function prefs() {
@@ -316,17 +337,39 @@
       }
     }
 
-    root.querySelectorAll('th').forEach(function (th) {
-      var txt = String(th.textContent || '').trim();
-      if (txt === 'kg elemento' || txt === 'lb elemento' || txt.indexOf('elemento') >= 0 && (txt.indexOf('kg') === 0 || txt.indexOf('lb') === 0)) {
-        th.textContent = massSym + ' ' + t('elemento', 'element');
-      }
-      if (txt.indexOf('óxido (CaO') >= 0 || txt.indexOf('oxide (CaO') >= 0) {
-        th.textContent = massSym + ' ' + t('óxido (CaO, MgO, K₂O)', 'oxide (CaO, MgO, K₂O)');
-      }
-      if (txt.indexOf('óxido (P₂O₅') >= 0 || txt.indexOf('oxide (P₂O₅') >= 0) {
-        th.textContent = massSym + ' ' + t('óxido (P₂O₅, SO₃)', 'oxide (P₂O₅, SO₃)');
-      }
+    function rewriteMassLabels(el) {
+      if (!el) return;
+      var html = el.innerHTML;
+      if (!html) return;
+      var next = html
+        .replace(/\bkg elemento\b/g, massSym + ' ' + t('elemento', 'element'))
+        .replace(/\blb elemento\b/g, massSym + ' ' + t('elemento', 'element'))
+        .replace(/\bkg element\b/g, massSym + ' ' + t('elemento', 'element'))
+        .replace(/\blb element\b/g, massSym + ' ' + t('elemento', 'element'))
+        .replace(/\bkg óxido \(CaO, MgO, K₂O\)/g, massSym + ' ' + t('óxido (CaO, MgO, K₂O)', 'oxide (CaO, MgO, K₂O)'))
+        .replace(/\blb óxido \(CaO, MgO, K₂O\)/g, massSym + ' ' + t('óxido (CaO, MgO, K₂O)', 'oxide (CaO, MgO, K₂O)'))
+        .replace(/\bkg oxide \(CaO, MgO, K₂O\)/g, massSym + ' ' + t('óxido (CaO, MgO, K₂O)', 'oxide (CaO, MgO, K₂O)'))
+        .replace(/\blb oxide \(CaO, MgO, K₂O\)/g, massSym + ' ' + t('óxido (CaO, MgO, K₂O)', 'oxide (CaO, MgO, K₂O)'))
+        .replace(/\bkg óxido \(P₂O₅, SO₃\)/g, massSym + ' ' + t('óxido (P₂O₅, SO₃)', 'oxide (P₂O₅, SO₃)'))
+        .replace(/\blb óxido \(P₂O₅, SO₃\)/g, massSym + ' ' + t('óxido (P₂O₅, SO₃)', 'oxide (P₂O₅, SO₃)'))
+        .replace(/\bkg oxide \(P₂O₅, SO₃\)/g, massSym + ' ' + t('óxido (P₂O₅, SO₃)', 'oxide (P₂O₅, SO₃)'))
+        .replace(/\blb oxide \(P₂O₅, SO₃\)/g, massSym + ' ' + t('óxido (P₂O₅, SO₃)', 'oxide (P₂O₅, SO₃)'));
+      if (next !== html) el.innerHTML = next;
+    }
+    root.querySelectorAll('th, summary, #agua-tab-container > p').forEach(rewriteMassLabels);
+
+    var acidHelp = root.querySelector('[data-aw-section="acid"] > p');
+    if (acidHelp) {
+      var helpEs = isUS()
+        ? 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en fl oz/1000 gal y galones totales según el volumen indicado.'
+        : 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en mL/m³ y litros totales según el volumen indicado.';
+      acidHelp.textContent = translateString(helpEs);
+    }
+
+    root.querySelectorAll('#aw-acid-select option').forEach(function (opt) {
+      var raw = opt.getAttribute('data-name-es') || opt.textContent;
+      if (!opt.getAttribute('data-name-es')) opt.setAttribute('data-name-es', raw);
+      opt.textContent = translateString(opt.getAttribute('data-name-es'));
     });
 
     var acidPer = root.querySelector('#aw-acid-per-m3');

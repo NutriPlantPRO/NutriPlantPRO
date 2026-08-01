@@ -217,6 +217,8 @@ function setFertiNutrientView(view) {
   const macroBtn = document.getElementById('fertiViewMacroBtn');
   const microBtn = document.getElementById('fertiViewMicroBtn');
   if (macroBtn && microBtn) {
+    macroBtn.textContent = fertProgT('macros', 'Macros');
+    microBtn.textContent = fertProgT('micros', 'Micros');
     if (fertiNutrientView === 'macro') {
       macroBtn.classList.remove('btn-secondary');
       macroBtn.classList.add('btn-primary');
@@ -246,6 +248,10 @@ function updateFertiProgramTimeTitle() {
       ? fertProgT('months', 'Número de Meses:')
       : fertProgT('weeks', 'Número de Semanas:');
   }
+  const macroBtn = document.getElementById('fertiViewMacroBtn');
+  const microBtn = document.getElementById('fertiViewMicroBtn');
+  if (macroBtn) macroBtn.textContent = fertProgT('macros', 'Macros');
+  if (microBtn) microBtn.textContent = fertProgT('micros', 'Micros');
 }
 
 function setFertiTimeUnit(unit) {
@@ -345,12 +351,14 @@ function renderFertiCustomMaterialsList() {
   if (!container) return;
   const list = Array.isArray(fertiCustomMaterials) ? fertiCustomMaterials : [];
   if (list.length === 0) {
-    container.innerHTML = '<div style="color:#6b7280;">Sin fertilizantes personalizados.</div>';
+    container.innerHTML = `<div style="color:#6b7280;">${fertProgT('no_custom', 'Sin fertilizantes personalizados.')}</div>`;
     return;
   }
   container.innerHTML = list.map(mat => {
     const key = encodeURIComponent((mat.id || mat.name || '').toString());
-    const badge = mat.source === 'user' ? 'Usuario' : 'Proyecto';
+    const badge = mat.source === 'user'
+      ? fertProgT('user_badge', 'Usuario')
+      : fertProgT('project_badge', 'Proyecto');
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -358,8 +366,8 @@ function renderFertiCustomMaterialsList() {
           <span style="font-size:12px;color:#64748b;border:1px solid #e2e8f0;border-radius:999px;padding:2px 8px;">${badge}</span>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditFertiCustomMaterial('${key}')">Editar</button>
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeFertiCustomMaterial('${key}')">Eliminar</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditFertiCustomMaterial('${key}')">${fertProgT('edit', 'Editar')}</button>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeFertiCustomMaterial('${key}')">${fertProgT('delete', 'Eliminar')}</button>
         </div>
       </div>
     `;
@@ -378,7 +386,7 @@ function findFertiCustomMaterialByKey(key) {
 function removeFertiCustomMaterial(encodedKey) {
   const key = decodeURIComponent(encodedKey || '').toLowerCase();
   if (!key) return;
-  if (!confirm('¿Eliminar este fertilizante del catálogo?')) return;
+  if (!confirm(fertProgT('confirm_delete_one', '¿Eliminar este fertilizante del catálogo?'))) return;
   const match = (m) => ((m.id || m.name || '') + '').toLowerCase() === key;
   const userBefore = (Array.isArray(fertiCustomMaterialsUser) ? fertiCustomMaterialsUser : []).length;
   const projBefore = (Array.isArray(fertiCustomMaterialsProject) ? fertiCustomMaterialsProject : []).length;
@@ -408,9 +416,9 @@ function openEditFertiCustomMaterial(encodedKey) {
   overlay.dataset.editKey = key;
   overlay.dataset.editMode = 'true';
   const titleEl = overlay.querySelector('.modal-header h3');
-  if (titleEl) titleEl.textContent = '✏️ Editar Materia Prima Personalizada';
+  if (titleEl) titleEl.textContent = fertProgT('edit_material_title', '✏️ Editar Materia Prima Personalizada');
   const saveBtn = overlay.querySelector('#fertiCustom_saveBtn');
-  if (saveBtn) saveBtn.textContent = 'Guardar cambios';
+  if (saveBtn) saveBtn.textContent = fertProgT('save_changes', 'Guardar cambios');
   const mat = found.material;
   overlay.querySelector('#fertiCustom_name').value = mat.name || '';
   overlay.querySelector('#fertiCustom_N_NO3').value = mat.N_NO3 ?? 0;
@@ -432,7 +440,7 @@ function openEditFertiCustomMaterial(encodedKey) {
 }
 
 function clearFertiCustomMaterials() {
-  if (!confirm('¿Eliminar todo el catálogo de fertilizantes solubles personalizados?')) return;
+  if (!confirm(fertProgT('confirm_clear_catalog', '¿Eliminar todo el catálogo de fertilizantes solubles personalizados?'))) return;
   const userId = fertiGetCurrentUserId();
   if (userId) {
     fertiCustomMaterialsUser = [];
@@ -472,20 +480,20 @@ function openFertiPreloadedCatalogModal() {
   overlay.innerHTML = `
     <div class="material-modal" style="max-width:95%;width:920px;max-height:85vh;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
       <div class="modal-header" style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="margin:0;font-size:1.1rem;color:#1e293b;">📋 Fertilizantes disponibles (concentración %)</h3>
+        <h3 style="margin:0;font-size:1.1rem;color:#1e293b;">${fertProgT('available_fertilizers', '📋 Fertilizantes disponibles (concentración %)')}</h3>
         <button class="btn btn-secondary btn-sm" type="button" data-close-ferti-preloaded>✕</button>
       </div>
       <div style="padding:14px 18px;overflow:auto;flex:1;">
-        <p style="margin:0 0 12px 0;font-size:0.9rem;color:#64748b;">Consulta de concentraciones de los fertilizantes solubles precargados. Valores en % (óxidos donde aplica).</p>
+        <p style="margin:0 0 12px 0;font-size:0.9rem;color:#64748b;">${fertProgT('available_fertilizers_help', 'Consulta de concentraciones de los fertilizantes solubles precargados. Valores en % (óxidos donde aplica).')}</p>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
             <thead>
               <tr style="background:#f1f5f9;">
-                <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">Nombre</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">${fertProgT('name_col', 'Nombre')}</th>
                 ${FERTI_CATALOG_COLS.map(k => `<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${fertiCatalogColLabel(k)}</th>`).join('')}
               </tr>
             </thead>
-            <tbody>${rows || '<tr><td colspan="' + (1 + FERTI_CATALOG_COLS.length) + '" style="padding:12px;color:#64748b;">Sin fertilizantes precargados.</td></tr>'}</tbody>
+            <tbody>${rows || '<tr><td colspan="' + (1 + FERTI_CATALOG_COLS.length) + '" style="padding:12px;color:#64748b;">' + fertProgT('no_preloaded', 'Sin fertilizantes precargados.') + '</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -503,7 +511,7 @@ function updateFertiCustomMaterial(overlay) {
   if (!found.material) return;
   const getNum = id => { const v = parseFloat(overlay.querySelector('#'+id).value); return isNaN(v) ? 0 : Math.max(0, v); };
   const name = (overlay.querySelector('#fertiCustom_name').value || '').trim();
-  if (!name) { if (window.showMessage) window.showMessage('Escribe un nombre', 'warning'); return; }
+  if (!name) { if (window.showMessage) window.showMessage(fertProgT('name_required', 'Escribe un nombre'), 'warning'); return; }
   const updated = {
     ...found.material,
     name,
@@ -865,7 +873,9 @@ function renderFertiWeeks() {
     ? 'text-align:center;background:#f0fdf4;color:#166534;border-top:1px solid #bbf7d0;border-bottom:1px solid #bbf7d0;'
     : 'text-align:center;background:#eff6ff;color:#1e3a8a;border-top:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe;';
 
-  const addTimeLabel = fertiTimeUnit === 'mes' ? 'Agregar mes' : 'Agregar semana';
+  const addTimeLabel = fertiTimeUnit === 'mes'
+    ? fertProgT('add_month', 'Agregar mes')
+    : fertProgT('add_week', 'Agregar semana');
   container.innerHTML = `
     <table class="materials-table">
       <thead>
@@ -2065,20 +2075,25 @@ function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3h
  */
 function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
   opts = opts || {};
+  const isEn = opts.language === 'en';
+  const rt = function (es, en) { return isEn ? en : es; };
   const weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
   if (!weeks.length) return '';
   const waterArr = fertiNormalizeWaterM3haFromProgram(program);
   const stageIndexes = weeks.map((_, i) => i).filter(i => (waterArr[i] || 0) > 0);
-  const timeUnitLabel = program.timeUnit === 'mes' ? 'mes' : 'semana';
+  const volUnit = (typeof fertProgUI === 'function' && fertProgUI())
+    ? fertProgUI().unit('volume_area')
+    : 'm³/ha';
+  const timeUnitLabel = program.timeUnit === 'mes' ? rt('mes', 'month') : rt('semana', 'week');
   if (!stageIndexes.length) {
     const idx = Math.max(0, Math.min(parseInt(program.chartSelectedStageIndex, 10) || 0, weeks.length - 1));
     const slotLabel = fertiStageSlotLabelFromProgram(program, idx);
     return `
       <div class="report-block" style="border-color:#fde68a;background:#fffbeb;">
-        <div class="report-block-title">⚗️ Relación ppm · meq/L · % (lámina de riego)</div>
+        <div class="report-block-title">⚗️ ${rt('Relación ppm · meq/L · % (lámina de riego)', 'ppm · meq/L · % relationship (irrigation depth)')}</div>
         <div class="report-note" style="margin:0;">
-          Captura <strong>m³/ha</strong> de lámina en Gráficas de Fertirriego para cada ${timeUnitLabel} (p. ej. ${slotLabel}).
-          Sin ese dato no se calculan ppm, meq/L ni % en el reporte.
+          ${rt('Captura', 'Enter')} <strong>${volUnit}</strong> ${rt('de lámina en Gráficas de Fertirriego para cada', 'irrigation depth in Fertigation Charts for each')} ${timeUnitLabel} (e.g. ${slotLabel}).
+          ${rt('Sin ese dato no se calculan ppm, meq/L ni % en el reporte.', 'Without that value, ppm, meq/L and % are not calculated in the report.')}
         </div>
       </div>`;
   }
@@ -2093,16 +2108,16 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
       ).join('');
   const introNote = useCompact
     ? `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
-        <strong>Vista compacta</strong> (${stageIndexes.length} etapas con lámina): tablas cruzadas por nutriente.
-        Base operativa: <strong>fertilizante + aporte de agua</strong>. Lámina: ${waterSummary}.
-        Los % siguen la misma lógica que Gráficas (triángulos N-P-S y K-Ca-Mg; Cl⁻ y N-NH₄⁺ aparte).
+        <strong>${rt('Vista compacta', 'Compact view')}</strong> (${stageIndexes.length} ${rt('etapas con lámina', 'stages with depth')}): ${rt('tablas cruzadas por nutriente.', 'cross tables by nutrient.')}
+        ${rt('Base operativa:', 'Operating base:')} <strong>${rt('fertilizante + aporte de agua', 'fertilizer + water supply')}</strong>. ${rt('Lámina:', 'Depth:')} ${waterSummary}.
+        ${rt('Los % siguen la misma lógica que Gráficas (triángulos N-P-S y K-Ca-Mg; Cl⁻ y N-NH₄⁺ aparte).', 'Percentages follow the same Charts logic (N-P-S and K-Ca-Mg triangles; Cl⁻ and N-NH₄⁺ separate).')}
       </p>`
     : `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
-        Lámina capturada en Gráficas: ${waterSummary}.
+        ${rt('Lámina capturada en Gráficas:', 'Depth captured in Charts:')} ${waterSummary}.
       </p>`;
   return `
     <div class="report-block" style="border-color:#5eead4;background:#f0fdfa;">
-      <div class="report-block-title">⚗️ Relación ppm · meq/L · % (por lámina de riego)</div>
+      <div class="report-block-title">⚗️ ${rt('Relación ppm · meq/L · % (por lámina de riego)', 'ppm · meq/L · % relationship (by irrigation depth)')}</div>
       ${introNote}
       ${stageBlocks}
     </div>`;
@@ -2113,12 +2128,15 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
  * program = { weeks: [{ totals: { N_NO3, N_NH4, ... } }], timeUnit: 'mes'|'semana' }
  * callback(result) con result = { macro: dataUrl, micro: dataUrl } o {} si falla.
  */
-function getFertiChartsDataUrlsForReport(program, callback) {
+function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
   if (!program || !Array.isArray(program.weeks) || program.weeks.length === 0) {
     if (typeof callback === 'function') callback({});
     return;
   }
+  const reportLang = reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
+  const reportUnits = reportOptions && reportOptions.unit_system === 'us_customary' ? 'us_customary' : 'metric';
   loadChartJs(function() {
+    const buildCharts = function () {
     const weeks = program.weeks;
     const timeUnit = program.timeUnit || 'semana';
     const labels = weeks.map(function(w, i) { return fertiChartSlotLabelAtIndex(timeUnit, i); });
@@ -2239,6 +2257,17 @@ function getFertiChartsDataUrlsForReport(program, callback) {
     macroCanvas.remove();
     microCanvas.remove();
     if (typeof callback === 'function') callback(result);
+    };
+    var runBuild = buildCharts;
+    if (window.NpFertigationUI && typeof window.NpFertigationUI.withLanguage === 'function') {
+      var prevLangBuild = runBuild;
+      runBuild = function () { return window.NpFertigationUI.withLanguage(reportLang, prevLangBuild); };
+    }
+    if (window.NpFertigationUI && typeof window.NpFertigationUI.withUnitSystem === 'function') {
+      var prevUnitBuild = runBuild;
+      runBuild = function () { return window.NpFertigationUI.withUnitSystem(reportUnits, prevUnitBuild); };
+    }
+    runBuild();
   });
 }
 window.getFertiChartsDataUrlsForReport = getFertiChartsDataUrlsForReport;
@@ -2553,16 +2582,16 @@ function openFertiNewMaterialModal() {
   overlay.innerHTML = `
     <div class="material-modal">
       <div class="modal-header">
-        <h3 style="margin:0;display:flex;align-items:center;gap:8px;">➕ Nueva Materia Prima Personalizada</h3>
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px;">${fertProgT('new_material_title', '➕ Nueva Materia Prima Personalizada')}</h3>
         <button class="btn btn-secondary btn-sm" onclick="this.closest('.material-modal-overlay').remove()">✕</button>
       </div>
       <div class="material-modal-body">
         <div class="form-group">
-          <label>Nombre de la Materia Prima:</label>
-          <input type="text" id="fertiCustom_name" placeholder="Ej: Nitrato de Calcio">
+          <label>${fertProgT('material_name', 'Nombre de la Materia Prima:')}</label>
+          <input type="text" id="fertiCustom_name" placeholder="${fertProgT('material_name_ph', 'Ej: Nitrato de Calcio')}">
         </div>
         <div class="form-group">
-          <label>Concentración de Nutrientes (%):</label>
+          <label>${fertProgT('nutrient_concentration', 'Concentración de Nutrientes (%):')}</label>
           <div class="nutrient-inputs-grid">
             <div class="nutrient-input"><label>N(NO3):</label><input type="number" id="fertiCustom_N_NO3" step="0.01" placeholder="0.00"></div>
             <div class="nutrient-input"><label>N(NH4):</label><input type="number" id="fertiCustom_N_NH4" step="0.01" placeholder="0.00"></div>
@@ -2582,16 +2611,16 @@ function openFertiNewMaterialModal() {
           </div>
         </div>
         <div class="form-group">
-          <label>Fertilizantes solubles personalizados:</label>
+          <label>${fertProgT('custom_solubles', 'Fertilizantes solubles personalizados:')}</label>
           <div id="fertiCustomMaterialsList" style="margin-top:6px;"></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn btn-info btn-sm" onclick="openFertiPreloadedCatalogModal()" title="Consultar concentraciones de fertilizantes precargados">📋 Ver fertilizantes disponibles</button>
-            <button class="btn btn-secondary btn-sm" onclick="clearFertiCustomMaterials()">🧹 Limpiar catálogo</button>
+            <button class="btn btn-info btn-sm" onclick="openFertiPreloadedCatalogModal()" title="${fertProgT('view_available_title', 'Consultar concentraciones de fertilizantes precargados')}">📋 ${fertProgT('view_available', 'Ver fertilizantes disponibles')}</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearFertiCustomMaterials()">🧹 ${fertProgT('clear_catalog', 'Limpiar catálogo')}</button>
           </div>
         </div>
         <div class="material-modal-actions">
-          <button class="btn btn-secondary" onclick="this.closest('.material-modal-overlay').remove()">Cancelar</button>
-          <button class="btn btn-primary" id="fertiCustom_saveBtn">Agregar Materia Prima</button>
+          <button class="btn btn-secondary" onclick="this.closest('.material-modal-overlay').remove()">${fertProgT('cancel', 'Cancelar')}</button>
+          <button class="btn btn-primary" id="fertiCustom_saveBtn">${fertProgT('add_material', 'Agregar Materia Prima')}</button>
         </div>
       </div>
     </div>
@@ -2610,7 +2639,7 @@ function openFertiNewMaterialModal() {
     }
     const getNum = id => { const v = parseFloat(overlay.querySelector('#'+id).value); return isNaN(v) ? 0 : Math.max(0, v); };
     const name = (overlay.querySelector('#fertiCustom_name').value || '').trim();
-    if (!name) { if (window.showMessage) window.showMessage('Escribe un nombre', 'warning'); return; }
+    if (!name) { if (window.showMessage) window.showMessage(fertProgT('name_required', 'Escribe un nombre'), 'warning'); return; }
     const mat = {
       id: 'custom_' + Date.now(),
       name,
@@ -2638,7 +2667,7 @@ function openFertiNewMaterialModal() {
     mergeFertiCustomMaterials();
     renderFertiWeeks();
     renderFertiCustomMaterialsList();
-    if (window.showMessage) window.showMessage('✅ Fertilizante agregado', 'success');
+    if (window.showMessage) window.showMessage(fertProgT('fertilizer_added', '✅ Fertilizante agregado'), 'success');
     overlay.remove();
   });
 }

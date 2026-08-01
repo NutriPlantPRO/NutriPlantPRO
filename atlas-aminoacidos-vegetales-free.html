@@ -9,7 +9,8 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801h"></script>
+  <script src="assets/np-atlas-en.js?v=20260801h"></script>
 
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <style>
@@ -1494,7 +1495,7 @@
           ? ' style="border-color:' + h.color + ';background:' + h.color + '18;box-shadow:0 0 0 3px ' + h.color + '28"'
           : '';
         return '<button type="button" class="hormone-legend-btn' + (isActive ? ' active' : '') + '" data-hormone="' + h.id + '"' + style + '>' +
-          '<span class="swatch" style="background:' + h.color + '"></span>' + escapeHtml(h.name) +
+          '<span class="swatch" style="background:' + h.color + '"></span>' + escapeHtml(hormoneView(h).name) +
           '</button>';
       }).join('');
       Array.prototype.forEach.call(legend.querySelectorAll('.hormone-legend-btn'), function (btn) {
@@ -1507,17 +1508,18 @@
 
     function renderHormoneStages() {
       var grid = document.getElementById('hormoneStageGrid');
-      grid.innerHTML = PLANT_STAGES.map(function (s) {
-        var hormoneNames = s.hormones.map(function (hid) {
+      grid.innerHTML = PLANT_STAGES.map(function (raw) {
+        var s = stageView(raw);
+        var hormoneNames = raw.hormones.map(function (hid) {
           var h = HORMONES.find(function (x) { return x.id === hid; });
-          return h ? h.name : hid;
+          return h ? hormoneView(h).name : hid;
         });
-        return '<article class="hormone-stage-card ' + (state.stageSelected && state.stageSelected.id === s.id ? 'active' : '') + '" data-stage="' + s.id + '">' +
+        return '<article class="hormone-stage-card ' + (state.stageSelected && state.stageSelected.id === raw.id ? 'active' : '') + '" data-stage="' + raw.id + '">' +
           '<span class="stage-kicker">' + escapeHtml(s.title) + '</span>' +
           '<h3>' + escapeHtml(s.name) + '</h3>' +
-          '<p class="event"><strong>Evento:</strong> ' + escapeHtml(s.event) + '</p>' +
+          '<p class="event"><strong>' + escapeHtml(atlasLabel('evento', 'Evento:')) + '</strong> ' + escapeHtml(s.event) + '</p>' +
           pills(hormoneNames, 'blue') +
-          '<div class="nutrients-label">Nutrientes clave</div>' +
+          '<div class="nutrients-label">' + escapeHtml(atlasLabel('nutrientesClave', 'Nutrientes clave')) + '</div>' +
           pills(s.nutrients, 'green') +
           '</article>';
       }).join('');
@@ -1529,30 +1531,34 @@
       });
     }
 
-    function hormoneDetailHtml(h) {
-      return '<div class="section"><h3>Rol fisiológico</h3><p>' + escapeHtml(h.role) + ' — ' + escapeHtml(h.physiology) + '</p></div>' +
-        '<div class="section"><h3>Etapas dominantes</h3>' + pills(h.stages.map(function (sid) {
-          var st = PLANT_STAGES.find(function (s) { return s.id === sid; });
-          return st ? st.title + ' · ' + st.name : sid;
+    function hormoneDetailHtml(raw) {
+      var h = hormoneView(raw);
+      return '<div class="section"><h3>' + escapeHtml(atlasLabel('rolFisiologico', 'Rol fisiológico')) + '</h3><p>' + escapeHtml(h.role) + ' — ' + escapeHtml(h.physiology) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('etapasDominantes', 'Etapas dominantes')) + '</h3>' + pills(raw.stages.map(function (sid) {
+          var st = PLANT_STAGES.find(function (x) { return x.id === sid; });
+          if (!st) return sid;
+          var sv = stageView(st);
+          return sv.title + ' · ' + sv.name;
         }), 'blue') + '</div>' +
-        '<div class="section"><h3>Interpretación agronómica</h3><p>' + escapeHtml(h.agronomy) + '</p></div>' +
-        '<div class="section"><h3>Nutrientes cofactores</h3>' + pills(h.nutrients, 'green') + '</div>' +
-        '<div class="section"><h3>Vínculo con aminoácidos</h3>' + list(h.aminoLinks) + '</div>' +
-        '<div class="section"><h3>Evidencia</h3><p><span class="pill ' + evidencePill(h.evidence) + '">Evidencia ' + escapeHtml(h.evidence) + '</span></p></div>' +
-        '<div class="section"><h3>Referencias</h3>' + list(h.references) + '</div>';
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('interpretacionAgronomica', 'Interpretación agronómica')) + '</h3><p>' + escapeHtml(h.agronomy) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('nutrientesCofactores', 'Nutrientes cofactores')) + '</h3>' + pills(h.nutrients, 'green') + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('vinculoAminoacidos', 'Vínculo con aminoácidos')) + '</h3>' + list(h.aminoLinks) + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('evidence', 'Evidencia')) + '</h3><p><span class="pill ' + evidencePill(raw.evidence) + '">' + escapeHtml(atlasLabel('evidencePrefix', 'Evidencia ') + (h.evidence || localizeTerm(raw.evidence))) + '</span></p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('bibliografia', 'Referencias')) + '</h3>' + list(raw.references) + '</div>';
     }
 
-    function stageDetailHtml(s) {
-      var hormoneNames = s.hormones.map(function (hid) {
+    function stageDetailHtml(raw) {
+      var s = stageView(raw);
+      var hormoneNames = raw.hormones.map(function (hid) {
         var h = HORMONES.find(function (x) { return x.id === hid; });
-        return h ? h.name + ' (' + h.abbr + ')' : hid;
+        return h ? hormoneView(h).name + ' (' + h.abbr + ')' : hid;
       });
-      return '<div class="section"><h3>Evento celular</h3><p>' + escapeHtml(s.event) + '</p></div>' +
-        '<div class="section"><h3>Hormonas dominantes</h3>' + list(hormoneNames) + '</div>' +
-        '<div class="section"><h3>Fisiología de la etapa</h3><p>' + escapeHtml(s.physiology) + '</p></div>' +
-        '<div class="section"><h3>Manejo nutricional</h3><p>' + escapeHtml(s.agronomy) + '</p></div>' +
-        '<div class="section"><h3>Nutrientes clave</h3>' + pills(s.nutrients, 'green') + '</div>' +
-        '<div class="section"><h3>Aminoácidos relacionados</h3>' + list(s.aminoLinks) + '</div>';
+      return '<div class="section"><h3>' + escapeHtml(atlasLabel('eventoCelular', 'Evento celular')) + '</h3><p>' + escapeHtml(s.event) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('hormonasDominantes', 'Hormonas dominantes')) + '</h3>' + list(hormoneNames) + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('fisiologiaEtapa', 'Fisiología de la etapa')) + '</h3><p>' + escapeHtml(s.physiology) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('manejoNutricional', 'Manejo nutricional')) + '</h3><p>' + escapeHtml(s.agronomy) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('nutrientesClave', 'Nutrientes clave')) + '</h3>' + pills(s.nutrients, 'green') + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('aminoacidosRelacionados', 'Aminoácidos relacionados')) + '</h3>' + list(s.aminoLinks) + '</div>';
     }
 
     function updateHormoneChartHighlight(activeIds) {
@@ -1596,12 +1602,13 @@
     function selectHormone(h) {
       state.hormoneSelected = h;
       state.stageSelected = null;
+      var v = hormoneView(h);
       var panel = document.querySelector('.hormone-panel');
       if (panel) panel.scrollTop = 0;
-      document.getElementById('hormoneSelectedType').textContent = 'Fitohormona · ' + h.abbr;
-      document.getElementById('hormoneSelectedName').textContent = h.name;
-      document.getElementById('hormoneSelectedSubtitle').textContent = h.role;
-      document.getElementById('hormoneVisual').innerHTML = '<div><strong>' + h.emoji + '</strong><span>' + escapeHtml(h.role) + '</span></div>';
+      document.getElementById('hormoneSelectedType').textContent = atlasLabel('fitohormona', 'Fitohormona') + ' · ' + h.abbr;
+      document.getElementById('hormoneSelectedName').textContent = v.name;
+      document.getElementById('hormoneSelectedSubtitle').textContent = v.role;
+      document.getElementById('hormoneVisual').innerHTML = '<div><strong>' + h.emoji + '</strong><span>' + escapeHtml(v.role) + '</span></div>';
       document.getElementById('hormoneDetailPanel').innerHTML = hormoneDetailHtml(h);
       renderHormoneLegend();
       renderHormoneStages();
@@ -1616,12 +1623,13 @@
     function selectStage(s) {
       state.stageSelected = s;
       state.hormoneSelected = null;
+      var v = stageView(s);
       var panel = document.querySelector('.hormone-panel');
       if (panel) panel.scrollTop = 0;
-      document.getElementById('hormoneSelectedType').textContent = s.title;
-      document.getElementById('hormoneSelectedName').textContent = s.name;
-      document.getElementById('hormoneSelectedSubtitle').textContent = s.event;
-      document.getElementById('hormoneVisual').innerHTML = '<div><strong>' + escapeHtml(s.title) + '</strong><span>' + escapeHtml(s.event) + '</span></div>';
+      document.getElementById('hormoneSelectedType').textContent = v.title;
+      document.getElementById('hormoneSelectedName').textContent = v.name;
+      document.getElementById('hormoneSelectedSubtitle').textContent = v.event;
+      document.getElementById('hormoneVisual').innerHTML = '<div><strong>' + escapeHtml(v.title) + '</strong><span>' + escapeHtml(v.event) + '</span></div>';
       document.getElementById('hormoneDetailPanel').innerHTML = stageDetailHtml(s);
       renderHormoneLegend();
       renderHormoneStages();
@@ -1703,7 +1711,8 @@
 
     var HORMONE_LABEL_SLOTS = [168, 392, 616, 840];
 
-    function hormoneChartMarkerHtml(transition, point, labelX) {
+    function hormoneChartMarkerHtml(transition, point, labelX, index) {
+      transition = transitionView(transition, index == null ? 0 : index);
       var titleW = transition.sub ? 168 : 138;
       var titleH = transition.sub ? 32 : 22;
       var labelBottom = 318;
@@ -1711,7 +1720,7 @@
       var rectX = labelX - titleW * 0.5;
       var connectorX = labelX;
       var connectorY = labelY;
-      var aria = 'ETAPA ' + transition.stage + ': ' + transition.title + (transition.sub ? ' ' + transition.sub : '');
+      var aria = atlasLabel('etapa', 'ETAPA') + ' ' + transition.stage + ': ' + transition.title + (transition.sub ? ' ' + transition.sub : '');
       var subHtml = transition.sub
         ? '<text class="event-label-sub" x="' + labelX + '" y="' + (labelY + 25) + '" text-anchor="middle">' + escapeHtml(transition.sub) + '</text>'
         : '';
@@ -1751,7 +1760,7 @@
       curvesMount.innerHTML = HORMONE_CHART_CURVES.map(function (cfg) {
         var meta = HORMONES.find(function (h) { return h.id === cfg.id; });
         var color = meta ? meta.color : '#16a34a';
-        var name = meta ? meta.name : cfg.id;
+        var name = meta ? hormoneView(meta).name : cfg.id;
         return '<g class="hormone-curve" data-hormone="' + cfg.id + '" role="button" tabindex="0" aria-label="' + escapeHtml(name) + '">' +
           '<path class="hormone-fill" d="' + hormoneChartAreaPath(cfg) + '" fill="url(#' + cfg.grad + ')"/>' +
           '<path class="hormone-line" d="' + hormoneChartLinePath(cfg) + '" stroke="' + color + '"/>' +
@@ -1766,7 +1775,7 @@
         });
         var slots = hormoneChartResolveLabelSlots(points);
         return HORMONE_TRANSITIONS.map(function (transition, index) {
-          return hormoneChartMarkerHtml(transition, points[index], slots[index]);
+          return hormoneChartMarkerHtml(transition, points[index], slots[index], index);
         }).join('');
       })();
     }
@@ -1796,6 +1805,62 @@
       selectStage(PLANT_STAGES[0]);
     }
 
+    
+    function atlasIsEn() {
+      try { return window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en'; } catch (e) { return false; }
+    }
+    function atlasLabel(key, fallback) {
+      var bag = window.NP_ATLAS_EN && window.NP_ATLAS_EN.labels;
+      if (atlasIsEn() && bag && bag[key]) return bag[key];
+      return fallback != null ? fallback : key;
+    }
+    function aminoView(a) {
+      if (!a || !atlasIsEn()) return a;
+      var en = window.NP_ATLAS_EN && window.NP_ATLAS_EN.amino && window.NP_ATLAS_EN.amino[a.id];
+      return en ? Object.assign({}, a, en) : a;
+    }
+    function stageView(st) {
+      if (!st || !atlasIsEn()) return st;
+      var en = window.NP_ATLAS_EN && window.NP_ATLAS_EN.stages && window.NP_ATLAS_EN.stages[st.id];
+      return en ? Object.assign({}, st, en) : st;
+    }
+    function hormoneView(h) {
+      if (!h || !atlasIsEn()) return h;
+      var en = window.NP_ATLAS_EN && window.NP_ATLAS_EN.hormones && window.NP_ATLAS_EN.hormones[h.id];
+      return en ? Object.assign({}, h, en) : h;
+    }
+    function transitionView(t, index) {
+      if (!t || !atlasIsEn()) return t;
+      var en = window.NP_ATLAS_EN && window.NP_ATLAS_EN.transitions && window.NP_ATLAS_EN.transitions[index];
+      return en ? Object.assign({}, t, { title: en.title, sub: en.sub || '' }) : t;
+    }
+    var _atlasTermMap = null;
+    function atlasTermMap() {
+      if (_atlasTermMap) return _atlasTermMap;
+      _atlasTermMap = {};
+      if (!window.NP_ATLAS_EN || !window.NP_ATLAS_EN.amino) return _atlasTermMap;
+      AMINO_ACIDS.forEach(function (a) {
+        var en = window.NP_ATLAS_EN.amino[a.id];
+        if (!en) return;
+        ['family','routes','phenology','stress','precursors','categories','formulations'].forEach(function (k) {
+          (a[k] || []).forEach(function (sv, i) {
+            if (en[k] && en[k][i]) _atlasTermMap[sv] = en[k][i];
+          });
+        });
+        if (en.evidence) _atlasTermMap[a.evidence] = en.evidence;
+        if (en.name) _atlasTermMap[a.name] = en.name;
+      });
+      return _atlasTermMap;
+    }
+    function localizeTerm(v) {
+      if (!atlasIsEn()) return v;
+      var map = atlasTermMap();
+      return map[v] || (window.NpFreeNutritionUI ? window.NpFreeNutritionUI.translate(v) : v);
+    }
+    function localizeList(items) {
+      return (items || []).map(localizeTerm);
+    }
+
     function uniqueFrom(field) {
       var set = {};
       AMINO_ACIDS.forEach(function (a) {
@@ -1806,8 +1871,8 @@
 
     function fillSelect(id, label, values) {
       var select = document.getElementById(id);
-      select.innerHTML = '<option value="">Todos</option>' + values.map(function (v) {
-        return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>';
+      select.innerHTML = '<option value="">' + escapeHtml(atlasLabel('todos', 'Todos')) + '</option>' + values.map(function (v) {
+        return '<option value="' + escapeHtml(v) + '">' + escapeHtml(localizeTerm(v)) + '</option>';
       }).join('');
     }
 
@@ -1847,16 +1912,18 @@
       var cards = document.getElementById('cards');
       var filtered = AMINO_ACIDS.filter(matchesFilters);
       document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
-      document.getElementById('resultCount').textContent = filtered.length + ' de ' + AMINO_ACIDS.length + ' aminoácidos visibles';
-      cards.innerHTML = filtered.map(function (a) {
-        return '<article class="amino-card ' + (state.selected && state.selected.id === a.id ? 'active' : '') + '" data-id="' + a.id + '">' +
+      var countTpl = atlasLabel('count', '{n} de {total} aminoácidos visibles');
+      document.getElementById('resultCount').textContent = countTpl.replace('{n}', filtered.length).replace('{total}', AMINO_ACIDS.length);
+      cards.innerHTML = filtered.map(function (raw) {
+        var a = aminoView(raw);
+        return '<article class="amino-card ' + (state.selected && state.selected.id === raw.id ? 'active' : '') + '" data-id="' + raw.id + '">' +
           '<div class="card-top"><div><h2 class="name">' + escapeHtml(a.name) + '</h2><div class="latin">' + escapeHtml(a.lName) + '</div></div>' +
           '<span class="abbr">' + escapeHtml(a.abbr1) + '</span></div>' +
           '<div class="meta">' +
           '<span class="pill green">' + escapeHtml(a.abbr3) + '</span>' +
           '<span class="pill">' + escapeHtml(a.formula) + '</span>' +
           '<span class="pill">' + escapeHtml(a.mw) + '</span>' +
-          '<span class="pill ' + evidencePill(a.evidence) + '">Evidencia ' + escapeHtml(a.evidence) + '</span>' +
+          '<span class="pill ' + evidencePill(raw.evidence) + '">' + escapeHtml(atlasLabel('evidencePrefix', 'Evidencia ') + a.evidence) + '</span>' +
           '</div>' +
           '<p class="card-summary">' + escapeHtml(a.benefits) + '</p>' +
           '<div class="meta">' + a.categories.slice(0, 4).map(function (c) {
@@ -1907,22 +1974,23 @@
     function selectAmino(a, options) {
       options = options || {};
       state.selected = a;
+      var v = aminoView(a);
       var panel = document.querySelector('.panel');
       if (panel) panel.scrollTop = 0;
-      document.getElementById('selectedEvidence').textContent = 'Evidencia ' + a.evidence;
-      document.getElementById('selectedName').textContent = a.name + ' (' + a.abbr3 + ' / ' + a.abbr1 + ')';
-      document.getElementById('selectedSubtitle').textContent = a.lName + ' · ' + a.formula + ' · ' + a.mw;
+      document.getElementById('selectedEvidence').textContent = atlasLabel('evidencePrefix', 'Evidencia ') + v.evidence;
+      document.getElementById('selectedName').textContent = v.name + ' (' + v.abbr3 + ' / ' + v.abbr1 + ')';
+      document.getElementById('selectedSubtitle').textContent = v.lName + ' · ' + v.formula + ' · ' + v.mw;
       document.getElementById('detailPanel').innerHTML =
-        '<div class="section"><h3>Familia química</h3><div class="meta">' + a.family.map(function (v) { return '<span class="pill green">' + escapeHtml(v) + '</span>'; }).join('') + '</div></div>' +
-        '<div class="section"><h3>Rutas metabólicas en plantas</h3>' + list(a.routes) + '</div>' +
-        '<div class="section"><h3>Función fisiológica</h3><p>' + escapeHtml(a.physiology) + '</p></div>' +
-        '<div class="section"><h3>Beneficios agronómicos</h3><p>' + escapeHtml(a.benefits) + '</p></div>' +
-        '<div class="section"><h3>Fenología relevante</h3>' + list(a.phenology) + '</div>' +
-        '<div class="section"><h3>Tolerancia a estrés</h3>' + list(a.stress) + '</div>' +
-        '<div class="section"><h3>Precursor de metabolitos</h3>' + list(a.precursors) + '</div>' +
-        '<div class="section"><h3>Categorías funcionales automáticas</h3><div class="meta">' + a.categories.map(function (v) { return '<span class="pill blue">' + escapeHtml(v) + '</span>'; }).join('') + '</div></div>' +
-        '<div class="section"><h3>Bibliografía científica de respaldo</h3>' + list(a.references) + '</div>' +
-        '<div class="section"><p><strong>Nota técnica:</strong> esta herramienta resume evidencia bioquímica y fisiológica; no sustituye validación por cultivo, dosis, fuente comercial, mezcla, vía de aplicación y condición de campo.</p></div>';
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('familiaQuimica', 'Familia química')) + '</h3><div class="meta">' + v.family.map(function (x) { return '<span class="pill green">' + escapeHtml(x) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('routesHeading', 'Rutas metabólicas en plantas')) + '</h3>' + list(v.routes) + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('funcionFisiologica', 'Función fisiológica')) + '</h3><p>' + escapeHtml(v.physiology) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('beneficiosAgronomicos', 'Beneficios agronómicos')) + '</h3><p>' + escapeHtml(v.benefits) + '</p></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('fenologiaRelevante', 'Fenología relevante')) + '</h3>' + list(v.phenology) + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('toleranciaEstres', 'Tolerancia a estrés')) + '</h3>' + list(v.stress) + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('precursorMetabolitos', 'Precursor de metabolitos')) + '</h3>' + list(v.precursors) + '</div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('categoriasFuncionales', 'Categorías funcionales automáticas')) + '</h3><div class="meta">' + v.categories.map(function (x) { return '<span class="pill blue">' + escapeHtml(x) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="section"><h3>' + escapeHtml(atlasLabel('bibliografia', 'Bibliografía científica de respaldo')) + '</h3>' + list(a.references) + '</div>' +
+        '<div class="section"><p><strong>' + escapeHtml(atlasLabel('notaTecnica', 'Nota técnica:')) + '</strong> ' + escapeHtml(atlasLabel('notaTecnicaTexto', 'esta herramienta resume evidencia bioquímica y fisiológica; no sustituye validación por cultivo, dosis, fuente comercial, mezcla, vía de aplicación y condición de campo.')) + '</p></div>';
       renderCards();
       updateSelectedPanelMaxHeight();
       loadMolecule(a);
@@ -1975,6 +2043,73 @@
       });
     }
 
+    
+    function applyAtlasChrome() {
+      _atlasTermMap = null;
+      var search = document.getElementById('searchInput');
+      if (search) search.placeholder = atlasLabel('buscarPlaceholder', 'Prolina, auxinas, clorofila...');
+      var setText = function (sel, es, key) {
+        var el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+        if (!el) return;
+        el.textContent = atlasIsEn() ? atlasLabel(key, es) : es;
+      };
+      setText('label[for="searchInput"]', 'Buscar', 'buscar');
+      setText('label[for="stressFilter"]', 'Estrés', 'estres');
+      setText('label[for="phenologyFilter"]', 'Fenología', 'fenologia');
+      setText('label[for="formulationFilter"]', 'Formulación nutricional', 'formulacion');
+      setText('label[for="categoryFilter"]', 'Categoría funcional', 'categoria');
+      setText('label[for="evidenceFilter"]', 'Evidencia', 'evidence');
+      var ev = document.getElementById('evidenceFilter');
+      if (ev) {
+        Array.prototype.forEach.call(ev.options, function (opt) {
+          if (!opt.value) opt.textContent = atlasLabel('todas', 'Todas');
+          else if (opt.value === 'Alta') opt.textContent = atlasLabel('alta', 'Alta');
+          else if (opt.value === 'Media') opt.textContent = atlasLabel('media', 'Media');
+          else if (opt.value === 'Baja') opt.textContent = atlasLabel('baja', 'Baja');
+        });
+      }
+      var lead = document.querySelector('.hormone-lead');
+      if (lead) {
+        lead.innerHTML = atlasIsEn()
+          ? atlasLabel('hormoneLeadHtml', lead.innerHTML)
+          : '<strong>Referencia visual didáctica</strong> — no son valores de laboratorio. Las curvas suaves muestran cómo, entre etapas, el mando hormonal va pasando de una fitohormona a la siguiente. Los puntos blancos marcan ese <strong>cambio de nivel</strong> (Citoquinina → Auxina → Giberelinas → Etileno → ABA).';
+      }
+      var disc = document.querySelector('.hormone-disclaimer');
+      if (disc) disc.textContent = atlasIsEn()
+        ? atlasLabel('hormoneDisclaimer', disc.textContent)
+        : 'Cualquier desequilibrio en estos ciclos hormonales en cualquier momento puede reducir irreversiblemente la expresión genética. La nutrición y el manejo deben sostener cada transición fenológica.';
+      var boardH2 = document.querySelector('.hormone-board > h2');
+      if (boardH2) boardH2.textContent = atlasLabel('nivelesHormonales', 'Niveles hormonales por etapa');
+      var axisY = document.querySelector('.hormone-chart text[transform]');
+      if (axisY) axisY.textContent = atlasLabel('axisNiveles', 'Niveles hormonales');
+      var axisX = document.querySelector('.hormone-chart text[text-anchor="middle"][y="362"]');
+      if (axisX) axisX.textContent = atlasLabel('axisCofactores', 'Nutrientes claves / Co-factores / Hormonas');
+      var headers = document.querySelectorAll('.stage-header');
+      PLANT_STAGES.forEach(function (st, i) {
+        var g = headers[i];
+        if (!g) return;
+        var sv = stageView(st);
+        var t = g.querySelector('.stage-header-title');
+        var n = g.querySelector('.stage-header-name');
+        if (t) t.textContent = sv.title;
+        if (n) n.textContent = sv.name;
+      });
+    }
+    window.refreshAtlasUi = function refreshAtlasUi() {
+      applyAtlasChrome();
+      fillSelect('stressFilter', 'Estrés', uniqueFrom('stress'));
+      fillSelect('phenologyFilter', 'Fenología', uniqueFrom('phenology'));
+      fillSelect('formulationFilter', 'Formulación', uniqueFrom('formulations'));
+      fillSelect('categoryFilter', 'Categoría', uniqueFrom('categories'));
+      renderCards();
+      if (state.selected) selectAmino(state.selected);
+      renderHormoneLegend();
+      renderHormoneStages();
+      renderHormoneChart();
+      if (state.stageSelected) selectStage(state.stageSelected);
+      else if (state.hormoneSelected) selectHormone(state.hormoneSelected);
+    }
+
     function init() {
       document.querySelectorAll('.tool-tab-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -1999,6 +2134,7 @@
       });
 
       initHormones();
+      applyAtlasChrome();
       syncAtlasEmbedLayout('amino');
       selectAmino(state.selected);
       window.addEventListener('resize', function () {
@@ -2014,7 +2150,11 @@
   <script>
     (function () {
       if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
-        window.NpFreeNutritionUI.init();
+        window.NpFreeNutritionUI.init({
+          refresh: function () {
+            if (typeof window.refreshAtlasUi === 'function') window.refreshAtlasUi();
+          }
+        });
       }
     })();
   </script>

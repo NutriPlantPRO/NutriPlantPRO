@@ -46,6 +46,57 @@
   function lecturaDepthUnit() {
     return lecturaUsesInches() ? 'in' : 'mm';
   }
+
+  function lecturaVolumeUnit() {
+    return lecturaUsesInches() ? 'US gal' : 'm³';
+  }
+  function lecturaAreaUnit() {
+    return lecturaUsesInches() ? 'acre' : 'ha';
+  }
+  function areaFromHa(ha) {
+    if (ha == null || !Number.isFinite(Number(ha))) return null;
+    var n = Number(ha);
+    if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.fromSI === 'function') {
+      try { return window.NpAgronomicUnits.fromSI(n, 'area'); } catch (e) { /* fall through */ }
+    }
+    return lecturaUsesInches() ? n * 2.47105381 : n;
+  }
+  function fmtAreaHa(ha, dec) {
+    var v = areaFromHa(ha);
+    if (v == null || !Number.isFinite(v)) return '—';
+    return Number(v).toFixed(dec == null ? 2 : dec) + ' ' + lecturaAreaUnit();
+  }
+  /** Canonical irrigation volume is always m³; display US gal when imperial. */
+  function volumeFromM3(m3) {
+    if (m3 == null || !Number.isFinite(Number(m3))) return null;
+    var n = Number(m3);
+    if (!lecturaUsesInches()) return n;
+    if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.fromSI === 'function') {
+      try { return window.NpAgronomicUnits.fromSI(n, 'volume'); } catch (e) { /* fall through */ }
+    }
+    return n * 264.172052;
+  }
+  function volumeDisplayToM3(display) {
+    if (display == null || !Number.isFinite(Number(display))) return null;
+    var n = Number(display);
+    if (!lecturaUsesInches()) return n;
+    if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.toSI === 'function') {
+      try { return window.NpAgronomicUnits.toSI(n, 'volume'); } catch (e) { /* fall through */ }
+    }
+    return n / 264.172052;
+  }
+  function volumeInputValue(m3) {
+    var v = volumeFromM3(m3);
+    if (v == null || !Number.isFinite(v)) return '';
+    return lecturaUsesInches() ? String(Math.round(v * 10) / 10) : String(round1(v));
+  }
+  function fmtVolumeM3(m3, dec) {
+    var v = volumeFromM3(m3);
+    if (v == null || !Number.isFinite(v)) return '—';
+    var d = dec != null ? dec : (lecturaUsesInches() ? 0 : 1);
+    return Number(v).toFixed(d);
+  }
+
   function lecturaPrefsFingerprint() {
     var p = lecturaPrefs();
     return p.language + '|' + p.unit_system;
@@ -814,24 +865,55 @@
     if (row.status === 'not_found') return '<span style="color:#94a3b8;">—</span>';
     return '<span style="color:#0369a1;font-weight:700;">' + lecturaT('radar.status_generating', '⏳ Generando…') + '</span>';
   }
+  function translateRadarReason(text) {
+    var raw = String(text || '');
+    if (!raw) return '';
+    if (lecturaPrefs().language !== 'en') return raw;
+    return raw
+      .replace(/Imagen incompleta por nubosidad/g, 'Incomplete image due to cloud cover')
+      .replace(/Sin imagen por cobertura insuficiente \(nubosidad\)/g, 'No image due to insufficient coverage (cloud)')
+      .replace(/útiles /g, 'useful ')
+      .replace(/ con /g, ' with ')
+      .replace(/ pasadas? Sentinel/g, function (m) {
+        return m.indexOf('pasadas') >= 0 ? ' Sentinel passes' : ' Sentinel pass';
+      })
+      .replace(/meta ~100% del predio con dato válido/g, 'target ~100% of the field with valid data')
+      .replace(/del predio con dato válido/g, 'of the field with valid data')
+      .replace(/Quincena incompleta: imagen ampliada al mes calendario de este periodo\./g,
+        'Incomplete biweek: image expanded to this period’s calendar month.')
+      .replace(/Clima\/riego siguen en /g, 'Climate/irrigation stay on ')
+      .replace(/Imagen buscada en mes /g, 'Image searched in month ')
+      .replace(/^Imagen incompleta/, 'Incomplete image')
+      .replace(/^Sin imagen/, 'No image');
+  }
   function incompleteImageReason(r) {
     if (r && (r.incomplete_reason || r.omit_reason || r.error_message)) {
-      return r.incomplete_reason || r.omit_reason || r.error_message;
+      return translateRadarReason(r.incomplete_reason || r.omit_reason || r.error_message);
     }
     if (!r) return '';
     var pct = r.valid_pct != null ? r.valid_pct : null;
     var n = r.scene_count != null ? r.scene_count : null;
-    return (
-      'Imagen incompleta por nubosidad — útiles ' +
-      (pct != null ? pct + '%' : '—') +
-      (n != null ? ' con ' + n + ' pasada' + (n === 1 ? '' : 's') + ' Sentinel' : '') +
-      '.'
+    return lecturaT(
+      'radar.status_incomplete_detail',
+      'Imagen incompleta por nubosidad — útiles {pct}{scenes}.',
+      {
+        pct: pct != null ? pct + '%' : '—',
+        scenes: n != null
+          ? (Number(n) === 1
+            ? lecturaT('radar.with_pass_one', ' con {n} pasada Sentinel', { n: n })
+            : lecturaT('radar.with_pass_many', ' con {n} pasadas Sentinel', { n: n }))
+          : ''
+      }
     );
   }
   function omitImageReason(r) {
-    if (r && r.omit_reason) return r.omit_reason;
-    if (r && r.error_message && r.image_omitted) return r.error_message;
-    return incompleteImageReason(r).replace(/^Imagen incompleta/, 'Sin imagen');
+    if (r && r.omit_reason) return translateRadarReason(r.omit_reason);
+    if (r && r.error_message && r.image_omitted) return translateRadarReason(r.error_message);
+    var inc = incompleteImageReason(r);
+    if (lecturaPrefs().language === 'en') {
+      return inc.replace(/^Incomplete image/, 'No image').replace(/^Imagen incompleta/, 'No image');
+    }
+    return inc.replace(/^Imagen incompleta/, 'Sin imagen');
   }
   function periodIdLabel(r) {
     var idx = Number(r && r.index);
@@ -908,7 +990,7 @@
         mmInp.value = depthInputValue(mmVal);
       }
       if (m3Inp && document.activeElement !== m3Inp) {
-        m3Inp.value = r.riego_m3 != null ? r.riego_m3 : '';
+        m3Inp.value = volumeInputValue(r.riego_m3);
       }
     });
     return true;
@@ -932,30 +1014,36 @@
     var inpStyle = 'width:72px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;text-align:right;';
     var sig = lecturaTableSignature(state);
 
+    var volU = lecturaVolumeUnit();
+    var areaU = lecturaAreaUnit();
     var html = '<div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 10px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;">' +
       '<label style="display:flex;align-items:center;gap:6px;font-weight:700;color:#14532d;">' +
-        '% franja regada' +
+        lecturaT('radar.franja_pct_label', '% franja regada') +
         '<input type="number" id="lecturaFranjaPct" min="1" max="100" step="1" value="' + pct + '" style="width:64px;border:1px solid #86efac;border-radius:6px;padding:4px 6px;font-size:13px;font-weight:700;color:#14532d;text-align:right;">' +
         '%' +
       '</label>' +
-      '<span>Predio: <strong>' + (cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '—') + '</strong></span>' +
-      '<span>Franja: <strong>' + (iHa != null ? fmtNum(iHa, 2) + ' ha' : '—') + '</strong></span>' +
-      '<span style="color:#64748b;font-size:11px;">1 ' +
-      lecturaDepthUnit() +
-      ' ' +
-      lecturaT('radar.franja_convert_hint', 'en franja = 10 m³ × ha franja · edita m³ o lámina y se convierte solo') +
+      '<span>' + lecturaT('radar.field_area_label', 'Predio:') + ' <strong>' + (cropHa != null ? fmtAreaHa(cropHa, 2) : '—') + '</strong></span>' +
+      '<span>' + lecturaT('radar.strip_area_label', 'Franja:') + ' <strong>' + (iHa != null ? fmtAreaHa(iHa, 2) : '—') + '</strong></span>' +
+      '<span style="color:#64748b;font-size:11px;">' +
+      lecturaT(
+        lecturaUsesInches() ? 'radar.franja_convert_hint_us' : 'radar.franja_convert_hint',
+        lecturaUsesInches()
+          ? '1 {unit} on strip ≈ 27,154 US gal × strip acres · edit gal or depth and it converts'
+          : '1 {unit} en franja = 10 m³ × ha franja · edita m³ o lámina y se convierte solo',
+        { unit: lecturaDepthUnit() }
+      ) +
       '</span>' +
     '</div>';
 
     var unitBox =
       'display:inline-block;padding:1px 6px;margin:0 1px;border:1px solid #0f766e;border-radius:5px;' +
       'background:#ccfbf1;color:#115e59;font-weight:800;font-size:11px;line-height:1.35;';
-    var haLabel = cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '— ha';
+    var haLabel = cropHa != null ? fmtAreaHa(cropHa, 2) : ('— ' + areaU);
     var depthU = lecturaDepthUnit();
     var riegoMmHeader =
       lecturaT('radar.riego_depth_header', 'Riego') + ' <span style="' + unitBox + '">' + depthU + '</span>';
     var riegoM3Header =
-      lecturaT('radar.riego_m3_header', 'Riego') + ' <span style="' + unitBox + '">m³</span> / ' + haLabel;
+      lecturaT('radar.riego_m3_header', 'Riego') + ' <span style="' + unitBox + '">' + volU + '</span> / ' + haLabel;
 
     // lámina primero (junto a ET₀/lluvia); m³ después — mismo riego, dos unidades.
     var riegoThL =
@@ -1006,13 +1094,13 @@
       ],
       [
         riegoMmHeader,
-        lecturaT('radar.riego_mm_cell_title', 'Lámina de riego en la franja ({unit}). Mismo dato que m³; se convierte solo.', { unit: depthU }),
+        lecturaT('radar.riego_mm_cell_title', 'Mismo riego que {vol} (lámina en franja, {unit})', { unit: depthU, vol: volU }),
         true,
         'riegoL'
       ],
       [
         riegoM3Header,
-        lecturaT('radar.riego_m3_cell_title', 'Volumen de riego en m³ sobre el polígono ({ha}). Mismo dato que {unit}.', { ha: haLabel, unit: depthU }),
+        lecturaT('radar.riego_m3_cell_title', 'Mismo riego que {unit} (volumen del polígono)', { ha: haLabel, unit: depthU, vol: volU }),
         true,
         'riegoR'
       ],
@@ -1037,19 +1125,21 @@
       if (!r || !r.lookback_expanded) return '';
       var search =
         r.search_date_start && r.search_date_end
-          ? ' Imagen buscada en mes ' + r.search_date_start + ' → ' + r.search_date_end + '.'
+          ? ' ' + lecturaT('radar.image_searched_month', 'Imagen buscada en mes {start} → {end}.', {
+              start: r.search_date_start,
+              end: r.search_date_end
+            })
           : '';
       var scenes =
         Array.isArray(r.scene_dates) && r.scene_dates.length
           ? ' Sentinel: ' + r.scene_dates.join(', ') + '.'
           : '';
       return (
-        'Quincena incompleta: imagen ampliada al mes calendario de este periodo.' +
-        ' Clima/riego siguen en ' +
-        (r.date_start || '') +
-        ' – ' +
-        (r.date_end || '') +
-        '.' +
+        lecturaT(
+          'radar.lookback_expanded_tip',
+          'Quincena incompleta: imagen ampliada al mes calendario de este periodo. Clima/riego siguen en {start} – {end}.',
+          { start: r.date_start || '', end: r.date_end || '' }
+        ) +
         search +
         scenes
       );
@@ -1082,14 +1172,14 @@
         '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto')) + '">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
         '<td data-field="et0" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtDepth(r.et0_sum) + '</td>' +
         '<td data-field="rain" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtDepth(r.rain_sum) + '</td>' +
-        '<td style="' + riegoTdL + '" title="' + esc(lecturaT('radar.riego_mm_cell_title', 'Mismo riego que m³ (lámina en franja)')) + '">' +
+        '<td style="' + riegoTdL + '" title="' + esc(lecturaT('radar.riego_mm_cell_title', 'Mismo riego que {vol} (lámina en franja, {unit})', { unit: depthU, vol: volU })) + '">' +
           '<input type="number" min="0" step="' + (lecturaUsesInches() ? '0.01' : '0.1') + '" value="' + esc(depthInputValue(mmVal)) +
-          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_mm_input_title', 'Lámina en franja regada (mismo riego que m³)')) + '"' +
+          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_mm_input_title', 'Lámina en franja regada (mismo riego que {vol})', { vol: volU })) + '"' +
           (iHa == null ? ' disabled' : '') + '>' +
         '</td>' +
-        '<td style="' + riegoTdR + '" title="' + esc(lecturaT('radar.riego_m3_cell_title', 'Mismo riego que mm (volumen del polígono)')) + '">' +
-          '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
-          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que {unit}', { ha: haLabel, unit: depthU })) + '">' +
+        '<td style="' + riegoTdR + '" title="' + esc(lecturaT('radar.riego_m3_cell_title', 'Mismo riego que {unit} (volumen del polígono)', { unit: depthU, vol: volU })) + '">' +
+          '<input type="number" min="0" step="' + (lecturaUsesInches() ? '1' : '0.1') + '" value="' + esc(volumeInputValue(r.riego_m3)) +
+          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que {unit}', { ha: haLabel, unit: depthU, vol: volU })) + '">' +
         '</td>' +
         '<td data-field="status" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
       '</tr>';
@@ -1099,8 +1189,8 @@
       '<div style="font-size:11px;color:#64748b;margin-top:6px;">' +
       lecturaT(
         'radar.table_footnote',
-        'ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego {unit} y m³</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).',
-        { unit: depthU }
+        'ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego {unit} y {vol}</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).',
+        { unit: depthU, vol: volU }
       ) +
       (cropHa == null
         ? ' <span style="color:#b45309;">' +
@@ -1129,9 +1219,11 @@
         var row = (state.rows || []).find(function (x) { return x.index === idx; });
         if (!row) return;
         var v = parseFloat(inp.value);
-        row.riego_m3 = Number.isFinite(v) ? round1(v) : null;
+        var m3Si = Number.isFinite(v) ? volumeDisplayToM3(v) : null;
+        row.riego_m3 = m3Si != null ? round1(m3Si) : null;
         row.riego_mm = m3ToMm(row.riego_m3, irrigatedHa(state));
         saveState(state);
+        inp.value = volumeInputValue(row.riego_m3);
         var mmInp = wrap.querySelector('input[data-riego-mm-index="' + idx + '"]');
         if (mmInp) mmInp.value = depthInputValue(row.riego_mm);
         renderChart(state);
@@ -1160,7 +1252,7 @@
         saveState(state);
         inp.value = depthInputValue(row.riego_mm);
         var m3Inp = wrap.querySelector('input[data-riego-m3-index="' + idx + '"]');
-        if (m3Inp) m3Inp.value = row.riego_m3 != null ? row.riego_m3 : '';
+        if (m3Inp) m3Inp.value = volumeInputValue(row.riego_m3);
         renderChart(state);
       });
     });
@@ -1724,34 +1816,39 @@
     function scaleLegend(kind) {
       var cfg = {
         ndvi: {
-          title: 'Escala NDVI relativa al predio',
+          title: lecturaT('radar.scale_ndvi_title', 'Escala NDVI relativa al predio'),
           color: '#166534',
           bar: 'linear-gradient(90deg,#7f1d1d,#b91c1c,#ea580c,#f59e0b,#fde68a,#bef264,#65a30d,#15803d,#064e3b)',
-          tip: 'Verde = mayor vigor dentro de ese predio/periodo; rojo = menor. No es escala absoluta universal.'
+          tip: lecturaT('radar.scale_ndvi_tip_gallery', 'Verde = mayor vigor dentro de ese predio/periodo; rojo = menor. No es escala absoluta universal.'),
+          help: lecturaT('radar.scale_rel_help', 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.')
         },
         ndmi: {
-          title: 'Escala NDMI relativa al predio',
+          title: lecturaT('radar.scale_ndmi_title', 'Escala NDMI relativa al predio'),
           color: '#0369a1',
           bar: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
-          tip: 'Azul/verde = mayor humedad relativa del dosel dentro de ese predio/periodo; naranja/café = menor.'
+          tip: lecturaT('radar.scale_ndmi_tip_gallery', 'Azul/verde = mayor humedad relativa del dosel dentro de ese predio/periodo; naranja/café = menor.'),
+          help: lecturaT('radar.scale_rel_help', 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.')
         },
         ndre: {
-          title: 'Escala NDRE relativa al predio',
+          title: lecturaT('radar.scale_ndre_title', 'Escala NDRE relativa al predio'),
           color: '#0f766e',
           bar: 'linear-gradient(90deg,#7f1d1d,#c2410c,#ca8a04,#eab308,#a3e635,#22c55e,#0d9488,#0f766e,#134e4a)',
-          tip: 'Teal/verde = mayor clorofila / dosel dentro de ese predio/periodo; rojo/ámbar = menor.'
+          tip: lecturaT('radar.scale_ndre_tip_gallery', 'Teal/verde = mayor clorofila / dosel dentro de ese predio/periodo; rojo/ámbar = menor.'),
+          help: lecturaT('radar.scale_rel_help', 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.')
         },
         rgb: {
-          title: 'Vista natural RGB',
+          title: lecturaT('radar.scale_rgb_title_short', 'Vista natural RGB'),
           color: '#334155',
           bar: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
-          tip: 'Colores naturales del predio (bandas azul/verde/rojo de Sentinel-2).'
+          tip: lecturaT('radar.scale_rgb_tip_gallery', 'Colores naturales del predio (bandas azul/verde/rojo de Sentinel-2).'),
+          help: lecturaT('radar.scale_rgb_help_gallery', 'Imagen en color natural del mismo predio/periodo (píxeles válidos dentro del polígono).')
         },
         clouds: {
-          title: 'Máscara de nubes Sentinel-2',
+          title: lecturaT('radar.scale_clouds_title', 'Máscara de nubes Sentinel-2'),
           color: '#6d28d9',
           bar: 'linear-gradient(90deg,#7c3aed,#64748b,#cbd5e1,#ffffff)',
-          tip: 'Morado = sombra; blanco/gris = nube; transparente = superficie despejada.'
+          tip: lecturaT('radar.scale_clouds_tip_gallery', 'Morado = sombra; blanco/gris = nube; transparente = superficie despejada.'),
+          help: lecturaT('radar.scale_clouds_help_gallery', 'Máscara SCL del mismo predio y periodo; las zonas transparentes quedaron despejadas.')
         }
       };
       var c = cfg[kind] || cfg.ndvi;
@@ -1759,16 +1856,10 @@
       var isClouds = kind === 'clouds';
       return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:11px;color:#475569;">' +
         '<span style="font-weight:700;color:' + c.color + ';">' + c.title + '</span>' +
-        (isRgb ? '' : (isClouds ? '<span>Morado = sombra</span>' : '<span>Menor</span>')) +
-        '<span style="width:140px;height:8px;border-radius:999px;background:' + c.bar + ';display:inline-block;" title="' + c.tip + '"></span>' +
-        (isRgb ? '' : (isClouds ? '<span>Blanco = nube</span>' : '<span>Mayor</span>')) +
-        '<span style="color:#64748b;line-height:1.35;">' +
-          (isRgb
-            ? 'Imagen en color natural del mismo predio/periodo (píxeles válidos dentro del polígono).'
-            : (isClouds
-                ? 'Máscara SCL del mismo predio y periodo; las zonas transparentes quedaron despejadas.'
-                : 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.')) +
-        '</span>' +
+        (isRgb ? '' : (isClouds ? '<span>' + lecturaT('radar.scale_clouds_low', 'Morado = sombra') + '</span>' : '<span>' + lecturaT('radar.scale_low_short', 'Menor') + '</span>')) +
+        '<span style="width:140px;height:8px;border-radius:999px;background:' + c.bar + ';display:inline-block;" title="' + esc(c.tip) + '"></span>' +
+        (isRgb ? '' : (isClouds ? '<span>' + lecturaT('radar.scale_clouds_high', 'Blanco = nube') + '</span>' : '<span>' + lecturaT('radar.scale_high_short', 'Mayor') + '</span>')) +
+        '<span style="color:#64748b;line-height:1.35;">' + c.help + '</span>' +
       '</div>';
     }
     function miniCardUrl(r, key) {
@@ -1784,14 +1875,16 @@
       var incomplete = !omitted && !!(r.image_incomplete || r.error_code === 'radar_incomplete_coverage');
       var url = omitted ? null : miniCardUrl(r, key);
       var metaParts = [];
-      if (r.avg_cloud_cover != null) metaParts.push('nubes ~' + esc(r.avg_cloud_cover) + '%');
-      if (r.valid_pct != null) metaParts.push('útil ' + esc(r.valid_pct) + '%');
+      if (r.avg_cloud_cover != null) metaParts.push(lecturaT('radar.clouds_approx', 'nubes ~{pct}%', { pct: esc(r.avg_cloud_cover) }));
+      if (r.valid_pct != null) metaParts.push(lecturaT('radar.useful_pct', 'útil {pct}%', { pct: esc(r.valid_pct) }));
       if (r.scene_count != null) {
         metaParts.push(
-          r.scene_count + ' pasada' + (Number(r.scene_count) === 1 ? '' : 's')
+          Number(r.scene_count) === 1
+            ? lecturaT('radar.scene_pass_one', '{n} pasada', { n: r.scene_count })
+            : lecturaT('radar.scene_pass_many', '{n} pasadas', { n: r.scene_count })
         );
       }
-      if (incomplete) metaParts.push('incompleta');
+      if (incomplete) metaParts.push(lecturaT('radar.meta_incomplete', 'incompleta'));
       if (r.lookback_expanded) {
         if (r.search_date_start && r.search_date_end) {
           metaParts.push('mes ' + esc(r.search_date_start) + '→' + esc(r.search_date_end) + '*');
@@ -1835,36 +1928,40 @@
       '</figure>';
     }
     var html =
-      '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 8px;">Imágenes comparativas por periodo</div>' +
+      '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 8px;">' + lecturaT('radar.gallery_title', 'Imágenes comparativas por periodo') + '</div>' +
       '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;overflow-x:auto;">' +
-        '<div style="font-size:12px;font-weight:800;color:#166534;margin:0 0 4px;">NDVI — vigor vegetativo</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#166534;margin:0 0 4px;">' + lecturaT('radar.gallery_ndvi', 'NDVI — vigor vegetativo') + '</div>' +
         scaleLegend('ndvi') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndvi', 'NDVI', '#166534'); }).join('') +
         '</div>' +
-        '<div style="font-size:12px;font-weight:800;color:#0369a1;margin:14px 0 4px;">NDMI — humedad del dosel</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#0369a1;margin:14px 0 4px;">' + lecturaT('radar.gallery_ndmi', 'NDMI — humedad del dosel') + '</div>' +
         scaleLegend('ndmi') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
         '</div>' +
-        '<div style="font-size:12px;font-weight:800;color:#0f766e;margin:14px 0 4px;">NDRE — clorofila y estado del dosel</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#0f766e;margin:14px 0 4px;">' + lecturaT('radar.gallery_ndre', 'NDRE — clorofila y estado del dosel') + '</div>' +
         scaleLegend('ndre') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndre', 'NDRE', '#0f766e'); }).join('') +
         '</div>' +
-        '<div style="font-size:12px;font-weight:800;color:#334155;margin:14px 0 4px;">RGB — vista natural del predio</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#334155;margin:14px 0 4px;">' + lecturaT('radar.gallery_rgb', 'RGB — vista natural del predio') + '</div>' +
         scaleLegend('rgb') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'rgb', 'RGB', '#334155'); }).join('') +
         '</div>' +
-        '<div style="font-size:12px;font-weight:800;color:#6d28d9;margin:14px 0 4px;">☁️ Nubes y sombras — máscara SCL</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#6d28d9;margin:14px 0 4px;">' + lecturaT('radar.gallery_clouds', '☁️ Nubes y sombras — máscara SCL') + '</div>' +
         scaleLegend('clouds') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
-          rows.map(function (r) { return miniCard(r, 'clouds', 'Nubes SCL', '#6d28d9'); }).join('') +
+          rows.map(function (r) { return miniCard(r, 'clouds', lecturaT('radar.clouds_label', 'Nubes SCL'), '#6d28d9'); }).join('') +
         '</div>' +
-        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* mes = quincena ampliada al mes calendario solo para la imagen (clima/riego = periodo de 15 d). El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.' +
+        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">' +
+          lecturaT(
+            'radar.gallery_footer',
+            '* mes = quincena ampliada al mes calendario solo para la imagen (clima/riego = periodo de 15 d). El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.'
+          ) +
           (skippedCount
-            ? ' · ' + skippedCount + ' periodo(s) sin imagen por nubes no se muestran aquí (sí quedan en la tabla).'
+            ? ' · ' + lecturaT('radar.gallery_skipped', '{n} periodo(s) sin imagen por nubes no se muestran aquí (sí quedan en la tabla).', { n: skippedCount })
             : '') +
         '</div>' +
       '</div>';

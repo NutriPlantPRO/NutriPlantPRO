@@ -648,13 +648,16 @@
   align-items: flex-start;
   overflow: hidden;
   background: #fff;
+  min-height: 480px;
+  /* Evita que el header del plugin (nombre/seguidores) quede pegado al borde */
+  padding-top: 0;
 }
 
 .login-social-pane__embed--facebook iframe {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  min-height: 420px;
+  min-height: 540px;
 }
 
 .login-social-pane__embed--instagram iframe {
@@ -950,12 +953,15 @@
 }
 
 .auth-logo-container {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .auth-card-logo {
-  height: 80px;
+  /* N del lockup ≈ tamaño de .login-free-tools-banner__logo (~5.75rem) */
+  height: clamp(6.5rem, 14vw, 7.5rem);
   width: auto;
+  max-width: min(100%, 22rem);
+  object-fit: contain;
   filter: drop-shadow(0 4px 16px rgba(37, 99, 235, 0.3));
 }
 
@@ -1262,7 +1268,8 @@
   }
   
   .auth-card-logo {
-    height: 64px;
+    height: clamp(5.5rem, 22vw, 6.25rem);
+    max-width: min(100%, 18rem);
   }
 }
 

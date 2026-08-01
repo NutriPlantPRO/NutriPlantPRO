@@ -96,8 +96,55 @@
     'Punto de marchitez': 'Wilting point',
     'Profundidad de suelo': 'Soil depth',
     'Área': 'Area',
-    '% suelo explorado — superficie (franja)': '% explored soil — surface (strip)',
+    '% suelo explorado — superficie (franja)': 'Considered soil surface (% · strip)',
+    'Superficie de suelo considerada (% · franja)': 'Considered soil surface (% · strip)',
+    'El % suelo explorado es la fracción del': 'Considered soil surface is the fraction of the',
+    'La superficie de suelo considerada es la fracción del': 'Considered soil surface is the fraction of the',
+    'y % de superficie explorada': 'and % considered soil surface',
+    'y % de superficie de suelo considerada': 'and % considered soil surface',
+    'triángulo textual USDA en español.': 'USDA texture triangle.',
+    'triángulo textural USDA.': 'USDA texture triangle.',
+    'Si el % explorado es < 100, verás mm en franja regada (para regar) y la referencia sobre ha cultivo completa.': 'If considered surface is < 100%, you will see depth in the irrigated strip (for irrigation) and the reference over the full crop area.',
+    'Si la superficie considerada es < 100%, verás la lámina en franja regada (para regar) y la referencia sobre el área de cultivo completa.': 'If considered surface is < 100%, you will see depth in the irrigated strip (for irrigation) and the reference over the full crop area.',
+    'Ejemplo 30 · 40 · 30': 'Example 30 · 40 · 30',
+    'vs arcilla': 'vs clay',
+    'Tamaño de partículas (referencia USDA / ISSS)': 'Particle size (USDA / ISSS reference)',
+    'Textura estimada:': 'Estimated texture:',
+    'Normalizar a 100%': 'Normalize to 100%',
     'Humedad actual del suelo': 'Current soil moisture',
+    'Barras horizontales: la escala muestra tus': 'Horizontal bars: the scale shows your',
+    'La franja violeta marca la': 'The violet band marks the',
+    'zona objetivo de riego (40–60% del agua útil)': 'irrigation target zone (40–60% of available water)',
+    'referencia NutriPlant para no regar siempre hasta CC': 'NutriPlant reference so you do not always irrigate to FC',
+    'Franco arenoso': 'Sandy loam',
+    'Franco limoso': 'Silt loam',
+    'Franco arcilloso': 'Clay loam',
+    'Partícula': 'Particle',
+    'Diámetro': 'Diameter',
+    'Base (1×)': 'Base (1×)',
+    '1 a 25×': '1 to 25×',
+    '25 a 1.000×': '25 to 1,000×',
+    'Línea de arena (constante arena)': 'Sand line (constant sand)',
+    'Línea de limo (constante limo)': 'Silt line (constant silt)',
+    'Línea de arcilla (constante arcilla)': 'Clay line (constant clay)',
+    'Triángulo de textura (USDA)': 'Texture triangle (USDA)',
+    'Introduce arena, limo y arcilla (%) o': 'Enter sand, silt and clay (%) or',
+    'arrastra el punto': 'drag the point',
+    'dentro del triángulo; los tres campos, la textura y un': 'inside the triangle; the three fields, texture and a',
+    'rango típico de CC y PMP': 'typical FC and PWP range',
+    'aparecen en el recuadro verde': 'appear in the green box',
+    'Idealmente deben sumar 100%': 'Ideally they should sum to 100%',
+    'Las zonas de color reproducen límites oficiales USDA (soiltexture CRAN).': 'Colored zones follow official USDA limits (soiltexture CRAN).',
+    'Este bloque muestra cuánto almacén “útil entre PMP y CC” tienes como': 'This block shows how much “useful store between PWP and FC” you have as',
+    'referencia de capacidad': 'capacity reference',
+    'con humedad actual se calculan aparte el': 'with current moisture it also calculates the',
+    'Los m³ se reparten solo en esa superficie': 'Volume is allocated only on that surface',
+    'el volumen se reparte solo en esa superficie': 'volume is allocated only on that surface',
+    'los mm en franja': 'strip depth',
+    'la lámina en franja': 'strip depth',
+    'son la lámina física en el suelo humedecido': 'is the physical depth in the wetted soil',
+    'es la lámina física en el suelo humedecido': 'is the physical depth in the wetted soil',
+    'NutriPlant PRO — material educativo. Los valores típicos de CC y PMP varían con estructura, materia orgánica y método de medición; el triángulo de texturas sigue polígonos USDA estándar (referencia Soil Survey Manual / soiltexture). Combine con laboratorio y criterio local.': 'NutriPlant PRO — educational material. Typical FC and PWP values vary with structure, organic matter and measurement method; the texture triangle follows standard USDA polygons (Soil Survey Manual / soiltexture reference). Combine with lab data and local judgment.',
     'Resultados (actualizado al cambiar valores)': 'Results (updated when values change)',
     'Ayuda visual: saturación · CC · PMP': 'Visual guide: saturation · FC · PWP',
     'Punto de saturación': 'Saturation point',
@@ -106,12 +153,11 @@
     'Arena': 'Sand',
     'Limo': 'Silt',
     'Arcilla': 'Clay',
-    'Normalizar a 100%': 'Normalize to 100%',
+    'Franco': 'Loam',
     'Tamaño de partículas': 'Particle size',
-    'Partícula': 'Particle',
-    'Diámetro': 'Diameter',
     'Clasificación y valores de referencia': 'Classification and reference values',
     'Clasificación': 'Classification',
+    'Clasificación:': 'Classification:',
     'Blanda': 'Soft',
     'Moderadamente dura': 'Moderately hard',
     'Muy dura': 'Very hard',
@@ -119,7 +165,51 @@
     'Dureza del agua (conversiones y rango)': 'Water hardness (conversions and range)',
     'Dureza por Ca + Mg': 'Hardness from Ca + Mg',
     'Dureza como CaCO₃': 'Hardness as CaCO₃',
+    'Dureza como CaCO₃ (ppm o mg/L)': 'Hardness as CaCO₃ (ppm or mg/L)',
+    'Dureza (meq/L)': 'Hardness (meq/L)',
+    'Dureza (°dH)': 'Hardness (°dH)',
+    'Dureza (°e)': 'Hardness (°e)',
+    'Dureza (°fH)': 'Hardness (°fH)',
     'Dureza total como CaCO₃ (resultado)': 'Total hardness as CaCO₃ (result)',
+    'ppm o mg/L': 'ppm or mg/L',
+    'ppm o meq/L': 'ppm or meq/L',
+    ' o en ': ' or in ',
+    'ej.': 'e.g.',
+    'Introduce dureza en cualquier unidad (ppm, meq/L, °dH, °e, °fH).': 'Enter hardness in any unit (ppm, meq/L, °dH, °e, °fH).',
+    'Escribe en cualquier casilla: las demás se actualizan al vuelo; al salir se redondea. Empieza vacío hasta que tú ingreses datos.': 'Type in any box: the others update live; values round when you leave the field. Starts empty until you enter data.',
+    'Para quien trae análisis de laboratorio. Elige en cada renglón si el valor de Ca o Mg está en': 'For lab analysis results. On each row choose whether Ca or Mg is in',
+    'al salir de la casilla se redondea.': 'values round when you leave the field.',
+    'Introduce al menos un valor (Ca o Mg) del análisis.': 'Enter at least one value (Ca or Mg) from the analysis.',
+    'Suma durezas iónicas:': 'Ionic hardness sum:',
+    'como CaCO₃': 'as CaCO₃',
+    'no indicado (0 en la suma).': 'not entered (0 in the sum).',
+    'Lectura rápida:': 'Quick reading:',
+    'Equivalente estimado:': 'Estimated equivalent:',
+    'Clasificación: —': 'Classification: —',
+    'Ca: no indicado (0 en la suma).': 'Ca: not entered (0 in the sum).',
+    'Mg: no indicado (0 en la suma).': 'Mg: not entered (0 in the sum).',
+    'Unidad de calcio': 'Calcium unit',
+    'Unidad de magnesio': 'Magnesium unit',
+    'Unidad del volumen de preparación': 'Preparation volume unit',
+    'Suma de las contribuciones de Ca y Mg a equivalente CaCO₃': 'Sum of Ca and Mg contributions as CaCO₃ equivalent',
+    'Meq de ácido por litro de agua = (HCO₃⁻ + CO₃²⁻) − residual (meq/L). Dosis mL/m³ = (meq/L × 1000) ÷ meq/mL del ácido, igual que en Análisis de agua. El': 'Acid meq per liter of water = (HCO₃⁻ + CO₃²⁻) − residual (meq/L). Dose mL/m³ = (meq/L × 1000) ÷ acid meq/mL, same as Water analysis. The',
+    'volumen de preparación': 'preparation volume',
+    'puede capturarse en L o m³ según tu tanque, calda o volumen a acidificar. Si el resultado es negativo, se toma como 0.': 'can be entered in L or m³ for your tank, spray mix or volume to acidify. If the result is negative, it is taken as 0.',
+    'Completa alcalinidad (HCO₃⁻, CO₃²⁻),': 'Complete alkalinity (HCO₃⁻, CO₃²⁻),',
+    'para ver la dosis de ácido.': 'to see the acid dose.',
+    'm³ de agua (solo referencia).': 'm³ of water (reference only).',
+    'Referencia técnica: no neutralizar al 100% por defecto. Ajusta con colchón (residual objetivo) y valida pH final de la solución.': 'Technical reference: do not neutralize 100% by default. Adjust with a buffer (target residual) and validate final solution pH.',
+    'Tip de aplicación foliar: prioriza compatibilidad del producto y rango de pH recomendado en etiqueta. Esta herramienta orienta, no reemplaza prueba de mezcla.': 'Foliar tip: prioritize product compatibility and label pH range. This tool guides; it does not replace a jar test.',
+    'El cálculo es estimado según tus datos de entrada. Usa EPP y buenas prácticas al manipular ácidos.': 'The calculation is an estimate from your inputs. Use PPE and good practice when handling acids.',
+    'conversión y tiras': 'conversion and strips',
+    'dureza desde Ca y Mg de laboratorio': 'hardness from lab Ca and Mg',
+    'dosis de ácido con colchón (residual objetivo)': 'acid dose with buffer (target residual)',
+    'Herramienta independiente:': 'Standalone tool:',
+    'Criterio en': 'Criterion in',
+    'meq/L y grados:': 'meq/L and degrees:',
+    'equivalencias aproximadas': 'approximate equivalents',
+    'Referencia habitual': 'Common reference',
+    'Para contrastar, usa el CaCO₃ del informe; meq/° redondeados a 2 dec.': 'For comparison, use CaCO₃ from the report; meq/° rounded to 2 decimals.',
     'Calcio': 'Calcium',
     'Magnesio': 'Magnesium',
     'Ácido para neutralizar HCO₃⁻ y CO₃²⁻ (con colchón)': 'Acid to neutralize HCO₃⁻ and CO₃²⁻ (with residual buffer)',
@@ -138,6 +228,13 @@
     'Volumen usado': 'Volume used',
     'Equivale a': 'Equivalent to',
     'solo referencia': 'reference only',
+    'de ácido': 'of acid',
+    'de agua': 'of water',
+    'Para': 'For',
+    'aprox.': 'approx.',
+    'Meq/L a neutralizar': 'meq/L to neutralize',
+    'ppm eq. CaCO₃.': 'ppm eq. CaCO₃.',
+    'en la suma': 'in the sum',
     'Referencia técnica': 'Technical reference',
     'Foco técnico:': 'Technical focus:',
     'valida en campo': 'validate in the field',
@@ -169,6 +266,23 @@
     'periodo seleccionado': 'selected period',
     'Valores manuales = acumulado de esos mismos días.': 'Manual values = total for those same days.',
     'información meteorológica con respaldo satelital': 'weather information with satellite support',
+    'Elige un punto en el mapa (como en VPD). NutriPlant consulta lluvia y ETo con información meteorológica con respaldo satelital y calcula déficit y balance para 1 o 7 días. Puedes ajustar Kc, riego aplicado y superficies. Estimación rápida — validar en campo.':
+      'Pick a point on the map (as in VPD). NutriPlant looks up rainfall and ETo with weather information with satellite support and calculates deficit and balance for 1 or 7 days. You can adjust Kc, applied irrigation and areas. Quick estimate — validate in the field.',
+    'Elige un punto en el mapa (como en VPD). NutriPlant consulta': 'Pick a point on the map (as in VPD). NutriPlant looks up',
+    'lluvia y ETo': 'rainfall and ETo',
+    'y calcula déficit y balance para': 'and calculates deficit and balance for',
+    'Puedes ajustar Kc, riego aplicado y superficies. Estimación rápida —': 'You can adjust Kc, applied irrigation and areas. Quick estimate —',
+    'Clima cargado. Ajusta Kc y riego si hace falta.': 'Weather loaded. Adjust Kc and irrigation if needed.',
+    'Referencia satélite · actualizada': 'Satellite reference · updated',
+    'Referencia satélite disponible · actualizada': 'Satellite reference available · updated',
+    'Área total del cultivo (ETc / m³).': 'Total crop area (ETc / volume).',
+    'Área total del cultivo (ETc / volumen).': 'Total crop area (ETc / volume).',
+    'la app calcula la lámina en mm en los resultados.': 'the app calculates depth in the results.',
+    'la app calcula la lámina en los resultados.': 'the app calculates depth in the results.',
+    'Pulsa <strong>Obtener clima y calcular</strong> o ingresa ETo/lluvia manualmente.': 'Press <strong>Get weather and calculate</strong> or enter ETo/rainfall manually.',
+    'Mapa, GPS o escribe lat/lng. Luego obtén clima para cargar ETo y lluvia del periodo.': 'Map, GPS, or enter lat/lng. Then fetch weather to load period ETo and rainfall.',
+    'ETo, lluvia y riego corresponden al': 'ETo, rainfall and irrigation match the',
+    'ETo, lluvia y riego de esta caja corresponden al': 'ETo, rainfall and irrigation in this box match the',
     'Ej. limón, aguacate…': 'e.g. lemon, avocado…',
     'Eliminar esta lectura': 'Delete this reading',
     'Eliminar cuadro guardado': 'Delete saved panel',
@@ -178,8 +292,10 @@
     'Referencia práctica NutriPlant PRO:': 'NutriPlant PRO practical reference:',
     'capacidad útil CC − PMP': 'available water FC − PWP',
     'por hectárea (no es tu humedad hoy si ya ingresaste medición), lámina hasta CC según humedad actual, y': 'per hectare (not today’s moisture if you already entered a reading), depth to FC from current moisture, and',
-    '% de superficie explorada': '% explored surface',
-    '(franja regada — mismo criterio que balance hídrico); triángulo textual USDA en español.': '(wetted strip — same criterion as water balance); USDA texture triangle text in Spanish.',
+    '% de superficie explorada': '% considered soil surface',
+    '% de superficie de suelo considerada': '% considered soil surface',
+    '(franja regada — mismo criterio que balance hídrico); triángulo textual USDA en español.': '(wetted strip — same criterion as water balance); USDA texture triangle.',
+    '(franja regada — mismo criterio que balance hídrico); triángulo textural USDA.': '(wetted strip — same criterion as water balance); USDA texture triangle.',
     'Puedes usar el desplegable para': 'You can use the dropdown to',
     'cargar una vez': 'load once',
     'CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. La': 'illustrative FC and PWP for a typical texture; choosing a row fills the fields and the menu resets (so if you edit numbers later, it does not look stuck on that texture). You can also type FC and PWP by hand. The',
@@ -188,17 +304,21 @@
     'lámina a reponer hasta CC': 'depth to refill to FC',
     'y verla en la barra.': 'and see it on the bar.',
     'Cargar valores de referencia (CC / PMP)': 'Load reference values (FC / PWP)',
-    'El % suelo explorado es la fracción del': '% explored soil is the fraction of the',
+    'El % suelo explorado es la fracción del': 'Considered soil surface is the fraction of the',
+    'La superficie de suelo considerada es la fracción del': 'Considered soil surface is the fraction of the',
     'área del cultivo': 'crop area',
     'con raíces activas o zona humedecida (goteo, surco).': 'with active roots or wetted zone (drip, furrow).',
     'No es profundidad.': 'It is not depth.',
     'Mismo criterio que «franja regada» en 🌧️ balance hídrico: los': 'Same criterion as the «wetted strip» in 🌧️ water balance: the',
+    'Mismo criterio que «franja regada» en 🌧️ balance hídrico: el volumen se reparte solo en esa superficie; la lámina en franja es la lámina física en el suelo humedecido.': 'Same criterion as the «wetted strip» in 🌧️ water balance: volume is allocated only on that surface; strip depth is the physical depth in the wetted soil.',
     'se reparten solo en esa superficie; los': 'are allocated only to that surface; the',
-    'mm en franja': 'mm in strip',
+    'mm en franja': 'depth in strip',
     'son la lámina física en el suelo humedecido.': 'are the physical depth in the wetted soil.',
     'Este bloque muestra cuánto almacén “útil entre PMP y CC” tienes como referencia de capacidad': 'This block shows how much “useful storage between PWP and FC” you have as a capacity reference',
-    'con humedad actual se calculan aparte el déficit y la lámina hasta CC. Si el % explorado es': 'with current moisture, deficit and depth to FC are calculated separately. If explored % is',
-    'verás mm en franja regada (para regar) y la referencia sobre ha cultivo completa.': 'you will see mm in the irrigated strip (for irrigation) and the reference over the full crop ha.',
+    'con humedad actual se calculan aparte el déficit y la lámina hasta CC. Si el % explorado es': 'with current moisture, deficit and depth to FC are calculated separately. If considered surface is',
+    'con humedad actual se calculan aparte el déficit y la lámina hasta CC. Si la superficie considerada es': 'with current moisture, deficit and depth to FC are calculated separately. If considered surface is',
+    'verás mm en franja regada (para regar) y la referencia sobre ha cultivo completa.': 'you will see strip irrigation depth (for irrigation) and the reference over the full crop area.',
+    'verás la lámina en franja regada (para regar) y la referencia sobre el área de cultivo completa.': 'you will see strip irrigation depth (for irrigation) and the reference over the full crop area.',
     'Barras horizontales: la escala muestra tus': 'Horizontal bars: the scale shows your',
     'como proporción del volumen de poros (% vol.). Entre ambos aparece la': 'as a proportion of pore volume (% vol.). Between them appears the',
     'banda típica de agua útil': 'typical available-water band',
@@ -237,12 +357,30 @@
     'Ej. 60 = 60% del área (franja regada); no es profundidad': 'e.g. 60 = 60% of area (wetted strip); not depth',
     'Referencia de tamaño de partículas': 'Particle size reference',
     '% volumétrico de referencia': 'reference volumetric %',
+    'Ej:': 'e.g.:',
+    'Ej: 20.5': 'e.g. 20.5',
+    'Ej: 85': 'e.g. 85',
+    'Ej: 25': 'e.g. 25',
+    'Ej: 80': 'e.g. 80',
+    'Ej: 27.4': 'e.g. 27.4',
+    'Ej: 600 W/m²': 'e.g. 600 W/m²',
+    'ej. 19.4326': 'e.g. 19.4326',
+    'ej. -99.1332': 'e.g. -99.1332',
     'Foco técnico: el VPD aquí es ambiental': 'Technical focus: VPD here is environmental',
     '(aire a escala meteorológica). Si usas el mapa, NutriPlant toma en ese punto temperatura, humedad y radiación a partir de': '(air at meteorological scale). If you use the map, NutriPlant takes temperature, humidity and radiation at that point from',
     '; en el cultivo el microclima puede variar con el': '; in the crop the microclimate can vary with',
     'área foliar': 'leaf area',
     ', el dosel o la ventilación. La T': ', canopy or ventilation. Leaf T',
     'hoja manual o estimada por radiación es orientativa —': 'entered manually or estimated from radiation is indicative —',
+    'Elige un punto en el mapa o usa tu ubicación. NutriPlant obtiene la temperatura, humedad y radiación solar actuales en ese punto': 'Pick a point on the map or use your location. NutriPlant gets current temperature, humidity and solar radiation at that point',
+    '; con radiación se estima': '; with radiation it estimates',
+    'y el VPD.': 'and VPD.',
+    'información meteorológica con respaldo satelital': 'weather information with satellite support',
+    'ambiental': 'environmental',
+    'microclima': 'microclimate',
+    'dosel': 'canopy',
+    'ventilación': 'ventilation',
+    'orientativa': 'indicative',
     'La temperatura de hoja se calculará automáticamente': 'Leaf temperature will be calculated automatically',
     'Ambiente húmedo / baja demanda evaporativa': 'Humid environment / low evaporative demand',
     'Transpiración activa; vigilar cultivo sensible': 'Active transpiration; watch sensitive crops',
@@ -259,7 +397,6 @@
     'No se pudieron obtener datos del clima. Revisa tu conexión.': 'Weather data could not be obtained. Check your connection.',
     'No se pudo leer el GPS. Prueba seleccionando un punto en el mapa.': 'GPS could not be read. Try selecting a point on the map.',
     'Sin dato útil de radiación en esta respuesta — VPD simple (solo T y HR). Punto:': 'No usable radiation in this response — simple VPD (T and RH only). Point:',
-    'Elige un punto en el mapa o usa tu ubicación. NutriPlant obtiene la temperatura, humedad y radiación solar actuales en ese punto': 'Pick a point on the map or use your location. NutriPlant gets current temperature, humidity and solar radiation at that point',
     'Herramienta independiente:': 'Standalone tool:',
     'conversión y tiras o método sencillo': 'conversion and strips or simple method',
     'dureza desde Ca y Mg de laboratorio': 'hardness from lab Ca + Mg',
@@ -299,7 +436,7 @@
     'Obtener lectura': 'Get reading',
     'Tiempo actual en el predio': 'Current weather at the field',
     'Calculadora de balance hídrico': 'Water balance calculator',
-    'Satélite, valores de campo (ETo, pluviómetro, riego) o ambos. Calcula déficit y balance en mm y m³/ha.': 'Satellite, field values (ETo, rain gauge, irrigation) or both. Calculates deficit and balance in mm and m³/ha.',
+    'Satélite, valores de campo (ETo, pluviómetro, riego) o ambos. Calcula déficit y balance en mm y m³/ha.': 'Satellite, field values (ETo, rain gauge, irrigation) or both. Calculates deficit and balance in depth and volume per area units.',
     'Agrega un polígono en': 'Add a polygon in',
     'para consultar lluvia y ET₀.': 'to query rainfall and ET₀.',
     'Agrega un polígono en <strong>Ubicación</strong> para consultar lluvia y ET₀.': 'Add a polygon in <strong>Location</strong> to query rainfall and ET₀.',
@@ -330,6 +467,14 @@
     'Ambiental': 'Environmental',
     'Avanzado': 'Advanced',
     'Ajuste manual:': 'Manual adjustment:',
+    'Bajo': 'Low',
+    'Óptimo': 'Optimal',
+    'Alto': 'High',
+    'Moderado': 'Moderate',
+    'Muy alto': 'Very high',
+    'Extremo': 'Extreme',
+    'Estado:': 'Status:',
+    'Rango Óptimo:': 'Optimal range:',
     'VPD con radiación solar:': 'VPD with solar radiation:',
     'la radiación (W/m²) proviene de estimaciones con información satelital en el predio. NutriPlant estima la temperatura de hoja a partir de esa radiación y calcula el VPD con el modelo avanzado (presión de saturación a T': 'radiation (W/m²) comes from satellite-based estimates at the field. NutriPlant estimates leaf temperature from that radiation and calculates VPD with the advanced model (saturation pressure at T',
     'Radiación solar (global)': 'Solar radiation (global)',
@@ -355,7 +500,7 @@
     'Ej. Limón, aguacate…': 'E.g. Lemon, avocado…',
     'Sin valor precargado': 'No preset value',
     'Consulta la tabla Kc FAO-56 abajo.': 'See the FAO-56 Kc table below.',
-    'Volumen en franja (m³)': 'Strip volume (m³)',
+    'Volumen en franja (m³)': 'Strip volume',
     'Volumen total aplicado en la': 'Total volume applied in the',
     'zona humedecida': 'wetted zone',
     'del periodo. Indica': 'for the period. Enter',
@@ -383,12 +528,17 @@
     '/día': '/day',
   };
 
+  var languageOverride = null;
+
   function prefs() {
     var p = w.NpPrefs && typeof w.NpPrefs.get === 'function' ? w.NpPrefs.get() : w.NP_PREFS_BOOTSTRAP;
+    var language = languageOverride === 'en' || languageOverride === 'es'
+      ? languageOverride
+      : (p && p.language === 'en' ? 'en' : 'es');
     return {
-      language: p && p.language === 'en' ? 'en' : 'es',
+      language: language,
       unit_system: p && p.unit_system === 'us_customary' ? 'us_customary' : 'metric',
-      locale: (p && p.locale) || (p && p.language === 'en' ? 'en-US' : 'es-MX')
+      locale: (p && p.locale) || (language === 'en' ? 'en-US' : 'es-MX')
     };
   }
 
@@ -519,32 +669,42 @@
     return output;
   }
 
+  function translateAttrs(el) {
+    if (!el || el.nodeType !== 1) return;
+    if (el.closest && el.closest('.notranslate,[translate="no"]')) return;
+    if (attrOriginals && !attrOriginals.has(el)) attrOriginals.set(el, {});
+    ['placeholder', 'title', 'aria-label'].forEach(function (name) {
+      if (!el.hasAttribute || !el.hasAttribute(name)) return;
+      var bag = attrOriginals ? attrOriginals.get(el) : {};
+      if (bag[name] === undefined) bag[name] = el.getAttribute(name);
+      if (attrOriginals) attrOriginals.set(el, bag);
+      el.setAttribute(name, prefs().language === 'en' ? translateString(bag[name]) : bag[name]);
+    });
+  }
+
+  function translateTextNode(node) {
+    if (!node || node.nodeType !== 3) return;
+    if (!String(node.nodeValue || '').trim()) return;
+    if (node.parentElement && node.parentElement.closest('.notranslate,[translate="no"]')) return;
+    if (textOriginals && !textOriginals.has(node)) textOriginals.set(node, node.nodeValue);
+    var original = textOriginals ? textOriginals.get(node) : node.nodeValue;
+    node.nodeValue = prefs().language === 'en' ? translateString(original) : original;
+  }
+
   function translateNode(node) {
     if (!node || !w.document) return;
-    var lang = prefs().language;
     if (node.nodeType === 3) {
-      if (!String(node.nodeValue || '').trim()) return;
-      if (textOriginals && !textOriginals.has(node)) textOriginals.set(node, node.nodeValue);
-      var original = textOriginals ? textOriginals.get(node) : node.nodeValue;
-      node.nodeValue = lang === 'en' ? translateString(original) : original;
+      translateTextNode(node);
       return;
     }
     if (node.nodeType !== 1 && node.nodeType !== 9 && node.nodeType !== 11) return;
-    if (node.nodeType === 1) {
-      if (node.closest && node.closest('.notranslate,[translate="no"]')) return;
-      var attrs = ['placeholder', 'title', 'aria-label'];
-      if (attrOriginals && !attrOriginals.has(node)) attrOriginals.set(node, {});
-      attrs.forEach(function (name) {
-        if (!node.hasAttribute || !node.hasAttribute(name)) return;
-        var bag = attrOriginals ? attrOriginals.get(node) : {};
-        if (bag[name] === undefined) bag[name] = node.getAttribute(name);
-        if (attrOriginals) attrOriginals.set(node, bag);
-        node.setAttribute(name, lang === 'en' ? translateString(bag[name]) : bag[name]);
-      });
-    }
-    var walker = w.document.createTreeWalker(node, 4);
+    if (node.nodeType === 1) translateAttrs(node);
+    var walker = w.document.createTreeWalker(node, 5);
     var current;
-    while ((current = walker.nextNode())) translateNode(current);
+    while ((current = walker.nextNode())) {
+      if (current.nodeType === 3) translateTextNode(current);
+      else if (current.nodeType === 1) translateAttrs(current);
+    }
   }
 
   function applyLanguage(root) {
@@ -607,17 +767,46 @@
     return prefs().language === 'en' ? (en || translateString(es)) : es;
   }
 
+  function runWithOverride(assign, restore, callback) {
+    assign();
+    try {
+      var result = callback();
+      if (result && typeof result.then === 'function') {
+        return Promise.resolve(result).then(
+          function (value) { restore(); return value; },
+          function (err) { restore(); return Promise.reject(err); }
+        );
+      }
+      restore();
+      return result;
+    } catch (e) {
+      restore();
+      throw e;
+    }
+  }
+
   function withUnitSystem(system, callback) {
     if (system !== 'metric' && system !== 'us_customary') {
       throw new TypeError('Sistema de unidades no soportado: ' + system);
     }
     var previous = unitSystemOverride;
-    unitSystemOverride = system;
-    try {
-      return callback();
-    } finally {
-      unitSystemOverride = previous;
+    return runWithOverride(
+      function () { unitSystemOverride = system; },
+      function () { unitSystemOverride = previous; },
+      callback
+    );
+  }
+
+  function withLanguage(language, callback) {
+    if (language !== 'en' && language !== 'es') {
+      throw new TypeError('Idioma no soportado: ' + language);
     }
+    var previous = languageOverride;
+    return runWithOverride(
+      function () { languageOverride = language; },
+      function () { languageOverride = previous; },
+      callback
+    );
   }
 
   var api = {
@@ -641,7 +830,8 @@
     refreshUnitLabels: refreshUnitLabels,
     init: init,
     t: t,
-    withUnitSystem: withUnitSystem
+    withUnitSystem: withUnitSystem,
+    withLanguage: withLanguage
   };
   return api;
 });

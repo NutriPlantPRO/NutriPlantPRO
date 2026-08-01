@@ -7,7 +7,7 @@
   <meta name="description" content="Calculadora de balance hídrico: déficit ETc, riego en m³ en franja regada, puente con Agua en suelo, mm en resultados y % suelo explorado.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="../assets/manual.css?v=20260730m">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260801us">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -100,11 +100,26 @@
       Balance (m³) = déficit m³ cultivo − riego m³ en franja<br>
       Balance (mm ref. cultivo) = balance m³ ÷ (10 × ha cultivo)
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés (US customary)</span>
+      ETc = ETo × Kc (igual; lámina en <strong>in</strong>)<br>
+      Balance (US gal) = déficit US gal cultivo − riego US gal en franja<br>
+      Balance (in ref. cultivo) = balance US gal ÷ (27 154 × acres cultivo)
+      <span class="mt-formula-us__note">1 mm ≈ 0,03937 in · 1 ha ≈ 2,471 acres · 1 m³ ≈ 264,17 US gal · 1 in sobre 1 acre ≈ 27 154 US gal.</span>
+    </div>
     <p>El <strong>déficit</strong> se expresa en mm sobre el <strong>área del cultivo</strong>; el <strong>riego</strong> siempre en la <strong>franja regada</strong>. El balance descuenta <strong>volumen real</strong> (m³).</p>
     <p>Conversión de volumen:</p>
     <div class="mt-formula">1 mm sobre X ha = X × 10 m³ · m³ total = mm × 10 × ha</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      1 in sobre X acres = X × 27 154 US gal · US gal total = in × 27 154 × acres
+    </div>
     <p>Riego en m³ (franja):</p>
     <div class="mt-formula">mm en franja = m³ ÷ (superficie regada ha × 10)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      in en franja = US gal ÷ (acres regados × 27 154)
+    </div>
 
     <h2>Área del cultivo vs franja regada</h2>
     <p>
@@ -120,6 +135,11 @@
       factor franja = superficie cultivo ÷ superficie regada<br>
       mm en franja = mm sobre cultivo × factor franja
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      factor franja = acres cultivo ÷ acres regados<br>
+      in en franja = in sobre cultivo × factor franja
+    </div>
     <p>Ejemplo: déficit 8,9 mm en 1 ha = 89 m³. Riego 20 m³ en franja 0,5 ha (= 4 mm en franja). Balance = 89 − 20 = <strong>69 m³</strong> (6,9 mm ref. cultivo; 13,8 mm en franja).</p>
     <p>Ejemplo coherente con 🪨 Agua en suelo: <strong>90 m³</strong> en franja 0,6 ha = <strong>15 mm</strong> en zona humedecida; la misma cantidad = <strong>9 mm</strong> de referencia sobre 1 ha cultivo. El <strong>m³ no cambia</strong>; solo cambia la lámina según el área de referencia.</p>
 
@@ -129,6 +149,10 @@
       Se eliminó el selector mm en la UI para evitar confusión con la lámina de resultados. Internamente la app convierte:
     </p>
     <div class="mt-formula">mm en franja = m³ riego ÷ (superficie regada ha × 10)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      in en franja = US gal riego ÷ (acres regados × 27 154)
+    </div>
     <p>En campo suele operarse en <strong>m³</strong> (contador, pozo, fertirriego); los <strong>mm</strong> aparecen en el resumen y en el recuadro «Dato importante — riego en campo».</p>
 
     <h2>Referencia almacén suelo (puente con 🪨 Agua en suelo)</h2>
@@ -149,6 +173,10 @@
 
     <h2>m³ vs mm en resultados</h2>
     <div class="mt-formula">m³ = mm × ha × 10</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      US gal = in × acres × 27 154
+    </div>
     <p>
       Priorizar <strong>m³ en franja</strong> para operar riego. Los mm del resumen son la misma agua en lámina;
       con ha cultivo ≠ ha regada, un mismo m³ se expresa como más mm en franja y menos mm de referencia sobre ha cultivo.
@@ -170,6 +198,10 @@
       (botones «Sugerir franja regada» y «Usar % del análisis de suelo» en PRO); <strong>no altera el déficit ETc</strong>.
     </p>
     <div class="mt-formula">franja sugerida (ha) = superficie cultivo × (% alcance / 100)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">Sistema inglés</span>
+      franja sugerida (acres) = superficie cultivo (acres) × (% alcance / 100)
+    </div>
     <p>
       Recuadro <strong>Criterio NutriPlant</strong>, enlace «Ver tabla» a la referencia desplegable
       <strong>% suelo explorado por sistema</strong> (aguacate, berry, hortaliza…). La misma tabla orientativa está en
@@ -262,11 +294,26 @@
       Balance (m³) = crop deficit m³ − irrigation m³ in strip<br>
       Balance (mm crop ref.) = balance m³ ÷ (10 × ha crop)
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      ETc = ETo × Kc (same; depth in <strong>in</strong>)<br>
+      Balance (US gal) = crop deficit US gal − irrigation US gal in strip<br>
+      Balance (in crop ref.) = balance US gal ÷ (27,154 × crop acres)
+      <span class="mt-formula-us__note">1 mm ≈ 0.03937 in · 1 ha ≈ 2.471 acres · 1 m³ ≈ 264.17 US gal · 1 in on 1 acre ≈ 27,154 US gal.</span>
+    </div>
     <p>The <strong>deficit</strong> is expressed in mm over the <strong>crop area</strong>; <strong>irrigation</strong> is always in the <strong>irrigated strip</strong>. The balance subtracts <strong>real volume</strong> (m³).</p>
     <p>Volume conversion:</p>
     <div class="mt-formula">1 mm over X ha = X × 10 m³ · total m³ = mm × 10 × ha</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      1 in over X acres = X × 27,154 US gal · total US gal = in × 27,154 × acres
+    </div>
     <p>Irrigation in m³ (strip):</p>
     <div class="mt-formula">mm in strip = m³ ÷ (irrigated area ha × 10)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      in in strip = US gal ÷ (irrigated acres × 27,154)
+    </div>
 
     <h2>Crop area vs irrigated strip</h2>
     <p>
@@ -282,6 +329,11 @@
       strip factor = crop area ÷ irrigated area<br>
       mm in strip = mm over crop × strip factor
     </div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      strip factor = crop acres ÷ irrigated acres<br>
+      in in strip = in over crop × strip factor
+    </div>
     <p>Example: 8.9 mm deficit on 1 ha = 89 m³. Irrigation 20 m³ on strip 0.5 ha (= 4 mm in strip). Balance = 89 − 20 = <strong>69 m³</strong> (6.9 mm crop ref.; 13.8 mm in strip).</p>
     <p>Example consistent with 🪨 Soil water: <strong>90 m³</strong> on strip 0.6 ha = <strong>15 mm</strong> in the wetted zone; the same amount = <strong>9 mm</strong> reference over 1 ha crop. The <strong>m³ does not change</strong>; only depth changes by reference area.</p>
 
@@ -291,6 +343,10 @@
       The mm selector was removed from the UI to avoid confusion with result depth. Internally the app converts:
     </p>
     <div class="mt-formula">mm in strip = irrigation m³ ÷ (irrigated area ha × 10)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      in in strip = irrigation US gal ÷ (irrigated acres × 27,154)
+    </div>
     <p>In the field, operations usually use <strong>m³</strong> (meter, well, fertigation); <strong>mm</strong> appear in the summary and in the “Important data — field irrigation” box.</p>
 
     <h2>Soil store reference (bridge with 🪨 Soil water)</h2>
@@ -311,7 +367,11 @@
 
     <h2>m³ vs mm in results</h2>
     <div class="mt-formula">m³ = mm × ha × 10</div>
-    <p>
+
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      US gal = in × acres × 27,154
+    </div>    <p>
       Prioritize <strong>m³ in strip</strong> to operate irrigation. Summary mm are the same water as depth;
       when crop ha ≠ irrigated ha, the same m³ is expressed as more mm in strip and fewer mm reference over crop ha.
       The “Important data — field irrigation” box uses m³ and mm in the irrigated strip.
@@ -332,6 +392,10 @@
       (“Suggest irrigated strip” and “Use % from soil analysis” buttons in PRO); it <strong>does not alter the ETc deficit</strong>.
     </p>
     <div class="mt-formula">suggested strip (ha) = crop area × (% reach / 100)</div>
+    <div class="mt-formula-us">
+      <span class="mt-formula-us__label">US customary</span>
+      suggested strip (acres) = crop area (acres) × (% reach / 100)
+    </div>
     <p>
       <strong>NutriPlant Criterion</strong> box, “View table” link to the expandable reference
       <strong>% soil explored by system</strong> (avocado, berry, vegetable…). The same indicative table is in

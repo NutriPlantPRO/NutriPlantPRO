@@ -9,7 +9,8 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260730c"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260801g"></script>
+  <script src="assets/np-periodic-forms-en.js?v=20260801g"></script>
 
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <title>Tabla Periódica (Nutrientes Esenciales)</title>
@@ -340,13 +341,13 @@
   </div>
 
   <div id="paneMol" class="tab-pane" role="tabpanel">
-    <p class="lead">Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén su <strong>peso molecular (g/mol)</strong> y el <strong>% de peso de cada átomo</strong> en la molécula. Para sales dobles, hidratos o mezclas de varias moléculas usa la herramienta <strong>Composición de fertilizantes</strong>.</p>
+    <p class="lead" id="molLead"></p>
     <div class="panel">
-      <h2>Peso molecular y composición elemental</h2>
-      <p class="mol-hint">Desde la pestaña <strong>Tabla periódica</strong>, selecciona un elemento y pulsa <strong>+ Usar en calculadora molecular</strong>. Ejemplos de moléculas:</p>
+      <h2 id="molPanelTitle">Peso molecular y composición elemental</h2>
+      <p class="mol-hint" id="molHint"></p>
       <div class="mol-chips" id="molExamples"></div>
       <div class="mol-row">
-        <label>Fórmula
+        <label><span id="molFormulaLabel">Fórmula</span>
           <input type="text" id="molFormula" placeholder="KNO3, H2SO4, Ca(NO3)2, NH4NO3" autocomplete="off" spellcheck="false" />
         </label>
         <button type="button" class="mol-btn" id="molCalcBtn">Calcular</button>
@@ -355,22 +356,22 @@
       <p id="molError" class="mol-err" hidden></p>
       <div id="molResults" hidden>
         <div class="mol-summary" id="molSummary"></div>
-        <p class="mol-section-title">Composición elemental (%)</p>
+        <p class="mol-section-title" id="molCompTitle">Composición elemental (%)</p>
         <div class="mol-table-wrap">
           <table class="mol-table">
             <thead>
               <tr>
-                <th>Elemento</th>
-                <th>Átomos</th>
-                <th>Masa parcial (g/mol)</th>
-                <th>% en molécula</th>
-                <th>P. eq. meq (g/eq)</th>
+                <th id="molThEl">Elemento</th>
+                <th id="molThAtoms">Átomos</th>
+                <th id="molThMass">Masa parcial (g/mol)</th>
+                <th id="molThPct">% en molécula</th>
+                <th id="molThEq">P. eq. meq (g/eq)</th>
               </tr>
             </thead>
             <tbody id="molTableBody"></tbody>
           </table>
         </div>
-        <p class="foot">P. eq. meq = peso atómico ÷ valencia agronómica habitual (meq/L ↔ ppm elemental en NutriPlant). Peso equivalente de la molécula = PM ÷ n cuando se detecta ácido/base típico (H⁺ u OH⁻ intercambiables).</p>
+        <p class="foot" id="molFootEq"></p>
       </div>
     </div>
   </div>
@@ -389,11 +390,7 @@
           <div id="forms3dViewer"></div>
           <div class="forms-viewer-state" id="formsViewerState">Selecciona una molécula o forma iónica para cargar el modelo 3D si PubChem lo tiene disponible.</div>
         </div>
-        <p class="forms-model-note">
-          <strong>Lectura del modelo:</strong> PubChem = estructura 3D de referencia cuando está disponible.
-          Modelo NutriPlant = representación didáctica que conserva composición y geometría general del ion/sal;
-          en sales, hidratos y precipitados no sustituye una estructura cristalográfica exacta.
-        </p>
+        <p class="forms-model-note" id="formsModelNote"></p>
         <div id="formsDetailBody"></div>
       </aside>
     </div>
@@ -880,9 +877,81 @@
       '5. Precipitados / baja solubilidad'
     ];
 
+    function tpIsEn() {
+      try {
+        return window.NpFreeNutritionUI && window.NpFreeNutritionUI.prefs().language === 'en';
+      } catch (e) {
+        return false;
+      }
+    }
+    function tp(es, en) {
+      return tpIsEn() ? (en != null ? en : es) : es;
+    }
+    function tpTr(text) {
+      try {
+        return window.NpFreeNutritionUI ? window.NpFreeNutritionUI.translate(text) : text;
+      } catch (e) {
+        return text;
+      }
+    }
+    function formField(item, key) {
+      if (!item) return '';
+      if (tpIsEn()) {
+        var bag = (window.NP_PERIODIC_FORMS_EN && window.NP_PERIODIC_FORMS_EN[item.id]) || null;
+        if (bag && bag[key]) return bag[key];
+      }
+      return item[key] || '';
+    }
+    function formTagLabel(tag) {
+      return tpTr(tag);
+    }
+    function applyPeriodicChrome() {
+      var molLead = document.getElementById('molLead');
+      if (molLead) {
+        molLead.innerHTML = tp(
+          'Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén su <strong>peso molecular (g/mol)</strong> y el <strong>% de peso de cada átomo</strong> en la molécula. Para sales dobles, hidratos o mezclas de varias moléculas usa la herramienta <strong>Composición de fertilizantes</strong>.',
+          'Type a <strong>chemical formula</strong> (element or molecule) and get its <strong>molecular weight (g/mol)</strong> and the <strong>% weight of each atom</strong> in the molecule. For double salts, hydrates or multi-molecule mixes use the <strong>Fertilizer composition</strong> tool.'
+        );
+      }
+      var setText = function (id, es, en) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = tp(es, en);
+      };
+      setText('molPanelTitle', 'Peso molecular y composición elemental', 'Molecular weight and elemental composition');
+      var molHint = document.getElementById('molHint');
+      if (molHint) {
+        molHint.innerHTML = tp(
+          'Desde la pestaña <strong>Tabla periódica</strong>, selecciona un elemento y pulsa <strong>+ Usar en calculadora molecular</strong>. Ejemplos de moléculas:',
+          'From the <strong>Periodic table</strong> tab, select an element and press <strong>+ Use in molecular calculator</strong>. Molecule examples:'
+        );
+      }
+      setText('molFormulaLabel', 'Fórmula', 'Formula');
+      setText('molCalcBtn', 'Calcular', 'Calculate');
+      setText('molClearBtn', 'Limpiar', 'Clear');
+      setText('molCompTitle', 'Composición elemental (%)', 'Elemental composition (%)');
+      setText('molThEl', 'Elemento', 'Element');
+      setText('molThAtoms', 'Átomos', 'Atoms');
+      setText('molThMass', 'Masa parcial (g/mol)', 'Partial mass (g/mol)');
+      setText('molThPct', '% en molécula', '% in molecule');
+      setText('molThEq', 'P. eq. meq (g/eq)', 'Eq. wt. meq (g/eq)');
+      setText(
+        'molFootEq',
+        'P. eq. meq = peso atómico ÷ valencia agronómica habitual (meq/L ↔ ppm elemental en NutriPlant). Peso equivalente de la molécula = PM ÷ n cuando se detecta ácido/base típico (H⁺ u OH⁻ intercambiables).',
+        'Eq. wt. meq = atomic weight ÷ usual agronomic valence (meq/L ↔ elemental ppm in NutriPlant). Molecule equivalent weight = MW ÷ n when a typical acid/base is detected (exchangeable H⁺ or OH⁻).'
+      );
+      var formsNote = document.getElementById('formsModelNote');
+      if (formsNote) {
+        formsNote.innerHTML = tp(
+          '<strong>Lectura del modelo:</strong> PubChem = estructura 3D de referencia cuando está disponible. Modelo NutriPlant = representación didáctica que conserva composición y geometría general del ion/sal; en sales, hidratos y precipitados no sustituye una estructura cristalográfica exacta.',
+          '<strong>Model reading:</strong> PubChem = reference 3D structure when available. NutriPlant model = teaching representation that keeps composition and general ion/salt geometry; for salts, hydrates and precipitates it does not replace an exact crystallographic structure.'
+        );
+      }
+    }
+
     function fmtNum(n, digits) {
       if (!Number.isFinite(n)) return '—';
-      return n.toLocaleString('es-MX', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+      var locale = tpIsEn() ? 'en-US' : 'es-MX';
+      return n.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
     }
 
     function primaryValence(symbol) {
@@ -1104,7 +1173,7 @@
 
     function elementName(symbol) {
       const hit = ELEMENTS.find(function(el) { return el.s === symbol; });
-      return hit ? hit.n : symbol;
+      return hit ? tpTr(hit.n) : symbol;
     }
 
     function renderMolResults(parsed) {
@@ -1120,10 +1189,10 @@
       const eqMol = eqInfo ? parsed.mw / eqInfo.n : null;
 
       summaryEl.innerHTML = [
-        ['Peso molecular (PM)', fmtNum(parsed.mw, 3) + ' g/mol'],
-        ['Fórmula normalizada', formatNormalizedDisplay(parsed.normalized)],
-        eqMol ? ['Peso equivalente (molécula)', fmtNum(eqMol, 3) + ' g/eq'] : null,
-        eqInfo ? ['Criterio eq. molécula', eqInfo.label] : null
+        [tp('Peso molecular (PM)', 'Molecular weight (MW)'), fmtNum(parsed.mw, 3) + ' g/mol'],
+        [tp('Fórmula normalizada', 'Normalized formula'), formatNormalizedDisplay(parsed.normalized)],
+        eqMol ? [tp('Peso equivalente (molécula)', 'Equivalent weight (molecule)'), fmtNum(eqMol, 3) + ' g/eq'] : null,
+        eqInfo ? [tp('Criterio eq. molécula', 'Molecule eq. criterion'), tpTr(eqInfo.label)] : null
       ].filter(Boolean).map(function(row) {
         return '<div class="card"><div class="k">' + row[0] + '</div><div class="v">' + row[1] + '</div></div>';
       }).join('');
@@ -1168,22 +1237,20 @@
       return div.innerHTML;
     }
 
-    function renderFormsFilters() {
-      const mount = document.getElementById('formsFilters');
-      const present = new Set(CHEMICAL_FORMS.map(formDisplayGroup));
-      const groups = ['Todos'].concat(FORM_GROUP_ORDER.filter(function(g) { return present.has(g); }));
-      mount.innerHTML = groups.map(function(g) {
-        return '<button type="button" class="forms-filter ' + (g === activeFormsGroup ? 'active' : '') + '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>';
-      }).join('');
-      mount.querySelectorAll('.forms-filter').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          activeFormsGroup = btn.getAttribute('data-group') || 'Todos';
-          renderForms();
-        });
-      });
+    function formDisplayGroup(item) {
+      if (!item) return tp('5. Precipitados / baja solubilidad', '5. Precipitates / low solubility');
+      const tags = (item.tags || []).join(' ');
+      if (item.group === 'Absorción vegetal') {
+        if (/Catión/i.test(tags)) return tp('2. Cationes absorbidos', '2. Absorbed cations');
+        return tp('1. Aniones / moléculas absorbidas', '1. Anions / absorbed molecules');
+      }
+      if (item.group === 'Quelatos') return tp('3. Quelatos', '3. Chelates');
+      if (item.group === 'Sales fertilizantes') return tp('4. Sales fertilizantes', '4. Fertilizer salts');
+      if (item.group === 'Precipitados / baja solubilidad') return tp('5. Precipitados / baja solubilidad', '5. Precipitates / low solubility');
+      return item.group;
     }
 
-    function formDisplayGroup(item) {
+    function formDisplayGroupKey(item) {
       if (!item) return '5. Precipitados / baja solubilidad';
       const tags = (item.tags || []).join(' ');
       if (item.group === 'Absorción vegetal') {
@@ -1197,24 +1264,40 @@
     }
 
     function formGroupRank(item) {
-      const i = FORM_GROUP_ORDER.indexOf(formDisplayGroup(item));
+      const i = FORM_GROUP_ORDER.indexOf(formDisplayGroupKey(item));
       return i >= 0 ? i : 99;
+    }
+
+    function renderFormsFilters() {
+      const mount = document.getElementById('formsFilters');
+      const present = new Set(CHEMICAL_FORMS.map(formDisplayGroupKey));
+      const groups = ['Todos'].concat(FORM_GROUP_ORDER.filter(function(g) { return present.has(g); }));
+      mount.innerHTML = groups.map(function(g) {
+        const label = g === 'Todos' ? tp('Todos', 'All') : tpTr(g);
+        return '<button type="button" class="forms-filter ' + (g === activeFormsGroup ? 'active' : '') + '" data-group="' + escapeHtml(g) + '">' + escapeHtml(label) + '</button>';
+      }).join('');
+      mount.querySelectorAll('.forms-filter').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          activeFormsGroup = btn.getAttribute('data-group') || 'Todos';
+          renderForms();
+        });
+      });
     }
 
     function renderForms() {
       renderFormsFilters();
       const grid = document.getElementById('formsGrid');
       const list = CHEMICAL_FORMS.filter(function(item) {
-        return activeFormsGroup === 'Todos' || formDisplayGroup(item) === activeFormsGroup;
+        return activeFormsGroup === 'Todos' || formDisplayGroupKey(item) === activeFormsGroup;
       }).slice().sort(function(a, b) {
         return formGroupRank(a) - formGroupRank(b);
       });
       grid.innerHTML = list.map(function(item) {
         return '<article class="form-card ' + (item.id === selectedFormId ? 'active' : '') + '" data-id="' + escapeHtml(item.id) + '">' +
-          '<h3>' + escapeHtml(item.name) + '</h3>' +
+          '<h3>' + escapeHtml(formField(item, 'name')) + '</h3>' +
           '<div class="form-formula notranslate" translate="no">' + escapeHtml(item.formula) + '</div>' +
-          '<div class="form-kind">' + item.tags.map(function(t) { return '<span>' + escapeHtml(t) + '</span>'; }).join('') + '</div>' +
-          '<p class="form-note">' + escapeHtml(item.plant) + '</p>' +
+          '<div class="form-kind">' + item.tags.map(function(t) { return '<span>' + escapeHtml(formTagLabel(t)) + '</span>'; }).join('') + '</div>' +
+          '<p class="form-note">' + escapeHtml(formField(item, 'plant')) + '</p>' +
           '</article>';
       }).join('');
       grid.querySelectorAll('.form-card').forEach(function(card) {
@@ -1225,34 +1308,49 @@
     }
 
     function modelClassForItem(item) {
-      if (!item) return { label: 'Modelo', detail: 'Representación visual de apoyo.' };
+      if (!item) return { label: tp('Modelo', 'Model'), detail: tp('Representación visual de apoyo.', 'Supporting visual representation.') };
       if (/-EDTA|-DTPA|-EDDHA/i.test(item.formula || '')) {
         return {
-          label: 'Complejo quelatado representativo',
-          detail: 'Metal central coordinado por donadores N/O del ligando; la forma comercial exacta depende de isómero, sal, hidratación y pH.'
+          label: tp('Complejo quelatado representativo', 'Representative chelate complex'),
+          detail: tp(
+            'Metal central coordinado por donadores N/O del ligando; la forma comercial exacta depende de isómero, sal, hidratación y pH.',
+            'Central metal coordinated by N/O donors of the ligand; the exact commercial form depends on isomer, salt, hydration and pH.'
+          )
         };
       }
       if (item.group === 'Precipitados / baja solubilidad') {
         return {
-          label: 'Unidad mineral representativa',
-          detail: 'Conserva el anión definido y cationes asociados; el sólido real es una red cristalina, no una molécula aislada.'
+          label: tp('Unidad mineral representativa', 'Representative mineral unit'),
+          detail: tp(
+            'Conserva el anión definido y cationes asociados; el sólido real es una red cristalina, no una molécula aislada.',
+            'Keeps the defined anion and associated cations; the real solid is a crystal lattice, not an isolated molecule.'
+          )
         };
       }
       if (item.group === 'Sales fertilizantes') {
         return {
-          label: 'Unidad iónica representativa',
-          detail: 'Muestra el anión real y los cationes asociados; en hidratos el agua se representa como agua de cristalización.'
+          label: tp('Unidad iónica representativa', 'Representative ionic unit'),
+          detail: tp(
+            'Muestra el anión real y los cationes asociados; en hidratos el agua se representa como agua de cristalización.',
+            'Shows the real anion and associated cations; in hydrates water is shown as crystallization water.'
+          )
         };
       }
       if (simpleIonSymbol(item.formula)) {
         return {
-          label: 'Ion simple',
-          detail: 'El átomo/ion se representa como esfera; sus datos químicos vienen de la tabla periódica.'
+          label: tp('Ion simple', 'Simple ion'),
+          detail: tp(
+            'El átomo/ion se representa como esfera; sus datos químicos vienen de la tabla periódica.',
+            'The atom/ion is shown as a sphere; its chemical data come from the periodic table.'
+          )
         };
       }
       return {
-        label: 'Ion o molécula definida',
-        detail: 'Geometría molecular de referencia cuando PubChem está disponible, o unidad NutriPlant ajustada a la geometría esperada.'
+        label: tp('Ion o molécula definida', 'Defined ion or molecule'),
+        detail: tp(
+          'Geometría molecular de referencia cuando PubChem está disponible, o unidad NutriPlant ajustada a la geometría esperada.',
+          'Reference molecular geometry when PubChem is available, or a NutriPlant unit tuned to the expected geometry.'
+        )
       };
     }
 
@@ -1309,10 +1407,10 @@
     function atomFactsHtml(symbol) {
       const d = DETAILS[symbol] || {};
       return '<div class="mol-summary">' +
-        '<div class="card"><div class="k">Peso atómico</div><div class="v">' + escapeHtml(d.aw || String(ATOMIC_WEIGHTS[symbol] || '—')) + ' g/mol</div></div>' +
-        '<div class="card"><div class="k">Valencia(s)</div><div class="v">' + escapeHtml(d.val || '—') + '</div></div>' +
-        '<div class="card"><div class="k">Radio atómico</div><div class="v">' + escapeHtml(d.rad || '—') + '</div></div>' +
-        '<div class="card"><div class="k">Electronegatividad</div><div class="v">' + escapeHtml(d.en || '—') + '</div></div>' +
+        '<div class="card"><div class="k">' + tp('Peso atómico', 'Atomic weight') + '</div><div class="v">' + escapeHtml(d.aw || String(ATOMIC_WEIGHTS[symbol] || '—')) + ' g/mol</div></div>' +
+        '<div class="card"><div class="k">' + tp('Valencia(s)', 'Valence(s)') + '</div><div class="v">' + escapeHtml(d.val || '—') + '</div></div>' +
+        '<div class="card"><div class="k">' + tp('Radio atómico', 'Atomic radius') + '</div><div class="v">' + escapeHtml(d.rad || '—') + '</div></div>' +
+        '<div class="card"><div class="k">' + tp('Electronegatividad', 'Electronegativity') + '</div><div class="v">' + escapeHtml(d.en || '—') + '</div></div>' +
       '</div>';
     }
 
@@ -1336,11 +1434,11 @@
         '</tr>';
       }).join('');
       return '<div class="mol-summary">' +
-        '<div class="card"><div class="k">Peso molecular</div><div class="v">' + fmtNum(parsed.mw, 3) + ' g/mol</div></div>' +
-        '<div class="card"><div class="k">Fórmula calculada</div><div class="v notranslate" translate="no">' + escapeHtml(formatNormalizedDisplay(parsed.normalized)) + '</div></div>' +
+        '<div class="card"><div class="k">' + tp('Peso molecular', 'Molecular weight') + '</div><div class="v">' + fmtNum(parsed.mw, 3) + ' g/mol</div></div>' +
+        '<div class="card"><div class="k">' + tp('Fórmula calculada', 'Calculated formula') + '</div><div class="v notranslate" translate="no">' + escapeHtml(formatNormalizedDisplay(parsed.normalized)) + '</div></div>' +
       '</div>' +
       '<div class="mol-table-wrap">' +
-        '<table class="mol-table"><thead><tr><th>Elemento</th><th>Átomos</th><th>Peso atómico</th><th>Valencia(s)</th><th>Radio</th><th>Masa parcial</th><th>% PM</th></tr></thead><tbody>' +
+        '<table class="mol-table"><thead><tr><th>' + tp('Elemento', 'Element') + '</th><th>' + tp('Átomos', 'Atoms') + '</th><th>' + tp('Peso atómico', 'Atomic weight') + '</th><th>' + tp('Valencia(s)', 'Valence(s)') + '</th><th>' + tp('Radio', 'Radius') + '</th><th>' + tp('Masa parcial', 'Partial mass') + '</th><th>' + tp('% PM', '% MW') + '</th></tr></thead><tbody>' +
         rows +
         '</tbody></table>' +
       '</div>';
@@ -1350,20 +1448,26 @@
       const formula = item && item.formula ? item.formula : '';
       const ion = simpleIonSymbol(formula);
       if (ion) {
-        return '<div class="forms-detail-section"><h3>Datos atómicos</h3>' + atomFactsHtml(ion) + '</div>';
+        return '<div class="forms-detail-section"><h3>' + tp('Datos atómicos', 'Atomic data') + '</h3>' + atomFactsHtml(ion) + '</div>';
       }
       if (/-EDTA|-DTPA|-EDDHA/i.test(formula)) {
         const metal = (formula.match(/^([A-Z][a-z]?)-/) || [])[1];
-        return '<div class="forms-detail-section"><h3>Datos químicos</h3>' +
+        return '<div class="forms-detail-section"><h3>' + tp('Datos químicos', 'Chemical data') + '</h3>' +
           (metal ? atomFactsHtml(metal) : '') +
-          '<p style="margin-top:8px;">Quelato comercial: la fórmula exacta depende del isómero, sal acompañante y grado del proveedor. Se muestra el metal central; para % exacto usar etiqueta garantizada del producto.</p>' +
+          '<p style="margin-top:8px;">' + tp(
+            'Quelato comercial: la fórmula exacta depende del isómero, sal acompañante y grado del proveedor. Se muestra el metal central; para % exacto usar etiqueta garantizada del producto.',
+            'Commercial chelate: the exact formula depends on isomer, accompanying salt and supplier grade. The central metal is shown; for exact % use the product guaranteed analysis.'
+          ) + '</p>' +
         '</div>';
       }
       try {
         const parsed = parseCompound(formulaForComputation(formula));
-        return '<div class="forms-detail-section"><h3>Peso molecular y composición</h3>' + compositionHtmlFromParsed(parsed) + '</div>';
+        return '<div class="forms-detail-section"><h3>' + tp('Peso molecular y composición', 'Molecular weight and composition') + '</h3>' + compositionHtmlFromParsed(parsed) + '</div>';
       } catch (e) {
-        return '<div class="forms-detail-section"><h3>Datos químicos</h3><p>No se pudo calcular PM para esta forma. Usa la pestaña Peso molecular con una fórmula exacta si deseas revisar una fuente específica.</p></div>';
+        return '<div class="forms-detail-section"><h3>' + tp('Datos químicos', 'Chemical data') + '</h3><p>' + tp(
+          'No se pudo calcular PM para esta forma. Usa la pestaña Peso molecular con una fórmula exacta si deseas revisar una fuente específica.',
+          'MW could not be calculated for this form. Use the Molecular weight tab with an exact formula if you want to review a specific source.'
+        ) + '</p></div>';
       }
     }
 
@@ -1374,16 +1478,16 @@
       selectedFormId = item.id;
       const detailPanel = document.querySelector('.forms-detail');
       if (detailPanel) detailPanel.scrollTop = 0;
-      document.getElementById('formsTitle').textContent = item.name;
+      document.getElementById('formsTitle').textContent = formField(item, 'name');
       document.getElementById('formsMeta').innerHTML =
         '<span class="notranslate" translate="no">' + escapeHtml(item.formula) + '</span> · ' + escapeHtml(formDisplayGroup(item));
       const modelClass = modelClassForItem(item);
       document.getElementById('formsDetailBody').innerHTML =
-        '<div class="forms-detail-section"><h3>Tipo de visualización</h3><span class="forms-model-badge">' + escapeHtml(modelClass.label) + '</span><p style="margin-top:8px;">' + escapeHtml(modelClass.detail) + '</p></div>' +
+        '<div class="forms-detail-section"><h3>' + tp('Tipo de visualización', 'Visualization type') + '</h3><span class="forms-model-badge">' + escapeHtml(modelClass.label) + '</span><p style="margin-top:8px;">' + escapeHtml(modelClass.detail) + '</p></div>' +
         formChemistryHtml(item) +
-        '<div class="forms-detail-section"><h3>Función / absorción</h3><p>' + escapeHtml(item.plant) + '</p></div>' +
-        '<div class="forms-detail-section"><h3>Fuente o formación</h3><p>' + escapeHtml(item.source) + '</p></div>' +
-        '<div class="forms-detail-section"><h3>Cuidado agronómico</h3><p>' + escapeHtml(item.caution) + '</p></div>';
+        '<div class="forms-detail-section"><h3>' + tp('Función / absorción', 'Function / uptake') + '</h3><p>' + escapeHtml(formField(item, 'plant')) + '</p></div>' +
+        '<div class="forms-detail-section"><h3>' + tp('Fuente o formación', 'Source or formation') + '</h3><p>' + escapeHtml(formField(item, 'source')) + '</p></div>' +
+        '<div class="forms-detail-section"><h3>' + tp('Cuidado agronómico', 'Agronomic care') + '</h3><p>' + escapeHtml(formField(item, 'caution')) + '</p></div>';
       renderForms();
       updateFormsDetailMaxHeight();
       loadForm3d(item);
@@ -1671,7 +1775,7 @@
             fontSize: 13
           });
           viewer.render();
-          stateEl.textContent = 'Átomo seleccionado: ' + elem + ' · ' + elementName(elem) + '.';
+          stateEl.textContent = tp('Átomo seleccionado:', 'Selected atom:') + ' ' + elem + ' · ' + elementName(elem) + '.';
         });
         formsViewer.zoomTo();
         formsViewer.render();
@@ -1799,14 +1903,21 @@
       return x.querySelector('.s').textContent === 'N';
     });
     if (first) first.click();
+
+    function refreshPeriodicUi() {
+      applyPeriodicChrome();
+      renderForms();
+      if (selectedFormId) selectChemicalForm(selectedFormId);
+      var resEl = document.getElementById('molResults');
+      if (resEl && !resEl.hidden && molFormula && molFormula.value) {
+        try { runMolCalc(); } catch (e) {}
+      }
+    }
+    if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
+      window.NpFreeNutritionUI.init({ refresh: refreshPeriodicUi });
+    }
+    applyPeriodicChrome();
   </script>
   <script src="apply-no-traducir.js"></script>
-  <script>
-    (function () {
-      if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.init === 'function') {
-        window.NpFreeNutritionUI.init();
-      }
-    })();
-  </script>
 </body>
 </html>
