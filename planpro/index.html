@@ -9608,20 +9608,30 @@
     .np-cal-overlay-panel--multi .np-cal-overlay-plant-chip--on::before {
       background: #1d4ed8;
     }
+    .np-cal-overlay-sticky-top {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      flex-shrink: 0;
+      margin: 0;
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 6%, rgba(255, 255, 255, 0.96));
+      backdrop-filter: blur(6px);
+      border-top: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 8%, rgba(148, 163, 184, 0.22));
+      border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
+    }
     .np-cal-overlay-month-bar {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px 12px;
-      padding: 6px 6px 7px;
+      padding: 6px 6px 4px;
       margin: 0;
-      border-top: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 8%, rgba(148, 163, 184, 0.22));
-      border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 6%, rgba(255, 255, 255, 0.94));
-      backdrop-filter: blur(6px);
+    }
+    .np-cal-overlay-dow-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 0 5px;
     }
     .np-cal-overlay-nav {
       display: contents;
@@ -10117,7 +10127,13 @@
       font-size: 10px;
       font-weight: 700;
       color: #64748b;
-      padding: 4px 0;
+      padding: 2px 0 0;
+    }
+    .np-cal-overlay-dow--sat {
+      color: #a16207;
+    }
+    .np-cal-overlay-dow--sun {
+      color: #9f1239;
     }
     .np-cal-overlay-day {
       box-sizing: border-box;
@@ -10130,6 +10146,14 @@
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(226, 232, 240, 0.95));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 4%, rgba(255, 255, 255, 0.9));
       overflow: hidden;
+    }
+    .np-cal-overlay-day--sat {
+      background: color-mix(in srgb, #eab308 12%, rgba(255, 252, 235, 0.94));
+      border-color: color-mix(in srgb, #ca8a04 16%, rgba(226, 232, 240, 0.9));
+    }
+    .np-cal-overlay-day--sun {
+      background: color-mix(in srgb, #9f1239 8%, rgba(255, 245, 247, 0.95));
+      border-color: color-mix(in srgb, #9f1239 14%, rgba(226, 232, 240, 0.9));
     }
     .np-cal-overlay-day--muted {
       opacity: 0.35;
@@ -10384,18 +10408,22 @@
         gap: 4px;
       }
       .np-cal-overlay-month-bar {
-        padding: 1px 4px 2px;
+        padding: 1px 4px 1px;
         margin: 0;
       }
       .np-cal-overlay-month-label {
         font-size: 0.98rem;
+      }
+      .np-cal-overlay-dow-row {
+        gap: 4px;
+        padding: 0 0 3px;
       }
       .np-cal-overlay-grid {
         gap: 4px;
       }
       .np-cal-overlay-dow {
         font-size: 8px;
-        padding: 2px 0;
+        padding: 1px 0 0;
         letter-spacing: -0.02em;
       }
       .np-cal-overlay-day {
@@ -10452,6 +10480,10 @@
       .np-cal-overlay-body {
         padding: 0 4px 6px !important;
         gap: 1px;
+      }
+      .np-cal-overlay-dow-row {
+        gap: 2px;
+        padding: 0 0 2px;
       }
       .np-cal-overlay-grid {
         gap: 2px;
@@ -11813,12 +11845,15 @@
         </div>
       </div>
       <div id="npCalOverlayBody" class="np-modal-body np-cal-overlay-body">
-        <div class="np-cal-overlay-month-bar" aria-label="Mes del calendario">
-          <div class="np-cal-overlay-nav">
-            <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
-            <span id="npCalOverlayMonthLabel" class="np-cal-overlay-month-label"></span>
-            <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayNext" aria-label="Mes siguiente">▶</button>
+        <div class="np-cal-overlay-sticky-top">
+          <div class="np-cal-overlay-month-bar" aria-label="Mes del calendario">
+            <div class="np-cal-overlay-nav">
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
+              <span id="npCalOverlayMonthLabel" class="np-cal-overlay-month-label"></span>
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayNext" aria-label="Mes siguiente">▶</button>
+            </div>
           </div>
+          <div id="npCalOverlayDow" class="np-cal-overlay-dow-row" aria-hidden="true"></div>
         </div>
         <div id="npCalOverlayGrid" class="np-cal-overlay-grid" role="grid" aria-label="Mes con semáforos"></div>
       </div>
@@ -21480,9 +21515,16 @@
     }
   }
 
+  function calOverlayWeekendClass(mondayIdx) {
+    if (mondayIdx === 5) return ' np-cal-overlay-day--sat';
+    if (mondayIdx === 6) return ' np-cal-overlay-day--sun';
+    return '';
+  }
+
   function renderCalOverlayGrid() {
     var grid = $('npCalOverlayGrid');
     var lab = $('npCalOverlayMonthLabel');
+    var dowRow = $('npCalOverlayDow');
     if (!grid || !lab) return;
     ensureSidebarCalMonth();
     var y = state.sidebarCalYear;
@@ -21502,18 +21544,23 @@
       String(new Date().getDate()).padStart(2, '0');
     grid.innerHTML = '';
     var dowLbl = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    dowLbl.forEach(function (L) {
-      var h = document.createElement('div');
-      h.className = 'np-cal-overlay-dow';
-      h.textContent = L;
-      grid.appendChild(h);
-    });
+    if (dowRow) {
+      dowRow.innerHTML = '';
+      dowLbl.forEach(function (L, idx) {
+        var h = document.createElement('div');
+        h.className =
+          'np-cal-overlay-dow' +
+          (idx === 5 ? ' np-cal-overlay-dow--sat' : idx === 6 ? ' np-cal-overlay-dow--sun' : '');
+        h.textContent = L;
+        dowRow.appendChild(h);
+      });
+    }
     var totalCells = mondayBased + lastDay;
     var padEnd = (7 - (totalCells % 7)) % 7;
     var i;
     for (i = 0; i < mondayBased; i++) {
       var pad = document.createElement('div');
-      pad.className = 'np-cal-overlay-day np-cal-overlay-day--muted';
+      pad.className = 'np-cal-overlay-day np-cal-overlay-day--muted' + calOverlayWeekendClass(i);
       grid.appendChild(pad);
     }
     for (var day = 1; day <= lastDay; day++) {
@@ -21528,8 +21575,10 @@
         var total = bucket.entries.length;
         var cell = document.createElement('div');
         var focusDay = state.calOverlayFocusDateKey && dateKey === state.calOverlayFocusDateKey;
+        var mondayIdx = (mondayBased + d - 1) % 7;
         cell.className =
           'np-cal-overlay-day' +
+          calOverlayWeekendClass(mondayIdx) +
           (dateKey === todayKey ? ' np-cal-overlay-day--today' : '') +
           (focusDay ? ' np-cal-overlay-day--focus' : '');
         cell.setAttribute('data-cal-date', dateKey);
@@ -21619,7 +21668,9 @@
     }
     for (i = 0; i < padEnd; i++) {
       var pad2 = document.createElement('div');
-      pad2.className = 'np-cal-overlay-day np-cal-overlay-day--muted';
+      pad2.className =
+        'np-cal-overlay-day np-cal-overlay-day--muted' +
+        calOverlayWeekendClass((mondayBased + lastDay + i) % 7);
       grid.appendChild(pad2);
     }
     if (state.calOverlayFocusDateKey) {
@@ -21915,7 +21966,6 @@
     );
     setPlanProAppMode('apuntes');
     if (areaId !== state.selectedAreaId) {
-      resetCreateFormPendingBlocks();
       state.selectedAreaId = areaId;
       state.selectedCategoryId = null;
       renderPillarTabs();
@@ -21924,14 +21974,21 @@
     selectCategory(catId);
     planProExpandCategoryAncestors(catId);
     renderTree();
+    /* Siempre hoja limpia: scrollPlanProSheetSection('new') abre con keepForm y
+       si no reseteamos aquí reutiliza título/cuerpo/bloques/id del apunte anterior. */
+    var titleInp = $('npTitle');
+    if (titleInp) titleInp.value = '';
+    clearRichEditor();
+    resetCreateFormPendingBlocks();
+    resetCreateFormMeta();
+    state.createItemId = null;
     createFormDueKey = dateKey;
     createFormPriorityLevel = lv;
     createFormDueTime = '';
     createFormDueEndTime = '';
+    createFormIsClosed = false;
     wireCreateFichaPill();
     updateFichaDuePillEl($('npCreateFichaPill'), dateKey, storePriorityFromLevel(lv), '');
-    var titleInp = $('npTitle');
-    if (titleInp) titleInp.value = '';
     scrollPlanProSheetSection('new');
   }
 
