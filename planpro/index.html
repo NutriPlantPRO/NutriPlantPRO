@@ -9496,6 +9496,22 @@
     }
     .np-cal-overlay-panel--multi {
       --np-cal-overlay-accent: #1e3a8a;
+      /* Difuminado desde la esquina de la N: ahí hay color para que la hoja blanca se lea;
+         el resto sigue lavado suave como cuando hay varias plantas. */
+      background:
+        radial-gradient(
+          ellipse 78% 62% at 0% 0%,
+          color-mix(in srgb, var(--np-cal-overlay-accent) 58%, #fff) 0%,
+          color-mix(in srgb, var(--np-cal-overlay-accent) 28%, #fff) 34%,
+          color-mix(in srgb, var(--np-cal-overlay-accent) 10%, #fff) 62%,
+          transparent 78%
+        ),
+        radial-gradient(
+          ellipse 120% 90% at 58% -6%,
+          color-mix(in srgb, var(--np-cal-overlay-accent) 24%, #fff) 0%,
+          color-mix(in srgb, var(--np-cal-overlay-accent) 11%, #fff) 42%,
+          rgba(255, 255, 255, 0.97) 78%
+        );
     }
     .np-cal-overlay-title {
       display: inline-flex;
@@ -9523,6 +9539,7 @@
     }
     .np-cal-overlay-panel--multi .np-cal-overlay-logo--lit {
       display: block;
+      filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.28));
     }
     .np-cal-overlay-plant-filter {
       display: flex;
@@ -15908,16 +15925,25 @@
     return el.outerHTML + '&#xa0;';
   }
 
-  function insertRichDueAtCursor(editorEl, dateKey, level, dueTime, dueEndTime) {
+  function insertRichDueAtCursor(editorEl, dateKey, level, dueTime, dueEndTime, savedRange) {
     var html = buildRichDueMarkerHtml(dateKey, level, null, dueTime, dueEndTime);
     if (!html) return;
     var target = editorEl || $('npBodyRich');
     if (!target) return;
+    var rangeToUse =
+      savedRange ||
+      (target._npSavedRange && target.contains(target._npSavedRange.commonAncestorContainer)
+        ? target._npSavedRange
+        : null);
     target.focus();
+    if (rangeToUse) restoreRichEditorSelectionRange(target, rangeToUse);
     var sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     var range = sel.getRangeAt(0).cloneRange();
-    if (!target.contains(range.commonAncestorContainer)) return;
+    if (!target.contains(range.commonAncestorContainer)) {
+      range.selectNodeContents(target);
+      range.collapse(false);
+    }
     var holder = document.createElement('div');
     holder.innerHTML = sanitizeRich(html);
     var frag = document.createDocumentFragment();
@@ -15933,10 +15959,13 @@
       } catch (e2) {}
       return;
     }
-    range.setStartAfter(last);
+    var sp = document.createTextNode('\u00a0');
+    if (last.parentNode) last.parentNode.insertBefore(sp, last.nextSibling);
+    range.setStartAfter(sp);
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
+    target._npSavedRange = range.cloneRange();
   }
 
   function positionRichDuePopover(anchorRect) {
@@ -16080,11 +16109,31 @@
     if (allDayInp) allDayInp.checked = !markerTime;
     syncRichDuePickerLevelButtons(level);
     if (rm) rm.style.display = marker ? '' : 'none';
-    richDuePickerState = { mode: 'marker', editorEl: editorEl, markerEl: marker, level: level };
+    var savedRange =
+      marker
+        ? null
+        : opts.savedRange ||
+          getRichEditorSelectionRange(editorEl) ||
+          (editorEl._npSavedRange && editorEl.contains(editorEl._npSavedRange.commonAncestorContainer)
+            ? editorEl._npSavedRange.cloneRange()
+            : null);
+    if (savedRange) editorEl._npSavedRange = savedRange;
+    richDuePickerState = {
+      mode: 'marker',
+      editorEl: editorEl,
+      markerEl: marker,
+      level: level,
+      savedRange: savedRange
+    };
     pop.classList.remove('np-hide');
     var rect = null;
     if (marker) rect = marker.getBoundingClientRect();
-    else {
+    else if (savedRange) {
+      try {
+        rect = savedRange.getBoundingClientRect();
+      } catch (eSaved) {}
+    }
+    if (!rect || (!rect.width && !rect.height)) {
       var sel = window.getSelection();
       if (sel && sel.rangeCount) {
         try {
@@ -16152,7 +16201,14 @@
     if (marker && ed && ed.contains(marker)) {
       applyRichDueMarkerEl(marker, dk, lv, dueTime, dueEndTime);
     } else if (ed) {
-      insertRichDueAtCursor(ed, dk, lv, dueTime, dueEndTime);
+      insertRichDueAtCursor(
+        ed,
+        dk,
+        lv,
+        dueTime,
+        dueEndTime,
+        richDuePickerState.savedRange || ed._npSavedRange || null
+      );
     }
     closeRichDuePicker();
     syncRichEmptyClass(ed);
@@ -17827,7 +17883,17 @@
     var b = e.target.closest('[data-rich]');
     if (!b) return false;
     e.preventDefault();
+    /* Guardar caret antes de focus: al clicar la toolbar el navegador mueve la selección. */
+    var savedBeforeFocus =
+      getRichEditorSelectionRange(editorEl) ||
+      (editorEl._npSavedRange && editorEl.contains(editorEl._npSavedRange.commonAncestorContainer)
+        ? editorEl._npSavedRange.cloneRange()
+        : null);
     editorEl.focus();
+    if (savedBeforeFocus) {
+      restoreRichEditorSelectionRange(editorEl, savedBeforeFocus);
+      editorEl._npSavedRange = savedBeforeFocus;
+    }
     var kind = b.getAttribute('data-rich');
     if (kind === 'cmd') {
       try {
@@ -17854,7 +17920,10 @@
       insertRichSnippet(b.getAttribute('data-snippet'), editorEl);
     } else if (kind === 'duedate') {
       wireRichDuePopoverOnce();
-      openRichDuePicker({ editorEl: editorEl });
+      openRichDuePicker({
+        editorEl: editorEl,
+        savedRange: savedBeforeFocus || editorEl._npSavedRange || null
+      });
     } else if (kind === 'image') {
       if (!state.client || !state.userId) {
         showToast('Inicia sesión para subir imágenes.', true);
@@ -18676,6 +18745,9 @@
     ensureRichToolbarPinBtn(tb);
 
     /* Clic en la barra: debe ir aquí (no delegado en #npDetailModal) porque .np-modal-panel hace stopPropagation. */
+    tb.addEventListener('mousedown', function (e) {
+      if (e.target && e.target.closest && e.target.closest('[data-rich]')) e.preventDefault();
+    });
     tb.addEventListener('click', function (e) {
       if (e.target && e.target.closest && e.target.closest('.np-rich-toolbar-pin')) return;
       handleRichToolbarClick(e, ed);
@@ -28405,6 +28477,9 @@
   });
 
   ensureRichToolbarPinBtn($('npRichToolbar'));
+  $('npRichToolbar').addEventListener('mousedown', function (e) {
+    if (e.target && e.target.closest && e.target.closest('[data-rich]')) e.preventDefault();
+  });
   $('npRichToolbar').addEventListener('click', function (e) {
     if (e.target && e.target.closest && e.target.closest('.np-rich-toolbar-pin')) return;
     handleRichToolbarClick(e, $('npBodyRich'));
