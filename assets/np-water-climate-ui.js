@@ -26,7 +26,8 @@
     temperature: { canonical: 'C', metric: 'C', us_customary: 'F' },
     temperature_delta: { canonical: 'deltaC', metric: 'deltaC', us_customary: 'deltaF' },
     depth: { canonical: 'cm', metric: 'cm', us_customary: 'in' },
-    bulk_density: { canonical: 'g/cm3', metric: 'g/cm3', us_customary: 'lb/ft3' },
+    // Misma práctica agronómica: g/cm³ también en US; lb/ft³ es equivalencia secundaria.
+    bulk_density: { canonical: 'g/cm3', metric: 'g/cm3', us_customary: 'g/cm3' },
     area: { canonical: 'ha', metric: 'ha', us_customary: 'acre' },
     volume: { canonical: 'm3', metric: 'm3', us_customary: 'US gal' },
     speed: { canonical: 'km/h', metric: 'km/h', us_customary: 'mph' },

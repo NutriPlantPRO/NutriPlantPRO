@@ -249,6 +249,7 @@
             <input id="inDA" type="number" step="0.01" min="0.5" max="2.5" value="1.20" />
             <span class="unit" data-np-n-unit="bulk_density">g/cm³</span>
           </div>
+          <div class="np-bd-us-hint" id="inDA-us-hint" style="font-size:11px;color:#64748b;margin-top:2px;min-height:1.1em;" hidden></div>
         </div>
 
         <div class="field">
@@ -488,6 +489,14 @@
         out.inDA = window.NpFreeNutritionUI.toSI(parseNum(document.getElementById('inDA'), 1.2), 'bulk_density');
         return out;
       }, apply);
+      function updateDaHint() {
+        var hint = document.getElementById('inDA-us-hint');
+        if (!hint || !window.NpAgronomicUnits || typeof window.NpAgronomicUnits.bulkDensitySecondaryLbFt3 !== 'function') return;
+        var daSI = Number(document.getElementById('inDA').dataset.npSi || 1.2);
+        var text = window.NpAgronomicUnits.bulkDensitySecondaryLbFt3(daSI);
+        hint.textContent = text;
+        hint.hidden = !text;
+      }
       window.NpFreeNutritionUI.init({
         refresh: function () {
           var p = document.getElementById('inP');
@@ -497,7 +506,8 @@
           p.value = window.NpFreeNutritionUI.input(pSI, 'depth');
           da.value = window.NpFreeNutritionUI.input(daSI, 'bulk_density');
           document.querySelector('[data-np-n-unit="depth"]').textContent = window.NpFreeNutritionUI.unit('depth');
-          document.querySelector('[data-np-n-unit="bulk_density"]').textContent = window.NpFreeNutritionUI.unit('bulk_density');
+          document.querySelector('[data-np-n-unit="bulk_density"]').textContent = 'g/cm³';
+          updateDaHint();
           compute();
         }
       });
@@ -506,8 +516,10 @@
       ['inP', 'inDA'].forEach(function (id) {
         document.getElementById(id).addEventListener('input', function () {
           this.dataset.npSi = window.NpFreeNutritionUI.toSI(parseNum(this, 0), id === 'inP' ? 'depth' : 'bulk_density');
+          if (id === 'inDA') updateDaHint();
         });
       });
+      updateDaHint();
       syncTminFromSlider();
       compute();
     })();

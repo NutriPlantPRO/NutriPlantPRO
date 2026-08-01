@@ -19,7 +19,8 @@
     yield_mass_area: { canonical: 't/ha', metric: 't/ha', us_customary: 'short ton/acre', resultDigits: 2 },
     extraction_mass_yield: { canonical: 'kg/t', metric: 'kg/t', us_customary: 'lb/short ton', resultDigits: 2 },
     depth: { canonical: 'cm', metric: 'cm', us_customary: 'in', resultDigits: 2 },
-    bulk_density: { canonical: 'g/cm3', metric: 'g/cm3', us_customary: 'lb/ft3', resultDigits: 3 },
+    // Agrónomos siguen usando g/cm³; lb/ft³ es solo equivalencia secundaria en US.
+    bulk_density: { canonical: 'g/cm3', metric: 'g/cm3', us_customary: 'g/cm3', resultDigits: 3 },
     temperature: { canonical: 'C', metric: 'C', us_customary: 'F', resultDigits: 2 },
     temperature_delta: { canonical: 'deltaC', metric: 'deltaC', us_customary: 'deltaF', resultDigits: 2 },
     volume: { canonical: 'm3', metric: 'L', us_customary: 'US gal', resultDigits: 2 },
@@ -157,6 +158,25 @@
     );
   }
 
+  /** Equivalencia opcional lb/ft³ cuando el perfil está en US customary. Canonical sigue en g/cm³. */
+  function bulkDensitySecondaryLbFt3(gcm3) {
+    if (getPrefs().unit_system !== 'us_customary') return '';
+    var n = Number(gcm3);
+    if (!Number.isFinite(n)) return '';
+    var lb = unitsApi().convert(n, 'g/cm3', 'lb/ft3');
+    return '≈ ' + formatNumber(lb, 1) + ' lb/ft³';
+  }
+
+  /** Presentación: "1.35 g/cm³" o en US "1.35 g/cm³ (≈ 84.3 lb/ft³)". */
+  function formatBulkDensityFromSI(gcm3, digits) {
+    var d = digits == null ? 3 : digits;
+    var n = Number(gcm3);
+    if (!Number.isFinite(n)) return '—';
+    var primary = formatNumber(n, d) + ' g/cm³';
+    var secondary = bulkDensitySecondaryLbFt3(n);
+    return secondary ? primary + ' (' + secondary.replace(/^≈\s*/, '') + ')' : primary;
+  }
+
   function convert(value, fromKind, toKind) {
     var fromTechnical = technical[fromKind];
     if ((fromKind === 'concentration' || fromKind === 'concentration_mass_volume') &&
@@ -187,6 +207,8 @@
     toSI: toSI,
     formatInputFromSI: formatInputFromSI,
     formatResultFromSI: formatResultFromSI,
+    bulkDensitySecondaryLbFt3: bulkDensitySecondaryLbFt3,
+    formatBulkDensityFromSI: formatBulkDensityFromSI,
     convert: convert
   };
 });

@@ -52,10 +52,12 @@
     'Fertilidad del suelo': 'Soil fertility',
     'Profundidad (cm)': 'Depth (cm)',
     'Profundidad': 'Depth',
-    'Suelo explorado por raíces (%)': 'Root-explored soil (%)',
+    'Superficie de suelo considerada (%)': 'Considered soil surface (%)',
+    'Suelo explorado por raíces (%)': 'Considered soil surface (%)',
     'Base técnica de ajuste.': 'Technical adjustment basis.',
     'Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.': 'Calculated values are not a direct recommendation; they are a starting point subject to efficiency and agronomic judgment.',
-    'En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).': 'In kg/ha only the soil explored by roots at the stated depth is considered. Ideal K, Ca and Mg (ppm): from Cations CEC — ideal meq = CEC × target saturation (K 5%, Mg 13%, Ca 70%) and ppm = meq × equivalent factor (K 391, Mg 121.5, Ca 200.4).',
+    'En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).': 'In kg/ha only the indicated soil surface at the stated depth is considered. Ideal K, Ca and Mg (ppm): from Cations CEC — ideal meq = CEC × target saturation (K 5%, Mg 13%, Ca 70%) and ppm = meq × equivalent factor (K 391, Mg 121.5, Ca 200.4).',
+    'En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).': 'In kg/ha only the indicated soil surface at the stated depth is considered. Ideal K, Ca and Mg (ppm): from Cations CEC — ideal meq = CEC × target saturation (K 5%, Mg 13%, Ca 70%) and ppm = meq × equivalent factor (K 391, Mg 121.5, Ca 200.4).',
     'Recargar valores ideales de referencia': 'Reload reference ideal values',
     'Concepto': 'Concept',
     'Nivel (laboratorio)': 'Level (lab)',
@@ -268,18 +270,20 @@
     root = root || (w.document && w.document.getElementById('view')) || w.document;
     if (!root || !root.querySelector) return;
     var depthSym = unitSymbol('depth');
-    var bdSym = unitSymbol('bulk_density');
+    var bdSym = 'g/cm³';
     var doseSym = unitSymbol('dose_mass_area');
     var massSym = unitSymbol('mass');
     var volLabel = isUS() ? t('Agua de riego:', 'Irrigation water:') + ' (' + unitSymbol('volume') + ')'
       : t('m³ agua de riego:', 'Irrigation water m³:');
 
-    var bdLabel = root.querySelector('#soil-physical-bulkDensity') && root.querySelector('#soil-physical-bulkDensity').closest('label');
+    var bdInput = root.querySelector('#soil-physical-bulkDensity');
+    var bdLabel = bdInput && bdInput.closest('label');
     if (bdLabel) {
       var bdSpan = bdLabel.querySelector('.soil-label-blue') || bdLabel;
       if (bdSpan.classList && bdSpan.classList.contains('soil-label-blue')) {
         bdSpan.textContent = t('Densidad aparente', 'Bulk density') + ' ' + bdSym;
       }
+      updateBulkDensityHint(bdInput);
     }
 
     var depthInput = root.querySelector('#soil-fertility-depthCm');
@@ -345,6 +349,48 @@
     }
   }
 
+  function ensureBulkDensityHint(input) {
+    if (!input) return null;
+    var host = input.closest('label') || input.parentElement;
+    if (!host) return null;
+    var hint = host.querySelector('.np-bd-us-hint');
+    if (!hint) {
+      hint = w.document.createElement('div');
+      hint.className = 'np-bd-us-hint';
+      hint.style.cssText = 'display:block;font-size:11px;color:#64748b;margin-top:2px;line-height:1.3;min-height:1.1em;font-weight:400;';
+      host.appendChild(hint);
+    }
+    return hint;
+  }
+
+  function updateBulkDensityHint(input) {
+    if (!input) return;
+    var hint = ensureBulkDensityHint(input);
+    if (!hint) return;
+    var api = agronomic();
+    var display = parseFloat(String(input.value || '').replace(',', '.'));
+    var si = Number.isFinite(display) ? toSI(display, 'bulk_density') : NaN;
+    var text = api && typeof api.bulkDensitySecondaryLbFt3 === 'function'
+      ? api.bulkDensitySecondaryLbFt3(si)
+      : '';
+    hint.textContent = text;
+    hint.hidden = !text;
+  }
+
+  function bindBulkDensityHint(root) {
+    root = root || (w.document && w.document.getElementById('view')) || w.document;
+    if (!root || !root.querySelector) return;
+    var input = root.querySelector('#soil-physical-bulkDensity');
+    if (!input || input.dataset.npBdHintBound === '1') {
+      if (input) updateBulkDensityHint(input);
+      return;
+    }
+    input.addEventListener('input', function () { updateBulkDensityHint(input); });
+    input.addEventListener('change', function () { updateBulkDensityHint(input); });
+    input.dataset.npBdHintBound = '1';
+    updateBulkDensityHint(input);
+  }
+
   return {
     translateString: translateString,
     t: t,
@@ -361,6 +407,16 @@
     volumeInputToSI: volumeInputToSI,
     formatAcidDoseMlPerM3: formatAcidDoseMlPerM3,
     formatAcidTotalLiters: formatAcidTotalLiters,
-    applyUnitLabels: applyUnitLabels
+    applyUnitLabels: applyUnitLabels,
+    bindBulkDensityHint: bindBulkDensityHint,
+    updateBulkDensityHint: updateBulkDensityHint,
+    formatBulkDensityFromSI: function (gcm3, digits) {
+      var api = agronomic();
+      if (api && typeof api.formatBulkDensityFromSI === 'function') {
+        return api.formatBulkDensityFromSI(gcm3, digits);
+      }
+      var n = Number(gcm3);
+      return Number.isFinite(n) ? n.toFixed(digits == null ? 3 : digits) + ' g/cm³' : '—';
+    }
   };
 });

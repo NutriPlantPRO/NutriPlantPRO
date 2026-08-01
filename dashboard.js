@@ -50,8 +50,12 @@ function analysisPresentHtml(html) {
 
 function analysisApplyUnits(root) {
   try {
+    var target = root || document.getElementById('view') || document;
     if (window.NpAnalysisUI && typeof window.NpAnalysisUI.applyUnitLabels === 'function') {
-      window.NpAnalysisUI.applyUnitLabels(root || document.getElementById('view') || document);
+      window.NpAnalysisUI.applyUnitLabels(target);
+    }
+    if (window.NpAnalysisUI && typeof window.NpAnalysisUI.bindBulkDensityHint === 'function') {
+      window.NpAnalysisUI.bindBulkDensityHint(target);
     }
   } catch (e) {}
 }
@@ -1282,7 +1286,7 @@ function sectionTemplate(name) {
           <!-- Botón de Cálculo -->
           <div class="calculation-actions">
             <div class="soil-reach-card">
-              <label for="soil-reach-percent">Suelo explorado por raíces (%)</label>
+              <label for="soil-reach-percent">Superficie de suelo considerada (%)</label>
               <div class="soil-reach-input">
                 <input type="number" id="soil-reach-percent" min="0" max="100" step="1" value="100" title="Puedes escribir cualquier valor y al salir del campo se ajusta entre 10 y 100 %.">
                 <span>%</span>
@@ -3874,7 +3878,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     if (totalSo4Real > 0) html += `<li><strong>${amendmentT('sulfate', 'Sulfato')} (<span class="notranslate" translate="no">SO₄²⁻</span>):</strong> ${amendmentQuantity(totalSo4Real, 'dose_mass_area')}</li>`;
     if (totalSiReal > 0) html += `<li><strong>${amendmentT('silicon', 'Silicio')} (<span class="notranslate" translate="no">Si</span>):</strong> ${amendmentQuantity(totalSiReal, 'dose_mass_area')}</li>`;
     html += '</ul>';
-    html += `<div class="np-amend-reach-note">${amendmentT('reach_note', '% del volumen de suelo explorado por raíces')} (${formatNumber(reachPercent, 0)}%).</div>`;
+    html += `<div class="np-amend-reach-note">${amendmentT('reach_note', '% de superficie de suelo considerada')} (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
     
     html += '<div class="amendment-details">';
@@ -10210,7 +10214,16 @@ function createLegacyReportHTML(data) {
           </div>
           <div class="data-item">
             <div class="data-label">Densidad Aparente:</div>
-            <div class="data-value">${data.initialAnalysis.density || 'No especificado'} g/cm³</div>
+            <div class="data-value">${(function () {
+              const n = Number(data.initialAnalysis.density);
+              if (!Number.isFinite(n) || !n) return 'No especificado';
+              try {
+                if (window.NpAmendmentUI && typeof window.NpAmendmentUI.formatBulkDensityFromSI === 'function') {
+                  return window.NpAmendmentUI.formatBulkDensityFromSI(n, 3);
+                }
+              } catch (e) {}
+              return n + ' g/cm³';
+            })()}</div>
           </div>
           <div class="data-item">
             <div class="data-label">Profundidad Efectiva:</div>
@@ -16779,8 +16792,20 @@ function createAmendmentsSectionHTML(reportLanguage) {
     return reportNum(n, digits);
   };
   const doseUnit = reportUnit('dose_mass_area', 'kg/ha');
-  const densityUnit = reportUnit('bulk_density', 'g/cm3');
   const depthUnit = reportUnit('depth', 'cm');
+  const densityDisplay = (function () {
+    const n = Number(properties.density);
+    if (!Number.isFinite(n)) return '—';
+    try {
+      if (window.NpAmendmentUI && typeof window.NpAmendmentUI.formatBulkDensityFromSI === 'function') {
+        return window.NpAmendmentUI.formatBulkDensityFromSI(n, 3);
+      }
+      if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.formatBulkDensityFromSI === 'function') {
+        return window.NpAgronomicUnits.formatBulkDensityFromSI(n, 3);
+      }
+    } catch (e) {}
+    return reportNum(n, 3) + ' g/cm³';
+  })();
   const adjusted = rawDetails.map(function (item) {
     return {
       id: item.id,
@@ -16826,7 +16851,7 @@ function createAmendmentsSectionHTML(reportLanguage) {
           <strong>${rt('Propiedades del Suelo:', 'Soil Properties:')}</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:6px;font-size:13px;">
             <div><strong>pH:</strong> ${reportNum(properties.ph, 2)}</div>
-            <div><strong>${rt('Densidad', 'Bulk density')}:</strong> ${reportValue(properties.density, 'bulk_density', 3)} ${densityUnit}</div>
+            <div><strong>${rt('Densidad', 'Bulk density')}:</strong> ${densityDisplay}</div>
             <div><strong>${rt('Profundidad', 'Depth')}:</strong> ${reportValue(properties.depth, 'depth', 2)} ${depthUnit}</div>
           </div>
         </div>
@@ -16854,7 +16879,7 @@ function createAmendmentsSectionHTML(reportLanguage) {
               <li><strong>${rt('Sulfato', 'Sulfate')} (SO₄²⁻):</strong> ${reportValue(totals.so4, 'dose_mass_area', 2)} ${doseUnit}</li>
               <li><strong>${rt('Silicio', 'Silicon')} (<span class="notranslate" translate="no">Si</span>):</strong> ${reportValue(totals.si, 'dose_mass_area', 2)} ${doseUnit}</li>
             </ul>
-            <div>${rt('Suelo explorado por raíces', 'Soil explored by roots')}: ${reportNum(reach, 0)} %</div>
+            <div>${rt('Superficie de suelo considerada', 'Considered soil surface')}: ${reportNum(reach, 0)} %</div>
             </div>
             <div class="np-amend-fallback-details">
             <div class="np-amend-fallback-details-title">${rt('🧾 Detalles por Enmienda', '🧾 Amendment Details')}</div>
@@ -21157,12 +21182,12 @@ function createSoilAnalysisTabHTML() {
                 <div class="soil-fertility-params">
                   <div class="soil-fertility-params-row" style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
                     <label title="${dashboardT('analysis.depth_title', 'Profundidad de la capa de suelo considerada en el análisis (ej. 0-20 cm)')}" data-i18n-title="analysis.depth_title">Profundidad (cm) <input type="number" id="soil-fertility-depthCm" min="1" step="1" style="width:70px;" placeholder="${dashboardT('analysis.depth_placeholder', 'ej. 20')}" data-i18n-placeholder="analysis.depth_placeholder" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','depthCm',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
-                    <label title="${dashboardT('analysis.reach_label_title', 'Qué parte de esa capa de suelo es realmente explorada por las raíces del cultivo. 100% = toda la capa; 50% = solo la mitad (ej. riego por goteo).')}" data-i18n-title="analysis.reach_label_title">Suelo explorado por raíces (%) <input type="number" id="soil-fertility-reachPct" min="0" max="100" step="1" style="width:70px;" placeholder="100" title="${dashboardT('analysis.reach_input_title', '100 = toda la capa; 50 = mitad')}" data-i18n-title="analysis.reach_input_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','reachPct',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
+                    <label title="${dashboardT('analysis.reach_label_title', 'Porcentaje de la superficie de suelo considerada en el cálculo (kg/ha). 100% = toda la capa; 50% = solo la mitad (ej. riego por goteo).')}" data-i18n-title="analysis.reach_label_title">Superficie de suelo considerada (%) <input type="number" id="soil-fertility-reachPct" min="0" max="100" step="1" style="width:70px;" placeholder="100" title="${dashboardT('analysis.reach_input_title', '100 = toda la capa; 50 = mitad')}" data-i18n-title="analysis.reach_input_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','reachPct',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
                     <label title="${dashboardT('analysis.cic_params_title', 'CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual.')}" data-i18n-title="analysis.cic_params_title"><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span> <span id="soil-cic-params" class="soil-cic-display">—</span></label>
                   </div>
                   <div class="soil-fertility-params-hint">
                     <strong>Base técnica de ajuste.</strong><br><span class="soil-fertility-disclaimer">Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.</span>
-                    <br>En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
+                    <br>En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
                     <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
                   </div>
                 </div>

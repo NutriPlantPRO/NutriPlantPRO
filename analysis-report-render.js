@@ -81,7 +81,7 @@
         ];
         var SOIL_PHYSICAL_LABELS = { texturalClass: 'Clase textural', saturationPoint: 'Punto saturación %', fieldCapacity: 'Capacidad de campo %', wiltingPoint: 'Punto marchitamiento %', hydraulicConductivity: 'Cond. hidráulica cm/h', bulkDensity: 'Densidad aparente g/cm³' };
         var SOIL_PH_LABELS = { ph: 'pH (1:2 agua)', phBuffer: 'pH Buffer', totalCarbonates: 'Carbonatos totales %', salinity: 'Salinidad CE dS/m' };
-        var SOIL_FERTILITY_LABELS = { pMethod: 'Método P', mo: 'MO %', nNo3: 'N-NO₃ ppm', p: 'P', k: 'K', ca: 'Ca', mg: 'Mg', na: 'Na', s: 'S', fe: 'Fe', mn: 'Mn', b: 'B', zn: 'Zn', cu: 'Cu', moly: 'Mo', al: 'Al', depthCm: 'Profundidad (cm)', reachPct: 'Suelo explorado por raíces (%)' };
+        var SOIL_FERTILITY_LABELS = { pMethod: 'Método P', mo: 'MO %', nNo3: 'N-NO₃ ppm', p: 'P', k: 'K', ca: 'Ca', mg: 'Mg', na: 'Na', s: 'S', fe: 'Fe', mn: 'Mn', b: 'B', zn: 'Zn', cu: 'Cu', moly: 'Mo', al: 'Al', depthCm: 'Profundidad (cm)', reachPct: 'Superficie de suelo considerada (%)' };
         /** Orden de columnas de fertilidad igual que en el panel del usuario: MO %, N-NO3, P, K, Ca, Mg, Na, S, Fe, Mn, B, Zn, Cu, Mo, Al */
         var FERTILITY_COLUMN_ORDER = ['mo', 'nNo3', 'p', 'k', 'ca', 'mg', 'na', 's', 'fe', 'mn', 'b', 'zn', 'cu', 'moly', 'al'];
         var SOIL_DEFAULT_REF = { texturalClass: '—', saturationPoint: '—', fieldCapacity: '—', wiltingPoint: '—', hydraulicConductivity: '—', bulkDensity: '—', ph: '6.0–7.5', phBuffer: '—', totalCarbonates: '—', salinity: '—', pMethod: '—', mo: '3', nNo3: '20', p: '40', k: '—', ca: '—', mg: '—', na: '0', s: '15', fe: '20', mn: '20', b: '1', zn: '3', cu: '1.5', al: '0', moly: '0.1' };
@@ -287,7 +287,7 @@
                 var parts = [];
                 if (labMap.pMethod !== undefined && labMap.pMethod !== null && String(labMap.pMethod).trim() !== '') parts.push('Método P: ' + escapeHtml(String(labMap.pMethod).trim()));
                 if (labMap.depthCm !== undefined && labMap.depthCm !== null && String(labMap.depthCm).trim() !== '') parts.push('Profundidad: ' + escapeHtml(String(labMap.depthCm).trim()) + ' cm');
-                if (labMap.reachPct !== undefined && labMap.reachPct !== null && String(labMap.reachPct).trim() !== '') parts.push('Suelo explorado por raíces: ' + escapeHtml(String(labMap.reachPct).trim()) + ' %');
+                if (labMap.reachPct !== undefined && labMap.reachPct !== null && String(labMap.reachPct).trim() !== '') parts.push('Superficie de suelo considerada: ' + escapeHtml(String(labMap.reachPct).trim()) + ' %');
                 if (parts.length) out += '<p class="admin-analysis-legend" style="margin-bottom:10px;">' + parts.join(' · ') + '</p>';
             }
             if (tableParams.length === 0) return out || null;

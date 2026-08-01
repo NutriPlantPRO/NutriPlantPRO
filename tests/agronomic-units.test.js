@@ -54,10 +54,28 @@ module.exports = [
     run: function () {
       assert.equal(agronomic.unit('dose_mass_area'), 'lb/acre');
       assert.equal(agronomic.unit('yield_mass_area'), 'short ton/acre');
-      assert.equal(agronomic.unit('bulk_density'), 'lb/ft3');
+      assert.equal(agronomic.unit('bulk_density'), 'g/cm3');
       assert.equal(agronomic.formatInputFromSI(1.234567, 'mass'), '2.7218');
       assert.match(agronomic.formatResultFromSI(100, 'dose_mass_area'), /^89\.22 lb\/acre$/);
-      assert.match(agronomic.formatResultFromSI(1, 'bulk_density'), /^62\.428 lb\/ft³$/);
+      assert.match(agronomic.formatResultFromSI(1.35, 'bulk_density'), /^1\.35 g\/cm³$/);
+      assert.match(agronomic.bulkDensitySecondaryLbFt3(1.35), /^≈ 84\.3 lb\/ft³$/);
+      assert.match(agronomic.formatBulkDensityFromSI(1.35), /^1\.35 g\/cm³ \(84\.3 lb\/ft³\)$/);
+    }
+  },
+  {
+    name: 'agronómicas: densidad aparente no convierte a lb/ft³ en métrico',
+    run: function () {
+      var prev = global.NpPrefs.get;
+      global.NpPrefs.get = function () {
+        return { language: 'es', unit_system: 'metric', locale: 'es-MX' };
+      };
+      try {
+        assert.equal(agronomic.unit('bulk_density'), 'g/cm3');
+        assert.equal(agronomic.bulkDensitySecondaryLbFt3(1.35), '');
+        assert.equal(agronomic.formatBulkDensityFromSI(1.35), '1.35 g/cm³');
+      } finally {
+        global.NpPrefs.get = prev;
+      }
     }
   },
   {

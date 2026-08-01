@@ -38,7 +38,7 @@
     delete_custom: 'Delete custom amendment',
     custom_name: 'Amendment name',
     chemical_formula: 'Chemical formula',
-    root_zone: 'Soil explored by roots (%)',
+    root_zone: 'Considered soil surface (%)',
     root_zone_help: 'Enter any value; it will be constrained to 10–100% when you leave the field.',
     calculate: '🧮 Calculate Amendment',
     reset: '🔄 Reset',
@@ -50,7 +50,7 @@
     magnesium: 'Magnesium',
     sulfate: 'Sulfate',
     silicon: 'Silicon',
-    reach_note: '% of soil volume explored by roots',
+    reach_note: '% of considered soil surface',
     details: '📋 Amendment Details:',
     quantity: 'Quantity',
     warning: 'Possible excess contribution due to composition',
@@ -116,7 +116,38 @@
     var digits = kind === 'bulk_density' ? 3 : 2;
     return trimFixed(fromSI(value, kind), digits);
   }
-  function quantityFromSI(value, kind) { return resultFromSI(value, kind) + ' ' + unit(kind); }
+  function quantityFromSI(value, kind) {
+    if (kind === 'bulk_density' && typeof agronomic().formatBulkDensityFromSI === 'function') {
+      return agronomic().formatBulkDensityFromSI(value);
+    }
+    return resultFromSI(value, kind) + ' ' + unit(kind);
+  }
+
+  function ensureBulkDensityHint(input) {
+    if (!input || !input.parentElement) return null;
+    var hint = input.parentElement.querySelector('.np-bd-us-hint');
+    if (!hint) {
+      hint = w.document.createElement('div');
+      hint.className = 'np-bd-us-hint';
+      hint.style.cssText = 'font-size:11px;color:#64748b;margin-top:2px;line-height:1.3;min-height:1.1em;';
+      input.insertAdjacentElement('afterend', hint);
+    }
+    return hint;
+  }
+
+  function updateBulkDensityHint(element) {
+    if (!element) return;
+    var hint = ensureBulkDensityHint(element);
+    if (!hint) return;
+    var api = agronomic();
+    var si = Number(element.dataset.npSiValue);
+    if (!Number.isFinite(si)) si = toSI(Number(element.value) || 0, 'bulk_density');
+    var text = typeof api.bulkDensitySecondaryLbFt3 === 'function'
+      ? api.bulkDensitySecondaryLbFt3(si)
+      : '';
+    hint.textContent = text;
+    hint.hidden = !text;
+  }
 
   function meqToKgHa(meq, equivalentWeight, depthCm, bulkDensityGcm3) {
     var values = [meq, equivalentWeight, depthCm, bulkDensityGcm3].map(Number);
@@ -142,14 +173,17 @@
     element.dataset.npSiValue = String(n);
     element.dataset.npQuantityKind = kind;
     element.value = inputFromSI(n, kind);
+    if (kind === 'bulk_density') updateBulkDensityHint(element);
   }
 
   function readSIInput(element, kind) {
     if (!element) return 0;
     var n = Number(element.value);
     if (!Number.isFinite(n)) return 0;
-    var si = toSI(n, kind || element.dataset.npQuantityKind);
+    var resolvedKind = kind || element.dataset.npQuantityKind;
+    var si = toSI(n, resolvedKind);
     element.dataset.npSiValue = String(si);
+    if (resolvedKind === 'bulk_density') updateBulkDensityHint(element);
     return si;
   }
 
@@ -157,9 +191,13 @@
     if (!element) return;
     if (!element.dataset.npSiValue) setSIInput(element, Number(element.value) || 0, kind);
     element.dataset.npQuantityKind = kind;
-    if (element.dataset.npAmendmentBound === '1') return;
+    if (element.dataset.npAmendmentBound === '1') {
+      if (kind === 'bulk_density') updateBulkDensityHint(element);
+      return;
+    }
     element.addEventListener('input', function () { readSIInput(element, kind); });
     element.dataset.npAmendmentBound = '1';
+    if (kind === 'bulk_density') updateBulkDensityHint(element);
   }
 
   function renderSIInput(element, kind) {
@@ -202,7 +240,10 @@
     if (note) note.innerHTML = t('units_note', '<strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica). Captura los cationes del laboratorio en esas unidades; la CIC total suele venir en el reporte o como suma de cationes.');
     if (headings[2]) setText(headings[2], t('soil_properties', '🌱 Propiedades del Suelo'));
     var properties = container.querySelectorAll('.property-item');
-    if (properties[0]) setText(properties[0].querySelector('label'), t('bulk_density', 'Densidad aparente') + ' (' + unit('bulk_density') + '):');
+    if (properties[0]) {
+      setText(properties[0].querySelector('label'), t('bulk_density', 'Densidad aparente') + ' (g/cm³):');
+      updateBulkDensityHint(properties[0].querySelector('#soil-density'));
+    }
     if (properties[1]) setText(properties[1].querySelector('label'), t('depth', 'Profundidad') + ' (' + unit('depth') + '):');
     if (properties[2]) setText(properties[2].querySelector('label'), t('soil_ph', 'pH del suelo:'));
     var targetHeading = container.querySelector('.target-section h3');
@@ -213,7 +254,7 @@
     var th = container.querySelectorAll('.amendments-table thead th');
     [t('amendment', 'Enmienda'), t('formula', 'Fórmula'), t('molecular_weight', 'Peso Molecular')].forEach(function (text, index) { setText(th[index], text); });
     if (th[10]) setText(th[10], t('actions', 'Acciones'));
-    setText(container.querySelector('.soil-reach-card label'), t('root_zone', 'Suelo explorado por raíces (%)'));
+    setText(container.querySelector('.soil-reach-card label'), t('root_zone', 'Superficie de suelo considerada (%)'));
     var reach = container.querySelector('#soil-reach-percent');
     if (reach) reach.title = t('root_zone_help', 'Puedes escribir cualquier valor y al salir del campo se ajusta entre 10 y 100 %.');
     setText(container.querySelector('#calculate-amendment'), t('calculate', '🧮 Calcular Enmienda'));
@@ -244,6 +285,16 @@
     inputFromSI: inputFromSI,
     resultFromSI: resultFromSI,
     quantityFromSI: quantityFromSI,
+    bulkDensitySecondaryLbFt3: function (gcm3) {
+      return typeof agronomic().bulkDensitySecondaryLbFt3 === 'function'
+        ? agronomic().bulkDensitySecondaryLbFt3(gcm3)
+        : '';
+    },
+    formatBulkDensityFromSI: function (gcm3, digits) {
+      return typeof agronomic().formatBulkDensityFromSI === 'function'
+        ? agronomic().formatBulkDensityFromSI(gcm3, digits)
+        : resultFromSI(gcm3, 'bulk_density') + ' g/cm³';
+    },
     meqToKgHa: meqToKgHa,
     kgHaToMeq: kgHaToMeq,
     materialName: materialName,

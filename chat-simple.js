@@ -1422,7 +1422,7 @@ INSTRUCCIONES:
 - Resultados de los programas que el chat SÍ ve: En Nutrición Granular recibes la lista de aplicaciones guardadas (cada una con título, dosis kg/ha y materiales); puedes referirte a ellas como "las aplicaciones que tienes", "tu programa granular", etc. En Fertirriego recibes el número de semanas o meses, la unidad de tiempo (semana/mes), el modo (óxido o elemental), la lista de fertilizantes/materias y el aporte total del programa por nutriente (kg/ha); puedes referirte a "tu programa de fertirriego", "los aportes de tu programa", etc. Si el usuario agrega o cambia aplicaciones (granular) o semanas/dosis (fertirriego), tras guardar el proyecto esos datos pasan al contexto en la siguiente consulta.
 - Lógica de la plataforma en Fertirriego, Granular e Hidroponía (resumen): (1) Granular y Fertirriego permiten modo óxido o elemental; los valores en contexto están en el modo guardado. (2) Granular: Requerimiento define la meta; Programa son aplicaciones (dosis kg/ha y materiales) que cubren la meta. (3) Fertirriego: Requerimiento define la meta; Programa por semanas o meses genera aportes; Gráficas comparan aporte vs requerimiento. (4) Hidroponía: las dos subsecciones están relacionadas: Solución por etapa define el objetivo (ppm/meq por etapa); Cálculo de fertilizantes usa ese objetivo, resta el aporte del agua (análisis de agua), obtiene el requerimiento total y calcula fertilizantes y dosis para cubrirlo. Interpreta números y etiquetas según el bloque de datos.
 - Si existe una línea "Resultado en pantalla (prioridad alta...)" en ENMIENDAS, úsala como fuente principal para cantidades y aportes; cita esos números exactos en tu respuesta.
-- Si existen los bloques "🧪 Enmiendas Disponibles", "Meq a ajustar", "% Suelo explorado por raíces" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
+- Si existen los bloques "🧪 Enmiendas Disponibles", "Meq a ajustar", "% Superficie de suelo considerada" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
 - Cómo saber si el usuario habla de datos de Enmienda o de la pestaña Análisis de Suelo: (1) "ANÁLISIS DE SUELO INICIAL" = único conjunto de valores (**meq/100g = cmol_c/kg**, CIC, etc.) usados en la pestaña Enmienda para el cálculo de enmiendas. (2) "ANÁLISIS DE SUELO (reportes)" = lista de reportes en la pestaña Análisis > Análisis de Suelo (cada uno con título, fecha, fertilidad, cationes, kg/ha). Si el usuario está en Enmienda o dice "los datos de enmienda", "lo que tengo en enmienda", "el análisis inicial" → usar el bloque INICIAL. Si está en la pestaña Análisis (subpestaña Análisis de Suelo) o dice "los reportes de análisis", "el análisis de suelo que cargué" (en contexto de reportes) → usar el bloque (reportes). Si no queda claro, responde usando el bloque que coincida con la pestaña donde está (snapshot "ANÁLISIS (pestaña actual)" indica si está en Análisis de Suelo = reportes) o aclara: "¿te refieres a los valores que usas en Enmienda (Análisis Inicial) o a uno de los reportes de la pestaña Análisis de Suelo?".
 - Tu valor diferenciador es usar SIEMPRE los datos que ves del proyecto (análisis, programa, cultivo, CIC, solución nutritiva, etc.) para dar recomendaciones específicas a este agronomista, no genéricas. Interpreta sus números con la lógica NutriPlant PRO, sugiere acciones concretas y saca de apuros con pasos claros (qué cambiar, en qué rango, por qué).
 - Usa el bloque INTERCONEXIONES ENTRE PESTAÑAS cuando convenga: si preguntan por qué algo no funciona (ej. VPD sin clima), de dónde sale un dato (ej. enmienda que usa CIC de suelo) o qué pestaña completar primero; indica la pestaña origen o la que debe configurarse.
@@ -2203,7 +2203,7 @@ ESTILO DE RESPUESTA:
       }
     }
 
-    // 2) % Suelo explorado por raíces (input)
+    // 2) % Superficie de suelo considerada (input)
     const soilReachEl = document.getElementById('soil-reach-percent');
     if (soilReachEl) {
       const v = String(soilReachEl.value || '').trim();
@@ -2955,7 +2955,7 @@ ESTILO DE RESPUESTA:
         if (liveBlocks.targetMeq) context += `Meq a ajustar (valores usados en el cálculo; NutriPlant sugiere pero el usuario puede modificarlos): ${liveBlocks.targetMeq}\n`;
         context += '🧪 Enmiendas Disponibles:\n';
         context += liveBlocks.availableTable ? `${liveBlocks.availableTable}\n` : 'No disponible en pantalla.\n';
-        context += '% Suelo explorado por raíces:\n';
+        context += '% Superficie de suelo considerada:\n';
         context += liveBlocks.soilReachPercent ? `${liveBlocks.soilReachPercent}%\n` : 'No disponible en pantalla.\n';
         context += '📊 Resultados del Cálculo de Enmiendas:\n';
         context += liveBlocks.calcResultsText ? `${liveBlocks.calcResultsText}\n` : 'No hay resultados visibles aún.\n';

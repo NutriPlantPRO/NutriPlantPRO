@@ -27,8 +27,9 @@ module.exports = [
         assert.match(amendment.inputFromSI(sample[1], sample[0]), /^-?\d+(?:\.\d{1,4})?$/);
       });
       assert.equal(amendment.unit('depth'), 'in');
-      assert.equal(amendment.unit('bulk_density'), 'lb/ft3');
+      assert.equal(amendment.unit('bulk_density'), 'g/cm3');
       assert.equal(amendment.unit('dose_mass_area'), 'lb/acre');
+      assert.match(amendment.formatBulkDensityFromSI(1.1), /g\/cm³.*lb\/ft³/);
     }
   },
   {

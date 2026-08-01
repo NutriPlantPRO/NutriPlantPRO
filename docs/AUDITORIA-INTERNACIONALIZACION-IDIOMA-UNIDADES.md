@@ -163,7 +163,7 @@ La regla de “dos usuarios viendo el mismo proyecto con unidades distintas” c
 | Volumen superficial | m³/ha | US gal/acre, acre-inch | Directa |
 | Concentración de producto | kg/m³, g/L | lb/1,000 US gal | Directa |
 | Rendimiento | t/ha | short ton/acre o bushel/acre | Directa o contextual |
-| Densidad de suelo | g/cm³ | lb/ft³ | Directa |
+| Densidad de suelo | g/cm³ | g/cm³ (equivalencia opcional lb/ft³) | Primaria fija; secundaria |
 | Presión | bar, kPa | psi | Directa |
 | Caudal absoluto | L/s, L/min, m³/h | gpm, US gal/h | Directa |
 | Conductividad | dS/m, mS/cm | normalmente las mismas | No convertir o cambiar escala |
