@@ -9938,8 +9938,8 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: min(460px, calc(100vw - 16px));
-      max-height: min(72vh, 520px);
+      width: min(560px, calc(100vw - 24px));
+      max-height: min(86vh, 780px);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -9955,23 +9955,24 @@
       display: none;
     }
     .np-cal-overlay-summary-pop-head {
-      padding: 10px 12px 8px;
+      padding: 12px 14px 10px;
       border-bottom: 1px solid rgba(148, 163, 184, 0.28);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       color: #0f172a;
       flex: 0 0 auto;
       flex-shrink: 0;
+      line-height: 1.35;
     }
     .np-cal-overlay-summary-pop-scroll {
       flex: 1 1 0;
-      min-height: 0;
+      min-height: 180px;
       overflow-x: hidden;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
       touch-action: pan-y;
-      padding: 6px 6px 10px;
+      padding: 8px 8px 12px;
     }
     .np-cal-overlay-summary-pop-list {
       display: flex;
@@ -21301,6 +21302,7 @@
     pop.style.left = '';
     pop.style.top = '';
     pop.style.width = '';
+    pop.style.height = '';
     pop.style.maxHeight = '';
     pop.style.transform = '';
     pop._calPopEntries = null;
@@ -21389,23 +21391,37 @@
   function positionCalOverlaySummaryPop(anchorBtn, pop) {
     if (!anchorBtn || !pop) return;
     var chipRect = anchorBtn.getBoundingClientRect();
-    var margin = 10;
-    var maxPopH = Math.min(window.innerHeight * 0.72, 520);
-    var popWidth = Math.min(Math.min(460, window.innerWidth - 16), Math.max(280, chipRect.width + 48));
+    var margin = 12;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var maxPopH = Math.min(vh * 0.86, 780);
+    var popWidth = Math.min(560, vw - 24);
     var left = chipRect.left + chipRect.width / 2 - popWidth / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - popWidth - margin));
-    var spaceBelow = window.innerHeight - chipRect.bottom - margin;
+    left = Math.max(margin, Math.min(left, vw - popWidth - margin));
+    var spaceBelow = vh - chipRect.bottom - margin;
     var spaceAbove = chipRect.top - margin;
-    var flip = maxPopH > spaceBelow && spaceAbove > spaceBelow;
-    var available = Math.max(168, flip ? spaceAbove : spaceBelow);
-    var capH = Math.min(maxPopH, available);
-    var top = flip ? chipRect.top - margin : chipRect.bottom + margin;
+    var preferH = Math.min(maxPopH, Math.max(Math.round(vh * 0.58), 340));
+    var flip = spaceBelow < preferH && spaceAbove > spaceBelow;
+    var sideSpace = flip ? spaceAbove : spaceBelow;
+    var capH;
+    var top;
+    var transform = '';
+    if (sideSpace >= Math.min(preferH, 300)) {
+      capH = Math.min(maxPopH, sideSpace);
+      top = flip ? chipRect.top - margin : chipRect.bottom + margin;
+      transform = flip ? 'translateY(-100%)' : '';
+    } else {
+      /* Poco espacio junto al chip: panel grande centrado para poder deslizar a gusto. */
+      capH = Math.min(maxPopH, vh - 2 * margin);
+      top = Math.round((vh - capH) / 2);
+    }
     pop.style.position = 'fixed';
     pop.style.left = Math.round(left) + 'px';
     pop.style.top = Math.round(top) + 'px';
     pop.style.width = Math.round(popWidth) + 'px';
     pop.style.maxHeight = Math.round(capH) + 'px';
-    pop.style.transform = flip ? 'translateY(-100%)' : '';
+    pop.style.height = Math.round(capH) + 'px';
+    pop.style.transform = transform;
   }
 
   function openCalOverlaySummaryPop(anchorBtn, title, entries, opts) {
