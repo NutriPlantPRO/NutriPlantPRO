@@ -1062,6 +1062,8 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   border-top: 1px solid #e5e7eb;
   color: #6b7280;
   font-size: 11px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 .agro-pdf-export-host .agro-print-footer-row {
   display: flex;
@@ -1098,6 +1100,11 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   width: 72px;
   height: 72px;
   object-fit: contain;
+}
+.agro-pdf-export-host .agro-print-footer-qr span {
+  color: #0369a1;
+  font-weight: 700;
+  font-size: 11px;
 }
 .agro-pdf-export-host .agro-title-block {
   display: block;

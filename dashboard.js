@@ -6297,38 +6297,38 @@ function np_renderProjects(){
 
   for (const p of projects) {
     const card = document.createElement("div");
-    card.className = `card ${p.id === currentId ? 'selected' : ''}`;
+    card.className = `card np-project-card ${p.id === currentId ? 'selected' : ''}`;
     card.setAttribute('data-id', p.id);
     const encodedId = encodeURIComponent(String(p.id || ''));
     
     // Construir información del proyecto de forma más clara
     let projectDetails = '';
     if (p.cultivo) {
-      projectDetails += `<div class="text-sm" style="opacity:.8; margin-bottom:4px;">
-        <span style="font-weight:500;">🌾 ${dashboardT('dashboard.crop', 'Cultivo')}:</span> <span>${escapeHtml(p.cultivo)}</span>
+      projectDetails += `<div class="np-project-card__meta">
+        <span>🌾 ${dashboardT('dashboard.crop', 'Cultivo')}:</span> <span>${escapeHtml(p.cultivo)}</span>
       </div>`;
     }
     if (p.variedad) {
-      projectDetails += `<div class="text-sm" style="opacity:.8; margin-bottom:4px;">
-        <span style="font-weight:500;">🧬 ${dashboardT('dashboard.variety', 'Variedad')}:</span> <span>${escapeHtml(p.variedad)}</span>
+      projectDetails += `<div class="np-project-card__meta">
+        <span>🧬 ${dashboardT('dashboard.variety', 'Variedad')}:</span> <span>${escapeHtml(p.variedad)}</span>
       </div>`;
     }
     if (p.campoOsector) {
-      projectDetails += `<div class="text-sm" style="opacity:.8; margin-bottom:4px;">
-        <span style="font-weight:500;">📍 ${dashboardT('dashboard.field_sector', 'Campo o Sector')}:</span> <span>${escapeHtml(p.campoOsector)}</span>
+      projectDetails += `<div class="np-project-card__meta">
+        <span>📍 ${dashboardT('dashboard.field_sector', 'Campo o Sector')}:</span> <span>${escapeHtml(p.campoOsector)}</span>
       </div>`;
     }
     if (!p.cultivo && !p.variedad && !p.campoOsector) {
-      projectDetails = '<div class="text-sm" style="opacity:.7">—</div>';
+      projectDetails = '<div class="np-project-card__meta np-project-card__meta--empty">—</div>';
     }
     
     card.innerHTML = `
       <div class="project-info">
-        <div class="font-semibold" style="margin-bottom:8px;">${escapeHtml(p.title)}</div>
+        <div class="font-semibold np-project-card__title">${escapeHtml(p.title)}</div>
         ${projectDetails}
-        <div class="text-xs" style="opacity:.6; margin-top:8px;">${dashboardT('dashboard.updated', 'Actualizado')}: ${new Date(p.updatedAt).toLocaleString()}</div>
+        <div class="np-project-card__updated">${dashboardT('dashboard.updated', 'Actualizado')}: ${new Date(p.updatedAt).toLocaleString()}</div>
       </div>
-      <div class="actions" style="margin-top:8px; display:flex; gap:8px;">
+      <div class="actions np-project-card__actions">
         <button class="btn" data-act="open" data-id="${encodedId}" title="${dashboardT('dashboard.open_project', 'Abrir proyecto')}">${dashboardT('common.open', 'Abrir')}</button>
         <button class="btn" data-act="edit" data-id="${encodedId}">${dashboardT('common.edit', 'Editar')}</button>
         <button class="btn" data-act="dup" data-id="${encodedId}">${dashboardT('common.duplicate', 'Duplicar')}</button>
@@ -8907,6 +8907,76 @@ function getRadarRequestIdForReport() {
   return '';
 }
 
+/**
+ * Convierte URL firmada de Radar a data URL compacta para PDF.
+ * RGB a veces falla a medias en impresión si el PNG es muy grande: se redimensiona a JPEG.
+ */
+async function reportImageUrlToDataUrl(url, opts) {
+  if (!url || typeof url !== 'string') return null;
+  opts = opts || {};
+  const maxEdge = Math.max(80, Number(opts.maxEdge) || 640);
+  const quality = opts.quality != null ? Number(opts.quality) : 0.84;
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onloadend = function () { resolve(reader.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+  function scaleToDataUrl(sourceW, sourceH, draw) {
+    const scale = Math.min(1, maxEdge / Math.max(sourceW, sourceH, 1));
+    const dw = Math.max(1, Math.round(sourceW * scale));
+    const dh = Math.max(1, Math.round(sourceH * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = dw;
+    canvas.height = dh;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, dw, dh);
+    draw(ctx, dw, dh);
+    try {
+      return canvas.toDataURL('image/jpeg', quality);
+    } catch (e) {
+      return null;
+    }
+  }
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const blob = await r.blob();
+    if (typeof createImageBitmap === 'function') {
+      try {
+        const bmp = await createImageBitmap(blob);
+        const dataUrl = scaleToDataUrl(bmp.width, bmp.height, function (ctx, dw, dh) {
+          ctx.drawImage(bmp, 0, 0, dw, dh);
+        });
+        try { bmp.close(); } catch (eClose) { /* ignore */ }
+        if (dataUrl) return dataUrl;
+      } catch (eBmp) { /* fallback abajo */ }
+    }
+    const objUrl = URL.createObjectURL(blob);
+    try {
+      const img = await new Promise(function (resolve, reject) {
+        const el = new Image();
+        el.onload = function () { resolve(el); };
+        el.onerror = reject;
+        el.src = objUrl;
+      });
+      const dataUrl = scaleToDataUrl(img.naturalWidth || img.width, img.naturalHeight || img.height, function (ctx, dw, dh) {
+        ctx.drawImage(img, 0, 0, dw, dh);
+      });
+      if (dataUrl) return dataUrl;
+    } finally {
+      try { URL.revokeObjectURL(objUrl); } catch (eRev) { /* ignore */ }
+    }
+    return await blobToDataUrl(blob);
+  } catch (e) {
+    return null;
+  }
+}
+
 /** Descarga NDVI/NDMI firmados y los pasa a data URL para incrustar en PDF (evita fallos de impresión por dominios externos). */
 async function fetchRadarImagesDataUrlsForReport() {
   const out = { ndviDataUrl: null, ndmiDataUrl: null, ndreDataUrl: null, rgbDataUrl: null, generatedAt: null, error: null };
@@ -8966,28 +9036,12 @@ async function fetchRadarImagesDataUrlsForReport() {
     out.sentinelPeriod =
       meta.date_start && meta.date_end ? meta.date_start + ' – ' + meta.date_end : '';
 
-    async function urlToDataUrl(url) {
-      if (!url || typeof url !== 'string') return null;
-      try {
-        const r = await fetch(url);
-        if (!r.ok) return null;
-        const blob = await r.blob();
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        return null;
-      }
-    }
-
+    const pilotOpts = { maxEdge: 720, quality: 0.86 };
     const [ndvi, ndmi, ndre, rgb] = await Promise.all([
-      urlToDataUrl(ndviUrl),
-      urlToDataUrl(ndmiUrl),
-      urlToDataUrl(ndreUrl),
-      urlToDataUrl(rgbUrl)
+      reportImageUrlToDataUrl(ndviUrl, pilotOpts),
+      reportImageUrlToDataUrl(ndmiUrl, pilotOpts),
+      reportImageUrlToDataUrl(ndreUrl, pilotOpts),
+      reportImageUrlToDataUrl(rgbUrl, pilotOpts)
     ]);
     out.ndviDataUrl = ndvi;
     out.ndmiDataUrl = ndmi;
@@ -9019,23 +9073,6 @@ async function fetchLecturaSatelitalForReport() {
     out.periods = state.periods != null ? state.periods : state.rows.length;
     out.endDate = state.endDate || null;
     out.franja_pct = state.franja_pct != null ? state.franja_pct : null;
-
-    async function urlToDataUrl(url) {
-      if (!url || typeof url !== 'string') return null;
-      try {
-        const r = await fetch(url);
-        if (!r.ok) return null;
-        const blob = await r.blob();
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        return null;
-      }
-    }
 
     const baseRows = state.rows.slice().sort(function (a, b) {
       return (Number(a.index) || 0) - (Number(b.index) || 0);
@@ -9093,6 +9130,7 @@ async function fetchLecturaSatelitalForReport() {
       }
     }
 
+    const thumbOpts = { maxEdge: 280, quality: 0.82 };
     const enriched = [];
     for (let i = 0; i < baseRows.length; i++) {
       const r = baseRows[i];
@@ -9127,10 +9165,10 @@ async function fetchLecturaSatelitalForReport() {
       const rgbUrl = (it && it.rgb_signed_url) || r.rgb_signed_url || null;
       if (ndviUrl || ndmiUrl || ndreUrl || rgbUrl) {
         const [ndvi, ndmi, ndre, rgb] = await Promise.all([
-          urlToDataUrl(ndviUrl),
-          urlToDataUrl(ndmiUrl),
-          urlToDataUrl(ndreUrl),
-          urlToDataUrl(rgbUrl)
+          reportImageUrlToDataUrl(ndviUrl, thumbOpts),
+          reportImageUrlToDataUrl(ndmiUrl, thumbOpts),
+          reportImageUrlToDataUrl(ndreUrl, thumbOpts),
+          reportImageUrlToDataUrl(rgbUrl, thumbOpts)
         ]);
         row.ndviDataUrl = ndvi;
         row.ndmiDataUrl = ndmi;
@@ -9858,6 +9896,7 @@ function getFertirriegoProgramForReport() {
 /**
  * Tras document.write en una ventana nueva, onload a veces no dispara; imprimimos con retardo
  * y respaldo por load para evitar pestaña en blanco aparente o diálogo de impresión que no abre.
+ * Espera a que las miniaturas Radar/RGB decodifiquen; si no, a veces salen cortadas/blancas.
  */
 function scheduleReportPrintWhenReady(printWindow) {
   if (!printWindow) return;
@@ -9872,18 +9911,47 @@ function scheduleReportPrintWhenReady(printWindow) {
       console.warn('scheduleReportPrintWhenReady print:', e);
     }
   }
+  function waitForImages() {
+    try {
+      var doc = printWindow.document;
+      if (!doc) return Promise.resolve();
+      var imgs = Array.prototype.slice.call(doc.images || []);
+      if (!imgs.length) return Promise.resolve();
+      return Promise.all(imgs.map(function (img) {
+        if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+        return new Promise(function (resolve) {
+          var done = function () { resolve(); };
+          img.addEventListener('load', done, { once: true });
+          img.addEventListener('error', done, { once: true });
+          if (typeof img.decode === 'function') {
+            img.decode().then(done).catch(done);
+          }
+          setTimeout(done, 10000);
+        });
+      }));
+    } catch (e) {
+      return Promise.resolve();
+    }
+  }
+  function printAfterImages() {
+    waitForImages().then(function () {
+      setTimeout(doPrint, 250);
+    }).catch(function () {
+      setTimeout(doPrint, 400);
+    });
+  }
   try {
     if (printWindow.document && printWindow.document.readyState === 'complete') {
-      setTimeout(doPrint, 400);
+      printAfterImages();
       return;
     }
     printWindow.addEventListener('load', function onReportLoad() {
       printWindow.removeEventListener('load', onReportLoad);
-      setTimeout(doPrint, 400);
+      printAfterImages();
     });
-    setTimeout(doPrint, 1200);
+    setTimeout(doPrint, 14000);
   } catch (e) {
-    setTimeout(doPrint, 500);
+    setTimeout(doPrint, 800);
   }
 }
 
@@ -15197,6 +15265,36 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           color: #64748b;
           font-size: 11px;
         }
+        /* Marco fijo: evita RGB/Radar “cortados” o solo una franja al imprimir */
+        .report-radar-frame {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          background: #f8fafc;
+          box-sizing: border-box;
+        }
+        .report-radar-frame--thumb {
+          height: 110px;
+          width: 100%;
+        }
+        .report-radar-frame--lg {
+          height: 250px;
+          width: 100%;
+        }
+        .report-radar-frame img {
+          display: block;
+          max-width: 100%;
+          max-height: 100%;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+          object-position: center;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         .report-table-legend {
           margin: 0 0 12px 0 !important;
           padding: 10px 14px;
@@ -15909,6 +16007,15 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
             break-inside: avoid;
             page-break-inside: avoid;
           }
+          .report-radar-frame {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .report-radar-frame img {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            object-fit: contain !important;
+          }
           .footer {
             break-inside: avoid;
             page-break-inside: avoid;
@@ -16453,14 +16560,14 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
       /* ignore */
     }
   }
-  const imgStyle =
-    'width:100%;max-height:270px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;';
   const cell = function (cap, dataUrl, alt, withScale, color) {
     if (!dataUrl) return '';
     return (
       `<div class="report-keep-together report-keep-tight" style="min-width:0;">` +
       `<div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px;">${cap}</div>` +
-      `<img src="${dataUrl}" alt="${alt}" style="${imgStyle}" />` +
+      `<div class="report-radar-frame report-radar-frame--lg">` +
+      `<img src="${dataUrl}" alt="${alt}" />` +
+      `</div>` +
       (withScale ? scaleHtml : '') +
       `</div>`
     );
@@ -16657,11 +16764,13 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       }
       return (
         '<div style="min-width:0;">' +
+        '<div class="report-radar-frame report-radar-frame--thumb">' +
         '<img src="' +
         dataUrl +
         '" alt="' +
         label +
-        '" style="width:100%;max-height:120px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />' +
+        '" />' +
+        '</div>' +
         '<div style="text-align:center;font-size:9px;font-weight:700;color:' +
         color +
         ';margin-top:2px;line-height:1.2;">' +
@@ -19148,20 +19257,20 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
         <div class="report-block-title">${rt('Resultado', 'Result')} ${massAreaUnit} ${rt('por etapa', 'by stage')}</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
-            <thead><tr><th>Etapa</th>${kgHead}</tr></thead>
+            <thead><tr><th>${rt('Etapa', 'Stage')}</th>${kgHead}</tr></thead>
             <tbody>${kgRows}</tbody>
           </table>
         </div>
       </div>
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
-        <div class="report-block-title">Gráficas ${massAreaUnit} por etapa</div>
+        <div class="report-block-title">${rt('Gráficas ' + massAreaUnit + ' por etapa', 'Charts ' + massAreaUnit + ' by stage')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
           <div>
-            <div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes (N, P, K, Ca, Mg, S)</div>
+            <div class="report-subtitle" style="margin-bottom:6px;">${rt('Macronutrientes (N, P, K, Ca, Mg, S)', 'Macronutrients (N, P, K, Ca, Mg, S)')}</div>
             ${macroImg}
           </div>
           <div>
-            <div class="report-subtitle" style="margin-bottom:6px;">Micronutrientes (Fe, Mn, B, Zn, Cu, Mo)</div>
+            <div class="report-subtitle" style="margin-bottom:6px;">${rt('Micronutrientes (Fe, Mn, B, Zn, Cu, Mo)', 'Micronutrients (Fe, Mn, B, Zn, Cu, Mo)')}</div>
             ${microImg}
           </div>
         </div>

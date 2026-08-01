@@ -356,7 +356,7 @@
       '.agro-table-scroll-hint', '.agro-kc-wa', '.agro-kc-bar-note',
       '.agro-kc-view-box', '.agro-pdf-bar', '.agro-input-action .agro-btn',
       '#agro-map', '.agro-mobile-days', '.agro-kc-bar',
-      '.agro-print-footer', '.agro-print-mark'
+      '.agro-print-mark'
     ].join(',');
     clone.querySelectorAll(hideSel).forEach((el) => el.remove());
 
@@ -373,16 +373,19 @@
         reportCards[1].classList.add('agro-pdf-chart-section');
         reportCards[1].style.breakBefore = 'always';
         reportCards[1].style.pageBreakBefore = 'always';
-
-        const sourceQr = document.querySelector('#agro-print-footer .agro-print-footer-qr');
-        if (sourceQr) {
-          const finalQr = document.createElement('div');
-          finalQr.className = 'agro-pdf-final-qr';
-          finalQr.innerHTML = `<strong>NutriPlant PRO</strong><span>${esc(t('pdf_scan'))}</span>`;
-          finalQr.appendChild(sourceQr.cloneNode(true));
-          reportCards[1].appendChild(finalQr);
-        }
       }
+    }
+
+    // Mismo pie que impresión en laptop (legal + Generado por + hoja + QR), no el bloque “Escanea…”.
+    const sourceFooter = document.querySelector('#agro-print-footer');
+    const cloneFooter = clone.querySelector('#agro-print-footer');
+    if (sourceFooter) {
+      const footerNode = sourceFooter.cloneNode(true);
+      footerNode.id = 'agro-print-footer-pdf';
+      if (cloneFooter) cloneFooter.replaceWith(footerNode);
+      else clone.appendChild(footerNode);
+    } else if (cloneFooter) {
+      cloneFooter.style.display = 'block';
     }
 
     const tw = clone.querySelector('.agro-table-wrap');

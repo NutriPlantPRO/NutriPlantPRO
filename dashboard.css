@@ -2161,19 +2161,130 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 
 #np-projects-list {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(3, 1fr); /* FIJO: 3 columnas */
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-/* ===== (ajuste #3) Estabilizador de altura en tarjetas de proyectos ===== */
-#np-projects-list .card .project-info { min-height: 64px; }
-#np-projects-list .card .actions {
-  min-height: 40px;
+/* Tarjetas de proyecto: compactas, tipo card simple (también en celular) */
+#np-projects-list .np-project-card {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  padding: 11px 12px 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, opacity 0.15s ease;
 }
-#np-projects-list .card .btn { white-space: nowrap; }
+
+.content.inicio-page #np-projects-list .np-project-card:hover {
+  transform: none;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+}
+
+#np-projects-list .np-project-card .project-info {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+#np-projects-list .np-project-card__title {
+  font-size: 14px;
+  line-height: 1.25;
+  margin-bottom: 5px;
+  color: #0f172a;
+}
+
+#np-projects-list .np-project-card__meta {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #475569;
+  margin-bottom: 2px;
+}
+
+#np-projects-list .np-project-card__meta span:first-child {
+  font-weight: 600;
+  color: #334155;
+}
+
+#np-projects-list .np-project-card__meta--empty {
+  opacity: 0.65;
+}
+
+#np-projects-list .np-project-card__updated {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 6px;
+  line-height: 1.3;
+}
+
+#np-projects-list .np-project-card__actions,
+#np-projects-list .np-project-card .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 8px;
+  min-height: 0;
+  flex: 0 0 auto;
+  white-space: normal;
+  flex-wrap: nowrap;
+}
+
+#np-projects-list .np-project-card .btn {
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  padding: 5px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+#np-projects-list .np-project-card .btn:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  transform: none;
+  box-shadow: none;
+}
+
+#np-projects-list .np-project-card .btn[data-act="del"] {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+#np-projects-list .np-project-card .btn[data-act="del"]:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+  box-shadow: none;
+}
+
+/* Seleccionada: resalta un poco vs las demás */
+#np-projects-list .np-project-card.selected {
+  border: 1.5px solid #10b981 !important;
+  background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 58%) !important;
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.12),
+    0 4px 14px rgba(16, 185, 129, 0.12) !important;
+}
+
+#np-projects-list .np-project-card.selected .np-project-card__title,
+#np-projects-list .np-project-card.selected .font-semibold {
+  color: #047857 !important;
+}
+
+#np-projects-list:has(.np-project-card.selected) .np-project-card:not(.selected) {
+  opacity: 0.9;
+}
 
 /* ===== BOTONES DE LAS TARJETAS ===== */
 .view .card .row {
@@ -2189,27 +2300,47 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   gap: 10px;
   flex: 0 0 auto;
   white-space: nowrap;
-  flex-wrap: nowrap; /* FIJO: No wrap */
+  flex-wrap: nowrap;
 }
 
-/* ===== INICIO RESPONSIVE (tablet/cel): evitar tarjetas comprimidas ===== */
+/* Inicio responsive: en cel/tablet siguen viéndose como tarjetas (grid), no lista */
 @media (max-width: 1200px) {
-  .grid-3,
+  .grid-3:not(#np-projects-list) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   #np-projects-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
-  .grid-3,
-  #np-projects-list {
+  .grid-3:not(#np-projects-list) {
     grid-template-columns: 1fr;
   }
-
-  .view .card .actions,
-  #np-projects-list .card .actions {
+  #np-projects-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .view .card .actions:not(.np-project-card__actions) {
     flex-wrap: wrap;
     white-space: normal;
+  }
+}
+
+@media (max-width: 420px) {
+  #np-projects-list {
+    gap: 8px;
+  }
+  #np-projects-list .np-project-card {
+    padding: 9px 9px 8px;
+    border-radius: 10px;
+  }
+  #np-projects-list .np-project-card__title {
+    font-size: 13px;
+  }
+  #np-projects-list .np-project-card .btn {
+    font-size: 10px;
+    padding: 4px 4px;
   }
 }
 
