@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=27" />
+  <link rel="stylesheet" href="auth.css?v=28" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -2615,7 +2615,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260801aa" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
+        <iframe id="agroclimateForecastFrame" src="pronosticoclimatico/?embed=login&v=20260801ad" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -4381,9 +4381,9 @@
       function facebookEmbedWidth(container) {
         var width = Math.floor((container && container.clientWidth) || 0);
         if (!width) width = Math.floor(root.clientWidth - 40);
-        // Facebook Page Plugin: bajo ~300px el encabezado (nombre/seguidores) se comprime y se corta.
-        if (!width || width < 300) width = 340;
-        return Math.max(300, Math.min(500, width));
+        // Ancho holgado: con el header grande, bajo ~380px Facebook comprime y corta “seguidores”.
+        if (!width || width < 380) width = 420;
+        return Math.max(380, Math.min(500, width));
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4393,15 +4393,14 @@
         container.dataset.fbWidth = String(width);
         container.innerHTML = '';
         var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
-        // hide_cover=true: portadas angostas/recortadas ya no tapan nombre + seguidores.
-        // small_header=false: deja visible el encabezado de la página.
-        // Un poco más de alto evita que “X seguidores” quede clipado por la barra Seguir/Compartir.
-        var fbHeight = 580;
+        // hide_cover=true: sin portada que tape el encabezado.
+        // small_header=true: el plugin deja nombre + seguidores sin que la barra Seguir/Compartir los recorte.
+        var fbHeight = 600;
         container.appendChild(createSocialIframe(
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
             '&height=' + fbHeight +
-            '&small_header=false&adapt_container_width=true&hide_cover=true&show_facepile=false',
+            '&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false',
           'NutriPlant PRO en Facebook',
           {
             scrolling: 'no',

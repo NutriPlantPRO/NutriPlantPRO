@@ -10696,7 +10696,7 @@ window.downloadReport = function(reportId) {
           console.warn('⚠️ Falló reporte en inglés. Fallback a español:', e && e.message ? e.message : e);
           effectiveLang = 'es';
           reportHTML = createReportHTML(printableSections, chartImages, 'es', requestedUnitSystem);
-          showMessage('⚠️ No se pudo generar en inglés. Se abrió en español.', 'warning');
+          showMessage(dashboardT('dashboard.reports_en_fallback', '⚠️ No se pudo generar en inglés. Se generó en español.'), 'warning');
         } else {
           throw e;
         }
@@ -10704,7 +10704,7 @@ window.downloadReport = function(reportId) {
       if (effectiveLang !== requestedLang) report.reportLanguage = effectiveLang;
       var printWindow = window.open('about:blank', '_blank');
       if (!printWindow) {
-        showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
+        showMessage(dashboardT('dashboard.reports_popup_blocked', '❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.'), 'error');
         return;
       }
       printWindow.document.open();
@@ -14250,7 +14250,7 @@ window.generatePDFReport = function() {
   // Abrir pestaña ya en el gesto del usuario (antes de persist/HTML pesado) para evitar pop-up bloqueado o pestaña vacía.
   const printWindow = window.open('about:blank', '_blank');
   if (!printWindow) {
-    showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
+    showMessage(dashboardT('dashboard.reports_popup_blocked', '❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.'), 'error');
     return;
   }
   try {
@@ -14279,7 +14279,7 @@ window.generatePDFReport = function() {
           console.warn('⚠️ Falló generación en inglés. Fallback a español:', renderErr && renderErr.message ? renderErr.message : renderErr);
           effectiveLanguage = 'es';
           reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es', reportUnitSystem);
-          showMessage('⚠️ No se pudo generar en inglés. Se generó en español.', 'warning');
+          showMessage(dashboardT('dashboard.reports_en_fallback', '⚠️ No se pudo generar en inglés. Se generó en español.'), 'warning');
         } else {
           throw renderErr;
         }
@@ -14298,11 +14298,19 @@ window.generatePDFReport = function() {
       printWindow.document.close();
       printWindow.focus();
       scheduleReportPrintWhenReady(printWindow);
-      showMessage('✅ Se abrió la vista para descargar PDF (' + selectedSections.length + ' secciones).', 'success');
+      showMessage(dashboardT(
+        'dashboard.reports_pdf_view_opened',
+        '✅ Se abrió la vista para descargar PDF ({count} secciones).',
+        { count: selectedSections.length }
+      ), 'success');
     } catch (error) {
       console.error('❌ Error generando PDF:', error);
       try { printWindow.close(); } catch (eClose2) {}
-      showMessage('❌ Error generando PDF: ' + error.message, 'error');
+      showMessage(dashboardT(
+        'dashboard.reports_pdf_error',
+        '❌ Error generando PDF: {error}',
+        { error: error && error.message ? error.message : error }
+      ), 'error');
     }
   }
 
@@ -24316,7 +24324,7 @@ window.descargarReporte = function() {
   // Aquí iría la lógica para generar y descargar el PDF real
   // Por ahora, mostrar mensaje
   setTimeout(() => {
-    showMessage('✅ PDF generado y descargado exitosamente', 'success');
+    showMessage(dashboardT('dashboard.reports_pdf_downloaded', '✅ PDF generado y descargado exitosamente'), 'success');
   }, 2000);
 };
 

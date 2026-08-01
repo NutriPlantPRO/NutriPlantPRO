@@ -368,6 +368,22 @@
         reportCards[0].classList.add('agro-pdf-table-section');
         reportCards[0].style.breakBefore = 'always';
         reportCards[0].style.pageBreakBefore = 'always';
+        reportCards[0].style.paddingTop = '14px';
+        reportCards[0].style.overflow = 'visible';
+        const tableHead = reportCards[0].querySelector('.agro-section-head');
+        if (tableHead) {
+          tableHead.style.breakInside = 'avoid';
+          tableHead.style.pageBreakInside = 'avoid';
+          tableHead.style.overflow = 'visible';
+          tableHead.style.paddingTop = '2px';
+        }
+        const tableH2 = reportCards[0].querySelector('.agro-section-head h2');
+        if (tableH2) {
+          tableH2.style.lineHeight = '1.3';
+          tableH2.style.paddingTop = '2px';
+          tableH2.style.marginTop = '4px';
+          tableH2.style.overflow = 'visible';
+        }
       }
       if (reportCards[1]) {
         reportCards[1].classList.add('agro-pdf-chart-section');
@@ -516,7 +532,14 @@
           jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' },
           pagebreak: {
             mode: ['css', 'legacy'],
-            avoid: ['.agro-summary-card', '.agro-chart-box', '.agro-print-page1-fill', '.agro-report-meta']
+            avoid: [
+              '.agro-summary-card',
+              '.agro-chart-box',
+              '.agro-print-page1-fill',
+              '.agro-report-meta',
+              '.agro-section-head',
+              '.agro-pdf-table-section .agro-section-head'
+            ]
           }
         })
         .from(clone)

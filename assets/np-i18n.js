@@ -518,7 +518,12 @@
         reports_persist_fail: "❌ No se pudo guardar el estado actual antes de generar el reporte.",
         reports_download_persist_fail: "❌ No se pudo guardar el estado actual antes de descargar el reporte.",
         reports_invalid_sections: "⚠️ Este reporte no contiene secciones válidas para PDF.",
-        reports_pending_cloud: "⚠️ Algunos reportes aún pendientes de nube. Se reintentará automáticamente."
+        reports_pending_cloud: "⚠️ Algunos reportes aún pendientes de nube. Se reintentará automáticamente.",
+        reports_pdf_view_opened: "✅ Se abrió la vista para descargar PDF ({count} secciones).",
+        reports_popup_blocked: "❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.",
+        reports_en_fallback: "⚠️ No se pudo generar en inglés. Se generó en español.",
+        reports_pdf_error: "❌ Error generando PDF: {error}",
+        reports_pdf_downloaded: "✅ PDF generado y descargado exitosamente"
       },
       free_tools: {
         prefs_aria: "Preferencias de idioma y unidades",
@@ -1489,7 +1494,12 @@
         reports_persist_fail: "❌ Could not save the current state before generating the report.",
         reports_download_persist_fail: "❌ Could not save the current state before downloading the report.",
         reports_invalid_sections: "⚠️ This report has no valid sections for PDF.",
-        reports_pending_cloud: "⚠️ Some reports are still pending cloud sync. Will retry automatically."
+        reports_pending_cloud: "⚠️ Some reports are still pending cloud sync. Will retry automatically.",
+        reports_pdf_view_opened: "✅ Opened the view to download PDF ({count} sections).",
+        reports_popup_blocked: "❌ Your browser blocked the print window. Allow pop-ups to download the PDF.",
+        reports_en_fallback: "⚠️ Could not generate in English. Generated in Spanish.",
+        reports_pdf_error: "❌ Error generating PDF: {error}",
+        reports_pdf_downloaded: "✅ PDF generated and downloaded successfully"
       },
       free_tools: {
         prefs_aria: "Language and unit preferences",
