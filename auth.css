@@ -642,74 +642,22 @@
   background: #fff;
 }
 
-/* Título + seguidores fuera del iframe (Facebook los recorta por dentro) */
-.login-social-fb-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 10px;
-  padding: 12px 14px 14px;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
-}
-
-.login-social-fb-brand__logo {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  flex: 0 0 auto;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-}
-
-.login-social-fb-brand__text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.login-social-fb-brand__title {
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1.25;
-  color: #1877f2;
-  text-decoration: none;
-  letter-spacing: -0.01em;
-}
-
-.login-social-fb-brand__title:hover {
-  text-decoration: underline;
-}
-
-.login-social-fb-brand__followers {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: #475569;
-  padding-bottom: 2px;
-}
-
 .login-social-pane__embed--facebook {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow: hidden;
+  overflow: visible;
   background: #fff;
-  min-height: 420px;
-  max-height: 480px;
-  padding: 0;
-  border-radius: 12px;
+  min-height: 600px;
+  /* Un poco de aire arriba ayuda a que el header del plugin (nombre + seguidores) no se sienta aplastado */
+  padding: 12px 0 4px;
 }
 
 .login-social-pane__embed--facebook iframe {
   width: auto;
   max-width: 100%;
-  margin: -72px auto 0;
-  min-height: 640px;
+  margin: 0 auto;
+  min-height: 620px;
   flex: 0 0 auto;
 }
 

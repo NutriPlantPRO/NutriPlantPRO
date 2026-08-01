@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=30" />
+  <link rel="stylesheet" href="auth.css?v=31" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -456,14 +456,6 @@
         <div class="login-social-panels">
           <div class="login-social-pane active" role="tabpanel" id="social-panel-facebook" aria-labelledby="social-tab-facebook" data-social-panel="facebook">
             <div class="login-social-pane__body">
-              <!-- Encabezado propio: FB recorta nombre/seguidores dentro del iframe; aquí sí hay espacio. -->
-              <div class="login-social-fb-brand">
-                <img class="login-social-fb-brand__logo" src="assets/N_Hoja_Azul.png" alt="" width="44" height="44">
-                <div class="login-social-fb-brand__text">
-                  <a class="login-social-fb-brand__title" href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer">NutriPlant PRO</a>
-                  <span class="login-social-fb-brand__followers" data-i18n="auth.social_fb_followers">8.521 seguidores</span>
-                </div>
-              </div>
               <div class="login-social-pane__embed login-social-pane__embed--facebook" data-social-embed="facebook"></div>
             </div>
             <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--facebook" data-i18n="auth.social_cta_facebook">Ver página en Facebook</a>
@@ -4406,14 +4398,14 @@
         container.dataset.fbWidth = String(width);
         container.innerHTML = '';
         var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
-        // Encabezado (nombre/seguidores) lo mostramos fuera del iframe; aquí solo el feed.
-        // small_header=true + clip CSS oculta el header roto de Facebook.
-        var fbHeight = 640;
+        // Conteo vivo de Facebook (plugin). hide_cover + ancho = caja + un poco más de alto
+        // para que nombre/seguidores no queden tan apretados contra Seguir/Compartir.
+        var fbHeight = 620;
         var iframe = createSocialIframe(
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
             '&height=' + fbHeight +
-            '&small_header=true&adapt_container_width=false&hide_cover=true&show_facepile=false',
+            '&small_header=false&adapt_container_width=false&hide_cover=true&show_facepile=false',
           'NutriPlant PRO en Facebook',
           {
             scrolling: 'no',
