@@ -6,7 +6,7 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=20260801ai"></script>
+  <script defer src="assets/np-i18n.js?v=20260802a"></script>
   <script defer src="assets/np-units-core.js?v=20260730a"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=31" />
+  <link rel="stylesheet" href="auth.css?v=35" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -120,29 +120,53 @@
     <div class="auth-container">
       <div id="authPreferencesHome">
         <section id="authPreferencesBar" class="auth-preferences-bar" aria-labelledby="authPreferencesTitle">
-          <div class="auth-preferences-bar__intro">
-            <h2 id="authPreferencesTitle" class="auth-preferences-bar__title" data-i18n="auth.preferences">Preferencias</h2>
-          </div>
-          <div class="auth-preferences-bar__controls">
-            <div class="auth-preference-field">
-              <label for="authLanguage" data-i18n="profile.language">Idioma</label>
-              <select id="authLanguage" name="language" aria-describedby="authLanguageHelp">
-                <option value="es" data-i18n="selector.spanish">Español</option>
-                <option value="en" data-i18n="selector.english">Inglés</option>
-              </select>
-              <small id="authLanguageHelp">
-                <span data-i18n="selector.spanish">Español</span> / <span data-i18n="selector.english">Inglés</span>
-              </small>
+          <div class="auth-preferences-bar__prefs">
+            <div class="auth-preferences-bar__intro">
+              <h2 id="authPreferencesTitle" class="auth-preferences-bar__title" data-i18n="auth.preferences">Preferencias</h2>
             </div>
-            <div class="auth-preference-field">
-              <label for="authUnitSystem" data-i18n="profile.unit_system">Sistema de unidades</label>
-              <select id="authUnitSystem" name="unit_system" aria-describedby="authUnitSystemHelp">
-                <option value="metric" data-i18n="selector.metric">Métrico (Sistema Internacional)</option>
-                <option value="us_customary" data-i18n="selector.us_customary">US customary</option>
-              </select>
-              <small id="authUnitSystemHelp">
-                <span data-i18n="selector.metric">Métrico (Sistema Internacional)</span> / <span data-i18n="selector.us_customary">US customary</span>
-              </small>
+            <div class="auth-preferences-bar__controls">
+              <div class="auth-preference-field">
+                <label for="authLanguage" data-i18n="profile.language">Idioma</label>
+                <select id="authLanguage" name="language" aria-describedby="authLanguageHelp">
+                  <option value="es" data-i18n="selector.spanish">Español</option>
+                  <option value="en" data-i18n="selector.english">Inglés</option>
+                </select>
+                <small id="authLanguageHelp">
+                  <span data-i18n="selector.spanish">Español</span> / <span data-i18n="selector.english">Inglés</span>
+                </small>
+              </div>
+              <div class="auth-preference-field">
+                <label for="authUnitSystem" data-i18n="profile.unit_system">Sistema de unidades</label>
+                <select id="authUnitSystem" name="unit_system" aria-describedby="authUnitSystemHelp">
+                  <option value="metric" data-i18n="selector.metric">Métrico (Sistema Internacional)</option>
+                  <option value="us_customary" data-i18n="selector.us_customary">US customary</option>
+                </select>
+                <small id="authUnitSystemHelp">
+                  <span data-i18n="selector.metric">Métrico (Sistema Internacional)</span> / <span data-i18n="selector.us_customary">US customary</span>
+                </small>
+              </div>
+            </div>
+          </div>
+          <div class="auth-preferences-bar__portal" role="navigation" aria-label="Manual técnico y contacto" data-i18n-aria-label="auth.manual_aria">
+            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual auth-preferences-bar__manual" target="_blank" rel="noopener noreferrer" title="Manual técnico público" data-i18n-title="auth.manual_aria">
+              <img src="assets/N_Hoja_Azul.png" alt="" class="auth-portal-cta__icon" width="16" height="16" decoding="async">
+              <span data-i18n="auth.manual">Manual Técnico</span>
+            </a>
+            <div class="auth-preferences-bar__contact">
+              <span class="auth-preferences-bar__contact-label" data-i18n="auth.contact_us">Contáctanos:</span>
+              <a href="mailto:admin@nutriplantpro.com" class="auth-preferences-bar__contact-btn auth-preferences-bar__contact-btn--mail">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <span data-i18n="auth.contact_mail">Correo</span>
+              </a>
+              <a href="https://wa.me/13868044542?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO" target="_blank" rel="noopener noreferrer" class="auth-preferences-bar__contact-btn auth-preferences-bar__contact-btn--wa">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                <span>WhatsApp</span>
+              </a>
             </div>
           </div>
         </section>
@@ -164,65 +188,6 @@
           </div>
           <h1 class="auth-title" data-i18n="auth.login_title">Iniciar sesión</h1>
           <p style="margin: 8px 0 0; font-size: 15px; color: #475569; font-weight: 500; text-align: center;" data-i18n="auth.tagline">Diseña, ajusta y nutre con criterio técnico</p>
-          <div class="auth-portal-ctas" role="navigation" aria-label="Manual técnico público" data-i18n-aria-label="auth.manual_aria">
-            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual" target="_blank" rel="noopener noreferrer" title="Manual técnico público" data-i18n-title="auth.manual_aria">
-              <img src="assets/N_Hoja_Azul.png" alt="" class="auth-portal-cta__icon" width="18" height="18" decoding="async">
-              <span data-i18n="auth.manual">Manual Técnico</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- Contáctanos: debajo del título de bienvenida -->
-        <div style="
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 8px;
-          font-size: 13px;
-          margin-top: 16px;
-          margin-bottom: 8px;
-        ">
-            <span style="color: #64748b; font-weight: 500;" data-i18n="auth.contact_us">Contáctanos:</span>
-            <a href="mailto:admin@nutriplantpro.com" style="
-              display: inline-flex;
-              align-items: center;
-              gap: 6px;
-              color: #2563eb;
-              text-decoration: none;
-              font-weight: 500;
-              padding: 6px 12px;
-              border-radius: 8px;
-              transition: all 0.2s ease;
-              background: rgba(37, 99, 235, 0.05);
-              border: 1px solid rgba(37, 99, 235, 0.1);
-              font-size: 13px;
-            " onmouseover="this.style.background='rgba(37, 99, 235, 0.1)'; this.style.borderColor='rgba(37, 99, 235, 0.2)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(37, 99, 235, 0.15)'" onmouseout="this.style.background='rgba(37, 99, 235, 0.05)'; this.style.borderColor='rgba(37, 99, 235, 0.1)'; this.style.transform='none'; this.style.boxShadow='none'">
-              <svg style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-              <span data-i18n="auth.contact_mail">Correo</span>
-            </a>
-          <a href="https://wa.me/13868044542?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO" target="_blank" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 6px 12px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            background: #25d366;
-            border: 1px solid #25d366;
-            font-size: 13px;
-          " onmouseover="this.style.background='#20ba5a'; this.style.borderColor='#20ba5a'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(37, 211, 102, 0.3)'" onmouseout="this.style.background='#25d366'; this.style.borderColor='#25d366'; this.style.transform='none'; this.style.boxShadow='none'">
-            <svg style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-            </svg>
-            WhatsApp
-          </a>
         </div>
 
         <div style="margin: 20px 0; height: 1px; background: #e5e7eb;"></div>
@@ -556,7 +521,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-supabase.js?v=1762793900"></script>
-  <script src="auth.js?v=20260801t"></script>
+  <script src="auth.js?v=20260802a"></script>
   
   <!-- Modal de Calculadora de Conversión -->
   <div id="conversionCalculatorModal" class="modal-overlay">
@@ -2835,6 +2800,32 @@
   </div>
 
   <!-- Modal de Registro de Usuario (Multi-Paso) -->
+  <!-- Ruta dueño: admin@nutriplantpro.com elige destino tras validar contraseña -->
+  <div id="adminDestinationModal" class="modal-overlay admin-dest-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="adminDestinationTitle">
+    <div class="modal admin-dest-modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="adminDestinationTitle">¿A dónde quieres entrar?</h2>
+      </div>
+      <div class="modal-body">
+        <p class="admin-dest-intro">Sesión validada. Elige el panel. Admin y Plan PRO pedirán el código de 4 dígitos.</p>
+        <div class="admin-dest-actions">
+          <button type="button" class="admin-dest-btn admin-dest-btn--pro" data-admin-dest="dashboard">
+            <span class="admin-dest-btn__label">NutriPlant PRO</span>
+            <span class="admin-dest-btn__hint">Dashboard de suscriptor</span>
+          </button>
+          <button type="button" class="admin-dest-btn admin-dest-btn--admin" data-admin-dest="admin">
+            <span class="admin-dest-btn__label">Admin</span>
+            <span class="admin-dest-btn__hint">Panel · luego código 4 dígitos</span>
+          </button>
+          <button type="button" class="admin-dest-btn admin-dest-btn--plan" data-admin-dest="planpro">
+            <span class="admin-dest-btn__label">Plan PRO</span>
+            <span class="admin-dest-btn__hint">Cerebro Digital · luego código 4 dígitos</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal recuperar contraseña (Supabase envía enlace por correo) -->
   <div id="forgotPasswordModal" class="modal-overlay" style="display: none;">
     <div class="modal" style="max-width: 420px;">
@@ -4270,7 +4261,7 @@
     <div class="cookie-consent-inner">
       <p class="cookie-consent-text">
         Utilizamos cookies y almacenamiento local para que la sesión y tus datos funcionen correctamente. Al continuar, aceptas su uso.
-        <a href="politicas-privacidad.html" target="_blank" rel="noopener" class="cookie-consent-link">Política de privacidad</a>
+        <a href="politicas-privacidad.html" target="_blank" rel="noopener" class="cookie-consent-link" data-i18n="about.privacy_policy">Política de privacidad</a>
       </p>
       <button type="button" id="cookie-consent-accept" class="cookie-consent-btn">Aceptar</button>
     </div>
@@ -4475,18 +4466,26 @@
       }
 
       function syncSocialPanelHeight() {
-        if (window.innerWidth < 1024) {
+        if (window.innerWidth < 700) {
+          root.style.minHeight = '';
           root.style.maxHeight = '';
+          root.style.height = '';
+          var panelsMobile = root.querySelector('.login-social-panels');
+          if (panelsMobile) panelsMobile.style.minHeight = '';
         } else {
           var tools = document.querySelector('.login-split__tools');
           var login = document.querySelector('.login-split__login');
           if (tools && login) {
-            var available = tools.offsetHeight - login.offsetHeight - 16;
-            root.style.minHeight = '260px';
-            if (available > 200) {
-              root.style.maxHeight = available + 'px';
-            } else {
-              root.style.maxHeight = '';
+            var gap = 16;
+            var available = Math.round(tools.offsetHeight - login.offsetHeight - gap);
+            if (available < 320) available = 320;
+            root.style.maxHeight = '';
+            root.style.minHeight = available + 'px';
+            root.style.height = available + 'px';
+            var panels = root.querySelector('.login-social-panels');
+            if (panels) {
+              var chrome = 118;
+              panels.style.minHeight = Math.max(240, available - chrome) + 'px';
             }
           }
         }
@@ -4525,12 +4524,15 @@
         document.fonts.ready.then(syncSocialPanelHeight);
       }
       var toolsCol = document.querySelector('.login-split__tools');
-      if (toolsCol && window.ResizeObserver) {
+      var loginCol = document.querySelector('.login-split__login');
+      if (window.ResizeObserver) {
         var ro = new window.ResizeObserver(syncSocialPanelHeight);
-        ro.observe(toolsCol);
+        if (toolsCol) ro.observe(toolsCol);
+        if (loginCol) ro.observe(loginCol);
       }
       window.setTimeout(syncSocialPanelHeight, 400);
       window.setTimeout(syncSocialPanelHeight, 1200);
+      window.setTimeout(syncSocialPanelHeight, 2500);
 
       showSocialTab('facebook');
     })();

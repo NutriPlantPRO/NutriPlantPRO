@@ -172,7 +172,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: nowrap;
+  gap: 12px 18px;
   width: 100%;
   padding: 9px 12px 8px;
   box-sizing: border-box;
@@ -190,6 +191,14 @@
   background: linear-gradient(90deg, #2563eb 0%, #16a34a 100%);
 }
 
+.auth-preferences-bar__prefs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
 .auth-preferences-bar__intro {
   flex: 0 0 auto;
 }
@@ -205,11 +214,117 @@
 }
 
 .auth-preferences-bar__controls {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(130px, 1fr));
   gap: 10px;
   width: auto;
+  max-width: 430px;
+}
+
+/* Manual + Contáctanos: misma altura compacta que preferencias (lap) */
+.auth-preferences-bar__portal {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.auth-preferences-bar__manual {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.2;
+  height: 32px;
+  box-sizing: border-box;
+}
+
+.auth-preferences-bar__manual .auth-portal-cta__icon {
+  width: 15px;
+  height: 15px;
+}
+
+.auth-preferences-bar__contact {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.auth-preferences-bar__contact-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.auth-preferences-bar__contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.auth-preferences-bar__contact-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.auth-preferences-bar__contact-btn--mail {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+}
+
+.auth-preferences-bar__contact-btn--mail:hover {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.28);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+}
+
+.auth-preferences-bar__contact-btn--wa {
+  color: #fff;
+  background: #25d366;
+  border: 1px solid #25d366;
+}
+
+.auth-preferences-bar__contact-btn--wa:hover {
+  background: #20ba5a;
+  border-color: #20ba5a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.28);
+}
+
+/* En registro solo preferencias (sin manual/contacto) */
+.registration-preferences-slot .auth-preferences-bar__portal {
+  display: none !important;
+}
+
+.registration-preferences-slot .auth-preferences-bar {
+  justify-content: space-between;
+}
+
+.registration-preferences-slot .auth-preferences-bar__prefs {
+  flex: 1 1 auto;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.registration-preferences-slot .auth-preferences-bar__controls {
+  flex: 1 1 auto;
   max-width: 430px;
 }
 
@@ -423,13 +538,21 @@
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 699px) {
   .auth-preferences-bar {
     align-items: stretch;
     flex-direction: column;
-    gap: 7px;
+    flex-wrap: wrap;
+    gap: 8px;
     padding: 11px 9px 9px;
     border-radius: 12px;
+  }
+
+  .auth-preferences-bar__prefs {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
   }
 
   .auth-preferences-bar__title {
@@ -443,6 +566,13 @@
     max-width: none;
   }
 
+  .auth-preferences-bar__portal {
+    justify-content: center;
+    width: 100%;
+    padding-top: 2px;
+    border-top: 1px solid #eef2f7;
+  }
+
   .auth-preference-field label {
     margin-bottom: 3px;
     font-size: 9px;
@@ -454,8 +584,17 @@
     font-size: 14px;
   }
 
+  .auth-preferences-bar__manual,
+  .auth-preferences-bar__contact-btn {
+    height: 36px;
+  }
+
   .registration-preferences-slot {
     padding: 0 12px 10px;
+  }
+
+  .registration-preferences-slot .auth-preferences-bar__portal {
+    display: none !important;
   }
 }
 
@@ -821,7 +960,8 @@
   margin-top: 10px;
 }
 
-@media (max-width: 1023px) {
+/* Cel / Fold cerrado: panel social compacto */
+@media (max-width: 699px) {
   .login-social-panel.auth-card {
     padding: 24px 20px 20px;
   }
@@ -836,7 +976,12 @@
   }
 }
 
-@media (min-width: 1024px) {
+/*
+  Fold abierto (~700–900 CSS px), tablet y laptop:
+  misma composición en 2 columnas (login | herramientas).
+  Cubierta Fold / teléfono (<700) sigue apilada.
+*/
+@media (min-width: 700px) {
   .auth-page .auth-main {
     align-items: flex-start;
     justify-content: center;
@@ -854,9 +999,9 @@
 
   .login-split {
     display: grid;
-    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
     grid-template-rows: auto 1fr;
-    gap: 20px;
+    gap: 16px;
     align-items: stretch;
   }
 
@@ -874,8 +1019,12 @@
   .login-social-panel.auth-card {
     grid-column: 1;
     grid-row: 2;
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
-    min-height: 260px;
+    align-self: stretch;
+    min-height: 320px;
+    height: 100%;
     padding: 22px 22px 18px;
     overflow: hidden;
   }
@@ -883,10 +1032,27 @@
   .login-split__tools {
     grid-column: 2;
     grid-row: 1 / -1;
+    align-self: stretch;
   }
 
   .login-social-panels {
-    min-height: 260px;
+    flex: 1 1 auto;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .login-social-pane.active {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .login-social-pane__body,
+  .login-social-pane__embed {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .login-split__login,
@@ -911,6 +1077,13 @@
     margin-top: 28px;
     padding-top: 20px;
     padding-bottom: 8px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .login-split {
+    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    gap: 20px;
   }
 }
 
@@ -950,7 +1123,7 @@
 /* Encabezado de la tarjeta */
 .auth-header-content {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .auth-logo-container {
@@ -958,10 +1131,10 @@
 }
 
 .auth-card-logo {
-  /* N del lockup ≈ tamaño de .login-free-tools-banner__logo (~5.75rem) */
-  height: clamp(6.5rem, 14vw, 7.5rem);
+  /* Un poco más grande en la tarjeta de login */
+  height: clamp(7.75rem, 16vw, 9.25rem);
   width: auto;
-  max-width: min(100%, 22rem);
+  max-width: min(100%, 26rem);
   object-fit: contain;
   filter: drop-shadow(0 4px 16px rgba(37, 99, 235, 0.3));
 }
@@ -1269,8 +1442,8 @@
   }
   
   .auth-card-logo {
-    height: clamp(5.5rem, 22vw, 6.25rem);
-    max-width: min(100%, 18rem);
+    height: clamp(6.5rem, 24vw, 7.75rem);
+    max-width: min(100%, 21rem);
   }
 }
 
@@ -1617,4 +1790,92 @@
 }
 .login-public-footer-links .sep {
   display: none;
+}
+
+/* Dueño admin@: elegir NutriPlant PRO / Admin / Plan PRO tras login */
+.admin-dest-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+.admin-dest-overlay.is-open {
+  display: flex !important;
+}
+.admin-dest-modal {
+  max-width: 420px;
+  width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  overflow: hidden;
+}
+.admin-dest-modal .modal-header {
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.admin-dest-modal .modal-title {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+.admin-dest-modal .modal-body {
+  padding: 16px 20px 22px;
+}
+.admin-dest-intro {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.admin-dest-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-dest-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.admin-dest-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+.admin-dest-btn__label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.admin-dest-btn__hint {
+  font-size: 12px;
+  color: #64748b;
+}
+.admin-dest-btn--pro {
+  border-color: #93c5fd;
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+}
+.admin-dest-btn--admin {
+  border-color: #cbd5e1;
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+}
+.admin-dest-btn--plan {
+  border-color: #86efac;
+  background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%);
 }

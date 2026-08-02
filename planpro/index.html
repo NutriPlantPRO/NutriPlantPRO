@@ -2603,9 +2603,44 @@
         font-size: 10px;
         white-space: nowrap;
       }
-      /* Ya hay árbol de carpetas arriba: evita bloque duplicado y scroll horizontal */
+      /* En celular el árbol queda arriba: los chips (↑ / mismo nivel / subcarpetas) van junto a los archivos */
       #npViewNutriPro #npNutriFolderNavBlocks {
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      #npViewNutriPro #npNutriFolderNavBlocks.np-hide {
         display: none !important;
+      }
+      #npViewNutriPro .np-nutri-folder-nav-block {
+        padding: 8px 10px;
+        border-radius: 10px;
+      }
+      #npViewNutriPro .np-nutri-folder-nav-label {
+        margin-bottom: 6px;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+      }
+      #npViewNutriPro .np-nutri-folder-chip-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 6px;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+        scrollbar-width: thin;
+      }
+      #npViewNutriPro button.np-nutri-folder-chip {
+        flex: 0 0 auto;
+        max-width: min(78vw, 260px);
+        padding: 7px 11px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       #npViewNutriPro .np-nutri-subtabs {
         margin-bottom: 8px;
@@ -2669,11 +2704,6 @@
         display: flex;
         flex-wrap: nowrap;
         gap: 4px;
-      }
-      #npViewNutriPro .np-nutri-folder-nav-blocks,
-      #npViewNutriPro .np-nutri-folder-chip-row {
-        max-width: 100%;
-        overflow-x: hidden;
       }
     }
     .np-flow-search-result--clickable {
@@ -4099,11 +4129,13 @@
       #npCreateModal.np-modal-overlay {
         padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
       }
-      #npDetailModal .np-modal-head {
-        padding: 12px 12px 10px;
-        gap: 10px;
+      #npDetailModal .np-modal-head,
+      #npCreateModal .np-modal-head {
+        padding: 10px 12px 10px;
+        gap: 8px;
       }
-      #npDetailModal .np-detail-head-actions .btn {
+      #npDetailModal .np-detail-head-actions .btn,
+      #npCreateModal .np-create-head-actions .btn {
         font-size: 11px;
         padding: 6px 9px;
         min-height: 32px;
@@ -4127,6 +4159,13 @@
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
     }
+    /* Apunte: barra de acciones arriba (full width), luego título + meta */
+    #npDetailModal .np-modal-head,
+    #npCreateModal .np-modal-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
     .np-modal-head h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; word-break: break-word; }
     .np-detail-title-row {
       display: block;
@@ -4145,19 +4184,32 @@
     .np-detail-meta-path-row {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: flex-start;
       gap: 6px 8px;
       margin-bottom: 2px;
+      width: 100%;
     }
     .np-detail-meta-path-row .np-modal-meta-path {
-      flex: 1 1 0;
+      flex: 1 1 140px;
       min-width: 0;
+      margin-left: auto;
+      text-align: right;
     }
     .np-detail-head-main > #npDetailLifeRow {
       display: none;
     }
-    .np-detail-meta-path-row > #npDetailLifeRow {
+    .np-detail-meta-path-row > #npDetailLifeRow,
+    .np-detail-meta-path-row > #npCreateLifeRow {
       display: inline-flex;
+      order: 1;
+      flex: 0 0 auto;
+    }
+    .np-detail-meta-path-row > .np-meta-fold-toggle {
+      order: 2;
+      flex: 0 0 auto;
+    }
+    .np-detail-meta-path-row > .np-modal-meta-path {
+      order: 3;
     }
     .np-detail-life-label {
       font-size: 12px;
@@ -4398,17 +4450,9 @@
     .np-detail-head-main {
       flex: 1;
       min-width: 0;
+      width: 100%;
     }
-    .np-detail-head-actions {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 6px;
-      max-width: min(100%, 340px);
-    }
+    .np-detail-head-actions,
     .np-create-head-actions {
       display: flex;
       flex-direction: row;
@@ -4417,7 +4461,16 @@
       align-items: center;
       justify-content: flex-end;
       gap: 6px;
-      flex: 0 0 auto;
+      width: 100%;
+      max-width: none;
+      box-sizing: border-box;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    #npCreateModal .np-modal-head > div:not(.np-create-head-actions) {
+      min-width: 0;
+      width: 100%;
+      flex: 1 1 auto;
     }
     .np-create-relations-host {
       margin-top: 10px;
@@ -5415,8 +5468,8 @@
         radial-gradient(ellipse 70% 50% at 80% 70%, rgba(34, 197, 94, 0.06), transparent 50%),
         rgba(248, 250, 252, 0.95);
       overflow: hidden;
-      /* Solo el SVG captura gestos; el wrap no bloquea scroll del contenedor */
-      touch-action: manipulation;
+      /* Gestos del mapa van al SVG; el wrap no pelea con pellizco/pan */
+      touch-action: none;
     }
     .np-mapa-svg {
       width: 100%;
@@ -5425,6 +5478,9 @@
       display: block;
       cursor: grab;
       touch-action: none;
+      -ms-touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .np-mapa-svg.np-mapa-panning {
       cursor: grabbing;
@@ -11543,7 +11599,7 @@
             Neuron PRO
           </h2>
           <p class="np-muted np-mapa-lead" style="margin:0 0 8px;font-size:12px;line-height:1.4;">
-            Planta ○ · rama ▢ · sub-rama ◇ · apunte ○ · archivo ▭ · link ◇. Sombras = alcance. Toca una línea tipada para ver el detalle.
+            Planta ○ · rama ▢ · sub-rama ◇ · apunte ○ · archivo ▭ · link ◇. Sombras = alcance. Toca una línea tipada para ver el detalle. En el mapa: 1 dedo = mover · pellizca = zoom.
           </p>
           <div class="np-mapa-controls">
           <div class="np-mapa-toolbar" aria-label="Controles del mapa">
@@ -11955,6 +12011,24 @@
   <div id="npCreateModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel" role="dialog" aria-labelledby="npTitle">
       <div class="np-modal-head">
+        <div class="np-create-head-actions">
+          <button
+            type="button"
+            id="npCreateSaveBulb"
+            class="np-save-bulb np-save-bulb--dirty"
+            title="Guardar apunte"
+            aria-label="Guardar apunte"
+          >💡</button>
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCreateModalClose">Cerrar</button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-ghost-green"
+            id="npCreateExportPdfBtn"
+            title="Generar PDF de este apunte y guardarlo en Nutri PRO › Apuntes PDF"
+          >
+            PDF → Nutri PRO
+          </button>
+        </div>
         <div style="min-width:0;flex:1;">
           <input
             id="npTitle"
@@ -11982,7 +12056,6 @@
                 </button>
                 <span id="npCreateLifeLabel" class="np-detail-life-label np-detail-life-label--active">Activo</span>
               </div>
-              <div id="npCreateModalPath" class="np-modal-meta-path"></div>
               <button
                 type="button"
                 id="npCreateMetaFoldToggle"
@@ -11994,6 +12067,7 @@
                 <span class="np-meta-fold-toggle-icon" aria-hidden="true">▼</span>
                 <span class="np-meta-fold-toggle-label">Detalles</span>
               </button>
+              <div id="npCreateModalPath" class="np-modal-meta-path"></div>
             </div>
             <div id="npCreateMetaFold" class="np-meta-fold">
               <div class="np-detail-item-meta-edit np-ficha-meta-row" id="npCreateItemMeta">
@@ -12008,24 +12082,6 @@
               <div id="npCreateRelationsHost" class="np-create-relations-host"></div>
             </div>
           </div>
-        </div>
-        <div class="np-create-head-actions">
-          <button
-            type="button"
-            id="npCreateSaveBulb"
-            class="np-save-bulb np-save-bulb--dirty"
-            title="Guardar apunte"
-            aria-label="Guardar apunte"
-          >💡</button>
-          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCreateModalClose">Cerrar</button>
-          <button
-            type="button"
-            class="btn btn-ghost btn-ghost-green"
-            id="npCreateExportPdfBtn"
-            title="Generar PDF de este apunte y guardarlo en Nutri PRO › Apuntes PDF"
-          >
-            PDF → Nutri PRO
-          </button>
         </div>
       </div>
       <div class="np-modal-body">
@@ -12097,6 +12153,24 @@
   <div id="npDetailModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel" role="dialog" aria-labelledby="npDetailTitle">
       <div class="np-modal-head">
+        <div class="np-detail-head-actions">
+          <button
+            type="button"
+            id="npDetailSaveBulb"
+            class="np-save-bulb"
+            title="Guardar apunte ahora"
+            aria-label="Guardar apunte ahora"
+          >💡</button>
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose">Cerrar</button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-ghost-green"
+            id="npDetailExportPdfBtn"
+            title="Generar PDF de este apunte y guardarlo en Nutri PRO › Apuntes PDF"
+          >
+            PDF → Nutri PRO
+          </button>
+        </div>
         <div class="np-detail-head-main">
           <div class="np-detail-title-row">
             <input
@@ -12123,24 +12197,6 @@
             </button>
             <span id="npDetailLifeLabel" class="np-detail-life-label np-detail-life-label--active">Activo</span>
           </div>
-        </div>
-        <div class="np-detail-head-actions">
-          <button
-            type="button"
-            id="npDetailSaveBulb"
-            class="np-save-bulb"
-            title="Guardar apunte ahora"
-            aria-label="Guardar apunte ahora"
-          >💡</button>
-          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose">Cerrar</button>
-          <button
-            type="button"
-            class="btn btn-ghost btn-ghost-green"
-            id="npDetailExportPdfBtn"
-            title="Generar PDF de este apunte y guardarlo en Nutri PRO › Apuntes PDF"
-          >
-            PDF → Nutri PRO
-          </button>
         </div>
       </div>
       <div id="npDetailBody" class="np-modal-body"></div>
@@ -12354,8 +12410,21 @@
       fromCache
         ? 'Última lectura en vivo ' + planProStorageAgeLabel(fetchedAt) + ' · toca para actualizar ahora'
         : 'Lectura en vivo · se refresca sola cada ~10 min',
-      'Toca para forzar actualización (máx. 1 vez cada 45 s).'
+      'Toca para forzar actualización (máx. 1 vez cada 45 s).',
+      '',
+      'Este total suma TODOS los buckets (Nutri PRO + imágenes de apuntes + PDF + otros).',
+      'El peso junto a cada carpeta en Nutri PRO es solo documentos de esa bóveda (con subcarpetas).'
     ];
+    if (state && state.nutriProVaultTotals && state.nutriProVaultTotals.bytes != null) {
+      lines.push(
+        'Nutri PRO documentos: ' +
+          formatPlanProStorageSize(state.nutriProVaultTotals.bytes) +
+          ' · ' +
+          (state.nutriProVaultTotals.files || 0) +
+          ' archivo' +
+          ((state.nutriProVaultTotals.files || 0) === 1 ? '' : 's')
+      );
+    }
     var buckets = data.buckets;
     if (buckets && buckets.length) {
       lines.push('');
@@ -18282,8 +18351,6 @@
     var path = document.createElement('div');
     path.className = 'np-modal-meta-path';
     path.textContent = planProItemPathParts(r).join(' · ');
-    if (lifeRow) pathRow.appendChild(lifeRow);
-    pathRow.appendChild(path);
 
     var foldId = 'npDetailMetaFold';
     var toggle = document.createElement('button');
@@ -18295,7 +18362,10 @@
     toggle.innerHTML =
       '<span class="np-meta-fold-toggle-icon" aria-hidden="true">▼</span>' +
       '<span class="np-meta-fold-toggle-label">Detalles</span>';
+
+    if (lifeRow) pathRow.appendChild(lifeRow);
     pathRow.appendChild(toggle);
+    pathRow.appendChild(path);
     el.appendChild(pathRow);
 
     var fold = document.createElement('div');
@@ -18988,6 +19058,7 @@
     nutriProFileCountByFolder: {},
     nutriProLinkCountByFolder: {},
     nutriProFileSizeByFolder: {},
+    nutriProVaultTotals: { files: 0, bytes: 0 },
     nutriProFolderSortMode: 'title',
     nutriProFileSortMode: 'title',
     nutriProDnd: null,
@@ -20912,12 +20983,18 @@
         btn.type = 'button';
         btn.className = 'np-cal-day';
         btn.setAttribute('data-cal-date', dateKey);
-        btn.setAttribute('aria-label', 'Día ' + d);
+        var hasDot = flags.baja || flags.media || flags.alta;
+        btn.setAttribute(
+          'aria-label',
+          hasDot
+            ? 'Día ' + d + ' · ver apuntes con semáforo'
+            : 'Día ' + d + ' · ver pendientes'
+        );
+        btn.title = hasDot ? 'Ver apuntes de este día' : 'Ver pendientes de este día';
         var num = document.createElement('span');
         num.className = 'np-cal-day-num';
         num.textContent = String(d);
         btn.appendChild(num);
-        var hasDot = flags.baja || flags.media || flags.alta;
         if (hasDot) {
           var dots = document.createElement('div');
           dots.className = 'np-cal-cell-dots';
@@ -28348,13 +28425,7 @@
       if (!cell) return;
       var dk = cell.getAttribute('data-cal-date');
       if (!dk || cell.classList.contains('np-cal-day--muted')) return;
-      openCalOverlayModal(dk);
-    });
-    npCalGridEl.addEventListener('dblclick', function (e) {
-      var cell = e.target.closest('[data-cal-date]');
-      if (!cell) return;
-      var dk = cell.getAttribute('data-cal-date');
-      if (!dk || cell.classList.contains('np-cal-day--muted')) return;
+      /* Un toque: listado del día (como el semáforo). El mes completo sigue en el botón del calendario. */
       openCalDayModal(dk);
     });
   }
@@ -28895,6 +28966,8 @@
   var planProMapaForceFit = false;
   var planProMapaHasUserView = false;
   var planProMapaPan = null;
+  var planProMapaPinch = null;
+  var planProMapaPointers = null;
   var planProMapaWired = false;
   var planProMapaDataCache = null;
   var planProMapaAnim = null;
@@ -30782,6 +30855,71 @@
   function wirePlanProMapaInteractions(svg) {
     if (!svg || planProMapaWired) return;
     planProMapaWired = true;
+    if (!planProMapaPointers) planProMapaPointers = Object.create(null);
+
+    function mapaSvgLocal(clientX, clientY) {
+      var rect = svg.getBoundingClientRect();
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function mapaPointerList() {
+      var out = [];
+      var id;
+      for (id in planProMapaPointers) {
+        if (Object.prototype.hasOwnProperty.call(planProMapaPointers, id)) {
+          out.push(planProMapaPointers[id]);
+        }
+      }
+      return out;
+    }
+
+    function mapaPointersDist(a, b) {
+      var dx = a.x - b.x;
+      var dy = a.y - b.y;
+      return Math.sqrt(dx * dx + dy * dy) || 1;
+    }
+
+    function beginMapaPinch() {
+      var pts = mapaPointerList();
+      if (pts.length < 2) return;
+      var a = pts[0];
+      var b = pts[1];
+      var mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      planProMapaPan = null;
+      planProMapaPinch = {
+        dist0: mapaPointersDist(a, b),
+        scale0: planProMapaView.scale,
+        midX0: mid.x,
+        midY0: mid.y,
+        viewX0: planProMapaView.x,
+        viewY0: planProMapaView.y
+      };
+      svg.classList.add('np-mapa-panning');
+    }
+
+    function updateMapaPinch() {
+      if (!planProMapaPinch) return;
+      var pts = mapaPointerList();
+      if (pts.length < 2) return;
+      var a = pts[0];
+      var b = pts[1];
+      var mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      var dist = mapaPointersDist(a, b);
+      var next = Math.min(4.5, Math.max(0.12, planProMapaPinch.scale0 * (dist / planProMapaPinch.dist0)));
+      var wx = (planProMapaPinch.midX0 - planProMapaPinch.viewX0) / planProMapaPinch.scale0;
+      var wy = (planProMapaPinch.midY0 - planProMapaPinch.viewY0) / planProMapaPinch.scale0;
+      planProMapaView.scale = next;
+      planProMapaView.x = mid.x - wx * next;
+      planProMapaView.y = mid.y - wy * next;
+      planProMapaHasUserView = true;
+      applyPlanProMapaTransform();
+    }
+
+    function endMapaPinch() {
+      planProMapaPinch = null;
+      if (!planProMapaPan) svg.classList.remove('np-mapa-panning');
+    }
+
     svg.addEventListener('wheel', function (e) {
       e.preventDefault();
       var rect = svg.getBoundingClientRect();
@@ -30800,41 +30938,91 @@
       planProMapaView.scale = next;
       planProMapaView.x = mx - wx * next;
       planProMapaView.y = my - wy * next;
+      planProMapaHasUserView = true;
       applyPlanProMapaTransform();
     }, { passive: false });
+
     svg.addEventListener('pointerdown', function (e) {
-      if (e.button !== 0) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      var local = mapaSvgLocal(e.clientX, e.clientY);
+      planProMapaPointers[e.pointerId] = { id: e.pointerId, x: local.x, y: local.y };
+      try {
+        svg.setPointerCapture(e.pointerId);
+      } catch (err) {}
+
+      var count = mapaPointerList().length;
+      if (count >= 2) {
+        if (e.target && e.target.closest) {
+          /* Pellizco siempre sobre el mapa, aunque empiece en un nodo. */
+        }
+        beginMapaPinch();
+        e.preventDefault();
+        return;
+      }
+
       if (e.target && e.target.closest) {
         if (e.target.closest('.np-mapa-node')) return;
         if (e.target.closest('.np-mapa-edge-sem') || e.target.closest('.np-mapa-edge-hit')) return;
       }
       clearMapaEdgeFocus();
       closeMapaEdgeDetail();
+      planProMapaPinch = null;
       planProMapaPan = {
-        px: e.clientX,
-        py: e.clientY,
+        px: local.x,
+        py: local.y,
         ox: planProMapaView.x,
         oy: planProMapaView.y,
         id: e.pointerId
       };
-      try {
-        svg.setPointerCapture(e.pointerId);
-      } catch (err) {}
       svg.classList.add('np-mapa-panning');
+      e.preventDefault();
     });
+
     svg.addEventListener('pointermove', function (e) {
+      if (!planProMapaPointers[e.pointerId]) return;
+      var local = mapaSvgLocal(e.clientX, e.clientY);
+      planProMapaPointers[e.pointerId].x = local.x;
+      planProMapaPointers[e.pointerId].y = local.y;
+
+      if (planProMapaPinch && mapaPointerList().length >= 2) {
+        updateMapaPinch();
+        e.preventDefault();
+        return;
+      }
+
       if (!planProMapaPan || planProMapaPan.id !== e.pointerId) return;
-      planProMapaView.x = planProMapaPan.ox + (e.clientX - planProMapaPan.px);
-      planProMapaView.y = planProMapaPan.oy + (e.clientY - planProMapaPan.py);
+      planProMapaView.x = planProMapaPan.ox + (local.x - planProMapaPan.px);
+      planProMapaView.y = planProMapaPan.oy + (local.y - planProMapaPan.py);
+      planProMapaHasUserView = true;
       applyPlanProMapaTransform();
-    });
-    function endPan(e) {
-      if (!planProMapaPan || (e && planProMapaPan.id !== e.pointerId)) return;
-      planProMapaPan = null;
-      svg.classList.remove('np-mapa-panning');
+      e.preventDefault();
+    }, { passive: false });
+
+    function endPointer(e) {
+      if (planProMapaPointers[e.pointerId]) {
+        delete planProMapaPointers[e.pointerId];
+      }
+      var left = mapaPointerList().length;
+      if (planProMapaPan && planProMapaPan.id === e.pointerId) {
+        planProMapaPan = null;
+      }
+      if (left >= 2) {
+        beginMapaPinch();
+      } else {
+        endMapaPinch();
+        if (left === 1 && !planProMapaPan) {
+          /* Tras pellizco, no arrastrar con el dedo que queda (evita salto). */
+          svg.classList.remove('np-mapa-panning');
+        } else if (!planProMapaPan) {
+          svg.classList.remove('np-mapa-panning');
+        }
+      }
     }
-    svg.addEventListener('pointerup', endPan);
-    svg.addEventListener('pointercancel', endPan);
+    svg.addEventListener('pointerup', endPointer);
+    svg.addEventListener('pointercancel', endPointer);
+    svg.addEventListener('lostpointercapture', function (e) {
+      if (planProMapaPointers[e.pointerId]) endPointer(e);
+    });
   }
 
   function showMapaTip(text) {
@@ -32452,30 +32640,71 @@
     var fileMap = {};
     var linkMap = {};
     var sizeMap = {};
-    if (state.nutriProReady) {
-      var fr = await state.client.from('plan_pro_nutri_files').select('folder_id,size_bytes');
-      if (!fr.error) {
-        (fr.data || []).forEach(function (row) {
+    var pageSize = 1000;
+
+    async function fetchAllRows(table, columns) {
+      var all = [];
+      var pageFrom = 0;
+      var guard = 0;
+      while (guard < 80) {
+        guard += 1;
+        var res = await state.client
+          .from(table)
+          .select(columns)
+          .range(pageFrom, pageFrom + pageSize - 1);
+        if (res.error) throw res.error;
+        var batch = res.data || [];
+        for (var i = 0; i < batch.length; i++) all.push(batch[i]);
+        if (batch.length < pageSize) break;
+        pageFrom += pageSize;
+      }
+      return all;
+    }
+
+    try {
+      if (state.nutriProReady) {
+        var fileRows = await fetchAllRows('plan_pro_nutri_files', 'folder_id,size_bytes');
+        fileRows.forEach(function (row) {
           if (!row) return;
           var k = nutriProFolderCountKey(row.folder_id);
           fileMap[k] = (fileMap[k] || 0) + 1;
           sizeMap[k] = (sizeMap[k] || 0) + (Number(row.size_bytes) || 0);
         });
       }
-    }
-    if (state.nutriProLinksReady) {
-      var lr = await state.client.from('plan_pro_nutri_links').select('folder_id');
-      if (!lr.error) {
-        (lr.data || []).forEach(function (row) {
+      if (state.nutriProLinksReady) {
+        var linkRows = await fetchAllRows('plan_pro_nutri_links', 'folder_id');
+        linkRows.forEach(function (row) {
           if (!row) return;
           var k = nutriProFolderCountKey(row.folder_id);
           linkMap[k] = (linkMap[k] || 0) + 1;
         });
       }
+    } catch (errCounts) {
+      console.warn('Nutri PRO folder counts:', errCounts);
+      return;
     }
     state.nutriProFileCountByFolder = fileMap;
     state.nutriProLinkCountByFolder = linkMap;
     state.nutriProFileSizeByFolder = sizeMap;
+    var vaultBytes = 0;
+    var vaultFiles = 0;
+    Object.keys(fileMap).forEach(function (k) {
+      vaultFiles += Number(fileMap[k]) || 0;
+    });
+    Object.keys(sizeMap).forEach(function (k) {
+      vaultBytes += Number(sizeMap[k]) || 0;
+    });
+    state.nutriProVaultTotals = { files: vaultFiles, bytes: vaultBytes };
+    /* Refrescar tooltip del pill de nube si ya hay lectura de storage. */
+    try {
+      var cached = planProStorageCacheRead();
+      if (cached && cached.data) {
+        renderPlanProStorageUsage(cached.data, null, {
+          fetchedAt: cached.fetchedAt,
+          fromCache: true
+        });
+      }
+    } catch (eTip) {}
   }
 
   async function nutriProSyncFolderCountsUi() {
@@ -34389,18 +34618,35 @@
 
   async function loadNutriProFolders() {
     if (!state.client || !state.nutriProReady) return [];
-    var res = await state.client
-      .from('plan_pro_nutri_folders')
-      .select('id,parent_id,title,color_hex,sort_order,created_at,updated_at')
-      .order('sort_order', { ascending: true });
-    if (res.error) {
-      if (/plan_pro_nutri|does not exist|schema cache/i.test(res.error.message || '')) {
+    var pageSize = 1000;
+    var pageFrom = 0;
+    var all = [];
+    var guard = 0;
+    var lastError = null;
+    while (guard < 40) {
+      guard += 1;
+      var res = await state.client
+        .from('plan_pro_nutri_folders')
+        .select('id,parent_id,title,color_hex,sort_order,created_at,updated_at')
+        .order('sort_order', { ascending: true })
+        .range(pageFrom, pageFrom + pageSize - 1);
+      if (res.error) {
+        lastError = res.error;
+        break;
+      }
+      var batch = res.data || [];
+      for (var i = 0; i < batch.length; i++) all.push(batch[i]);
+      if (batch.length < pageSize) break;
+      pageFrom += pageSize;
+    }
+    if (lastError && !all.length) {
+      if (/plan_pro_nutri|does not exist|schema cache/i.test(lastError.message || '')) {
         state.nutriProReady = false;
         setNutriProSetupVisible(true);
       }
-      throw res.error;
+      throw lastError;
     }
-    state.nutriProFolders = res.data || [];
+    state.nutriProFolders = all;
     setNutriProSetupVisible(false);
     return state.nutriProFolders;
   }

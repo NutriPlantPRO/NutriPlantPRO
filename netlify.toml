@@ -196,3 +196,9 @@
   to = "/.netlify/functions/nutriplant-access-pin"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/lab-analysis-extract"
+  to = "/.netlify/functions/lab-analysis-extract"
+  status = 200
+  force = true

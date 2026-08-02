@@ -21400,6 +21400,8 @@ function createSoilAnalysisTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewSoilAnalysis && window.addNewSoilAnalysis();">➕ Agregar análisis</button>
+              <button type="button" class="btn btn-sm" id="soilPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openSoilPdfExtract && window.openSoilPdfExtract();">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <input type="file" id="soilPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
             </div>
           </div>
           <div id="soil-analyses-list" class="soil-analyses-list"></div>
@@ -21578,6 +21580,7 @@ function createSoilAnalysisTabHTML() {
           </div>
         </div>
       </div>
+      <div id="soil-analysis-compare-host" class="np-analysis-compare-host"></div>
     </div>
   `;
   return analysisPresentHtml(html);
@@ -22029,6 +22032,9 @@ window.renderSoilAnalysesList = function renderSoilAnalysesList() {
     card.onclick = function () { window.selectSoilAnalysis(a.id); };
     listEl.appendChild(card);
   });
+  if (window._soilCompareState && typeof window._soilCompareState.refresh === 'function') {
+    window._soilCompareState.refresh();
+  }
 };
 
 window.initSoilAnalysesTab = function initSoilAnalysesTab() {
@@ -22038,6 +22044,177 @@ window.initSoilAnalysesTab = function initSoilAnalysesTab() {
   const emptyEl = document.getElementById('soil-analysis-form-empty');
   if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
   if (emptyEl) emptyEl.style.display = 'block';
+  var compareHost = document.getElementById('soil-analysis-compare-host');
+  if (compareHost && window.NpAnalysisCompare && typeof window.NpAnalysisCompare.mountSoilCompare === 'function') {
+    window._soilCompareState = window.NpAnalysisCompare.mountSoilCompare(compareHost, {
+      getAnalyses: function () { return window.getSoilAnalyses() || []; }
+    });
+  }
+  var fileInput = document.getElementById('soilPdfFileInput');
+  if (fileInput && fileInput.dataset.npWired !== '1') {
+    fileInput.dataset.npWired = '1';
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (file) window.handleSoilPdfFile && window.handleSoilPdfFile(file);
+    });
+  }
+  try {
+    if (window.NpI18n && typeof window.NpI18n.apply === 'function') {
+      var soilRoot = document.getElementById('soil-analysis-tab-container') || document.getElementById('soil-analysis-compare-host');
+      if (soilRoot) window.NpI18n.apply(soilRoot);
+    }
+  } catch (e) { /* ignore */ }
+};
+
+window.openSoilPdfExtract = function openSoilPdfExtract() {
+  if (!currentProject || !currentProject.id) {
+    alert(dashboardT('analysis.pdf_need_project', 'Selecciona un proyecto primero.'));
+    return;
+  }
+  var input = document.getElementById('soilPdfFileInput');
+  if (input) input.click();
+};
+
+window.handleSoilPdfFile = async function handleSoilPdfFile(file) {
+  if (!file) return;
+  if (!currentProject || !currentProject.id) {
+    alert(dashboardT('analysis.pdf_need_project', 'Selecciona un proyecto primero.'));
+    return;
+  }
+  var btn = document.getElementById('soilPdfExtractBtn');
+  var prevHtml = btn ? btn.innerHTML : '';
+  try {
+    var token = null;
+    if (typeof getRadarAccessTokenForReport === 'function') {
+      token = await getRadarAccessTokenForReport();
+    } else if (typeof window.getSupabaseClient === 'function') {
+      var client = window.getSupabaseClient();
+      if (client) {
+        var sess = await client.auth.getSession();
+        token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+      }
+    }
+    if (!token) {
+      alert(dashboardT('analysis.pdf_need_session', 'Inicia sesión en la nube (Supabase) para extraer PDF.'));
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ ' + dashboardT('analysis.pdf_extracting', 'Extrayendo datos del PDF…');
+    }
+    var base64 = await new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = String(reader.result || '');
+        var comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    var apiBase = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : '') || '';
+    var url = String(apiBase).replace(/\/$/, '') + '/api/lab-analysis-extract';
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        analysisType: 'soil',
+        filename: file.name || 'analisis-suelo.pdf',
+        mimeType: file.type || 'application/pdf',
+        fileBase64: base64
+      })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !data.ok || !data.fields) {
+      alert((data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.'));
+      return;
+    }
+    if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.openSoilReviewModal !== 'function') {
+      window.applySoilExtractedFields(data.fields, { asNew: true });
+      return;
+    }
+    window.NpAnalysisCompare.openSoilReviewModal(data.fields, function (payload, opts) {
+      window.applySoilExtractedFields(payload, opts || {});
+    });
+  } catch (e) {
+    console.warn('handleSoilPdfFile', e);
+    alert((e && e.message) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = prevHtml || ('📄 ' + dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer'));
+    }
+  }
+};
+
+window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts) {
+  opts = opts || {};
+  if (!fields || typeof fields !== 'object') return;
+  if (!currentProject || !currentProject.id) {
+    alert(dashboardT('analysis.pdf_need_project', 'Selecciona un proyecto primero.'));
+    return;
+  }
+  var list = window.getSoilAnalyses();
+  var analysis = null;
+  var wrap = document.getElementById('soil-analysis-form-wrap');
+  var currentId = wrap && wrap.getAttribute('data-current-id');
+  if (opts.asNew || !currentId) {
+    analysis = createEmptySoilAnalysis();
+    analysis.title = analysisNewTitle(list.length + 1);
+    list.push(analysis);
+  } else {
+    analysis = list.find(function (a) { return a.id === currentId; });
+    if (!analysis) {
+      analysis = createEmptySoilAnalysis();
+      analysis.title = analysisNewTitle(list.length + 1);
+      list.push(analysis);
+    }
+  }
+
+  function mergeGroup(groupName, src) {
+    if (!src || typeof src !== 'object') return;
+    if (!analysis[groupName] || typeof analysis[groupName] !== 'object') analysis[groupName] = {};
+    Object.keys(src).forEach(function (k) {
+      var v = src[k];
+      if (v === undefined || v === null) return;
+      var s = String(v).trim();
+      if (s === '') return;
+      analysis[groupName][k] = s;
+    });
+  }
+
+  if (fields.title) analysis.title = String(fields.title).trim();
+  if (fields.date) analysis.date = String(fields.date).trim();
+  mergeGroup('physical', fields.physical);
+  mergeGroup('phSection', fields.phSection);
+  if (fields.fertility) {
+    if (!analysis.fertility) analysis.fertility = {};
+    Object.keys(fields.fertility).forEach(function (k) {
+      if (k === 'ideal') return;
+      var v = fields.fertility[k];
+      if (v === undefined || v === null) return;
+      var s = String(v).trim();
+      if (s === '') return;
+      analysis.fertility[k] = s;
+    });
+  }
+  mergeGroup('cations', fields.cations);
+  mergeGroup('ratios', fields.ratios);
+
+  window.saveSoilAnalysesToProjectImmediate && window.saveSoilAnalysesToProjectImmediate();
+  window.renderSoilAnalysesList && window.renderSoilAnalysesList();
+  window.selectSoilAnalysis && window.selectSoilAnalysis(analysis.id);
+  if (typeof window.updateCationsCICAndPct === 'function') window.updateCationsCICAndPct();
+  if (typeof window.updateSoilAnalysisRatios === 'function') window.updateSoilAnalysisRatios();
+  if (typeof window.updateSoilFertilityKgHa === 'function') window.updateSoilFertilityKgHa();
+  if (window._soilCompareState && typeof window._soilCompareState.refresh === 'function') {
+    window._soilCompareState.refresh();
+  }
+  alert(dashboardT('analysis.pdf_applied', 'Datos aplicados. Revisa el formulario y guarda si hace falta.'));
 };
 
 // Guardar estado de la pestaña Análisis de Suelo (análisis seleccionado y secciones abiertas) para restaurar al volver o tras recargar

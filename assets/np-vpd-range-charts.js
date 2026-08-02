@@ -217,18 +217,19 @@
   function resolveCriticalChartTargetWidth(anchorEl) {
     var w = 0;
     var results = document.getElementById('vpd-range-results');
-    if (results && results.clientWidth > 0) {
-      w = results.clientWidth - 20;
+    if (results && results.clientWidth > 40) {
+      w = results.clientWidth - 28;
     }
-    if (anchorEl && anchorEl.clientWidth > 0) {
-      w = Math.max(w, anchorEl.clientWidth - 12);
+    if (anchorEl && anchorEl.clientWidth > 40) {
+      // Preferir el ancho real del bloque (sin forzar más ancho del que ya tiene).
+      w = w > 0 ? Math.min(w, anchorEl.clientWidth - 12) : anchorEl.clientWidth - 12;
     }
     if (!w && typeof window !== 'undefined' && window.innerWidth) {
-      w = Math.min(1100, Math.max(CRITICAL_CHART_DASHBOARD_MIN_WIDTH, window.innerWidth - 300));
+      w = Math.min(1100, Math.max(320, window.innerWidth - 300));
     }
     if (!w) w = CRITICAL_CHART_DASHBOARD_MIN_WIDTH;
     return Math.max(
-      CRITICAL_CHART_DASHBOARD_MIN_WIDTH,
+      280,
       Math.min(CRITICAL_CHART_DASHBOARD_MAX_WIDTH, Math.floor(w))
     );
   }
@@ -247,19 +248,24 @@
       if (fluid) {
         innerEl.style.width = '100%';
         innerEl.style.minWidth = '0';
-        innerEl.style.maxWidth = 'none';
+        innerEl.style.maxWidth = '100%';
       } else {
         innerEl.style.width = layout.canvasWidth + 'px';
         innerEl.style.minWidth = layout.canvasWidth + 'px';
         innerEl.style.maxWidth = layout.canvasWidth + 'px';
       }
       innerEl.style.height = layout.canvasHeight + 'px';
+      innerEl.style.minHeight = layout.canvasHeight + 'px';
+      innerEl.style.boxSizing = 'border-box';
     }
     if (canvasEl) {
       canvasEl.width = layout.canvasWidth;
       canvasEl.height = layout.canvasHeight;
+      // Fluido: CSS al 100% del contenedor (no forzar px o la sección se alarga al pintar).
       canvasEl.style.width = fluid ? '100%' : layout.canvasWidth + 'px';
       canvasEl.style.height = layout.canvasHeight + 'px';
+      canvasEl.style.maxWidth = fluid ? '100%' : '';
+      canvasEl.style.display = 'block';
     }
   }
 
@@ -283,13 +289,19 @@
 
   function criticalChartViewportHtml(prefix) {
     return (
-      '<div class="np-vpd-critical-chart-viewport" data-np-chart-mode="dashboard" style="width:100%;border:1px solid #fed7aa;border-radius:8px;background:#fff;padding:4px 6px;box-sizing:border-box;">' +
-      '<div data-np-chart-inner="critical" style="width:100%;height:' +
+      '<div class="np-vpd-critical-chart-viewport" data-np-chart-mode="dashboard" style="width:100%;max-width:100%;min-height:' +
       CRITICAL_CHART_DASHBOARD_HEIGHT +
-      'px;position:relative;">' +
+      'px;box-sizing:border-box;overflow:hidden;border:1px solid #fed7aa;border-radius:8px;background:#fff;padding:4px 6px;">' +
+      '<div data-np-chart-inner="critical" style="width:100%;max-width:100%;min-width:0;height:' +
+      CRITICAL_CHART_DASHBOARD_HEIGHT +
+      'px;min-height:' +
+      CRITICAL_CHART_DASHBOARD_HEIGHT +
+      'px;box-sizing:border-box;position:relative;">' +
       '<canvas id="' +
       prefix +
-      '-critical-canvas"></canvas></div></div>'
+      '-critical-canvas" style="display:block;width:100%;height:' +
+      CRITICAL_CHART_DASHBOARD_HEIGHT +
+      'px;"></canvas></div></div>'
     );
   }
 
@@ -755,7 +767,7 @@
         : '') +
       ' · ' +
       chartT('barras 24 h + VPD máx/mín', '24 h bars + max/min VPD');
-    applyCriticalChartLayout(null, canvas, layout);
+    applyCriticalChartLayout(null, canvas, layout, !!opts.fluid);
     var useResponsive = opts.responsive !== false && !opts.layout;
     var animOn = opts.animation !== false;
     var ink = opts.pdfExport ? '#334155' : '#7c2d12';
@@ -1031,6 +1043,7 @@
     var inner =
       graphPanel && graphPanel.querySelector('[data-np-chart-inner="critical"]');
     if (!canvas || !prep.windowStart) return;
+    if (viewport) viewport._npCriticalPaintLock = true;
     var days =
       prep.windowStart && prep.windowEnd
         ? isoDateSpanInclusiveDays(prep.windowStart, prep.windowEnd)
@@ -1040,11 +1053,18 @@
     charts.critical = createCriticalHoursChart(canvas, cfg.dailySummaryRows || [], prep, {
       responsive: false,
       maintainAspectRatio: false,
-      animation: true,
+      animation: false,
+      fluid: true,
       summaryRows: cfg.summaryRows,
       granularity: (cfg.meta || {}).granularity,
       layout: layout
     });
+    if (viewport) {
+      viewport._npCriticalLastWidth = layout.canvasWidth;
+      requestAnimationFrame(function () {
+        viewport._npCriticalPaintLock = false;
+      });
+    }
   }
 
   function initInteractiveBlock(cfg) {
@@ -1069,13 +1089,23 @@
     var graphPanel = document.getElementById(cfg.prefix + '-critical-graph');
     var viewport =
       graphPanel && graphPanel.querySelector('.np-vpd-critical-chart-viewport');
+    var resultsHost = document.getElementById('vpd-range-results');
     if (viewport && !viewport._npCriticalResizeBound) {
       viewport._npCriticalResizeBound = true;
       var resizeTimer = null;
       var onResize = function () {
+        if (viewport._npCriticalPaintLock) return;
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
           if (!graphPanel || graphPanel.style.display === 'none') return;
+          if (viewport._npCriticalPaintLock) return;
+          var nextW = resolveCriticalChartTargetWidth(viewport || graphPanel);
+          if (
+            viewport._npCriticalLastWidth &&
+            Math.abs(nextW - viewport._npCriticalLastWidth) < 12
+          ) {
+            return;
+          }
           loadChartJs(function () {
             paintCriticalChartInteractive(cfg, prep, charts);
           });
@@ -1083,7 +1113,8 @@
       };
       if (typeof ResizeObserver !== 'undefined') {
         var ro = new ResizeObserver(onResize);
-        ro.observe(viewport);
+        // Observar el host de resultados (ancho estable), no el canvas que se repinta.
+        ro.observe(resultsHost || viewport);
         viewport._npCriticalResizeObserver = ro;
       }
       window.addEventListener('resize', onResize);
@@ -1141,7 +1172,9 @@
         : '') +
       '<div id="' +
       prefix +
-      '-critical-graph" style="display:block;">' +
+      '-critical-graph" style="display:block;width:100%;max-width:100%;box-sizing:border-box;min-height:' +
+      CRITICAL_CHART_DASHBOARD_HEIGHT +
+      'px;">' +
       criticalChartViewportHtml(prefix) +
       '</div>' +
       '<div id="' +

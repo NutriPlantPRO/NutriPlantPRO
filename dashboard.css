@@ -2255,6 +2255,25 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   box-shadow: none;
 }
 
+#np-projects-list .np-project-card .btn[data-act="open"] {
+  border-color: #10b981;
+  background: #fff;
+  color: #047857;
+}
+
+#np-projects-list .np-project-card .btn[data-act="open"]:hover {
+  background: #ecfdf5;
+  border-color: #059669;
+  color: #047857;
+  box-shadow: none;
+}
+
+#np-projects-list .np-project-card.selected .btn[data-act="open"] {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+
 #np-projects-list .np-project-card .btn[data-act="del"] {
   border-color: #fecaca;
   background: #fef2f2;
@@ -7748,6 +7767,202 @@ html.embed-login body {
   gap: 8px;
 }
 .soil-analyses-list { display: flex; flex-direction: column; gap: 8px; }
+
+/* Comparar análisis + modal PDF lab */
+.np-analysis-compare-host {
+  margin-top: 18px;
+}
+.np-analysis-compare {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0 14px 14px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+.np-analysis-compare__summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: #0f172a;
+  padding: 12px 2px;
+  list-style: none;
+}
+.np-analysis-compare__summary::-webkit-details-marker { display: none; }
+.np-analysis-compare__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.np-analysis-compare__cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.np-analysis-compare__col-btn {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.np-analysis-compare__col-btn.is-on {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+.np-analysis-compare__table-wrap {
+  overflow: auto;
+  max-height: 360px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.np-analysis-compare__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 520px;
+}
+.np-analysis-compare__table th,
+.np-analysis-compare__table td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 7px 9px;
+  text-align: left;
+  white-space: nowrap;
+}
+.np-analysis-compare__table th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 1;
+  font-weight: 800;
+  color: #0f172a;
+}
+.np-analysis-compare__table th.is-on {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.np-analysis-compare__chart-wrap {
+  height: 320px;
+  position: relative;
+}
+.np-lab-pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.np-lab-pdf-modal__panel {
+  width: min(720px, 100%);
+  max-height: min(90vh, 900px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  padding: 16px 18px 18px;
+}
+.np-lab-pdf-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.np-lab-pdf-modal__head h3 {
+  margin: 0;
+  font-size: 17px;
+  color: #0f172a;
+}
+.np-lab-pdf-modal__close {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #64748b;
+}
+.np-lab-pdf-modal__intro,
+.np-lab-pdf-modal__notes {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.np-lab-pdf-modal__notes {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.np-lab-pdf-modal__actions-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.np-lab-pdf-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 48vh;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px;
+}
+.np-lab-pdf-modal__row {
+  display: grid;
+  grid-template-columns: 18px minmax(120px, 1fr) minmax(100px, 1.2fr);
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.np-lab-pdf-modal__label { color: #334155; font-weight: 600; }
+.np-lab-pdf-modal__val {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.np-lab-pdf-modal__foot {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.np-lab-pdf-modal__new {
+  font-size: 13px;
+  color: #334155;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.np-lab-pdf-modal__foot-btns {
+  display: flex;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .np-lab-pdf-modal__row {
+    grid-template-columns: 18px 1fr;
+  }
+  .np-lab-pdf-modal__val {
+    grid-column: 1 / -1;
+  }
+}
 .soil-analysis-card {
   padding: 12px;
   background: #fff;

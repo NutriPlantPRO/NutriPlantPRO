@@ -170,6 +170,95 @@ function npGetSafeLoginNextUrl() {
 }
 window.npGetSafeLoginNextUrl = npGetSafeLoginNextUrl;
 
+/** Solo tu correo dueño: tras contraseña válida, elegir NutriPlant PRO / Admin / Plan PRO. */
+var NP_OWNER_ADMIN_EMAIL = 'admin@nutriplantpro.com';
+var NP_ADMIN_PANEL_URL = 'admin/index.html?k=np_admin_key_8f4a2b9c1e7d';
+var NP_PLANPRO_PANEL_URL = 'planpro/?k=np_planpro_key_4a7f2e9b1c6d';
+
+function npIsOwnerAdminEmail(email) {
+  return String(email || '').trim().toLowerCase() === NP_OWNER_ADMIN_EMAIL;
+}
+
+function npShowAdminDestinationChooser() {
+  var modal = document.getElementById('adminDestinationModal');
+  if (!modal) {
+    location.href = 'dashboard.html';
+    return;
+  }
+  modal.classList.add('is-open');
+  modal.style.display = 'flex';
+}
+
+function npHideAdminDestinationChooser() {
+  var modal = document.getElementById('adminDestinationModal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.style.display = 'none';
+}
+
+function npGoAdminDestination(dest) {
+  dest = String(dest || '').trim().toLowerCase();
+  if (dest === 'dashboard' || dest === 'pro' || dest === 'nutriplant') {
+    location.href = 'dashboard.html';
+    return;
+  }
+  if (dest === 'admin') {
+    try {
+      localStorage.setItem('admin_logged_in', 'true');
+      localStorage.setItem('admin_username', NP_OWNER_ADMIN_EMAIL);
+      localStorage.setItem('admin_session_timestamp', Date.now().toString());
+    } catch (e) {}
+    location.href = NP_ADMIN_PANEL_URL;
+    return;
+  }
+  if (dest === 'planpro' || dest === 'plan_pro' || dest === 'plan-pro') {
+    location.href = NP_PLANPRO_PANEL_URL;
+    return;
+  }
+}
+
+/** Si es admin@… muestra el chooser y no redirige solo; si hay ?next= válido, respeta next. */
+function npAfterOwnerAdminAuthenticated(email, submitBtn, originalText) {
+  if (!npIsOwnerAdminEmail(email)) return false;
+  clearLoginFailures();
+  showSuccess(authT('auth.welcome_admin', '¡Bienvenido Administrador! Elige a dónde entrar…'));
+  if (submitBtn && originalText) resetButton(submitBtn, originalText);
+  try {
+    var p = new URLSearchParams(window.location.search);
+    var next = (p.get('next') || '').trim();
+    if (next) {
+      setTimeout(function () {
+        location.href = npGetSafeLoginNextUrl();
+      }, 600);
+      return true;
+    }
+  } catch (e) {}
+  npShowAdminDestinationChooser();
+  return true;
+}
+
+(function wireAdminDestinationChooser() {
+  function onReady() {
+    var modal = document.getElementById('adminDestinationModal');
+    if (!modal || modal.dataset.wired === '1') return;
+    modal.dataset.wired = '1';
+    modal.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-admin-dest]') : null;
+      if (!btn) return;
+      npGoAdminDestination(btn.getAttribute('data-admin-dest'));
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onReady);
+  } else {
+    onReady();
+  }
+})();
+
+window.npShowAdminDestinationChooser = npShowAdminDestinationChooser;
+window.npGoAdminDestination = npGoAdminDestination;
+window.npIsOwnerAdminEmail = npIsOwnerAdminEmail;
+
 // Si estamos en dashboard y no hay sesión, redirige a login:
 if (location.pathname.endsWith("dashboard.html") && !localStorage.getItem(AUTH_KEY)) {
   location.href = "login.html";
@@ -277,14 +366,16 @@ if (form) {
     
     // 🔐 ADMIN: intentar Supabase primero (si está configurado) para que el panel admin cargue datos de la nube
     const ADMIN_ACCESS = { 'admin@nutriplantpro.com': 'npja1502' };
-    if (ADMIN_ACCESS[email] && ADMIN_ACCESS[email] === pass) {
+    const emailNorm = email.toLowerCase();
+    if (ADMIN_ACCESS[emailNorm] && ADMIN_ACCESS[emailNorm] === pass) {
       const supabaseAuth = window.nutriplantSupabaseAuth;
       if (supabaseAuth && supabaseAuth.isAvailable && supabaseAuth.isAvailable()) {
         try {
-          const result = await supabaseAuth.signIn(email, pass);
+          const result = await supabaseAuth.signIn(emailNorm, pass);
           if (result.ok && result.user) {
-            // Admin existe en Supabase → sesión lista para cargar datos en el panel admin
+            // Admin existe en Supabase → sesión lista; dueño elige destino
             localStorage.removeItem('currentProjectId');
+            if (npAfterOwnerAdminAuthenticated(emailNorm, submitBtn, originalText)) return;
             showSuccess(authT("auth.welcome_admin", "¡Bienvenido Administrador! Ingresando..."));
             setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
             return;
@@ -292,7 +383,7 @@ if (form) {
         } catch (e) { console.warn('Admin Supabase sign-in falló, usando modo local:', e); }
       }
       // Fallback: admin solo en localStorage (cuando no existe en Supabase)
-      const adminUserId = 'admin_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+      const adminUserId = 'admin_' + btoa(emailNorm).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
       const adminUserKey = `nutriplant_user_${adminUserId}`;
       let adminUserData = null;
       try {
@@ -300,9 +391,9 @@ if (form) {
         if (existingData) adminUserData = JSON.parse(existingData);
       } catch (e) { console.error('Error reading admin user data:', e); }
       if (!adminUserData) {
-        adminUserData = { email, name: 'Administrador NutriPlant', userId: adminUserId, password: 'npja1502', isAdmin: true, subscription_status: 'active', subscription_amount: 0, created_at: new Date().toISOString() };
+        adminUserData = { email: emailNorm, name: 'Administrador NutriPlant', userId: adminUserId, password: 'npja1502', isAdmin: true, subscription_status: 'active', subscription_amount: 0, created_at: new Date().toISOString() };
         await npApplyLocalAuthPreferences(adminUserData);
-        if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData)) || !npSafeSetItem(`nutriplant_user_email_${email}`, adminUserId)) {
+        if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData)) || !npSafeSetItem(`nutriplant_user_email_${emailNorm}`, adminUserId)) {
           showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
           resetButton(submitBtn, originalText);
           return;
@@ -318,12 +409,13 @@ if (form) {
         }
       }
       if (!npSafeSetItem('nutriplant_user_id', adminUserId) ||
-          !npSafeSetItem(AUTH_KEY, JSON.stringify({ email, userId: adminUserId, ts: Date.now(), name: 'Administrador', isAdmin: true }))) {
+          !npSafeSetItem(AUTH_KEY, JSON.stringify({ email: emailNorm, userId: adminUserId, ts: Date.now(), name: 'Administrador', isAdmin: true }))) {
         showError(authT("auth.err_storage_full", "❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo."));
         resetButton(submitBtn, originalText);
         return;
       }
       localStorage.removeItem('currentProjectId');
+      if (npAfterOwnerAdminAuthenticated(emailNorm, submitBtn, originalText)) return;
       showSuccess(authT("auth.welcome_admin", "¡Bienvenido Administrador! Ingresando..."));
       setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
       return;
@@ -353,6 +445,7 @@ if (form) {
           }
           localStorage.removeItem('nutriplant-current-project');
           localStorage.removeItem('currentProjectId');
+          if (npAfterOwnerAdminAuthenticated(email.toLowerCase(), submitBtn, originalText)) return;
           const name = result.user?.name || email.split('@')[0];
           clearLoginFailures();
           showSuccess(authT("auth.welcome_user", "¡Bienvenido, {name}! Ingresando...", { name: name }));
@@ -502,6 +595,8 @@ if (form) {
     localStorage.removeItem('nutriplant-current-project');
     localStorage.removeItem('currentProjectId');
     
+    if (npAfterOwnerAdminAuthenticated(email.toLowerCase(), submitBtn, originalText)) return;
+
     // Mostrar mensaje de éxito antes de redirigir
     const userName = userFound.name || email.split('@')[0];
     clearLoginFailures();

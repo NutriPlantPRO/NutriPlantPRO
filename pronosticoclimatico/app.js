@@ -783,6 +783,7 @@
   async function generate() {
     const c = coords();
     if (!c) return setStatus(t('coords_invalid'), 'error');
+    applyCoords(c.lat, c.lng, true);
     const btn = $('agro-generate-btn');
     btn.disabled = true;
     setStatus(t('fetching'));
@@ -1464,9 +1465,11 @@
       [80, 250, 600].forEach((ms) => setTimeout(() => map?.invalidateSize(), ms));
       $('agro-location-card').scrollIntoView({ behavior: 'smooth' });
     });
-    ['agro-lat', 'agro-lng', 'agro-plot-name'].forEach((id) => $(id).addEventListener('change', () => {
-      saveInputs();
+    ['agro-lat', 'agro-lng'].forEach((id) => $(id).addEventListener('change', () => {
+      const c = coords();
+      if (c) applyCoords(c.lat, c.lng, true);
     }));
+    $('agro-plot-name').addEventListener('change', () => saveInputs());
   }
 
   function bindAboutModal() {

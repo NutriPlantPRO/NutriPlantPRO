@@ -701,6 +701,30 @@
       var key = el.getAttribute('data-agro-i18n-title');
       if (key) el.setAttribute('title', t(key));
     });
+    scope.querySelectorAll('a[href*="politicas-privacidad"], a[href*="terminos-condiciones"]').forEach(function (a) {
+      var href = a.getAttribute('href');
+      if (!href) return;
+      var hash = '';
+      var iHash = href.indexOf('#');
+      if (iHash >= 0) {
+        hash = href.slice(iHash);
+        href = href.slice(0, iHash);
+      }
+      var base = href;
+      var query = '';
+      var iQ = href.indexOf('?');
+      if (iQ >= 0) {
+        base = href.slice(0, iQ);
+        query = href.slice(iQ + 1);
+      }
+      try {
+        var params = new URLSearchParams(query);
+        params.set('lang', lang);
+        a.setAttribute('href', base + '?' + params.toString() + hash);
+      } catch (e) {
+        a.setAttribute('href', base + '?lang=' + lang + hash);
+      }
+    });
   }
 
   function setReportPrefs(prefs) {

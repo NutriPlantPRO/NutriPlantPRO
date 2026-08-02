@@ -196,6 +196,248 @@
             margin: 8px 0 0 0;
             opacity: 0.95;
         }
+
+        /* Banda superior tipo Plan PRO */
+        .admin-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            margin: 0 0 18px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 6px 22px rgba(15, 23, 42, 0.06), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
+            position: relative;
+            z-index: 12000;
+        }
+        .admin-top-bar__brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .admin-top-bar__brand img {
+            height: 36px;
+            width: auto;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
+        }
+        .admin-top-bar__brand h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+        .admin-top-bar__brand .sub {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .admin-top-bar__actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+        .admin-cloud-sync-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            transition: background 0.18s ease, border-color 0.18s ease, opacity 0.15s ease;
+        }
+        .admin-cloud-sync-btn:hover:not(:disabled) {
+            border-color: rgba(37, 99, 235, 0.35);
+            color: #1d4ed8;
+            background: #fff;
+        }
+        .admin-cloud-sync-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .admin-cloud-sync-btn svg {
+            width: 22px;
+            height: 22px;
+        }
+        .admin-cloud-sync-btn .admin-cloud-sync-dot {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+        .admin-cloud-sync-btn[data-state="synced"] .admin-cloud-sync-dot { background: #22c55e; }
+        .admin-cloud-sync-btn[data-state="pending"] .admin-cloud-sync-dot,
+        .admin-cloud-sync-btn[data-state="saving"] .admin-cloud-sync-dot { background: #f59e0b; }
+        .admin-cloud-sync-btn[data-state="error"] .admin-cloud-sync-dot { background: #ef4444; }
+        .admin-top-menu-btn,
+        .admin-top-logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+        .admin-top-menu-btn:hover,
+        .admin-top-logout-btn:hover {
+            border-color: rgba(37, 99, 235, 0.35);
+            color: #1d4ed8;
+            background: #fff;
+        }
+        .admin-top-menu-btn[aria-expanded="true"] {
+            border-color: rgba(34, 197, 94, 0.45);
+            background: rgba(240, 253, 244, 0.95);
+            color: #16a34a;
+        }
+        .admin-top-menu-btn svg,
+        .admin-top-logout-btn svg {
+            width: 22px;
+            height: 18px;
+            display: block;
+        }
+        .admin-top-logout-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        .admin-top-menu-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 12001;
+            background: rgba(15, 23, 42, 0.28);
+        }
+        .admin-top-menu-backdrop.is-open { display: block; }
+        .admin-top-menu-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 12002;
+            width: min(420px, calc(100vw - 32px));
+            max-height: min(78vh, 640px);
+            overflow: auto;
+            padding: 14px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+        }
+        .admin-top-menu-panel.is-open { display: block; }
+        .admin-top-menu-title {
+            display: block;
+            margin: 0 0 10px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .admin-top-menu-block {
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .admin-top-menu-block:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+        .admin-top-menu-sub {
+            display: block;
+            margin: 0 0 8px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .admin-top-menu-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .admin-top-menu-links a {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 10px;
+            border-radius: 9px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .admin-top-menu-links a:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+        .admin-top-menu-links a.admin-link-brand {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+        .admin-top-menu-links a.admin-link-plan {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: #15803d;
+        }
+        .admin-top-menu-social {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .admin-top-menu-social a {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #334155;
+        }
+        .admin-top-menu-social a svg {
+            width: 16px;
+            height: 16px;
+        }
+        @media (max-width: 640px) {
+            .admin-top-bar {
+                padding: 10px 12px;
+            }
+            .admin-top-bar__brand img { height: 30px; }
+            .admin-top-bar__brand h1 { font-size: 1.05rem; }
+            .admin-cloud-sync-btn,
+            .admin-top-menu-btn,
+            .admin-top-logout-btn {
+                width: 40px;
+                height: 40px;
+            }
+        }
         
         .admin-stats {
             display: grid;
@@ -579,6 +821,80 @@
             max-width: 100%;
             box-sizing: border-box;
         }
+        .data-viewer-filters {
+            margin-bottom: 20px;
+            padding: 12px 14px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .data-viewer-filters-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            margin: 0;
+            padding: 4px 2px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font: inherit;
+            color: #334155;
+            text-align: left;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .data-viewer-filters-toggle:hover {
+            color: #0f172a;
+        }
+        .data-viewer-filters-toggle-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .data-viewer-filters-toggle-meta {
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+        }
+        .data-viewer-filters-chevron {
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            line-height: 1;
+            transition: transform 0.18s ease, background 0.15s ease;
+        }
+        .data-viewer-filters.is-collapsed .data-viewer-filters-chevron {
+            transform: rotate(-90deg);
+        }
+        .data-viewer-filters-body {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+            gap: 12px;
+        }
+        .data-viewer-filters.is-collapsed .data-viewer-filters-body {
+            display: none;
+        }
+        @media (max-width: 720px) {
+            .data-viewer-filters {
+                padding: 10px 10px 12px;
+            }
+            .data-viewer-filters-toggle-label {
+                font-size: 12px;
+            }
+        }
         /* Por encima del visor de tablas (#dataViewerModal z-index 50000); si no, Editar abre detrás y parece que no hace nada. */
         #editUserModal.modal-overlay {
             z-index: 55000 !important;
@@ -722,13 +1038,139 @@
     </div>
 
     <div id="adminAppShell" class="admin-container" style="display: none;">
+        <header class="admin-top-bar" id="adminTopBar">
+            <div class="admin-top-bar__brand">
+                <img src="../assets/NutriPlant_PRO_blue.png" alt="" />
+                <div>
+                    <h1>Admin</h1>
+                    <div class="sub">Panel de administración</div>
+                </div>
+            </div>
+            <div class="admin-top-bar__actions">
+                <button type="button" id="admin-refresh-cloud-btn" class="admin-cloud-sync-btn" data-state="idle" onclick="refrescarDesdeNube()" aria-label="Actualizar desde Supabase" title="Actualizar desde Supabase">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    </svg>
+                    <span class="admin-cloud-sync-dot" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="admin-top-menu-btn" id="adminTopMenuBtn" aria-expanded="false" aria-controls="adminTopMenuPanel" aria-haspopup="dialog" aria-label="Abrir menú de accesos">
+                    <svg viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M1 1.5h22M1 9h22M1 16.5h22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <button type="button" class="admin-top-logout-btn" id="adminTopLogoutBtn" onclick="logout()" aria-label="Cerrar sesión" title="Cerrar sesión">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 2v10"/>
+                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="adminTopMenuBackdrop" class="admin-top-menu-backdrop" aria-hidden="true"></div>
+            <div id="adminTopMenuPanel" class="admin-top-menu-panel" role="dialog" aria-modal="true" aria-labelledby="adminTopMenuTitle" aria-hidden="true">
+                <span id="adminTopMenuTitle" class="admin-top-menu-title">Accesos</span>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Redes NutriPlant PRO</span>
+                    <div class="admin-top-menu-social" aria-label="Redes NutriPlant PRO">
+                        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+                        <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+                        <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" title="TikTok" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
+                        <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/></svg></a>
+                        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Portal NutriPlant</span>
+                    <div class="admin-top-menu-links">
+                        <a class="admin-link-brand" href="../login.html" target="_blank" rel="noopener noreferrer">NutriPlant PRO</a>
+                        <a class="admin-link-plan" href="../planpro/?k=np_planpro_key_4a7f2e9b1c6d">Plan PRO</a>
+                        <a href="agroclimate.html?k=np_admin_key_8f4a2b9c1e7d">Alertas agroclimáticas</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Portal y pagos</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer">Cuenta PayPal</a>
+                        <a href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer">PayPal Developer</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Nube y desarrollo</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a>
+                        <a href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer">Analytics</a>
+                        <a href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a>
+                        <a href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <a href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer">Namecheap</a>
+                        <a href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer">Google Cloud</a>
+                        <a href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer">OpenAI</a>
+                        <a href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer">Microsoft</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Cuentas y ahorro</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer">BBVA</a>
+                        <a href="https://gbm.com/" target="_blank" rel="noopener noreferrer">GBM</a>
+                        <a href="https://client.schwab.com/app/accounts/summary/" target="_blank" rel="noopener noreferrer">Charles Schwab</a>
+                        <a href="https://www.chase.com/" target="_blank" rel="noopener noreferrer">Chase</a>
+                        <a href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer">CETES</a>
+                        <a href="https://wise.com/home" target="_blank" rel="noopener noreferrer">Wise</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Noticias</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer">El Financiero</a>
+                        <a href="https://www.eleconomista.com.mx/" target="_blank" rel="noopener noreferrer">El Economista</a>
+                        <a href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer">PD China</a>
+                        <a href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer">NY Times</a>
+                        <a href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer">WSJ</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Mercados e información</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer">BMV</a>
+                        <a href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer">Banxico</a>
+                        <a href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>
+                        <a href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer">T. Economics</a>
+                        <a href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer">Yahoo Finanzas</a>
+                        <a href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer">Google Finanzas</a>
+                        <a href="https://finviz.com/" target="_blank" rel="noopener noreferrer">Finviz</a>
+                        <a href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer">FMI</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Dispositivos y herramientas</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://smartthingsfind.samsung.com/" target="_blank" rel="noopener noreferrer">SmartThings Find</a>
+                        <a href="https://myaccount.google.com/device-activity" target="_blank" rel="noopener noreferrer">Dispositivos Google</a>
+                        <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Canva</a>
+                        <a href="https://www.windy.com/?19.119,-104.217,5" target="_blank" rel="noopener noreferrer">Windy</a>
+                        <a href="https://zoom.earth/" target="_blank" rel="noopener noreferrer">Zoom Earth</a>
+                    </div>
+                </div>
+                <div class="admin-top-menu-block">
+                    <span class="admin-top-menu-sub">Servicios</span>
+                    <div class="admin-top-menu-links">
+                        <a href="https://izzi.mx/login" target="_blank" rel="noopener noreferrer">izzi</a>
+                        <a href="https://telmex.com/web/guest/pago_sin_login" target="_blank" rel="noopener noreferrer">Telmex pago</a>
+                        <a href="https://www.elpalaciodehierro.com/login" target="_blank" rel="noopener noreferrer">Palacio</a>
+                        <a href="https://www.hsbc.com.mx/online/dashboard/" target="_blank" rel="noopener noreferrer">HSBC</a>
+                        <a href="https://www.mitelcel.com/mitelcel/login" target="_blank" rel="noopener noreferrer">Mi Telcel</a>
+                        <a href="https://www.mintmobile.com/" target="_blank" rel="noopener noreferrer">Mint Mobile</a>
+                        <a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Cuenta Google</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
         <!-- Admin Dashboard -->
         <div id="adminDashboard">
             <div class="admin-header">
                 <img src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO" style="height: 70px; max-width: 350px; object-fit: contain; margin-bottom: 12px;">
                 <h1>Panel de Administración</h1>
                 <p>Gestión completa de usuarios, proyectos y datos</p>
-                <p style="margin-top:14px;"><a href="../planpro/?k=np_planpro_key_4a7f2e9b1c6d" style="color:#fff;font-weight:600;text-decoration:underline;">Plan PRO — Cerebro Digital</a></p>
                 <p style="margin-top:8px;"><a href="agroclimate.html?k=np_admin_key_8f4a2b9c1e7d" style="display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid rgba(255,255,255,.55);border-radius:8px;color:#fff;font-weight:700;text-decoration:none;">🌤️ Alertas agroclimáticas · usuarios y mapa</a></p>
             </div>
 
@@ -737,12 +1179,13 @@
             <div class="admin-stats">
                 <div class="stat-card">
                     <div class="stat-number" id="totalUsers">-</div>
-                    <div class="stat-label">👥 Suscriptores Totales</div>
+                    <div class="stat-label">👥 Registrados Totales</div>
                 </div>
                 
                 <div class="stat-card">
                     <div class="stat-number" id="activeSubscriptions">-</div>
                     <div class="stat-label">✅ Suscripciones Activas</div>
+                    <div class="stat-sub" id="activeSubscriptionsBreakdown" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                 </div>
                 
                 <div class="stat-card">
@@ -763,11 +1206,13 @@
                 <div class="stat-card">
                     <div class="stat-number" id="estimatedCostChat">-</div>
                     <div class="stat-label">💰 Costo est. Chat total (USD)</div>
+                    <div class="stat-sub" id="estimatedCostChatNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                 </div>
                 
                 <div class="stat-card">
                     <div class="stat-number" id="estimatedCostChatMonth">-</div>
                     <div class="stat-label">📅 Costo est. Chat este mes (USD)</div>
+                    <div class="stat-sub" id="estimatedCostChatMonthNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                 </div>
                 <div class="stat-card" style="grid-column: 1 / -1; max-width: 100%; background: #f0f9ff; border-left: 4px solid #0284c7;">
                     <div class="stat-label" style="margin-bottom: 4px;">🤖 Tu uso (chat admin)</div>
@@ -864,10 +1309,6 @@
             <div id="dashboardMessageZone" style="margin-top: 24px; margin-bottom: 8px; min-height: 0;">
                 <div id="dashboardErrorMessage" class="error-message" style="display: none;"></div>
                 <div id="dashboardSuccessMessage" class="success-message" style="display: none;"></div>
-            </div>
-            <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                <button id="admin-refresh-cloud-btn" class="btn-admin" onclick="refrescarDesdeNube()" style="background: #10b981;">☁️ Refrescar desde Supabase</button>
-                <button class="btn-admin secondary" onclick="logout()">Cerrar Sesión</button>
             </div>
 
             <style>
@@ -976,6 +1417,9 @@
             btn.disabled = blocked;
             btn.style.opacity = blocked ? '0.7' : '1';
             btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
+            if (_adminRefreshInProgress) btn.setAttribute('data-state', 'saving');
+            else if (rem > 0) btn.setAttribute('data-state', 'pending');
+            else btn.setAttribute('data-state', 'synced');
             if (_adminRefreshBtnTimer) {
                 clearTimeout(_adminRefreshBtnTimer);
                 _adminRefreshBtnTimer = null;
@@ -1964,6 +2408,7 @@
             if (window.nutriplantAccessPin) {
                 window.nutriplantAccessPin.clearAccess(window.nutriplantAccessPin.SCOPE_ADMIN);
             }
+            closeAdminTopMenu();
             localStorage.removeItem('admin_logged_in');
             localStorage.removeItem('admin_username');
             localStorage.removeItem('admin_session_timestamp');
@@ -1975,6 +2420,58 @@
             applyAdminLockoutUI(lockout.locked, lockout.remainingMs);
             if (lockout.locked) setTimeout(updateLockoutCountdown, 10000);
         }
+
+        function openAdminTopMenu() {
+            var btn = document.getElementById('adminTopMenuBtn');
+            var panel = document.getElementById('adminTopMenuPanel');
+            var backdrop = document.getElementById('adminTopMenuBackdrop');
+            if (!btn || !panel) return;
+            btn.setAttribute('aria-expanded', 'true');
+            panel.classList.add('is-open');
+            panel.setAttribute('aria-hidden', 'false');
+            if (backdrop) {
+                backdrop.classList.add('is-open');
+                backdrop.setAttribute('aria-hidden', 'false');
+            }
+        }
+
+        function closeAdminTopMenu() {
+            var btn = document.getElementById('adminTopMenuBtn');
+            var panel = document.getElementById('adminTopMenuPanel');
+            var backdrop = document.getElementById('adminTopMenuBackdrop');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (panel) {
+                panel.classList.remove('is-open');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+            if (backdrop) {
+                backdrop.classList.remove('is-open');
+                backdrop.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        (function wireAdminTopMenu() {
+            var btn = document.getElementById('adminTopMenuBtn');
+            var panel = document.getElementById('adminTopMenuPanel');
+            var backdrop = document.getElementById('adminTopMenuBackdrop');
+            if (!btn || !panel) return;
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (btn.getAttribute('aria-expanded') === 'true') closeAdminTopMenu();
+                else openAdminTopMenu();
+            });
+            if (backdrop) {
+                backdrop.addEventListener('click', function () { closeAdminTopMenu(); });
+            }
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeAdminTopMenu();
+            });
+            panel.addEventListener('click', function (e) {
+                var a = e.target && e.target.closest ? e.target.closest('a') : null;
+                if (a) closeAdminTopMenu();
+            });
+        })();
         
         // 🔒 PROTECCIÓN: Validar sesión periódicamente (cada 5 minutos)
         setInterval(function() {
@@ -2016,26 +2513,44 @@
             const users = getAllUsers();
             const cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
             const useCloudCounts = cloudUsers.length > 0;
+            const pool = useCloudCounts ? cloudUsers : users;
             const chatMetrics = getChatMetrics();
+            const activeAll = pool.filter(function (u) { return u && u.subscription_status === 'active'; });
+            const activeCounting = pool.filter(adminUserCountsTowardSubscriptionRevenue);
+            const activeExcluded = activeAll.filter(function (u) { return !adminUserCountsTowardSubscriptionRevenue(u); });
             const stats = {
-                totalUsers: useCloudCounts ? cloudUsers.length : users.length,
-                activeSubscriptions: useCloudCounts ? cloudUsers.filter(u => u.subscription_status === 'active').length : users.filter(u => u.subscription_status === 'active').length,
+                totalUsers: pool.length,
+                activeSubscriptions: activeAll.length,
+                activeCounting: activeCounting.length,
+                activeExcluded: activeExcluded.length,
                 totalProjects: getTotalProjects(),
                 totalChats: chatMetrics.totalMessages,
                 totalInteractions: chatMetrics.totalInteractions,
                 estimatedCostChat: chatMetrics.estimatedCostUSD,
                 activeUsers: getActiveUsers(),
-                pendingSubscriptions: useCloudCounts ? cloudUsers.filter(u => u.subscription_status === 'pending').length : users.filter(u => u.subscription_status === 'pending').length
+                pendingSubscriptions: pool.filter(function (u) { return u && u.subscription_status === 'pending'; }).length
             };
             
             // Actualizar UI
             document.getElementById('totalUsers').textContent = stats.totalUsers;
             document.getElementById('activeSubscriptions').textContent = stats.activeSubscriptions;
+            var activeBreak = document.getElementById('activeSubscriptionsBreakdown');
+            if (activeBreak) {
+                activeBreak.textContent =
+                    stats.activeCounting +
+                    ' suman ingreso · ' +
+                    stats.activeExcluded +
+                    ' no suman (admin / «no suma»)';
+            }
             document.getElementById('totalProjects').textContent = stats.totalProjects;
             document.getElementById('totalChats').textContent = stats.totalChats;
             document.getElementById('totalInteractions').textContent = stats.totalInteractions;
             document.getElementById('estimatedCostChat').textContent = stats.estimatedCostChat.toFixed(4);
             document.getElementById('estimatedCostChatMonth').textContent = (chatMetrics.estimatedCostUSDThisMonth != null ? chatMetrics.estimatedCostUSDThisMonth.toFixed(4) : '0.0000');
+            var costNote = document.getElementById('estimatedCostChatNote');
+            var costMonthNote = document.getElementById('estimatedCostChatMonthNote');
+            if (costNote) costNote.textContent = 'Sin uso del chat admin (va aparte abajo)';
+            if (costMonthNote) costMonthNote.textContent = 'Sin uso del chat admin';
             var elAdminTotal = document.getElementById('adminChatCostTotal');
             var elAdminMonth = document.getElementById('adminChatCostMonth');
             var localAdmin = (typeof getAdminChatUsageLocal === 'function') ? getAdminChatUsageLocal() : null;
@@ -2071,18 +2586,19 @@
                         Object.keys(data.users).forEach(function(uid) {
                             var u = data.users[uid];
                             if (!u || !u.months) return;
-                            if (uid === '__admin__') {
-                                Object.keys(u.months).forEach(function(m) {
-                                    var bucket = u.months[m];
-                                    adminTotal += bucket.cost_usd || 0;
-                                    if (m === monthKey) adminMonth += bucket.cost_usd || 0;
-                                });
-                            }
+                            var isAdminBucket = uid === '__admin__';
                             Object.keys(u.months).forEach(function(m) {
                                 var bucket = u.months[m];
-                                totalUsd += bucket.cost_usd || 0;
-                                totalReqs += bucket.requests || 0;
-                                if (m === monthKey) { monthUsd += bucket.cost_usd || 0; monthReqs += bucket.requests || 0; }
+                                var cost = bucket.cost_usd || 0;
+                                var reqs = bucket.requests || 0;
+                                if (isAdminBucket) {
+                                    adminTotal += cost;
+                                    if (m === monthKey) adminMonth += cost;
+                                    return; /* admin no suma en totales de usuarios */
+                                }
+                                totalUsd += cost;
+                                totalReqs += reqs;
+                                if (m === monthKey) { monthUsd += cost; monthReqs += reqs; }
                             });
                         });
                         var elCost = document.getElementById('estimatedCostChat');
@@ -2091,6 +2607,18 @@
                         if (elCost) elCost.textContent = totalUsd.toFixed(4);
                         if (elMonth) elMonth.textContent = monthUsd.toFixed(4);
                         if (elInt) elInt.textContent = totalReqs;
+                        var note = document.getElementById('estimatedCostChatNote');
+                        var noteM = document.getElementById('estimatedCostChatMonthNote');
+                        if (note) {
+                            note.textContent = adminTotal > 0
+                                ? ('Sin admin · admin aparte: $' + adminTotal.toFixed(4))
+                                : 'Sin uso del chat admin';
+                        }
+                        if (noteM) {
+                            noteM.textContent = adminMonth > 0
+                                ? ('Sin admin · admin este mes: $' + adminMonth.toFixed(4))
+                                : 'Sin uso del chat admin';
+                        }
                         var elAdminTotal = document.getElementById('adminChatCostTotal');
                         var elAdminMonth = document.getElementById('adminChatCostMonth');
                         if (elAdminTotal) elAdminTotal.textContent = adminTotal.toFixed(4);
@@ -2376,7 +2904,7 @@
                 var pending = (document.getElementById('pendingSubscriptions') && document.getElementById('pendingSubscriptions').textContent) || '0';
                 var lines = [
                     '--- RESUMEN DEL PANEL ---',
-                    'Suscriptores totales: ' + totalUsers + ' | Suscripciones activas: ' + activeSubs + ' | Proyectos totales: ' + totalProjects,
+                    'Registrados totales: ' + totalUsers + ' | Suscripciones activas: ' + activeSubs + ' | Proyectos totales: ' + totalProjects,
                     'Mensajes chat: ' + totalChats + ' | Interacciones IA: ' + interactions + ' | Costo chat total (USD): ' + costTotal + ' | Este mes: ' + costMonth + ' | Pendientes: ' + pending,
                     '',
                     '--- LISTA DE USUARIOS (nombre, email, teléfono, ubicación, suscripción) ---'
@@ -5382,17 +5910,19 @@
         async function showSubscriptionsOverview() {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionsOverview: load from cloud', e); } }
             const users = getAllUsers();
-            const activeNonAdmin = users.filter(u => u.subscription_status === 'active' && !u.isAdmin);
+            const activeAll = users.filter(u => u.subscription_status === 'active');
+            const countingActive = users.filter(adminUserCountsTowardSubscriptionRevenue);
+            const excludedActive = activeAll.filter(u => !adminUserCountsTowardSubscriptionRevenue(u));
             const overview = {
                 total: users.length,
-                active: users.filter(u => u.subscription_status === 'active').length,
+                active: activeAll.length,
                 pending: users.filter(u => u.subscription_status === 'pending').length,
                 cancelled: users.filter(u => u.subscription_status === 'cancelled').length,
                 expired: users.filter(u => u.subscription_status === 'expired').length,
-                totalRevenuePerCycle: users
-                    .filter(adminUserCountsTowardSubscriptionRevenue)
+                totalRevenuePerCycle: countingActive
                     .reduce((sum, u) => sum + (parseFloat(u.subscription_amount) || 0), 0),
-                excludedActiveCount: activeNonAdmin.filter(u => u.exclude_from_revenue === true).length
+                countingActiveCount: countingActive.length,
+                excludedActiveCount: excludedActive.length
             };
             const CICLOS_POR_ANIO = 12 / 5;
             const equivAnual = overview.totalRevenuePerCycle * CICLOS_POR_ANIO;
@@ -5403,11 +5933,12 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; margin-bottom: 24px;">
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.total}</div>
-                            <div style="color: #64748b; margin-top: 8px;">Total Suscriptores</div>
+                            <div style="color: #64748b; margin-top: 8px;">Total Registrados</div>
                         </div>
                         <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.active}</div>
                             <div style="color: #64748b; margin-top: 8px;">✅ Activas</div>
+                            <div style="color:#64748b;font-size:12px;margin-top:8px;line-height:1.35;">${overview.countingActiveCount} suman · ${overview.excludedActiveCount} no suman (admin / «no suma»)</div>
                         </div>
                         <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.pending}</div>
@@ -5424,8 +5955,8 @@
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.totalRevenuePerCycle.toFixed(2)} USD</div>
                             <div style="color: #64748b; margin-top: 8px;">💰 Ingreso por ciclo (contable)</div>
-                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Equiv. anual: $${equivAnual.toFixed(2)} USD · Sin activos marcados «no suma»</div>
-                            ${overview.excludedActiveCount > 0 ? `<div style="color:#b45309;font-size:12px;margin-top:8px;">📉 ${overview.excludedActiveCount} activo(s) excluido(s) de este total (Supabase)</div>` : ''}
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Equiv. anual: $${equivAnual.toFixed(2)} USD · Solo activos que suman (sin admin ni «no suma»)</div>
+                            <div style="color:#0369a1;font-size:12px;margin-top:8px;line-height:1.35;">✅ ${overview.countingActiveCount} cuentan en este total${overview.excludedActiveCount > 0 ? ` · 📉 ${overview.excludedActiveCount} activo(s) no suman` : ''}</div>
                         </div>
                     </div>
                     <button onclick="closeDataViewer()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cerrar</button>
@@ -6107,6 +6638,13 @@
             };
             var dataToShow = usePagination ? config.data.slice(0, DATA_VIEWER_PAGE_SIZE) : config.data;
             
+            var filterableCols = (config.columns || []).filter(function (col) {
+                return col && col.filterable;
+            });
+            var filtersCollapsedDefault =
+                typeof window.matchMedia === 'function' &&
+                window.matchMedia('(max-width: 720px)').matches;
+
             // Construir HTML de la tabla con filtros
             let html = `
                 <div style="padding: 24px;">
@@ -6116,31 +6654,45 @@
                         </div>
                         <button onclick="closeDataViewer()" style="background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 4px 12px;">×</button>
                     </div>
-                    
-                    <div style="margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 8px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px;">
             `;
-            
-            // Agregar filtros por columna
-            config.columns.forEach(col => {
-                if (col.filterable) {
+
+            if (filterableCols.length) {
+                html += `
+                    <div id="dataViewerFilters" class="data-viewer-filters${filtersCollapsedDefault ? ' is-collapsed' : ''}">
+                        <button type="button"
+                                class="data-viewer-filters-toggle"
+                                id="dataViewerFiltersToggle"
+                                onclick="toggleDataViewerFilters()"
+                                aria-expanded="${filtersCollapsedDefault ? 'false' : 'true'}"
+                                aria-controls="dataViewerFiltersBody">
+                            <span class="data-viewer-filters-toggle-label">
+                                🔍 Filtros
+                                <span class="data-viewer-filters-toggle-meta" id="dataViewerFiltersMeta">${filterableCols.length} campos</span>
+                            </span>
+                            <span class="data-viewer-filters-chevron" aria-hidden="true">${filtersCollapsedDefault ? '›' : '⌄'}</span>
+                        </button>
+                        <div id="dataViewerFiltersBody" class="data-viewer-filters-body" ${filtersCollapsedDefault ? 'hidden' : ''}>
+            `;
+                filterableCols.forEach(function (col) {
                     html += `
-                        <div>
-                            <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">${col.label}</label>
-                            <input type="text" 
-                                   id="filter-${col.key}" 
-                                   placeholder="Filtrar ${col.label}..." 
-                                   onkeyup="filterTable('${col.key}', this.value)"
-                                   style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px;">
-                        </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">${col.label}</label>
+                                <input type="text"
+                                       id="filter-${col.key}"
+                                       placeholder="Filtrar ${col.label}..."
+                                       onkeyup="filterTable('${col.key}', this.value)"
+                                       style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px;">
+                            </div>
                     `;
-                }
-            });
-            
-            html += `
+                });
+                html += `
                         </div>
                     </div>
-            `;
+                `;
+            } else {
+                html += `<div style="margin-bottom: 12px;"></div>`;
+            }
+            
             if (isDeletedProjectsBulkMode(config)) {
                 html += `
                     <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -6216,6 +6768,22 @@
             updateDeletedProjectsBulkUi();
         }
         window.showDataViewerWithFilters = showDataViewerWithFilters;
+
+        function toggleDataViewerFilters() {
+            var panel = document.getElementById('dataViewerFilters');
+            var btn = document.getElementById('dataViewerFiltersToggle');
+            var body = document.getElementById('dataViewerFiltersBody');
+            var chevron = panel && panel.querySelector('.data-viewer-filters-chevron');
+            if (!panel || !btn) return;
+            var collapsed = panel.classList.toggle('is-collapsed');
+            btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            if (body) {
+                if (collapsed) body.setAttribute('hidden', '');
+                else body.removeAttribute('hidden');
+            }
+            if (chevron) chevron.textContent = collapsed ? '›' : '⌄';
+        }
+        window.toggleDataViewerFilters = toggleDataViewerFilters;
         
         // 🔙 SISTEMA DE NAVEGACIÓN HACIA ATRÁS
         let navigationHistory = {

@@ -836,7 +836,29 @@
         delete_vpd_range: "Eliminar cuadro guardado",
         soil_suggest_60_title: "Prellena volumen hasta 60% agua útil (tope zona objetivo)",
         soil_suggest_cc_title: "Prellena volumen hasta capacidad de campo (CC)",
-        soil_m3_franja_title: "Volumen en la franja regada"
+        soil_m3_franja_title: "Volumen en la franja regada",
+        pdf_attach: "Adjuntar PDF / Extraer",
+        pdf_attach_title: "Sube un PDF o imagen de laboratorio y revisa los valores detectados",
+        pdf_need_project: "Selecciona un proyecto primero.",
+        pdf_need_session: "Inicia sesión en la nube (Supabase) para extraer PDF.",
+        pdf_extracting: "Extrayendo datos del PDF…",
+        pdf_extract_failed: "No se pudieron extraer datos.",
+        pdf_applied: "Datos aplicados. Revisa el formulario y guarda si hace falta.",
+        compare_title: "Comparar análisis (tabla y gráfica)",
+        compare_hint: "Cada columna es un análisis del proyecto. Activa las columnas que quieras ver en la gráfica. Eje Y izquierdo: % · derecho: ppm cuando ambos estén presentes.",
+        compare_toggle_col: "Incluir/excluir en gráfica",
+        compare_param: "Parámetro",
+        compare_chart_aria: "Gráfica comparación análisis de suelo",
+        compare_axis_value: "Valor",
+        pdf_review_title: "Revisar datos detectados (suelo)",
+        pdf_review_intro: "Marca los campos a aplicar. Corrige o completa los vacíos. Luego confirma para llenar el análisis.",
+        pdf_review_select_valued: "Seleccionar todos con valor",
+        pdf_review_clear: "Quitar selección",
+        pdf_review_as_new: "Crear análisis nuevo (si no, aplica al actual)",
+        pdf_review_cancel: "Cancelar",
+        pdf_review_apply: "Aplicar",
+        pdf_review_close: "Cerrar",
+        analysis_n: "Análisis {n}"
       },
       tools: {
         close: "Cerrar",
@@ -1814,7 +1836,29 @@
         delete_vpd_range: "Delete saved panel",
         soil_suggest_60_title: "Prefills volume up to 60% available water (target zone cap)",
         soil_suggest_cc_title: "Prefills volume up to field capacity (FC)",
-        soil_m3_franja_title: "Volume in the irrigated strip"
+        soil_m3_franja_title: "Volume in the irrigated strip",
+        pdf_attach: "Attach PDF / Extract",
+        pdf_attach_title: "Upload a lab PDF or image and review detected values",
+        pdf_need_project: "Select a project first.",
+        pdf_need_session: "Sign in to the cloud (Supabase) to extract PDF data.",
+        pdf_extracting: "Extracting data from the PDF…",
+        pdf_extract_failed: "Could not extract data.",
+        pdf_applied: "Values applied. Review the form and save if needed.",
+        compare_title: "Compare analyses (table and chart)",
+        compare_hint: "Each column is a project analysis. Toggle columns to include in the chart. Left Y-axis: % · right: ppm when both are present.",
+        compare_toggle_col: "Include/exclude in chart",
+        compare_param: "Parameter",
+        compare_chart_aria: "Soil analysis comparison chart",
+        compare_axis_value: "Value",
+        pdf_review_title: "Review detected values (soil)",
+        pdf_review_intro: "Check fields to apply. Fix or fill blanks, then confirm to populate the analysis.",
+        pdf_review_select_valued: "Select all with a value",
+        pdf_review_clear: "Clear selection",
+        pdf_review_as_new: "Create a new analysis (otherwise apply to current)",
+        pdf_review_cancel: "Cancel",
+        pdf_review_apply: "Apply",
+        pdf_review_close: "Close",
+        analysis_n: "Analysis {n}"
       },
       tools: {
         close: "Close",
@@ -2058,7 +2102,49 @@
     collect(root, 'data-i18n-html').forEach(function (element) {
       element.innerHTML = t(element.getAttribute('data-i18n-html'), readParams(element));
     });
+    stampLegalLangLinks(root);
     return root;
+  }
+
+  /** Privacidad / términos: conservar idioma en el enlace (?lang=es|en). */
+  function stampLegalHref(href, lang) {
+    if (!href || href.indexOf('javascript:') === 0 || href.charAt(0) === '#') return href;
+    var hash = '';
+    var iHash = href.indexOf('#');
+    if (iHash >= 0) {
+      hash = href.slice(iHash);
+      href = href.slice(0, iHash);
+    }
+    var base = href;
+    var query = '';
+    var iQ = href.indexOf('?');
+    if (iQ >= 0) {
+      base = href.slice(0, iQ);
+      query = href.slice(iQ + 1);
+    }
+    if (!/politicas-privacidad\.html|terminos-condiciones\.html/i.test(base)) {
+      return base + (query ? '?' + query : '') + hash;
+    }
+    try {
+      var params = new URLSearchParams(query);
+      params.set('lang', lang);
+      var qs = params.toString();
+      return base + (qs ? '?' + qs : '') + hash;
+    } catch (e) {
+      return base + '?lang=' + lang + hash;
+    }
+  }
+
+  function stampLegalLangLinks(root) {
+    root = root || w.document;
+    if (!root || !root.querySelectorAll) return;
+    var nodes = root.querySelectorAll('a[href*="politicas-privacidad"], a[href*="terminos-condiciones"]');
+    for (var i = 0; i < nodes.length; i++) {
+      var a = nodes[i];
+      var href = a.getAttribute('href');
+      if (!href) continue;
+      a.setAttribute('href', stampLegalHref(href, language));
+    }
   }
 
   function setLanguage(nextLanguage, options) {
