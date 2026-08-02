@@ -244,6 +244,167 @@
             gap: 8px;
             flex-wrap: wrap;
             margin-left: auto;
+            position: relative;
+        }
+        .admin-fx-pill,
+        .admin-weather-pill {
+            flex-shrink: 0;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 88px;
+            max-width: 150px;
+            height: 44px;
+            padding: 4px 9px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background: linear-gradient(180deg, rgba(247, 251, 255, 0.96) 0%, rgba(239, 246, 255, 0.9) 100%);
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            font-family: inherit;
+            line-height: 1.15;
+            transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
+        }
+        .admin-weather-pill {
+            min-width: 108px;
+            max-width: 168px;
+            background: linear-gradient(180deg, rgba(240, 253, 250, 0.96) 0%, rgba(236, 253, 245, 0.9) 100%);
+        }
+        .admin-fx-pill:hover,
+        .admin-weather-pill:hover,
+        .admin-fx-pill.admin-pill--open,
+        .admin-weather-pill.admin-pill--open {
+            transform: translateY(-1px);
+            border-color: rgba(37, 99, 235, 0.35);
+            outline: none;
+        }
+        .admin-fx-pill[data-state="loading"],
+        .admin-weather-pill[data-state="loading"] { color: #64748b; }
+        .admin-fx-pill[data-state="error"],
+        .admin-weather-pill[data-state="error"] {
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #b91c1c;
+        }
+        .admin-fx-num,
+        .admin-weather-num {
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        .admin-fx-sub,
+        .admin-weather-sub {
+            font-size: 8px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .admin-storage-pill {
+            flex-shrink: 0;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 72px;
+            height: 44px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background: linear-gradient(180deg, rgba(247, 254, 251, 0.96) 0%, rgba(236, 253, 245, 0.9) 100%);
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
+            font-family: inherit;
+            line-height: 1.15;
+        }
+        .admin-storage-pill:hover,
+        .admin-storage-pill:focus-visible {
+            background: linear-gradient(180deg, rgba(250, 255, 252, 0.99) 0%, rgba(240, 253, 248, 0.95) 100%);
+            border-color: rgba(34, 197, 94, 0.4);
+            transform: translateY(-1px);
+            outline: none;
+        }
+        .admin-storage-pill[data-state="loading"] { color: #64748b; }
+        .admin-storage-pill[data-state="warn"] {
+            border-color: rgba(245, 158, 11, 0.45);
+            color: #b45309;
+        }
+        .admin-storage-pill[data-state="cached"] .admin-storage-sub { color: #94a3b8; }
+        .admin-storage-num {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+        .admin-storage-sub {
+            font-size: 8px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        .admin-pill-popover {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 12003;
+            width: min(92vw, 300px);
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+            box-sizing: border-box;
+        }
+        .admin-pill-popover.is-open { display: block; }
+        .admin-pill-popover__head {
+            margin: 0 0 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .admin-pill-popover__live {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #1e3a8a;
+            line-height: 1.2;
+        }
+        .admin-pill-popover__meta {
+            margin: 0 0 10px;
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .admin-pill-popover__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .admin-pill-popover__actions a,
+        .admin-pill-popover__actions button {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 9px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: inherit;
         }
         .admin-cloud-sync-btn {
             position: relative;
@@ -396,15 +557,80 @@
             color: #1d4ed8;
         }
         .admin-top-menu-links a.admin-link-brand {
-            border-color: #bfdbfe;
-            background: #eff6ff;
+            border-color: rgba(37, 99, 235, 0.38);
+            background: linear-gradient(180deg, rgba(239, 246, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #1d4ed8;
         }
         .admin-top-menu-links a.admin-link-plan {
-            border-color: #bbf7d0;
-            background: #f0fdf4;
+            border-color: rgba(22, 163, 74, 0.45);
+            background: linear-gradient(180deg, rgba(240, 253, 244, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #15803d;
         }
+        .admin-top-menu-links a.admin-link-alertas {
+            border-color: rgba(14, 165, 233, 0.45);
+            background: linear-gradient(180deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+            color: #0369a1;
+        }
+        .admin-top-menu-links a.admin-link-paypal {
+            border-color: rgba(0, 48, 135, 0.38);
+            background: linear-gradient(180deg, rgba(230, 243, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+            color: #003087;
+        }
+        .admin-top-menu-links a.admin-link-paypal-dev {
+            border-color: rgba(0, 112, 186, 0.42);
+            background: linear-gradient(180deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+            color: #005ea6;
+        }
+        .admin-top-menu-links a.admin-link-supabase {
+            border-color: rgba(62, 207, 142, 0.55);
+            color: #0f766e;
+            background: linear-gradient(180deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.75) 100%);
+        }
+        .admin-top-menu-links a.admin-link-ga {
+            border-color: rgba(234, 179, 8, 0.55);
+            color: #a16207;
+            background: linear-gradient(180deg, rgba(254, 252, 232, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
+        }
+        .admin-top-menu-links a.admin-link-netlify {
+            border-color: rgba(0, 199, 183, 0.5);
+            color: #0d9488;
+            background: linear-gradient(180deg, rgba(240, 253, 250, 0.98) 0%, rgba(255, 255, 255, 0.75) 100%);
+        }
+        .admin-top-menu-links a.admin-link-github {
+            border-color: rgba(36, 41, 47, 0.35);
+            color: #24292f;
+            background: linear-gradient(180deg, rgba(246, 248, 250, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
+        }
+        .admin-top-menu-links a.admin-link-namecheap {
+            border-color: rgba(222, 55, 35, 0.45);
+            color: #c2410c;
+            background: linear-gradient(180deg, rgba(255, 247, 237, 0.98) 0%, rgba(255, 255, 255, 0.76) 100%);
+        }
+        .admin-top-menu-links a.admin-link-gcp {
+            border-color: rgba(66, 133, 244, 0.45);
+            color: #1a73e8;
+            background: linear-gradient(180deg, rgba(232, 240, 254, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
+        }
+        .admin-top-menu-links a.admin-link-openai {
+            border-color: rgba(16, 163, 127, 0.5);
+            color: #0f766e;
+            background: linear-gradient(180deg, rgba(236, 253, 245, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
+        }
+        .admin-top-menu-links a.admin-link-microsoft {
+            border-color: rgba(0, 120, 212, 0.45);
+            color: #0b5cab;
+            background: linear-gradient(180deg, rgba(239, 246, 255, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
+        }
+        .admin-top-menu-links a.admin-link-bbva { border-color: rgba(0, 68, 129, 0.48); color: #004481; background: linear-gradient(180deg, rgba(224, 236, 248, 0.94) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-gbm { border-color: rgba(109, 40, 217, 0.4); color: #6d28d9; background: linear-gradient(180deg, rgba(245, 243, 255, 0.96) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-schwab { border-color: rgba(0, 163, 224, 0.45); color: #0369a1; background: linear-gradient(180deg, rgba(224, 242, 254, 0.96) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-chase { border-color: rgba(17, 85, 204, 0.45); color: #1d4ed8; background: linear-gradient(180deg, rgba(239, 246, 255, 0.96) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-cetes { border-color: rgba(22, 163, 74, 0.45); color: #15803d; background: linear-gradient(180deg, rgba(240, 253, 244, 0.96) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-wise { border-color: rgba(163, 230, 53, 0.55); color: #3f6212; background: linear-gradient(180deg, rgba(247, 254, 231, 0.96) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-news { border-color: rgba(71, 85, 105, 0.35); color: #1e293b; background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-markets { border-color: rgba(37, 99, 235, 0.35); color: #1d4ed8; background: linear-gradient(180deg, rgba(239, 246, 255, 0.95) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-tools { border-color: rgba(14, 165, 233, 0.4); color: #0369a1; background: linear-gradient(180deg, rgba(240, 249, 255, 0.96) 0%, #fff 100%); }
+        .admin-top-menu-links a.admin-link-services { border-color: rgba(244, 63, 94, 0.35); color: #be123c; background: linear-gradient(180deg, rgba(255, 241, 242, 0.96) 0%, #fff 100%); }
         .admin-top-menu-social {
             display: flex;
             flex-wrap: wrap;
@@ -425,12 +651,28 @@
             width: 16px;
             height: 16px;
         }
+        .admin-top-menu-social a[title="Facebook"] { border-color: #1877f2; color: #1877f2; background: #eff6ff; }
+        .admin-top-menu-social a[title="Instagram"] { border-color: #e4405f; color: #db2777; background: #fdf2f8; }
+        .admin-top-menu-social a[title="TikTok"] { border-color: #0f172a; color: #0f172a; background: #f8fafc; }
+        .admin-top-menu-social a[title="YouTube"] { border-color: #ff0000; color: #dc2626; background: #fef2f2; }
+        .admin-top-menu-social a[title="LinkedIn"] { border-color: #0077b5; color: #0077b5; background: #eff6ff; }
         @media (max-width: 640px) {
             .admin-top-bar {
                 padding: 10px 12px;
             }
             .admin-top-bar__brand img { height: 30px; }
             .admin-top-bar__brand h1 { font-size: 1.05rem; }
+            .admin-fx-pill,
+            .admin-weather-pill,
+            .admin-storage-pill {
+                min-width: 72px;
+                max-width: 110px;
+                height: 40px;
+                padding: 3px 6px;
+            }
+            .admin-fx-num,
+            .admin-weather-num,
+            .admin-storage-num { font-size: 10px; }
             .admin-cloud-sync-btn,
             .admin-top-menu-btn,
             .admin-top-logout-btn {
@@ -1047,6 +1289,18 @@
                 </div>
             </div>
             <div class="admin-top-bar__actions">
+                <button type="button" class="admin-fx-pill" id="adminFxBtn" data-state="loading" aria-expanded="false" aria-controls="adminFxPopover" title="Tipo de cambio · toca para detalle">
+                    <span class="admin-fx-num" id="adminFxNum">TC …</span>
+                    <span class="admin-fx-sub" id="adminFxSub">USD → MXN</span>
+                </button>
+                <button type="button" class="admin-weather-pill" id="adminWeatherBtn" data-state="loading" aria-expanded="false" aria-controls="adminWeatherPopover" title="Clima local · toca para detalle">
+                    <span class="admin-weather-num" id="adminWeatherNum">Clima …</span>
+                    <span class="admin-weather-sub" id="adminWeatherSub">ubicación</span>
+                </button>
+                <button type="button" class="admin-storage-pill" id="adminStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" title="Archivos en Supabase · calculando…">
+                    <span class="admin-storage-num" id="adminStorageNum">…</span>
+                    <span class="admin-storage-sub" id="adminStorageSub">NutriPlant nube</span>
+                </button>
                 <button type="button" id="admin-refresh-cloud-btn" class="admin-cloud-sync-btn" data-state="idle" onclick="refrescarDesdeNube()" aria-label="Actualizar desde Supabase" title="Actualizar desde Supabase">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
@@ -1064,6 +1318,24 @@
                         <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
                     </svg>
                 </button>
+                <div id="adminFxPopover" class="admin-pill-popover" role="dialog" aria-hidden="true">
+                    <p class="admin-pill-popover__head">Tipo de cambio</p>
+                    <p class="admin-pill-popover__live" id="adminFxLive">—</p>
+                    <p class="admin-pill-popover__meta" id="adminFxMeta">Referencia orientativa · no es cotización bancaria.</p>
+                    <div class="admin-pill-popover__actions">
+                        <a id="adminFxGoogle" href="https://www.google.com/search?q=1+USD+to+MXN" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+                        <button type="button" id="adminFxRefresh">Actualizar</button>
+                    </div>
+                </div>
+                <div id="adminWeatherPopover" class="admin-pill-popover" role="dialog" aria-hidden="true">
+                    <p class="admin-pill-popover__head">Clima local</p>
+                    <p class="admin-pill-popover__live" id="adminWeatherLive">—</p>
+                    <p class="admin-pill-popover__meta" id="adminWeatherMeta">—</p>
+                    <div class="admin-pill-popover__actions">
+                        <a id="adminWeatherGoogle" href="https://www.google.com/search?q=clima" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+                        <button type="button" id="adminWeatherRefresh">Actualizar</button>
+                    </div>
+                </div>
             </div>
             <div id="adminTopMenuBackdrop" class="admin-top-menu-backdrop" aria-hidden="true"></div>
             <div id="adminTopMenuPanel" class="admin-top-menu-panel" role="dialog" aria-modal="true" aria-labelledby="adminTopMenuTitle" aria-hidden="true">
@@ -1083,83 +1355,83 @@
                     <div class="admin-top-menu-links">
                         <a class="admin-link-brand" href="../login.html" target="_blank" rel="noopener noreferrer">NutriPlant PRO</a>
                         <a class="admin-link-plan" href="../planpro/?k=np_planpro_key_4a7f2e9b1c6d">Plan PRO</a>
-                        <a href="agroclimate.html?k=np_admin_key_8f4a2b9c1e7d">Alertas agroclimáticas</a>
+                        <a class="admin-link-alertas" href="agroclimate.html?k=np_admin_key_8f4a2b9c1e7d">Alertas agroclimáticas</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Portal y pagos</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer">Cuenta PayPal</a>
-                        <a href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer">PayPal Developer</a>
+                        <a class="admin-link-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer">Cuenta PayPal</a>
+                        <a class="admin-link-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer">PayPal Developer</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Nube y desarrollo</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a>
-                        <a href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer">Analytics</a>
-                        <a href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a>
-                        <a href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a>
-                        <a href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer">Namecheap</a>
-                        <a href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer">Google Cloud</a>
-                        <a href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer">OpenAI</a>
-                        <a href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer">Microsoft</a>
+                        <a class="admin-link-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a>
+                        <a class="admin-link-ga" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer">Analytics</a>
+                        <a class="admin-link-netlify" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a>
+                        <a class="admin-link-github" href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <a class="admin-link-namecheap" href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer">Namecheap</a>
+                        <a class="admin-link-gcp" href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer">Google Cloud</a>
+                        <a class="admin-link-openai" href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer">OpenAI</a>
+                        <a class="admin-link-microsoft" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer">Microsoft</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Cuentas y ahorro</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer">BBVA</a>
-                        <a href="https://gbm.com/" target="_blank" rel="noopener noreferrer">GBM</a>
-                        <a href="https://client.schwab.com/app/accounts/summary/" target="_blank" rel="noopener noreferrer">Charles Schwab</a>
-                        <a href="https://www.chase.com/" target="_blank" rel="noopener noreferrer">Chase</a>
-                        <a href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer">CETES</a>
-                        <a href="https://wise.com/home" target="_blank" rel="noopener noreferrer">Wise</a>
+                        <a class="admin-link-bbva" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer">BBVA</a>
+                        <a class="admin-link-gbm" href="https://gbm.com/" target="_blank" rel="noopener noreferrer">GBM</a>
+                        <a class="admin-link-schwab" href="https://client.schwab.com/app/accounts/summary/" target="_blank" rel="noopener noreferrer">Charles Schwab</a>
+                        <a class="admin-link-chase" href="https://www.chase.com/" target="_blank" rel="noopener noreferrer">Chase</a>
+                        <a class="admin-link-cetes" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer">CETES</a>
+                        <a class="admin-link-wise" href="https://wise.com/home" target="_blank" rel="noopener noreferrer">Wise</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Noticias</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer">El Financiero</a>
-                        <a href="https://www.eleconomista.com.mx/" target="_blank" rel="noopener noreferrer">El Economista</a>
-                        <a href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer">PD China</a>
-                        <a href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer">NY Times</a>
-                        <a href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer">WSJ</a>
+                        <a class="admin-link-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer">El Financiero</a>
+                        <a class="admin-link-news" href="https://www.eleconomista.com.mx/" target="_blank" rel="noopener noreferrer">El Economista</a>
+                        <a class="admin-link-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer">PD China</a>
+                        <a class="admin-link-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer">NY Times</a>
+                        <a class="admin-link-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer">WSJ</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Mercados e información</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer">BMV</a>
-                        <a href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer">Banxico</a>
-                        <a href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>
-                        <a href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer">T. Economics</a>
-                        <a href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer">Yahoo Finanzas</a>
-                        <a href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer">Google Finanzas</a>
-                        <a href="https://finviz.com/" target="_blank" rel="noopener noreferrer">Finviz</a>
-                        <a href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer">FMI</a>
+                        <a class="admin-link-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer">BMV</a>
+                        <a class="admin-link-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer">Banxico</a>
+                        <a class="admin-link-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>
+                        <a class="admin-link-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer">T. Economics</a>
+                        <a class="admin-link-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer">Yahoo Finanzas</a>
+                        <a class="admin-link-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer">Google Finanzas</a>
+                        <a class="admin-link-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer">Finviz</a>
+                        <a class="admin-link-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer">FMI</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Dispositivos y herramientas</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://smartthingsfind.samsung.com/" target="_blank" rel="noopener noreferrer">SmartThings Find</a>
-                        <a href="https://myaccount.google.com/device-activity" target="_blank" rel="noopener noreferrer">Dispositivos Google</a>
-                        <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Canva</a>
-                        <a href="https://www.windy.com/?19.119,-104.217,5" target="_blank" rel="noopener noreferrer">Windy</a>
-                        <a href="https://zoom.earth/" target="_blank" rel="noopener noreferrer">Zoom Earth</a>
+                        <a class="admin-link-tools" href="https://smartthingsfind.samsung.com/" target="_blank" rel="noopener noreferrer">SmartThings Find</a>
+                        <a class="admin-link-tools" href="https://myaccount.google.com/device-activity" target="_blank" rel="noopener noreferrer">Dispositivos Google</a>
+                        <a class="admin-link-tools" href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Canva</a>
+                        <a class="admin-link-tools" href="https://www.windy.com/?19.119,-104.217,5" target="_blank" rel="noopener noreferrer">Windy</a>
+                        <a class="admin-link-tools" href="https://zoom.earth/" target="_blank" rel="noopener noreferrer">Zoom Earth</a>
                     </div>
                 </div>
                 <div class="admin-top-menu-block">
                     <span class="admin-top-menu-sub">Servicios</span>
                     <div class="admin-top-menu-links">
-                        <a href="https://izzi.mx/login" target="_blank" rel="noopener noreferrer">izzi</a>
-                        <a href="https://telmex.com/web/guest/pago_sin_login" target="_blank" rel="noopener noreferrer">Telmex pago</a>
-                        <a href="https://www.elpalaciodehierro.com/login" target="_blank" rel="noopener noreferrer">Palacio</a>
-                        <a href="https://www.hsbc.com.mx/online/dashboard/" target="_blank" rel="noopener noreferrer">HSBC</a>
-                        <a href="https://www.mitelcel.com/mitelcel/login" target="_blank" rel="noopener noreferrer">Mi Telcel</a>
-                        <a href="https://www.mintmobile.com/" target="_blank" rel="noopener noreferrer">Mint Mobile</a>
-                        <a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Cuenta Google</a>
+                        <a class="admin-link-services" href="https://izzi.mx/login" target="_blank" rel="noopener noreferrer">izzi</a>
+                        <a class="admin-link-services" href="https://telmex.com/web/guest/pago_sin_login" target="_blank" rel="noopener noreferrer">Telmex pago</a>
+                        <a class="admin-link-services" href="https://www.elpalaciodehierro.com/login" target="_blank" rel="noopener noreferrer">Palacio</a>
+                        <a class="admin-link-services" href="https://www.hsbc.com.mx/online/dashboard/" target="_blank" rel="noopener noreferrer">HSBC</a>
+                        <a class="admin-link-services" href="https://www.mitelcel.com/mitelcel/login" target="_blank" rel="noopener noreferrer">Mi Telcel</a>
+                        <a class="admin-link-services" href="https://www.mintmobile.com/" target="_blank" rel="noopener noreferrer">Mint Mobile</a>
+                        <a class="admin-link-services" href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Cuenta Google</a>
                     </div>
                 </div>
             </div>
@@ -1180,12 +1452,20 @@
                 <div class="stat-card">
                     <div class="stat-number" id="totalUsers">-</div>
                     <div class="stat-label">👥 Registrados Totales</div>
+                    <div class="stat-sub" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;">Todos: activos, inactivos y sin suscripción</div>
                 </div>
                 
                 <div class="stat-card">
                     <div class="stat-number" id="activeSubscriptions">-</div>
                     <div class="stat-label">✅ Suscripciones Activas</div>
                     <div class="stat-sub" id="activeSubscriptionsBreakdown" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
+                </div>
+                
+                <div class="stat-card" style="background:#eff6ff;">
+                    <div class="stat-number" id="estimatedRevenueCycle">-</div>
+                    <div class="stat-label">💰 Ingreso est. por ciclo (USD)</div>
+                    <div class="stat-sub" id="estimatedRevenueCycleNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
+                    <div class="stat-sub" id="estimatedRevenueCycleCount" style="margin-top:6px;font-size:12px;line-height:1.35;color:#1e3a8a;font-weight:700;"></div>
                 </div>
                 
                 <div class="stat-card">
@@ -2472,6 +2752,323 @@
                 if (a) closeAdminTopMenu();
             });
         })();
+
+        (function wireAdminFxAndWeather() {
+            var fxBtn = document.getElementById('adminFxBtn');
+            var fxPop = document.getElementById('adminFxPopover');
+            var wxBtn = document.getElementById('adminWeatherBtn');
+            var wxPop = document.getElementById('adminWeatherPopover');
+            var fxState = { rate: null, updatedAt: 0 };
+            var wxState = { temp: null, place: 'CDMX', lat: 19.4326, lng: -99.1332 };
+
+            function closePops(except) {
+                [fxPop, wxPop].forEach(function (p) {
+                    if (!p || p === except) return;
+                    p.classList.remove('is-open');
+                    p.setAttribute('aria-hidden', 'true');
+                });
+                [fxBtn, wxBtn].forEach(function (b) {
+                    if (!b) return;
+                    if (except && ((except === fxPop && b === fxBtn) || (except === wxPop && b === wxBtn))) return;
+                    b.classList.remove('admin-pill--open');
+                    b.setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            function togglePop(btn, pop) {
+                if (!btn || !pop) return;
+                var open = pop.classList.contains('is-open');
+                closePops(open ? null : pop);
+                if (!open) {
+                    pop.classList.add('is-open');
+                    pop.setAttribute('aria-hidden', 'false');
+                    btn.classList.add('admin-pill--open');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            async function refreshFx() {
+                var num = document.getElementById('adminFxNum');
+                var live = document.getElementById('adminFxLive');
+                var meta = document.getElementById('adminFxMeta');
+                var g = document.getElementById('adminFxGoogle');
+                if (fxBtn) fxBtn.setAttribute('data-state', 'loading');
+                if (num) num.textContent = 'TC …';
+                try {
+                    var res = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
+                    var data = await res.json();
+                    if (!res.ok || data.result !== 'success' || data.rates == null || data.rates.MXN == null) {
+                        throw new Error('Sin cotización');
+                    }
+                    fxState.rate = Number(data.rates.MXN);
+                    fxState.updatedAt = data.time_last_update_unix ? data.time_last_update_unix * 1000 : Date.now();
+                    var line = '1 USD = ' + fxState.rate.toFixed(2) + ' MXN';
+                    if (fxBtn) fxBtn.setAttribute('data-state', 'ok');
+                    if (num) num.textContent = fxState.rate.toFixed(2) + ' MXN';
+                    if (live) live.textContent = line;
+                    if (meta) {
+                        meta.textContent =
+                            new Date(fxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) +
+                            ' · open.er-api · referencia';
+                    }
+                    if (g) g.href = 'https://www.google.com/search?q=1+USD+to+MXN';
+                    if (fxBtn) fxBtn.title = line + ' · toca para detalle';
+                } catch (err) {
+                    if (fxBtn) fxBtn.setAttribute('data-state', 'error');
+                    if (num) num.textContent = 'TC —';
+                    if (live) live.textContent = 'No disponible';
+                    if (meta) meta.textContent = (err && err.message) || 'Error al consultar TC';
+                }
+            }
+
+            async function refreshWeather() {
+                var num = document.getElementById('adminWeatherNum');
+                var sub = document.getElementById('adminWeatherSub');
+                var live = document.getElementById('adminWeatherLive');
+                var meta = document.getElementById('adminWeatherMeta');
+                var g = document.getElementById('adminWeatherGoogle');
+                if (wxBtn) wxBtn.setAttribute('data-state', 'loading');
+                if (num) num.textContent = 'Clima …';
+                function runFetch(lat, lng, place) {
+                    wxState.lat = lat;
+                    wxState.lng = lng;
+                    if (place) wxState.place = place;
+                    var url =
+                        'https://api.open-meteo.com/v1/forecast?latitude=' +
+                        encodeURIComponent(lat) +
+                        '&longitude=' +
+                        encodeURIComponent(lng) +
+                        '&current=temperature_2m,relative_humidity_2m,weather_code,cloud_cover&timezone=auto';
+                    return fetch(url, { cache: 'no-store' })
+                        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+                        .then(function (pack) {
+                            if (!pack.ok || !pack.d || !pack.d.current) throw new Error('Sin clima');
+                            var cur = pack.d.current;
+                            wxState.temp = cur.temperature_2m;
+                            var t = Math.round(Number(cur.temperature_2m));
+                            var hum = cur.relative_humidity_2m != null ? Math.round(Number(cur.relative_humidity_2m)) + '%' : '—';
+                            var cloud = cur.cloud_cover != null ? Math.round(Number(cur.cloud_cover)) + '%' : '—';
+                            if (wxBtn) wxBtn.setAttribute('data-state', 'ok');
+                            if (num) num.textContent = t + '°C';
+                            if (sub) sub.textContent = wxState.place;
+                            if (live) live.textContent = t + '°C · humedad ' + hum + ' · nubes ' + cloud;
+                            if (meta) {
+                                meta.textContent =
+                                    wxState.place +
+                                    ' · ' +
+                                    new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) +
+                                    ' · Open-Meteo';
+                            }
+                            if (g) {
+                                g.href =
+                                    'https://www.google.com/search?q=clima+' +
+                                    encodeURIComponent(wxState.place || (lat + ',' + lng));
+                            }
+                            if (wxBtn) wxBtn.title = t + '°C · ' + wxState.place + ' · toca para detalle';
+                        });
+                }
+                try {
+                    if (navigator.geolocation) {
+                        await new Promise(function (resolve) {
+                            navigator.geolocation.getCurrentPosition(
+                                function (pos) {
+                                    runFetch(pos.coords.latitude, pos.coords.longitude, 'Mi ubicación')
+                                        .then(resolve)
+                                        .catch(resolve);
+                                },
+                                function () {
+                                    runFetch(19.4326, -99.1332, 'CDMX').then(resolve).catch(resolve);
+                                },
+                                { enableHighAccuracy: false, timeout: 6000, maximumAge: 600000 }
+                            );
+                        });
+                    } else {
+                        await runFetch(19.4326, -99.1332, 'CDMX');
+                    }
+                } catch (err) {
+                    if (wxBtn) wxBtn.setAttribute('data-state', 'error');
+                    if (num) num.textContent = 'Clima —';
+                    if (sub) sub.textContent = 'sin datos';
+                    if (live) live.textContent = 'No disponible';
+                    if (meta) meta.textContent = (err && err.message) || 'Error al consultar clima';
+                }
+            }
+
+            if (fxBtn && fxPop) {
+                fxBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePop(fxBtn, fxPop);
+                });
+            }
+            if (wxBtn && wxPop) {
+                wxBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePop(wxBtn, wxPop);
+                });
+            }
+            var fxRefresh = document.getElementById('adminFxRefresh');
+            var wxRefresh = document.getElementById('adminWeatherRefresh');
+            if (fxRefresh) fxRefresh.addEventListener('click', function (e) { e.stopPropagation(); refreshFx(); });
+            if (wxRefresh) wxRefresh.addEventListener('click', function (e) { e.stopPropagation(); refreshWeather(); });
+            document.addEventListener('click', function (e) {
+                if (e.target.closest && (e.target.closest('#adminFxBtn') || e.target.closest('#adminFxPopover') || e.target.closest('#adminWeatherBtn') || e.target.closest('#adminWeatherPopover'))) {
+                    return;
+                }
+                closePops(null);
+            });
+            refreshFx();
+            refreshWeather();
+            setInterval(refreshFx, 60 * 60 * 1000);
+            setInterval(refreshWeather, 60 * 60 * 1000);
+        })();
+
+        (function wireAdminStorageUsage() {
+            var QUOTA_GB = 100;
+            var CACHE_KEY = 'np_admin_storage_usage_v1';
+            var MIN_REFRESH_MS = 45000;
+            var AUTO_MS = 10 * 60 * 1000;
+            var btn = document.getElementById('adminStorageBtn');
+            var num = document.getElementById('adminStorageNum');
+            var sub = document.getElementById('adminStorageSub');
+            if (!btn || !num || !sub) return;
+            var inFlight = false;
+            var lastFetchAt = 0;
+            var rpcMissing = false;
+
+            function fmtSize(bytes) {
+                var n = Number(bytes) || 0;
+                if (n < 1024) return n + ' B';
+                if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+                if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+                return (n / 1073741824).toFixed(2) + ' GB';
+            }
+            function pillLine(bytes, quotaGb) {
+                var used = Number(bytes) || 0;
+                var q = Number(quotaGb) || QUOTA_GB;
+                var usedStr =
+                    used >= 1073741824
+                        ? (used / 1073741824).toFixed(2) + ' GB'
+                        : used >= 1048576
+                          ? (used / 1048576).toFixed(0) + ' MB'
+                          : fmtSize(used);
+                return usedStr + ' / ' + q + ' GB';
+            }
+            function readCache() {
+                try {
+                    var raw = localStorage.getItem(CACHE_KEY);
+                    if (!raw) return null;
+                    var o = JSON.parse(raw);
+                    if (!o || !o.data || !o.fetchedAt) return null;
+                    return o;
+                } catch (e) {
+                    return null;
+                }
+            }
+            function writeCache(data) {
+                try {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data || {}, fetchedAt: Date.now() }));
+                } catch (e) {}
+            }
+            function render(data, errMsg, meta) {
+                meta = meta || {};
+                if (errMsg || !data) {
+                    btn.setAttribute('data-state', rpcMissing ? 'warn' : 'idle');
+                    num.textContent = '— / ' + QUOTA_GB + ' GB';
+                    sub.textContent = 'NutriPlant nube';
+                    var hint = errMsg || 'No se pudo leer el uso de archivos.';
+                    if (rpcMissing) hint += ' Ejecuta supabase-plan-pro-storage-usage.sql en Supabase.';
+                    btn.title = hint;
+                    btn.setAttribute('aria-label', hint);
+                    return;
+                }
+                var total = Number(data.total_bytes) || 0;
+                var quotaGb = Number(data.quota_gb) || QUOTA_GB;
+                var quotaBytes = quotaGb * 1073741824;
+                var freeBytes = Math.max(0, quotaBytes - total);
+                var pct = quotaGb > 0 ? (total / quotaBytes) * 100 : 0;
+                var fromCache = !!meta.fromCache;
+                num.textContent = pillLine(total, quotaGb);
+                sub.textContent = 'NutriPlant nube';
+                btn.setAttribute('data-state', pct >= 92 ? 'warn' : fromCache ? 'cached' : 'idle');
+                var lines = [
+                    'NutriPlant PRO · almacenamiento total en Supabase',
+                    'Usado: ' + fmtSize(total) + ' · Disponible: ~' + fmtSize(freeBytes),
+                    'Cuota: ' + quotaGb + ' GB',
+                    fromCache ? 'Última lectura en caché · toca para actualizar' : 'Lectura en vivo · se refresca cada ~10 min',
+                    'Toca para forzar actualización (máx. cada 45 s).'
+                ];
+                if (data.buckets && data.buckets.length) {
+                    lines.push('', 'Por bucket:');
+                    data.buckets.forEach(function (b) {
+                        if (!b || !b.bucket_id) return;
+                        lines.push('• ' + b.bucket_id + ': ' + fmtSize(b.bytes));
+                    });
+                }
+                btn.title = lines.join('\n');
+                btn.setAttribute('aria-label', pillLine(total, quotaGb) + ' en la nube NutriPlant');
+            }
+            async function refresh(force) {
+                var cached = readCache();
+                var now = Date.now();
+                if (!force && cached && cached.data && now - cached.fetchedAt < AUTO_MS) {
+                    render(cached.data, null, { fromCache: true, fetchedAt: cached.fetchedAt });
+                    return;
+                }
+                if (force && lastFetchAt && now - lastFetchAt < MIN_REFRESH_MS) {
+                    if (cached && cached.data) render(cached.data, null, { fromCache: true, fetchedAt: cached.fetchedAt });
+                    return;
+                }
+                if (inFlight) return;
+                if (typeof window.getSupabaseClient !== 'function') {
+                    render(null, 'Supabase no disponible en este panel.');
+                    return;
+                }
+                var client = window.getSupabaseClient();
+                if (!client) {
+                    render(null, 'Supabase no disponible en este panel.');
+                    return;
+                }
+                inFlight = true;
+                if (force) btn.setAttribute('data-state', 'loading');
+                if (force && (!cached || !cached.data)) num.textContent = '…';
+                try {
+                    var res = await client.rpc('plan_pro_storage_usage');
+                    if (res.error) {
+                        if (/plan_pro_storage_usage|not exist|does not exist|42883/i.test(res.error.message || '')) {
+                            rpcMissing = true;
+                        }
+                        if (cached && cached.data) {
+                            render(cached.data, null, { fromCache: true, fetchedAt: cached.fetchedAt });
+                        } else {
+                            render(null, res.error.message || 'Error al leer almacenamiento.');
+                        }
+                        return;
+                    }
+                    lastFetchAt = Date.now();
+                    writeCache(res.data || {});
+                    render(res.data || {}, null, { fromCache: false, fetchedAt: lastFetchAt });
+                } catch (e) {
+                    if (cached && cached.data) {
+                        render(cached.data, null, { fromCache: true, fetchedAt: cached.fetchedAt });
+                    } else {
+                        render(null, (e && e.message) || String(e));
+                    }
+                } finally {
+                    inFlight = false;
+                }
+            }
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                refresh(true);
+            });
+            refresh(false);
+            setInterval(function () {
+                if (!document.hidden) refresh(false);
+            }, AUTO_MS);
+        })();
         
         // 🔒 PROTECCIÓN: Validar sesión periódicamente (cada 5 minutos)
         setInterval(function() {
@@ -2523,6 +3120,9 @@
                 activeSubscriptions: activeAll.length,
                 activeCounting: activeCounting.length,
                 activeExcluded: activeExcluded.length,
+                revenuePerCycle: activeCounting.reduce(function (sum, u) {
+                    return sum + (parseFloat(u.subscription_amount) || 0);
+                }, 0),
                 totalProjects: getTotalProjects(),
                 totalChats: chatMetrics.totalMessages,
                 totalInteractions: chatMetrics.totalInteractions,
@@ -2536,11 +3136,32 @@
             document.getElementById('activeSubscriptions').textContent = stats.activeSubscriptions;
             var activeBreak = document.getElementById('activeSubscriptionsBreakdown');
             if (activeBreak) {
-                activeBreak.textContent =
+                activeBreak.innerHTML =
+                    '<span style="color:#1e3a8a;font-weight:800;">' +
                     stats.activeCounting +
-                    ' suman ingreso · ' +
+                    ' suman ingreso</span> · ' +
                     stats.activeExcluded +
                     ' no suman (admin / «no suma»)';
+            }
+            var revEl = document.getElementById('estimatedRevenueCycle');
+            var revNote = document.getElementById('estimatedRevenueCycleNote');
+            var revCount = document.getElementById('estimatedRevenueCycleCount');
+            if (revEl) revEl.textContent = '$' + stats.revenuePerCycle.toFixed(2);
+            if (revNote) {
+                var equivAnualDash = stats.revenuePerCycle * (12 / 5);
+                revNote.textContent =
+                    'Equiv. anual: $' +
+                    equivAnualDash.toFixed(2) +
+                    ' · Solo activos que suman (sin admin ni «no suma»)';
+            }
+            if (revCount) {
+                revCount.innerHTML =
+                    '✅ ' +
+                    stats.activeCounting +
+                    ' cuentan en este total' +
+                    (stats.activeExcluded > 0
+                        ? ' · 📉 ' + stats.activeExcluded + ' activo(s) no suman'
+                        : '');
             }
             document.getElementById('totalProjects').textContent = stats.totalProjects;
             document.getElementById('totalChats').textContent = stats.totalChats;
@@ -5934,11 +6555,12 @@
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.total}</div>
                             <div style="color: #64748b; margin-top: 8px;">Total Registrados</div>
+                            <div style="color:#64748b;font-size:12px;margin-top:8px;line-height:1.35;">Todos: activos, inactivos y sin suscripción</div>
                         </div>
                         <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.active}</div>
                             <div style="color: #64748b; margin-top: 8px;">✅ Activas</div>
-                            <div style="color:#64748b;font-size:12px;margin-top:8px;line-height:1.35;">${overview.countingActiveCount} suman · ${overview.excludedActiveCount} no suman (admin / «no suma»)</div>
+                            <div style="font-size:12px;margin-top:8px;line-height:1.35;color:#64748b;"><span style="color:#1e3a8a;font-weight:800;">${overview.countingActiveCount} suman ingreso</span> · ${overview.excludedActiveCount} no suman (admin / «no suma»)</div>
                         </div>
                         <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.pending}</div>
@@ -5956,7 +6578,7 @@
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.totalRevenuePerCycle.toFixed(2)} USD</div>
                             <div style="color: #64748b; margin-top: 8px;">💰 Ingreso por ciclo (contable)</div>
                             <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Equiv. anual: $${equivAnual.toFixed(2)} USD · Solo activos que suman (sin admin ni «no suma»)</div>
-                            <div style="color:#0369a1;font-size:12px;margin-top:8px;line-height:1.35;">✅ ${overview.countingActiveCount} cuentan en este total${overview.excludedActiveCount > 0 ? ` · 📉 ${overview.excludedActiveCount} activo(s) no suman` : ''}</div>
+                            <div style="color:#1e3a8a;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">✅ ${overview.countingActiveCount} cuentan en este total${overview.excludedActiveCount > 0 ? ` · 📉 ${overview.excludedActiveCount} activo(s) no suman` : ''}</div>
                         </div>
                     </div>
                     <button onclick="closeDataViewer()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cerrar</button>

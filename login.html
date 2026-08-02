@@ -32,7 +32,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=41" />
+  <link rel="stylesheet" href="auth.css?v=44" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -121,9 +121,8 @@
       <div id="authPreferencesHome">
         <section id="authPreferencesBar" class="auth-preferences-bar" aria-labelledby="authPreferencesTitle">
           <div class="auth-preferences-bar__prefs">
-            <div class="auth-preferences-bar__intro">
-              <h2 id="authPreferencesTitle" class="auth-preferences-bar__title" data-i18n="auth.preferences">Preferencias</h2>
-            </div>
+            <h2 id="authPreferencesTitle" class="auth-sr-only" data-i18n="auth.preferences">Preferencias</h2>
+            <span class="auth-preferences-bar__accent" aria-hidden="true"></span>
             <div class="auth-preferences-bar__controls">
               <div class="auth-preference-field">
                 <label for="authLanguage" data-i18n="profile.language">Idioma</label>
@@ -4392,9 +4391,9 @@
           var panels = root.querySelector('.login-social-panels');
           h = Math.floor((panels && panels.clientHeight) || 0) - 48;
         }
-        if (!h) h = 360;
-        // Crece con el panel (alineado a herramientas); deja aire para el CTA.
-        return Math.max(260, Math.min(720, h));
+        if (!h) h = 320;
+        // No empujar el CTA fuera del panel
+        return Math.max(220, Math.min(480, h));
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4513,10 +4512,21 @@
             root.style.maxHeight = available + 'px';
             var panels = root.querySelector('.login-social-panels');
             if (panels) {
-              var chrome = 118;
-              panels.style.minHeight = Math.max(200, available - chrome) + 'px';
-              panels.style.height = Math.max(200, available - chrome) + 'px';
-              panels.style.maxHeight = Math.max(200, available - chrome) + 'px';
+              // Título + tabs + CTA + paddings: deja el botón “Ver página” completo
+              var titleEl = root.querySelector('.login-social-panel__title');
+              var subEl = root.querySelector('.login-social-panel__subtitle');
+              var tabsEl = root.querySelector('.login-social-tabs');
+              var ctaEl = root.querySelector('.login-social-pane.active > .login-social-card__cta');
+              var chrome =
+                (titleEl ? titleEl.offsetHeight : 22) +
+                (subEl ? subEl.offsetHeight : 18) +
+                (tabsEl ? tabsEl.offsetHeight : 44) +
+                (ctaEl ? ctaEl.offsetHeight + 14 : 56) +
+                36;
+              var panelsH = Math.max(180, available - chrome);
+              panels.style.minHeight = panelsH + 'px';
+              panels.style.height = panelsH + 'px';
+              panels.style.maxHeight = panelsH + 'px';
             }
           }
         }
