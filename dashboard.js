@@ -9657,6 +9657,13 @@ const EXTRACTION_ETAPA_CHART_COLORS = [
 ];
 
 function loadChartJsForReport(callback) {
+  if (typeof callback !== 'function') callback = function () {};
+  if (window.NpVpdRangeCharts && typeof window.NpVpdRangeCharts.loadChartJs === 'function') {
+    window.NpVpdRangeCharts.loadChartJs(function () {
+      callback();
+    });
+    return;
+  }
   if (typeof window.loadChartJs === 'function') {
     window.loadChartJs(callback);
     return;
@@ -9665,10 +9672,29 @@ function loadChartJsForReport(callback) {
     callback();
     return;
   }
+  if (window._npChartJsReportLoading) {
+    (window._npChartJsReportWaiters = window._npChartJsReportWaiters || []).push(callback);
+    return;
+  }
+  window._npChartJsReportLoading = true;
+  window._npChartJsReportWaiters = [callback];
   const s = document.createElement('script');
   s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-  s.onload = callback;
-  s.onerror = function() { callback(); };
+  s.setAttribute('data-np-chartjs', '1');
+  s.onload = function () {
+    window._npChartJsReportLoading = false;
+    var list = (window._npChartJsReportWaiters || []).splice(0);
+    list.forEach(function (fn) {
+      try { fn(); } catch (e) {}
+    });
+  };
+  s.onerror = function () {
+    window._npChartJsReportLoading = false;
+    var list = (window._npChartJsReportWaiters || []).splice(0);
+    list.forEach(function (fn) {
+      try { fn(); } catch (e) {}
+    });
+  };
   document.head.appendChild(s);
 }
 
@@ -24347,6 +24373,14 @@ async function fetchVPDRangeData(evt) {
   var btn = evt && evt.target ? evt.target : null;
   var original = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Descargando...'; }
+  // Precargar Chart.js en paralelo con la descarga Open-Meteo (evita cuadro en blanco).
+  try {
+    if (window.NpVpdRangeCharts && typeof window.NpVpdRangeCharts.loadChartJs === 'function') {
+      window.NpVpdRangeCharts.loadChartJs(function () {});
+    } else if (typeof loadChartJsForReport === 'function') {
+      loadChartJsForReport(function () {});
+    }
+  } catch (ePre) {}
   try {
     var hourlyRows = await fetchVPDRangeHourlyRows(location.lat, location.lng, startDate, endDate);
     hourlyRows.sort(function(a, b) {

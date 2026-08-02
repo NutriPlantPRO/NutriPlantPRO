@@ -291,7 +291,10 @@
     return (
       '<div class="np-vpd-critical-chart-viewport" data-np-chart-mode="dashboard" style="width:100%;max-width:100%;min-height:' +
       CRITICAL_CHART_DASHBOARD_HEIGHT +
-      'px;box-sizing:border-box;overflow:hidden;border:1px solid #fed7aa;border-radius:8px;background:#fff;padding:4px 6px;">' +
+      'px;box-sizing:border-box;overflow:hidden;border:1px solid #fed7aa;border-radius:8px;background:#fff;padding:4px 6px;position:relative;">' +
+      '<div data-np-critical-chart-status style="display:flex;align-items:center;justify-content:center;position:absolute;inset:4px 6px;z-index:2;background:#fff;color:#9a3412;font-size:12px;font-weight:600;text-align:center;padding:12px;box-sizing:border-box;">' +
+      chartT('Cargando gráfica…', 'Loading chart…') +
+      '</div>' +
       '<div data-np-chart-inner="critical" style="width:100%;max-width:100%;min-width:0;height:' +
       CRITICAL_CHART_DASHBOARD_HEIGHT +
       'px;min-height:' +
@@ -301,7 +304,7 @@
       prefix +
       '-critical-canvas" style="display:block;width:100%;height:' +
       CRITICAL_CHART_DASHBOARD_HEIGHT +
-      'px;"></canvas></div></div>'
+      'px;visibility:hidden;"></canvas></div></div>'
     );
   }
 
@@ -851,20 +854,116 @@
     });
   }
 
+  var chartJsWaiters = [];
+  var chartJsLoading = false;
+  var CHART_JS_SRC = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+
+  function flushChartJsWaiters(ok) {
+    chartJsLoading = false;
+    var list = chartJsWaiters.splice(0, chartJsWaiters.length);
+    list.forEach(function (fn) {
+      try {
+        fn(!!ok && !!w.Chart);
+      } catch (e) {}
+    });
+  }
+
   function loadChartJs(cb) {
+    if (typeof cb !== 'function') cb = function () {};
     if (w.Chart) {
-      cb();
+      cb(true);
       return;
     }
-    if (typeof w.loadChartJsForReport === 'function') {
-      w.loadChartJsForReport(cb);
+    chartJsWaiters.push(cb);
+    if (chartJsLoading) return;
+    chartJsLoading = true;
+
+    var existing = document.querySelector('script[data-np-chartjs="1"]');
+    if (existing) {
+      var tries = 0;
+      var poll = setInterval(function () {
+        tries += 1;
+        if (w.Chart) {
+          clearInterval(poll);
+          flushChartJsWaiters(true);
+        } else if (tries > 200) {
+          clearInterval(poll);
+          flushChartJsWaiters(false);
+        }
+      }, 50);
       return;
     }
+
     var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-    s.onload = cb;
-    s.onerror = cb;
+    s.src = CHART_JS_SRC;
+    s.async = true;
+    s.setAttribute('data-np-chartjs', '1');
+    s.onload = function () {
+      flushChartJsWaiters(!!w.Chart);
+    };
+    s.onerror = function () {
+      flushChartJsWaiters(false);
+    };
     document.head.appendChild(s);
+  }
+
+  function setCriticalChartStatus(viewport, state) {
+    if (!viewport) return;
+    var status = viewport.querySelector('[data-np-critical-chart-status]');
+    var canvas = viewport.querySelector('canvas');
+    if (!status) return;
+    if (state === 'loading') {
+      status.style.display = 'flex';
+      status.textContent = chartT('Cargando gráfica…', 'Loading chart…');
+      if (canvas) canvas.style.visibility = 'hidden';
+    } else if (state === 'error') {
+      status.style.display = 'flex';
+      status.textContent = chartT(
+        'No se pudo cargar la gráfica. Revisa la conexión o pulsa Gráfica de nuevo.',
+        'Could not load the chart. Check your connection or tap Chart again.'
+      );
+      if (canvas) canvas.style.visibility = 'hidden';
+    } else if (state === 'empty') {
+      status.style.display = 'flex';
+      status.textContent = chartT(
+        'Sin datos diarios para graficar en este tramo.',
+        'No daily data to chart in this span.'
+      );
+      if (canvas) canvas.style.visibility = 'hidden';
+    } else {
+      status.style.display = 'none';
+      status.textContent = '';
+      if (canvas) canvas.style.visibility = 'visible';
+    }
+  }
+
+  function resolveCriticalChartDailyRows(cfg, prep) {
+    cfg = cfg || {};
+    var rows = resolveDailySummaryRows(
+      cfg.dailySummaryRows || [],
+      cfg.summaryRows,
+      (cfg.meta || {}).granularity
+    );
+    var agg = aggregateDailyVpdForChart(rows, prep && prep.windowStart, prep && prep.windowEnd);
+    var hasSignal =
+      agg.items.length &&
+      agg.items.some(function (i) {
+        return (i.total || 0) > 0 || Number.isFinite(i.maxVpd) || Number.isFinite(i.minVpd);
+      });
+    if (!hasSignal && prep && prep.windowStart && prep.windowEnd) {
+      rows = dailyRowsFromCriticalEvents(
+        cfg.criticalRows || [],
+        prep.windowStart,
+        prep.windowEnd
+      );
+    }
+    return rows;
+  }
+
+  function whenLayoutReady(fn) {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(fn);
+    });
   }
 
   /** JPEG/PDF: el canvas transparente se ve negro; pintar fondo blanco antes de exportar. */
@@ -1030,41 +1129,80 @@
   }
 
   function paintCriticalChartInteractive(cfg, prep, charts) {
-    if (charts.critical) {
-      try {
-        charts.critical.destroy();
-      } catch (e) {}
-      charts.critical = null;
-    }
     var canvas = document.getElementById(cfg.prefix + '-critical-canvas');
     var graphPanel = document.getElementById(cfg.prefix + '-critical-graph');
     var viewport =
       graphPanel && graphPanel.querySelector('.np-vpd-critical-chart-viewport');
     var inner =
       graphPanel && graphPanel.querySelector('[data-np-chart-inner="critical"]');
-    if (!canvas || !prep.windowStart) return;
+    if (!canvas || !canvas.isConnected || !prep || !prep.windowStart) {
+      setCriticalChartStatus(viewport, 'empty');
+      return false;
+    }
+    if (!w.Chart) {
+      setCriticalChartStatus(viewport, 'error');
+      return false;
+    }
     if (viewport) viewport._npCriticalPaintLock = true;
+    if (charts.critical) {
+      try {
+        charts.critical.destroy();
+      } catch (e) {}
+      charts.critical = null;
+    }
+    var dailyRows = resolveCriticalChartDailyRows(cfg, prep);
     var days =
       prep.windowStart && prep.windowEnd
         ? isoDateSpanInclusiveDays(prep.windowStart, prep.windowEnd)
         : CRITICAL_DISPLAY_DAYS;
     var layout = measureDashboardCriticalChartLayout(days, viewport || graphPanel);
     applyCriticalChartLayout(inner, canvas, layout, true);
-    charts.critical = createCriticalHoursChart(canvas, cfg.dailySummaryRows || [], prep, {
-      responsive: false,
-      maintainAspectRatio: false,
-      animation: false,
-      fluid: true,
-      summaryRows: cfg.summaryRows,
-      granularity: (cfg.meta || {}).granularity,
-      layout: layout
-    });
+    try {
+      charts.critical = createCriticalHoursChart(canvas, dailyRows, prep, {
+        responsive: false,
+        maintainAspectRatio: false,
+        animation: false,
+        fluid: true,
+        summaryRows: cfg.summaryRows,
+        granularity: (cfg.meta || {}).granularity,
+        layout: layout
+      });
+    } catch (err) {
+      console.warn('NpVpdRangeCharts paintCriticalChartInteractive:', err);
+      charts.critical = null;
+    }
+    if (!charts.critical) {
+      setCriticalChartStatus(viewport, 'empty');
+      if (viewport) {
+        requestAnimationFrame(function () {
+          viewport._npCriticalPaintLock = false;
+        });
+      }
+      return false;
+    }
+    setCriticalChartStatus(viewport, 'ready');
     if (viewport) {
       viewport._npCriticalLastWidth = layout.canvasWidth;
       requestAnimationFrame(function () {
         viewport._npCriticalPaintLock = false;
       });
     }
+    return true;
+  }
+
+  function scheduleCriticalChartPaint(cfg, prep, charts, viewport) {
+    setCriticalChartStatus(viewport, 'loading');
+    loadChartJs(function (ok) {
+      if (!ok) {
+        setCriticalChartStatus(viewport, 'error');
+        return;
+      }
+      whenLayoutReady(function () {
+        var canvas = document.getElementById(cfg.prefix + '-critical-canvas');
+        if (!canvas || !canvas.isConnected) return;
+        paintCriticalChartInteractive(cfg, prep, charts);
+      });
+    });
   }
 
   function initInteractiveBlock(cfg) {
@@ -1073,52 +1211,68 @@
     var criticalRows = cfg.criticalRows || [];
     var meta = cfg.meta || {};
     var prep = prepareCriticalRowsForDisplay(criticalRows, meta.endDate, meta.startDate);
+    var prefix = cfg.prefix || 'np-vpd';
+    var graphPanel = document.getElementById(prefix + '-critical-graph');
+    var viewport =
+      graphPanel && graphPanel.querySelector('.np-vpd-critical-chart-viewport');
+
+    // Una sola suscripción global por prefijo (evita listeners huérfanos al re-render).
+    if (w._npVpdCriticalRuntime && w._npVpdCriticalRuntime[prefix]) {
+      try {
+        var prev = w._npVpdCriticalRuntime[prefix];
+        if (prev.ro) prev.ro.disconnect();
+        if (prev.onResize) window.removeEventListener('resize', prev.onResize);
+        if (prev.charts && prev.charts.critical) {
+          try {
+            prev.charts.critical.destroy();
+          } catch (e0) {}
+        }
+      } catch (eClean) {}
+    }
+    w._npVpdCriticalRuntime = w._npVpdCriticalRuntime || {};
 
     bindViewToggle(
-      document.getElementById(cfg.prefix + '-critical-view-graph'),
-      document.getElementById(cfg.prefix + '-critical-view-table'),
-      document.getElementById(cfg.prefix + '-critical-graph'),
-      document.getElementById(cfg.prefix + '-critical-table'),
+      document.getElementById(prefix + '-critical-view-graph'),
+      document.getElementById(prefix + '-critical-view-table'),
+      graphPanel,
+      document.getElementById(prefix + '-critical-table'),
       function () {
-        loadChartJs(function () {
-          paintCriticalChartInteractive(cfg, prep, charts);
-        });
+        scheduleCriticalChartPaint(cfg, prep, charts, viewport);
       }
     );
 
-    var graphPanel = document.getElementById(cfg.prefix + '-critical-graph');
-    var viewport =
-      graphPanel && graphPanel.querySelector('.np-vpd-critical-chart-viewport');
     var resultsHost = document.getElementById('vpd-range-results');
-    if (viewport && !viewport._npCriticalResizeBound) {
-      viewport._npCriticalResizeBound = true;
-      var resizeTimer = null;
-      var onResize = function () {
+    var resizeTimer = null;
+    var onResize = function () {
+      if (!viewport || !viewport.isConnected) return;
+      if (viewport._npCriticalPaintLock) return;
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (!viewport.isConnected) return;
+        if (!graphPanel || !graphPanel.isConnected || graphPanel.style.display === 'none') return;
         if (viewport._npCriticalPaintLock) return;
-        if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () {
-          if (!graphPanel || graphPanel.style.display === 'none') return;
-          if (viewport._npCriticalPaintLock) return;
-          var nextW = resolveCriticalChartTargetWidth(viewport || graphPanel);
-          if (
-            viewport._npCriticalLastWidth &&
-            Math.abs(nextW - viewport._npCriticalLastWidth) < 12
-          ) {
-            return;
-          }
-          loadChartJs(function () {
-            paintCriticalChartInteractive(cfg, prep, charts);
-          });
-        }, 180);
-      };
-      if (typeof ResizeObserver !== 'undefined') {
-        var ro = new ResizeObserver(onResize);
-        // Observar el host de resultados (ancho estable), no el canvas que se repinta.
-        ro.observe(resultsHost || viewport);
-        viewport._npCriticalResizeObserver = ro;
-      }
-      window.addEventListener('resize', onResize);
+        var nextW = resolveCriticalChartTargetWidth(viewport || graphPanel);
+        if (
+          viewport._npCriticalLastWidth &&
+          Math.abs(nextW - viewport._npCriticalLastWidth) < 16
+        ) {
+          return;
+        }
+        scheduleCriticalChartPaint(cfg, prep, charts, viewport);
+      }, 220);
+    };
+    var ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(onResize);
+      // Observar el host de resultados (ancho estable), no el canvas que se repinta.
+      ro.observe(resultsHost || viewport);
     }
+    window.addEventListener('resize', onResize);
+    w._npVpdCriticalRuntime[prefix] = {
+      onResize: onResize,
+      ro: ro,
+      charts: charts
+    };
 
     return { prep: prep, charts: charts };
   }
