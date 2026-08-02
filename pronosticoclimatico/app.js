@@ -886,21 +886,41 @@
     return cards.map((c) => `<article class="agro-summary-card ${c[3]}"><small>${c[0]}</small><strong>${c[1]}</strong><span>${c[2]}</span></article>`).join('');
   }
 
+  function wordMin() {
+    return I && I.getLanguage && I.getLanguage() === 'en' ? 'min' : 'mín';
+  }
+  function wordMax() {
+    return I && I.getLanguage && I.getLanguage() === 'en' ? 'max' : 'máx';
+  }
+  function wordRain() {
+    return I && I.getLanguage && I.getLanguage() === 'en' ? 'Rain' : 'Lluvia';
+  }
+  function thKey(label) {
+    return `<span class="agro-th-key">${esc(label)}</span>`;
+  }
+
   function dayCardsHtml() {
     return rows.map((r) => `<article class="agro-day-card ${r.kind}">
       <div class="agro-day-card-head"><strong>${esc(dateLabel(r.date))}</strong><span class="agro-day-badge ${r.kind}">${kindBadge(r.kind)}</span></div>
       <div class="agro-day-card-grid">
-        <div class="agro-day-metric"><small>${t('day_temp')}</small><strong>${dispTemp(r.tempMin)}–${showTemp(r.tempMax)}</strong></div>
-        <div class="agro-day-metric"><small>${t('day_humidity')}</small><strong>${fmt(r.humidityMin, 0)}–${fmt(r.humidityMax, 0, ' %')}</strong></div>
-        <div class="agro-day-metric"><small>VPD</small><strong>${fmt(r.vpdMin, 2)}–${fmt(r.vpdMax, 2, ' kPa')}</strong></div>
-        <div class="agro-day-metric"><small>${t('day_eto_etc')}</small><strong>${dispDepth(r.et0)} / ${dispDepth(r.etc)} ${depthUnitLabel()}</strong></div>
-        <div class="agro-day-metric"><small>${t('day_rain')}</small><strong>${showDepth(r.rain)}</strong></div>
+        <div class="agro-day-metric"><small>${t('day_temp')}</small><strong><span class="agro-val-min">${dispTemp(r.tempMin)}</span>–<span class="agro-val-max">${dispTemp(r.tempMax)}</span></strong></div>
+        <div class="agro-day-metric agro-day-metric--rh"><small>${t('day_humidity')}</small><strong><span class="agro-val-min">${fmt(r.humidityMin, 0)}</span>–<span class="agro-val-max">${fmt(r.humidityMax, 0, ' %')}</span></strong></div>
+        <div class="agro-day-metric agro-day-metric--vpd"><small>VPD</small><strong><span class="agro-val-min">${fmt(r.vpdMin, 2)}</span>–<span class="agro-val-max">${fmt(r.vpdMax, 2, ' kPa')}</span></strong></div>
+        <div class="agro-day-metric"><small><span class="agro-val-eto">ETo</span> / <span class="agro-val-etc">ETc</span></small><strong><span class="agro-val-eto">${dispDepth(r.et0)}</span> / <span class="agro-val-etc">${dispDepth(r.etc)}</span> ${depthUnitLabel()}</strong></div>
+        <div class="agro-day-metric"><small><span class="agro-val-rain">${esc(wordRain())}</span></small><strong><span class="agro-val-rain">${showDepth(r.rain)}</span></strong></div>
         <div class="agro-day-metric"><small>${t('day_rad')}</small><strong>${fmt(r.radiationMax, 0, ' W/m²')}</strong></div>
       </div></article>`).join('');
   }
 
   function tableHtml() {
     let firstForecast = true;
+    const uTemp = esc(tempUnitLabel());
+    const uDepth = esc(depthUnitLabel());
+    const wMin = wordMin();
+    const wMax = wordMax();
+    const en = !!(I && I.getLanguage && I.getLanguage() === 'en');
+    const rhLabel = en ? 'RH' : 'HR';
+    const dewLabel = en ? 'Dew' : 'Rocío';
     const body = rows.map((r) => {
       const first = r.kind === 'forecast' && firstForecast;
       if (first) firstForecast = false;
@@ -922,12 +942,12 @@
         <th class="group-water" colspan="3">${t('th_water')}</th>
       </tr>
       <tr class="agro-metric-row">
-        <th class="col-atm col-temp-min">${t('th_tmin')}</th><th class="col-atm col-temp-max">${t('th_tmax')}</th>
-        <th class="col-atm col-rh-min">${t('th_rhmin')}</th><th class="col-atm col-rh-max">${t('th_rhmax')}</th>
-        <th class="col-atm col-dew-min">${t('th_dewmin')}</th><th class="col-atm col-dew-max col-end-atm">${t('th_dewmax')}</th>
+        <th class="col-atm col-temp-min">T ${thKey(wMin)} ${uTemp}</th><th class="col-atm col-temp-max">T ${thKey(wMax)} ${uTemp}</th>
+        <th class="col-atm col-rh-min">${rhLabel} ${thKey(wMin)} %</th><th class="col-atm col-rh-max">${rhLabel} ${thKey(wMax)} %</th>
+        <th class="col-atm col-dew-min">${dewLabel} ${thKey(wMin)} ${uTemp}</th><th class="col-atm col-dew-max col-end-atm">${dewLabel} ${thKey(wMax)} ${uTemp}</th>
         <th class="col-vpd col-rad">${t('th_rad')}</th>
-        <th class="col-vpd col-vpd-min">${t('th_vpdmin')}</th><th class="col-vpd col-vpd-max col-end-vpd">${t('th_vpdmax')}</th>
-        <th class="col-water col-eto">${t('th_eto')}</th><th class="col-water col-etc">${t('th_etc')}${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water col-rain">${t('th_rain')}</th>
+        <th class="col-vpd col-vpd-min">VPD ${thKey(wMin)}</th><th class="col-vpd col-vpd-max col-end-vpd">VPD ${thKey(wMax)}</th>
+        <th class="col-water col-eto">${thKey('ETo')} ${uDepth}</th><th class="col-water col-etc">${thKey('ETc')} ${uDepth}${activeKc() != null ? `<span class="agro-etc-kc">· Kc ${Number(activeKc()).toFixed(2)}</span>` : ''}</th><th class="col-water col-rain">${thKey(wordRain())} ${uDepth}</th>
       </tr>
     </thead><tbody>${body}</tbody></table>`;
   }

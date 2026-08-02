@@ -157,12 +157,19 @@ function copyFor(language, us) {
       ? 'Compact table in the email. Chart, full history and PDF → “View full report”.'
       : 'Tabla compacta en el correo. Gráfica, histórico completo y PDF → «Ver reporte completo».',
     day: en ? 'Day' : 'Día',
-    thTemp: en ? `T ${tempUnit}<br>min–max` : `T ${tempUnit}<br>mín–máx`,
-    thRh: en ? 'RH %<br>min–max' : 'HR %<br>mín–máx',
-    thVpd: en ? 'VPD<br>min–max' : 'VPD<br>mín–máx',
+    /* Misma paleta que las celdas: mín más tenue, máx más intenso; ETo / ETc / lluvia distintos */
+    thTemp: en
+      ? `T ${tempUnit}<br><span style="color:#ea580c;font-weight:700;">min</span>–<span style="color:#c2410c;font-weight:800;">max</span>`
+      : `T ${tempUnit}<br><span style="color:#ea580c;font-weight:700;">mín</span>–<span style="color:#c2410c;font-weight:800;">máx</span>`,
+    thRh: en
+      ? `RH %<br><span style="color:#0284c7;font-weight:700;">min</span>–<span style="color:#0369a1;font-weight:800;">max</span>`
+      : `HR %<br><span style="color:#0284c7;font-weight:700;">mín</span>–<span style="color:#0369a1;font-weight:800;">máx</span>`,
+    thVpd: en
+      ? `VPD<br><span style="color:#7c3aed;font-weight:700;">min</span>–<span style="color:#6d28d9;font-weight:800;">max</span>`
+      : `VPD<br><span style="color:#7c3aed;font-weight:700;">mín</span>–<span style="color:#6d28d9;font-weight:800;">máx</span>`,
     thWater: en
-      ? `${depthUnit}<br>ETo / ETc / Rain`
-      : `${depthUnit}<br>ETo / ETc / Lluvia`,
+      ? `${depthUnit}<br><span style="color:#0f766e;font-weight:700;">ETo</span> / <span style="color:#15803d;font-weight:700;">ETc</span> / <span style="color:#1d4ed8;font-weight:800;">Rain</span>`
+      : `${depthUnit}<br><span style="color:#0f766e;font-weight:700;">ETo</span> / <span style="color:#15803d;font-weight:700;">ETc</span> / <span style="color:#1d4ed8;font-weight:800;">Lluvia</span>`,
     noForecast: en ? 'No forecast days.' : 'Sin días de pronóstico.',
     footnote: en
       ? 'Estimated weather forecast for the registered coordinates. Leaf temperature and VPD are indicative; validate the microclimate in the field.'

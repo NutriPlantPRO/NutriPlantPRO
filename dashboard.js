@@ -2802,11 +2802,11 @@ function renderProjectCards(p) {
     </div>
     <div class="sb-chiprow">
       <button class="sb-chip" data-section="ubicacion">🛰️ <span class="text">${dashboardT('dashboard.radar', 'Radar Satelital')}</span></button>
+      <button class="sb-chip" data-section="clima">🌤️ <span class="text">${dashboardT('dashboard.climate', 'Clima')}</span></button>
       <button class="sb-chip" data-section="enmienda">🚜 <span class="text">${dashboardT('dashboard.amendment', 'Enmienda')}</span></button>
       <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">${dashboardT('dashboard.granular', 'Nutrición Granular')}</span></button>
       <button class="sb-chip" data-section="fertirriego">📈 <span class="text">${dashboardT('dashboard.fertigation', 'Fertirriego')}</span></button>
       <button class="sb-chip" data-section="hidroponia">💧 <span class="text">${dashboardT('dashboard.hydroponics', 'Hidroponía')}</span></button>
-      <button class="sb-chip" data-section="reporte">📄 <span class="text">${dashboardT('dashboard.report', 'Reporte')}</span></button>
     </div>
   `;
   sbStack.appendChild(card1);
@@ -2828,15 +2828,15 @@ card2.innerHTML = `
 `;
   sbStack.appendChild(card2);
 
-  // CHIP INDEPENDIENTE PARA DÉFICIT DE PRESIÓN DE VAPOR
-  const vpdCard = document.createElement("div");
-  vpdCard.className = "sb-card sb-vpd-card";
-  vpdCard.innerHTML = `
+  // CHIP INDEPENDIENTE PARA REPORTE (mismo bloque compacto que tenía Clima)
+  const reportCard = document.createElement("div");
+  reportCard.className = "sb-card sb-vpd-card";
+  reportCard.innerHTML = `
     <div class="sb-chiprow">
-      <button class="sb-chip" data-section="clima">🌤️ <span class="text">${dashboardT('dashboard.climate', 'Clima')}</span></button>
+      <button class="sb-chip" data-section="reporte">📄 <span class="text">${dashboardT('dashboard.report', 'Reporte')}</span></button>
     </div>
   `;
-  sbStack.appendChild(vpdCard);
+  sbStack.appendChild(reportCard);
 
   // Ejecutar después de renderizar las tarjetas
   setTimeout(() => handleSidebarTextVisibility(), 0);

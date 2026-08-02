@@ -359,10 +359,10 @@
             right: 0;
             z-index: 12003;
             width: min(92vw, 300px);
-            padding: 12px;
+            padding: 12px 12px 10px;
             border-radius: 14px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(255, 255, 255, 0.98);
             box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
             box-sizing: border-box;
         }
@@ -378,13 +378,75 @@
             font-size: 18px;
             font-weight: 800;
             color: #1e3a8a;
+            font-variant-numeric: tabular-nums;
             line-height: 1.2;
         }
-        .admin-pill-popover__meta {
-            margin: 0 0 10px;
-            font-size: 11px;
+        #adminWeatherPopover .admin-pill-popover__live {
+            font-size: 17px;
+            color: #92400e;
+        }
+        .admin-pill-popover__row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .admin-pill-popover__row label {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             color: #64748b;
-            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+        .admin-pill-popover__row select {
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: #fff;
+            font-size: 12px;
+            font-family: inherit;
+            color: #334155;
+        }
+        .admin-pill-popover__grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 10px;
+            margin: 0 0 8px;
+        }
+        .admin-pill-popover__grid div {
+            font-size: 11px;
+            color: #334155;
+            line-height: 1.35;
+        }
+        .admin-pill-popover__grid strong {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+        .admin-pill-popover__place {
+            margin: 0 0 8px;
+            font-size: 10px;
+            color: #475569;
+            line-height: 1.35;
+        }
+        .admin-pill-popover__meta {
+            margin: 0 0 8px;
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.35;
+        }
+        .admin-pill-popover__hint {
+            margin: 0 0 8px;
+            font-size: 10px;
+            color: #94a3b8;
+            line-height: 1.35;
         }
         .admin-pill-popover__actions {
             display: flex;
@@ -395,16 +457,21 @@
         .admin-pill-popover__actions button {
             display: inline-flex;
             align-items: center;
-            padding: 6px 9px;
+            padding: 5px 8px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             background: #f8fafc;
             color: #334155;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             text-decoration: none;
             cursor: pointer;
             font-family: inherit;
+        }
+        .admin-pill-popover__actions a.admin-pill-link--google {
+            border-color: rgba(234, 179, 8, 0.55);
+            color: #a16207;
+            background: linear-gradient(180deg, rgba(254, 252, 232, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
         }
         .admin-cloud-sync-btn {
             position: relative;
@@ -498,14 +565,15 @@
             top: calc(100% + 8px);
             right: 0;
             z-index: 12002;
-            width: min(420px, calc(100vw - 32px));
-            max-height: min(78vh, 640px);
+            width: min(480px, calc(100vw - 24px));
+            max-height: min(78vh, 720px);
             overflow: auto;
-            padding: 14px;
+            padding: 12px;
             border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+            box-sizing: border-box;
         }
         .admin-top-menu-panel.is-open { display: block; }
         .admin-top-menu-title {
@@ -516,32 +584,78 @@
             color: #0f172a;
         }
         .admin-top-menu-block {
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 10px;
+            padding: 10px 12px 12px;
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.78);
+            box-sizing: border-box;
         }
-        .admin-top-menu-block:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: 0;
+        .admin-top-menu-block:last-child { margin-bottom: 0; }
+        .admin-top-menu-block--social {
+            border-left: 3px solid rgba(37, 99, 235, 0.48);
+            background: linear-gradient(90deg, rgba(239, 246, 255, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--admin {
+            border-left: 3px solid rgba(22, 163, 74, 0.55);
+            background: linear-gradient(90deg, rgba(240, 253, 244, 0.5) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--portal {
+            border-left: 3px solid rgba(22, 163, 74, 0.62);
+            background: linear-gradient(90deg, rgba(236, 253, 245, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--tools {
+            border-left: 3px solid rgba(79, 70, 229, 0.55);
+            background: linear-gradient(90deg, rgba(238, 242, 255, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--accounts {
+            border-left: 3px solid rgba(37, 99, 235, 0.55);
+            background: linear-gradient(90deg, rgba(239, 246, 255, 0.45) 0%, rgba(255, 255, 255, 0.9) 42%);
+        }
+        .admin-top-menu-block--news {
+            border-left: 3px solid rgba(217, 119, 6, 0.65);
+            background: linear-gradient(90deg, rgba(255, 251, 235, 0.5) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--markets {
+            border-left: 3px solid rgba(13, 148, 136, 0.55);
+            background: linear-gradient(90deg, rgba(240, 253, 250, 0.45) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--extra {
+            border-left: 3px solid rgba(14, 165, 233, 0.55);
+            background: linear-gradient(90deg, rgba(240, 249, 255, 0.55) 0%, rgba(255, 255, 255, 0.92) 42%);
+        }
+        .admin-top-menu-block--services {
+            border-left: 3px solid rgba(124, 58, 237, 0.52);
+            background: linear-gradient(90deg, rgba(245, 243, 255, 0.55) 0%, rgba(255, 255, 255, 0.92) 42%);
         }
         .admin-top-menu-sub {
             display: block;
             margin: 0 0 8px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
             color: #64748b;
+            line-height: 1.2;
         }
-        .admin-top-menu-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+        .admin-top-menu-block--portal .admin-top-menu-sub { color: #166534; }
+        .admin-top-menu-block--tools .admin-top-menu-sub { color: #4338ca; }
+        .admin-top-menu-block--extra .admin-top-menu-sub { color: #0369a1; }
+        .admin-top-menu-block--services .admin-top-menu-sub { color: #5b21b6; }
+        .admin-top-menu-block--social .admin-top-menu-sub { color: #1d4ed8; }
+        /* Portal / nav: rejilla 2 columnas (como Plan PRO) */
+        .admin-top-menu-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr));
+            gap: 8px 10px;
+            width: 100%;
         }
-        .admin-top-menu-links a {
+        .admin-top-menu-nav a {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 36px;
             padding: 7px 10px;
             border-radius: 9px;
             border: 1px solid #e2e8f0;
@@ -550,73 +664,116 @@
             font-size: 12px;
             font-weight: 700;
             text-decoration: none;
+            text-align: center;
+            box-sizing: border-box;
+            line-height: 1.25;
+            white-space: normal;
         }
+        /* Nube: 2 columnas */
+        .admin-top-menu-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+        /* Cuentas / noticias / mercados / dispositivos / servicios: 3 columnas (2 en celular) */
+        .admin-top-menu-links {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            align-items: stretch;
+            width: 100%;
+        }
+        .admin-top-menu-tools a,
+        .admin-top-menu-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-width: 0;
+            min-height: 36px;
+            padding: 7px 10px;
+            border-radius: 9px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            text-align: center;
+            box-sizing: border-box;
+            line-height: 1.25;
+            white-space: normal;
+        }
+        .admin-top-menu-nav a:hover,
+        .admin-top-menu-tools a:hover,
         .admin-top-menu-links a:hover {
             border-color: #93c5fd;
             background: #eff6ff;
             color: #1d4ed8;
         }
+        .admin-top-menu-nav a.admin-link-brand,
         .admin-top-menu-links a.admin-link-brand {
             border-color: rgba(37, 99, 235, 0.38);
             background: linear-gradient(180deg, rgba(239, 246, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #1d4ed8;
         }
-        .admin-top-menu-links a.admin-link-plan {
+        .admin-top-menu-nav a.admin-link-plan {
             border-color: rgba(22, 163, 74, 0.45);
             background: linear-gradient(180deg, rgba(240, 253, 244, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #15803d;
         }
-        .admin-top-menu-links a.admin-link-alertas {
+        .admin-top-menu-nav a.admin-link-alertas {
             border-color: rgba(14, 165, 233, 0.45);
             background: linear-gradient(180deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #0369a1;
         }
-        .admin-top-menu-links a.admin-link-paypal {
+        .admin-top-menu-nav a.admin-link-paypal {
             border-color: rgba(0, 48, 135, 0.38);
             background: linear-gradient(180deg, rgba(230, 243, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #003087;
         }
-        .admin-top-menu-links a.admin-link-paypal-dev {
+        .admin-top-menu-nav a.admin-link-paypal-dev {
             border-color: rgba(0, 112, 186, 0.42);
             background: linear-gradient(180deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
             color: #005ea6;
         }
-        .admin-top-menu-links a.admin-link-supabase {
+        .admin-top-menu-tools a.admin-link-supabase {
             border-color: rgba(62, 207, 142, 0.55);
             color: #0f766e;
             background: linear-gradient(180deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.75) 100%);
         }
-        .admin-top-menu-links a.admin-link-ga {
+        .admin-top-menu-tools a.admin-link-ga {
             border-color: rgba(234, 179, 8, 0.55);
             color: #a16207;
             background: linear-gradient(180deg, rgba(254, 252, 232, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
         }
-        .admin-top-menu-links a.admin-link-netlify {
+        .admin-top-menu-tools a.admin-link-netlify {
             border-color: rgba(0, 199, 183, 0.5);
             color: #0d9488;
             background: linear-gradient(180deg, rgba(240, 253, 250, 0.98) 0%, rgba(255, 255, 255, 0.75) 100%);
         }
-        .admin-top-menu-links a.admin-link-github {
+        .admin-top-menu-tools a.admin-link-github {
             border-color: rgba(36, 41, 47, 0.35);
             color: #24292f;
             background: linear-gradient(180deg, rgba(246, 248, 250, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
         }
-        .admin-top-menu-links a.admin-link-namecheap {
+        .admin-top-menu-tools a.admin-link-namecheap {
             border-color: rgba(222, 55, 35, 0.45);
             color: #c2410c;
             background: linear-gradient(180deg, rgba(255, 247, 237, 0.98) 0%, rgba(255, 255, 255, 0.76) 100%);
         }
-        .admin-top-menu-links a.admin-link-gcp {
+        .admin-top-menu-tools a.admin-link-gcp {
             border-color: rgba(66, 133, 244, 0.45);
             color: #1a73e8;
             background: linear-gradient(180deg, rgba(232, 240, 254, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
         }
-        .admin-top-menu-links a.admin-link-openai {
+        .admin-top-menu-tools a.admin-link-openai {
             border-color: rgba(16, 163, 127, 0.5);
             color: #0f766e;
             background: linear-gradient(180deg, rgba(236, 253, 245, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
         }
-        .admin-top-menu-links a.admin-link-microsoft {
+        .admin-top-menu-tools a.admin-link-microsoft {
             border-color: rgba(0, 120, 212, 0.45);
             color: #0b5cab;
             background: linear-gradient(180deg, rgba(239, 246, 255, 0.98) 0%, rgba(255, 255, 255, 0.78) 100%);
@@ -633,8 +790,9 @@
         .admin-top-menu-links a.admin-link-services { border-color: rgba(244, 63, 94, 0.35); color: #be123c; background: linear-gradient(180deg, rgba(255, 241, 242, 0.96) 0%, #fff 100%); }
         .admin-top-menu-social {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             gap: 6px;
+            justify-content: flex-start;
         }
         .admin-top-menu-social a {
             width: 36px;
@@ -646,6 +804,7 @@
             border: 1px solid #e2e8f0;
             background: #fff;
             color: #334155;
+            flex-shrink: 0;
         }
         .admin-top-menu-social a svg {
             width: 16px;
@@ -656,9 +815,21 @@
         .admin-top-menu-social a[title="TikTok"] { border-color: #0f172a; color: #0f172a; background: #f8fafc; }
         .admin-top-menu-social a[title="YouTube"] { border-color: #ff0000; color: #dc2626; background: #fef2f2; }
         .admin-top-menu-social a[title="LinkedIn"] { border-color: #0077b5; color: #0077b5; background: #eff6ff; }
+        @media (max-width: 400px) {
+            .admin-top-menu-links {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
         @media (max-width: 640px) {
             .admin-top-bar {
                 padding: 10px 12px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .admin-top-bar__actions {
+                margin-left: 0;
+                width: 100%;
+                justify-content: flex-start;
             }
             .admin-top-bar__brand img { height: 30px; }
             .admin-top-bar__brand h1 { font-size: 1.05rem; }
@@ -678,6 +849,12 @@
             .admin-top-logout-btn {
                 width: 40px;
                 height: 40px;
+            }
+            .admin-top-menu-panel {
+                left: 8px;
+                right: 8px;
+                width: auto;
+                max-height: min(78vh, calc(100dvh - 110px));
             }
         }
         
@@ -1289,7 +1466,7 @@
                 </div>
             </div>
             <div class="admin-top-bar__actions">
-                <button type="button" class="admin-fx-pill" id="adminFxBtn" data-state="loading" aria-expanded="false" aria-controls="adminFxPopover" title="Tipo de cambio · toca para detalle">
+                <button type="button" class="admin-fx-pill" id="adminFxBtn" data-state="loading" aria-expanded="false" aria-controls="adminFxPopover" title="Tipo de cambio de referencia · toca para elegir monedas">
                     <span class="admin-fx-num" id="adminFxNum">TC …</span>
                     <span class="admin-fx-sub" id="adminFxSub">USD → MXN</span>
                 </button>
@@ -1318,21 +1495,40 @@
                         <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
                     </svg>
                 </button>
-                <div id="adminFxPopover" class="admin-pill-popover" role="dialog" aria-hidden="true">
-                    <p class="admin-pill-popover__head">Tipo de cambio</p>
+                <div id="adminFxPopover" class="admin-pill-popover" role="dialog" aria-hidden="true" aria-labelledby="adminFxPopTitle">
+                    <p id="adminFxPopTitle" class="admin-pill-popover__head">Tipo de cambio</p>
                     <p class="admin-pill-popover__live" id="adminFxLive">—</p>
-                    <p class="admin-pill-popover__meta" id="adminFxMeta">Referencia orientativa · no es cotización bancaria.</p>
+                    <div class="admin-pill-popover__row">
+                        <div>
+                            <label for="adminFxFrom">De</label>
+                            <select id="adminFxFrom" aria-label="Moneda origen"></select>
+                        </div>
+                        <div>
+                            <label for="adminFxTo">A</label>
+                            <select id="adminFxTo" aria-label="Moneda destino"></select>
+                        </div>
+                    </div>
+                    <p class="admin-pill-popover__meta" id="adminFxMeta">—</p>
+                    <p class="admin-pill-popover__hint">Referencia orientativa · no es cotización bancaria.</p>
                     <div class="admin-pill-popover__actions">
-                        <a id="adminFxGoogle" href="https://www.google.com/search?q=1+USD+to+MXN" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+                        <a id="adminFxGoogle" class="admin-pill-link--google" href="https://www.google.com/search?q=1+USD+to+MXN" target="_blank" rel="noopener noreferrer">Ver en Google</a>
                         <button type="button" id="adminFxRefresh">Actualizar</button>
                     </div>
                 </div>
-                <div id="adminWeatherPopover" class="admin-pill-popover" role="dialog" aria-hidden="true">
-                    <p class="admin-pill-popover__head">Clima local</p>
+                <div id="adminWeatherPopover" class="admin-pill-popover" role="dialog" aria-hidden="true" aria-labelledby="adminWeatherPopTitle">
+                    <p id="adminWeatherPopTitle" class="admin-pill-popover__head">Clima local</p>
                     <p class="admin-pill-popover__live" id="adminWeatherLive">—</p>
+                    <div class="admin-pill-popover__grid">
+                        <div><strong>Humedad</strong><span id="adminWeatherPopHum">—</span></div>
+                        <div><strong>Índice UV</strong><span id="adminWeatherPopUv">—</span></div>
+                        <div><strong>Condición</strong><span id="adminWeatherPopCond">—</span></div>
+                        <div><strong>Nubosidad</strong><span id="adminWeatherPopCloud">—</span></div>
+                    </div>
+                    <p class="admin-pill-popover__place" id="adminWeatherPopPlace">—</p>
                     <p class="admin-pill-popover__meta" id="adminWeatherMeta">—</p>
                     <div class="admin-pill-popover__actions">
-                        <a id="adminWeatherGoogle" href="https://www.google.com/search?q=clima" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+                        <a id="adminWeatherGoogle" class="admin-pill-link--google" href="https://www.google.com/search?q=clima" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+                        <button type="button" id="adminWeatherLocBtn">Mi ubicación</button>
                         <button type="button" id="adminWeatherRefresh">Actualizar</button>
                     </div>
                 </div>
@@ -1340,7 +1536,7 @@
             <div id="adminTopMenuBackdrop" class="admin-top-menu-backdrop" aria-hidden="true"></div>
             <div id="adminTopMenuPanel" class="admin-top-menu-panel" role="dialog" aria-modal="true" aria-labelledby="adminTopMenuTitle" aria-hidden="true">
                 <span id="adminTopMenuTitle" class="admin-top-menu-title">Accesos</span>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--social" aria-label="Redes NutriPlant PRO">
                     <span class="admin-top-menu-sub">Redes NutriPlant PRO</span>
                     <div class="admin-top-menu-social" aria-label="Redes NutriPlant PRO">
                         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
@@ -1350,88 +1546,88 @@
                         <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
-                    <span class="admin-top-menu-sub">Portal NutriPlant</span>
-                    <div class="admin-top-menu-links">
-                        <a class="admin-link-brand" href="../login.html" target="_blank" rel="noopener noreferrer">NutriPlant PRO</a>
-                        <a class="admin-link-plan" href="../planpro/?k=np_planpro_key_4a7f2e9b1c6d">Plan PRO</a>
+                <div class="admin-top-menu-block admin-top-menu-block--admin" aria-label="Alertas">
+                    <span class="admin-top-menu-sub">Admin</span>
+                    <div class="admin-top-menu-nav">
                         <a class="admin-link-alertas" href="agroclimate.html?k=np_admin_key_8f4a2b9c1e7d">Alertas agroclimáticas</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--portal" aria-label="Portal NutriPlant y pagos">
                     <span class="admin-top-menu-sub">Portal y pagos</span>
-                    <div class="admin-top-menu-links">
-                        <a class="admin-link-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer">Cuenta PayPal</a>
-                        <a class="admin-link-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer">PayPal Developer</a>
+                    <div class="admin-top-menu-nav">
+                        <a class="admin-link-brand" href="../login.html" target="_blank" rel="noopener noreferrer">NutriPlant PRO</a>
+                        <a class="admin-link-plan" href="../planpro/?k=np_planpro_key_4a7f2e9b1c6d">Plan PRO</a>
+                        <a class="admin-link-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer" title="Cuenta PayPal">Cuenta PayPal</a>
+                        <a class="admin-link-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" title="PayPal Developer">PayPal Developer</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--tools" aria-label="Nube y desarrollo">
                     <span class="admin-top-menu-sub">Nube y desarrollo</span>
-                    <div class="admin-top-menu-links">
-                        <a class="admin-link-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer">Supabase</a>
-                        <a class="admin-link-ga" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer">Analytics</a>
-                        <a class="admin-link-netlify" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a>
-                        <a class="admin-link-github" href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a>
-                        <a class="admin-link-namecheap" href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer">Namecheap</a>
-                        <a class="admin-link-gcp" href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer">Google Cloud</a>
-                        <a class="admin-link-openai" href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer">OpenAI</a>
-                        <a class="admin-link-microsoft" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer">Microsoft</a>
+                    <div class="admin-top-menu-tools">
+                        <a class="admin-link-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer" title="Supabase">Supabase</a>
+                        <a class="admin-link-ga" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer" title="Google Analytics">Analytics</a>
+                        <a class="admin-link-netlify" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer" title="Netlify">Netlify</a>
+                        <a class="admin-link-github" href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub">GitHub</a>
+                        <a class="admin-link-namecheap" href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer" title="Namecheap">Namecheap</a>
+                        <a class="admin-link-gcp" href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer" title="Google Cloud Console">Google Cloud</a>
+                        <a class="admin-link-openai" href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer" title="OpenAI API keys">OpenAI</a>
+                        <a class="admin-link-microsoft" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer" title="Cuenta Microsoft">Microsoft</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--accounts" aria-label="Cuentas y ahorro">
                     <span class="admin-top-menu-sub">Cuentas y ahorro</span>
                     <div class="admin-top-menu-links">
-                        <a class="admin-link-bbva" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer">BBVA</a>
-                        <a class="admin-link-gbm" href="https://gbm.com/" target="_blank" rel="noopener noreferrer">GBM</a>
-                        <a class="admin-link-schwab" href="https://client.schwab.com/app/accounts/summary/" target="_blank" rel="noopener noreferrer">Charles Schwab</a>
-                        <a class="admin-link-chase" href="https://www.chase.com/" target="_blank" rel="noopener noreferrer">Chase</a>
-                        <a class="admin-link-cetes" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer">CETES</a>
-                        <a class="admin-link-wise" href="https://wise.com/home" target="_blank" rel="noopener noreferrer">Wise</a>
+                        <a class="admin-link-bbva" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer" title="BBVA México">BBVA</a>
+                        <a class="admin-link-gbm" href="https://gbm.com/" target="_blank" rel="noopener noreferrer" title="GBM">GBM</a>
+                        <a class="admin-link-schwab" href="https://client.schwab.com/app/accounts/summary/" target="_blank" rel="noopener noreferrer" title="Charles Schwab">Charles Schwab</a>
+                        <a class="admin-link-chase" href="https://www.chase.com/" target="_blank" rel="noopener noreferrer" title="Chase">Chase</a>
+                        <a class="admin-link-cetes" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer" title="CETES Directo">CETES</a>
+                        <a class="admin-link-wise" href="https://wise.com/home" target="_blank" rel="noopener noreferrer" title="Wise">Wise</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--news" aria-label="Noticias">
                     <span class="admin-top-menu-sub">Noticias</span>
                     <div class="admin-top-menu-links">
-                        <a class="admin-link-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer">El Financiero</a>
-                        <a class="admin-link-news" href="https://www.eleconomista.com.mx/" target="_blank" rel="noopener noreferrer">El Economista</a>
-                        <a class="admin-link-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer">PD China</a>
-                        <a class="admin-link-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer">NY Times</a>
-                        <a class="admin-link-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer">WSJ</a>
+                        <a class="admin-link-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
+                        <a class="admin-link-news" href="https://www.eleconomista.com.mx/" target="_blank" rel="noopener noreferrer" title="El Economista">El Economista</a>
+                        <a class="admin-link-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
+                        <a class="admin-link-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
+                        <a class="admin-link-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--markets" aria-label="Mercados e información">
                     <span class="admin-top-menu-sub">Mercados e información</span>
                     <div class="admin-top-menu-links">
-                        <a class="admin-link-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer">BMV</a>
-                        <a class="admin-link-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer">Banxico</a>
-                        <a class="admin-link-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>
-                        <a class="admin-link-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer">T. Economics</a>
-                        <a class="admin-link-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer">Yahoo Finanzas</a>
-                        <a class="admin-link-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer">Google Finanzas</a>
-                        <a class="admin-link-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer">Finviz</a>
-                        <a class="admin-link-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer">FMI</a>
+                        <a class="admin-link-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer" title="Bolsa Mexicana de Valores">BMV</a>
+                        <a class="admin-link-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer" title="Banco de México">Banxico</a>
+                        <a class="admin-link-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer" title="TradingView">TradingView</a>
+                        <a class="admin-link-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer" title="Trading Economics">T. Economics</a>
+                        <a class="admin-link-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer" title="Yahoo Finance">Yahoo Finanzas</a>
+                        <a class="admin-link-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
+                        <a class="admin-link-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
+                        <a class="admin-link-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--extra" aria-label="Dispositivos y herramientas">
                     <span class="admin-top-menu-sub">Dispositivos y herramientas</span>
                     <div class="admin-top-menu-links">
-                        <a class="admin-link-tools" href="https://smartthingsfind.samsung.com/" target="_blank" rel="noopener noreferrer">SmartThings Find</a>
-                        <a class="admin-link-tools" href="https://myaccount.google.com/device-activity" target="_blank" rel="noopener noreferrer">Dispositivos Google</a>
-                        <a class="admin-link-tools" href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Canva</a>
-                        <a class="admin-link-tools" href="https://www.windy.com/?19.119,-104.217,5" target="_blank" rel="noopener noreferrer">Windy</a>
-                        <a class="admin-link-tools" href="https://zoom.earth/" target="_blank" rel="noopener noreferrer">Zoom Earth</a>
+                        <a class="admin-link-tools" href="https://smartthingsfind.samsung.com/" target="_blank" rel="noopener noreferrer" title="Samsung SmartThings Find">SmartThings Find</a>
+                        <a class="admin-link-tools" href="https://myaccount.google.com/device-activity" target="_blank" rel="noopener noreferrer" title="Dispositivos Google">Dispositivos Google</a>
+                        <a class="admin-link-tools" href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" title="Canva">Canva</a>
+                        <a class="admin-link-tools" href="https://www.windy.com/?19.119,-104.217,5" target="_blank" rel="noopener noreferrer" title="Windy">Windy</a>
+                        <a class="admin-link-tools" href="https://zoom.earth/" target="_blank" rel="noopener noreferrer" title="Zoom Earth">Zoom Earth</a>
                     </div>
                 </div>
-                <div class="admin-top-menu-block">
+                <div class="admin-top-menu-block admin-top-menu-block--services" aria-label="Servicios">
                     <span class="admin-top-menu-sub">Servicios</span>
                     <div class="admin-top-menu-links">
-                        <a class="admin-link-services" href="https://izzi.mx/login" target="_blank" rel="noopener noreferrer">izzi</a>
-                        <a class="admin-link-services" href="https://telmex.com/web/guest/pago_sin_login" target="_blank" rel="noopener noreferrer">Telmex pago</a>
-                        <a class="admin-link-services" href="https://www.elpalaciodehierro.com/login" target="_blank" rel="noopener noreferrer">Palacio</a>
-                        <a class="admin-link-services" href="https://www.hsbc.com.mx/online/dashboard/" target="_blank" rel="noopener noreferrer">HSBC</a>
-                        <a class="admin-link-services" href="https://www.mitelcel.com/mitelcel/login" target="_blank" rel="noopener noreferrer">Mi Telcel</a>
-                        <a class="admin-link-services" href="https://www.mintmobile.com/" target="_blank" rel="noopener noreferrer">Mint Mobile</a>
-                        <a class="admin-link-services" href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Cuenta Google</a>
+                        <a class="admin-link-services" href="https://izzi.mx/login" target="_blank" rel="noopener noreferrer" title="izzi">izzi</a>
+                        <a class="admin-link-services" href="https://telmex.com/web/guest/pago_sin_login" target="_blank" rel="noopener noreferrer" title="Telmex pago">Telmex pago</a>
+                        <a class="admin-link-services" href="https://www.elpalaciodehierro.com/login" target="_blank" rel="noopener noreferrer" title="El Palacio de Hierro">Palacio</a>
+                        <a class="admin-link-services" href="https://www.hsbc.com.mx/online/dashboard/" target="_blank" rel="noopener noreferrer" title="HSBC México">HSBC</a>
+                        <a class="admin-link-services" href="https://www.mitelcel.com/mitelcel/login" target="_blank" rel="noopener noreferrer" title="Mi Telcel">Mi Telcel</a>
+                        <a class="admin-link-services" href="https://www.mintmobile.com/" target="_blank" rel="noopener noreferrer" title="Mint Mobile">Mint Mobile</a>
+                        <a class="admin-link-services" href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer" title="Cuenta de Google">Cuenta Google</a>
                     </div>
                 </div>
             </div>
@@ -2758,8 +2954,38 @@
             var fxPop = document.getElementById('adminFxPopover');
             var wxBtn = document.getElementById('adminWeatherBtn');
             var wxPop = document.getElementById('adminWeatherPopover');
-            var fxState = { rate: null, updatedAt: 0 };
-            var wxState = { temp: null, place: 'CDMX', lat: 19.4326, lng: -99.1332 };
+            var FX_CURRENCIES = [
+                { code: 'USD', label: 'USD · Dólar USA' },
+                { code: 'MXN', label: 'MXN · Peso mexicano' },
+                { code: 'EUR', label: 'EUR · Euro' },
+                { code: 'CAD', label: 'CAD · Dólar canadiense' },
+                { code: 'GBP', label: 'GBP · Libra' },
+                { code: 'JPY', label: 'JPY · Yen' },
+                { code: 'CNY', label: 'CNY · Yuan' },
+                { code: 'BRL', label: 'BRL · Real' },
+                { code: 'COP', label: 'COP · Peso colombiano' },
+                { code: 'ARS', label: 'ARS · Peso argentino' },
+                { code: 'CLP', label: 'CLP · Peso chileno' }
+            ];
+            var fxState = { from: 'USD', to: 'MXN', rate: null, updatedAt: null, source: '' };
+            var fxLoading = false;
+            var wxState = {
+                lat: null,
+                lng: null,
+                placeName: '',
+                temp: null,
+                humidity: null,
+                uv: null,
+                cloudCover: null,
+                weatherCode: null,
+                conditionShort: '',
+                conditionLong: '',
+                updatedAt: null
+            };
+            var wxLoading = false;
+            var wxLocLoading = false;
+            var WX_CACHE_KEY = 'np_admin_weather_loc_v1';
+            var FX_CACHE_KEY = 'np_admin_fx_pair_v1';
 
             function closePops(except) {
                 [fxPop, wxPop].forEach(function (p) {
@@ -2787,118 +3013,479 @@
                 }
             }
 
-            async function refreshFx() {
+            function headerCompact() {
+                return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
+            }
+
+            function fxCurrencyLabel(code) {
+                var hit = FX_CURRENCIES.filter(function (c) { return c.code === code; })[0];
+                return hit ? hit.code : code;
+            }
+
+            function fxFormatRate(n) {
+                var x = Number(n);
+                if (!isFinite(x)) return '—';
+                if (x >= 10) return x.toFixed(2);
+                if (x >= 1) return x.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+                return x.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+            }
+
+            function fxPairLabel(from, to, rate) {
+                if (from === to) return '1 ' + fxCurrencyLabel(from) + ' = 1 ' + fxCurrencyLabel(to);
+                return '1 ' + fxCurrencyLabel(from) + ' → ' + fxFormatRate(rate) + ' ' + fxCurrencyLabel(to);
+            }
+
+            function fxPillLine(from, to, rate) {
+                if (headerCompact() && isFinite(Number(rate))) {
+                    return fxFormatRate(rate) + ' ' + fxCurrencyLabel(to);
+                }
+                return fxPairLabel(from, to, rate);
+            }
+
+            function fxGoogleUrl(from, to) {
+                return 'https://www.google.com/search?q=' + encodeURIComponent('1 ' + from + ' to ' + to);
+            }
+
+            function fxSourceLabel(source) {
+                if (source === 'yahoo-finance') return 'Referencia intradía · Yahoo Finance';
+                if (source === 'open.er-api') return 'Referencia diaria · open.er-api';
+                return 'Referencia orientativa';
+            }
+
+            function fxApiBase() {
+                return (
+                    (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+                    (window.location && window.location.origin) ||
+                    ''
+                );
+            }
+
+            function loadFxPrefs() {
+                try {
+                    var raw = localStorage.getItem(FX_CACHE_KEY);
+                    if (!raw) return;
+                    var o = JSON.parse(raw);
+                    if (o && o.from) fxState.from = String(o.from).toUpperCase();
+                    if (o && o.to) fxState.to = String(o.to).toUpperCase();
+                } catch (e) {}
+            }
+
+            function saveFxPrefs() {
+                try {
+                    localStorage.setItem(FX_CACHE_KEY, JSON.stringify({ from: fxState.from, to: fxState.to }));
+                } catch (e) {}
+            }
+
+            function syncFxSelects() {
+                var fromSel = document.getElementById('adminFxFrom');
+                var toSel = document.getElementById('adminFxTo');
+                if (fromSel) fromSel.value = fxState.from;
+                if (toSel) toSel.value = fxState.to;
+                var link = document.getElementById('adminFxGoogle');
+                if (link) link.href = fxGoogleUrl(fxState.from, fxState.to);
+            }
+
+            function renderFxUi(opts) {
+                opts = opts || {};
                 var num = document.getElementById('adminFxNum');
+                var sub = document.getElementById('adminFxSub');
                 var live = document.getElementById('adminFxLive');
                 var meta = document.getElementById('adminFxMeta');
-                var g = document.getElementById('adminFxGoogle');
-                if (fxBtn) fxBtn.setAttribute('data-state', 'loading');
-                if (num) num.textContent = 'TC …';
-                try {
-                    var res = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
-                    var data = await res.json();
-                    if (!res.ok || data.result !== 'success' || data.rates == null || data.rates.MXN == null) {
-                        throw new Error('Sin cotización');
-                    }
-                    fxState.rate = Number(data.rates.MXN);
-                    fxState.updatedAt = data.time_last_update_unix ? data.time_last_update_unix * 1000 : Date.now();
-                    var line = '1 USD = ' + fxState.rate.toFixed(2) + ' MXN';
-                    if (fxBtn) fxBtn.setAttribute('data-state', 'ok');
-                    if (num) num.textContent = fxState.rate.toFixed(2) + ' MXN';
-                    if (live) live.textContent = line;
-                    if (meta) {
-                        meta.textContent =
-                            new Date(fxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) +
-                            ' · open.er-api · referencia';
-                    }
-                    if (g) g.href = 'https://www.google.com/search?q=1+USD+to+MXN';
-                    if (fxBtn) fxBtn.title = line + ' · toca para detalle';
-                } catch (err) {
+                var pairSub = fxState.from + ' → ' + fxState.to;
+                if (sub) sub.textContent = pairSub;
+                if (opts.loading) {
+                    if (fxBtn) fxBtn.setAttribute('data-state', 'loading');
+                    if (num) num.textContent = 'TC …';
+                    if (live) live.textContent = 'Actualizando…';
+                    return;
+                }
+                if (opts.error) {
                     if (fxBtn) fxBtn.setAttribute('data-state', 'error');
                     if (num) num.textContent = 'TC —';
                     if (live) live.textContent = 'No disponible';
-                    if (meta) meta.textContent = (err && err.message) || 'Error al consultar TC';
+                    if (meta) meta.textContent = opts.error;
+                    return;
+                }
+                if (fxBtn) fxBtn.setAttribute('data-state', 'ok');
+                var label = fxPairLabel(fxState.from, fxState.to, fxState.rate);
+                if (num) num.textContent = fxPillLine(fxState.from, fxState.to, fxState.rate);
+                if (live) live.textContent = label;
+                if (meta) {
+                    var when = fxState.updatedAt
+                        ? new Date(fxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+                        : '—';
+                    meta.textContent = when + ' · ' + fxSourceLabel(fxState.source) + ' · se actualiza cada hora';
+                }
+                if (fxBtn) fxBtn.title = label + ' · toca para cambiar monedas o ver en Google';
+                syncFxSelects();
+            }
+
+            async function fetchFxErApi(from, to) {
+                var f = String(from || 'USD').toUpperCase();
+                var t = String(to || 'MXN').toUpperCase();
+                if (f === t) return { rate: 1, updatedAt: Date.now(), source: 'misma moneda' };
+                var res = await fetch('https://open.er-api.com/v6/latest/' + encodeURIComponent(f), { cache: 'no-store' });
+                if (!res.ok) throw new Error('No se pudo consultar el tipo de cambio.');
+                var data = await res.json();
+                var rates = (data && (data.rates || data.conversion_rates)) || null;
+                if (!data || data.result !== 'success' || !rates || rates[t] == null) {
+                    throw new Error('Par de monedas no disponible.');
+                }
+                var updatedAt = data.time_last_update_unix ? data.time_last_update_unix * 1000 : Date.now();
+                return { rate: Number(rates[t]), updatedAt: updatedAt, source: 'open.er-api' };
+            }
+
+            async function fetchFxRate(from, to) {
+                var f = String(from || 'USD').toUpperCase();
+                var t = String(to || 'MXN').toUpperCase();
+                if (f === t) return { rate: 1, updatedAt: Date.now(), source: 'misma moneda' };
+                try {
+                    var base = fxApiBase();
+                    if (base) {
+                        var res = await fetch(
+                            base + '/api/plan-pro-fx-rate?from=' + encodeURIComponent(f) + '&to=' + encodeURIComponent(t),
+                            { cache: 'no-store' }
+                        );
+                        if (res.ok) {
+                            var data = await res.json();
+                            if (data && isFinite(Number(data.rate))) {
+                                return {
+                                    rate: Number(data.rate),
+                                    updatedAt: data.updatedAt || Date.now(),
+                                    source: data.source || 'api'
+                                };
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return fetchFxErApi(f, t);
+            }
+
+            async function refreshFx(force) {
+                if (fxLoading && !force) return;
+                fxLoading = true;
+                renderFxUi({ loading: true });
+                try {
+                    var hit = await fetchFxRate(fxState.from, fxState.to);
+                    fxState.rate = hit.rate;
+                    fxState.updatedAt = hit.updatedAt;
+                    fxState.source = hit.source || '';
+                    renderFxUi({});
+                } catch (err) {
+                    renderFxUi({ error: (err && err.message) || 'TC no disponible' });
+                } finally {
+                    fxLoading = false;
                 }
             }
 
-            async function refreshWeather() {
+            function weatherWmo(code) {
+                var n = Number(code);
+                if (!Number.isFinite(n)) return { short: '—', long: 'Sin dato', emoji: '🌡️' };
+                if (n === 0) return { short: 'Soleado', long: 'Despejado / soleado', emoji: '☀️' };
+                if (n === 1 || n === 2) return { short: 'Parcial', long: 'Parcialmente nublado', emoji: '⛅' };
+                if (n === 3) return { short: 'Nublado', long: 'Nublado', emoji: '☁️' };
+                if (n === 45 || n === 48) return { short: 'Niebla', long: 'Niebla', emoji: '🌫️' };
+                if (n >= 51 && n <= 57) return { short: 'Llovizna', long: 'Llovizna', emoji: '🌦️' };
+                if (n >= 61 && n <= 67) return { short: 'Lluvia', long: 'Lluvia', emoji: '🌧️' };
+                if (n >= 71 && n <= 77) return { short: 'Nieve', long: 'Nieve', emoji: '❄️' };
+                if (n >= 80 && n <= 82) return { short: 'Chubascos', long: 'Chubascos / lluvia', emoji: '🌧️' };
+                if (n >= 85 && n <= 86) return { short: 'Nieve', long: 'Chubascos de nieve', emoji: '❄️' };
+                if (n >= 95 && n <= 99) return { short: 'Tormenta', long: 'Tormenta eléctrica', emoji: '⛈️' };
+                return { short: 'Variable', long: 'Condición variable', emoji: '🌤️' };
+            }
+
+            function fmtTemp(v) {
+                var x = Number(v);
+                if (!Number.isFinite(x)) return '—';
+                return (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '') + '°C';
+            }
+
+            function fmtPct(v) {
+                var x = Number(v);
+                if (!Number.isFinite(x)) return '—';
+                return Math.round(x) + '%';
+            }
+
+            function fmtUv(v) {
+                var x = Number(v);
+                if (!Number.isFinite(x)) return '—';
+                return (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '');
+            }
+
+            function shortPlace(name) {
+                var s = String(name || '').trim();
+                if (!s) return 'Mi ubicación';
+                var parts = s.split(',');
+                return (parts[0] || s).trim().slice(0, 18);
+            }
+
+            function hasCoords() {
+                return wxState.lat != null && wxState.lng != null && isFinite(wxState.lat) && isFinite(wxState.lng);
+            }
+
+            function loadWxLoc() {
+                try {
+                    var raw = localStorage.getItem(WX_CACHE_KEY);
+                    if (!raw) return;
+                    var o = JSON.parse(raw);
+                    if (o && isFinite(Number(o.lat)) && isFinite(Number(o.lng))) {
+                        wxState.lat = Number(o.lat);
+                        wxState.lng = Number(o.lng);
+                        if (o.placeName) wxState.placeName = String(o.placeName);
+                    }
+                } catch (e) {}
+            }
+
+            function saveWxLoc() {
+                try {
+                    localStorage.setItem(
+                        WX_CACHE_KEY,
+                        JSON.stringify({ lat: wxState.lat, lng: wxState.lng, placeName: wxState.placeName || '' })
+                    );
+                } catch (e) {}
+            }
+
+            function weatherGoogleUrl() {
+                var q = wxState.placeName || (hasCoords() ? wxState.lat + ',' + wxState.lng : 'clima');
+                return 'https://www.google.com/search?q=' + encodeURIComponent('clima ' + q);
+            }
+
+            function renderWxUi(opts) {
+                opts = opts || {};
                 var num = document.getElementById('adminWeatherNum');
                 var sub = document.getElementById('adminWeatherSub');
                 var live = document.getElementById('adminWeatherLive');
+                var hum = document.getElementById('adminWeatherPopHum');
+                var uvEl = document.getElementById('adminWeatherPopUv');
+                var cond = document.getElementById('adminWeatherPopCond');
+                var cloud = document.getElementById('adminWeatherPopCloud');
+                var place = document.getElementById('adminWeatherPopPlace');
                 var meta = document.getElementById('adminWeatherMeta');
                 var g = document.getElementById('adminWeatherGoogle');
-                if (wxBtn) wxBtn.setAttribute('data-state', 'loading');
-                if (num) num.textContent = 'Clima …';
-                function runFetch(lat, lng, place) {
-                    wxState.lat = lat;
-                    wxState.lng = lng;
-                    if (place) wxState.place = place;
-                    var url =
-                        'https://api.open-meteo.com/v1/forecast?latitude=' +
-                        encodeURIComponent(lat) +
-                        '&longitude=' +
-                        encodeURIComponent(lng) +
-                        '&current=temperature_2m,relative_humidity_2m,weather_code,cloud_cover&timezone=auto';
-                    return fetch(url, { cache: 'no-store' })
-                        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-                        .then(function (pack) {
-                            if (!pack.ok || !pack.d || !pack.d.current) throw new Error('Sin clima');
-                            var cur = pack.d.current;
-                            wxState.temp = cur.temperature_2m;
-                            var t = Math.round(Number(cur.temperature_2m));
-                            var hum = cur.relative_humidity_2m != null ? Math.round(Number(cur.relative_humidity_2m)) + '%' : '—';
-                            var cloud = cur.cloud_cover != null ? Math.round(Number(cur.cloud_cover)) + '%' : '—';
-                            if (wxBtn) wxBtn.setAttribute('data-state', 'ok');
-                            if (num) num.textContent = t + '°C';
-                            if (sub) sub.textContent = wxState.place;
-                            if (live) live.textContent = t + '°C · humedad ' + hum + ' · nubes ' + cloud;
-                            if (meta) {
-                                meta.textContent =
-                                    wxState.place +
-                                    ' · ' +
-                                    new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) +
-                                    ' · Open-Meteo';
-                            }
-                            if (g) {
-                                g.href =
-                                    'https://www.google.com/search?q=clima+' +
-                                    encodeURIComponent(wxState.place || (lat + ',' + lng));
-                            }
-                            if (wxBtn) wxBtn.title = t + '°C · ' + wxState.place + ' · toca para detalle';
-                        });
+                if (g) g.href = weatherGoogleUrl();
+                if (opts.loading) {
+                    if (wxBtn) wxBtn.setAttribute('data-state', 'loading');
+                    if (num) num.textContent = opts.locating ? 'GPS …' : 'Clima …';
+                    if (sub) sub.textContent = opts.locating ? 'ubicación' : shortPlace(wxState.placeName);
+                    if (live) live.textContent = 'Actualizando…';
+                    return;
                 }
-                try {
-                    if (navigator.geolocation) {
-                        await new Promise(function (resolve) {
-                            navigator.geolocation.getCurrentPosition(
-                                function (pos) {
-                                    runFetch(pos.coords.latitude, pos.coords.longitude, 'Mi ubicación')
-                                        .then(resolve)
-                                        .catch(resolve);
-                                },
-                                function () {
-                                    runFetch(19.4326, -99.1332, 'CDMX').then(resolve).catch(resolve);
-                                },
-                                { enableHighAccuracy: false, timeout: 6000, maximumAge: 600000 }
-                            );
-                        });
-                    } else {
-                        await runFetch(19.4326, -99.1332, 'CDMX');
-                    }
-                } catch (err) {
+                if (opts.error) {
                     if (wxBtn) wxBtn.setAttribute('data-state', 'error');
                     if (num) num.textContent = 'Clima —';
-                    if (sub) sub.textContent = 'sin datos';
+                    if (sub) sub.textContent = opts.errorShort || 'sin datos';
                     if (live) live.textContent = 'No disponible';
-                    if (meta) meta.textContent = (err && err.message) || 'Error al consultar clima';
+                    if (meta) meta.textContent = opts.error;
+                    return;
+                }
+                if (wxBtn) wxBtn.setAttribute('data-state', 'ok');
+                var wmo = weatherWmo(wxState.weatherCode);
+                var main = headerCompact()
+                    ? fmtTemp(wxState.temp) + ' · ' + fmtPct(wxState.humidity)
+                    : fmtTemp(wxState.temp) + ' · ' + fmtPct(wxState.humidity) + ' · UV ' + fmtUv(wxState.uv);
+                var subLine = (wxState.conditionShort || wmo.short) + ' · ' + shortPlace(wxState.placeName);
+                if (num) num.textContent = main;
+                if (sub) sub.textContent = subLine;
+                if (live) {
+                    live.textContent =
+                        wmo.emoji + ' ' + fmtTemp(wxState.temp) + ' · ' + (wxState.conditionLong || wmo.long);
+                }
+                if (hum) hum.textContent = fmtPct(wxState.humidity);
+                if (uvEl) uvEl.textContent = fmtUv(wxState.uv);
+                if (cond) cond.textContent = wxState.conditionLong || wmo.long;
+                if (cloud) {
+                    cloud.textContent =
+                        wxState.cloudCover == null ? '—' : Math.round(Number(wxState.cloudCover)) + '%';
+                }
+                if (place) {
+                    var coords = hasCoords()
+                        ? wxState.lat.toFixed(4) + ', ' + wxState.lng.toFixed(4)
+                        : '';
+                    place.textContent =
+                        (wxState.placeName || 'Ubicación del dispositivo') + (coords ? ' · ' + coords : '');
+                }
+                if (meta) {
+                    var when = wxState.updatedAt
+                        ? new Date(wxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+                        : '—';
+                    meta.textContent = when + ' · se actualiza cada hora';
+                }
+                if (wxBtn) wxBtn.title = main + ' · ' + subLine + ' · toca para detalle';
+            }
+
+            function formatPlaceFromAddress(addr) {
+                if (!addr) return '';
+                var city = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+                var state = addr.state || addr.region || '';
+                var country = addr.country || '';
+                var parts = [city, state, country].filter(Boolean);
+                return parts.join(', ');
+            }
+
+            async function reverseGeocode(lat, lng) {
+                var url =
+                    'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' +
+                    encodeURIComponent(lat) +
+                    '&lon=' +
+                    encodeURIComponent(lng) +
+                    '&zoom=10&addressdetails=1';
+                var res = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!res.ok) throw new Error('No se pudo leer el nombre del lugar.');
+                var data = await res.json();
+                var formatted = formatPlaceFromAddress(data && data.address);
+                if (formatted) return formatted;
+                if (data && data.display_name) {
+                    var dn = String(data.display_name);
+                    return dn.length > 64 ? dn.slice(0, 62) + '…' : dn;
+                }
+                return lat.toFixed(3) + ', ' + lng.toFixed(3);
+            }
+
+            function requestLocation(forceFresh) {
+                return new Promise(function (resolve, reject) {
+                    if (!navigator.geolocation) {
+                        reject(new Error('Este navegador no permite ubicación.'));
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        function (pos) {
+                            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                        },
+                        function (err) {
+                            reject(new Error((err && err.message) || 'No se pudo leer tu ubicación.'));
+                        },
+                        { enableHighAccuracy: false, timeout: 12000, maximumAge: forceFresh ? 0 : 600000 }
+                    );
+                });
+            }
+
+            async function fetchWeatherReading(lat, lng) {
+                var url =
+                    'https://api.open-meteo.com/v1/forecast?latitude=' +
+                    encodeURIComponent(lat) +
+                    '&longitude=' +
+                    encodeURIComponent(lng) +
+                    '&current=temperature_2m,relative_humidity_2m,uv_index,weather_code,cloud_cover&timezone=auto';
+                var res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) throw new Error('No se pudo consultar el clima.');
+                var data = await res.json();
+                var cur = data && data.current;
+                if (!cur) throw new Error('Sin lectura meteorológica.');
+                var wmo = weatherWmo(cur.weather_code);
+                return {
+                    temp: cur.temperature_2m,
+                    humidity: cur.relative_humidity_2m,
+                    uv: cur.uv_index,
+                    cloudCover: cur.cloud_cover,
+                    weatherCode: cur.weather_code,
+                    conditionShort: wmo.short,
+                    conditionLong: wmo.long,
+                    updatedAt: Date.now()
+                };
+            }
+
+            function applyCoords(lat, lng, geocode) {
+                wxState.lat = lat;
+                wxState.lng = lng;
+                if (!wxState.placeName) wxState.placeName = lat.toFixed(3) + ', ' + lng.toFixed(3);
+                saveWxLoc();
+                if (geocode) {
+                    reverseGeocode(lat, lng)
+                        .then(function (name) {
+                            if (!name) return;
+                            wxState.placeName = name;
+                            saveWxLoc();
+                            if (!wxLoading) renderWxUi({});
+                        })
+                        .catch(function () {});
                 }
             }
+
+            async function tryUpdateLocation(forceFresh) {
+                if (wxLocLoading) return null;
+                wxLocLoading = true;
+                try {
+                    var loc = await requestLocation(!!forceFresh);
+                    applyCoords(loc.lat, loc.lng, true);
+                    return loc;
+                } catch (e) {
+                    return null;
+                } finally {
+                    wxLocLoading = false;
+                }
+            }
+
+            async function fetchAndRenderWeather() {
+                if (!hasCoords()) throw new Error('Permite ubicación o pulsa «Mi ubicación».');
+                var hit = await fetchWeatherReading(wxState.lat, wxState.lng);
+                wxState.temp = hit.temp;
+                wxState.humidity = hit.humidity;
+                wxState.uv = hit.uv;
+                wxState.cloudCover = hit.cloudCover;
+                wxState.weatherCode = hit.weatherCode;
+                wxState.conditionShort = hit.conditionShort;
+                wxState.conditionLong = hit.conditionLong;
+                wxState.updatedAt = hit.updatedAt;
+                renderWxUi({});
+            }
+
+            async function refreshWeather(opts) {
+                opts = opts || {};
+                if (wxLoading && !opts.force) return;
+                wxLoading = true;
+                var coordsOk = hasCoords();
+                var mustLocate = !coordsOk || !!opts.forceLocation;
+                renderWxUi({ loading: true, locating: mustLocate && !coordsOk });
+                try {
+                    if (mustLocate) {
+                        var loc = await tryUpdateLocation(!!opts.forceLocation);
+                        if (!loc && !coordsOk) {
+                            applyCoords(19.4326, -99.1332, true);
+                            wxState.placeName = wxState.placeName || 'CDMX';
+                        }
+                    } else if (opts.requestLocation) {
+                        tryUpdateLocation(false).then(function (locHit) {
+                            if (!locHit) return;
+                            fetchAndRenderWeather().catch(function () {});
+                        });
+                    }
+                    await fetchAndRenderWeather();
+                } catch (err) {
+                    renderWxUi({
+                        error: (err && err.message) || 'Clima no disponible',
+                        errorShort: mustLocate ? 'sin GPS' : 'sin datos'
+                    });
+                } finally {
+                    wxLoading = false;
+                }
+            }
+
+            loadFxPrefs();
+            loadWxLoc();
+            var fromSel = document.getElementById('adminFxFrom');
+            var toSel = document.getElementById('adminFxTo');
+            FX_CURRENCIES.forEach(function (c) {
+                if (fromSel) {
+                    var o1 = document.createElement('option');
+                    o1.value = c.code;
+                    o1.textContent = c.label;
+                    fromSel.appendChild(o1);
+                }
+                if (toSel) {
+                    var o2 = document.createElement('option');
+                    o2.value = c.code;
+                    o2.textContent = c.label;
+                    toSel.appendChild(o2);
+                }
+            });
+            syncFxSelects();
 
             if (fxBtn && fxPop) {
                 fxBtn.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
                     togglePop(fxBtn, fxPop);
+                    if (fxPop.classList.contains('is-open')) renderFxUi({});
                 });
             }
             if (wxBtn && wxPop) {
@@ -2906,22 +3493,68 @@
                     e.preventDefault();
                     e.stopPropagation();
                     togglePop(wxBtn, wxPop);
+                    if (wxPop.classList.contains('is-open')) renderWxUi({});
+                });
+            }
+            if (fromSel) {
+                fromSel.addEventListener('change', function () {
+                    fxState.from = this.value || 'USD';
+                    saveFxPrefs();
+                    syncFxSelects();
+                    refreshFx(true);
+                });
+            }
+            if (toSel) {
+                toSel.addEventListener('change', function () {
+                    fxState.to = this.value || 'MXN';
+                    saveFxPrefs();
+                    syncFxSelects();
+                    refreshFx(true);
                 });
             }
             var fxRefresh = document.getElementById('adminFxRefresh');
             var wxRefresh = document.getElementById('adminWeatherRefresh');
-            if (fxRefresh) fxRefresh.addEventListener('click', function (e) { e.stopPropagation(); refreshFx(); });
-            if (wxRefresh) wxRefresh.addEventListener('click', function (e) { e.stopPropagation(); refreshWeather(); });
+            var wxLocBtn = document.getElementById('adminWeatherLocBtn');
+            if (fxRefresh) {
+                fxRefresh.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    refreshFx(true);
+                });
+            }
+            if (wxRefresh) {
+                wxRefresh.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    refreshWeather({ force: true, requestLocation: false });
+                });
+            }
+            if (wxLocBtn) {
+                wxLocBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    refreshWeather({ force: true, requestLocation: true, forceLocation: true });
+                });
+            }
             document.addEventListener('click', function (e) {
-                if (e.target.closest && (e.target.closest('#adminFxBtn') || e.target.closest('#adminFxPopover') || e.target.closest('#adminWeatherBtn') || e.target.closest('#adminWeatherPopover'))) {
+                if (
+                    e.target.closest &&
+                    (e.target.closest('#adminFxBtn') ||
+                        e.target.closest('#adminFxPopover') ||
+                        e.target.closest('#adminWeatherBtn') ||
+                        e.target.closest('#adminWeatherPopover'))
+                ) {
                     return;
                 }
                 closePops(null);
             });
-            refreshFx();
-            refreshWeather();
-            setInterval(refreshFx, 60 * 60 * 1000);
-            setInterval(refreshWeather, 60 * 60 * 1000);
+            refreshFx(true);
+            refreshWeather({ force: true, requestLocation: true });
+            setInterval(function () {
+                if (document.hidden) return;
+                refreshFx(false);
+            }, 60 * 60 * 1000);
+            setInterval(function () {
+                if (document.hidden) return;
+                refreshWeather({ requestLocation: false });
+            }, 60 * 60 * 1000);
         })();
 
         (function wireAdminStorageUsage() {

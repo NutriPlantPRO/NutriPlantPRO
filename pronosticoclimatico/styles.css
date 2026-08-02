@@ -396,31 +396,42 @@ input:focus, select:focus, textarea:focus { border-color: #38bdf8; box-shadow: 0
 .agro-table th.col-atm { background: #f0f9ff; color: #075985; }
 .agro-table th.col-vpd { background: #f5f3ff; color: #5b21b6; }
 .agro-table th.col-water { background: #f0fdf4; color: #166534; }
-/* Letras por métrica: mín menos intenso que máx, pero legible (no tan tenue) */
-.agro-table th.col-temp-min,
+/* Valores y encabezados por métrica: mín más tenue que máx; ETo / ETc / lluvia con su color */
+.agro-table .agro-metric-row th.col-temp-min,
 .agro-table td.col-temp-min { color: #ea580c; font-weight: 700; }
-.agro-table th.col-temp-max,
+.agro-table .agro-metric-row th.col-temp-max,
 .agro-table td.col-temp-max { color: #c2410c; font-weight: 800; }
-.agro-table th.col-rh-min,
+.agro-table .agro-metric-row th.col-rh-min,
 .agro-table td.col-rh-min { color: #0284c7; font-weight: 700; }
-.agro-table th.col-rh-max,
+.agro-table .agro-metric-row th.col-rh-max,
 .agro-table td.col-rh-max { color: #0369a1; font-weight: 800; }
-.agro-table th.col-dew-min,
+.agro-table .agro-metric-row th.col-dew-min,
 .agro-table td.col-dew-min { color: #0891b2; font-weight: 700; }
-.agro-table th.col-dew-max,
+.agro-table .agro-metric-row th.col-dew-max,
 .agro-table td.col-dew-max { color: #0e7490; font-weight: 800; }
-.agro-table th.col-rad,
+.agro-table .agro-metric-row th.col-rad,
 .agro-table td.col-rad { color: #a16207; font-weight: 800; }
-.agro-table th.col-vpd-min,
+.agro-table .agro-metric-row th.col-vpd-min,
 .agro-table td.col-vpd-min { color: #7c3aed; font-weight: 700; }
-.agro-table th.col-vpd-max,
+.agro-table .agro-metric-row th.col-vpd-max,
 .agro-table td.col-vpd-max { color: #6d28d9; font-weight: 800; }
-.agro-table th.col-eto,
+.agro-table .agro-metric-row th.col-eto,
 .agro-table td.col-eto { color: #0f766e; font-weight: 800; }
-.agro-table th.col-etc,
+.agro-table .agro-metric-row th.col-etc,
 .agro-table td.col-etc { color: #15803d; font-weight: 800; }
-.agro-table th.col-rain,
+.agro-table .agro-metric-row th.col-rain,
 .agro-table td.col-rain { color: #1d4ed8; font-weight: 800; }
+/* Palabra clave del encabezado (mín/máx/ETo…) alineada al color del valor */
+.agro-table .agro-metric-row th .agro-th-key { font-weight: 800; }
+.agro-day-metric .agro-val-min { color: #ea580c; font-weight: 700; }
+.agro-day-metric .agro-val-max { color: #c2410c; font-weight: 800; }
+.agro-day-metric.agro-day-metric--rh .agro-val-min { color: #0284c7; }
+.agro-day-metric.agro-day-metric--rh .agro-val-max { color: #0369a1; }
+.agro-day-metric.agro-day-metric--vpd .agro-val-min { color: #7c3aed; }
+.agro-day-metric.agro-day-metric--vpd .agro-val-max { color: #6d28d9; }
+.agro-day-metric .agro-val-eto { color: #0f766e; font-weight: 700; }
+.agro-day-metric .agro-val-etc { color: #15803d; font-weight: 700; }
+.agro-day-metric .agro-val-rain { color: #1d4ed8; font-weight: 800; }
 .agro-table td.col-etc .agro-etc-kc,
 .agro-table th.col-etc .agro-etc-kc { color: #166534; }
 .agro-table td { padding: 9px 8px; text-align: center; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }

@@ -61,47 +61,58 @@
     { id: 'ratios', titleKey: 'analysis.block_ratios', title: 'Relaciones', chartType: null, chart: false }
   ];
 
+  /** Campos de revisión PDF: sección (como las tablas del análisis) + unidad + tip. */
+  var SOIL_REVIEW_SECTIONS = [
+    { id: 'meta', titleKey: 'analysis.review_sec_meta', title: 'General' },
+    { id: 'physical', titleKey: 'analysis.block_physical', title: 'Físicos / salinidad / MO' },
+    { id: 'ph', titleKey: 'analysis.block_ph', title: 'pH' },
+    { id: 'macros', titleKey: 'analysis.block_macros', title: 'Macros (ppm)' },
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)' },
+    { id: 'cations', titleKey: 'analysis.block_cations', title: 'Cationes (meq) / CIC' },
+    { id: 'cec_pct', titleKey: 'analysis.block_cec_pct', title: '% saturación CIC' }
+  ];
+
   var SOIL_REVIEW_FIELDS = [
-    { path: 'title', labelKey: 'analysis.f_title', label: 'Título' },
-    { path: 'date', labelKey: 'analysis.f_date', label: 'Fecha' },
-    { path: 'physical.texturalClass', labelKey: 'analysis.f_texture', label: 'Clase textural' },
-    { path: 'physical.saturationPoint', labelKey: 'analysis.f_sat_point', label: 'Punto saturación %' },
-    { path: 'physical.fieldCapacity', labelKey: 'analysis.f_field_cap', label: 'Capacidad de campo %' },
-    { path: 'physical.wiltingPoint', labelKey: 'analysis.f_wilting', label: 'Punto marchitez %' },
-    { path: 'physical.hydraulicConductivity', labelKey: 'analysis.f_hydr_cond', label: 'Cond. hidráulica cm/h' },
-    { path: 'physical.bulkDensity', labelKey: 'analysis.f_bulk_density', label: 'Densidad aparente g/cm³' },
-    { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH' },
-    { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer' },
-    { path: 'phSection.totalCarbonates', labelKey: 'analysis.f_carbonates', label: 'Carbonatos totales %' },
-    { path: 'phSection.salinity', labelKey: 'analysis.f_ec', label: 'CE dS/m' },
-    { path: 'fertility.pMethod', labelKey: 'analysis.f_p_method', label: 'Método P' },
-    { path: 'fertility.mo', labelKey: 'analysis.f_om', label: 'MO %' },
-    { path: 'fertility.nNo3', labelKey: 'analysis.f_n_no3', label: 'N-NO₃ ppm' },
-    { path: 'fertility.p', labelKey: 'analysis.f_p', label: 'P ppm' },
-    { path: 'fertility.k', labelKey: 'analysis.f_k', label: 'K ppm' },
-    { path: 'fertility.ca', labelKey: 'analysis.f_ca', label: 'Ca ppm' },
-    { path: 'fertility.mg', labelKey: 'analysis.f_mg', label: 'Mg ppm' },
-    { path: 'fertility.na', labelKey: 'analysis.f_na', label: 'Na ppm' },
-    { path: 'fertility.s', labelKey: 'analysis.f_s', label: 'S ppm' },
-    { path: 'fertility.fe', labelKey: 'analysis.f_fe', label: 'Fe ppm' },
-    { path: 'fertility.mn', labelKey: 'analysis.f_mn', label: 'Mn ppm' },
-    { path: 'fertility.b', labelKey: 'analysis.f_b', label: 'B ppm' },
-    { path: 'fertility.zn', labelKey: 'analysis.f_zn', label: 'Zn ppm' },
-    { path: 'fertility.cu', labelKey: 'analysis.f_cu', label: 'Cu ppm' },
-    { path: 'fertility.moly', labelKey: 'analysis.f_mo', label: 'Mo ppm' },
-    { path: 'fertility.al', labelKey: 'analysis.f_al', label: 'Al ppm' },
-    { path: 'fertility.depthCm', labelKey: 'analysis.f_depth', label: 'Profundidad cm' },
-    { path: 'cations.ca', labelKey: 'analysis.f_ca_meq', label: 'Ca meq' },
-    { path: 'cations.mg', labelKey: 'analysis.f_mg_meq', label: 'Mg meq' },
-    { path: 'cations.k', labelKey: 'analysis.f_k_meq', label: 'K meq' },
-    { path: 'cations.na', labelKey: 'analysis.f_na_meq', label: 'Na meq' },
-    { path: 'cations.al', labelKey: 'analysis.f_al_meq', label: 'Al meq' },
-    { path: 'cations.h', labelKey: 'analysis.f_h_meq', label: 'H meq' },
-    { path: 'cations.cic', labelKey: 'analysis.f_cec', label: 'CIC' },
-    { path: 'cations.pctCa', labelKey: 'analysis.f_pct_ca', label: '% Ca' },
-    { path: 'cations.pctMg', labelKey: 'analysis.f_pct_mg', label: '% Mg' },
-    { path: 'cations.pctK', labelKey: 'analysis.f_pct_k', label: '% K' },
-    { path: 'cations.pctNa', labelKey: 'analysis.f_pct_na', label: '% Na' }
+    { path: 'title', labelKey: 'analysis.f_title', label: 'Título', section: 'meta', unit: '', tipKey: 'analysis.unit_tip_text', tip: 'Texto libre (lab, predio o cliente)' },
+    { path: 'date', labelKey: 'analysis.f_date', label: 'Fecha', section: 'meta', unit: '', tipKey: 'analysis.unit_tip_date', tip: 'Fecha del informe (YYYY-MM-DD)' },
+    { path: 'physical.texturalClass', labelKey: 'analysis.f_texture', label: 'Clase textural', section: 'physical', unit: '', tipKey: 'analysis.unit_tip_texture', tip: 'Clase textural (ej. Franco, Arenoso)' },
+    { path: 'physical.saturationPoint', labelKey: 'analysis.f_sat_point', label: 'Punto saturación', section: 'physical', unit: '%', tipKey: 'analysis.unit_tip_pct_water', tip: 'Porcentaje de humedad a saturación' },
+    { path: 'physical.fieldCapacity', labelKey: 'analysis.f_field_cap', label: 'Capacidad de campo', section: 'physical', unit: '%', tipKey: 'analysis.unit_tip_pct_water', tip: 'Porcentaje de humedad a capacidad de campo' },
+    { path: 'physical.wiltingPoint', labelKey: 'analysis.f_wilting', label: 'Punto marchitez', section: 'physical', unit: '%', tipKey: 'analysis.unit_tip_pct_water', tip: 'Porcentaje de humedad en punto de marchitez permanente' },
+    { path: 'physical.hydraulicConductivity', labelKey: 'analysis.f_hydr_cond', label: 'Cond. hidráulica', section: 'physical', unit: 'cm/h', tipKey: 'analysis.unit_tip_cm_h', tip: 'Conductividad hidráulica saturada en centímetros por hora' },
+    { path: 'physical.bulkDensity', labelKey: 'analysis.f_bulk_density', label: 'Densidad aparente', section: 'physical', unit: 'g/cm³', tipKey: 'analysis.unit_tip_bd', tip: 'Densidad aparente del suelo en gramos por centímetro cúbico' },
+    { path: 'phSection.totalCarbonates', labelKey: 'analysis.f_carbonates', label: 'Carbonatos totales', section: 'physical', unit: '%', tipKey: 'analysis.unit_tip_pct', tip: 'Porcentaje de carbonatos totales' },
+    { path: 'phSection.salinity', labelKey: 'analysis.f_ec', label: 'CE', section: 'physical', unit: 'dS/m', tipKey: 'analysis.unit_tip_ec', tip: 'Conductividad eléctrica (salinidad); dS/m = mmhos/cm' },
+    { path: 'fertility.mo', labelKey: 'analysis.f_om', label: 'MO', section: 'physical', unit: '%', tipKey: 'analysis.unit_tip_om', tip: 'Materia orgánica en porcentaje' },
+    { path: 'fertility.depthCm', labelKey: 'analysis.f_depth', label: 'Profundidad', section: 'physical', unit: 'cm', tipKey: 'analysis.unit_tip_cm', tip: 'Profundidad de muestreo en centímetros (canónico NutriPlant)' },
+    { path: 'fertility.pMethod', labelKey: 'analysis.f_p_method', label: 'Método P', section: 'physical', unit: '', tipKey: 'analysis.unit_tip_p_method', tip: 'Método de extracción de P (Olsen, Bray, Mehlich…)' },
+    { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH', section: 'ph', unit: 'pH', tipKey: 'analysis.unit_tip_ph', tip: 'pH del suelo (sin unidad; escala 0–14)' },
+    { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer', section: 'ph', unit: 'pH', tipKey: 'analysis.unit_tip_ph_buf', tip: 'pH buffer / SMP si el lab lo reporta' },
+    { path: 'fertility.nNo3', labelKey: 'analysis.f_n_no3', label: 'N-NO₃', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Nitrógeno nítrico elemental en ppm (mg/kg)' },
+    { path: 'fertility.p', labelKey: 'analysis.f_p', label: 'P', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Fósforo elemental en ppm (mg/kg)' },
+    { path: 'fertility.k', labelKey: 'analysis.f_k', label: 'K', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Potasio elemental en ppm (mg/kg)' },
+    { path: 'fertility.ca', labelKey: 'analysis.f_ca', label: 'Ca', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Calcio elemental en ppm (mg/kg)' },
+    { path: 'fertility.mg', labelKey: 'analysis.f_mg', label: 'Mg', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Magnesio elemental en ppm (mg/kg)' },
+    { path: 'fertility.na', labelKey: 'analysis.f_na', label: 'Na', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Sodio elemental en ppm (mg/kg)' },
+    { path: 'fertility.s', labelKey: 'analysis.f_s', label: 'S', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Azufre elemental en ppm (mg/kg)' },
+    { path: 'fertility.fe', labelKey: 'analysis.f_fe', label: 'Fe', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Hierro en ppm (mg/kg)' },
+    { path: 'fertility.mn', labelKey: 'analysis.f_mn', label: 'Mn', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Manganeso en ppm (mg/kg)' },
+    { path: 'fertility.b', labelKey: 'analysis.f_b', label: 'B', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Boro en ppm (mg/kg)' },
+    { path: 'fertility.zn', labelKey: 'analysis.f_zn', label: 'Zn', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Zinc en ppm (mg/kg)' },
+    { path: 'fertility.cu', labelKey: 'analysis.f_cu', label: 'Cu', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Cobre en ppm (mg/kg)' },
+    { path: 'fertility.moly', labelKey: 'analysis.f_mo', label: 'Mo', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Molibdeno en ppm (mg/kg)' },
+    { path: 'fertility.al', labelKey: 'analysis.f_al', label: 'Al', section: 'micros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Aluminio en ppm (mg/kg) — fertilidad, no meq' },
+    { path: 'cations.ca', labelKey: 'analysis.f_ca_meq', label: 'Ca', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_meq', tip: 'Calcio intercambiable en meq/100g (o cmol⁺/kg)' },
+    { path: 'cations.mg', labelKey: 'analysis.f_mg_meq', label: 'Mg', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_meq', tip: 'Magnesio intercambiable en meq/100g (o cmol⁺/kg)' },
+    { path: 'cations.k', labelKey: 'analysis.f_k_meq', label: 'K', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_meq', tip: 'Potasio intercambiable en meq/100g (o cmol⁺/kg)' },
+    { path: 'cations.na', labelKey: 'analysis.f_na_meq', label: 'Na', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_meq', tip: 'Sodio intercambiable en meq/100g (o cmol⁺/kg)' },
+    { path: 'cations.al', labelKey: 'analysis.f_al_meq', label: 'Al', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_meq', tip: 'Aluminio intercambiable en meq/100g' },
+    { path: 'cations.h', labelKey: 'analysis.f_h_meq', label: 'H', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_meq', tip: 'Hidrógeno intercambiable en meq/100g' },
+    { path: 'cations.cic', labelKey: 'analysis.f_cec', label: 'CIC', section: 'cations', unit: 'meq', tipKey: 'analysis.unit_tip_cec', tip: 'Capacidad de intercambio catiónico en meq/100g (CEC)' },
+    { path: 'cations.pctCa', labelKey: 'analysis.f_pct_ca', label: '% Ca', section: 'cec_pct', unit: '%', tipKey: 'analysis.unit_tip_pct_sat', tip: 'Porcentaje de saturación de bases — calcio' },
+    { path: 'cations.pctMg', labelKey: 'analysis.f_pct_mg', label: '% Mg', section: 'cec_pct', unit: '%', tipKey: 'analysis.unit_tip_pct_sat', tip: 'Porcentaje de saturación de bases — magnesio' },
+    { path: 'cations.pctK', labelKey: 'analysis.f_pct_k', label: '% K', section: 'cec_pct', unit: '%', tipKey: 'analysis.unit_tip_pct_sat', tip: 'Porcentaje de saturación de bases — potasio' },
+    { path: 'cations.pctNa', labelKey: 'analysis.f_pct_na', label: '% Na', section: 'cec_pct', unit: '%', tipKey: 'analysis.unit_tip_pct_sat', tip: 'Porcentaje de saturación de bases — sodio' }
   ];
 
   function fieldLabel(field) {
@@ -493,12 +504,23 @@
         : '';
       out.push({
         path: f.path,
+        section: f.section || 'meta',
         label: fieldLabel(f) + lim,
+        unit: f.unit || '',
+        tip: tr(f.tipKey || '', f.tip || ''),
         value: str,
         checked: autoCheck
       });
     });
     return out;
+  }
+
+  function escapeAttr(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   function openSoilReviewModal(fields, onApply) {
@@ -528,6 +550,12 @@
             'Si ves valores como &lt;25 o ND (límite de detección), cámbialos a un número antes de aplicar, o déjalos sin marcar.'
           ) +
         '</p>' +
+        '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#0369a1;">' +
+          tr(
+            'analysis.pdf_review_units_hint',
+            'Cada campo muestra su unidad (ppm, meq, %, cm…). Toca la etiqueta de unidad para ver qué valor va ahí. Si el PDF traía unidades inglesas, ya se convierten; revisa las notas si hubo conversión.'
+          ) +
+        '</p>' +
         (fields && fields.notes ? '<p class="np-lab-pdf-modal__notes">' + String(fields.notes).replace(/</g, '&lt;') + '</p>' : '') +
         '<div class="np-lab-pdf-modal__actions-top">' +
           '<button type="button" class="btn btn-sm" data-act="all">' +
@@ -554,14 +582,56 @@
       '</div>';
 
     var list = modal.querySelector('.np-lab-pdf-modal__list');
+    var bySection = {};
     rows.forEach(function (row) {
-      var item = document.createElement('label');
-      item.className = 'np-lab-pdf-modal__row';
-      item.innerHTML =
-        '<input type="checkbox" data-path="' + row.path + '"' + (row.checked ? ' checked' : '') + '>' +
-        '<span class="np-lab-pdf-modal__label">' + row.label + '</span>' +
-        '<input type="text" class="np-lab-pdf-modal__val" data-path-val="' + row.path + '" value="' + String(row.value).replace(/"/g, '&quot;') + '">';
-      list.appendChild(item);
+      var sid = row.section || 'meta';
+      if (!bySection[sid]) bySection[sid] = [];
+      bySection[sid].push(row);
+    });
+    SOIL_REVIEW_SECTIONS.forEach(function (sec) {
+      var secRows = bySection[sec.id];
+      if (!secRows || !secRows.length) return;
+      var head = document.createElement('div');
+      head.className = 'np-lab-pdf-modal__section np-lab-pdf-modal__section--' + sec.id;
+      head.textContent = tr(sec.titleKey, sec.title);
+      list.appendChild(head);
+      secRows.forEach(function (row) {
+        var item = document.createElement('label');
+        item.className = 'np-lab-pdf-modal__row';
+        var unitHtml = row.unit
+          ? '<span class="np-lab-pdf-modal__unit" title="' +
+            escapeAttr(row.tip || row.unit) +
+            '">' +
+            escapeAttr(row.unit) +
+            '</span>'
+          : '<span class="np-lab-pdf-modal__unit np-lab-pdf-modal__unit--empty" title="' +
+            escapeAttr(row.tip || '') +
+            '">—</span>';
+        item.innerHTML =
+          '<input type="checkbox" data-path="' +
+          escapeAttr(row.path) +
+          '"' +
+          (row.checked ? ' checked' : '') +
+          '>' +
+          '<span class="np-lab-pdf-modal__label-wrap">' +
+            '<span class="np-lab-pdf-modal__label" title="' +
+            escapeAttr(row.tip || row.label) +
+            '">' +
+            row.label +
+            '</span>' +
+            unitHtml +
+          '</span>' +
+          '<input type="text" class="np-lab-pdf-modal__val" data-path-val="' +
+          escapeAttr(row.path) +
+          '" value="' +
+          escapeAttr(row.value) +
+          '" placeholder="' +
+          escapeAttr(row.unit || '') +
+          '" title="' +
+          escapeAttr(row.tip || '') +
+          '">';
+        list.appendChild(item);
+      });
     });
 
     function close() { modal.remove(); }
@@ -603,6 +673,7 @@
     SOIL_FIELDS: SOIL_FIELDS,
     SOIL_BLOCKS: SOIL_BLOCKS,
     SOIL_REVIEW_FIELDS: SOIL_REVIEW_FIELDS,
+    SOIL_REVIEW_SECTIONS: SOIL_REVIEW_SECTIONS,
     getByPath: getByPath,
     setByPath: setByPath,
     buildCompareRows: buildCompareRows,

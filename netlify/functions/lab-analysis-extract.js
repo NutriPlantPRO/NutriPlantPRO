@@ -232,6 +232,241 @@ function tNote(lang, es, en) {
 }
 
 /**
+ * Extrae número + unidad opcional de un string de lab.
+ * Ej.: "12 in", "6 inches", '8"', "1.35 g/cm3", "0.5 in/hr", "90 lb/ft³"
+ */
+function parseQtyWithUnit(raw) {
+  const t = String(raw == null ? '' : raw)
+    .trim()
+    .replace(/,/g, '.')
+    .replace(/\s+/g, ' ');
+  if (!t) return null;
+  const m = t.match(
+    /^(-?\d+(?:\.\d+)?)\s*(in(?:ch(?:es)?)?|"|ft|feet|cm|mm|g\/?cm3|g\/?cc|g\s*cm-3|lb\/?ft3|lb\/?ft³|pcf|in\/?h(?:r|our)?|cm\/?h(?:r|our)?|mmhos\/?cm|mmho\/?cm|ms\/?cm|ds\/?m|ppm|mg\/?kg|lb\/?ac(?:re)?|lbs\/?ac(?:re)?)?\s*$/i
+  );
+  if (!m) {
+    if (/^-?\d+(\.\d+)?$/.test(t)) return { num: Number(t), unit: '' };
+    return null;
+  }
+  const num = Number(m[1]);
+  if (!Number.isFinite(num)) return null;
+  let unit = String(m[2] || '')
+    .toLowerCase()
+    .replace(/³/g, '3')
+    .replace(/\s+/g, '')
+    .replace(/hour/g, 'h')
+    .replace(/hr/g, 'h');
+  if (unit === '"' || unit === 'inch' || unit === 'inches') unit = 'in';
+  if (unit === 'feet') unit = 'ft';
+  if (unit === 'g/cc' || unit === 'gcm-3' || unit === 'gcm3') unit = 'g/cm3';
+  if (unit === 'lb/ft³' || unit === 'pcf') unit = 'lb/ft3';
+  if (unit === 'mmho/cm' || unit === 'mmhos/cm' || unit === 'ms/cm') unit = 'dS/m';
+  if (unit === 'ds/m') unit = 'dS/m';
+  if (unit === 'lbs/acre' || unit === 'lb/acre' || unit === 'lbs/ac' || unit === 'lb/ac') unit = 'lb/acre';
+  if (unit === 'mg/kg') unit = 'ppm';
+  if (unit === 'in/hour') unit = 'in/h';
+  if (unit === 'cm/hour') unit = 'cm/h';
+  return { num: num, unit: unit };
+}
+
+function canonUnitHint(raw) {
+  const u = String(raw || '')
+    .toLowerCase()
+    .trim()
+    .replace(/³/g, '3')
+    .replace(/\s+/g, '');
+  if (!u) return '';
+  if (/^(in|inch|inches|")$/.test(u)) return 'in';
+  if (/^(ft|feet)$/.test(u)) return 'ft';
+  if (/^(cm)$/.test(u)) return 'cm';
+  if (/^(mm)$/.test(u)) return 'mm';
+  if (/^(g\/?cm3|g\/?cc|gcm3)$/.test(u)) return 'g/cm3';
+  if (/^(lb\/?ft3|pcf)$/.test(u)) return 'lb/ft3';
+  if (/^(in\/?h|in\/?hr)$/.test(u)) return 'in/h';
+  if (/^(cm\/?h|cm\/?hr)$/.test(u)) return 'cm/h';
+  if (/^(mmhos?\/?cm|ms\/?cm|ds\/?m)$/.test(u)) return 'dS/m';
+  if (/^(lb\/?ac|lbs\/?ac|lb\/?acre|lbs\/?acre)$/.test(u)) return 'lb/acre';
+  if (/^(ppm|mg\/?kg)$/.test(u)) return 'ppm';
+  return u;
+}
+
+/**
+ * Convierte físicos / profundidad / CE desde unidades inglesas (o con sufijo) al canónico NutriPlant.
+ * También usa unitHints opcionales del modelo: { depth, bulkDensity, hydraulicConductivity, salinity }.
+ */
+function normalizeEnglishPhysicalUnits(base, notesArr, lang, unitHints) {
+  if (!base) return;
+  const hints = unitHints && typeof unitHints === 'object' ? unitHints : {};
+  const phys = base.physical || {};
+  const fert = base.fertility || {};
+  const ph = base.phSection || {};
+
+  // —— Profundidad → cm ——
+  const depthRaw = asStr(fert.depthCm);
+  if (depthRaw && !isDetectionLimitValue(depthRaw)) {
+    const parsed = parseQtyWithUnit(depthRaw);
+    const hint = canonUnitHint(hints.depth || hints.depthCm || hints.sampleDepth);
+    if (parsed) {
+      const unit = parsed.unit || hint;
+      let cm = parsed.num;
+      let converted = false;
+      if (unit === 'in') {
+        cm = parsed.num * 2.54;
+        converted = true;
+      } else if (unit === 'ft') {
+        cm = parsed.num * 30.48;
+        converted = true;
+      } else if (unit === 'mm') {
+        cm = parsed.num / 10;
+        converted = true;
+      } else if (!unit && hint === 'in') {
+        cm = parsed.num * 2.54;
+        converted = true;
+      } else if (!unit && hint === 'ft') {
+        cm = parsed.num * 30.48;
+        converted = true;
+      }
+      // Heurística: lab USA suele muestrear 6/8/12/24 in; solo si unitHints marca sistema US
+      if (
+        !converted &&
+        !unit &&
+        !hint &&
+        /us|imperial|english|usa/.test(String(hints.system || hints.unitSystem || '').toLowerCase()) &&
+        parsed.num > 0 &&
+        parsed.num <= 36 &&
+        Number.isInteger(parsed.num)
+      ) {
+        cm = parsed.num * 2.54;
+        converted = true;
+      }
+      fert.depthCm = roundStr(cm, 2);
+      if (converted) {
+        notesArr.push(
+          tNote(
+            lang,
+            'Profundidad: lab ' + depthRaw + (unit || hint ? ' (' + (unit || hint) + ')' : '') + ' → ' + fert.depthCm + ' cm',
+            'Depth: lab ' + depthRaw + (unit || hint ? ' (' + (unit || hint) + ')' : '') + ' → ' + fert.depthCm + ' cm'
+          )
+        );
+      }
+    }
+  }
+
+  // —— Densidad aparente → g/cm³ ——
+  const bdRaw = asStr(phys.bulkDensity);
+  const systemHint = String(hints.system || hints.unitSystem || '').toLowerCase();
+  const looksUsSystem = /us|imperial|english|usa/.test(systemHint);
+  if (bdRaw && !isDetectionLimitValue(bdRaw)) {
+    const parsed = parseQtyWithUnit(bdRaw);
+    const hint = canonUnitHint(hints.bulkDensity || hints.bd);
+    if (parsed) {
+      const unit = parsed.unit || hint;
+      let gcm3 = parsed.num;
+      let converted = false;
+      if (unit === 'lb/ft3') {
+        gcm3 = parsed.num * 0.016018463;
+        converted = true;
+      } else if (!unit && hint === 'lb/ft3') {
+        gcm3 = parsed.num * 0.016018463;
+        converted = true;
+      } else if (!unit && !hint && looksUsSystem && parsed.num > 20 && parsed.num < 140) {
+        // Solo con sistema USA marcado: valores típicos lb/ft³ (≈70–110)
+        gcm3 = parsed.num * 0.016018463;
+        converted = true;
+      }
+      phys.bulkDensity = roundStr(gcm3, 3);
+      if (converted) {
+        notesArr.push(
+          tNote(
+            lang,
+            'Densidad aparente: lab ' + bdRaw + ' → ' + phys.bulkDensity + ' g/cm³',
+            'Bulk density: lab ' + bdRaw + ' → ' + phys.bulkDensity + ' g/cm³'
+          )
+        );
+      }
+    }
+  }
+
+  // —— Conductividad hidráulica → cm/h ——
+  const hcRaw = asStr(phys.hydraulicConductivity);
+  if (hcRaw && !isDetectionLimitValue(hcRaw)) {
+    const parsed = parseQtyWithUnit(hcRaw);
+    const hint = canonUnitHint(hints.hydraulicConductivity || hints.kSat || hints.ksat);
+    if (parsed) {
+      const unit = parsed.unit || hint;
+      let cmh = parsed.num;
+      let converted = false;
+      if (unit === 'in/h') {
+        cmh = parsed.num * 2.54;
+        converted = true;
+      } else if (!unit && hint === 'in/h') {
+        cmh = parsed.num * 2.54;
+        converted = true;
+      }
+      phys.hydraulicConductivity = roundStr(cmh, 3);
+      if (converted) {
+        notesArr.push(
+          tNote(
+            lang,
+            'Cond. hidráulica: lab ' + hcRaw + ' → ' + phys.hydraulicConductivity + ' cm/h',
+            'Hydraulic conductivity: lab ' + hcRaw + ' → ' + phys.hydraulicConductivity + ' cm/h'
+          )
+        );
+      }
+    }
+  }
+
+  // —— CE / salinidad: mmhos/cm ≡ mS/cm ≡ dS/m (mismo número) ——
+  const salRaw = asStr(ph.salinity);
+  if (salRaw && !isDetectionLimitValue(salRaw)) {
+    const parsed = parseQtyWithUnit(salRaw);
+    if (parsed) {
+      ph.salinity = roundStr(parsed.num, 3);
+      if (parsed.unit && parsed.unit !== 'dS/m') {
+        notesArr.push(
+          tNote(
+            lang,
+            'CE: lab ' + salRaw + ' → ' + ph.salinity + ' dS/m (mmhos/cm y mS/cm equivalen a dS/m)',
+            'EC: lab ' + salRaw + ' → ' + ph.salinity + ' dS/m (mmhos/cm and mS/cm equal dS/m)'
+          )
+        );
+      }
+    }
+  }
+
+  // —— Fertilidad en lb/acre: no convertir a ciegas (depende de profundidad/DA); avisar ——
+  const fertFields = ['nNo3', 'p', 'k', 'ca', 'mg', 'na', 's', 'fe', 'mn', 'b', 'zn', 'cu', 'moly', 'al'];
+  const lbAcreHits = [];
+  fertFields.forEach(function (field) {
+    const raw = asStr(fert[field]);
+    if (!raw || isDetectionLimitValue(raw)) return;
+    const parsed = parseQtyWithUnit(raw);
+    const fertHint = canonUnitHint(hints.fertility || hints.nutrients);
+    if (!parsed) return;
+    if (parsed.unit === 'lb/acre' || fertHint === 'lb/acre') {
+      lbAcreHits.push(field + '=' + raw);
+      // Dejar el número visible pero marcar para revisión humana
+      fert[field] = roundStr(parsed.num, 3);
+    } else if (parsed.unit === 'ppm' || !parsed.unit) {
+      fert[field] = roundStr(parsed.num, 3);
+    }
+  });
+  if (lbAcreHits.length) {
+    notesArr.push(
+      tNote(
+        lang,
+        'Fertilidad en lb/acre detectada (' +
+          lbAcreHits.join(', ') +
+          '): no se convirtió a ppm (hace falta profundidad/DA). Revisa y convierte a mano si aplica.',
+        'Fertility in lb/acre detected (' +
+          lbAcreHits.join(', ') +
+          '): not auto-converted to ppm (needs depth/BD). Review and convert manually if needed.'
+      )
+    );
+  }
+}
+
+/**
  * Convierte variantes comunes de lab (P₂O₅, K₂O, SO₄, NO₃, …) a elemental.
  * Lee fertility.forms.{p,k,ca,mg,s,nNo3,…} o *ReportedAs legacy (sReportedAs).
  */
@@ -642,6 +877,11 @@ function normalizeSoilPayload(raw, lang) {
     else if (pm.includes('bray')) base.fertility.pMethod = 'Bray';
     else if (pm.includes('mehlich')) base.fertility.pMethod = 'Mehlich';
   }
+  const unitHints =
+    (raw.unitHints && typeof raw.unitHints === 'object' && raw.unitHints) ||
+    (raw.sourceUnits && typeof raw.sourceUnits === 'object' && raw.sourceUnits) ||
+    {};
+  normalizeEnglishPhysicalUnits(base, convertNotes, lang, unitHints);
   normalizeFertilityForms(base.fertility, convertNotes, lang);
   reconcileSoilCations(base.cations, convertNotes, lang);
   if (limitHints.length) {
@@ -662,8 +902,8 @@ function normalizeSoilPayload(raw, lang) {
 function soilPrompt(lang) {
   const en = noteLang(lang) === 'en';
   const notesRule = en
-    ? '- notes: short note in ENGLISH if the report is ambiguous, incomplete, has limits (<, ND), or SO4 vs S forms. Always write notes in English.'
-    : '- notes: breve aviso en ESPAÑOL si el informe es ambiguo, incompleto, tiene límites (<, ND) o formas SO4 vs S. Escribe notes siempre en español.';
+    ? '- notes: short note in ENGLISH if the report is ambiguous, incomplete, has limits (<, ND), SO4 vs S forms, or English/US units were converted. Always write notes in English.'
+    : '- notes: breve aviso en ESPAÑOL si el informe es ambiguo, incompleto, tiene límites (<, ND), formas SO4 vs S, o se convirtieron unidades inglesas/USA. Escribe notes siempre en español.';
   return [
     en
       ? 'You are a soil lab report extractor for NutriPlant PRO.'
@@ -672,6 +912,11 @@ function soilPrompt(lang) {
       ? 'Read the lab PDF or image and return ONLY valid JSON (no markdown) with this exact shape:'
       : 'Lee el PDF o imagen del laboratorio y devuelve SOLO un JSON válido (sin markdown) con esta forma exacta:',
     JSON.stringify(emptySoilShape(), null, 2),
+    '',
+    en
+      ? 'You MAY also include an optional sibling object unitHints (not inside the soil fields) describing ORIGINAL lab units before conversion, e.g.:'
+      : 'Puedes incluir además un objeto opcional unitHints (fuera de los campos de suelo) con las unidades ORIGINALES del lab antes de convertir, ej.:',
+    '{"unitHints":{"system":"us_customary","depth":"in","bulkDensity":"lb/ft3","hydraulicConductivity":"in/h","salinity":"mmhos/cm","fertility":"ppm"}}',
     '',
     en ? 'Rules:' : 'Reglas:',
     '- Usa números en string. Si un valor no aparece, deja "".',
@@ -686,9 +931,21 @@ function soilPrompt(lang) {
     '  s="SO4"|"SO3"|"S"|"S-SO4"; nNo3="NO3"|"N-NO3"|"NH4"; fe="Fe2O3"|"Fe"; mn="MnO"|"Mn"; zn="ZnO"|"Zn".',
     '  El servidor convierte óxido/ion → elemental (P₂O₅×0.436, K₂O×0.830, SO₄×0.334, NO₃×0.226, etc.).',
     '  Si ya es elemental, forms="P"/"K"/"S"/… o "".',
-    '- CATIONES (CRÍTICO — formato típico de lab mexicano/español):',
-    '  Tabla "Cationes Intercambiables / Porcentaje de saturación de bases":',
-    '  * Fila SUPERIOR "% Sat" → SOLO pctCa, pctMg, pctK, pctNa, pctAl, pctH (suman ≈100).',
+    '- UNIDADES INGLESAS / USA (CRÍTICO): NutriPlant guarda SIEMPRE métrico canónico.',
+    '  Detecta si el PDF es lab USA / English units (inches, in/hr, lb/ft³, lb/acre, mmhos/cm, etc.).',
+    '  Convierte ANTES de guardar en los campos:',
+    '  * fertility.depthCm: pulgadas/inches → cm (×2.54). pies/ft → cm (×30.48). Resultado en CM.',
+    '  * physical.bulkDensity: lb/ft³ (pcf) → g/cm³ (×0.016018). Resultado en g/cm³.',
+    '  * physical.hydraulicConductivity: in/h o in/hr → cm/h (×2.54). Resultado en cm/h.',
+    '  * phSection.salinity: mmhos/cm y mS/cm = dS/m (mismo número). Guarda dS/m.',
+    '  * fertility ppm/mg/kg: no cambian de número. Si el lab trae lb/acre para nutrientes, NO inventes ppm;',
+    '    deja el número y pon unitHints.fertility="lb/acre" + avisa en notes (el servidor no convierte lb/acre a ppm a ciegas).',
+    '  * CEC/meq/100g y % sat: iguales en labs USA y MX; no conviertas.',
+    '  Llena unitHints con las unidades ORIGINALES detectadas (system="us_customary" si aplica).',
+    '  En notes menciona cada conversión hecha (ej. "Depth 6 in → 15.24 cm").',
+    '- CATIONES (CRÍTICO — formato típico de lab mexicano/español; labs USA usan CEC meq/100g + % base sat igual):',
+    '  Tabla "Cationes Intercambiables / Porcentaje de saturación de bases" / "Exchangeable cations / Base saturation":',
+    '  * Fila SUPERIOR "% Sat" / "% Base Sat" → SOLO pctCa, pctMg, pctK, pctNa, pctAl, pctH (suman ≈100).',
     '  * Fila INFERIOR "me/100g" o "meq/100g" → SOLO ca, mg, k, na, al, h y CIC en cations.cic.',
     '  * Las etiquetas Ca Mg K Na Al H CIC suelen estar ABAJO; no te guíes solo por el orden visual.',
     '  * Ejemplo real: %Sat Ca=54.7 Mg=37.6 K=3.85 Na=3.64 | meq Ca=7.82 Mg=5.38 K=0.55 Na=0.52 | CIC=14.3',

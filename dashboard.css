@@ -2404,11 +2404,11 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 
 /* Posicionar chips específicos - Distribución uniforme */
 .sb-chip[data-section="ubicacion"] { top: 0; left: 0; }
-.sb-chip[data-section="enmienda"] { top: 30px; left: 0; }
-.sb-chip[data-section="nutricion-granular"] { top: 60px; left: 0; }
-.sb-chip[data-section="fertirriego"] { top: 90px; left: 0; }
-.sb-chip[data-section="hidroponia"] { top: 120px; left: 0; }
-.sb-chip[data-section="reporte"] { top: 150px; left: 0; }
+.sb-chip[data-section="clima"] { top: 30px; left: 0; }
+.sb-chip[data-section="enmienda"] { top: 60px; left: 0; }
+.sb-chip[data-section="nutricion-granular"] { top: 90px; left: 0; }
+.sb-chip[data-section="fertirriego"] { top: 120px; left: 0; }
+.sb-chip[data-section="hidroponia"] { top: 150px; left: 0; }
 
 .sb-chip[data-section="suelo"] { top: 0; left: 0; }
 .sb-chip[data-section="extracto"] { top: 30px; left: 0; }
@@ -7820,24 +7820,28 @@ html.embed-login body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   margin-bottom: 0;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
 }
 .np-analysis-compare__tables {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+  width: 100%;
+  align-items: stretch;
 }
 .np-analysis-compare__table-block {
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   padding: 10px 12px 12px;
   background: #f8fafc;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 .np-analysis-compare__table-block--ph { border-color: #93c5fd; background: #f8fbff; }
 .np-analysis-compare__table-block--physical { border-color: #86efac; background: #f7fdf9; }
@@ -7854,7 +7858,7 @@ html.embed-login body {
   color: #0f172a;
 }
 .np-analysis-compare__table {
-  width: auto;
+  width: 100%;
   border-collapse: collapse;
   font-size: 12px;
   min-width: 0;
@@ -7936,8 +7940,18 @@ html.embed-login body {
   height: 240px;
   position: relative;
 }
+@media (max-width: 1100px) {
+  .np-analysis-compare__tables {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 900px) {
   .np-analysis-compare__charts {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .np-analysis-compare__tables {
     grid-template-columns: 1fr;
   }
 }
@@ -7953,7 +7967,7 @@ html.embed-login body {
   box-sizing: border-box;
 }
 .np-lab-pdf-modal__panel {
-  width: min(420px, 100%);
+  width: min(480px, 100%);
   max-height: min(90vh, 900px);
   overflow: auto;
   background: #fff;
@@ -8006,20 +8020,65 @@ html.embed-login body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 48vh;
+  max-height: 52vh;
   overflow: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 8px;
 }
+.np-lab-pdf-modal__section {
+  margin: 8px 0 2px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #334155;
+  background: #f1f5f9;
+  border-left: 3px solid #94a3b8;
+}
+.np-lab-pdf-modal__section:first-child { margin-top: 0; }
+.np-lab-pdf-modal__section--physical { border-left-color: #22c55e; background: #f0fdf4; color: #166534; }
+.np-lab-pdf-modal__section--ph { border-left-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+.np-lab-pdf-modal__section--macros { border-left-color: #f59e0b; background: #fffbeb; color: #b45309; }
+.np-lab-pdf-modal__section--micros { border-left-color: #a855f7; background: #faf5ff; color: #7e22ce; }
+.np-lab-pdf-modal__section--cations { border-left-color: #64748b; background: #f8fafc; color: #334155; }
+.np-lab-pdf-modal__section--cec_pct { border-left-color: #ea580c; background: #fff7ed; color: #c2410c; }
 .np-lab-pdf-modal__row {
   display: grid;
-  grid-template-columns: 18px minmax(72px, 0.9fr) minmax(88px, 1.1fr);
+  grid-template-columns: 18px minmax(110px, 1.15fr) minmax(88px, 1fr);
   gap: 6px;
   align-items: center;
   font-size: 12px;
 }
+.np-lab-pdf-modal__label-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 0;
+}
 .np-lab-pdf-modal__label { color: #334155; font-weight: 600; }
+.np-lab-pdf-modal__unit {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  cursor: help;
+  white-space: nowrap;
+}
+.np-lab-pdf-modal__unit--empty {
+  color: #94a3b8;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
 .np-lab-pdf-modal__val {
   width: 100%;
   padding: 6px 8px;
@@ -8049,6 +8108,9 @@ html.embed-login body {
 @media (max-width: 640px) {
   .np-lab-pdf-modal__row {
     grid-template-columns: 18px 1fr;
+  }
+  .np-lab-pdf-modal__label-wrap {
+    grid-column: 2;
   }
   .np-lab-pdf-modal__val {
     grid-column: 1 / -1;

@@ -10290,6 +10290,26 @@
       white-space: nowrap;
       flex-shrink: 0;
       font-variant-numeric: tabular-nums;
+      appearance: none;
+      -webkit-appearance: none;
+      margin: 0;
+      padding: 2px 5px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .np-cal-overlay-day-num:hover {
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, #fff);
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 32%, rgba(148, 163, 184, 0.35));
+      color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 78%, #0f172a);
+    }
+    .np-cal-overlay-day-num.np-cal-overlay-summary-chip--open {
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 16%, #fff);
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 48%, rgba(148, 163, 184, 0.4));
+      color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 82%, #0f172a);
     }
     .np-cal-overlay-day-total {
       font-size: 9px;
@@ -21354,12 +21374,14 @@
       t2.textContent = sub;
       main.appendChild(t2);
     }
-    var date = document.createElement('span');
-    date.className = 'np-cal-overlay-summary-pop-date';
-    date.textContent = calOverlayShortDateLabel(ent.dateKey);
     row.appendChild(dot);
     row.appendChild(main);
-    row.appendChild(date);
+    if (!subtitleOpts.hideDate) {
+      var date = document.createElement('span');
+      date.className = 'np-cal-overlay-summary-pop-date';
+      date.textContent = calOverlayShortDateLabel(ent.dateKey);
+      row.appendChild(date);
+    }
     (function (entry) {
       row.addEventListener('click', function (e) {
         e.preventDefault();
@@ -21386,6 +21408,8 @@
     pop._calPopOpts = null;
     pop._calPopShown = 0;
     pop._calPopAnchor = null;
+    pop._calPopHidePlant = null;
+    pop._calPopHideDate = null;
     document.querySelectorAll('.np-cal-overlay-summary-chip--open').forEach(function (el) {
       el.classList.remove('np-cal-overlay-summary-chip--open');
     });
@@ -21423,6 +21447,7 @@
     var list = pop._calPopEntries || [];
     var opts = pop._calPopOpts || {};
     var hidePlant = !!pop._calPopHidePlant;
+    var hideDate = !!pop._calPopHideDate;
     var limit = pop._calPopShown || CAL_OVERLAY_POP_INITIAL;
     scrollBody.innerHTML = '';
     var rendered = 0;
@@ -21442,7 +21467,11 @@
         branchList.className = 'np-cal-overlay-summary-pop-branch-list';
         group.entries.forEach(function (ent) {
           if (rendered >= limit) return;
-          appendCalOverlaySummaryPopRow(branchList, ent, { hidePlant: hidePlant, hideBranch: true });
+          appendCalOverlaySummaryPopRow(branchList, ent, {
+            hidePlant: hidePlant,
+            hideBranch: true,
+            hideDate: hideDate
+          });
           rendered += 1;
         });
         if (branchList.childNodes.length) {
@@ -21455,7 +21484,11 @@
       var mount = document.createElement('div');
       mount.className = 'np-cal-overlay-summary-pop-list';
       list.slice(0, limit).forEach(function (ent) {
-        appendCalOverlaySummaryPopRow(mount, ent, { hidePlant: hidePlant, hideBranch: false });
+        appendCalOverlaySummaryPopRow(mount, ent, {
+          hidePlant: hidePlant,
+          hideBranch: false,
+          hideDate: hideDate
+        });
       });
       scrollBody.appendChild(mount);
       rendered = Math.min(limit, list.length);
@@ -21508,7 +21541,11 @@
     if (!pop || !anchorBtn) return;
     closeCalOverlaySummaryPop();
     anchorBtn.classList.add('np-cal-overlay-summary-chip--open');
-    var hidePlant = anchorBtn.getAttribute('data-cal-summary-kind') === 'plant';
+    var summaryKind = anchorBtn.getAttribute('data-cal-summary-kind') || '';
+    var hidePlant =
+      summaryKind === 'plant' ||
+      (summaryKind === 'day' && (state.calOverlayAreaIds || []).length <= 1);
+    var hideDate = summaryKind === 'day';
     var head = document.createElement('div');
     head.className = 'np-cal-overlay-summary-pop-head';
     head.textContent = title;
@@ -21517,6 +21554,7 @@
     pop._calPopEntries = list;
     pop._calPopOpts = opts;
     pop._calPopHidePlant = hidePlant;
+    pop._calPopHideDate = hideDate;
     pop._calPopAnchor = anchorBtn;
     pop._calPopShown = 0;
     if (!list.length) {
@@ -21751,9 +21789,37 @@
         head.className = 'np-cal-overlay-day-head';
         var headLeft = document.createElement('div');
         headLeft.className = 'np-cal-overlay-day-head-left';
-        var num = document.createElement('span');
+        var num = document.createElement('button');
+        num.type = 'button';
         num.className = 'np-cal-overlay-day-num';
         num.textContent = String(d);
+        num.setAttribute('data-cal-summary-kind', 'day');
+        num.title =
+          total
+            ? 'Ver ' + total + ' semáforo' + (total === 1 ? '' : 's') + ' del ' + d + ' de ' + NP_CAL_MONTH_NAMES[m]
+            : 'Ver eventos del ' + d + ' de ' + NP_CAL_MONTH_NAMES[m];
+        num.setAttribute(
+          'aria-label',
+          (total ? total + ' semáforos · ' : '') + 'Eventos del ' + d + ' de ' + NP_CAL_MONTH_NAMES[m]
+        );
+        (function (dayEntries, dayNum, dayBtn) {
+          dayBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (dayBtn.classList.contains('np-cal-overlay-summary-chip--open')) {
+              closeCalOverlaySummaryPop();
+              return;
+            }
+            var dayStats = calOverlayStatsFromEntries(dayEntries);
+            var dayLabel = dayNum + ' de ' + NP_CAL_MONTH_NAMES[m] + ' ' + y;
+            openCalOverlaySummaryPop(
+              dayBtn,
+              dayLabel + ' · ' + calOverlaySummaryStatsLabel(dayStats),
+              dayEntries,
+              { groupByBranch: true }
+            );
+          });
+        })(bucket.entries, d, num);
         headLeft.appendChild(num);
         if (total) {
           var tot = document.createElement('span');
