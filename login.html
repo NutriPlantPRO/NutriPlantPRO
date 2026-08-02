@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=35" />
+  <link rel="stylesheet" href="auth.css?v=36" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -4382,16 +4382,33 @@
         return Math.max(280, Math.min(500, width));
       }
 
+      function facebookEmbedHeight(container) {
+        var h = Math.floor((container && container.clientHeight) || 0);
+        if (!h) {
+          var body = container && container.closest('.login-social-pane__body');
+          h = Math.floor((body && body.clientHeight) || 0);
+        }
+        if (!h) h = 320;
+        // Plugin FB dentro del alto fijo del panel (deja aire para el CTA).
+        return Math.max(240, Math.min(380, h));
+      }
+
       function mountFacebookEmbed(container, force) {
         if (!container) return;
         var width = facebookEmbedWidth(container);
-        if (!force && container.dataset.fbWidth === String(width) && container.querySelector('iframe')) return;
+        var fbHeight = facebookEmbedHeight(container);
+        if (
+          !force &&
+          container.dataset.fbWidth === String(width) &&
+          container.dataset.fbHeight === String(fbHeight) &&
+          container.querySelector('iframe')
+        ) {
+          return;
+        }
         container.dataset.fbWidth = String(width);
+        container.dataset.fbHeight = String(fbHeight);
         container.innerHTML = '';
         var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
-        // Conteo vivo de Facebook (plugin). hide_cover + ancho = caja + un poco más de alto
-        // para que nombre/seguidores no queden tan apretados contra Seguir/Compartir.
-        var fbHeight = 620;
         var iframe = createSocialIframe(
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
@@ -4407,6 +4424,7 @@
         );
         iframe.style.width = width + 'px';
         iframe.style.maxWidth = '100%';
+        iframe.style.height = fbHeight + 'px';
         iframe.style.minHeight = fbHeight + 'px';
         container.appendChild(iframe);
         container.dataset.loaded = '1';
@@ -4471,22 +4489,20 @@
           root.style.maxHeight = '';
           root.style.height = '';
           var panelsMobile = root.querySelector('.login-social-panels');
-          if (panelsMobile) panelsMobile.style.minHeight = '';
+          if (panelsMobile) {
+            panelsMobile.style.minHeight = '';
+            panelsMobile.style.height = '';
+          }
         } else {
-          var tools = document.querySelector('.login-split__tools');
-          var login = document.querySelector('.login-split__login');
-          if (tools && login) {
-            var gap = 16;
-            var available = Math.round(tools.offsetHeight - login.offsetHeight - gap);
-            if (available < 320) available = 320;
-            root.style.maxHeight = '';
-            root.style.minHeight = available + 'px';
-            root.style.height = available + 'px';
-            var panels = root.querySelector('.login-social-panels');
-            if (panels) {
-              var chrome = 118;
-              panels.style.minHeight = Math.max(240, available - chrome) + 'px';
-            }
+          // Alto definido en CSS (--login-social-panel-h). No igualar a herramientas:
+          // eso estiraba el panel hasta el footer.
+          root.style.minHeight = '';
+          root.style.maxHeight = '';
+          root.style.height = '';
+          var panels = root.querySelector('.login-social-panels');
+          if (panels) {
+            panels.style.minHeight = '';
+            panels.style.height = '';
           }
         }
         var fbPane = root.querySelector('[data-social-panel="facebook"]');

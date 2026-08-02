@@ -1021,11 +1021,14 @@
     grid-row: 2;
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
-    align-self: stretch;
-    min-height: 320px;
-    height: 100%;
-    padding: 22px 22px 18px;
+    flex: 0 0 auto;
+    align-self: start;
+    /* Alto fijo: no se estira hasta el footer / columna de herramientas */
+    --login-social-panel-h: 460px;
+    height: var(--login-social-panel-h);
+    max-height: var(--login-social-panel-h);
+    min-height: var(--login-social-panel-h);
+    padding: 18px 20px 16px;
     overflow: hidden;
   }
 
@@ -1037,9 +1040,20 @@
 
   .login-social-panels {
     flex: 1 1 auto;
-    min-height: 280px;
+    min-height: 0;
+    height: auto;
+    max-height: none;
     display: flex;
     flex-direction: column;
+  }
+
+  .login-social-pane__embed {
+    min-height: 0;
+  }
+
+  .login-social-pane__embed--facebook {
+    min-height: 0;
+    padding: 8px 0 0;
   }
 
   .login-social-pane.active {

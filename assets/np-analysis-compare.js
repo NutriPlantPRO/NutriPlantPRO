@@ -11,87 +11,110 @@
   ];
 
   var SOIL_FIELDS = [
-    { path: 'phSection.ph', label: 'pH', unit: 'other', chartable: true },
-    { path: 'phSection.phBuffer', label: 'pH Buffer', unit: 'other', chartable: true },
-    { path: 'phSection.totalCarbonates', label: 'Carbonatos totales', unit: 'pct', chartable: true },
-    { path: 'phSection.salinity', label: 'CE (dS/m)', unit: 'other', chartable: true },
-    { path: 'physical.saturationPoint', label: 'Punto saturación', unit: 'pct', chartable: true },
-    { path: 'physical.fieldCapacity', label: 'Capacidad de campo', unit: 'pct', chartable: true },
-    { path: 'physical.wiltingPoint', label: 'Punto marchitez', unit: 'pct', chartable: true },
-    { path: 'physical.bulkDensity', label: 'Densidad aparente', unit: 'other', chartable: true },
-    { path: 'physical.hydraulicConductivity', label: 'Cond. hidráulica', unit: 'other', chartable: true },
-    { path: 'fertility.mo', label: 'MO', unit: 'pct', chartable: true },
-    { path: 'fertility.nNo3', label: 'N-NO₃', unit: 'ppm', chartable: true },
-    { path: 'fertility.p', label: 'P', unit: 'ppm', chartable: true },
-    { path: 'fertility.k', label: 'K', unit: 'ppm', chartable: true },
-    { path: 'fertility.ca', label: 'Ca', unit: 'ppm', chartable: true },
-    { path: 'fertility.mg', label: 'Mg', unit: 'ppm', chartable: true },
-    { path: 'fertility.na', label: 'Na', unit: 'ppm', chartable: true },
-    { path: 'fertility.s', label: 'S', unit: 'ppm', chartable: true },
-    { path: 'fertility.fe', label: 'Fe', unit: 'ppm', chartable: true },
-    { path: 'fertility.mn', label: 'Mn', unit: 'ppm', chartable: true },
-    { path: 'fertility.b', label: 'B', unit: 'ppm', chartable: true },
-    { path: 'fertility.zn', label: 'Zn', unit: 'ppm', chartable: true },
-    { path: 'fertility.cu', label: 'Cu', unit: 'ppm', chartable: true },
-    { path: 'fertility.moly', label: 'Mo', unit: 'ppm', chartable: true },
-    { path: 'fertility.al', label: 'Al', unit: 'ppm', chartable: true },
-    { path: 'cations.ca', label: 'Ca (meq)', unit: 'meq', chartable: true },
-    { path: 'cations.mg', label: 'Mg (meq)', unit: 'meq', chartable: true },
-    { path: 'cations.k', label: 'K (meq)', unit: 'meq', chartable: true },
-    { path: 'cations.na', label: 'Na (meq)', unit: 'meq', chartable: true },
-    { path: 'cations.cic', label: 'CIC', unit: 'meq', chartable: true },
-    { path: 'cations.pctCa', label: '% Ca', unit: 'pct', chartable: true },
-    { path: 'cations.pctMg', label: '% Mg', unit: 'pct', chartable: true },
-    { path: 'cations.pctK', label: '% K', unit: 'pct', chartable: true },
-    { path: 'cations.pctNa', label: '% Na', unit: 'pct', chartable: true },
-    { path: 'ratios.caMg', label: 'Ca/Mg', unit: 'other', chartable: true },
-    { path: 'ratios.mgK', label: 'Mg/K', unit: 'other', chartable: true },
-    { path: 'ratios.caMgK', label: '(Ca+Mg)/K', unit: 'other', chartable: true },
-    { path: 'ratios.caK', label: 'Ca/K', unit: 'other', chartable: true }
+    { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH', unit: 'other', chartable: true, block: 'ph' },
+    { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer', unit: 'other', chartable: true, block: 'ph' },
+    { path: 'phSection.totalCarbonates', labelKey: 'analysis.f_carbonates', label: 'Carbonatos totales', unit: 'pct', chartable: true, block: 'physical' },
+    { path: 'phSection.salinity', labelKey: 'analysis.f_ec', label: 'CE (dS/m)', unit: 'other', chartable: true, block: 'physical' },
+    { path: 'physical.saturationPoint', labelKey: 'analysis.f_sat_point', label: 'Punto saturación', unit: 'pct', chartable: true, block: 'physical' },
+    { path: 'physical.fieldCapacity', labelKey: 'analysis.f_field_cap', label: 'Capacidad de campo', unit: 'pct', chartable: true, block: 'physical' },
+    { path: 'physical.wiltingPoint', labelKey: 'analysis.f_wilting', label: 'Punto marchitez', unit: 'pct', chartable: true, block: 'physical' },
+    { path: 'physical.bulkDensity', labelKey: 'analysis.f_bulk_density', label: 'Densidad aparente', unit: 'other', chartable: true, block: 'physical' },
+    { path: 'physical.hydraulicConductivity', labelKey: 'analysis.f_hydr_cond', label: 'Cond. hidráulica', unit: 'other', chartable: true, block: 'physical' },
+    { path: 'fertility.mo', labelKey: 'analysis.f_om', label: 'MO', unit: 'pct', chartable: true, block: 'physical' },
+    { path: 'fertility.nNo3', labelKey: 'analysis.f_n_no3', label: 'N-NO₃', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.p', labelKey: 'analysis.f_p', label: 'P', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.k', labelKey: 'analysis.f_k', label: 'K', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.ca', labelKey: 'analysis.f_ca', label: 'Ca', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.mg', labelKey: 'analysis.f_mg', label: 'Mg', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.na', labelKey: 'analysis.f_na', label: 'Na', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.s', labelKey: 'analysis.f_s', label: 'S', unit: 'ppm', chartable: true, block: 'macros' },
+    { path: 'fertility.fe', labelKey: 'analysis.f_fe', label: 'Fe', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'fertility.mn', labelKey: 'analysis.f_mn', label: 'Mn', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'fertility.b', labelKey: 'analysis.f_b', label: 'B', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'fertility.zn', labelKey: 'analysis.f_zn', label: 'Zn', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'fertility.cu', labelKey: 'analysis.f_cu', label: 'Cu', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'fertility.moly', labelKey: 'analysis.f_mo', label: 'Mo', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'fertility.al', labelKey: 'analysis.f_al', label: 'Al', unit: 'ppm', chartable: true, block: 'micros' },
+    { path: 'cations.ca', labelKey: 'analysis.f_ca_meq', label: 'Ca', unit: 'meq', chartable: false, block: 'cations' },
+    { path: 'cations.mg', labelKey: 'analysis.f_mg_meq', label: 'Mg', unit: 'meq', chartable: false, block: 'cations' },
+    { path: 'cations.k', labelKey: 'analysis.f_k_meq', label: 'K', unit: 'meq', chartable: false, block: 'cations' },
+    { path: 'cations.na', labelKey: 'analysis.f_na_meq', label: 'Na', unit: 'meq', chartable: false, block: 'cations' },
+    { path: 'cations.cic', labelKey: 'analysis.f_cec', label: 'CIC', unit: 'meq', chartable: false, block: 'cations' },
+    { path: 'cations.pctCa', labelKey: 'analysis.f_pct_ca', label: '% Ca', unit: 'pct', chartable: true, block: 'cec_pct' },
+    { path: 'cations.pctMg', labelKey: 'analysis.f_pct_mg', label: '% Mg', unit: 'pct', chartable: true, block: 'cec_pct' },
+    { path: 'cations.pctK', labelKey: 'analysis.f_pct_k', label: '% K', unit: 'pct', chartable: true, block: 'cec_pct' },
+    { path: 'cations.pctNa', labelKey: 'analysis.f_pct_na', label: '% Na', unit: 'pct', chartable: true, block: 'cec_pct' },
+    { path: 'ratios.caMg', labelKey: 'analysis.f_ratio_ca_mg', label: 'Ca/Mg', unit: 'other', chartable: false, block: 'ratios' },
+    { path: 'ratios.mgK', labelKey: 'analysis.f_ratio_mg_k', label: 'Mg/K', unit: 'other', chartable: false, block: 'ratios' },
+    { path: 'ratios.caMgK', labelKey: 'analysis.f_ratio_ca_mg_k', label: '(Ca+Mg)/K', unit: 'other', chartable: false, block: 'ratios' },
+    { path: 'ratios.caK', labelKey: 'analysis.f_ratio_ca_k', label: 'Ca/K', unit: 'other', chartable: false, block: 'ratios' }
+  ];
+
+  /** Orden y metadatos de bloques (tabla + gráficas). */
+  var SOIL_BLOCKS = [
+    { id: 'ph', titleKey: 'analysis.block_ph', title: 'pH', chartType: 'bar', chart: true },
+    { id: 'physical', titleKey: 'analysis.block_physical', title: 'Físicos / salinidad / MO', chartType: 'bar', chart: true },
+    { id: 'macros', titleKey: 'analysis.block_macros', title: 'Macros (ppm)', chartType: 'line', chart: true },
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'line', chart: true },
+    { id: 'cec_pct', titleKey: 'analysis.block_cec_pct', title: '% saturación CIC', chartType: 'bar', chart: true },
+    { id: 'cations', titleKey: 'analysis.block_cations', title: 'Cationes (meq) / CIC', chartType: null, chart: false },
+    { id: 'ratios', titleKey: 'analysis.block_ratios', title: 'Relaciones', chartType: null, chart: false }
   ];
 
   var SOIL_REVIEW_FIELDS = [
-    { path: 'title', label: 'Título' },
-    { path: 'date', label: 'Fecha' },
-    { path: 'physical.texturalClass', label: 'Clase textural' },
-    { path: 'physical.saturationPoint', label: 'Punto saturación %' },
-    { path: 'physical.fieldCapacity', label: 'Capacidad de campo %' },
-    { path: 'physical.wiltingPoint', label: 'Punto marchitez %' },
-    { path: 'physical.hydraulicConductivity', label: 'Cond. hidráulica cm/h' },
-    { path: 'physical.bulkDensity', label: 'Densidad aparente g/cm³' },
-    { path: 'phSection.ph', label: 'pH' },
-    { path: 'phSection.phBuffer', label: 'pH Buffer' },
-    { path: 'phSection.totalCarbonates', label: 'Carbonatos totales %' },
-    { path: 'phSection.salinity', label: 'CE dS/m' },
-    { path: 'fertility.pMethod', label: 'Método P' },
-    { path: 'fertility.mo', label: 'MO %' },
-    { path: 'fertility.nNo3', label: 'N-NO₃ ppm' },
-    { path: 'fertility.p', label: 'P ppm' },
-    { path: 'fertility.k', label: 'K ppm' },
-    { path: 'fertility.ca', label: 'Ca ppm' },
-    { path: 'fertility.mg', label: 'Mg ppm' },
-    { path: 'fertility.na', label: 'Na ppm' },
-    { path: 'fertility.s', label: 'S ppm' },
-    { path: 'fertility.fe', label: 'Fe ppm' },
-    { path: 'fertility.mn', label: 'Mn ppm' },
-    { path: 'fertility.b', label: 'B ppm' },
-    { path: 'fertility.zn', label: 'Zn ppm' },
-    { path: 'fertility.cu', label: 'Cu ppm' },
-    { path: 'fertility.moly', label: 'Mo ppm' },
-    { path: 'fertility.al', label: 'Al ppm' },
-    { path: 'fertility.depthCm', label: 'Profundidad cm' },
-    { path: 'cations.ca', label: 'Ca meq' },
-    { path: 'cations.mg', label: 'Mg meq' },
-    { path: 'cations.k', label: 'K meq' },
-    { path: 'cations.na', label: 'Na meq' },
-    { path: 'cations.al', label: 'Al meq' },
-    { path: 'cations.h', label: 'H meq' },
-    { path: 'cations.cic', label: 'CIC' },
-    { path: 'cations.pctCa', label: '% Ca' },
-    { path: 'cations.pctMg', label: '% Mg' },
-    { path: 'cations.pctK', label: '% K' },
-    { path: 'cations.pctNa', label: '% Na' }
+    { path: 'title', labelKey: 'analysis.f_title', label: 'Título' },
+    { path: 'date', labelKey: 'analysis.f_date', label: 'Fecha' },
+    { path: 'physical.texturalClass', labelKey: 'analysis.f_texture', label: 'Clase textural' },
+    { path: 'physical.saturationPoint', labelKey: 'analysis.f_sat_point', label: 'Punto saturación %' },
+    { path: 'physical.fieldCapacity', labelKey: 'analysis.f_field_cap', label: 'Capacidad de campo %' },
+    { path: 'physical.wiltingPoint', labelKey: 'analysis.f_wilting', label: 'Punto marchitez %' },
+    { path: 'physical.hydraulicConductivity', labelKey: 'analysis.f_hydr_cond', label: 'Cond. hidráulica cm/h' },
+    { path: 'physical.bulkDensity', labelKey: 'analysis.f_bulk_density', label: 'Densidad aparente g/cm³' },
+    { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH' },
+    { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer' },
+    { path: 'phSection.totalCarbonates', labelKey: 'analysis.f_carbonates', label: 'Carbonatos totales %' },
+    { path: 'phSection.salinity', labelKey: 'analysis.f_ec', label: 'CE dS/m' },
+    { path: 'fertility.pMethod', labelKey: 'analysis.f_p_method', label: 'Método P' },
+    { path: 'fertility.mo', labelKey: 'analysis.f_om', label: 'MO %' },
+    { path: 'fertility.nNo3', labelKey: 'analysis.f_n_no3', label: 'N-NO₃ ppm' },
+    { path: 'fertility.p', labelKey: 'analysis.f_p', label: 'P ppm' },
+    { path: 'fertility.k', labelKey: 'analysis.f_k', label: 'K ppm' },
+    { path: 'fertility.ca', labelKey: 'analysis.f_ca', label: 'Ca ppm' },
+    { path: 'fertility.mg', labelKey: 'analysis.f_mg', label: 'Mg ppm' },
+    { path: 'fertility.na', labelKey: 'analysis.f_na', label: 'Na ppm' },
+    { path: 'fertility.s', labelKey: 'analysis.f_s', label: 'S ppm' },
+    { path: 'fertility.fe', labelKey: 'analysis.f_fe', label: 'Fe ppm' },
+    { path: 'fertility.mn', labelKey: 'analysis.f_mn', label: 'Mn ppm' },
+    { path: 'fertility.b', labelKey: 'analysis.f_b', label: 'B ppm' },
+    { path: 'fertility.zn', labelKey: 'analysis.f_zn', label: 'Zn ppm' },
+    { path: 'fertility.cu', labelKey: 'analysis.f_cu', label: 'Cu ppm' },
+    { path: 'fertility.moly', labelKey: 'analysis.f_mo', label: 'Mo ppm' },
+    { path: 'fertility.al', labelKey: 'analysis.f_al', label: 'Al ppm' },
+    { path: 'fertility.depthCm', labelKey: 'analysis.f_depth', label: 'Profundidad cm' },
+    { path: 'cations.ca', labelKey: 'analysis.f_ca_meq', label: 'Ca meq' },
+    { path: 'cations.mg', labelKey: 'analysis.f_mg_meq', label: 'Mg meq' },
+    { path: 'cations.k', labelKey: 'analysis.f_k_meq', label: 'K meq' },
+    { path: 'cations.na', labelKey: 'analysis.f_na_meq', label: 'Na meq' },
+    { path: 'cations.al', labelKey: 'analysis.f_al_meq', label: 'Al meq' },
+    { path: 'cations.h', labelKey: 'analysis.f_h_meq', label: 'H meq' },
+    { path: 'cations.cic', labelKey: 'analysis.f_cec', label: 'CIC' },
+    { path: 'cations.pctCa', labelKey: 'analysis.f_pct_ca', label: '% Ca' },
+    { path: 'cations.pctMg', labelKey: 'analysis.f_pct_mg', label: '% Mg' },
+    { path: 'cations.pctK', labelKey: 'analysis.f_pct_k', label: '% K' },
+    { path: 'cations.pctNa', labelKey: 'analysis.f_pct_na', label: '% Na' }
   ];
+
+  function fieldLabel(field) {
+    if (!field) return '';
+    return tr(field.labelKey || '', field.label || field.path || '');
+  }
+
+  function unitSuffix(unit) {
+    if (unit === 'pct') return ' (%)';
+    if (unit === 'ppm') return ' (ppm)';
+    if (unit === 'meq') return ' (meq)';
+    return '';
+  }
 
   function getByPath(obj, path) {
     if (!obj || !path) return '';
@@ -146,6 +169,30 @@
     return tr('analysis.analysis_n', 'Análisis {n}', { n: index + 1 });
   }
 
+  /** Cabecera de columna en 1–2 renglones (título / fecha) para no alargar la tabla. */
+  function fillAnalysisColumnHeader(th, a, index) {
+    th.classList.add('np-analysis-compare__th-analysis');
+    th.title = analysisLabel(a, index);
+    var title = (a && a.title) ? String(a.title).trim() : '';
+    var d = (a && a.date) ? String(a.date).trim() : '';
+    th.textContent = '';
+    if (title && d) {
+      var tEl = document.createElement('span');
+      tEl.className = 'np-analysis-compare__th-title';
+      tEl.textContent = title;
+      var dEl = document.createElement('span');
+      dEl.className = 'np-analysis-compare__th-date';
+      dEl.textContent = d;
+      th.appendChild(tEl);
+      th.appendChild(dEl);
+    } else {
+      var one = document.createElement('span');
+      one.className = 'np-analysis-compare__th-title';
+      one.textContent = title || d || tr('analysis.analysis_n', 'Análisis {n}', { n: index + 1 });
+      th.appendChild(one);
+    }
+  }
+
   function buildCompareRows(analyses, catalog) {
     catalog = catalog || SOIL_FIELDS;
     analyses = Array.isArray(analyses) ? analyses : [];
@@ -155,9 +202,10 @@
       });
       return {
         path: field.path,
-        label: field.label,
+        label: fieldLabel(field),
         unit: field.unit || 'other',
         chartable: field.chartable !== false,
+        block: field.block || 'other',
         values: values
       };
     });
@@ -181,141 +229,104 @@
     document.head.appendChild(s);
   }
 
-  function destroyChart(state) {
-    if (state && state.chart) {
+  function destroyCharts(state) {
+    if (!state) return;
+    if (state.charts) {
+      Object.keys(state.charts).forEach(function (id) {
+        try { state.charts[id].destroy(); } catch (e) {}
+      });
+    }
+    state.charts = {};
+    if (state.chart) {
       try { state.chart.destroy(); } catch (e) {}
       state.chart = null;
     }
   }
 
-  function renderCompareChart(canvas, rows, analyses, selectedIds, state) {
-    if (!canvas || !w.Chart) return;
-    destroyChart(state);
+  function selectedAnalyses(analyses, selectedIds) {
     var selected = [];
     analyses.forEach(function (a, idx) {
       if (selectedIds[a.id]) selected.push({ analysis: a, index: idx });
     });
+    return selected;
+  }
+
+  function yAxisTitleForRows(rows) {
+    var units = {};
+    rows.forEach(function (r) { units[r.unit] = true; });
+    if (units.pct && !units.ppm && !units.meq) return '%';
+    if (units.ppm && !units.pct) return 'ppm';
+    if (units.meq && !units.pct && !units.ppm) return 'meq';
+    return tr('analysis.compare_axis_value', 'Valor');
+  }
+
+  function renderBlockChart(canvas, rows, analyses, selectedIds, chartType, chartKey, state) {
+    if (!canvas || !w.Chart) return;
+    if (state.charts && state.charts[chartKey]) {
+      try { state.charts[chartKey].destroy(); } catch (e) {}
+      delete state.charts[chartKey];
+    }
+    var selected = selectedAnalyses(analyses, selectedIds);
     if (!selected.length) return;
 
     var chartRows = rows.filter(function (r) {
-      return r.chartable && r.values.some(function (v) { return v != null; });
+      return r.chartable !== false && r.values.some(function (v) { return v != null; });
     });
-    if (!chartRows.length) return;
-
-    var unitsUsed = {};
-    chartRows.forEach(function (r) { unitsUsed[r.unit] = true; });
-    var hasPct = !!unitsUsed.pct;
-    var hasPpm = !!unitsUsed.ppm;
-    var dual = hasPct && hasPpm;
-
-    // When dual, chart only % + ppm so axes stay meaningful.
-    if (dual) {
-      chartRows = chartRows.filter(function (r) {
-        return r.unit === 'pct' || r.unit === 'ppm';
-      });
-    }
     if (!chartRows.length) return;
 
     var labels = chartRows.map(function (r) {
-      var u = r.unit === 'pct' ? ' %' : (r.unit === 'ppm' ? ' ppm' : (r.unit === 'meq' ? ' meq' : ''));
-      return r.label + u;
+      return r.label + unitSuffix(r.unit);
+    });
+    var isBar = chartType === 'bar';
+    var datasets = selected.map(function (item, si) {
+      var color = CHART_COLORS[si % CHART_COLORS.length];
+      return {
+        label: analysisLabel(item.analysis, item.index),
+        data: chartRows.map(function (r) {
+          var v = r.values[item.index];
+          return v == null ? null : v;
+        }),
+        borderColor: color,
+        backgroundColor: isBar ? color + 'cc' : color + '33',
+        borderWidth: isBar ? 1 : 2,
+        tension: 0.25,
+        spanGaps: true,
+        fill: false,
+        maxBarThickness: 28
+      };
     });
 
-    var datasets;
-    if (dual) {
-      datasets = [];
-      selected.forEach(function (item, si) {
-        var color = CHART_COLORS[si % CHART_COLORS.length];
-        var base = analysisLabel(item.analysis, item.index);
-        datasets.push({
-          label: base + ' (%)',
-          data: chartRows.map(function (r) {
-            return r.unit === 'pct' ? r.values[item.index] : null;
-          }),
-          borderColor: color,
-          backgroundColor: color + '33',
-          tension: 0.2,
-          spanGaps: true,
-          yAxisID: 'yPct'
-        });
-        datasets.push({
-          label: base + ' (ppm)',
-          data: chartRows.map(function (r) {
-            return r.unit === 'ppm' ? r.values[item.index] : null;
-          }),
-          borderColor: color,
-          backgroundColor: 'transparent',
-          borderDash: [5, 4],
-          tension: 0.2,
-          spanGaps: true,
-          yAxisID: 'yPpm'
-        });
-      });
-    } else {
-      datasets = selected.map(function (item, si) {
-        var color = CHART_COLORS[si % CHART_COLORS.length];
-        return {
-          label: analysisLabel(item.analysis, item.index),
-          data: chartRows.map(function (r) {
-            var v = r.values[item.index];
-            return v == null ? null : v;
-          }),
-          borderColor: color,
-          backgroundColor: color + '33',
-          tension: 0.2,
-          spanGaps: true,
-          yAxisID: 'y'
-        };
-      });
-    }
-
-    var scales = {
-      x: {
-        ticks: { maxRotation: 60, minRotation: 30, font: { size: 10 } }
-      }
-    };
-    if (dual) {
-      scales.yPct = {
-        type: 'linear',
-        position: 'left',
-        title: { display: true, text: '%' },
-        grid: { drawOnChartArea: true }
-      };
-      scales.yPpm = {
-        type: 'linear',
-        position: 'right',
-        title: { display: true, text: 'ppm' },
-        grid: { drawOnChartArea: false }
-      };
-    } else {
-      scales.y = {
-        type: 'linear',
-        position: 'left',
-        title: {
-          display: true,
-          text: hasPct ? '%' : (hasPpm ? 'ppm' : tr('analysis.compare_axis_value', 'Valor'))
-        }
-      };
-    }
-
-    state.chart = new w.Chart(canvas.getContext('2d'), {
-      type: 'line',
+    if (!state.charts) state.charts = {};
+    state.charts[chartKey] = new w.Chart(canvas.getContext('2d'), {
+      type: isBar ? 'bar' : 'line',
       data: { labels: labels, datasets: datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-          tooltip: { callbacks: {
-            label: function (ctx) {
-              var v = ctx.parsed.y;
-              if (v == null) return ctx.dataset.label + ': —';
-              return ctx.dataset.label + ': ' + v;
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var v = ctx.parsed.y;
+                if (v == null) return ctx.dataset.label + ': —';
+                return ctx.dataset.label + ': ' + v;
+              }
             }
-          } }
+          }
         },
-        scales: scales
+        scales: {
+          x: {
+            ticks: { maxRotation: 50, minRotation: 20, font: { size: 9 } }
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            beginAtZero: true,
+            title: { display: true, text: yAxisTitleForRows(chartRows), font: { size: 11 } }
+          }
+        }
       }
     });
   }
@@ -325,33 +336,46 @@
     if (!host) return null;
     var state = {
       selected: {},
-      chart: null,
+      charts: {},
       getAnalyses: options.getAnalyses || function () { return []; }
     };
+
+    var chartsHtml = SOIL_BLOCKS.filter(function (b) { return b.chart; }).map(function (b) {
+      return (
+        '<div class="np-analysis-compare__chart-card" data-block="' + b.id + '">' +
+          '<h4 class="np-analysis-compare__chart-title">' +
+            tr(b.titleKey, b.title) +
+          '</h4>' +
+          '<div class="np-analysis-compare__chart-wrap">' +
+            '<canvas id="npSoilChart_' + b.id + '" aria-label="' + tr(b.titleKey, b.title) + '"></canvas>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
 
     host.innerHTML =
       '<details class="np-analysis-compare" open>' +
         '<summary class="np-analysis-compare__summary" data-i18n="analysis.compare_title">📊 ' +
-          tr('analysis.compare_title', 'Comparar análisis (tabla y gráfica)') +
+          tr('analysis.compare_title', 'Comparar análisis (tabla y gráficas)') +
         '</summary>' +
         '<div class="np-analysis-compare__body">' +
           '<p class="np-analysis-compare__hint" data-i18n="analysis.compare_hint">' +
-            tr('analysis.compare_hint', 'Cada columna es un análisis del proyecto. Activa las columnas que quieras ver en la gráfica. Eje Y izquierdo: % · derecho: ppm cuando ambos estén presentes.') +
+            tr(
+              'analysis.compare_hint',
+              'Cada columna es un análisis. Activa los que quieras comparar. Tabla y gráficas están agrupadas por bloques (pH, físicos/MO, macros, micros, % CIC).'
+            ) +
           '</p>' +
           '<div class="np-analysis-compare__cols" id="npSoilCompareCols"></div>' +
-          '<div class="np-analysis-compare__table-wrap"><table class="np-analysis-compare__table" id="npSoilCompareTable"><thead></thead><tbody></tbody></table></div>' +
-          '<div class="np-analysis-compare__chart-wrap"><canvas id="npSoilCompareChart" aria-label="' +
-            tr('analysis.compare_chart_aria', 'Gráfica comparación análisis de suelo') +
-          '"></canvas></div>' +
+          '<div class="np-analysis-compare__tables" id="npSoilCompareTables"></div>' +
+          '<div class="np-analysis-compare__charts" id="npSoilCompareCharts">' + chartsHtml + '</div>' +
         '</div>' +
       '</details>';
 
     function refresh() {
       var analyses = state.getAnalyses() || [];
       var colsEl = host.querySelector('#npSoilCompareCols');
-      var table = host.querySelector('#npSoilCompareTable');
-      var canvas = host.querySelector('#npSoilCompareChart');
-      if (!colsEl || !table) return;
+      var tablesHost = host.querySelector('#npSoilCompareTables');
+      if (!colsEl || !tablesHost) return;
 
       var idSet = {};
       analyses.forEach(function (a) { idSet[a.id] = true; });
@@ -377,36 +401,62 @@
       });
 
       var rows = buildCompareRows(analyses, SOIL_FIELDS);
-      var thead = table.querySelector('thead');
-      var tbody = table.querySelector('tbody');
-      thead.innerHTML = '';
-      tbody.innerHTML = '';
-      var hr = document.createElement('tr');
-      hr.innerHTML = '<th>' + tr('analysis.compare_param', 'Parámetro') + '</th>';
-      analyses.forEach(function (a, idx) {
-        var th = document.createElement('th');
-        th.textContent = analysisLabel(a, idx);
-        if (state.selected[a.id]) th.className = 'is-on';
-        hr.appendChild(th);
-      });
-      thead.appendChild(hr);
-
-      rows.forEach(function (row) {
-        var tr = document.createElement('tr');
-        var unitHint = row.unit === 'pct' ? ' (%)' : (row.unit === 'ppm' ? ' (ppm)' : (row.unit === 'meq' ? ' (meq)' : ''));
-        var td0 = document.createElement('td');
-        td0.textContent = row.label + unitHint;
-        tr.appendChild(td0);
-        row.values.forEach(function (v) {
-          var td = document.createElement('td');
-          td.textContent = v == null ? '—' : String(v);
-          tr.appendChild(td);
+      tablesHost.innerHTML = '';
+      SOIL_BLOCKS.forEach(function (block) {
+        var blockRows = rows.filter(function (r) { return r.block === block.id; });
+        if (!blockRows.length) return;
+        var wrap = document.createElement('div');
+        wrap.className = 'np-analysis-compare__table-block np-analysis-compare__table-block--' + block.id;
+        wrap.innerHTML =
+          '<h4 class="np-analysis-compare__block-title">' + tr(block.titleKey, block.title) + '</h4>' +
+          '<div class="np-analysis-compare__table-wrap">' +
+            '<table class="np-analysis-compare__table"><thead></thead><tbody></tbody></table>' +
+          '</div>';
+        var table = wrap.querySelector('table');
+        var thead = table.querySelector('thead');
+        var tbody = table.querySelector('tbody');
+        var hr = document.createElement('tr');
+        var th0 = document.createElement('th');
+        th0.textContent = tr('analysis.compare_param', 'Parámetro');
+        hr.appendChild(th0);
+        analyses.forEach(function (a, idx) {
+          var th = document.createElement('th');
+          fillAnalysisColumnHeader(th, a, idx);
+          if (state.selected[a.id]) th.classList.add('is-on');
+          hr.appendChild(th);
         });
-        tbody.appendChild(tr);
+        thead.appendChild(hr);
+        blockRows.forEach(function (row) {
+          var trEl = document.createElement('tr');
+          var td0 = document.createElement('td');
+          td0.textContent = row.label + unitSuffix(row.unit);
+          trEl.appendChild(td0);
+          row.values.forEach(function (v) {
+            var td = document.createElement('td');
+            td.textContent = v == null ? '—' : String(v);
+            trEl.appendChild(td);
+          });
+          tbody.appendChild(trEl);
+        });
+        tablesHost.appendChild(wrap);
       });
 
       ensureChartJs(function () {
-        renderCompareChart(canvas, rows, analyses, state.selected, state);
+        destroyCharts(state);
+        SOIL_BLOCKS.forEach(function (block) {
+          if (!block.chart) return;
+          var canvas = host.querySelector('#npSoilChart_' + block.id);
+          var blockRows = rows.filter(function (r) { return r.block === block.id; });
+          renderBlockChart(
+            canvas,
+            blockRows,
+            analyses,
+            state.selected,
+            block.chartType,
+            block.id,
+            state
+          );
+        });
       });
     }
 
@@ -415,15 +465,37 @@
     return state;
   }
 
+  function isDetectionLimitValue(s) {
+    var t = String(s || '').trim();
+    if (!t) return false;
+    if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return true;
+    if (/^[<>]=?\s*\d/.test(t)) return true;
+    return false;
+  }
+
+  function isPlainNumericValue(s) {
+    var t = String(s || '').trim().replace(/,/g, '');
+    if (!t) return false;
+    if (isDetectionLimitValue(t)) return false;
+    return /^-?\d+(\.\d+)?$/.test(t);
+  }
+
   function flattenDetected(fields) {
     var out = [];
+    var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1 };
     SOIL_REVIEW_FIELDS.forEach(function (f) {
       var val = getByPath(fields, f.path);
+      var str = val === null || val === undefined ? '' : String(val);
+      var isText = !!textPaths[f.path];
+      var autoCheck = str !== '' && (isText || isPlainNumericValue(str));
+      var lim = str && isDetectionLimitValue(str)
+        ? ' ' + tr('analysis.pdf_limit_tag', '⚠ límite')
+        : '';
       out.push({
         path: f.path,
-        label: f.label,
-        value: val === null || val === undefined ? '' : String(val),
-        checked: val !== '' && val !== null && val !== undefined
+        label: fieldLabel(f) + lim,
+        value: str,
+        checked: autoCheck
       });
     });
     return out;
@@ -449,6 +521,12 @@
         '</div>' +
         '<p class="np-lab-pdf-modal__intro">' +
           tr('analysis.pdf_review_intro', 'Marca los campos a aplicar. Corrige o completa los vacíos. Luego confirma para llenar el análisis.') +
+        '</p>' +
+        '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#b45309;">' +
+          tr(
+            'analysis.pdf_review_limits_hint',
+            'Si ves valores como &lt;25 o ND (límite de detección), cámbialos a un número antes de aplicar, o déjalos sin marcar.'
+          ) +
         '</p>' +
         (fields && fields.notes ? '<p class="np-lab-pdf-modal__notes">' + String(fields.notes).replace(/</g, '&lt;') + '</p>' : '') +
         '<div class="np-lab-pdf-modal__actions-top">' +
@@ -523,6 +601,7 @@
 
   w.NpAnalysisCompare = {
     SOIL_FIELDS: SOIL_FIELDS,
+    SOIL_BLOCKS: SOIL_BLOCKS,
     SOIL_REVIEW_FIELDS: SOIL_REVIEW_FIELDS,
     getByPath: getByPath,
     setByPath: setByPath,

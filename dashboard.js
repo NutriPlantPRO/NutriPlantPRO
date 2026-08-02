@@ -22130,7 +22130,18 @@ window.handleSoilPdfFile = async function handleSoilPdfFile(file) {
     });
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok || !data.ok || !data.fields) {
-      alert((data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.'));
+      var errMsg = (data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.');
+      if (data && (data.code === 'quota_exceeded' || data.code === 'quota_preventive_block')) {
+        errMsg = dashboardT(
+          'analysis.pdf_quota',
+          'Sin créditos de IA suficientes. Cada extracción PDF cuesta {n} créditos (misma bolsa que el chat).',
+          { n: (data.credits_required != null ? data.credits_required : 3) }
+        );
+        if (data.error) errMsg = data.error;
+      } else if (data && data.code === 'chat_blocked') {
+        errMsg = data.error || dashboardT('analysis.pdf_chat_blocked', 'La IA está deshabilitada para tu cuenta.');
+      }
+      alert(errMsg);
       return;
     }
     if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.openSoilReviewModal !== 'function') {
@@ -22175,7 +22186,20 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
     }
   }
 
-  function mergeGroup(groupName, src) {
+  function isDetectionLimitValue(s) {
+    var t = String(s || '').trim();
+    if (!t) return false;
+    if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return true;
+    return /^[<>]=?\s*\d/.test(t);
+  }
+  function isPlainNumericValue(s) {
+    var t = String(s || '').trim().replace(/,/g, '');
+    if (!t || isDetectionLimitValue(t)) return false;
+    return /^-?\d+(\.\d+)?$/.test(t);
+  }
+  var limitNotes = [];
+
+  function mergeGroup(groupName, src, numericOnly) {
     if (!src || typeof src !== 'object') return;
     if (!analysis[groupName] || typeof analysis[groupName] !== 'object') analysis[groupName] = {};
     Object.keys(src).forEach(function (k) {
@@ -22183,14 +22207,27 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
       if (v === undefined || v === null) return;
       var s = String(v).trim();
       if (s === '') return;
+      if (numericOnly && isDetectionLimitValue(s)) {
+        limitNotes.push(groupName + '.' + k + '=' + s);
+        return;
+      }
+      if (numericOnly && !isPlainNumericValue(s) && k !== 'pMethod' && k !== 'texturalClass') {
+        // Texto raro en campo numérico: no forzar al input number
+        limitNotes.push(groupName + '.' + k + '=' + s);
+        return;
+      }
       analysis[groupName][k] = s;
     });
   }
 
   if (fields.title) analysis.title = String(fields.title).trim();
   if (fields.date) analysis.date = String(fields.date).trim();
-  mergeGroup('physical', fields.physical);
-  mergeGroup('phSection', fields.phSection);
+  mergeGroup('physical', fields.physical, false);
+  // physical numeric-ish fields still ok as strings in project data
+  if (fields.physical && fields.physical.texturalClass) {
+    analysis.physical.texturalClass = String(fields.physical.texturalClass).trim();
+  }
+  mergeGroup('phSection', fields.phSection, true);
   if (fields.fertility) {
     if (!analysis.fertility) analysis.fertility = {};
     Object.keys(fields.fertility).forEach(function (k) {
@@ -22199,11 +22236,24 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
       if (v === undefined || v === null) return;
       var s = String(v).trim();
       if (s === '') return;
+      if (k === 'pMethod') {
+        analysis.fertility[k] = s;
+        return;
+      }
+      if (k === 'sReportedAs') return;
+      if (isDetectionLimitValue(s) || !isPlainNumericValue(s)) {
+        limitNotes.push('fertility.' + k + '=' + s);
+        return;
+      }
       analysis.fertility[k] = s;
     });
   }
-  mergeGroup('cations', fields.cations);
-  mergeGroup('ratios', fields.ratios);
+  mergeGroup('cations', fields.cations, true);
+  mergeGroup('ratios', fields.ratios, true);
+  if (limitNotes.length) {
+    var hint = 'Límites lab (no aplicados como número): ' + limitNotes.join('; ');
+    analysis._pdfLimitNotes = hint;
+  }
 
   window.saveSoilAnalysesToProjectImmediate && window.saveSoilAnalysesToProjectImmediate();
   window.renderSoilAnalysesList && window.renderSoilAnalysesList();
