@@ -211,15 +211,6 @@
   border: 0;
 }
 
-.auth-preferences-bar__accent {
-  flex: 0 0 auto;
-  align-self: stretch;
-  width: 3px;
-  min-height: 38px;
-  border-radius: 2px;
-  background: #2563eb;
-}
-
 .auth-preferences-bar__intro {
   flex: 0 0 auto;
 }
@@ -577,11 +568,6 @@
     align-items: stretch;
     gap: 10px;
     width: 100%;
-  }
-
-  .auth-preferences-bar__accent {
-    min-height: 0;
-    align-self: stretch;
   }
 
   .auth-preferences-bar__controls {
