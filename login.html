@@ -30,9 +30,9 @@
   <meta name="theme-color" content="#16a34a">
   <script src="config-no-traducir-terminos.js"></script>
   
-  <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
+  <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=38" />
+  <link rel="stylesheet" href="auth.css?v=41" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -4498,13 +4498,16 @@
             panelsMobile.style.height = '';
           }
         } else {
-          // Igualar al alto de herramientas gratis: redes ocupa (tools − login − gap).
+          // Alto natural de herramientas (sin stretch) − login − gap. Tope duro para no alargar la página.
           var tools = document.querySelector('.login-split__tools');
           var login = document.querySelector('.login-split__login');
           if (tools && login) {
             var gap = 16;
-            var available = Math.round(tools.offsetHeight - login.offsetHeight - gap);
+            var toolsH = Math.round(tools.scrollHeight || tools.offsetHeight || 0);
+            var loginH = Math.round(login.offsetHeight || 0);
+            var available = toolsH - loginH - gap;
             if (available < 280) available = 280;
+            if (available > 640) available = 640;
             root.style.height = available + 'px';
             root.style.minHeight = available + 'px';
             root.style.maxHeight = available + 'px';
@@ -4512,7 +4515,8 @@
             if (panels) {
               var chrome = 118;
               panels.style.minHeight = Math.max(200, available - chrome) + 'px';
-              panels.style.height = '';
+              panels.style.height = Math.max(200, available - chrome) + 'px';
+              panels.style.maxHeight = Math.max(200, available - chrome) + 'px';
             }
           }
         }

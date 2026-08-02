@@ -7820,10 +7820,13 @@ html.embed-login body {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   margin-bottom: 0;
+  width: fit-content;
+  max-width: 100%;
 }
 .np-analysis-compare__tables {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -7832,6 +7835,9 @@ html.embed-login body {
   border-radius: 12px;
   padding: 10px 12px 12px;
   background: #f8fafc;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .np-analysis-compare__table-block--ph { border-color: #93c5fd; background: #f8fbff; }
 .np-analysis-compare__table-block--physical { border-color: #86efac; background: #f7fdf9; }
@@ -7848,16 +7854,16 @@ html.embed-login body {
   color: #0f172a;
 }
 .np-analysis-compare__table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
   font-size: 12px;
-  min-width: 420px;
+  min-width: 0;
   background: #fff;
 }
 .np-analysis-compare__table th,
 .np-analysis-compare__table td {
   border-bottom: 1px solid #f1f5f9;
-  padding: 7px 9px;
+  padding: 6px 8px;
   text-align: left;
   white-space: nowrap;
 }
@@ -7873,11 +7879,11 @@ html.embed-login body {
   color: #1d4ed8;
   background: #eff6ff;
 }
-/* Títulos de análisis: ancho acotado + hasta 2 renglones */
+/* Títulos de análisis: columnas compactas (evita hueco enorme) */
 .np-analysis-compare__table th.np-analysis-compare__th-analysis {
-  max-width: 9.5rem;
-  min-width: 5.5rem;
-  width: 9.5rem;
+  max-width: 7.25rem;
+  min-width: 4.5rem;
+  width: 7.25rem;
   white-space: normal;
   vertical-align: bottom;
   line-height: 1.25;
