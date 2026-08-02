@@ -985,7 +985,7 @@
   .auth-page .auth-main {
     align-items: flex-start;
     justify-content: center;
-    padding: 20px 24px 32px;
+    padding: 20px 16px 32px;
     margin-top: 56px;
     width: 100%;
   }
@@ -996,6 +996,37 @@
     display: block;
     margin: 0 auto;
   }
+
+  /* Preferencias: mismo ancho útil que login | herramientas */
+  .auth-page #authPreferencesHome {
+    width: 100%;
+    max-width: none;
+    margin: 0 0 12px;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .auth-page .auth-preferences-bar {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    gap: 14px 22px;
+    padding: 10px 14px 9px;
+  }
+
+  /* Laptop: Manual más separado de Contáctanos */
+  .auth-page .auth-preferences-bar__portal {
+    gap: 10px 8px;
+    justify-content: flex-end;
+  }
+
+  .auth-page .auth-preferences-bar__contact {
+    margin-left: 18px;
+    padding-left: 18px;
+    border-left: 1px solid #e2e8f0;
+    gap: 8px;
+  }
+}
 
   .login-split {
     display: grid;
@@ -1021,13 +1052,12 @@
     grid-row: 2;
     display: flex;
     flex-direction: column;
-    flex: 0 0 auto;
-    align-self: start;
-    /* Alto fijo: no se estira hasta el footer / columna de herramientas */
-    --login-social-panel-h: 460px;
-    height: var(--login-social-panel-h);
-    max-height: var(--login-social-panel-h);
-    min-height: var(--login-social-panel-h);
+    flex: 1 1 auto;
+    align-self: stretch;
+    /* Alto = resto de la columna de herramientas (login arriba + redes abajo) */
+    height: 100%;
+    min-height: 280px;
+    max-height: none;
     padding: 18px 20px 16px;
     overflow: hidden;
   }
@@ -1095,6 +1125,16 @@
 }
 
 @media (min-width: 1024px) {
+  .auth-page .auth-main {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .auth-page .auth-preferences-bar__contact {
+    margin-left: 24px;
+    padding-left: 22px;
+  }
+
   .login-split {
     grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
     gap: 20px;

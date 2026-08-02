@@ -6541,6 +6541,15 @@ function np_renderProjects(){
       }
     }
     if (act === "dup") {
+      var projMeta = np_loadProjects().find(function (x) { return x.id === id; });
+      var projLabel = (projMeta && (projMeta.title || projMeta.name)) || id;
+      if (!confirm(dashboardT(
+        'dashboard.confirm_duplicate_project',
+        '¿Duplicar el proyecto "{name}"?\n\nSe creará una copia con toda su información.',
+        { name: projLabel }
+      ))) {
+        return;
+      }
       const copy = np_duplicateProject(id);
       if (copy) np_renderProjects();
     }
@@ -22123,6 +22132,9 @@ window.handleSoilPdfFile = async function handleSoilPdfFile(file) {
       },
       body: JSON.stringify({
         analysisType: 'soil',
+        language: (window.NpI18n && typeof window.NpI18n.getLanguage === 'function'
+          ? window.NpI18n.getLanguage()
+          : 'es') || 'es',
         filename: file.name || 'analisis-suelo.pdf',
         mimeType: file.type || 'application/pdf',
         fileBase64: base64

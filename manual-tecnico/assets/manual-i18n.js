@@ -58,6 +58,10 @@
     },
     flow_cta: { es: 'Ver guía de flujo →', en: 'See flow guide →' },
     pillars_h2: { es: 'Pilares del manual', en: 'Manual pillars' },
+    pillars_note: {
+      es: 'Mapa de temas del manual (no son enlaces). Los capítulos clicables están más abajo.',
+      en: 'Topic map of the manual (not links). Clickable chapters are below.'
+    },
     chapters_h2: { es: 'Capítulos', en: 'Chapters' },
     chapters_meta: {
       es: '25 capítulos publicados · El icono de cada enlace indica el pilar al que pertenece (arriba).',
@@ -309,10 +313,13 @@
       else if (txt === 'Capítulos' || txt === 'Chapters') h2.textContent = t('chapters_h2');
       else if (txt === 'Autoría técnica' || txt === 'Technical authorship') h2.textContent = t('authorship_h2');
     });
-    var chaptersMeta = document.querySelector('h2 + .mt-meta');
-    if (chaptersMeta && /25 capítulos|25 published/i.test(chaptersMeta.textContent || '')) {
-      chaptersMeta.textContent = t('chapters_meta');
-    }
+    var pillarsNote = document.querySelector('.mt-pillars-note');
+    if (pillarsNote) pillarsNote.textContent = t('pillars_note');
+    document.querySelectorAll('h2').forEach(function (h2) {
+      if (!/Capítulos|Chapters/.test(h2.textContent || '')) return;
+      var meta = h2.nextElementSibling;
+      if (meta && meta.classList.contains('mt-meta')) meta.textContent = t('chapters_meta');
+    });
     document.querySelectorAll('h2').forEach(function (h2) {
       if (/Autoría técnica|Technical authorship/.test(h2.textContent || '')) {
         var meta = h2.nextElementSibling;

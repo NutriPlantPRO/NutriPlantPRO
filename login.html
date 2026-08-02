@@ -32,7 +32,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=36" />
+  <link rel="stylesheet" href="auth.css?v=38" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -4388,9 +4388,13 @@
           var body = container && container.closest('.login-social-pane__body');
           h = Math.floor((body && body.clientHeight) || 0);
         }
-        if (!h) h = 320;
-        // Plugin FB dentro del alto fijo del panel (deja aire para el CTA).
-        return Math.max(240, Math.min(380, h));
+        if (!h) {
+          var panels = root.querySelector('.login-social-panels');
+          h = Math.floor((panels && panels.clientHeight) || 0) - 48;
+        }
+        if (!h) h = 360;
+        // Crece con el panel (alineado a herramientas); deja aire para el CTA.
+        return Math.max(260, Math.min(720, h));
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4494,15 +4498,22 @@
             panelsMobile.style.height = '';
           }
         } else {
-          // Alto definido en CSS (--login-social-panel-h). No igualar a herramientas:
-          // eso estiraba el panel hasta el footer.
-          root.style.minHeight = '';
-          root.style.maxHeight = '';
-          root.style.height = '';
-          var panels = root.querySelector('.login-social-panels');
-          if (panels) {
-            panels.style.minHeight = '';
-            panels.style.height = '';
+          // Igualar al alto de herramientas gratis: redes ocupa (tools − login − gap).
+          var tools = document.querySelector('.login-split__tools');
+          var login = document.querySelector('.login-split__login');
+          if (tools && login) {
+            var gap = 16;
+            var available = Math.round(tools.offsetHeight - login.offsetHeight - gap);
+            if (available < 280) available = 280;
+            root.style.height = available + 'px';
+            root.style.minHeight = available + 'px';
+            root.style.maxHeight = available + 'px';
+            var panels = root.querySelector('.login-social-panels');
+            if (panels) {
+              var chrome = 118;
+              panels.style.minHeight = Math.max(200, available - chrome) + 'px';
+              panels.style.height = '';
+            }
           }
         }
         var fbPane = root.querySelector('[data-social-panel="facebook"]');

@@ -223,18 +223,25 @@ function canonForm(s) {
   return asStr(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function noteLang(lang) {
+  return String(lang || '').toLowerCase().slice(0, 2) === 'en' ? 'en' : 'es';
+}
+
+function tNote(lang, es, en) {
+  return noteLang(lang) === 'en' ? en : es;
+}
+
 /**
  * Convierte variantes comunes de lab (P₂O₅, K₂O, SO₄, NO₃, …) a elemental.
  * Lee fertility.forms.{p,k,ca,mg,s,nNo3,…} o *ReportedAs legacy (sReportedAs).
  */
-function normalizeFertilityForms(fertility, notesArr) {
+function normalizeFertilityForms(fertility, notesArr, lang) {
   if (!fertility || typeof fertility !== 'object') return;
   const forms = {};
   const srcForms = fertility.forms && typeof fertility.forms === 'object' ? fertility.forms : {};
   Object.keys(srcForms).forEach(function (k) {
     forms[k] = canonForm(srcForms[k]);
   });
-  // Legacy / aliases
   if (!forms.s && fertility.sReportedAs) forms.s = canonForm(fertility.sReportedAs);
   if (!forms.p && fertility.pReportedAs) forms.p = canonForm(fertility.pReportedAs);
   if (!forms.k && fertility.kReportedAs) forms.k = canonForm(fertility.kReportedAs);
@@ -281,92 +288,326 @@ function normalizeFertilityForms(fertility, notesArr) {
     if (conv && conv.field === field) {
       if (conv.factor === 1) {
         fertility[field] = roundStr(num, 3);
-        notesArr.push(field + ': ' + conv.label + ' (sin convertir)=' + fertility[field]);
+        notesArr.push(
+          tNote(
+            lang,
+            field + ': ' + conv.label + ' (sin convertir)=' + fertility[field],
+            field + ': ' + conv.label + ' (no conversion)=' + fertility[field]
+          )
+        );
       } else {
         fertility[field] = roundStr(num * conv.factor, 3);
         notesArr.push(
-          field + ': lab ' + form + '=' + raw + ' → elemental=' + fertility[field] + ' (' + conv.label + ')'
+          tNote(
+            lang,
+            field + ': lab ' + form + '=' + raw + ' → elemental=' + fertility[field] + ' (' + conv.label + ')',
+            field + ': lab ' + form + '=' + raw + ' → elemental=' + fertility[field] + ' (' + conv.label + ')'
+          )
         );
       }
       return;
     }
-    // Forma desconocida: dejar número y avisar
     fertility[field] = roundStr(num, 3);
-    notesArr.push(field + ': forma reportada "' + form + '" no mapeada; valor sin convertir=' + fertility[field]);
+    notesArr.push(
+      tNote(
+        lang,
+        field + ': forma reportada "' + form + '" no mapeada; valor sin convertir=' + fertility[field],
+        field + ': reported form "' + form + '" not mapped; value left as-is=' + fertility[field]
+      )
+    );
   });
 }
 
+function parseCationNum(v) {
+  const n = Number(String(v || '').replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+function sumFinite(arr) {
+  return arr.reduce((a, n) => a + (n == null ? 0 : n), 0);
+}
+
+function looksLikePctRow(vals, countHint) {
+  const nums = vals.filter((n) => n != null);
+  if (nums.length < (countHint || 3)) return false;
+  const s = sumFinite(nums);
+  const max = Math.max.apply(null, nums);
+  // Suma típica de bases ≈100; no usar umbral bajo (~70) o se confunde con meq+CIC mezclados
+  return s > 88 && s < 112 && max > 20;
+}
+
+function looksLikeMeqRow(vals) {
+  const nums = vals.filter((n) => n != null);
+  if (!nums.length) return false;
+  const s = sumFinite(nums);
+  const max = Math.max.apply(null, nums);
+  return s > 0 && s < 70 && max < 45;
+}
+
 /**
- * Evita confusión típica de tablas lab: fila "% Sat" vs "meq/100g" vs CIC.
- * Si hay % Sat + CIC, reconstruye meq = %/100 × CIC.
- * Si los "meq" suman ~100 y hay CIC real, eran % metidos en meq.
+ * Si Al/H vienen NA y el modelo metió la CIC en H, recupérala.
  */
-function reconcileSoilCations(cations, notesArr) {
+function rescueCicFromHydrogen(cations, notesArr, lang) {
+  let cic = parseCationNum(cations.cic);
+  const h = parseCationNum(cations.h);
+  const al = parseCationNum(cations.al);
+  if (cic != null && cic > 0) return cic;
+  if (h == null || h < 2 || h > 60) return null;
+  if (al != null && al > 0) return null;
+  const bases = ['ca', 'mg', 'k', 'na'].map((k) => parseCationNum(cations[k]));
+  const baseSum = sumFinite(bases);
+  // H ≈ CIC típica cuando las "bases" parecen % (suma alta) o no suman como meq≈H
+  if (looksLikePctRow(bases, 3) || Math.abs(baseSum - h) > 2) {
+    cations.cic = roundStr(h, 3);
+    cations.h = '';
+    cations.pctH = cations.pctH && parseCationNum(cations.pctH) === h ? '' : cations.pctH;
+    notesArr.push(
+      tNote(
+        lang,
+        'CIC: se tomó el valor que venía en H (Al/H no analizados)=' + cations.cic,
+        'CEC: took the value that was in H (Al/H not analyzed)=' + cations.cic
+      )
+    );
+    return h;
+  }
+  return null;
+}
+
+/**
+ * Cuando la IA mezcla filas % Sat / meq, busca 4 números que sumen ≈100
+ * entre ca/mg/k/na y pct* y reconstruye con CIC.
+ * Prefiere el subconjunto cuyos meq derivados coinciden con números “sobrantes” del pool.
+ */
+function recoverBaseSaturationFromPool(cations, cic, notesArr, lang) {
+  if (cic == null || cic <= 0 || cic > 80) return false;
+  const baseMeqKeys = ['ca', 'mg', 'k', 'na'];
+  const basePctKeys = ['pctCa', 'pctMg', 'pctK', 'pctNa'];
+  const pool = [];
+  baseMeqKeys.forEach((k) => {
+    const n = parseCationNum(cations[k]);
+    if (n != null && n > 0) pool.push(n);
+  });
+  basePctKeys.forEach((k) => {
+    const n = parseCationNum(cations[k]);
+    if (n != null && n > 0) pool.push(n);
+  });
+  if (pool.length < 4) return false;
+
+  const currentPct = basePctKeys.map((k) => parseCationNum(cations[k]));
+  const currentMeq = baseMeqKeys.map((k) => parseCationNum(cations[k]));
+  const pctAlreadyGood = looksLikePctRow(currentPct, 4);
+  const meqMatchesPct =
+    pctAlreadyGood &&
+    cic > 0 &&
+    currentMeq.filter((m, i) => {
+      if (m == null || currentPct[i] == null) return false;
+      return Math.abs(m - (currentPct[i] / 100) * cic) < Math.max(0.15, cic * 0.02);
+    }).length >= 3;
+  if (pctAlreadyGood && meqMatchesPct) return false;
+
+  let best = null;
+  const n = pool.length;
+  for (let a = 0; a < n - 3; a++) {
+    for (let b = a + 1; b < n - 2; b++) {
+      for (let c = b + 1; c < n - 1; c++) {
+        for (let d = c + 1; d < n; d++) {
+          const idxs = [a, b, c, d];
+          const subset = idxs.map((i) => pool[i]);
+          const s = sumFinite(subset);
+          if (s < 90 || s > 110) continue;
+          // Evitar elegir meq reales como si fueran % (p.ej. 7.82 dentro del cuarteto)
+          const pctSorted = subset.slice().sort((x, y) => y - x);
+          if (pctSorted[0] < 25) continue; // Ca% suele ser el mayor
+          const meqDerived = pctSorted.map((p) => (p / 100) * cic);
+          const used = idxs.slice();
+          const leftovers = pool.filter((_, i) => used.indexOf(i) < 0);
+          let match = 0;
+          meqDerived.forEach((m) => {
+            const hit = leftovers.findIndex((v) => Math.abs(v - m) < Math.max(0.12, cic * 0.015));
+            if (hit >= 0) {
+              match += 1;
+              leftovers.splice(hit, 1);
+            }
+          });
+          const err = Math.abs(s - 100);
+          // match de sobrantes pesa más que err pequeño (evita 54.7+37.6+7.82+0.55≈100)
+          const score = match * 10 - err;
+          if (!best || score > best.score) {
+            best = { subset: pctSorted, err, sum: s, match, score };
+          }
+        }
+      }
+    }
+  }
+  // Exigir al menos 2 meq del lab reconocibles en el pool, o suma muy cercana a 100
+  if (!best || best.err > 8) return false;
+  if (best.match < 2 && best.err > 1.5) return false;
+
+  const pctSorted = best.subset;
+  basePctKeys.forEach((k, i) => {
+    cations[k] = roundStr(pctSorted[i], 2);
+  });
+  baseMeqKeys.forEach((k, i) => {
+    cations[k] = roundStr((pctSorted[i] / 100) * cic, 4);
+  });
+  cations.cic = roundStr(cic, 3);
+  notesArr.push(
+    tNote(
+      lang,
+      'Cationes: se corrigió confusión % Sat / meq (suma %≈' +
+        roundStr(best.sum, 2) +
+        '); meq = % × CIC=' +
+        cations.cic,
+      'Cations: fixed % sat / meq mix-up (% sum≈' +
+        roundStr(best.sum, 2) +
+        '); meq = % × CEC=' +
+        cations.cic
+    )
+  );
+  return true;
+}
+
+/**
+ * Evita confusión típica de tablas lab: fila "% Sat" (arriba) vs "meq/100g" (abajo) vs CIC.
+ */
+function reconcileSoilCations(cations, notesArr, lang) {
   if (!cations || typeof cations !== 'object') return;
-  const meqKeys = ['ca', 'mg', 'k', 'na', 'al', 'h'];
-  const pctKeys = ['pctCa', 'pctMg', 'pctK', 'pctNa', 'pctAl', 'pctH'];
+  const baseMeqKeys = ['ca', 'mg', 'k', 'na'];
+  const basePctKeys = ['pctCa', 'pctMg', 'pctK', 'pctNa'];
 
-  const meqs = meqKeys.map((k) => {
-    const n = Number(String(cations[k] || '').replace(/,/g, ''));
-    return Number.isFinite(n) ? n : null;
-  });
-  const pcts = pctKeys.map((k) => {
-    const n = Number(String(cations[k] || '').replace(/,/g, ''));
-    return Number.isFinite(n) ? n : null;
-  });
-  let cic = Number(String(cations.cic || '').replace(/,/g, ''));
-  if (!Number.isFinite(cic)) cic = null;
+  let cic = rescueCicFromHydrogen(cations, notesArr, lang);
+  if (cic == null) {
+    cic = parseCationNum(cations.cic);
+    if (!Number.isFinite(cic) || cic <= 0) cic = null;
+  }
 
-  const meqSum = meqs.reduce((a, n) => a + (n == null ? 0 : n), 0);
-  const pctSum = pcts.reduce((a, n) => a + (n == null ? 0 : n), 0);
-  const pctCount = pcts.filter((n) => n != null).length;
-  const meqCount = meqs.filter((n) => n != null).length;
+  let baseMeqs = baseMeqKeys.map((k) => parseCationNum(cations[k]));
+  let basePcts = basePctKeys.map((k) => parseCationNum(cations[k]));
+  let meqSum = sumFinite(baseMeqs);
+  let pctSum = sumFinite(basePcts);
+  const meqCount = baseMeqs.filter((n) => n != null).length;
+  const pctCount = basePcts.filter((n) => n != null).length;
 
-  if (meqSum > 85 && meqSum < 115 && cic != null && cic > 0 && cic < 60 && meqCount >= 4) {
-    meqKeys.forEach((k, i) => {
-      const p = meqs[i];
-      if (p == null) return;
-      cations[pctKeys[i]] = roundStr(p, 2);
-      cations[k] = roundStr((p / 100) * cic, 4);
+  // Primero intentar recuperar mezcla parcial (% y meq intercalados) con CIC conocida
+  if (recoverBaseSaturationFromPool(cations, cic, notesArr, lang)) {
+    return;
+  }
+
+  // Filas completas intercambiadas: meq←% y pct←meq (solo si la fila meq suma ≈100 limpia)
+  if (
+    looksLikePctRow(baseMeqs, 4) &&
+    (looksLikeMeqRow(basePcts) || pctSum < 70 || pctCount < 3)
+  ) {
+    baseMeqKeys.forEach((k, i) => {
+      const pctVal = baseMeqs[i];
+      const meqVal = basePcts[i];
+      cations[basePctKeys[i]] = pctVal != null ? roundStr(pctVal, 2) : '';
+      cations[k] = meqVal != null ? roundStr(meqVal, 4) : '';
     });
     notesArr.push(
-      'Cationes: los valores en meq parecían % saturación (suma≈100); se recalcularon meq con CIC=' + cic
+      tNote(
+        lang,
+        'Cationes: se intercambiaron filas % Sat ↔ meq (el lab pone % arriba y meq abajo)',
+        'Cations: swapped % sat ↔ meq rows (lab puts % on top and meq below)'
+      )
+    );
+    if (cic != null && cic > 0) {
+      baseMeqKeys.forEach((k, i) => {
+        const p = parseCationNum(cations[basePctKeys[i]]);
+        if (p == null) return;
+        // Si tras el swap el meq quedó vacío o raro, recalcular desde % × CIC
+        const m = parseCationNum(cations[k]);
+        if (m == null || Math.abs(m - (p / 100) * cic) > Math.max(0.2, cic * 0.03)) {
+          cations[k] = roundStr((p / 100) * cic, 4);
+        }
+      });
+    }
+    return;
+  }
+
+  baseMeqs = baseMeqKeys.map((k) => parseCationNum(cations[k]));
+  basePcts = basePctKeys.map((k) => parseCationNum(cations[k]));
+  meqSum = sumFinite(baseMeqs);
+  pctSum = sumFinite(basePcts);
+
+  if (looksLikePctRow(baseMeqs, 3) && cic != null && cic > 0 && cic < 80) {
+    baseMeqKeys.forEach((k, i) => {
+      const p = baseMeqs[i];
+      if (p == null) return;
+      cations[basePctKeys[i]] = roundStr(p, 2);
+      cations[k] = roundStr((p / 100) * cic, 4);
+    });
+    cations.cic = roundStr(cic, 3);
+    notesArr.push(
+      tNote(
+        lang,
+        'Cationes: los valores en meq parecían % saturación (suma≈100); se recalcularon meq con CIC=' + cic,
+        'Cations: meq values looked like % saturation (sum≈100); meq recalculated with CEC=' + cic
+      )
     );
     return;
   }
 
-  if (cic != null && cic > 0 && pctCount >= 4 && pctSum > 90 && pctSum < 110) {
-    meqKeys.forEach((k, i) => {
-      const p = pcts[i];
+  const pctCountNow = basePcts.filter((n) => n != null).length;
+  if (cic != null && cic > 0 && pctCountNow >= 3 && pctSum > 85 && pctSum < 115) {
+    baseMeqKeys.forEach((k, i) => {
+      const p = basePcts[i];
       if (p == null) return;
       cations[k] = roundStr((p / 100) * cic, 4);
     });
     cations.cic = roundStr(cic, 3);
     notesArr.push(
-      'Cationes: meq reconstruidos desde % Sat del lab × CIC=' + cic + ' (evita confusión de filas)'
+      tNote(
+        lang,
+        'Cationes: meq reconstruidos desde % Sat del lab × CIC=' + cic + ' (evita confusión de filas)',
+        'Cations: meq rebuilt from lab % sat × CEC=' + cic + ' (avoids row mix-ups)'
+      )
     );
     return;
   }
 
-  if (meqCount >= 4 && meqSum > 0 && meqSum < 85) {
+  // Solo inventar CIC=suma si los meq parecen reales (no % disfrazados)
+  if (meqCount >= 4 && looksLikeMeqRow(baseMeqs) && meqSum > 0 && meqSum < 70) {
     if (cic == null || cic <= 0) {
       cations.cic = roundStr(meqSum, 3);
-      notesArr.push('CIC: no venía claro; se usó suma de meq=' + cations.cic);
+      notesArr.push(
+        tNote(
+          lang,
+          'CIC: no venía claro; se usó suma de meq=' + cations.cic,
+          'CEC: was unclear; used sum of meq=' + cations.cic
+        )
+      );
       cic = meqSum;
     }
-    if (pctCount < 4 && cic > 0) {
-      meqKeys.forEach((k, i) => {
-        const m = meqs[i];
+    const pctCountFill = basePctKeys.filter((k) => parseCationNum(cations[k]) != null).length;
+    if (pctCountFill < 4 && cic > 0) {
+      baseMeqKeys.forEach((k, i) => {
+        const m = parseCationNum(cations[k]);
         if (m == null) return;
-        if (pcts[i] == null) cations[pctKeys[i]] = roundStr((m / cic) * 100, 2);
+        if (parseCationNum(cations[basePctKeys[i]]) == null) {
+          cations[basePctKeys[i]] = roundStr((m / cic) * 100, 2);
+        }
       });
     }
+  } else if (
+    (cic == null || cic <= 0) &&
+    looksLikePctRow(baseMeqs, 3) &&
+    meqSum > 70
+  ) {
+    notesArr.push(
+      tNote(
+        lang,
+        'Cationes: los meq parecen % saturación; revisa la fila meq/CIC del informe antes de aplicar',
+        'Cations: meq fields look like % saturation; check the meq/CEC row in the report before applying'
+      )
+    );
   }
 }
 
-function normalizeSoilPayload(raw) {
+function normalizeSoilPayload(raw, lang) {
   const base = emptySoilShape();
   if (!raw || typeof raw !== 'object') return base;
+  lang = noteLang(lang);
   base.title = asStr(raw.title);
   base.date = asStr(raw.date);
   base.notes = asStr(raw.notes);
@@ -401,11 +642,14 @@ function normalizeSoilPayload(raw) {
     else if (pm.includes('bray')) base.fertility.pMethod = 'Bray';
     else if (pm.includes('mehlich')) base.fertility.pMethod = 'Mehlich';
   }
-  normalizeFertilityForms(base.fertility, convertNotes);
-  reconcileSoilCations(base.cations, convertNotes);
+  normalizeFertilityForms(base.fertility, convertNotes, lang);
+  reconcileSoilCations(base.cations, convertNotes, lang);
   if (limitHints.length) {
-    const hint =
-      'Límites de detección (define el número en la revisión): ' + limitHints.join('; ');
+    const hint = tNote(
+      lang,
+      'Límites de detección (define el número en la revisión): ' + limitHints.join('; '),
+      'Detection limits (set a number in review): ' + limitHints.join('; ')
+    );
     base.notes = base.notes ? base.notes + ' | ' + hint : hint;
   }
   if (convertNotes.length) {
@@ -415,13 +659,21 @@ function normalizeSoilPayload(raw) {
   return base;
 }
 
-function soilPrompt() {
+function soilPrompt(lang) {
+  const en = noteLang(lang) === 'en';
+  const notesRule = en
+    ? '- notes: short note in ENGLISH if the report is ambiguous, incomplete, has limits (<, ND), or SO4 vs S forms. Always write notes in English.'
+    : '- notes: breve aviso en ESPAÑOL si el informe es ambiguo, incompleto, tiene límites (<, ND) o formas SO4 vs S. Escribe notes siempre en español.';
   return [
-    'Eres un extractor de análisis de suelo agrícola para NutriPlant PRO.',
-    'Lee el PDF o imagen del laboratorio y devuelve SOLO un JSON válido (sin markdown) con esta forma exacta:',
+    en
+      ? 'You are a soil lab report extractor for NutriPlant PRO.'
+      : 'Eres un extractor de análisis de suelo agrícola para NutriPlant PRO.',
+    en
+      ? 'Read the lab PDF or image and return ONLY valid JSON (no markdown) with this exact shape:'
+      : 'Lee el PDF o imagen del laboratorio y devuelve SOLO un JSON válido (sin markdown) con esta forma exacta:',
     JSON.stringify(emptySoilShape(), null, 2),
     '',
-    'Reglas:',
+    en ? 'Rules:' : 'Reglas:',
     '- Usa números en string. Si un valor no aparece, deja "".',
     '- No inventes datos. Prefiere vacío a adivinar.',
     '- IMPORTANTE: si el lab reporta límite de detección o no cuantificado, NO inventes un número.',
@@ -434,18 +686,23 @@ function soilPrompt() {
     '  s="SO4"|"SO3"|"S"|"S-SO4"; nNo3="NO3"|"N-NO3"|"NH4"; fe="Fe2O3"|"Fe"; mn="MnO"|"Mn"; zn="ZnO"|"Zn".',
     '  El servidor convierte óxido/ion → elemental (P₂O₅×0.436, K₂O×0.830, SO₄×0.334, NO₃×0.226, etc.).',
     '  Si ya es elemental, forms="P"/"K"/"S"/… o "".',
-    '- CATIONES (muy importante — tablas con 2 filas):',
-    '  * Fila "meq/100g" o "cmol+/kg" → cations.ca/mg/k/na/al/h y cations.cic (típico Ca~1-40, CIC~2-50).',
-    '  * Fila "% Sat" / "% saturación" / "% bases" → cations.pctCa/pctMg/pctK/pctNa/pctAl/pctH (suman ~100).',
-    '  * NUNCA copies un % (ej. 75.8 o 1.42) dentro de ca/mg/k/na meq.',
-    '  * NUNCA copies un meq (ej. 4.80) dentro de pct*.',
-    '  * CIC/CEC va en cations.cic (meq), NO como porcentaje.',
-    '  * Si la tabla muestra ambas filas, llena AMBAS con los valores exactos del lab.',
+    '- CATIONES (CRÍTICO — formato típico de lab mexicano/español):',
+    '  Tabla "Cationes Intercambiables / Porcentaje de saturación de bases":',
+    '  * Fila SUPERIOR "% Sat" → SOLO pctCa, pctMg, pctK, pctNa, pctAl, pctH (suman ≈100).',
+    '  * Fila INFERIOR "me/100g" o "meq/100g" → SOLO ca, mg, k, na, al, h y CIC en cations.cic.',
+    '  * Las etiquetas Ca Mg K Na Al H CIC suelen estar ABAJO; no te guíes solo por el orden visual.',
+    '  * Ejemplo real: %Sat Ca=54.7 Mg=37.6 K=3.85 Na=3.64 | meq Ca=7.82 Mg=5.38 K=0.55 Na=0.52 | CIC=14.3',
+    '  * En ese ejemplo: cations.ca="7.82" (NO 54.7), cations.pctCa="54.7", cations.cic="14.3".',
+    '  * NA / ND / vacío en Al o H → deja "" ; NUNCA pongas la CIC dentro de cations.h.',
+    '  * CIC/CEC va SOLO en cations.cic (meq ~2-50). NUNCA como % ni en H.',
+    '  * NUNCA copies un % (54.7, 37.6…) en ca/mg/k/na meq.',
+    '  * NUNCA copies un meq (7.82, 0.55…) en pct*.',
+    '  * Si hay ambas filas, llena AMBAS con los valores exactos del lab (fila correcta → campo correcto).',
     '- phSection.salinity = CE en dS/m si aparece.',
     '- physical: % para saturación/CC/PMP; bulkDensity g/cm3; hydraulicConductivity cm/h.',
     '- date en YYYY-MM-DD si puedes; title = lab/cliente/rancho si aparece.',
     '- confidence: "high" | "medium" | "low".',
-    '- notes: breve aviso si el informe es ambiguo, incompleto, tiene límites (<, ND) o formas SO4 vs S.'
+    notesRule
   ].join('\n');
 }
 
@@ -467,11 +724,12 @@ async function verifyUser(accessToken) {
   return { ok: true, userId: userData.user.id, email: userData.user.email || '' };
 }
 
-async function extractWithOpenAI({ buffer, filename, mimeType }) {
+async function extractWithOpenAI({ buffer, filename, mimeType, language }) {
   const apiKey = (process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey) {
     return { ok: false, status: 500, error: 'OPENAI_API_KEY no configurada.' };
   }
+  const lang = noteLang(language);
   const model = resolveModel();
   const isPdf = /pdf/i.test(mimeType || '') || /\.pdf$/i.test(filename || '');
   const b64 = buffer.toString('base64');
@@ -480,7 +738,7 @@ async function extractWithOpenAI({ buffer, filename, mimeType }) {
     : 'data:' + (mimeType || 'image/jpeg') + ';base64,' + b64;
 
   const content = [
-    { type: 'input_text', text: soilPrompt() }
+    { type: 'input_text', text: soilPrompt(lang) }
   ];
   if (isPdf) {
     content.push({
@@ -524,7 +782,12 @@ async function extractWithOpenAI({ buffer, filename, mimeType }) {
   if (!parsed) {
     return { ok: false, status: 422, error: 'La IA no devolvió JSON válido. Intenta con otro PDF o captura más clara.' };
   }
-  return { ok: true, fields: normalizeSoilPayload(parsed), model, rawPreview: text.slice(0, 400) };
+  return {
+    ok: true,
+    fields: normalizeSoilPayload(parsed, lang),
+    model,
+    rawPreview: text.slice(0, 400)
+  };
 }
 
 exports.handler = async function (event) {
@@ -557,6 +820,7 @@ exports.handler = async function (event) {
   if (analysisType !== 'soil') {
     return jsonResponse(400, { ok: false, error: 'Por ahora solo analysisType=soil está soportado.' });
   }
+  const language = noteLang(body.language || body.lang || 'es');
 
   const filename = String(body.filename || 'analisis.pdf').slice(0, 180);
   const mimeType = String(body.mimeType || 'application/pdf').slice(0, 120);
@@ -594,7 +858,7 @@ exports.handler = async function (event) {
   }
 
   try {
-    const extracted = await extractWithOpenAI({ buffer, filename, mimeType });
+    const extracted = await extractWithOpenAI({ buffer, filename, mimeType, language });
     if (!extracted.ok) {
       return jsonResponse(extracted.status || 500, { ok: false, error: extracted.error });
     }

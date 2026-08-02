@@ -7947,14 +7947,14 @@ html.embed-login body {
   box-sizing: border-box;
 }
 .np-lab-pdf-modal__panel {
-  width: min(720px, 100%);
+  width: min(420px, 100%);
   max-height: min(90vh, 900px);
   overflow: auto;
   background: #fff;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
-  padding: 16px 18px 18px;
+  padding: 14px 14px 16px;
 }
 .np-lab-pdf-modal__head {
   display: flex;
@@ -7965,7 +7965,7 @@ html.embed-login body {
 }
 .np-lab-pdf-modal__head h3 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   color: #0f172a;
 }
 .np-lab-pdf-modal__close {
@@ -7979,7 +7979,7 @@ html.embed-login body {
 .np-lab-pdf-modal__intro,
 .np-lab-pdf-modal__notes {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: 12px;
   color: #64748b;
   line-height: 1.45;
 }
@@ -8008,8 +8008,8 @@ html.embed-login body {
 }
 .np-lab-pdf-modal__row {
   display: grid;
-  grid-template-columns: 18px minmax(120px, 1fr) minmax(100px, 1.2fr);
-  gap: 8px;
+  grid-template-columns: 18px minmax(72px, 0.9fr) minmax(88px, 1.1fr);
+  gap: 6px;
   align-items: center;
   font-size: 12px;
 }

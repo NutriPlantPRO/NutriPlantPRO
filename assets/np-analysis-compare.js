@@ -52,8 +52,8 @@
 
   /** Orden y metadatos de bloques (tabla + gráficas). */
   var SOIL_BLOCKS = [
-    { id: 'ph', titleKey: 'analysis.block_ph', title: 'pH', chartType: 'bar', chart: true },
-    { id: 'physical', titleKey: 'analysis.block_physical', title: 'Físicos / salinidad / MO', chartType: 'bar', chart: true },
+    { id: 'ph', titleKey: 'analysis.block_ph', title: 'pH', chartType: null, chart: false },
+    { id: 'physical', titleKey: 'analysis.block_physical', title: 'Físicos / salinidad / MO', chartType: null, chart: false },
     { id: 'macros', titleKey: 'analysis.block_macros', title: 'Macros (ppm)', chartType: 'line', chart: true },
     { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'line', chart: true },
     { id: 'cec_pct', titleKey: 'analysis.block_cec_pct', title: '% saturación CIC', chartType: 'bar', chart: true },
@@ -362,7 +362,7 @@
           '<p class="np-analysis-compare__hint" data-i18n="analysis.compare_hint">' +
             tr(
               'analysis.compare_hint',
-              'Cada columna es un análisis. Activa los que quieras comparar. Tabla y gráficas están agrupadas por bloques (pH, físicos/MO, macros, micros, % CIC).'
+              'Cada columna es un análisis. Activa los que quieras comparar. pH y físicos/MO solo en tabla; gráficas: macros, micros y % CIC.'
             ) +
           '</p>' +
           '<div class="np-analysis-compare__cols" id="npSoilCompareCols"></div>' +
