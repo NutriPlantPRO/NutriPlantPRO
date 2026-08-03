@@ -506,6 +506,8 @@
   /** @type {{ id: string, title: string, state: object, savedAt: number }[]} */
   var presetsList = [];
   var presetDirtyWired = false;
+  /** Título de la curva activa en el proyecto (el que el socio puso al guardar/cargar). */
+  var activeCurveTitle = '';
 
   function generatePresetId() {
     return (
@@ -691,6 +693,7 @@
           invalidatePresetChoice();
           return;
         }
+        normalized.title = String(p.title || '').trim().slice(0, 120);
         applyState(normalized);
         ensurePct();
         renderAll();
@@ -716,20 +719,23 @@
               minute: '2-digit'
             });
         }
+        title = title.slice(0, 120);
         var stInner = snapshotState();
         var stOk = normalizeState(stInner);
         if (!stOk) {
           alert('No es posible guardar: espera que la tabla cargue o revisa valores.');
           return;
         }
+        activeCurveTitle = title;
         presetsList.push({
           id: generatePresetId(),
-          title: title.slice(0, 120),
+          title: title,
           state: snapshotState(),
           savedAt: Date.now()
         });
         if (inpTitle) inpTitle.value = '';
         persistFullPresetsBucket();
+        schedulePersist();
       });
     }
 
@@ -845,7 +851,7 @@
       while (arr.length < st.length) arr.push(0);
       pctMap[n.id] = arr.map(function (v) { return round1(parseFloat(v) || 0); });
     });
-    return {
+    var out = {
       version: raw.version || toolStateVersion,
       updatedAt: Number(raw.updatedAt) || Date.now(),
       nutrients: nList,
@@ -855,10 +861,14 @@
       stages: st,
       pct: pctMap
     };
+    if (typeof raw.title === 'string' && raw.title.trim()) {
+      out.title = raw.title.trim().slice(0, 120);
+    }
+    return out;
   }
 
   function snapshotState() {
-    return {
+    var out = {
       version: toolStateVersion,
       updatedAt: Date.now(),
       nutrients: nutrients.map(function (n) {
@@ -868,6 +878,8 @@
       stages: stages.slice(),
       pct: JSON.parse(JSON.stringify(pct))
     };
+    if (activeCurveTitle) out.title = String(activeCurveTitle).slice(0, 120);
+    return out;
   }
 
   function applyState(state) {
@@ -876,6 +888,10 @@
     optionalQueue = Array.isArray(state.optionalQueue) ? state.optionalQueue.slice() : [];
     stages = state.stages.slice();
     pct = JSON.parse(JSON.stringify(state.pct || {}));
+    activeCurveTitle =
+      typeof state.title === 'string' && state.title.trim()
+        ? state.title.trim().slice(0, 120)
+        : '';
     ensurePct();
     return true;
   }
@@ -944,6 +960,7 @@
     BASE.forEach(function (b) {
       pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
     });
+    activeCurveTitle = '';
     ensurePct();
     invalidatePresetChoice();
     renderAll();

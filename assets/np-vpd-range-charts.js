@@ -751,6 +751,7 @@
 
   function createCriticalHoursChart(canvas, dailyRows, prep, opts) {
     if (!canvas || !w.Chart) return null;
+    destroyChartOnCanvas(canvas);
     opts = opts || {};
     var rows = resolveDailySummaryRows(
       dailyRows,
@@ -1128,6 +1129,17 @@
     );
   }
 
+  /** Libera Chart.js ligado al canvas (evita "Canvas is already in use" tras re-init). */
+  function destroyChartOnCanvas(canvas) {
+    if (!canvas || !w.Chart) return;
+    try {
+      if (typeof w.Chart.getChart === 'function') {
+        var bound = w.Chart.getChart(canvas);
+        if (bound) bound.destroy();
+      }
+    } catch (e) {}
+  }
+
   function paintCriticalChartInteractive(cfg, prep, charts) {
     var canvas = document.getElementById(cfg.prefix + '-critical-canvas');
     var graphPanel = document.getElementById(cfg.prefix + '-critical-graph');
@@ -1150,6 +1162,7 @@
       } catch (e) {}
       charts.critical = null;
     }
+    destroyChartOnCanvas(canvas);
     var dailyRows = resolveCriticalChartDailyRows(cfg, prep);
     var days =
       prep.windowStart && prep.windowEnd
@@ -1230,12 +1243,28 @@
       } catch (eClean) {}
     }
     w._npVpdCriticalRuntime = w._npVpdCriticalRuntime || {};
+    destroyChartOnCanvas(document.getElementById(prefix + '-critical-canvas'));
+
+    // Evitar listeners duplicados si init se llama varias veces (p. ej. admin rAF + timeout).
+    var graphBtn = document.getElementById(prefix + '-critical-view-graph');
+    var tableBtn = document.getElementById(prefix + '-critical-view-table');
+    var tablePanel = document.getElementById(prefix + '-critical-table');
+    if (graphBtn && graphBtn.parentNode) {
+      var freshGraph = graphBtn.cloneNode(true);
+      graphBtn.parentNode.replaceChild(freshGraph, graphBtn);
+      graphBtn = freshGraph;
+    }
+    if (tableBtn && tableBtn.parentNode) {
+      var freshTable = tableBtn.cloneNode(true);
+      tableBtn.parentNode.replaceChild(freshTable, tableBtn);
+      tableBtn = freshTable;
+    }
 
     bindViewToggle(
-      document.getElementById(prefix + '-critical-view-graph'),
-      document.getElementById(prefix + '-critical-view-table'),
+      graphBtn,
+      tableBtn,
       graphPanel,
-      document.getElementById(prefix + '-critical-table'),
+      tablePanel,
       function () {
         scheduleCriticalChartPaint(cfg, prep, charts, viewport);
       }

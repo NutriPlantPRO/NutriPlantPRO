@@ -5732,20 +5732,25 @@ function np_duplicateProject(id) {
     if (typeof window.nutriplantSyncProjectToCloud === 'function') {
       try {
         window.nutriplantSyncProjectToCloud(newId, duplicatedData);
-        if (Array.isArray(window._np_cloud_projects_cache)) {
-          window._np_cloud_projects_cache.unshift({
-            id: newId,
-            title: duplicatedData.name || duplicatedData.title || copy.title,
-            cultivo: duplicatedData.cultivo || duplicatedData.crop_type || '',
-            variedad: duplicatedData.variedad || '',
-            campoOsector: duplicatedData.campoOsector || null,
-            createdAt: now,
-            updatedAt: now
-          });
-        }
       } catch (err) {
         console.warn('⚠️ Sync proyecto duplicado a nube:', err);
       }
+    }
+    // Incluir user_id: np_loadProjects filtra por user_id y sin eso la copia no aparece hasta "Actualizar con la nube"
+    if (Array.isArray(window._np_cloud_projects_cache)) {
+      window._np_cloud_projects_cache = window._np_cloud_projects_cache.filter(function (row) {
+        return !(row && row.id === newId);
+      });
+      window._np_cloud_projects_cache.unshift({
+        id: newId,
+        user_id: userId,
+        title: duplicatedData.name || duplicatedData.title || copy.title,
+        cultivo: duplicatedData.cultivo || duplicatedData.crop_type || '',
+        variedad: duplicatedData.variedad || '',
+        campoOsector: duplicatedData.campoOsector || null,
+        createdAt: now,
+        updatedAt: now
+      });
     }
     
     // NO usar projectStorage.saveProject para evitar validaciones durante duplicación
@@ -5810,20 +5815,24 @@ function np_duplicateProject(id) {
     if (typeof window.nutriplantSyncProjectToCloud === 'function') {
       try {
         window.nutriplantSyncProjectToCloud(newId, emptyDuplicatedData);
-        if (Array.isArray(window._np_cloud_projects_cache)) {
-          window._np_cloud_projects_cache.unshift({
-            id: newId,
-            title: copy.title,
-            cultivo: '',
-            variedad: '',
-            campoOsector: null,
-            createdAt: now,
-            updatedAt: now
-          });
-        }
       } catch (err) {
         console.warn('⚠️ Sync proyecto duplicado (vacío) a nube:', err);
       }
+    }
+    if (Array.isArray(window._np_cloud_projects_cache)) {
+      window._np_cloud_projects_cache = window._np_cloud_projects_cache.filter(function (row) {
+        return !(row && row.id === newId);
+      });
+      window._np_cloud_projects_cache.unshift({
+        id: newId,
+        user_id: userId,
+        title: copy.title,
+        cultivo: '',
+        variedad: '',
+        campoOsector: null,
+        createdAt: now,
+        updatedAt: now
+      });
     }
   }
   
@@ -5850,9 +5859,18 @@ function np_duplicateProject(id) {
   // 🔄 Renderizar la lista actualizada para mostrar el proyecto duplicado
   np_renderProjects();
   
-  // 🎉 Mostrar mensaje de éxito al usuario
+  // 🎉 Mensaje de éxito (sin alert bloqueante)
   const projectName = copy.title;
-  alert(`✅ Proyecto duplicado exitosamente: "${projectName}"\n\nID: ${newId}\n\nEl proyecto duplicado incluye toda la información del original y está listo para que lo edites.`);
+  if (typeof window.showMessage === 'function') {
+    window.showMessage(
+      dashboardT(
+        'dashboard.duplicate_success',
+        'Proyecto duplicado: "{name}". Ya aparece en la lista.',
+        { name: projectName }
+      ),
+      'success'
+    );
+  }
   
   console.log('✅ Proyecto duplicado exitosamente:', newId);
   console.log('✅ Proyecto asociado al usuario:', userId);
@@ -19411,6 +19429,9 @@ function createSolucionNutritivaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewSolucionNutritivaAnalysis && window.addNewSolucionNutritivaAnalysis();">➕ Agregar análisis</button>
+              <button type="button" class="btn btn-sm" id="snPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('solucion_nutritiva');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <input type="file" id="snPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
+
             </div>
           </div>
           <div id="solucion-nutritiva-list" class="soil-analyses-list"></div>
@@ -19440,9 +19461,9 @@ function createSolucionNutritivaTabHTML() {
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
                     <tbody class="notranslate" translate="no">
+                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="sn-k-meq" class="fertirriego-input" data-sn-macro="K" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td><input type="number" step="0.1" id="sn-k-ppm" class="fertirriego-input" data-sn-macro="K" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td>180 – 300</td><td id="sn-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','k',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td id="sn-diff-k">—</td></tr>
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="sn-ca-meq" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td><input type="number" step="0.1" id="sn-ca-ppm" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td>140 – 220</td><td id="sn-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','ca',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td id="sn-diff-ca">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="sn-mg-meq" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td><input type="number" step="0.1" id="sn-mg-ppm" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="sn-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','mg',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td id="sn-diff-mg">—</td></tr>
-                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="sn-k-meq" class="fertirriego-input" data-sn-macro="K" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td><input type="number" step="0.1" id="sn-k-ppm" class="fertirriego-input" data-sn-macro="K" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td>180 – 300</td><td id="sn-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','k',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td id="sn-diff-k">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="sn-na-meq" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td><input type="number" step="0.1" id="sn-na-ppm" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td>—</td><td id="sn-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','na',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td id="sn-diff-na">—</td></tr>
                     </tbody>
                   </table>
@@ -19484,6 +19505,7 @@ function createSolucionNutritivaTabHTML() {
           </div>
         </div>
       </div>
+      <div id="sn-analysis-compare-host" class="np-analysis-compare-host"></div>
     </div>
   `;
   return analysisPresentHtml(html);
@@ -19691,6 +19713,14 @@ window.initSolucionNutritivaTab = function initSolucionNutritivaTab() {
   var emptyEl = document.getElementById('solucion-nutritiva-form-empty');
   if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
   if (emptyEl) emptyEl.style.display = 'block';
+  window.wireLabPdfCompare && window.wireLabPdfCompare({
+    type: 'solucion_nutritiva',
+    hostId: 'sn-analysis-compare-host',
+    btnId: 'snPdfExtractBtn',
+    inputId: 'snPdfFileInput',
+    getAnalyses: function () { return window.getSolucionNutritivaAnalyses() || []; },
+    stateKey: '_snCompareState'
+  });
 };
 
 window.saveSolucionNutritivaUIState = function saveSolucionNutritivaUIState() {
@@ -19770,6 +19800,9 @@ function createExtractoPastaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewExtractoPastaAnalysis && window.addNewExtractoPastaAnalysis();">➕ Agregar análisis</button>
+              <button type="button" class="btn btn-sm" id="epPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('extracto_pasta');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <input type="file" id="epPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
+
             </div>
           </div>
           <div id="extracto-pasta-list" class="soil-analyses-list"></div>
@@ -19799,9 +19832,9 @@ function createExtractoPastaTabHTML() {
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
                     <tbody class="notranslate" translate="no">
+                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="ep-k-meq" class="fertirriego-input" data-ep-macro="K" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td><input type="number" step="0.1" id="ep-k-ppm" class="fertirriego-input" data-ep-macro="K" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td>200 – 300</td><td id="ep-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','k',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td id="ep-diff-k">—</td></tr>
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="ep-ca-meq" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td><input type="number" step="0.1" id="ep-ca-ppm" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td>150 – 220</td><td id="ep-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','ca',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td id="ep-diff-ca">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="ep-mg-meq" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td><input type="number" step="0.1" id="ep-mg-ppm" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="ep-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','mg',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td id="ep-diff-mg">—</td></tr>
-                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="ep-k-meq" class="fertirriego-input" data-ep-macro="K" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td><input type="number" step="0.1" id="ep-k-ppm" class="fertirriego-input" data-ep-macro="K" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td>200 – 300</td><td id="ep-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','k',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td id="ep-diff-k">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="ep-na-meq" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td><input type="number" step="0.1" id="ep-na-ppm" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td>ideal &lt;50</td><td id="ep-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','na',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td id="ep-diff-na">—</td></tr>
                     </tbody>
                   </table>
@@ -19859,6 +19892,7 @@ function createExtractoPastaTabHTML() {
           </div>
         </div>
       </div>
+      <div id="ep-analysis-compare-host" class="np-analysis-compare-host"></div>
     </div>
   `;
   return analysisPresentHtml(html);
@@ -20137,6 +20171,14 @@ window.initExtractoPastaTab = function initExtractoPastaTab() {
   var emptyEl = document.getElementById('extracto-pasta-form-empty');
   if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
   if (emptyEl) emptyEl.style.display = 'block';
+  window.wireLabPdfCompare && window.wireLabPdfCompare({
+    type: 'extracto_pasta',
+    hostId: 'ep-analysis-compare-host',
+    btnId: 'epPdfExtractBtn',
+    inputId: 'epPdfFileInput',
+    getAnalyses: function () { return window.getExtractoPastaAnalyses() || []; },
+    stateKey: '_epCompareState'
+  });
 };
 
 window.saveExtractoPastaUIState = function saveExtractoPastaUIState() {
@@ -20232,6 +20274,9 @@ function createAguaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewAguaAnalysis && window.addNewAguaAnalysis();">➕ Agregar análisis</button>
+              <button type="button" class="btn btn-sm" id="awPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('agua');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <input type="file" id="awPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
+
             </div>
           </div>
           <div id="agua-list" class="soil-analyses-list"></div>
@@ -20263,9 +20308,9 @@ function createAguaTabHTML() {
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th><span class="notranslate" translate="no">meq/L<br>o mmolc/L</span></th><th>ppm</th><th>kg elemento</th><th>kg óxido (CaO, MgO, K₂O)</th></tr></thead>
                     <tbody class="notranslate" translate="no">
+                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="aw-k-meq" class="fertirriego-input" data-aw-macro="K" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('K','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-k-ppm" class="fertirriego-input" data-aw-macro="K" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('K','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-k">—</td><td id="aw-kg-k2o">—</td></tr>
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="aw-ca-meq" class="fertirriego-input" data-aw-macro="Ca" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Ca','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-ca-ppm" class="fertirriego-input" data-aw-macro="Ca" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Ca','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-ca">—</td><td id="aw-kg-cao">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="aw-mg-meq" class="fertirriego-input" data-aw-macro="Mg" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Mg','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-mg-ppm" class="fertirriego-input" data-aw-macro="Mg" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Mg','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-mg">—</td><td id="aw-kg-mgo">—</td></tr>
-                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="aw-k-meq" class="fertirriego-input" data-aw-macro="K" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('K','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-k-ppm" class="fertirriego-input" data-aw-macro="K" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('K','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-k">—</td><td id="aw-kg-k2o">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="aw-na-meq" class="fertirriego-input" data-aw-macro="Na" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Na','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-na-ppm" class="fertirriego-input" data-aw-macro="Na" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Na','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-na">—</td><td id="aw-kg-na2o">—</td></tr>
                       <tr><td colspan="2"><strong>Suma cationes (<span class="notranslate" translate="no">meq/L o mmolc/L</span>)</strong></td><td id="aw-sum-cations-meq" colspan="3">—</td></tr>
                     </tbody>
@@ -20327,6 +20372,7 @@ function createAguaTabHTML() {
           </div>
         </div>
       </div>
+      <div id="aw-analysis-compare-host" class="np-analysis-compare-host"></div>
     </div>
   `;
   return analysisPresentHtml(html);
@@ -20653,6 +20699,14 @@ window.initAguaTab = function initAguaTab() {
   var emptyEl = document.getElementById('agua-form-empty');
   if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
   if (emptyEl) emptyEl.style.display = 'block';
+  window.wireLabPdfCompare && window.wireLabPdfCompare({
+    type: 'agua',
+    hostId: 'aw-analysis-compare-host',
+    btnId: 'awPdfExtractBtn',
+    inputId: 'awPdfFileInput',
+    getAnalyses: function () { return window.getAguaAnalyses() || []; },
+    stateKey: '_awCompareState'
+  });
 };
 
 window.saveAguaUIState = function saveAguaUIState() {
@@ -20748,6 +20802,9 @@ function createFoliarTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewFoliarAnalysis && window.addNewFoliarAnalysis();">➕ Agregar análisis</button>
+              <button type="button" class="btn btn-sm" id="foliarPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('foliar');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <input type="file" id="foliarPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
+
             </div>
           </div>
           <div id="foliar-list" class="soil-analyses-list"></div>
@@ -20790,6 +20847,7 @@ function createFoliarTabHTML() {
           </div>
         </div>
       </div>
+      <div id="foliar-analysis-compare-host" class="np-analysis-compare-host"></div>
     </div>
   `;
   return analysisPresentHtml(html);
@@ -20957,6 +21015,14 @@ window.initFoliarTab = function initFoliarTab() {
   var emptyEl = document.getElementById('foliar-form-empty');
   if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
   if (emptyEl) emptyEl.style.display = 'block';
+  window.wireLabPdfCompare && window.wireLabPdfCompare({
+    type: 'foliar',
+    hostId: 'foliar-analysis-compare-host',
+    btnId: 'foliarPdfExtractBtn',
+    inputId: 'foliarPdfFileInput',
+    getAnalyses: function () { return window.getFoliarAnalyses() || []; },
+    stateKey: '_foliarCompareState'
+  });
 };
 
 window.saveFoliarUIState = function saveFoliarUIState() {
@@ -21108,6 +21174,9 @@ function createFrutaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewFrutaAnalysis && window.addNewFrutaAnalysis();">➕ Agregar análisis</button>
+              <button type="button" class="btn btn-sm" id="frutaPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('fruta');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <input type="file" id="frutaPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
+
             </div>
           </div>
           <div id="fruta-list" class="soil-analyses-list"></div>
@@ -21170,6 +21239,7 @@ function createFrutaTabHTML() {
           </div>
         </div>
       </div>
+      <div id="fruta-analysis-compare-host" class="np-analysis-compare-host"></div>
     </div>
   `;
   return analysisPresentHtml(html);
@@ -21381,6 +21451,14 @@ window.initFrutaTab = function initFrutaTab() {
   var emptyEl = document.getElementById('fruta-form-empty');
   if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
   if (emptyEl) emptyEl.style.display = 'block';
+  window.wireLabPdfCompare && window.wireLabPdfCompare({
+    type: 'fruta',
+    hostId: 'fruta-analysis-compare-host',
+    btnId: 'frutaPdfExtractBtn',
+    inputId: 'frutaPdfFileInput',
+    getAnalyses: function () { return window.getFrutaAnalyses() || []; },
+    stateKey: '_frutaCompareState'
+  });
 };
 
 window.saveFrutaUIState = function saveFrutaUIState() {
@@ -21455,21 +21533,21 @@ function createSoilAnalysisTabHTML() {
               <details class="soil-section" data-soil-section="physical" open>
                 <summary>🌱 Propiedades físicas</summary>
                 <div class="soil-fields">
-                  <label>Clase textural <input type="text" id="soil-physical-texturalClass" data-group="physical" data-field="texturalClass" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','texturalClass',this.value)" placeholder="${dashboardT('analysis.textural_placeholder', 'ej. Franco Arenoso')}" data-i18n-placeholder="analysis.textural_placeholder"></label>
-                  <label>Punto saturación % <input type="number" step="0.01" id="soil-physical-saturationPoint" data-group="physical" data-field="saturationPoint" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','saturationPoint',this.value)"></label>
-                  <label>Capacidad de campo % <input type="number" step="0.01" id="soil-physical-fieldCapacity" data-group="physical" data-field="fieldCapacity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','fieldCapacity',this.value)"></label>
-                  <label>Punto marchitamiento % <input type="number" step="0.01" id="soil-physical-wiltingPoint" data-group="physical" data-field="wiltingPoint" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','wiltingPoint',this.value)"></label>
-                  <label>Cond. hidráulica cm/h <input type="number" step="0.01" id="soil-physical-hydraulicConductivity" data-group="physical" data-field="hydraulicConductivity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','hydraulicConductivity',this.value)"></label>
-                  <label><span class="soil-label-blue">Densidad aparente g/cm³</span> <input type="number" step="0.01" id="soil-physical-bulkDensity" data-group="physical" data-field="bulkDensity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','bulkDensity',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
+                  <label><span class="soil-field-lbl">Clase textural</span> <input type="text" id="soil-physical-texturalClass" data-group="physical" data-field="texturalClass" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','texturalClass',this.value)" placeholder="${dashboardT('analysis.textural_placeholder', 'ej. Franco Arenoso')}" data-i18n-placeholder="analysis.textural_placeholder"></label>
+                  <label><span class="soil-field-lbl">Punto saturación %</span> <input type="number" step="0.01" id="soil-physical-saturationPoint" data-group="physical" data-field="saturationPoint" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','saturationPoint',this.value)"></label>
+                  <label><span class="soil-field-lbl">Capacidad de campo %</span> <input type="number" step="0.01" id="soil-physical-fieldCapacity" data-group="physical" data-field="fieldCapacity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','fieldCapacity',this.value)"></label>
+                  <label><span class="soil-field-lbl">Punto marchitamiento %</span> <input type="number" step="0.01" id="soil-physical-wiltingPoint" data-group="physical" data-field="wiltingPoint" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','wiltingPoint',this.value)"></label>
+                  <label><span class="soil-field-lbl">Cond. hidráulica cm/h</span> <input type="number" step="0.01" id="soil-physical-hydraulicConductivity" data-group="physical" data-field="hydraulicConductivity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','hydraulicConductivity',this.value)"></label>
+                  <label><span class="soil-label-blue soil-field-lbl">Densidad aparente g/cm³</span> <input type="number" step="0.01" id="soil-physical-bulkDensity" data-group="physical" data-field="bulkDensity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('physical','bulkDensity',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
                 </div>
               </details>
               <details class="soil-section" data-soil-section="ph">
                 <summary>📐 pH y salinidad</summary>
                 <div class="soil-fields">
-                  <label>pH (1:2 agua) <input type="number" step="0.01" id="soil-phSection-ph" data-group="phSection" data-field="ph" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','ph',this.value)"></label>
-                  <label>pH Buffer <input type="number" step="0.01" id="soil-phSection-phBuffer" data-group="phSection" data-field="phBuffer" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','phBuffer',this.value)"></label>
-                  <label>Carbonatos totales % <input type="number" step="0.001" id="soil-phSection-totalCarbonates" data-group="phSection" data-field="totalCarbonates" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','totalCarbonates',this.value)"></label>
-                  <label>Salinidad CE dS/m <input type="number" step="0.01" id="soil-phSection-salinity" data-group="phSection" data-field="salinity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','salinity',this.value)"></label>
+                  <label><span class="soil-field-lbl">pH (1:2 agua)</span> <input type="number" step="0.01" id="soil-phSection-ph" data-group="phSection" data-field="ph" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','ph',this.value)"></label>
+                  <label><span class="soil-field-lbl">pH Buffer</span> <input type="number" step="0.01" id="soil-phSection-phBuffer" data-group="phSection" data-field="phBuffer" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','phBuffer',this.value)"></label>
+                  <label><span class="soil-field-lbl">Carbonatos totales %</span> <input type="number" step="0.001" id="soil-phSection-totalCarbonates" data-group="phSection" data-field="totalCarbonates" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','totalCarbonates',this.value)"></label>
+                  <label><span class="soil-field-lbl">CE (dS/m)</span> <input type="number" step="0.01" id="soil-phSection-salinity" data-group="phSection" data-field="salinity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','salinity',this.value)"></label>
                 </div>
               </details>
               <details class="soil-section" data-soil-section="fertility">
@@ -22304,6 +22382,306 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
   }
   alert(dashboardT('analysis.pdf_applied', 'Datos aplicados. Revisa el formulario y guarda si hace falta.'));
 };
+
+// ========== PDF extract + compare (tipos de lab no-suelo) ==========
+window.LAB_PDF_TYPE_CFG = {
+  solucion_nutritiva: {
+    formWrapId: 'solucion-nutritiva-form-wrap',
+    btnId: 'snPdfExtractBtn',
+    inputId: 'snPdfFileInput',
+    getList: function () { return window.getSolucionNutritivaAnalyses(); },
+    createEmpty: function () { return createEmptySolucionNutritivaAnalysis(); },
+    save: function () { window.saveSolucionNutritivaAnalysesToProjectImmediate && window.saveSolucionNutritivaAnalysesToProjectImmediate(); },
+    render: function () { window.renderSolucionNutritivaList && window.renderSolucionNutritivaList(); },
+    select: function (id) { window.selectSolucionNutritivaAnalysis && window.selectSolucionNutritivaAnalysis(id); },
+    refreshCompare: function () {
+      if (window._snCompareState && typeof window._snCompareState.refresh === 'function') window._snCompareState.refresh();
+    },
+    afterApply: function () {
+      window.snUpdateMicroRef && window.snUpdateMicroRef();
+      ['ca','mg','k','na'].forEach(function (k) { window.snUpdateMacroRef && window.snUpdateMacroRef('cations', k); });
+      ['no3','po4','so4','cl','hco3','co3'].forEach(function (k) { window.snUpdateMacroRef && window.snUpdateMacroRef('anions', k); });
+    },
+    groups: ['general', 'cations', 'anions', 'micros'],
+    topFields: []
+  },
+  extracto_pasta: {
+    formWrapId: 'extracto-pasta-form-wrap',
+    btnId: 'epPdfExtractBtn',
+    inputId: 'epPdfFileInput',
+    getList: function () { return window.getExtractoPastaAnalyses(); },
+    createEmpty: function () { return createEmptyExtractoPastaAnalysis(); },
+    save: function () { window.saveExtractoPastaAnalysesToProjectImmediate && window.saveExtractoPastaAnalysesToProjectImmediate(); },
+    render: function () { window.renderExtractoPastaList && window.renderExtractoPastaList(); },
+    select: function (id) { window.selectExtractoPastaAnalysis && window.selectExtractoPastaAnalysis(id); },
+    refreshCompare: function () {
+      if (window._epCompareState && typeof window._epCompareState.refresh === 'function') window._epCompareState.refresh();
+    },
+    afterApply: function () {
+      window.epUpdateMicroRef && window.epUpdateMicroRef();
+      ['ca','mg','k','na'].forEach(function (k) { window.epUpdateMacroRef && window.epUpdateMacroRef('cations', k); });
+      ['no3','po4','so4','cl','hco3','co3'].forEach(function (k) { window.epUpdateMacroRef && window.epUpdateMacroRef('anions', k); });
+    },
+    groups: ['general', 'cations', 'anions', 'micros'],
+    topFields: []
+  },
+  agua: {
+    formWrapId: 'agua-form-wrap',
+    btnId: 'awPdfExtractBtn',
+    inputId: 'awPdfFileInput',
+    getList: function () { return window.getAguaAnalyses(); },
+    createEmpty: function () { return createEmptyAguaAnalysis(); },
+    save: function () { window.saveAguaAnalysesToProjectImmediate && window.saveAguaAnalysesToProjectImmediate(); },
+    render: function () { window.renderAguaList && window.renderAguaList(); },
+    select: function (id) { window.selectAguaAnalysis && window.selectAguaAnalysis(id); },
+    refreshCompare: function () {
+      if (window._awCompareState && typeof window._awCompareState.refresh === 'function') window._awCompareState.refresh();
+    },
+    afterApply: function () {
+      window.awUpdateSums && window.awUpdateSums();
+      window.awUpdateKgOxide && window.awUpdateKgOxide();
+      window.awUpdateAcid && window.awUpdateAcid();
+    },
+    groups: ['general', 'cations', 'anions', 'micros'],
+    topFields: ['m3Riego', 'acidResidualMeq']
+  },
+  foliar: {
+    formWrapId: 'foliar-form-wrap',
+    btnId: 'foliarPdfExtractBtn',
+    inputId: 'foliarPdfFileInput',
+    getList: function () { return window.getFoliarAnalyses(); },
+    createEmpty: function () { return createEmptyFoliarAnalysis(); },
+    save: function () { window.saveFoliarAnalysesToProjectImmediate && window.saveFoliarAnalysesToProjectImmediate(); },
+    render: function () { window.renderFoliarList && window.renderFoliarList(); },
+    select: function (id) { window.selectFoliarAnalysis && window.selectFoliarAnalysis(id); },
+    refreshCompare: function () {
+      if (window._foliarCompareState && typeof window._foliarCompareState.refresh === 'function') window._foliarCompareState.refresh();
+    },
+    afterApply: function () { window.foliarUpdateDOP && window.foliarUpdateDOP(); },
+    groups: ['macros', 'micros'],
+    topFields: []
+  },
+  fruta: {
+    formWrapId: 'fruta-form-wrap',
+    btnId: 'frutaPdfExtractBtn',
+    inputId: 'frutaPdfFileInput',
+    getList: function () { return window.getFrutaAnalyses(); },
+    createEmpty: function () { return createEmptyFrutaAnalysis(); },
+    save: function () { window.saveFrutaAnalysesToProjectImmediate && window.saveFrutaAnalysesToProjectImmediate(); },
+    render: function () { window.renderFrutaList && window.renderFrutaList(); },
+    select: function (id) { window.selectFrutaAnalysis && window.selectFrutaAnalysis(id); },
+    refreshCompare: function () {
+      if (window._frutaCompareState && typeof window._frutaCompareState.refresh === 'function') window._frutaCompareState.refresh();
+    },
+    afterApply: function () { window.frutaUpdateICC && window.frutaUpdateICC(); },
+    groups: ['macros', 'micros', 'calidad', 'calcio'],
+    topFields: []
+  }
+};
+
+window.wireLabPdfCompare = function wireLabPdfCompare(opts) {
+  opts = opts || {};
+  var host = document.getElementById(opts.hostId);
+  if (host && window.NpAnalysisCompare && typeof window.NpAnalysisCompare.mountLabCompare === 'function') {
+    window[opts.stateKey] = window.NpAnalysisCompare.mountLabCompare(host, {
+      type: opts.type,
+      getAnalyses: opts.getAnalyses
+    });
+  }
+  var fileInput = document.getElementById(opts.inputId);
+  if (fileInput && fileInput.dataset.npWired !== '1') {
+    fileInput.dataset.npWired = '1';
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (file) window.handleLabPdfFile && window.handleLabPdfFile(opts.type, file);
+    });
+  }
+};
+
+window.openLabPdfExtract = function openLabPdfExtract(type) {
+  if (!currentProject || !currentProject.id) {
+    alert(dashboardT('analysis.pdf_need_project', 'Selecciona un proyecto primero.'));
+    return;
+  }
+  var cfg = window.LAB_PDF_TYPE_CFG[type];
+  var input = cfg && document.getElementById(cfg.inputId);
+  if (input) input.click();
+};
+
+window.handleLabPdfFile = async function handleLabPdfFile(type, file) {
+  if (!file) return;
+  if (!currentProject || !currentProject.id) {
+    alert(dashboardT('analysis.pdf_need_project', 'Selecciona un proyecto primero.'));
+    return;
+  }
+  var cfg = window.LAB_PDF_TYPE_CFG[type];
+  if (!cfg) return;
+  var btn = document.getElementById(cfg.btnId);
+  var prevHtml = btn ? btn.innerHTML : '';
+  try {
+    var token = null;
+    if (typeof getRadarAccessTokenForReport === 'function') {
+      token = await getRadarAccessTokenForReport();
+    } else if (typeof window.getSupabaseClient === 'function') {
+      var client = window.getSupabaseClient();
+      if (client) {
+        var sess = await client.auth.getSession();
+        token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+      }
+    }
+    if (!token) {
+      alert(dashboardT('analysis.pdf_need_session', 'Inicia sesión en la nube (Supabase) para extraer PDF.'));
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ ' + dashboardT('analysis.pdf_extracting', 'Extrayendo datos del PDF…');
+    }
+    var base64 = await new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = String(reader.result || '');
+        var comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    var apiBase = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : '') || '';
+    var url = String(apiBase).replace(/\/$/, '') + '/api/lab-analysis-extract';
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        analysisType: type,
+        language: (window.NpI18n && typeof window.NpI18n.getLanguage === 'function'
+          ? window.NpI18n.getLanguage()
+          : 'es') || 'es',
+        filename: file.name || ('analisis-' + type + '.pdf'),
+        mimeType: file.type || 'application/pdf',
+        fileBase64: base64
+      })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !data.ok || !data.fields) {
+      var errMsg = (data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.');
+      if (data && (data.code === 'quota_exceeded' || data.code === 'quota_preventive_block')) {
+        errMsg = dashboardT(
+          'analysis.pdf_quota',
+          'Sin créditos de IA suficientes. Cada extracción PDF cuesta {n} créditos (misma bolsa que el chat).',
+          { n: (data.credits_required != null ? data.credits_required : 3) }
+        );
+        if (data.error) errMsg = data.error;
+      } else if (data && data.code === 'chat_blocked') {
+        errMsg = data.error || dashboardT('analysis.pdf_chat_blocked', 'La IA está deshabilitada para tu cuenta.');
+      }
+      alert(errMsg);
+      return;
+    }
+    if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.openLabReviewModal !== 'function') {
+      window.applyLabExtractedFields(type, data.fields, { asNew: true });
+      return;
+    }
+    window.NpAnalysisCompare.openLabReviewModal(type, data.fields, function (payload, opts) {
+      window.applyLabExtractedFields(type, payload, opts || {});
+    });
+  } catch (e) {
+    console.warn('handleLabPdfFile', type, e);
+    alert((e && e.message) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = prevHtml || ('📄 ' + dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer'));
+    }
+  }
+};
+
+window.applyLabExtractedFields = function applyLabExtractedFields(type, fields, opts) {
+  opts = opts || {};
+  if (!fields || typeof fields !== 'object') return;
+  if (!currentProject || !currentProject.id) {
+    alert(dashboardT('analysis.pdf_need_project', 'Selecciona un proyecto primero.'));
+    return;
+  }
+  var cfg = window.LAB_PDF_TYPE_CFG[type];
+  if (!cfg) return;
+  var list = cfg.getList();
+  var analysis = null;
+  var wrap = document.getElementById(cfg.formWrapId);
+  var currentId = wrap && wrap.getAttribute('data-current-id');
+  if (opts.asNew || !currentId) {
+    analysis = cfg.createEmpty();
+    analysis.title = analysisNewTitle(list.length + 1);
+    list.push(analysis);
+  } else {
+    analysis = list.find(function (a) { return a.id === currentId; });
+    if (!analysis) {
+      analysis = cfg.createEmpty();
+      analysis.title = analysisNewTitle(list.length + 1);
+      list.push(analysis);
+    }
+  }
+
+  function isDetectionLimitValue(s) {
+    var t = String(s || '').trim();
+    if (!t) return false;
+    if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return true;
+    return /^[<>]=?\s*\d/.test(t);
+  }
+  function isPlainNumericValue(s) {
+    var t = String(s || '').trim().replace(/,/g, '');
+    if (!t || isDetectionLimitValue(t)) return false;
+    return /^-?\d+(\.\d+)?$/.test(t);
+  }
+  var limitNotes = [];
+
+  function mergeGroup(groupName, src) {
+    if (!src || typeof src !== 'object') return;
+    if (!analysis[groupName] || typeof analysis[groupName] !== 'object') analysis[groupName] = {};
+    Object.keys(src).forEach(function (k) {
+      var v = src[k];
+      if (v === undefined || v === null) return;
+      var s = String(v).trim();
+      if (s === '') return;
+      if (isDetectionLimitValue(s) || !isPlainNumericValue(s)) {
+        limitNotes.push(groupName + '.' + k + '=' + s);
+        return;
+      }
+      analysis[groupName][k] = s;
+    });
+  }
+
+  if (fields.title) analysis.title = String(fields.title).trim();
+  if (fields.date) analysis.date = String(fields.date).trim();
+  (cfg.topFields || []).forEach(function (k) {
+    if (fields[k] === undefined || fields[k] === null) return;
+    var s = String(fields[k]).trim();
+    if (!s) return;
+    if (isDetectionLimitValue(s) || !isPlainNumericValue(s)) {
+      limitNotes.push(k + '=' + s);
+      return;
+    }
+    analysis[k] = s;
+  });
+  (cfg.groups || []).forEach(function (g) {
+    mergeGroup(g, fields[g]);
+  });
+  if (limitNotes.length) {
+    analysis._pdfLimitNotes = 'Límites lab (no aplicados como número): ' + limitNotes.join('; ');
+  }
+
+  cfg.save();
+  cfg.render();
+  cfg.select(analysis.id);
+  if (typeof cfg.afterApply === 'function') cfg.afterApply();
+  cfg.refreshCompare();
+  alert(dashboardT('analysis.pdf_applied', 'Datos aplicados. Revisa el formulario y guarda si hace falta.'));
+};
+
 
 // Guardar estado de la pestaña Análisis de Suelo (análisis seleccionado y secciones abiertas) para restaurar al volver o tras recargar
 window.saveSoilAnalysisUIState = function saveSoilAnalysisUIState() {

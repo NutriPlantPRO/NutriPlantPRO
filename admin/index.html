@@ -9,9 +9,11 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/N_Hoja_Azul.png">
     <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="../dashboard.css?v=20260320">
+    <link rel="stylesheet" href="../dashboard.css?v=20260803b">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
+    <script src="../assets/np-lab-type-configs.js?v=20260803c"></script>
+    <script src="../assets/np-analysis-compare.js?v=20260803c"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
@@ -267,6 +269,12 @@
             line-height: 1.15;
             transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
         }
+        /* TC: ámbar / naranja tenue para distinguirlo del clima */
+        .admin-fx-pill {
+            border-color: rgba(245, 158, 11, 0.38);
+            background: linear-gradient(180deg, #fffbeb 0%, #ffedd5 100%);
+            color: #9a3412;
+        }
         .admin-weather-pill {
             min-width: 108px;
             max-width: 168px;
@@ -280,8 +288,14 @@
             border-color: rgba(37, 99, 235, 0.35);
             outline: none;
         }
+        .admin-fx-pill:hover,
+        .admin-fx-pill.admin-pill--open {
+            border-color: rgba(217, 119, 6, 0.55);
+            background: linear-gradient(180deg, #fef3c7 0%, #fed7aa 100%);
+        }
         .admin-fx-pill[data-state="loading"],
         .admin-weather-pill[data-state="loading"] { color: #64748b; }
+        .admin-fx-pill[data-state="loading"] { color: #b45309; }
         .admin-fx-pill[data-state="error"],
         .admin-weather-pill[data-state="error"] {
             border-color: rgba(239, 68, 68, 0.35);
@@ -305,6 +319,9 @@
             max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .admin-fx-sub {
+            color: #c2410c;
         }
         .admin-storage-pill {
             flex-shrink: 0;
@@ -482,17 +499,17 @@
             height: 44px;
             padding: 0;
             border-radius: 12px;
-            border: 1px solid rgba(148, 163, 184, 0.38);
-            background: rgba(255, 255, 255, 0.9);
-            color: #334155;
+            border: 1.5px solid rgba(34, 197, 94, 0.5);
+            background: rgba(240, 253, 244, 0.92);
+            color: #15803d;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
             transition: background 0.18s ease, border-color 0.18s ease, opacity 0.15s ease;
         }
         .admin-cloud-sync-btn:hover:not(:disabled) {
-            border-color: rgba(37, 99, 235, 0.35);
-            color: #1d4ed8;
-            background: #fff;
+            border-color: rgba(22, 163, 74, 0.7);
+            color: #166534;
+            background: rgba(220, 252, 231, 0.98);
         }
         .admin-cloud-sync-btn:disabled {
             opacity: 0.7;
@@ -509,12 +526,25 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #94a3b8;
+            background: #22c55e;
+            border: 2px solid #fff;
+            box-sizing: border-box;
         }
         .admin-cloud-sync-btn[data-state="synced"] .admin-cloud-sync-dot { background: #22c55e; }
         .admin-cloud-sync-btn[data-state="pending"] .admin-cloud-sync-dot,
         .admin-cloud-sync-btn[data-state="saving"] .admin-cloud-sync-dot { background: #f59e0b; }
         .admin-cloud-sync-btn[data-state="error"] .admin-cloud-sync-dot { background: #ef4444; }
+        .admin-cloud-sync-btn[data-state="pending"],
+        .admin-cloud-sync-btn[data-state="saving"] {
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #b45309;
+            background: rgba(255, 251, 235, 0.95);
+        }
+        .admin-cloud-sync-btn[data-state="error"] {
+            border-color: rgba(239, 68, 68, 0.45);
+            color: #b91c1c;
+            background: rgba(254, 242, 242, 0.95);
+        }
         .admin-top-menu-btn,
         .admin-top-logout-btn {
             display: inline-flex;
@@ -530,8 +560,7 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
         }
-        .admin-top-menu-btn:hover,
-        .admin-top-logout-btn:hover {
+        .admin-top-menu-btn:hover {
             border-color: rgba(37, 99, 235, 0.35);
             color: #1d4ed8;
             background: #fff;
@@ -540,6 +569,17 @@
             border-color: rgba(34, 197, 94, 0.45);
             background: rgba(240, 253, 244, 0.95);
             color: #16a34a;
+        }
+        .admin-top-logout-btn {
+            border: 1.5px solid rgba(220, 38, 38, 0.55);
+            color: #991b1b;
+            background: rgba(254, 242, 242, 0.88);
+            box-shadow: 0 1px 3px rgba(185, 28, 28, 0.08), 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+        }
+        .admin-top-logout-btn:hover {
+            border-color: rgba(185, 28, 28, 0.75);
+            background: rgba(254, 226, 226, 0.95);
+            color: #7f1d1d;
         }
         .admin-top-menu-btn svg,
         .admin-top-logout-btn svg {
@@ -792,7 +832,9 @@
             display: flex;
             flex-wrap: nowrap;
             gap: 6px;
-            justify-content: flex-start;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
         }
         .admin-top-menu-social a {
             width: 36px;
@@ -820,35 +862,101 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 720px) {
             .admin-top-bar {
                 padding: 10px 12px;
                 flex-direction: column;
                 align-items: stretch;
-            }
-            .admin-top-bar__actions {
-                margin-left: 0;
-                width: 100%;
-                justify-content: flex-start;
+                gap: 10px;
             }
             .admin-top-bar__brand img { height: 30px; }
             .admin-top-bar__brand h1 { font-size: 1.05rem; }
+            .admin-top-bar__actions {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-rows: auto auto;
+                gap: 8px;
+                width: 100%;
+                margin-left: 0;
+                min-width: 0;
+                overflow: visible;
+            }
+            #adminFxPopover,
+            #adminWeatherPopover {
+                position: fixed;
+                grid-column: unset;
+                grid-row: unset;
+                margin: 0;
+                z-index: 13000;
+            }
+            #adminFxBtn {
+                grid-column: 1;
+                grid-row: 1;
+            }
+            #adminWeatherBtn {
+                grid-column: 2;
+                grid-row: 1;
+            }
+            #adminStorageBtn {
+                grid-column: 3;
+                grid-row: 1;
+            }
+            #admin-refresh-cloud-btn {
+                grid-column: 1;
+                grid-row: 2;
+                justify-self: center;
+            }
+            #adminTopMenuBtn {
+                grid-column: 2;
+                grid-row: 2;
+                justify-self: center;
+            }
+            #adminTopLogoutBtn {
+                grid-column: 3;
+                grid-row: 2;
+                justify-self: center;
+            }
             .admin-fx-pill,
             .admin-weather-pill,
             .admin-storage-pill {
-                min-width: 72px;
-                max-width: 110px;
+                width: 100%;
+                min-width: 0 !important;
+                max-width: none !important;
                 height: 40px;
-                padding: 3px 6px;
+                padding: 4px 6px;
+                border-radius: 10px;
+                box-sizing: border-box;
+                justify-self: stretch;
+                align-self: stretch;
+                overflow: hidden;
+            }
+            .admin-fx-sub,
+            .admin-weather-sub,
+            .admin-storage-sub {
+                display: none;
             }
             .admin-fx-num,
             .admin-weather-num,
-            .admin-storage-num { font-size: 10px; }
+            .admin-storage-num {
+                display: block;
+                width: 100%;
+                font-size: 10px;
+                line-height: 1.15;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+                text-align: center;
+            }
             .admin-cloud-sync-btn,
             .admin-top-menu-btn,
             .admin-top-logout-btn {
-                width: 40px;
+                width: 100%;
+                max-width: 44px;
                 height: 40px;
+                min-width: 0;
+                margin-inline: auto;
+                border-radius: 10px;
             }
             .admin-top-menu-panel {
                 left: 8px;
@@ -1396,7 +1504,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../assets/np-lectura-satelital.js?v=202607171330"></script>
-    <script src="../assets/np-vpd-range-charts.js?v=20260802b"></script>
+    <script src="../assets/np-vpd-range-charts.js?v=20260803a"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
 <body class="admin-body">
@@ -9348,7 +9456,42 @@
                 while (arr.length < stages.length) arr.push(0);
                 pct[n.id] = arr.map(function (v) { return Math.round((Number(v) || 0) * 10) / 10; });
             });
-            return { nutrients: nutrients, stages: stages, pct: pct, updatedAt: Number(raw.updatedAt) || 0 };
+            var out = { nutrients: nutrients, stages: stages, pct: pct, updatedAt: Number(raw.updatedAt) || 0 };
+            if (typeof raw.title === 'string' && raw.title.trim()) {
+                out.title = raw.title.trim().slice(0, 120);
+            }
+            return out;
+        }
+
+        function adminExtraccionEtapaStateFingerprint(state) {
+            if (!state) return '';
+            var nutrients = state.nutrients || [];
+            var stages = state.stages || [];
+            var parts = [stages.join('|')];
+            nutrients.forEach(function (n) {
+                parts.push(String(n.id) + ':' + (Number(n.total) || 0).toFixed(2));
+                var arr = (state.pct && state.pct[n.id]) || [];
+                parts.push(arr.map(function (v) { return (Number(v) || 0).toFixed(1); }).join(','));
+            });
+            return parts.join(';;');
+        }
+
+        /** Título guardado en el proyecto, o el de la biblioteca si coincide la curva. */
+        function adminResolveExtraccionCurveTitle(state, libraryPresets) {
+            if (state && typeof state.title === 'string' && state.title.trim()) {
+                return state.title.trim().slice(0, 120);
+            }
+            if (!state || !libraryPresets || !libraryPresets.length) return '';
+            var fp = adminExtraccionEtapaStateFingerprint(state);
+            if (!fp) return '';
+            for (var i = 0; i < libraryPresets.length; i++) {
+                var p = libraryPresets[i];
+                if (!p || !p.state || !p.title) continue;
+                if (adminExtraccionEtapaStateFingerprint(p.state) === fp) {
+                    return String(p.title).trim().slice(0, 120);
+                }
+            }
+            return '';
         }
 
         function adminGetExtraccionEtapaStateFromProject(project, ownerUserId, projectId) {
@@ -9456,11 +9599,25 @@
             var updatedTxt = state.updatedAt
                 ? new Date(state.updatedAt).toLocaleString('es-MX')
                 : '';
+            var curveTitle = '';
+            if (chartIds && typeof chartIds.title === 'string' && chartIds.title.trim()) {
+                curveTitle = chartIds.title.trim().slice(0, 120);
+            } else if (state && typeof state.title === 'string' && state.title.trim()) {
+                curveTitle = state.title.trim().slice(0, 120);
+            }
+            var heading = chartIds.compact
+                ? (curveTitle ? '📈 ' + escapeHtml(curveTitle) : '📈 Curva')
+                : (curveTitle ? '📊 ' + escapeHtml(curveTitle) : '📊 Curva en este proyecto');
+            var descLead = chartIds.compact
+                ? 'Datos guardados en la biblioteca personal del usuario.'
+                : (curveTitle
+                    ? 'Curva <strong>' + escapeHtml(curveTitle) + '</strong> cargada en <strong>este proyecto</strong> (kg/ha, % por etapa). También en el reporte admin si marcas la sección correspondiente.'
+                    : 'Curva cargada y guardada en <strong>este proyecto</strong> (kg/ha, % por etapa). También en el reporte admin si marcas la sección correspondiente.');
             return `
                 <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 18px;">${chartIds.compact ? '📈 Curva' : '📊 Curva en este proyecto'}</h3>
+                    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 18px;">${heading}</h3>
                     <p style="margin: 0 0 14px 0; font-size: 13px; color: #64748b; line-height: 1.45;">
-                        ${chartIds.compact ? 'Datos guardados en la biblioteca personal del usuario.' : 'Curva cargada y guardada en <strong>este proyecto</strong> (kg/ha, % por etapa). También en el reporte admin si marcas la sección correspondiente.'}
+                        ${descLead}
                         ${updatedTxt ? ' <strong>Actualizado:</strong> ' + escapeHtml(updatedTxt) + '.' : ''}
                     </p>
                     <div style="margin-bottom: 14px;">
@@ -9614,7 +9771,12 @@
                 var microWrapId = 'adminExtLibMicro_' + safeUser + '_' + safePreset;
                 chartJobs.push({ state: p.state, macroWrapId: macroWrapId, microWrapId: microWrapId });
                 var savedTxt = p.savedAt ? new Date(p.savedAt).toLocaleString('es-MX') : '';
-                var inner = adminBuildExtraccionEtapaDetailHtml(p.state, { macroWrapId: macroWrapId, microWrapId: microWrapId, compact: true });
+                var inner = adminBuildExtraccionEtapaDetailHtml(p.state, {
+                    macroWrapId: macroWrapId,
+                    microWrapId: microWrapId,
+                    compact: true,
+                    title: p.title
+                });
                 return `
                     <details class="admin-ext-library-item" style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:0;margin-bottom:10px;">
                         <summary>
@@ -11744,12 +11906,20 @@
             }
 
             let adminUserExtLibraryBuilt = { html: '', chartJobs: [] };
+            var adminUserExtPresets = [];
             if (reportOwnerUserId) {
                 try {
-                    var adminUserExtPresets = await adminFetchUserExtraccionEtapaLibrary(reportOwnerUserId);
+                    adminUserExtPresets = await adminFetchUserExtraccionEtapaLibrary(reportOwnerUserId);
                     adminUserExtLibraryBuilt = adminBuildUserExtraccionLibrarySectionHtml(reportOwnerUserId, adminUserExtPresets);
                 } catch (libErr) {
                     console.warn('viewProjectDetails: biblioteca extracción/etapa', libErr);
+                }
+            }
+            if (adminExtEtapaState && extraccionEtapaChartIds) {
+                var resolvedExtTitle = adminResolveExtraccionCurveTitle(adminExtEtapaState, adminUserExtPresets);
+                if (resolvedExtTitle) {
+                    adminExtEtapaState.title = resolvedExtTitle;
+                    extraccionEtapaChartIds.title = resolvedExtTitle;
                 }
             }
             
@@ -13574,7 +13744,23 @@
                 const accentBorder = colorLeft === 'suelo' ? '#eab308' : colorLeft === 'solucion' ? '#3b82f6' : colorLeft === 'pasta' ? '#a855f7' : colorLeft === 'agua' ? '#06b6d4' : colorLeft === 'foliar' ? '#22c55e' : '#f97316';
                 let inner = '';
                 if (hasData) {
-                    inner = '<div class="admin-reports-list">' + arr.map((a, i) => {
+                    // Comparativa tablas + gráficas (mismo widget que el panel de usuario)
+                    if (arr.length >= 1) {
+                        if (colorLeft === 'suelo') {
+                            inner += '<div id="admin-soil-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
+                        } else if (colorLeft === 'solucion') {
+                            inner += '<div id="admin-sn-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
+                        } else if (colorLeft === 'pasta') {
+                            inner += '<div id="admin-ep-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
+                        } else if (colorLeft === 'agua') {
+                            inner += '<div id="admin-aw-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
+                        } else if (colorLeft === 'foliar') {
+                            inner += '<div id="admin-foliar-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
+                        } else if (colorLeft === 'fruta') {
+                            inner += '<div id="admin-fruta-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
+                        }
+                    }
+                    inner += '<div class="admin-reports-list">' + arr.map((a, i) => {
                         const name = a.title || a.name || (a.meta && a.meta.title) || `Reporte ${i + 1}`;
                         const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
                         const infoHtml = formatAnalysisItemInfo(a);
@@ -13923,12 +14109,15 @@
                     setTimeout(tryRenderExt, 200);
                 }
                 if (adminVpdRangeInit && window.NpVpdRangeCharts) {
-                    const tryVpd = () => {
-                        window.NpVpdRangeCharts.initInteractiveBlock(Object.assign({ prefix: 'admin-vpd' }, adminVpdRangeInit));
-                    };
-                    tryVpd();
-                    requestAnimationFrame(tryVpd);
-                    setTimeout(tryVpd, 80);
+                    // Una sola init tras layout: múltiples llamadas competían por el mismo canvas (Chart.js → vacío).
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            if (!document.getElementById('admin-vpd-critical-canvas')) return;
+                            window.NpVpdRangeCharts.initInteractiveBlock(
+                                Object.assign({ prefix: 'admin-vpd' }, adminVpdRangeInit)
+                            );
+                        });
+                    });
                 }
                 if (adminUserExtLibraryBuilt && adminUserExtLibraryBuilt.chartJobs && adminUserExtLibraryBuilt.chartJobs.length) {
                     adminScheduleExtraccionLibraryCharts(adminUserExtLibraryBuilt.chartJobs, content);
@@ -13936,6 +14125,36 @@
                 const adminClimateData = project.climateAnalysis || (project.data && project.data.climateAnalysis) || null;
                 if (adminClimateData && (adminClimateData.rainfall || adminClimateData.et0)) {
                     adminScheduleClimateCharts(adminClimateData, content);
+                }
+                // Comparativa de análisis de lab (tablas + gráficas), igual que en el panel de usuario
+                try {
+                    function adminNormalizeAnalyses(list, prefix) {
+                        return (Array.isArray(list) ? list : []).map(function (a, i) {
+                            if (!a || typeof a !== 'object') return null;
+                            var row = Object.assign({}, a);
+                            if (!row.id) row.id = 'admin_' + prefix + '_' + i + '_' + (row.date || i);
+                            if (!row.title) row.title = row.name || ((row.meta && row.meta.title) || ('Análisis ' + (i + 1)));
+                            if (!row.date && row.meta && row.meta.date) row.date = row.meta.date;
+                            return row;
+                        }).filter(Boolean);
+                    }
+                    function adminMountLabCompare(hostId, type, list, stateKey) {
+                        var host = content.querySelector('#' + hostId);
+                        if (!host || !list.length || !window.NpAnalysisCompare || typeof window.NpAnalysisCompare.mountLabCompare !== 'function') return;
+                        var normalized = adminNormalizeAnalyses(list, type);
+                        window[stateKey] = window.NpAnalysisCompare.mountLabCompare(host, {
+                            type: type,
+                            getAnalyses: function () { return normalized; }
+                        });
+                    }
+                    adminMountLabCompare('admin-soil-compare-host', 'soil', project.soilAnalyses, '_adminSoilCompareState');
+                    adminMountLabCompare('admin-sn-compare-host', 'solucion_nutritiva', project.solucionNutritivaAnalyses, '_adminSnCompareState');
+                    adminMountLabCompare('admin-ep-compare-host', 'extracto_pasta', project.extractoPastaAnalyses, '_adminEpCompareState');
+                    adminMountLabCompare('admin-aw-compare-host', 'agua', project.aguaAnalyses, '_adminAwCompareState');
+                    adminMountLabCompare('admin-foliar-compare-host', 'foliar', project.foliarAnalyses, '_adminFoliarCompareState');
+                    adminMountLabCompare('admin-fruta-compare-host', 'fruta', project.frutaAnalyses, '_adminFrutaCompareState');
+                } catch (soilCompareErr) {
+                    console.warn('admin lab compare:', soilCompareErr);
                 }
             }
         }
@@ -15335,11 +15554,28 @@
 
         function formatRadarAdminSentinelPeriod(item) {
             if (!item || !item.sentinel_period) return '';
-            var from = item.sentinel_period.from;
-            var to = item.sentinel_period.to;
-            if (from && to) return ' · Sentinel ' + from + ' → ' + to;
-            if (from || to) return ' · Sentinel ' + (from || to);
+            var from = item.sentinel_period.from ? String(item.sentinel_period.from).slice(0, 10) : '';
+            var to = item.sentinel_period.to ? String(item.sentinel_period.to).slice(0, 10) : '';
+            if (from && to && from === to) {
+                return ' · Escena satélite: ' + from;
+            }
+            if (from && to) {
+                return ' · Ventana satélite: ' + from + ' → ' + to;
+            }
+            if (from || to) {
+                return ' · Escena satélite: ' + (from || to);
+            }
             return '';
+        }
+
+        function formatRadarAdminHistoryOption(item, isLatest) {
+            if (!item) return 'Imagen Radar';
+            var label =
+                'Pedido ' +
+                formatRadarAdminDate(item.created_at) +
+                formatRadarAdminSentinelPeriod(item);
+            if (isLatest) label += ' · más reciente';
+            return label;
         }
 
         function ensureRadarAdminModal() {
@@ -15383,9 +15619,14 @@
             var sourceLabel = meta.pilot || meta.engine === 'cdse_pilot'
                 ? 'Pilot Copernicus/Sentinel-2'
                 : (meta.source || 'Sentinel-2 / Earth Engine');
-            var periodLabel = meta.date_start && meta.date_end
-                ? ' · Sentinel ' + esc(String(meta.date_start)) + ' – ' + esc(String(meta.date_end))
-                : '';
+            var periodLabel = '';
+            if (meta.date_start && meta.date_end) {
+                var ds = String(meta.date_start).slice(0, 10);
+                var de = String(meta.date_end).slice(0, 10);
+                periodLabel = ds === de
+                    ? ' · Escena satélite: ' + esc(ds)
+                    : ' · Ventana satélite: ' + esc(ds) + ' → ' + esc(de);
+            }
             var selectedCharged = res.j.credits && res.j.credits.selected_charged != null
                 ? Number(res.j.credits.selected_charged)
                 : (meta.credits_charged != null ? Number(meta.credits_charged) : null);
@@ -15459,20 +15700,23 @@
             var selectHtml = '';
             if (history.length > 0) {
                 var options = history.map(function (item, idx) {
-                    var label = formatRadarAdminDate(item.created_at) + formatRadarAdminSentinelPeriod(item);
-                    if (idx === 0) label += ' · más reciente';
+                    var label = formatRadarAdminHistoryOption(item, idx === 0);
                     var selected = String(item.id) === String(viewId) ? ' selected' : '';
                     return '<option value="' + esc(String(item.id)) + '"' + selected + '>' + esc(label) + '</option>';
                 }).join('');
                 selectHtml =
-                    '<div style="margin:0 0 14px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">' +
+                    '<div style="margin:0 0 8px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">' +
                     '<label style="font-size:13px;color:#475569;font-weight:600;">Generación:</label>' +
                     '<select id="radarAdminHistorySelect" data-project-id="' + esc(String(projectId)) + '" onchange="loadRadarAdminSnapshot(this.dataset.projectId, this.value)" ' +
                     'style="flex:1;min-width:220px;max-width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;">' +
                     options +
                     '</select>' +
                     '<span style="font-size:12px;color:#64748b;">' + esc(String(historyCount)) + ' guardada' + (historyCount === 1 ? '' : 's') + '</span>' +
-                    '</div>';
+                    '</div>' +
+                    '<p style="margin:0 0 14px 0;font-size:11px;color:#64748b;line-height:1.45;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 10px;">' +
+                    '<strong>Pedido</strong> = cuándo el socio generó la imagen en la app. ' +
+                    '<strong>Escena / ventana satélite</strong> = fecha(s) de la captura Sentinel-2 usada (si hay dos distintas, es el rango buscado; si son iguales, es el día de la pasada).' +
+                    '</p>';
             }
 
             var blockNdvi = ndvi
@@ -17350,7 +17594,8 @@
                 '@media (max-width:899px){#connMapModal .conn-map-modal-toolbar{flex:0 1 auto;width:100%;flex-basis:auto;}}' +
                 '@media (min-width:900px){#connMapModal .conn-map-modal-toolbar{width:auto;max-width:100%;justify-content:flex-end;}}' +
                 '#connMapModal #connMapSummaryBadge{flex-shrink:0;}' +
-                '#connMapModal #connMapContainer{flex:1 1 0;min-height:max(180px,28vh);}' +
+                '#connMapModal #connMapContainer{flex:1 1 0;min-height:max(180px,28vh);background:#0f172a;}' +
+                '#connMapModal #connMapContainer .leaflet-container{width:100%!important;height:100%!important;background:#0f172a;}' +
                 '@media (orientation:landscape) and (max-height:900px){#connMapModal{align-items:stretch;justify-content:stretch;padding:0;}#connMapModal .conn-map-modal-panel{width:100%!important;max-width:none!important;height:100%!important;max-height:100dvh!important;border-radius:0!important;}#connMapModal .conn-map-modal-header{padding:10px 14px;gap:8px;}#connMapModal .conn-map-modal-title p{margin:2px 0 0!important;}#connMapModal #connMapContainer{min-height:0;flex:1 1 0;}}' +
                 '#connMapModal .conn-map-modal-select{padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:13px;flex:1 1 140px;min-width:0;max-width:100%;box-sizing:border-box;}' +
                 '#connMapModal .conn-map-modal-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;justify-content:stretch;box-sizing:border-box;}' +
@@ -17379,9 +17624,30 @@
                 if (!window.L) return;
                 var center = [19.4326, -99.1332];
                 var zoom = 3;
-                connMapInstance = L.map(container, { zoomControl: true, attributionControl: true }).setView(center, zoom);
-                connMapStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
-                connMapSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 });
+                // Evitar mundo repetido a los lados (copias sin marcadores)
+                var worldBounds = L.latLngBounds([[-85.05112878, -180], [85.05112878, 180]]);
+                var mapW = Math.max(container.clientWidth || 0, 640);
+                var minZ = Math.max(2, Math.ceil(Math.log2(mapW / 256)));
+                connMapInstance = L.map(container, {
+                    zoomControl: true,
+                    attributionControl: true,
+                    worldCopyJump: false,
+                    maxBounds: worldBounds,
+                    maxBoundsViscosity: 1.0,
+                    minZoom: minZ
+                }).setView(center, Math.max(zoom, minZ));
+                connMapStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 19,
+                    noWrap: true,
+                    bounds: worldBounds
+                });
+                connMapSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri',
+                    maxZoom: 19,
+                    noWrap: true,
+                    bounds: worldBounds
+                });
                 connMapStreetLayer.addTo(connMapInstance);
                 connMapSatelliteView = false;
                 updateConnMapViewButton();

@@ -9,8 +9,8 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260801h"></script>
-  <script src="assets/np-atlas-en.js?v=20260801h"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260803a"></script>
+  <script src="assets/np-atlas-en.js?v=20260803a"></script>
 
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <style>
@@ -1305,10 +1305,22 @@
       }
     ];
 
-    var elementNames = {
+    var elementNamesEs = {
       H: 'Hidrógeno', C: 'Carbono', N: 'Nitrógeno', O: 'Oxígeno', S: 'Azufre',
       P: 'Fósforo', Cl: 'Cloro'
     };
+    function elementNames() {
+      if (!atlasIsEn()) return elementNamesEs;
+      return {
+        H: atlasLabel('hidrogeno', 'Hidrógeno'),
+        C: atlasLabel('carbono', 'Carbono'),
+        N: atlasLabel('nitrogeno', 'Nitrógeno'),
+        O: atlasLabel('oxigeno', 'Oxígeno'),
+        S: atlasLabel('azufre', 'Azufre'),
+        P: atlasLabel('fosforo', 'Fósforo'),
+        Cl: atlasLabel('cloro', 'Cloro')
+      };
+    }
 
     var state = {
       selected: AMINO_ACIDS[14],
@@ -1444,10 +1456,14 @@
       }
     ];
 
+    function localizeNutrient(v) {
+      if (v === 'N amínico') return atlasLabel('nAminico', 'N amínico');
+      return localizeTerm(v);
+    }
     function pills(items, cls) {
       cls = cls || 'green';
       return '<div class="meta">' + items.map(function (v) {
-        return '<span class="pill ' + cls + '">' + escapeHtml(v) + '</span>';
+        return '<span class="pill ' + cls + '">' + escapeHtml(localizeNutrient(v)) + '</span>';
       }).join('') + '</div>';
     }
 
@@ -1999,9 +2015,9 @@
 
     function loadMolecule(a) {
       var viewerState = document.getElementById('viewerState');
-      viewerState.textContent = 'Cargando estructura 3D desde PubChem...';
+      viewerState.textContent = atlasLabel('cargando3d', 'Cargando estructura 3D desde PubChem...');
       if (!window.$3Dmol) {
-        viewerState.textContent = 'El visor 3D requiere conexión para cargar 3Dmol.js. La tarjeta científica queda disponible sin conexión.';
+        viewerState.textContent = atlasLabel('sin3d', 'El visor 3D requiere conexión para cargar 3Dmol.js. La tarjeta científica queda disponible sin conexión.');
         return;
       }
 
@@ -2009,6 +2025,7 @@
       viewerEl.innerHTML = '';
       state.viewer = window.$3Dmol.createViewer(viewerEl, { backgroundColor: '#111827' });
       var url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + a.cid + '/SDF?record_type=3d';
+      var names = elementNames();
 
       fetch(url).then(function (r) {
         if (!r.ok) throw new Error('PubChem no devolvió estructura 3D');
@@ -2022,7 +2039,7 @@
         state.viewer.setClickable({}, true, function (atom, viewer) {
           if (state.label) viewer.removeLabel(state.label);
           var elem = atom.elem || atom.element || '?';
-          var label = (elementNames[elem] || elem) + ' (' + elem + ')';
+          var label = (names[elem] || elem) + ' (' + elem + ')';
           state.label = viewer.addLabel(label, {
             position: atom,
             backgroundColor: 'rgba(15,23,42,0.88)',
@@ -2033,13 +2050,14 @@
             fontSize: 13
           });
           viewer.render();
-          viewerState.textContent = 'Átomo seleccionado: ' + label + '. Arrastra para rotar, usa zoom y doble clic para recentrar.';
+          viewerState.textContent = atlasLabel('atomoSeleccionado', 'Átomo seleccionado: {label}. Arrastra para rotar, usa zoom y doble clic para recentrar.').replace('{label}', label);
         });
         state.viewer.zoomTo();
         state.viewer.render();
-        viewerState.textContent = 'Modelo CPK cargado. Arrastra para rotar 360°, usa zoom y selecciona un átomo para ver su nombre.';
+        viewerState.textContent = atlasLabel('modeloCpk', 'Modelo CPK cargado. Arrastra para rotar 360°, usa zoom y selecciona un átomo para ver su nombre.');
       }).catch(function () {
-        viewerState.innerHTML = 'No se pudo cargar el modelo 3D desde PubChem. Abre la fuente: <a href="https://pubchem.ncbi.nlm.nih.gov/compound/' + a.cid + '" target="_blank" rel="noopener noreferrer" style="color:#bbf7d0;">PubChem CID ' + a.cid + '</a>.';
+        viewerState.innerHTML = escapeHtml(atlasLabel('error3d', 'No se pudo cargar el modelo 3D desde PubChem. Abre la fuente:')) +
+          ' <a href="https://pubchem.ncbi.nlm.nih.gov/compound/' + a.cid + '" target="_blank" rel="noopener noreferrer" style="color:#bbf7d0;">PubChem CID ' + a.cid + '</a>.';
       });
     }
 
@@ -2094,6 +2112,20 @@
         if (t) t.textContent = sv.title;
         if (n) n.textContent = sv.name;
       });
+      var viewerState = document.getElementById('viewerState');
+      if (viewerState && !state.viewer) {
+        viewerState.textContent = atlasLabel('modeloHint', 'Modelo 3D CPK: arrastra para rotar 360°, rueda/pinza para zoom. Selecciona un átomo para ver su nombre.');
+      }
+      var atomKey = document.querySelector('.atom-key');
+      if (atomKey) {
+        var names = elementNames();
+        atomKey.innerHTML =
+          '<span class="atom"><span class="dot c"></span>' + escapeHtml(names.C) + '</span>' +
+          '<span class="atom"><span class="dot h"></span>' + escapeHtml(names.H) + '</span>' +
+          '<span class="atom"><span class="dot o"></span>' + escapeHtml(names.O) + '</span>' +
+          '<span class="atom"><span class="dot n"></span>' + escapeHtml(names.N) + '</span>' +
+          '<span class="atom"><span class="dot s"></span>' + escapeHtml(names.S) + '</span>';
+      }
     }
     window.refreshAtlasUi = function refreshAtlasUi() {
       applyAtlasChrome();

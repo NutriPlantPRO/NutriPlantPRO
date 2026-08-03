@@ -1,8 +1,12 @@
 /**
  * Netlify Function: extrae campos de un PDF/imagen de análisis de laboratorio
- * y los mapea al shape NutriPlant (fase 1: soil).
+ * y los mapea al shape NutriPlant.
  *
- * POST JSON { analysisType: 'soil', filename, mimeType, fileBase64 }
+ * POST JSON {
+ *   analysisType: 'soil'|'solucion_nutritiva'|'extracto_pasta'|'agua'|'foliar'|'fruta'
+ *     (aliases: sn, pasta, water/aw, leaf, fruit),
+ *   language, filename, mimeType, fileBase64
+ * }
  * Authorization: Bearer <supabase access_token>
  *
  * Cobra créditos de la misma bolsa que el Chat IA (profiles.chat_usage_*).
@@ -963,6 +967,260 @@ function soilPrompt(lang) {
   ].join('\n');
 }
 
+function emptyIonicShape(kind) {
+  const base = {
+    title: '',
+    date: '',
+    notes: '',
+    confidence: '',
+    general: {},
+    cations: {
+      ca_meq: '',
+      ca_ppm: '',
+      mg_meq: '',
+      mg_ppm: '',
+      na_meq: '',
+      na_ppm: '',
+      k_meq: '',
+      k_ppm: ''
+    },
+    anions: {
+      so4_meq: '',
+      so4_ppm: '',
+      hco3_meq: '',
+      hco3_ppm: '',
+      cl_meq: '',
+      cl_ppm: '',
+      co3_meq: '',
+      co3_ppm: '',
+      po4_meq: '',
+      po4_ppm: '',
+      no3_meq: '',
+      no3_ppm: ''
+    },
+    micros: {}
+  };
+  if (kind === 'solucion_nutritiva') {
+    base.general = { ce: '', ph: '', ras: '' };
+    base.micros = { b: '', fe: '', mn: '', cu: '', zn: '', mo: '', n_nh4: '' };
+    base.ideal = {};
+  } else if (kind === 'extracto_pasta') {
+    base.general = { cee: '', ras: '', phe: '' };
+    base.micros = { b: '', fe: '', mn: '', cu: '', zn: '', mo: '' };
+    base.ideal = {};
+  } else if (kind === 'agua') {
+    base.m3Riego = '';
+    base.acidResidualMeq = '';
+    base.general = { ce: '', ph: '', ras: '' };
+    base.micros = { b: '', fe: '', mn: '', cu: '', zn: '' };
+  }
+  return base;
+}
+
+function emptyFoliarShape() {
+  return {
+    title: '',
+    date: '',
+    notes: '',
+    confidence: '',
+    macros: { N: '', P: '', K: '', Ca: '', Mg: '', S: '' },
+    micros: { Fe: '', Mn: '', Zn: '', Cu: '', B: '', Mo: '' }
+  };
+}
+
+function emptyFrutaShape() {
+  return Object.assign(emptyFoliarShape(), {
+    calidad: { materiaSeca: '', brix: '', firmeza: '', acidezTitulable: '' },
+    calcio: { caTotal: '', caSolublePct: '', caLigadoPct: '', caInsolublePct: '' }
+  });
+}
+
+function normalizeIonicPayload(raw, kind, lang) {
+  const base = emptyIonicShape(kind);
+  if (!raw || typeof raw !== 'object') return base;
+  lang = noteLang(lang);
+  base.title = asStr(raw.title);
+  base.date = asStr(raw.date);
+  base.notes = asStr(raw.notes);
+  base.confidence = asStr(raw.confidence);
+  if (kind === 'agua') {
+    base.m3Riego = asStr(raw.m3Riego);
+    base.acidResidualMeq = asStr(raw.acidResidualMeq);
+  }
+  ['general', 'cations', 'anions', 'micros'].forEach((group) => {
+    const src = raw[group] && typeof raw[group] === 'object' ? raw[group] : {};
+    Object.keys(base[group]).forEach((key) => {
+      base[group][key] = asStr(src[key]);
+    });
+  });
+  if (kind === 'extracto_pasta' && raw.general) {
+    if (!base.general.cee) base.general.cee = asStr(raw.general.ce || raw.general.EC || raw.general.ec);
+    if (!base.general.phe) base.general.phe = asStr(raw.general.ph || raw.general.pH);
+  }
+  if ((kind === 'solucion_nutritiva' || kind === 'agua') && raw.general) {
+    if (!base.general.ce) base.general.ce = asStr(raw.general.EC || raw.general.ec || raw.general.cee);
+    if (!base.general.ph) base.general.ph = asStr(raw.general.pH || raw.general.phe);
+  }
+  return base;
+}
+
+function normalizeFoliarPayload(raw) {
+  const base = emptyFoliarShape();
+  if (!raw || typeof raw !== 'object') return base;
+  base.title = asStr(raw.title);
+  base.date = asStr(raw.date);
+  base.notes = asStr(raw.notes);
+  base.confidence = asStr(raw.confidence);
+  const macros = raw.macros && typeof raw.macros === 'object' ? raw.macros : {};
+  const micros = raw.micros && typeof raw.micros === 'object' ? raw.micros : {};
+  Object.keys(base.macros).forEach((k) => {
+    base.macros[k] = asStr(macros[k] != null ? macros[k] : macros[k.toLowerCase()]);
+  });
+  Object.keys(base.micros).forEach((k) => {
+    base.micros[k] = asStr(micros[k] != null ? micros[k] : micros[k.toLowerCase()]);
+  });
+  return base;
+}
+
+function normalizeFrutaPayload(raw) {
+  const base = emptyFrutaShape();
+  const foliar = normalizeFoliarPayload(raw);
+  base.title = foliar.title;
+  base.date = foliar.date;
+  base.notes = foliar.notes;
+  base.confidence = foliar.confidence;
+  base.macros = foliar.macros;
+  base.micros = foliar.micros;
+  const calidad = raw && raw.calidad && typeof raw.calidad === 'object' ? raw.calidad : {};
+  const calcio = raw && raw.calcio && typeof raw.calcio === 'object' ? raw.calcio : {};
+  Object.keys(base.calidad).forEach((k) => {
+    base.calidad[k] = asStr(calidad[k]);
+  });
+  if (!base.calidad.brix) {
+    base.calidad.brix = asStr(calidad.Brix || calidad.degreesBrix || calidad['°Brix']);
+  }
+  Object.keys(base.calcio).forEach((k) => {
+    base.calcio[k] = asStr(calcio[k]);
+  });
+  return base;
+}
+
+function ionicPrompt(kind, lang) {
+  const en = noteLang(lang) === 'en';
+  const shape = emptyIonicShape(kind);
+  const labels = {
+    solucion_nutritiva: en ? 'nutrient solution / fertigation liquor' : 'solución nutritiva / licor de fertirriego',
+    extracto_pasta: en ? 'saturated paste extract' : 'extracto de pasta saturada',
+    agua: en ? 'irrigation / fertigation water' : 'agua de riego / fertirrigación'
+  };
+  const name = labels[kind] || kind;
+  return [
+    en
+      ? 'You are a lab report extractor for NutriPlant PRO (' + name + ').'
+      : 'Eres un extractor de análisis de laboratorio para NutriPlant PRO (' + name + ').',
+    en
+      ? 'Read the PDF/image (Spanish or English labs) and return ONLY valid JSON with this exact shape:'
+      : 'Lee el PDF/imagen (lab en español o inglés) y devuelve SOLO JSON válido con esta forma exacta:',
+    JSON.stringify(shape, null, 2),
+    '',
+    en ? 'Rules:' : 'Reglas:',
+    '- Numbers as strings. Missing values = "". Do not invent.',
+    '- Detection limits (<, ND, trace, BDL): keep EXACT text in the field; mention in notes.',
+    '- Synonyms EN/ES: EC/CE/electrical conductivity → general.ce (or general.cee for paste); pH; SAR/RAS;',
+    '  K/Ca/Mg/Na cations; NO3/nitrate, H2PO4/PO4/phosphate/P, SO4/sulfate/S, Cl/chloride, HCO3/bicarbonate, CO3/carbonate;',
+    '  micros B Fe Mn Zn Cu Mo; NH4/ammonium → micros.n_nh4 when present (SN only).',
+    '- Prefer ppm elemental for nutrient concentrations when both meq and ppm appear; still fill both if clear.',
+    '- meq/L and mmolc/L are equivalent for charge; store the number in *_meq fields.',
+    '- date YYYY-MM-DD if possible; title = lab/client/ranch if present.',
+    '- confidence: high|medium|low.',
+    en
+      ? '- notes: short ENGLISH note if ambiguous or conversions needed.'
+      : '- notes: breve aviso en ESPAÑOL si hay ambigüedad o conversiones.'
+  ].join('\n');
+}
+
+function foliarPrompt(lang) {
+  const en = noteLang(lang) === 'en';
+  return [
+    en
+      ? 'You are a leaf/tissue lab report extractor for NutriPlant PRO.'
+      : 'Eres un extractor de análisis foliar para NutriPlant PRO.',
+    en
+      ? 'Read the PDF/image (ES or EN) and return ONLY valid JSON:'
+      : 'Lee el PDF/imagen (ES o EN) y devuelve SOLO JSON válido:',
+    JSON.stringify(emptyFoliarShape(), null, 2),
+    '',
+    '- macros N P K Ca Mg S as % dry matter (string numbers).',
+    '- micros Fe Mn Zn Cu B Mo as mg/kg or ppm (same number).',
+    '- Do not invent. Limits (<, ND) keep exact text.',
+    '- Synonyms: leaf analysis, tissue test, foliar, hoja, % MS, dry weight.',
+    '- date YYYY-MM-DD; title if present; confidence high|medium|low.',
+    en ? '- notes in English if needed.' : '- notes en español si hace falta.'
+  ].join('\n');
+}
+
+function frutaPrompt(lang) {
+  const en = noteLang(lang) === 'en';
+  return [
+    en
+      ? 'You are a fruit quality/nutrient lab report extractor for NutriPlant PRO.'
+      : 'Eres un extractor de análisis de fruta para NutriPlant PRO.',
+    en
+      ? 'Read the PDF/image (ES or EN) and return ONLY valid JSON:'
+      : 'Lee el PDF/imagen (ES o EN) y devuelve SOLO JSON válido:',
+    JSON.stringify(emptyFrutaShape(), null, 2),
+    '',
+    '- macros % ; micros mg/kg; calidad: dry matter / materiaSeca, Brix/°Brix → brix, firmness/firmeza, titratable acidity/acidezTitulable.',
+    '- calcio: total Ca, soluble/ligado/insoluble % if present.',
+    '- Do not invent. Keep detection-limit text exact.',
+    '- date YYYY-MM-DD; title; confidence; notes language matches UI language.'
+  ].join('\n');
+}
+
+function resolveAnalysisType(raw) {
+  const t = String(raw || 'soil').trim().toLowerCase();
+  const map = {
+    soil: 'soil',
+    suelo: 'soil',
+    solucion_nutritiva: 'solucion_nutritiva',
+    sn: 'solucion_nutritiva',
+    solucion: 'solucion_nutritiva',
+    nutrient_solution: 'solucion_nutritiva',
+    extracto_pasta: 'extracto_pasta',
+    pasta: 'extracto_pasta',
+    ep: 'extracto_pasta',
+    paste: 'extracto_pasta',
+    agua: 'agua',
+    water: 'agua',
+    aw: 'agua',
+    foliar: 'foliar',
+    leaf: 'foliar',
+    fruta: 'fruta',
+    fruit: 'fruta'
+  };
+  return map[t] || null;
+}
+
+function promptForType(analysisType, lang) {
+  if (analysisType === 'soil') return soilPrompt(lang);
+  if (analysisType === 'solucion_nutritiva' || analysisType === 'extracto_pasta' || analysisType === 'agua') {
+    return ionicPrompt(analysisType, lang);
+  }
+  if (analysisType === 'foliar') return foliarPrompt(lang);
+  if (analysisType === 'fruta') return frutaPrompt(lang);
+  return soilPrompt(lang);
+}
+
+function normalizeForType(analysisType, parsed, lang) {
+  if (analysisType === 'soil') return normalizeSoilPayload(parsed, lang);
+  if (analysisType === 'solucion_nutritiva' || analysisType === 'extracto_pasta' || analysisType === 'agua') {
+    return normalizeIonicPayload(parsed, analysisType, lang);
+  }
+  if (analysisType === 'foliar') return normalizeFoliarPayload(parsed);
+  if (analysisType === 'fruta') return normalizeFrutaPayload(parsed);
+  return normalizeSoilPayload(parsed, lang);
+}
+
 async function verifyUser(accessToken) {
   const url = (process.env.SUPABASE_URL || '').trim();
   const key =
@@ -981,12 +1239,13 @@ async function verifyUser(accessToken) {
   return { ok: true, userId: userData.user.id, email: userData.user.email || '' };
 }
 
-async function extractWithOpenAI({ buffer, filename, mimeType, language }) {
+async function extractWithOpenAI({ buffer, filename, mimeType, language, analysisType }) {
   const apiKey = (process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey) {
     return { ok: false, status: 500, error: 'OPENAI_API_KEY no configurada.' };
   }
   const lang = noteLang(language);
+  const type = resolveAnalysisType(analysisType) || 'soil';
   const model = resolveModel();
   const isPdf = /pdf/i.test(mimeType || '') || /\.pdf$/i.test(filename || '');
   const b64 = buffer.toString('base64');
@@ -995,12 +1254,12 @@ async function extractWithOpenAI({ buffer, filename, mimeType, language }) {
     : 'data:' + (mimeType || 'image/jpeg') + ';base64,' + b64;
 
   const content = [
-    { type: 'input_text', text: soilPrompt(lang) }
+    { type: 'input_text', text: promptForType(type, lang) }
   ];
   if (isPdf) {
     content.push({
       type: 'input_file',
-      filename: filename || 'analisis-suelo.pdf',
+      filename: filename || ('analisis-' + type + '.pdf'),
       file_data: dataUrl
     });
   } else {
@@ -1041,7 +1300,8 @@ async function extractWithOpenAI({ buffer, filename, mimeType, language }) {
   }
   return {
     ok: true,
-    fields: normalizeSoilPayload(parsed, lang),
+    analysisType: type,
+    fields: normalizeForType(type, parsed, lang),
     model,
     rawPreview: text.slice(0, 400)
   };
@@ -1073,9 +1333,13 @@ exports.handler = async function (event) {
     return jsonResponse(400, { ok: false, error: 'JSON inválido.' });
   }
 
-  const analysisType = String(body.analysisType || 'soil').trim().toLowerCase();
-  if (analysisType !== 'soil') {
-    return jsonResponse(400, { ok: false, error: 'Por ahora solo analysisType=soil está soportado.' });
+  const analysisType = resolveAnalysisType(body.analysisType || 'soil');
+  if (!analysisType) {
+    return jsonResponse(400, {
+      ok: false,
+      error:
+        'analysisType no soportado. Usa: soil, solucion_nutritiva, extracto_pasta, agua, foliar, fruta (o aliases sn/pasta/water/leaf/fruit).'
+    });
   }
   const language = noteLang(body.language || body.lang || 'es');
 
@@ -1115,7 +1379,13 @@ exports.handler = async function (event) {
   }
 
   try {
-    const extracted = await extractWithOpenAI({ buffer, filename, mimeType, language });
+    const extracted = await extractWithOpenAI({
+      buffer,
+      filename,
+      mimeType,
+      language,
+      analysisType
+    });
     if (!extracted.ok) {
       return jsonResponse(extracted.status || 500, { ok: false, error: extracted.error });
     }
@@ -1124,7 +1394,7 @@ exports.handler = async function (event) {
     }
     return jsonResponse(200, {
       ok: true,
-      analysisType: 'soil',
+      analysisType: extracted.analysisType || analysisType,
       fields: extracted.fields,
       model: extracted.model,
       credits_used: creditGate.skipped ? 0 : creditsNeeded,

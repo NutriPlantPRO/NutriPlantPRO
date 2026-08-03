@@ -11,11 +11,12 @@
   <meta name="theme-color" content="#2563eb" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260802j"></script>
+  <script src="assets/np-i18n.js?v=20260803a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-analysis-ui.js?v=20260801w"></script>
-  <script src="assets/np-analysis-compare.js?v=20260802g"></script>
+  <script src="assets/np-analysis-ui.js?v=20260803a"></script>
+  <script src="assets/np-lab-type-configs.js?v=20260803c"></script>
+  <script src="assets/np-analysis-compare.js?v=20260803c"></script>
   <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
   <script src="assets/np-fertigation-ui.js?v=20260801y"></script>
   <script src="assets/np-granular-ui.js?v=20260730c"></script>
@@ -48,7 +49,7 @@
   <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260802f" />
+  <link rel="stylesheet" href="dashboard.css?v=20260803b" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -437,8 +438,8 @@
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260801x"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
-  <script src="assets/np-vpd-range-charts.js?v=20260802b"></script>
-  <script src="dashboard.js?v=20260802g"></script>
+  <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
+  <script src="dashboard.js?v=20260803d"></script>
   <script src="fertirriego-program-functions.js?v=20260801y"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=202607302100"></script>
@@ -5108,10 +5109,10 @@ CONTRATO:
       if (frame && needsFullReload) {
         try {
           var pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260801g' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260803a' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         } catch (e) {
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260801g&t=' + Date.now();
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260803a&t=' + Date.now();
           _npExtraccionEtapaFrameKey = frameKey;
         }
       }
@@ -7131,7 +7132,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260801h" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260803a" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7147,7 +7148,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260801g" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260803a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

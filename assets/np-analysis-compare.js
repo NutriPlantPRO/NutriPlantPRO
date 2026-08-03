@@ -10,6 +10,19 @@
     '#0891b2', '#ca8a04', '#dc2626', '#4f46e5', '#059669'
   ];
 
+  function analysisColor(index) {
+    return CHART_COLORS[(Number(index) || 0) % CHART_COLORS.length];
+  }
+
+  /** Fondo tenue a partir del color de gráfica (hex #rrggbb). */
+  function analysisColorWash(color, alphaHex) {
+    var c = String(color || '#2563eb');
+    if (c.charAt(0) === '#' && (c.length === 7 || c.length === 4)) {
+      return c + (alphaHex || '1a');
+    }
+    return c;
+  }
+
   var SOIL_FIELDS = [
     { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH', unit: 'other', chartable: true, block: 'ph' },
     { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer', unit: 'other', chartable: true, block: 'ph' },
@@ -155,6 +168,16 @@
     return Number.isFinite(n) ? n : null;
   }
 
+  /** CEC % y relaciones: 2 decimales; el resto sin forzar (labs ya vienen redondeados). */
+  function formatCompareValue(v, row) {
+    if (v == null || !Number.isFinite(v)) return '—';
+    var block = row && row.block;
+    if (block === 'cec_pct' || block === 'ratios' || (row && row.unit === 'pct')) {
+      return Number(v).toFixed(2);
+    }
+    return String(v);
+  }
+
   function tr(key, fallback, params) {
     try {
       if (w.NpI18n && typeof w.NpI18n.t === 'function') {
@@ -181,7 +204,8 @@
   }
 
   /** Cabecera de columna en 1–2 renglones (título / fecha) para no alargar la tabla. */
-  function fillAnalysisColumnHeader(th, a, index) {
+  function fillAnalysisColumnHeader(th, a, index, opts) {
+    opts = opts || {};
     th.classList.add('np-analysis-compare__th-analysis');
     th.title = analysisLabel(a, index);
     var title = (a && a.title) ? String(a.title).trim() : '';
@@ -201,6 +225,16 @@
       one.className = 'np-analysis-compare__th-title';
       one.textContent = title || d || tr('analysis.analysis_n', 'Análisis {n}', { n: index + 1 });
       th.appendChild(one);
+    }
+    var color = analysisColor(index);
+    th.style.color = color;
+    th.style.borderTop = '3px solid ' + color;
+    if (opts.on) {
+      th.style.background = analysisColorWash(color, '18');
+      th.style.opacity = '1';
+    } else {
+      th.style.background = '#f8fafc';
+      th.style.opacity = '0.72';
     }
   }
 
@@ -289,8 +323,8 @@
       return r.label + unitSuffix(r.unit);
     });
     var isBar = chartType === 'bar';
-    var datasets = selected.map(function (item, si) {
-      var color = CHART_COLORS[si % CHART_COLORS.length];
+    var datasets = selected.map(function (item) {
+      var color = analysisColor(item.index);
       return {
         label: analysisLabel(item.analysis, item.index),
         data: chartRows.map(function (r) {
@@ -322,7 +356,8 @@
               label: function (ctx) {
                 var v = ctx.parsed.y;
                 if (v == null) return ctx.dataset.label + ': —';
-                return ctx.dataset.label + ': ' + v;
+                var rowMeta = chartRows[ctx.dataIndex];
+                return ctx.dataset.label + ': ' + formatCompareValue(v, rowMeta);
               }
             }
           }
@@ -342,23 +377,54 @@
     });
   }
 
-  function mountSoilCompare(host, options) {
+  function getTypeConfig(type) {
+    if (type === 'soil' || type === 'suelo') {
+      return {
+        id: 'soil',
+        fields: SOIL_FIELDS,
+        blocks: SOIL_BLOCKS,
+        reviewSections: SOIL_REVIEW_SECTIONS,
+        reviewFields: SOIL_REVIEW_FIELDS,
+        hint:
+          'Cada columna es un análisis. Activa los que quieras comparar. pH y físicos/MO solo en tabla; gráficas: macros, micros y % CIC.',
+        reviewTitle: 'Revisar datos detectados (suelo)',
+        canvasPrefix: 'npSoilChart_'
+      };
+    }
+    var cfg =
+      w.NpLabTypeConfigs && typeof w.NpLabTypeConfigs.resolveType === 'function'
+        ? w.NpLabTypeConfigs.resolveType(type)
+        : null;
+    if (!cfg) return null;
+    return Object.assign({ canvasPrefix: 'npLabChart_' + cfg.id + '_' }, cfg);
+  }
+
+  function mountLabCompare(host, options) {
     options = options || {};
     if (!host) return null;
+    var typeCfg = getTypeConfig(options.type || 'soil');
+    if (!typeCfg) {
+      console.warn('NpAnalysisCompare.mountLabCompare: tipo desconocido', options.type);
+      return null;
+    }
+    var fieldsCatalog = typeCfg.fields;
+    var blocksCatalog = typeCfg.blocks;
+    var uid = 'npCmp_' + String(typeCfg.id || 'x').replace(/[^a-z0-9_]/gi, '') + '_' + String(Date.now()).slice(-6);
     var state = {
+      type: typeCfg.id,
       selected: {},
       charts: {},
       getAnalyses: options.getAnalyses || function () { return []; }
     };
 
-    var chartsHtml = SOIL_BLOCKS.filter(function (b) { return b.chart; }).map(function (b) {
+    var chartsHtml = blocksCatalog.filter(function (b) { return b.chart; }).map(function (b) {
       return (
         '<div class="np-analysis-compare__chart-card" data-block="' + b.id + '">' +
           '<h4 class="np-analysis-compare__chart-title">' +
             tr(b.titleKey, b.title) +
           '</h4>' +
           '<div class="np-analysis-compare__chart-wrap">' +
-            '<canvas id="npSoilChart_' + b.id + '" aria-label="' + tr(b.titleKey, b.title) + '"></canvas>' +
+            '<canvas id="' + uid + '_' + b.id + '" aria-label="' + tr(b.titleKey, b.title) + '"></canvas>' +
           '</div>' +
         '</div>'
       );
@@ -366,44 +432,47 @@
 
     host.innerHTML =
       '<details class="np-analysis-compare" open>' +
-        '<summary class="np-analysis-compare__summary" data-i18n="analysis.compare_title">📊 ' +
+        '<summary class="np-analysis-compare__summary">📊 ' +
           tr('analysis.compare_title', 'Comparar análisis (tabla y gráficas)') +
         '</summary>' +
         '<div class="np-analysis-compare__body">' +
-          '<p class="np-analysis-compare__hint" data-i18n="analysis.compare_hint">' +
-            tr(
-              'analysis.compare_hint',
-              'Cada columna es un análisis. Activa los que quieras comparar. pH y físicos/MO solo en tabla; gráficas: macros, micros y % CIC.'
-            ) +
+          '<p class="np-analysis-compare__hint">' +
+            tr('analysis.compare_hint_' + typeCfg.id, typeCfg.hint || '') +
           '</p>' +
-          '<div class="np-analysis-compare__cols" id="npSoilCompareCols"></div>' +
-          '<div class="np-analysis-compare__tables" id="npSoilCompareTables"></div>' +
-          '<div class="np-analysis-compare__charts" id="npSoilCompareCharts">' + chartsHtml + '</div>' +
+          '<div class="np-analysis-compare__cols" id="' + uid + '_cols"></div>' +
+          '<div class="np-analysis-compare__tables" id="' + uid + '_tables"></div>' +
+          '<div class="np-analysis-compare__charts" id="' + uid + '_charts">' + chartsHtml + '</div>' +
         '</div>' +
       '</details>';
 
     function refresh() {
       var analyses = state.getAnalyses() || [];
-      var colsEl = host.querySelector('#npSoilCompareCols');
-      var tablesHost = host.querySelector('#npSoilCompareTables');
+      var colsEl = host.querySelector('#' + uid + '_cols');
+      var tablesHost = host.querySelector('#' + uid + '_tables');
       if (!colsEl || !tablesHost) return;
 
       var idSet = {};
-      analyses.forEach(function (a) { idSet[a.id] = true; });
+      analyses.forEach(function (a) { if (a && a.id) idSet[a.id] = true; });
       Object.keys(state.selected).forEach(function (id) {
         if (!idSet[id]) delete state.selected[id];
       });
       if (!Object.keys(state.selected).length && analyses.length) {
-        analyses.forEach(function (a) { state.selected[a.id] = true; });
+        analyses.forEach(function (a) { if (a && a.id) state.selected[a.id] = true; });
       }
 
       colsEl.innerHTML = '';
       analyses.forEach(function (a, idx) {
+        var on = !!state.selected[a.id];
+        var color = analysisColor(idx);
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'np-analysis-compare__col-btn' + (state.selected[a.id] ? ' is-on' : '');
+        btn.className = 'np-analysis-compare__col-btn' + (on ? ' is-on' : '');
         btn.textContent = analysisLabel(a, idx);
         btn.title = tr('analysis.compare_toggle_col', 'Incluir/excluir en gráfica');
+        btn.style.borderColor = color;
+        btn.style.color = on ? color : '#64748b';
+        btn.style.background = on ? analysisColorWash(color, '1a') : '#f8fafc';
+        btn.style.boxShadow = on ? 'inset 0 0 0 1px ' + color : 'none';
         btn.addEventListener('click', function () {
           state.selected[a.id] = !state.selected[a.id];
           refresh();
@@ -411,9 +480,9 @@
         colsEl.appendChild(btn);
       });
 
-      var rows = buildCompareRows(analyses, SOIL_FIELDS);
+      var rows = buildCompareRows(analyses, fieldsCatalog);
       tablesHost.innerHTML = '';
-      SOIL_BLOCKS.forEach(function (block) {
+      blocksCatalog.forEach(function (block) {
         var blockRows = rows.filter(function (r) { return r.block === block.id; });
         if (!blockRows.length) return;
         var wrap = document.createElement('div');
@@ -432,7 +501,7 @@
         hr.appendChild(th0);
         analyses.forEach(function (a, idx) {
           var th = document.createElement('th');
-          fillAnalysisColumnHeader(th, a, idx);
+          fillAnalysisColumnHeader(th, a, idx, { on: !!state.selected[a.id] });
           if (state.selected[a.id]) th.classList.add('is-on');
           hr.appendChild(th);
         });
@@ -444,7 +513,7 @@
           trEl.appendChild(td0);
           row.values.forEach(function (v) {
             var td = document.createElement('td');
-            td.textContent = v == null ? '—' : String(v);
+            td.textContent = formatCompareValue(v, row);
             trEl.appendChild(td);
           });
           tbody.appendChild(trEl);
@@ -454,9 +523,9 @@
 
       ensureChartJs(function () {
         destroyCharts(state);
-        SOIL_BLOCKS.forEach(function (block) {
+        blocksCatalog.forEach(function (block) {
           if (!block.chart) return;
-          var canvas = host.querySelector('#npSoilChart_' + block.id);
+          var canvas = host.querySelector('#' + uid + '_' + block.id);
           var blockRows = rows.filter(function (r) { return r.block === block.id; });
           renderBlockChart(
             canvas,
@@ -476,6 +545,12 @@
     return state;
   }
 
+  function mountSoilCompare(host, options) {
+    options = options || {};
+    options.type = 'soil';
+    return mountLabCompare(host, options);
+  }
+
   function isDetectionLimitValue(s) {
     var t = String(s || '').trim();
     if (!t) return false;
@@ -491,10 +566,18 @@
     return /^-?\d+(\.\d+)?$/.test(t);
   }
 
-  function flattenDetected(fields) {
+  function escapeAttr(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function flattenDetectedForType(fields, reviewFields, textPaths) {
     var out = [];
-    var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1 };
-    SOIL_REVIEW_FIELDS.forEach(function (f) {
+    textPaths = textPaths || { title: 1, date: 1 };
+    (reviewFields || []).forEach(function (f) {
       var val = getByPath(fields, f.path);
       var str = val === null || val === undefined ? '' : String(val);
       var isText = !!textPaths[f.path];
@@ -515,19 +598,35 @@
     return out;
   }
 
-  function escapeAttr(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+  function flattenDetected(fields) {
+    return flattenDetectedForType(fields, SOIL_REVIEW_FIELDS, {
+      title: 1,
+      date: 1,
+      'physical.texturalClass': 1,
+      'fertility.pMethod': 1
+    });
   }
 
-  function openSoilReviewModal(fields, onApply) {
+  function openLabReviewModal(typeOrFields, fieldsOrOnApply, maybeOnApply) {
+    var type = 'soil';
+    var fields = typeOrFields;
+    var onApply = fieldsOrOnApply;
+    if (typeof typeOrFields === 'string') {
+      type = typeOrFields;
+      fields = fieldsOrOnApply;
+      onApply = maybeOnApply;
+    }
+    var typeCfg = getTypeConfig(type);
+    if (!typeCfg) {
+      console.warn('openLabReviewModal: tipo desconocido', type);
+      return;
+    }
+
     var existing = document.getElementById('npLabPdfReviewModal');
     if (existing) existing.remove();
 
-    var rows = flattenDetected(fields || {});
+    var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1 };
+    var rows = flattenDetectedForType(fields || {}, typeCfg.reviewFields, textPaths);
     var modal = document.createElement('div');
     modal.id = 'npLabPdfReviewModal';
     modal.className = 'np-lab-pdf-modal';
@@ -536,7 +635,7 @@
     modal.innerHTML =
       '<div class="np-lab-pdf-modal__panel">' +
         '<div class="np-lab-pdf-modal__head">' +
-          '<h3>' + tr('analysis.pdf_review_title', 'Revisar datos detectados (suelo)') + '</h3>' +
+          '<h3>' + tr('analysis.pdf_review_title_' + typeCfg.id, typeCfg.reviewTitle || 'Revisar datos detectados') + '</h3>' +
           '<button type="button" class="np-lab-pdf-modal__close" aria-label="' +
             tr('analysis.pdf_review_close', 'Cerrar') +
           '">×</button>' +
@@ -553,7 +652,7 @@
         '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#0369a1;">' +
           tr(
             'analysis.pdf_review_units_hint',
-            'Cada campo muestra su unidad (ppm, meq, %, cm…). Toca la etiqueta de unidad para ver qué valor va ahí. Si el PDF traía unidades inglesas, ya se convierten; revisa las notas si hubo conversión.'
+            'Cada campo muestra su unidad (ppm, meq, %, cm…). Revisa sinónimos EN/ES del lab antes de aplicar.'
           ) +
         '</p>' +
         (fields && fields.notes ? '<p class="np-lab-pdf-modal__notes">' + String(fields.notes).replace(/</g, '&lt;') + '</p>' : '') +
@@ -588,7 +687,7 @@
       if (!bySection[sid]) bySection[sid] = [];
       bySection[sid].push(row);
     });
-    SOIL_REVIEW_SECTIONS.forEach(function (sec) {
+    (typeCfg.reviewSections || []).forEach(function (sec) {
       var secRows = bySection[sec.id];
       if (!secRows || !secRows.length) return;
       var head = document.createElement('div');
@@ -669,6 +768,10 @@
     document.body.appendChild(modal);
   }
 
+  function openSoilReviewModal(fields, onApply) {
+    return openLabReviewModal('soil', fields, onApply);
+  }
+
   w.NpAnalysisCompare = {
     SOIL_FIELDS: SOIL_FIELDS,
     SOIL_BLOCKS: SOIL_BLOCKS,
@@ -677,7 +780,10 @@
     getByPath: getByPath,
     setByPath: setByPath,
     buildCompareRows: buildCompareRows,
+    getTypeConfig: getTypeConfig,
+    mountLabCompare: mountLabCompare,
     mountSoilCompare: mountSoilCompare,
+    openLabReviewModal: openLabReviewModal,
     openSoilReviewModal: openSoilReviewModal,
     analysisLabel: analysisLabel
   };

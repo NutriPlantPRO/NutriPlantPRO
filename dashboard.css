@@ -7800,7 +7800,7 @@ html.embed-login body {
   margin-bottom: 12px;
 }
 .np-analysis-compare__col-btn {
-  border: 1px solid #cbd5e1;
+  border: 2px solid #cbd5e1;
   background: #f8fafc;
   color: #334155;
   border-radius: 999px;
@@ -7808,11 +7808,11 @@ html.embed-login body {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 .np-analysis-compare__col-btn.is-on {
+  /* color/borde vienen inline del color de la gráfica */
   background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1d4ed8;
 }
 .np-analysis-compare__table-wrap {
   overflow: auto;
@@ -7880,7 +7880,8 @@ html.embed-login body {
   color: #0f172a;
 }
 .np-analysis-compare__table th.is-on {
-  color: #1d4ed8;
+  /* color/fondo de título = color de serie (inline en JS) */
+  color: inherit;
   background: #eff6ff;
 }
 /* Títulos de análisis: columnas compactas (evita hueco enorme) */
@@ -8215,6 +8216,12 @@ html.embed-login body {
   display: block;
   white-space: nowrap;
   line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Análisis de suelo: títulos de celda siempre en 1 renglón (EN suele ser más largo). */
+#soil-analysis-tab-container .soil-fields {
+  grid-template-columns: repeat(auto-fill, minmax(11.75rem, 1fr));
 }
 @media (max-width: 360px) {
   .soil-fields .soil-field-lbl {

@@ -1093,11 +1093,13 @@
   }
 
   .auth-page .auth-preferences-bar__prefs {
+    display: flex;
     min-width: 0;
     gap: 10px;
     /* Centrado sobre la tarjeta de Iniciar sesión (no pegado a la esquina) */
     justify-content: center;
-    justify-self: center;
+    justify-self: stretch;
+    align-items: center;
     width: 100%;
   }
 
@@ -1105,13 +1107,17 @@
     grid-template-columns: repeat(2, minmax(100px, 140px));
     gap: 8px;
     max-width: 290px;
+    width: max-content;
+    margin-left: auto;
+    margin-right: auto;
+    flex: 0 0 auto;
   }
 
   /* Manual + contacto: centrados sobre la columna de herramientas */
   .auth-page .auth-preferences-bar__portal {
     gap: 10px 8px;
     justify-content: center;
-    justify-self: center;
+    justify-self: stretch;
     width: 100%;
     flex: 0 1 auto;
   }
