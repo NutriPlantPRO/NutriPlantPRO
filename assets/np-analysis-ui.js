@@ -295,8 +295,9 @@
     var bdSym = 'g/cm³';
     var doseSym = unitSymbol('dose_mass_area');
     var massSym = unitSymbol('mass');
-    var volLabel = isUS() ? t('Agua de riego:', 'Irrigation water:') + ' (' + unitSymbol('volume') + ')'
-      : t('m³ agua de riego:', 'Irrigation water m³:');
+    var volLabel = isUS()
+      ? t('Agua de riego', 'Irrigation water') + ' (' + unitSymbol('volume') + ')'
+      : t('m³ agua de riego', 'Irrigation water m³');
 
     var bdInput = root.querySelector('#soil-physical-bulkDensity');
     var bdLabel = bdInput && bdInput.closest('label');
@@ -327,16 +328,21 @@
       kghaStrong.textContent = doseSym + ' (' + t('diferencia', 'difference') + ')';
     }
 
-    var m3Label = root.querySelector('label[for="aw-m3-riego"], #aw-m3-riego') &&
-      (root.querySelector('#aw-m3-riego') && root.querySelector('#aw-m3-riego').previousElementSibling);
-    // Header row uses a bare <label> before the input
     var aguaHeader = root.querySelector('#agua-form-wrap .soil-analysis-form-header');
     if (aguaHeader) {
-      var firstLabel = aguaHeader.querySelector('label');
-      if (firstLabel && !firstLabel.querySelector('input')) {
-        firstLabel.textContent = volLabel.replace(/:$/, '') + ':';
+      var volLabEl = aguaHeader.querySelector('#aw-m3-riego-label') || aguaHeader.querySelector('label');
+      if (volLabEl && !volLabEl.querySelector('input')) {
+        volLabEl.textContent = volLabel + ':';
+      }
+      var volInp = aguaHeader.querySelector('#aw-m3-riego');
+      if (volInp) {
+        volInp.placeholder = isUS()
+          ? t('ej. 26417', 'e.g. 26417')
+          : t('ej. 100', 'e.g. 100');
+        volInp.setAttribute('data-i18n-placeholder', isUS() ? 'analysis.gal_riego_placeholder' : 'analysis.m3_riego_placeholder');
       }
     }
+    updateAguaVolumeEquiv(root);
 
     function rewriteMassLabels(el) {
       if (!el) return;
@@ -391,6 +397,32 @@
         ? t('En base a (agua):', 'Based on (water):')
         : t('En base a (m³ agua):', 'Based on (water m³):');
     }
+  }
+
+  function updateAguaVolumeEquiv(root) {
+    root = root || (w.document && w.document.getElementById('view')) || w.document;
+    if (!root || !root.querySelector) return;
+    var hint = root.querySelector('#aw-m3-riego-equiv');
+    var inp = root.querySelector('#aw-m3-riego');
+    if (!hint) return;
+    if (!isUS()) {
+      hint.style.display = 'none';
+      hint.textContent = '';
+      return;
+    }
+    hint.style.display = 'inline';
+    if (!inp) {
+      hint.textContent = '';
+      return;
+    }
+    var si = volumeInputToSI(inp.value);
+    if (!Number.isFinite(si) || si <= 0) {
+      hint.textContent = '(≈ — m³)';
+      return;
+    }
+    var shown = si >= 100 ? si.toFixed(1) : (si >= 10 ? si.toFixed(2) : si.toFixed(3));
+    hint.textContent = '(≈ ' + shown + ' m³)';
+    hint.title = t('Equivalente en metros cúbicos', 'Equivalent in cubic meters');
   }
 
   function ensureBulkDensityHint(input) {
@@ -452,6 +484,7 @@
     formatAcidDoseMlPerM3: formatAcidDoseMlPerM3,
     formatAcidTotalLiters: formatAcidTotalLiters,
     applyUnitLabels: applyUnitLabels,
+    updateAguaVolumeEquiv: updateAguaVolumeEquiv,
     bindBulkDensityHint: bindBulkDensityHint,
     updateBulkDensityHint: updateBulkDensityHint,
     formatBulkDensityFromSI: function (gcm3, digits) {

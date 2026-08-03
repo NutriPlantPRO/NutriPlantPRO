@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="../dashboard.css?v=20260803b">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
-    <script src="../assets/np-lab-type-configs.js?v=20260803c"></script>
-    <script src="../assets/np-analysis-compare.js?v=20260803c"></script>
+    <script src="../assets/np-lab-type-configs.js?v=20260803g"></script>
+    <script src="../assets/np-analysis-compare.js?v=20260803g"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
@@ -269,33 +269,40 @@
             line-height: 1.15;
             transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
         }
-        /* TC: ámbar / naranja tenue para distinguirlo del clima */
+        /* TC: azul bajito · clima: naranja bajito */
         .admin-fx-pill {
-            border-color: rgba(245, 158, 11, 0.38);
-            background: linear-gradient(180deg, #fffbeb 0%, #ffedd5 100%);
-            color: #9a3412;
+            border-color: rgba(59, 130, 246, 0.35);
+            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+            color: #1e40af;
         }
         .admin-weather-pill {
             min-width: 108px;
             max-width: 168px;
-            background: linear-gradient(180deg, rgba(240, 253, 250, 0.96) 0%, rgba(236, 253, 245, 0.9) 100%);
+            border-color: rgba(245, 158, 11, 0.38);
+            background: linear-gradient(180deg, #fffbeb 0%, #ffedd5 100%);
+            color: #9a3412;
         }
         .admin-fx-pill:hover,
         .admin-weather-pill:hover,
         .admin-fx-pill.admin-pill--open,
         .admin-weather-pill.admin-pill--open {
             transform: translateY(-1px);
-            border-color: rgba(37, 99, 235, 0.35);
             outline: none;
         }
         .admin-fx-pill:hover,
         .admin-fx-pill.admin-pill--open {
+            border-color: rgba(37, 99, 235, 0.55);
+            background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+        .admin-weather-pill:hover,
+        .admin-weather-pill.admin-pill--open {
             border-color: rgba(217, 119, 6, 0.55);
             background: linear-gradient(180deg, #fef3c7 0%, #fed7aa 100%);
         }
         .admin-fx-pill[data-state="loading"],
         .admin-weather-pill[data-state="loading"] { color: #64748b; }
-        .admin-fx-pill[data-state="loading"] { color: #b45309; }
+        .admin-fx-pill[data-state="loading"] { color: #2563eb; }
+        .admin-weather-pill[data-state="loading"] { color: #b45309; }
         .admin-fx-pill[data-state="error"],
         .admin-weather-pill[data-state="error"] {
             border-color: rgba(239, 68, 68, 0.35);
@@ -321,6 +328,9 @@
             text-overflow: ellipsis;
         }
         .admin-fx-sub {
+            color: #1d4ed8;
+        }
+        .admin-weather-sub {
             color: #c2410c;
         }
         .admin-storage-pill {
@@ -16919,7 +16929,7 @@
                             <button onclick="closeGlobalMapModal()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Cerrar">✕ Cerrar</button>
                         </div>
                     </div>
-                    <div id="globalMapContainer" style="flex: 1; min-height: 400px; border-radius: 0 0 12px 12px; position: relative;">
+                    <div id="globalMapContainer" style="flex: 1; min-height: 400px; border-radius: 0 0 12px 12px; position: relative; background: #0f172a;">
                         <div id="globalMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">
                             <div style="font-size: 16px; margin-bottom: 12px;">Cargando mapa...</div>
                             <div style="width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
@@ -16927,6 +16937,7 @@
                     </div>
                 </div>
                 <style id="globalMapClusterStyles">
+                    #globalMapContainer .leaflet-container { width: 100% !important; height: 100% !important; background: #0f172a; }
                     /* Diseño PRO: globo con número bien visible sobre el mapa */
                     #globalMapContainer .marker-cluster {
                         background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
@@ -16982,15 +16993,30 @@
                 
                 const center = [19.4326, -99.1332];
                 let zoom = 3;
-                globalMapInstance = L.map(container, { zoomControl: true, attributionControl: true }).setView(center, zoom);
+                // Evitar mundo repetido a los lados (copias sin marcadores)
+                const worldBounds = L.latLngBounds([[-85.05112878, -180], [85.05112878, 180]]);
+                const mapW = Math.max(container.clientWidth || 0, 640);
+                const minZ = Math.max(2, Math.ceil(Math.log2(mapW / 256)));
+                globalMapInstance = L.map(container, {
+                    zoomControl: true,
+                    attributionControl: true,
+                    worldCopyJump: false,
+                    maxBounds: worldBounds,
+                    maxBoundsViscosity: 1.0,
+                    minZoom: minZ
+                }).setView(center, Math.max(zoom, minZ));
                 
                 globalMapStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap',
-                    maxZoom: 19
+                    maxZoom: 19,
+                    noWrap: true,
+                    bounds: worldBounds
                 });
                 globalMapSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     attribution: '© Esri',
-                    maxZoom: 19
+                    maxZoom: 19,
+                    noWrap: true,
+                    bounds: worldBounds
                 });
                 globalMapStreetLayer.addTo(globalMapInstance);
                 globalMapSatelliteView = false;
@@ -17089,6 +17115,9 @@
                         console.warn('fitBounds global map:', e);
                     }
                 }
+                setTimeout(function () {
+                    if (globalMapInstance) try { globalMapInstance.invalidateSize(); } catch (e) {}
+                }, 250);
             }
             
             function loadMarkerClusterThenInit() {

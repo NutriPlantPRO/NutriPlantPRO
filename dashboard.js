@@ -19429,7 +19429,7 @@ function createSolucionNutritivaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewSolucionNutritivaAnalysis && window.addNewSolucionNutritivaAnalysis();">➕ Agregar análisis</button>
-              <button type="button" class="btn btn-sm" id="snPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('solucion_nutritiva');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <button type="button" class="btn btn-sm" id="snPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('solucion_nutritiva');">📄 <span data-i18n="analysis.pdf_attach">${dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer')}</span></button>
               <input type="file" id="snPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
 
             </div>
@@ -19575,6 +19575,8 @@ window.saveSolucionNutritivaField = function saveSolucionNutritivaField(group, f
   else if (group === 'micros' && a.micros) { a.micros[field] = value; }
   else if (group === 'ideal') { if (!a.ideal) a.ideal = {}; a.ideal[field] = value; }
   window.saveSolucionNutritivaAnalysesToProject();
+  if (group === 'meta') window.renderSolucionNutritivaList && window.renderSolucionNutritivaList();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_snCompareState');
 };
 
 window.snSyncMeqPpm = function snSyncMeqPpm(macro, fromUnit, inputEl) {
@@ -19598,6 +19600,7 @@ window.snSyncMeqPpm = function snSyncMeqPpm(macro, fromUnit, inputEl) {
   if (isCation && a.cations) { a.cations[keyMeq] = meqEl.value; a.cations[keyPpm] = ppmEl.value; }
   if (!isCation && a.anions) { a.anions[keyMeq] = meqEl.value; a.anions[keyPpm] = ppmEl.value; }
   window.saveSolucionNutritivaAnalysesToProject();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_snCompareState');
 };
 
 window.snUpdateMicroRef = function snUpdateMicroRef() {
@@ -19800,7 +19803,7 @@ function createExtractoPastaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewExtractoPastaAnalysis && window.addNewExtractoPastaAnalysis();">➕ Agregar análisis</button>
-              <button type="button" class="btn btn-sm" id="epPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('extracto_pasta');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <button type="button" class="btn btn-sm" id="epPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('extracto_pasta');">📄 <span data-i18n="analysis.pdf_attach">${dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer')}</span></button>
               <input type="file" id="epPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
 
             </div>
@@ -19962,6 +19965,8 @@ window.saveExtractoPastaField = function saveExtractoPastaField(group, field, va
   else if (group === 'micros' && a.micros) { a.micros[field] = value; }
   else if (group === 'ideal') { if (!a.ideal) a.ideal = {}; a.ideal[field] = value; }
   window.saveExtractoPastaAnalysesToProject();
+  if (group === 'meta') window.renderExtractoPastaList && window.renderExtractoPastaList();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_epCompareState');
 };
 
 window.epSyncMeqPpm = function epSyncMeqPpm(macro, fromUnit, inputEl) {
@@ -19986,6 +19991,7 @@ window.epSyncMeqPpm = function epSyncMeqPpm(macro, fromUnit, inputEl) {
   if (!isCation && a.anions) { a.anions[keyMeq] = meqEl.value; a.anions[keyPpm] = ppmEl.value; }
   window.saveExtractoPastaAnalysesToProject();
   if (typeof window.epUpdateRatiosRef === 'function') window.epUpdateRatiosRef();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_epCompareState');
 };
 
 // Referencias en ppm: rango [min,max] o ideal/riesgo { idealMax, riskMin }
@@ -20274,7 +20280,7 @@ function createAguaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewAguaAnalysis && window.addNewAguaAnalysis();">➕ Agregar análisis</button>
-              <button type="button" class="btn btn-sm" id="awPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('agua');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <button type="button" class="btn btn-sm" id="awPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('agua');">📄 <span data-i18n="analysis.pdf_attach">${dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer')}</span></button>
               <input type="file" id="awPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
 
             </div>
@@ -20287,8 +20293,9 @@ function createAguaTabHTML() {
           </div>
           <div id="agua-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <label style="margin-right:8px;">m³ agua de riego:</label>
-              <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" style="width:80px;" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
+              <label id="aw-m3-riego-label" style="margin-right:6px;">m³ agua de riego:</label>
+              <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" style="width:80px;" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
+              <span id="aw-m3-riego-equiv" class="aw-m3-riego-equiv" aria-live="polite" style="display:none;font-size:11px;color:#64748b;margin:0 8px 0 4px;white-space:nowrap;"></span>
               <input type="text" id="aw-meta-title" placeholder="${dashboardT('analysis.meta_title_simple', 'Título')}" data-i18n-placeholder="analysis.meta_title_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','title',this.value)">
               <input type="text" id="aw-meta-date" placeholder="${dashboardT('analysis.meta_date_simple', 'Fecha')}" data-i18n-placeholder="analysis.meta_date_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentAguaAnalysis && window.deleteCurrentAguaAnalysis();">Eliminar</button>
@@ -20428,6 +20435,14 @@ window.saveAguaAnalysesToProjectImmediate = function saveAguaAnalysesToProjectIm
   }
 };
 
+window.awUpdateVolumeEquiv = function awUpdateVolumeEquiv() {
+  try {
+    if (window.NpAnalysisUI && typeof window.NpAnalysisUI.updateAguaVolumeEquiv === 'function') {
+      window.NpAnalysisUI.updateAguaVolumeEquiv(document.getElementById('agua-tab-container') || document);
+    }
+  } catch (e) {}
+};
+
 window.saveAguaField = function saveAguaField(group, valueOrField, value) {
   var wrap = document.getElementById('agua-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -20448,6 +20463,8 @@ window.saveAguaField = function saveAguaField(group, valueOrField, value) {
   else if (group === 'acidResidualMeq') { a.acidResidualMeq = valueOrField; }
   else if (group === 'micros' && a.micros) { a.micros[valueOrField] = value; }
   window.saveAguaAnalysesToProject();
+  if (group === 'meta') window.renderAguaList && window.renderAguaList();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_awCompareState');
 };
 
 window.awSyncMeqPpm = function awSyncMeqPpm(macro, fromUnit, inputEl) {
@@ -20474,6 +20491,7 @@ window.awSyncMeqPpm = function awSyncMeqPpm(macro, fromUnit, inputEl) {
   if (typeof window.awUpdateSums === 'function') window.awUpdateSums();
   if (typeof window.awUpdateKgOxide === 'function') window.awUpdateKgOxide();
   if (typeof window.awUpdateAcid === 'function') window.awUpdateAcid();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_awCompareState');
 };
 
 window.awUpdateSums = function awUpdateSums() {
@@ -20641,6 +20659,7 @@ window.selectAguaAnalysis = function selectAguaAnalysis(id) {
     ? (window.NpAnalysisUI ? window.NpAnalysisUI.volumeInputFromSI(a.m3Riego) : a.m3Riego)
     : '';
   analysisApplyUnits(document.getElementById('agua-tab-container'));
+  window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv();
   document.getElementById('aw-meta-title').value = analysisDisplayTitle(a.title || '');
   document.getElementById('aw-meta-date').value = a.date || '';
   if (a.general) { ['ce','ras','ph'].forEach(function(f) { var el = document.getElementById('aw-general-' + f); if (el) el.value = a.general[f] !== undefined && a.general[f] !== '' ? a.general[f] : ''; }); }
@@ -20802,7 +20821,7 @@ function createFoliarTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewFoliarAnalysis && window.addNewFoliarAnalysis();">➕ Agregar análisis</button>
-              <button type="button" class="btn btn-sm" id="foliarPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('foliar');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <button type="button" class="btn btn-sm" id="foliarPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('foliar');">📄 <span data-i18n="analysis.pdf_attach">${dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer')}</span></button>
               <input type="file" id="foliarPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
 
             </div>
@@ -20915,6 +20934,8 @@ window.saveFoliarField = function saveFoliarField(group, valueOrField, value) {
   else if (group === 'optimalMacro') { if (!a.optimalMacro) a.optimalMacro = {}; a.optimalMacro[valueOrField] = value; }
   else if (group === 'optimalMicro') { if (!a.optimalMicro) a.optimalMicro = {}; a.optimalMicro[valueOrField] = value; }
   window.saveFoliarAnalysesToProject();
+  if (group === 'meta') window.renderFoliarList && window.renderFoliarList();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_foliarCompareState');
 };
 
 window.foliarUpdateDOP = function foliarUpdateDOP() {
@@ -21174,7 +21195,7 @@ function createFrutaTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewFrutaAnalysis && window.addNewFrutaAnalysis();">➕ Agregar análisis</button>
-              <button type="button" class="btn btn-sm" id="frutaPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('fruta');">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <button type="button" class="btn btn-sm" id="frutaPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openLabPdfExtract && window.openLabPdfExtract('fruta');">📄 <span data-i18n="analysis.pdf_attach">${dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer')}</span></button>
               <input type="file" id="frutaPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
 
             </div>
@@ -21296,6 +21317,19 @@ window.saveFrutaAnalysesToProjectImmediate = function saveFrutaAnalysesToProject
   }
 };
 
+window.scheduleLabCompareRefresh = function scheduleLabCompareRefresh(stateKey) {
+  if (!stateKey) return;
+  var timerKey = '__npCmpTimer_' + stateKey;
+  if (window[timerKey]) clearTimeout(window[timerKey]);
+  window[timerKey] = setTimeout(function () {
+    window[timerKey] = null;
+    var st = window[stateKey];
+    if (st && typeof st.refresh === 'function') {
+      try { st.refresh(); } catch (e) { console.warn('lab compare refresh', stateKey, e); }
+    }
+  }, 350);
+};
+
 window.saveFrutaField = function saveFrutaField(group, valueOrField, value) {
   var wrap = document.getElementById('fruta-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -21317,6 +21351,8 @@ window.saveFrutaField = function saveFrutaField(group, valueOrField, value) {
   }
   else if (group === 'optimalCalcio') { if (!a.optimalCalcio) a.optimalCalcio = {}; a.optimalCalcio[valueOrField] = value; }
   window.saveFrutaAnalysesToProject();
+  if (group === 'meta') window.renderFrutaList && window.renderFrutaList();
+  window.scheduleLabCompareRefresh('_frutaCompareState');
 };
 
 window.frutaUpdateICC = function frutaUpdateICC() {
@@ -21513,7 +21549,7 @@ function createSoilAnalysisTabHTML() {
             <strong>Reportes en este proyecto</strong>
             <div class="soil-analysis-list-actions">
               <button type="button" class="btn btn-sm btn-success" onclick="window.addNewSoilAnalysis && window.addNewSoilAnalysis();">➕ Agregar análisis</button>
-              <button type="button" class="btn btn-sm" id="soilPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openSoilPdfExtract && window.openSoilPdfExtract();">📄 <span data-i18n="analysis.pdf_attach">Adjuntar PDF / Extraer</span></button>
+              <button type="button" class="btn btn-sm" id="soilPdfExtractBtn" title="${dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados')}" data-i18n-title="analysis.pdf_attach_title" onclick="window.openSoilPdfExtract && window.openSoilPdfExtract();">📄 <span data-i18n="analysis.pdf_attach">${dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer')}</span></button>
               <input type="file" id="soilPdfFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
             </div>
           </div>
@@ -21791,6 +21827,7 @@ window.saveSoilAnalysisField = function saveSoilAnalysisField(group, field, valu
     window.updateSoilAnalysisRatios && window.updateSoilAnalysisRatios();
   }
   if (group === 'meta') window.renderSoilAnalysesList && window.renderSoilAnalysesList();
+  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_soilCompareState');
 };
 
 window.saveSoilAnalysisIdealField = function saveSoilAnalysisIdealField(field, value) {
@@ -22497,6 +22534,19 @@ window.wireLabPdfCompare = function wireLabPdfCompare(opts) {
       if (file) window.handleLabPdfFile && window.handleLabPdfFile(opts.type, file);
     });
   }
+  // Traducir botón PDF al idioma actual (las pestañas se montan después del apply global)
+  try {
+    var btn = opts.btnId ? document.getElementById(opts.btnId) : null;
+    var applyRoot = (btn && btn.closest('.soil-analysis-tab-container')) || (btn && btn.parentElement) || btn;
+    if (applyRoot && window.NpI18n && typeof window.NpI18n.apply === 'function') {
+      window.NpI18n.apply(applyRoot);
+    } else if (btn) {
+      var span = btn.querySelector('[data-i18n="analysis.pdf_attach"]');
+      var label = dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer');
+      if (span) span.textContent = label;
+      btn.title = dashboardT('analysis.pdf_attach_title', 'Sube un PDF o imagen de laboratorio y revisa los valores detectados');
+    }
+  } catch (e) { /* ignore */ }
 };
 
 window.openLabPdfExtract = function openLabPdfExtract(type) {

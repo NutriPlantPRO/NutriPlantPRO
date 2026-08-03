@@ -128,16 +128,60 @@
     { path: 'cations.pctNa', labelKey: 'analysis.f_pct_na', label: '% Na', section: 'cec_pct', unit: '%', tipKey: 'analysis.unit_tip_pct_sat', tip: 'Porcentaje de saturación de bases — sodio' }
   ];
 
+  function isEnLang() {
+    try {
+      if (w.NpI18n && typeof w.NpI18n.getLanguage === 'function') {
+        return String(w.NpI18n.getLanguage() || '').toLowerCase().indexOf('en') === 0;
+      }
+      var p = w.NpPrefs && typeof w.NpPrefs.get === 'function' ? w.NpPrefs.get() : null;
+      return !!(p && p.language === 'en');
+    } catch (e) {
+      return false;
+    }
+  }
+
   function fieldLabel(field) {
     if (!field) return '';
-    return tr(field.labelKey || '', field.label || field.path || '');
+    if (field.labelKey) {
+      var viaKey = tr(field.labelKey, '');
+      if (viaKey && viaKey !== field.labelKey) return viaKey;
+    }
+    if (isEnLang() && field.labelEn) return field.labelEn;
+    return field.label || field.path || '';
+  }
+
+  function sectionTitle(sec) {
+    if (!sec) return '';
+    if (sec.titleKey) {
+      var viaKey = tr(sec.titleKey, '');
+      if (viaKey && viaKey !== sec.titleKey) return viaKey;
+    }
+    if (isEnLang() && sec.titleEn) return sec.titleEn;
+    return sec.title || sec.id || '';
   }
 
   function unitSuffix(unit) {
+    if (!unit || unit === 'other') return '';
     if (unit === 'pct') return ' (%)';
     if (unit === 'ppm') return ' (ppm)';
     if (unit === 'meq') return ' (meq)';
+    if (unit === 'brix') return ' (°Brix)';
+    if (unit === 'kgcm2') return ' (kg/cm²)';
+    if (unit === 'psi') return ' (psi)';
+    if (unit === 'mg100g') return ' (mg/100 g)';
+    // Si ya es un símbolo legible (%, °Brix…), úsalo directo
+    if (/[%°]|ppm|meq|kg|psi|g\b/i.test(String(unit))) {
+      return ' (' + String(unit) + ')';
+    }
     return '';
+  }
+
+  function chartLabelForRow(row) {
+    var base = row.label || '';
+    // Evitar duplicar unidad si el label ya la trae
+    if (/\(%\)|°Brix|\(kg\/cm| \(psi\)|\(mg\/100|\(ppm\)|\(meq\)/i.test(base)) return base;
+    if (row.unit === 'brix' && /brix/i.test(base)) return base;
+    return base + unitSuffix(row.unit);
   }
 
   function getByPath(obj, path) {
@@ -241,14 +285,26 @@
   function buildCompareRows(analyses, catalog) {
     catalog = catalog || SOIL_FIELDS;
     analyses = Array.isArray(analyses) ? analyses : [];
+    var usFirm = !!(w.NpAnalysisUI && typeof w.NpAnalysisUI.isUS === 'function' && w.NpAnalysisUI.isUS());
     return catalog.map(function (field) {
+      var unit = field.unit || 'other';
+      var label = fieldLabel(field);
       var values = analyses.map(function (a) {
-        return numOrNull(getByPath(a, field.path));
+        var raw = getByPath(a, field.path);
+        if (field.path === 'calidad.firmeza' && usFirm) {
+          var n = numOrNull(raw);
+          return n == null ? null : n * 14.223343307;
+        }
+        return numOrNull(raw);
       });
+      if (field.path === 'calidad.firmeza' && usFirm) {
+        unit = 'psi';
+        label = isEnLang() ? 'Firmness' : 'Firmeza';
+      }
       return {
         path: field.path,
-        label: fieldLabel(field),
-        unit: field.unit || 'other',
+        label: label,
+        unit: unit,
         chartable: field.chartable !== false,
         block: field.block || 'other',
         values: values
@@ -298,10 +354,23 @@
 
   function yAxisTitleForRows(rows) {
     var units = {};
-    rows.forEach(function (r) { units[r.unit] = true; });
-    if (units.pct && !units.ppm && !units.meq) return '%';
-    if (units.ppm && !units.pct) return 'ppm';
-    if (units.meq && !units.pct && !units.ppm) return 'meq';
+    var count = 0;
+    rows.forEach(function (r) {
+      var u = r.unit || 'other';
+      if (!units[u]) {
+        units[u] = true;
+        count += 1;
+      }
+    });
+    // Unidades mezcladas (ej. calidad fruta: %, °Brix, firmeza): sin título genérico engañoso
+    if (count > 1) return '';
+    if (units.pct) return '%';
+    if (units.ppm) return 'ppm';
+    if (units.meq) return 'meq';
+    if (units.brix) return '°Brix';
+    if (units.kgcm2) return 'kg/cm²';
+    if (units.psi) return 'psi';
+    if (units.mg100g) return 'mg/100 g';
     return tr('analysis.compare_axis_value', 'Valor');
   }
 
@@ -320,7 +389,7 @@
     if (!chartRows.length) return;
 
     var labels = chartRows.map(function (r) {
-      return r.label + unitSuffix(r.unit);
+      return chartLabelForRow(r);
     });
     var isBar = chartType === 'bar';
     var datasets = selected.map(function (item) {
@@ -370,7 +439,10 @@
             type: 'linear',
             position: 'left',
             beginAtZero: true,
-            title: { display: true, text: yAxisTitleForRows(chartRows), font: { size: 11 } }
+            title: (function () {
+              var yt = yAxisTitleForRows(chartRows);
+              return { display: !!yt, text: yt || '', font: { size: 11 } };
+            })()
           }
         }
       }
@@ -421,10 +493,10 @@
       return (
         '<div class="np-analysis-compare__chart-card" data-block="' + b.id + '">' +
           '<h4 class="np-analysis-compare__chart-title">' +
-            tr(b.titleKey, b.title) +
+            sectionTitle(b) +
           '</h4>' +
           '<div class="np-analysis-compare__chart-wrap">' +
-            '<canvas id="' + uid + '_' + b.id + '" aria-label="' + tr(b.titleKey, b.title) + '"></canvas>' +
+            '<canvas id="' + uid + '_' + b.id + '" aria-label="' + sectionTitle(b) + '"></canvas>' +
           '</div>' +
         '</div>'
       );
@@ -488,7 +560,7 @@
         var wrap = document.createElement('div');
         wrap.className = 'np-analysis-compare__table-block np-analysis-compare__table-block--' + block.id;
         wrap.innerHTML =
-          '<h4 class="np-analysis-compare__block-title">' + tr(block.titleKey, block.title) + '</h4>' +
+          '<h4 class="np-analysis-compare__block-title">' + sectionTitle(block) + '</h4>' +
           '<div class="np-analysis-compare__table-wrap">' +
             '<table class="np-analysis-compare__table"><thead></thead><tbody></tbody></table>' +
           '</div>';
@@ -509,7 +581,7 @@
         blockRows.forEach(function (row) {
           var trEl = document.createElement('tr');
           var td0 = document.createElement('td');
-          td0.textContent = row.label + unitSuffix(row.unit);
+          td0.textContent = chartLabelForRow(row);
           trEl.appendChild(td0);
           row.values.forEach(function (v) {
             var td = document.createElement('td');
@@ -590,7 +662,7 @@
         section: f.section || 'meta',
         label: fieldLabel(f) + lim,
         unit: f.unit || '',
-        tip: tr(f.tipKey || '', f.tip || ''),
+        tip: (isEnLang() && f.tipEn) ? f.tipEn : tr(f.tipKey || '', f.tip || ''),
         value: str,
         checked: autoCheck
       });
@@ -627,6 +699,22 @@
 
     var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1 };
     var rows = flattenDetectedForType(fields || {}, typeCfg.reviewFields, textPaths);
+    var isUsVol = !!(w.NpAnalysisUI && typeof w.NpAnalysisUI.isUS === 'function' && w.NpAnalysisUI.isUS());
+    rows.forEach(function (row) {
+      if (row.path !== 'm3Riego') return;
+      if (isUsVol) {
+        row.label = tr('analysis.review_irrigation_gal', 'Agua riego');
+        row.unit = 'US gal';
+        row.tip = tr('analysis.review_irrigation_gal_tip', 'Volumen de riego en galones US. Se guarda internamente en m³.');
+        if (row.value && isPlainNumericValue(row.value) && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputFromSI === 'function') {
+          row.value = String(w.NpAnalysisUI.volumeInputFromSI(row.value));
+        }
+      } else {
+        row.label = tr('analysis.review_irrigation_m3', 'm³ riego');
+        row.unit = 'm³';
+        row.tip = tr('analysis.review_irrigation_m3_tip', 'Volumen de riego en metros cúbicos.');
+      }
+    });
     var modal = document.createElement('div');
     modal.id = 'npLabPdfReviewModal';
     modal.className = 'np-lab-pdf-modal';
@@ -635,9 +723,13 @@
     modal.innerHTML =
       '<div class="np-lab-pdf-modal__panel">' +
         '<div class="np-lab-pdf-modal__head">' +
-          '<h3>' + tr('analysis.pdf_review_title_' + typeCfg.id, typeCfg.reviewTitle || 'Revisar datos detectados') + '</h3>' +
+          '<h3>' +
+            (isEnLang() && typeCfg.reviewTitleEn
+              ? typeCfg.reviewTitleEn
+              : tr('analysis.pdf_review_title_' + typeCfg.id, typeCfg.reviewTitle || 'Revisar datos detectados')) +
+          '</h3>' +
           '<button type="button" class="np-lab-pdf-modal__close" aria-label="' +
-            tr('analysis.pdf_review_close', 'Cerrar') +
+            tr('analysis.pdf_review_close', isEnLang() ? 'Close' : 'Cerrar') +
           '">×</button>' +
         '</div>' +
         '<p class="np-lab-pdf-modal__intro">' +
@@ -692,7 +784,7 @@
       if (!secRows || !secRows.length) return;
       var head = document.createElement('div');
       head.className = 'np-lab-pdf-modal__section np-lab-pdf-modal__section--' + sec.id;
-      head.textContent = tr(sec.titleKey, sec.title);
+      head.textContent = sectionTitle(sec);
       list.appendChild(head);
       secRows.forEach(function (row) {
         var item = document.createElement('label');
@@ -720,16 +812,42 @@
             '</span>' +
             unitHtml +
           '</span>' +
-          '<input type="text" class="np-lab-pdf-modal__val" data-path-val="' +
-          escapeAttr(row.path) +
-          '" value="' +
-          escapeAttr(row.value) +
-          '" placeholder="' +
-          escapeAttr(row.unit || '') +
-          '" title="' +
-          escapeAttr(row.tip || '') +
-          '">';
+          '<span class="np-lab-pdf-modal__val-wrap" style="display:inline-flex;align-items:center;gap:6px;min-width:0;flex:1;">' +
+            '<input type="text" class="np-lab-pdf-modal__val" data-path-val="' +
+            escapeAttr(row.path) +
+            '" value="' +
+            escapeAttr(row.value) +
+            '" placeholder="' +
+            escapeAttr(row.unit || '') +
+            '" title="' +
+            escapeAttr(row.tip || '') +
+            '">' +
+            (row.path === 'm3Riego' && isUsVol
+              ? '<span class="np-lab-pdf-modal__m3-equiv" data-m3-equiv style="font-size:11px;color:#64748b;white-space:nowrap;"></span>'
+              : '') +
+          '</span>';
         list.appendChild(item);
+        if (row.path === 'm3Riego' && isUsVol) {
+          var valInp = item.querySelector('[data-path-val]');
+          var equivEl = item.querySelector('[data-m3-equiv]');
+          function refreshM3Equiv() {
+            if (!equivEl || !valInp) return;
+            var si = w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputToSI === 'function'
+              ? w.NpAnalysisUI.volumeInputToSI(valInp.value)
+              : NaN;
+            if (!Number.isFinite(si) || si <= 0) {
+              equivEl.textContent = '(≈ — m³)';
+              return;
+            }
+            var shown = si >= 100 ? si.toFixed(1) : (si >= 10 ? si.toFixed(2) : si.toFixed(3));
+            equivEl.textContent = '(≈ ' + shown + ' m³)';
+          }
+          if (valInp) {
+            valInp.addEventListener('input', refreshM3Equiv);
+            valInp.addEventListener('change', refreshM3Equiv);
+          }
+          refreshM3Equiv();
+        }
       });
     });
 
@@ -758,7 +876,13 @@
         var cb = row.querySelector('input[type="checkbox"][data-path]');
         var val = row.querySelector('[data-path-val]');
         if (!cb || !cb.checked || !val) return;
-        setByPath(payload, cb.getAttribute('data-path'), String(val.value || '').trim());
+        var path = cb.getAttribute('data-path');
+        var raw = String(val.value || '').trim();
+        if (path === 'm3Riego' && isUsVol && raw && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputToSI === 'function') {
+          var siVol = w.NpAnalysisUI.volumeInputToSI(raw);
+          if (Number.isFinite(siVol)) raw = String(siVol);
+        }
+        setByPath(payload, path, raw);
       });
       var asNew = !!(modal.querySelector('[data-new]') && modal.querySelector('[data-new]').checked);
       close();

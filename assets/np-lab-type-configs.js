@@ -5,16 +5,18 @@
 (function (w) {
   'use strict';
 
-  function f(path, label, unit, block, chartable, section) {
+  function f(path, label, unit, block, chartable, section, labelEn) {
     return {
       path: path,
       label: label,
+      labelEn: labelEn || '',
       labelKey: '',
       unit: unit || 'other',
       block: block,
       chartable: chartable !== false,
       section: section || block,
-      tip: label
+      tip: label,
+      tipEn: labelEn || label
     };
   }
 
@@ -89,7 +91,7 @@
   ].concat(PASTA_FIELDS);
 
   var AGUA_FIELDS = [
-    f('m3Riego', 'm³ riego', 'other', 'general', false, 'general'),
+    f('m3Riego', 'm³ riego', 'm3', 'general', false, 'general'),
     f('acidResidualMeq', 'Residual ácido (meq)', 'meq', 'general', false, 'general'),
     f('general.ce', 'CE', 'other', 'general', true, 'general'),
     f('general.ph', 'pH', 'other', 'general', true, 'general'),
@@ -149,42 +151,42 @@
   ];
 
   var FOLIAR_REVIEW_SECTIONS = [
-    { id: 'meta', titleKey: 'analysis.review_sec_meta', title: 'General' },
-    { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)' },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)' }
+    { id: 'meta', titleKey: 'analysis.review_sec_meta', title: 'General', titleEn: 'General' },
+    { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)', titleEn: 'Macros (% DM)' },
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)', titleEn: 'Micros (mg/kg)' }
   ];
 
   var FOLIAR_REVIEW_FIELDS = [
-    f('title', 'Título', '', 'meta', false, 'meta'),
-    f('date', 'Fecha', '', 'meta', false, 'meta')
+    f('title', 'Título', '', 'meta', false, 'meta', 'Title'),
+    f('date', 'Fecha', '', 'meta', false, 'meta', 'Date')
   ].concat(FOLIAR_FIELDS);
 
   var FRUTA_FIELDS = FOLIAR_FIELDS.concat([
-    f('calidad.materiaSeca', 'Materia seca', 'pct', 'calidad', true, 'calidad'),
-    f('calidad.brix', '°Brix', 'other', 'calidad', true, 'calidad'),
-    f('calidad.firmeza', 'Firmeza', 'other', 'calidad', true, 'calidad'),
-    f('calidad.acidezTitulable', 'Acidez titulable', 'other', 'calidad', true, 'calidad'),
-    f('calcio.caTotal', 'Ca total', 'other', 'calcio', true, 'calcio'),
-    f('calcio.caSolublePct', 'Ca soluble %', 'pct', 'calcio', true, 'calcio'),
-    f('calcio.caLigadoPct', 'Ca ligado %', 'pct', 'calcio', true, 'calcio'),
-    f('calcio.caInsolublePct', 'Ca insoluble %', 'pct', 'calcio', true, 'calcio')
+    f('calidad.materiaSeca', 'Materia seca', 'pct', 'calidad', true, 'calidad', 'Dry matter'),
+    f('calidad.brix', '°Brix', 'brix', 'calidad', true, 'calidad', '°Brix'),
+    f('calidad.firmeza', 'Firmeza', 'kgcm2', 'calidad', true, 'calidad', 'Firmness'),
+    f('calidad.acidezTitulable', 'Acidez titulable', 'pct', 'calidad', true, 'calidad', 'Titratable acidity'),
+    f('calcio.caTotal', 'Ca total', 'mg100g', 'calcio', true, 'calcio', 'Total Ca'),
+    f('calcio.caSolublePct', 'Ca soluble', 'pct', 'calcio', true, 'calcio', 'Soluble Ca'),
+    f('calcio.caLigadoPct', 'Ca ligado', 'pct', 'calcio', true, 'calcio', 'Bound Ca'),
+    f('calcio.caInsolublePct', 'Ca insoluble', 'pct', 'calcio', true, 'calcio', 'Insoluble Ca')
   ]);
 
   var FRUTA_BLOCKS = [
-    { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (%)', chartType: 'line', chart: true },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)', chartType: 'line', chart: true },
-    { id: 'calidad', titleKey: 'analysis.block_calidad', title: 'Calidad', chartType: 'bar', chart: true },
-    { id: 'calcio', titleKey: 'analysis.block_calcio_fruta', title: 'Calcio fruta', chartType: 'bar', chart: true }
+    { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (%)', titleEn: 'Macros (%)', chartType: 'line', chart: true },
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)', titleEn: 'Micros (mg/kg)', chartType: 'line', chart: true },
+    { id: 'calidad', titleKey: 'analysis.block_calidad', title: 'Calidad', titleEn: 'Quality', chartType: 'bar', chart: true },
+    { id: 'calcio', titleKey: 'analysis.block_calcio_fruta', title: 'Calcio fruta', titleEn: 'Fruit calcium', chartType: 'bar', chart: true }
   ];
 
   var FRUTA_REVIEW_SECTIONS = FOLIAR_REVIEW_SECTIONS.concat([
-    { id: 'calidad', titleKey: 'analysis.block_calidad', title: 'Calidad' },
-    { id: 'calcio', titleKey: 'analysis.block_calcio_fruta', title: 'Calcio fruta' }
+    { id: 'calidad', titleKey: 'analysis.block_calidad', title: 'Calidad', titleEn: 'Quality' },
+    { id: 'calcio', titleKey: 'analysis.block_calcio_fruta', title: 'Calcio fruta', titleEn: 'Fruit calcium' }
   ]);
 
   var FRUTA_REVIEW_FIELDS = [
-    f('title', 'Título', '', 'meta', false, 'meta'),
-    f('date', 'Fecha', '', 'meta', false, 'meta')
+    f('title', 'Título', '', 'meta', false, 'meta', 'Title'),
+    f('date', 'Fecha', '', 'meta', false, 'meta', 'Date')
   ].concat(FRUTA_FIELDS);
 
   var CONFIGS = {
@@ -241,7 +243,8 @@
       reviewFields: FRUTA_REVIEW_FIELDS,
       hint:
         'Cada columna es un análisis de fruta. Gráficas: macros, micros, calidad y calcio.',
-      reviewTitle: 'Revisar datos detectados (fruta)'
+      reviewTitle: 'Revisar datos detectados (fruta)',
+      reviewTitleEn: 'Review detected data (fruit)'
     }
   };
 
