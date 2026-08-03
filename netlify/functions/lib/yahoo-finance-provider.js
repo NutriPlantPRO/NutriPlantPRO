@@ -11,7 +11,8 @@ const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
 const FETCH_TIMEOUT_MS = 12000;
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_SEARCH_MS = 10 * 60 * 1000;
 const cache = new Map();
 
 const RANGE_MAP = {
@@ -24,10 +25,11 @@ const RANGE_MAP = {
   MAX: { range: 'max', interval: '1mo' }
 };
 
-function cacheGet(key) {
+function cacheGet(key, ttlMs) {
   const hit = cache.get(key);
   if (!hit) return null;
-  if (Date.now() - hit.at > CACHE_TTL_MS) {
+  const ttl = ttlMs != null ? ttlMs : CACHE_TTL_MS;
+  if (Date.now() - hit.at > ttl) {
     cache.delete(key);
     return null;
   }
@@ -155,7 +157,7 @@ async function searchAssets(query) {
   const q = String(query || '').trim();
   if (!q) return [];
   const cacheKey = 'search:' + q.toLowerCase();
-  const cached = cacheGet(cacheKey);
+  const cached = cacheGet(cacheKey, CACHE_TTL_SEARCH_MS);
   if (cached) return cached;
 
   const url =
@@ -284,11 +286,17 @@ async function getHistory(symbol, rangeKey) {
   const ts = Array.isArray(chart.timestamp) ? chart.timestamp : [];
   const quote = chart.indicators && chart.indicators.quote && chart.indicators.quote[0];
   const closes = (quote && quote.close) || [];
+  const volumes = (quote && quote.volume) || [];
   const points = [];
   for (let i = 0; i < ts.length; i++) {
     const c = closes[i];
     if (c == null || !Number.isFinite(Number(c))) continue;
-    points.push({ t: ts[i] * 1000, v: Number(c) });
+    const vol = volumes[i];
+    points.push({
+      t: ts[i] * 1000,
+      v: Number(c),
+      vol: vol != null && Number.isFinite(Number(vol)) ? Number(vol) : null
+    });
   }
 
   const out = {

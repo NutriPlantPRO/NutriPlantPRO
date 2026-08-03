@@ -11696,17 +11696,17 @@
       <div id="npViewInvestPro" class="np-hide">
         <div id="npInvSetupMsg" class="np-msg warn np-inv-setup np-hide">
           Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-invest-watchlist.sql</code>
+          y luego <code>supabase-plan-pro-invest-lists.sql</code>
         </div>
         <div class="np-inv-hero">
           <h2>Invest PRO</h2>
-          <p>Consulta empresas, ETFs, índices y cripto. Marca ★ para armar <strong>Mi portafolio</strong> (se guarda en tu cuenta). Filtra por categoría o busca cualquier ticker.</p>
+          <p>Modo <strong>consulta / análisis</strong> (no en vivo). Crea listas de interés, agrega ★ tickers y elimínalas cuando ya no las uses. ⇄ = comparar 2–6.</p>
         </div>
         <div class="np-inv-layout">
           <aside class="np-inv-side">
             <section class="np-inv-panel">
               <div class="np-inv-panel-title">
                 <span>Buscar</span>
-                <span class="np-muted" style="font-weight:500;font-size:11px;">Mi portafolio: <strong id="npInvWatchCount">0</strong></span>
               </div>
               <div class="np-inv-search-wrap" id="npInvSearchWrap">
                 <input id="npInvSearch" type="search" autocomplete="off" placeholder="Ticker o nombre (AAPL, VOO, BTC-USD…)" aria-label="Buscar activo" />
@@ -11714,7 +11714,22 @@
               </div>
             </section>
             <section class="np-inv-panel">
-              <div class="np-inv-panel-title"><span>⭐ Popular Picks</span></div>
+              <div class="np-inv-panel-title">
+                <span>Listas</span>
+                <span class="np-muted" style="font-weight:500;font-size:11px;">Ítems: <strong id="npInvWatchCount">0</strong></span>
+              </div>
+              <div class="np-inv-lists-bar" id="npInvListsBar" aria-label="Mis listas"></div>
+              <div class="np-inv-lists-actions">
+                <button type="button" class="btn btn-ghost btn-ghost-green" id="npInvListNewBtn" title="Crear lista de empresas de interés">+ Nueva lista</button>
+                <button type="button" class="btn btn-ghost" id="npInvListRenameBtn" title="Renombrar lista activa">Renombrar</button>
+                <button type="button" class="btn btn-ghost" id="npInvListDeleteBtn" title="Eliminar lista activa (y sus tickers)">Eliminar lista</button>
+              </div>
+              <p class="np-muted" style="margin:8px 0 0;font-size:11px;line-height:1.35;">
+                ★ agrega/quita el ticker en la <strong>lista activa</strong> (se guarda en tu cuenta). Puedes crear varias listas y borrar las que ya no uses.
+              </p>
+            </section>
+            <section class="np-inv-panel">
+              <div class="np-inv-panel-title"><span>⭐ Popular Picks / contenido</span></div>
               <div id="npInvFilters" class="np-inv-filters" aria-label="Filtros de catálogo"></div>
               <div id="npInvPicks" class="np-inv-picks" aria-label="Lista de activos"></div>
             </section>
@@ -11735,11 +11750,12 @@
                     </div>
                   </div>
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                   <button type="button" class="np-inv-watch-btn" id="npInvWatchBtn">☆ Agregar a Mi portafolio</button>
-                  <button type="button" class="btn btn-ghost btn-ghost-blue" id="npInvRefreshBtn">Actualizar</button>
+                  <button type="button" class="btn btn-ghost btn-ghost-blue" id="npInvRefreshBtn" title="Vuelve a bajar solo lo seleccionado (ficha + comparación)">Actualizar selección</button>
                 </div>
               </div>
+              <p id="npInvDataStamp" class="np-inv-data-stamp np-muted">Sin consulta aún · no es cotización en vivo</p>
               <div class="np-inv-price-row" style="margin-top:14px;">
                 <div class="np-inv-price" id="npInvPrice">—</div>
                 <div class="np-inv-change" id="npInvChange">—</div>
@@ -11761,9 +11777,13 @@
             <section class="np-inv-panel">
               <div class="np-inv-panel-title"><span>Gráfica</span></div>
               <div id="npInvRanges" class="np-inv-ranges" aria-label="Periodo"></div>
+              <div id="npInvMetrics" class="np-inv-ranges" aria-label="Indicador a graficar"></div>
+              <p class="np-muted" style="margin:0 0 8px;font-size:11px;line-height:1.4;">
+                Cambiar periodo o indicador <strong>reusa</strong> lo ya bajado. Solo <strong>Actualizar selección</strong> vuelve a consultar la web (activo + comparación).
+              </p>
               <div id="npInvCompareChips" class="np-inv-compare-chips" aria-label="Comparación"></div>
               <div class="np-inv-chart-wrap">
-                <svg id="npInvChartSvg" role="img" aria-label="Gráfica de precio"></svg>
+                <svg id="npInvChartSvg" role="img" aria-label="Gráfica de mercados"></svg>
                 <div id="npInvChartEmpty" class="np-inv-chart-empty">Selecciona un activo para ver la gráfica.</div>
               </div>
               <div id="npInvChartLegend" class="np-inv-legend"></div>

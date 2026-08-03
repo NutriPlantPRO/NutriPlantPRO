@@ -6,7 +6,16 @@
   'use strict';
 
   var RANGES = ['1D', '5D', '1M', '6M', '1A', '5A', 'MAX'];
+  var CHART_METRICS = [
+    { id: 'price', label: 'Precio' },
+    { id: 'volume', label: 'Volumen' },
+    { id: 'pct', label: 'Rendimiento %' },
+    { id: 'pe', label: 'P/E' },
+    { id: 'forwardPe', label: 'Fwd P/E' },
+    { id: 'changePercent', label: 'Cambio día %' }
+  ];
   var COMPARE_COLORS = ['#2563eb', '#059669', '#d97706', '#db2777', '#7c3aed', '#0891b2'];
+  var SNAPSHOT_METRICS = { pe: 1, forwardPe: 1, changePercent: 1 };
 
   /** Catálogo Popular Picks (predefinido). symbol Yahoo + nombre visible. */
   var CATALOG = [
@@ -122,12 +131,19 @@
 
   var st = {
     wired: false,
-    filter: 'portfolio',
+    filter: 'list',
+    lists: [],
+    activeListId: null,
+    listsReady: true,
     watchlist: [],
     watchBySymbol: Object.create(null),
     activeSymbol: null,
     quote: null,
     range: '1A',
+    chartMetric: 'price',
+    lastSeries: [],
+    lastFetchedAt: null,
+    fromCache: false,
     compareSymbols: [],
     searchTimer: null,
     loading: false,
@@ -224,6 +240,89 @@
     return 'stock';
   }
 
+  function activeList() {
+    return (st.lists || []).find(function (l) {
+      return l.id === st.activeListId;
+    }) || null;
+  }
+
+  function activeListName() {
+    var l = activeList();
+    return (l && l.name) || 'Mi portafolio';
+  }
+
+  async function ensureDefaultList() {
+    var ctx = getCtx();
+    if (!ctx.client || !ctx.userId || !st.listsReady) return null;
+    var existing = (st.lists || []).find(function (l) {
+      return l.is_default;
+    });
+    if (existing) return existing;
+    var named = (st.lists || []).find(function (l) {
+      return String(l.name || '').toLowerCase() === 'mi portafolio';
+    });
+    if (named) {
+      await ctx.client
+        .from('plan_pro_invest_lists')
+        .update({ is_default: true })
+        .eq('id', named.id)
+        .eq('user_id', ctx.userId);
+      return named;
+    }
+    var ins = await ctx.client
+      .from('plan_pro_invest_lists')
+      .insert({
+        user_id: ctx.userId,
+        name: 'Mi portafolio',
+        is_default: true,
+        sort_order: 0
+      })
+      .select('id, user_id, name, is_default, sort_order, created_at')
+      .single();
+    if (ins.error) throw ins.error;
+    return ins.data;
+  }
+
+  async function loadLists() {
+    var ctx = getCtx();
+    if (!ctx.client || !ctx.userId) {
+      st.lists = [];
+      st.activeListId = null;
+      return;
+    }
+    try {
+      var res = await ctx.client
+        .from('plan_pro_invest_lists')
+        .select('id, user_id, name, is_default, sort_order, created_at')
+        .eq('user_id', ctx.userId)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (res.error) {
+        if (/relation|does not exist|schema|plan_pro_invest_lists/i.test(res.error.message || '')) {
+          st.listsReady = false;
+          st.lists = [];
+          return;
+        }
+        throw res.error;
+      }
+      st.listsReady = true;
+      st.lists = res.data || [];
+      if (!st.lists.length) {
+        var def = await ensureDefaultList();
+        if (def) st.lists = [def];
+      }
+      if (!st.activeListId || !(st.lists || []).some(function (l) { return l.id === st.activeListId; })) {
+        var pref =
+          (st.lists || []).find(function (l) {
+            return l.is_default;
+          }) || st.lists[0];
+        st.activeListId = pref ? pref.id : null;
+      }
+    } catch (e) {
+      st.lists = [];
+    }
+  }
+
   async function loadWatchlist() {
     var ctx = getCtx();
     if (!ctx.client || !ctx.userId) {
@@ -231,15 +330,39 @@
       st.watchBySymbol = Object.create(null);
       return;
     }
+    await loadLists();
     try {
-      var res = await ctx.client
+      var q = ctx.client
         .from('plan_pro_invest_watchlist')
-        .select('id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at')
+        .select('id, list_id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at')
         .eq('user_id', ctx.userId)
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
+      if (st.activeListId && st.listsReady) {
+        q = q.eq('list_id', st.activeListId);
+      }
+      var res = await q;
       if (res.error) {
-        if (/relation|does not exist|schema|plan_pro_invest_watchlist/i.test(res.error.message || '')) {
+        // Fallback si aún no corrió migración list_id
+        if (/list_id|column/i.test(res.error.message || '')) {
+          var legacy = await ctx.client
+            .from('plan_pro_invest_watchlist')
+            .select('id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at')
+            .eq('user_id', ctx.userId)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: true });
+          if (legacy.error) {
+            if (/relation|does not exist|schema|plan_pro_invest_watchlist/i.test(legacy.error.message || '')) {
+              st.tableReady = false;
+              st.watchlist = [];
+            } else {
+              throw legacy.error;
+            }
+          } else {
+            st.tableReady = true;
+            st.watchlist = legacy.data || [];
+          }
+        } else if (/relation|does not exist|schema|plan_pro_invest_watchlist/i.test(res.error.message || '')) {
           st.tableReady = false;
           st.watchlist = [];
         } else {
@@ -257,7 +380,7 @@
       st.watchBySymbol[String(row.symbol).toUpperCase()] = row;
     });
 
-    if (st.tableReady && !st.seeded && st.watchlist.length === 0) {
+    if (st.tableReady && st.listsReady && !st.seeded && st.watchlist.length === 0 && activeList() && activeList().is_default) {
       st.seeded = true;
       await seedDefaultPortfolio();
     }
@@ -265,10 +388,11 @@
 
   async function seedDefaultPortfolio() {
     var ctx = getCtx();
-    if (!ctx.client || !ctx.userId || !st.tableReady) return;
+    if (!ctx.client || !ctx.userId || !st.tableReady || !st.activeListId) return;
     var rows = DEFAULT_PORTFOLIO.map(function (it, i) {
       return {
         user_id: ctx.userId,
+        list_id: st.activeListId,
         symbol: it.symbol,
         asset_name: it.name,
         asset_type: it.asset_type,
@@ -281,6 +405,91 @@
     } catch (e) {}
   }
 
+  async function createList(name) {
+    var ctx = getCtx();
+    if (!ctx.client || !ctx.userId) return;
+    if (!st.listsReady) {
+      toast('Ejecuta en Supabase: supabase-plan-pro-invest-lists.sql', true);
+      return;
+    }
+    var n = String(name || '').trim();
+    if (!n) return;
+    var res = await ctx.client
+      .from('plan_pro_invest_lists')
+      .insert({
+        user_id: ctx.userId,
+        name: n,
+        is_default: false,
+        sort_order: (st.lists || []).length
+      })
+      .select('id, user_id, name, is_default, sort_order, created_at')
+      .single();
+    if (res.error) {
+      toast(res.error.message || 'No se pudo crear la lista', true);
+      return;
+    }
+    st.activeListId = res.data.id;
+    st.filter = 'list';
+    await loadWatchlist();
+    renderListsBar();
+    renderFilters();
+    renderPicks();
+    renderWatchlistBar();
+    updateWatchButtonLabel();
+    toast('Lista creada: ' + n);
+  }
+
+  async function renameActiveList(name) {
+    var ctx = getCtx();
+    var list = activeList();
+    if (!ctx.client || !list) return;
+    var n = String(name || '').trim();
+    if (!n) return;
+    var res = await ctx.client
+      .from('plan_pro_invest_lists')
+      .update({ name: n })
+      .eq('id', list.id)
+      .eq('user_id', ctx.userId);
+    if (res.error) {
+      toast(res.error.message || 'No se pudo renombrar', true);
+      return;
+    }
+    await loadLists();
+    renderListsBar();
+    renderFilters();
+    updateWatchButtonLabel();
+    toast('Lista renombrada');
+  }
+
+  async function deleteActiveList() {
+    var ctx = getCtx();
+    var list = activeList();
+    if (!ctx.client || !list) return;
+    if (list.is_default) {
+      toast('No puedes eliminar «Mi portafolio». Crea otra lista y bórrala si quieres.', true);
+      return;
+    }
+    if (!window.confirm('¿Eliminar la lista «' + list.name + '» y todos sus tickers?')) return;
+    var res = await ctx.client
+      .from('plan_pro_invest_lists')
+      .delete()
+      .eq('id', list.id)
+      .eq('user_id', ctx.userId);
+    if (res.error) {
+      toast(res.error.message || 'No se pudo eliminar', true);
+      return;
+    }
+    st.activeListId = null;
+    await loadWatchlist();
+    st.filter = 'list';
+    renderListsBar();
+    renderFilters();
+    renderPicks();
+    renderWatchlistBar();
+    updateWatchButtonLabel();
+    toast('Lista eliminada');
+  }
+
   async function addToWatchlist(item) {
     var ctx = getCtx();
     if (!ctx.client || !ctx.userId) return;
@@ -288,11 +497,16 @@
       toast('Ejecuta en Supabase: supabase-plan-pro-invest-watchlist.sql', true);
       return;
     }
+    if (!st.listsReady || !st.activeListId) {
+      toast('Ejecuta en Supabase: supabase-plan-pro-invest-lists.sql', true);
+      return;
+    }
     var symbol = String(item.symbol || '').toUpperCase();
     if (!symbol) return;
     if (st.watchBySymbol[symbol]) return;
     var row = {
       user_id: ctx.userId,
+      list_id: st.activeListId,
       symbol: symbol,
       asset_name: item.name || item.asset_name || symbol,
       asset_type: item.assetType || item.asset_type || null,
@@ -300,7 +514,11 @@
       currency: item.currency || null,
       sort_order: st.watchlist.length
     };
-    var res = await ctx.client.from('plan_pro_invest_watchlist').insert(row).select('id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at').single();
+    var res = await ctx.client
+      .from('plan_pro_invest_watchlist')
+      .insert(row)
+      .select('id, list_id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at')
+      .single();
     if (res.error) {
       toast(res.error.message || 'No se pudo agregar', true);
       return;
@@ -308,7 +526,8 @@
     await loadWatchlist();
     renderPicks();
     renderWatchlistBar();
-    toast(symbol + ' agregado a Mi portafolio');
+    updateWatchButtonLabel();
+    toast(symbol + ' → ' + activeListName());
   }
 
   async function removeFromWatchlist(symbol) {
@@ -326,7 +545,8 @@
     renderPicks();
     renderWatchlistBar();
     renderCompareChips();
-    toast(sym + ' quitado de Mi portafolio');
+    updateWatchButtonLabel();
+    toast(sym + ' quitado de «' + activeListName() + '»');
   }
 
   async function toggleWatchlist(item) {
@@ -335,10 +555,52 @@
     else await addToWatchlist(item);
   }
 
+  function updateWatchButtonLabel() {
+    var starBtn = $('npInvWatchBtn');
+    if (!starBtn || !st.quote) return;
+    var on = !!st.watchBySymbol[String(st.quote.symbol).toUpperCase()];
+    var listName = activeListName();
+    starBtn.textContent = on ? '★ En «' + listName + '»' : '☆ Agregar a «' + listName + '»';
+    starBtn.classList.toggle('np-inv-watch-btn--on', on);
+  }
+
+  function renderListsBar() {
+    var mount = $('npInvListsBar');
+    if (!mount) return;
+    if (!st.listsReady) {
+      mount.innerHTML =
+        '<p class="np-muted" style="margin:0;font-size:12px;">Ejecuta <code>supabase-plan-pro-invest-lists.sql</code> para crear listas.</p>';
+      return;
+    }
+    if (!(st.lists || []).length) {
+      mount.innerHTML = '<p class="np-muted" style="margin:0;font-size:12px;">Sin listas aún.</p>';
+      return;
+    }
+    mount.innerHTML = st.lists
+      .map(function (l) {
+        var active = l.id === st.activeListId ? ' np-inv-chip--active' : '';
+        var mark = l.is_default ? '⭐ ' : '📁 ';
+        return (
+          '<button type="button" class="np-inv-chip' +
+          active +
+          '" data-inv-list="' +
+          escapeHtml(l.id) +
+          '" title="Lista activa para ★">' +
+          mark +
+          escapeHtml(l.name) +
+          '</button>'
+        );
+      })
+      .join('');
+  }
+
   function renderFilters() {
     var mount = $('npInvFilters');
     if (!mount) return;
-    var filters = [{ id: 'portfolio', label: '⭐ Mi portafolio' }, { id: 'all', label: 'Todos' }];
+    var filters = [
+      { id: 'list', label: '📋 ' + activeListName() },
+      { id: 'all', label: 'Todos (catálogo)' }
+    ];
     CATALOG.forEach(function (g) {
       filters.push({ id: 'g:' + g.group, label: (g.icon ? g.icon + ' ' : '') + g.group });
     });
@@ -362,12 +624,12 @@
     var mount = $('npInvPicks');
     if (!mount) return;
     var items = [];
-    if (st.filter === 'portfolio') {
+    if (st.filter === 'list' || st.filter === 'portfolio') {
       items = st.watchlist.map(function (w) {
         return {
           symbol: w.symbol,
           name: w.asset_name || w.symbol,
-          group: 'Mi portafolio',
+          group: activeListName(),
           asset_type: w.asset_type,
           inWatch: true
         };
@@ -392,13 +654,16 @@
     if (!items.length) {
       mount.innerHTML =
         '<p class="np-muted" style="margin:0;font-size:13px;">' +
-        (st.filter === 'portfolio'
-          ? 'Tu portafolio está vacío. Marca activos en Popular Picks o busca un ticker.'
+        (st.filter === 'list' || st.filter === 'portfolio'
+          ? 'Lista vacía. Marca ★ en Popular Picks o busca un ticker para agregarlo a «' +
+            escapeHtml(activeListName()) +
+            '».'
           : 'Sin activos en este filtro.') +
         '</p>';
       return;
     }
 
+    var listName = activeListName();
     mount.innerHTML = items
       .map(function (it) {
         var sym = String(it.symbol).toUpperCase();
@@ -429,9 +694,9 @@
           '" data-inv-type="' +
           escapeHtml(it.asset_type || '') +
           '" aria-label="' +
-          (on ? 'Quitar de Mi portafolio' : 'Agregar a Mi portafolio') +
+          (on ? 'Quitar de ' + listName : 'Agregar a ' + listName) +
           '" title="' +
-          (on ? 'Quitar de Mi portafolio' : 'Agregar a Mi portafolio') +
+          (on ? 'Quitar de «' + listName + '»' : 'Agregar a «' + listName + '»') +
           '">' +
           (on ? '★' : '☆') +
           '</button>' +
@@ -455,22 +720,43 @@
     var mount = $('npInvCompareChips');
     if (!mount) return;
     if (!st.compareSymbols.length) {
-      mount.innerHTML = '<span class="np-muted" style="font-size:12px;">Toca ⇄ en un activo para comparar (máx. 6).</span>';
+      mount.innerHTML =
+        '<span class="np-muted" style="font-size:12px;">Comparación vacía · agrega 2 a 6 con ⇄ (ej. NVDA + MSFT + VOO).</span>';
       return;
     }
-    mount.innerHTML = st.compareSymbols
-      .map(function (sym, i) {
-        return (
-          '<span class="np-inv-cmp-chip" style="--np-inv-cmp:' +
-          COMPARE_COLORS[i % COMPARE_COLORS.length] +
-          '">' +
-          escapeHtml(sym) +
-          '<button type="button" data-inv-compare-off="' +
-          escapeHtml(sym) +
-          '" aria-label="Quitar de comparación">×</button></span>'
-        );
-      })
-      .join('');
+    mount.innerHTML =
+      '<span class="np-inv-cmp-count">' +
+      st.compareSymbols.length +
+      '/6</span>' +
+      st.compareSymbols
+        .map(function (sym, i) {
+          return (
+            '<span class="np-inv-cmp-chip" style="--np-inv-cmp:' +
+            COMPARE_COLORS[i % COMPARE_COLORS.length] +
+            '">' +
+            escapeHtml(sym) +
+            '<button type="button" data-inv-compare-off="' +
+            escapeHtml(sym) +
+            '" aria-label="Quitar de comparación">×</button></span>'
+          );
+        })
+        .join('');
+  }
+
+  function renderMetricButtons() {
+    var mount = $('npInvMetrics');
+    if (!mount) return;
+    mount.innerHTML = CHART_METRICS.map(function (m) {
+      return (
+        '<button type="button" class="np-inv-range np-inv-metric-btn' +
+        (st.chartMetric === m.id ? ' np-inv-range--active' : '') +
+        '" data-inv-metric="' +
+        m.id +
+        '">' +
+        m.label +
+        '</button>'
+      );
+    }).join('');
   }
 
   function setMetric(id, valueHtml, cls) {
@@ -528,9 +814,7 @@
 
     var starBtn = $('npInvWatchBtn');
     if (starBtn) {
-      var on = !!st.watchBySymbol[String(quote.symbol).toUpperCase()];
-      starBtn.textContent = on ? '★ En Mi portafolio' : '☆ Agregar a Mi portafolio';
-      starBtn.classList.toggle('np-inv-watch-btn--on', on);
+      updateWatchButtonLabel();
     }
 
     setMetric('npInvOpen', fmtPrice(quote.open, null));
@@ -565,10 +849,137 @@
     }).join('');
   }
 
+  function svgEl(name, attrs) {
+    var node = document.createElementNS('http://www.w3.org/2000/svg', name);
+    Object.keys(attrs || {}).forEach(function (k) {
+      node.setAttribute(k, attrs[k]);
+    });
+    return node;
+  }
+
+  function drawBarChart(rows, metricId) {
+    var svg = $('npInvChartSvg');
+    var empty = $('npInvChartEmpty');
+    if (!svg) return;
+    var w = svg.clientWidth || 640;
+    var h = 260;
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.innerHTML = '';
+
+    var usable = (rows || []).filter(function (r) {
+      return r && r.value != null && Number.isFinite(Number(r.value));
+    });
+    if (!usable.length) {
+      if (empty) {
+        empty.classList.remove('np-hide');
+        empty.textContent =
+          metricId === 'pe' || metricId === 'forwardPe'
+            ? 'P/E no disponible aún con la fuente pública (aparece N/D). Precio y Volumen sí se grafican en el tiempo.'
+            : 'Sin valores para este indicador en los activos seleccionados.';
+      }
+      return;
+    }
+    if (empty) empty.classList.add('np-hide');
+
+    var pad = { t: 20, r: 16, b: 36, l: 48 };
+    var innerW = w - pad.l - pad.r;
+    var innerH = h - pad.t - pad.b;
+    var vals = usable.map(function (r) { return Number(r.value); });
+    var vMin = Math.min.apply(null, vals.concat([0]));
+    var vMax = Math.max.apply(null, vals.concat([0]));
+    if (vMin === vMax) {
+      vMin -= 1;
+      vMax += 1;
+    }
+    var barW = Math.min(64, (innerW / usable.length) * 0.62);
+    var gap = innerW / usable.length;
+
+    function yScale(v) {
+      return pad.t + (1 - (v - vMin) / (vMax - vMin || 1)) * innerH;
+    }
+    var zeroY = yScale(0);
+
+    for (var gi = 0; gi < 4; gi++) {
+      var gy = pad.t + (innerH * gi) / 3;
+      svg.appendChild(
+        svgEl('line', {
+          x1: pad.l,
+          y1: gy,
+          x2: pad.l + innerW,
+          y2: gy,
+          stroke: 'rgba(148,163,184,0.35)',
+          'stroke-width': '1'
+        })
+      );
+      var gv = vMax - ((vMax - vMin) * gi) / 3;
+      var ty = svgEl('text', {
+        x: pad.l - 6,
+        y: gy + 3,
+        'text-anchor': 'end',
+        fill: '#64748b',
+        'font-size': '10'
+      });
+      ty.textContent = fmtNum(gv, Math.abs(gv) >= 100 ? 0 : 2);
+      svg.appendChild(ty);
+    }
+
+    usable.forEach(function (r, i) {
+      var val = Number(r.value);
+      var x = pad.l + gap * i + (gap - barW) / 2;
+      var y = yScale(val);
+      var bh = Math.abs(zeroY - y);
+      var top = Math.min(y, zeroY);
+      var color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+      svg.appendChild(
+        svgEl('rect', {
+          x: x,
+          y: top,
+          width: barW,
+          height: Math.max(2, bh),
+          rx: '4',
+          fill: color,
+          opacity: '0.85'
+        })
+      );
+      var lx = svgEl('text', {
+        x: x + barW / 2,
+        y: h - 12,
+        'text-anchor': 'middle',
+        fill: '#334155',
+        'font-size': '10',
+        'font-weight': '700'
+      });
+      lx.textContent = r.symbol;
+      svg.appendChild(lx);
+      var vx = svgEl('text', {
+        x: x + barW / 2,
+        y: top - 4,
+        'text-anchor': 'middle',
+        fill: '#0f172a',
+        'font-size': '10',
+        'font-weight': '700'
+      });
+      vx.textContent = fmtNum(val, 2);
+      svg.appendChild(vx);
+    });
+
+    var legend = $('npInvChartLegend');
+    if (legend) {
+      var label =
+        metricId === 'pe'
+          ? 'P/E actual (comparación)'
+          : metricId === 'forwardPe'
+            ? 'Forward P/E actual'
+            : 'Cambio del día %';
+      legend.innerHTML = '<span class="np-muted" style="font-size:12px;">' + label + ' · barras al momento (no serie histórica)</span>';
+    }
+  }
+
   function drawChart(seriesList) {
     var svg = $('npInvChartSvg');
     var empty = $('npInvChartEmpty');
     if (!svg) return;
+    var metric = st.chartMetric || 'price';
     var w = svg.clientWidth || 640;
     var h = 260;
     svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
@@ -590,21 +1001,39 @@
     var innerW = w - pad.l - pad.r;
     var innerH = h - pad.t - pad.b;
 
-    // Normalizar a % desde primer punto para comparar varios activos
-    var multi = usable.length > 1;
+    var multi = usable.length > 1 || metric === 'pct';
+    var useVolume = metric === 'volume';
     var norm = usable.map(function (s) {
-      var pts = s.points;
-      var base = pts[0].v;
+      var pts = s.points
+        .map(function (p) {
+          var raw = useVolume ? p.vol : p.v;
+          return raw != null && Number.isFinite(Number(raw))
+            ? { t: p.t, raw: Number(raw) }
+            : null;
+        })
+        .filter(Boolean);
+      if (!pts.length) return { symbol: s.symbol, points: [] };
+      var base = pts[0].raw;
       return {
         symbol: s.symbol,
         points: pts.map(function (p) {
-          return {
-            t: p.t,
-            v: multi ? ((p.v - base) / base) * 100 : p.v
-          };
+          var v = multi || metric === 'pct' ? ((p.raw - base) / (base || 1)) * 100 : p.raw;
+          return { t: p.t, v: v };
         })
       };
+    }).filter(function (s) {
+      return s.points.length > 1;
     });
+
+    if (!norm.length) {
+      if (empty) {
+        empty.classList.remove('np-hide');
+        empty.textContent = useVolume
+          ? 'Sin volumen histórico para este periodo.'
+          : 'Sin datos de gráfica para este periodo.';
+      }
+      return;
+    }
 
     var allT = [];
     var allV = [];
@@ -633,20 +1062,10 @@
       return pad.t + (1 - (v - vMin) / (vMax - vMin || 1)) * innerH;
     }
 
-    var ns = 'http://www.w3.org/2000/svg';
-    function el(name, attrs) {
-      var node = document.createElementNS(ns, name);
-      Object.keys(attrs || {}).forEach(function (k) {
-        node.setAttribute(k, attrs[k]);
-      });
-      return node;
-    }
-
-    // grid
     for (var gi = 0; gi < 4; gi++) {
       var gy = pad.t + (innerH * gi) / 3;
       svg.appendChild(
-        el('line', {
+        svgEl('line', {
           x1: pad.l,
           y1: gy,
           x2: pad.l + innerW,
@@ -656,8 +1075,13 @@
         })
       );
       var gv = vMax - ((vMax - vMin) * gi) / 3;
-      var label = multi ? fmtNum(gv, 1) + '%' : fmtNum(gv, gv >= 100 ? 0 : 2);
-      var ty = el('text', {
+      var asPct = multi || metric === 'pct';
+      var label = asPct
+        ? fmtNum(gv, 1) + '%'
+        : useVolume
+          ? fmtCap(gv)
+          : fmtNum(gv, gv >= 100 ? 0 : 2);
+      var ty = svgEl('text', {
         x: pad.l - 6,
         y: gy + 3,
         'text-anchor': 'end',
@@ -676,7 +1100,7 @@
         })
         .join(' ');
       svg.appendChild(
-        el('path', {
+        svgEl('path', {
           d: d,
           fill: 'none',
           stroke: color,
@@ -689,14 +1113,16 @@
 
     var legend = $('npInvChartLegend');
     if (legend) {
-      legend.innerHTML = usable
+      var suffix =
+        metric === 'volume' ? ' · volumen' : multi || metric === 'pct' ? ' (%)' : '';
+      legend.innerHTML = norm
         .map(function (s, i) {
           return (
             '<span class="np-inv-legend-item"><i style="background:' +
             COMPARE_COLORS[i % COMPARE_COLORS.length] +
             '"></i>' +
             escapeHtml(s.symbol) +
-            (multi ? ' (%)' : '') +
+            suffix +
             '</span>'
           );
         })
@@ -704,7 +1130,92 @@
     }
   }
 
-  async function loadAsset(symbol) {
+  function renderDataStamp() {
+    var el = $('npInvDataStamp');
+    if (!el) return;
+    if (!st.lastFetchedAt && !st.activeSymbol) {
+      el.textContent = 'Sin consulta aún · modo análisis (no en vivo)';
+      return;
+    }
+    var when = st.lastFetchedAt
+      ? new Date(st.lastFetchedAt).toLocaleString('es-MX', {
+          dateStyle: 'short',
+          timeStyle: 'short'
+        })
+      : '—';
+    var src = st.fromCache ? 'desde caché de esta sesión' : 'consulta web';
+    var sel = selectedSymbols();
+    el.textContent =
+      'Datos fijados · ' +
+      when +
+      ' · ' +
+      src +
+      (sel.length ? ' · selección: ' + sel.join(', ') : '') +
+      ' · «Actualizar selección» solo si quieres datos nuevos';
+  }
+
+  function selectedSymbols() {
+    var symbols = st.compareSymbols.slice();
+    if (st.activeSymbol && symbols.indexOf(st.activeSymbol) < 0) {
+      symbols.unshift(st.activeSymbol);
+    }
+    return symbols.filter(Boolean).slice(0, 6);
+  }
+
+  async function loadSnapshotMetricChart(opts) {
+    opts = opts || {};
+    var force = !!opts.force;
+    var svc = global.financialDataService;
+    if (!svc) return;
+    var symbols = selectedSymbols();
+    if (!symbols.length) {
+      drawBarChart([], st.chartMetric);
+      return;
+    }
+    var status = $('npInvStatus');
+    if (status && force) {
+      status.textContent = 'Actualizando indicadores…';
+      status.classList.remove('np-hide');
+    }
+    try {
+      var quotes = await svc.getQuotes(symbols, { force: force });
+      var rows = (quotes || []).map(function (q) {
+        if (!q || q.error) return { symbol: (q && q.symbol) || '?', value: null };
+        var val = null;
+        if (st.chartMetric === 'pe') val = q.pe;
+        else if (st.chartMetric === 'forwardPe') val = q.forwardPe;
+        else if (st.chartMetric === 'changePercent') val = q.changePercent;
+        return { symbol: q.symbol, value: val };
+      });
+      var times = (quotes || [])
+        .map(function (q) {
+          return q && q.__cachedAt;
+        })
+        .filter(Boolean);
+      if (times.length) st.lastFetchedAt = Math.max.apply(null, times);
+      st.fromCache = (quotes || []).every(function (q) {
+        return !q || q.error || q.__fromCache;
+      });
+      drawBarChart(rows, st.chartMetric);
+      renderDataStamp();
+      if (status) status.classList.add('np-hide');
+    } catch (e) {
+      drawBarChart([], st.chartMetric);
+      var empty = $('npInvChartEmpty');
+      if (empty) {
+        empty.classList.remove('np-hide');
+        empty.textContent = (e && e.message) || 'No se pudieron cargar indicadores';
+      }
+      if (status) {
+        status.textContent = (e && e.message) || 'Error';
+        status.classList.remove('np-hide');
+      }
+    }
+  }
+
+  async function loadAsset(symbol, opts) {
+    opts = opts || {};
+    var force = !!opts.force;
     var svc = global.financialDataService;
     if (!svc) {
       toast('Servicio financiero no cargado', true);
@@ -716,44 +1227,64 @@
     st.loading = true;
     var status = $('npInvStatus');
     if (status) {
-      status.textContent = 'Cargando ' + sym + '…';
+      status.textContent = force ? 'Actualizando ' + sym + '…' : 'Cargando ' + sym + '…';
       status.classList.remove('np-hide');
     }
     renderPicks();
     try {
-      var quote = await svc.getQuote(sym);
+      var quote = await svc.getQuote(sym, { force: force });
       st.quote = quote;
+      st.fromCache = !!(quote && quote.__fromCache);
+      st.lastFetchedAt = (quote && quote.__cachedAt) || Date.now();
       renderQuoteCard(quote);
-      await loadChart();
-      if (status) status.classList.add('np-hide');
+      renderDataStamp();
+      await loadChart({ force: force });
+      if (status) {
+        if (st.fromCache && !force) {
+          status.textContent = 'Usando datos ya consultados (sin nueva descarga).';
+          setTimeout(function () {
+            if (status && status.textContent.indexOf('ya consultados') >= 0) {
+              status.classList.add('np-hide');
+            }
+          }, 2200);
+        } else {
+          status.classList.add('np-hide');
+        }
+      }
     } catch (e) {
       st.quote = null;
       renderQuoteCard(null);
       var empty = $('npInvEmpty');
-      if (empty) {
-        empty.classList.remove('np-hide');
-        empty.textContent =
-          e && e.code === 'NOT_FOUND'
+      var msg =
+        e && (e.code === 'RATE_LIMIT' || e.status === 429)
+          ? 'Yahoo limitó consultas. Espera ~30–60 s y pulsa Actualizar selección.'
+          : e && e.code === 'NOT_FOUND'
             ? 'Activo no encontrado'
             : (e && e.message) || 'No se pudo cargar el activo';
+      if (empty) {
+        empty.classList.remove('np-hide');
+        empty.textContent = msg;
       }
       if (status) {
-        status.textContent = empty ? empty.textContent : 'Error';
+        status.textContent = msg;
         status.classList.remove('np-hide');
       }
+      renderDataStamp();
     } finally {
       st.loading = false;
     }
   }
 
-  async function loadChart() {
+  async function loadChart(opts) {
+    opts = opts || {};
+    var force = !!opts.force;
     var svc = global.financialDataService;
     if (!svc) return;
-    var symbols = st.compareSymbols.slice();
-    if (st.activeSymbol && symbols.indexOf(st.activeSymbol) < 0) {
-      symbols.unshift(st.activeSymbol);
+    if (SNAPSHOT_METRICS[st.chartMetric]) {
+      await loadSnapshotMetricChart({ force: force });
+      return;
     }
-    symbols = symbols.filter(Boolean).slice(0, 6);
+    var symbols = selectedSymbols();
     if (!symbols.length) {
       drawChart([]);
       return;
@@ -762,18 +1293,55 @@
     try {
       var series =
         symbols.length === 1
-          ? [await svc.getHistory(symbols[0], st.range)]
-          : await svc.compare(symbols, st.range);
+          ? [await svc.getHistory(symbols[0], st.range, { force: force })]
+          : await svc.compare(symbols, st.range, { force: force });
+      st.lastSeries = series;
+      var anyFresh = (series || []).some(function (s) {
+        return s && s.__fromCache === false;
+      });
+      var anyCache = (series || []).some(function (s) {
+        return s && s.__fromCache;
+      });
+      st.fromCache = !anyFresh && anyCache;
+      var times = (series || [])
+        .map(function (s) {
+          return s && s.__cachedAt;
+        })
+        .filter(Boolean);
+      if (times.length) st.lastFetchedAt = Math.max.apply(null, times);
       drawChart(series);
-      if (status) status.classList.add('np-hide');
+      renderDataStamp();
+      if (status && !st.loading) status.classList.add('np-hide');
     } catch (e) {
       drawChart([]);
       var empty = $('npInvChartEmpty');
+      var msg =
+        e && (e.code === 'RATE_LIMIT' || e.status === 429)
+          ? 'La fuente limitó consultas. Espera y usa Actualizar selección.'
+          : (e && e.message) || 'No se pudo cargar la gráfica';
       if (empty) {
         empty.classList.remove('np-hide');
-        empty.textContent = (e && e.message) || 'No se pudo cargar la gráfica';
+        empty.textContent = msg;
+      }
+      if (status) {
+        status.textContent = msg;
+        status.classList.remove('np-hide');
       }
     }
+  }
+
+  async function refreshSelection() {
+    var svc = global.financialDataService;
+    var symbols = selectedSymbols();
+    if (!symbols.length) {
+      toast('Selecciona un activo primero', true);
+      return;
+    }
+    if (svc && typeof svc.clearSymbols === 'function') {
+      svc.clearSymbols(symbols);
+    }
+    toast('Actualizando solo: ' + symbols.join(', '));
+    await loadAsset(st.activeSymbol || symbols[0], { force: true });
   }
 
   async function runSearch(q) {
@@ -839,6 +1407,19 @@
         renderPicks();
         return;
       }
+      t = e.target.closest('[data-inv-list]');
+      if (t) {
+        st.activeListId = t.getAttribute('data-inv-list');
+        st.filter = 'list';
+        loadWatchlist().then(function () {
+          renderListsBar();
+          renderFilters();
+          renderPicks();
+          renderWatchlistBar();
+          updateWatchButtonLabel();
+        });
+        return;
+      }
       t = e.target.closest('[data-inv-open]');
       if (t) {
         loadAsset(t.getAttribute('data-inv-open'));
@@ -879,6 +1460,19 @@
         st.range = t.getAttribute('data-inv-range');
         renderRangeButtons();
         loadChart();
+        return;
+      }
+      t = e.target.closest('[data-inv-metric]');
+      if (t) {
+        st.chartMetric = t.getAttribute('data-inv-metric') || 'price';
+        renderMetricButtons();
+        if (SNAPSHOT_METRICS[st.chartMetric]) {
+          loadChart();
+        } else if (st.lastSeries && st.lastSeries.length) {
+          drawChart(st.lastSeries);
+        } else {
+          loadChart();
+        }
         return;
       }
       t = e.target.closest('[data-inv-search-pick]');
@@ -940,8 +1534,32 @@
     var refreshBtn = $('npInvRefreshBtn');
     if (refreshBtn) {
       refreshBtn.addEventListener('click', function () {
-        if (global.financialDataService) global.financialDataService.clearCache();
-        if (st.activeSymbol) loadAsset(st.activeSymbol);
+        refreshSelection();
+      });
+    }
+
+    var listNew = $('npInvListNewBtn');
+    if (listNew && listNew.dataset.npWired !== '1') {
+      listNew.dataset.npWired = '1';
+      listNew.addEventListener('click', function () {
+        var name = window.prompt('Nombre de la nueva lista (ej. Agricultura, Semis, Largo plazo):');
+        if (name) createList(name);
+      });
+    }
+    var listRename = $('npInvListRenameBtn');
+    if (listRename && listRename.dataset.npWired !== '1') {
+      listRename.dataset.npWired = '1';
+      listRename.addEventListener('click', function () {
+        var cur = activeListName();
+        var name = window.prompt('Nuevo nombre de la lista:', cur);
+        if (name && name.trim() !== cur) renameActiveList(name);
+      });
+    }
+    var listDel = $('npInvListDeleteBtn');
+    if (listDel && listDel.dataset.npWired !== '1') {
+      listDel.dataset.npWired = '1';
+      listDel.addEventListener('click', function () {
+        deleteActiveList();
       });
     }
 
@@ -959,19 +1577,47 @@
     wireEvents();
     renderFilters();
     renderRangeButtons();
+    renderMetricButtons();
     renderCompareChips();
     await loadWatchlist();
+    renderListsBar();
     renderWatchlistBar();
+    renderFilters();
     renderPicks();
+    renderDataStamp();
+    updateWatchButtonLabel();
 
     var setup = $('npInvSetupMsg');
-    if (setup) setup.classList.toggle('np-hide', st.tableReady);
+    if (setup) {
+      if (!st.tableReady) {
+        setup.classList.remove('np-hide');
+        setup.innerHTML =
+          'Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-invest-watchlist.sql</code>';
+      } else if (!st.listsReady) {
+        setup.classList.remove('np-hide');
+        setup.innerHTML =
+          'Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-invest-lists.sql</code> (listas personalizadas)';
+      } else {
+        setup.classList.add('np-hide');
+      }
+    }
+
+    // Si ya hay ficha en esta sesión, no vuelvas a pegarle a la web al reabrir la pestaña
+    if (st.activeSymbol && st.quote) {
+      renderQuoteCard(st.quote);
+      if (st.lastSeries && st.lastSeries.length && !SNAPSHOT_METRICS[st.chartMetric]) {
+        drawChart(st.lastSeries);
+      } else {
+        await loadChart({ force: false });
+      }
+      return;
+    }
 
     if (!st.activeSymbol) {
       var first =
         (st.watchlist[0] && st.watchlist[0].symbol) ||
         (DEFAULT_PORTFOLIO[0] && DEFAULT_PORTFOLIO[0].symbol);
-      if (first) await loadAsset(first);
+      if (first) await loadAsset(first, { force: false });
     }
   }
 
@@ -981,6 +1627,7 @@
       global.PlanProInvest._ctx = ctx || {};
     },
     openSymbol: loadAsset,
+    refreshSelection: refreshSelection,
     catalog: CATALOG
   };
 })(typeof window !== 'undefined' ? window : globalThis);

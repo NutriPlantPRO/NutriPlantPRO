@@ -1921,7 +1921,7 @@ function sectionTemplate(name) {
           <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar Pilot')}</button>
-            <button type="button" id="radarBtnGenerateDem" class="btn btn-secondary" style="font-size: 13px;" data-i18n="radar.btn_generate_dem">${rt('radar.btn_generate_dem', '⛰ Generar relieve')}</button>
+            <button type="button" id="radarBtnGenerateDem" class="btn radar-dem-btn" style="font-size: 13px;" data-i18n="radar.btn_generate_dem">${rt('radar.btn_generate_dem', '⛰ Generar relieve')}</button>
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;" data-i18n="radar.btn_status">${rt('radar.btn_status', '🔄 Estado')}</button>
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
             <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
@@ -19993,7 +19993,9 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
 }
 
 /**
- * Captura gráficas Chart.js de la comparativa lab (offscreen) para embeber en el PDF.
+ * Genera data-URLs de gráficas lab para el PDF.
+ * No usa mountLabCompare (offscreen suele dar canvas en blanco):
+ * crea canvas con tamaño fijo + Chart.js responsive:false (mismo patrón que fertirriego).
  */
 function captureLabCompareChartsForReport(callback, reportOptions) {
   var done = typeof callback === 'function' ? callback : function () {};
@@ -20004,7 +20006,8 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     return selectedTypes.indexOf(spec.type) >= 0;
   });
   var out = {};
-  if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.mountLabCompare !== 'function') {
+
+  if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.getTypeConfig !== 'function') {
     done(out);
     return;
   }
@@ -20018,12 +20021,6 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     }
   } catch (e) { /* ignore */ }
 
-  var host = document.createElement('div');
-  host.setAttribute('aria-hidden', 'true');
-  // Visible pero casi transparente y fuera de vista: Chart.js necesita tamaño real de canvas
-  host.style.cssText = 'position:fixed;left:-10000px;top:0;width:820px;min-height:900px;opacity:0.02;pointer-events:none;z-index:-1;overflow:visible;background:#fff;';
-  document.body.appendChild(host);
-
   function cleanupLang() {
     try {
       if (prevLang != null && window.NpI18n && typeof window.NpI18n.setLanguage === 'function') {
@@ -20032,118 +20029,165 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     } catch (e) { /* ignore */ }
   }
 
-  function finishAll() {
-    try { if (host.parentNode) host.parentNode.removeChild(host); } catch (e) { /* ignore */ }
+  function chartRowLabel(row) {
+    var base = (row && row.label) || '';
+    if (/\(%\)|°Brix|\(kg\/cm| \(psi\)|\(mg\/100|\(ppm\)|\(meq\)/i.test(base)) return base;
+    var u = row && row.unit;
+    if (u === 'pct') return base + ' (%)';
+    if (u === 'ppm') return base + ' (ppm)';
+    if (u === 'meq') return base + ' (meq)';
+    if (u === 'brix') return base + ' (°Brix)';
+    if (u === 'kgcm2') return base + ' (kg/cm²)';
+    if (u === 'psi') return base + ' (psi)';
+    if (u === 'mg100g') return base + ' (mg/100 g)';
+    return base;
+  }
+
+  function yTitleForRows(rows) {
+    var units = {};
+    var count = 0;
+    (rows || []).forEach(function (r) {
+      var u = r.unit || 'other';
+      if (!units[u]) { units[u] = true; count += 1; }
+    });
+    if (count > 1) return '';
+    if (units.pct) return '%';
+    if (units.ppm) return 'ppm';
+    if (units.meq) return 'meq';
+    if (units.brix) return '°Brix';
+    if (units.kgcm2) return 'kg/cm²';
+    if (units.psi) return 'psi';
+    if (units.mg100g) return 'mg/100 g';
+    return '';
+  }
+
+  function renderOneBlockChart(block, blockRows, analyses) {
+    if (!window.Chart || !block || !block.chart) return null;
+    var chartRows = blockRows.filter(function (r) {
+      return r.chartable !== false && (r.values || []).some(function (v) { return v != null && Number.isFinite(v); });
+    });
+    if (!chartRows.length || !analyses.length) return null;
+
+    var W = 760;
+    var H = 300;
+    var canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    // Fuera de pantalla pero con layout real (evita canvas 0×0)
+    canvas.style.cssText = 'position:fixed;left:-9999px;top:0;width:' + W + 'px;height:' + H + 'px;opacity:1;pointer-events:none;z-index:-1;';
+    document.body.appendChild(canvas);
+
+    var isBar = block.chartType === 'bar';
+    var labelFn = window.NpAnalysisCompare.analysisLabel;
+    var datasets = analyses.map(function (a, idx) {
+      var color = reportLabAnalysisColor(idx);
+      return {
+        label: (typeof labelFn === 'function') ? labelFn(a, idx) : (a.title || a.name || ('#' + (idx + 1))),
+        data: chartRows.map(function (r) {
+          var v = r.values[idx];
+          return v == null || !Number.isFinite(v) ? null : v;
+        }),
+        borderColor: color,
+        backgroundColor: isBar ? color + 'cc' : color + '33',
+        borderWidth: isBar ? 1.5 : 2.5,
+        tension: 0.25,
+        spanGaps: true,
+        fill: false,
+        maxBarThickness: 32,
+        pointRadius: isBar ? 0 : 3
+      };
+    });
+
+    var yt = yTitleForRows(chartRows);
+    var chart = null;
+    var dataUrl = null;
+    try {
+      chart = new window.Chart(canvas.getContext('2d'), {
+        type: isBar ? 'bar' : 'line',
+        data: {
+          labels: chartRows.map(chartRowLabel),
+          datasets: datasets
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          devicePixelRatio: 2,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12, font: { size: 11 }, padding: 10 }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { maxRotation: 45, minRotation: 0, font: { size: 10 }, color: '#475569' },
+              grid: { color: 'rgba(148,163,184,0.25)' }
+            },
+            y: {
+              beginAtZero: true,
+              title: { display: !!yt, text: yt || '', font: { size: 11 }, color: '#64748b' },
+              ticks: { font: { size: 10 }, color: '#475569' },
+              grid: { color: 'rgba(148,163,184,0.25)' }
+            }
+          }
+        }
+      });
+      if (chart && typeof chart.toBase64Image === 'function') {
+        dataUrl = chart.toBase64Image('image/png', 1);
+      } else {
+        dataUrl = canvas.toDataURL('image/png');
+      }
+      // Evitar data URL vacía / casi vacía
+      if (!dataUrl || dataUrl.length < 500) dataUrl = null;
+    } catch (eChart) {
+      console.warn('lab PDF chart render', block.id, eChart);
+      dataUrl = null;
+    }
+    try { if (chart) chart.destroy(); } catch (eD) { /* ignore */ }
+    try { if (canvas.parentNode) canvas.parentNode.removeChild(canvas); } catch (eR) { /* ignore */ }
+    return dataUrl;
+  }
+
+  function buildAll() {
+    specs.forEach(function (spec) {
+      var list = getLabAnalysesListForReport(spec.listKey);
+      if (!list.length) return;
+      var typeCfg = window.NpAnalysisCompare.getTypeConfig(spec.type);
+      if (!typeCfg || !typeCfg.fields || !typeCfg.blocks) return;
+      var rows = window.NpAnalysisCompare.buildCompareRows(list, typeCfg.fields);
+      var charts = {};
+      typeCfg.blocks.forEach(function (block) {
+        if (!block || !block.chart) return;
+        var blockRows = rows.filter(function (r) { return r.block === block.id; });
+        var url = renderOneBlockChart(block, blockRows, list);
+        if (url) charts[block.id] = url;
+      });
+      if (Object.keys(charts).length) out[spec.type] = charts;
+    });
     cleanupLang();
     done(out);
   }
 
-  function waitForCharts(state, expected, attempt, cbWait) {
-    var keys = state && state.charts ? Object.keys(state.charts) : [];
-    if ((expected === 0) || keys.length >= expected || attempt >= 40) {
-      // Dar un frame extra para que Chart pinte
-      setTimeout(cbWait, 120);
-      return;
-    }
-    setTimeout(function () { waitForCharts(state, expected, attempt + 1, cbWait); }, 120);
-  }
-
-  function next(i) {
-    if (i >= specs.length) {
-      finishAll();
-      return;
-    }
-    var spec = specs[i];
-    var list = getLabAnalysesListForReport(spec.listKey);
-    if (!list.length) {
-      next(i + 1);
-      return;
-    }
-    var typeCfg = window.NpAnalysisCompare.getTypeConfig(spec.type);
-    var expectedCharts = (typeCfg && typeCfg.blocks)
-      ? typeCfg.blocks.filter(function (b) { return b && b.chart; }).length
-      : 0;
-    if (!expectedCharts) {
-      next(i + 1);
-      return;
-    }
-
-    var wrap = document.createElement('div');
-    host.innerHTML = '';
-    host.appendChild(wrap);
-    var state = null;
-    try {
-      state = window.NpAnalysisCompare.mountLabCompare(wrap, {
-        type: spec.type,
-        getAnalyses: function () { return list; }
-      });
-    } catch (eMount) {
-      console.warn('captureLabCompareChartsForReport mount', spec.type, eMount);
-      next(i + 1);
-      return;
-    }
-
-    // Forzar tamaño de canvas para captura
-    try {
-      wrap.querySelectorAll('.np-analysis-compare__chart-wrap').forEach(function (el) {
-        el.style.height = '280px';
-        el.style.width = '760px';
-        el.style.position = 'relative';
-      });
-      wrap.querySelectorAll('canvas').forEach(function (c) {
-        c.style.width = '760px';
-        c.style.height = '280px';
-      });
-      if (state && typeof state.refresh === 'function') state.refresh();
-    } catch (eSize) { /* ignore */ }
-
-    waitForCharts(state, expectedCharts, 0, function () {
-      var charts = {};
-      try {
-        if (state && state.charts) {
-          Object.keys(state.charts).forEach(function (key) {
-            var chart = state.charts[key];
-            try {
-              if (chart && typeof chart.resize === 'function') chart.resize();
-              if (chart && typeof chart.toBase64Image === 'function') {
-                charts[key] = chart.toBase64Image('image/png', 1);
-              } else if (chart && chart.canvas && typeof chart.canvas.toDataURL === 'function') {
-                charts[key] = chart.canvas.toDataURL('image/png');
-              }
-            } catch (eCap) {
-              console.warn('capture chart', spec.type, key, eCap);
-            }
-          });
-        }
-        // Fallback: capturar canvas del DOM aunque Chart no esté en state
-        if (!Object.keys(charts).length) {
-          wrap.querySelectorAll('canvas').forEach(function (canvas) {
-            var id = String(canvas.id || '');
-            var parts = id.split('_');
-            var blockId = parts.length ? parts[parts.length - 1] : id;
-            try {
-              if (canvas.width > 0 && canvas.height > 0) {
-                charts[blockId] = canvas.toDataURL('image/png');
-              }
-            } catch (eDom) { /* ignore */ }
-          });
-        }
-      } catch (eAll) { /* ignore */ }
-      if (Object.keys(charts).length) out[spec.type] = charts;
-      try {
-        if (state && state.charts) {
-          Object.keys(state.charts).forEach(function (k) {
-            try { state.charts[k].destroy(); } catch (eD) { /* ignore */ }
-          });
-        }
-      } catch (eDes) { /* ignore */ }
-      wrap.innerHTML = '';
-      next(i + 1);
-    });
-  }
-
   ensureChartJsForReport(function () {
-    next(0);
+    // Un frame para asegurar que Chart esté listo en el hilo
+    setTimeout(function () {
+      if (!window.Chart) {
+        console.warn('captureLabCompareChartsForReport: Chart.js no disponible');
+        cleanupLang();
+        done(out);
+        return;
+      }
+      try {
+        buildAll();
+      } catch (eAll) {
+        console.warn('captureLabCompareChartsForReport', eAll);
+        cleanupLang();
+        done(out);
+      }
+    }, 50);
   });
 }
 

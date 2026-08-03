@@ -188,7 +188,7 @@ exports.handler = async function handler(event) {
         'Prioriza «routes» para decirle al usuario DÓNDE está (Notebook PRO › … / Nutri PRO › …). ' +
         'Usa snippets de nutri.sources / unified_citations y preview de notebook.items para responder. ' +
         'Neuron PRO = cruces apunte↔archivo en routes kind=neuron. No inventes rutas. ' +
-        'Invest PRO = mercados (tickers/gráficas/watchlist) en Plan PRO → pestaña Invest PRO; no inventes precios.'
+        'Invest PRO = mercados (tickers/gráficas/watchlist) en Plan PRO → pestaña Invest PRO; no inventes precios. Compara 2–6 con ⇄. Indicadores de gráfica: Precio, Volumen, %, P/E/Fwd P/E (barras actuales).'
     });
   } catch (err) {
     return jsonResponse(500, { ok: false, error: (err && err.message) || String(err) });

@@ -151,11 +151,20 @@
   color: #0d9488;
 }
 
-.np-inv-filters {
+.np-inv-lists-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+.np-inv-lists-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.np-inv-lists-actions .btn {
+  font-size: 11px;
+  padding: 5px 10px;
 }
 .np-inv-chip {
   border: 1px solid rgba(148, 163, 184, 0.4);
@@ -303,6 +312,11 @@
   font-size: 11px;
 }
 
+.np-inv-data-stamp {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
 .np-inv-price-row {
   display: flex;
   flex-wrap: wrap;
@@ -441,6 +455,17 @@
   gap: 6px;
   align-items: center;
   min-height: 28px;
+}
+.np-inv-cmp-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f766e;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(13, 148, 136, 0.12);
+}
+.np-inv-metric-btn {
+  border-style: dashed;
 }
 .np-inv-cmp-chip {
   display: inline-flex;

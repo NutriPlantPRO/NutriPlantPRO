@@ -163,6 +163,8 @@ exports.handler = async function (event) {
             error: e && e.message ? e.message : 'Error'
           });
         }
+        // Evita saturar Yahoo al comparar varios tickers seguidos
+        await new Promise((r) => setTimeout(r, 180));
       }
       return json(200, { series, range });
     }

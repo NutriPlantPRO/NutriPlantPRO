@@ -15,9 +15,10 @@ Consultar **empresas, ETFs, índices y criptomonedas**:
 - Buscador por ticker o nombre (ej. `AAPL`, `VOO`, `YAR.OL`, `BTC-USD`)
 - Ficha: nombre, ticker, tipo, precio, cambio del día, apertura, máx/mín día, 52 semanas, volumen; P/E / Forward P/E / EPS / yield / cap. cuando la fuente los entrega (si no → **N/D**)
 - Gráfica histórica: 1D, 5D, 1M, 6M, 1A, 5A, Máximo
-- Comparar hasta 6 activos en la misma gráfica
+- Selector de indicador: Precio · Volumen · Rendimiento % · P/E · Fwd P/E · Cambio día % (P/E = barras actuales al comparar; serie histórica de P/E aún no con fuente pública)
+- Comparar hasta **6** activos en la misma gráfica (⇄ en cada chip; típico 3–5)
 - **Popular Picks**: catálogo predefinido por categorías (IA, Semiconductores, Agricultura, Salud, Finanzas, Consumo, Espacio, Energía, ETFs, Cripto, Índices)
-- **⭐ Mi portafolio** (watchlist): el admin marca ★ para agregar/quitar; se guarda en Supabase con símbolo + nombre
+- **⭐ Listas** (persistentes en Supabase): «Mi portafolio» + listas custom (crear / renombrar / eliminar). ★ agrega o quita el ticker en la **lista activa**. SQL: `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql`.
 
 ## Datos técnicos (para no inventar)
 
@@ -27,8 +28,8 @@ Consultar **empresas, ETFs, índices y criptomonedas**:
 | Cliente aislado | `assets/planpro-financial-data-service.js` |
 | API interna | `GET /api/plan-pro-invest` (Netlify; solo admin Bearer) |
 | Proveedor actual | Yahoo Finance endpoints públicos **sin API key** (`lib/yahoo-finance-provider.js`) |
-| Tabla | `plan_pro_invest_watchlist` (RLS: `is_admin_user()` + `user_id = auth.uid()`) |
-| SQL setup | `supabase-plan-pro-invest-watchlist.sql` |
+| Tabla | `plan_pro_invest_lists` + `plan_pro_invest_watchlist.list_id` |
+| SQL setup | `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql` |
 
 **Importante:** la fuente sin API key puede cambiar o fallar. El servicio está aislado para cambiar de proveedor sin rehacer la UI.
 

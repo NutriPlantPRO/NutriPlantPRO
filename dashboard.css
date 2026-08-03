@@ -8650,6 +8650,31 @@ html.embed-login body {
   cursor: wait;
 }
 
+/* Relieve DEM: distinto del Pilot (azul) y de Estado/Ver (gris) */
+#radarBtnGenerateDem.radar-dem-btn,
+.radar-ndvi-panel #radarBtnGenerateDem.radar-dem-btn {
+  background: #b45309;
+  border-color: #92400e;
+  color: #fff;
+}
+#radarBtnGenerateDem.radar-dem-btn:hover,
+.radar-ndvi-panel #radarBtnGenerateDem.radar-dem-btn:hover {
+  background: #92400e;
+  border-color: #78350f;
+  color: #fff;
+}
+#radarBtnGenerateDem.radar-dem-btn:active,
+.radar-ndvi-panel #radarBtnGenerateDem.radar-dem-btn:active {
+  background: #78350f;
+}
+#radarBtnGenerateDem.radar-dem-btn:disabled,
+.radar-ndvi-panel #radarBtnGenerateDem.radar-dem-btn:disabled {
+  background: #d97706;
+  border-color: #b45309;
+  opacity: 0.7;
+  cursor: wait;
+}
+
 /* Pilot: conmutador NDVI / NDMI (junto a 🛰) */
 .radar-ndvi-panel .radar-pilot-layer-btn {
   display: inline-flex;
