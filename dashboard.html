@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#2563eb" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260803h"></script>
+  <script src="assets/np-i18n.js?v=20260803i"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-analysis-ui.js?v=20260803e"></script>
@@ -49,7 +49,7 @@
   <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260803b" />
+  <link rel="stylesheet" href="dashboard.css?v=20260803c" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -437,9 +437,9 @@
   <script src="assets/np-irrigation-balance-core.js?v=20260801y"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260801x"></script>
-  <script src="analysis-report-render.js?v=1760005000"></script>
+  <script src="analysis-report-render.js?v=20260803a"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260803i"></script>
+  <script src="dashboard.js?v=20260803l"></script>
   <script src="fertirriego-program-functions.js?v=20260801y"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=202607302100"></script>
@@ -6236,10 +6236,38 @@ CONTRATO:
           </div>
         </div>
 
-        <div class="report-section-item" onclick="toggleReportSection('labAnalyses')" data-section="labAnalyses">
-          <div class="report-section-info">
-            <div class="report-section-title" data-i18n="dashboard.reports_sec_lab_title">🧪 Análisis de laboratorio</div>
-            <div class="report-section-description" data-i18n="dashboard.reports_sec_lab_desc">Suelo, solución nutritiva, extracto de pasta, agua, foliar y fruta — datos, tablas comparativas y gráficas</div>
+        <div class="report-section-group" data-section-group="labAnalyses">
+          <div class="report-section-item" onclick="toggleReportSection('labAnalyses')" data-section="labAnalyses">
+            <div class="report-section-info">
+              <div class="report-section-title" data-i18n="dashboard.reports_sec_lab_title">🧪 Análisis de laboratorio</div>
+              <div class="report-section-description" data-i18n="dashboard.reports_sec_lab_desc">Elige abajo cuáles incluir: suelo, solución nutritiva, extracto de pasta, agua, foliar y fruta</div>
+            </div>
+          </div>
+          <div class="report-lab-subtypes" id="reportLabSubtypes" role="group" aria-label="Lab analysis types">
+            <button type="button" class="report-lab-subtype-item" data-lab-type="soil" onclick="toggleReportLabType(event,'soil')">
+              <span class="report-lab-subtype-icon">🟫</span>
+              <span class="report-lab-subtype-label" data-i18n="dashboard.reports_lab_soil">Suelo</span>
+            </button>
+            <button type="button" class="report-lab-subtype-item" data-lab-type="solucion_nutritiva" onclick="toggleReportLabType(event,'solucion_nutritiva')">
+              <span class="report-lab-subtype-icon">🧪💧</span>
+              <span class="report-lab-subtype-label" data-i18n="dashboard.reports_lab_sn">Solución nutritiva</span>
+            </button>
+            <button type="button" class="report-lab-subtype-item" data-lab-type="extracto_pasta" onclick="toggleReportLabType(event,'extracto_pasta')">
+              <span class="report-lab-subtype-icon">🧪📋</span>
+              <span class="report-lab-subtype-label" data-i18n="dashboard.reports_lab_pasta">Extracto de pasta</span>
+            </button>
+            <button type="button" class="report-lab-subtype-item" data-lab-type="agua" onclick="toggleReportLabType(event,'agua')">
+              <span class="report-lab-subtype-icon">💧🔬</span>
+              <span class="report-lab-subtype-label" data-i18n="dashboard.reports_lab_agua">Agua</span>
+            </button>
+            <button type="button" class="report-lab-subtype-item" data-lab-type="foliar" onclick="toggleReportLabType(event,'foliar')">
+              <span class="report-lab-subtype-icon">🍃</span>
+              <span class="report-lab-subtype-label" data-i18n="dashboard.reports_lab_foliar">Foliar</span>
+            </button>
+            <button type="button" class="report-lab-subtype-item" data-lab-type="fruta" onclick="toggleReportLabType(event,'fruta')">
+              <span class="report-lab-subtype-icon">🍎</span>
+              <span class="report-lab-subtype-label" data-i18n="dashboard.reports_lab_fruta">Fruta</span>
+            </button>
           </div>
         </div>
 

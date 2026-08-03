@@ -172,6 +172,25 @@
       el mensaje es: <em>«Radar máximo 250 ha; divide el polígono»</em> (no gasta crédito). Para ranchos grandes, traza lotes por separado.
     </div>
 
+    <h2>Relieve del predio (Pendiente + Altura · DEM)</h2>
+    <p>
+      Además de las capas Sentinel (Pilot), el selector <strong>Capa</strong> incluye
+      <strong>Pendiente</strong> y <strong>Altura</strong> del relieve del predio, generadas con
+      <strong>Copernicus DEM GLO-30</strong> (~30&nbsp;m). El botón
+      <strong>Generar relieve</strong> / <em>Generate relief</em> produce <strong>ambas</strong> capas
+      en una sola operación.
+    </p>
+    <ul>
+      <li><strong>0 créditos Radar:</strong> no usa Pilot ni la fecha Sentinel; no gasta el cupo mensual.</li>
+      <li><strong>Capa fija:</strong> no cambia con cada generación Pilot/Lectura. Regenerar solo si movés el polígono.</li>
+      <li><strong>Pendiente (%):</strong> crema/gris = más plano → café oscuro = más inclinado. Mismo color ≈ misma inclinación (<strong>no</strong> misma altitud).</li>
+      <li><strong>Altura:</strong> azul = más bajo → ámbar/café = más alto <strong>dentro del predio</strong>. Mismo color ≈ misma altura relativa. Unidades: <strong>m</strong> (métrico) o <strong>ft</strong> (US customary).</li>
+      <li><strong>PDF / admin:</strong> si hay relieve, se muestran los dos mapas (altura + pendiente) en lugar del croquis SVG simple.</li>
+    </ul>
+    <div class="mt-warn">
+      DEM ~30&nbsp;m es apoyo de relieve a escala de predio; <strong>no sustituye</strong> topografía de precisión ni el recorrido de campo.
+    </div>
+
     <h2>Generación e historial Radar Pilot (NDVI + NDMI + NDRE + RGB)</h2>
     <p>
       Cada <strong>generación Pilot</strong> produce las <strong>cuatro capas</strong> en una sola operación, las guarda en el historial
@@ -250,9 +269,9 @@
       <strong>VPD:</strong> calculadoras simple y avanzada, historial de cálculos y series por día/semana/mes
       (máximos por fecha). <strong>Lluvia y ET₀:</strong> tablas mensuales y
       <a href="balance-hidrico-riego-clima.html">calculadora de balance hídrico</a> (déficit y riego rápido).
-      <strong>Radar Satelital:</strong> (1) Polígono / capas NDVI-NDMI-NDRE-RGB, «Ver en mapa» e historial Pilot
+      <strong>Radar Satelital:</strong> (1) Polígono / capas NDVI-NDMI-NDRE-RGB + relieve DEM (Pendiente/Altura, Generar relieve, 0 créditos), «Ver en mapa» e historial Pilot
       (máx. 250 ha); (2) Lectura Satelital con tabla, gráfica y galería por periodos. Cruce recomendado: riego,
-      textura/drenaje, análisis foliar/suelo, VPD y recorrido de zonas contrastantes en el mapa.
+      textura/drenaje, relieve, análisis foliar/suelo, VPD y recorrido de zonas contrastantes en el mapa.
     </p>
     </div>
     <div data-mt-lang="en" hidden>
@@ -370,6 +389,24 @@
       the message is: <em>«Radar máximo 250 ha; divide el polígono»</em> (no credit spent). For large ranches, draw lots separately.
     </div>
 
+    <h2>Field relief (Slope + Elevation · DEM)</h2>
+    <p>
+      Besides the Sentinel layers (Pilot), the <strong>Layer</strong> selector includes
+      <strong>Slope</strong> and <strong>Elevation</strong> from field relief, built with
+      <strong>Copernicus DEM GLO-30</strong> (~30&nbsp;m). The
+      <strong>Generate relief</strong> button creates <strong>both</strong> layers in one operation.
+    </p>
+    <ul>
+      <li><strong>0 Radar credits:</strong> does not use Pilot or the Sentinel date; does not spend the monthly quota.</li>
+      <li><strong>Fixed layer:</strong> does not change with each Pilot/Reading generation. Regenerate only if you move the polygon.</li>
+      <li><strong>Slope (%):</strong> cream/gray = flatter → dark brown = steeper. Same color ≈ same steepness (<strong>not</strong> same elevation).</li>
+      <li><strong>Elevation:</strong> blue = lower → amber/brown = higher <strong>within the field</strong>. Same color ≈ same relative height. Units: <strong>m</strong> (metric) or <strong>ft</strong> (US customary).</li>
+      <li><strong>PDF / admin:</strong> when relief exists, both maps (elevation + slope) replace the simple SVG sketch.</li>
+    </ul>
+    <div class="mt-warn">
+      DEM ~30&nbsp;m is field-scale relief support; it <strong>does not replace</strong> survey-grade topography or field scouting.
+    </div>
+
     <h2>Pilot Radar generation and history (NDVI + NDMI + NDRE + RGB)</h2>
     <p>
       Each <strong>Pilot generation</strong> produces the <strong>four layers</strong> in one operation, saves them in history
@@ -448,9 +485,9 @@
       <strong>VPD:</strong> simple and advanced calculators, calculation history and series by day/week/month
       (maxima by date). <strong>Rain and ET₀:</strong> monthly tables and
       <a href="balance-hidrico-riego-clima.html">water balance calculator</a> (deficit and quick irrigation).
-      <strong>Satellite Radar:</strong> (1) Polygon / NDVI-NDMI-NDRE-RGB layers, “View on map” and Pilot history
+      <strong>Satellite Radar:</strong> (1) Polygon / NDVI-NDMI-NDRE-RGB layers + DEM relief (Slope/Elevation, Generate relief, 0 credits), “View on map” and Pilot history
       (max. 250 ha); (2) Satellite Reading with table, chart and gallery by periods. Recommended cross-check: irrigation,
-      texture/drainage, foliar/soil analysis, VPD and scouting of contrasting zones on the map.
+      texture/drainage, relief, foliar/soil analysis, VPD and scouting of contrasting zones on the map.
     </p>
     </div>
 

@@ -118,7 +118,23 @@
         var FRUTA_OPTIMAL_CALIDAD = { materiaSeca: 15, brix: 12, firmeza: 5, acidezTitulable: 0.5 };
         var FRUTA_OPTIMAL_CALCIO = { caTotal: 20, caSolublePct: 18, caLigadoPct: 25, caInsolublePct: 55 };
         var FRUTA_CALIDAD_LABELS = { materiaSeca: 'Materia Seca (%)', brix: '°Brix', firmeza: 'Firmeza (kg/cm²)', acidezTitulable: 'Acidez titulable (%)' };
+        var FRUTA_CALIDAD_LABELS_EN = { materiaSeca: 'Dry matter (%)', brix: '°Brix', firmeza: 'Firmness (kg/cm²)', acidezTitulable: 'Titratable acidity (%)' };
         var FRUTA_CALCIO_LABELS = { caTotal: 'Ca total (mg/100 g MF)', caSolublePct: '% Ca soluble', caLigadoPct: '% Ca ligado', caInsolublePct: '% Ca insoluble' };
+        var FRUTA_CALCIO_LABELS_EN = { caTotal: 'Total Ca (mg/100 g FW)', caSolublePct: '% soluble Ca', caLigadoPct: '% bound Ca', caInsolublePct: '% insoluble Ca' };
+
+        function isEnLang() {
+            try {
+                if (options && options.language === 'en') return true;
+                if (options && options.language === 'es') return false;
+                if (global.NpI18n && typeof global.NpI18n.getLanguage === 'function') {
+                    return String(global.NpI18n.getLanguage() || '').toLowerCase().indexOf('en') === 0;
+                }
+                var p = global.NpPrefs && typeof global.NpPrefs.get === 'function' ? global.NpPrefs.get() : null;
+                return !!(p && p.language === 'en');
+            } catch (e) {
+                return false;
+            }
+        }
 
         function getSoilParamLabel(grp, p) {
             if (grp === 'physical') return SOIL_PHYSICAL_LABELS[p] || friendlyLabel(p);
@@ -131,7 +147,10 @@
             if (dop === null || typeof dop !== 'number' || isNaN(dop)) return { icon: '—', status: '—' };
             var abs = Math.abs(dop);
             var icon = abs <= 10 ? '🟢' : abs <= 25 ? '🔶' : abs <= 50 ? '🟠' : '🔴';
-            var status = abs <= 10 ? 'Óptimo' : (dop < 0 ? (abs > 50 ? 'Muy bajo' : 'Bajo') : (abs > 50 ? 'Muy alto' : 'Alto'));
+            var status;
+            if (abs <= 10) status = isEnLang() ? 'Optimal' : 'Óptimo';
+            else if (dop < 0) status = abs > 50 ? (isEnLang() ? 'Very low' : 'Muy bajo') : (isEnLang() ? 'Low' : 'Bajo');
+            else status = abs > 50 ? (isEnLang() ? 'Very high' : 'Muy alto') : (isEnLang() ? 'High' : 'Alto');
             return { icon: icon, status: status };
         }
 
@@ -162,12 +181,21 @@
             }).join('');
 
             var out = '<div class="admin-analysis-data-wrap">';
-            out += '<p class="admin-analysis-legend"><strong>DOP</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
-            out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrientes (% MS)</div>';
-            out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
-            out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (mg/kg)</div>';
-            out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
-            out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
+            if (isEnLang()) {
+                out += '<p class="admin-analysis-legend"><strong>DOP</strong> = ((Value − Optimum) / Optimum) × 100.</p>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrients (% DM)</div>';
+                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (%)</th><th>Optimum (%)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (mg/kg)</div>';
+                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (mg/kg)</th><th>Optimum (mg/kg)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Visual rule:</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
+            } else {
+                out += '<p class="admin-analysis-legend"><strong>DOP</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrientes (% MS)</div>';
+                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (mg/kg)</div>';
+                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
+            }
             out += '</div>';
             return out;
         }
@@ -176,7 +204,10 @@
             if (icc === null || typeof icc !== 'number' || isNaN(icc)) return { icon: '—', status: '—' };
             var abs = Math.abs(icc);
             var icon = abs <= 10 ? '🟢' : abs <= 25 ? '🔶' : abs <= 50 ? '🟠' : '🔴';
-            var status = abs <= 10 ? 'Óptimo' : (icc < 0 ? (abs > 50 ? 'Muy bajo' : 'Bajo') : (abs > 50 ? 'Muy alto' : 'Alto'));
+            var status;
+            if (abs <= 10) status = isEnLang() ? 'Optimal' : 'Óptimo';
+            else if (icc < 0) status = abs > 50 ? (isEnLang() ? 'Very low' : 'Muy bajo') : (isEnLang() ? 'Low' : 'Bajo');
+            else status = abs > 50 ? (isEnLang() ? 'Very high' : 'Muy alto') : (isEnLang() ? 'High' : 'Alto');
             return { icon: icon, status: status };
         }
 
@@ -224,23 +255,46 @@
                 return iccRow(k, micros[k], o, 2, 2);
             }).join('');
             var calidadKeys = ['materiaSeca', 'brix', 'firmeza', 'acidezTitulable'];
+            var usFirm = !!(global.NpAnalysisUI && typeof global.NpAnalysisUI.isUS === 'function' && global.NpAnalysisUI.isUS());
+            var KGCM2_TO_PSI = 14.223343307;
             var calidadRows = calidadKeys.map(function (k) {
                 var o = (optCalidad[k] !== undefined && optCalidad[k] !== '') ? optCalidad[k] : FRUTA_OPTIMAL_CALIDAD[k];
-                return iccRow(FRUTA_CALIDAD_LABELS[k], calidad[k], o, 2, 2);
+                var label = FRUTA_CALIDAD_LABELS[k];
+                var val = calidad[k];
+                var opt = o;
+                if (k === 'firmeza' && usFirm) {
+                    label = isEnLang() ? 'Firmness (psi)' : 'Firmeza (psi)';
+                    var nv = n(val), no = n(opt);
+                    if (!isNaN(nv)) val = Number((nv * KGCM2_TO_PSI).toFixed(1));
+                    if (!isNaN(no)) opt = Number((no * KGCM2_TO_PSI).toFixed(1));
+                } else if (isEnLang() && FRUTA_CALIDAD_LABELS_EN && FRUTA_CALIDAD_LABELS_EN[k]) {
+                    label = FRUTA_CALIDAD_LABELS_EN[k];
+                }
+                return iccRow(label, val, opt, 2, 2);
             }).join('');
             var calcioKeys = ['caTotal', 'caSolublePct', 'caLigadoPct', 'caInsolublePct'];
             var calcioRows = calcioKeys.map(function (k) {
                 var o = (optCalcio[k] !== undefined && optCalcio[k] !== '') ? optCalcio[k] : FRUTA_OPTIMAL_CALCIO[k];
-                return calcioRow(FRUTA_CALCIO_LABELS[k], calcio[k], o);
+                var lab = (isEnLang() && FRUTA_CALCIO_LABELS_EN[k]) ? FRUTA_CALCIO_LABELS_EN[k] : FRUTA_CALCIO_LABELS[k];
+                return calcioRow(lab, calcio[k], o);
             }).join('');
 
             var out = '<div class="admin-analysis-data-wrap">';
-            out += '<p class="admin-analysis-legend"><strong>ICC</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
-            out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrientes en fruta (%)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
-            out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (mg/kg)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
-            out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Calidad de Fruta</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determinación</th><th>Resultado</th><th>Óptimo</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + calidadRows + '</tbody></table></div>';
-            out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Calcio en Fruta (mg/100 g MF)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determinación</th><th>Resultado</th><th>Óptimo</th><th>Estado (semáforo)</th></tr></thead><tbody>' + calcioRows + '</tbody></table></div>';
-            out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |ICC| ≤ 10% &nbsp;|&nbsp; 🟡 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
+            if (isEnLang()) {
+                out += '<p class="admin-analysis-legend"><strong>CQI</strong> = ((Value − Optimum) / Optimum) × 100.</p>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Fruit macronutrients (%)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (%)</th><th>Optimum (%)</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (mg/kg)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (mg/kg)</th><th>Optimum (mg/kg)</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Fruit quality</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determination</th><th>Result</th><th>Optimum</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + calidadRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Fruit calcium (mg/100 g FW)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determination</th><th>Result</th><th>Optimum</th><th>Status</th></tr></thead><tbody>' + calcioRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Visual rule:</strong> 🟢 |CQI| ≤ 10% &nbsp;|&nbsp; 🟡 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
+            } else {
+                out += '<p class="admin-analysis-legend"><strong>ICC</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrientes en fruta (%)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (mg/kg)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Calidad de Fruta</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determinación</th><th>Resultado</th><th>Óptimo</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + calidadRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Calcio en Fruta (mg/100 g MF)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determinación</th><th>Resultado</th><th>Óptimo</th><th>Estado (semáforo)</th></tr></thead><tbody>' + calcioRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |ICC| ≤ 10% &nbsp;|&nbsp; 🟡 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
+            }
             out += '</div>';
             return out;
         }
@@ -587,16 +641,43 @@
             var meqPerM3 = meqPerLNeutralizar * 1000;
             var mlPerM3 = acid && acid.meqPerMl ? (meqPerM3 / acid.meqPerMl) : 0;
             var litrosTotal = m3 ? ((mlPerM3 * m3) / 1000) : 0;
+            var ui = global.NpAnalysisUI;
+            var isUS = !!(ui && typeof ui.isUS === 'function' && ui.isUS());
+            var en = isEnLang();
+            var volDisp = (m3 > 0 && ui && typeof ui.formatVolumeM3 === 'function')
+                ? ui.formatVolumeM3(m3, 2)
+                : (m3 > 0 ? formatNum(m3) + ' m³' : '—');
+            var doseDisp = (mlPerM3 > 0 && ui && typeof ui.formatAcidDoseMlPerM3 === 'function')
+                ? ui.formatAcidDoseMlPerM3(mlPerM3, 2)
+                : (mlPerM3 > 0 ? formatNum(mlPerM3) + ' mL/m³' : '—');
+            var totalDisp = (litrosTotal > 0 && ui && typeof ui.formatAcidTotalLiters === 'function')
+                ? ui.formatAcidTotalLiters(litrosTotal, 2)
+                : (litrosTotal > 0 ? formatNum(litrosTotal) + ' L' : '—');
+            var volLabel = isUS
+                ? (en ? 'Irrigation water (total volume):' : 'Agua de riego (volumen total):')
+                : (en ? 'Irrigation water m³ (total volume):' : 'm³ agua de riego (volumen total):');
+            var doseLabel = isUS
+                ? (en ? 'Acid dose:' : 'Dosis de ácido:')
+                : (en ? 'mL acid / m³:' : 'mL ácido / m³:');
+            var totalLabel = isUS
+                ? (en ? 'Acid (total volume):' : 'Ácido (volumen total):')
+                : (en ? 'L acid (total volume):' : 'L ácido (volumen total):');
+
             html += '<div class="admin-analysis-group" style="border:2px solid #16a34a;background:#f0fdf4;border-radius:10px;padding:14px;margin-top:16px;">';
-            html += '<div class="admin-analysis-group-title" style="color:#166534;">🧪 Ácido para neutralizar HCO₃⁻ y CO₃²⁻</div>';
-            html += '<p style="font-size:0.85rem;color:#166534;margin:0 0 12px 0;">Meq ácido = (HCO₃⁻ + CO₃²⁻) − meq/L residual objetivo.</p>';
+            html += '<div class="admin-analysis-group-title" style="color:#166534;">🧪 ' +
+                (en ? 'Acid to neutralize HCO₃⁻ and CO₃²⁻' : 'Ácido para neutralizar HCO₃⁻ y CO₃²⁻') + '</div>';
+            html += '<p style="font-size:0.85rem;color:#166534;margin:0 0 12px 0;">' +
+                (en
+                    ? 'Acid meq = (HCO₃⁻ + CO₃²⁻) − target residual meq/L.'
+                    : 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − meq/L residual objetivo.') +
+                '</p>';
             html += '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 20px;font-size:0.92rem;">';
-            html += '<span>Residual objetivo (meq/L):</span><span>' + formatNum(residualMeq) + '</span>';
-            html += '<span>Meq/L a neutralizar:</span><span><strong>' + formatNum(meqPerLNeutralizar) + '</strong></span>';
-            html += '<span>Ácido seleccionado:</span><span><span style="display:inline-block;padding:4px 10px;border:1px solid #86efac;background:#dcfce7;color:#14532d;border-radius:999px;font-weight:700;">' + escapeHtml(acid ? acid.name : acidId || '—') + '</span></span>';
-            html += '<span>m³ agua de riego (volumen total):</span><span><span style="display:inline-block;padding:4px 10px;border:1px solid #bbf7d0;background:#f7fee7;color:#166534;border-radius:8px;font-weight:700;">' + (obj.m3Riego !== undefined && obj.m3Riego !== null && String(obj.m3Riego).trim() !== '' ? formatNum(obj.m3Riego) + ' m³' : '—') + '</span></span>';
-            html += '<span>mL ácido / m³:</span><span>' + (mlPerM3 > 0 ? formatNum(mlPerM3) + ' mL' : '—') + '</span>';
-            html += '<span>L ácido (volumen total):</span><span><strong>' + (litrosTotal > 0 ? formatNum(litrosTotal) + ' L' : '—') + '</strong></span>';
+            html += '<span>' + (en ? 'Target residual (meq/L):' : 'Residual objetivo (meq/L):') + '</span><span>' + formatNum(residualMeq) + '</span>';
+            html += '<span>' + (en ? 'meq/L to neutralize:' : 'Meq/L a neutralizar:') + '</span><span><strong>' + formatNum(meqPerLNeutralizar) + '</strong></span>';
+            html += '<span>' + (en ? 'Selected acid:' : 'Ácido seleccionado:') + '</span><span><span style="display:inline-block;padding:4px 10px;border:1px solid #86efac;background:#dcfce7;color:#14532d;border-radius:999px;font-weight:700;">' + escapeHtml(acid ? acid.name : acidId || '—') + '</span></span>';
+            html += '<span>' + volLabel + '</span><span><span style="display:inline-block;padding:4px 10px;border:1px solid #bbf7d0;background:#f7fee7;color:#166534;border-radius:8px;font-weight:700;">' + escapeHtml(volDisp) + '</span></span>';
+            html += '<span>' + doseLabel + '</span><span>' + escapeHtml(doseDisp) + '</span>';
+            html += '<span>' + totalLabel + '</span><span><strong>' + escapeHtml(totalDisp) + '</strong></span>';
             html += '</div></div>';
         }
         html += '</div>';

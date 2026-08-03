@@ -9,9 +9,9 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/N_Hoja_Azul.png">
     <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="../dashboard.css?v=20260803b">
+    <link rel="stylesheet" href="../dashboard.css?v=20260803c">
     <script src="../subscription-config.js"></script>
-    <script src="../analysis-report-render.js"></script>
+    <script src="../analysis-report-render.js?v=20260803a"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260803g"></script>
     <script src="../assets/np-analysis-compare.js?v=20260803h"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
@@ -7491,10 +7491,20 @@
                             <div class="report-section-description">Solución nutritiva por etapa</div>
                         </div>
                     </div>
-                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('labAnalyses')" data-section="labAnalyses">
-                        <div class="report-section-info">
-                            <div class="report-section-title">🧪 Análisis de laboratorio</div>
-                            <div class="report-section-description">Suelo, SN, pasta, agua, foliar y fruta — datos, tablas y gráficas</div>
+                    <div class="report-section-group" data-section-group="labAnalyses" style="margin-bottom:10px;">
+                        <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('labAnalyses')" data-section="labAnalyses">
+                            <div class="report-section-info">
+                                <div class="report-section-title">🧪 Análisis de laboratorio</div>
+                                <div class="report-section-description">Elige abajo cuáles incluir en el PDF</div>
+                            </div>
+                        </div>
+                        <div class="report-lab-subtypes admin-report-lab-subtypes" id="adminReportLabSubtypes" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 12px 12px;border:2px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;background:#f8fafc;">
+                            <button type="button" class="report-lab-subtype-item admin-report-lab-subtype" data-lab-type="soil" onclick="toggleAdminReportLabType(event,'soil')">🟫 Suelo</button>
+                            <button type="button" class="report-lab-subtype-item admin-report-lab-subtype" data-lab-type="solucion_nutritiva" onclick="toggleAdminReportLabType(event,'solucion_nutritiva')">🧪💧 Solución nutritiva</button>
+                            <button type="button" class="report-lab-subtype-item admin-report-lab-subtype" data-lab-type="extracto_pasta" onclick="toggleAdminReportLabType(event,'extracto_pasta')">🧪📋 Extracto de pasta</button>
+                            <button type="button" class="report-lab-subtype-item admin-report-lab-subtype" data-lab-type="agua" onclick="toggleAdminReportLabType(event,'agua')">💧🔬 Agua</button>
+                            <button type="button" class="report-lab-subtype-item admin-report-lab-subtype" data-lab-type="foliar" onclick="toggleAdminReportLabType(event,'foliar')">🍃 Foliar</button>
+                            <button type="button" class="report-lab-subtype-item admin-report-lab-subtype" data-lab-type="fruta" onclick="toggleAdminReportLabType(event,'fruta')">🍎 Fruta</button>
                         </div>
                     </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('extraccionEtapa')" data-section="extraccionEtapa">
@@ -14270,6 +14280,9 @@
                 if (idx === 0) el.classList.add('selected');
                 else el.classList.remove('selected');
             });
+            document.querySelectorAll('#adminCustomReportModal .admin-report-lab-subtype').forEach(function (el) {
+                el.classList.remove('selected');
+            });
             modal.style.display = 'flex';
             updateAdminCustomReportBtn();
         };
@@ -14279,11 +14292,45 @@
             if (modal) modal.style.display = 'none';
         };
 
+        function syncAdminLabAnalysesParent() {
+            var parent = document.querySelector('#adminCustomReportModal .admin-report-section-item[data-section="labAnalyses"]');
+            if (!parent) return;
+            var any = !!document.querySelector('#adminCustomReportModal .admin-report-lab-subtype.selected');
+            parent.classList.toggle('selected', any);
+        }
+
         window.toggleAdminReportSection = function (sectionId) {
             var el = document.querySelector('#adminCustomReportModal .admin-report-section-item[data-section="' + sectionId + '"]');
-            if (el) el.classList.toggle('selected');
+            if (!el) return;
+            var willSelect = !el.classList.contains('selected');
+            el.classList.toggle('selected', willSelect);
+            if (sectionId === 'labAnalyses') {
+                document.querySelectorAll('#adminCustomReportModal .admin-report-lab-subtype').forEach(function (sub) {
+                    sub.classList.toggle('selected', willSelect);
+                });
+            }
             updateAdminCustomReportBtn();
         };
+
+        window.toggleAdminReportLabType = function (event, labType) {
+            if (event) {
+                try { event.preventDefault(); } catch (e0) {}
+                try { event.stopPropagation(); } catch (e1) {}
+            }
+            var item = document.querySelector('#adminCustomReportModal .admin-report-lab-subtype[data-lab-type="' + labType + '"]');
+            if (!item) return;
+            item.classList.toggle('selected');
+            syncAdminLabAnalysesParent();
+            updateAdminCustomReportBtn();
+        };
+
+        function getAdminSelectedLabTypes() {
+            var order = ['soil', 'solucion_nutritiva', 'extracto_pasta', 'agua', 'foliar', 'fruta'];
+            var selected = Array.from(document.querySelectorAll('#adminCustomReportModal .admin-report-lab-subtype.selected'))
+                .map(function (el) { return el.getAttribute('data-lab-type'); })
+                .filter(Boolean);
+            return order.filter(function (t) { return selected.indexOf(t) >= 0; });
+        }
 
         function updateAdminCustomReportBtn() {
             var n = document.querySelectorAll('#adminCustomReportModal .admin-report-section-item.selected').length;
@@ -14320,6 +14367,11 @@
                 alert('Selecciona al menos una sección.');
                 return;
             }
+            var selectedLabTypes = sections.indexOf('labAnalyses') >= 0 ? getAdminSelectedLabTypes() : [];
+            if (sections.indexOf('labAnalyses') >= 0 && !selectedLabTypes.length) {
+                alert('Elige al menos un tipo de análisis de laboratorio.');
+                return;
+            }
             var userId = ctx.userId || null;
             var isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(userId));
             if (shareLink && !isUuid) {
@@ -14333,6 +14385,7 @@
                 userId: userId,
                 projectId: ctx.projectId || (ctx.project && ctx.project.id) || null,
                 selectedSections: sections,
+                selectedLabTypes: selectedLabTypes,
                 reportLanguage: lang,
                 adminMode: true,
                 shareLink: !!shareLink,

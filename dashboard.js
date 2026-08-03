@@ -1889,6 +1889,8 @@ function sectionTemplate(name) {
               <option value="ndre" data-i18n="radar.option_ndre">${rt('radar.option_ndre', 'NDRE clorofila / dosel')}</option>
               <option value="rgb" data-i18n="radar.option_rgb">${rt('radar.option_rgb', 'RGB vista natural')}</option>
               <option value="clouds" data-i18n="radar.option_clouds">${rt('radar.option_clouds', '☁️ Nubes y sombras')}</option>
+              <option value="slope" data-i18n="radar.option_slope">${rt('radar.option_slope', 'Pendiente del predio')}</option>
+              <option value="elev" data-i18n="radar.option_elev">${rt('radar.option_elev', 'Altura del predio')}</option>
             </select>
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
@@ -1902,16 +1904,24 @@ function sectionTemplate(name) {
             <strong style="color:#14532d;" data-i18n="radar.how_built_label">${rt('radar.how_built_label', 'Cómo se arma:')}</strong>
             <span>${rt('radar.how_built_html', 'elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo 250 ha</strong> por predio.')}</span>
           </div>
+          <div id="radarDemHint" style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.7);border:1px dashed #94a3b8;">
+            <strong style="color:#0f172a;" data-i18n="radar.dem_hint_label">${rt('radar.dem_hint_label', 'Relieve (pendiente):')}</strong>
+            <span data-i18n="radar.dem_hint_html">${rt('radar.dem_hint_html', 'capas fijas del predio (Copernicus DEM ~30 m): pendiente e altura. No usan créditos Radar ni cambian con cada Pilot/Lectura. Regenera solo si mueves el polígono.')}</span>
+          </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
             <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
-            <span id="radarScaleBar" style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);display:inline-block;"></span>
+            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
+              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
+              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
+            </div>
             <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
             <span id="radarNdviHelp" style="color:#166534;">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
           </div>
           <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar Pilot')}</button>
+            <button type="button" id="radarBtnGenerateDem" class="btn btn-secondary" style="font-size: 13px;" data-i18n="radar.btn_generate_dem">${rt('radar.btn_generate_dem', '⛰ Generar relieve')}</button>
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;" data-i18n="radar.btn_status">${rt('radar.btn_status', '🔄 Estado')}</button>
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
             <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
@@ -9006,41 +9016,113 @@ async function reportImageUrlToDataUrl(url, opts) {
 
 /** Descarga NDVI/NDMI firmados y los pasa a data URL para incrustar en PDF (evita fallos de impresión por dominios externos). */
 async function fetchRadarImagesDataUrlsForReport() {
-  const out = { ndviDataUrl: null, ndmiDataUrl: null, ndreDataUrl: null, rgbDataUrl: null, generatedAt: null, error: null };
+  const out = {
+    ndviDataUrl: null,
+    ndmiDataUrl: null,
+    ndreDataUrl: null,
+    rgbDataUrl: null,
+    slopeDataUrl: null,
+    slopeMeta: null,
+    elevDataUrl: null,
+    elevMeta: null,
+    generatedAt: null,
+    error: null
+  };
   try {
     if (!currentProject || !currentProject.id) {
       out.error = 'no_project';
       return out;
     }
     const token = await getRadarAccessTokenForReport();
-    if (!token) {
-      out.error = 'no_session';
-      return out;
-    }
     const requestId = getRadarRequestIdForReport();
-    const body = requestId
-      ? { action: 'view', project_id: String(currentProject.id), request_id: requestId }
-      : { action: 'status', project_id: String(currentProject.id) };
-    const res = await fetch(getRadarApiUrlForReport(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json().catch(() => ({}));
-    let snap = requestId ? data.snapshot : data.latest;
-    if (requestId && (!res.ok || !snap)) {
-      const fallbackRes = await fetch(getRadarApiUrlForReport(), {
+    let data = null;
+    let snap = null;
+
+    if (token) {
+      const body = requestId
+        ? { action: 'view', project_id: String(currentProject.id), request_id: requestId }
+        : { action: 'status', project_id: String(currentProject.id) };
+      const res = await fetch(getRadarApiUrlForReport(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ action: 'status', project_id: String(currentProject.id) })
+        body: JSON.stringify(body)
       });
-      const fallbackData = await fallbackRes.json().catch(() => ({}));
-      if (fallbackRes.ok && fallbackData.latest) {
-        snap = fallbackData.latest;
-      } else {
-        return out;
+      data = await res.json().catch(() => ({}));
+      snap = requestId ? data.snapshot : data.latest;
+      if (requestId && (!res.ok || !snap)) {
+        const fallbackRes = await fetch(getRadarApiUrlForReport(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ action: 'status', project_id: String(currentProject.id) })
+        });
+        const fallbackData = await fallbackRes.json().catch(() => ({}));
+        if (fallbackRes.ok && fallbackData.latest) {
+          snap = fallbackData.latest;
+          data = fallbackData;
+        }
       }
     }
+
+    // Admin: firmar Radar/DEM del dueño del proyecto (sin sesión del usuario)
+    if (
+      (!snap || !(data && data.dem && data.dem.dem_signed_url)) &&
+      window._nutriplantAdminReadOnlyReport
+    ) {
+      try {
+        const auth = window._nutriplantAdminReportAuth || {};
+        const headers = { 'Content-Type': 'application/json' };
+        if (auth.radarAdminSecret) headers['X-Radar-Admin-Secret'] = auth.radarAdminSecret;
+        const resAdm = await fetch(getRadarApiUrlForReport(), {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            action: 'admin_status',
+            project_id: String(currentProject.id),
+            admin_key: auth.adminKey || undefined,
+            request_id: requestId || undefined
+          })
+        });
+        const dataAdm = await resAdm.json().catch(() => ({}));
+        if (resAdm.ok) {
+          if (!snap && dataAdm.latest) snap = dataAdm.latest;
+          if (!data) data = dataAdm;
+          else if (dataAdm.dem) data.dem = dataAdm.dem;
+        }
+      } catch (eAdm) {
+        console.warn('fetchRadarImagesDataUrlsForReport admin:', eAdm);
+      }
+    }
+
+    // DEM pendiente (capa fija): status / dem_status / admin_status
+    let demInfo = data && data.dem ? data.dem : null;
+    if ((!demInfo || !demInfo.dem_signed_url) && token) {
+      try {
+        const demRes = await fetch(getRadarApiUrlForReport(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ action: 'dem_status', project_id: String(currentProject.id) })
+        });
+        const demData = await demRes.json().catch(() => ({}));
+        if (demRes.ok && demData.dem) demInfo = demData.dem;
+      } catch (eDem) {
+        console.warn('fetchRadarImagesDataUrlsForReport dem_status:', eDem);
+      }
+    }
+
+    const demUrl = demInfo && demInfo.dem_signed_url ? demInfo.dem_signed_url : null;
+    const elevUrl = demInfo && demInfo.elev_signed_url ? demInfo.elev_signed_url : null;
+    if (demUrl || elevUrl) {
+      const slopeOpts = { maxEdge: 720, quality: 0.88 };
+      const [slopeDu, elevDu] = await Promise.all([
+        demUrl ? reportImageUrlToDataUrl(demUrl, slopeOpts) : Promise.resolve(null),
+        elevUrl ? reportImageUrlToDataUrl(elevUrl, slopeOpts) : Promise.resolve(null)
+      ]);
+      out.slopeDataUrl = slopeDu;
+      out.elevDataUrl = elevDu;
+      out.slopeMeta = demInfo.dem_meta || null;
+      out.elevMeta = demInfo.dem_meta || null;
+    }
+
     if (!snap) {
       return out;
     }
@@ -9282,6 +9364,11 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
     try {
       captureLabCompareChartsForReport(function (labCharts) {
         if (labCharts && typeof labCharts === 'object') finalOut.labAnalyses = labCharts;
+        if (reportOptions && Array.isArray(reportOptions.labTypes)) {
+          finalOut.labTypes = reportOptions.labTypes.slice(0);
+        } else if (Array.isArray(window._npReportLabTypes)) {
+          finalOut.labTypes = window._npReportLabTypes.slice(0);
+        }
         next(finalOut);
       }, reportOptions || {});
     } catch (e) {
@@ -9342,8 +9429,24 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
       .then(function (pair) {
         const radar = pair[0];
         const lectura = pair[1];
-        if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl || radar.ndreDataUrl || radar.rgbDataUrl)) {
+        if (
+          radar &&
+          typeof radar === 'object' &&
+          (radar.ndviDataUrl ||
+            radar.ndmiDataUrl ||
+            radar.ndreDataUrl ||
+            radar.rgbDataUrl ||
+            radar.slopeDataUrl ||
+            radar.elevDataUrl)
+        ) {
           out.radar = radar;
+        }
+        if (radar && (radar.slopeDataUrl || radar.elevDataUrl)) {
+          out.demSlope = {
+            dataUrl: radar.slopeDataUrl || null,
+            elevDataUrl: radar.elevDataUrl || null,
+            meta: radar.slopeMeta || radar.elevMeta || null
+          };
         }
         function attachLecturaAndFinish() {
           if (lectura && Array.isArray(lectura.rows) && lectura.rows.length) {
@@ -9417,9 +9520,21 @@ async function buildReportHtmlSnapshotForShare(report) {
       ? 'us_customary'
       : 'metric';
   return new Promise(function(resolve) {
+    var labTypes = Array.isArray(report && report.selectedLabTypes)
+      ? report.selectedLabTypes
+      : (Array.isArray(report && report.labTypes) ? report.labTypes : null);
+    if (selectedSections.indexOf('labAnalyses') >= 0) {
+      window._npReportLabTypes = resolveReportLabTypes(labTypes || []);
+    } else {
+      window._npReportLabTypes = [];
+    }
     loadChartImagesForReport(selectedSections, function(chartImages) {
-      resolve(createReportHTML(selectedSections, chartImages || {}, lang, unitSystem));
-    }, { language: lang, unit_system: unitSystem });
+      try {
+        resolve(createReportHTML(selectedSections, chartImages || {}, lang, unitSystem));
+      } finally {
+        window._npReportLabTypes = null;
+      }
+    }, { language: lang, unit_system: unitSystem, labTypes: window._npReportLabTypes || [] });
   });
 }
 
@@ -14156,18 +14271,61 @@ function toggleReportSection(sectionId) {
     console.log('❌ No se encontró la sección:', sectionId);
     return;
   }
-  
-  // Alternar clase visual
-  if (sectionItem.classList.contains('selected')) {
-    sectionItem.classList.remove('selected');
-    console.log('❌ Sección deseleccionada:', sectionId);
-  } else {
+
+  const willSelect = !sectionItem.classList.contains('selected');
+  if (willSelect) {
     sectionItem.classList.add('selected');
     console.log('✅ Sección seleccionada:', sectionId);
+  } else {
+    sectionItem.classList.remove('selected');
+    console.log('❌ Sección deseleccionada:', sectionId);
+  }
+
+  if (sectionId === 'labAnalyses') {
+    document.querySelectorAll('#reportModal .report-lab-subtype-item').forEach(function (el) {
+      el.classList.toggle('selected', willSelect);
+    });
   }
   
   // Actualizar botón
   updateGenerateButton();
+}
+
+window.toggleReportLabType = function toggleReportLabType(event, labType) {
+  if (event) {
+    try { event.preventDefault(); } catch (e0) { /* ignore */ }
+    try { event.stopPropagation(); } catch (e1) { /* ignore */ }
+  }
+  var item = document.querySelector('#reportModal .report-lab-subtype-item[data-lab-type="' + labType + '"]');
+  if (!item) return;
+  item.classList.toggle('selected');
+  syncReportLabAnalysesParent();
+  updateGenerateButton();
+};
+
+function syncReportLabAnalysesParent() {
+  var parent = document.querySelector('#reportModal .report-section-item[data-section="labAnalyses"]');
+  if (!parent) return;
+  var any = !!document.querySelector('#reportModal .report-lab-subtype-item.selected');
+  parent.classList.toggle('selected', any);
+}
+
+function getSelectedLabAnalysisTypes(rootSelector) {
+  var root = rootSelector || '#reportModal';
+  var allowed = getLabAnalysesReportSpecs().map(function (s) { return s.type; });
+  var selected = Array.from(document.querySelectorAll(root + ' .report-lab-subtype-item.selected'))
+    .map(function (el) { return el.getAttribute('data-lab-type'); })
+    .filter(function (t) { return t && allowed.indexOf(t) >= 0; });
+  // Mantener orden canónico
+  return allowed.filter(function (t) { return selected.indexOf(t) >= 0; });
+}
+
+function resolveReportLabTypes(explicitTypes) {
+  var all = getLabAnalysesReportSpecs().map(function (s) { return s.type; });
+  if (Array.isArray(explicitTypes) && explicitTypes.length) {
+    return all.filter(function (t) { return explicitTypes.indexOf(t) >= 0; });
+  }
+  return all.slice();
 }
 
 // Función eliminada - ahora solo funciona tocando la tarjeta completa
@@ -14315,12 +14473,22 @@ window.generatePDFReport = function() {
   console.log('📄 Generando reporte PDF...');
   
   const selectedSections = normalizeReportSections(getSelectedReportSections());
+  const selectedLabTypes = selectedSections.indexOf('labAnalyses') >= 0
+    ? resolveReportLabTypes(getSelectedLabAnalysisTypes('#reportModal'))
+    : [];
+  window._npReportLabTypes = selectedLabTypes.slice();
   const reportLanguage = getSelectedReportLanguage();
   const reportUnitSystem = window.NpPrefs && window.NpPrefs.get().unit_system === 'us_customary'
     ? 'us_customary'
     : 'metric';
   if (!selectedSections.length) {
+    window._npReportLabTypes = null;
     showMessage(dashboardT('dashboard.reports_select_section', '⚠️ Selecciona al menos una sección para el reporte.'), 'warning');
+    return;
+  }
+  if (selectedSections.indexOf('labAnalyses') >= 0 && !selectedLabTypes.length) {
+    window._npReportLabTypes = null;
+    showMessage(dashboardT('dashboard.reports_select_lab_type', '⚠️ Elige al menos un tipo de análisis de laboratorio.'), 'warning');
     return;
   }
 
@@ -14366,6 +14534,7 @@ window.generatePDFReport = function() {
         timestamp: new Date().toISOString(),
         projectName: currentProject?.name || 'Proyecto NutriPlant',
         selectedSections: selectedSections.slice(0),
+        selectedLabTypes: selectedLabTypes.slice(0),
         reportLanguage: effectiveLanguage,
         unit_system: reportUnitSystem,
         reportHTML
@@ -14388,12 +14557,15 @@ window.generatePDFReport = function() {
         '❌ Error generando PDF: {error}',
         { error: error && error.message ? error.message : error }
       ), 'error');
+    } finally {
+      window._npReportLabTypes = null;
     }
   }
 
   loadChartImagesForReport(selectedSections, finishPdf, {
     language: reportLanguage,
-    unit_system: reportUnitSystem
+    unit_system: reportUnitSystem,
+    labTypes: selectedLabTypes.slice(0)
   });
 };
 
@@ -14414,6 +14586,10 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
     try { window.close(); } catch (e) {}
     return;
   }
+  const selectedLabTypes = selectedSections.indexOf('labAnalyses') >= 0
+    ? resolveReportLabTypes(job.selectedLabTypes || job.labTypes || [])
+    : [];
+  window._npReportLabTypes = selectedLabTypes.slice();
   const reportLanguage = job.reportLanguage === 'en' ? 'en' : 'es';
   const reportUnitSystem =
     job.unitSystem === 'us_customary' || job.unit_system === 'us_customary'
@@ -14639,7 +14815,8 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
   setStatus(wantShare ? 'Calculando gráficas y secciones para el link…' : 'Calculando gráficas y secciones…');
   loadChartImagesForReport(selectedSections, wantShare ? finishShare : finishPdf, {
     language: reportLanguage,
-    unit_system: reportUnitSystem
+    unit_system: reportUnitSystem,
+    labTypes: selectedLabTypes.slice(0)
   });
 };
 
@@ -15934,55 +16111,85 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
         .badge-ok { color: #059669; font-weight: 700; }
         .badge-low { color: #d97706; font-weight: 700; }
         .badge-high { color: #dc2626; font-weight: 700; }
-        .report-lab-compare { margin: 8px 0 12px; }
+        .report-lab-compare { margin: 4px 0 8px; }
         .report-lab-compare-title {
           margin: 0 0 8px;
           font-size: 0.95rem;
           color: #1e293b;
         }
         .report-lab-compare-block {
-          margin: 0 0 10px;
-          padding: 8px;
+          margin: 0 0 14px;
+          padding: 10px 12px 12px;
           border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          background: #f8fafc;
+          border-radius: 10px;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
           page-break-inside: avoid;
+          box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         }
         .report-lab-compare-block-title {
-          margin: 0 0 6px;
+          margin: 0 0 8px;
           font-size: 12px;
-          font-weight: 700;
-          color: #334155;
+          font-weight: 800;
+          color: #0f172a;
+          letter-spacing: .03em;
           text-transform: uppercase;
-          letter-spacing: .02em;
         }
         .report-lab-compare-table-wrap { overflow-x: auto; }
         .report-lab-compare-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 11px;
+          font-size: 11.5px;
           background: #fff;
+          border-radius: 8px;
+          overflow: hidden;
         }
         .report-lab-compare-table th,
         .report-lab-compare-table td {
           border: 1px solid #e2e8f0;
-          padding: 5px 7px;
+          padding: 7px 8px;
           text-align: center;
         }
-        .report-lab-compare-table th:first-child,
-        .report-lab-compare-table td:first-child {
-          text-align: left;
-          font-weight: 600;
+        .report-lab-th-param,
+        .report-lab-td-param {
+          text-align: left !important;
+          font-weight: 700;
           white-space: nowrap;
-        }
-        .report-lab-compare-table th {
           background: #f1f5f9;
-          color: #0f172a;
+          color: #334155;
         }
-        .report-lab-charts { margin: 8px 0 12px; }
+        .report-lab-th-analysis {
+          background: #f8fafc;
+          font-weight: 800;
+          font-size: 11px;
+        }
+        .report-lab-td-val {
+          font-weight: 700;
+          font-variant-numeric: tabular-nums;
+        }
+        .report-lab-row-alt td {
+          background: #fafbfc;
+        }
         .report-lab-chart-card {
-          margin: 0 0 10px;
+          margin: 10px 0 2px;
+          padding: 10px;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          background: #fff;
           page-break-inside: avoid;
+        }
+        .report-lab-chart-caption {
+          font-size: 12px;
+          font-weight: 700;
+          color: #334155;
+          margin: 0 0 8px;
+        }
+        .report-lab-chart-card img {
+          width: 100%;
+          max-width: 760px;
+          height: auto;
+          display: block;
+          margin: 0 auto;
+          border-radius: 6px;
         }
         .report-lab-type-title { page-break-after: avoid; }
         .report-print-tip {
@@ -16530,6 +16737,108 @@ function translateReportHTMLStrings(html, reportLanguage) {
 }
 
 // Función para crear sección de ubicación
+function createLocationDemMapHTML(demSlope, rt) {
+  const rtSafe = typeof rt === 'function' ? rt : function (es) { return es; };
+  if (!demSlope || (!demSlope.dataUrl && !demSlope.elevDataUrl)) return '';
+  const meta = demSlope.meta || {};
+  const slopeParts = [];
+  if (meta.slope_min != null && meta.slope_max != null) {
+    slopeParts.push(
+      rtSafe('Pendiente', 'Slope') +
+        ' ' +
+        Number(meta.slope_min).toFixed(1) +
+        '–' +
+        Number(meta.slope_max).toFixed(1) +
+        '%'
+    );
+  }
+  const elevParts = [];
+  if (meta.elev_min != null && meta.elev_max != null) {
+    const fmtElev =
+      typeof window.np_formatElevM === 'function'
+        ? window.np_formatElevM
+        : function (v) {
+            const n = Number(v);
+            if (!Number.isFinite(n)) return '—';
+            try {
+              if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.formatResultFromSI === 'function') {
+                return window.NpAgronomicUnits.formatResultFromSI(n, 'elevation');
+              }
+            } catch (e) { /* fallback */ }
+            return Math.round(n) + ' m';
+          };
+    elevParts.push(
+      rtSafe('Altitud', 'Elevation') +
+        ' ' +
+        fmtElev(meta.elev_min) +
+        '–' +
+        fmtElev(meta.elev_max)
+    );
+  }
+  const slopeBar =
+    'linear-gradient(90deg,#f8f5f0,#e8e0d4,#d4c4a8,#c4a574,#a67c52,#8b5e3c,#6b4423,#4a2f1a,#2d1b0e)';
+  const elevBar =
+    'linear-gradient(90deg,#1e3a8a,#2563eb,#38bdf8,#7dd3fc,#a7f3d0,#fef3c7,#fbbf24,#ea580c,#9a3412)';
+
+  function oneCard(title, dataUrl, bar, lowL, highL, statsArr, note) {
+    if (!dataUrl) return '';
+    const statsLine = statsArr.length
+      ? `<div class="report-note-inline" style="margin-top:6px;">${statsArr.join(' · ')}</div>`
+      : '';
+    return `
+      <div class="report-keep-together" style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:8px;">
+        <div style="font-size:12px;font-weight:700;color:#44403c;margin-bottom:6px;">${title}</div>
+        <div class="report-radar-frame report-radar-frame--lg" style="border-color:#d6d3d1;background:#fafaf9;">
+          <img src="${dataUrl}" alt="${title}" />
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px;font-size:9px;color:#78716c;line-height:1.3;">
+          <span style="font-weight:700;">${lowL}</span>
+          <span style="width:120px;height:8px;border-radius:999px;background:${bar};display:inline-block;flex-shrink:0;border:1px solid #e7e5e4;"></span>
+          <span style="font-weight:700;">${highL}</span>
+        </div>
+        ${statsLine}
+        <div class="report-note-inline" style="margin-top:6px;">${note}</div>
+      </div>
+    `;
+  }
+
+  const elevCard = oneCard(
+    rtSafe('Altura del predio', 'Field elevation'),
+    demSlope.elevDataUrl,
+    elevBar,
+    rtSafe('Más baja', 'Lower'),
+    rtSafe('Más alta', 'Higher'),
+    elevParts,
+    rtSafe(
+      'Mismo color ≈ misma altitud dentro del predio (Copernicus DEM ~30 m).',
+      'Same color ≈ same elevation within the field (Copernicus DEM ~30 m).'
+    )
+  );
+  const slopeCard = oneCard(
+    rtSafe('Pendiente del predio', 'Field slope'),
+    demSlope.dataUrl,
+    slopeBar,
+    rtSafe('Más plano', 'Flatter'),
+    rtSafe('Más inclinado', 'Steeper'),
+    slopeParts,
+    rtSafe(
+      'Mismo color ≈ misma inclinación (no altura). Capa fija del predio.',
+      'Same color ≈ same steepness (not elevation). Fixed field layer.'
+    )
+  );
+
+  if (!elevCard && !slopeCard) return '';
+  return `
+    <div style="margin-top:10px;">
+      <div style="font-size:12px;font-weight:700;color:#44403c;margin-bottom:8px;">${rtSafe('Relieve del predio', 'Field relief')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;">
+        ${elevCard || ''}
+        ${slopeCard || ''}
+      </div>
+    </div>
+  `;
+}
+
 function createLocationPolygonSVG(polygon, rt) {
   const rtSafe = typeof rt === 'function' ? rt : function (es) { return es; };
   const points = (Array.isArray(polygon) ? polygon : [])
@@ -17084,6 +17393,21 @@ function createLocationSectionHTML(chartImages, rt, lang, reportUnitSystem) {
     rtSafe,
     langSafe
   );
+  const demSlope =
+    (chartImages && chartImages.demSlope) ||
+    (chartImages &&
+      chartImages.radar &&
+      (chartImages.radar.slopeDataUrl || chartImages.radar.elevDataUrl) && {
+        dataUrl: chartImages.radar.slopeDataUrl || null,
+        elevDataUrl: chartImages.radar.elevDataUrl || null,
+        meta: chartImages.radar.slopeMeta || chartImages.radar.elevMeta || null
+      }) ||
+    null;
+  const fieldMapBlock = demSlope
+    ? createLocationDemMapHTML(demSlope, rtSafe)
+    : hasPolygon
+      ? createLocationPolygonSVG(polygon, rtSafe)
+      : '';
   const statusText = hasPolygon
     ? rtSafe('Polígono registrado (', 'Registered polygon (') + polygon.length + ' ' + rtSafe('vértices)', 'vertices)')
     : rtSafe('Sin polígono', 'No polygon');
@@ -17111,7 +17435,7 @@ function createLocationSectionHTML(chartImages, rt, lang, reportUnitSystem) {
             ${showingMore}
           ` : ''}
         </div>
-        ${hasPolygon ? createLocationPolygonSVG(polygon, rtSafe) : ''}
+        ${fieldMapBlock}
         ${radarBlock}
         ${lecturaBlock}
       </div>
@@ -19476,66 +19800,111 @@ function formatLabCompareCellValue(v, row) {
   return String(v);
 }
 
-function buildLabCompareTablesHTML(type, analyses, rt) {
+var REPORT_LAB_CHART_COLORS = [
+  '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#db2777',
+  '#0891b2', '#ca8a04', '#dc2626', '#4f46e5', '#059669'
+];
+
+function reportLabAnalysisColor(index) {
+  return REPORT_LAB_CHART_COLORS[(Number(index) || 0) % REPORT_LAB_CHART_COLORS.length];
+}
+
+function reportLabBlockTitle(block, rt) {
+  var blockTitle = (block && (block.title || block.id)) || '';
+  try {
+    if (window.NpI18n && typeof window.NpI18n.t === 'function' && block && block.titleKey) {
+      var via = window.NpI18n.t(block.titleKey);
+      if (via && via !== block.titleKey) return via;
+      if (block.titleEn) return rt(block.title || block.id, block.titleEn);
+    } else if (block && block.titleEn) {
+      return rt(block.title || block.id, block.titleEn);
+    }
+  } catch (e) { /* keep default */ }
+  return blockTitle;
+}
+
+function ensureChartJsForReport(callback) {
+  var done = typeof callback === 'function' ? callback : function () {};
+  if (window.Chart) {
+    done();
+    return;
+  }
+  var existing = document.querySelector('script[data-np-chartjs]');
+  if (existing) {
+    existing.addEventListener('load', function () { done(); });
+    setTimeout(done, 2500);
+    return;
+  }
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+  s.async = true;
+  s.setAttribute('data-np-chartjs', '1');
+  s.onload = function () { done(); };
+  s.onerror = function () { done(); };
+  document.head.appendChild(s);
+}
+
+/** Tablas comparativas + gráficas (sin detalle por reporte). */
+function buildLabCompareSectionHTML(type, analyses, chartImages, rt, accent) {
   if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.getTypeConfig !== 'function') return '';
   var typeCfg = window.NpAnalysisCompare.getTypeConfig(type);
   if (!typeCfg || !typeCfg.fields || !typeCfg.blocks) return '';
   var rows = window.NpAnalysisCompare.buildCompareRows(analyses, typeCfg.fields);
   if (!rows || !rows.length) return '';
   var labelFn = window.NpAnalysisCompare.analysisLabel;
+  var chartsByBlock = (chartImages && chartImages.labAnalyses && chartImages.labAnalyses[type]) || {};
   var html = '<div class="report-lab-compare">';
-  html += '<h3 class="report-lab-compare-title">📊 ' + rt('Comparar análisis (tabla y gráficas)', 'Compare analyses (table and charts)') + '</h3>';
+
   typeCfg.blocks.forEach(function (block) {
     var blockRows = rows.filter(function (r) { return r.block === block.id; });
     if (!blockRows.length) return;
-    var blockTitle = block.title || block.id;
-    try {
-      if (window.NpI18n && typeof window.NpI18n.t === 'function' && block.titleKey) {
-        var via = window.NpI18n.t(block.titleKey);
-        if (via && via !== block.titleKey) blockTitle = via;
-        else if (block.titleEn) blockTitle = rt(block.title || block.id, block.titleEn);
-      } else if (block.titleEn) {
-        blockTitle = rt(block.title || block.id, block.titleEn);
-      }
-    } catch (e) { /* keep default */ }
-    html += '<div class="report-lab-compare-block" data-block="' + block.id + '">';
+    var blockTitle = reportLabBlockTitle(block, rt);
+    var borderColor = accent || '#94a3b8';
+    if (block.id === 'macros') borderColor = '#f59e0b';
+    else if (block.id === 'micros') borderColor = '#8b5cf6';
+    else if (block.id === 'cec_pct') borderColor = '#f97316';
+    else if (block.id === 'ph') borderColor = '#3b82f6';
+    else if (block.id === 'physical') borderColor = '#22c55e';
+    else if (block.id === 'cations' || block.id === 'anions') borderColor = '#64748b';
+    else if (block.id === 'ratios') borderColor = '#6366f1';
+    else if (block.id === 'calidad') borderColor = '#ec4899';
+    else if (block.id === 'calcio') borderColor = '#0ea5e9';
+
+    html += '<div class="report-lab-compare-block" data-block="' + block.id + '" style="border-left:4px solid ' + borderColor + ';">';
     html += '<h4 class="report-lab-compare-block-title">' + reportEscapeHtml(blockTitle) + '</h4>';
     html += '<div class="report-lab-compare-table-wrap"><table class="report-lab-compare-table"><thead><tr>';
-    html += '<th>' + rt('Parámetro', 'Parameter') + '</th>';
+    html += '<th class="report-lab-th-param">' + rt('Parámetro', 'Parameter') + '</th>';
     analyses.forEach(function (a, idx) {
       var name = (typeof labelFn === 'function') ? labelFn(a, idx) : (a.title || a.name || ('#' + (idx + 1)));
-      html += '<th>' + reportEscapeHtml(String(name || '')) + '</th>';
+      var color = reportLabAnalysisColor(idx);
+      html += '<th class="report-lab-th-analysis" style="color:' + color + ';border-bottom:3px solid ' + color + ';">' +
+        reportEscapeHtml(String(name || '')) + '</th>';
     });
     html += '</tr></thead><tbody>';
-    blockRows.forEach(function (row) {
+    blockRows.forEach(function (row, ri) {
       var paramLabel = row.label || row.path || '';
       if (row.unit && row.unit !== 'other' && !/\(%\)|°Brix|\(ppm\)|\(meq\)|\(psi\)/i.test(paramLabel)) {
         var suf = row.unit === 'pct' ? ' (%)' : row.unit === 'ppm' ? ' (ppm)' : row.unit === 'meq' ? ' (meq)' : row.unit === 'brix' ? ' (°Brix)' : row.unit === 'kgcm2' ? ' (kg/cm²)' : row.unit === 'psi' ? ' (psi)' : row.unit === 'mg100g' ? ' (mg/100 g)' : '';
         paramLabel = paramLabel + suf;
       }
-      html += '<tr><td>' + reportEscapeHtml(paramLabel) + '</td>';
-      (row.values || []).forEach(function (v) {
-        html += '<td>' + reportEscapeHtml(formatLabCompareCellValue(v, row)) + '</td>';
+      html += '<tr class="' + (ri % 2 ? 'report-lab-row-alt' : '') + '"><td class="report-lab-td-param">' + reportEscapeHtml(paramLabel) + '</td>';
+      (row.values || []).forEach(function (v, vi) {
+        var color = reportLabAnalysisColor(vi);
+        html += '<td class="report-lab-td-val" style="color:' + color + ';">' + reportEscapeHtml(formatLabCompareCellValue(v, row)) + '</td>';
       });
       html += '</tr>';
     });
-    html += '</tbody></table></div></div>';
-  });
-  html += '</div>';
-  return html;
-}
+    html += '</tbody></table></div>';
 
-function buildLabCompareChartsHTML(type, chartImages, rt) {
-  var byType = chartImages && chartImages.labAnalyses && chartImages.labAnalyses[type];
-  if (!byType || typeof byType !== 'object') return '';
-  var keys = Object.keys(byType).filter(function (k) { return !!byType[k]; });
-  if (!keys.length) return '';
-  var html = '<div class="report-lab-charts">';
-  keys.forEach(function (blockId) {
-    html += '<div class="report-lab-chart-card">';
-    html += '<img src="' + byType[blockId] + '" alt="' + reportEscapeHtml(rt('Gráfica', 'Chart') + ' ' + blockId) + '" style="width:100%;max-width:720px;height:auto;display:block;margin:8px auto;">';
+    if (block.chart && chartsByBlock[block.id]) {
+      html += '<div class="report-lab-chart-card">';
+      html += '<div class="report-lab-chart-caption">📈 ' + reportEscapeHtml(blockTitle) + '</div>';
+      html += '<img src="' + chartsByBlock[block.id] + '" alt="' + reportEscapeHtml(rt('Gráfica', 'Chart') + ' ' + blockTitle) + '">';
+      html += '</div>';
+    }
     html += '</div>';
   });
+
   html += '</div>';
   return html;
 }
@@ -19543,8 +19912,22 @@ function buildLabCompareChartsHTML(type, chartImages, rt) {
 function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem) {
   const isEn = lang === 'en';
   const rt = function (es, en) { return isEn ? en : es; };
-  const specs = getLabAnalysesReportSpecs();
+  const selectedTypes = resolveReportLabTypes(
+    (chartImages && chartImages.labTypes) || window._npReportLabTypes
+  );
+  const specs = getLabAnalysesReportSpecs().filter(function (spec) {
+    return selectedTypes.indexOf(spec.type) >= 0;
+  });
   let body = '';
+
+  if (!specs.length) {
+    return `
+    <div class="section" style="border-left-color:#0ea5e9;">
+      <h2 class="section-title">🧪 ${rt('Análisis de laboratorio', 'Lab analyses')}</h2>
+      <div class="report-note">${rt('No se seleccionó ningún tipo de análisis.', 'No analysis type was selected.')}</div>
+    </div>
+  `;
+  }
 
   specs.forEach(function (spec) {
     const list = getLabAnalysesListForReport(spec.listKey);
@@ -19556,8 +19939,8 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
         : rt('(' + count + ' reportes)', '(' + count + ' reports)'));
     const title = isEn ? spec.titleEn : spec.titleEs;
 
-    body += '<div class="report-lab-type" style="border-left:4px solid ' + spec.accent + ';padding:12px 12px 12px 14px;margin:0 0 16px;background:#fff;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;border-left-color:' + spec.accent + ';">';
-    body += '<h3 class="report-lab-type-title" style="margin:0 0 10px;font-size:1.05rem;color:#0f172a;">' +
+    body += '<div class="report-lab-type" style="border-left:4px solid ' + spec.accent + ';padding:14px 14px 14px 16px;margin:0 0 18px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;border-left-width:4px;border-left-color:' + spec.accent + ';">';
+    body += '<h3 class="report-lab-type-title" style="margin:0 0 12px;font-size:1.08rem;color:#0f172a;">' +
       spec.icon + ' ' + title + ' <span style="color:#64748b;font-weight:600;font-size:0.92rem;">' + countLabel + '</span></h3>';
 
     if (!count) {
@@ -19566,28 +19949,33 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
       return;
     }
 
-    // Comparativa (tablas + gráficas) primero, como en el dashboard
-    body += buildLabCompareTablesHTML(spec.type, list, rt);
-    body += buildLabCompareChartsHTML(spec.type, chartImages, rt);
+    // Tablas comparativas + gráficas
+    body += buildLabCompareSectionHTML(spec.type, list, chartImages, rt, spec.accent);
 
-    list.forEach(function (r, i) {
-      const name = r.title || r.name || (rt('Reporte', 'Report') + ' ' + (i + 1));
-      const date = r.date || '';
-      let rendered = (typeof window.NutriPlantRenderAnalysisReport === 'function')
-        ? window.NutriPlantRenderAnalysisReport(r, { escapeHtml: reportEscapeHtml })
-        : '';
-      if (isEn && rendered && window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function') {
-        try { rendered = window.NpAnalysisUI.translateString(rendered); } catch (e) { /* ignore */ }
-      }
-      body += '<div class="report-card" style="margin-top:12px;">';
-      body += '<div class="report-card-head"><span>' + reportEscapeHtml(String(name)) + '</span>';
-      if (date) body += '<span class="report-card-meta">' + reportEscapeHtml(String(date)) + '</span>';
-      body += '</div>';
-      body += rendered
-        ? '<div style="margin-top:10px;">' + rendered + '</div>'
-        : '<div style="font-size:13px;color:#6b7280;margin-top:6px;">' + rt('Sin datos detallados para mostrar.', 'No detailed data to show.') + '</div>';
-      body += '</div>';
-    });
+    // Detalle por reporte solo en agua (ácido), foliar (DOP) y fruta (ICC)
+    if (spec.type === 'agua' || spec.type === 'foliar' || spec.type === 'fruta') {
+      list.forEach(function (r, i) {
+        const name = r.title || r.name || (rt('Reporte', 'Report') + ' ' + (i + 1));
+        const date = r.date || '';
+        let rendered = (typeof window.NutriPlantRenderAnalysisReport === 'function')
+          ? window.NutriPlantRenderAnalysisReport(r, {
+              escapeHtml: reportEscapeHtml,
+              language: isEn ? 'en' : 'es'
+            })
+          : '';
+        if (isEn && rendered && window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function') {
+          try { rendered = window.NpAnalysisUI.translateString(rendered); } catch (e) { /* ignore */ }
+        }
+        body += '<div class="report-card" style="margin-top:14px;">';
+        body += '<div class="report-card-head"><span>' + reportEscapeHtml(String(name)) + '</span>';
+        if (date) body += '<span class="report-card-meta">' + reportEscapeHtml(String(date)) + '</span>';
+        body += '</div>';
+        body += rendered
+          ? '<div style="margin-top:10px;">' + rendered + '</div>'
+          : '<div style="font-size:13px;color:#6b7280;margin-top:6px;">' + rt('Sin datos detallados para mostrar.', 'No detailed data to show.') + '</div>';
+        body += '</div>';
+      });
+    }
 
     body += '</div>';
   });
@@ -19596,8 +19984,8 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
     <div class="section" style="border-left-color:#0ea5e9;">
       <h2 class="section-title">🧪 ${rt('Análisis de laboratorio', 'Lab analyses')}</h2>
       <p class="report-note" style="margin-top:0;">${rt(
-        'Datos, tablas comparativas y gráficas de los 6 análisis del proyecto (mismo orden y colores que el panel de usuario).',
-        'Data, compare tables and charts for the 6 lab analyses in the project (same order and colors as the user dashboard).'
+        'Tablas y gráficas comparativas. En agua, foliar y fruta también el detalle de cada reporte (ácido, DOP e ICC).',
+        'Compare tables and charts. For water, foliar and fruit also each report detail (acid, DOP and CQI).'
       )}</p>
       ${body}
     </div>
@@ -19606,11 +19994,15 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
 
 /**
  * Captura gráficas Chart.js de la comparativa lab (offscreen) para embeber en el PDF.
- * Respeta idioma/unidades via reportOptions + NpI18n / NpPrefs actuales.
  */
 function captureLabCompareChartsForReport(callback, reportOptions) {
   var done = typeof callback === 'function' ? callback : function () {};
-  var specs = getLabAnalysesReportSpecs();
+  var selectedTypes = resolveReportLabTypes(
+    (reportOptions && reportOptions.labTypes) || window._npReportLabTypes
+  );
+  var specs = getLabAnalysesReportSpecs().filter(function (spec) {
+    return selectedTypes.indexOf(spec.type) >= 0;
+  });
   var out = {};
   if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.mountLabCompare !== 'function') {
     done(out);
@@ -19628,7 +20020,8 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
 
   var host = document.createElement('div');
   host.setAttribute('aria-hidden', 'true');
-  host.style.cssText = 'position:fixed;left:-12000px;top:0;width:760px;height:520px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden;';
+  // Visible pero casi transparente y fuera de vista: Chart.js necesita tamaño real de canvas
+  host.style.cssText = 'position:fixed;left:-10000px;top:0;width:820px;min-height:900px;opacity:0.02;pointer-events:none;z-index:-1;overflow:visible;background:#fff;';
   document.body.appendChild(host);
 
   function cleanupLang() {
@@ -19647,11 +20040,12 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
 
   function waitForCharts(state, expected, attempt, cbWait) {
     var keys = state && state.charts ? Object.keys(state.charts) : [];
-    if ((expected === 0) || keys.length >= expected || attempt >= 20) {
-      cbWait();
+    if ((expected === 0) || keys.length >= expected || attempt >= 40) {
+      // Dar un frame extra para que Chart pinte
+      setTimeout(cbWait, 120);
       return;
     }
-    setTimeout(function () { waitForCharts(state, expected, attempt + 1, cbWait); }, 100);
+    setTimeout(function () { waitForCharts(state, expected, attempt + 1, cbWait); }, 120);
   }
 
   function next(i) {
@@ -19689,6 +20083,20 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
       return;
     }
 
+    // Forzar tamaño de canvas para captura
+    try {
+      wrap.querySelectorAll('.np-analysis-compare__chart-wrap').forEach(function (el) {
+        el.style.height = '280px';
+        el.style.width = '760px';
+        el.style.position = 'relative';
+      });
+      wrap.querySelectorAll('canvas').forEach(function (c) {
+        c.style.width = '760px';
+        c.style.height = '280px';
+      });
+      if (state && typeof state.refresh === 'function') state.refresh();
+    } catch (eSize) { /* ignore */ }
+
     waitForCharts(state, expectedCharts, 0, function () {
       var charts = {};
       try {
@@ -19696,12 +20104,28 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
           Object.keys(state.charts).forEach(function (key) {
             var chart = state.charts[key];
             try {
+              if (chart && typeof chart.resize === 'function') chart.resize();
               if (chart && typeof chart.toBase64Image === 'function') {
-                charts[key] = chart.toBase64Image('image/png');
+                charts[key] = chart.toBase64Image('image/png', 1);
               } else if (chart && chart.canvas && typeof chart.canvas.toDataURL === 'function') {
                 charts[key] = chart.canvas.toDataURL('image/png');
               }
-            } catch (eCap) { /* ignore */ }
+            } catch (eCap) {
+              console.warn('capture chart', spec.type, key, eCap);
+            }
+          });
+        }
+        // Fallback: capturar canvas del DOM aunque Chart no esté en state
+        if (!Object.keys(charts).length) {
+          wrap.querySelectorAll('canvas').forEach(function (canvas) {
+            var id = String(canvas.id || '');
+            var parts = id.split('_');
+            var blockId = parts.length ? parts[parts.length - 1] : id;
+            try {
+              if (canvas.width > 0 && canvas.height > 0) {
+                charts[blockId] = canvas.toDataURL('image/png');
+              }
+            } catch (eDom) { /* ignore */ }
           });
         }
       } catch (eAll) { /* ignore */ }
@@ -19718,7 +20142,9 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     });
   }
 
-  next(0);
+  ensureChartJsForReport(function () {
+    next(0);
+  });
 }
 
 function createAnalysesListSectionHTML(title, list) {

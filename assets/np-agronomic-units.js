@@ -34,6 +34,7 @@
     mass: { canonical: 'kg', metric: 'kg', us_customary: 'lb', resultDigits: 2 },
     area: { canonical: 'ha', metric: 'ha', us_customary: 'acre', resultDigits: 2 },
     distance: { canonical: 'km', metric: 'km', us_customary: 'mi', resultDigits: 2 },
+    elevation: { canonical: 'm', metric: 'm', us_customary: 'ft', resultDigits: 0 },
     solubility: {
       canonical: 'g/L',
       metric: 'g/L',

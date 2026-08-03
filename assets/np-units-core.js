@@ -105,6 +105,7 @@
     mm: { magnitude: 'length', symbol: 'mm', factor: 0.001 },
     cm: { magnitude: 'length', symbol: 'cm', factor: 0.01 },
     in: { magnitude: 'length', symbol: 'in', factor: 0.0254 },
+    ft: { magnitude: 'length', symbol: 'ft', factor: 0.3048 },
     'kg/kg': { magnitude: 'extraction_mass_yield', symbol: 'kg/kg', factor: 1 },
     'kg/t': { magnitude: 'extraction_mass_yield', symbol: 'kg/t', factor: 0.001 },
     'lb/short ton': {
@@ -210,6 +211,9 @@
     in: 'in',
     inch: 'in',
     inches: 'in',
+    ft: 'ft',
+    foot: 'ft',
+    feet: 'ft',
     'kg/kg': 'kg/kg',
     'kg/t': 'kg/t',
     'kg/ton': 'kg/t',

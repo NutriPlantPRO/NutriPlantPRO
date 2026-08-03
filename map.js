@@ -1300,9 +1300,16 @@ class NutriPlantMap {
         coordinates: locationData.center ? `${locationData.center.lat.toFixed(6)}, ${locationData.center.lng.toFixed(6)}` : '',
         surface: `${this.formatNumber(locationData.areaHectares)} ha`,
         perimeterDisplay: np_formatPerimeterDisplay(locationData.perimeter, (n) => this.formatNumber(n)),
-        elevationDisplay: Number.isFinite(locationData.elevationM)
-          ? `${Math.round(locationData.elevationM)} ${np_radarT('radar.unit_msl', 'msnm')}`
-          : np_radarT('radar.na', 'N/D')
+        elevationDisplay: (function () {
+          if (!Number.isFinite(locationData.elevationM)) return np_radarT('radar.na', 'N/D');
+          const prefs = window.NpAgronomicUnits && typeof window.NpAgronomicUnits.getPrefs === 'function'
+            ? window.NpAgronomicUnits.getPrefs()
+            : null;
+          if (prefs && prefs.unit_system === 'us_customary') {
+            return np_formatElevM(locationData.elevationM) + ' ' + np_radarT('radar.unit_amslof', 'AMSL');
+          }
+          return Math.round(locationData.elevationM) + ' ' + np_radarT('radar.unit_msl', 'msnm');
+        })()
       };
       const existingLoc =
         (typeof window.projectStorage !== 'undefined' && window.projectStorage.loadSection
@@ -2785,9 +2792,18 @@ function setLocationAltitudeDisplay(elevationM) {
   const altitudeEl = document.getElementById('altitudeDisplay');
   if (!altitudeEl) return;
   const meters = Number(elevationM);
-  altitudeEl.textContent = Number.isFinite(meters)
-    ? `${Math.round(meters)} ${np_radarT('radar.unit_msl', 'msnm')}`
-    : np_radarT('radar.na', 'N/D');
+  if (!Number.isFinite(meters)) {
+    altitudeEl.textContent = np_radarT('radar.na', 'N/D');
+    return;
+  }
+  const elevTxt = np_formatElevM(meters);
+  const prefs = window.NpAgronomicUnits && typeof window.NpAgronomicUnits.getPrefs === 'function'
+    ? window.NpAgronomicUnits.getPrefs()
+    : null;
+  const isUs = prefs && prefs.unit_system === 'us_customary';
+  altitudeEl.textContent = isUs
+    ? elevTxt + ' ' + np_radarT('radar.unit_amslof', 'AMSL')
+    : Math.round(meters) + ' ' + np_radarT('radar.unit_msl', 'msnm');
 }
 
 function forceClearLocationDisplay() {
@@ -2870,12 +2886,34 @@ const RADAR_INDEX_CONFIG = {
     gradient: 'linear-gradient(90deg,#7c3aed,#64748b,#cbd5e1,#ffffff)',
     shownText: 'Nubes y sombras en mapa.',
     loadingText: 'Cargando máscara de nubes en el mapa...'
+  },
+  slope: {
+    label: 'Pendiente',
+    busyLabel: 'Pendiente',
+    title: 'Pendiente relativa del predio',
+    low: 'Más plano',
+    high: 'Más inclinado',
+    help: 'Pendiente (%) del relieve (Copernicus DEM ~30 m). Crema/gris = más plano; café oscuro = más pendiente. Capa fija: no cambia con Pilot.',
+    gradient: 'linear-gradient(90deg,#f8f5f0,#e8e0d4,#d4c4a8,#c4a574,#a67c52,#8b5e3c,#6b4423,#4a2f1a,#2d1b0e)',
+    shownText: 'Pendiente del predio en mapa.',
+    loadingText: 'Cargando pendiente del predio en el mapa...'
+  },
+  elev: {
+    label: 'Altura',
+    busyLabel: 'Altura',
+    title: 'Altura relativa del predio',
+    low: 'Más baja',
+    high: 'Más alta',
+    help: 'Altitud (m) relativa al predio (Copernicus DEM ~30 m). Azul = más bajo; ámbar/café = más alto. Mismo color ≈ misma altura dentro del predio.',
+    gradient: 'linear-gradient(90deg,#1e3a8a,#2563eb,#38bdf8,#7dd3fc,#a7f3d0,#fef3c7,#fbbf24,#ea580c,#9a3412)',
+    shownText: 'Altura del predio en mapa.',
+    loadingText: 'Cargando altura del predio en el mapa...'
   }
 };
 
 function np_normalizeRadarIndex(value) {
   const v = String(value || '').toLowerCase();
-  if (v === 'ndmi' || v === 'ndre' || v === 'rgb' || v === 'clouds') return v;
+  if (v === 'ndmi' || v === 'ndre' || v === 'rgb' || v === 'clouds' || v === 'slope' || v === 'elev') return v;
   return 'ndvi';
 }
 
@@ -2923,16 +2961,35 @@ function np_getRadarIndexConfig(index) {
       help: 'radar.scale_clouds_help',
       shownText: 'radar.shown_clouds',
       loadingText: 'radar.loading_clouds'
+    },
+    slope: {
+      label: 'radar.label_slope',
+      title: 'radar.scale_slope_title',
+      low: 'radar.scale_slope_low',
+      high: 'radar.scale_slope_high',
+      help: 'radar.scale_slope_help',
+      shownText: 'radar.shown_slope',
+      loadingText: 'radar.loading_slope'
+    },
+    elev: {
+      label: 'radar.label_elev',
+      title: 'radar.scale_elev_title',
+      low: 'radar.scale_elev_low',
+      high: 'radar.scale_elev_high',
+      help: 'radar.scale_elev_help',
+      shownText: 'radar.shown_elev',
+      loadingText: 'radar.loading_elev'
     }
   };
   const k = keys[idx] || keys.ndvi;
+  const helpParams = idx === 'elev' ? { unit: np_elevDisplayUnit() } : undefined;
   return {
     label: k.label ? np_radarT(k.label, base.label) : base.label,
     busyLabel: base.busyLabel,
     title: np_radarT(k.title, base.title),
     low: np_radarT(k.low, base.low),
     high: np_radarT(k.high, base.high),
-    help: np_radarT(k.help, base.help),
+    help: np_radarT(k.help, base.help, helpParams),
     gradient: base.gradient,
     shownText: np_radarT(k.shownText, base.shownText),
     loadingText: np_radarT(k.loadingText, base.loadingText)
@@ -2952,6 +3009,153 @@ function np_setSelectedRadarIndex(index) {
   np_updateRadarScaleUi();
 }
 
+function np_formatSlopePct(value, digits) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const d = digits != null ? digits : n >= 10 ? 0 : 1;
+  return (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d) + '%';
+}
+
+function np_formatElevM(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  try {
+    if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.formatResultFromSI === 'function') {
+      return window.NpAgronomicUnits.formatResultFromSI(n, 'elevation');
+    }
+  } catch (e) { /* fallback */ }
+  return Math.round(n) + ' ' + np_radarT('radar.unit_m', 'm');
+}
+
+function np_elevDisplayUnit() {
+  try {
+    if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function') {
+      return window.NpAgronomicUnits.unit('elevation');
+    }
+  } catch (e) { /* fallback */ }
+  return np_radarT('radar.unit_m', 'm');
+}
+
+window.np_formatElevM = np_formatElevM;
+window.np_elevDisplayUnit = np_elevDisplayUnit;
+
+function np_getSlopeScaleRange() {
+  const dem = window.__nutriplantRadarDem;
+  const meta = dem && dem.dem_meta ? dem.dem_meta : null;
+  if (!meta) return null;
+  const vis = meta.vis || null;
+  let min = null;
+  let max = null;
+  if (vis && Number.isFinite(Number(vis.min)) && Number.isFinite(Number(vis.max))) {
+    min = Number(vis.min);
+    max = Number(vis.max);
+  } else if (Number.isFinite(Number(meta.slope_min)) && Number.isFinite(Number(meta.slope_max))) {
+    min = Number(meta.slope_min);
+    max = Number(meta.slope_max);
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return null;
+  return { min, max, mean: Number.isFinite(Number(meta.slope_mean)) ? Number(meta.slope_mean) : null };
+}
+
+function np_getElevScaleRange() {
+  const dem = window.__nutriplantRadarDem;
+  const meta = dem && dem.dem_meta ? dem.dem_meta : null;
+  if (!meta) return null;
+  const vis = meta.elev_vis || null;
+  let min = null;
+  let max = null;
+  if (vis && Number.isFinite(Number(vis.min)) && Number.isFinite(Number(vis.max))) {
+    min = Number(vis.min);
+    max = Number(vis.max);
+  } else if (Number.isFinite(Number(meta.elev_min)) && Number.isFinite(Number(meta.elev_max))) {
+    min = Number(meta.elev_min);
+    max = Number(meta.elev_max);
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return null;
+  return { min, max, mean: Number.isFinite(Number(meta.elev_mean)) ? Number(meta.elev_mean) : null };
+}
+
+function np_updateRadarScaleTicks(index) {
+  const ticks = document.getElementById('radarScaleTicks');
+  const panel = document.getElementById('radarNdviPanel');
+  const wrap = document.getElementById('radarScaleBarWrap');
+  if (!ticks) return;
+  const idx = np_normalizeRadarIndex(index);
+  if (panel) {
+    panel.classList.toggle('radar-scale-slope', idx === 'slope');
+    panel.classList.toggle('radar-scale-elev', idx === 'elev');
+  }
+  if (wrap) wrap.style.width = idx === 'slope' || idx === 'elev' ? '240px' : '150px';
+
+  if (idx !== 'slope' && idx !== 'elev') {
+    ticks.hidden = true;
+    ticks.innerHTML = '';
+    return;
+  }
+
+  const isElev = idx === 'elev';
+  const range = isElev ? np_getElevScaleRange() : np_getSlopeScaleRange();
+  const fmt = isElev ? np_formatElevM : np_formatSlopePct;
+
+  if (!range) {
+    const fallback = isElev
+      ? [
+          { t: 0, label: np_radarT('radar.scale_elev_tick_low', 'baja') },
+          { t: 0.5, label: np_radarT('radar.scale_elev_tick_mid', 'media') },
+          { t: 1, label: np_radarT('radar.scale_elev_tick_high', 'alta') }
+        ]
+      : [
+          { t: 0, label: '0%' },
+          { t: 0.5, label: '7.5%' },
+          { t: 1, label: '15%' }
+        ];
+    ticks.innerHTML = fallback
+      .map(function (item, i) {
+        const align =
+          i === 0 ? 'radar-scale-tick--start' : i === fallback.length - 1 ? 'radar-scale-tick--end' : '';
+        return (
+          '<span class="radar-scale-tick ' +
+          align +
+          '" style="left:' +
+          item.t * 100 +
+          '%"><span class="radar-scale-tick-label">' +
+          item.label +
+          '</span></span>'
+        );
+      })
+      .join('');
+    ticks.hidden = false;
+    return;
+  }
+
+  const mid =
+    range.mean != null && range.mean >= range.min && range.mean <= range.max
+      ? range.mean
+      : (range.min + range.max) / 2;
+  const points = [
+    { t: 0, label: fmt(range.min) },
+    { t: (mid - range.min) / (range.max - range.min), label: fmt(mid) },
+    { t: 1, label: fmt(range.max) }
+  ];
+  ticks.innerHTML = points
+    .map(function (item, i) {
+      const left = Math.max(0, Math.min(1, item.t)) * 100;
+      const align =
+        i === 0 ? 'radar-scale-tick--start' : i === points.length - 1 ? 'radar-scale-tick--end' : '';
+      return (
+        '<span class="radar-scale-tick ' +
+        align +
+        '" style="left:' +
+        left +
+        '%"><span class="radar-scale-tick-label">' +
+        item.label +
+        '</span></span>'
+      );
+    })
+    .join('');
+  ticks.hidden = false;
+}
+
 function np_updateRadarScaleUi(indexOverride) {
   const idx = indexOverride != null ? np_normalizeRadarIndex(indexOverride) : np_getSelectedRadarIndex();
   const cfg = np_getRadarIndexConfig(idx);
@@ -2961,11 +3165,41 @@ function np_updateRadarScaleUi(indexOverride) {
   const bar = document.getElementById('radarScaleBar');
   const help = document.getElementById('radarNdviHelp');
   if (title) title.textContent = cfg.title;
-  if (low) low.textContent = cfg.low;
-  if (high) high.textContent = cfg.high;
   if (bar) bar.style.background = cfg.gradient;
   if (help) help.textContent = cfg.help;
+
+  if (idx === 'slope') {
+    const range = np_getSlopeScaleRange();
+    if (low) {
+      low.textContent = range
+        ? np_radarT('radar.scale_slope_low_val', 'Plano {v}', { v: np_formatSlopePct(range.min) })
+        : cfg.low;
+    }
+    if (high) {
+      high.textContent = range
+        ? np_radarT('radar.scale_slope_high_val', 'Inclinado {v}', { v: np_formatSlopePct(range.max) })
+        : cfg.high;
+    }
+  } else if (idx === 'elev') {
+    const range = np_getElevScaleRange();
+    if (low) {
+      low.textContent = range
+        ? np_radarT('radar.scale_elev_low_val', 'Baja {v}', { v: np_formatElevM(range.min) })
+        : cfg.low;
+    }
+    if (high) {
+      high.textContent = range
+        ? np_radarT('radar.scale_elev_high_val', 'Alta {v}', { v: np_formatElevM(range.max) })
+        : cfg.high;
+    }
+  } else {
+    if (low) low.textContent = cfg.low;
+    if (high) high.textContent = cfg.high;
+  }
+
+  np_updateRadarScaleTicks(idx);
   np_updateRadarActionLabels(idx);
+  np_updateRadarSnapshotSelectForIndex(idx);
 }
 
 function np_updateRadarActionLabels(indexOverride) {
@@ -2990,6 +3224,22 @@ function np_getRadarSignedUrl(data, index) {
   const snap = data && (data.snapshot || data.latest) ? data.snapshot || data.latest : data;
   if (!snap) return '';
   const idx = np_normalizeRadarIndex(index);
+  if (idx === 'slope') {
+    return (
+      snap.dem_signed_url ||
+      (data && data.dem_signed_url) ||
+      (data && data.dem && data.dem.dem_signed_url) ||
+      ''
+    );
+  }
+  if (idx === 'elev') {
+    return (
+      snap.elev_signed_url ||
+      (data && data.elev_signed_url) ||
+      (data && data.dem && data.dem.elev_signed_url) ||
+      ''
+    );
+  }
   if (idx === 'ndmi') {
     return snap.ndmi_signed_url || snap.images?.ndmi?.signed_url || '';
   }
@@ -3003,6 +3253,63 @@ function np_getRadarSignedUrl(data, index) {
     return snap.cloud_mask_signed_url || snap.images?.clouds?.signed_url || '';
   }
   return snap.signed_url || snap.images?.ndvi?.signed_url || '';
+}
+
+function np_getDemSignedUrl(statusOrDem, index) {
+  if (!statusOrDem) return '';
+  const idx = index != null ? np_normalizeRadarIndex(index) : np_getSelectedRadarIndex();
+  if (idx === 'elev') {
+    if (statusOrDem.elev_signed_url) return String(statusOrDem.elev_signed_url);
+    if (statusOrDem.dem && statusOrDem.dem.elev_signed_url) {
+      return String(statusOrDem.dem.elev_signed_url);
+    }
+    const cached = window.__nutriplantRadarDem;
+    if (cached && cached.elev_signed_url) return String(cached.elev_signed_url);
+    return '';
+  }
+  if (statusOrDem.dem_signed_url) return String(statusOrDem.dem_signed_url);
+  if (statusOrDem.dem && statusOrDem.dem.dem_signed_url) {
+    return String(statusOrDem.dem.dem_signed_url);
+  }
+  const cached = window.__nutriplantRadarDem;
+  if (cached && cached.dem_signed_url) return String(cached.dem_signed_url);
+  return '';
+}
+
+function np_storeRadarDemState(demPayload) {
+  if (!demPayload || typeof demPayload !== 'object') {
+    window.__nutriplantRadarDem = null;
+    return;
+  }
+  window.__nutriplantRadarDem = {
+    has_dem: !!demPayload.has_dem,
+    has_elev: !!demPayload.has_elev || !!demPayload.elev_signed_url,
+    dem_signed_url: demPayload.dem_signed_url || null,
+    elev_signed_url: demPayload.elev_signed_url || null,
+    dem_stale: !!demPayload.dem_stale,
+    dem_meta: demPayload.dem_meta || null,
+    current_polygon_hash: demPayload.current_polygon_hash || null
+  };
+}
+
+function np_updateRadarSnapshotSelectForIndex(indexOverride) {
+  const idx = indexOverride != null ? np_normalizeRadarIndex(indexOverride) : np_getSelectedRadarIndex();
+  const sel = document.getElementById('radarSnapshotSelect');
+  if (!sel) return;
+  if (idx === 'slope' || idx === 'elev') {
+    sel.disabled = true;
+    const dem = window.__nutriplantRadarDem;
+    const label =
+      dem && (idx === 'elev' ? dem.has_elev || dem.elev_signed_url : dem.has_dem)
+        ? np_radarT('radar.dem_snapshot_fixed', 'Relieve (fijo del predio)')
+        : np_radarT('radar.dem_snapshot_none', 'Sin relieve generado');
+    sel.title = label;
+    return;
+  }
+  const st = window.__nutriplantRadarNdviStatus;
+  const hasHistory = !!(st && Array.isArray(st.history) && st.history.length);
+  sel.disabled = !hasHistory;
+  sel.title = np_radarT('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto');
 }
 
 function np_formatRadarDateTime(iso) {
@@ -3742,6 +4049,8 @@ function np_getRadarPilotDataUrl(index) {
   const pilot = window.__nutriplantRadarPilot;
   if (!pilot || !pilot.active) return '';
   const idx = np_normalizeRadarIndex(index);
+  if (idx === 'slope') return '';
+  if (idx === 'elev') return '';
   if (idx === 'ndmi') {
     return pilot.ndmi_signed_url || pilot.images?.ndmi?.signed_url || pilot.ndmi_data_url || pilot.images?.ndmi?.data_url || '';
   }
@@ -4215,8 +4524,13 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       hasLatestNdreImage: !!np_getRadarSignedUrl(data, 'ndre'),
       hasLatestRgbImage: !!np_getRadarSignedUrl(data, 'rgb'),
       latestCreatedAt: data.latest?.created_at || null,
-      meta: data.latest?.meta || null
+      meta: data.latest?.meta || null,
+      dem: data.dem || null
     };
+    np_storeRadarDemState(data.dem || null);
+    np_updateRadarSnapshotSelectForIndex();
+    const demIdx = np_getSelectedRadarIndex();
+    if (demIdx === 'slope' || demIdx === 'elev') np_updateRadarScaleUi(demIdx);
     const costLine = np_formatRadarCreditLine(data.pricing || null);
     const pilotCost = Number(data.pricing?.credits_charged) || 1;
     let tone = 'ok';
@@ -4329,6 +4643,29 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     np_updateRadarScaleUi(idx);
     window.__nutriplantRadarPilotLayer = idx;
 
+    if (idx === 'slope' || idx === 'elev') {
+      const demUrl = np_getDemSignedUrl(window.__nutriplantRadarDem, idx);
+      if (demUrl && nutriPlantMap && np_getPolygonBoundsFromMap()) {
+        window.showRadarDemOnMap(idx).catch((err) => {
+          console.warn('Radar: capa relieve', err);
+        });
+        return;
+      }
+      const hint = document.getElementById('radarStatusHint');
+      if (hint) {
+        hint.textContent = window.__nutriplantRadarDem && window.__nutriplantRadarDem.dem_stale
+          ? np_radarT(
+              'radar.dem_stale_hint',
+              'El polígono cambió. Pulsa «Generar relieve» para actualizar.'
+            )
+          : np_radarT(
+              'radar.dem_missing_hint',
+              'Aún no hay relieve. Pulsa «Generar relieve» (0 créditos).'
+            );
+      }
+      return;
+    }
+
     if (window.__nutriplantRadarOverlaySource === 'pilot' && radarGroundOverlay) {
       const url = np_getRadarPilotDataUrl(idx);
       if (url) {
@@ -4383,6 +4720,9 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   document.getElementById('radarBtnGenerate')?.addEventListener('click', () => {
     window.generateRadarCdsePilot();
   });
+  document.getElementById('radarBtnGenerateDem')?.addEventListener('click', () => {
+    window.generateRadarDemSlope();
+  });
   document.getElementById('radarBtnHide')?.addEventListener('click', () => {
     window.hideRadarNdviOverlay();
   });
@@ -4393,6 +4733,7 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     np_togglePilotRadarLayer().catch((err) => console.warn('Pilot capa:', err));
   });
   np_setPilotRadarIndex(np_getPilotRadarIndex());
+  np_updateRadarSnapshotSelectForIndex();
 };
 
 window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
@@ -4583,6 +4924,11 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
     alert('El mapa no está listo.');
     return;
   }
+  const selected = np_getSelectedRadarIndex();
+  if (selected === 'slope' || selected === 'elev') {
+    await window.showRadarDemOnMap(selected);
+    return;
+  }
   const bounds = np_getPolygonBoundsFromMap();
   const token = await np_getRadarAccessToken();
   if (!token) {
@@ -4634,6 +4980,196 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
   } catch (e) {
     console.error('Radar NDVI view:', e);
     alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver imagen.');
+  }
+};
+
+window.showRadarDemOnMap = async function showRadarDemOnMap(indexOverride) {
+  if (!nutriPlantMap || !nutriPlantMap.map) {
+    alert('El mapa no está listo.');
+    return;
+  }
+  const bounds = np_getPolygonBoundsFromMap();
+  if (!bounds) {
+    alert('Carga un polígono del predio en el mapa.');
+    return;
+  }
+  let idx = np_normalizeRadarIndex(indexOverride != null ? indexOverride : np_getSelectedRadarIndex());
+  if (idx !== 'slope' && idx !== 'elev') idx = 'slope';
+  let url = np_getDemSignedUrl(window.__nutriplantRadarDem, idx);
+  if (!url) {
+    const token = await np_getRadarAccessToken();
+    const proj = nutriPlantMap.getCurrentProject && nutriPlantMap.getCurrentProject();
+    if (token && proj && proj.id) {
+      try {
+        const res = await fetch(np_radarApiUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ action: 'dem_status', project_id: String(proj.id) })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.dem) {
+          np_storeRadarDemState(data.dem);
+          url = np_getDemSignedUrl(data.dem, idx);
+          if (!url && idx === 'elev' && data.dem.dem_signed_url) {
+            // Relieve viejo sin capa de altura: ofrecer pendiente
+            idx = 'slope';
+            url = np_getDemSignedUrl(data.dem, 'slope');
+          }
+        }
+      } catch (e) {
+        console.warn('dem_status:', e);
+      }
+    }
+  }
+  if (!url) {
+    alert(
+      np_radarT(
+        'radar.dem_missing_alert',
+        'Aún no hay relieve generado. Pulsa «Generar relieve» (no usa créditos Radar).'
+      )
+    );
+    return;
+  }
+  np_setSelectedRadarIndex(idx);
+  const hint = document.getElementById('radarStatusHint');
+  const cfg = np_getRadarIndexConfig(idx);
+  if (hint) hint.textContent = cfg.loadingText;
+  await np_preloadRadarImage(url);
+  if (radarGroundOverlay) {
+    radarGroundOverlay.setMap(null);
+    radarGroundOverlay = null;
+  }
+  np_setRadarPolygonMask(false);
+  np_showRadarOverlay(url, bounds, 0.92, { pilot: false, index: idx });
+  np_setRadarPolygonMask(true, null);
+  np_showRadarLegend(true);
+  window.__nutriplantRadarOverlaySource = 'dem';
+  if (nutriPlantMap.map && bounds) {
+    nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
+  }
+  const dem = window.__nutriplantRadarDem;
+  const meta = dem && dem.dem_meta ? dem.dem_meta : null;
+  let extra = '';
+  if (idx === 'elev' && meta && meta.elev_mean != null) {
+    extra =
+      ' ' +
+      np_radarT('radar.elev_stats_hint', 'Media ~{mean} (min {min} · max {max}).', {
+        mean: np_formatElevM(Number(meta.elev_mean)),
+        min: meta.elev_min != null ? np_formatElevM(Number(meta.elev_min)) : '—',
+        max: meta.elev_max != null ? np_formatElevM(Number(meta.elev_max)) : '—'
+      });
+  } else if (meta && meta.slope_mean != null) {
+    extra =
+      ' ' +
+      np_radarT('radar.dem_stats_hint', 'Media ~{mean}% (min {min} · max {max}).', {
+        mean: meta.slope_mean,
+        min: meta.slope_min != null ? meta.slope_min : '—',
+        max: meta.slope_max != null ? meta.slope_max : '—'
+      });
+  }
+  if (dem && dem.dem_stale) {
+    extra +=
+      ' ' +
+      np_radarT('radar.dem_stale_short', 'Polígono cambió: regenera el relieve.');
+  }
+  if (hint) hint.textContent = cfg.shownText + extra;
+  np_updateRadarScaleUi(idx);
+};
+
+window.generateRadarDemSlope = async function generateRadarDemSlope() {
+  const token = await np_getRadarAccessToken();
+  if (!token) {
+    alert('Inicia sesión con tu cuenta en la nube.');
+    return;
+  }
+  const proj = nutriPlantMap && nutriPlantMap.getCurrentProject ? nutriPlantMap.getCurrentProject() : null;
+  if (!proj || !proj.id) {
+    alert('Selecciona un proyecto.');
+    return;
+  }
+  const bounds = np_getPolygonBoundsFromMap();
+  if (!bounds) {
+    alert('Traza y guarda un polígono del predio antes de generar el relieve.');
+    return;
+  }
+  const areaLimit = np_getRadarAreaLimitFromStatus();
+  if (areaLimit) {
+    alert(areaLimit.message);
+    return;
+  }
+  const btn = document.getElementById('radarBtnGenerateDem');
+  const hint = document.getElementById('radarStatusHint');
+  const original = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('radar-loading');
+    btn.textContent = np_radarT('radar.btn_generating_dem', '⏳ Generando relieve…');
+  }
+  if (hint) {
+    hint.textContent = np_radarT(
+      'radar.dem_generating_hint',
+      'Generando pendiente y altura del predio (Copernicus DEM, 0 créditos)…'
+    );
+  }
+  const force = !!(
+    window.__nutriplantRadarDem &&
+    (window.__nutriplantRadarDem.dem_stale || !window.__nutriplantRadarDem.has_elev)
+  );
+  try {
+    const res = await fetch(np_radarApiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({
+        action: 'generate_dem',
+        project_id: String(proj.id),
+        force: !!force
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.message || data.error || 'No se pudo generar el relieve.');
+      if (hint) hint.textContent = data.message || data.error || 'Error al generar relieve.';
+      return;
+    }
+    const demInfo = data.dem || {
+      has_dem: !!data.dem_signed_url,
+      has_elev: !!data.elev_signed_url,
+      dem_signed_url: data.dem_signed_url || null,
+      elev_signed_url: data.elev_signed_url || null,
+      dem_stale: false,
+      dem_meta: data.dem && data.dem.dem_meta ? data.dem.dem_meta : null
+    };
+    if (data.dem_signed_url && !demInfo.dem_signed_url) {
+      demInfo.dem_signed_url = data.dem_signed_url;
+      demInfo.has_dem = true;
+    }
+    if (data.elev_signed_url && !demInfo.elev_signed_url) {
+      demInfo.elev_signed_url = data.elev_signed_url;
+      demInfo.has_elev = true;
+    }
+    np_storeRadarDemState(demInfo);
+    const prefer =
+      np_getSelectedRadarIndex() === 'elev' || np_getSelectedRadarIndex() === 'slope'
+        ? np_getSelectedRadarIndex()
+        : 'elev';
+    np_setSelectedRadarIndex(prefer);
+    await window.showRadarDemOnMap(prefer);
+    if (hint) {
+      hint.textContent = data.cached
+        ? np_radarT('radar.dem_cached_ok', 'Relieve ya guardado (sin regenerar). Capas pendiente y altura listas.')
+        : np_radarT('radar.dem_generated_ok', 'Relieve generado (pendiente + altura). 0 créditos.');
+    }
+  } catch (e) {
+    console.error('generateRadarDemSlope:', e);
+    alert('No se pudo conectar para generar el relieve. Revisa tu conexión.');
+    if (hint) hint.textContent = 'Relieve: sin conexión al servidor.';
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('radar-loading');
+      btn.textContent =
+        original || np_radarT('radar.btn_generate_dem', '⛰ Generar relieve');
+    }
   }
 };
 

@@ -14,7 +14,7 @@
  *   NUTRIPLANT_ADMIN_KEY                  — opcional; admin_key en body (misma clave ?k= del panel admin)
  *
  * Body JSON:
- *   action: "status" | "generate" | "admin_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
+ *   action: "status" | "view" | "generate" | "dem_status" | "generate_dem" | "admin_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
  *   project_id: string
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
@@ -23,8 +23,132 @@ const DEFAULT_MONTHLY = 20;
 const BUCKET = 'radar-ndvi';
 const LOOKBACK_DAYS_FIRST = 120;
 const LOOKBACK_DAYS_FALLBACK = 365;
+const crypto = require('crypto');
 const radarCredits = require('./lib/radar-credits');
 const { sumMonthlyRadarCreditsUsed, getPendingPilotJobForStatus, getLatestFailedPilotJob, getRadarRowsByIds } = require('./lib/radar-pilot-job');
+const { findCopDemGlo30Urls, bboxFromPolygon } = require('./lib/radar-pilot-stac');
+const { renderDemSlopePng } = require('./lib/radar-pilot-render');
+
+function demSlopeStoragePath(userId, projectId) {
+  return String(userId) + '/' + String(projectId) + '/dem_slope.png';
+}
+
+function demElevStoragePath(userId, projectId) {
+  return String(userId) + '/' + String(projectId) + '/dem_elev.png';
+}
+
+function demSlopeMetaPath(userId, projectId) {
+  return String(userId) + '/' + String(projectId) + '/dem_slope.meta.json';
+}
+
+function normalizePolygonForHash(polygon) {
+  if (!Array.isArray(polygon)) return [];
+  return polygon
+    .map((pt) => {
+      if (Array.isArray(pt) && pt.length >= 2) {
+        return [Number(Number(pt[0]).toFixed(6)), Number(Number(pt[1]).toFixed(6))];
+      }
+      if (pt && typeof pt === 'object') {
+        return [Number(Number(pt.lat).toFixed(6)), Number(Number(pt.lng).toFixed(6))];
+      }
+      return null;
+    })
+    .filter((pt) => pt && Number.isFinite(pt[0]) && Number.isFinite(pt[1]));
+}
+
+function polygonHash(polygon) {
+  const norm = normalizePolygonForHash(polygon);
+  return crypto.createHash('sha256').update(JSON.stringify(norm)).digest('hex').slice(0, 24);
+}
+
+function locationPolygonFromProject(proj) {
+  const loc = proj && proj.data && proj.data.location ? proj.data.location : null;
+  const snap = buildLocationSnapshot(loc);
+  return snap && snap.polygon ? snap.polygon : null;
+}
+
+async function downloadDemMeta(supabase, userId, projectId) {
+  const path = demSlopeMetaPath(userId, projectId);
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).download(path);
+    if (error || !data) return null;
+    const text = await data.text();
+    return JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function demAssetExists(supabase, userId, projectId) {
+  const path = demSlopeStoragePath(userId, projectId);
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function demElevAssetExists(supabase, userId, projectId) {
+  const path = demElevStoragePath(userId, projectId);
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function buildDemStatusPayload(supabase, userId, projectId, polygon) {
+  const path = demSlopeStoragePath(userId, projectId);
+  const elevPath = demElevStoragePath(userId, projectId);
+  const meta = await downloadDemMeta(supabase, userId, projectId);
+  const exists = await demAssetExists(supabase, userId, projectId);
+  const elevExists = await demElevAssetExists(supabase, userId, projectId);
+  const currentHash = polygon && polygon.length >= 3 ? polygonHash(polygon) : null;
+  const storedHash = meta && meta.polygon_hash ? String(meta.polygon_hash) : null;
+  const stale = !!(
+    exists &&
+    currentHash &&
+    storedHash &&
+    (currentHash !== storedHash || !elevExists)
+  );
+  let signedUrl = null;
+  let elevSignedUrl = null;
+  if (exists) {
+    signedUrl = await signedUrlForPath(supabase, path, 3600);
+  }
+  if (elevExists) {
+    elevSignedUrl = await signedUrlForPath(supabase, elevPath, 3600);
+  }
+  return {
+    has_dem: !!(exists && signedUrl),
+    has_elev: !!(elevExists && elevSignedUrl),
+    dem_signed_url: signedUrl,
+    elev_signed_url: elevSignedUrl,
+    dem_stale: stale,
+    dem_meta: meta
+      ? {
+          polygon_hash: meta.polygon_hash || null,
+          generated_at: meta.generated_at || null,
+          slope_min: meta.slope_min != null ? meta.slope_min : null,
+          slope_max: meta.slope_max != null ? meta.slope_max : null,
+          slope_mean: meta.slope_mean != null ? meta.slope_mean : null,
+          elev_min: meta.elev_min != null ? meta.elev_min : null,
+          elev_max: meta.elev_max != null ? meta.elev_max : null,
+          elev_mean: meta.elev_mean != null ? meta.elev_mean : null,
+          source: meta.source || 'cop-dem-glo-30',
+          width: meta.width || null,
+          height: meta.height || null,
+          vis: meta.vis || null,
+          elev_vis: meta.elev_vis || null
+        }
+      : null,
+    current_polygon_hash: currentHash
+  };
+}
 
 function corsHeaders() {
   return {
@@ -675,6 +799,9 @@ exports.handler = async (event) => {
       sigCloudMask = signed.cloudMaskSignedUrl;
     }
 
+    const demPolygonAdm = locationPolygonFromProject(projAdm);
+    const demInfoAdm = await buildDemStatusPayload(supabase, ownerUserId, projectIdAdm, demPolygonAdm);
+
     return jsonResponse(200, {
       ok: true,
       admin: true,
@@ -692,7 +819,8 @@ exports.handler = async (event) => {
           viewRowAdm && viewRowAdm.meta && viewRowAdm.meta.credits_charged != null
             ? Number(viewRowAdm.meta.credits_charged)
             : null
-      })
+      }),
+      dem: demInfoAdm
     });
   }
 
@@ -1123,6 +1251,8 @@ exports.handler = async (event) => {
       : await getLatestFailedPilotJob(supabase, userId, projectId);
     const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
     const pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
+    const demPolygon = locationPolygonFromProject(proj);
+    const demInfo = await buildDemStatusPayload(supabase, userId, projectId, demPolygon);
     return jsonResponse(200, {
       ok: true,
       month_key: mk,
@@ -1138,7 +1268,8 @@ exports.handler = async (event) => {
       ),
       pending_job: pendingJob,
       last_failed_job: lastFailedJob,
-      history
+      history,
+      dem: demInfo
     });
   }
 
@@ -1266,8 +1397,148 @@ exports.handler = async (event) => {
     return jsonResponse(200, { ok: true, items });
   }
 
+  if (action === 'dem_status') {
+    const polygon = locationPolygonFromProject(proj);
+    const demInfo = await buildDemStatusPayload(supabase, userId, projectId, polygon);
+    return jsonResponse(200, { ok: true, project_id: projectId, dem: demInfo });
+  }
+
+  if (action === 'generate_dem') {
+    const polygon = locationPolygonFromProject(proj);
+    if (!polygon || polygon.length < 3) {
+      return jsonResponse(400, {
+        error: 'no_polygon',
+        message: 'Guarda un polígono del predio en la nube antes de generar el relieve.'
+      });
+    }
+    const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
+    const areaLimitErr = radarCredits.getRadarAreaLimitError(areaHa);
+    if (areaLimitErr) {
+      return jsonResponse(400, {
+        error: areaLimitErr.code || 'area_limit',
+        message: areaLimitErr.message
+      });
+    }
+
+    const force = body.force === true || body.force === 'true' || body.force === 1;
+    const hash = polygonHash(polygon);
+    const existing = await buildDemStatusPayload(supabase, userId, projectId, polygon);
+    if (
+      !force &&
+      existing.has_dem &&
+      existing.has_elev &&
+      !existing.dem_stale &&
+      existing.dem_signed_url
+    ) {
+      return jsonResponse(200, {
+        ok: true,
+        cached: true,
+        project_id: projectId,
+        dem_signed_url: existing.dem_signed_url,
+        elev_signed_url: existing.elev_signed_url,
+        dem: existing
+      });
+    }
+
+    try {
+      const demTiles = await findCopDemGlo30Urls(polygon);
+      const rendered = await renderDemSlopePng(
+        {
+          urls: demTiles.urls,
+          bbox4326: demTiles.bbox4326 || bboxFromPolygon(polygon),
+          polygon
+        },
+        { maxDim: Math.min(Math.max(parseInt(body.max_dim, 10) || 512, 128), 1024) }
+      );
+
+      const storagePath = demSlopeStoragePath(userId, projectId);
+      const elevStoragePath = demElevStoragePath(userId, projectId);
+      const metaPath = demSlopeMetaPath(userId, projectId);
+      const meta = {
+        polygon_hash: hash,
+        generated_at: new Date().toISOString(),
+        slope_min: rendered.slope_min,
+        slope_max: rendered.slope_max,
+        slope_mean: rendered.slope_mean,
+        elev_min: rendered.elev_min,
+        elev_max: rendered.elev_max,
+        elev_mean: rendered.elev_mean,
+        source: rendered.source || 'cop-dem-glo-30',
+        width: rendered.width,
+        height: rendered.height,
+        item_ids: demTiles.itemIds || [],
+        vis: rendered.vis || null,
+        elev_vis: rendered.elev_vis || null
+      };
+
+      const uploads = [
+        supabase.storage.from(BUCKET).upload(storagePath, rendered.png, {
+          contentType: 'image/png',
+          upsert: true
+        }),
+        supabase.storage.from(BUCKET).upload(metaPath, Buffer.from(JSON.stringify(meta), 'utf8'), {
+          contentType: 'application/json',
+          upsert: true
+        })
+      ];
+      if (rendered.elevPng) {
+        uploads.push(
+          supabase.storage.from(BUCKET).upload(elevStoragePath, rendered.elevPng, {
+            contentType: 'image/png',
+            upsert: true
+          })
+        );
+      }
+      const [upPng, upMeta, upElev] = await Promise.all(uploads);
+      if (upPng.error) {
+        console.error('generate_dem upload png:', upPng.error.message);
+        return jsonResponse(500, {
+          error: 'dem_upload_failed',
+          message: upPng.error.message || 'No se pudo guardar la imagen de relieve.'
+        });
+      }
+      if (upMeta.error) {
+        console.warn('generate_dem upload meta:', upMeta.error.message);
+      }
+      if (upElev && upElev.error) {
+        console.warn('generate_dem upload elev:', upElev.error.message);
+      }
+
+      const [signedUrl, elevSignedUrl] = await Promise.all([
+        signedUrlForPath(supabase, storagePath, 3600),
+        rendered.elevPng ? signedUrlForPath(supabase, elevStoragePath, 3600) : Promise.resolve(null)
+      ]);
+      const demInfo = await buildDemStatusPayload(supabase, userId, projectId, polygon);
+      return jsonResponse(200, {
+        ok: true,
+        cached: false,
+        project_id: projectId,
+        dem_signed_url: signedUrl || demInfo.dem_signed_url,
+        elev_signed_url: elevSignedUrl || demInfo.elev_signed_url,
+        dem: demInfo.has_dem
+          ? demInfo
+          : {
+              ...demInfo,
+              has_dem: !!signedUrl,
+              has_elev: !!elevSignedUrl,
+              dem_signed_url: signedUrl,
+              elev_signed_url: elevSignedUrl,
+              dem_meta: meta
+            }
+      });
+    } catch (e) {
+      console.error('generate_dem:', e && e.message ? e.message : e);
+      return jsonResponse(500, {
+        error: 'dem_generate_failed',
+        message: (e && e.message) || 'No se pudo generar el relieve del predio.'
+      });
+    }
+  }
+
   if (action !== 'generate') {
-    return jsonResponse(400, { error: 'action debe ser status, view, generate o lectura_status' });
+    return jsonResponse(400, {
+      error: 'action debe ser status, view, generate, dem_status o generate_dem'
+    });
   }
 
   let lastSignedUrl = null;

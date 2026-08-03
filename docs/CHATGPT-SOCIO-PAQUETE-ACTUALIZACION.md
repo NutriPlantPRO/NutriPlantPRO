@@ -1,6 +1,6 @@
 # Paquete único — Actualizar GPT “Socio Admin” (una sola vez)
 
-Sigue estos pasos en orden. Incluye **calculadoras gratuitas** + **análisis de laboratorio (6 pestañas)** + **manual técnico público (web/GEO)**.
+Sigue estos pasos en orden. Incluye **calculadoras gratuitas** + **análisis de laboratorio (6 pestañas)** + **manual técnico público (web/GEO)** + **Invest PRO**.
 
 ---
 
@@ -9,23 +9,26 @@ Sigue estos pasos en orden. Incluye **calculadoras gratuitas** + **análisis de 
 Sube el repo (o deploy manual) para que existan en producción:
 
 - `nutri_pro_file_inspect` ← **nuevo v2.13** (archivo vivo Supabase sin OCR API)
+- `plan-pro-invest` ← **nuevo** (proxy Yahoo Finance para Invest PRO; solo admin)
 - `free_tools_catalog`
 - `lab_analyses_catalog`
 - `manual_tecnico_catalog` ← **nuevo**
 - `project_analyses` mejorado (más campos suelo, `report_id`, `latest_only`)
 - Sitio público: `/manual-tecnico/` (ya HTML estático)
+- Plan PRO: pestaña **Invest PRO** + SQL `supabase-plan-pro-invest-watchlist.sql` en Supabase
 
 ---
 
-## Paso B — Knowledge (5 archivos)
+## Paso B — Knowledge (6 archivos)
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza versiones viejas):
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Pronóstico agroclimático / alertas)
-2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.07.4**: Radar Pilot/Lectura = 1 pasada más clara, sin mediana/relleno entre fechas)
+2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b Comparar análisis tabla+gráficas + PDF)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.3**: Radar DEM Pendiente/Altura 0 créditos + comparación multi-análisis tabla/gráficas)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
+6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **nuevo** (Plan PRO → Invest PRO: mercados, Popular Picks, Mi portafolio)
 
 También pega de nuevo el bloque Instructions de `docs/CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` (pide describe_api → **2.13.0**).
 
@@ -67,7 +70,8 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 4.1. **“¿Qué es el Pronóstico agroclimático / alertas semanales?”** → Knowledge HERRAMIENTAS § Pronóstico o `free_tools_catalog` tool `pronostico_agroclimatico` (admin: `agroclimate.html`)
 5. “¿Qué pestañas hay en Análisis?” → `lab_analyses_catalog`
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`
-6.1. **“¿Cómo se arma la imagen Radar / Pilot / Lectura?”** → Knowledge MANUAL §4.11 (**v2026.07.4**): **1 pasada** más clara, sin mediana/relleno; ≥~15% útiles
+6.1. **“¿Cómo se arma la imagen Radar / Pilot / Lectura?”** → Knowledge MANUAL §4.11 (**v2026.08.3**): **1 pasada** más clara, sin mediana/relleno; ≥~15% útiles; **Pendiente/Altura DEM** = Generar relieve, 0 créditos
+6.2. **“¿Qué es Comparar análisis / tablas y gráficas en Reportes?”** → Knowledge ANALISIS §3b + MANUAL §4.3
 7. **“¿Cómo calculamos kg/ha en fertilidad del suelo? Cita la URL pública”** → `manual_tecnico_catalog` chapter `analisis_suelo_fertilidad_kgha` o Knowledge MANUAL
 8. **“¿Cómo calcula NutriPlant el balance hídrico de riego?”** → `manual_tecnico_catalog` chapter `balance_hidrico_riego_clima` o Knowledge MANUAL §4.11b
 8.1. **“¿Qué aminoácidos ayudan más bajo estrés hídrico o salino?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` + `free_tools_catalog` tool `atlas_aminoacidos_vegetales`
@@ -80,6 +84,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 14. **“Redacta un post LinkedIn sobre % meq que no suman 100”** → PUBLICACIONES-REDES + capítulo FAQ + URL manual
 15. **“¿Qué capítulos tenemos para publicar esta semana?”** → `manual_tecnico_catalog` + pilar G `publicaciones_redes_sociales`
 16. **“¿Cuánto vendió Yara en junio?”** (o cifra en un Excel) → `nutri_pro_ask` y si snippets no bastan → `nutri_pro_file_inspect` con `q`
+17. **“¿Dónde veo NVIDIA / mi portafolio / Invest PRO?”** → Knowledge INVEST-PRO: Plan PRO → pestaña Invest PRO (sin inventar precios)
 
 **Redes en el día a día:** cuando publiques algo nuevo, pega el link al Socio en ChatGPT y redactáis juntos (ver flujo en `PUBLICACIONES-REDES` intro y en Instructions § fuente 5). Para que lo recuerde en futuros chats: añade la fila en §8 y re-sube el Knowledge #4 (o actualiza en Cursor y vuelve a subir).
 

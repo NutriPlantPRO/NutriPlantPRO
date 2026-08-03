@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.07.4 · **25 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.08.3 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-07-22 · **v2026.07.4** (+ Radar: Pilot y Lectura = **1 pasada** más clara por imagen, sin mediana/relleno entre fechas; ≥~15% útiles; máx. 250 ha)
+**Versión Knowledge:** 2026-08-03 · **v2026.08.3** (+ Radar: capas fijas **Pendiente** y **Altura** Copernicus DEM ~30 m, 0 créditos; comparación multi-análisis tabla+gráficas en Reportes PDF)
 
 ---
 
@@ -116,6 +116,8 @@ kg/ha = (lab − ideal) × factor
 
 Ideales K/Ca/Mg desde CIC (5/70/13 %). P: Bray 40, Olsen 25, Mehlich 40 ppm. Orientativo, no dosis automática.
 
+**Comparar análisis (tabla + gráficas):** en cada subpestaña Análisis (Suelo, Solución, Extracto, Agua, Foliar, Fruta), si hay ≥2 reportes, el bloque **«Comparar análisis (tabla y gráficas)»** alinea columnas por análisis (activar/desactivar). Tablas por bloque; gráficas solo donde aporta (ej. suelo: macros/micros/% CIC; pH y físicos suelen ser tabla). Mismo bloque sale en **Reportes PDF** (tablas + capturas de gráficas). No sustituye el detalle por reporte ni inventa datos: lee los reportes guardados del proyecto.
+
 ### 4.4 Enmiendas CIC
 
 **URL:** …/enmiendas-balance-cic.html · Dashboard Enmiendas. CIC = suma catiónica meq/100g. Saturación % = meq/CIC×100. Rangos K 3–7, Ca 65–75, Mg 10–15, Na 0–1, Al 0–1, H 0–10 %. `soilAnalysis` (enmienda) vs `soilAnalyses[]` (reportes Análisis).
@@ -167,9 +169,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/diseno-solucion-nutritiva-didactica.html · login localStorage; triángulos, CE, Cl, NH₄.
 
-### 4.11 VPD y Radar Satelital (NDVI / NDMI / NDRE / RGB)
+### 4.11 VPD y Radar Satelital (NDVI / NDMI / NDRE / RGB + relieve DEM)
 
-**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); módulo **Radar Satelital** (antes Ubicación) con Pilot Copernicus/Sentinel-2: **NDVI** (vigor), **NDMI** (humedad relativa del dosel), **NDRE** (clorofila / estado del dosel, red edge), **RGB** (vista natural). Apoyo a decisión, no sustituye recorrido de campo.
+**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); módulo **Radar Satelital** (antes Ubicación) con Pilot Copernicus/Sentinel-2: **NDVI** (vigor), **NDMI** (humedad relativa del dosel), **NDRE** (clorofila / estado del dosel, red edge), **RGB** (vista natural). Además capas fijas de relieve **Pendiente** y **Altura** (Copernicus DEM GLO-30 ~30 m). Apoyo a decisión, no sustituye recorrido de campo.
 
 **Cómo se arma la imagen:** **Pilot y Lectura** = **1 sola pasada** Sentinel-2 por imagen (la más clara sobre el predio; sin mediana ni relleno entre fechas) + máscara **SCL**. Lectura mantiene periodos (quincenal/mensual) y clima/riego del periodo. Las **cuatro capas** salen juntas de la misma generación. Resolución típica ~**10 m**/píxel (NDRE/NDMI usan bandas nativas ~20 m remuestreadas).
 
@@ -177,9 +179,11 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **RGB (vista natural):** no usa Menor/Mayor. **Verde** ≈ planta viva; **rojo/café/rosado** ≈ suelo desnudo o rastrojo (color natural de la tierra, no “bajo vigor”). Útil para ubicar el predio y contrastar con índices.
 
+**Relieve DEM (Pendiente + Altura):** botón **Generar relieve** produce **ambas** capas de una vez (**0 créditos** Radar; no usa Pilot ni fecha Sentinel). Cache por `polygon_hash`; regenerar solo si movés el polígono. **Pendiente (%):** crema/gris = más plano → café oscuro = más inclinado; mismo color ≈ misma inclinación (**no** misma altitud). **Altura:** azul = más bajo → ámbar/café = más alto **dentro del predio**; mismo color ≈ misma altura relativa. Unidades: pendiente siempre %; altitud en **m** (métrico) o **ft** (US customary); botones/leyendas i18n ES/EN. En PDF/admin, si hay DEM: dos mapas (altura + pendiente) en lugar del croquis SVG simple.
+
 **Tope de área:** máximo **250 ha**. Si el polígono es mayor: mensaje «Radar máximo 250 ha; divide el polígono» (no gasta crédito). Ranchos grandes → lotes separados.
 
-**Pilot (pestaña Polígono / NDVI y NDMI):** ventanas **14 → 21 → 30 → 45 d**; **1 pasada** (la más clara + SCL; sin mezclar fechas). Solo corta si ~**100%** útiles; si no, guarda lo mejor (≥~15% cobertura útil). Si &lt;~15% no guarda imagen vacía. Muestra fecha satelital y % útil. Capas: NDVI → NDMI → NDRE → RGB. Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3** (las cuatro capas juntas). Ver historial / «Ver en mapa» no gasta.
+**Pilot (pestaña Polígono / NDVI y NDMI):** ventanas **14 → 21 → 30 → 45 d**; **1 pasada** (la más clara + SCL; sin mezclar fechas). Solo corta si ~**100%** útiles; si no, guarda lo mejor (≥~15% cobertura útil). Si &lt;~15% no guarda imagen vacía. Muestra fecha satelital y % útil. Capas: NDVI → NDMI → NDRE → RGB (+ selector **Pendiente/Altura** si ya generaste relieve). Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3** (las cuatro capas Sentinel juntas; **DEM no consume**). Ver historial / «Ver en mapa» no gasta.
 
 **Lectura Satelital (pestaña 2):** histórico del **mismo predio** con **2–6 periodos** (fecha final elegida), **quincenal (15 d)** o **mensual**. Por periodo: NDVI/NDMI/NDRE promedio, miniaturas NDVI|NDMI|NDRE|RGB, VPD promedio + horas VPD por banda (Open-Meteo), ET₀ y lluvia acumulados, riego m³↔mm. En la gráfica, el tooltip de horas VPD muestra **horas y %** de cada rango (&lt;0.5 / 0.5–1.5 / &gt;1.5) respecto al total de horas del periodo (p. ej. 15 d ≈ 360 h). Si hay **Kc** en Clima (`irrigationQuickCalc.kc`), la gráfica añade **ETc = ET₀ × Kc** por periodo (eje mm; Kc constante). **1 pasada**/periodo (la más clara; sin mediana); quincena incompleta puede ampliar al mes (`lookback_expanded`, *). Costo **fijo por consulta**: **3 créditos** ≤30 ha, **4** si >30 ha. Persistencia `location.lecturaSatelital`. PDF/admin: tabla, gráfica, miniaturas.
 ### 4.11b Balance hídrico y cálculo rápido de riego (Clima)

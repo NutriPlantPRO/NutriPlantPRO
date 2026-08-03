@@ -7,9 +7,11 @@
 const PC_STAC = 'https://planetarycomputer.microsoft.com/api/stac/v1/search';
 const PC_SIGN = 'https://planetarycomputer.microsoft.com/api/sas/v1/sign';
 const PC_TOKEN = 'https://planetarycomputer.microsoft.com/api/sas/v1/token/sentinel-2-l2a';
+const PC_TOKEN_DEM = 'https://planetarycomputer.microsoft.com/api/sas/v1/token/cop-dem-glo-30';
 const CDSE_STAC = 'https://stac.dataspace.copernicus.eu/v1/search';
 const CDSE_TOKEN =
   'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token';
+const COP_DEM_COLLECTION = 'cop-dem-glo-30';
 
 function bboxFromPolygon(polygon) {
   let minLat = 90;
@@ -32,23 +34,44 @@ function isoDaysAgo(days) {
 
 let pcCollectionTokenCache = null;
 let pcCollectionTokenExpiry = 0;
+const pcTokenByCollection = Object.create(null);
 
-async function getPcCollectionToken() {
-  const now = Date.now();
-  if (pcCollectionTokenCache && pcCollectionTokenExpiry > now + 60000) {
+async function getPcCollectionToken(collectionId) {
+  const collection = String(collectionId || 'sentinel-2-l2a').trim() || 'sentinel-2-l2a';
+  if (collection === 'sentinel-2-l2a') {
+    const now = Date.now();
+    if (pcCollectionTokenCache && pcCollectionTokenExpiry > now + 60000) {
+      return pcCollectionTokenCache;
+    }
+    const res = await fetch(PC_TOKEN);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.token) return null;
+    pcCollectionTokenCache = data.token;
+    const exp = data['msft:expiry'] ? Date.parse(data['msft:expiry']) : now + 3600000;
+    pcCollectionTokenExpiry = Number.isFinite(exp) ? exp : now + 3600000;
     return pcCollectionTokenCache;
   }
-  const res = await fetch(PC_TOKEN);
+  const cached = pcTokenByCollection[collection];
+  const now = Date.now();
+  if (cached && cached.expiry > now + 60000) return cached.token;
+  const tokenUrl =
+    collection === COP_DEM_COLLECTION
+      ? PC_TOKEN_DEM
+      : 'https://planetarycomputer.microsoft.com/api/sas/v1/token/' + encodeURIComponent(collection);
+  const res = await fetch(tokenUrl);
   if (!res.ok) return null;
   const data = await res.json();
   if (!data.token) return null;
-  pcCollectionTokenCache = data.token;
   const exp = data['msft:expiry'] ? Date.parse(data['msft:expiry']) : now + 3600000;
-  pcCollectionTokenExpiry = Number.isFinite(exp) ? exp : now + 3600000;
-  return pcCollectionTokenCache;
+  pcTokenByCollection[collection] = {
+    token: data.token,
+    expiry: Number.isFinite(exp) ? exp : now + 3600000
+  };
+  return data.token;
 }
 
-async function signPcHref(href) {
+async function signPcHref(href, collectionId) {
   const signedUrl =
     PC_SIGN + '?href=' + encodeURIComponent(href);
   const res = await fetch(signedUrl);
@@ -56,12 +79,64 @@ async function signPcHref(href) {
     const data = await res.json();
     if (data.href) return data.href;
   }
-  const token = await getPcCollectionToken();
+  const token = await getPcCollectionToken(collectionId);
   if (token) {
     const sep = href.includes('?') ? '&' : '?';
     return href + sep + token;
   }
   throw new Error('PC sign HTTP ' + res.status);
+}
+
+/**
+ * Copernicus DEM GLO-30 (~30 m) via Planetary Computer.
+ * Prefers the tile that covers the polygon center (fields << tile size).
+ * @returns {Promise<{ urls: string[], itemIds: string[], bbox4326: number[] }>}
+ */
+async function findCopDemGlo30Urls(polygon) {
+  if (!Array.isArray(polygon) || polygon.length < 3) {
+    throw new Error('Polígono inválido para DEM');
+  }
+  const bbox = bboxFromPolygon(polygon);
+  const centerLng = (bbox[0] + bbox[2]) / 2;
+  const centerLat = (bbox[1] + bbox[3]) / 2;
+  const body = {
+    collections: [COP_DEM_COLLECTION],
+    bbox,
+    limit: 12
+  };
+  const result = await stacSearch(PC_STAC, body, { 'Content-Type': 'application/json' }, 0);
+  const features = (result && result.features) || [];
+  if (!features.length) {
+    throw new Error('No hay teselas Copernicus DEM (GLO-30) para este predio');
+  }
+
+  function featureContainsCenter(feature) {
+    const fb = Array.isArray(feature.bbox) ? feature.bbox : null;
+    if (!fb || fb.length < 4) return false;
+    return centerLng >= fb[0] && centerLng <= fb[2] && centerLat >= fb[1] && centerLat <= fb[3];
+  }
+
+  const ordered = features.slice().sort((a, b) => {
+    const aIn = featureContainsCenter(a) ? 0 : 1;
+    const bIn = featureContainsCenter(b) ? 0 : 1;
+    return aIn - bIn;
+  });
+
+  const primary = ordered[0];
+  const href =
+    (primary.assets && primary.assets.data && primary.assets.data.href) ||
+    (primary.assets && primary.assets.elevation && primary.assets.elevation.href) ||
+    null;
+  if (!href) {
+    throw new Error('Teselas DEM sin asset de elevación firmable');
+  }
+  const signed = await signPcHref(href, COP_DEM_COLLECTION);
+  return {
+    urls: [signed],
+    itemIds: [String(primary.id || '')],
+    bbox4326: bbox,
+    collection: COP_DEM_COLLECTION
+  };
 }
 
 async function getCdseToken(clientId, clientSecret) {
@@ -738,6 +813,8 @@ module.exports = {
   findSentinel2ScenesForComposite,
   findSentinel2ScenesForRange,
   findSentinel2SceneSclById,
+  findCopDemGlo30Urls,
+  COP_DEM_COLLECTION,
   SCENE_SEARCH_TIERS,
   COMPOSITE_LOOKBACK_DAYS,
   COMPOSITE_MAX_SCENES,

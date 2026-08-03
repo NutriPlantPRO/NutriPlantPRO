@@ -187,7 +187,8 @@ exports.handler = async function handler(event) {
       gpt_hint:
         'Prioriza «routes» para decirle al usuario DÓNDE está (Notebook PRO › … / Nutri PRO › …). ' +
         'Usa snippets de nutri.sources / unified_citations y preview de notebook.items para responder. ' +
-        'Neuron PRO = cruces apunte↔archivo en routes kind=neuron. No inventes rutas.'
+        'Neuron PRO = cruces apunte↔archivo en routes kind=neuron. No inventes rutas. ' +
+        'Invest PRO = mercados (tickers/gráficas/watchlist) en Plan PRO → pestaña Invest PRO; no inventes precios.'
     });
   } catch (err) {
     return jsonResponse(500, { ok: false, error: (err && err.message) || String(err) });

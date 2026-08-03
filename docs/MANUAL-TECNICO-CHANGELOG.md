@@ -5,6 +5,14 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-08-03 — Relieve DEM + comparación lab · Knowledge GPT v2026.08.3
+
+### Actualizado
+
+- **Radar:** capas fijas **Pendiente** y **Altura** (Copernicus DEM GLO-30 ~30 m); botón Generar relieve / Generate relief; **0 créditos**; pendiente %; altura m/ft según unidades; i18n leyendas; PDF con ambos mapas.
+- **Análisis:** bloque Comparar análisis (tabla + gráficas) en dashboard y PDF; Knowledge ANALISIS §3b + MANUAL §4.3 / §4.11.
+- Archivos: `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (**v2026.08.3**), `ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`, `chat-simple.js`, `manual-tecnico-catalog.js`, `lab-analyses-catalog.js`, `vpd-deficit-presion-vapor.html`, `analisis-suelo-fertilidad-kgha.html`.
+
 ## 2026-07-22 — Radar pasada única + Knowledge GPT v2026.07.4
 
 ### Actualizado

@@ -1493,6 +1493,81 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
+.report-section-group {
+  margin-bottom: 10px;
+}
+
+.report-section-group > .report-section-item {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.report-lab-subtypes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 2px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  background: #f8fafc;
+}
+
+.report-section-group:has(.report-section-item.selected) .report-lab-subtypes {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.report-lab-subtype-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.report-lab-subtype-item:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.report-lab-subtype-item.selected {
+  border-color: #10b981;
+  background: #ecfdf5;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25);
+  color: #065f46;
+}
+
+.report-lab-subtype-icon {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.report-lab-subtype-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+@media (max-width: 520px) {
+  .report-lab-subtypes {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Checkboxes eliminados - solo tarjetas verdes */
 
 .report-section-info {
@@ -8475,6 +8550,73 @@ html.embed-login body {
 }
 
 /* Pilot Radar (Copernicus) — icono casi invisible junto a «Quitar capa» */
+.radar-ndvi-panel .radar-scale-bar-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 220px;
+  max-width: min(220px, 100%);
+  gap: 2px;
+  vertical-align: middle;
+}
+.radar-ndvi-panel .radar-scale-bar {
+  display: block;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-sizing: border-box;
+}
+.radar-ndvi-panel .radar-scale-ticks {
+  position: relative;
+  height: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.radar-ndvi-panel .radar-scale-ticks[hidden] {
+  display: none !important;
+}
+.radar-ndvi-panel .radar-scale-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.radar-ndvi-panel .radar-scale-tick--start {
+  transform: translateX(0);
+  align-items: flex-start;
+}
+.radar-ndvi-panel .radar-scale-tick--end {
+  transform: translateX(-100%);
+  align-items: flex-end;
+}
+.radar-ndvi-panel .radar-scale-tick::before {
+  content: '';
+  width: 1px;
+  height: 5px;
+  background: #64748b;
+  margin-bottom: 1px;
+}
+.radar-ndvi-panel .radar-scale-tick-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1;
+  white-space: nowrap;
+}
+.radar-ndvi-panel.radar-scale-slope #radarScaleTitle,
+.radar-ndvi-panel.radar-scale-slope #radarNdviHelp {
+  color: #57534e;
+}
+.radar-ndvi-panel.radar-scale-elev #radarScaleTitle,
+.radar-ndvi-panel.radar-scale-elev #radarNdviHelp {
+  color: #1e3a8a;
+}
+
 .radar-ndvi-panel .radar-pilot-trigger {
   display: inline-flex;
   align-items: center;

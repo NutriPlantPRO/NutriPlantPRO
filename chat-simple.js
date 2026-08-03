@@ -202,17 +202,18 @@ E) CÓMO RESPONDER SI PREGUNTAN «cmol vs meq»
 /** Manual Radar Satelital (NDVI/NDMI + Lectura): siempre disponible en el chat del dashboard. */
 function getRadarCultivoManual() {
   return `
-RADAR SATELITAL (NDVI / NDMI / NDRE / RGB + Lectura Satelital) — NutriPlant PRO:
-- Módulo del dashboard: **Radar Satelital** (interno Ubicación). Dos pestañas: (1) Polígono / NDVI y NDMI; (2) Lectura Satelital.
-- Qué es: imágenes satelitales Pilot Copernicus/Sentinel-2 (~10 m) recortadas al polígono. Capas: NDVI (vigor), NDMI (dosel hídrico), NDRE (clorofila/dosel, red edge), RGB (vista natural). Orden: NDVI → NDMI → NDRE → RGB. Las cuatro salen de la **misma pasada** (SCL; **1 fecha**, sin mezclar ni rellenar con otras).
+RADAR SATELITAL (NDVI / NDMI / NDRE / RGB + relieve DEM + Lectura Satelital) — NutriPlant PRO:
+- Módulo del dashboard: **Radar Satelital** (interno Ubicación). Dos pestañas: (1) Polígono / capas; (2) Lectura Satelital.
+- Qué es: imágenes satelitales Pilot Copernicus/Sentinel-2 (~10 m) recortadas al polígono. Capas Sentinel: NDVI (vigor), NDMI (dosel hídrico), NDRE (clorofila/dosel, red edge), RGB (vista natural). Orden: NDVI → NDMI → NDRE → RGB. Las cuatro salen de la **misma pasada** (SCL; **1 fecha**, sin mezclar ni rellenar con otras).
+- **Relieve DEM (Pendiente + Altura):** botón «Generar relieve» / «Generate relief» crea **ambas** capas fijas del predio (Copernicus DEM GLO-30 ~30 m). **0 créditos** Radar; no usa Pilot ni fecha Sentinel. Regenerar solo si cambias el polígono. Pendiente (%): crema→café = plano→inclinado; mismo color ≈ misma inclinación (no altura). Altura: azul→ámbar = más bajo→más alto dentro del predio; mismo color ≈ misma altura relativa. Unidades: % (pendiente); m o ft (altura) según sistema de unidades del usuario. En PDF: ambos mapas si hay DEM.
 - Colorimetría índices: relativa al predio/fecha (P10–P90). RGB = color natural (no Menor/Mayor): verde ≈ planta; rojo/café ≈ suelo o rastrojo (no “bajo vigor”).
 - **Tope: máximo 250 ha**. Si excede: «Radar máximo 250 ha; divide el polígono» (sin gastar crédito).
 - **Cómo se arma (Pilot y Lectura):** elige la pasada más clara sobre el predio; **no mediana** entre fechas (así la comparación de vigor dentro del lote no engaña). Guarda si ≥~5% útiles; meta ~100%.
-- Pilot: **1 pasada** en **14 → 21 → 30 → 45 d**; ~100% útiles o guarda lo mejor (≥~5%). Costo ≤30 ha=1 · >30=2 · >100=3.
+- Pilot: **1 pasada** en **14 → 21 → 30 → 45 d**; ~100% útiles o guarda lo mejor (≥~5%). Costo ≤30 ha=1 · >30=2 · >100=3 (Sentinel; DEM no consume).
 - Lectura Satelital: 2–6 periodos; NDVI/NDMI/NDRE + miniaturas RGB; VPD/ET₀/lluvia/riego; **1 pasada**/periodo (la más clara); quincena incompleta → mes (*). Costo fijo 3 (4 si >30 ha). Persistido en location.lecturaSatelital. PDF/admin incluidos.
 - Tooltip gráfica Lectura: horas VPD por rango (<0.5 / 0.5–1.5 / >1.5) con **horas y % del total de horas del periodo**.
-- Uso: cruzar índices/RGB con riego, suelo, foliar, VPD y campo. No causa única por color.
-- Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; no sustituye análisis de suelo/foliar ni diagnóstico de campo.
+- Uso: cruzar índices/RGB/relieve con riego, suelo, foliar, VPD y campo. No causa única por color ni por pendiente sola.
+- Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; DEM ~30 m (no sustituye topografía de precisión); no sustituye análisis de suelo/foliar ni diagnóstico de campo.
 `;
 }
 
@@ -1251,6 +1252,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Análisis Foliar (DOP): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: título, fecha, Eliminar. El chat ve los valores que el usuario ingresa: resultado del laboratorio (macros en % MS: N, P, K, Ca, Mg, S; micros en mg/kg: Fe, Mn, Zn, Cu, B, Mo), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el DOP % resultante.
 - DOP (Diagnosis and Recommendation Integrated System): DOP = ((Valor − Óptimo) / Óptimo) × 100. Indica en porcentaje cuánto se desvía el resultado del óptimo: negativo = por debajo del óptimo (déficit), positivo = por encima (exceso). Sirve para evaluar niveles nutrimentales en el cultivo y apoyar la toma de decisiones (correcciones, ajustes al programa de fertilización, priorización de nutrientes a reforzar o reducir). Regla de interpretación en NutriPlant: 🟢 |DOP| ≤ 10% óptimo; 🔶 10–25% atención; 🟠 25–50% deficiencia o exceso marcado; 🔴 &gt;50% muy bajo o muy alto. Si el usuario ha editado los óptimos en un análisis, el chat puede notarlo (en contexto aparecen "opt" y el DOP calculado con ese óptimo) y aportar criterio técnico cuando consulte (por ejemplo explicar el significado del DOP, sugerir ajustes o cruzar con suelo/programa).
 - Análisis de Fruta (ICC): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte el chat ve los valores que el usuario ingresa (resultado de laboratorio), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el ICC % resultante. Secciones: (1) Macronutrientes en fruta (%): N, P, K, Ca, Mg, S — Resultado, Óptimo editable, ICC y Estado; (2) Micronutrientes (mg/kg): Fe, Mn, Zn, Cu, B, Mo — Resultado, Óptimo editable, ICC y Estado; (3) Calidad de fruta: Materia Seca (%), °Brix, Firmeza (kg/cm²), Acidez titulable (%) — Resultado, Óptimo editable, ICC y Estado; (4) Calcio en fruta (mg/100 g MF): Ca total, % Ca soluble, % Ca ligado, % Ca insoluble — Resultado, Óptimo editable, Estado (semáforo). Regla visual: 🟢 |ICC| ≤ 10% | 🟡 10–25% | 🟠 25–50% | 🔴 &gt;50%. Si el usuario modifica un valor óptimo, el chat puede notarlo (en contexto aparecen "opt" e ICC con ese óptimo) y dar criterio técnico.
+- **Comparar análisis (tabla y gráficas):** en cada subpestaña de Análisis, si hay varios reportes, aparece el bloque «Comparar análisis (tabla y gráficas)» / «Compare analyses (table and charts)». Cada columna = un análisis (se activa/desactiva). Tablas por bloque de parámetros; gráficas solo donde aplica (ej. suelo: macros, micros, % CIC; pH/físicos suelen ser solo tabla). El mismo bloque se incluye en **Reportes PDF** (tablas + imágenes de gráficas). El chat debe saber que el usuario puede comparar histórico en pantalla y en PDF; al interpretar, alinear reportes por fecha/título sin inventar valores.
 - ICC (Índice Comparativo de Calidad): mismo método que DOP pero aplicado a fruta para interpretar niveles o resultados de análisis de fruta. ICC = ((Valor − Óptimo) / Óptimo) × 100. Indica en % la desviación respecto al óptimo (negativo = por debajo, positivo = por encima). Sirve para evaluar calidad nutrimental y organoléptica de la fruta y apoyar decisiones (manejo poscosecha, ajustes de fertilización o calcio, priorización de correcciones).
 - Parámetros de calidad de fruta: Materia Seca (%), °Brix (sólidos solubles), Firmeza (kg/cm²), Acidez titulable (%). Reflejan madurez, sabor y conservación; el chat debe interpretarlos junto con los nutrientes y el calcio.
 - Calcio en fruta — valor agronómico para calidad poscosecha: el chat debe dominar este tema técnico. (1) Ca total (mg/100 g MF): contenido total de calcio en fruta. (2) % Ca soluble: fracción en forma iónica o fácilmente disponible; asociada a estabilidad de membranas y pared celular; bajo Ca soluble puede relacionarse con mayor susceptibilidad a desórdenes y ablandamiento. (3) % Ca ligado: calcio unido a pectinas y otros componentes de pared (forma menos disponible que el soluble pero estructuralmente importante). (4) % Ca insoluble: incluye calcio precipitado como oxalato de calcio, carbonatos o unido a fitato; esta fracción no está disponible para funciones celulares; alto % de Ca insoluble (ej. oxalato) puede indicar que buena parte del Ca total no contribuye a la firmeza ni a la reducción de desórdenes (bitter pit, podredumbres). En conjunto, una buena calidad poscosecha suele asociarse a Ca total adecuado y una proporción favorable de Ca soluble/ligado respecto a insoluble; el chat debe interpretar los valores del análisis (resultado vs óptimo) y el estado semáforo para aportar criterio sobre manejo de calcio y calidad de fruta. Integrar análisis foliar, suelo y fruta en diagnóstico.`,
@@ -1265,16 +1267,16 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Calculadora de balance hídrico (Clima → Lluvia y ET₀): estimación rápida de déficit y balance para 1, 7 o 30 días. Fórmulas: ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja** (entrada de riego **solo m³** en franja regada; mm de lámina en resultados). Conversión: 1 mm sobre X ha = X × 10 m³. Déficit en mm sobre ha cultivo; si ha regada &lt; ha cultivo, los mm se concentran en franja (sub-línea «↳ en franja regada»); m³ totales no se dividen (ej. 90 m³ = 9 mm ref. cultivo 1 ha = 15 mm en franja 0,6 ha). Bloque **🪨 Referencia almacén suelo** lee m³ hasta CC desde herramienta Agua en suelo (\`nutriplant_bridge_soil_water_v1\`) — complementa, no sustituye riego aplicado. ETo/lluvia satélite o manual; macrotúnel = lluvia 0. Kc manual (tabla FAO consulta). % raíces sugiere franja, no altera déficit ETc. Tablas Kc y % suelo explorado por sistema; Criterio NutriPlant. Estimar %: Conversor magnitudes (copa circular o cama/banda). Datos en climateAnalysis.irrigationQuickCalc. Nota: no considera almacenamiento en suelo en el balance ETc (salvo bloque puente 🪨), escurrimiento, drenaje ni lixiviación; validar en campo.`,
       ubicacion: `
 - Radar Satelital (interno Ubicación): el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a Radar Satelital y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
-- Pestaña 1 — Polígono / NDVI y NDMI (Pilot): Sentinel-2. Ventana **14 → 21 → 30 → 45 d**; **1 escena** (la más clara + SCL, sin mediana); ~100% o guarda lo mejor (≥~5%). Capas: NDVI, NDMI, NDRE, RGB (misma generación). RGB: verde≈planta, rojo/café≈suelo. **Máx. 250 ha**.
+- Pestaña 1 — Polígono / capas (Pilot + relieve): Sentinel-2. Ventana **14 → 21 → 30 → 45 d**; **1 escena** (la más clara + SCL, sin mediana); ~100% o guarda lo mejor (≥~5%). Capas: NDVI, NDMI, NDRE, RGB (misma generación). RGB: verde≈planta, rojo/café≈suelo. **Relieve DEM:** «Generar relieve» → Pendiente (%) + Altura (m/ft) Copernicus DEM ~30 m, **0 créditos**, capas fijas del predio (regenerar si movés el polígono). Mismo color en pendiente ≈ misma inclinación (no altura); mismo color en altura ≈ misma elevación relativa. **Máx. 250 ha**.
 - Pestaña 2 — Lectura Satelital: histórico 2–6 periodos con NDVI/NDMI/NDRE/RGB, VPD, ET₀, lluvia y riego. **1 pasada**/periodo (la más clara; sin mediana ni relleno). Tooltip VPD: horas + % del periodo. Costo fijo 3 (4 si >30 ha). Mismo tope 250 ha.
-- Si el contexto trae última imagen/fecha/historial o Lectura, puedes explicar el estado Radar. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
+- Si el contexto trae última imagen/fecha/historial, Lectura o relieve DEM, puedes explicar el estado Radar. No diagnosticar causa única solo con índices o pendiente: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
       reportes: `
-- Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Clima (VPD, lluvia, ET₀). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
+- Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Clima (VPD, lluvia, ET₀), Análisis. (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. Si incluye Análisis y hay varios reportes del mismo tipo, el PDF lleva **tablas comparativas + gráficas** (bloque Comparar análisis) además del detalle. Si hay relieve DEM generado, la sección Ubicación muestra mapas de altura y pendiente. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
       general: `
 - NutriPlant PRO: responder con base en datos del proyecto activo y criterio agronómico técnico.
 - Diferenciar siempre hechos del proyecto vs conocimiento general.
 - Calculadoras globales en barra del dashboard (cualquier pestaña): 💧 Diseño de solución nutritiva (didáctico), 🔗 Interacciones y movilidad, 🪨 Agua en suelo y textura, 🌧️ Lámina de riego y balance hídrico, 🧂 Solubilidad e índice salino — ver MANUAL CALCULADORAS PRO.
-- Radar NDVI/NDMI (Ubicación): ver MANUAL RADAR DEL CULTIVO y bloque "RADAR DEL CULTIVO (NDVI/NDMI)" en datos del proyecto.`
+- Radar NDVI/NDMI/relieve DEM (Ubicación): ver MANUAL RADAR DEL CULTIVO y bloque "RADAR DEL CULTIVO" en datos del proyecto.`
     };
     return base[module] || base.general;
   }
@@ -1384,7 +1386,7 @@ ARQUITECTURA NUTRIPLANT Y CONTEXTO GLOBAL DEL PROYECTO:
 - Conoces la arquitectura de NutriPlant: módulos (Inicio, Ubicación, Enmienda, Nutrición Granular, Fertirriego, Hidroponía, Análisis, VPD, Reportes), subpestañas de Análisis (Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar/DOP, Fruta/ICC) y cómo se relacionan (p. ej. Suelo→Enmienda, Agua→Fertirriego/Hidroponía, Foliar/Suelo/Fruta→diagnóstico integrado).
 - Los datos que te pasamos son del MISMO proyecto en su totalidad: incluyen TODAS las secciones que el usuario tenga guardadas (Enmienda, Fertirriego, Granular, Hidroponía, Análisis de Suelo, Foliar, Fruta, Agua, Solución Nutritiva, Extracto de Pasta, Extracción por etapa 📊, etc.), aunque el usuario esté en otra pestaña. Por ejemplo: si está en Fertirriego y te pregunta por su análisis foliar o por su suelo, tienes esos datos en el bloque "DATOS DEL PROYECTO" y debes usarlos para responder e interactuar con él.
 - Puedes usar la lógica y explicar el funcionamiento de cualquier módulo cuando el usuario pregunte; responde con los datos del bloque del módulo del que hablen.
-- Radar NDVI/NDMI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO (NDVI/NDMI)" o "LECTURA SATELITAL". Si el usuario pregunta por vigor, humedad del dosel, manchas, zonas rojas/amarillas/verdes, histórico por periodos, Lectura Satelital, NDVI/NDMI promedio vs VPD/ET₀/lluvia/riego, usa esos bloques y recuerda que la colorimetría es relativa al predio/fecha. Cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color.
+- Radar NDVI/NDMI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO" o "LECTURA SATELITAL". Si el usuario pregunta por vigor, humedad del dosel, manchas, zonas rojas/amarillas/verdes, pendiente/altura del predio, Generar relieve, histórico por periodos, Lectura Satelital, NDVI/NDMI promedio vs VPD/ET₀/lluvia/riego, usa esos bloques y recuerda que la colorimetría de índices es relativa al predio/fecha; el DEM es relieve fijo (0 créditos). Cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color ni solo por pendiente.
 
 UNIDADES POR MÓDULO (NO CONFUNDIR):
 - **Hidroponía**: concentraciones y aportes de fertilizantes son SIEMPRE en forma ELEMENTAL (%, ppm por elemento). No hay modo óxido en hidroponía.
@@ -1905,9 +1907,9 @@ ESTILO DE RESPUESTA:
       /Imagen NDVI mostrada|Imagen NDMI mostrada/i.test(String(hint?.textContent || ''));
 
     const lines = [];
-    lines.push('--- RADAR DEL CULTIVO (NDVI/NDMI) ---');
+    lines.push('--- RADAR DEL CULTIVO (NDVI/NDMI + relieve DEM) ---');
     lines.push(
-      'Radar Pilot Copernicus/Sentinel-2. NDVI = vigor relativo; NDMI = humedad relativa del dosel (no humedad de suelo). Colorimetría relativa al predio/fecha: rojo/naranja = menor nivel relativo, amarillo/verde claro = intermedio, verde/azul verdoso = mayor nivel relativo. Cruzar ambos índices con riego, suelo, foliar, VPD y campo.'
+      'Radar Pilot Copernicus/Sentinel-2. NDVI = vigor relativo; NDMI = humedad relativa del dosel (no humedad de suelo). Colorimetría relativa al predio/fecha: rojo/naranja = menor nivel relativo, amarillo/verde claro = intermedio, verde/azul verdoso = mayor nivel relativo. Relieve DEM: capas Pendiente (%) y Altura (m/ft) fijas del predio (Copernicus DEM ~30 m; Generar relieve = 0 créditos). Cruzar índices y relieve con riego, suelo, foliar, VPD y campo.'
     );
     lines.push(`Polígono del predio: ${hasPolygon ? 'definido (Radar habilitado)' : 'sin polígono — ir a Ubicación, dibujar y guardar antes de generar Radar'}.`);
 
@@ -1987,12 +1989,44 @@ ESTILO DE RESPUESTA:
       }
     }
 
-    const capa = indexSel && indexSel.value === 'ndmi' ? 'NDMI' : 'NDVI';
-    if (hasOverlay) lines.push(`Capa visible en mapa ahora: ${capa} (según panel).`);
+    const capaRaw = indexSel ? String(indexSel.value || '').toLowerCase() : 'ndvi';
+    const capaLabel =
+      capaRaw === 'ndmi' ? 'NDMI'
+        : capaRaw === 'ndre' ? 'NDRE'
+          : capaRaw === 'rgb' ? 'RGB'
+            : capaRaw === 'slope' ? 'Pendiente (DEM)'
+              : capaRaw === 'elev' ? 'Altura (DEM)'
+                : capaRaw === 'clouds' ? 'Nubes'
+                  : 'NDVI';
+    if (hasOverlay) lines.push(`Capa visible en mapa ahora: ${capaLabel} (según panel).`);
     else if (helpEl?.textContent) lines.push(`Ayuda escala en pantalla: ${String(helpEl.textContent).trim()}.`);
 
+    const dem = window.__nutriplantRadarDem;
+    if (dem && (dem.has_dem || dem.dem_slope_signed_url || dem.dem_elev_signed_url || dem.dem_meta)) {
+      const meta = dem.dem_meta || {};
+      const slopeBits = [];
+      if (meta.slope_mean != null) slopeBits.push('pendiente media ~' + meta.slope_mean + '%');
+      if (meta.slope_min != null && meta.slope_max != null) {
+        slopeBits.push('rango ' + meta.slope_min + '–' + meta.slope_max + '%');
+      }
+      const elevBits = [];
+      if (meta.elev_mean != null) elevBits.push('altura media ~' + Math.round(Number(meta.elev_mean)) + ' m');
+      if (meta.elev_min != null && meta.elev_max != null) {
+        elevBits.push('rango ' + Math.round(Number(meta.elev_min)) + '–' + Math.round(Number(meta.elev_max)) + ' m (canónico; UI puede mostrar ft en US)');
+      }
+      lines.push(
+        'Relieve DEM: generado' +
+          (dem.dem_stale ? ' (STALE: polígono cambió — regenerar)' : '') +
+          (slopeBits.length ? '; ' + slopeBits.join(', ') : '') +
+          (elevBits.length ? '; ' + elevBits.join(', ') : '') +
+          '.'
+      );
+    } else {
+      lines.push('Relieve DEM: aún no generado (botón Generar relieve / Generate relief; 0 créditos).');
+    }
+
     lines.push(
-      'Si preguntan por manchas o colores: describir variabilidad espacial, sugerir recorrido de zonas contrastantes y cruzar NDVI+NDMI con datos del proyecto antes de recomendar riego o fertilización.'
+      'Si preguntan por manchas o colores: describir variabilidad espacial, sugerir recorrido de zonas contrastantes y cruzar NDVI+NDMI+relieve con datos del proyecto antes de recomendar riego o fertilización.'
     );
 
     // Lectura Satelital (histórico por periodos) persistida en location.lecturaSatelital

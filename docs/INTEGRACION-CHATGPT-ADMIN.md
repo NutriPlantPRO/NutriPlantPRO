@@ -89,8 +89,11 @@ Un **GPT personalizado privado** en la app ChatGPT que, al hablar en natural (�
 | `plan_pro_areas` | Pilares (Personal, Yara, NutriPlant…) |
 | `plan_pro_categories` | Categorías |
 | `plan_pro_items` | `title`, `body_plain`, `body_html`, `body_blocks` (mini-tablas inversión/gastos), `priority`, `status`, `due_at`, `relation_tags` |
+| `plan_pro_invest_watchlist` | **Invest PRO** — favoritos/Mi portafolio (symbol, asset_name, asset_type…) |
 
-Solo filas con `owner_id` = tu usuario admin.
+**Módulos UI Plan PRO:** Notebook PRO · Nutri PRO · Neuron PRO · **Invest PRO** (mercados; Knowledge `docs/INVEST-PRO-CONOCIMIENTO-GPT.md`). Cotizaciones vía `/api/plan-pro-invest` (no es action del GPT Socio aún).
+
+Solo filas con `owner_id` / `user_id` = tu usuario admin.
 
 ---
 
@@ -168,7 +171,8 @@ ChatGPT solo **presenta** tablas y explica; la API **devuelve números**.
    - **Calculadoras gratuitas:** Knowledge `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` y/o `free_tools_catalog`. Solo localStorage; no sustituyen reportes del suscriptor.
    - **Manual técnico público (GEO/web):** Knowledge `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` y/o `manual_tecnico_catalog`. Citas: https://nutriplantpro.com/manual-tecnico/ — no sustituye `project_analyses`.
    - **Guía paso a paso:** `docs/CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`.
-   - **Radar NDVI/NDMI/NDRE/RGB:** `radar_project` con `project_name` o `project_id`. Lee `radar_history` (fechas: `created_at`, `sentinel_period`, `id`). `latest_radar` trae URLs firmadas de la **más reciente** (índices + RGB si existen); si pide fecha antigua, repite con `params.request_id`. Di siempre la **fecha**. **Cómo se arma:** Pilot y Lectura = **1 pasada** más clara (sin mediana/relleno entre fechas); guarda ≥~15% útiles. Índices: colorimetría **relativa al predio**. RGB: verde≈planta, rojo/café≈suelo (no Menor/Mayor). Máx. **250 ha**. Ver cap. `vpd-deficit-presion-vapor` / Knowledge MANUAL §4.11 (**v2026.07.4**). No analices píxeles: pasa enlaces firmados (~1 h).
+   - **Radar NDVI/NDMI/NDRE/RGB + relieve DEM:** `radar_project` con `project_name` o `project_id`. Lee `radar_history` (fechas: `created_at`, `sentinel_period`, `id`). `latest_radar` trae URLs firmadas de la **más reciente** (índices + RGB si existen); si pide fecha antigua, repite con `params.request_id`. Di siempre la **fecha**. **Cómo se arma:** Pilot y Lectura = **1 pasada** más clara (sin mediana/relleno entre fechas); guarda ≥~15% útiles. **Relieve:** capas Pendiente/Altura Copernicus DEM ~30 m (**Generar relieve**, **0 créditos**; no son Sentinel). Índices: colorimetría **relativa al predio**. RGB: verde≈planta, rojo/café≈suelo (no Menor/Mayor). Máx. **250 ha**. Ver cap. `vpd-deficit-presion-vapor` / Knowledge MANUAL §4.11 (**v2026.08.3**). No analices píxeles: pasa enlaces firmados (~1 h).
+   - **Análisis lab (comparar):** varios reportes del mismo tipo → UI/PDF «Comparar análisis (tabla y gráficas)»; datos vía `project_analyses` / Knowledge `ANALISIS-LABORATORIO`.
 4. **Knowledge (obligatorio para criterios):** sube los tres archivos:
    - `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
    - `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`

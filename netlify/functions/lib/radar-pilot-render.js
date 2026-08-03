@@ -234,7 +234,15 @@ async function readBandCog(url, bbox4326, outW, outH, opts) {
   const { fromUrl } = await import('geotiff');
   const tiff = await fromUrl(url, { allowFullFile: false, rangeChunkSize: 65536 });
   const image = await tiff.getImage();
-  const geo = geoBboxToUtm(bbox4326);
+  const useLonLat = !!(opts && opts.lonLat);
+  const geo = useLonLat
+    ? {
+        minX: bbox4326[0],
+        maxX: bbox4326[2],
+        minY: bbox4326[1],
+        maxY: bbox4326[3]
+      }
+    : geoBboxToUtm(bbox4326);
   const window = pixelWindowFromGeo(image, geo.minX, geo.minY, geo.maxX, geo.maxY);
   const noData = image.getGDALNoData ? image.getGDALNoData() : null;
   const rasters = await image.readRasters({
@@ -244,6 +252,205 @@ async function readBandCog(url, bbox4326, outW, outH, opts) {
     resampleMethod: opts && opts.nearest ? 'nearest' : 'bilinear'
   });
   return { data: rasters[0], noData, width: outW, height: outH };
+}
+
+/** Pendiente relativa al predio: plano (crema/gris) → inclinado (café). Distinta del NDVI. */
+const SLOPE_VIS = {
+  min: 0,
+  max: 15,
+  palette: ['f8f5f0', 'e8e0d4', 'd4c4a8', 'c4a574', 'a67c52', '8b5e3c', '6b4423', '4a2f1a', '2d1b0e']
+};
+
+/** Altura relativa al predio: baja (azul) → media → alta (ámbar/café). Distinta de pendiente y NDVI. */
+const ELEV_VIS = {
+  min: 0,
+  max: 100,
+  palette: ['1e3a8a', '2563eb', '38bdf8', '7dd3fc', 'a7f3d0', 'fef3c7', 'fbbf24', 'ea580c', '9a3412']
+};
+
+function elevValue(val, noData) {
+  if (val == null || !Number.isFinite(val)) return NaN;
+  if (noData != null && Number.isFinite(noData) && val === noData) return NaN;
+  // Nodata frecuentes en DEM
+  if (val < -500 || val > 9000) return NaN;
+  return val;
+}
+
+/**
+ * Mosaic DEM tiles (EPSG:4326) into one elevation grid.
+ */
+async function readDemElevationMosaic(urls, bbox4326, outW, outH) {
+  const elev = new Float32Array(outW * outH);
+  elev.fill(NaN);
+  let any = false;
+  for (const url of urls) {
+    let layer;
+    try {
+      layer = await readBandCog(url, bbox4326, outW, outH, { lonLat: true, nearest: false });
+    } catch (err) {
+      console.warn('DEM tile skip:', err && err.message ? err.message : err);
+      continue;
+    }
+    const noData = layer.noData;
+    for (let i = 0; i < elev.length; i++) {
+      if (Number.isFinite(elev[i])) continue;
+      const v = elevValue(layer.data[i], noData);
+      if (Number.isFinite(v)) {
+        elev[i] = v;
+        any = true;
+      }
+    }
+  }
+  if (!any) {
+    throw new Error('No se pudo leer elevación DEM sobre el predio');
+  }
+  return elev;
+}
+
+/**
+ * Slope percent from elevation grid (meters). Geographic spacing converted to meters.
+ */
+function computeSlopePercent(elev, width, height, bbox4326) {
+  const [west, south, east, north] = bbox4326;
+  const midLat = (south + north) / 2;
+  const metersPerDegLat = 110540;
+  const metersPerDegLng = 111320 * Math.cos((midLat * Math.PI) / 180);
+  const dyM = ((north - south) / Math.max(height, 1)) * metersPerDegLat;
+  const dxM = ((east - west) / Math.max(width, 1)) * Math.max(metersPerDegLng, 1);
+  const out = new Float32Array(width * height);
+  out.fill(NaN);
+  for (let row = 1; row < height - 1; row++) {
+    for (let col = 1; col < width - 1; col++) {
+      const i = row * width + col;
+      const z = elev[i];
+      if (!Number.isFinite(z)) continue;
+      const zl = elev[i - 1];
+      const zr = elev[i + 1];
+      const zu = elev[i - width];
+      const zd = elev[i + width];
+      if (![zl, zr, zu, zd].every(Number.isFinite)) continue;
+      const dzdx = (zr - zl) / (2 * dxM);
+      const dzdy = (zd - zu) / (2 * dyM);
+      out[i] = Math.sqrt(dzdx * dzdx + dzdy * dzdy) * 100;
+    }
+  }
+  // Fill edges from nearest interior
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      if (Number.isFinite(out[i])) continue;
+      if (!Number.isFinite(elev[i])) continue;
+      const rr = Math.min(height - 2, Math.max(1, row));
+      const cc = Math.min(width - 2, Math.max(1, col));
+      const v = out[rr * width + cc];
+      if (Number.isFinite(v)) out[i] = v;
+    }
+  }
+  return out;
+}
+
+function elevStatsInPolygon(elev, width, height, polygon, bbox4326) {
+  let min = Infinity;
+  let max = -Infinity;
+  let sum = 0;
+  let n = 0;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const v = elev[i];
+      if (!Number.isFinite(v)) continue;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      min = Math.min(min, v);
+      max = Math.max(max, v);
+      sum += v;
+      n += 1;
+    }
+  }
+  if (!n) return { elev_min: null, elev_max: null, elev_mean: null };
+  return {
+    elev_min: Math.round(min * 10) / 10,
+    elev_max: Math.round(max * 10) / 10,
+    elev_mean: Math.round((sum / n) * 10) / 10
+  };
+}
+
+/**
+ * Render slope + elevation PNGs clipped to polygon from Copernicus DEM COG URLs.
+ * @param {{ urls: string[], bbox4326: number[], polygon: number[][] }} dem
+ */
+async function renderDemSlopePng(dem, opts) {
+  const maxDim = Math.min(Math.max(Number(opts?.maxDim) || 512, 128), 1024);
+  const polygon = dem.polygon || null;
+  const bbox4326 = dem.bbox4326;
+  const urls = dem.urls || [];
+  if (!urls.length) throw new Error('Sin URLs DEM');
+  if (!bbox4326 || bbox4326.length < 4) throw new Error('BBox DEM inválido');
+
+  const { outW, outH } = computeOutputSize(bbox4326, maxDim);
+  const elev = await readDemElevationMosaic(urls, bbox4326, outW, outH);
+  const slope = computeSlopePercent(elev, outW, outH, bbox4326);
+  const elevStats = elevStatsInPolygon(elev, outW, outH, polygon, bbox4326);
+
+  const elevFallback = {
+    ...ELEV_VIS,
+    min: elevStats.elev_min != null ? elevStats.elev_min : ELEV_VIS.min,
+    max:
+      elevStats.elev_max != null && elevStats.elev_max > (elevStats.elev_min || 0)
+        ? elevStats.elev_max
+        : (elevStats.elev_min || 0) + 10
+  };
+
+  const [slopeRendered, elevRendered] = await Promise.all([
+    indexToPngBuffer(slope, SLOPE_VIS, outW, outH, polygon, bbox4326, {
+      requireCoverage: false,
+      label: 'Pendiente'
+    }),
+    indexToPngBuffer(elev, elevFallback, outW, outH, polygon, bbox4326, {
+      requireCoverage: false,
+      label: 'Altura'
+    })
+  ]);
+
+  const slopeVals = [];
+  for (let row = 0; row < outH; row++) {
+    for (let col = 0; col < outW; col++) {
+      const i = row * outW + col;
+      const v = slope[i];
+      if (!Number.isFinite(v)) continue;
+      const [lat, lng] = pixelCenterLatLng(col, row, outW, outH, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      slopeVals.push(v);
+    }
+  }
+  slopeVals.sort((a, b) => a - b);
+  const slopeMin = slopeVals.length ? Math.round(slopeVals[0] * 100) / 100 : null;
+  const slopeMax = slopeVals.length
+    ? Math.round(slopeVals[slopeVals.length - 1] * 100) / 100
+    : null;
+  const slopeMean =
+    slopeVals.length > 0
+      ? Math.round(
+          (slopeVals.reduce((s, v) => s + v, 0) / slopeVals.length) * 100
+        ) / 100
+      : null;
+
+  return {
+    width: outW,
+    height: outH,
+    png: slopeRendered.buffer,
+    elevPng: elevRendered.buffer,
+    coverage: slopeRendered.coverage,
+    vis: slopeRendered.vis,
+    elev_vis: elevRendered.vis,
+    slope_min: slopeMin,
+    slope_max: slopeMax,
+    slope_mean: slopeMean,
+    elev_min: elevStats.elev_min,
+    elev_max: elevStats.elev_max,
+    elev_mean: elevStats.elev_mean,
+    source: 'cop-dem-glo-30'
+  };
 }
 
 function computeIndex(bandA, bandB, noDataA, noDataB, formula) {
@@ -709,6 +916,7 @@ module.exports = {
   renderNdviNdmiPngs,
   renderNdviNdmiCompositePngs,
   renderRegionalSclCloudMaskPng,
+  renderDemSlopePng,
   measurePolygonCoverage,
   meanPolygonValid,
   hasAcceptableCoverage,
@@ -719,5 +927,7 @@ module.exports = {
   NDVI_VIS,
   NDMI_VIS,
   NDRE_VIS,
+  SLOPE_VIS,
+  ELEV_VIS,
   SCL_BAD
 };

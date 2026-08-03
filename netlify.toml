@@ -19,6 +19,7 @@
 # si el deploy no acepta un valor, baja el número o configúralo en el panel: Site → Functions.
 [functions."radar-ndvi"]
   timeout = 60
+  external_node_modules = ["@google/earthengine", "googleapis", "geotiff", "sharp", "proj4"]
 
 [functions."radar-cdse-pilot"]
   timeout = 26
@@ -182,6 +183,12 @@
 [[redirects]]
   from = "/api/plan-pro-fx-rate"
   to = "/.netlify/functions/plan-pro-fx-rate"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/plan-pro-invest"
+  to = "/.netlify/functions/plan-pro-invest"
   status = 200
   force = true
 

@@ -49,6 +49,21 @@ Cada elemento es un **reporte** con `id`, `title`, `date` y secciones propias.
 
 ---
 
+## 3b. Comparar análisis (tabla + gráficas) — dashboard y PDF
+
+Cuando hay **varios reportes** del mismo tipo en un proyecto, la app muestra el bloque **«Comparar análisis (tabla y gráficas)»** (i18n ES/EN):
+
+1. **Columnas:** cada análisis es una columna; el usuario activa/desactiva cuáles entran en la comparación/gráficas.
+2. **Tablas por bloque** (ej. suelo: pH, físicos/MO, macros ppm, micros ppm, % CIC, cationes meq, relaciones).
+3. **Gráficas** solo en bloques chartables (suelo: macros línea, micros línea, % CIC barras). pH/físicos suelen ser **solo tabla**.
+4. **Otros tipos** (solución, extracto, agua, foliar, fruta): mismo patrón con sus bloques (macros/micros/calidad/etc.).
+5. **Reportes PDF:** al incluir Análisis, el PDF lleva las tablas comparativas + imágenes de las gráficas (no solo el detalle individual).
+6. **Admin / ChatGPT:** los valores siguen en `project_analyses`; la UI de comparación es del dashboard/PDF. Al interpretar histórico, puedes alinear varios reportes del mismo `type` por fecha/título como hace la app.
+
+No inventar series ni promedios si la API no los trae; leer cada reporte.
+
+---
+
 ## 4. Criterios por pestaña
 
 ### 4.1 Análisis de suelo

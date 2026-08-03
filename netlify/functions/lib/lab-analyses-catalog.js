@@ -3,7 +3,7 @@
  * Alineado con docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-  version: '2026-05-21',
+  version: '2026-08-03',
   storage: {
     table: 'projects',
     column: 'data (JSONB)',
@@ -16,6 +16,13 @@ module.exports = {
       fruta: 'frutaAnalyses'
     },
     separate_enmienda: 'soilAnalysis (pestaña Enmiendas, no confundir con Análisis → Suelo)'
+  },
+  compare_ui: {
+    where: 'Dashboard Análisis (cada subpestaña) + Reportes PDF',
+    title: 'Comparar análisis (tabla y gráficas) / Compare analyses (table and charts)',
+    behavior:
+      '≥2 reportes del mismo tipo: columnas por análisis (on/off); tablas por bloque; gráficas solo en bloques chartables (ej. suelo macros/micros/% CIC). PDF incluye tablas + capturas de gráficas. Datos = mismos arrays que project_analyses.',
+    not: 'No inventa series; no sustituye detalle por reporte'
   },
   api: {
     read_action: 'project_analyses',
