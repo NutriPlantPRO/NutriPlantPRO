@@ -11,12 +11,12 @@
   <meta name="theme-color" content="#2563eb" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260803a"></script>
+  <script src="assets/np-i18n.js?v=20260803h"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-analysis-ui.js?v=20260803e"></script>
   <script src="assets/np-lab-type-configs.js?v=20260803g"></script>
-  <script src="assets/np-analysis-compare.js?v=20260803g"></script>
+  <script src="assets/np-analysis-compare.js?v=20260803h"></script>
   <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
   <script src="assets/np-fertigation-ui.js?v=20260801y"></script>
   <script src="assets/np-granular-ui.js?v=20260730c"></script>
@@ -439,7 +439,7 @@
   <script src="climate-functions.js?v=20260801x"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260803h"></script>
+  <script src="dashboard.js?v=20260803i"></script>
   <script src="fertirriego-program-functions.js?v=20260801y"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=202607302100"></script>
@@ -6200,6 +6200,13 @@ CONTRATO:
             <div class="report-section-description" data-i18n="dashboard.reports_sec_location_desc">Predio, polígono, Radar Pilot (NDVI/NDMI) y Lectura Satelital (histórico por periodos)</div>
           </div>
         </div>
+
+        <div class="report-section-item" onclick="toggleReportSection('vpd')" data-section="vpd">
+          <div class="report-section-info">
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_climate_title">🌤️ Clima</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_climate_desc">VPD, lluvia acumulada, ET₀ y lectura meteorológica</div>
+          </div>
+        </div>
         
         <div class="report-section-item" onclick="toggleReportSection('amendments')" data-section="amendments">
           <div class="report-section-info">
@@ -6229,10 +6236,10 @@ CONTRATO:
           </div>
         </div>
 
-        <div class="report-section-item" onclick="toggleReportSection('vpd')" data-section="vpd">
+        <div class="report-section-item" onclick="toggleReportSection('labAnalyses')" data-section="labAnalyses">
           <div class="report-section-info">
-            <div class="report-section-title" data-i18n="dashboard.reports_sec_climate_title">🌤️ Clima</div>
-            <div class="report-section-description" data-i18n="dashboard.reports_sec_climate_desc">VPD, lluvia acumulada, ET₀ y lectura meteorológica</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_lab_title">🧪 Análisis de laboratorio</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_lab_desc">Suelo, solución nutritiva, extracto de pasta, agua, foliar y fruta — datos, tablas comparativas y gráficas</div>
           </div>
         </div>
 

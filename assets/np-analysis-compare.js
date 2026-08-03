@@ -699,22 +699,61 @@
 
     var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1 };
     var rows = flattenDetectedForType(fields || {}, typeCfg.reviewFields, textPaths);
-    var isUsVol = !!(w.NpAnalysisUI && typeof w.NpAnalysisUI.isUS === 'function' && w.NpAnalysisUI.isUS());
+    var isUsUnits = !!(w.NpAnalysisUI && typeof w.NpAnalysisUI.isUS === 'function' && w.NpAnalysisUI.isUS());
+    var KGCM2_TO_PSI = 14.223343307;
+    function isFirmezaPath(p) {
+      return p === 'calidad.firmeza' || p === 'optimalCalidad.firmeza';
+    }
+    function toPsiDisplay(raw) {
+      if (w.frutaFirmezaFromSI) return String(w.frutaFirmezaFromSI(raw));
+      var n = Number(String(raw).replace(',', '.'));
+      if (!Number.isFinite(n)) return String(raw);
+      return String(Number((n * KGCM2_TO_PSI).toFixed(1)));
+    }
+    function fromPsiToSi(raw) {
+      if (w.frutaFirmezaToSI) return String(w.frutaFirmezaToSI(raw));
+      var n = Number(String(raw).replace(',', '.'));
+      if (!Number.isFinite(n)) return String(raw);
+      return String(Number((n / KGCM2_TO_PSI).toFixed(4)));
+    }
     rows.forEach(function (row) {
-      if (row.path !== 'm3Riego') return;
-      if (isUsVol) {
-        row.label = tr('analysis.review_irrigation_gal', 'Agua riego');
-        row.unit = 'US gal';
-        row.tip = tr('analysis.review_irrigation_gal_tip', 'Volumen de riego en galones US. Se guarda internamente en m³.');
-        if (row.value && isPlainNumericValue(row.value) && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputFromSI === 'function') {
-          row.value = String(w.NpAnalysisUI.volumeInputFromSI(row.value));
+      if (row.path === 'm3Riego') {
+        if (isUsUnits) {
+          row.label = tr('analysis.review_irrigation_gal', 'Agua riego');
+          row.unit = 'US gal';
+          row.tip = tr('analysis.review_irrigation_gal_tip', 'Volumen de riego en galones US. Se guarda internamente en m³.');
+          if (row.value && isPlainNumericValue(row.value) && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputFromSI === 'function') {
+            row.value = String(w.NpAnalysisUI.volumeInputFromSI(row.value));
+          }
+        } else {
+          row.label = tr('analysis.review_irrigation_m3', 'm³ riego');
+          row.unit = 'm³';
+          row.tip = tr('analysis.review_irrigation_m3_tip', 'Volumen de riego en metros cúbicos.');
         }
-      } else {
-        row.label = tr('analysis.review_irrigation_m3', 'm³ riego');
-        row.unit = 'm³';
-        row.tip = tr('analysis.review_irrigation_m3_tip', 'Volumen de riego en metros cúbicos.');
+        return;
+      }
+      if (isFirmezaPath(row.path)) {
+        if (isUsUnits) {
+          row.unit = 'psi';
+          row.tip = tr(
+            'analysis.review_firmness_psi_tip',
+            isEnLang()
+              ? 'Firmness in psi. Stored internally as kg/cm².'
+              : 'Firmeza en psi. Se guarda internamente en kg/cm².'
+          );
+          if (row.value && isPlainNumericValue(row.value)) {
+            row.value = toPsiDisplay(row.value);
+          }
+        } else {
+          row.unit = 'kg/cm²';
+          row.tip = tr(
+            'analysis.review_firmness_kg_tip',
+            isEnLang() ? 'Firmness in kg/cm².' : 'Firmeza en kg/cm².'
+          );
+        }
       }
     });
+    var isUsVol = isUsUnits;
     var modal = document.createElement('div');
     modal.id = 'npLabPdfReviewModal';
     modal.className = 'np-lab-pdf-modal';
@@ -881,6 +920,9 @@
         if (path === 'm3Riego' && isUsVol && raw && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputToSI === 'function') {
           var siVol = w.NpAnalysisUI.volumeInputToSI(raw);
           if (Number.isFinite(siVol)) raw = String(siVol);
+        }
+        if (isFirmezaPath(path) && isUsUnits && raw && isPlainNumericValue(raw)) {
+          raw = fromPsiToSi(raw);
         }
         setByPath(payload, path, raw);
       });

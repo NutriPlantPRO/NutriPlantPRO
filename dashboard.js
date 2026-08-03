@@ -9224,6 +9224,7 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
     selectedSections.indexOf('vpd') >= 0 &&
     typeof window.getClimateChartsDataUrlsForReport === 'function';
   const needVpdCritical = selectedSections.indexOf('vpd') >= 0;
+  const needLabAnalyses = selectedSections.indexOf('labAnalyses') >= 0;
 
   function appendVpdCharts(out, next) {
     if (!needVpdCritical || !window.NpVpdRangeCharts) {
@@ -9273,21 +9274,42 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
     }
   }
 
+  function appendLabCharts(finalOut, next) {
+    if (!needLabAnalyses) {
+      next(finalOut);
+      return;
+    }
+    try {
+      captureLabCompareChartsForReport(function (labCharts) {
+        if (labCharts && typeof labCharts === 'object') finalOut.labAnalyses = labCharts;
+        next(finalOut);
+      }, reportOptions || {});
+    } catch (e) {
+      console.warn('loadChartImagesForReport labAnalyses:', e);
+      next(finalOut);
+    }
+  }
+
   function finish(out) {
     function done(finalOut) {
+      var afterExtraccion = function (withExtraccion) {
+        appendLabCharts(withExtraccion, function (withLab) {
+          appendVpdCharts(withLab, callback);
+        });
+      };
       if (!needExtraccionEtapa) {
-        appendVpdCharts(finalOut, callback);
+        afterExtraccion(finalOut);
         return;
       }
       try {
         const state = getExtraccionEtapaStateForReport();
         getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
           if (imgs && (imgs.macro || imgs.micro)) finalOut.extraccionEtapa = imgs;
-          appendVpdCharts(finalOut, callback);
+          afterExtraccion(finalOut);
         }, reportOptions || {});
       } catch (e) {
         console.warn('loadChartImagesForReport extraccionEtapa:', e);
-        appendVpdCharts(finalOut, callback);
+        afterExtraccion(finalOut);
       }
     }
 
@@ -10638,6 +10660,8 @@ function reportUiSectionLabel(sectionId) {
     hydroponics: ['dashboard.reports_section_hydro', 'Hidroponía'],
     vpd: ['dashboard.reports_section_climate', 'Clima'],
     climate: ['dashboard.reports_section_climate', 'Clima'],
+    labanalyses: ['dashboard.reports_section_lab', 'Análisis de laboratorio'],
+    lab_analyses: ['dashboard.reports_section_lab', 'Análisis de laboratorio'],
     extraccionetapa: ['dashboard.reports_section_extract', 'Extracción por etapa'],
     extraccion_etapa: ['dashboard.reports_section_extract', 'Extracción por etapa']
   };
@@ -14158,8 +14182,8 @@ function updateGenerateButton() {
   }
 }
 
-const REPORT_ALLOWED_SECTIONS = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
-const REPORT_SECTION_ORDER = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
+const REPORT_ALLOWED_SECTIONS = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
+const REPORT_SECTION_ORDER = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
 
 function normalizeReportSections(sections) {
   if (!Array.isArray(sections)) return [];
@@ -15910,6 +15934,57 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
         .badge-ok { color: #059669; font-weight: 700; }
         .badge-low { color: #d97706; font-weight: 700; }
         .badge-high { color: #dc2626; font-weight: 700; }
+        .report-lab-compare { margin: 8px 0 12px; }
+        .report-lab-compare-title {
+          margin: 0 0 8px;
+          font-size: 0.95rem;
+          color: #1e293b;
+        }
+        .report-lab-compare-block {
+          margin: 0 0 10px;
+          padding: 8px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          background: #f8fafc;
+          page-break-inside: avoid;
+        }
+        .report-lab-compare-block-title {
+          margin: 0 0 6px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #334155;
+          text-transform: uppercase;
+          letter-spacing: .02em;
+        }
+        .report-lab-compare-table-wrap { overflow-x: auto; }
+        .report-lab-compare-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11px;
+          background: #fff;
+        }
+        .report-lab-compare-table th,
+        .report-lab-compare-table td {
+          border: 1px solid #e2e8f0;
+          padding: 5px 7px;
+          text-align: center;
+        }
+        .report-lab-compare-table th:first-child,
+        .report-lab-compare-table td:first-child {
+          text-align: left;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+        .report-lab-compare-table th {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+        .report-lab-charts { margin: 8px 0 12px; }
+        .report-lab-chart-card {
+          margin: 0 0 10px;
+          page-break-inside: avoid;
+        }
+        .report-lab-type-title { page-break-after: avoid; }
         .report-print-tip {
           margin-top: 10px;
           padding: 8px 12px;
@@ -16142,7 +16217,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       return createSectionHTML(sectionId, chartImgs, lang, unitSystem);
     }).join('');
   };
-  // Forzar idioma + unidades del PDF en helpers (VPD, balance, fertirriego, alertas).
+  // Forzar idioma + unidades del PDF en helpers (VPD, balance, fertirriego, alertas, lab compare).
   const runWithReportPrefs = function (fn) {
     var run = fn;
     if (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.withUnitSystem === 'function') {
@@ -16160,6 +16235,24 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
     if (window.NpFertigationUI && typeof window.NpFertigationUI.withUnitSystem === 'function') {
       var prevFertiUnit = run;
       run = function () { return window.NpFertigationUI.withUnitSystem(unitSystem, prevFertiUnit); };
+    }
+    // NpAnalysisCompare / NutriPlantRender usan NpI18n + NpPrefs (unidad)
+    if (window.NpI18n && typeof window.NpI18n.setLanguage === 'function') {
+      var prevI18n = run;
+      run = function () {
+        var prevLangI18n = null;
+        try {
+          if (typeof window.NpI18n.getLanguage === 'function') prevLangI18n = window.NpI18n.getLanguage();
+        } catch (e0) { /* ignore */ }
+        try { window.NpI18n.setLanguage(lang, { persist: false }); } catch (e1) { /* ignore */ }
+        try {
+          return prevI18n();
+        } finally {
+          try {
+            if (prevLangI18n) window.NpI18n.setLanguage(prevLangI18n, { persist: false });
+          } catch (e2) { /* ignore */ }
+        }
+      };
     }
     return run();
   };
@@ -16223,6 +16316,9 @@ function createSectionHTML(sectionId, chartImages, reportLanguage, reportUnitSys
       break;
     case 'extraccionEtapa':
       html += createExtraccionEtapaSectionHTML(chartImages, lang, reportUnitSystem);
+      break;
+    case 'labAnalyses':
+      html += createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem);
       break;
     case 'soil_analyses':
       html += createAnalysesListSectionHTML('🟫 Análisis: Suelo (reportes)', currentProject.soilAnalyses);
@@ -16302,6 +16398,21 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['📈 Fertirriego', '📈 Fertigation'],
     ['💧 Hidroponía', '💧 Hydroponics'],
     ['🌱 Hidroponía', '🌱 Hydroponics'],
+    ['🧪 Análisis de laboratorio', '🧪 Lab analyses'],
+    ['Análisis de laboratorio', 'Lab analyses'],
+    ['Comparar análisis (tabla y gráficas)', 'Compare analyses (table and charts)'],
+    ['No hay reportes guardados en esta sección.', 'No saved reports in this section.'],
+    ['Sin datos detallados para mostrar.', 'No detailed data to show.'],
+    ['(Sin reportes)', '(No reports)'],
+    ['(1 reporte)', '(1 report)'],
+    [' reportes)', ' reports)'],
+    ['Análisis de Suelo', 'Soil Analysis'],
+    ['Solución Nutritiva', 'Nutrient Solution'],
+    ['Extracto de Pasta', 'Saturated Paste Extract'],
+    ['Análisis de Agua', 'Water Analysis'],
+    ['Análisis Foliar', 'Leaf Analysis'],
+    ['Análisis de Fruta', 'Fruit Analysis'],
+    ['Parámetro', 'Parameter'],
     ['🌤️ Clima — VPD', '🌤️ Climate — VPD'],
     ['🌧️ Clima — Lluvia, ET₀ y tiempo actual', '🌧️ Climate — Rain, ET₀ and current weather'],
     ['🌡️ Déficit de Presión de Vapor', '🌡️ Vapor Pressure Deficit'],
@@ -19337,6 +19448,277 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
         </div>
       </div>
     </div>`;
+}
+
+function getLabAnalysesReportSpecs() {
+  return [
+    { type: 'soil', icon: '🟫', titleEs: 'Análisis de Suelo', titleEn: 'Soil Analysis', accent: '#eab308', listKey: 'soilAnalyses' },
+    { type: 'solucion_nutritiva', icon: '🧪💧', titleEs: 'Solución Nutritiva', titleEn: 'Nutrient Solution', accent: '#3b82f6', listKey: 'solucionNutritivaAnalyses' },
+    { type: 'extracto_pasta', icon: '🧪📋', titleEs: 'Extracto de Pasta', titleEn: 'Saturated Paste Extract', accent: '#a855f7', listKey: 'extractoPastaAnalyses' },
+    { type: 'agua', icon: '💧🔬', titleEs: 'Análisis de Agua', titleEn: 'Water Analysis', accent: '#06b6d4', listKey: 'aguaAnalyses' },
+    { type: 'foliar', icon: '🍃🔍', titleEs: 'Análisis Foliar', titleEn: 'Leaf Analysis', accent: '#22c55e', listKey: 'foliarAnalyses' },
+    { type: 'fruta', icon: '🍎🔬', titleEs: 'Análisis de Fruta', titleEn: 'Fruit Analysis', accent: '#f97316', listKey: 'frutaAnalyses' }
+  ];
+}
+
+function getLabAnalysesListForReport(listKey) {
+  if (!currentProject) return [];
+  var list = currentProject[listKey];
+  return Array.isArray(list) ? list : [];
+}
+
+function formatLabCompareCellValue(v, row) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  var block = row && row.block;
+  if (block === 'cec_pct' || block === 'ratios' || (row && row.unit === 'pct')) {
+    return Number(v).toFixed(2);
+  }
+  return String(v);
+}
+
+function buildLabCompareTablesHTML(type, analyses, rt) {
+  if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.getTypeConfig !== 'function') return '';
+  var typeCfg = window.NpAnalysisCompare.getTypeConfig(type);
+  if (!typeCfg || !typeCfg.fields || !typeCfg.blocks) return '';
+  var rows = window.NpAnalysisCompare.buildCompareRows(analyses, typeCfg.fields);
+  if (!rows || !rows.length) return '';
+  var labelFn = window.NpAnalysisCompare.analysisLabel;
+  var html = '<div class="report-lab-compare">';
+  html += '<h3 class="report-lab-compare-title">📊 ' + rt('Comparar análisis (tabla y gráficas)', 'Compare analyses (table and charts)') + '</h3>';
+  typeCfg.blocks.forEach(function (block) {
+    var blockRows = rows.filter(function (r) { return r.block === block.id; });
+    if (!blockRows.length) return;
+    var blockTitle = block.title || block.id;
+    try {
+      if (window.NpI18n && typeof window.NpI18n.t === 'function' && block.titleKey) {
+        var via = window.NpI18n.t(block.titleKey);
+        if (via && via !== block.titleKey) blockTitle = via;
+        else if (block.titleEn) blockTitle = rt(block.title || block.id, block.titleEn);
+      } else if (block.titleEn) {
+        blockTitle = rt(block.title || block.id, block.titleEn);
+      }
+    } catch (e) { /* keep default */ }
+    html += '<div class="report-lab-compare-block" data-block="' + block.id + '">';
+    html += '<h4 class="report-lab-compare-block-title">' + reportEscapeHtml(blockTitle) + '</h4>';
+    html += '<div class="report-lab-compare-table-wrap"><table class="report-lab-compare-table"><thead><tr>';
+    html += '<th>' + rt('Parámetro', 'Parameter') + '</th>';
+    analyses.forEach(function (a, idx) {
+      var name = (typeof labelFn === 'function') ? labelFn(a, idx) : (a.title || a.name || ('#' + (idx + 1)));
+      html += '<th>' + reportEscapeHtml(String(name || '')) + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    blockRows.forEach(function (row) {
+      var paramLabel = row.label || row.path || '';
+      if (row.unit && row.unit !== 'other' && !/\(%\)|°Brix|\(ppm\)|\(meq\)|\(psi\)/i.test(paramLabel)) {
+        var suf = row.unit === 'pct' ? ' (%)' : row.unit === 'ppm' ? ' (ppm)' : row.unit === 'meq' ? ' (meq)' : row.unit === 'brix' ? ' (°Brix)' : row.unit === 'kgcm2' ? ' (kg/cm²)' : row.unit === 'psi' ? ' (psi)' : row.unit === 'mg100g' ? ' (mg/100 g)' : '';
+        paramLabel = paramLabel + suf;
+      }
+      html += '<tr><td>' + reportEscapeHtml(paramLabel) + '</td>';
+      (row.values || []).forEach(function (v) {
+        html += '<td>' + reportEscapeHtml(formatLabCompareCellValue(v, row)) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function buildLabCompareChartsHTML(type, chartImages, rt) {
+  var byType = chartImages && chartImages.labAnalyses && chartImages.labAnalyses[type];
+  if (!byType || typeof byType !== 'object') return '';
+  var keys = Object.keys(byType).filter(function (k) { return !!byType[k]; });
+  if (!keys.length) return '';
+  var html = '<div class="report-lab-charts">';
+  keys.forEach(function (blockId) {
+    html += '<div class="report-lab-chart-card">';
+    html += '<img src="' + byType[blockId] + '" alt="' + reportEscapeHtml(rt('Gráfica', 'Chart') + ' ' + blockId) + '" style="width:100%;max-width:720px;height:auto;display:block;margin:8px auto;">';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem) {
+  const isEn = lang === 'en';
+  const rt = function (es, en) { return isEn ? en : es; };
+  const specs = getLabAnalysesReportSpecs();
+  let body = '';
+
+  specs.forEach(function (spec) {
+    const list = getLabAnalysesListForReport(spec.listKey);
+    const count = list.length;
+    const countLabel = count === 0
+      ? rt('(Sin reportes)', '(No reports)')
+      : (count === 1
+        ? rt('(1 reporte)', '(1 report)')
+        : rt('(' + count + ' reportes)', '(' + count + ' reports)'));
+    const title = isEn ? spec.titleEn : spec.titleEs;
+
+    body += '<div class="report-lab-type" style="border-left:4px solid ' + spec.accent + ';padding:12px 12px 12px 14px;margin:0 0 16px;background:#fff;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;border-left-color:' + spec.accent + ';">';
+    body += '<h3 class="report-lab-type-title" style="margin:0 0 10px;font-size:1.05rem;color:#0f172a;">' +
+      spec.icon + ' ' + title + ' <span style="color:#64748b;font-weight:600;font-size:0.92rem;">' + countLabel + '</span></h3>';
+
+    if (!count) {
+      body += '<div class="report-note">' + rt('No hay reportes guardados en esta sección.', 'No saved reports in this section.') + '</div>';
+      body += '</div>';
+      return;
+    }
+
+    // Comparativa (tablas + gráficas) primero, como en el dashboard
+    body += buildLabCompareTablesHTML(spec.type, list, rt);
+    body += buildLabCompareChartsHTML(spec.type, chartImages, rt);
+
+    list.forEach(function (r, i) {
+      const name = r.title || r.name || (rt('Reporte', 'Report') + ' ' + (i + 1));
+      const date = r.date || '';
+      let rendered = (typeof window.NutriPlantRenderAnalysisReport === 'function')
+        ? window.NutriPlantRenderAnalysisReport(r, { escapeHtml: reportEscapeHtml })
+        : '';
+      if (isEn && rendered && window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function') {
+        try { rendered = window.NpAnalysisUI.translateString(rendered); } catch (e) { /* ignore */ }
+      }
+      body += '<div class="report-card" style="margin-top:12px;">';
+      body += '<div class="report-card-head"><span>' + reportEscapeHtml(String(name)) + '</span>';
+      if (date) body += '<span class="report-card-meta">' + reportEscapeHtml(String(date)) + '</span>';
+      body += '</div>';
+      body += rendered
+        ? '<div style="margin-top:10px;">' + rendered + '</div>'
+        : '<div style="font-size:13px;color:#6b7280;margin-top:6px;">' + rt('Sin datos detallados para mostrar.', 'No detailed data to show.') + '</div>';
+      body += '</div>';
+    });
+
+    body += '</div>';
+  });
+
+  return `
+    <div class="section" style="border-left-color:#0ea5e9;">
+      <h2 class="section-title">🧪 ${rt('Análisis de laboratorio', 'Lab analyses')}</h2>
+      <p class="report-note" style="margin-top:0;">${rt(
+        'Datos, tablas comparativas y gráficas de los 6 análisis del proyecto (mismo orden y colores que el panel de usuario).',
+        'Data, compare tables and charts for the 6 lab analyses in the project (same order and colors as the user dashboard).'
+      )}</p>
+      ${body}
+    </div>
+  `;
+}
+
+/**
+ * Captura gráficas Chart.js de la comparativa lab (offscreen) para embeber en el PDF.
+ * Respeta idioma/unidades via reportOptions + NpI18n / NpPrefs actuales.
+ */
+function captureLabCompareChartsForReport(callback, reportOptions) {
+  var done = typeof callback === 'function' ? callback : function () {};
+  var specs = getLabAnalysesReportSpecs();
+  var out = {};
+  if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.mountLabCompare !== 'function') {
+    done(out);
+    return;
+  }
+
+  var reportLang = reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
+  var prevLang = null;
+  try {
+    if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function') prevLang = window.NpI18n.getLanguage();
+    if (window.NpI18n && typeof window.NpI18n.setLanguage === 'function') {
+      window.NpI18n.setLanguage(reportLang, { persist: false });
+    }
+  } catch (e) { /* ignore */ }
+
+  var host = document.createElement('div');
+  host.setAttribute('aria-hidden', 'true');
+  host.style.cssText = 'position:fixed;left:-12000px;top:0;width:760px;height:520px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden;';
+  document.body.appendChild(host);
+
+  function cleanupLang() {
+    try {
+      if (prevLang != null && window.NpI18n && typeof window.NpI18n.setLanguage === 'function') {
+        window.NpI18n.setLanguage(prevLang, { persist: false });
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function finishAll() {
+    try { if (host.parentNode) host.parentNode.removeChild(host); } catch (e) { /* ignore */ }
+    cleanupLang();
+    done(out);
+  }
+
+  function waitForCharts(state, expected, attempt, cbWait) {
+    var keys = state && state.charts ? Object.keys(state.charts) : [];
+    if ((expected === 0) || keys.length >= expected || attempt >= 20) {
+      cbWait();
+      return;
+    }
+    setTimeout(function () { waitForCharts(state, expected, attempt + 1, cbWait); }, 100);
+  }
+
+  function next(i) {
+    if (i >= specs.length) {
+      finishAll();
+      return;
+    }
+    var spec = specs[i];
+    var list = getLabAnalysesListForReport(spec.listKey);
+    if (!list.length) {
+      next(i + 1);
+      return;
+    }
+    var typeCfg = window.NpAnalysisCompare.getTypeConfig(spec.type);
+    var expectedCharts = (typeCfg && typeCfg.blocks)
+      ? typeCfg.blocks.filter(function (b) { return b && b.chart; }).length
+      : 0;
+    if (!expectedCharts) {
+      next(i + 1);
+      return;
+    }
+
+    var wrap = document.createElement('div');
+    host.innerHTML = '';
+    host.appendChild(wrap);
+    var state = null;
+    try {
+      state = window.NpAnalysisCompare.mountLabCompare(wrap, {
+        type: spec.type,
+        getAnalyses: function () { return list; }
+      });
+    } catch (eMount) {
+      console.warn('captureLabCompareChartsForReport mount', spec.type, eMount);
+      next(i + 1);
+      return;
+    }
+
+    waitForCharts(state, expectedCharts, 0, function () {
+      var charts = {};
+      try {
+        if (state && state.charts) {
+          Object.keys(state.charts).forEach(function (key) {
+            var chart = state.charts[key];
+            try {
+              if (chart && typeof chart.toBase64Image === 'function') {
+                charts[key] = chart.toBase64Image('image/png');
+              } else if (chart && chart.canvas && typeof chart.canvas.toDataURL === 'function') {
+                charts[key] = chart.canvas.toDataURL('image/png');
+              }
+            } catch (eCap) { /* ignore */ }
+          });
+        }
+      } catch (eAll) { /* ignore */ }
+      if (Object.keys(charts).length) out[spec.type] = charts;
+      try {
+        if (state && state.charts) {
+          Object.keys(state.charts).forEach(function (k) {
+            try { state.charts[k].destroy(); } catch (eD) { /* ignore */ }
+          });
+        }
+      } catch (eDes) { /* ignore */ }
+      wrap.innerHTML = '';
+      next(i + 1);
+    });
+  }
+
+  next(0);
 }
 
 function createAnalysesListSectionHTML(title, list) {

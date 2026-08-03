@@ -13,7 +13,7 @@
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260803g"></script>
-    <script src="../assets/np-analysis-compare.js?v=20260803g"></script>
+    <script src="../assets/np-analysis-compare.js?v=20260803h"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
@@ -7461,6 +7461,12 @@
                             <div class="report-section-description">Predio, polígono, Radar Pilot NDVI/NDMI/NDRE/RGB y Lectura Satelital</div>
                         </div>
                     </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('vpd')" data-section="vpd">
+                        <div class="report-section-info">
+                            <div class="report-section-title">🌤️ Clima</div>
+                            <div class="report-section-description">VPD, lluvia, ET₀</div>
+                        </div>
+                    </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('amendments')" data-section="amendments">
                         <div class="report-section-info">
                             <div class="report-section-title">🚜 Análisis de Enmiendas</div>
@@ -7485,10 +7491,10 @@
                             <div class="report-section-description">Solución nutritiva por etapa</div>
                         </div>
                     </div>
-                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('vpd')" data-section="vpd">
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('labAnalyses')" data-section="labAnalyses">
                         <div class="report-section-info">
-                            <div class="report-section-title">🌤️ Clima</div>
-                            <div class="report-section-description">VPD, lluvia, ET₀</div>
+                            <div class="report-section-title">🧪 Análisis de laboratorio</div>
+                            <div class="report-section-description">Suelo, SN, pasta, agua, foliar y fruta — datos, tablas y gráficas</div>
                         </div>
                     </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('extraccionEtapa')" data-section="extraccionEtapa">
@@ -14246,8 +14252,8 @@
             }
         };
 
-        var ADMIN_REPORT_ALLOWED_SECTIONS = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
-        var ADMIN_REPORT_SECTION_ORDER = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
+        var ADMIN_REPORT_ALLOWED_SECTIONS = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
+        var ADMIN_REPORT_SECTION_ORDER = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
 
         window.openAdminCustomReportModal = function () {
             var ctx = window._adminViewProjectContext;
