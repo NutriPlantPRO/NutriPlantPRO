@@ -277,8 +277,10 @@
       selector: {
         spanish: "Español",
         english: "Inglés",
-        metric: "Métrico (ha, kg, m³, °C, etc.)",
-        us_customary: "US customary (acre, lb, ft, °F, etc.)"
+        metric: "Métrico",
+        us_customary: "US customary",
+        metric_full: "Métrico (ha, kg, m³, °C, etc.)",
+        us_customary_full: "US customary (acre, lb, ft, °F, etc.)"
       },
       granular: {
         requirements_tab: "Requerimiento Nutricional",
@@ -1401,8 +1403,10 @@
       selector: {
         spanish: "Spanish",
         english: "English",
-        metric: "Metric (ha, kg, m³, °C, etc.)",
-        us_customary: "US customary (acre, lb, ft, °F, etc.)"
+        metric: "Metric",
+        us_customary: "US customary",
+        metric_full: "Metric (ha, kg, m³, °C, etc.)",
+        us_customary_full: "US customary (acre, lb, ft, °F, etc.)"
       },
       granular: {
         requirements_tab: "Nutrient Requirements",

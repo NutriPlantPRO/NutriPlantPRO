@@ -133,14 +133,14 @@
                   <span data-i18n="selector.spanish">Español</span> / <span data-i18n="selector.english">Inglés</span>
                 </small>
               </div>
-              <div class="auth-preference-field">
+              <div class="auth-preference-field auth-preference-field--units">
                 <label for="authUnitSystem" data-i18n="profile.unit_system">Sistema de unidades</label>
-                <select id="authUnitSystem" name="unit_system" aria-describedby="authUnitSystemHelp">
-                  <option value="metric" data-i18n="selector.metric">Métrico (ha, kg, m³, °C, etc.)</option>
-                  <option value="us_customary" data-i18n="selector.us_customary">US customary (acre, lb, ft, °F, etc.)</option>
+                <select id="authUnitSystem" class="auth-unit-native" name="unit_system" aria-describedby="authUnitSystemHelp">
+                  <option value="metric" data-i18n="selector.metric" data-i18n-full="selector.metric_full">Métrico</option>
+                  <option value="us_customary" data-i18n="selector.us_customary" data-i18n-full="selector.us_customary_full">US customary</option>
                 </select>
                 <small id="authUnitSystemHelp">
-                  <span data-i18n="selector.metric">Métrico (ha, kg, m³, °C, etc.)</span> / <span data-i18n="selector.us_customary">US customary (acre, lb, ft, °F, etc.)</span>
+                  <span data-i18n="selector.metric_full">Métrico (ha, kg, m³, °C, etc.)</span> / <span data-i18n="selector.us_customary_full">US customary (acre, lb, ft, °F, etc.)</span>
                 </small>
               </div>
             </div>
@@ -3178,19 +3178,119 @@
         var languageSelect = document.getElementById('authLanguage');
         var unitSystemSelect = document.getElementById('authUnitSystem');
         var prefs = window.NpPrefs.get();
+        var t = function (key, fallback) {
+          try {
+            if (window.NpI18n && typeof window.NpI18n.t === 'function') {
+              var v = window.NpI18n.t(key);
+              if (v && v !== key) return v;
+            }
+          } catch (e) {}
+          return fallback;
+        };
+
+        function unitShortLabel(value) {
+          return value === 'us_customary'
+            ? t('selector.us_customary', 'US customary')
+            : t('selector.metric', 'Métrico');
+        }
+        function unitFullLabel(value) {
+          return value === 'us_customary'
+            ? t('selector.us_customary_full', 'US customary (acre, lb, ft, °F, etc.)')
+            : t('selector.metric_full', 'Métrico (ha, kg, m³, °C, etc.)');
+        }
+
+        function ensureAuthUnitCombo() {
+          if (!unitSystemSelect || unitSystemSelect._npUnitCombo) return unitSystemSelect._npUnitCombo;
+          var field = unitSystemSelect.closest('.auth-preference-field--units') || unitSystemSelect.parentNode;
+          var combo = document.createElement('div');
+          combo.className = 'auth-unit-combo';
+          combo.innerHTML =
+            '<button type="button" class="auth-unit-combo__btn" id="authUnitSystemBtn" aria-haspopup="listbox" aria-expanded="false"></button>' +
+            '<ul class="auth-unit-combo__menu" role="listbox" hidden></ul>';
+          field.appendChild(combo);
+          var btn = combo.querySelector('.auth-unit-combo__btn');
+          var menu = combo.querySelector('.auth-unit-combo__menu');
+
+          function closeMenu() {
+            combo.classList.remove('is-open');
+            menu.hidden = true;
+            btn.setAttribute('aria-expanded', 'false');
+          }
+          function openMenu() {
+            combo.classList.add('is-open');
+            menu.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+          }
+          function renderMenu() {
+            var cur = unitSystemSelect.value === 'us_customary' ? 'us_customary' : 'metric';
+            menu.innerHTML =
+              ['metric', 'us_customary'].map(function (val) {
+                var selected = val === cur ? ' is-selected' : '';
+                return (
+                  '<li role="none"><button type="button" role="option" class="auth-unit-combo__option' +
+                  selected +
+                  '" data-value="' +
+                  val +
+                  '" aria-selected="' +
+                  (val === cur ? 'true' : 'false') +
+                  '">' +
+                  unitFullLabel(val) +
+                  '</button></li>'
+                );
+              }).join('');
+          }
+          function syncBtn() {
+            var cur = unitSystemSelect.value === 'us_customary' ? 'us_customary' : 'metric';
+            btn.textContent = unitShortLabel(cur);
+            btn.title = unitFullLabel(cur);
+            renderMenu();
+          }
+
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (combo.classList.contains('is-open')) closeMenu();
+            else {
+              renderMenu();
+              openMenu();
+            }
+          });
+          menu.addEventListener('click', function (e) {
+            var opt = e.target && e.target.closest ? e.target.closest('[data-value]') : null;
+            if (!opt) return;
+            var val = opt.getAttribute('data-value') === 'us_customary' ? 'us_customary' : 'metric';
+            unitSystemSelect.value = val;
+            unitSystemSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            syncBtn();
+            closeMenu();
+          });
+          document.addEventListener('click', function (e) {
+            if (!combo.contains(e.target) && e.target !== unitSystemSelect) closeMenu();
+          });
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeMenu();
+          });
+
+          unitSystemSelect._npUnitCombo = { sync: syncBtn, close: closeMenu };
+          syncBtn();
+          return unitSystemSelect._npUnitCombo;
+        }
 
         languageSelect.value = prefs.language;
         unitSystemSelect.value = prefs.unit_system;
         window.NpI18n.setLanguage(prefs.language, { persist: false });
+        ensureAuthUnitCombo();
 
         languageSelect.addEventListener('change', function() {
           window.NpPrefs.set({ language: this.value }, { explicit: true });
           window.NpI18n.setLanguage(this.value, { persist: false });
+          if (unitSystemSelect._npUnitCombo) unitSystemSelect._npUnitCombo.sync();
           if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
 
         unitSystemSelect.addEventListener('change', function() {
           window.NpPrefs.set({ unit_system: this.value }, { explicit: true });
+          if (unitSystemSelect._npUnitCombo) unitSystemSelect._npUnitCombo.sync();
         });
 
         window.addEventListener('np:prefs-changed', function(event) {
@@ -3199,6 +3299,7 @@
           languageSelect.value = next.language;
           unitSystemSelect.value = next.unit_system;
           document.documentElement.setAttribute('data-np-unit-system', next.unit_system);
+          if (unitSystemSelect._npUnitCombo) unitSystemSelect._npUnitCombo.sync();
           if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
 
