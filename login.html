@@ -3188,10 +3188,10 @@
           return fallback;
         };
 
-        /** Cerrado: etiqueta corta. Al abrir la lista: etiqueta con ejemplos. */
-        function syncAuthUnitOptionLabels(mode) {
+        /** Etiqueta corta siempre (el select nativo no puede mostrar largo solo en la lista).
+         *  Ejemplos completos van en title + ayuda oculta. */
+        function syncAuthUnitOptionLabels() {
           if (!unitSystemSelect) return;
-          var showFull = mode === 'full';
           Array.prototype.forEach.call(unitSystemSelect.options || [], function (opt) {
             var val = opt.value === 'us_customary' ? 'us_customary' : 'metric';
             var shortKey = val === 'us_customary' ? 'selector.us_customary' : 'selector.metric';
@@ -3200,7 +3200,7 @@
             var fullFb = val === 'us_customary'
               ? 'US customary (acre, lb, ft, °F, etc.)'
               : 'Métrico (ha, kg, m³, °C, etc.)';
-            opt.textContent = showFull ? t(fullKey, fullFb) : t(shortKey, shortFb);
+            opt.textContent = t(shortKey, shortFb);
             opt.setAttribute('title', t(fullKey, fullFb));
           });
         }
@@ -3208,27 +3208,18 @@
         languageSelect.value = prefs.language;
         unitSystemSelect.value = prefs.unit_system;
         window.NpI18n.setLanguage(prefs.language, { persist: false });
-        syncAuthUnitOptionLabels('short');
+        syncAuthUnitOptionLabels();
 
         languageSelect.addEventListener('change', function() {
           window.NpPrefs.set({ language: this.value }, { explicit: true });
           window.NpI18n.setLanguage(this.value, { persist: false });
-          syncAuthUnitOptionLabels('short');
+          syncAuthUnitOptionLabels();
           if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
 
-        unitSystemSelect.addEventListener('focus', function() {
-          syncAuthUnitOptionLabels('full');
-        });
-        unitSystemSelect.addEventListener('mousedown', function() {
-          syncAuthUnitOptionLabels('full');
-        });
-        unitSystemSelect.addEventListener('blur', function() {
-          syncAuthUnitOptionLabels('short');
-        });
         unitSystemSelect.addEventListener('change', function() {
           window.NpPrefs.set({ unit_system: this.value }, { explicit: true });
-          syncAuthUnitOptionLabels('short');
+          syncAuthUnitOptionLabels();
         });
 
         window.addEventListener('np:prefs-changed', function(event) {
@@ -3237,7 +3228,7 @@
           languageSelect.value = next.language;
           unitSystemSelect.value = next.unit_system;
           document.documentElement.setAttribute('data-np-unit-system', next.unit_system);
-          syncAuthUnitOptionLabels('short');
+          syncAuthUnitOptionLabels();
           if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
 

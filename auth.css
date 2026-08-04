@@ -231,8 +231,8 @@
 .auth-preferences-bar__controls {
   flex: 0 0 auto;
   display: grid;
-  /* Mismo ancho fijo en ambas casillas */
-  grid-template-columns: repeat(2, 110px);
+  /* Mismo ancho fijo ≈ "US customary" */
+  grid-template-columns: repeat(2, 140px);
   gap: 8px;
   width: auto;
   max-width: none;
@@ -581,10 +581,12 @@
 
   .auth-preferences-bar__controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    max-width: none;
-    flex: 1 1 auto;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    flex: 0 1 auto;
   }
 
   .auth-preferences-bar__portal {
@@ -596,20 +598,20 @@
   }
 
   .auth-preference-field {
-    padding: 6px 8px 7px;
+    padding: 4px 5px 5px;
   }
 
   .auth-preference-field label {
-    margin: 0 1px 4px;
-    font-size: 10px;
+    margin: 0 1px 3px;
+    font-size: 9px;
     letter-spacing: 0.01em;
   }
 
   .auth-preference-field select {
-    height: 38px;
-    min-height: 38px;
-    font-size: 13px;
-    padding: 4px 26px 4px 8px;
+    height: 36px;
+    min-height: 36px;
+    font-size: 12px;
+    padding: 3px 22px 3px 6px;
   }
 
   .auth-preferences-bar__manual,
@@ -1120,7 +1122,7 @@
   }
 
   .auth-page .auth-preferences-bar__controls {
-    grid-template-columns: repeat(2, 110px);
+    grid-template-columns: repeat(2, 140px);
     gap: 8px;
     max-width: none;
     width: max-content;
