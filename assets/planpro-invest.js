@@ -726,13 +726,12 @@
     if (graphBtn) {
       var n = st.compareSymbols.length;
       graphBtn.disabled = n < 1;
-      graphBtn.textContent =
-        n < 1 ? 'Graficar comparación' : n === 1 ? 'Graficar 1 activo' : 'Graficar ' + n + ' activos';
+      graphBtn.textContent = n < 1 ? 'Graficar' : 'Graficar (' + n + ')';
     }
     if (!mount) return;
     if (!st.compareSymbols.length) {
       mount.innerHTML =
-        '<span class="np-muted" style="font-size:12px;">Marca ⇄ en AAPL, MSFT, VOO… (2–6) y luego «Graficar comparación».</span>';
+        '<span class="np-muted" style="font-size:12px;">Marca ⇄ en 2 o más activos para comparar.</span>';
       return;
     }
     mount.innerHTML =
@@ -1268,7 +1267,7 @@
       var empty = $('npInvEmpty');
       var msg =
         e && (e.code === 'RATE_LIMIT' || e.status === 429)
-          ? 'Yahoo gratis se saturó. Espera 1–2 min y pulsa Actualizar selección. Invest PRO sí funciona; la fuente pública a veces se cierra.'
+          ? 'No se pudo consultar ahora. Reintenta en un momento.'
           : e && e.code === 'NOT_FOUND'
             ? 'Activo no encontrado'
             : (e && e.message) || 'No se pudo cargar el activo';
@@ -1354,8 +1353,7 @@
         drawChart(st.lastSeries);
         var statusKeep = $('npInvStatus');
         if (statusKeep) {
-          statusKeep.textContent =
-            'Fuente saturada · mostrando última gráfica guardada. Espera un poco y reintenta.';
+          statusKeep.textContent = 'Usando última gráfica disponible. Reintenta si quieres refrescar.';
           statusKeep.classList.remove('np-hide');
         }
         return;
@@ -1364,7 +1362,7 @@
       var empty = $('npInvChartEmpty');
       var msg =
         e && (e.code === 'RATE_LIMIT' || e.status === 429)
-          ? 'Yahoo gratis se saturó (pasa). Espera 1–2 min y pulsa «Graficar comparación» o Actualizar selección. No está roto Invest PRO.'
+          ? 'No se pudo consultar ahora. Reintenta en un momento.'
           : (e && e.message) || 'No se pudo cargar la gráfica';
       if (empty) {
         empty.classList.remove('np-hide');
@@ -1505,7 +1503,11 @@
         else toast('Máximo 6 activos en comparación', true);
         renderPicks();
         renderCompareChips();
-        // No consulta web aquí: solo marca. Usa «Graficar comparación».
+        if (st.compareSymbols.length) {
+          loadChart({ force: false, symbols: st.compareSymbols.slice() });
+        } else if (st.activeSymbol) {
+          loadChart({ force: false, symbols: [st.activeSymbol] });
+        }
         return;
       }
       t = e.target.closest('[data-inv-compare-off]');
@@ -1514,6 +1516,11 @@
         st.compareSymbols = st.compareSymbols.filter(function (s) { return s !== off; });
         renderPicks();
         renderCompareChips();
+        if (st.compareSymbols.length) {
+          loadChart({ force: false, symbols: st.compareSymbols.slice() });
+        } else if (st.activeSymbol) {
+          loadChart({ force: false, symbols: [st.activeSymbol] });
+        }
         return;
       }
       t = e.target.closest('[data-inv-range]');

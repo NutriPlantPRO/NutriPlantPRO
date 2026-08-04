@@ -13,7 +13,7 @@ const { createClient } = require('@supabase/supabase-js');
 const yahoo = require('./lib/yahoo-finance-provider');
 
 const RATE_WINDOW_MS = 60 * 1000;
-const RATE_MAX = 40;
+const RATE_MAX = 120;
 const rateBuckets = new Map();
 
 function corsHeaders() {
@@ -156,22 +156,21 @@ exports.handler = async function (event) {
       const symbols = raw.map(normalizeSymbol).filter(Boolean).slice(0, 6);
       const range = String(params.range || '1A').toUpperCase();
       if (symbols.length < 1) return json(400, { error: 'Indica al menos un symbol.' });
-      const series = [];
-      for (const s of symbols) {
-        try {
-          series.push(await yahoo.getHistory(s, range));
-        } catch (e) {
-          series.push({
-            symbol: s,
-            range,
-            points: [],
-            error: e && e.message ? e.message : 'Error'
-          });
-        }
-        // Evita saturar Yahoo al comparar varios tickers seguidos
-        await new Promise((r) => setTimeout(r, 350));
-      }
-      return json(200, { series, range });
+      const settled = await Promise.all(
+        symbols.map(async (s) => {
+          try {
+            return await yahoo.getHistory(s, range);
+          } catch (e) {
+            return {
+              symbol: s,
+              range,
+              points: [],
+              error: e && e.message ? e.message : 'Error'
+            };
+          }
+        })
+      );
+      return json(200, { series: settled, range });
     }
 
     return json(400, { error: 'action inválida. Usa search|quote|quotes|chart|compare.' });
