@@ -18530,8 +18530,8 @@
                 '<div id="connMapContainer" style="flex: 1 1 auto; border-radius: 0 0 12px 12px; position: relative;">' +
                 '<div id="connMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">Cargando mapa...</div></div></div>' +
                 '<style>' +
-                '#connMapModal{display:flex;align-items:center;justify-content:center;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));box-sizing:border-box;}' +
-                '#connMapModal .conn-map-modal-panel{width:95%;height:92vh;max-height:92dvh;}' +
+                '#connMapModal{display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));box-sizing:border-box;background:rgba(0,0,0,0.75);}' +
+                '#connMapModal .conn-map-modal-panel{width:95%;height:92vh;max-width:1400px;max-height:92dvh;border-radius:12px!important;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;}' +
                 '#connMapModal .conn-map-modal-header{padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;flex-direction:column;gap:12px;align-items:stretch;box-sizing:border-box;max-width:100%;flex-shrink:0;}' +
                 '@media (min-width:900px){#connMapModal .conn-map-modal-header{flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 20px;}}' +
                 '#connMapModal .conn-map-modal-title{flex:1 1 260px;min-width:0;max-width:100%;}' +
@@ -18542,7 +18542,8 @@
                 '#connMapModal #connMapSummaryBadge{flex-shrink:0;}' +
                 '#connMapModal #connMapContainer{flex:1 1 0;min-height:max(180px,28vh);background:#0f172a;}' +
                 '#connMapModal #connMapContainer .leaflet-container{width:100%!important;height:100%!important;background:#0f172a;}' +
-                '@media (orientation:landscape) and (max-height:900px){#connMapModal{align-items:stretch;justify-content:stretch;padding:0;}#connMapModal .conn-map-modal-panel{width:100%!important;max-width:none!important;height:100%!important;max-height:100dvh!important;border-radius:0!important;}#connMapModal .conn-map-modal-header{padding:10px 14px;gap:8px;}#connMapModal .conn-map-modal-title p{margin:2px 0 0!important;}#connMapModal #connMapContainer{min-height:0;flex:1 1 0;}}' +
+                /* Misma ventanita flotante que Mapa global (no pantalla completa en landscape) */ +
+                '@media (orientation:landscape) and (max-height:900px){#connMapModal{align-items:center;justify-content:center;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));}#connMapModal .conn-map-modal-panel{width:min(96%,1400px)!important;max-width:1400px!important;height:min(94dvh,920px)!important;max-height:94dvh!important;border-radius:12px!important;}#connMapModal .conn-map-modal-header{padding:10px 14px;gap:8px;}#connMapModal .conn-map-modal-title p{margin:2px 0 0!important;}#connMapModal #connMapContainer{min-height:0;flex:1 1 0;}}' +
                 '#connMapModal .conn-map-modal-select{padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:13px;flex:1 1 140px;min-width:0;max-width:100%;box-sizing:border-box;}' +
                 '#connMapModal .conn-map-modal-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;justify-content:stretch;box-sizing:border-box;}' +
                 '@media (min-width:480px){#connMapModal .conn-map-modal-actions{width:auto;flex:1 1 auto;justify-content:flex-end;}}' +

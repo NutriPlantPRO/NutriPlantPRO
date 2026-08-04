@@ -792,6 +792,127 @@
     toast(sym + ' quitado de «' + activeListName() + '»');
   }
 
+  /** Persiste el orden actual de st.watchlist → sort_order en Supabase. */
+  async function persistWatchlistOrder() {
+    var ctx = getCtx();
+    if (!ctx.client || !ctx.userId || !st.tableReady) return false;
+    var rows = st.watchlist || [];
+    rows.forEach(function (row, i) {
+      row.sort_order = i;
+    });
+    var results = await Promise.all(
+      rows.map(function (row, i) {
+        if (!row || !row.id) return Promise.resolve({ error: null });
+        return ctx.client
+          .from('plan_pro_invest_watchlist')
+          .update({ sort_order: i })
+          .eq('id', row.id)
+          .eq('user_id', ctx.userId);
+      })
+    );
+    var err = results.find(function (r) {
+      return r && r.error;
+    });
+    if (err && err.error) {
+      toast(err.error.message || 'No se pudo guardar el orden', true);
+      return false;
+    }
+    return true;
+  }
+
+  function applyDomOrderToWatchlist(mount) {
+    if (!mount) return;
+    var syms = Array.prototype.map.call(mount.querySelectorAll('.np-inv-pick[data-inv-symbol]'), function (el) {
+      return String(el.getAttribute('data-inv-symbol') || '').toUpperCase();
+    });
+    var bySym = {};
+    (st.watchlist || []).forEach(function (w) {
+      bySym[String(w.symbol || '').toUpperCase()] = w;
+    });
+    var next = [];
+    syms.forEach(function (s) {
+      if (bySym[s]) {
+        next.push(bySym[s]);
+        delete bySym[s];
+      }
+    });
+    Object.keys(bySym).forEach(function (s) {
+      next.push(bySym[s]);
+    });
+    st.watchlist = next;
+    st.watchBySymbol = {};
+    next.forEach(function (row) {
+      st.watchBySymbol[String(row.symbol || '').toUpperCase()] = row;
+    });
+  }
+
+  /** Arrastrar ⋮⋮ solo en vista de lista / Mi portafolio. */
+  function wireWatchlistDrag(mount) {
+    if (!mount) return;
+    var canReorder = st.filter === 'list' || st.filter === 'portfolio';
+    mount.classList.toggle('np-inv-picks--reorder', canReorder);
+    if (!canReorder) return;
+
+    var dragEl = null;
+    var saving = false;
+
+    function onPointerDown(e) {
+      var handle = e.target.closest('.np-inv-drag');
+      if (!handle || !mount.contains(handle)) return;
+      var pick = handle.closest('.np-inv-pick');
+      if (!pick) return;
+      e.preventDefault();
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      dragEl = pick;
+      pick.classList.add('np-inv-pick--dragging');
+    }
+
+    function onPointerMove(e) {
+      if (!dragEl) return;
+      var over = document.elementFromPoint(e.clientX, e.clientY);
+      var target = over && over.closest ? over.closest('.np-inv-pick') : null;
+      if (!target || target === dragEl || !mount.contains(target)) return;
+      var picks = Array.prototype.slice.call(mount.querySelectorAll('.np-inv-pick'));
+      var from = picks.indexOf(dragEl);
+      var to = picks.indexOf(target);
+      if (from < 0 || to < 0 || from === to) return;
+      if (from < to) mount.insertBefore(dragEl, target.nextSibling);
+      else mount.insertBefore(dragEl, target);
+    }
+
+    async function onPointerUp() {
+      if (!dragEl) return;
+      dragEl.classList.remove('np-inv-pick--dragging');
+      dragEl = null;
+      if (saving) return;
+      var before = (st.watchlist || [])
+        .map(function (w) {
+          return String(w.symbol || '').toUpperCase();
+        })
+        .join('|');
+      applyDomOrderToWatchlist(mount);
+      var after = (st.watchlist || [])
+        .map(function (w) {
+          return String(w.symbol || '').toUpperCase();
+        })
+        .join('|');
+      if (before === after) return;
+      saving = true;
+      var ok = await persistWatchlistOrder();
+      saving = false;
+      if (ok) toast('Orden de favoritos guardado en la nube');
+    }
+
+    if (mount.dataset.npInvDragWired === '1') return;
+    mount.dataset.npInvDragWired = '1';
+    mount.addEventListener('pointerdown', onPointerDown);
+    mount.addEventListener('pointermove', onPointerMove);
+    mount.addEventListener('pointerup', onPointerUp);
+    mount.addEventListener('pointercancel', onPointerUp);
+  }
+
   async function toggleWatchlist(item) {
     var sym = String(item.symbol || '').toUpperCase();
     if (st.watchBySymbol[sym]) await removeFromWatchlist(sym);
@@ -907,55 +1028,69 @@
             '».'
           : 'Sin activos en este filtro.') +
         '</p>';
+      mount.classList.remove('np-inv-picks--reorder');
       return;
     }
 
     var listName = activeListName();
-    mount.innerHTML = items
-      .map(function (it) {
-        var sym = String(it.symbol).toUpperCase();
-        var on = !!st.watchBySymbol[sym];
-        var active = st.activeSymbol === sym ? ' np-inv-pick--active' : '';
-        return (
-          '<div class="np-inv-pick' +
-          active +
-          '" data-inv-symbol="' +
-          escapeHtml(sym) +
-          '">' +
-          '<button type="button" class="np-inv-pick-main" data-inv-open="' +
-          escapeHtml(sym) +
-          '" title="Ver ficha">' +
-          '<span class="np-inv-pick-sym">' +
-          escapeHtml(sym) +
-          '</span>' +
-          '<span class="np-inv-pick-name">' +
-          escapeHtml(it.name || sym) +
-          '</span>' +
-          '</button>' +
-          '<button type="button" class="np-inv-star' +
-          (on ? ' np-inv-star--on' : '') +
-          '" data-inv-toggle="' +
-          escapeHtml(sym) +
-          '" data-inv-name="' +
-          escapeHtml(it.name || sym) +
-          '" data-inv-type="' +
-          escapeHtml(it.asset_type || '') +
-          '" aria-label="' +
-          (on ? 'Quitar de ' + listName : 'Agregar a ' + listName) +
-          '" title="' +
-          (on ? 'Quitar de «' + listName + '»' : 'Agregar a «' + listName + '»') +
-          '">' +
-          (on ? '★' : '☆') +
-          '</button>' +
-          '<button type="button" class="np-inv-cmp-btn' +
-          (st.compareSymbols.indexOf(sym) >= 0 ? ' np-inv-cmp-btn--on' : '') +
-          '" data-inv-compare="' +
-          escapeHtml(sym) +
-          '" title="Comparar en gráfica">⇄</button>' +
-          '</div>'
-        );
-      })
-      .join('');
+    var canReorder = st.filter === 'list' || st.filter === 'portfolio';
+    var hint = canReorder
+      ? '<p class="np-inv-reorder-hint np-muted">Arrastra <strong>⋮⋮</strong> para reordenar · se guarda en la nube</p>'
+      : '';
+    mount.innerHTML =
+      hint +
+      items
+        .map(function (it) {
+          var sym = String(it.symbol).toUpperCase();
+          var on = !!st.watchBySymbol[sym];
+          var active = st.activeSymbol === sym ? ' np-inv-pick--active' : '';
+          var drag =
+            canReorder
+              ? '<button type="button" class="np-inv-drag" aria-label="Reordenar" title="Arrastrar para reordenar" tabindex="-1">⋮⋮</button>'
+              : '';
+          return (
+            '<div class="np-inv-pick' +
+            (canReorder ? ' np-inv-pick--sortable' : '') +
+            active +
+            '" data-inv-symbol="' +
+            escapeHtml(sym) +
+            '">' +
+            drag +
+            '<button type="button" class="np-inv-pick-main" data-inv-open="' +
+            escapeHtml(sym) +
+            '" title="Ver ficha">' +
+            '<span class="np-inv-pick-sym">' +
+            escapeHtml(sym) +
+            '</span>' +
+            '<span class="np-inv-pick-name">' +
+            escapeHtml(it.name || sym) +
+            '</span>' +
+            '</button>' +
+            '<button type="button" class="np-inv-star' +
+            (on ? ' np-inv-star--on' : '') +
+            '" data-inv-toggle="' +
+            escapeHtml(sym) +
+            '" data-inv-name="' +
+            escapeHtml(it.name || sym) +
+            '" data-inv-type="' +
+            escapeHtml(it.asset_type || '') +
+            '" aria-label="' +
+            (on ? 'Quitar de ' + listName : 'Agregar a ' + listName) +
+            '" title="' +
+            (on ? 'Quitar de «' + listName + '»' : 'Agregar a «' + listName + '»') +
+            '">' +
+            (on ? '★' : '☆') +
+            '</button>' +
+            '<button type="button" class="np-inv-cmp-btn' +
+            (st.compareSymbols.indexOf(sym) >= 0 ? ' np-inv-cmp-btn--on' : '') +
+            '" data-inv-compare="' +
+            escapeHtml(sym) +
+            '" title="Comparar en gráfica">⇄</button>' +
+            '</div>'
+          );
+        })
+        .join('');
+    wireWatchlistDrag(mount);
   }
 
   function renderWatchlistBar() {

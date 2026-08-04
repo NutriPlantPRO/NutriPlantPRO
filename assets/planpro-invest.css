@@ -240,7 +240,11 @@
   overflow: auto;
   padding-right: 2px;
 }
-
+.np-inv-reorder-hint {
+  margin: 0 0 4px;
+  font-size: 11px;
+  line-height: 1.35;
+}
 .np-inv-pick {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -250,6 +254,41 @@
   border-radius: 12px;
   padding: 4px;
   background: rgba(255, 255, 255, 0.7);
+}
+.np-inv-pick--sortable {
+  grid-template-columns: auto 1fr auto auto;
+}
+.np-inv-drag {
+  width: 28px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  line-height: 1;
+  padding: 0;
+}
+.np-inv-drag:hover {
+  color: #0d9488;
+  background: color-mix(in srgb, #0d9488 10%, #fff);
+}
+.np-inv-drag:active,
+.np-inv-pick--dragging .np-inv-drag {
+  cursor: grabbing;
+}
+.np-inv-pick--dragging {
+  opacity: 0.92;
+  border-color: #0d9488;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
+  background: #fff;
+  z-index: 2;
 }
 .np-inv-pick--active {
   border-color: #0d9488;
