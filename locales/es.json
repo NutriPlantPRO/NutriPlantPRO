@@ -252,8 +252,8 @@
   "selector": {
     "spanish": "Español",
     "english": "Inglés",
-    "metric": "Métrico (Sistema Internacional)",
-    "us_customary": "US customary"
+    "metric": "Métrico (ha, kg, m³, °C, etc.)",
+    "us_customary": "US customary (acre, lb, ft, °F, etc.)"
   },
   "granular": {
     "requirements_tab": "Requerimiento Nutricional",

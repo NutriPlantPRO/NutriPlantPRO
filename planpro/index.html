@@ -11723,10 +11723,10 @@
           <div class="np-inv-hero-row">
             <div>
               <h2>Invest PRO</h2>
-              <p>Modo <strong>consulta / análisis</strong> (no en vivo). Crea listas de interés, agrega ★ tickers y elimínalas cuando ya no las uses. ⇄ = comparar 2–6.</p>
+              <p>Gráfica <strong>TradingView</strong> dentro de Plan PRO. Tus listas ★ se guardan aquí. ⇄ compara hasta 6. Si ya iniciaste sesión en TradingView en este navegador, usa tu misma cuenta.</p>
             </div>
-            <button type="button" class="np-inv-refresh-main" id="npInvRefreshBtn" title="Vuelve a bajar solo lo seleccionado (ficha + comparación)">
-              Actualizar selección
+            <button type="button" class="np-inv-refresh-main" id="npInvRefreshBtn" title="Recargar la gráfica TradingView">
+              Recargar gráfica
             </button>
           </div>
         </div>
@@ -11764,7 +11764,7 @@
           </aside>
           <div class="np-inv-main">
             <p id="npInvStatus" class="np-inv-status np-hide" aria-live="polite"></p>
-            <p id="npInvEmpty" class="np-inv-empty np-inv-panel">Selecciona un activo o busca un ticker para ver su ficha.</p>
+            <p id="npInvEmpty" class="np-inv-empty np-inv-panel">Selecciona un activo o escribe un ticker para abrir la gráfica TradingView.</p>
             <section id="npInvQuoteCard" class="np-inv-panel np-hide">
               <div class="np-inv-toolbar">
                 <div class="np-inv-quote-head" style="margin:0;">
@@ -11774,20 +11774,22 @@
                     <div class="np-inv-quote-meta">
                       <span id="npInvSymbol">—</span>
                       <span class="np-inv-badge" id="npInvType">—</span>
-                      <span id="npInvExchange">—</span>
+                      <span id="npInvExchange">TradingView</span>
                     </div>
                   </div>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                  <button type="button" class="np-inv-watch-btn" id="npInvWatchBtn">☆ Agregar a Mi portafolio</button>
+                  <a class="np-inv-tv-link" id="npInvTvLink" href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">Abrir en TradingView ↗</a>
+                  <button type="button" class="np-inv-watch-btn" id="npInvWatchBtn">☆ Agregar a lista</button>
                 </div>
               </div>
-              <p id="npInvDataStamp" class="np-inv-data-stamp np-muted">Sin consulta aún · no es cotización en vivo</p>
-              <div class="np-inv-price-row" style="margin-top:14px;">
+              <p id="npInvDataStamp" class="np-inv-data-stamp np-muted">Gráfica TradingView · precio e indicadores van en el chart</p>
+              <!-- Campos legacy (Yahoo); ocultos — la data vive en TradingView -->
+              <div class="np-inv-price-row np-hide" style="margin-top:14px;" aria-hidden="true">
                 <div class="np-inv-price" id="npInvPrice">—</div>
                 <div class="np-inv-change" id="npInvChange">—</div>
               </div>
-              <div class="np-inv-metrics" aria-label="Indicadores">
+              <div class="np-inv-metrics np-hide" aria-hidden="true">
                 <div class="np-inv-metric"><span class="np-inv-metric-label">Apertura</span><span class="np-inv-metric-val" id="npInvOpen">N/D</span></div>
                 <div class="np-inv-metric"><span class="np-inv-metric-label">Máx. día</span><span class="np-inv-metric-val" id="npInvDayHigh">N/D</span></div>
                 <div class="np-inv-metric"><span class="np-inv-metric-label">Mín. día</span><span class="np-inv-metric-val" id="npInvDayLow">N/D</span></div>
@@ -11801,21 +11803,22 @@
                 <div class="np-inv-metric"><span class="np-inv-metric-label">Volumen</span><span class="np-inv-metric-val" id="npInvVol">N/D</span></div>
               </div>
             </section>
-            <section class="np-inv-panel">
-              <div class="np-inv-panel-title"><span>Gráfica</span></div>
-              <div id="npInvRanges" class="np-inv-ranges" aria-label="Periodo"></div>
-              <div id="npInvMetrics" class="np-inv-ranges" aria-label="Indicador a graficar"></div>
+            <section class="np-inv-panel np-inv-chart-panel">
+              <div class="np-inv-panel-title"><span>Gráfica TradingView</span></div>
+              <div id="npInvRanges" class="np-inv-ranges np-hide" aria-hidden="true"></div>
+              <div id="npInvMetrics" class="np-inv-ranges np-hide" aria-hidden="true"></div>
               <p class="np-muted" style="margin:0 0 8px;font-size:11px;line-height:1.4;">
-                Marca <strong>⇄</strong> en varios activos para compararlos en la gráfica (hasta 6).
+                Marca <strong>⇄</strong> en varios activos para compararlos (hasta 6). Periodos e indicadores: toolbar del chart.
               </p>
               <div class="np-inv-compare-row">
                 <div id="npInvCompareChips" class="np-inv-compare-chips" aria-label="Comparación"></div>
-                <button type="button" class="np-inv-graph-btn" id="npInvGraphCompareBtn" title="Volver a graficar la comparación">
+                <button type="button" class="np-inv-graph-btn" id="npInvGraphCompareBtn" title="Aplicar comparación en TradingView">
                   Graficar
                 </button>
               </div>
-              <div class="np-inv-chart-wrap">
-                <svg id="npInvChartSvg" role="img" aria-label="Gráfica de mercados"></svg>
+              <div class="np-inv-chart-wrap np-inv-chart-wrap--tv">
+                <div id="npInvTvWrap" class="np-inv-tv-wrap" aria-label="Gráfica TradingView"></div>
+                <svg id="npInvChartSvg" class="np-hide" aria-hidden="true"></svg>
                 <div id="npInvChartEmpty" class="np-inv-chart-empty">Selecciona un activo para ver la gráfica.</div>
               </div>
               <div id="npInvChartLegend" class="np-inv-legend"></div>
@@ -27475,8 +27478,8 @@
         'NUNCA digas que no puedes ver Nutri PRO, Notebook PRO, Neuron PRO, Invest PRO o textos indexados como limitación permanente. ' +
         'Si el bloque dice sin coincidencias, dilo y sugiere otras palabras / OCR — no inventes. ' +
         'Neuron PRO = cruces apunte↔archivo cuando aparecen en rutas kind=neuron. ' +
-        'Invest PRO = pestaña de mercados (empresas, ETFs, índices, cripto): Popular Picks, Mi portafolio ★, ficha, gráfica y comparación. ' +
-        'Si pregunta por tickers, precios, P/E, watchlist o “cómo veo NVDA/VOO”, indícale Plan PRO → Invest PRO. NO inventes cotizaciones ni métricas financieras. ' +
+        'Invest PRO = pestaña de mercados con gráfica TradingView embebida, Popular Picks, listas ★ y comparación ⇄. ' +
+        'Si pregunta por tickers o gráficas, indícale Plan PRO → Invest PRO. NO inventes cotizaciones; el chart es de TradingView. ' +
         'Ayuda a priorizar, redactar, resumir y sugerir siguientes pasos. Responde siempre en español. ' +
         'Guardar en Nutri PRO: si pide guardar algo, genera contenido útil y confirma carpeta; la app muestra panel de confirmación. ' +
         'Si adjunta imagen, léela. Si adjunta PDF/Excel/Word, indícale guardarlo en Nutri PRO desde el panel. ' +

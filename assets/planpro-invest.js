@@ -240,6 +240,134 @@
     return 'stock';
   }
 
+  /** Yahoo/ticker interno → símbolo TradingView. */
+  var TV_SYMBOL_MAP = {
+    '^GSPC': 'SPX',
+    '^NDX': 'NDX',
+    '^DJI': 'DJI',
+    '^RUT': 'RUT',
+    '^VIX': 'VIX',
+    'BTC-USD': 'BINANCE:BTCUSDT',
+    'ETH-USD': 'BINANCE:ETHUSDT',
+    'BRK-B': 'NYSE:BRK.B',
+    'BRK.B': 'NYSE:BRK.B',
+    'YAR.OL': 'OSE:YAR'
+  };
+
+  function toTvSymbol(raw) {
+    var s = String(raw || '').trim().toUpperCase();
+    if (!s) return 'NASDAQ:AAPL';
+    if (TV_SYMBOL_MAP[s]) return TV_SYMBOL_MAP[s];
+    if (/\.OL$/.test(s)) return 'OSE:' + s.replace(/\.OL$/, '');
+    return s.replace(/-/g, '.');
+  }
+
+  function tvChartUrl(symbol) {
+    return 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(toTvSymbol(symbol));
+  }
+
+  function resolveAssetMeta(symbol) {
+    var sym = String(symbol || '').trim().toUpperCase();
+    var hit = catalogFlat().find(function (x) {
+      return x.symbol === sym;
+    });
+    if (hit) return hit;
+    var w = (st.watchlist || []).find(function (x) {
+      return String(x.symbol || '').toUpperCase() === sym;
+    });
+    if (w) {
+      return {
+        symbol: sym,
+        name: w.name || sym,
+        asset_type: w.asset_type || guessType(sym, '')
+      };
+    }
+    return { symbol: sym, name: sym, asset_type: guessType(sym, '') };
+  }
+
+  function mountTradingViewChart(opts) {
+    opts = opts || {};
+    var wrap = $('npInvTvWrap');
+    var empty = $('npInvChartEmpty');
+    var status = $('npInvStatus');
+    var symbols = opts.symbols && opts.symbols.length ? opts.symbols.slice(0, 6) : selectedSymbols();
+    if (!wrap) return;
+    if (!symbols.length) {
+      wrap.innerHTML = '';
+      if (empty) {
+        empty.classList.remove('np-hide');
+        empty.textContent = 'Selecciona un activo para ver la gráfica.';
+      }
+      return;
+    }
+    var primary = symbols[0];
+    var compares = symbols.slice(1);
+    if (empty) empty.classList.add('np-hide');
+    wrap.innerHTML = '';
+
+    var container = document.createElement('div');
+    container.className = 'tradingview-widget-container';
+    container.style.width = '100%';
+    container.style.height = '100%';
+
+    var widgetEl = document.createElement('div');
+    widgetEl.className = 'tradingview-widget-container__widget';
+    widgetEl.style.width = '100%';
+    widgetEl.style.height = '100%';
+    container.appendChild(widgetEl);
+
+    var cfg = {
+      autosize: true,
+      symbol: toTvSymbol(primary),
+      interval: 'D',
+      timezone: 'America/Mexico_City',
+      theme: 'light',
+      style: '1',
+      locale: 'es',
+      enable_publishing: false,
+      allow_symbol_change: true,
+      hide_side_toolbar: false,
+      calendar: false,
+      support_host: 'https://www.tradingview.com'
+    };
+    if (compares.length) {
+      cfg.compareSymbols = compares.map(function (s) {
+        return { symbol: toTvSymbol(s), position: 'SameScale' };
+      });
+    }
+
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.async = true;
+    script.textContent = JSON.stringify(cfg);
+    container.appendChild(script);
+    wrap.appendChild(container);
+
+    var legend = $('npInvChartLegend');
+    if (legend) {
+      legend.innerHTML =
+        '<span class="np-muted" style="font-size:12px;">TradingView · ' +
+        escapeHtml(primary) +
+        ' → <strong>' +
+        escapeHtml(toTvSymbol(primary)) +
+        '</strong>' +
+        (compares.length
+          ? ' · vs ' +
+            compares
+              .map(function (s) {
+                return escapeHtml(s);
+              })
+              .join(', ')
+          : '') +
+        '</span>';
+    }
+    if (status) status.classList.add('np-hide');
+    st.lastFetchedAt = Date.now();
+    st.fromCache = false;
+    renderDataStamp();
+  }
+
   function activeList() {
     return (st.lists || []).find(function (l) {
       return l.id === st.activeListId;
@@ -827,6 +955,11 @@
       updateWatchButtonLabel();
     }
 
+    var tvLink = $('npInvTvLink');
+    if (tvLink && quote.symbol) {
+      tvLink.href = tvChartUrl(quote.symbol);
+    }
+
     setMetric('npInvOpen', fmtPrice(quote.open, null));
     setMetric('npInvDayHigh', fmtPrice(quote.dayHigh, null));
     setMetric('npInvDayLow', fmtPrice(quote.dayLow, null));
@@ -1143,25 +1276,18 @@
   function renderDataStamp() {
     var el = $('npInvDataStamp');
     if (!el) return;
-    if (!st.lastFetchedAt && !st.activeSymbol) {
-      el.textContent = 'Sin consulta aún · modo análisis (no en vivo)';
+    if (!st.activeSymbol) {
+      el.textContent = 'Elige un ticker · gráfica TradingView (tu sesión del navegador si ya entraste ahí)';
       return;
     }
-    var when = st.lastFetchedAt
-      ? new Date(st.lastFetchedAt).toLocaleString('es-MX', {
-          dateStyle: 'short',
-          timeStyle: 'short'
-        })
-      : '—';
-    var src = st.fromCache ? 'desde caché de esta sesión' : 'consulta web';
     var sel = selectedSymbols();
     el.textContent =
-      'Datos fijados · ' +
-      when +
-      ' · ' +
-      src +
-      (sel.length ? ' · selección: ' + sel.join(', ') : '') +
-      ' · «Actualizar selección» solo si quieres datos nuevos';
+      'TradingView · ' +
+      st.activeSymbol +
+      ' → ' +
+      toTvSymbol(st.activeSymbol) +
+      (sel.length > 1 ? ' · comparación: ' + sel.join(', ') : '') +
+      ' · listas ★ guardadas en Plan PRO';
   }
 
   function selectedSymbols() {
@@ -1225,168 +1351,54 @@
 
   async function loadAsset(symbol, opts) {
     opts = opts || {};
-    var force = !!opts.force;
-    var svc = global.financialDataService;
-    if (!svc) {
-      toast('Servicio financiero no cargado', true);
-      return;
-    }
     var sym = String(symbol || '').trim().toUpperCase();
     if (!sym) return;
     st.activeSymbol = sym;
-    st.loading = true;
+    st.loading = false;
     var status = $('npInvStatus');
-    if (status) {
-      status.textContent = force ? 'Actualizando ' + sym + '…' : 'Cargando ' + sym + '…';
-      status.classList.remove('np-hide');
-    }
+    if (status) status.classList.add('np-hide');
     renderPicks();
-    try {
-      // Una sola consulta: ficha + gráfica del rango (antes eran 2 → Yahoo 429 de entrada).
-      var quote;
-      var histOpts = { force: force };
-      if (typeof svc.getBundle === 'function' && !SNAPSHOT_METRICS[st.chartMetric]) {
-        var bundle = await svc.getBundle(sym, st.range, { force: force });
-        quote = bundle && bundle.quote;
-        if (bundle && bundle.history) histOpts.prefetched = [bundle.history];
-      } else {
-        quote = await svc.getQuote(sym, { force: force });
-      }
-      st.quote = quote;
-      st.fromCache = !!(quote && quote.__fromCache);
-      st.lastFetchedAt = (quote && quote.__cachedAt) || Date.now();
-      renderQuoteCard(quote);
-      renderDataStamp();
-      await loadChart(histOpts);
-      if (status) {
-        if (st.fromCache && !force) {
-          status.textContent = 'Usando datos ya consultados (sin nueva descarga).';
-          setTimeout(function () {
-            if (status && status.textContent.indexOf('ya consultados') >= 0) {
-              status.classList.add('np-hide');
-            }
-          }, 2200);
-        } else {
-          status.classList.add('np-hide');
-        }
-      }
-    } catch (e) {
-      st.quote = null;
-      renderQuoteCard(null);
-      var empty = $('npInvEmpty');
-      var msg =
-        e && (e.code === 'RATE_LIMIT' || e.status === 429)
-          ? 'No se pudo consultar ahora. Reintenta en un momento.'
-          : e && e.code === 'NOT_FOUND'
-            ? 'Activo no encontrado'
-            : (e && e.message) || 'No se pudo cargar el activo';
-      if (empty) {
-        empty.classList.remove('np-hide');
-        empty.textContent = msg;
-      }
-      if (status) {
-        status.textContent = msg;
-        status.classList.remove('np-hide');
-      }
-      renderDataStamp();
-    } finally {
-      st.loading = false;
+
+    var meta = resolveAssetMeta(sym);
+    var quote = {
+      symbol: sym,
+      name: meta.name || sym,
+      assetType: meta.asset_type || 'stock',
+      exchange: 'TradingView',
+      logoUrl: null,
+      price: null,
+      change: null,
+      changePercent: null
+    };
+    st.quote = quote;
+    st.lastFetchedAt = Date.now();
+    st.fromCache = false;
+    renderQuoteCard(quote);
+    renderDataStamp();
+
+    var chartSymbols;
+    if (st.compareSymbols.length >= 2) {
+      chartSymbols =
+        st.compareSymbols.indexOf(sym) >= 0
+          ? st.compareSymbols.slice()
+          : [sym].concat(st.compareSymbols).slice(0, 6);
+    } else if (st.compareSymbols.length === 1 && st.compareSymbols[0] !== sym) {
+      chartSymbols = [sym, st.compareSymbols[0]];
+    } else {
+      chartSymbols = [sym];
     }
+    mountTradingViewChart({ symbols: chartSymbols });
   }
 
   async function loadChart(opts) {
     opts = opts || {};
-    var force = !!opts.force;
-    var svc = global.financialDataService;
-    if (!svc) return;
-    if (SNAPSHOT_METRICS[st.chartMetric]) {
-      await loadSnapshotMetricChart({ force: force });
-      return;
-    }
     var symbols = opts.symbols && opts.symbols.length ? opts.symbols.slice(0, 6) : selectedSymbols();
     if (!symbols.length) {
-      drawChart([]);
+      mountTradingViewChart({ symbols: [] });
       return;
     }
-    var status = $('npInvStatus');
-    try {
-      var series;
-      if (opts.prefetched && opts.prefetched.length) {
-        series = opts.prefetched;
-      } else {
-        series =
-          symbols.length === 1
-            ? [await svc.getHistory(symbols[0], st.range, { force: force })]
-            : await svc.compare(symbols, st.range, { force: force });
-      }
-      st.lastSeries = series;
-      var failed = (series || []).filter(function (s) {
-        return !s || s.error || !s.points || s.points.length < 2;
-      });
-      var okSeries = (series || []).filter(function (s) {
-        return s && !s.error && s.points && s.points.length > 1;
-      });
-      var anyFresh = okSeries.some(function (s) {
-        return s && s.__fromCache === false;
-      });
-      var anyCache = okSeries.some(function (s) {
-        return s && s.__fromCache;
-      });
-      st.fromCache = !anyFresh && anyCache;
-      var times = okSeries
-        .map(function (s) {
-          return s && s.__cachedAt;
-        })
-        .filter(Boolean);
-      if (times.length) st.lastFetchedAt = Math.max.apply(null, times);
-      drawChart(okSeries.length ? okSeries : series);
-      renderDataStamp();
-      if (status) {
-        if (failed.length && okSeries.length) {
-          status.textContent =
-            'Graficados: ' +
-            okSeries
-              .map(function (s) {
-                return s.symbol;
-              })
-              .join(', ') +
-            ' · sin datos: ' +
-            failed
-              .map(function (s) {
-                return (s && s.symbol) || '?';
-              })
-              .join(', ') +
-            ' (sin datos de la fuente)';
-          status.classList.remove('np-hide');
-        } else if (!st.loading) {
-          status.classList.add('np-hide');
-        }
-      }
-    } catch (e) {
-      if (st.lastSeries && st.lastSeries.length) {
-        drawChart(st.lastSeries);
-        var statusKeep = $('npInvStatus');
-        if (statusKeep) {
-          statusKeep.textContent = 'Usando última gráfica disponible. Reintenta si quieres refrescar.';
-          statusKeep.classList.remove('np-hide');
-        }
-        return;
-      }
-      drawChart([]);
-      var empty = $('npInvChartEmpty');
-      var msg =
-        e && (e.code === 'RATE_LIMIT' || e.status === 429)
-          ? 'No se pudo consultar ahora. Reintenta en un momento.'
-          : (e && e.message) || 'No se pudo cargar la gráfica';
-      if (empty) {
-        empty.classList.remove('np-hide');
-        empty.textContent = msg;
-      }
-      if (status) {
-        status.textContent = msg;
-        status.classList.remove('np-hide');
-      }
-    }
+    if (!st.activeSymbol) st.activeSymbol = symbols[0];
+    mountTradingViewChart({ symbols: symbols });
   }
 
   async function graphCompareSelection() {
@@ -1395,22 +1407,18 @@
       return;
     }
     if (!st.activeSymbol) st.activeSymbol = st.compareSymbols[0];
-    toast('Graficando: ' + st.compareSymbols.join(', '));
-    await loadChart({ force: false, symbols: st.compareSymbols.slice() });
+    toast('Comparando en TradingView: ' + st.compareSymbols.join(', '));
+    await loadChart({ symbols: st.compareSymbols.slice() });
   }
 
   async function refreshSelection() {
-    var svc = global.financialDataService;
     var symbols = selectedSymbols();
     if (!symbols.length) {
       toast('Selecciona un activo primero', true);
       return;
     }
-    if (svc && typeof svc.clearSymbols === 'function') {
-      svc.clearSymbols(symbols);
-    }
-    toast('Actualizando solo: ' + symbols.join(', '));
-    await loadAsset(st.activeSymbol || symbols[0], { force: true });
+    toast('Recargando gráfica TradingView…');
+    mountTradingViewChart({ symbols: symbols });
   }
 
   async function runSearch(q) {
@@ -1422,50 +1430,69 @@
       mount.innerHTML = '';
       return;
     }
-    var svc = global.financialDataService;
-    if (!svc) return;
     mount.classList.remove('np-hide');
-    mount.innerHTML = '<div class="np-inv-search-item np-muted">Buscando…</div>';
-    try {
-      var results = await svc.search(query);
-      if (!results.length) {
-        mount.innerHTML =
-          '<div class="np-inv-search-item np-muted" style="display:block;line-height:1.45;">' +
-          'No encontrado en Yahoo.<br>' +
-          'Prueba el <strong>ticker exacto</strong>: BRK-B (no BRK.B), YAR.OL, TSM, BTC-USD, ^GSPC.<br>' +
-          'O escribe el nombre en inglés (Apple, NVIDIA).' +
-          '</div>';
-        return;
-      }
-      mount.innerHTML = results
-        .map(function (r) {
-          return (
-            '<button type="button" class="np-inv-search-item" data-inv-search-pick="' +
-            escapeHtml(r.symbol) +
-            '" data-inv-name="' +
-            escapeHtml(r.name || r.symbol) +
-            '" data-inv-type="' +
-            escapeHtml(r.assetType || '') +
-            '">' +
-            '<strong>' +
-            escapeHtml(r.symbol) +
-            '</strong>' +
-            '<span>' +
-            escapeHtml(r.name || '') +
-            '</span>' +
-            '<em>' +
-            escapeHtml(TYPE_LABEL[r.assetType] || r.assetType || '') +
-            '</em>' +
-            '</button>'
-          );
-        })
-        .join('');
-    } catch (e) {
-      mount.innerHTML =
-        '<div class="np-inv-search-item np-muted">' +
-        escapeHtml((e && e.message) || 'Error de búsqueda') +
-        '</div>';
+    var ql = query.toLowerCase();
+    var exact = query.toUpperCase().replace(/\s+/g, '');
+    var hits = catalogFlat()
+      .filter(function (it) {
+        return (
+          it.symbol.toLowerCase().indexOf(ql) >= 0 ||
+          String(it.name || '')
+            .toLowerCase()
+            .indexOf(ql) >= 0
+        );
+      })
+      .slice(0, 12);
+    var hasExact = hits.some(function (h) {
+      return h.symbol === exact;
+    });
+    var parts = [];
+    if (!hasExact && /^[\^A-Z0-9.-]{1,20}$/i.test(exact)) {
+      parts.push(
+        '<button type="button" class="np-inv-search-item" data-inv-search-pick="' +
+          escapeHtml(exact) +
+          '" data-inv-name="' +
+          escapeHtml(exact) +
+          '" data-inv-type="stock">' +
+          '<strong>' +
+          escapeHtml(exact) +
+          '</strong>' +
+          '<span>Abrir en TradingView</span>' +
+          '<em>' +
+          escapeHtml(toTvSymbol(exact)) +
+          '</em>' +
+          '</button>'
+      );
     }
+    hits.forEach(function (r) {
+      parts.push(
+        '<button type="button" class="np-inv-search-item" data-inv-search-pick="' +
+          escapeHtml(r.symbol) +
+          '" data-inv-name="' +
+          escapeHtml(r.name || r.symbol) +
+          '" data-inv-type="' +
+          escapeHtml(r.asset_type || '') +
+          '">' +
+          '<strong>' +
+          escapeHtml(r.symbol) +
+          '</strong>' +
+          '<span>' +
+          escapeHtml(r.name || '') +
+          '</span>' +
+          '<em>' +
+          escapeHtml(TYPE_LABEL[r.asset_type] || r.asset_type || '') +
+          '</em>' +
+          '</button>'
+      );
+    });
+    if (!parts.length) {
+      mount.innerHTML =
+        '<div class="np-inv-search-item np-muted" style="display:block;line-height:1.45;">' +
+        'Sin coincidencias en el catálogo.<br>Escribe el <strong>ticker exacto</strong> (AAPL, VOO, BTC-USD, BRK-B) y Enter.' +
+        '</div>';
+      return;
+    }
+    mount.innerHTML = parts.join('');
   }
 
   function wireEvents() {
@@ -1692,14 +1719,10 @@
       }
     }
 
-    // Si ya hay ficha en esta sesión, no vuelvas a pegarle a la web al reabrir la pestaña
+    // Si ya hay ficha en esta sesión, remonta TradingView (sin Yahoo)
     if (st.activeSymbol && st.quote) {
       renderQuoteCard(st.quote);
-      if (st.lastSeries && st.lastSeries.length && !SNAPSHOT_METRICS[st.chartMetric]) {
-        drawChart(st.lastSeries);
-      } else {
-        await loadChart({ force: false });
-      }
+      mountTradingViewChart({ symbols: selectedSymbols() });
       return;
     }
 

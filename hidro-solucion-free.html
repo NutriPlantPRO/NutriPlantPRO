@@ -1109,8 +1109,8 @@
       margin: 0 0 10px;
       font-size: 0.78rem;
     }
-    .hydro-pref-bar label { display: inline-flex; align-items: center; gap: 4px; color: #475569; }
-    .hydro-pref-bar select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+    .hydro-pref-bar label { display: inline-flex; align-items: center; gap: 4px; color: #2563eb; font-weight: 700; }
+    .hydro-pref-bar select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; max-width: min(100%, 280px); }
   </style>
   <script>
     (function () {
@@ -1134,8 +1134,8 @@
     </label>
     <label><span data-i18n="profile.unit_system">Unidades</span>
       <select id="hydroUnitSystemSelect">
-        <option value="metric" data-i18n="selector.metric">Métrico (Sistema Internacional)</option>
-        <option value="us_customary" data-i18n="selector.us_customary">US customary</option>
+        <option value="metric" data-i18n="selector.metric">Métrico (ha, kg, m³, °C, etc.)</option>
+        <option value="us_customary" data-i18n="selector.us_customary">US customary (acre, lb, ft, °F, etc.)</option>
       </select>
     </label>
   </div>

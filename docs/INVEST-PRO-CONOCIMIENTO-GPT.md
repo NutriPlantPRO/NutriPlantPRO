@@ -10,28 +10,26 @@ URL app: `/planpro/` (misma entrada admin + PIN).
 
 ## Para qué sirve
 
-Consultar **empresas, ETFs, índices y criptomonedas**:
+Consultar **empresas, ETFs, índices y criptomonedas** con gráfica **TradingView embebida** en Plan PRO:
 
-- Buscador por ticker o nombre (ej. `AAPL`, `VOO`, `YAR.OL`, `BTC-USD`)
-- Ficha: nombre, ticker, tipo, precio, cambio del día, apertura, máx/mín día, 52 semanas, volumen; P/E / Forward P/E / EPS / yield / cap. cuando la fuente los entrega (si no → **N/D**)
-- Gráfica histórica: 1D, 5D, 1M, 6M, 1A, 5A, Máximo
-- Selector de indicador: Precio · Volumen · Rendimiento % · P/E · Fwd P/E · Cambio día % (P/E = barras actuales al comparar; serie histórica de P/E aún no con fuente pública)
-- Comparar hasta **6** activos en la misma gráfica (⇄ en cada chip; típico 3–5)
-- **Popular Picks**: catálogo predefinido por categorías (IA, Semiconductores, Agricultura, Salud, Finanzas, Consumo, Espacio, Energía, ETFs, Cripto, Índices)
-- **⭐ Listas** (persistentes en Supabase): «Mi portafolio» + listas custom (crear / renombrar / eliminar). ★ agrega o quita el ticker en la **lista activa**. SQL: `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql`.
+- Buscador (catálogo Popular Picks + ticker exacto → abre en TradingView)
+- Cabecera del activo + enlace “Abrir en TradingView”
+- Gráfica avanzada TradingView (periodos, indicadores, dibujo en el toolbar del widget)
+- Comparar hasta **6** activos (⇄ + Graficar → `compareSymbols` en el widget)
+- **Popular Picks** y **⭐ Listas** en Supabase (sin cambio)
+- Si el admin ya inició sesión en TradingView en el mismo navegador, puede usar su cuenta ahí
 
 ## Datos técnicos (para no inventar)
 
 | Pieza | Detalle |
 |-------|---------|
 | UI | `planpro/index.html` + `assets/planpro-invest.js` / `.css` |
-| Cliente aislado | `assets/planpro-financial-data-service.js` |
-| API interna | `GET /api/plan-pro-invest` (Netlify; solo admin Bearer) |
-| Proveedor actual | Yahoo Finance endpoints públicos **sin API key** (`lib/yahoo-finance-provider.js`) |
+| Gráfica | Widget TradingView Advanced Chart (embed) |
+| Cliente Yahoo (legado / opcional) | `assets/planpro-financial-data-service.js` + `/api/plan-pro-invest` — **ya no** alimenta la gráfica principal |
 | Tabla | `plan_pro_invest_lists` + `plan_pro_invest_watchlist.list_id` |
 | SQL setup | `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql` |
 
-**Importante:** la fuente sin API key puede cambiar o fallar. El servicio está aislado para cambiar de proveedor sin rehacer la UI.
+**Importante:** no inventes precios; la cotización se ve en el chart de TradingView. Listas ★ = Plan PRO / Supabase.
 
 ## Qué NO hace (aún)
 

@@ -277,8 +277,8 @@
       selector: {
         spanish: "Español",
         english: "Inglés",
-        metric: "Métrico (Sistema Internacional)",
-        us_customary: "US customary"
+        metric: "Métrico (ha, kg, m³, °C, etc.)",
+        us_customary: "US customary (acre, lb, ft, °F, etc.)"
       },
       granular: {
         requirements_tab: "Requerimiento Nutricional",
@@ -1401,8 +1401,8 @@
       selector: {
         spanish: "Spanish",
         english: "English",
-        metric: "Metric (International System)",
-        us_customary: "US customary"
+        metric: "Metric (ha, kg, m³, °C, etc.)",
+        us_customary: "US customary (acre, lb, ft, °F, etc.)"
       },
       granular: {
         requirements_tab: "Nutrient Requirements",

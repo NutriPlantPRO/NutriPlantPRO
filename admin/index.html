@@ -16844,6 +16844,32 @@
         let globalMapSentinelSelection = null;
         let globalMapNdviLayer = null;
         let globalMapFieldCloudLayer = null;
+
+        /** Logo NutriPlant PRO a la derecha de los botones +/- (Leaflet topleft). */
+        function addNutriPlantMapBrandLogo(map) {
+            if (!map || !window.L) return null;
+            try {
+                if (map._npBrandLogoControl) {
+                    map.removeControl(map._npBrandLogoControl);
+                    map._npBrandLogoControl = null;
+                }
+            } catch (e) {}
+            var BrandCtrl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function () {
+                    var wrap = L.DomUtil.create('div', 'np-map-brand-logo');
+                    wrap.innerHTML =
+                        '<img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" draggable="false" />';
+                    L.DomEvent.disableClickPropagation(wrap);
+                    L.DomEvent.disableScrollPropagation(wrap);
+                    return wrap;
+                }
+            });
+            var ctrl = new BrandCtrl();
+            ctrl.addTo(map);
+            map._npBrandLogoControl = ctrl;
+            return ctrl;
+        }
         
         function showGlobalMap() {
             // En admin preferimos fuente nube para consistencia entre dispositivos.
@@ -16997,6 +17023,32 @@
                 </div>
                 <style id="globalMapClusterStyles">
                     #globalMapContainer .leaflet-container { width: 100% !important; height: 100% !important; background: #0f172a; }
+                    #globalMapContainer .leaflet-top.leaflet-left,
+                    #connMapContainer .leaflet-top.leaflet-left {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        flex-wrap: nowrap !important;
+                        align-items: flex-start !important;
+                        gap: 8px;
+                    }
+                    #globalMapContainer .np-map-brand-logo,
+                    #connMapContainer .np-map-brand-logo {
+                        margin: 10px 0 0 0 !important;
+                        padding: 6px 10px;
+                        background: rgba(255,255,255,0.96);
+                        border-radius: 8px;
+                        box-shadow: 0 1px 5px rgba(0,0,0,0.35);
+                        border: none;
+                        line-height: 0;
+                    }
+                    #globalMapContainer .np-map-brand-logo img,
+                    #connMapContainer .np-map-brand-logo img {
+                        height: 34px;
+                        width: auto;
+                        max-width: 150px;
+                        display: block;
+                        object-fit: contain;
+                    }
                     /* Diseño PRO: globo con número bien visible sobre el mapa */
                     #globalMapContainer .marker-cluster {
                         background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
@@ -17080,6 +17132,7 @@
                 globalMapStreetLayer.addTo(globalMapInstance);
                 globalMapSatelliteView = false;
                 updateGlobalMapViewButton();
+                addNutriPlantMapBrandLogo(globalMapInstance);
                 
                 const allBounds = [];
                 globalMapPolygonLayers = [];
@@ -17568,6 +17621,56 @@
             return name ? (name + ' · ' + email) : email;
         }
 
+        /** Semáforo mapa conexiones: verde activo (cuenta USD), amarillo activo sin ingreso, rojo no activo. */
+        function getConnectionsUserSemaforo(uid) {
+            var u = connMapUsersById[uid] || null;
+            if (!u) {
+                return {
+                    color: '#94a3b8',
+                    title: 'Usuario no encontrado en el panel',
+                    short: 'Sin dato'
+                };
+            }
+            var status = String(u.subscription_status || '').toLowerCase();
+            if (status === 'active') {
+                if (u.exclude_from_revenue === true) {
+                    return {
+                        color: '#eab308',
+                        title: 'Activo, pero no cuenta en el conteo de ingresos USD (no paga / excluido)',
+                        short: 'Activo · no en USD'
+                    };
+                }
+                return {
+                    color: '#22c55e',
+                    title: 'Activo (cuenta en ingresos USD)',
+                    short: 'Activo'
+                };
+            }
+            var statusLabel =
+                status === 'suspended' ? 'Suspendido'
+                    : status === 'cancelled' ? 'Cancelado'
+                        : status === 'expired' ? 'Expirado'
+                            : status === 'pending' ? 'Pendiente'
+                                : status === 'inactive' ? 'Inactivo'
+                                    : (status || 'No activo');
+            return {
+                color: '#ef4444',
+                title: 'No activo: ' + statusLabel,
+                short: statusLabel
+            };
+        }
+
+        function getConnectionsUserSemaforoHtml(uid) {
+            var meta = getConnectionsUserSemaforo(uid);
+            return '<span class="conn-map-semaforo" title="' +
+                String(meta.title).replace(/"/g, '&quot;') +
+                '" aria-label="' +
+                String(meta.title).replace(/"/g, '&quot;') +
+                '" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' +
+                meta.color +
+                ';margin-right:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(15,23,42,0.15);"></span>';
+        }
+
         function getConnectionsGroupingPrecision(mode) {
             // En "última ubicación por usuario" usamos mayor precisión para no fusionar puntos cercanos.
             if (mode === 'latest_per_user') return 4;
@@ -17693,6 +17796,9 @@
                 '@media (max-width:600px){#connMapModal .conn-map-modal-header{padding:10px 12px;gap:8px;}#connMapModal .conn-map-modal-title{flex:none;}#connMapModal .conn-map-modal-title h2{font-size:18px!important;line-height:1.2;}#connMapModal .conn-map-modal-title p{font-size:12px!important;line-height:1.3;margin-top:2px!important;}#connMapModal .conn-map-modal-toolbar{gap:6px;flex:none;width:100%;}#connMapModal .conn-map-modal-select{flex:1 1 calc(50% - 3px);padding:7px 8px;font-size:12px;}#connMapModal .conn-map-modal-actions{width:100%;gap:6px;flex-wrap:nowrap;}#connMapModal .conn-map-btn-sat,#connMapModal .conn-map-btn-close{padding:8px 10px;font-size:12px;line-height:1.2;flex:1 1 0;}#connMapModal #connMapSummaryBadge{padding:6px 12px;font-size:12px;}}' +
                 '@media (max-width:359px){#connMapModal .conn-map-modal-select{flex:1 1 100%;}#connMapModal .conn-map-modal-actions{flex-wrap:wrap;}#connMapModal .conn-map-btn-sat,#connMapModal .conn-map-btn-close{flex:1 1 100%;}}' +
                 '#connMapContainer .marker-cluster{background:linear-gradient(145deg,#fff 0%,#f1f5f9 100%)!important;border:2px solid #f59e0b!important;border-radius:50%!important;box-shadow:0 4px 14px rgba(0,0,0,0.2)!important;}#connMapContainer .marker-cluster div{background:transparent!important;color:#0f172a!important;font-weight:800!important;font-size:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;line-height:1!important;padding:0!important;margin:0!important;}#connMapContainer .marker-cluster span{display:block!important;line-height:1!important;}.conn-map-num-marker{background:none!important;border:none!important;}.conn-map-num-marker .conn-map-num{display:flex!important;align-items:center!important;justify-content:center!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;background:linear-gradient(145deg,#3b82f6 0%,#2563eb 100%)!important;color:#fff!important;font-weight:800!important;font-size:15px!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;line-height:1!important;}' +
+                '#connMapContainer .leaflet-top.leaflet-left{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:flex-start!important;gap:8px;}' +
+                '#connMapContainer .np-map-brand-logo{margin:10px 0 0 0!important;padding:6px 10px;background:rgba(255,255,255,0.96);border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,0.35);border:none;line-height:0;}' +
+                '#connMapContainer .np-map-brand-logo img{height:34px;width:auto;max-width:150px;display:block;object-fit:contain;}' +
                 '</style>';
             modal.style.display = 'flex';
             if (count === 0) {
@@ -17739,6 +17845,7 @@
                 connMapStreetLayer.addTo(connMapInstance);
                 connMapSatelliteView = false;
                 updateConnMapViewButton();
+                addNutriPlantMapBrandLogo(connMapInstance);
                 var allBounds = [];
                 function makeNumberIcon(count) {
                     return L.divIcon({
@@ -17806,7 +17913,8 @@
                         var usersTotal = userRows.length;
                         var usersDetail = userRows.slice(0, 8).map(function(row) {
                             var label = getConnectionsUserLabel(row.uid);
-                            return '<li style="margin:2px 0;"><strong>' + row.count + '</strong> · ' + label + '</li>';
+                            var dot = getConnectionsUserSemaforoHtml(row.uid);
+                            return '<li style="margin:2px 0;line-height:1.35;">' + dot + '<strong>' + row.count + '</strong> · ' + label + '</li>';
                         }).join('');
                         if (usersTotal > 8) usersDetail += '<li style="margin:2px 0;color:#64748b;">... y ' + (usersTotal - 8) + ' usuario(s) mas</li>';
                         var latestTs = g.visits.reduce(function(max, v) {
@@ -17820,6 +17928,11 @@
                             '<strong>Ultima:</strong> ' + lastDate +
                             '<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0;">' +
                             '<div style="font-weight:600;margin-bottom:4px;">Desglose por usuario:</div>' +
+                            '<div style="font-size:11px;color:#64748b;margin:0 0 6px 0;line-height:1.35;">' +
+                            '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:4px;vertical-align:middle;"></span>Activo · ' +
+                            '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#eab308;margin:0 4px 0 8px;vertical-align:middle;"></span>Activo sin USD · ' +
+                            '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin:0 4px 0 8px;vertical-align:middle;"></span>No activo' +
+                            '</div>' +
                             '<ol style="margin:0;padding-left:18px;font-size:12px;max-height:150px;overflow:auto;">' + (usersDetail || '<li>Sin detalle</li>') + '</ol>' +
                             '</div>';
                         var numToShow = usersTotal;
