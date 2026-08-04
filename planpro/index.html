@@ -1151,6 +1151,27 @@
       justify-content: center;
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
+    /* Pantalla pequeña: Notebook|Nutri / Neuron|Invest en 2×2 */
+    @media (max-width: 720px) {
+      .np-app-mode-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .np-app-mode-btn {
+        flex: none;
+        min-width: 0;
+        width: 100%;
+        padding: 10px 10px;
+        font-size: 13px;
+      }
+      .np-app-mode-btn-content {
+        gap: 6px;
+      }
+      .np-app-mode-btn-label {
+        white-space: nowrap;
+      }
+    }
     .np-app-mode-btn-content {
       display: inline-flex;
       align-items: center;
@@ -11699,8 +11720,15 @@
           y luego <code>supabase-plan-pro-invest-lists.sql</code>
         </div>
         <div class="np-inv-hero">
-          <h2>Invest PRO</h2>
-          <p>Modo <strong>consulta / análisis</strong> (no en vivo). Crea listas de interés, agrega ★ tickers y elimínalas cuando ya no las uses. ⇄ = comparar 2–6.</p>
+          <div class="np-inv-hero-row">
+            <div>
+              <h2>Invest PRO</h2>
+              <p>Modo <strong>consulta / análisis</strong> (no en vivo). Crea listas de interés, agrega ★ tickers y elimínalas cuando ya no las uses. ⇄ = comparar 2–6.</p>
+            </div>
+            <button type="button" class="np-inv-refresh-main" id="npInvRefreshBtn" title="Vuelve a bajar solo lo seleccionado (ficha + comparación)">
+              Actualizar selección
+            </button>
+          </div>
         </div>
         <div class="np-inv-layout">
           <aside class="np-inv-side">
@@ -11752,7 +11780,6 @@
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                   <button type="button" class="np-inv-watch-btn" id="npInvWatchBtn">☆ Agregar a Mi portafolio</button>
-                  <button type="button" class="btn btn-ghost btn-ghost-blue" id="npInvRefreshBtn" title="Vuelve a bajar solo lo seleccionado (ficha + comparación)">Actualizar selección</button>
                 </div>
               </div>
               <p id="npInvDataStamp" class="np-inv-data-stamp np-muted">Sin consulta aún · no es cotización en vivo</p>

@@ -16171,11 +16171,12 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
         }
         .report-lab-chart-card {
           margin: 10px 0 2px;
-          padding: 10px;
+          padding: 10px 10px 14px;
           border: 1px solid #e2e8f0;
           border-radius: 10px;
           background: #fff;
           page-break-inside: avoid;
+          overflow: visible;
         }
         .report-lab-chart-caption {
           font-size: 12px;
@@ -16190,6 +16191,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           display: block;
           margin: 0 auto;
           border-radius: 6px;
+          overflow: visible;
         }
         .report-lab-type-title { page-break-after: avoid; }
         .report-print-tip {
@@ -20068,13 +20070,17 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     });
     if (!chartRows.length || !analyses.length) return null;
 
-    var W = 760;
-    var H = 300;
+    function shortLegendLabel(s) {
+      var t = String(s || '').trim();
+      if (t.length <= 34) return t;
+      return t.slice(0, 33) + '…';
+    }
+
+    var W = 780;
+    var H = 460;
     var canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
     // Fuera de pantalla pero con layout real (evita canvas 0×0)
     canvas.style.cssText = 'position:fixed;left:-9999px;top:0;width:' + W + 'px;height:' + H + 'px;opacity:1;pointer-events:none;z-index:-1;';
     document.body.appendChild(canvas);
@@ -20083,8 +20089,9 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     var labelFn = window.NpAnalysisCompare.analysisLabel;
     var datasets = analyses.map(function (a, idx) {
       var color = reportLabAnalysisColor(idx);
+      var full = (typeof labelFn === 'function') ? labelFn(a, idx) : (a.title || a.name || ('#' + (idx + 1)));
       return {
-        label: (typeof labelFn === 'function') ? labelFn(a, idx) : (a.title || a.name || ('#' + (idx + 1))),
+        label: shortLegendLabel(full),
         data: chartRows.map(function (r) {
           var v = r.values[idx];
           return v == null || !Number.isFinite(v) ? null : v;
@@ -20115,32 +20122,53 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
           maintainAspectRatio: false,
           animation: false,
           devicePixelRatio: 2,
+          layout: {
+            // Más aire abajo: etiquetas X rotadas no se cortan en el PNG del PDF
+            padding: { top: 8, right: 16, bottom: 28, left: 8 }
+          },
           plugins: {
+            // Arriba evita choque leyenda ↔ etiquetas del eje X
             legend: {
-              position: 'bottom',
-              labels: { boxWidth: 12, font: { size: 11 }, padding: 10 }
+              display: true,
+              position: 'top',
+              align: 'start',
+              labels: {
+                boxWidth: 10,
+                boxHeight: 10,
+                font: { size: 10 },
+                padding: 10,
+                usePointStyle: true
+              }
             }
           },
           scales: {
             x: {
-              ticks: { maxRotation: 45, minRotation: 0, font: { size: 10 }, color: '#475569' },
+              ticks: {
+                maxRotation: 35,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 12,
+                font: { size: 10 },
+                color: '#475569',
+                padding: 8
+              },
               grid: { color: 'rgba(148,163,184,0.25)' }
             },
             y: {
               beginAtZero: true,
               title: { display: !!yt, text: yt || '', font: { size: 11 }, color: '#64748b' },
-              ticks: { font: { size: 10 }, color: '#475569' },
+              ticks: { font: { size: 10 }, color: '#475569', padding: 4 },
               grid: { color: 'rgba(148,163,184,0.25)' }
             }
           }
         }
       });
+      try { if (chart && typeof chart.update === 'function') chart.update('none'); } catch (eUp) { /* ignore */ }
       if (chart && typeof chart.toBase64Image === 'function') {
         dataUrl = chart.toBase64Image('image/png', 1);
       } else {
         dataUrl = canvas.toDataURL('image/png');
       }
-      // Evitar data URL vacía / casi vacía
       if (!dataUrl || dataUrl.length < 500) dataUrl = null;
     } catch (eChart) {
       console.warn('lab PDF chart render', block.id, eChart);
@@ -21627,7 +21655,7 @@ window.restoreAguaUIState = function restoreAguaUIState() {
 
 // ========== ANÁLISIS FOLIAR (DOP) ==========
 var FOLIAR_OPTIMAL_MACRO = { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 }; // % MS
-var FOLIAR_OPTIMAL_MICRO = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 }; // mg/kg
+var FOLIAR_OPTIMAL_MICRO = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 }; // ppm
 
 function createEmptyFoliarAnalysis() {
   return {
@@ -21702,11 +21730,11 @@ function createFoliarTabHTML() {
                 </div>
               </details>
               <details class="soil-section" data-f-section="micro" open>
-                <summary>📊 Micronutrientes (mg/kg)</summary>
+                <summary>📊 Micronutrientes (ppm)</summary>
                 <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Ingresa resultado del análisis y, si quieres, ajusta el óptimo.</p>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>DOP</th><th>Estado</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>Resultado (ppm)</th><th>Óptimo (ppm)</th><th>DOP</th><th>Estado</th></tr></thead>
                     <tbody>${microRows}</tbody>
                   </table>
                 </div>
@@ -22076,11 +22104,11 @@ function createFrutaTabHTML() {
                 </div>
               </details>
               <details class="soil-section" data-fru-section="micro" open>
-                <summary>📊 Micronutrientes (mg/kg)</summary>
+                <summary>📊 Micronutrientes (ppm)</summary>
                 <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Ingresa resultado del análisis y, si quieres, ajusta el óptimo.</p>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>ICC</th><th>Estado</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>Resultado (ppm)</th><th>Óptimo (ppm)</th><th>ICC</th><th>Estado</th></tr></thead>
                     <tbody>${microRows}</tbody>
                   </table>
                 </div>

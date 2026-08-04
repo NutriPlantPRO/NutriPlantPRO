@@ -185,15 +185,15 @@
                 out += '<p class="admin-analysis-legend"><strong>DOP</strong> = ((Value − Optimum) / Optimum) × 100.</p>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrients (% DM)</div>';
                 out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (%)</th><th>Optimum (%)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
-                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (mg/kg)</div>';
-                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (mg/kg)</th><th>Optimum (mg/kg)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (ppm)</div>';
+                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (ppm)</th><th>Optimum (ppm)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Visual rule:</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
             } else {
                 out += '<p class="admin-analysis-legend"><strong>DOP</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrientes (% MS)</div>';
                 out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
-                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (mg/kg)</div>';
-                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (ppm)</div>';
+                out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (ppm)</th><th>Óptimo (ppm)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
             }
             out += '</div>';
@@ -283,14 +283,14 @@
             if (isEnLang()) {
                 out += '<p class="admin-analysis-legend"><strong>CQI</strong> = ((Value − Optimum) / Optimum) × 100.</p>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Fruit macronutrients (%)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (%)</th><th>Optimum (%)</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
-                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (mg/kg)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (mg/kg)</th><th>Optimum (mg/kg)</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (ppm)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (ppm)</th><th>Optimum (ppm)</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Fruit quality</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determination</th><th>Result</th><th>Optimum</th><th>CQI</th><th>Status</th></tr></thead><tbody>' + calidadRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Fruit calcium (mg/100 g FW)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determination</th><th>Result</th><th>Optimum</th><th>Status</th></tr></thead><tbody>' + calcioRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Visual rule:</strong> 🟢 |CQI| ≤ 10% &nbsp;|&nbsp; 🟡 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
             } else {
                 out += '<p class="admin-analysis-legend"><strong>ICC</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Macronutrientes en fruta (%)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
-                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (mg/kg)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (mg/kg)</th><th>Óptimo (mg/kg)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (ppm)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (ppm)</th><th>Óptimo (ppm)</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Calidad de Fruta</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determinación</th><th>Resultado</th><th>Óptimo</th><th>ICC</th><th>Estado</th></tr></thead><tbody>' + calidadRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Calcio en Fruta (mg/100 g MF)</div><table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Determinación</th><th>Resultado</th><th>Óptimo</th><th>Estado (semáforo)</th></tr></thead><tbody>' + calcioRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |ICC| ≤ 10% &nbsp;|&nbsp; 🟡 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
@@ -523,6 +523,7 @@
                 var vTbl = '<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;">'
                     + '<table class="admin-analysis-rel-table admin-soil-table-horizontal" style="margin:0;"><thead><tr><th class="col-concept">Elemento</th>';
                 if (hasMeqPpm) vTbl += '<th>meq/L</th><th>ppm</th>';
+                else if (grp === 'micros') vTbl += '<th>Valor (lab) (ppm)</th>';
                 else vTbl += '<th>Valor (lab)</th>';
                 vTbl += '</tr></thead><tbody>';
                 params.forEach(function (p) {
@@ -592,6 +593,11 @@
                 if (grp === 'cations') title = 'Cationes (meq/L y ppm)';
                 if (grp === 'anions') title = 'Aniones (meq/L y ppm)';
                 if (grp === 'micros') title = 'Micronutrimentos (ppm)';
+            }
+            if (isAguaType) {
+                if (grp === 'cations') title = 'Cationes (meq/L y ppm)';
+                if (grp === 'anions') title = 'Aniones (meq/L y ppm)';
+                if (grp === 'micros') title = 'Micronutrientes (ppm)';
             }
             var items = byGroup[grp];
             var content = null;

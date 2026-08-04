@@ -579,13 +579,17 @@
     mount.innerHTML = st.lists
       .map(function (l) {
         var active = l.id === st.activeListId ? ' np-inv-chip--active' : '';
+        var portfolio = l.is_default ? ' np-inv-list-chip--portfolio' : '';
         var mark = l.is_default ? '⭐ ' : '📁 ';
         return (
           '<button type="button" class="np-inv-chip' +
+          portfolio +
           active +
           '" data-inv-list="' +
           escapeHtml(l.id) +
-          '" title="Lista activa para ★">' +
+          '" title="' +
+          (l.is_default ? 'Mi portafolio principal' : 'Lista de interés') +
+          '">' +
           mark +
           escapeHtml(l.name) +
           '</button>'

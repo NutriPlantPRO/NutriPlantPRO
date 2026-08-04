@@ -147,13 +147,13 @@
 
   var FOLIAR_BLOCKS = [
     { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)', chartType: 'line', chart: true },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)', chartType: 'line', chart: true }
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'line', chart: true }
   ];
 
   var FOLIAR_REVIEW_SECTIONS = [
     { id: 'meta', titleKey: 'analysis.review_sec_meta', title: 'General', titleEn: 'General' },
     { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)', titleEn: 'Macros (% DM)' },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)', titleEn: 'Micros (mg/kg)' }
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', titleEn: 'Micros (ppm)' }
   ];
 
   var FOLIAR_REVIEW_FIELDS = [
@@ -174,7 +174,7 @@
 
   var FRUTA_BLOCKS = [
     { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (%)', titleEn: 'Macros (%)', chartType: 'line', chart: true },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (mg/kg)', titleEn: 'Micros (mg/kg)', chartType: 'line', chart: true },
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', titleEn: 'Micros (ppm)', chartType: 'line', chart: true },
     { id: 'calidad', titleKey: 'analysis.block_calidad', title: 'Calidad', titleEn: 'Quality', chartType: 'bar', chart: true },
     { id: 'calcio', titleKey: 'analysis.block_calcio_fruta', title: 'Calcio fruta', titleEn: 'Fruit calcium', chartType: 'bar', chart: true }
   ];
@@ -231,7 +231,7 @@
       reviewSections: FOLIAR_REVIEW_SECTIONS,
       reviewFields: FOLIAR_REVIEW_FIELDS,
       hint:
-        'Cada columna es un análisis foliar. Gráficas: macros (% MS) y micros (mg/kg).',
+        'Cada columna es un análisis foliar. Gráficas: macros (% MS) y micros (ppm).',
       reviewTitle: 'Revisar datos detectados (foliar)'
     },
     fruta: {
@@ -242,7 +242,7 @@
       reviewSections: FRUTA_REVIEW_SECTIONS,
       reviewFields: FRUTA_REVIEW_FIELDS,
       hint:
-        'Cada columna es un análisis de fruta. Gráficas: macros, micros, calidad y calcio.',
+        'Cada columna es un análisis de fruta. Gráficas: macros (%), micros (ppm), calidad y calcio.',
       reviewTitle: 'Revisar datos detectados (fruta)',
       reviewTitleEn: 'Review detected data (fruit)'
     }

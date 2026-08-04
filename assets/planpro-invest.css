@@ -162,7 +162,54 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+.np-inv-hero-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.np-inv-hero-row > div {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+.np-inv-refresh-main {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.28);
+}
+.np-inv-refresh-main:hover {
+  filter: brightness(1.05);
+}
+.np-inv-list-chip--portfolio {
+  border-color: #0d9488 !important;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #0d9488 18%, #fff) 0%,
+    #fff 100%
+  ) !important;
+  color: #0f766e !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #0d9488 25%, transparent),
+    0 4px 12px rgba(13, 148, 136, 0.18);
+  font-size: 12px;
+  padding: 7px 12px;
+}
+.np-inv-list-chip--portfolio.np-inv-chip--active {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+  color: #fff !important;
+  border-color: #0f766e !important;
+}
 .np-inv-lists-actions .btn {
+  opacity: 0.92;
+  font-weight: 600;
   font-size: 11px;
   padding: 5px 10px;
 }
@@ -522,6 +569,9 @@
   }
   .np-inv-price {
     font-size: 1.45rem;
+  }
+  .np-inv-refresh-main {
+    width: 100%;
   }
 }
 
