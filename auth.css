@@ -231,11 +231,11 @@
 .auth-preferences-bar__controls {
   flex: 0 0 auto;
   display: grid;
-  /* Idioma más angosto; unidades más ancho para que quepa "US customary" */
-  grid-template-columns: minmax(118px, 140px) minmax(152px, 186px);
-  gap: 10px;
+  /* Mismo ancho fijo en ambas casillas */
+  grid-template-columns: repeat(2, 110px);
+  gap: 8px;
   width: auto;
-  max-width: 348px;
+  max-width: none;
 }
 
 /* Manual + Contáctanos: misma altura compacta que preferencias (lap) */
@@ -343,13 +343,13 @@
 }
 
 .registration-preferences-slot .auth-preferences-bar__controls {
-  flex: 1 1 auto;
-  max-width: 380px;
+  flex: 0 0 auto;
+  max-width: none;
 }
 
 .auth-preference-field {
   min-width: 0;
-  padding: 5px 7px 6px;
+  padding: 4px 6px 5px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -580,7 +580,7 @@
   }
 
   .auth-preferences-bar__controls {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     width: 100%;
     max-width: none;
@@ -1120,9 +1120,9 @@
   }
 
   .auth-page .auth-preferences-bar__controls {
-    grid-template-columns: minmax(118px, 140px) minmax(152px, 186px);
-    gap: 10px;
-    max-width: 348px;
+    grid-template-columns: repeat(2, 110px);
+    gap: 8px;
+    max-width: none;
     width: max-content;
     margin-left: auto;
     margin-right: auto;
