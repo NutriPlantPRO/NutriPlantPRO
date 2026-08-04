@@ -231,10 +231,11 @@
 .auth-preferences-bar__controls {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(2, minmax(120px, 150px));
-  gap: 8px;
+  /* Idioma más angosto; unidades más ancho para que quepa "US customary" */
+  grid-template-columns: minmax(118px, 140px) minmax(152px, 186px);
+  gap: 10px;
   width: auto;
-  max-width: 320px;
+  max-width: 348px;
 }
 
 /* Manual + Contáctanos: misma altura compacta que preferencias (lap) */
@@ -343,12 +344,12 @@
 
 .registration-preferences-slot .auth-preferences-bar__controls {
   flex: 1 1 auto;
-  max-width: 430px;
+  max-width: 380px;
 }
 
 .auth-preference-field {
   min-width: 0;
-  padding: 5px 6px 6px;
+  padding: 5px 7px 6px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -363,20 +364,23 @@
 }
 
 .auth-preference-field label {
-  margin: 0 3px 4px;
+  margin: 0 2px 3px;
   color: #2563eb;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: 0.035em;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .auth-preference-field select {
   width: 100%;
   height: 32px;
   min-height: 32px;
-  padding: 4px 30px 4px 9px;
+  padding: 4px 28px 4px 8px;
   color: #0f172a;
   font: inherit;
   font-size: 12px;
@@ -385,7 +389,6 @@
   border: 1px solid #cbd5e1;
   border-radius: 7px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  text-overflow: ellipsis;
 }
 
 .auth-preference-field select:hover {
@@ -577,8 +580,8 @@
   }
 
   .auth-preferences-bar__controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 10px;
     width: 100%;
     max-width: none;
     flex: 1 1 auto;
@@ -587,19 +590,26 @@
   .auth-preferences-bar__portal {
     justify-content: center;
     width: 100%;
-    padding-top: 2px;
+    padding-top: 8px;
+    margin-top: 2px;
     border-top: 1px solid #eef2f7;
   }
 
+  .auth-preference-field {
+    padding: 6px 8px 7px;
+  }
+
   .auth-preference-field label {
-    margin-bottom: 3px;
-    font-size: 9px;
+    margin: 0 1px 4px;
+    font-size: 10px;
+    letter-spacing: 0.01em;
   }
 
   .auth-preference-field select {
-    height: 40px;
-    min-height: 40px;
-    font-size: 14px;
+    height: 38px;
+    min-height: 38px;
+    font-size: 13px;
+    padding: 4px 26px 4px 8px;
   }
 
   .auth-preferences-bar__manual,
@@ -1110,9 +1120,9 @@
   }
 
   .auth-page .auth-preferences-bar__controls {
-    grid-template-columns: repeat(2, minmax(120px, 150px));
-    gap: 8px;
-    max-width: 320px;
+    grid-template-columns: minmax(118px, 140px) minmax(152px, 186px);
+    gap: 10px;
+    max-width: 348px;
     width: max-content;
     margin-left: auto;
     margin-right: auto;

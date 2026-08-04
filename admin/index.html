@@ -269,18 +269,18 @@
             line-height: 1.15;
             transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
         }
-        /* TC: azul bajito · clima: naranja bajito */
+        /* Mismo tono pastel que Plan PRO */
         .admin-fx-pill {
-            border-color: rgba(59, 130, 246, 0.35);
-            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-            color: #1e40af;
+            border-color: rgba(148, 163, 184, 0.38);
+            background: linear-gradient(180deg, rgba(247, 251, 255, 0.96) 0%, rgba(239, 246, 255, 0.9) 100%);
+            color: #334155;
         }
         .admin-weather-pill {
             min-width: 108px;
             max-width: 168px;
-            border-color: rgba(245, 158, 11, 0.38);
-            background: linear-gradient(180deg, #fffbeb 0%, #ffedd5 100%);
-            color: #9a3412;
+            border-color: rgba(148, 163, 184, 0.38);
+            background: linear-gradient(180deg, rgba(255, 253, 247, 0.96) 0%, rgba(254, 249, 235, 0.9) 100%);
+            color: #334155;
         }
         .admin-fx-pill:hover,
         .admin-weather-pill:hover,
@@ -291,18 +291,16 @@
         }
         .admin-fx-pill:hover,
         .admin-fx-pill.admin-pill--open {
-            border-color: rgba(37, 99, 235, 0.55);
-            background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+            background: linear-gradient(180deg, rgba(250, 252, 255, 0.99) 0%, rgba(241, 248, 255, 0.95) 100%);
+            border-color: color-mix(in srgb, #2563eb 32%, rgba(148, 163, 184, 0.38));
         }
         .admin-weather-pill:hover,
         .admin-weather-pill.admin-pill--open {
-            border-color: rgba(217, 119, 6, 0.55);
-            background: linear-gradient(180deg, #fef3c7 0%, #fed7aa 100%);
+            background: linear-gradient(180deg, rgba(255, 254, 248, 0.99) 0%, rgba(255, 251, 235, 0.95) 100%);
+            border-color: color-mix(in srgb, #d97706 32%, rgba(148, 163, 184, 0.38));
         }
         .admin-fx-pill[data-state="loading"],
         .admin-weather-pill[data-state="loading"] { color: #64748b; }
-        .admin-fx-pill[data-state="loading"] { color: #2563eb; }
-        .admin-weather-pill[data-state="loading"] { color: #b45309; }
         .admin-fx-pill[data-state="error"],
         .admin-weather-pill[data-state="error"] {
             border-color: rgba(239, 68, 68, 0.35);
@@ -314,6 +312,9 @@
             font-weight: 800;
             white-space: nowrap;
             font-variant-numeric: tabular-nums;
+        }
+        .admin-weather-num {
+            font-size: 10px;
         }
         .admin-fx-sub,
         .admin-weather-sub {
@@ -327,11 +328,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .admin-fx-sub {
-            color: #1d4ed8;
-        }
         .admin-weather-sub {
-            color: #c2410c;
+            text-transform: none;
+            letter-spacing: 0.02em;
         }
         .admin-storage-pill {
             flex-shrink: 0;
@@ -355,7 +354,7 @@
         .admin-storage-pill:hover,
         .admin-storage-pill:focus-visible {
             background: linear-gradient(180deg, rgba(250, 255, 252, 0.99) 0%, rgba(240, 253, 248, 0.95) 100%);
-            border-color: rgba(34, 197, 94, 0.4);
+            border-color: color-mix(in srgb, #22c55e 35%, rgba(148, 163, 184, 0.38));
             transform: translateY(-1px);
             outline: none;
         }
@@ -509,17 +508,18 @@
             height: 44px;
             padding: 0;
             border-radius: 12px;
-            border: 1.5px solid rgba(34, 197, 94, 0.5);
-            background: rgba(240, 253, 244, 0.92);
-            color: #15803d;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background: rgba(255, 255, 255, 0.85);
+            color: #64748b;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-            transition: background 0.18s ease, border-color 0.18s ease, opacity 0.15s ease;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.2s ease, opacity 0.15s ease, transform 0.15s ease;
         }
         .admin-cloud-sync-btn:hover:not(:disabled) {
-            border-color: rgba(22, 163, 74, 0.7);
-            color: #166534;
-            background: rgba(220, 252, 231, 0.98);
+            background: rgba(255, 255, 255, 0.98);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #16a34a;
+            transform: translateY(-1px);
         }
         .admin-cloud-sync-btn:disabled {
             opacity: 0.7;
@@ -531,14 +531,18 @@
         }
         .admin-cloud-sync-btn .admin-cloud-sync-dot {
             position: absolute;
-            right: 8px;
-            top: 8px;
-            width: 8px;
-            height: 8px;
+            right: 7px;
+            bottom: 7px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
-            background: #22c55e;
+            background: #94a3b8;
             border: 2px solid #fff;
             box-sizing: border-box;
+        }
+        .admin-cloud-sync-btn[data-state="synced"] {
+            color: #16a34a;
+            border-color: rgba(34, 197, 94, 0.4);
         }
         .admin-cloud-sync-btn[data-state="synced"] .admin-cloud-sync-dot { background: #22c55e; }
         .admin-cloud-sync-btn[data-state="pending"] .admin-cloud-sync-dot,
@@ -548,12 +552,12 @@
         .admin-cloud-sync-btn[data-state="saving"] {
             border-color: rgba(245, 158, 11, 0.5);
             color: #b45309;
-            background: rgba(255, 251, 235, 0.95);
+            background: rgba(255, 255, 255, 0.9);
         }
         .admin-cloud-sync-btn[data-state="error"] {
-            border-color: rgba(239, 68, 68, 0.45);
+            border-color: rgba(239, 68, 68, 0.35);
             color: #b91c1c;
-            background: rgba(254, 242, 242, 0.95);
+            background: rgba(255, 255, 255, 0.9);
         }
         .admin-top-menu-btn,
         .admin-top-logout-btn {
@@ -565,15 +569,17 @@
             padding: 0;
             border-radius: 12px;
             border: 1px solid rgba(148, 163, 184, 0.38);
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.85);
             color: #334155;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
         }
         .admin-top-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.98);
             border-color: rgba(37, 99, 235, 0.35);
             color: #1d4ed8;
-            background: #fff;
+            transform: translateY(-1px);
         }
         .admin-top-menu-btn[aria-expanded="true"] {
             border-color: rgba(34, 197, 94, 0.45);
@@ -581,15 +587,17 @@
             color: #16a34a;
         }
         .admin-top-logout-btn {
-            border: 1.5px solid rgba(220, 38, 38, 0.55);
-            color: #991b1b;
-            background: rgba(254, 242, 242, 0.88);
-            box-shadow: 0 1px 3px rgba(185, 28, 28, 0.08), 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+            border-radius: 999px;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            color: #b91c1c;
+            background: rgba(254, 242, 242, 0.9);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
         }
         .admin-top-logout-btn:hover {
-            border-color: rgba(185, 28, 28, 0.75);
-            background: rgba(254, 226, 226, 0.95);
-            color: #7f1d1d;
+            border-color: rgba(239, 68, 68, 0.45);
+            background: rgba(254, 226, 226, 0.98);
+            color: #991b1b;
+            transform: translateY(-1px);
         }
         .admin-top-menu-btn svg,
         .admin-top-logout-btn svg {
