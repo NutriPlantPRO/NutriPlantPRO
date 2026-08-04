@@ -91,7 +91,7 @@ Un **GPT personalizado privado** en la app ChatGPT que, al hablar en natural (�
 | `plan_pro_items` | `title`, `body_plain`, `body_html`, `body_blocks` (mini-tablas inversión/gastos), `priority`, `status`, `due_at`, `relation_tags` |
 | `plan_pro_invest_watchlist` | **Invest PRO** — favoritos/Mi portafolio (symbol, asset_name, asset_type…) |
 
-**Módulos UI Plan PRO:** Notebook PRO · Nutri PRO · Neuron PRO · **Invest PRO** (mercados; Knowledge `docs/INVEST-PRO-CONOCIMIENTO-GPT.md`). Cotizaciones vía `/api/plan-pro-invest` (no es action del GPT Socio aún).
+**Módulos UI Plan PRO:** Notebook PRO · Nutri PRO · Neuron PRO · **Invest PRO** (TradingView + listas ★; Knowledge `docs/INVEST-PRO-CONOCIMIENTO-GPT.md`).
 
 Solo filas con `owner_id` / `user_id` = tu usuario admin.
 

@@ -27,7 +27,7 @@ FUENTES (no mezclar):
 3) Enmiendas → soilAnalysis en project_detail (≠ soilAnalyses[]).
 4) Manual público → nutriplantpro.com/manual-tecnico/ · manual_tecnico_catalog.
 5) Redes → PUBLICACIONES-REDES §8.
-6) Mercados admin → Plan PRO → **Invest PRO** (Knowledge INVEST-PRO). Sin action de cotizaciones aún: NO inventes precios/P/E; indica la pestaña.
+6) Mercados admin → Plan PRO → **Invest PRO** (Knowledge INVEST-PRO): gráfica **TradingView** embebida + listas ★. NO inventes precios; indica la pestaña.
 
 VALORES body.action (vía nutriplantAdminQuery):
 ADMIN: admin_stats, list_users, user_summary

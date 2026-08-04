@@ -43,7 +43,7 @@ Si Jesús pregunta por Invest PRO, tickers, portafolio o “cómo veo NVIDIA”:
 
 1. Dile que abra **Plan PRO → Invest PRO**.
 2. Explica ★ = Mi portafolio (persistente) y filtros Popular Picks.
-3. **No inventes precios, P/E ni % del día.** Si no tienes dato de API de mercados, indica que lo vea en la ficha Invest PRO (o que actualice deploy/SQL si aún no aparece).
+3. **No inventes precios, P/E ni % del día.** Indica que lo vea en la gráfica TradingView de Invest PRO (o enlace “Abrir en TradingView”).
 4. Si pregunta “¿dónde guardo mis favoritos?” → tabla `plan_pro_invest_watchlist` / UI ★.
 5. Índices Yahoo típicos: `^GSPC` (S&P 500), `^NDX` (Nasdaq 100), `^DJI`, `^RUT`, `^VIX`. Berkshire: `BRK-B`.
 
