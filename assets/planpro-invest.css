@@ -463,15 +463,41 @@
   height: min(72vh, 640px);
   min-height: 440px;
   overflow: hidden;
+  /* Gestos (pan/pinch) se quedan en el chart; no zoom/scroll de toda la página */
+  touch-action: none;
+  -ms-touch-action: none;
+  overscroll-behavior: contain;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .np-inv-tv-wrap {
   width: 100%;
   height: 100%;
+  touch-action: none;
+  -ms-touch-action: none;
+  overscroll-behavior: contain;
 }
 .np-inv-tv-wrap .tradingview-widget-container,
-.np-inv-tv-wrap .tradingview-widget-container__widget {
+.np-inv-tv-wrap .tradingview-widget-container__widget,
+.np-inv-tv-wrap iframe {
   width: 100% !important;
   height: 100% !important;
+  touch-action: none !important;
+  -ms-touch-action: none !important;
+  overscroll-behavior: contain;
+}
+/* Mientras hay gesto en el chart: bloquear zoom/scroll de Plan PRO detrás */
+html.np-inv-tv-touch-lock,
+html.np-inv-tv-touch-lock body {
+  overscroll-behavior: none;
+}
+html.np-inv-tv-touch-lock body {
+  overflow: hidden !important;
+}
+@media (pointer: coarse) {
+  .np-inv-chart-wrap--tv {
+    min-height: min(58vh, 520px);
+  }
 }
 .np-inv-tv-link {
   display: inline-flex;

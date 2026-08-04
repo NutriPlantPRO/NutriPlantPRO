@@ -14,7 +14,7 @@
  *   NUTRIPLANT_ADMIN_KEY                  — opcional; admin_key en body (misma clave ?k= del panel admin)
  *
  * Body JSON:
- *   action: "status" | "view" | "generate" | "dem_status" | "generate_dem" | "admin_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
+ *   action: "status" | "view" | "generate" | "dem_status" | "generate_dem" | "admin_status" | "admin_dem_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
  *   project_id: string
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
@@ -821,6 +821,39 @@ exports.handler = async (event) => {
             : null
       }),
       dem: demInfoAdm
+    });
+  }
+
+  if (bodyActionEarly === 'admin_dem_status') {
+    if (!isAdminRadarAuthorized(event, body)) {
+      return jsonResponse(403, {
+        error: 'admin_unauthorized',
+        message: 'Acceso admin denegado. Abre el panel con ?k= válido o usa X-Radar-Admin-Secret.'
+      });
+    }
+    const projectIdDem = body.project_id != null ? String(body.project_id).trim() : '';
+    if (!projectIdDem) {
+      return jsonResponse(400, { error: 'project_id es obligatorio' });
+    }
+    const { data: projDem, error: projDemErr } = await supabase
+      .from('projects')
+      .select('id, user_id, data')
+      .eq('id', projectIdDem)
+      .maybeSingle();
+    if (projDemErr || !projDem) {
+      return jsonResponse(404, {
+        error: 'project_not_found',
+        message: 'Proyecto no encontrado en la nube.'
+      });
+    }
+    const demPolygon = locationPolygonFromProject(projDem);
+    const demInfo = await buildDemStatusPayload(supabase, projDem.user_id, projectIdDem, demPolygon);
+    return jsonResponse(200, {
+      ok: true,
+      admin: true,
+      project_id: projectIdDem,
+      owner_user_id: projDem.user_id,
+      dem: demInfo
     });
   }
 

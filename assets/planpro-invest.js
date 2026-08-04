@@ -285,6 +285,117 @@
     return { symbol: sym, name: sym, asset_type: guessType(sym, '') };
   }
 
+  function bindTradingViewTouchIsolation(root) {
+    if (!root || root.dataset.npTvTouchBound === '1') return;
+    root.dataset.npTvTouchBound = '1';
+
+    var chartShell = root.closest('.np-inv-chart-wrap--tv') || root;
+
+    function setPageTouchLock(on) {
+      try {
+        document.documentElement.classList.toggle('np-inv-tv-touch-lock', !!on);
+      } catch (e) {}
+    }
+
+    function syncPageLock(e) {
+      setPageTouchLock(!!(e && e.touches && e.touches.length > 0));
+    }
+
+    chartShell.addEventListener(
+      'touchstart',
+      function (e) {
+        syncPageLock(e);
+        if (e.touches && e.touches.length > 1) {
+          try {
+            e.preventDefault();
+          } catch (err) {}
+        }
+      },
+      { passive: false, capture: true }
+    );
+
+    chartShell.addEventListener(
+      'touchmove',
+      function (e) {
+        syncPageLock(e);
+        if (e.touches && e.touches.length > 1) {
+          try {
+            e.preventDefault();
+            e.stopPropagation();
+          } catch (err) {}
+        }
+      },
+      { passive: false, capture: true }
+    );
+
+    chartShell.addEventListener('touchend', syncPageLock, { passive: true, capture: true });
+    chartShell.addEventListener('touchcancel', syncPageLock, { passive: true, capture: true });
+
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (type) {
+      chartShell.addEventListener(
+        type,
+        function (e) {
+          try {
+            e.preventDefault();
+          } catch (err) {}
+        },
+        { passive: false, capture: true }
+      );
+    });
+
+    // Pellizco sobre el iframe de TradingView a veces lo toma el navegador (zoom de página).
+    // Si hay 2+ dedos y alguno cae en el área del chart, bloquear zoom de Plan PRO.
+    if (!document.documentElement.dataset.npInvTvDocTouch) {
+      document.documentElement.dataset.npInvTvDocTouch = '1';
+      document.addEventListener(
+        'touchmove',
+        function (e) {
+          if (!document.getElementById('npInvTvWrap')) return;
+          var view = document.getElementById('npViewInvestPro');
+          if (!view || view.classList.contains('np-hide')) return;
+          if (!(e.touches && e.touches.length > 1)) return;
+          var shell = document.querySelector('#npViewInvestPro .np-inv-chart-wrap--tv');
+          if (!shell) return;
+          var r = shell.getBoundingClientRect();
+          for (var i = 0; i < e.touches.length; i++) {
+            var t = e.touches[i];
+            if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom) {
+              try {
+                e.preventDefault();
+              } catch (err) {}
+              return;
+            }
+          }
+        },
+        { passive: false, capture: true }
+      );
+      document.addEventListener(
+        'gesturestart',
+        function (e) {
+          var view = document.getElementById('npViewInvestPro');
+          if (!view || view.classList.contains('np-hide')) return;
+          if (!document.querySelector('#npViewInvestPro .np-inv-chart-wrap--tv iframe')) return;
+          try {
+            e.preventDefault();
+          } catch (err) {}
+        },
+        { passive: false, capture: true }
+      );
+    }
+
+    // Cuando TradingView inyecta el iframe, forzar touch-action
+    try {
+      var mo = new MutationObserver(function () {
+        var iframes = root.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {
+          iframes[i].style.touchAction = 'none';
+          iframes[i].setAttribute('scrolling', 'no');
+        }
+      });
+      mo.observe(root, { childList: true, subtree: true });
+    } catch (e) {}
+  }
+
   function mountTradingViewChart(opts) {
     opts = opts || {};
     var wrap = $('npInvTvWrap');
@@ -298,6 +409,9 @@
         empty.classList.remove('np-hide');
         empty.textContent = 'Selecciona un activo para ver la gráfica.';
       }
+      try {
+        document.documentElement.classList.remove('np-inv-tv-touch-lock');
+      } catch (e) {}
       return;
     }
     var primary = symbols[0];
@@ -343,6 +457,7 @@
     script.textContent = JSON.stringify(cfg);
     container.appendChild(script);
     wrap.appendChild(container);
+    bindTradingViewTouchIsolation(wrap);
 
     var legend = $('npInvChartLegend');
     if (legend) {

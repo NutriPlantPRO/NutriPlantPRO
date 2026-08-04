@@ -380,10 +380,10 @@
         }
         .admin-pill-popover {
             display: none;
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            z-index: 12003;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 13000;
             width: min(92vw, 300px);
             padding: 12px 12px 10px;
             border-radius: 14px;
@@ -901,11 +901,9 @@
             }
             #adminFxPopover,
             #adminWeatherPopover {
-                position: fixed;
                 grid-column: unset;
                 grid-row: unset;
                 margin: 0;
-                z-index: 13000;
             }
             #adminFxBtn {
                 grid-column: 1;
@@ -1279,6 +1277,11 @@
             transition: all 0.3s ease;
             width: 100%;
             margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-sizing: border-box;
         }
         
         .btn-admin:hover {
@@ -1292,6 +1295,43 @@
         
         .btn-admin.secondary:hover {
             background: #4b5563;
+        }
+
+        .btn-admin.is-cloud-loading,
+        .btn-admin.is-cloud-loading:hover,
+        button.is-cloud-loading {
+            opacity: 0.92;
+            cursor: wait;
+            transform: none !important;
+            pointer-events: none;
+        }
+        .admin-cloud-busy-spin {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            flex-shrink: 0;
+            animation: admin-cloud-busy-spin 0.7s linear infinite;
+        }
+        .btn-admin.secondary .admin-cloud-busy-spin {
+            border-color: rgba(255,255,255,0.3);
+            border-top-color: #fff;
+        }
+        .admin-cloud-busy-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        @keyframes admin-cloud-busy-spin {
+            to { transform: rotate(360deg); }
+        }
+        .admin-cloud-sync-btn[data-state="saving"] svg {
+            animation: admin-cloud-busy-spin 0.85s linear infinite;
+        }
+        .admin-cloud-sync-btn[data-state="saving"] {
+            color: #b45309;
         }
         
         .error-message {
@@ -1785,7 +1825,7 @@
                 
                 <div class="stat-card" style="background:#eff6ff;">
                     <div class="stat-number" id="estimatedRevenueCycle">-</div>
-                    <div class="stat-label">💰 Ingreso est. por ciclo (USD)</div>
+                    <div class="stat-label">💰 Ingreso est. por ciclo (USD neto)</div>
                     <div class="stat-sub" id="estimatedRevenueCycleNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                     <div class="stat-sub" id="estimatedRevenueCycleCount" style="margin-top:6px;font-size:12px;line-height:1.35;color:#1e3a8a;font-weight:700;"></div>
                 </div>
@@ -1835,54 +1875,54 @@
             <div class="admin-sections">
                 <div class="admin-section">
                     <h3 class="section-title">👥 Gestión de Suscriptores</h3>
-                    <button class="btn-admin" onclick="showAllUsers()">Ver Todos los Suscriptores</button>
-                    <button class="btn-admin secondary" onclick="showNewSubscribersThisMonth()">🆕 Suscriptores nuevos este mes</button>
-                    <button class="btn-admin secondary" onclick="showActiveSubscribers()">Suscriptores Activos</button>
-                    <button class="btn-admin secondary" onclick="showPendingSubscribers()">Suscripciones Pendientes</button>
-                    <button class="btn-admin secondary" onclick="showUsersWithProjects()">Suscriptores con Proyectos</button>
+                    <button class="btn-admin" onclick="showAllUsers(event)">Ver Todos los Suscriptores</button>
+                    <button class="btn-admin secondary" onclick="showNewSubscribersThisMonth(event)">🆕 Suscriptores nuevos este mes</button>
+                    <button class="btn-admin secondary" onclick="showActiveSubscribers(event)">Suscriptores Activos</button>
+                    <button class="btn-admin secondary" onclick="showPendingSubscribers(event)">Suscripciones Pendientes</button>
+                    <button class="btn-admin secondary" onclick="showUsersWithProjects(event)">Suscriptores con Proyectos</button>
                     <button class="btn-admin secondary" onclick="exportUsers()">Exportar Suscriptores</button>
                 </div>
                 
                 <div class="admin-section">
                     <h3 class="section-title">💳 Gestión de Suscripciones</h3>
-                    <button class="btn-admin" onclick="showSubscriptionsOverview()">Resumen de Suscripciones</button>
-                    <button class="btn-admin secondary" onclick="showExpiredSubscriptions()">Suscripciones Expiradas</button>
-                    <button class="btn-admin secondary" onclick="showCancelledSubscriptions()">Suscripciones Canceladas</button>
-                    <button class="btn-admin secondary" onclick="showSubscriptionRevenue()">Ingresos por Suscripción</button>
+                    <button class="btn-admin" onclick="showSubscriptionsOverview(event)">Resumen de Suscripciones</button>
+                    <button class="btn-admin secondary" onclick="showExpiredSubscriptions(event)">Suscripciones Expiradas</button>
+                    <button class="btn-admin secondary" onclick="showCancelledSubscriptions(event)">Suscripciones Canceladas</button>
+                    <button class="btn-admin secondary" onclick="showSubscriptionRevenue(event)">Ingresos por Suscripción</button>
                 </div>
                 
                 <div class="admin-section">
                     <h3 class="section-title">📋 Gestión de Proyectos</h3>
-                    <button class="btn-admin" onclick="showAllProjects()">Ver Todos los Proyectos</button>
-                    <button class="btn-admin secondary" onclick="showGlobalMap()">🗺️ Mapa global</button>
-                    <button class="btn-admin secondary" onclick="showProjectsByUser()">Proyectos por Usuario</button>
-                    <button class="btn-admin secondary" onclick="showProjectsByCrop()">Proyectos por Cultivo</button>
-                    <button class="btn-admin secondary" onclick="showDeletedProjects()">♻️ Proyectos eliminados</button>
+                    <button class="btn-admin" onclick="showAllProjects(event)">Ver Todos los Proyectos</button>
+                    <button class="btn-admin secondary" onclick="showGlobalMap(event)">🗺️ Mapa global</button>
+                    <button class="btn-admin secondary" onclick="showProjectsByUser(event)">Proyectos por Usuario</button>
+                    <button class="btn-admin secondary" onclick="showProjectsByCrop(event)">Proyectos por Cultivo</button>
+                    <button class="btn-admin secondary" onclick="showDeletedProjects(event)">♻️ Proyectos eliminados</button>
                     <button class="btn-admin secondary" onclick="searchProjects()">Buscar Proyectos</button>
                     <button class="btn-admin secondary" onclick="exportProjects()">Exportar Proyectos</button>
-                    <button class="btn-admin secondary" onclick="showRadarImagesAdmin()">🛰️ Imágenes Radar NDVI/NDMI/NDRE/RGB</button>
+                    <button class="btn-admin secondary" onclick="showRadarImagesAdmin(event)">🛰️ Imágenes Radar NDVI/NDMI/NDRE/RGB</button>
                     <button class="btn-admin secondary" onclick="sanitizeLocalCacheConsistency(true)">🧹 Limpiar caché inconsistente</button>
                 </div>
                 
                 <div class="admin-section">
                     <h3 class="section-title">💬 Historial de Conversaciones</h3>
-                    <button class="btn-admin" onclick="showAllChats()">Ver Todas las Conversaciones</button>
-                    <button class="btn-admin secondary" onclick="showChatSummaryByProject()">Resumen por Proyecto</button>
-                    <button class="btn-admin secondary" onclick="showChatSummaryByUser()">Resumen por Usuario</button>
+                    <button class="btn-admin" onclick="showAllChats(event)">Ver Todas las Conversaciones</button>
+                    <button class="btn-admin secondary" onclick="showChatSummaryByProject(event)">Resumen por Proyecto</button>
+                    <button class="btn-admin secondary" onclick="showChatSummaryByUser(event)">Resumen por Usuario</button>
                     <button class="btn-admin secondary" onclick="searchChats()">Buscar en Chats</button>
                     <button class="btn-admin secondary" onclick="exportChats()">Exportar Chats</button>
                 </div>
                 <div class="admin-section">
                     <h3 class="section-title">💰 Consumo Chat IA (backend)</h3>
                     <p style="color: #64748b; font-size: 14px; margin-bottom: 10px;">Coste real por usuario/mes registrado por el servidor (USD y tokens).</p>
-                    <button class="btn-admin" onclick="showChatUsageByUser()">Ver consumo por usuario (este mes)</button>
+                    <button class="btn-admin" onclick="showChatUsageByUser(event)">Ver consumo por usuario (este mes)</button>
                 </div>
                 
                 <div class="admin-section">
                     <h3 class="section-title">📊 Entradas al panel</h3>
                     <p style="color: #64748b; font-size: 14px; margin-bottom: 10px;">Cuántas veces entran los suscriptores al dashboard por mes (throttle 1 por hora). Ubicación aproximada por IP para el mapa.</p>
-                    <button class="btn-admin" onclick="showDashboardVisits()">Ver entradas por usuario / mes</button>
-                    <button class="btn-admin secondary" onclick="showConnectionsMap()">🗺️ Mapa de conexiones</button>
+                    <button class="btn-admin" onclick="showDashboardVisits(event)">Ver entradas por usuario / mes</button>
+                    <button class="btn-admin secondary" onclick="showConnectionsMap(event)">🗺️ Mapa de conexiones</button>
                 </div>
                 
                 <!-- Ocultas por ahora; descomentar si en el futuro se quieren ver en el panel -->
@@ -2011,6 +2051,54 @@
         function getAdminRefreshCooldownRemainingMs() {
             return Math.max(0, ADMIN_REFRESH_COOLDOWN_MS - (Date.now() - _adminRefreshLastAt));
         }
+
+        /** Indicador en el mismo botón mientras se baja de la nube (no añade espera extra). */
+        function adminResolveBusyButton(evOrBtn) {
+            if (!evOrBtn) return null;
+            if (evOrBtn.nodeType === 1) {
+                return evOrBtn.closest ? (evOrBtn.closest('button') || evOrBtn) : evOrBtn;
+            }
+            var t = evOrBtn.currentTarget || evOrBtn.target;
+            if (!t) return null;
+            return (t.closest && t.closest('button')) || (t.tagName === 'BUTTON' ? t : null);
+        }
+
+        function adminCloudBusyStart(evOrBtn, label) {
+            var btn = adminResolveBusyButton(evOrBtn);
+            if (!btn || btn.dataset.adminCloudBusy === '1') return function () {};
+            btn.dataset.adminCloudBusy = '1';
+            btn.dataset.adminCloudBusyHtml = btn.innerHTML;
+            if (btn.disabled) btn.dataset.adminCloudBusyWasDisabled = '1';
+            btn.disabled = true;
+            btn.classList.add('is-cloud-loading');
+            btn.setAttribute('aria-busy', 'true');
+            var text = label || '☁️ Bajando de la nube…';
+            btn.innerHTML =
+                '<span class="admin-cloud-busy-spin" aria-hidden="true"></span>' +
+                '<span class="admin-cloud-busy-label">' + text + '</span>';
+            return function adminCloudBusyEnd() {
+                if (!btn || btn.dataset.adminCloudBusy !== '1') return;
+                btn.classList.remove('is-cloud-loading');
+                btn.removeAttribute('aria-busy');
+                btn.innerHTML = btn.dataset.adminCloudBusyHtml || btn.innerHTML;
+                btn.disabled = btn.dataset.adminCloudBusyWasDisabled === '1';
+                delete btn.dataset.adminCloudBusy;
+                delete btn.dataset.adminCloudBusyHtml;
+                delete btn.dataset.adminCloudBusyWasDisabled;
+            };
+        }
+
+        async function adminRunWithCloudBusy(evOrBtn, label, fn) {
+            var end = adminCloudBusyStart(evOrBtn, label);
+            try {
+                return await Promise.resolve(typeof fn === 'function' ? fn() : fn);
+            } finally {
+                if (typeof end === 'function') end();
+            }
+        }
+        window.adminCloudBusyStart = adminCloudBusyStart;
+        window.adminRunWithCloudBusy = adminRunWithCloudBusy;
+
         function updateAdminRefreshButtonState() {
             var btn = document.getElementById('admin-refresh-cloud-btn');
             if (!btn) return;
@@ -3113,11 +3201,38 @@
             var WX_CACHE_KEY = 'np_admin_weather_loc_v1';
             var FX_CACHE_KEY = 'np_admin_fx_pair_v1';
 
+            function positionPillPopover(btn, pop, minHeight) {
+                if (!btn || !pop || !pop.classList.contains('is-open')) return;
+                var rect = btn.getBoundingClientRect();
+                var margin = 8;
+                var width = Math.min(300, window.innerWidth - 16);
+                var left = rect.left + rect.width / 2 - width / 2;
+                left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+                var top = rect.bottom + margin;
+                var need = typeof minHeight === 'number' ? minHeight : 220;
+                if (top + need > window.innerHeight - margin) {
+                    top = rect.top - margin;
+                    pop.style.transform = 'translateY(-100%)';
+                } else {
+                    pop.style.transform = '';
+                }
+                pop.style.left = Math.round(left) + 'px';
+                pop.style.top = Math.round(top) + 'px';
+                pop.style.width = Math.round(width) + 'px';
+                pop.style.right = 'auto';
+            }
+
+            function repositionOpenPills() {
+                if (fxPop && fxPop.classList.contains('is-open')) positionPillPopover(fxBtn, fxPop, 220);
+                if (wxPop && wxPop.classList.contains('is-open')) positionPillPopover(wxBtn, wxPop, 260);
+            }
+
             function closePops(except) {
                 [fxPop, wxPop].forEach(function (p) {
                     if (!p || p === except) return;
                     p.classList.remove('is-open');
                     p.setAttribute('aria-hidden', 'true');
+                    p.style.transform = '';
                 });
                 [fxBtn, wxBtn].forEach(function (b) {
                     if (!b) return;
@@ -3136,6 +3251,7 @@
                     pop.setAttribute('aria-hidden', 'false');
                     btn.classList.add('admin-pill--open');
                     btn.setAttribute('aria-expanded', 'true');
+                    positionPillPopover(btn, pop, pop === wxPop ? 260 : 220);
                 }
             }
 
@@ -3671,6 +3787,8 @@
                 }
                 closePops(null);
             });
+            window.addEventListener('resize', repositionOpenPills);
+            window.addEventListener('scroll', repositionOpenPills, true);
             refreshFx(true);
             refreshWeather({ force: true, requestLocation: true });
             setInterval(function () {
@@ -3879,9 +3997,8 @@
                 activeSubscriptions: activeAll.length,
                 activeCounting: activeCounting.length,
                 activeExcluded: activeExcluded.length,
-                revenuePerCycle: activeCounting.reduce(function (sum, u) {
-                    return sum + (parseFloat(u.subscription_amount) || 0);
-                }, 0),
+                // Contable neto: $46/ciclo por activo que suma (tras comisión PayPal), no el $49 de lista.
+                revenuePerCycle: adminNetRevenuePerCycle(activeCounting.length),
                 totalProjects: getTotalProjects(),
                 totalChats: chatMetrics.totalMessages,
                 totalInteractions: chatMetrics.totalInteractions,
@@ -3911,7 +4028,9 @@
                 revNote.textContent =
                     'Equiv. anual: $' +
                     equivAnualDash.toFixed(2) +
-                    ' · Solo activos que suman (sin admin ni «no suma»)';
+                    ' · $' +
+                    ADMIN_NET_REVENUE_PER_CYCLE_USD +
+                    ' neto/ciclo (tras PayPal) · Solo activos que suman';
             }
             if (revCount) {
                 revCount.innerHTML =
@@ -4746,8 +4865,102 @@
             return true;
         }
 
+        /** Neto por ciclo tras comisión PayPal (lista $49 → ~$46). Solo tarjetas de resumen contable en admin. */
+        var ADMIN_NET_REVENUE_PER_CYCLE_USD = 46;
+        var ADMIN_SUBSCRIPTION_CYCLE_MONTHS = 5;
+        function adminNetRevenuePerCycle(countingCount) {
+            return (Number(countingCount) || 0) * ADMIN_NET_REVENUE_PER_CYCLE_USD;
+        }
+
+        function adminParseDate(raw) {
+            if (raw == null || raw === '') return null;
+            var d = new Date(raw);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        /**
+         * Cobro real = last_payment_date (PayPal → Supabase profiles).
+         * Sin esa fecha no suma en contabilidad histórica (trial / aún no cobrado).
+         */
+        function adminUserHasPaidEvidence(u) {
+            if (!u || u.isAdmin === true) return false;
+            if (u.exclude_from_revenue === true) return false;
+            return !!adminParseDate(u.last_payment_date);
+        }
+
+        /**
+         * Ciclos cobrados estimados con activated_at → last_payment_date (PayPal).
+         * last_payment es el último cobro; el tramo desde activación estima cuántos ciclos hubo.
+         * Cancelados que sí tienen last_payment_date siguen contando.
+         */
+        function adminEstimatePaidCyclesForUser(u) {
+            if (!adminUserHasPaidEvidence(u)) return 0;
+            var lastPay = adminParseDate(u.last_payment_date);
+            var start = adminParseDate(u.subscription_activated_at) || lastPay;
+            var end = lastPay;
+            if (!start || !end) return 1;
+            if (end.getTime() < start.getTime()) end = start;
+            var months =
+                (end.getFullYear() - start.getFullYear()) * 12 +
+                (end.getMonth() - start.getMonth());
+            if (end.getDate() + 15 < start.getDate()) months -= 1;
+            if (months < 0) months = 0;
+            var cycles = Math.floor(months / ADMIN_SUBSCRIPTION_CYCLE_MONTHS) + 1;
+            if (cycles < 1) cycles = 1;
+            if (cycles > 120) cycles = 120;
+            return cycles;
+        }
+
+        /** Activo contable al que ya le pasó next_payment_date (falta renovación / cobro). */
+        function adminUserNextPaymentOverdue(u) {
+            if (!adminUserCountsTowardSubscriptionRevenue(u)) return false;
+            var next = adminParseDate(u.next_payment_date);
+            if (!next) return false;
+            return next.getTime() < Date.now();
+        }
+
+        /** Totales históricos según last_payment_date de PayPal (+ next_payment para “le falta cobro”). */
+        function adminLifetimePaidRevenueSummary(users) {
+            var people = 0;
+            var cycles = 0;
+            var cancelledOrExpiredWhoPaid = 0;
+            var activeWhoPaid = 0;
+            var activeNoLastPayment = 0;
+            var activeNextOverdue = 0;
+            (users || []).forEach(function (u) {
+                if (!u || u.isAdmin === true) return;
+                if (u.exclude_from_revenue === true) return;
+
+                if (adminUserCountsTowardSubscriptionRevenue(u) && !adminParseDate(u.last_payment_date)) {
+                    activeNoLastPayment += 1; // activo / trial sin cobro PayPal aún
+                }
+                if (adminUserNextPaymentOverdue(u)) {
+                    activeNextOverdue += 1;
+                }
+
+                var c = adminEstimatePaidCyclesForUser(u);
+                if (c < 1) return;
+                people += 1;
+                cycles += c;
+                var st = u.subscription_status;
+                if (st === 'cancelled' || st === 'expired') cancelledOrExpiredWhoPaid += 1;
+                else if (st === 'active') activeWhoPaid += 1;
+            });
+            return {
+                people: people,
+                cycles: cycles,
+                cancelledOrExpiredWhoPaid: cancelledOrExpiredWhoPaid,
+                activeWhoPaid: activeWhoPaid,
+                activeNoLastPayment: activeNoLastPayment,
+                activeNextOverdue: activeNextOverdue,
+                totalNetUsd: cycles * ADMIN_NET_REVENUE_PER_CYCLE_USD
+            };
+        }
+
         // 📋 FUNCIONES DE GESTIÓN
-        async function showAllUsers() {
+        async function showAllUsers(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             // Siempre refrescar desde Supabase: suscripción, Subscription ID, fechas de pago y datos de perfil vienen de la nube (no solo local).
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllUsers: load from cloud', e); }
@@ -4781,9 +4994,14 @@
                 previousView: showAllUsers,
                 previousViewParams: []
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         
-        async function showAllProjects() {
+        async function showAllProjects(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             console.log('📋 Mostrando todos los proyectos...');
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllProjects: load from cloud', e); }
@@ -4815,9 +5033,14 @@
                     delete: true
                 }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
 
-        async function showDeletedProjects() {
+        async function showDeletedProjects(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showDeletedProjects: load cloud', e); }
             }
@@ -4866,10 +5089,15 @@
                     delete: true
                 }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         window.showDeletedProjects = showDeletedProjects;
         
-        async function showAllChats() {
+        async function showAllChats(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllChats: load from cloud', e); } }
             console.log('💬 Mostrando todas las conversaciones...');
             const chats = getAllChats();
@@ -4893,6 +5121,9 @@
                     delete: false
                 }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
 
         /** Abre el historial completo de chat de un proyecto (desde la vista de proyecto o todos los proyectos). */
@@ -5110,7 +5341,9 @@
             return list.filter(function (r) { return r.total_messages > 0; }).sort(function (a, b) { return b.total_messages - a.total_messages; });
         }
         
-        async function showChatSummaryByProject() {
+        async function showChatSummaryByProject(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByProject: load from cloud', e); } }
             const data = getChatSummaryByProject();
             const m = getChatMetrics();
@@ -5129,9 +5362,14 @@
                 ],
                 actions: { edit: false, delete: false }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         
-        async function showChatSummaryByUser() {
+        async function showChatSummaryByUser(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByUser: load from cloud', e); } }
             const data = getChatSummaryByUser();
             const m = getChatMetrics();
@@ -5149,10 +5387,15 @@
                 ],
                 actions: { edit: false, delete: false }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
 
         /** Consumo mensual de Chat IA por usuario (créditos) tomando profiles en Supabase. */
-        async function showChatUsageByUser() {
+        async function showChatUsageByUser(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
             var USD_PER_CREDIT_EST = 0.002; // techo gpt-4o-mini (chats pesados); 250 ≈ $0.50. Típico real ≈ $0.001/crédito (~$0.25/250)
             var DEFAULT_CHAT_CREDITS = 250;
@@ -5248,11 +5491,16 @@
                 ],
                 actions: { edit: false, delete: false }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         window.showChatUsageByUser = showChatUsageByUser;
 
         /** Entradas al panel: semana actual, acum. mes (día 1 a hoy), acum. año (1 ene a hoy). Por usuario y totales. */
-        async function showDashboardVisits() {
+        async function showDashboardVisits(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (!window._adminCloudCache || !window._adminCloudCache.users) {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showDashboardVisits: load cloud', e); }
             }
@@ -5310,6 +5558,9 @@
                 ],
                 actions: { edit: false, delete: false }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         window.showDashboardVisits = showDashboardVisits;
 
@@ -7287,25 +7538,47 @@
             document.documentElement.style.overflow = '';
         }
 
-        async function showSubscriptionsOverview() {
+        async function showSubscriptionsOverview(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionsOverview: load from cloud', e); } }
             const users = getAllUsers();
             const activeAll = users.filter(u => u.subscription_status === 'active');
             const countingActive = users.filter(adminUserCountsTowardSubscriptionRevenue);
             const excludedActive = activeAll.filter(u => !adminUserCountsTowardSubscriptionRevenue(u));
+            const lifetime = adminLifetimePaidRevenueSummary(users);
             const overview = {
                 total: users.length,
                 active: activeAll.length,
                 pending: users.filter(u => u.subscription_status === 'pending').length,
                 cancelled: users.filter(u => u.subscription_status === 'cancelled').length,
                 expired: users.filter(u => u.subscription_status === 'expired').length,
-                totalRevenuePerCycle: countingActive
-                    .reduce((sum, u) => sum + (parseFloat(u.subscription_amount) || 0), 0),
+                totalRevenuePerCycle: adminNetRevenuePerCycle(countingActive.length),
                 countingActiveCount: countingActive.length,
-                excludedActiveCount: excludedActive.length
+                excludedActiveCount: excludedActive.length,
+                lifetimePeople: lifetime.people,
+                lifetimeCycles: lifetime.cycles,
+                lifetimeNetUsd: lifetime.totalNetUsd,
+                lifetimeCancelledPaid: lifetime.cancelledOrExpiredWhoPaid,
+                lifetimeActivePaid: lifetime.activeWhoPaid,
+                lifetimeActiveNoPay: lifetime.activeNoLastPayment,
+                lifetimeNextOverdue: lifetime.activeNextOverdue
             };
             const CICLOS_POR_ANIO = 12 / 5;
             const equivAnual = overview.totalRevenuePerCycle * CICLOS_POR_ANIO;
+            const lifetimeExtraBits = [];
+            if (overview.lifetimeCancelledPaid > 0) {
+                lifetimeExtraBits.push(overview.lifetimeCancelledPaid + ' cancelaron/expiraron pero sí pagaron');
+            }
+            if (overview.lifetimeActiveNoPay > 0) {
+                lifetimeExtraBits.push(overview.lifetimeActiveNoPay + ' activas sin last_payment (trial / aún no cobrado)');
+            }
+            if (overview.lifetimeNextOverdue > 0) {
+                lifetimeExtraBits.push(overview.lifetimeNextOverdue + ' con next_payment vencido (les falta cobro/renovación)');
+            }
+            const lifetimeExtraHtml = lifetimeExtraBits.length
+                ? ' · ' + lifetimeExtraBits.join(' · ')
+                : '';
             
             const html = `
                 <div style="padding: 24px;">
@@ -7335,9 +7608,15 @@
                         </div>
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.totalRevenuePerCycle.toFixed(2)} USD</div>
-                            <div style="color: #64748b; margin-top: 8px;">💰 Ingreso por ciclo (contable)</div>
-                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Equiv. anual: $${equivAnual.toFixed(2)} USD · Solo activos que suman (sin admin ni «no suma»)</div>
+                            <div style="color: #64748b; margin-top: 8px;">💰 Ingreso por ciclo (contable neto)</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Equiv. anual: $${equivAnual.toFixed(2)} USD · $${ADMIN_NET_REVENUE_PER_CYCLE_USD} neto/ciclo (tras comisión PayPal; lista $49)</div>
                             <div style="color:#1e3a8a;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">✅ ${overview.countingActiveCount} cuentan en este total${overview.excludedActiveCount > 0 ? ` · 📉 ${overview.excludedActiveCount} activo(s) no suman` : ''}</div>
+                        </div>
+                        <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
+                            <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.lifetimeNetUsd.toFixed(2)} USD</div>
+                            <div style="color: #64748b; margin-top: 8px;">🏦 Total cobrado histórico (neto)</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Solo quien tiene <strong>last_payment_date</strong> de PayPal · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman</div>
+                            <div style="color:#065f46;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.lifetimePeople} persona(s) con cobro · ${overview.lifetimeCycles} ciclo(s)${lifetimeExtraHtml}</div>
                         </div>
                     </div>
                     <button onclick="closeDataViewer()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cerrar</button>
@@ -7351,9 +7630,14 @@
                 modal.style.display = 'flex';
                 lockBodyScrollForDataViewer();
             }
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         
-        async function showExpiredSubscriptions() {
+        async function showExpiredSubscriptions(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showExpiredSubscriptions: load from cloud', e); } }
             const users = getAllUsers();
             const expiredUsers = users.filter(u => u.subscription_status === 'expired');
@@ -7373,9 +7657,14 @@
                     delete: true
                 }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         
-        async function showCancelledSubscriptions() {
+        async function showCancelledSubscriptions(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showCancelledSubscriptions: load from cloud', e); } }
             const users = getAllUsers();
             const cancelledUsers = users.filter(u => u.subscription_status === 'cancelled');
@@ -7395,9 +7684,14 @@
                     delete: true
                 }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         
-        async function showSubscriptionRevenue() {
+        async function showSubscriptionRevenue(ev) {
+            var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
+            try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionRevenue: load from cloud', e); } }
             const users = getAllUsers();
             const activeUsers = users.filter(adminUserCountsTowardSubscriptionRevenue);
@@ -7440,6 +7734,9 @@
                     delete: true
                 }
             });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
     </script>
     
@@ -7503,7 +7800,7 @@
                         <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('labAnalyses')" data-section="labAnalyses">
                             <div class="report-section-info">
                                 <div class="report-section-title">🧪 Análisis de laboratorio</div>
-                                <div class="report-section-description">Elige abajo cuáles incluir en el PDF</div>
+                                <div class="report-section-description">Suelo, SN y extracto: solo tablas y gráficas. Agua, foliar y fruta: también el detalle de cada reporte.</div>
                             </div>
                         </div>
                         <div class="report-lab-subtypes admin-report-lab-subtypes" id="adminReportLabSubtypes" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 12px 12px;border:2px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;background:#f8fafc;">
@@ -7983,8 +8280,8 @@
                 if (config.actions.edit) {
                     if (isProject) {
                         var safeId = safeUserRef;
-                        var viewProjCall = config.previousViewForProject ? ('viewProjectDetailsWithReturn(\'' + safeId + '\', \'' + (config.previousViewForProject + '').replace(/'/g, "\\'") + '\')') : ('viewProjectDetails(\'' + safeId + '\')');
-                        html += '<button onclick="' + viewProjCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editProject(\'' + safeId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
+                        var viewProjCall = config.previousViewForProject ? ('viewProjectDetailsWithReturn(\'' + safeId + '\', \'' + (config.previousViewForProject + '').replace(/'/g, "\\'") + '\', event)') : ('viewProjectDetails(\'' + safeId + '\', null, null, event)');
+                        html += '<button onclick="' + viewProjCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px;">👁️ Ver</button><button onclick="editProject(\'' + safeId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
                     } else {
                         var prevCall = config.previousView ? ('viewUserDetails(\'' + safeUserRef + '\', ' + (config.previousView.name || 'null') + ', ' + JSON.stringify(config.previousViewParams || []) + ')') : ('viewUserDetails(\'' + safeUserRef + '\')');
                         html += '<button onclick="' + prevCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editUser(\'' + safeUserRef + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
@@ -11785,11 +12082,11 @@
         
         // 👁️ FUNCIÓN PARA VER DETALLES COMPLETOS DEL PROYECTO
         /** Abre detalle del proyecto y deja registrada la vista a la que volver con el botón ← (ej. Todos los Proyectos). */
-        function viewProjectDetailsWithReturn(projectId, returnViewName) {
+        function viewProjectDetailsWithReturn(projectId, returnViewName, ev) {
             var fn = typeof returnViewName === 'function' ? returnViewName : (window[returnViewName]);
             var params = (window._dataViewerState && window._dataViewerState.config && window._dataViewerState.config.previousViewParamsForProject) ? window._dataViewerState.config.previousViewParamsForProject : [];
             if (typeof fn === 'function') setPreviousView(fn, params || []);
-            viewProjectDetails(projectId);
+            return viewProjectDetails(projectId, null, null, ev);
         }
         window.viewProjectDetailsWithReturn = viewProjectDetailsWithReturn;
 
@@ -11805,7 +12102,11 @@
             } catch (e) { return html; }
         }
 
-        async function viewProjectDetails(projectId, fromView = null, fromViewParams = null) {
+        async function viewProjectDetails(projectId, fromView = null, fromViewParams = null, evOrBtn = null) {
+            var endBusy = (typeof window.adminCloudBusyStart === 'function')
+                ? window.adminCloudBusyStart(evOrBtn, '☁️ Bajando…')
+                : function () {};
+            try {
             try { await ensureAdminReportsLoaded({ force: false }); } catch (e) { console.warn('viewProjectDetails: load reports', e); }
             // Guardar vista anterior si se proporciona
             if (fromView) {
@@ -12085,13 +12386,13 @@
                                             ${r?.reportHTML
                                                 ? '<div style="font-size:11px;color:#059669;margin-top:4px;">Snapshot HTML disponible (Abrir/Imprimir o link)</div>'
                                                 : (Array.isArray(r?.selectedSections) && r.selectedSections.length
-                                                    ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">Historial en nube (metadatos). Sin snapshot HTML hasta «Compartir vista». Usa el botón verde de reporte personalizado o pide al usuario el link.</div>'
+                                                    ? '<div style="font-size:11px;color:#059669;margin-top:4px;">Historial en nube · Abrir/Imprimir regenera el PDF con las secciones guardadas (datos actuales del proyecto)</div>'
                                                     : '<div style="font-size:11px;color:#b45309;margin-top:4px;">Reporte antiguo (sin secciones ni HTML)</div>')}
                                         </div>
                                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                             <button onclick="openProjectSavedReport('${encodeURIComponent(reportOwnerUserId || '')}', '${encodeURIComponent(projectId)}', '${encodeURIComponent(String(r?.id || ''))}')"
                                                     style="background:#4f46e5;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;"
-                                                    title="Abrir e imprimir reporte">
+                                                    title="Abrir e imprimir: usa el HTML guardado o regenera el PDF con las secciones del historial">
                                                 🖨️ Abrir/Imprimir
                                             </button>
                                             ${shareEnabled
@@ -12188,6 +12489,17 @@
                                             onmouseout="this.style.background='#0f766e'; this.style.transform='translateY(0)';">
                                         📈 Lectura Satelital
                                     </button>
+                                    <button type="button" onclick="loadAdminProjectDemPanel('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}', true)"
+                                            title="Ver relieve DEM del predio: pendiente (%) y altura (Copernicus ~30 m)"
+                                            style="background: #92400e; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#78350f'; this.style.transform='translateY(-1px)';"
+                                            onmouseout="this.style.background='#92400e'; this.style.transform='translateY(0)';">
+                                        ⛰ Relieve / Topografía
+                                    </button>
+                                    </div>
+                                    <div id="adminDemPanel_${adminSafeId(project.id)}" class="admin-dem-panel" data-project-id="${escapeHtml(String(project.id))}" style="margin-top:14px;padding:12px;border:1px solid #d6d3d1;border-radius:8px;background:#fafaf9;">
+                                      <div style="font-weight:700;color:#44403c;margin-bottom:6px;font-size:14px;">⛰ Relieve del predio (pendiente + altura)</div>
+                                      <div class="admin-dem-panel-body" style="font-size:12px;color:#78716c;">Cargando relieve…</div>
                                     </div>
                                     ${hasLectura ? `
                                     <div style="margin-top:16px;padding:12px;border:1px solid #bbf7d0;border-radius:8px;background:#f8fafc;">
@@ -13764,21 +14076,24 @@
             }
             html += `</div>`;
             
-            // ========== ANÁLISIS (mismo orden que las pestañas; cada uno abrir/minimizar; cada reporte despliega su info) ==========
+            // ========== ANÁLISIS (mismo orden que las pestañas) ==========
+            // Suelo / SN / Extracto: como el usuario → tablas + gráficas comparativas al frente.
+            // Agua / Foliar / Fruta: comparativa + detalle por reporte (ácido, DOP, ICC).
             const formatAnalysisItemInfo = (obj) => {
                 if (!obj || typeof obj !== 'object') return '';
                 if (typeof window.NutriPlantRenderAnalysisReport === 'function')
                     return window.NutriPlantRenderAnalysisReport(obj, { escapeHtml });
                 return '<div class="admin-analysis-data-wrap"><p class="admin-analysis-empty" style="color:#64748b; font-size: 12px; margin: 0;">Sin datos adicionales.</p></div>';
             };
+            const COMPARE_ONLY_TYPES = { suelo: 1, solucion: 1, pasta: 1 };
             const renderAnalysisSection = (title, icon, list, colorLeft) => {
                 const arr = Array.isArray(list) ? list : [];
                 const hasData = arr.length > 0;
                 const countLabel = hasData ? ` (${arr.length} ${arr.length === 1 ? 'reporte' : 'reportes'})` : '';
                 const accentBorder = colorLeft === 'suelo' ? '#eab308' : colorLeft === 'solucion' ? '#3b82f6' : colorLeft === 'pasta' ? '#a855f7' : colorLeft === 'agua' ? '#06b6d4' : colorLeft === 'foliar' ? '#22c55e' : '#f97316';
+                const compareOnly = !!COMPARE_ONLY_TYPES[colorLeft];
                 let inner = '';
                 if (hasData) {
-                    // Comparativa tablas + gráficas (mismo widget que el panel de usuario)
                     if (arr.length >= 1) {
                         if (colorLeft === 'suelo') {
                             inner += '<div id="admin-soil-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
@@ -13794,11 +14109,26 @@
                             inner += '<div id="admin-fruta-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
                         }
                     }
-                    inner += '<div class="admin-reports-list">' + arr.map((a, i) => {
-                        const name = a.title || a.name || (a.meta && a.meta.title) || `Reporte ${i + 1}`;
-                        const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
-                        const infoHtml = formatAnalysisItemInfo(a);
-                        return `<details class="admin-report-item">
+                    if (compareOnly) {
+                        // Como el usuario / PDF: solo listado corto; el detalle visual son tablas+gráficas.
+                        inner += '<details class="admin-json-toggle" style="margin-top:8px;"><summary>Listado de reportes (' + arr.length + ')</summary>';
+                        inner += '<ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#334155;line-height:1.5;">';
+                        inner += arr.map(function (a, i) {
+                            const name = a.title || a.name || (a.meta && a.meta.title) || ('Reporte ' + (i + 1));
+                            const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
+                            return '<li><strong>' + escapeHtml(String(name)) + '</strong>' +
+                                (date ? ' <span style="color:#64748b;">· ' + escapeHtml(String(date)) + '</span>' : '') +
+                                '</li>';
+                        }).join('');
+                        inner += '</ul>';
+                        inner += '<details class="admin-json-toggle" style="margin-top:10px;"><summary>Ver datos (JSON)</summary><pre style="max-height:250px;">' +
+                            escapeHtml(JSON.stringify(list, null, 2)) + '</pre></details></details>';
+                    } else {
+                        inner += '<div class="admin-reports-list">' + arr.map((a, i) => {
+                            const name = a.title || a.name || (a.meta && a.meta.title) || `Reporte ${i + 1}`;
+                            const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
+                            const infoHtml = formatAnalysisItemInfo(a);
+                            return `<details class="admin-report-item">
                             <summary style="list-style: none; display: flex; align-items: center; gap: 6px;">
                                 <span class="admin-analysis-chevron" style="font-size: 10px;">▶</span>
                                 <strong>${escapeHtml(String(name))}</strong>${date ? ' <span style="color:#64748b;">' + escapeHtml(String(date)) + '</span>' : ''}
@@ -13808,17 +14138,24 @@
                                 <details class="admin-json-toggle"><summary>Ver JSON de este reporte</summary><pre>${escapeHtml(JSON.stringify(a, null, 2))}</pre></details>
                             </div>
                         </details>`;
-                    }).join('') + '</div>';
-                    inner += '<details class="admin-json-toggle" style="margin-top: 16px;"><summary>Ver datos (JSON) de todos</summary><pre style="max-height: 250px;">' + escapeHtml(JSON.stringify(list, null, 2)) + '</pre></details>';
+                        }).join('') + '</div>';
+                        inner += '<details class="admin-json-toggle" style="margin-top: 16px;"><summary>Ver datos (JSON) de todos</summary><pre style="max-height: 250px;">' + escapeHtml(JSON.stringify(list, null, 2)) + '</pre></details>';
+                    }
                 } else {
                     inner = '<p style="color: #94a3b8; font-style: italic; margin: 0;">Sin datos en este proyecto.</p>';
                 }
-                return `<details class="admin-analysis-block" style="border-left: 4px solid ${accentBorder};">
+                // Abrir por defecto suelo/SN/pasta con datos para que Chart.js mida bien el canvas
+                const openAttr = (hasData && compareOnly) ? ' open' : '';
+                const hint = compareOnly
+                    ? '<p style="margin:0 0 12px;font-size:12px;color:#64748b;line-height:1.4;">Vista igual que el usuario: tablas y gráficas comparativas. En el PDF de estas secciones solo va esta parte.</p>'
+                    : '';
+                return `<details class="admin-analysis-block" data-admin-lab-type="${escapeHtml(colorLeft)}" style="border-left: 4px solid ${accentBorder};"${openAttr}>
                     <summary style="list-style: none; display: flex; align-items: center; gap: 8px;">
                         <span class="admin-analysis-chevron" style="user-select: none;">▶</span>
                         <span>${icon} ${title}${!hasData ? ' <span style="color: #64748b; font-size: 0.9em; font-weight: normal;">(Sin datos)</span>' : countLabel}</span>
                     </summary>
                     <div class="admin-analysis-body">
+                        ${hint}
                         ${inner}
                     </div>
                 </details>`;
@@ -14120,6 +14457,11 @@
                 content.innerHTML = html;
                 modal.style.display = 'flex';
                 lockBodyScrollForDataViewer();
+                if (hasPolygon && project.id && typeof loadAdminProjectDemPanel === 'function') {
+                    setTimeout(function () {
+                        loadAdminProjectDemPanel(project.id, false);
+                    }, 80);
+                }
                 if (fertiChartIds && typeof renderAdminFertirriegoCharts === 'function') {
                     const tryRender = () => {
                         const macroEl = document.getElementById(fertiChartIds.macroWrapId) || document.getElementById(fertiChartIds.macroId) || content.querySelector('[id^="adminFertiMacroChartWrap_"]');
@@ -14187,9 +14529,45 @@
                     adminMountLabCompare('admin-aw-compare-host', 'agua', project.aguaAnalyses, '_adminAwCompareState');
                     adminMountLabCompare('admin-foliar-compare-host', 'foliar', project.foliarAnalyses, '_adminFoliarCompareState');
                     adminMountLabCompare('admin-fruta-compare-host', 'fruta', project.frutaAnalyses, '_adminFrutaCompareState');
+
+                    // Si el bloque estaba cerrado al montar, Chart.js queda en 0×0; al abrir, refrescar.
+                    var refreshMap = {
+                        suelo: '_adminSoilCompareState',
+                        solucion: '_adminSnCompareState',
+                        pasta: '_adminEpCompareState',
+                        agua: '_adminAwCompareState',
+                        foliar: '_adminFoliarCompareState',
+                        fruta: '_adminFrutaCompareState'
+                    };
+                    content.querySelectorAll('.admin-analysis-block[data-admin-lab-type]').forEach(function (block) {
+                        if (block.dataset.npCompareToggleWired === '1') return;
+                        block.dataset.npCompareToggleWired = '1';
+                        block.addEventListener('toggle', function () {
+                            if (!block.open) return;
+                            var key = refreshMap[block.getAttribute('data-admin-lab-type')];
+                            var st = key ? window[key] : null;
+                            if (st && typeof st.refresh === 'function') {
+                                setTimeout(function () {
+                                    try { st.refresh(); } catch (eRefresh) {}
+                                }, 40);
+                            }
+                        });
+                    });
+                    // Pasada extra tras layout (bloques abiertos de suelo/SN/pasta)
+                    setTimeout(function () {
+                        ['_adminSoilCompareState', '_adminSnCompareState', '_adminEpCompareState'].forEach(function (k) {
+                            var st = window[k];
+                            if (st && typeof st.refresh === 'function') {
+                                try { st.refresh(); } catch (e2) {}
+                            }
+                        });
+                    }, 120);
                 } catch (soilCompareErr) {
                     console.warn('admin lab compare:', soilCompareErr);
                 }
+            }
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
             }
         }
         window.viewProjectDetails = viewProjectDetails;
@@ -14230,30 +14608,82 @@
             }
 
             const reportHTML = typeof report.reportHTML === 'string' ? report.reportHTML.trim() : '';
-            if (!reportHTML) {
+            if (reportHTML) {
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) {
+                    alert('❌ Tu navegador bloqueó la ventana emergente. Habilita pop-ups para imprimir.');
+                    return;
+                }
+                printWindow.document.open();
+                printWindow.document.write(reportHTML);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.onload = function() {
+                    setTimeout(function() {
+                        printWindow.print();
+                    }, 300);
+                };
+                return;
+            }
+
+            // Historial en nube: se guardan secciones, no el HTML (igual que el panel del usuario regenera al descargar).
+            const rawSections = Array.isArray(report.selectedSections) ? report.selectedSections : [];
+            const sections = normalizeAdminReportSections(rawSections);
+            if (!sections.length) {
                 alert(
-                    'Este reporte está en la nube como historial (secciones/fecha), pero sin snapshot HTML.\n\n' +
-                    '• En el panel del usuario: «Compartir vista» genera el link y guarda el HTML.\n' +
-                    '• O usa aquí «Generar reporte personalizado (solo lectura)» para armar un PDF ahora.'
+                    'Este reporte no tiene snapshot HTML ni secciones válidas para regenerar el PDF.\n\n' +
+                    'Usa «Generar reporte personalizado (solo lectura)» o pide al usuario que pulse «Compartir vista».'
                 );
                 return;
             }
 
-            const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-                alert('❌ Tu navegador bloqueó la ventana emergente. Habilita pop-ups para imprimir.');
+            const ctx = window._adminViewProjectContext;
+            if (!ctx || !ctx.project || String(ctx.projectId) !== String(projectId)) {
+                alert('Abre el detalle de este proyecto e inténtalo de nuevo (hace falta el proyecto cargado para regenerar el PDF).');
                 return;
             }
 
-            printWindow.document.open();
-            printWindow.document.write(reportHTML);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.onload = function() {
-                setTimeout(function() {
-                    printWindow.print();
-                }, 300);
+            let selectedLabTypes = [];
+            if (sections.indexOf('labAnalyses') >= 0) {
+                const fromReport = Array.isArray(report.selectedLabTypes)
+                    ? report.selectedLabTypes
+                    : (Array.isArray(report.labTypes) ? report.labTypes : []);
+                selectedLabTypes = fromReport.filter(Boolean);
+                if (!selectedLabTypes.length) {
+                    selectedLabTypes = ['soil', 'solucion_nutritiva', 'extracto_pasta', 'agua', 'foliar', 'fruta'];
+                }
+            }
+
+            const lang = (report.reportLanguage === 'en') ? 'en' : 'es';
+            const unitSystem =
+                report.unit_system === 'us_customary' || report.unitSystem === 'us_customary'
+                    ? 'us_customary'
+                    : 'metric';
+            const job = {
+                project: ctx.project,
+                userId: ctx.userId || userId || null,
+                projectId: ctx.projectId || projectId,
+                selectedSections: sections,
+                selectedLabTypes: selectedLabTypes,
+                reportLanguage: lang,
+                unit_system: unitSystem,
+                adminMode: true,
+                shareLink: false,
+                adminAuthorName: 'Consulta Admin NutriPlant PRO',
+                adminKey: (typeof getAdminPanelAccessKey === 'function' ? getAdminPanelAccessKey() : '') || undefined,
+                radarAdminSecret: (typeof getRadarAdminPanelSecret === 'function' ? getRadarAdminPanelSecret() : '') || undefined,
+                sourceSavedReportId: reportId
             };
+            try {
+                sessionStorage.setItem('nutriplant_admin_report_job', JSON.stringify(job));
+            } catch (e) {
+                alert('No se pudo preparar el reporte. Los datos del proyecto pueden ser demasiado grandes para esta ventana.');
+                return;
+            }
+            const w = window.open('../admin-report-print.html', '_blank');
+            if (!w) {
+                alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para abrir/imprimir el reporte.');
+            }
         };
 
         window.openProjectSharedReportLink = function(encodedReportId, encodedToken) {
@@ -14942,8 +15372,8 @@
                                     ` : ''}
                                 </div>
                                 <div style="display: flex; gap: 8px; margin-left: 16px;">
-                                    <button onclick="viewProjectDetails('${project.id}', function() { viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams)}); }, []);" 
-                                            style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                                    <button onclick="viewProjectDetails('${project.id}', function() { viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams)}); }, [], event)" 
+                                            style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap; display:inline-flex; align-items:center; gap:6px;">
                                         👁️ Ver Detalles
                                     </button>
                                     <button onclick="editProject('${project.id}'); closeDataViewer();" 
@@ -15281,12 +15711,27 @@
             });
         }
 
-        function showRadarImagesAdmin() {
+        async function showRadarImagesAdmin(ev) {
+            var endBusy = (typeof window.adminCloudBusyStart === 'function')
+                ? window.adminCloudBusyStart(ev, '☁️ Bajando…')
+                : function () {};
+            try {
             __radarImagesAdminState.page = 1;
             var modal = ensureRadarImagesAdminModal();
             modal.style.display = 'flex';
             renderRadarImagesAdminShell(modal);
-            loadRadarImagesAdminPage();
+            await new Promise(function (resolve) {
+                loadRadarImagesAdminPage();
+                // No ralentizar: solo esperar a que termine el fetch ya lanzado.
+                var t0 = Date.now();
+                (function poll() {
+                    if (!__radarImagesAdminState.loading || Date.now() - t0 > 120000) return resolve();
+                    setTimeout(poll, 40);
+                })();
+            });
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         window.showRadarImagesAdmin = showRadarImagesAdmin;
 
@@ -15762,8 +16207,17 @@
                 : '';
 
             if (!history.length && !ndvi && !ndmi && !ndre && !rgb) {
+                var demOnlyHtml = buildAdminDemCardsHtml(res.j.dem);
                 modal.innerHTML =
-                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;"><p style="color:#475569;margin:0;">No hay Radar guardado para este proyecto en la nube (el usuario debe generarlo desde Ubicación).</p>' +
+                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:720px;max-height:90vh;overflow:auto;">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+                    '<h2 style="margin:0;font-size:18px;color:#1e293b;">🛰️ Radar / Relieve</h2>' +
+                    '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
+                    '<p style="color:#475569;margin:0 0 14px 0;">No hay imágenes Pilot NDVI/NDMI guardadas aún. El relieve DEM (si el usuario lo generó) aparece abajo.</p>' +
+                    '<div style="padding:12px;border:1px solid #d6d3d1;border-radius:8px;background:#fafaf9;">' +
+                    '<div style="font-weight:700;color:#44403c;margin-bottom:8px;font-size:14px;">⛰ Relieve del predio</div>' +
+                    demOnlyHtml +
+                    '</div>' +
                     '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#10b981;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
                 return;
             }
@@ -15843,6 +16297,10 @@
                 blockNdre +
                 blockRgb +
                 blockCloud +
+                '</div>' +
+                '<div style="margin-top:18px;padding:12px;border:1px solid #d6d3d1;border-radius:10px;background:#fafaf9;">' +
+                '<div style="font-weight:800;color:#44403c;margin-bottom:8px;font-size:14px;">⛰ Relieve del predio (pendiente + altura)</div>' +
+                buildAdminDemCardsHtml(res.j.dem) +
                 '</div>' +
                 owner +
                 '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">' + esc(String(sourceLabel)) + '. Valores relativos al polígono (RGB = color natural).</p></div></div>';
@@ -16054,6 +16512,138 @@
             });
         }
         window.openRadarSentinelMapAdmin = openRadarSentinelMapAdmin;
+
+        function fetchAdminDemStatus(projectId) {
+            var adminKey = getAdminPanelAccessKey();
+            var secret = getRadarAdminPanelSecret();
+            var fetchHeaders = { 'Content-Type': 'application/json' };
+            if (secret) fetchHeaders['X-Radar-Admin-Secret'] = secret;
+            var url = getNutriPlantRadarApiUrlForAdmin();
+            function post(action, extra) {
+                var payload = Object.assign({
+                    action: action,
+                    project_id: String(projectId || '').trim(),
+                    admin_key: adminKey || undefined
+                }, extra || {});
+                return fetch(url, {
+                    method: 'POST',
+                    headers: fetchHeaders,
+                    body: JSON.stringify(payload)
+                }).then(function (r) {
+                    return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
+                });
+            }
+            return post('admin_dem_status').then(function (res) {
+                if (res && res.ok && res.j && res.j.ok) return res;
+                // Deploy antiguo sin admin_dem_status, o error puntual → admin_status ya trae dem.
+                return post('admin_status', { history_limit: 1 });
+            });
+        }
+
+        function buildAdminDemCardsHtml(dem) {
+            var esc = escRadarAdminHtml;
+            if (!dem || (!dem.dem_signed_url && !dem.elev_signed_url && !dem.has_dem && !dem.has_elev)) {
+                return '<div style="font-size:12px;color:#78716c;line-height:1.45;">Aún no hay relieve generado en este proyecto. El usuario lo crea en Radar Satelital con «Generar relieve» (0 créditos).</div>';
+            }
+            var meta = dem.dem_meta || {};
+            var slopeBar = 'linear-gradient(90deg,#f8f5f0,#e8e0d4,#d4c4a8,#c4a574,#a67c52,#8b5e3c,#6b4423,#4a2f1a,#2d1b0e)';
+            var elevBar = 'linear-gradient(90deg,#1e3a8a,#2563eb,#38bdf8,#7dd3fc,#a7f3d0,#fef3c7,#fbbf24,#ea580c,#9a3412)';
+            var slopeStats = '';
+            if (meta.slope_min != null && meta.slope_max != null) {
+                slopeStats = 'Pendiente ' + Number(meta.slope_min).toFixed(1) + '–' + Number(meta.slope_max).toFixed(1) + '%' +
+                    (meta.slope_mean != null ? ' · media ' + Number(meta.slope_mean).toFixed(1) + '%' : '');
+            }
+            var elevStats = '';
+            if (meta.elev_min != null && meta.elev_max != null) {
+                elevStats = 'Altitud ' + Math.round(Number(meta.elev_min)) + '–' + Math.round(Number(meta.elev_max)) + ' m' +
+                    (meta.elev_mean != null ? ' · media ' + Math.round(Number(meta.elev_mean)) + ' m' : '');
+            }
+            var stale = dem.dem_stale
+                ? '<div style="margin:0 0 10px;padding:8px 10px;border-radius:8px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;font-size:12px;">El polígono cambió desde que se generó el relieve. El usuario debe pulsar «Generar relieve» otra vez.</div>'
+                : '';
+            var when = meta.generated_at
+                ? '<div style="font-size:11px;color:#a8a29e;margin-bottom:10px;">Generado: ' + esc(new Date(meta.generated_at).toLocaleString('es-MX')) + ' · Copernicus DEM ~30 m · 0 créditos Radar</div>'
+                : '<div style="font-size:11px;color:#a8a29e;margin-bottom:10px;">Copernicus DEM ~30 m · 0 créditos Radar</div>';
+
+            function card(title, url, bar, lowL, highL, stats, note) {
+                if (!url) return '';
+                var safeUrl = String(url).replace(/"/g, '&quot;');
+                return '<div style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:10px;">' +
+                    '<div style="font-size:12px;font-weight:700;color:#44403c;margin-bottom:6px;">' + esc(title) + '</div>' +
+                    '<button type="button" onclick="openAdminRadarLightbox(' +
+                    JSON.stringify(String(url)) + ',' + JSON.stringify(title) + ',' + JSON.stringify(stats || note || '') +
+                    ')" style="display:block;width:100%;padding:0;border:none;background:transparent;cursor:zoom-in;">' +
+                    '<img src="' + safeUrl + '" alt="' + esc(title) + '" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#fafaf9;border:1px solid #e7e5e4;" />' +
+                    '</button>' +
+                    '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px;font-size:10px;color:#78716c;">' +
+                    '<span style="font-weight:700;">' + esc(lowL) + '</span>' +
+                    '<span style="width:110px;height:8px;border-radius:999px;background:' + bar + ';display:inline-block;border:1px solid #e7e5e4;"></span>' +
+                    '<span style="font-weight:700;">' + esc(highL) + '</span></div>' +
+                    (stats ? '<div style="font-size:11px;color:#57534e;margin-top:4px;">' + esc(stats) + '</div>' : '') +
+                    '<div style="font-size:10px;color:#a8a29e;margin-top:4px;">' + esc(note) + '</div></div>';
+            }
+
+            var elevCard = card(
+                'Altura del predio',
+                dem.elev_signed_url,
+                elevBar,
+                'Más baja',
+                'Más alta',
+                elevStats,
+                'Mismo color ≈ misma altitud dentro del predio.'
+            );
+            var slopeCard = card(
+                'Pendiente del predio',
+                dem.dem_signed_url,
+                slopeBar,
+                'Más plano',
+                'Más inclinado',
+                slopeStats,
+                'Mismo color ≈ misma inclinación (no es altura).'
+            );
+            if (!elevCard && !slopeCard) {
+                return '<div style="font-size:12px;color:#78716c;">Relieve registrado pero sin URL de imagen. El usuario puede regenerarlo con «Generar relieve».</div>';
+            }
+            return stale + when +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">' +
+                elevCard + slopeCard + '</div>';
+        }
+
+        function loadAdminProjectDemPanel(projectId, scrollIntoView) {
+            var pid = String(projectId || '').trim();
+            if (!pid) return;
+            var panel = document.getElementById('adminDemPanel_' + adminSafeId(pid));
+            if (!panel) {
+                panel = document.querySelector('.admin-dem-panel[data-project-id="' + pid.replace(/"/g, '') + '"]');
+            }
+            if (!panel) return;
+            var body = panel.querySelector('.admin-dem-panel-body');
+            if (!body) return;
+            var adminKey = getAdminPanelAccessKey();
+            var secret = getRadarAdminPanelSecret();
+            if (!adminKey && !secret) {
+                body.innerHTML = '<span style="color:#b45309;">Abre el panel admin con el enlace que incluye ?k=… para ver el relieve.</span>';
+                return;
+            }
+            body.innerHTML = '<span style="color:#78716c;">Cargando relieve (pendiente + altura)…</span>';
+            if (scrollIntoView) {
+                try { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+            }
+            fetchAdminDemStatus(pid)
+                .then(function (res) {
+                    if (!res.ok || !res.j || res.j.ok === false) {
+                        var msg = (res.j && (res.j.message || res.j.error)) || ('HTTP ' + res.status);
+                        body.innerHTML = '<span style="color:#b91c1c;">No se pudo cargar el relieve: ' + escRadarAdminHtml(msg) + '</span>';
+                        return;
+                    }
+                    body.innerHTML = buildAdminDemCardsHtml(res.j.dem);
+                })
+                .catch(function (err) {
+                    body.innerHTML = '<span style="color:#b91c1c;">Error de red al cargar relieve.</span>';
+                    console.error('admin dem:', err);
+                });
+        }
+        window.loadAdminProjectDemPanel = loadAdminProjectDemPanel;
 
         function fetchRadarAdminData(projectId, requestId) {
             var adminKey = getAdminPanelAccessKey();
@@ -16843,8 +17433,11 @@
         let globalMapInstance = null;
         let globalMapStreetLayer = null;
         let globalMapSatelliteLayer = null;
+        let globalMapTopoLayer = null;
         let globalMapPolygonLayers = [];
         let globalMapMarkerCluster = null;
+        /** 'streets' | 'satellite' | 'topo' */
+        let globalMapBaseView = 'streets';
         let globalMapSatelliteView = false;
         let globalMapSentinelLayers = null;
         let globalMapSentinelInfoControl = null;
@@ -16852,6 +17445,97 @@
         let globalMapSentinelSelection = null;
         let globalMapNdviLayer = null;
         let globalMapFieldCloudLayer = null;
+
+        /** Tarjeta flotante siempre visible (evita que el popup de Leaflet se recorte en pantalla grande / landscape). */
+        function ensureAdminMapFloatStyles() {
+            if (document.getElementById('npAdminMapFloatStyles')) return;
+            var style = document.createElement('style');
+            style.id = 'npAdminMapFloatStyles';
+            style.textContent =
+                '#globalMapContainer,#connMapContainer{position:relative;}' +
+                '.np-admin-map-float{position:absolute;z-index:1200;left:50%;bottom:14px;transform:translateX(-50%);' +
+                'width:min(380px,calc(100% - 20px));max-height:min(72%,520px);overflow:auto;background:#fff;' +
+                'border-radius:12px;box-shadow:0 14px 40px rgba(15,23,42,.28);border:1px solid #e2e8f0;' +
+                'padding:12px 14px 14px;box-sizing:border-box;-webkit-overflow-scrolling:touch;}' +
+                '.np-admin-map-float[hidden]{display:none!important;}' +
+                '.np-admin-map-float__close{position:sticky;top:0;float:right;margin:-4px -4px 0 8px;width:28px;height:28px;' +
+                'border:none;border-radius:8px;background:#f1f5f9;color:#475569;font-size:18px;line-height:1;cursor:pointer;z-index:2;}' +
+                '.np-admin-map-float__close:hover{background:#e2e8f0;color:#0f172a;}' +
+                '.np-admin-map-float__body{min-width:0;font-size:13px;color:#334155;line-height:1.45;}' +
+                '@media (min-width:900px){.np-admin-map-float{left:auto;right:16px;top:16px;bottom:auto;transform:none;' +
+                'max-height:calc(100% - 32px);width:min(400px,42%);}}' +
+                '#globalMapContainer .leaflet-popup-pane,#connMapContainer .leaflet-popup-pane{z-index:650;}' +
+                '#globalMapContainer .leaflet-popup-content-wrapper,#connMapContainer .leaflet-popup-content-wrapper{' +
+                'border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.22);}' +
+                '#globalMapContainer .leaflet-popup-content,#connMapContainer .leaflet-popup-content{' +
+                'margin:10px 12px;max-height:min(48vh,360px);overflow-y:auto;-webkit-overflow-scrolling:touch;}';
+            document.head.appendChild(style);
+        }
+
+        function showAdminMapFloatCard(containerId, html) {
+            ensureAdminMapFloatStyles();
+            var container = document.getElementById(containerId);
+            if (!container) return null;
+            var card = container.querySelector('.np-admin-map-float');
+            if (!card) {
+                card = document.createElement('div');
+                card.className = 'np-admin-map-float';
+                card.setAttribute('role', 'dialog');
+                card.innerHTML =
+                    '<button type="button" class="np-admin-map-float__close" aria-label="Cerrar">×</button>' +
+                    '<div class="np-admin-map-float__body"></div>';
+                card.querySelector('.np-admin-map-float__close').addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    card.hidden = true;
+                });
+                card.addEventListener('click', function (e) { e.stopPropagation(); });
+                if (window.L && L.DomEvent) {
+                    try {
+                        L.DomEvent.disableClickPropagation(card);
+                        L.DomEvent.disableScrollPropagation(card);
+                    } catch (err) {}
+                }
+                container.appendChild(card);
+            }
+            var body = card.querySelector('.np-admin-map-float__body');
+            if (body) body.innerHTML = html;
+            card.hidden = false;
+            try { card.scrollTop = 0; } catch (e) {}
+            return card;
+        }
+
+        function hideAdminMapFloatCard(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var card = container.querySelector('.np-admin-map-float');
+            if (card) card.hidden = true;
+        }
+
+        function bindAdminMapFloatContent(layer, containerId, html, map) {
+            if (!layer || !html) return;
+            layer.on('click', function (e) {
+                // Evita que el mismo clic baje al mapa y cierre la tarjeta al instante (muy común en desktop).
+                try {
+                    if (e) L.DomEvent.stopPropagation(e);
+                    if (e && e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+                } catch (err) {}
+                var container = document.getElementById(containerId);
+                if (container) container._npFloatIgnoreMapClickUntil = Date.now() + 400;
+                showAdminMapFloatCard(containerId, html);
+            });
+        }
+
+        function wireAdminMapFloatDismissOnMapClick(map, containerId) {
+            if (!map) return;
+            map.on('click', function () {
+                var container = document.getElementById(containerId);
+                if (container && container._npFloatIgnoreMapClickUntil && Date.now() < container._npFloatIgnoreMapClickUntil) {
+                    return;
+                }
+                hideAdminMapFloatCard(containerId);
+            });
+        }
 
         /** Logo NutriPlant PRO a la derecha de los botones +/- (Leaflet topleft). */
         function addNutriPlantMapBrandLogo(map) {
@@ -16879,13 +17563,28 @@
             return ctrl;
         }
         
-        function showGlobalMap() {
+        async function showGlobalMap(ev) {
+            var endBusy = (typeof window.adminCloudBusyStart === 'function')
+                ? window.adminCloudBusyStart(ev, '☁️ Bajando…')
+                : function () {};
+            try {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showGlobalMap: load cloud', e); }
+            }
             // En admin preferimos fuente nube para consistencia entre dispositivos.
             // Si no hay cache nube disponible, usamos fallback local.
             const cloudProjects = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects))
                 ? window._adminCloudCache.projects
                 : [];
-            const projects = cloudProjects.length ? cloudProjects.slice() : getAllProjects();
+            const isSoftDeletedProject = function (p) {
+                if (!p) return false;
+                if (p.is_deleted) return true;
+                var d = p.data || {};
+                return !!(d._is_deleted || d.is_deleted || d.deleted_at);
+            };
+            // No mostrar proyectos de la papelera recuperable (solo activos, como getAllProjects).
+            const projects = (cloudProjects.length ? cloudProjects.slice() : getAllProjects())
+                .filter(function (p) { return !isSoftDeletedProject(p); });
             const normalizeObject = (value) => {
                 if (!value) return null;
                 if (typeof value === 'string') {
@@ -16985,20 +17684,13 @@
                         e.stopPropagation();
                         const id = btn.getAttribute('data-project-id');
                         if (id) {
-                            const originalText = btn.textContent;
-                            btn.disabled = true;
-                            btn.textContent = 'Abriendo proyecto…';
-                            Promise.resolve(viewProjectDetails(id, 'showAllProjects', []))
+                            Promise.resolve(viewProjectDetails(id, 'showAllProjects', [], btn))
                                 .then(function() {
                                     closeGlobalMapModal();
                                 })
                                 .catch(function(error) {
                                     console.error('Mapa global → detalle:', error);
                                     alert('No se pudo abrir el proyecto: ' + ((error && error.message) || error));
-                                })
-                                .finally(function() {
-                                    btn.disabled = false;
-                                    btn.textContent = originalText;
                                 });
                         }
                     }
@@ -17009,20 +17701,20 @@
             
             const count = withPolygon.length;
             globalMapModal.innerHTML = `
-                <div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                    <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div>
+                <div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0;">
+                        <div style="min-width:0;flex:1 1 220px;">
                             <h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa global</h2>
                             <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">${count} proyecto(s) con ubicación. Desde lejos verás banderitas/agrupaciones; al acercar, polígonos. Clic en uno para ver resumen.</p>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <button id="globalMapViewToggleBtn" onclick="toggleGlobalMapView()" style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <button id="globalMapViewToggleBtn" onclick="toggleGlobalMapView()" style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;" title="Alternar Calles · Satélite · Topografía">
                                 <span id="globalMapViewIcon">🛰️</span> <span id="globalMapViewText">Vista Satelital</span>
                             </button>
                             <button onclick="closeGlobalMapModal()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Cerrar">✕ Cerrar</button>
                         </div>
                     </div>
-                    <div id="globalMapContainer" style="flex: 1; min-height: 400px; border-radius: 0 0 12px 12px; position: relative; background: #0f172a;">
+                    <div id="globalMapContainer" style="flex: 1 1 0; min-height: max(180px, 28vh); border-radius: 0 0 12px 12px; position: relative; background: #0f172a;">
                         <div id="globalMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">
                             <div style="font-size: 16px; margin-bottom: 12px;">Cargando mapa...</div>
                             <div style="width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
@@ -17137,10 +17829,19 @@
                     noWrap: true,
                     bounds: worldBounds
                 });
+                globalMapTopoLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri · Topografía',
+                    maxZoom: 19,
+                    noWrap: true,
+                    bounds: worldBounds
+                });
+                ensureAdminMapFloatStyles();
                 globalMapStreetLayer.addTo(globalMapInstance);
+                globalMapBaseView = 'streets';
                 globalMapSatelliteView = false;
                 updateGlobalMapViewButton();
                 addNutriPlantMapBrandLogo(globalMapInstance);
+                wireAdminMapFloatDismissOnMapClick(globalMapInstance, 'globalMapContainer');
                 
                 const allBounds = [];
                 globalMapPolygonLayers = [];
@@ -17206,13 +17907,14 @@
                             </div>
                         </div>
                     `;
-                    layer.bindPopup(popupHtml);
+                    bindAdminMapFloatContent(layer, 'globalMapContainer', popupHtml, globalMapInstance);
                     layer.addTo(globalMapInstance);
                     globalMapPolygonLayers.push(layer);
                     
                     const center = polygonCentroid(latLngs);
                     if (center) {
-                        const marker = L.marker(center, { icon: defaultIcon }).bindPopup(popupHtml);
+                        const marker = L.marker(center, { icon: defaultIcon });
+                        bindAdminMapFloatContent(marker, 'globalMapContainer', popupHtml, globalMapInstance);
                         if (markerClusterGroup) {
                             markerClusterGroup.addLayer(marker);
                         } else {
@@ -17266,6 +17968,9 @@
                 document.head.appendChild(script);
             } else {
                 loadMarkerClusterThenInit();
+            }
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
             }
         }
         window.showGlobalMap = showGlobalMap;
@@ -17536,32 +18241,53 @@
         }
         window.showRegionalCloudsOnGlobalMap = showRegionalCloudsOnGlobalMap;
         
-        function toggleGlobalMapView() {
-            if (!globalMapInstance || !globalMapStreetLayer || !globalMapSatelliteLayer) return;
-            if (globalMapSatelliteView) {
-                globalMapInstance.removeLayer(globalMapSatelliteLayer);
-                globalMapStreetLayer.addTo(globalMapInstance);
+        function applyGlobalMapBaseLayer(nextView) {
+            if (!globalMapInstance || !globalMapStreetLayer || !globalMapSatelliteLayer || !globalMapTopoLayer) return;
+            var layers = [globalMapStreetLayer, globalMapSatelliteLayer, globalMapTopoLayer];
+            layers.forEach(function (ly) {
+                try { if (globalMapInstance.hasLayer(ly)) globalMapInstance.removeLayer(ly); } catch (e) {}
+            });
+            if (nextView === 'satellite') {
+                globalMapSatelliteLayer.addTo(globalMapInstance);
+                globalMapBaseView = 'satellite';
+                globalMapSatelliteView = true;
+            } else if (nextView === 'topo') {
+                globalMapTopoLayer.addTo(globalMapInstance);
+                globalMapBaseView = 'topo';
                 globalMapSatelliteView = false;
             } else {
-                globalMapInstance.removeLayer(globalMapStreetLayer);
-                globalMapSatelliteLayer.addTo(globalMapInstance);
-                globalMapSatelliteView = true;
+                globalMapStreetLayer.addTo(globalMapInstance);
+                globalMapBaseView = 'streets';
+                globalMapSatelliteView = false;
             }
             updateGlobalMapViewButton();
+        }
+
+        function toggleGlobalMapView() {
+            if (!globalMapInstance || !globalMapStreetLayer || !globalMapSatelliteLayer || !globalMapTopoLayer) return;
+            // Calles → Satélite → Topografía → Calles
+            var order = { streets: 'satellite', satellite: 'topo', topo: 'streets' };
+            applyGlobalMapBaseLayer(order[globalMapBaseView] || 'satellite');
         }
         window.toggleGlobalMapView = toggleGlobalMapView;
         
         function updateGlobalMapViewButton() {
             const icon = document.getElementById('globalMapViewIcon');
             const text = document.getElementById('globalMapViewText');
-            if (icon && text) {
-                if (globalMapSatelliteView) {
-                    icon.textContent = '🗺️';
-                    text.textContent = 'Vista Normal';
-                } else {
-                    icon.textContent = '🛰️';
-                    text.textContent = 'Vista Satelital';
-                }
+            const btn = document.getElementById('globalMapViewToggleBtn');
+            if (!icon || !text) return;
+            if (globalMapBaseView === 'satellite') {
+                icon.textContent = '🗻';
+                text.textContent = 'Vista Topografía';
+                if (btn) btn.title = 'Siguiente: topografía (relieve / curvas)';
+            } else if (globalMapBaseView === 'topo') {
+                icon.textContent = '🗺️';
+                text.textContent = 'Vista Calles';
+                if (btn) btn.title = 'Siguiente: mapa de calles';
+            } else {
+                icon.textContent = '🛰️';
+                text.textContent = 'Vista Satelital';
+                if (btn) btn.title = 'Siguiente: satélite';
             }
         }
         
@@ -17569,6 +18295,7 @@
             const modal = document.getElementById('globalMapModal');
             if (modal) modal.style.display = 'none';
             clearSentinelFromGlobalMap();
+            hideAdminMapFloatCard('globalMapContainer');
             if (globalMapInstance) {
                 if (globalMapMarkerCluster) {
                     try { globalMapInstance.removeLayer(globalMapMarkerCluster); } catch (e) {}
@@ -17580,12 +18307,16 @@
                 }
                 if (globalMapStreetLayer) try { globalMapInstance.removeLayer(globalMapStreetLayer); } catch (e) {}
                 if (globalMapSatelliteLayer) try { globalMapInstance.removeLayer(globalMapSatelliteLayer); } catch (e) {}
+                if (globalMapTopoLayer) try { globalMapInstance.removeLayer(globalMapTopoLayer); } catch (e) {}
                 globalMapInstance.remove();
                 const container = document.getElementById('globalMapContainer');
                 if (container) container.innerHTML = '';
                 globalMapInstance = null;
                 globalMapStreetLayer = null;
                 globalMapSatelliteLayer = null;
+                globalMapTopoLayer = null;
+                globalMapBaseView = 'streets';
+                globalMapSatelliteView = false;
             }
         }
         window.closeGlobalMapModal = closeGlobalMapModal;
@@ -17734,7 +18465,11 @@
             badge.textContent = modeLabel + ' | ' + periodLabel + ' | Visitas: ' + (visitsList || []).length + ' | Usuarios: ' + users.size;
         }
 
-        async function showConnectionsMap() {
+        async function showConnectionsMap(ev) {
+            var endBusy = (typeof window.adminCloudBusyStart === 'function')
+                ? window.adminCloudBusyStart(ev, '☁️ Bajando…')
+                : function () {};
+            try {
             try { await ensureAdminDashboardVisitsLoaded({ force: false }); } catch (e) { console.warn('showConnectionsMap: load visits', e); }
             var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
             var users = getAllUsers();
@@ -17853,7 +18588,9 @@
                 connMapStreetLayer.addTo(connMapInstance);
                 connMapSatelliteView = false;
                 updateConnMapViewButton();
+                ensureAdminMapFloatStyles();
                 addNutriPlantMapBrandLogo(connMapInstance);
+                wireAdminMapFloatDismissOnMapClick(connMapInstance, 'connMapContainer');
                 var allBounds = [];
                 function makeNumberIcon(count) {
                     return L.divIcon({
@@ -17866,6 +18603,7 @@
                 }
                 connMapRenderMarkers = function(visitsToRender) {
                     if (!connMapInstance) return;
+                    hideAdminMapFloatCard('connMapContainer');
                     if (connMapMarkerCluster) {
                         try { connMapInstance.removeLayer(connMapMarkerCluster); } catch (e) {}
                         connMapMarkerCluster = null;
@@ -17944,7 +18682,8 @@
                             '<ol style="margin:0;padding-left:18px;font-size:12px;max-height:150px;overflow:auto;">' + (usersDetail || '<li>Sin detalle</li>') + '</ol>' +
                             '</div>';
                         var numToShow = usersTotal;
-                        var marker = L.marker([lat, lng], { icon: makeNumberIcon(numToShow) }).bindPopup(popupHtml);
+                        var marker = L.marker([lat, lng], { icon: makeNumberIcon(numToShow) });
+                        bindAdminMapFloatContent(marker, 'connMapContainer', popupHtml, connMapInstance);
                         marker.options.visitCount = numToShow;
                         allBoundsLocal.push([lat, lng]);
                         if (clusterGroup) clusterGroup.addLayer(marker); else marker.addTo(connMapInstance);
@@ -17989,6 +18728,9 @@
             } else {
                 loadLeafletThenConnMap();
             }
+            } finally {
+                if (typeof endBusy === 'function') endBusy();
+            }
         }
         window.showConnectionsMap = showConnectionsMap;
 
@@ -18028,6 +18770,7 @@
         function closeConnectionsMapModal() {
             var modal = document.getElementById('connMapModal');
             if (modal) modal.style.display = 'none';
+            hideAdminMapFloatCard('connMapContainer');
             if (connMapInstance) {
                 if (connMapMarkerCluster) { try { connMapInstance.removeLayer(connMapMarkerCluster); } catch (e) {} }
                 connMapMarkerCluster = null;
