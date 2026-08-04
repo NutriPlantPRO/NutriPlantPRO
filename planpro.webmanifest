@@ -1,12 +1,12 @@
 {
-  "id": "/",
-  "name": "NutriPlant PRO",
-  "short_name": "NutriPlant",
-  "description": "Diseña, ajusta y nutre — nutrición vegetal y fertirriego.",
-  "start_url": "/login.html",
-  "scope": "/",
+  "id": "/planpro/",
+  "name": "Plan PRO",
+  "short_name": "Plan PRO",
+  "description": "Plan PRO · Cerebro Digital — Notebook, Nutri, Neuron e Invest PRO.",
+  "start_url": "/planpro/index.html?k=np_planpro_key_4a7f2e9b1c6d",
+  "scope": "/planpro/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#eceff3",
   "theme_color": "#16a34a",
   "icons": [
     {

@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - NutriPlant PRO</title>
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NP Admin">
     <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png">
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/N_Hoja_Azul.png">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/N_Hoja_Azul.png">
     <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="manifest" href="/admin.webmanifest">
     <link rel="stylesheet" href="../dashboard.css?v=20260803c">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js?v=20260803o"></script>
@@ -2026,11 +2029,20 @@
     </div>
 
     <script>
-        // 🔒 PROTECCIÓN URL: Solo quien tenga el enlace con el token puede ver esta página
+        // 🔒 PROTECCIÓN URL: enlace con token (?k=). En app instalada viene en start_url; también se guarda en local.
         (function() {
             var ADMIN_ACCESS_KEY = 'np_admin_key_8f4a2b9c1e7d';
+            var STORE_KEY = 'np_admin_pwa_k';
             var params = new URLSearchParams(window.location.search);
-            if (params.get('k') !== ADMIN_ACCESS_KEY) {
+            var fromUrl = params.get('k');
+            if (fromUrl) {
+                try { localStorage.setItem(STORE_KEY, fromUrl); } catch (e) {}
+            }
+            var k = fromUrl;
+            if (!k) {
+                try { k = localStorage.getItem(STORE_KEY); } catch (e) { k = null; }
+            }
+            if (k !== ADMIN_ACCESS_KEY) {
                 window.location.replace('../login.html');
                 return;
             }

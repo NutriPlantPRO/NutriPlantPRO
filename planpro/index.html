@@ -5,14 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Plan PRO · Cerebro Digital</title>
+  <meta name="theme-color" content="#16a34a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Plan PRO">
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
+  <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png" />
+  <link rel="manifest" href="/planpro.webmanifest" />
   <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260804tv" />
   <script src="../config-no-traducir-terminos.js"></script>
   <script>
     (function () {
       var PLANPRO_ACCESS_KEY = 'np_planpro_key_4a7f2e9b1c6d';
+      var STORE_KEY = 'np_planpro_pwa_k';
       var params = new URLSearchParams(window.location.search);
-      if (params.get('k') !== PLANPRO_ACCESS_KEY) {
+      var fromUrl = params.get('k');
+      if (fromUrl) {
+        try { localStorage.setItem(STORE_KEY, fromUrl); } catch (e) {}
+      }
+      var k = fromUrl || (function () {
+        try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; }
+      })();
+      if (k !== PLANPRO_ACCESS_KEY) {
         window.location.replace('../login.html');
       }
     })();

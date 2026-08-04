@@ -1,0 +1,25 @@
+{
+  "id": "/admin/",
+  "name": "NutriPlant Admin",
+  "short_name": "NP Admin",
+  "description": "Panel de administración NutriPlant PRO — suscriptores, proyectos y datos.",
+  "start_url": "/admin/index.html?k=np_admin_key_8f4a2b9c1e7d",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#e8ecf2",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/assets/N_Hoja_Azul.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/N_Hoja_Azul.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
