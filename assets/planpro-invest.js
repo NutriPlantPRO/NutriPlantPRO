@@ -722,10 +722,17 @@
 
   function renderCompareChips() {
     var mount = $('npInvCompareChips');
+    var graphBtn = $('npInvGraphCompareBtn');
+    if (graphBtn) {
+      var n = st.compareSymbols.length;
+      graphBtn.disabled = n < 1;
+      graphBtn.textContent =
+        n < 1 ? 'Graficar comparación' : n === 1 ? 'Graficar 1 activo' : 'Graficar ' + n + ' activos';
+    }
     if (!mount) return;
     if (!st.compareSymbols.length) {
       mount.innerHTML =
-        '<span class="np-muted" style="font-size:12px;">Comparación vacía · agrega 2 a 6 con ⇄ (ej. NVDA + MSFT + VOO).</span>';
+        '<span class="np-muted" style="font-size:12px;">Marca ⇄ en AAPL, MSFT, VOO… (2–6) y luego «Graficar comparación».</span>';
       return;
     }
     mount.innerHTML =
@@ -1261,7 +1268,7 @@
       var empty = $('npInvEmpty');
       var msg =
         e && (e.code === 'RATE_LIMIT' || e.status === 429)
-          ? 'Yahoo limitó consultas. Espera ~30–60 s y pulsa Actualizar selección.'
+          ? 'Yahoo gratis se saturó. Espera 1–2 min y pulsa Actualizar selección. Invest PRO sí funciona; la fuente pública a veces se cierra.'
           : e && e.code === 'NOT_FOUND'
             ? 'Activo no encontrado'
             : (e && e.message) || 'No se pudo cargar el activo';
@@ -1288,7 +1295,7 @@
       await loadSnapshotMetricChart({ force: force });
       return;
     }
-    var symbols = selectedSymbols();
+    var symbols = opts.symbols && opts.symbols.length ? opts.symbols.slice(0, 6) : selectedSymbols();
     if (!symbols.length) {
       drawChart([]);
       return;
@@ -1300,28 +1307,64 @@
           ? [await svc.getHistory(symbols[0], st.range, { force: force })]
           : await svc.compare(symbols, st.range, { force: force });
       st.lastSeries = series;
-      var anyFresh = (series || []).some(function (s) {
+      var failed = (series || []).filter(function (s) {
+        return !s || s.error || !s.points || s.points.length < 2;
+      });
+      var okSeries = (series || []).filter(function (s) {
+        return s && !s.error && s.points && s.points.length > 1;
+      });
+      var anyFresh = okSeries.some(function (s) {
         return s && s.__fromCache === false;
       });
-      var anyCache = (series || []).some(function (s) {
+      var anyCache = okSeries.some(function (s) {
         return s && s.__fromCache;
       });
       st.fromCache = !anyFresh && anyCache;
-      var times = (series || [])
+      var times = okSeries
         .map(function (s) {
           return s && s.__cachedAt;
         })
         .filter(Boolean);
       if (times.length) st.lastFetchedAt = Math.max.apply(null, times);
-      drawChart(series);
+      drawChart(okSeries.length ? okSeries : series);
       renderDataStamp();
-      if (status && !st.loading) status.classList.add('np-hide');
+      if (status) {
+        if (failed.length && okSeries.length) {
+          status.textContent =
+            'Graficados: ' +
+            okSeries
+              .map(function (s) {
+                return s.symbol;
+              })
+              .join(', ') +
+            ' · sin datos: ' +
+            failed
+              .map(function (s) {
+                return (s && s.symbol) || '?';
+              })
+              .join(', ') +
+            ' (Yahoo no respondió o ticker inválido)';
+          status.classList.remove('np-hide');
+        } else if (!st.loading) {
+          status.classList.add('np-hide');
+        }
+      }
     } catch (e) {
+      if (st.lastSeries && st.lastSeries.length) {
+        drawChart(st.lastSeries);
+        var statusKeep = $('npInvStatus');
+        if (statusKeep) {
+          statusKeep.textContent =
+            'Fuente saturada · mostrando última gráfica guardada. Espera un poco y reintenta.';
+          statusKeep.classList.remove('np-hide');
+        }
+        return;
+      }
       drawChart([]);
       var empty = $('npInvChartEmpty');
       var msg =
         e && (e.code === 'RATE_LIMIT' || e.status === 429)
-          ? 'La fuente limitó consultas. Espera y usa Actualizar selección.'
+          ? 'Yahoo gratis se saturó (pasa). Espera 1–2 min y pulsa «Graficar comparación» o Actualizar selección. No está roto Invest PRO.'
           : (e && e.message) || 'No se pudo cargar la gráfica';
       if (empty) {
         empty.classList.remove('np-hide');
@@ -1332,6 +1375,16 @@
         status.classList.remove('np-hide');
       }
     }
+  }
+
+  async function graphCompareSelection() {
+    if (!st.compareSymbols.length) {
+      toast('Marca al menos 1 activo con ⇄', true);
+      return;
+    }
+    if (!st.activeSymbol) st.activeSymbol = st.compareSymbols[0];
+    toast('Graficando: ' + st.compareSymbols.join(', '));
+    await loadChart({ force: false, symbols: st.compareSymbols.slice() });
   }
 
   async function refreshSelection() {
@@ -1364,7 +1417,12 @@
     try {
       var results = await svc.search(query);
       if (!results.length) {
-        mount.innerHTML = '<div class="np-inv-search-item np-muted">Activo no encontrado</div>';
+        mount.innerHTML =
+          '<div class="np-inv-search-item np-muted" style="display:block;line-height:1.45;">' +
+          'No encontrado en Yahoo.<br>' +
+          'Prueba el <strong>ticker exacto</strong>: BRK-B (no BRK.B), YAR.OL, TSM, BTC-USD, ^GSPC.<br>' +
+          'O escribe el nombre en inglés (Apple, NVIDIA).' +
+          '</div>';
         return;
       }
       mount.innerHTML = results
@@ -1447,7 +1505,7 @@
         else toast('Máximo 6 activos en comparación', true);
         renderPicks();
         renderCompareChips();
-        loadChart();
+        // No consulta web aquí: solo marca. Usa «Graficar comparación».
         return;
       }
       t = e.target.closest('[data-inv-compare-off]');
@@ -1456,7 +1514,6 @@
         st.compareSymbols = st.compareSymbols.filter(function (s) { return s !== off; });
         renderPicks();
         renderCompareChips();
-        loadChart();
         return;
       }
       t = e.target.closest('[data-inv-range]');
@@ -1539,6 +1596,14 @@
     if (refreshBtn) {
       refreshBtn.addEventListener('click', function () {
         refreshSelection();
+      });
+    }
+
+    var graphBtn = $('npInvGraphCompareBtn');
+    if (graphBtn && graphBtn.dataset.npWired !== '1') {
+      graphBtn.dataset.npWired = '1';
+      graphBtn.addEventListener('click', function () {
+        graphCompareSelection();
       });
     }
 

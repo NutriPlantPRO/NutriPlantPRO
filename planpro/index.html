@@ -11806,9 +11806,14 @@
               <div id="npInvRanges" class="np-inv-ranges" aria-label="Periodo"></div>
               <div id="npInvMetrics" class="np-inv-ranges" aria-label="Indicador a graficar"></div>
               <p class="np-muted" style="margin:0 0 8px;font-size:11px;line-height:1.4;">
-                Cambiar periodo o indicador <strong>reusa</strong> lo ya bajado. Solo <strong>Actualizar selección</strong> vuelve a consultar la web (activo + comparación).
+                1) Marca <strong>⇄</strong> en 2–6 activos · 2) Pulsa <strong>Graficar comparación</strong> (una sola descarga). Periodo/indicador reusa lo bajado.
               </p>
-              <div id="npInvCompareChips" class="np-inv-compare-chips" aria-label="Comparación"></div>
+              <div class="np-inv-compare-row">
+                <div id="npInvCompareChips" class="np-inv-compare-chips" aria-label="Comparación"></div>
+                <button type="button" class="np-inv-graph-btn" id="npInvGraphCompareBtn" title="Descarga y grafica solo los marcados con ⇄">
+                  Graficar comparación
+                </button>
+              </div>
               <div class="np-inv-chart-wrap">
                 <svg id="npInvChartSvg" role="img" aria-label="Gráfica de mercados"></svg>
                 <div id="npInvChartEmpty" class="np-inv-chart-empty">Selecciona un activo para ver la gráfica.</div>

@@ -11,8 +11,8 @@ const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
 const FETCH_TIMEOUT_MS = 12000;
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const CACHE_TTL_SEARCH_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const CACHE_TTL_SEARCH_MS = 45 * 60 * 1000;
 const cache = new Map();
 
 const RANGE_MAP = {
@@ -30,15 +30,20 @@ function cacheGet(key, ttlMs) {
   if (!hit) return null;
   const ttl = ttlMs != null ? ttlMs : CACHE_TTL_MS;
   if (Date.now() - hit.at > ttl) {
-    cache.delete(key);
     return null;
   }
   return hit.value;
 }
 
+/** Devuelve caché aunque esté vencida (para no fallar en 429). */
+function cacheGetStale(key) {
+  const hit = cache.get(key);
+  return hit ? hit.value : null;
+}
+
 function cacheSet(key, value) {
   cache.set(key, { at: Date.now(), value });
-  if (cache.size > 200) {
+  if (cache.size > 300) {
     const oldest = cache.keys().next().value;
     cache.delete(oldest);
   }
@@ -153,42 +158,79 @@ async function fetchChart(symbol, rangeKey) {
   throw err;
 }
 
+function normalizeYahooSymbol(raw) {
+  let s = String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '');
+  if (/^[A-Z]+\.[A-Z]$/.test(s)) s = s.replace(/\./, '-');
+  return s;
+}
+
 async function searchAssets(query) {
-  const q = String(query || '').trim();
-  if (!q) return [];
-  const cacheKey = 'search:' + q.toLowerCase();
+  const qRaw = String(query || '').trim();
+  if (!qRaw) return [];
+  const qNorm = normalizeYahooSymbol(qRaw);
+  const cacheKey = 'search:' + qRaw.toLowerCase();
   const cached = cacheGet(cacheKey, CACHE_TTL_SEARCH_MS);
   if (cached) return cached;
 
-  const url =
-    'https://query1.finance.yahoo.com/v1/finance/search?q=' +
-    encodeURIComponent(q) +
-    '&quotesCount=10&newsCount=0&listsCount=0';
-  const { ok, status, data } = await fetchJson(url);
-  if (status === 429) {
-    const err = new Error('La fuente limitó temporalmente las consultas. Espera un momento.');
-    err.code = 'RATE_LIMIT';
-    throw err;
+  async function runSearch(q) {
+    const url =
+      'https://query1.finance.yahoo.com/v1/finance/search?q=' +
+      encodeURIComponent(q) +
+      '&quotesCount=12&newsCount=0&listsCount=0';
+    const { ok, status, data } = await fetchJson(url);
+    if (status === 429) {
+      const err = new Error('La fuente limitó temporalmente las consultas. Espera un momento.');
+      err.code = 'RATE_LIMIT';
+      throw err;
+    }
+    if (!ok || !data) return null;
+    const quotes = Array.isArray(data.quotes) ? data.quotes : [];
+    return quotes.map((row) => ({
+      symbol: row.symbol,
+      name: row.longname || row.shortname || row.symbol,
+      assetType: mapAssetType(row.quoteType || row.typeDisp, row.symbol),
+      exchange: row.exchDisp || row.exchange || null,
+      currency: null
+    }));
   }
-  if (!ok || !data) {
+
+  let items = await runSearch(qRaw);
+  if (items == null) {
     const err = new Error('La fuente de datos no respondió. Intenta de nuevo.');
     err.code = 'PROVIDER_DOWN';
     throw err;
   }
-  const quotes = Array.isArray(data.quotes) ? data.quotes : [];
-  const items = quotes.map((row) => ({
-    symbol: row.symbol,
-    name: row.longname || row.shortname || row.symbol,
-    assetType: mapAssetType(row.quoteType || row.typeDisp, row.symbol),
-    exchange: row.exchDisp || row.exchange || null,
-    currency: null
-  }));
+  // Si no hay hits y el ticker parece símbolo, prueba forma Yahoo (BRK-B) y chart directo
+  if (!items.length && qNorm && qNorm !== qRaw.toUpperCase()) {
+    items = (await runSearch(qNorm)) || [];
+  }
+  if (!items.length && /^[\^A-Z0-9.-]{1,15}$/i.test(qNorm)) {
+    try {
+      const quote = await getQuote(qNorm);
+      if (quote && quote.symbol) {
+        items = [
+          {
+            symbol: quote.symbol,
+            name: quote.name || quote.symbol,
+            assetType: quote.assetType || 'other',
+            exchange: quote.exchange || null,
+            currency: quote.currency || null
+          }
+        ];
+      }
+    } catch (e) {
+      /* sin hit */
+    }
+  }
   cacheSet(cacheKey, items);
   return items;
 }
 
 async function getQuote(symbol) {
-  const sym = String(symbol || '').trim().toUpperCase();
+  const sym = normalizeYahooSymbol(symbol);
   if (!sym) {
     const err = new Error('Ticker vacío');
     err.code = 'BAD_REQUEST';
@@ -202,6 +244,11 @@ async function getQuote(symbol) {
   try {
     chart = await fetchChart(sym, '5D');
   } catch (e) {
+    const stale = cacheGetStale(cacheKey);
+    if (stale && e && (e.code === 'RATE_LIMIT' || e.code === 'PROVIDER_DOWN' || e.code === 'CHART_ERROR')) {
+      stale.__stale = true;
+      return stale;
+    }
     if (e && (e.code === 'NOT_FOUND' || e.code === 'RATE_LIMIT')) throw e;
     const err = new Error('La fuente de datos no respondió. Intenta de nuevo.');
     err.code = 'PROVIDER_DOWN';
@@ -261,7 +308,7 @@ async function getQuote(symbol) {
 }
 
 async function getHistory(symbol, rangeKey) {
-  const sym = String(symbol || '').trim().toUpperCase();
+  const sym = normalizeYahooSymbol(symbol);
   const rk = String(rangeKey || '1A').toUpperCase();
   if (!sym) {
     const err = new Error('Ticker vacío');
@@ -276,6 +323,11 @@ async function getHistory(symbol, rangeKey) {
   try {
     chart = await fetchChart(sym, rk);
   } catch (e) {
+    const stale = cacheGetStale(cacheKey);
+    if (stale && e && (e.code === 'RATE_LIMIT' || e.code === 'PROVIDER_DOWN' || e.code === 'CHART_ERROR')) {
+      stale.__stale = true;
+      return stale;
+    }
     if (e && (e.code === 'NOT_FOUND' || e.code === 'RATE_LIMIT')) throw e;
     const err = new Error('La fuente de datos no respondió. Intenta de nuevo.');
     err.code = 'PROVIDER_DOWN';

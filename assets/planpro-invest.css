@@ -496,12 +496,36 @@
   display: inline-block;
 }
 
-.np-inv-compare-chips {
+.np-inv-compare-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.np-inv-compare-row .np-inv-compare-chips {
+  flex: 1 1 180px;
   min-height: 28px;
+}
+.np-inv-graph-btn {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.np-inv-graph-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.np-inv-graph-btn:not(:disabled):hover {
+  filter: brightness(1.05);
 }
 .np-inv-cmp-count {
   font-size: 11px;

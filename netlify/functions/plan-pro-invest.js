@@ -65,10 +65,15 @@ async function verifyAdmin(supabase, accessToken) {
 }
 
 function normalizeSymbol(raw) {
-  return String(raw || '')
+  let s = String(raw || '')
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '');
+  // Yahoo usa guion en clase B (BRK.B → BRK-B)
+  if (/^[A-Z]+\.[A-Z]$/.test(s)) {
+    s = s.replace(/\./, '-');
+  }
+  return s;
 }
 
 exports.handler = async function (event) {
@@ -164,7 +169,7 @@ exports.handler = async function (event) {
           });
         }
         // Evita saturar Yahoo al comparar varios tickers seguidos
-        await new Promise((r) => setTimeout(r, 180));
+        await new Promise((r) => setTimeout(r, 350));
       }
       return json(200, { series, range });
     }
