@@ -104,7 +104,7 @@ exports.handler = async function (event) {
     return json(adminCheck.status, { error: adminCheck.error });
   }
   if (!checkRate(adminCheck.userId)) {
-    return json(429, { error: 'Demasiadas consultas. Espera un momento e intenta de nuevo.' });
+    return json(429, { error: 'No se pudo consultar ahora. Reintenta en un momento.', code: 'RATE_LIMIT' });
   }
 
   const params = event.queryStringParameters || {};
@@ -123,6 +123,15 @@ exports.handler = async function (event) {
       if (!symbol) return json(400, { error: 'Indica un ticker (symbol).' });
       const quote = await yahoo.getQuote(symbol);
       return json(200, { quote });
+    }
+
+    // Ficha + gráfica en una sola ida a Yahoo (abrir activo / init).
+    if (action === 'bundle') {
+      const symbol = normalizeSymbol(params.symbol || params.q);
+      const range = String(params.range || '1A').toUpperCase();
+      if (!symbol) return json(400, { error: 'Indica un ticker (symbol).' });
+      const bundle = await yahoo.getBundle(symbol, range);
+      return json(200, { quote: bundle.quote, history: bundle.history });
     }
 
     if (action === 'quotes') {

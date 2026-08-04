@@ -147,7 +147,7 @@ async function fetchChart(symbol, rangeKey) {
     }
   }
   if (lastStatus === 429) {
-    const err = new Error('La fuente limitó temporalmente las consultas. Espera un momento.');
+    const err = new Error('No se pudo consultar ahora. Reintenta en un momento.');
     err.code = 'RATE_LIMIT';
     throw err;
   }
@@ -182,7 +182,7 @@ async function searchAssets(query) {
       '&quotesCount=12&newsCount=0&listsCount=0';
     const { ok, status, data } = await fetchJson(url);
     if (status === 429) {
-      const err = new Error('La fuente limitó temporalmente las consultas. Espera un momento.');
+      const err = new Error('No se pudo consultar ahora. Reintenta en un momento.');
       err.code = 'RATE_LIMIT';
       throw err;
     }
@@ -229,58 +229,31 @@ async function searchAssets(query) {
   return items;
 }
 
-async function getQuote(symbol) {
-  const sym = normalizeYahooSymbol(symbol);
-  if (!sym) {
-    const err = new Error('Ticker vacío');
-    err.code = 'BAD_REQUEST';
-    throw err;
-  }
-  const cacheKey = 'quote:' + sym;
-  const cached = cacheGet(cacheKey);
-  if (cached) return cached;
-
-  let chart;
-  try {
-    chart = await fetchChart(sym, '5D');
-  } catch (e) {
-    const stale = cacheGetStale(cacheKey);
-    if (stale && e && (e.code === 'RATE_LIMIT' || e.code === 'PROVIDER_DOWN' || e.code === 'CHART_ERROR')) {
-      stale.__stale = true;
-      return stale;
-    }
-    if (e && (e.code === 'NOT_FOUND' || e.code === 'RATE_LIMIT')) throw e;
-    const err = new Error('La fuente de datos no respondió. Intenta de nuevo.');
-    err.code = 'PROVIDER_DOWN';
-    throw err;
-  }
-
-  const meta = chart.meta || {};
-  const quote = meta.regularMarketPrice != null ? Number(meta.regularMarketPrice) : null;
+function quoteFromChart(chart, sym) {
+  const meta = (chart && chart.meta) || {};
+  const price = meta.regularMarketPrice != null ? Number(meta.regularMarketPrice) : null;
   const prev =
     meta.chartPreviousClose != null
       ? Number(meta.chartPreviousClose)
       : meta.previousClose != null
         ? Number(meta.previousClose)
         : null;
-  const change = quote != null && prev != null ? quote - prev : null;
+  const change = price != null && prev != null ? price - prev : null;
   const changePercent = change != null && prev ? (change / prev) * 100 : null;
 
   const indicators = chart.indicators && chart.indicators.quote && chart.indicators.quote[0];
   const opens = indicators && indicators.open;
   const lastOpen = Array.isArray(opens) ? opens.filter((x) => x != null).slice(-1)[0] : null;
 
-  // Campos fundamentales (P/E, forward P/E, EPS, yield, marketCap) no vienen en el
-  // endpoint chart público. Se dejan null → UI muestra "N/D". El servicio está
-  // preparado para rellenarlos cuando se cambie de proveedor o se habilite uno con auth.
-  const out = normalizeQuote({
+  // Fundamentales (P/E, EPS, etc.) no vienen en chart público → N/D en UI.
+  return normalizeQuote({
     symbol: meta.symbol || sym,
     name: meta.longName || meta.shortName || sym,
     assetType: mapAssetType(meta.instrumentType, meta.symbol || sym),
     exchange: meta.fullExchangeName || meta.exchangeName || null,
     currency: meta.currency || null,
     logoUrl: logoFromSymbol(meta.symbol || sym),
-    price: quote,
+    price,
     change,
     changePercent,
     open: nd(lastOpen),
@@ -296,13 +269,117 @@ async function getQuote(symbol) {
     volume: nd(meta.regularMarketVolume),
     updatedAt: meta.regularMarketTime ? meta.regularMarketTime * 1000 : Date.now()
   });
+}
 
+function historyFromChart(chart, sym, rk) {
+  const meta = (chart && chart.meta) || {};
+  const ts = Array.isArray(chart.timestamp) ? chart.timestamp : [];
+  const q = chart.indicators && chart.indicators.quote && chart.indicators.quote[0];
+  const closes = (q && q.close) || [];
+  const volumes = (q && q.volume) || [];
+  const points = [];
+  for (let i = 0; i < ts.length; i++) {
+    const c = closes[i];
+    if (c == null || !Number.isFinite(Number(c))) continue;
+    const vol = volumes[i];
+    points.push({
+      t: ts[i] * 1000,
+      v: Number(c),
+      vol: vol != null && Number.isFinite(Number(vol)) ? Number(vol) : null
+    });
+  }
+  return {
+    provider: 'yahoo-finance',
+    symbol: meta.symbol || sym,
+    range: rk,
+    currency: meta.currency || null,
+    points
+  };
+}
+
+async function fetchChartCached(sym, rk, cacheKey) {
+  try {
+    return await fetchChart(sym, rk);
+  } catch (e) {
+    const stale = cacheGetStale(cacheKey);
+    if (stale && e && (e.code === 'RATE_LIMIT' || e.code === 'PROVIDER_DOWN' || e.code === 'CHART_ERROR')) {
+      stale.__stale = true;
+      return { __stalePayload: stale };
+    }
+    if (e && (e.code === 'NOT_FOUND' || e.code === 'RATE_LIMIT')) throw e;
+    const err = new Error('La fuente de datos no respondió. Intenta de nuevo.');
+    err.code = 'PROVIDER_DOWN';
+    throw err;
+  }
+}
+
+/**
+ * Una sola llamada a Yahoo: ficha + gráfica del rango pedido.
+ * Evita el doble hit (quote 5D + chart) al abrir un activo.
+ */
+async function getBundle(symbol, rangeKey) {
+  const sym = normalizeYahooSymbol(symbol);
+  const rk = String(rangeKey || '1A').toUpperCase();
+  if (!sym) {
+    const err = new Error('Ticker vacío');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  const qKey = 'quote:' + sym;
+  const hKey = 'hist:' + sym + ':' + rk;
+  const qCached = cacheGet(qKey);
+  const hCached = cacheGet(hKey);
+  if (qCached && hCached) {
+    return { quote: qCached, history: hCached };
+  }
+
+  const chartOrStale = await fetchChartCached(sym, rk, hKey);
+  if (chartOrStale && chartOrStale.__stalePayload) {
+    const staleHist = chartOrStale.__stalePayload;
+    const staleQuote = cacheGetStale(qKey);
+    if (staleQuote) {
+      staleQuote.__stale = true;
+      return { quote: staleQuote, history: staleHist };
+    }
+    throw Object.assign(new Error('No se pudo consultar ahora. Reintenta en un momento.'), {
+      code: 'RATE_LIMIT'
+    });
+  }
+
+  const quote = quoteFromChart(chartOrStale, sym);
+  if (quote.price == null) {
+    const err = new Error('Activo no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  const history = historyFromChart(chartOrStale, sym, rk);
+  cacheSet(qKey, quote);
+  cacheSet(hKey, history);
+  return { quote, history };
+}
+
+async function getQuote(symbol) {
+  const sym = normalizeYahooSymbol(symbol);
+  if (!sym) {
+    const err = new Error('Ticker vacío');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  const cacheKey = 'quote:' + sym;
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const chartOrStale = await fetchChartCached(sym, '5D', cacheKey);
+  if (chartOrStale && chartOrStale.__stalePayload) {
+    return chartOrStale.__stalePayload;
+  }
+
+  const out = quoteFromChart(chartOrStale, sym);
   if (out.price == null) {
     const err = new Error('Activo no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
   }
-
   cacheSet(cacheKey, out);
   return out;
 }
@@ -319,45 +396,19 @@ async function getHistory(symbol, rangeKey) {
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
-  let chart;
+  const chartOrStale = await fetchChartCached(sym, rk, cacheKey);
+  if (chartOrStale && chartOrStale.__stalePayload) {
+    return chartOrStale.__stalePayload;
+  }
+
+  const out = historyFromChart(chartOrStale, sym, rk);
+  // Rellena ficha desde el mismo chart (próximo getQuote no vuelve a Yahoo).
   try {
-    chart = await fetchChart(sym, rk);
+    const q = quoteFromChart(chartOrStale, sym);
+    if (q.price != null) cacheSet('quote:' + sym, q);
   } catch (e) {
-    const stale = cacheGetStale(cacheKey);
-    if (stale && e && (e.code === 'RATE_LIMIT' || e.code === 'PROVIDER_DOWN' || e.code === 'CHART_ERROR')) {
-      stale.__stale = true;
-      return stale;
-    }
-    if (e && (e.code === 'NOT_FOUND' || e.code === 'RATE_LIMIT')) throw e;
-    const err = new Error('La fuente de datos no respondió. Intenta de nuevo.');
-    err.code = 'PROVIDER_DOWN';
-    throw err;
+    /* ignore */
   }
-
-  const meta = chart.meta || {};
-  const ts = Array.isArray(chart.timestamp) ? chart.timestamp : [];
-  const quote = chart.indicators && chart.indicators.quote && chart.indicators.quote[0];
-  const closes = (quote && quote.close) || [];
-  const volumes = (quote && quote.volume) || [];
-  const points = [];
-  for (let i = 0; i < ts.length; i++) {
-    const c = closes[i];
-    if (c == null || !Number.isFinite(Number(c))) continue;
-    const vol = volumes[i];
-    points.push({
-      t: ts[i] * 1000,
-      v: Number(c),
-      vol: vol != null && Number.isFinite(Number(vol)) ? Number(vol) : null
-    });
-  }
-
-  const out = {
-    provider: 'yahoo-finance',
-    symbol: meta.symbol || sym,
-    range: rk,
-    currency: meta.currency || null,
-    points
-  };
   cacheSet(cacheKey, out);
   return out;
 }
@@ -366,6 +417,7 @@ module.exports = {
   searchAssets,
   getQuote,
   getHistory,
+  getBundle,
   RANGE_MAP,
   normalizeQuote
 };

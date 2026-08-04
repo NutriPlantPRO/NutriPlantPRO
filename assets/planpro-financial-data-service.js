@@ -141,6 +141,34 @@
       return q;
     },
 
+    /** Una sola red: ficha + historial del rango (evita doble hit al abrir). */
+    getBundle: async function (symbol, range, opts) {
+      var sym = String(symbol || '').trim();
+      var rk = String(range || '1A').toUpperCase();
+      var data = await request({ action: 'bundle', symbol: sym, range: rk }, opts);
+      var q = data.quote || null;
+      var h = data.history || null;
+      var at = data.__cachedAt || Date.now();
+      if (q) {
+        q.__fromCache = !!data.__fromCache;
+        q.__cachedAt = at;
+        cacheSet(
+          cacheKey(['req', new URLSearchParams({ action: 'quote', symbol: sym }).toString()]),
+          { quote: q, __fromCache: data.__fromCache, __cachedAt: at }
+        );
+      }
+      if (h) {
+        h.__fromCache = !!data.__fromCache;
+        h.__cachedAt = at;
+        cacheSet(histKey(sym, rk), {
+          history: h,
+          __fromCache: data.__fromCache,
+          __cachedAt: at
+        });
+      }
+      return { quote: q, history: h };
+    },
+
     getQuotes: async function (symbols, opts) {
       var list = (symbols || []).filter(Boolean).slice(0, 12);
       if (!list.length) return [];

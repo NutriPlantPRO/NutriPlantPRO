@@ -1242,13 +1242,22 @@
     }
     renderPicks();
     try {
-      var quote = await svc.getQuote(sym, { force: force });
+      // Una sola consulta: ficha + gráfica del rango (antes eran 2 → Yahoo 429 de entrada).
+      var quote;
+      var histOpts = { force: force };
+      if (typeof svc.getBundle === 'function' && !SNAPSHOT_METRICS[st.chartMetric]) {
+        var bundle = await svc.getBundle(sym, st.range, { force: force });
+        quote = bundle && bundle.quote;
+        if (bundle && bundle.history) histOpts.prefetched = [bundle.history];
+      } else {
+        quote = await svc.getQuote(sym, { force: force });
+      }
       st.quote = quote;
       st.fromCache = !!(quote && quote.__fromCache);
       st.lastFetchedAt = (quote && quote.__cachedAt) || Date.now();
       renderQuoteCard(quote);
       renderDataStamp();
-      await loadChart({ force: force });
+      await loadChart(histOpts);
       if (status) {
         if (st.fromCache && !force) {
           status.textContent = 'Usando datos ya consultados (sin nueva descarga).';
@@ -1301,10 +1310,15 @@
     }
     var status = $('npInvStatus');
     try {
-      var series =
-        symbols.length === 1
-          ? [await svc.getHistory(symbols[0], st.range, { force: force })]
-          : await svc.compare(symbols, st.range, { force: force });
+      var series;
+      if (opts.prefetched && opts.prefetched.length) {
+        series = opts.prefetched;
+      } else {
+        series =
+          symbols.length === 1
+            ? [await svc.getHistory(symbols[0], st.range, { force: force })]
+            : await svc.compare(symbols, st.range, { force: force });
+      }
       st.lastSeries = series;
       var failed = (series || []).filter(function (s) {
         return !s || s.error || !s.points || s.points.length < 2;
@@ -1342,7 +1356,7 @@
                 return (s && s.symbol) || '?';
               })
               .join(', ') +
-            ' (Yahoo no respondió o ticker inválido)';
+            ' (sin datos de la fuente)';
           status.classList.remove('np-hide');
         } else if (!st.loading) {
           status.classList.add('np-hide');
