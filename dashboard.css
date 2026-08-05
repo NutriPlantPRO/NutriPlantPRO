@@ -7796,12 +7796,18 @@ html.embed-login body {
   display: block;
 }
 
-/* Granular: sin fadeIn al cambiar Requerimiento/Programa (evita parpadeo leve) */
-.nutricion-granular-container .tab-content {
+/* Granular / Fertirriego / Hidroponía / Clima: sin fadeIn al cambiar subpestañas (solo visual) */
+.nutricion-granular-container .tab-content,
+.fertirriego-container .tab-content,
+.hydroponia-container .tab-content,
+.climate-container .tab-content {
   animation: none !important;
   transform: none !important;
 }
-.nutricion-granular-container .tab-content.active {
+.nutricion-granular-container .tab-content.active,
+.fertirriego-container .tab-content.active,
+.hydroponia-container .tab-content.active,
+.climate-container .tab-content.active {
   opacity: 1;
 }
 
@@ -8633,7 +8639,7 @@ html.embed-login body {
   filter: blur(1.2px);
 }
 .np-dem-smooth-img.np-dem-smooth-slope {
-  filter: blur(2.4px);
+  filter: blur(6px);
 }
 
 .radar-ndvi-panel .radar-pilot-trigger {

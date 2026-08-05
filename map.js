@@ -4435,8 +4435,9 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   const isSlopeLayer = idxNorm === 'slope';
   const containerOpacity = isPilotLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
   // DEM ~30 m: difuminar bloques (pendiente más que altura). Pilot: sin filtro. GEE legacy: saturación.
-  const visualFilter = isSlopeLayer
-    ? 'blur(2.85px) contrast(1.03)'
+  // Pendiente: blur base; en draw() se ajusta según tamaño en pantalla (predios chicos = cuadros enormes).
+  let visualFilter = isSlopeLayer
+    ? 'blur(8px) contrast(1.02)'
     : isDemLayer
       ? 'blur(1.75px) contrast(1.04)'
       : isPilotLayer
@@ -4470,6 +4471,8 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     img.style.opacity = '1';
     img.style.filter = visualFilter;
     img.style.imageRendering = 'auto';
+    this._npIsSlopeLayer = isSlopeLayer;
+    this._npImg = img;
     img.onload = () => {
       console.log('✅ Imagen Radar cargada en overlay');
       if (typeof overlay.draw === 'function') overlay.draw();
@@ -4498,6 +4501,12 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     this.div.style.width = Math.max(width, 2) + 'px';
     this.div.style.height = Math.max(height, 2) + 'px';
     this.div.style.display = 'block';
+    // Pendiente: más zoom / predio chico → cuadros DEM más grandes → más blur.
+    if (this._npIsSlopeLayer && this._npImg) {
+      const edge = Math.max(width, height);
+      const blurPx = Math.max(8, Math.min(28, Math.round(edge * 0.045)));
+      this._npImg.style.filter = 'blur(' + blurPx + 'px) contrast(1.02)';
+    }
     console.log('🛰️ Radar overlay draw:', { left, top, width, height });
   };
   overlay.onRemove = function() {

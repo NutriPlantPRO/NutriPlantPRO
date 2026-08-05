@@ -309,9 +309,11 @@ async function readDemElevationMosaic(urls, bbox4326, outW, outH) {
 
 /**
  * Suaviza una malla float (NaN-aware) para que el DEM ~30 m no se vea a bloques.
+ * @param {number} [radius=1] radio del kernel (1 = 3×3, 2 = 5×5)
  */
-function smoothFloatGrid(src, width, height, passes) {
-  const nPass = Math.min(Math.max(Number(passes) || 2, 1), 6);
+function smoothFloatGrid(src, width, height, passes, radius) {
+  const nPass = Math.min(Math.max(Number(passes) || 2, 1), 10);
+  const r = Math.min(Math.max(Number(radius) || 1, 1), 3);
   let a = Float32Array.from(src);
   let b = new Float32Array(src.length);
   for (let p = 0; p < nPass; p++) {
@@ -324,8 +326,8 @@ function smoothFloatGrid(src, width, height, passes) {
         }
         let sum = 0;
         let n = 0;
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
             const rr = row + dy;
             const cc = col + dx;
             if (rr < 0 || rr >= height || cc < 0 || cc >= width) continue;
@@ -351,8 +353,8 @@ function smoothFloatGrid(src, width, height, passes) {
  */
 async function demRgbaToSmoothPng(rgba, width, height, opts) {
   const stronger = opts && opts.strong === true;
-  const scale = stronger ? 3 : 2;
-  const blurSigma = stronger ? 2.4 : 1.35;
+  const scale = stronger ? 4 : 2;
+  const blurSigma = stronger ? 4.2 : 1.35;
   return sharp(rgba, { raw: { width, height, channels: 4 } })
     .resize(width * scale, height * scale, { kernel: sharp.kernel.lanczos3 })
     .blur(blurSigma)
@@ -445,11 +447,11 @@ async function renderDemSlopePng(dem, opts) {
   // Stats con valores crudos; suavizado solo para visualización (sin bloques ~30 m).
   const elevStats = elevStatsInPolygon(elevRaw, outW, outH, polygon, bbox4326);
   // Pre-suavizar DEM antes de pendiente: reduce escalones del grid ~30 m en el gradiente.
-  const elevForSlope = smoothFloatGrid(elevRaw, outW, outH, 3);
+  const elevForSlope = smoothFloatGrid(elevRaw, outW, outH, 4, 2);
   const slopeRaw = computeSlopePercent(elevForSlope, outW, outH, bbox4326);
   const elev = smoothFloatGrid(elevRaw, outW, outH, 3);
-  // Pendiente: más pases que altura (la 2ª imagen ya se ve continua; la 1ª salía a cuadros).
-  const slope = smoothFloatGrid(slopeRaw, outW, outH, 5);
+  // Pendiente: kernel más ancho + más pases (en predios chicos el DEM ~30 m se ve a cuadros).
+  const slope = smoothFloatGrid(slopeRaw, outW, outH, 7, 2);
 
   const elevFallback = {
     ...ELEV_VIS,
