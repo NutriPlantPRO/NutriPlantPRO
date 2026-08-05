@@ -346,13 +346,16 @@ function smoothFloatGrid(src, width, height, passes) {
 }
 
 /**
- * Sube resolución + blur ligero del PNG DEM para transiciones continuas al ampliar.
+ * Sube resolución + blur del PNG DEM para transiciones continuas al ampliar.
+ * Pendiente necesita más suavizado que altura (el gradiente DEM ~30 m sale más a bloques).
  */
-async function demRgbaToSmoothPng(rgba, width, height) {
-  const scale = 2;
+async function demRgbaToSmoothPng(rgba, width, height, opts) {
+  const stronger = opts && opts.strong === true;
+  const scale = stronger ? 3 : 2;
+  const blurSigma = stronger ? 2.4 : 1.35;
   return sharp(rgba, { raw: { width, height, channels: 4 } })
     .resize(width * scale, height * scale, { kernel: sharp.kernel.lanczos3 })
-    .blur(1.2)
+    .blur(blurSigma)
     .png()
     .toBuffer();
 }
@@ -439,11 +442,14 @@ async function renderDemSlopePng(dem, opts) {
 
   const { outW, outH } = computeOutputSize(bbox4326, maxDim);
   const elevRaw = await readDemElevationMosaic(urls, bbox4326, outW, outH);
-  const slopeRaw = computeSlopePercent(elevRaw, outW, outH, bbox4326);
   // Stats con valores crudos; suavizado solo para visualización (sin bloques ~30 m).
   const elevStats = elevStatsInPolygon(elevRaw, outW, outH, polygon, bbox4326);
+  // Pre-suavizar DEM antes de pendiente: reduce escalones del grid ~30 m en el gradiente.
+  const elevForSlope = smoothFloatGrid(elevRaw, outW, outH, 3);
+  const slopeRaw = computeSlopePercent(elevForSlope, outW, outH, bbox4326);
   const elev = smoothFloatGrid(elevRaw, outW, outH, 3);
-  const slope = smoothFloatGrid(slopeRaw, outW, outH, 3);
+  // Pendiente: más pases que altura (la 2ª imagen ya se ve continua; la 1ª salía a cuadros).
+  const slope = smoothFloatGrid(slopeRaw, outW, outH, 5);
 
   const elevFallback = {
     ...ELEV_VIS,
@@ -458,7 +464,8 @@ async function renderDemSlopePng(dem, opts) {
     indexToPngBuffer(slope, SLOPE_VIS, outW, outH, polygon, bbox4326, {
       requireCoverage: false,
       label: 'Pendiente',
-      demSmooth: true
+      demSmooth: true,
+      demSmoothStrong: true
     }),
     indexToPngBuffer(elev, elevFallback, outW, outH, polygon, bbox4326, {
       requireCoverage: false,
@@ -857,7 +864,9 @@ async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox43
   const rgba = colorizeIndex(indexValues, relativeVis, width, height, polygon, bbox4326);
   const buffer =
     opts && opts.demSmooth
-      ? await demRgbaToSmoothPng(rgba, width, height)
+      ? await demRgbaToSmoothPng(rgba, width, height, {
+          strong: opts.demSmoothStrong === true
+        })
       : await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
   return { buffer, vis: relativeVis, coverage };
 }

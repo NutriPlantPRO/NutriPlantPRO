@@ -16826,16 +16826,18 @@ function createLocationDemMapHTML(demSlope, rt) {
   const elevBar =
     'linear-gradient(90deg,#1e3a8a,#2563eb,#38bdf8,#7dd3fc,#a7f3d0,#fef3c7,#fbbf24,#ea580c,#9a3412)';
 
-  function oneCard(title, dataUrl, bar, lowL, highL, statsArr, note) {
+  function oneCard(title, dataUrl, bar, lowL, highL, statsArr, note, softBlur) {
     if (!dataUrl) return '';
     const statsLine = statsArr.length
       ? `<div class="report-note-inline" style="margin-top:6px;">${statsArr.join(' · ')}</div>`
       : '';
+    const blurPx = softBlur ? '2.2px' : '1.1px';
+    const slopeCls = softBlur ? ' np-dem-smooth-slope' : '';
     return `
       <div class="report-keep-together" style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:8px;">
         <div style="font-size:12px;font-weight:700;color:#44403c;margin-bottom:6px;">${title}</div>
         <div class="report-radar-frame report-radar-frame--lg" style="border-color:#d6d3d1;background:#fafaf9;">
-          <img class="np-dem-smooth-img" src="${dataUrl}" alt="${title}" style="image-rendering:auto;filter:blur(1.1px);" />
+          <img class="np-dem-smooth-img${slopeCls}" src="${dataUrl}" alt="${title}" style="image-rendering:auto;filter:blur(${blurPx});" />
         </div>
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px;font-size:9px;color:#78716c;line-height:1.3;">
           <span style="font-weight:700;">${lowL}</span>
@@ -16870,7 +16872,8 @@ function createLocationDemMapHTML(demSlope, rt) {
     rtSafe(
       'Mismo color ≈ misma inclinación (no altura). Capa fija del predio.',
       'Same color ≈ same steepness (not elevation). Fixed field layer.'
-    )
+    ),
+    true
   );
 
   if (!elevCard && !slopeCard) return '';

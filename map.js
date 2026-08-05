@@ -4432,13 +4432,16 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     (isPilotLayer ? np_getPilotRadarIndex() : np_getSelectedRadarIndex());
   const idxNorm = np_normalizeRadarIndex(indexForLabel);
   const isDemLayer = idxNorm === 'slope' || idxNorm === 'elev';
+  const isSlopeLayer = idxNorm === 'slope';
   const containerOpacity = isPilotLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
-  // DEM ~30 m: difuminar bloques. Índices Pilot: sin filtro. Overlay GEE legacy: saturación.
-  const visualFilter = isDemLayer
-    ? 'blur(1.75px) contrast(1.04)'
-    : isPilotLayer
-      ? 'none'
-      : 'saturate(1.35) contrast(1.15)';
+  // DEM ~30 m: difuminar bloques (pendiente más que altura). Pilot: sin filtro. GEE legacy: saturación.
+  const visualFilter = isSlopeLayer
+    ? 'blur(2.85px) contrast(1.03)'
+    : isDemLayer
+      ? 'blur(1.75px) contrast(1.04)'
+      : isPilotLayer
+        ? 'none'
+        : 'saturate(1.35) contrast(1.15)';
   const overlay = new google.maps.OverlayView();
   overlay.onAdd = function() {
     const div = document.createElement('div');
@@ -4456,7 +4459,9 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Radar ' + np_getRadarIndexConfig(indexForLabel).label;
-    img.className = isDemLayer ? 'np-dem-smooth-img' : '';
+    img.className = isDemLayer
+      ? 'np-dem-smooth-img' + (isSlopeLayer ? ' np-dem-smooth-slope' : '')
+      : '';
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.display = 'block';

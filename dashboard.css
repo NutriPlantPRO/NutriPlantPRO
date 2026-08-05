@@ -8632,6 +8632,9 @@ html.embed-login body {
   -ms-interpolation-mode: bicubic;
   filter: blur(1.2px);
 }
+.np-dem-smooth-img.np-dem-smooth-slope {
+  filter: blur(2.4px);
+}
 
 .radar-ndvi-panel .radar-pilot-trigger {
   display: inline-flex;
