@@ -100,12 +100,30 @@
     }
     .vpd-coord-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 10px;
       margin-bottom: 10px;
     }
+    .vpd-coord-row > div { min-width: 0; }
+    .vpd-coord-row label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 4px;
+    }
+    .vpd-coord-row input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    /* Lat/Lng siempre en el mismo renglón, también en celular */
     @media (max-width: 520px) {
-      .vpd-coord-row { grid-template-columns: 1fr; }
+      .vpd-coord-row { gap: 8px; }
+      .vpd-coord-row input { padding-left: 8px; padding-right: 8px; }
     }
     #vpd-geo-status {
       font-size: 12px;
@@ -194,12 +212,12 @@
       <p id="vpdMapLead" style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;"></p>
       <div class="vpd-coord-row">
         <div>
-          <label style="display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;">Latitud</label>
-          <input id="vpd-free-lat" type="number" step="any" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;" placeholder="ej. 19.4326" />
+          <label for="vpd-free-lat">Latitud</label>
+          <input id="vpd-free-lat" type="number" step="any" placeholder="ej. 19.4326" />
         </div>
         <div>
-          <label style="display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;">Longitud</label>
-          <input id="vpd-free-lng" type="number" step="any" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;" placeholder="ej. -99.1332" />
+          <label for="vpd-free-lng">Longitud</label>
+          <input id="vpd-free-lng" type="number" step="any" placeholder="ej. -99.1332" />
         </div>
       </div>
       <div class="vpd-map-actions">

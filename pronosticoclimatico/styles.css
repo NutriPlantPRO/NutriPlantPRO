@@ -786,10 +786,14 @@ html.agro-embed .agro-title-block h1 { font-size: 25px; }
   .agro-social-links .social-btn { width: 28px; height: 28px; }
   .agro-social-links .social-icon { width: 18px; height: 18px; }
   .agro-card { padding: 14px; border-radius: 13px; }
-  .agro-coords-grid, .agro-form-grid { grid-template-columns: 1fr; }
+  .agro-form-grid { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
+  /* Lat/Lng caben juntas en móvil; el resto ocupa el ancho completo */
+  .agro-coords-grid { gap: 10px; }
+  .agro-coords-grid > label > input { padding-left: 8px; padding-right: 8px; }
+  .agro-coords-grid > .agro-plot-name-field { grid-column: 1 / -1; }
   .agro-coords-grid > .agro-map-actions {
-    grid-column: 1;
+    grid-column: 1 / -1;
     margin-top: 2px;
   }
   .agro-input-action {

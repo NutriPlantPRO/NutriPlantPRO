@@ -18,15 +18,17 @@ Consultar **empresas, ETFs, índices y criptomonedas** con gráfica **TradingVie
 - Comparar hasta **6** activos (⇄ + Graficar → `compareSymbols` en el widget)
 - **Popular Picks** y **⭐ Listas** en Supabase (sin cambio)
 - Si el admin ya inició sesión en TradingView en el mismo navegador, puede usar su cuenta ahí
+- **Portafolio Schwab (abajo):** subir 1–4 capturas de la tabla de posiciones → `/api/invest-portfolio-extract` (visión IA) llena Symbol, Quantity, Price (+ fecha de subida), Market Value, Day Change, Gain/Loss; columnas **Objetivo** y **Comentarios** son manuales y **no se pisan** al actualizar; pasteles de peso por ticker y % ETF vs acciones (localStorage por usuario)
 
 ## Datos técnicos (para no inventar)
 
 | Pieza | Detalle |
 |-------|---------|
-| UI | `planpro/index.html` + `assets/planpro-invest.js` / `.css` |
+| UI | `planpro/index.html` + `assets/planpro-invest.js` / `planpro-invest-portfolio.js` / `.css` |
 | Gráfica | Widget TradingView Advanced Chart (embed) |
 | Cliente Yahoo (legado / opcional) | `assets/planpro-financial-data-service.js` + `/api/plan-pro-invest` — **ya no** alimenta la gráfica principal |
-| Tabla | `plan_pro_invest_lists` + `plan_pro_invest_watchlist.list_id` |
+| Watchlist | `plan_pro_invest_lists` + `plan_pro_invest_watchlist.list_id` |
+| Portafolio holdings | localStorage `np_plan_pro_invest_holdings_v1_<userId>` + API `/api/invest-portfolio-extract` |
 | SQL setup | `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql` |
 
 **Importante:** no inventes precios; la cotización se ve en el chart de TradingView. Listas ★ = Plan PRO / Supabase.
@@ -35,6 +37,7 @@ Consultar **empresas, ETFs, índices y criptomonedas** con gráfica **TradingVie
 
 - No hay action `nutriplantAdminQuery` para cotizaciones en vivo (no uses la API admin para inventar precios).
 - No hay noticias, recomendaciones de compra ni alertas automáticas en v1.
+- El portafolio Schwab **no** sincroniza solo con el broker: hay que subir capturas; los precios de la tabla son los de la captura, no cotización en vivo.
 - No es asesoría financiera: es herramienta de consulta de mercado para el admin.
 
 ## Cómo debe responder el Socio / el chat IA

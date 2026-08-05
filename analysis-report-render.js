@@ -22,6 +22,53 @@
     function renderAnalysisReport(obj, options) {
         if (!obj || typeof obj !== 'object') return '';
         var escapeHtml = (options && typeof options.escapeHtml === 'function') ? options.escapeHtml : defaultEscape;
+        var reportLanguage = options && (options.language === 'en' || options.language === 'es')
+            ? options.language
+            : (function () {
+                try {
+                    if (global.NpI18n && typeof global.NpI18n.getLanguage === 'function') {
+                        return String(global.NpI18n.getLanguage() || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'es';
+                    }
+                    var p = global.NpPrefs && typeof global.NpPrefs.get === 'function' ? global.NpPrefs.get() : null;
+                    return p && p.language === 'en' ? 'en' : 'es';
+                } catch (e) { return 'es'; }
+            })();
+        var hasExplicitUnits = options &&
+            (options.unitSystem === 'us_customary' || options.unitSystem === 'metric' ||
+             options.unit_system === 'us_customary' || options.unit_system === 'metric');
+        var reportUnitSystem = hasExplicitUnits
+            ? ((options.unitSystem === 'us_customary' || options.unit_system === 'us_customary') ? 'us_customary' : 'metric')
+            : (function () {
+                try {
+                    if (global.NpAnalysisUI && typeof global.NpAnalysisUI.isUS === 'function') {
+                        return global.NpAnalysisUI.isUS() ? 'us_customary' : 'metric';
+                    }
+                    var p = global.NpPrefs && typeof global.NpPrefs.get === 'function' ? global.NpPrefs.get() : null;
+                    return p && p.unit_system === 'us_customary' ? 'us_customary' : 'metric';
+                } catch (e) { return 'metric'; }
+            })();
+        function tr(es, en) { return reportLanguage === 'en' ? en : es; }
+        function isUSUnits() { return reportUnitSystem === 'us_customary'; }
+        function num(raw) {
+            var n = parseFloat(String(raw == null ? '' : raw).replace(',', '.'));
+            return isNaN(n) ? NaN : n;
+        }
+        function depthDisplay(cm) {
+            var n = num(cm);
+            if (isNaN(n)) return '—';
+            return isUSUnits() ? formatNum(n / 2.54, 2) + ' in' : formatNum(n, 2) + ' cm';
+        }
+        function doseDifferenceDisplay(kgHa) {
+            var n = num(kgHa);
+            if (isNaN(n)) return '—';
+            return formatNum(isUSUnits() ? n * 0.8921791216 : n, 2);
+        }
+        function bulkDensityDisplay(gcm3) {
+            var n = num(gcm3);
+            if (isNaN(n)) return '—';
+            var metric = formatNum(n, 3) + ' g/cm³';
+            return isUSUnits() ? metric + ' (' + formatNum(n * 62.4279606, 1) + ' lb/ft³)' : metric;
+        }
 
         var skip = { title: 1, name: 1, meta: 1, date: 1, calculatedAt: 1, id: 1 };
         function flatten(o, prefix) {
@@ -62,26 +109,54 @@
             var r = parseFloat(String(ref).replace(',', '.'));
             if (isNaN(v) || isNaN(r) || r === 0) return { text: '—', cls: '' };
             var pct = ((v - r) / r) * 100;
-            if (Math.abs(pct) <= 10) return { text: 'Dentro', cls: 'badge-ok' };
-            if (pct < 0) return { text: 'Bajo', cls: 'badge-low' };
-            return { text: 'Alto', cls: 'badge-high' };
+            if (Math.abs(pct) <= 10) return { text: tr('Dentro', 'Within'), cls: 'badge-ok' };
+            if (pct < 0) return { text: tr('Bajo', 'Low'), cls: 'badge-low' };
+            return { text: tr('Alto', 'High'), cls: 'badge-high' };
         }
 
-        var groupTitles = { general: 'General', cations: 'Cationes intercambiables y CIC', anions: 'Aniones', micros: 'Micronutrientes', ideal: 'Parámetros de referencia', physical: 'Propiedades físicas', phSection: 'pH y salinidad', fertility: 'Fertilidad del suelo', ratios: 'Relaciones entre cationes' };
+        var groupTitles = {
+            general: tr('General', 'General'),
+            cations: tr('Cationes intercambiables y CIC', 'Exchangeable cations and CEC'),
+            anions: tr('Aniones', 'Anions'),
+            micros: tr('Micronutrientes', 'Micronutrients'),
+            ideal: tr('Parámetros de referencia', 'Reference parameters'),
+            physical: tr('Propiedades físicas', 'Physical properties'),
+            phSection: tr('pH y salinidad', 'pH and salinity'),
+            fertility: tr('Fertilidad del suelo', 'Soil fertility'),
+            ratios: tr('Relaciones entre cationes', 'Cation ratios')
+        };
         function friendlyLabel(key) {
             var part = key.split('.').pop() || key;
             return part.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
         }
         var RATIO_LABELS = { camg: 'Ca/Mg', mgk: 'Mg/K', camgk: '(Ca+Mg)/K', cak: 'Ca/K' };
         var AGUA_ACIDS = [
-            { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6 },
-            { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7 },
-            { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0 },
-            { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6 }
+            { id: 'acido_nitrico_55', name: tr('Ácido Nítrico 55%', 'Nitric Acid 55%'), meqPerMl: 11.6 },
+            { id: 'acido_sulfurico_98', name: tr('Ácido Sulfúrico 98%', 'Sulfuric Acid 98%'), meqPerMl: 36.7 },
+            { id: 'acido_fosforico_75', name: tr('Ácido Fosfórico 75%', 'Phosphoric Acid 75%'), meqPerMl: 12.0 },
+            { id: 'acido_fosforico_85', name: tr('Ácido Fosfórico 85%', 'Phosphoric Acid 85%'), meqPerMl: 14.6 }
         ];
-        var SOIL_PHYSICAL_LABELS = { texturalClass: 'Clase textural', saturationPoint: 'Punto saturación %', fieldCapacity: 'Capacidad de campo %', wiltingPoint: 'Punto marchitamiento %', hydraulicConductivity: 'Cond. hidráulica cm/h', bulkDensity: 'Densidad aparente g/cm³' };
-        var SOIL_PH_LABELS = { ph: 'pH (1:2 agua)', phBuffer: 'pH Buffer', totalCarbonates: 'Carbonatos totales %', salinity: 'Salinidad CE dS/m' };
-        var SOIL_FERTILITY_LABELS = { pMethod: 'Método P', mo: 'MO %', nNo3: 'N-NO₃ ppm', p: 'P', k: 'K', ca: 'Ca', mg: 'Mg', na: 'Na', s: 'S', fe: 'Fe', mn: 'Mn', b: 'B', zn: 'Zn', cu: 'Cu', moly: 'Mo', al: 'Al', depthCm: 'Profundidad (cm)', reachPct: 'Superficie de suelo considerada (%)' };
+        var SOIL_PHYSICAL_LABELS = {
+            texturalClass: tr('Clase textural', 'Textural class'),
+            saturationPoint: tr('Punto saturación %', 'Saturation point %'),
+            fieldCapacity: tr('Capacidad de campo %', 'Field capacity %'),
+            wiltingPoint: tr('Punto marchitamiento %', 'Wilting point %'),
+            hydraulicConductivity: tr('Cond. hidráulica cm/h', 'Hydr. conductivity cm/h'),
+            bulkDensity: tr('Densidad aparente g/cm³', 'Bulk density g/cm³')
+        };
+        var SOIL_PH_LABELS = {
+            ph: tr('pH (1:2 agua)', 'pH (1:2 water)'),
+            phBuffer: tr('pH Buffer', 'Buffer pH'),
+            totalCarbonates: tr('Carbonatos totales %', 'Total carbonates %'),
+            salinity: tr('Salinidad CE dS/m', 'EC (dS/m)')
+        };
+        var SOIL_FERTILITY_LABELS = {
+            pMethod: tr('Método P', 'P method'), mo: 'MO %', nNo3: 'N-NO₃ ppm',
+            p: 'P', k: 'K', ca: 'Ca', mg: 'Mg', na: 'Na', s: 'S', fe: 'Fe',
+            mn: 'Mn', b: 'B', zn: 'Zn', cu: 'Cu', moly: 'Mo', al: 'Al',
+            depthCm: tr('Profundidad (cm)', 'Depth (cm)'),
+            reachPct: tr('Superficie de suelo considerada (%)', 'Considered soil surface (%)')
+        };
         /** Orden de columnas de fertilidad igual que en el panel del usuario: MO %, N-NO3, P, K, Ca, Mg, Na, S, Fe, Mn, B, Zn, Cu, Mo, Al */
         var FERTILITY_COLUMN_ORDER = ['mo', 'nNo3', 'p', 'k', 'ca', 'mg', 'na', 's', 'fe', 'mn', 'b', 'zn', 'cu', 'moly', 'al'];
         var SOIL_DEFAULT_REF = { texturalClass: '—', saturationPoint: '—', fieldCapacity: '—', wiltingPoint: '—', hydraulicConductivity: '—', bulkDensity: '—', ph: '6.0–7.5', phBuffer: '—', totalCarbonates: '—', salinity: '—', pMethod: '—', mo: '3', nNo3: '20', p: '40', k: '—', ca: '—', mg: '—', na: '0', s: '15', fe: '20', mn: '20', b: '1', zn: '3', cu: '1.5', al: '0', moly: '0.1' };
@@ -124,8 +199,9 @@
 
         function isEnLang() {
             try {
-                if (options && options.language === 'en') return true;
-                if (options && options.language === 'es') return false;
+                if (options && (options.language === 'en' || options.language === 'es')) {
+                    return options.language === 'en';
+                }
                 if (global.NpI18n && typeof global.NpI18n.getLanguage === 'function') {
                     return String(global.NpI18n.getLanguage() || '').toLowerCase().indexOf('en') === 0;
                 }
@@ -137,9 +213,20 @@
         }
 
         function getSoilParamLabel(grp, p) {
-            if (grp === 'physical') return SOIL_PHYSICAL_LABELS[p] || friendlyLabel(p);
+            if (grp === 'physical') {
+                if (p === 'bulkDensity') {
+                    return tr(
+                        isUSUnits() ? 'Densidad aparente g/cm³ (lb/ft³)' : 'Densidad aparente g/cm³',
+                        isUSUnits() ? 'Bulk density g/cm³ (lb/ft³)' : 'Bulk density g/cm³'
+                    );
+                }
+                return SOIL_PHYSICAL_LABELS[p] || friendlyLabel(p);
+            }
             if (grp === 'phSection') return SOIL_PH_LABELS[p] || friendlyLabel(p);
-            if (grp === 'fertility') return SOIL_FERTILITY_LABELS[p] || friendlyLabel(p);
+            if (grp === 'fertility') {
+                if (p === 'depthCm') return tr('Profundidad (' + (isUSUnits() ? 'in' : 'cm') + ')', 'Depth (' + (isUSUnits() ? 'in' : 'cm') + ')');
+                return SOIL_FERTILITY_LABELS[p] || friendlyLabel(p);
+            }
             return friendlyLabel(p);
         }
 
@@ -255,7 +342,7 @@
                 return iccRow(k, micros[k], o, 2, 2);
             }).join('');
             var calidadKeys = ['materiaSeca', 'brix', 'firmeza', 'acidezTitulable'];
-            var usFirm = !!(global.NpAnalysisUI && typeof global.NpAnalysisUI.isUS === 'function' && global.NpAnalysisUI.isUS());
+            var usFirm = isUSUnits();
             var KGCM2_TO_PSI = 14.223343307;
             var calidadRows = calidadKeys.map(function (k) {
                 var o = (optCalidad[k] !== undefined && optCalidad[k] !== '') ? optCalidad[k] : FRUTA_OPTIMAL_CALIDAD[k];
@@ -317,12 +404,15 @@
             if (params.length === 0) return null;
             var onlyLab = (grp === 'physical' || grp === 'phSection');
             if (onlyLab) {
-                var tbl = '<table class="admin-analysis-rel-table admin-soil-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Concepto</th>';
+                var tbl = '<table class="admin-analysis-rel-table admin-soil-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Concepto', 'Concept') + '</th>';
                 params.forEach(function (p) { tbl += '<th>' + escapeHtml(getSoilParamLabel(grp, p)) + '</th>'; });
-                tbl += '</tr></thead><tbody><tr><td class="col-concept">Dato laboratorio</td>';
+                tbl += '</tr></thead><tbody><tr><td class="col-concept">' + tr('Dato laboratorio', 'Lab value') + '</td>';
                 params.forEach(function (p) {
                     var lab = labMap[p];
-                    tbl += '<td>' + escapeHtml(lab !== undefined && lab !== null && lab !== '' ? formatNum(lab) : '—') + '</td>';
+                    var shown = lab !== undefined && lab !== null && lab !== ''
+                        ? (p === 'bulkDensity' ? bulkDensityDisplay(lab) : formatNum(lab))
+                        : '—';
+                    tbl += '<td>' + escapeHtml(shown) + '</td>';
                 });
                 tbl += '</tr></tbody></table>';
                 return tbl;
@@ -339,14 +429,20 @@
             var out = '';
             if (grp === 'fertility' && (labMap.pMethod != null || labMap.depthCm != null || labMap.reachPct != null)) {
                 var parts = [];
-                if (labMap.pMethod !== undefined && labMap.pMethod !== null && String(labMap.pMethod).trim() !== '') parts.push('Método P: ' + escapeHtml(String(labMap.pMethod).trim()));
-                if (labMap.depthCm !== undefined && labMap.depthCm !== null && String(labMap.depthCm).trim() !== '') parts.push('Profundidad: ' + escapeHtml(String(labMap.depthCm).trim()) + ' cm');
-                if (labMap.reachPct !== undefined && labMap.reachPct !== null && String(labMap.reachPct).trim() !== '') parts.push('Superficie de suelo considerada: ' + escapeHtml(String(labMap.reachPct).trim()) + ' %');
+                if (labMap.pMethod !== undefined && labMap.pMethod !== null && String(labMap.pMethod).trim() !== '') {
+                    parts.push(tr('Método P: ', 'P method: ') + escapeHtml(String(labMap.pMethod).trim()));
+                }
+                if (labMap.depthCm !== undefined && labMap.depthCm !== null && String(labMap.depthCm).trim() !== '') {
+                    parts.push(tr('Profundidad: ', 'Depth: ') + escapeHtml(depthDisplay(labMap.depthCm)));
+                }
+                if (labMap.reachPct !== undefined && labMap.reachPct !== null && String(labMap.reachPct).trim() !== '') {
+                    parts.push(tr('Superficie de suelo considerada: ', 'Considered soil surface: ') + escapeHtml(String(labMap.reachPct).trim()) + ' %');
+                }
                 if (parts.length) out += '<p class="admin-analysis-legend" style="margin-bottom:10px;">' + parts.join(' · ') + '</p>';
             }
             if (tableParams.length === 0) return out || null;
             var idealSource = (grp === 'fertility') ? fertilityIdeal : {};
-            var tbl = '<table class="admin-analysis-rel-table admin-soil-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Concepto</th>';
+            var tbl = '<table class="admin-analysis-rel-table admin-soil-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Concepto', 'Concept') + '</th>';
             tableParams.forEach(function (p) { tbl += '<th>' + escapeHtml(getSoilParamLabel(grp, p)) + '</th>'; });
             tbl += '</tr></thead><tbody>';
             var labCells = [], refCells = [], statusCells = [], kgHaCells = [];
@@ -368,16 +464,18 @@
                     var labNum = (lab !== undefined && lab !== null && lab !== '') ? parseFloat(String(lab).replace(',', '.')) : NaN;
                     var idealNum = (idealVal != null && idealVal !== '' && !isNaN(parseFloat(String(idealVal)))) ? parseFloat(String(idealVal).replace(',', '.')) : NaN;
                     var diff = isNaN(labNum) ? NaN : (isNaN(idealNum) ? labNum : (labNum - idealNum));
-                    var kgHa = isNaN(diff) ? '—' : formatNum(diff * factor);
-                    kgHaCells.push('<td>' + escapeHtml(kgHa) + '</td>');
+                    var doseDiff = isNaN(diff) ? '—' : doseDifferenceDisplay(diff * factor);
+                    kgHaCells.push('<td>' + escapeHtml(doseDiff) + '</td>');
                 }
             });
-            tbl += '<tr><td class="col-concept">Dato laboratorio</td>' + labCells.join('') + '</tr>';
-            tbl += '<tr><td class="col-concept">Nivel ideal</td>' + refCells.join('') + '</tr>';
+            tbl += '<tr><td class="col-concept">' + tr('Dato laboratorio', 'Lab value') + '</td>' + labCells.join('') + '</tr>';
+            tbl += '<tr><td class="col-concept">' + tr('Nivel ideal', 'Ideal level') + '</td>' + refCells.join('') + '</tr>';
             if (grp === 'fertility' && kgHaCells.length) {
-                tbl += '<tr class="admin-soil-kgha-row"><td class="col-concept">kg/ha (diferencia)</td>' + kgHaCells.join('') + '</tr>';
+                tbl += '<tr class="admin-soil-kgha-row"><td class="col-concept">' +
+                    (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (' + tr('diferencia', 'difference') + ')</td>' +
+                    kgHaCells.join('') + '</tr>';
             } else {
-                tbl += '<tr><td class="col-concept">Estado</td>' + statusCells.join('') + '</tr>';
+                tbl += '<tr><td class="col-concept">' + tr('Estado', 'Status') + '</td>' + statusCells.join('') + '</tr>';
             }
             tbl += '</tbody></table>';
             return out + tbl;
@@ -406,14 +504,16 @@
             var tdStyle = 'padding:10px 12px;text-align:center;border:1px solid #e2e8f0;';
             var html = '<div class="soil-cations-structure" style="display:flex;flex-wrap:wrap;gap:16px 20px;">';
             html += '<div class="soil-cations-meq-block" style="' + boxStyle + '">';
-            html += '<p class="soil-block-title" style="' + headerStyle + '"><span class="notranslate" translate="no">Concentraciones (meq/100g o cmol⁺/kg)</span></p>';
+            html += '<p class="soil-block-title" style="' + headerStyle + '"><span class="notranslate" translate="no">' +
+                tr('Concentraciones (meq/100g o cmol⁺/kg)', 'Concentrations (meq/100g or cmol⁺/kg)') + '</span></p>';
             html += '<div style="padding:12px;"><table style="' + tableStyle + '"><thead><tr>';
             ['ca', 'mg', 'k', 'na', 'al', 'h'].forEach(function (p) { html += '<th style="' + thStyle + '">' + escapeHtml(paramLabel(p)) + '</th>'; });
             html += '</tr></thead><tbody><tr>';
             ['ca', 'mg', 'k', 'na', 'al', 'h'].forEach(function (p) { html += '<td style="' + tdStyle + '">' + val(p) + '</td>'; });
             html += '</tr></tbody></table></div></div>';
             html += '<div class="soil-cations-pct-box" style="' + boxStyle + '">';
-            html += '<p class="soil-block-title soil-block-title-blue" style="' + headerStyle + '">CIC y saturación (%)</p>';
+            html += '<p class="soil-block-title soil-block-title-blue" style="' + headerStyle + '">' +
+                tr('CIC y saturación (%)', 'CEC and saturation (%)') + '</p>';
             html += '<div style="padding:12px;"><table style="' + tableStyle + '"><thead><tr>';
             html += '<th style="' + thStyle + '"><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span></th>';
             CATION_PCT_COLS.forEach(function (p) { html += '<th style="' + thStyle + '">' + escapeHtml(paramLabel(p)) + '</th>'; });
@@ -488,9 +588,9 @@
             // similar al formulario que ve el usuario. Solución Nutritiva y Extracto de Pasta: columnas Ideal (opc.) y Diferencia.
             if (!isSoilType) {
                 if (isSolucionType || isExtractoType) {
-                    var sTbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th>';
-                    if (hasMeqPpm) sTbl += '<th>meq/L</th><th>ppm</th><th>Ideal (opc.)</th><th>Diferencia</th>';
-                    else sTbl += '<th>Análisis (ppm)</th><th>Ideal (opc.)</th><th>Diferencia</th>';
+                    var sTbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Elemento', 'Element') + '</th>';
+                    if (hasMeqPpm) sTbl += '<th>meq/L</th><th>ppm</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
+                    else sTbl += '<th>' + tr('Análisis (ppm)', 'Analysis (ppm)') + '</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
                     sTbl += '</tr></thead><tbody>';
                     params.forEach(function (p) {
                         var row = paramKeys[p] || {};
@@ -521,10 +621,10 @@
                     return sTbl;
                 }
                 var vTbl = '<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;">'
-                    + '<table class="admin-analysis-rel-table admin-soil-table-horizontal" style="margin:0;"><thead><tr><th class="col-concept">Elemento</th>';
+                    + '<table class="admin-analysis-rel-table admin-soil-table-horizontal" style="margin:0;"><thead><tr><th class="col-concept">' + tr('Elemento', 'Element') + '</th>';
                 if (hasMeqPpm) vTbl += '<th>meq/L</th><th>ppm</th>';
-                else if (grp === 'micros') vTbl += '<th>Valor (lab) (ppm)</th>';
-                else vTbl += '<th>Valor (lab)</th>';
+                else if (grp === 'micros') vTbl += '<th>' + tr('Valor (lab) (ppm)', 'Lab value (ppm)') + '</th>';
+                else vTbl += '<th>' + tr('Valor (lab)', 'Lab value') + '</th>';
                 vTbl += '</tr></thead><tbody>';
                 params.forEach(function (p) {
                     var row = paramKeys[p] || {};
@@ -541,7 +641,7 @@
                 vTbl += '</tbody></table></div>';
                 return vTbl;
             }
-            var tbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Concepto</th>';
+            var tbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Concepto', 'Concept') + '</th>';
             params.forEach(function (p) { tbl += '<th>' + escapeHtml(paramLabel(p)) + '</th>'; });
             tbl += '</tr></thead><tbody>';
             if (hasMeqPpm) {
@@ -551,14 +651,14 @@
                 params.forEach(function (p) { tbl += '<td>' + escapeHtml(formatNum(paramKeys[p].ppm)) + '</td>'; });
                 tbl += '</tr>';
             } else {
-                tbl += '<tr><td class="col-concept">Valor (lab)</td>';
+                tbl += '<tr><td class="col-concept">' + tr('Valor (lab)', 'Lab value') + '</td>';
                 params.forEach(function (p) { tbl += '<td>' + escapeHtml(paramKeys[p].valor !== undefined && paramKeys[p].valor !== '' ? formatNum(paramKeys[p].valor) : '—') + '</td>'; });
                 tbl += '</tr>';
             }
             if (isSoilType) {
-                tbl += '<tr><td class="col-concept">Referencia (ideal)</td>';
+                tbl += '<tr><td class="col-concept">' + tr('Referencia (ideal)', 'Reference (ideal)') + '</td>';
                 params.forEach(function (p) { tbl += '<td>' + escapeHtml(paramKeys[p].refDisplay || '—') + '</td>'; });
-                tbl += '</tr><tr><td class="col-concept">Estado</td>';
+                tbl += '</tr><tr><td class="col-concept">' + tr('Estado', 'Status') + '</td>';
                 params.forEach(function (p) {
                     var row = paramKeys[p];
                     var refForStatus = row.refNumeric || '—';
@@ -581,23 +681,32 @@
         if (isFoliarType) return buildFoliarReadOnly();
 
         var html = '<div class="admin-analysis-data-wrap">';
-        if (hasSoilTables) html += '<p class="admin-analysis-legend"><strong>Propiedades físicas y pH y salinidad:</strong> Concepto + Dato laboratorio. <strong>Fertilidad:</strong> Dato laboratorio, Nivel ideal y kg/ha (diferencia).</p>';
-        else if (hasRelated) html += '<p class="admin-analysis-legend"><strong>meq/L y ppm</strong> = valores calculados' + (isSoilType ? '; <strong>Referencia</strong> = valor ideal; <strong>Estado</strong> = Dentro / Bajo / Alto.' : '.') + '</p>';
+        if (hasSoilTables) {
+            html += '<p class="admin-analysis-legend">' + tr(
+                '<strong>Propiedades físicas y pH y salinidad:</strong> Concepto + Dato laboratorio. <strong>Fertilidad:</strong> Dato laboratorio, Nivel ideal y ' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (diferencia).',
+                '<strong>Physical properties, pH and salinity:</strong> Concept + lab value. <strong>Fertility:</strong> Lab value, ideal level and ' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (difference).'
+            ) + '</p>';
+        } else if (hasRelated) {
+            html += '<p class="admin-analysis-legend">' + tr(
+                '<strong>meq/L y ppm</strong> = valores calculados' + (isSoilType ? '; <strong>Referencia</strong> = valor ideal; <strong>Estado</strong> = Dentro / Bajo / Alto.' : '.'),
+                '<strong>meq/L and ppm</strong> = calculated values' + (isSoilType ? '; <strong>Reference</strong> = ideal value; <strong>Status</strong> = Within / Low / High.' : '.')
+            ) + '</p>';
+        }
         orderedGroups.forEach(function (grp) {
             if (grp === 'ideal' && !isSoilType) return;
             if (isAguaType && (grp === 'm3Riego' || grp === 'acidId')) return;
             var title = groupTitles[grp] || grp;
-            if (grp === 'cations' && !isSoilType) title = 'Cationes';
+            if (grp === 'cations' && !isSoilType) title = tr('Cationes', 'Cations');
             if (isSolucionType || isExtractoType) {
-                if (grp === 'general') title = 'Características generales (salinidad / sodicidad)';
-                if (grp === 'cations') title = 'Cationes (meq/L y ppm)';
-                if (grp === 'anions') title = 'Aniones (meq/L y ppm)';
-                if (grp === 'micros') title = 'Micronutrimentos (ppm)';
+                if (grp === 'general') title = tr('Características generales (salinidad / sodicidad)', 'General characteristics (salinity / sodicity)');
+                if (grp === 'cations') title = tr('Cationes (meq/L y ppm)', 'Cations (meq/L and ppm)');
+                if (grp === 'anions') title = tr('Aniones (meq/L y ppm)', 'Anions (meq/L and ppm)');
+                if (grp === 'micros') title = tr('Micronutrimentos (ppm)', 'Micronutrients (ppm)');
             }
             if (isAguaType) {
-                if (grp === 'cations') title = 'Cationes (meq/L y ppm)';
-                if (grp === 'anions') title = 'Aniones (meq/L y ppm)';
-                if (grp === 'micros') title = 'Micronutrientes (ppm)';
+                if (grp === 'cations') title = tr('Cationes (meq/L y ppm)', 'Cations (meq/L and ppm)');
+                if (grp === 'anions') title = tr('Aniones (meq/L y ppm)', 'Anions (meq/L and ppm)');
+                if (grp === 'micros') title = tr('Micronutrientes (ppm)', 'Micronutrients (ppm)');
             }
             var items = byGroup[grp];
             var content = null;
@@ -609,7 +718,10 @@
             if (content) {
                 var extra = '';
                 if (grp === 'cations' && isSoilType) {
-                    extra = '<p class="admin-analysis-legend" style="margin-bottom:10px;"><strong>Referencia saturación CIC (ideal):</strong> K⁺ 3-7%, Ca²⁺ 65-75%, Mg²⁺ 10-15%, H⁺ 0-10%, Na⁺ 0-1%, Al³⁺ 0-1%. <strong>Relaciones entre cationes:</strong> Ca/Mg = 6, Mg/K = 3.5, (Ca+Mg)/K = 18, Ca/K = 14.</p>';
+                    extra = '<p class="admin-analysis-legend" style="margin-bottom:10px;">' + tr(
+                        '<strong>Referencia saturación CIC (ideal):</strong> K⁺ 3-7%, Ca²⁺ 65-75%, Mg²⁺ 10-15%, H⁺ 0-10%, Na⁺ 0-1%, Al³⁺ 0-1%. <strong>Relaciones entre cationes:</strong> Ca/Mg = 6, Mg/K = 3.5, (Ca+Mg)/K = 18, Ca/K = 14.',
+                        '<strong>CEC saturation reference (ideal):</strong> K⁺ 3-7%, Ca²⁺ 65-75%, Mg²⁺ 10-15%, H⁺ 0-10%, Na⁺ 0-1%, Al³⁺ 0-1%. <strong>Cation ratios:</strong> Ca/Mg = 6, Mg/K = 3.5, (Ca+Mg)/K = 18, Ca/K = 14.'
+                    ) + '</p>';
                 }
                 html += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">' + escapeHtml(title) + '</div>' + extra + content + '</div>';
             } else {
@@ -647,18 +759,19 @@
             var meqPerM3 = meqPerLNeutralizar * 1000;
             var mlPerM3 = acid && acid.meqPerMl ? (meqPerM3 / acid.meqPerMl) : 0;
             var litrosTotal = m3 ? ((mlPerM3 * m3) / 1000) : 0;
-            var ui = global.NpAnalysisUI;
-            var isUS = !!(ui && typeof ui.isUS === 'function' && ui.isUS());
+            var isUS = isUSUnits();
             var en = isEnLang();
-            var volDisp = (m3 > 0 && ui && typeof ui.formatVolumeM3 === 'function')
-                ? ui.formatVolumeM3(m3, 2)
-                : (m3 > 0 ? formatNum(m3) + ' m³' : '—');
-            var doseDisp = (mlPerM3 > 0 && ui && typeof ui.formatAcidDoseMlPerM3 === 'function')
-                ? ui.formatAcidDoseMlPerM3(mlPerM3, 2)
-                : (mlPerM3 > 0 ? formatNum(mlPerM3) + ' mL/m³' : '—');
-            var totalDisp = (litrosTotal > 0 && ui && typeof ui.formatAcidTotalLiters === 'function')
-                ? ui.formatAcidTotalLiters(litrosTotal, 2)
-                : (litrosTotal > 0 ? formatNum(litrosTotal) + ' L' : '—');
+            // Conversiones explícitas con el sistema del reporte. No depender de
+            // las preferencias que tenga abierta la interfaz al generar el PDF.
+            var volDisp = m3 > 0
+                ? (isUS ? formatNum(m3 * 264.1720524, 2) + ' US gal' : formatNum(m3, 2) + ' m³')
+                : '—';
+            var doseDisp = mlPerM3 > 0
+                ? (isUS ? formatNum(mlPerM3 * 0.128, 2) + ' fl oz/1000 gal' : formatNum(mlPerM3, 2) + ' mL/m³')
+                : '—';
+            var totalDisp = litrosTotal > 0
+                ? (isUS ? formatNum(litrosTotal * 0.2641720524, 2) + ' US gal' : formatNum(litrosTotal, 2) + ' L')
+                : '—';
             var volLabel = isUS
                 ? (en ? 'Irrigation water (total volume):' : 'Agua de riego (volumen total):')
                 : (en ? 'Irrigation water m³ (total volume):' : 'm³ agua de riego (volumen total):');

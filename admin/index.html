@@ -12,11 +12,11 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
     <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
     <link rel="manifest" href="/admin.webmanifest">
-    <link rel="stylesheet" href="../dashboard.css?v=20260804a">
+    <link rel="stylesheet" href="../dashboard.css?v=20260805b">
     <script src="../subscription-config.js"></script>
-    <script src="../analysis-report-render.js?v=20260803o"></script>
-    <script src="../assets/np-lab-type-configs.js?v=20260803n"></script>
-    <script src="../assets/np-analysis-compare.js?v=20260803h"></script>
+    <script src="../analysis-report-render.js?v=20260805p"></script>
+    <script src="../assets/np-lab-type-configs.js?v=20260805a"></script>
+    <script src="../assets/np-analysis-compare.js?v=20260805c"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
@@ -14121,21 +14121,21 @@
             html += `</div>`;
             
             // ========== ANÁLISIS (mismo orden que las pestañas) ==========
-            // Suelo / SN / Extracto: como el usuario → tablas + gráficas comparativas al frente.
-            // Agua / Foliar / Fruta: comparativa + detalle por reporte (ácido, DOP, ICC).
+            // Los seis tipos muestran comparativa + detalle por reporte.
             const formatAnalysisItemInfo = (obj) => {
                 if (!obj || typeof obj !== 'object') return '';
                 if (typeof window.NutriPlantRenderAnalysisReport === 'function')
                     return window.NutriPlantRenderAnalysisReport(obj, { escapeHtml });
                 return '<div class="admin-analysis-data-wrap"><p class="admin-analysis-empty" style="color:#64748b; font-size: 12px; margin: 0;">Sin datos adicionales.</p></div>';
             };
-            const COMPARE_ONLY_TYPES = { suelo: 1, solucion: 1, pasta: 1 };
+            // Se abren al montar para que Chart.js pueda medir bien el canvas.
+            const AUTO_OPEN_COMPARE_TYPES = { suelo: 1, solucion: 1, pasta: 1 };
             const renderAnalysisSection = (title, icon, list, colorLeft) => {
                 const arr = Array.isArray(list) ? list : [];
                 const hasData = arr.length > 0;
                 const countLabel = hasData ? ` (${arr.length} ${arr.length === 1 ? 'reporte' : 'reportes'})` : '';
                 const accentBorder = colorLeft === 'suelo' ? '#eab308' : colorLeft === 'solucion' ? '#3b82f6' : colorLeft === 'pasta' ? '#a855f7' : colorLeft === 'agua' ? '#06b6d4' : colorLeft === 'foliar' ? '#22c55e' : '#f97316';
-                const compareOnly = !!COMPARE_ONLY_TYPES[colorLeft];
+                const autoOpenCompare = !!AUTO_OPEN_COMPARE_TYPES[colorLeft];
                 let inner = '';
                 if (hasData) {
                     if (arr.length >= 1) {
@@ -14153,26 +14153,12 @@
                             inner += '<div id="admin-fruta-compare-host" class="np-analysis-compare-host" style="margin:0 0 16px;"></div>';
                         }
                     }
-                    if (compareOnly) {
-                        // Como el usuario / PDF: solo listado corto; el detalle visual son tablas+gráficas.
-                        inner += '<details class="admin-json-toggle" style="margin-top:8px;"><summary>Listado de reportes (' + arr.length + ')</summary>';
-                        inner += '<ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#334155;line-height:1.5;">';
-                        inner += arr.map(function (a, i) {
-                            const name = a.title || a.name || (a.meta && a.meta.title) || ('Reporte ' + (i + 1));
-                            const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
-                            return '<li><strong>' + escapeHtml(String(name)) + '</strong>' +
-                                (date ? ' <span style="color:#64748b;">· ' + escapeHtml(String(date)) + '</span>' : '') +
-                                '</li>';
-                        }).join('');
-                        inner += '</ul>';
-                        inner += '<details class="admin-json-toggle" style="margin-top:10px;"><summary>Ver datos (JSON)</summary><pre style="max-height:250px;">' +
-                            escapeHtml(JSON.stringify(list, null, 2)) + '</pre></details></details>';
-                    } else {
-                        inner += '<div class="admin-reports-list">' + arr.map((a, i) => {
-                            const name = a.title || a.name || (a.meta && a.meta.title) || `Reporte ${i + 1}`;
-                            const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
-                            const infoHtml = formatAnalysisItemInfo(a);
-                            return `<details class="admin-report-item">
+                    // Detalle por análisis, igual que en el panel del usuario (los seis tipos)
+                    inner += '<div class="admin-reports-list">' + arr.map((a, i) => {
+                        const name = a.title || a.name || (a.meta && a.meta.title) || `Reporte ${i + 1}`;
+                        const date = a.date || (a.meta && a.meta.date) || (a.calculatedAt && new Date(a.calculatedAt).toLocaleDateString('es-MX')) || '';
+                        const infoHtml = formatAnalysisItemInfo(a);
+                        return `<details class="admin-report-item">
                             <summary style="list-style: none; display: flex; align-items: center; gap: 6px;">
                                 <span class="admin-analysis-chevron" style="font-size: 10px;">▶</span>
                                 <strong>${escapeHtml(String(name))}</strong>${date ? ' <span style="color:#64748b;">' + escapeHtml(String(date)) + '</span>' : ''}
@@ -14182,16 +14168,15 @@
                                 <details class="admin-json-toggle"><summary>Ver JSON de este reporte</summary><pre>${escapeHtml(JSON.stringify(a, null, 2))}</pre></details>
                             </div>
                         </details>`;
-                        }).join('') + '</div>';
-                        inner += '<details class="admin-json-toggle" style="margin-top: 16px;"><summary>Ver datos (JSON) de todos</summary><pre style="max-height: 250px;">' + escapeHtml(JSON.stringify(list, null, 2)) + '</pre></details>';
-                    }
+                    }).join('') + '</div>';
+                    inner += '<details class="admin-json-toggle" style="margin-top: 16px;"><summary>Ver datos (JSON) de todos</summary><pre style="max-height: 250px;">' + escapeHtml(JSON.stringify(list, null, 2)) + '</pre></details>';
                 } else {
                     inner = '<p style="color: #94a3b8; font-style: italic; margin: 0;">Sin datos en este proyecto.</p>';
                 }
                 // Abrir por defecto suelo/SN/pasta con datos para que Chart.js mida bien el canvas
-                const openAttr = (hasData && compareOnly) ? ' open' : '';
-                const hint = compareOnly
-                    ? '<p style="margin:0 0 12px;font-size:12px;color:#64748b;line-height:1.4;">Vista igual que el usuario: tablas y gráficas comparativas. En el PDF de estas secciones solo va esta parte.</p>'
+                const openAttr = (hasData && autoOpenCompare) ? ' open' : '';
+                const hint = autoOpenCompare
+                    ? '<p style="margin:0 0 12px;font-size:12px;color:#64748b;line-height:1.4;">Vista igual que el usuario: tablas y gráficas comparativas, y abajo el detalle de cada análisis. El PDF también incluye ambos.</p>'
                     : '';
                 return `<details class="admin-analysis-block" data-admin-lab-type="${escapeHtml(colorLeft)}" style="border-left: 4px solid ${accentBorder};"${openAttr}>
                     <summary style="list-style: none; display: flex; align-items: center; gap: 8px;">

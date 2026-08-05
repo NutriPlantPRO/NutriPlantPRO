@@ -14439,7 +14439,9 @@ function getSelectedLabAnalysisTypes(rootSelector) {
 
 function resolveReportLabTypes(explicitTypes) {
   var all = getLabAnalysesReportSpecs().map(function (s) { return s.type; });
-  if (Array.isArray(explicitTypes) && explicitTypes.length) {
+  // Un arreglo vacío significa que el usuario no eligió ningún tipo.
+  // Solo la ausencia del dato (reportes antiguos) conserva el fallback legacy.
+  if (Array.isArray(explicitTypes)) {
     return all.filter(function (t) { return explicitTypes.indexOf(t) >= 0; });
   }
   return all.slice();
@@ -20038,66 +20040,56 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
     (chartImages && chartImages.labTypes) || window._npReportLabTypes
   );
   const specs = getLabAnalysesReportSpecs().filter(function (spec) {
-    return selectedTypes.indexOf(spec.type) >= 0;
+    // PDF limpio: solo tipos seleccionados que tengan al menos un reporte.
+    return selectedTypes.indexOf(spec.type) >= 0 &&
+      getLabAnalysesListForReport(spec.listKey).length > 0;
   });
   let body = '';
 
   if (!specs.length) {
-    return `
-    <div class="section" style="border-left-color:#0ea5e9;">
-      <h2 class="section-title">🧪 ${rt('Análisis de laboratorio', 'Lab analyses')}</h2>
-      <div class="report-note">${rt('No se seleccionó ningún tipo de análisis.', 'No analysis type was selected.')}</div>
-    </div>
-  `;
+    return '';
   }
 
   specs.forEach(function (spec) {
     const list = getLabAnalysesListForReport(spec.listKey);
     const count = list.length;
-    const countLabel = count === 0
-      ? rt('(Sin reportes)', '(No reports)')
-      : (count === 1
-        ? rt('(1 reporte)', '(1 report)')
-        : rt('(' + count + ' reportes)', '(' + count + ' reports)'));
+    const countLabel = count === 1
+      ? rt('(1 reporte)', '(1 report)')
+      : rt('(' + count + ' reportes)', '(' + count + ' reports)');
     const title = isEn ? spec.titleEn : spec.titleEs;
 
     body += '<div class="report-lab-type" style="border-left:4px solid ' + spec.accent + ';padding:14px 14px 14px 16px;margin:0 0 18px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;border-left-width:4px;border-left-color:' + spec.accent + ';">';
     body += '<h3 class="report-lab-type-title" style="margin:0 0 12px;font-size:1.08rem;color:#0f172a;">' +
       spec.icon + ' ' + title + ' <span style="color:#64748b;font-weight:600;font-size:0.92rem;">' + countLabel + '</span></h3>';
 
-    if (!count) {
-      body += '<div class="report-note">' + rt('No hay reportes guardados en esta sección.', 'No saved reports in this section.') + '</div>';
-      body += '</div>';
-      return;
-    }
-
     // Tablas comparativas + gráficas
     body += buildLabCompareSectionHTML(spec.type, list, chartImages, rt, spec.accent);
 
-    // Detalle por reporte solo en agua (ácido), foliar (DOP) y fruta (ICC)
-    if (spec.type === 'agua' || spec.type === 'foliar' || spec.type === 'fruta') {
-      list.forEach(function (r, i) {
-        const name = r.title || r.name || (rt('Reporte', 'Report') + ' ' + (i + 1));
-        const date = r.date || '';
-        let rendered = (typeof window.NutriPlantRenderAnalysisReport === 'function')
-          ? window.NutriPlantRenderAnalysisReport(r, {
-              escapeHtml: reportEscapeHtml,
-              language: isEn ? 'en' : 'es'
-            })
-          : '';
-        if (isEn && rendered && window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function') {
-          try { rendered = window.NpAnalysisUI.translateString(rendered); } catch (e) { /* ignore */ }
-        }
-        body += '<div class="report-card" style="margin-top:14px;">';
-        body += '<div class="report-card-head"><span>' + reportEscapeHtml(String(name)) + '</span>';
-        if (date) body += '<span class="report-card-meta">' + reportEscapeHtml(String(date)) + '</span>';
-        body += '</div>';
-        body += rendered
-          ? '<div style="margin-top:10px;">' + rendered + '</div>'
-          : '<div style="font-size:13px;color:#6b7280;margin-top:6px;">' + rt('Sin datos detallados para mostrar.', 'No detailed data to show.') + '</div>';
-        body += '</div>';
-      });
-    }
+    // Detalle individual para los seis tipos. El renderizador recibe las
+    // preferencias del PDF, no las que casualmente tenga abierta la interfaz.
+    list.forEach(function (r, i) {
+      const name = r.title || r.name || (rt('Reporte', 'Report') + ' ' + (i + 1));
+      const date = r.date || '';
+      let rendered = (typeof window.NutriPlantRenderAnalysisReport === 'function')
+        ? window.NutriPlantRenderAnalysisReport(r, {
+            escapeHtml: reportEscapeHtml,
+            language: isEn ? 'en' : 'es',
+            unitSystem: reportUnitSystem,
+            unit_system: reportUnitSystem
+          })
+        : '';
+      if (isEn && rendered && window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function') {
+        try { rendered = window.NpAnalysisUI.translateString(rendered); } catch (e) { /* ignore */ }
+      }
+      body += '<div class="report-card" style="margin-top:14px;">';
+      body += '<div class="report-card-head"><span>' + reportEscapeHtml(String(name)) + '</span>';
+      if (date) body += '<span class="report-card-meta">' + reportEscapeHtml(String(date)) + '</span>';
+      body += '</div>';
+      body += rendered
+        ? '<div style="margin-top:10px;">' + rendered + '</div>'
+        : '<div style="font-size:13px;color:#6b7280;margin-top:6px;">' + rt('Sin datos detallados para mostrar.', 'No detailed data to show.') + '</div>';
+      body += '</div>';
+    });
 
     body += '</div>';
   });
@@ -23345,10 +23337,16 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
     if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return true;
     return /^[<>]=?\s*\d/.test(t);
   }
+  function normalizeDecimal(s) {
+    if (window.NpNum && typeof window.NpNum.normalizeDecimal === 'function') {
+      return window.NpNum.normalizeDecimal(s);
+    }
+    return String(s == null ? '' : s).trim();
+  }
   function isPlainNumericValue(s) {
-    var t = String(s || '').trim().replace(/,/g, '');
+    var t = String(s || '').trim();
     if (!t || isDetectionLimitValue(t)) return false;
-    return /^-?\d+(\.\d+)?$/.test(t);
+    return /^-?\d+(\.\d+)?$/.test(normalizeDecimal(t));
   }
   var limitNotes = [];
 
@@ -23369,7 +23367,7 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
         limitNotes.push(groupName + '.' + k + '=' + s);
         return;
       }
-      analysis[groupName][k] = s;
+      analysis[groupName][k] = normalizeDecimal(s);
     });
   }
 
@@ -23398,7 +23396,7 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
         limitNotes.push('fertility.' + k + '=' + s);
         return;
       }
-      analysis.fertility[k] = s;
+      analysis.fertility[k] = normalizeDecimal(s);
     });
   }
   mergeGroup('cations', fields.cations, true);
@@ -23682,10 +23680,16 @@ window.applyLabExtractedFields = function applyLabExtractedFields(type, fields, 
     if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return true;
     return /^[<>]=?\s*\d/.test(t);
   }
+  function normalizeDecimal(s) {
+    if (window.NpNum && typeof window.NpNum.normalizeDecimal === 'function') {
+      return window.NpNum.normalizeDecimal(s);
+    }
+    return String(s == null ? '' : s).trim();
+  }
   function isPlainNumericValue(s) {
-    var t = String(s || '').trim().replace(/,/g, '');
+    var t = String(s || '').trim();
     if (!t || isDetectionLimitValue(t)) return false;
-    return /^-?\d+(\.\d+)?$/.test(t);
+    return /^-?\d+(\.\d+)?$/.test(normalizeDecimal(t));
   }
   var limitNotes = [];
 
@@ -23701,7 +23705,7 @@ window.applyLabExtractedFields = function applyLabExtractedFields(type, fields, 
         limitNotes.push(groupName + '.' + k + '=' + s);
         return;
       }
-      analysis[groupName][k] = s;
+      analysis[groupName][k] = normalizeDecimal(s);
     });
   }
 
@@ -23715,7 +23719,7 @@ window.applyLabExtractedFields = function applyLabExtractedFields(type, fields, 
       limitNotes.push(k + '=' + s);
       return;
     }
-    analysis[k] = s;
+    analysis[k] = normalizeDecimal(s);
   });
   (cfg.groups || []).forEach(function (g) {
     mergeGroup(g, fields[g]);

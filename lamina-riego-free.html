@@ -23,12 +23,15 @@
     #irr-free-map { height: 220px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1; }
     .irr-coord-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 10px;
       margin-bottom: 10px;
     }
+    .irr-coord-row > div { min-width: 0; }
+    /* Lat/Lng siempre en el mismo renglón, también en celular */
     @media (max-width: 520px) {
-      .irr-coord-row { grid-template-columns: 1fr; }
+      .irr-coord-row { gap: 8px; }
+      .irr-coord-row input { padding-left: 8px; padding-right: 8px; }
     }
     .irr-coord-row label {
       display: block;

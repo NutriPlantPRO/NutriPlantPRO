@@ -631,8 +631,25 @@
     return false;
   }
 
-  function isPlainNumericValue(s) {
-    var t = String(s || '').trim().replace(/,/g, '');
+  function normalizeDecimal(s, commaIsDecimal) {
+    if (w.NpNum && typeof w.NpNum.normalizeDecimal === 'function') {
+      return w.NpNum.normalizeDecimal(s, commaIsDecimal);
+    }
+    return String(s == null ? '' : s).trim();
+  }
+
+  function commaIsDecimalIn(values) {
+    if (w.NpNum && typeof w.NpNum.commaIsDecimalIn === 'function') {
+      return w.NpNum.commaIsDecimalIn(values);
+    }
+    return false;
+  }
+
+  function isPlainNumericValue(s, commaIsDecimal) {
+    if (w.NpNum && typeof w.NpNum.isNumericLike === 'function') {
+      return w.NpNum.isNumericLike(s, commaIsDecimal);
+    }
+    var t = String(s || '').trim();
     if (!t) return false;
     if (isDetectionLimitValue(t)) return false;
     return /^-?\d+(\.\d+)?$/.test(t);
@@ -649,10 +666,17 @@
   function flattenDetectedForType(fields, reviewFields, textPaths) {
     var out = [];
     textPaths = textPaths || { title: 1, date: 1 };
+    var numericRaw = (reviewFields || []).map(function (f) {
+      if (textPaths[f.path]) return '';
+      var v = getByPath(fields, f.path);
+      return v === null || v === undefined ? '' : String(v);
+    });
+    var commaIsDecimal = commaIsDecimalIn(numericRaw);
     (reviewFields || []).forEach(function (f) {
       var val = getByPath(fields, f.path);
       var str = val === null || val === undefined ? '' : String(val);
       var isText = !!textPaths[f.path];
+      if (!isText && str) str = normalizeDecimal(str, commaIsDecimal);
       var autoCheck = str !== '' && (isText || isPlainNumericValue(str));
       var lim = str && isDetectionLimitValue(str)
         ? ' ' + tr('analysis.pdf_limit_tag', '⚠ límite')
@@ -706,13 +730,13 @@
     }
     function toPsiDisplay(raw) {
       if (w.frutaFirmezaFromSI) return String(w.frutaFirmezaFromSI(raw));
-      var n = Number(String(raw).replace(',', '.'));
+      var n = Number(normalizeDecimal(raw));
       if (!Number.isFinite(n)) return String(raw);
       return String(Number((n * KGCM2_TO_PSI).toFixed(1)));
     }
     function fromPsiToSi(raw) {
       if (w.frutaFirmezaToSI) return String(w.frutaFirmezaToSI(raw));
-      var n = Number(String(raw).replace(',', '.'));
+      var n = Number(normalizeDecimal(raw));
       if (!Number.isFinite(n)) return String(raw);
       return String(Number((n / KGCM2_TO_PSI).toFixed(4)));
     }
@@ -917,6 +941,7 @@
         if (!cb || !cb.checked || !val) return;
         var path = cb.getAttribute('data-path');
         var raw = String(val.value || '').trim();
+        if (raw && !textPaths[path]) raw = normalizeDecimal(raw);
         if (path === 'm3Riego' && isUsVol && raw && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputToSI === 'function') {
           var siVol = w.NpAnalysisUI.volumeInputToSI(raw);
           if (Number.isFinite(siVol)) raw = String(siVol);

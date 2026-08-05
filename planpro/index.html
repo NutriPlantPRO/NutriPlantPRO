@@ -11870,6 +11870,62 @@
             </section>
           </div>
         </div>
+
+        <section id="npInvPortfolioPanel" class="np-inv-panel np-inv-pf-panel" aria-label="Portafolio Schwab">
+          <div class="np-inv-pf-head">
+            <div>
+              <div class="np-inv-panel-title" style="margin-bottom:4px;">
+                <span>Mi portafolio · seguimiento Schwab</span>
+              </div>
+              <p class="np-inv-pf-lead">
+                Sube 1–4 capturas de tu tabla de posiciones (acciones o ETFs). La IA de Chat Admin lee Symbol, Quantity, Price, Market Value y Gain/Loss; actualiza la tabla y las gráficas. <strong>Objetivo</strong> y <strong>Comentarios</strong> son tuyos: no se borran al subir una captura nueva.
+              </p>
+            </div>
+            <div class="np-inv-pf-actions-bar">
+              <input type="file" id="npInvPfFileInput" class="np-hide" accept="image/jpeg,image/png,image/webp,image/gif" multiple tabindex="-1" aria-hidden="true" />
+              <button type="button" class="np-inv-pf-upload-btn" id="npInvPfUploadBtn" title="Examinar capturas y extraer con IA">
+                Examinar imagen · extraer con IA
+              </button>
+              <button type="button" class="btn btn-ghost" id="npInvPfClearBtn" title="Vaciar tabla">Limpiar</button>
+            </div>
+          </div>
+          <p id="npInvPfStatus" class="np-inv-pf-status np-hide" aria-live="polite"></p>
+          <div id="npInvPfSummary" class="np-inv-pf-summary" aria-live="polite"></div>
+          <div class="np-inv-pf-body">
+            <div class="np-inv-pf-table-col">
+              <p id="npInvPfEmpty" class="np-inv-pf-empty">Aún no hay posiciones. Sube capturas de Charles Schwab (o similar) para armar la tabla.</p>
+              <div id="npInvPfTableWrap" class="np-inv-pf-table-wrap np-hide">
+                <table class="np-inv-pf-table" id="npInvPfTable">
+                  <thead>
+                    <tr>
+                      <th>Symbol / Name</th>
+                      <th>Cantidad</th>
+                      <th>Valor actual <span class="np-inv-pf-th-hint">(+ fecha subida)</span></th>
+                      <th>Market Value</th>
+                      <th>Day Change</th>
+                      <th>Gain / Loss</th>
+                      <th>Objetivo</th>
+                      <th>Comentarios</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="npInvPfTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="np-inv-pf-charts-col">
+              <p id="npInvPfChartsEmpty" class="np-inv-pf-empty np-inv-pf-empty--charts">Las gráficas de pastel aparecen al cargar posiciones.</p>
+              <div id="npInvPfCharts" class="np-inv-pf-charts np-hide">
+                <div class="np-inv-pf-chart-box">
+                  <canvas id="npInvPfPieHoldings" aria-label="Peso por posición"></canvas>
+                </div>
+                <div class="np-inv-pf-chart-box">
+                  <canvas id="npInvPfPieType" aria-label="ETF vs acciones"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div id="npPillarTabFlyoutBackdrop" class="np-pillar-tab-flyout-backdrop" aria-hidden="true"></div>
@@ -12420,6 +12476,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260804fav"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260805pf"></script>
   <script>
 (function () {
   'use strict';
@@ -29234,6 +29291,9 @@
       }
       if (window.PlanProInvest && typeof window.PlanProInvest.init === 'function') {
         window.PlanProInvest.init();
+      }
+      if (window.PlanProInvestPortfolio && typeof window.PlanProInvestPortfolio.init === 'function') {
+        window.PlanProInvestPortfolio.init();
       }
     }
   }

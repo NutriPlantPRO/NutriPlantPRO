@@ -5,6 +5,94 @@
 (function (w) {
   'use strict';
 
+  function isDetectionLimit(s) {
+    var t = String(s == null ? '' : s).trim();
+    if (!t) return false;
+    if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return true;
+    return /^[<>]=?\s*\d/.test(t);
+  }
+
+  /**
+   * Números de lab (es/en) → punto decimal, que es lo único que aceptan los
+   * inputs number del formulario.
+   *   "1,5" → "1.5"   "1.234,56" → "1234.56"   "2,500" → "2500"   "1 234" → "1234"
+   * Ambiguo ("1,234"): coma = miles salvo que commaIsDecimal sea true.
+   * Si el texto no parece número (ND, <25, texto libre) se devuelve intacto.
+   */
+  function normalizeDecimal(raw, commaIsDecimal) {
+    var original = String(raw == null ? '' : raw).trim();
+    if (!original) return '';
+    var lim = original.match(/^([<>]=?)\s*(\S.*)$/);
+    if (lim) return lim[1] + normalizeDecimal(lim[2], commaIsDecimal);
+    var s = original
+      .replace(/[\s\u00a0\u202f\u2009]/g, '')
+      .replace(/[\u2019'\u00b4`]/g, '')
+      .replace(/[\u2212\u2013\u2014]/g, '-');
+    if (!/^-?(?=[\d.,]*\d)[\d.,]+$/.test(s)) return original;
+    var neg = s.charAt(0) === '-';
+    if (neg) s = s.slice(1);
+
+    var dots = (s.match(/\./g) || []).length;
+    var commas = (s.match(/,/g) || []).length;
+    var intPart = s;
+    var decPart = '';
+    var cut = -1;
+    if (dots && commas) {
+      cut = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','));
+    } else if (commas === 1) {
+      var idx = s.lastIndexOf(',');
+      // "2,500" puede ser miles; "0,418" no (un grupo de miles nunca empieza en 0)
+      var looksGrouped = s.slice(idx + 1).length === 3 && /^[1-9]\d{0,2}$/.test(s.slice(0, idx));
+      if (!looksGrouped || commaIsDecimal) cut = idx;
+    } else if (dots === 1) {
+      cut = s.lastIndexOf('.');
+    }
+    if (cut >= 0) {
+      intPart = s.slice(0, cut);
+      decPart = s.slice(cut + 1);
+    }
+    intPart = intPart.replace(/[.,]/g, '') || '0';
+    decPart = decPart.replace(/[.,]/g, '');
+    if (!/^\d+$/.test(intPart)) return original;
+    if (decPart && !/^\d+$/.test(decPart)) return original;
+    return (neg ? '-' : '') + (decPart ? intPart + '.' + decPart : intPart);
+  }
+
+  function isNumericLike(raw, commaIsDecimal) {
+    var t = String(raw == null ? '' : raw).trim();
+    if (!t || isDetectionLimit(t)) return false;
+    return /^-?\d+(\.\d+)?$/.test(normalizeDecimal(t, commaIsDecimal));
+  }
+
+  function toNumber(raw, commaIsDecimal) {
+    var n = Number(normalizeDecimal(raw, commaIsDecimal));
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  /**
+   * ¿La coma es decimal en este informe? Se decide con el conjunto de valores:
+   * si hay comas con 1-2 o 4+ decimales y ningún punto decimal, el lab usa coma.
+   */
+  function commaIsDecimalIn(values) {
+    var comma = false;
+    var dot = false;
+    (values || []).forEach(function (v) {
+      var t = String(v == null ? '' : v).trim();
+      if (!/^-?[\d.,\s]+$/.test(t)) return;
+      if (/,\d{1,2}$/.test(t) || /,\d{4,}$/.test(t)) comma = true;
+      if (/\.\d{1,2}$/.test(t) || /\.\d{4,}$/.test(t)) dot = true;
+    });
+    return comma && !dot;
+  }
+
+  w.NpNum = {
+    isDetectionLimit: isDetectionLimit,
+    normalizeDecimal: normalizeDecimal,
+    isNumericLike: isNumericLike,
+    toNumber: toNumber,
+    commaIsDecimalIn: commaIsDecimalIn
+  };
+
   function f(path, label, unit, block, chartable, section, labelEn) {
     return {
       path: path,

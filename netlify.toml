@@ -209,3 +209,9 @@
   to = "/.netlify/functions/lab-analysis-extract"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/invest-portfolio-extract"
+  to = "/.netlify/functions/invest-portfolio-extract"
+  status = 200
+  force = true

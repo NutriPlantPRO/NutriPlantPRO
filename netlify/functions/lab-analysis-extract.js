@@ -173,11 +173,126 @@ function isDetectionLimitValue(s) {
   return false;
 }
 
+/**
+ * Números de lab (es/en) → punto decimal, que es lo que espera el formulario.
+ *   "1,5" → "1.5"   "1.234,56" → "1234.56"   "2,500" → "2500"   "1 234" → "1234"
+ * Ambiguo ("1,234"): coma = miles salvo que commaIsDecimal sea true.
+ * Si el texto no parece número (ND, <25, texto libre) se devuelve intacto.
+ */
+function normalizeDecimalText(raw, commaIsDecimal) {
+  const original = String(raw == null ? '' : raw).trim();
+  if (!original) return '';
+  const lim = original.match(/^([<>]=?)\s*(\S.*)$/);
+  if (lim) return lim[1] + normalizeDecimalText(lim[2], commaIsDecimal);
+  let s = original
+    .replace(/[\s\u00a0\u202f\u2009]/g, '')
+    .replace(/[\u2019'\u00b4`]/g, '')
+    .replace(/[\u2212\u2013\u2014]/g, '-');
+  if (!/^-?(?=[\d.,]*\d)[\d.,]+$/.test(s)) return original;
+  const neg = s.charAt(0) === '-';
+  if (neg) s = s.slice(1);
+
+  const dots = (s.match(/\./g) || []).length;
+  const commas = (s.match(/,/g) || []).length;
+  let cut = -1;
+  if (dots && commas) {
+    cut = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','));
+  } else if (commas === 1) {
+    const idx = s.lastIndexOf(',');
+    // "2,500" puede ser miles; "0,418" no (un grupo de miles nunca empieza en 0)
+    const looksGrouped = s.slice(idx + 1).length === 3 && /^[1-9]\d{0,2}$/.test(s.slice(0, idx));
+    if (!looksGrouped || commaIsDecimal) cut = idx;
+  } else if (dots === 1) {
+    cut = s.lastIndexOf('.');
+  }
+  let intPart = cut >= 0 ? s.slice(0, cut) : s;
+  let decPart = cut >= 0 ? s.slice(cut + 1) : '';
+  intPart = intPart.replace(/[.,]/g, '') || '0';
+  decPart = decPart.replace(/[.,]/g, '');
+  if (!/^\d+$/.test(intPart)) return original;
+  if (decPart && !/^\d+$/.test(decPart)) return original;
+  return (neg ? '-' : '') + (decPart ? intPart + '.' + decPart : intPart);
+}
+
+/** Claves que nunca son número: no tocar (fechas tipo 05.08.2026, formas, unidades…). */
+const NON_NUMERIC_KEYS = new Set([
+  'title',
+  'date',
+  'notes',
+  'confidence',
+  'forms',
+  'unitHints',
+  'sourceUnits',
+  'pMethod',
+  'texturalClass',
+  'sReportedAs',
+  'pReportedAs',
+  'kReportedAs',
+  'nNo3ReportedAs',
+  'caReportedAs',
+  'mgReportedAs'
+]);
+
+function collectNumericStrings(node, out, key) {
+  if (node == null) return out;
+  if (typeof node === 'string') {
+    if (!NON_NUMERIC_KEYS.has(key)) out.push(node);
+    return out;
+  }
+  if (Array.isArray(node)) {
+    node.forEach((v) => collectNumericStrings(v, out, key));
+    return out;
+  }
+  if (typeof node === 'object') {
+    Object.keys(node).forEach((k) => {
+      if (NON_NUMERIC_KEYS.has(k)) return;
+      collectNumericStrings(node[k], out, k);
+    });
+  }
+  return out;
+}
+
+/** ¿La coma es decimal en este informe? Se decide con todos los valores del JSON. */
+function commaIsDecimalIn(values) {
+  let comma = false;
+  let dot = false;
+  (values || []).forEach((v) => {
+    const t = String(v == null ? '' : v).trim();
+    if (!/^-?[\d.,\s]+$/.test(t)) return;
+    if (/,\d{1,2}$/.test(t) || /,\d{4,}$/.test(t)) comma = true;
+    if (/\.\d{1,2}$/.test(t) || /\.\d{4,}$/.test(t)) dot = true;
+  });
+  return comma && !dot;
+}
+
+/** Deja todo el JSON del modelo con punto decimal antes de mapearlo al shape. */
+function normalizeNumericStringsDeep(node, commaIsDecimal, key) {
+  if (node == null) return node;
+  if (typeof node === 'string') {
+    return NON_NUMERIC_KEYS.has(key) ? node : normalizeDecimalText(node, commaIsDecimal);
+  }
+  if (Array.isArray(node)) {
+    return node.map((v) => normalizeNumericStringsDeep(v, commaIsDecimal, key));
+  }
+  if (typeof node !== 'object') return node;
+  const out = {};
+  Object.keys(node).forEach((k) => {
+    out[k] = NON_NUMERIC_KEYS.has(k) ? node[k] : normalizeNumericStringsDeep(node[k], commaIsDecimal, k);
+  });
+  return out;
+}
+
+function normalizeDecimalsInPayload(parsed) {
+  if (!parsed || typeof parsed !== 'object') return parsed;
+  const commaIsDecimal = commaIsDecimalIn(collectNumericStrings(parsed, [], ''));
+  return normalizeNumericStringsDeep(parsed, commaIsDecimal, '');
+}
+
 function isPlainNumericValue(s) {
-  const t = String(s || '').trim().replace(/,/g, '');
+  const t = String(s || '').trim();
   if (!t) return false;
   if (isDetectionLimitValue(t)) return false;
-  return /^-?\d+(\.\d+)?$/.test(t);
+  return /^-?\d+(\.\d+)?$/.test(normalizeDecimalText(t));
 }
 
 function roundStr(n, digits) {
@@ -242,17 +357,17 @@ function tNote(lang, es, en) {
 function parseQtyWithUnit(raw) {
   const t = String(raw == null ? '' : raw)
     .trim()
-    .replace(/,/g, '.')
     .replace(/\s+/g, ' ');
   if (!t) return null;
   const m = t.match(
-    /^(-?\d+(?:\.\d+)?)\s*(in(?:ch(?:es)?)?|"|ft|feet|cm|mm|g\/?cm3|g\/?cc|g\s*cm-3|lb\/?ft3|lb\/?ft³|pcf|in\/?h(?:r|our)?|cm\/?h(?:r|our)?|mmhos\/?cm|mmho\/?cm|ms\/?cm|ds\/?m|ppm|mg\/?kg|lb\/?ac(?:re)?|lbs\/?ac(?:re)?)?\s*$/i
+    /^(-?[\d.,]+)\s*(in(?:ch(?:es)?)?|"|ft|feet|cm|mm|g\/?cm3|g\/?cc|g\s*cm-3|lb\/?ft3|lb\/?ft³|pcf|in\/?h(?:r|our)?|cm\/?h(?:r|our)?|mmhos\/?cm|mmho\/?cm|ms\/?cm|ds\/?m|ppm|mg\/?kg|lb\/?ac(?:re)?|lbs\/?ac(?:re)?)?\s*$/i
   );
   if (!m) {
-    if (/^-?\d+(\.\d+)?$/.test(t)) return { num: Number(t), unit: '' };
+    const only = normalizeDecimalText(t);
+    if (/^-?\d+(\.\d+)?$/.test(only)) return { num: Number(only), unit: '' };
     return null;
   }
-  const num = Number(m[1]);
+  const num = Number(normalizeDecimalText(m[1]));
   if (!Number.isFinite(num)) return null;
   let unit = String(m[2] || '')
     .toLowerCase()
@@ -514,7 +629,7 @@ function normalizeFertilityForms(fertility, notesArr, lang) {
   Object.keys(fieldToFormKey).forEach(function (field) {
     const raw = asStr(fertility[field]);
     if (!raw || isDetectionLimitValue(raw)) return;
-    const num = Number(String(raw).replace(/,/g, ''));
+    const num = Number(normalizeDecimalText(raw));
     if (!Number.isFinite(num)) return;
 
     const formKey = fieldToFormKey[field];
@@ -558,7 +673,7 @@ function normalizeFertilityForms(fertility, notesArr, lang) {
 }
 
 function parseCationNum(v) {
-  const n = Number(String(v || '').replace(/,/g, ''));
+  const n = Number(normalizeDecimalText(v));
   return Number.isFinite(n) ? n : null;
 }
 
@@ -903,6 +1018,12 @@ function normalizeSoilPayload(raw, lang) {
   return base;
 }
 
+function decimalRule(lang) {
+  return noteLang(lang) === 'en'
+    ? '- DECIMAL SEPARATOR: always use a dot (1.5, 0.418), even if the report uses a comma ("1,5" → "1.5"). Never output thousands separators ("2,500" → "2500").'
+    : '- SEPARADOR DECIMAL: usa SIEMPRE punto (1.5, 0.418), aunque el informe use coma ("1,5" → "1.5"). Nunca uses separador de miles ("2,500" → "2500").';
+}
+
 function soilPrompt(lang) {
   const en = noteLang(lang) === 'en';
   const notesRule = en
@@ -924,6 +1045,7 @@ function soilPrompt(lang) {
     '',
     en ? 'Rules:' : 'Reglas:',
     '- Usa números en string. Si un valor no aparece, deja "".',
+    decimalRule(lang),
     '- No inventes datos. Prefiere vacío a adivinar.',
     '- IMPORTANTE: si el lab reporta límite de detección o no cuantificado, NO inventes un número.',
     '  Ejemplos: "<25", "< 0.5", ">100", "ND", "traza", "BDL". Conserva el texto EXACTO en el campo',
@@ -1125,6 +1247,7 @@ function ionicPrompt(kind, lang) {
     '',
     en ? 'Rules:' : 'Reglas:',
     '- Numbers as strings. Missing values = "". Do not invent.',
+    decimalRule(lang),
     '- Detection limits (<, ND, trace, BDL): keep EXACT text in the field; mention in notes.',
     '- Synonyms EN/ES: EC/CE/electrical conductivity → general.ce (or general.cee for paste); pH; SAR/RAS;',
     '  K/Ca/Mg/Na cations; NO3/nitrate, H2PO4/PO4/phosphate/P, SO4/sulfate/S, Cl/chloride, HCO3/bicarbonate, CO3/carbonate;',
@@ -1150,6 +1273,7 @@ function foliarPrompt(lang) {
       : 'Lee el PDF/imagen (ES o EN) y devuelve SOLO JSON válido:',
     JSON.stringify(emptyFoliarShape(), null, 2),
     '',
+    decimalRule(lang),
     '- macros N P K Ca Mg S as % dry matter (string numbers).',
     '- micros Fe Mn Zn Cu B Mo as mg/kg or ppm (same number).',
     '- Do not invent. Limits (<, ND) keep exact text.',
@@ -1170,6 +1294,7 @@ function frutaPrompt(lang) {
       : 'Lee el PDF/imagen (ES o EN) y devuelve SOLO JSON válido:',
     JSON.stringify(emptyFrutaShape(), null, 2),
     '',
+    decimalRule(lang),
     '- macros % ; micros mg/kg; calidad: dry matter / materiaSeca, Brix/°Brix → brix, firmness/firmeza, titratable acidity/acidezTitulable.',
     '- calcio: total Ca, soluble/ligado/insoluble % if present.',
     '- Do not invent. Keep detection-limit text exact.',
@@ -1301,7 +1426,7 @@ async function extractWithOpenAI({ buffer, filename, mimeType, language, analysi
   return {
     ok: true,
     analysisType: type,
-    fields: normalizeForType(type, parsed, lang),
+    fields: normalizeForType(type, normalizeDecimalsInPayload(parsed), lang),
     model,
     rawPreview: text.slice(0, 400)
   };
