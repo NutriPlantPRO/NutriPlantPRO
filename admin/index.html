@@ -7176,6 +7176,69 @@
             });
         }
         
+        /** Orden de proyectos en ficha de usuario. Default: más reciente (actualizado) arriba. */
+        function getAdminUserProjectsSort() {
+            var s = window._adminUserProjectsSort;
+            if (!s || typeof s !== 'object') {
+                s = { by: 'updated_at', dir: 'desc' };
+                window._adminUserProjectsSort = s;
+            }
+            if (s.by !== 'updated_at' && s.by !== 'created_at' && s.by !== 'name') s.by = 'updated_at';
+            if (s.dir !== 'asc' && s.dir !== 'desc') s.dir = (s.by === 'name' ? 'asc' : 'desc');
+            return s;
+        }
+
+        function adminProjectDateMs(v) {
+            if (v == null || v === '') return 0;
+            var t = new Date(v).getTime();
+            return Number.isFinite(t) ? t : 0;
+        }
+
+        function sortAdminUserProjects(list, sortState) {
+            var arr = Array.isArray(list) ? list.slice() : [];
+            var s = sortState || getAdminUserProjectsSort();
+            var by = s.by || 'updated_at';
+            var dir = s.dir === 'asc' ? 1 : -1;
+            arr.sort(function (a, b) {
+                var cmp = 0;
+                if (by === 'name') {
+                    var na = String((a && a.name) || '').toLowerCase();
+                    var nb = String((b && b.name) || '').toLowerCase();
+                    cmp = na.localeCompare(nb, 'es', { sensitivity: 'base', numeric: true });
+                } else if (by === 'created_at') {
+                    cmp = adminProjectDateMs(a && a.created_at) - adminProjectDateMs(b && b.created_at);
+                } else {
+                    // updated_at (default): si falta updated, usar created
+                    var ua = adminProjectDateMs(a && (a.updated_at || a.created_at));
+                    var ub = adminProjectDateMs(b && (b.updated_at || b.created_at));
+                    cmp = ua - ub;
+                }
+                if (cmp !== 0) return cmp * dir;
+                // desempate estable: nombre, luego id
+                var ta = String((a && a.name) || '').toLowerCase();
+                var tb = String((b && b.name) || '').toLowerCase();
+                if (ta !== tb) return ta.localeCompare(tb, 'es', { sensitivity: 'base' });
+                return String((a && a.id) || '').localeCompare(String((b && b.id) || ''));
+            });
+            return arr;
+        }
+
+        function setAdminUserProjectsSort(by) {
+            var nextBy = (by === 'created_at' || by === 'name' || by === 'updated_at') ? by : 'updated_at';
+            // Fechas: más reciente arriba. Nombre: A → Z.
+            var nextDir = (nextBy === 'name') ? 'asc' : 'desc';
+            window._adminUserProjectsSort = { by: nextBy, dir: nextDir };
+            return window._adminUserProjectsSort;
+        }
+
+        function changeAdminUserProjectsSort(by) {
+            setAdminUserProjectsSort(by);
+            var ctx = window._adminUserDetailsNavCtx || {};
+            if (typeof viewUserDetails === 'function' && ctx.userId) {
+                viewUserDetails(ctx.userId, ctx.prevViewName || null, ctx.prevViewParams || []);
+            }
+        }
+
         function getUserProjects(userId, userEmail) {
             const projects = [];
             const processedIds = new Set();
@@ -15080,6 +15143,11 @@
             }
             const viewCanonicalId = getCanonicalUserIdForAdmin(user) || String(userId);
             var escViewId = String(viewCanonicalId).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            window._adminUserDetailsNavCtx = {
+                userId: viewCanonicalId,
+                prevViewName: tempNavigationContext.previousViewName || null,
+                prevViewParams: tempNavigationContext.previousViewParams || []
+            };
             user = { ...user, chat_history_sin_proyecto: user.chat_history_sin_proyecto || [] };
             
             // Refrescar fechas de suscripción directamente desde Supabase para evitar N/A por caché local.
@@ -15122,6 +15190,8 @@
             
             // Obtener proyectos del usuario (email por si userId no coincide con la clave en localStorage)
             const userProjects = getUserProjects(viewCanonicalId, user.email);
+            const userProjectsSort = getAdminUserProjectsSort();
+            const sortedUserProjects = sortAdminUserProjects(userProjects, userProjectsSort);
             // Resumen chat IA por usuario (suma de todos sus proyectos)
             let userChatMessages = 0, userChatInteractions = 0;
             userProjects.forEach(function (p) {
@@ -15339,8 +15409,22 @@
                         
                         <!-- Proyectos del Usuario -->
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                            <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📁 Proyectos del Usuario (${userProjects.length})</h3>
-                            <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud({ force: true }); viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
+                            <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px;">📁 Proyectos del Usuario (${userProjects.length})</h3>
+                            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px;">
+                                <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud({ force: true }); viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
+                                ${userProjects.length > 0 ? `
+                                <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#334155; font-weight:500;">
+                                    Ordenar por
+                                    <select onchange="changeAdminUserProjectsSort(this.value)"
+                                            style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; background:#fff; color:#0f172a; cursor:pointer;">
+                                        <option value="updated_at"${userProjectsSort.by === 'updated_at' ? ' selected' : ''}>Fecha de modificación</option>
+                                        <option value="created_at"${userProjectsSort.by === 'created_at' ? ' selected' : ''}>Fecha de creación</option>
+                                        <option value="name"${userProjectsSort.by === 'name' ? ' selected' : ''}>Nombre</option>
+                                    </select>
+                                </label>
+                                <span style="font-size:11px; color:#64748b;">${userProjectsSort.by === 'name' ? 'A → Z' : 'más reciente arriba'}</span>
+                                ` : ''}
+                            </div>
             `;
             
             if (userProjects.length === 0) {
@@ -15355,7 +15439,7 @@
                     <div style="display: grid; gap: 12px;">
                 `;
                 
-                userProjects.forEach((project, index) => {
+                sortedUserProjects.forEach((project, index) => {
                     // Centro del polígono (mismo criterio que Radar / Lectura / clima).
                     let locationText = 'No especificado';
                     if (project.location && typeof project.location === 'object') {

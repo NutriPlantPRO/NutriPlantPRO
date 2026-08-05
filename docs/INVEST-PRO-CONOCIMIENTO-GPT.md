@@ -18,7 +18,7 @@ Consultar **empresas, ETFs, índices y criptomonedas** con gráfica **TradingVie
 - Comparar hasta **6** activos (⇄ + Graficar → `compareSymbols` en el widget)
 - **Popular Picks** y **⭐ Listas** en Supabase (sin cambio)
 - Si el admin ya inició sesión en TradingView en el mismo navegador, puede usar su cuenta ahí
-- **Portafolio Schwab (abajo):** subir 1–4 capturas de la tabla de posiciones → `/api/invest-portfolio-extract` (visión IA) llena Symbol, Quantity, Price (+ fecha de subida), Market Value, Day Change, Gain/Loss; columnas **Objetivo** y **Comentarios** son manuales y **no se pisan** al actualizar; pasteles de peso por ticker y % ETF vs acciones (localStorage por usuario)
+- **Portafolio Schwab (abajo):** subir 1–4 capturas → `/api/invest-portfolio-extract` → filas en Supabase `plan_pro_invest_holdings`. Escaneo actualiza solo mercado (precio, cantidad, etc.). **Objetivo** y **Comentarios** solo se escriben cuando el admin los edita. Pasteles de peso y % ETF vs acciones.
 
 ## Datos técnicos (para no inventar)
 
@@ -28,8 +28,8 @@ Consultar **empresas, ETFs, índices y criptomonedas** con gráfica **TradingVie
 | Gráfica | Widget TradingView Advanced Chart (embed) |
 | Cliente Yahoo (legado / opcional) | `assets/planpro-financial-data-service.js` + `/api/plan-pro-invest` — **ya no** alimenta la gráfica principal |
 | Watchlist | `plan_pro_invest_lists` + `plan_pro_invest_watchlist.list_id` |
-| Portafolio holdings | localStorage `np_plan_pro_invest_holdings_v1_<userId>` + API `/api/invest-portfolio-extract` |
-| SQL setup | `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql` |
+| Portafolio holdings | tabla `plan_pro_invest_holdings` + API `/api/invest-portfolio-extract` (cache local de respaldo) |
+| SQL setup | `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql` + `supabase-plan-pro-invest-holdings.sql` |
 
 **Importante:** no inventes precios; la cotización se ve en el chart de TradingView. Listas ★ = Plan PRO / Supabase.
 

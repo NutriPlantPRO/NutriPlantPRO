@@ -1,6 +1,7 @@
 /**
  * Invest PRO — Portafolio Schwab: captura → IA → tabla + pasteles.
- * Columnas manuales (objetivo / comentarios) persisten por símbolo.
+ * Persistencia: Supabase plan_pro_invest_holdings.
+ * Objetivo / comentarios: solo se escriben cuando el admin los edita (nunca por escaneo).
  */
 (function (global) {
   'use strict';
@@ -8,18 +9,25 @@
   var STORAGE_KEY = 'np_plan_pro_invest_holdings_v1';
   var MAX_IMAGES = 4;
   var MAX_FILE_BYTES = 4.5 * 1024 * 1024;
+  var MANUAL_SAVE_MS = 450;
   var PIE_COLORS = [
     '#0d9488', '#2563eb', '#059669', '#d97706', '#db2777',
     '#7c3aed', '#0891b2', '#ea580c', '#4f46e5', '#16a34a',
     '#ca8a04', '#e11d48', '#0e7490', '#9333ea', '#65a30d'
   ];
 
+  var SORT_STORAGE = 'np_plan_pro_invest_holdings_sort_v1';
   var st = {
     wired: false,
     holdings: [],
     extracting: false,
+    tableReady: true,
     pieHoldings: null,
-    pieType: null
+    pieType: null,
+    manualTimers: Object.create(null),
+    savingCloud: false,
+    sortKey: 'marketValue',
+    sortDir: 'desc'
   };
 
   function $(id) {
@@ -49,7 +57,7 @@
     return STORAGE_KEY + '_' + uid;
   }
 
-  function loadStored() {
+  function loadLocalCache() {
     try {
       var raw = localStorage.getItem(storageKey());
       if (!raw) return [];
@@ -60,18 +68,287 @@
     }
   }
 
-  function saveStored() {
+  function saveLocalCache() {
     try {
       localStorage.setItem(
         storageKey(),
         JSON.stringify({
-          version: 1,
+          version: 2,
           updatedAt: new Date().toISOString(),
           holdings: st.holdings
         })
       );
     } catch (e) {
       /* ignore quota */
+    }
+  }
+
+  function numOrNull(v) {
+    if (v == null || v === '') return null;
+    var n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function holdingFromDb(row) {
+    if (!row) return null;
+    return {
+      id: row.id || null,
+      symbol: String(row.symbol || '').toUpperCase(),
+      name: row.asset_name || '',
+      assetType: row.asset_type || 'stock',
+      quantity: numOrNull(row.quantity),
+      price: numOrNull(row.price),
+      priceChange: numOrNull(row.price_change),
+      priceChangePct: numOrNull(row.price_change_pct),
+      marketValue: numOrNull(row.market_value),
+      dayChange: numOrNull(row.day_change),
+      dayChangePct: numOrNull(row.day_change_pct),
+      costBasis: numOrNull(row.cost_basis),
+      gainLoss: numOrNull(row.gain_loss),
+      gainLossPct: numOrNull(row.gain_loss_pct),
+      asOfDate: row.as_of_date || '',
+      targetShares: row.target_shares != null ? String(row.target_shares) : '',
+      comments: row.comments != null ? String(row.comments) : ''
+    };
+  }
+
+  /** Payload de mercado (+ manuals desde memoria). Escaneo NUNCA inventa manuals. */
+  function holdingToDbRow(h, userId, sortOrder) {
+    return {
+      user_id: userId,
+      symbol: String(h.symbol || '').toUpperCase(),
+      asset_name: h.name || '',
+      asset_type: h.assetType || 'stock',
+      quantity: numOrNull(h.quantity),
+      price: numOrNull(h.price),
+      price_change: numOrNull(h.priceChange),
+      price_change_pct: numOrNull(h.priceChangePct),
+      market_value: numOrNull(h.marketValue),
+      day_change: numOrNull(h.dayChange),
+      day_change_pct: numOrNull(h.dayChangePct),
+      cost_basis: numOrNull(h.costBasis),
+      gain_loss: numOrNull(h.gainLoss),
+      gain_loss_pct: numOrNull(h.gainLossPct),
+      as_of_date: h.asOfDate || '',
+      target_shares: h.targetShares != null ? String(h.targetShares) : '',
+      comments: h.comments != null ? String(h.comments) : '',
+      sort_order: sortOrder != null ? sortOrder : 0,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  function isMissingTableError(err) {
+    var msg = (err && err.message) || '';
+    return /relation|does not exist|schema|plan_pro_invest_holdings/i.test(msg);
+  }
+
+  function showSetupHint(show) {
+    var el = $('npInvPfSetupMsg');
+    if (!el) return;
+    if (show) el.classList.remove('np-hide');
+    else el.classList.add('np-hide');
+  }
+
+  async function loadFromCloud() {
+    var ctx = getCtx();
+    if (!ctx.client || !ctx.userId) {
+      st.holdings = loadLocalCache();
+      return;
+    }
+    try {
+      var res = await ctx.client
+        .from('plan_pro_invest_holdings')
+        .select(
+          'id, symbol, asset_name, asset_type, quantity, price, price_change, price_change_pct, market_value, day_change, day_change_pct, cost_basis, gain_loss, gain_loss_pct, as_of_date, target_shares, comments, sort_order, updated_at'
+        )
+        .eq('user_id', ctx.userId)
+        .order('sort_order', { ascending: true })
+        .order('market_value', { ascending: false });
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          st.tableReady = false;
+          showSetupHint(true);
+          st.holdings = loadLocalCache();
+          return;
+        }
+        throw res.error;
+      }
+      st.tableReady = true;
+      showSetupHint(false);
+      var rows = (res.data || []).map(holdingFromDb).filter(Boolean);
+      if (!rows.length) {
+        var local = loadLocalCache();
+        if (local.length) {
+          st.holdings = local;
+          await persistHoldingsToCloud({ reason: 'migrate-local' });
+          return;
+        }
+      }
+      st.holdings = rows;
+      saveLocalCache();
+    } catch (e) {
+      console.warn('Invest portafolio: load cloud', e);
+      st.holdings = loadLocalCache();
+    }
+  }
+
+  function marketUpdatePayload(h, sortOrder) {
+    return {
+      asset_name: h.name || '',
+      asset_type: h.assetType || 'stock',
+      quantity: numOrNull(h.quantity),
+      price: numOrNull(h.price),
+      price_change: numOrNull(h.priceChange),
+      price_change_pct: numOrNull(h.priceChangePct),
+      market_value: numOrNull(h.marketValue),
+      day_change: numOrNull(h.dayChange),
+      day_change_pct: numOrNull(h.dayChangePct),
+      cost_basis: numOrNull(h.costBasis),
+      gain_loss: numOrNull(h.gainLoss),
+      gain_loss_pct: numOrNull(h.gainLossPct),
+      as_of_date: h.asOfDate || '',
+      sort_order: sortOrder != null ? sortOrder : 0,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Guarda en nube.
+   * reason=scan → UPDATE solo columnas de mercado (NUNCA target_shares/comments).
+   * reason=migrate-local → upsert completo (incluye manuals del cache local).
+   */
+  async function persistHoldingsToCloud(opts) {
+    opts = opts || {};
+    var ctx = getCtx();
+    saveLocalCache();
+    if (!ctx.client || !ctx.userId || !st.tableReady) return { ok: !st.tableReady };
+    if (!st.holdings.length && opts.reason !== 'clear') return { ok: true };
+
+    st.savingCloud = true;
+    try {
+      if (opts.reason === 'scan') {
+        var existingRes = await ctx.client
+          .from('plan_pro_invest_holdings')
+          .select('symbol')
+          .eq('user_id', ctx.userId);
+        if (existingRes.error) {
+          if (isMissingTableError(existingRes.error)) {
+            st.tableReady = false;
+            showSetupHint(true);
+            return { ok: false, missing: true };
+          }
+          throw existingRes.error;
+        }
+        var have = Object.create(null);
+        (existingRes.data || []).forEach(function (r) {
+          if (r && r.symbol) have[String(r.symbol).toUpperCase()] = 1;
+        });
+
+        var inserts = [];
+        for (var i = 0; i < st.holdings.length; i++) {
+          var h = st.holdings[i];
+          var sym = String(h.symbol || '').toUpperCase();
+          if (have[sym]) {
+            // Solo mercado — Objetivo/Comentarios quedan intactos en Supabase
+            var up = await ctx.client
+              .from('plan_pro_invest_holdings')
+              .update(marketUpdatePayload(h, i))
+              .eq('user_id', ctx.userId)
+              .eq('symbol', sym);
+            if (up.error) throw up.error;
+          } else {
+            inserts.push(holdingToDbRow(h, ctx.userId, i));
+          }
+        }
+        if (inserts.length) {
+          var ins = await ctx.client.from('plan_pro_invest_holdings').insert(inserts);
+          if (ins.error) throw ins.error;
+        }
+        return { ok: true };
+      }
+
+      // migrate-local / manual-insert: upsert completo
+      var payload = st.holdings.map(function (h, idx) {
+        return holdingToDbRow(h, ctx.userId, idx);
+      });
+      if (!payload.length) return { ok: true };
+      var res = await ctx.client
+        .from('plan_pro_invest_holdings')
+        .upsert(payload, { onConflict: 'user_id,symbol' });
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          st.tableReady = false;
+          showSetupHint(true);
+          return { ok: false, missing: true };
+        }
+        throw res.error;
+      }
+      return { ok: true };
+    } catch (e) {
+      console.warn('Invest portafolio: save cloud', e);
+      toast('No se pudo guardar en la nube. Quedó en este navegador.', true);
+      return { ok: false, error: e };
+    } finally {
+      st.savingCloud = false;
+    }
+  }
+
+  /** Solo Objetivo / Comentarios — nunca llamado por el escaneo. */
+  async function persistManualToCloud(symbol) {
+    var ctx = getCtx();
+    var sym = String(symbol || '').toUpperCase();
+    var h = st.holdings.find(function (x) {
+      return x.symbol === sym;
+    });
+    if (!h) return;
+    saveLocalCache();
+    if (!ctx.client || !ctx.userId || !st.tableReady) return;
+
+    try {
+      var res = await ctx.client
+        .from('plan_pro_invest_holdings')
+        .update({
+          target_shares: h.targetShares != null ? String(h.targetShares) : '',
+          comments: h.comments != null ? String(h.comments) : '',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', ctx.userId)
+        .eq('symbol', sym);
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          st.tableReady = false;
+          showSetupHint(true);
+          return;
+        }
+        // Si aún no existe fila (raro), crea con manuals
+        if (/0 rows|not found/i.test(res.error.message || '')) {
+          await persistHoldingsToCloud({ reason: 'manual-insert' });
+        } else {
+          throw res.error;
+        }
+      }
+    } catch (e) {
+      console.warn('Invest portafolio: save manual', e);
+    }
+  }
+
+  function scheduleManualSave(symbol) {
+    var sym = String(symbol || '').toUpperCase();
+    if (st.manualTimers[sym]) clearTimeout(st.manualTimers[sym]);
+    st.manualTimers[sym] = setTimeout(function () {
+      delete st.manualTimers[sym];
+      persistManualToCloud(sym);
+    }, MANUAL_SAVE_MS);
+  }
+
+  async function flushManualSaves() {
+    var syms = Object.keys(st.manualTimers);
+    syms.forEach(function (sym) {
+      clearTimeout(st.manualTimers[sym]);
+      delete st.manualTimers[sym];
+    });
+    for (var i = 0; i < syms.length; i++) {
+      await persistManualToCloud(syms[i]);
     }
   }
 
@@ -157,6 +434,7 @@
       var sym = String(row.symbol).toUpperCase();
       var prev = bySym[sym] || {};
       bySym[sym] = {
+        id: prev.id || null,
         symbol: sym,
         name: row.name || prev.name || sym,
         assetType: row.assetType || prev.assetType || 'stock',
@@ -171,7 +449,7 @@
         gainLoss: row.gainLoss != null ? row.gainLoss : null,
         gainLossPct: row.gainLossPct != null ? row.gainLossPct : null,
         asOfDate: asOfDate,
-        // Manuales: NUNCA sobrescribir con la captura
+        // Manuales: NUNCA tocar con el escaneo — solo lo que ya tenía el usuario
         targetShares: prev.targetShares != null ? prev.targetShares : '',
         comments: prev.comments != null ? prev.comments : ''
       };
@@ -184,7 +462,7 @@
       .sort(function (a, b) {
         return (b.marketValue || 0) - (a.marketValue || 0);
       });
-    saveStored();
+    saveLocalCache();
   }
 
   function updateManual(symbol, field, value) {
@@ -199,26 +477,59 @@
         }
       }
     });
-    saveStored();
+    saveLocalCache();
+    // Solo este path escribe Objetivo/Comentarios en Supabase
+    scheduleManualSave(sym);
   }
 
-  function removeHolding(symbol) {
+  async function removeHolding(symbol) {
     var sym = String(symbol || '').toUpperCase();
     st.holdings = st.holdings.filter(function (h) {
       return h.symbol !== sym;
     });
-    saveStored();
+    saveLocalCache();
     render();
+    var ctx = getCtx();
+    if (ctx.client && ctx.userId && st.tableReady) {
+      try {
+        var res = await ctx.client
+          .from('plan_pro_invest_holdings')
+          .delete()
+          .eq('user_id', ctx.userId)
+          .eq('symbol', sym);
+        if (res.error && isMissingTableError(res.error)) {
+          st.tableReady = false;
+          showSetupHint(true);
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
   }
 
-  function clearAll() {
+  async function clearAll() {
     if (!st.holdings.length) return;
-    if (!window.confirm('¿Vaciar la tabla de portafolio? Se borran también objetivos y comentarios.')) {
+    if (!window.confirm('¿Vaciar la tabla de portafolio? Se borran también objetivos y comentarios en la nube.')) {
       return;
     }
     st.holdings = [];
-    saveStored();
+    saveLocalCache();
     render();
+    var ctx = getCtx();
+    if (ctx.client && ctx.userId && st.tableReady) {
+      try {
+        var res = await ctx.client
+          .from('plan_pro_invest_holdings')
+          .delete()
+          .eq('user_id', ctx.userId);
+        if (res.error && isMissingTableError(res.error)) {
+          st.tableReady = false;
+          showSetupHint(true);
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
     toast('Portafolio limpio');
   }
 
@@ -326,6 +637,7 @@
     var totalFound = 0;
 
     try {
+      await flushManualSaves();
       for (var n = 0; n < files.length; n++) {
         setStatus('Analizando captura ' + (n + 1) + ' de ' + files.length + ' con Chat Admin IA…');
         var rows = await extractOne(files[n], token);
@@ -339,12 +651,15 @@
         setStatus('No se detectaron filas de portafolio. Prueba capturas más claras del listado Schwab.', true);
         toast('Sin posiciones detectadas', true);
       } else {
+        setStatus('Guardando en Supabase… (objetivo y comentarios intactos)');
+        var saved = await persistHoldingsToCloud({ reason: 'scan' });
         setStatus(
           'Listo: ' +
             totalFound +
             ' posición(es) leídas · valor actual con fecha ' +
             asOf +
-            '. Objetivos y comentarios se conservaron.'
+            '. Objetivos y comentarios se conservaron' +
+            (saved && saved.ok && st.tableReady ? ' · guardado en nube.' : '.')
         );
         toast('Portafolio actualizado (' + totalFound + ')');
       }
@@ -560,6 +875,199 @@
       '%</strong></span>';
   }
 
+  function loadSortPrefs() {
+    try {
+      var raw = localStorage.getItem(SORT_STORAGE);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (data && data.key) st.sortKey = String(data.key);
+      if (data && (data.dir === 'asc' || data.dir === 'desc')) st.sortDir = data.dir;
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function saveSortPrefs() {
+    try {
+      localStorage.setItem(
+        SORT_STORAGE,
+        JSON.stringify({ key: st.sortKey, dir: st.sortDir })
+      );
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function sortValue(h, key) {
+    if (!h) return null;
+    if (key === 'symbol') return String(h.symbol || '').toUpperCase();
+    if (key === 'comments') return String(h.comments || '').toLowerCase();
+    if (key === 'targetShares') {
+      var t = Number(h.targetShares);
+      return Number.isFinite(t) ? t : String(h.targetShares || '').toLowerCase();
+    }
+    var n = Number(h[key]);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function compareHoldings(a, b) {
+    var key = st.sortKey || 'marketValue';
+    var dir = st.sortDir === 'asc' ? 1 : -1;
+    var va = sortValue(a, key);
+    var vb = sortValue(b, key);
+    if (va == null && vb == null) {
+      return String(a.symbol || '').localeCompare(String(b.symbol || ''));
+    }
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'string' || typeof vb === 'string') {
+      var cmp = String(va).localeCompare(String(vb), 'es', { numeric: true, sensitivity: 'base' });
+      if (cmp !== 0) return cmp * dir;
+    } else {
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+    }
+    return String(a.symbol || '').localeCompare(String(b.symbol || ''));
+  }
+
+  function holdingsGrouped() {
+    var stocks = [];
+    var etfs = [];
+    var others = [];
+    st.holdings.forEach(function (h) {
+      if (h.assetType === 'etf') etfs.push(h);
+      else if (h.assetType === 'stock') stocks.push(h);
+      else others.push(h);
+    });
+    stocks.sort(compareHoldings);
+    etfs.sort(compareHoldings);
+    others.sort(compareHoldings);
+    return { stocks: stocks, etfs: etfs, others: others };
+  }
+
+  function syncSortHeaderUi() {
+    var head = $('npInvPfTableHead');
+    if (!head) return;
+    var buttons = head.querySelectorAll('[data-pf-sort]');
+    for (var i = 0; i < buttons.length; i++) {
+      var btn = buttons[i];
+      var key = btn.getAttribute('data-pf-sort');
+      var ico = btn.querySelector('.np-inv-pf-sort-ico');
+      var active = key === st.sortKey;
+      btn.classList.toggle('np-inv-pf-th-btn--active', active);
+      btn.setAttribute('aria-sort', active ? (st.sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
+      if (ico) {
+        ico.textContent = active ? (st.sortDir === 'asc' ? '▲' : '▼') : '⇅';
+      }
+    }
+  }
+
+  function setSort(key) {
+    if (!key) return;
+    if (st.sortKey === key) {
+      st.sortDir = st.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      st.sortKey = key;
+      // Texto A→Z; números mayor→menor al primer clic
+      st.sortDir = key === 'symbol' || key === 'comments' ? 'asc' : 'desc';
+    }
+    saveSortPrefs();
+    renderTable();
+  }
+
+  function rowHtml(h, t) {
+    var pct =
+      t.total > 0 && Number.isFinite(Number(h.marketValue))
+        ? ((Number(h.marketValue) / t.total) * 100).toFixed(1) + '%'
+        : '—';
+    var priceCell =
+      '<div class="np-inv-pf-price">' +
+      escapeHtml(fmtMoney(h.price)) +
+      '</div>' +
+      '<div class="np-inv-pf-asof" title="Fecha de la captura subida">' +
+      escapeHtml(h.asOfDate || '—') +
+      '</div>';
+    return (
+      '<tr data-pf-sym="' +
+      escapeHtml(h.symbol) +
+      '">' +
+      '<td class="np-inv-pf-sym-cell">' +
+      '<button type="button" class="np-inv-pf-sym-btn" data-pf-open="' +
+      escapeHtml(h.symbol) +
+      '" title="Abrir en gráfica">' +
+      escapeHtml(h.symbol) +
+      '</button>' +
+      '<div class="np-inv-pf-name">' +
+      escapeHtml(h.name || '') +
+      '</div>' +
+      '<span class="np-inv-pf-type' +
+      (h.assetType === 'etf' ? ' np-inv-pf-type--etf' : '') +
+      '">' +
+      escapeHtml(typeLabel(h.assetType)) +
+      '</span>' +
+      '</td>' +
+      '<td class="np-inv-pf-num">' +
+      escapeHtml(fmtQty(h.quantity)) +
+      '</td>' +
+      '<td class="np-inv-pf-num">' +
+      priceCell +
+      '</td>' +
+      '<td class="np-inv-pf-num">' +
+      escapeHtml(fmtMoney(h.marketValue)) +
+      '<div class="np-inv-pf-asof">' +
+      escapeHtml(pct) +
+      '</div></td>' +
+      '<td class="np-inv-pf-num ' +
+      signedClass(h.dayChange) +
+      '">' +
+      escapeHtml(fmtSigned(h.dayChange)) +
+      '</td>' +
+      '<td class="np-inv-pf-num ' +
+      signedClass(h.gainLoss) +
+      '">' +
+      escapeHtml(fmtSigned(h.gainLoss)) +
+      '</td>' +
+      '<td><input class="np-inv-pf-input" type="text" inputmode="decimal" ' +
+      'data-pf-target="' +
+      escapeHtml(h.symbol) +
+      '" value="' +
+      escapeHtml(h.targetShares != null ? h.targetShares : '') +
+      '" placeholder="ej. 2" aria-label="Objetivo acciones ' +
+      escapeHtml(h.symbol) +
+      '" /></td>' +
+      '<td><input class="np-inv-pf-input np-inv-pf-input--wide" type="text" ' +
+      'data-pf-comment="' +
+      escapeHtml(h.symbol) +
+      '" value="' +
+      escapeHtml(h.comments || '') +
+      '" placeholder="Compra / nota…" aria-label="Comentario ' +
+      escapeHtml(h.symbol) +
+      '" /></td>' +
+      '<td class="np-inv-pf-actions">' +
+      '<button type="button" class="np-inv-pf-del" data-pf-del="' +
+      escapeHtml(h.symbol) +
+      '" title="Quitar fila">×</button>' +
+      '</td>' +
+      '</tr>'
+    );
+  }
+
+  function sectionSepHtml(label) {
+    return (
+      '<tr class="np-inv-pf-sep" aria-hidden="true">' +
+      '<td colspan="9">' +
+      '<div class="np-inv-pf-sep-inner">' +
+      '<span class="np-inv-pf-sep-line"></span>' +
+      '<span class="np-inv-pf-sep-label">' +
+      escapeHtml(label) +
+      '</span>' +
+      '<span class="np-inv-pf-sep-line"></span>' +
+      '</div>' +
+      '</td>' +
+      '</tr>'
+    );
+  }
+
   function renderTable() {
     var body = $('npInvPfTableBody');
     var empty = $('npInvPfEmpty');
@@ -576,83 +1084,30 @@
     if (tableWrap) tableWrap.classList.remove('np-hide');
 
     var t = totals();
-    var html = st.holdings
-      .map(function (h) {
-        var pct =
-          t.total > 0 && Number.isFinite(Number(h.marketValue))
-            ? ((Number(h.marketValue) / t.total) * 100).toFixed(1) + '%'
-            : '—';
-        var priceCell =
-          '<div class="np-inv-pf-price">' +
-          escapeHtml(fmtMoney(h.price)) +
-          '</div>' +
-          '<div class="np-inv-pf-asof" title="Fecha de la captura subida">' +
-          escapeHtml(h.asOfDate || '—') +
-          '</div>';
-        return (
-          '<tr data-pf-sym="' +
-          escapeHtml(h.symbol) +
-          '">' +
-          '<td class="np-inv-pf-sym-cell">' +
-          '<button type="button" class="np-inv-pf-sym-btn" data-pf-open="' +
-          escapeHtml(h.symbol) +
-          '" title="Abrir en gráfica">' +
-          escapeHtml(h.symbol) +
-          '</button>' +
-          '<div class="np-inv-pf-name">' +
-          escapeHtml(h.name || '') +
-          '</div>' +
-          '<span class="np-inv-pf-type">' +
-          escapeHtml(typeLabel(h.assetType)) +
-          '</span>' +
-          '</td>' +
-          '<td class="np-inv-pf-num">' +
-          escapeHtml(fmtQty(h.quantity)) +
-          '</td>' +
-          '<td class="np-inv-pf-num">' +
-          priceCell +
-          '</td>' +
-          '<td class="np-inv-pf-num">' +
-          escapeHtml(fmtMoney(h.marketValue)) +
-          '<div class="np-inv-pf-asof">' +
-          escapeHtml(pct) +
-          '</div></td>' +
-          '<td class="np-inv-pf-num ' +
-          signedClass(h.dayChange) +
-          '">' +
-          escapeHtml(fmtSigned(h.dayChange)) +
-          '</td>' +
-          '<td class="np-inv-pf-num ' +
-          signedClass(h.gainLoss) +
-          '">' +
-          escapeHtml(fmtSigned(h.gainLoss)) +
-          '</td>' +
-          '<td><input class="np-inv-pf-input" type="text" inputmode="decimal" ' +
-          'data-pf-target="' +
-          escapeHtml(h.symbol) +
-          '" value="' +
-          escapeHtml(h.targetShares != null ? h.targetShares : '') +
-          '" placeholder="ej. 2" aria-label="Objetivo acciones ' +
-          escapeHtml(h.symbol) +
-          '" /></td>' +
-          '<td><input class="np-inv-pf-input np-inv-pf-input--wide" type="text" ' +
-          'data-pf-comment="' +
-          escapeHtml(h.symbol) +
-          '" value="' +
-          escapeHtml(h.comments || '') +
-          '" placeholder="Compra / nota…" aria-label="Comentario ' +
-          escapeHtml(h.symbol) +
-          '" /></td>' +
-          '<td class="np-inv-pf-actions">' +
-          '<button type="button" class="np-inv-pf-del" data-pf-del="' +
-          escapeHtml(h.symbol) +
-          '" title="Quitar fila">×</button>' +
-          '</td>' +
-          '</tr>'
-        );
-      })
-      .join('');
-    body.innerHTML = html;
+    var g = holdingsGrouped();
+    var parts = [];
+
+    if (g.stocks.length) {
+      parts.push(sectionSepHtml('Acciones'));
+      g.stocks.forEach(function (h) {
+        parts.push(rowHtml(h, t));
+      });
+    }
+    if (g.etfs.length) {
+      parts.push(sectionSepHtml('ETFs'));
+      g.etfs.forEach(function (h) {
+        parts.push(rowHtml(h, t));
+      });
+    }
+    if (g.others.length) {
+      parts.push(sectionSepHtml('Otros'));
+      g.others.forEach(function (h) {
+        parts.push(rowHtml(h, t));
+      });
+    }
+
+    body.innerHTML = parts.join('');
+    syncSortHeaderUi();
   }
 
   function render() {
@@ -685,6 +1140,11 @@
     }
 
     root.addEventListener('click', function (e) {
+      var sortBtn = e.target.closest('[data-pf-sort]');
+      if (sortBtn) {
+        setSort(sortBtn.getAttribute('data-pf-sort'));
+        return;
+      }
       var open = e.target.closest('[data-pf-open]');
       if (open) {
         var sym = open.getAttribute('data-pf-open');
@@ -717,9 +1177,10 @@
     });
   }
 
-  function init() {
+  async function init() {
     wireEvents();
-    st.holdings = loadStored();
+    loadSortPrefs();
+    await loadFromCloud();
     render();
   }
 

@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
   <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png" />
   <link rel="manifest" href="/planpro.webmanifest" />
-  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260804fav" />
+  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260805pf4" />
   <script src="../config-no-traducir-terminos.js"></script>
   <script>
     (function () {
@@ -11872,13 +11872,17 @@
         </div>
 
         <section id="npInvPortfolioPanel" class="np-inv-panel np-inv-pf-panel" aria-label="Portafolio Schwab">
+          <div id="npInvPfSetupMsg" class="np-msg warn np-hide" style="margin-bottom:10px;">
+            Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-invest-holdings.sql</code>
+            (para guardar el portafolio en la nube).
+          </div>
           <div class="np-inv-pf-head">
             <div>
               <div class="np-inv-panel-title" style="margin-bottom:4px;">
                 <span>Mi portafolio · seguimiento Schwab</span>
               </div>
               <p class="np-inv-pf-lead">
-                Sube 1–4 capturas de tu tabla de posiciones (acciones o ETFs). La IA de Chat Admin lee Symbol, Quantity, Price, Market Value y Gain/Loss; actualiza la tabla y las gráficas. <strong>Objetivo</strong> y <strong>Comentarios</strong> son tuyos: no se borran al subir una captura nueva.
+                Sube 1–4 capturas de tu tabla de posiciones (acciones o ETFs). La IA lee Symbol, Quantity, Price, Market Value y Gain/Loss; se guarda en <strong>Supabase</strong>. <strong>Objetivo</strong> y <strong>Comentarios</strong> solo cambian cuando tú los escribes — el escaneo no los toca.
               </p>
             </div>
             <div class="np-inv-pf-actions-bar">
@@ -11897,15 +11901,48 @@
               <div id="npInvPfTableWrap" class="np-inv-pf-table-wrap np-hide">
                 <table class="np-inv-pf-table" id="npInvPfTable">
                   <thead>
-                    <tr>
-                      <th>Symbol / Name</th>
-                      <th>Cantidad</th>
-                      <th>Valor actual <span class="np-inv-pf-th-hint">(+ fecha subida)</span></th>
-                      <th>Market Value</th>
-                      <th>Day Change</th>
-                      <th>Gain / Loss</th>
-                      <th>Objetivo</th>
-                      <th>Comentarios</th>
+                    <tr id="npInvPfTableHead">
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="symbol" title="Ordenar por ticker">
+                          Symbol / Name <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="quantity" title="Ordenar por cantidad">
+                          Cantidad <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="price" title="Ordenar por valor actual">
+                          Valor actual <span class="np-inv-pf-th-hint">(+ fecha subida)</span>
+                          <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="marketValue" title="Ordenar por market value">
+                          Market Value <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="dayChange" title="Ordenar por day change">
+                          Day Change <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="gainLoss" title="Ordenar por gain/loss">
+                          Gain / Loss <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="targetShares" title="Ordenar por objetivo">
+                          Objetivo <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="comments" title="Ordenar por comentario">
+                          Comentarios <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
                       <th></th>
                     </tr>
                   </thead>
@@ -12476,7 +12513,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260804fav"></script>
-  <script src="../assets/planpro-invest-portfolio.js?v=20260805pf"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260805pf4"></script>
   <script>
 (function () {
   'use strict';
