@@ -16,7 +16,8 @@
     dose_mass_area: { canonical: 'kg/ha', metric: 'kg/ha', us_customary: 'lb/acre', resultDigits: 2 },
     volume_area: { canonical: 'm3/ha', metric: 'm3/ha', us_customary: 'US gal/acre', resultDigits: 2 },
     water_depth: { canonical: 'mm', metric: 'mm', us_customary: 'in', resultDigits: 2 },
-    yield_mass_area: { canonical: 't/ha', metric: 't/ha', us_customary: 'short ton/acre', resultDigits: 2 },
+    // us_customary id interno lb/acre_yield (símbolo lb/acre); short ton/acre queda disponible en NpUnits.
+    yield_mass_area: { canonical: 't/ha', metric: 't/ha', us_customary: 'lb/acre_yield', resultDigits: 2 },
     extraction_mass_yield: { canonical: 'kg/t', metric: 'kg/t', us_customary: 'lb/short ton', resultDigits: 2 },
     depth: { canonical: 'cm', metric: 'cm', us_customary: 'in', resultDigits: 2 },
     // Agrónomos siguen usando g/cm³; lb/ft³ es solo equivalencia secundaria en US.
@@ -113,22 +114,30 @@
     return definitions[kind];
   }
 
+  /** Id de unidad para conversión (puede ser interno, p. ej. lb/acre_yield). */
+  function storageUnit(kind) {
+    if (technical[kind]) return technical[kind].unit;
+    return definition(kind)[getPrefs().unit_system];
+  }
+
+  /** Etiqueta al usuario. lb/acre_yield → lb/acre (id interno; lb/acre ya es dosis). */
   function displayUnit(kind) {
     if (technical[kind]) return technical[kind].unit;
-    var item = definition(kind);
-    return item[getPrefs().unit_system];
+    var id = storageUnit(kind);
+    if (id === 'lb/acre_yield') return 'lb/acre';
+    return id;
   }
 
   function fromSI(value, kind) {
     var item = definition(kind);
     if (item.identity) return Number(value);
-    return unitsApi().convert(Number(value), item.canonical, displayUnit(kind));
+    return unitsApi().convert(Number(value), item.canonical, storageUnit(kind));
   }
 
   function toSI(value, kind) {
     var item = definition(kind);
     if (item.identity) return Number(value);
-    return unitsApi().convert(Number(value), displayUnit(kind), item.canonical);
+    return unitsApi().convert(Number(value), storageUnit(kind), item.canonical);
   }
 
   function formatNumber(value, digits) {
@@ -151,9 +160,10 @@
 
   function formatResultFromSI(value, kind) {
     var item = definition(kind);
+    // formatQuantity acepta id o alias; para yield US usamos el id de conversión.
     return unitsApi().formatQuantity(
       fromSI(value, kind),
-      displayUnit(kind),
+      storageUnit(kind),
       getPrefs().locale,
       item.resultDigits
     );

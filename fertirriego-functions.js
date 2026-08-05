@@ -9,6 +9,26 @@ function fertiUnit(kind, fallback) { const ui = fertiUI(); return ui ? ui.unit(k
 function fertiInputFromSI(value, kind) { const ui = fertiUI(); return ui ? ui.inputFromSI(value, kind) : String(value); }
 function fertiResultFromSI(value, kind) { const ui = fertiUI(); return ui ? ui.resultFromSI(value, kind) : Number(value || 0).toFixed(2); }
 function fertiInputToSI(value, kind) { const ui = fertiUI(); return ui ? ui.toSI(value, kind) : Number(value); }
+/** Lee rendimiento del input en SI (t/ha). Vacío → null (sin inventar 25). */
+function fertiReadYieldSI(input) {
+  const raw = input && typeof input === 'object' ? input.value : input;
+  if (raw === '' || raw == null) return null;
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return null;
+  const si = fertiInputToSI(n, 'yield_mass_area');
+  return Number.isFinite(si) ? si : null;
+}
+function fertiYieldForCalc(yieldSI) {
+  return Number.isFinite(yieldSI) ? yieldSI : 0;
+}
+function fertiSetYieldFromSI(input, value) {
+  if (!input) return;
+  if (value == null || !Number.isFinite(Number(value))) {
+    input.value = '';
+    return;
+  }
+  input.value = fertiInputFromSI(value, 'yield_mass_area');
+}
 function fertiExtractionInput(nutrient, value) {
   updateExtractionPerTon(nutrient, fertiInputToSI(value, 'extraction_mass_yield'));
 }
@@ -727,19 +747,22 @@ calculateNutrientRequirements = function(opts) {
       if (prev) cropTypeEl.setAttribute('onchange', prev);
     }
     
-    // 🚀 CRÍTICO: REPLICAR ESTRUCTURA DE GRANULAR (QUE FUNCIONA)
-    // Usar opts.targetYield ?? parseFloat(targetYieldEl.value) || 25 (igual que Granular líneas 182-185)
+    // Rendimiento: opts (SI) o DOM. Vacío = null (nunca inventar 25).
     let targetYield = opts?.targetYield;
     if (typeof targetYield !== 'number' || Number.isNaN(targetYield)) {
-      targetYield = fertiInputToSI(parseFloat(targetYieldEl?.value) || 25, 'yield_mass_area');
+      targetYield = fertiReadYieldSI(targetYieldEl);
     }
+    const yieldForCalc = fertiYieldForCalc(targetYield);
     
-    // Si opts.targetYield existe y es diferente del DOM, actualizar DOM (igual que Granular líneas 186-191)
-    if (opts?.targetYield != null && targetYieldEl && Math.abs(fertiInputToSI(parseFloat(targetYieldEl.value), 'yield_mass_area') - opts.targetYield) > 1e-8) {
-      const prev = targetYieldEl.getAttribute('onchange');
-      targetYieldEl.removeAttribute('onchange');
-      targetYieldEl.value = fertiInputFromSI(opts.targetYield, 'yield_mass_area');
-      if (prev) targetYieldEl.setAttribute('onchange', prev);
+    // Si opts trae rendimiento SI, sincronizar DOM solo si cambió
+    if (opts?.targetYield != null && targetYieldEl) {
+      const currentSI = fertiReadYieldSI(targetYieldEl);
+      if (currentSI == null || Math.abs(currentSI - opts.targetYield) > 1e-8) {
+        const prev = targetYieldEl.getAttribute('onchange');
+        targetYieldEl.removeAttribute('onchange');
+        fertiSetYieldFromSI(targetYieldEl, opts.targetYield);
+        if (prev) targetYieldEl.setAttribute('onchange', prev);
+      }
     }
     
     // 🚀 CRÍTICO: REPLICAR ESTRUCTURA DE GRANULAR (QUE FUNCIONA)
@@ -942,7 +965,7 @@ calculateNutrientRequirements = function(opts) {
     // Lista de nutrientes en el orden correcto
     Object.keys(extraction).forEach(nutrient => {
       if (nutrients.includes(nutrient)) {
-        totalExtraction[nutrient] = (extraction[nutrient] * targetYield).toFixed(2);
+        totalExtraction[nutrient] = (extraction[nutrient] * yieldForCalc).toFixed(2);
       }
     });
 
@@ -1439,7 +1462,7 @@ updateExtractionPerTon = function(nutrient, value) {
     window.savedFertiExtractionOverrides[cropType][nutrientKey] = extractionValue;
     console.log('✅ Extracción guardada en variable global (SIEMPRE en formato ÓXIDO):', { cropType, nutrient: nutrientKey, value: extractionValue });
     
-    const targetYield = fertiInputToSI(parseFloat(document.getElementById('fertirriegoTargetYield').value) || 25, 'yield_mass_area');
+    const targetYield = fertiYieldForCalc(fertiReadYieldSI(document.getElementById('fertirriegoTargetYield')));
     
     // Calcular extracción total (multiplicar por toneladas objetivo) - SIEMPRE EN ÓXIDO
     const totalExtraction = (extractionValue * targetYield).toFixed(2);
@@ -1622,7 +1645,7 @@ function rememberFertirriegoUIState() {
       return;
     }
     const cropType = cropEl.value || '';
-    const targetYield = fertiInputToSI(parseFloat(yieldEl.value) || 25, 'yield_mass_area');
+    const targetYield = fertiReadYieldSI(yieldEl);
     // Persistir SIEMPRE en localStorage del proyecto para evitar depender de métodos inexistentes
     // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
     const k = `nutriplant_project_${pid}`; const pd = JSON.parse(localStorage.getItem(k) || '{}');
@@ -1687,14 +1710,12 @@ function applyFertirriegoUIState() {
     }
     const ty = document.getElementById('fertirriegoTargetYield');
     if (ty && st.targetYield != null) {
-      // 🚀 CRÍTICO: Solo aplicar si el valor actual es diferente (no sobrescribir si el usuario acaba de cambiarlo)
-      const currentValue = parseFloat(ty.value);
-      const savedValue = parseFloat(st.targetYield);
-      if (isNaN(currentValue) || Math.abs(currentValue - savedValue) > 0.01) {
-        // CRÍTICO: Quitar onchange antes de establecer valor para evitar recálculo prematuro
+      const currentSI = fertiReadYieldSI(ty);
+      const savedSI = Number(st.targetYield);
+      if (currentSI == null || !Number.isFinite(savedSI) || Math.abs(currentSI - savedSI) > 1e-6) {
         const oldOnChange = ty.getAttribute('onchange');
         ty.removeAttribute('onchange');
-        ty.value = fertiInputFromSI(st.targetYield, 'yield_mass_area');
+        fertiSetYieldFromSI(ty, savedSI);
         if (oldOnChange) ty.setAttribute('onchange', oldOnChange);
       }
     }
@@ -1746,7 +1767,8 @@ function saveFertirriegoRequirements(options = {}) {
     const hasUI = !!cropTypeEl && !!targetYieldEl && !!tableContainer;
     
     const cropType = cropTypeEl?.value || '';
-    const targetYield = fertiInputToSI(parseFloat(targetYieldEl?.value) || 25, 'yield_mass_area');
+    // Si hay UI, el input manda (vacío = null). Sin UI, conservar guardado.
+    const targetYield = hasUI ? fertiReadYieldSI(targetYieldEl) : null;
 
     const nutrients = FERTIRRIEGO_NUTRIENTS;
     
@@ -1799,10 +1821,10 @@ function saveFertirriegoRequirements(options = {}) {
     // (para preservar el valor guardado si cropType está vacío)
     const effectiveCropType = cropType || (existingData && existingData.cropType ? existingData.cropType : '');
 
-    // 🚀 CRÍTICO: Calcular effectiveTargetYield temprano para evitar referencias antes de definir
-    const effectiveTargetYield = (targetYield === 25 && existingData && existingData.targetYield != null && existingData.targetYield !== 25) 
-      ? existingData.targetYield 
-      : targetYield;
+    const effectiveTargetYield = hasUI
+      ? targetYield
+      : (existingData && existingData.targetYield != null ? existingData.targetYield : null);
+    const yieldForSaveCalc = fertiYieldForCalc(effectiveTargetYield);
     
     // Calcular extracción total para usar como default si no hay ajuste guardado
     let totalExtraction = {};
@@ -1810,7 +1832,7 @@ function saveFertirriegoRequirements(options = {}) {
       const extraction = CROP_EXTRACTION_DB[effectiveCropType];
       nutrients.forEach(n => {
         if (extraction[n] !== undefined) {
-          totalExtraction[n] = (extraction[n] * targetYield).toFixed(2);
+          totalExtraction[n] = (extraction[n] * yieldForSaveCalc).toFixed(2);
         }
       });
     }
@@ -2628,7 +2650,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
       }
       const targetYieldNoData = document.getElementById('fertirriegoTargetYield');
       if (targetYieldNoData) {
-        targetYieldNoData.value = targetYieldNoData.defaultValue || '25';
+        targetYieldNoData.value = '';
       }
       isFertirriegoElementalMode = false;
       window.isFertirriegoElementalMode = false;
@@ -2761,32 +2783,22 @@ loadFertirriegoRequirements = function(retryCount = 0) {
         if (userIsChangingValue) {
           console.log('ℹ️ loadFertirriegoRequirements: Omitiendo restauración de targetYield porque el usuario está cambiando el valor');
           // NO hacer return aquí - continuar cargando otros datos (ajustes, eficiencias, etc.)
-        } else if (data.targetYield != null) {
-          // 🚀 CRÍTICO: SIEMPRE aplicar el valor guardado cuando estamos cargando (no cuando el usuario está cambiando)
-          // Esto asegura que los valores guardados se restablezcan correctamente al recargar la página
-          const currentValue = parseFloat(targetYieldInput.value);
-          const savedValue = parseFloat(data.targetYield);
-          
-          // Aplicar SIEMPRE el valor guardado (la condición solo verifica si hay un valor válido guardado)
-          if (!isNaN(savedValue) && savedValue > 0) {
-            // CRÍTICO: Establecer valor SIN disparar eventos que recalculen sin valores guardados
-            const oldOnChange = targetYieldInput.getAttribute('onchange');
-            targetYieldInput.removeAttribute('onchange');
-            targetYieldInput.value = fertiInputFromSI(data.targetYield, 'yield_mass_area');
-            // 🚀 CRÍTICO: Actualizar lastFertiTargetYield para que calculateNutrientRequirements no lo sobrescriba
-            lastFertiTargetYield = savedValue;
-            if (oldOnChange) targetYieldInput.setAttribute('onchange', oldOnChange);
-            console.log('✅ targetYield restaurado desde guardado:', data.targetYield, '(valor anterior:', currentValue, ')');
-          } else {
-            console.warn('⚠️ targetYield guardado no es válido:', data.targetYield);
-          }
+        } else if (data.targetYield != null && Number.isFinite(Number(data.targetYield))) {
+          const currentSI = fertiReadYieldSI(targetYieldInput);
+          const savedValue = Number(data.targetYield);
+          const oldOnChange = targetYieldInput.getAttribute('onchange');
+          targetYieldInput.removeAttribute('onchange');
+          fertiSetYieldFromSI(targetYieldInput, savedValue);
+          lastFertiTargetYield = savedValue;
+          if (oldOnChange) targetYieldInput.setAttribute('onchange', oldOnChange);
+          console.log('✅ targetYield restaurado desde guardado:', data.targetYield, '(SI anterior:', currentSI, ')');
         } else {
-          // Si no hay targetYield guardado pero hay un valor en el DOM, mantenerlo
-          const currentValue = parseFloat(targetYieldInput.value);
-          if (!isNaN(currentValue) && currentValue > 0) {
-            lastFertiTargetYield = fertiInputToSI(currentValue, 'yield_mass_area');
-            console.log('ℹ️ targetYield no guardado, manteniendo valor del DOM:', currentValue);
-          }
+          // Sin rendimiento guardado: dejar el campo limpio (no inventar default)
+          const oldOnChange = targetYieldInput.getAttribute('onchange');
+          targetYieldInput.removeAttribute('onchange');
+          targetYieldInput.value = '';
+          lastFertiTargetYield = null;
+          if (oldOnChange) targetYieldInput.setAttribute('onchange', oldOnChange);
         }
       }
       // 🚀 CRÍTICO: isElementalMode ya se cargó ARRIBA (antes de establecer cropType/targetYield)
@@ -2833,7 +2845,9 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     // PRIORIDAD 1: data.cropType (valor guardado) - IGUAL QUE GRANULAR
     const cropTypeToUse = (data && data.cropType) ? data.cropType : ((select && select.value) ? select.value : null);
     // PRIORIDAD 1: data.targetYield (valor guardado) - IGUAL QUE GRANULAR
-    const targetYieldToUse = (data && data.targetYield != null) ? data.targetYield : ((targetYieldInput && targetYieldInput.value) ? parseFloat(targetYieldInput.value) : 25);
+    const targetYieldToUse = (data && data.targetYield != null)
+      ? data.targetYield
+      : fertiReadYieldSI(targetYieldInput);
     
     // 🚀 DEBUG CRÍTICO: Verificar valores antes de llamar calculateNutrientRequirements
     console.log('🔍 DEBUG CRÍTICO - Valores antes de calculateNutrientRequirements:', {
@@ -2985,14 +2999,16 @@ loadFertirriegoRequirements = function(retryCount = 0) {
 
           const settleCropType = (data && data.cropType) ? data.cropType : (cropTypeEl.value || null);
           const settleTargetYield = (data && data.targetYield != null)
-            ? parseFloat(data.targetYield)
-            : (parseFloat(targetYieldEl.value) || 25);
+            ? Number(data.targetYield)
+            : fertiReadYieldSI(targetYieldEl);
 
           const settleOptions = {
             _isLoading: true,
-            cropType: settleCropType,
-            targetYield: settleTargetYield
+            cropType: settleCropType
           };
+          if (Number.isFinite(settleTargetYield)) {
+            settleOptions.targetYield = settleTargetYield;
+          }
           const settleHasAdjustment = !!(
             data &&
             data.adjustment &&
@@ -3087,13 +3103,17 @@ window.loadCustomFertirriegoCrops = loadCustomFertirriegoCrops;
 window.addEventListener('np:prefs-changed', function () {
   try {
     const crop = document.getElementById('fertirriegoCropType');
-    const canonicalYield = Number.isFinite(lastFertiTargetYield) ? lastFertiTargetYield : 25;
-    calculateNutrientRequirements({
+    const yieldEl = document.getElementById('fertirriegoTargetYield');
+    const canonicalYield = Number.isFinite(lastFertiTargetYield)
+      ? lastFertiTargetYield
+      : fertiReadYieldSI(yieldEl);
+    const opts = {
       _isLoading: true,
       cropType: crop ? crop.value : undefined,
-      targetYield: canonicalYield,
       extractionOverrides: window.savedFertiExtractionOverrides || {}
-    });
+    };
+    if (Number.isFinite(canonicalYield)) opts.targetYield = canonicalYield;
+    calculateNutrientRequirements(opts);
   } catch (error) {
     console.warn('Fertirriego: no se pudo actualizar la presentación de unidades.', error);
   }
@@ -3123,40 +3143,36 @@ document.addEventListener('DOMContentLoaded', function() {
       userIsChangingValue = true;
 
       // Resetear ajustes SOLO cuando cambia el cultivo (no cuando cambia rendimiento)
+      // El rendimiento del input se conserva al cambiar cultivo (no se fuerza default).
       if (id === 'fertirriegoCropType') {
         savedFertiAdjustments = null;
         savedFertiEfficiencies = null;
         savedFertiAdjustmentsAuto = true;
         lastFertiCrop = null;
-        lastFertiTargetYield = null;
       }
 
       rememberFertirriegoUIState();
 
-      // 🚀 CRÍTICO: Actualizar lastFertiTargetYield con el NUEVO valor antes de recalcular
-      // para que calculateNutrientRequirements no lo sobrescriba
       if (id === 'fertirriegoTargetYield') {
-        const newValue = fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area');
-        if (!isNaN(newValue)) {
-          lastFertiTargetYield = newValue;
-        }
+        lastFertiTargetYield = fertiReadYieldSI(e.target);
       }
       if (id === 'fertirriegoCropType') {
         lastFertiCrop = e.target.value;
       }
       
-      // Recalcular inmediatamente (pero NO restaurar valores guardados - usar el valor que el usuario acaba de poner)
+      // Recalcular: rendimiento siempre desde el DOM actual (sin inventar default)
       if (typeof window.calculateNutrientRequirements === 'function' && window.calculateNutrientRequirements._isRealFunction === true) {
-        // Pasar el valor actual del input para que NO lo sobrescriba
-        const currentValue = id === 'fertirriegoTargetYield' ? fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area') : undefined;
+        const yieldEl = document.getElementById('fertirriegoTargetYield');
+        const currentValue = fertiReadYieldSI(yieldEl);
         const currentCrop = id === 'fertirriegoCropType' ? e.target.value : undefined;
-        window.calculateNutrientRequirements({
+        const calcOpts = {
           _isLoading: false,
-          _userChanged: true, // Marcar que el usuario hizo el cambio
+          _userChanged: true,
           _forceAutoAdjustments: id === 'fertirriegoCropType',
-          targetYield: currentValue,
           cropType: currentCrop
-        });
+        };
+        if (Number.isFinite(currentValue)) calcOpts.targetYield = currentValue;
+        window.calculateNutrientRequirements(calcOpts);
       }
       
       // 🚀 CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica targetYield (valor crítico)
@@ -3195,22 +3211,15 @@ document.addEventListener('DOMContentLoaded', function() {
       // 🚀 CRÍTICO: Marcar que el usuario está cambiando el valor
       userIsChangingValue = true;
       
-      // Actualizar lastFertiTargetYield con el valor que el usuario está escribiendo
-      const newValue = fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area');
-      if (!isNaN(newValue)) {
-        lastFertiTargetYield = newValue;
-      }
+      lastFertiTargetYield = fertiReadYieldSI(e.target);
       
       clearTimeout(window.fertirriegoRecalcTimer);
       window.fertirriegoRecalcTimer = setTimeout(() => {
         if (typeof window.calculateNutrientRequirements === 'function' && window.calculateNutrientRequirements._isRealFunction === true) {
-          // Pasar el valor actual para que NO lo sobrescriba
-          const currentValue = fertiInputToSI(parseFloat(e.target.value), 'yield_mass_area');
-          window.calculateNutrientRequirements({
-            _isLoading: false,
-            _userChanged: true,
-            targetYield: currentValue
-          });
+          const currentValue = fertiReadYieldSI(e.target);
+          const recalcOpts = { _isLoading: false, _userChanged: true };
+          if (Number.isFinite(currentValue)) recalcOpts.targetYield = currentValue;
+          window.calculateNutrientRequirements(recalcOpts);
         }
         // Desactivar la bandera después de recalcular
         setTimeout(() => {

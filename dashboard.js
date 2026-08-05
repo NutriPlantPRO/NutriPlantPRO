@@ -728,10 +728,10 @@ function isSidebarMinimized() {
 // ============================
 function sectionTemplate(name) {
   if (name === "Inicio") {
+    // Unidad fija según preferencia global: métrico t/ha · inglés lb/acre (sin selector).
     const yieldUnitPrimary = (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function')
       ? window.NpAgronomicUnits.unit('yield_mass_area')
-      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'short ton/acre' : 't/ha');
-    const yieldUnitSecondary = (window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'lb/acre' : 'kg/ha';
+      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'lb/acre' : 't/ha');
     return `
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -799,16 +799,10 @@ function sectionTemplate(name) {
 
           <div class="row" style="gap:12px;margin-top:10px;">
             <div style="flex:1;">
-              <label>${dashboardT('dashboard.expected_yield', 'Rendimiento esperado')}</label>
+              <label>${dashboardT('dashboard.expected_yield', 'Rendimiento esperado')} (${yieldUnitPrimary})</label>
               <input id="np-rend" type="number" step="any" placeholder="${dashboardT('dashboard.expected_yield_placeholder', 'Ej. 12')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
-            </div>
-            <div style="width:160px;">
-              <label>${dashboardT('dashboard.unit', 'Unidad')}</label>
-              <select id="np-unidad" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;">
-                <option value="${yieldUnitPrimary}">${yieldUnitPrimary}</option>
-                <option value="${yieldUnitSecondary}">${yieldUnitSecondary}</option>
-              </select>
+              <input type="hidden" id="np-unidad" value="${yieldUnitPrimary}" />
             </div>
           </div>
 
@@ -855,16 +849,10 @@ function sectionTemplate(name) {
 
           <div class="row" style="gap:12px;margin-top:10px;">
             <div style="flex:1;">
-              <label>${dashboardT('dashboard.expected_yield', 'Rendimiento esperado')}</label>
+              <label>${dashboardT('dashboard.expected_yield', 'Rendimiento esperado')} (${yieldUnitPrimary})</label>
               <input id="edit-np-rend" type="number" step="any" placeholder="${dashboardT('dashboard.expected_yield_placeholder', 'Ej. 12')}"
                      style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;" />
-            </div>
-            <div style="width:160px;">
-              <label>${dashboardT('dashboard.unit', 'Unidad')}</label>
-              <select id="edit-np-unidad" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;">
-                <option value="${yieldUnitPrimary}">${yieldUnitPrimary}</option>
-                <option value="${yieldUnitSecondary}">${yieldUnitSecondary}</option>
-              </select>
+              <input type="hidden" id="edit-np-unidad" value="${yieldUnitPrimary}" />
             </div>
           </div>
 
@@ -935,7 +923,7 @@ function sectionTemplate(name) {
                 </div>
                 <div class="form-group">
                   <label for="fertirriegoTargetYield">${ft('target_yield', 'Rendimiento Objetivo')} (${fUnit('yield_mass_area', 't/ha')}):</label>
-                  <input type="number" id="fertirriegoTargetYield" step="0.0001" min="0" value="${fInput(25, 'yield_mass_area')}">
+                  <input type="number" id="fertirriegoTargetYield" step="0.0001" min="0" value="" inputmode="decimal">
                 </div>
                 <div class="form-group" style="min-width: 280px;">
                   <label style="visibility: hidden;">Botón</label>
@@ -1395,7 +1383,7 @@ function sectionTemplate(name) {
         };
         window.calculateGranularNutrientRequirements = function(opts){
           try{
-            const cropType = document.getElementById('granularRequerimientoCropType')?.value; const targetYield = parseFloat(document.getElementById('granularRequerimientoTargetYield')?.value)||10;
+            const cropType = document.getElementById('granularRequerimientoCropType')?.value; const _gyRaw = document.getElementById('granularRequerimientoTargetYield')?.value; const targetYield = (_gyRaw === '' || _gyRaw == null || !Number.isFinite(parseFloat(_gyRaw))) ? 0 : parseFloat(_gyRaw);
             const baseExtraction = window.GRANULAR_CROP_EXTRACTION_DB[cropType]; if(!baseExtraction) return;
             
             // 🚀 CRÍTICO: Cargar extractionOverrides desde storage (igual que función real)
@@ -1536,7 +1524,7 @@ function sectionTemplate(name) {
               </div>
               <div class="form-group">
                 <label for="granularRequerimientoTargetYield">${granularT('target_yield', 'Rendimiento Objetivo')} (${granularUnit('yield_mass_area', 't/ha')}):</label>
-                <input type="number" id="granularRequerimientoTargetYield" step="0.0001" min="0" value="${window.NpGranularUI ? window.NpGranularUI.inputFromSI(10, 'yield_mass_area') : '10'}" onchange="calculateGranularNutrientRequirements(); window.scheduleSaveGranularRequirements && window.scheduleSaveGranularRequirements();">
+                <input type="number" id="granularRequerimientoTargetYield" step="0.0001" min="0" value="" inputmode="decimal" onchange="calculateGranularNutrientRequirements(); window.scheduleSaveGranularRequirements && window.scheduleSaveGranularRequirements();">
               </div>
               <div class="form-group" style="min-width: 280px;">
                 <label style="visibility: hidden;">Botón</label>
@@ -5962,15 +5950,11 @@ function np_openEditProjectModal(projectId) {
   if (variedadInput) variedadInput.value = projectData.variedad || '';
   if (rendInput) rendInput.value = projectData.rendimientoEsperado || '';
   if (unidadInput) {
-    const savedUnit = projectData.unidadRendimiento || 't/ha';
-    const hasOption = Array.prototype.some.call(unidadInput.options, function (opt) { return opt.value === savedUnit; });
-    if (!hasOption) {
-      const opt = document.createElement('option');
-      opt.value = savedUnit;
-      opt.textContent = savedUnit;
-      unidadInput.appendChild(opt);
-    }
-    unidadInput.value = savedUnit;
+    // Unidad siempre según sistema de medida actual (métrico t/ha · inglés lb/acre).
+    const systemUnit = (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function')
+      ? window.NpAgronomicUnits.unit('yield_mass_area')
+      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'lb/acre' : 't/ha');
+    unidadInput.value = systemUnit;
   }
   
   // Guardar el ID del proyecto en un atributo del formulario para usarlo al guardar
@@ -11771,7 +11755,14 @@ function collectCurrentData() {
     }
     
     if (gCrop) currentProject.granular.requirements.cropType = gCrop.value;
-    if (gYield) currentProject.granular.requirements.targetYield = granularInputToSI(gYield.value, 'yield_mass_area') || 10;
+    if (gYield) {
+      currentProject.granular.requirements.targetYield = (gYield.value === '' || gYield.value == null)
+        ? null
+        : granularInputToSI(gYield.value, 'yield_mass_area');
+      if (!Number.isFinite(currentProject.granular.requirements.targetYield)) {
+        currentProject.granular.requirements.targetYield = null;
+      }
+    }
     
     const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2','Cl'];
     const existingGranularAdj = currentProject.granular.requirements.adjustment || {};
@@ -11835,7 +11826,17 @@ function collectCurrentData() {
     }
     
     if (fCrop) currentProject.fertirriego.requirements.cropType = fCrop.value;
-    if (fYield) currentProject.fertirriego.requirements.targetYield = parseFloat(fYield.value) || 10;
+    if (fYield) {
+      if (fYield.value === '' || fYield.value == null) {
+        currentProject.fertirriego.requirements.targetYield = null;
+      } else {
+        const fertiUi = window.NpFertigationUI;
+        const parsed = parseFloat(fYield.value);
+        currentProject.fertirriego.requirements.targetYield = Number.isFinite(parsed)
+          ? (fertiUi ? fertiUi.toSI(parsed, 'yield_mass_area') : parsed)
+          : null;
+      }
+    }
     
     const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     // Preservar valores existentes: solo sobrescribir desde el DOM cuando el input exista (evita perder datos al generar reporte desde otra pestaña)
@@ -11962,7 +11963,9 @@ function getGranularDataForSave(existingGranular = {}) {
   // Recopilar datos actuales del DOM
   const requirements = {
     cropType: gCrop.value,
-    targetYield: granularInputToSI(gYield.value, 'yield_mass_area') || 10,
+    targetYield: (gYield.value === '' || gYield.value == null)
+      ? null
+      : granularInputToSI(gYield.value, 'yield_mass_area'),
     extractionOverrides: extractionOverrides, // 🚀 CRÍTICO: Preservar y actualizar extractionOverrides
     adjustment: {},
     efficiency: {},
@@ -13029,7 +13032,9 @@ function np_snapshotGranularRequirements() {
     const target = document.getElementById('granularRequerimientoTargetYield');
     if (!select || !target) return; // no UI visible; dejar que los guardados normales se encarguen
     const cropType = select.value || '';
-    const targetYield = granularInputToSI(target.value, 'yield_mass_area') || 10;
+    const targetYield = (target.value === '' || target.value == null)
+      ? null
+      : granularInputToSI(target.value, 'yield_mass_area');
     const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const adjustment = {}; const efficiency = {};
     nutrients.forEach(n => {
@@ -13114,7 +13119,11 @@ function np_snapshotFertirriegoRequirements() {
     const target = document.getElementById('fertirriegoTargetYield');
     if (!select || !target) return;
     const cropType = select.value || '';
-    const targetYield = parseFloat(target.value) || 25;
+    const targetYield = (target.value === '' || target.value == null)
+      ? null
+      : (window.NpFertigationUI
+        ? window.NpFertigationUI.toSI(parseFloat(target.value), 'yield_mass_area')
+        : parseFloat(target.value));
     const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const adjustment = {}; const efficiency = {};
     nutrients.forEach(n => {
@@ -13225,7 +13234,11 @@ function saveBeforeTabChange() {
           }
         })();
         const cropType = gCrop ? gCrop.value : (req.cropType || '');
-        const targetYield = gYield ? (granularInputToSI(gYield.value, 'yield_mass_area') || req.targetYield || 0) : (req.targetYield || 0);
+        const targetYield = gYield
+          ? ((gYield.value === '' || gYield.value == null)
+            ? (req.targetYield != null ? req.targetYield : null)
+            : granularInputToSI(gYield.value, 'yield_mass_area'))
+          : (req.targetYield != null ? req.targetYield : null);
         // Capturar extracción por tonelada si fue editada
         const extractionOverrides = req.extractionOverrides || {};
         if (cropType) {
@@ -13297,7 +13310,17 @@ function saveBeforeTabChange() {
         // lastUI
         unified.fertirriego.lastUI = unified.fertirriego.lastUI || {};
         if (fCrop) unified.fertirriego.lastUI.cropType = fCrop.value;
-        if (fYield) unified.fertirriego.lastUI.targetYield = parseFloat(fYield.value) || 0;
+        if (fYield) {
+          if (fYield.value === '' || fYield.value == null) {
+            unified.fertirriego.lastUI.targetYield = null;
+          } else {
+            const fertiUi = window.NpFertigationUI;
+            const parsed = parseFloat(fYield.value);
+            unified.fertirriego.lastUI.targetYield = Number.isFinite(parsed)
+              ? (fertiUi ? fertiUi.toSI(parsed, 'yield_mass_area') : parsed)
+              : null;
+          }
+        }
         // requirements merge
         const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         const adjustment = {}; const efficiency = {};
@@ -13325,7 +13348,15 @@ function saveBeforeTabChange() {
         })();
         const req = unified.fertirriego.requirements || {};
         const cropType = fCrop ? fCrop.value : (req.cropType || '');
-        const targetYield = fYield ? (parseFloat(fYield.value) || req.targetYield || 0) : (req.targetYield || 0);
+        const targetYield = (function () {
+          if (fYield && fYield.value !== '' && fYield.value != null) {
+            const fertiUi = window.NpFertigationUI;
+            const parsed = parseFloat(fYield.value);
+            if (!Number.isFinite(parsed)) return req.targetYield != null ? req.targetYield : null;
+            return fertiUi ? fertiUi.toSI(parsed, 'yield_mass_area') : parsed;
+          }
+          return req.targetYield != null ? req.targetYield : null;
+        })();
         // Capturar extracción por tonelada si fue editada
         const extractionOverrides = req.extractionOverrides || {};
         if (cropType) {

@@ -85,13 +85,27 @@ function granularReqToSI(value, kind) {
   return ui ? ui.toSI(value, kind) : Number(value);
 }
 
+/** Lee rendimiento del input en SI (t/ha). Vacío → null (sin inventar 10). */
 function granularReadYieldSI(input) {
-  const value = parseFloat(input && input.value);
-  return Number.isFinite(value) ? granularReqToSI(value, 'yield_mass_area') : 10;
+  const raw = input && input.value;
+  if (raw === '' || raw == null) return null;
+  const value = parseFloat(raw);
+  if (!Number.isFinite(value)) return null;
+  const si = granularReqToSI(value, 'yield_mass_area');
+  return Number.isFinite(si) ? si : null;
+}
+
+function granularYieldForCalc(yieldSI) {
+  return Number.isFinite(yieldSI) ? yieldSI : 0;
 }
 
 function granularSetYieldFromSI(input, value) {
-  if (input && value != null) input.value = granularReqFromSI(value, 'yield_mass_area', true);
+  if (!input) return;
+  if (value == null || !Number.isFinite(Number(value))) {
+    input.value = '';
+    return;
+  }
+  input.value = granularReqFromSI(value, 'yield_mass_area', true);
 }
 
 // ====== Autosave y estado sucio (dirty) ======
@@ -248,6 +262,7 @@ function calculateGranularNutrientRequirements(options = {}) {
     if (typeof targetYield !== 'number' || Number.isNaN(targetYield)) {
       targetYield = granularReadYieldSI(yieldInput);
     }
+    const yieldForCalc = granularYieldForCalc(targetYield);
     if (options.targetYield != null) {
       const prev = yieldInput.getAttribute('onchange');
       yieldInput.removeAttribute('onchange');
@@ -430,7 +445,7 @@ function calculateGranularNutrientRequirements(options = {}) {
 
     nutrients.forEach(nutrient => {
       const perTon = typeof extraction[nutrient] === 'number' ? extraction[nutrient] : 0;
-      const total = parseFloat((perTon * targetYield).toFixed(2));
+      const total = parseFloat((perTon * yieldForCalc).toFixed(2));
       totalExtraction[nutrient] = total;
 
       let adjValue;
@@ -1943,13 +1958,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (id === 'granularRequerimientoTargetYield') {
       clearTimeout(window.granularRecalcTimer);
       window.granularRecalcTimer = setTimeout(() => {
-        const currentValue = granularReqToSI(parseFloat(e.target.value), 'yield_mass_area');
+        const currentValue = granularReadYieldSI(e.target);
         if (typeof window.calculateGranularNutrientRequirements === 'function') {
-          window.calculateGranularNutrientRequirements({
-            _isLoading: false,
-            _userChanged: true,
-            targetYield: currentValue
-          });
+          const opts = { _isLoading: false, _userChanged: true };
+          if (Number.isFinite(currentValue)) opts.targetYield = currentValue;
+          window.calculateGranularNutrientRequirements(opts);
         }
         scheduleSaveGranularRequirements();
       }, 300);
@@ -1999,11 +2012,15 @@ document.addEventListener('DOMContentLoaded', function() {
       const crop = document.getElementById('granularRequerimientoCropType');
       const target = document.getElementById('granularRequerimientoTargetYield');
       if (!crop || !target) return;
-      calculateGranularNutrientRequirements({
+      const prefsOpts = {
         _isLoading: true,
-        cropType: crop.value,
-        targetYield: Number.isFinite(lastGranularCalculatedYield) ? lastGranularCalculatedYield : 10
-      });
+        cropType: crop.value
+      };
+      const prefsYield = Number.isFinite(lastGranularCalculatedYield)
+        ? lastGranularCalculatedYield
+        : granularReadYieldSI(target);
+      if (Number.isFinite(prefsYield)) prefsOpts.targetYield = prefsYield;
+      calculateGranularNutrientRequirements(prefsOpts);
     } catch (error) {
       console.warn('No se pudo refrescar la presentación granular:', error);
     }
@@ -2217,9 +2234,9 @@ function loadGranularRequirements(retryCount = 0) {
     }
     
     if (!requirementData) {
-      console.log('ℹ️ No hay datos guardados de Granular para este proyecto - usando valores precargados');
-      // NO retornar - dejar que se calcule con valores precargados
-      // Pero marcar que no hay datos guardados para que se guarden cuando el usuario modifique
+      console.log('ℹ️ No hay datos guardados de Granular para este proyecto - rendimiento limpio');
+      const tyClear = document.getElementById('granularRequerimientoTargetYield');
+      if (tyClear) tyClear.value = '';
       requirementData = null;
     }
 

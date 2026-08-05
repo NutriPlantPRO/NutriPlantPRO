@@ -25,7 +25,8 @@
     yield_mass_area: {
       canonical: 'kg/m2',
       metric: 't/ha',
-      us_customary: 'short ton/acre'
+      // Id interno: lb/acre ya existe como dosis; el símbolo mostrado es lb/acre.
+      us_customary: 'lb/acre_yield'
     },
     bulk_density: {
       canonical: 'kg/m3',
@@ -88,6 +89,11 @@
       factor: M3_PER_US_GAL / M2_PER_ACRE
     },
     't/ha': { magnitude: 'yield_mass_area', symbol: 't/ha', factor: 0.1 },
+    'lb/acre_yield': {
+      magnitude: 'yield_mass_area',
+      symbol: 'lb/acre',
+      factor: KG_PER_LB / M2_PER_ACRE
+    },
     'short ton/acre': {
       magnitude: 'yield_mass_area',
       symbol: 'short ton/acre',
@@ -188,6 +194,7 @@
     't/ha': 't/ha',
     'tonne/ha': 't/ha',
     'metric ton/ha': 't/ha',
+    'lb/acre_yield': 'lb/acre_yield',
     'short ton/acre': 'short ton/acre',
     'us ton/acre': 'short ton/acre',
     m3: 'm3',

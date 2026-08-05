@@ -355,9 +355,24 @@ async function demRgbaToSmoothPng(rgba, width, height, opts) {
   const stronger = opts && opts.strong === true;
   const scale = stronger ? 4 : 2;
   const blurSigma = stronger ? 4.2 : 1.35;
-  return sharp(rgba, { raw: { width, height, channels: 4 } })
+  // Opacidad plena donde hay color (el blur no debe “lavar” el overlay a transparente).
+  const hardened = Buffer.from(rgba);
+  for (let i = 3; i < hardened.length; i += 4) {
+    if (hardened[i] > 0) hardened[i] = 255;
+  }
+  const { data, info } = await sharp(hardened, { raw: { width, height, channels: 4 } })
     .resize(width * scale, height * scale, { kernel: sharp.kernel.lanczos3 })
     .blur(blurSigma)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] >= 24) data[i] = 255;
+    else if (data[i] > 0) data[i] = Math.min(255, data[i] * 4);
+  }
+  return sharp(data, {
+    raw: { width: info.width, height: info.height, channels: 4 }
+  })
     .png()
     .toBuffer();
 }
@@ -829,8 +844,9 @@ function pixelCenterLatLng(col, row, width, height, bbox4326) {
   return [lat, lng];
 }
 
-function colorizeIndex(indexValues, vis, width, height, polygon, bbox4326) {
+function colorizeIndex(indexValues, vis, width, height, polygon, bbox4326, opts) {
   const lut = buildPaletteLUT(vis.palette, vis.min, vis.max);
+  const alpha = opts && opts.opaque === true ? 255 : 235;
   const rgba = Buffer.alloc(width * height * 4);
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
@@ -851,7 +867,7 @@ function colorizeIndex(indexValues, vis, width, height, polygon, bbox4326) {
       rgba[o] = lut[t * 3];
       rgba[o + 1] = lut[t * 3 + 1];
       rgba[o + 2] = lut[t * 3 + 2];
-      rgba[o + 3] = 235;
+      rgba[o + 3] = alpha;
     }
   }
   return rgba;
@@ -863,7 +879,9 @@ async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox43
     assertEnoughValidCoverage(coverage, (opts && opts.label) || null);
   }
   const relativeVis = computeRelativeVis(indexValues, width, height, polygon, bbox4326, vis);
-  const rgba = colorizeIndex(indexValues, relativeVis, width, height, polygon, bbox4326);
+  const rgba = colorizeIndex(indexValues, relativeVis, width, height, polygon, bbox4326, {
+    opaque: !!(opts && opts.demSmooth)
+  });
   const buffer =
     opts && opts.demSmooth
       ? await demRgbaToSmoothPng(rgba, width, height, {

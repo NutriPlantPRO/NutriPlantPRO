@@ -4433,13 +4433,15 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   const idxNorm = np_normalizeRadarIndex(indexForLabel);
   const isDemLayer = idxNorm === 'slope' || idxNorm === 'elev';
   const isSlopeLayer = idxNorm === 'slope';
-  const containerOpacity = isPilotLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
+  // DEM (relieve): opacidad alta — el blur no debe dejarlo “lavado”/transparente.
+  const containerOpacity =
+    isPilotLayer || isDemLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
   // DEM ~30 m: difuminar bloques (pendiente más que altura). Pilot: sin filtro. GEE legacy: saturación.
   // Pendiente: blur base; en draw() se ajusta según tamaño en pantalla (predios chicos = cuadros enormes).
   let visualFilter = isSlopeLayer
-    ? 'blur(8px) contrast(1.02)'
+    ? 'blur(6px) contrast(1.14) saturate(1.2) brightness(0.96)'
     : isDemLayer
-      ? 'blur(1.75px) contrast(1.04)'
+      ? 'blur(1.75px) contrast(1.08) saturate(1.08)'
       : isPilotLayer
         ? 'none'
         : 'saturate(1.35) contrast(1.15)';
@@ -4472,6 +4474,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     img.style.filter = visualFilter;
     img.style.imageRendering = 'auto';
     this._npIsSlopeLayer = isSlopeLayer;
+    this._npIsDemLayer = isDemLayer;
     this._npImg = img;
     img.onload = () => {
       console.log('✅ Imagen Radar cargada en overlay');
@@ -4501,11 +4504,12 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     this.div.style.width = Math.max(width, 2) + 'px';
     this.div.style.height = Math.max(height, 2) + 'px';
     this.div.style.display = 'block';
-    // Pendiente: más zoom / predio chico → cuadros DEM más grandes → más blur.
+    // Pendiente: más zoom / predio chico → cuadros DEM más grandes → más blur (sin lavar el color).
     if (this._npIsSlopeLayer && this._npImg) {
       const edge = Math.max(width, height);
-      const blurPx = Math.max(8, Math.min(28, Math.round(edge * 0.045)));
-      this._npImg.style.filter = 'blur(' + blurPx + 'px) contrast(1.02)';
+      const blurPx = Math.max(5, Math.min(16, Math.round(edge * 0.028)));
+      this._npImg.style.filter =
+        'blur(' + blurPx + 'px) contrast(1.14) saturate(1.2) brightness(0.96)';
     }
     console.log('🛰️ Radar overlay draw:', { left, top, width, height });
   };
@@ -5243,7 +5247,7 @@ window.showRadarDemOnMap = async function showRadarDemOnMap(indexOverride, opts)
     radarGroundOverlay = null;
   }
   np_setRadarPolygonMask(false);
-  np_showRadarOverlay(url, bounds, 0.92, { pilot: false, index: idx });
+  np_showRadarOverlay(url, bounds, 1, { pilot: false, index: idx });
   np_setRadarPolygonMask(true, null);
   np_showRadarLegend(true);
   window.__nutriplantRadarOverlaySource = 'dem';
