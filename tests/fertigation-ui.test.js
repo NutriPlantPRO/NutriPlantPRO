@@ -31,7 +31,7 @@ module.exports = [
       ].forEach(function (sample) {
         close(ferti.toSI(ferti.fromSI(sample[1], sample[0]), sample[0]), sample[1], 1e-9);
       });
-      assert.equal(ferti.unit('yield_mass_area'), 'lb/acre');
+      assert.equal(ferti.unit('yield_mass_area'), 'short ton/acre');
       assert.equal(ferti.unit('extraction_mass_yield'), 'lb/short ton');
     }
   },

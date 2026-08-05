@@ -607,8 +607,23 @@
   }
 
   // ---------- HTML ----------
+  function lecturaMaxAreaLabel() {
+    if (typeof window.radarMaxAreaLabel === 'function') return window.radarMaxAreaLabel(250);
+    var prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+    if (prefs && prefs.unit_system === 'us_customary') return '250 ha (≈ 618 acres)';
+    return '250 ha';
+  }
+
   function createLecturaSatelitalHTML() {
     var t = lecturaT;
+    var maxArea = lecturaMaxAreaLabel();
+    var introParams = { unit: lecturaDepthUnit(), max_area: maxArea };
+    var introParamsAttr = JSON.stringify(introParams).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    var introHtml = t(
+      'radar.lectura_intro_html',
+      'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ {unit} con % de franja). Máximo <strong>{max_area}</strong> por predio.',
+      introParams
+    );
     return '' +
       '<div class="lectura-satelital-panel" style="padding:4px 2px;">' +
         '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px;">' +
@@ -620,8 +635,8 @@
               '<span id="lecturaCreditsCost" class="radar-credits-badge__cost"></span>' +
             '</div>' +
           '</div>' +
-          '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
-            t('radar.lectura_intro_html', 'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ {unit} con % de franja). Máximo <strong>250 ha</strong> por predio.', { unit: lecturaDepthUnit() }) +
+          '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;" data-i18n-html="radar.lectura_intro_html" data-i18n-params="' + introParamsAttr + '">' +
+            introHtml +
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;" data-i18n="radar.how_built_label">' + t('radar.how_built_label', 'Cómo se arma:') + '</strong> ' +
@@ -2565,6 +2580,26 @@
           changed.indexOf('unit_system') >= 0 ||
           changed.indexOf('locale') >= 0;
         if (!langOrUnit) return;
+        try {
+          var intro = document.querySelector('[data-i18n-html="radar.lectura_intro_html"]');
+          if (intro) {
+            var obj = { unit: lecturaDepthUnit(), max_area: lecturaMaxAreaLabel() };
+            try {
+              var raw = intro.getAttribute('data-i18n-params');
+              if (raw) obj = Object.assign(JSON.parse(raw) || {}, obj);
+            } catch (eMerge) { /* keep obj */ }
+            intro.setAttribute('data-i18n-params', JSON.stringify(obj));
+            if (window.NpI18n && typeof window.NpI18n.apply === 'function') {
+              window.NpI18n.apply(intro);
+            } else {
+              intro.innerHTML = lecturaT(
+                'radar.lectura_intro_html',
+                'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ {unit} con % de franja). Máximo <strong>{max_area}</strong> por predio.',
+                obj
+              );
+            }
+          }
+        } catch (eIntro) { /* ignore */ }
         var st = loadState();
         if (!st || !st.rows || !st.rows.length) return;
         // Force full remount so headers/units/chart axis refresh (not soft live patch).

@@ -6,9 +6,26 @@ console.log('📦 fertirriego-functions.js cargado (v1758360000)');
 function fertiUI() { return window.NpFertigationUI || null; }
 function fertiT(key, es) { const ui = fertiUI(); return ui ? ui.t(key, es) : es; }
 function fertiUnit(kind, fallback) { const ui = fertiUI(); return ui ? ui.unit(kind) : fallback; }
-function fertiInputFromSI(value, kind) { const ui = fertiUI(); return ui ? ui.inputFromSI(value, kind) : String(value); }
-function fertiResultFromSI(value, kind) { const ui = fertiUI(); return ui ? ui.resultFromSI(value, kind) : Number(value || 0).toFixed(2); }
+function fertiInputFromSI(value, kind, digits) {
+  const ui = fertiUI();
+  return ui ? ui.inputFromSI(value, kind, digits) : String(value);
+}
+function fertiResultFromSI(value, kind, digits) {
+  const ui = fertiUI();
+  return ui ? ui.resultFromSI(value, kind, digits) : Number(value || 0).toFixed(digits == null ? 2 : digits);
+}
 function fertiInputToSI(value, kind) { const ui = fertiUI(); return ui ? ui.toSI(value, kind) : Number(value); }
+/** Macros de dosis: 1 decimal (evita ruido kg/ha→lb/acre). Micros: 4. */
+const FERTI_MACRO_DOSE_NUTRIENTS = { N: 1, P2O5: 1, K2O: 1, CaO: 1, MgO: 1, SO4: 1, S: 1 };
+function fertiAdjDisplayDigits(nutrient) {
+  return FERTI_MACRO_DOSE_NUTRIENTS[nutrient] ? 1 : 4;
+}
+function fertiAdjInputFromSI(value, nutrient) {
+  return fertiInputFromSI(value, 'dose_mass_area', fertiAdjDisplayDigits(nutrient));
+}
+function fertiAdjStep(nutrient) {
+  return FERTI_MACRO_DOSE_NUTRIENTS[nutrient] ? '0.1' : '0.0001';
+}
 /** Lee rendimiento del input en SI (t/ha). Vacío → null (sin inventar 25). */
 function fertiReadYieldSI(input) {
   const raw = input && typeof input === 'object' ? input.value : input;
@@ -1221,7 +1238,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
         <!-- Fila 3: Ajuste por niveles en suelo -->
         <tr>
           <td><strong>${fertiT('soil_adjustment', 'Ajuste por niveles')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong></td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${fertiInputFromSI(getConvertedValue(n, adjustment[n]), 'dose_mass_area')}" step="0.0001" onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`).join('')}
+          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${fertiAdjInputFromSI(getConvertedValue(n, adjustment[n]), n)}" step="${fertiAdjStep(n)}" onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`).join('')}
         </tr>
         
         <!-- Fila 4: Eficiencia -->
@@ -1233,7 +1250,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
         <!-- Fila 5: Requerimiento Real -->
         <tr class="requirement-real-row">
           <td><strong>${fertiT('actual_requirement', 'Requerimiento Real')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong></td>
-          ${nutrients.map(n => `<td id="ferti-req-${n}">${fertiResultFromSI(getConvertedValue(n, realRequirement[n]), 'dose_mass_area')}</td>`).join('')}
+          ${nutrients.map(n => `<td id="ferti-req-${n}">${fertiResultFromSI(getConvertedValue(n, realRequirement[n]), 'dose_mass_area', fertiAdjDisplayDigits(n) === 1 ? 1 : 2)}</td>`).join('')}
         </tr>
       </tbody>
     </table>
@@ -1340,11 +1357,12 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
       // Aplicar ajuste - EXACTAMENTE IGUAL QUE GRANULAR
       const adjInput = document.getElementById(`ferti-adj-${nutrient}`);
       if (adjInput && adjustment[nutrient] !== undefined) {
-        const displayValue = fertiInputFromSI(getConvertedValue(nutrient, adjustment[nutrient]), 'dose_mass_area');
+        const displayValue = fertiAdjInputFromSI(getConvertedValue(nutrient, adjustment[nutrient]), nutrient);
         const currentValue = parseFloat(adjInput.value) || 0;
         const targetValue = parseFloat(displayValue) || 0;
+        const tol = fertiAdjDisplayDigits(nutrient) === 1 ? 0.05 : 0.01;
         // Aplicar SIEMPRE si el valor es diferente (incluso si es 0)
-        if (Math.abs(currentValue - targetValue) > 0.01) {
+        if (Math.abs(currentValue - targetValue) > tol) {
           // CRÍTICO: Quitar onchange temporalmente para evitar guardados durante aplicación
           const oldOnChange = adjInput.getAttribute('onchange');
           adjInput.removeAttribute('onchange');
@@ -1481,7 +1499,7 @@ updateExtractionPerTon = function(nutrient, value) {
     if (adjInput) {
       // Mostrar en el formato actual (elemental u óxido)
       const shownAdjustment = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
-      adjInput.value = fertiInputFromSI(shownAdjustment, 'dose_mass_area');
+      adjInput.value = fertiAdjInputFromSI(shownAdjustment, nutrient);
       
       // Recalcular requerimiento real - SIEMPRE usar valores en óxido
       const efficiencyValue = parseFloat(document.getElementById(`ferti-eff-${nutrient}`).value) || 1;
@@ -1538,7 +1556,7 @@ updateAdjustment = function(nutrient, value) {
     
     const reqCell = document.getElementById(`ferti-req-${nutrient}`);
     if (reqCell) {
-      reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area');
+      reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area', fertiAdjDisplayDigits(nutrient) === 1 ? 1 : 2);
       console.log(`✅ Requerimiento Real ${nutrient} actualizado: ${reqCell.textContent} (ajuste: ${adjValue}, eficiencia: ${efficiencyValue}%)`);
     } else {
       console.warn(`⚠️ No se encontró celda req-${nutrient} para actualizar`);
@@ -1590,7 +1608,7 @@ updateEfficiency = function(nutrient, value) {
     // CRÍTICO: Usar getConvertedValue igual que en updateAdjustment (EXACTAMENTE IGUAL QUE GRANULAR)
     const reqCell = document.getElementById(`ferti-req-${nutrient}`);
     if (reqCell) {
-      reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area');
+      reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area', fertiAdjDisplayDigits(nutrient) === 1 ? 1 : 2);
       console.log(`✅ Requerimiento Real ${nutrient} actualizado: ${reqCell.textContent} (ajuste: ${adjustmentValue}, eficiencia: ${efficiencyValue}%)`);
     } else {
       console.warn(`⚠️ No se encontró celda req-${nutrient} para actualizar`);

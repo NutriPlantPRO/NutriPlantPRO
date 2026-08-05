@@ -201,8 +201,16 @@
     if (!Number.isFinite(n)) return '0';
     return n.toFixed(digits).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
   }
-  function inputFromSI(value, kind) { return trim(fromSI(value, kind), 4); }
-  function resultFromSI(value, kind) { return trim(fromSI(value, kind), 2); }
+  function inputFromSI(value, kind, digits) {
+    var d = digits == null ? 4 : Number(digits);
+    if (!Number.isFinite(d) || d < 0) d = 4;
+    return trim(fromSI(value, kind), d);
+  }
+  function resultFromSI(value, kind, digits) {
+    var d = digits == null ? 2 : Number(digits);
+    if (!Number.isFinite(d) || d < 0) d = 2;
+    return trim(fromSI(value, kind), d);
+  }
   function quantityFromSI(value, kind) { return resultFromSI(value, kind) + ' ' + unit(kind); }
   function cropName(id, fallback, language) {
     return (language || prefs().language) === 'en' ? (CROPS_EN[id] || fallback || id) : (fallback || id);

@@ -332,7 +332,7 @@
         results: "Resultados del cálculo"
       },
       dashboard: {
-        document_title: "Panel — NutriPlant Pro",
+        document_title: "Panel",
         home: "Inicio",
         hydroponics: "Hidroponía",
         fertigation: "Fertirriego",
@@ -588,7 +588,7 @@
         status_hint_default: "Sincroniza el predio a la nube, luego genera la imagen Pilot.",
         status_hint_first: "Sincroniza el predio a la nube, luego genera la primera imagen Pilot.",
         how_built_label: "Cómo se arma:",
-        how_built_html: "elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo 250 ha</strong> por predio.",
+        how_built_html: "elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo {max_area}</strong> por predio.",
         scale_ndvi_title: "Escala NDVI relativa al predio",
         scale_ndmi_title: "Escala NDMI relativa al predio",
         scale_ndre_title: "Escala NDRE relativa al predio",
@@ -750,7 +750,7 @@
         label_clouds: "Nubes",
         lectura_title: "📈 Lectura Satelital — histórico del predio",
         lectura_credits_title: "Mismo saldo de créditos Radar que Pilot",
-        lectura_intro_html: "Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ {unit} con % de franja). Máximo <strong>250 ha</strong> por predio.",
+        lectura_intro_html: "Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ {unit} con % de franja). Máximo <strong>{max_area}</strong> por predio.",
         lectura_how_built_html: "por periodo elige <strong>1 sola pasada</strong> Sentinel (la más clara; sin mediana ni relleno entre fechas). Misma lógica de periodos (quincenal/mensual; quincena incompleta puede ampliar al mes). Si queda incompleto (&lt;~100% útiles) <strong>igual muestra la imagen</strong> y explica nubosidad + %; solo si casi no hay cobertura (&lt;~5%) no hay imagen y solo el motivo. Clima/riego sí quedan. Las imágenes se generan <strong>en la nube en segundo plano</strong> (igual que Pilot): puedes cerrar y luego pulsar «Mostrar imágenes». <strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.",
         frecuencia: "Frecuencia",
         freq_biweekly: "Quincenal (15 días)",
@@ -1458,7 +1458,7 @@
         results: "Calculation results"
       },
       dashboard: {
-        document_title: "Dashboard — NutriPlant Pro",
+        document_title: "Dashboard",
         home: "Home",
         hydroponics: "Hydroponics",
         fertigation: "Fertigation",
@@ -1714,7 +1714,7 @@
         status_hint_default: "Sync the field to the cloud, then generate the Pilot image.",
         status_hint_first: "Sync the field to the cloud, then generate the first Pilot image.",
         how_built_label: "How it works:",
-        how_built_html: "pick <strong>1 single</strong> Sentinel pass (the clearest over the field), without mixing dates or filling from others. Window 14 → 21 → 30 → 45 d; stop if ~100% useful; otherwise keep the best passes (≥~5%). Layers: NDVI, NDMI, NDRE, RGB and SCL clouds. <strong>Maximum 250 ha</strong> per field.",
+        how_built_html: "pick <strong>1 single</strong> Sentinel pass (the clearest over the field), without mixing dates or filling from others. Window 14 → 21 → 30 → 45 d; stop if ~100% useful; otherwise keep the best passes (≥~5%). Layers: NDVI, NDMI, NDRE, RGB and SCL clouds. <strong>Maximum {max_area}</strong> per field.",
         scale_ndvi_title: "NDVI scale relative to the field",
         scale_ndmi_title: "NDMI scale relative to the field",
         scale_ndre_title: "NDRE scale relative to the field",
@@ -1876,7 +1876,7 @@
         label_clouds: "Clouds",
         lectura_title: "📈 Satellite Reading — field history",
         lectura_credits_title: "Same Radar credit balance as Pilot",
-        lectura_intro_html: "Build a history of the <strong>same field</strong> (2 to 6 periods back) with <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>rainfall</strong> and your <strong>irrigation</strong> (m³ ↔ {unit} with strip %). Maximum <strong>250 ha</strong> per field.",
+        lectura_intro_html: "Build a history of the <strong>same field</strong> (2 to 6 periods back) with <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>rainfall</strong> and your <strong>irrigation</strong> (m³ ↔ {unit} with strip %). Maximum <strong>{max_area}</strong> per field.",
         lectura_how_built_html: "per period pick <strong>1 single</strong> Sentinel pass (the clearest; no median or fill across dates). Same period logic (biweekly/monthly; incomplete biweek may expand to the month). If incomplete (&lt;~100% useful) it <strong>still shows the image</strong> and explains cloudiness + %; only if almost no coverage (&lt;~5%) there is no image and only the reason. Climate/irrigation remain. Images are generated <strong>in the cloud in the background</strong> (like Pilot): you can close and later press “Show images”. <strong>Cost:</strong> 3 credits (4 if field &gt;30 ha) for the whole query.",
         frecuencia: "Frequency",
         freq_biweekly: "Biweekly (15 days)",

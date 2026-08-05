@@ -6,7 +6,10 @@ function fertProgUI() { return window.NpFertigationUI || null; }
 function fertProgT(key, es) { const ui = fertProgUI(); return ui ? ui.t(key, es) : es; }
 function fertProgUnit(kind, fallback) { const ui = fertProgUI(); return ui ? ui.unit(kind) : fallback; }
 function fertProgInputFromSI(value, kind) { const ui = fertProgUI(); return ui ? ui.inputFromSI(value, kind) : String(value); }
-function fertProgResultFromSI(value, kind) { const ui = fertProgUI(); return ui ? ui.resultFromSI(value, kind) : fertiNum(value); }
+function fertProgResultFromSI(value, kind, digits) {
+  const ui = fertProgUI();
+  return ui ? ui.resultFromSI(value, kind, digits) : fertiNum(value, digits == null ? 2 : digits);
+}
 function fertProgToSI(value, kind) { const ui = fertProgUI(); return ui ? ui.toSI(value, kind) : Number(value); }
 function fertProgStage(name) { const ui = fertProgUI(); return ui ? ui.stageName(name) : name; }
 function fertProgMaterial(name) { const ui = fertProgUI(); return ui ? ui.materialName(name) : name; }
@@ -165,6 +168,19 @@ function fertiProgFormat(num, nutrientKey, sKgOpt) {
   }
   const decimals = (nutrientKey && isFertiMicroNutrient(nutrientKey)) ? 3 : 2;
   return isNaN(n) ? (decimals === 3 ? '0.000' : '0.00') : n.toFixed(decimals);
+}
+
+/** Aporte de nutriente en unidades de pantalla (kg/ha o lb/acre), alineado con TOTAL/PDF. */
+function fertiProgNutrientDisplay(num, nutrientKey, sKgOpt) {
+  let n;
+  if (nutrientKey === 'SO4' && sKgOpt !== undefined) {
+    n = fertiMergeSulfurKgDisplay(num, sKgOpt);
+  } else {
+    n = parseFloat(num || 0);
+  }
+  if (isNaN(n)) n = 0;
+  const digits = (nutrientKey && isFertiMicroNutrient(nutrientKey)) ? 3 : 2;
+  return fertProgResultFromSI(n, 'dose_mass_area', digits);
 }
 
 // Modo visual del programa (óxido/elemental)
@@ -851,14 +867,14 @@ function renderFertiWeeks() {
             ${fertiColumns.map(c => `
               <td><input type="number" step="0.0001" value="${fertProgInputFromSI(week.kgByCol?.[c.id]||0, 'dose_mass_area')}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
             `).join('')}
-            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgFormat(week.totals?.[n]||0, n, n === 'SO4' ? (week.totals?.S || 0) : undefined)}</td>`).join('')}
+            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgNutrientDisplay(week.totals?.[n]||0, n, n === 'SO4' ? (week.totals?.S || 0) : undefined)}</td>`).join('')}
           </tr>
         `).join('');
   const totalsRowHtml = `
           <tr class="total-row">
             <td colspan="2" style="text-align:left;font-weight:700;">${fertProgT('total', 'TOTAL')}</td>
             ${fertiColumns.map((c,i)=>`<td><div class="total-value">${fertProgResultFromSI(fertColTotals[i], 'dose_mass_area')}</div><div class="total-label-sm" title="${fertColNames[i]||''}">${(fertColNames[i]||'').slice(0,14)}</div></td>`).join('')}
-            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertProgResultFromSI(fertProgElementalMode ? fertProgFormat(nutTotals[n]||0, n, n === 'SO4' ? (nutTotals.S || 0) : undefined) : (nutTotals[n]||0), 'dose_mass_area')}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
+            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertiProgNutrientDisplay(nutTotals[n]||0, n, n === 'SO4' ? (nutTotals.S || 0) : undefined)}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
           </tr>`;
 
   const timeSelectHtml = `
@@ -1007,8 +1023,12 @@ function updateFertiSummary() {
       const scoped = fertiTable ? fertiTable.querySelector(`#ferti-req-${n}`) : null;
       const el = scoped || document.getElementById(`ferti-req-${n}`) || document.getElementById(`req-${n}`);
       if (el && el.textContent != null) {
-        const v = parseFloat((el.textContent || '').toString().replace(/,/g,'').trim());
-        if (!isNaN(v)) { tmp[n] = v; anyLive = true; }
+        // Celda ya en unidad de presentación (kg/ha o lb/acre) → SI (kg/ha)
+        const vDisplay = parseFloat((el.textContent || '').toString().replace(/,/g, '').trim());
+        if (!isNaN(vDisplay)) {
+          tmp[n] = fertProgToSI(vDisplay, 'dose_mass_area');
+          anyLive = true;
+        }
       }
     });
     if (anyLive) {

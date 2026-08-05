@@ -33,7 +33,7 @@ module.exports = [
         close(granular.toSI(granular.fromSI(sample[1], sample[0]), sample[0]), sample[1], 1e-10);
       });
       assert.equal(granular.unit('dose_mass_area'), 'lb/acre');
-      assert.equal(granular.unit('yield_mass_area'), 'lb/acre');
+      assert.equal(granular.unit('yield_mass_area'), 'short ton/acre');
       assert.equal(granular.unit('extraction_mass_yield'), 'lb/short ton');
     }
   },

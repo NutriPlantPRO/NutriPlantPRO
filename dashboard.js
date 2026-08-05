@@ -109,6 +109,36 @@ function radarT(key, fallback, params) {
   return dashboardT(key, fallback, params);
 }
 
+/** Tope Radar 250 ha; en US customary también acres (≈ 618). */
+function radarMaxAreaLabel(maxHa) {
+  const ha = Number(maxHa) > 0 ? Number(maxHa) : 250;
+  const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+  const us = prefs && prefs.unit_system === 'us_customary';
+  if (!us) return ha + ' ha';
+  let acres = ha * 2.4710538147;
+  try {
+    if (window.NpUnits && typeof window.NpUnits.convert === 'function') {
+      acres = window.NpUnits.convert(ha, 'ha', 'acre');
+    }
+  } catch (e) { /* ignore */ }
+  return ha + ' ha (≈ ' + Math.round(acres) + ' acres)';
+}
+
+function npRefreshRadarMaxAreaI18nParams() {
+  const maxArea = radarMaxAreaLabel(250);
+  document.querySelectorAll('[data-i18n-html="radar.how_built_html"], [data-i18n-html="radar.lectura_intro_html"]').forEach(function (el) {
+    let obj = {};
+    try {
+      const raw = el.getAttribute('data-i18n-params');
+      if (raw) obj = JSON.parse(raw) || {};
+    } catch (e) { obj = {}; }
+    obj.max_area = maxArea;
+    el.setAttribute('data-i18n-params', JSON.stringify(obj));
+  });
+}
+window.radarMaxAreaLabel = radarMaxAreaLabel;
+window.npRefreshRadarMaxAreaI18nParams = npRefreshRadarMaxAreaI18nParams;
+
 function granularT(key, fallback) {
   try {
     if (window.NpGranularUI) return window.NpGranularUI.t(key, fallback);
@@ -728,10 +758,10 @@ function isSidebarMinimized() {
 // ============================
 function sectionTemplate(name) {
   if (name === "Inicio") {
-    // Unidad fija según preferencia global: métrico t/ha · inglés lb/acre (sin selector).
+    // Unidad fija según preferencia global: métrico t/ha · inglés short ton/acre (sin selector).
     const yieldUnitPrimary = (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function')
       ? window.NpAgronomicUnits.unit('yield_mass_area')
-      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'lb/acre' : 't/ha');
+      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'short ton/acre' : 't/ha');
     return `
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -1811,6 +1841,13 @@ function sectionTemplate(name) {
       'radar.coords_placeholder',
       'Formato: lat,lng (una por línea)\nEjemplo:\n19.68090,-103.44290\n19.68120,-103.44180\n19.67990,-103.44120'
     ).replace(/"/g, '&quot;');
+    const radarMaxArea = radarMaxAreaLabel(250);
+    const howBuiltParamsAttr = JSON.stringify({ max_area: radarMaxArea }).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    const howBuiltHtml = rt(
+      'radar.how_built_html',
+      'elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo {max_area}</strong> por predio.',
+      { max_area: radarMaxArea }
+    );
     return `
       <div class="location-container radar-satelital-container">
         <div class="radar-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
@@ -1891,7 +1928,7 @@ function sectionTemplate(name) {
           <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;" data-i18n="radar.how_built_label">${rt('radar.how_built_label', 'Cómo se arma:')}</strong>
-            <span>${rt('radar.how_built_html', 'elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo 250 ha</strong> por predio.')}</span>
+            <span data-i18n-html="radar.how_built_html" data-i18n-params="${howBuiltParamsAttr}">${howBuiltHtml}</span>
           </div>
           <div id="radarDemHint" style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.7);border:1px dashed #94a3b8;">
             <strong style="color:#0f172a;" data-i18n="radar.dem_hint_label">${rt('radar.dem_hint_label', 'Relieve (pendiente):')}</strong>
@@ -2696,6 +2733,7 @@ function npSyncManualLinksLang() {
 window.npSyncManualLinksLang = npSyncManualLinksLang;
 
 window.npHandleDashboardPreferencesChanged = function () {
+  if (typeof npRefreshRadarMaxAreaI18nParams === 'function') npRefreshRadarMaxAreaI18nParams();
   if (window.NpI18n) window.NpI18n.apply(document);
   if (typeof npSyncManualLinksLang === 'function') npSyncManualLinksLang();
   document.querySelectorAll('[data-i18n-title][data-np-tooltip]').forEach(function (el) {
@@ -5950,10 +5988,10 @@ function np_openEditProjectModal(projectId) {
   if (variedadInput) variedadInput.value = projectData.variedad || '';
   if (rendInput) rendInput.value = projectData.rendimientoEsperado || '';
   if (unidadInput) {
-    // Unidad siempre según sistema de medida actual (métrico t/ha · inglés lb/acre).
+    // Unidad siempre según sistema de medida actual (métrico t/ha · inglés short ton/acre).
     const systemUnit = (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function')
       ? window.NpAgronomicUnits.unit('yield_mass_area')
-      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'lb/acre' : 't/ha');
+      : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'short ton/acre' : 't/ha');
     unidadInput.value = systemUnit;
   }
   

@@ -24,7 +24,6 @@ module.exports = [
     run: function () {
       close(units.convert(100, 'kg/ha', 'lb/acre'), 89.21791216, 1e-8);
       close(units.convert(1, 't/ha', 'short ton/acre'), 0.4460895608, 1e-10);
-      close(units.convert(1, 't/ha', 'lb/acre_yield'), 892.1791216, 1e-6);
       close(units.convert(1, 'cm', 'in'), 0.3937007874, 1e-10);
       close(units.convert(1, 'g/cm3', 'lb/ft3'), 62.42796058, 1e-8);
       close(units.convert(1, 'kg', 'lb'), 2.2046226218, 1e-9);
@@ -54,7 +53,7 @@ module.exports = [
     name: 'agronómicas: unidades y formatos siguen preferencias',
     run: function () {
       assert.equal(agronomic.unit('dose_mass_area'), 'lb/acre');
-      assert.equal(agronomic.unit('yield_mass_area'), 'lb/acre');
+      assert.equal(agronomic.unit('yield_mass_area'), 'short ton/acre');
       assert.equal(agronomic.unit('bulk_density'), 'g/cm3');
       assert.equal(agronomic.formatInputFromSI(1.234567, 'mass'), '2.7218');
       assert.match(agronomic.formatResultFromSI(100, 'dose_mass_area'), /^89\.22 lb\/acre$/);

@@ -16,8 +16,7 @@
     dose_mass_area: { canonical: 'kg/ha', metric: 'kg/ha', us_customary: 'lb/acre', resultDigits: 2 },
     volume_area: { canonical: 'm3/ha', metric: 'm3/ha', us_customary: 'US gal/acre', resultDigits: 2 },
     water_depth: { canonical: 'mm', metric: 'mm', us_customary: 'in', resultDigits: 2 },
-    // us_customary id interno lb/acre_yield (símbolo lb/acre); short ton/acre queda disponible en NpUnits.
-    yield_mass_area: { canonical: 't/ha', metric: 't/ha', us_customary: 'lb/acre_yield', resultDigits: 2 },
+    yield_mass_area: { canonical: 't/ha', metric: 't/ha', us_customary: 'short ton/acre', resultDigits: 2 },
     extraction_mass_yield: { canonical: 'kg/t', metric: 'kg/t', us_customary: 'lb/short ton', resultDigits: 2 },
     depth: { canonical: 'cm', metric: 'cm', us_customary: 'in', resultDigits: 2 },
     // Agrónomos siguen usando g/cm³; lb/ft³ es solo equivalencia secundaria en US.
