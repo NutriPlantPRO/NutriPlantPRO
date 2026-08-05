@@ -19,7 +19,8 @@ CREATE TRIGGER tr_plan_pro_ui_prefs_updated
   BEFORE UPDATE ON public.plan_pro_ui_prefs
   FOR EACH ROW EXECUTE PROCEDURE public.plan_pro_set_updated_at();
 
-COMMENT ON TABLE public.plan_pro_ui_prefs IS 'Plan PRO: prefs de UI por admin (ej. tree_collapsed en prefs_json).';
+COMMENT ON TABLE public.plan_pro_ui_prefs IS
+  'Plan PRO: prefs de UI por admin (tree_collapsed, cal_overlay_area_ids, invest_holdings_sort en prefs_json).';
 
 ALTER TABLE public.plan_pro_ui_prefs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.plan_pro_ui_prefs FORCE ROW LEVEL SECURITY;

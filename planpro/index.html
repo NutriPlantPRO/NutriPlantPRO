@@ -12513,7 +12513,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260804fav"></script>
-  <script src="../assets/planpro-invest-portfolio.js?v=20260805pf4"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260805pf5"></script>
   <script>
 (function () {
   'use strict';
@@ -19325,9 +19325,11 @@
     locationFavorites: [],
     locationFavoritesReady: true,
     treeCollapsed: {},
+    investHoldingsSort: { key: 'marketValue', dir: 'desc' },
     planProUiPrefsReady: true,
     planProTreeCollapsedSaveTimer: null,
     planProCalOverlaySaveTimer: null,
+    planProInvestSortSaveTimer: null,
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
     planProBodyHtmlColumn: true,
@@ -25030,11 +25032,58 @@
     if (sanitized.length) state.calOverlayAreaIds = sanitized;
   }
 
+  function planProSanitizeInvestHoldingsSort(raw) {
+    var allowed = {
+      symbol: 1,
+      quantity: 1,
+      price: 1,
+      marketValue: 1,
+      dayChange: 1,
+      gainLoss: 1,
+      targetShares: 1,
+      comments: 1
+    };
+    var key = raw && raw.key != null ? String(raw.key) : 'marketValue';
+    if (!allowed[key]) key = 'marketValue';
+    var dir = raw && raw.dir === 'asc' ? 'asc' : 'desc';
+    return { key: key, dir: dir };
+  }
+
   function planProMergedUiPrefsJson() {
     return {
       tree_collapsed: planProSanitizeTreeCollapsed(state.treeCollapsed || {}),
-      cal_overlay_area_ids: planProSanitizeCalOverlayAreaIds(state.calOverlayAreaIds || [])
+      cal_overlay_area_ids: planProSanitizeCalOverlayAreaIds(state.calOverlayAreaIds || []),
+      invest_holdings_sort: planProSanitizeInvestHoldingsSort(state.investHoldingsSort || {})
     };
+  }
+
+  function planProWriteInvestHoldingsSortLocal(sort) {
+    try {
+      localStorage.setItem(
+        'np_plan_pro_invest_holdings_sort_v1',
+        JSON.stringify(planProSanitizeInvestHoldingsSort(sort || {}))
+      );
+    } catch (eWrite) {}
+  }
+
+  function planProReadInvestHoldingsSortLocal() {
+    try {
+      var raw = localStorage.getItem('np_plan_pro_invest_holdings_sort_v1');
+      if (!raw) return null;
+      return planProSanitizeInvestHoldingsSort(JSON.parse(raw));
+    } catch (eRead) {
+      return null;
+    }
+  }
+
+  function planProScheduleInvestHoldingsSortSave(sort) {
+    state.investHoldingsSort = planProSanitizeInvestHoldingsSort(sort || state.investHoldingsSort);
+    planProWriteInvestHoldingsSortLocal(state.investHoldingsSort);
+    if (state.planProInvestSortSaveTimer) clearTimeout(state.planProInvestSortSaveTimer);
+    state.planProInvestSortSaveTimer = window.setTimeout(function () {
+      state.planProInvestSortSaveTimer = null;
+      planProSaveUiPrefsCloud();
+    }, 450);
   }
 
   function planProScheduleCalOverlayAreaIdsSave() {
@@ -25086,6 +25135,8 @@
     if (local) planProApplyTreeCollapsed(local);
     var localCal = planProReadCalOverlayAreaIdsLocal();
     if (localCal && localCal.length) planProApplyCalOverlayAreaIds(localCal);
+    var localInvSort = planProReadInvestHoldingsSortLocal();
+    if (localInvSort) state.investHoldingsSort = localInvSort;
     if (!state.client || !state.userId) return;
     try {
       var res = await state.client
@@ -25114,6 +25165,11 @@
           planProApplyCalOverlayAreaIds(sanitizedCal);
           planProWriteCalOverlayAreaIdsLocal(sanitizedCal);
         }
+      }
+      var cloudInvSort = res.data.prefs_json.invest_holdings_sort;
+      if (cloudInvSort && typeof cloudInvSort === 'object') {
+        state.investHoldingsSort = planProSanitizeInvestHoldingsSort(cloudInvSort);
+        planProWriteInvestHoldingsSortLocal(state.investHoldingsSort);
       }
     } catch (eLoad) {}
   }
@@ -29323,7 +29379,9 @@
         window.PlanProInvest.setContext({
           client: state.client,
           userId: state.userId,
-          toast: showToast
+          toast: showToast,
+          investHoldingsSort: state.investHoldingsSort,
+          saveInvestHoldingsSort: planProScheduleInvestHoldingsSortSave
         });
       }
       if (window.PlanProInvest && typeof window.PlanProInvest.init === 'function') {

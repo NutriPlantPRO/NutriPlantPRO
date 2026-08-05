@@ -29,6 +29,7 @@ Consultar **empresas, ETFs, índices y criptomonedas** con gráfica **TradingVie
 | Cliente Yahoo (legado / opcional) | `assets/planpro-financial-data-service.js` + `/api/plan-pro-invest` — **ya no** alimenta la gráfica principal |
 | Watchlist | `plan_pro_invest_lists` + `plan_pro_invest_watchlist.list_id` |
 | Portafolio holdings | tabla `plan_pro_invest_holdings` + API `/api/invest-portfolio-extract` (cache local de respaldo) |
+| Orden tabla portafolio | `plan_pro_ui_prefs.prefs_json.invest_holdings_sort` `{ key, dir }` |
 | SQL setup | `supabase-plan-pro-invest-watchlist.sql` + `supabase-plan-pro-invest-lists.sql` + `supabase-plan-pro-invest-holdings.sql` |
 
 **Importante:** no inventes precios; la cotización se ve en el chart de TradingView. Listas ★ = Plan PRO / Supabase.

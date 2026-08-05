@@ -875,26 +875,39 @@
       '%</strong></span>';
   }
 
+  function applySortObject(data) {
+    if (!data || typeof data !== 'object') return;
+    if (data.key) st.sortKey = String(data.key);
+    if (data.dir === 'asc' || data.dir === 'desc') st.sortDir = data.dir;
+  }
+
   function loadSortPrefs() {
+    // 1) Nube vía Plan PRO (plan_pro_ui_prefs.invest_holdings_sort)
+    var ctx = getCtx();
+    if (ctx.investHoldingsSort) {
+      applySortObject(ctx.investHoldingsSort);
+      return;
+    }
+    // 2) Cache local
     try {
       var raw = localStorage.getItem(SORT_STORAGE);
       if (!raw) return;
-      var data = JSON.parse(raw);
-      if (data && data.key) st.sortKey = String(data.key);
-      if (data && (data.dir === 'asc' || data.dir === 'desc')) st.sortDir = data.dir;
+      applySortObject(JSON.parse(raw));
     } catch (e) {
       /* ignore */
     }
   }
 
   function saveSortPrefs() {
+    var payload = { key: st.sortKey, dir: st.sortDir };
     try {
-      localStorage.setItem(
-        SORT_STORAGE,
-        JSON.stringify({ key: st.sortKey, dir: st.sortDir })
-      );
+      localStorage.setItem(SORT_STORAGE, JSON.stringify(payload));
     } catch (e) {
       /* ignore */
+    }
+    var ctx = getCtx();
+    if (typeof ctx.saveInvestHoldingsSort === 'function') {
+      ctx.saveInvestHoldingsSort(payload);
     }
   }
 
