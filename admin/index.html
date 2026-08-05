@@ -12,7 +12,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/N_Hoja_Azul.png">
     <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png">
     <link rel="manifest" href="/admin.webmanifest">
-    <link rel="stylesheet" href="../dashboard.css?v=20260803c">
+    <link rel="stylesheet" href="../dashboard.css?v=20260804a">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js?v=20260803o"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260803n"></script>
@@ -165,6 +165,32 @@
         .btn-admin-login:hover {
             filter: brightness(1.03);
             transform: translateY(-1px);
+        }
+        .admin-login-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 4px;
+        }
+        .btn-admin-to-nutriplant {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            border-radius: 980px;
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            background: rgba(239, 246, 255, 0.95);
+            color: #1d4ed8;
+            font-weight: 650;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .btn-admin-to-nutriplant:hover {
+            background: #dbeafe;
+            border-color: rgba(37, 99, 235, 0.55);
         }
         .admin-login-card .error-message {
             margin-bottom: 12px;
@@ -1598,7 +1624,10 @@
                     <input type="password" id="password" name="password" required>
                 </div>
                 
-                <button type="submit" class="btn-admin-login">Entrar</button>
+                <div class="admin-login-actions">
+                    <button type="submit" class="btn-admin-login">Entrar</button>
+                    <a class="btn-admin-to-nutriplant" href="../login.html">Ir a NutriPlant PRO</a>
+                </div>
             </form>
         </div>
 
@@ -1620,7 +1649,10 @@
                         required
                     />
                 </div>
-                <button type="submit" class="btn-admin-login">Continuar</button>
+                <div class="admin-login-actions">
+                    <button type="submit" class="btn-admin-login">Continuar</button>
+                    <a class="btn-admin-to-nutriplant" href="../login.html">Ir a NutriPlant PRO</a>
+                </div>
             </form>
         </div>
     </div>
@@ -15624,7 +15656,7 @@
         window.closeRadarAdminModal = closeRadarAdminModal;
 
         /** Visor grande para miniaturas NDVI/NDMI del admin (Lectura / Radar). */
-        function openAdminRadarLightbox(url, title, subtitle) {
+        function openAdminRadarLightbox(url, title, subtitle, demSmooth) {
             if (!url) return;
             var overlay = document.getElementById('adminRadarLightbox');
             if (!overlay) {
@@ -15654,7 +15686,17 @@
             var img = overlay.querySelector('#adminRadarLightboxImg');
             var t = overlay.querySelector('#adminRadarLightboxTitle');
             var s = overlay.querySelector('#adminRadarLightboxSub');
-            if (img) { img.src = url; img.alt = title || ''; }
+            if (img) {
+                img.src = url;
+                img.alt = title || '';
+                var titleStr = String(title || '');
+                var isDem =
+                    demSmooth === true ||
+                    /pendiente|altura|slope|elev|relieve|dem/i.test(titleStr);
+                img.className = isDem ? 'np-dem-smooth-img' : '';
+                img.style.filter = isDem ? 'blur(1.35px)' : '';
+                img.style.imageRendering = 'auto';
+            }
             if (t) t.textContent = title || '';
             if (s) s.textContent = subtitle || '';
             overlay.style.display = 'flex';
@@ -16584,8 +16626,8 @@
                     '<div style="font-size:12px;font-weight:700;color:#44403c;margin-bottom:6px;">' + esc(title) + '</div>' +
                     '<button type="button" onclick="openAdminRadarLightbox(' +
                     JSON.stringify(String(url)) + ',' + JSON.stringify(title) + ',' + JSON.stringify(stats || note || '') +
-                    ')" style="display:block;width:100%;padding:0;border:none;background:transparent;cursor:zoom-in;">' +
-                    '<img src="' + safeUrl + '" alt="' + esc(title) + '" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#fafaf9;border:1px solid #e7e5e4;" />' +
+                    ',true)" style="display:block;width:100%;padding:0;border:none;background:transparent;cursor:zoom-in;">' +
+                    '<img class="np-dem-smooth-img" src="' + safeUrl + '" alt="' + esc(title) + '" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#fafaf9;border:1px solid #e7e5e4;image-rendering:auto;filter:blur(1.15px);" />' +
                     '</button>' +
                     '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px;font-size:10px;color:#78716c;">' +
                     '<span style="font-weight:700;">' + esc(lowL) + '</span>' +
@@ -17501,7 +17543,14 @@
                     e.stopPropagation();
                     card.hidden = true;
                 });
-                card.addEventListener('click', function (e) { e.stopPropagation(); });
+                // Los botones del resumen se atienden AQUÍ: L.DomEvent.disableClickPropagation
+                // evita que el clic suba al modal (donde antes estaban los handlers).
+                card.addEventListener('click', function (e) {
+                    if (typeof handleGlobalMapProjectAction === 'function' && handleGlobalMapProjectAction(e)) {
+                        return;
+                    }
+                    e.stopPropagation();
+                });
                 if (window.L && L.DomEvent) {
                     try {
                         L.DomEvent.disableClickPropagation(card);
@@ -17516,6 +17565,54 @@
             try { card.scrollTop = 0; } catch (e) {}
             return card;
         }
+
+        /** Acciones de la ventanita del mapa global (detalle / Sentinel / Radar / Lectura). */
+        function handleGlobalMapProjectAction(e) {
+            if (!e || !e.target || !e.target.closest) return false;
+            var sentinelBtn = e.target.closest('.global-map-sentinel-project');
+            if (sentinelBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var sid = sentinelBtn.getAttribute('data-project-id');
+                if (sid) showSentinelOnGlobalMap(sid, sentinelBtn);
+                return true;
+            }
+            var radarBtn = e.target.closest('.global-map-radar-project');
+            if (radarBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var rid = radarBtn.getAttribute('data-project-id');
+                if (rid && typeof showRadarAdminModal === 'function') showRadarAdminModal(rid);
+                return true;
+            }
+            var lecturaBtn = e.target.closest('.global-map-lectura-project');
+            if (lecturaBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var lid = lecturaBtn.getAttribute('data-project-id');
+                if (lid && typeof showLecturaAdminModal === 'function') showLecturaAdminModal(lid);
+                return true;
+            }
+            var openBtn = e.target.closest('.global-map-open-project');
+            if (openBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var oid = openBtn.getAttribute('data-project-id');
+                if (oid) {
+                    Promise.resolve(viewProjectDetails(oid, 'showAllProjects', [], openBtn))
+                        .then(function () {
+                            closeGlobalMapModal();
+                        })
+                        .catch(function (error) {
+                            console.error('Mapa global → detalle:', error);
+                            alert('No se pudo abrir el proyecto: ' + ((error && error.message) || error));
+                        });
+                }
+                return true;
+            }
+            return false;
+        }
+        window.handleGlobalMapProjectAction = handleGlobalMapProjectAction;
 
         function hideAdminMapFloatCard(containerId) {
             var container = document.getElementById(containerId);
@@ -17662,49 +17759,8 @@
                 globalMapModal.id = 'globalMapModal';
                 globalMapModal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:56000; justify-content:center; align-items:center;';
                 globalMapModal.addEventListener('click', function(e) {
-                    const sentinelBtn = e.target.closest('.global-map-sentinel-project');
-                    if (sentinelBtn) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const id = sentinelBtn.getAttribute('data-project-id');
-                        if (id) showSentinelOnGlobalMap(id, sentinelBtn);
+                    if (typeof handleGlobalMapProjectAction === 'function' && handleGlobalMapProjectAction(e)) {
                         return;
-                    }
-                    const radarBtn = e.target.closest('.global-map-radar-project');
-                    if (radarBtn) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const id = radarBtn.getAttribute('data-project-id');
-                        if (id && typeof showRadarAdminModal === 'function') {
-                            showRadarAdminModal(id);
-                        }
-                        return;
-                    }
-                    const lecturaBtn = e.target.closest('.global-map-lectura-project');
-                    if (lecturaBtn) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const id = lecturaBtn.getAttribute('data-project-id');
-                        if (id && typeof showLecturaAdminModal === 'function') {
-                            showLecturaAdminModal(id);
-                        }
-                        return;
-                    }
-                    const btn = e.target.closest('.global-map-open-project');
-                    if (btn) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const id = btn.getAttribute('data-project-id');
-                        if (id) {
-                            Promise.resolve(viewProjectDetails(id, 'showAllProjects', [], btn))
-                                .then(function() {
-                                    closeGlobalMapModal();
-                                })
-                                .catch(function(error) {
-                                    console.error('Mapa global → detalle:', error);
-                                    alert('No se pudo abrir el proyecto: ' + ((error && error.message) || error));
-                                });
-                        }
                     }
                 });
                 document.body.appendChild(globalMapModal);

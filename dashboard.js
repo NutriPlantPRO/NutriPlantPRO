@@ -294,6 +294,7 @@ function isPhaseOneCachedSection(sectionName) {
     sectionName === 'Fertirriego' ||
     sectionName === 'Hidroponia' ||
     sectionName === 'Enmienda' ||
+    sectionName === 'Ubicación' ||
     sectionName.indexOf('Análisis:') === 0;
 }
 function getScrollPosition() {
@@ -2032,6 +2033,9 @@ function selectSection(name, el) {
   var previousSection = title && title.dataset ? (title.dataset.npSection || currentSectionName) : currentSectionName;
   currentSectionName = name;
   if (previousSection) {
+    if (previousSection === 'Ubicación' && typeof window.np_captureRadarSessionState === 'function') {
+      try { window.np_captureRadarSessionState(); } catch (eRadarCap) { console.warn('radar session capture:', eRadarCap); }
+    }
     var subTab = getCurrentSubTabForSection(previousSection);
     var scrollKey = subTab ? previousSection + '|' + subTab : previousSection;
     sectionScrollPositions[scrollKey] = getScrollPosition();
@@ -2588,12 +2592,39 @@ function selectSection(name, el) {
 
   // Inicializar mapa si es la sección de ubicación
   if (name === "Ubicación") {
-    setTimeout(() => {
-      if (typeof initLocationMap === 'function') initLocationMap();
+    if (reusedCachedDom) {
+      // DOM + mapa conservados al ir a Clima/otra sección: solo refrescar y reponer capa.
       setTimeout(() => {
-        if (typeof np_syncMapLocationFromProject === 'function') np_syncMapLocationFromProject();
-      }, 750);
-    }, 100);
+        try {
+          if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
+            if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+              nutriPlantMap.bindLocationControlButtons();
+            }
+            if (typeof nutriPlantMap.refreshMapView === 'function') {
+              nutriPlantMap.refreshMapView('radar-section-cache');
+            }
+          }
+          if (typeof google !== 'undefined' && google.maps && nutriPlantMap && nutriPlantMap.map) {
+            google.maps.event.trigger(nutriPlantMap.map, 'resize');
+          }
+          if (typeof window.np_restoreRadarSessionState === 'function') {
+            window.np_restoreRadarSessionState({ soft: true });
+          }
+        } catch (eRadarRest) {
+          console.warn('radar cache restore:', eRadarRest);
+        }
+      }, 120);
+    } else {
+      setTimeout(() => {
+        if (typeof initLocationMap === 'function') initLocationMap();
+        setTimeout(() => {
+          if (typeof np_syncMapLocationFromProject === 'function') np_syncMapLocationFromProject();
+          if (typeof window.np_restoreRadarSessionState === 'function') {
+            window.np_restoreRadarSessionState({ soft: false });
+          }
+        }, 750);
+      }, 100);
+    }
   }
 
   if (name === "Enmienda") {
@@ -6158,6 +6189,8 @@ function np_setCurrentProject(id, projectMeta) {
   }
   
   // 🚀 CRÍTICO: Limpiar mapa completamente antes de cambiar proyecto
+  window.__nutriplantRadarSession = null;
+  window.__nutriplantRadarInternalTab = 'poligono';
   if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
     console.log('🧹 Limpiando mapa al cambiar proyecto...');
     if (typeof window.hideRadarNdviOverlay === 'function') {
@@ -13492,10 +13525,21 @@ function loadOnTabChange(tabName) {
       runLocationTab(0);
       setTimeout(() => {
         try {
-          if (typeof window.refreshRadarNdviStatus === 'function') window.refreshRadarNdviStatus();
           if (typeof window.initRadarNdviUi === 'function') window.initRadarNdviUi();
           if (typeof window.initRadarSatelitalTabs === 'function') window.initRadarSatelitalTabs();
           if (typeof window.initLecturaSatelital === 'function') window.initLecturaSatelital();
+          if (typeof window.np_applyRadarInternalTabFromSession === 'function') {
+            window.np_applyRadarInternalTabFromSession();
+          }
+          var statusP =
+            typeof window.refreshRadarNdviStatus === 'function'
+              ? Promise.resolve(window.refreshRadarNdviStatus()).catch(function () {})
+              : Promise.resolve();
+          statusP.then(function () {
+            if (typeof window.np_restoreRadarSessionState === 'function') {
+              window.np_restoreRadarSessionState({ soft: false });
+            }
+          });
         } catch (e) {
           console.warn('Radar NDVI UI:', e);
         }
@@ -16791,7 +16835,7 @@ function createLocationDemMapHTML(demSlope, rt) {
       <div class="report-keep-together" style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:8px;">
         <div style="font-size:12px;font-weight:700;color:#44403c;margin-bottom:6px;">${title}</div>
         <div class="report-radar-frame report-radar-frame--lg" style="border-color:#d6d3d1;background:#fafaf9;">
-          <img src="${dataUrl}" alt="${title}" />
+          <img class="np-dem-smooth-img" src="${dataUrl}" alt="${title}" style="image-rendering:auto;filter:blur(1.1px);" />
         </div>
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px;font-size:9px;color:#78716c;line-height:1.3;">
           <span style="font-weight:700;">${lowL}</span>

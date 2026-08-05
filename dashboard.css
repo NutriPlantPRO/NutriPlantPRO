@@ -7796,6 +7796,15 @@ html.embed-login body {
   display: block;
 }
 
+/* Granular: sin fadeIn al cambiar Requerimiento/Programa (evita parpadeo leve) */
+.nutricion-granular-container .tab-content {
+  animation: none !important;
+  transform: none !important;
+}
+.nutricion-granular-container .tab-content.active {
+  opacity: 1;
+}
+
 /* ===== Análisis de Suelo (pestaña Suelo) ===== */
 .soil-analysis-tab-container { max-width: 100%; }
 
@@ -8615,6 +8624,13 @@ html.embed-login body {
 .radar-ndvi-panel.radar-scale-elev #radarScaleTitle,
 .radar-ndvi-panel.radar-scale-elev #radarNdviHelp {
   color: #1e3a8a;
+}
+
+/* Relieve DEM: suavizar píxeles ~30 m (pendiente / altura) en cards y overlay */
+.np-dem-smooth-img {
+  image-rendering: auto !important;
+  -ms-interpolation-mode: bicubic;
+  filter: blur(1.2px);
 }
 
 .radar-ndvi-panel .radar-pilot-trigger {

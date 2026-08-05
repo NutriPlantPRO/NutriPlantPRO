@@ -308,6 +308,56 @@ async function readDemElevationMosaic(urls, bbox4326, outW, outH) {
 }
 
 /**
+ * Suaviza una malla float (NaN-aware) para que el DEM ~30 m no se vea a bloques.
+ */
+function smoothFloatGrid(src, width, height, passes) {
+  const nPass = Math.min(Math.max(Number(passes) || 2, 1), 6);
+  let a = Float32Array.from(src);
+  let b = new Float32Array(src.length);
+  for (let p = 0; p < nPass; p++) {
+    for (let row = 0; row < height; row++) {
+      for (let col = 0; col < width; col++) {
+        const i = row * width + col;
+        if (!Number.isFinite(a[i])) {
+          b[i] = NaN;
+          continue;
+        }
+        let sum = 0;
+        let n = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const rr = row + dy;
+            const cc = col + dx;
+            if (rr < 0 || rr >= height || cc < 0 || cc >= width) continue;
+            const v = a[rr * width + cc];
+            if (!Number.isFinite(v)) continue;
+            sum += v;
+            n += 1;
+          }
+        }
+        b[i] = n ? sum / n : NaN;
+      }
+    }
+    const tmp = a;
+    a = b;
+    b = tmp;
+  }
+  return a;
+}
+
+/**
+ * Sube resolución + blur ligero del PNG DEM para transiciones continuas al ampliar.
+ */
+async function demRgbaToSmoothPng(rgba, width, height) {
+  const scale = 2;
+  return sharp(rgba, { raw: { width, height, channels: 4 } })
+    .resize(width * scale, height * scale, { kernel: sharp.kernel.lanczos3 })
+    .blur(1.2)
+    .png()
+    .toBuffer();
+}
+
+/**
  * Slope percent from elevation grid (meters). Geographic spacing converted to meters.
  */
 function computeSlopePercent(elev, width, height, bbox4326) {
@@ -388,9 +438,12 @@ async function renderDemSlopePng(dem, opts) {
   if (!bbox4326 || bbox4326.length < 4) throw new Error('BBox DEM inválido');
 
   const { outW, outH } = computeOutputSize(bbox4326, maxDim);
-  const elev = await readDemElevationMosaic(urls, bbox4326, outW, outH);
-  const slope = computeSlopePercent(elev, outW, outH, bbox4326);
-  const elevStats = elevStatsInPolygon(elev, outW, outH, polygon, bbox4326);
+  const elevRaw = await readDemElevationMosaic(urls, bbox4326, outW, outH);
+  const slopeRaw = computeSlopePercent(elevRaw, outW, outH, bbox4326);
+  // Stats con valores crudos; suavizado solo para visualización (sin bloques ~30 m).
+  const elevStats = elevStatsInPolygon(elevRaw, outW, outH, polygon, bbox4326);
+  const elev = smoothFloatGrid(elevRaw, outW, outH, 3);
+  const slope = smoothFloatGrid(slopeRaw, outW, outH, 3);
 
   const elevFallback = {
     ...ELEV_VIS,
@@ -404,11 +457,13 @@ async function renderDemSlopePng(dem, opts) {
   const [slopeRendered, elevRendered] = await Promise.all([
     indexToPngBuffer(slope, SLOPE_VIS, outW, outH, polygon, bbox4326, {
       requireCoverage: false,
-      label: 'Pendiente'
+      label: 'Pendiente',
+      demSmooth: true
     }),
     indexToPngBuffer(elev, elevFallback, outW, outH, polygon, bbox4326, {
       requireCoverage: false,
-      label: 'Altura'
+      label: 'Altura',
+      demSmooth: true
     })
   ]);
 
@@ -416,7 +471,7 @@ async function renderDemSlopePng(dem, opts) {
   for (let row = 0; row < outH; row++) {
     for (let col = 0; col < outW; col++) {
       const i = row * outW + col;
-      const v = slope[i];
+      const v = slopeRaw[i];
       if (!Number.isFinite(v)) continue;
       const [lat, lng] = pixelCenterLatLng(col, row, outW, outH, bbox4326);
       if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
@@ -800,7 +855,10 @@ async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox43
   }
   const relativeVis = computeRelativeVis(indexValues, width, height, polygon, bbox4326, vis);
   const rgba = colorizeIndex(indexValues, relativeVis, width, height, polygon, bbox4326);
-  const buffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  const buffer =
+    opts && opts.demSmooth
+      ? await demRgbaToSmoothPng(rgba, width, height)
+      : await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
   return { buffer, vis: relativeVis, coverage };
 }
 

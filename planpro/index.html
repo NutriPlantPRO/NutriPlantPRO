@@ -607,6 +607,32 @@
     .np-pin-full-logout:hover {
       color: #b91c1c;
     }
+    .np-login-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .np-btn-to-nutriplant {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 980px;
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      background: rgba(239, 246, 255, 0.95);
+      color: #1d4ed8;
+      font-weight: 650;
+      font-size: 13px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .np-btn-to-nutriplant:hover {
+      background: #dbeafe;
+      border-color: rgba(37, 99, 235, 0.55);
+    }
     .np-cloud-sync-btn {
       flex-shrink: 0;
       display: inline-flex;
@@ -11258,7 +11284,10 @@
           <input type="email" id="npLoginEmail" name="email" autocomplete="username" required />
           <label for="npLoginPass">Acceso 2</label>
           <input type="password" id="npLoginPass" name="password" autocomplete="current-password" required />
-          <button type="submit" class="btn btn-primary" id="npBtnLogin">Entrar</button>
+          <div class="np-login-actions">
+            <button type="submit" class="btn btn-primary" id="npBtnLogin">Entrar</button>
+            <a class="np-btn-to-nutriplant" href="../login.html">Ir a NutriPlant PRO</a>
+          </div>
         </form>
       </div>
       <div id="npDenied" class="np-msg err np-hide"></div>
@@ -11279,7 +11308,10 @@
             placeholder=""
             required
           />
-          <button type="submit" class="btn btn-primary" id="npPinSubmit">Continuar</button>
+          <div class="np-login-actions">
+            <button type="submit" class="btn btn-primary" id="npPinSubmit">Continuar</button>
+            <a class="np-btn-to-nutriplant" href="../login.html">Ir a NutriPlant PRO</a>
+          </div>
         </form>
         <button type="button" class="np-pin-full-logout np-hide" id="npPinFullLogout">Cerrar sesión completa</button>
       </div>

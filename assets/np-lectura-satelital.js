@@ -2452,6 +2452,53 @@
   }
 
   // ---------- init ----------
+  function applyRadarInternalTab(tab, opts) {
+    var container = document.querySelector('.radar-satelital-container');
+    if (!container) return false;
+    var target = tab === 'lectura' ? 'lectura' : 'poligono';
+    var btn = container.querySelector('.radar-tab-button[data-radartab="' + target + '"]');
+    if (!btn) return false;
+    container.querySelectorAll('.radar-tab-button').forEach(function (b) {
+      var active = b === btn;
+      b.classList.toggle('active', active);
+      b.style.background = active ? '#dcfce7' : '#fff';
+      b.style.color = active ? '#14532d' : '#475569';
+      b.style.borderColor = active ? '#bbf7d0' : '#e2e8f0';
+    });
+    container.querySelectorAll('.radar-tab-content').forEach(function (c) {
+      c.style.display = (c.id === 'radarTab' + (target === 'lectura' ? 'Lectura' : 'Poligono')) ? 'block' : 'none';
+      c.classList.toggle('active', c.id === 'radarTab' + (target === 'lectura' ? 'Lectura' : 'Poligono'));
+    });
+    window.__nutriplantRadarInternalTab = target;
+    try {
+      if (window.__nutriplantRadarSession) {
+        window.__nutriplantRadarSession.internalTab = target;
+        window.__nutriplantRadarSession.at = Date.now();
+      }
+    } catch (eSess) {}
+    var silent = opts && opts.silent;
+    if (target === 'lectura') {
+      updateCostHint();
+      var st = loadState();
+      lecturaChartPrefsFp = '';
+      destroyLecturaChart();
+      window.__lecturaChartDeferPending = false;
+      if (st) renderAll(st);
+      if (!silent) autoShowLecturaImages();
+    } else if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap && nutriPlantMap.map && typeof google !== 'undefined') {
+      setTimeout(function () { try { google.maps.event.trigger(nutriPlantMap.map, 'resize'); } catch (e) {} }, 60);
+    }
+    return true;
+  }
+
+  function np_applyRadarInternalTabFromSession() {
+    var tab =
+      (window.__nutriplantRadarSession && window.__nutriplantRadarSession.internalTab) ||
+      window.__nutriplantRadarInternalTab ||
+      'poligono';
+    return applyRadarInternalTab(tab, { silent: true });
+  }
+
   function initRadarSatelitalTabs() {
     var container = document.querySelector('.radar-satelital-container');
     if (!container || container.dataset.radarTabsBound === '1') return;
@@ -2459,32 +2506,14 @@
     container.querySelectorAll('.radar-tab-button').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var tab = btn.getAttribute('data-radartab');
-        container.querySelectorAll('.radar-tab-button').forEach(function (b) {
-          var active = b === btn;
-          b.classList.toggle('active', active);
-          b.style.background = active ? '#dcfce7' : '#fff';
-          b.style.color = active ? '#14532d' : '#475569';
-          b.style.borderColor = active ? '#bbf7d0' : '#e2e8f0';
-        });
-        container.querySelectorAll('.radar-tab-content').forEach(function (c) {
-          c.style.display = (c.id === 'radarTab' + (tab === 'lectura' ? 'Lectura' : 'Poligono')) ? 'block' : 'none';
-          c.classList.toggle('active', c.id === 'radarTab' + (tab === 'lectura' ? 'Lectura' : 'Poligono'));
-        });
-        if (tab === 'lectura') {
-          updateCostHint();
-          var st = loadState();
-          // Force hard chart rebuild: init may have run while this tab was display:none (blank Chart.js).
-          lecturaChartPrefsFp = '';
-          destroyLecturaChart();
-          window.__lecturaChartDeferPending = false;
-          if (st) renderAll(st);
-          autoShowLecturaImages();
-        } else if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap && nutriPlantMap.map && typeof google !== 'undefined') {
-          setTimeout(function () { try { google.maps.event.trigger(nutriPlantMap.map, 'resize'); } catch (e) {} }, 60);
-        }
+        applyRadarInternalTab(tab, { silent: false });
       });
     });
+    // Restaurar pestaña interna si se recargó el HTML al volver desde otra sección.
+    np_applyRadarInternalTabFromSession();
   }
+  window.applyRadarInternalTab = applyRadarInternalTab;
+  window.np_applyRadarInternalTabFromSession = np_applyRadarInternalTabFromSession;
   window.initRadarSatelitalTabs = initRadarSatelitalTabs;
 
   function initLecturaSatelital() {

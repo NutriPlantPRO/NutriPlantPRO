@@ -2830,6 +2830,162 @@ let radarGroundOverlay = null;
 let radarPreviousPolygonStyles = null;
 let radarOutlinePolygons = [];
 let radarActiveIndex = 'ndvi';
+/** Sesión Radar: capa/mapa/pestaña al salir a Clima u otra sección lateral */
+window.__nutriplantRadarSession = window.__nutriplantRadarSession || null;
+window.__nutriplantRadarInternalTab = window.__nutriplantRadarInternalTab || 'poligono';
+
+function np_getRadarProjectIdForSession() {
+  try {
+    if (nutriPlantMap && typeof nutriPlantMap.getCurrentProject === 'function') {
+      const p = nutriPlantMap.getCurrentProject();
+      if (p && p.id) return String(p.id);
+    }
+  } catch (e) {}
+  try {
+    if (typeof currentProject !== 'undefined' && currentProject && currentProject.id) {
+      return String(currentProject.id);
+    }
+  } catch (e2) {}
+  return null;
+}
+
+function np_applyRadarSessionCamera(sess) {
+  if (!sess || !nutriPlantMap || !nutriPlantMap.map) return;
+  try {
+    if (
+      sess.mapCenter &&
+      Number.isFinite(Number(sess.mapCenter.lat)) &&
+      Number.isFinite(Number(sess.mapCenter.lng))
+    ) {
+      nutriPlantMap.map.setCenter({
+        lat: Number(sess.mapCenter.lat),
+        lng: Number(sess.mapCenter.lng)
+      });
+    }
+    if (Number.isFinite(Number(sess.mapZoom))) {
+      nutriPlantMap.map.setZoom(Number(sess.mapZoom));
+    }
+  } catch (e) {
+    console.warn('np_applyRadarSessionCamera:', e);
+  }
+}
+
+window.np_captureRadarSessionState = function np_captureRadarSessionState() {
+  let internalTab = window.__nutriplantRadarInternalTab || 'poligono';
+  try {
+    const btn = document.querySelector('.radar-satelital-container .radar-tab-button.active');
+    const t = btn && btn.getAttribute('data-radartab');
+    if (t === 'lectura' || t === 'poligono') internalTab = t;
+  } catch (e) {}
+  window.__nutriplantRadarInternalTab = internalTab;
+
+  let mapCenter = null;
+  let mapZoom = null;
+  try {
+    if (nutriPlantMap && nutriPlantMap.map) {
+      const c = nutriPlantMap.map.getCenter();
+      if (c) mapCenter = { lat: c.lat(), lng: c.lng() };
+      mapZoom = nutriPlantMap.map.getZoom();
+    }
+  } catch (e2) {}
+
+  const overlayVisible = !!(radarGroundOverlay || window.__nutriplantRadarOverlaySource);
+  window.__nutriplantRadarSession = {
+    projectId: np_getRadarProjectIdForSession(),
+    index: np_getSelectedRadarIndex(),
+    overlayVisible,
+    overlaySource: window.__nutriplantRadarOverlaySource || null,
+    internalTab,
+    requestId: np_getSelectedRadarRequestId() || null,
+    mapCenter,
+    mapZoom,
+    at: Date.now()
+  };
+  return window.__nutriplantRadarSession;
+};
+
+window.np_markRadarOverlaySession = function np_markRadarOverlaySession(visible) {
+  const sess = window.__nutriplantRadarSession || {};
+  const projectId = np_getRadarProjectIdForSession() || sess.projectId || null;
+  window.__nutriplantRadarSession = Object.assign({}, sess, {
+    projectId,
+    index: np_getSelectedRadarIndex(),
+    overlayVisible: !!visible,
+    overlaySource: visible ? window.__nutriplantRadarOverlaySource || sess.overlaySource || null : null,
+    requestId: np_getSelectedRadarRequestId() || sess.requestId || null,
+    at: Date.now()
+  });
+};
+
+window.np_restoreRadarSessionState = async function np_restoreRadarSessionState(opts) {
+  const soft = !!(opts && opts.soft);
+  const sess = window.__nutriplantRadarSession;
+  if (!sess || !sess.projectId) return false;
+  const pid = np_getRadarProjectIdForSession();
+  if (!pid || String(pid) !== String(sess.projectId)) return false;
+
+  if (window.__npRadarRestoreBusy) return false;
+  window.__npRadarRestoreBusy = true;
+  try {
+    if (typeof window.np_applyRadarInternalTabFromSession === 'function') {
+      window.np_applyRadarInternalTabFromSession();
+    }
+    if (sess.index) {
+      np_setSelectedRadarIndex(sess.index);
+      np_updateRadarScaleUi(sess.index);
+    }
+
+    const mapReady = typeof np_isLocationMapReady === 'function' && np_isLocationMapReady();
+    if (!mapReady) {
+      window.__npRadarRestoreBusy = false;
+      window.__npRadarRestoreTries = (window.__npRadarRestoreTries || 0) + 1;
+      if (window.__npRadarRestoreTries <= 14) {
+        setTimeout(function () {
+          window.np_restoreRadarSessionState(opts);
+        }, 350);
+      }
+      return false;
+    }
+    window.__npRadarRestoreTries = 0;
+
+    if (soft && radarGroundOverlay) {
+      try {
+        if (typeof google !== 'undefined' && google.maps && nutriPlantMap.map) {
+          google.maps.event.trigger(nutriPlantMap.map, 'resize');
+        }
+        if (nutriPlantMap && typeof nutriPlantMap.refreshMapView === 'function') {
+          nutriPlantMap.refreshMapView('radar-soft-restore');
+        }
+      } catch (eSoft) {}
+      np_applyRadarSessionCamera(sess);
+      return true;
+    }
+
+    if (!sess.overlayVisible) {
+      np_applyRadarSessionCamera(sess);
+      return true;
+    }
+
+    const idx = np_normalizeRadarIndex(sess.index || 'ndvi');
+    const restoreOpts = { skipFit: true, silent: true };
+    if (idx === 'slope' || idx === 'elev') {
+      await window.showRadarDemOnMap(idx, restoreOpts);
+    } else if (sess.overlaySource === 'pilot') {
+      const url = np_getRadarPilotDataUrl(idx);
+      if (url) await np_applyRadarPilotOverlay(url, idx);
+      else await window.showRadarNdviOnMap(restoreOpts);
+    } else {
+      await window.showRadarNdviOnMap(restoreOpts);
+    }
+    np_applyRadarSessionCamera(sess);
+    return true;
+  } catch (e) {
+    console.warn('np_restoreRadarSessionState:', e);
+    return false;
+  } finally {
+    window.__npRadarRestoreBusy = false;
+  }
+};
 
 const RADAR_INDEX_CONFIG = {
   ndvi: {
@@ -4274,8 +4430,15 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   const indexForLabel =
     overlayOpts.index ||
     (isPilotLayer ? np_getPilotRadarIndex() : np_getSelectedRadarIndex());
+  const idxNorm = np_normalizeRadarIndex(indexForLabel);
+  const isDemLayer = idxNorm === 'slope' || idxNorm === 'elev';
   const containerOpacity = isPilotLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
-  const visualFilter = isPilotLayer ? 'none' : 'saturate(1.35) contrast(1.15)';
+  // DEM ~30 m: difuminar bloques. Índices Pilot: sin filtro. Overlay GEE legacy: saturación.
+  const visualFilter = isDemLayer
+    ? 'blur(1.75px) contrast(1.04)'
+    : isPilotLayer
+      ? 'none'
+      : 'saturate(1.35) contrast(1.15)';
   const overlay = new google.maps.OverlayView();
   overlay.onAdd = function() {
     const div = document.createElement('div');
@@ -4293,6 +4456,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Radar ' + np_getRadarIndexConfig(indexForLabel).label;
+    img.className = isDemLayer ? 'np-dem-smooth-img' : '';
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.display = 'block';
@@ -4371,9 +4535,14 @@ async function np_applyRadarPilotOverlay(url, index) {
   if (nutriPlantMap && nutriPlantMap.map && bounds) {
     nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
   }
+  if (typeof window.np_markRadarOverlaySession === 'function') {
+    window.np_markRadarOverlaySession(true);
+  }
 }
 
-async function np_applyRadarOverlay(url, snap, index) {
+async function np_applyRadarOverlay(url, snap, index, opts) {
+  const options = opts && typeof opts === 'object' ? opts : {};
+  const skipFit = !!options.skipFit;
   const hint = document.getElementById('radarStatusHint');
   const cfg = np_getRadarIndexConfig(index || np_getSelectedRadarIndex());
   const overlayCtx = np_getRadarOverlayContext(snap);
@@ -4401,7 +4570,7 @@ async function np_applyRadarOverlay(url, snap, index) {
     overlayCtx.fromSnapshot ? overlayCtx.polygon : null
   );
   np_showRadarLegend(true);
-  if (nutriPlantMap && nutriPlantMap.map && bounds) {
+  if (!skipFit && nutriPlantMap && nutriPlantMap.map && bounds) {
     nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
   }
   if (hint) {
@@ -4409,6 +4578,9 @@ async function np_applyRadarOverlay(url, snap, index) {
     hint.textContent = cfg.shownText + (cap ? ' ' + cap : '');
   }
   np_updateRadarSceneMeta(snap);
+  if (typeof window.np_markRadarOverlaySession === 'function') {
+    window.np_markRadarOverlaySession(true);
+  }
 }
 
 window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
@@ -4917,32 +5089,37 @@ window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
   np_setRadarPolygonMask(false);
   np_showRadarLegend(false);
   np_updateRadarSceneMeta(null);
+  if (typeof window.np_markRadarOverlaySession === 'function') {
+    window.np_markRadarOverlaySession(false);
+  }
 };
 
-window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
+window.showRadarNdviOnMap = async function showRadarNdviOnMap(opts) {
+  const options = opts && typeof opts === 'object' ? opts : {};
+  const silent = !!options.silent;
   if (!nutriPlantMap || !nutriPlantMap.map) {
-    alert('El mapa no está listo.');
+    if (!silent) alert('El mapa no está listo.');
     return;
   }
   const selected = np_getSelectedRadarIndex();
   if (selected === 'slope' || selected === 'elev') {
-    await window.showRadarDemOnMap(selected);
+    await window.showRadarDemOnMap(selected, options);
     return;
   }
   const bounds = np_getPolygonBoundsFromMap();
   const token = await np_getRadarAccessToken();
   if (!token) {
-    alert('No hay sesión. Vuelve a iniciar sesión.');
+    if (!silent) alert('No hay sesión. Vuelve a iniciar sesión.');
     return;
   }
   const proj = nutriPlantMap.getCurrentProject();
   if (!proj || !proj.id) {
-    alert('Selecciona un proyecto.');
+    if (!silent) alert('Selecciona un proyecto.');
     return;
   }
   const requestId = np_getSelectedRadarRequestId();
   if (!requestId) {
-    alert('No hay imágenes Radar guardadas. Genera una tras sincronizar el predio.');
+    if (!silent) alert('No hay imágenes Radar guardadas. Genera una tras sincronizar el predio.');
     return;
   }
   try {
@@ -4957,40 +5134,50 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.message || data.error || 'No se pudo cargar la imagen Radar seleccionada.');
+      if (!silent) alert(data.message || data.error || 'No se pudo cargar la imagen Radar seleccionada.');
       return;
     }
     const selectedIndex = np_getSelectedRadarIndex();
     const snap = data.snapshot || null;
     const overlayCtx = np_getRadarOverlayContext(snap);
     if (!overlayCtx.bounds && !bounds) {
-      alert('Carga un polígono del predio en el mapa o elige una imagen con coordenadas guardadas.');
+      if (!silent) {
+        alert('Carga un polígono del predio en el mapa o elige una imagen con coordenadas guardadas.');
+      }
       return;
     }
     const url = np_getRadarSignedUrl({ snapshot: snap }, selectedIndex);
     if (!url) {
-      alert(
-        'Esta imagen no incluye ' +
-          np_getRadarIndexConfig(selectedIndex).label +
-          '. Prueba otra capa o elige otra fecha en el listado.'
-      );
+      if (!silent) {
+        alert(
+          'Esta imagen no incluye ' +
+            np_getRadarIndexConfig(selectedIndex).label +
+            '. Prueba otra capa o elige otra fecha en el listado.'
+        );
+      }
       return;
     }
-    await np_applyRadarOverlay(url, snap, selectedIndex);
+    await np_applyRadarOverlay(url, snap, selectedIndex, options);
+    if (typeof window.np_markRadarOverlaySession === 'function') {
+      window.np_markRadarOverlaySession(true);
+    }
   } catch (e) {
     console.error('Radar NDVI view:', e);
-    alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver imagen.');
+    if (!silent) alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver imagen.');
   }
 };
 
-window.showRadarDemOnMap = async function showRadarDemOnMap(indexOverride) {
+window.showRadarDemOnMap = async function showRadarDemOnMap(indexOverride, opts) {
+  const options = opts && typeof opts === 'object' ? opts : {};
+  const silent = !!options.silent;
+  const skipFit = !!options.skipFit;
   if (!nutriPlantMap || !nutriPlantMap.map) {
-    alert('El mapa no está listo.');
+    if (!silent) alert('El mapa no está listo.');
     return;
   }
   const bounds = np_getPolygonBoundsFromMap();
   if (!bounds) {
-    alert('Carga un polígono del predio en el mapa.');
+    if (!silent) alert('Carga un polígono del predio en el mapa.');
     return;
   }
   let idx = np_normalizeRadarIndex(indexOverride != null ? indexOverride : np_getSelectedRadarIndex());
@@ -5022,12 +5209,14 @@ window.showRadarDemOnMap = async function showRadarDemOnMap(indexOverride) {
     }
   }
   if (!url) {
-    alert(
-      np_radarT(
-        'radar.dem_missing_alert',
-        'Aún no hay relieve generado. Pulsa «Generar relieve» (no usa créditos Radar).'
-      )
-    );
+    if (!silent) {
+      alert(
+        np_radarT(
+          'radar.dem_missing_alert',
+          'Aún no hay relieve generado. Pulsa «Generar relieve» (no usa créditos Radar).'
+        )
+      );
+    }
     return;
   }
   np_setSelectedRadarIndex(idx);
@@ -5044,8 +5233,11 @@ window.showRadarDemOnMap = async function showRadarDemOnMap(indexOverride) {
   np_setRadarPolygonMask(true, null);
   np_showRadarLegend(true);
   window.__nutriplantRadarOverlaySource = 'dem';
-  if (nutriPlantMap.map && bounds) {
+  if (!skipFit && nutriPlantMap.map && bounds) {
     nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
+  }
+  if (typeof window.np_markRadarOverlaySession === 'function') {
+    window.np_markRadarOverlaySession(true);
   }
   const dem = window.__nutriplantRadarDem;
   const meta = dem && dem.dem_meta ? dem.dem_meta : null;
@@ -5746,6 +5938,11 @@ function initLocationMap() {
   if (nutriPlantMap) {
     console.log('🗑️ Eliminando instancia previa del mapa...');
     try {
+      // Soltar overlay Radar sin borrar la sesión (se restaura al volver a la sección).
+      if (radarGroundOverlay) {
+        try { radarGroundOverlay.setMap(null); } catch (eOv) {}
+        radarGroundOverlay = null;
+      }
       const currentMapElement = document.getElementById('map');
       if (nutriPlantMap.polygon) {
         nutriPlantMap.polygon.setMap(null);
