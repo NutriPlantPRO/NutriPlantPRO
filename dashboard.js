@@ -7161,13 +7161,17 @@ function selectGranularSubTab(tabName) {
       return;
     }
 
-    // Mismo criterio que Fertirriego / Hidroponía: guardar antes de cambiar subpestaña
-    // (requerimiento: cancela debounce y persiste; programa: sync DOM + applications).
+    // Guardar antes de cambiar subpestaña solo si ya hubo edición o hidratación.
+    // Force-save con DOM fresco (maíz + yield vacío) pisaba cultivo/rendimiento guardados.
     try {
-      if (typeof window.saveGranularRequirementsImmediate === 'function') {
-        window.saveGranularRequirementsImmediate({ force: true });
-      } else if (typeof window.saveGranularRequirements === 'function') {
-        window.saveGranularRequirements({ force: true });
+      const granularDirty = typeof window.isGranularRequirementsDirty === 'function' && window.isGranularRequirementsDirty();
+      const granularHydrated = typeof window.isGranularRequirementsHydrated === 'function' && window.isGranularRequirementsHydrated();
+      if (granularDirty || granularHydrated) {
+        if (typeof window.saveGranularRequirementsImmediate === 'function') {
+          window.saveGranularRequirementsImmediate({ force: true });
+        } else if (typeof window.saveGranularRequirements === 'function') {
+          window.saveGranularRequirements({ force: true });
+        }
       }
       if (typeof window.saveApplications === 'function') {
         window.saveApplications();

@@ -113,6 +113,15 @@ let granularReqDirty = false;
 let granularReqAutosaveInterval = null;
 // CRÍTICO: Bandera para evitar recálculos automáticos durante la carga de valores guardados
 let isGranularLoading = false;
+// Evita force-save con HTML fresco (maíz + yield vacío) antes de hidratar el proyecto.
+let granularReqHydratedProjectId = null;
+
+function isGranularRequirementsHydrated(projectId) {
+  const pid = projectId || getCurrentProjectId();
+  return !!(pid && granularReqHydratedProjectId != null && String(granularReqHydratedProjectId) === String(pid));
+}
+window.isGranularRequirementsHydrated = isGranularRequirementsHydrated;
+window.isGranularRequirementsDirty = function() { return !!granularReqDirty; };
 function flushGranularRequirementsIfDirty(){
   try {
     if (granularReqDirty) {
@@ -1135,10 +1144,16 @@ function getCurrentProjectId() {
 function rememberGranularUIState() {
   try {
     const pid = getCurrentProjectId(); if (!pid) return;
-    const cropType = document.getElementById('granularRequerimientoCropType')?.value || '';
-    const targetYield = granularReadYieldSI(document.getElementById('granularRequerimientoTargetYield'));
+    let cropType = document.getElementById('granularRequerimientoCropType')?.value || '';
+    let targetYield = granularReadYieldSI(document.getElementById('granularRequerimientoTargetYield'));
     // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
     const k = `nutriplant_project_${pid}`; const pd = JSON.parse(localStorage.getItem(k) || '{}');
+    const prev = (pd.granularLastUI && typeof pd.granularLastUI === 'object') ? pd.granularLastUI : null;
+    // No pisar lastUI bueno con vacío si aún no hay edición del usuario.
+    if (!cropType && prev && prev.cropType) cropType = prev.cropType;
+    if (targetYield == null && prev && prev.targetYield != null && !granularReqDirty) {
+      targetYield = prev.targetYield;
+    }
     pd.granularLastUI = { cropType, targetYield }; localStorage.setItem(k, JSON.stringify(pd));
     // También guardar en esquema unificado
     try { granUnifiedMerge(obj => { obj.granular = obj.granular || {}; obj.granular.lastUI = { cropType, targetYield }; }); } catch {}
@@ -1198,6 +1213,12 @@ function saveGranularRequirements(options = {}) {
       return;
     }
 
+    // Force-save antes de hidratar (DOM en defaults) pisaba cultivo/rendimiento guardados.
+    if (!isGranularRequirementsHydrated(projectId) && !granularReqDirty) {
+      console.debug('⏭️ saveGranularRequirements omitido (aún no hidratado para este proyecto)');
+      return;
+    }
+
     const cropEl = document.getElementById('granularRequerimientoCropType');
     const yieldEl = document.getElementById('granularRequerimientoTargetYield');
     const tableContainer = document.getElementById('granularRequerimientoTableContainer');
@@ -1208,8 +1229,8 @@ function saveGranularRequirements(options = {}) {
       return;
     }
 
-    const cropType = cropEl.value || '';
-    const targetYield = granularReadYieldSI(yieldEl);
+    let cropType = cropEl.value || '';
+    let targetYield = granularReadYieldSI(yieldEl);
     
     const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
     const adjustment = {};
@@ -1253,6 +1274,14 @@ function saveGranularRequirements(options = {}) {
     if (!hasUI && !existingData) {
       console.warn('⚠️ Guardado omitido: UI de Granular no disponible y no hay datos existentes.');
       return;
+    }
+
+    // Sin edición del usuario: no dejar que el HTML fresco (maíz + yield vacío) pise el núcleo guardado.
+    if (existingData && !granularReqDirty) {
+      if (existingData.cropType) cropType = existingData.cropType;
+      if (existingData.targetYield != null) targetYield = existingData.targetYield;
+    } else if (existingData && !cropType && existingData.cropType) {
+      cropType = existingData.cropType;
     }
 
     // 🚀 CRÍTICO: Elegir modo confiable según disponibilidad
@@ -2086,6 +2115,7 @@ function loadGranularRequirements(retryCount = 0) {
     if (lastGranularProjectIdLoaded && lastGranularProjectIdLoaded !== projectId) {
       console.log('🔄 Cambio de proyecto detectado en Granular. Limpiando estado runtime...');
       resetGranularRuntimeState();
+      granularReqHydratedProjectId = null;
     }
     lastGranularProjectIdLoaded = projectId;
     let requirementData = null;
@@ -2275,6 +2305,29 @@ function loadGranularRequirements(retryCount = 0) {
       }
     }
 
+    // Recuperar cultivo/rendimiento desde lastUI si requirements llegó incompleto (wipe previo).
+    try {
+      let lastUI = null;
+      if (window.projectStorage) {
+        const gSec = window.projectStorage.loadSection('granular', projectId);
+        if (gSec && gSec.lastUI) lastUI = gSec.lastUI;
+      }
+      if (!lastUI) {
+        const rawUI = localStorage.getItem(`nutriplant_project_${projectId}`);
+        if (rawUI) {
+          const oUI = JSON.parse(rawUI);
+          lastUI = (oUI && oUI.granular && oUI.granular.lastUI) || oUI.granularLastUI || null;
+        }
+      }
+      if (lastUI && typeof lastUI === 'object' && (lastUI.cropType || lastUI.targetYield != null)) {
+        if (!requirementData) requirementData = {};
+        if (!requirementData.cropType && lastUI.cropType) requirementData.cropType = lastUI.cropType;
+        if (requirementData.targetYield == null && lastUI.targetYield != null) {
+          requirementData.targetYield = lastUI.targetYield;
+        }
+      }
+    } catch (e) {}
+
     // REGLA: Si hay datos guardados, aplicarlos. Si no, usar valores precargados
     if (requirementData) {
       const select = document.getElementById('granularRequerimientoCropType');
@@ -2438,6 +2491,7 @@ function loadGranularRequirements(retryCount = 0) {
     } else {
       console.log('✅ Requerimientos de nutrición granular cargados (sin datos guardados - usando precargados)');
     }
+    granularReqHydratedProjectId = projectId;
   } catch (error) {
     console.error('❌ Error cargando requerimientos de nutrición granular:', error);
     // CRÍTICO: Asegurar que la función esté disponible incluso si hay error
