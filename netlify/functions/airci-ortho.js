@@ -312,8 +312,6 @@ exports.handler = async function handler(event) {
         pctVsMean: t.pctVsMean,
         confidence: t.confidence != null ? t.confidence : null,
         sem: t.sem,
-        semAbs: t.semAbs || null,
-        pctVsTarget: t.pctVsTarget != null ? t.pctVsTarget : null,
         matchStatus: t.matchStatus || null,
         deltaAreaPx: t.deltaAreaPx != null ? t.deltaAreaPx : null,
         deltaAreaM2: t.deltaAreaM2 != null ? t.deltaAreaM2 : null,

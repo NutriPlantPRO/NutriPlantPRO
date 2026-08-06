@@ -517,70 +517,6 @@
     return { key: 'azul', label: 'Por encima', color: '#2563eb', fill: '#3b82f699' };
   }
 
-  /**
-   * Semáforo vs área objetivo (m²). Misma paleta que el relativo.
-   * pct = (área − objetivo) / objetivo × 100
-   */
-  function semaforoVsTarget(areaM2, targetM2) {
-    var a = Number(areaM2);
-    var t = Number(targetM2);
-    if (!Number.isFinite(a) || !Number.isFinite(t) || t <= 0) {
-      return null;
-    }
-    var pct = ((a - t) / t) * 100;
-    if (pct < -45) {
-      return {
-        key: 'rojo',
-        label: 'Muy bajo',
-        color: '#dc2626',
-        fill: '#dc262699',
-        pctVsTarget: pct
-      };
-    }
-    if (pct < -15) {
-      return {
-        key: 'amarillo',
-        label: 'Por debajo',
-        color: '#ca8a04',
-        fill: '#eab30899',
-        pctVsTarget: pct
-      };
-    }
-    if (pct <= 15) {
-      return {
-        key: 'verde',
-        label: 'En objetivo',
-        color: '#16a34a',
-        fill: '#22c55e99',
-        pctVsTarget: pct
-      };
-    }
-    return {
-      key: 'azul',
-      label: 'Por encima',
-      color: '#2563eb',
-      fill: '#3b82f699',
-      pctVsTarget: pct
-    };
-  }
-
-  /** Aplica semAbs / pctVsTarget a cada árbol (mutates). */
-  function applyTargetSem(trees, targetM2) {
-    var t = Number(targetM2);
-    var ok = Number.isFinite(t) && t > 0;
-    (trees || []).forEach(function (tree) {
-      if (!ok || tree.areaM2 == null || !Number.isFinite(Number(tree.areaM2))) {
-        tree.semAbs = null;
-        tree.pctVsTarget = null;
-        return;
-      }
-      var sem = semaforoVsTarget(tree.areaM2, t);
-      tree.semAbs = sem;
-      tree.pctVsTarget = sem ? sem.pctVsTarget : null;
-    });
-    return trees;
-  }
-
   function haversineM(lat1, lon1, lat2, lon2) {
     var R = 6371000;
     var toRad = Math.PI / 180;
@@ -1564,8 +1500,6 @@
   global.AirCICanopy = {
     analyzeCanopies: analyzeCanopies,
     semaforoClass: semaforoClass,
-    semaforoVsTarget: semaforoVsTarget,
-    applyTargetSem: applyTargetSem,
     matchTreesAcrossFlights: matchTreesAcrossFlights,
     deltaSemClass: deltaSemClass,
     haversineM: haversineM,

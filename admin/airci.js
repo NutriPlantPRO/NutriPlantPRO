@@ -32,7 +32,6 @@
   var saveHint = document.getElementById('aciSaveHint');
   var saveTimer = null;
   var cloudSyncTimer = null;
-  var targetSemTimer = null;
 
   var map = null;
   var rasterLayer = null;
@@ -48,8 +47,6 @@
   var activeLayer = 'ortho'; // compat: última capa tocada
   var layerOn = { ortho: true, copas: false, semaforo: false, numeros: false };
   var activeSemFilter = 'all';
-  /** 'rel' = Z del lote · 'abs' = vs área objetivo m² */
-  var activeSemMode = 'rel';
   /** Filtrar por cambio vs vuelo anterior */
   var activeDeltaFilter = 'all';
   /** sem | delta | pheno */
@@ -381,7 +378,6 @@
       panel.hidden = true;
       return;
     }
-    applyTargetToCurrentTrees();
     var s = enrichStatsFromTrees(result.stats || {}, result.trees);
     var cover = s.coverPct != null ? Number(s.coverPct) : null;
     var bare =
@@ -537,48 +533,6 @@
       }
     ];
 
-    var targetM2 = getTargetM2();
-    if (targetM2 != null) {
-      var onTarget = 0;
-      var pctSum = 0;
-      var pctN = 0;
-      result.trees.forEach(function (t) {
-        if (t.semAbs && t.semAbs.key === 'verde') onTarget += 1;
-        if (t.pctVsTarget != null && Number.isFinite(Number(t.pctVsTarget))) {
-          pctSum += Number(t.pctVsTarget);
-          pctN += 1;
-        }
-      });
-      var meanPctObj = pctN ? pctSum / pctN : null;
-      rows.push({
-        label: 'Área objetivo (estándar)',
-        value: targetM2.toFixed(1) + ' m²',
-        note: hasScale
-          ? 'Meta de copa del cultivo (editable en datos del predio)'
-          : 'Definida, pero sin escala geo no se clasifica en m²',
-        cls: 'aci-sum--accent'
-      });
-      if (hasScale && pctN) {
-        rows.push({
-          label: 'Copas en objetivo (±15%)',
-          value:
-            onTarget.toLocaleString('es-MX') +
-            ' · ' +
-            ((onTarget / result.trees.length) * 100).toFixed(1) +
-            '%',
-          note: 'Semáforo absoluto vs ' + targetM2.toFixed(1) + ' m²',
-          cls: 'aci-sum--accent'
-        });
-        rows.push({
-          label: 'Media vs objetivo',
-          value:
-            (meanPctObj >= 0 ? '+' : '') + meanPctObj.toFixed(1) + '%',
-          note: 'Promedio de Δ% de todas las copas vs el estándar',
-          cls: meanPctObj < -15 ? 'aci-sum--warn' : 'aci-sum--accent'
-        });
-      }
-    }
-
     var match = s.match || (result.stats && result.stats.match);
     if (match && match.hasHistory) {
       rows.push({
@@ -702,12 +656,10 @@
     canopyLabelLayer = null;
     canopyResult = null;
     activeSemFilter = 'all';
-    activeSemMode = 'rel';
     activeDeltaFilter = 'all';
     paintMode = 'sem';
     phenoPaintKey = 'dom';
     activePhenoFilter = 'all';
-    syncSemModeUi();
     var histPanel = document.getElementById('aciHistoryPanel');
     if (histPanel) histPanel.hidden = true;
     var phenoPanel = document.getElementById('aciPhenoPanel');
@@ -861,103 +813,8 @@
     return canopyResult && Array.isArray(canopyResult.trees) ? canopyResult.trees : [];
   }
 
-  function getTargetM2() {
-    var el = document.querySelector('[data-meta="target_m2"]');
-    if (!el) return null;
-    var v = Number(String(el.value || '').replace(',', '.').trim());
-    return Number.isFinite(v) && v > 0 ? v : null;
-  }
-
-  function canUseAbsSem() {
-    if (getTargetM2() == null) return false;
-    return getAllTrees().some(function (t) {
-      return t.areaM2 != null && Number.isFinite(Number(t.areaM2));
-    });
-  }
-
   function treeActiveSem(t) {
-    if (!t) return null;
-    if (activeSemMode === 'abs' && t.semAbs) return t.semAbs;
-    return t.sem || null;
-  }
-
-  function applyTargetToCurrentTrees() {
-    if (!canopyResult || !Array.isArray(canopyResult.trees)) return;
-    if (window.AirCICanopy && typeof AirCICanopy.applyTargetSem === 'function') {
-      AirCICanopy.applyTargetSem(canopyResult.trees, getTargetM2());
-    }
-  }
-
-  function syncSemModeUi() {
-    var absOk = canUseAbsSem();
-    if (activeSemMode === 'abs' && !absOk) activeSemMode = 'rel';
-    document.querySelectorAll('[data-sem-mode]').forEach(function (btn) {
-      var m = btn.getAttribute('data-sem-mode');
-      btn.classList.toggle('is-active', m === activeSemMode);
-      if (m === 'abs') {
-        btn.disabled = !absOk;
-        btn.title = absOk
-          ? 'Clasifica cada copa vs el área objetivo (m²)'
-          : 'Define área objetivo (m²) y usa un GeoTIFF con escala';
-      }
-    });
-    var hint = document.getElementById('aciSemModeHint');
-    if (hint) {
-      hint.textContent =
-        activeSemMode === 'abs'
-          ? 'Modo: vs área objetivo (' +
-            getTargetM2() +
-            ' m²). Clic en fila/tarjeta para filtrar mapa y detalle.'
-          : 'Modo: vs promedio del lote (Z). Clic en fila/tarjeta para filtrar mapa y detalle.';
-    }
-    var title = document.getElementById('aciSemCompareTitle');
-    if (title) {
-      title.textContent =
-        activeSemMode === 'abs'
-          ? 'Comparación vs objetivo m²'
-          : 'Comparación por semáforo (Z del lote)';
-    }
-    document.querySelectorAll('[data-sem="verde"]').forEach(function (btn) {
-      var em = btn.querySelector('[data-sem-count="verde"]');
-      var countHtml = em ? em.outerHTML : '';
-      var label = activeSemMode === 'abs' ? 'En objetivo ' : 'Promedio ';
-      btn.innerHTML = label + countHtml;
-      btn.title =
-        activeSemMode === 'abs'
-          ? 'Clic: ver solo en objetivo (±15%)'
-          : 'Clic: ver solo promedio';
-    });
-  }
-
-  function refreshTargetSemViews() {
-    applyTargetToCurrentTrees();
-    syncSemModeUi();
-    syncSemLegend();
-    applySemFilterStyles();
-    if (canopyResult) {
-      renderAnalysisSummary(canopyResult);
-      renderCanopyTable(treesMatchingSem(activeSemFilter));
-    } else {
-      renderSemBreakdown([]);
-    }
-  }
-
-  function setSemMode(mode) {
-    if (mode !== 'abs' && mode !== 'rel') mode = 'rel';
-    if (mode === 'abs' && !canUseAbsSem()) {
-      setMapStatus('Define área objetivo (m²) y usa TIFF con escala', 'error');
-      return;
-    }
-    if (mode === activeSemMode) return;
-    activeSemMode = mode;
-    activeSemFilter = 'all';
-    refreshTargetSemViews();
-    setMapStatus(
-      mode === 'abs'
-        ? 'Semáforo vs objetivo ' + getTargetM2() + ' m²'
-        : 'Semáforo vs lote (Z)',
-      'ok'
-    );
+    return t && t.sem ? t.sem : null;
   }
 
   function treesMatchingSem(key) {
@@ -1051,23 +908,15 @@
         btn.classList.remove('is-empty');
       }
     });
-    syncSemModeUi();
   }
 
   function buildSemBreakdown(trees) {
-    var metaRel = {
+    var meta = {
       rojo: { label: 'Muy bajo', hint: 'Z < −1.5' },
       amarillo: { label: 'Por debajo', hint: '−1.5 ≤ Z < −0.5' },
       verde: { label: 'Promedio', hint: '−0.5 ≤ Z ≤ +0.5' },
       azul: { label: 'Por encima', hint: 'Z > +0.5' }
     };
-    var metaAbs = {
-      rojo: { label: 'Muy bajo', hint: '< −45% vs obj.' },
-      amarillo: { label: 'Por debajo', hint: '−45% … −15%' },
-      verde: { label: 'En objetivo', hint: '±15% vs obj.' },
-      azul: { label: 'Por encima', hint: '> +15% vs obj.' }
-    };
-    var meta = activeSemMode === 'abs' ? metaAbs : metaRel;
     var keys = ['rojo', 'amarillo', 'verde', 'azul'];
     var stats =
       canopyResult && canopyResult.stats
@@ -1619,11 +1468,6 @@
           ? Math.round(Number(t.confidence))
           : null;
       var sem = t.sem || { key: 'verde', label: '—' };
-      var semAbs = t.semAbs;
-      var pctObj =
-        t.pctVsTarget != null && Number.isFinite(Number(t.pctVsTarget))
-          ? Number(t.pctVsTarget)
-          : null;
       var confCls =
         conf == null
           ? ''
@@ -1654,7 +1498,7 @@
         pct.toFixed(1) +
         '%</td><td>' +
         (perc != null && Number.isFinite(perc) ? Math.round(perc) : '—') +
-        '</td><td title="Desvío estándar vs promedio del lote (z-score)">' +
+        '</td><td title="Desvío estándar vs promedio del predio (z-score)">' +
         z.toFixed(2) +
         '</td><td class="' +
         confCls +
@@ -1664,15 +1508,7 @@
         sem.key +
         '">' +
         sem.label +
-        '</span></td><td>' +
-        (semAbs
-          ? '<span class="aci-badge-sem ' + semAbs.key + '">' + semAbs.label + '</span>'
-          : '—') +
-        '</td><td title="Δ % vs área objetivo">' +
-        (pctObj != null
-          ? (pctObj >= 0 ? '+' : '') + pctObj.toFixed(1) + '%'
-          : '—') +
-        '</td><td title="Cambio de área vs vuelo anterior">' +
+        '</span></td><td title="Cambio de área vs vuelo anterior">' +
         (t.deltaAreaM2 != null
           ? fmtNum(t.deltaAreaM2, 2)
           : t.deltaAreaPx != null
@@ -1771,7 +1607,6 @@
       } catch (e2) {}
     }
     canopyResult = result;
-    applyTargetToCurrentTrees();
     canopyOutlineLayer = L.layerGroup();
     canopyFillLayer = L.layerGroup();
     canopyLabelLayer = L.layerGroup();
@@ -2730,18 +2565,26 @@
     var meta = collectMeta();
     var titleEl = document.getElementById('aciOpenTitle');
     var pathEl = document.getElementById('aciOpenPath');
-    var title = meta.title || 'Análisis sin título';
-    var agricola = meta.agricola || 'Sin agrícola';
-    var predio = meta.predio || 'Sin predio/rama';
+    var title = (meta.title || '').trim() || 'Análisis sin título';
+    var agricola = (meta.agricola || '').trim();
+    var predio = (meta.predio || '').trim();
     if (titleEl) titleEl.textContent = title;
-    if (pathEl) pathEl.textContent = agricola + ' → ' + predio + ' · id ' + getSiteId().slice(0, 8);
+    if (pathEl) {
+      var parts = [];
+      if (agricola) parts.push(agricola);
+      if (predio) parts.push(predio);
+      parts.push(title);
+      var path = parts.join(' → ');
+      var idShort = getSiteId().slice(0, 8);
+      pathEl.textContent = path + (idShort ? ' · id ' + idShort : '');
+    }
   }
 
   function buildProjectsTree(sites) {
     var tree = Object.create(null);
     (sites || []).forEach(function (s) {
       var ag = (s.agricola || '').trim() || 'Sin agrícola';
-      var pr = (s.predio || '').trim() || 'Sin predio / rama';
+      var pr = (s.predio || '').trim() || 'Sin predio';
       if (!tree[ag]) tree[ag] = Object.create(null);
       if (!tree[ag][pr]) tree[ag][pr] = [];
       tree[ag][pr].push(s);
@@ -3167,7 +3010,6 @@
       cultivo: '',
       variedad: '',
       edad: '',
-      target_m2: '',
       nota: ''
     };
   }
@@ -3873,17 +3715,9 @@
   document.querySelectorAll('[data-meta]').forEach(function (el) {
     el.addEventListener('input', function () {
       scheduleSave();
-      if (el.getAttribute('data-meta') === 'target_m2') {
-        clearTimeout(targetSemTimer);
-        targetSemTimer = setTimeout(refreshTargetSemViews, 280);
-      }
     });
     el.addEventListener('change', function () {
       scheduleSave();
-      if (el.getAttribute('data-meta') === 'target_m2') {
-        clearTimeout(targetSemTimer);
-        refreshTargetSemViews();
-      }
     });
   });
 
@@ -3891,15 +3725,6 @@
   var detectModelEl = document.getElementById('aciDetectModel');
   if (detectModelEl) {
     detectModelEl.addEventListener('change', persistDetectModelChoice);
-  }
-
-  var semModeBar = document.getElementById('aciSemModeBar');
-  if (semModeBar) {
-    semModeBar.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('[data-sem-mode]') : null;
-      if (!btn || btn.disabled) return;
-      setSemMode(btn.getAttribute('data-sem-mode'));
-    });
   }
 
   var deltaFilterEl = document.getElementById('aciDeltaFilter');

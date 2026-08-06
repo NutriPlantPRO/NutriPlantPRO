@@ -90,7 +90,7 @@
           <div class="aci-projects__head">
             <div>
               <strong>Proyectos AirCI</strong>
-              <span>Agrícola → predio/rama → análisis · solo AirCI</span>
+              <span>Agrícola → predio → análisis · solo AirCI</span>
             </div>
             <div class="aci-projects__actions">
               <button type="button" class="aci-btn aci-btn--enter" id="aciNewProjectBtn">＋ Nuevo análisis</button>
@@ -142,13 +142,6 @@
               <label for="aciEdad">Edad</label>
               <input id="aciEdad" type="text" placeholder="Años" data-meta="edad" autocomplete="off">
             </div>
-          </div>
-          <div class="aci-meta-row aci-meta-row--target">
-            <div class="aci-field aci-field--target">
-              <label for="aciTargetM2">Área objetivo (m²)</label>
-              <input id="aciTargetM2" type="number" min="0" step="0.1" placeholder="ej. 12" data-meta="target_m2" inputmode="decimal" title="Estándar de copa del cultivo (m² por árbol)">
-            </div>
-            <p class="aci-target-hint">Estándar agronómico del cultivo. Con GeoTIFF a escala activa el semáforo <strong>vs objetivo</strong> (además del Z del lote).</p>
           </div>
           <div class="aci-field aci-field--nota">
             <label for="aciNota">Nota / comentario</label>
@@ -249,20 +242,15 @@
         <p class="aci-orchard-lead">
           Con miles de árboles el análisis útil es del <strong>lote completo</strong>: cobertura, variación y semáforo.
           La <strong>cobertura %</strong> siempre se calcula; <strong>ha, m² y densidad</strong> solo si el GeoTIFF está georreferenciado.
-          Define un <strong>área objetivo (m²)</strong> en datos del predio para el semáforo absoluto vs estándar del cultivo.
+          El semáforo compara cada copa <strong>vs el promedio del predio</strong> (Z-score), no contra un estándar fijo.
           Al volver a detectar (otro vuelo), AirCI empareja copas por proximidad y muestra <strong>Δ área</strong>.
           La fenología (flor / brote / vegetativo) se estima del RGB de cada copa.
           La tabla por árbol es solo para revisar casos puntuales (filtra por color).
         </p>
         <div class="aci-orchard-grid">
           <div class="aci-orchard-block aci-orchard-block--sem">
-            <h3 class="aci-orchard-h" id="aciSemCompareTitle">Comparación por semáforo</h3>
-            <div class="aci-sem-mode" id="aciSemModeBar" role="group" aria-label="Modo de semáforo">
-              <span class="aci-basemap-label">Modo</span>
-              <button type="button" class="aci-layer-chip is-active" data-sem-mode="rel" title="Clasifica vs el promedio del lote (Z-score)">Vs lote (Z)</button>
-              <button type="button" class="aci-layer-chip" data-sem-mode="abs" title="Requiere área objetivo (m²) y GeoTIFF con escala">Vs objetivo m²</button>
-            </div>
-            <p class="aci-orchard-hint" id="aciSemModeHint">Clic en una fila o tarjeta para filtrar el mapa y el detalle por árbol. Modo actual: vs promedio del lote (Z).</p>
+            <h3 class="aci-orchard-h" id="aciSemCompareTitle">Comparación por semáforo (vs predio)</h3>
+            <p class="aci-orchard-hint" id="aciSemModeHint">Cada copa se clasifica vs el promedio del predio (Z). Clic en una fila o tarjeta para filtrar el mapa y el detalle por árbol.</p>
             <div class="aci-orchard-table-wrap">
               <table class="aci-orchard-table aci-orchard-table--sem" id="aciSemStatsTable">
                 <thead>
@@ -344,7 +332,7 @@
               <span id="aciHistNote">Match por proximidad · ID estable · Δ área</span>
             </div>
             <div class="aci-sem-mode" role="group" aria-label="Pintar mapa">
-              <button type="button" class="aci-layer-chip" data-paint-mode="sem" title="Relleno por semáforo Z / objetivo">Pintar semáforo</button>
+              <button type="button" class="aci-layer-chip" data-paint-mode="sem" title="Relleno por semáforo vs predio (Z)">Pintar semáforo</button>
               <button type="button" class="aci-layer-chip" data-paint-mode="delta" title="Relleno por cambio de área vs vuelo anterior">Pintar Δ</button>
             </div>
           </div>
@@ -399,9 +387,7 @@
                     <th title="Percentil de tamaño dentro del lote (50 = mediana)">Percentil</th>
                     <th title="Desvío estándar vs el promedio del lote (z-score). 0 = promedio; +1 = una desviación por encima; −1.5 o menos = muy bajo">Desvío (Z)</th>
                     <th title="Confianza de detección 0–100 (forma compacta, verde ExG, tamaño vs mediana, borde)">Conf. %</th>
-                    <th title="Semáforo relativo al lote (Z-score)">Sem. lote</th>
-                    <th title="Semáforo vs área objetivo m² del cultivo">Sem. obj.</th>
-                    <th title="Diferencia % vs área objetivo (m²)">Δ % obj.</th>
+                    <th title="Semáforo relativo al predio (Z-score)">Sem. predio</th>
                     <th title="Cambio de área vs vuelo anterior">Δ área</th>
                     <th title="Δ % área vs vuelo anterior">Δ % vuelo</th>
                     <th title="Estado fenológico dominante de la copa">Feno</th>
@@ -454,28 +440,15 @@
                   <dd>Confianza de que el blob es una <strong>copa</strong> (0–100): forma compacta, verde ExG, tamaño vs mediana y si toca el borde del orto. Debajo de ~38 se excluye (pasto/borde).</dd>
                 </div>
                 <div>
-                  <dt>Sem. lote (Z)</dt>
+                  <dt>Sem. predio (Z)</dt>
                   <dd>
-                    Relativo al promedio del lote:
+                    Relativo al promedio del predio (no a un estándar fijo de cultivo):
                     <ul>
                       <li><strong class="aci-c-rojo">Rojo · Muy bajo</strong> — Z &lt; −1.5</li>
                       <li><strong class="aci-c-amarillo">Amarillo · Por debajo</strong> — −1.5 ≤ Z &lt; −0.5</li>
                       <li><strong class="aci-c-verde">Verde · Promedio</strong> — −0.5 ≤ Z ≤ +0.5</li>
                       <li><strong class="aci-c-azul">Azul · Por encima</strong> — Z &gt; +0.5</li>
                     </ul>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Área objetivo · Sem. obj.</dt>
-                  <dd>
-                    Estándar agronómico en m² (campo del predio). Con escala geo:
-                    <ul>
-                      <li><strong class="aci-c-rojo">Rojo</strong> — &lt; −45% vs objetivo</li>
-                      <li><strong class="aci-c-amarillo">Amarillo</strong> — −45% … −15%</li>
-                      <li><strong class="aci-c-verde">Verde · En objetivo</strong> — ±15%</li>
-                      <li><strong class="aci-c-azul">Azul</strong> — &gt; +15%</li>
-                    </ul>
-                    El mapa/filtro puede cambiar entre <strong>Vs lote (Z)</strong> y <strong>Vs objetivo m²</strong>.
                   </dd>
                 </div>
                 <div>

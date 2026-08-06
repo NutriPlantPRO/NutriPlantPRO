@@ -512,22 +512,6 @@ button, input, select, textarea { font: inherit; }
   background: #fef3c7;
   border: 1px solid #fcd34d;
 }
-.aci-meta-row--target {
-  grid-template-columns: minmax(140px, 0.55fr) minmax(180px, 1.45fr);
-  align-items: center;
-  margin-top: 2px;
-}
-
-.aci-field--target input {
-  max-width: 140px;
-}
-
-.aci-target-hint {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.35;
-  color: var(--aci-muted);
-}
 
 .aci-sem-mode {
   display: flex;
