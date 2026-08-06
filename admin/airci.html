@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806st1">
+  <link rel="stylesheet" href="./airci.css?v=20260806f5">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -137,6 +137,13 @@
               <input id="aciEdad" type="text" placeholder="Años" data-meta="edad" autocomplete="off">
             </div>
           </div>
+          <div class="aci-meta-row aci-meta-row--target">
+            <div class="aci-field aci-field--target">
+              <label for="aciTargetM2">Área objetivo (m²)</label>
+              <input id="aciTargetM2" type="number" min="0" step="0.1" placeholder="ej. 12" data-meta="target_m2" inputmode="decimal" title="Estándar de copa del cultivo (m² por árbol)">
+            </div>
+            <p class="aci-target-hint">Estándar agronómico del cultivo. Con GeoTIFF a escala activa el semáforo <strong>vs objetivo</strong> (además del Z del lote).</p>
+          </div>
           <div class="aci-field aci-field--nota">
             <label for="aciNota">Nota / comentario</label>
             <textarea id="aciNota" rows="2" placeholder="Observaciones del vuelo o del predio" data-meta="nota"></textarea>
@@ -147,9 +154,11 @@
 
       <section class="aci-metrics" aria-label="Resumen ortomosaico">
         <div class="aci-metric"><small>Árboles / copas</small><strong id="aciMetricTrees">—</strong><em id="aciMetricTreesSub">detección F2</em></div>
-        <div class="aci-metric"><small>Cobertura copa</small><strong id="aciMetricCover">—</strong><em>vegetación ExG</em></div>
+        <div class="aci-metric"><small>Cobertura total</small><strong id="aciMetricCover">—</strong><em id="aciMetricCoverSub">copa sobre orto</em></div>
+        <div class="aci-metric"><small>Sin cobertura</small><strong id="aciMetricBare">—</strong><em id="aciMetricBareSub">suelo / espacio libre</em></div>
+        <div class="aci-metric"><small>Superficie</small><strong id="aciMetricHa">—</strong><em id="aciMetricHaSub">ha del orto</em></div>
+        <div class="aci-metric"><small>Densidad</small><strong id="aciMetricDensity">—</strong><em id="aciMetricDensitySub">árboles / ha</em></div>
         <div class="aci-metric"><small>Área promedio</small><strong id="aciMetricMean">—</strong><em id="aciMetricMeanSub">píxeles de copa</em></div>
-        <div class="aci-metric"><small>Archivo</small><strong id="aciMetricFile">—</strong><em id="aciMetricCloud">nube</em></div>
       </section>
 
       <section class="aci-panel aci-map-panel">
@@ -179,7 +188,7 @@
           <button type="button" class="aci-layer-chip" data-layer="copas" disabled title="Contornos de copa">Copas (contorno)</button>
           <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled title="Relleno por tamaño">Semáforo tamaño</button>
           <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Números solo con esta capa activa">Números (ID)</button>
-          <span class="aci-layer-soon">Floración / brotación / vegetativo — después</span>
+          <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" disabled title="Pinta por estado fenológico dominante">Fenología</button>
         </div>
         <div class="aci-basemap-bar" aria-label="Mapa de fondo" id="aciBasemapBar">
           <span class="aci-basemap-label">Fondo</span>
@@ -196,34 +205,281 @@
           <button type="button" class="aci-leg aci-leg--verde" data-sem="verde" title="Clic: ver solo promedio">Promedio <em data-sem-count="verde"></em></button>
           <button type="button" class="aci-leg aci-leg--azul" data-sem="azul" title="Clic: ver solo por encima">Por encima <em data-sem-count="azul"></em></button>
         </div>
+        <div class="aci-legend" id="aciDeltaLegend" hidden>
+          <span class="aci-basemap-label">Δ área</span>
+          <span class="aci-leg aci-leg--rojo">Redujo ≥20%</span>
+          <span class="aci-leg aci-leg--amarillo">Bajó poco</span>
+          <span class="aci-leg aci-leg--verde">Estable ±5%</span>
+          <span class="aci-leg aci-leg--azul">Creció</span>
+          <span class="aci-leg" style="border-color:#94a3b8;color:#475569">Nuevo</span>
+        </div>
+        <div class="aci-legend" id="aciPhenoLegend" hidden>
+          <span class="aci-basemap-label">Fenología</span>
+          <span class="aci-leg aci-leg--flor">Floración</span>
+          <span class="aci-leg aci-leg--brote">Brotación</span>
+          <span class="aci-leg aci-leg--veg">Vegetativo</span>
+          <span class="aci-leg" style="border-color:#94a3b8;color:#475569">Sin clasificar</span>
+        </div>
+      </section>
+
+      <!-- Análisis del predio completo (no por árbol): lecturas generales de la huerta -->
+      <section class="aci-panel aci-orchard-panel" id="aciSummaryPanel" hidden>
+        <div class="aci-map-head">
+          <div>
+            <strong>Estadística general del predio</strong>
+            <span>Valores de toda la huerta · comparaciones generales (no fila por árbol)</span>
+          </div>
+          <span id="aciScaleBadge" class="aci-scale-badge" hidden title=""></span>
+        </div>
+        <p class="aci-orchard-lead">
+          Con miles de árboles el análisis útil es del <strong>lote completo</strong>: cobertura, variación y semáforo.
+          La <strong>cobertura %</strong> siempre se calcula; <strong>ha, m² y densidad</strong> solo si el GeoTIFF está georreferenciado.
+          Define un <strong>área objetivo (m²)</strong> en datos del predio para el semáforo absoluto vs estándar del cultivo.
+          Al volver a detectar (otro vuelo), AirCI empareja copas por proximidad y muestra <strong>Δ área</strong>.
+          La fenología (flor / brote / vegetativo) se estima del RGB de cada copa.
+          La tabla por árbol es solo para revisar casos puntuales (filtra por color).
+        </p>
+        <div class="aci-orchard-grid">
+          <div class="aci-orchard-block">
+            <h3 class="aci-orchard-h">Indicadores del predio</h3>
+            <div class="aci-orchard-table-wrap">
+              <table class="aci-orchard-table" id="aciOrchardStatsTable">
+                <thead>
+                  <tr>
+                    <th>Indicador</th>
+                    <th>Valor</th>
+                    <th>Qué significa</th>
+                  </tr>
+                </thead>
+                <tbody id="aciSummaryList"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="aci-orchard-block">
+            <h3 class="aci-orchard-h" id="aciSemCompareTitle">Comparación por semáforo</h3>
+            <div class="aci-sem-mode" id="aciSemModeBar" role="group" aria-label="Modo de semáforo">
+              <span class="aci-basemap-label">Modo</span>
+              <button type="button" class="aci-layer-chip is-active" data-sem-mode="rel" title="Clasifica vs el promedio del lote (Z-score)">Vs lote (Z)</button>
+              <button type="button" class="aci-layer-chip" data-sem-mode="abs" title="Requiere área objetivo (m²) y GeoTIFF con escala">Vs objetivo m²</button>
+            </div>
+            <p class="aci-orchard-hint" id="aciSemModeHint">Clic en una fila o tarjeta para filtrar el mapa y el detalle por árbol. Modo actual: vs promedio del lote (Z).</p>
+            <div class="aci-orchard-table-wrap">
+              <table class="aci-orchard-table aci-orchard-table--sem" id="aciSemStatsTable">
+                <thead>
+                  <tr>
+                    <th>Clase</th>
+                    <th>Árboles</th>
+                    <th>% predio</th>
+                    <th>Cobertura</th>
+                    <th id="aciSemM2Head" hidden>m² copa</th>
+                    <th>Área prom.</th>
+                  </tr>
+                </thead>
+                <tbody id="aciSemStatsBody"></tbody>
+              </table>
+            </div>
+            <div class="aci-sem-breakdown" id="aciSemBreakdown" role="group" aria-label="Filtro rápido por semáforo"></div>
+          </div>
+        </div>
+
+        <div class="aci-history-panel" id="aciHistoryPanel" hidden>
+          <div class="aci-map-head">
+            <div>
+              <strong>Historial vs vuelo anterior (F4)</strong>
+              <span id="aciHistNote">Match por proximidad · ID estable · Δ área</span>
+            </div>
+            <div class="aci-sem-mode" role="group" aria-label="Pintar mapa">
+              <button type="button" class="aci-layer-chip" data-paint-mode="sem" title="Relleno por semáforo Z / objetivo">Pintar semáforo</button>
+              <button type="button" class="aci-layer-chip" data-paint-mode="delta" title="Relleno por cambio de área vs vuelo anterior">Pintar Δ</button>
+            </div>
+          </div>
+          <div class="aci-history-metrics">
+            <div class="aci-hist-metric"><small>Emparejados</small><strong id="aciHistMatched">—</strong></div>
+            <div class="aci-hist-metric"><small>Nuevos</small><strong id="aciHistNew">—</strong></div>
+            <div class="aci-hist-metric"><small>Faltantes</small><strong id="aciHistMissing">—</strong></div>
+            <div class="aci-hist-metric"><small>Δ área media</small><strong id="aciHistMeanDelta">—</strong></div>
+          </div>
+          <div class="aci-legend aci-delta-filter" id="aciDeltaFilter" aria-label="Filtrar por cambio">
+            <span class="aci-basemap-label">Filtrar Δ</span>
+            <button type="button" class="aci-leg aci-leg--all is-active" data-delta="all">Todos</button>
+            <button type="button" class="aci-leg aci-leg--azul" data-delta="up">Creció <em>(0)</em></button>
+            <button type="button" class="aci-leg aci-leg--rojo" data-delta="down">Redujo <em>(0)</em></button>
+            <button type="button" class="aci-leg aci-leg--verde" data-delta="flat">Estable <em>(0)</em></button>
+            <button type="button" class="aci-leg" data-delta="new" style="border-color:#94a3b8;color:#475569">Nuevos <em>(0)</em></button>
+          </div>
+        </div>
+
+        <div class="aci-pheno-panel" id="aciPhenoPanel" hidden>
+          <div class="aci-map-head">
+            <div>
+              <strong>Fenología del predio (F5)</strong>
+              <span id="aciPhenoNote">Floración + brotación + vegetativo + sin clasificar = 100%</span>
+            </div>
+            <div class="aci-sem-mode" role="group" aria-label="Pintar fenología">
+              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" title="Color por estado dominante">Dominante</button>
+              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="flor" title="Intensidad por % floración">Flor %</button>
+              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="brote" title="Intensidad por % brotación">Brote %</button>
+              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="veg" title="Intensidad por % vegetativo">Veg %</button>
+            </div>
+          </div>
+          <p class="aci-pheno-disclaimer" role="note">
+            La <strong>coloración atípica</strong> es solo una señal visual del RGB.
+            No la interpretes automáticamente como deficiencia nutricional ni enfermedad:
+            puede ser floración, brotación u otra etapa vegetativa.
+          </p>
+          <div class="aci-history-metrics aci-pheno-metrics">
+            <div class="aci-hist-metric"><small>Dominante lote</small><strong id="aciPhenoDom">—</strong></div>
+            <div class="aci-hist-metric"><small>Floración media</small><strong id="aciPhenoFlor">—</strong></div>
+            <div class="aci-hist-metric"><small>Brotación media</small><strong id="aciPhenoBrote">—</strong></div>
+            <div class="aci-hist-metric"><small>Vegetativo medio</small><strong id="aciPhenoVeg">—</strong></div>
+            <div class="aci-hist-metric"><small>Sin clasificar</small><strong id="aciPhenoOther">—</strong></div>
+            <div class="aci-hist-metric"><small>Color atípico*</small><strong id="aciPhenoAtyp">—</strong></div>
+            <div class="aci-hist-metric"><small>Conf. feno.</small><strong id="aciPhenoConf">—</strong></div>
+          </div>
+          <div class="aci-legend aci-pheno-filter" id="aciPhenoFilter" aria-label="Filtrar por fenología">
+            <span class="aci-basemap-label">Filtrar feno</span>
+            <button type="button" class="aci-leg aci-leg--all is-active" data-pheno="all">Todos</button>
+            <button type="button" class="aci-leg aci-leg--flor" data-pheno="flor">Floración <em>(0)</em></button>
+            <button type="button" class="aci-leg aci-leg--brote" data-pheno="brote">Brotación <em>(0)</em></button>
+            <button type="button" class="aci-leg aci-leg--veg" data-pheno="veg">Vegetativo <em>(0)</em></button>
+            <button type="button" class="aci-leg" data-pheno="other" style="border-color:#94a3b8;color:#475569">Otro <em>(0)</em></button>
+          </div>
+        </div>
       </section>
 
       <section class="aci-panel aci-table-panel" id="aciTablePanel" hidden>
-        <div class="aci-map-head">
-          <div>
-            <strong>Tabla por árbol</strong>
-            <span id="aciTableSub">Capa activa · clic en fila destaca en mapa</span>
+        <details class="aci-tree-detail" id="aciTreeDetail">
+          <summary class="aci-tree-detail-sum">
+            <span>
+              <strong>Detalle por árbol</strong>
+              <em id="aciTableSub">Opcional · filtra por semáforo · en huertas grandes no conviene mirar los 15 000 uno a uno</em>
+            </span>
+          </summary>
+          <div class="aci-tree-detail-body">
+            <div class="aci-legend aci-table-filter" id="aciTableFilter" aria-label="Filtrar tabla por semáforo">
+              <span class="aci-basemap-label">Filtrar detalle</span>
+              <button type="button" class="aci-leg aci-leg--all is-active" data-sem="all" title="Mostrar todas las copas">Todos</button>
+              <button type="button" class="aci-leg aci-leg--rojo" data-sem="rojo" title="Solo muy bajo">Muy bajo <em data-sem-count="rojo"></em></button>
+              <button type="button" class="aci-leg aci-leg--amarillo" data-sem="amarillo" title="Solo por debajo">Por debajo <em data-sem-count="amarillo"></em></button>
+              <button type="button" class="aci-leg aci-leg--verde" data-sem="verde" title="Solo promedio">Promedio <em data-sem-count="verde"></em></button>
+              <button type="button" class="aci-leg aci-leg--azul" data-sem="azul" title="Solo por encima">Por encima <em data-sem-count="azul"></em></button>
+            </div>
+            <p id="aciTableCapNote" class="aci-table-cap-note np-hide" hidden></p>
+            <div class="aci-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th title="ID secuencial de este vuelo">ID</th>
+                    <th title="ID estable entre vuelos (match por proximidad)">ID est.</th>
+                    <th title="Número de surco (fila de plantación detectada)">Surco</th>
+                    <th title="Posición dentro del surco (línea)">Pos</th>
+                    <th title="Área de la copa en píxeles">Área (px)</th>
+                    <th title="Área en m² (requiere GeoTIFF con escala / GSD)">Área (m²)</th>
+                    <th title="Diámetro equivalente de la copa (mismo área que un círculo)">Diám. (m)</th>
+                    <th title="% de cobertura de esta copa respecto al área total del ortomosaico">% cob.</th>
+                    <th title="Diferencia porcentual vs el área promedio del lote">Δ % vs prom.</th>
+                    <th title="Percentil de tamaño dentro del lote (50 = mediana)">Percentil</th>
+                    <th title="Desvío estándar vs el promedio del lote (z-score). 0 = promedio; +1 = una desviación por encima; −1.5 o menos = muy bajo">Desvío (Z)</th>
+                    <th title="Confianza de detección 0–100 (forma compacta, verde ExG, tamaño vs mediana, borde)">Conf. %</th>
+                    <th title="Semáforo relativo al lote (Z-score)">Sem. lote</th>
+                    <th title="Semáforo vs área objetivo m² del cultivo">Sem. obj.</th>
+                    <th title="Diferencia % vs área objetivo (m²)">Δ % obj.</th>
+                    <th title="Cambio de área vs vuelo anterior">Δ área</th>
+                    <th title="Δ % área vs vuelo anterior">Δ % vuelo</th>
+                    <th title="Estado fenológico dominante de la copa">Feno</th>
+                    <th title="% píxeles clasificados como floración">Flor %</th>
+                    <th title="% píxeles clasificados como brotación">Brote %</th>
+                    <th title="% píxeles vegetativo maduro">Veg %</th>
+                    <th title="Coloración atípica (paralela; no es diagnóstico)">Atíp. %</th>
+                  </tr>
+                </thead>
+                <tbody id="aciTableBody"></tbody>
+              </table>
+            </div>
+            <details class="aci-concepts">
+              <summary>Conceptos de la tabla</summary>
+              <dl class="aci-concepts-list">
+                <div>
+                  <dt>Surco</dt>
+                  <dd>Fila de plantación detectada en el ortomosaico (surco 1, 2, 3…).</dd>
+                </div>
+                <div>
+                  <dt>Pos</dt>
+                  <dd>Posición del árbol <strong>dentro de ese surco</strong> (planta 1, 2, 3… a lo largo de la línea). Junto con Surco ubica el árbol en el lote (ej. Surco 2 · Pos 5).</dd>
+                </div>
+                <div>
+                  <dt>Área (px) / m² / Diám.</dt>
+                  <dd>Tamaño de la copa. Los m² y el diámetro requieren GeoTIFF georreferenciado (escala/GSD); si no hay escala aparecen como —.</dd>
+                </div>
+                <div>
+                  <dt>% cob.</dt>
+                  <dd>Porcentaje de cobertura de <strong>esta copa</strong> respecto al <strong>área total</strong> del ortomosaico. La suma ≈ cobertura total del lote. El <strong>%</strong> siempre se calcula; los <strong>m² / ha / densidad</strong> del predio solo si el TIFF tiene georreferencia usable (badge Escala OK).</dd>
+                </div>
+                <div>
+                  <dt>ha · m² · GSD</dt>
+                  <dd><strong>Superficie analizada (ha)</strong>, <strong>m² de copa</strong> y <strong>árboles/ha</strong> salen del GSD del GeoTIFF. Sin escala el análisis sigue en píxeles y % — no se inventan metros.</dd>
+                </div>
+                <div>
+                  <dt>Δ % vs prom.</dt>
+                  <dd>Cuánto más grande o más chica es la copa respecto al <strong>promedio del lote</strong> (en %).</dd>
+                </div>
+                <div>
+                  <dt>Percentil</dt>
+                  <dd>Ranking de tamaño dentro del lote: <strong>50</strong> ≈ mediana (la mitad son más chicas, la mitad más grandes). <strong>90</strong> = más grande que el ~90% de las copas. <strong>10</strong> = de las más chicas.</dd>
+                </div>
+                <div>
+                  <dt>Desvío (Z)</dt>
+                  <dd>Z-score: cuántas desviaciones estándar está respecto al promedio. <strong>0</strong> = promedio · <strong>+1</strong> ≈ una DE por encima · <strong>−1.5 o menos</strong> = muy bajo.</dd>
+                </div>
+                <div>
+                  <dt>Conf. %</dt>
+                  <dd>Confianza de que el blob es una <strong>copa</strong> (0–100): forma compacta, verde ExG, tamaño vs mediana y si toca el borde del orto. Debajo de ~38 se excluye (pasto/borde).</dd>
+                </div>
+                <div>
+                  <dt>Sem. lote (Z)</dt>
+                  <dd>
+                    Relativo al promedio del lote:
+                    <ul>
+                      <li><strong class="aci-c-rojo">Rojo · Muy bajo</strong> — Z &lt; −1.5</li>
+                      <li><strong class="aci-c-amarillo">Amarillo · Por debajo</strong> — −1.5 ≤ Z &lt; −0.5</li>
+                      <li><strong class="aci-c-verde">Verde · Promedio</strong> — −0.5 ≤ Z ≤ +0.5</li>
+                      <li><strong class="aci-c-azul">Azul · Por encima</strong> — Z &gt; +0.5</li>
+                    </ul>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Área objetivo · Sem. obj.</dt>
+                  <dd>
+                    Estándar agronómico en m² (campo del predio). Con escala geo:
+                    <ul>
+                      <li><strong class="aci-c-rojo">Rojo</strong> — &lt; −45% vs objetivo</li>
+                      <li><strong class="aci-c-amarillo">Amarillo</strong> — −45% … −15%</li>
+                      <li><strong class="aci-c-verde">Verde · En objetivo</strong> — ±15%</li>
+                      <li><strong class="aci-c-azul">Azul</strong> — &gt; +15%</li>
+                    </ul>
+                    El mapa/filtro puede cambiar entre <strong>Vs lote (Z)</strong> y <strong>Vs objetivo m²</strong>.
+                  </dd>
+                </div>
+                <div>
+                  <dt>ID est. · Δ vs vuelo</dt>
+                  <dd>
+                    Al detectar de nuevo (u otro orto del mismo predio), cada copa se empareja con el vuelo anterior por
+                    <strong>proximidad del centro</strong> (GPS si hay escala). Conserva un <strong>ID estable</strong>
+                    y calcula Δ área (m²/%). Copas sin pareja = nuevas; las del vuelo anterior sin pareja = faltantes.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Fenología (Flor / Brote / Veg)</dt>
+                  <dd>
+                    Clasificación RGB de píxeles dentro de cada copa.
+                    <strong>Floración + brotación + vegetativo + sin clasificar = 100%</strong>.
+                    <strong>Atíp. %</strong> es métrica paralela (amarillo/bronce) y <em>no</em> implica nutrición ni enfermedad.
+                  </dd>
+                </div>
+              </dl>
+            </details>
           </div>
-        </div>
-        <div class="aci-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th title="ID secuencial: surco 1 planta 1, luego planta 2… luego surco 2…">ID</th>
-                <th title="Número de surco (fila de plantación detectada)">Surco</th>
-                <th title="Posición dentro del surco (línea)">Pos</th>
-                <th title="Área de la copa en píxeles">Área (px)</th>
-                <th title="Área en m² (requiere GeoTIFF con escala / GSD)">Área (m²)</th>
-                <th title="Diámetro equivalente de la copa (mismo área que un círculo)">Diám. (m)</th>
-                <th title="Diferencia porcentual vs el área promedio del lote">Δ % vs prom.</th>
-                <th title="Percentil de tamaño dentro del lote (50 = mediana)">Percentil</th>
-                <th title="Desvío estándar vs el promedio del lote (z-score). 0 = promedio; +1 = una desviación por encima; −1.5 o menos = muy bajo">Desvío (Z)</th>
-                <th>Semáforo</th>
-              </tr>
-            </thead>
-            <tbody id="aciTableBody"></tbody>
-          </table>
-        </div>
+        </details>
       </section>
 
       <p class="aci-footer-note">
@@ -241,7 +497,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806x"></script>
-  <script src="./airci.js?v=20260806x"></script>
+  <script src="./airci-canopy.js?v=20260806f5"></script>
+  <script src="./airci.js?v=20260806f5"></script>
 </body>
 </html>

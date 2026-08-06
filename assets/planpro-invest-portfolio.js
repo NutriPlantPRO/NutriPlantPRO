@@ -544,6 +544,11 @@
     var stock = 0;
     var etf = 0;
     var other = 0;
+    var quantity = 0;
+    var dayChange = 0;
+    var dayKnown = 0;
+    var gainLoss = 0;
+    var gainKnown = 0;
     st.holdings.forEach(function (h) {
       var v = Number(h.marketValue);
       if (Number.isFinite(v)) {
@@ -557,6 +562,18 @@
         cost += c;
         costKnown += 1;
       }
+      var q = Number(h.quantity);
+      if (Number.isFinite(q)) quantity += q;
+      var d = Number(h.dayChange);
+      if (Number.isFinite(d)) {
+        dayChange += d;
+        dayKnown += 1;
+      }
+      var g = Number(h.gainLoss);
+      if (Number.isFinite(g)) {
+        gainLoss += g;
+        gainKnown += 1;
+      }
     });
     return {
       total: total,
@@ -564,7 +581,13 @@
       costBasisCount: costKnown,
       stock: stock,
       etf: etf,
-      other: other
+      other: other,
+      quantity: quantity,
+      dayChange: dayChange,
+      dayChangeKnown: dayKnown,
+      gainLoss: gainLoss,
+      gainLossKnown: gainKnown,
+      count: st.holdings.length
     };
   }
 
@@ -849,9 +872,11 @@
             plugins: {
               legend: {
                 position: 'right',
+                align: 'center',
                 labels: {
                   boxWidth: 12,
                   font: { size: 10 },
+                  padding: 8,
                   generateLabels: function (chart) {
                     var data = chart.data;
                     if (!data.labels || !data.labels.length) return [];
@@ -875,12 +900,7 @@
                   }
                 }
               },
-              title: {
-                display: true,
-                text: 'Peso por posición',
-                color: '#0f766e',
-                font: { size: 13, weight: '700' }
-              },
+              title: { display: false },
               tooltip: {
                 callbacks: {
                   label: function (ctx) {
@@ -936,9 +956,11 @@
             plugins: {
               legend: {
                 position: 'right',
+                align: 'center',
                 labels: {
                   boxWidth: 12,
                   font: { size: 11 },
+                  padding: 8,
                   generateLabels: function (chart) {
                     var data = chart.data;
                     if (!data.labels || !data.labels.length) return [];
@@ -962,12 +984,7 @@
                   }
                 }
               },
-              title: {
-                display: true,
-                text: 'ETF vs Acciones · USD',
-                color: '#0f766e',
-                font: { size: 13, weight: '700' }
-              },
+              title: { display: false },
               tooltip: {
                 callbacks: {
                   label: function (ctx) {
@@ -988,18 +1005,36 @@
         var barLabels = [];
         var costData = [];
         var valueData = [];
+        var valueBg = [];
+        var valueBorder = [];
+        var costBg = [];
+        var costBorder = [];
         sorted.forEach(function (h) {
           var mv = Number(h.marketValue);
           var cb = holdingCostBasis(h);
           if (!Number.isFinite(mv) && cb == null) return;
+          var cost = cb != null && Number.isFinite(cb) ? cb : 0;
+          var val = Number.isFinite(mv) ? mv : 0;
           barLabels.push(h.symbol);
-          costData.push(cb != null && Number.isFinite(cb) ? cb : 0);
-          valueData.push(Number.isFinite(mv) ? mv : 0);
+          costData.push(cost);
+          valueData.push(val);
+          // Pérdida → rojo · Ganancia (o empate) → verde (y toque azul en cost)
+          if (val < cost) {
+            valueBg.push('rgba(220, 38, 38, 0.85)');
+            valueBorder.push('#b91c1c');
+            costBg.push('rgba(248, 113, 113, 0.32)');
+            costBorder.push('#f87171');
+          } else {
+            valueBg.push('rgba(13, 148, 136, 0.85)');
+            valueBorder.push('#0f766e');
+            costBg.push('rgba(37, 99, 235, 0.28)');
+            costBorder.push('#2563eb');
+          }
         });
-        // Altura dinámica según nº de tickers
-        var box = c3.parentElement;
+        // Altura dinámica según nº de tickers (título HTML queda fuera del canvas)
+        var box = c3.closest('.np-inv-pf-chart-box') || c3.parentElement;
         if (box) {
-          var hPx = Math.max(260, Math.min(520, 48 + barLabels.length * 28));
+          var hPx = Math.max(300, Math.min(540, 72 + barLabels.length * 28));
           box.style.height = hPx + 'px';
         }
         st.barCostValue = new global.Chart(c3, {
@@ -1010,8 +1045,8 @@
               {
                 label: 'Cost Basis',
                 data: costData,
-                backgroundColor: 'rgba(100, 116, 139, 0.38)',
-                borderColor: '#64748b',
+                backgroundColor: costBg,
+                borderColor: costBorder,
                 borderWidth: 1,
                 borderRadius: 4,
                 grouped: false,
@@ -1022,8 +1057,8 @@
               {
                 label: 'Valor actual',
                 data: valueData,
-                backgroundColor: 'rgba(13, 148, 136, 0.82)',
-                borderColor: '#0f766e',
+                backgroundColor: valueBg,
+                borderColor: valueBorder,
                 borderWidth: 1,
                 borderRadius: 4,
                 grouped: false,
@@ -1040,16 +1075,45 @@
             plugins: {
               legend: {
                 position: 'bottom',
-                labels: { boxWidth: 12, font: { size: 11 } }
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 11 },
+                  generateLabels: function () {
+                    return [
+                      {
+                        text: 'Ganancia (verde)',
+                        fillStyle: 'rgba(13, 148, 136, 0.85)',
+                        strokeStyle: '#0f766e',
+                        lineWidth: 1,
+                        hidden: false,
+                        datasetIndex: 1
+                      },
+                      {
+                        text: 'Pérdida (rojo)',
+                        fillStyle: 'rgba(220, 38, 38, 0.85)',
+                        strokeStyle: '#b91c1c',
+                        lineWidth: 1,
+                        hidden: false,
+                        datasetIndex: 1
+                      },
+                      {
+                        text: 'Cost Basis (azul / rojo suave)',
+                        fillStyle: 'rgba(37, 99, 235, 0.28)',
+                        strokeStyle: '#2563eb',
+                        lineWidth: 1,
+                        hidden: false,
+                        datasetIndex: 0
+                      }
+                    ];
+                  }
+                }
               },
-              title: {
-                display: true,
-                text: 'Valor actual vs Cost Basis',
-                color: '#0f766e',
-                font: { size: 13, weight: '700' }
-              },
+              title: { display: false },
               tooltip: {
                 callbacks: {
+                  label: function () {
+                    return null;
+                  },
                   afterBody: function (items) {
                     if (!items || !items.length) return '';
                     var idx = items[0].dataIndex;
@@ -1057,15 +1121,13 @@
                     var val = valueData[idx] || 0;
                     var diff = val - cost;
                     var sign = diff > 0 ? '+' : '';
-                    return (
-                      'Δ G/L ≈ ' +
-                      sign +
-                      fmtMoney(diff) +
-                      (cost > 0 ? ' (' + ((diff / cost) * 100).toFixed(1) + '%)' : '')
-                    );
-                  },
-                  label: function (ctx) {
-                    return ' ' + ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.x);
+                    var pct =
+                      cost > 0 ? ' (' + ((diff / cost) * 100).toFixed(1) + '%)' : '';
+                    return [
+                      'Valor actual  ' + fmtMoney(val),
+                      'Cost Basis    ' + fmtMoney(cost),
+                      'Δ G/L ≈ ' + sign + fmtMoney(diff) + pct
+                    ];
                   }
                 }
               }
@@ -1095,33 +1157,57 @@
   function renderSummary() {
     var el = $('npInvPfSummary');
     if (!el) return;
-    if (!st.holdings.length) {
-      el.innerHTML = '';
-      return;
-    }
-    var t = totals();
+    el.innerHTML = '';
+    el.classList.add('np-hide');
+    el.setAttribute('hidden', '');
+  }
+
+  function totalsFootHtml(t) {
     var stockPct = t.total > 0 ? ((t.stock / t.total) * 100).toFixed(1) : '0';
     var etfPct = t.total > 0 ? ((t.etf / t.total) * 100).toFixed(1) : '0';
-    var costHtml =
-      t.costBasisCount > 0
-        ? '<span class="np-inv-pf-sum-cost">Cost Basis <strong>' +
-          escapeHtml(fmtMoney(t.costBasis)) +
-          '</strong></span>'
-        : '<span class="np-inv-pf-sum-cost" title="Sube una captura que muestre la columna Cost Basis">Cost Basis <strong>—</strong></span>';
-    el.innerHTML =
-      '<span><strong>' +
-      st.holdings.length +
-      '</strong> posiciones</span>' +
-      '<span>Valor actual <strong>' +
+    var costText =
+      t.costBasisCount > 0 ? fmtMoney(t.costBasis) : '—';
+    var dayText = t.dayChangeKnown > 0 ? fmtSigned(t.dayChange) : '—';
+    var glText = t.gainLossKnown > 0 ? fmtSigned(t.gainLoss) : '—';
+    return (
+      '<tr class="np-inv-pf-totals-row">' +
+      '<td>' +
+      '<span class="np-inv-pf-tfoot-label">Totales</span>' +
+      '<span class="np-inv-pf-tfoot-sub">' +
+      escapeHtml(String(t.count || 0)) +
+      ' posiciones</span>' +
+      '</td>' +
+      '<td class="np-inv-pf-num">' +
+      escapeHtml(fmtQty(t.quantity)) +
+      '</td>' +
+      '<td class="np-inv-pf-num">—</td>' +
+      '<td class="np-inv-pf-num">' +
       escapeHtml(fmtMoney(t.total)) +
-      '</strong></span>' +
-      costHtml +
-      '<span>Acciones <strong>' +
+      '<div class="np-inv-pf-asof">100%</div></td>' +
+      '<td class="np-inv-pf-num ' +
+      signedClass(t.dayChangeKnown > 0 ? t.dayChange : null) +
+      '">' +
+      escapeHtml(dayText) +
+      '</td>' +
+      '<td class="np-inv-pf-num">' +
+      escapeHtml(costText) +
+      '</td>' +
+      '<td class="np-inv-pf-num ' +
+      signedClass(t.gainLossKnown > 0 ? t.gainLoss : null) +
+      '">' +
+      escapeHtml(glText) +
+      '</td>' +
+      '<td class="np-inv-pf-num">—</td>' +
+      '<td>' +
+      '<span class="np-inv-pf-tfoot-sub">Acciones ' +
       escapeHtml(stockPct) +
-      '%</strong></span>' +
-      '<span>ETFs <strong>' +
+      '% · ETFs ' +
       escapeHtml(etfPct) +
-      '%</strong></span>';
+      '%</span>' +
+      '</td>' +
+      '<td></td>' +
+      '</tr>'
+    );
   }
 
   function applySortObject(data) {
@@ -1373,12 +1459,14 @@
 
   function renderTable() {
     var body = $('npInvPfTableBody');
+    var foot = $('npInvPfTableFoot');
     var empty = $('npInvPfEmpty');
     var tableWrap = $('npInvPfTableWrap');
     if (!body) return;
 
     if (!st.holdings.length) {
       body.innerHTML = '';
+      if (foot) foot.innerHTML = '';
       if (empty) empty.classList.remove('np-hide');
       if (tableWrap) tableWrap.classList.add('np-hide');
       return;
@@ -1410,6 +1498,7 @@
     }
 
     body.innerHTML = parts.join('');
+    if (foot) foot.innerHTML = totalsFootHtml(t);
     syncSortHeaderUi();
   }
 

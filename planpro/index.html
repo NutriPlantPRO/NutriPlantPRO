@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
   <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png" />
   <link rel="manifest" href="/planpro.webmanifest" />
-  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260806pf3" />
+  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260806layout3" />
   <script src="../config-no-traducir-terminos.js"></script>
   <script>
     (function () {
@@ -11890,12 +11890,9 @@
           </div>
           <div class="np-inv-pf-head">
             <div>
-              <div class="np-inv-panel-title" style="margin-bottom:4px;">
+              <div class="np-inv-panel-title" style="margin-bottom:0;">
                 <span>Mi portafolio · seguimiento Schwab</span>
               </div>
-              <p class="np-inv-pf-lead">
-                Sube 1–4 capturas de tu tabla de posiciones (acciones o ETFs). La IA lee Symbol, Quantity, Price, Market Value, <strong>Cost Basis</strong> y Gain/Loss; se guarda en <strong>Supabase</strong>. <strong>Objetivo</strong>, <strong>Comentarios</strong> y el apunte general solo cambian cuando tú los escribes — el escaneo no los toca.
-              </p>
             </div>
             <div class="np-inv-pf-actions-bar">
               <input type="file" id="npInvPfFileInput" class="np-hide" accept="image/jpeg,image/png,image/webp,image/gif" multiple tabindex="-1" aria-hidden="true" />
@@ -11906,17 +11903,15 @@
             </div>
           </div>
           <p id="npInvPfStatus" class="np-inv-pf-status np-hide" aria-live="polite"></p>
-          <div id="npInvPfSummary" class="np-inv-pf-summary" aria-live="polite"></div>
+          <div id="npInvPfSummary" class="np-inv-pf-summary np-hide" aria-live="polite" hidden></div>
           <div class="np-inv-pf-scratch" id="npInvPfScratchWrap">
             <label class="np-inv-pf-scratch-label" for="npInvPfScratch">
               Apunte general
-              <span class="np-inv-pf-scratch-hint">compras pendientes, ideas, datos sueltos…</span>
             </label>
             <textarea
               id="npInvPfScratch"
               class="np-inv-pf-scratch-ta"
               rows="3"
-              placeholder="Ej. Comprar más QQQM · Revisar SPCX · Esperar dip en ABBV…"
               aria-label="Apunte general del portafolio"
             ></textarea>
           </div>
@@ -11978,6 +11973,7 @@
                     </tr>
                   </thead>
                   <tbody id="npInvPfTableBody"></tbody>
+                  <tfoot id="npInvPfTableFoot"></tfoot>
                 </table>
               </div>
             </div>
@@ -11985,16 +11981,25 @@
               <p id="npInvPfChartsEmpty" class="np-inv-pf-empty np-inv-pf-empty--charts">Las gráficas aparecen al cargar posiciones.</p>
               <div id="npInvPfCharts" class="np-inv-pf-charts np-hide">
                 <div class="np-inv-pf-chart-box">
-                  <canvas id="npInvPfPieHoldings" aria-label="Peso por posición"></canvas>
+                  <div class="np-inv-pf-chart-title">Peso por posición</div>
+                  <div class="np-inv-pf-chart-canvas-wrap">
+                    <canvas id="npInvPfPieHoldings" aria-label="Peso por posición"></canvas>
+                  </div>
                 </div>
                 <div class="np-inv-pf-chart-box">
-                  <canvas id="npInvPfPieType" aria-label="ETF vs acciones"></canvas>
+                  <div class="np-inv-pf-chart-title">ETF vs Acciones · USD</div>
+                  <div class="np-inv-pf-chart-canvas-wrap">
+                    <canvas id="npInvPfPieType" aria-label="ETF vs acciones"></canvas>
+                  </div>
                 </div>
                 <div class="np-inv-pf-chart-box np-inv-pf-chart-box--bars">
-                  <canvas id="npInvPfBarCostValue" aria-label="Valor actual vs Cost Basis por posición"></canvas>
+                  <div class="np-inv-pf-chart-title">Valor actual vs Cost Basis</div>
+                  <div class="np-inv-pf-chart-canvas-wrap">
+                    <canvas id="npInvPfBarCostValue" aria-label="Valor actual vs Cost Basis por posición"></canvas>
+                  </div>
                 </div>
                 <p class="np-inv-pf-chart-legend-note">
-                  Barras: la más ancha = el mayor (valor o cost); la de adentro = el menor. Teal = valor actual · gris = cost basis.
+                  Barras: verde = ganancia · rojo = pérdida · azul suave = cost basis. Hover: valor actual, cost basis y G/L.
                 </p>
               </div>
             </div>
@@ -12550,7 +12555,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260804fav"></script>
-  <script src="../assets/planpro-invest-portfolio.js?v=20260806pf2"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260806pf4"></script>
   <script>
 (function () {
   'use strict';
