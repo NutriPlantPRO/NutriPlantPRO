@@ -240,7 +240,7 @@
     return 'stock';
   }
 
-  /** Yahoo/ticker interno → símbolo TradingView. */
+  /** Yahoo/ticker interno → símbolo TradingView (con exchange). */
   var TV_SYMBOL_MAP = {
     '^GSPC': 'SPX',
     '^NDX': 'NDX',
@@ -251,13 +251,64 @@
     'ETH-USD': 'BINANCE:ETHUSDT',
     'BRK-B': 'NYSE:BRK.B',
     'BRK.B': 'NYSE:BRK.B',
-    'YAR.OL': 'OSE:YAR'
+    'YAR.OL': 'OSE:YAR',
+    AAPL: 'NASDAQ:AAPL',
+    MSFT: 'NASDAQ:MSFT',
+    GOOGL: 'NASDAQ:GOOGL',
+    GOOG: 'NASDAQ:GOOG',
+    NVDA: 'NASDAQ:NVDA',
+    AMZN: 'NASDAQ:AMZN',
+    META: 'NASDAQ:META',
+    PLTR: 'NASDAQ:PLTR',
+    AMD: 'NASDAQ:AMD',
+    AVGO: 'NASDAQ:AVGO',
+    QCOM: 'NASDAQ:QCOM',
+    ASML: 'NASDAQ:ASML',
+    TSM: 'NYSE:TSM',
+    COST: 'NASDAQ:COST',
+    TSLA: 'NASDAQ:TSLA',
+    NVO: 'NYSE:NVO',
+    ABBV: 'NYSE:ABBV',
+    LLY: 'NYSE:LLY',
+    JNJ: 'NYSE:JNJ',
+    JPM: 'NYSE:JPM',
+    V: 'NYSE:V',
+    MA: 'NYSE:MA',
+    WMT: 'NYSE:WMT',
+    KO: 'NYSE:KO',
+    PG: 'NYSE:PG',
+    DE: 'NYSE:DE',
+    NTR: 'NYSE:NTR',
+    CF: 'NYSE:CF',
+    MOS: 'NYSE:MOS',
+    NEE: 'NYSE:NEE',
+    FSLR: 'NASDAQ:FSLR',
+    RKLB: 'NASDAQ:RKLB',
+    LUNR: 'NASDAQ:LUNR',
+    SPCX: 'AMEX:SPCX',
+    VOO: 'AMEX:VOO',
+    QQQM: 'NASDAQ:QQQM',
+    SCHD: 'AMEX:SCHD',
+    SPY: 'AMEX:SPY',
+    VXUS: 'NASDAQ:VXUS',
+    INDA: 'BATS:INDA',
+    EWT: 'AMEX:EWT',
+    EWY: 'AMEX:EWY',
+    EWS: 'AMEX:EWS',
+    EWG: 'AMEX:EWG',
+    EWZ: 'AMEX:EWZ',
+    EWW: 'AMEX:EWW',
+    SMH: 'NASDAQ:SMH',
+    SOXX: 'NASDAQ:SOXX',
+    IBIT: 'NASDAQ:IBIT',
+    ETHA: 'NASDAQ:ETHA'
   };
 
   function toTvSymbol(raw) {
     var s = String(raw || '').trim().toUpperCase();
     if (!s) return 'NASDAQ:AAPL';
     if (TV_SYMBOL_MAP[s]) return TV_SYMBOL_MAP[s];
+    if (/^[A-Z]+:/.test(s)) return s;
     if (/\.OL$/.test(s)) return 'OSE:' + s.replace(/\.OL$/, '');
     return s.replace(/-/g, '.');
   }
@@ -396,6 +447,9 @@
     } catch (e) {}
   }
 
+  var _tvMountTimer = null;
+  var _tvMountTries = 0;
+
   function mountTradingViewChart(opts) {
     opts = opts || {};
     var wrap = $('npInvTvWrap');
@@ -403,7 +457,12 @@
     var status = $('npInvStatus');
     var symbols = opts.symbols && opts.symbols.length ? opts.symbols.slice(0, 6) : selectedSymbols();
     if (!wrap) return;
+    if (_tvMountTimer) {
+      clearTimeout(_tvMountTimer);
+      _tvMountTimer = null;
+    }
     if (!symbols.length) {
+      _tvMountTries = 0;
       wrap.innerHTML = '';
       if (empty) {
         empty.classList.remove('np-hide');
@@ -417,21 +476,39 @@
     var primary = symbols[0];
     var compares = symbols.slice(1);
     if (empty) empty.classList.add('np-hide');
+
+    // Si el flex aún no tiene altura, TV queda en blanco (OHLC 0). Reintentar.
+    var rectH = Math.floor(wrap.getBoundingClientRect().height || 0);
+    var shell = wrap.closest('.np-inv-chart-wrap--tv');
+    var shellH = shell ? Math.floor(shell.getBoundingClientRect().height || 0) : 0;
+    var h = Math.max(rectH, shellH);
+    if (h < 120 && _tvMountTries < 12) {
+      _tvMountTries += 1;
+      _tvMountTimer = setTimeout(function () {
+        mountTradingViewChart(opts);
+      }, 80);
+      return;
+    }
+    _tvMountTries = 0;
+    h = Math.max(380, h || 480);
+
     wrap.innerHTML = '';
 
     var container = document.createElement('div');
     container.className = 'tradingview-widget-container';
     container.style.width = '100%';
-    container.style.height = '100%';
+    container.style.height = h + 'px';
 
     var widgetEl = document.createElement('div');
     widgetEl.className = 'tradingview-widget-container__widget';
     widgetEl.style.width = '100%';
-    widgetEl.style.height = '100%';
+    widgetEl.style.height = h + 'px';
     container.appendChild(widgetEl);
 
     var cfg = {
-      autosize: true,
+      width: '100%',
+      height: h,
+      autosize: false,
       symbol: toTvSymbol(primary),
       interval: 'D',
       timezone: 'America/Mexico_City',
@@ -441,6 +518,7 @@
       enable_publishing: false,
       allow_symbol_change: true,
       hide_side_toolbar: false,
+      withdateranges: true,
       calendar: false,
       support_host: 'https://www.tradingview.com'
     };
@@ -454,7 +532,7 @@
     script.type = 'text/javascript';
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
     script.async = true;
-    script.textContent = JSON.stringify(cfg);
+    script.innerHTML = JSON.stringify(cfg);
     container.appendChild(script);
     wrap.appendChild(container);
     bindTradingViewTouchIsolation(wrap);

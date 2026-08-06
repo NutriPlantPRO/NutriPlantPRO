@@ -333,7 +333,8 @@ button, input, select, textarea { font: inherit; }
 
 /* —— Shell —— */
 .aci-shell {
-  width: min(1280px, calc(100% - 26px));
+  /* Más ancho: ~mitad de margen lateral vs 1280px */
+  width: min(1680px, calc(100% - 14px));
   margin: 18px auto 48px;
 }
 
