@@ -10,8 +10,8 @@
 
   var DICT = {
     doc_title: {
-      es: 'Pronóstico agroclimático | NutriPlant PRO',
-      en: 'Agroclimate forecast | NutriPlant PRO'
+      es: 'Agroclimático | NutriPlant PRO',
+      en: 'Agroclimate | NutriPlant PRO'
     },
     meta_description: {
       es: 'Pronóstico agroclimático NutriPlant por ubicación: VPD, ETo, ETc, precipitación, temperatura, humedad, radiación y punto de rocío.',
@@ -27,7 +27,7 @@
       es: 'NutriPlant PRO · información meteorológica por coordenadas',
       en: 'NutriPlant PRO · weather information by coordinates'
     },
-    title: { es: 'Pronóstico agroclimático', en: 'Agroclimate forecast' },
+    title: { es: 'Agroclimático', en: 'Agroclimate' },
     lead: {
       es: 'Consulta temperatura, humedad, punto de rocío, radiación, VPD, ETo, ETc y precipitación para tu ubicación.',
       en: 'Check temperature, humidity, dew point, radiation, VPD, ETo, ETc, and precipitation for your location.'

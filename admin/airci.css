@@ -605,14 +605,14 @@ button, input, select, textarea { font: inherit; }
 }
 
 .aci-pheno-disclaimer {
-  margin: 8px 0 10px;
-  padding: 8px 11px;
+  margin: 6px 0 8px;
+  padding: 7px 10px;
   border-radius: 8px;
   background: #fff7ed;
   border: 1px solid #fdba74;
   color: #9a3412;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 11.5px;
+  line-height: 1.35;
 }
 
 .aci-pheno-metrics {
@@ -698,6 +698,36 @@ button, input, select, textarea { font: inherit; }
 .aci-orchard-block--sem,
 .aci-orchard-block--pheno {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.aci-orchard-block--sem .aci-orchard-table-wrap {
+  flex: 1 1 auto;
+}
+
+.aci-orchard-block--sem .aci-sem-breakdown {
+  margin-top: auto;
+  padding-top: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aci-orchard-block--pheno .aci-pheno-panel--side {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+}
+
+.aci-orchard-block--pheno .aci-pheno-metrics {
+  flex: 1 1 auto;
+  align-content: start;
+}
+
+.aci-orchard-block--pheno .aci-pheno-filter {
+  margin-top: auto;
+  padding-top: 10px;
 }
 
 /* Sin fenología aún: semáforo a ancho completo (sin columna vacía) */
@@ -706,6 +736,9 @@ button, input, select, textarea { font: inherit; }
 }
 .aci-orchard-grid:has(#aciPhenoPanel[hidden]) .aci-orchard-block--pheno {
   display: none;
+}
+.aci-orchard-grid:has(#aciPhenoPanel[hidden]) .aci-orchard-block--sem .aci-sem-breakdown {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .aci-orchard-h {
   margin: 0 0 8px;
