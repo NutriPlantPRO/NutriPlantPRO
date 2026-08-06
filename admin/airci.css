@@ -582,6 +582,25 @@ button, input, select, textarea { font: inherit; }
   border-top: 1px solid var(--aci-line);
 }
 
+/* Debajo del semáforo (columna derecha) — aprovecha hueco junto a Indicadores */
+.aci-pheno-panel--nested {
+  margin-top: 16px;
+}
+
+.aci-orchard-block .aci-pheno-panel--nested .aci-map-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.aci-orchard-block .aci-pheno-panel--nested .aci-pheno-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aci-orchard-block .aci-pheno-panel--nested .aci-hist-metric strong {
+  font-size: 15px;
+}
+
 .aci-pheno-disclaimer {
   margin: 8px 0 10px;
   padding: 8px 11px;
@@ -924,6 +943,31 @@ button, input, select, textarea { font: inherit; }
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.aci-detect-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--aci-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.aci-detect-mode select {
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--aci-line);
+  background: #fff;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
 }
 
 .aci-btn--file {

@@ -54,9 +54,9 @@
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: 14px;
   align-items: stretch;
-  /* Misma altura para lista + gráfica: sin hueco blanco abajo */
-  height: min(72vh, 680px);
-  min-height: 520px;
+  /* Lista + gráfica más altas, siempre alineadas */
+  height: min(88vh, 900px);
+  min-height: 640px;
 }
 
 .np-inv-side,
@@ -559,7 +559,7 @@
 .np-inv-chart-wrap--tv {
   flex: 1 1 auto;
   height: auto;
-  min-height: 280px;
+  min-height: 360px;
   overflow: hidden;
   /* Gestos (pan/pinch) se quedan en el chart; no zoom/scroll de toda la página */
   touch-action: none;
@@ -855,16 +855,25 @@ html.np-inv-tv-touch-lock body {
   grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.9fr);
   gap: 16px;
   align-items: stretch;
+  /* Misma altura tabla ↔ gráficas; la tabla hace scroll adentro */
+  height: min(78vh, 760px);
+  min-height: 460px;
 }
 .np-inv-pf-table-col {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .np-inv-pf-charts-col {
   min-width: 0;
   min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .np-inv-pf-empty {
   margin: 0;
@@ -877,6 +886,7 @@ html.np-inv-tv-touch-lock body {
   background: color-mix(in srgb, #0d9488 4%, #fff);
 }
 .np-inv-pf-empty--charts {
+  flex: 1 1 auto;
   min-height: 120px;
   display: flex;
   align-items: center;
@@ -885,7 +895,6 @@ html.np-inv-tv-touch-lock body {
 .np-inv-pf-table-wrap {
   flex: 1 1 auto;
   min-height: 0;
-  /* Misma altura que la columna de gráficas; scroll interno si hay muchas filas */
   height: 100%;
   overflow: auto;
   overscroll-behavior: contain;
@@ -903,7 +912,7 @@ html.np-inv-tv-touch-lock body {
 .np-inv-pf-table thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   text-align: left;
   padding: 10px 10px;
   font-size: 11px;
@@ -917,9 +926,9 @@ html.np-inv-tv-touch-lock body {
   border-bottom: 1px solid color-mix(in srgb, #0d9488 22%, rgba(148, 163, 184, 0.35));
   white-space: nowrap;
 }
-.np-inv-pf-table tfoot td {
+.np-inv-pf-table thead tr.np-inv-pf-totals-row td {
   position: sticky;
-  bottom: 0;
+  top: var(--np-inv-pf-th-h, 48px);
   z-index: 2;
   text-align: left;
   padding: 10px 10px;
@@ -931,15 +940,15 @@ html.np-inv-tv-touch-lock body {
     color-mix(in srgb, #0d9488 14%, #fff) 0%,
     color-mix(in srgb, #0d9488 8%, #fff) 100%
   );
-  border-top: 1px solid color-mix(in srgb, #0d9488 28%, rgba(148, 163, 184, 0.35));
-  box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.04);
+  border-bottom: 1px solid color-mix(in srgb, #0d9488 28%, rgba(148, 163, 184, 0.35));
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
   vertical-align: top;
   white-space: nowrap;
 }
-.np-inv-pf-table tfoot .np-inv-pf-num {
+.np-inv-pf-table thead tr.np-inv-pf-totals-row .np-inv-pf-num {
   font-variant-numeric: tabular-nums;
 }
-.np-inv-pf-table tfoot .np-inv-pf-asof {
+.np-inv-pf-table thead tr.np-inv-pf-totals-row .np-inv-pf-asof {
   font-weight: 600;
   color: #0f766e;
   opacity: 0.85;
@@ -1170,11 +1179,16 @@ html.np-inv-tv-touch-lock body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 .np-inv-pf-chart-box {
   display: flex;
   flex-direction: column;
-  height: 250px;
+  flex: 0 0 auto;
+  height: 220px;
   padding: 10px 10px 8px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, #0d9488 16%, rgba(148, 163, 184, 0.35));
@@ -1182,8 +1196,9 @@ html.np-inv-tv-touch-lock body {
   box-sizing: border-box;
 }
 .np-inv-pf-chart-box--bars {
-  height: min(440px, 58vh);
-  min-height: 300px;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 240px;
 }
 .np-inv-pf-chart-title {
   flex: 0 0 auto;
@@ -1227,22 +1242,22 @@ html.np-inv-tv-touch-lock body {
   }
   .np-inv-panel--picks {
     flex: none;
-    max-height: min(52vh, 420px);
+    max-height: min(62vh, 520px);
   }
   .np-inv-picks,
   .np-inv-panel--picks .np-inv-picks {
     height: auto;
-    min-height: 160px;
+    min-height: 200px;
     max-height: none;
   }
   .np-inv-chart-panel {
     flex: none;
-    min-height: min(58vh, 520px);
+    min-height: min(68vh, 620px);
   }
   .np-inv-chart-wrap--tv {
     flex: none;
-    height: min(58vh, 520px);
-    min-height: 320px;
+    height: min(68vh, 620px);
+    min-height: 380px;
   }
   .np-inv-price {
     font-size: 1.45rem;
@@ -1253,14 +1268,28 @@ html.np-inv-tv-touch-lock body {
   .np-inv-pf-body {
     grid-template-columns: 1fr;
     align-items: start;
+    height: auto;
+    min-height: 0;
   }
-  .np-inv-pf-table-col {
+  .np-inv-pf-table-col,
+  .np-inv-pf-charts-col {
+    height: auto;
     max-height: none;
+    overflow: visible;
   }
   .np-inv-pf-table-wrap {
     flex: none;
     height: auto;
-    max-height: min(60vh, 480px);
+    max-height: min(58vh, 480px);
+  }
+  .np-inv-pf-charts {
+    height: auto;
+    overflow: visible;
+  }
+  .np-inv-pf-chart-box--bars {
+    flex: none;
+    height: min(420px, 50vh);
+    min-height: 260px;
   }
   .np-inv-pf-upload-btn {
     width: 100%;
@@ -1272,8 +1301,8 @@ html.np-inv-tv-touch-lock body {
 
 @media (pointer: coarse) and (min-width: 901px) {
   .np-inv-layout {
-    height: min(68vh, 640px);
-    min-height: 480px;
+    height: min(82vh, 820px);
+    min-height: 580px;
   }
 }
 
@@ -1349,16 +1378,16 @@ html.np-inv-tv-touch-lock body {
     background: rgba(13, 148, 136, 0.2);
     color: #99f6e4;
   }
-  .np-inv-pf-table tfoot td {
+  .np-inv-pf-table thead tr.np-inv-pf-totals-row td {
     background: rgba(13, 148, 136, 0.22);
     color: #99f6e4;
-    border-top-color: rgba(13, 148, 136, 0.4);
+    border-bottom-color: rgba(13, 148, 136, 0.4);
   }
   .np-inv-pf-tfoot-label {
     color: #99f6e4;
   }
   .np-inv-pf-tfoot-sub,
-  .np-inv-pf-table tfoot .np-inv-pf-asof {
+  .np-inv-pf-table thead tr.np-inv-pf-totals-row .np-inv-pf-asof {
     color: #94a3b8;
   }
   .np-inv-pf-table tbody td {

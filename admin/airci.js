@@ -20,6 +20,8 @@
   var OWNER_EMAIL = 'admin@nutriplantpro.com';
   var SESSION_MAX_MS = 12 * 60 * 60 * 1000;
   var API = '/api/airci-ortho';
+  var API_AI = '/api/airci-canopy-ai';
+  var DETECT_MODEL_KEY = 'airci_detect_model_v1';
   var PREVIEW_WARN_BYTES = 80 * 1024 * 1024;
 
   var gateEl = document.getElementById('aciGate');
@@ -2186,6 +2188,146 @@
     return false;
   }
 
+  function getDetectModel() {
+    var el = document.getElementById('aciDetectModel');
+    var v = el ? String(el.value || 'exg') : 'exg';
+    if (v === 'exg') return 'exg';
+    if (
+      v === 'gpt-5.6-luna' ||
+      v === 'gpt-5.6-terra' ||
+      v === 'gpt-5.6-sol'
+    ) {
+      return v;
+    }
+    return 'exg';
+  }
+
+  function persistDetectModelChoice() {
+    try {
+      localStorage.setItem(DETECT_MODEL_KEY, getDetectModel());
+    } catch (e) {}
+  }
+
+  function loadDetectModelChoice() {
+    var el = document.getElementById('aciDetectModel');
+    if (!el) return;
+    try {
+      var v = localStorage.getItem(DETECT_MODEL_KEY);
+      if (v) el.value = v;
+    } catch (e) {}
+  }
+
+  async function apiCanopyAi(body) {
+    var token = await getAccessToken();
+    if (!token) {
+      return {
+        ok: false,
+        error: 'Sin sesión Supabase. Entra de nuevo desde login.html con tu admin.'
+      };
+    }
+    var res = await fetch(API_AI, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify(body)
+    });
+    var data = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !data.ok) {
+      return {
+        ok: false,
+        error: (data && data.error) || 'Error IA ' + res.status
+      };
+    }
+    return data;
+  }
+
+  /** Dos recortes representativos del orto (JPEG) para calibrar la IA. */
+  function makeCalibrationTiles(georaster, outSize) {
+    outSize = outSize || 448;
+    if (!georaster || !window.AirCICanopy) return [];
+    var bands = AirCICanopy.getBandArrays(georaster);
+    if (!bands) return [];
+    var w = georaster.width;
+    var h = georaster.height;
+    var maxR = bands.maxs[0];
+    var maxG = bands.maxs[1] != null ? bands.maxs[1] : bands.maxs[0];
+    var maxB = bands.maxs[2] != null ? bands.maxs[2] : bands.maxs[0];
+    var tileW = Math.max(64, Math.floor(w * 0.42));
+    var tileH = Math.max(64, Math.floor(h * 0.42));
+    var origins = [
+      {
+        id: 'tile1',
+        x0: Math.max(0, Math.floor(w * 0.08)),
+        y0: Math.max(0, Math.floor(h * 0.2))
+      },
+      {
+        id: 'tile2',
+        x0: Math.max(0, Math.floor(w * 0.5)),
+        y0: Math.max(0, Math.floor(h * 0.35))
+      }
+    ];
+    var out = [];
+    origins.forEach(function (o) {
+      var x0 = o.x0;
+      var y0 = o.y0;
+      var x1 = Math.min(w - 1, x0 + tileW - 1);
+      var y1 = Math.min(h - 1, y0 + tileH - 1);
+      var cw = x1 - x0 + 1;
+      var ch = y1 - y0 + 1;
+      if (cw < 32 || ch < 32) return;
+      var canvas = document.createElement('canvas');
+      canvas.width = outSize;
+      canvas.height = outSize;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      var img = ctx.createImageData(outSize, outSize);
+      var i = 0;
+      for (var py = 0; py < outSize; py++) {
+        for (var px = 0; px < outSize; px++) {
+          var sx = x0 + ((px + 0.5) / outSize) * cw;
+          var sy = y0 + ((py + 0.5) / outSize) * ch;
+          var ix = Math.max(0, Math.min(w - 1, sx | 0));
+          var iy = Math.max(0, Math.min(h - 1, sy | 0));
+          var idx = iy * w + ix;
+          img.data[i++] = AirCICanopy.bandScale(bands.r[idx], maxR);
+          img.data[i++] = AirCICanopy.bandScale(bands.g[idx], maxG);
+          img.data[i++] = AirCICanopy.bandScale(bands.b[idx], maxB);
+          img.data[i++] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      out.push({
+        id: o.id,
+        imageBase64: canvas.toDataURL('image/jpeg', 0.7)
+      });
+    });
+    return out;
+  }
+
+  async function calibrateDetectionWithAi(model) {
+    var tiles = makeCalibrationTiles(currentGeoraster, 448);
+    if (!tiles.length) {
+      throw new Error('No se pudieron generar recortes para calibrar');
+    }
+    setMapStatus(
+      'IA ' + model.replace('gpt-5.6-', '') + ' · calibrando con ' + tiles.length + ' fotos…',
+      'ok'
+    );
+    var r = await apiCanopyAi({
+      action: 'calibrate',
+      model: model,
+      images: tiles
+    });
+    if (!r.ok || !r.calibration) {
+      throw new Error(r.error || 'Fallo calibración IA');
+    }
+    return r.calibration;
+  }
+
   function runCanopyDetection() {
     if (!currentGeoraster) {
       setMapStatus('Primero sube un GeoTIFF', 'error');
@@ -2195,46 +2337,64 @@
       setMapStatus('Falta airci-canopy.js', 'error');
       return;
     }
-    setMapStatus('Detectando copas (ExG)…');
+    var model = getDetectModel();
+    var useAi = model !== 'exg';
+    persistDetectModelChoice();
+    setMapStatus(
+      useAi
+        ? 'Calibrando con IA ' + model.replace('gpt-5.6-', '') + ' (2 fotos)…'
+        : 'Detectando copas (ExG)…'
+    );
     var btn = document.getElementById('aciAnalyzeBtn');
     if (btn) btn.disabled = true;
     setTimeout(async function () {
       try {
         var siteId = getSiteId();
         var prevBundle = getPreviousTreesForMatch(siteId);
-        var result = window.AirCICanopy.analyzeCanopies(currentGeoraster, {});
-        applyFlightMatch(result, prevBundle);
-        drawCanopies(result);
-        document.getElementById('aciMapSub').textContent =
-          'Copas detectadas · ExG thr ' +
-          result.stats.threshold +
-          (result.stats.meanConfidence != null
-            ? ' · conf. media ' + Math.round(result.stats.meanConfidence) + '%'
-            : '') +
-          (result.stats.excludedTotal
-            ? ' · excl. ' + result.stats.excludedTotal
-            : '') +
-          (result.stats.match && result.stats.match.hasHistory
-            ? ' · match ' + result.stats.match.matched + '/' + result.stats.count
-            : '');
-        if (result.stats.truncated) {
+        var calib = null;
+        if (useAi) {
+          calib = await calibrateDetectionWithAi(model);
           setMapStatus(
-            'Detectadas ' +
-              result.stats.count +
-              ' copas (tope ' +
-              result.stats.maxTrees +
-              '). Hay más en el orto; se listan las de mayor área.',
-            'ok'
-          );
-        } else if (result.stats.match && result.stats.match.hasHistory) {
-          setMapStatus(
-            result.stats.count +
-              ' copas · ' +
-              result.stats.match.matched +
-              ' con ID estable vs vuelo anterior',
+            'Criterio listo' +
+              (calib.crop_hint ? ' · ' + calib.crop_hint : '') +
+              ' · detectando todo el predio…',
             'ok'
           );
         }
+        var result = window.AirCICanopy.analyzeCanopies(currentGeoraster, {
+          profile: useAi ? 'ai' : 'strict',
+          calibration: calib || undefined
+        });
+        if (useAi && calib) {
+          result.stats.aiModel = model;
+          result.stats.aiCalibrated = true;
+          result.stats.cropHint = calib.crop_hint || '';
+        }
+        applyFlightMatch(result, prevBundle);
+        drawCanopies(result);
+        document.getElementById('aciMapSub').textContent =
+          'Copas · ' +
+          (useAi
+            ? 'IA calib. ' + model.replace('gpt-5.6-', '')
+            : 'ExG') +
+          ' · thr ' +
+          result.stats.threshold +
+          (result.stats.meanConfidence != null
+            ? ' · conf. ' + Math.round(result.stats.meanConfidence) + '%'
+            : '') +
+          (result.stats.cropHint ? ' · ' + result.stats.cropHint : '') +
+          (result.stats.match && result.stats.match.hasHistory
+            ? ' · match ' + result.stats.match.matched + '/' + result.stats.count
+            : '');
+        setMapStatus(
+          result.stats.count +
+            ' copas' +
+            (useAi
+              ? ' · calibrado con 2 fotos (' + model.replace('gpt-5.6-', '') + ')'
+              : ' · ExG') +
+            (result.stats.truncated ? ' · tope ' + result.stats.maxTrees : ''),
+          'ok'
+        );
         setActiveTab('analisis');
         saveCurrentMetaToSiteStore();
         refreshProjectsUi();
@@ -3726,6 +3886,12 @@
       }
     });
   });
+
+  loadDetectModelChoice();
+  var detectModelEl = document.getElementById('aciDetectModel');
+  if (detectModelEl) {
+    detectModelEl.addEventListener('change', persistDetectModelChoice);
+  }
 
   var semModeBar = document.getElementById('aciSemModeBar');
   if (semModeBar) {

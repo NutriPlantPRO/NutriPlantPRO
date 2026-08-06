@@ -59,8 +59,83 @@
     return 255;
   }
 
-  /** ExG estricto: ignora negro/sombra, exige verde dominante (copa vs pasto) */
-  function buildVegetationMask(georaster) {
+  /**
+   * ExG con perfil:
+   * - 'strict' → F2 estricto
+   * - 'ai' → permisivo por defecto
+   * - objeto calibration de la IA → parámetros calibrados
+   */
+  function resolveExgParams(profileOrCalib) {
+    var c =
+      profileOrCalib && typeof profileOrCalib === 'object' ? profileOrCalib : null;
+    var mode =
+      c != null
+        ? 'calib'
+        : profileOrCalib === 'ai'
+          ? 'ai'
+          : 'strict';
+    if (mode === 'calib') {
+      return {
+        mode: 'calib',
+        gMargin: Number(c.g_margin) || 0.035,
+        bMargin: Number(c.b_margin) || 0.03,
+        gAbs: Number(c.g_abs) || 4,
+        bAbs: Number(c.b_abs) || 3,
+        darkSum: Number(c.dark_sum) || 40,
+        minG: Number(c.min_g) || 24,
+        pct: Number(c.exg_percentile) || 58,
+        thrMin: Number(c.thr_min) || 60,
+        thrMax: Number(c.thr_max) || 165,
+        erosionPasses: Number(c.erosion_passes) === 2 ? 2 : 1,
+        allowYellow: c.allow_yellow_green !== false,
+        yellowBoost: c.yellow_boost !== false,
+        minAreaPx: Number(c.min_area_px) || 60,
+        minConfidence: Number(c.min_confidence) || 30,
+        cropHint: c.crop_hint || ''
+      };
+    }
+    if (mode === 'ai') {
+      return {
+        mode: 'ai',
+        gMargin: 0.03,
+        bMargin: 0.025,
+        gAbs: 3,
+        bAbs: 2,
+        darkSum: 36,
+        minG: 22,
+        pct: 55,
+        thrMin: 55,
+        thrMax: 160,
+        erosionPasses: 1,
+        allowYellow: true,
+        yellowBoost: true,
+        minAreaPx: 55,
+        minConfidence: 28,
+        cropHint: ''
+      };
+    }
+    return {
+      mode: 'strict',
+      gMargin: 0.055,
+      bMargin: 0.04,
+      gAbs: 6,
+      bAbs: 4,
+      darkSum: 48,
+      minG: 28,
+      pct: 68,
+      thrMin: 78,
+      thrMax: 175,
+      erosionPasses: 2,
+      allowYellow: false,
+      yellowBoost: false,
+      minAreaPx: MIN_AREA_PX,
+      minConfidence: MIN_CONFIDENCE,
+      cropHint: ''
+    };
+  }
+
+  function buildVegetationMask(georaster, profileOrCalib) {
+    var P = resolveExgParams(profileOrCalib);
     var bands = getBandArrays(georaster);
     if (!bands) throw new Error('GeoTIFF sin bandas RGB');
     var w = georaster.width;
@@ -80,16 +155,23 @@
       var B = bandScale(bands.b[p], maxB);
       var s = R + G + B;
       var v = 0;
-      // Negro / nodata / sombra oscura (más estricto)
-      if (s < 48 || (R < 20 && G < 24 && B < 20) || G < 28) {
+      if (s < P.darkSum || (R < 18 && G < 20 && B < 18) || G < P.minG) {
         v = 0;
       } else {
         var r = R / s;
         var g = G / s;
         var b = B / s;
-        // Verde debe ganar con más margen (reduce pasto seco / suelo / sombra verde)
-        if (g > r + 0.055 && g > b + 0.04 && G > R + 6 && G > B + 4) {
+        var greenOk = P.allowYellow
+          ? g + 0.02 >= r && g > b + P.bMargin && G + 4 >= R && G > B + P.bAbs
+          : g > r + P.gMargin &&
+            g > b + P.bMargin &&
+            G > R + P.gAbs &&
+            G > B + P.bAbs;
+        if (greenOk) {
           var raw = 2 * g - r - b;
+          if (P.yellowBoost && R > G && R - G < 28 && G > B + 4) {
+            raw = Math.max(raw, 0.15);
+          }
           v = Math.max(0, Math.min(255, Math.round((raw + 1) * 127.5)));
         } else {
           v = 0;
@@ -102,16 +184,15 @@
       }
     }
 
-    // Umbral más alto: percentil ~68 de candidatos verdes
-    var thr = valid > 100 ? percentileFromHist(hist, valid, 68) : 95;
-    thr = Math.max(78, Math.min(thr, 175));
+    var thr =
+      valid > 100 ? percentileFromHist(hist, valid, P.pct) : P.mode === 'strict' ? 95 : 70;
+    thr = Math.max(P.thrMin, Math.min(thr, P.thrMax));
 
     var mask = new Uint8Array(n);
     for (var q = 0; q < n; q++) {
       if (exg[q] >= thr) mask[q] = 1;
     }
 
-    // Erosión 4-vecinos: rompe puentes de pasto entre árboles
     var eroded = new Uint8Array(n);
     for (var y = 1; y < h - 1; y++) {
       for (var x = 1; x < w - 1; x++) {
@@ -127,34 +208,36 @@
         }
       }
     }
-    // Segunda erosión ligera (solo vecinos cardinales) para pasto fino
-    var eroded2 = new Uint8Array(n);
-    for (var y2 = 1; y2 < h - 1; y2++) {
-      for (var x2 = 1; x2 < w - 1; x2++) {
-        var i2 = y2 * w + x2;
-        if (
-          eroded[i2] &&
-          eroded[i2 - 1] &&
-          eroded[i2 + 1] &&
-          eroded[i2 - w] &&
-          eroded[i2 + w]
-        ) {
-          eroded2[i2] = 1;
+    var source = eroded;
+    if (P.erosionPasses >= 2) {
+      var eroded2 = new Uint8Array(n);
+      for (var y2 = 1; y2 < h - 1; y2++) {
+        for (var x2 = 1; x2 < w - 1; x2++) {
+          var i2 = y2 * w + x2;
+          if (
+            eroded[i2] &&
+            eroded[i2 - 1] &&
+            eroded[i2 + 1] &&
+            eroded[i2 - w] &&
+            eroded[i2 + w]
+          ) {
+            eroded2[i2] = 1;
+          }
         }
       }
+      source = eroded2;
     }
-    // Dilatación (recuperar copa)
     var dil = new Uint8Array(n);
     var count = 0;
     for (var yy = 1; yy < h - 1; yy++) {
       for (var xx = 1; xx < w - 1; xx++) {
         var ii = yy * w + xx;
         if (
-          eroded2[ii] ||
-          eroded2[ii - 1] ||
-          eroded2[ii + 1] ||
-          eroded2[ii - w] ||
-          eroded2[ii + w]
+          source[ii] ||
+          source[ii - 1] ||
+          source[ii + 1] ||
+          source[ii - w] ||
+          source[ii + w]
         ) {
           dil[ii] = 1;
           count++;
@@ -162,7 +245,6 @@
       }
     }
 
-    // Limpiar anillo del borde del orto (artefactos / pasto de margen)
     var clear = Math.max(1, Math.min(BORDER_CLEAR_PX, ((Math.min(w, h) / 2) | 0) - 1));
     for (var by = 0; by < h; by++) {
       for (var bx = 0; bx < w; bx++) {
@@ -182,7 +264,9 @@
       threshold: thr,
       vegPixels: Math.max(0, count),
       width: w,
-      height: h
+      height: h,
+      profile: P.mode,
+      params: P
     };
   }
 
@@ -1224,8 +1308,17 @@
 
   function analyzeCanopies(georaster, opts) {
     opts = opts || {};
-    var minArea = opts.minAreaPx != null ? opts.minAreaPx : MIN_AREA_PX;
-    var veg = buildVegetationMask(georaster);
+    var profileOrCalib =
+      opts.calibration && typeof opts.calibration === 'object'
+        ? opts.calibration
+        : opts.profile === 'ai'
+          ? 'ai'
+          : 'strict';
+    var P = resolveExgParams(profileOrCalib);
+    var minArea = opts.minAreaPx != null ? opts.minAreaPx : P.minAreaPx;
+    var minConf =
+      opts.minConfidence != null ? opts.minConfidence : P.minConfidence;
+    var veg = buildVegetationMask(georaster, profileOrCalib);
     var totalPx = veg.width * veg.height;
     var maxAreaAbs = Math.max(minArea * 20, Math.floor(totalPx * MAX_AREA_FRAC));
     var gsdM = estimateGsdM(georaster);
@@ -1284,7 +1377,7 @@
       c.confidence = scoreCanopy(c, med);
     });
     comps = comps.filter(function (c) {
-      if ((c.confidence || 0) < MIN_CONFIDENCE) {
+      if ((c.confidence || 0) < minConf) {
         excluded.lowConf++;
         return false;
       }
@@ -1438,6 +1531,9 @@
         excludedShape: excluded.shape,
         excludedLowConf: excluded.lowConf,
         candidatesRaw: rawComps.length,
+        detectionProfile: veg.profile || P.mode,
+        calibration: P.mode === 'calib' ? opts.calibration : null,
+        cropHint: P.cropHint || '',
         hasPhenology: phenoSummary.hasPhenology,
         meanFlorPct: phenoSummary.meanFlorPct,
         meanBrotePct: phenoSummary.meanBrotePct,
@@ -1449,6 +1545,20 @@
         meanPhenoConfidence: phenoSummary.meanPhenoConfidence
       }
     };
+  }
+
+  /** Polígono circular en lat/lng desde centro y radio en píxeles. */
+  function circleToLatLngs(georaster, cx, cy, radiusPx, sides) {
+    sides = sides || 28;
+    var r = Math.max(2, Number(radiusPx) || 2);
+    var out = [];
+    for (var i = 0; i < sides; i++) {
+      var a = (i / sides) * Math.PI * 2;
+      var x = cx + Math.cos(a) * r;
+      var y = cy + Math.sin(a) * r;
+      out.push(pixelToLatLng(georaster, x, y));
+    }
+    return out;
   }
 
   global.AirCICanopy = {
@@ -1465,6 +1575,11 @@
     phenoSemForPct: phenoSemForPct,
     PHENO_META: PHENO_META,
     orderComponentsByRows: orderComponentsByRows,
-    scoreCanopy: scoreCanopy
+    scoreCanopy: scoreCanopy,
+    circleToLatLngs: circleToLatLngs,
+    pixelToLatLng: pixelToLatLng,
+    getBandArrays: getBandArrays,
+    bandScale: bandScale,
+    resolveExgParams: resolveExgParams
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1031,12 +1031,9 @@
             costBorder.push('#2563eb');
           }
         });
-        // Altura dinámica según nº de tickers (título HTML queda fuera del canvas)
+        // Altura la marca el layout CSS (alineada con la tabla); no forzar px inline
         var box = c3.closest('.np-inv-pf-chart-box') || c3.parentElement;
-        if (box) {
-          var hPx = Math.max(300, Math.min(540, 72 + barLabels.length * 28));
-          box.style.height = hPx + 'px';
-        }
+        if (box) box.style.height = '';
         st.barCostValue = new global.Chart(c3, {
           type: 'bar',
           data: {
@@ -1162,7 +1159,7 @@
     el.setAttribute('hidden', '');
   }
 
-  function totalsFootHtml(t) {
+  function totalsCellsHtml(t) {
     var stockPct = t.total > 0 ? ((t.stock / t.total) * 100).toFixed(1) : '0';
     var etfPct = t.total > 0 ? ((t.etf / t.total) * 100).toFixed(1) : '0';
     var costText =
@@ -1170,7 +1167,6 @@
     var dayText = t.dayChangeKnown > 0 ? fmtSigned(t.dayChange) : '—';
     var glText = t.gainLossKnown > 0 ? fmtSigned(t.gainLoss) : '—';
     return (
-      '<tr class="np-inv-pf-totals-row">' +
       '<td>' +
       '<span class="np-inv-pf-tfoot-label">Totales</span>' +
       '<span class="np-inv-pf-tfoot-sub">' +
@@ -1205,9 +1201,15 @@
       escapeHtml(etfPct) +
       '%</span>' +
       '</td>' +
-      '<td></td>' +
-      '</tr>'
+      '<td></td>'
     );
+  }
+
+  function syncTotalsStickyOffset() {
+    var head = $('npInvPfTableHead');
+    var wrap = $('npInvPfTableWrap');
+    if (!head || !wrap) return;
+    wrap.style.setProperty('--np-inv-pf-th-h', Math.ceil(head.getBoundingClientRect().height) + 'px');
   }
 
   function applySortObject(data) {
@@ -1459,14 +1461,17 @@
 
   function renderTable() {
     var body = $('npInvPfTableBody');
-    var foot = $('npInvPfTableFoot');
+    var totalsRow = $('npInvPfTableTotals');
     var empty = $('npInvPfEmpty');
     var tableWrap = $('npInvPfTableWrap');
     if (!body) return;
 
     if (!st.holdings.length) {
       body.innerHTML = '';
-      if (foot) foot.innerHTML = '';
+      if (totalsRow) {
+        totalsRow.innerHTML = '';
+        totalsRow.setAttribute('hidden', '');
+      }
       if (empty) empty.classList.remove('np-hide');
       if (tableWrap) tableWrap.classList.add('np-hide');
       return;
@@ -1498,8 +1503,12 @@
     }
 
     body.innerHTML = parts.join('');
-    if (foot) foot.innerHTML = totalsFootHtml(t);
+    if (totalsRow) {
+      totalsRow.innerHTML = totalsCellsHtml(t);
+      totalsRow.removeAttribute('hidden');
+    }
     syncSortHeaderUi();
+    syncTotalsStickyOffset();
   }
 
   function render() {

@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806f5">
+  <link rel="stylesheet" href="./airci.css?v=20260806lay">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -172,6 +172,15 @@
               Subir GeoTIFF
               <input id="aciTiffInput" type="file" accept=".tif,.tiff,image/tiff" hidden>
             </label>
+            <label class="aci-detect-mode" for="aciDetectModel">
+              <span>Detección</span>
+              <select id="aciDetectModel" title="ExG gratis, o IA calibra con 2 fotos y ExG corre en todo el predio">
+                <option value="exg">ExG · gratis (sin IA)</option>
+                <option value="gpt-5.6-luna" selected>Luna · calibra 2 fotos</option>
+                <option value="gpt-5.6-terra">Terra · calibra 2 fotos</option>
+                <option value="gpt-5.6-sol">Sol · calibra 2 fotos</option>
+              </select>
+            </label>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciAnalyzeBtn" hidden>Detectar copas</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
           </div>
@@ -279,6 +288,43 @@
               </table>
             </div>
             <div class="aci-sem-breakdown" id="aciSemBreakdown" role="group" aria-label="Filtro rápido por semáforo"></div>
+
+            <div class="aci-pheno-panel aci-pheno-panel--nested" id="aciPhenoPanel" hidden>
+              <div class="aci-map-head">
+                <div>
+                  <strong>Fenología del predio</strong>
+                  <span id="aciPhenoNote">Floración + brotación + vegetativo + sin clasificar = 100%</span>
+                </div>
+                <div class="aci-sem-mode" role="group" aria-label="Pintar fenología">
+                  <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" title="Color por estado dominante">Dominante</button>
+                  <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="flor" title="Intensidad por % floración">Flor %</button>
+                  <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="brote" title="Intensidad por % brotación">Brote %</button>
+                  <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="veg" title="Intensidad por % vegetativo">Veg %</button>
+                </div>
+              </div>
+              <p class="aci-pheno-disclaimer" role="note">
+                La <strong>coloración atípica</strong> es solo una señal visual del RGB.
+                No la interpretes automáticamente como deficiencia nutricional ni enfermedad:
+                puede ser floración, brotación u otra etapa vegetativa.
+              </p>
+              <div class="aci-history-metrics aci-pheno-metrics">
+                <div class="aci-hist-metric"><small>Dominante lote</small><strong id="aciPhenoDom">—</strong></div>
+                <div class="aci-hist-metric"><small>Floración media</small><strong id="aciPhenoFlor">—</strong></div>
+                <div class="aci-hist-metric"><small>Brotación media</small><strong id="aciPhenoBrote">—</strong></div>
+                <div class="aci-hist-metric"><small>Vegetativo medio</small><strong id="aciPhenoVeg">—</strong></div>
+                <div class="aci-hist-metric"><small>Sin clasificar</small><strong id="aciPhenoOther">—</strong></div>
+                <div class="aci-hist-metric"><small>Color atípico*</small><strong id="aciPhenoAtyp">—</strong></div>
+                <div class="aci-hist-metric"><small>Conf. feno.</small><strong id="aciPhenoConf">—</strong></div>
+              </div>
+              <div class="aci-legend aci-pheno-filter" id="aciPhenoFilter" aria-label="Filtrar por fenología">
+                <span class="aci-basemap-label">Filtrar feno</span>
+                <button type="button" class="aci-leg aci-leg--all is-active" data-pheno="all">Todos</button>
+                <button type="button" class="aci-leg aci-leg--flor" data-pheno="flor">Floración <em>(0)</em></button>
+                <button type="button" class="aci-leg aci-leg--brote" data-pheno="brote">Brotación <em>(0)</em></button>
+                <button type="button" class="aci-leg aci-leg--veg" data-pheno="veg">Vegetativo <em>(0)</em></button>
+                <button type="button" class="aci-leg" data-pheno="other" style="border-color:#94a3b8;color:#475569">Otro <em>(0)</em></button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -306,43 +352,6 @@
             <button type="button" class="aci-leg aci-leg--rojo" data-delta="down">Redujo <em>(0)</em></button>
             <button type="button" class="aci-leg aci-leg--verde" data-delta="flat">Estable <em>(0)</em></button>
             <button type="button" class="aci-leg" data-delta="new" style="border-color:#94a3b8;color:#475569">Nuevos <em>(0)</em></button>
-          </div>
-        </div>
-
-        <div class="aci-pheno-panel" id="aciPhenoPanel" hidden>
-          <div class="aci-map-head">
-            <div>
-              <strong>Fenología del predio (F5)</strong>
-              <span id="aciPhenoNote">Floración + brotación + vegetativo + sin clasificar = 100%</span>
-            </div>
-            <div class="aci-sem-mode" role="group" aria-label="Pintar fenología">
-              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" title="Color por estado dominante">Dominante</button>
-              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="flor" title="Intensidad por % floración">Flor %</button>
-              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="brote" title="Intensidad por % brotación">Brote %</button>
-              <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="veg" title="Intensidad por % vegetativo">Veg %</button>
-            </div>
-          </div>
-          <p class="aci-pheno-disclaimer" role="note">
-            La <strong>coloración atípica</strong> es solo una señal visual del RGB.
-            No la interpretes automáticamente como deficiencia nutricional ni enfermedad:
-            puede ser floración, brotación u otra etapa vegetativa.
-          </p>
-          <div class="aci-history-metrics aci-pheno-metrics">
-            <div class="aci-hist-metric"><small>Dominante lote</small><strong id="aciPhenoDom">—</strong></div>
-            <div class="aci-hist-metric"><small>Floración media</small><strong id="aciPhenoFlor">—</strong></div>
-            <div class="aci-hist-metric"><small>Brotación media</small><strong id="aciPhenoBrote">—</strong></div>
-            <div class="aci-hist-metric"><small>Vegetativo medio</small><strong id="aciPhenoVeg">—</strong></div>
-            <div class="aci-hist-metric"><small>Sin clasificar</small><strong id="aciPhenoOther">—</strong></div>
-            <div class="aci-hist-metric"><small>Color atípico*</small><strong id="aciPhenoAtyp">—</strong></div>
-            <div class="aci-hist-metric"><small>Conf. feno.</small><strong id="aciPhenoConf">—</strong></div>
-          </div>
-          <div class="aci-legend aci-pheno-filter" id="aciPhenoFilter" aria-label="Filtrar por fenología">
-            <span class="aci-basemap-label">Filtrar feno</span>
-            <button type="button" class="aci-leg aci-leg--all is-active" data-pheno="all">Todos</button>
-            <button type="button" class="aci-leg aci-leg--flor" data-pheno="flor">Floración <em>(0)</em></button>
-            <button type="button" class="aci-leg aci-leg--brote" data-pheno="brote">Brotación <em>(0)</em></button>
-            <button type="button" class="aci-leg aci-leg--veg" data-pheno="veg">Vegetativo <em>(0)</em></button>
-            <button type="button" class="aci-leg" data-pheno="other" style="border-color:#94a3b8;color:#475569">Otro <em>(0)</em></button>
           </div>
         </div>
       </section>
@@ -497,7 +506,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806f5"></script>
-  <script src="./airci.js?v=20260806f5"></script>
+  <script src="./airci-canopy.js?v=20260806cal"></script>
+  <script src="./airci.js?v=20260806cal"></script>
 </body>
 </html>
