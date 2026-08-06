@@ -6,10 +6,10 @@
   <title>AirCI Crop Intelligence | NutriPlant PRO</title>
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
-  <link rel="stylesheet" href="./airci.css?v=20260806a">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./airci.css?v=20260806b">
 </head>
 <body class="aci-body">
-  <!-- Gate: sesión admin + PIN 4 dígitos (mismos que Admin) -->
   <div id="aciGate" class="aci-gate">
     <div class="aci-gate-card">
       <h1>AirCI</h1>
@@ -53,7 +53,7 @@
       <section class="aci-panel aci-meta">
         <div class="aci-meta__head">
           <strong>Datos del predio</strong>
-          <span>Edita el texto aquí mismo · se guarda en este dispositivo (F0)</span>
+          <span>Edita aquí · local + nube (si hay sesión Supabase)</span>
         </div>
         <div class="aci-meta-grid">
           <div class="aci-field aci-field--wide">
@@ -88,51 +88,66 @@
         <p id="aciSaveHint" class="aci-save-hint" role="status"></p>
       </section>
 
-      <section class="aci-metrics" aria-label="Resumen (placeholder)">
-        <div class="aci-metric"><small>Árboles detectados</small><strong>—</strong><em>Próximo: análisis</em></div>
-        <div class="aci-metric"><small>Cobertura de copa</small><strong>—</strong><em>Próximo: análisis</em></div>
-        <div class="aci-metric"><small>Área promedio</small><strong>—</strong><em>Próximo: análisis</em></div>
-        <div class="aci-metric"><small>Sin copa / faltantes</small><strong>—</strong><em>Próximo: análisis</em></div>
+      <section class="aci-metrics" aria-label="Resumen ortomosaico">
+        <div class="aci-metric"><small>Archivo</small><strong id="aciMetricFile">—</strong><em id="aciMetricFileSub">Sin TIFF</em></div>
+        <div class="aci-metric"><small>Tamaño</small><strong id="aciMetricSize">—</strong><em>bytes del GeoTIFF</em></div>
+        <div class="aci-metric"><small>Dimensiones</small><strong id="aciMetricDims">—</strong><em id="aciMetricBands">bandas</em></div>
+        <div class="aci-metric"><small>Nube</small><strong id="aciMetricCloud">—</strong><em id="aciMetricCloudSub">Storage</em></div>
       </section>
 
       <section class="aci-panel aci-map-panel">
         <div class="aci-map-head">
           <div>
-            <strong>Mapa / ortomosaico</strong>
-            <span id="aciMapSub">Fase F1: subida GeoTIFF (WebODM)</span>
+            <strong>Mapa / ortomosaico GeoTIFF</strong>
+            <span id="aciMapSub">Sube un .tif / .tiff (WebODM u otro)</span>
           </div>
-          <span>Capas · semáforo · tabla (próximo)</span>
+          <div class="aci-upload-bar">
+            <label class="aci-btn aci-btn--file">
+              Subir GeoTIFF
+              <input id="aciTiffInput" type="file" accept=".tif,.tiff,image/tiff" hidden>
+            </label>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
+          </div>
         </div>
-        <div class="aci-map-placeholder">
-          <div>
-            <h2>Aquí irá el ortomosaico y las capas</h2>
-            <p>
-              Cobertura de copa, semáforo de tamaño (rojo / amarillo / verde / azul)
-              y tabla de valores sincronizada debajo del mapa.
-            </p>
+        <div id="aciMapWrap" class="aci-map-wrap">
+          <div id="aciMapPlaceholder" class="aci-map-placeholder">
+            <div>
+              <h2>Sube tu GeoTIFF para verlo aquí</h2>
+              <p>
+                Se muestra en el mapa con georreferencia (si el TIFF la trae).
+                Luego se sube a Supabase Storage para guardarlo en la nube.
+              </p>
+            </div>
           </div>
+          <div id="aciMap" class="aci-map" hidden></div>
+          <div id="aciMapStatus" class="aci-map-status" hidden role="status"></div>
         </div>
         <div class="aci-layers" aria-label="Capas previstas">
-          <span class="aci-layer-chip is-active">Cobertura</span>
+          <span class="aci-layer-chip is-active">Ortomosaico RGB</span>
+          <span class="aci-layer-chip">Cobertura</span>
           <span class="aci-layer-chip">Semáforo tamaño</span>
           <span class="aci-layer-chip">Floración</span>
           <span class="aci-layer-chip">Brotación</span>
           <span class="aci-layer-chip">Vegetativo</span>
           <span class="aci-layer-chip">Coloración</span>
           <span class="aci-layer-chip">Atípicos</span>
-          <span class="aci-layer-chip">Cambios</span>
         </div>
       </section>
 
       <p class="aci-footer-note">
         AirCI Crop Intelligence by NutriPlant PRO · Uso interno (admin).
-        Entrega al cliente: PDF + link de solo lectura (fases siguientes).
-        Doc: <code>docs/AIRCI-CROP-INTELLIGENCE-PLAN.md</code>
+        SQL una vez: <code>supabase-airci.sql</code> · API <code>/api/airci-ortho</code>.
+        Si el TIFF es muy grande (&gt;~80&nbsp;MB), el visor del navegador puede ir lento; la nube acepta hasta 500&nbsp;MB.
       </p>
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+  <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci.js?v=20260806a"></script>
+  <script src="./airci.js?v=20260806b"></script>
 </body>
 </html>

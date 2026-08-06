@@ -4,7 +4,7 @@ Documento vivo para definir e implementar el módulo **AirCI**: análisis de hue
 
 **Ruta prevista:** `https://nutriplantpro.com/airCI`  
 **Acceso:** solo uso interno (admin). No es módulo público de usuarios.  
-**Estado:** F0 listo (shell + login + PIN). Siguiente: F1 (GeoTIFF + mapa).
+**Estado:** F1 listo (subida GeoTIFF + mapa). Ejecutar `supabase-airci.sql` en Supabase. Siguiente: F2 detección de copas.
 
 ---
 
@@ -399,7 +399,7 @@ IDs permanentes: `tree_id` estable en el site; matching entre vuelos por proximi
 | Fase | Qué incluye | Prioridad |
 |------|-------------|-----------|
 | **F0** | Shell `/airCI`: header agroclimate-style + logos + metadatos inline + cards placeholder + acceso admin | ✅ Hecho (2026-08-06) |
-| **F1** | Subida GeoTIFF (WebODM) + storage + visor mapa Leaflet | Alta |
+| **F1** | Subida GeoTIFF (WebODM) + storage + visor mapa Leaflet | ✅ Hecho (2026-08-06) |
 | **F2** | Detección de copas + IDs + métricas tamaño + resumen predio | Alta |
 | **F3** | Estadística completa + histograma/boxplot + export CSV/GeoJSON | Alta |
 | **F4** | Capas mapa + ficha por árbol | Alta |
@@ -429,14 +429,14 @@ IDs permanentes: `tree_id` estable en el site; matching entre vuelos por proximi
 | 4 | Arranque | Empezar por **F0** (shell visual + metadatos), luego F1 con GeoTIFF |
 | 5 | Auth | Login admin → modal destino (+ botón AirCI) → **mismos 4 dígitos** |
 | 6 | Entrega cliente | **PDF + link** solo lectura |
+| 7 | Storage GeoTIFF | **Supabase Storage** bucket `airci-orthos` (`supabase-airci.sql`) |
 
-### Siguen abiertas (no bloquean F0)
+### Siguen abiertas (no bloquean F1)
 
 1. **¿“Coloración atípica” entra en el 100% fenológico o es métrica paralela?**
 2. **¿Umbrales pequeña/media/grande: fijos por cultivo o percentiles del lote?**
 3. **¿Matching de IDs entre vuelos: solo distancia al centro, o registro geométrico del mosaico?**
-4. **Storage del GeoTIFF: ¿Supabase Storage?** (casi seguro sí en F1)
-5. **PIN: ¿mismo scope que admin/planpro o scope `airci` con el mismo código?** (recomendado: mismo código / mismo secreto)
+4. **PIN: ¿mismo scope que admin/planpro o scope `airci` con el mismo código?** → **Hecho:** scope `airci` usa `ADMIN_ACCESS_PIN`
 ---
 
 ## 11. Criterios de éxito (MVP interno)
