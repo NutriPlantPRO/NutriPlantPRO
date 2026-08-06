@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806c">
+  <link rel="stylesheet" href="./airci.css?v=20260806h">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -63,10 +63,42 @@
     </header>
 
     <main class="aci-shell">
+      <nav class="aci-tabs" aria-label="Secciones AirCI">
+        <button type="button" class="aci-tab is-active" data-tab="proyectos">Proyectos</button>
+        <button type="button" class="aci-tab" data-tab="analisis">Análisis</button>
+      </nav>
+
+      <!-- —— Proyectos AirCI (solo AirCI, no NutriPlant PRO) —— -->
+      <section id="aciTabProyectos" class="aci-tab-panel">
+        <div class="aci-panel aci-projects">
+          <div class="aci-projects__head">
+            <div>
+              <strong>Proyectos AirCI</strong>
+              <span>Agrícola → predio/rama → análisis · solo AirCI</span>
+            </div>
+            <div class="aci-projects__actions">
+              <button type="button" class="aci-btn aci-btn--enter" id="aciNewProjectBtn">＋ Nuevo análisis</button>
+              <button type="button" class="aci-btn aci-btn--ghost" id="aciRefreshProjectsBtn">Actualizar</button>
+            </div>
+          </div>
+          <p id="aciProjectsHint" class="aci-save-hint">Cargando…</p>
+          <div id="aciProjectsTree" class="aci-projects-tree"></div>
+        </div>
+      </section>
+
+      <!-- —— Análisis (mapa + datos del abierto) —— -->
+      <section id="aciTabAnalisis" class="aci-tab-panel" hidden>
+        <div class="aci-open-banner" id="aciOpenBanner">
+          <div>
+            <strong id="aciOpenTitle">Sin análisis abierto</strong>
+            <span id="aciOpenPath">Crea o abre uno en Proyectos</span>
+          </div>
+          <button type="button" class="aci-btn aci-btn--ghost" data-tab-jump="proyectos">Ver proyectos</button>
+        </div>
+
       <section class="aci-panel aci-meta">
         <div class="aci-meta__head">
           <strong>Datos del predio</strong>
-          <span>Edita aquí · local + nube (si hay sesión Supabase)</span>
         </div>
         <div class="aci-meta-grid">
           <div class="aci-field aci-field--wide">
@@ -102,10 +134,10 @@
       </section>
 
       <section class="aci-metrics" aria-label="Resumen ortomosaico">
-        <div class="aci-metric"><small>Archivo</small><strong id="aciMetricFile">—</strong><em id="aciMetricFileSub">Sin TIFF</em></div>
-        <div class="aci-metric"><small>Tamaño</small><strong id="aciMetricSize">—</strong><em>bytes del GeoTIFF</em></div>
-        <div class="aci-metric"><small>Dimensiones</small><strong id="aciMetricDims">—</strong><em id="aciMetricBands">bandas</em></div>
-        <div class="aci-metric"><small>Nube</small><strong id="aciMetricCloud">—</strong><em id="aciMetricCloudSub">Storage</em></div>
+        <div class="aci-metric"><small>Árboles / copas</small><strong id="aciMetricTrees">—</strong><em id="aciMetricTreesSub">detección F2</em></div>
+        <div class="aci-metric"><small>Cobertura copa</small><strong id="aciMetricCover">—</strong><em>vegetación ExG</em></div>
+        <div class="aci-metric"><small>Área promedio</small><strong id="aciMetricMean">—</strong><em>píxeles de copa</em></div>
+        <div class="aci-metric"><small>Archivo</small><strong id="aciMetricFile">—</strong><em id="aciMetricCloud">nube</em></div>
       </section>
 
       <section class="aci-panel aci-map-panel">
@@ -119,39 +151,59 @@
               Subir GeoTIFF
               <input id="aciTiffInput" type="file" accept=".tif,.tiff,image/tiff" hidden>
             </label>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciAnalyzeBtn" hidden>Detectar copas</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
           </div>
         </div>
         <div id="aciMapWrap" class="aci-map-wrap">
           <div id="aciMapPlaceholder" class="aci-map-placeholder">
-            <div>
-              <h2>Sube tu GeoTIFF para verlo aquí</h2>
-              <p>
-                Se muestra en el mapa con georreferencia (si el TIFF la trae).
-                Luego se sube a Supabase Storage para guardarlo en la nube.
-              </p>
-            </div>
+            <span>Usa <strong>Subir GeoTIFF</strong> para cargar el ortomosaico</span>
           </div>
           <div id="aciMap" class="aci-map" hidden></div>
           <div id="aciMapStatus" class="aci-map-status" hidden role="status"></div>
         </div>
-        <div class="aci-layers" aria-label="Capas previstas">
-          <span class="aci-layer-chip is-active">Ortomosaico RGB</span>
-          <span class="aci-layer-chip">Cobertura</span>
-          <span class="aci-layer-chip">Semáforo tamaño</span>
-          <span class="aci-layer-chip">Floración</span>
-          <span class="aci-layer-chip">Brotación</span>
-          <span class="aci-layer-chip">Vegetativo</span>
-          <span class="aci-layer-chip">Coloración</span>
-          <span class="aci-layer-chip">Atípicos</span>
+        <div class="aci-layers" aria-label="Capas" id="aciLayerBar">
+          <button type="button" class="aci-layer-chip is-active" data-layer="ortho">Ortomosaico RGB</button>
+          <button type="button" class="aci-layer-chip" data-layer="copas" disabled>Copas (contorno)</button>
+          <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled>Semáforo tamaño</button>
+          <span class="aci-layer-soon">Floración / brotación / vegetativo — después</span>
+        </div>
+        <div class="aci-legend" id="aciLegend" hidden>
+          <span class="aci-leg aci-leg--rojo">Rojo · muy bajo</span>
+          <span class="aci-leg aci-leg--amarillo">Amarillo · debajo</span>
+          <span class="aci-leg aci-leg--verde">Verde · promedio</span>
+          <span class="aci-leg aci-leg--azul">Azul · arriba</span>
+        </div>
+      </section>
+
+      <section class="aci-panel aci-table-panel" id="aciTablePanel" hidden>
+        <div class="aci-map-head">
+          <div>
+            <strong>Tabla por árbol</strong>
+            <span id="aciTableSub">Capa activa · clic en fila destaca en mapa</span>
+          </div>
+        </div>
+        <div class="aci-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Área (px)</th>
+                <th>Δ % vs prom.</th>
+                <th>Z</th>
+                <th>Semáforo</th>
+              </tr>
+            </thead>
+            <tbody id="aciTableBody"></tbody>
+          </table>
         </div>
       </section>
 
       <p class="aci-footer-note">
-        AirCI Crop Intelligence by NutriPlant PRO · Uso interno (admin).
-        SQL una vez: <code>supabase-airci.sql</code> · API <code>/api/airci-ortho</code>.
-        Si el TIFF es muy grande (&gt;~80&nbsp;MB), el visor del navegador puede ir lento; la nube acepta hasta 500&nbsp;MB.
+        AirCI Crop Intelligence by NutriPlant PRO · Uso interno (admin) · aparte de NutriPlant PRO.
+        Al subir un GeoTIFF se generan capas de <strong>contorno de copa</strong> y <strong>semáforo</strong>.
       </p>
+      </section><!-- /aciTabAnalisis -->
     </main>
   </div>
 
@@ -161,6 +213,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci.js?v=20260806c"></script>
+  <script src="./airci-canopy.js?v=20260806h"></script>
+  <script src="./airci.js?v=20260806h"></script>
 </body>
 </html>

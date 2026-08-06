@@ -275,6 +275,24 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true, url: data.signedUrl, expires_in: ttl });
   }
 
+  if (action === 'list_sites') {
+    const { data, error } = await supabase
+      .from('airci_sites')
+      .select(
+        'id, title, agricola, predio, cultivo, variedad, edad, nota, created_at, updated_at'
+      )
+      .eq('owner_id', auth.userId)
+      .order('updated_at', { ascending: false });
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_sites|does not exist/i.test(error.message || '') ? 'supabase-airci.sql' : null
+      });
+    }
+    return json(200, { ok: true, sites: data || [] });
+  }
+
   if (action === 'list_flights') {
     const siteId = body.site_id;
     if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
@@ -298,6 +316,7 @@ exports.handler = async function handler(event) {
 
   return json(400, {
     ok: false,
-    error: 'action inválida (prepare | finalize | upsert_site | signed_url | list_flights)'
+    error:
+      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights)'
   });
 };

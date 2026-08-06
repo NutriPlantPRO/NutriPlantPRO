@@ -4,7 +4,7 @@ Documento vivo para definir e implementar el módulo **AirCI**: análisis de hue
 
 **Ruta prevista:** `https://nutriplantpro.com/airCI`  
 **Acceso:** solo uso interno (admin). No es módulo público de usuarios.  
-**Estado:** F1 listo (subida GeoTIFF + mapa). Ejecutar `supabase-airci.sql` en Supabase. Siguiente: F2 detección de copas.
+**Estado:** F2 MVP (copas + semáforo). Fenología (flor/brote/vegetativo) aplazada hasta definirla.
 
 ---
 
@@ -400,7 +400,7 @@ IDs permanentes: `tree_id` estable en el site; matching entre vuelos por proximi
 |------|-------------|-----------|
 | **F0** | Shell `/airCI`: header agroclimate-style + logos + metadatos inline + cards placeholder + acceso admin | ✅ Hecho (2026-08-06) |
 | **F1** | Subida GeoTIFF (WebODM) + storage + visor mapa Leaflet | ✅ Hecho (2026-08-06) |
-| **F2** | Detección de copas + IDs + métricas tamaño + resumen predio | Alta |
+| **F2** | Detección de copas + IDs + métricas tamaño + semáforo (ExG MVP) | ✅ MVP (2026-08-06) — sin fenología aún |
 | **F3** | Estadística completa + histograma/boxplot + export CSV/GeoJSON | Alta |
 | **F4** | Capas mapa + ficha por árbol | Alta |
 | **F5** | Fenología + coloración (con regla del 100% y disclaimer) | Media |
