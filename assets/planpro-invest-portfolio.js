@@ -1047,8 +1047,8 @@
                 borderWidth: 1,
                 borderRadius: 4,
                 grouped: false,
-                barPercentage: 0.82,
-                categoryPercentage: 0.78,
+                barPercentage: 0.88,
+                categoryPercentage: 0.86,
                 order: 2
               },
               {
@@ -1059,8 +1059,8 @@
                 borderWidth: 1,
                 borderRadius: 4,
                 grouped: false,
-                barPercentage: 0.48,
-                categoryPercentage: 0.78,
+                barPercentage: 0.55,
+                categoryPercentage: 0.86,
                 order: 1
               }
             ]

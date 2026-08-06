@@ -55,8 +55,8 @@
   gap: 14px;
   align-items: stretch;
   /* Lista + gráfica más altas, siempre alineadas */
-  height: min(88vh, 900px);
-  min-height: 640px;
+  height: min(94vh, 980px);
+  min-height: 720px;
 }
 
 .np-inv-side,
@@ -852,12 +852,12 @@ html.np-inv-tv-touch-lock body {
 }
 .np-inv-pf-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.9fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 2.05fr) minmax(260px, 0.78fr);
+  gap: 14px;
   align-items: stretch;
-  /* Misma altura tabla ↔ gráficas; la tabla hace scroll adentro */
-  height: min(78vh, 760px);
-  min-height: 460px;
+  /* Tabla más ancha + más alta; gráficas completas al lado */
+  height: min(90vh, 920px);
+  min-height: 560px;
 }
 .np-inv-pf-table-col {
   min-width: 0;
@@ -874,6 +874,8 @@ html.np-inv-tv-touch-lock body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .np-inv-pf-empty {
   margin: 0;
@@ -1188,7 +1190,7 @@ html.np-inv-tv-touch-lock body {
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
-  height: 220px;
+  height: 200px;
   padding: 10px 10px 8px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, #0d9488 16%, rgba(148, 163, 184, 0.35));
@@ -1196,9 +1198,9 @@ html.np-inv-tv-touch-lock body {
   box-sizing: border-box;
 }
 .np-inv-pf-chart-box--bars {
-  flex: 1 1 auto;
+  flex: 1.35 1 auto;
   height: auto;
-  min-height: 240px;
+  min-height: 320px;
 }
 .np-inv-pf-chart-title {
   flex: 0 0 auto;
@@ -1288,8 +1290,8 @@ html.np-inv-tv-touch-lock body {
   }
   .np-inv-pf-chart-box--bars {
     flex: none;
-    height: min(420px, 50vh);
-    min-height: 260px;
+    height: min(480px, 55vh);
+    min-height: 300px;
   }
   .np-inv-pf-upload-btn {
     width: 100%;
@@ -1301,8 +1303,8 @@ html.np-inv-tv-touch-lock body {
 
 @media (pointer: coarse) and (min-width: 901px) {
   .np-inv-layout {
-    height: min(82vh, 820px);
-    min-height: 580px;
+    height: min(90vh, 920px);
+    min-height: 640px;
   }
 }
 
