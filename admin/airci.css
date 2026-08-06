@@ -220,11 +220,11 @@ button, input, select, textarea { font: inherit; }
   top: 0;
   z-index: 1000;
   display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) auto minmax(160px, 1fr);
+  grid-template-columns: minmax(180px, 1.2fr) auto minmax(140px, 1fr);
   align-items: center;
-  gap: 10px 16px;
-  min-height: 112px;
-  padding: 6px 18px;
+  gap: 6px 14px;
+  min-height: 56px;
+  padding: 4px 16px;
   color: #fff;
   background: linear-gradient(120deg, #0f172a, #075985);
   box-shadow: 0 4px 18px #0f172a24;
@@ -233,15 +233,16 @@ button, input, select, textarea { font: inherit; }
 .aci-header__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   height: 100%;
 }
 
 .aci-header__brand img {
-  height: clamp(88px, 14vw, 118px);
+  /* Logo apilado: altura baja = franja cerca del margen */
+  height: clamp(40px, 6.5vw, 52px);
   width: auto;
-  max-width: min(560px, 52vw);
+  max-width: min(280px, 48vw);
   object-fit: contain;
   object-position: left center;
 }
@@ -253,28 +254,30 @@ button, input, select, textarea { font: inherit; }
 }
 
 .aci-header__center strong {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 750;
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .aci-header__center small {
   color: #bae6fd;
-  font-size: 11px;
+  font-size: 10.5px;
+  line-height: 1.25;
 }
 
 .aci-header__right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .aci-header__right img {
-  height: 70px;
+  height: 36px;
   width: auto;
-  max-width: min(320px, 40vw);
+  max-width: min(160px, 36vw);
   object-fit: contain;
   object-position: right center;
 }
@@ -940,23 +943,28 @@ button, input, select, textarea { font: inherit; }
   .aci-header {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto;
-    min-height: 100px;
+    min-height: 52px;
+    padding: 4px 12px;
   }
   .aci-header__center {
     grid-column: 1 / -1;
     order: 3;
   }
   .aci-header__brand img {
-    height: clamp(72px, 16vw, 96px);
-    max-width: min(420px, 58vw);
+    height: clamp(36px, 8vw, 46px);
+    max-width: min(220px, 55vw);
+  }
+  .aci-header__right img {
+    height: 30px;
+    max-width: min(130px, 38vw);
   }
 }
 
 @media (max-width: 640px) {
   .aci-meta-row { grid-template-columns: 1fr 1fr; }
   .aci-field--title { grid-column: 1 / -1; }
-  .aci-header__brand img { height: 68px; max-width: min(300px, 62vw); }
-  .aci-header__right img { height: 48px; max-width: min(160px, 40vw); }
+  .aci-header__brand img { height: 34px; max-width: min(180px, 58vw); }
+  .aci-header__right img { height: 26px; max-width: min(110px, 36vw); }
   .aci-metrics { grid-template-columns: 1fr 1fr; }
-  .aci-header { min-height: 88px; padding: 4px 12px; }
+  .aci-header { min-height: 48px; padding: 3px 10px; }
 }
