@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806header3">
+  <link rel="stylesheet" href="./airci.css?v=20260806hdr1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -57,8 +57,18 @@
         <small>Análisis de huerta con ortomosaico RGB</small>
       </div>
       <div class="aci-header__right">
-        <img src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO">
-        <a class="aci-header__link" href="../login.html">Salir</a>
+        <img class="aci-header__np" src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO">
+        <a
+          class="aci-header__logout"
+          href="../login.html"
+          aria-label="Cerrar sesión"
+          title="Cerrar sesión"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2v10"/>
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+          </svg>
+        </a>
       </div>
     </header>
 
@@ -168,20 +178,23 @@
           <button type="button" class="aci-layer-chip is-active" data-layer="ortho">Ortomosaico RGB</button>
           <button type="button" class="aci-layer-chip" data-layer="copas" disabled>Copas (contorno)</button>
           <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled>Semáforo tamaño</button>
+          <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Numeración por surco y línea, al centro de cada copa">Números (ID)</button>
           <span class="aci-layer-soon">Floración / brotación / vegetativo — después</span>
         </div>
         <div class="aci-basemap-bar" aria-label="Mapa de fondo" id="aciBasemapBar">
           <span class="aci-basemap-label">Fondo</span>
-          <button type="button" class="aci-layer-chip is-active" data-basemap="osm">Calles</button>
-          <button type="button" class="aci-layer-chip" data-basemap="sat">Satélite</button>
-          <button type="button" class="aci-layer-chip" data-basemap="relief">Relieve</button>
+          <button type="button" class="aci-layer-chip" data-basemap="osm" title="Google Maps · calles (NutriPlant)">Calles</button>
+          <button type="button" class="aci-layer-chip is-active" data-basemap="sat" title="Google Maps · satélite (NutriPlant)">Satélite</button>
+          <button type="button" class="aci-layer-chip" data-basemap="relief" title="Google Maps · relieve (NutriPlant)">Relieve</button>
           <button type="button" class="aci-layer-chip" data-basemap="off">Ocultar</button>
         </div>
         <div class="aci-legend" id="aciLegend" hidden>
-          <span class="aci-leg aci-leg--rojo">Rojo · muy bajo</span>
-          <span class="aci-leg aci-leg--amarillo">Amarillo · debajo</span>
-          <span class="aci-leg aci-leg--verde">Verde · promedio</span>
-          <span class="aci-leg aci-leg--azul">Azul · arriba</span>
+          <span class="aci-basemap-label">Filtrar</span>
+          <button type="button" class="aci-leg aci-leg--all is-active" data-sem="all" title="Mostrar todas las copas">Todos</button>
+          <button type="button" class="aci-leg aci-leg--rojo" data-sem="rojo" title="Clic: ver solo copas muy bajas">Rojo · muy bajo <em data-sem-count="rojo"></em></button>
+          <button type="button" class="aci-leg aci-leg--amarillo" data-sem="amarillo" title="Clic: ver solo por debajo del promedio">Amarillo · debajo <em data-sem-count="amarillo"></em></button>
+          <button type="button" class="aci-leg aci-leg--verde" data-sem="verde" title="Clic: ver solo promedio">Verde · promedio <em data-sem-count="verde"></em></button>
+          <button type="button" class="aci-leg aci-leg--azul" data-sem="azul" title="Clic: ver solo por encima del promedio">Azul · arriba <em data-sem-count="azul"></em></button>
         </div>
       </section>
 
@@ -196,7 +209,9 @@
           <table>
             <thead>
               <tr>
-                <th title="Identificador de la copa">ID</th>
+                <th title="ID secuencial: surco 1 planta 1, luego planta 2… luego surco 2…">ID</th>
+                <th title="Número de surco (fila de plantación detectada)">Surco</th>
+                <th title="Posición dentro del surco (línea)">Pos</th>
                 <th title="Área de la copa en píxeles">Área (px)</th>
                 <th title="Área en m² (requiere GeoTIFF con escala / GSD)">Área (m²)</th>
                 <th title="Diámetro equivalente de la copa (mismo área que un círculo)">Diám. (m)</th>
@@ -222,10 +237,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../supabase-config.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.14.1/dist/Leaflet.GoogleMutant.js"></script>
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806q"></script>
-  <script src="./airci.js?v=20260806q"></script>
+  <script src="./airci-canopy.js?v=20260806u"></script>
+  <script src="./airci.js?v=20260806u"></script>
 </body>
 </html>

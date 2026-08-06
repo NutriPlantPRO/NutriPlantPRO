@@ -13,6 +13,8 @@
   var CANOPY_BY_SITE_KEY = 'airci_canopy_by_site_v1';
   var TREE_COLLAPSE_KEY = 'airci_tree_collapse_v1';
   var BASEMAP_KEY = 'airci_basemap_v1';
+  /** Misma API Key que NutriPlant (map.js) — Google Maps como fondo AirCI */
+  var GOOGLE_MAPS_KEY = 'AIzaSyBWjzVfDemtQqq0Cy-Tr0VaHinV2bdlN1k';
   var OWNER_EMAIL = 'admin@nutriplantpro.com';
   var SESSION_MAX_MS = 12 * 60 * 60 * 1000;
   var API = '/api/airci-ortho';
@@ -30,13 +32,16 @@
   var map = null;
   var rasterLayer = null;
   var basemapLayer = null;
-  var activeBasemap = 'osm';
+  var activeBasemap = 'sat';
+  var googleMapsPromise = null;
   var lastBounds = null;
   var currentGeoraster = null;
   var canopyResult = null;
   var canopyOutlineLayer = null;
   var canopyFillLayer = null;
+  var canopyLabelLayer = null;
   var activeLayer = 'ortho';
+  var activeSemFilter = 'all';
   var treeLayersById = {};
   var orthoLoadInFlight = false;
 
@@ -148,19 +153,26 @@
         map.removeLayer(canopyFillLayer);
       } catch (e) {}
     }
+    if (canopyLabelLayer && map) {
+      try {
+        map.removeLayer(canopyLabelLayer);
+      } catch (e2) {}
+    }
     canopyOutlineLayer = null;
     canopyFillLayer = null;
+    canopyLabelLayer = null;
     canopyResult = null;
+    activeSemFilter = 'all';
     var legend = document.getElementById('aciLegend');
     var tablePanel = document.getElementById('aciTablePanel');
     if (legend) legend.hidden = true;
     if (tablePanel) tablePanel.hidden = true;
-    document.querySelectorAll('#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"]').forEach(
-      function (btn) {
-        btn.disabled = true;
-        btn.classList.remove('is-active');
-      }
-    );
+    document.querySelectorAll(
+      '#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"], #aciLayerBar [data-layer="numeros"]'
+    ).forEach(function (btn) {
+      btn.disabled = true;
+      btn.classList.remove('is-active');
+    });
     var orthoBtn = document.querySelector('#aciLayerBar [data-layer="ortho"]');
     if (orthoBtn) orthoBtn.classList.add('is-active');
     activeLayer = 'ortho';
@@ -175,7 +187,7 @@
       rasterLayer.setOpacity(activeLayer === 'ortho' ? 1 : 0.45);
     }
     if (canopyOutlineLayer) {
-      if (activeLayer === 'copas') {
+      if (activeLayer === 'copas' || activeLayer === 'numeros') {
         if (!map.hasLayer(canopyOutlineLayer)) canopyOutlineLayer.addTo(map);
       } else {
         if (map.hasLayer(canopyOutlineLayer)) map.removeLayer(canopyOutlineLayer);
@@ -188,6 +200,21 @@
         if (map.hasLayer(canopyFillLayer)) map.removeLayer(canopyFillLayer);
       }
     }
+    if (canopyLabelLayer) {
+      if (activeLayer === 'numeros' || activeLayer === 'semaforo' || activeLayer === 'copas') {
+        if (!map.hasLayer(canopyLabelLayer)) canopyLabelLayer.addTo(map);
+      } else {
+        if (map.hasLayer(canopyLabelLayer)) map.removeLayer(canopyLabelLayer);
+      }
+      // En semáforo/copas los números van más discretos; en capa Números, fuertes
+      var strong = activeLayer === 'numeros';
+      Object.keys(treeLayersById).forEach(function (id) {
+        var entry = treeLayersById[id];
+        if (!entry || !entry.labelEl) return;
+        entry.labelEl.classList.toggle('aci-tree-label--strong', strong);
+        entry.labelEl.classList.toggle('aci-tree-label--soft', !strong);
+      });
+    }
     var legend = document.getElementById('aciLegend');
     if (legend) legend.hidden = activeLayer !== 'semaforo';
   }
@@ -198,6 +225,121 @@
       minimumFractionDigits: digits,
       maximumFractionDigits: digits
     });
+  }
+
+  function getAllTrees() {
+    return canopyResult && Array.isArray(canopyResult.trees) ? canopyResult.trees : [];
+  }
+
+  function treesMatchingSem(key) {
+    var all = getAllTrees();
+    if (!key || key === 'all') return all;
+    return all.filter(function (t) {
+      return t.sem && t.sem.key === key;
+    });
+  }
+
+  function syncSemLegend() {
+    var counts = { rojo: 0, amarillo: 0, verde: 0, azul: 0 };
+    getAllTrees().forEach(function (t) {
+      var k = t.sem && t.sem.key;
+      if (k && counts[k] != null) counts[k]++;
+    });
+    Object.keys(counts).forEach(function (k) {
+      var el = document.querySelector('[data-sem-count="' + k + '"]');
+      if (el) el.textContent = counts[k] ? '(' + counts[k] + ')' : '(0)';
+    });
+    document.querySelectorAll('#aciLegend [data-sem]').forEach(function (btn) {
+      var k = btn.getAttribute('data-sem');
+      btn.classList.toggle('is-active', k === activeSemFilter);
+      if (k !== 'all') {
+        btn.disabled = !counts[k];
+        btn.classList.toggle('is-empty', !counts[k]);
+      } else {
+        btn.disabled = false;
+        btn.classList.remove('is-empty');
+      }
+    });
+  }
+
+  function applySemFilterStyles() {
+    Object.keys(treeLayersById).forEach(function (id) {
+      var entry = treeLayersById[id];
+      if (!entry || !entry.tree) return;
+      var match =
+        activeSemFilter === 'all' || (entry.tree.sem && entry.tree.sem.key === activeSemFilter);
+      if (entry.fill && entry.fill.setStyle) {
+        entry.fill.setStyle({
+          color: entry.tree.sem.color,
+          fillColor: entry.tree.sem.fill,
+          weight: match ? (activeSemFilter === 'all' ? 1.5 : 2.5) : 1,
+          fillOpacity: match ? (activeSemFilter === 'all' ? 0.72 : 0.88) : 0.08,
+          opacity: match ? 1 : 0.2
+        });
+      }
+      if (entry.outline && entry.outline.setStyle) {
+        entry.outline.setStyle({
+          color: '#22c55e',
+          weight: match ? 2 : 1,
+          fillOpacity: match ? 0.06 : 0.01,
+          opacity: match ? 1 : 0.15
+        });
+      }
+      if (entry.label) {
+        if (match) {
+          if (entry.label.getElement) {
+            var el = entry.label.getElement();
+            if (el) el.style.display = '';
+          }
+          if (entry.label.setOpacity) entry.label.setOpacity(1);
+        } else {
+          if (entry.label.getElement) {
+            var el2 = entry.label.getElement();
+            if (el2) el2.style.display = 'none';
+          }
+          if (entry.label.setOpacity) entry.label.setOpacity(0);
+        }
+      }
+    });
+  }
+
+  function fitSemFilterBounds(trees) {
+    if (!map || !trees || !trees.length) return;
+    var bounds = null;
+    trees.forEach(function (t) {
+      var entry = treeLayersById[t.id];
+      var layer = entry && (entry.fill || entry.outline);
+      if (!layer || !layer.getBounds) return;
+      var b = layer.getBounds();
+      if (!b || !b.isValid || !b.isValid()) return;
+      bounds = bounds ? bounds.extend(b) : L.latLngBounds(b.getSouthWest(), b.getNorthEast());
+    });
+    if (bounds && bounds.isValid()) {
+      map.fitBounds(bounds, { maxZoom: 20, padding: [36, 36] });
+    }
+  }
+
+  function setSemFilter(key) {
+    if (!key) key = 'all';
+    // segundo clic en el mismo filtro → vuelve a Todos
+    if (key !== 'all' && key === activeSemFilter) key = 'all';
+    activeSemFilter = key;
+    syncSemLegend();
+    applySemFilterStyles();
+    var filtered = treesMatchingSem(activeSemFilter);
+    renderCanopyTable(filtered);
+    if (activeSemFilter !== 'all') {
+      setLayerMode('semaforo');
+      fitSemFilterBounds(filtered);
+      setMapStatus(
+        filtered.length
+          ? filtered.length + ' copas · filtro semáforo «' + activeSemFilter + '»'
+          : 'Sin copas en ese semáforo',
+        filtered.length ? 'ok' : 'error'
+      );
+    } else if (canopyResult) {
+      setMapStatus(getAllTrees().length + ' copas · mostrando todas', 'ok');
+    }
   }
 
   function renderCanopyTable(trees) {
@@ -216,6 +358,10 @@
       tr.innerHTML =
         '<td>' +
         t.id +
+        '</td><td>' +
+        (t.row != null ? t.row : '—') +
+        '</td><td>' +
+        (t.pos != null ? t.pos : '—') +
         '</td><td>' +
         Number(t.areaPx || 0).toLocaleString('es-MX') +
         '</td><td>' +
@@ -245,12 +391,18 @@
     });
     panel.hidden = false;
     if (sub) {
-      var hasScale = trees.some(function (t) {
+      var hasScale = getAllTrees().some(function (t) {
         return t.areaM2 != null && Number.isFinite(Number(t.areaM2));
       });
+      var filterNote =
+        activeSemFilter && activeSemFilter !== 'all'
+          ? ' · filtro: ' + activeSemFilter
+          : '';
       sub.textContent =
         trees.length +
-        ' copas · clic en fila para localizar' +
+        ' copas' +
+        filterNote +
+        ' · clic en fila para localizar' +
         (hasScale ? '' : ' · sin escala: m²/diámetro requieren GeoTIFF georreferenciado');
     }
   }
@@ -264,19 +416,9 @@
       map.fitBounds(layer.getBounds(), { maxZoom: 20, padding: [40, 40] });
     }
     if (layer && layer.setStyle) {
-      var prev = layer.options;
-      layer.setStyle({ weight: 4, color: '#0f172a' });
+      layer.setStyle({ weight: 4, color: '#0f172a', opacity: 1, fillOpacity: 0.9 });
       setTimeout(function () {
-        if (activeLayer === 'semaforo' && entry.fill) {
-          entry.fill.setStyle({
-            color: entry.tree.sem.color,
-            fillColor: entry.tree.sem.fill,
-            weight: 1,
-            fillOpacity: 0.75
-          });
-        } else if (entry.outline) {
-          entry.outline.setStyle({ color: '#22c55e', weight: 2, fillOpacity: 0.05 });
-        }
+        applySemFilterStyles();
       }, 900);
     }
   }
@@ -294,9 +436,15 @@
         map.removeLayer(canopyFillLayer);
       } catch (e) {}
     }
+    if (canopyLabelLayer && map) {
+      try {
+        map.removeLayer(canopyLabelLayer);
+      } catch (e2) {}
+    }
     canopyResult = result;
     canopyOutlineLayer = L.layerGroup();
     canopyFillLayer = L.layerGroup();
+    canopyLabelLayer = L.layerGroup();
     treeLayersById = {};
 
     result.trees.forEach(function (t) {
@@ -313,44 +461,103 @@
         fillColor: t.sem.fill,
         fillOpacity: 0.72
       });
-      outline.bindTooltip(
-        'Copa #' +
-          t.id +
-          ' · ' +
-          t.areaPx +
-          ' px' +
-          (t.areaM2 != null ? ' · ' + Number(t.areaM2).toFixed(2) + ' m²' : '') +
-          (t.diameterM != null ? ' · Ø ' + Number(t.diameterM).toFixed(2) + ' m' : '')
-      );
+      var center = t.center;
+      if (!center || center.length < 2) {
+        var b0 = outline.getBounds();
+        center = [b0.getCenter().lat, b0.getCenter().lng];
+      }
+      var labelHtml =
+        '<div class="aci-tree-label aci-tree-label--soft" title="ID ' +
+        t.id +
+        (t.row != null ? ' · Surco ' + t.row + ' · Pos ' + t.pos : '') +
+        '">' +
+        t.id +
+        '</div>';
+      var label = L.marker(center, {
+        interactive: true,
+        keyboard: false,
+        zIndexOffset: 600,
+        icon: L.divIcon({
+          className: 'aci-tree-label-wrap',
+          html: labelHtml,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        })
+      });
+      var tip =
+        '#' +
+        t.id +
+        (t.row != null ? ' · S' + t.row + '-P' + t.pos : '') +
+        ' · ' +
+        t.areaPx +
+        ' px' +
+        (t.areaM2 != null ? ' · ' + Number(t.areaM2).toFixed(2) + ' m²' : '');
+      outline.bindTooltip(tip);
       fill.bindTooltip(
         '#' +
           t.id +
+          (t.row != null ? ' · S' + t.row + '-P' + t.pos : '') +
           ' · ' +
           t.sem.label +
           ' · ' +
           (t.pctVsMean >= 0 ? '+' : '') +
           t.pctVsMean.toFixed(0) +
-          '%' +
-          (t.percentile != null ? ' · P' + Math.round(t.percentile) : '') +
-          ' · desvío Z ' +
-          Number(t.z).toFixed(2)
+          '%'
       );
+      label.bindTooltip(tip);
       outline.on('click', function () {
         highlightTree(t.id);
       });
       fill.on('click', function () {
         highlightTree(t.id);
       });
+      label.on('click', function () {
+        highlightTree(t.id);
+      });
       canopyOutlineLayer.addLayer(outline);
       canopyFillLayer.addLayer(fill);
-      treeLayersById[t.id] = { outline: outline, fill: fill, tree: t };
+      canopyLabelLayer.addLayer(label);
+      var labelEl = null;
+      try {
+        labelEl = label.getElement() && label.getElement().querySelector('.aci-tree-label');
+      } catch (e3) {}
+      treeLayersById[t.id] = {
+        outline: outline,
+        fill: fill,
+        label: label,
+        labelEl: labelEl,
+        tree: t
+      };
     });
 
-    document.querySelectorAll('#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"]').forEach(
-      function (btn) {
+    // Enlazar elementos DOM de labels tras añadir al mapa (si aún no)
+    setTimeout(function () {
+      var strong = activeLayer === 'numeros';
+      Object.keys(treeLayersById).forEach(function (id) {
+        var entry = treeLayersById[id];
+        if (!entry || !entry.label) return;
+        try {
+          var root = entry.label.getElement();
+          entry.labelEl = root && root.querySelector('.aci-tree-label');
+          if (entry.labelEl) {
+            entry.labelEl.classList.toggle('aci-tree-label--strong', strong);
+            entry.labelEl.classList.toggle('aci-tree-label--soft', !strong);
+          }
+        } catch (e4) {}
+      });
+      applySemFilterStyles();
+    }, 0);
+
+    document
+      .querySelectorAll(
+        '#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"], #aciLayerBar [data-layer="numeros"]'
+      )
+      .forEach(function (btn) {
         btn.disabled = false;
-      }
-    );
+      });
+    activeSemFilter = 'all';
+    syncSemLegend();
+    applySemFilterStyles();
     renderCanopyTable(result.trees);
     updateMetrics({
       treeCount: result.stats.count,
@@ -359,7 +566,14 @@
       meanAreaM2: result.stats.meanAreaM2,
       filename: document.getElementById('aciMetricFile') && document.getElementById('aciMetricFile').textContent
     });
-    setLayerMode('semaforo');
+    var rowN = result.stats && result.stats.rowCount ? result.stats.rowCount : null;
+    setLayerMode('numeros');
+    if (rowN) {
+      setMapStatus(
+        result.stats.count + ' copas · ' + rowN + ' surcos · ID por surco y línea',
+        'ok'
+      );
+    }
   }
 
   function getLastFlightId() {
@@ -484,6 +698,16 @@
         drawCanopies(result);
         document.getElementById('aciMapSub').textContent =
           'Copas detectadas · ExG thr ' + result.stats.threshold;
+        if (result.stats.truncated) {
+          setMapStatus(
+            'Detectadas ' +
+              result.stats.count +
+              ' copas (tope ' +
+              result.stats.maxTrees +
+              '). Hay más en el orto; se listan las de mayor área.',
+            'ok'
+          );
+        }
         setActiveTab('analisis');
         saveCurrentMetaToSiteStore();
         refreshProjectsUi();
@@ -1377,6 +1601,110 @@
     return r;
   }
 
+  function ensureGoogleMaps() {
+    if (googleMapsPromise) return googleMapsPromise;
+    googleMapsPromise = new Promise(function (resolve) {
+      if (window.google && google.maps) {
+        resolve(true);
+        return;
+      }
+      if (!GOOGLE_MAPS_KEY) {
+        resolve(false);
+        return;
+      }
+      var existing = document.querySelector('script[data-aci-gmaps="1"]');
+      if (existing) {
+        var tries = 0;
+        var t = setInterval(function () {
+          tries++;
+          if (window.google && google.maps) {
+            clearInterval(t);
+            resolve(true);
+          } else if (tries > 80) {
+            clearInterval(t);
+            resolve(false);
+          }
+        }, 100);
+        return;
+      }
+      var s = document.createElement('script');
+      s.setAttribute('data-aci-gmaps', '1');
+      s.async = true;
+      s.src =
+        'https://maps.googleapis.com/maps/api/js?key=' +
+        encodeURIComponent(GOOGLE_MAPS_KEY) +
+        '&language=es&region=MX';
+      s.onload = function () {
+        resolve(!!(window.google && google.maps));
+      };
+      s.onerror = function () {
+        resolve(false);
+      };
+      document.head.appendChild(s);
+    });
+    return googleMapsPromise;
+  }
+
+  function canUseGoogleBasemap() {
+    return !!(
+      window.google &&
+      google.maps &&
+      L.gridLayer &&
+      typeof L.gridLayer.googleMutant === 'function'
+    );
+  }
+
+  function fallbackBasemapDefs() {
+    return {
+      osm: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        opts: { maxZoom: 22, attribution: '&copy; OpenStreetMap' }
+      },
+      sat: {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        opts: {
+          maxZoom: 22,
+          attribution: 'Tiles &copy; Esri'
+        }
+      },
+      relief: {
+        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        opts: {
+          maxZoom: 17,
+          attribution: '&copy; OpenTopoMap'
+        }
+      }
+    };
+  }
+
+  function createBasemapLayer(mode) {
+    if (canUseGoogleBasemap()) {
+      var gType = mode === 'sat' ? 'hybrid' : mode === 'relief' ? 'terrain' : 'roadmap';
+      return L.gridLayer.googleMutant({
+        type: gType,
+        maxZoom: 22
+      });
+    }
+    var def = fallbackBasemapDefs()[mode];
+    if (!def) return null;
+    return L.tileLayer(def.url, def.opts);
+  }
+
+  function bringOverlaysFront() {
+    if (rasterLayer && map && map.hasLayer(rasterLayer) && rasterLayer.bringToFront) {
+      rasterLayer.bringToFront();
+    }
+    if (canopyOutlineLayer && map && map.hasLayer(canopyOutlineLayer) && canopyOutlineLayer.bringToFront) {
+      canopyOutlineLayer.bringToFront();
+    }
+    if (canopyFillLayer && map && map.hasLayer(canopyFillLayer) && canopyFillLayer.bringToFront) {
+      canopyFillLayer.bringToFront();
+    }
+    if (canopyLabelLayer && map && map.hasLayer(canopyLabelLayer) && canopyLabelLayer.bringToFront) {
+      canopyLabelLayer.bringToFront();
+    }
+  }
+
   function initMapOnce() {
     if (map || typeof L === 'undefined') return;
     var mapEl = document.getElementById('aciMap');
@@ -1389,30 +1717,13 @@
         activeBasemap = saved;
       }
     } catch (e) {}
-    setBasemap(activeBasemap);
-  }
-
-  function basemapDefs() {
-    return {
-      osm: {
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        opts: { maxZoom: 22, attribution: '&copy; OpenStreetMap' }
-      },
-      sat: {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        opts: {
-          maxZoom: 22,
-          attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics'
-        }
-      },
-      relief: {
-        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-        opts: {
-          maxZoom: 17,
-          attribution: '&copy; OpenTopoMap (CC-BY-SA), &copy; OpenStreetMap'
-        }
-      }
-    };
+    syncBasemapChips();
+    // Cargar Google Maps (API NutriPlant) y aplicar fondo
+    ensureGoogleMaps().then(function () {
+      setBasemap(activeBasemap);
+    });
+    // Mientras carga, poner fallback inmediato
+    if (activeBasemap !== 'off') setBasemap(activeBasemap);
   }
 
   function syncBasemapChips() {
@@ -1422,8 +1733,8 @@
   }
 
   function setBasemap(mode) {
-    mode = mode || 'osm';
-    if (mode !== 'osm' && mode !== 'sat' && mode !== 'relief' && mode !== 'off') mode = 'osm';
+    mode = mode || 'sat';
+    if (mode !== 'osm' && mode !== 'sat' && mode !== 'relief' && mode !== 'off') mode = 'sat';
     activeBasemap = mode;
     try {
       localStorage.setItem(BASEMAP_KEY, mode);
@@ -1445,20 +1756,37 @@
     }
     if (mapEl) mapEl.classList.remove('aci-map--no-basemap');
 
-    var def = basemapDefs()[mode];
-    if (!def) return;
-    basemapLayer = L.tileLayer(def.url, def.opts);
-    basemapLayer.addTo(map);
-    if (basemapLayer.bringToBack) basemapLayer.bringToBack();
-    // Mantener ortomosaico y copas encima del fondo
-    if (rasterLayer && map.hasLayer(rasterLayer) && rasterLayer.bringToFront) {
-      rasterLayer.bringToFront();
+    // Si aún no está Google, intentar cargarlo y reaplicar
+    if (!canUseGoogleBasemap()) {
+      var layer = createBasemapLayer(mode);
+      if (layer) {
+        basemapLayer = layer;
+        basemapLayer.addTo(map);
+        if (basemapLayer.bringToBack) basemapLayer.bringToBack();
+        bringOverlaysFront();
+      }
+      ensureGoogleMaps().then(function (ok) {
+        if (ok && activeBasemap === mode && canUseGoogleBasemap()) {
+          setBasemap(mode);
+        }
+      });
+      return;
     }
-    if (canopyOutlineLayer && map.hasLayer(canopyOutlineLayer) && canopyOutlineLayer.bringToFront) {
-      canopyOutlineLayer.bringToFront();
-    }
-    if (canopyFillLayer && map.hasLayer(canopyFillLayer) && canopyFillLayer.bringToFront) {
-      canopyFillLayer.bringToFront();
+
+    try {
+      basemapLayer = createBasemapLayer(mode);
+      if (!basemapLayer) return;
+      basemapLayer.addTo(map);
+      if (basemapLayer.bringToBack) basemapLayer.bringToBack();
+      bringOverlaysFront();
+    } catch (e3) {
+      console.warn('AirCI basemap Google falló, usando tiles de respaldo', e3);
+      var fb = fallbackBasemapDefs()[mode];
+      if (fb) {
+        basemapLayer = L.tileLayer(fb.url, fb.opts).addTo(map);
+        if (basemapLayer.bringToBack) basemapLayer.bringToBack();
+        bringOverlaysFront();
+      }
     }
   }
 
@@ -1891,6 +2219,15 @@
       setBasemap(btn.getAttribute('data-basemap'));
     });
     syncBasemapChips();
+  }
+
+  var legendEl = document.getElementById('aciLegend');
+  if (legendEl) {
+    legendEl.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-sem]') : null;
+      if (!btn || btn.disabled) return;
+      setSemFilter(btn.getAttribute('data-sem'));
+    });
   }
 
   document.querySelectorAll('.aci-tab').forEach(function (btn) {

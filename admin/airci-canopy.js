@@ -6,7 +6,7 @@
   'use strict';
 
   var MIN_AREA_PX = 80;
-  var MAX_TREES = 1200;
+  var MAX_TREES = 15000;
   /** Descarta “blobs” que son casi toda la vegetación (pasto unido / bordes) */
   var MAX_AREA_FRAC = 0.012; // 1.2% del área de la imagen
   var MAX_AREA_VS_MEDIAN = 8; // > 8× mediana = outlier a excluir de stats/capas
@@ -236,10 +236,6 @@
       });
     });
 
-    comps.sort(function (a, b) {
-      return b.areaPx - a.areaPx;
-    });
-    if (comps.length > MAX_TREES) comps = comps.slice(0, MAX_TREES);
     return comps;
   }
 
@@ -407,6 +403,105 @@
     return ((below + 0.5 * equal) / n) * 100;
   }
 
+  /**
+   * Ordena componentes por surco (filas) y posición en la línea.
+   * Detecta la dirección dominante con vecinos cercanos y agrupa por proyección perpendicular.
+   */
+  function orderComponentsByRows(comps) {
+    var pts = comps.map(function (c, i) {
+      return {
+        idx: i,
+        comp: c,
+        x: (c.box.minX + c.box.maxX) / 2,
+        y: (c.box.minY + c.box.maxY) / 2
+      };
+    });
+    if (!pts.length) return [];
+    if (pts.length === 1) {
+      return [{ comp: pts[0].comp, row: 1, pos: 1 }];
+    }
+
+    function dist2(a, b) {
+      var dx = a.x - b.x;
+      var dy = a.y - b.y;
+      return dx * dx + dy * dy;
+    }
+
+    var angles = [];
+    var nnDists = [];
+    for (var i = 0; i < pts.length; i++) {
+      var best = Infinity;
+      var bestJ = -1;
+      for (var j = 0; j < pts.length; j++) {
+        if (i === j) continue;
+        var d = dist2(pts[i], pts[j]);
+        if (d < best) {
+          best = d;
+          bestJ = j;
+        }
+      }
+      if (bestJ < 0) continue;
+      nnDists.push(Math.sqrt(best));
+      var dx = pts[bestJ].x - pts[i].x;
+      var dy = pts[bestJ].y - pts[i].y;
+      var ang = Math.atan2(dy, dx);
+      if (ang < 0) ang += Math.PI;
+      if (ang >= Math.PI) ang -= Math.PI;
+      angles.push(ang);
+    }
+
+    var sumSin = 0;
+    var sumCos = 0;
+    for (var a = 0; a < angles.length; a++) {
+      sumSin += Math.sin(2 * angles[a]);
+      sumCos += Math.cos(2 * angles[a]);
+    }
+    var rowAngle = angles.length ? 0.5 * Math.atan2(sumSin, sumCos) : 0;
+    var ux = Math.cos(rowAngle);
+    var uy = Math.sin(rowAngle);
+    var vx = -uy;
+    var vy = ux;
+
+    var medNn = median(nnDists);
+    if (!medNn || medNn < 1) medNn = 10;
+    var rowGap = Math.max(medNn * 0.55, medNn * 0.4 + 2);
+
+    pts.forEach(function (p) {
+      p.along = p.x * ux + p.y * uy;
+      p.across = p.x * vx + p.y * vy;
+    });
+    pts.sort(function (a, b) {
+      return a.across - b.across;
+    });
+
+    var rows = [];
+    var current = [pts[0]];
+    for (var k = 1; k < pts.length; k++) {
+      if (pts[k].across - pts[k - 1].across > rowGap) {
+        rows.push(current);
+        current = [pts[k]];
+      } else {
+        current.push(pts[k]);
+      }
+    }
+    rows.push(current);
+
+    var ordered = [];
+    rows.forEach(function (row, rIdx) {
+      row.sort(function (a, b) {
+        return a.along - b.along;
+      });
+      row.forEach(function (p, pIdx) {
+        ordered.push({
+          comp: p.comp,
+          row: rIdx + 1,
+          pos: pIdx + 1
+        });
+      });
+    });
+    return ordered;
+  }
+
   function analyzeCanopies(georaster, opts) {
     opts = opts || {};
     var minArea = opts.minAreaPx != null ? opts.minAreaPx : MIN_AREA_PX;
@@ -432,13 +527,16 @@
       });
     }
 
-    comps.sort(function (a, b) {
-      return b.areaPx - a.areaPx;
-    });
-    if (comps.length > MAX_TREES) comps = comps.slice(0, MAX_TREES);
+    // 3) orden surco → línea (ya no por área)
+    var ordered = orderComponentsByRows(comps);
+    var truncated = false;
+    if (ordered.length > MAX_TREES) {
+      ordered = ordered.slice(0, MAX_TREES);
+      truncated = true;
+    }
 
-    var areas = comps.map(function (c) {
-      return c.areaPx;
+    var areas = ordered.map(function (o) {
+      return o.comp.areaPx;
     });
     var stats = meanStd(areas);
     var areasSorted = areas.slice().sort(function (a, b) {
@@ -448,7 +546,13 @@
     var retainedPx = 0;
     for (var i = 0; i < areas.length; i++) retainedPx += areas[i];
 
-    var trees = comps.map(function (c, idx) {
+    var rowCount = 0;
+    ordered.forEach(function (o) {
+      if (o.row > rowCount) rowCount = o.row;
+    });
+
+    var trees = ordered.map(function (o, idx) {
+      var c = o.comp;
       var z = (c.areaPx - stats.mean) / stats.std;
       var sem = semaforoClass(z);
       var latlngs = componentToLatLngs(georaster, c);
@@ -457,13 +561,14 @@
       var center = pixelToLatLng(georaster, cx, cy);
       var boxW = c.box.maxX - c.box.minX + 1;
       var boxH = c.box.maxY - c.box.minY + 1;
-      // Diámetro equivalente de círculo con la misma área
       var diamEqPx = 2 * Math.sqrt(c.areaPx / Math.PI);
       var areaM2 = gsdM != null ? c.areaPx * gsdM * gsdM : null;
       var diameterM = gsdM != null ? diamEqPx * gsdM : null;
       var diameterBoxM = gsdM != null ? Math.max(boxW, boxH) * gsdM : null;
       return {
         id: idx + 1,
+        row: o.row,
+        pos: o.pos,
         areaPx: c.areaPx,
         areaM2: areaM2,
         diameterM: diameterM,
@@ -495,13 +600,17 @@
         width: veg.width,
         height: veg.height,
         maxAreaAbs: maxAreaAbs,
-        gsdM: gsdM
+        gsdM: gsdM,
+        truncated: truncated,
+        maxTrees: MAX_TREES,
+        rowCount: rowCount
       }
     };
   }
 
   global.AirCICanopy = {
     analyzeCanopies: analyzeCanopies,
-    semaforoClass: semaforoClass
+    semaforoClass: semaforoClass,
+    orderComponentsByRows: orderComponentsByRows
   };
 })(typeof window !== 'undefined' ? window : globalThis);
