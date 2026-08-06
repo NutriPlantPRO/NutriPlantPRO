@@ -350,12 +350,70 @@
     return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
   }
 
+  /** GSD en metros/píxel si el GeoTIFF trae georreferencia usable; si no, null. */
+  function estimateGsdM(georaster) {
+    var w = georaster.width;
+    var h = georaster.height;
+    if (!w || !h) return null;
+    var pw = Number(georaster.pixelWidth);
+    var ph = Number(georaster.pixelHeight);
+    if (!Number.isFinite(pw) || !Number.isFinite(ph) || pw <= 0 || ph <= 0) {
+      if (
+        georaster.xmax == null ||
+        georaster.xmin == null ||
+        georaster.ymax == null ||
+        georaster.ymin == null
+      ) {
+        return null;
+      }
+      pw = (georaster.xmax - georaster.xmin) / w;
+      ph = (georaster.ymax - georaster.ymin) / h;
+    }
+    if (!Number.isFinite(pw) || !Number.isFinite(ph) || pw <= 0 || ph <= 0) return null;
+
+    var proj = String(georaster.projection != null ? georaster.projection : '');
+    var looksDegrees =
+      (Math.abs(pw) < 0.01 && Math.abs(ph) < 0.01) ||
+      proj === '4326' ||
+      /4326/.test(proj) ||
+      /WGS\s*84/i.test(proj);
+    var gx;
+    var gy;
+    if (looksDegrees) {
+      var midLat = ((Number(georaster.ymin) || 0) + (Number(georaster.ymax) || 0)) / 2;
+      var mPerDegLat = 111320;
+      var mPerDegLng = 111320 * Math.cos((midLat * Math.PI) / 180);
+      gx = Math.abs(pw) * Math.abs(mPerDegLng);
+      gy = Math.abs(ph) * mPerDegLat;
+    } else {
+      gx = Math.abs(pw);
+      gy = Math.abs(ph);
+    }
+    // Ortomosaico de huerta típico: GSD cm–dm. Fuera de rango → coords falsas / sin escala.
+    if (gx > 5 || gy > 5 || gx < 0.001 || gy < 0.001) return null;
+    return Math.sqrt(gx * gy);
+  }
+
+  function percentileRank(value, sortedAsc) {
+    var n = sortedAsc.length;
+    if (!n) return 50;
+    if (n === 1) return 50;
+    var below = 0;
+    var equal = 0;
+    for (var i = 0; i < n; i++) {
+      if (sortedAsc[i] < value) below++;
+      else if (sortedAsc[i] === value) equal++;
+    }
+    return ((below + 0.5 * equal) / n) * 100;
+  }
+
   function analyzeCanopies(georaster, opts) {
     opts = opts || {};
     var minArea = opts.minAreaPx != null ? opts.minAreaPx : MIN_AREA_PX;
     var veg = buildVegetationMask(georaster);
     var totalPx = veg.width * veg.height;
     var maxAreaAbs = Math.max(minArea * 20, Math.floor(totalPx * MAX_AREA_FRAC));
+    var gsdM = estimateGsdM(georaster);
 
     var comps = connectedComponents(veg.mask, veg.width, veg.height, minArea);
     // 1) quitar gigantes (pasto unido / casi toda la huerta)
@@ -383,6 +441,9 @@
       return c.areaPx;
     });
     var stats = meanStd(areas);
+    var areasSorted = areas.slice().sort(function (a, b) {
+      return a - b;
+    });
     // cobertura solo con píxeles de copas retenidas
     var retainedPx = 0;
     for (var i = 0; i < areas.length; i++) retainedPx += areas[i];
@@ -394,9 +455,21 @@
       var cx = (c.box.minX + c.box.maxX) / 2;
       var cy = (c.box.minY + c.box.maxY) / 2;
       var center = pixelToLatLng(georaster, cx, cy);
+      var boxW = c.box.maxX - c.box.minX + 1;
+      var boxH = c.box.maxY - c.box.minY + 1;
+      // Diámetro equivalente de círculo con la misma área
+      var diamEqPx = 2 * Math.sqrt(c.areaPx / Math.PI);
+      var areaM2 = gsdM != null ? c.areaPx * gsdM * gsdM : null;
+      var diameterM = gsdM != null ? diamEqPx * gsdM : null;
+      var diameterBoxM = gsdM != null ? Math.max(boxW, boxH) * gsdM : null;
       return {
         id: idx + 1,
         areaPx: c.areaPx,
+        areaM2: areaM2,
+        diameterM: diameterM,
+        diameterBoxM: diameterBoxM,
+        diameterPx: diamEqPx,
+        percentile: percentileRank(c.areaPx, areasSorted),
         z: z,
         pctVsMean: stats.mean ? ((c.areaPx - stats.mean) / stats.mean) * 100 : 0,
         sem: sem,
@@ -406,11 +479,14 @@
       };
     });
 
+    var meanAreaM2 = gsdM != null && stats.mean ? stats.mean * gsdM * gsdM : null;
+
     return {
       trees: trees,
       stats: {
         count: trees.length,
         meanArea: stats.mean,
+        meanAreaM2: meanAreaM2,
         stdArea: stats.std,
         medianArea: med,
         vegPixels: retainedPx,
@@ -418,7 +494,8 @@
         threshold: veg.threshold,
         width: veg.width,
         height: veg.height,
-        maxAreaAbs: maxAreaAbs
+        maxAreaAbs: maxAreaAbs,
+        gsdM: gsdM
       }
     };
   }

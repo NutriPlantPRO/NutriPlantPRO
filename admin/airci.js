@@ -12,6 +12,7 @@
   var META_BY_SITE_KEY = 'airci_meta_by_site_v1';
   var CANOPY_BY_SITE_KEY = 'airci_canopy_by_site_v1';
   var TREE_COLLAPSE_KEY = 'airci_tree_collapse_v1';
+  var BASEMAP_KEY = 'airci_basemap_v1';
   var OWNER_EMAIL = 'admin@nutriplantpro.com';
   var SESSION_MAX_MS = 12 * 60 * 60 * 1000;
   var API = '/api/airci-ortho';
@@ -29,6 +30,7 @@
   var map = null;
   var rasterLayer = null;
   var basemapLayer = null;
+  var activeBasemap = 'osm';
   var lastBounds = null;
   var currentGeoraster = null;
   var canopyResult = null;
@@ -122,7 +124,16 @@
     if (treesEl && info.treeCount != null) treesEl.textContent = String(info.treeCount);
     if (treesSub && info.treeCount != null) treesSub.textContent = 'copas detectadas';
     if (coverEl && info.coverPct != null) coverEl.textContent = info.coverPct.toFixed(1) + '%';
-    if (meanEl && info.meanArea != null) meanEl.textContent = Math.round(info.meanArea).toLocaleString('es-MX');
+    if (meanEl && info.meanArea != null) {
+      var meanSub = document.getElementById('aciMetricMeanSub');
+      if (info.meanAreaM2 != null && Number.isFinite(info.meanAreaM2)) {
+        meanEl.textContent = info.meanAreaM2.toFixed(2) + ' m²';
+        if (meanSub) meanSub.textContent = 'copa media del lote';
+      } else {
+        meanEl.textContent = Math.round(info.meanArea).toLocaleString('es-MX');
+        if (meanSub) meanSub.textContent = 'píxeles de copa';
+      }
+    }
   }
 
   function clearCanopyLayers() {
@@ -181,6 +192,14 @@
     if (legend) legend.hidden = activeLayer !== 'semaforo';
   }
 
+  function fmtNum(v, digits) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    return Number(v).toLocaleString('es-MX', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+  }
+
   function renderCanopyTable(trees) {
     var tbody = document.getElementById('aciTableBody');
     var panel = document.getElementById('aciTablePanel');
@@ -190,20 +209,30 @@
     trees.forEach(function (t) {
       var tr = document.createElement('tr');
       tr.dataset.treeId = String(t.id);
+      var pct = t.pctVsMean != null ? Number(t.pctVsMean) : 0;
+      var z = t.z != null ? Number(t.z) : 0;
+      var perc = t.percentile != null ? Number(t.percentile) : null;
+      var sem = t.sem || { key: 'verde', label: '—' };
       tr.innerHTML =
         '<td>' +
         t.id +
         '</td><td>' +
-        t.areaPx.toLocaleString('es-MX') +
+        Number(t.areaPx || 0).toLocaleString('es-MX') +
         '</td><td>' +
-        (t.pctVsMean >= 0 ? '+' : '') +
-        t.pctVsMean.toFixed(1) +
+        fmtNum(t.areaM2, 2) +
+        '</td><td>' +
+        fmtNum(t.diameterM, 2) +
+        '</td><td>' +
+        (pct >= 0 ? '+' : '') +
+        pct.toFixed(1) +
         '%</td><td>' +
-        t.z.toFixed(2) +
+        (perc != null && Number.isFinite(perc) ? Math.round(perc) : '—') +
+        '</td><td title="Desvío estándar vs promedio del lote (z-score)">' +
+        z.toFixed(2) +
         '</td><td><span class="aci-badge-sem ' +
-        t.sem.key +
+        sem.key +
         '">' +
-        t.sem.label +
+        sem.label +
         '</span></td>';
       tr.addEventListener('click', function () {
         tbody.querySelectorAll('tr').forEach(function (r) {
@@ -215,7 +244,15 @@
       tbody.appendChild(tr);
     });
     panel.hidden = false;
-    if (sub) sub.textContent = trees.length + ' copas · clic en fila para localizar';
+    if (sub) {
+      var hasScale = trees.some(function (t) {
+        return t.areaM2 != null && Number.isFinite(Number(t.areaM2));
+      });
+      sub.textContent =
+        trees.length +
+        ' copas · clic en fila para localizar' +
+        (hasScale ? '' : ' · sin escala: m²/diámetro requieren GeoTIFF georreferenciado');
+    }
   }
 
   function highlightTree(id) {
@@ -276,9 +313,27 @@
         fillColor: t.sem.fill,
         fillOpacity: 0.72
       });
-      outline.bindTooltip('Copa #' + t.id + ' · ' + t.areaPx + ' px');
+      outline.bindTooltip(
+        'Copa #' +
+          t.id +
+          ' · ' +
+          t.areaPx +
+          ' px' +
+          (t.areaM2 != null ? ' · ' + Number(t.areaM2).toFixed(2) + ' m²' : '') +
+          (t.diameterM != null ? ' · Ø ' + Number(t.diameterM).toFixed(2) + ' m' : '')
+      );
       fill.bindTooltip(
-        '#' + t.id + ' · ' + t.sem.label + ' · ' + (t.pctVsMean >= 0 ? '+' : '') + t.pctVsMean.toFixed(0) + '%'
+        '#' +
+          t.id +
+          ' · ' +
+          t.sem.label +
+          ' · ' +
+          (t.pctVsMean >= 0 ? '+' : '') +
+          t.pctVsMean.toFixed(0) +
+          '%' +
+          (t.percentile != null ? ' · P' + Math.round(t.percentile) : '') +
+          ' · desvío Z ' +
+          Number(t.z).toFixed(2)
       );
       outline.on('click', function () {
         highlightTree(t.id);
@@ -301,6 +356,7 @@
       treeCount: result.stats.count,
       coverPct: result.stats.coverPct,
       meanArea: result.stats.meanArea,
+      meanAreaM2: result.stats.meanAreaM2,
       filename: document.getElementById('aciMetricFile') && document.getElementById('aciMetricFile').textContent
     });
     setLayerMode('semaforo');
@@ -1326,11 +1382,84 @@
     var mapEl = document.getElementById('aciMap');
     if (!mapEl) return;
     map = L.map(mapEl, { zoomControl: true, attributionControl: true });
-    basemapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 22,
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
     map.setView([23.6, -102.5], 5);
+    try {
+      var saved = localStorage.getItem(BASEMAP_KEY);
+      if (saved === 'osm' || saved === 'sat' || saved === 'relief' || saved === 'off') {
+        activeBasemap = saved;
+      }
+    } catch (e) {}
+    setBasemap(activeBasemap);
+  }
+
+  function basemapDefs() {
+    return {
+      osm: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        opts: { maxZoom: 22, attribution: '&copy; OpenStreetMap' }
+      },
+      sat: {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        opts: {
+          maxZoom: 22,
+          attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics'
+        }
+      },
+      relief: {
+        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        opts: {
+          maxZoom: 17,
+          attribution: '&copy; OpenTopoMap (CC-BY-SA), &copy; OpenStreetMap'
+        }
+      }
+    };
+  }
+
+  function syncBasemapChips() {
+    document.querySelectorAll('#aciBasemapBar [data-basemap]').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-basemap') === activeBasemap);
+    });
+  }
+
+  function setBasemap(mode) {
+    mode = mode || 'osm';
+    if (mode !== 'osm' && mode !== 'sat' && mode !== 'relief' && mode !== 'off') mode = 'osm';
+    activeBasemap = mode;
+    try {
+      localStorage.setItem(BASEMAP_KEY, mode);
+    } catch (e) {}
+    syncBasemapChips();
+    if (!map || typeof L === 'undefined') return;
+
+    if (basemapLayer) {
+      try {
+        map.removeLayer(basemapLayer);
+      } catch (e2) {}
+      basemapLayer = null;
+    }
+
+    var mapEl = document.getElementById('aciMap');
+    if (mode === 'off') {
+      if (mapEl) mapEl.classList.add('aci-map--no-basemap');
+      return;
+    }
+    if (mapEl) mapEl.classList.remove('aci-map--no-basemap');
+
+    var def = basemapDefs()[mode];
+    if (!def) return;
+    basemapLayer = L.tileLayer(def.url, def.opts);
+    basemapLayer.addTo(map);
+    if (basemapLayer.bringToBack) basemapLayer.bringToBack();
+    // Mantener ortomosaico y copas encima del fondo
+    if (rasterLayer && map.hasLayer(rasterLayer) && rasterLayer.bringToFront) {
+      rasterLayer.bringToFront();
+    }
+    if (canopyOutlineLayer && map.hasLayer(canopyOutlineLayer) && canopyOutlineLayer.bringToFront) {
+      canopyOutlineLayer.bringToFront();
+    }
+    if (canopyFillLayer && map.hasLayer(canopyFillLayer) && canopyFillLayer.bringToFront) {
+      canopyFillLayer.bringToFront();
+    }
   }
 
   function showMapPane(show) {
@@ -1752,6 +1881,16 @@
       if (!btn || btn.disabled) return;
       setLayerMode(btn.getAttribute('data-layer'));
     });
+  }
+
+  var basemapBar = document.getElementById('aciBasemapBar');
+  if (basemapBar) {
+    basemapBar.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-basemap]') : null;
+      if (!btn) return;
+      setBasemap(btn.getAttribute('data-basemap'));
+    });
+    syncBasemapChips();
   }
 
   document.querySelectorAll('.aci-tab').forEach(function (btn) {
