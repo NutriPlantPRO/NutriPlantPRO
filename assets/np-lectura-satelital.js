@@ -665,7 +665,10 @@
           '<div id="lecturaRunsWrap" style="margin-top:10px;display:none;">' +
             '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">' +
               '<span data-i18n="radar.saved_blocks">' + t('radar.saved_blocks', 'Bloques guardados (lecturas / imágenes pasadas)') + '</span>' +
-              '<select id="lecturaRunSelect" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;max-width:100%;"></select>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+                '<select id="lecturaRunSelect" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;max-width:100%;flex:1;min-width:180px;"></select>' +
+                '<button type="button" id="lecturaBtnDeleteRun" class="btn" style="font-size:12px;padding:6px 10px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;" data-i18n="radar.btn_delete_block" data-i18n-title="radar.btn_delete_block_title" title="' + t('radar.btn_delete_block_title', 'Borrar de la nube este bloque (imágenes y lectura)') + '">' + t('radar.btn_delete_block', '🗑 Borrar bloque') + '</button>' +
+              '</div>' +
             '</label>' +
             '<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;" data-i18n="radar.saved_blocks_help">' + t('radar.saved_blocks_help', 'Si generas otro bloque de periodos, el anterior queda aquí para seguir viendo su tabla e imágenes.') + '</div>' +
           '</div>' +
@@ -1991,15 +1994,18 @@
   function renderRunSelector(state) {
     var wrap = document.getElementById('lecturaRunsWrap');
     var sel = document.getElementById('lecturaRunSelect');
+    var delBtn = document.getElementById('lecturaBtnDeleteRun');
     if (!wrap || !sel) return;
     var runs = state && Array.isArray(state.runs) ? state.runs : [];
-    if (runs.length < 2) {
+    if (!runs.length) {
       wrap.style.display = 'none';
       sel.innerHTML = '';
+      if (delBtn) delBtn.disabled = true;
       return;
     }
     wrap.style.display = 'block';
     sel.disabled = false;
+    if (delBtn) delBtn.disabled = false;
     sel.innerHTML = runs
       .map(function (run, idx) {
         var tag = run.id === state.activeRunId ? ' (viendo)' : idx === 0 ? '' : '';
@@ -2035,6 +2041,122 @@
     renderAll(state);
     setStatus('Mostrando bloque: ' + runLabel(getActiveRun(state)));
     refreshLectura();
+  }
+
+  async function deleteLecturaRun() {
+    var state = loadState();
+    if (!state || !Array.isArray(state.runs) || !state.runs.length) {
+      alert(lecturaT('radar.delete_block_none', 'No hay bloque seleccionado para borrar.'));
+      return;
+    }
+    var sel = document.getElementById('lecturaRunSelect');
+    var runId = (sel && sel.value) || state.activeRunId || (state.runs[0] && state.runs[0].id);
+    if (!runId) {
+      alert(lecturaT('radar.delete_block_none', 'No hay bloque seleccionado para borrar.'));
+      return;
+    }
+    var run = null;
+    for (var i = 0; i < state.runs.length; i++) {
+      if (state.runs[i] && String(state.runs[i].id) === String(runId)) {
+        run = state.runs[i];
+        break;
+      }
+    }
+    if (!run) {
+      alert(lecturaT('radar.delete_block_none', 'No hay bloque seleccionado para borrar.'));
+      return;
+    }
+
+    var ok = window.confirm(
+      lecturaT(
+        'radar.delete_block_confirm',
+        '¿Borrar este bloque de Lectura Satelital de la nube?\n\nSe eliminarán las imágenes NDVI/NDMI/NDRE/RGB de todos sus periodos y ya no aparecerá en la lista. Esta acción no se puede deshacer.'
+      ) +
+        '\n\n' +
+        runLabel(run)
+    );
+    if (!ok) return;
+
+    var token = await getToken();
+    var proj = getProject();
+    if (!token || !proj || !proj.id) {
+      alert(lecturaT('radar.delete_block_fail', 'No se pudo borrar el bloque.'));
+      return;
+    }
+
+    var ids = [];
+    (run.rows || []).forEach(function (r) {
+      if (r && r.request_id) ids.push(String(r.request_id));
+    });
+
+    var delBtn = document.getElementById('lecturaBtnDeleteRun');
+    var prevTxt = delBtn ? delBtn.textContent : '';
+    if (delBtn) {
+      delBtn.disabled = true;
+      delBtn.textContent = '…';
+    }
+    setStatus(lecturaT('radar.delete_block_busy', 'Borrando bloque de la nube…'));
+
+    try {
+      var res = await fetch(apiUrl('/api/radar-ndvi'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          action: 'delete',
+          project_id: String(proj.id),
+          request_ids: ids,
+          lectura_run_id: String(runId)
+        })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok || !data.ok) {
+        throw new Error(data.message || data.error || lecturaT('radar.delete_block_fail', 'No se pudo borrar el bloque.'));
+      }
+
+      // Actualizar estado local (el servidor ya limpió la nube).
+      state = loadState() || state;
+      state.runs = (state.runs || []).filter(function (r) {
+        return r && String(r.id) !== String(runId);
+      });
+      if (!state.runs.length) {
+        state.rows = [];
+        state.activeRunId = null;
+        state.updatedAt = new Date().toISOString();
+        saveState(state);
+        renderAll(state);
+        setStatus(lecturaT('radar.delete_block_ok', 'Bloque borrado de la nube.'));
+        return;
+      }
+      if (String(state.activeRunId) === String(runId)) {
+        state.activeRunId = state.runs[0].id;
+      }
+      applyActiveToTop(state);
+      saveState(state);
+      var f = document.getElementById('lecturaFreq');
+      var c = document.getElementById('lecturaCount');
+      var e = document.getElementById('lecturaEndDate');
+      if (f && state.frequency) f.value = state.frequency;
+      if (c && state.periods) c.value = String(state.periods);
+      if (e && state.endDate) e.value = state.endDate;
+      renderAll(state);
+      setStatus(lecturaT('radar.delete_block_ok', 'Bloque borrado de la nube.'));
+      refreshLectura();
+      if (typeof window.refreshRadarNdviStatus === 'function') {
+        window.refreshRadarNdviStatus().catch(function () {});
+      }
+    } catch (err) {
+      console.warn('deleteLecturaRun:', err);
+      alert(
+        lecturaT('radar.delete_block_fail', 'No se pudo borrar el bloque.') +
+          (err && err.message ? '\n\n' + err.message : '')
+      );
+      setStatus(lecturaT('radar.delete_block_fail', 'No se pudo borrar el bloque.'));
+    } finally {
+      if (delBtn) {
+        delBtn.disabled = false;
+        delBtn.textContent = prevTxt || lecturaT('radar.btn_delete_block', '🗑 Borrar bloque');
+      }
+    }
   }
 
   /**
@@ -2568,6 +2690,14 @@
     if (runSel) {
       runSel.addEventListener('change', function () {
         switchLecturaRun(runSel.value);
+      });
+    }
+    var delRunBtn = document.getElementById('lecturaBtnDeleteRun');
+    if (delRunBtn) {
+      delRunBtn.addEventListener('click', function () {
+        deleteLecturaRun().catch(function (err) {
+          console.warn('Lectura delete:', err);
+        });
       });
     }
     if (!window.__npLecturaPrefsBound) {

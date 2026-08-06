@@ -6,9 +6,12 @@
 
   var META_KEY = 'airci_site_meta_v1';
   var FLIGHT_KEY = 'airci_flight_local_v1';
+  var FLIGHT_BY_SITE_KEY = 'airci_flight_by_site_v1';
   var SITE_ID_KEY = 'airci_site_id_v1';
   var CATALOG_KEY = 'airci_projects_catalog_v1';
   var META_BY_SITE_KEY = 'airci_meta_by_site_v1';
+  var CANOPY_BY_SITE_KEY = 'airci_canopy_by_site_v1';
+  var TREE_COLLAPSE_KEY = 'airci_tree_collapse_v1';
   var OWNER_EMAIL = 'admin@nutriplantpro.com';
   var SESSION_MAX_MS = 12 * 60 * 60 * 1000;
   var API = '/api/airci-ortho';
@@ -33,6 +36,7 @@
   var canopyFillLayer = null;
   var activeLayer = 'ortho';
   var treeLayersById = {};
+  var orthoLoadInFlight = false;
 
 
   function showError(msg) {
@@ -302,6 +306,110 @@
     setLayerMode('semaforo');
   }
 
+  function getLastFlightId() {
+    try {
+      var raw = localStorage.getItem(FLIGHT_KEY);
+      if (!raw) return null;
+      var f = JSON.parse(raw);
+      if (!f || !f.flight_id) return null;
+      if (f.site_id && f.site_id !== getSiteId()) return null;
+      return f.flight_id;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveCanopyLocal(siteId, payload) {
+    try {
+      var raw = localStorage.getItem(CANOPY_BY_SITE_KEY);
+      var mapObj = raw ? JSON.parse(raw) : {};
+      if (!mapObj || typeof mapObj !== 'object') mapObj = {};
+      mapObj[siteId] = {
+        stats: payload.stats,
+        trees: payload.trees,
+        saved_at: Date.now()
+      };
+      localStorage.setItem(CANOPY_BY_SITE_KEY, JSON.stringify(mapObj));
+    } catch (e) {}
+  }
+
+  function loadCanopyLocal(siteId) {
+    try {
+      var raw = localStorage.getItem(CANOPY_BY_SITE_KEY);
+      var mapObj = raw ? JSON.parse(raw) : {};
+      return mapObj && mapObj[siteId] ? mapObj[siteId] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function persistCanopyResult(result) {
+    var siteId = getSiteId();
+    saveCanopyLocal(siteId, { stats: result.stats, trees: result.trees });
+    var r = await apiOrtho({
+      action: 'save_canopy',
+      site_id: siteId,
+      flight_id: getLastFlightId(),
+      stats: result.stats,
+      trees: result.trees
+    });
+    if (r.ok) {
+      setMapStatus(
+        result.stats.count +
+          ' copas guardadas en Supabase · cobertura ' +
+          Number(result.stats.coverPct || 0).toFixed(1) +
+          '%',
+        'ok'
+      );
+      return true;
+    }
+    setMapStatus(
+      r.setup
+        ? 'Copas en local. Ejecuta ' + r.setup + ' en Supabase.'
+        : 'Copas en local. Nube: ' + (r.error || 'error'),
+      'error'
+    );
+    return false;
+  }
+
+  async function restoreCanopyForSite(siteId) {
+    try {
+      var r = await apiOrtho({ action: 'load_canopy', site_id: siteId });
+      if (r.ok && r.result && Array.isArray(r.result.trees) && r.result.trees.length) {
+        drawCanopies({
+          trees: r.result.trees,
+          stats: r.result.stats || {
+            count: r.result.trees.length,
+            coverPct: 0,
+            meanArea: 0,
+            stdArea: 1,
+            threshold: 0
+          }
+        });
+        showMapPane(true);
+        setMapStatus(r.result.trees.length + ' copas restauradas desde Supabase', 'ok');
+        return true;
+      }
+    } catch (e) {}
+    var local = loadCanopyLocal(siteId);
+    if (local && Array.isArray(local.trees) && local.trees.length) {
+      drawCanopies({
+        trees: local.trees,
+        stats: local.stats || {
+          count: local.trees.length,
+          coverPct: 0,
+          meanArea: 0,
+          stdArea: 1,
+          threshold: 0
+        }
+      });
+      showMapPane(true);
+      setMapStatus(local.trees.length + ' copas restauradas (local)', 'ok');
+      return true;
+    }
+    return false;
+  }
+
   function runCanopyDetection() {
     if (!currentGeoraster) {
       setMapStatus('Primero sube un GeoTIFF', 'error');
@@ -314,22 +422,16 @@
     setMapStatus('Detectando copas (ExG)…');
     var btn = document.getElementById('aciAnalyzeBtn');
     if (btn) btn.disabled = true;
-    setTimeout(function () {
+    setTimeout(async function () {
       try {
         var result = window.AirCICanopy.analyzeCanopies(currentGeoraster, {});
         drawCanopies(result);
-    setMapStatus(
-      result.stats.count +
-        ' copas · cobertura ' +
-        result.stats.coverPct.toFixed(1) +
-        '% · semáforo por tamaño',
-      'ok'
-    );
-    document.getElementById('aciMapSub').textContent =
-      'Copas detectadas · ExG thr ' + result.stats.threshold;
-    setActiveTab('analisis');
-    saveCurrentMetaToSiteStore();
-    refreshProjectsUi();
+        document.getElementById('aciMapSub').textContent =
+          'Copas detectadas · ExG thr ' + result.stats.threshold;
+        setActiveTab('analisis');
+        saveCurrentMetaToSiteStore();
+        refreshProjectsUi();
+        await persistCanopyResult(result);
       } catch (e) {
         console.error(e);
         setMapStatus('Error detectando copas: ' + (e.message || e), 'error');
@@ -358,11 +460,33 @@
     var anal = document.getElementById('aciTabAnalisis');
     if (proy) proy.hidden = tab !== 'proyectos';
     if (anal) anal.hidden = tab !== 'analisis';
-    if (tab === 'analisis' && map) {
+    if (tab === 'analisis') {
       setTimeout(function () {
-        map.invalidateSize();
-        if (lastBounds) map.fitBounds(lastBounds, { padding: [20, 20] });
+        if (map) {
+          map.invalidateSize();
+          if (lastBounds) map.fitBounds(lastBounds, { padding: [20, 20] });
+        }
       }, 80);
+      // Si no hay TIFF en memoria pero el análisis existe, recargar de la nube
+      if (!currentGeoraster && !rasterLayer && !orthoLoadInFlight) {
+        var sid = getSiteId();
+        if (sid) {
+          setMapStatus('Recuperando ortomosaico de este análisis…', 'ok');
+          orthoLoadInFlight = true;
+          loadOrthoAndCanopyForSite(sid)
+            .catch(function (e) {
+              console.error(e);
+              showMapPane(false);
+              setMapStatus(
+                'No se pudo recuperar el GeoTIFF. Usa Subir GeoTIFF de nuevo.',
+                'error'
+              );
+            })
+            .then(function () {
+              orthoLoadInFlight = false;
+            });
+        }
+      }
     }
     if (tab === 'proyectos') refreshProjectsUi();
   }
@@ -421,6 +545,220 @@
     writeCatalog(list);
   }
 
+  function purgeSitesLocal(siteIds) {
+    var ids = (siteIds || []).filter(Boolean);
+    if (!ids.length) return;
+    var idSet = Object.create(null);
+    ids.forEach(function (id) {
+      idSet[id] = true;
+    });
+
+    writeCatalog(
+      readCatalog().filter(function (s) {
+        return !idSet[s.id];
+      })
+    );
+
+    var metaMap = readMetaBySite();
+    ids.forEach(function (id) {
+      delete metaMap[id];
+    });
+    writeMetaBySite(metaMap);
+
+    try {
+      var rawF = localStorage.getItem(FLIGHT_BY_SITE_KEY);
+      var byF = rawF ? JSON.parse(rawF) : {};
+      if (byF && typeof byF === 'object') {
+        ids.forEach(function (id) {
+          delete byF[id];
+        });
+        localStorage.setItem(FLIGHT_BY_SITE_KEY, JSON.stringify(byF));
+      }
+    } catch (e) {}
+
+    try {
+      var rawC = localStorage.getItem(CANOPY_BY_SITE_KEY);
+      var byC = rawC ? JSON.parse(rawC) : {};
+      if (byC && typeof byC === 'object') {
+        ids.forEach(function (id) {
+          delete byC[id];
+        });
+        localStorage.setItem(CANOPY_BY_SITE_KEY, JSON.stringify(byC));
+      }
+    } catch (e2) {}
+
+    var current = getSiteId();
+    if (idSet[current]) {
+      try {
+        localStorage.removeItem(FLIGHT_KEY);
+        localStorage.removeItem(META_KEY);
+      } catch (e3) {}
+      currentGeoraster = null;
+      clearCanopyLayers();
+      if (rasterLayer && map) {
+        try {
+          map.removeLayer(rasterLayer);
+        } catch (e4) {}
+        rasterLayer = null;
+      }
+      lastBounds = null;
+      showMapPane(false);
+      var analyzeBtn = document.getElementById('aciAnalyzeBtn');
+      if (analyzeBtn) analyzeBtn.hidden = true;
+      updateMetrics({ filename: '—', cloud: '—', cloud_sub: '—' });
+      var treesEl = document.getElementById('aciMetricTrees');
+      var coverEl = document.getElementById('aciMetricCover');
+      var meanEl = document.getElementById('aciMetricMean');
+      if (treesEl) treesEl.textContent = '—';
+      if (coverEl) coverEl.textContent = '—';
+      if (meanEl) meanEl.textContent = '—';
+
+      var remaining = readCatalog();
+      if (remaining.length) {
+        try {
+          localStorage.setItem(SITE_ID_KEY, remaining[0].id);
+        } catch (e5) {}
+        loadMeta();
+        updateOpenBanner();
+      } else {
+        var freshId = uuid();
+        var blank = defaultMeta();
+        blank.title = 'Nuevo análisis';
+        try {
+          localStorage.setItem(SITE_ID_KEY, freshId);
+          localStorage.setItem(META_KEY, JSON.stringify(blank));
+        } catch (e6) {}
+        document.querySelectorAll('[data-meta]').forEach(function (el) {
+          var key = el.getAttribute('data-meta');
+          if (!key) return;
+          el.value = blank[key] || '';
+        });
+        updateOpenBanner();
+      }
+    }
+  }
+
+  async function deleteSiteWithConfirm(siteId, title) {
+    if (!siteId) return;
+    var label = title || siteId.slice(0, 8);
+    var ok = window.confirm(
+      '¿Borrar el análisis «' +
+        label +
+        '»?\n\nSe eliminará:\n• datos del predio\n• GeoTIFF en la nube\n• copas / semáforo guardados\n\nEsta acción no se puede deshacer.'
+    );
+    if (!ok) return;
+
+    var hint = document.getElementById('aciProjectsHint');
+    if (hint) {
+      hint.textContent = 'Borrando análisis…';
+      hint.classList.remove('is-ok');
+    }
+
+    var cloudOk = false;
+    try {
+      var r = await apiOrtho({ action: 'delete_site', site_id: siteId });
+      cloudOk = !!(r && r.ok);
+      if (!cloudOk && r && !r.missing) {
+        var cont = window.confirm(
+          'No se pudo borrar en la nube: ' +
+            (r.error || 'error') +
+            '\n\n¿Borrar solo de este navegador?'
+        );
+        if (!cont) {
+          if (hint) hint.textContent = 'Borrado cancelado';
+          return;
+        }
+      }
+    } catch (e) {
+      var cont2 = window.confirm(
+        'Error de red al borrar en la nube.\n\n¿Borrar solo de este navegador?'
+      );
+      if (!cont2) return;
+    }
+
+    purgeSitesLocal([siteId]);
+    await refreshProjectsUi();
+    if (hint) {
+      hint.textContent = cloudOk
+        ? 'Análisis borrado (nube + local)'
+        : 'Análisis borrado en este navegador';
+      hint.classList.add('is-ok');
+    }
+  }
+
+  async function deleteAgricolaWithConfirm(agName, count) {
+    var label = agName || 'Sin agrícola';
+    var n = Number(count) || 0;
+    var ok = window.confirm(
+      '¿Borrar el agrícola «' +
+        label +
+        '» y sus ' +
+        n +
+        ' análisis?\n\nSe eliminará todo lo de este agrícola:\n• análisis\n• GeoTIFF en la nube\n• copas / datos\n\nEsta acción no se puede deshacer.'
+    );
+    if (!ok) return;
+
+    var hint = document.getElementById('aciProjectsHint');
+    if (hint) {
+      hint.textContent = 'Borrando agrícola…';
+      hint.classList.remove('is-ok');
+    }
+
+    var localIds = readCatalog()
+      .filter(function (s) {
+        var a = (s.agricola || '').trim() || 'Sin agrícola';
+        return a === label;
+      })
+      .map(function (s) {
+        return s.id;
+      });
+
+    var cloudIds = [];
+    var cloudOk = false;
+    try {
+      var r = await apiOrtho({ action: 'delete_agricola', agricola: label });
+      cloudOk = !!(r && (r.ok || r.count === 0));
+      if (r && Array.isArray(r.deleted)) cloudIds = r.deleted;
+      if (!cloudOk && r && r.errors && r.errors.length) {
+        var cont = window.confirm(
+          'Algunos no se borraron en la nube.\n\n¿Borrar de todas formas en este navegador los análisis de «' +
+            label +
+            '»?'
+        );
+        if (!cont) {
+          if (hint) hint.textContent = 'Borrado cancelado';
+          return;
+        }
+      }
+    } catch (e) {
+      var cont2 = window.confirm(
+        'Error de red al borrar en la nube.\n\n¿Borrar solo de este navegador el agrícola «' +
+          label +
+          '»?'
+      );
+      if (!cont2) return;
+    }
+
+    var allIds = localIds.slice();
+    cloudIds.forEach(function (id) {
+      if (allIds.indexOf(id) < 0) allIds.push(id);
+    });
+    purgeSitesLocal(allIds);
+    setAgricolaCollapsed(label, false);
+    await refreshProjectsUi();
+    if (hint) {
+      hint.textContent =
+        'Agrícola «' +
+        label +
+        '» borrado' +
+        (cloudOk ? ' (nube + local)' : ' (local)') +
+        ' · ' +
+        allIds.length +
+        ' análisis';
+      hint.classList.add('is-ok');
+    }
+  }
+
   function updateOpenBanner() {
     var meta = collectMeta();
     var titleEl = document.getElementById('aciOpenTitle');
@@ -444,6 +782,52 @@
     return tree;
   }
 
+  function readTreeCollapse() {
+    try {
+      var raw = localStorage.getItem(TREE_COLLAPSE_KEY);
+      var o = raw ? JSON.parse(raw) : null;
+      if (!o || typeof o !== 'object') return { ag: {}, pr: {} };
+      if (!o.ag || typeof o.ag !== 'object') o.ag = {};
+      if (!o.pr || typeof o.pr !== 'object') o.pr = {};
+      return o;
+    } catch (e) {
+      return { ag: {}, pr: {} };
+    }
+  }
+
+  function writeTreeCollapse(state) {
+    try {
+      localStorage.setItem(TREE_COLLAPSE_KEY, JSON.stringify(state || { ag: {}, pr: {} }));
+    } catch (e) {}
+  }
+
+  function predioCollapseKey(ag, pr) {
+    return String(ag) + '\u0001' + String(pr);
+  }
+
+  function isAgricolaCollapsed(ag) {
+    return !!readTreeCollapse().ag[ag];
+  }
+
+  function isPredioCollapsed(ag, pr) {
+    return !!readTreeCollapse().pr[predioCollapseKey(ag, pr)];
+  }
+
+  function setAgricolaCollapsed(ag, collapsed) {
+    var st = readTreeCollapse();
+    if (collapsed) st.ag[ag] = true;
+    else delete st.ag[ag];
+    writeTreeCollapse(st);
+  }
+
+  function setPredioCollapsed(ag, pr, collapsed) {
+    var st = readTreeCollapse();
+    var k = predioCollapseKey(ag, pr);
+    if (collapsed) st.pr[k] = true;
+    else delete st.pr[k];
+    writeTreeCollapse(st);
+  }
+
   function renderProjectsTree(sites) {
     var root = document.getElementById('aciProjectsTree');
     var hint = document.getElementById('aciProjectsHint');
@@ -460,7 +844,8 @@
       return;
     }
     if (hint) {
-      hint.textContent = sites.length + ' análisis · Agrícola → predio/rama → título';
+      hint.textContent =
+        sites.length + ' análisis · clic en agrícola/predio para minimizar · se guarda solo';
       hint.classList.add('is-ok');
     }
     var tree = buildProjectsTree(sites);
@@ -468,24 +853,65 @@
       .sort()
       .forEach(function (ag) {
         var folder = document.createElement('div');
-        folder.className = 'aci-folder';
+        var agCollapsed = isAgricolaCollapsed(ag);
+        folder.className = 'aci-folder' + (agCollapsed ? ' is-collapsed' : '');
+        folder.dataset.agricola = ag;
         var branches = tree[ag];
         var count = 0;
         Object.keys(branches).forEach(function (k) {
           count += branches[k].length;
         });
-        folder.innerHTML =
-          '<div class="aci-folder__name">📁 ' +
+        var head = document.createElement('div');
+        head.className = 'aci-folder__head';
+        var toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'aci-folder__name';
+        toggle.setAttribute('data-toggle-ag', ag);
+        toggle.setAttribute('aria-expanded', agCollapsed ? 'false' : 'true');
+        toggle.innerHTML =
+          '<span class="aci-fold-chevron" aria-hidden="true"></span>' +
+          '<span class="aci-fold-label">📁 ' +
           escapeHtml(ag) +
           '<small>' +
           count +
-          ' análisis</small></div>';
+          ' análisis</small></span>';
+        var delAg = document.createElement('button');
+        delAg.type = 'button';
+        delAg.className = 'aci-btn aci-btn--danger aci-btn--sm';
+        delAg.setAttribute('data-delete-ag', ag);
+        delAg.setAttribute('data-delete-ag-count', String(count));
+        delAg.title = 'Borrar agrícola y todos sus análisis';
+        delAg.textContent = 'Borrar';
+        head.appendChild(toggle);
+        head.appendChild(delAg);
+        folder.appendChild(head);
+
+        var body = document.createElement('div');
+        body.className = 'aci-folder__body';
         Object.keys(branches)
           .sort()
           .forEach(function (pr) {
             var branch = document.createElement('div');
-            branch.className = 'aci-branch';
-            branch.innerHTML = '<div class="aci-branch__name">🌿 ' + escapeHtml(pr) + '</div>';
+            var prCollapsed = isPredioCollapsed(ag, pr);
+            branch.className = 'aci-branch' + (prCollapsed ? ' is-collapsed' : '');
+            branch.dataset.predio = pr;
+            var bHead = document.createElement('button');
+            bHead.type = 'button';
+            bHead.className = 'aci-branch__name';
+            bHead.setAttribute('data-toggle-pr', pr);
+            bHead.setAttribute('data-toggle-ag-parent', ag);
+            bHead.setAttribute('aria-expanded', prCollapsed ? 'false' : 'true');
+            bHead.innerHTML =
+              '<span class="aci-fold-chevron aci-fold-chevron--sm" aria-hidden="true"></span>' +
+              '<span>🌿 ' +
+              escapeHtml(pr) +
+              ' <em>(' +
+              branches[pr].length +
+              ')</em></span>';
+            branch.appendChild(bHead);
+
+            var bBody = document.createElement('div');
+            bBody.className = 'aci-branch__body';
             branches[pr].forEach(function (s) {
               var row = document.createElement('div');
               row.className = 'aci-project-row' + (s.id === currentId ? ' is-current' : '');
@@ -504,11 +930,18 @@
                 '<button type="button" class="aci-btn aci-btn--enter aci-btn--sm" data-open-site="' +
                 escapeHtml(s.id) +
                 '">Abrir</button>' +
+                '<button type="button" class="aci-btn aci-btn--danger aci-btn--sm" data-delete-site="' +
+                escapeHtml(s.id) +
+                '" data-delete-title="' +
+                escapeHtml(title) +
+                '">Borrar</button>' +
                 '</div>';
-              branch.appendChild(row);
+              bBody.appendChild(row);
             });
-            folder.appendChild(branch);
+            branch.appendChild(bBody);
+            body.appendChild(branch);
           });
+        folder.appendChild(body);
         root.appendChild(folder);
       });
   }
@@ -585,14 +1018,12 @@
 
   function openSite(siteId) {
     if (!siteId) return;
-    // guardar el actual antes de cambiar
     saveCurrentMetaToSiteStore();
     try {
       localStorage.setItem(SITE_ID_KEY, siteId);
     } catch (e) {}
     var mapObj = readMetaBySite();
     var meta = mapObj[siteId] || defaultMeta();
-    // si el catálogo tiene más datos, rellenar vacíos
     var cat = readCatalog().filter(function (s) {
       return s.id === siteId;
     })[0];
@@ -609,7 +1040,7 @@
     try {
       localStorage.setItem(META_KEY, JSON.stringify(meta));
     } catch (e) {}
-    // limpiar mapa al cambiar de proyecto (el TIFF se vuelve a subir o cargar)
+
     currentGeoraster = null;
     clearCanopyLayers();
     if (rasterLayer && map) {
@@ -618,18 +1049,101 @@
       } catch (e) {}
       rasterLayer = null;
     }
-    showMapPane(false);
-    var ph = document.getElementById('aciMapPlaceholder');
-    if (ph) {
-      ph.hidden = false;
-      ph.style.display = '';
-    }
-    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-    if (analyzeBtn) analyzeBtn.hidden = true;
+    lastBounds = null;
+
     updateOpenBanner();
     setActiveTab('analisis');
     refreshProjectsUi();
-    setMapStatus('Proyecto abierto. Sube el GeoTIFF de este análisis.', 'ok');
+    // setActiveTab dispara loadOrthoAndCanopyForSite si no hay mapa en memoria
+  }
+
+  async function loadOrthoAndCanopyForSite(siteId) {
+    var orthoOk = await loadOrthoFromCloud(siteId);
+    var canopyOk = await restoreCanopyForSite(siteId);
+    if (orthoOk && canopyOk) {
+      setMapStatus('Ortomosaico + copas restaurados desde la nube', 'ok');
+      setLayerMode('semaforo');
+      return;
+    }
+    if (orthoOk && !canopyOk) {
+      setMapStatus('Ortomosaico restaurado. Pulsando Detectar copas…', 'ok');
+      runCanopyDetection();
+      return;
+    }
+    if (!orthoOk && canopyOk) {
+      setMapStatus(
+        'Copas restauradas (sin TIFF en mapa). Sube de nuevo el GeoTIFF para ver el fondo.',
+        'ok'
+      );
+      return;
+    }
+    showMapPane(false);
+    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
+    if (analyzeBtn) analyzeBtn.hidden = true;
+    setMapStatus('Este análisis aún no tiene GeoTIFF en la nube. Súbelo aquí.', 'ok');
+  }
+
+  async function loadOrthoFromCloud(siteId) {
+    var path = null;
+    var filename = 'ortho.tif';
+    var flightId = null;
+    var byteSize = null;
+
+    // 1) API flights
+    try {
+      var list = await apiOrtho({ action: 'list_flights', site_id: siteId });
+      if (list.ok && list.flights && list.flights.length) {
+        var f = list.flights[0];
+        path = f.storage_path;
+        filename = f.filename || filename;
+        flightId = f.id;
+        byteSize = f.byte_size;
+      }
+    } catch (e) {}
+
+    // 2) local map por site
+    if (!path) {
+      try {
+        var raw = localStorage.getItem(FLIGHT_BY_SITE_KEY);
+        var by = raw ? JSON.parse(raw) : {};
+        var local = by && by[siteId];
+        if (local && local.path) {
+          path = local.path;
+          filename = local.filename || filename;
+          flightId = local.flight_id || null;
+          byteSize = local.byte_size || null;
+        }
+      } catch (e2) {}
+    }
+
+    if (!path) return false;
+
+    setMapStatus('Descargando GeoTIFF desde Storage…');
+    var signed = await apiOrtho({ action: 'signed_url', path: path, ttl_sec: 3600 });
+    if (!signed.ok || !signed.url) {
+      setMapStatus(signed.error || 'No hay URL firmada del TIFF', 'error');
+      return false;
+    }
+
+    var res = await fetch(signed.url);
+    if (!res.ok) {
+      setMapStatus('Error descargando TIFF (' + res.status + ')', 'error');
+      return false;
+    }
+    var buf = await res.arrayBuffer();
+    await renderGeotiffFromArrayBuffer(buf, {
+      filename: filename,
+      byte_size: byteSize || buf.byteLength,
+      cloud: 'En nube',
+      cloud_sub: 'airci-orthos',
+      skipAutoDetect: true
+    });
+    saveFlightLocal(
+      { filename: filename, byte_size: byteSize || buf.byteLength },
+      path,
+      flightId
+    );
+    return true;
   }
 
   function createNewProject() {
@@ -869,6 +1383,7 @@
   }
 
   async function renderGeotiffFromArrayBuffer(arrayBuffer, meta) {
+    meta = meta || {};
     if (typeof parseGeoraster !== 'function' || typeof GeoRasterLayer === 'undefined') {
       throw new Error('Faltan librerías georaster en el navegador.');
     }
@@ -931,31 +1446,38 @@
     document.getElementById('aciMapSub').textContent =
       'Ortomosaico cargado' + (info.crs ? ' · proyección ' + info.crs : '');
 
-    // Auto-detectar copas + semáforo tras cargar el TIFF
-    setTimeout(runCanopyDetection, 120);
+    if (!meta.skipAutoDetect) {
+      setTimeout(runCanopyDetection, 120);
+    }
 
     return info;
   }
 
   function saveFlightLocal(info, path, flightId) {
+    var siteId = getSiteId();
+    var entry = {
+      site_id: siteId,
+      flight_id: flightId || null,
+      path: path || null,
+      filename: info.filename,
+      byte_size: info.byte_size,
+      width_px: info.width_px,
+      height_px: info.height_px,
+      bands: info.bands,
+      crs: info.crs,
+      bbox_json: info.bbox_json || null,
+      updated_at: Date.now()
+    };
     try {
-      localStorage.setItem(
-        FLIGHT_KEY,
-        JSON.stringify({
-          site_id: getSiteId(),
-          flight_id: flightId || null,
-          path: path || null,
-          filename: info.filename,
-          byte_size: info.byte_size,
-          width_px: info.width_px,
-          height_px: info.height_px,
-          bands: info.bands,
-          crs: info.crs,
-          bbox_json: info.bbox_json || null,
-          updated_at: Date.now()
-        })
-      );
+      localStorage.setItem(FLIGHT_KEY, JSON.stringify(entry));
     } catch (e) {}
+    try {
+      var raw = localStorage.getItem(FLIGHT_BY_SITE_KEY);
+      var by = raw ? JSON.parse(raw) : {};
+      if (!by || typeof by !== 'object') by = {};
+      by[siteId] = entry;
+      localStorage.setItem(FLIGHT_BY_SITE_KEY, JSON.stringify(by));
+    } catch (e2) {}
   }
 
   function restoreFlightHint() {
@@ -1253,9 +1775,61 @@
   var treeEl = document.getElementById('aciProjectsTree');
   if (treeEl) {
     treeEl.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('[data-open-site]') : null;
-      if (!btn) return;
-      openSite(btn.getAttribute('data-open-site'));
+      var t =
+        e.target && e.target.closest
+          ? e.target.closest(
+              '[data-toggle-ag],[data-toggle-pr],[data-open-site],[data-delete-site],[data-delete-ag]'
+            )
+          : null;
+      if (!t) return;
+
+      if (t.hasAttribute('data-delete-site')) {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteSiteWithConfirm(t.getAttribute('data-delete-site'), t.getAttribute('data-delete-title'));
+        return;
+      }
+
+      if (t.hasAttribute('data-delete-ag')) {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteAgricolaWithConfirm(
+          t.getAttribute('data-delete-ag'),
+          t.getAttribute('data-delete-ag-count')
+        );
+        return;
+      }
+
+      if (t.hasAttribute('data-open-site')) {
+        openSite(t.getAttribute('data-open-site'));
+        return;
+      }
+
+      if (t.hasAttribute('data-toggle-ag') && !t.hasAttribute('data-toggle-pr')) {
+        e.preventDefault();
+        var ag = t.getAttribute('data-toggle-ag');
+        var folder = t.closest('.aci-folder');
+        var next = !(folder && folder.classList.contains('is-collapsed'));
+        setAgricolaCollapsed(ag, next);
+        if (folder) {
+          folder.classList.toggle('is-collapsed', next);
+          t.setAttribute('aria-expanded', next ? 'false' : 'true');
+        }
+        return;
+      }
+
+      if (t.hasAttribute('data-toggle-pr')) {
+        e.preventDefault();
+        var agP = t.getAttribute('data-toggle-ag-parent');
+        var pr = t.getAttribute('data-toggle-pr');
+        var branch = t.closest('.aci-branch');
+        var nextPr = !(branch && branch.classList.contains('is-collapsed'));
+        setPredioCollapsed(agP, pr, nextPr);
+        if (branch) {
+          branch.classList.toggle('is-collapsed', nextPr);
+          t.setAttribute('aria-expanded', nextPr ? 'false' : 'true');
+        }
+      }
     });
   }
 

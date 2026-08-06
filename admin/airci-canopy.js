@@ -5,8 +5,11 @@
 (function (global) {
   'use strict';
 
-  var MIN_AREA_PX = 40;
-  var MAX_TREES = 800;
+  var MIN_AREA_PX = 80;
+  var MAX_TREES = 1200;
+  /** Descarta “blobs” que son casi toda la vegetación (pasto unido / bordes) */
+  var MAX_AREA_FRAC = 0.012; // 1.2% del área de la imagen
+  var MAX_AREA_VS_MEDIAN = 8; // > 8× mediana = outlier a excluir de stats/capas
 
   function bandScale(v, max) {
     var n = Number(v);
@@ -42,31 +45,17 @@
     return { r: r, g: g, b: b, maxs: georaster.maxs || [255, 255, 255] };
   }
 
-  function otsuThreshold(hist, total) {
-    var sum = 0;
-    for (var i = 0; i < 256; i++) sum += i * hist[i];
-    var sumB = 0;
-    var wB = 0;
-    var maxVar = -1;
-    var threshold = 20;
-    for (var t = 0; t < 256; t++) {
-      wB += hist[t];
-      if (wB === 0) continue;
-      var wF = total - wB;
-      if (wF === 0) break;
-      sumB += t * hist[t];
-      var mB = sumB / wB;
-      var mF = (sum - sumB) / wF;
-      var between = wB * wF * (mB - mF) * (mB - mF);
-      if (between > maxVar) {
-        maxVar = between;
-        threshold = t;
-      }
+  function percentileFromHist(hist, total, p) {
+    var need = (p / 100) * total;
+    var acc = 0;
+    for (var i = 0; i < 256; i++) {
+      acc += hist[i];
+      if (acc >= need) return i;
     }
-    return threshold;
+    return 255;
   }
 
-  /** ExG normalizado 0–255 + máscara binaria */
+  /** ExG estricto: ignora negro/sombra, exige verde dominante (copa vs pasto claro) */
   function buildVegetationMask(georaster) {
     var bands = getBandArrays(georaster);
     if (!bands) throw new Error('GeoTIFF sin bandas RGB');
@@ -86,36 +75,74 @@
       var G = bandScale(bands.g[p], maxG);
       var B = bandScale(bands.b[p], maxB);
       var s = R + G + B;
-      var v;
-      if (s < 15) {
+      var v = 0;
+      // Negro / nodata / sombra muy oscura
+      if (s < 40 || (R < 18 && G < 22 && B < 18)) {
         v = 0;
       } else {
-        // ExG normalizado: 2g - r - b  (r,g,b fracciones)
         var r = R / s;
         var g = G / s;
         var b = B / s;
-        var raw = 2 * g - r - b;
-        v = Math.max(0, Math.min(255, Math.round((raw + 1) * 127.5)));
+        // Verde debe ganar con margen (reduce pasto seco / suelo)
+        if (g > r + 0.04 && g > b + 0.03 && G > R && G > B) {
+          var raw = 2 * g - r - b;
+          v = Math.max(0, Math.min(255, Math.round((raw + 1) * 127.5)));
+        } else {
+          v = 0;
+        }
       }
       exg[p] = v;
-      if (s >= 15) {
+      if (v > 0) {
         hist[v]++;
         valid++;
       }
     }
 
-    var thr = otsuThreshold(hist, Math.max(1, valid));
-    thr = Math.max(28, Math.min(thr, 140));
+    // Umbral alto: percentil ~62 de los píxeles ya “verdes candidatos”
+    var thr = valid > 100 ? percentileFromHist(hist, valid, 62) : 90;
+    thr = Math.max(70, Math.min(thr, 170));
 
     var mask = new Uint8Array(n);
-    var count = 0;
     for (var q = 0; q < n; q++) {
-      if (exg[q] >= thr) {
-        mask[q] = 1;
-        count++;
+      if (exg[q] >= thr) mask[q] = 1;
+    }
+
+    // Erosión 4-vecinos: rompe puentes de pasto entre árboles
+    var eroded = new Uint8Array(n);
+    for (var y = 1; y < h - 1; y++) {
+      for (var x = 1; x < w - 1; x++) {
+        var i = y * w + x;
+        if (
+          mask[i] &&
+          mask[i - 1] &&
+          mask[i + 1] &&
+          mask[i - w] &&
+          mask[i + w]
+        ) {
+          eroded[i] = 1;
+        }
       }
     }
-    return { mask: mask, threshold: thr, vegPixels: count, width: w, height: h };
+    // Dilatación ligera (recuperar copa)
+    var dil = new Uint8Array(n);
+    var count = 0;
+    for (var yy = 1; yy < h - 1; yy++) {
+      for (var xx = 1; xx < w - 1; xx++) {
+        var ii = yy * w + xx;
+        if (
+          eroded[ii] ||
+          eroded[ii - 1] ||
+          eroded[ii + 1] ||
+          eroded[ii - w] ||
+          eroded[ii + w]
+        ) {
+          dil[ii] = 1;
+          count++;
+        }
+      }
+    }
+
+    return { mask: dil, threshold: thr, vegPixels: count, width: w, height: h };
   }
 
   function connectedComponents(mask, width, height, minArea) {
@@ -314,16 +341,52 @@
     return { key: 'azul', label: 'Por encima', color: '#2563eb', fill: '#3b82f699' };
   }
 
+  function median(arr) {
+    if (!arr.length) return 0;
+    var a = arr.slice().sort(function (x, y) {
+      return x - y;
+    });
+    var m = (a.length / 2) | 0;
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+
   function analyzeCanopies(georaster, opts) {
     opts = opts || {};
     var minArea = opts.minAreaPx != null ? opts.minAreaPx : MIN_AREA_PX;
     var veg = buildVegetationMask(georaster);
+    var totalPx = veg.width * veg.height;
+    var maxAreaAbs = Math.max(minArea * 20, Math.floor(totalPx * MAX_AREA_FRAC));
+
     var comps = connectedComponents(veg.mask, veg.width, veg.height, minArea);
+    // 1) quitar gigantes (pasto unido / casi toda la huerta)
+    comps = comps.filter(function (c) {
+      return c.areaPx <= maxAreaAbs;
+    });
+
+    // 2) mediana y filtrar outliers enormes vs mediana
+    var areasAll = comps.map(function (c) {
+      return c.areaPx;
+    });
+    var med = median(areasAll);
+    if (med > 0) {
+      comps = comps.filter(function (c) {
+        return c.areaPx <= med * MAX_AREA_VS_MEDIAN;
+      });
+    }
+
+    comps.sort(function (a, b) {
+      return b.areaPx - a.areaPx;
+    });
+    if (comps.length > MAX_TREES) comps = comps.slice(0, MAX_TREES);
+
     var areas = comps.map(function (c) {
       return c.areaPx;
     });
     var stats = meanStd(areas);
-    var totalPx = veg.width * veg.height;
+    // cobertura solo con píxeles de copas retenidas
+    var retainedPx = 0;
+    for (var i = 0; i < areas.length; i++) retainedPx += areas[i];
+
     var trees = comps.map(function (c, idx) {
       var z = (c.areaPx - stats.mean) / stats.std;
       var sem = semaforoClass(z);
@@ -349,11 +412,13 @@
         count: trees.length,
         meanArea: stats.mean,
         stdArea: stats.std,
-        vegPixels: veg.vegPixels,
-        coverPct: totalPx ? (veg.vegPixels / totalPx) * 100 : 0,
+        medianArea: med,
+        vegPixels: retainedPx,
+        coverPct: totalPx ? (retainedPx / totalPx) * 100 : 0,
         threshold: veg.threshold,
         width: veg.width,
-        height: veg.height
+        height: veg.height,
+        maxAreaAbs: maxAreaAbs
       }
     };
   }

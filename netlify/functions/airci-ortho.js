@@ -10,6 +10,8 @@
  *   upsert_site  → upsert airci_sites + meta
  *   signed_url   → URL firmada de lectura
  *   list_flights → vuelos del site
+ *   delete_site  → borra análisis + TIFF Storage + copas
+ *   delete_agricola → borra todos los análisis de un agrícola
  */
 
 'use strict';
@@ -293,6 +295,97 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true, sites: data || [] });
   }
 
+  if (action === 'save_canopy') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+    const flightId = isUuid(body.flight_id) ? body.flight_id : null;
+    const stats = body.stats && typeof body.stats === 'object' ? body.stats : {};
+    const trees = Array.isArray(body.trees) ? body.trees : [];
+    // Limitar tamaño: máximo ~2000 árboles en JSON
+    const treesTrim = trees.slice(0, 2000).map(function (t) {
+      return {
+        id: t.id,
+        areaPx: t.areaPx,
+        z: t.z,
+        pctVsMean: t.pctVsMean,
+        sem: t.sem,
+        latlngs: t.latlngs,
+        center: t.center
+      };
+    });
+
+    const row = {
+      site_id: siteId,
+      flight_id: flightId,
+      owner_id: auth.userId,
+      tree_count: Number(stats.count != null ? stats.count : treesTrim.length) || 0,
+      cover_pct: stats.coverPct != null ? Number(stats.coverPct) : null,
+      mean_area_px: stats.meanArea != null ? Number(stats.meanArea) : null,
+      std_area_px: stats.stdArea != null ? Number(stats.stdArea) : null,
+      threshold: stats.threshold != null ? Number(stats.threshold) : null,
+      stats_json: stats,
+      trees_json: treesTrim,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('airci_canopy_results')
+      .upsert(row, { onConflict: 'site_id' })
+      .select('id, site_id, flight_id, tree_count, cover_pct, updated_at')
+      .single();
+
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_canopy_results|does not exist|schema cache/i.test(error.message || '')
+          ? 'supabase-airci-canopy-results.sql'
+          : null
+      });
+    }
+    return json(200, { ok: true, result: data });
+  }
+
+  if (action === 'load_canopy') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+    const { data, error } = await supabase
+      .from('airci_canopy_results')
+      .select(
+        'id, site_id, flight_id, tree_count, cover_pct, mean_area_px, std_area_px, threshold, stats_json, trees_json, updated_at'
+      )
+      .eq('site_id', siteId)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_canopy_results|does not exist/i.test(error.message || '')
+          ? 'supabase-airci-canopy-results.sql'
+          : null
+      });
+    }
+    if (!data) return json(200, { ok: true, result: null });
+    return json(200, {
+      ok: true,
+      result: {
+        id: data.id,
+        site_id: data.site_id,
+        flight_id: data.flight_id,
+        stats: Object.assign({}, data.stats_json || {}, {
+          count: data.tree_count,
+          coverPct: data.cover_pct,
+          meanArea: data.mean_area_px,
+          stdArea: data.std_area_px,
+          threshold: data.threshold
+        }),
+        trees: data.trees_json || [],
+        updated_at: data.updated_at
+      }
+    });
+  }
+
   if (action === 'list_flights') {
     const siteId = body.site_id;
     if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
@@ -314,9 +407,134 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true, flights: data || [] });
   }
 
+  async function removeStorageForSite(ownerId, siteId, flightRows) {
+    const paths = [];
+    (flightRows || []).forEach(function (f) {
+      if (f && f.storage_path) paths.push(f.storage_path);
+    });
+    const folder = ownerId + '/' + siteId;
+    try {
+      const { data: listed } = await supabase.storage.from(BUCKET).list(folder, { limit: 200 });
+      (listed || []).forEach(function (obj) {
+        if (obj && obj.name) {
+          const p = folder + '/' + obj.name;
+          if (paths.indexOf(p) < 0) paths.push(p);
+        }
+      });
+    } catch (e) {}
+    if (!paths.length) return { removed: 0 };
+    const { error } = await supabase.storage.from(BUCKET).remove(paths);
+    if (error) return { removed: 0, warning: error.message };
+    return { removed: paths.length };
+  }
+
+  async function deleteOneSite(siteId) {
+    if (!isUuid(siteId)) return { ok: false, error: 'site_id inválido' };
+
+    const { data: site, error: siteErr } = await supabase
+      .from('airci_sites')
+      .select('id, title, agricola')
+      .eq('id', siteId)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+    if (siteErr) {
+      return {
+        ok: false,
+        error: siteErr.message,
+        setup: /airci_sites|does not exist/i.test(siteErr.message || '') ? 'supabase-airci.sql' : null
+      };
+    }
+    if (!site) return { ok: false, error: 'Análisis no encontrado en la nube', missing: true };
+
+    const { data: flights } = await supabase
+      .from('airci_flights')
+      .select('id, storage_path')
+      .eq('site_id', siteId)
+      .eq('owner_id', auth.userId);
+
+    const storage = await removeStorageForSite(auth.userId, siteId, flights || []);
+
+    // canopy + flights caen por CASCADE al borrar site
+    const { error: delErr } = await supabase
+      .from('airci_sites')
+      .delete()
+      .eq('id', siteId)
+      .eq('owner_id', auth.userId);
+    if (delErr) {
+      return { ok: false, error: delErr.message, storage: storage };
+    }
+    return {
+      ok: true,
+      site_id: siteId,
+      title: site.title || '',
+      agricola: site.agricola || '',
+      flights_removed: (flights || []).length,
+      files_removed: storage.removed || 0,
+      warning: storage.warning || null
+    };
+  }
+
+  if (action === 'delete_site') {
+    const siteId = body.site_id;
+    const result = await deleteOneSite(siteId);
+    if (!result.ok) {
+      return json(result.missing ? 404 : 500, result);
+    }
+    return json(200, result);
+  }
+
+  if (action === 'delete_agricola') {
+    const label = String(body.agricola != null ? body.agricola : '').trim();
+    const isEmptyLabel = !label || label === 'Sin agrícola';
+
+    const { data: allSites, error: listErr } = await supabase
+      .from('airci_sites')
+      .select('id, title, agricola')
+      .eq('owner_id', auth.userId);
+    if (listErr) {
+      return json(500, {
+        ok: false,
+        error: listErr.message,
+        setup: /airci_sites|does not exist/i.test(listErr.message || '') ? 'supabase-airci.sql' : null
+      });
+    }
+
+    const match = (allSites || []).filter(function (s) {
+      const ag = String(s.agricola || '').trim();
+      if (isEmptyLabel) return !ag;
+      return ag === label;
+    });
+
+    if (!match.length) {
+      return json(200, {
+        ok: true,
+        agricola: isEmptyLabel ? 'Sin agrícola' : label,
+        deleted: [],
+        count: 0,
+        note: 'No había análisis de este agrícola en la nube'
+      });
+    }
+
+    const deleted = [];
+    const errors = [];
+    for (let i = 0; i < match.length; i++) {
+      const r = await deleteOneSite(match[i].id);
+      if (r.ok) deleted.push(r.site_id);
+      else errors.push({ site_id: match[i].id, error: r.error });
+    }
+
+    return json(200, {
+      ok: errors.length === 0,
+      agricola: isEmptyLabel ? 'Sin agrícola' : label,
+      deleted: deleted,
+      count: deleted.length,
+      errors: errors.length ? errors : undefined
+    });
+  }
+
   return json(400, {
     ok: false,
     error:
-      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights)'
+      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | delete_site | delete_agricola)'
   });
 };

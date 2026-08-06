@@ -138,7 +138,15 @@ function normalizeHolding(raw) {
     marketValue: marketValue,
     dayChange: asNum(raw.dayChange != null ? raw.dayChange : raw.dayChangeDollar),
     dayChangePct: asNum(raw.dayChangePct != null ? raw.dayChangePct : raw.dayChangePercent),
-    costBasis: asNum(raw.costBasis != null ? raw.costBasis : raw.cost),
+    costBasis: asNum(
+      raw.costBasis != null
+        ? raw.costBasis
+        : raw.cost_basis != null
+          ? raw.cost_basis
+          : raw.totalCost != null
+            ? raw.totalCost
+            : raw.cost
+    ),
     gainLoss: asNum(raw.gainLoss != null ? raw.gainLoss : raw.gainLossDollar),
     gainLossPct: asNum(raw.gainLossPct != null ? raw.gainLossPct : raw.gainLossPercent)
   };
@@ -178,6 +186,7 @@ function buildPrompt() {
     '- symbol = ticker (mayúsculas). name = nombre bajo el ticker si aparece.',
     '- assetType: "etf" si el nombre/ticker es ETF (INVESCO, VANGUARD, iShares, QQQM, VOO, etc.); si no "stock"; cripto "crypto"; efectivo "cash".',
     '- Números como number (no strings). Usa punto decimal. Negativos con signo -.',
+    '- costBasis = columna "Cost Basis" de Schwab (total invertido / lo que costó la posición, NO el precio por acción). Si no se ve en la captura, null.',
     '- Si solo ves $ y no %, deja *Pct en null. No inventes valores ausentes: null.',
     '- Si la imagen no es una tabla de portafolio, holdings: [].'
   ].join('\n');

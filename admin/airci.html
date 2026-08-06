@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806h">
+  <link rel="stylesheet" href="./airci.css?v=20260806o">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -101,33 +101,35 @@
           <strong>Datos del predio</strong>
         </div>
         <div class="aci-meta-grid">
-          <div class="aci-field aci-field--wide">
-            <label for="aciTitle">Título / apunte</label>
-            <input id="aciTitle" type="text" placeholder="Ej. Huerta norte — vuelo mayo" data-meta="title" autocomplete="off">
+          <div class="aci-meta-row">
+            <div class="aci-field aci-field--title">
+              <label for="aciTitle">Título</label>
+              <input id="aciTitle" type="text" placeholder="Huerta / vuelo" data-meta="title" autocomplete="off">
+            </div>
+            <div class="aci-field">
+              <label for="aciAgricola">Agrícola</label>
+              <input id="aciAgricola" type="text" placeholder="Productor" data-meta="agricola" autocomplete="off">
+            </div>
+            <div class="aci-field">
+              <label for="aciPredio">Predio</label>
+              <input id="aciPredio" type="text" placeholder="Sector" data-meta="predio" autocomplete="off">
+            </div>
+            <div class="aci-field">
+              <label for="aciCultivo">Cultivo</label>
+              <input id="aciCultivo" type="text" placeholder="Cultivo" data-meta="cultivo" autocomplete="off">
+            </div>
+            <div class="aci-field">
+              <label for="aciVariedad">Variedad</label>
+              <input id="aciVariedad" type="text" placeholder="Variedad" data-meta="variedad" autocomplete="off">
+            </div>
+            <div class="aci-field aci-field--edad">
+              <label for="aciEdad">Edad</label>
+              <input id="aciEdad" type="text" placeholder="Años" data-meta="edad" autocomplete="off">
+            </div>
           </div>
-          <div class="aci-field">
-            <label for="aciAgricola">Agrícola / productor</label>
-            <input id="aciAgricola" type="text" placeholder="Nombre" data-meta="agricola" autocomplete="off">
-          </div>
-          <div class="aci-field">
-            <label for="aciPredio">Predio o sector</label>
-            <input id="aciPredio" type="text" placeholder="Bloque / sector" data-meta="predio" autocomplete="off">
-          </div>
-          <div class="aci-field">
-            <label for="aciCultivo">Cultivo</label>
-            <input id="aciCultivo" type="text" placeholder="Aguacate, mango…" data-meta="cultivo" autocomplete="off">
-          </div>
-          <div class="aci-field">
-            <label for="aciVariedad">Variedad</label>
-            <input id="aciVariedad" type="text" placeholder="Hass…" data-meta="variedad" autocomplete="off">
-          </div>
-          <div class="aci-field">
-            <label for="aciEdad">Edad</label>
-            <input id="aciEdad" type="text" placeholder="8 años" data-meta="edad" autocomplete="off">
-          </div>
-          <div class="aci-field aci-field--wide">
+          <div class="aci-field aci-field--nota">
             <label for="aciNota">Nota / comentario</label>
-            <textarea id="aciNota" rows="3" placeholder="Observaciones del vuelo o del predio" data-meta="nota"></textarea>
+            <textarea id="aciNota" rows="2" placeholder="Observaciones del vuelo o del predio" data-meta="nota"></textarea>
           </div>
         </div>
         <p id="aciSaveHint" class="aci-save-hint" role="status"></p>
@@ -213,7 +215,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806h"></script>
-  <script src="./airci.js?v=20260806h"></script>
+  <script src="./airci-canopy.js?v=20260806o"></script>
+  <script src="./airci.js?v=20260806o"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
   <link rel="apple-touch-icon" href="../assets/N_Hoja_Azul.png" />
   <link rel="manifest" href="/planpro.webmanifest" />
-  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260805pf4" />
+  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260806pf3" />
   <script src="../config-no-traducir-terminos.js"></script>
   <script>
     (function () {
@@ -5706,6 +5706,18 @@
     }
     .np-mapa-tip.np-mapa-tip--on {
       opacity: 1;
+    }
+    .np-mapa-tip.np-mapa-tip--action {
+      pointer-events: auto;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .np-mapa-tip.np-mapa-tip--action:hover,
+    .np-mapa-tip.np-mapa-tip--action:focus-visible {
+      background: rgba(15, 23, 42, 0.94);
+      outline: 2px solid rgba(99, 102, 241, 0.55);
+      outline-offset: 1px;
     }
     .np-mapa-edge-detail {
       position: absolute;
@@ -11801,7 +11813,7 @@
                 ★ agrega/quita el ticker en la <strong>lista activa</strong> (se guarda en tu cuenta). Puedes crear varias listas y borrar las que ya no uses.
               </p>
             </section>
-            <section class="np-inv-panel">
+            <section class="np-inv-panel np-inv-panel--picks">
               <div class="np-inv-panel-title"><span>⭐ Popular Picks / contenido</span></div>
               <div id="npInvFilters" class="np-inv-filters" aria-label="Filtros de catálogo"></div>
               <div id="npInvPicks" class="np-inv-picks" aria-label="Lista de activos"></div>
@@ -11882,7 +11894,7 @@
                 <span>Mi portafolio · seguimiento Schwab</span>
               </div>
               <p class="np-inv-pf-lead">
-                Sube 1–4 capturas de tu tabla de posiciones (acciones o ETFs). La IA lee Symbol, Quantity, Price, Market Value y Gain/Loss; se guarda en <strong>Supabase</strong>. <strong>Objetivo</strong> y <strong>Comentarios</strong> solo cambian cuando tú los escribes — el escaneo no los toca.
+                Sube 1–4 capturas de tu tabla de posiciones (acciones o ETFs). La IA lee Symbol, Quantity, Price, Market Value, <strong>Cost Basis</strong> y Gain/Loss; se guarda en <strong>Supabase</strong>. <strong>Objetivo</strong>, <strong>Comentarios</strong> y el apunte general solo cambian cuando tú los escribes — el escaneo no los toca.
               </p>
             </div>
             <div class="np-inv-pf-actions-bar">
@@ -11895,6 +11907,19 @@
           </div>
           <p id="npInvPfStatus" class="np-inv-pf-status np-hide" aria-live="polite"></p>
           <div id="npInvPfSummary" class="np-inv-pf-summary" aria-live="polite"></div>
+          <div class="np-inv-pf-scratch" id="npInvPfScratchWrap">
+            <label class="np-inv-pf-scratch-label" for="npInvPfScratch">
+              Apunte general
+              <span class="np-inv-pf-scratch-hint">compras pendientes, ideas, datos sueltos…</span>
+            </label>
+            <textarea
+              id="npInvPfScratch"
+              class="np-inv-pf-scratch-ta"
+              rows="3"
+              placeholder="Ej. Comprar más QQQM · Revisar SPCX · Esperar dip en ABBV…"
+              aria-label="Apunte general del portafolio"
+            ></textarea>
+          </div>
           <div class="np-inv-pf-body">
             <div class="np-inv-pf-table-col">
               <p id="npInvPfEmpty" class="np-inv-pf-empty">Aún no hay posiciones. Sube capturas de Charles Schwab (o similar) para armar la tabla.</p>
@@ -11929,6 +11954,12 @@
                         </button>
                       </th>
                       <th>
+                        <button type="button" class="np-inv-pf-th-btn" data-pf-sort="costBasis" title="Ordenar por cost basis">
+                          Cost Basis <span class="np-inv-pf-th-hint">(lo invertido)</span>
+                          <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
+                        </button>
+                      </th>
+                      <th>
                         <button type="button" class="np-inv-pf-th-btn" data-pf-sort="gainLoss" title="Ordenar por gain/loss">
                           Gain / Loss <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
                         </button>
@@ -11938,7 +11969,7 @@
                           Objetivo <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
                         </button>
                       </th>
-                      <th>
+                      <th class="np-inv-pf-th-comments">
                         <button type="button" class="np-inv-pf-th-btn" data-pf-sort="comments" title="Ordenar por comentario">
                           Comentarios <span class="np-inv-pf-sort-ico" aria-hidden="true"></span>
                         </button>
@@ -11951,7 +11982,7 @@
               </div>
             </div>
             <div class="np-inv-pf-charts-col">
-              <p id="npInvPfChartsEmpty" class="np-inv-pf-empty np-inv-pf-empty--charts">Las gráficas de pastel aparecen al cargar posiciones.</p>
+              <p id="npInvPfChartsEmpty" class="np-inv-pf-empty np-inv-pf-empty--charts">Las gráficas aparecen al cargar posiciones.</p>
               <div id="npInvPfCharts" class="np-inv-pf-charts np-hide">
                 <div class="np-inv-pf-chart-box">
                   <canvas id="npInvPfPieHoldings" aria-label="Peso por posición"></canvas>
@@ -11959,6 +11990,12 @@
                 <div class="np-inv-pf-chart-box">
                   <canvas id="npInvPfPieType" aria-label="ETF vs acciones"></canvas>
                 </div>
+                <div class="np-inv-pf-chart-box np-inv-pf-chart-box--bars">
+                  <canvas id="npInvPfBarCostValue" aria-label="Valor actual vs Cost Basis por posición"></canvas>
+                </div>
+                <p class="np-inv-pf-chart-legend-note">
+                  Barras: la más ancha = el mayor (valor o cost); la de adentro = el menor. Teal = valor actual · gris = cost basis.
+                </p>
               </div>
             </div>
           </div>
@@ -12513,7 +12550,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260804fav"></script>
-  <script src="../assets/planpro-invest-portfolio.js?v=20260805pf5"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260806pf2"></script>
   <script>
 (function () {
   'use strict';
@@ -19326,10 +19363,12 @@
     locationFavoritesReady: true,
     treeCollapsed: {},
     investHoldingsSort: { key: 'marketValue', dir: 'desc' },
+    investPortfolioNotes: '',
     planProUiPrefsReady: true,
     planProTreeCollapsedSaveTimer: null,
     planProCalOverlaySaveTimer: null,
     planProInvestSortSaveTimer: null,
+    planProInvestNotesSaveTimer: null,
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
     planProBodyHtmlColumn: true,
@@ -25039,6 +25078,7 @@
       price: 1,
       marketValue: 1,
       dayChange: 1,
+      costBasis: 1,
       gainLoss: 1,
       targetShares: 1,
       comments: 1
@@ -25049,11 +25089,18 @@
     return { key: key, dir: dir };
   }
 
+  function planProSanitizeInvestPortfolioNotes(raw) {
+    var s = raw == null ? '' : String(raw);
+    if (s.length > 8000) s = s.slice(0, 8000);
+    return s;
+  }
+
   function planProMergedUiPrefsJson() {
     return {
       tree_collapsed: planProSanitizeTreeCollapsed(state.treeCollapsed || {}),
       cal_overlay_area_ids: planProSanitizeCalOverlayAreaIds(state.calOverlayAreaIds || []),
-      invest_holdings_sort: planProSanitizeInvestHoldingsSort(state.investHoldingsSort || {})
+      invest_holdings_sort: planProSanitizeInvestHoldingsSort(state.investHoldingsSort || {}),
+      invest_portfolio_notes: planProSanitizeInvestPortfolioNotes(state.investPortfolioNotes || '')
     };
   }
 
@@ -25082,6 +25129,35 @@
     if (state.planProInvestSortSaveTimer) clearTimeout(state.planProInvestSortSaveTimer);
     state.planProInvestSortSaveTimer = window.setTimeout(function () {
       state.planProInvestSortSaveTimer = null;
+      planProSaveUiPrefsCloud();
+    }, 450);
+  }
+
+  function planProWriteInvestPortfolioNotesLocal(notes) {
+    try {
+      localStorage.setItem(
+        'np_plan_pro_invest_portfolio_notes_v1',
+        planProSanitizeInvestPortfolioNotes(notes || '')
+      );
+    } catch (eWrite) {}
+  }
+
+  function planProReadInvestPortfolioNotesLocal() {
+    try {
+      var raw = localStorage.getItem('np_plan_pro_invest_portfolio_notes_v1');
+      if (raw == null) return '';
+      return planProSanitizeInvestPortfolioNotes(raw);
+    } catch (eRead) {
+      return '';
+    }
+  }
+
+  function planProScheduleInvestPortfolioNotesSave(notes) {
+    state.investPortfolioNotes = planProSanitizeInvestPortfolioNotes(notes);
+    planProWriteInvestPortfolioNotesLocal(state.investPortfolioNotes);
+    if (state.planProInvestNotesSaveTimer) clearTimeout(state.planProInvestNotesSaveTimer);
+    state.planProInvestNotesSaveTimer = window.setTimeout(function () {
+      state.planProInvestNotesSaveTimer = null;
       planProSaveUiPrefsCloud();
     }, 450);
   }
@@ -25137,6 +25213,8 @@
     if (localCal && localCal.length) planProApplyCalOverlayAreaIds(localCal);
     var localInvSort = planProReadInvestHoldingsSortLocal();
     if (localInvSort) state.investHoldingsSort = localInvSort;
+    var localInvNotes = planProReadInvestPortfolioNotesLocal();
+    if (localInvNotes) state.investPortfolioNotes = localInvNotes;
     if (!state.client || !state.userId) return;
     try {
       var res = await state.client
@@ -25170,6 +25248,12 @@
       if (cloudInvSort && typeof cloudInvSort === 'object') {
         state.investHoldingsSort = planProSanitizeInvestHoldingsSort(cloudInvSort);
         planProWriteInvestHoldingsSortLocal(state.investHoldingsSort);
+      }
+      if (res.data.prefs_json.invest_portfolio_notes != null) {
+        state.investPortfolioNotes = planProSanitizeInvestPortfolioNotes(
+          res.data.prefs_json.invest_portfolio_notes
+        );
+        planProWriteInvestPortfolioNotesLocal(state.investPortfolioNotes);
       }
     } catch (eLoad) {}
   }
@@ -29381,7 +29465,9 @@
           userId: state.userId,
           toast: showToast,
           investHoldingsSort: state.investHoldingsSort,
-          saveInvestHoldingsSort: planProScheduleInvestHoldingsSortSave
+          saveInvestHoldingsSort: planProScheduleInvestHoldingsSortSave,
+          investPortfolioNotes: state.investPortfolioNotes,
+          saveInvestPortfolioNotes: planProScheduleInvestPortfolioNotesSave
         });
       }
       if (window.PlanProInvest && typeof window.PlanProInvest.init === 'function') {
@@ -29431,13 +29517,18 @@
   /** Abre apunte desde Neuron PRO sin salir del mapa (al cerrar sigues donde estabas). */
   async function openMapaApunteKeepView(itemId) {
     if (!itemId) return;
-    snapshotPlanProMapaView();
-    var row = await fetchPlanProItemForDetail(itemId);
-    if (!row) {
-      showToast('Apunte no encontrado.', true);
-      return;
+    try {
+      snapshotPlanProMapaView();
+      var row = await fetchPlanProItemForDetail(itemId);
+      if (!row) {
+        showToast('Apunte no encontrado.', true);
+        return;
+      }
+      await openItemDetail(row);
+    } catch (e) {
+      console.warn('openMapaApunteKeepView', e);
+      showToast((e && e.message) || 'No se pudo abrir el apunte.', true);
     }
-    await openItemDetail(row);
   }
 
   function scheduleRenderPlanProMapa() {
@@ -31380,24 +31471,25 @@
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       var local = mapaSvgLocal(e.clientX, e.clientY);
       planProMapaPointers[e.pointerId] = { id: e.pointerId, x: local.x, y: local.y };
-      try {
-        svg.setPointerCapture(e.pointerId);
-      } catch (err) {}
 
       var count = mapaPointerList().length;
       if (count >= 2) {
-        if (e.target && e.target.closest) {
-          /* Pellizco siempre sobre el mapa, aunque empiece en un nodo. */
-        }
+        try {
+          svg.setPointerCapture(e.pointerId);
+        } catch (errCap) {}
         beginMapaPinch();
         e.preventDefault();
         return;
       }
 
-      if (e.target && e.target.closest) {
-        if (e.target.closest('.np-mapa-node')) return;
-        if (e.target.closest('.np-mapa-edge-sem') || e.target.closest('.np-mapa-edge-hit')) return;
+      /* Nodo/relación: NO capturar el puntero en el SVG (si no, el click nunca llega al apunte). */
+      if (mapaIsInteractiveTarget(e.target)) {
+        return;
       }
+
+      try {
+        svg.setPointerCapture(e.pointerId);
+      } catch (err) {}
       clearMapaEdgeFocus();
       closeMapaEdgeDetail();
       planProMapaPinch = null;
@@ -31459,16 +31551,90 @@
     });
   }
 
-  function showMapaTip(text) {
+  var planProMapaTipAction = null;
+  var planProMapaTipClearTimer = null;
+
+  function showMapaTip(text, action) {
     var tip = $('npMapaTip');
     if (!tip) return;
+    if (planProMapaTipClearTimer) {
+      clearTimeout(planProMapaTipClearTimer);
+      planProMapaTipClearTimer = null;
+    }
+    planProMapaTipAction = typeof action === 'function' ? action : null;
     if (!text) {
-      tip.classList.remove('np-mapa-tip--on');
+      tip.classList.remove('np-mapa-tip--on', 'np-mapa-tip--action');
       tip.textContent = '';
+      tip.removeAttribute('role');
+      tip.removeAttribute('tabindex');
       return;
     }
     tip.textContent = text;
     tip.classList.add('np-mapa-tip--on');
+    tip.classList.toggle('np-mapa-tip--action', !!planProMapaTipAction);
+    if (planProMapaTipAction) {
+      tip.setAttribute('role', 'button');
+      tip.setAttribute('tabindex', '0');
+    } else {
+      tip.removeAttribute('role');
+      tip.removeAttribute('tabindex');
+    }
+  }
+
+  function scheduleClearMapaTip() {
+    if (planProMapaTipClearTimer) clearTimeout(planProMapaTipClearTimer);
+    planProMapaTipClearTimer = setTimeout(function () {
+      planProMapaTipClearTimer = null;
+      showMapaTip('');
+    }, 420);
+  }
+
+  /** Tap fiable en SVG: pointerup (sin arrastre) + click de respaldo. */
+  function bindMapaTap(el, handler) {
+    if (!el || typeof handler !== 'function') return;
+    var start = null;
+    el.addEventListener('pointerdown', function (ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      start = { x: ev.clientX, y: ev.clientY, id: ev.pointerId };
+    });
+    el.addEventListener('pointerup', function (ev) {
+      if (!start || start.id !== ev.pointerId) return;
+      var moved =
+        Math.abs(ev.clientX - start.x) > 12 || Math.abs(ev.clientY - start.y) > 12;
+      start = null;
+      if (moved) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      el.__npMapaTapAt = Date.now();
+      try {
+        handler(ev);
+      } catch (err) {
+        console.warn('mapa tap', err);
+      }
+    });
+    el.addEventListener('pointercancel', function () {
+      start = null;
+    });
+    el.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (el.__npMapaTapAt && Date.now() - el.__npMapaTapAt < 450) return;
+      el.__npMapaTapAt = Date.now();
+      try {
+        handler(ev);
+      } catch (err) {
+        console.warn('mapa click', err);
+      }
+    });
+  }
+
+  function mapaIsInteractiveTarget(target) {
+    if (!target || !target.closest) return false;
+    return !!(
+      target.closest('.np-mapa-node') ||
+      target.closest('.np-mapa-edge-sem') ||
+      target.closest('.np-mapa-edge-hit')
+    );
   }
 
   async function renderPlanProMapa() {
@@ -31661,24 +31827,28 @@
         hit.setAttribute('d', dAttr);
         hit.setAttribute('class', 'np-mapa-edge-hit');
         function onEdgeEnter() {
-          showMapaTip(tip + ' · toca para ver ambos');
+          showMapaTip(tip + ' · toca para ver ambos', function () {
+            focusPlanProMapaRelation(a, b, path, tip, e);
+          });
         }
         function onEdgeLeave() {
           if (!($('npMapaSvg') && $('npMapaSvg').classList.contains('is-edge-focus'))) {
-            showMapaTip('');
+            scheduleClearMapaTip();
           }
         }
-        function onEdgeClick(ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
+        function onEdgeActivate(ev) {
+          if (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+          }
           focusPlanProMapaRelation(a, b, path, tip, e);
         }
         path.addEventListener('pointerenter', onEdgeEnter);
         path.addEventListener('pointerleave', onEdgeLeave);
-        path.addEventListener('click', onEdgeClick);
         hit.addEventListener('pointerenter', onEdgeEnter);
         hit.addEventListener('pointerleave', onEdgeLeave);
-        hit.addEventListener('click', onEdgeClick);
+        bindMapaTap(path, onEdgeActivate);
+        bindMapaTap(hit, onEdgeActivate);
         world.appendChild(path);
         world.appendChild(hit);
       });
@@ -31738,27 +31908,34 @@
                   : n.kind === 'nutri_link'
                     ? 'Link'
                     : 'Apunte';
-          showMapaTip(kindLab + ': ' + n.label);
+          var tipText = kindLab + ': ' + n.label;
+          var tipAction = null;
+          if (n.kind === 'item') {
+            tipText += ' · toca para abrir';
+            tipAction = function () {
+              handleMapaRelateTap('apunte', n.refId, n.label);
+            };
+          } else if (n.kind === 'nutri_file' || n.kind === 'nutri_link') {
+            tipText += ' · toca para abrir';
+            tipAction = function () {
+              handleMapaRelateTap(n.kind, n.refId, n.label, n);
+            };
+          }
+          showMapaTip(tipText, tipAction);
         });
         g.addEventListener('pointerleave', function () {
-          showMapaTip('');
+          scheduleClearMapaTip();
         });
         if (n.kind === 'item') {
-          g.addEventListener('click', function (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
+          bindMapaTap(g, function () {
             handleMapaRelateTap('apunte', n.refId, n.label);
           });
         } else if (n.kind === 'nutri_file' || n.kind === 'nutri_link') {
-          g.addEventListener('click', function (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
+          bindMapaTap(g, function () {
             handleMapaRelateTap(n.kind, n.refId, n.label, n);
           });
         } else if (n.kind === 'area') {
-          g.addEventListener('click', function (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
+          bindMapaTap(g, function () {
             var sel = $('npMapaFilterArea');
             if (!sel) return;
             if (sel.value === n.refId) {
@@ -36502,6 +36679,34 @@
         closeMapaEdgeDetail();
         clearMapaEdgeFocus();
         showMapaTip('');
+      });
+    }
+    var mapaTip = $('npMapaTip');
+    if (mapaTip && mapaTip.dataset.npWired !== '1') {
+      mapaTip.dataset.npWired = '1';
+      mapaTip.addEventListener('pointerenter', function () {
+        if (planProMapaTipClearTimer) {
+          clearTimeout(planProMapaTipClearTimer);
+          planProMapaTipClearTimer = null;
+        }
+      });
+      function runMapaTipAction(ev) {
+        if (!planProMapaTipAction) return;
+        if (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+        var fn = planProMapaTipAction;
+        try {
+          fn();
+        } catch (errTip) {
+          console.warn('mapa tip action', errTip);
+          showToast((errTip && errTip.message) || 'No se pudo abrir.', true);
+        }
+      }
+      mapaTip.addEventListener('click', runMapaTipAction);
+      mapaTip.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') runMapaTipAction(ev);
       });
     }
     var mapaShowAll = $('npMapaShowAllBtn');

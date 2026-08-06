@@ -16365,6 +16365,9 @@
                     'style="flex:1;min-width:220px;max-width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;">' +
                     options +
                     '</select>' +
+                    '<button type="button" onclick="deleteRadarAdminSnapshot(' +
+                    JSON.stringify(String(projectId)) +
+                    ')" style="font-size:12px;padding:8px 12px;border-radius:8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;cursor:pointer;font-weight:700;">🗑 Borrar</button>' +
                     '<span style="font-size:12px;color:#64748b;">' + esc(String(historyCount)) + ' guardada' + (historyCount === 1 ? '' : 's') + '</span>' +
                     '</div>' +
                     '<p style="margin:0 0 14px 0;font-size:11px;color:#64748b;line-height:1.45;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 10px;">' +
@@ -16803,6 +16806,42 @@
         }
         window.loadRadarAdminSnapshot = loadRadarAdminSnapshot;
 
+        function deleteRadarAdminSnapshot(projectId) {
+            var sel = document.getElementById('radarAdminHistorySelect');
+            var requestId = sel && sel.value ? String(sel.value) : '';
+            if (!requestId) {
+                alert('No hay imagen seleccionada.');
+                return;
+            }
+            var ok = window.confirm(
+                '¿Eliminar esta imagen Pilot de la nube?\n\nSe borrará el archivo (NDVI/NDMI/NDRE/RGB), el registro y las referencias en el proyecto. El usuario dejará de verla.\n\nEsta acción no se puede deshacer.'
+            );
+            if (!ok) return;
+            var modal = ensureRadarAdminModal();
+            showRadarAdminLoading(modal, 'Eliminando imagen…');
+            postRadarAdminApi({
+                action: 'admin_delete',
+                request_id: requestId,
+                project_id: String(projectId || '')
+            })
+                .then(function (res) {
+                    if (!res.ok || !res.j || !res.j.ok) {
+                        var msg =
+                            (res.j && (res.j.message || res.j.error)) ||
+                            ('Error HTTP ' + res.status);
+                        alert('No se pudo eliminar: ' + msg);
+                        loadRadarAdminSnapshot(projectId, requestId);
+                        return;
+                    }
+                    showRadarAdminModal(projectId);
+                })
+                .catch(function (err) {
+                    alert('Error de red al eliminar: ' + ((err && err.message) || err));
+                    loadRadarAdminSnapshot(projectId, requestId);
+                });
+        }
+        window.deleteRadarAdminSnapshot = deleteRadarAdminSnapshot;
+
         function showRadarAdminModal(projectId) {
             var adminKey = getAdminPanelAccessKey();
             var secret = getRadarAdminPanelSecret();
@@ -17006,7 +17045,7 @@
 
             var runs = Array.isArray(lecturaState.runs) ? lecturaState.runs : [];
             var runSelectHtml = '';
-            if (runs.length > 1) {
+            if (runs.length > 0) {
                 runSelectHtml =
                     '<div style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
                     '<label style="font-size:12px;font-weight:700;color:#0f766e;">Bloque guardado</label>' +
@@ -17018,7 +17057,10 @@
                             '>' + esc(adminLecturaRunLabel(run, idx)) + '</option>';
                     }).join('') +
                     '</select>' +
-                    '<span style="font-size:11px;color:#64748b;">' + runs.length + ' bloques</span>' +
+                    '<button type="button" onclick="deleteAdminLecturaRun(' +
+                    JSON.stringify(String(projectId)) +
+                    ')" style="font-size:12px;padding:8px 12px;border-radius:8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;cursor:pointer;font-weight:700;">🗑 Borrar bloque</button>' +
+                    '<span style="font-size:11px;color:#64748b;">' + runs.length + ' bloque' + (runs.length === 1 ? '' : 's') + '</span>' +
                     '</div>';
             }
 
@@ -17227,6 +17269,63 @@
                 });
         }
         window.switchAdminLecturaRun = switchAdminLecturaRun;
+
+        function deleteAdminLecturaRun(projectId) {
+            var st = window.__adminLecturaModalState;
+            var sel = document.getElementById('adminLecturaRunSelect');
+            var runId =
+                (sel && sel.value) ||
+                (st && st.lectura && st.lectura.activeRunId) ||
+                '';
+            if (!runId) {
+                alert('No hay bloque seleccionado.');
+                return;
+            }
+            var run = null;
+            if (st && st.lectura && Array.isArray(st.lectura.runs)) {
+                for (var i = 0; i < st.lectura.runs.length; i++) {
+                    if (st.lectura.runs[i] && String(st.lectura.runs[i].id) === String(runId)) {
+                        run = st.lectura.runs[i];
+                        break;
+                    }
+                }
+            }
+            var ids = [];
+            (run && run.rows ? run.rows : []).forEach(function (r) {
+                if (r && r.request_id) ids.push(String(r.request_id));
+            });
+            var label = run ? adminLecturaRunLabel(run, 0) : String(runId);
+            var ok = window.confirm(
+                '¿Eliminar este bloque de Lectura Satelital de la nube?\n\n' +
+                    label +
+                    '\n\nSe borrarán las imágenes de todos sus periodos y el usuario dejará de verlo. Esta acción no se puede deshacer.'
+            );
+            if (!ok) return;
+            var modal = ensureRadarAdminModal();
+            showRadarAdminLoading(modal, 'Eliminando bloque…');
+            postRadarAdminApi({
+                action: 'admin_delete',
+                project_id: String(projectId || (st && st.projectId) || ''),
+                request_ids: ids,
+                lectura_run_id: String(runId)
+            })
+                .then(function (res) {
+                    if (!res.ok || !res.j || !res.j.ok) {
+                        var msg =
+                            (res.j && (res.j.message || res.j.error)) ||
+                            ('Error HTTP ' + res.status);
+                        alert('No se pudo eliminar: ' + msg);
+                        showLecturaAdminModal(projectId || (st && st.projectId));
+                        return;
+                    }
+                    showLecturaAdminModal(projectId || (st && st.projectId));
+                })
+                .catch(function (err) {
+                    alert('Error de red al eliminar: ' + ((err && err.message) || err));
+                    showLecturaAdminModal(projectId || (st && st.projectId));
+                });
+        }
+        window.deleteAdminLecturaRun = deleteAdminLecturaRun;
 
         function showLecturaAdminModal(projectId) {
             var adminKey = getAdminPanelAccessKey();

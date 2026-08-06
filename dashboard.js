@@ -1921,9 +1921,10 @@ function sectionTemplate(name) {
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
             <span data-i18n="radar.image">${rt('radar.image', 'Imagen')}</span>
-            <select id="radarSnapshotSelect" disabled data-i18n-title="radar.snapshot_title" title="${rt('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto')}" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:600;min-width:160px;max-width:min(320px,100%);">
+            <select id="radarSnapshotSelect" disabled data-i18n-title="radar.snapshot_title" title="${rt('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto')}" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:600;min-width:160px;max-width:min(280px,100%);">
               <option value="" data-i18n="radar.no_saved_images">${rt('radar.no_saved_images', 'Sin imágenes guardadas')}</option>
             </select>
+            <button type="button" id="radarBtnDeleteSnapshot" class="btn" style="font-size:12px;padding:5px 8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;font-weight:700;cursor:pointer;" data-i18n="radar.btn_delete_image" data-i18n-title="radar.btn_delete_image_title" title="${rt('radar.btn_delete_image_title', 'Borrar de la nube la imagen seleccionada')}">${rt('radar.btn_delete_image', '🗑 Borrar')}</button>
           </label>
           <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">

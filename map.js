@@ -4916,6 +4916,9 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   document.getElementById('radarBtnHide')?.addEventListener('click', () => {
     window.hideRadarNdviOverlay();
   });
+  document.getElementById('radarBtnDeleteSnapshot')?.addEventListener('click', () => {
+    window.deleteRadarNdviSnapshot().catch((err) => console.warn('Radar delete:', err));
+  });
   document.getElementById('radarBtnPilotCdse')?.addEventListener('click', () => {
     window.generateRadarCdsePilot();
   });
@@ -5109,6 +5112,80 @@ window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
   np_updateRadarSceneMeta(null);
   if (typeof window.np_markRadarOverlaySession === 'function') {
     window.np_markRadarOverlaySession(false);
+  }
+};
+
+/** Borra de la nube la imagen Pilot seleccionada en el selector «Imagen». */
+window.deleteRadarNdviSnapshot = async function deleteRadarNdviSnapshot() {
+  const requestId = np_getSelectedRadarRequestId();
+  if (!requestId) {
+    alert(np_radarT('radar.delete_image_none', 'Selecciona una imagen Pilot para borrar.'));
+    return;
+  }
+  const ok = window.confirm(
+    np_radarT(
+      'radar.delete_image_confirm',
+      '¿Borrar esta imagen Pilot de la nube?\n\nSe eliminará el archivo (NDVI/NDMI/NDRE/RGB) y ya no aparecerá en el selector. Esta acción no se puede deshacer.'
+    )
+  );
+  if (!ok) return;
+
+  const token = await np_getRadarAccessToken();
+  if (!token) {
+    alert(np_radarT('radar.credits_login', 'Inicia sesión para ver créditos Radar'));
+    return;
+  }
+  const proj =
+    nutriPlantMap && typeof nutriPlantMap.getCurrentProject === 'function'
+      ? nutriPlantMap.getCurrentProject()
+      : null;
+  if (!proj || !proj.id) {
+    alert('Elige o guarda un proyecto.');
+    return;
+  }
+
+  const btn = document.getElementById('radarBtnDeleteSnapshot');
+  const hint = document.getElementById('radarStatusHint');
+  const prevBtn = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+  }
+  if (hint) hint.textContent = 'Borrando imagen de la nube…';
+
+  try {
+    const res = await fetch(np_radarApiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({
+        action: 'delete',
+        project_id: String(proj.id),
+        request_id: String(requestId)
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || data.error || np_radarT('radar.delete_image_fail', 'No se pudo borrar la imagen.'));
+    }
+
+    if (typeof window.hideRadarNdviOverlay === 'function') window.hideRadarNdviOverlay();
+    np_persistRadarSnapshotSelection('');
+    await window.refreshRadarNdviStatus();
+    if (hint) {
+      hint.textContent = np_radarT('radar.delete_image_ok', 'Imagen borrada de la nube.');
+    }
+  } catch (err) {
+    console.warn('deleteRadarNdviSnapshot:', err);
+    alert(
+      np_radarT('radar.delete_image_fail', 'No se pudo borrar la imagen.') +
+        (err && err.message ? '\n\n' + err.message : '')
+    );
+    if (hint) hint.textContent = np_radarT('radar.delete_image_fail', 'No se pudo borrar la imagen.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = prevBtn || np_radarT('radar.btn_delete_image', '🗑 Borrar');
+    }
   }
 };
 

@@ -14,7 +14,7 @@
  *   NUTRIPLANT_ADMIN_KEY                  — opcional; admin_key en body (misma clave ?k= del panel admin)
  *
  * Body JSON:
- *   action: "status" | "view" | "generate" | "dem_status" | "generate_dem" | "admin_status" | "admin_dem_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
+ *   action: "status" | "view" | "generate" | "delete" | "dem_status" | "generate_dem" | "admin_status" | "admin_dem_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
  *   project_id: string
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
@@ -569,13 +569,15 @@ async function resolveProjectIdsByQuery(supabase, projectQ) {
 
 /**
  * Quita request_id / URLs de Lectura y radarSelectedRequestId de Pilot
- * cuando el admin borra una imagen.
+ * cuando se borra una imagen (usuario o admin).
+ * opts.byAdmin → mensaje "por administrador"; si no, "por el usuario".
  */
-function scrubRequestIdFromProjectData(projectData, requestId) {
+function scrubRequestIdFromProjectData(projectData, requestId, opts) {
   const id = String(requestId || '').trim();
   if (!id || !projectData || typeof projectData !== 'object') {
     return { changed: false, data: projectData };
   }
+  const byAdmin = !!(opts && opts.byAdmin);
   const data = JSON.parse(JSON.stringify(projectData));
   const loc = data.location;
   if (!loc || typeof loc !== 'object') {
@@ -601,8 +603,10 @@ function scrubRequestIdFromProjectData(projectData, requestId) {
       delete next.rgb_signed_url;
       delete next.cloud_mask_signed_url;
       next.status = 'deleted';
-      next.error_code = 'admin_deleted';
-      next.error_message = 'Imagen eliminada por administrador';
+      next.error_code = byAdmin ? 'admin_deleted' : 'user_deleted';
+      next.error_message = byAdmin
+        ? 'Imagen eliminada por administrador'
+        : 'Imagen eliminada por el usuario';
       return next;
     });
   }
@@ -621,6 +625,163 @@ function scrubRequestIdFromProjectData(projectData, requestId) {
   }
 
   return { changed, data };
+}
+
+/** Quita un bloque completo de Lectura Satelital del data del proyecto. */
+function removeLecturaRunFromProjectData(projectData, runId) {
+  const id = String(runId || '').trim();
+  if (!id || !projectData || typeof projectData !== 'object') {
+    return { changed: false, data: projectData };
+  }
+  const data = JSON.parse(JSON.stringify(projectData));
+  const loc = data.location;
+  if (!loc || typeof loc !== 'object' || !loc.lecturaSatelital || typeof loc.lecturaSatelital !== 'object') {
+    return { changed: false, data: projectData };
+  }
+  const ls = loc.lecturaSatelital;
+  if (!Array.isArray(ls.runs) || !ls.runs.length) {
+    return { changed: false, data: projectData };
+  }
+  const before = ls.runs.length;
+  ls.runs = ls.runs.filter((run) => run && String(run.id) !== id);
+  if (ls.runs.length === before) {
+    return { changed: false, data: projectData };
+  }
+  if (!ls.runs.length) {
+    loc.lecturaSatelital = {
+      runs: [],
+      rows: [],
+      activeRunId: null,
+      updatedAt: new Date().toISOString()
+    };
+    return { changed: true, data };
+  }
+  if (String(ls.activeRunId || '') === id) {
+    ls.activeRunId = ls.runs[0].id;
+  }
+  const active =
+    ls.runs.find((r) => r && String(r.id) === String(ls.activeRunId)) || ls.runs[0];
+  ls.activeRunId = active.id;
+  ls.rows = Array.isArray(active.rows) ? active.rows : [];
+  ls.frequency = active.frequency != null ? active.frequency : ls.frequency;
+  ls.periods = active.periods != null ? active.periods : ls.periods;
+  ls.endDate = active.endDate != null ? active.endDate : ls.endDate;
+  ls.updatedAt = active.updatedAt || new Date().toISOString();
+  if (active.franja_pct != null) ls.franja_pct = active.franja_pct;
+  return { changed: true, data };
+}
+
+function collectDeleteRequestIds(body) {
+  const ids = [];
+  const seen = {};
+  function push(raw) {
+    const id = raw != null ? String(raw).trim() : '';
+    if (!id || seen[id]) return;
+    seen[id] = true;
+    ids.push(id);
+  }
+  if (body && body.request_id != null) push(body.request_id);
+  if (body && Array.isArray(body.request_ids)) {
+    body.request_ids.forEach(push);
+  }
+  return ids;
+}
+
+/**
+ * Borra filas radar_requests + archivos Storage y limpia referencias en el proyecto.
+ * byAdmin: true usa scrub de admin; lecturaRunId quita el bloque entero de Lectura.
+ */
+async function purgeRadarRequestsAndScrubProject(supabase, {
+  requestIds,
+  projectId,
+  userIdFilter,
+  byAdmin,
+  lecturaRunId
+}) {
+  const ids = (requestIds || []).map((x) => String(x).trim()).filter(Boolean);
+  const result = {
+    deleted_ids: [],
+    missing_ids: [],
+    storage: [],
+    project_scrubbed: false,
+    lectura_run_removed: false
+  };
+
+  let rows = [];
+  if (ids.length) {
+    let q = supabase
+      .from('radar_requests')
+      .select('id, created_at, month_key, image_storage_path, meta, user_id, project_id')
+      .in('id', ids);
+    if (projectId) q = q.eq('project_id', String(projectId));
+    if (userIdFilter) q = q.eq('user_id', String(userIdFilter));
+    const { data, error } = await q;
+    if (error) {
+      throw new Error(error.message || 'purge_select_failed');
+    }
+    rows = Array.isArray(data) ? data : [];
+    const found = {};
+    rows.forEach((r) => {
+      found[String(r.id)] = true;
+    });
+    ids.forEach((id) => {
+      if (!found[id]) result.missing_ids.push(id);
+    });
+  }
+
+  for (const row of rows) {
+    const storageResult = await deleteRadarStorageFiles(supabase, row);
+    result.storage.push({ id: row.id, storage: storageResult });
+    const { error: delErr } = await supabase.from('radar_requests').delete().eq('id', row.id);
+    if (delErr) {
+      throw new Error(delErr.message || 'purge_row_failed');
+    }
+    result.deleted_ids.push(String(row.id));
+  }
+
+  const projectIdDel =
+    (projectId && String(projectId).trim()) ||
+    (rows[0] && rows[0].project_id != null ? String(rows[0].project_id) : '');
+  if (!projectIdDel) return result;
+
+  const { data: projDel, error: projDelErr } = await supabase
+    .from('projects')
+    .select('id, data')
+    .eq('id', projectIdDel)
+    .maybeSingle();
+  if (projDelErr || !projDel) return result;
+
+  let nextData = projDel.data || {};
+  let changed = false;
+  const runId = lecturaRunId != null ? String(lecturaRunId).trim() : '';
+  if (runId) {
+    const rem = removeLecturaRunFromProjectData(nextData, runId);
+    if (rem.changed) {
+      nextData = rem.data;
+      changed = true;
+      result.lectura_run_removed = true;
+    }
+  }
+  result.deleted_ids.forEach((rid) => {
+    const scrub = scrubRequestIdFromProjectData(nextData, rid, { byAdmin: !!byAdmin });
+    if (scrub.changed) {
+      nextData = scrub.data;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    const { error: updErr } = await supabase
+      .from('projects')
+      .update({ data: nextData, updated_at: new Date().toISOString() })
+      .eq('id', projectIdDel);
+    if (updErr) {
+      console.warn('purgeRadarRequests scrub project:', updErr.message);
+    } else {
+      result.project_scrubbed = true;
+    }
+  }
+  return result;
 }
 
 async function deleteRadarStorageFiles(supabase, row) {
@@ -1146,75 +1307,106 @@ exports.handler = async (event) => {
       });
     }
 
-    const requestIdDel = body.request_id != null ? String(body.request_id).trim() : '';
-    if (!requestIdDel) {
-      return jsonResponse(400, { error: 'request_id es obligatorio' });
+    const requestIdsDel = collectDeleteRequestIds(body);
+    const lecturaRunIdDel =
+      body.lectura_run_id != null ? String(body.lectura_run_id).trim() : '';
+    if (!requestIdsDel.length && !lecturaRunIdDel) {
+      return jsonResponse(400, {
+        error: 'request_id_required',
+        message: 'Indica request_id, request_ids o lectura_run_id.'
+      });
     }
 
-    const { data: rowDel, error: rowDelErr } = await supabase
-      .from('radar_requests')
-      .select('id, created_at, month_key, image_storage_path, meta, user_id, project_id')
-      .eq('id', requestIdDel)
-      .maybeSingle();
-
-    if (rowDelErr) {
-      console.error('admin_delete select:', rowDelErr.message);
-      return jsonResponse(500, { error: 'admin_delete_failed', message: rowDelErr.message });
+    // Si solo llega el run, recolectar IDs desde el proyecto en nube.
+    let idsToDelete = requestIdsDel.slice();
+    let projectIdHint =
+      body.project_id != null ? String(body.project_id).trim() : '';
+    if (lecturaRunIdDel && !idsToDelete.length) {
+      if (!projectIdHint) {
+        return jsonResponse(400, {
+          error: 'project_id_required',
+          message: 'Con lectura_run_id hace falta project_id (o request_ids).'
+        });
+      }
+      const { data: projHint, error: projHintErr } = await supabase
+        .from('projects')
+        .select('id, data')
+        .eq('id', projectIdHint)
+        .maybeSingle();
+      if (projHintErr || !projHint) {
+        return jsonResponse(404, {
+          error: 'project_not_found',
+          message: 'Proyecto no encontrado.'
+        });
+      }
+      const ls =
+        projHint.data &&
+        projHint.data.location &&
+        projHint.data.location.lecturaSatelital
+          ? projHint.data.location.lecturaSatelital
+          : null;
+      const run =
+        ls && Array.isArray(ls.runs)
+          ? ls.runs.find((r) => r && String(r.id) === lecturaRunIdDel)
+          : null;
+      const rowsSrc =
+        run && Array.isArray(run.rows)
+          ? run.rows
+          : ls && Array.isArray(ls.rows) && String(ls.activeRunId || '') === lecturaRunIdDel
+            ? ls.rows
+            : [];
+      rowsSrc.forEach((row) => {
+        if (row && row.request_id) idsToDelete.push(String(row.request_id));
+      });
+      // Dedup
+      idsToDelete = collectDeleteRequestIds({ request_ids: idsToDelete });
     }
-    if (!rowDel) {
+
+    if (!idsToDelete.length && !lecturaRunIdDel) {
       return jsonResponse(404, {
         error: 'radar_not_found',
         message: 'No se encontró esa imagen Radar.'
       });
     }
 
-    const kind = isLecturaRadarRow(rowDel) ? 'lectura' : 'pilot';
-    const storageResult = await deleteRadarStorageFiles(supabase, rowDel);
-
-    const { error: delErr } = await supabase.from('radar_requests').delete().eq('id', requestIdDel);
-    if (delErr) {
-      console.error('admin_delete row:', delErr.message);
+    let purge;
+    try {
+      purge = await purgeRadarRequestsAndScrubProject(supabase, {
+        requestIds: idsToDelete,
+        projectId: projectIdHint || undefined,
+        userIdFilter: null,
+        byAdmin: true,
+        lecturaRunId: lecturaRunIdDel || undefined
+      });
+    } catch (purgeErr) {
+      console.error('admin_delete purge:', purgeErr.message || purgeErr);
       return jsonResponse(500, {
-        error: 'admin_delete_row_failed',
-        message: delErr.message,
-        storage: storageResult
+        error: 'admin_delete_failed',
+        message: purgeErr.message || String(purgeErr)
       });
     }
 
-    let projectScrubbed = false;
-    const projectIdDel = rowDel.project_id != null ? String(rowDel.project_id) : '';
-    if (projectIdDel) {
-      const { data: projDel, error: projDelErr } = await supabase
-        .from('projects')
-        .select('id, data')
-        .eq('id', projectIdDel)
-        .maybeSingle();
-      if (!projDelErr && projDel) {
-        const scrub = scrubRequestIdFromProjectData(projDel.data || {}, requestIdDel);
-        if (scrub.changed) {
-          const { error: updErr } = await supabase
-            .from('projects')
-            .update({ data: scrub.data, updated_at: new Date().toISOString() })
-            .eq('id', projectIdDel);
-          if (updErr) {
-            console.warn('admin_delete scrub project:', updErr.message);
-          } else {
-            projectScrubbed = true;
-          }
-        }
-      }
+    if (!purge.deleted_ids.length && !purge.lectura_run_removed) {
+      return jsonResponse(404, {
+        error: 'radar_not_found',
+        message: 'No se encontró esa imagen Radar.'
+      });
     }
 
+    const firstId = purge.deleted_ids[0] || requestIdsDel[0] || null;
     return jsonResponse(200, {
       ok: true,
       admin: true,
       deleted: true,
-      request_id: requestIdDel,
-      kind,
-      project_id: projectIdDel || null,
-      user_id: rowDel.user_id || null,
-      storage: storageResult,
-      project_scrubbed: projectScrubbed
+      request_id: firstId,
+      request_ids: purge.deleted_ids,
+      missing_ids: purge.missing_ids,
+      kind: purge.deleted_ids.length > 1 || lecturaRunIdDel ? 'lectura' : 'pilot',
+      project_id: projectIdHint || null,
+      lectura_run_id: lecturaRunIdDel || null,
+      lectura_run_removed: !!purge.lectura_run_removed,
+      storage: purge.storage,
+      project_scrubbed: !!purge.project_scrubbed
     });
   }
 
@@ -1335,6 +1527,98 @@ exports.handler = async (event) => {
         signed.rgbSignedUrl,
         signed.cloudMaskSignedUrl
       )
+    });
+  }
+
+  if (action === 'delete') {
+    const requestIdsDel = collectDeleteRequestIds(body);
+    const lecturaRunIdDel =
+      body.lectura_run_id != null ? String(body.lectura_run_id).trim() : '';
+    if (!requestIdsDel.length && !lecturaRunIdDel) {
+      return jsonResponse(400, {
+        error: 'request_id_required',
+        message: 'Indica la imagen o el bloque de Lectura a eliminar.'
+      });
+    }
+
+    let idsToDelete = requestIdsDel.slice();
+    if (lecturaRunIdDel && !idsToDelete.length) {
+      const ls =
+        proj.data && proj.data.location && proj.data.location.lecturaSatelital
+          ? proj.data.location.lecturaSatelital
+          : null;
+      const run =
+        ls && Array.isArray(ls.runs)
+          ? ls.runs.find((r) => r && String(r.id) === lecturaRunIdDel)
+          : null;
+      const rowsSrc =
+        run && Array.isArray(run.rows)
+          ? run.rows
+          : ls && Array.isArray(ls.rows) && String(ls.activeRunId || '') === lecturaRunIdDel
+            ? ls.rows
+            : [];
+      rowsSrc.forEach((row) => {
+        if (row && row.request_id) idsToDelete.push(String(row.request_id));
+      });
+      idsToDelete = collectDeleteRequestIds({ request_ids: idsToDelete });
+    }
+
+    if (!idsToDelete.length && !lecturaRunIdDel) {
+      return jsonResponse(404, {
+        error: 'radar_not_found',
+        message: 'No se encontró esa imagen Radar en este proyecto.'
+      });
+    }
+
+    let purge;
+    try {
+      purge = await purgeRadarRequestsAndScrubProject(supabase, {
+        requestIds: idsToDelete,
+        projectId,
+        userIdFilter: userId,
+        byAdmin: false,
+        lecturaRunId: lecturaRunIdDel || undefined
+      });
+    } catch (purgeErr) {
+      console.error('user delete purge:', purgeErr.message || purgeErr);
+      return jsonResponse(500, {
+        error: 'delete_failed',
+        message: purgeErr.message || String(purgeErr)
+      });
+    }
+
+    if (!purge.deleted_ids.length && !purge.lectura_run_removed) {
+      return jsonResponse(404, {
+        error: 'radar_not_found',
+        message: 'No se encontró esa imagen Radar en este proyecto.'
+      });
+    }
+
+    // Refrescar créditos/historial tras borrar (no regenera nada).
+    creditsView = radarCredits.buildRadarCreditsView(
+      baseLimit,
+      bonus,
+      await sumMonthlyCreditsUsed(supabase, userId, mk)
+    );
+    const historyAfter = (
+      await getRadarHistoryRows(supabase, userId, projectId, historyLimit)
+    )
+      .map(historyItemFromRow)
+      .filter(Boolean);
+
+    return jsonResponse(200, {
+      ok: true,
+      deleted: true,
+      request_id: purge.deleted_ids[0] || null,
+      request_ids: purge.deleted_ids,
+      missing_ids: purge.missing_ids,
+      lectura_run_id: lecturaRunIdDel || null,
+      lectura_run_removed: !!purge.lectura_run_removed,
+      project_scrubbed: !!purge.project_scrubbed,
+      storage: purge.storage,
+      month_key: mk,
+      credits: radarCredits.creditsApiPayload(creditsView),
+      history: historyAfter
     });
   }
 

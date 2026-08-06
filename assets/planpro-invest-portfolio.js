@@ -17,6 +17,7 @@
   ];
 
   var SORT_STORAGE = 'np_plan_pro_invest_holdings_sort_v1';
+  var NOTES_STORAGE = 'np_plan_pro_invest_portfolio_notes_v1';
   var st = {
     wired: false,
     holdings: [],
@@ -24,10 +25,13 @@
     tableReady: true,
     pieHoldings: null,
     pieType: null,
+    barCostValue: null,
     manualTimers: Object.create(null),
     savingCloud: false,
     sortKey: 'marketValue',
-    sortDir: 'desc'
+    sortDir: 'desc',
+    generalNotes: '',
+    notesTimer: null
   };
 
   function $(id) {
@@ -535,18 +539,46 @@
 
   function totals() {
     var total = 0;
+    var cost = 0;
+    var costKnown = 0;
     var stock = 0;
     var etf = 0;
     var other = 0;
     st.holdings.forEach(function (h) {
       var v = Number(h.marketValue);
-      if (!Number.isFinite(v)) return;
-      total += v;
-      if (h.assetType === 'etf') etf += v;
-      else if (h.assetType === 'stock') stock += v;
-      else other += v;
+      if (Number.isFinite(v)) {
+        total += v;
+        if (h.assetType === 'etf') etf += v;
+        else if (h.assetType === 'stock') stock += v;
+        else other += v;
+      }
+      var c = holdingCostBasis(h);
+      if (c != null) {
+        cost += c;
+        costKnown += 1;
+      }
     });
-    return { total: total, stock: stock, etf: etf, other: other };
+    return {
+      total: total,
+      costBasis: cost,
+      costBasisCount: costKnown,
+      stock: stock,
+      etf: etf,
+      other: other
+    };
+  }
+
+  /** Cost Basis Schwab (total invertido en la posición). Fallback: MV − G/L. */
+  function holdingCostBasis(h) {
+    if (!h) return null;
+    var c = Number(h.costBasis);
+    if (Number.isFinite(c)) return c;
+    var mv = Number(h.marketValue);
+    var gl = Number(h.gainLoss);
+    if (Number.isFinite(mv) && Number.isFinite(gl)) {
+      return Math.round((mv - gl) * 100) / 100;
+    }
+    return null;
   }
 
   function fileToBase64(file) {
@@ -713,14 +745,59 @@
     }
   }
 
+  /** Texto en el centro del doughnut: total USD. */
+  function doughnutCenterPlugin(totalText, subText) {
+    return {
+      id: 'npInvPfDoughnutCenter',
+      afterDraw: function (chart) {
+        var meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data.length) return;
+        var first = meta.data[0];
+        if (!first || typeof first.x !== 'number') return;
+        var ctx = chart.ctx;
+        var x = first.x;
+        var y = first.y;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#0f766e';
+        ctx.font = '700 13px system-ui, -apple-system, sans-serif';
+        ctx.fillText(String(totalText || ''), x, y - (subText ? 8 : 0));
+        if (subText) {
+          ctx.fillStyle = '#64748b';
+          ctx.font = '600 10px system-ui, -apple-system, sans-serif';
+          ctx.fillText(String(subText), x, y + 10);
+        }
+        ctx.restore();
+      }
+    };
+  }
+
+  function fmtMoneyShort(v) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    var n = Number(v);
+    if (Math.abs(n) >= 1000) {
+      return (
+        '$' +
+        n.toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        })
+      );
+    }
+    return fmtMoney(n);
+  }
+
   function renderCharts() {
     var empty = $('npInvPfChartsEmpty');
     var wrap = $('npInvPfCharts');
     if (!st.holdings.length) {
       destroyChart(st.pieHoldings);
       destroyChart(st.pieType);
+      destroyChart(st.barCostValue);
       st.pieHoldings = null;
       st.pieType = null;
+      st.barCostValue = null;
       if (empty) empty.classList.remove('np-hide');
       if (wrap) wrap.classList.add('np-hide');
       return;
@@ -731,10 +808,15 @@
     loadChartJs(function () {
       if (!global.Chart) return;
       var t = totals();
+      var sorted = st.holdings
+        .slice()
+        .sort(function (a, b) {
+          return (Number(b.marketValue) || 0) - (Number(a.marketValue) || 0);
+        });
       var labels = [];
       var values = [];
       var colors = [];
-      st.holdings.forEach(function (h, idx) {
+      sorted.forEach(function (h, idx) {
         var v = Number(h.marketValue);
         if (!Number.isFinite(v) || v <= 0) return;
         labels.push(h.symbol);
@@ -744,6 +826,7 @@
 
       var c1 = $('npInvPfPieHoldings');
       var c2 = $('npInvPfPieType');
+      var c3 = $('npInvPfBarCostValue');
       if (c1) {
         destroyChart(st.pieHoldings);
         st.pieHoldings = new global.Chart(c1, {
@@ -762,10 +845,35 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '58%',
             plugins: {
               legend: {
                 position: 'right',
-                labels: { boxWidth: 12, font: { size: 11 } }
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 10 },
+                  generateLabels: function (chart) {
+                    var data = chart.data;
+                    if (!data.labels || !data.labels.length) return [];
+                    var ds = data.datasets[0] || {};
+                    var arr = ds.data || [];
+                    return data.labels.map(function (label, i) {
+                      var v = Number(arr[i]) || 0;
+                      var pct = t.total > 0 ? ((v / t.total) * 100).toFixed(0) : '0';
+                      var bg = Array.isArray(ds.backgroundColor)
+                        ? ds.backgroundColor[i]
+                        : ds.backgroundColor;
+                      return {
+                        text: label + ' ' + fmtMoneyShort(v) + ' · ' + pct + '%',
+                        fillStyle: bg,
+                        strokeStyle: '#fff',
+                        lineWidth: 1,
+                        hidden: false,
+                        index: i
+                      };
+                    });
+                  }
+                }
               },
               title: {
                 display: true,
@@ -783,7 +891,8 @@
                 }
               }
             }
-          }
+          },
+          plugins: [doughnutCenterPlugin(fmtMoney(t.total), 'total USD')]
         });
       }
 
@@ -823,14 +932,39 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '58%',
             plugins: {
               legend: {
                 position: 'right',
-                labels: { boxWidth: 12, font: { size: 11 } }
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 11 },
+                  generateLabels: function (chart) {
+                    var data = chart.data;
+                    if (!data.labels || !data.labels.length) return [];
+                    var ds = data.datasets[0] || {};
+                    var arr = ds.data || [];
+                    return data.labels.map(function (label, i) {
+                      var v = Number(arr[i]) || 0;
+                      var pct = t.total > 0 ? ((v / t.total) * 100).toFixed(1) : '0';
+                      var bg = Array.isArray(ds.backgroundColor)
+                        ? ds.backgroundColor[i]
+                        : ds.backgroundColor;
+                      return {
+                        text: label + '  ' + fmtMoney(v) + '  (' + pct + '%)',
+                        fillStyle: bg,
+                        strokeStyle: '#fff',
+                        lineWidth: 1,
+                        hidden: false,
+                        index: i
+                      };
+                    });
+                  }
+                }
               },
               title: {
                 display: true,
-                text: '% ETF vs Acciones',
+                text: 'ETF vs Acciones · USD',
                 color: '#0f766e',
                 font: { size: 13, weight: '700' }
               },
@@ -842,6 +976,114 @@
                     return ' ' + ctx.label + ': ' + fmtMoney(v) + ' (' + pct + '%)';
                   }
                 }
+              }
+            }
+          },
+          plugins: [doughnutCenterPlugin(fmtMoney(t.total), 'total USD')]
+        });
+      }
+
+      if (c3) {
+        destroyChart(st.barCostValue);
+        var barLabels = [];
+        var costData = [];
+        var valueData = [];
+        sorted.forEach(function (h) {
+          var mv = Number(h.marketValue);
+          var cb = holdingCostBasis(h);
+          if (!Number.isFinite(mv) && cb == null) return;
+          barLabels.push(h.symbol);
+          costData.push(cb != null && Number.isFinite(cb) ? cb : 0);
+          valueData.push(Number.isFinite(mv) ? mv : 0);
+        });
+        // Altura dinámica según nº de tickers
+        var box = c3.parentElement;
+        if (box) {
+          var hPx = Math.max(260, Math.min(520, 48 + barLabels.length * 28));
+          box.style.height = hPx + 'px';
+        }
+        st.barCostValue = new global.Chart(c3, {
+          type: 'bar',
+          data: {
+            labels: barLabels,
+            datasets: [
+              {
+                label: 'Cost Basis',
+                data: costData,
+                backgroundColor: 'rgba(100, 116, 139, 0.38)',
+                borderColor: '#64748b',
+                borderWidth: 1,
+                borderRadius: 4,
+                grouped: false,
+                barPercentage: 0.82,
+                categoryPercentage: 0.78,
+                order: 2
+              },
+              {
+                label: 'Valor actual',
+                data: valueData,
+                backgroundColor: 'rgba(13, 148, 136, 0.82)',
+                borderColor: '#0f766e',
+                borderWidth: 1,
+                borderRadius: 4,
+                grouped: false,
+                barPercentage: 0.48,
+                categoryPercentage: 0.78,
+                order: 1
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { boxWidth: 12, font: { size: 11 } }
+              },
+              title: {
+                display: true,
+                text: 'Valor actual vs Cost Basis',
+                color: '#0f766e',
+                font: { size: 13, weight: '700' }
+              },
+              tooltip: {
+                callbacks: {
+                  afterBody: function (items) {
+                    if (!items || !items.length) return '';
+                    var idx = items[0].dataIndex;
+                    var cost = costData[idx] || 0;
+                    var val = valueData[idx] || 0;
+                    var diff = val - cost;
+                    var sign = diff > 0 ? '+' : '';
+                    return (
+                      'Δ G/L ≈ ' +
+                      sign +
+                      fmtMoney(diff) +
+                      (cost > 0 ? ' (' + ((diff / cost) * 100).toFixed(1) + '%)' : '')
+                    );
+                  },
+                  label: function (ctx) {
+                    return ' ' + ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.x);
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: {
+                  font: { size: 10 },
+                  callback: function (v) {
+                    return fmtMoneyShort(v);
+                  }
+                },
+                grid: { color: 'rgba(148, 163, 184, 0.2)' }
+              },
+              y: {
+                ticks: { font: { size: 11, weight: '700' }, color: '#0f766e' },
+                grid: { display: false }
               }
             }
           }
@@ -860,13 +1102,20 @@
     var t = totals();
     var stockPct = t.total > 0 ? ((t.stock / t.total) * 100).toFixed(1) : '0';
     var etfPct = t.total > 0 ? ((t.etf / t.total) * 100).toFixed(1) : '0';
+    var costHtml =
+      t.costBasisCount > 0
+        ? '<span class="np-inv-pf-sum-cost">Cost Basis <strong>' +
+          escapeHtml(fmtMoney(t.costBasis)) +
+          '</strong></span>'
+        : '<span class="np-inv-pf-sum-cost" title="Sube una captura que muestre la columna Cost Basis">Cost Basis <strong>—</strong></span>';
     el.innerHTML =
       '<span><strong>' +
       st.holdings.length +
       '</strong> posiciones</span>' +
-      '<span>Total <strong>' +
+      '<span>Valor actual <strong>' +
       escapeHtml(fmtMoney(t.total)) +
       '</strong></span>' +
+      costHtml +
       '<span>Acciones <strong>' +
       escapeHtml(stockPct) +
       '%</strong></span>' +
@@ -911,10 +1160,46 @@
     }
   }
 
+  function loadGeneralNotes() {
+    var ctx = getCtx();
+    if (ctx.investPortfolioNotes != null) {
+      st.generalNotes = String(ctx.investPortfolioNotes);
+    } else {
+      try {
+        var raw = localStorage.getItem(NOTES_STORAGE);
+        st.generalNotes = raw != null ? String(raw) : '';
+      } catch (e) {
+        st.generalNotes = '';
+      }
+    }
+    var ta = $('npInvPfScratch');
+    if (ta && document.activeElement !== ta) {
+      ta.value = st.generalNotes;
+    }
+  }
+
+  function scheduleGeneralNotesSave(value) {
+    st.generalNotes = String(value == null ? '' : value);
+    try {
+      localStorage.setItem(NOTES_STORAGE, st.generalNotes);
+    } catch (e) {
+      /* ignore */
+    }
+    if (st.notesTimer) clearTimeout(st.notesTimer);
+    st.notesTimer = setTimeout(function () {
+      st.notesTimer = null;
+      var ctx = getCtx();
+      if (typeof ctx.saveInvestPortfolioNotes === 'function') {
+        ctx.saveInvestPortfolioNotes(st.generalNotes);
+      }
+    }, MANUAL_SAVE_MS);
+  }
+
   function sortValue(h, key) {
     if (!h) return null;
     if (key === 'symbol') return String(h.symbol || '').toUpperCase();
     if (key === 'comments') return String(h.comments || '').toLowerCase();
+    if (key === 'costBasis') return holdingCostBasis(h);
     if (key === 'targetShares') {
       var t = Number(h.targetShares);
       return Number.isFinite(t) ? t : String(h.targetShares || '').toLowerCase();
@@ -993,6 +1278,7 @@
       t.total > 0 && Number.isFinite(Number(h.marketValue))
         ? ((Number(h.marketValue) / t.total) * 100).toFixed(1) + '%'
         : '—';
+    var cost = holdingCostBasis(h);
     var priceCell =
       '<div class="np-inv-pf-price">' +
       escapeHtml(fmtMoney(h.price)) +
@@ -1035,6 +1321,9 @@
       '">' +
       escapeHtml(fmtSigned(h.dayChange)) +
       '</td>' +
+      '<td class="np-inv-pf-num" title="Cost Basis (lo que invertiste)">' +
+      escapeHtml(cost != null ? fmtMoney(cost) : '—') +
+      '</td>' +
       '<td class="np-inv-pf-num ' +
       signedClass(h.gainLoss) +
       '">' +
@@ -1048,14 +1337,15 @@
       '" placeholder="ej. 2" aria-label="Objetivo acciones ' +
       escapeHtml(h.symbol) +
       '" /></td>' +
-      '<td><input class="np-inv-pf-input np-inv-pf-input--wide" type="text" ' +
+      '<td class="np-inv-pf-comment-cell">' +
+      '<textarea class="np-inv-pf-comment-ta" rows="3" ' +
       'data-pf-comment="' +
       escapeHtml(h.symbol) +
-      '" value="' +
-      escapeHtml(h.comments || '') +
       '" placeholder="Compra / nota…" aria-label="Comentario ' +
       escapeHtml(h.symbol) +
-      '" /></td>' +
+      '">' +
+      escapeHtml(h.comments || '') +
+      '</textarea></td>' +
       '<td class="np-inv-pf-actions">' +
       '<button type="button" class="np-inv-pf-del" data-pf-del="' +
       escapeHtml(h.symbol) +
@@ -1068,7 +1358,7 @@
   function sectionSepHtml(label) {
     return (
       '<tr class="np-inv-pf-sep" aria-hidden="true">' +
-      '<td colspan="9">' +
+      '<td colspan="10">' +
       '<div class="np-inv-pf-sep-inner">' +
       '<span class="np-inv-pf-sep-line"></span>' +
       '<span class="np-inv-pf-sep-label">' +
@@ -1126,6 +1416,7 @@
   function render() {
     renderTable();
     renderSummary();
+    loadGeneralNotes();
     renderCharts();
   }
 
@@ -1182,6 +1473,10 @@
     });
     root.addEventListener('input', function (e) {
       var t = e.target;
+      if (t && t.id === 'npInvPfScratch') {
+        scheduleGeneralNotesSave(t.value);
+        return;
+      }
       if (t && t.getAttribute('data-pf-target')) {
         updateManual(t.getAttribute('data-pf-target'), 'targetShares', t.value);
       } else if (t && t.getAttribute('data-pf-comment')) {
@@ -1193,6 +1488,7 @@
   async function init() {
     wireEvents();
     loadSortPrefs();
+    loadGeneralNotes();
     await loadFromCloud();
     render();
   }

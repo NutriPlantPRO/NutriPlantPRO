@@ -53,7 +53,7 @@
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .np-inv-side,
@@ -62,6 +62,23 @@
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
+}
+
+.np-inv-side {
+  /* Misma altura de fila que la columna de la gráfica */
+  align-self: stretch;
+}
+
+.np-inv-panel--picks {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.np-inv-panel--picks .np-inv-filters {
+  flex: 0 0 auto;
 }
 
 .np-inv-panel {
@@ -236,9 +253,16 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: min(62vh, 640px);
+  flex: 1 1 auto;
+  min-height: 220px;
+  /* Se estira con la gráfica; si hay muchos tickers, scroll interno */
+  max-height: none;
   overflow: auto;
   padding-right: 2px;
+}
+.np-inv-panel--picks .np-inv-picks {
+  /* Rellena el alto libre hasta alinear con TradingView */
+  height: 100%;
 }
 .np-inv-reorder-hint {
   margin: 0 0 4px;
@@ -749,6 +773,53 @@ html.np-inv-tv-touch-lock body {
   color: #0f766e;
   font-weight: 700;
 }
+.np-inv-pf-summary .np-inv-pf-sum-cost strong {
+  color: #0f172a;
+}
+.np-inv-pf-scratch {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #0d9488 18%, rgba(148, 163, 184, 0.35));
+  background: color-mix(in srgb, #0d9488 5%, #fff);
+}
+.np-inv-pf-scratch-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f766e;
+  margin-bottom: 6px;
+}
+.np-inv-pf-scratch-hint {
+  font-weight: 500;
+  font-size: 11px;
+  color: #64748b;
+}
+.np-inv-pf-scratch-ta {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+  max-height: 140px;
+  resize: vertical;
+  overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #0f172a;
+  background: #fff;
+}
+.np-inv-pf-scratch-ta:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.16);
+}
 .np-inv-pf-body {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.9fr);
@@ -781,7 +852,7 @@ html.np-inv-tv-touch-lock body {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  min-width: 860px;
+  min-width: 980px;
 }
 .np-inv-pf-table thead th {
   position: sticky;
@@ -954,6 +1025,38 @@ html.np-inv-tv-touch-lock body {
   width: 140px;
   min-width: 120px;
 }
+.np-inv-pf-th-comments {
+  min-width: 180px;
+}
+.np-inv-pf-comment-cell {
+  min-width: 180px;
+  width: 22%;
+  vertical-align: top;
+}
+.np-inv-pf-comment-ta {
+  display: block;
+  width: 100%;
+  min-width: 160px;
+  box-sizing: border-box;
+  min-height: 64px;
+  max-height: 120px;
+  height: 72px;
+  resize: vertical;
+  overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  background: #fff;
+  color: #0f172a;
+}
+.np-inv-pf-comment-ta:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.16);
+}
 .np-inv-pf-input:focus {
   outline: none;
   border-color: #0d9488;
@@ -988,13 +1091,30 @@ html.np-inv-tv-touch-lock body {
   border: 1px solid color-mix(in srgb, #0d9488 16%, rgba(148, 163, 184, 0.35));
   background: color-mix(in srgb, #0d9488 4%, #fff);
 }
+.np-inv-pf-chart-box--bars {
+  height: min(420px, 58vh);
+  min-height: 280px;
+}
+.np-inv-pf-chart-legend-note {
+  margin: 0;
+  padding: 0 4px 2px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: #64748b;
+}
 
 @media (max-width: 900px) {
   .np-inv-layout {
     grid-template-columns: 1fr;
+    align-items: start;
   }
-  .np-inv-picks {
-    max-height: 280px;
+  .np-inv-panel--picks {
+    flex: none;
+  }
+  .np-inv-picks,
+  .np-inv-panel--picks .np-inv-picks {
+    height: auto;
+    max-height: min(48vh, 360px);
   }
   .np-inv-price {
     font-size: 1.45rem;
