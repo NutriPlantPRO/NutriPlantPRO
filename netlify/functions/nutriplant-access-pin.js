@@ -43,9 +43,27 @@ function getSecret() {
 }
 
 function getExpectedPin(scope) {
+  if (scope === 'airci') {
+    // Mismos 4 dígitos: acepta ADMIN o Plan PRO (el que tengas configurado)
+    const adminPin = String(process.env.ADMIN_ACCESS_PIN || '').trim();
+    const planPin = String(process.env.PLAN_PRO_ACCESS_PIN || '').trim();
+    return adminPin || planPin;
+  }
   const envKey = SCOPES[scope];
   if (!envKey) return '';
   return String(process.env[envKey] || '').trim();
+}
+
+function pinMatches(scope, pin) {
+  if (scope === 'airci') {
+    const adminPin = String(process.env.ADMIN_ACCESS_PIN || '').trim();
+    const planPin = String(process.env.PLAN_PRO_ACCESS_PIN || '').trim();
+    if (adminPin && pin === adminPin) return true;
+    if (planPin && pin === planPin) return true;
+    return false;
+  }
+  const expected = getExpectedPin(scope);
+  return !!(expected && pin === expected);
 }
 
 function signToken(scope, expiresAt) {
@@ -111,7 +129,10 @@ exports.handler = async function handler(event) {
       return json(503, {
         ok: false,
         error: 'pin_not_configured',
-        message: `Falta ${SCOPES[scope]} en Netlify.`
+        message:
+          scope === 'airci'
+            ? 'Falta ADMIN_ACCESS_PIN o PLAN_PRO_ACCESS_PIN en Netlify.'
+            : `Falta ${SCOPES[scope]} en Netlify.`
       });
     }
     if (!getSecret()) {
@@ -121,7 +142,7 @@ exports.handler = async function handler(event) {
         message: 'Falta NUTRIPLANT_PIN_TOKEN_SECRET o PLAN_PRO_CALENDAR_FEED_TOKEN.'
       });
     }
-    if (!/^\d{4}$/.test(pin) || pin !== expected) {
+    if (!/^\d{4}$/.test(pin) || !pinMatches(scope, pin)) {
       return json(401, { ok: false, error: 'pin_incorrecto' });
     }
     const t = makeToken(scope);

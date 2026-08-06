@@ -534,6 +534,29 @@
     }
   }
 
+  async function verifyAirciPin(pinApi, pin) {
+    var primary = pinApi.SCOPE_AIRCI || 'airci';
+    var r = await pinApi.verifyPin(primary, pin);
+    if (r && r.ok) return { ok: true, scope: primary };
+
+    // Solo si el servidor aún no conoce scope airci (deploy pendiente), prueba admin / plan_pro
+    var err = String((r && r.error) || '');
+    var needFallback =
+      /scope|inválid|invalido|not_configured|no configurado|503|400/i.test(err) ||
+      !(await pinApi.isRequired(primary));
+
+    if (!needFallback) return r || { ok: false, error: 'PIN incorrecto.' };
+
+    var alts = [pinApi.SCOPE_ADMIN || 'admin', pinApi.SCOPE_PLAN_PRO || 'plan_pro'];
+    for (var i = 0; i < alts.length; i++) {
+      var scope = alts[i];
+      var rr = await pinApi.verifyPin(scope, pin);
+      if (rr && rr.ok) return { ok: true, scope: scope };
+      r = rr || r;
+    }
+    return r || { ok: false, error: 'PIN incorrecto.' };
+  }
+
   async function ensureAccess() {
     if (!hasAdminSession()) {
       showGate('Entra primero desde el login como admin y elige AirCI.');
@@ -558,13 +581,20 @@
       return;
     }
 
-    var required = await pinApi.isRequired(scope);
-    if (!required) {
+    // Si ya tienes PIN válido de AirCI, admin o Plan PRO en esta sesión, entra
+    var requiredAirci = await pinApi.isRequired(scope);
+    var requiredAdmin = await pinApi.isRequired(pinApi.SCOPE_ADMIN || 'admin');
+    var requiredPlan = await pinApi.isRequired(pinApi.SCOPE_PLAN_PRO || 'plan_pro');
+    if (!requiredAirci && !requiredAdmin && !requiredPlan) {
       showApp();
       return;
     }
 
-    if (await pinApi.hasValidAccess(scope)) {
+    if (
+      (await pinApi.hasValidAccess(scope)) ||
+      (await pinApi.hasValidAccess(pinApi.SCOPE_ADMIN || 'admin')) ||
+      (await pinApi.hasValidAccess(pinApi.SCOPE_PLAN_PRO || 'plan_pro'))
+    ) {
       showApp();
       return;
     }
@@ -594,7 +624,7 @@
       }
       if (btn) btn.disabled = true;
       showError('');
-      var r = await pinApi.verifyPin(pinApi.SCOPE_AIRCI || 'airci', pin);
+      var r = await verifyAirciPin(pinApi, pin);
       if (btn) btn.disabled = false;
       if (!r.ok) {
         showError(r.error || 'PIN incorrecto.');

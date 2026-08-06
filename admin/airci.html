@@ -7,28 +7,41 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806b">
+  <link rel="stylesheet" href="./airci.css?v=20260806c">
 </head>
 <body class="aci-body">
+  <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
   <div id="aciGate" class="aci-gate">
-    <div class="aci-gate-card">
-      <h1>AirCI</h1>
-      <p>Acceso privado. Usa el mismo código de 4 dígitos que Admin / Plan PRO.</p>
+    <header class="aci-access-header">
+      <div class="aci-access-brand">
+        <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
+        <div>
+          <h1>Acceso privado</h1>
+          <div class="aci-access-sub">AirCI Crop Intelligence</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="aci-gate-card aci-gate-card--accent">
+      <h2>Acceso privado</h2>
+      <p class="aci-gate-kicker">AirCI · Crop Intelligence by NutriPlant PRO</p>
       <div id="aciGateError" class="aci-error" role="alert"></div>
       <form id="aciPinForm">
-        <label for="aciPinInput">Código de 4 dígitos</label>
+        <label for="aciPinInput">Acceso 3</label>
         <input
           id="aciPinInput"
+          class="aci-pin-input"
           type="password"
           maxlength="4"
           pattern="[0-9]{4}"
           inputmode="numeric"
           autocomplete="one-time-code"
+          placeholder=""
           required
         >
         <div class="aci-gate-actions">
-          <button type="submit" class="aci-btn" id="aciPinSubmit">Entrar</button>
-          <a class="aci-btn aci-btn--ghost" href="../login.html">Volver al login</a>
+          <button type="submit" class="aci-btn aci-btn--enter" id="aciPinSubmit">Continuar</button>
+          <a class="aci-btn aci-btn--to-pro" href="../login.html">Ir a NutriPlant PRO</a>
         </div>
       </form>
     </div>
@@ -148,6 +161,6 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci.js?v=20260806b"></script>
+  <script src="./airci.js?v=20260806c"></script>
 </body>
 </html>
