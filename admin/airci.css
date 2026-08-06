@@ -582,22 +582,25 @@ button, input, select, textarea { font: inherit; }
   border-top: 1px solid var(--aci-line);
 }
 
-/* Debajo del semáforo (columna derecha) — aprovecha hueco junto a Indicadores */
-.aci-pheno-panel--nested {
-  margin-top: 16px;
+/* Fenología al lado del semáforo (misma fila) */
+.aci-pheno-panel--side {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  height: 100%;
 }
 
-.aci-orchard-block .aci-pheno-panel--nested .aci-map-head {
+.aci-orchard-block--pheno .aci-map-head {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
 }
 
-.aci-orchard-block .aci-pheno-panel--nested .aci-pheno-metrics {
+.aci-orchard-block--pheno .aci-pheno-metrics {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.aci-orchard-block .aci-pheno-panel--nested .aci-hist-metric strong {
+.aci-orchard-block--pheno .aci-hist-metric strong {
   font-size: 15px;
 }
 
@@ -619,6 +622,9 @@ button, input, select, textarea { font: inherit; }
 @media (min-width: 900px) {
   .aci-pheno-metrics {
     grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .aci-orchard-block--pheno .aci-pheno-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -680,9 +686,26 @@ button, input, select, textarea { font: inherit; }
 }
 .aci-orchard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
+}
+
+.aci-orchard-block--stats {
+  grid-column: 1 / -1;
+}
+
+.aci-orchard-block--sem,
+.aci-orchard-block--pheno {
+  min-width: 0;
+}
+
+/* Sin fenología aún: semáforo a ancho completo (sin columna vacía) */
+.aci-orchard-grid:has(#aciPhenoPanel[hidden]) .aci-orchard-block--sem {
+  grid-column: 1 / -1;
+}
+.aci-orchard-grid:has(#aciPhenoPanel[hidden]) .aci-orchard-block--pheno {
+  display: none;
 }
 .aci-orchard-h {
   margin: 0 0 8px;
