@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806hdr1">
+  <link rel="stylesheet" href="./airci.css?v=20260806st1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -172,13 +172,13 @@
             <span>Usa <strong>Subir GeoTIFF</strong> para cargar el ortomosaico</span>
           </div>
           <div id="aciMap" class="aci-map" hidden></div>
-          <div id="aciMapStatus" class="aci-map-status" hidden role="status"></div>
         </div>
-        <div class="aci-layers" aria-label="Capas" id="aciLayerBar">
-          <button type="button" class="aci-layer-chip is-active" data-layer="ortho">Ortomosaico RGB</button>
-          <button type="button" class="aci-layer-chip" data-layer="copas" disabled>Copas (contorno)</button>
-          <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled>Semáforo tamaño</button>
-          <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Numeración por surco y línea, al centro de cada copa">Números (ID)</button>
+        <p id="aciMapStatus" class="aci-map-status" hidden role="status"></p>
+        <div class="aci-layers" aria-label="Capas (puedes activar varias)" id="aciLayerBar">
+          <button type="button" class="aci-layer-chip is-active" data-layer="ortho" title="Activar/desactivar ortomosaico">Ortomosaico RGB</button>
+          <button type="button" class="aci-layer-chip" data-layer="copas" disabled title="Contornos de copa">Copas (contorno)</button>
+          <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled title="Relleno por tamaño">Semáforo tamaño</button>
+          <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Números solo con esta capa activa">Números (ID)</button>
           <span class="aci-layer-soon">Floración / brotación / vegetativo — después</span>
         </div>
         <div class="aci-basemap-bar" aria-label="Mapa de fondo" id="aciBasemapBar">
@@ -191,10 +191,10 @@
         <div class="aci-legend" id="aciLegend" hidden>
           <span class="aci-basemap-label">Filtrar</span>
           <button type="button" class="aci-leg aci-leg--all is-active" data-sem="all" title="Mostrar todas las copas">Todos</button>
-          <button type="button" class="aci-leg aci-leg--rojo" data-sem="rojo" title="Clic: ver solo copas muy bajas">Rojo · muy bajo <em data-sem-count="rojo"></em></button>
-          <button type="button" class="aci-leg aci-leg--amarillo" data-sem="amarillo" title="Clic: ver solo por debajo del promedio">Amarillo · debajo <em data-sem-count="amarillo"></em></button>
-          <button type="button" class="aci-leg aci-leg--verde" data-sem="verde" title="Clic: ver solo promedio">Verde · promedio <em data-sem-count="verde"></em></button>
-          <button type="button" class="aci-leg aci-leg--azul" data-sem="azul" title="Clic: ver solo por encima del promedio">Azul · arriba <em data-sem-count="azul"></em></button>
+          <button type="button" class="aci-leg aci-leg--rojo" data-sem="rojo" title="Clic: ver solo muy bajo">Muy bajo <em data-sem-count="rojo"></em></button>
+          <button type="button" class="aci-leg aci-leg--amarillo" data-sem="amarillo" title="Clic: ver solo por debajo">Por debajo <em data-sem-count="amarillo"></em></button>
+          <button type="button" class="aci-leg aci-leg--verde" data-sem="verde" title="Clic: ver solo promedio">Promedio <em data-sem-count="verde"></em></button>
+          <button type="button" class="aci-leg aci-leg--azul" data-sem="azul" title="Clic: ver solo por encima">Por encima <em data-sem-count="azul"></em></button>
         </div>
       </section>
 
@@ -241,7 +241,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806u"></script>
-  <script src="./airci.js?v=20260806u"></script>
+  <script src="./airci-canopy.js?v=20260806x"></script>
+  <script src="./airci.js?v=20260806x"></script>
 </body>
 </html>

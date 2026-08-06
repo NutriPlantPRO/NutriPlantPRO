@@ -40,7 +40,8 @@
   var canopyOutlineLayer = null;
   var canopyFillLayer = null;
   var canopyLabelLayer = null;
-  var activeLayer = 'ortho';
+  var activeLayer = 'ortho'; // compat: última capa tocada
+  var layerOn = { ortho: true, copas: false, semaforo: false, numeros: false };
   var activeSemFilter = 'all';
   var treeLayersById = {};
   var orthoLoadInFlight = false;
@@ -175,48 +176,90 @@
     });
     var orthoBtn = document.querySelector('#aciLayerBar [data-layer="ortho"]');
     if (orthoBtn) orthoBtn.classList.add('is-active');
+    layerOn = { ortho: true, copas: false, semaforo: false, numeros: false };
     activeLayer = 'ortho';
   }
 
-  function setLayerMode(mode) {
-    activeLayer = mode || 'ortho';
+  function syncLayerChips() {
     document.querySelectorAll('#aciLayerBar [data-layer]').forEach(function (btn) {
-      btn.classList.toggle('is-active', btn.getAttribute('data-layer') === activeLayer);
+      var key = btn.getAttribute('data-layer');
+      btn.classList.toggle('is-active', !!layerOn[key]);
     });
-    if (rasterLayer) {
-      rasterLayer.setOpacity(activeLayer === 'ortho' ? 1 : 0.45);
+  }
+
+  function applyLayerVisibility() {
+    // Ortomosaico: si está off, se oculta; si on, opaco encima del fondo
+    if (rasterLayer && map) {
+      if (layerOn.ortho) {
+        if (!map.hasLayer(rasterLayer)) rasterLayer.addTo(map);
+        if (rasterLayer.setOpacity) rasterLayer.setOpacity(1);
+      } else if (map.hasLayer(rasterLayer)) {
+        map.removeLayer(rasterLayer);
+      }
     }
-    if (canopyOutlineLayer) {
-      if (activeLayer === 'copas' || activeLayer === 'numeros') {
+    if (canopyOutlineLayer && map) {
+      if (layerOn.copas) {
         if (!map.hasLayer(canopyOutlineLayer)) canopyOutlineLayer.addTo(map);
-      } else {
-        if (map.hasLayer(canopyOutlineLayer)) map.removeLayer(canopyOutlineLayer);
+      } else if (map.hasLayer(canopyOutlineLayer)) {
+        map.removeLayer(canopyOutlineLayer);
       }
     }
-    if (canopyFillLayer) {
-      if (activeLayer === 'semaforo') {
+    if (canopyFillLayer && map) {
+      if (layerOn.semaforo) {
         if (!map.hasLayer(canopyFillLayer)) canopyFillLayer.addTo(map);
-      } else {
-        if (map.hasLayer(canopyFillLayer)) map.removeLayer(canopyFillLayer);
+      } else if (map.hasLayer(canopyFillLayer)) {
+        map.removeLayer(canopyFillLayer);
       }
     }
-    if (canopyLabelLayer) {
-      if (activeLayer === 'numeros' || activeLayer === 'semaforo' || activeLayer === 'copas') {
+    // Números solo si su capa está seleccionada
+    if (canopyLabelLayer && map) {
+      if (layerOn.numeros) {
         if (!map.hasLayer(canopyLabelLayer)) canopyLabelLayer.addTo(map);
-      } else {
-        if (map.hasLayer(canopyLabelLayer)) map.removeLayer(canopyLabelLayer);
+        Object.keys(treeLayersById).forEach(function (id) {
+          var entry = treeLayersById[id];
+          if (!entry || !entry.labelEl) return;
+          entry.labelEl.classList.add('aci-tree-label--strong');
+          entry.labelEl.classList.remove('aci-tree-label--soft');
+        });
+      } else if (map.hasLayer(canopyLabelLayer)) {
+        map.removeLayer(canopyLabelLayer);
       }
-      // En semáforo/copas los números van más discretos; en capa Números, fuertes
-      var strong = activeLayer === 'numeros';
-      Object.keys(treeLayersById).forEach(function (id) {
-        var entry = treeLayersById[id];
-        if (!entry || !entry.labelEl) return;
-        entry.labelEl.classList.toggle('aci-tree-label--strong', strong);
-        entry.labelEl.classList.toggle('aci-tree-label--soft', !strong);
-      });
     }
+    bringOverlaysFront();
     var legend = document.getElementById('aciLegend');
-    if (legend) legend.hidden = activeLayer !== 'semaforo';
+    if (legend) legend.hidden = !layerOn.semaforo;
+    syncLayerChips();
+  }
+
+  /** Multi-selección: enciende/apaga una capa. Orto no se apaga si es la única activa. */
+  function toggleLayer(mode) {
+    mode = mode || 'ortho';
+    if (!Object.prototype.hasOwnProperty.call(layerOn, mode)) return;
+    var next = !layerOn[mode];
+    if (!next && mode === 'ortho') {
+      var otherOn = layerOn.copas || layerOn.semaforo || layerOn.numeros;
+      if (!otherOn) {
+        // dejar al menos el orto visible
+        next = true;
+      }
+    }
+    layerOn[mode] = next;
+    activeLayer = mode;
+    applyLayerVisibility();
+  }
+
+  /** Enciende capas concretas (sin apagar las demás) — útil tras detectar/restaurar */
+  function enableLayers(keys) {
+    (keys || []).forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(layerOn, k)) layerOn[k] = true;
+    });
+    if (keys && keys.length) activeLayer = keys[keys.length - 1];
+    applyLayerVisibility();
+  }
+
+  function setLayerMode(mode) {
+    // Compat: activar esa capa (multi), no exclusividad
+    toggleLayer(mode);
   }
 
   function fmtNum(v, digits) {
@@ -329,7 +372,7 @@
     var filtered = treesMatchingSem(activeSemFilter);
     renderCanopyTable(filtered);
     if (activeSemFilter !== 'all') {
-      setLayerMode('semaforo');
+      enableLayers(['semaforo']);
       fitSemFilterBounds(filtered);
       setMapStatus(
         filtered.length
@@ -410,8 +453,10 @@
   function highlightTree(id) {
     var entry = treeLayersById[id];
     if (!entry || !map) return;
-    var layer = activeLayer === 'semaforo' ? entry.fill : entry.outline;
-    if (!layer) layer = entry.outline || entry.fill;
+    var layer = null;
+    if (layerOn.semaforo && entry.fill) layer = entry.fill;
+    else if (layerOn.copas && entry.outline) layer = entry.outline;
+    else layer = entry.fill || entry.outline;
     if (layer && layer.getBounds) {
       map.fitBounds(layer.getBounds(), { maxZoom: 20, padding: [40, 40] });
     }
@@ -467,9 +512,14 @@
         center = [b0.getCenter().lat, b0.getCenter().lng];
       }
       var labelHtml =
-        '<div class="aci-tree-label aci-tree-label--soft" title="ID ' +
+        '<div class="aci-tree-label aci-tree-label--soft aci-tree-label--' +
+        (t.sem && t.sem.key ? t.sem.key : 'verde') +
+        '" style="background:' +
+        (t.sem && t.sem.color ? t.sem.color : '#0f172a') +
+        '" title="ID ' +
         t.id +
         (t.row != null ? ' · Surco ' + t.row + ' · Pos ' + t.pos : '') +
+        (t.sem && t.sem.label ? ' · ' + t.sem.label : '') +
         '">' +
         t.id +
         '</div>';
@@ -532,7 +582,6 @@
 
     // Enlazar elementos DOM de labels tras añadir al mapa (si aún no)
     setTimeout(function () {
-      var strong = activeLayer === 'numeros';
       Object.keys(treeLayersById).forEach(function (id) {
         var entry = treeLayersById[id];
         if (!entry || !entry.label) return;
@@ -540,12 +589,13 @@
           var root = entry.label.getElement();
           entry.labelEl = root && root.querySelector('.aci-tree-label');
           if (entry.labelEl) {
-            entry.labelEl.classList.toggle('aci-tree-label--strong', strong);
-            entry.labelEl.classList.toggle('aci-tree-label--soft', !strong);
+            entry.labelEl.classList.add('aci-tree-label--strong');
+            entry.labelEl.classList.remove('aci-tree-label--soft');
           }
         } catch (e4) {}
       });
       applySemFilterStyles();
+      applyLayerVisibility();
     }, 0);
 
     document
@@ -567,7 +617,12 @@
       filename: document.getElementById('aciMetricFile') && document.getElementById('aciMetricFile').textContent
     });
     var rowN = result.stats && result.stats.rowCount ? result.stats.rowCount : null;
-    setLayerMode('numeros');
+    layerOn.ortho = true;
+    layerOn.semaforo = true;
+    layerOn.numeros = true;
+    layerOn.copas = false;
+    activeLayer = 'numeros';
+    applyLayerVisibility();
     if (rowN) {
       setMapStatus(
         result.stats.count + ' copas · ' + rowN + ' surcos · ID por surco y línea',
@@ -1342,7 +1397,7 @@
     var canopyOk = await restoreCanopyForSite(siteId);
     if (orthoOk && canopyOk) {
       setMapStatus('Ortomosaico + copas restaurados desde la nube', 'ok');
-      setLayerMode('semaforo');
+      enableLayers(['ortho', 'semaforo', 'numeros']);
       return;
     }
     if (orthoOk && !canopyOk) {
@@ -1691,8 +1746,13 @@
   }
 
   function bringOverlaysFront() {
-    if (rasterLayer && map && map.hasLayer(rasterLayer) && rasterLayer.bringToFront) {
-      rasterLayer.bringToFront();
+    // Fondo Google atrás; ortomosaico opaco encima; copas/números al frente
+    if (basemapLayer && map && map.hasLayer(basemapLayer) && basemapLayer.bringToBack) {
+      basemapLayer.bringToBack();
+    }
+    if (rasterLayer && map && map.hasLayer(rasterLayer)) {
+      if (rasterLayer.setOpacity) rasterLayer.setOpacity(1);
+      if (rasterLayer.bringToFront) rasterLayer.bringToFront();
     }
     if (canopyOutlineLayer && map && map.hasLayer(canopyOutlineLayer) && canopyOutlineLayer.bringToFront) {
       canopyOutlineLayer.bringToFront();
@@ -1862,6 +1922,9 @@
       pixelValuesToColorFn: colorFnForGeoraster(georaster)
     });
     rasterLayer.addTo(map);
+    if (basemapLayer && basemapLayer.bringToBack) basemapLayer.bringToBack();
+    if (rasterLayer.bringToFront) rasterLayer.bringToFront();
+    bringOverlaysFront();
     lastBounds = rasterLayer.getBounds();
     showMapPane(true);
     map.fitBounds(lastBounds, { padding: [24, 24] });

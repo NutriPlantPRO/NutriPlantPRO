@@ -548,34 +548,28 @@ button, input, select, textarea { font: inherit; }
 
 .aci-map {
   width: 100%;
-  height: min(48vh, 420px);
-  min-height: 280px;
+  height: min(82vh, 900px);
+  min-height: 520px;
   background: #e2e8f0;
 }
 
 .aci-map-status {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
-  z-index: 500;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.88);
-  color: #e2e8f0;
+  margin: 0;
+  padding: 8px 15px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--aci-muted, #64748b);
   font-size: 12px;
   font-weight: 600;
-  pointer-events: none;
+  line-height: 1.35;
 }
 
 .aci-map-status.is-error {
-  background: rgba(127, 29, 29, 0.92);
-  color: #fee2e2;
+  color: #b91c1c;
 }
 
 .aci-map-status.is-ok {
-  background: rgba(21, 128, 61, 0.9);
-  color: #dcfce7;
+  color: #15803d;
 }
 
 .aci-layers {
@@ -749,16 +743,21 @@ button, input, select, textarea { font: inherit; }
   user-select: none;
 }
 
+.aci-tree-label--rojo { background: #dc2626; }
+.aci-tree-label--amarillo { background: #ca8a04; }
+.aci-tree-label--verde { background: #16a34a; }
+.aci-tree-label--azul { background: #2563eb; }
+
 .aci-tree-label--strong {
   min-width: 26px;
   height: 26px;
   font-size: 12px;
-  background: #0369a1;
-  border-color: #e0f2fe;
+  border-color: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.5);
 }
 
 .aci-tree-label--soft {
-  opacity: 0.92;
+  opacity: 0.95;
   transform: scale(0.92);
 }
 
@@ -1131,4 +1130,8 @@ button, input, select, textarea { font: inherit; }
   .aci-header__right img { height: 26px; max-width: min(110px, 36vw); }
   .aci-metrics { grid-template-columns: 1fr 1fr; }
   .aci-header { min-height: 48px; padding: 3px 10px; }
+  .aci-map {
+    height: min(70vh, 640px);
+    min-height: 360px;
+  }
 }
