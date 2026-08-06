@@ -61,6 +61,17 @@
 # Si /index.html se abre sin pasar por la regla anterior, index.html redirige por JS/meta
 # y muestra la portada (logo + Manual + Iniciar sesión) como respaldo
 
+# AirCI — Crop Intelligence (panel admin interno)
+[[redirects]]
+  from = "/airCI"
+  to = "/admin/airci.html"
+  status = 200
+
+[[redirects]]
+  from = "/airci"
+  to = "/admin/airci.html"
+  status = 200
+
 # Manual técnico: servir index explícito (evita bucle 301 /manual-tecnico/ → /manual-tecnico/)
 [[redirects]]
   from = "/manual-tecnico"

@@ -172,6 +172,7 @@
   global.nutriplantAccessPin = {
     SCOPE_PLAN_PRO: 'plan_pro',
     SCOPE_ADMIN: 'admin',
+    SCOPE_AIRCI: 'airci',
     isRequired: isRequired,
     hasValidAccess: hasValidAccess,
     verifyPin: verifyPin,

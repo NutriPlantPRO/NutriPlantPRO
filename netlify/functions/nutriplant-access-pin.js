@@ -1,12 +1,12 @@
 /**
- * Verificación de PIN de 4 dígitos para Plan PRO y panel admin.
+ * Verificación de PIN de 4 dígitos para Plan PRO, panel admin y AirCI.
  * POST { scope, pin } → token firmado
  * GET ?scope=&action=required → { required }
  * GET ?scope=&token= → { ok }
  *
  * Netlify env:
  *   PLAN_PRO_ACCESS_PIN
- *   ADMIN_ACCESS_PIN
+ *   ADMIN_ACCESS_PIN  (también usado por scope airci = mismos 4 dígitos)
  *   NUTRIPLANT_PIN_TOKEN_SECRET (o usa PLAN_PRO_CALENDAR_FEED_TOKEN)
  */
 
@@ -14,7 +14,8 @@ const crypto = require('crypto');
 
 const SCOPES = {
   plan_pro: 'PLAN_PRO_ACCESS_PIN',
-  admin: 'ADMIN_ACCESS_PIN'
+  admin: 'ADMIN_ACCESS_PIN',
+  airci: 'ADMIN_ACCESS_PIN'
 };
 
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;

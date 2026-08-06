@@ -158,25 +158,40 @@ function npGetSafeLoginNextUrl() {
     'dashboard.html': true,
     'planpro/': true,
     'planpro/index.html': true,
-    'admin/index.html': true
+    'admin/index.html': true,
+    'admin/airci.html': true,
+    'airCI': true,
+    'airci': true
   };
   try {
     var p = new URLSearchParams(window.location.search);
     var next = (p.get('next') || '').trim();
     if (next.charAt(0) === '/') next = next.slice(1);
-    if (allowed[next]) return next;
+    if (allowed[next]) {
+      if (next === 'airCI' || next === 'airci') return 'admin/airci.html';
+      return next;
+    }
   } catch (e) {}
   return 'dashboard.html';
 }
 window.npGetSafeLoginNextUrl = npGetSafeLoginNextUrl;
 
-/** Solo tu correo dueño: tras contraseña válida, elegir NutriPlant PRO / Admin / Plan PRO. */
+/** Solo tu correo dueño: tras contraseña válida, elegir NutriPlant PRO / Admin / Plan PRO / AirCI. */
 var NP_OWNER_ADMIN_EMAIL = 'admin@nutriplantpro.com';
 var NP_ADMIN_PANEL_URL = 'admin/index.html?k=np_admin_key_8f4a2b9c1e7d';
 var NP_PLANPRO_PANEL_URL = 'planpro/?k=np_planpro_key_4a7f2e9b1c6d';
+var NP_AIRCI_PANEL_URL = 'admin/airci.html';
 
 function npIsOwnerAdminEmail(email) {
   return String(email || '').trim().toLowerCase() === NP_OWNER_ADMIN_EMAIL;
+}
+
+function npMarkOwnerAdminSession() {
+  try {
+    localStorage.setItem('admin_logged_in', 'true');
+    localStorage.setItem('admin_username', NP_OWNER_ADMIN_EMAIL);
+    localStorage.setItem('admin_session_timestamp', Date.now().toString());
+  } catch (e) {}
 }
 
 function npShowAdminDestinationChooser() {
@@ -203,16 +218,17 @@ function npGoAdminDestination(dest) {
     return;
   }
   if (dest === 'admin') {
-    try {
-      localStorage.setItem('admin_logged_in', 'true');
-      localStorage.setItem('admin_username', NP_OWNER_ADMIN_EMAIL);
-      localStorage.setItem('admin_session_timestamp', Date.now().toString());
-    } catch (e) {}
+    npMarkOwnerAdminSession();
     location.href = NP_ADMIN_PANEL_URL;
     return;
   }
   if (dest === 'planpro' || dest === 'plan_pro' || dest === 'plan-pro') {
     location.href = NP_PLANPRO_PANEL_URL;
+    return;
+  }
+  if (dest === 'airci' || dest === 'air_ci' || dest === 'air-ci') {
+    npMarkOwnerAdminSession();
+    location.href = NP_AIRCI_PANEL_URL;
     return;
   }
 }

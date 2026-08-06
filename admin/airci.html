@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AirCI Crop Intelligence | NutriPlant PRO</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="./airci.css?v=20260806a">
+</head>
+<body class="aci-body">
+  <!-- Gate: sesión admin + PIN 4 dígitos (mismos que Admin) -->
+  <div id="aciGate" class="aci-gate">
+    <div class="aci-gate-card">
+      <h1>AirCI</h1>
+      <p>Acceso privado. Usa el mismo código de 4 dígitos que Admin / Plan PRO.</p>
+      <div id="aciGateError" class="aci-error" role="alert"></div>
+      <form id="aciPinForm">
+        <label for="aciPinInput">Código de 4 dígitos</label>
+        <input
+          id="aciPinInput"
+          type="password"
+          maxlength="4"
+          pattern="[0-9]{4}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          required
+        >
+        <div class="aci-gate-actions">
+          <button type="submit" class="aci-btn" id="aciPinSubmit">Entrar</button>
+          <a class="aci-btn aci-btn--ghost" href="../login.html">Volver al login</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="aciApp" hidden>
+    <header class="aci-header">
+      <div class="aci-header__brand">
+        <img src="../assets/AirCL_4K_transparente.png" alt="AirCI Crop Intelligence by NutriPlant PRO">
+      </div>
+      <div class="aci-header__center">
+        <strong>AirCI Crop Intelligence</strong>
+        <small>Análisis de huerta con ortomosaico RGB</small>
+      </div>
+      <div class="aci-header__right">
+        <img src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO">
+        <a class="aci-header__link" href="../login.html">Salir</a>
+      </div>
+    </header>
+
+    <main class="aci-shell">
+      <section class="aci-panel aci-meta">
+        <div class="aci-meta__head">
+          <strong>Datos del predio</strong>
+          <span>Edita el texto aquí mismo · se guarda en este dispositivo (F0)</span>
+        </div>
+        <div class="aci-meta-grid">
+          <div class="aci-field aci-field--wide">
+            <label for="aciTitle">Título / apunte</label>
+            <input id="aciTitle" type="text" placeholder="Ej. Huerta norte — vuelo mayo" data-meta="title" autocomplete="off">
+          </div>
+          <div class="aci-field">
+            <label for="aciAgricola">Agrícola / productor</label>
+            <input id="aciAgricola" type="text" placeholder="Nombre" data-meta="agricola" autocomplete="off">
+          </div>
+          <div class="aci-field">
+            <label for="aciPredio">Predio o sector</label>
+            <input id="aciPredio" type="text" placeholder="Bloque / sector" data-meta="predio" autocomplete="off">
+          </div>
+          <div class="aci-field">
+            <label for="aciCultivo">Cultivo</label>
+            <input id="aciCultivo" type="text" placeholder="Aguacate, mango…" data-meta="cultivo" autocomplete="off">
+          </div>
+          <div class="aci-field">
+            <label for="aciVariedad">Variedad</label>
+            <input id="aciVariedad" type="text" placeholder="Hass…" data-meta="variedad" autocomplete="off">
+          </div>
+          <div class="aci-field">
+            <label for="aciEdad">Edad</label>
+            <input id="aciEdad" type="text" placeholder="8 años" data-meta="edad" autocomplete="off">
+          </div>
+          <div class="aci-field aci-field--wide">
+            <label for="aciNota">Nota / comentario</label>
+            <textarea id="aciNota" rows="3" placeholder="Observaciones del vuelo o del predio" data-meta="nota"></textarea>
+          </div>
+        </div>
+        <p id="aciSaveHint" class="aci-save-hint" role="status"></p>
+      </section>
+
+      <section class="aci-metrics" aria-label="Resumen (placeholder)">
+        <div class="aci-metric"><small>Árboles detectados</small><strong>—</strong><em>Próximo: análisis</em></div>
+        <div class="aci-metric"><small>Cobertura de copa</small><strong>—</strong><em>Próximo: análisis</em></div>
+        <div class="aci-metric"><small>Área promedio</small><strong>—</strong><em>Próximo: análisis</em></div>
+        <div class="aci-metric"><small>Sin copa / faltantes</small><strong>—</strong><em>Próximo: análisis</em></div>
+      </section>
+
+      <section class="aci-panel aci-map-panel">
+        <div class="aci-map-head">
+          <div>
+            <strong>Mapa / ortomosaico</strong>
+            <span id="aciMapSub">Fase F1: subida GeoTIFF (WebODM)</span>
+          </div>
+          <span>Capas · semáforo · tabla (próximo)</span>
+        </div>
+        <div class="aci-map-placeholder">
+          <div>
+            <h2>Aquí irá el ortomosaico y las capas</h2>
+            <p>
+              Cobertura de copa, semáforo de tamaño (rojo / amarillo / verde / azul)
+              y tabla de valores sincronizada debajo del mapa.
+            </p>
+          </div>
+        </div>
+        <div class="aci-layers" aria-label="Capas previstas">
+          <span class="aci-layer-chip is-active">Cobertura</span>
+          <span class="aci-layer-chip">Semáforo tamaño</span>
+          <span class="aci-layer-chip">Floración</span>
+          <span class="aci-layer-chip">Brotación</span>
+          <span class="aci-layer-chip">Vegetativo</span>
+          <span class="aci-layer-chip">Coloración</span>
+          <span class="aci-layer-chip">Atípicos</span>
+          <span class="aci-layer-chip">Cambios</span>
+        </div>
+      </section>
+
+      <p class="aci-footer-note">
+        AirCI Crop Intelligence by NutriPlant PRO · Uso interno (admin).
+        Entrega al cliente: PDF + link de solo lectura (fases siguientes).
+        Doc: <code>docs/AIRCI-CROP-INTELLIGENCE-PLAN.md</code>
+      </p>
+    </main>
+  </div>
+
+  <script src="../nutriplant-access-pin.js"></script>
+  <script src="./airci.js?v=20260806a"></script>
+</body>
+</html>

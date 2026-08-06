@@ -2065,3 +2065,7 @@
   border-color: #86efac;
   background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%);
 }
+.admin-dest-btn--airci {
+  border-color: #7dd3fc;
+  background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+}
