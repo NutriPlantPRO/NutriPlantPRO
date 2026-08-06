@@ -855,9 +855,9 @@ html.np-inv-tv-touch-lock body {
   grid-template-columns: minmax(0, 2.05fr) minmax(260px, 0.78fr);
   gap: 14px;
   align-items: stretch;
-  /* Tabla más ancha + más alta; gráficas completas al lado */
-  height: min(90vh, 920px);
-  min-height: 560px;
+  /* Más alto: tabla + gráficas con muchas acciones se ven bien */
+  height: min(98vh, 1200px);
+  min-height: 720px;
 }
 .np-inv-pf-table-col {
   min-width: 0;
@@ -1184,7 +1184,9 @@ html.np-inv-tv-touch-lock body {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .np-inv-pf-chart-box {
   display: flex;
@@ -1198,9 +1200,9 @@ html.np-inv-tv-touch-lock body {
   box-sizing: border-box;
 }
 .np-inv-pf-chart-box--bars {
-  flex: 1.35 1 auto;
+  flex: 1 0 auto;
   height: auto;
-  min-height: 320px;
+  min-height: 400px;
 }
 .np-inv-pf-chart-title {
   flex: 0 0 auto;
@@ -1290,8 +1292,8 @@ html.np-inv-tv-touch-lock body {
   }
   .np-inv-pf-chart-box--bars {
     flex: none;
-    height: min(480px, 55vh);
-    min-height: 300px;
+    height: min(560px, 62vh);
+    min-height: 360px;
   }
   .np-inv-pf-upload-btn {
     width: 100%;

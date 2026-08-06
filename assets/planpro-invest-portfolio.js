@@ -1031,9 +1031,15 @@
             costBorder.push('#2563eb');
           }
         });
-        // Altura la marca el layout CSS (alineada con la tabla); no forzar px inline
+        // Más acciones → gráfica de barras más alta (barras legibles)
         var box = c3.closest('.np-inv-pf-chart-box') || c3.parentElement;
-        if (box) box.style.height = '';
+        if (box) {
+          var nBars = barLabels.length || 1;
+          var needed = Math.max(400, 72 + nBars * 34);
+          box.style.height = needed + 'px';
+          box.style.minHeight = needed + 'px';
+          box.style.flex = '0 0 auto';
+        }
         st.barCostValue = new global.Chart(c3, {
           type: 'bar',
           data: {
