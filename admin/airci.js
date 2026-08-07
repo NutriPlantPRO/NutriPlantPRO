@@ -3230,7 +3230,9 @@
     if (!map.getPane('airciCalibration')) {
       var pane = map.createPane('airciCalibration');
       pane.style.zIndex = '660';
-      pane.style.pointerEvents = 'auto';
+      // none: solo polígonos/vértices reciben clic; si el pane es auto, tapa el mapa
+      // y «Añadir punto» no puede registrar el segundo clic.
+      pane.style.pointerEvents = 'none';
     }
     calibrationLayer = L.layerGroup({ pane: 'airciCalibration' }).addTo(map);
     calibrationVertexLayer = L.layerGroup({ pane: 'airciCalibration' }).addTo(map);
@@ -3246,6 +3248,7 @@
       });
       polygon.bindTooltip('Muestra ' + (sampleIndex + 1) + ' · clic para editar');
       polygon.on('click', function (event) {
+        L.DomEvent.stopPropagation(event);
         if (calibrationAddPoint && selected) {
           sample.latlngs.push([event.latlng.lat, event.latlng.lng]);
           calibrationAddPoint = false;
@@ -3260,6 +3263,18 @@
         renderCalibrationSamples();
         syncCalibrationUi();
       });
+      if (selected) {
+        polygon.on('dblclick', function (event) {
+          L.DomEvent.stopPropagation(event);
+          L.DomEvent.preventDefault(event);
+          sample.latlngs.push([event.latlng.lat, event.latlng.lng]);
+          calibrationAddPoint = false;
+          calibrationReady = false;
+          renderCalibrationSamples();
+          syncCalibrationUi();
+          setMapStatus('Punto añadido a la copa ' + (sampleIndex + 1) + '.', 'ok');
+        });
+      }
       calibrationLayer.addLayer(polygon);
       if (!selected) return;
       var center = calibrationCentroid(sample.latlngs);
@@ -3372,6 +3387,12 @@
     if (addPoint) {
       addPoint.hidden = !calibrationActive || calibrationSelectedIndex < 0;
       addPoint.classList.toggle('is-active', calibrationAddPoint);
+      addPoint.textContent = calibrationAddPoint
+        ? 'Clic en mapa / copa…'
+        : 'Añadir punto';
+      addPoint.title = calibrationAddPoint
+        ? 'Modo activo: haz clic en el borde de la copa seleccionada para añadir el vértice'
+        : 'Añade un vértice a la copa seleccionada (luego clic en el mapa)';
     }
     if (reset) reset.hidden = !calibrationActive && !calibrationReady;
     if (confirm) {
@@ -3483,7 +3504,7 @@
       // quedan debajo del canvas de copas y no reciben clics tras Analizar.
       var pane = map.createPane('airciEdit');
       pane.style.zIndex = '670';
-      pane.style.pointerEvents = 'auto';
+      pane.style.pointerEvents = 'none';
     }
     return 'airciEdit';
   }
@@ -3563,6 +3584,7 @@
     );
 
     function shiftRing(dLat, dLng) {
+      if (!dLat && !dLng) return;
       tree.latlngs = tree.latlngs.map(function (point) {
         return [point[0] + dLat, point[1] + dLng];
       });
@@ -3576,8 +3598,10 @@
 
     // Arrastrar toda la copa desde el relleno (lo más fácil con muchos puntos)
     var bodyDrag = null;
+    var moveDragActive = false;
     editable.on('mousedown', function (event) {
       if (!event.originalEvent || event.originalEvent.button !== 0) return;
+      if (moveDragActive) return;
       L.DomEvent.stopPropagation(event);
       L.DomEvent.preventDefault(event);
       if (map.dragging && map.dragging.enabled()) map.dragging.disable();
@@ -3588,7 +3612,7 @@
       };
     });
     function onBodyMove(event) {
-      if (!bodyDrag) return;
+      if (!bodyDrag || moveDragActive) return;
       var dLat = event.latlng.lat - bodyDrag.lat;
       var dLng = event.latlng.lng - bodyDrag.lng;
       if (!dLat && !dLng) return;
@@ -3603,7 +3627,10 @@
       var moved = bodyDrag.moved;
       bodyDrag = null;
       if (map.dragging) map.dragging.enable();
-      if (moved) commitMove('Copa movida y guardada.');
+      if (moved) {
+        // Reponer vértices en la posición nueva; si no, queda la «sombra» en el sitio viejo.
+        commitMove('Copa movida y guardada.', { redraw: true });
+      }
     }
     map.on('mousemove', onBodyMove);
     map.on('mouseup', onBodyUp);
@@ -3644,6 +3671,8 @@
       moveMarker.bindTooltip('Arrastra para mover toda la copa');
       var moveStart = null;
       moveMarker.on('dragstart', function () {
+        moveDragActive = true;
+        bodyDrag = null;
         var origin = calibrationCentroid(tree.latlngs);
         moveStart = { lat: origin[0], lng: origin[1] };
         if (map.dragging) map.dragging.disable();
@@ -3651,19 +3680,18 @@
       moveMarker.on('drag', function (event) {
         if (!moveStart) return;
         var at = event.target.getLatLng();
-        editable.setLatLngs(
-          tree.latlngs.map(function (point) {
-            return [point[0] + at.lat - moveStart.lat, point[1] + at.lng - moveStart.lng];
-          })
-        );
+        // Incremental: actualiza latlngs de verdad (no solo preview), evita snap-back.
+        var dLat = at.lat - moveStart.lat;
+        var dLng = at.lng - moveStart.lng;
+        if (!dLat && !dLng) return;
+        moveStart = { lat: at.lat, lng: at.lng };
+        shiftRing(dLat, dLng);
       });
-      moveMarker.on('dragend', function (event) {
-        if (!moveStart) return;
-        var at = event.target.getLatLng();
-        shiftRing(at.lat - moveStart.lat, at.lng - moveStart.lng);
+      moveMarker.on('dragend', function () {
         moveStart = null;
+        moveDragActive = false;
         if (map.dragging) map.dragging.enable();
-        commitMove('Copa movida y guardada.');
+        commitMove('Copa movida y guardada.', { redraw: true });
       });
 
       // Con muchos puntos: vértices un poco más chicos, pero siempre arrastrables.
@@ -5659,9 +5687,16 @@
     if (!map.getPane('airciProfessional')) {
       var professionalPane = map.createPane('airciProfessional');
       professionalPane.style.zIndex = '650';
-      professionalPane.style.pointerEvents = 'auto';
+      // Solo las copas dibujadas capturan clic (clase leaflet-interactive).
+      professionalPane.style.pointerEvents = 'none';
     }
     ensureAirciEditPane();
+    if (map.getPane('airciCalibration')) {
+      map.getPane('airciCalibration').style.pointerEvents = 'none';
+    }
+    if (map.getPane('airciEdit')) {
+      map.getPane('airciEdit').style.pointerEvents = 'none';
+    }
     map.setView([23.6, -102.5], 5);
     try {
       var saved = localStorage.getItem(BASEMAP_KEY);
@@ -6326,9 +6361,9 @@
       syncCalibrationUi();
       if (calibrationAddPoint) {
         setMapStatus(
-          'Modo añadir punto activo · clic dentro o junto a la copa ' +
+          'Modo añadir punto · ahora haz CLIC en el borde de la copa ' +
             (calibrationSelectedIndex + 1) +
-            ' para pintar el vértice.',
+            ' (o doble clic sobre ella).',
           'ok'
         );
       } else {

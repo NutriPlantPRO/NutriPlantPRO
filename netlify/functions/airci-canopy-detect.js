@@ -112,8 +112,9 @@ async function recalculateResult(supabase, resultId) {
   return { ok: true, stats: data };
 }
 
-function normalizePolygon(value) {
-  if (!Array.isArray(value) || value.length < 3 || value.length > 80) return null;
+function normalizePolygon(value, maxPoints) {
+  const limit = Math.max(16, Math.min(Number(maxPoints) || 400, 800));
+  if (!Array.isArray(value) || value.length < 3 || value.length > limit) return null;
   const ring = value.map((point) => {
     if (!Array.isArray(point) || point.length < 2) return null;
     const lat = finite(point[0]);
@@ -456,7 +457,8 @@ exports.handler = async function handler(event) {
     if (resultError) return json(500, { ok: false, error: resultError.message });
     if (!result) return json(404, { ok: false, error: 'Resultado no encontrado.' });
     const tree = body.tree && typeof body.tree === 'object' ? body.tree : {};
-    const polygon = normalizePolygon(tree.polygon_json);
+    // Copas IA suelen tener muchos vértices; el tope viejo (80) hacía fallar el guardado al mover.
+    const polygon = normalizePolygon(tree.polygon_json, 500);
     const centerLat = finite(tree.center_lat);
     const centerLng = finite(tree.center_lng);
 

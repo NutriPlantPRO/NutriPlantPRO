@@ -665,6 +665,15 @@ function hydroSaveData() {
       obj.sections.hidroponia = payload;
       localStorage.setItem(key, JSON.stringify(obj));
     }
+    // Mantener currentProject al día (si no, al regresar puede reaparecer lo borrado).
+    try {
+      if (window.currentProject && window.currentProject.id === pid) {
+        window.currentProject.hidroponia = Object.assign({}, payload);
+        if (window.currentProject.sections) {
+          window.currentProject.sections.hidroponia = Object.assign({}, payload);
+        }
+      }
+    } catch (eSync) {}
   } catch (e) {
     console.warn('⚠️ Error guardando Hidroponia:', e);
   }
@@ -2117,6 +2126,84 @@ function hydroAddFert() {
   });
 }
 
+function hydroIsAcidMaterialId(id) {
+  const s = String(id || '');
+  return s.indexOf('acido_nitrico') >= 0 ||
+    s.indexOf('acido_fosforico') >= 0 ||
+    s.indexOf('acido_sulfurico') >= 0;
+}
+
+function hydroAcidElementForId(id) {
+  const s = String(id || '');
+  if (s.indexOf('nitrico') >= 0) return 'N_NO3';
+  if (s.indexOf('fosforico') >= 0) return 'P';
+  return 'S';
+}
+
+/** Material ácido con unit/density/% para dosificar por L (catálogo o fallback). */
+function hydroResolveAcidMaterial(acidId, materials) {
+  const id = acidId || 'acido_nitrico_55';
+  const mats = Array.isArray(materials) ? materials : getAllHydroMaterials();
+  let mat = mats.find(m => m && m.id === id) || null;
+  if (mat && String(mat.unit || '').toUpperCase() === 'L' && parseFloat(mat.density) > 0) return mat;
+  const meta = HYDRO_WATER_ACIDS[id] || HYDRO_WATER_ACIDS.acido_nitrico_55;
+  const fallback = {
+    id: id,
+    name: (meta && (meta.nameEs || meta.nameEn)) || id,
+    unit: 'L',
+    density: (meta && meta.densityKgL) || (mat && mat.density) || 1.4,
+    N_NO3: id.indexOf('nitrico') >= 0 ? 12.2 : (parseFloat(mat && mat.N_NO3) || 0),
+    N_NH4: 0,
+    P: id.indexOf('fosforico') >= 0 ? ((id.indexOf('85') >= 0 ? 61 : 54) / 2.291) : (parseFloat(mat && mat.P) || 0),
+    S: id.indexOf('sulfurico') >= 0 ? (96 / 3) : (parseFloat(mat && mat.S) || 0),
+    K: 0, Ca: 0, Mg: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, Cl: 0
+  };
+  if (mat) {
+    return Object.assign({}, mat, {
+      unit: 'L',
+      density: parseFloat(mat.density) > 0 ? parseFloat(mat.density) : fallback.density,
+      N_NO3: parseFloat(mat.N_NO3) > 0 ? parseFloat(mat.N_NO3) : fallback.N_NO3,
+      P: parseFloat(mat.P) > 0 ? parseFloat(mat.P) : fallback.P,
+      S: parseFloat(mat.S) > 0 ? parseFloat(mat.S) : fallback.S
+    });
+  }
+  return fallback;
+}
+
+/** L de ácido = (mL/m³ del análisis) × volumen hidro / 1000 */
+function hydroAcidDoseLitersFromAnalysis(preferredAcidId) {
+  const acidCtx = hydroResolveAcidContext();
+  const calc = acidCtx && acidCtx.calc;
+  const vol = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
+  if (!calc || !(calc.mlPerM3 > 0) || !(vol > 0)) {
+    return { liters: 0, acidId: preferredAcidId || null, calc: null };
+  }
+  const acidId = preferredAcidId || calc.acidId || 'acido_nitrico_55';
+  return {
+    liters: (calc.mlPerM3 * vol) / 1000,
+    acidId: acidId,
+    calc: calc,
+    mlPerM3: calc.mlPerM3
+  };
+}
+
+/** Configura fila de ácido: dosis (L) + tanque C + modo producto. */
+function hydroApplyAcidDoseToFertRow(fert, acidId, materials) {
+  if (!fert) return null;
+  const id = acidId || fert.materialId || 'acido_nitrico_55';
+  const mat = hydroResolveAcidMaterial(id, materials);
+  const doseInfo = hydroAcidDoseLitersFromAnalysis(id);
+  fert.materialId = mat.id;
+  fert.element = hydroAcidElementForId(mat.id);
+  fert.calcMode = 'product';
+  fert.tank = 'C';
+  fert.autoOrder = 1;
+  fert.targetPpm = 0;
+  if (doseInfo.liters > 0) fert.productTotalL = doseInfo.liters;
+  else if (!(parseFloat(fert.productTotalL) > 0)) fert.productTotalL = 0;
+  return { fert: fert, mat: mat, doseInfo: doseInfo };
+}
+
 function hydroAutoCalculateSolution() {
   const stage = hydroGetActiveStage();
   if (!stage) return;
@@ -2158,30 +2245,33 @@ function hydroAutoCalculateSolution() {
     return den > 0 ? (parseFloat(mat?.[numerator]) || 0) / den : 0;
   };
 
-  // El ácido (mL/m³ del análisis) entra primero y descuenta su aporte de N, P o S.
-  const acidCtx = hydroResolveAcidContext();
-  const acidCalc = acidCtx.calc;
-  const hydroVolForAcid = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
-  if (acidCalc && acidCalc.mlPerM3 > 0 && hydroVolForAcid > 0) {
-    if (acidCtx.analysis && acidCtx.analysis.id && !hydroState.waterAnalysisId) {
-      hydroState.waterAnalysisId = acidCtx.analysis.id;
-      hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
-    }
-    const acidId = acidCalc.acidId || 'acido_nitrico_55';
-    if (byId(acidId)) {
-      const totalLiters = (acidCalc.mlPerM3 * hydroVolForAcid) / 1000;
-      if (totalLiters > 0) {
-        hydroState.fertilizers.push({
-          id: 'fert_auto_acid_' + Date.now(),
-          materialId: acidId,
-          element: acidId.indexOf('nitrico') >= 0 ? 'N_NO3' : (acidId.indexOf('fosforico') >= 0 ? 'P' : 'S'),
-          targetPpm: 0,
-          calcMode: 'product',
-          productTotalL: totalLiters,
-          tank: 'C',
-          autoOrder: 1
-        });
-      }
+  // 0) PRIMERO: ácido del análisis (mL/m³ → L totales) en tanque C; su aporte resta N/P/S.
+  const doseInfo = hydroAcidDoseLitersFromAnalysis();
+  let acidIncluded = false;
+  if (doseInfo.liters > 0 && doseInfo.acidId) {
+    const acidMat = hydroResolveAcidMaterial(doseInfo.acidId, materials);
+    if (!byId(acidMat.id)) materials.push(acidMat);
+    const acidRow = {
+      id: 'fert_auto_acid_' + Date.now(),
+      materialId: acidMat.id,
+      element: hydroAcidElementForId(acidMat.id),
+      targetPpm: 0,
+      calcMode: 'product',
+      productTotalL: doseInfo.liters,
+      tank: 'C',
+      autoOrder: 1
+    };
+    hydroState.fertilizers.push(acidRow);
+    acidIncluded = true;
+    if (doseInfo.calc && doseInfo.calc.acidId && !hydroState.waterAnalysisId && doseInfo.calc) {
+      // mantener resumen si había contexto
+      try {
+        const ctx = hydroResolveAcidContext();
+        if (ctx.analysis && ctx.analysis.id) {
+          hydroState.waterAnalysisId = ctx.analysis.id;
+          hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
+        }
+      } catch (e) {}
     }
   }
 
@@ -2207,12 +2297,13 @@ function hydroAutoCalculateSolution() {
   // 5) SOP completa solamente el potasio que todavía falta (también aporta S).
   addTargetRow('sop', 'K', remaining('K'), 'B', 41);
 
+  // 5b) Nitrato restante: nitrato de calcio (después del ácido / NKS / nitrato Mg).
+  addTargetRow('nitrato_calcio_granular', 'N_NO3', remaining('N_NO3'), 'A', 42);
+
   // 6) El amonio restante se completa con sulfato de amonio (también aporta S).
   addTargetRow('sulfato_amonio_soluble', 'N_NH4', remaining('N_NH4'), 'B', 50);
 
   // 7) Sulfatos de Mg: antes de micros para que quede junto a las dosis altas de macros.
-  // Primero el Mg restante; si aún falta S, se completa con sulfato de Mg.
-  // El S casi siempre se pasa o falta un poco: se cierra aquí y se reporta.
   const mgSulfateRow = addTargetRow('sulfato_magnesio', 'Mg', remaining('Mg'), 'B', 55);
   const sStillNeeded = remaining('S');
   if (sStillNeeded > 0.05) {
@@ -2244,6 +2335,7 @@ function hydroAutoCalculateSolution() {
   renderHydroFertTable();
   renderHydroFertTotals();
   renderHydroVolumeCard();
+  renderHydroAcidSummary();
   hydroScheduleSave();
 
   const finalTotals = hydroGetFertTotalsPpm();
@@ -2263,6 +2355,18 @@ function hydroAutoCalculateSolution() {
         ' Sulfur (S): short by ~' + Math.abs(sDelta).toFixed(2) + ' ppm (common when closing with sulfates).'
       );
   }
+  let acidNote = '';
+  if (acidIncluded && doseInfo.liters > 0) {
+    acidNote = hydroT(
+      ' Ácido primero (tanque C): ' + doseInfo.liters.toFixed(3) + ' L (' + Number(doseInfo.mlPerM3).toFixed(2) + ' mL/m³).',
+      ' Acid first (tank C): ' + doseInfo.liters.toFixed(3) + ' L (' + Number(doseInfo.mlPerM3).toFixed(2) + ' mL/m³).'
+    );
+  } else if (!acidIncluded) {
+    acidNote = hydroT(
+      ' Sin dosis de ácido del análisis (vincula agua con HCO₃⁻/CO₃²⁻ o revisa Análisis → Agua).',
+      ' No acid dose from analysis (link water with HCO₃⁻/CO₃²⁻ or check Analysis → Water).'
+    );
+  }
   if (window.showMessage) {
     const base = unresolved.length
       ? hydroT(
@@ -2270,13 +2374,16 @@ function hydroAutoCalculateSolution() {
         'Proposal calculated. Review nutrients still pending: '
       ) + unresolved.map(hydroLabelPlain).join(', ')
       : hydroT('Propuesta automática calculada. Revisa compatibilidad y dosis antes de aplicarla.', 'Automatic proposal calculated. Review compatibility and doses before applying.');
-    window.showMessage(base + sNote, (unresolved.length || Math.abs(sDelta) > 0.05) ? 'warning' : 'success');
+    window.showMessage(base + acidNote + sNote, (unresolved.length || Math.abs(sDelta) > 0.05 || !acidIncluded) ? 'warning' : 'success');
   }
 }
 
 /** Para una fila con materialId devuelve { dose, comp, contributions } en elemental */
 function hydroFertRowComputed(f) {
-  const mat = getAllHydroMaterials().find(m => m.id === f.materialId);
+  let mat = getAllHydroMaterials().find(m => m.id === f.materialId);
+  if (hydroIsAcidMaterialId(f.materialId)) {
+    mat = hydroResolveAcidMaterial(f.materialId, mat ? [mat].concat(getAllHydroMaterials()) : getAllHydroMaterials());
+  }
   const comp = mat ? { ...mat } : {};
   HYDRO_PPM_NUTRIENTS.forEach(n => { if (comp[n] == null) comp[n] = 0; });
   const unit = String(comp.unit || '').toUpperCase();
@@ -2286,6 +2393,11 @@ function hydroFertRowComputed(f) {
 
   // Modo por producto total para líquidos (ej. ácidos): L totales -> kg eq -> ppm producto (dose).
   if (f && f.calcMode === 'product' && unit === 'L' && density > 0) {
+    const productTotalL = parseFloat(f.productTotalL) || 0;
+    const kgEq = productTotalL * density;
+    dose = vol > 0 ? (kgEq * 1000 / vol) : 0;
+  } else if (f && hydroIsAcidMaterialId(f.materialId) && unit === 'L' && density > 0 && (parseFloat(f.productTotalL) || 0) > 0) {
+    // Si es ácido con L capturados, forzar aporte aunque calcMode se haya perdido.
     const productTotalL = parseFloat(f.productTotalL) || 0;
     const kgEq = productTotalL * density;
     dose = vol > 0 ? (kgEq * 1000 / vol) : 0;
@@ -2498,8 +2610,8 @@ function hydroFertRowProductTotal(f, materials) {
   const unit = String(mat?.unit || '').toUpperCase();
   const density = parseFloat(mat?.density);
   if (unit === 'L' && density > 0) {
-    // En modo "product", respetar el valor ingresado por el usuario.
-    if (f && f.calcMode === 'product') {
+    // En modo "product" (ácidos): respetar L totales capturados.
+    if (f && (f.calcMode === 'product' || hydroIsAcidMaterialId(f.materialId))) {
       const manualL = parseFloat(f.productTotalL) || 0;
       return { value: manualL, unit: 'L', kgEquivalent };
     }
@@ -2563,11 +2675,13 @@ function renderHydroFertTable() {
       const val = v > 0 ? v.toFixed(2) : '';
       return `<td class="${thClass(n)}"><input class="hydro-input hydro-contrib-input" data-fert-id="${f.id}" data-fert-element="${n}" type="number" step="0.01" min="0" placeholder="—" value="${val}" title="ppm de ${hydroLabelPlain(n)} que aporta este fertilizante"></td>`;
     }).join('');
-    const mat = materials.find(m => m && m.id === f.materialId);
+    const mat = materials.find(m => m && m.id === f.materialId) ||
+      (hydroIsAcidMaterialId(f.materialId) ? hydroResolveAcidMaterial(f.materialId, materials) : null);
     const matUnit = String(mat?.unit || '').toUpperCase();
     const matDensity = parseFloat(mat?.density) || 0;
     const isLiquid = matUnit === 'L' && matDensity > 0;
-    const liquidInputValue = (f && f.calcMode === 'product')
+    const isAcid = hydroIsAcidMaterialId(f.materialId);
+    const liquidInputValue = ((f && f.calcMode === 'product') || isAcid)
       ? (parseFloat(f.productTotalL) || 0)
       : total.value;
     const liquidDisplay = hydroDisplayLiquidL(liquidInputValue);
@@ -3247,7 +3361,9 @@ function bindHydroEvents(container) {
       hydroState.fertilizers = hydroState.fertilizers.filter(f => f.id !== id);
       renderHydroFertTable();
       renderHydroFertTotals();
-      hydroScheduleSave();
+      renderHydroVolumeCard();
+      hydroFlushSaveNow();
+      return;
     }
   });
 
@@ -3449,10 +3565,15 @@ function bindHydroEvents(container) {
       const fert = hydroState.fertilizers.find(f => f.id === fertId);
       if (fert) {
         fert.materialId = value;
-        // Al cambiar material, iniciar en modo ppm para evitar arrastrar litros de otro producto.
-        fert.calcMode = 'ppm';
-        if (!fert.element) fert.element = 'K';
-        if (fert.productTotalL == null) fert.productTotalL = 0;
+        if (hydroIsAcidMaterialId(value)) {
+          // Ácidos: dosis en L + tanque C; el aporte (N/P/S) se calcula con % y densidad.
+          hydroApplyAcidDoseToFertRow(fert, value, getAllHydroMaterials());
+        } else {
+          fert.calcMode = 'ppm';
+          if (!fert.element) fert.element = 'K';
+          if (fert.productTotalL == null) fert.productTotalL = 0;
+          if (!fert.tank) fert.tank = 'A';
+        }
         renderHydroFertTable();
         renderHydroFertTotals();
         hydroScheduleSave();
@@ -3463,6 +3584,15 @@ function bindHydroEvents(container) {
       const elem = target.getAttribute('data-fert-element');
       const fert = hydroState.fertilizers.find(f => f.id === fertId);
       if (fert && elem) {
+        // En ácidos la dosis va en L (producto); no pasar a modo ppm por editar un aporte.
+        if (hydroIsAcidMaterialId(fert.materialId)) {
+          fert.calcMode = 'product';
+          fert.tank = fert.tank || 'C';
+          renderHydroFertTable();
+          renderHydroFertTotals();
+          hydroScheduleSave();
+          return;
+        }
         fert.calcMode = 'ppm';
         fert.element = elem;
         fert.targetPpm = parseFloat(target.value) || 0;
@@ -3487,11 +3617,14 @@ function bindHydroEvents(container) {
     if (target.classList && target.classList.contains('hydro-tank-select')) {
       const fert = hydroState.fertilizers.find(f => f.id === fertId);
       if (fert) {
-        fert.tank = target.value || 'A';
+        const nextTank = target.value || 'A';
+        fert.tank = nextTank;
+        // Actualizar resumen por tanque sin reconstruir toda la tabla (evita “no cambió”).
         renderHydroVolumeCard();
-        renderHydroFertTable();
-        hydroScheduleSave();
+        renderHydroFertTotals();
+        hydroFlushSaveNow();
       }
+      return;
     }
   });
 
@@ -3697,6 +3830,7 @@ window.hydroFormatProductAmount = hydroFormatProductAmount;
 window.hydroFormatProductAmountWithUnit = hydroFormatProductAmountWithUnit;
 window.initHydroponiaUI = initHydroponiaUI;
 window.saveHydroponiaData = hydroSaveData;
+window.hydroFlushSaveNow = hydroFlushSaveNow;
 window.openHydroNewMaterialModal = openHydroNewMaterialModal;
 window.openEditHydroCustomMaterial = openEditHydroCustomMaterial;
 window.openHydroPreloadedCatalogModal = openHydroPreloadedCatalogModal;

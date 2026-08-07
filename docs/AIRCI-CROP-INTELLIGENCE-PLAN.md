@@ -4,7 +4,7 @@ Documento vivo para definir e implementar el módulo **AirCI**: análisis de hue
 
 **Ruta prevista:** `https://nutriplantpro.com/airCI`  
 **Acceso:** solo uso interno (admin). No es módulo público de usuarios.  
-**Estado:** F2 MVP (copas + semáforo). Fenología (flor/brote/vegetativo) aplazada hasta definirla.
+**Estado:** plataforma F2 parcial (orto + cloud + UI). La **detección automática aún no cumple** el objetivo en predios con pasto; ver arquitectura en `docs/AIRCI-CANOPY-DETECTION-ARCHITECTURE.md`. Fenología aplazada.
 
 ---
 

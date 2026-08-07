@@ -897,12 +897,12 @@ class ProjectStorage {
         }
       }
       // 🟢 Sincronizar con la nube.
-      // - vpdAnalysis/fertirriego: sync inmediato + cancelar debounce del mismo id
-      //   para evitar que un payload viejo llegue después y pise datos recientes.
+      // - vpdAnalysis/fertirriego/granular/hidroponia: sync inmediato + cancelar debounce del mismo id
+      //   para evitar que un payload viejo llegue después y pise datos recientes (p. ej. filas borradas).
       // - resto de secciones: debounce estándar.
       if (!skippedNoopSave) {
         const sp = typeof window !== 'undefined' ? window.nutriplantSupabaseProjects : null;
-        if ((section === 'vpdAnalysis' || section === 'climateAnalysis' || section === 'fertirriego' || section === 'granular') && sp && typeof sp.syncProjectNow === 'function') {
+        if ((section === 'vpdAnalysis' || section === 'climateAnalysis' || section === 'fertirriego' || section === 'granular' || section === 'hidroponia') && sp && typeof sp.syncProjectNow === 'function') {
           try {
             if (typeof sp.cancelScheduledProjectCloudSync === 'function') {
               sp.cancelScheduledProjectCloudSync(projectId);

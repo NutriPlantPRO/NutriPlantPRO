@@ -2088,6 +2088,12 @@ function selectSection(name, el) {
     if (previousSection === 'Ubicación' && typeof window.np_captureRadarSessionState === 'function') {
       try { window.np_captureRadarSessionState(); } catch (eRadarCap) { console.warn('radar session capture:', eRadarCap); }
     }
+    if (previousSection === 'Hidroponia') {
+      try {
+        if (typeof window.hydroFlushSaveNow === 'function') window.hydroFlushSaveNow();
+        else if (typeof window.saveHydroponiaData === 'function') window.saveHydroponiaData();
+      } catch (eHydroLeave) { console.warn('hydro flush on leave:', eHydroLeave); }
+    }
     var subTab = getCurrentSubTabForSection(previousSection);
     var scrollKey = subTab ? previousSection + '|' + subTab : previousSection;
     sectionScrollPositions[scrollKey] = getScrollPosition();
