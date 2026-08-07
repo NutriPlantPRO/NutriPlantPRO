@@ -5830,6 +5830,14 @@
       padding: 4px 10px;
       font-size: 12px;
     }
+    .np-mapa-edge-detail-actions .np-mapa-edge-detail-unlink {
+      border-color: rgba(220, 38, 38, 0.32);
+      color: #b91c1c;
+    }
+    .np-mapa-edge-detail-actions .np-mapa-edge-detail-unlink:hover {
+      background: rgba(254, 226, 226, 0.78);
+      border-color: rgba(220, 38, 38, 0.5);
+    }
     .np-mapa-edge-detail-arrow {
       text-align: center;
       color: #94a3b8;
@@ -30634,6 +30642,8 @@
           from: 'item:' + r.from_item_id,
           to: 'item:' + r.to_item_id,
           kind: 'sem',
+          relation_id: r.id,
+          relation_store: 'plan_pro',
           relation_type: r.relation_type,
           label: planProRelationTypeLabel(r.relation_type, false)
         };
@@ -30646,6 +30656,8 @@
         from: fromKey,
         to: toKey,
         kind: 'sem',
+        relation_id: r.id,
+        relation_store: 'nutri',
         relation_type: r.relation_type,
         label: planProRelationTypeLabel(r.relation_type, false)
       });
@@ -31293,6 +31305,41 @@
     }
   }
 
+  function buildMapaEdgeUnlinkAction(edgeMeta) {
+    if (!edgeMeta || !edgeMeta.relation_id) return null;
+    var actionWrap = document.createElement('div');
+    actionWrap.className = 'np-mapa-edge-detail-actions';
+    var unlinkBtn = document.createElement('button');
+    unlinkBtn.type = 'button';
+    unlinkBtn.className = 'btn btn-ghost np-mapa-edge-detail-unlink';
+    unlinkBtn.textContent = 'Desrelacionar';
+    unlinkBtn.setAttribute('aria-label', 'Eliminar esta relación');
+    unlinkBtn.addEventListener('click', async function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!window.confirm('¿Quieres eliminar esta relación?')) return;
+      unlinkBtn.disabled = true;
+      unlinkBtn.textContent = 'Eliminando…';
+      try {
+        npCloudSyncTouch();
+        if (edgeMeta.relation_store === 'nutri') {
+          await deleteNutriRelation(edgeMeta.relation_id);
+        } else {
+          await deletePlanProRelation(edgeMeta.relation_id);
+        }
+        closeMapaEdgeDetail();
+        showToast('Relación eliminada.');
+        scheduleRenderPlanProMapa();
+      } catch (e) {
+        unlinkBtn.disabled = false;
+        unlinkBtn.textContent = 'Desrelacionar';
+        showToast((e && e.message) || 'No se pudo eliminar la relación.', true);
+      }
+    });
+    actionWrap.appendChild(unlinkBtn);
+    return actionWrap;
+  }
+
   function showMapaEdgeDetail(fromNode, toNode, edgeMeta) {
     var panel = $('npMapaEdgeDetail');
     var body = $('npMapaEdgeDetailBody');
@@ -31318,6 +31365,8 @@
     arrow.textContent = '↓';
     body.appendChild(arrow);
     body.appendChild(buildMapaEdgeEndCard('Destino', toDetail));
+    var unlinkAction = buildMapaEdgeUnlinkAction(edgeMeta);
+    if (unlinkAction) body.appendChild(unlinkAction);
     panel.classList.remove('np-hide');
     panel.setAttribute('aria-hidden', 'false');
   }

@@ -28,6 +28,10 @@ supabase-server-config.json
 # Dependencias Node (nunca subir; cada quien hace npm install)
 node_modules/
 
+# Paquete temporal de despliegue y SDK descargado localmente
+airci-canopy-worker.zip
+gcloud init/
+
 
 
 
