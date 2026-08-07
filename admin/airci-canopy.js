@@ -2344,12 +2344,33 @@
       )
     );
 
-    // Mapa de evidencia de planta (contraste/textura/sombra/color según contexto)
+    // Semillas: visión IA (como ojo humano) O picos locales
     var plantPack = buildPlantnessMap(georaster, veg.blurPx || 10, veg.exg, scene);
     var plantMap = plantPack.plant;
     var peakMin = 20;
     var seedMask = null;
-    var rawSeeds = findCanopySeeds(plantMap, seedMask, w, h, winR, peakMin);
+    var rawSeeds;
+    var usedVision = false;
+    if (Array.isArray(opts.visionSeeds) && opts.visionSeeds.length) {
+      usedVision = true;
+      rawSeeds = opts.visionSeeds
+        .map(function (s) {
+          var x = Math.round(Number(s.x));
+          var y = Math.round(Number(s.y));
+          if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+          if (x < 0 || y < 0 || x >= w || y >= h) return null;
+          return {
+            x: x,
+            y: y,
+            v: Number(s.v) > 0 ? Number(s.v) : 200,
+            rPx: Number(s.rPx) > 0 ? Number(s.rPx) : null,
+            fromVision: true
+          };
+        })
+        .filter(Boolean);
+    } else {
+      rawSeeds = findCanopySeeds(plantMap, seedMask, w, h, winR, peakMin);
+    }
     var seeds = nmsSeeds(rawSeeds, spacingPx * NMS_FRAC);
 
     var orthoHa =
@@ -2360,7 +2381,13 @@
       targetDens != null && orthoHa != null && orthoHa > 0.01
         ? Math.round(targetDens * orthoHa)
         : null;
-    if (expectedTrees != null && expectedTrees >= 3 && seeds.length > expectedTrees * 1.45) {
+    // Con visión no recortar agresivo: la IA ya eligió plantas
+    if (
+      !usedVision &&
+      expectedTrees != null &&
+      expectedTrees >= 3 &&
+      seeds.length > expectedTrees * 1.45
+    ) {
       seeds = seeds.slice(0, Math.max(expectedTrees, Math.ceil(expectedTrees * 1.35)));
     }
 
@@ -2377,20 +2404,40 @@
       } else {
         spacingPx = 0.55 * spacingPx + 0.45 * refined;
       }
-      seeds = nmsSeeds(rawSeeds, spacingPx * NMS_FRAC);
-      if (expectedTrees != null && expectedTrees >= 3 && seeds.length > expectedTrees * 1.45) {
-        seeds = seeds.slice(0, Math.max(expectedTrees, Math.ceil(expectedTrees * 1.35)));
+      if (!usedVision) {
+        seeds = nmsSeeds(rawSeeds, spacingPx * NMS_FRAC);
+        if (expectedTrees != null && expectedTrees >= 3 && seeds.length > expectedTrees * 1.45) {
+          seeds = seeds.slice(0, Math.max(expectedTrees, Math.ceil(expectedTrees * 1.35)));
+        }
+      } else {
+        // Visión: NMS más suave (0.4×spacing) para no borrar vecinos reales
+        seeds = nmsSeeds(rawSeeds, spacingPx * 0.4);
       }
     }
 
     var searchR = Math.max(winR + 2, Math.round(spacingPx * SEARCH_RADIUS_FRAC));
     searchR = Math.min(searchR, Math.round(spacingPx * 0.48));
-    // Radio de búsqueda ≈ media copa esperada (no más que medio spacing)
     if (gsdM != null && gsdM > 0) {
       searchR = Math.min(
         searchR,
         Math.max(winR + 2, Math.round((scene.diamMaxM * 0.55) / gsdM))
       );
+    }
+    // Si la visión dio radio por planta, usarlo como tope de búsqueda
+    if (usedVision) {
+      var rMed = median(
+        seeds
+          .map(function (s) {
+            return s.rPx;
+          })
+          .filter(function (r) {
+            return r != null && r > 0;
+          })
+      );
+      if (rMed != null && rMed > 4) {
+        searchR = Math.max(searchR, Math.round(rMed * 1.15));
+        searchR = Math.min(searchR, Math.round(spacingPx * 0.5));
+      }
     }
 
     // 2) Segmentar localmente + elipse; labels para fenología
@@ -2511,6 +2558,14 @@
       var ev = evaluatePlantEvidence(c, scene, gsdM);
       c.plantEvidence = ev.score;
       c.plantReasons = ev.reasons;
+      // Semilla de visión: no tirar por evidencia local débil
+      if (c.seed && c.seed.fromVision) {
+        if (ev.score < 28) {
+          excluded.evidence++;
+          return false;
+        }
+        return true;
+      }
       if (!ev.ok) {
         excluded.evidence++;
         return false;
@@ -2734,8 +2789,9 @@
           minEvidence: scene.minEvidence
         },
         searchRadiusPx: searchR,
-        detectionMode: 'center_ellipse',
+        detectionMode: usedVision ? 'vision_plants' : 'center_ellipse',
         plantness: true,
+        visionSeeds: usedVision ? rawSeeds.length : 0,
         detectionProfile: veg.profile || P.mode,
         calibration: P.mode === 'calib' ? opts.calibration : null,
         cropHint: P.cropHint || '',

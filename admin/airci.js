@@ -2240,9 +2240,9 @@
     return null;
   }
 
-  /** Dos recortes representativos del orto (JPEG) para calibrar la IA. */
-  function makeCalibrationTiles(georaster, outSize) {
-    outSize = outSize || 448;
+  /** Recortes del orto con bbox en píxeles (para mapear detecciones IA → geo). */
+  function makeDetectionTiles(georaster, outSize) {
+    outSize = outSize || 512;
     if (!georaster || !window.AirCICanopy) return [];
     var bands = AirCICanopy.getBandArrays(georaster);
     if (!bands) return [];
@@ -2251,18 +2251,19 @@
     var maxR = bands.maxs[0];
     var maxG = bands.maxs[1] != null ? bands.maxs[1] : bands.maxs[0];
     var maxB = bands.maxs[2] != null ? bands.maxs[2] : bands.maxs[0];
-    var tileW = Math.max(64, Math.floor(w * 0.42));
-    var tileH = Math.max(64, Math.floor(h * 0.42));
+    // 2 ventanas grandes (~55%) cubren buena parte del predio a bajo costo
+    var tileW = Math.max(96, Math.floor(w * 0.55));
+    var tileH = Math.max(96, Math.floor(h * 0.55));
     var origins = [
       {
         id: 'tile1',
-        x0: Math.max(0, Math.floor(w * 0.08)),
-        y0: Math.max(0, Math.floor(h * 0.2))
+        x0: Math.max(0, Math.floor(w * 0.02)),
+        y0: Math.max(0, Math.floor(h * 0.05))
       },
       {
         id: 'tile2',
-        x0: Math.max(0, Math.floor(w * 0.5)),
-        y0: Math.max(0, Math.floor(h * 0.35))
+        x0: Math.max(0, Math.min(w - tileW, Math.floor(w * 0.43))),
+        y0: Math.max(0, Math.min(h - tileH, Math.floor(h * 0.35)))
       }
     ];
     var out = [];
@@ -2297,10 +2298,102 @@
       ctx.putImageData(img, 0, 0);
       out.push({
         id: o.id,
-        imageBase64: canvas.toDataURL('image/jpeg', 0.7)
+        x0: x0,
+        y0: y0,
+        cw: cw,
+        ch: ch,
+        outSize: outSize,
+        imageBase64: canvas.toDataURL('image/jpeg', 0.72)
       });
     });
     return out;
+  }
+
+  function makeCalibrationTiles(georaster, outSize) {
+    return makeDetectionTiles(georaster, outSize || 448).map(function (t) {
+      return { id: t.id, imageBase64: t.imageBase64 };
+    });
+  }
+
+  /** Visión: marca plantas en RGB (como en el chat), no calibra umbrales. */
+  async function detectPlantsWithAi(model) {
+    var tiles = makeDetectionTiles(currentGeoraster, 512);
+    if (!tiles.length) {
+      throw new Error('No se pudieron generar recortes para visión');
+    }
+    setMapStatus(
+      'IA ' +
+        model.replace('gpt-5.6-', '') +
+        ' · mirando ' +
+        tiles.length +
+        ' fotos y marcando plantas…',
+      'ok'
+    );
+    var r = await apiCanopyAi({
+      action: 'detect_plants',
+      model: model,
+      images: tiles.map(function (t) {
+        return { id: t.id, imageBase64: t.imageBase64 };
+      }),
+      site_id: getSiteId()
+    });
+    if (!r.ok) {
+      throw new Error(r.error || 'Fallo detección visión');
+    }
+    var plants = Array.isArray(r.plants)
+      ? r.plants
+      : r.detection && Array.isArray(r.detection.plants)
+        ? r.detection.plants
+        : [];
+    var byId = Object.create(null);
+    tiles.forEach(function (t) {
+      byId[t.id] = t;
+    });
+    var seeds = [];
+    plants.forEach(function (p) {
+      var tile = byId[p.image_id] || byId[String(p.image_id)];
+      if (!tile) {
+        // fallback: first tile
+        tile = tiles[0];
+      }
+      if (!tile) return;
+      var cx = Number(p.cx);
+      var cy = Number(p.cy);
+      var rn = Number(p.r);
+      if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+      var x = Math.round(tile.x0 + cx * tile.cw);
+      var y = Math.round(tile.y0 + cy * tile.ch);
+      var rPx = Math.max(
+        4,
+        Math.round((Number.isFinite(rn) ? rn : 0.06) * Math.min(tile.cw, tile.ch))
+      );
+      seeds.push({
+        x: x,
+        y: y,
+        v: Math.round(180 + 70 * (Number(p.conf) || 0.85)),
+        rPx: rPx,
+        fromVision: true
+      });
+    });
+    if (r.cost && r.cost.usd_est != null) {
+      setMapStatus(
+        'Visión ' +
+          (r.cost.label || model) +
+          ' · ' +
+          seeds.length +
+          ' plantas en recortes · ~' +
+          fmtUsd4(r.cost.usd_est) +
+          (r.cost.setup ? ' · ejecuta ' + r.cost.setup : ''),
+        r.cost.setup ? 'error' : 'ok'
+      );
+    }
+    refreshAiUsageBar();
+    return {
+      seeds: seeds,
+      notes: (r.detection && r.detection.notes) || '',
+      cost: r.cost || null,
+      tileCount: tiles.length
+    };
   }
 
   async function calibrateDetectionWithAi(model) {
@@ -2349,8 +2442,8 @@
     persistDetectModelChoice();
     setMapStatus(
       useAi
-        ? 'Calibrando con IA ' + model.replace('gpt-5.6-', '') + ' (2 fotos)…'
-        : 'Detectando copas (ExG)…'
+        ? 'IA ' + model.replace('gpt-5.6-', '') + ' · visión de plantas (RGB)…'
+        : 'Detectando copas (local)…'
     );
     var btn = document.getElementById('aciAnalyzeBtn');
     if (btn) btn.disabled = true;
@@ -2361,18 +2454,30 @@
         var savedProf = await loadDetectProfileForSite(siteId);
         var calib = null;
         var calibSource = 'exg';
+        var visionSeeds = null;
 
         if (useAi) {
-          calib = await calibrateDetectionWithAi(model);
-          calibSource = 'ai_calib';
-          setMapStatus(
-            'Criterio listo' +
-              (calib.crop_hint ? ' · ' + calib.crop_hint : '') +
-              ' · detectando todo el predio…',
-            'ok'
-          );
+          var vision = await detectPlantsWithAi(model);
+          visionSeeds = vision.seeds || [];
+          calibSource = 'ai_vision';
+          if (!visionSeeds.length) {
+            setMapStatus(
+              'Visión no marcó plantas en los recortes · reintentando con criterio local…',
+              'error'
+            );
+          } else {
+            setMapStatus(
+              'Visión: ' +
+                visionSeeds.length +
+                ' plantas · ajustando copas…',
+              'ok'
+            );
+          }
+          // Criterio guardado solo como apoyo de forma/spacing si existe
+          if (savedProf && savedProf.params) {
+            calib = savedProf.params;
+          }
         } else if (savedProf && savedProf.params) {
-          // ExG gratis pero con criterio guardado del predio/cultivo
           calib = savedProf.params;
           calibSource = savedProf.level === 'site' ? 'site_profile' : 'crop_default';
           setMapStatus(
@@ -2391,23 +2496,23 @@
           profile: useAi || calib ? 'ai' : 'strict',
           calibration: calib || undefined,
           targetTreesPerHa:
-            Number.isFinite(densHa) && densHa >= 50 && densHa <= 2500 ? densHa : undefined
+            Number.isFinite(densHa) && densHa >= 50 && densHa <= 2500 ? densHa : undefined,
+          visionSeeds: visionSeeds && visionSeeds.length ? visionSeeds : undefined,
+          visionOnly: !!(visionSeeds && visionSeeds.length)
         });
-        if (calib) {
+        if (useAi || calib) {
           result.stats.aiModel = useAi ? model : calibSource;
-          result.stats.aiCalibrated = !!useAi;
+          result.stats.aiCalibrated = false;
+          result.stats.aiVision = !!useAi;
           result.stats.detectSource = calibSource;
-          result.stats.cropHint = calib.crop_hint || (savedProf && savedProf.crop_hint) || '';
+          result.stats.cropHint =
+            (calib && calib.crop_hint) || (savedProf && savedProf.crop_hint) || '';
         }
         applyFlightMatch(result, prevBundle);
         drawCanopies(result);
         document.getElementById('aciMapSub').textContent =
-          'Copas · planta+elipse · ' +
-          (useAi
-            ? 'IA calib. ' + model.replace('gpt-5.6-', '')
-            : calib
-              ? 'perfil ' + (savedProf && savedProf.level === 'site' ? 'predio' : 'cultivo')
-              : 'estructura') +
+          'Copas · ' +
+          (useAi ? 'visión IA ' + model.replace('gpt-5.6-', '') : 'local') +
           (result.stats.targetTreesPerHa != null
             ? ' · dens. ' + Math.round(result.stats.targetTreesPerHa) + '/ha'
             : '') +
@@ -2431,10 +2536,10 @@
               ? ' (ref ~' + result.stats.expectedTrees + ')'
               : '') +
             (useAi
-              ? ' · calibrado (' + model.replace('gpt-5.6-', '') + ')'
+              ? ' · visión ' + model.replace('gpt-5.6-', '')
               : calib
                 ? ' · criterio guardado'
-                : ' · centros+elipse') +
+                : ' · local') +
             (result.stats.truncated ? ' · tope ' + result.stats.maxTrees : ''),
           'ok'
         );
@@ -2442,42 +2547,6 @@
         saveCurrentMetaToSiteStore();
         refreshProjectsUi();
         await persistCanopyResult(result);
-        // Solo guardar criterio si fue calibración IA fresca y el resultado no parece basura
-        var meanConf = result.stats.meanConfidence != null ? result.stats.meanConfidence : 0;
-        var looksSane =
-          useAi &&
-          result.stats.count >= 3 &&
-          meanConf >= 50 &&
-          !(result.stats.excludedTone > result.stats.count * 3);
-        if (looksSane && calib && Object.keys(calib).length) {
-          var saveProf = await persistDetectProfile(calib, {
-            source: 'ai_calib',
-            crop_hint: result.stats.cropHint || '',
-            notes: calib.notes || ''
-          });
-          if (saveProf && saveProf.ok) {
-            setMapStatus(
-              result.stats.count +
-                ' copas · criterio guardado en predio' +
-                (saveProf.crop_key ? ' + cultivo «' + saveProf.crop_key + '»' : ''),
-              'ok'
-            );
-          } else if (saveProf && saveProf.setup) {
-            setMapStatus(
-              result.stats.count +
-                ' copas. Para guardar criterios ejecuta ' +
-                saveProf.setup +
-                ' en Supabase.',
-              'error'
-            );
-          }
-        } else if (useAi && calib && !looksSane) {
-          setMapStatus(
-            result.stats.count +
-              ' copas · criterio NO guardado (detección dudosa; vuelve a Analizar o usa ExG estricto)',
-            'error'
-          );
-        }
       } catch (e) {
         console.error(e);
         setMapStatus('Error analizando: ' + (e.message || e), 'error');

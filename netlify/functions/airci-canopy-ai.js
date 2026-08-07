@@ -1,10 +1,8 @@
 /**
- * AirCI — calibración IA del detector (2 fotos → parámetros ExG).
+ * AirCI — IA de copas:
+ *  - calibrate: 1–2 fotos → parámetros / plant_context
+ *  - detect_plants: 1–2 fotos → lista de plantas (centros) como visión humana RGB
  * POST /api/airci-canopy-ai
- * Authorization: Bearer <supabase admin token>
- * Body: { model, action?: 'calibrate', images: [{ id, imageBase64 }] }
- *
- * Modelos: gpt-5.6-luna | gpt-5.6-terra | gpt-5.6-sol
  */
 'use strict';
 
@@ -432,6 +430,145 @@ async function calibrateWithOpenAI(model, images) {
   };
 }
 
+function normalizePlantDetections(parsed, imageIds) {
+  const src = parsed && typeof parsed === 'object' ? parsed : {};
+  const list = Array.isArray(src.plants)
+    ? src.plants
+    : Array.isArray(src.trees)
+      ? src.trees
+      : Array.isArray(src.detections)
+        ? src.detections
+        : [];
+  const idSet = new Set((imageIds || []).map(String));
+  const plants = [];
+  list.forEach(function (p, i) {
+    if (!p || typeof p !== 'object') return;
+    let cx = Number(p.cx != null ? p.cx : p.x);
+    let cy = Number(p.cy != null ? p.cy : p.y);
+    let r = Number(p.r != null ? p.r : p.radius != null ? p.radius : p.radius_norm);
+    // Accept 0–100 percent by mistake
+    if (cx > 1.5 || cy > 1.5) {
+      cx = cx / 100;
+      cy = cy / 100;
+      if (r > 1.5) r = r / 100;
+    }
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    cx = Math.max(0, Math.min(1, cx));
+    cy = Math.max(0, Math.min(1, cy));
+    if (!Number.isFinite(r) || r <= 0) r = 0.06;
+    r = Math.max(0.02, Math.min(0.35, r));
+    let imageId = String(p.image_id || p.tile_id || p.id || '');
+    if (!imageId || (idSet.size && !idSet.has(imageId))) {
+      // If model omitted id and only one image, bind to it
+      if (imageIds && imageIds.length === 1) imageId = String(imageIds[0]);
+      else if (imageIds && imageIds.length && i < imageIds.length) imageId = String(imageIds[i % imageIds.length]);
+      else imageId = imageIds && imageIds[0] ? String(imageIds[0]) : 'tile1';
+    }
+    plants.push({
+      image_id: imageId,
+      cx: cx,
+      cy: cy,
+      r: r,
+      conf: Number.isFinite(Number(p.conf)) ? Math.max(0, Math.min(1, Number(p.conf))) : 0.85
+    });
+  });
+  return {
+    plants: plants,
+    notes: String(src.notes || '').slice(0, 240),
+    plant_count: plants.length
+  };
+}
+
+/**
+ * Visión RGB: marcar plantas como un humano (no calibrar umbrales).
+ */
+async function detectPlantsWithOpenAI(model, images) {
+  const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+  if (!apiKey) {
+    return { ok: false, status: 500, error: 'OPENAI_API_KEY no configurada.' };
+  }
+
+  const ids = images.map(function (im) {
+    return String(im.id);
+  });
+  const prompt =
+    'Eres visión aérea agrícola. Miras ortomosaico RGB como un humano.\n' +
+    'Marca CADA árbol/planta de cultivo (copa). NO marques: gente, sombras, pasto, suelo, cajas, vehículos, burros, herramientas.\n' +
+    'Si hay un árbol joven pequeño, también cuéntalo. Si dos copas chocan, marca DOS centros si ves dos plantas.\n' +
+    'Devuelve SOLO JSON:\n' +
+    '{\n' +
+    '  "plants": [\n' +
+    '    {"image_id": "' +
+    (ids[0] || 'tile1') +
+    '", "cx": 0.42, "cy": 0.55, "r": 0.08, "conf": 0.9}\n' +
+    '  ],\n' +
+    '  "notes": "breve"\n' +
+    '}\n' +
+    'cx,cy,r están coordenadas NORMALIZADAS 0–1 relativas a ESA imagen (r = radio aprox. de la copa).\n' +
+    'image_id debe ser uno de: ' +
+    ids.join(', ') +
+    '.\n' +
+    'Sé exhaustivo en cada recorte: cuenta como humano, no como sensor de “verde”.';
+
+  const content = [{ type: 'input_text', text: prompt }];
+  images.forEach(function (img, idx) {
+    let url = String(img.imageBase64 || '');
+    if (!url) return;
+    if (!/^data:/i.test(url)) {
+      url = 'data:image/jpeg;base64,' + url.replace(/^data:[^;]+;base64,/, '');
+    }
+    content.push({
+      type: 'input_text',
+      text: 'Imagen id=' + (img.id || ids[idx] || idx + 1) + ' — marca todas las plantas aquí.'
+    });
+    content.push({ type: 'input_image', image_url: url });
+  });
+
+  const payload = {
+    model: model,
+    input: [{ role: 'user', content: content }],
+    max_output_tokens: isGpt56Family(model) ? 2500 : 1800
+  };
+
+  const res = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + apiKey
+    },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json().catch(function () {
+    return {};
+  });
+  if (!res.ok) {
+    const msg =
+      (data && data.error && data.error.message) || 'OpenAI error HTTP ' + res.status;
+    return { ok: false, status: 502, error: msg };
+  }
+  const text = outputTextFromResponses(data);
+  const parsed = parseJsonLoose(text);
+  if (!parsed) {
+    return {
+      ok: false,
+      status: 422,
+      error: 'La IA no devolvió JSON de plantas válido.',
+      rawPreview: String(text || '').slice(0, 280)
+    };
+  }
+  const usage = data.usage || {};
+  return {
+    ok: true,
+    model: model,
+    detection: normalizePlantDetections(parsed, ids),
+    usage: {
+      input_tokens: usage.input_tokens || usage.prompt_tokens || null,
+      output_tokens: usage.output_tokens || usage.completion_tokens || null
+    },
+    rawPreview: text.slice(0, 280)
+  };
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(), body: '' };
@@ -487,8 +624,15 @@ exports.handler = async function (event) {
     });
   }
 
-  const out = await calibrateWithOpenAI(model, images);
-  if (!out.ok) return json(out.status || 500, { ok: false, error: out.error });
+  const isDetect =
+    action === 'detect_plants' ||
+    action === 'detect' ||
+    action === 'vision_plants';
+
+  const out = isDetect
+    ? await detectPlantsWithOpenAI(model, images)
+    : await calibrateWithOpenAI(model, images);
+  if (!out.ok) return json(out.status || 500, { ok: false, error: out.error, rawPreview: out.rawPreview });
 
   const logged = await recordAirciAiUsage(admin.supabase, {
     userId: admin.userId,
@@ -497,9 +641,30 @@ exports.handler = async function (event) {
     usage: out.usage || {}
   });
 
+  if (isDetect) {
+    return json(200, {
+      ok: true,
+      model: out.model,
+      action: 'detect_plants',
+      detection: out.detection,
+      plants: (out.detection && out.detection.plants) || [],
+      usage: out.usage,
+      cost: {
+        usd_est: logged.usd_est != null ? logged.usd_est : estimateUsd(model),
+        model: out.model || model,
+        label: modelShortLabel(out.model || model),
+        pricing: AIRCI_USD_PER_QUERY,
+        recorded: !!logged.ok,
+        setup: logged.setup || null
+      },
+      rawPreview: out.rawPreview
+    });
+  }
+
   return json(200, {
     ok: true,
     model: out.model,
+    action: 'calibrate',
     calibration: out.calibration,
     usage: out.usage,
     cost: {
