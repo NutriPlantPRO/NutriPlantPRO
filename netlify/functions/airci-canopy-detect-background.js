@@ -7,10 +7,9 @@
 'use strict';
 
 const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto');
 
-// URL pública de Cloud Run. La autenticación del request usa HMAC con la clave
-// servidor de Supabase ya presente en Netlify; no añade variables Lambda.
+// URL pública de Cloud Run. El worker vuelve a validar el JWT del usuario y
+// comprueba que el job le pertenece; no añade variables Lambda.
 const WORKER_URL = 'https://airci-canopy-worker-6syn5d2fca-uc.a.run.app';
 
 function getSupabase() {
@@ -70,26 +69,12 @@ exports.handler = async function handler(event) {
   if (jobError || !job) return { statusCode: 404, body: 'Trabajo no encontrado' };
   if (job.status === 'done') return { statusCode: 202, body: '' };
 
-  const signingKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-  if (!signingKey) {
-    await failJob(
-      supabase,
-      jobId,
-      'Falta SUPABASE_SERVICE_ROLE_KEY en Netlify.'
-    );
-    return { statusCode: 503, body: 'Worker AirCI no configurado' };
-  }
-  const signature = crypto
-    .createHmac('sha256', signingKey)
-    .update('airci-worker:v1:' + jobId)
-    .digest('hex');
-
   try {
     const response = await fetch(WORKER_URL + '/process', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-AirCI-Worker-Signature': signature
+        Authorization: 'Bearer ' + accessToken
       },
       body: JSON.stringify({ job_id: jobId })
     });

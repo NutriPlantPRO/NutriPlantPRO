@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png" />
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png" />
   <link rel="manifest" href="/planpro.webmanifest" />
-  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260806picksmodal1" />
+  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260806picksmodal2" />
   <script src="../config-no-traducir-terminos.js"></script>
   <script>
     (function () {
@@ -11823,11 +11823,15 @@
                 ★ agrega/quita el ticker en la <strong>lista activa</strong> (se guarda en tu cuenta). Puedes crear varias listas y borrar las que ya no uses.
               </p>
             </section>
-            <button type="button" class="np-inv-open-picks" id="npInvOpenPicksBtn" data-inv-picks-open aria-haspopup="dialog" aria-controls="npInvPicksModal">
-              <span aria-hidden="true">⭐</span>
-              Explorar catálogo y contenido
-              <span class="np-inv-open-picks-arrow" aria-hidden="true">↗</span>
-            </button>
+            <section class="np-inv-panel np-inv-panel--picks">
+              <div class="np-inv-panel-title">
+                <span>⭐ Acciones</span>
+                <button type="button" class="np-inv-open-picks" id="npInvOpenPicksBtn" data-inv-picks-open aria-haspopup="dialog" aria-controls="npInvPicksModal">
+                  Filtros <span class="np-inv-open-picks-arrow" aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <div id="npInvPicks" class="np-inv-picks" aria-label="Lista de activos"></div>
+            </section>
           </aside>
           <div class="np-inv-main">
             <p id="npInvStatus" class="np-inv-status np-hide" aria-live="polite"></p>
@@ -11898,12 +11902,11 @@
             <div class="np-inv-picks-modal-head">
               <div>
                 <h3 id="npInvPicksModalTitle">⭐ Popular Picks / contenido</h3>
-                <p>Explora, agrega a tu lista ★ o selecciona activos para comparar.</p>
+                <p>Elige qué contenido quieres ver en tu lista de acciones.</p>
               </div>
               <button type="button" class="np-inv-picks-modal-close" data-inv-picks-close aria-label="Cerrar catálogo">×</button>
             </div>
             <div id="npInvFilters" class="np-inv-filters" aria-label="Filtros de catálogo"></div>
-            <div id="npInvPicks" class="np-inv-picks" aria-label="Lista de activos"></div>
           </section>
         </div>
 
@@ -12578,7 +12581,7 @@
   <script src="../auth-supabase.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
-  <script src="../assets/planpro-invest.js?v=20260806picksmodal1"></script>
+  <script src="../assets/planpro-invest.js?v=20260806picksmodal2"></script>
   <script src="../assets/planpro-invest-portfolio.js?v=20260806pf8"></script>
   <script>
 (function () {

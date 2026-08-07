@@ -82,14 +82,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 11px 12px;
+  width: auto;
+  padding: 5px 8px;
   border: 1px solid color-mix(in srgb, #f59e0b 42%, rgba(148, 163, 184, 0.3));
-  border-radius: 14px;
+  border-radius: 9px;
   background: linear-gradient(135deg, color-mix(in srgb, #f59e0b 12%, #fff), rgba(255, 255, 255, 0.96));
   color: #92400e;
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 750;
   text-align: left;
   cursor: pointer;
@@ -345,9 +345,9 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: min(100%, 1040px);
-  height: min(82vh, 760px);
-  min-height: 440px;
+  width: min(100%, 740px);
+  height: auto;
+  min-height: 0;
   padding: 18px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.36);
@@ -387,16 +387,6 @@
 }
 .np-inv-picks-modal-close:hover {
   background: rgba(226, 232, 240, 0.9);
-}
-.np-inv-picks-modal .np-inv-picks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-  gap: 8px;
-  padding: 2px 4px 4px 0;
-}
-.np-inv-picks-modal .np-inv-reorder-hint {
-  grid-column: 1 / -1;
 }
 .np-inv-reorder-hint {
   margin: 0 0 4px;
@@ -1338,13 +1328,10 @@ html.np-inv-tv-touch-lock body {
   }
   .np-inv-picks-modal-card {
     width: 100%;
-    height: min(86vh, 760px);
+    height: auto;
     min-height: 0;
     padding: 14px;
     border-radius: 16px;
-  }
-  .np-inv-picks-modal .np-inv-picks {
-    grid-template-columns: 1fr;
   }
   .np-inv-layout {
     grid-template-columns: 1fr;

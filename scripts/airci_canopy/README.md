@@ -29,8 +29,8 @@ gcloud run deploy airci-canopy-worker \
 ```
 
 `--allow-unauthenticated` permite que Netlify alcance el servicio; `/process`
-exige una firma HMAC creada con la `SUPABASE_SERVICE_ROLE_KEY`, que nunca llega
-al navegador.
+exige el JWT de Supabase del usuario y valida que el trabajo solicitado le
+pertenezca.
 
 La URL del worker se configura en
 `netlify/functions/airci-canopy-detect-background.js`; no se añaden variables
