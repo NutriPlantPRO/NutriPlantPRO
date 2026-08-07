@@ -45,6 +45,12 @@
   timeout = 900
   external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
 
+[functions."airci-canopy-detect"]
+  timeout = 26
+
+[functions."airci-canopy-detect-background"]
+  timeout = 900
+
 [functions."nutriplant-admin-assistant"]
   timeout = 26
 
@@ -224,6 +230,12 @@
 [[redirects]]
   from = "/api/airci-canopy-ai"
   to = "/.netlify/functions/airci-canopy-ai"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/airci-canopy-detect"
+  to = "/.netlify/functions/airci-canopy-detect"
   status = 200
   force = true
 

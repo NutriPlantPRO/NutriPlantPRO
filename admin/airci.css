@@ -1067,6 +1067,59 @@ button, input, select, textarea { font: inherit; }
   color: #0369a1;
 }
 
+.aci-pro-status {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  background: #f0fdfa;
+  color: #115e59;
+}
+
+.aci-pro-status__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+  font-size: 12px;
+}
+
+.aci-pro-status__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ccfbf1;
+}
+
+.aci-pro-status__track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #14b8a6);
+  transition: width 0.25s ease;
+}
+
+.aci-pro-status small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #0f766e;
+}
+
+.aci-pro-status.is-done {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.aci-pro-status.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 .aci-btn--file {
   position: relative;
   overflow: hidden;

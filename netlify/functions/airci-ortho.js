@@ -346,12 +346,48 @@ exports.handler = async function handler(event) {
       threshold: stats.threshold != null ? Number(stats.threshold) : null,
       stats_json: stats,
       trees_json: treesTrim,
+      detector_version: String(stats.detectorVersion || stats.aiModel || 'browser-local').slice(0, 120),
+      source: 'browser',
+      status: 'done',
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
+    let currentProfessional = null;
+    if (flightId) {
+      const { data: currentRow } = await supabase
+        .from('airci_canopy_results')
+        .select('id, source')
+        .eq('flight_id', flightId)
+        .eq('owner_id', auth.userId)
+        .eq('is_current', true)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (currentRow && currentRow.source === 'cloud_worker') currentProfessional = currentRow;
+    }
+    row.is_current = !currentProfessional;
+
+    let existingQuery = supabase
       .from('airci_canopy_results')
-      .upsert(row, { onConflict: 'site_id' })
+      .select('id')
+      .eq('site_id', siteId)
+      .eq('owner_id', auth.userId)
+      .eq('source', 'browser');
+    existingQuery = flightId
+      ? existingQuery.eq('flight_id', flightId)
+      : existingQuery.is('flight_id', null);
+    const { data: existing } = await existingQuery
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const saveQuery = existing
+      ? supabase
+          .from('airci_canopy_results')
+          .update(row)
+          .eq('id', existing.id)
+      : supabase.from('airci_canopy_results').insert(row);
+    const { data, error } = await saveQuery
       .select('id, site_id, flight_id, tree_count, cover_pct, updated_at')
       .single();
 
@@ -359,9 +395,11 @@ exports.handler = async function handler(event) {
       return json(500, {
         ok: false,
         error: error.message,
-        setup: /airci_canopy_results|does not exist|schema cache/i.test(error.message || '')
-          ? 'supabase-airci-canopy-results.sql'
-          : null
+        setup: /detector_version|is_current|source/i.test(error.message || '')
+          ? 'supabase-airci-professional.sql'
+          : /airci_canopy_results|does not exist|schema cache/i.test(error.message || '')
+            ? 'supabase-airci-canopy-results.sql'
+            : null
       });
     }
     return json(200, { ok: true, result: data });
@@ -370,21 +408,29 @@ exports.handler = async function handler(event) {
   if (action === 'load_canopy') {
     const siteId = body.site_id;
     if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
-    const { data, error } = await supabase
+    const flightId = isUuid(body.flight_id) ? body.flight_id : null;
+    let loadQuery = supabase
       .from('airci_canopy_results')
       .select(
-        'id, site_id, flight_id, tree_count, cover_pct, mean_area_px, std_area_px, threshold, stats_json, trees_json, updated_at'
+        'id, site_id, flight_id, tree_count, cover_pct, mean_area_px, std_area_px, threshold, stats_json, trees_json, detector_version, source, updated_at'
       )
       .eq('site_id', siteId)
       .eq('owner_id', auth.userId)
+      .eq('is_current', true);
+    if (flightId) loadQuery = loadQuery.eq('flight_id', flightId);
+    const { data, error } = await loadQuery
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (error) {
       return json(500, {
         ok: false,
         error: error.message,
-        setup: /airci_canopy_results|does not exist/i.test(error.message || '')
-          ? 'supabase-airci-canopy-results.sql'
-          : null
+        setup: /detector_version|is_current|source/i.test(error.message || '')
+          ? 'supabase-airci-professional.sql'
+          : /airci_canopy_results|does not exist/i.test(error.message || '')
+            ? 'supabase-airci-canopy-results.sql'
+            : null
       });
     }
     if (!data) return json(200, { ok: true, result: null });

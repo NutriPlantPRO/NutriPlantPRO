@@ -21,7 +21,8 @@
   var SESSION_MAX_MS = 12 * 60 * 60 * 1000;
   var API = '/api/airci-ortho';
   var API_AI = '/api/airci-canopy-ai';
-  var DETECT_MODEL_KEY = 'airci_detect_model_v1';
+  var API_PRO = '/api/airci-canopy-detect';
+  var DETECT_MODEL_KEY = 'airci_detect_model_v2';
   var PREVIEW_WARN_BYTES = 80 * 1024 * 1024;
 
   var gateEl = document.getElementById('aciGate');
@@ -57,6 +58,14 @@
   var activePhenoFilter = 'all';
   var treeLayersById = {};
   var orthoLoadInFlight = false;
+  var professionalLayer = null;
+  var professionalRenderer = null;
+  var professionalResultId = null;
+  var professionalStats = null;
+  var professionalPollTimer = null;
+  var professionalViewportTimer = null;
+  var professionalViewportRequestId = 0;
+  var activeProfessionalJobId = null;
 
 
   function showError(msg) {
@@ -652,6 +661,19 @@
 
   function clearCanopyLayers() {
     treeLayersById = {};
+    clearTimeout(professionalPollTimer);
+    clearTimeout(professionalViewportTimer);
+    activeProfessionalJobId = null;
+    setProfessionalUi(null);
+    if (professionalLayer && map) {
+      try {
+        map.removeLayer(professionalLayer);
+      } catch (e0) {}
+    }
+    professionalLayer = null;
+    professionalResultId = null;
+    professionalStats = null;
+    professionalViewportRequestId++;
     if (canopyOutlineLayer && map) {
       try {
         map.removeLayer(canopyOutlineLayer);
@@ -2121,7 +2143,8 @@
 
   function getDetectModel() {
     var el = document.getElementById('aciDetectModel');
-    var v = el ? String(el.value || 'exg') : 'exg';
+    var v = el ? String(el.value || 'cloud-pro') : 'cloud-pro';
+    if (v === 'cloud-pro') return 'cloud-pro';
     if (v === 'exg') return 'exg';
     if (
       v === 'gpt-5.6-luna' ||
@@ -2130,7 +2153,7 @@
     ) {
       return v;
     }
-    return 'exg';
+    return 'cloud-pro';
   }
 
   function persistDetectModelChoice() {
@@ -2171,6 +2194,36 @@
       return {
         ok: false,
         error: (data && data.error) || 'Error IA ' + res.status
+      };
+    }
+    return data;
+  }
+
+  async function apiProfessional(body) {
+    var token = await getAccessToken();
+    if (!token) {
+      return {
+        ok: false,
+        error: 'Sin sesión Supabase. Entra de nuevo desde login.html con tu admin.'
+      };
+    }
+    var res = await fetch(API_PRO, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify(body)
+    });
+    var data = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !data.ok) {
+      return {
+        ok: false,
+        error: (data && data.error) || 'Error AirCI Professional ' + res.status,
+        setup: data && data.setup,
+        job: data && data.job
       };
     }
     return data;
@@ -2597,7 +2650,259 @@
     btn.textContent = busy ? 'Analizando…' : 'Analizar';
   }
 
+  function setProfessionalUi(job) {
+    var box = document.getElementById('aciProfessionalStatus');
+    var bar = document.getElementById('aciProfessionalProgressBar');
+    var label = document.getElementById('aciProfessionalProgressLabel');
+    var cost = document.getElementById('aciProfessionalCost');
+    if (!box) return;
+    if (!job) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    var progress = Math.max(0, Math.min(100, Number(job.progress) || 0));
+    if (bar) bar.style.width = progress + '%';
+    if (label) {
+      label.textContent =
+        (job.phase || (job.status === 'done' ? 'Terminado' : 'Procesando')) +
+        ' · ' +
+        Math.round(progress) +
+        '%';
+    }
+    if (cost) {
+      var value = job.actual_usd != null ? job.actual_usd : job.estimated_usd;
+      cost.textContent =
+        (job.actual_usd != null ? 'Costo técnico aprox. ' : 'Presupuesto estimado ') +
+        fmtUsd4(value || 0);
+    }
+    box.classList.toggle('is-error', job.status === 'error');
+    box.classList.toggle('is-done', job.status === 'done');
+  }
+
+  function professionalColor(key) {
+    if (key === 'rojo') return '#dc2626';
+    if (key === 'amarillo') return '#d97706';
+    if (key === 'azul') return '#2563eb';
+    return '#16a34a';
+  }
+
+  async function loadProfessionalViewport(resultId, stats) {
+    if (!map || !resultId) return;
+    var requestId = ++professionalViewportRequestId;
+    showMapPane(true);
+    professionalResultId = resultId;
+    professionalStats = stats || professionalStats || {};
+    var treeBbox = professionalStats && professionalStats.treeBbox;
+    if (
+      !lastBounds &&
+      Array.isArray(treeBbox) &&
+      treeBbox.length === 4 &&
+      treeBbox.every(function (value) {
+        return Number.isFinite(Number(value));
+      })
+    ) {
+      map.fitBounds(
+        [
+          [Number(treeBbox[1]), Number(treeBbox[0])],
+          [Number(treeBbox[3]), Number(treeBbox[2])]
+        ],
+        { padding: [24, 24] }
+      );
+    }
+    var bounds = map.getBounds && map.getBounds();
+    var bbox =
+      bounds && bounds.isValid && bounds.isValid()
+        ? [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+        : null;
+    var response = await apiProfessional({
+      action: 'trees',
+      result_id: resultId,
+      bbox: bbox,
+      limit: 1000,
+      offset: 0
+    });
+    if (
+      !response.ok ||
+      professionalResultId !== resultId ||
+      requestId !== professionalViewportRequestId
+    ) {
+      if (!response.ok) setMapStatus(response.error || 'No se pudieron cargar las copas', 'error');
+      return;
+    }
+    if (professionalLayer && map) {
+      try {
+        map.removeLayer(professionalLayer);
+      } catch (e) {}
+    }
+    if (!professionalRenderer && typeof L !== 'undefined' && L.canvas) {
+      professionalRenderer = L.canvas({ padding: 0.5, pane: 'airciProfessional' });
+    }
+    professionalLayer = L.layerGroup();
+    (response.trees || []).forEach(function (tree) {
+      var color = professionalColor(tree.sem_key);
+      var polygon = Array.isArray(tree.polygon_json) ? tree.polygon_json : null;
+      var layer;
+      if (polygon && polygon.length >= 3) {
+        layer = L.polygon(polygon, {
+          renderer: professionalRenderer || undefined,
+          pane: 'airciProfessional',
+          color: color,
+          weight: 1.2,
+          fillColor: color,
+          fillOpacity: 0.38
+        });
+      } else {
+        layer = L.circleMarker([tree.center_lat, tree.center_lng], {
+          renderer: professionalRenderer || undefined,
+          pane: 'airciProfessional',
+          radius: 4,
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.7
+        });
+      }
+      layer.bindTooltip(
+        '#' +
+          tree.tree_index +
+          (tree.area_m2 != null ? ' · ' + Number(tree.area_m2).toFixed(2) + ' m²' : '') +
+          (tree.confidence != null ? ' · conf. ' + Math.round(tree.confidence) + '%' : '')
+      );
+      professionalLayer.addLayer(layer);
+    });
+    professionalLayer.addTo(map);
+    bringOverlaysFront();
+    if (professionalLayer.bringToFront) professionalLayer.bringToFront();
+
+    var resultStats = Object.assign({}, response.result && response.result.stats_json, stats || {});
+    updateMetrics({
+      treeCount: Number(resultStats.count || (response.result && response.result.tree_count)) || 0,
+      coverPct:
+        resultStats.coverPct != null
+          ? Number(resultStats.coverPct)
+          : response.result && response.result.cover_pct,
+      meanArea: resultStats.meanArea,
+      meanAreaM2: resultStats.meanAreaM2,
+      hasScale: resultStats.gsdM != null,
+      gsdCm: resultStats.gsdM != null ? Number(resultStats.gsdM) * 100 : null
+    });
+    document.getElementById('aciMapSub').textContent =
+      'AirCI Professional · ' +
+      (Number(resultStats.count || (response.result && response.result.tree_count)) || 0) +
+      ' árboles · detector ' +
+      ((response.result && response.result.detector_version) || 'cloud');
+    setMapStatus(
+      (response.trees || []).length +
+        ' copas visibles' +
+        (response.has_more ? ' · acerca el mapa para ver todas en esta zona' : '') +
+        ' · resultado completo guardado por vuelo',
+      'ok'
+    );
+  }
+
+  async function pollProfessionalJob(jobId) {
+    clearTimeout(professionalPollTimer);
+    if (!jobId) return;
+    activeProfessionalJobId = jobId;
+    var response = await apiProfessional({ action: 'status', job_id: jobId });
+    if (!response.ok || !response.job) {
+      setAnalyzeBusy(false);
+      setMapStatus(
+        (response.setup ? 'Ejecuta ' + response.setup + ' · ' : '') +
+          (response.error || 'No se pudo consultar el análisis'),
+        'error'
+      );
+      return;
+    }
+    var job = response.job;
+    setProfessionalUi(job);
+    if (job.status === 'done') {
+      activeProfessionalJobId = null;
+      setAnalyzeBusy(false);
+      setMapStatus(
+        'Análisis profesional terminado · ' +
+          Number((job.stats && job.stats.count) || 0) +
+          ' árboles · costo ' +
+          fmtUsd4(job.actual_usd || 0),
+        'ok'
+      );
+      await loadProfessionalViewport(job.result_id, job.stats || {});
+      return;
+    }
+    if (job.status === 'error' || job.status === 'cancelled') {
+      activeProfessionalJobId = null;
+      setAnalyzeBusy(false);
+      setMapStatus(job.error || 'El análisis profesional no terminó.', 'error');
+      return;
+    }
+    setAnalyzeBusy(true);
+    setMapStatus(
+      'AirCI Professional · ' + (job.phase || 'Procesando') + ' · ' + job.progress + '%',
+      'ok'
+    );
+    professionalPollTimer = setTimeout(function () {
+      pollProfessionalJob(jobId);
+    }, 3000);
+  }
+
+  async function startProfessionalDetection() {
+    var flightId = getLastFlightId();
+    if (!flightId) {
+      setMapStatus('Guarda primero el GeoTIFF en la nube y vuelve a Analizar.', 'error');
+      return;
+    }
+    setAnalyzeBusy(true);
+    setMapStatus('Creando análisis profesional del predio completo…', 'ok');
+    var meta = collectMeta();
+    var density = Number(meta.densidad_ha);
+    var spacing =
+      Number.isFinite(density) && density > 0 ? Math.sqrt(10000 / density) : 0;
+    var response = await apiProfessional({
+      action: 'enqueue',
+      site_id: getSiteId(),
+      flight_id: flightId,
+      options: {
+        detector_mode: 'classical_v1',
+        expected_spacing_m: spacing,
+        min_canopy_m: 1,
+        max_canopy_m: 12,
+        cost_cap_usd: 1
+      }
+    });
+    if (!response.ok || !response.job) {
+      setAnalyzeBusy(false);
+      setMapStatus(
+        (response.setup ? 'Ejecuta ' + response.setup + ' en Supabase. ' : '') +
+          (response.error || 'No se pudo iniciar AirCI Professional'),
+        'error'
+      );
+      return;
+    }
+    setProfessionalUi(response.job);
+    pollProfessionalJob(response.job.id);
+  }
+
+  async function resumeProfessionalJobForFlight() {
+    var flightId = getLastFlightId();
+    if (!flightId || activeProfessionalJobId) return false;
+    var response = await apiProfessional({ action: 'status', flight_id: flightId });
+    if (!response.ok || !response.job) return false;
+    setProfessionalUi(response.job);
+    if (response.job.status === 'queued' || response.job.status === 'processing') {
+      pollProfessionalJob(response.job.id);
+    } else if (response.job.status === 'done' && response.job.result_id) {
+      loadProfessionalViewport(response.job.result_id, response.job.stats || {});
+    }
+    return true;
+  }
+
   function runCanopyDetection() {
+    var model = getDetectModel();
+    if (model === 'cloud-pro') {
+      persistDetectModelChoice();
+      startProfessionalDetection();
+      return;
+    }
     if (!currentGeoraster) {
       setMapStatus('Primero sube un GeoTIFF', 'error');
       return;
@@ -2606,7 +2911,6 @@
       setMapStatus('Falta airci-canopy.js', 'error');
       return;
     }
-    var model = getDetectModel();
     var useAi = model !== 'exg';
     persistDetectModelChoice();
     var runId = ++detectRunId;
@@ -3368,6 +3672,16 @@
 
   async function loadOrthoAndCanopyForSite(siteId) {
     var orthoOk = await loadOrthoFromCloud(siteId);
+    if (getDetectModel() === 'cloud-pro') {
+      var hasProfessional = await resumeProfessionalJobForFlight();
+      if (!hasProfessional && orthoOk) {
+        setMapStatus(
+          'GeoTIFF listo · pulsa Analizar para procesar el predio completo',
+          'ok'
+        );
+      }
+      return;
+    }
     var canopyOk = await restoreCanopyForSite(siteId);
     if (orthoOk && canopyOk) {
       setMapStatus('Ortomosaico + copas restaurados desde la nube', 'ok');
@@ -3426,6 +3740,28 @@
     }
 
     if (!path) return false;
+
+    saveFlightLocal(
+      { filename: filename, byte_size: byteSize },
+      path,
+      flightId
+    );
+    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
+    if (analyzeBtn) analyzeBtn.hidden = false;
+    if (getDetectModel() === 'cloud-pro' && Number(byteSize) > PREVIEW_WARN_BYTES) {
+      showMapPane(false);
+      updateMetrics({
+        filename: filename,
+        byte_size: byteSize,
+        cloud: 'En nube',
+        cloud_sub: 'listo para worker'
+      });
+      setMapStatus(
+        'GeoTIFF grande en nube · no se descarga al navegador; AirCI Professional lo procesa por tiles',
+        'ok'
+      );
+      return true;
+    }
 
     setMapStatus('Descargando GeoTIFF desde Storage…');
     var signed = await apiOrtho({ action: 'signed_url', path: path, ttl_sec: 3600 });
@@ -3748,6 +4084,11 @@
     var mapEl = document.getElementById('aciMap');
     if (!mapEl) return;
     map = L.map(mapEl, { zoomControl: true, attributionControl: true });
+    if (!map.getPane('airciProfessional')) {
+      var professionalPane = map.createPane('airciProfessional');
+      professionalPane.style.zIndex = '650';
+      professionalPane.style.pointerEvents = 'auto';
+    }
     map.setView([23.6, -102.5], 5);
     try {
       var saved = localStorage.getItem(BASEMAP_KEY);
@@ -3762,6 +4103,13 @@
     });
     // Mientras carga, poner fallback inmediato
     if (activeBasemap !== 'off') setBasemap(activeBasemap);
+    map.on('moveend', function () {
+      if (!professionalResultId) return;
+      clearTimeout(professionalViewportTimer);
+      professionalViewportTimer = setTimeout(function () {
+        loadProfessionalViewport(professionalResultId, professionalStats || {});
+      }, 280);
+    });
   }
 
   function syncBasemapChips() {
@@ -3917,6 +4265,13 @@
       height_px: georaster.height,
       bands: georaster.numberOfRasters || (georaster.rasters && georaster.rasters.length) || null,
       crs: georaster.projection != null ? String(georaster.projection) : null,
+      gsd_m:
+        georaster.projection != null &&
+        String(georaster.projection) !== '4326' &&
+        Number.isFinite(Math.abs(Number(georaster.pixelWidth))) &&
+        Math.abs(Number(georaster.pixelWidth)) > 0
+          ? Math.abs(Number(georaster.pixelWidth))
+          : null,
       cloud: meta.cloud || 'Vista local',
       cloud_sub: meta.cloud_sub || 'pendiente de nube'
     };
@@ -3944,8 +4299,13 @@
     document.getElementById('aciMapSub').textContent =
       'Ortomosaico cargado' + (info.crs ? ' · proyección ' + info.crs : '');
 
-    if (!meta.skipAutoDetect) {
+    if (!meta.skipAutoDetect && getDetectModel() !== 'cloud-pro') {
       setTimeout(runCanopyDetection, 120);
+    } else if (!meta.skipAutoDetect && getDetectModel() === 'cloud-pro') {
+      setMapStatus(
+        'Ortomosaico listo · pulsa Analizar para procesar el predio completo en la nube',
+        'ok'
+      );
     }
 
     return info;
@@ -3963,6 +4323,7 @@
       height_px: info.height_px,
       bands: info.bands,
       crs: info.crs,
+      gsd_m: info.gsd_m,
       bbox_json: info.bbox_json || null,
       updated_at: Date.now()
     };
@@ -4062,6 +4423,7 @@
       height_px: info.height_px,
       bands: info.bands,
       crs: info.crs,
+      gsd_m: info.gsd_m,
       bbox_json: info.bbox_json || null
     });
 
@@ -4077,7 +4439,12 @@
     } catch (e) {}
     saveFlightLocal(info, prep.path, prep.flight_id);
     updateMetrics(Object.assign({}, info, { cloud: 'En nube', cloud_sub: 'airci-orthos' }));
-    setMapStatus('GeoTIFF en el mapa y guardado en Supabase Storage', 'ok');
+    setMapStatus(
+      getDetectModel() === 'cloud-pro'
+        ? 'GeoTIFF guardado · pulsa Analizar para iniciar AirCI Professional'
+        : 'GeoTIFF en el mapa y guardado en Supabase Storage',
+      'ok'
+    );
     return { ok: true, path: prep.path, flight_id: prep.flight_id };
   }
 
@@ -4089,11 +4456,43 @@
       return;
     }
 
+    if (file.size > PREVIEW_WARN_BYTES && getDetectModel() === 'cloud-pro') {
+      currentGeoraster = null;
+      clearCanopyLayers();
+      if (rasterLayer && map) {
+        try {
+          map.removeLayer(rasterLayer);
+        } catch (e0) {}
+        rasterLayer = null;
+      }
+      lastBounds = null;
+      showMapPane(false);
+      setMapStatus(
+        'Archivo grande (' +
+          formatBytes(file.size) +
+          ') · se subirá directo; el worker lo procesará por tiles sin llenar la memoria.',
+        'ok'
+      );
+      var minimalInfo = {
+        filename: file.name,
+        byte_size: file.size,
+        cloud: 'Vista en nube',
+        cloud_sub: 'subiendo…'
+      };
+      updateMetrics(minimalInfo);
+      var uploaded = await uploadToCloud(file, minimalInfo);
+      if (uploaded && uploaded.ok) {
+        var analyzeBtn = document.getElementById('aciAnalyzeBtn');
+        if (analyzeBtn) analyzeBtn.hidden = false;
+      }
+      return;
+    }
+
     if (file.size > PREVIEW_WARN_BYTES) {
       setMapStatus(
         'Archivo grande (' +
           formatBytes(file.size) +
-          '). El visor puede tardar o fallar por memoria; la nube sí lo acepta.',
+          '). El visor local puede fallar por memoria; usa Profesional para procesarlo por tiles.',
         'error'
       );
     }
@@ -4228,7 +4627,10 @@
   loadDetectModelChoice();
   var detectModelEl = document.getElementById('aciDetectModel');
   if (detectModelEl) {
-    detectModelEl.addEventListener('change', persistDetectModelChoice);
+    detectModelEl.addEventListener('change', function () {
+      persistDetectModelChoice();
+      if (getDetectModel() === 'cloud-pro') resumeProfessionalJobForFlight();
+    });
   }
 
   var deltaFilterEl = document.getElementById('aciDeltaFilter');

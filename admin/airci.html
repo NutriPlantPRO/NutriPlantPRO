@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806fix2">
+  <link rel="stylesheet" href="./airci.css?v=20260806pro1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -177,9 +177,10 @@
             </label>
             <label class="aci-detect-mode" for="aciDetectModel">
               <span>Detección</span>
-              <select id="aciDetectModel" title="Local gratis, o IA recorre el predio por rejilla y marca árboles (no pasto/gente/autos)">
+              <select id="aciDetectModel" title="Profesional procesa el GeoTIFF completo por tiles; Local/IA son modos de prueba">
+                <option value="cloud-pro" selected>Profesional · predio completo · presupuesto $1</option>
                 <option value="exg">Local · gratis (sin IA)</option>
-                <option value="gpt-5.6-luna" selected>Luna · rejilla árboles · ~$0.01–0.07</option>
+                <option value="gpt-5.6-luna">Luna · muestra IA · ~$0.01–0.07</option>
                 <option value="gpt-5.6-terra">Terra · rejilla árboles · ~$0.02–0.12</option>
                 <option value="gpt-5.6-sol">Sol · rejilla árboles · ~$0.04–0.18</option>
               </select>
@@ -195,6 +196,16 @@
           · total: <strong id="aciAiUsageTotalReq">0</strong> ·
           <strong id="aciAiUsageTotalUsd">$0.0000</strong>
         </p>
+        <div id="aciProfessionalStatus" class="aci-pro-status" hidden role="status">
+          <div class="aci-pro-status__top">
+            <strong id="aciProfessionalProgressLabel">En cola · 0%</strong>
+            <span id="aciProfessionalCost">Presupuesto estimado $0.0000</span>
+          </div>
+          <div class="aci-pro-status__track" aria-hidden="true">
+            <span id="aciProfessionalProgressBar"></span>
+          </div>
+          <small>Procesamiento completo por tiles · puedes recargar la página sin perder el trabajo.</small>
+        </div>
         <div id="aciMapWrap" class="aci-map-wrap">
           <div id="aciMapPlaceholder" class="aci-map-placeholder">
             <span>Usa <strong>Subir GeoTIFF</strong> para cargar el ortomosaico</span>
@@ -525,7 +536,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806fix2"></script>
-  <script src="./airci.js?v=20260806fix2"></script>
+  <script src="./airci-canopy.js?v=20260806pro1"></script>
+  <script src="./airci.js?v=20260806pro1"></script>
 </body>
 </html>
