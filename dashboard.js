@@ -1023,10 +1023,14 @@ function sectionTemplate(name) {
                 <div class="summary-nutrients" style="margin-top: 16px;">
                   <div class="ferti-water-header-row">
                     <h4>${ft('water_supply', '💧 Aporte por agua')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
-                    <select id="fertiImportWaterSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_analysis_title', 'Traer kg/ha desde un análisis de agua guardado en este proyecto')}">
-                      <option value="">${ft('bring_from_analysis', 'Traer de análisis')}</option>
-                    </select>
+                    <label class="hydro-import-water-wrap" for="fertiImportWaterSelect">
+                      <span class="hydro-import-water-label">${ft('bring_from_analysis', 'Traer de análisis')}</span>
+                      <select id="fertiImportWaterSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_analysis_title', 'Elige un análisis de agua del proyecto: se cargan sus kg/ha en aporte por agua')}">
+                        <option value="">${ft('select_water_analysis', 'Seleccionar análisis…')}</option>
+                      </select>
+                    </label>
                   </div>
+                  <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_analysis_hint', 'Elige un análisis de la lista para cargar sus valores, o escríbelos a mano.')}</div>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelN">N-NO₃⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
@@ -1780,11 +1784,14 @@ function sectionTemplate(name) {
               <div class="hydro-card-header">
                 <div class="hydro-water-header-row">
                   <h3>💧 ${hydroT('Análisis de agua (ppm)', 'Water analysis (ppm)')}</h3>
-                  <select id="hydroImportWaterSelect" class="hydro-input hydro-import-water-select" title="${hydroT('Traer ppm desde un análisis de agua guardado en este proyecto', 'Load ppm from a water analysis saved in this project')}">
-                    <option value="">${hydroT('Traer de análisis', 'Bring from analysis')}</option>
-                  </select>
+                  <label class="hydro-import-water-wrap" for="hydroImportWaterSelect">
+                    <span class="hydro-import-water-label">${hydroT('Traer de análisis', 'Bring from analysis')}</span>
+                    <select id="hydroImportWaterSelect" class="hydro-input hydro-import-water-select" title="${hydroT('Elige un análisis de agua del proyecto: se cargan sus ppm y la dosis de ácido', 'Pick a project water analysis: its ppm and acid dose are loaded')}">
+                      <option value="">${hydroT('Seleccionar análisis…', 'Select analysis…')}</option>
+                    </select>
+                  </label>
                 </div>
-                <div class="hydro-muted">${hydroT('Ingresa los aportes del agua para calcular el faltante.', 'Enter water contributions to calculate the remaining requirement.')}</div>
+                <div class="hydro-muted">${hydroT('Elige un análisis de la lista para cargar sus valores, o escríbelos a mano. Se restan del objetivo para calcular el faltante.', 'Pick an analysis from the list to load its values, or type them manually. They are subtracted from the target to calculate what is missing.')}</div>
               </div>
               <div id="hydroWaterGrid" class="hydro-grid"></div>
               <div id="hydroAcidSummary" class="hydro-acid-summary"></div>

@@ -1021,15 +1021,19 @@ function renderHydroStageTable() {
     stage.ce = computedCe.toFixed(2);
     const sol = hydroResolveStageSolution(stage);
     const pickerCls = 'hydro-input hydro-solution-picker' + (sol.selected ? ' is-selected' : ' is-empty');
-    const pickerLabel = sol.selected ? hydroEscapeAttr(sol.label) : '';
     const pickerAria = sol.selected
       ? sol.label
       : hydroT('Elegir solución nutritiva', 'Choose nutrient solution');
     const pickerTitle = sol.selected ? sol.label : pickerAria;
+    // Vacío: icono + “Elegir” para que se lea como botón, no como celda en blanco.
+    const unlockIcon = '<svg class="hydro-solution-picker__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 8h-1V6a4 4 0 0 0-8 0h2a2 2 0 1 1 4 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-5 8.75a1.75 1.75 0 1 1 0-3.5 1.75 1.75 0 0 1 0 3.5z"/></svg>';
+    const pickerInner = sol.selected
+      ? `<span class="hydro-solution-picker__label">${hydroEscapeAttr(sol.label)}</span>`
+      : `${unlockIcon}<span class="hydro-solution-picker__label">${hydroEscapeAttr(hydroT('Elegir', 'Choose'))}</span>`;
     return `
       <tr data-stage-id="${stage.id}">
         <td>
-          <button type="button" class="${pickerCls}" data-hydro-solution-picker data-stage-id="${stage.id}" aria-label="${hydroEscapeAttr(pickerAria)}" title="${hydroEscapeAttr(pickerTitle)}">${pickerLabel}</button>
+          <button type="button" class="${pickerCls}" data-hydro-solution-picker data-stage-id="${stage.id}" aria-label="${hydroEscapeAttr(pickerAria)}" title="${hydroEscapeAttr(pickerTitle)}">${pickerInner}</button>
         </td>
         <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => {
@@ -2017,7 +2021,8 @@ function hydroRefreshWaterAnalysisSelect() {
   if (!select) return;
   const previous = select.value;
   const list = hydroGetProjectWaterAnalyses();
-  const placeholder = hydroT('Traer de análisis', 'Bring from analysis');
+  // Placeholder = “elige uno”, no el verbo “Traer” (eso va en la etiqueta).
+  const placeholder = hydroT('Seleccionar análisis…', 'Select analysis…');
   let html = `<option value="">${placeholder}</option>`;
   if (!list.length) {
     html += `<option value="" disabled>${hydroT('Sin análisis de agua en este proyecto', 'No water analyses in this project')}</option>`;
@@ -2032,10 +2037,26 @@ function hydroRefreshWaterAnalysisSelect() {
   const selectedId = hydroState.waterAnalysisId || previous || '';
   if (selectedId && list.some(a => a && a.id === selectedId)) select.value = selectedId;
   else select.value = '';
-  select.title = hydroT('Traer ppm y dosis de ácido desde un análisis de agua de este proyecto', 'Load ppm and acid dose from a water analysis in this project');
+  select.title = hydroT(
+    'Elige un análisis: se cargan sus ppm y la dosis de ácido en este cálculo',
+    'Pick an analysis: its ppm and acid dose are loaded into this calculation'
+  );
+  select.classList.toggle('is-linked', !!(select.value));
+  const labelEl = select.closest('.hydro-import-water-wrap')?.querySelector('.hydro-import-water-label');
+  if (labelEl) {
+    labelEl.textContent = select.value
+      ? hydroT('Análisis vinculado', 'Linked analysis')
+      : hydroT('Traer de análisis', 'Bring from analysis');
+  }
   // onclick propio: no depende de listeners acumulados / re-init de hidroponía.
   select.onchange = function () {
     const analysisId = select.value;
+    select.classList.toggle('is-linked', !!analysisId);
+    if (labelEl) {
+      labelEl.textContent = analysisId
+        ? hydroT('Análisis vinculado', 'Linked analysis')
+        : hydroT('Traer de análisis', 'Bring from analysis');
+    }
     if (!analysisId) {
       hydroState.waterAnalysisId = null;
       hydroState.acidDoseSummary = null;

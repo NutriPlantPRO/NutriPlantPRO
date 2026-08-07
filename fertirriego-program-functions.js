@@ -1652,7 +1652,8 @@ function fertiRefreshWaterAnalysisSelect() {
   if (!select) return;
   const previous = select.value;
   const list = fertiGetProjectWaterAnalyses();
-  const placeholder = fertProgT('bring_from_analysis', 'Traer de análisis');
+  // Placeholder = “elige uno”; el verbo “Traer” va en la etiqueta al lado.
+  const placeholder = fertProgT('select_water_analysis', 'Seleccionar análisis…');
   let html = `<option value="">${fertiEscapeAttr(placeholder)}</option>`;
   if (!list.length) {
     html += `<option value="" disabled>${fertiEscapeAttr(fertProgT('no_water_analyses', 'Sin análisis de agua en este proyecto'))}</option>`;
@@ -1669,8 +1670,16 @@ function fertiRefreshWaterAnalysisSelect() {
   else select.value = '';
   select.title = fertProgT(
     'bring_from_analysis_title',
-    'Traer kg/ha desde un análisis de agua guardado en este proyecto'
+    'Elige un análisis: se cargan sus kg/ha en aporte por agua'
   );
+  select.classList.toggle('is-linked', !!(select.value));
+  const labelEl = select.closest('.hydro-import-water-wrap')
+    && select.closest('.hydro-import-water-wrap').querySelector('.hydro-import-water-label');
+  if (labelEl) {
+    labelEl.textContent = select.value
+      ? fertProgT('linked_water_analysis', 'Análisis vinculado')
+      : fertProgT('bring_from_analysis', 'Traer de análisis');
+  }
 }
 
 function fertiApplyWaterAnalysisById(analysisId) {
@@ -1713,7 +1722,20 @@ function initFertiWaterInputs() {
     const el = e.target;
     if (!el || el.id !== 'fertiImportWaterSelect') return;
     const analysisId = el.value;
-    if (!analysisId) return;
+    el.classList.toggle('is-linked', !!analysisId);
+    const labelEl = el.closest('.hydro-import-water-wrap')
+      && el.closest('.hydro-import-water-wrap').querySelector('.hydro-import-water-label');
+    if (labelEl) {
+      labelEl.textContent = analysisId
+        ? fertProgT('linked_water_analysis', 'Análisis vinculado')
+        : fertProgT('bring_from_analysis', 'Traer de análisis');
+    }
+    if (!analysisId) {
+      fertiWaterAnalysisId = null;
+      markFertiProgDirty();
+      try { if (typeof saveFertirriegoProgram === 'function') saveFertirriegoProgram(); } catch (err) {}
+      return;
+    }
     const ok = fertiApplyWaterAnalysisById(analysisId);
     if (!ok && window.showMessage) {
       window.showMessage(

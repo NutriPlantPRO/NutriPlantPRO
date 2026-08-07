@@ -1907,17 +1907,20 @@
         color: '#16a34a',
         fill: '#22c55e99'
       };
+      var isCalib = !!t.isManual;
       var outline = L.polygon(t.latlngs, {
-        color: '#22c55e',
-        weight: 2,
-        fillColor: '#22c55e',
+        color: isCalib ? '#f59e0b' : '#22c55e',
+        weight: isCalib ? 3 : 2,
+        dashArray: isCalib ? '6 4' : null,
+        fillColor: isCalib ? '#f59e0b' : '#22c55e',
         fillOpacity: 0.06
       });
       var fill = L.polygon(t.latlngs, {
-        color: activeSem.color,
-        weight: 1.5,
-        fillColor: activeSem.fill,
-        fillOpacity: 0.72
+        color: isCalib ? '#b45309' : activeSem.color,
+        weight: isCalib ? 2.2 : 1.5,
+        dashArray: isCalib ? '5 3' : null,
+        fillColor: isCalib ? '#f59e0bcc' : activeSem.fill,
+        fillOpacity: isCalib ? 0.55 : 0.72
       });
       var center = t.center;
       if (!center || center.length < 2) {
@@ -1926,15 +1929,17 @@
       }
       var labelHtml =
         '<div class="aci-tree-label aci-tree-label--soft aci-tree-label--' +
-        (activeSem.key || 'verde') +
+        (isCalib ? 'calib' : activeSem.key || 'verde') +
         '" style="background:' +
-        (activeSem.color || '#0f172a') +
-        '" title="ID ' +
+        (isCalib ? '#b45309' : activeSem.color || '#0f172a') +
+        '" title="' +
+        (isCalib ? 'Calibración · ' : '') +
+        'ID ' +
         t.id +
         (t.row != null ? ' · Surco ' + t.row + ' · Pos ' + t.pos : '') +
         (activeSem.label ? ' · ' + activeSem.label : '') +
         '">' +
-        t.id +
+        (isCalib ? 'C' : t.id) +
         '</div>';
       var label = L.marker(center, {
         interactive: true,
@@ -4144,12 +4149,28 @@
     if (job.status === 'done') {
       activeProfessionalJobId = null;
       setAnalyzeBusy(false);
+      var doneStats = job.stats || {};
+      var detectedN = Number(doneStats.count) || 0;
+      var expectedN = doneStats.expectedTrees != null ? Number(doneStats.expectedTrees) : null;
+      var missingN = doneStats.missingCount != null ? Number(doneStats.missingCount) : null;
+      var anchorsN = doneStats.calibrationAnchors != null ? Number(doneStats.calibrationAnchors) : null;
+      var ratioMsg = '';
+      var statusKind = 'ok';
+      if (expectedN != null && expectedN > 0) {
+        var deltaPct = (Math.abs(detectedN - expectedN) / expectedN) * 100;
+        ratioMsg = ' · ' + detectedN + '/' + expectedN + ' esp.';
+        if (deltaPct > 15) {
+          statusKind = 'error';
+          ratioMsg += ' · revisa densidad o las 10';
+        }
+      } else {
+        ratioMsg = ' · ' + detectedN + ' árboles';
+      }
+      if (anchorsN != null) ratioMsg += ' · ' + anchorsN + ' anclas';
+      if (missingN != null && Number.isFinite(missingN)) ratioMsg += ' · ' + missingN + ' huecos';
       setMapStatus(
-        'Análisis profesional terminado · ' +
-          Number((job.stats && job.stats.count) || 0) +
-          ' árboles · costo ' +
-          fmtUsd4(job.actual_usd || 0),
-        'ok'
+        'grid_v1 listo' + ratioMsg + ' · costo ' + fmtUsd4(job.actual_usd || 0),
+        statusKind
       );
       await loadProfessionalViewport(job.result_id, job.stats || {});
       return;
@@ -4200,7 +4221,7 @@
       site_id: getSiteId(),
       flight_id: flightId,
       options: {
-        detector_mode: 'classical_v1',
+        detector_mode: 'grid_v1',
         expected_spacing_m: spacing,
         min_canopy_m: calibration.profile.min_canopy_m || 1,
         max_canopy_m: calibration.profile.max_canopy_m || 12,

@@ -308,8 +308,9 @@ exports.handler = async function handler(event) {
       status: 'queued',
       progress: 0,
       phase: 'En cola',
-      detector_mode: String(options.detector_mode || 'classical_v1').slice(0, 60),
+      detector_mode: String(options.detector_mode || 'grid_v1').slice(0, 60),
       options_json: {
+        detector_mode: String(options.detector_mode || 'grid_v1').slice(0, 60),
         min_canopy_m: Math.max(0.3, Math.min(Number(options.min_canopy_m) || 1.0, 12)),
         max_canopy_m: Math.max(1, Math.min(Number(options.max_canopy_m) || 12, 40)),
         expected_spacing_m: Math.max(
@@ -320,6 +321,20 @@ exports.handler = async function handler(event) {
           0,
           Math.min(Number(options.target_trees_per_ha) || 0, 5000)
         ),
+        row_azimuth_deg:
+          options.row_azimuth_deg == null || options.row_azimuth_deg === ''
+            ? null
+            : Math.max(0, Math.min(Number(options.row_azimuth_deg) || 0, 180)),
+        planting_frame_m:
+          options.planting_frame_m && typeof options.planting_frame_m === 'object'
+            ? {
+                in_row: Math.max(0, Math.min(Number(options.planting_frame_m.in_row) || 0, 60)),
+                between_rows: Math.max(
+                  0,
+                  Math.min(Number(options.planting_frame_m.between_rows) || 0, 60)
+                )
+              }
+            : null,
         calibration,
         cost_cap_usd: Math.max(0.1, Math.min(Number(options.cost_cap_usd) || 1, 5))
       },

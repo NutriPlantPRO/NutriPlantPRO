@@ -12,7 +12,7 @@ import requests
 from flask import Flask, jsonify, request
 from supabase import Client, create_client
 
-from detector import DETECTOR_VERSION, analyze_geotiff
+from detector import DETECTOR_VERSION, DetectorError, analyze_geotiff
 
 
 app = Flask(__name__)
@@ -61,6 +61,12 @@ def update_job(client: Client, job_id: str, **fields) -> None:
     client.table("airci_detect_jobs").update(fields).eq("id", job_id).execute()
 
 
+def _format_error(error: Exception | str) -> str:
+    if isinstance(error, DetectorError):
+        return f"{error.code}: {error}"[:4000]
+    return str(error)[:4000]
+
+
 def fail_job(client: Client | None, job_id: str, error: Exception | str) -> None:
     if not client:
         return
@@ -70,7 +76,7 @@ def fail_job(client: Client | None, job_id: str, error: Exception | str) -> None
             job_id,
             status="error",
             phase="Error",
-            error_message=str(error)[:4000],
+            error_message=_format_error(error),
             finished_at=utc_now(),
         )
     except Exception:
@@ -212,6 +218,9 @@ def process_job(job_id: str, client: Client | None = None) -> dict:
         downloaded_bytes = download_ortho(client, flight["storage_path"], temp_path)
 
         options = dict(job.get("options_json") or {})
+        if job.get("detector_mode") and not options.get("detector_mode"):
+            options["detector_mode"] = job.get("detector_mode")
+        options.setdefault("detector_mode", "grid_v1")
         if flight.get("gsd_m"):
             options["gsd_m"] = float(flight["gsd_m"])
         cost_cap_usd = max(0.1, min(float(options.get("cost_cap_usd") or 1.0), 5.0))
@@ -324,7 +333,7 @@ def process():
         return jsonify(process_job(job_id, client))
     except Exception as error:
         app.logger.exception("AirCI job %s", job_id)
-        return jsonify({"ok": False, "error": str(error)}), 500
+        return jsonify({"ok": False, "error": _format_error(error)}), 500
 
 
 if __name__ == "__main__":

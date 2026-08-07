@@ -3916,16 +3916,42 @@ html.embed-login body {
   margin: 0;
 }
 
+.hydro-import-water-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.hydro-import-water-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0369a1;
+  white-space: nowrap;
+}
 .hydro-import-water-select {
-  max-width: min(100%, 240px);
+  max-width: min(100%, 260px);
+  min-width: 160px;
   font-size: 0.82rem;
   font-weight: 600;
-  border: 1px solid #0ea5e9;
+  border: 1.5px solid #0ea5e9;
   color: #0369a1;
-  background: #f0f9ff;
-  border-radius: 7px;
-  padding: 6px 8px;
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 8px;
+  padding: 7px 10px;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(14, 165, 233, 0.15);
+}
+.hydro-import-water-select:hover,
+.hydro-import-water-select:focus {
+  border-color: #0284c7;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.22);
+}
+.hydro-import-water-select.is-linked {
+  border-color: #059669;
+  color: #065f46;
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
 }
 
 .hydro-acid-summary {
@@ -4087,35 +4113,54 @@ html.embed-login body {
   text-overflow: ellipsis;
 }
 .hydro-solution-picker {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   width: 90px;
   max-width: 90px;
   min-width: 90px;
   min-height: 34px;
-  padding: 7px 8px;
+  padding: 6px 8px;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
   cursor: pointer;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
   box-sizing: border-box;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+.hydro-solution-picker__icon {
+  flex: 0 0 auto;
+  display: block;
+}
+.hydro-solution-picker__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .hydro-solution-picker.is-empty {
-  background: #fff;
-  border: 1.5px solid #86efac;
-  color: transparent;
-  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.06);
+  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1.5px solid #16a34a;
+  color: #15803d;
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.18);
 }
 .hydro-solution-picker.is-empty:hover,
 .hydro-solution-picker.is-empty:focus-visible {
-  border-color: #16a34a;
-  background: #f0fdf4;
+  border-color: #15803d;
+  background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #14532d;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.28);
+  transform: translateY(-1px);
   outline: none;
+}
+.hydro-solution-picker.is-empty:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
 }
 .hydro-solution-picker.is-selected {
   background: #16a34a;

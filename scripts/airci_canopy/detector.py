@@ -1,15 +1,14 @@
-"""Detector clásico AirCI v1.2.
+"""Detector AirCI — motor oficial ``grid_v1``.
 
-Procesa GeoTIFF por ventanas solapadas. No carga el raster completo en memoria.
-Criterio multi-señal (contraste oscuro, textura, sombra, verdor relativo): no basta
-“más verde”. Un modelo de segmentación entrenado puede sustituir ``detect_tile``
-sin cambiar el contrato.
+Pipeline: patrón (10 + densidad) → rejilla de seeds → confirmar RGB local → merge.
+El RGB no inventa centros libres; solo confirma candidatos de la rejilla.
+``detect_tile`` queda como apoyo de evidencia / modo experimental ``classical_v1``.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Callable, Iterable
 
 import cv2
@@ -19,7 +18,16 @@ from rasterio.windows import Window
 from rasterio.warp import transform as warp_transform
 
 
-DETECTOR_VERSION = "airci-classical-v1.2.0"
+DETECTOR_VERSION = "airci-grid-v1.0.0"
+CLASSICAL_DETECTOR_VERSION = "airci-classical-v1.2.0"
+
+
+class DetectorError(ValueError):
+    """Error de negocio con código estable para UI/worker."""
+
+    def __init__(self, code: str, message: str):
+        self.code = str(code)
+        super().__init__(message)
 
 
 @dataclass
@@ -30,6 +38,31 @@ class Candidate:
     confidence: float
     area_px: float
     contour_px: list[tuple[float, float]] = field(default_factory=list)
+    seed_id: str | None = None
+    shift_m: float | None = None
+
+
+@dataclass
+class PlantingPattern:
+    typical_diam_m: float
+    spacing_in_row_m: float
+    spacing_between_rows_m: float
+    row_azimuth_deg: float
+    source: str
+    pattern_confidence: float
+    target_trees_per_ha: float | None = None
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class Seed:
+    seed_id: str
+    x_px: float
+    y_px: float
+    row_i: int
+    col_i: int
 
 
 def _to_u8(band: np.ndarray) -> np.ndarray:
@@ -559,12 +592,773 @@ def _to_wgs84(
     return centers, polygons
 
 
-def analyze_geotiff(
+def _valid_calibration_samples(samples: list) -> list[dict]:
+    valid: list[dict] = []
+    for sample in samples:
+        if not isinstance(sample, dict):
+            continue
+        ring = _normalize_ring(sample.get("polygon_json"))
+        lat = float(sample.get("center_lat") or 0)
+        lng = float(sample.get("center_lng") or 0)
+        if ring is None or not (math.isfinite(lat) and math.isfinite(lng)):
+            continue
+        if abs(lat) > 90 or abs(lng) > 180:
+            continue
+        diameter_m = float(sample.get("diameter_m") or 0)
+        if diameter_m <= 0 and float(sample.get("area_m2") or 0) > 0:
+            diameter_m = 2.0 * math.sqrt(float(sample["area_m2"]) / math.pi)
+        if diameter_m <= 0:
+            continue
+        item = dict(sample)
+        item["center_lat"] = lat
+        item["center_lng"] = lng
+        item["diameter_m"] = diameter_m
+        item["polygon_json"] = ring
+        valid.append(item)
+    return valid
+
+
+def _local_en_m(centers: list[tuple[float, float]]) -> np.ndarray:
+    """Lat/lng → este/norte locales en metros (origen = media)."""
+    if not centers:
+        return np.zeros((0, 2), dtype=np.float64)
+    lat0 = float(np.mean([c[0] for c in centers]))
+    lng0 = float(np.mean([c[1] for c in centers]))
+    out = np.zeros((len(centers), 2), dtype=np.float64)
+    for index, (lat, lng) in enumerate(centers):
+        north = _haversine_m(lat0, lng0, lat, lng0)
+        if lat < lat0:
+            north = -north
+        east = _haversine_m(lat0, lng0, lat0, lng)
+        if lng < lng0:
+            east = -east
+        out[index, 0] = east
+        out[index, 1] = north
+    return out
+
+
+def _angle_mod180(deg: float) -> float:
+    value = deg % 180.0
+    if value < 0:
+        value += 180.0
+    return value
+
+
+def _nn_distances(xy: np.ndarray) -> list[float]:
+    dists: list[float] = []
+    for index in range(len(xy)):
+        best = float("inf")
+        for other in range(len(xy)):
+            if index == other:
+                continue
+            delta = xy[index] - xy[other]
+            dist = float(math.hypot(float(delta[0]), float(delta[1])))
+            if dist < best:
+                best = dist
+        if math.isfinite(best) and best < 1e7:
+            dists.append(best)
+    return dists
+
+
+def pattern_from_calibration(samples: list, options: dict | None = None) -> PlantingPattern:
+    """Etapa A: Ø típico, azimut, paso en hilera y entre hileras."""
+    options = options or {}
+    valid = _valid_calibration_samples(samples)
+    if len(valid) < 10:
+        raise DetectorError(
+            "CALIBRATION_REQUIRED",
+            f"Se requieren 10 copas con centro+perímetro+Ø; hay {len(valid)} válidas.",
+        )
+
+    diameters = [float(sample["diameter_m"]) for sample in valid]
+    typical_diam = float(np.median(diameters))
+    if typical_diam < 0.4 or typical_diam > 40:
+        raise DetectorError(
+            "PATTERN_UNSTABLE",
+            f"Diámetro típico fuera de rango ({typical_diam:.2f} m).",
+        )
+
+    centers = [(float(s["center_lat"]), float(s["center_lng"])) for s in valid]
+    xy = _local_en_m(centers)
+    # Separación mínima entre anclas (no pegadas).
+    nn = _nn_distances(xy)
+    median_nn = float(np.median(nn)) if nn else 0.0
+    if median_nn > 0 and median_nn < 0.35 * typical_diam:
+        raise DetectorError(
+            "PATTERN_UNSTABLE",
+            "Las 10 copas están demasiado juntas para estimar un patrón de plantación.",
+        )
+
+    dens = float(options.get("target_trees_per_ha") or options.get("densidad_ha") or 0.0)
+    dens = dens if 20 <= dens <= 5000 else 0.0
+    frame = options.get("planting_frame_m") if isinstance(options.get("planting_frame_m"), dict) else {}
+    frame_in = float(frame.get("in_row") or 0) if frame else 0.0
+    frame_between = float(frame.get("between_rows") or 0) if frame else 0.0
+    az_opt = options.get("row_azimuth_deg")
+    az_opt = float(az_opt) if az_opt is not None and str(az_opt) != "" else None
+
+    # Azimut: PCA (dirección de mayor dispersión ≈ hilera o calle).
+    centered = xy - xy.mean(axis=0)
+    if float(np.linalg.norm(centered)) < 1e-6:
+        raise DetectorError("PATTERN_UNSTABLE", "Las 10 copas colapsan en un solo punto.")
+    cov = centered.T @ centered / max(1, len(centered) - 1)
+    eigvals, eigvecs = np.linalg.eigh(cov)
+    axis = eigvecs[:, int(np.argmax(eigvals))]
+    az_pca = _angle_mod180(math.degrees(math.atan2(float(axis[1]), float(axis[0]))))
+
+    # Refinar con ángulos de vecinos más cercanos.
+    pair_angles: list[float] = []
+    for index in range(len(xy)):
+        best_j = -1
+        best_d = float("inf")
+        for other in range(len(xy)):
+            if index == other:
+                continue
+            delta = xy[other] - xy[index]
+            dist = float(math.hypot(float(delta[0]), float(delta[1])))
+            if dist < best_d:
+                best_d = dist
+                best_j = other
+        if best_j >= 0:
+            delta = xy[best_j] - xy[index]
+            pair_angles.append(
+                _angle_mod180(math.degrees(math.atan2(float(delta[1]), float(delta[0]))))
+            )
+    if pair_angles:
+        # Media circular mod 180.
+        doubled = [math.radians(a * 2.0) for a in pair_angles]
+        mean_sin = float(np.mean([math.sin(a) for a in doubled]))
+        mean_cos = float(np.mean([math.cos(a) for a in doubled]))
+        az_nn = _angle_mod180(math.degrees(math.atan2(mean_sin, mean_cos)) / 2.0)
+        # Si PCA y NN discrepan mucho, preferir NN (hileras locales).
+        diff = min(abs(az_pca - az_nn), 180.0 - abs(az_pca - az_nn))
+        az_est = az_nn if diff > 35 else az_pca
+    else:
+        az_est = az_pca
+        diff = 0.0
+
+    row_azimuth = _angle_mod180(az_opt) if az_opt is not None else az_est
+
+    # Proyectar a ejes hilera / entre-hilera.
+    theta = math.radians(row_azimuth)
+    cos_t, sin_t = math.cos(theta), math.sin(theta)
+    along = centered[:, 0] * cos_t + centered[:, 1] * sin_t
+    across = -centered[:, 0] * sin_t + centered[:, 1] * cos_t
+
+    def _typical_step(values: np.ndarray) -> float:
+        steps: list[float] = []
+        for index, value in enumerate(values):
+            best = float("inf")
+            for other, other_value in enumerate(values):
+                if index == other:
+                    continue
+                delta = abs(float(value - other_value))
+                if 0.4 < delta < best:
+                    best = delta
+            if math.isfinite(best) and best < 1e6:
+                steps.append(best)
+        return float(np.median(steps)) if steps else 0.0
+
+    step_along = _typical_step(along)
+    step_across = _typical_step(across)
+    spacing_density = math.sqrt(10000.0 / dens) if dens > 0 else 0.0
+
+    source_parts: list[str] = []
+    if frame_in >= 0.5 and frame_between >= 0.5:
+        spacing_in_row = frame_in
+        spacing_between = frame_between
+        source_parts.append("frame")
+    elif dens > 0:
+        # Densidad manda el producto; NN afina el eje dominante.
+        if step_along >= 0.8 and abs(step_along - spacing_density) / spacing_density <= 0.45:
+            spacing_in_row = step_along
+        else:
+            spacing_in_row = spacing_density
+        spacing_between = 10000.0 / (dens * spacing_in_row)
+        if step_across >= 0.8 and abs(step_across - spacing_between) / max(spacing_between, 1e-6) <= 0.5:
+            spacing_between = step_across
+            spacing_in_row = 10000.0 / (dens * spacing_between)
+        source_parts.append("density")
+        if step_along >= 0.8 or step_across >= 0.8:
+            source_parts.append("calibration")
+    else:
+        spacing_in_row = step_along or median_nn or typical_diam * 1.7
+        spacing_between = step_across or spacing_in_row
+        source_parts.append("calibration")
+
+    if spacing_in_row < 0.8 or spacing_in_row > 45 or spacing_between < 0.8 or spacing_between > 60:
+        raise DetectorError(
+            "PATTERN_UNSTABLE",
+            f"Espaciado incoherente ({spacing_in_row:.2f}×{spacing_between:.2f} m).",
+        )
+
+    # Confianza: dispersión de anclas + acuerdo NN/PCA + acuerdo con densidad.
+    span = float(np.linalg.norm(xy.max(axis=0) - xy.min(axis=0)))
+    span_score = min(1.0, span / max(spacing_in_row * 3.0, 1.0))
+    angle_score = 1.0 if az_opt is not None else max(0.0, 1.0 - (diff / 90.0))
+    dens_score = 1.0
+    if dens > 0 and median_nn > 0:
+        dens_score = max(0.0, 1.0 - abs(median_nn - spacing_density) / max(spacing_density, 1e-6))
+    confidence = float(np.clip(0.35 * span_score + 0.35 * angle_score + 0.30 * dens_score, 0, 1))
+    if confidence < 0.28 and az_opt is None:
+        raise DetectorError(
+            "PATTERN_UNSTABLE",
+            "No hay hilera clara con las 10 marcas; reparte mejor las copas o indica azimut.",
+        )
+
+    return PlantingPattern(
+        typical_diam_m=round(typical_diam, 4),
+        spacing_in_row_m=round(float(spacing_in_row), 4),
+        spacing_between_rows_m=round(float(spacing_between), 4),
+        row_azimuth_deg=round(float(row_azimuth), 3),
+        source="+".join(source_parts) or "calibration",
+        pattern_confidence=round(confidence, 4),
+        target_trees_per_ha=dens if dens > 0 else None,
+    )
+
+
+def seed_grid(
+    pattern: PlantingPattern,
+    width_px: int,
+    height_px: int,
+    gsd_m: float,
+    origin_xy_px: tuple[float, float] | None = None,
+    expected_trees: int | None = None,
+) -> list[Seed]:
+    """Etapa B: rejilla de candidatos en píxeles del orto."""
+    if not gsd_m or gsd_m <= 0:
+        raise DetectorError("NO_GSD", "El orto no tiene GSD usable para la rejilla.")
+    step_x = pattern.spacing_in_row_m / gsd_m
+    step_y = pattern.spacing_between_rows_m / gsd_m
+    if step_x < 2 or step_y < 2:
+        raise DetectorError("TOO_MANY_SEEDS", "Espaciado en píxeles demasiado fino; revisa GSD/densidad.")
+
+    theta = math.radians(pattern.row_azimuth_deg)
+    # En imagen, +y baja; el ENU norte ≈ −fila si el norte del CRS apunta “arriba”.
+    # Trabajamos en ejes de píxel: col≈este, row≈sur ⇒ ángulo ENU se refleja en Y.
+    ux, uy = math.cos(theta), -math.sin(theta)
+    vx, vy = math.sin(theta), math.cos(theta)
+
+    ox = float(origin_xy_px[0]) if origin_xy_px else width_px / 2.0
+    oy = float(origin_xy_px[1]) if origin_xy_px else height_px / 2.0
+
+    # Cubrir bbox con margen de medio paso.
+    corners = [(0.0, 0.0), (width_px - 1.0, 0.0), (0.0, height_px - 1.0), (width_px - 1.0, height_px - 1.0)]
+    along_vals: list[float] = []
+    across_vals: list[float] = []
+    for cx, cy in corners:
+        dx, dy = cx - ox, cy - oy
+        along_vals.append(dx * ux + dy * uy)
+        across_vals.append(dx * vx + dy * vy)
+    a0 = min(along_vals) - step_x
+    a1 = max(along_vals) + step_x
+    b0 = min(across_vals) - step_y
+    b1 = max(across_vals) + step_y
+
+    n_along = int(math.floor((a1 - a0) / step_x)) + 1
+    n_across = int(math.floor((b1 - b0) / step_y)) + 1
+    rough = n_along * n_across
+    max_seeds = 50_000
+    if expected_trees and expected_trees > 0:
+        max_seeds = min(max_seeds, max(200, int(expected_trees * 1.35) + 50))
+    if rough > max_seeds * 1.2:
+        raise DetectorError(
+            "TOO_MANY_SEEDS",
+            f"La rejilla generaría ~{rough} seeds; sectoriza el orto o revisa densidad.",
+        )
+
+    seeds: list[Seed] = []
+    for row_i in range(n_across):
+        across = b0 + row_i * step_y
+        for col_i in range(n_along):
+            along = a0 + col_i * step_x
+            x = ox + along * ux + across * vx
+            y = oy + along * uy + across * vy
+            if x < -step_x or y < -step_y or x > width_px + step_x or y > height_px + step_y:
+                continue
+            if x < 0 or y < 0 or x >= width_px or y >= height_px:
+                continue
+            seeds.append(
+                Seed(
+                    seed_id=f"r{row_i}-c{col_i}",
+                    x_px=float(x),
+                    y_px=float(y),
+                    row_i=row_i,
+                    col_i=col_i,
+                )
+            )
+            if len(seeds) > max_seeds:
+                raise DetectorError(
+                    "TOO_MANY_SEEDS",
+                    f"Más de {max_seeds} seeds; reduce el área o corrige densidad.",
+                )
+    return seeds
+
+
+def confirm_seed(
+    canopy: np.ndarray,
+    lum: np.ndarray,
+    texture: np.ndarray,
+    dark_blob: np.ndarray,
+    labels: np.ndarray,
+    seed_x: float,
+    seed_y: float,
+    pattern: PlantingPattern,
+    gsd_m: float,
+) -> Candidate | None:
+    """Etapa C: confirma (o descarta) un seed con evidencia RGB local."""
+    height, width = canopy.shape[:2]
+    sx = int(round(seed_x))
+    sy = int(round(seed_y))
+    if sx < 0 or sy < 0 or sx >= width or sy >= height:
+        return None
+
+    typical_r = max(2.0, (pattern.typical_diam_m * 0.5) / gsd_m)
+    max_shift_px = max(2.0, (0.25 * pattern.spacing_in_row_m) / gsd_m)
+    search = int(math.ceil(max_shift_px))
+    x0, x1 = max(0, sx - search), min(width, sx + search + 1)
+    y0, y1 = max(0, sy - search), min(height, sy + search + 1)
+    patch = canopy[y0:y1, x0:x1].astype(np.float32)
+    if patch.size == 0:
+        return None
+
+    # Pico ponderado al centro del seed (evita enganchar sombra/borde lejano).
+    yy, xx = np.mgrid[y0:y1, x0:x1]
+    dist2 = (xx - seed_x) ** 2 + (yy - seed_y) ** 2
+    allowed = dist2 <= (max_shift_px * max_shift_px)
+    if not np.any(allowed):
+        return None
+    sigma2 = max(4.0, (max_shift_px * 0.55) ** 2)
+    weight = np.exp(-dist2 / (2.0 * sigma2)).astype(np.float32)
+    # Distancia al borde de vegetación favorece el interior de la copa.
+    local_mask = (labels[y0:y1, x0:x1] > 0).astype(np.uint8)
+    if local_mask.any():
+        dist_in = cv2.distanceTransform(local_mask, cv2.DIST_L2, 5)
+        interior = np.minimum(dist_in / max(typical_r * 0.35, 1.0), 1.5)
+    else:
+        interior = np.zeros_like(patch)
+    scored = np.where(allowed, patch * weight * (0.55 + 0.45 * interior), -1.0)
+    peak_score = float(scored.max())
+    if peak_score < 28:
+        return None
+    py, px = np.unravel_index(int(np.argmax(scored)), scored.shape)
+    cx = float(x0 + px)
+    cy = float(y0 + py)
+    # Si el centro del seed ya es creíble, no te vayas al borde.
+    center_val = float(canopy[sy, sx])
+    if center_val >= 55 and math.hypot(cx - seed_x, cy - seed_y) > max_shift_px * 0.45:
+        cx, cy = float(seed_x), float(seed_y)
+    ix, iy = int(round(cx)), int(round(cy))
+    ix = min(max(ix, 0), width - 1)
+    iy = min(max(iy, 0), height - 1)
+
+    peak = float(canopy[iy, ix])
+    score_norm = peak / 255.0
+    texture_score = min(1.0, float(texture[iy, ix]) / 12.0)
+    dark_score = min(1.0, float(dark_blob[iy, ix]) / 22.0)
+    shadow_score = _shadow_support(lum, ix, iy, typical_r)
+    if score_norm < 0.20 and texture_score < 0.22:
+        return None
+
+    radius = typical_r
+    contour_px, contour_area = _contour_for_seed(labels, ix, iy, radius)
+    typical_area = math.pi * (pattern.typical_diam_m * 0.5) ** 2
+    if contour_area > 0:
+        area_m2 = contour_area * gsd_m * gsd_m
+        if area_m2 < typical_area * 0.12 or area_m2 > typical_area * 2.8:
+            contour_area = 0.0
+            contour_px = []
+        else:
+            radius = max(
+                typical_r * 0.45,
+                min(math.sqrt(contour_area / math.pi), typical_r * 1.45),
+            )
+    if contour_area <= 0:
+        # Evidencia en el seed pero máscara incompleta → círculo del Ø típico.
+        if score_norm < 0.28 and texture_score < 0.30:
+            return None
+        contour_area = math.pi * radius * radius
+        contour_px = []
+
+    confidence = 100.0 * (
+        0.40 * score_norm
+        + 0.22 * texture_score
+        + 0.18 * dark_score
+        + 0.12 * shadow_score
+        + 0.08 * min(1.0, typical_r / max(radius, 1.0))
+    )
+    if confidence < 34:
+        return None
+
+    shift_m = math.hypot(cx - seed_x, cy - seed_y) * gsd_m
+    return Candidate(
+        x_px=cx,
+        y_px=cy,
+        radius_px=float(radius),
+        confidence=float(round(confidence, 1)),
+        area_px=float(contour_area),
+        contour_px=contour_px,
+        shift_m=float(round(shift_m, 3)),
+    )
+
+
+def _apply_semaphore(trees: list[dict]) -> tuple[float, float]:
+    areas = np.asarray(
+        [float(tree.get("area_px") or 0) for tree in trees if tree.get("area_px") is not None],
+        dtype=np.float64,
+    )
+    mean_area = float(areas.mean()) if len(areas) else 0.0
+    std_area = float(areas.std()) if len(areas) else 0.0
+    for tree in trees:
+        area_px = float(tree.get("area_px") or 0)
+        z_score = (area_px - mean_area) / std_area if std_area > 1e-9 else 0.0
+        metrics = dict(tree.get("metrics_json") or {})
+        metrics["z"] = round(z_score, 4)
+        tree["metrics_json"] = metrics
+        if tree.get("is_manual"):
+            tree["sem_key"] = "verde"
+            continue
+        if z_score < -1.1:
+            tree["sem_key"] = "rojo"
+        elif z_score < -0.45:
+            tree["sem_key"] = "amarillo"
+        elif z_score > 1.0:
+            tree["sem_key"] = "azul"
+        else:
+            tree["sem_key"] = "verde"
+    return mean_area, std_area
+
+
+def _size_band(ortho_ha: float | None) -> str:
+    if ortho_ha is None:
+        return "M"
+    if ortho_ha <= 1.0:
+        return "S"
+    if ortho_ha <= 10.0:
+        return "M"
+    return "L"
+
+
+def _samples_pixel_origin(
+    dataset: rasterio.io.DatasetReader,
+    samples: list[dict],
+) -> tuple[float, float] | None:
+    xs: list[float] = []
+    ys: list[float] = []
+    for sample in samples:
+        lat = float(sample["center_lat"])
+        lng = float(sample["center_lng"])
+        try:
+            xs_crs, ys_crs = warp_transform("EPSG:4326", dataset.crs, [lng], [lat])
+            col, row = ~dataset.transform * (xs_crs[0], ys_crs[0])
+        except Exception:
+            continue
+        if math.isfinite(col) and math.isfinite(row):
+            xs.append(float(col))
+            ys.append(float(row))
+    if not xs:
+        return None
+    return float(np.mean(xs)), float(np.mean(ys))
+
+
+def _candidates_to_trees(
+    dataset: rasterio.io.DatasetReader,
+    candidates: list[Candidate],
+    gsd_m: float | None,
+) -> list[dict]:
+    centers, polygons = _to_wgs84(dataset, candidates)
+    trees: list[dict] = []
+    for index, candidate in enumerate(candidates):
+        area_m2 = candidate.area_px * gsd_m * gsd_m if gsd_m else None
+        diameter_m = 2.0 * candidate.radius_px * gsd_m if gsd_m else None
+        lat, lng = centers[index]
+        trees.append(
+            {
+                "tree_index": index + 1,
+                "stable_id": candidate.seed_id or str(index + 1),
+                "center_lat": float(lat),
+                "center_lng": float(lng),
+                "area_px": round(candidate.area_px, 2),
+                "area_m2": round(area_m2, 3) if area_m2 is not None else None,
+                "diameter_m": round(diameter_m, 3) if diameter_m is not None else None,
+                "confidence": candidate.confidence,
+                "sem_key": "verde",
+                "polygon_json": polygons[index],
+                "is_manual": False,
+                "metrics_json": {
+                    "source": "grid_confirmed",
+                    "from_calibration": False,
+                    "seed_id": candidate.seed_id,
+                    "shift_m": candidate.shift_m,
+                    "radius_px": round(candidate.radius_px, 2),
+                    "z": 0.0,
+                },
+            }
+        )
+    return trees
+
+
+def merge_and_score(
+    confirmed: list[dict],
+    anchors: list[dict],
+    pattern: PlantingPattern,
+    missing_count: int,
+    seeds_total: int,
+    ortho_ha: float | None,
+    gsd_m: float | None,
+    extra_stats: dict | None = None,
+) -> tuple[list[dict], dict]:
+    """Etapa D: anclas + confirmados + semáforo + stats."""
+    trees, replaced = _merge_calibration_anchors(
+        confirmed, anchors, pattern.spacing_in_row_m
+    )
+    for tree in trees:
+        metrics = dict(tree.get("metrics_json") or {})
+        if tree.get("is_manual"):
+            metrics["source"] = "calibration"
+            metrics["from_calibration"] = True
+        tree["metrics_json"] = metrics
+    mean_area, std_area = _apply_semaphore(trees)
+    dens = pattern.target_trees_per_ha
+    expected = int(round(dens * ortho_ha)) if dens and ortho_ha and ortho_ha > 0 else None
+    stats = {
+        "count": len(trees),
+        "meanArea": round(mean_area, 3),
+        "stdArea": round(std_area, 3),
+        "gsdM": gsd_m,
+        "detectorVersion": DETECTOR_VERSION,
+        "detectorMode": "grid_v1",
+        "professional": True,
+        "validationStatus": "requires_review",
+        "calibrationAnchors": len(anchors),
+        "calibrationReplaced": replaced,
+        "missingCount": int(missing_count),
+        "seedsTotal": int(seeds_total),
+        "confirmed": len(confirmed),
+        "expectedSpacingM": round(pattern.spacing_in_row_m, 3),
+        "targetTreesPerHa": dens,
+        "expectedTrees": expected,
+        "orthoAreaHa": round(ortho_ha, 4) if ortho_ha else None,
+        "plantingPattern": pattern.as_dict(),
+        "band": _size_band(ortho_ha),
+        "quality": {
+            "pattern_confidence": pattern.pattern_confidence,
+            "frame_vs_density_ok": True,
+            "gsd_cm": round(gsd_m * 100.0, 2) if gsd_m else None,
+        },
+    }
+    if extra_stats:
+        stats.update(extra_stats)
+    if trees:
+        latitudes = [float(tree["center_lat"]) for tree in trees]
+        longitudes = [float(tree["center_lng"]) for tree in trees]
+        stats["treeBbox"] = [
+            float(min(longitudes)),
+            float(min(latitudes)),
+            float(max(longitudes)),
+            float(max(latitudes)),
+        ]
+    return trees, stats
+
+
+def _prepare_confirm_masks(
+    tile: np.ndarray,
+    pattern: PlantingPattern,
+    gsd_m: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    rgb = _rgb_u8(tile)
+    canopy, lum, texture, dark_blob = _canopy_evidence(rgb)
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    valid = hsv[:, :, 2] > 12
+    mask = np.zeros(canopy.shape, dtype=np.uint8)
+    if valid.any() and int(canopy[valid].max()) >= 8:
+        otsu_value, _ = cv2.threshold(canopy[valid], 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        positive = canopy[valid & (canopy > 8)]
+        pct_thr = int(np.percentile(positive, 58)) if positive.size > 80 else int(otsu_value)
+        threshold = max(50, min(int(otsu_value * 0.82), pct_thr))
+        mask = ((canopy >= threshold) & valid).astype(np.uint8) * 255
+        min_radius_px = max(2.5, (pattern.typical_diam_m * 0.35) / gsd_m)
+        morphology_radius = max(1, min(12, int(round(min_radius_px * 0.12))))
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (_odd(morphology_radius * 2 + 1), _odd(morphology_radius * 2 + 1))
+        )
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    _, labels = cv2.connectedComponents((mask > 0).astype(np.uint8), connectivity=8)
+    return canopy, lum, texture, dark_blob, labels
+
+
+def analyze_geotiff_grid(
     path: str,
     options: dict,
     progress: Callable[[int, str], None] | None = None,
 ) -> tuple[list[dict], dict]:
-    """Procesa un GeoTIFF completo por tiles y devuelve árboles + estadísticas."""
+    """Pipeline oficial: patrón → rejilla → confirmar → merge."""
+
+    def report(value: int, phase: str) -> None:
+        if progress:
+            progress(max(0, min(100, int(value))), phase)
+
+    calibration = options.get("calibration") if isinstance(options.get("calibration"), dict) else {}
+    samples_raw = calibration.get("samples") if isinstance(calibration.get("samples"), list) else []
+    samples = _valid_calibration_samples(samples_raw)
+    pattern = pattern_from_calibration(samples_raw, options)
+
+    tile_size = max(512, min(int(options.get("tile_size") or 2048), 4096))
+    # Overlap debe cubrir > 1× Ø típico.
+    min_overlap = int(math.ceil((pattern.typical_diam_m / max(float(options.get("gsd_m") or 0.05), 1e-3)) * 1.05))
+    overlap = max(64, min(int(options.get("overlap") or max(256, min_overlap)), tile_size // 3))
+    provided_gsd = float(options.get("gsd_m") or 0.0) or None
+
+    report(8, "Abriendo GeoTIFF")
+    with rasterio.open(path) as dataset:
+        if dataset.count < 1:
+            raise ValueError("El GeoTIFF no tiene bandas.")
+        gsd_m = _meters_per_pixel(dataset, provided_gsd)
+        if not gsd_m or gsd_m <= 0:
+            raise DetectorError("NO_GSD", "El GeoTIFF no tiene escala (GSD) usable.")
+
+        total_pixels = float(dataset.width * dataset.height)
+        ortho_ha = (total_pixels * gsd_m * gsd_m) / 10000.0
+        if ortho_ha < 0.05:
+            raise DetectorError("PATTERN_UNSTABLE", "Orto demasiado pequeño (< 0.05 ha).")
+        dens = pattern.target_trees_per_ha
+        expected_trees = int(round(dens * ortho_ha)) if dens else None
+        if expected_trees and expected_trees > 50_000:
+            raise DetectorError(
+                "TOO_MANY_SEEDS",
+                f"Se esperan ~{expected_trees} plantas; sectoriza el predio antes de analizar.",
+            )
+
+        report(14, "Generando rejilla de plantación")
+        origin = _samples_pixel_origin(dataset, samples)
+        seeds = seed_grid(
+            pattern,
+            width_px=dataset.width,
+            height_px=dataset.height,
+            gsd_m=gsd_m,
+            origin_xy_px=origin,
+            expected_trees=expected_trees,
+        )
+
+        # Índice espacial de seeds por celda de tile.
+        cell = float(tile_size - overlap)
+        buckets: dict[tuple[int, int], list[Seed]] = {}
+        for seed in seeds:
+            bx = int(seed.x_px // max(cell, 1.0))
+            by = int(seed.y_px // max(cell, 1.0))
+            buckets.setdefault((bx, by), []).append(seed)
+
+        x_starts = _window_starts(dataset.width, tile_size, overlap)
+        y_starts = _window_starts(dataset.height, tile_size, overlap)
+        total_tiles = len(x_starts) * len(y_starts)
+        confirmed: list[Candidate] = []
+        completed = 0
+        seen_seeds: set[str] = set()
+
+        report(18, f"Confirmando {len(seeds)} candidatos")
+        for y0 in y_starts:
+            for x0 in x_starts:
+                width = min(tile_size, dataset.width - x0)
+                height = min(tile_size, dataset.height - y0)
+                # Seeds cuyo centro cae en el core del tile (evita dobles en overlap).
+                local_seeds: list[Seed] = []
+                bx0 = int(x0 // max(cell, 1.0)) - 1
+                by0 = int(y0 // max(cell, 1.0)) - 1
+                bx1 = int((x0 + width) // max(cell, 1.0)) + 1
+                by1 = int((y0 + height) // max(cell, 1.0)) + 1
+                for by in range(by0, by1 + 1):
+                    for bx in range(bx0, bx1 + 1):
+                        for seed in buckets.get((bx, by), ()):
+                            if seed.seed_id in seen_seeds:
+                                continue
+                            if not _in_core(
+                                seed.x_px,
+                                seed.y_px,
+                                x0,
+                                y0,
+                                width,
+                                height,
+                                dataset.width,
+                                dataset.height,
+                                overlap,
+                            ):
+                                continue
+                            local_seeds.append(seed)
+                if local_seeds:
+                    window = Window(x0, y0, width, height)
+                    tile = dataset.read(
+                        indexes=list(range(1, min(dataset.count, 3) + 1)),
+                        window=window,
+                        boundless=False,
+                    )
+                    canopy, lum, texture, dark_blob, labels = _prepare_confirm_masks(
+                        tile, pattern, gsd_m
+                    )
+                    for seed in local_seeds:
+                        seen_seeds.add(seed.seed_id)
+                        hit = confirm_seed(
+                            canopy,
+                            lum,
+                            texture,
+                            dark_blob,
+                            labels,
+                            seed.x_px - x0,
+                            seed.y_px - y0,
+                            pattern,
+                            gsd_m,
+                        )
+                        if hit is None:
+                            continue
+                        hit.x_px += x0
+                        hit.y_px += y0
+                        hit.contour_px = [(px + x0, py + y0) for px, py in hit.contour_px]
+                        hit.seed_id = seed.seed_id
+                        confirmed.append(hit)
+                completed += 1
+                report(
+                    18 + int(62 * completed / max(total_tiles, 1)),
+                    f"Confirmando tile {completed}/{total_tiles}",
+                )
+
+        missing_count = max(0, len(seeds) - len(confirmed))
+
+        report(84, "Convirtiendo coordenadas")
+        auto_trees = _candidates_to_trees(dataset, confirmed, gsd_m)
+        report(88, "Fusionando anclas de calibración")
+        anchors = _calibration_anchor_trees(samples, gsd_m)
+        cover_area = float(sum(float(c.area_px) for c in confirmed))
+        # Anclas suman después del merge; cover se recalcula abajo.
+        trees, stats = merge_and_score(
+            auto_trees,
+            anchors,
+            pattern,
+            missing_count=missing_count,
+            seeds_total=len(seeds),
+            ortho_ha=ortho_ha,
+            gsd_m=gsd_m,
+            extra_stats={
+                "widthPx": dataset.width,
+                "heightPx": dataset.height,
+                "tileSize": tile_size,
+                "overlap": overlap,
+                "tilesProcessed": total_tiles,
+                "calibrationSamples": len(samples_raw),
+                "calibrated": len(samples) >= 10,
+            },
+        )
+        cover_area = float(sum(float(tree.get("area_px") or 0) for tree in trees))
+        stats["coverPct"] = round(min(100.0, 100.0 * cover_area / total_pixels), 3)
+        report(90, "Preparando resultados")
+        return trees, stats
+
+
+def analyze_geotiff_classical(
+    path: str,
+    options: dict,
+    progress: Callable[[int, str], None] | None = None,
+) -> tuple[list[dict], dict]:
+    """Modo experimental: búsqueda libre por tiles (motor anterior)."""
 
     tile_size = max(512, min(int(options.get("tile_size") or 2048), 4096))
     overlap = max(64, min(int(options.get("overlap") or 256), tile_size // 3))
@@ -573,7 +1367,6 @@ def analyze_geotiff(
     provided_gsd = float(options.get("gsd_m") or 0.0) or None
     calibration = options.get("calibration") if isinstance(options.get("calibration"), dict) else {}
     samples = calibration.get("samples") if isinstance(calibration.get("samples"), list) else []
-    # Las copas corregidas por el usuario mandan sobre los valores genéricos.
     sample_diameters = [
         float(sample["diameter_m"])
         for sample in samples
@@ -651,89 +1444,22 @@ def analyze_geotiff(
             if target_density and ortho_ha and ortho_ha > 0
             else None
         )
-        # Si hay densidad, no dejes que el detector invente el doble de plantas.
         if expected_trees and expected_trees >= 10 and len(candidates) > expected_trees * 1.45:
             candidates = sorted(candidates, key=lambda c: c.confidence, reverse=True)
             candidates = candidates[: max(expected_trees, int(math.ceil(expected_trees * 1.35)))]
 
         report(84, "Convirtiendo coordenadas")
-        centers, polygons = _to_wgs84(dataset, candidates)
-        areas = np.asarray([candidate.area_px for candidate in candidates], dtype=np.float64)
-        mean_area = float(areas.mean()) if len(areas) else 0.0
-        std_area = float(areas.std()) if len(areas) else 0.0
-
-        trees: list[dict] = []
-        for index, candidate in enumerate(candidates, start=1):
-            area_m2 = candidate.area_px * gsd_m * gsd_m if gsd_m else None
-            diameter_m = 2.0 * candidate.radius_px * gsd_m if gsd_m else None
-            z_score = (
-                (candidate.area_px - mean_area) / std_area if std_area > 1e-9 else 0.0
-            )
-            if z_score < -1.1:
-                sem_key = "rojo"
-            elif z_score < -0.45:
-                sem_key = "amarillo"
-            elif z_score > 1.0:
-                sem_key = "azul"
-            else:
-                sem_key = "verde"
-            lat, lng = centers[index - 1]
-            trees.append(
-                {
-                    "tree_index": index,
-                    "stable_id": str(index),
-                    "center_lat": float(lat),
-                    "center_lng": float(lng),
-                    "area_px": round(candidate.area_px, 2),
-                    "area_m2": round(area_m2, 3) if area_m2 is not None else None,
-                    "diameter_m": round(diameter_m, 3) if diameter_m is not None else None,
-                    "confidence": candidate.confidence,
-                    "sem_key": sem_key,
-                    "polygon_json": polygons[index - 1],
-                    "is_manual": False,
-                    "metrics_json": {
-                        "radius_px": round(candidate.radius_px, 2),
-                        "z": round(z_score, 4),
-                    },
-                }
-            )
+        trees = _candidates_to_trees(dataset, candidates, gsd_m)
+        for tree in trees:
+            metrics = dict(tree.get("metrics_json") or {})
+            metrics["source"] = "classical"
+            tree["metrics_json"] = metrics
 
         report(88, "Aplicando copas de calibración")
         anchors = _calibration_anchor_trees(samples, gsd_m)
         trees, replaced = _merge_calibration_anchors(trees, anchors, expected_spacing_m)
-
-        # Recalcular semáforo con el set final (incluye anclas).
-        final_areas = np.asarray(
-            [float(tree.get("area_px") or 0) for tree in trees if tree.get("area_px") is not None],
-            dtype=np.float64,
-        )
-        mean_area = float(final_areas.mean()) if len(final_areas) else mean_area
-        std_area = float(final_areas.std()) if len(final_areas) else std_area
-        for tree in trees:
-            area_px = float(tree.get("area_px") or 0)
-            z_score = (area_px - mean_area) / std_area if std_area > 1e-9 else 0.0
-            if tree.get("is_manual"):
-                # Las del usuario no se “castigan”: quedan verdes de referencia.
-                tree["sem_key"] = "verde"
-                metrics = dict(tree.get("metrics_json") or {})
-                metrics["z"] = round(z_score, 4)
-                tree["metrics_json"] = metrics
-                continue
-            if z_score < -1.1:
-                tree["sem_key"] = "rojo"
-            elif z_score < -0.45:
-                tree["sem_key"] = "amarillo"
-            elif z_score > 1.0:
-                tree["sem_key"] = "azul"
-            else:
-                tree["sem_key"] = "verde"
-            metrics = dict(tree.get("metrics_json") or {})
-            metrics["z"] = round(z_score, 4)
-            tree["metrics_json"] = metrics
-
-        cover_area = float(
-            sum(float(tree.get("area_px") or 0) for tree in trees)
-        )
+        mean_area, std_area = _apply_semaphore(trees)
+        cover_area = float(sum(float(tree.get("area_px") or 0) for tree in trees))
         cover_pct = 100.0 * cover_area / total_pixels if total_pixels else 0.0
         stats = {
             "count": len(trees),
@@ -746,7 +1472,8 @@ def analyze_geotiff(
             "tileSize": tile_size,
             "overlap": overlap,
             "tilesProcessed": total_tiles,
-            "detectorVersion": DETECTOR_VERSION,
+            "detectorVersion": CLASSICAL_DETECTOR_VERSION,
+            "detectorMode": "classical_v1",
             "professional": True,
             "validationStatus": "requires_review",
             "calibrationSamples": len(samples),
@@ -769,3 +1496,15 @@ def analyze_geotiff(
             ]
         report(90, "Preparando resultados")
         return trees, stats
+
+
+def analyze_geotiff(
+    path: str,
+    options: dict,
+    progress: Callable[[int, str], None] | None = None,
+) -> tuple[list[dict], dict]:
+    """Entrada única: por defecto ``grid_v1``; ``classical_v1`` solo experimental."""
+    mode = str((options or {}).get("detector_mode") or "grid_v1").strip().lower()
+    if mode in {"classical", "classical_v1", "free_search", "v1.2"}:
+        return analyze_geotiff_classical(path, options, progress=progress)
+    return analyze_geotiff_grid(path, options, progress=progress)

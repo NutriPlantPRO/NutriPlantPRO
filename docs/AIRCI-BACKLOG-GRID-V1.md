@@ -12,15 +12,15 @@ Leyenda: `[ ]` pendiente · prioridad P0 = bloquea todo · P1 = pro cercano · P
 
 | # | Área | Qué es | Archivo principal |
 |---|------|--------|-------------------|
-| 1.1 | `pattern_from_calibration` | De las 10 + densidad → Ø, azimut, paso en hilera / entre hileras | `detector.py` |
-| 1.2 | `seed_grid` | Generar rejilla de candidatos en el bbox del orto | `detector.py` |
-| 1.3 | `confirm_seed` | En cada punto: ¿hay copa? → polígono o faltante | `detector.py` |
-| 1.4 | `merge_and_score` | Pegar las 10 anclas + confirmados + semáforo + stats | `detector.py` |
-| 1.5 | Cablear `analyze_geotiff` | Usar solo este pipeline (`grid_v1`); no verde-libre como default | `detector.py` |
-| 1.6 | Errores claros | `PATTERN_UNSTABLE`, `NO_GSD`, etc. | `detector.py` + API |
-| 1.7 | Selftests | Pruebas sintéticas del patrón/rejilla/confirm/merge | `selftest.py` |
+| 1.1 | `pattern_from_calibration` | ✅ | `detector.py` |
+| 1.2 | `seed_grid` | ✅ | `detector.py` |
+| 1.3 | `confirm_seed` | ✅ | `detector.py` |
+| 1.4 | `merge_and_score` | ✅ | `detector.py` |
+| 1.5 | Cablear `analyze_geotiff` | ✅ default `grid_v1` | `detector.py` |
+| 1.6 | Errores claros | ✅ `DetectorError` + worker | `detector.py` + `worker.py` |
+| 1.7 | Selftests | ✅ E5 | `selftest.py` |
 
-**Deploy:** redeploy Cloud Run cuando 1.1–1.7 pasen tests.
+**Deploy:** redeploy Cloud Run + Netlify (pendiente).
 
 ---
 
