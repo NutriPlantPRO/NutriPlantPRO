@@ -8,7 +8,7 @@ segmentación entrenado puede sustituir ``detect_tile`` sin cambiar el contrato.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Iterable
 
 import cv2
@@ -28,6 +28,7 @@ class Candidate:
     radius_px: float
     confidence: float
     area_px: float
+    contour_px: list[tuple[float, float]] = field(default_factory=list)
 
 
 def _to_u8(band: np.ndarray) -> np.ndarray:
@@ -94,6 +95,43 @@ def _nms(candidates: Iterable[Candidate], min_distance: float) -> list[Candidate
     return kept
 
 
+def _contour_for_seed(labels: np.ndarray, x: int, y: int, radius_px: float) -> tuple[list[tuple[float, float]], float]:
+    """Obtiene el borde real de vegetación asociado a un centro de copa.
+
+    Si dos copas quedaron unidas en la máscara, limita el componente al radio
+    local del candidato para evitar que un solo perímetro cubra toda la hilera.
+    """
+    height, width = labels.shape[:2]
+    if x < 0 or y < 0 or x >= width or y >= height:
+        return [], 0.0
+    label = int(labels[y, x])
+    if label == 0:
+        search = max(2, int(round(radius_px * 0.25)))
+        y0, y1 = max(0, y - search), min(height, y + search + 1)
+        x0, x1 = max(0, x - search), min(width, x + search + 1)
+        nearby = labels[y0:y1, x0:x1]
+        values = nearby[nearby > 0]
+        if not values.size:
+            return [], 0.0
+        label = int(values[0])
+    component = (labels == label).astype(np.uint8) * 255
+    # Una copa pegada a otra se conserva cerca de su máximo local.
+    limit = max(4, int(round(radius_px * 1.35)))
+    local = np.zeros_like(component)
+    cv2.circle(local, (x, y), limit, 255, thickness=-1)
+    component = cv2.bitwise_and(component, local)
+    contours, _ = cv2.findContours(component, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return [], 0.0
+    contour = max(contours, key=cv2.contourArea)
+    if cv2.contourArea(contour) < 4:
+        return [], 0.0
+    epsilon = max(1.0, 0.008 * cv2.arcLength(contour, True))
+    simplified = cv2.approxPolyDP(contour, epsilon, True).reshape(-1, 2)
+    points = [(float(px), float(py)) for px, py in simplified]
+    return points, float(cv2.contourArea(contour))
+
+
 def detect_tile(
     tile: np.ndarray,
     gsd_m: float | None,
@@ -135,6 +173,7 @@ def detect_tile(
     )
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    _, component_labels = cv2.connectedComponents((mask > 0).astype(np.uint8), connectivity=8)
 
     distance = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
     peak_window = _odd(min(101, max(5, int(round(spacing_px * 0.55)))))
@@ -161,13 +200,15 @@ def detect_tile(
         confidence = 100.0 * (0.62 * radius_score + 0.38 * green_score)
         if confidence < 34:
             continue
+        contour_px, contour_area = _contour_for_seed(component_labels, x, y, radius)
         found.append(
             Candidate(
                 x_px=float(cx),
                 y_px=float(cy),
                 radius_px=float(radius),
                 confidence=float(round(confidence, 1)),
-                area_px=float(math.pi * radius * radius),
+                area_px=contour_area if contour_area > 0 else float(math.pi * radius * radius),
+                contour_px=contour_px,
             )
         )
 
@@ -226,14 +267,22 @@ def _to_wgs84(
     center_ys: list[float] = []
     ring_xs: list[float] = []
     ring_ys: list[float] = []
+    ring_sizes: list[int] = []
     for candidate in candidates:
         x_geo, y_geo = dataset.transform * (candidate.x_px + 0.5, candidate.y_px + 0.5)
         center_xs.append(x_geo)
         center_ys.append(y_geo)
-        for side in range(sides):
-            angle = (2.0 * math.pi * side) / sides
-            px = candidate.x_px + math.cos(angle) * candidate.radius_px
-            py = candidate.y_px + math.sin(angle) * candidate.radius_px
+        points = candidate.contour_px
+        if len(points) < 3:
+            points = [
+                (
+                    candidate.x_px + math.cos((2.0 * math.pi * side) / sides) * candidate.radius_px,
+                    candidate.y_px + math.sin((2.0 * math.pi * side) / sides) * candidate.radius_px,
+                )
+                for side in range(sides)
+            ]
+        ring_sizes.append(len(points))
+        for px, py in points:
             gx, gy = dataset.transform * (px + 0.5, py + 0.5)
             ring_xs.append(gx)
             ring_ys.append(gy)
@@ -242,13 +291,14 @@ def _to_wgs84(
     ring_lngs, ring_lats = warp_transform(dataset.crs, "EPSG:4326", ring_xs, ring_ys)
     centers = list(zip(center_lats, center_lngs))
     polygons: list[list[list[float]]] = []
-    for index in range(len(candidates)):
-        start = index * sides
+    start = 0
+    for ring_size in ring_sizes:
         ring = [
             [float(ring_lats[start + side]), float(ring_lngs[start + side])]
-            for side in range(sides)
+            for side in range(ring_size)
         ]
         polygons.append(ring)
+        start += ring_size
     return centers, polygons
 
 
@@ -265,6 +315,19 @@ def analyze_geotiff(
     max_canopy_m = max(min_canopy_m + 0.5, float(options.get("max_canopy_m") or 12.0))
     expected_spacing_m = max(0.0, float(options.get("expected_spacing_m") or 0.0))
     provided_gsd = float(options.get("gsd_m") or 0.0) or None
+    calibration = options.get("calibration") if isinstance(options.get("calibration"), dict) else {}
+    samples = calibration.get("samples") if isinstance(calibration.get("samples"), list) else []
+    # Las copas corregidas por el usuario mandan sobre los valores genéricos.
+    sample_diameters = [
+        float(sample["diameter_m"])
+        for sample in samples
+        if isinstance(sample, dict) and float(sample.get("diameter_m") or 0) > 0
+    ]
+    if sample_diameters:
+        min_canopy_m = max(0.3, min(sample_diameters) * 0.72)
+        max_canopy_m = max(min_canopy_m + 0.5, max(sample_diameters) * 1.35)
+        if len(sample_diameters) > 1:
+            expected_spacing_m = expected_spacing_m or float(np.median(sample_diameters)) * 1.7
 
     def report(value: int, phase: str) -> None:
         if progress:
@@ -301,6 +364,7 @@ def analyze_geotiff(
                 for candidate in local:
                     candidate.x_px += x0
                     candidate.y_px += y0
+                    candidate.contour_px = [(x + x0, y + y0) for x, y in candidate.contour_px]
                     if _in_core(
                         candidate.x_px,
                         candidate.y_px,
@@ -380,6 +444,8 @@ def analyze_geotiff(
             "detectorVersion": DETECTOR_VERSION,
             "professional": True,
             "validationStatus": "requires_review",
+            "calibrationSamples": len(samples),
+            "calibrated": len(samples) >= 10,
         }
         if centers:
             latitudes = [center[0] for center in centers]

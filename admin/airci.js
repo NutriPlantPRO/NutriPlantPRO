@@ -73,6 +73,18 @@
   var professionalTableRequestId = 0;
   var professionalTableResultId = null;
   var professionalSemCounts = null;
+  var calibrationSamples = [];
+  var calibrationActive = false;
+  var calibrationReady = false;
+  var calibrationLayer = null;
+  var calibrationVertexLayer = null;
+  var calibrationCandidates = null;
+  var calibrationSelectedIndex = -1;
+  var calibrationAddPoint = false;
+  var professionalEditMode = false;
+  var professionalAddMode = false;
+  var professionalSelectedTree = null;
+  var professionalEditLayer = null;
 
 
   function showError(msg) {
@@ -2897,6 +2909,7 @@
       var meanArea = professionalStats && Number(professionalStats.meanArea);
       return {
         id: tree.tree_index,
+        dbId: tree.id,
         stableId: tree.stable_id || tree.tree_index,
         row: tree.row_no,
         pos: tree.position_no,
@@ -2909,6 +2922,7 @@
         latlngs: polygon,
         sem: professionalSem(tree.sem_key),
         z: metrics.z,
+        isManual: !!tree.is_manual,
         pctVsMean:
           Number.isFinite(areaPx) && Number.isFinite(meanArea) && meanArea > 0
             ? ((areaPx - meanArea) / meanArea) * 100
@@ -3018,6 +3032,402 @@
     syncSemLegend();
   }
 
+  function calibrationCentroid(points) {
+    var lat = 0;
+    var lng = 0;
+    (points || []).forEach(function (point) {
+      lat += Number(point[0]) || 0;
+      lng += Number(point[1]) || 0;
+    });
+    var n = Math.max(1, (points || []).length);
+    return [lat / n, lng / n];
+  }
+
+  function calibrationPolygonMetrics(points) {
+    if (!Array.isArray(points) || points.length < 3) {
+      return { areaM2: null, diameterM: null, center: [0, 0] };
+    }
+    var center = calibrationCentroid(points);
+    var latScale = 111320;
+    var lngScale = 111320 * Math.max(0.1, Math.cos((center[0] * Math.PI) / 180));
+    var twiceArea = 0;
+    for (var i = 0; i < points.length; i++) {
+      var a = points[i];
+      var b = points[(i + 1) % points.length];
+      var ax = (Number(a[1]) - center[1]) * lngScale;
+      var ay = (Number(a[0]) - center[0]) * latScale;
+      var bx = (Number(b[1]) - center[1]) * lngScale;
+      var by = (Number(b[0]) - center[0]) * latScale;
+      twiceArea += ax * by - bx * ay;
+    }
+    var areaM2 = Math.abs(twiceArea / 2);
+    return {
+      areaM2: areaM2,
+      diameterM: areaM2 > 0 ? 2 * Math.sqrt(areaM2 / Math.PI) : null,
+      center: center
+    };
+  }
+
+  function calibrationPayload() {
+    var samples = calibrationSamples.map(function (sample) {
+      var metrics = calibrationPolygonMetrics(sample.latlngs);
+      return {
+        polygon_json: sample.latlngs,
+        center_lat: metrics.center[0],
+        center_lng: metrics.center[1],
+        area_m2: metrics.areaM2,
+        diameter_m: metrics.diameterM
+      };
+    });
+    var diameters = samples
+      .map(function (sample) { return Number(sample.diameter_m) || 0; })
+      .filter(function (value) { return value > 0; })
+      .sort(function (a, b) { return a - b; });
+    var spacing = [];
+    samples.forEach(function (sample, index) {
+      var best = Infinity;
+      samples.forEach(function (other, otherIndex) {
+        if (index === otherIndex) return;
+        var distance = window.AirCICanopy && AirCICanopy.haversineM
+          ? AirCICanopy.haversineM(sample.center_lat, sample.center_lng, other.center_lat, other.center_lng)
+          : Infinity;
+        if (distance < best) best = distance;
+      });
+      if (Number.isFinite(best)) spacing.push(best);
+    });
+    spacing.sort(function (a, b) { return a - b; });
+    var middle = function (values) {
+      if (!values.length) return null;
+      return values[Math.floor(values.length / 2)];
+    };
+    return {
+      samples: samples,
+      profile: {
+        min_canopy_m: diameters.length ? Math.max(0.3, diameters[0] * 0.72) : null,
+        max_canopy_m: diameters.length ? diameters[diameters.length - 1] * 1.35 : null,
+        expected_spacing_m: middle(spacing)
+      }
+    };
+  }
+
+  function clearCalibrationLayers() {
+    if (calibrationLayer && map) map.removeLayer(calibrationLayer);
+    if (calibrationVertexLayer && map) map.removeLayer(calibrationVertexLayer);
+    calibrationLayer = null;
+    calibrationVertexLayer = null;
+  }
+
+  function renderCalibrationSamples() {
+    clearCalibrationLayers();
+    if (!map || typeof L === 'undefined') return;
+    calibrationLayer = L.layerGroup().addTo(map);
+    calibrationVertexLayer = L.layerGroup().addTo(map);
+    calibrationSamples.forEach(function (sample, sampleIndex) {
+      var selected = sampleIndex === calibrationSelectedIndex;
+      var polygon = L.polygon(sample.latlngs, {
+        color: selected ? '#1d4ed8' : '#0ea5e9',
+        weight: selected ? 3 : 2,
+        fillColor: '#38bdf8',
+        fillOpacity: 0.16,
+        bubblingMouseEvents: false
+      });
+      polygon.bindTooltip('Muestra ' + (sampleIndex + 1) + ' · clic para editar');
+      polygon.on('click', function () {
+        calibrationSelectedIndex = sampleIndex;
+        calibrationAddPoint = false;
+        renderCalibrationSamples();
+        syncCalibrationUi();
+      });
+      calibrationLayer.addLayer(polygon);
+      if (!selected) return;
+      sample.latlngs.forEach(function (point, pointIndex) {
+        var marker = L.marker(point, {
+          draggable: true,
+          keyboard: false,
+          icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
+        });
+        marker.on('drag', function (event) {
+          var latlng = event.target.getLatLng();
+          sample.latlngs[pointIndex] = [latlng.lat, latlng.lng];
+          polygon.setLatLngs(sample.latlngs);
+        });
+        marker.on('dragend', function () {
+          calibrationReady = false;
+          renderCalibrationSamples();
+          syncCalibrationUi();
+        });
+        marker.on('contextmenu', function () {
+          if (sample.latlngs.length <= 3) return;
+          sample.latlngs.splice(pointIndex, 1);
+          calibrationReady = false;
+          renderCalibrationSamples();
+          syncCalibrationUi();
+        });
+        calibrationVertexLayer.addLayer(marker);
+      });
+    });
+    bringOverlaysFront();
+  }
+
+  function syncCalibrationUi() {
+    var box = document.getElementById('aciCalibration');
+    var count = document.getElementById('aciCalibrationCount');
+    var hint = document.getElementById('aciCalibrationHint');
+    var start = document.getElementById('aciCalibrationStart');
+    var addPoint = document.getElementById('aciCalibrationAddPoint');
+    var reset = document.getElementById('aciCalibrationReset');
+    var confirm = document.getElementById('aciCalibrationConfirm');
+    var analyze = document.getElementById('aciAnalyzeBtn');
+    if (!box) return;
+    var visible = !!currentGeoraster;
+    box.hidden = !visible;
+    if (!visible) {
+      if (analyze && getDetectModel() === 'cloud-pro') {
+        analyze.disabled = true;
+        analyze.title = 'Carga una vista previa para seleccionar las 10 copas de calibración';
+      }
+      return;
+    }
+    if (count) count.textContent = calibrationSamples.length + ' / 10';
+    box.classList.toggle('is-active', calibrationActive);
+    box.classList.toggle('is-ready', calibrationReady);
+    if (hint) {
+      hint.textContent = calibrationReady
+        ? 'Calibración confirmada: estas 10 copas definen el criterio para este vuelo.'
+        : calibrationActive
+          ? 'Haz clic en una copa representativa; clic derecho en un punto para quitarlo.'
+          : 'Selecciona 10 árboles representativos. AirCI propone el perímetro y tú lo ajustas.';
+    }
+    if (start) {
+      start.hidden = calibrationActive || calibrationReady;
+      start.disabled = !currentGeoraster;
+    }
+    if (addPoint) {
+      addPoint.hidden = !calibrationActive || calibrationSelectedIndex < 0;
+      addPoint.classList.toggle('is-active', calibrationAddPoint);
+    }
+    if (reset) reset.hidden = !calibrationActive && !calibrationReady;
+    if (confirm) {
+      confirm.hidden = calibrationSamples.length !== 10 || calibrationReady;
+      confirm.disabled = calibrationSamples.length !== 10;
+    }
+    if (analyze && getDetectModel() === 'cloud-pro') {
+      analyze.disabled = !calibrationReady;
+      analyze.title = calibrationReady
+        ? 'Analiza el predio con las 10 copas calibradas'
+        : 'Primero selecciona y confirma 10 copas de calibración';
+    }
+  }
+
+  function buildCalibrationCandidates() {
+    if (calibrationCandidates || !currentGeoraster || !window.AirCICanopy) return;
+    setMapStatus('Preparando candidatos de copa para la calibración…', 'ok');
+    var detected = AirCICanopy.analyzeCanopies(currentGeoraster, { profile: 'ai' });
+    calibrationCandidates = (detected && detected.trees) || [];
+  }
+
+  function fallbackCalibrationRing(latlng) {
+    var meters = 3;
+    var latDelta = meters / 111320;
+    var lngDelta = meters / (111320 * Math.max(0.1, Math.cos((latlng.lat * Math.PI) / 180)));
+    return [
+      [latlng.lat - latDelta, latlng.lng],
+      [latlng.lat - latDelta * 0.55, latlng.lng + lngDelta * 0.92],
+      [latlng.lat + latDelta * 0.55, latlng.lng + lngDelta * 0.92],
+      [latlng.lat + latDelta, latlng.lng],
+      [latlng.lat + latDelta * 0.55, latlng.lng - lngDelta * 0.92],
+      [latlng.lat - latDelta * 0.55, latlng.lng - lngDelta * 0.92]
+    ];
+  }
+
+  function addCalibrationSample(latlng) {
+    if (!calibrationActive || calibrationSamples.length >= 10) return;
+    buildCalibrationCandidates();
+    var closest = null;
+    var bestDistance = Infinity;
+    (calibrationCandidates || []).forEach(function (candidate) {
+      var center = candidate.center;
+      if (!center || center.length < 2) return;
+      var distance = window.AirCICanopy && AirCICanopy.haversineM
+        ? AirCICanopy.haversineM(latlng.lat, latlng.lng, center[0], center[1])
+        : Infinity;
+      if (distance < bestDistance) {
+        closest = candidate;
+        bestDistance = distance;
+      }
+    });
+    var ring = closest && bestDistance < 12 && Array.isArray(closest.latlngs) && closest.latlngs.length >= 3
+      ? closest.latlngs.map(function (point) { return [Number(point[0]), Number(point[1])]; })
+      : fallbackCalibrationRing(latlng);
+    calibrationSamples.push({ latlngs: ring });
+    calibrationSelectedIndex = calibrationSamples.length - 1;
+    calibrationReady = false;
+    renderCalibrationSamples();
+    syncCalibrationUi();
+    setMapStatus('Muestra ' + calibrationSamples.length + '/10 lista. Ajusta sus puntos y selecciona la siguiente copa.', 'ok');
+  }
+
+  async function confirmCalibration() {
+    if (calibrationSamples.length !== 10) return;
+    var flightId = getLastFlightId();
+    if (!flightId) {
+      setMapStatus('Espera a que el GeoTIFF termine de guardarse en la nube.', 'error');
+      return;
+    }
+    var payload = calibrationPayload();
+    var response = await apiProfessional({
+      action: 'calibration_save',
+      site_id: getSiteId(),
+      flight_id: flightId,
+      calibration: payload
+    });
+    if (!response.ok) {
+      setMapStatus(response.error || 'No se pudo guardar la calibración.', 'error');
+      return;
+    }
+    calibrationActive = false;
+    calibrationReady = true;
+    calibrationAddPoint = false;
+    renderCalibrationSamples();
+    syncCalibrationUi();
+    setMapStatus('10 copas calibradas y guardadas. Ya puedes analizar el predio.', 'ok');
+  }
+
+  function resetCalibration() {
+    calibrationSamples = [];
+    calibrationCandidates = null;
+    calibrationSelectedIndex = -1;
+    calibrationReady = false;
+    calibrationAddPoint = false;
+    calibrationActive = true;
+    clearCalibrationLayers();
+    syncCalibrationUi();
+  }
+
+  function syncProfessionalEditUi() {
+    var tools = document.getElementById('aciResultEdit');
+    var toggle = document.getElementById('aciResultEditToggle');
+    var add = document.getElementById('aciResultAddTree');
+    var remove = document.getElementById('aciResultDeleteTree');
+    if (tools) tools.hidden = !professionalResultId;
+    if (toggle) {
+      toggle.classList.toggle('is-active', professionalEditMode);
+      toggle.textContent = professionalEditMode ? 'Terminar edición' : 'Editar perímetros';
+    }
+    if (add) {
+      add.classList.toggle('is-active', professionalAddMode);
+      add.textContent = professionalAddMode ? 'Clic en mapa para añadir' : 'Añadir copa faltante';
+    }
+    if (remove) remove.disabled = !professionalSelectedTree;
+  }
+
+  function clearProfessionalEditLayer() {
+    if (professionalEditLayer && map) map.removeLayer(professionalEditLayer);
+    professionalEditLayer = null;
+  }
+
+  async function saveProfessionalTree(tree, operation) {
+    var metrics = calibrationPolygonMetrics(tree.latlngs);
+    return apiProfessional({
+      action: 'tree_edit',
+      result_id: professionalResultId,
+      operation: operation,
+      tree_index: tree.id,
+      tree: {
+        polygon_json: tree.latlngs,
+        center_lat: metrics.center[0],
+        center_lng: metrics.center[1],
+        area_m2: metrics.areaM2,
+        diameter_m: metrics.diameterM,
+        area_px: tree.areaPx
+      }
+    });
+  }
+
+  function openProfessionalTreeEditor(tree) {
+    clearProfessionalEditLayer();
+    if (!professionalEditMode || !tree || !map || typeof L === 'undefined') return;
+    professionalSelectedTree = tree;
+    professionalEditLayer = L.layerGroup().addTo(map);
+    var editable = L.polygon(tree.latlngs, {
+      color: '#1d4ed8',
+      weight: 3,
+      fillColor: '#60a5fa',
+      fillOpacity: 0.08
+    }).addTo(professionalEditLayer);
+    editable.on('dblclick', async function (event) {
+      tree.latlngs.push([event.latlng.lat, event.latlng.lng]);
+      var response = await saveProfessionalTree(tree, 'update');
+      if (!response.ok) {
+        setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
+        return;
+      }
+      loadProfessionalViewport(professionalResultId, professionalStats || {});
+    });
+    tree.latlngs.forEach(function (point, pointIndex) {
+      var marker = L.marker(point, {
+        draggable: true,
+        keyboard: false,
+        icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
+      }).addTo(professionalEditLayer);
+      marker.on('drag', function (event) {
+        var latlng = event.target.getLatLng();
+        tree.latlngs[pointIndex] = [latlng.lat, latlng.lng];
+        editable.setLatLngs(tree.latlngs);
+      });
+      marker.on('dragend', async function () {
+        var response = await saveProfessionalTree(tree, 'update');
+        if (!response.ok) {
+          setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
+          return;
+        }
+        setMapStatus('Perímetro actualizado.', 'ok');
+        loadProfessionalViewport(professionalResultId, professionalStats || {});
+      });
+      marker.on('contextmenu', async function () {
+        if (tree.latlngs.length <= 3) return;
+        tree.latlngs.splice(pointIndex, 1);
+        var response = await saveProfessionalTree(tree, 'update');
+        if (!response.ok) setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
+        else loadProfessionalViewport(professionalResultId, professionalStats || {});
+      });
+    });
+    syncProfessionalEditUi();
+  }
+
+  async function addProfessionalTreeAt(latlng) {
+    var ring = fallbackCalibrationRing(latlng);
+    var tree = { id: null, latlngs: ring, areaPx: null };
+    var response = await saveProfessionalTree(tree, 'add');
+    if (!response.ok) {
+      setMapStatus(response.error || 'No se pudo añadir la copa.', 'error');
+      return;
+    }
+    professionalAddMode = false;
+    setMapStatus('Copa añadida. Selecciónala para ajustar su perímetro.', 'ok');
+    syncProfessionalEditUi();
+    loadProfessionalViewport(professionalResultId, professionalStats || {});
+  }
+
+  async function deleteSelectedProfessionalTree() {
+    if (!professionalSelectedTree || !professionalResultId) return;
+    var response = await apiProfessional({
+      action: 'tree_edit',
+      result_id: professionalResultId,
+      operation: 'delete',
+      tree_index: professionalSelectedTree.id
+    });
+    if (!response.ok) {
+      setMapStatus(response.error || 'No se pudo borrar la copa.', 'error');
+      return;
+    }
+    professionalSelectedTree = null;
+    clearProfessionalEditLayer();
+    syncProfessionalEditUi();
+    setMapStatus('Copa eliminada del resultado.', 'ok');
+    loadProfessionalViewport(professionalResultId, professionalStats || {});
+  }
+
   async function loadProfessionalTablePage(offset) {
     if (!professionalResultId) return;
     var requestId = ++professionalTableRequestId;
@@ -3072,6 +3482,7 @@
     showMapPane(true);
     professionalResultId = resultId;
     professionalStats = stats || professionalStats || {};
+    syncProfessionalEditUi();
     var treeBbox = professionalStats && professionalStats.treeBbox;
     if (
       professionalFittedResultId !== resultId &&
@@ -3150,6 +3561,10 @@
           (tree.confidence != null ? ' · conf. ' + Math.round(tree.confidence) + '%' : '')
       );
       layer.on('click', function () {
+        if (professionalEditMode) {
+          openProfessionalTreeEditor(tree);
+          return;
+        }
         highlightTree(tree.tree_index);
       });
       treeLayersById[String(tree.tree_index)] = {
@@ -3162,6 +3577,7 @@
     professionalLayer.addTo(map);
     bringOverlaysFront();
     if (professionalLayer.bringToFront) professionalLayer.bringToFront();
+    syncProfessionalEditUi();
 
     var resultStats = Object.assign({}, response.result && response.result.stats_json, stats || {});
     professionalStats = resultStats;
@@ -3245,21 +3661,28 @@
       setMapStatus('Guarda primero el GeoTIFF en la nube y vuelve a Analizar.', 'error');
       return;
     }
+    if (!calibrationReady || calibrationSamples.length !== 10) {
+      setMapStatus('Primero selecciona, ajusta y confirma las 10 copas de calibración.', 'error');
+      syncCalibrationUi();
+      return;
+    }
     setAnalyzeBusy(true);
     setMapStatus('Creando análisis profesional del predio completo…', 'ok');
     var meta = collectMeta();
     var density = Number(meta.densidad_ha);
     var spacing =
       Number.isFinite(density) && density > 0 ? Math.sqrt(10000 / density) : 0;
+    var calibration = calibrationPayload();
     var response = await apiProfessional({
       action: 'enqueue',
       site_id: getSiteId(),
       flight_id: flightId,
       options: {
         detector_mode: 'classical_v1',
-        expected_spacing_m: spacing,
-        min_canopy_m: 1,
-        max_canopy_m: 12,
+        expected_spacing_m: calibration.profile.expected_spacing_m || spacing,
+        min_canopy_m: calibration.profile.min_canopy_m || 1,
+        max_canopy_m: calibration.profile.max_canopy_m || 12,
+        calibration: calibration,
         cost_cap_usd: 1
       }
     });
@@ -3593,6 +4016,11 @@
         localStorage.removeItem(META_KEY);
       } catch (e3) {}
       currentGeoraster = null;
+      calibrationSamples = [];
+      calibrationReady = false;
+      calibrationActive = false;
+      clearCalibrationLayers();
+      syncCalibrationUi();
       clearCanopyLayers();
       if (rasterLayer && map) {
         try {
@@ -4504,6 +4932,21 @@
         loadProfessionalViewport(professionalResultId, professionalStats || {});
       }, 280);
     });
+    map.on('click', function (event) {
+      if (calibrationActive) {
+        if (calibrationAddPoint && calibrationSelectedIndex >= 0) {
+          calibrationSamples[calibrationSelectedIndex].latlngs.push([event.latlng.lat, event.latlng.lng]);
+          calibrationAddPoint = false;
+          calibrationReady = false;
+          renderCalibrationSamples();
+          syncCalibrationUi();
+          return;
+        }
+        addCalibrationSample(event.latlng);
+        return;
+      }
+      if (professionalAddMode) addProfessionalTreeAt(event.latlng);
+    });
   }
 
   function syncBasemapChips() {
@@ -4628,6 +5071,13 @@
     setMapStatus('Leyendo GeoTIFF…');
     var georaster = await parseGeoraster(arrayBuffer);
     currentGeoraster = georaster;
+    calibrationSamples = [];
+    calibrationCandidates = null;
+    calibrationSelectedIndex = -1;
+    calibrationActive = false;
+    calibrationReady = false;
+    calibrationAddPoint = false;
+    clearCalibrationLayers();
     clearCanopyLayers();
     if (rasterLayer && map) {
       try {
@@ -4651,6 +5101,7 @@
 
     var analyzeBtn = document.getElementById('aciAnalyzeBtn');
     if (analyzeBtn) analyzeBtn.hidden = false;
+    syncCalibrationUi();
 
     var info = {
       filename: meta.filename,
@@ -5023,6 +5474,7 @@
   if (detectModelEl) {
     detectModelEl.addEventListener('change', function () {
       persistDetectModelChoice();
+      syncCalibrationUi();
       if (getDetectModel() === 'cloud-pro') resumeProfessionalJobForFlight();
     });
   }
@@ -5082,6 +5534,66 @@
       runCanopyDetection();
     });
   }
+
+  var calibrationStartBtn = document.getElementById('aciCalibrationStart');
+  if (calibrationStartBtn) {
+    calibrationStartBtn.addEventListener('click', function () {
+      if (!currentGeoraster) {
+        setMapStatus('Necesitas la vista previa del GeoTIFF para seleccionar las 10 copas.', 'error');
+        return;
+      }
+      calibrationActive = true;
+      calibrationReady = false;
+      calibrationSelectedIndex = calibrationSamples.length ? calibrationSamples.length - 1 : -1;
+      buildCalibrationCandidates();
+      renderCalibrationSamples();
+      syncCalibrationUi();
+      setMapStatus('Selecciona en el mapa la primera de 10 copas representativas.', 'ok');
+    });
+  }
+  var calibrationAddPointBtn = document.getElementById('aciCalibrationAddPoint');
+  if (calibrationAddPointBtn) {
+    calibrationAddPointBtn.addEventListener('click', function () {
+      calibrationAddPoint = !calibrationAddPoint;
+      syncCalibrationUi();
+      if (calibrationAddPoint) setMapStatus('Haz clic en el mapa para añadir un vértice a la copa seleccionada.', 'ok');
+    });
+  }
+  var calibrationResetBtn = document.getElementById('aciCalibrationReset');
+  if (calibrationResetBtn) calibrationResetBtn.addEventListener('click', resetCalibration);
+  var calibrationConfirmBtn = document.getElementById('aciCalibrationConfirm');
+  if (calibrationConfirmBtn) calibrationConfirmBtn.addEventListener('click', confirmCalibration);
+  var resultEditToggle = document.getElementById('aciResultEditToggle');
+  if (resultEditToggle) {
+    resultEditToggle.addEventListener('click', function () {
+      professionalEditMode = !professionalEditMode;
+      professionalAddMode = false;
+      if (!professionalEditMode) {
+        professionalSelectedTree = null;
+        clearProfessionalEditLayer();
+      }
+      syncProfessionalEditUi();
+      setMapStatus(
+        professionalEditMode
+          ? 'Clic en una copa para mover sus vértices. Clic derecho en un vértice para quitarlo.'
+          : 'Edición manual terminada.',
+        'ok'
+      );
+    });
+  }
+  var resultAddTree = document.getElementById('aciResultAddTree');
+  if (resultAddTree) {
+    resultAddTree.addEventListener('click', function () {
+      if (!professionalResultId) return;
+      professionalAddMode = !professionalAddMode;
+      professionalEditMode = false;
+      clearProfessionalEditLayer();
+      syncProfessionalEditUi();
+      if (professionalAddMode) setMapStatus('Haz clic sobre el centro de la copa faltante para añadirla.', 'ok');
+    });
+  }
+  var resultDeleteTree = document.getElementById('aciResultDeleteTree');
+  if (resultDeleteTree) resultDeleteTree.addEventListener('click', deleteSelectedProfessionalTree);
 
   var layerBar = document.getElementById('aciLayerBar');
   if (layerBar) {

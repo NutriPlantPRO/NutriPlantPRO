@@ -189,6 +189,19 @@
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
           </div>
         </div>
+        <div class="aci-calibration" id="aciCalibration" hidden>
+          <div class="aci-calibration__copy">
+            <strong>Calibración de copas</strong>
+            <span id="aciCalibrationHint">Selecciona 10 árboles representativos del vuelo. AirCI propondrá cada perímetro y tú lo ajustas.</span>
+          </div>
+          <div class="aci-calibration__actions">
+            <b id="aciCalibrationCount">0 / 10</b>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciCalibrationStart">Seleccionar 10 árboles</button>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciCalibrationAddPoint" hidden>Añadir punto</button>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciCalibrationReset" hidden>Reiniciar</button>
+            <button type="button" class="aci-btn aci-btn--analyze" id="aciCalibrationConfirm" hidden>Confirmar 10 copas</button>
+          </div>
+        </div>
         <p id="aciAiUsageBar" class="aci-ai-usage" hidden role="status">
           IA AirCI · este mes: <strong id="aciAiUsageMonthReq">0</strong> consultas ·
           <strong id="aciAiUsageMonthUsd">$0.0000</strong>
@@ -220,6 +233,12 @@
           <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Números solo con esta capa activa">Números (ID)</button>
           <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" disabled title="Pinta por estado fenológico dominante">Fenología</button>
           <button type="button" class="aci-layer-chip" data-paint-mode="color" disabled title="AirCI Color Score 0–100 (GLI vs predio). Como NDVI relativo, pero por copa RGB">Color Score</button>
+        </div>
+        <div class="aci-result-edit" id="aciResultEdit" hidden>
+          <span>Corrección manual</span>
+          <button type="button" class="aci-btn aci-btn--ghost" id="aciResultEditToggle">Editar perímetros</button>
+          <button type="button" class="aci-btn aci-btn--ghost" id="aciResultAddTree">Añadir copa faltante</button>
+          <button type="button" class="aci-btn aci-btn--danger" id="aciResultDeleteTree" disabled>Borrar copa seleccionada</button>
         </div>
         <div class="aci-basemap-bar" aria-label="Mapa de fondo" id="aciBasemapBar">
           <span class="aci-basemap-label">Fondo</span>

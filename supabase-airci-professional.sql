@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS public.airci_canopy_trees (
   color_score double precision,
   sem_key text,
   polygon_json jsonb,
+  is_deleted boolean NOT NULL DEFAULT false,
+  is_manual boolean NOT NULL DEFAULT false,
   metrics_json jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (result_id, tree_index)
@@ -95,8 +97,26 @@ CREATE INDEX IF NOT EXISTS airci_canopy_trees_flight_idx
 CREATE INDEX IF NOT EXISTS airci_canopy_trees_viewport_idx
   ON public.airci_canopy_trees (result_id, center_lat, center_lng);
 
+ALTER TABLE public.airci_canopy_trees
+  ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_manual boolean NOT NULL DEFAULT false;
+
+-- Diez copas ajustadas por el usuario para calibrar cada vuelo.
+CREATE TABLE IF NOT EXISTS public.airci_canopy_calibrations (
+  flight_id uuid PRIMARY KEY REFERENCES public.airci_flights (id) ON DELETE CASCADE,
+  site_id uuid NOT NULL REFERENCES public.airci_sites (id) ON DELETE CASCADE,
+  owner_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  calibration_json jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS airci_canopy_calibrations_owner_idx
+  ON public.airci_canopy_calibrations (owner_id, updated_at DESC);
+
 ALTER TABLE public.airci_detect_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.airci_canopy_trees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.airci_canopy_calibrations ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "airci_detect_jobs_admin_all" ON public.airci_detect_jobs;
 CREATE POLICY "airci_detect_jobs_admin_all"
@@ -112,10 +132,19 @@ CREATE POLICY "airci_canopy_trees_admin_all"
   USING (public.is_admin_user())
   WITH CHECK (public.is_admin_user());
 
+DROP POLICY IF EXISTS "airci_canopy_calibrations_admin_all" ON public.airci_canopy_calibrations;
+CREATE POLICY "airci_canopy_calibrations_admin_all"
+  ON public.airci_canopy_calibrations FOR ALL
+  TO authenticated
+  USING (public.is_admin_user())
+  WITH CHECK (public.is_admin_user());
+
 COMMENT ON TABLE public.airci_detect_jobs IS
   'AirCI: cola y progreso de análisis profesional por vuelo.';
 COMMENT ON TABLE public.airci_canopy_trees IS
   'AirCI: una fila por árbol/copa para resultados grandes y consultas por viewport.';
+COMMENT ON TABLE public.airci_canopy_calibrations IS
+  'AirCI: diez copas de referencia y perfil derivado por vuelo.';
 
 -- Promoción atómica: el resultado anterior sigue vigente hasta que el nuevo
 -- tenga todos sus árboles guardados.

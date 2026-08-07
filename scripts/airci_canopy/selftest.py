@@ -59,6 +59,12 @@ def main() -> None:
                 "min_canopy_m": 1.0,
                 "max_canopy_m": 8.0,
                 "expected_spacing_m": 6.0,
+                "calibration": {
+                    "samples": [
+                        {"diameter_m": 2.8}
+                        for _ in range(10)
+                    ]
+                },
             },
         )
         if len(trees) != 3 or stats["count"] != 3:
@@ -67,6 +73,8 @@ def main() -> None:
             )
         if not all(-180 <= tree["center_lng"] <= 180 for tree in trees):
             raise AssertionError("Coordenadas WGS84 inválidas")
+        if not stats["calibrated"] or stats["calibrationSamples"] != 10:
+            raise AssertionError("No se aplicó la calibración de 10 copas")
     finally:
         path.unlink(missing_ok=True)
 

@@ -8,6 +8,8 @@
  *   enqueue { site_id, flight_id, options? }
  *   status  { job_id? | flight_id? }
  *   trees   { result_id, bbox?: [west,south,east,north], limit?, offset? }
+ *   calibration_save/load { site_id, flight_id, calibration }
+ *   tree_edit { result_id, operation, tree_index?, tree? }
  */
 'use strict';
 
@@ -62,9 +64,54 @@ async function verifyAdmin(supabase, token) {
 
 function setupFor(error) {
   const msg = String((error && error.message) || error || '');
-  return /airci_detect_jobs|airci_canopy_trees|schema cache|does not exist/i.test(msg)
+  return /airci_detect_jobs|airci_canopy_trees|airci_canopy_calibrations|schema cache|does not exist/i.test(msg)
     ? 'supabase-airci-professional.sql'
     : null;
+}
+
+function finite(value) {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizePolygon(value) {
+  if (!Array.isArray(value) || value.length < 3 || value.length > 80) return null;
+  const ring = value.map((point) => {
+    if (!Array.isArray(point) || point.length < 2) return null;
+    const lat = finite(point[0]);
+    const lng = finite(point[1]);
+    return lat == null || lng == null || Math.abs(lat) > 90 || Math.abs(lng) > 180 ? null : [lat, lng];
+  });
+  return ring.every(Boolean) ? ring : null;
+}
+
+function normalizeCalibration(value) {
+  if (!value || typeof value !== 'object') return null;
+  const rawSamples = Array.isArray(value.samples) ? value.samples : [];
+  if (rawSamples.length !== 10) return null;
+  const samples = rawSamples.map((sample, index) => {
+    const polygon_json = normalizePolygon(sample && sample.polygon_json);
+    const center_lat = finite(sample && sample.center_lat);
+    const center_lng = finite(sample && sample.center_lng);
+    if (!polygon_json || center_lat == null || center_lng == null) return null;
+    const diameter = finite(sample && sample.diameter_m);
+    const area = finite(sample && sample.area_m2);
+    return {
+      sample_index: index + 1,
+      center_lat,
+      center_lng,
+      polygon_json,
+      diameter_m: diameter != null && diameter > 0 ? diameter : null,
+      area_m2: area != null && area > 0 ? area : null
+    };
+  });
+  if (!samples.every(Boolean)) return null;
+  return {
+    version: 1,
+    samples,
+    profile: value.profile && typeof value.profile === 'object' ? value.profile : {}
+  };
 }
 
 function publicJob(row) {
@@ -209,6 +256,13 @@ exports.handler = async function handler(event) {
     if (active) return json(200, { ok: true, reused: true, job: publicJob(active) });
 
     const options = body.options && typeof body.options === 'object' ? body.options : {};
+    const calibration = normalizeCalibration(options.calibration);
+    if (!calibration) {
+      return json(400, {
+        ok: false,
+        error: 'Antes de analizar confirma los 10 árboles de calibración y sus perímetros.'
+      });
+    }
     const row = {
       site_id: flight.site_id,
       flight_id: flight.id,
@@ -224,6 +278,7 @@ exports.handler = async function handler(event) {
           0,
           Math.min(Number(options.expected_spacing_m) || 0, 30)
         ),
+        calibration,
         cost_cap_usd: Math.max(0.1, Math.min(Number(options.cost_cap_usd) || 1, 5))
       },
       estimated_usd: estimateUsd(flight)
@@ -301,6 +356,132 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true, job: publicJob(current) });
   }
 
+  if (action === 'calibration_save' || action === 'calibration_load') {
+    if (!isUuid(body.site_id) || !isUuid(body.flight_id)) {
+      return json(400, { ok: false, error: 'site_id y flight_id son obligatorios.' });
+    }
+    const { data: flight, error: flightError } = await supabase
+      .from('airci_flights')
+      .select('id, site_id, owner_id')
+      .eq('id', body.flight_id)
+      .eq('site_id', body.site_id)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+    if (flightError) return json(500, { ok: false, error: flightError.message, setup: setupFor(flightError) });
+    if (!flight) return json(404, { ok: false, error: 'Vuelo/GeoTIFF no encontrado.' });
+
+    if (action === 'calibration_load') {
+      const { data, error } = await supabase
+        .from('airci_canopy_calibrations')
+        .select('calibration_json, updated_at')
+        .eq('flight_id', flight.id)
+        .eq('owner_id', auth.userId)
+        .maybeSingle();
+      if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
+      return json(200, { ok: true, calibration: data ? data.calibration_json : null, updated_at: data && data.updated_at });
+    }
+
+    const calibration = normalizeCalibration(body.calibration);
+    if (!calibration) {
+      return json(400, { ok: false, error: 'La calibración debe contener exactamente 10 copas válidas.' });
+    }
+    const { data, error } = await supabase
+      .from('airci_canopy_calibrations')
+      .upsert(
+        {
+          site_id: flight.site_id,
+          flight_id: flight.id,
+          owner_id: auth.userId,
+          calibration_json: calibration,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'flight_id' }
+      )
+      .select('calibration_json, updated_at')
+      .single();
+    if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
+    return json(200, { ok: true, calibration: data.calibration_json, updated_at: data.updated_at });
+  }
+
+  if (action === 'tree_edit') {
+    if (!isUuid(body.result_id)) return json(400, { ok: false, error: 'result_id obligatorio.' });
+    const operation = String(body.operation || '').toLowerCase();
+    const { data: result, error: resultError } = await supabase
+      .from('airci_canopy_results')
+      .select('id, site_id, flight_id')
+      .eq('id', body.result_id)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+    if (resultError) return json(500, { ok: false, error: resultError.message });
+    if (!result) return json(404, { ok: false, error: 'Resultado no encontrado.' });
+    const tree = body.tree && typeof body.tree === 'object' ? body.tree : {};
+    const polygon = normalizePolygon(tree.polygon_json);
+    const centerLat = finite(tree.center_lat);
+    const centerLng = finite(tree.center_lng);
+
+    if (operation === 'delete') {
+      const treeIndex = Math.max(1, Math.floor(Number(body.tree_index) || 0));
+      const { error } = await supabase
+        .from('airci_canopy_trees')
+        .update({ is_deleted: true, metrics_json: { edit: 'deleted', edited_at: new Date().toISOString() } })
+        .eq('result_id', result.id)
+        .eq('tree_index', treeIndex)
+        .eq('owner_id', auth.userId);
+      if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
+      return json(200, { ok: true });
+    }
+    if (!polygon || centerLat == null || centerLng == null) {
+      return json(400, { ok: false, error: 'El perímetro y centro de la copa son obligatorios.' });
+    }
+    const patch = {
+      polygon_json: polygon,
+      center_lat: centerLat,
+      center_lng: centerLng,
+      area_px: finite(tree.area_px),
+      area_m2: finite(tree.area_m2),
+      diameter_m: finite(tree.diameter_m),
+      is_deleted: false,
+      metrics_json: { edit: operation, edited_at: new Date().toISOString() }
+    };
+    if (operation === 'update') {
+      const treeIndex = Math.max(1, Math.floor(Number(body.tree_index) || 0));
+      const { error } = await supabase
+        .from('airci_canopy_trees')
+        .update(patch)
+        .eq('result_id', result.id)
+        .eq('tree_index', treeIndex)
+        .eq('owner_id', auth.userId);
+      if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
+      return json(200, { ok: true });
+    }
+    if (operation === 'add') {
+      const { data: latest, error: latestError } = await supabase
+        .from('airci_canopy_trees')
+        .select('tree_index')
+        .eq('result_id', result.id)
+        .order('tree_index', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestError) return json(500, { ok: false, error: latestError.message });
+      const { error } = await supabase.from('airci_canopy_trees').insert(
+        Object.assign(patch, {
+          result_id: result.id,
+          site_id: result.site_id,
+          flight_id: result.flight_id,
+          owner_id: auth.userId,
+          tree_index: (latest && Number(latest.tree_index) || 0) + 1,
+          stable_id: 'manual-' + Date.now(),
+          confidence: 100,
+          sem_key: 'verde',
+          is_manual: true
+        })
+      );
+      if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
+      return json(200, { ok: true });
+    }
+    return json(400, { ok: false, error: 'operation inválida: update | delete | add' });
+  }
+
   if (action === 'trees') {
     if (!isUuid(body.result_id)) {
       return json(400, { ok: false, error: 'result_id obligatorio.' });
@@ -319,7 +500,7 @@ exports.handler = async function handler(event) {
     const semKey = String(body.sem_key || '').trim().toLowerCase();
     const allowedSem = new Set(['rojo', 'amarillo', 'verde', 'azul']);
     const applyTreeFilters = (query) => {
-      let next = query.eq('result_id', result.id).eq('owner_id', auth.userId);
+      let next = query.eq('result_id', result.id).eq('owner_id', auth.userId).neq('is_deleted', true);
       if (allowedSem.has(semKey)) next = next.eq('sem_key', semKey);
       const bbox = Array.isArray(body.bbox) ? body.bbox.map(Number) : null;
       if (bbox && bbox.length === 4 && bbox.every(Number.isFinite)) {
@@ -347,7 +528,7 @@ exports.handler = async function handler(event) {
       supabase
         .from('airci_canopy_trees')
         .select(
-          'tree_index, stable_id, row_no, position_no, center_lat, center_lng, area_px, area_m2, diameter_m, confidence, color_score, sem_key, polygon_json, metrics_json'
+          'id, tree_index, stable_id, row_no, position_no, center_lat, center_lng, area_px, area_m2, diameter_m, confidence, color_score, sem_key, polygon_json, metrics_json, is_manual'
         )
     )
       .order('tree_index', { ascending: true })
@@ -367,5 +548,5 @@ exports.handler = async function handler(event) {
     });
   }
 
-  return json(400, { ok: false, error: 'action inválida: enqueue | status | trees' });
+  return json(400, { ok: false, error: 'action inválida: enqueue | status | trees | calibration_save | calibration_load | tree_edit' });
 };
