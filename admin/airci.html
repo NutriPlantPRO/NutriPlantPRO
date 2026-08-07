@@ -142,6 +142,10 @@
               <label for="aciEdad">Edad</label>
               <input id="aciEdad" type="text" placeholder="Años" data-meta="edad" autocomplete="off">
             </div>
+            <div class="aci-field">
+              <label for="aciDensidadHa">Densidad ref. (árboles/ha)</label>
+              <input id="aciDensidadHa" type="number" min="50" max="2500" step="1" placeholder="ej. 416" data-meta="densidad_ha" inputmode="numeric" autocomplete="off" title="Referencia del predio: con la superficie estima distancia entre plantas y ordena filas. Varía por huerta.">
+            </div>
           </div>
           <div class="aci-field aci-field--nota">
             <label for="aciNota">Nota / comentario</label>
@@ -521,7 +525,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806aiuse"></script>
-  <script src="./airci.js?v=20260806aiuse"></script>
+  <script src="./airci-canopy.js?v=20260806plant2"></script>
+  <script src="./airci.js?v=20260806plant2"></script>
 </body>
 </html>

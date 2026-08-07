@@ -2385,9 +2385,13 @@
           );
         }
 
+        var metaNow = collectMeta();
+        var densHa = Number(metaNow.densidad_ha);
         var result = window.AirCICanopy.analyzeCanopies(currentGeoraster, {
           profile: useAi || calib ? 'ai' : 'strict',
-          calibration: calib || undefined
+          calibration: calib || undefined,
+          targetTreesPerHa:
+            Number.isFinite(densHa) && densHa >= 50 && densHa <= 2500 ? densHa : undefined
         });
         if (calib) {
           result.stats.aiModel = useAi ? model : calibSource;
@@ -2398,14 +2402,21 @@
         applyFlightMatch(result, prevBundle);
         drawCanopies(result);
         document.getElementById('aciMapSub').textContent =
-          'Copas · ' +
+          'Copas · planta+elipse · ' +
           (useAi
             ? 'IA calib. ' + model.replace('gpt-5.6-', '')
             : calib
               ? 'perfil ' + (savedProf && savedProf.level === 'site' ? 'predio' : 'cultivo')
-              : 'ExG') +
-          ' · thr ' +
-          result.stats.threshold +
+              : 'estructura') +
+          (result.stats.targetTreesPerHa != null
+            ? ' · dens. ' + Math.round(result.stats.targetTreesPerHa) + '/ha'
+            : '') +
+          (result.stats.expectedCanopyDiamM != null
+            ? ' · Ø~' + result.stats.expectedCanopyDiamM.toFixed(1) + ' m'
+            : '') +
+          (result.stats.spacingM != null
+            ? ' · esp. ' + result.stats.spacingM.toFixed(1) + ' m'
+            : '') +
           (result.stats.meanConfidence != null
             ? ' · conf. ' + Math.round(result.stats.meanConfidence) + '%'
             : '') +
@@ -2415,12 +2426,15 @@
             : '');
         setMapStatus(
           result.stats.count +
-            ' copas' +
+            ' plantas' +
+            (result.stats.expectedTrees != null
+              ? ' (ref ~' + result.stats.expectedTrees + ')'
+              : '') +
             (useAi
-              ? ' · calibrado con 2 fotos (' + model.replace('gpt-5.6-', '') + ')'
+              ? ' · calibrado (' + model.replace('gpt-5.6-', '') + ')'
               : calib
                 ? ' · criterio guardado'
-                : ' · ExG') +
+                : ' · centros+elipse') +
             (result.stats.truncated ? ' · tope ' + result.stats.maxTrees : ''),
           'ok'
         );
@@ -2428,9 +2442,16 @@
         saveCurrentMetaToSiteStore();
         refreshProjectsUi();
         await persistCanopyResult(result);
-        if (calib && Object.keys(calib).length) {
+        // Solo guardar criterio si fue calibración IA fresca y el resultado no parece basura
+        var meanConf = result.stats.meanConfidence != null ? result.stats.meanConfidence : 0;
+        var looksSane =
+          useAi &&
+          result.stats.count >= 3 &&
+          meanConf >= 50 &&
+          !(result.stats.excludedTone > result.stats.count * 3);
+        if (looksSane && calib && Object.keys(calib).length) {
           var saveProf = await persistDetectProfile(calib, {
-            source: calibSource === 'ai_calib' ? 'ai_calib' : calibSource,
+            source: 'ai_calib',
             crop_hint: result.stats.cropHint || '',
             notes: calib.notes || ''
           });
@@ -2450,6 +2471,12 @@
               'error'
             );
           }
+        } else if (useAi && calib && !looksSane) {
+          setMapStatus(
+            result.stats.count +
+              ' copas · criterio NO guardado (detección dudosa; vuelve a Analizar o usa ExG estricto)',
+            'error'
+          );
         }
       } catch (e) {
         console.error(e);
@@ -3228,6 +3255,7 @@
       cultivo: '',
       variedad: '',
       edad: '',
+      densidad_ha: '',
       nota: ''
     };
   }
@@ -3336,8 +3364,11 @@
 
   async function upsertSiteCloud() {
     var meta = collectMeta();
+    var payload = Object.assign({}, meta);
+    // densida_ha es parámetro local de detección (aún no hay columna en airci_sites)
+    delete payload.densidad_ha;
     var r = await apiOrtho(
-      Object.assign({ action: 'upsert_site', site_id: getSiteId() }, meta)
+      Object.assign({ action: 'upsert_site', site_id: getSiteId() }, payload)
     );
     if (r.ok && saveHint) {
       saveHint.textContent = 'Guardado local + nube';
@@ -3734,6 +3765,7 @@
       edad: meta.edad,
       nota: meta.nota
     });
+    // densida_ha se guarda en meta local del predio; no se manda a airci_sites aún
 
     if (!prep.ok) {
       var msg = prep.error || 'No se pudo preparar la subida';

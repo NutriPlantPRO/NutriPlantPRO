@@ -1,27 +1,32 @@
 /**
- * AirCI — detección de copas (ExG + componentes) y semáforo por área.
- * F2: máscara más estricta, exclusiones forma/borde, confianza por copa.
+ * AirCI — detección de copas: centros (picos ExG) → vegetación local
+ * limitada por spacing → elipse. Semáforo / Color Score / fenología encima.
  */
 (function (global) {
   'use strict';
 
-  var MIN_AREA_PX = 280;
+  var MIN_AREA_PX = 900;
   var MAX_TREES = 15000;
   /** Descarta “blobs” que son casi toda la vegetación (pasto unido / bordes) */
-  var MAX_AREA_FRAC = 0.01; // 1.0% del área de la imagen
-  var MAX_AREA_VS_MEDIAN = 6.5; // > 6.5× mediana = outlier
-  var MIN_FILL_RATIO = 0.18; // área / bbox: muy hueco = pasto/borde
-  var MAX_ASPECT = 2.8; // árbol ≈ redondo; >2.8 suele ser franja/pasto
-  var MIN_CONFIDENCE = 42; // debajo: se excluye del lote
-  var BORDER_CLEAR_PX = 2; // anillo del orto sin vegetación (artefactos)
-  /** Diámetro mínimo típico de copa frutal (no “pasto verde”) */
-  var MIN_CANOPY_DIAM_M = 2.0;
-  /** Fragmento vs mediana del lote: debajo = pedazo de árbol, no árbol */
-  var MIN_FRAC_OF_MEDIAN = 0.28;
-  /** Distancia máx. (× radio mediano) para fusionar micro-copas de la misma planta */
-  var MERGE_GAP_FRAC = 0.95;
-  /** Radio de suavizado ExG en metros (une textura de una misma copa) */
-  var EXG_BLUR_M = 0.9;
+  var MAX_AREA_FRAC = 0.02;
+  var MAX_AREA_VS_MEDIAN = 5.5;
+  var MIN_FILL_RATIO = 0.28;
+  var MAX_ASPECT = 2.0;
+  var MIN_CIRCULARITY = 0.32;
+  var MIN_CONFIDENCE = 52;
+  var BORDER_CLEAR_PX = 2;
+  /** Diámetro mínimo típico de copa frutal en huerta adulta */
+  var MIN_CANOPY_DIAM_M = 3.5;
+  var MIN_FRAC_OF_MEDIAN = 0.4;
+  var MERGE_GAP_FRAC = 1.1;
+  /** Suavizado fuerte: une textura de UNA copa (evita micro-triángulos) */
+  var EXG_BLUR_M = 2.0;
+  /** Fracción del spacing → radio de búsqueda local (no une vecinos) */
+  var SEARCH_RADIUS_FRAC = 0.42;
+  /** NMS: distancia mínima entre centros ≈ esta fracción del spacing */
+  var NMS_FRAC = 0.55;
+  /** Spacing típico huerta frutal adulta (m) si no hay calib */
+  var DEFAULT_SPACING_M = 6.5;
 
   function bandScale(v, max) {
     var n = Number(v);
@@ -121,46 +126,56 @@
           ? 'ai'
           : 'strict';
     if (mode === 'calib') {
+      // Pisos duros: la IA no puede “abrir” el detector hasta marcar pasto/sombra
       return {
         mode: 'calib',
-        gMargin: Number(c.g_margin) || 0.035,
-        bMargin: Number(c.b_margin) || 0.03,
-        gAbs: Number(c.g_abs) || 4,
-        bAbs: Number(c.b_abs) || 3,
-        darkSum: Number(c.dark_sum) || 40,
-        minG: Number(c.min_g) || 24,
-        pct: Number(c.exg_percentile) || 58,
-        thrMin: Number(c.thr_min) || 60,
+        gMargin: Math.max(0.028, Number(c.g_margin) || 0.04),
+        bMargin: Math.max(0.022, Number(c.b_margin) || 0.035),
+        gAbs: Math.max(3, Number(c.g_abs) || 5),
+        bAbs: Math.max(2, Number(c.b_abs) || 4),
+        darkSum: Math.max(55, Number(c.dark_sum) || 60),
+        minG: Math.max(26, Number(c.min_g) || 28),
+        pct: Math.max(55, Math.min(78, Number(c.exg_percentile) || 62)),
+        thrMin: Math.max(58, Number(c.thr_min) || 70),
         thrMax: Number(c.thr_max) || 165,
         erosionPasses: Number(c.erosion_passes) === 2 ? 2 : 1,
-        closePasses: Number(c.close_passes) >= 1 ? Math.min(5, Number(c.close_passes) | 0) : 3,
-        blurM: Number(c.blur_m) > 0 ? Number(c.blur_m) : EXG_BLUR_M,
-        allowYellow: c.allow_yellow_green !== false,
-        yellowBoost: c.yellow_boost !== false,
-        minAreaPx: Math.max(200, Number(c.min_area_px) || 260),
-        minConfidence: Math.max(36, Number(c.min_confidence) || 40),
+        closePasses: Math.max(3, Math.min(6, Number(c.close_passes) >= 1 ? Number(c.close_passes) | 0 : 4)),
+        blurM: Math.max(1.6, Number(c.blur_m) > 0 ? Number(c.blur_m) : EXG_BLUR_M),
+        allowYellow: c.allow_yellow_green === true,
+        yellowBoost: c.yellow_boost === true,
+        minAreaPx: Math.max(MIN_AREA_PX, Number(c.min_area_px) || MIN_AREA_PX),
+        minConfidence: Math.max(MIN_CONFIDENCE, Number(c.min_confidence) || MIN_CONFIDENCE),
+        typicalSpacingM:
+          Number(c.typical_spacing_m) > 0
+            ? Math.max(3.5, Math.min(14, Number(c.typical_spacing_m)))
+            : null,
+        targetTreesPerHa: null,
+        plantContext: extractPlantContext(c),
         cropHint: c.crop_hint || ''
       };
     }
     if (mode === 'ai') {
       return {
         mode: 'ai',
-        gMargin: 0.03,
-        bMargin: 0.025,
-        gAbs: 3,
-        bAbs: 2,
-        darkSum: 42,
-        minG: 22,
-        pct: 52,
-        thrMin: 48,
-        thrMax: 150,
+        gMargin: 0.04,
+        bMargin: 0.032,
+        gAbs: 5,
+        bAbs: 3,
+        darkSum: 58,
+        minG: 26,
+        pct: 58,
+        thrMin: 62,
+        thrMax: 160,
         erosionPasses: 1,
-        closePasses: 3,
+        closePasses: 4,
         blurM: EXG_BLUR_M,
-        allowYellow: true,
-        yellowBoost: true,
-        minAreaPx: 240,
-        minConfidence: 38,
+        allowYellow: false,
+        yellowBoost: false,
+        minAreaPx: MIN_AREA_PX,
+        minConfidence: MIN_CONFIDENCE,
+        typicalSpacingM: null,
+        targetTreesPerHa: null,
+        plantContext: defaultPlantContext(),
         cropHint: ''
       };
     }
@@ -182,7 +197,109 @@
       yellowBoost: false,
       minAreaPx: MIN_AREA_PX,
       minConfidence: MIN_CONFIDENCE,
+      typicalSpacingM: null,
+      targetTreesPerHa: null,
+      plantContext: defaultPlantContext(),
       cropHint: ''
+    };
+  }
+
+  /** Criterios tipo “ojo humano” en RGB: tamaño, contraste, sombra, forma — no solo color. */
+  function defaultPlantContext() {
+    return {
+      crownVsAlley: 'darker', // darker | similar | brighter
+      bloomOrYellow: false,
+      alleyType: 'grass', // grass | bare_soil | mixed
+      typicalCanopyDiamM: null,
+      canopyShape: 'round', // round | oval | irregular
+      shadowsUseful: true,
+      minEvidence: 52,
+      notes: ''
+    };
+  }
+
+  function extractPlantContext(c) {
+    var base = defaultPlantContext();
+    if (!c || typeof c !== 'object') return base;
+    var pc =
+      c.plant_context && typeof c.plant_context === 'object' ? c.plant_context : c;
+    var crown = String(pc.crown_vs_alley || pc.crownVsAlley || base.crownVsAlley).toLowerCase();
+    if (crown.indexOf('bright') >= 0) crown = 'brighter';
+    else if (crown.indexOf('similar') >= 0 || crown.indexOf('igual') >= 0) crown = 'similar';
+    else crown = 'darker';
+    var alley = String(pc.alley_type || pc.alleyType || base.alleyType).toLowerCase();
+    if (alley.indexOf('soil') >= 0 || alley.indexOf('suelo') >= 0) alley = 'bare_soil';
+    else if (alley.indexOf('mix') >= 0) alley = 'mixed';
+    else alley = 'grass';
+    var shape = String(pc.canopy_shape || pc.canopyShape || base.canopyShape).toLowerCase();
+    if (shape.indexOf('oval') >= 0 || shape.indexOf('elip') >= 0) shape = 'oval';
+    else if (shape.indexOf('irreg') >= 0) shape = 'irregular';
+    else shape = 'round';
+    var diam = Number(pc.typical_canopy_diam_m || pc.typicalCanopyDiamM);
+    return {
+      crownVsAlley: crown,
+      bloomOrYellow:
+        pc.bloom_or_yellow_crown === true ||
+        pc.bloomOrYellow === true ||
+        c.allow_yellow_green === true,
+      alleyType: alley,
+      typicalCanopyDiamM:
+        Number.isFinite(diam) && diam > 1.5 && diam < 16 ? diam : null,
+      canopyShape: shape,
+      shadowsUseful: pc.shadows_useful !== false && pc.shadowsUseful !== false,
+      minEvidence: Math.max(
+        40,
+        Math.min(75, Number(pc.min_evidence || pc.minEvidence) || base.minEvidence)
+      ),
+      notes: String(pc.looks_like_notes || pc.notes || c.notes || '').slice(0, 200)
+    };
+  }
+
+  /**
+   * Contexto operativo del predio: densidad + IA + GSD → qué “cuenta” como planta.
+   * Como el ojo humano: tamaño esperado, contraste vs calle, sombra, forma.
+   */
+  function resolvePlantScene(opts, P, gsdM) {
+    opts = opts || {};
+    var pc = Object.assign({}, P.plantContext || defaultPlantContext());
+    if (opts.plantContext && typeof opts.plantContext === 'object') {
+      pc = Object.assign(pc, extractPlantContext(opts.plantContext));
+    }
+    var dens =
+      opts.targetTreesPerHa != null && Number(opts.targetTreesPerHa) > 0
+        ? Number(opts.targetTreesPerHa)
+        : null;
+    var spacingM =
+      spacingMFromDensityHa(dens) ||
+      (opts.typicalSpacingM != null && Number(opts.typicalSpacingM) > 0
+        ? Number(opts.typicalSpacingM)
+        : null) ||
+      P.typicalSpacingM ||
+      DEFAULT_SPACING_M;
+    spacingM = Math.max(3.2, Math.min(14, spacingM));
+
+    var diamM =
+      pc.typicalCanopyDiamM != null
+        ? pc.typicalCanopyDiamM
+        : Math.max(2.8, Math.min(9, spacingM * 0.72));
+    // Rango de diámetro de copa creíble para ESTE predio
+    var diamMinM = diamM * (pc.canopyShape === 'irregular' ? 0.35 : 0.42);
+    var diamMaxM = diamM * (pc.canopyShape === 'oval' ? 1.45 : 1.3);
+
+    return {
+      dens: dens,
+      spacingM: spacingM,
+      diamM: diamM,
+      diamMinM: diamMinM,
+      diamMaxM: diamMaxM,
+      crownVsAlley: pc.crownVsAlley,
+      bloomOrYellow: pc.bloomOrYellow,
+      alleyType: pc.alleyType,
+      canopyShape: pc.canopyShape,
+      shadowsUseful: pc.shadowsUseful,
+      minEvidence: pc.minEvidence,
+      notes: pc.notes,
+      gsdM: gsdM
     };
   }
 
@@ -208,28 +325,43 @@
       var s = R + G + B;
       var v = 0;
       // Sombra / casi negro: no es copa
-      if (s < P.darkSum || (R < 22 && G < 24 && B < 22) || G < P.minG) {
+      if (s < Math.max(P.darkSum, 70) || (R < 28 && G < 32 && B < 28) || G < P.minG) {
         v = 0;
-      } else if (s > 300 && R + 8 >= G && Math.abs(R - G) < 35 && G > B + 8) {
-        // Pasto soleado amarillo-verdoso brillante (no copa oscura)
+      } else if (
+        (s > 230 && Math.abs(R - G) < 38 && G > B + 5 && R > B + 3) ||
+        (s > 200 && Math.abs(R - G) < 22 && G > B + 8 && R > 70)
+      ) {
+        // Pasto soleado / calle amarillo-verdosa — NO copa
+        v = 0;
+      } else if (s > 300) {
+        // Demasiado brillante para follaje denso
         v = 0;
       } else {
         var r = R / s;
         var g = G / s;
         var b = B / s;
-        var greenOk = P.allowYellow
-          ? g + 0.015 >= r && g > b + P.bMargin && G + 6 >= R && G > B + P.bAbs
-          : g > r + P.gMargin &&
+        // Copa: verde dominante y no tan claro como el pasto
+        var greenOk =
+          g > r + Math.max(0.01, P.gMargin * 0.6) &&
+          g > b + P.bMargin &&
+          G > R + Math.max(2, P.gAbs - 1) &&
+          G > B + P.bAbs &&
+          s >= 75 &&
+          s <= 300;
+        if (P.allowYellow && !greenOk) {
+          greenOk =
+            g + 0.01 >= r &&
             g > b + P.bMargin &&
-            G > R + P.gAbs &&
-            G > B + P.bAbs;
+            G + 2 >= R &&
+            G > B + P.bAbs &&
+            s >= 80 &&
+            s <= 290 &&
+            G > 40;
+        }
         if (greenOk) {
           var raw = 2 * g - r - b;
-          if (P.yellowBoost && R > G && R - G < 28 && G > B + 4) {
-            raw = Math.max(raw, 0.15);
-          }
-          // Preferir verde de copa (más oscuro) vs pasto claro
-          if (s > 340) raw *= 0.55;
+          if (s > 270) raw *= 0.4;
+          if (s < 95) raw *= 0.7; // borde de sombra
           v = Math.max(0, Math.min(255, Math.round((raw + 1) * 127.5)));
         } else {
           v = 0;
@@ -249,11 +381,12 @@
     // Suavizar ExG a escala de copa: une textura de UN árbol (evita micro-triángulos)
     var gsdGuess = estimateGsdM(georaster);
     var blurM = P.blurM != null ? P.blurM : EXG_BLUR_M;
-    var blurPx = 6;
+    var blurPx = 10;
     if (gsdGuess != null && Number.isFinite(gsdGuess) && gsdGuess > 0) {
-      blurPx = Math.max(3, Math.min(22, Math.round(blurM / gsdGuess)));
+      blurPx = Math.max(6, Math.min(36, Math.round(blurM / gsdGuess)));
     } else {
-      blurPx = Math.max(4, Math.min(16, Math.round(Math.min(w, h) / 180)));
+      // Sin GSD: asumir ~3–5 cm/px típico de orto dron → blur ~1.5–2 m
+      blurPx = Math.max(8, Math.min(28, Math.round(Math.min(w, h) / 90)));
     }
     var blurred = boxBlurU8(exg, w, h, blurPx);
     var histB = new Array(256);
@@ -271,11 +404,12 @@
       validB > 100 ? percentileFromHist(histB, validB, Math.max(40, P.pct - 8)) : thr;
     thrB = Math.max(P.thrMin - 8, Math.min(thrB, P.thrMax));
 
-    var mask = new Uint8Array(n);
+    var maskRaw = new Uint8Array(n);
     for (var q = 0; q < n; q++) {
       // Requiere señal suavizada (copa) y algo de ExG original (no sombra pura)
-      if (blurred[q] >= thrB && exg[q] >= Math.max(12, thr * 0.25)) mask[q] = 1;
+      if (blurred[q] >= thrB && exg[q] >= Math.max(12, thr * 0.25)) maskRaw[q] = 1;
     }
+    var mask = maskRaw;
 
     function dilateOnce(src) {
       var out = new Uint8Array(n);
@@ -316,8 +450,8 @@
     }
 
     // Cierre fuerte: dilatar varias veces (rellena huecos de la copa) + erosión suave
-    var closeN = P.closePasses != null ? P.closePasses : 3;
-    closeN = Math.max(2, Math.min(5, closeN));
+    var closeN = P.closePasses != null ? P.closePasses : 4;
+    closeN = Math.max(3, Math.min(6, closeN));
     var dil = mask;
     for (var cp = 0; cp < closeN; cp++) {
       dil = dilateOnce(dil);
@@ -347,8 +481,11 @@
 
     return {
       mask: dil,
+      maskRaw: maskRaw,
       exg: exg,
+      blurred: blurred,
       threshold: thrB,
+      thrRaw: thr,
       vegPixels: Math.max(0, count),
       width: w,
       height: h,
@@ -486,11 +623,73 @@
     }
     if (fill < MIN_FILL_RATIO) return false;
     if (aspect > MAX_ASPECT) return false;
-    if (circ < 0.22) return false;
-    // Muy alargado + poco lleno = pasto / surco
-    if (aspect > 2.2 && fill < 0.32) return false;
-    if (comp.touchesBorder && fill < 0.28 && aspect > 2.0) return false;
+    if (circ < MIN_CIRCULARITY) return false;
+    if (aspect > 1.75 && fill < 0.4) return false;
+    if (aspect > 1.55 && circ < 0.4) return false;
+    if (comp.touchesBorder && fill < 0.35 && aspect > 1.6) return false;
     return true;
+  }
+
+  /** Muestrea tono RGB del blob: descarta sombra / pasto claro / gente. */
+  function sampleBlobTone(georaster, comp) {
+    var bands = getBandArrays(georaster);
+    if (!bands || !comp || !comp.box) return null;
+    var w = georaster.width;
+    var h = georaster.height;
+    var maxR = bands.maxs[0];
+    var maxG = bands.maxs[1] != null ? bands.maxs[1] : bands.maxs[0];
+    var maxB = bands.maxs[2] != null ? bands.maxs[2] : bands.maxs[0];
+    var box = comp.box;
+    var sumR = 0;
+    var sumG = 0;
+    var sumB = 0;
+    var n = 0;
+    var boxW = box.maxX - box.minX + 1;
+    var boxH = box.maxY - box.minY + 1;
+    var stride = Math.max(1, Math.ceil(Math.sqrt((boxW * boxH) / 120)));
+    for (var yy = box.minY; yy <= box.maxY; yy += stride) {
+      for (var xx = box.minX; xx <= box.maxX; xx += stride) {
+        if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+        var R = bandScale(bands.r[yy * w + xx], maxR);
+        var G = bandScale(bands.g[yy * w + xx], maxG);
+        var B = bandScale(bands.b[yy * w + xx], maxB);
+        sumR += R;
+        sumG += G;
+        sumB += B;
+        n++;
+      }
+    }
+    if (!n) return null;
+    return {
+      meanR: sumR / n,
+      meanG: sumG / n,
+      meanB: sumB / n,
+      meanSum: (sumR + sumG + sumB) / n
+    };
+  }
+
+  /** ¿Tono plausible de planta (copa, floración, follaje oscuro) — no pasto soleado ni sombra pura? */
+  function isCanopyTone(tone) {
+    if (!tone) return false;
+    var s = tone.meanSum;
+    var R = tone.meanR;
+    var G = tone.meanG;
+    var B = tone.meanB;
+    // Sombra / suelo muy oscuro sin estructura
+    if (s < 70) return false;
+    // Pasto / tierra / ropa muy claros
+    if (s > 310) return false;
+    // Pasto soleado: alto, R≈G, poco azul
+    if (s > 235 && Math.abs(R - G) < 20 && G > B + 10 && R > 85) return false;
+    // Planta: verde, amarillo-flor, o copa más oscura que pasto (G o R no dominados por B)
+    var greenish = G >= R - 8 && G > B + 1;
+    var yellowishBloom = R >= G - 6 && R > B + 8 && G > B + 4 && s >= 90 && s <= 280;
+    var darkCrown = s >= 70 && s <= 200 && G + 6 >= B && R + 8 >= B;
+    return greenish || yellowishBloom || darkCrown;
+  }
+
+  function isGrassLikeShape(comp) {
+    return !looksLikeTree(comp);
   }
 
   /** Confianza 0–100: prior de “es un árbol”, no solo vegetación verde. */
@@ -513,7 +712,6 @@
     var sizeScore = 0.45;
     if (medianArea > 0 && area > 0) {
       var ratio = area / medianArea;
-      // Un árbol del lote suele estar cerca de la mediana (no un trocito)
       if (ratio >= 0.45 && ratio <= 2.4) sizeScore = 1;
       else if (ratio >= 0.28 && ratio <= 3.5) sizeScore = 0.7;
       else if (ratio >= 0.18 && ratio <= 4.5) sizeScore = 0.4;
@@ -529,10 +727,6 @@
         0.16 * sizeScore +
         0.06 * borderScore);
     return Math.max(0, Math.min(100, Math.round(conf)));
-  }
-
-  function isGrassLikeShape(comp) {
-    return !looksLikeTree(comp);
   }
 
   function pixelToLatLng(georaster, x, y) {
@@ -1651,6 +1845,449 @@
     return minArea;
   }
 
+  function spacingMFromDensityHa(treesPerHa) {
+    var d = Number(treesPerHa);
+    if (!Number.isFinite(d) || d < 50 || d > 2500) return null;
+    // Marco cuadrado aproximado: área/planta = 10000/d → lado = sqrt
+    return Math.sqrt(10000 / d);
+  }
+
+  function guessSpacingPx(gsdM, w, h, typicalSpacingM) {
+    var spacingM =
+      typicalSpacingM != null && Number.isFinite(typicalSpacingM) && typicalSpacingM > 0
+        ? typicalSpacingM
+        : DEFAULT_SPACING_M;
+    spacingM = Math.max(3.2, Math.min(14, spacingM));
+    if (gsdM != null && Number.isFinite(gsdM) && gsdM > 0) {
+      return Math.max(8, Math.min(Math.min(w, h) / 3, spacingM / gsdM));
+    }
+    return Math.max(12, Math.min(Math.min(w, h) / 25, 80));
+  }
+
+  /**
+   * Mapa de evidencia de planta en RGB (como el ojo: objeto vs calle).
+   * Factores: contraste, textura, sombra adyacente, color suave — pesos según contexto.
+   */
+  function buildPlantnessMap(georaster, blurPx, softExg, scene) {
+    scene = scene || defaultPlantContext();
+    var bands = getBandArrays(georaster);
+    if (!bands) throw new Error('GeoTIFF sin bandas RGB');
+    var w = georaster.width;
+    var h = georaster.height;
+    var n = w * h;
+    var maxR = bands.maxs[0];
+    var maxG = bands.maxs[1] != null ? bands.maxs[1] : bands.maxs[0];
+    var maxB = bands.maxs[2] != null ? bands.maxs[2] : bands.maxs[0];
+    var lum = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      var R = bandScale(bands.r[i], maxR);
+      var G = bandScale(bands.g[i], maxG);
+      var B = bandScale(bands.b[i], maxB);
+      lum[i] = 0.3 * R + 0.59 * G + 0.11 * B;
+    }
+    var canopyR = Math.max(3, Math.min(28, blurPx | 0));
+    var texR = Math.max(1, Math.min(6, Math.round(canopyR / 4)));
+    var shadowR = Math.max(canopyR + 2, Math.min(36, Math.round(canopyR * 1.6)));
+    var meanL = boxBlurU8(lum, w, h, canopyR);
+    var fineL = boxBlurU8(lum, w, h, texR);
+    var wideL = boxBlurU8(lum, w, h, shadowR);
+
+    // Pesos tipo humano: contraste importa más que “verde”
+    var wDark =
+      scene.crownVsAlley === 'brighter' ? 0.35 : scene.crownVsAlley === 'similar' ? 0.7 : 1.45;
+    var wBright =
+      scene.crownVsAlley === 'brighter' ? 1.2 : scene.crownVsAlley === 'similar' ? 0.55 : 0.35;
+    var wTex = 1.15;
+    var wColor = scene.bloomOrYellow ? 0.22 : scene.alleyType === 'bare_soil' ? 0.55 : 0.38;
+    var wShadow = scene.shadowsUseful ? 0.85 : 0.15;
+
+    var raw = new Float32Array(n);
+    for (var p = 0; p < n; p++) {
+      var L = lum[p];
+      var m = meanL[p];
+      var darkBlob = Math.max(0, m - L);
+      var brightBlob = Math.max(0, L - m);
+      var texture = Math.abs(L - fineL[p]);
+      // Sombra proyectada: anillo/vecindario más amplio más oscuro que la calle media
+      var shadowCue = Math.max(0, m - wideL[p]);
+      var shadowFlat = L < 35 && m < 45 && texture < 4;
+      var exgSoft = softExg && softExg[p] > 0 ? softExg[p] / 255 : 0;
+      var score =
+        wDark * darkBlob +
+        wBright * Math.min(brightBlob, 48) +
+        wTex * texture +
+        wShadow * shadowCue +
+        wColor * 40 * exgSoft;
+      if (shadowFlat) score *= 0.12;
+      if (texture < 3 && darkBlob < 4 && brightBlob < 4) score *= 0.3;
+      // Calle de pasto muy uniforme
+      if (scene.alleyType === 'grass' && texture < 2.5 && Math.abs(L - m) < 3) score *= 0.25;
+      raw[p] = score;
+    }
+    var blurred = boxBlurU8(raw, w, h, Math.max(2, Math.round(canopyR * 0.55)));
+    var maxV = 1e-6;
+    for (var q = 0; q < n; q++) {
+      if (blurred[q] > maxV) maxV = blurred[q];
+    }
+    var out = new Float32Array(n);
+    for (var u = 0; u < n; u++) {
+      out[u] = Math.max(0, Math.min(255, (blurred[u] / maxV) * 255));
+    }
+    return { plant: out, lum: lum, meanL: meanL, width: w, height: h };
+  }
+
+  /**
+   * Evidencia multi-factor: ¿esto se comporta como planta de ESTE predio?
+   * Tamaño vs densidad/Ø esperado, forma, plantness, no “basura” de calle.
+   */
+  function evaluatePlantEvidence(comp, scene, gsdM) {
+    var reasons = [];
+    var score = 0;
+    var area = Number(comp.areaPx) || 0;
+    var aspect = Number(comp.aspect) || 1;
+    var fill = Number(comp.fillRatio) || 0;
+    var circ = Number(comp.circularity) || 0;
+    var peak = comp.seed && comp.seed.v != null ? comp.seed.v : Number(comp.meanExg) || 0;
+
+    var diamEq =
+      gsdM != null && gsdM > 0
+        ? 2 * Math.sqrt(area / Math.PI) * gsdM
+        : comp.ellipse
+          ? 2 * Math.sqrt(comp.ellipse.rx * comp.ellipse.ry)
+          : null;
+
+    // 1) Tamaño creíble para el marco del predio (ojo humano: “ese bulto es del tamaño de un árbol”)
+    var sizeScore = 0.45;
+    if (diamEq != null && scene.diamMinM != null) {
+      if (diamEq >= scene.diamMinM && diamEq <= scene.diamMaxM) {
+        sizeScore = 1;
+        reasons.push('tamano_ok');
+      } else if (diamEq >= scene.diamMinM * 0.7 && diamEq <= scene.diamMaxM * 1.35) {
+        sizeScore = 0.65;
+        reasons.push('tamano_borde');
+      } else {
+        sizeScore = 0.12;
+        reasons.push('tamano_fuera');
+      }
+    } else {
+      sizeScore = 0.5;
+    }
+    score += 28 * sizeScore;
+
+    // 2) Objeto compacto (no franja de pasto / no persona suelta)
+    var shapeScore = 0.4;
+    if (scene.canopyShape === 'irregular') {
+      shapeScore = fill >= 0.18 && aspect <= 2.8 ? 0.85 : fill >= 0.12 ? 0.5 : 0.15;
+    } else if (scene.canopyShape === 'oval') {
+      shapeScore =
+        aspect <= 2.4 && fill >= 0.22 && circ >= 0.18
+          ? 0.9
+          : aspect <= 2.8 && fill >= 0.18
+            ? 0.55
+            : 0.2;
+    } else {
+      shapeScore =
+        aspect <= 2.05 && fill >= 0.25 && circ >= 0.22
+          ? 1
+          : aspect <= 2.4 && fill >= 0.2
+            ? 0.6
+            : 0.18;
+    }
+    if (shapeScore >= 0.85) reasons.push('forma_copa');
+    else if (shapeScore < 0.35) reasons.push('forma_rara');
+    score += 24 * shapeScore;
+
+    // 3) Evidencia de “objeto” en el centro (plantness)
+    var peakScore = Math.max(0, Math.min(1, peak / 140));
+    score += 22 * peakScore;
+    if (peakScore > 0.55) reasons.push('contraste_centro');
+
+    // 4) No demasiado chico vs spacing (basura / gente / sombra suelta)
+    var vsSpacing = 0.5;
+    if (diamEq != null && scene.spacingM > 0) {
+      var ratio = diamEq / scene.spacingM;
+      // Copa típica ~0.45–0.85 del marco
+      if (ratio >= 0.35 && ratio <= 0.95) {
+        vsSpacing = 1;
+        reasons.push('vs_marco');
+      } else if (ratio >= 0.25 && ratio <= 1.15) vsSpacing = 0.6;
+      else vsSpacing = 0.15;
+    }
+    score += 16 * vsSpacing;
+
+    // 5) Bloom / color no descalifica si el contexto lo espera
+    if (scene.bloomOrYellow) {
+      score += 4;
+      reasons.push('floracion_ok');
+    }
+
+    score = Math.max(0, Math.min(100, Math.round(score)));
+    return {
+      ok: score >= (scene.minEvidence || 52),
+      score: score,
+      reasons: reasons,
+      diamEqM: diamEq
+    };
+  }
+
+  /** Picos locales = centros candidatos de planta (sobre mapa plantness). */
+  function findCanopySeeds(scoreMap, seedMask, w, h, winR, minVal) {
+    winR = Math.max(2, winR | 0);
+    var step = Math.max(1, Math.floor(winR / 2));
+    var peaks = [];
+    var y0 = winR;
+    var y1 = h - winR;
+    var x0 = winR;
+    var x1 = w - winR;
+    for (var y = y0; y < y1; y += step) {
+      for (var x = x0; x < x1; x += step) {
+        var bestV = -1;
+        var bx = x;
+        var by = y;
+        var yEnd = Math.min(y1, y + step);
+        var xEnd = Math.min(x1, x + step);
+        for (var yy = y; yy < yEnd; yy++) {
+          var row = yy * w;
+          for (var xx = x; xx < xEnd; xx++) {
+            var ii = row + xx;
+            if (seedMask && !seedMask[ii]) continue;
+            var vv = scoreMap[ii];
+            if (vv > bestV) {
+              bestV = vv;
+              bx = xx;
+              by = yy;
+            }
+          }
+        }
+        if (bestV < minVal) continue;
+        var isMax = true;
+        for (var dy = -winR; dy <= winR && isMax; dy++) {
+          var ry = (by + dy) * w;
+          for (var dx = -winR; dx <= winR; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            if (scoreMap[ry + bx + dx] > bestV) {
+              isMax = false;
+              break;
+            }
+          }
+        }
+        if (isMax) peaks.push({ x: bx, y: by, v: bestV });
+      }
+    }
+    peaks.sort(function (a, b) {
+      return b.v - a.v;
+    });
+    // Deduplicar picos casi idénticos
+    var uniq = [];
+    var minD2 = Math.max(4, (winR * 0.5) * (winR * 0.5));
+    for (var p = 0; p < peaks.length; p++) {
+      var ok = true;
+      for (var u = 0; u < uniq.length; u++) {
+        var ddx = peaks[p].x - uniq[u].x;
+        var ddy = peaks[p].y - uniq[u].y;
+        if (ddx * ddx + ddy * ddy < minD2) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) uniq.push(peaks[p]);
+    }
+    return uniq;
+  }
+
+  function nmsSeeds(seeds, minDistPx) {
+    var minD2 = minDistPx * minDistPx;
+    var kept = [];
+    for (var i = 0; i < seeds.length; i++) {
+      var s = seeds[i];
+      var ok = true;
+      for (var j = 0; j < kept.length; j++) {
+        var dx = s.x - kept[j].x;
+        var dy = s.y - kept[j].y;
+        if (dx * dx + dy * dy < minD2) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) kept.push(s);
+    }
+    return kept;
+  }
+
+  function medianNnSpacingPx(seeds) {
+    if (!seeds || seeds.length < 2) return null;
+    var dists = [];
+    for (var i = 0; i < seeds.length; i++) {
+      var best = Infinity;
+      for (var j = 0; j < seeds.length; j++) {
+        if (i === j) continue;
+        var dx = seeds[i].x - seeds[j].x;
+        var dy = seeds[i].y - seeds[j].y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < best) best = d;
+      }
+      if (best < Infinity) dists.push(best);
+    }
+    return median(dists);
+  }
+
+  /**
+   * Segmenta la planta alrededor del centro dentro de radio R.
+   * Usa plantness (estructura) + ExG suave; no exige “lo más verde”.
+   */
+  function segmentAroundSeed(seed, plantMap, softExg, labels, labelId, w, h, radiusPx) {
+    var R = Math.max(3, radiusPx);
+    var R2 = R * R;
+    var minPlant = Math.max(12, seed.v * 0.32);
+    var sx = seed.x | 0;
+    var sy = seed.y | 0;
+    var start = sy * w + sx;
+    if (sx < 0 || sy < 0 || sx >= w || sy >= h) {
+      return { areaPx: 0, pixels: [], box: null };
+    }
+    if (labels[start] && labels[start] !== labelId) {
+      return { areaPx: 0, pixels: [], box: null };
+    }
+    if (plantMap[start] < minPlant * 0.7 && !(softExg && softExg[start] > 20)) {
+      return { areaPx: 0, pixels: [], box: null };
+    }
+
+    var queue = [start];
+    labels[start] = labelId;
+    var pixels = [start];
+    var minX = sx;
+    var maxX = sx;
+    var minY = sy;
+    var maxY = sy;
+    var qi = 0;
+    var dirs = [-1, 1, -w, w];
+
+    while (qi < queue.length) {
+      var cur = queue[qi++];
+      var cx = cur % w;
+      var cy = (cur / w) | 0;
+      for (var d = 0; d < 4; d++) {
+        var nidx = cur + dirs[d];
+        if (nidx < 0 || nidx >= w * h) continue;
+        var nx = nidx % w;
+        var ny = (nidx / w) | 0;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        if (Math.abs(nx - cx) + Math.abs(ny - cy) !== 1) continue;
+        if (labels[nidx]) continue;
+        var ddx = nx - sx;
+        var ddy = ny - sy;
+        if (ddx * ddx + ddy * ddy > R2) continue;
+        var pv = plantMap[nidx];
+        var ev = softExg ? softExg[nidx] : 0;
+        // Misma planta: plantness relativo al centro O algo de ExG/copa
+        if (pv < minPlant && ev < 16) continue;
+        if (pv < seed.v * 0.22 && ev < 28) continue;
+        labels[nidx] = labelId;
+        queue.push(nidx);
+        pixels.push(nidx);
+        if (nx < minX) minX = nx;
+        if (nx > maxX) maxX = nx;
+        if (ny < minY) minY = ny;
+        if (ny > maxY) maxY = ny;
+      }
+    }
+
+    return {
+      areaPx: pixels.length,
+      pixels: pixels,
+      box: { minX: minX, maxX: maxX, minY: minY, maxY: maxY }
+    };
+  }
+
+  /** Elipse por momentos de inercia (PCA 2D) sobre píxeles segmentados. */
+  function fitEllipse(pixels, w) {
+    var n = pixels.length;
+    if (n < 8) return null;
+    var sumX = 0;
+    var sumY = 0;
+    for (var i = 0; i < n; i++) {
+      sumX += pixels[i] % w;
+      sumY += (pixels[i] / w) | 0;
+    }
+    var cx = sumX / n;
+    var cy = sumY / n;
+    var mxx = 0;
+    var myy = 0;
+    var mxy = 0;
+    for (var j = 0; j < n; j++) {
+      var x = (pixels[j] % w) - cx;
+      var y = ((pixels[j] / w) | 0) - cy;
+      mxx += x * x;
+      myy += y * y;
+      mxy += x * y;
+    }
+    mxx /= n;
+    myy /= n;
+    mxy /= n;
+    var tmp = Math.sqrt(Math.max(0, (mxx - myy) * (mxx - myy) + 4 * mxy * mxy));
+    var l1 = 0.5 * (mxx + myy + tmp);
+    var l2 = 0.5 * (mxx + myy - tmp);
+    // ~2σ cubre la mayor parte del blob
+    var rx = 2 * Math.sqrt(Math.max(l1, 0.25));
+    var ry = 2 * Math.sqrt(Math.max(l2, 0.25));
+    if (rx < ry) {
+      var swap = rx;
+      rx = ry;
+      ry = swap;
+    }
+    var angle = 0.5 * Math.atan2(2 * mxy, mxx - myy);
+    return { cx: cx, cy: cy, rx: rx, ry: ry, angle: angle };
+  }
+
+  function ellipseToPixelRing(ell, sides) {
+    sides = sides || 28;
+    var out = [];
+    var cosA = Math.cos(ell.angle);
+    var sinA = Math.sin(ell.angle);
+    for (var i = 0; i < sides; i++) {
+      var t = (i / sides) * Math.PI * 2;
+      var lx = Math.cos(t) * ell.rx;
+      var ly = Math.sin(t) * ell.ry;
+      var x = ell.cx + lx * cosA - ly * sinA;
+      var y = ell.cy + lx * sinA + ly * cosA;
+      out.push([x, y]);
+    }
+    return out;
+  }
+
+  function ellipseToLatLngs(georaster, ell, sides) {
+    return ellipseToPixelRing(ell, sides).map(function (xy) {
+      return pixelToLatLng(georaster, xy[0], xy[1]);
+    });
+  }
+
+  function scoreSeedCanopy(comp, seedV, medianArea) {
+    var area = Number(comp.areaPx) || 0;
+    var fill = Number(comp.fillRatio) || 0;
+    var aspect = Number(comp.aspect) || 1;
+    var circ = Number(comp.circularity) || 0;
+    var peak = Math.max(0, Math.min(1, (seedV || 0) / 160));
+    var compact = Math.max(0, Math.min(1, (fill - 0.2) / 0.55));
+    var roundScore = Math.max(0, Math.min(1, 1 - (aspect - 1) / 1.8));
+    var circScore = Math.max(0, Math.min(1, (circ - 0.2) / 0.55));
+    var sizeScore = 0.45;
+    if (medianArea > 0 && area > 0) {
+      var ratio = area / medianArea;
+      if (ratio >= 0.45 && ratio <= 2.4) sizeScore = 1;
+      else if (ratio >= 0.28 && ratio <= 3.5) sizeScore = 0.7;
+      else if (ratio >= 0.18 && ratio <= 4.5) sizeScore = 0.4;
+      else sizeScore = 0.15;
+    }
+    var conf =
+      100 *
+      (0.28 * peak +
+        0.2 * compact +
+        0.18 * roundScore +
+        0.18 * circScore +
+        0.16 * sizeScore);
+    return Math.max(0, Math.min(100, Math.round(conf)));
+  }
+
   function analyzeCanopies(georaster, opts) {
     opts = opts || {};
     var profileOrCalib =
@@ -1661,7 +2298,9 @@
           : 'strict';
     var P = resolveExgParams(profileOrCalib);
     var veg = buildVegetationMask(georaster, profileOrCalib);
-    var totalPx = veg.width * veg.height;
+    var w = veg.width;
+    var h = veg.height;
+    var totalPx = w * h;
     var gsdM = estimateGsdM(georaster);
     var minAreaPx = resolveMinAreaPx(
       opts.minAreaPx != null ? opts.minAreaPx : P.minAreaPx,
@@ -1670,99 +2309,215 @@
     );
     var minConf =
       opts.minConfidence != null ? opts.minConfidence : P.minConfidence;
-    var maxAreaAbs = Math.max(minAreaPx * 20, Math.floor(totalPx * MAX_AREA_FRAC));
 
-    var cc = connectedComponents(
-      veg.mask,
-      veg.width,
-      veg.height,
-      Math.max(40, Math.floor(minAreaPx * 0.35)),
-      veg.exg
-    );
-    var rawComps = cc.comps || [];
-    var labels = cc.labels;
     var excluded = {
       giant: 0,
       outlier: 0,
       shape: 0,
+      tone: 0,
+      evidence: 0,
       lowConf: 0,
       tiny: 0,
-      mergedAway: 0
+      mergedAway: 0,
+      weakSeed: 0
     };
 
-    // 1) quitar gigantes (pasto unido / casi toda la huerta)
-    var comps = rawComps.filter(function (c) {
+    // Escena del predio: densidad + criterios de planta (IA / default)
+    var scene = resolvePlantScene(opts, P, gsdM);
+    var targetDens = scene.dens;
+    var densSpacingM = spacingMFromDensityHa(targetDens);
+    var spacingPx = guessSpacingPx(gsdM, w, h, scene.spacingM);
+    var spacingLocked = densSpacingM != null || P.typicalSpacingM != null;
+
+    // Área mínima alineada al Ø de copa esperado del predio
+    if (gsdM != null && gsdM > 0 && scene.diamMinM > 0) {
+      var rMin = scene.diamMinM / 2;
+      minAreaPx = Math.max(minAreaPx, Math.ceil((Math.PI * rMin * rMin) / (gsdM * gsdM)));
+    }
+
+    var winR = Math.max(
+      3,
+      Math.round(
+        gsdM != null && gsdM > 0
+          ? Math.max((scene.diamMinM * 0.4) / gsdM, (MIN_CANOPY_DIAM_M * 0.3) / gsdM)
+          : spacingPx * 0.22
+      )
+    );
+
+    // Mapa de evidencia de planta (contraste/textura/sombra/color según contexto)
+    var plantPack = buildPlantnessMap(georaster, veg.blurPx || 10, veg.exg, scene);
+    var plantMap = plantPack.plant;
+    var peakMin = 20;
+    var seedMask = null;
+    var rawSeeds = findCanopySeeds(plantMap, seedMask, w, h, winR, peakMin);
+    var seeds = nmsSeeds(rawSeeds, spacingPx * NMS_FRAC);
+
+    var orthoHa =
+      gsdM != null && Number.isFinite(gsdM) && gsdM > 0
+        ? (totalPx * gsdM * gsdM) / 10000
+        : null;
+    var expectedTrees =
+      targetDens != null && orthoHa != null && orthoHa > 0.01
+        ? Math.round(targetDens * orthoHa)
+        : null;
+    if (expectedTrees != null && expectedTrees >= 3 && seeds.length > expectedTrees * 1.45) {
+      seeds = seeds.slice(0, Math.max(expectedTrees, Math.ceil(expectedTrees * 1.35)));
+    }
+
+    var nnMed = medianNnSpacingPx(seeds);
+    if (nnMed != null && nnMed > 4) {
+      var refined = nnMed;
+      if (gsdM != null && gsdM > 0) {
+        var m = refined * gsdM;
+        m = Math.max(3.2, Math.min(12, m));
+        refined = m / gsdM;
+      }
+      if (spacingLocked) {
+        spacingPx = 0.72 * spacingPx + 0.28 * refined;
+      } else {
+        spacingPx = 0.55 * spacingPx + 0.45 * refined;
+      }
+      seeds = nmsSeeds(rawSeeds, spacingPx * NMS_FRAC);
+      if (expectedTrees != null && expectedTrees >= 3 && seeds.length > expectedTrees * 1.45) {
+        seeds = seeds.slice(0, Math.max(expectedTrees, Math.ceil(expectedTrees * 1.35)));
+      }
+    }
+
+    var searchR = Math.max(winR + 2, Math.round(spacingPx * SEARCH_RADIUS_FRAC));
+    searchR = Math.min(searchR, Math.round(spacingPx * 0.48));
+    // Radio de búsqueda ≈ media copa esperada (no más que medio spacing)
+    if (gsdM != null && gsdM > 0) {
+      searchR = Math.min(
+        searchR,
+        Math.max(winR + 2, Math.round((scene.diamMaxM * 0.55) / gsdM))
+      );
+    }
+
+    // 2) Segmentar localmente + elipse; labels para fenología
+    var labels = new Int32Array(totalPx);
+    var comps = [];
+    for (var si = 0; si < seeds.length; si++) {
+      var seed = seeds[si];
+      var labelId = si + 1;
+      var sIdx = seed.y * w + seed.x;
+      if (labels[sIdx] && labels[sIdx] !== labelId) {
+        excluded.weakSeed++;
+        continue;
+      }
+      var seg = segmentAroundSeed(
+        seed,
+        plantMap,
+        veg.exg,
+        labels,
+        labelId,
+        w,
+        h,
+        searchR
+      );
+      if (!seg.areaPx || seg.areaPx < Math.max(40, Math.floor(minAreaPx * 0.25))) {
+        excluded.tiny++;
+        // liberar labels débiles
+        for (var pi = 0; pi < seg.pixels.length; pi++) labels[seg.pixels[pi]] = 0;
+        continue;
+      }
+      var ell = fitEllipse(seg.pixels, w);
+      if (!ell) {
+        excluded.shape++;
+        for (var pj = 0; pj < seg.pixels.length; pj++) labels[seg.pixels[pj]] = 0;
+        continue;
+      }
+      // Recentrar elipse hacia el centro de masa (ya lo es) y asegurar tamaño mínimo
+      var minRx =
+        gsdM != null && gsdM > 0
+          ? (scene.diamMinM * 0.4) / gsdM
+          : 4;
+      ell.rx = Math.max(ell.rx, minRx);
+      ell.ry = Math.max(ell.ry, minRx * (scene.canopyShape === 'oval' ? 0.55 : 0.7));
+
+      var ellArea = Math.PI * ell.rx * ell.ry;
+      var fill = ellArea > 0 ? Math.min(1.2, seg.areaPx / ellArea) : 0;
+      var aspect = ell.rx / Math.max(1e-6, ell.ry);
+      var circ = (4 * seg.areaPx) / (Math.PI * Math.max(ell.rx * 2, 1) * Math.max(ell.rx * 2, 1));
+      var box = {
+        minX: Math.max(0, Math.floor(ell.cx - ell.rx)),
+        maxX: Math.min(w - 1, Math.ceil(ell.cx + ell.rx)),
+        minY: Math.max(0, Math.floor(ell.cy - ell.rx)),
+        maxY: Math.min(h - 1, Math.ceil(ell.cy + ell.rx))
+      };
+      // edge ring in pixel space for legacy helpers
+      var ring = ellipseToPixelRing(ell, 28);
+      var edge = ring.map(function (xy) {
+        return [Math.round(xy[0]), Math.round(xy[1])];
+      });
+
+      var comp = {
+        label: labelId,
+        areaPx: seg.areaPx,
+        box: box,
+        edge: edge,
+        fillRatio: fill,
+        aspect: aspect,
+        circularity: circ,
+        meanExg: seed.v,
+        touchesBorder:
+          box.minX <= 1 || box.minY <= 1 || box.maxX >= w - 2 || box.maxY >= h - 2,
+        borderPx: 0,
+        seed: seed,
+        ellipse: ell,
+        _ellLatLngs: null
+      };
+      comps.push(comp);
+    }
+
+    // 3) Filtros: tamaño / forma blanda / tono / evidencia multi-factor de PLANTA
+    var maxAreaAbs = Math.max(minAreaPx * 20, Math.floor(totalPx * MAX_AREA_FRAC));
+    var maxAspect =
+      scene.canopyShape === 'irregular'
+        ? 2.9
+        : scene.canopyShape === 'oval'
+          ? 2.55
+          : MAX_ASPECT + 0.25;
+    comps = comps.filter(function (c) {
       if (c.areaPx > maxAreaAbs) {
         excluded.giant++;
         return false;
       }
-      return true;
-    });
-
-    // 1b) fusionar micro-copas de la misma planta (1ª pasada)
-    var preMergeN = comps.length;
-    var medPre = median(
-      comps.map(function (c) {
-        return c.areaPx;
-      })
-    );
-    var medRad = medPre > 0 ? Math.sqrt(medPre / Math.PI) : 10;
-    var mergeGap = Math.max(10, Math.min(64, Math.round(medRad * MERGE_GAP_FRAC * 2)));
-    if (gsdM != null && Number.isFinite(gsdM) && gsdM > 0) {
-      // ~2 m de holgura: fragmentos de la misma copa (~5–8 m Ø) se unen; árboles vecinos no
-      mergeGap = Math.max(mergeGap, Math.round(2.0 / gsdM));
-    }
-    comps = mergeNearbyComps(comps, mergeGap);
-    excluded.mergedAway = Math.max(0, preMergeN - comps.length);
-
-    // 1c) tamaño mínimo absoluto (después del merge)
-    comps = comps.filter(function (c) {
       if (c.areaPx < minAreaPx) {
         excluded.tiny++;
         return false;
       }
-      return true;
-    });
-
-    // 2) forma de árbol (redondo/compacto), no pasto/franja
-    comps = comps.filter(function (c) {
-      if (!looksLikeTree(c)) {
+      if (c.aspect > maxAspect) {
+        excluded.shape++;
+        return false;
+      }
+      if (c.fillRatio < (scene.canopyShape === 'irregular' ? 0.14 : 0.18)) {
         excluded.shape++;
         return false;
       }
       return true;
     });
 
-    // 2b) mediana de candidatos “árbol” → 2ª fusión + descartar fragmentos vs predio
-    var areasSeed = comps.map(function (c) {
-      return c.areaPx;
-    });
-    var medSeed = median(areasSeed);
-    if (medSeed > 0 && comps.length > 2) {
-      var rad2 = Math.sqrt(medSeed / Math.PI);
-      var gap2 = Math.max(mergeGap, Math.round(rad2 * 1.15));
-      if (gsdM != null && Number.isFinite(gsdM) && gsdM > 0) {
-        gap2 = Math.max(gap2, Math.round(2.4 / gsdM));
+    comps = comps.filter(function (c) {
+      // Con floración esperada, no matar por tono “poco verde”
+      if (scene.bloomOrYellow) return true;
+      if (!isCanopyTone(sampleBlobTone(georaster, c))) {
+        excluded.tone++;
+        return false;
       }
-      var before2 = comps.length;
-      comps = mergeNearbyComps(comps, gap2);
-      excluded.mergedAway += Math.max(0, before2 - comps.length);
+      return true;
+    });
 
-      comps = comps.filter(function (c) {
-        if (!looksLikeTree(c)) {
-          excluded.shape++;
-          return false;
-        }
-        // Pedazo de copa: mucho más chico que el árbol típico del predio
-        if (c.areaPx < medSeed * MIN_FRAC_OF_MEDIAN) {
-          excluded.tiny++;
-          return false;
-        }
-        return true;
-      });
-    }
+    comps = comps.filter(function (c) {
+      var ev = evaluatePlantEvidence(c, scene, gsdM);
+      c.plantEvidence = ev.score;
+      c.plantReasons = ev.reasons;
+      if (!ev.ok) {
+        excluded.evidence++;
+        return false;
+      }
+      return true;
+    });
 
-    // 3) mediana y filtrar outliers / fragmentos vs mediana del predio
     var areasAll = comps.map(function (c) {
       return c.areaPx;
     });
@@ -1781,9 +2536,10 @@
       });
     }
 
-    // 4) confianza: score de “es árbol” + excluir muy bajas
     comps.forEach(function (c) {
-      c.confidence = scoreCanopy(c, med);
+      var base = scoreSeedCanopy(c, c.seed ? c.seed.v : c.meanExg, med);
+      var ev = c.plantEvidence != null ? c.plantEvidence : base;
+      c.confidence = Math.round(0.45 * base + 0.55 * ev);
     });
     comps = comps.filter(function (c) {
       if ((c.confidence || 0) < minConf) {
@@ -1793,7 +2549,7 @@
       return true;
     });
 
-    // 5) orden surco → línea
+    // 4) Orden surco → línea
     var ordered = orderComponentsByRows(comps);
     var truncated = false;
     if (ordered.length > MAX_TREES) {
@@ -1821,20 +2577,25 @@
       if (o.row > rowCount) rowCount = o.row;
     });
 
-    // 6) Fenología RGB por copa (flor + brote + veg + other = 100%)
     var phenoList = classifyTreesPhenology(georaster, labels, ordered);
 
     var trees = ordered.map(function (o, idx) {
       var c = o.comp;
       var z = (c.areaPx - stats.mean) / stats.std;
       var sem = semaforoClass(z);
-      var latlngs = componentToLatLngs(georaster, c);
-      var cx = (c.box.minX + c.box.maxX) / 2;
-      var cy = (c.box.minY + c.box.maxY) / 2;
+      var latlngs =
+        c.ellipse != null
+          ? ellipseToLatLngs(georaster, c.ellipse, 28)
+          : componentToLatLngs(georaster, c);
+      var cx = c.ellipse ? c.ellipse.cx : (c.box.minX + c.box.maxX) / 2;
+      var cy = c.ellipse ? c.ellipse.cy : (c.box.minY + c.box.maxY) / 2;
       var center = pixelToLatLng(georaster, cx, cy);
       var boxW = c.box.maxX - c.box.minX + 1;
       var boxH = c.box.maxY - c.box.minY + 1;
       var diamEqPx = 2 * Math.sqrt(c.areaPx / Math.PI);
+      if (c.ellipse) {
+        diamEqPx = 2 * Math.sqrt(c.ellipse.rx * c.ellipse.ry);
+      }
       var areaM2 = gsdM != null ? c.areaPx * gsdM * gsdM : null;
       var diameterM = gsdM != null ? diamEqPx * gsdM : null;
       var diameterBoxM = gsdM != null ? Math.max(boxW, boxH) * gsdM : null;
@@ -1903,6 +2664,8 @@
       excluded.giant +
       excluded.outlier +
       excluded.shape +
+      excluded.tone +
+      excluded.evidence +
       excluded.lowConf +
       excluded.tiny;
 
@@ -1935,8 +2698,8 @@
         bareAreaM2: bareAreaM2,
         treesPerHa: treesPerHa,
         threshold: veg.threshold,
-        width: veg.width,
-        height: veg.height,
+        width: w,
+        height: h,
         maxAreaAbs: maxAreaAbs,
         truncated: truncated,
         maxTrees: MAX_TREES,
@@ -1946,11 +2709,33 @@
         excludedGiant: excluded.giant,
         excludedOutlier: excluded.outlier,
         excludedShape: excluded.shape,
+        excludedTone: excluded.tone,
+        excludedEvidence: excluded.evidence,
         excludedLowConf: excluded.lowConf,
         excludedTiny: excluded.tiny,
+        excludedWeakSeed: excluded.weakSeed,
         mergedFragments: excluded.mergedAway,
         minAreaPxUsed: minAreaPx,
-        candidatesRaw: rawComps.length,
+        candidatesRaw: rawSeeds.length,
+        seedsKept: seeds.length,
+        spacingPx: spacingPx,
+        spacingM: hasScale ? spacingPx * gsdM : null,
+        spacingFromDensity: densSpacingM != null,
+        targetTreesPerHa: targetDens,
+        expectedTrees: expectedTrees,
+        expectedCanopyDiamM: scene.diamM,
+        canopyDiamRangeM: [scene.diamMinM, scene.diamMaxM],
+        plantScene: {
+          crownVsAlley: scene.crownVsAlley,
+          bloomOrYellow: scene.bloomOrYellow,
+          alleyType: scene.alleyType,
+          canopyShape: scene.canopyShape,
+          shadowsUseful: scene.shadowsUseful,
+          minEvidence: scene.minEvidence
+        },
+        searchRadiusPx: searchR,
+        detectionMode: 'center_ellipse',
+        plantness: true,
         detectionProfile: veg.profile || P.mode,
         calibration: P.mode === 'calib' ? opts.calibration : null,
         cropHint: P.cropHint || '',
@@ -2004,6 +2789,9 @@
     orderComponentsByRows: orderComponentsByRows,
     scoreCanopy: scoreCanopy,
     circleToLatLngs: circleToLatLngs,
+    ellipseToLatLngs: ellipseToLatLngs,
+    fitEllipse: fitEllipse,
+    spacingMFromDensityHa: spacingMFromDensityHa,
     pixelToLatLng: pixelToLatLng,
     getBandArrays: getBandArrays,
     bandScale: bandScale,

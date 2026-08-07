@@ -274,24 +274,54 @@ function normalizeCalib(parsed) {
   const src = parsed && typeof parsed === 'object' ? parsed : {};
   const calib =
     src.calibration && typeof src.calibration === 'object' ? src.calibration : src;
+  const pcRaw =
+    calib.plant_context && typeof calib.plant_context === 'object'
+      ? calib.plant_context
+      : {};
+  let crown = String(pcRaw.crown_vs_alley || 'darker').toLowerCase();
+  if (crown.includes('bright')) crown = 'brighter';
+  else if (crown.includes('similar') || crown.includes('igual')) crown = 'similar';
+  else crown = 'darker';
+  let alley = String(pcRaw.alley_type || 'grass').toLowerCase();
+  if (alley.includes('soil') || alley.includes('suelo')) alley = 'bare_soil';
+  else if (alley.includes('mix')) alley = 'mixed';
+  else alley = 'grass';
+  let shape = String(pcRaw.canopy_shape || 'round').toLowerCase();
+  if (shape.includes('oval') || shape.includes('elip')) shape = 'oval';
+  else if (shape.includes('irreg')) shape = 'irregular';
+  else shape = 'round';
+
   return {
     crop_hint: String(calib.crop_hint || src.crop_hint || '').slice(0, 80),
-    allow_yellow_green: calib.allow_yellow_green !== false,
-    g_margin: clamp(calib.g_margin, 0.01, 0.12, 0.035),
-    b_margin: clamp(calib.b_margin, 0.01, 0.1, 0.03),
-    g_abs: clamp(calib.g_abs, 0, 20, 4),
-    b_abs: clamp(calib.b_abs, 0, 20, 3),
-    dark_sum: clamp(calib.dark_sum, 20, 80, 40),
-    min_g: clamp(calib.min_g, 10, 60, 24),
-    exg_percentile: clamp(calib.exg_percentile, 40, 85, 58),
-    thr_min: clamp(calib.thr_min, 40, 120, 60),
-    thr_max: clamp(calib.thr_max, 100, 200, 165),
+    allow_yellow_green:
+      calib.allow_yellow_green === true || pcRaw.bloom_or_yellow_crown === true,
+    g_margin: clamp(calib.g_margin, 0.025, 0.12, 0.04),
+    b_margin: clamp(calib.b_margin, 0.02, 0.1, 0.035),
+    g_abs: clamp(calib.g_abs, 3, 20, 5),
+    b_abs: clamp(calib.b_abs, 2, 20, 4),
+    dark_sum: clamp(calib.dark_sum, 50, 90, 60),
+    min_g: clamp(calib.min_g, 24, 60, 28),
+    exg_percentile: clamp(calib.exg_percentile, 52, 80, 62),
+    thr_min: clamp(calib.thr_min, 55, 120, 70),
+    thr_max: clamp(calib.thr_max, 120, 200, 165),
     erosion_passes: clamp(calib.erosion_passes, 1, 2, 1) | 0,
-    close_passes: clamp(calib.close_passes, 1, 3, 2) | 0,
-    min_area_px: clamp(calib.min_area_px, 180, 900, 260) | 0,
-    min_confidence: clamp(calib.min_confidence, 32, 58, 40) | 0,
-    yellow_boost: calib.yellow_boost !== false,
-    notes: String(calib.notes || src.notes || '').slice(0, 200)
+    close_passes: clamp(calib.close_passes, 3, 6, 4) | 0,
+    blur_m: clamp(calib.blur_m, 1.5, 3.0, 2.0),
+    min_area_px: clamp(calib.min_area_px, 600, 4000, 900) | 0,
+    min_confidence: clamp(calib.min_confidence, 48, 70, 52) | 0,
+    typical_spacing_m: clamp(calib.typical_spacing_m, 3.5, 14, 6.5),
+    yellow_boost: calib.yellow_boost === true || pcRaw.bloom_or_yellow_crown === true,
+    plant_context: {
+      crown_vs_alley: crown,
+      bloom_or_yellow_crown: pcRaw.bloom_or_yellow_crown === true,
+      alley_type: alley,
+      typical_canopy_diam_m: clamp(pcRaw.typical_canopy_diam_m, 2.5, 12, 5.5),
+      canopy_shape: shape,
+      shadows_useful: pcRaw.shadows_useful !== false,
+      min_evidence: clamp(pcRaw.min_evidence, 40, 75, 52) | 0,
+      looks_like_notes: String(pcRaw.looks_like_notes || '').slice(0, 180)
+    },
+    notes: String(calib.notes || src.notes || pcRaw.looks_like_notes || '').slice(0, 200)
   };
 }
 
@@ -302,35 +332,50 @@ async function calibrateWithOpenAI(model, images) {
   }
 
   const prompt =
-    'Eres agrónomo + visión para detectar COPAS de árboles frutales en ortomosaico RGB.\n' +
-    'Te paso 1 o 2 recortes del mismo vuelo. NO listes árboles uno a uno.\n' +
-    'Devuelve SOLO JSON con parámetros para un detector Excess Green (ExG) que separe COPA vs PASTO/suelo/sombra.\n' +
+    'Eres agrónomo. Ves ortomosaico RGB como un humano: planta ≠ pasto ≠ suelo ≠ animal ≠ sombra.\n' +
+    'NO listes árboles. Devuelve SOLO JSON con CONTEXTO DE PLANTA + parámetros de apoyo.\n' +
+    'El detector local usa: centros + radio por spacing + evidencia (tamaño vs marco, contraste, textura, sombra, forma).\n' +
     'Formato exacto:\n' +
     '{\n' +
-    '  "crop_hint": "ej. citrico amarillo-verdoso",\n' +
-    '  "allow_yellow_green": true,\n' +
-    '  "g_margin": 0.03,\n' +
-    '  "b_margin": 0.025,\n' +
-    '  "g_abs": 3,\n' +
-    '  "b_abs": 2,\n' +
-    '  "dark_sum": 38,\n' +
-    '  "min_g": 22,\n' +
-    '  "exg_percentile": 55,\n' +
-    '  "thr_min": 55,\n' +
-    '  "thr_max": 160,\n' +
+    '  "crop_hint": "ej. citrico adulto",\n' +
+    '  "typical_spacing_m": 6.5,\n' +
+    '  "plant_context": {\n' +
+    '    "crown_vs_alley": "darker",\n' +
+    '    "bloom_or_yellow_crown": false,\n' +
+    '    "alley_type": "grass",\n' +
+    '    "typical_canopy_diam_m": 5.5,\n' +
+    '    "canopy_shape": "round",\n' +
+    '    "shadows_useful": true,\n' +
+    '    "min_evidence": 52,\n' +
+    '    "looks_like_notes": "copa densa más oscura que pasto; sombra al SW"\n' +
+    '  },\n' +
+    '  "allow_yellow_green": false,\n' +
+    '  "g_margin": 0.04,\n' +
+    '  "b_margin": 0.032,\n' +
+    '  "g_abs": 5,\n' +
+    '  "b_abs": 3,\n' +
+    '  "dark_sum": 60,\n' +
+    '  "min_g": 28,\n' +
+    '  "exg_percentile": 62,\n' +
+    '  "thr_min": 70,\n' +
+    '  "thr_max": 165,\n' +
     '  "erosion_passes": 1,\n' +
-    '  "close_passes": 2,\n' +
-    '  "min_area_px": 260,\n' +
-    '  "min_confidence": 40,\n' +
-    '  "yellow_boost": true,\n' +
+    '  "close_passes": 4,\n' +
+    '  "blur_m": 2.0,\n' +
+    '  "min_area_px": 900,\n' +
+    '  "min_confidence": 52,\n' +
+    '  "yellow_boost": false,\n' +
     '  "notes": "breve"\n' +
     '}\n' +
-    'Reglas: el objetivo es detectar ÁRBOLES/COPAS (formas compactas redondeadas), no cualquier mancha verde. ' +
-    'si copa es amarillo-verdosa y pasto similar, permite yellow_green y márgenes más bajos; ' +
-    'si pasto muy verde y copa oscura, sé más estricto (márgenes más altos, percentile más alto). ' +
-    'NUNCA pongas min_area_px bajo (evita <200): produce micro-copas falsas. ' +
-    'Prefer min_area_px 220–400. close_passes 2 reconecta huecos dentro de la misma copa. ' +
-    'erosion_passes 1 = menos achica copa; 2 = más limpia pasto.';
+    'Reglas plant_context (OBLIGATORIO, es lo importante):\n' +
+    '- crown_vs_alley: darker|similar|brighter (copa vs calle) — como lo ves a simple vista.\n' +
+    '- bloom_or_yellow_crown: true si hay flor/copa amarilla (NO uses solo “más verde”).\n' +
+    '- alley_type: grass|bare_soil|mixed.\n' +
+    '- typical_canopy_diam_m: diámetro visual típico de UNA copa (m).\n' +
+    '- canopy_shape: round|oval|irregular (copas que chocan → irregular/oval).\n' +
+    '- shadows_useful: true si la sombra ayuda a reconocer el árbol.\n' +
+    '- typical_spacing_m: distancia centro-a-centro entre vecinos.\n' +
+    'ExG fields son apoyo secundario. Prioriza describir CÓMO se reconoce la planta en RGB.';
 
   const content = [{ type: 'input_text', text: prompt }];
   images.forEach(function (img, idx) {
@@ -346,7 +391,7 @@ async function calibrateWithOpenAI(model, images) {
   const payload = {
     model: model,
     input: [{ role: 'user', content: content }],
-    max_output_tokens: isGpt56Family(model) ? 1200 : 900
+    max_output_tokens: isGpt56Family(model) ? 1600 : 1100
   };
 
   const res = await fetch('https://api.openai.com/v1/responses', {
