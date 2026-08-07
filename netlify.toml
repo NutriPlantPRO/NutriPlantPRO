@@ -10,6 +10,10 @@
 [build.environment]
   NODE_VERSION = "20"
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+  # Evita falsos positivos en HTML/JS del panel (keys públicas de Maps, links de consola).
+  SECRETS_SCAN_OMIT_PATHS = "admin/airci.html,admin/airci.js,admin/airci.css,map.js"
+  # EE_PROJECT_ID es el ID del proyecto GCP (público en consola), no una clave secreta.
+  SECRETS_SCAN_OMIT_KEYS = "EE_PROJECT_ID"
 
 [functions]
   # EE es pesado: incluir desde node_modules en el zip de la función (evita fallos del bundler).
