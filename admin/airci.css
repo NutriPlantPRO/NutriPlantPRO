@@ -885,6 +885,21 @@ button, input, select, textarea { font: inherit; }
   background: #fefce8;
   border: 1px solid color-mix(in srgb, #ca8a04 28%, transparent);
 }
+.aci-professional-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.aci-professional-pager span {
+  color: var(--aci-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.aci-professional-pager .aci-btn {
+  min-height: 32px;
+}
 
 @media (max-width: 960px) {
   .aci-orchard-grid {

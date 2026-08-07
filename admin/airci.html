@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806pro1">
+  <link rel="stylesheet" href="./airci.css?v=20260806pro2">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -403,6 +403,11 @@
               <button type="button" class="aci-leg aci-leg--azul" data-sem="azul" title="Solo por encima">Por encima <em data-sem-count="azul"></em></button>
             </div>
             <p id="aciTableCapNote" class="aci-table-cap-note np-hide" hidden></p>
+            <div id="aciProfessionalPager" class="aci-professional-pager np-hide" hidden aria-label="Páginas de árboles profesionales">
+              <button type="button" class="aci-btn aci-btn--ghost" id="aciProfessionalPrev">← Anterior</button>
+              <span id="aciProfessionalPagerText"></span>
+              <button type="button" class="aci-btn aci-btn--ghost" id="aciProfessionalNext">Siguiente →</button>
+            </div>
             <div class="aci-table-wrap">
               <table>
                 <thead>
@@ -536,7 +541,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806pro1"></script>
-  <script src="./airci.js?v=20260806pro1"></script>
+  <script src="./airci-canopy.js?v=20260806pro2"></script>
+  <script src="./airci.js?v=20260806pro2"></script>
 </body>
 </html>

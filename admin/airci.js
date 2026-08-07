@@ -62,10 +62,17 @@
   var professionalRenderer = null;
   var professionalResultId = null;
   var professionalStats = null;
+  var professionalFittedResultId = null;
   var professionalPollTimer = null;
   var professionalViewportTimer = null;
   var professionalViewportRequestId = 0;
   var activeProfessionalJobId = null;
+  var PROFESSIONAL_TABLE_PAGE = 400;
+  var professionalTableOffset = 0;
+  var professionalTableTotal = 0;
+  var professionalTableRequestId = 0;
+  var professionalTableResultId = null;
+  var professionalSemCounts = null;
 
 
   function showError(msg) {
@@ -376,7 +383,16 @@
     var panel = document.getElementById('aciSummaryPanel');
     var list = document.getElementById('aciSummaryList');
     if (!panel || !list) return;
-    if (!result || !result.trees || !result.trees.length) {
+    var professionalCount =
+      result &&
+      result.source === 'professional' &&
+      result.stats &&
+      Number(result.stats.count);
+    if (
+      !result ||
+      ((!result.trees || !result.trees.length) &&
+        !(Number.isFinite(professionalCount) && professionalCount > 0))
+    ) {
       list.innerHTML = '';
       var brEmpty = document.getElementById('aciSemBreakdown');
       if (brEmpty) brEmpty.innerHTML = '';
@@ -646,7 +662,11 @@
         );
       })
       .join('');
-    renderSemBreakdown(result.trees);
+    if (result.source === 'professional' && professionalSemCounts) {
+      renderSemBreakdownFromCounts(professionalSemCounts);
+    } else if (result.source !== 'professional') {
+      renderSemBreakdown(result.trees || []);
+    }
     renderHistoryPanel(result);
     renderPhenoPanel(result);
     panel.hidden = false;
@@ -654,8 +674,12 @@
     var treeDetail = document.getElementById('aciTreeDetail');
     if (treeDetail) {
       // Huertas grandes: el detalle por árbol queda cerrado; el foco es el predio
-      if (result.trees.length > 250) treeDetail.open = false;
-      else if (result.trees.length <= 80) treeDetail.open = true;
+      var treeN =
+        result.source === 'professional'
+          ? Number(s.count || professionalTableTotal || (result.trees && result.trees.length) || 0)
+          : (result.trees && result.trees.length) || 0;
+      if (treeN > 250) treeDetail.open = false;
+      else if (treeN <= 80) treeDetail.open = true;
     }
   }
 
@@ -673,7 +697,14 @@
     professionalLayer = null;
     professionalResultId = null;
     professionalStats = null;
+    professionalFittedResultId = null;
     professionalViewportRequestId++;
+    professionalTableOffset = 0;
+    professionalTableTotal = 0;
+    professionalTableRequestId++;
+    professionalTableResultId = null;
+    professionalSemCounts = null;
+    setProfessionalPager(null);
     if (canopyOutlineLayer && map) {
       try {
         map.removeLayer(canopyOutlineLayer);
@@ -930,14 +961,18 @@
 
   function syncSemLegend() {
     var counts = { rojo: 0, amarillo: 0, verde: 0, azul: 0 };
-    getAllTrees().forEach(function (t) {
-      var sem = treeActiveSem(t);
-      var k = sem && sem.key;
-      if (k && counts[k] != null) counts[k]++;
-    });
+    if (canopyResult && canopyResult.source === 'professional' && professionalSemCounts) {
+      counts = Object.assign(counts, professionalSemCounts);
+    } else {
+      getAllTrees().forEach(function (t) {
+        var sem = treeActiveSem(t);
+        var k = sem && sem.key;
+        if (k && counts[k] != null) counts[k]++;
+      });
+    }
     Object.keys(counts).forEach(function (k) {
       document.querySelectorAll('[data-sem-count="' + k + '"]').forEach(function (el) {
-        el.textContent = counts[k] ? '(' + counts[k] + ')' : '(0)';
+        el.textContent = counts[k] ? '(' + Number(counts[k]).toLocaleString('es-MX') + ')' : '(0)';
       });
     });
     document.querySelectorAll('[data-sem]').forEach(function (btn) {
@@ -1009,17 +1044,11 @@
     return out;
   }
 
-  function renderSemBreakdown(trees) {
+  function paintSemBreakdown(br) {
     var wrap = document.getElementById('aciSemBreakdown');
     var semBody = document.getElementById('aciSemStatsBody');
     var m2Head = document.getElementById('aciSemM2Head');
     if (!wrap && !semBody) return;
-    if (!trees || !trees.length) {
-      if (wrap) wrap.innerHTML = '';
-      if (semBody) semBody.innerHTML = '';
-      return;
-    }
-    var br = buildSemBreakdown(trees);
     var keys = ['rojo', 'amarillo', 'verde', 'azul'];
     var hasScale = !!(br.rojo && br.rojo.hasScale);
     if (m2Head) m2Head.hidden = !hasScale;
@@ -1030,7 +1059,9 @@
           var meanCell = r.count
             ? r.meanAreaM2 != null
               ? Number(r.meanAreaM2).toFixed(2) + ' m²'
-              : Math.round(r.meanArea).toLocaleString('es-MX') + ' px'
+              : r.meanArea
+                ? Math.round(r.meanArea).toLocaleString('es-MX') + ' px'
+                : '—'
             : '—';
           var m2Cell = hasScale
             ? '<td>' + (r.count && r.areaM2 != null ? fmtM2(r.areaM2) : '—') + '</td>'
@@ -1052,13 +1083,13 @@
             r.hint +
             '</div></td>' +
             '<td>' +
-            r.count +
+            Number(r.count || 0).toLocaleString('es-MX') +
             '</td>' +
             '<td>' +
             (r.count ? r.pctTrees.toFixed(1) + '%' : '—') +
             '</td>' +
             '<td>' +
-            (r.count ? r.coverPct.toFixed(2) + '%' : '—') +
+            (r.count && r.coverPct != null ? Number(r.coverPct).toFixed(2) + '%' : '—') +
             '</td>' +
             m2Cell +
             '<td>' +
@@ -1075,9 +1106,8 @@
           var r = br[k];
           var metaLine = r.count
             ? r.pctTrees.toFixed(0) +
-              '% del predio · cob. ' +
-              r.coverPct.toFixed(2) +
-              '%' +
+              '% del predio' +
+              (r.coverPct != null ? ' · cob. ' + Number(r.coverPct).toFixed(2) + '%' : '') +
               (r.areaM2 != null ? ' · ' + fmtM2(r.areaM2) : '')
             : r.hint + ' · sin copas';
           return (
@@ -1096,7 +1126,7 @@
             r.label +
             '</span>' +
             '<span class="aci-sem-card-count">' +
-            r.count +
+            Number(r.count || 0).toLocaleString('es-MX') +
             '</span>' +
             '</div>' +
             '<div class="aci-sem-card-meta">' +
@@ -1107,6 +1137,53 @@
         })
         .join('');
     }
+  }
+
+  function renderSemBreakdown(trees) {
+    var wrap = document.getElementById('aciSemBreakdown');
+    var semBody = document.getElementById('aciSemStatsBody');
+    if (!wrap && !semBody) return;
+    if (!trees || !trees.length) {
+      if (wrap) wrap.innerHTML = '';
+      if (semBody) semBody.innerHTML = '';
+      return;
+    }
+    paintSemBreakdown(buildSemBreakdown(trees));
+  }
+
+  function renderSemBreakdownFromCounts(counts) {
+    var meta = {
+      rojo: { label: 'Muy bajo', hint: 'Z < −1.5' },
+      amarillo: { label: 'Por debajo', hint: '−1.5 ≤ Z < −0.5' },
+      verde: { label: 'Promedio', hint: '−0.5 ≤ Z ≤ +0.5' },
+      azul: { label: 'Por encima', hint: 'Z > +0.5' }
+    };
+    var keys = ['rojo', 'amarillo', 'verde', 'azul'];
+    var total = keys.reduce(function (sum, key) {
+      return sum + (Number(counts && counts[key]) || 0);
+    }, 0);
+    var gsd = professionalStats && Number(professionalStats.gsdM);
+    var hasScale = !!(professionalStats && professionalStats.hasScale && Number.isFinite(gsd) && gsd > 0);
+    var meanArea = professionalStats && Number(professionalStats.meanArea);
+    var meanAreaM2 = professionalStats && Number(professionalStats.meanAreaM2);
+    var br = {};
+    keys.forEach(function (key) {
+      var count = Number(counts && counts[key]) || 0;
+      br[key] = {
+        key: key,
+        label: meta[key].label,
+        hint: meta[key].hint,
+        count: count,
+        areaPx: null,
+        areaM2: null,
+        coverPct: null,
+        meanArea: count && Number.isFinite(meanArea) ? meanArea : 0,
+        meanAreaM2: count && Number.isFinite(meanAreaM2) ? meanAreaM2 : null,
+        pctTrees: total > 0 ? (count / total) * 100 : 0,
+        hasScale: hasScale
+      };
+    });
+    paintSemBreakdown(br);
   }
 
   function applySemFilterStyles() {
@@ -1202,6 +1279,36 @@
     activeSemFilter = key;
     syncSemLegend();
     applySemFilterStyles();
+    if (canopyResult && canopyResult.source === 'professional' && professionalResultId) {
+      loadProfessionalTablePage(0);
+      syncDeltaFilterUi();
+      var proCount =
+        activeSemFilter === 'all'
+          ? Number(
+              (professionalStats && professionalStats.count) ||
+                professionalTableTotal ||
+                0
+            )
+          : professionalSemCounts && professionalSemCounts[activeSemFilter] != null
+            ? Number(professionalSemCounts[activeSemFilter])
+            : null;
+      if (activeSemFilter !== 'all') {
+        var treeDetailPro = document.getElementById('aciTreeDetail');
+        if (treeDetailPro) treeDetailPro.open = true;
+        setMapStatus(
+          proCount != null
+            ? proCount.toLocaleString('es-MX') + ' copas · filtro sem «' + activeSemFilter + '»'
+            : 'Filtro sem «' + activeSemFilter + '»',
+          'ok'
+        );
+      } else {
+        setMapStatus(
+          (proCount || 0).toLocaleString('es-MX') + ' copas · mostrando todas',
+          'ok'
+        );
+      }
+      return;
+    }
     renderSemBreakdown(getAllTrees());
     var filtered = treesMatchingSem(activeSemFilter);
     renderCanopyTable(filtered);
@@ -1472,7 +1579,44 @@
 
   var TABLE_ROW_CAP = 400;
 
-  function renderCanopyTable(trees) {
+  function setProfessionalPager(info) {
+    var pager = document.getElementById('aciProfessionalPager');
+    var text = document.getElementById('aciProfessionalPagerText');
+    var prev = document.getElementById('aciProfessionalPrev');
+    var next = document.getElementById('aciProfessionalNext');
+    if (!pager) return;
+    if (!info || !info.total) {
+      pager.hidden = true;
+      pager.classList.add('np-hide');
+      if (text) text.textContent = '';
+      return;
+    }
+    var offset = Math.max(0, Number(info.offset) || 0);
+    var pageSize = Math.max(1, Number(info.pageSize) || PROFESSIONAL_TABLE_PAGE);
+    var total = Math.max(0, Number(info.total) || 0);
+    var from = total ? offset + 1 : 0;
+    var to = Math.min(offset + pageSize, total);
+    var page = Math.floor(offset / pageSize) + 1;
+    var pages = Math.max(1, Math.ceil(total / pageSize));
+    pager.hidden = false;
+    pager.classList.remove('np-hide');
+    if (text) {
+      text.textContent =
+        from.toLocaleString('es-MX') +
+        '–' +
+        to.toLocaleString('es-MX') +
+        ' de ' +
+        total.toLocaleString('es-MX') +
+        ' · página ' +
+        page +
+        '/' +
+        pages;
+    }
+    if (prev) prev.disabled = offset <= 0;
+    if (next) next.disabled = offset + pageSize >= total;
+  }
+
+  function renderCanopyTable(trees, pageInfo) {
     var tbody = document.getElementById('aciTableBody');
     var panel = document.getElementById('aciTablePanel');
     var sub = document.getElementById('aciTableSub');
@@ -1480,16 +1624,28 @@
     if (!tbody || !panel) return;
     tbody.innerHTML = '';
     trees = Array.isArray(trees) ? trees : [];
-    var total = trees.length;
+    var paged = !!(pageInfo && pageInfo.paged);
+    var total = paged
+      ? Math.max(0, Number(pageInfo.total) || 0)
+      : trees.length;
     var capped = false;
     var shown = trees;
     // Con miles de filas el navegador se traba: mostrar tope y empujar al filtro / resumen del predio
-    if (total > TABLE_ROW_CAP) {
+    if (!paged && total > TABLE_ROW_CAP) {
       shown = trees.slice(0, TABLE_ROW_CAP);
       capped = true;
     }
     if (capNote) {
-      if (capped) {
+      if (paged && total > shown.length) {
+        capNote.hidden = false;
+        capNote.classList.remove('np-hide');
+        capNote.textContent =
+          'Resultado completo guardado: ' +
+          total.toLocaleString('es-MX') +
+          ' copas. La tabla muestra ' +
+          PROFESSIONAL_TABLE_PAGE.toLocaleString('es-MX') +
+          ' por página para no trabar el navegador. Usa Anterior/Siguiente para recorrerlas todas.';
+      } else if (capped) {
         capNote.hidden = false;
         capNote.classList.remove('np-hide');
         capNote.textContent =
@@ -1506,6 +1662,15 @@
         capNote.classList.add('np-hide');
         capNote.textContent = '';
       }
+    }
+    if (paged) {
+      setProfessionalPager({
+        offset: pageInfo.offset,
+        pageSize: pageInfo.pageSize || PROFESSIONAL_TABLE_PAGE,
+        total: total
+      });
+    } else {
+      setProfessionalPager(null);
     }
     shown.forEach(function (t) {
       var tr = document.createElement('tr');
@@ -1621,23 +1786,43 @@
     });
     panel.hidden = false;
     if (sub) {
-      var hasScale = getAllTrees().some(function (t) {
-        return t.areaM2 != null && Number.isFinite(Number(t.areaM2));
-      });
+      var hasScale =
+        (pageInfo && pageInfo.hasScale) ||
+        getAllTrees().some(function (t) {
+          return t.areaM2 != null && Number.isFinite(Number(t.areaM2));
+        });
       var filterNote =
         activeSemFilter && activeSemFilter !== 'all'
           ? ' · filtro: ' + activeSemFilter
           : '';
-      sub.textContent =
-        (capped
-          ? shown.length.toLocaleString('es-MX') +
-            ' de ' +
-            total.toLocaleString('es-MX')
-          : String(total)) +
-        ' copas' +
-        filterNote +
-        ' · detalle opcional' +
-        (hasScale ? '' : ' · sin escala m²');
+      if (paged) {
+        var from = total ? (Number(pageInfo.offset) || 0) + 1 : 0;
+        var to = Math.min(
+          (Number(pageInfo.offset) || 0) + shown.length,
+          total
+        );
+        sub.textContent =
+          'Profesional · ' +
+          from.toLocaleString('es-MX') +
+          '–' +
+          to.toLocaleString('es-MX') +
+          ' de ' +
+          total.toLocaleString('es-MX') +
+          ' copas' +
+          filterNote +
+          (hasScale ? '' : ' · sin escala m²');
+      } else {
+        sub.textContent =
+          (capped
+            ? shown.length.toLocaleString('es-MX') +
+              ' de ' +
+              total.toLocaleString('es-MX')
+            : String(total)) +
+          ' copas' +
+          filterNote +
+          ' · detalle opcional' +
+          (hasScale ? '' : ' · sin escala m²');
+      }
     }
   }
 
@@ -2733,12 +2918,10 @@
     });
   }
 
-  function syncProfessionalResultUi(response, resultStats) {
-    var trees = professionalTreesForUi(response.trees);
-    if (!trees.length) return;
-    var result = response.result || {};
+  function buildProfessionalStats(resultStats, resultMeta, totalTrees) {
+    var result = resultMeta || {};
     var stats = Object.assign({}, resultStats || {});
-    stats.count = Number(stats.count || result.tree_count) || trees.length;
+    stats.count = Number(stats.count || result.tree_count || totalTrees) || 0;
     stats.width = stats.width || stats.widthPx;
     stats.height = stats.height || stats.heightPx;
     stats.hasScale = stats.gsdM != null;
@@ -2757,20 +2940,34 @@
         stats.canopyAreaM2 = stats.orthoAreaM2 * (Number(stats.coverPct) / 100);
         stats.bareAreaM2 = Math.max(0, stats.orthoAreaM2 - stats.canopyAreaM2);
       }
+      if (stats.meanArea != null && stats.meanAreaM2 == null) {
+        stats.meanAreaM2 = Number(stats.meanArea) * gsd * gsd;
+      }
+      if (
+        stats.treesPerHa == null &&
+        stats.orthoAreaHa != null &&
+        stats.orthoAreaHa > 0 &&
+        stats.count
+      ) {
+        stats.treesPerHa = stats.count / stats.orthoAreaHa;
+      }
+      if (stats.gsdCm == null) stats.gsdCm = gsd * 100;
     }
-    stats = enrichStatsFromTrees(stats, trees);
-    canopyResult = { trees: trees, stats: stats, source: 'professional' };
-    treeLayersById = treeLayersById || {};
-    trees.forEach(function (tree) {
-      var layerEntry = treeLayersById[String(tree.id)];
-      if (layerEntry) layerEntry.tree = tree;
-    });
-    activeSemFilter = 'all';
-    activeDeltaFilter = 'all';
-    activePhenoFilter = 'all';
-    renderCanopyTable(treesMatchingSem('all'));
+    if (stats.coverPct != null && stats.barePct == null) {
+      stats.barePct = Math.max(0, 100 - Number(stats.coverPct));
+    }
+    return stats;
+  }
+
+  function syncProfessionalSummaryUi(resultStats, resultMeta) {
+    var stats = buildProfessionalStats(resultStats, resultMeta, professionalTableTotal);
+    professionalStats = stats;
+    canopyResult = {
+      trees: (canopyResult && canopyResult.trees) || [],
+      stats: stats,
+      source: 'professional'
+    };
     renderAnalysisSummary(canopyResult);
-    syncSemLegend();
     updateMetrics({
       treeCount: stats.count,
       coverPct: stats.coverPct,
@@ -2784,11 +2981,6 @@
       treesPerHa: stats.treesPerHa,
       gsdCm: stats.gsdCm
     });
-    var tableSub = document.getElementById('aciTableSub');
-    if (tableSub) {
-      tableSub.textContent =
-        'Resultado Profesional · área, diámetro y confianza por copa. Fenología y Color Score no se calcularon en este análisis.';
-    }
     document
       .querySelectorAll('#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"], #aciLayerBar [data-layer="numeros"]')
       .forEach(function (button) {
@@ -2803,6 +2995,77 @@
       });
   }
 
+  async function loadProfessionalSemCounts(resultId) {
+    if (!resultId) return;
+    var keys = ['rojo', 'amarillo', 'verde', 'azul'];
+    var counts = { rojo: 0, amarillo: 0, verde: 0, azul: 0 };
+    await Promise.all(
+      keys.map(function (key) {
+        return apiProfessional({
+          action: 'trees',
+          result_id: resultId,
+          sem_key: key,
+          limit: 1,
+          offset: 0
+        }).then(function (response) {
+          if (response && response.ok) counts[key] = Number(response.total) || 0;
+        });
+      })
+    );
+    if (professionalResultId !== resultId) return;
+    professionalSemCounts = counts;
+    renderSemBreakdownFromCounts(counts);
+    syncSemLegend();
+  }
+
+  async function loadProfessionalTablePage(offset) {
+    if (!professionalResultId) return;
+    var requestId = ++professionalTableRequestId;
+    var pageOffset = Math.max(0, Number(offset) || 0);
+    var payload = {
+      action: 'trees',
+      result_id: professionalResultId,
+      limit: PROFESSIONAL_TABLE_PAGE,
+      offset: pageOffset
+    };
+    if (activeSemFilter && activeSemFilter !== 'all') {
+      payload.sem_key = activeSemFilter;
+    }
+    var response = await apiProfessional(payload);
+    if (
+      !response.ok ||
+      requestId !== professionalTableRequestId ||
+      professionalResultId !== payload.result_id
+    ) {
+      if (!response.ok) {
+        setMapStatus(response.error || 'No se pudo cargar la tabla de árboles', 'error');
+      }
+      return;
+    }
+    var trees = professionalTreesForUi(response.trees);
+    professionalTableOffset = Number(response.offset) || pageOffset;
+    professionalTableTotal = Number(response.total) || trees.length;
+    canopyResult = {
+      trees: trees,
+      stats: (canopyResult && canopyResult.stats) || professionalStats || {},
+      source: 'professional'
+    };
+    trees.forEach(function (tree) {
+      var layerEntry = treeLayersById[String(tree.id)];
+      if (layerEntry) layerEntry.tree = tree;
+    });
+    renderCanopyTable(trees, {
+      paged: true,
+      offset: professionalTableOffset,
+      pageSize: PROFESSIONAL_TABLE_PAGE,
+      total: professionalTableTotal,
+      hasScale: !!(professionalStats && professionalStats.hasScale)
+    });
+    var treeDetail = document.getElementById('aciTreeDetail');
+    if (treeDetail && professionalTableTotal > 250) treeDetail.open = false;
+    else if (treeDetail && professionalTableTotal <= 80) treeDetail.open = true;
+  }
+
   async function loadProfessionalViewport(resultId, stats) {
     if (!map || !resultId) return;
     var requestId = ++professionalViewportRequestId;
@@ -2811,7 +3074,7 @@
     professionalStats = stats || professionalStats || {};
     var treeBbox = professionalStats && professionalStats.treeBbox;
     if (
-      !lastBounds &&
+      professionalFittedResultId !== resultId &&
       Array.isArray(treeBbox) &&
       treeBbox.length === 4 &&
       treeBbox.every(function (value) {
@@ -2825,6 +3088,7 @@
         ],
         { padding: [24, 24] }
       );
+      professionalFittedResultId = resultId;
     }
     var bounds = map.getBounds && map.getBounds();
     var bbox =
@@ -2901,17 +3165,31 @@
 
     var resultStats = Object.assign({}, response.result && response.result.stats_json, stats || {});
     professionalStats = resultStats;
-    syncProfessionalResultUi(response, resultStats);
+    syncProfessionalSummaryUi(resultStats, response.result || {});
+    if (professionalTableResultId !== resultId) {
+      professionalTableResultId = resultId;
+      activeSemFilter = 'all';
+      activeDeltaFilter = 'all';
+      activePhenoFilter = 'all';
+      loadProfessionalSemCounts(resultId);
+      loadProfessionalTablePage(0);
+    }
     document.getElementById('aciMapSub').textContent =
       'AirCI Professional · ' +
-      (Number(resultStats.count || (response.result && response.result.tree_count)) || 0) +
+      (Number(resultStats.count || (response.result && response.result.tree_count)) || 0).toLocaleString(
+        'es-MX'
+      ) +
       ' árboles · detector ' +
       ((response.result && response.result.detector_version) || 'cloud');
     setMapStatus(
       (response.trees || []).length +
-        ' copas visibles' +
-        (response.has_more ? ' · acerca el mapa para ver todas en esta zona' : '') +
-        ' · resultado completo guardado por vuelo',
+        ' copas visibles en el mapa' +
+        (response.has_more ? ' · acerca el mapa para ver más en esta zona' : '') +
+        ' · tabla con las ' +
+        (
+          Number(resultStats.count || (response.result && response.result.tree_count)) || 0
+        ).toLocaleString('es-MX') +
+        ' guardadas',
       'ok'
     );
   }
@@ -4856,6 +5134,24 @@
 
   var refreshBtn = document.getElementById('aciRefreshProjectsBtn');
   if (refreshBtn) refreshBtn.addEventListener('click', refreshProjectsUi);
+
+  var proPrev = document.getElementById('aciProfessionalPrev');
+  var proNext = document.getElementById('aciProfessionalNext');
+  if (proPrev) {
+    proPrev.addEventListener('click', function () {
+      if (!professionalResultId) return;
+      loadProfessionalTablePage(
+        Math.max(0, professionalTableOffset - PROFESSIONAL_TABLE_PAGE)
+      );
+    });
+  }
+  if (proNext) {
+    proNext.addEventListener('click', function () {
+      if (!professionalResultId) return;
+      if (professionalTableOffset + PROFESSIONAL_TABLE_PAGE >= professionalTableTotal) return;
+      loadProfessionalTablePage(professionalTableOffset + PROFESSIONAL_TABLE_PAGE);
+    });
+  }
 
   var treeEl = document.getElementById('aciProjectsTree');
   if (treeEl) {

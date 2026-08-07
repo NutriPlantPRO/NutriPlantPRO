@@ -316,40 +316,54 @@ exports.handler = async function handler(event) {
 
     const limit = Math.min(Math.max(Number(body.limit) || 1000, 1), MAX_TREE_PAGE);
     const offset = Math.max(Number(body.offset) || 0, 0);
-    let query = supabase
-      .from('airci_canopy_trees')
-      .select(
-        'tree_index, stable_id, row_no, position_no, center_lat, center_lng, area_px, area_m2, diameter_m, confidence, color_score, sem_key, polygon_json, metrics_json'
-      )
-      .eq('result_id', result.id)
-      .eq('owner_id', auth.userId);
+    const semKey = String(body.sem_key || '').trim().toLowerCase();
+    const allowedSem = new Set(['rojo', 'amarillo', 'verde', 'azul']);
+    const applyTreeFilters = (query) => {
+      let next = query.eq('result_id', result.id).eq('owner_id', auth.userId);
+      if (allowedSem.has(semKey)) next = next.eq('sem_key', semKey);
+      const bbox = Array.isArray(body.bbox) ? body.bbox.map(Number) : null;
+      if (bbox && bbox.length === 4 && bbox.every(Number.isFinite)) {
+        const west = Math.min(bbox[0], bbox[2]);
+        const east = Math.max(bbox[0], bbox[2]);
+        const south = Math.min(bbox[1], bbox[3]);
+        const north = Math.max(bbox[1], bbox[3]);
+        next = next
+          .gte('center_lng', west)
+          .lte('center_lng', east)
+          .gte('center_lat', south)
+          .lte('center_lat', north);
+      }
+      return next;
+    };
 
-    const bbox = Array.isArray(body.bbox) ? body.bbox.map(Number) : null;
-    if (bbox && bbox.length === 4 && bbox.every(Number.isFinite)) {
-      const west = Math.min(bbox[0], bbox[2]);
-      const east = Math.max(bbox[0], bbox[2]);
-      const south = Math.min(bbox[1], bbox[3]);
-      const north = Math.max(bbox[1], bbox[3]);
-      query = query
-        .gte('center_lng', west)
-        .lte('center_lng', east)
-        .gte('center_lat', south)
-        .lte('center_lat', north);
+    const { count: totalCount, error: countError } = await applyTreeFilters(
+      supabase.from('airci_canopy_trees').select('id', { count: 'exact', head: true })
+    );
+    if (countError) {
+      return json(500, { ok: false, error: countError.message, setup: setupFor(countError) });
     }
 
-    const { data: trees, error } = await query
+    const { data: trees, error } = await applyTreeFilters(
+      supabase
+        .from('airci_canopy_trees')
+        .select(
+          'tree_index, stable_id, row_no, position_no, center_lat, center_lng, area_px, area_m2, diameter_m, confidence, color_score, sem_key, polygon_json, metrics_json'
+        )
+    )
       .order('tree_index', { ascending: true })
       .range(offset, offset + limit - 1);
     if (error) {
       return json(500, { ok: false, error: error.message, setup: setupFor(error) });
     }
+    const total = Number(totalCount) || 0;
     return json(200, {
       ok: true,
       result: result,
       trees: trees || [],
       offset: offset,
       limit: limit,
-      has_more: (trees || []).length === limit
+      total: total,
+      has_more: offset + (trees || []).length < total
     });
   }
 
