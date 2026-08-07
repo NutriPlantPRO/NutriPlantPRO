@@ -46,6 +46,7 @@ Object.keys(MATERIALS_DB).forEach(name => {
 // Variables globales simples
 let applications = [];
 let appCounter = 1;
+let granularPriceOverrides = {};
 
 function granularProgramUI() {
   return typeof window !== 'undefined' ? window.NpGranularUI : null;
@@ -79,6 +80,82 @@ function granularProgramToSI(value, kind) {
 function granularMaterialDisplayName(name) {
   const ui = granularProgramUI();
   return ui ? ui.materialName(name) : name;
+}
+
+function granularPriceApi() {
+  return typeof window !== 'undefined' ? window.NpFertilizerPrice : null;
+}
+
+function granularPriceLabels() {
+  const api = granularPriceApi();
+  return api ? api.labels() : {
+    price: granularProgramT('price', 'Precio'),
+    priceUnit: 'USD/t',
+    cost: granularProgramT('cost', 'Costo'),
+    totalCost: granularProgramT('total_cost', 'Costo total'),
+    costAreaUnit: 'USD/ha'
+  };
+}
+
+function granularLoadPriceOverrides() {
+  try {
+    const profile = loadUserProfile();
+    const api = granularPriceApi();
+    const cloudSynced = profile && profile.customGranularMaterials && profile.customGranularMaterials.__priceOverrides;
+    const raw = (profile && profile.granularPriceOverrides) || cloudSynced || {};
+    granularPriceOverrides = api ? api.normalizeOverrides(raw) : raw;
+  } catch (e) {
+    granularPriceOverrides = {};
+  }
+  return granularPriceOverrides;
+}
+
+function granularPersistPriceOverrides(overrides) {
+  const api = granularPriceApi();
+  granularPriceOverrides = api ? api.normalizeOverrides(overrides) : (overrides || {});
+  const profile = loadUserProfile();
+  if (profile) {
+    profile.granularPriceOverrides = granularPriceOverrides;
+    profile.customGranularMaterials = profile.customGranularMaterials || {};
+    profile.customGranularMaterials.__priceOverrides = granularPriceOverrides;
+    saveUserProfile(profile);
+  } else {
+    try { localStorage.setItem('granularPriceOverrides_global_user', JSON.stringify(granularPriceOverrides)); } catch (e) {}
+  }
+  return granularPriceOverrides;
+}
+
+function granularResolveMaterialPrice(name) {
+  const api = granularPriceApi();
+  const material = MATERIALS_DB[name] || {};
+  if (api) {
+    return api.resolvePriceUsdPerTonne(name, {
+      customItems: [{ id: name, name: name, priceUsdPerTonne: material.priceUsdPerTonne }],
+      priceOverrides: granularPriceOverrides
+    });
+  }
+  return parseFloat(material.priceUsdPerTonne) || parseFloat(granularPriceOverrides[name]) || 0;
+}
+
+function granularMaterialKgHa(app, material) {
+  const dose = parseFloat(app && app.doseKgHa) || 0;
+  const percentage = parseFloat(material && material.percentage) || 0;
+  return dose * percentage / 100;
+}
+
+function granularMaterialCostUsdPerHa(app, material) {
+  const api = granularPriceApi();
+  const price = granularResolveMaterialPrice(material && material.name);
+  const kgHa = granularMaterialKgHa(app, material);
+  return api ? api.costUsdPerHaFromKgHa(kgHa, price) : (kgHa / 1000) * price;
+}
+
+function granularAreaCostText(usdPerHa) {
+  const api = granularPriceApi();
+  const shown = api ? api.toDisplayAreaCost(usdPerHa) : usdPerHa;
+  const unit = api ? api.costAreaUnitLabel() : 'USD/ha';
+  const money = api ? api.formatMoney(shown) : (parseFloat(shown) || 0).toFixed(2);
+  return money + ' ' + unit;
 }
 
 function isAutoGranularAppTitle(title) {
@@ -147,7 +224,11 @@ function saveUserProfile(profile) {
 function getUserCustomMaterialsMap() {
   const profile = loadUserProfile();
   let custom = profile && profile.customGranularMaterials;
-  if (custom && typeof custom === 'object' && Object.keys(custom).length > 0) return custom;
+  if (custom && typeof custom === 'object' && Object.keys(custom).length > 0) {
+    const items = { ...custom };
+    delete items.__priceOverrides;
+    return items;
+  }
   // Sin sesión o perfil vacío: cargar desde fallback para que persistan tras reinicio
   try {
     const raw = localStorage.getItem('granularCustomMaterials_global_user');
@@ -160,6 +241,13 @@ function getUserCustomMaterialsMap() {
 }
 
 function loadUserCustomMaterials() {
+  granularLoadPriceOverrides();
+  if (!Object.keys(granularPriceOverrides).length) {
+    try {
+      const raw = localStorage.getItem('granularPriceOverrides_global_user');
+      if (raw) granularPriceOverrides = JSON.parse(raw) || {};
+    } catch (e) {}
+  }
   const custom = getUserCustomMaterialsMap();
   Object.keys(custom).forEach(name => {
     if (!name) return;
@@ -326,6 +414,9 @@ function openEditCustomMaterial(encodedName) {
   document.getElementById('newMaterialCu').value = comp.Cu ?? 0;
   document.getElementById('newMaterialMo').value = comp.Mo ?? 0;
   document.getElementById('newMaterialSiO2').value = comp.SiO2 ?? 0;
+  document.getElementById('newMaterialPrice').value = granularPriceApi()
+    ? granularPriceApi().toDisplayPrice(comp.priceUsdPerTonne || 0)
+    : (comp.priceUsdPerTonne || 0);
 }
 
 function saveEditedCustomMaterial() {
@@ -352,7 +443,12 @@ function saveEditedCustomMaterial() {
     B: parseFloat(document.getElementById('newMaterialB').value) || 0,
     Mn: parseFloat(document.getElementById('newMaterialMn').value) || 0,
     Cu: parseFloat(document.getElementById('newMaterialCu').value) || 0,
-    Mo: parseFloat(document.getElementById('newMaterialMo').value) || 0
+    Mo: parseFloat(document.getElementById('newMaterialMo').value) || 0,
+    priceUsdPerTonne: (() => {
+      const api = granularPriceApi();
+      const raw = document.getElementById('newMaterialPrice').value;
+      return api ? api.fromDisplayPrice(raw) : (parseFloat(raw) || 0);
+    })()
   };
   const userId = getCurrentUserId();
   if (userId) {
@@ -538,6 +634,8 @@ function renderApplications() {
               <th class="notranslate" translate="no">Cu</th>
               <th class="notranslate" translate="no">Mo</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('SiO2')}</th>
+              <th>${granularPriceLabels().price}<br><small>${granularPriceLabels().priceUnit}</small></th>
+              <th>${granularPriceLabels().cost}<br><small>${granularPriceLabels().costAreaUnit}</small></th>
               <th>${granularProgramT('action', 'Acción')}</th>
             </tr>
           </thead>
@@ -581,7 +679,7 @@ function renderApplications() {
 // Función para renderizar materiales
 function renderMaterials(app) {
   if (!app.materials || app.materials.length === 0) {
-    return `<tr><td colspan="16" style="text-align: center; color: #6b7280;">${granularProgramT('no_materials', 'No hay materias primas')}</td></tr>`;
+    return `<tr><td colspan="18" style="text-align: center; color: #6b7280;">${granularProgramT('no_materials', 'No hay materias primas')}</td></tr>`;
   }
   
   const rows = app.materials.map((material, index) => `
@@ -609,6 +707,8 @@ function renderMaterials(app) {
       <td>${formatProgramValue('Cu', material.Cu, 3)}</td>
       <td>${formatProgramValue('Mo', material.Mo, 3)}</td>
       <td>${formatProgramValue('SiO2', material.SiO2, 2)}</td>
+      <td>${granularPriceApi() ? granularPriceApi().formatMoney(granularPriceApi().toDisplayPrice(granularResolveMaterialPrice(material.name))) : granularResolveMaterialPrice(material.name).toFixed(2)}</td>
+      <td><strong>${granularAreaCostText(granularMaterialCostUsdPerHa(app, material))}</strong></td>
       <td><button class="remove-application-btn" onclick="removeMaterial('${app.id}', ${index})" 
                   style="padding: 4px 8px; font-size: 0.7rem;">🗑️</button></td>
     </tr>
@@ -634,6 +734,8 @@ function renderMaterials(app) {
       <td>${formatProgramValue('Mo', totals.Mo, 3)}</td>
       <td>${formatProgramValue('SiO2', totals.SiO2, 2)}</td>
       <td></td>
+      <td><strong>${granularAreaCostText(app.materials.reduce((sum, material) => sum + granularMaterialCostUsdPerHa(app, material), 0))}</strong></td>
+      <td></td>
     </tr>
   `;
 
@@ -655,6 +757,8 @@ function renderMaterials(app) {
       <td>${formatProgramValue('Cu', contribution.Cu, 2, 'dose_mass_area')}</td>
       <td>${formatProgramValue('Mo', contribution.Mo, 2, 'dose_mass_area')}</td>
       <td>${formatProgramValue('SiO2', contribution.SiO2, 2, 'dose_mass_area')}</td>
+      <td></td>
+      <td></td>
       <td></td>
     </tr>
   `;
@@ -696,6 +800,10 @@ function showNewMaterialModal(appId) {
         <div class="form-group">
           <label>${granularProgramT('fertilizer_name', 'Nombre de la Materia Prima:')}</label>
           <input type="text" id="newMaterialName" placeholder="Ej: Superfosfato Triple" maxlength="50">
+        </div>
+        <div class="form-group">
+          <label>${granularPriceLabels().price} (${granularPriceLabels().priceUnit}):</label>
+          <input type="number" id="newMaterialPrice" min="0" step="0.01" value="0">
         </div>
         
         <div class="form-group">
@@ -803,6 +911,8 @@ function getBaseGranularMaterials() {
 }
 function openGranularPreloadedCatalogModal() {
   const list = getBaseGranularMaterials();
+  const priceLabels = granularPriceLabels();
+  const priceApi = granularPriceApi();
   const rows = list.map(mat => {
     const cells = [
       granularMaterialDisplayName(mat.name || '').replace(/</g, '&lt;'),
@@ -811,7 +921,9 @@ function openGranularPreloadedCatalogModal() {
         return v.toFixed(2);
       })
     ];
-    return `<tr style="border-bottom:1px solid #e5e7eb;">${cells.map((c, i) => `<td style="padding:6px 10px;${i === 0 ? 'font-weight:600;' : 'text-align:right;'}">${c}</td>`).join('')}</tr>`;
+    const price = priceApi ? priceApi.toDisplayPrice(granularResolveMaterialPrice(mat.name)) : granularResolveMaterialPrice(mat.name);
+    const priceCell = `<td style="padding:6px 10px;text-align:right;"><input class="granular-price-input" data-material-name="${encodeURIComponent(mat.name)}" type="number" min="0" step="0.01" value="${price}" style="width:82px;padding:4px;text-align:right;"></td>`;
+    return `<tr style="border-bottom:1px solid #e5e7eb;">${cells.map((c, i) => `<td style="padding:6px 10px;${i === 0 ? 'font-weight:600;' : 'text-align:right;'}">${c}</td>`).join('')}${priceCell}</tr>`;
   }).join('');
   const overlay = document.createElement('div');
   overlay.className = 'material-modal-overlay granular-preloaded-overlay';
@@ -830,15 +942,31 @@ function openGranularPreloadedCatalogModal() {
               <tr style="background:#f1f5f9;">
                 <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">${granularProgramT('material', 'Nombre')}</th>
                 ${GRANULAR_CATALOG_COLS.map(k => `<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${granularCatalogColLabel(k)}</th>`).join('')}
+                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${priceLabels.price}<br><small>${priceLabels.priceUnit}</small></th>
               </tr>
             </thead>
-            <tbody>${rows || '<tr><td colspan="' + (1 + GRANULAR_CATALOG_COLS.length) + '" style="padding:12px;color:#64748b;">' + granularProgramT('no_preloaded_fertilizers', 'Sin fertilizantes precargados.') + '</td></tr>'}</tbody>
+            <tbody>${rows || '<tr><td colspan="' + (2 + GRANULAR_CATALOG_COLS.length) + '" style="padding:12px;color:#64748b;">' + granularProgramT('no_preloaded_fertilizers', 'Sin fertilizantes precargados.') + '</td></tr>'}</tbody>
           </table>
         </div>
+      </div>
+      <div style="padding:12px 18px;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn btn-primary btn-sm" type="button" data-save-granular-prices>${granularProgramT('save_changes', 'Guardar cambios')}</button>
       </div>
     </div>
   `;
   overlay.querySelector('[data-close-granular-preloaded]').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-save-granular-prices]').addEventListener('click', () => {
+    const next = { ...granularPriceOverrides };
+    overlay.querySelectorAll('.granular-price-input').forEach(input => {
+      const name = decodeURIComponent(input.dataset.materialName || '');
+      const shown = parseFloat(input.value);
+      next[name] = priceApi ? priceApi.fromDisplayPrice(shown) : (Number.isFinite(shown) ? shown : 0);
+    });
+    granularPersistPriceOverrides(next);
+    renderApplications();
+    updateSummary();
+    overlay.remove();
+  });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
@@ -867,7 +995,12 @@ function addCustomMaterial(appId) {
       B: parseFloat(document.getElementById('newMaterialB').value) || 0,
       Mn: parseFloat(document.getElementById('newMaterialMn').value) || 0,
       Cu: parseFloat(document.getElementById('newMaterialCu').value) || 0,
-      Mo: parseFloat(document.getElementById('newMaterialMo').value) || 0
+      Mo: parseFloat(document.getElementById('newMaterialMo').value) || 0,
+      priceUsdPerTonne: (() => {
+        const api = granularPriceApi();
+        const raw = document.getElementById('newMaterialPrice').value;
+        return api ? api.fromDisplayPrice(raw) : (parseFloat(raw) || 0);
+      })()
     };
     
     // Agregar a la base de datos de materias primas
@@ -1326,6 +1459,22 @@ function updateSummary(options = {}) {
     const totalDoseElement = document.getElementById('totalDoseKgHa');
     if (totalDoseElement) {
       totalDoseElement.textContent = granularProgramResultFromSI(totalDose, 'dose_mass_area');
+    }
+
+    const totalCostUsdPerHa = applications.reduce((sum, app) => {
+      return sum + (app.materials || []).reduce((appSum, material) => {
+        return appSum + granularMaterialCostUsdPerHa(app, material);
+      }, 0);
+    }, 0);
+    const totalCostElement = document.getElementById('granularTotalCost');
+    if (totalCostElement) {
+      const api = granularPriceApi();
+      const shown = api ? api.toDisplayAreaCost(totalCostUsdPerHa) : totalCostUsdPerHa;
+      totalCostElement.textContent = api ? api.formatMoney(shown) : shown.toFixed(2);
+    }
+    const totalCostUnit = document.getElementById('granularTotalCostUnit');
+    if (totalCostUnit) {
+      totalCostUnit.textContent = granularPriceLabels().costAreaUnit;
     }
     
     // Calcular totales de nutrientes REALES (Kg/Ha) de todas las aplicaciones

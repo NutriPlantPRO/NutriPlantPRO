@@ -103,16 +103,34 @@
     });
   }
 
-  function getSiteId() {
+  function peekSiteId() {
     try {
       var id = localStorage.getItem(SITE_ID_KEY);
       if (id && /^[0-9a-f-]{36}$/i.test(id)) return id;
+    } catch (e) {}
+    return null;
+  }
+
+  function getSiteId() {
+    try {
+      var id = peekSiteId();
+      if (id) return id;
       id = uuid();
       localStorage.setItem(SITE_ID_KEY, id);
       return id;
     } catch (e) {
       return uuid();
     }
+  }
+
+  /** Análisis vacío sin agrícola/predio: no debe inventar carpetas "Sin agrícola". */
+  function isGhostProjectMeta(meta) {
+    meta = meta || {};
+    var title = String(meta.title || '').trim();
+    var agricola = String(meta.agricola || '').trim();
+    var predio = String(meta.predio || '').trim();
+    var cultivo = String(meta.cultivo || '').trim();
+    return !agricola && !predio && !cultivo && (!title || /^nuevo análisis$/i.test(title));
   }
 
   function hasAdminSession() {
@@ -3147,15 +3165,21 @@
   function renderCalibrationSamples() {
     clearCalibrationLayers();
     if (!map || typeof L === 'undefined') return;
-    calibrationLayer = L.layerGroup().addTo(map);
-    calibrationVertexLayer = L.layerGroup().addTo(map);
+    if (!map.getPane('airciCalibration')) {
+      var pane = map.createPane('airciCalibration');
+      pane.style.zIndex = '660';
+      pane.style.pointerEvents = 'auto';
+    }
+    calibrationLayer = L.layerGroup({ pane: 'airciCalibration' }).addTo(map);
+    calibrationVertexLayer = L.layerGroup({ pane: 'airciCalibration' }).addTo(map);
     calibrationSamples.forEach(function (sample, sampleIndex) {
       var selected = sampleIndex === calibrationSelectedIndex;
       var polygon = L.polygon(sample.latlngs, {
+        pane: 'airciCalibration',
         color: selected ? '#1d4ed8' : '#0ea5e9',
         weight: selected ? 3 : 2,
         fillColor: '#38bdf8',
-        fillOpacity: 0.16,
+        fillOpacity: 0.22,
         bubblingMouseEvents: false
       });
       polygon.bindTooltip('Muestra ' + (sampleIndex + 1) + ' · clic para editar');
@@ -3178,6 +3202,7 @@
       if (!selected) return;
       var center = calibrationCentroid(sample.latlngs);
       var moveMarker = L.marker(center, {
+        pane: 'airciCalibration',
         draggable: true,
         keyboard: false,
         zIndexOffset: 1000,
@@ -3221,6 +3246,7 @@
       calibrationVertexLayer.addLayer(moveMarker);
       sample.latlngs.forEach(function (point, pointIndex) {
         var marker = L.marker(point, {
+          pane: 'airciCalibration',
           draggable: true,
           keyboard: false,
           icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
@@ -3393,6 +3419,191 @@
     professionalEditLayer = null;
   }
 
+  function normalizeEditableTree(tree) {
+    if (!tree) return null;
+    var ring =
+      Array.isArray(tree.latlngs) && tree.latlngs.length >= 3
+        ? tree.latlngs
+        : Array.isArray(tree.polygon_json)
+          ? tree.polygon_json
+          : null;
+    if (!ring || ring.length < 3) return null;
+    tree.latlngs = ring.map(function (point) {
+      return [Number(point[0]), Number(point[1])];
+    });
+    if (tree.id == null && tree.tree_index != null) tree.id = tree.tree_index;
+    return tree;
+  }
+
+  /**
+   * Editor fácil con muchos puntos: la IA conserva el detalle;
+   * tú mueves la copa entera arrastrando el relleno o ↕,
+   * y solo tocas vértices si quieres afinar la forma.
+   */
+  function mountCanopyShapeEditor(tree, handlers) {
+    handlers = handlers || {};
+    professionalEditLayer = L.layerGroup().addTo(map);
+    var dense = tree.latlngs.length > 12;
+    var editable = L.polygon(tree.latlngs, {
+      color: '#1d4ed8',
+      weight: dense ? 2.5 : 3,
+      fillColor: '#3b82f6',
+      fillOpacity: 0.2,
+      className: 'aci-canopy-edit-poly'
+    }).addTo(professionalEditLayer);
+    editable.bindTooltip(
+      dense
+        ? tree.latlngs.length +
+            ' puntos · arrastra la copa para moverla · zoom para afinar vértices'
+        : 'Arrastra la copa o ↕ para moverla · puntos para afinar',
+      { sticky: true }
+    );
+
+    function shiftRing(dLat, dLng) {
+      tree.latlngs = tree.latlngs.map(function (point) {
+        return [point[0] + dLat, point[1] + dLng];
+      });
+      editable.setLatLngs(tree.latlngs);
+    }
+
+    function commitMove(message) {
+      if (typeof handlers.onCommit === 'function') handlers.onCommit(message || 'Copa actualizada.');
+    }
+
+    // Arrastrar toda la copa desde el relleno (lo más fácil con muchos puntos)
+    var bodyDrag = null;
+    editable.on('mousedown', function (event) {
+      if (!event.originalEvent || event.originalEvent.button !== 0) return;
+      L.DomEvent.stopPropagation(event);
+      L.DomEvent.preventDefault(event);
+      if (map.dragging && map.dragging.enabled()) map.dragging.disable();
+      bodyDrag = {
+        lat: event.latlng.lat,
+        lng: event.latlng.lng,
+        moved: false
+      };
+    });
+    function onBodyMove(event) {
+      if (!bodyDrag) return;
+      var dLat = event.latlng.lat - bodyDrag.lat;
+      var dLng = event.latlng.lng - bodyDrag.lng;
+      if (!dLat && !dLng) return;
+      bodyDrag.moved = true;
+      bodyDrag.lat = event.latlng.lat;
+      bodyDrag.lng = event.latlng.lng;
+      shiftRing(dLat, dLng);
+      if (moveMarker) moveMarker.setLatLng(calibrationCentroid(tree.latlngs));
+    }
+    function onBodyUp() {
+      if (!bodyDrag) return;
+      var moved = bodyDrag.moved;
+      bodyDrag = null;
+      if (map.dragging) map.dragging.enable();
+      if (moved) commitMove('Copa movida y guardada.');
+    }
+    map.on('mousemove', onBodyMove);
+    map.on('mouseup', onBodyUp);
+    editable.on('remove', function () {
+      map.off('mousemove', onBodyMove);
+      map.off('mouseup', onBodyUp);
+      if (map.dragging) map.dragging.enable();
+    });
+
+    editable.on('dblclick', function (event) {
+      L.DomEvent.stopPropagation(event);
+      tree.latlngs.push([event.latlng.lat, event.latlng.lng]);
+      commitMove('Punto añadido y guardado.');
+    });
+
+    var moveMarker = null;
+    var vertexMarkers = [];
+
+    function redrawHandles() {
+      if (moveMarker && professionalEditLayer) professionalEditLayer.removeLayer(moveMarker);
+      vertexMarkers.forEach(function (marker) {
+        if (professionalEditLayer) professionalEditLayer.removeLayer(marker);
+      });
+      vertexMarkers = [];
+      var center = calibrationCentroid(tree.latlngs);
+      moveMarker = L.marker(center, {
+        draggable: true,
+        keyboard: false,
+        zIndexOffset: 1200,
+        icon: L.divIcon({
+          className: 'aci-calibration-move',
+          html: '<i>↕</i>',
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
+        })
+      }).addTo(professionalEditLayer);
+      moveMarker.bindTooltip('Arrastra para mover toda la copa');
+      var moveStart = null;
+      moveMarker.on('dragstart', function () {
+        var origin = calibrationCentroid(tree.latlngs);
+        moveStart = { lat: origin[0], lng: origin[1] };
+        if (map.dragging) map.dragging.disable();
+      });
+      moveMarker.on('drag', function (event) {
+        if (!moveStart) return;
+        var at = event.target.getLatLng();
+        editable.setLatLngs(
+          tree.latlngs.map(function (point) {
+            return [point[0] + at.lat - moveStart.lat, point[1] + at.lng - moveStart.lng];
+          })
+        );
+      });
+      moveMarker.on('dragend', function (event) {
+        if (!moveStart) return;
+        var at = event.target.getLatLng();
+        shiftRing(at.lat - moveStart.lat, at.lng - moveStart.lng);
+        moveStart = null;
+        if (map.dragging) map.dragging.enable();
+        commitMove('Copa movida y guardada.');
+      });
+
+      // Con muchos puntos: vértices más chicos; todos siguen editables.
+      var size = dense ? 8 : 12;
+      var cls = dense ? 'aci-calibration-vertex aci-calibration-vertex--dense' : 'aci-calibration-vertex';
+      tree.latlngs.forEach(function (point, pointIndex) {
+        var marker = L.marker(point, {
+          draggable: true,
+          keyboard: false,
+          icon: L.divIcon({
+            className: cls,
+            html: '<i></i>',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          })
+        }).addTo(professionalEditLayer);
+        marker.on('drag', function (event) {
+          var at = event.target.getLatLng();
+          tree.latlngs[pointIndex] = [at.lat, at.lng];
+          editable.setLatLngs(tree.latlngs);
+        });
+        marker.on('dragend', function () {
+          commitMove('Perímetro actualizado.');
+        });
+        marker.on('contextmenu', function () {
+          if (tree.latlngs.length <= 3) return;
+          tree.latlngs.splice(pointIndex, 1);
+          commitMove('Punto eliminado.');
+        });
+        vertexMarkers.push(marker);
+      });
+    }
+
+    redrawHandles();
+    setMapStatus(
+      dense
+        ? 'Copa con ' +
+            tree.latlngs.length +
+            ' puntos (detalle IA). Arrastra el relleno o ↕ para moverla; zoom para afinar vértices.'
+        : 'Arrastra la copa o ↕ para moverla. Puntos azules para afinar la forma.',
+      'ok'
+    );
+    return editable;
+  }
+
   async function saveProfessionalTree(tree, operation) {
     var metrics = calibrationPolygonMetrics(tree.latlngs);
     var response = await apiProfessional({
@@ -3418,97 +3629,20 @@
 
   function openProfessionalTreeEditor(tree) {
     clearProfessionalEditLayer();
+    tree = normalizeEditableTree(tree);
     if (!professionalEditMode || !tree || !map || typeof L === 'undefined') return;
     professionalSelectedTree = tree;
-    professionalEditLayer = L.layerGroup().addTo(map);
-    var editable = L.polygon(tree.latlngs, {
-      color: '#1d4ed8',
-      weight: 3,
-      fillColor: '#60a5fa',
-      fillOpacity: 0.08
-    }).addTo(professionalEditLayer);
-    editable.on('dblclick', async function (event) {
-      tree.latlngs.push([event.latlng.lat, event.latlng.lng]);
-      var response = await saveProfessionalTree(tree, 'update');
-      if (!response.ok) {
-        setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
-        return;
-      }
-      loadProfessionalViewport(professionalResultId, professionalStats || {});
-    });
-    var center = calibrationCentroid(tree.latlngs);
-    var moveMarker = L.marker(center, {
-      draggable: true,
-      keyboard: false,
-      zIndexOffset: 1000,
-      icon: L.divIcon({
-        className: 'aci-calibration-move',
-        html: '<i>↕</i>',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
-      })
-    }).addTo(professionalEditLayer);
-    moveMarker.bindTooltip('Arrastra para mover toda la copa');
-    var moveStart = null;
-    moveMarker.on('dragstart', function () {
-      var origin = calibrationCentroid(tree.latlngs);
-      moveStart = { lat: origin[0], lng: origin[1] };
-    });
-    moveMarker.on('drag', function (event) {
-      if (!moveStart) return;
-      var latlng = event.target.getLatLng();
-      var dLat = latlng.lat - moveStart.lat;
-      var dLng = latlng.lng - moveStart.lng;
-      editable.setLatLngs(
-        tree.latlngs.map(function (point) {
-          return [point[0] + dLat, point[1] + dLng];
-        })
-      );
-    });
-    moveMarker.on('dragend', async function (event) {
-      if (!moveStart) return;
-      var latlng = event.target.getLatLng();
-      var dLat = latlng.lat - moveStart.lat;
-      var dLng = latlng.lng - moveStart.lng;
-      tree.latlngs = tree.latlngs.map(function (point) {
-        return [point[0] + dLat, point[1] + dLng];
-      });
-      moveStart = null;
-      var response = await saveProfessionalTree(tree, 'update');
-      if (!response.ok) {
-        setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
-        return;
-      }
-      setMapStatus('Copa movida y guardada.', 'ok');
-      loadProfessionalViewport(professionalResultId, professionalStats || {});
-    });
-    tree.latlngs.forEach(function (point, pointIndex) {
-      var marker = L.marker(point, {
-        draggable: true,
-        keyboard: false,
-        icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
-      }).addTo(professionalEditLayer);
-      marker.on('drag', function (event) {
-        var latlng = event.target.getLatLng();
-        tree.latlngs[pointIndex] = [latlng.lat, latlng.lng];
-        editable.setLatLngs(tree.latlngs);
-      });
-      marker.on('dragend', async function () {
+    browserSelectedTree = null;
+    mountCanopyShapeEditor(tree, {
+      onCommit: async function (message) {
         var response = await saveProfessionalTree(tree, 'update');
         if (!response.ok) {
           setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
           return;
         }
-        setMapStatus('Perímetro actualizado.', 'ok');
+        setMapStatus(message || 'Perímetro actualizado.', 'ok');
         loadProfessionalViewport(professionalResultId, professionalStats || {});
-      });
-      marker.on('contextmenu', async function () {
-        if (tree.latlngs.length <= 3) return;
-        tree.latlngs.splice(pointIndex, 1);
-        var response = await saveProfessionalTree(tree, 'update');
-        if (!response.ok) setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
-        else loadProfessionalViewport(professionalResultId, professionalStats || {});
-      });
+      }
     });
     syncProfessionalEditUi();
   }
@@ -3615,59 +3749,14 @@
 
   function openBrowserTreeEditor(tree) {
     clearProfessionalEditLayer();
+    tree = normalizeEditableTree(tree);
     if (!professionalEditMode || !tree || !map || typeof L === 'undefined') return;
     browserSelectedTree = tree;
-    professionalEditLayer = L.layerGroup().addTo(map);
-    var editable = L.polygon(tree.latlngs, {
-      color: '#1d4ed8', weight: 3, fillColor: '#60a5fa', fillOpacity: 0.08
-    }).addTo(professionalEditLayer);
-    editable.on('dblclick', function (event) {
-      tree.latlngs.push([event.latlng.lat, event.latlng.lng]);
-      refreshBrowserEdit('Punto añadido y corrección guardada.');
-    });
-    var center = calibrationCentroid(tree.latlngs);
-    var moveMarker = L.marker(center, {
-      draggable: true, keyboard: false, zIndexOffset: 1000,
-      icon: L.divIcon({ className: 'aci-calibration-move', html: '<i>↕</i>', iconSize: [28, 28], iconAnchor: [14, 14] })
-    }).addTo(professionalEditLayer);
-    moveMarker.bindTooltip('Arrastra para mover toda la copa');
-    var origin = null;
-    moveMarker.on('dragstart', function () {
-      var c = calibrationCentroid(tree.latlngs);
-      origin = { lat: c[0], lng: c[1] };
-    });
-    moveMarker.on('drag', function (event) {
-      if (!origin) return;
-      var at = event.target.getLatLng();
-      editable.setLatLngs(tree.latlngs.map(function (point) {
-        return [point[0] + at.lat - origin.lat, point[1] + at.lng - origin.lng];
-      }));
-    });
-    moveMarker.on('dragend', function (event) {
-      if (!origin) return;
-      var at = event.target.getLatLng();
-      tree.latlngs = tree.latlngs.map(function (point) {
-        return [point[0] + at.lat - origin.lat, point[1] + at.lng - origin.lng];
-      });
-      origin = null;
-      refreshBrowserEdit('Copa movida y corrección guardada.');
-    });
-    tree.latlngs.forEach(function (point, index) {
-      var marker = L.marker(point, {
-        draggable: true, keyboard: false,
-        icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
-      }).addTo(professionalEditLayer);
-      marker.on('drag', function (event) {
-        var at = event.target.getLatLng();
-        tree.latlngs[index] = [at.lat, at.lng];
-        editable.setLatLngs(tree.latlngs);
-      });
-      marker.on('dragend', function () { refreshBrowserEdit('Perímetro actualizado y guardado.'); });
-      marker.on('contextmenu', function () {
-        if (tree.latlngs.length <= 3) return;
-        tree.latlngs.splice(index, 1);
-        refreshBrowserEdit('Punto eliminado y corrección guardada.');
-      });
+    professionalSelectedTree = null;
+    mountCanopyShapeEditor(tree, {
+      onCommit: function (message) {
+        refreshBrowserEdit(message || 'Corrección guardada.');
+      }
     });
     syncProfessionalEditUi();
   }
@@ -4521,13 +4610,13 @@
         loadMeta();
         updateOpenBanner();
       } else {
-        var freshId = uuid();
-        var blank = defaultMeta();
-        blank.title = 'Nuevo análisis';
+        // Sin proyectos: lista vacía. No inventar "Sin agrícola / Sin predio".
         try {
-          localStorage.setItem(SITE_ID_KEY, freshId);
-          localStorage.setItem(META_KEY, JSON.stringify(blank));
+          localStorage.removeItem(SITE_ID_KEY);
+          localStorage.removeItem(META_KEY);
+          localStorage.removeItem(FLIGHT_KEY);
         } catch (e6) {}
+        var blank = defaultMeta();
         document.querySelectorAll('[data-meta]').forEach(function (el) {
           var key = el.getAttribute('data-meta');
           if (!key) return;
@@ -4879,10 +4968,18 @@
     }
     // 1) local catalog
     var local = readCatalog();
-    // 2) merge current open site
-    var cur = Object.assign({ id: getSiteId() }, collectMeta());
-    upsertCatalogEntry(cur);
-    local = readCatalog();
+    // 2) merge current open site only if already listed or has real data
+    var curId = peekSiteId();
+    if (curId) {
+      var curMeta = collectMeta();
+      var alreadyListed = local.some(function (s) {
+        return s && s.id === curId;
+      });
+      if (alreadyListed || !isGhostProjectMeta(curMeta)) {
+        upsertCatalogEntry(Object.assign({ id: curId }, curMeta));
+      }
+      local = readCatalog();
+    }
 
     // 3) try cloud
     var cloudSites = null;
@@ -4891,6 +4988,17 @@
       if (r.ok && Array.isArray(r.sites)) {
         cloudSites = r.sites;
         cloudSites.forEach(function (s) {
+          // No reinyectar fantasmas vacíos de la nube en la lista de proyectos
+          if (
+            isGhostProjectMeta({
+              title: s.title,
+              agricola: s.agricola,
+              predio: s.predio,
+              cultivo: s.cultivo
+            })
+          ) {
+            return;
+          }
           upsertCatalogEntry({
             id: s.id,
             title: s.title,
@@ -4909,6 +5017,14 @@
         hint.textContent = 'Lista local · para nube ejecuta ' + r.setup;
       }
     } catch (e) {}
+
+    // Quitar fantasmas vacíos viejos; conservar solo el abierto si acabas de
+    // pulsar ＋ Nuevo análisis (aún sin agrícola/predio).
+    local = local.filter(function (s) {
+      if (!isGhostProjectMeta(s)) return true;
+      return !!(curId && s.id === curId);
+    });
+    writeCatalog(local);
 
     renderProjectsTree(local);
     if (hint && (!hint.textContent || hint.textContent.indexOf('Actualizando') === 0)) {
@@ -5365,7 +5481,7 @@
   }
 
   function bringOverlaysFront() {
-    // Fondo Google atrás; ortomosaico opaco encima; copas/números al frente
+    // Fondo Google atrás; ortomosaico encima; copas/calibración/edición al frente
     if (basemapLayer && map && map.hasLayer(basemapLayer) && basemapLayer.bringToBack) {
       basemapLayer.bringToBack();
     }
@@ -5381,6 +5497,18 @@
     }
     if (canopyLabelLayer && map && map.hasLayer(canopyLabelLayer) && canopyLabelLayer.bringToFront) {
       canopyLabelLayer.bringToFront();
+    }
+    if (professionalLayer && map && map.hasLayer(professionalLayer) && professionalLayer.bringToFront) {
+      professionalLayer.bringToFront();
+    }
+    if (calibrationLayer && map && map.hasLayer(calibrationLayer) && calibrationLayer.bringToFront) {
+      calibrationLayer.bringToFront();
+    }
+    if (calibrationVertexLayer && map && map.hasLayer(calibrationVertexLayer) && calibrationVertexLayer.bringToFront) {
+      calibrationVertexLayer.bringToFront();
+    }
+    if (professionalEditLayer && map && map.hasLayer(professionalEditLayer) && professionalEditLayer.bringToFront) {
+      professionalEditLayer.bringToFront();
     }
   }
 
@@ -6044,9 +6172,26 @@
   var calibrationAddPointBtn = document.getElementById('aciCalibrationAddPoint');
   if (calibrationAddPointBtn) {
     calibrationAddPointBtn.addEventListener('click', function () {
+      if (!calibrationActive) {
+        setMapStatus('Primero pulsa «Seleccionar 10 árboles» y marca una copa.', 'error');
+        return;
+      }
+      if (calibrationSelectedIndex < 0 || !calibrationSamples.length) {
+        setMapStatus('Primero haz clic en un árbol para crear/seleccionar su copa.', 'error');
+        return;
+      }
       calibrationAddPoint = !calibrationAddPoint;
       syncCalibrationUi();
-      if (calibrationAddPoint) setMapStatus('Haz clic en el mapa para añadir un vértice a la copa seleccionada.', 'ok');
+      if (calibrationAddPoint) {
+        setMapStatus(
+          'Modo añadir punto activo · clic dentro o junto a la copa ' +
+            (calibrationSelectedIndex + 1) +
+            ' para pintar el vértice.',
+          'ok'
+        );
+      } else {
+        setMapStatus('Modo añadir punto cancelado.', 'ok');
+      }
     });
   }
   var calibrationResetBtn = document.getElementById('aciCalibrationReset');

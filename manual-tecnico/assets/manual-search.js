@@ -122,7 +122,7 @@
       icon: '📈',
       pillar: 'D · Programas',
       title: 'Hidroponía: solución nutritiva por etapa',
-      keywords: 'hidroponía solución nutritiva etapa meq fertilizante dosis tanque nitrato calcio'
+      keywords: 'hidroponía solución nutritiva etapa meq fertilizante dosis tanque nitrato calcio traer de análisis ácido mL/m³ volumen coincidencia leyenda PDF admin'
     },
     {
       href: 'capitulos/diseno-solucion-nutritiva-didactica.html',

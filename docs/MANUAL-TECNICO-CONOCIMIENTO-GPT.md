@@ -165,6 +165,16 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/hidroponia-solucion-por-etapa.html · Proyecto nube; etapas; CE ≈ Σmeq/20; tanques A–E; agua relleno resta objetivo. ≠ herramienta gratis didáctica.
 
+**Agua y ácido en Cálculo de fertilizantes (lógica de producto):**
+- Selector **Traer de análisis / Bring from analysis**: carga ppm del reporte Análisis → Agua del mismo proyecto (macros, micros, Cl⁻) al bloque de agua de hidroponía.
+- **Leyenda de ácido / volumen** (UI, panel admin y PDF; EN si el reporte está en inglés):
+  1. Ácido del análisis: HNO₃ 55 % (11,6 meq/mL), H₂SO₄ 98 % (36,7), H₃PO₄ 75 % (12,0) o 85 % (14,6).
+  2. meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual objetivo (defecto 1 meq/L).
+  3. mL/m³ = meq/L × 1000 ÷ meqPerMl del ácido; L totales = mL/m³ × m³ ÷ 1000.
+  4. Se muestran L según el **m³ del análisis** y L según el **volumen de agua de hidroponía**.
+  5. Aviso si esos m³ coinciden o no (tolerancia ≈ 0,01 m³) + recordatorio de revisar la dosis.
+- En cálculo automático, el ácido puede ir al **tanque C** como líquido. Catálogo de soluciones (Steiner/Hoagland/… + propias del usuario) aparte.
+
 ### 4.10 Solución didáctica (gratis)
 
 **URL:** …/diseno-solucion-nutritiva-didactica.html · login localStorage; triángulos, CE, Cl, NH₄.
@@ -214,7 +224,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/agua-dureza-acidificacion-solubilidad.html  
 - **Dureza:** ppm CaCO₃ ↔ meq/L (÷50,043); °dH/°e/°fH; clase USGS (&lt;60 blanda … ≥180 muy dura). Dureza lab = Ca×2,498 + Mg×4,118 (ppm CaCO₃).  
-- **Ácido:** meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L×1000÷meq/mL ácido. Ácidos app: HNO₃ 55 %, H₂SO₄ 98 %, H₃PO₄ 75/85 %. No neutralizar 100 % por defecto.  
+- **Ácido:** meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L×1000÷meq/mL ácido. Ácidos app: HNO₃ 55 %, H₂SO₄ 98 %, H₃PO₄ 75/85 %. No neutralizar 100 % por defecto. En **Hidroponía → Traer de análisis** la misma dosis se muestra como leyenda (L del análisis vs L del volumen hidro; aviso si m³ no coinciden; admin/PDF; EN si reporte EN). Ver §4.9.  
 - **IS:** NaNO₃=100; solubilidad g/L tabla gratis. IS alto = más osmótico relativo, no «prohibido». Herramientas: `agua_dureza`, `solubilidad_is` en free_tools_catalog.
 
 ### 4.13 Mulder y compatibilidad (Pilar F)

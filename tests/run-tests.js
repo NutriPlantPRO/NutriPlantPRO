@@ -8,6 +8,7 @@ var suites = [
   require('./fertigation-ui.test.js'),
   require('./amendment-ui.test.js'),
   require('./hydro-units.test.js'),
+  require('./hydro-solution-catalog.test.js'),
   require('./i18n.test.js'),
   require('./water-climate-ui.test.js'),
   require('./free-nutrition-ui.test.js')

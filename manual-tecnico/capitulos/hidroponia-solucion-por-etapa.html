@@ -147,10 +147,29 @@
     <h2>Etapas, agua y tanques</h2>
     <ul>
       <li>Varias <strong>etapas</strong> con composición independiente (ppm/meq editables; triángulos N-P-S y K-Ca-Mg).</li>
-      <li><strong>Agua de relleno</strong> — ppm por nutriente desde análisis de agua; se restan del objetivo de la etapa activa.</li>
+      <li><strong>Agua de relleno</strong> — ppm por nutriente desde análisis de agua; se restan del objetivo de la etapa activa. En Cálculo de fertilizantes el selector <strong>Traer de análisis</strong> carga un reporte de <strong>Análisis → Agua</strong> del mismo proyecto.</li>
       <li><strong>Volumen de agua (m³)</strong> — base para convertir dosis ppm → kg/L totales del programa.</li>
       <li><strong>Tanques A–E</strong> — capacidad (L), tasa de inyección (L/m³), materiales por tanque; volumen de concentrado y recargas.</li>
     </ul>
+
+    <h2>Leyenda de ácido y coincidencia de volumen</h2>
+    <p>
+      Si el cálculo está vinculado a un análisis de agua, bajo el bloque de ppm del agua aparece una
+      <strong>leyenda de ácido</strong> (misma lógica que en Análisis → Agua → Ácido para neutralizar):
+    </p>
+    <div class="mt-formula">
+      meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual objetivo<br>
+      mL ácido/m³ = meq/L × 1000 ÷ meqPerMl del ácido<br>
+      L totales = mL/m³ × volumen (m³) ÷ 1000
+    </div>
+    <ul>
+      <li>Ácidos en app: nítrico 55 % (11,6 meq/mL), sulfúrico 98 % (36,7), fosfórico 75 % (12,0) y 85 % (14,6).</li>
+      <li>Se muestran los <strong>L según el m³ del análisis</strong> y los <strong>L según el volumen de hidroponía</strong>.</li>
+      <li>Aviso si esos m³ <strong>coinciden o no</strong> (tolerancia ≈ 0,01 m³) y recordatorio de revisar la dosis.</li>
+      <li>La misma leyenda aparece en el <strong>panel admin</strong> y en el <strong>reporte PDF</strong> (en inglés si el idioma del reporte es EN).</li>
+      <li>En cálculo automático el ácido puede entrar al <strong>tanque C</strong> como líquido.</li>
+    </ul>
+
     <h2>Microelementos y Cl</h2>
     <p>Fe, Mn, B, Zn, Cu, Mo en ppm; Cl⁻ al final de la tabla, manual. Los óxidos de materiales (P₂O₅, K₂O…) se convierten a elemental con factores NutriPlant antes del balance.</p>
     </div>
@@ -244,10 +263,29 @@
     <h2>Stages, water and tanks</h2>
     <ul>
       <li>Several <strong>stages</strong> with independent composition (editable ppm/meq; N-P-S and K-Ca-Mg triangles).</li>
-      <li><strong>Makeup water</strong> — ppm per nutrient from water analysis; subtracted from the active stage target.</li>
+      <li><strong>Makeup water</strong> — ppm per nutrient from water analysis; subtracted from the active stage target. In Fertilizer calculation the <strong>Bring from analysis</strong> selector loads a report from <strong>Analysis → Water</strong> in the same project.</li>
       <li><strong>Water volume (m³)</strong> — basis to convert dose ppm → total kg/L for the program.</li>
       <li><strong>Tanks A–E</strong> — capacity (L), injection rate (L/m³), materials per tank; concentrate volume and refills.</li>
     </ul>
+
+    <h2>Acid legend and volume match</h2>
+    <p>
+      When the calculation is linked to a water analysis, under the water ppm block an
+      <strong>acid legend</strong> appears (same logic as Analysis → Water → Acid to neutralize):
+    </p>
+    <div class="mt-formula">
+      meq/L to neutralize = (HCO₃⁻ + CO₃²⁻) − target residual<br>
+      mL acid/m³ = meq/L × 1000 ÷ meqPerMl of the acid<br>
+      Total L = mL/m³ × volume (m³) ÷ 1000
+    </div>
+    <ul>
+      <li>App acids: nitric 55 % (11.6 meq/mL), sulfuric 98 % (36.7), phosphoric 75 % (12.0) and 85 % (14.6).</li>
+      <li>Shows <strong>L for the analysis m³</strong> and <strong>L for the hydroponics water volume</strong>.</li>
+      <li>Warns whether those m³ <strong>match or not</strong> (tolerance ≈ 0.01 m³) plus a reminder to review the dose.</li>
+      <li>The same legend appears in the <strong>admin panel</strong> and the <strong>PDF report</strong> (in English when the report language is EN).</li>
+      <li>In automatic calculation the acid may enter <strong>tank C</strong> as a liquid.</li>
+    </ul>
+
     <h2>Micronutrients and Cl</h2>
     <p>Fe, Mn, B, Zn, Cu, Mo in ppm; Cl⁻ at the end of the table, manual. Material oxides (P₂O₅, K₂O…) are converted to elemental with NutriPlant factors before the balance.</p>
     </div>

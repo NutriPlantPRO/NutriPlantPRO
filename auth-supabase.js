@@ -251,6 +251,7 @@
             if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
             if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
             if (profile.custom_hydro_materials != null && typeof profile.custom_hydro_materials === 'object') localProfile.customHydroMaterials = profile.custom_hydro_materials;
+            if (profile.custom_hydro_solutions != null && typeof profile.custom_hydro_solutions === 'object') localProfile.customHydroSolutions = profile.custom_hydro_solutions;
             if (profile.custom_granular_materials != null && typeof profile.custom_granular_materials === 'object') localProfile.customGranularMaterials = profile.custom_granular_materials;
             if (profile.custom_granular_crops != null && typeof profile.custom_granular_crops === 'object') localProfile.customGranularCrops = profile.custom_granular_crops;
             if (profile.custom_amendments != null && Array.isArray(profile.custom_amendments)) {
@@ -333,6 +334,7 @@
         if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
         if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
         if (profile.custom_hydro_materials != null && typeof profile.custom_hydro_materials === 'object') localProfile.customHydroMaterials = profile.custom_hydro_materials;
+        if (profile.custom_hydro_solutions != null && typeof profile.custom_hydro_solutions === 'object') localProfile.customHydroSolutions = profile.custom_hydro_solutions;
         if (profile.custom_granular_materials != null && typeof profile.custom_granular_materials === 'object') localProfile.customGranularMaterials = profile.custom_granular_materials;
         if (profile.custom_granular_crops != null && typeof profile.custom_granular_crops === 'object') localProfile.customGranularCrops = profile.custom_granular_crops;
         if (profile.custom_amendments != null && Array.isArray(profile.custom_amendments)) {

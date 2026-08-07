@@ -1111,6 +1111,14 @@
     }
     .hydro-pref-bar label { display: inline-flex; align-items: center; gap: 4px; color: #2563eb; font-weight: 700; }
     .hydro-pref-bar select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; max-width: min(100%, 280px); }
+    .hydro-solution-picker { margin-left: auto; border: 1px solid #2563eb; color: #1d4ed8; background: #eff6ff; border-radius: 7px; padding: 7px 10px; font-weight: 700; cursor: pointer; }
+    .hydro-solution-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 16px; background: rgba(15,23,42,.55); }
+    .hydro-solution-modal__card { width: min(1100px,100%); max-height: 85vh; overflow: auto; background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 24px 60px rgba(15,23,42,.25); }
+    .hydro-solution-modal__head { display:flex; gap:12px; align-items:center; justify-content:space-between; }
+    .hydro-solution-modal__table { width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; }
+    .hydro-solution-modal__table th,.hydro-solution-modal__table td { padding:8px; border-bottom:1px solid #e2e8f0; text-align:center; white-space:nowrap; }
+    .hydro-solution-modal__table th:first-child,.hydro-solution-modal__table td:first-child { text-align:left; }
+    .hydro-solution-modal__choose { border:0; border-radius:6px; padding:6px 9px; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; }
   </style>
   <script>
     (function () {
@@ -1151,6 +1159,7 @@
         <div class="hydro-card">
           <div class="hydro-card-header">
             <h3>🧪 Diseño de solución nutritiva</h3>
+            <button type="button" class="hydro-solution-picker" id="hydroSolutionPickerBtn">Soluciones nutritivas</button>
             <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;" title="Con CE: arrastra el triángulo (actualiza % meq, meq/L y ppm). Sin CE al arrastrar: reparte 30 meq/L solo en N-P-S y K-Ca-Mg; NH₄⁺ no se autocompleta.">CE + triángulo, o edita <strong>meq/L</strong> / <strong>ppm</strong>. Sin CE: <strong>30 meq/L</strong> en el triángulo; <strong>N-NH₄⁺</strong> aparte.</p>
             <div id="hydroNitrogenSummaryText" class="hydro-n-summary"></div>
           </div>
@@ -1229,14 +1238,14 @@
 
   <script src="assets/fert-formula-engine.js"></script>
   <script src="assets/hydro-fert-aporte-catalog.js?v=20260535"></script>
+  <script src="assets/hydro-solution-catalog.js"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
     /** Orden tablas: aniones (triángulo + Cl) · cationes (triángulo + NH₄) */
     const HYDRO_MEQ_NUTRIENTS = ['N_NO3','P','S','Cl','K','Ca','Mg','N_NH4'];
     const HYDRO_MEQ_CE_PARTICIPANTS = ['N_NO3','P','S','Cl','K','Ca','Mg','N_NH4'];
-    // En la versión gratuita no se muestran micros en ppm.
-    const HYDRO_MICROS = [];
+    const HYDRO_MICROS = ['Fe','Mn','Zn','B','Cu','Mo'];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
 
     function hydroUiT(es, en) {
@@ -1303,7 +1312,7 @@
         id: 'stage_1',
         ce: '0.00',
         meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, Cl: 0, K: 0, Ca: 0, Mg: 0 },
-        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Cl: 0 }
+        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Cl: 0, Fe: 0, Mn: 0, Zn: 0, B: 0, Cu: 0, Mo: 0 }
       };
     }
 
@@ -1325,7 +1334,7 @@
     function hydroNormalizeSaved(raw) {
       if (!raw || typeof raw !== 'object' || !Array.isArray(raw.stages) || !raw.stages.length) return null;
       const meqKeys = ['N_NO3', 'N_NH4', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg'];
-      const ppmKeys = ['N_NO3', 'N_NH4', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg'];
+      const ppmKeys = ['N_NO3', 'N_NH4', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg', 'Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
       const stages = raw.stages.slice(0, 1).map(function (s, i) {
         const ceNum = parseFloat(s && s.ce);
         return {
@@ -1526,6 +1535,47 @@
 
     function hydroGetActiveStage() {
       return hydroState.stages.find(s => s.id === hydroState.activeStageId) || hydroState.stages[0];
+    }
+
+    function hydroOpenSolutionCatalog() {
+      const catalog = window.NpHydroSolutionCatalog;
+      if (!catalog) return;
+      const macroKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
+      const microKeys = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
+      const label = function (key) { return hydroLabelPlain(key); };
+      const rows = catalog.builtIn.map(function (recipe) {
+        return '<tr><td><strong>' + recipe.name + '</strong></td>' +
+          macroKeys.map(function (key) { return '<td>' + (recipe.meq[key] || 0) + '</td>'; }).join('') +
+          microKeys.map(function (key) { return '<td>' + (recipe.ppm[key] || 0) + '</td>'; }).join('') +
+          '<td><button class="hydro-solution-modal__choose" data-hydro-recipe="' + recipe.id + '">Elegir</button></td></tr>';
+      }).join('');
+      const overlay = document.createElement('div');
+      overlay.className = 'hydro-solution-modal';
+      overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
+        '<div class="hydro-solution-modal__head"><div><h2>' + hydroUiT('Catálogo de soluciones nutritivas', 'Nutrient solution catalog') + '</h2><p>' + hydroUiT('Macros en meq/L y micros en ppm.', 'Macros in meq/L and micros in ppm.') + '</p></div><button type="button" data-hydro-catalog-close>×</button></div>' +
+        '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + hydroUiT('Solución', 'Solution') + '</th>' +
+        macroKeys.map(function (key) { return '<th>' + label(key) + '<br>meq/L</th>'; }).join('') +
+        microKeys.map(function (key) { return '<th>' + key + '<br>ppm</th>'; }).join('') + '<th></th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+      overlay.addEventListener('click', function (event) {
+        if (event.target === overlay || event.target.closest('[data-hydro-catalog-close]')) { overlay.remove(); return; }
+        const choose = event.target.closest('[data-hydro-recipe]');
+        if (!choose) return;
+        const recipe = catalog.builtIn.find(function (item) { return item.id === choose.getAttribute('data-hydro-recipe'); });
+        const stage = hydroGetActiveStage();
+        catalog.apply(recipe, stage);
+        stage.ce = hydroComputeCE(stage).toFixed(2);
+        renderHydroMeqTable();
+        renderHydroDerivedTables();
+        renderHydroTriangle();
+        hydroScheduleSave();
+        overlay.remove();
+      });
+      document.body.appendChild(overlay);
+    }
+
+    function hydroRefreshSolutionPickerLabel() {
+      var button = document.getElementById('hydroSolutionPickerBtn');
+      if (button) button.textContent = hydroUiT('Soluciones nutritivas', 'Nutrient solutions');
     }
 
     function hydroComputeMacroPpm(stage) {
@@ -3287,10 +3337,13 @@
         window.NpPrefs.set({ unit_system: unitSelect.value }, { explicit: true });
       });
       switchHydroMainTab(hydroActiveMainTab);
+      hydroRefreshSolutionPickerLabel();
       renderHydroMeqTable();
       renderHydroDerivedTables();
       renderHydroTriangle();
       bindEvents();
+      var catalogButton = document.getElementById('hydroSolutionPickerBtn');
+      if (catalogButton) catalogButton.addEventListener('click', hydroOpenSolutionCatalog);
       bindFertAporteEvents();
       setupTernaryDrag();
     }
@@ -3308,6 +3361,7 @@
       if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
         window.NpFreeNutritionUI.applyLanguage();
       }
+      hydroRefreshSolutionPickerLabel();
       // La dosis almacenada sigue en SI; solo cambia su representación.
       renderFertAporteAll();
       renderHydroMeqTable();

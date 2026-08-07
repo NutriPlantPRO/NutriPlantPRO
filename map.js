@@ -305,9 +305,6 @@ class NutriPlantMap {
     // Configurar eventos
     this.setupEventListeners();
 
-    // Intentar obtener la ubicación del usuario
-    this.getCurrentLocation();
-
     // 🚀 CRÍTICO: NO limpiar ni cargar datos automáticamente aquí
     // El polígono se cargará desde initLocationMap() DESPUÉS de que el mapa esté completamente inicializado
     // Solo limpiar si NO hay proyecto (se verificará en loadProjectLocation)
@@ -1555,6 +1552,18 @@ class NutriPlantMap {
     }
   }
 
+  /**
+   * En Radar, solicita GPS solo después de confirmar que el proyecto no tiene
+   * un predio guardado. Evita centrar inicialmente en el fallback de CDMX.
+   */
+  maybeAutoCenterOnUserLocation(projectId) {
+    if (!projectId || !this.map) return;
+    window.__npRadarAutoGeoDone = window.__npRadarAutoGeoDone || {};
+    if (window.__npRadarAutoGeoDone[projectId]) return;
+    window.__npRadarAutoGeoDone[projectId] = true;
+    this.getCurrentLocation();
+  }
+
   addUserLocationMarker(location) {
     // Crear marcador de ubicación actual
     this.userLocationMarker = new google.maps.Marker({
@@ -2254,6 +2263,8 @@ class NutriPlantMap {
         null,
         '📍 Haz clic en el mapa para trazar tu parcela'
       );
+      // Solo para proyectos nuevos/sin parcela: centrar una vez en GPS.
+      this.maybeAutoCenterOnUserLocation(currentProject.id);
       return null;
     }
     

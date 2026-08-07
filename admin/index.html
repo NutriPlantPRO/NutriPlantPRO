@@ -18,6 +18,9 @@
     <script src="../assets/np-lab-type-configs.js?v=20260805a"></script>
     <script src="../assets/np-analysis-compare.js?v=20260805c"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
+    <script src="../assets/hydro-solution-catalog.js"></script>
+    <script src="../assets/hydro-acid-legend.js"></script>
+    <script src="../assets/np-fertilizer-price.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
@@ -2216,7 +2219,8 @@
          */
         async function adminFetchAllProfilesWithSelectFallback(client) {
             var tiers = [
-                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly',
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_hydro_solutions, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly',
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_hydro_solutions, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project',
                 'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project',
                 'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login'
             ];
@@ -2372,6 +2376,7 @@
                         isAdmin: isAdmin,
                         custom_ferti_materials: p.custom_ferti_materials,
                         custom_hydro_materials: p.custom_hydro_materials,
+                        custom_hydro_solutions: p.custom_hydro_solutions,
                         custom_granular_materials: p.custom_granular_materials,
                         custom_granular_crops: p.custom_granular_crops,
                         custom_ferti_crops: p.custom_ferti_crops,
@@ -5854,6 +5859,7 @@
                                 // Catálogos en la nube (para "Catálogos guardados en la nube" en detalle de usuario)
                                 if (cloudUser.custom_ferti_materials != null) userData.custom_ferti_materials = cloudUser.custom_ferti_materials;
                                 if (cloudUser.custom_hydro_materials != null) userData.custom_hydro_materials = cloudUser.custom_hydro_materials;
+                                if (cloudUser.custom_hydro_solutions != null) userData.custom_hydro_solutions = cloudUser.custom_hydro_solutions;
                                 if (cloudUser.custom_granular_materials != null) userData.custom_granular_materials = cloudUser.custom_granular_materials;
                                 if (cloudUser.custom_granular_crops != null) userData.custom_granular_crops = cloudUser.custom_granular_crops;
                                 if (cloudUser.custom_ferti_crops != null) userData.custom_ferti_crops = cloudUser.custom_ferti_crops;
@@ -5929,6 +5935,7 @@
                             isAdmin: isAdmin,
                             custom_ferti_materials: cu.custom_ferti_materials,
                             custom_hydro_materials: cu.custom_hydro_materials,
+                            custom_hydro_solutions: cu.custom_hydro_solutions,
                             custom_granular_materials: cu.custom_granular_materials,
                             custom_granular_crops: cu.custom_granular_crops,
                             custom_ferti_crops: cu.custom_ferti_crops,
@@ -5977,10 +5984,17 @@
                 if (!hasUserLocation(out) && hasUserLocation(other)) out.location = other.location;
                 if (out.isAdmin && !out.password) out.password = other.password || 'npja1502';
                 // Preservar catálogos de la nube (el que tenga datos gana)
-                const catKeys = ['custom_ferti_materials', 'custom_hydro_materials', 'custom_granular_materials', 'custom_granular_crops', 'custom_ferti_crops', 'custom_amendments'];
+                const catKeys = ['custom_ferti_materials', 'custom_hydro_materials', 'custom_hydro_solutions', 'custom_granular_materials', 'custom_granular_crops', 'custom_ferti_crops', 'custom_amendments'];
+                function catalogHasData(v) {
+                    if (v == null) return false;
+                    if (Array.isArray(v)) return v.length > 0;
+                    if (typeof v === 'object' && Array.isArray(v.items)) return v.items.length > 0;
+                    if (typeof v === 'object') return Object.keys(v).length > 0;
+                    return false;
+                }
                 catKeys.forEach(function(k) {
-                    var ov = (out[k] != null && Array.isArray(out[k]) && out[k].length) ? out[k] : null;
-                    var oth = (other[k] != null && Array.isArray(other[k]) && other[k].length) ? other[k] : null;
+                    var ov = catalogHasData(out[k]) ? out[k] : null;
+                    var oth = catalogHasData(other[k]) ? other[k] : null;
                     if (oth && !ov) out[k] = other[k];
                     else if (ov) out[k] = chosen[k];
                 });
@@ -12332,6 +12346,24 @@
             }
 
             const reportOwnerUserId = resolveProjectOwnerUserId(project);
+            const adminPriceApi = window.NpFertilizerPrice || null;
+            const adminPriceUser = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users))
+                ? window._adminCloudCache.users.find(function(u) { return String(u && (u.id || u.userId)) === String(reportOwnerUserId); })
+                : null;
+            function adminProgramCostLabel(costUsdPerHa, batch) {
+                if (!adminPriceApi) return (parseFloat(costUsdPerHa) || 0).toFixed(2) + (batch ? ' USD' : ' USD/ha');
+                const shown = batch ? costUsdPerHa : adminPriceApi.toDisplayAreaCost(costUsdPerHa);
+                return adminPriceApi.formatMoney(shown) + ' ' + (batch ? 'USD' : adminPriceApi.costAreaUnitLabel());
+            }
+            function adminResolveProgramPrice(materialId, kind, customItems) {
+                if (!adminPriceApi) return 0;
+                const blobKey = kind === 'hydro' ? 'custom_hydro_materials' : (kind === 'ferti' ? 'custom_ferti_materials' : 'custom_granular_materials');
+                const blob = (adminPriceUser && adminPriceUser[blobKey]) || {};
+                const overrides = kind === 'granular'
+                    ? (blob.__priceOverrides || {})
+                    : (blob.priceOverrides || {});
+                return adminPriceApi.resolvePriceUsdPerTonne(materialId, { customItems: customItems || [], priceOverrides: overrides });
+            }
             const reportsStorageKey = reportOwnerUserId ? `nutriplant_reports_${reportOwnerUserId}_${projectId}` : null;
             let generatedReports = [];
             // Primero: reportes desde la nube (tabla reports)
@@ -13102,9 +13134,21 @@
                     programSummary.requerido[n] = display(req);
                     programSummary.diferencia[n] = display(diff);
                 });
+                const adminGranularCustomBlob = (adminPriceUser && adminPriceUser.custom_granular_materials) || {};
+                const adminGranularCustomItems = Object.keys(adminGranularCustomBlob).filter(k => k !== '__priceOverrides').map(name => ({
+                    id: name, name: name, priceUsdPerTonne: adminGranularCustomBlob[name] && adminGranularCustomBlob[name].priceUsdPerTonne
+                }));
+                const granularProgramCostUsdPerHa = (Array.isArray(granularProgram.applications) ? granularProgram.applications : []).reduce((programCost, app) => {
+                    return programCost + (Array.isArray(app.materials) ? app.materials.reduce((appCost, mat) => {
+                        const kgHa = (parseFloat(app.doseKgHa) || 0) * (parseFloat(mat.percentage) || 0) / 100;
+                        const price = adminResolveProgramPrice(mat.name, 'granular', adminGranularCustomItems);
+                        return appCost + (adminPriceApi ? adminPriceApi.costUsdPerHaFromKgHa(kgHa, price) : 0);
+                    }, 0) : 0);
+                }, 0);
                 html += `
                     <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid #bfdbfe;">
                         <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px; font-weight: 600;">🌱 Programa Granular ${programIsElemental ? '<span style="color: #10b981; font-size: 14px; font-weight: normal;">(Modo Elemental)</span>' : '<span style="color: #64748b; font-size: 14px; font-weight: normal;">(Modo Óxido)</span>'}</h4>
+                        <div style="margin:0 0 12px;padding:9px 11px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;color:#166534;font-weight:700;">💲 Costo total: ${adminProgramCostLabel(granularProgramCostUsdPerHa, false)}</div>
                 `;
                 
                 html += `
@@ -13544,6 +13588,14 @@
                 const byId = new Map(materials.map(m => [m.id, m]));
                 const customItems = project?.sections?.fertirriego?.customMaterials?.items || project?.fertirriego?.customMaterials?.items || project?.fertiCustomMaterials?.items || project?.fertirriegoCustomMaterials?.items || [];
                 const customById = new Map((Array.isArray(customItems) ? customItems : []).filter(m => m && m.id).map(m => [m.id, m]));
+                const fertiProgramCostUsdPerHa = progColumns.reduce((total, column) => {
+                    const material = byId.get(column.materialId) || customById.get(column.materialId) || {};
+                    const amount = weeks.reduce((sum, week) => sum + (parseFloat(week?.kgByCol?.[column.id]) || 0), 0);
+                    const productKg = String(material.unit || '').toUpperCase() === 'L' && (parseFloat(material.density) || 0) > 0
+                        ? amount * parseFloat(material.density) : amount;
+                    const price = adminResolveProgramPrice(column.materialId, 'ferti', Array.isArray(customItems) ? customItems : []);
+                    return total + (adminPriceApi ? adminPriceApi.costUsdPerHaFromKgHa(productKg, price) : 0);
+                }, 0);
                 function adminFertiColumnName(c) {
                     const explicit = (c && (c.name || c.label)) ? String(c.name || c.label).trim() : '';
                     if (explicit) return explicit;
@@ -13756,6 +13808,7 @@
                             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;margin-bottom:10px;">
                                 <div><strong>${fertirriegoProgram.timeUnit === 'mes' ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
                                 <div><strong>Dosis Total Kg/Ha:</strong> ${formatAdminValue('N', totalDose)}</div>
+                                <div><strong>💲 Costo total:</strong> ${adminProgramCostLabel(fertiProgramCostUsdPerHa, false)}</div>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong style="color:#1e293b;font-size:13px;">💡 Aporte del programa de nutrición (Kg/Ha):</strong>
@@ -14015,6 +14068,20 @@
                                 return `<div><strong>${adminHydroLabel(n)}:</strong> ${v.toFixed(2)}</div>`;
                             }).join('')}
                         </div>
+                        ${(function () {
+                            if (!window.NpHydroAcidLegend || typeof window.NpHydroAcidLegend.resolveAndBuild !== 'function') return '';
+                            const agua = Array.isArray(project.aguaAnalyses) ? project.aguaAnalyses
+                                : (Array.isArray(project.agua_analyses) ? project.agua_analyses : []);
+                            return window.NpHydroAcidLegend.resolveAndBuild({
+                                lang: 'es',
+                                hidroponia: hidroponia,
+                                aguaAnalyses: agua,
+                                hydroVolumeM3: hydroVolM3 != null ? hydroVolM3 : hidroponia.volumeWaterM3,
+                                classPrefix: 'hydro',
+                                admin: true,
+                                wrap: true
+                            }) || '';
+                        })()}
                     </div>
                 `;
             }
@@ -14051,6 +14118,13 @@
                     return f.materialId || '—';
                 }
                 if (hydroFerts.length > 0) {
+                    const hydroBatchCostUsd = hydroFerts.reduce((sum, f) => {
+                        const totals = typeof adminHydroComputeDoseAndKg === 'function'
+                            ? adminHydroComputeDoseAndKg(f, hydroVolM3, adminHydroMats)
+                            : { kg: 0 };
+                        const price = adminResolveProgramPrice(f.materialId, 'hydro', Array.isArray(customItems) ? customItems : []);
+                        return sum + (adminPriceApi ? adminPriceApi.costUsdFromKg(parseFloat(totals.kg) || 0, price) : 0);
+                    }, 0);
                     const contribHeaderCells = HYDRO_PPM_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">${adminHydroLabel(n)}</th>`).join('');
                     const fertRows = hydroFerts.map(f => {
                         const name = adminHydroFertName(f);
@@ -14069,6 +14143,7 @@
                     html += `
                         <div style="margin-bottom: 16px;">
                             <strong style="color: #1e293b; font-size: 14px;">🧮 Fertilizantes</strong>
+                            <span style="margin-left:10px;padding:4px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:999px;color:#166534;font-size:12px;font-weight:700;">💲 Costo total: ${adminProgramCostLabel(hydroBatchCostUsd, true)}</span>
                             <p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Aporte en ppm de cada elemento en la solución final. En "Total producto", sólidos en kg y líquidos (ácidos) en L.</p>
                             <div style="overflow-x: auto; margin-top: 8px;">
                                 <table style="width:100%; border-collapse: collapse; font-size: 13px;">
@@ -14980,9 +15055,33 @@
         // Orden de aportes como en el panel del usuario (Fertirriego, Granular, Cultivos, Enmiendas)
         var ADMIN_FERTI_ORDER = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         var ADMIN_HYDRO_ORDER = ['N_NH4','N_NO3','P','S','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo'];
+        var ADMIN_HYDRO_MEQ_ORDER = ['N_NH4','N_NO3','P','S','K','Ca','Mg'];
+        var ADMIN_HYDRO_MICRO_ORDER = ['Fe','Mn','Zn','B','Cu','Mo'];
         var ADMIN_EXTRACTION_ORDER = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         var ADMIN_GRANULAR_ORDER = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         var ADMIN_AMENDMENT_ORDER = ['formula','formula_quimica','peso_molecular','molecular_weight','k','ca','mg','so4','co3','h2o','si'];
+
+        function formatHydroSolutionRecipe(recipe) {
+            if (!recipe || typeof recipe !== 'object') return '<p style="margin:0;font-size:12px;color:#64748b;">—</p>';
+            var meq = recipe.meq || {};
+            var ppm = recipe.ppm || {};
+            function rowTable(title, keys, source, unit) {
+                var cells = keys.map(function(k) {
+                    var v = source[k];
+                    if (v == null || v === '') v = 0;
+                    return '<th style="padding:6px 8px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;white-space:nowrap;">' + escapeHtml(k) + ' ' + unit + '</th>';
+                }).join('');
+                var vals = keys.map(function(k) {
+                    var v = source[k];
+                    if (v == null || v === '') v = 0;
+                    return '<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:500;">' + escapeHtml(String(v)) + '</td>';
+                }).join('');
+                return '<p style="margin:8px 0 4px;font-size:12px;font-weight:600;color:#475569;">' + title + '</p>' +
+                    '<div style="overflow-x:auto;"><table style="font-size:11px;border-collapse:collapse;min-width:100%;"><thead><tr>' + cells + '</tr></thead><tbody><tr>' + vals + '</tr></tbody></table></div>';
+            }
+            var sourceLabel = recipe.source ? ('<p style="margin:0 0 4px;font-size:12px;color:#64748b;">Fuente: ' + escapeHtml(String(recipe.source)) + '</p>') : '';
+            return sourceLabel + rowTable('Macros (meq/L)', ADMIN_HYDRO_MEQ_ORDER, meq, 'meq/L') + rowTable('Micros (ppm)', ADMIN_HYDRO_MICRO_ORDER, ppm, 'ppm');
+        }
 
         // Formatear composición (nutrientes, extracción, etc.) como tabla legible, con orden fijo si se pasa keyOrder
         function formatComposition(obj, skipKeys, keyOrder, extractionOrder) {
@@ -15080,12 +15179,55 @@
             }
 
             // Fertirriego – fertilizantes (orden: N_NO3, N_NH4, P2O5, K2O, CaO, MgO, S, SO4, Fe, Mn, B, Zn, Cu, Mo, SiO2)
-            var fertiItems = (u.custom_ferti_materials && u.custom_ferti_materials.items) ? u.custom_ferti_materials.items : (Array.isArray(u.custom_ferti_materials) ? u.custom_ferti_materials : []);
-            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">🌱 Fertilizantes (Fertirriego)</summary><div style="margin-top:8px;">' + listWithComposition(fertiItems, function(x) { return formatComposition(x, null, ADMIN_FERTI_ORDER); }) + '</div></details>';
+            var fertiBlob = u.custom_ferti_materials && typeof u.custom_ferti_materials === 'object' ? u.custom_ferti_materials : {};
+            var fertiItems = Array.isArray(fertiBlob.items) ? fertiBlob.items : (Array.isArray(u.custom_ferti_materials) ? u.custom_ferti_materials : []);
+            var fertiPriceOv = fertiBlob.priceOverrides || {};
+            var hydroBlob = u.custom_hydro_materials && typeof u.custom_hydro_materials === 'object' ? u.custom_hydro_materials : {};
+            var hydroItems = Array.isArray(hydroBlob.items) ? hydroBlob.items : (Array.isArray(u.custom_hydro_materials) ? u.custom_hydro_materials : []);
+            var hydroPriceOv = hydroBlob.priceOverrides || {};
+            function adminPriceLine(item) {
+                var p = parseFloat(item && item.priceUsdPerTonne);
+                if (!Number.isFinite(p) || p <= 0) return '';
+                return '<p style="margin:6px 0 0;font-size:12px;color:#0f766e;"><strong>Precio:</strong> ' + p.toFixed(2) + ' USD/t</p>';
+            }
+            function adminPriceOverridesBlock(map, title) {
+                var keys = map && typeof map === 'object' ? Object.keys(map).filter(function(k) { return parseFloat(map[k]) > 0; }) : [];
+                if (!keys.length) return '';
+                var rows = keys.map(function(k) {
+                    return '<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #e2e8f0;"><strong>' + escapeHtml(k) + '</strong>: ' + Number(map[k]).toFixed(2) + ' USD/t</div>';
+                }).join('');
+                return '<div style="margin-top:10px;padding:8px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:6px;"><strong style="font-size:12px;color:#115e59;">' + title + '</strong>' + rows + '</div>';
+            }
+            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">🌱 Fertilizantes (Fertirriego)</summary><div style="margin-top:8px;">' +
+                listWithComposition(fertiItems, function(x) { return formatComposition(x, null, ADMIN_FERTI_ORDER) + adminPriceLine(x); }) +
+                adminPriceOverridesBlock(fertiPriceOv, 'Precios precargados (USD/t)') +
+                '</div></details>';
 
             // Hidroponía – fertilizantes (orden: N_NH4, N_NO3, P, S, K, Ca, Mg, Fe, Mn, B, Zn, Cu, Mo)
-            var hydroItems = (u.custom_hydro_materials && u.custom_hydro_materials.items) ? u.custom_hydro_materials.items : (Array.isArray(u.custom_hydro_materials) ? u.custom_hydro_materials : []);
-            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">💧 Fertilizantes (Hidroponía)</summary><div style="margin-top:8px;">' + listWithComposition(hydroItems, function(x) { return formatComposition(x, null, ADMIN_HYDRO_ORDER); }) + '</div></details>';
+            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">💧 Fertilizantes (Hidroponía)</summary><div style="margin-top:8px;">' +
+                listWithComposition(hydroItems, function(x) { return formatComposition(x, null, ADMIN_HYDRO_ORDER) + adminPriceLine(x); }) +
+                adminPriceOverridesBlock(hydroPriceOv, 'Precios precargados (USD/t)') +
+                '</div></details>';
+
+            // Soluciones nutritivas de literatura (catálogo fijo de la app)
+            var litSolutions = (window.NpHydroSolutionCatalog && Array.isArray(window.NpHydroSolutionCatalog.builtIn))
+                ? window.NpHydroSolutionCatalog.builtIn
+                : [];
+            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">🧪 Soluciones nutritivas (literatura)</summary><div style="margin-top:8px;">' +
+                listWithComposition(litSolutions, function(x) {
+                    return formatHydroSolutionRecipe(x);
+                }) +
+                '</div></details>';
+
+            // Soluciones nutritivas propias del usuario
+            var hydroSolutions = (u.custom_hydro_solutions && u.custom_hydro_solutions.items)
+                ? u.custom_hydro_solutions.items
+                : (Array.isArray(u.custom_hydro_solutions) ? u.custom_hydro_solutions : []);
+            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">🧪 Soluciones nutritivas (propias del usuario)</summary><div style="margin-top:8px;">' +
+                listWithComposition(hydroSolutions, function(x) {
+                    return formatHydroSolutionRecipe(x);
+                }) +
+                '</div></details>';
 
             // Nutrición granular – materias primas (orden: N, P2O5, K2O, CaO, MgO, S, SO4, Fe, Mn, B, Zn, Cu, Mo, SiO2)
             var granMat = (u.custom_granular_materials && typeof u.custom_granular_materials === 'object') ? u.custom_granular_materials : {};
@@ -15803,8 +15945,9 @@
                 var isDem =
                     demSmooth === true ||
                     /pendiente|altura|slope|elev|relieve|dem/i.test(titleStr);
+                var isSlope = /pendiente|slope/i.test(titleStr);
                 img.className = isDem ? 'np-dem-smooth-img' : '';
-                img.style.filter = isDem ? 'blur(1.35px)' : '';
+                img.style.filter = isDem ? (isSlope ? 'blur(5px) contrast(1.12) saturate(1.15)' : 'blur(1.2px)') : '';
                 img.style.imageRendering = 'auto';
             }
             if (t) t.textContent = title || '';
@@ -16732,7 +16875,7 @@
                 ? '<div style="font-size:11px;color:#a8a29e;margin-bottom:10px;">Generado: ' + esc(new Date(meta.generated_at).toLocaleString('es-MX')) + ' · Copernicus DEM ~30 m · 0 créditos Radar</div>'
                 : '<div style="font-size:11px;color:#a8a29e;margin-bottom:10px;">Copernicus DEM ~30 m · 0 créditos Radar</div>';
 
-            function card(title, url, bar, lowL, highL, stats, note) {
+            function card(title, url, bar, lowL, highL, stats, note, isSlope) {
                 if (!url) return '';
                 var safeUrl = String(url).replace(/"/g, '&quot;');
                 return '<div style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:10px;">' +
@@ -16740,7 +16883,7 @@
                     '<button type="button" onclick="openAdminRadarLightbox(' +
                     JSON.stringify(String(url)) + ',' + JSON.stringify(title) + ',' + JSON.stringify(stats || note || '') +
                     ',true)" style="display:block;width:100%;padding:0;border:none;background:transparent;cursor:zoom-in;">' +
-                    '<img class="np-dem-smooth-img" src="' + safeUrl + '" alt="' + esc(title) + '" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#fafaf9;border:1px solid #e7e5e4;image-rendering:auto;filter:blur(1.15px);" />' +
+                    '<img class="np-dem-smooth-img' + (isSlope ? ' np-dem-smooth-slope' : '') + '" src="' + safeUrl + '" alt="' + esc(title) + '" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#fafaf9;border:1px solid #e7e5e4;image-rendering:auto;filter:' + (isSlope ? 'blur(5px) contrast(1.12) saturate(1.15)' : 'blur(1.2px)') + ';" />' +
                     '</button>' +
                     '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px;font-size:10px;color:#78716c;">' +
                     '<span style="font-weight:700;">' + esc(lowL) + '</span>' +
@@ -16766,7 +16909,8 @@
                 'Más plano',
                 'Más inclinado',
                 slopeStats,
-                'Mismo color ≈ misma inclinación (no es altura).'
+                'Mismo color ≈ misma inclinación (no es altura).',
+                true
             );
             if (!elevCard && !slopeCard) {
                 return '<div style="font-size:12px;color:#78716c;">Relieve registrado pero sin URL de imagen. El usuario puede regenerarlo con «Generar relieve».</div>';

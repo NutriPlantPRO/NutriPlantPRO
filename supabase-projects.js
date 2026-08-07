@@ -1014,6 +1014,31 @@
       } catch (e) { console.warn('⚠️ syncUserCustomHydroMaterials:', e); }
     },
 
+    fetchUserCustomHydroSolutions: async function(userId) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return null;
+      const client = getClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client.from('profiles').select('custom_hydro_solutions').eq('id', userId).single();
+        if (error || !data) return null;
+        return data.custom_hydro_solutions && typeof data.custom_hydro_solutions === 'object' ? data.custom_hydro_solutions : null;
+      } catch (e) { return null; }
+    },
+
+    syncUserCustomHydroSolutions: async function(userId, customHydroSolutions) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return;
+      const client = getClient();
+      if (!client) return;
+      try {
+        const payload = customHydroSolutions && typeof customHydroSolutions === 'object' ? customHydroSolutions : { items: [] };
+        const { error } = await client.from('profiles').update({
+          custom_hydro_solutions: payload,
+          updated_at: new Date().toISOString()
+        }).eq('id', userId);
+        if (error) console.warn('⚠️ Supabase sync soluciones hidropónicas:', error.message);
+      } catch (e) { console.warn('⚠️ syncUserCustomHydroSolutions:', e); }
+    },
+
     /** Biblioteca de curvas extracción/etapa del usuario (profiles.extraccion_etapa_presets) */
     fetchUserExtraccionEtapaPresets: async function(userId) {
       if (!userId || !UUID_REGEX.test(String(userId))) return null;
@@ -1416,6 +1441,20 @@
   window.nutriplantFetchCustomHydroMaterialsFromCloud = function(userId) {
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserCustomHydroMaterials) {
       return window.nutriplantSupabaseProjects.fetchUserCustomHydroMaterials(userId);
+    }
+    return Promise.resolve(null);
+  };
+
+  window.nutriplantSyncCustomHydroSolutionsToCloud = function(userId, solutions) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncUserCustomHydroSolutions) {
+      return window.nutriplantSupabaseProjects.syncUserCustomHydroSolutions(userId, solutions);
+    }
+    return Promise.resolve();
+  };
+
+  window.nutriplantFetchCustomHydroSolutionsFromCloud = function(userId) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserCustomHydroSolutions) {
+      return window.nutriplantSupabaseProjects.fetchUserCustomHydroSolutions(userId);
     }
     return Promise.resolve(null);
   };

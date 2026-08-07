@@ -3893,6 +3893,72 @@ html.embed-login body {
   font-size: 1.1rem;
 }
 
+.hydro-water-header-row,
+.ferti-water-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ferti-water-header-row {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ferti-water-header-row h4 {
+  margin: 0;
+}
+
+.hydro-import-water-select {
+  max-width: min(100%, 240px);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid #0ea5e9;
+  color: #0369a1;
+  background: #f0f9ff;
+  border-radius: 7px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.hydro-acid-summary {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  background: #f0f9ff;
+  color: #0c4a6e;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.hydro-acid-summary:empty {
+  display: none;
+}
+
+.hydro-acid-warning {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.hydro-volume-match-note {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.hydro-volume-match-note--ok {
+  color: #166534;
+}
+
+.hydro-volume-match-note--warn {
+  color: #b45309;
+}
+
 .hydro-table-wrap {
   width: 100%;
 }
@@ -7711,6 +7777,58 @@ html.embed-login body {
 .requirement-real-row td:first-child {
   background: #10b981;
   color: white;
+}
+
+.req-steps-guide {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 100%);
+  border: 1px solid #bae6fd;
+}
+
+.req-steps-guide__title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0369a1;
+  letter-spacing: 0.01em;
+}
+
+.req-steps-guide__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.req-steps-guide__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1 1 200px;
+  min-width: min(100%, 200px);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #334155;
+  font-weight: 500;
+}
+
+.req-steps-guide__n {
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: #0ea5e9;
+  box-shadow: 0 1px 2px rgba(3, 105, 161, 0.2);
 }
 
 /* ===== MODAL STYLES FOR CUSTOM CROP ===== */

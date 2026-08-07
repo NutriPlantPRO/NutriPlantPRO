@@ -1017,7 +1017,12 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
-                  <h4>${ft('water_supply', '💧 Aporte por agua')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
+                  <div class="ferti-water-header-row">
+                    <h4>${ft('water_supply', '💧 Aporte por agua')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
+                    <select id="fertiImportWaterSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_analysis_title', 'Traer kg/ha desde un análisis de agua guardado en este proyecto')}">
+                      <option value="">${ft('bring_from_analysis', 'Traer de análisis')}</option>
+                    </select>
+                  </div>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelN">N-NO₃⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
@@ -1595,6 +1600,10 @@ function sectionTemplate(name) {
                   <span class="summary-label">${granularT('total_dose', 'Dosis Total')} (${granularUnit('dose_mass_area', 'kg/ha')}):</span>
                   <span class="summary-value" id="totalDoseKgHa">0</span>
                 </div>
+                <div class="summary-item">
+                  <span class="summary-label">${granularT('total_cost', 'Costo total')} (<span id="granularTotalCostUnit">USD/ha</span>):</span>
+                  <span class="summary-value" id="granularTotalCost">0.00</span>
+                </div>
               </div>
               
               <div class="summary-nutrients">
@@ -1718,7 +1727,7 @@ function sectionTemplate(name) {
         <div class="hydroponia-tabs">
           <button class="tab-button active" data-tab="hidro-solucion">
             <span class="tab-icon">🧪</span>
-            <span class="tab-text">${hydroT('Solución por etapa', 'Solution by stage')}</span>
+            <span class="tab-text">${hydroT('Solución nutritiva', 'Nutrient solution')}</span>
           </button>
           <button class="tab-button" data-tab="hidro-calculo">
             <span class="tab-icon">⚙️</span>
@@ -1730,7 +1739,7 @@ function sectionTemplate(name) {
           <div class="tab-content active" id="hidro-solucion">
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>🧪 ${hydroT('Solución nutritiva por etapa', 'Nutrient solution by stage')}</h3>
+                <h3>🧪 ${hydroT('Solución nutritiva', 'Nutrient solution')}</h3>
                 
                 <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
               </div>
@@ -1758,17 +1767,23 @@ function sectionTemplate(name) {
             <div class="hydro-card">
               <div class="hydro-card-header">
                 <h3>🎯 ${hydroT('Objetivo de solución (ppm)', 'Solution target (ppm)')}</h3>
-                <div class="hydro-muted">${hydroT('Se toma de la etapa seleccionada en la pestaña anterior.', 'Uses the stage selected in the previous tab.')}</div>
+                <div class="hydro-muted">${hydroT('Se toma de la solución nutritiva de la pestaña anterior.', 'Uses the nutrient solution from the previous tab.')}</div>
               </div>
               <div id="hydroObjectiveGrid" class="hydro-grid"></div>
             </div>
 
             <div class="hydro-card">
               <div class="hydro-card-header">
-                <h3>💧 ${hydroT('Análisis de agua (ppm)', 'Water analysis (ppm)')}</h3>
+                <div class="hydro-water-header-row">
+                  <h3>💧 ${hydroT('Análisis de agua (ppm)', 'Water analysis (ppm)')}</h3>
+                  <select id="hydroImportWaterSelect" class="hydro-input hydro-import-water-select" title="${hydroT('Traer ppm desde un análisis de agua guardado en este proyecto', 'Load ppm from a water analysis saved in this project')}">
+                    <option value="">${hydroT('Traer de análisis', 'Bring from analysis')}</option>
+                  </select>
+                </div>
                 <div class="hydro-muted">${hydroT('Ingresa los aportes del agua para calcular el faltante.', 'Enter water contributions to calculate the remaining requirement.')}</div>
               </div>
               <div id="hydroWaterGrid" class="hydro-grid"></div>
+              <div id="hydroAcidSummary" class="hydro-acid-summary"></div>
             </div>
 
             <div class="hydro-card">
@@ -1783,6 +1798,7 @@ function sectionTemplate(name) {
                 <h3>🧮 ${hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)')}</h3>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                   <button class="btn btn-secondary btn-sm" id="hydroAddFertBtn">➕ ${hydroT('Agregar fertilizante', 'Add fertilizer')}</button>
+                  <button class="btn btn-info btn-sm" id="hydroAutoCalculateBtn" type="button" title="${hydroT('Genera una propuesta automática con los requerimientos, el agua y el ácido seleccionado', 'Generates an automatic proposal from requirements, water, and the selected acid')}">✨ ${hydroT('Calcular solución automática', 'Calculate solution automatically')}</button>
                   <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="${hydroT('Ver, editar o eliminar fertilizantes personalizados', 'View, edit, or delete custom fertilizers')}">${hydroT('Gestionar catálogo de fertilizantes', 'Manage fertilizer catalog')}</button>
                 </div>
               </div>
@@ -9007,12 +9023,14 @@ function getRadarRequestIdForReport() {
 /**
  * Convierte URL firmada de Radar a data URL compacta para PDF.
  * RGB a veces falla a medias en impresión si el PNG es muy grande: se redimensiona a JPEG.
+ * Relieve DEM conserva PNG para no introducir bloques JPEG en las capas suavizadas.
  */
 async function reportImageUrlToDataUrl(url, opts) {
   if (!url || typeof url !== 'string') return null;
   opts = opts || {};
   const maxEdge = Math.max(80, Number(opts.maxEdge) || 640);
   const quality = opts.quality != null ? Number(opts.quality) : 0.84;
+  const mimeType = opts.mimeType === 'image/png' ? 'image/png' : 'image/jpeg';
   function blobToDataUrl(blob) {
     return new Promise(function (resolve, reject) {
       const reader = new FileReader();
@@ -9034,7 +9052,7 @@ async function reportImageUrlToDataUrl(url, opts) {
     ctx.fillRect(0, 0, dw, dh);
     draw(ctx, dw, dh);
     try {
-      return canvas.toDataURL('image/jpeg', quality);
+      return canvas.toDataURL(mimeType, mimeType === 'image/jpeg' ? quality : undefined);
     } catch (e) {
       return null;
     }
@@ -9172,7 +9190,9 @@ async function fetchRadarImagesDataUrlsForReport() {
     const demUrl = demInfo && demInfo.dem_signed_url ? demInfo.dem_signed_url : null;
     const elevUrl = demInfo && demInfo.elev_signed_url ? demInfo.elev_signed_url : null;
     if (demUrl || elevUrl) {
-      const slopeOpts = { maxEdge: 720, quality: 0.88 };
+      // DEM ya viene suavizado desde servidor; mantener PNG y tamaño completo evita
+      // la pixelación que introducía la recompresión JPEG del PDF.
+      const slopeOpts = { maxEdge: 1024, mimeType: 'image/png' };
       const [slopeDu, elevDu] = await Promise.all([
         demUrl ? reportImageUrlToDataUrl(demUrl, slopeOpts) : Promise.resolve(null),
         elevUrl ? reportImageUrlToDataUrl(elevUrl, slopeOpts) : Promise.resolve(null)
@@ -16628,7 +16648,7 @@ function createSectionHTML(sectionId, chartImages, reportLanguage, reportUnitSys
       html += createAmendmentsSectionHTML(lang);
       break;
     case 'fertigation':
-      html += createFertigationSectionHTML(chartImages, lang);
+      html += createFertigationSectionHTML(chartImages, lang, reportUnitSystem);
       break;
     case 'analysis':
       html += createAnalysisSectionHTML();
@@ -16907,7 +16927,9 @@ function createLocationDemMapHTML(demSlope, rt) {
     const statsLine = statsArr.length
       ? `<div class="report-note-inline" style="margin-top:6px;">${statsArr.join(' · ')}</div>`
       : '';
-    const blurPx = softBlur ? '2.2px' : '1.1px';
+    // Igualar la pendiente al suavizado del Dashboard: el DEM es ~30 m y sin
+    // este blur los píxeles de la grilla se marcan demasiado al imprimir.
+    const blurPx = softBlur ? '5px' : '1.2px';
     const slopeCls = softBlur ? ' np-dem-smooth-slope' : '';
     return `
       <div class="report-keep-together" style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:8px;">
@@ -18073,6 +18095,37 @@ function createGranularSectionHTML(reportLanguage) {
   });
 
   const applications = Array.isArray(program.applications) ? program.applications : [];
+  const priceApi = window.NpFertilizerPrice || null;
+  const priceUnitSystem = priceApi ? priceApi.getUnitSystem() : 'metric';
+  const priceLabels = priceApi ? priceApi.labels(reportLang, priceUnitSystem) : {
+    price: rt('Precio', 'Price'), priceUnit: 'USD/t', cost: rt('Costo', 'Cost'),
+    totalCost: rt('Costo total', 'Total cost'), costAreaUnit: 'USD/ha'
+  };
+  let granularPriceOverrides = {};
+  let granularCustomPriceItems = [];
+  try {
+    const uid = localStorage.getItem('nutriplant_user_id');
+    const profile = uid ? JSON.parse(localStorage.getItem('nutriplant_user_' + uid) || '{}') : {};
+    const custom = profile.customGranularMaterials || {};
+    granularPriceOverrides = (profile.granularPriceOverrides || custom.__priceOverrides || {});
+    granularCustomPriceItems = Object.keys(custom).filter(k => k !== '__priceOverrides').map(name => ({
+      id: name, name: name, priceUsdPerTonne: custom[name] && custom[name].priceUsdPerTonne
+    }));
+  } catch (e) {}
+  function granularReportPrice(name) {
+    return priceApi ? priceApi.resolvePriceUsdPerTonne(name, {
+      customItems: granularCustomPriceItems, priceOverrides: granularPriceOverrides
+    }) : 0;
+  }
+  function granularReportMaterialCost(app, material) {
+    const kgHa = toNumber(app && app.doseKgHa) * toNumber(material && material.percentage) / 100;
+    return priceApi ? priceApi.costUsdPerHaFromKgHa(kgHa, granularReportPrice(material && material.name)) : 0;
+  }
+  function granularReportAreaCost(cost) {
+    const shown = priceApi ? priceApi.toDisplayAreaCost(cost, priceUnitSystem) : cost;
+    return (priceApi ? priceApi.formatMoney(shown) : toNumber(shown).toFixed(2)) + ' ' + priceLabels.costAreaUnit;
+  }
+  const granularProgramCostUsdPerHa = applications.reduce((total, app) => total + (Array.isArray(app.materials) ? app.materials.reduce((sum, material) => sum + granularReportMaterialCost(app, material), 0) : 0), 0);
   const totalProgram = {};
   NUTRIENTS.forEach(nutrient => { totalProgram[nutrient] = 0; });
   function addGranularResultsFoldedS(results, totals) {
@@ -18136,6 +18189,8 @@ function createGranularSectionHTML(reportLanguage) {
           const v = toDisplayValue(nutrient, granularMatOxideVal(material, nutrient), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
         }).join('')}
+        <td>${priceApi ? priceApi.formatMoney(priceApi.toDisplayPrice(granularReportPrice(material.name), priceUnitSystem)) : '0.00'}</td>
+        <td>${granularReportAreaCost(granularReportMaterialCost(app, material))}</td>
       </tr>
     `).join('');
 
@@ -18148,6 +18203,8 @@ function createGranularSectionHTML(reportLanguage) {
           const v = toDisplayValue(nutrient, granularMatOxideVal(composition, nutrient), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
         }).join('')}
+        <td></td>
+        <td>${granularReportAreaCost(materials.reduce((sum, material) => sum + granularReportMaterialCost(app, material), 0))}</td>
       </tr>
     `;
 
@@ -18159,10 +18216,12 @@ function createGranularSectionHTML(reportLanguage) {
             <th>${rt('Material', 'Material')}</th>
             <th>%</th>
             ${NUTRIENTS.map(nutrient => `<th>${nutrientLabel(nutrient, programModeIsElemental)}</th>`).join('')}
+            <th>${priceLabels.price}<br><small>${priceLabels.priceUnit}</small></th>
+            <th>${priceLabels.cost}<br><small>${priceLabels.costAreaUnit}</small></th>
           </tr>
         </thead>
         <tbody>
-          ${rows || `<tr><td colspan="${NUTRIENTS.length + 2}" style="text-align:center;color:#64748b;">${rt('No hay materiales en esta aplicación.', 'No materials in this application.')}</td></tr>`}
+          ${rows || `<tr><td colspan="${NUTRIENTS.length + 4}" style="text-align:center;color:#64748b;">${rt('No hay materiales en esta aplicación.', 'No materials in this application.')}</td></tr>`}
           ${totalRow}
         </tbody>
       </table>
@@ -18207,6 +18266,8 @@ function createGranularSectionHTML(reportLanguage) {
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(realRequirement, doseValue), programModeIsElemental, false)}</div>
         <div class="report-subtitle">${rt('Diferencia (Aporte - Requerimiento)', 'Difference (Supply − Requirement)')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(diffProgram, doseValue), programModeIsElemental, true)}</div>
+        <div class="report-subtitle">${priceLabels.totalCost} (${priceLabels.costAreaUnit}):</div>
+        <div class="report-nutrient-wrap"><span class="report-nutrient-pill"><strong>${granularReportAreaCost(granularProgramCostUsdPerHa)}</strong></span></div>
       </div>
       <div class="report-block">
         <div class="report-block-title">${rt('Aplicaciones configuradas', 'Configured applications')} (${applications.length})</div>
@@ -18240,10 +18301,11 @@ function reportEscapeHtml(s) {
   return div.innerHTML;
 }
 
-function createFertigationSectionHTML(chartImages, reportLanguage) {
+function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
   const reportLang = reportLanguage === 'en' ? 'en' : 'es';
   const rt = (es, en) => reportLang === 'en' ? en : es;
   const fertiUI = window.NpFertigationUI || null;
+  const fertiReportUnitSystem = reportUnitSystem === 'us_customary' ? 'us_customary' : 'metric';
   const doseUnit = fertiUI ? fertiUI.unit('dose_mass_area') : 'kg/ha';
   const yieldUnit = fertiUI ? fertiUI.unit('yield_mass_area') : 't/ha';
   const extractionUnit = fertiUI ? fertiUI.unit('extraction_mass_yield') : 'kg/t';
@@ -18539,6 +18601,28 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
     return acc + Object.values(kgByCol).reduce((s, x) => s + toNum(x), 0);
   }, 0);
   const programDoseColumnTotals = programDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
+  const priceApi = window.NpFertilizerPrice || null;
+  const priceLabels = priceApi
+    ? priceApi.labels(reportLang, fertiReportUnitSystem)
+    : { costPerProduct: rt('Costo por producto', 'Cost per product'), totalCost: rt('Costo total', 'Total cost'), costAreaUnit: fertiReportUnitSystem === 'us_customary' ? 'USD/acre' : 'USD/ha' };
+  let reportPriceOverrides = {};
+  try {
+    reportPriceOverrides = priceApi ? priceApi.loadMergedPriceOverrides() : {};
+  } catch (ePrice) { reportPriceOverrides = {}; }
+  const customPriceItems = [
+    ...(Array.isArray(fertiCustomItems) ? fertiCustomItems : []),
+    ...(Array.isArray(fertiMaterials) ? fertiMaterials.filter(m => m && String(m.id || '').startsWith('custom_')) : [])
+  ];
+  const programDoseColumnCostsUsdHa = programDoseColumns.map((c, i) => {
+    const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId) || null;
+    const amount = programDoseColumnTotals[i] || 0;
+    const kg = priceApi ? priceApi.productKgFromAmount(amount, mat) : amount;
+    const price = priceApi
+      ? priceApi.resolvePriceUsdPerTonne(c?.materialId, { customItems: customPriceItems, priceOverrides: reportPriceOverrides })
+      : 0;
+    return priceApi ? priceApi.costUsdPerHaFromKgHa(kg, price) : 0;
+  });
+  const programTotalCostUsdHa = programDoseColumnCostsUsdHa.reduce((s, v) => s + (Number(v) || 0), 0);
   const totalMacroCols = hasWeekTotals ? macroCols.map(n => {
     if (n === 'SO4') return weeks.reduce((acc, w) => acc + fertiReportMergedSo4KgFromTotals(w?.totals), 0);
     return weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0);
@@ -18686,6 +18770,24 @@ function createFertigationSectionHTML(chartImages, reportLanguage) {
               <td></td>
               ${programDoseColumnTotals.map(v => `<td>${q(v, 'dose_mass_area', doseUnit)}</td>`).join('')}
             </tr>
+            ${programDoseColumns.length ? `
+            <tr style="background:#f0fdfa;">
+              <td colspan="2"><strong style="color:#0f766e;">${priceLabels.costPerProduct}</strong><br><span style="font-size:11px;color:#64748b;">${priceLabels.costAreaUnit}</span></td>
+              ${programDoseColumnCostsUsdHa.map(v => {
+                const disp = priceApi ? priceApi.toDisplayAreaCost(v, fertiReportUnitSystem) : v;
+                const txt = disp > 0 ? (priceApi ? priceApi.formatMoney(disp) : disp.toFixed(2)) : '—';
+                return `<td style="color:#0f766e;font-weight:600;">${txt}</td>`;
+              }).join('')}
+            </tr>
+            <tr style="background:#ccfbf1;">
+              <td colspan="2"><strong style="color:#115e59;">${priceLabels.totalCost} (${priceLabels.costAreaUnit})</strong></td>
+              <td colspan="${Math.max(1, programDoseColumns.length)}" style="color:#115e59;font-weight:800;">${
+                (() => {
+                  const disp = priceApi ? priceApi.toDisplayAreaCost(programTotalCostUsdHa, fertiReportUnitSystem) : programTotalCostUsdHa;
+                  return disp > 0 ? ((priceApi ? priceApi.formatMoney(disp) : disp.toFixed(2)) + ' ' + priceLabels.costAreaUnit) : '—';
+                })()
+              }</td>
+            </tr>` : ''}
           </tbody>
         </table>
         </div>
@@ -19087,18 +19189,46 @@ function createHidroponiaSectionHTML(reportLanguage) {
   }
   const reportPpmTotals = {};
   hydroNutrients.forEach(n => { reportPpmTotals[n] = 0; });
+  const hydroPriceApi = window.NpFertilizerPrice || null;
+  let hydroReportPriceOverrides = {};
+  try {
+    hydroReportPriceOverrides = hydroPriceApi ? hydroPriceApi.loadMergedPriceOverrides() : {};
+  } catch (eHp) { hydroReportPriceOverrides = {}; }
+  const hydroPriceItems = [
+    ...(Array.isArray(hydroCustomItems) ? hydroCustomItems : []),
+    ...(Array.isArray(hydroMaterials) ? hydroMaterials : [])
+  ];
+  const hydroPriceLabels = hydroPriceApi
+    ? hydroPriceApi.labels(reportLang)
+    : { cost: rt('Costo', 'Cost'), costBatchUnit: 'USD', totalCost: rt('Costo total', 'Total cost') };
+  let hydroBatchTotalUsd = 0;
   const fertRows = fertilizers.map(f => {
-    const { dose, totalValue, totalUnit } = hydroDoseAndTotals(f);
+    const { dose, totalValue, totalUnit, kg } = hydroDoseAndTotals(f);
     const c = getHydroFertilizerContributionsForReport(f, dose);
     hydroNutrients.forEach(n => { reportPpmTotals[n] += toNum(c[n]); });
+    const price = hydroPriceApi
+      ? hydroPriceApi.resolvePriceUsdPerTonne(f?.materialId, {
+        customItems: hydroPriceItems,
+        priceOverrides: hydroReportPriceOverrides
+      })
+      : 0;
+    const costUsd = hydroPriceApi ? hydroPriceApi.costUsdFromKg(kg, price) : 0;
+    hydroBatchTotalUsd += costUsd;
+    const costTxt = costUsd > 0
+      ? ((hydroPriceApi ? hydroPriceApi.formatMoney(costUsd) : costUsd.toFixed(2)) + ' ' + hydroPriceLabels.costBatchUnit)
+      : '—';
     return `<tr>
       <td>${reportEscapeHtml(hydroFertName(f))}</td>
       <td>${rt('Tanque', 'Tank')} ${reportEscapeHtml(f.tank || 'A')}</td>
       <td>${Number.isFinite(dose) && dose > 0 ? dose.toFixed(1) : '—'}</td>
       ${hydroNutrients.map(n => `<td>${toNum(c[n]).toFixed(2)}</td>`).join('')}
       <td>${Number.isFinite(totalValue) && totalValue > 0 ? formatHydroProductQty(totalValue, totalUnit) : '—'}</td>
+      <td style="color:#0f766e;font-weight:600;">${costTxt}</td>
     </tr>`;
   }).join('');
+  const hydroBatchTotalTxt = hydroBatchTotalUsd > 0
+    ? ((hydroPriceApi ? hydroPriceApi.formatMoney(hydroBatchTotalUsd) : hydroBatchTotalUsd.toFixed(2)) + ' ' + hydroPriceLabels.costBatchUnit)
+    : '—';
   const ppmTotals = hydroNutrients.some(n => toNum(reportPpmTotals[n]) > 0) ? reportPpmTotals : persistedPpmTotals;
   const waterPpm = (h && h.water && typeof h.water === 'object') ? h.water : {};
   const ppmTotalsWithWater = {};
@@ -19234,6 +19364,19 @@ function createHidroponiaSectionHTML(reportLanguage) {
         <div class="report-nutrient-wrap report-hydro-nutrient-wrap">
           ${hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(h.water && h.water[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
+        ${(function () {
+          if (typeof window.NpHydroAcidLegend === 'undefined' || typeof window.NpHydroAcidLegend.resolveAndBuild !== 'function') return '';
+          const agua = (currentProject && (currentProject.aguaAnalyses || currentProject.agua_analyses)) || [];
+          const legend = window.NpHydroAcidLegend.resolveAndBuild({
+            lang: reportLang,
+            hidroponia: h,
+            aguaAnalyses: Array.isArray(agua) ? agua : [],
+            hydroVolumeM3: volumeWaterM3 != null ? volumeWaterM3 : (h.volumeWaterM3 || 0),
+            classPrefix: 'hydro',
+            wrap: true
+          });
+          return legend || '';
+        })()}
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">📦 ${rt('Cálculo por volumen de agua', 'Calculation by water volume')}</div>
@@ -19255,8 +19398,10 @@ function createHidroponiaSectionHTML(reportLanguage) {
         </div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>${rt('Fertilizante', 'Fertilizer')}</th><th>${rt('Tanque', 'Tank')}</th><th>${rt('Dosis (ppm)', 'Dose (ppm)')}</th>${hydroNutrients.map(n => `<th>${label(n)}</th>`).join('')}<th>${rt('Total producto', 'Total product')}</th></tr></thead>
-          <tbody>${fertRows || `<tr><td colspan="${hydroNutrients.length + 4}" style="text-align:center;color:#64748b;">${rt('Sin fertilizantes guardados.', 'No fertilizers saved.')}</td></tr>`}</tbody>
+          <thead><tr><th>${rt('Fertilizante', 'Fertilizer')}</th><th>${rt('Tanque', 'Tank')}</th><th>${rt('Dosis (ppm)', 'Dose (ppm)')}</th>${hydroNutrients.map(n => `<th>${label(n)}</th>`).join('')}<th>${rt('Total producto', 'Total product')}</th><th>${hydroPriceLabels.cost} (${hydroPriceLabels.costBatchUnit})</th></tr></thead>
+          <tbody>${fertRows || `<tr><td colspan="${hydroNutrients.length + 5}" style="text-align:center;color:#64748b;">${rt('Sin fertilizantes guardados.', 'No fertilizers saved.')}</td></tr>`}
+          ${fertRows ? `<tr style="background:#ccfbf1;"><td colspan="${hydroNutrients.length + 4}" style="text-align:right;font-weight:800;color:#115e59;">${hydroPriceLabels.totalCost}</td><td style="font-weight:800;color:#115e59;">${hydroBatchTotalTxt}</td></tr>` : ''}
+          </tbody>
         </table>
         </div>
       </div>

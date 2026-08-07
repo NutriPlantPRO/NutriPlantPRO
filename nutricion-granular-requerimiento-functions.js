@@ -566,6 +566,15 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
         </tr>
       </tbody>
     </table>
+    <div class="req-steps-guide" aria-label="${granularReqT('req_steps_title', 'Cómo usar esta tabla')}">
+      <p class="req-steps-guide__title">${granularReqT('req_steps_title', 'Cómo usar esta tabla')}</p>
+      <ol class="req-steps-guide__list">
+        <li><span class="req-steps-guide__n">1</span><span>${granularReqT('req_step_1', 'Selecciona tu cultivo y rendimiento objetivo')}</span></li>
+        <li><span class="req-steps-guide__n">2</span><span>${granularReqT('req_step_2', 'Ajusta la extracción por tonelada')}</span></li>
+        <li><span class="req-steps-guide__n">3</span><span>${granularReqT('req_step_3', 'Corrige por aporte o déficit de tu suelo')}</span></li>
+        <li><span class="req-steps-guide__n">4</span><span>${granularReqT('req_step_4', 'Ajusta por eficiencia del fertilizante y del sistema')}</span></li>
+      </ol>
+    </div>
   `;
   container.innerHTML = tableHTML;
   
