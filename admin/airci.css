@@ -301,38 +301,38 @@ button, input, select, textarea { font: inherit; }
 
 .aci-header__storage {
   display: grid;
-  gap: 1px;
+  gap: 0;
   min-width: 0;
-  max-width: 210px;
-  padding: 6px 10px;
+  max-width: 148px;
+  padding: 4px 8px;
   border: 1px solid rgba(134, 239, 172, 0.55);
-  border-radius: 10px;
+  border-radius: 8px;
   background: linear-gradient(180deg, rgba(247, 254, 251, 0.96) 0%, rgba(236, 253, 245, 0.92) 100%);
   color: #0f172a;
   text-align: left;
   cursor: pointer;
   font: inherit;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.1);
 }
 .aci-header__storage small {
   color: #64748b;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 .aci-header__storage strong {
   color: #0f172a;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
   white-space: nowrap;
 }
 .aci-header__storage em {
-  color: #94a3b8;
-  font-size: 10px;
+  color: #64748b;
+  font-size: 9px;
   font-style: normal;
-  line-height: 1.2;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

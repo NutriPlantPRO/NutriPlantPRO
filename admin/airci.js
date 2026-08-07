@@ -3946,35 +3946,36 @@
     var freeBytes = Math.max(0, quotaBytes - total);
     var pct = quotaGb > 0 ? (total / quotaBytes) * 100 : 0;
     var airciBytes = 0;
+    var otherBuckets = [];
     (data.buckets || []).forEach(function (b) {
-      if (b && b.bucket_id === 'airci-orthos') airciBytes = Number(b.bytes) || 0;
+      if (!b || !b.bucket_id) return;
+      if (b.bucket_id === 'airci-orthos') {
+        airciBytes = Number(b.bytes) || 0;
+      } else {
+        otherBuckets.push(b);
+      }
     });
     num.textContent = storagePillLine(total, quotaGb);
-    sub.textContent =
-      airciBytes > 0
-        ? 'AirCI ' + storageFmtSize(airciBytes) + ' · toca para actualizar'
-        : 'Supabase · toca para actualizar';
+    sub.textContent = 'AirCI ' + storageFmtSize(airciBytes);
     btn.setAttribute('data-state', pct >= 92 ? 'warn' : meta.fromCache ? 'cached' : 'idle');
     var lines = [
       'NutriPlant PRO · almacenamiento total en Supabase',
       'Usado: ' + storageFmtSize(total) + ' · Disponible: ~' + storageFmtSize(freeBytes),
       'Cuota: ' + quotaGb + ' GB',
-      airciBytes > 0 ? 'Solo AirCI (airci-orthos): ' + storageFmtSize(airciBytes) : 'Sin archivos AirCI aún',
       meta.fromCache
         ? 'Última lectura en caché · toca para actualizar'
-        : 'Lectura en vivo · se refresca cada ~10 min'
+        : 'Lectura en vivo · se refresca cada ~10 min',
+      '',
+      'Por bucket:',
+      '• airci-orthos (AirCI): ' + storageFmtSize(airciBytes)
     ];
-    if (data.buckets && data.buckets.length) {
-      lines.push('', 'Por bucket:');
-      data.buckets.forEach(function (b) {
-        if (!b || !b.bucket_id) return;
-        lines.push('• ' + b.bucket_id + ': ' + storageFmtSize(b.bytes));
-      });
-    }
+    otherBuckets.forEach(function (b) {
+      lines.push('• ' + b.bucket_id + ': ' + storageFmtSize(b.bytes));
+    });
     btn.title = lines.join('\n');
     btn.setAttribute(
       'aria-label',
-      storagePillLine(total, quotaGb) + ' en Supabase'
+      storagePillLine(total, quotaGb) + ' · AirCI ' + storageFmtSize(airciBytes)
     );
   }
 
