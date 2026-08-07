@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260807storage1">
+  <link rel="stylesheet" href="./airci.css?v=20260807bills1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -56,14 +56,35 @@
   <div id="aciApp" hidden>
     <header class="aci-header">
       <div class="aci-header__brand">
-        <img src="../assets/AirCL_4K_transparente.png?v=20260806horiz" alt="AirCI Crop Intelligence by NutriPlant PRO">
+        <img class="aci-header__airci" src="../assets/AirCL_4K_transparente.png?v=20260806horiz" alt="AirCI Crop Intelligence">
+        <img class="aci-header__np" src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO">
       </div>
       <div class="aci-header__center">
         <strong>AirCI Crop Intelligence</strong>
         <small>Análisis de huerta con ortomosaico RGB</small>
       </div>
       <div class="aci-header__right">
-        <img class="aci-header__np" src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO">
+        <button type="button" class="aci-header__storage" id="aciStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en Supabase" title="Archivos en Supabase · calculando…">
+          <small>Almacenamiento nube</small>
+          <strong id="aciStorageNum">…</strong>
+          <em id="aciStorageSub">Supabase · toca para actualizar</em>
+        </button>
+        <a
+          class="aci-header__bill"
+          href="https://console.cloud.google.com/billing/01A8DB-ADB0DA-B974B6?project=nutriplant-radar-ee"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Facturación Google Cloud"
+          aria-label="Abrir facturación Google Cloud"
+        >Cloud</a>
+        <a
+          class="aci-header__bill aci-header__bill--openai"
+          href="https://platform.openai.com/settings/organization/billing/overview"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Facturación OpenAI"
+          aria-label="Abrir facturación OpenAI"
+        >OpenAI</a>
         <a
           class="aci-header__logout"
           href="../login.html"
@@ -156,11 +177,6 @@
       </section>
 
       <section class="aci-metrics" aria-label="Resumen ortomosaico">
-        <button type="button" class="aci-metric aci-metric--storage" id="aciStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en Supabase" title="Archivos en Supabase · calculando…">
-          <small>Almacenamiento nube</small>
-          <strong id="aciStorageNum">…</strong>
-          <em id="aciStorageSub">Supabase · toca para actualizar</em>
-        </button>
         <div class="aci-metric"><small>Árboles / copas</small><strong id="aciMetricTrees">—</strong><em id="aciMetricTreesSub">detección F2</em></div>
         <div class="aci-metric"><small>Cobertura total</small><strong id="aciMetricCover">—</strong><em id="aciMetricCoverSub">copa sobre orto</em></div>
         <div class="aci-metric"><small>Sin cobertura</small><strong id="aciMetricBare">—</strong><em id="aciMetricBareSub">suelo / espacio libre</em></div>
@@ -565,7 +581,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260807storage1"></script>
-  <script src="./airci.js?v=20260807storage1"></script>
+  <script src="./airci-canopy.js?v=20260807bills1"></script>
+  <script src="./airci.js?v=20260807bills1"></script>
 </body>
 </html>
