@@ -1870,9 +1870,15 @@ function sectionTemplate(name) {
     );
     return `
       <div class="location-container radar-satelital-container">
-        <div class="radar-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
-          <button type="button" class="radar-tab-button active" data-radartab="poligono" data-i18n="radar.tab_crop" style="display:flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#dcfce7;color:#14532d;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">${rt('radar.tab_crop', '🗺️ Radar del cultivo')}</button>
-          <button type="button" class="radar-tab-button" data-radartab="lectura" data-i18n="radar.tab_reading" style="display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">${rt('radar.tab_reading', '📈 Lectura Satelital')}</button>
+        <div class="radar-tabs">
+          <button type="button" class="radar-tab-button tab-button active" data-radartab="poligono">
+            <span class="tab-icon" aria-hidden="true">📡</span>
+            <span class="tab-text" data-i18n="radar.tab_crop">${rt('radar.tab_crop', 'Radar del cultivo')}</span>
+          </button>
+          <button type="button" class="radar-tab-button tab-button" data-radartab="lectura">
+            <span class="tab-icon" aria-hidden="true">📈</span>
+            <span class="tab-text" data-i18n="radar.tab_reading">${rt('radar.tab_reading', 'Lectura Satelital')}</span>
+          </button>
         </div>
         <div class="radar-tab-content active" id="radarTabPoligono">
         <div class="location-header">
@@ -21400,6 +21406,7 @@ function createEmptyAguaAnalysis() {
     date: '',
     m3Riego: '',
     acidResidualMeq: 1,
+    acidId: 'acido_nitrico_55',
     general: { ce: '', ph: '', ras: '' },
     cations: { ca_meq: '', ca_ppm: '', mg_meq: '', mg_ppm: '', na_meq: '', na_ppm: '', k_meq: '', k_ppm: '' },
     anions: { so4_meq: '', so4_ppm: '', hco3_meq: '', hco3_ppm: '', cl_meq: '', cl_ppm: '', co3_meq: '', co3_ppm: '', po4_meq: '', po4_ppm: '', no3_meq: '', no3_ppm: '' },

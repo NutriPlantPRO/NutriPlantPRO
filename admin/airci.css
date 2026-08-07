@@ -1262,10 +1262,10 @@ button, input, select, textarea { font: inherit; }
 .aci-calibration-vertex { background: transparent; border: 0; }
 .aci-calibration-vertex i { display: block; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 50%; background: #2563eb; box-shadow: 0 1px 4px #0f172a80; }
 .aci-calibration-vertex--dense i {
-  width: 8px;
-  height: 8px;
-  border-width: 1.5px;
-  opacity: 0.9;
+  width: 10px;
+  height: 10px;
+  border-width: 2px;
+  opacity: 1;
 }
 .aci-calibration-move { background: transparent; border: 0; }
 .aci-calibration-move i {

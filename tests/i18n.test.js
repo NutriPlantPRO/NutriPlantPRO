@@ -37,7 +37,7 @@ module.exports = [
       assert.equal(i18n.t('dashboard.recent_projects'), 'Proyectos recientes');
       assert.equal(i18n.t('profile.user_info_title'), 'Información de Usuario');
       assert.equal(i18n.t('free_tools.hydro_title'), '💧 Diseño de solución nutritiva');
-      assert.equal(i18n.t('radar.tab_crop'), '🗺️ Radar del cultivo');
+      assert.equal(i18n.t('radar.tab_crop'), 'Radar del cultivo');
       assert.equal(
         i18n.t('analysis.depth_title'),
         'Profundidad de la capa de suelo considerada en el análisis (ej. 0-20 cm)'

@@ -548,8 +548,8 @@
         hydro_tab_fert: "2 · Aporte fertilizantes"
       },
       radar: {
-        tab_crop: "🗺️ Radar del cultivo",
-        tab_reading: "📈 Lectura Satelital",
+        tab_crop: "Radar del cultivo",
+        tab_reading: "Lectura Satelital",
         title_button: "Radar Satelital",
         surface: "Superficie:",
         perimeter: "Perímetro:",
@@ -1687,8 +1687,8 @@
         hydro_tab_fert: "2 · Fertilizer supply"
       },
       radar: {
-        tab_crop: "🗺️ Crop Radar",
-        tab_reading: "📈 Satellite Reading",
+        tab_crop: "Crop Radar",
+        tab_reading: "Satellite Reading",
         title_button: "Satellite Radar",
         surface: "Area:",
         perimeter: "Perimeter:",

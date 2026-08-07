@@ -315,6 +315,10 @@ exports.handler = async function handler(event) {
           0,
           Math.min(Number(options.expected_spacing_m) || 0, 30)
         ),
+        target_trees_per_ha: Math.max(
+          0,
+          Math.min(Number(options.target_trees_per_ha) || 0, 5000)
+        ),
         calibration,
         cost_cap_usd: Math.max(0.1, Math.min(Number(options.cost_cap_usd) || 1, 5))
       },

@@ -453,9 +453,9 @@ function hydroSaveCustomMaterials() {
   } catch {}
 }
 
-/** Lista de materiales solubles en forma elemental para hidroponía (base + personalizados) */
+/** Lista de materiales solubles en forma elemental para hidroponía (base + personalizados compartidos) */
 function getAllHydroMaterials() {
-  hydroLoadCustomMaterials();
+  hydroLoadCustomMaterialsSync();
   const base = (typeof window.getAllFertiMaterials === 'function')
     ? window.getAllFertiMaterials()
     : [];
@@ -467,9 +467,130 @@ function getAllHydroMaterials() {
   }));
   const byId = new Map();
   elemental.forEach(m => { if (m && m.id) byId.set(String(m.id), m); });
-  custom.forEach(m => { if (m && m.id) byId.set(String(m.id), m); });
+  // Personalizados de hidro: por id y también por nombre (por si ferti trae el mismo con otro id)
+  custom.forEach(m => {
+    if (!m) return;
+    if (m.id) byId.set(String(m.id), m);
+    const nameKey = String(m.name || '').trim().toLowerCase();
+    if (nameKey && !Array.from(byId.values()).some(x => String(x.name || '').trim().toLowerCase() === nameKey)) {
+      byId.set(String(m.id || nameKey), m);
+    }
+  });
   return Array.from(byId.values());
 }
+
+/** Elemental (hidro) → óxidos (fertirriego) para catálogo soluble compartido */
+function hydroElementalToFertiOxide(mat) {
+  if (!mat) return null;
+  const c = HYDRO_OXIDE_TO_ELEMENTAL;
+  const n = (v) => Math.max(0, parseFloat(v) || 0);
+  const sEle = n(mat.S);
+  return {
+    id: mat.id || ('hydro_custom_' + Date.now()),
+    name: mat.name || mat.id || '',
+    N_NO3: n(mat.N_NO3),
+    N_NH4: n(mat.N_NH4),
+    P2O5: n(mat.P) * c.P2O5_TO_P,
+    K2O: n(mat.K) * c.K2O_TO_K,
+    CaO: n(mat.Ca) * c.CaO_TO_Ca,
+    MgO: n(mat.Mg) * c.MgO_TO_Mg,
+    SO4: sEle > 0 ? sEle * 3 : 0,
+    S: 0,
+    Cl: n(mat.Cl),
+    Fe: n(mat.Fe),
+    Mn: n(mat.Mn),
+    B: n(mat.B),
+    Zn: n(mat.Zn),
+    Cu: n(mat.Cu),
+    Mo: n(mat.Mo),
+    SiO2: n(mat.SiO2),
+    priceUsdPerTonne: n(mat.priceUsdPerTonne)
+  };
+}
+
+/** Empuja un personalizado de hidro al catálogo soluble de fertirriego (mismo catálogo). */
+function hydroPushCustomToFertiCatalog(mat) {
+  if (!mat || typeof window.upsertFertiCustomMaterialFromHydro !== 'function') return;
+  const oxide = hydroElementalToFertiOxide(mat);
+  if (!oxide || !oxide.name) return;
+  try { window.upsertFertiCustomMaterialFromHydro(oxide); } catch (e) { console.warn('Sync hidro→ferti:', e); }
+}
+
+function hydroRemoveCustomFromFertiCatalog(key) {
+  if (!key || typeof window.removeFertiCustomMaterialShared !== 'function') return;
+  try { window.removeFertiCustomMaterialShared(key); } catch (e) { console.warn('Remove ferti shared:', e); }
+}
+
+/** Importa solubles de fertirriego que aún no estén en hidro (catálogo compartido). */
+function hydroImportSharedFertiCustoms() {
+  if (typeof window.getFertiCustomMaterialsForShare !== 'function') return false;
+  let fertiList = [];
+  try { fertiList = window.getFertiCustomMaterialsForShare() || []; } catch (e) { return false; }
+  if (!Array.isArray(fertiList) || !fertiList.length) return false;
+  hydroCustomMaterialsUser = Array.isArray(hydroCustomMaterialsUser) ? hydroCustomMaterialsUser : [];
+  const seen = new Set(hydroCustomMaterialsUser.map(function (m) {
+    return ((m.id || m.name || '') + '').toLowerCase();
+  }));
+  const seenNames = new Set(hydroCustomMaterialsUser.map(function (m) {
+    return String(m.name || '').trim().toLowerCase();
+  }).filter(Boolean));
+  let changed = false;
+  fertiList.forEach(function (fm) {
+    if (!fm) return;
+    const key = ((fm.id || fm.name || '') + '').toLowerCase();
+    const nameKey = String(fm.name || '').trim().toLowerCase();
+    if (!key || seen.has(key) || (nameKey && seenNames.has(nameKey))) return;
+    const el = hydroMaterialToElemental(fm);
+    if (!el) return;
+    el.priceUsdPerTonne = parseFloat(fm.priceUsdPerTonne) || 0;
+    hydroCustomMaterialsUser.push(el);
+    seen.add(key);
+    if (nameKey) seenNames.add(nameKey);
+    changed = true;
+  });
+  if (changed) hydroSaveCustomMaterials();
+  return changed;
+}
+
+window.getHydroCustomMaterialsForShare = function () {
+  hydroLoadCustomMaterialsSync();
+  return Array.isArray(hydroCustomMaterialsUser) ? hydroCustomMaterialsUser.slice() : [];
+};
+window.hydroElementalToFertiOxide = hydroElementalToFertiOxide;
+window.hydroMaterialToElemental = hydroMaterialToElemental;
+window.upsertHydroCustomMaterialFromFerti = function (elemMat) {
+  if (!elemMat || !(elemMat.id || elemMat.name)) return;
+  hydroLoadCustomMaterialsSync();
+  const key = ((elemMat.id || elemMat.name || '') + '').toLowerCase();
+  const nameKey = String(elemMat.name || '').trim().toLowerCase();
+  hydroCustomMaterialsUser = (hydroCustomMaterialsUser || []).filter(function (m) {
+    const mk = ((m.id || m.name || '') + '').toLowerCase();
+    const nk = String(m.name || '').trim().toLowerCase();
+    return mk !== key && !(nameKey && nk === nameKey);
+  });
+  hydroCustomMaterialsUser.push(elemMat);
+  hydroSaveCustomMaterials();
+  try {
+    if (document.getElementById('hydroCustomMaterialsList')) renderHydroCustomMaterialsList();
+    if (typeof renderHydroFertTable === 'function') renderHydroFertTable();
+  } catch (e) {}
+};
+window.removeHydroCustomMaterialShared = function (key) {
+  const k = String(key || '').toLowerCase();
+  if (!k) return;
+  hydroLoadCustomMaterialsSync();
+  const before = (hydroCustomMaterialsUser || []).length;
+  hydroCustomMaterialsUser = (hydroCustomMaterialsUser || []).filter(function (m) {
+    return ((m.id || m.name || '') + '').toLowerCase() !== k &&
+      String(m.name || '').trim().toLowerCase() !== k;
+  });
+  if (hydroCustomMaterialsUser.length !== before) {
+    hydroSaveCustomMaterials();
+    try {
+      if (document.getElementById('hydroCustomMaterialsList')) renderHydroCustomMaterialsList();
+    } catch (e) {}
+  }
+};
 
 function hydroLoadData() {
   const pid = hydroGetProjectId();
@@ -616,9 +737,15 @@ function hydroGetActiveStage() {
   return hydroState.stages.find(s => s.id === hydroState.activeStageId) || hydroState.stages[0] || null;
 }
 
+function hydroCloseSolutionCatalogOverlays() {
+  document.querySelectorAll('.hydro-solution-modal').forEach(function (el) { el.remove(); });
+}
+
 function hydroOpenSolutionCatalog() {
   const catalog = window.NpHydroSolutionCatalog;
   if (!catalog) return;
+  // Evitar apilar overlays si init/rebind abrió el catálogo más de una vez.
+  hydroCloseSolutionCatalogOverlays();
   hydroLoadCustomSolutionsSync();
   const macroKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
   const microKeys = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
@@ -722,12 +849,14 @@ function hydroOpenSolutionCatalog() {
     const found = hydroCustomSolutionsUser.findIndex(function (item) { return item.id === entry.id; });
     if (found >= 0) hydroCustomSolutionsUser[found] = entry; else hydroCustomSolutionsUser.push(entry);
     hydroSaveCustomSolutions();
-    overlay.remove();
     hydroOpenSolutionCatalog();
   };
 
   overlay.addEventListener('click', function (event) {
-    if (event.target === overlay || event.target.closest('[data-hydro-solution-close]')) { overlay.remove(); return; }
+    if (event.target === overlay || event.target.closest('[data-hydro-solution-close]')) {
+      hydroCloseSolutionCatalogOverlays();
+      return;
+    }
     if (event.target.closest('[data-hydro-solution-new]')) { showDraftRow(null); return; }
     if (event.target.closest('[data-hydro-draft-cancel]')) { removeDraftRow(); return; }
     if (event.target.closest('[data-hydro-draft-save]')) { saveDraftRow(); return; }
@@ -739,7 +868,7 @@ function hydroOpenSolutionCatalog() {
       active.ce = hydroComputeCE(active).toFixed(2);
       renderHydroAll();
       hydroScheduleSave();
-      overlay.remove();
+      hydroCloseSolutionCatalogOverlays();
       return;
     }
     const edit = event.target.closest('[data-hydro-solution-edit]');
@@ -748,7 +877,6 @@ function hydroOpenSolutionCatalog() {
     if (del && window.confirm(hydroT('¿Eliminar esta solución propia?', 'Delete this custom solution?'))) {
       hydroCustomSolutionsUser = hydroCustomSolutionsUser.filter(item => item.id !== del.getAttribute('data-hydro-solution-delete'));
       hydroSaveCustomSolutions();
-      overlay.remove();
       hydroOpenSolutionCatalog();
     }
   });
@@ -1651,11 +1779,18 @@ function hydroWaterAcidCalculation(analysis) {
   }
   if (!analysis) return null;
   const anions = analysis.anions || {};
-  const hasCarbonateData = (anions.hco3_meq !== '' && anions.hco3_meq != null) ||
-    (anions.co3_meq !== '' && anions.co3_meq != null);
+  const meqFromPpm = (ppm, eqw) => {
+    const p = parseFloat(ppm);
+    return (Number.isFinite(p) && eqw > 0) ? (p / eqw) : NaN;
+  };
+  let hco3 = parseFloat(anions.hco3_meq);
+  if (!Number.isFinite(hco3)) hco3 = meqFromPpm(anions.hco3_ppm, 61.02);
+  let co3 = parseFloat(anions.co3_meq);
+  if (!Number.isFinite(co3)) co3 = meqFromPpm(anions.co3_ppm, 30.0);
+  const hasCarbonateData = Number.isFinite(hco3) || Number.isFinite(co3);
   if (!hasCarbonateData) return null;
-  const hco3 = Math.max(0, parseFloat(anions.hco3_meq) || 0);
-  const co3 = Math.max(0, parseFloat(anions.co3_meq) || 0);
+  hco3 = Number.isFinite(hco3) ? Math.max(0, hco3) : 0;
+  co3 = Number.isFinite(co3) ? Math.max(0, co3) : 0;
   const residualRaw = parseFloat(analysis.acidResidualMeq);
   const residualMeq = Number.isFinite(residualRaw) && residualRaw >= 0 ? residualRaw : 1;
   const acidId = analysis.acidId || 'acido_nitrico_55';
@@ -1689,6 +1824,139 @@ function hydroBuildAcidDoseSummary() {
   return { waterAnalysisId: hydroState.waterAnalysisId || null, hasAcid: !!calc };
 }
 
+/** true si el agua de hidroponía está vacía (solo ceros / sin datos). */
+function hydroWaterLooksEmpty() {
+  const w = hydroState.water || {};
+  return HYDRO_PPM_NUTRIENTS.every(function (n) {
+    return !(Math.abs(parseFloat(w[n]) || 0) > 0);
+  });
+}
+
+/**
+ * Resuelve análisis + cálculo de ácido (mL/m³) para UI y auto-cálculo.
+ * Prioridad: vínculo actual → id del resumen guardado → análisis del proyecto con dosis > 0.
+ * No muta hydroState (el vínculo se fija en ensure/apply).
+ */
+function hydroResolveAcidContext() {
+  const list = hydroGetProjectWaterAnalyses();
+  let analysis = hydroGetSelectedWaterAnalysis();
+  if (!analysis && hydroState.acidDoseSummary && hydroState.acidDoseSummary.waterAnalysisId) {
+    analysis = list.find(function (a) {
+      return a && a.id === hydroState.acidDoseSummary.waterAnalysisId;
+    }) || null;
+  }
+  let calc = hydroWaterAcidCalculation(analysis);
+  if (calc && calc.mlPerM3 > 0) return { analysis: analysis || null, calc: calc };
+
+  if (list.length) {
+    const hydroVol = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
+    let best = null;
+    let bestCalc = null;
+    list.forEach(function (a) {
+      const c = hydroWaterAcidCalculation(a);
+      if (!c || !(c.mlPerM3 > 0)) return;
+      if (!bestCalc) {
+        best = a;
+        bestCalc = c;
+        return;
+      }
+      const bestMatch = bestCalc.volumesMatch;
+      const curMatch = c.volumesMatch;
+      if (curMatch && !bestMatch) {
+        best = a;
+        bestCalc = c;
+        return;
+      }
+      if (curMatch === bestMatch && Math.abs((c.analysisVolumeM3 || 0) - hydroVol) < Math.abs((bestCalc.analysisVolumeM3 || 0) - hydroVol)) {
+        best = a;
+        bestCalc = c;
+      }
+    });
+    if (best && bestCalc) return { analysis: best, calc: bestCalc };
+  }
+
+  if ((!calc || !(calc.mlPerM3 > 0)) && hydroState.acidDoseSummary && hydroState.acidDoseSummary.hasAcid) {
+    const summary = hydroState.acidDoseSummary;
+    const mlPerM3 = Math.max(0, parseFloat(summary.mlPerM3) || 0);
+    const hydroVol = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
+    if (mlPerM3 > 0) {
+      const acidId = summary.acidId || 'acido_nitrico_55';
+      const acid = HYDRO_WATER_ACIDS[acidId] || HYDRO_WATER_ACIDS.acido_nitrico_55;
+      return {
+        analysis: analysis || null,
+        calc: {
+          acidId: acidId,
+          acid: acid,
+          hco3: parseFloat(summary.hco3) || 0,
+          co3: parseFloat(summary.co3) || 0,
+          residualMeq: parseFloat(summary.residualMeq) || 1,
+          neededMeqL: parseFloat(summary.neededMeqL) || 0,
+          mlPerM3: mlPerM3,
+          analysisVolumeM3: parseFloat(summary.analysisVolumeM3) || 0,
+          hydroVolumeM3: hydroVol,
+          analysisTotalLiters: mlPerM3 * (parseFloat(summary.analysisVolumeM3) || 0) / 1000,
+          totalLiters: mlPerM3 * hydroVol / 1000,
+          volumesMatch: !!summary.volumesMatch
+        }
+      };
+    }
+  }
+  return { analysis: analysis || null, calc: calc || null };
+}
+
+/** Vincula un análisis de agua; opcionalmente carga ppm. */
+function hydroLinkWaterAnalysis(analysis, opts) {
+  opts = opts || {};
+  if (!analysis || !analysis.id) return false;
+  hydroState.waterAnalysisId = analysis.id;
+  if (opts.applyPpm !== false) {
+    hydroState.water = Object.assign({}, hydroState.water || {}, hydroPpmFromAguaAnalysis(analysis));
+  }
+  hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
+  return !!(hydroState.acidDoseSummary && hydroState.acidDoseSummary.hasAcid);
+}
+
+/** Al abrir hidroponía: recuperar vínculo de ácido / auto-vincular si hay dosis mL/m³. */
+function hydroEnsureAcidLinkFromProject() {
+  const list = hydroGetProjectWaterAnalyses();
+  if (!list.length) return;
+
+  if (hydroState.waterAnalysisId) {
+    const linked = list.find(function (a) { return a && a.id === hydroState.waterAnalysisId; });
+    if (linked) {
+      hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
+      return;
+    }
+    hydroState.waterAnalysisId = null;
+  }
+
+  if (hydroState.acidDoseSummary && hydroState.acidDoseSummary.waterAnalysisId) {
+    const fromSummary = list.find(function (a) {
+      return a && a.id === hydroState.acidDoseSummary.waterAnalysisId;
+    });
+    if (fromSummary) {
+      hydroLinkWaterAnalysis(fromSummary, { applyPpm: hydroWaterLooksEmpty() });
+      return;
+    }
+  }
+
+  const withAcid = [];
+  list.forEach(function (a) {
+    const c = hydroWaterAcidCalculation(a);
+    if (c && c.mlPerM3 > 0) withAcid.push({ analysis: a, calc: c });
+  });
+  if (!withAcid.length) return;
+  const hydroVol = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
+  withAcid.sort(function (a, b) {
+    const am = a.calc.volumesMatch ? 0 : 1;
+    const bm = b.calc.volumesMatch ? 0 : 1;
+    if (am !== bm) return am - bm;
+    return Math.abs((a.calc.analysisVolumeM3 || 0) - hydroVol) - Math.abs((b.calc.analysisVolumeM3 || 0) - hydroVol);
+  });
+  // Si hay dosis de ácido en el proyecto, vincular (ppm solo si el agua de hidro está vacía).
+  hydroLinkWaterAnalysis(withAcid[0].analysis, { applyPpm: hydroWaterLooksEmpty() });
+}
+
 function hydroUiLang() {
   try {
     const prefs = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
@@ -1712,11 +1980,13 @@ function hydroVolumeMatchNoteHtml(analysisVolumeM3) {
 function renderHydroAcidSummary() {
   const wrap = document.getElementById('hydroAcidSummary');
   if (!wrap) return;
-  const analysis = hydroGetSelectedWaterAnalysis();
+  const resolved = hydroResolveAcidContext();
+  const analysis = resolved.analysis || hydroGetSelectedWaterAnalysis();
   const lang = hydroUiLang();
   if (window.NpHydroAcidLegend && typeof window.NpHydroAcidLegend.buildHtml === 'function') {
+    const list = hydroGetProjectWaterAnalyses();
     const label = analysis
-      ? hydroEscapeAttr(hydroWaterAnalysisLabel(analysis, hydroGetProjectWaterAnalyses().indexOf(analysis)))
+      ? hydroEscapeAttr(hydroWaterAnalysisLabel(analysis, list.indexOf(analysis)))
       : '';
     wrap.innerHTML = window.NpHydroAcidLegend.buildHtml({
       lang,
@@ -1724,7 +1994,7 @@ function renderHydroAcidSummary() {
       summary: hydroState.acidDoseSummary || null,
       hydroVolumeM3: hydroState.volumeWaterM3,
       analysisLabel: label,
-      linked: !!hydroState.waterAnalysisId,
+      linked: !!(hydroState.waterAnalysisId || (analysis && analysis.id)),
       classPrefix: 'hydro',
       wrap: false
     });
@@ -1746,29 +2016,70 @@ function hydroRefreshWaterAnalysisSelect() {
     html += list.map((analysis, index) => {
       const id = hydroEscapeAttr(analysis && analysis.id ? analysis.id : ('idx_' + index));
       const label = hydroEscapeAttr(hydroWaterAnalysisLabel(analysis, index));
-      return `<option value="${id}">${label}</option>`;
+      return `<option value="${id}" data-hydro-water-index="${index}">${label}</option>`;
     }).join('');
   }
   select.innerHTML = html;
-  const selectedId = previous || hydroState.waterAnalysisId || '';
+  const selectedId = hydroState.waterAnalysisId || previous || '';
   if (selectedId && list.some(a => a && a.id === selectedId)) select.value = selectedId;
   else select.value = '';
-  select.title = hydroT('Traer ppm desde un análisis de agua guardado en este proyecto', 'Load ppm from a water analysis saved in this project');
+  select.title = hydroT('Traer ppm y dosis de ácido desde un análisis de agua de este proyecto', 'Load ppm and acid dose from a water analysis in this project');
+  // onclick propio: no depende de listeners acumulados / re-init de hidroponía.
+  select.onchange = function () {
+    const analysisId = select.value;
+    if (!analysisId) {
+      hydroState.waterAnalysisId = null;
+      hydroState.acidDoseSummary = null;
+      renderHydroAcidSummary();
+      renderHydroVolumeCard();
+      hydroScheduleSave();
+      return;
+    }
+    const ok = hydroApplyWaterAnalysisById(analysisId);
+    if (!ok && window.showMessage) {
+      window.showMessage(hydroT('No se encontró ese análisis de agua.', 'That water analysis was not found.'), 'warning');
+    }
+  };
 }
 
 function hydroApplyWaterAnalysisById(analysisId) {
   if (!analysisId) return false;
   const list = hydroGetProjectWaterAnalyses();
-  const analysis = list.find(a => a && a.id === analysisId);
+  let analysis = list.find(a => a && a.id === analysisId);
+  if (!analysis && String(analysisId).indexOf('idx_') === 0) {
+    const idx = parseInt(String(analysisId).slice(4), 10);
+    if (Number.isFinite(idx) && list[idx]) analysis = list[idx];
+  }
   if (!analysis) return false;
-  hydroState.waterAnalysisId = analysisId;
-  hydroState.water = Object.assign({}, hydroState.water || {}, hydroPpmFromAguaAnalysis(analysis));
-  hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
+  hydroLinkWaterAnalysis(analysis, { applyPpm: true });
   renderHydroWater();
   renderHydroAcidSummary();
   renderHydroVolumeCard();
   renderHydroMissing();
   hydroScheduleSave();
+  const calc = hydroWaterAcidCalculation(analysis);
+  if (window.showMessage) {
+    if (calc && calc.mlPerM3 > 0) {
+      const acidName = hydroUiLang() === 'en'
+        ? ((calc.acid && calc.acid.nameEn) || calc.acidId)
+        : ((calc.acid && calc.acid.nameEs) || calc.acidId);
+      window.showMessage(
+        hydroT(
+          'Agua y ácido cargados: ' + acidName + ' · ' + calc.mlPerM3.toFixed(2) + ' mL/m³',
+          'Water and acid loaded: ' + acidName + ' · ' + calc.mlPerM3.toFixed(2) + ' mL/m³'
+        ),
+        'success'
+      );
+    } else {
+      window.showMessage(
+        hydroT(
+          'Ppm del agua cargadas. Este análisis no tiene dosis de ácido calculable (HCO₃⁻/CO₃²⁻).',
+          'Water ppm loaded. This analysis has no calculable acid dose (HCO₃⁻/CO₃²⁻).'
+        ),
+        'warning'
+      );
+    }
+  }
   return true;
 }
 
@@ -1847,19 +2158,31 @@ function hydroAutoCalculateSolution() {
     return den > 0 ? (parseFloat(mat?.[numerator]) || 0) / den : 0;
   };
 
-  // El ácido calculado se incorpora primero para descontar su aporte de N, P o S.
-  const acidCalc = hydroWaterAcidCalculation(hydroGetSelectedWaterAnalysis());
-  if (acidCalc && acidCalc.totalLiters > 0 && byId(acidCalc.acidId)) {
-    hydroState.fertilizers.push({
-      id: 'fert_auto_acid_' + Date.now(),
-      materialId: acidCalc.acidId,
-      element: acidCalc.acidId.indexOf('nitrico') >= 0 ? 'N_NO3' : (acidCalc.acidId.indexOf('fosforico') >= 0 ? 'P' : 'S'),
-      targetPpm: 0,
-      calcMode: 'product',
-      productTotalL: acidCalc.totalLiters,
-      tank: 'C',
-      autoOrder: 90
-    });
+  // El ácido (mL/m³ del análisis) entra primero y descuenta su aporte de N, P o S.
+  const acidCtx = hydroResolveAcidContext();
+  const acidCalc = acidCtx.calc;
+  const hydroVolForAcid = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
+  if (acidCalc && acidCalc.mlPerM3 > 0 && hydroVolForAcid > 0) {
+    if (acidCtx.analysis && acidCtx.analysis.id && !hydroState.waterAnalysisId) {
+      hydroState.waterAnalysisId = acidCtx.analysis.id;
+      hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
+    }
+    const acidId = acidCalc.acidId || 'acido_nitrico_55';
+    if (byId(acidId)) {
+      const totalLiters = (acidCalc.mlPerM3 * hydroVolForAcid) / 1000;
+      if (totalLiters > 0) {
+        hydroState.fertilizers.push({
+          id: 'fert_auto_acid_' + Date.now(),
+          materialId: acidId,
+          element: acidId.indexOf('nitrico') >= 0 ? 'N_NO3' : (acidId.indexOf('fosforico') >= 0 ? 'P' : 'S'),
+          targetPpm: 0,
+          calcMode: 'product',
+          productTotalL: totalLiters,
+          tank: 'C',
+          autoOrder: 1
+        });
+      }
+    }
   }
 
   // 1) Calcio: nitrato de calcio en tanque A.
@@ -2581,6 +2904,29 @@ function rerenderHydroForPreferences() {
 }
 
 // ---------- Modal: fertilizante soluble (concentración elemental) ----------
+function hydroCustomMaterialCompositionText(mat) {
+  if (!mat) return '';
+  const parts = [];
+  HYDRO_PPM_NUTRIENTS.forEach(function (n) {
+    const v = parseFloat(mat[n]);
+    if (!(v > 0)) return;
+    parts.push(hydroLabelPlain(n) + ' ' + (Math.abs(v - Math.round(v)) < 1e-6 ? String(Math.round(v)) : v.toFixed(2)) + '%');
+  });
+  return parts.join(' · ');
+}
+
+function hydroCustomMaterialPriceText(mat) {
+  const api = hydroGetPriceApi();
+  const L = api ? api.labels() : { price: hydroT('Precio', 'Price'), priceUnit: 'USD/t' };
+  const id = mat && (mat.id || mat.name) ? String(mat.id || mat.name) : '';
+  let canon = parseFloat(mat && mat.priceUsdPerTonne);
+  if (!(canon > 0) && id) canon = hydroResolveMaterialPrice(id);
+  canon = Number.isFinite(canon) ? canon : 0;
+  const disp = api ? api.toDisplayPrice(canon) : canon;
+  if (!(disp > 0)) return L.price + ': —';
+  return L.price + ': ' + Number(disp.toFixed(2)) + ' ' + L.priceUnit;
+}
+
 function renderHydroCustomMaterialsList() {
   const container = document.getElementById('hydroCustomMaterialsList');
   if (!container) return;
@@ -2591,10 +2937,20 @@ function renderHydroCustomMaterialsList() {
   }
   container.innerHTML = list.map(mat => {
     const key = encodeURIComponent((mat.id || mat.name || '').toString());
+    const name = String(mat.name || mat.id || '').replace(/</g, '&lt;');
+    const comp = hydroCustomMaterialCompositionText(mat);
+    const price = hydroCustomMaterialPriceText(mat);
     return `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
-        <span>${(mat.name || mat.id || '').replace(/</g, '&lt;')}</span>
-        <div style="display:flex;gap:6px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #e5e7eb;">
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:650;color:#0f172a;">${name}</div>
+          <div style="margin-top:4px;font-size:0.82rem;color:#475569;line-height:1.35;">
+            <span style="font-weight:600;color:#334155;">${hydroT('Composición', 'Composition')}:</span>
+            ${comp ? ('<span class="notranslate" translate="no"> ' + comp.replace(/</g, '&lt;') + '</span>') : (' <span style="color:#94a3b8;">' + hydroT('sin nutrientes capturados', 'no nutrients entered') + '</span>')}
+          </div>
+          <div style="margin-top:3px;font-size:0.82rem;color:#0369a1;font-weight:600;">${price.replace(/</g, '&lt;')}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
           <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditHydroCustomMaterial('${key.replace(/'/g, "\\'")}')">${hydroT('Editar', 'Edit')}</button>
           <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeHydroCustomMaterial('${key.replace(/'/g, "\\'")}')">${hydroT('Eliminar', 'Delete')}</button>
         </div>
@@ -2617,6 +2973,7 @@ function removeHydroCustomMaterial(encodedKey) {
     m => ((m.id || m.name || '') + '').toLowerCase() !== key
   );
   hydroSaveCustomMaterials();
+  hydroRemoveCustomFromFertiCatalog(key);
   renderHydroCustomMaterialsList();
   renderHydroFertTable();
   renderHydroFertTotals();
@@ -2651,8 +3008,12 @@ function openEditHydroCustomMaterial(encodedKey) {
 
 function clearHydroCustomMaterials() {
   if (!confirm('¿Eliminar todo el catálogo de fertilizantes solubles personalizados de hidroponía?')) return;
+  const keys = (hydroCustomMaterialsUser || []).map(function (m) {
+    return ((m.id || m.name || '') + '').toLowerCase();
+  }).filter(Boolean);
   hydroCustomMaterialsUser = [];
   hydroSaveCustomMaterials();
+  keys.forEach(hydroRemoveCustomFromFertiCatalog);
   renderHydroCustomMaterialsList();
   renderHydroFertTable();
   renderHydroFertTotals();
@@ -2755,6 +3116,7 @@ function updateHydroCustomMaterial(overlay) {
   );
   hydroCustomMaterialsUser.push(updated);
   hydroSaveCustomMaterials();
+  hydroPushCustomToFertiCatalog(updated);
   renderHydroCustomMaterialsList();
   renderHydroFertTable();
   renderHydroFertTotals();
@@ -2795,7 +3157,8 @@ function openHydroNewMaterialModal() {
           <div class="nutrient-inputs-grid">${nutrientInputs}</div>
         </div>
         <div class="form-group">
-          <label>${hydroT('Fertilizantes solubles personalizados (hidroponía)', 'Custom soluble fertilizers (hydroponics)')}:</label>
+          <label>${hydroT('Fertilizantes solubles personalizados (hidroponía ↔ fertirriego)', 'Custom soluble fertilizers (hydroponics ↔ fertigation)')}:</label>
+          <p style="margin:4px 0 6px 0;font-size:0.82rem;color:#64748b;">${hydroT('Mismo catálogo soluble: lo que agregues aquí también aparece en Fertirriego, y viceversa.', 'Same soluble catalog: what you add here also appears in Fertigation, and vice versa.')}</p>
           <div id="hydroCustomMaterialsList" style="margin-top:6px;"></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
             <button class="btn btn-info btn-sm" onclick="openHydroPreloadedCatalogModal()" title="${hydroT('Consultar concentraciones elementales de fertilizantes precargados', 'View elemental concentrations of preloaded fertilizers')}">📋 ${hydroT('Ver fertilizantes disponibles', 'View available fertilizers')}</button>
@@ -2813,6 +3176,7 @@ function openHydroNewMaterialModal() {
   document.body.appendChild(overlay);
   overlay.dataset.editMode = 'false';
   overlay.dataset.editKey = '';
+  hydroImportSharedFertiCustoms();
   renderHydroCustomMaterialsList();
 
   overlay.querySelector('#hydroCustom_saveBtn').addEventListener('click', () => {
@@ -2835,6 +3199,7 @@ function openHydroNewMaterialModal() {
     hydroCustomMaterialsUser = hydroCustomMaterialsUser || [];
     hydroCustomMaterialsUser.push(mat);
     hydroSaveCustomMaterials();
+    hydroPushCustomToFertiCatalog(mat);
     renderHydroCustomMaterialsList();
     renderHydroFertTable();
     renderHydroFertTotals();
@@ -2845,6 +3210,9 @@ function openHydroNewMaterialModal() {
 
 function bindHydroEvents(container) {
   if (!container) return;
+  // initHydroponiaUI puede correr varias veces; no acumular listeners (abría N overlays).
+  if (container._hydroEventsBound) return;
+  container._hydroEventsBound = true;
   container.addEventListener('focusin', (e) => {
     const target = e.target;
     const stageId = target && target.getAttribute ? target.getAttribute('data-stage-id') : null;
@@ -3001,15 +3369,8 @@ function bindHydroEvents(container) {
 
   container.addEventListener('change', (e) => {
     const target = e.target;
-    if (target && target.id === 'hydroImportWaterSelect') {
-      const analysisId = target.value;
-      if (!analysisId) return;
-      const ok = hydroApplyWaterAnalysisById(analysisId);
-      if (!ok && window.showMessage) {
-        window.showMessage(hydroT('No se encontró ese análisis de agua.', 'That water analysis was not found.'), 'warning');
-      }
-      return;
-    }
+    // hydroImportWaterSelect usa su propio onchange en hydroRefreshWaterAnalysisSelect
+    if (target && target.id === 'hydroImportWaterSelect') return;
     const stageId = target.getAttribute('data-stage-id');
     if (stageId) {
       hydroState.activeStageId = stageId;
@@ -3148,9 +3509,9 @@ function bindHydroEvents(container) {
   if (autoCalculateBtn) autoCalculateBtn.onclick = hydroAutoCalculateSolution;
   const manageCatalogBtn = document.getElementById('hydroManageCatalogBtn');
   if (manageCatalogBtn) {
-    manageCatalogBtn.addEventListener('click', () => {
+    manageCatalogBtn.onclick = function () {
       if (typeof window.openHydroNewMaterialModal === 'function') window.openHydroNewMaterialModal();
-    });
+    };
   }
 
   container.addEventListener('focusout', (e) => {
@@ -3320,11 +3681,8 @@ function initHydroponiaUI() {
   HYDRO_PPM_NUTRIENTS.forEach(key => {
     if (hydroState.water[key] == null || hydroState.water[key] === '') hydroState.water[key] = 0;
   });
-  // Rehidratar resumen de ácido desde el análisis vinculado (si sigue en el proyecto).
-  if (hydroState.waterAnalysisId) {
-    const liveSummary = hydroBuildAcidDoseSummary();
-    if (liveSummary && liveSummary.hasAcid) hydroState.acidDoseSummary = liveSummary;
-  }
+  // Rehidratar / auto-vincular dosis de ácido (mL/m³) desde Análisis → Agua.
+  hydroEnsureAcidLinkFromProject();
   hydroEnsureDefaults();
   hydroLoadCustomMaterials();
   hydroLoadCustomSolutions();

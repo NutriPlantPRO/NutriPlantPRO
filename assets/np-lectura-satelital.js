@@ -2598,9 +2598,10 @@
     container.querySelectorAll('.radar-tab-button').forEach(function (b) {
       var active = b === btn;
       b.classList.toggle('active', active);
-      b.style.background = active ? '#dcfce7' : '#fff';
-      b.style.color = active ? '#14532d' : '#475569';
-      b.style.borderColor = active ? '#bbf7d0' : '#e2e8f0';
+      // Estilos de carpeta vía CSS (.radar-tab-button.active); no pisar con inline.
+      b.style.background = '';
+      b.style.color = '';
+      b.style.borderColor = '';
     });
     container.querySelectorAll('.radar-tab-content').forEach(function (c) {
       c.style.display = (c.id === 'radarTab' + (target === 'lectura' ? 'Lectura' : 'Poligono')) ? 'block' : 'none';

@@ -3150,9 +3150,71 @@
       plant_context: {
         typical_canopy_diam_m: mid,
         canopy_shape: 'round',
-        notes: 'Criterio derivado de las 10 copas ajustadas manualmente.'
+        crown_vs_alley: 'darker',
+        alley_type: 'grass',
+        shadows_useful: true,
+        notes:
+          'Criterio de las 10 copas: copa más oscura/texturizada que la calle; sombra útil; no solo verde.'
       }
     };
+  }
+
+  /** Tras el análisis local: las 10 copas del usuario entran al resultado con su perímetro. */
+  function mergeCalibrationAnchorsIntoResult(result) {
+    if (!result || !Array.isArray(result.trees) || calibrationSamples.length !== 10) {
+      return result;
+    }
+    var payload = calibrationPayload();
+    var spacing = Number(payload.profile && payload.profile.expected_spacing_m) || 0;
+    var meta = collectMeta();
+    var density = Number(meta.densidad_ha);
+    if (Number.isFinite(density) && density >= 20 && density <= 5000) {
+      spacing = Math.sqrt(10000 / density) || spacing;
+    }
+    var suppressM = spacing > 0 ? Math.max(1.2, spacing * 0.45) : 3;
+    var anchors = (payload.samples || []).map(function (sample, index) {
+      return {
+        id: 'calib-' + (index + 1),
+        stableId: 'calib-' + (index + 1),
+        latlngs: sample.polygon_json,
+        center: [sample.center_lat, sample.center_lng],
+        areaM2: sample.area_m2,
+        diameterM: sample.diameter_m,
+        areaPx: null,
+        confidence: 100,
+        isManual: true,
+        sem: { key: 'verde', label: 'Verde', color: '#16a34a', fill: '#16a34a99' },
+        source: 'calibration'
+      };
+    });
+    var kept = result.trees.filter(function (tree) {
+      var center = tree.center || [];
+      var lat = Number(center[0]);
+      var lng = Number(center[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return true;
+      return !anchors.some(function (anchor) {
+        var dist =
+          window.AirCICanopy && AirCICanopy.haversineM
+            ? AirCICanopy.haversineM(lat, lng, anchor.center[0], anchor.center[1])
+            : Infinity;
+        return dist < suppressM;
+      });
+    });
+    var maxId = kept.reduce(function (max, tree) {
+      return Math.max(max, Number(tree.id) || 0);
+    }, 0);
+    anchors.forEach(function (anchor, index) {
+      if (anchor.id == null || String(anchor.id).indexOf('calib-') === 0) {
+        anchor.id = maxId + index + 1;
+      }
+      kept.push(anchor);
+    });
+    result.trees = kept;
+    result.stats = result.stats || {};
+    result.stats.count = kept.length;
+    result.stats.calibrationAnchors = anchors.length;
+    result.stats.calibrated = true;
+    return result;
   }
 
   function clearCalibrationLayers() {
@@ -3298,10 +3360,10 @@
     box.classList.toggle('is-ready', calibrationReady);
     if (hint) {
       hint.textContent = calibrationReady
-        ? 'Calibración confirmada: estas 10 copas definen el criterio para este vuelo.'
+        ? 'Calibración confirmada: estas 10 copas se guardan en el resultado y definen tamaño/espaciado del análisis.'
         : calibrationActive
           ? 'Haz clic en el centro de cada árbol. Se crea una copa de 6 puntos; ajusta, añade puntos o arrastra ↕ para moverla.'
-          : 'Selecciona 10 árboles representativos. Cada clic crea una copa inicial de 6 puntos que tú ajustas.';
+          : 'Selecciona 10 árboles representativos. Cada uno se conserva como referencia real tras Analizar (no solo desbloquea el botón).';
     }
     if (start) {
       start.hidden = calibrationActive || calibrationReady;
@@ -3414,7 +3476,45 @@
     if (remove) remove.disabled = !professionalSelectedTree && !browserSelectedTree;
   }
 
+  function ensureAirciEditPane() {
+    if (!map || typeof L === 'undefined') return 'airciEdit';
+    if (!map.getPane('airciEdit')) {
+      // Por encima de airciProfessional (650) y markerPane (600): si no, los vértices
+      // quedan debajo del canvas de copas y no reciben clics tras Analizar.
+      var pane = map.createPane('airciEdit');
+      pane.style.zIndex = '670';
+      pane.style.pointerEvents = 'auto';
+    }
+    return 'airciEdit';
+  }
+
+  function professionalTreeLayerKey(tree) {
+    if (!tree) return '';
+    if (tree.id != null) return String(tree.id);
+    if (tree.tree_index != null) return String(tree.tree_index);
+    return '';
+  }
+
+  function setProfessionalTreeDimmed(tree, dimmed) {
+    var key = professionalTreeLayerKey(tree);
+    var entry = key && treeLayersById[key];
+    if (!entry || !entry.outline || !entry.outline.setStyle) return;
+    if (dimmed) {
+      entry.outline.setStyle({ opacity: 0, fillOpacity: 0, weight: 0 });
+      return;
+    }
+    var color = professionalColor((entry.tree && entry.tree.sem_key) || (tree && tree.sem_key));
+    entry.outline.setStyle({
+      color: color,
+      fillColor: color,
+      weight: 1.2,
+      opacity: 1,
+      fillOpacity: 0.38
+    });
+  }
+
   function clearProfessionalEditLayer() {
+    if (professionalSelectedTree) setProfessionalTreeDimmed(professionalSelectedTree, false);
     if (professionalEditLayer && map) map.removeLayer(professionalEditLayer);
     professionalEditLayer = null;
   }
@@ -3442,13 +3542,16 @@
    */
   function mountCanopyShapeEditor(tree, handlers) {
     handlers = handlers || {};
-    professionalEditLayer = L.layerGroup().addTo(map);
+    var editPane = ensureAirciEditPane();
+    professionalEditLayer = L.layerGroup({ pane: editPane }).addTo(map);
     var dense = tree.latlngs.length > 12;
     var editable = L.polygon(tree.latlngs, {
+      pane: editPane,
       color: '#1d4ed8',
       weight: dense ? 2.5 : 3,
       fillColor: '#3b82f6',
-      fillOpacity: 0.2,
+      fillOpacity: 0.22,
+      bubblingMouseEvents: false,
       className: 'aci-canopy-edit-poly'
     }).addTo(professionalEditLayer);
     editable.bindTooltip(
@@ -3466,7 +3569,8 @@
       editable.setLatLngs(tree.latlngs);
     }
 
-    function commitMove(message) {
+    function commitMove(message, opts) {
+      if (opts && opts.redraw) redrawHandles();
       if (typeof handlers.onCommit === 'function') handlers.onCommit(message || 'Copa actualizada.');
     }
 
@@ -3512,7 +3616,7 @@
     editable.on('dblclick', function (event) {
       L.DomEvent.stopPropagation(event);
       tree.latlngs.push([event.latlng.lat, event.latlng.lng]);
-      commitMove('Punto añadido y guardado.');
+      commitMove('Punto añadido y guardado.', { redraw: true });
     });
 
     var moveMarker = null;
@@ -3526,6 +3630,7 @@
       vertexMarkers = [];
       var center = calibrationCentroid(tree.latlngs);
       moveMarker = L.marker(center, {
+        pane: editPane,
         draggable: true,
         keyboard: false,
         zIndexOffset: 1200,
@@ -3561,11 +3666,12 @@
         commitMove('Copa movida y guardada.');
       });
 
-      // Con muchos puntos: vértices más chicos; todos siguen editables.
-      var size = dense ? 8 : 12;
+      // Con muchos puntos: vértices un poco más chicos, pero siempre arrastrables.
+      var size = dense ? 10 : 12;
       var cls = dense ? 'aci-calibration-vertex aci-calibration-vertex--dense' : 'aci-calibration-vertex';
       tree.latlngs.forEach(function (point, pointIndex) {
         var marker = L.marker(point, {
+          pane: editPane,
           draggable: true,
           keyboard: false,
           icon: L.divIcon({
@@ -3583,21 +3689,23 @@
         marker.on('dragend', function () {
           commitMove('Perímetro actualizado.');
         });
-        marker.on('contextmenu', function () {
+        marker.on('contextmenu', function (event) {
+          L.DomEvent.preventDefault(event);
           if (tree.latlngs.length <= 3) return;
           tree.latlngs.splice(pointIndex, 1);
-          commitMove('Punto eliminado.');
+          commitMove('Punto eliminado.', { redraw: true });
         });
         vertexMarkers.push(marker);
       });
     }
 
     redrawHandles();
+    if (professionalEditLayer && professionalEditLayer.bringToFront) professionalEditLayer.bringToFront();
     setMapStatus(
       dense
         ? 'Copa con ' +
             tree.latlngs.length +
-            ' puntos (detalle IA). Arrastra el relleno o ↕ para moverla; zoom para afinar vértices.'
+            ' puntos (detalle IA). Arrastra el relleno o ↕ para moverla; puntos azules para afinar el perímetro.'
         : 'Arrastra la copa o ↕ para moverla. Puntos azules para afinar la forma.',
       'ok'
     );
@@ -3633,6 +3741,7 @@
     if (!professionalEditMode || !tree || !map || typeof L === 'undefined') return;
     professionalSelectedTree = tree;
     browserSelectedTree = null;
+    setProfessionalTreeDimmed(tree, true);
     mountCanopyShapeEditor(tree, {
       onCommit: async function (message) {
         var response = await saveProfessionalTree(tree, 'update');
@@ -3641,7 +3750,27 @@
           return;
         }
         setMapStatus(message || 'Perímetro actualizado.', 'ok');
-        loadProfessionalViewport(professionalResultId, professionalStats || {});
+        var metrics = calibrationPolygonMetrics(tree.latlngs);
+        var entry = treeLayersById[professionalTreeLayerKey(tree)];
+        if (entry) {
+          entry.tree = Object.assign({}, entry.tree || {}, {
+            polygon_json: tree.latlngs.slice(),
+            center_lat: metrics.center[0],
+            center_lng: metrics.center[1],
+            area_m2: metrics.areaM2,
+            diameter_m: metrics.diameterM,
+            area_px: tree.areaPx
+          });
+          if (entry.outline && entry.outline.setLatLngs) {
+            entry.outline.setLatLngs(tree.latlngs);
+          }
+          // Sigue oculta bajo el editor mientras editas
+          setProfessionalTreeDimmed(tree, true);
+        }
+        if (response.stats) {
+          professionalStats = response.stats;
+          syncProfessionalSummaryUi(response.stats, {});
+        }
       }
     });
     syncProfessionalEditUi();
@@ -4028,18 +4157,27 @@
     setMapStatus('Creando análisis profesional del predio completo…', 'ok');
     var meta = collectMeta();
     var density = Number(meta.densidad_ha);
-    var spacing =
-      Number.isFinite(density) && density > 0 ? Math.sqrt(10000 / density) : 0;
+    var spacingFromDensity =
+      Number.isFinite(density) && density >= 20 && density <= 5000
+        ? Math.sqrt(10000 / density)
+        : 0;
     var calibration = calibrationPayload();
+    // Densidad del predio manda para saber cuántas/dónde buscar; las 10 copas fijan Ø y anclas.
+    var spacing =
+      spacingFromDensity ||
+      Number(calibration.profile.expected_spacing_m) ||
+      0;
     var response = await apiProfessional({
       action: 'enqueue',
       site_id: getSiteId(),
       flight_id: flightId,
       options: {
         detector_mode: 'classical_v1',
-        expected_spacing_m: calibration.profile.expected_spacing_m || spacing,
+        expected_spacing_m: spacing,
         min_canopy_m: calibration.profile.min_canopy_m || 1,
         max_canopy_m: calibration.profile.max_canopy_m || 12,
+        target_trees_per_ha:
+          Number.isFinite(density) && density >= 20 && density <= 5000 ? density : 0,
         calibration: calibration,
         cost_cap_usd: 1
       }
@@ -4163,6 +4301,7 @@
           visionOnly: !!(visionSeeds && visionSeeds.length)
         });
         if (runId !== detectRunId) return;
+        result = mergeCalibrationAnchorsIntoResult(result);
         if (useAi || calib) {
           result.stats.aiModel = useAi ? model : calibSource;
           result.stats.aiCalibrated = true;
@@ -5522,6 +5661,7 @@
       professionalPane.style.zIndex = '650';
       professionalPane.style.pointerEvents = 'auto';
     }
+    ensureAirciEditPane();
     map.setView([23.6, -102.5], 5);
     try {
       var saved = localStorage.getItem(BASEMAP_KEY);
@@ -5538,6 +5678,8 @@
     if (activeBasemap !== 'off') setBasemap(activeBasemap);
     map.on('moveend', function () {
       if (!professionalResultId) return;
+      // No recargar el viewport a mitad de edición: destruye handles / pierde el perímetro activo.
+      if (professionalEditMode && professionalEditLayer) return;
       clearTimeout(professionalViewportTimer);
       professionalViewportTimer = setTimeout(function () {
         loadProfessionalViewport(professionalResultId, professionalStats || {});
@@ -6207,11 +6349,14 @@
         professionalSelectedTree = null;
         browserSelectedTree = null;
         clearProfessionalEditLayer();
+        if (professionalResultId) {
+          loadProfessionalViewport(professionalResultId, professionalStats || {});
+        }
       }
       syncProfessionalEditUi();
       setMapStatus(
         professionalEditMode
-          ? 'Clic en una copa: mueve puntos, doble clic para añadir, o arrastra ↕ para mover toda la copa.'
+          ? 'Clic en una copa: arrastra puntos azules para el perímetro, doble clic para añadir, o ↕ para mover toda la copa.'
           : 'Edición manual terminada.',
         'ok'
       );

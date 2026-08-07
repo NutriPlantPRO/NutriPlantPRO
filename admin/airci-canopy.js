@@ -328,8 +328,10 @@
       if (s < Math.max(P.darkSum, 70) || (R < 28 && G < 32 && B < 28) || G < P.minG) {
         v = 0;
       } else if (
-        (s > 230 && Math.abs(R - G) < 38 && G > B + 5 && R > B + 3) ||
-        (s > 200 && Math.abs(R - G) < 22 && G > B + 8 && R > 70)
+        (s > 220 && Math.abs(R - G) < 42 && G > B + 5 && R > B + 3 && G > 85) ||
+        (s > 190 && Math.abs(R - G) < 28 && G > B + 8 && R > 65 && G > 95) ||
+        // Pasto limón brillante: más “verde” que la copa oscura
+        (G > 140 && R > 110 && B < G - 25 && s > 280 && Math.abs(R - G) < 55)
       ) {
         // Pasto soleado / calle amarillo-verdosa — NO copa
         v = 0;
@@ -1920,8 +1922,9 @@
         wColor * 40 * exgSoft;
       if (shadowFlat) score *= 0.12;
       if (texture < 3 && darkBlob < 4 && brightBlob < 4) score *= 0.3;
-      // Calle de pasto muy uniforme
-      if (scene.alleyType === 'grass' && texture < 2.5 && Math.abs(L - m) < 3) score *= 0.25;
+      // Calle de pasto muy uniforme / limón brillante
+      if (scene.alleyType === 'grass' && texture < 2.8 && Math.abs(L - m) < 4) score *= 0.22;
+      if (scene.alleyType === 'grass' && L > m + 8 && texture < 5 && exgSoft > 0.15) score *= 0.35;
       raw[p] = score;
     }
     var blurred = boxBlurU8(raw, w, h, Math.max(2, Math.round(canopyR * 0.55)));

@@ -325,8 +325,47 @@ function setFertiTimeUnit(unit) {
 // Materiales base + personalizados
 function getAllFertiMaterials() {
   try {
-    return [...FERT_SOLUBLES_DB, ...(Array.isArray(fertiCustomMaterials) ? fertiCustomMaterials : [])];
-  } catch { return [...FERT_SOLUBLES_DB]; }
+    const merged = new Map();
+    const push = (m) => {
+      if (!m || !(m.id || m.name)) return;
+      const id = String(m.id || m.name);
+      if (!merged.has(id)) merged.set(id, m);
+    };
+    (FERT_SOLUBLES_DB || []).forEach(push);
+    (Array.isArray(fertiCustomMaterials) ? fertiCustomMaterials : []).forEach(push);
+    // Catálogo soluble compartido: personalizados creados en hidroponía
+    if (typeof window.getHydroCustomMaterialsForShare === 'function') {
+      const hydroList = window.getHydroCustomMaterialsForShare() || [];
+      hydroList.forEach(function (hm) {
+        if (!hm) return;
+        const oxide = (typeof window.hydroElementalToFertiOxide === 'function')
+          ? window.hydroElementalToFertiOxide(hm)
+          : null;
+        const mat = oxide || {
+          id: hm.id,
+          name: hm.name,
+          N_NO3: hm.N_NO3, N_NH4: hm.N_NH4,
+          P2O5: (parseFloat(hm.P) || 0) * 2.291,
+          K2O: (parseFloat(hm.K) || 0) * 1.204,
+          CaO: (parseFloat(hm.Ca) || 0) * 1.399,
+          MgO: (parseFloat(hm.Mg) || 0) * 1.658,
+          SO4: (parseFloat(hm.S) || 0) * 3,
+          S: 0,
+          Cl: hm.Cl, Fe: hm.Fe, Mn: hm.Mn, B: hm.B, Zn: hm.Zn, Cu: hm.Cu, Mo: hm.Mo,
+          priceUsdPerTonne: hm.priceUsdPerTonne
+        };
+        const nameKey = String(mat.name || '').trim().toLowerCase();
+        const already = Array.from(merged.values()).some(function (x) {
+          return String(x.id) === String(mat.id) ||
+            (nameKey && String(x.name || '').trim().toLowerCase() === nameKey);
+        });
+        if (!already) push(mat);
+      });
+    }
+    return Array.from(merged.values());
+  } catch {
+    return [...FERT_SOLUBLES_DB];
+  }
 }
 
 /** Solo los fertilizantes precargados (sin personalizados), para consulta de concentración */
@@ -376,6 +415,106 @@ function mergeFertiCustomMaterials() {
   (Array.isArray(fertiCustomMaterialsProject) ? fertiCustomMaterialsProject : []).forEach(push);
   fertiCustomMaterials = Array.from(merged.values());
 }
+
+/** Importa solubles de hidroponía al catálogo de fertirriego (mismo catálogo soluble). */
+function fertiImportSharedHydroCustoms() {
+  if (typeof window.getHydroCustomMaterialsForShare !== 'function') return false;
+  let hydroList = [];
+  try { hydroList = window.getHydroCustomMaterialsForShare() || []; } catch (e) { return false; }
+  if (!Array.isArray(hydroList) || !hydroList.length) return false;
+  fertiCustomMaterialsUser = Array.isArray(fertiCustomMaterialsUser) ? fertiCustomMaterialsUser : [];
+  const seen = new Set(fertiCustomMaterialsUser.map(function (m) {
+    return ((m.id || m.name || '') + '').toLowerCase();
+  }));
+  const seenNames = new Set(fertiCustomMaterialsUser.map(function (m) {
+    return String(m.name || '').trim().toLowerCase();
+  }).filter(Boolean));
+  let changed = false;
+  hydroList.forEach(function (hm) {
+    if (!hm) return;
+    const key = ((hm.id || hm.name || '') + '').toLowerCase();
+    const nameKey = String(hm.name || '').trim().toLowerCase();
+    if (!key || seen.has(key) || (nameKey && seenNames.has(nameKey))) return;
+    const oxide = (typeof window.hydroElementalToFertiOxide === 'function')
+      ? window.hydroElementalToFertiOxide(hm)
+      : null;
+    if (!oxide) return;
+    fertiCustomMaterialsUser = upsertFertiMaterial(fertiCustomMaterialsUser, oxide, 'user');
+    seen.add(key);
+    if (nameKey) seenNames.add(nameKey);
+    changed = true;
+  });
+  if (changed) {
+    saveFertiCustomMaterialsToUser();
+    mergeFertiCustomMaterials();
+  }
+  return changed;
+}
+
+function fertiPushCustomToHydroCatalog(mat) {
+  if (!mat || typeof window.upsertHydroCustomMaterialFromFerti !== 'function') return;
+  const elem = (typeof window.hydroMaterialToElemental === 'function')
+    ? window.hydroMaterialToElemental(mat)
+    : null;
+  // Fallback local si hidro aún no expuso el helper
+  const out = elem || {
+    id: mat.id,
+    name: mat.name,
+    N_NO3: parseFloat(mat.N_NO3) || 0,
+    N_NH4: parseFloat(mat.N_NH4) || 0,
+    P: (parseFloat(mat.P2O5) || 0) / 2.291 || parseFloat(mat.P) || 0,
+    K: (parseFloat(mat.K2O) || 0) / 1.204 || parseFloat(mat.K) || 0,
+    Ca: (parseFloat(mat.CaO) || 0) / 1.399 || parseFloat(mat.Ca) || 0,
+    Mg: (parseFloat(mat.MgO) || 0) / 1.658 || parseFloat(mat.Mg) || 0,
+    S: parseFloat(mat.S) || ((parseFloat(mat.SO4) || 0) / 3) || 0,
+    Cl: parseFloat(mat.Cl) || 0,
+    Fe: parseFloat(mat.Fe) || 0,
+    Mn: parseFloat(mat.Mn) || 0,
+    B: parseFloat(mat.B) || 0,
+    Zn: parseFloat(mat.Zn) || 0,
+    Cu: parseFloat(mat.Cu) || 0,
+    Mo: parseFloat(mat.Mo) || 0,
+    priceUsdPerTonne: parseFloat(mat.priceUsdPerTonne) || 0
+  };
+  if (elem && mat.priceUsdPerTonne != null) out.priceUsdPerTonne = parseFloat(mat.priceUsdPerTonne) || 0;
+  try { window.upsertHydroCustomMaterialFromFerti(out); } catch (e) { console.warn('Sync ferti→hidro:', e); }
+}
+
+function fertiRemoveCustomFromHydroCatalog(key) {
+  if (!key || typeof window.removeHydroCustomMaterialShared !== 'function') return;
+  try { window.removeHydroCustomMaterialShared(key); } catch (e) { console.warn('Remove hydro shared:', e); }
+}
+
+window.getFertiCustomMaterialsForShare = function () {
+  mergeFertiCustomMaterials();
+  return Array.isArray(fertiCustomMaterials) ? fertiCustomMaterials.slice() : [];
+};
+window.upsertFertiCustomMaterialFromHydro = function (oxideMat) {
+  if (!oxideMat || !(oxideMat.id || oxideMat.name)) return;
+  fertiCustomMaterialsUser = upsertFertiMaterial(fertiCustomMaterialsUser, oxideMat, 'user');
+  saveFertiCustomMaterialsToUser();
+  mergeFertiCustomMaterials();
+  try {
+    if (document.getElementById('fertiCustomMaterialsList')) renderFertiCustomMaterialsList();
+    if (typeof renderFertiWeeks === 'function') renderFertiWeeks();
+  } catch (e) {}
+};
+window.removeFertiCustomMaterialShared = function (key) {
+  const k = String(key || '').toLowerCase();
+  if (!k) return;
+  const match = (m) => ((m.id || m.name || '') + '').toLowerCase() === k ||
+    String(m.name || '').trim().toLowerCase() === k;
+  const userBefore = (fertiCustomMaterialsUser || []).length;
+  const projBefore = (fertiCustomMaterialsProject || []).length;
+  fertiCustomMaterialsUser = (fertiCustomMaterialsUser || []).filter(m => !match(m));
+  fertiCustomMaterialsProject = (fertiCustomMaterialsProject || []).filter(m => !match(m));
+  if (userBefore !== fertiCustomMaterialsUser.length) saveFertiCustomMaterialsToUser();
+  if (projBefore !== fertiCustomMaterialsProject.length) saveFertiCustomMaterials();
+  mergeFertiCustomMaterials();
+  try {
+    if (document.getElementById('fertiCustomMaterialsList')) renderFertiCustomMaterialsList();
+  } catch (e) {}
+};
 function upsertFertiMaterial(list, mat, source) {
   const safeList = Array.isArray(list) ? list : [];
   const key = ((mat.id || mat.name || '') + '').toLowerCase();
@@ -414,6 +553,46 @@ function saveFertiCustomMaterialsToUser() {
   } catch {}
 }
 
+function fertiCustomMaterialCompositionText(mat) {
+  if (!mat) return '';
+  const specs = [
+    ['N(NO₃)', 'N_NO3'],
+    ['N(NH₄)', 'N_NH4'],
+    ['P₂O₅', 'P2O5'],
+    ['K₂O', 'K2O'],
+    ['CaO', 'CaO'],
+    ['MgO', 'MgO'],
+    ['SO₄', 'SO4'],
+    ['Cl⁻', 'Cl'],
+    ['Fe', 'Fe'],
+    ['Mn', 'Mn'],
+    ['B', 'B'],
+    ['Zn', 'Zn'],
+    ['Cu', 'Cu'],
+    ['Mo', 'Mo'],
+    ['SiO₂', 'SiO2']
+  ];
+  const parts = [];
+  specs.forEach(function (pair) {
+    const v = parseFloat(mat[pair[1]]);
+    if (!(v > 0)) return;
+    parts.push(pair[0] + ' ' + (Math.abs(v - Math.round(v)) < 1e-6 ? String(Math.round(v)) : v.toFixed(2)) + '%');
+  });
+  return parts.join(' · ');
+}
+
+function fertiCustomMaterialPriceText(mat) {
+  const api = fertiGetPriceApi();
+  const L = api ? api.labels() : { price: fertProgT('price', 'Precio'), priceUnit: 'USD/t' };
+  const id = mat && (mat.id || mat.name) ? String(mat.id || mat.name) : '';
+  let canon = parseFloat(mat && mat.priceUsdPerTonne);
+  if (!(canon > 0) && id) canon = fertiResolveMaterialPrice(id);
+  canon = Number.isFinite(canon) ? canon : 0;
+  const disp = api ? api.toDisplayPrice(canon) : canon;
+  if (!(disp > 0)) return L.price + ': —';
+  return L.price + ': ' + Number(disp.toFixed(2)) + ' ' + L.priceUnit;
+}
+
 function renderFertiCustomMaterialsList() {
   const container = document.getElementById('fertiCustomMaterialsList');
   if (!container) return;
@@ -427,13 +606,23 @@ function renderFertiCustomMaterialsList() {
     const badge = mat.source === 'user'
       ? fertProgT('user_badge', 'Usuario')
       : fertProgT('project_badge', 'Proyecto');
+    const name = fertProgMaterial(mat.name || mat.id);
+    const comp = fertiCustomMaterialCompositionText(mat);
+    const price = fertiCustomMaterialPriceText(mat);
     return `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span>${fertProgMaterial(mat.name || mat.id)}</span>
-          <span style="font-size:12px;color:#64748b;border:1px solid #e2e8f0;border-radius:999px;padding:2px 8px;">${badge}</span>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #e5e7eb;">
+        <div style="min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-weight:650;color:#0f172a;">${name}</span>
+            <span style="font-size:12px;color:#64748b;border:1px solid #e2e8f0;border-radius:999px;padding:2px 8px;">${badge}</span>
+          </div>
+          <div style="margin-top:4px;font-size:0.82rem;color:#475569;line-height:1.35;">
+            <span style="font-weight:600;color:#334155;">${fertProgT('composition', 'Composición')}:</span>
+            ${comp ? ('<span class="notranslate" translate="no"> ' + comp + '</span>') : (' <span style="color:#94a3b8;">' + fertProgT('no_nutrients', 'sin nutrientes capturados') + '</span>')}
+          </div>
+          <div style="margin-top:3px;font-size:0.82rem;color:#0369a1;font-weight:600;">${price}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;">
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
           <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="openEditFertiCustomMaterial('${key}')">${fertProgT('edit', 'Editar')}</button>
           <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem;" onclick="removeFertiCustomMaterial('${key}')">${fertProgT('delete', 'Eliminar')}</button>
         </div>
@@ -467,6 +656,7 @@ function removeFertiCustomMaterial(encodedKey) {
     saveFertiCustomMaterials();
   }
   mergeFertiCustomMaterials();
+  fertiRemoveCustomFromHydroCatalog(key);
   renderFertiCustomMaterialsList();
   renderFertiWeeks();
 }
@@ -516,6 +706,9 @@ function openEditFertiCustomMaterial(encodedKey) {
 
 function clearFertiCustomMaterials() {
   if (!confirm(fertProgT('confirm_clear_catalog', '¿Eliminar todo el catálogo de fertilizantes solubles personalizados?'))) return;
+  const keys = (Array.isArray(fertiCustomMaterials) ? fertiCustomMaterials : []).map(function (m) {
+    return ((m.id || m.name || '') + '').toLowerCase();
+  }).filter(Boolean);
   const userId = fertiGetCurrentUserId();
   if (userId) {
     fertiCustomMaterialsUser = [];
@@ -525,6 +718,7 @@ function clearFertiCustomMaterials() {
     saveFertiCustomMaterials();
   }
   mergeFertiCustomMaterials();
+  keys.forEach(fertiRemoveCustomFromHydroCatalog);
   renderFertiCustomMaterialsList();
   renderFertiWeeks();
 }
@@ -655,6 +849,7 @@ function updateFertiCustomMaterial(overlay) {
     saveFertiCustomMaterials();
   }
   mergeFertiCustomMaterials();
+  fertiPushCustomToHydroCatalog(updated);
   renderFertiWeeks();
   renderFertiCustomMaterialsList();
   if (window.showMessage) window.showMessage('✅ Fertilizante actualizado', 'success');
@@ -2929,7 +3124,8 @@ function openFertiNewMaterialModal() {
           </div>
         </div>
         <div class="form-group">
-          <label>${fertProgT('custom_solubles', 'Fertilizantes solubles personalizados:')}</label>
+          <label>${fertProgT('custom_solubles', 'Fertilizantes solubles personalizados (fertirriego ↔ hidroponía):')}</label>
+          <p style="margin:4px 0 6px 0;font-size:0.82rem;color:#64748b;">${fertProgT('shared_soluble_help', 'Mismo catálogo soluble: lo que agregues aquí también aparece en Hidroponía, y viceversa.')}</p>
           <div id="fertiCustomMaterialsList" style="margin-top:6px;"></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
             <button class="btn btn-info btn-sm" onclick="openFertiPreloadedCatalogModal()" title="${fertProgT('view_available_title', 'Consultar concentraciones de fertilizantes precargados')}">📋 ${fertProgT('view_available', 'Ver fertilizantes disponibles')}</button>
@@ -2947,6 +3143,7 @@ function openFertiNewMaterialModal() {
   document.body.appendChild(overlay);
   overlay.dataset.editMode = 'false';
   overlay.dataset.editKey = '';
+  fertiImportSharedHydroCustoms();
   renderFertiCustomMaterialsList();
 
   // Guardar
@@ -2989,6 +3186,7 @@ function openFertiNewMaterialModal() {
     fertiCustomMaterialsUser = upsertFertiMaterial(fertiCustomMaterialsUser, mat, 'user');
     saveFertiCustomMaterialsToUser();
     mergeFertiCustomMaterials();
+    fertiPushCustomToHydroCatalog(mat);
     renderFertiWeeks();
     renderFertiCustomMaterialsList();
     if (window.showMessage) window.showMessage(fertProgT('fertilizer_added', '✅ Fertilizante agregado'), 'success');

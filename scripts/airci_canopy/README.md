@@ -51,6 +51,8 @@ Salud:
 curl http://localhost:8080/health
 ```
 
-El detector `classical_v1` es una línea base que debe validarse con zonas
-contadas manualmente. Su salida se marca `requires_review`; no debe venderse
-como precisión garantizada hasta completar esa validación.
+El detector `classical_v1` (ahora **v1.2**) combina contraste local (copa
+más oscura o más clara según la calle), textura de follaje, soporte de sombra y
+verdor relativo — no solo “más verde”. Debe validarse con zonas contadas
+manualmente. Su salida se marca `requires_review`; no debe venderse como
+precisión garantizada hasta completar esa validación.
