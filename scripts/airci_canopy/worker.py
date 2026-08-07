@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import hmac
+import hashlib
 import tempfile
 import time
 from datetime import datetime, timezone
@@ -30,10 +32,18 @@ def supabase_client() -> Client:
     return create_client(url, key)
 
 
-def require_worker_secret() -> bool:
-    expected = os.environ.get("AIRCI_WORKER_SECRET", "").strip()
-    received = request.headers.get("X-AirCI-Worker-Secret", "").strip()
-    return bool(expected and received and expected == received)
+def valid_worker_signature(job_id: str) -> bool:
+    """Autoriza solo al backend Netlify usando la clave server-side compartida."""
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    received = request.headers.get("X-AirCI-Worker-Signature", "").strip()
+    if not key or not received or not job_id:
+        return False
+    expected = hmac.new(
+        key.encode("utf-8"),
+        f"airci-worker:v1:{job_id}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, received)
 
 
 def update_job(client: Client, job_id: str, **fields) -> None:
@@ -294,12 +304,12 @@ def health():
 
 @app.post("/process")
 def process():
-    if not require_worker_secret():
-        return jsonify({"ok": False, "error": "No autorizado"}), 401
     payload = request.get_json(silent=True) or {}
     job_id = str(payload.get("job_id") or "").strip()
     if not job_id:
         return jsonify({"ok": False, "error": "job_id requerido"}), 400
+    if not valid_worker_signature(job_id):
+        return jsonify({"ok": False, "error": "No autorizado"}), 401
     try:
         return jsonify(process_job(job_id))
     except Exception as error:

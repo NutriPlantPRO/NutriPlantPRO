@@ -49,8 +49,6 @@ El backend lee todo por variables de entorno; no hace falta tocar código.
 | `OPENAI_PRICE_*` | Precios por 1M tokens (solo si cambian) | Opcional |
 | `SUPABASE_URL` | Para que el admin pueda cambiar el correo de un usuario en Supabase Auth (mismo valor que en `supabase-config.js`) | Opcional; si no está, el admin solo actualiza perfil, no el correo de acceso |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave **service_role** del proyecto (Settings → API). Solo la usa el servidor para actualizar email en Auth | Opcional; nunca exponer en el frontend |
-| `AIRCI_WORKER_URL` | URL del worker AirCI en Cloud Run, sin `/process` | Obligatoria para AirCI Professional |
-| `AIRCI_WORKER_SECRET` | Secreto compartido Netlify ↔ Cloud Run | Obligatoria para AirCI Professional; nunca exponer en frontend |
 | `NUTRIPLANT_ADMIN_KEY` | Clave que valida las peticiones del panel admin (por defecto la misma que `?k=...` en la URL del admin) | Opcional; si no está, se usa el valor por defecto del código |
 
 **Editar correo desde el panel admin:**  

@@ -6,9 +6,7 @@ escala a cero cuando no trabaja.
 ## Antes de desplegar
 
 1. Ejecuta `supabase-airci-professional.sql` en Supabase.
-2. Crea un secreto largo; el mismo valor va en Cloud Run y Netlify:
-   `AIRCI_WORKER_SECRET`.
-3. El worker también requiere:
+2. El worker requiere:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -27,16 +25,16 @@ gcloud run deploy airci-canopy-worker \
   --concurrency 1 \
   --max-instances 2 \
   --set-env-vars SUPABASE_URL=TU_URL \
-  --set-secrets SUPABASE_SERVICE_ROLE_KEY=airci-supabase-key:latest,AIRCI_WORKER_SECRET=airci-worker-secret:latest
+  --set-secrets SUPABASE_SERVICE_ROLE_KEY=airci-supabase-key:latest
 ```
 
 `--allow-unauthenticated` permite que Netlify alcance el servicio; `/process`
-sigue protegido por `X-AirCI-Worker-Secret`. No expongas ese secreto al navegador.
+exige una firma HMAC creada con la `SUPABASE_SERVICE_ROLE_KEY`, que nunca llega
+al navegador.
 
-En Netlify configura:
-
-- `AIRCI_WORKER_URL`: URL del servicio, sin `/process`.
-- `AIRCI_WORKER_SECRET`: mismo secreto.
+La URL del worker se configura en
+`netlify/functions/airci-canopy-detect-background.js`; no se añaden variables
+de entorno nuevas a Netlify, evitando el límite AWS Lambda de 4 KB.
 
 ## Validación local
 
