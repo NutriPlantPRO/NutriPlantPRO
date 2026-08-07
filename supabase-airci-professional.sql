@@ -188,3 +188,125 @@ REVOKE ALL ON FUNCTION public.airci_promote_canopy_result(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.airci_promote_canopy_result(uuid) FROM anon;
 REVOKE ALL ON FUNCTION public.airci_promote_canopy_result(uuid) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.airci_promote_canopy_result(uuid) TO service_role;
+
+-- Recalcula los indicadores del lote tras una corrección manual de una copa.
+-- Se ejecuta desde la función Netlify con service_role; no se expone al navegador.
+CREATE OR REPLACE FUNCTION public.airci_recalculate_canopy_result(p_result_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_stats jsonb;
+  v_gsd_m double precision;
+  v_total_px double precision;
+  v_ortho_m2 double precision;
+  v_count integer;
+  v_sum_px double precision;
+  v_mean_px double precision;
+  v_std_px double precision;
+  v_min_px double precision;
+  v_max_px double precision;
+  v_cover_pct double precision;
+BEGIN
+  SELECT stats_json
+    INTO v_stats
+  FROM public.airci_canopy_results
+  WHERE id = p_result_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Resultado AirCI no encontrado';
+  END IF;
+
+  v_gsd_m := NULLIF(v_stats->>'gsdM', '')::double precision;
+  v_total_px := COALESCE(
+    NULLIF(v_stats->>'totalPixels', '')::double precision,
+    NULLIF(v_stats->>'widthPx', '')::double precision
+      * NULLIF(v_stats->>'heightPx', '')::double precision
+  );
+
+  SELECT
+    COUNT(*)::integer,
+    COALESCE(SUM(area_px), 0),
+    COALESCE(AVG(area_px), 0),
+    COALESCE(STDDEV_POP(area_px), 0),
+    COALESCE(MIN(area_px), 0),
+    COALESCE(MAX(area_px), 0)
+  INTO v_count, v_sum_px, v_mean_px, v_std_px, v_min_px, v_max_px
+  FROM public.airci_canopy_trees
+  WHERE result_id = p_result_id
+    AND is_deleted = false;
+
+  UPDATE public.airci_canopy_trees AS tree
+     SET sem_key = CASE
+          WHEN v_std_px <= 1e-9 THEN 'verde'
+          WHEN (tree.area_px - v_mean_px) / v_std_px < -1.1 THEN 'rojo'
+          WHEN (tree.area_px - v_mean_px) / v_std_px < -0.45 THEN 'amarillo'
+          WHEN (tree.area_px - v_mean_px) / v_std_px > 1.0 THEN 'azul'
+          ELSE 'verde'
+        END,
+        metrics_json = COALESCE(tree.metrics_json, '{}'::jsonb)
+          || jsonb_build_object(
+            'z',
+            CASE
+              WHEN v_std_px <= 1e-9 THEN 0
+              ELSE round(((tree.area_px - v_mean_px) / v_std_px)::numeric, 4)
+            END,
+            'recalculated_at',
+            now()
+          )
+   WHERE tree.result_id = p_result_id
+     AND tree.is_deleted = false;
+
+  v_cover_pct := CASE
+    WHEN v_total_px > 0 THEN LEAST(100, 100 * v_sum_px / v_total_px)
+    ELSE 0
+  END;
+  v_ortho_m2 := CASE
+    WHEN v_gsd_m > 0 AND v_total_px > 0 THEN v_total_px * v_gsd_m * v_gsd_m
+    ELSE NULL
+  END;
+
+  v_stats := COALESCE(v_stats, '{}'::jsonb) || jsonb_build_object(
+    'count', v_count,
+    'coverPct', round(v_cover_pct::numeric, 3),
+    'barePct', round((100 - v_cover_pct)::numeric, 3),
+    'meanArea', round(v_mean_px::numeric, 3),
+    'stdArea', round(v_std_px::numeric, 3),
+    'minArea', round(v_min_px::numeric, 3),
+    'maxArea', round(v_max_px::numeric, 3),
+    'cvPct', CASE WHEN v_mean_px > 0 THEN round((100 * v_std_px / v_mean_px)::numeric, 3) ELSE 0 END,
+    'maxVsMeanPct', CASE WHEN v_mean_px > 0 THEN round((100 * (v_max_px - v_mean_px) / v_mean_px)::numeric, 3) ELSE 0 END,
+    'minVsMeanPct', CASE WHEN v_mean_px > 0 THEN round((100 * (v_min_px - v_mean_px) / v_mean_px)::numeric, 3) ELSE 0 END,
+    'maxMinRatio', CASE WHEN v_min_px > 0 THEN round((v_max_px / v_min_px)::numeric, 4) ELSE NULL END,
+    'vegPixels', round(v_sum_px::numeric, 3),
+    'canopyAreaM2', CASE WHEN v_gsd_m > 0 THEN round((v_sum_px * v_gsd_m * v_gsd_m)::numeric, 3) ELSE NULL END,
+    'meanAreaM2', CASE WHEN v_gsd_m > 0 THEN round((v_mean_px * v_gsd_m * v_gsd_m)::numeric, 3) ELSE NULL END,
+    'minAreaM2', CASE WHEN v_gsd_m > 0 THEN round((v_min_px * v_gsd_m * v_gsd_m)::numeric, 3) ELSE NULL END,
+    'maxAreaM2', CASE WHEN v_gsd_m > 0 THEN round((v_max_px * v_gsd_m * v_gsd_m)::numeric, 3) ELSE NULL END,
+    'orthoAreaM2', v_ortho_m2,
+    'orthoAreaHa', CASE WHEN v_ortho_m2 IS NOT NULL THEN v_ortho_m2 / 10000 ELSE NULL END,
+    'bareAreaM2', CASE WHEN v_ortho_m2 IS NOT NULL THEN GREATEST(0, v_ortho_m2 - v_sum_px * v_gsd_m * v_gsd_m) ELSE NULL END,
+    'treesPerHa', CASE WHEN v_ortho_m2 > 0 THEN v_count * 10000 / v_ortho_m2 ELSE NULL END,
+    'manualEditsRecalculatedAt', now()
+  );
+
+  UPDATE public.airci_canopy_results
+     SET tree_count = v_count,
+         cover_pct = v_cover_pct,
+         mean_area_px = v_mean_px,
+         std_area_px = v_std_px,
+         stats_json = v_stats,
+         updated_at = now()
+   WHERE id = p_result_id;
+
+  RETURN v_stats;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.airci_recalculate_canopy_result(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.airci_recalculate_canopy_result(uuid) FROM anon;
+REVOKE ALL ON FUNCTION public.airci_recalculate_canopy_result(uuid) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.airci_recalculate_canopy_result(uuid) TO service_role;

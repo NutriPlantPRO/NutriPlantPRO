@@ -3357,7 +3357,7 @@
 
   async function saveProfessionalTree(tree, operation) {
     var metrics = calibrationPolygonMetrics(tree.latlngs);
-    return apiProfessional({
+    var response = await apiProfessional({
       action: 'tree_edit',
       result_id: professionalResultId,
       operation: operation,
@@ -3371,6 +3371,11 @@
         area_px: tree.areaPx
       }
     });
+    if (response.ok && response.stats) {
+      professionalStats = response.stats;
+      loadProfessionalSemCounts(professionalResultId);
+    }
+    return response;
   }
 
   function openProfessionalTreeEditor(tree) {
@@ -3495,6 +3500,10 @@
     if (!response.ok) {
       setMapStatus(response.error || 'No se pudo borrar la copa.', 'error');
       return;
+    }
+    if (response.stats) {
+      professionalStats = response.stats;
+      loadProfessionalSemCounts(professionalResultId);
     }
     professionalSelectedTree = null;
     clearProfessionalEditLayer();

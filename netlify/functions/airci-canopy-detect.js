@@ -64,7 +64,7 @@ async function verifyAdmin(supabase, token) {
 
 function setupFor(error) {
   const msg = String((error && error.message) || error || '');
-  return /airci_detect_jobs|airci_canopy_trees|airci_canopy_calibrations|schema cache|does not exist/i.test(msg)
+  return /airci_detect_jobs|airci_canopy_trees|airci_canopy_calibrations|airci_recalculate_canopy_result|schema cache|does not exist/i.test(msg)
     ? 'supabase-airci-professional.sql'
     : null;
 }
@@ -73,6 +73,43 @@ function finite(value) {
   if (value == null || value === '') return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function polygonMetricsM2(polygon) {
+  if (!Array.isArray(polygon) || polygon.length < 3) return null;
+  const center = polygon.reduce(
+    (total, point) => [total[0] + point[0], total[1] + point[1]],
+    [0, 0]
+  ).map((value) => value / polygon.length);
+  const latScale = 111320;
+  const lngScale = 111320 * Math.max(0.1, Math.cos((center[0] * Math.PI) / 180));
+  let twiceArea = 0;
+  let perimeterM = 0;
+  polygon.forEach((point, index) => {
+    const next = polygon[(index + 1) % polygon.length];
+    const ax = (point[1] - center[1]) * lngScale;
+    const ay = (point[0] - center[0]) * latScale;
+    const bx = (next[1] - center[1]) * lngScale;
+    const by = (next[0] - center[0]) * latScale;
+    twiceArea += ax * by - bx * ay;
+    perimeterM += Math.hypot(bx - ax, by - ay);
+  });
+  const areaM2 = Math.abs(twiceArea / 2);
+  return {
+    areaM2,
+    perimeterM,
+    diameterM: areaM2 > 0 ? 2 * Math.sqrt(areaM2 / Math.PI) : null,
+    centerLat: center[0],
+    centerLng: center[1]
+  };
+}
+
+async function recalculateResult(supabase, resultId) {
+  const { data, error } = await supabase.rpc('airci_recalculate_canopy_result', {
+    p_result_id: resultId
+  });
+  if (error) return { ok: false, error };
+  return { ok: true, stats: data };
 }
 
 function normalizePolygon(value) {
@@ -408,7 +445,7 @@ exports.handler = async function handler(event) {
     const operation = String(body.operation || '').toLowerCase();
     const { data: result, error: resultError } = await supabase
       .from('airci_canopy_results')
-      .select('id, site_id, flight_id')
+      .select('id, site_id, flight_id, stats_json')
       .eq('id', body.result_id)
       .eq('owner_id', auth.userId)
       .maybeSingle();
@@ -428,20 +465,34 @@ exports.handler = async function handler(event) {
         .eq('tree_index', treeIndex)
         .eq('owner_id', auth.userId);
       if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
-      return json(200, { ok: true });
+      const recalculated = await recalculateResult(supabase, result.id);
+      if (!recalculated.ok) {
+        return json(500, { ok: false, error: recalculated.error.message, setup: setupFor(recalculated.error) });
+      }
+      return json(200, { ok: true, stats: recalculated.stats });
     }
     if (!polygon || centerLat == null || centerLng == null) {
       return json(400, { ok: false, error: 'El perímetro y centro de la copa son obligatorios.' });
     }
+    const metrics = polygonMetricsM2(polygon);
+    const gsdM = finite(result.stats_json && result.stats_json.gsdM);
+    const areaPx =
+      metrics && gsdM != null && gsdM > 0
+        ? metrics.areaM2 / (gsdM * gsdM)
+        : finite(tree.area_px);
     const patch = {
       polygon_json: polygon,
-      center_lat: centerLat,
-      center_lng: centerLng,
-      area_px: finite(tree.area_px),
-      area_m2: finite(tree.area_m2),
-      diameter_m: finite(tree.diameter_m),
+      center_lat: metrics ? metrics.centerLat : centerLat,
+      center_lng: metrics ? metrics.centerLng : centerLng,
+      area_px: areaPx,
+      area_m2: metrics ? metrics.areaM2 : finite(tree.area_m2),
+      diameter_m: metrics ? metrics.diameterM : finite(tree.diameter_m),
       is_deleted: false,
-      metrics_json: { edit: operation, edited_at: new Date().toISOString() }
+      metrics_json: {
+        edit: operation,
+        edited_at: new Date().toISOString(),
+        perimeter_m: metrics ? metrics.perimeterM : null
+      }
     };
     if (operation === 'update') {
       const treeIndex = Math.max(1, Math.floor(Number(body.tree_index) || 0));
@@ -452,7 +503,11 @@ exports.handler = async function handler(event) {
         .eq('tree_index', treeIndex)
         .eq('owner_id', auth.userId);
       if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
-      return json(200, { ok: true });
+      const recalculated = await recalculateResult(supabase, result.id);
+      if (!recalculated.ok) {
+        return json(500, { ok: false, error: recalculated.error.message, setup: setupFor(recalculated.error) });
+      }
+      return json(200, { ok: true, stats: recalculated.stats });
     }
     if (operation === 'add') {
       const { data: latest, error: latestError } = await supabase
@@ -477,7 +532,11 @@ exports.handler = async function handler(event) {
         })
       );
       if (error) return json(500, { ok: false, error: error.message, setup: setupFor(error) });
-      return json(200, { ok: true });
+      const recalculated = await recalculateResult(supabase, result.id);
+      if (!recalculated.ok) {
+        return json(500, { ok: false, error: recalculated.error.message, setup: setupFor(recalculated.error) });
+      }
+      return json(200, { ok: true, stats: recalculated.stats });
     }
     return json(400, { ok: false, error: 'operation inválida: update | delete | add' });
   }
