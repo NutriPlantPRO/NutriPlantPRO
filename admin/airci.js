@@ -2687,6 +2687,122 @@
     return '#16a34a';
   }
 
+  function professionalSem(key) {
+    var labels = {
+      rojo: 'Muy bajo',
+      amarillo: 'Por debajo',
+      verde: 'Promedio',
+      azul: 'Por encima'
+    };
+    var normalized = labels[key] ? key : 'verde';
+    var color = professionalColor(normalized);
+    return {
+      key: normalized,
+      label: labels[normalized],
+      color: color,
+      fill: color + '99'
+    };
+  }
+
+  function professionalTreesForUi(trees) {
+    return (Array.isArray(trees) ? trees : []).map(function (tree) {
+      var metrics = tree.metrics_json && typeof tree.metrics_json === 'object' ? tree.metrics_json : {};
+      var polygon = Array.isArray(tree.polygon_json) ? tree.polygon_json : [];
+      var areaPx = Number(tree.area_px);
+      var meanArea = professionalStats && Number(professionalStats.meanArea);
+      return {
+        id: tree.tree_index,
+        stableId: tree.stable_id || tree.tree_index,
+        row: tree.row_no,
+        pos: tree.position_no,
+        areaPx: Number.isFinite(areaPx) ? areaPx : 0,
+        areaM2: tree.area_m2,
+        diameterM: tree.diameter_m,
+        confidence: tree.confidence,
+        colorScore: tree.color_score,
+        center: [Number(tree.center_lat), Number(tree.center_lng)],
+        latlngs: polygon,
+        sem: professionalSem(tree.sem_key),
+        z: metrics.z,
+        pctVsMean:
+          Number.isFinite(areaPx) && Number.isFinite(meanArea) && meanArea > 0
+            ? ((areaPx - meanArea) / meanArea) * 100
+            : null,
+        source: 'professional'
+      };
+    });
+  }
+
+  function syncProfessionalResultUi(response, resultStats) {
+    var trees = professionalTreesForUi(response.trees);
+    if (!trees.length) return;
+    var result = response.result || {};
+    var stats = Object.assign({}, resultStats || {});
+    stats.count = Number(stats.count || result.tree_count) || trees.length;
+    stats.width = stats.width || stats.widthPx;
+    stats.height = stats.height || stats.heightPx;
+    stats.hasScale = stats.gsdM != null;
+    stats.hasPhenology = false;
+    stats.hasColorScore = false;
+    var width = Number(stats.width);
+    var height = Number(stats.height);
+    var gsd = Number(stats.gsdM);
+    if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+      stats.totalPixels = width * height;
+    }
+    if (Number.isFinite(gsd) && gsd > 0 && Number.isFinite(Number(stats.totalPixels))) {
+      stats.orthoAreaM2 = Number(stats.totalPixels) * gsd * gsd;
+      stats.orthoAreaHa = stats.orthoAreaM2 / 10000;
+      if (stats.coverPct != null) {
+        stats.canopyAreaM2 = stats.orthoAreaM2 * (Number(stats.coverPct) / 100);
+        stats.bareAreaM2 = Math.max(0, stats.orthoAreaM2 - stats.canopyAreaM2);
+      }
+    }
+    stats = enrichStatsFromTrees(stats, trees);
+    canopyResult = { trees: trees, stats: stats, source: 'professional' };
+    treeLayersById = treeLayersById || {};
+    trees.forEach(function (tree) {
+      var layerEntry = treeLayersById[String(tree.id)];
+      if (layerEntry) layerEntry.tree = tree;
+    });
+    activeSemFilter = 'all';
+    activeDeltaFilter = 'all';
+    activePhenoFilter = 'all';
+    renderCanopyTable(treesMatchingSem('all'));
+    renderAnalysisSummary(canopyResult);
+    syncSemLegend();
+    updateMetrics({
+      treeCount: stats.count,
+      coverPct: stats.coverPct,
+      barePct: stats.barePct,
+      meanArea: stats.meanArea,
+      meanAreaM2: stats.meanAreaM2,
+      hasScale: stats.hasScale,
+      orthoAreaHa: stats.orthoAreaHa,
+      canopyAreaM2: stats.canopyAreaM2,
+      bareAreaM2: stats.bareAreaM2,
+      treesPerHa: stats.treesPerHa,
+      gsdCm: stats.gsdCm
+    });
+    var tableSub = document.getElementById('aciTableSub');
+    if (tableSub) {
+      tableSub.textContent =
+        'Resultado Profesional · área, diámetro y confianza por copa. Fenología y Color Score no se calcularon en este análisis.';
+    }
+    document
+      .querySelectorAll('#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"], #aciLayerBar [data-layer="numeros"]')
+      .forEach(function (button) {
+        button.disabled = true;
+        button.title = 'Las copas profesionales se muestran directamente en el mapa.';
+      });
+    document
+      .querySelectorAll('[data-paint-mode="pheno"], [data-paint-mode="color"]')
+      .forEach(function (button) {
+        button.disabled = true;
+        button.title = 'Este análisis profesional aún no calcula este indicador.';
+      });
+  }
+
   async function loadProfessionalViewport(resultId, stats) {
     if (!map || !resultId) return;
     var requestId = ++professionalViewportRequestId;
@@ -2739,6 +2855,7 @@
       professionalRenderer = L.canvas({ padding: 0.5, pane: 'airciProfessional' });
     }
     professionalLayer = L.layerGroup();
+    treeLayersById = {};
     (response.trees || []).forEach(function (tree) {
       var color = professionalColor(tree.sem_key);
       var polygon = Array.isArray(tree.polygon_json) ? tree.polygon_json : null;
@@ -2768,6 +2885,14 @@
           (tree.area_m2 != null ? ' · ' + Number(tree.area_m2).toFixed(2) + ' m²' : '') +
           (tree.confidence != null ? ' · conf. ' + Math.round(tree.confidence) + '%' : '')
       );
+      layer.on('click', function () {
+        highlightTree(tree.tree_index);
+      });
+      treeLayersById[String(tree.tree_index)] = {
+        outline: layer,
+        fill: layer,
+        tree: tree
+      };
       professionalLayer.addLayer(layer);
     });
     professionalLayer.addTo(map);
@@ -2775,17 +2900,8 @@
     if (professionalLayer.bringToFront) professionalLayer.bringToFront();
 
     var resultStats = Object.assign({}, response.result && response.result.stats_json, stats || {});
-    updateMetrics({
-      treeCount: Number(resultStats.count || (response.result && response.result.tree_count)) || 0,
-      coverPct:
-        resultStats.coverPct != null
-          ? Number(resultStats.coverPct)
-          : response.result && response.result.cover_pct,
-      meanArea: resultStats.meanArea,
-      meanAreaM2: resultStats.meanAreaM2,
-      hasScale: resultStats.gsdM != null,
-      gsdCm: resultStats.gsdM != null ? Number(resultStats.gsdM) * 100 : null
-    });
+    professionalStats = resultStats;
+    syncProfessionalResultUi(response, resultStats);
     document.getElementById('aciMapSub').textContent =
       'AirCI Professional · ' +
       (Number(resultStats.count || (response.result && response.result.tree_count)) || 0) +
