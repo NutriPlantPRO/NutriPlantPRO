@@ -3132,7 +3132,16 @@
         bubblingMouseEvents: false
       });
       polygon.bindTooltip('Muestra ' + (sampleIndex + 1) + ' · clic para editar');
-      polygon.on('click', function () {
+      polygon.on('click', function (event) {
+        if (calibrationAddPoint && selected) {
+          sample.latlngs.push([event.latlng.lat, event.latlng.lng]);
+          calibrationAddPoint = false;
+          calibrationReady = false;
+          renderCalibrationSamples();
+          syncCalibrationUi();
+          setMapStatus('Punto añadido a la copa ' + (sampleIndex + 1) + '.', 'ok');
+          return;
+        }
         calibrationSelectedIndex = sampleIndex;
         calibrationAddPoint = false;
         renderCalibrationSamples();
@@ -3225,7 +3234,7 @@
     var visible = !!currentGeoraster;
     box.hidden = !visible;
     if (!visible) {
-      if (analyze && getDetectModel() === 'cloud-pro') {
+      if (analyze) {
         analyze.disabled = true;
         analyze.title = 'Carga una vista previa para seleccionar las 10 copas de calibración';
       }
@@ -3254,7 +3263,7 @@
       confirm.hidden = calibrationSamples.length !== 10 || calibrationReady;
       confirm.disabled = calibrationSamples.length !== 10;
     }
-    if (analyze && getDetectModel() === 'cloud-pro') {
+    if (analyze) {
       analyze.disabled = !calibrationReady;
       analyze.title = calibrationReady
         ? 'Analiza el predio con las 10 copas calibradas'
@@ -3799,6 +3808,11 @@
 
   function runCanopyDetection() {
     var model = getDetectModel();
+    if (!calibrationReady || calibrationSamples.length !== 10) {
+      setMapStatus('Primero selecciona, ajusta y confirma las 10 copas de calibración.', 'error');
+      syncCalibrationUi();
+      return;
+    }
     if (model === 'cloud-pro') {
       persistDetectModelChoice();
       startProfessionalDetection();
@@ -5386,14 +5400,10 @@
     document.getElementById('aciMapSub').textContent =
       'Ortomosaico cargado' + (info.crs ? ' · proyección ' + info.crs : '');
 
-    if (!meta.skipAutoDetect && getDetectModel() !== 'cloud-pro') {
-      setTimeout(runCanopyDetection, 120);
-    } else if (!meta.skipAutoDetect && getDetectModel() === 'cloud-pro') {
-      setMapStatus(
-        'Ortomosaico listo · pulsa Analizar para procesar el predio completo en la nube',
-        'ok'
-      );
-    }
+    setMapStatus(
+      'Ortomosaico listo · selecciona, ajusta y confirma las 10 copas antes de analizar',
+      'ok'
+    );
 
     return info;
   }
