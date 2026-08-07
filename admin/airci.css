@@ -1891,8 +1891,19 @@ button, input, select, textarea { font: inherit; }
 }
 
 .aci-project-row__info span {
+  display: block;
   color: var(--aci-muted);
   font-size: 11px;
+}
+
+.aci-project-row__dates {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 650;
+  line-height: 1.3;
 }
 
 .aci-project-row__btns {

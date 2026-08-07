@@ -84,6 +84,7 @@
   var professionalEditMode = false;
   var professionalAddMode = false;
   var professionalSelectedTree = null;
+  var browserSelectedTree = null;
   var professionalEditLayer = null;
 
 
@@ -1950,13 +1951,16 @@
       );
       label.bindTooltip(tip);
       outline.on('click', function () {
-        highlightTree(t.id);
+        if (professionalEditMode && !professionalResultId) openBrowserTreeEditor(t);
+        else highlightTree(t.id);
       });
       fill.on('click', function () {
-        highlightTree(t.id);
+        if (professionalEditMode && !professionalResultId) openBrowserTreeEditor(t);
+        else highlightTree(t.id);
       });
       label.on('click', function () {
-        highlightTree(t.id);
+        if (professionalEditMode && !professionalResultId) openBrowserTreeEditor(t);
+        else highlightTree(t.id);
       });
       canopyOutlineLayer.addLayer(outline);
       canopyFillLayer.addLayer(fill);
@@ -3110,6 +3114,29 @@
     };
   }
 
+  function calibrationDetectorContext() {
+    var payload = calibrationPayload();
+    var diameters = (payload.samples || [])
+      .map(function (sample) {
+        return Number(sample.diameter_m);
+      })
+      .filter(function (value) {
+        return Number.isFinite(value) && value > 0;
+      })
+      .sort(function (a, b) {
+        return a - b;
+      });
+    var mid = diameters.length ? diameters[Math.floor(diameters.length / 2)] : null;
+    return {
+      typical_spacing_m: payload.profile.expected_spacing_m || null,
+      plant_context: {
+        typical_canopy_diam_m: mid,
+        canopy_shape: 'round',
+        notes: 'Criterio derivado de las 10 copas ajustadas manualmente.'
+      }
+    };
+  }
+
   function clearCalibrationLayers() {
     if (calibrationLayer && map) map.removeLayer(calibrationLayer);
     if (calibrationVertexLayer && map) map.removeLayer(calibrationVertexLayer);
@@ -3347,7 +3374,9 @@
     var toggle = document.getElementById('aciResultEditToggle');
     var add = document.getElementById('aciResultAddTree');
     var remove = document.getElementById('aciResultDeleteTree');
-    if (tools) tools.hidden = !professionalResultId;
+    var hasBrowserResult =
+      !professionalResultId && canopyResult && Array.isArray(canopyResult.trees) && canopyResult.trees.length;
+    if (tools) tools.hidden = !professionalResultId && !hasBrowserResult;
     if (toggle) {
       toggle.classList.toggle('is-active', professionalEditMode);
       toggle.textContent = professionalEditMode ? 'Terminar edición' : 'Editar perímetros';
@@ -3356,7 +3385,7 @@
       add.classList.toggle('is-active', professionalAddMode);
       add.textContent = professionalAddMode ? 'Clic en mapa para añadir' : 'Añadir copa faltante';
     }
-    if (remove) remove.disabled = !professionalSelectedTree;
+    if (remove) remove.disabled = !professionalSelectedTree && !browserSelectedTree;
   }
 
   function clearProfessionalEditLayer() {
@@ -3519,6 +3548,153 @@
     syncProfessionalEditUi();
     setMapStatus('Copa eliminada del resultado.', 'ok');
     loadProfessionalViewport(professionalResultId, professionalStats || {});
+  }
+
+  function recalculateBrowserResult() {
+    if (!canopyResult || !Array.isArray(canopyResult.trees)) return;
+    var trees = canopyResult.trees;
+    var gsd = Number(canopyResult.stats && canopyResult.stats.gsdM);
+    var areas = [];
+    trees.forEach(function (tree) {
+      var metrics = calibrationPolygonMetrics(tree.latlngs);
+      tree.center = metrics.center;
+      tree.areaM2 = metrics.areaM2;
+      if (Number.isFinite(gsd) && gsd > 0 && metrics.areaM2 != null) {
+        tree.areaPx = metrics.areaM2 / (gsd * gsd);
+      }
+      if (Number.isFinite(Number(tree.areaPx))) areas.push(Number(tree.areaPx));
+    });
+    var sum = areas.reduce(function (total, value) { return total + value; }, 0);
+    var mean = areas.length ? sum / areas.length : 0;
+    var variance = areas.length
+      ? areas.reduce(function (total, value) { return total + Math.pow(value - mean, 2); }, 0) / areas.length
+      : 0;
+    var std = Math.sqrt(variance);
+    trees.forEach(function (tree) {
+      var z = std > 1e-9 ? (Number(tree.areaPx) - mean) / std : 0;
+      if (window.AirCICanopy && AirCICanopy.semaforoClass) tree.sem = AirCICanopy.semaforoClass(z);
+    });
+    canopyResult.stats = canopyResult.stats || {};
+    canopyResult.stats.count = trees.length;
+    canopyResult.stats.meanArea = mean;
+    canopyResult.stats.stdArea = std;
+    var totalPixels = Number(canopyResult.stats.totalPixels) ||
+      Number(canopyResult.stats.widthPx) * Number(canopyResult.stats.heightPx);
+    if (Number.isFinite(totalPixels) && totalPixels > 0) {
+      canopyResult.stats.coverPct = Math.min(100, (100 * sum) / totalPixels);
+    }
+  }
+
+  async function persistBrowserEdit() {
+    recalculateBrowserResult();
+    var siteId = getSiteId();
+    var flightId = getLastFlightId();
+    saveCanopyLocal(siteId, { stats: canopyResult.stats, trees: canopyResult.trees, flight_id: flightId });
+    var response = await apiOrtho({
+      action: 'save_canopy',
+      site_id: siteId,
+      flight_id: flightId,
+      stats: canopyResult.stats,
+      trees: canopyResult.trees
+    });
+    if (!response.ok) {
+      setMapStatus(response.error || 'La corrección quedó local; no se pudo guardar en la nube.', 'error');
+      return false;
+    }
+    return true;
+  }
+
+  async function refreshBrowserEdit(message) {
+    if (!(await persistBrowserEdit())) return;
+    browserSelectedTree = null;
+    clearProfessionalEditLayer();
+    drawCanopies(canopyResult);
+    syncProfessionalEditUi();
+    setMapStatus(message, 'ok');
+  }
+
+  function openBrowserTreeEditor(tree) {
+    clearProfessionalEditLayer();
+    if (!professionalEditMode || !tree || !map || typeof L === 'undefined') return;
+    browserSelectedTree = tree;
+    professionalEditLayer = L.layerGroup().addTo(map);
+    var editable = L.polygon(tree.latlngs, {
+      color: '#1d4ed8', weight: 3, fillColor: '#60a5fa', fillOpacity: 0.08
+    }).addTo(professionalEditLayer);
+    editable.on('dblclick', function (event) {
+      tree.latlngs.push([event.latlng.lat, event.latlng.lng]);
+      refreshBrowserEdit('Punto añadido y corrección guardada.');
+    });
+    var center = calibrationCentroid(tree.latlngs);
+    var moveMarker = L.marker(center, {
+      draggable: true, keyboard: false, zIndexOffset: 1000,
+      icon: L.divIcon({ className: 'aci-calibration-move', html: '<i>↕</i>', iconSize: [28, 28], iconAnchor: [14, 14] })
+    }).addTo(professionalEditLayer);
+    moveMarker.bindTooltip('Arrastra para mover toda la copa');
+    var origin = null;
+    moveMarker.on('dragstart', function () {
+      var c = calibrationCentroid(tree.latlngs);
+      origin = { lat: c[0], lng: c[1] };
+    });
+    moveMarker.on('drag', function (event) {
+      if (!origin) return;
+      var at = event.target.getLatLng();
+      editable.setLatLngs(tree.latlngs.map(function (point) {
+        return [point[0] + at.lat - origin.lat, point[1] + at.lng - origin.lng];
+      }));
+    });
+    moveMarker.on('dragend', function (event) {
+      if (!origin) return;
+      var at = event.target.getLatLng();
+      tree.latlngs = tree.latlngs.map(function (point) {
+        return [point[0] + at.lat - origin.lat, point[1] + at.lng - origin.lng];
+      });
+      origin = null;
+      refreshBrowserEdit('Copa movida y corrección guardada.');
+    });
+    tree.latlngs.forEach(function (point, index) {
+      var marker = L.marker(point, {
+        draggable: true, keyboard: false,
+        icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
+      }).addTo(professionalEditLayer);
+      marker.on('drag', function (event) {
+        var at = event.target.getLatLng();
+        tree.latlngs[index] = [at.lat, at.lng];
+        editable.setLatLngs(tree.latlngs);
+      });
+      marker.on('dragend', function () { refreshBrowserEdit('Perímetro actualizado y guardado.'); });
+      marker.on('contextmenu', function () {
+        if (tree.latlngs.length <= 3) return;
+        tree.latlngs.splice(index, 1);
+        refreshBrowserEdit('Punto eliminado y corrección guardada.');
+      });
+    });
+    syncProfessionalEditUi();
+  }
+
+  function addBrowserTreeAt(latlng) {
+    if (!canopyResult || !Array.isArray(canopyResult.trees)) return;
+    var maxId = canopyResult.trees.reduce(function (max, tree) {
+      return Math.max(max, Number(tree.id) || 0);
+    }, 0);
+    canopyResult.trees.push({
+      id: maxId + 1,
+      stableId: 'manual-' + Date.now(),
+      latlngs: fallbackCalibrationRing(latlng),
+      center: [latlng.lat, latlng.lng],
+      areaPx: null,
+      areaM2: null
+    });
+    professionalAddMode = false;
+    refreshBrowserEdit('Copa añadida y guardada. Selecciónala para ajustarla.');
+  }
+
+  function deleteSelectedBrowserTree() {
+    if (!browserSelectedTree || !canopyResult || !Array.isArray(canopyResult.trees)) return;
+    canopyResult.trees = canopyResult.trees.filter(function (tree) {
+      return tree !== browserSelectedTree;
+    });
+    refreshBrowserEdit('Copa eliminada y corrección guardada.');
   }
 
   async function loadProfessionalTablePage(offset) {
@@ -3842,8 +4018,10 @@
         var prevBundle = getPreviousTreesForMatch(siteId);
         var savedProf = await loadDetectProfileForSite(siteId);
         if (runId !== detectRunId) return;
-        var calib = null;
-        var calibSource = 'exg';
+        // Las 10 copas del vuelo mandan: sus tamaños y espaciamiento guían tanto
+        // el detector local como la visión IA, no son solamente un desbloqueo.
+        var calib = calibrationDetectorContext();
+        var calibSource = '10_copas';
         var visionSeeds = null;
 
         if (useAi) {
@@ -3864,15 +4042,19 @@
               'ok'
             );
           }
-          // Criterio guardado solo como apoyo de forma/spacing si existe
-          if (savedProf && savedProf.params) {
-            calib = savedProf.params;
-          }
         } else if (savedProf && savedProf.params) {
-          calib = savedProf.params;
-          calibSource = savedProf.level === 'site' ? 'site_profile' : 'crop_default';
+          // El perfil previo conserva parámetros de color; las 10 copas actuales
+          // sustituyen su tamaño y espaciamiento para este vuelo concreto.
+          calib = Object.assign({}, savedProf.params, calib, {
+            plant_context: Object.assign(
+              {},
+              savedProf.params.plant_context || {},
+              calib.plant_context
+            )
+          });
+          calibSource = '10_copas + ' + (savedProf.level === 'site' ? 'predio' : 'cultivo');
           setMapStatus(
-            'Usando criterio guardado (' +
+            'Usando las 10 copas ajustadas + criterio guardado (' +
               (savedProf.level === 'site' ? 'predio' : 'cultivo') +
               ')' +
               (savedProf.crop_hint ? ' · ' + savedProf.crop_hint : '') +
@@ -3884,8 +4066,8 @@
         var metaNow = collectMeta();
         var densHa = Number(metaNow.densidad_ha);
         var result = window.AirCICanopy.analyzeCanopies(currentGeoraster, {
-          profile: useAi || calib ? 'ai' : 'strict',
-          calibration: calib || undefined,
+          profile: 'ai',
+          calibration: calib,
           targetTreesPerHa:
             Number.isFinite(densHa) && densHa >= 50 && densHa <= 2500 ? densHa : undefined,
           visionSeeds: visionSeeds && visionSeeds.length ? visionSeeds : undefined,
@@ -3894,7 +4076,7 @@
         if (runId !== detectRunId) return;
         if (useAi || calib) {
           result.stats.aiModel = useAi ? model : calibSource;
-          result.stats.aiCalibrated = false;
+          result.stats.aiCalibrated = true;
           result.stats.aiVision = !!useAi;
           result.stats.detectSource = calibSource;
           result.stats.cropHint =
@@ -4199,13 +4381,42 @@
     } catch (e) {}
   }
 
+  function catalogTs(value) {
+    if (value == null || value === '') return null;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    var parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function formatCatalogDate(value) {
+    var ms = catalogTs(value);
+    if (ms == null) return '—';
+    try {
+      return new Date(ms).toLocaleString('es-MX', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return '—';
+    }
+  }
+
   function upsertCatalogEntry(site) {
     if (!site || !site.id) return;
     var list = readCatalog();
+    var now = Date.now();
+    var createdIn = catalogTs(site.created_at);
+    var updatedIn = catalogTs(site.updated_at);
     var found = false;
     for (var i = 0; i < list.length; i++) {
       if (list[i].id === site.id) {
-        list[i] = Object.assign({}, list[i], site, { updated_at: Date.now() });
+        var next = Object.assign({}, list[i], site);
+        next.created_at = createdIn || list[i].created_at || now;
+        next.updated_at = updatedIn != null ? updatedIn : now;
+        list[i] = next;
         found = true;
         break;
       }
@@ -4213,12 +4424,20 @@
     if (!found) {
       list.unshift(
         Object.assign({}, site, {
-          updated_at: Date.now(),
-          created_at: site.created_at || Date.now()
+          created_at: createdIn || now,
+          updated_at: updatedIn != null ? updatedIn : now
         })
       );
     }
     writeCatalog(list);
+  }
+
+  function sortLabelKeys(keys, emptyLabel) {
+    return (keys || []).slice().sort(function (a, b) {
+      if (a === emptyLabel) return 1;
+      if (b === emptyLabel) return -1;
+      return String(a).localeCompare(String(b), 'es', { sensitivity: 'base' });
+    });
   }
 
   function purgeSitesLocal(siteIds) {
@@ -4540,101 +4759,108 @@
       hint.classList.add('is-ok');
     }
     var tree = buildProjectsTree(sites);
-    Object.keys(tree)
-      .sort()
-      .forEach(function (ag) {
-        var folder = document.createElement('div');
-        var agCollapsed = isAgricolaCollapsed(ag);
-        folder.className = 'aci-folder' + (agCollapsed ? ' is-collapsed' : '');
-        folder.dataset.agricola = ag;
-        var branches = tree[ag];
-        var count = 0;
-        Object.keys(branches).forEach(function (k) {
-          count += branches[k].length;
-        });
-        var head = document.createElement('div');
-        head.className = 'aci-folder__head';
-        var toggle = document.createElement('button');
-        toggle.type = 'button';
-        toggle.className = 'aci-folder__name';
-        toggle.setAttribute('data-toggle-ag', ag);
-        toggle.setAttribute('aria-expanded', agCollapsed ? 'false' : 'true');
-        toggle.innerHTML =
-          '<span class="aci-fold-chevron" aria-hidden="true"></span>' +
-          '<span class="aci-fold-label">📁 ' +
-          escapeHtml(ag) +
-          '<small>' +
-          count +
-          ' análisis</small></span>';
-        var delAg = document.createElement('button');
-        delAg.type = 'button';
-        delAg.className = 'aci-btn aci-btn--danger aci-btn--sm';
-        delAg.setAttribute('data-delete-ag', ag);
-        delAg.setAttribute('data-delete-ag-count', String(count));
-        delAg.title = 'Borrar agrícola y todos sus análisis';
-        delAg.textContent = 'Borrar';
-        head.appendChild(toggle);
-        head.appendChild(delAg);
-        folder.appendChild(head);
-
-        var body = document.createElement('div');
-        body.className = 'aci-folder__body';
-        Object.keys(branches)
-          .sort()
-          .forEach(function (pr) {
-            var branch = document.createElement('div');
-            var prCollapsed = isPredioCollapsed(ag, pr);
-            branch.className = 'aci-branch' + (prCollapsed ? ' is-collapsed' : '');
-            branch.dataset.predio = pr;
-            var bHead = document.createElement('button');
-            bHead.type = 'button';
-            bHead.className = 'aci-branch__name';
-            bHead.setAttribute('data-toggle-pr', pr);
-            bHead.setAttribute('data-toggle-ag-parent', ag);
-            bHead.setAttribute('aria-expanded', prCollapsed ? 'false' : 'true');
-            bHead.innerHTML =
-              '<span class="aci-fold-chevron aci-fold-chevron--sm" aria-hidden="true"></span>' +
-              '<span>🌿 ' +
-              escapeHtml(pr) +
-              ' <em>(' +
-              branches[pr].length +
-              ')</em></span>';
-            branch.appendChild(bHead);
-
-            var bBody = document.createElement('div');
-            bBody.className = 'aci-branch__body';
-            branches[pr].forEach(function (s) {
-              var row = document.createElement('div');
-              row.className = 'aci-project-row' + (s.id === currentId ? ' is-current' : '');
-              var title = (s.title || '').trim() || 'Sin título';
-              var cult = (s.cultivo || '').trim();
-              row.innerHTML =
-                '<div class="aci-project-row__info"><strong>' +
-                escapeHtml(title) +
-                '</strong><span>' +
-                (cult ? escapeHtml(cult) + ' · ' : '') +
-                'id ' +
-                String(s.id).slice(0, 8) +
-                (s.id === currentId ? ' · abierto' : '') +
-                '</span></div>' +
-                '<div class="aci-project-row__btns">' +
-                '<button type="button" class="aci-btn aci-btn--enter aci-btn--sm" data-open-site="' +
-                escapeHtml(s.id) +
-                '">Abrir</button>' +
-                '<button type="button" class="aci-btn aci-btn--danger aci-btn--sm" data-delete-site="' +
-                escapeHtml(s.id) +
-                '" data-delete-title="' +
-                escapeHtml(title) +
-                '">Borrar</button>' +
-                '</div>';
-              bBody.appendChild(row);
-            });
-            branch.appendChild(bBody);
-            body.appendChild(branch);
-          });
-        folder.appendChild(body);
-        root.appendChild(folder);
+    sortLabelKeys(Object.keys(tree), 'Sin agrícola').forEach(function (ag) {
+      var folder = document.createElement('div');
+      var agCollapsed = isAgricolaCollapsed(ag);
+      folder.className = 'aci-folder' + (agCollapsed ? ' is-collapsed' : '');
+      folder.dataset.agricola = ag;
+      var branches = tree[ag];
+      var count = 0;
+      Object.keys(branches).forEach(function (k) {
+        count += branches[k].length;
       });
+      var head = document.createElement('div');
+      head.className = 'aci-folder__head';
+      var toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'aci-folder__name';
+      toggle.setAttribute('data-toggle-ag', ag);
+      toggle.setAttribute('aria-expanded', agCollapsed ? 'false' : 'true');
+      toggle.innerHTML =
+        '<span class="aci-fold-chevron" aria-hidden="true"></span>' +
+        '<span class="aci-fold-label">📁 ' +
+        escapeHtml(ag) +
+        '<small>' +
+        count +
+        ' análisis</small></span>';
+      var delAg = document.createElement('button');
+      delAg.type = 'button';
+      delAg.className = 'aci-btn aci-btn--danger aci-btn--sm';
+      delAg.setAttribute('data-delete-ag', ag);
+      delAg.setAttribute('data-delete-ag-count', String(count));
+      delAg.title = 'Borrar agrícola y todos sus análisis';
+      delAg.textContent = 'Borrar';
+      head.appendChild(toggle);
+      head.appendChild(delAg);
+      folder.appendChild(head);
+
+      var body = document.createElement('div');
+      body.className = 'aci-folder__body';
+      sortLabelKeys(Object.keys(branches), 'Sin predio').forEach(function (pr) {
+        var branch = document.createElement('div');
+        var prCollapsed = isPredioCollapsed(ag, pr);
+        branch.className = 'aci-branch' + (prCollapsed ? ' is-collapsed' : '');
+        branch.dataset.predio = pr;
+        var bHead = document.createElement('button');
+        bHead.type = 'button';
+        bHead.className = 'aci-branch__name';
+        bHead.setAttribute('data-toggle-pr', pr);
+        bHead.setAttribute('data-toggle-ag-parent', ag);
+        bHead.setAttribute('aria-expanded', prCollapsed ? 'false' : 'true');
+        bHead.innerHTML =
+          '<span class="aci-fold-chevron aci-fold-chevron--sm" aria-hidden="true"></span>' +
+          '<span>🌿 ' +
+          escapeHtml(pr) +
+          ' <em>(' +
+          branches[pr].length +
+          ')</em></span>';
+        branch.appendChild(bHead);
+
+        var bBody = document.createElement('div');
+        bBody.className = 'aci-branch__body';
+        branches[pr]
+          .slice()
+          .sort(function (a, b) {
+            var ta = String((a && a.title) || '').trim() || 'Sin título';
+            var tb = String((b && b.title) || '').trim() || 'Sin título';
+            return ta.localeCompare(tb, 'es', { sensitivity: 'base' });
+          })
+          .forEach(function (s) {
+            var row = document.createElement('div');
+            row.className = 'aci-project-row' + (s.id === currentId ? ' is-current' : '');
+            var title = (s.title || '').trim() || 'Sin título';
+            var cult = (s.cultivo || '').trim();
+            row.innerHTML =
+              '<div class="aci-project-row__info"><strong>' +
+              escapeHtml(title) +
+              '</strong><span>' +
+              (cult ? escapeHtml(cult) + ' · ' : '') +
+              'id ' +
+              String(s.id).slice(0, 8) +
+              (s.id === currentId ? ' · abierto' : '') +
+              '</span><em class="aci-project-row__dates">Creado: ' +
+              escapeHtml(formatCatalogDate(s.created_at)) +
+              ' · Editado: ' +
+              escapeHtml(formatCatalogDate(s.updated_at || s.created_at)) +
+              '</em></div>' +
+              '<div class="aci-project-row__btns">' +
+              '<button type="button" class="aci-btn aci-btn--enter aci-btn--sm" data-open-site="' +
+              escapeHtml(s.id) +
+              '">Abrir</button>' +
+              '<button type="button" class="aci-btn aci-btn--danger aci-btn--sm" data-delete-site="' +
+              escapeHtml(s.id) +
+              '" data-delete-title="' +
+              escapeHtml(title) +
+              '">Borrar</button>' +
+              '</div>';
+            bBody.appendChild(row);
+          });
+        branch.appendChild(bBody);
+        body.appendChild(branch);
+      });
+      folder.appendChild(body);
+      root.appendChild(folder);
+    });
   }
 
   function escapeHtml(s) {
@@ -4674,7 +4900,8 @@
             variedad: s.variedad,
             edad: s.edad,
             nota: s.nota,
-            updated_at: s.updated_at ? Date.parse(s.updated_at) : Date.now()
+            created_at: s.created_at || null,
+            updated_at: s.updated_at || s.created_at || null
           });
         });
         local = readCatalog();
@@ -5201,7 +5428,10 @@
         addCalibrationSample(event.latlng);
         return;
       }
-      if (professionalAddMode) addProfessionalTreeAt(event.latlng);
+      if (professionalAddMode) {
+        if (professionalResultId) addProfessionalTreeAt(event.latlng);
+        else addBrowserTreeAt(event.latlng);
+      }
     });
   }
 
@@ -5830,6 +6060,7 @@
       professionalAddMode = false;
       if (!professionalEditMode) {
         professionalSelectedTree = null;
+        browserSelectedTree = null;
         clearProfessionalEditLayer();
       }
       syncProfessionalEditUi();
@@ -5844,7 +6075,7 @@
   var resultAddTree = document.getElementById('aciResultAddTree');
   if (resultAddTree) {
     resultAddTree.addEventListener('click', function () {
-      if (!professionalResultId) return;
+      if (!professionalResultId && !(canopyResult && Array.isArray(canopyResult.trees))) return;
       professionalAddMode = !professionalAddMode;
       professionalEditMode = false;
       clearProfessionalEditLayer();
@@ -5853,7 +6084,12 @@
     });
   }
   var resultDeleteTree = document.getElementById('aciResultDeleteTree');
-  if (resultDeleteTree) resultDeleteTree.addEventListener('click', deleteSelectedProfessionalTree);
+  if (resultDeleteTree) {
+    resultDeleteTree.addEventListener('click', function () {
+      if (professionalResultId) deleteSelectedProfessionalTree();
+      else deleteSelectedBrowserTree();
+    });
+  }
 
   var layerBar = document.getElementById('aciLayerBar');
   if (layerBar) {
