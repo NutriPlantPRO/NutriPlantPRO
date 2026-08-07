@@ -488,7 +488,7 @@ button, input, select, textarea { font: inherit; }
 
 .aci-metrics {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 13px;
 }
@@ -500,6 +500,29 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
   box-shadow: 0 4px 14px #0f172a0a;
 }
+
+.aci-metric--storage {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-color: #86efac;
+  background: linear-gradient(180deg, #f7fefb 0%, #ecfdf5 100%);
+  font: inherit;
+  color: inherit;
+}
+.aci-metric--storage:hover,
+.aci-metric--storage:focus-visible {
+  border-color: #22c55e;
+  outline: none;
+  box-shadow: 0 0 0 3px #22c55e33;
+}
+.aci-metric--storage[data-state='loading'] strong { color: #64748b; }
+.aci-metric--storage[data-state='warn'] {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+}
+.aci-metric--storage[data-state='warn'] strong { color: #b45309; }
 
 .aci-metric small {
   color: var(--aci-muted);

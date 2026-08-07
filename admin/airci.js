@@ -3871,6 +3871,161 @@
     refreshProjectsUi();
     setActiveTab('proyectos');
     refreshAiUsageBar();
+    refreshStorageUsage(false);
+  }
+
+  var storageUsageInFlight = false;
+  var storageUsageLastFetch = 0;
+  var storageUsageRpcMissing = false;
+  var STORAGE_CACHE_KEY = 'airci_storage_usage_v1';
+  var STORAGE_QUOTA_GB = 100;
+  var STORAGE_AUTO_MS = 10 * 60 * 1000;
+  var STORAGE_MIN_REFRESH_MS = 45000;
+
+  function storageFmtSize(bytes) {
+    var n = Number(bytes) || 0;
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+    return (n / 1073741824).toFixed(2) + ' GB';
+  }
+
+  function storagePillLine(bytes, quotaGb) {
+    var used = Number(bytes) || 0;
+    var q = Number(quotaGb) || STORAGE_QUOTA_GB;
+    var usedStr =
+      used >= 1073741824
+        ? (used / 1073741824).toFixed(2) + ' GB'
+        : used >= 1048576
+          ? (used / 1048576).toFixed(0) + ' MB'
+          : storageFmtSize(used);
+    return usedStr + ' / ' + q + ' GB';
+  }
+
+  function readStorageCache() {
+    try {
+      var raw = localStorage.getItem(STORAGE_CACHE_KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (!o || !o.data || !o.fetchedAt) return null;
+      return o;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeStorageCache(data) {
+    try {
+      localStorage.setItem(
+        STORAGE_CACHE_KEY,
+        JSON.stringify({ data: data || {}, fetchedAt: Date.now() })
+      );
+    } catch (e) {}
+  }
+
+  function renderStorageUsage(data, errMsg, meta) {
+    var btn = document.getElementById('aciStorageBtn');
+    var num = document.getElementById('aciStorageNum');
+    var sub = document.getElementById('aciStorageSub');
+    if (!btn || !num || !sub) return;
+    meta = meta || {};
+    if (errMsg || !data) {
+      btn.setAttribute('data-state', storageUsageRpcMissing ? 'warn' : 'idle');
+      num.textContent = '— / ' + STORAGE_QUOTA_GB + ' GB';
+      sub.textContent = 'Supabase';
+      var hint = errMsg || 'No se pudo leer el uso de archivos.';
+      if (storageUsageRpcMissing) {
+        hint += ' Ejecuta supabase-plan-pro-storage-usage.sql en Supabase.';
+      }
+      btn.title = hint;
+      return;
+    }
+    var total = Number(data.total_bytes) || 0;
+    var quotaGb = Number(data.quota_gb) || STORAGE_QUOTA_GB;
+    var quotaBytes = quotaGb * 1073741824;
+    var freeBytes = Math.max(0, quotaBytes - total);
+    var pct = quotaGb > 0 ? (total / quotaBytes) * 100 : 0;
+    var airciBytes = 0;
+    (data.buckets || []).forEach(function (b) {
+      if (b && b.bucket_id === 'airci-orthos') airciBytes = Number(b.bytes) || 0;
+    });
+    num.textContent = storagePillLine(total, quotaGb);
+    sub.textContent =
+      airciBytes > 0
+        ? 'AirCI ' + storageFmtSize(airciBytes) + ' · toca para actualizar'
+        : 'Supabase · toca para actualizar';
+    btn.setAttribute('data-state', pct >= 92 ? 'warn' : meta.fromCache ? 'cached' : 'idle');
+    var lines = [
+      'NutriPlant PRO · almacenamiento total en Supabase',
+      'Usado: ' + storageFmtSize(total) + ' · Disponible: ~' + storageFmtSize(freeBytes),
+      'Cuota: ' + quotaGb + ' GB',
+      airciBytes > 0 ? 'Solo AirCI (airci-orthos): ' + storageFmtSize(airciBytes) : 'Sin archivos AirCI aún',
+      meta.fromCache
+        ? 'Última lectura en caché · toca para actualizar'
+        : 'Lectura en vivo · se refresca cada ~10 min'
+    ];
+    if (data.buckets && data.buckets.length) {
+      lines.push('', 'Por bucket:');
+      data.buckets.forEach(function (b) {
+        if (!b || !b.bucket_id) return;
+        lines.push('• ' + b.bucket_id + ': ' + storageFmtSize(b.bytes));
+      });
+    }
+    btn.title = lines.join('\n');
+    btn.setAttribute(
+      'aria-label',
+      storagePillLine(total, quotaGb) + ' en Supabase'
+    );
+  }
+
+  async function refreshStorageUsage(force) {
+    var cached = readStorageCache();
+    var now = Date.now();
+    if (!force && cached && cached.data && now - cached.fetchedAt < STORAGE_AUTO_MS) {
+      renderStorageUsage(cached.data, null, { fromCache: true });
+      return;
+    }
+    if (force && storageUsageLastFetch && now - storageUsageLastFetch < STORAGE_MIN_REFRESH_MS) {
+      if (cached && cached.data) renderStorageUsage(cached.data, null, { fromCache: true });
+      return;
+    }
+    if (storageUsageInFlight) return;
+    var client =
+      typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
+    if (!client) {
+      renderStorageUsage(null, 'Supabase no disponible. Entra desde login admin.');
+      return;
+    }
+    storageUsageInFlight = true;
+    var btn = document.getElementById('aciStorageBtn');
+    var num = document.getElementById('aciStorageNum');
+    if (force && btn) btn.setAttribute('data-state', 'loading');
+    if (force && num && (!cached || !cached.data)) num.textContent = '…';
+    try {
+      var res = await client.rpc('plan_pro_storage_usage');
+      if (res.error) {
+        if (/plan_pro_storage_usage|not exist|does not exist|42883/i.test(res.error.message || '')) {
+          storageUsageRpcMissing = true;
+        }
+        if (cached && cached.data) {
+          renderStorageUsage(cached.data, null, { fromCache: true });
+        } else {
+          renderStorageUsage(null, res.error.message || 'Error al leer almacenamiento.');
+        }
+        return;
+      }
+      storageUsageLastFetch = Date.now();
+      writeStorageCache(res.data || {});
+      renderStorageUsage(res.data || {}, null, { fromCache: false });
+    } catch (e) {
+      if (cached && cached.data) {
+        renderStorageUsage(cached.data, null, { fromCache: true });
+      } else {
+        renderStorageUsage(null, (e && e.message) || String(e));
+      }
+    } finally {
+      storageUsageInFlight = false;
+    }
   }
 
   function setActiveTab(tab) {
@@ -4105,6 +4260,7 @@
 
     purgeSitesLocal([siteId]);
     await refreshProjectsUi();
+    if (cloudOk) refreshStorageUsage(true);
     if (hint) {
       hint.textContent = cloudOk
         ? 'Análisis borrado (nube + local)'
@@ -4173,6 +4329,7 @@
     purgeSitesLocal(allIds);
     setAgricolaCollapsed(label, false);
     await refreshProjectsUi();
+    if (cloudOk) refreshStorageUsage(true);
     if (hint) {
       hint.textContent =
         'Agrícola «' +
@@ -5290,6 +5447,7 @@
         : 'GeoTIFF en el mapa y guardado en Supabase Storage',
       'ok'
     );
+    refreshStorageUsage(true);
     return { ok: true, path: prep.path, flight_id: prep.flight_id };
   }
 
@@ -5532,6 +5690,14 @@
   if (analyzeBtn) {
     analyzeBtn.addEventListener('click', function () {
       runCanopyDetection();
+    });
+  }
+
+  var storageBtn = document.getElementById('aciStorageBtn');
+  if (storageBtn) {
+    storageBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      refreshStorageUsage(true);
     });
   }
 

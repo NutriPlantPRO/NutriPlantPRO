@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AirCI Crop Intelligence | NutriPlant PRO</title>
+  <title>AirCI Crop Intelligence</title>
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806pro2">
+  <link rel="stylesheet" href="./airci.css?v=20260807storage1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -156,6 +156,11 @@
       </section>
 
       <section class="aci-metrics" aria-label="Resumen ortomosaico">
+        <button type="button" class="aci-metric aci-metric--storage" id="aciStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en Supabase" title="Archivos en Supabase · calculando…">
+          <small>Almacenamiento nube</small>
+          <strong id="aciStorageNum">…</strong>
+          <em id="aciStorageSub">Supabase · toca para actualizar</em>
+        </button>
         <div class="aci-metric"><small>Árboles / copas</small><strong id="aciMetricTrees">—</strong><em id="aciMetricTreesSub">detección F2</em></div>
         <div class="aci-metric"><small>Cobertura total</small><strong id="aciMetricCover">—</strong><em id="aciMetricCoverSub">copa sobre orto</em></div>
         <div class="aci-metric"><small>Sin cobertura</small><strong id="aciMetricBare">—</strong><em id="aciMetricBareSub">suelo / espacio libre</em></div>
@@ -560,7 +565,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806pro2"></script>
-  <script src="./airci.js?v=20260806pro2"></script>
+  <script src="./airci-canopy.js?v=20260807storage1"></script>
+  <script src="./airci.js?v=20260807storage1"></script>
 </body>
 </html>
