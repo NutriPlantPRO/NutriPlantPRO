@@ -3140,6 +3140,49 @@
       });
       calibrationLayer.addLayer(polygon);
       if (!selected) return;
+      var center = calibrationCentroid(sample.latlngs);
+      var moveMarker = L.marker(center, {
+        draggable: true,
+        keyboard: false,
+        zIndexOffset: 1000,
+        icon: L.divIcon({
+          className: 'aci-calibration-move',
+          html: '<i>↕</i>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        })
+      });
+      moveMarker.bindTooltip('Arrastra para mover toda la copa');
+      var moveStart = null;
+      moveMarker.on('dragstart', function () {
+        var origin = calibrationCentroid(sample.latlngs);
+        moveStart = { lat: origin[0], lng: origin[1] };
+      });
+      moveMarker.on('drag', function (event) {
+        if (!moveStart) return;
+        var latlng = event.target.getLatLng();
+        var dLat = latlng.lat - moveStart.lat;
+        var dLng = latlng.lng - moveStart.lng;
+        polygon.setLatLngs(
+          sample.latlngs.map(function (point) {
+            return [point[0] + dLat, point[1] + dLng];
+          })
+        );
+      });
+      moveMarker.on('dragend', function (event) {
+        if (!moveStart) return;
+        var latlng = event.target.getLatLng();
+        var dLat = latlng.lat - moveStart.lat;
+        var dLng = latlng.lng - moveStart.lng;
+        sample.latlngs = sample.latlngs.map(function (point) {
+          return [point[0] + dLat, point[1] + dLng];
+        });
+        moveStart = null;
+        calibrationReady = false;
+        renderCalibrationSamples();
+        syncCalibrationUi();
+      });
+      calibrationVertexLayer.addLayer(moveMarker);
       sample.latlngs.forEach(function (point, pointIndex) {
         var marker = L.marker(point, {
           draggable: true,
@@ -3195,8 +3238,8 @@
       hint.textContent = calibrationReady
         ? 'Calibración confirmada: estas 10 copas definen el criterio para este vuelo.'
         : calibrationActive
-          ? 'Haz clic en una copa representativa; clic derecho en un punto para quitarlo.'
-          : 'Selecciona 10 árboles representativos. AirCI propone el perímetro y tú lo ajustas.';
+          ? 'Haz clic en el centro de cada árbol. Se crea una copa de 6 puntos; ajusta, añade puntos o arrastra ↕ para moverla.'
+          : 'Selecciona 10 árboles representativos. Cada clic crea una copa inicial de 6 puntos que tú ajustas.';
     }
     if (start) {
       start.hidden = calibrationActive || calibrationReady;
@@ -3242,29 +3285,15 @@
 
   function addCalibrationSample(latlng) {
     if (!calibrationActive || calibrationSamples.length >= 10) return;
-    buildCalibrationCandidates();
-    var closest = null;
-    var bestDistance = Infinity;
-    (calibrationCandidates || []).forEach(function (candidate) {
-      var center = candidate.center;
-      if (!center || center.length < 2) return;
-      var distance = window.AirCICanopy && AirCICanopy.haversineM
-        ? AirCICanopy.haversineM(latlng.lat, latlng.lng, center[0], center[1])
-        : Infinity;
-      if (distance < bestDistance) {
-        closest = candidate;
-        bestDistance = distance;
-      }
-    });
-    var ring = closest && bestDistance < 12 && Array.isArray(closest.latlngs) && closest.latlngs.length >= 3
-      ? closest.latlngs.map(function (point) { return [Number(point[0]), Number(point[1])]; })
-      : fallbackCalibrationRing(latlng);
+    // El usuario elige el árbol: no se reutiliza una copa detectada automáticamente.
+    // El hexágono ligero solo sirve como punto de partida para el ajuste manual.
+    var ring = fallbackCalibrationRing(latlng);
     calibrationSamples.push({ latlngs: ring });
     calibrationSelectedIndex = calibrationSamples.length - 1;
     calibrationReady = false;
     renderCalibrationSamples();
     syncCalibrationUi();
-    setMapStatus('Muestra ' + calibrationSamples.length + '/10 lista. Ajusta sus puntos y selecciona la siguiente copa.', 'ok');
+    setMapStatus('Copa ' + calibrationSamples.length + '/10 creada. Ajusta sus 6 puntos o arrastra ↕ para moverla.', 'ok');
   }
 
   async function confirmCalibration() {
@@ -3362,6 +3391,52 @@
         setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
         return;
       }
+      loadProfessionalViewport(professionalResultId, professionalStats || {});
+    });
+    var center = calibrationCentroid(tree.latlngs);
+    var moveMarker = L.marker(center, {
+      draggable: true,
+      keyboard: false,
+      zIndexOffset: 1000,
+      icon: L.divIcon({
+        className: 'aci-calibration-move',
+        html: '<i>↕</i>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      })
+    }).addTo(professionalEditLayer);
+    moveMarker.bindTooltip('Arrastra para mover toda la copa');
+    var moveStart = null;
+    moveMarker.on('dragstart', function () {
+      var origin = calibrationCentroid(tree.latlngs);
+      moveStart = { lat: origin[0], lng: origin[1] };
+    });
+    moveMarker.on('drag', function (event) {
+      if (!moveStart) return;
+      var latlng = event.target.getLatLng();
+      var dLat = latlng.lat - moveStart.lat;
+      var dLng = latlng.lng - moveStart.lng;
+      editable.setLatLngs(
+        tree.latlngs.map(function (point) {
+          return [point[0] + dLat, point[1] + dLng];
+        })
+      );
+    });
+    moveMarker.on('dragend', async function (event) {
+      if (!moveStart) return;
+      var latlng = event.target.getLatLng();
+      var dLat = latlng.lat - moveStart.lat;
+      var dLng = latlng.lng - moveStart.lng;
+      tree.latlngs = tree.latlngs.map(function (point) {
+        return [point[0] + dLat, point[1] + dLng];
+      });
+      moveStart = null;
+      var response = await saveProfessionalTree(tree, 'update');
+      if (!response.ok) {
+        setMapStatus(response.error || 'No se pudo guardar el perímetro.', 'error');
+        return;
+      }
+      setMapStatus('Copa movida y guardada.', 'ok');
       loadProfessionalViewport(professionalResultId, professionalStats || {});
     });
     tree.latlngs.forEach(function (point, pointIndex) {
@@ -5712,10 +5787,9 @@
       calibrationActive = true;
       calibrationReady = false;
       calibrationSelectedIndex = calibrationSamples.length ? calibrationSamples.length - 1 : -1;
-      buildCalibrationCandidates();
       renderCalibrationSamples();
       syncCalibrationUi();
-      setMapStatus('Selecciona en el mapa la primera de 10 copas representativas.', 'ok');
+      setMapStatus('Haz clic en el centro del primer árbol: tú eliges las 10 copas de referencia.', 'ok');
     });
   }
   var calibrationAddPointBtn = document.getElementById('aciCalibrationAddPoint');
@@ -5742,7 +5816,7 @@
       syncProfessionalEditUi();
       setMapStatus(
         professionalEditMode
-          ? 'Clic en una copa para mover sus vértices. Clic derecho en un vértice para quitarlo.'
+          ? 'Clic en una copa: mueve puntos, doble clic para añadir, o arrastra ↕ para mover toda la copa.'
           : 'Edición manual terminada.',
         'ok'
       );
