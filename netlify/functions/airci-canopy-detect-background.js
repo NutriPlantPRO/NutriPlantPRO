@@ -10,7 +10,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 // URL pública de Cloud Run. El worker vuelve a validar el JWT del usuario y
 // comprueba que el job le pertenece; no añade variables Lambda.
-const WORKER_URL = 'https://airci-canopy-worker-6syn5d2fca-uc.a.run.app';
+const WORKER_URL = 'https://airci-canopy-worker-272020949652.us-central1.run.app';
 
 function getSupabase() {
   const url = String(process.env.SUPABASE_URL || '').trim();
