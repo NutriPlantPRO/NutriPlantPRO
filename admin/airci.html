@@ -175,15 +175,22 @@
               <span>Detección</span>
               <select id="aciDetectModel" title="ExG gratis, o IA calibra con 2 fotos y ExG corre en todo el predio">
                 <option value="exg">ExG · gratis (sin IA)</option>
-                <option value="gpt-5.6-luna" selected>Luna · calibra 2 fotos</option>
-                <option value="gpt-5.6-terra">Terra · calibra 2 fotos</option>
-                <option value="gpt-5.6-sol">Sol · calibra 2 fotos</option>
+                <option value="gpt-5.6-luna" selected>Luna · calibra 2 fotos · ~$0.006</option>
+                <option value="gpt-5.6-terra">Terra · calibra 2 fotos · ~$0.012</option>
+                <option value="gpt-5.6-sol">Sol · calibra 2 fotos · ~$0.022</option>
               </select>
             </label>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciAnalyzeBtn" hidden title="Analiza el ortomosaico: detecta copas, métricas y semáforo">Analizar</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
           </div>
         </div>
+        <p id="aciAiUsageBar" class="aci-ai-usage" hidden role="status">
+          IA AirCI · este mes: <strong id="aciAiUsageMonthReq">0</strong> consultas ·
+          <strong id="aciAiUsageMonthUsd">$0.0000</strong>
+          <span id="aciAiUsageByModel" class="aci-ai-usage__models"></span>
+          · total: <strong id="aciAiUsageTotalReq">0</strong> ·
+          <strong id="aciAiUsageTotalUsd">$0.0000</strong>
+        </p>
         <div id="aciMapWrap" class="aci-map-wrap">
           <div id="aciMapPlaceholder" class="aci-map-placeholder">
             <span>Usa <strong>Subir GeoTIFF</strong> para cargar el ortomosaico</span>
@@ -197,6 +204,7 @@
           <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled title="Relleno por tamaño">Semáforo tamaño</button>
           <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Números solo con esta capa activa">Números (ID)</button>
           <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" disabled title="Pinta por estado fenológico dominante">Fenología</button>
+          <button type="button" class="aci-layer-chip" data-paint-mode="color" disabled title="AirCI Color Score 0–100 (GLI vs predio). Como NDVI relativo, pero por copa RGB">Color Score</button>
         </div>
         <div class="aci-basemap-bar" aria-label="Mapa de fondo" id="aciBasemapBar">
           <span class="aci-basemap-label">Fondo</span>
@@ -228,6 +236,14 @@
           <span class="aci-leg aci-leg--veg">Vegetativo</span>
           <span class="aci-leg" style="border-color:#94a3b8;color:#475569">Sin clasificar</span>
         </div>
+        <div class="aci-legend" id="aciColorLegend" hidden>
+          <span class="aci-basemap-label">Color Score</span>
+          <span class="aci-leg" style="border-color:#ca8a04;color:#a16207">0–20 bronce</span>
+          <span class="aci-leg" style="border-color:#d97706;color:#b45309">21–40 menos verde</span>
+          <span class="aci-leg" style="border-color:#16a34a;color:#15803d">41–60 promedio</span>
+          <span class="aci-leg" style="border-color:#15803d;color:#166534">61–80 más verde</span>
+          <span class="aci-leg" style="border-color:#166534;color:#14532d">81–100 intenso</span>
+        </div>
       </section>
 
       <!-- Análisis del predio completo (no por árbol): lecturas generales de la huerta -->
@@ -244,9 +260,10 @@
           La <strong>cobertura %</strong> siempre se calcula; <strong>ha, m² y densidad</strong> solo si el GeoTIFF está georreferenciado.
           El semáforo compara cada copa <strong>vs el promedio del predio</strong> (Z-score), no contra un estándar fijo.
           Al volver a detectar (otro vuelo), AirCI empareja copas por proximidad y muestra <strong>Δ área</strong>.
-          La fenología (flor / brote / vegetativo) se estima del RGB de cada copa.
-          La tabla por árbol es solo para revisar casos puntuales (filtra por color).
-        </p>
+              La fenología (flor / brote / vegetativo) y el <strong>Color Score</strong> (GLI 0–100 vs predio)
+              se estiman del RGB de cada copa — capa en mapa como el NDVI del Radar, pero por árbol.
+              La tabla por árbol es solo para revisar casos puntuales (filtra por color).
+            </p>
         <div class="aci-orchard-grid">
           <div class="aci-orchard-block aci-orchard-block--sem">
             <h3 class="aci-orchard-h" id="aciSemCompareTitle">Comparación por semáforo (vs predio)</h3>
@@ -394,6 +411,10 @@
                     <th title="% píxeles clasificados como floración">Flor %</th>
                     <th title="% píxeles clasificados como brotación">Brote %</th>
                     <th title="% píxeles vegetativo maduro">Veg %</th>
+                    <th title="Sin clasificar / sombra (completa el 100% fenológico)">Otros %</th>
+                    <th title="AirCI Color Score 0–100 (GLI vs P10–P90 del predio). No es salud.">Color 0–100</th>
+                    <th title="Banda de verdor relativo al predio">Color banda</th>
+                    <th title="Mediana GLI de la copa">(GLI)</th>
                     <th title="Coloración atípica (paralela; no es diagnóstico)">Atíp. %</th>
                   </tr>
                 </thead>
@@ -460,11 +481,23 @@
                   </dd>
                 </div>
                 <div>
-                  <dt>Fenología (Flor / Brote / Veg)</dt>
+                  <dt>Fenología (Flor / Brote / Veg / Otros)</dt>
                   <dd>
                     Clasificación RGB de píxeles dentro de cada copa.
                     <strong>Floración + brotación + vegetativo + sin clasificar = 100%</strong>.
                     <strong>Atíp. %</strong> es métrica paralela (amarillo/bronce) y <em>no</em> implica nutrición ni enfermedad.
+                  </dd>
+                </div>
+                <div>
+                  <dt>AirCI Color Score (0–100)</dt>
+                  <dd>
+                    Verdor relativo al predio con <strong>GLI</strong> = (2G−R−B)/(2G+R+B).
+                    Por árbol: mediana GLI de la copa →
+                    Score = 100 × (GLI − P10) / (P90 − P10), limitado 0–100.
+                    Bandas: <strong>0–20</strong> amarillo/bronce · <strong>21–40</strong> menos verde ·
+                    <strong>41–60</strong> promedio · <strong>61–80</strong> más verde ·
+                    <strong>81–100</strong> verde intenso.
+                    <em>No se interpreta automáticamente como salud.</em>
                   </dd>
                 </div>
               </dl>
@@ -488,7 +521,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806cal"></script>
-  <script src="./airci.js?v=20260806cal"></script>
+  <script src="./airci-canopy.js?v=20260806aiuse"></script>
+  <script src="./airci.js?v=20260806aiuse"></script>
 </body>
 </html>

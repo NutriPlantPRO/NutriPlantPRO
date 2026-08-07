@@ -1070,6 +1070,146 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
 
+  /** Green Leaf Index (RGB). Altos = más verde; bajos = amarillo/bronce/rojo. */
+  function pixelGli(R, G, B) {
+    var sum = R + G + B;
+    if (sum < 42 || (R < 18 && G < 20 && B < 18)) return null; // sombra
+    var den = 2 * G + R + B;
+    if (den < 1e-3) return null;
+    return (2 * G - R - B) / den;
+  }
+
+  /**
+   * AirCI Color Score 0–100 vs P10–P90 de la huerta (GLI mediana por copa).
+   * No interpreta salud; solo posición relativa de verdor.
+   */
+  var COLOR_SCORE_BANDS = [
+    {
+      key: 'bronce',
+      min: 0,
+      max: 20,
+      label: 'Amarillo / bronce',
+      color: '#ca8a04',
+      fill: '#eab30899',
+      hint: '0–20'
+    },
+    {
+      key: 'bajo',
+      min: 21,
+      max: 40,
+      label: 'Menos verde',
+      color: '#d97706',
+      fill: '#f59e0b99',
+      hint: '21–40'
+    },
+    {
+      key: 'medio',
+      min: 41,
+      max: 60,
+      label: 'Color promedio',
+      color: '#16a34a',
+      fill: '#22c55e99',
+      hint: '41–60'
+    },
+    {
+      key: 'alto',
+      min: 61,
+      max: 80,
+      label: 'Más verde',
+      color: '#15803d',
+      fill: '#16a34a99',
+      hint: '61–80'
+    },
+    {
+      key: 'intenso',
+      min: 81,
+      max: 100,
+      label: 'Verde intenso',
+      color: '#166534',
+      fill: '#15803d99',
+      hint: '81–100'
+    }
+  ];
+
+  function colorScoreBand(score) {
+    var s = Number(score);
+    if (!Number.isFinite(s)) return null;
+    s = Math.max(0, Math.min(100, s));
+    for (var i = 0; i < COLOR_SCORE_BANDS.length; i++) {
+      var b = COLOR_SCORE_BANDS[i];
+      if (s >= b.min && s <= b.max) {
+        return {
+          key: b.key,
+          label: b.label,
+          color: b.color,
+          fill: b.fill,
+          hint: b.hint,
+          score: Math.round(s)
+        };
+      }
+    }
+    return COLOR_SCORE_BANDS[2];
+  }
+
+  function percentileSorted(sortedAsc, p) {
+    if (!sortedAsc || !sortedAsc.length) return null;
+    if (sortedAsc.length === 1) return sortedAsc[0];
+    var rank = (p / 100) * (sortedAsc.length - 1);
+    var lo = Math.floor(rank);
+    var hi = Math.ceil(rank);
+    if (lo === hi) return sortedAsc[lo];
+    var t = rank - lo;
+    return sortedAsc[lo] * (1 - t) + sortedAsc[hi] * t;
+  }
+
+  /**
+   * Aplica Color Score 0–100 a cada árbol con gliMedian.
+   * Score = 100 × (GLI − P10) / (P90 − P10), clamp 0–100.
+   */
+  function applyOrchardColorScores(trees) {
+    var gliVals = [];
+    (trees || []).forEach(function (t) {
+      if (t && t.gliMedian != null && Number.isFinite(Number(t.gliMedian))) {
+        gliVals.push(Number(t.gliMedian));
+      }
+    });
+    var sorted = gliVals.slice().sort(function (a, b) {
+      return a - b;
+    });
+    var p10 = percentileSorted(sorted, 10);
+    var p50 = percentileSorted(sorted, 50);
+    var p90 = percentileSorted(sorted, 90);
+    var span = p90 != null && p10 != null ? p90 - p10 : 0;
+
+    (trees || []).forEach(function (t) {
+      if (!t || t.gliMedian == null || !Number.isFinite(Number(t.gliMedian))) {
+        t.colorScore = null;
+        t.semColor = null;
+        return;
+      }
+      var g = Number(t.gliMedian);
+      var score;
+      if (!(span > 1e-6)) {
+        score = 50;
+      } else {
+        score = 100 * ((g - p10) / span);
+        score = Math.max(0, Math.min(100, score));
+      }
+      t.colorScore = Math.round(score * 10) / 10;
+      t.semColor = colorScoreBand(score);
+    });
+
+    return {
+      hasColorScore: sorted.length > 0,
+      gliP10: p10,
+      gliP50: p50,
+      gliP90: p90,
+      colorScoreBands: COLOR_SCORE_BANDS,
+      disclaimer:
+        'AirCI Color Score: verdor relativo al predio (GLI). No interpreta salud ni nutrición.'
+    };
+  }
+
   /**
    * Clase fenológica 100%: flor | brote | veg | other
    * (other = sombra / no clasificado)
@@ -1182,7 +1322,8 @@
       phenoDominant: null,
       phenoConfidence: null,
       meanRgb: null,
-      semPheno: null
+      semPheno: null,
+      gliMedian: null
     };
     if (!bands || !labels) {
       return treesOrOrdered.map(function () {
@@ -1210,6 +1351,7 @@
       var sumG = 0;
       var sumB = 0;
       var n = 0;
+      var gliSamples = [];
       var boxW = box.maxX - box.minX + 1;
       var boxH = box.maxY - box.minY + 1;
       var targetSamples = 700;
@@ -1233,6 +1375,9 @@
           sumG += G;
           sumB += B;
           n++;
+          var gli = pixelGli(R, G, B);
+          if (gli != null && cls !== 'other') gliSamples.push(gli);
+          else if (gli != null && R + G + B >= 70) gliSamples.push(gli);
         }
       }
 
@@ -1241,6 +1386,7 @@
         flor = brote = veg = other = atyp = 0;
         sumR = sumG = sumB = 0;
         n = 0;
+        gliSamples = [];
         for (var y2 = box.minY; y2 <= box.maxY; y2 += stride) {
           for (var x2 = box.minX; x2 <= box.maxX; x2 += stride) {
             if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h) continue;
@@ -1260,6 +1406,9 @@
             sumG += G2;
             sumB += B2;
             n++;
+            var gli2 = pixelGli(R2, G2, B2);
+            if (gli2 != null && cls2 !== 'other') gliSamples.push(gli2);
+            else if (gli2 != null && s2 >= 70) gliSamples.push(gli2);
           }
         }
       }
@@ -1319,6 +1468,7 @@
           b: Math.round(sumB / n)
         },
         semPheno: phenoSemForDominant(dominant),
+        gliMedian: median(gliSamples),
         sampledPx: n
       };
     });
@@ -1716,11 +1866,15 @@
         phenoDominant: ph.phenoDominant,
         phenoConfidence: ph.phenoConfidence,
         meanRgb: ph.meanRgb,
-        semPheno: ph.semPheno
+        semPheno: ph.semPheno,
+        gliMedian: ph.gliMedian != null ? ph.gliMedian : null,
+        colorScore: null,
+        semColor: null
       };
     });
 
     var phenoSummary = summarizePhenology(trees);
+    var colorSummary = applyOrchardColorScores(trees);
 
     var meanAreaM2 = gsdM != null && stats.mean ? stats.mean * gsdM * gsdM : null;
     var minArea = areas.length ? Math.min.apply(null, areas) : 0;
@@ -1808,7 +1962,12 @@
         meanAtypicalPct: phenoSummary.meanAtypicalPct,
         dominantOrchard: phenoSummary.dominantOrchard,
         dominantCounts: phenoSummary.dominantCounts,
-        meanPhenoConfidence: phenoSummary.meanPhenoConfidence
+        meanPhenoConfidence: phenoSummary.meanPhenoConfidence,
+        hasColorScore: colorSummary.hasColorScore,
+        gliP10: colorSummary.gliP10,
+        gliP50: colorSummary.gliP50,
+        gliP90: colorSummary.gliP90,
+        colorScoreDisclaimer: colorSummary.disclaimer
       }
     };
   }
@@ -1837,7 +1996,11 @@
     summarizePhenology: summarizePhenology,
     phenoSemForDominant: phenoSemForDominant,
     phenoSemForPct: phenoSemForPct,
+    pixelGli: pixelGli,
+    colorScoreBand: colorScoreBand,
+    applyOrchardColorScores: applyOrchardColorScores,
     PHENO_META: PHENO_META,
+    COLOR_SCORE_BANDS: COLOR_SCORE_BANDS,
     orderComponentsByRows: orderComponentsByRows,
     scoreCanopy: scoreCanopy,
     circleToLatLngs: circleToLatLngs,

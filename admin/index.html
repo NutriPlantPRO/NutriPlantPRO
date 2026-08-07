@@ -1895,6 +1895,19 @@
                     <div class="stat-label" style="margin-bottom: 4px;">🤖 Tu uso (chat admin)</div>
                     <div style="font-size: 14px; color: #1e40af;">Total: <span id="adminChatCostTotal">—</span> USD · Este mes: <span id="adminChatCostMonth">—</span> USD</div>
                 </div>
+                <div class="stat-card" style="grid-column: 1 / -1; max-width: 100%; background: #ecfeff; border-left: 4px solid #0891b2;">
+                    <div class="stat-label" style="margin-bottom: 4px;">🛸 AirCI · uso IA (Luna / Terra / Sol)</div>
+                    <div style="font-size: 14px; color: #155e75; line-height: 1.5;">
+                        Este mes: <strong id="airciAiMonthReq">—</strong> consultas ·
+                        <strong id="airciAiMonthUsd">—</strong> USD
+                        <span id="airciAiMonthByModel" style="display:block;margin-top:4px;font-size:12px;color:#0e7490;"></span>
+                        Total: <strong id="airciAiTotalReq">—</strong> ·
+                        <strong id="airciAiTotalUsd">—</strong> USD
+                        <span style="display:block;margin-top:4px;font-size:11px;color:#64748b;">
+                            Estimado / consulta · Luna ~$0.006 · Terra ~$0.012 · Sol ~$0.022 (2 fotos)
+                        </span>
+                    </div>
+                </div>
                 
                 <div class="stat-card">
                     <div class="stat-number" id="activeUsers">-</div>
@@ -4112,6 +4125,34 @@
                             var em = document.getElementById('adminChatCostMonth');
                             if (et) et.textContent = Number(r.data.total_usd_est).toFixed(4);
                             if (em) em.textContent = (r.data.month_key === monthKey && r.data.month_usd_est != null) ? Number(r.data.month_usd_est).toFixed(4) : '0.0000';
+                        }
+                    }).catch(function() {});
+                    // AirCI IA usage (Luna / Terra / Sol)
+                    supabaseClient.from('airci_ai_usage').select(
+                        'total_requests, total_usd_est, month_key, month_requests, month_usd_est, month_by_model_json'
+                    ).eq('id', 'default').maybeSingle().then(function(r) {
+                        var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                        var d = r.data || {};
+                        var same = d.month_key === monthKey;
+                        var elMR = document.getElementById('airciAiMonthReq');
+                        var elMU = document.getElementById('airciAiMonthUsd');
+                        var elTR = document.getElementById('airciAiTotalReq');
+                        var elTU = document.getElementById('airciAiTotalUsd');
+                        var elBy = document.getElementById('airciAiMonthByModel');
+                        if (elMR) elMR.textContent = same ? String(d.month_requests || 0) : '0';
+                        if (elMU) elMU.textContent = same ? Number(d.month_usd_est || 0).toFixed(4) : '0.0000';
+                        if (elTR) elTR.textContent = String(d.total_requests || 0);
+                        if (elTU) elTU.textContent = Number(d.total_usd_est || 0).toFixed(4);
+                        if (elBy) {
+                            var map = same && d.month_by_model_json ? d.month_by_model_json : {};
+                            var parts = [];
+                            ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'].forEach(function(k) {
+                                var b = map[k];
+                                if (!b || !(Number(b.requests) > 0)) return;
+                                var lab = b.label || (k.indexOf('luna') >= 0 ? 'Luna' : k.indexOf('terra') >= 0 ? 'Terra' : 'Sol');
+                                parts.push(lab + ': ' + b.requests + ' × ~$' + Number(b.usd || 0).toFixed(4));
+                            });
+                            elBy.textContent = parts.length ? parts.join(' · ') : '';
                         }
                     }).catch(function() {});
                 }

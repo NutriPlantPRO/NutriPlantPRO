@@ -19,6 +19,161 @@ const ALLOWED_MODELS = new Set([
 const DEFAULT_MODEL = 'gpt-5.6-luna';
 const MAX_IMAGES = 2;
 
+/** USD estimado por consulta AirCI (calibración con 1–2 fotos). */
+const AIRCI_USD_PER_QUERY = {
+  'gpt-5.6-luna': 0.006,
+  'gpt-5.6-terra': 0.012,
+  'gpt-5.6-sol': 0.022,
+  'gpt-4o-mini': 0.008
+};
+
+function modelShortLabel(model) {
+  const m = String(model || '');
+  if (/luna/i.test(m)) return 'Luna';
+  if (/terra/i.test(m)) return 'Terra';
+  if (/sol/i.test(m)) return 'Sol';
+  if (/mini/i.test(m)) return 'Mini';
+  return m.replace(/^gpt-5\.6-/i, '') || 'IA';
+}
+
+function estimateUsd(model) {
+  const key = String(model || '').trim();
+  if (AIRCI_USD_PER_QUERY[key] != null) return AIRCI_USD_PER_QUERY[key];
+  return 0.01;
+}
+
+function monthKeyNow() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function bumpModelBucket(mapObj, model, usd) {
+  const out = mapObj && typeof mapObj === 'object' ? Object.assign({}, mapObj) : {};
+  const cur = out[model] && typeof out[model] === 'object' ? out[model] : { requests: 0, usd: 0 };
+  out[model] = {
+    requests: (Number(cur.requests) || 0) + 1,
+    usd: Math.round(((Number(cur.usd) || 0) + usd) * 10000) / 10000,
+    label: modelShortLabel(model)
+  };
+  return out;
+}
+
+async function recordAirciAiUsage(supabase, opts) {
+  const model = String(opts.model || DEFAULT_MODEL);
+  const usd = estimateUsd(model);
+  const mk = monthKeyNow();
+  const ownerId = opts.userId || null;
+  const siteId = opts.siteId || null;
+  const usage = opts.usage || {};
+
+  try {
+    await supabase.from('airci_ai_usage_events').insert({
+      owner_id: ownerId,
+      model: model,
+      usd_est: usd,
+      site_id: siteId,
+      input_tokens: usage.input_tokens != null ? Number(usage.input_tokens) : null,
+      output_tokens: usage.output_tokens != null ? Number(usage.output_tokens) : null
+    });
+  } catch (e) {}
+
+  const { data: row } = await supabase
+    .from('airci_ai_usage')
+    .select(
+      'id, total_requests, total_usd_est, month_key, month_requests, month_usd_est, by_model_json, month_by_model_json'
+    )
+    .eq('id', 'default')
+    .maybeSingle();
+
+  const base = row || {
+    id: 'default',
+    total_requests: 0,
+    total_usd_est: 0,
+    month_key: mk,
+    month_requests: 0,
+    month_usd_est: 0,
+    by_model_json: {},
+    month_by_model_json: {}
+  };
+
+  const sameMonth = base.month_key === mk;
+  const next = {
+    id: 'default',
+    total_requests: (Number(base.total_requests) || 0) + 1,
+    total_usd_est:
+      Math.round(((Number(base.total_usd_est) || 0) + usd) * 10000) / 10000,
+    month_key: mk,
+    month_requests: sameMonth ? (Number(base.month_requests) || 0) + 1 : 1,
+    month_usd_est: sameMonth
+      ? Math.round(((Number(base.month_usd_est) || 0) + usd) * 10000) / 10000
+      : usd,
+    by_model_json: bumpModelBucket(base.by_model_json, model, usd),
+    month_by_model_json: bumpModelBucket(
+      sameMonth ? base.month_by_model_json : {},
+      model,
+      usd
+    ),
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabase.from('airci_ai_usage').upsert(next, { onConflict: 'id' });
+  if (error) {
+    return {
+      ok: false,
+      error: error.message,
+      setup: /airci_ai_usage|does not exist|schema cache/i.test(error.message || '')
+        ? 'supabase-airci-ai-usage.sql'
+        : null,
+      usd_est: usd
+    };
+  }
+  return { ok: true, usd_est: usd, summary: next };
+}
+
+async function loadAirciAiUsage(supabase) {
+  const { data, error } = await supabase
+    .from('airci_ai_usage')
+    .select(
+      'total_requests, total_usd_est, month_key, month_requests, month_usd_est, by_model_json, month_by_model_json, updated_at'
+    )
+    .eq('id', 'default')
+    .maybeSingle();
+  if (error) {
+    return {
+      ok: false,
+      error: error.message,
+      setup: /airci_ai_usage|does not exist/i.test(error.message || '')
+        ? 'supabase-airci-ai-usage.sql'
+        : null
+    };
+  }
+  const mk = monthKeyNow();
+  const row = data || {
+    total_requests: 0,
+    total_usd_est: 0,
+    month_key: mk,
+    month_requests: 0,
+    month_usd_est: 0,
+    by_model_json: {},
+    month_by_model_json: {}
+  };
+  const sameMonth = row.month_key === mk;
+  return {
+    ok: true,
+    pricing: AIRCI_USD_PER_QUERY,
+    usage: {
+      total_requests: Number(row.total_requests) || 0,
+      total_usd_est: Number(row.total_usd_est) || 0,
+      month_key: mk,
+      month_requests: sameMonth ? Number(row.month_requests) || 0 : 0,
+      month_usd_est: sameMonth ? Number(row.month_usd_est) || 0 : 0,
+      by_model: row.by_model_json || {},
+      month_by_model: sameMonth ? row.month_by_model_json || {} : {},
+      updated_at: row.updated_at || null
+    }
+  };
+}
+
 function corsHeaders() {
   return {
     'Content-Type': 'application/json',
@@ -255,6 +410,14 @@ exports.handler = async function (event) {
   }
 
   const model = resolveModel(body.model);
+  const action = String(body.action || 'calibrate').toLowerCase();
+
+  if (action === 'usage' || action === 'get_usage') {
+    const u = await loadAirciAiUsage(admin.supabase);
+    if (!u.ok) return json(500, u);
+    return json(200, u);
+  }
+
   const imagesIn = Array.isArray(body.images)
     ? body.images
     : Array.isArray(body.crops)
@@ -281,5 +444,27 @@ exports.handler = async function (event) {
 
   const out = await calibrateWithOpenAI(model, images);
   if (!out.ok) return json(out.status || 500, { ok: false, error: out.error });
-  return json(200, out);
+
+  const logged = await recordAirciAiUsage(admin.supabase, {
+    userId: admin.userId,
+    model: out.model || model,
+    siteId: body.site_id || null,
+    usage: out.usage || {}
+  });
+
+  return json(200, {
+    ok: true,
+    model: out.model,
+    calibration: out.calibration,
+    usage: out.usage,
+    cost: {
+      usd_est: logged.usd_est != null ? logged.usd_est : estimateUsd(model),
+      model: out.model || model,
+      label: modelShortLabel(out.model || model),
+      pricing: AIRCI_USD_PER_QUERY,
+      recorded: !!logged.ok,
+      setup: logged.setup || null
+    },
+    rawPreview: out.rawPreview
+  });
 };

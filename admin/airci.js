@@ -49,7 +49,7 @@
   var activeSemFilter = 'all';
   /** Filtrar por cambio vs vuelo anterior */
   var activeDeltaFilter = 'all';
-  /** sem | delta | pheno */
+  /** sem | delta | pheno | color */
   var paintMode = 'sem';
   /** dom | flor | brote | veg | atyp */
   var phenoPaintKey = 'dom';
@@ -599,6 +599,22 @@
       });
     }
 
+    if (s.hasColorScore) {
+      rows.push({
+        label: 'AirCI Color Score (GLI)',
+        value:
+          'P10 ' +
+          (s.gliP10 != null ? Number(s.gliP10).toFixed(2) : '—') +
+          ' · P50 ' +
+          (s.gliP50 != null ? Number(s.gliP50).toFixed(2) : '—') +
+          ' · P90 ' +
+          (s.gliP90 != null ? Number(s.gliP90).toFixed(2) : '—'),
+        note:
+          'Verdor 0–100 vs predio (no es salud). 0–20 bronce · 41–60 promedio · 81–100 intenso',
+        cls: 'aci-sum--accent'
+      });
+    }
+
     if (s.rowCount) {
       rows.splice(1, 0, {
         label: 'Surcos detectados',
@@ -668,6 +684,8 @@
     if (deltaLeg) deltaLeg.hidden = true;
     var phenoLeg = document.getElementById('aciPhenoLegend');
     if (phenoLeg) phenoLeg.hidden = true;
+    var colorLeg = document.getElementById('aciColorLegend');
+    if (colorLeg) colorLeg.hidden = true;
     var legend = document.getElementById('aciLegend');
     var tablePanel = document.getElementById('aciTablePanel');
     var summaryPanel = document.getElementById('aciSummaryPanel');
@@ -748,6 +766,8 @@
     if (deltaLeg) deltaLeg.hidden = paintMode !== 'delta' || !layerOn.semaforo;
     var phenoLeg = document.getElementById('aciPhenoLegend');
     if (phenoLeg) phenoLeg.hidden = paintMode !== 'pheno' || !layerOn.semaforo;
+    var colorLeg = document.getElementById('aciColorLegend');
+    if (colorLeg) colorLeg.hidden = paintMode !== 'color' || !layerOn.semaforo;
     syncLayerChips();
   }
 
@@ -849,6 +869,7 @@
   function treePaintSem(t) {
     if (!t) return null;
     if (paintMode === 'delta' && t.semDelta) return t.semDelta;
+    if (paintMode === 'color' && t.semColor) return t.semColor;
     if (paintMode === 'pheno') {
       if (phenoPaintKey === 'dom' && t.semPheno) return t.semPheno;
       if (
@@ -1208,12 +1229,18 @@
   }
 
   function setPaintMode(mode, phenoKey) {
-    if (mode !== 'delta' && mode !== 'pheno') mode = 'sem';
+    if (mode !== 'delta' && mode !== 'pheno' && mode !== 'color') mode = 'sem';
     paintMode = mode;
     if (phenoKey) phenoPaintKey = phenoKey;
     syncPaintModeUi();
     if (paintMode !== 'sem') enableLayers(['semaforo']);
     applySemFilterStyles();
+    if (paintMode === 'color') {
+      setMapStatus(
+        'Capa Color Score (GLI 0–100 vs predio) · no interpreta salud',
+        'ok'
+      );
+    }
   }
 
   function setPaintByDelta(on) {
@@ -1237,9 +1264,11 @@
     var legend = document.getElementById('aciLegend');
     var deltaLeg = document.getElementById('aciDeltaLegend');
     var phenoLeg = document.getElementById('aciPhenoLegend');
+    var colorLeg = document.getElementById('aciColorLegend');
     if (legend) legend.hidden = paintMode !== 'sem' || !layerOn.semaforo;
     if (deltaLeg) deltaLeg.hidden = paintMode !== 'delta' || !layerOn.semaforo;
     if (phenoLeg) phenoLeg.hidden = paintMode !== 'pheno' || !layerOn.semaforo;
+    if (colorLeg) colorLeg.hidden = paintMode !== 'color' || !layerOn.semaforo;
   }
 
   function syncPaintDeltaUi() {
@@ -1536,6 +1565,26 @@
         fmtNum(t.brotePct, 1) +
         '</td><td>' +
         fmtNum(t.vegPct, 1) +
+        '</td><td>' +
+        fmtNum(t.otherPct, 1) +
+        '</td><td title="AirCI Color Score (GLI vs predio)">' +
+        (t.colorScore != null && Number.isFinite(Number(t.colorScore))
+          ? Number(t.colorScore).toFixed(0)
+          : '—') +
+        '</td><td>' +
+        (t.semColor
+          ? '<span class="aci-badge-sem" style="border-color:' +
+            t.semColor.color +
+            ';color:' +
+            t.semColor.color +
+            '">' +
+            t.semColor.label +
+            '</span>'
+          : '—') +
+        '</td><td title="Mediana GLI de la copa">' +
+        (t.gliMedian != null && Number.isFinite(Number(t.gliMedian))
+          ? Number(t.gliMedian).toFixed(3)
+          : '—') +
         '</td><td title="Coloración atípica (paralela; no diagnóstico)">' +
         fmtNum(t.atypicalPct, 1) +
         '</td>';
@@ -2127,6 +2176,70 @@
     return data;
   }
 
+  function fmtUsd4(n) {
+    var v = Number(n);
+    if (!Number.isFinite(v)) v = 0;
+    return '$' + v.toFixed(4);
+  }
+
+  function renderAiUsageBar(usage) {
+    var bar = document.getElementById('aciAiUsageBar');
+    if (!bar) return;
+    if (!usage) {
+      bar.hidden = true;
+      return;
+    }
+    bar.hidden = false;
+    var elMR = document.getElementById('aciAiUsageMonthReq');
+    var elMU = document.getElementById('aciAiUsageMonthUsd');
+    var elTR = document.getElementById('aciAiUsageTotalReq');
+    var elTU = document.getElementById('aciAiUsageTotalUsd');
+    var elBy = document.getElementById('aciAiUsageByModel');
+    if (elMR) elMR.textContent = String(usage.month_requests || 0);
+    if (elMU) elMU.textContent = fmtUsd4(usage.month_usd_est);
+    if (elTR) elTR.textContent = String(usage.total_requests || 0);
+    if (elTU) elTU.textContent = fmtUsd4(usage.total_usd_est);
+    if (elBy) {
+      var monthMap = usage.month_by_model || {};
+      var parts = [];
+      ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'].forEach(function (k) {
+        var b = monthMap[k];
+        if (!b || !(Number(b.requests) > 0)) return;
+        var lab = b.label || k.replace('gpt-5.6-', '');
+        parts.push(
+          lab +
+            ' ' +
+            b.requests +
+            '× (' +
+            fmtUsd4(b.usd) +
+            ')'
+        );
+      });
+      elBy.textContent = parts.length ? '· ' + parts.join(' · ') : '';
+    }
+  }
+
+  async function refreshAiUsageBar() {
+    try {
+      var r = await apiCanopyAi({ action: 'usage' });
+      if (r.ok && r.usage) {
+        renderAiUsageBar(r.usage);
+        return r.usage;
+      }
+      if (r.setup) {
+        var bar = document.getElementById('aciAiUsageBar');
+        if (bar) {
+          bar.hidden = false;
+          bar.innerHTML =
+            'Para ver uso/costo IA ejecuta <strong>' +
+            r.setup +
+            '</strong> en Supabase.';
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
   /** Dos recortes representativos del orto (JPEG) para calibrar la IA. */
   function makeCalibrationTiles(georaster, outSize) {
     outSize = outSize || 448;
@@ -2202,11 +2315,23 @@
     var r = await apiCanopyAi({
       action: 'calibrate',
       model: model,
-      images: tiles
+      images: tiles,
+      site_id: getSiteId()
     });
     if (!r.ok || !r.calibration) {
       throw new Error(r.error || 'Fallo calibración IA');
     }
+    if (r.cost && r.cost.usd_est != null) {
+      setMapStatus(
+        'Calibrado ' +
+          (r.cost.label || model) +
+          ' · esta consulta ~' +
+          fmtUsd4(r.cost.usd_est) +
+          (r.cost.setup ? ' · ejecuta ' + r.cost.setup + ' para guardar uso' : ''),
+        r.cost.setup ? 'error' : 'ok'
+      );
+    }
+    refreshAiUsageBar();
     return r.calibration;
   }
 
@@ -2343,6 +2468,7 @@
     restoreFlightHint();
     refreshProjectsUi();
     setActiveTab('proyectos');
+    refreshAiUsageBar();
   }
 
   function setActiveTab(tab) {
