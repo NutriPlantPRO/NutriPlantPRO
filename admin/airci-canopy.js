@@ -5,19 +5,23 @@
 (function (global) {
   'use strict';
 
-  var MIN_AREA_PX = 220;
+  var MIN_AREA_PX = 280;
   var MAX_TREES = 15000;
   /** Descarta “blobs” que son casi toda la vegetación (pasto unido / bordes) */
   var MAX_AREA_FRAC = 0.01; // 1.0% del área de la imagen
   var MAX_AREA_VS_MEDIAN = 6.5; // > 6.5× mediana = outlier
-  var MIN_FILL_RATIO = 0.14; // área / bbox: muy hueco = pasto/borde
-  var MAX_ASPECT = 4.2; // muy alargado = franja de pasto
-  var MIN_CONFIDENCE = 38; // debajo: se excluye del lote
+  var MIN_FILL_RATIO = 0.18; // área / bbox: muy hueco = pasto/borde
+  var MAX_ASPECT = 2.8; // árbol ≈ redondo; >2.8 suele ser franja/pasto
+  var MIN_CONFIDENCE = 42; // debajo: se excluye del lote
   var BORDER_CLEAR_PX = 2; // anillo del orto sin vegetación (artefactos)
-  /** Copa mínima “realista” (diámetro equiv. ~1.1 m) cuando hay GSD */
-  var MIN_CANOPY_DIAM_M = 1.1;
+  /** Diámetro mínimo típico de copa frutal (no “pasto verde”) */
+  var MIN_CANOPY_DIAM_M = 2.0;
+  /** Fragmento vs mediana del lote: debajo = pedazo de árbol, no árbol */
+  var MIN_FRAC_OF_MEDIAN = 0.28;
   /** Distancia máx. (× radio mediano) para fusionar micro-copas de la misma planta */
-  var MERGE_GAP_FRAC = 0.55;
+  var MERGE_GAP_FRAC = 0.95;
+  /** Radio de suavizado ExG en metros (une textura de una misma copa) */
+  var EXG_BLUR_M = 0.9;
 
   function bandScale(v, max) {
     var n = Number(v);
@@ -63,6 +67,44 @@
     return 255;
   }
 
+  function boxBlurU8(src, w, h, radius) {
+    var r = Math.max(1, Math.min(24, radius | 0));
+    var n = w * h;
+    var tmp = new Float32Array(n);
+    var out = new Float32Array(n);
+    var diam = r * 2 + 1;
+    // horizontal
+    for (var y = 0; y < h; y++) {
+      var row = y * w;
+      var acc = 0;
+      for (var i = -r; i <= r; i++) {
+        var xx = Math.max(0, Math.min(w - 1, i));
+        acc += src[row + xx];
+      }
+      for (var x = 0; x < w; x++) {
+        tmp[row + x] = acc / diam;
+        var leave = Math.max(0, Math.min(w - 1, x - r));
+        var add = Math.max(0, Math.min(w - 1, x + r + 1));
+        acc += src[row + add] - src[row + leave];
+      }
+    }
+    // vertical
+    for (var x2 = 0; x2 < w; x2++) {
+      var acc2 = 0;
+      for (var j = -r; j <= r; j++) {
+        var yy = Math.max(0, Math.min(h - 1, j));
+        acc2 += tmp[yy * w + x2];
+      }
+      for (var y2 = 0; y2 < h; y2++) {
+        out[y2 * w + x2] = acc2 / diam;
+        var leaveY = Math.max(0, Math.min(h - 1, y2 - r));
+        var addY = Math.max(0, Math.min(h - 1, y2 + r + 1));
+        acc2 += tmp[addY * w + x2] - tmp[leaveY * w + x2];
+      }
+    }
+    return out;
+  }
+
   /**
    * ExG con perfil:
    * - 'strict' → F2 estricto
@@ -91,11 +133,12 @@
         thrMin: Number(c.thr_min) || 60,
         thrMax: Number(c.thr_max) || 165,
         erosionPasses: Number(c.erosion_passes) === 2 ? 2 : 1,
-        closePasses: Number(c.close_passes) === 1 ? 1 : 2,
+        closePasses: Number(c.close_passes) >= 1 ? Math.min(5, Number(c.close_passes) | 0) : 3,
+        blurM: Number(c.blur_m) > 0 ? Number(c.blur_m) : EXG_BLUR_M,
         allowYellow: c.allow_yellow_green !== false,
         yellowBoost: c.yellow_boost !== false,
-        minAreaPx: Math.max(160, Number(c.min_area_px) || 200),
-        minConfidence: Math.max(32, Number(c.min_confidence) || 34),
+        minAreaPx: Math.max(200, Number(c.min_area_px) || 260),
+        minConfidence: Math.max(36, Number(c.min_confidence) || 40),
         cropHint: c.crop_hint || ''
       };
     }
@@ -106,17 +149,18 @@
         bMargin: 0.025,
         gAbs: 3,
         bAbs: 2,
-        darkSum: 36,
+        darkSum: 42,
         minG: 22,
-        pct: 55,
-        thrMin: 55,
-        thrMax: 160,
+        pct: 52,
+        thrMin: 48,
+        thrMax: 150,
         erosionPasses: 1,
-        closePasses: 2,
+        closePasses: 3,
+        blurM: EXG_BLUR_M,
         allowYellow: true,
         yellowBoost: true,
-        minAreaPx: 180,
-        minConfidence: 32,
+        minAreaPx: 240,
+        minConfidence: 38,
         cropHint: ''
       };
     }
@@ -126,13 +170,14 @@
       bMargin: 0.04,
       gAbs: 6,
       bAbs: 4,
-      darkSum: 48,
+      darkSum: 52,
       minG: 28,
-      pct: 68,
-      thrMin: 78,
-      thrMax: 175,
-      erosionPasses: 2,
-      closePasses: 2,
+      pct: 62,
+      thrMin: 70,
+      thrMax: 165,
+      erosionPasses: 1,
+      closePasses: 3,
+      blurM: EXG_BLUR_M,
       allowYellow: false,
       yellowBoost: false,
       minAreaPx: MIN_AREA_PX,
@@ -162,14 +207,18 @@
       var B = bandScale(bands.b[p], maxB);
       var s = R + G + B;
       var v = 0;
-      if (s < P.darkSum || (R < 18 && G < 20 && B < 18) || G < P.minG) {
+      // Sombra / casi negro: no es copa
+      if (s < P.darkSum || (R < 22 && G < 24 && B < 22) || G < P.minG) {
+        v = 0;
+      } else if (s > 300 && R + 8 >= G && Math.abs(R - G) < 35 && G > B + 8) {
+        // Pasto soleado amarillo-verdoso brillante (no copa oscura)
         v = 0;
       } else {
         var r = R / s;
         var g = G / s;
         var b = B / s;
         var greenOk = P.allowYellow
-          ? g + 0.02 >= r && g > b + P.bMargin && G + 4 >= R && G > B + P.bAbs
+          ? g + 0.015 >= r && g > b + P.bMargin && G + 6 >= R && G > B + P.bAbs
           : g > r + P.gMargin &&
             g > b + P.bMargin &&
             G > R + P.gAbs &&
@@ -179,6 +228,8 @@
           if (P.yellowBoost && R > G && R - G < 28 && G > B + 4) {
             raw = Math.max(raw, 0.15);
           }
+          // Preferir verde de copa (más oscuro) vs pasto claro
+          if (s > 340) raw *= 0.55;
           v = Math.max(0, Math.min(255, Math.round((raw + 1) * 127.5)));
         } else {
           v = 0;
@@ -195,44 +246,35 @@
       valid > 100 ? percentileFromHist(hist, valid, P.pct) : P.mode === 'strict' ? 95 : 70;
     thr = Math.max(P.thrMin, Math.min(thr, P.thrMax));
 
+    // Suavizar ExG a escala de copa: une textura de UN árbol (evita micro-triángulos)
+    var gsdGuess = estimateGsdM(georaster);
+    var blurM = P.blurM != null ? P.blurM : EXG_BLUR_M;
+    var blurPx = 6;
+    if (gsdGuess != null && Number.isFinite(gsdGuess) && gsdGuess > 0) {
+      blurPx = Math.max(3, Math.min(22, Math.round(blurM / gsdGuess)));
+    } else {
+      blurPx = Math.max(4, Math.min(16, Math.round(Math.min(w, h) / 180)));
+    }
+    var blurred = boxBlurU8(exg, w, h, blurPx);
+    var histB = new Array(256);
+    for (var hb = 0; hb < 256; hb++) histB[hb] = 0;
+    var validB = 0;
+    for (var bi = 0; bi < n; bi++) {
+      var bv = Math.max(0, Math.min(255, Math.round(blurred[bi])));
+      blurred[bi] = bv;
+      if (bv > 8) {
+        histB[bv]++;
+        validB++;
+      }
+    }
+    var thrB =
+      validB > 100 ? percentileFromHist(histB, validB, Math.max(40, P.pct - 8)) : thr;
+    thrB = Math.max(P.thrMin - 8, Math.min(thrB, P.thrMax));
+
     var mask = new Uint8Array(n);
     for (var q = 0; q < n; q++) {
-      if (exg[q] >= thr) mask[q] = 1;
-    }
-
-    var eroded = new Uint8Array(n);
-    for (var y = 1; y < h - 1; y++) {
-      for (var x = 1; x < w - 1; x++) {
-        var i0 = y * w + x;
-        if (
-          mask[i0] &&
-          mask[i0 - 1] &&
-          mask[i0 + 1] &&
-          mask[i0 - w] &&
-          mask[i0 + w]
-        ) {
-          eroded[i0] = 1;
-        }
-      }
-    }
-    var source = eroded;
-    if (P.erosionPasses >= 2) {
-      var eroded2 = new Uint8Array(n);
-      for (var y2 = 1; y2 < h - 1; y2++) {
-        for (var x2 = 1; x2 < w - 1; x2++) {
-          var i2 = y2 * w + x2;
-          if (
-            eroded[i2] &&
-            eroded[i2 - 1] &&
-            eroded[i2 + 1] &&
-            eroded[i2 - w] &&
-            eroded[i2 + w]
-          ) {
-            eroded2[i2] = 1;
-          }
-        }
-      }
-      source = eroded2;
+      // Requiere señal suavizada (copa) y algo de ExG original (no sombra pura)
+      if (blurred[q] >= thrB && exg[q] >= Math.max(12, thr * 0.25)) mask[q] = 1;
     }
 
     function dilateOnce(src) {
@@ -254,11 +296,35 @@
       return out;
     }
 
-    // Opening (ya erosionado) + cierre extra: reconecta huecos dentro de la misma copa
-    var dil = dilateOnce(source);
-    var closeN = P.closePasses != null ? P.closePasses : 2;
-    for (var cp = 1; cp < closeN; cp++) {
+    function erodeOnce(src) {
+      var out = new Uint8Array(n);
+      for (var yy = 1; yy < h - 1; yy++) {
+        for (var xx = 1; xx < w - 1; xx++) {
+          var ii = yy * w + xx;
+          if (
+            src[ii] &&
+            src[ii - 1] &&
+            src[ii + 1] &&
+            src[ii - w] &&
+            src[ii + w]
+          ) {
+            out[ii] = 1;
+          }
+        }
+      }
+      return out;
+    }
+
+    // Cierre fuerte: dilatar varias veces (rellena huecos de la copa) + erosión suave
+    var closeN = P.closePasses != null ? P.closePasses : 3;
+    closeN = Math.max(2, Math.min(5, closeN));
+    var dil = mask;
+    for (var cp = 0; cp < closeN; cp++) {
       dil = dilateOnce(dil);
+    }
+    var erodeN = P.erosionPasses >= 2 ? 2 : 1;
+    for (var ep = 0; ep < erodeN; ep++) {
+      dil = erodeOnce(dil);
     }
 
     var count = 0;
@@ -270,9 +336,9 @@
     for (var by = 0; by < h; by++) {
       for (var bx = 0; bx < w; bx++) {
         if (bx < clear || by < clear || bx >= w - clear || by >= h - clear) {
-          var bi = by * w + bx;
-          if (dil[bi]) {
-            dil[bi] = 0;
+          var bix = by * w + bx;
+          if (dil[bix]) {
+            dil[bix] = 0;
             count--;
           }
         }
@@ -282,12 +348,13 @@
     return {
       mask: dil,
       exg: exg,
-      threshold: thr,
+      threshold: thrB,
       vegPixels: Math.max(0, count),
       width: w,
       height: h,
       profile: P.mode,
-      params: P
+      params: P,
+      blurPx: blurPx
     };
   }
 
@@ -387,6 +454,9 @@
       var aspect = Math.max(boxW, boxH) / Math.max(1, Math.min(boxW, boxH));
       var meanExg = sumExg[id] != null ? sumExg[id] / area : 0;
       var touchesBorder = (borderPx[id] || 0) > 0;
+      // Circularidad proxy: área / círculo del diámetro mayor del bbox (árbol ≈ 0.35–0.9)
+      var circ =
+        (4 * area) / (Math.PI * Math.max(boxW, boxH) * Math.max(boxW, boxH));
       comps.push({
         label: id,
         areaPx: area,
@@ -394,6 +464,7 @@
         edge: points[id] || [],
         fillRatio: fill,
         aspect: aspect,
+        circularity: circ,
         meanExg: meanExg,
         touchesBorder: touchesBorder,
         borderPx: borderPx[id] || 0
@@ -403,41 +474,65 @@
     return { comps: comps, labels: labels };
   }
 
-  /** Confianza 0–100: forma compacta, ExG, tamaño vs mediana, borde. */
+  /** ¿Parece árbol/copa (redondo-compacto) y no pasto/franja? */
+  function looksLikeTree(comp) {
+    var fill = Number(comp.fillRatio) || 0;
+    var aspect = Number(comp.aspect) || 1;
+    var circ = Number(comp.circularity);
+    if (!Number.isFinite(circ)) {
+      var bw = comp.box ? comp.box.maxX - comp.box.minX + 1 : 1;
+      var bh = comp.box ? comp.box.maxY - comp.box.minY + 1 : 1;
+      circ = (4 * (comp.areaPx || 0)) / (Math.PI * Math.max(bw, bh) * Math.max(bw, bh));
+    }
+    if (fill < MIN_FILL_RATIO) return false;
+    if (aspect > MAX_ASPECT) return false;
+    if (circ < 0.22) return false;
+    // Muy alargado + poco lleno = pasto / surco
+    if (aspect > 2.2 && fill < 0.32) return false;
+    if (comp.touchesBorder && fill < 0.28 && aspect > 2.0) return false;
+    return true;
+  }
+
+  /** Confianza 0–100: prior de “es un árbol”, no solo vegetación verde. */
   function scoreCanopy(comp, medianArea) {
     var fill = Number(comp.fillRatio) || 0;
     var aspect = Number(comp.aspect) || 1;
     var area = Number(comp.areaPx) || 0;
     var meanExg = Number(comp.meanExg) || 0;
+    var circ = Number(comp.circularity);
+    if (!Number.isFinite(circ)) {
+      var bw = comp.box ? comp.box.maxX - comp.box.minX + 1 : 1;
+      var bh = comp.box ? comp.box.maxY - comp.box.minY + 1 : 1;
+      circ = (4 * area) / (Math.PI * Math.max(bw, bh) * Math.max(bw, bh));
+    }
 
-    var compact = Math.max(0, Math.min(1, (fill - 0.1) / 0.55));
-    var aspectScore = Math.max(0, Math.min(1, 1 - (aspect - 1) / 3.5));
+    var compact = Math.max(0, Math.min(1, (fill - 0.15) / 0.5));
+    var roundScore = Math.max(0, Math.min(1, 1 - (aspect - 1) / 2.2));
+    var circScore = Math.max(0, Math.min(1, (circ - 0.15) / 0.55));
     var exgScore = Math.max(0, Math.min(1, meanExg / 180));
-    var sizeScore = 0.55;
+    var sizeScore = 0.45;
     if (medianArea > 0 && area > 0) {
       var ratio = area / medianArea;
-      if (ratio >= 0.35 && ratio <= 2.8) sizeScore = 1;
-      else if (ratio >= 0.2 && ratio <= 4) sizeScore = 0.65;
-      else sizeScore = 0.25;
+      // Un árbol del lote suele estar cerca de la mediana (no un trocito)
+      if (ratio >= 0.45 && ratio <= 2.4) sizeScore = 1;
+      else if (ratio >= 0.28 && ratio <= 3.5) sizeScore = 0.7;
+      else if (ratio >= 0.18 && ratio <= 4.5) sizeScore = 0.4;
+      else sizeScore = 0.12;
     }
-    var borderScore = comp.touchesBorder ? 0.55 : 1;
+    var borderScore = comp.touchesBorder ? 0.5 : 1;
     var conf =
       100 *
-      (0.32 * compact +
-        0.22 * aspectScore +
-        0.2 * exgScore +
-        0.18 * sizeScore +
-        0.08 * borderScore);
+      (0.22 * compact +
+        0.2 * roundScore +
+        0.22 * circScore +
+        0.14 * exgScore +
+        0.16 * sizeScore +
+        0.06 * borderScore);
     return Math.max(0, Math.min(100, Math.round(conf)));
   }
 
   function isGrassLikeShape(comp) {
-    var fill = Number(comp.fillRatio) || 0;
-    var aspect = Number(comp.aspect) || 1;
-    if (fill < MIN_FILL_RATIO) return true;
-    if (aspect >= MAX_ASPECT && fill < 0.35) return true;
-    if (comp.touchesBorder && fill < 0.22 && aspect > 2.5) return true;
-    return false;
+    return !looksLikeTree(comp);
   }
 
   function pixelToLatLng(georaster, x, y) {
@@ -1372,13 +1467,18 @@
       var it = items[k];
       var boxW = it.box.maxX - it.box.minX + 1;
       var boxH = it.box.maxY - it.box.minY + 1;
+      var fill = it.areaPx / Math.max(1, boxW * boxH);
+      var aspect = Math.max(boxW, boxH) / Math.max(1, Math.min(boxW, boxH));
       out.push({
         label: k + 1,
         areaPx: it.areaPx,
         box: it.box,
         edge: it.edge,
-        fillRatio: it.areaPx / Math.max(1, boxW * boxH),
-        aspect: Math.max(boxW, boxH) / Math.max(1, Math.min(boxW, boxH)),
+        fillRatio: fill,
+        aspect: aspect,
+        circularity:
+          (4 * it.areaPx) /
+          (Math.PI * Math.max(boxW, boxH) * Math.max(boxW, boxH)),
         meanExg: it.meanExg,
         touchesBorder: it.touchesBorder,
         borderPx: it.borderPx
@@ -1388,16 +1488,16 @@
   }
 
   function resolveMinAreaPx(baseMin, gsdM, totalPx) {
-    var minArea = Math.max(120, Number(baseMin) || MIN_AREA_PX);
+    var minArea = Math.max(180, Number(baseMin) || MIN_AREA_PX);
     if (gsdM != null && Number.isFinite(gsdM) && gsdM > 0) {
       var r = MIN_CANOPY_DIAM_M / 2;
       var minM2 = Math.PI * r * r;
       var fromGsd = Math.ceil(minM2 / (gsdM * gsdM));
       minArea = Math.max(minArea, fromGsd);
     }
-    // En ortos grandes, evita polvo de 5–20 px
-    if (totalPx > 2e6) minArea = Math.max(minArea, 260);
-    else if (totalPx > 8e5) minArea = Math.max(minArea, 200);
+    // En ortos grandes, evita polvo de píxeles
+    if (totalPx > 2e6) minArea = Math.max(minArea, 320);
+    else if (totalPx > 8e5) minArea = Math.max(minArea, 240);
     return minArea;
   }
 
@@ -1449,23 +1549,23 @@
       return true;
     });
 
-    // 1b) fusionar micro-copas de la misma planta
+    // 1b) fusionar micro-copas de la misma planta (1ª pasada)
     var preMergeN = comps.length;
     var medPre = median(
       comps.map(function (c) {
         return c.areaPx;
       })
     );
-    var medRad = medPre > 0 ? Math.sqrt(medPre / Math.PI) : 8;
-    var mergeGap = Math.max(8, Math.min(48, Math.round(medRad * MERGE_GAP_FRAC * 2)));
+    var medRad = medPre > 0 ? Math.sqrt(medPre / Math.PI) : 10;
+    var mergeGap = Math.max(10, Math.min(64, Math.round(medRad * MERGE_GAP_FRAC * 2)));
     if (gsdM != null && Number.isFinite(gsdM) && gsdM > 0) {
-      // ~0.7–1.0 m de holgura entre centros de fragmentos
-      mergeGap = Math.max(mergeGap, Math.round(0.85 / gsdM));
+      // ~2 m de holgura: fragmentos de la misma copa (~5–8 m Ø) se unen; árboles vecinos no
+      mergeGap = Math.max(mergeGap, Math.round(2.0 / gsdM));
     }
     comps = mergeNearbyComps(comps, mergeGap);
     excluded.mergedAway = Math.max(0, preMergeN - comps.length);
 
-    // 1c) tamaño mínimo real (después del merge)
+    // 1c) tamaño mínimo absoluto (después del merge)
     comps = comps.filter(function (c) {
       if (c.areaPx < minAreaPx) {
         excluded.tiny++;
@@ -1474,16 +1574,45 @@
       return true;
     });
 
-    // 2) forma tipo pasto / franja / borde hueco
+    // 2) forma de árbol (redondo/compacto), no pasto/franja
     comps = comps.filter(function (c) {
-      if (isGrassLikeShape(c)) {
+      if (!looksLikeTree(c)) {
         excluded.shape++;
         return false;
       }
       return true;
     });
 
-    // 3) mediana y filtrar outliers enormes vs mediana
+    // 2b) mediana de candidatos “árbol” → 2ª fusión + descartar fragmentos vs predio
+    var areasSeed = comps.map(function (c) {
+      return c.areaPx;
+    });
+    var medSeed = median(areasSeed);
+    if (medSeed > 0 && comps.length > 2) {
+      var rad2 = Math.sqrt(medSeed / Math.PI);
+      var gap2 = Math.max(mergeGap, Math.round(rad2 * 1.15));
+      if (gsdM != null && Number.isFinite(gsdM) && gsdM > 0) {
+        gap2 = Math.max(gap2, Math.round(2.4 / gsdM));
+      }
+      var before2 = comps.length;
+      comps = mergeNearbyComps(comps, gap2);
+      excluded.mergedAway += Math.max(0, before2 - comps.length);
+
+      comps = comps.filter(function (c) {
+        if (!looksLikeTree(c)) {
+          excluded.shape++;
+          return false;
+        }
+        // Pedazo de copa: mucho más chico que el árbol típico del predio
+        if (c.areaPx < medSeed * MIN_FRAC_OF_MEDIAN) {
+          excluded.tiny++;
+          return false;
+        }
+        return true;
+      });
+    }
+
+    // 3) mediana y filtrar outliers / fragmentos vs mediana del predio
     var areasAll = comps.map(function (c) {
       return c.areaPx;
     });
@@ -1494,11 +1623,15 @@
           excluded.outlier++;
           return false;
         }
+        if (c.areaPx < med * MIN_FRAC_OF_MEDIAN) {
+          excluded.tiny++;
+          return false;
+        }
         return true;
       });
     }
 
-    // 4) confianza: score + excluir muy bajas
+    // 4) confianza: score de “es árbol” + excluir muy bajas
     comps.forEach(function (c) {
       c.confidence = scoreCanopy(c, med);
     });

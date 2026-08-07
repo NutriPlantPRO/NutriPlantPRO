@@ -133,8 +133,8 @@ function normalizeCalib(parsed) {
     thr_max: clamp(calib.thr_max, 100, 200, 165),
     erosion_passes: clamp(calib.erosion_passes, 1, 2, 1) | 0,
     close_passes: clamp(calib.close_passes, 1, 3, 2) | 0,
-    min_area_px: clamp(calib.min_area_px, 120, 800, 200) | 0,
-    min_confidence: clamp(calib.min_confidence, 28, 55, 34) | 0,
+    min_area_px: clamp(calib.min_area_px, 180, 900, 260) | 0,
+    min_confidence: clamp(calib.min_confidence, 32, 58, 40) | 0,
     yellow_boost: calib.yellow_boost !== false,
     notes: String(calib.notes || src.notes || '').slice(0, 200)
   };
@@ -165,15 +165,16 @@ async function calibrateWithOpenAI(model, images) {
     '  "thr_max": 160,\n' +
     '  "erosion_passes": 1,\n' +
     '  "close_passes": 2,\n' +
-    '  "min_area_px": 200,\n' +
-    '  "min_confidence": 34,\n' +
+    '  "min_area_px": 260,\n' +
+    '  "min_confidence": 40,\n' +
     '  "yellow_boost": true,\n' +
     '  "notes": "breve"\n' +
     '}\n' +
-    'Reglas: si copa es amarillo-verdosa y pasto similar, permite yellow_green y márgenes más bajos; ' +
+    'Reglas: el objetivo es detectar ÁRBOLES/COPAS (formas compactas redondeadas), no cualquier mancha verde. ' +
+    'si copa es amarillo-verdosa y pasto similar, permite yellow_green y márgenes más bajos; ' +
     'si pasto muy verde y copa oscura, sé más estricto (márgenes más altos, percentile más alto). ' +
-    'NUNCA pongas min_area_px bajo (evita <150): produce micro-copas falsas. ' +
-    'Prefer min_area_px 180–350. close_passes 2 reconecta huecos dentro de la misma copa. ' +
+    'NUNCA pongas min_area_px bajo (evita <200): produce micro-copas falsas. ' +
+    'Prefer min_area_px 220–400. close_passes 2 reconecta huecos dentro de la misma copa. ' +
     'erosion_passes 1 = menos achica copa; 2 = más limpia pasto.';
 
   const content = [{ type: 'input_text', text: prompt }];

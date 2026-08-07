@@ -1960,6 +1960,53 @@
     return false;
   }
 
+  /** Guarda criterio de análisis (predio + enriquece cultivo) */
+  async function persistDetectProfile(detectParams, opts) {
+    opts = opts || {};
+    var meta = collectMeta();
+    var criteria = opts.criteria || {
+      shape: 'copa_compacta_redondeada',
+      exclude: ['pasto', 'sombra', 'gente', 'vehiculo', 'cajas'],
+      notes: (detectParams && detectParams.notes) || ''
+    };
+    var r = await apiOrtho({
+      action: 'save_detect_profile',
+      site_id: getSiteId(),
+      flight_id: getLastFlightId(),
+      cultivo: meta.cultivo || '',
+      crop_label: meta.cultivo || '',
+      detect_params: detectParams || {},
+      criteria: criteria,
+      source: opts.source || 'ai_calib',
+      crop_hint: (detectParams && detectParams.crop_hint) || opts.crop_hint || '',
+      notes: opts.notes || (detectParams && detectParams.notes) || ''
+    });
+    if (!r.ok && r.setup) {
+      console.warn('AirCI perfil: ejecuta', r.setup);
+    }
+    return r;
+  }
+
+  async function loadDetectProfileForSite(siteId) {
+    try {
+      var r = await apiOrtho({
+        action: 'load_detect_profile',
+        site_id: siteId,
+        cultivo: (collectMeta().cultivo || '').trim()
+      });
+      if (r.ok && r.profile && r.profile.detect_params) {
+        return {
+          level: r.level,
+          params: r.profile.detect_params,
+          criteria: r.profile.criteria || {},
+          source: r.profile.source,
+          crop_hint: r.profile.crop_hint || ''
+        };
+      }
+    } catch (e) {}
+    return null;
+  }
+
   async function restoreCanopyForSite(siteId) {
     function finalizeRestore(trees, stats, statusMsg) {
       var result = {
@@ -2186,24 +2233,42 @@
       try {
         var siteId = getSiteId();
         var prevBundle = getPreviousTreesForMatch(siteId);
+        var savedProf = await loadDetectProfileForSite(siteId);
         var calib = null;
+        var calibSource = 'exg';
+
         if (useAi) {
           calib = await calibrateDetectionWithAi(model);
+          calibSource = 'ai_calib';
           setMapStatus(
             'Criterio listo' +
               (calib.crop_hint ? ' · ' + calib.crop_hint : '') +
               ' · detectando todo el predio…',
             'ok'
           );
+        } else if (savedProf && savedProf.params) {
+          // ExG gratis pero con criterio guardado del predio/cultivo
+          calib = savedProf.params;
+          calibSource = savedProf.level === 'site' ? 'site_profile' : 'crop_default';
+          setMapStatus(
+            'Usando criterio guardado (' +
+              (savedProf.level === 'site' ? 'predio' : 'cultivo') +
+              ')' +
+              (savedProf.crop_hint ? ' · ' + savedProf.crop_hint : '') +
+              '…',
+            'ok'
+          );
         }
+
         var result = window.AirCICanopy.analyzeCanopies(currentGeoraster, {
-          profile: useAi ? 'ai' : 'strict',
+          profile: useAi || calib ? 'ai' : 'strict',
           calibration: calib || undefined
         });
-        if (useAi && calib) {
-          result.stats.aiModel = model;
-          result.stats.aiCalibrated = true;
-          result.stats.cropHint = calib.crop_hint || '';
+        if (calib) {
+          result.stats.aiModel = useAi ? model : calibSource;
+          result.stats.aiCalibrated = !!useAi;
+          result.stats.detectSource = calibSource;
+          result.stats.cropHint = calib.crop_hint || (savedProf && savedProf.crop_hint) || '';
         }
         applyFlightMatch(result, prevBundle);
         drawCanopies(result);
@@ -2211,7 +2276,9 @@
           'Copas · ' +
           (useAi
             ? 'IA calib. ' + model.replace('gpt-5.6-', '')
-            : 'ExG') +
+            : calib
+              ? 'perfil ' + (savedProf && savedProf.level === 'site' ? 'predio' : 'cultivo')
+              : 'ExG') +
           ' · thr ' +
           result.stats.threshold +
           (result.stats.meanConfidence != null
@@ -2226,7 +2293,9 @@
             ' copas' +
             (useAi
               ? ' · calibrado con 2 fotos (' + model.replace('gpt-5.6-', '') + ')'
-              : ' · ExG') +
+              : calib
+                ? ' · criterio guardado'
+                : ' · ExG') +
             (result.stats.truncated ? ' · tope ' + result.stats.maxTrees : ''),
           'ok'
         );
@@ -2234,9 +2303,32 @@
         saveCurrentMetaToSiteStore();
         refreshProjectsUi();
         await persistCanopyResult(result);
+        if (calib && Object.keys(calib).length) {
+          var saveProf = await persistDetectProfile(calib, {
+            source: calibSource === 'ai_calib' ? 'ai_calib' : calibSource,
+            crop_hint: result.stats.cropHint || '',
+            notes: calib.notes || ''
+          });
+          if (saveProf && saveProf.ok) {
+            setMapStatus(
+              result.stats.count +
+                ' copas · criterio guardado en predio' +
+                (saveProf.crop_key ? ' + cultivo «' + saveProf.crop_key + '»' : ''),
+              'ok'
+            );
+          } else if (saveProf && saveProf.setup) {
+            setMapStatus(
+              result.stats.count +
+                ' copas. Para guardar criterios ejecuta ' +
+                saveProf.setup +
+                ' en Supabase.',
+              'error'
+            );
+          }
+        }
       } catch (e) {
         console.error(e);
-        setMapStatus('Error detectando copas: ' + (e.message || e), 'error');
+        setMapStatus('Error analizando: ' + (e.message || e), 'error');
       }
       if (btn) btn.disabled = false;
     }, 40);
@@ -2876,7 +2968,7 @@
       return;
     }
     if (orthoOk && !canopyOk) {
-      setMapStatus('Ortomosaico restaurado. Pulsando Detectar copas…', 'ok');
+      setMapStatus('Ortomosaico restaurado. Analizando…', 'ok');
       runCanopyDetection();
       return;
     }

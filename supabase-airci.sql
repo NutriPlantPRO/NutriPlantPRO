@@ -110,6 +110,7 @@ CREATE POLICY "airci_orthos_delete_admin"
   USING (bucket_id = 'airci-orthos' AND public.is_admin_user());
 
 -- Resultados de detección de copas / semáforo (también en supabase-airci-canopy-results.sql)
+-- Criterios de análisis por cultivo/predio: ver supabase-airci-detect-profiles.sql
 CREATE TABLE IF NOT EXISTS public.airci_canopy_results (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   site_id uuid NOT NULL REFERENCES public.airci_sites (id) ON DELETE CASCADE,

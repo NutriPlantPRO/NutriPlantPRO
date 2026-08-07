@@ -550,9 +550,225 @@ exports.handler = async function handler(event) {
     });
   }
 
+  function normCropKey(raw) {
+    const s = String(raw || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return s || 'generico';
+  }
+
+  function isPlainObject(v) {
+    return v != null && typeof v === 'object' && !Array.isArray(v);
+  }
+
+  /** Guarda criterio del predio + enriquece perfil del cultivo */
+  if (action === 'save_detect_profile') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+
+    const cultivoLabel = String(body.cultivo || body.crop_label || '').trim().slice(0, 120);
+    const cropKey = normCropKey(body.crop_key || cultivoLabel || 'generico');
+    const cropLabel = cultivoLabel || cropKey;
+    const detectParams = isPlainObject(body.detect_params) ? body.detect_params : {};
+    const criteria = isPlainObject(body.criteria) ? body.criteria : {};
+    const source = String(body.source || 'ai_calib').slice(0, 40);
+    const cropHint = String(body.crop_hint || detectParams.crop_hint || '').slice(0, 120);
+    const notes = String(body.notes || '').slice(0, 2000);
+    const flightId = isUuid(body.flight_id) ? body.flight_id : null;
+
+    // 1) Upsert perfil de cultivo (memoria compartida)
+    let cropProfileId = null;
+    const { data: cropRow, error: cropErr } = await supabase
+      .from('airci_crop_profiles')
+      .upsert(
+        {
+          owner_id: auth.userId,
+          crop_key: cropKey,
+          crop_label: cropLabel,
+          criteria_json: criteria,
+          detect_params_json: detectParams,
+          notes: notes,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'owner_id,crop_key' }
+      )
+      .select('id, times_used')
+      .maybeSingle();
+
+    if (cropErr) {
+      return json(500, {
+        ok: false,
+        error: cropErr.message,
+        setup: /airci_crop_profiles|does not exist|schema cache/i.test(cropErr.message || '')
+          ? 'supabase-airci-detect-profiles.sql'
+          : null
+      });
+    }
+    if (cropRow && cropRow.id) {
+      cropProfileId = cropRow.id;
+      await supabase
+        .from('airci_crop_profiles')
+        .update({ times_used: (Number(cropRow.times_used) || 0) + 1 })
+        .eq('id', cropProfileId);
+    }
+
+    // 2) Upsert criterio del predio (manda)
+    const siteRow = {
+      site_id: siteId,
+      owner_id: auth.userId,
+      crop_profile_id: cropProfileId,
+      detect_params_json: detectParams,
+      criteria_json: criteria,
+      source: source,
+      last_flight_id: flightId,
+      crop_hint: cropHint,
+      notes: notes,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: siteProf, error: siteErr } = await supabase
+      .from('airci_site_detect_profiles')
+      .upsert(siteRow, { onConflict: 'site_id' })
+      .select('id, site_id, crop_profile_id, source, crop_hint, updated_at')
+      .single();
+
+    if (siteErr) {
+      return json(500, {
+        ok: false,
+        error: siteErr.message,
+        setup: /airci_site_detect_profiles|does not exist|schema cache/i.test(siteErr.message || '')
+          ? 'supabase-airci-detect-profiles.sql'
+          : null
+      });
+    }
+
+    return json(200, {
+      ok: true,
+      site_profile: siteProf,
+      crop_key: cropKey,
+      crop_profile_id: cropProfileId
+    });
+  }
+
+  /** Carga criterio: predio > cultivo > null */
+  if (action === 'load_detect_profile') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+
+    const { data: siteProf, error: siteErr } = await supabase
+      .from('airci_site_detect_profiles')
+      .select(
+        'id, site_id, crop_profile_id, detect_params_json, criteria_json, source, crop_hint, notes, updated_at'
+      )
+      .eq('site_id', siteId)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+
+    if (siteErr) {
+      return json(500, {
+        ok: false,
+        error: siteErr.message,
+        setup: /airci_site_detect_profiles|does not exist/i.test(siteErr.message || '')
+          ? 'supabase-airci-detect-profiles.sql'
+          : null
+      });
+    }
+
+    if (siteProf && siteProf.detect_params_json && Object.keys(siteProf.detect_params_json).length) {
+      return json(200, {
+        ok: true,
+        level: 'site',
+        profile: {
+          detect_params: siteProf.detect_params_json,
+          criteria: siteProf.criteria_json || {},
+          source: siteProf.source,
+          crop_hint: siteProf.crop_hint || '',
+          notes: siteProf.notes || '',
+          updated_at: siteProf.updated_at,
+          crop_profile_id: siteProf.crop_profile_id
+        }
+      });
+    }
+
+    // Fallback: perfil del cultivo declarado en el site
+    const { data: siteMeta } = await supabase
+      .from('airci_sites')
+      .select('cultivo')
+      .eq('id', siteId)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+
+    const cropKey = normCropKey((siteMeta && siteMeta.cultivo) || body.cultivo || '');
+    if (cropKey && cropKey !== 'generico') {
+      const { data: cropProf, error: cropErr } = await supabase
+        .from('airci_crop_profiles')
+        .select(
+          'id, crop_key, crop_label, detect_params_json, criteria_json, notes, times_used, updated_at'
+        )
+        .eq('owner_id', auth.userId)
+        .eq('crop_key', cropKey)
+        .maybeSingle();
+
+      if (cropErr) {
+        return json(500, {
+          ok: false,
+          error: cropErr.message,
+          setup: /airci_crop_profiles|does not exist/i.test(cropErr.message || '')
+            ? 'supabase-airci-detect-profiles.sql'
+            : null
+        });
+      }
+
+      if (cropProf && cropProf.detect_params_json && Object.keys(cropProf.detect_params_json).length) {
+        return json(200, {
+          ok: true,
+          level: 'crop',
+          profile: {
+            detect_params: cropProf.detect_params_json,
+            criteria: cropProf.criteria_json || {},
+            source: 'crop_default',
+            crop_hint: cropProf.crop_label || cropProf.crop_key,
+            notes: cropProf.notes || '',
+            updated_at: cropProf.updated_at,
+            crop_key: cropProf.crop_key,
+            crop_profile_id: cropProf.id,
+            times_used: cropProf.times_used
+          }
+        });
+      }
+    }
+
+    return json(200, { ok: true, level: null, profile: null });
+  }
+
+  if (action === 'list_crop_profiles') {
+    const { data, error } = await supabase
+      .from('airci_crop_profiles')
+      .select(
+        'id, crop_key, crop_label, criteria_json, detect_params_json, notes, times_used, updated_at'
+      )
+      .eq('owner_id', auth.userId)
+      .order('crop_label', { ascending: true });
+
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_crop_profiles|does not exist/i.test(error.message || '')
+          ? 'supabase-airci-detect-profiles.sql'
+          : null
+      });
+    }
+    return json(200, { ok: true, crops: data || [] });
+  }
+
   return json(400, {
     ok: false,
     error:
-      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | delete_site | delete_agricola)'
+      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | save_detect_profile | load_detect_profile | list_crop_profiles | delete_site | delete_agricola)'
   });
 };
