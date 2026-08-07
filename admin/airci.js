@@ -2240,9 +2240,28 @@
     return null;
   }
 
-  /** Recortes del orto con bbox en píxeles (para mapear detecciones IA → geo). */
-  function makeDetectionTiles(georaster, outSize) {
+  /** USD estimado por consulta (igual que airci-canopy-ai.js). */
+  var AI_USD = {
+    'gpt-5.6-luna': 0.006,
+    'gpt-5.6-terra': 0.012,
+    'gpt-5.6-sol': 0.022,
+    'gpt-4o-mini': 0.008
+  };
+
+  /** Tope de consultas IA por análisis (rejilla). */
+  function maxAiBatchesForModel(model) {
+    if (/sol/i.test(model)) return 8; // ~$0.18
+    if (/terra/i.test(model)) return 10; // ~$0.12
+    return 12; // Luna ~$0.072
+  }
+
+  /**
+   * Rejilla de recortes sobre TODO el orto (no solo 2 ventanas).
+   * Cada tile se baja a outSize×outSize JPEG para que la IA vea árboles, no “mancha verde”.
+   */
+  function makeDetectionTiles(georaster, outSize, opts) {
     outSize = outSize || 512;
+    opts = opts || {};
     if (!georaster || !window.AirCICanopy) return [];
     var bands = AirCICanopy.getBandArrays(georaster);
     if (!bands) return [];
@@ -2251,27 +2270,98 @@
     var maxR = bands.maxs[0];
     var maxG = bands.maxs[1] != null ? bands.maxs[1] : bands.maxs[0];
     var maxB = bands.maxs[2] != null ? bands.maxs[2] : bands.maxs[0];
-    // 2 ventanas grandes (~55%) cubren buena parte del predio a bajo costo
-    var tileW = Math.max(96, Math.floor(w * 0.55));
-    var tileH = Math.max(96, Math.floor(h * 0.55));
-    var origins = [
-      {
-        id: 'tile1',
-        x0: Math.max(0, Math.floor(w * 0.02)),
-        y0: Math.max(0, Math.floor(h * 0.05))
-      },
-      {
-        id: 'tile2',
-        x0: Math.max(0, Math.min(w - tileW, Math.floor(w * 0.43))),
-        y0: Math.max(0, Math.min(h - tileH, Math.floor(h * 0.35)))
+
+    var maxTiles = opts.maxTiles != null ? opts.maxTiles : 24;
+    var overviewOnly = !!opts.overviewOnly;
+
+    var origins = [];
+    var tileW;
+    var tileH;
+
+    if (overviewOnly || Math.max(w, h) < 900) {
+      // Predio chico o calibración: 2 ventanas amplias
+      tileW = Math.max(96, Math.floor(w * 0.55));
+      tileH = Math.max(96, Math.floor(h * 0.55));
+      origins = [
+        {
+          id: 'tile1',
+          x0: Math.max(0, Math.floor(w * 0.02)),
+          y0: Math.max(0, Math.floor(h * 0.05))
+        },
+        {
+          id: 'tile2',
+          x0: Math.max(0, Math.min(w - tileW, Math.floor(w * 0.43))),
+          y0: Math.max(0, Math.min(h - tileH, Math.floor(h * 0.35)))
+        }
+      ];
+    } else {
+      // Rejilla: cada celda ~árboles visibles (no comprimir 30 ha en una foto)
+      var shortSide = Math.min(w, h);
+      var longSide = Math.max(w, h);
+      // Lado del tile en px fuente: ~28–42% del lado corto, acotado
+      tileW = Math.max(160, Math.min(900, Math.floor(shortSide * 0.34)));
+      tileH = tileW;
+      var overlap = 0.18;
+      var stepX = Math.max(64, Math.floor(tileW * (1 - overlap)));
+      var stepY = Math.max(64, Math.floor(tileH * (1 - overlap)));
+
+      // Estimar cuántas celdas caben; si exceden maxTiles, agrandar paso
+      function countGrid(sx, sy, tw, th) {
+        var nx = Math.max(1, Math.ceil((w - tw) / sx) + 1);
+        var ny = Math.max(1, Math.ceil((h - th) / sy) + 1);
+        return { nx: nx, ny: ny, n: nx * ny };
       }
-    ];
+      var grid = countGrid(stepX, stepY, tileW, tileH);
+      var guard = 0;
+      while (grid.n > maxTiles && guard < 12) {
+        stepX = Math.floor(stepX * 1.18);
+        stepY = Math.floor(stepY * 1.18);
+        tileW = Math.min(Math.floor(tileW * 1.12), Math.floor(w * 0.55));
+        tileH = Math.min(Math.floor(tileH * 1.12), Math.floor(h * 0.55));
+        stepX = Math.max(64, Math.floor(tileW * (1 - overlap)));
+        stepY = Math.max(64, Math.floor(tileH * (1 - overlap)));
+        grid = countGrid(stepX, stepY, tileW, tileH);
+        guard++;
+      }
+
+      var ti = 0;
+      for (var row = 0; row < grid.ny; row++) {
+        for (var col = 0; col < grid.nx; col++) {
+          if (ti >= maxTiles) break;
+          var x0 = Math.min(Math.max(0, col * stepX), Math.max(0, w - tileW));
+          var y0 = Math.min(Math.max(0, row * stepY), Math.max(0, h - tileH));
+          // Evitar duplicados exactos en el borde
+          var id = 't' + row + '_' + col;
+          var dup = origins.some(function (o) {
+            return o.x0 === x0 && o.y0 === y0;
+          });
+          if (dup) continue;
+          origins.push({ id: id, x0: x0, y0: y0 });
+          ti++;
+        }
+        if (ti >= maxTiles) break;
+      }
+      // Si el predio es muy alargado y quedaron pocos, forzar al menos esquinas + centro
+      if (origins.length < 2 && longSide > shortSide * 1.4) {
+        origins = [
+          { id: 'tile1', x0: 0, y0: 0 },
+          {
+            id: 'tile2',
+            x0: Math.max(0, w - tileW),
+            y0: Math.max(0, h - tileH)
+          }
+        ];
+      }
+    }
+
     var out = [];
     origins.forEach(function (o) {
       var x0 = o.x0;
       var y0 = o.y0;
-      var x1 = Math.min(w - 1, x0 + tileW - 1);
-      var y1 = Math.min(h - 1, y0 + tileH - 1);
+      var tw = tileW;
+      var th = tileH;
+      var x1 = Math.min(w - 1, x0 + tw - 1);
+      var y1 = Math.min(h - 1, y0 + th - 1);
       var cw = x1 - x0 + 1;
       var ch = y1 - y0 + 1;
       if (cw < 32 || ch < 32) return;
@@ -2303,69 +2393,47 @@
         cw: cw,
         ch: ch,
         outSize: outSize,
-        imageBase64: canvas.toDataURL('image/jpeg', 0.72)
+        imageBase64: canvas.toDataURL('image/jpeg', 0.78)
       });
     });
     return out;
   }
 
   function makeCalibrationTiles(georaster, outSize) {
-    return makeDetectionTiles(georaster, outSize || 448).map(function (t) {
-      return { id: t.id, imageBase64: t.imageBase64 };
-    });
+    return makeDetectionTiles(georaster, outSize || 448, { overviewOnly: true, maxTiles: 2 }).map(
+      function (t) {
+        return { id: t.id, imageBase64: t.imageBase64 };
+      }
+    );
   }
 
-  /** Visión: marca plantas en RGB (como en el chat), no calibra umbrales. */
-  async function detectPlantsWithAi(model) {
-    var tiles = makeDetectionTiles(currentGeoraster, 512);
-    if (!tiles.length) {
-      throw new Error('No se pudieron generar recortes para visión');
-    }
-    setMapStatus(
-      'IA ' +
-        model.replace('gpt-5.6-', '') +
-        ' · mirando ' +
-        tiles.length +
-        ' fotos y marcando plantas…',
-      'ok'
-    );
-    var r = await apiCanopyAi({
-      action: 'detect_plants',
-      model: model,
-      images: tiles.map(function (t) {
-        return { id: t.id, imageBase64: t.imageBase64 };
-      }),
-      site_id: getSiteId()
-    });
-    if (!r.ok) {
-      throw new Error(r.error || 'Fallo detección visión');
-    }
-    var plants = Array.isArray(r.plants)
-      ? r.plants
-      : r.detection && Array.isArray(r.detection.plants)
-        ? r.detection.plants
-        : [];
+  function plantsToSeeds(plants, tiles) {
     var byId = Object.create(null);
     tiles.forEach(function (t) {
       byId[t.id] = t;
     });
     var seeds = [];
-    plants.forEach(function (p) {
+    (plants || []).forEach(function (p) {
       var tile = byId[p.image_id] || byId[String(p.image_id)];
-      if (!tile) {
-        // fallback: first tile
-        tile = tiles[0];
-      }
+      if (!tile && tiles.length === 1) tile = tiles[0];
       if (!tile) return;
       var cx = Number(p.cx);
       var cy = Number(p.cy);
       var rn = Number(p.r);
       if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+      // Acepta 0–1 o 0–100 por si el modelo se confunde
+      if (cx > 1.5 || cy > 1.5) {
+        cx = cx / 100;
+        cy = cy / 100;
+        if (rn > 1.5) rn = rn / 100;
+      }
+      cx = Math.max(0, Math.min(1, cx));
+      cy = Math.max(0, Math.min(1, cy));
       var x = Math.round(tile.x0 + cx * tile.cw);
       var y = Math.round(tile.y0 + cy * tile.ch);
       var rPx = Math.max(
         4,
-        Math.round((Number.isFinite(rn) ? rn : 0.06) * Math.min(tile.cw, tile.ch))
+        Math.round((Number.isFinite(rn) && rn > 0 ? rn : 0.06) * Math.min(tile.cw, tile.ch))
       );
       seeds.push({
         x: x,
@@ -2375,24 +2443,115 @@
         fromVision: true
       });
     });
-    if (r.cost && r.cost.usd_est != null) {
-      setMapStatus(
-        'Visión ' +
-          (r.cost.label || model) +
-          ' · ' +
-          seeds.length +
-          ' plantas en recortes · ~' +
-          fmtUsd4(r.cost.usd_est) +
-          (r.cost.setup ? ' · ejecuta ' + r.cost.setup : ''),
-        r.cost.setup ? 'error' : 'ok'
-      );
+    return seeds;
+  }
+
+  /** Dedup semillas de tiles solapados (misma planta vista 2 veces). */
+  function dedupeVisionSeeds(seeds, minDistPx) {
+    minDistPx = minDistPx || 10;
+    if (!seeds || seeds.length < 2) return seeds || [];
+    var sorted = seeds.slice().sort(function (a, b) {
+      return (b.v || 0) - (a.v || 0);
+    });
+    var kept = [];
+    sorted.forEach(function (s) {
+      var hit = kept.some(function (k) {
+        var dx = k.x - s.x;
+        var dy = k.y - s.y;
+        return dx * dx + dy * dy < minDistPx * minDistPx;
+      });
+      if (!hit) kept.push(s);
+    });
+    return kept;
+  }
+
+  /** Visión: rejilla de fotos → marca árboles (como ojo humano), no ExG. */
+  async function detectPlantsWithAi(model) {
+    var maxBatches = maxAiBatchesForModel(model);
+    var maxTiles = maxBatches * 2;
+    var tiles = makeDetectionTiles(currentGeoraster, 512, { maxTiles: maxTiles });
+    if (!tiles.length) {
+      throw new Error('No se pudieron generar recortes para visión');
     }
+    var usdEach = AI_USD[model] != null ? AI_USD[model] : 0.01;
+    var estTotal = usdEach * Math.ceil(tiles.length / 2);
+    var short = model.replace('gpt-5.6-', '');
+    setMapStatus(
+      'IA ' +
+        short +
+        ' · ' +
+        tiles.length +
+        ' fotos del predio (rejilla) · est. ~' +
+        fmtUsd4(estTotal) +
+        '…',
+      'ok'
+    );
+
+    var allPlants = [];
+    var totalUsd = 0;
+    var batches = Math.ceil(tiles.length / 2);
+    var lastLabel = short;
+    var lastSetup = null;
+
+    for (var b = 0; b < batches; b++) {
+      var slice = tiles.slice(b * 2, b * 2 + 2);
+      setMapStatus(
+        'IA ' +
+          short +
+          ' · lote ' +
+          (b + 1) +
+          '/' +
+          batches +
+          ' · buscando árboles (no pasto/gente/autos)…',
+        'ok'
+      );
+      var r = await apiCanopyAi({
+        action: 'detect_plants',
+        model: model,
+        images: slice.map(function (t) {
+          return { id: t.id, imageBase64: t.imageBase64 };
+        }),
+        site_id: getSiteId()
+      });
+      if (!r.ok) {
+        if (b === 0) throw new Error(r.error || 'Fallo detección visión');
+        setMapStatus(
+          'Lote ' + (b + 1) + ' falló (' + (r.error || 'error') + ') · sigo con lo ya marcado…',
+          'error'
+        );
+        continue;
+      }
+      var plants = Array.isArray(r.plants)
+        ? r.plants
+        : r.detection && Array.isArray(r.detection.plants)
+          ? r.detection.plants
+          : [];
+      allPlants = allPlants.concat(plants);
+      if (r.cost && r.cost.usd_est != null) totalUsd += Number(r.cost.usd_est) || 0;
+      if (r.cost && r.cost.label) lastLabel = r.cost.label;
+      if (r.cost && r.cost.setup) lastSetup = r.cost.setup;
+    }
+
+    var seeds = dedupeVisionSeeds(plantsToSeeds(allPlants, tiles), 12);
     refreshAiUsageBar();
+    setMapStatus(
+      'Visión ' +
+        lastLabel +
+        ' · ' +
+        seeds.length +
+        ' árboles en ' +
+        tiles.length +
+        ' fotos · ~' +
+        fmtUsd4(totalUsd) +
+        (lastSetup ? ' · ejecuta ' + lastSetup : ''),
+      lastSetup ? 'error' : seeds.length ? 'ok' : 'error'
+    );
     return {
       seeds: seeds,
-      notes: (r.detection && r.detection.notes) || '',
-      cost: r.cost || null,
-      tileCount: tiles.length
+      notes: '',
+      cost: { usd_est: totalUsd, label: lastLabel, setup: lastSetup },
+      tileCount: tiles.length,
+      batchCount: batches
     };
   }
 
@@ -2428,6 +2587,16 @@
     return r.calibration;
   }
 
+  var detectRunId = 0;
+
+  function setAnalyzeBusy(busy) {
+    var btn = document.getElementById('aciAnalyzeBtn');
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+    btn.textContent = busy ? 'Analizando…' : 'Analizar';
+  }
+
   function runCanopyDetection() {
     if (!currentGeoraster) {
       setMapStatus('Primero sube un GeoTIFF', 'error');
@@ -2440,24 +2609,27 @@
     var model = getDetectModel();
     var useAi = model !== 'exg';
     persistDetectModelChoice();
+    var runId = ++detectRunId;
     setMapStatus(
       useAi
         ? 'IA ' + model.replace('gpt-5.6-', '') + ' · visión de plantas (RGB)…'
         : 'Detectando copas (local)…'
     );
-    var btn = document.getElementById('aciAnalyzeBtn');
-    if (btn) btn.disabled = true;
+    setAnalyzeBusy(true);
     setTimeout(async function () {
       try {
+        if (runId !== detectRunId) return;
         var siteId = getSiteId();
         var prevBundle = getPreviousTreesForMatch(siteId);
         var savedProf = await loadDetectProfileForSite(siteId);
+        if (runId !== detectRunId) return;
         var calib = null;
         var calibSource = 'exg';
         var visionSeeds = null;
 
         if (useAi) {
           var vision = await detectPlantsWithAi(model);
+          if (runId !== detectRunId) return;
           visionSeeds = vision.seeds || [];
           calibSource = 'ai_vision';
           if (!visionSeeds.length) {
@@ -2500,6 +2672,7 @@
           visionSeeds: visionSeeds && visionSeeds.length ? visionSeeds : undefined,
           visionOnly: !!(visionSeeds && visionSeeds.length)
         });
+        if (runId !== detectRunId) return;
         if (useAi || calib) {
           result.stats.aiModel = useAi ? model : calibSource;
           result.stats.aiCalibrated = false;
@@ -2510,6 +2683,8 @@
         }
         applyFlightMatch(result, prevBundle);
         drawCanopies(result);
+        // Liberar botón YA: persistir no debe dejar Analizar muerto
+        setAnalyzeBusy(false);
         document.getElementById('aciMapSub').textContent =
           'Copas · ' +
           (useAi ? 'visión IA ' + model.replace('gpt-5.6-', '') : 'local') +
@@ -2529,20 +2704,29 @@
           (result.stats.match && result.stats.match.hasHistory
             ? ' · match ' + result.stats.match.matched + '/' + result.stats.count
             : '');
-        setMapStatus(
-          result.stats.count +
-            ' plantas' +
-            (result.stats.expectedTrees != null
-              ? ' (ref ~' + result.stats.expectedTrees + ')'
-              : '') +
-            (useAi
-              ? ' · visión ' + model.replace('gpt-5.6-', '')
-              : calib
-                ? ' · criterio guardado'
-                : ' · local') +
-            (result.stats.truncated ? ' · tope ' + result.stats.maxTrees : ''),
-          'ok'
-        );
+        if (!result.stats.count) {
+          setMapStatus(
+            useAi
+              ? 'Visión respondió pero 0 copas en mapa · prueba Local o vuelve a Analizar'
+              : '0 copas detectadas · revisa el orto o densidad del predio',
+            'error'
+          );
+        } else {
+          setMapStatus(
+            result.stats.count +
+              ' plantas' +
+              (result.stats.expectedTrees != null
+                ? ' (ref ~' + result.stats.expectedTrees + ')'
+                : '') +
+              (useAi
+                ? ' · visión ' + model.replace('gpt-5.6-', '')
+                : calib
+                  ? ' · criterio guardado'
+                  : ' · local') +
+              (result.stats.truncated ? ' · tope ' + result.stats.maxTrees : ''),
+            'ok'
+          );
+        }
         setActiveTab('analisis');
         saveCurrentMetaToSiteStore();
         refreshProjectsUi();
@@ -2550,8 +2734,9 @@
       } catch (e) {
         console.error(e);
         setMapStatus('Error analizando: ' + (e.message || e), 'error');
+      } finally {
+        if (runId === detectRunId) setAnalyzeBusy(false);
       }
-      if (btn) btn.disabled = false;
     }, 40);
   }
 

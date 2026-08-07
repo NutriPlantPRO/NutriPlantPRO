@@ -2136,9 +2136,12 @@
    * Usa plantness (estructura) + ExG suave; no exige “lo más verde”.
    */
   function segmentAroundSeed(seed, plantMap, softExg, labels, labelId, w, h, radiusPx) {
+    var fromVision = !!(seed && seed.fromVision);
     var R = Math.max(3, radiusPx);
     var R2 = R * R;
-    var minPlant = Math.max(12, seed.v * 0.32);
+    var minPlant = fromVision
+      ? Math.max(8, (seed.v || 160) * 0.18)
+      : Math.max(12, seed.v * 0.32);
     var sx = seed.x | 0;
     var sy = seed.y | 0;
     var start = sy * w + sx;
@@ -2148,7 +2151,12 @@
     if (labels[start] && labels[start] !== labelId) {
       return { areaPx: 0, pixels: [], box: null };
     }
-    if (plantMap[start] < minPlant * 0.7 && !(softExg && softExg[start] > 20)) {
+    // Visión IA: el centro ya es planta aunque ExG/plantness local sea bajo (flor, sombra, RGB raro)
+    if (
+      !fromVision &&
+      plantMap[start] < minPlant * 0.7 &&
+      !(softExg && softExg[start] > 20)
+    ) {
       return { areaPx: 0, pixels: [], box: null };
     }
 
@@ -2179,9 +2187,14 @@
         if (ddx * ddx + ddy * ddy > R2) continue;
         var pv = plantMap[nidx];
         var ev = softExg ? softExg[nidx] : 0;
-        // Misma planta: plantness relativo al centro O algo de ExG/copa
-        if (pv < minPlant && ev < 16) continue;
-        if (pv < seed.v * 0.22 && ev < 28) continue;
+        if (fromVision) {
+          // Flood suave: acepta textura débil dentro del radio de la copa marcada
+          if (pv < minPlant * 0.45 && ev < 8 && pixels.length > 12) continue;
+        } else {
+          // Misma planta: plantness relativo al centro O algo de ExG/copa
+          if (pv < minPlant && ev < 16) continue;
+          if (pv < seed.v * 0.22 && ev < 28) continue;
+        }
         labels[nidx] = labelId;
         queue.push(nidx);
         pixels.push(nidx);
@@ -2196,6 +2209,47 @@
       areaPx: pixels.length,
       pixels: pixels,
       box: { minX: minX, maxX: maxX, minY: minY, maxY: maxY }
+    };
+  }
+
+  /** Disco sintético cuando la visión marcó planta pero el ExG no segmenta. */
+  function synthesizeVisionDisk(seed, labels, labelId, w, h, radiusPx) {
+    var sx = seed.x | 0;
+    var sy = seed.y | 0;
+    var R = Math.max(4, Math.round(radiusPx || 8));
+    var R2 = R * R;
+    if (sx < 0 || sy < 0 || sx >= w || sy >= h) {
+      return { areaPx: 0, pixels: [], box: null, ellipse: null };
+    }
+    var pixels = [];
+    var minX = sx;
+    var maxX = sx;
+    var minY = sy;
+    var maxY = sy;
+    var y0 = Math.max(0, sy - R);
+    var y1 = Math.min(h - 1, sy + R);
+    var x0 = Math.max(0, sx - R);
+    var x1 = Math.min(w - 1, sx + R);
+    for (var y = y0; y <= y1; y++) {
+      for (var x = x0; x <= x1; x++) {
+        var dx = x - sx;
+        var dy = y - sy;
+        if (dx * dx + dy * dy > R2) continue;
+        var idx = y * w + x;
+        if (labels[idx] && labels[idx] !== labelId) continue;
+        labels[idx] = labelId;
+        pixels.push(idx);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    return {
+      areaPx: pixels.length,
+      pixels: pixels,
+      box: { minX: minX, maxX: maxX, minY: minY, maxY: maxY },
+      ellipse: { cx: sx, cy: sy, rx: R, ry: R * 0.92, angle: 0 }
     };
   }
 
@@ -2368,6 +2422,11 @@
           };
         })
         .filter(Boolean);
+      // Si la IA respondió pero las coords no cayeron en el raster → caer a local
+      if (!rawSeeds.length) {
+        usedVision = false;
+        rawSeeds = findCanopySeeds(plantMap, seedMask, w, h, winR, peakMin);
+      }
     } else {
       rawSeeds = findCanopySeeds(plantMap, seedMask, w, h, winR, peakMin);
     }
@@ -2441,6 +2500,8 @@
     }
 
     // 2) Segmentar localmente + elipse; labels para fenología
+    // visionOnly: confía en marcas IA; si ExG no segmenta, dibuja disco con r de la visión
+    var visionOnly = !!(opts.visionOnly && usedVision);
     var labels = new Int32Array(totalPx);
     var comps = [];
     for (var si = 0; si < seeds.length; si++) {
@@ -2451,6 +2512,11 @@
         excluded.weakSeed++;
         continue;
       }
+      var localR = searchR;
+      if (seed.fromVision && seed.rPx != null && seed.rPx > 3) {
+        localR = Math.max(searchR, Math.round(seed.rPx * 1.05));
+        localR = Math.min(localR, Math.max(searchR, Math.round(spacingPx * 0.55)));
+      }
       var seg = segmentAroundSeed(
         seed,
         plantMap,
@@ -2459,30 +2525,72 @@
         labelId,
         w,
         h,
-        searchR
+        localR
       );
-      if (!seg.areaPx || seg.areaPx < Math.max(40, Math.floor(minAreaPx * 0.25))) {
-        excluded.tiny++;
-        // liberar labels débiles
-        for (var pi = 0; pi < seg.pixels.length; pi++) labels[seg.pixels[pi]] = 0;
-        continue;
+      var ell = null;
+      var usedSynth = false;
+      var minSegArea = seed.fromVision
+        ? Math.max(12, Math.floor(minAreaPx * 0.08))
+        : Math.max(40, Math.floor(minAreaPx * 0.25));
+      if (!seg.areaPx || seg.areaPx < minSegArea) {
+        if (seed.fromVision) {
+          // Liberar labels débiles e inyectar disco de la visión
+          for (var pClear = 0; pClear < seg.pixels.length; pClear++) {
+            labels[seg.pixels[pClear]] = 0;
+          }
+          var synthR =
+            seed.rPx != null && seed.rPx > 3
+              ? seed.rPx
+              : Math.max(6, Math.round(localR * 0.72));
+          seg = synthesizeVisionDisk(seed, labels, labelId, w, h, synthR);
+          ell = seg.ellipse;
+          usedSynth = true;
+          if (!seg.areaPx) {
+            excluded.tiny++;
+            continue;
+          }
+        } else {
+          excluded.tiny++;
+          for (var pi = 0; pi < seg.pixels.length; pi++) labels[seg.pixels[pi]] = 0;
+          continue;
+        }
       }
-      var ell = fitEllipse(seg.pixels, w);
+      if (!ell) ell = fitEllipse(seg.pixels, w);
       if (!ell) {
-        excluded.shape++;
-        for (var pj = 0; pj < seg.pixels.length; pj++) labels[seg.pixels[pj]] = 0;
-        continue;
+        if (seed.fromVision) {
+          var fallbackR =
+            seed.rPx != null && seed.rPx > 3
+              ? seed.rPx
+              : Math.max(6, Math.round(localR * 0.7));
+          ell = {
+            cx: seed.x,
+            cy: seed.y,
+            rx: fallbackR,
+            ry: fallbackR * 0.92,
+            angle: 0
+          };
+          usedSynth = true;
+        } else {
+          excluded.shape++;
+          for (var pj = 0; pj < seg.pixels.length; pj++) labels[seg.pixels[pj]] = 0;
+          continue;
+        }
       }
       // Recentrar elipse hacia el centro de masa (ya lo es) y asegurar tamaño mínimo
       var minRx =
         gsdM != null && gsdM > 0
           ? (scene.diamMinM * 0.4) / gsdM
           : 4;
+      if (seed.fromVision) {
+        // Visión: no forzar Ø mínimo de huerta adulta (puede ser planta joven)
+        minRx = Math.min(minRx, Math.max(3, (seed.rPx || localR) * 0.45));
+      }
       ell.rx = Math.max(ell.rx, minRx);
       ell.ry = Math.max(ell.ry, minRx * (scene.canopyShape === 'oval' ? 0.55 : 0.7));
 
       var ellArea = Math.PI * ell.rx * ell.ry;
       var fill = ellArea > 0 ? Math.min(1.2, seg.areaPx / ellArea) : 0;
+      if (usedSynth) fill = Math.max(fill, 0.85);
       var aspect = ell.rx / Math.max(1e-6, ell.ry);
       var circ = (4 * seg.areaPx) / (Math.PI * Math.max(ell.rx * 2, 1) * Math.max(ell.rx * 2, 1));
       var box = {
@@ -2511,6 +2619,8 @@
         borderPx: 0,
         seed: seed,
         ellipse: ell,
+        fromVision: !!seed.fromVision,
+        visionSynth: usedSynth,
         _ellLatLngs: null
       };
       comps.push(comp);
@@ -2529,7 +2639,12 @@
         excluded.giant++;
         return false;
       }
-      if (c.areaPx < minAreaPx) {
+      // Visión: no matar por área mínima de ExG (la IA ya eligió la planta)
+      if (!c.fromVision && c.areaPx < minAreaPx) {
+        excluded.tiny++;
+        return false;
+      }
+      if (c.fromVision && c.areaPx < Math.max(8, Math.floor(minAreaPx * 0.05))) {
         excluded.tiny++;
         return false;
       }
@@ -2537,7 +2652,7 @@
         excluded.shape++;
         return false;
       }
-      if (c.fillRatio < (scene.canopyShape === 'irregular' ? 0.14 : 0.18)) {
+      if (!c.fromVision && c.fillRatio < (scene.canopyShape === 'irregular' ? 0.14 : 0.18)) {
         excluded.shape++;
         return false;
       }
@@ -2545,6 +2660,7 @@
     });
 
     comps = comps.filter(function (c) {
+      if (c.fromVision || visionOnly) return true;
       // Con floración esperada, no matar por tono “poco verde”
       if (scene.bloomOrYellow) return true;
       if (!isCanopyTone(sampleBlobTone(georaster, c))) {
@@ -2559,8 +2675,9 @@
       c.plantEvidence = ev.score;
       c.plantReasons = ev.reasons;
       // Semilla de visión: no tirar por evidencia local débil
-      if (c.seed && c.seed.fromVision) {
-        if (ev.score < 28) {
+      if (c.fromVision || (c.seed && c.seed.fromVision)) {
+        if (visionOnly) return true;
+        if (ev.score < 18) {
           excluded.evidence++;
           return false;
         }
@@ -2579,6 +2696,14 @@
     var med = median(areasAll);
     if (med > 0) {
       comps = comps.filter(function (c) {
+        if (c.fromVision) {
+          // Solo descartar outliers extremos entre marcas de visión
+          if (c.areaPx > med * (MAX_AREA_VS_MEDIAN * 1.8)) {
+            excluded.outlier++;
+            return false;
+          }
+          return true;
+        }
         if (c.areaPx > med * MAX_AREA_VS_MEDIAN) {
           excluded.outlier++;
           return false;
@@ -2595,9 +2720,14 @@
       var base = scoreSeedCanopy(c, c.seed ? c.seed.v : c.meanExg, med);
       var ev = c.plantEvidence != null ? c.plantEvidence : base;
       c.confidence = Math.round(0.45 * base + 0.55 * ev);
+      if (c.fromVision) {
+        c.confidence = Math.max(c.confidence, visionOnly ? 72 : 58);
+      }
     });
     comps = comps.filter(function (c) {
-      if ((c.confidence || 0) < minConf) {
+      if (c.fromVision && visionOnly) return true;
+      var need = c.fromVision ? Math.min(minConf, 40) : minConf;
+      if ((c.confidence || 0) < need) {
         excluded.lowConf++;
         return false;
       }

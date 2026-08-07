@@ -189,6 +189,23 @@ button, input, select, textarea { font: inherit; }
   border-color: #cbd5e1;
 }
 
+.aci-btn--analyze {
+  background: #0f766e;
+  color: #fff;
+  border-color: #0f766e;
+  font-weight: 700;
+}
+
+.aci-btn--analyze:hover:not(:disabled) {
+  background: #0d9488;
+  border-color: #0d9488;
+}
+
+.aci-btn--analyze:disabled {
+  opacity: 0.85;
+  cursor: wait;
+}
+
 .aci-btn--danger {
   background: #fff;
   color: #b91c1c;

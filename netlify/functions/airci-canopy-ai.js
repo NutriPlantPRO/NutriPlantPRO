@@ -492,10 +492,21 @@ async function detectPlantsWithOpenAI(model, images) {
     return String(im.id);
   });
   const prompt =
-    'Eres visión aérea agrícola. Miras ortomosaico RGB como un humano.\n' +
-    'Marca CADA árbol/planta de cultivo (copa). NO marques: gente, sombras, pasto, suelo, cajas, vehículos, burros, herramientas.\n' +
-    'Si hay un árbol joven pequeño, también cuéntalo. Si dos copas chocan, marca DOS centros si ves dos plantas.\n' +
-    'Devuelve SOLO JSON:\n' +
+    'Eres un agrónomo mirando un ortomosaico RGB de dron (vista cenital de huerta).\n' +
+    'Tu ÚNICO trabajo: marcar el CENTRO de cada ÁRBOL o planta de cultivo (copa).\n' +
+    '\n' +
+    'QUÉ ES UN ÁRBOL aquí:\n' +
+    '- Objeto individual con copa (redonda/oval), a menudo con sombra proyectada al suelo.\n' +
+    '- Suele repetirse en surcos/filas con espaciamiento similar.\n' +
+    '- Puede ser verde, amarillento, florido o joven/pequeño: igual cuenta.\n' +
+    '- Si dos copas se tocan, marca DOS centros (dos plantas).\n' +
+    '\n' +
+    'NO marques nunca:\n' +
+    '- Personas, animales, vehículos, cajas, herramientas, tuberías.\n' +
+    '- Pasto, maleza continua, suelo desnudo, caminos, sombras sueltas sin copa.\n' +
+    '- Charcos, techos, lonas, montones de tierra.\n' +
+    '\n' +
+    'Devuelve SOLO JSON válido:\n' +
     '{\n' +
     '  "plants": [\n' +
     '    {"image_id": "' +
@@ -504,11 +515,11 @@ async function detectPlantsWithOpenAI(model, images) {
     '  ],\n' +
     '  "notes": "breve"\n' +
     '}\n' +
-    'cx,cy,r están coordenadas NORMALIZADAS 0–1 relativas a ESA imagen (r = radio aprox. de la copa).\n' +
+    'cx,cy,r = NORMALIZADOS 0–1 respecto a ESA imagen (r ≈ radio de la copa).\n' +
     'image_id debe ser uno de: ' +
     ids.join(', ') +
     '.\n' +
-    'Sé exhaustivo en cada recorte: cuenta como humano, no como sensor de “verde”.';
+    'Sé exhaustivo: cuenta como humano en campo, no como sensor de píxeles verdes.';
 
   const content = [{ type: 'input_text', text: prompt }];
   images.forEach(function (img, idx) {
@@ -519,7 +530,10 @@ async function detectPlantsWithOpenAI(model, images) {
     }
     content.push({
       type: 'input_text',
-      text: 'Imagen id=' + (img.id || ids[idx] || idx + 1) + ' — marca todas las plantas aquí.'
+      text:
+        'Imagen id=' +
+        (img.id || ids[idx] || idx + 1) +
+        ' — marca TODOS los árboles/plantas de cultivo. Ignora gente, autos y pasto.'
     });
     content.push({ type: 'input_image', image_url: url });
   });
@@ -527,7 +541,7 @@ async function detectPlantsWithOpenAI(model, images) {
   const payload = {
     model: model,
     input: [{ role: 'user', content: content }],
-    max_output_tokens: isGpt56Family(model) ? 2500 : 1800
+    max_output_tokens: isGpt56Family(model) ? 4000 : 2500
   };
 
   const res = await fetch('https://api.openai.com/v1/responses', {

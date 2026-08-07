@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260806lay4">
+  <link rel="stylesheet" href="./airci.css?v=20260806fix2">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -177,14 +177,14 @@
             </label>
             <label class="aci-detect-mode" for="aciDetectModel">
               <span>Detección</span>
-              <select id="aciDetectModel" title="Local gratis, o IA mira 2 fotos RGB y marca plantas (como visión humana)">
+              <select id="aciDetectModel" title="Local gratis, o IA recorre el predio por rejilla y marca árboles (no pasto/gente/autos)">
                 <option value="exg">Local · gratis (sin IA)</option>
-                <option value="gpt-5.6-luna" selected>Luna · visión plantas · ~$0.006</option>
-                <option value="gpt-5.6-terra">Terra · visión plantas · ~$0.012</option>
-                <option value="gpt-5.6-sol">Sol · visión plantas · ~$0.022</option>
+                <option value="gpt-5.6-luna" selected>Luna · rejilla árboles · ~$0.01–0.07</option>
+                <option value="gpt-5.6-terra">Terra · rejilla árboles · ~$0.02–0.12</option>
+                <option value="gpt-5.6-sol">Sol · rejilla árboles · ~$0.04–0.18</option>
               </select>
             </label>
-            <button type="button" class="aci-btn aci-btn--ghost" id="aciAnalyzeBtn" hidden title="Analiza el ortomosaico: detecta copas, métricas y semáforo">Analizar</button>
+            <button type="button" class="aci-btn aci-btn--analyze" id="aciAnalyzeBtn" hidden title="Analiza el ortomosaico: detecta copas, métricas y semáforo">Analizar</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
           </div>
         </div>
@@ -525,7 +525,7 @@
   <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
-  <script src="./airci-canopy.js?v=20260806vision1"></script>
-  <script src="./airci.js?v=20260806vision1"></script>
+  <script src="./airci-canopy.js?v=20260806fix2"></script>
+  <script src="./airci.js?v=20260806fix2"></script>
 </body>
 </html>
