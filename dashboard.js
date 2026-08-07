@@ -992,6 +992,10 @@ function sectionTemplate(name) {
                     <span class="summary-label">${ft('total_dose', 'Dosis Total')} (${fUnit('dose_mass_area', 'kg/ha')}):</span>
                     <span class="summary-value" id="fertiTotalDoseKgHa">0</span>
                   </div>
+                  <div class="summary-item">
+                    <span class="summary-label">${ft('total_cost', 'Costo total')} (<span id="fertiTotalCostUnit">USD/ha</span>):</span>
+                    <span class="summary-value" id="fertiTotalCost">0.00</span>
+                  </div>
                 </div>
 
                 <div class="summary-nutrients">
@@ -1799,7 +1803,7 @@ function sectionTemplate(name) {
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                   <button class="btn btn-secondary btn-sm" id="hydroAddFertBtn">➕ ${hydroT('Agregar fertilizante', 'Add fertilizer')}</button>
                   <button class="btn btn-info btn-sm" id="hydroAutoCalculateBtn" type="button" title="${hydroT('Genera una propuesta automática con los requerimientos, el agua y el ácido seleccionado', 'Generates an automatic proposal from requirements, water, and the selected acid')}">✨ ${hydroT('Calcular solución automática', 'Calculate solution automatically')}</button>
-                  <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="${hydroT('Ver, editar o eliminar fertilizantes personalizados', 'View, edit, or delete custom fertilizers')}">${hydroT('Gestionar catálogo de fertilizantes', 'Manage fertilizer catalog')}</button>
+                  <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="${hydroT('Ver, editar o eliminar fertilizantes personalizados y sus precios', 'View, edit, or delete custom fertilizers and their prices')}">${hydroT('Gestionar catálogo de fertilizantes y precios', 'Manage fertilizer catalog and prices')}</button>
                 </div>
               </div>
               <div id="hydroVolumeCard" class="hydro-volume-card" style="margin-bottom:14px;"></div>
@@ -19024,15 +19028,18 @@ function createHidroponiaSectionHTML(reportLanguage) {
   function formatHydroProductQty(siValue, siUnit) {
     if (!Number.isFinite(siValue) || siValue <= 0) return '—';
     const hu = window.NpHydroUnits || null;
+    const fmt = (typeof window.hydroFormatProductAmount === 'function')
+      ? window.hydroFormatProductAmount
+      : function (n) { return Number(n).toFixed(3); };
     if (siUnit === 'L') {
       const m3 = siValue / 1000;
       const v = hu ? hu.fromSI(m3, 'liquid_volume') : siValue;
       const u = hu ? (typeof hydroUnitLabel === 'function' ? hydroUnitLabel(hu.unit('liquid_volume')) : hu.unit('liquid_volume')) : 'L';
-      return reportNum(v, 2) + ' ' + u;
+      return fmt(v) + ' ' + u;
     }
     const v = hu ? hu.fromSI(siValue, 'mass') : siValue;
     const u = hu ? hu.unit('mass') : 'kg';
-    return reportNum(v, 2) + ' ' + u;
+    return fmt(v) + ' ' + u;
   }
   const massUnitLabel = (window.NpHydroUnits ? window.NpHydroUnits.unit('mass') : 'kg');
   const liquidUnitLabel = window.NpHydroUnits

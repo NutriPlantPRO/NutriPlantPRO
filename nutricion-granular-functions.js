@@ -649,7 +649,7 @@ function renderApplications() {
             ${granularProgramT('add_fertilizer', '➕ Agregar fertilizante')}
           </button>
           <button class="add-custom-material-btn btn btn-info btn-sm" onclick="showNewMaterialModal('${app.id}')">
-            ${granularProgramT('manage_catalog', '📋 Gestionar catálogo de fertilizante')}
+            ${granularProgramT('manage_catalog', '📋 Gestionar catálogo de fertilizantes y precios')}
           </button>
         </div>
         
@@ -792,7 +792,7 @@ function showNewMaterialModal(appId) {
   modal.innerHTML = `
     <div class="material-modal">
       <div class="material-modal-header">
-        <h3>${granularProgramT('manage_catalog', '📋 Gestionar catálogo de fertilizante')}</h3>
+        <h3>${granularProgramT('manage_catalog', '📋 Gestionar catálogo de fertilizantes y precios')}</h3>
         <button class="material-modal-close" onclick="closeNewMaterialModal()">×</button>
       </div>
       

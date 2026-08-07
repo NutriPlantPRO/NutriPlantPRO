@@ -98,6 +98,26 @@ function fertiResolveMaterialPrice(materialId) {
   });
 }
 
+/** Costo total del programa (USD/ha SI) a partir de kg/ha por columna × precio. */
+function fertiComputeProgramTotalCostUsdHa() {
+  const priceApi = fertiGetPriceApi();
+  if (!priceApi || !Array.isArray(fertiColumns) || !fertiColumns.length) return 0;
+  const materials = getAllFertiMaterials();
+  const colTotals = fertiColumns.map(() => 0);
+  (fertiWeeks || []).forEach(w => {
+    fertiColumns.forEach((c, i) => {
+      colTotals[i] += parseFloat(w.kgByCol && w.kgByCol[c.id]) || 0;
+    });
+  });
+  return fertiColumns.reduce((sum, c, i) => {
+    const mat = materials.find(m => m && m.id === c.materialId);
+    const amount = colTotals[i] || 0;
+    const kg = priceApi.productKgFromAmount(amount, mat);
+    const price = fertiResolveMaterialPrice(c.materialId);
+    return sum + (priceApi.costUsdPerHaFromKgHa(kg, price) || 0);
+  }, 0);
+}
+
 function fertiPersistPriceOverrides(overrides) {
   const api = fertiGetPriceApi();
   fertiPriceOverrides = api
@@ -1031,7 +1051,7 @@ function renderFertiWeeks() {
     <div style="margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
       <button class="btn btn-secondary btn-sm" onclick="addFertiColumn()">➕ ${fertProgT('add_fertilizer', 'Agregar fertilizante')}</button>
       <button class="btn btn-secondary btn-sm" onclick="addFertiWeek()">➕ ${addTimeLabel}</button>
-      <button class="btn btn-info btn-sm" onclick="openFertiNewMaterialModal()">📋 ${fertProgT('manage_catalog', 'Gestionar catálogo de fertilizantes')}</button>
+      <button class="btn btn-info btn-sm" onclick="openFertiNewMaterialModal()">📋 ${fertProgT('manage_catalog', 'Gestionar catálogo de fertilizantes y precios')}</button>
     </div>
   `;
 }
@@ -1238,6 +1258,18 @@ function updateFertiSummary() {
   // Aporte total (mostramos por defecto óxidos más N fraccionado)
   const appsEl = document.getElementById('fertiTotalApplications'); if (appsEl) appsEl.textContent = String(fertiWeeks.length || 0);
   const doseEl = document.getElementById('fertiTotalDoseKgHa'); if (doseEl) doseEl.textContent = fertProgResultFromSI(totalKg, 'dose_mass_area');
+  const priceApi = fertiGetPriceApi();
+  const priceLabels = priceApi ? priceApi.labels() : { totalCost: fertProgT('total_cost', 'Costo total'), costAreaUnit: 'USD/ha' };
+  const totalCostUsdHa = fertiComputeProgramTotalCostUsdHa();
+  const totalCostDisp = priceApi ? priceApi.toDisplayAreaCost(totalCostUsdHa) : totalCostUsdHa;
+  const costEl = document.getElementById('fertiTotalCost');
+  if (costEl) {
+    costEl.textContent = (totalCostDisp > 0 && priceApi)
+      ? priceApi.formatMoney(totalCostDisp)
+      : (totalCostDisp > 0 ? totalCostDisp.toFixed(2) : '0.00');
+  }
+  const costUnitEl = document.getElementById('fertiTotalCostUnit');
+  if (costUnitEl) costUnitEl.textContent = priceLabels.costAreaUnit || 'USD/ha';
   set('fertiProgTotalN_NO3', totals.N_NO3); set('fertiProgTotalN_NH4', totals.N_NH4);
   set('fertiProgTotalP2O5', toElemental('P2O5', totals.P2O5)); set('fertiProgTotalK2O', toElemental('K2O', totals.K2O)); set('fertiProgTotalCaO', toElemental('CaO', totals.CaO)); set('fertiProgTotalMgO', toElemental('MgO', totals.MgO));
   set('fertiProgTotalS', totals.S);

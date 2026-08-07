@@ -73,6 +73,34 @@ function hydroStageLabel(stageName) {
   return hydroT(stageName, HYDRO_STAGE_EN[stageName] || stageName);
 }
 
+/** Etiqueta de solución elegida del catálogo; vacío si aún no hay selección. */
+function hydroResolveStageSolution(stage) {
+  if (!stage) return { selected: false, id: '', label: '' };
+  const catalog = window.NpHydroSolutionCatalog;
+  const custom = typeof hydroCustomSolutionsUser !== 'undefined' ? hydroCustomSolutionsUser : [];
+  const all = catalog && typeof catalog.all === 'function' ? catalog.all(custom) : [];
+  if (stage.solutionId) {
+    const byId = all.find(function (r) { return r.id === stage.solutionId; });
+    return {
+      selected: true,
+      id: stage.solutionId,
+      label: (byId && byId.name) || stage.name || ''
+    };
+  }
+  if (stage.name) {
+    const byName = all.find(function (r) { return r.name === stage.name; });
+    if (byName) {
+      return { selected: true, id: byName.id, label: byName.name };
+    }
+  }
+  return { selected: false, id: '', label: '' };
+}
+
+function hydroStageSolutionCellLabel(stage) {
+  const info = hydroResolveStageSolution(stage);
+  return info.selected ? info.label : '';
+}
+
 function hydroDisplayFromSI(value, kind, options) {
   const api = hydroPresentation();
   return api ? api.fromSI(value, kind, options) : Number(value);
@@ -104,6 +132,20 @@ function hydroUnitLabel(unit) {
 
 function hydroDisplayMassKg(kg) {
   return { value: hydroDisplayFromSI(kg, 'mass'), unit: hydroDisplayUnit('mass') };
+}
+
+/** Dosis de producto (kg/L): 3 decimales para ver micros muy bajos (evita 0.00). */
+function hydroFormatProductAmount(value, decimals) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const d = decimals != null ? decimals : 3;
+  return n.toFixed(d);
+}
+
+function hydroFormatProductAmountWithUnit(value, unit, decimals) {
+  const txt = hydroFormatProductAmount(value, decimals);
+  if (!txt) return '—';
+  return txt + (unit ? (' ' + unit) : '');
 }
 
 function hydroDisplayLiquidL(litres) {
@@ -581,44 +623,116 @@ function hydroOpenSolutionCatalog() {
   const macroKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
   const microKeys = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
   const all = catalog.all(hydroCustomSolutionsUser);
+  const activeBefore = hydroGetActiveStage();
+  const selectedId = hydroResolveStageSolution(activeBefore).id;
   const rows = all.map(function (recipe, index) {
     const custom = index >= catalog.builtIn.length;
-    return '<tr><td><strong>' + hydroEscapeAttr(recipe.name) + '</strong>' + (custom ? ' <small>(' + hydroT('propia', 'custom') + ')</small>' : '') + '</td>' +
+    const isSelected = selectedId && recipe.id === selectedId;
+    const chooseCls = 'hydro-solution-choose' + (isSelected ? ' is-selected' : '');
+    const chooseLabel = isSelected ? hydroT('Seleccionado', 'Selected') : hydroT('Elegir', 'Choose');
+    return '<tr' + (isSelected ? ' class="hydro-solution-row-selected"' : '') + ' data-hydro-recipe-id="' + hydroEscapeAttr(recipe.id) + '"><td><strong>' + hydroEscapeAttr(recipe.name) + '</strong>' + (custom ? ' <small>(' + hydroT('propia', 'custom') + ')</small>' : '') + '</td>' +
       macroKeys.map(k => '<td>' + (recipe.meq[k] || 0) + '</td>').join('') +
       microKeys.map(k => '<td>' + (recipe.ppm[k] || 0) + '</td>').join('') +
-      '<td><button data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Elegir', 'Choose') + '</button>' +
-      (custom ? ' <button data-hydro-solution-edit="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Editar', 'Edit') + '</button><button data-hydro-solution-delete="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Eliminar', 'Delete') + '</button>' : '') + '</td></tr>';
+      '<td><button type="button" class="' + chooseCls + '" data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' + chooseLabel + '</button>' +
+      (custom ? ' <button type="button" class="hydro-solution-choose-secondary" data-hydro-solution-edit="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Editar', 'Edit') + '</button><button type="button" class="hydro-solution-choose-secondary" data-hydro-solution-delete="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Eliminar', 'Delete') + '</button>' : '') + '</td></tr>';
   }).join('');
   const overlay = document.createElement('div');
   overlay.className = 'hydro-solution-modal';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:16px;background:rgba(15,23,42,.55)';
-  overlay.innerHTML = '<section style="width:min(1120px,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 24px 60px rgba(15,23,42,.25)" role="dialog" aria-modal="true">' +
-    '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h2 style="margin:0">' + hydroT('Catálogo de soluciones nutritivas', 'Nutrient solution catalog') + '</h2><p>' + hydroT('Macros en meq/L y micros en ppm.', 'Macros in meq/L and micros in ppm.') + '</p></div><button data-hydro-solution-close>×</button></div>' +
-    (hydroGetCurrentUserId() ? '<button data-hydro-solution-new>' + hydroT('+ Crear solución propia', '+ Create custom solution') + '</button>' : '') +
-    '<div style="overflow:auto"><table class="hydro-table" style="margin-top:12px"><thead><tr><th>' + hydroT('Solución', 'Solution') + '</th>' +
-    macroKeys.map(k => '<th>' + hydroLabelHtml(k) + '<br>meq/L</th>').join('') + microKeys.map(k => '<th>' + k + '<br>ppm</th>').join('') + '<th></th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
-  const saveFromActive = function (existingId) {
-    const active = hydroGetActiveStage();
-    const name = window.prompt(hydroT('Nombre de la solución', 'Solution name'), active && active.name || '');
-    if (!name || !active) return;
+  overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
+    '<div class="hydro-solution-modal__head"><div><h2 style="margin:0">' + hydroT('Catálogo de soluciones nutritivas', 'Nutrient solution catalog') + '</h2><p>' + hydroT('Macros en meq/L y micros en ppm.', 'Macros in meq/L and micros in ppm.') + '</p></div><button type="button" class="hydro-solution-modal__close" data-hydro-solution-close aria-label="Close">×</button></div>' +
+    (hydroGetCurrentUserId() ? '<button type="button" class="hydro-solution-modal__new" data-hydro-solution-new>' + hydroT('+ Crear solución propia', '+ Create custom solution') + '</button>' : '') +
+    '<div style="overflow:auto"><table class="hydro-table hydro-solution-modal__table" style="margin-top:12px"><thead><tr><th>' + hydroT('Solución', 'Solution') + '</th>' +
+    macroKeys.map(k => '<th>' + hydroLabelHtml(k) + '<br>meq/L</th>').join('') + microKeys.map(k => '<th>' + k + '<br>ppm</th>').join('') + '<th></th></tr></thead><tbody data-hydro-catalog-body>' + rows + '</tbody></table></div></section>';
+
+  const numInput = function (field, key, value) {
+    const v = (value != null && value !== '') ? value : 0;
+    return '<td><input class="hydro-solution-draft-input" type="number" step="0.01" min="0" data-hydro-draft-field="' + field + '" data-hydro-draft-key="' + key + '" value="' + hydroEscapeAttr(String(v)) + '"></td>';
+  };
+
+  const removeDraftRow = function () {
+    const draft = overlay.querySelector('[data-hydro-solution-draft]');
+    if (draft) draft.remove();
+    const newBtn = overlay.querySelector('[data-hydro-solution-new]');
+    if (newBtn) newBtn.disabled = false;
+  };
+
+  const showDraftRow = function (existingId) {
+    removeDraftRow();
+    const tbody = overlay.querySelector('[data-hydro-catalog-body]');
+    if (!tbody) return;
+    const existing = existingId ? hydroCustomSolutionsUser.find(function (item) { return item.id === existingId; }) : null;
+    const active = hydroGetActiveStage() || {};
+    const sourceMeq = existing && existing.meq ? existing.meq : (active.meq || {});
+    const sourcePpm = existing && existing.ppm ? existing.ppm : (active.ppm || {});
+    const isNew = !existingId;
+    const titleValue = isNew ? '' : (existing && existing.name ? existing.name : '');
+    const titlePlaceholder = hydroT('Nombre de la solución', 'Solution name');
+    const draft = document.createElement('tr');
+    draft.setAttribute('data-hydro-solution-draft', existingId || 'new');
+    draft.className = 'hydro-solution-draft-row';
+    draft.innerHTML =
+      '<td><input class="hydro-solution-draft-input hydro-solution-draft-title" type="text" data-hydro-draft-title placeholder="' + hydroEscapeAttr(titlePlaceholder) + '" value="' + hydroEscapeAttr(titleValue) + '" autocomplete="off"></td>' +
+      macroKeys.map(function (k) { return numInput('meq', k, sourceMeq[k]); }).join('') +
+      microKeys.map(function (k) { return numInput('ppm', k, sourcePpm[k]); }).join('') +
+      '<td class="hydro-solution-draft-actions">' +
+        '<button type="button" class="hydro-solution-choose is-selected" data-hydro-draft-save>' + hydroT('Guardar', 'Save') + '</button> ' +
+        '<button type="button" class="hydro-solution-choose-secondary" data-hydro-draft-cancel>' + hydroT('Cancelar', 'Cancel') + '</button>' +
+      '</td>';
+    tbody.insertBefore(draft, tbody.firstChild);
+    const newBtn = overlay.querySelector('[data-hydro-solution-new]');
+    if (newBtn) newBtn.disabled = true;
+    const titleEl = draft.querySelector('[data-hydro-draft-title]');
+    if (titleEl) {
+      titleEl.focus();
+      if (!isNew && titleEl.select) titleEl.select();
+    }
+  };
+
+  const saveDraftRow = function () {
+    const draft = overlay.querySelector('[data-hydro-solution-draft]');
+    if (!draft) return;
+    const titleEl = draft.querySelector('[data-hydro-draft-title]');
+    const name = titleEl ? String(titleEl.value || '').trim() : '';
+    if (!name) {
+      if (titleEl) {
+        titleEl.classList.add('is-invalid');
+        titleEl.focus();
+      }
+      if (window.showMessage) window.showMessage(hydroT('Escribe un nombre para la solución', 'Enter a name for the solution'), 'warning');
+      return;
+    }
+    const meq = {};
+    const ppm = {};
+    draft.querySelectorAll('[data-hydro-draft-field]').forEach(function (input) {
+      const field = input.getAttribute('data-hydro-draft-field');
+      const key = input.getAttribute('data-hydro-draft-key');
+      const val = hydroRound2(parseFloat(input.value) || 0);
+      if (field === 'meq') meq[key] = val;
+      if (field === 'ppm') ppm[key] = val;
+    });
+    const existingId = draft.getAttribute('data-hydro-solution-draft');
     const entry = {
-      id: existingId || 'solution_' + Date.now(),
-      name: name.trim(),
-      meq: Object.assign({}, active.meq),
-      ppm: Object.assign({}, active.ppm),
+      id: (existingId && existingId !== 'new') ? existingId : ('solution_' + Date.now()),
+      name: name,
+      meq: meq,
+      ppm: ppm,
       updatedAt: new Date().toISOString()
     };
-    const found = hydroCustomSolutionsUser.findIndex(item => item.id === entry.id);
+    const found = hydroCustomSolutionsUser.findIndex(function (item) { return item.id === entry.id; });
     if (found >= 0) hydroCustomSolutionsUser[found] = entry; else hydroCustomSolutionsUser.push(entry);
     hydroSaveCustomSolutions();
     overlay.remove();
     hydroOpenSolutionCatalog();
   };
+
   overlay.addEventListener('click', function (event) {
     if (event.target === overlay || event.target.closest('[data-hydro-solution-close]')) { overlay.remove(); return; }
-    if (event.target.closest('[data-hydro-solution-new]')) { saveFromActive(null); return; }
+    if (event.target.closest('[data-hydro-solution-new]')) { showDraftRow(null); return; }
+    if (event.target.closest('[data-hydro-draft-cancel]')) { removeDraftRow(); return; }
+    if (event.target.closest('[data-hydro-draft-save]')) { saveDraftRow(); return; }
     const choose = event.target.closest('[data-hydro-solution-choose]');
-    if (choose) {
+    if (choose && !choose.hasAttribute('data-hydro-draft-save')) {
       const recipe = all.find(item => item.id === choose.getAttribute('data-hydro-solution-choose'));
       const active = hydroGetActiveStage();
       catalog.apply(recipe, active);
@@ -629,13 +743,24 @@ function hydroOpenSolutionCatalog() {
       return;
     }
     const edit = event.target.closest('[data-hydro-solution-edit]');
-    if (edit) { saveFromActive(edit.getAttribute('data-hydro-solution-edit')); return; }
+    if (edit) { showDraftRow(edit.getAttribute('data-hydro-solution-edit')); return; }
     const del = event.target.closest('[data-hydro-solution-delete]');
     if (del && window.confirm(hydroT('¿Eliminar esta solución propia?', 'Delete this custom solution?'))) {
       hydroCustomSolutionsUser = hydroCustomSolutionsUser.filter(item => item.id !== del.getAttribute('data-hydro-solution-delete'));
       hydroSaveCustomSolutions();
       overlay.remove();
       hydroOpenSolutionCatalog();
+    }
+  });
+  overlay.addEventListener('keydown', function (event) {
+    if (!event.target.closest('[data-hydro-solution-draft]')) return;
+    if (event.key === 'Enter' && event.target.matches('input')) {
+      event.preventDefault();
+      saveDraftRow();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      removeDraftRow();
     }
   });
   document.body.appendChild(overlay);
@@ -757,10 +882,17 @@ function renderHydroStageTable() {
   const meqRows = hydroState.stages.map(stage => {
     const computedCe = hydroComputeCE(stage);
     stage.ce = computedCe.toFixed(2);
+    const sol = hydroResolveStageSolution(stage);
+    const pickerCls = 'hydro-input hydro-solution-picker' + (sol.selected ? ' is-selected' : ' is-empty');
+    const pickerLabel = sol.selected ? hydroEscapeAttr(sol.label) : '';
+    const pickerAria = sol.selected
+      ? sol.label
+      : hydroT('Elegir solución nutritiva', 'Choose nutrient solution');
+    const pickerTitle = sol.selected ? sol.label : pickerAria;
     return `
       <tr data-stage-id="${stage.id}">
         <td>
-          <button type="button" class="hydro-input hydro-solution-picker" data-hydro-solution-picker>${hydroEscapeAttr(stage.name || hydroT('Solución nutritiva', 'Nutrient solution'))}</button>
+          <button type="button" class="${pickerCls}" data-hydro-solution-picker data-stage-id="${stage.id}" aria-label="${hydroEscapeAttr(pickerAria)}" title="${hydroEscapeAttr(pickerTitle)}">${pickerLabel}</button>
         </td>
         <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => {
@@ -793,7 +925,7 @@ function renderHydroStageTable() {
     stage.ppm = { ...stage.ppm, ...macroPpm };
     return `
       <tr data-stage-id="${stage.id}">
-        <td>${hydroEscapeAttr(stage.name || hydroT('Solución nutritiva', 'Nutrient solution'))}</td>
+        <td>${hydroEscapeAttr(hydroStageSolutionCellLabel(stage))}</td>
         <td>${stage.ce ?? ''}</td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => {
           const useLive = hydroPpmTyping && hydroPpmTyping.stageId === stage.id && hydroPpmTyping.nutrient === n;
@@ -843,7 +975,7 @@ function renderHydroStageTable() {
     });
     return `
       <tr>
-        <td>${hydroEscapeAttr(stage.name || hydroT('Solución nutritiva', 'Nutrient solution'))}</td>
+        <td>${hydroEscapeAttr(hydroStageSolutionCellLabel(stage))}</td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
       </tr>
     `;
@@ -965,6 +1097,252 @@ function hydroBaryToXY(vA, vB, vC, pA, pB, pC) {
   };
 }
 
+let hydroTernGeom = null;
+let hydroTernDrag = { role: null, raf: null };
+
+function hydroXYToBaryPct(x, y, geom) {
+  const vT = geom.vTop, vL = geom.vLeft, vR = geom.vRight;
+  const denom = (vL.y - vR.y) * (vT.x - vR.x) + (vR.x - vL.x) * (vT.y - vR.y);
+  if (Math.abs(denom) < 1e-9) return { top: 33.33, left: 33.33, right: 33.34 };
+  let wTop = ((vL.y - vR.y) * (x - vR.x) + (vR.x - vL.x) * (y - vR.y)) / denom;
+  let wLeft = ((vR.y - vT.y) * (x - vR.x) + (vT.x - vR.x) * (y - vR.y)) / denom;
+  let wRight = 1 - wTop - wLeft;
+  wTop = Math.max(0, wTop); wLeft = Math.max(0, wLeft); wRight = Math.max(0, wRight);
+  const s = wTop + wLeft + wRight;
+  if (s < 1e-9) return { top: 33.33, left: 33.33, right: 33.34 };
+  return { top: (wTop / s) * 100, left: (wLeft / s) * 100, right: (wRight / s) * 100 };
+}
+
+function hydroTernMarkerLayout(anPt, catPt) {
+  const dx = catPt.x - anPt.x;
+  const dy = catPt.y - anPt.y;
+  const dist = Math.hypot(dx, dy);
+  const minSep = 24;
+  if (dist >= minSep) return { an: anPt, cat: catPt };
+  const ang = dist > 0.5 ? Math.atan2(dy, dx) : (-Math.PI / 4);
+  const off = (minSep - dist) * 0.5 + 10;
+  return {
+    an: { x: anPt.x - Math.cos(ang) * off, y: anPt.y - Math.sin(ang) * off },
+    cat: { x: catPt.x + Math.cos(ang) * off, y: catPt.y + Math.sin(ang) * off }
+  };
+}
+
+function hydroTernMarkerSvg(anVis, catVis, anInside, catInside) {
+  const anFill = anInside ? '#eab308' : '#b45309';
+  const catFill = catInside ? '#ef4444' : '#dc2626';
+  const catHit =
+    `<circle class="tern-hit-cat" data-tern-role="cat" cx="${catVis.x}" cy="${catVis.y}" r="16" fill="transparent" stroke="none" style="cursor:grab;" />` +
+    `<circle class="tern-vis-cat" cx="${catVis.x}" cy="${catVis.y}" r="7" fill="${catFill}" stroke="#ffffff" stroke-width="2.5" pointer-events="none" />` +
+    `<circle class="tern-vis-cat-ring" cx="${catVis.x}" cy="${catVis.y}" r="7" fill="none" stroke="#7f1d1d" stroke-width="1.2" pointer-events="none" />`;
+  const anHit =
+    `<rect class="tern-hit-an" data-tern-role="an" x="${anVis.x - 14}" y="${anVis.y - 14}" width="28" height="28" fill="transparent" stroke="none" style="cursor:grab;" />` +
+    `<rect class="tern-vis-an" x="${anVis.x - 7}" y="${anVis.y - 7}" width="14" height="14" fill="${anFill}" stroke="#ffffff" stroke-width="2" pointer-events="none" />` +
+    `<rect class="tern-vis-an" x="${anVis.x - 7}" y="${anVis.y - 7}" width="14" height="14" fill="none" stroke="#92400e" stroke-width="1.2" pointer-events="none" />`;
+  return catHit + anHit;
+}
+
+function hydroTernApplyMarkerAttrs(svg, anVis, catVis) {
+  const hitAn = svg.querySelector('.tern-hit-an');
+  const hitCat = svg.querySelector('.tern-hit-cat');
+  const visAn = svg.querySelectorAll('.tern-vis-an');
+  const visCat = svg.querySelector('.tern-vis-cat');
+  const ringCat = svg.querySelector('.tern-vis-cat-ring');
+  if (hitAn) {
+    hitAn.setAttribute('x', anVis.x - 14);
+    hitAn.setAttribute('y', anVis.y - 14);
+  }
+  visAn.forEach(el => {
+    el.setAttribute('x', anVis.x - 7);
+    el.setAttribute('y', anVis.y - 7);
+  });
+  if (hitCat) {
+    hitCat.setAttribute('cx', catVis.x);
+    hitCat.setAttribute('cy', catVis.y);
+  }
+  if (visCat) {
+    visCat.setAttribute('cx', catVis.x);
+    visCat.setAttribute('cy', catVis.y);
+  }
+  if (ringCat) {
+    ringCat.setAttribute('cx', catVis.x);
+    ringCat.setAttribute('cy', catVis.y);
+  }
+}
+
+function hydroEnsureGroupMeqTotals(stage) {
+  if (!stage.meq) stage.meq = {};
+  const sumAn = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+  const sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+  const nh4 = parseFloat(stage.meq.N_NH4) || 0;
+  if (sumAn + sumKcm < 0.01 && nh4 < 0.01) {
+    const ce = parseFloat(stage.ce) || 0;
+    const totalTriangle = ce > 0 ? Math.max(0, ce * 20 - nh4) : 30;
+    const third = totalTriangle / 6;
+    HYDRO_ANIONS.forEach(n => { stage.meq[n] = hydroRound2(third); });
+    HYDRO_CATIONS_TRIANGLE.forEach(n => { stage.meq[n] = hydroRound2(third); });
+    stage.ce = hydroComputeCE(stage).toFixed(2);
+  }
+}
+
+function hydroApplyAnionPct(stage, pTop, pLeft, pRight) {
+  hydroEnsureGroupMeqTotals(stage);
+  let sumAn = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+  if (sumAn <= 0) sumAn = 30;
+  stage.meq.N_NO3 = hydroRound2(sumAn * pTop / 100);
+  stage.meq.P = hydroRound2(sumAn * pLeft / 100);
+  stage.meq.S = hydroRound2(sumAn * pRight / 100);
+}
+
+function hydroApplyCationPct(stage, pTop, pLeft, pRight) {
+  hydroEnsureGroupMeqTotals(stage);
+  let sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+  if (sumKcm <= 0) sumKcm = 30;
+  stage.meq.K = hydroRound2(sumKcm * pTop / 100);
+  stage.meq.Ca = hydroRound2(sumKcm * pLeft / 100);
+  stage.meq.Mg = hydroRound2(sumKcm * pRight / 100);
+}
+
+function hydroTernaryPercents(stage) {
+  const meq = stage.meq || {};
+  const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+  const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+  return {
+    pNO3: sumAnions > 0 ? (parseFloat(meq.N_NO3) || 0) / sumAnions * 100 : 33.3,
+    pH2PO4: sumAnions > 0 ? (parseFloat(meq.P) || 0) / sumAnions * 100 : 33.3,
+    pSO4: sumAnions > 0 ? (parseFloat(meq.S) || 0) / sumAnions * 100 : 33.3,
+    pK: sumKCaMg > 0 ? (parseFloat(meq.K) || 0) / sumKCaMg * 100 : 33.3,
+    pCa: sumKCaMg > 0 ? (parseFloat(meq.Ca) || 0) / sumKCaMg * 100 : 33.3,
+    pMg: sumKCaMg > 0 ? (parseFloat(meq.Mg) || 0) / sumKCaMg * 100 : 33.3
+  };
+}
+
+function hydroPatchTriangleMarkers(stage) {
+  const wrap = document.getElementById('hydroTriangleCombined');
+  const svg = wrap && wrap.querySelector('svg');
+  if (!svg || !hydroTernGeom) return;
+  const g = hydroTernGeom;
+  const p = hydroTernaryPercents(stage);
+  const norm3 = (a, b, c) => {
+    let pa = Math.max(0, a), pb = Math.max(0, b), pc = Math.max(0, c);
+    const s = pa + pb + pc;
+    if (s > 0) { pa = (pa / s) * 100; pb = (pb / s) * 100; pc = (pc / s) * 100; }
+    return [pa, pb, pc];
+  };
+  const [pNO3, pH2PO4, pSO4] = norm3(p.pNO3, p.pH2PO4, p.pSO4);
+  const [pK, pCa, pMg] = norm3(p.pK, p.pCa, p.pMg);
+  const anPt = hydroBaryToXY(g.vTop, g.vLeft, g.vRight, pNO3, pH2PO4, pSO4);
+  const catPt = hydroBaryToXY(g.vTop, g.vLeft, g.vRight, pK, pCa, pMg);
+  const lay = hydroTernMarkerLayout(anPt, catPt);
+  hydroTernApplyMarkerAttrs(svg, lay.an, lay.cat);
+}
+
+function hydroTernClientToSvg(svg, clientX, clientY) {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return { x: 0, y: 0 };
+  const sp = pt.matrixTransform(ctm.inverse());
+  return { x: sp.x, y: sp.y };
+}
+
+function hydroRenderFromTriangleDrag(skipTriangleRedraw) {
+  const stage = hydroGetActiveStage();
+  if (!stage) return;
+  stage.ce = hydroComputeCE(stage).toFixed(2);
+  stage.ppm = Object.assign({}, stage.ppm || {}, hydroComputeMacroPpm(stage));
+  if (skipTriangleRedraw) {
+    hydroPatchTriangleMarkers(stage);
+    const info = document.getElementById('hydroTriangleInfoCombined');
+    if (info) {
+      const p = hydroTernaryPercents(stage);
+      info.textContent = `${hydroT('Aniones', 'Anions')}: N-NO₃⁻ ${p.pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${p.pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${p.pSO4.toFixed(1)}% | ${hydroT('Cationes', 'Cations')}: K⁺ ${p.pK.toFixed(1)}% · Ca²⁺ ${p.pCa.toFixed(1)}% · Mg²⁺ ${p.pMg.toFixed(1)}%`;
+    }
+    // Actualizar solo valores visibles de meq/CE/ppm sin rearmar tablas (arrastre fluido)
+    const root = document.querySelector('.hydroponia-container') || document;
+    const id = stage.id;
+    HYDRO_MEQ_NUTRIENTS.forEach(n => {
+      const el = root.querySelector(
+        '#hydroMeqTableWrap input.hydro-input[data-type="meq"][data-stage-id="' + id + '"][data-nutrient="' + n + '"]'
+      );
+      if (el) el.value = hydroRound2((stage.meq && stage.meq[n]) || 0).toFixed(2);
+    });
+    const ceEl = root.querySelector(
+      '#hydroMeqTableWrap input.hydro-input[data-field="ce"][data-stage-id="' + id + '"]'
+    );
+    if (ceEl) ceEl.value = stage.ce;
+    renderHydroNitrogenSummary();
+  } else {
+    renderHydroStageTable();
+    renderHydroNitrogenSummary();
+    renderHydroTriangle();
+    renderHydroObjective();
+    hydroScheduleSave();
+  }
+}
+
+function setupHydroTernaryDrag() {
+  const wrap = document.getElementById('hydroTriangleCombined');
+  if (!wrap || wrap._ternDragReady) return;
+  wrap._ternDragReady = true;
+
+  function applyAt(clientX, clientY) {
+    if (!hydroTernGeom || !hydroTernDrag.role) return;
+    const svg = wrap.querySelector('svg');
+    if (!svg) return;
+    const p = hydroTernClientToSvg(svg, clientX, clientY);
+    const b = hydroXYToBaryPct(p.x, p.y, hydroTernGeom);
+    const stage = hydroGetActiveStage();
+    if (!stage) return;
+    if (hydroTernDrag.role === 'an') {
+      hydroApplyAnionPct(stage, b.top, b.left, b.right);
+    } else if (hydroTernDrag.role === 'cat') {
+      hydroApplyCationPct(stage, b.top, b.left, b.right);
+    }
+    if (!hydroTernDrag.raf) {
+      hydroTernDrag.raf = requestAnimationFrame(function () {
+        hydroTernDrag.raf = null;
+        hydroRenderFromTriangleDrag(true);
+      });
+    }
+  }
+
+  wrap.addEventListener('pointerdown', function (e) {
+    const role = e.target.getAttribute && e.target.getAttribute('data-tern-role');
+    if (role !== 'an' && role !== 'cat') return;
+    hydroTernDrag.role = role;
+    wrap.classList.add('tern-dragging');
+    const svg = wrap.querySelector('svg');
+    if (svg) {
+      svg.classList.add('tern-dragging');
+      svg.classList.remove('tern-dragging-an', 'tern-dragging-cat');
+      svg.classList.add(role === 'an' ? 'tern-dragging-an' : 'tern-dragging-cat');
+    }
+    try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
+    applyAt(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+
+  wrap.addEventListener('pointermove', function (e) {
+    if (!hydroTernDrag.role) return;
+    applyAt(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+
+  function endDrag(e) {
+    if (!hydroTernDrag.role) return;
+    const wasRole = hydroTernDrag.role;
+    hydroTernDrag.role = null;
+    wrap.classList.remove('tern-dragging');
+    const svg = wrap.querySelector('svg');
+    if (svg) svg.classList.remove('tern-dragging', 'tern-dragging-an', 'tern-dragging-cat');
+    try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (wasRole) hydroRenderFromTriangleDrag(false);
+  }
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+}
+
 function hydroDrawCombinedTernary(container, data) {
   if (!container) return;
   const width = 460, height = 430, pad = 44;
@@ -977,6 +1355,7 @@ function hydroDrawCombinedTernary(container, data) {
   const vTop = { x: width / 2, y: pad };                      // 100% K, 100% NO₃ (opuesto a la base)
   const vLeft = { x: pad, y: pad + triHeight };               // 100% Ca, 100% H₂PO₄ (opuesto a línea derecha)
   const vRight = { x: width - pad, y: pad + triHeight };      // 100% Mg, 100% SO₄ (opuesto a línea izquierda)
+  hydroTernGeom = { vTop: vTop, vLeft: vLeft, vRight: vRight, width: width, height: height };
 
   const toXY_cation = (k, ca, mg) => hydroBaryToXY(vTop, vLeft, vRight, k, ca, mg);
   const toXY_anion = (no3, h2po4, so4) => hydroBaryToXY(vTop, vLeft, vRight, no3, h2po4, so4);
@@ -1041,7 +1420,6 @@ function hydroDrawCombinedTernary(container, data) {
   const [pK, pCa, pMg] = normalize(data.pK, data.pCa, data.pMg);
   const catPoint = toXY_cation(pK, pCa, pMg);
   const catInside = catZonePts.length >= 3 && hydroPointInPolygon(catPoint.x, catPoint.y, catZonePts);
-  const catCircle = `<circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />`;
 
   // Zona y punto ANIONES (relleno + borde con tramos sólidos y punteados)
   const anZonePts = (data.anionZone || []).map(([no3, h2po4, so4]) => toXY_anion(no3, h2po4, so4));
@@ -1051,7 +1429,8 @@ function hydroDrawCombinedTernary(container, data) {
   const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
   const anPoint = toXY_anion(pNO3, pH2PO4, pSO4);
   const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
-  const anSquare = `<rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
+  const markerLay = hydroTernMarkerLayout(anPoint, catPoint);
+  const markers = hydroTernMarkerSvg(markerLay.an, markerLay.cat, anInside, catInside);
 
   // Como en el ejemplo: en las esquinas solo 100 (sin 0). Escalas de 10 en 10 hasta 100.
   // Base: de derecha abajo hacia izquierda → 10, 20, ..., 90 (100 en esquina izq).
@@ -1095,13 +1474,14 @@ function hydroDrawCombinedTernary(container, data) {
       ${catPoly}
       ${cut55K}
       <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
-      ${catCircle}
-      ${anSquare}
+      ${markers}
       ${tickLabels}
       ${edgeLabels}
     </svg>
     </div>
+    <p class="hydro-tern-drag-hint">${hydroT('Arrastra el cuadrado amarillo (aniones) o el círculo rojo (cationes): se actualizan % meq, meq/L, ppm y CE.', 'Drag the yellow square (anions) or the red circle (cations): % meq, meq/L, ppm, and EC update.')}</p>
   `;
+  setupHydroTernaryDrag();
 }
 
 function renderHydroTriangle() {
@@ -1341,6 +1721,7 @@ function renderHydroAcidSummary() {
     wrap.innerHTML = window.NpHydroAcidLegend.buildHtml({
       lang,
       analysis,
+      summary: hydroState.acidDoseSummary || null,
       hydroVolumeM3: hydroState.volumeWaterM3,
       analysisLabel: label,
       linked: !!hydroState.waterAnalysisId,
@@ -1382,6 +1763,7 @@ function hydroApplyWaterAnalysisById(analysisId) {
   if (!analysis) return false;
   hydroState.waterAnalysisId = analysisId;
   hydroState.water = Object.assign({}, hydroState.water || {}, hydroPpmFromAguaAnalysis(analysis));
+  hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
   renderHydroWater();
   renderHydroAcidSummary();
   renderHydroVolumeCard();
@@ -1505,19 +1887,10 @@ function hydroAutoCalculateSolution() {
   // 6) El amonio restante se completa con sulfato de amonio (también aporta S).
   addTargetRow('sulfato_amonio_soluble', 'N_NH4', remaining('N_NH4'), 'B', 50);
 
-  // 7) Micronutrientes, uno por elemento.
-  [
-    ['fe_eddha', 'Fe'],
-    ['quelato_mn', 'Mn'],
-    ['acido_borico', 'B'],
-    ['quelato_zn', 'Zn'],
-    ['quelato_cu', 'Cu'],
-    ['molibdato_sodio', 'Mo']
-  ].forEach((pair, index) => addTargetRow(pair[0], pair[1], remaining(pair[1]), 'B', 60 + index));
-
-  // 8) Último: sulfatos. Primero el Mg restante; si aún falta S, se completa con sulfato de Mg.
-  // El S casi siempre se pasa o falta un poco: se cierra al final y se reporta.
-  const mgSulfateRow = addTargetRow('sulfato_magnesio', 'Mg', remaining('Mg'), 'B', 80);
+  // 7) Sulfatos de Mg: antes de micros para que quede junto a las dosis altas de macros.
+  // Primero el Mg restante; si aún falta S, se completa con sulfato de Mg.
+  // El S casi siempre se pasa o falta un poco: se cierra aquí y se reporta.
+  const mgSulfateRow = addTargetRow('sulfato_magnesio', 'Mg', remaining('Mg'), 'B', 55);
   const sStillNeeded = remaining('S');
   if (sStillNeeded > 0.05) {
     if (mgSulfateRow) {
@@ -1530,9 +1903,19 @@ function hydroAutoCalculateSolution() {
         mgSulfateRow.element = 'Mg';
       }
     } else {
-      addTargetRow('sulfato_magnesio', 'S', sStillNeeded, 'B', 81);
+      addTargetRow('sulfato_magnesio', 'S', sStillNeeded, 'B', 56);
     }
   }
+
+  // 8) Micronutrientes, uno por elemento (después de macros/sulfatos).
+  [
+    ['fe_eddha', 'Fe'],
+    ['quelato_mn', 'Mn'],
+    ['acido_borico', 'B'],
+    ['quelato_zn', 'Zn'],
+    ['quelato_cu', 'Cu'],
+    ['molibdato_sodio', 'Mo']
+  ].forEach((pair, index) => addTargetRow(pair[0], pair[1], remaining(pair[1]), 'B', 60 + index));
 
   hydroState.fertilizers.sort((a, b) => (a.autoOrder || 50) - (b.autoOrder || 50));
   renderHydroFertTable();
@@ -1846,7 +2229,7 @@ function renderHydroFertTable() {
       <td class="hydro-dose-readonly">${(parseFloat(f.dose || 0) > 0 ? parseFloat(f.dose).toFixed(1) : '—')}</td>
       ${contribCells}
       <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank">${tankOptions(tank)}</select></td>
-      <td class="hydro-kg-readonly">${totalDisplay.value > 0 ? `${totalDisplay.value.toFixed(2)} ${totalDisplay.unit}` : '—'}</td>
+      <td class="hydro-kg-readonly">${totalDisplay.value > 0 ? hydroFormatProductAmountWithUnit(totalDisplay.value, totalDisplay.unit) : '—'}</td>
       <td class="hydro-cost-cell" style="text-align:right;">—</td>
       <td><button class="btn btn-secondary btn-sm hydro-remove-fert" data-fert-id="${f.id}">✕</button></td>
     </tr>`;
@@ -1873,10 +2256,10 @@ function renderHydroFertTable() {
     const costTxt = (costUsd > 0 && priceApi) ? priceApi.formatMoney(costUsd) : (costUsd > 0 ? costUsd.toFixed(2) : '—');
     const totalCell = isLiquid
       ? `<div style="display:flex;align-items:center;gap:6px;">
-          <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.01" min="0" value="${liquidDisplay.value > 0 ? liquidDisplay.value.toFixed(2) : ''}" placeholder="${liquidDisplay.unit} ${hydroT('total', 'total')}" title="${hydroT('Volumen total del producto para el volumen de agua', 'Total product volume for the configured water volume')}">
+          <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.001" min="0" value="${liquidDisplay.value > 0 ? hydroFormatProductAmount(liquidDisplay.value) : ''}" placeholder="${liquidDisplay.unit} ${hydroT('total', 'total')}" title="${hydroT('Volumen total del producto para el volumen de agua', 'Total product volume for the configured water volume')}">
           <span class="hydro-muted" style="white-space:nowrap;">${liquidDisplay.unit}</span>
         </div>`
-      : `${totalDisplay.value > 0 ? `${totalDisplay.value.toFixed(2)} ${totalDisplay.unit}` : '—'}`;
+      : `${totalDisplay.value > 0 ? hydroFormatProductAmountWithUnit(totalDisplay.value, totalDisplay.unit) : '—'}`;
     return `
     <tr data-fert-id="${f.id}">
       <td>
@@ -2062,21 +2445,21 @@ function renderHydroVolumeCard() {
     const totalParts = [];
     const massTotal = hydroDisplayMassKg(data.totalKg);
     const liquidTotal = hydroDisplayLiquidL(data.totalL);
-    if (data.totalKg > 0) totalParts.push(`${massTotal.value.toFixed(2)} ${massTotal.unit}`);
-    if (data.totalL > 0) totalParts.push(`${liquidTotal.value.toFixed(2)} ${liquidTotal.unit}`);
+    if (data.totalKg > 0) totalParts.push(hydroFormatProductAmountWithUnit(massTotal.value, massTotal.unit));
+    if (data.totalL > 0) totalParts.push(hydroFormatProductAmountWithUnit(liquidTotal.value, liquidTotal.unit));
     let perRecargaLine = '';
     if (recargas > 1) {
       const perRecParts = [];
-      if (data.totalKg > 0) perRecParts.push(`${(massTotal.value / recargas).toFixed(2)} ${massTotal.unit}`);
-      if (data.totalL > 0) perRecParts.push(`${(liquidTotal.value / recargas).toFixed(2)} ${liquidTotal.unit}`);
+      if (data.totalKg > 0) perRecParts.push(hydroFormatProductAmountWithUnit(massTotal.value / recargas, massTotal.unit));
+      if (data.totalL > 0) perRecParts.push(hydroFormatProductAmountWithUnit(liquidTotal.value / recargas, liquidTotal.unit));
       perRecargaLine = ` <span class="hydro-muted" style="font-size:0.9rem;">(${perRecParts.join(' + ')} ${hydroT(`por recarga si son ${recargas} recargas`, `per fill for ${recargas} fills`)})</span>`;
     }
     const itemsHtml = data.items.map(i => {
       const shown = i.unit === 'L' ? hydroDisplayLiquidL(i.value) : hydroDisplayMassKg(i.value);
       const eq = hydroDisplayMassKg(i.kgEquivalent);
-      const itemPerRec = recargas > 1 ? `${(shown.value / recargas).toFixed(2)} ${shown.unit}` : null;
-      const eqText = i.unit === 'L' ? ` <span class="hydro-muted">(≈ ${eq.value.toFixed(2)} ${eq.unit} eq)</span>` : '';
-      return `<span class="hydro-tank-item">${(i.name || '').replace(/</g, '&lt;')}: ${shown.value.toFixed(2)} ${shown.unit}${eqText}${itemPerRec != null ? ` <span class="hydro-muted">(${itemPerRec} por recarga)</span>` : ''}</span>`;
+      const itemPerRec = recargas > 1 ? hydroFormatProductAmountWithUnit(shown.value / recargas, shown.unit) : null;
+      const eqText = i.unit === 'L' ? ` <span class="hydro-muted">(≈ ${hydroFormatProductAmountWithUnit(eq.value, eq.unit)} eq)</span>` : '';
+      return `<span class="hydro-tank-item">${(i.name || '').replace(/</g, '&lt;')}: ${hydroFormatProductAmountWithUnit(shown.value, shown.unit)}${eqText}${itemPerRec != null ? ` <span class="hydro-muted">(${itemPerRec} por recarga)</span>` : ''}</span>`;
     }).join('');
     return `
       <div class="hydro-tank-block" data-tank="${tq}">
@@ -2108,11 +2491,6 @@ function renderHydroVolumeCard() {
         <label>${hydroT('Tasa de inyección', 'Injection rate')} (${rateUnit}):</label>
         <input type="number" id="hydroInjectionRate" class="hydro-input" min="0.1" step="0.5" value="${r}" title="${hydroT('Concentrado por volumen de agua', 'Concentrate per water volume')} (${rateUnit})">
       </div>
-      ${(() => {
-        const analysis = hydroGetSelectedWaterAnalysis();
-        if (!analysis) return '';
-        return `<div class="hydro-volume-row" style="margin-top:4px;"><span style="grid-column:1/-1;">${hydroVolumeMatchNoteHtml(hydroAnalysisVolumeM3(analysis))}</span></div>`;
-      })()}
       <div class="hydro-volume-row" style="margin-top:6px;">
         <label>${hydroT('Relación de inyección', 'Injection ratio')}:</label>
         <span id="hydroInjectionRatio" style="display:inline-block;min-width:4em;font-weight:500;" title="${hydroT('1:(1000 ÷ tasa)', '1:(1000 ÷ rate)')}">${ratioDisplay}</span>
@@ -2120,6 +2498,14 @@ function renderHydroVolumeCard() {
       <div class="hydro-volume-result" style="margin-top:10px;padding:8px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;">
         <strong>${hydroT('Volumen de concentrado necesario', 'Required concentrate volume')}:</strong> ${concentradoDisplay.value.toFixed(2)} ${concentradoDisplay.unit} (${vInputDisplay} ${vUnit} × ${hydroDisplayInputValue(r, 4)} ${rateUnit}${rateUnit === 'US gal/1,000 US gal' ? ' ÷ 1,000' : ''}). <span class="hydro-muted">${hydroT('Con tu tanque de', 'With your tank of')} ${tDisplay.value.toFixed(2)} ${tDisplay.unit}:</span> ${recargasText}
       </div>
+      ${(() => {
+        const analysis = hydroGetSelectedWaterAnalysis();
+        const aVol = analysis
+          ? hydroAnalysisVolumeM3(analysis)
+          : (hydroState.acidDoseSummary && hydroState.acidDoseSummary.analysisVolumeM3) || 0;
+        if (!hydroState.waterAnalysisId && !(hydroState.acidDoseSummary && hydroState.acidDoseSummary.hasAcid)) return '';
+        return `<div class="hydro-volume-match-row hydro-volume-match-row--below">${hydroVolumeMatchNoteHtml(aVol)}</div>`;
+      })()}
       ${tankBlocks ? `<div class="hydro-tank-summary" style="margin-top:12px;">${porTanqueLegend}<strong>${hydroT('Por tanque (A, B, C)', 'By tank (A, B, C)')}:</strong><div class="hydro-tank-blocks">${tankBlocks}</div></div>` : ''}
     </div>
   `;
@@ -2178,7 +2564,7 @@ function hydroApplyStaticTranslations() {
   setText('#hidro-calculo .hydro-card:nth-child(4) h3', '🧮 ' + hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)'));
   setText('#hydroAddFertBtn', '➕ ' + hydroT('Agregar fertilizante', 'Add fertilizer'));
   setText('#hydroAutoCalculateBtn', '✨ ' + hydroT('Calcular solución automática', 'Calculate solution automatically'));
-  setText('#hydroManageCatalogBtn', hydroT('Gestionar catálogo de fertilizantes', 'Manage fertilizer catalog'));
+  setText('#hydroManageCatalogBtn', hydroT('Gestionar catálogo de fertilizantes y precios', 'Manage fertilizer catalog and prices'));
   const autoCalculate = container.querySelector('#hydroAutoCalculateBtn');
   if (autoCalculate) autoCalculate.title = hydroT(
     'Genera una propuesta automática con los requerimientos, el agua y el ácido seleccionado',
@@ -2475,7 +2861,11 @@ function bindHydroEvents(container) {
   });
 
   container.addEventListener('click', (e) => {
-    if (e.target.closest('[data-hydro-solution-picker]')) {
+    const picker = e.target.closest('[data-hydro-solution-picker]');
+    if (picker) {
+      const stageId = picker.getAttribute('data-stage-id') ||
+        (picker.closest('[data-stage-id]') && picker.closest('[data-stage-id]').getAttribute('data-stage-id'));
+      if (stageId) hydroState.activeStageId = stageId;
       hydroOpenSolutionCatalog();
       return;
     }
@@ -2498,6 +2888,7 @@ function bindHydroEvents(container) {
     // Solo actualizar estado en volumen/tanque/inyección; NO re-renderizar para no perder foco al escribir
     if (input.id === 'hydroVolumeWaterM3') {
       hydroState.volumeWaterM3 = hydroInputToSI(input.value, 'water_volume') || 100;
+      if (hydroState.waterAnalysisId) hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
       renderHydroAcidSummary();
       return;
     }
@@ -2665,6 +3056,7 @@ function bindHydroEvents(container) {
     // Al salir del campo (blur/Enter): actualizar tarjeta de volumen y recalcular
     if (target.id === 'hydroVolumeWaterM3') {
       hydroState.volumeWaterM3 = hydroInputToSI(target.value, 'water_volume') || 100;
+      if (hydroState.waterAnalysisId) hydroState.acidDoseSummary = hydroBuildAcidDoseSummary();
       renderHydroAcidSummary();
       renderHydroVolumeCard();
       renderHydroFertTable();
@@ -2876,6 +3268,8 @@ function initHydroponiaUI() {
     stages: [],
     activeStageId: null,
     water: {},
+    waterAnalysisId: null,
+    acidDoseSummary: null,
     fertilizers: [],
     volumeWaterM3: 100,
     tankVolumeL: 1000,
@@ -2887,6 +3281,8 @@ function initHydroponiaUI() {
       stages: Array.isArray(saved.stages) ? saved.stages : [],
       activeStageId: saved.activeStageId || null,
       water: saved.water || {},
+      waterAnalysisId: saved.waterAnalysisId || null,
+      acidDoseSummary: saved.acidDoseSummary || null,
       fertilizers: Array.isArray(saved.fertilizers) ? saved.fertilizers : [],
       volumeWaterM3: saved.volumeWaterM3 != null ? saved.volumeWaterM3 : 100,
       tankVolumeL: saved.tankVolumeL != null ? saved.tankVolumeL : 1000,
@@ -2924,6 +3320,11 @@ function initHydroponiaUI() {
   HYDRO_PPM_NUTRIENTS.forEach(key => {
     if (hydroState.water[key] == null || hydroState.water[key] === '') hydroState.water[key] = 0;
   });
+  // Rehidratar resumen de ácido desde el análisis vinculado (si sigue en el proyecto).
+  if (hydroState.waterAnalysisId) {
+    const liveSummary = hydroBuildAcidDoseSummary();
+    if (liveSummary && liveSummary.hasAcid) hydroState.acidDoseSummary = liveSummary;
+  }
   hydroEnsureDefaults();
   hydroLoadCustomMaterials();
   hydroLoadCustomSolutions();
@@ -2934,6 +3335,8 @@ function initHydroponiaUI() {
   bindHydroEvents(container);
 }
 
+window.hydroFormatProductAmount = hydroFormatProductAmount;
+window.hydroFormatProductAmountWithUnit = hydroFormatProductAmountWithUnit;
 window.initHydroponiaUI = initHydroponiaUI;
 window.saveHydroponiaData = hydroSaveData;
 window.openHydroNewMaterialModal = openHydroNewMaterialModal;

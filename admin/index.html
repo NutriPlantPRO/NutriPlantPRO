@@ -14131,7 +14131,11 @@
                         const tank = f.tank || 'A';
                         const totals = typeof adminHydroComputeDoseAndKg === 'function' ? adminHydroComputeDoseAndKg(f, hydroVolM3, adminHydroMats) : { dose: f.dose != null ? parseFloat(f.dose) : NaN, totalValue: NaN, totalUnit: 'kg' };
                         const dose = isFinite(totals.dose) ? totals.dose.toFixed(1) : '—';
-                        const totalProduct = (isFinite(totals.totalValue) && totals.totalValue > 0) ? `${totals.totalValue.toFixed(2)} ${totals.totalUnit}` : '—';
+                        const totalProduct = (isFinite(totals.totalValue) && totals.totalValue > 0)
+                            ? ((typeof window.hydroFormatProductAmountWithUnit === 'function')
+                                ? window.hydroFormatProductAmountWithUnit(totals.totalValue, totals.totalUnit)
+                                : `${totals.totalValue.toFixed(3)} ${totals.totalUnit}`)
+                            : '—';
                         const contrib = typeof adminHydroContributions === 'function' ? adminHydroContributions(f, adminHydroMats) : null;
                         const contribCells = HYDRO_PPM_NUTRIENTS.map(n => {
                             const v = contrib && (contrib[n] != null) ? parseFloat(contrib[n]) : 0;
@@ -14172,19 +14176,25 @@
                         const data = byTank[tq];
                         if ((data.totalKg <= 0) && (data.totalL <= 0)) return '';
                         const totalParts = [];
-                        if (data.totalKg > 0) totalParts.push(`${data.totalKg.toFixed(2)} kg`);
-                        if (data.totalL > 0) totalParts.push(`${data.totalL.toFixed(2)} L`);
+                        const fmtAmt = (typeof window.hydroFormatProductAmount === 'function')
+                            ? window.hydroFormatProductAmount
+                            : function (n) { return Number(n).toFixed(3); };
+                        const fmtWithUnit = (typeof window.hydroFormatProductAmountWithUnit === 'function')
+                            ? window.hydroFormatProductAmountWithUnit
+                            : function (n, u) { return fmtAmt(n) + ' ' + u; };
+                        if (data.totalKg > 0) totalParts.push(fmtWithUnit(data.totalKg, 'kg'));
+                        if (data.totalL > 0) totalParts.push(fmtWithUnit(data.totalL, 'L'));
                         const perRecParts = [];
-                        if (data.totalKg > 0) perRecParts.push(`${(recargas > 0 ? data.totalKg / recargas : data.totalKg).toFixed(2)} kg`);
-                        if (data.totalL > 0) perRecParts.push(`${(recargas > 0 ? data.totalL / recargas : data.totalL).toFixed(2)} L`);
+                        if (data.totalKg > 0) perRecParts.push(fmtWithUnit(recargas > 0 ? data.totalKg / recargas : data.totalKg, 'kg'));
+                        if (data.totalL > 0) perRecParts.push(fmtWithUnit(recargas > 0 ? data.totalL / recargas : data.totalL, 'L'));
                         const totalLineSuffix = (recargas > 1)
                             ? ` <span class="hydro-muted">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`
                             : '';
                         const itemsHtml = data.items.map(i => {
                             const pr = recargas > 0 ? (i.value / (recargas || 1)) : i.value;
-                            const eq = i.unit === 'L' && isFinite(i.kg) && i.kg > 0 ? ` <span class="hydro-muted">(≈ ${i.kg.toFixed(2)} kg eq)</span>` : '';
-                            const perRecHtml = (recargas > 1) ? ` <span class="hydro-muted">(${pr.toFixed(2)} ${i.unit} por recarga)</span>` : '';
-                            return `<span class="hydro-tank-item">${escapeHtml(i.name)}: ${i.value.toFixed(2)} ${i.unit}${eq}${perRecHtml}</span>`;
+                            const eq = i.unit === 'L' && isFinite(i.kg) && i.kg > 0 ? ` <span class="hydro-muted">(≈ ${fmtWithUnit(i.kg, 'kg')} eq)</span>` : '';
+                            const perRecHtml = (recargas > 1) ? ` <span class="hydro-muted">(${fmtWithUnit(pr, i.unit)} por recarga)</span>` : '';
+                            return `<span class="hydro-tank-item">${escapeHtml(i.name)}: ${fmtWithUnit(i.value, i.unit)}${eq}${perRecHtml}</span>`;
                         }).join('');
                         return `<div class="hydro-tank-block" data-tank="${escapeHtml(tq)}">
         <strong class="hydro-tank-block-title">${reportHydroTankIconHtml}<span class="hydro-tank-block-title-text">Tanque ${escapeHtml(tq)}: ${totalParts.join(' + ')} total${totalLineSuffix}</span></strong>

@@ -1111,14 +1111,16 @@
     }
     .hydro-pref-bar label { display: inline-flex; align-items: center; gap: 4px; color: #2563eb; font-weight: 700; }
     .hydro-pref-bar select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; max-width: min(100%, 280px); }
-    .hydro-solution-picker { margin-left: auto; border: 1px solid #2563eb; color: #1d4ed8; background: #eff6ff; border-radius: 7px; padding: 7px 10px; font-weight: 700; cursor: pointer; }
+    .hydro-solution-picker { margin-left: auto; border: 1.5px solid #16a34a; color: #15803d; background: #fff; border-radius: 8px; padding: 7px 12px; font-weight: 700; cursor: pointer; }
+    .hydro-solution-picker.is-selected { background: #16a34a; border-color: #15803d; color: #fff; }
     .hydro-solution-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 16px; background: rgba(15,23,42,.55); }
     .hydro-solution-modal__card { width: min(1100px,100%); max-height: 85vh; overflow: auto; background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 24px 60px rgba(15,23,42,.25); }
     .hydro-solution-modal__head { display:flex; gap:12px; align-items:center; justify-content:space-between; }
     .hydro-solution-modal__table { width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; }
     .hydro-solution-modal__table th,.hydro-solution-modal__table td { padding:8px; border-bottom:1px solid #e2e8f0; text-align:center; white-space:nowrap; }
     .hydro-solution-modal__table th:first-child,.hydro-solution-modal__table td:first-child { text-align:left; }
-    .hydro-solution-modal__choose { border:0; border-radius:6px; padding:6px 9px; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; }
+    .hydro-solution-modal__choose { min-width:112px; border:1.5px solid #16a34a; border-radius:8px; padding:7px 12px; background:#fff; color:#15803d; font-weight:750; cursor:pointer; }
+    .hydro-solution-modal__choose.is-selected { background:#16a34a; border-color:#15803d; color:#fff; }
   </style>
   <script>
     (function () {
@@ -1543,11 +1545,16 @@
       const macroKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
       const microKeys = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
       const label = function (key) { return hydroLabelPlain(key); };
+      const stage = hydroGetActiveStage();
+      const selectedId = stage && stage.solutionId ? stage.solutionId : '';
       const rows = catalog.builtIn.map(function (recipe) {
+        const isSelected = selectedId && recipe.id === selectedId;
+        const chooseCls = 'hydro-solution-modal__choose' + (isSelected ? ' is-selected' : '');
+        const chooseLabel = isSelected ? hydroUiT('Seleccionado', 'Selected') : hydroUiT('Elegir', 'Choose');
         return '<tr><td><strong>' + recipe.name + '</strong></td>' +
           macroKeys.map(function (key) { return '<td>' + (recipe.meq[key] || 0) + '</td>'; }).join('') +
           microKeys.map(function (key) { return '<td>' + (recipe.ppm[key] || 0) + '</td>'; }).join('') +
-          '<td><button class="hydro-solution-modal__choose" data-hydro-recipe="' + recipe.id + '">Elegir</button></td></tr>';
+          '<td><button type="button" class="' + chooseCls + '" data-hydro-recipe="' + recipe.id + '">' + chooseLabel + '</button></td></tr>';
       }).join('');
       const overlay = document.createElement('div');
       overlay.className = 'hydro-solution-modal';
@@ -1561,12 +1568,13 @@
         const choose = event.target.closest('[data-hydro-recipe]');
         if (!choose) return;
         const recipe = catalog.builtIn.find(function (item) { return item.id === choose.getAttribute('data-hydro-recipe'); });
-        const stage = hydroGetActiveStage();
-        catalog.apply(recipe, stage);
-        stage.ce = hydroComputeCE(stage).toFixed(2);
+        const active = hydroGetActiveStage();
+        catalog.apply(recipe, active);
+        active.ce = hydroComputeCE(active).toFixed(2);
         renderHydroMeqTable();
         renderHydroDerivedTables();
         renderHydroTriangle();
+        hydroRefreshSolutionPickerLabel();
         hydroScheduleSave();
         overlay.remove();
       });
@@ -1575,7 +1583,15 @@
 
     function hydroRefreshSolutionPickerLabel() {
       var button = document.getElementById('hydroSolutionPickerBtn');
-      if (button) button.textContent = hydroUiT('Soluciones nutritivas', 'Nutrient solutions');
+      if (!button) return;
+      var stage = hydroGetActiveStage();
+      if (stage && stage.solutionId && stage.name) {
+        button.textContent = stage.name;
+        button.classList.add('is-selected');
+      } else {
+        button.textContent = hydroUiT('Soluciones nutritivas', 'Nutrient solutions');
+        button.classList.remove('is-selected');
+      }
     }
 
     function hydroComputeMacroPpm(stage) {

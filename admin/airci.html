@@ -59,10 +59,6 @@
         <img class="aci-header__airci" src="../assets/AirCL_4K_transparente.png?v=20260806horiz" alt="AirCI Crop Intelligence">
         <img class="aci-header__np" src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO">
       </div>
-      <div class="aci-header__center">
-        <strong>AirCI Crop Intelligence</strong>
-        <small>Análisis de huerta con ortomosaico RGB</small>
-      </div>
       <div class="aci-header__right">
         <button type="button" class="aci-header__storage" id="aciStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en Supabase" title="Archivos en Supabase · calculando…">
           <small>Almacenamiento nube</small>
@@ -101,8 +97,14 @@
 
     <main class="aci-shell">
       <nav class="aci-tabs" aria-label="Secciones AirCI">
-        <button type="button" class="aci-tab is-active" data-tab="proyectos">Proyectos</button>
-        <button type="button" class="aci-tab" data-tab="analisis">Análisis</button>
+        <div class="aci-tabs__btns">
+          <button type="button" class="aci-tab is-active" data-tab="proyectos">Proyectos</button>
+          <button type="button" class="aci-tab" data-tab="analisis">Análisis</button>
+        </div>
+        <div class="aci-tabs__title">
+          <strong>AirCI Crop Intelligence</strong>
+          <small>Análisis de huerta con ortomosaico RGB</small>
+        </div>
       </nav>
 
       <!-- —— Proyectos AirCI (solo AirCI, no NutriPlant PRO) —— -->

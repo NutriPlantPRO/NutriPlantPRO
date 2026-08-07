@@ -27,14 +27,36 @@
     return Math.abs(x - y) <= (tol == null ? 0.01 : tol);
   }
 
+  function analysisMeqFromPpm(ppm, eqWeight) {
+    var p = parseFloat(ppm);
+    if (!Number.isFinite(p) || !(eqWeight > 0)) return NaN;
+    return p / eqWeight;
+  }
+
+  function carbonateMeq(anions) {
+    anions = anions || {};
+    var hco3 = parseFloat(anions.hco3_meq);
+    if (!Number.isFinite(hco3) && anions.hco3_ppm !== '' && anions.hco3_ppm != null) {
+      hco3 = analysisMeqFromPpm(anions.hco3_ppm, 61.02);
+    }
+    var co3 = parseFloat(anions.co3_meq);
+    if (!Number.isFinite(co3) && anions.co3_ppm !== '' && anions.co3_ppm != null) {
+      co3 = analysisMeqFromPpm(anions.co3_ppm, 30.0);
+    }
+    return {
+      hco3: Number.isFinite(hco3) ? Math.max(0, hco3) : null,
+      co3: Number.isFinite(co3) ? Math.max(0, co3) : null
+    };
+  }
+
   function calculate(analysis, hydroVolumeM3) {
     if (!analysis) return null;
     var anions = analysis.anions || {};
-    var hasCarbonateData = (anions.hco3_meq !== '' && anions.hco3_meq != null) ||
-      (anions.co3_meq !== '' && anions.co3_meq != null);
+    var carb = carbonateMeq(anions);
+    var hasCarbonateData = carb.hco3 != null || carb.co3 != null;
     if (!hasCarbonateData) return null;
-    var hco3 = Math.max(0, parseFloat(anions.hco3_meq) || 0);
-    var co3 = Math.max(0, parseFloat(anions.co3_meq) || 0);
+    var hco3 = carb.hco3 != null ? carb.hco3 : 0;
+    var co3 = carb.co3 != null ? carb.co3 : 0;
     var residualRaw = parseFloat(analysis.acidResidualMeq);
     var residualMeq = Number.isFinite(residualRaw) && residualRaw >= 0 ? residualRaw : 1;
     var acidId = analysis.acidId || 'acido_nitrico_55';
@@ -44,6 +66,7 @@
     var mlPerM3 = neededMeqL * 1000 / acid.meqPerMl;
     var aVol = analysisVolumeM3(analysis);
     var hVol = Math.max(0, parseFloat(hydroVolumeM3) || 0);
+    var density = (typeof acid.densityKgL === 'number' && acid.densityKgL > 0) ? acid.densityKgL : 1.5;
     return {
       acidId: acidId,
       acid: acid,
@@ -56,6 +79,9 @@
       hydroVolumeM3: hVol,
       analysisTotalLiters: mlPerM3 * aVol / 1000,
       totalLiters: mlPerM3 * hVol / 1000,
+      kgPerM3: (mlPerM3 / 1000) * density,
+      analysisTotalKg: (mlPerM3 * aVol / 1000) * density,
+      totalKg: (mlPerM3 * hVol / 1000) * density,
       volumesMatch: aVol > 0 && volumesMatch(aVol, hVol)
     };
   }
@@ -73,6 +99,10 @@
       acidId: calc.acidId,
       acidNameEs: calc.acid.nameEs,
       acidNameEn: calc.acid.nameEn,
+      hco3: calc.hco3,
+      co3: calc.co3,
+      residualMeq: calc.residualMeq,
+      neededMeqL: calc.neededMeqL,
       mlPerM3: calc.mlPerM3,
       analysisVolumeM3: calc.analysisVolumeM3,
       hydroVolumeM3: calc.hydroVolumeM3,
@@ -94,15 +124,15 @@
     }
     if (volumesMatch(aVol, hVol)) {
       return '<span class="' + p + '-volume-match-note ' + p + '-volume-match-note--ok">' + t(lang,
-        'Coincide con el volumen del análisis de agua',
-        'Matches the water analysis volume'
+        'Coincide con el volumen de agua considerado en Análisis → Agua para el cálculo de ácido',
+        'Matches the water volume used in Analysis → Water for the acid calculation'
       ) + ' (' + aVol.toFixed(2) + ' m³).</span>';
     }
     return '<span class="' + p + '-volume-match-note ' + p + '-volume-match-note--warn">' + t(lang,
-      'No coincide con el análisis de agua',
-      'Does not match the water analysis'
+      'No coincide con el volumen de Análisis → Agua para el cálculo de ácido',
+      'Does not match the Analysis → Water volume used for the acid calculation'
     ) + ': ' + t(lang, 'allí hay', 'there it is') + ' <strong>' + aVol.toFixed(2) + ' m³</strong> ' +
-      t(lang, 'para el cálculo de ácido.', 'for the acid calculation.') + '</span>';
+      t(lang, 'y aquí', 'and here') + ' <strong>' + hVol.toFixed(2) + ' m³</strong>.</span>';
   }
 
   function warningSpan(lang, classPrefix) {
@@ -119,15 +149,23 @@
       ? (calc.analysisVolumeM3.toFixed(2) + ' m³')
       : t(lang, 'sin volumen en el análisis', 'no volume in the analysis');
     var analysisLitersText = calc.analysisVolumeM3 > 0
-      ? (calc.analysisTotalLiters.toFixed(2) + ' L ' + t(lang, 'según el volumen del análisis', 'for the analysis volume'))
+      ? (calc.analysisTotalLiters.toFixed(2) + ' L')
       : t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
-    return '<strong>' + t(lang, 'Ácido seleccionado', 'Selected acid') + ':</strong> ' + acidName + '. ' +
-      '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong> ' +
-      '(' + t(lang, 'dosis en base al análisis de agua', 'dose based on the water analysis') + '). ' +
-      t(lang, 'Volumen usado en el análisis', 'Volume used in the analysis') + ': <strong>' + analysisVolText + '</strong> → <strong>' + analysisLitersText + '</strong>. ' +
-      t(lang, 'Para el volumen de aquí', 'For this volume') + ' (' + calc.hydroVolumeM3.toFixed(2) + ' m³): <strong>' + calc.totalLiters.toFixed(2) + ' L</strong>. ' +
-      volumeMatchNoteHtml(lang, calc.analysisVolumeM3, calc.hydroVolumeM3, classPrefix) + ' ' +
-      warningSpan(lang, classPrefix);
+    return '<div class="' + (classPrefix || 'hydro') + '-acid-summary-title"><strong>' +
+      t(lang, 'Resumen de la dosis de ácido', 'Acid dose summary') + '</strong></div>' +
+      '<p class="' + (classPrefix || 'hydro') + '-acid-summary-body">' +
+      '<strong>' + acidName + '</strong>. ' +
+      t(lang, 'meq a neutralizar (HCO₃⁻ + CO₃²⁻ − residual)', 'meq to neutralize (HCO₃⁻ + CO₃²⁻ − residual)') +
+      ': <strong>' + calc.neededMeqL.toFixed(2) + ' meq/L</strong> ' +
+      '(HCO₃⁻ ' + calc.hco3.toFixed(2) + ' + CO₃²⁻ ' + calc.co3.toFixed(2) +
+      ' − ' + t(lang, 'residual', 'residual') + ' ' + calc.residualMeq.toFixed(2) + '). ' +
+      '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
+      t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
+      t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ' +
+      t(lang, 'Para el volumen de aquí', 'For this volume') + ' (' + calc.hydroVolumeM3.toFixed(2) + ' m³): <strong>' +
+      calc.totalLiters.toFixed(2) + ' L</strong>. ' +
+      warningSpan(lang, classPrefix) +
+      '</p>';
   }
 
   function buildAcidHtmlFromSummary(lang, summary, hydroVolumeM3Override, classPrefix) {
@@ -137,6 +175,10 @@
       : Math.max(0, parseFloat(summary.hydroVolumeM3) || 0);
     var aVol = Math.max(0, parseFloat(summary.analysisVolumeM3) || 0);
     var mlPerM3 = Math.max(0, parseFloat(summary.mlPerM3) || 0);
+    var neededMeqL = Math.max(0, parseFloat(summary.neededMeqL) || 0);
+    var hco3 = Math.max(0, parseFloat(summary.hco3) || 0);
+    var co3 = Math.max(0, parseFloat(summary.co3) || 0);
+    var residualMeq = Number.isFinite(parseFloat(summary.residualMeq)) ? Math.max(0, parseFloat(summary.residualMeq)) : 1;
     var analysisTotalLiters = mlPerM3 * aVol / 1000;
     var totalLiters = mlPerM3 * hVol / 1000;
     var acidName = t(lang, summary.acidNameEs || '—', summary.acidNameEn || summary.acidNameEs || '—');
@@ -144,15 +186,23 @@
       ? (aVol.toFixed(2) + ' m³')
       : t(lang, 'sin volumen en el análisis', 'no volume in the analysis');
     var analysisLitersText = aVol > 0
-      ? (analysisTotalLiters.toFixed(2) + ' L ' + t(lang, 'según el volumen del análisis', 'for the analysis volume'))
+      ? (analysisTotalLiters.toFixed(2) + ' L')
       : t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
-    return '<strong>' + t(lang, 'Ácido seleccionado', 'Selected acid') + ':</strong> ' + acidName + '. ' +
-      '<strong>' + mlPerM3.toFixed(2) + ' mL/m³</strong> ' +
-      '(' + t(lang, 'dosis en base al análisis de agua', 'dose based on the water analysis') + '). ' +
-      t(lang, 'Volumen usado en el análisis', 'Volume used in the analysis') + ': <strong>' + analysisVolText + '</strong> → <strong>' + analysisLitersText + '</strong>. ' +
-      t(lang, 'Para el volumen de aquí', 'For this volume') + ' (' + hVol.toFixed(2) + ' m³): <strong>' + totalLiters.toFixed(2) + ' L</strong>. ' +
-      volumeMatchNoteHtml(lang, aVol, hVol, classPrefix) + ' ' +
-      warningSpan(lang, classPrefix);
+    return '<div class="' + (classPrefix || 'hydro') + '-acid-summary-title"><strong>' +
+      t(lang, 'Resumen de la dosis de ácido', 'Acid dose summary') + '</strong></div>' +
+      '<p class="' + (classPrefix || 'hydro') + '-acid-summary-body">' +
+      '<strong>' + acidName + '</strong>. ' +
+      t(lang, 'meq a neutralizar (HCO₃⁻ + CO₃²⁻ − residual)', 'meq to neutralize (HCO₃⁻ + CO₃²⁻ − residual)') +
+      ': <strong>' + neededMeqL.toFixed(2) + ' meq/L</strong> ' +
+      '(HCO₃⁻ ' + hco3.toFixed(2) + ' + CO₃²⁻ ' + co3.toFixed(2) +
+      ' − ' + t(lang, 'residual', 'residual') + ' ' + residualMeq.toFixed(2) + '). ' +
+      '<strong>' + mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
+      t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
+      t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ' +
+      t(lang, 'Para el volumen de aquí', 'For this volume') + ' (' + hVol.toFixed(2) + ' m³): <strong>' +
+      totalLiters.toFixed(2) + ' L</strong>. ' +
+      warningSpan(lang, classPrefix) +
+      '</p>';
   }
 
   /**
@@ -177,6 +227,8 @@
       var calc = calculate(opts.analysis, hydroVol);
       if (calc) {
         html = buildAcidHtmlFromCalc(lang, calc, classPrefix);
+      } else if (opts.summary && opts.summary.hasAcid) {
+        html = buildAcidHtmlFromSummary(lang, opts.summary, hydroVol, classPrefix);
       } else {
         var label = opts.analysisLabel ? (opts.analysisLabel + ': ') : '';
         html = label + t(lang,

@@ -243,7 +243,7 @@ button, input, select, textarea { font: inherit; }
   top: 0;
   z-index: 1000;
   display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) auto minmax(200px, 1.1fr);
+  grid-template-columns: minmax(220px, 1fr) auto;
   align-items: center;
   gap: 6px 14px;
   min-height: 56px;
@@ -276,25 +276,6 @@ button, input, select, textarea { font: inherit; }
   object-fit: contain;
   object-position: left center;
   flex-shrink: 1;
-}
-
-.aci-header__center {
-  display: grid;
-  text-align: center;
-  justify-items: center;
-}
-
-.aci-header__center strong {
-  font-size: 14px;
-  font-weight: 750;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
-
-.aci-header__center small {
-  color: #bae6fd;
-  font-size: 10.5px;
-  line-height: 1.25;
 }
 
 .aci-header__right {
@@ -1688,15 +1669,52 @@ button, input, select, textarea { font: inherit; }
 .aci-badge-sem.azul { background: #2563eb; }
 
 .aci-tabs {
+  position: relative;
   display: flex;
+  align-items: center;
   gap: 6px;
   margin-bottom: 12px;
-  padding: 4px;
+  padding: 4px 8px;
   border: 1px solid var(--aci-line);
   border-radius: 12px;
   background: #fff;
-  width: fit-content;
-  max-width: 100%;
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+
+.aci-tabs__btns {
+  display: flex;
+  gap: 6px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.aci-tabs__title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  pointer-events: none;
+  max-width: min(52vw, 420px);
+  padding: 0 8px;
+}
+
+.aci-tabs__title strong {
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.aci-tabs__title small {
+  color: #64748b;
+  font-size: 10.5px;
+  line-height: 1.25;
 }
 
 .aci-tab {
@@ -1986,13 +2004,8 @@ button, input, select, textarea { font: inherit; }
   .aci-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .aci-header {
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
     min-height: 52px;
     padding: 4px 12px;
-  }
-  .aci-header__center {
-    grid-column: 1 / -1;
-    order: 3;
   }
   .aci-header__airci {
     height: clamp(34px, 7vw, 44px);
@@ -2007,6 +2020,11 @@ button, input, select, textarea { font: inherit; }
     padding: 5px 8px;
   }
   .aci-header__storage strong { font-size: 12px; }
+  .aci-tabs__title {
+    max-width: min(46vw, 280px);
+  }
+  .aci-tabs__title strong { font-size: 12.5px; }
+  .aci-tabs__title small { font-size: 9.5px; }
 }
 
 @media (max-width: 640px) {
@@ -2017,6 +2035,8 @@ button, input, select, textarea { font: inherit; }
   .aci-header__storage em { display: none; }
   .aci-metrics { grid-template-columns: 1fr 1fr; }
   .aci-header { min-height: 48px; padding: 3px 10px; }
+  .aci-tabs__title small { display: none; }
+  .aci-tabs__title strong { font-size: 11.5px; }
   .aci-map {
     height: min(70vh, 640px);
     min-height: 360px;

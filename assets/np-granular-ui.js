@@ -50,7 +50,7 @@
     npk_ratio: 'NPK ratio:',
     remove: '🗑️ Remove',
     add_fertilizer: '➕ Add fertilizer',
-    manage_catalog: '📋 Manage fertilizer catalog',
+    manage_catalog: '📋 Manage fertilizer catalog and prices',
     configured_applications: 'Configured applications',
     no_applications: 'No applications are saved in the granular program.',
     application_supply: 'Supply from this application',
