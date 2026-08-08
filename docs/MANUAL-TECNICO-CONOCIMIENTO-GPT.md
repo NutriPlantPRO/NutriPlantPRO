@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.08.3 · **25 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.08.7 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-08-03 · **v2026.08.3** (+ Radar: capas fijas **Pendiente** y **Altura** Copernicus DEM ~30 m, 0 créditos; comparación multi-análisis tabla+gráficas en Reportes PDF)
+**Versión Knowledge:** 2026-08-07 · **v2026.08.7** (+ Hidroponía: ácido tanque C + auto-cálculo + costos USD lote; Fertirriego/Granular: costos USD/ha; UI «Seleccionar análisis…»)
 
 ---
 
@@ -149,6 +149,10 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/programa-fertirriego-etapas.html · Requerimiento → programa semanal/mensual → aporte agua N-NO₃ → gráficas. Lámina m³/ha.
 
+**Aporte por agua (UI):** etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir un reporte Análisis → Agua se cargan kg/ha). Sin reportes: «Sin análisis de agua en este proyecto».
+
+**Costos del programa (USD/ha):** precio canónico **USD/t métrica** por material (`NpFertilizerPrice`; UI métrico USD/t · US customary USD/ton corta). Por columna de fertilizante: kg producto/ha = suma de dosis en el ciclo (si unidad L: L/ha × densidad) → costo = kg/ha × (USD/t ÷ 1000). **Costo total** = suma de columnas → **USD/ha** (o USD/acre). Solubles personalizados y overrides de precio se **comparten con Hidroponía**. Sin precio → 0 / «—». No inventar precios de mercado.
+
 ### 4.7 Gráficas iónicas fertirriego
 
 **URL:** …/fertirriego-graficas-ionicas.html · Fertilizante solo vs + agua; ternarios; Cl aparte.
@@ -159,21 +163,25 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Requerimiento** (Dashboard → Nutrición granular): extracción total = kg/ton × rendimiento; requerimiento real = Ajuste ÷ (Eficiencia/100). Ajuste kg/ha editable por reservas/déficit suelo (criterio agrónomo; no obligatorio desde reporte lab). Eficiencias default granular: N 65 %, P₂O₅ 40 %, K₂O 85 %, CaO/MgO/SO₄ 85 %, micros 80 %, SiO₂ 85 % (editables).  
 - **Programa:** aplicaciones numeradas; **mezcla física** (% TM por material, habitualmente 100 %) o **fertilizante al 100 %**; dosis kg/ha por aplicación → aporte nutriente = dosis × (% nutriente en mezcla / 100). Total programa = suma de aplicaciones; resumen **Aporte − Requerimiento = Diferencia**. Sin aporte por agua (≠ fertirriego).  
 - **Formulación:** % nutriente en mezcla = Σ(% TM × % material); relación N-P₂O₅-K₂O normalizada al mínimo de los tres; kg/ha = dosis × %/100.  
-- **Gratis** (`granular-mix-free`): solo formulación de mezcla + kg/ha según dosis (localStorage). **Proyecto nube:** requerimiento + programa + resumen. Modo óxido/elemental como fertirriego.
+- **Costos (USD/ha):** kg producto/ha del material = dosis kg/ha × (% TM ÷ 100); costo = kg/ha × (USD/t ÷ 1000). Total aplicación / programa en **USD/ha** (USD/acre si US customary). Precio desde catálogo/overrides; sin precio → «—».  
+- **Gratis** (`granular-mix-free`): solo formulación de mezcla + kg/ha según dosis (localStorage). **Proyecto nube:** requerimiento + programa + resumen + costos. Modo óxido/elemental como fertirriego.
 
 ### 4.9 Hidroponía por etapa
 
 **URL:** …/hidroponia-solucion-por-etapa.html · Proyecto nube; etapas; CE ≈ Σmeq/20; tanques A–E; agua relleno resta objetivo. ≠ herramienta gratis didáctica.
 
 **Agua y ácido en Cálculo de fertilizantes (lógica de producto):**
-- Selector **Traer de análisis / Bring from analysis**: carga ppm del reporte Análisis → Agua del mismo proyecto (macros, micros, Cl⁻) al bloque de agua de hidroponía.
+- UI: etiqueta **«Traer de análisis»** + desplegable **«Seleccionar análisis…»**. Al elegir un reporte Análisis → Agua se cargan ppm (macros, micros, Cl⁻) y la dosis de ácido.
 - **Leyenda de ácido / volumen** (UI, panel admin y PDF; EN si el reporte está en inglés):
   1. Ácido del análisis: HNO₃ 55 % (11,6 meq/mL), H₂SO₄ 98 % (36,7), H₃PO₄ 75 % (12,0) o 85 % (14,6).
   2. meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual objetivo (defecto 1 meq/L).
   3. mL/m³ = meq/L × 1000 ÷ meqPerMl del ácido; L totales = mL/m³ × m³ ÷ 1000.
   4. Se muestran L según el **m³ del análisis** y L según el **volumen de agua de hidroponía**.
   5. Aviso si esos m³ coinciden o no (tolerancia ≈ 0,01 m³) + recordatorio de revisar la dosis.
-- En cálculo automático, el ácido puede ir al **tanque C** como líquido. Catálogo de soluciones (Steiner/Hoagland/… + propias del usuario) aparte.
+- **Ácido en filas:** el campo L es el **volumen total para el m³ de hidroponía** (no solo mL/m³). Modo producto, **tanque C**; aporte N/P/S (densidad × %) resta del faltante. Mismos IDs que Análisis → Agua.
+- **Calcular solución automática** (reemplaza filas): (0) ácido C primero → nitrato Ca A → MAP/MKP B → NKS B → nitrato Mg A → SOP B → nitrato Ca extra por N-NO₃ restante → sulfato amonio → sulfato Mg/S → micros. El S suele quedar ligeramente sobre/bajo.
+- Catálogo de soluciones (Steiner/Hoagland/… + propias). Solubles personalizados **compartidos con Fertirriego**.
+- **Costos (USD del lote, no por ha):** kg eq del producto para el volumen × (USD/t ÷ 1000); líquidos kg = L × densidad. Total = suma de filas. Precios sincronizados con ferti.
 
 ### 4.10 Solución didáctica (gratis)
 
@@ -224,7 +232,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/agua-dureza-acidificacion-solubilidad.html  
 - **Dureza:** ppm CaCO₃ ↔ meq/L (÷50,043); °dH/°e/°fH; clase USGS (&lt;60 blanda … ≥180 muy dura). Dureza lab = Ca×2,498 + Mg×4,118 (ppm CaCO₃).  
-- **Ácido:** meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L×1000÷meq/mL ácido. Ácidos app: HNO₃ 55 %, H₂SO₄ 98 %, H₃PO₄ 75/85 %. No neutralizar 100 % por defecto. En **Hidroponía → Traer de análisis** la misma dosis se muestra como leyenda (L del análisis vs L del volumen hidro; aviso si m³ no coinciden; admin/PDF; EN si reporte EN). Ver §4.9.  
+- **Ácido:** meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L×1000÷meq/mL ácido. Ácidos app: HNO₃ 55 %, H₂SO₄ 98 %, H₃PO₄ 75/85 %. No neutralizar 100 % por defecto. En **Hidroponía** al **Seleccionar análisis…** (etiqueta Traer de análisis) la misma dosis se muestra como leyenda y puede entrar al **tanque C** en auto-cálculo (L = mL/m³ × m³ hidro ÷ 1000; admin/PDF; EN si reporte EN). Ver §4.9.  
 - **IS:** NaNO₃=100; solubilidad g/L tabla gratis. IS alto = más osmótico relativo, no «prohibido». Herramientas: `agua_dureza`, `solubilidad_is` en free_tools_catalog.
 
 ### 4.13 Mulder y compatibilidad (Pilar F)

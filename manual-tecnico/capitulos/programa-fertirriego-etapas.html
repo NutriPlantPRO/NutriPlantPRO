@@ -133,9 +133,24 @@
       catálogo de materiales (% en etiqueta o ficha del fertilizante), no de una tabla fija externa.
     </p>
 
+    <h3>2b. Costos del programa (USD/ha)</h3>
+    <p>
+      Precio canónico <strong>USD/t métrica</strong> por material (UI: USD/t o USD/ton corta). Solubles
+      personalizados y precios se <strong>comparten con Hidroponía</strong>.
+    </p>
+    <div class="mt-formula">
+      kg producto/ha (columna) = suma de dosis en el ciclo<br>
+      (si el material es líquido: L/ha × densidad → kg/ha)<br>
+      Costo columna = kg/ha × (precio USD/t ÷ 1000)<br>
+      Costo total = suma de columnas → USD/ha (o USD/acre)
+    </div>
+    <p>Sin precio guardado → 0 / «—». No se inventan precios de mercado.</p>
+
     <h3>3. Aporte por agua</h3>
     <p>
-      Bloque editable en <strong>Programa de nutrición → Aporte por agua</strong>. Representa cuántos
+      Bloque editable en <strong>Programa de nutrición → Aporte por agua</strong>. UI: etiqueta
+      <strong>Traer de análisis</strong> + desplegable <strong>Seleccionar análisis…</strong> (al elegir
+      un reporte de Análisis → Agua se cargan los kg/ha). Representa cuántos
       <strong>kg/ha de cada elemento</strong> aporta el agua de riego durante el ciclo (referencia del
       proyecto), calculados desde el <strong>análisis de agua</strong> (meq/L y ppm) y el volumen de
       agua de referencia (m³). Fórmula típica para macros/micros en ppm:
@@ -292,9 +307,24 @@
       materials catalog (% on the label or fertilizer sheet), not from a fixed external table.
     </p>
 
+    <h3>2b. Program costs (USD/ha)</h3>
+    <p>
+      Canonical price <strong>USD/metric tonne</strong> per material (UI: USD/t or short ton). Custom
+      solubles and prices are <strong>shared with Hydroponics</strong>.
+    </p>
+    <div class="mt-formula">
+      product kg/ha (column) = sum of doses over the cycle<br>
+      (if liquid: L/ha × density → kg/ha)<br>
+      Column cost = kg/ha × (price USD/t ÷ 1000)<br>
+      Total cost = sum of columns → USD/ha (or USD/acre)
+    </div>
+    <p>No saved price → 0 / “—”. Market prices are not invented.</p>
+
     <h3>3. Water contribution</h3>
     <p>
-      Editable block under <strong>Nutrition program → Water contribution</strong>. It represents how many
+      Editable block under <strong>Nutrition program → Water contribution</strong>. UI: label
+      <strong>Bring from analysis</strong> + dropdown <strong>Select analysis…</strong> (picking a report
+      from Analysis → Water loads kg/ha). It represents how many
       <strong>kg/ha of each element</strong> irrigation water supplies over the cycle (project
       reference), calculated from the <strong>water analysis</strong> (meq/L and ppm) and the reference water
       volume (m³). Typical formula for macros/micros in ppm:

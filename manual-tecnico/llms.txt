@@ -46,7 +46,7 @@
 - Triángulos: aniones NO₃+P+SO₄ y cationes K+Ca+Mg suman 100 % cada uno; Cl y NH₄ aparte
 - N mineralizable y agua útil en suelo: ver capítulo n-mineralizable-agua-disponible-suelo
 - Mulder y compatibilidad C/R/I: ver capítulo interacciones-mulder-compatibilidad
-- Hidroponía: Traer de análisis carga ppm + leyenda de ácido (mL/m³, L análisis vs L volumen hidro, coincidencia de m³); misma leyenda en admin/PDF (EN si reporte EN); ver capítulo hidroponia-solucion-por-etapa
+- Hidroponía: Seleccionar análisis… carga ppm + ácido; L = mL/m³ × m³ hidro ÷ 1000; tanque C en auto-cálculo; costos USD del lote; ferti/granular costos USD/ha (precio USD/t × kg); ver capítulos hidroponia / fertirriego / granular
 - Atlas de Aminoácidos Vegetales: 20 aminoácidos proteinogénicos; filtros por estrés, fenología y formulación; evidencia Alta/Media/Baja; no convertir rutas metabólicas en promesas de campo
 - Huella de carbono fertilizantes (CO₂e, ruta por fertilizante, equiv. km pick-up A vs B; NK+Mg no en catálogo — mezcla comercial): ver capítulo huella-carbono-fertilizantes
 - Balance hídrico (Clima): ETc=ETo×Kc; déficit climático/cultivo; riego mm/m³; franja regada; ver capítulo balance-hidrico-riego-clima

@@ -146,8 +146,8 @@
     <p>División típica de N: ~95 % N-NO₃⁻ y ~5 % N-NH₄⁺ (editable). Triángulos: N-P-S y K-Ca-Mg (ver <a href="porcentaje-meq-aniones-cationes.html">% meq</a>).</p>
     <h2>Etapas, agua y tanques</h2>
     <ul>
-      <li>Varias <strong>etapas</strong> con composición independiente (ppm/meq editables; triángulos N-P-S y K-Ca-Mg).</li>
-      <li><strong>Agua de relleno</strong> — ppm por nutriente desde análisis de agua; se restan del objetivo de la etapa activa. En Cálculo de fertilizantes el selector <strong>Traer de análisis</strong> carga un reporte de <strong>Análisis → Agua</strong> del mismo proyecto.</li>
+      <li>Varias <strong>etapas</strong> con composición independiente (ppm/meq editables; triángulos N-P-S y K-Ca-Mg). Catálogo de soluciones (Steiner/Hoagland/… + propias): el botón vacío muestra <strong>Elegir</strong>.</li>
+      <li><strong>Agua de relleno</strong> — ppm por nutriente; se restan del objetivo. En Cálculo de fertilizantes: etiqueta <strong>Traer de análisis</strong> + desplegable <strong>Seleccionar análisis…</strong> (al elegir un reporte de <strong>Análisis → Agua</strong> se cargan ppm y dosis de ácido).</li>
       <li><strong>Volumen de agua (m³)</strong> — base para convertir dosis ppm → kg/L totales del programa.</li>
       <li><strong>Tanques A–E</strong> — capacidad (L), tasa de inyección (L/m³), materiales por tanque; volumen de concentrado y recargas.</li>
     </ul>
@@ -163,12 +163,33 @@
       L totales = mL/m³ × volumen (m³) ÷ 1000
     </div>
     <ul>
-      <li>Ácidos en app: nítrico 55 % (11,6 meq/mL), sulfúrico 98 % (36,7), fosfórico 75 % (12,0) y 85 % (14,6).</li>
+      <li>Ácidos en app: nítrico 55 % (11,6 meq/mL), sulfúrico 98 % (36,7), fosfórico 75 % (12,0) y 85 % (14,6). Mismos IDs que el catálogo de hidroponía.</li>
       <li>Se muestran los <strong>L según el m³ del análisis</strong> y los <strong>L según el volumen de hidroponía</strong>.</li>
       <li>Aviso si esos m³ <strong>coinciden o no</strong> (tolerancia ≈ 0,01 m³) y recordatorio de revisar la dosis.</li>
       <li>La misma leyenda aparece en el <strong>panel admin</strong> y en el <strong>reporte PDF</strong> (en inglés si el idioma del reporte es EN).</li>
-      <li>En cálculo automático el ácido puede entrar al <strong>tanque C</strong> como líquido.</li>
+      <li>En la fila de fertilizante, el campo L es el <strong>volumen total para el m³ de hidroponía</strong> (no solo mL/m³). Modo producto y <strong>tanque C</strong>; el aporte N/P/S del ácido (densidad × %) resta del faltante.</li>
     </ul>
+
+    <h2>Cálculo automático de solución</h2>
+    <p>El botón <strong>Calcular solución automática</strong> reemplaza las filas actuales. Orden típico:</p>
+    <ol>
+      <li><strong>Ácido</strong> del análisis (tanque C, L = mL/m³ × m³ hidro ÷ 1000) — primero.</li>
+      <li>Nitrato de calcio (tanque A) por Ca; luego MAP/MKP, NKS, nitrato de Mg, SOP.</li>
+      <li>Nitrato de calcio extra si aún falta N-NO₃⁻; sulfato de amonio; sulfato de Mg / S; micros.</li>
+    </ol>
+    <p>El azufre (S) suele quedar ligeramente por encima o por debajo al cerrar con sulfatos; es esperado.</p>
+
+    <h2>Costos (USD del lote)</h2>
+    <p>
+      Precio canónico <strong>USD/t métrica</strong> por material (UI: USD/t o USD/ton corta). Solubles
+      personalizados y precios se <strong>comparten con Fertirriego</strong>.
+    </p>
+    <div class="mt-formula">
+      kg equivalentes = masa del producto para el volumen de agua (líquidos: L × densidad)<br>
+      Costo fila (USD) = kg × (precio USD/t ÷ 1000)<br>
+      Costo total = suma de filas
+    </div>
+    <p>Es costo del <strong>lote / volumen configurado</strong>, no USD/ha. Sin precio → «—».</p>
 
     <h2>Microelementos y Cl</h2>
     <p>Fe, Mn, B, Zn, Cu, Mo en ppm; Cl⁻ al final de la tabla, manual. Los óxidos de materiales (P₂O₅, K₂O…) se convierten a elemental con factores NutriPlant antes del balance.</p>
@@ -262,8 +283,8 @@
     <p>Typical N split: ~95 % N-NO₃⁻ and ~5 % N-NH₄⁺ (editable). Triangles: N-P-S and K-Ca-Mg (see <a href="porcentaje-meq-aniones-cationes.html">% meq</a>).</p>
     <h2>Stages, water and tanks</h2>
     <ul>
-      <li>Several <strong>stages</strong> with independent composition (editable ppm/meq; N-P-S and K-Ca-Mg triangles).</li>
-      <li><strong>Makeup water</strong> — ppm per nutrient from water analysis; subtracted from the active stage target. In Fertilizer calculation the <strong>Bring from analysis</strong> selector loads a report from <strong>Analysis → Water</strong> in the same project.</li>
+      <li>Several <strong>stages</strong> with independent composition (editable ppm/meq; N-P-S and K-Ca-Mg triangles). Solution catalog (Steiner/Hoagland/… + custom): empty button shows <strong>Choose</strong>.</li>
+      <li><strong>Makeup water</strong> — ppm per nutrient; subtracted from the target. In Fertilizer calculation: label <strong>Bring from analysis</strong> + dropdown <strong>Select analysis…</strong> (picking a report from <strong>Analysis → Water</strong> loads ppm and acid dose).</li>
       <li><strong>Water volume (m³)</strong> — basis to convert dose ppm → total kg/L for the program.</li>
       <li><strong>Tanks A–E</strong> — capacity (L), injection rate (L/m³), materials per tank; concentrate volume and refills.</li>
     </ul>
@@ -279,12 +300,33 @@
       Total L = mL/m³ × volume (m³) ÷ 1000
     </div>
     <ul>
-      <li>App acids: nitric 55 % (11.6 meq/mL), sulfuric 98 % (36.7), phosphoric 75 % (12.0) and 85 % (14.6).</li>
+      <li>App acids: nitric 55 % (11.6 meq/mL), sulfuric 98 % (36.7), phosphoric 75 % (12.0) and 85 % (14.6). Same IDs as the hydroponics catalog.</li>
       <li>Shows <strong>L for the analysis m³</strong> and <strong>L for the hydroponics water volume</strong>.</li>
       <li>Warns whether those m³ <strong>match or not</strong> (tolerance ≈ 0.01 m³) plus a reminder to review the dose.</li>
       <li>The same legend appears in the <strong>admin panel</strong> and the <strong>PDF report</strong> (in English when the report language is EN).</li>
-      <li>In automatic calculation the acid may enter <strong>tank C</strong> as a liquid.</li>
+      <li>In the fertilizer row, L is the <strong>total volume for the hydroponics m³</strong> (not only mL/m³). Product mode and <strong>tank C</strong>; acid N/P/S contribution (density × %) reduces the shortfall.</li>
     </ul>
+
+    <h2>Automatic solution calculation</h2>
+    <p>The <strong>Calculate solution automatically</strong> button replaces current rows. Typical order:</p>
+    <ol>
+      <li><strong>Acid</strong> from analysis (tank C, L = mL/m³ × hydro m³ ÷ 1000) — first.</li>
+      <li>Calcium nitrate (tank A) for Ca; then MAP/MKP, NKS, magnesium nitrate, SOP.</li>
+      <li>Extra calcium nitrate if N-NO₃⁻ remains; ammonium sulfate; Mg sulfate / S; micros.</li>
+    </ol>
+    <p>Sulfur (S) often ends slightly high or low when closing with sulfates; that is expected.</p>
+
+    <h2>Costs (USD per batch)</h2>
+    <p>
+      Canonical price <strong>USD/metric tonne</strong> per material (UI: USD/t or short ton). Custom
+      solubles and prices are <strong>shared with Fertigation</strong>.
+    </p>
+    <div class="mt-formula">
+      kg equivalent = product mass for the water volume (liquids: L × density)<br>
+      Row cost (USD) = kg × (price USD/t ÷ 1000)<br>
+      Total cost = sum of rows
+    </div>
+    <p>This is cost for the <strong>configured batch / volume</strong>, not USD/ha. No price → “—”.</p>
 
     <h2>Micronutrients and Cl</h2>
     <p>Fe, Mn, B, Zn, Cu, Mo in ppm; Cl⁻ at the end of the table, manual. Material oxides (P₂O₅, K₂O…) are converted to elemental with NutriPlant factors before the balance.</p>

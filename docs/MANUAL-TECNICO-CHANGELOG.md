@@ -5,6 +5,14 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-08-07 — Hidroponía ácido/auto-cálculo + costos · Knowledge GPT v2026.08.7
+
+### Actualizado
+
+- **Hidroponía:** Traer de análisis (etiqueta + «Seleccionar análisis…»); ácido → L totales para volumen hidro, tanque C; auto-cálculo (ácido primero); costos **USD del lote**; solubles compartidos con ferti.
+- **Fertirriego / Granular:** costos **USD/ha** (precio USD/t × kg producto/ha); UI aporte agua alineada.
+- Archivos: `hidroponia-solucion-por-etapa.html`, `programa-fertirriego-etapas.html`, `granular-mezclas.html`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (**v2026.08.7**), `chat-simple.js`, `manual-tecnico-catalog.js`, `CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`.
+
 ## 2026-08-03 — Relieve DEM + comparación lab · Knowledge GPT v2026.08.3
 
 ### Actualizado

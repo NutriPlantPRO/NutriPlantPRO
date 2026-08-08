@@ -88,7 +88,7 @@ module.exports = {
       title: 'Programa de fertirriego por etapas',
       url: `${BASE}/capitulos/programa-fertirriego-etapas.html`,
       pillar: 'D — Fertirriego',
-      summary: 'Requerimiento kg/ha, programa por semana/mes, aporte agua N-NO3, lámina m³/ha.',
+      summary: 'Requerimiento kg/ha, programa por semana/mes, aporte agua N-NO3, costos USD/ha, lámina m³/ha.',
       status: 'published'
     },
     {
@@ -162,7 +162,7 @@ module.exports = {
       title: 'Hidroponía: solución nutritiva por etapa',
       url: `${BASE}/capitulos/hidroponia-solucion-por-etapa.html`,
       pillar: 'D — Hidroponía',
-      summary: 'Etapas, meq/L, CE, tanques A–E, agua de relleno; proyecto en nube.',
+      summary: 'Etapas, meq/L, CE, tanques A–E, ácido tanque C, auto-cálculo, costos USD lote; proyecto en nube.',
       status: 'published'
     },
     {
@@ -190,7 +190,7 @@ module.exports = {
       url: `${BASE}/capitulos/granular-mezclas.html`,
       pillar: 'D — Granular',
       summary:
-        'Requerimiento kg/ha (extracción×rend, ajuste suelo, eficiencia); programa aplicaciones (mezcla física o 100 %); aporte vs meta; relación N-P2O5-K2O; gratis solo formulación mezcla.',
+        'Requerimiento kg/ha (extracción×rend, ajuste suelo, eficiencia); programa aplicaciones (mezcla física o 100 %); costos USD/ha; aporte vs meta; relación N-P2O5-K2O; gratis solo formulación mezcla.',
       status: 'published'
     },
     {
