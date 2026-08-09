@@ -23804,8 +23804,14 @@ window.handleLabPdfFile = async function handleLabPdfFile(type, file) {
       return;
     }
     if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.openLabReviewModal !== 'function') {
+      if (type === 'agua' || type === 'solucion_nutritiva' || type === 'extracto_pasta') {
+        window.fillMissingIonicMeqPpm(data.fields, type);
+      }
       window.applyLabExtractedFields(type, data.fields, { asNew: true });
       return;
+    }
+    if (type === 'agua' || type === 'solucion_nutritiva' || type === 'extracto_pasta') {
+      window.fillMissingIonicMeqPpm(data.fields, type);
     }
     window.NpAnalysisCompare.openLabReviewModal(type, data.fields, function (payload, opts) {
       window.applyLabExtractedFields(type, payload, opts || {});
@@ -23819,6 +23825,51 @@ window.handleLabPdfFile = async function handleLabPdfFile(type, file) {
       btn.innerHTML = prevHtml || ('📄 ' + dashboardT('analysis.pdf_attach', 'Adjuntar PDF / Extraer'));
     }
   }
+};
+
+/** Completa meq↔ppm. Si vienen los dos, manda ppm y recalcula meq (mismo criterio que el extractor). */
+window.fillMissingIonicMeqPpm = function fillMissingIonicMeqPpm(target, analysisType) {
+  if (!target || typeof target !== 'object') return;
+  var weights = {
+    k: 39.1,
+    ca: 20.04,
+    mg: 12.15,
+    na: 23,
+    no3: 14,
+    po4: analysisType === 'agua' ? 30.97 : 31,
+    so4: 16.03,
+    cl: 35.45,
+    hco3: 61,
+    co3: 30
+  };
+  function numOk(s) {
+    if (s === undefined || s === null) return false;
+    var t = String(s).trim();
+    if (!t) return false;
+    if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return false;
+    if (/^[<>]=?\s*\d/.test(t)) return false;
+    var n = parseFloat(t);
+    return Number.isFinite(n);
+  }
+  function fillGroup(group) {
+    if (!group || typeof group !== 'object') return;
+    Object.keys(weights).forEach(function (ion) {
+      var meqKey = ion + '_meq';
+      var ppmKey = ion + '_ppm';
+      if (!(meqKey in group) && !(ppmKey in group)) return;
+      var w = weights[ion];
+      if (!w) return;
+      var hasMeq = numOk(group[meqKey]);
+      var hasPpm = numOk(group[ppmKey]);
+      if (hasPpm) {
+        group[meqKey] = (parseFloat(group[ppmKey]) / w).toFixed(2);
+      } else if (hasMeq) {
+        group[ppmKey] = (parseFloat(group[meqKey]) * w).toFixed(2);
+      }
+    });
+  }
+  fillGroup(target.cations);
+  fillGroup(target.anions);
 };
 
 window.applyLabExtractedFields = function applyLabExtractedFields(type, fields, opts) {
@@ -23897,6 +23948,9 @@ window.applyLabExtractedFields = function applyLabExtractedFields(type, fields, 
   (cfg.groups || []).forEach(function (g) {
     mergeGroup(g, fields[g]);
   });
+  if (type === 'agua' || type === 'solucion_nutritiva' || type === 'extracto_pasta') {
+    window.fillMissingIonicMeqPpm(analysis, type);
+  }
   if (limitNotes.length) {
     analysis._pdfLimitNotes = 'Límites lab (no aplicados como número): ' + limitNotes.join('; ');
   }

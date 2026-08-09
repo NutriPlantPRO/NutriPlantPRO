@@ -1157,6 +1157,49 @@ function emptyFrutaShape() {
   });
 }
 
+function reconcileIonicMeqPpm(base, kind) {
+  const weights = {
+    k: 39.1,
+    ca: 20.04,
+    mg: 12.15,
+    na: 23,
+    no3: 14,
+    po4: kind === 'agua' ? 30.97 : 31,
+    so4: 16.03,
+    cl: 35.45,
+    hco3: 61,
+    co3: 30
+  };
+  function numOk(s) {
+    const t = asStr(s).trim();
+    if (!t) return false;
+    if (/^(nd|n\.?\s*d\.?|traza|trace|bdl|lod|loq|ndr)$/i.test(t)) return false;
+    if (/^[<>]=?\s*\d/.test(t)) return false;
+    const n = Number(t);
+    return Number.isFinite(n);
+  }
+  function fillGroup(group) {
+    if (!group || typeof group !== 'object') return;
+    Object.keys(weights).forEach((ion) => {
+      const meqKey = ion + '_meq';
+      const ppmKey = ion + '_ppm';
+      if (!(meqKey in group) && !(ppmKey in group)) return;
+      const w = weights[ion];
+      if (!w) return;
+      const hasMeq = numOk(group[meqKey]);
+      const hasPpm = numOk(group[ppmKey]);
+      // Si hay ambos, manda ppm y recalcula meq (labs suelen reportar ppm elemental).
+      if (hasPpm) {
+        group[meqKey] = (Number(group[ppmKey]) / w).toFixed(2);
+      } else if (hasMeq) {
+        group[ppmKey] = (Number(group[meqKey]) * w).toFixed(2);
+      }
+    });
+  }
+  fillGroup(base.cations);
+  fillGroup(base.anions);
+}
+
 function normalizeIonicPayload(raw, kind, lang) {
   const base = emptyIonicShape(kind);
   if (!raw || typeof raw !== 'object') return base;
@@ -1183,6 +1226,7 @@ function normalizeIonicPayload(raw, kind, lang) {
     if (!base.general.ce) base.general.ce = asStr(raw.general.EC || raw.general.ec || raw.general.cee);
     if (!base.general.ph) base.general.ph = asStr(raw.general.pH || raw.general.phe);
   }
+  reconcileIonicMeqPpm(base, kind);
   return base;
 }
 

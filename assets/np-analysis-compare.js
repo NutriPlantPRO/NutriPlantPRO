@@ -917,9 +917,6 @@
     function close() { modal.remove(); }
 
     modal.querySelector('.np-lab-pdf-modal__close').addEventListener('click', close);
-    modal.addEventListener('click', function (e) {
-      if (e.target === modal) close();
-    });
     modal.querySelector('[data-act="cancel"]').addEventListener('click', close);
     modal.querySelector('[data-act="all"]').addEventListener('click', function () {
       list.querySelectorAll('.np-lab-pdf-modal__row').forEach(function (row) {
