@@ -36,12 +36,59 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+/** Logo N blanca / fondo azul — preview WhatsApp, Google, etc. */
+const SHARE_OG_IMAGE = 'https://nutriplantpro.com/assets/pwa-icon-512.png';
+
+function sharePreviewMeta(options) {
+  const opts = options || {};
+  const title = opts.title || 'NutriPlant PRO';
+  const description =
+    opts.description || 'Diseña, ajusta y nutre. Reporte compartido NutriPlant PRO.';
+  const url = opts.url || 'https://nutriplantpro.com/';
+  return (
+    '<link rel="icon" type="image/png" href="' +
+    SHARE_OG_IMAGE +
+    '">' +
+    '<link rel="apple-touch-icon" href="' +
+    SHARE_OG_IMAGE +
+    '">' +
+    '<meta property="og:type" content="website">' +
+    '<meta property="og:site_name" content="NutriPlant PRO">' +
+    '<meta property="og:title" content="' +
+    escapeHtml(title) +
+    '">' +
+    '<meta property="og:description" content="' +
+    escapeHtml(description) +
+    '">' +
+    '<meta property="og:image" content="' +
+    SHARE_OG_IMAGE +
+    '">' +
+    '<meta property="og:image:width" content="512">' +
+    '<meta property="og:image:height" content="512">' +
+    '<meta property="og:image:alt" content="NutriPlant PRO">' +
+    '<meta property="og:url" content="' +
+    escapeHtml(url) +
+    '">' +
+    '<meta name="twitter:card" content="summary">' +
+    '<meta name="twitter:title" content="' +
+    escapeHtml(title) +
+    '">' +
+    '<meta name="twitter:description" content="' +
+    escapeHtml(description) +
+    '">' +
+    '<meta name="twitter:image" content="' +
+    SHARE_OG_IMAGE +
+    '">'
+  );
+}
+
 function errorPage(title, message) {
   return `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  ${sharePreviewMeta({ title: 'NutriPlant PRO', description: message })}
   <title>${escapeHtml(title)}</title>
   <style>
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#f8fafc; color:#1e293b; }
@@ -197,12 +244,17 @@ function npSharedReportPrint(){
 
   let out = String(reportHtml || '');
   const docHasBase = /<base\s/i.test(out);
+  const previewMeta = sharePreviewMeta({
+    title: 'NutriPlant PRO — Reporte',
+    description: 'Vista compartida de reporte NutriPlant PRO.',
+    url: baseHref
+  });
   if (/<head[^>]*>/i.test(out)) {
     out = out.replace(/<head[^>]*>/i, function(m) {
-      return m + (docHasBase ? '' : baseTag) + chromeCss;
+      return m + (docHasBase ? '' : baseTag) + previewMeta + chromeCss;
     });
   } else {
-    out = '<head>' + (docHasBase ? '' : baseTag) + chromeCss + '</head>' + out;
+    out = '<head>' + (docHasBase ? '' : baseTag) + previewMeta + chromeCss + '</head>' + out;
   }
   if (/<body[^>]*>/i.test(out)) out = out.replace(/<body[^>]*>/i, function(m) { return m + chromeHeader; });
   else out = '<body>' + chromeHeader + out + '</body>';
@@ -224,6 +276,10 @@ function storageShellPage(signedUrl) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
+  ${sharePreviewMeta({
+    title: 'NutriPlant PRO — Reporte',
+    description: 'Vista compartida de reporte NutriPlant PRO.'
+  })}
   <title>NutriPlant PRO — Reporte</title>
   <style>
     html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc}

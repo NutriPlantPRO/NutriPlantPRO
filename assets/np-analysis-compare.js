@@ -849,7 +849,28 @@
       head.className = 'np-lab-pdf-modal__section np-lab-pdf-modal__section--' + sec.id;
       head.textContent = sectionTitle(sec);
       list.appendChild(head);
+      var prevUnit = '';
       secRows.forEach(function (row) {
+        var unit = String(row.unit || '').toLowerCase();
+        if (
+          prevUnit &&
+          unit &&
+          prevUnit !== unit &&
+          (prevUnit === 'ppm' || prevUnit === 'meq') &&
+          (unit === 'ppm' || unit === 'meq')
+        ) {
+          var divider = document.createElement('div');
+          divider.className = 'np-lab-pdf-modal__unit-divider';
+          divider.setAttribute('role', 'separator');
+          divider.innerHTML =
+            '<span class="np-lab-pdf-modal__unit-divider-line"></span>' +
+            '<span class="np-lab-pdf-modal__unit-divider-label">' +
+            escapeAttr(unit === 'meq' ? 'meq/L' : 'ppm') +
+            '</span>' +
+            '<span class="np-lab-pdf-modal__unit-divider-line"></span>';
+          list.appendChild(divider);
+        }
+        if (unit === 'ppm' || unit === 'meq') prevUnit = unit;
         var item = document.createElement('label');
         item.className = 'np-lab-pdf-modal__row';
         var unitHtml = row.unit
