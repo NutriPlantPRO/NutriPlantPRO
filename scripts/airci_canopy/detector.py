@@ -18,7 +18,7 @@ from rasterio.windows import Window
 from rasterio.warp import transform as warp_transform
 
 
-DETECTOR_VERSION = "airci-grid-v1.0.0"
+DETECTOR_VERSION = "airci-grid-v1.1.0"
 CLASSICAL_DETECTOR_VERSION = "airci-classical-v1.2.0"
 
 
@@ -63,6 +63,55 @@ class Seed:
     y_px: float
     row_i: int
     col_i: int
+
+
+@dataclass
+class MarkAppearance:
+    """Perfil visual aprendido de las 10 marcas (planta vs no-planta)."""
+
+    lum_lo: float
+    lum_hi: float
+    green_lo: float
+    green_hi: float
+    texture_lo: float
+    texture_hi: float
+    dark_lo: float
+    dark_hi: float
+    sample_count: int
+    pixel_count: int
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+    def match_score(
+        self, lum: float, green: float, texture: float, dark: float
+    ) -> float:
+        """0–1: qué tanto se parece el candidato a las marcas."""
+        checks = (
+            self.lum_lo <= lum <= self.lum_hi,
+            self.green_lo <= green <= self.green_hi,
+            self.texture_lo <= texture <= self.texture_hi,
+            self.dark_lo <= dark <= self.dark_hi,
+        )
+        return float(sum(1 for ok in checks if ok)) / 4.0
+
+    def accepts(self, lum: float, green: float, texture: float, dark: float) -> bool:
+        # Trazo imperfecto: bastan 3/4 señales dentro de banda.
+        # Rechazo duro si brillo o textura están muy lejos (pasto/sombra plana).
+        lum_span = max(8.0, self.lum_hi - self.lum_lo)
+        tex_span = max(1.5, self.texture_hi - self.texture_lo)
+        far_bright = lum > self.lum_hi + max(10.0, 0.28 * lum_span)
+        far_dark = lum < self.lum_lo - max(10.0, 0.28 * lum_span)
+        far_flat = texture < max(0.0, self.texture_lo - 0.45 * tex_span)
+        if far_bright or far_dark or far_flat:
+            return False
+        score = self.match_score(lum, green, texture, dark)
+        if score >= 0.75:
+            return True
+        # Pasto soleado suele fallar textura+dark aunque el verdor se solape.
+        if texture < self.texture_lo and dark < self.dark_lo:
+            return False
+        return score >= 0.5
 
 
 def _to_u8(band: np.ndarray) -> np.ndarray:
@@ -172,6 +221,150 @@ def _canopy_evidence(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
         canopy = np.clip(score * (255.0 / peak), 0, 255).astype(np.uint8)
         canopy[~valid] = 0
     return canopy, lum, texture, dark_blob
+
+
+def _feature_maps(rgb: np.ndarray) -> dict[str, np.ndarray]:
+    """Mapas usados para perfil de marcas y confirmación visual."""
+    canopy, lum, texture, dark_blob = _canopy_evidence(rgb)
+    red = rgb[:, :, 0].astype(np.float32)
+    green = rgb[:, :, 1].astype(np.float32)
+    blue = rgb[:, :, 2].astype(np.float32)
+    total = np.maximum(red + green + blue, 1.0)
+    greenness = np.clip((2.0 * green - red - blue) / total, 0.0, 1.5)
+    return {
+        "canopy": canopy,
+        "lum": lum,
+        "texture": texture,
+        "dark_blob": dark_blob,
+        "greenness": greenness,
+    }
+
+
+def _band_from_values(values: np.ndarray, pad_frac: float = 0.35) -> tuple[float, float]:
+    sample = np.asarray(values, dtype=np.float64)
+    sample = sample[np.isfinite(sample)]
+    if sample.size == 0:
+        return 0.0, 1.0
+    q25 = float(np.percentile(sample, 20))
+    q75 = float(np.percentile(sample, 80))
+    med = float(np.median(sample))
+    iqr = max(q75 - q25, abs(med) * 0.08, 1e-3)
+    lo = q25 - pad_frac * iqr
+    hi = q75 + pad_frac * iqr
+    # Evitar bandas degeneradas por trazos casi constantes.
+    if hi - lo < iqr * 0.5:
+        lo = med - 0.75 * iqr
+        hi = med + 0.75 * iqr
+    return float(lo), float(hi)
+
+
+def _ring_pixel_xy(
+    dataset: rasterio.io.DatasetReader, ring: list
+) -> np.ndarray | None:
+    if not ring or len(ring) < 3:
+        return None
+    lats = [float(point[0]) for point in ring]
+    lngs = [float(point[1]) for point in ring]
+    try:
+        xs_crs, ys_crs = warp_transform("EPSG:4326", dataset.crs, lngs, lats)
+    except Exception:
+        return None
+    points: list[list[float]] = []
+    for x_crs, y_crs in zip(xs_crs, ys_crs):
+        col, row = ~dataset.transform * (x_crs, y_crs)
+        if math.isfinite(col) and math.isfinite(row):
+            points.append([float(col), float(row)])
+    if len(points) < 3:
+        return None
+    return np.asarray(points, dtype=np.float32)
+
+
+def appearance_from_calibration(
+    dataset: rasterio.io.DatasetReader,
+    samples: list[dict],
+) -> MarkAppearance | None:
+    """Lee RGB dentro de las marcas y arma el perfil visual de planta."""
+    valid = _valid_calibration_samples(samples)
+    if len(valid) < 3:
+        return None
+
+    lum_vals: list[float] = []
+    green_vals: list[float] = []
+    texture_vals: list[float] = []
+    dark_vals: list[float] = []
+    used = 0
+
+    for sample in valid:
+        ring_xy = _ring_pixel_xy(dataset, sample.get("polygon_json") or [])
+        if ring_xy is None:
+            continue
+        min_x = int(math.floor(float(ring_xy[:, 0].min()))) - 2
+        max_x = int(math.ceil(float(ring_xy[:, 0].max()))) + 2
+        min_y = int(math.floor(float(ring_xy[:, 1].min()))) - 2
+        max_y = int(math.ceil(float(ring_xy[:, 1].max()))) + 2
+        min_x = max(0, min_x)
+        min_y = max(0, min_y)
+        max_x = min(dataset.width, max_x)
+        max_y = min(dataset.height, max_y)
+        width = max_x - min_x
+        height = max_y - min_y
+        if width < 3 or height < 3:
+            continue
+        window = Window(min_x, min_y, width, height)
+        try:
+            tile = dataset.read(
+                indexes=list(range(1, min(dataset.count, 3) + 1)),
+                window=window,
+                boundless=False,
+            )
+        except Exception:
+            continue
+        rgb = _rgb_u8(tile)
+        features = _feature_maps(rgb)
+        local = ring_xy.copy()
+        local[:, 0] -= min_x
+        local[:, 1] -= min_y
+        # Encoger el polígono al centro (~70%): el trazo humano suele comer pasto.
+        centroid = local.mean(axis=0)
+        local = centroid + 0.70 * (local - centroid)
+        mask = np.zeros((height, width), dtype=np.uint8)
+        cv2.fillPoly(mask, [np.round(local).astype(np.int32)], 1)
+        # Núcleo interior: evita borde/pasto si el trazo quedó un poco grande.
+        if mask.any() and min(height, width) >= 7:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            eroded = cv2.erode(mask, kernel, iterations=1)
+            if eroded.any():
+                mask = eroded
+        selected = mask > 0
+        if int(selected.sum()) < 8:
+            continue
+        lum_vals.extend(features["lum"][selected].astype(np.float64).tolist())
+        green_vals.extend(features["greenness"][selected].astype(np.float64).tolist())
+        texture_vals.extend(features["texture"][selected].astype(np.float64).tolist())
+        dark_vals.extend(features["dark_blob"][selected].astype(np.float64).tolist())
+        used += 1
+
+    if used < 3 or len(lum_vals) < 40:
+        return None
+
+    lum_lo, lum_hi = _band_from_values(np.asarray(lum_vals))
+    green_lo, green_hi = _band_from_values(np.asarray(green_vals), pad_frac=0.45)
+    texture_lo, texture_hi = _band_from_values(np.asarray(texture_vals), pad_frac=0.40)
+    dark_lo, dark_hi = _band_from_values(np.asarray(dark_vals), pad_frac=0.40)
+    # Textura mínima: las marcas suelen tener follaje; no aceptar piso liso.
+    texture_lo = max(0.0, min(texture_lo, float(np.percentile(texture_vals, 15))))
+    return MarkAppearance(
+        lum_lo=lum_lo,
+        lum_hi=lum_hi,
+        green_lo=green_lo,
+        green_hi=green_hi,
+        texture_lo=texture_lo,
+        texture_hi=max(texture_hi, texture_lo + 1.0),
+        dark_lo=dark_lo,
+        dark_hi=max(dark_hi, dark_lo + 0.5),
+        sample_count=used,
+        pixel_count=len(lum_vals),
+    )
 
 
 def _shadow_support(lum: np.ndarray, x: int, y: int, radius_px: float) -> float:
@@ -905,6 +1098,8 @@ def confirm_seed(
     seed_y: float,
     pattern: PlantingPattern,
     gsd_m: float,
+    appearance: MarkAppearance | None = None,
+    greenness: np.ndarray | None = None,
 ) -> Candidate | None:
     """Etapa C: confirma (o descarta) un seed con evidencia RGB local."""
     height, width = canopy.shape[:2]
@@ -954,11 +1149,34 @@ def confirm_seed(
 
     peak = float(canopy[iy, ix])
     score_norm = peak / 255.0
-    texture_score = min(1.0, float(texture[iy, ix]) / 12.0)
-    dark_score = min(1.0, float(dark_blob[iy, ix]) / 22.0)
+    local_lum = float(lum[iy, ix])
+    local_texture = float(texture[iy, ix])
+    local_dark = float(dark_blob[iy, ix])
+    local_green = float(greenness[iy, ix]) if greenness is not None else 0.0
+    texture_score = min(1.0, local_texture / 12.0)
+    dark_score = min(1.0, local_dark / 22.0)
     shadow_score = _shadow_support(lum, ix, iy, typical_r)
     if score_norm < 0.20 and texture_score < 0.22:
         return None
+
+    appearance_score = 1.0
+    if appearance is not None:
+        # Media local en un núcleo pequeño: el trazo de marca no es un solo pixel.
+        r = max(1, int(round(typical_r * 0.28)))
+        py0, py1 = max(0, iy - r), min(height, iy + r + 1)
+        px0, px1 = max(0, ix - r), min(width, ix + r + 1)
+        core_lum = float(lum[py0:py1, px0:px1].mean())
+        core_texture = float(texture[py0:py1, px0:px1].mean())
+        core_dark = float(dark_blob[py0:py1, px0:px1].mean())
+        if greenness is not None:
+            core_green = float(greenness[py0:py1, px0:px1].mean())
+        else:
+            core_green = local_green
+        if not appearance.accepts(core_lum, core_green, core_texture, core_dark):
+            return None
+        appearance_score = appearance.match_score(
+            core_lum, core_green, core_texture, core_dark
+        )
 
     radius = typical_r
     contour_px, contour_area = _contour_for_seed(labels, ix, iy, radius)
@@ -981,10 +1199,11 @@ def confirm_seed(
         contour_px = []
 
     confidence = 100.0 * (
-        0.40 * score_norm
-        + 0.22 * texture_score
-        + 0.18 * dark_score
-        + 0.12 * shadow_score
+        0.34 * score_norm
+        + 0.18 * texture_score
+        + 0.14 * dark_score
+        + 0.10 * shadow_score
+        + 0.16 * appearance_score
         + 0.08 * min(1.0, typical_r / max(radius, 1.0))
     )
     if confidence < 34:
@@ -1165,9 +1384,14 @@ def _prepare_confirm_masks(
     tile: np.ndarray,
     pattern: PlantingPattern,
     gsd_m: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     rgb = _rgb_u8(tile)
-    canopy, lum, texture, dark_blob = _canopy_evidence(rgb)
+    features = _feature_maps(rgb)
+    canopy = features["canopy"]
+    lum = features["lum"]
+    texture = features["texture"]
+    dark_blob = features["dark_blob"]
+    greenness = features["greenness"]
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     valid = hsv[:, :, 2] > 12
     mask = np.zeros(canopy.shape, dtype=np.uint8)
@@ -1185,7 +1409,7 @@ def _prepare_confirm_masks(
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     _, labels = cv2.connectedComponents((mask > 0).astype(np.uint8), connectivity=8)
-    return canopy, lum, texture, dark_blob, labels
+    return canopy, lum, texture, dark_blob, labels, greenness
 
 
 def analyze_geotiff_grid(
@@ -1229,6 +1453,9 @@ def analyze_geotiff_grid(
                 "TOO_MANY_SEEDS",
                 f"Se esperan ~{expected_trees} plantas; sectoriza el predio antes de analizar.",
             )
+
+        report(12, "Aprendiendo aspecto de tus 10 marcas")
+        appearance = appearance_from_calibration(dataset, samples)
 
         report(14, "Generando rejilla de plantación")
         origin = _samples_pixel_origin(dataset, samples)
@@ -1292,7 +1519,7 @@ def analyze_geotiff_grid(
                         window=window,
                         boundless=False,
                     )
-                    canopy, lum, texture, dark_blob, labels = _prepare_confirm_masks(
+                    canopy, lum, texture, dark_blob, labels, greenness = _prepare_confirm_masks(
                         tile, pattern, gsd_m
                     )
                     for seed in local_seeds:
@@ -1307,6 +1534,8 @@ def analyze_geotiff_grid(
                             seed.y_px - y0,
                             pattern,
                             gsd_m,
+                            appearance=appearance,
+                            greenness=greenness,
                         )
                         if hit is None:
                             continue
@@ -1345,6 +1574,8 @@ def analyze_geotiff_grid(
                 "tilesProcessed": total_tiles,
                 "calibrationSamples": len(samples_raw),
                 "calibrated": len(samples) >= 10,
+                "appearancePrior": bool(appearance),
+                "appearance": appearance.as_dict() if appearance else None,
             },
         )
         cover_area = float(sum(float(tree.get("area_px") or 0) for tree in trees))

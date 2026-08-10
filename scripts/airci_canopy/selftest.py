@@ -12,14 +12,18 @@ from rasterio.warp import transform as warp_transform
 
 from detector import (
     DETECTOR_VERSION,
+    MarkAppearance,
     PlantingPattern,
     analyze_geotiff,
+    appearance_from_calibration,
     confirm_seed,
     detect_tile,
     merge_and_score,
     pattern_from_calibration,
     seed_grid,
+    _feature_maps,
     _prepare_confirm_masks,
+    _rgb_u8,
 )
 
 
@@ -171,11 +175,17 @@ def test_confirm_and_merge() -> None:
         pattern_confidence=0.9,
         target_trees_per_ha=400,
     )
-    canopy, lum, texture, dark_blob, labels = _prepare_confirm_masks(image, pattern, gsd)
-    hit = confirm_seed(canopy, lum, texture, dark_blob, labels, 128, 128, pattern, gsd)
+    canopy, lum, texture, dark_blob, labels, greenness = _prepare_confirm_masks(
+        image, pattern, gsd
+    )
+    hit = confirm_seed(
+        canopy, lum, texture, dark_blob, labels, 128, 128, pattern, gsd, greenness=greenness
+    )
     if hit is None:
         raise AssertionError("confirm_seed debió confirmar copa oscura en pasto")
-    miss = confirm_seed(canopy, lum, texture, dark_blob, labels, 40, 40, pattern, gsd)
+    miss = confirm_seed(
+        canopy, lum, texture, dark_blob, labels, 40, 40, pattern, gsd, greenness=greenness
+    )
     if miss is not None:
         raise AssertionError("confirm_seed debió marcar faltante en pasto puro")
 
@@ -317,14 +327,159 @@ def test_analyze_grid_geotiff() -> None:
         path.unlink(missing_ok=True)
 
 
+def test_appearance_rejects_grass() -> None:
+    """Las marcas oscuras de copa deben rechazar pasto soleado brillante."""
+    np.random.seed(11)
+    gsd = 0.05
+    size = 320
+    transform = from_origin(500000, 2200000, gsd, gsd)
+    crs = "EPSG:32613"
+    image = np.zeros((3, size, size), dtype=np.uint8)
+    image[0, :, :] = 165
+    image[1, :, :] = 195
+    image[2, :, :] = 95
+    crowns = [(80, 80), (180, 90), (90, 190), (200, 200)]
+    for x, y in crowns:
+        _paint_canopy(image, x, y, 24, dark=True)
+
+    samples = [_px_to_sample(transform, crs, x, y, 22, 2.4) for x, y in crowns]
+    # Completar a 10 con repeticiones (mismo aspecto).
+    while len(samples) < 10:
+        x, y = crowns[len(samples) % len(crowns)]
+        samples.append(_px_to_sample(transform, crs, x, y, 22, 2.4))
+
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as handle:
+        path = Path(handle.name)
+    try:
+        with rasterio.open(
+            path,
+            "w",
+            driver="GTiff",
+            width=size,
+            height=size,
+            count=3,
+            dtype="uint8",
+            crs=crs,
+            transform=transform,
+        ) as dataset:
+            dataset.write(image)
+        with rasterio.open(path) as dataset:
+            appearance = appearance_from_calibration(dataset, samples)
+        if appearance is None:
+            raise AssertionError("Debía aprender perfil visual de las marcas")
+        if appearance.sample_count < 3:
+            raise AssertionError("Perfil con pocas marcas")
+
+        # Centro de copa oscura: aceptar.
+        rgb = _rgb_u8(image)
+        feats = _feature_maps(rgb)
+        cx, cy = crowns[0]
+        ok = appearance.accepts(
+            float(feats["lum"][cy, cx]),
+            float(feats["greenness"][cy, cx]),
+            float(feats["texture"][cy, cx]),
+            float(feats["dark_blob"][cy, cx]),
+        )
+        if not ok:
+            raise AssertionError("Perfil debió aceptar centro de marca/copa")
+
+        # Pasto brillante liso: rechazar (media de un parche sin copa).
+        grass = appearance.accepts(
+            float(feats["lum"][30:50, 30:50].mean()),
+            float(feats["greenness"][30:50, 30:50].mean()),
+            float(feats["texture"][30:50, 30:50].mean()),
+            float(feats["dark_blob"][30:50, 30:50].mean()),
+        )
+        if grass:
+            raise AssertionError(
+                "Perfil debió rechazar pasto soleado "
+                f"(lum_hi={appearance.lum_hi:.1f} tex_lo={appearance.texture_lo:.1f})"
+            )
+
+        pattern = PlantingPattern(
+            typical_diam_m=2.4,
+            spacing_in_row_m=6.0,
+            spacing_between_rows_m=6.0,
+            row_azimuth_deg=0.0,
+            source="test",
+            pattern_confidence=0.9,
+            target_trees_per_ha=400,
+        )
+        canopy, lum, texture, dark_blob, labels, greenness = _prepare_confirm_masks(
+            image, pattern, gsd
+        )
+        hit = confirm_seed(
+            canopy,
+            lum,
+            texture,
+            dark_blob,
+            labels,
+            float(cx),
+            float(cy),
+            pattern,
+            gsd,
+            appearance=appearance,
+            greenness=greenness,
+        )
+        if hit is None:
+            raise AssertionError("confirm_seed+appearance debió confirmar copa marcada")
+        miss = confirm_seed(
+            canopy,
+            lum,
+            texture,
+            dark_blob,
+            labels,
+            40.0,
+            40.0,
+            pattern,
+            gsd,
+            appearance=appearance,
+            greenness=greenness,
+        )
+        if miss is not None:
+            raise AssertionError("confirm_seed+appearance debió rechazar pasto")
+
+        # Banda inventada: brillo alto (pasto) no debe aceptar copa oscura.
+        bright_only = MarkAppearance(
+            lum_lo=150,
+            lum_hi=220,
+            green_lo=0.05,
+            green_hi=0.5,
+            texture_lo=0.0,
+            texture_hi=3.0,
+            dark_lo=0.0,
+            dark_hi=4.0,
+            sample_count=10,
+            pixel_count=100,
+        )
+        blocked = confirm_seed(
+            canopy,
+            lum,
+            texture,
+            dark_blob,
+            labels,
+            float(cx),
+            float(cy),
+            pattern,
+            gsd,
+            appearance=bright_only,
+            greenness=greenness,
+        )
+        if blocked is not None:
+            raise AssertionError("Perfil de pasto no debía confirmar copa oscura")
+    finally:
+        path.unlink(missing_ok=True)
+
+
 def main() -> None:
     test_evidence_detect_tile()
     test_pattern_and_seed_grid()
     test_confirm_and_merge()
     test_analyze_grid_geotiff()
+    test_appearance_rejects_grass()
     print(
         f"AirCI detector self-test OK ({DETECTOR_VERSION}): "
-        "pattern + seed_grid + confirm + merge + analyze_geotiff grid_v1"
+        "pattern + seed_grid + confirm + appearance + merge + analyze_geotiff grid_v1"
     )
 
 

@@ -143,10 +143,13 @@ function rowsFromOpenMeteo(data, kc, mode = 'weekly') {
     forecastStart = today;
     forecastEnd = weekEnd;
   } else {
+    // Correo semanal (~17:00 zona del predio): el día de envío (hoy) entra como
+    // PRONÓSTICO del día completo. Antes se saltaba (histórico hasta ayer, pronóstico
+    // desde mañana) y el domingo no salía ni como histórico ni como pronóstico.
     historicalStart = addDaysIso(today, -7);
     historicalEnd = addDaysIso(today, -1);
-    forecastStart = addDaysIso(today, 1);
-    forecastEnd = addDaysIso(today, 7);
+    forecastStart = today;
+    forecastEnd = addDaysIso(today, 6);
   }
 
   const kcValue = numberOrNull(kc);

@@ -139,8 +139,11 @@ En la ventanita alrededor de cada candidato:
 | Sombra al lado | ¿Hay objeto con altura? |
 | Verdor relativo | Apoyo; **nunca** la única verdad |
 | Tamaño vs Ø de tus 10 | ¿Es del tamaño de una planta de este predio? |
+| Perfil visual de tus 10 | Brillo/textura/verdor dentro de tus polígonos; si el candidato no se parece → **faltante** |
 
 Si el candidato cae en puro pasto uniforme → **faltante**, no invento un círculo.
+
+**Implementado en `grid_v1.1`:** `appearance_from_calibration` lee el RGB dentro de las 10 marcas y `confirm_seed` rechaza candidatos fuera de ese perfil (pasto/sombra/suelo). El trazo no necesita ser perfecto.
 
 ## A6. Qué te devuelvo
 

@@ -1102,15 +1102,6 @@
     .fert-aporte-btn--calc { background: #2563eb; color: #fff; }
     .fert-aporte-btn--save { background: #16a34a; color: #fff; }
     .fert-aporte-btn--mini { padding: 4px 8px; font-size: 11px; }
-    .hydro-pref-bar {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin: 0 0 10px;
-      font-size: 0.78rem;
-    }
-    .hydro-pref-bar label { display: inline-flex; align-items: center; gap: 4px; color: #2563eb; font-weight: 700; }
-    .hydro-pref-bar select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; max-width: min(100%, 280px); }
     .hydro-solution-picker { margin-left: auto; border: 1.5px solid #16a34a; color: #15803d; background: #fff; border-radius: 8px; padding: 7px 12px; font-weight: 700; cursor: pointer; }
     .hydro-solution-picker.is-selected { background: #16a34a; border-color: #15803d; color: #fff; }
     .hydro-solution-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 16px; background: rgba(15,23,42,.55); }
@@ -1134,20 +1125,6 @@
   <div class="np-free-tool-head">
     <h1 class="np-free-tool-title" data-i18n="free_tools.hydro_title">💧 Diseño de solución nutritiva</h1>
     <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  </div>
-  <div class="hydro-pref-bar" aria-label="Preferencias de idioma y unidades" data-i18n-aria-label="free_tools.prefs_aria">
-    <label><span data-i18n="profile.language">Idioma</span>
-      <select id="hydroLanguageSelect">
-        <option value="es" data-i18n="selector.spanish">Español</option>
-        <option value="en" data-i18n="selector.english">English</option>
-      </select>
-    </label>
-    <label><span data-i18n="profile.unit_system">Unidades</span>
-      <select id="hydroUnitSystemSelect">
-        <option value="metric" data-i18n="selector.metric" title="Métrico (ha, kg, m³, °C, etc.)">Métrico</option>
-        <option value="us_customary" data-i18n="selector.us_customary" title="US customary (acre, lb, ft, °F, etc.)">US customary</option>
-      </select>
-    </label>
   </div>
   <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
@@ -3326,10 +3303,6 @@
     function boot() {
       hydroApplyLoadedState(hydroLoadLocal());
       var prefs = window.NpPrefs && window.NpPrefs.get ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' };
-      var languageSelect = document.getElementById('hydroLanguageSelect');
-      var unitSelect = document.getElementById('hydroUnitSystemSelect');
-      if (languageSelect) languageSelect.value = prefs.language;
-      if (unitSelect) unitSelect.value = prefs.unit_system;
       if (window.NpI18n) {
         window.NpI18n.setLanguage(prefs.language, { persist: false });
         window.NpI18n.apply(document);
@@ -3345,13 +3318,6 @@
           }
         });
       }
-      if (languageSelect) languageSelect.addEventListener('change', function () {
-        window.NpPrefs.set({ language: languageSelect.value }, { explicit: true });
-        if (window.NpI18n) window.NpI18n.setLanguage(languageSelect.value, { persist: false });
-      });
-      if (unitSelect) unitSelect.addEventListener('change', function () {
-        window.NpPrefs.set({ unit_system: unitSelect.value }, { explicit: true });
-      });
       switchHydroMainTab(hydroActiveMainTab);
       hydroRefreshSolutionPickerLabel();
       renderHydroMeqTable();
@@ -3367,10 +3333,6 @@
     window.addEventListener('np:prefs-changed', function (event) {
       var next = event && event.detail && event.detail.prefs;
       if (!next) return;
-      var languageSelect = document.getElementById('hydroLanguageSelect');
-      var unitSelect = document.getElementById('hydroUnitSystemSelect');
-      if (languageSelect) languageSelect.value = next.language;
-      if (unitSelect) unitSelect.value = next.unit_system;
       if (window.NpI18n && window.NpI18n.getLanguage() !== next.language) {
         window.NpI18n.setLanguage(next.language, { persist: false });
       }
