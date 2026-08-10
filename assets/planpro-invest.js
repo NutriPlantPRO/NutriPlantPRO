@@ -61,7 +61,7 @@
       { symbol: 'PG', name: 'Procter & Gamble' }
     ]},
     { group: 'Espacio', icon: '🚀', items: [
-      { symbol: 'SPCX', name: 'SPCX' },
+      { symbol: 'SPCX', name: 'SpaceX' },
       { symbol: 'RKLB', name: 'Rocket Lab' },
       { symbol: 'LUNR', name: 'Intuitive Machines' }
     ]},
@@ -114,7 +114,7 @@
     { symbol: 'ABBV', name: 'AbbVie', asset_type: 'stock' },
     { symbol: 'JPM', name: 'JPMorgan', asset_type: 'stock' },
     { symbol: 'WMT', name: 'Walmart', asset_type: 'stock' },
-    { symbol: 'SPCX', name: 'SPCX', asset_type: 'etf' },
+    { symbol: 'SPCX', name: 'SpaceX', asset_type: 'stock' },
     { symbol: 'VOO', name: 'Vanguard S&P 500', asset_type: 'etf' },
     { symbol: 'QQQM', name: 'Invesco Nasdaq 100', asset_type: 'etf' },
     { symbol: 'INDA', name: 'iShares MSCI India', asset_type: 'etf' },
@@ -285,7 +285,7 @@
     FSLR: 'NASDAQ:FSLR',
     RKLB: 'NASDAQ:RKLB',
     LUNR: 'NASDAQ:LUNR',
-    SPCX: 'AMEX:SPCX',
+    SPCX: 'NASDAQ:SPCX',
     VOO: 'AMEX:VOO',
     QQQM: 'NASDAQ:QQQM',
     SCHD: 'AMEX:SCHD',

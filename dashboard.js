@@ -2777,7 +2777,9 @@ window.npHandleDashboardPreferencesChanged = function () {
   if (window.NpI18n) window.NpI18n.apply(document);
   if (typeof npSyncManualLinksLang === 'function') npSyncManualLinksLang();
   document.querySelectorAll('[data-i18n-title][data-np-tooltip]').forEach(function (el) {
-    el.setAttribute('data-np-tooltip', el.getAttribute('title') || el.getAttribute('aria-label') || '');
+    var tip = el.getAttribute('data-np-tooltip') || el.getAttribute('title') || el.getAttribute('aria-label') || '';
+    if (tip) el.setAttribute('data-np-tooltip', tip);
+    el.removeAttribute('title');
   });
   var saveBtn = document.getElementById('globalSaveDataBtn');
   if (saveBtn) {
@@ -8472,11 +8474,103 @@ function np_logDashboardVisit() {
   }).catch(function() {});
 }
 
+/** Tooltips rápidos de la barra de herramientas (sin title nativo del navegador). */
+function initNpDashTooltips() {
+  if (window._npDashTooltipsWired) return;
+  window._npDashTooltipsWired = true;
+
+  var tip = document.getElementById('npFloatTooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'npFloatTooltip';
+    tip.className = 'np-float-tooltip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    document.body.appendChild(tip);
+  }
+
+  var active = null;
+
+  function hideTip() {
+    tip.hidden = true;
+    tip.classList.remove('is-visible', 'is-above');
+    active = null;
+  }
+
+  function placeTip(el) {
+    if (!el) return;
+    var text = String(el.getAttribute('data-np-tooltip') || el.getAttribute('aria-label') || '').trim();
+    if (!text) {
+      hideTip();
+      return;
+    }
+    if (el.hasAttribute('title')) el.removeAttribute('title');
+    tip.textContent = text;
+    tip.hidden = false;
+    tip.classList.add('is-visible');
+    tip.classList.remove('is-above');
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+
+    var r = el.getBoundingClientRect();
+    var tw = tip.offsetWidth || 0;
+    var th = tip.offsetHeight || 0;
+    var gap = 8;
+    var left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    var top = r.bottom + gap;
+    if (top + th > window.innerHeight - 8 && r.top - gap - th > 8) {
+      top = r.top - gap - th;
+      tip.classList.add('is-above');
+    }
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
+    active = el;
+  }
+
+  function tipTarget(node) {
+    if (!node || !node.closest) return null;
+    return node.closest('.np-dash-tooltip[data-np-tooltip]');
+  }
+
+  document.addEventListener('pointerover', function (e) {
+    var el = tipTarget(e.target);
+    if (!el) return;
+    placeTip(el);
+  });
+
+  document.addEventListener('pointerout', function (e) {
+    var el = tipTarget(e.target);
+    if (!el || el !== active) return;
+    var related = e.relatedTarget;
+    if (related && el.contains(related)) return;
+    hideTip();
+  });
+
+  document.addEventListener('focusin', function (e) {
+    var el = tipTarget(e.target);
+    if (el) placeTip(el);
+  });
+
+  document.addEventListener('focusout', function (e) {
+    var el = tipTarget(e.target);
+    if (el === active) hideTip();
+  });
+
+  window.addEventListener('scroll', hideTip, true);
+  window.addEventListener('resize', hideTip);
+
+  document.querySelectorAll('.np-dash-tooltip[data-np-tooltip]').forEach(function (el) {
+    el.removeAttribute('title');
+  });
+}
+
 async function initializeDashboard() {
   if (window.NpI18n) window.NpI18n.apply(document);
   if (typeof npSyncManualLinksLang === 'function') npSyncManualLinksLang();
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
+  initNpDashTooltips();
   
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
@@ -8541,7 +8635,9 @@ async function initializeDashboard() {
   const first = menu?.querySelector("a");
   if (first) selectSection("Inicio", first);
   document.querySelectorAll('[data-i18n-title][data-np-tooltip]').forEach(function (el) {
-    el.setAttribute('data-np-tooltip', el.getAttribute('title') || el.getAttribute('aria-label') || '');
+    var tip = el.getAttribute('data-np-tooltip') || el.getAttribute('title') || el.getAttribute('aria-label') || '';
+    if (tip) el.setAttribute('data-np-tooltip', tip);
+    el.removeAttribute('title');
   });
   if (isSupabaseUser) {
     np_setProjectSyncStatus('syncing', dashboardT('dashboard.sync_projects', 'Sincronizando proyectos...'));

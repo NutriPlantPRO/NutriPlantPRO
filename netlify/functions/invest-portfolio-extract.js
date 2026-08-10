@@ -108,7 +108,7 @@ function guessAssetType(symbol, name, rawType) {
   const n = String(name || '').toUpperCase();
   const s = String(symbol || '').toUpperCase();
   if (/ETF|INVESCO|VANGUARD|ISHARES|SPDR|SCHWAB|VAN ECK|ARK /i.test(n)) return 'etf';
-  if (/^(VOO|QQQ|QQQM|SPY|SCHD|IWM|DIA|VTI|VXUS|SMH|SOXX|IBIT|ETHA|INDA|EWT|EWY|EWS|EWG|EWZ|EWW|SPCX)$/.test(s)) {
+  if (/^(VOO|QQQ|QQQM|SPY|SCHD|IWM|DIA|VTI|VXUS|SMH|SOXX|IBIT|ETHA|INDA|EWT|EWY|EWS|EWG|EWZ|EWW)$/.test(s)) {
     return 'etf';
   }
   if (/BTC|ETH|BITCOIN|ETHEREUM/i.test(n) || /^(BTC|ETH)/.test(s)) return 'crypto';

@@ -1244,94 +1244,58 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   height: 18px;
 }
 
-/* Tooltips del header: encima del botón (no empujan ni cubren el área bajo la barra) */
+/* Tooltips del header: flotantes en body (la barra tiene overflow-x y recorta ::after).
+   Instantáneos al hover — sin title nativo del navegador. */
 .header-buttons .btn-calculator.np-dash-tooltip,
 .header-buttons .btn-user.np-dash-tooltip {
   position: relative;
   overflow: visible;
 }
-.header-buttons .btn-calculator.np-dash-tooltip::before,
-.header-buttons .btn-user.np-dash-tooltip::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 2px);
-  top: auto;
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-top-color: #0f172a;
-  border-bottom: none;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.2s ease 0.08s,
-    visibility 0.2s ease 0.08s,
-    transform 0.2s ease 0.08s;
-  z-index: 10060;
-  pointer-events: none;
-  filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.2));
-}
-.header-buttons .btn-calculator.np-dash-tooltip::after,
-.header-buttons .btn-user.np-dash-tooltip::after {
-  content: attr(data-np-tooltip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 12px);
-  top: auto;
-  transform: translateX(-50%) translateY(4px);
-  padding: 9px 14px;
-  min-width: 0;
-  max-width: min(300px, 86vw);
-  background: linear-gradient(155deg, #1e3a5f 0%, #0f172a 55%, #0c1222 100%);
+
+.np-float-tooltip {
+  position: fixed;
+  z-index: 10080;
+  left: 0;
+  top: 0;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 7px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #0f172a;
   color: #f8fafc;
   font-size: 12px;
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1.35;
   letter-spacing: 0.01em;
   text-align: center;
   white-space: normal;
   word-break: break-word;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow:
-    0 -10px 28px rgba(15, 23, 42, 0.32),
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.22s ease 0.08s,
-    visibility 0.22s ease 0.08s,
-    transform 0.22s ease 0.08s;
-  z-index: 10061;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.38);
   pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.06s ease, transform 0.06s ease;
 }
-.header-buttons .btn-calculator.np-dash-tooltip:hover::before,
-.header-buttons .btn-calculator.np-dash-tooltip:focus-visible::before,
-.header-buttons .btn-user.np-dash-tooltip:hover::before,
-.header-buttons .btn-user.np-dash-tooltip:focus-visible::before,
-.header-buttons .btn-calculator.np-dash-tooltip:hover::after,
-.header-buttons .btn-calculator.np-dash-tooltip:focus-visible::after,
-.header-buttons .btn-user.np-dash-tooltip:hover::after,
-.header-buttons .btn-user.np-dash-tooltip:focus-visible::after {
+.np-float-tooltip.is-visible {
   opacity: 1;
-  visibility: visible;
+  transform: translateY(0);
 }
-.header-buttons .btn-calculator.np-dash-tooltip:hover::after,
-.header-buttons .btn-calculator.np-dash-tooltip:focus-visible::after,
-.header-buttons .btn-user.np-dash-tooltip:hover::after,
-.header-buttons .btn-user.np-dash-tooltip:focus-visible::after {
-  transform: translateX(-50%) translateY(0);
+.np-float-tooltip.is-above {
+  transform: translateY(-3px);
+}
+.np-float-tooltip.is-above.is-visible {
+  transform: translateY(0);
+}
+.np-float-tooltip[hidden] {
+  display: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .header-buttons .btn-calculator.np-dash-tooltip::before,
-  .header-buttons .btn-calculator.np-dash-tooltip::after,
-  .header-buttons .btn-user.np-dash-tooltip::before,
-  .header-buttons .btn-user.np-dash-tooltip::after {
+  .np-float-tooltip {
     transition: none;
+    transform: none;
   }
-  .header-buttons .btn-calculator.np-dash-tooltip::after,
-  .header-buttons .btn-user.np-dash-tooltip::after {
-    transform: translateX(-50%);
+  .np-float-tooltip.is-above {
+    transform: none;
   }
 }
 

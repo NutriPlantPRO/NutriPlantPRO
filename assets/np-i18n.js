@@ -2374,9 +2374,12 @@
     });
     collect(root, 'data-i18n-title').forEach(function (element) {
       var titleText = t(element.getAttribute('data-i18n-title'), readParams(element));
-      element.setAttribute('title', titleText);
       if (element.hasAttribute('data-np-tooltip')) {
+        // Tooltip custom (rápido): no usar title nativo del navegador (tarda ~1s).
         element.setAttribute('data-np-tooltip', titleText);
+        element.removeAttribute('title');
+      } else {
+        element.setAttribute('title', titleText);
       }
     });
     collect(root, 'data-i18n-html').forEach(function (element) {
