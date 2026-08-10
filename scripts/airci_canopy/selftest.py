@@ -232,10 +232,17 @@ def test_confirm_and_merge() -> None:
         gsd_m=gsd,
     )
     manuals = [t for t in trees if t.get("is_manual")]
+    autos = [t for t in trees if not t.get("is_manual")]
     if len(manuals) != 1:
         raise AssertionError("merge: ancla no quedó")
-    if len(trees) != 1:
-        raise AssertionError("merge: seed cerca del ancla debía eliminarse")
+    if len(autos) != 1:
+        raise AssertionError("merge: detección AirCI cerca del ancla no debe borrarse")
+    if len(trees) != 2:
+        raise AssertionError("merge: debe quedar auto + copia de calibración")
+    if stats.get("count") != 1:
+        raise AssertionError("inventario debe contar 1 (sin doblar la copia de calibración)")
+    if int(stats.get("calibrationPaired") or 0) != 1:
+        raise AssertionError("ancla debía emparejarse con la detección AirCI")
     if stats.get("band") != "S":
         raise AssertionError(f"Banda S esperada en 0.25 ha; hubo {stats.get('band')}")
     if stats.get("missingCount") != 3:
@@ -312,17 +319,25 @@ def test_analyze_grid_geotiff() -> None:
         manuals = [t for t in trees if t.get("is_manual")]
         if len(manuals) != 10:
             raise AssertionError(f"Las 10 anclas deben quedar; hay {len(manuals)}")
+        auto = [t for t in trees if not t.get("is_manual")]
+        # AirCI no debe borrar detecciones cerca de las anclas: si hay auto, count
+        # de inventario = autos (+ anclas sin pareja); resultTrees = autos + 10.
+        if stats.get("count", 0) < 1:
+            raise AssertionError("Inventario vacío")
+        if int(stats.get("resultTrees") or 0) < len(manuals):
+            raise AssertionError("resultTrees debía incluir anclas + detecciones")
         if stats.get("band") != "S":
             raise AssertionError(f"Banda S esperada; hubo {stats.get('band')}")
         if stats.get("seedsTotal", 0) < 10:
             raise AssertionError("Debía generar seeds")
         # Debe confirmar al menos parte de las copas pintadas (además de anclas).
-        auto = [t for t in trees if not t.get("is_manual")]
         if len(trees) < 10:
             raise AssertionError("Resultado vacío tras merge")
         # Sanity: no explotar
         if len(trees) > 80:
             raise AssertionError(f"Demasiados árboles en fixture chica: {len(trees)}")
+        if len(auto) < 1 and int(stats.get("calibrationPaired") or 0) > 0:
+            raise AssertionError("Había pares calibración pero cero autos")
         _ = auto
     finally:
         path.unlink(missing_ok=True)

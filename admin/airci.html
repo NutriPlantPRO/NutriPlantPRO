@@ -65,22 +65,42 @@
           <strong id="aciStorageNum">…</strong>
           <em id="aciStorageSub">Supabase · toca para actualizar</em>
         </button>
-        <a
-          class="aci-header__bill"
-          href="https://console.cloud.google.com/billing"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Facturación Google Cloud"
-          aria-label="Abrir facturación Google Cloud"
-        >Cloud</a>
-        <a
-          class="aci-header__bill aci-header__bill--openai"
-          href="https://platform.openai.com/settings/organization/billing/overview"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Facturación OpenAI"
-          aria-label="Abrir facturación OpenAI"
-        >OpenAI</a>
+        <div class="aci-header__tools" id="aciToolsMenu">
+          <button
+            type="button"
+            class="aci-header__tools-btn"
+            id="aciToolsBtn"
+            aria-expanded="false"
+            aria-haspopup="true"
+            aria-controls="aciToolsPanel"
+            title="Herramientas"
+            aria-label="Herramientas"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </button>
+          <div class="aci-header__tools-panel" id="aciToolsPanel" hidden role="menu" aria-label="Herramientas de facturación">
+            <a
+              class="aci-header__bill"
+              href="https://console.cloud.google.com/billing"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              title="Facturación Google Cloud"
+              aria-label="Abrir facturación Google Cloud"
+            >Cloud</a>
+            <a
+              class="aci-header__bill aci-header__bill--openai"
+              href="https://platform.openai.com/settings/organization/billing/overview"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              title="Facturación OpenAI"
+              aria-label="Abrir facturación OpenAI"
+            >OpenAI</a>
+          </div>
+        </div>
         <a
           class="aci-header__logout"
           href="../login.html"

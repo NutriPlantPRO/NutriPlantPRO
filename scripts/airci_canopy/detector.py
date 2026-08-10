@@ -18,7 +18,7 @@ from rasterio.windows import Window
 from rasterio.warp import transform as warp_transform
 
 
-DETECTOR_VERSION = "airci-grid-v1.1.0"
+DETECTOR_VERSION = "airci-grid-v1.1.1"
 CLASSICAL_DETECTOR_VERSION = "airci-classical-v1.2.0"
 
 
@@ -726,44 +726,72 @@ def _calibration_anchor_trees(samples: list, gsd_m: float | None) -> list[dict]:
     return anchors
 
 
+def _is_calibration_reference(tree: dict) -> bool:
+    """True si es copia de tus 10 ya emparejada con detección AirCI (no cuenta en inventario)."""
+    metrics = tree.get("metrics_json") if isinstance(tree.get("metrics_json"), dict) else {}
+    return bool(metrics.get("exclude_from_inventory"))
+
+
 def _merge_calibration_anchors(
     trees: list[dict],
     anchors: list[dict],
     spacing_m: float,
 ) -> tuple[list[dict], int]:
-    """Inserta las 10 copas del usuario y quita detecciones automáticas demasiado cerca."""
+    """Conserva detecciones AirCI y añade las 10 del usuario como copia de referencia.
+
+    Ya no se eliminan candidatos cerca de las anclas: AirCI debe analizar también
+    esas plantas. Si hubo detección cerca, la marca del usuario queda solo para
+    comparar (no cuenta en inventario). Si no hubo, la ancla sí cuenta (fallback).
+    """
     if not anchors:
         return trees, 0
-    suppress_m = max(1.2, spacing_m * 0.45) if spacing_m > 0 else 3.0
+    match_m = max(1.2, spacing_m * 0.45) if spacing_m > 0 else 3.0
+    paired_anchor_indexes: set[int] = set()
     kept: list[dict] = []
-    replaced = 0
     for tree in trees:
-        too_close = False
-        for anchor in anchors:
+        item = dict(tree)
+        metrics = dict(item.get("metrics_json") or {})
+        for index, anchor in enumerate(anchors):
+            if index in paired_anchor_indexes:
+                continue
             if (
                 _haversine_m(
-                    float(tree["center_lat"]),
-                    float(tree["center_lng"]),
+                    float(item["center_lat"]),
+                    float(item["center_lng"]),
                     float(anchor["center_lat"]),
                     float(anchor["center_lng"]),
                 )
-                < suppress_m
+                < match_m
             ):
-                too_close = True
+                paired_anchor_indexes.add(index)
+                calib_idx = (anchor.get("metrics_json") or {}).get("calibration_index", index)
+                metrics["paired_calibration_index"] = calib_idx
                 break
-        if too_close:
-            replaced += 1
-            continue
-        kept.append(tree)
-    kept.extend(anchors)
+        item["metrics_json"] = metrics
+        kept.append(item)
+
+    for index, anchor in enumerate(anchors):
+        ref = dict(anchor)
+        metrics = dict(ref.get("metrics_json") or {})
+        paired = index in paired_anchor_indexes
+        metrics["from_calibration"] = True
+        metrics["calibration_reference"] = True
+        metrics["paired_auto"] = paired
+        # Copia de comparación: no inflar conteo si AirCI ya detectó esa planta.
+        metrics["exclude_from_inventory"] = paired
+        ref["metrics_json"] = metrics
+        ref["is_manual"] = True
+        kept.append(ref)
+
     for index, tree in enumerate(kept, start=1):
         tree["tree_index"] = index
         if not tree.get("stable_id") or str(tree.get("stable_id")).isdigit():
             if tree.get("is_manual"):
-                tree["stable_id"] = f"calib-{tree.get('metrics_json', {}).get('calibration_index', index)}"
+                calib_idx = (tree.get("metrics_json") or {}).get("calibration_index", index)
+                tree["stable_id"] = f"calib-{calib_idx}"
             else:
                 tree["stable_id"] = str(index)
-    return kept, replaced
+    return kept, len(paired_anchor_indexes)
 
 
 def _to_wgs84(
@@ -1250,8 +1278,13 @@ def confirm_seed(
 
 
 def _apply_semaphore(trees: list[dict]) -> tuple[float, float]:
+    inventory = [tree for tree in trees if not _is_calibration_reference(tree)]
     areas = np.asarray(
-        [float(tree.get("area_px") or 0) for tree in trees if tree.get("area_px") is not None],
+        [
+            float(tree.get("area_px") or 0)
+            for tree in inventory
+            if tree.get("area_px") is not None
+        ],
         dtype=np.float64,
     )
     mean_area = float(areas.mean()) if len(areas) else 0.0
@@ -1262,7 +1295,7 @@ def _apply_semaphore(trees: list[dict]) -> tuple[float, float]:
         metrics = dict(tree.get("metrics_json") or {})
         metrics["z"] = round(z_score, 4)
         tree["metrics_json"] = metrics
-        if tree.get("is_manual"):
+        if tree.get("is_manual") or _is_calibration_reference(tree):
             tree["sem_key"] = "verde"
             continue
         if z_score < -1.1:
@@ -1356,7 +1389,7 @@ def merge_and_score(
     extra_stats: dict | None = None,
 ) -> tuple[list[dict], dict]:
     """Etapa D: anclas + confirmados + semáforo + stats."""
-    trees, replaced = _merge_calibration_anchors(
+    trees, paired = _merge_calibration_anchors(
         confirmed, anchors, pattern.spacing_in_row_m
     )
     for tree in trees:
@@ -1366,10 +1399,12 @@ def merge_and_score(
             metrics["from_calibration"] = True
         tree["metrics_json"] = metrics
     mean_area, std_area = _apply_semaphore(trees)
+    inventory = [tree for tree in trees if not _is_calibration_reference(tree)]
     dens = pattern.target_trees_per_ha
     expected = int(round(dens * ortho_ha)) if dens and ortho_ha and ortho_ha > 0 else None
     stats = {
-        "count": len(trees),
+        "count": len(inventory),
+        "resultTrees": len(trees),
         "meanArea": round(mean_area, 3),
         "stdArea": round(std_area, 3),
         "gsdM": gsd_m,
@@ -1378,7 +1413,8 @@ def merge_and_score(
         "professional": True,
         "validationStatus": "requires_review",
         "calibrationAnchors": len(anchors),
-        "calibrationReplaced": replaced,
+        "calibrationPaired": paired,
+        "calibrationReplaced": 0,  # legacy: ya no se sustituye la detección AirCI
         "missingCount": int(missing_count),
         "seedsTotal": int(seeds_total),
         "confirmed": len(confirmed),
@@ -1606,7 +1642,13 @@ def analyze_geotiff_grid(
                 "appearance": appearance.as_dict() if appearance else None,
             },
         )
-        cover_area = float(sum(float(tree.get("area_px") or 0) for tree in trees))
+        cover_area = float(
+            sum(
+                float(tree.get("area_px") or 0)
+                for tree in trees
+                if not _is_calibration_reference(tree)
+            )
+        )
         stats["coverPct"] = round(min(100.0, 100.0 * cover_area / total_pixels), 3)
         report(90, "Preparando resultados")
         return trees, stats
@@ -1716,12 +1758,16 @@ def analyze_geotiff_classical(
 
         report(88, "Aplicando copas de calibración")
         anchors = _calibration_anchor_trees(samples, gsd_m)
-        trees, replaced = _merge_calibration_anchors(trees, anchors, expected_spacing_m)
+        trees, paired = _merge_calibration_anchors(trees, anchors, expected_spacing_m)
         mean_area, std_area = _apply_semaphore(trees)
-        cover_area = float(sum(float(tree.get("area_px") or 0) for tree in trees))
+        inventory = [tree for tree in trees if not _is_calibration_reference(tree)]
+        cover_area = float(
+            sum(float(tree.get("area_px") or 0) for tree in inventory)
+        )
         cover_pct = 100.0 * cover_area / total_pixels if total_pixels else 0.0
         stats = {
-            "count": len(trees),
+            "count": len(inventory),
+            "resultTrees": len(trees),
             "coverPct": round(min(100.0, cover_pct), 3),
             "meanArea": round(mean_area, 3),
             "stdArea": round(std_area, 3),
@@ -1738,7 +1784,8 @@ def analyze_geotiff_classical(
             "calibrationSamples": len(samples),
             "calibrated": len(samples) >= 10,
             "calibrationAnchors": len(anchors),
-            "calibrationReplaced": replaced,
+            "calibrationPaired": paired,
+            "calibrationReplaced": 0,
             "expectedSpacingM": round(expected_spacing_m, 3) if expected_spacing_m else None,
             "targetTreesPerHa": target_density,
             "expectedTrees": expected_trees,

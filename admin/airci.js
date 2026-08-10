@@ -3164,7 +3164,7 @@
     };
   }
 
-  /** Tras el análisis local: las 10 copas del usuario entran al resultado con su perímetro. */
+  /** Tras el análisis: conserva detecciones AirCI y añade las 10 como copia de referencia. */
   function mergeCalibrationAnchorsIntoResult(result) {
     if (!result || !Array.isArray(result.trees) || calibrationSamples.length !== 10) {
       return result;
@@ -3176,7 +3176,7 @@
     if (Number.isFinite(density) && density >= 20 && density <= 5000) {
       spacing = Math.sqrt(10000 / density) || spacing;
     }
-    var suppressM = spacing > 0 ? Math.max(1.2, spacing * 0.45) : 3;
+    var matchM = spacing > 0 ? Math.max(1.2, spacing * 0.45) : 3;
     var anchors = (payload.samples || []).map(function (sample, index) {
       return {
         id: 'calib-' + (index + 1),
@@ -3189,22 +3189,34 @@
         confidence: 100,
         isManual: true,
         sem: { key: 'verde', label: 'Verde', color: '#16a34a', fill: '#16a34a99' },
-        source: 'calibration'
+        source: 'calibration',
+        calibrationReference: true,
+        excludeFromInventory: false
       };
     });
-    var kept = result.trees.filter(function (tree) {
+    var paired = 0;
+    result.trees.forEach(function (tree) {
       var center = tree.center || [];
       var lat = Number(center[0]);
       var lng = Number(center[1]);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return true;
-      return !anchors.some(function (anchor) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      for (var i = 0; i < anchors.length; i++) {
+        var anchor = anchors[i];
+        if (anchor.pairedAuto) continue;
         var dist =
           window.AirCICanopy && AirCICanopy.haversineM
             ? AirCICanopy.haversineM(lat, lng, anchor.center[0], anchor.center[1])
             : Infinity;
-        return dist < suppressM;
-      });
+        if (dist < matchM) {
+          anchor.pairedAuto = true;
+          anchor.excludeFromInventory = true;
+          tree.pairedCalibrationIndex = i;
+          paired += 1;
+          break;
+        }
+      }
     });
+    var kept = result.trees.slice();
     var maxId = kept.reduce(function (max, tree) {
       return Math.max(max, Number(tree.id) || 0);
     }, 0);
@@ -3214,10 +3226,16 @@
       }
       kept.push(anchor);
     });
+    var inventoryCount = kept.filter(function (tree) {
+      return !tree.excludeFromInventory;
+    }).length;
     result.trees = kept;
     result.stats = result.stats || {};
-    result.stats.count = kept.length;
+    result.stats.count = inventoryCount;
+    result.stats.resultTrees = kept.length;
     result.stats.calibrationAnchors = anchors.length;
+    result.stats.calibrationPaired = paired;
+    result.stats.calibrationReplaced = 0;
     result.stats.calibrated = true;
     return result;
   }
@@ -6418,6 +6436,29 @@
     storageBtn.addEventListener('click', function (e) {
       e.preventDefault();
       refreshStorageUsage(true);
+    });
+  }
+
+  var toolsWrap = document.getElementById('aciToolsMenu');
+  var toolsBtn = document.getElementById('aciToolsBtn');
+  var toolsPanel = document.getElementById('aciToolsPanel');
+  function setToolsOpen(open) {
+    if (!toolsBtn || !toolsPanel) return;
+    toolsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toolsPanel.hidden = !open;
+    if (toolsWrap) toolsWrap.classList.toggle('is-open', !!open);
+  }
+  if (toolsBtn && toolsPanel) {
+    toolsBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setToolsOpen(!!toolsPanel.hidden);
+    });
+    document.addEventListener('click', function (e) {
+      if (!toolsWrap || toolsPanel.hidden) return;
+      if (!toolsWrap.contains(e.target)) setToolsOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setToolsOpen(false);
     });
   }
 
