@@ -1259,15 +1259,45 @@ button, input, select, textarea { font: inherit; }
 .aci-calibration.is-active { border-color: #2563eb; background: #dbeafe; }
 .aci-calibration.is-ready { border-color: #16a34a; background: #f0fdf4; }
 .aci-calibration.is-ready .aci-calibration__actions b { background: #dcfce7; color: #166534; }
-.aci-calibration-vertex { background: transparent; border: 0; }
-.aci-calibration-vertex i { display: block; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 50%; background: #2563eb; box-shadow: 0 1px 4px #0f172a80; }
+.aci-calibration-vertex {
+  background: transparent;
+  border: 0;
+  /* Área de toque grande: el punto visual va centrado encima del polígono. */
+  width: 22px !important;
+  height: 22px !important;
+  margin-left: -11px !important;
+  margin-top: -11px !important;
+  pointer-events: auto !important;
+  cursor: grab;
+  z-index: 2;
+}
+.aci-calibration-vertex:active { cursor: grabbing; }
+.aci-calibration-vertex i {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 4px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 1px 5px #0f172acc;
+  pointer-events: none;
+}
 .aci-calibration-vertex--dense i {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
+  margin: 5px;
   border-width: 2px;
   opacity: 1;
 }
-.aci-calibration-move { background: transparent; border: 0; }
+.aci-calibration-move {
+  background: transparent;
+  border: 0;
+  pointer-events: auto !important;
+  cursor: grab;
+  z-index: 3;
+}
+.aci-calibration-move:active { cursor: grabbing; }
 .aci-calibration-move i {
   display: grid;
   width: 34px;
@@ -1282,6 +1312,7 @@ button, input, select, textarea { font: inherit; }
   font-weight: 900;
   line-height: 1;
   box-shadow: 0 2px 8px #0f172a99;
+  pointer-events: none;
 }
 .aci-canopy-edit-poly {
   cursor: grab !important;

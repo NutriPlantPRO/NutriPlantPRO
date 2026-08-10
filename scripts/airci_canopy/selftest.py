@@ -22,6 +22,7 @@ from detector import (
     pattern_from_calibration,
     seed_grid,
     _feature_maps,
+    _meters_per_pixel,
     _prepare_confirm_masks,
     _rgb_u8,
 )
@@ -471,15 +472,60 @@ def test_appearance_rejects_grass() -> None:
         path.unlink(missing_ok=True)
 
 
+def test_meters_per_pixel_geographic() -> None:
+    """EPSG:4326 debe dar GSD en metros (antes: NO_GSD)."""
+    # ~5 cm/px a ~19°N: 0.05 / (111320 * cos(19°)) ≈ 4.75e-7 deg/px en lon
+    lat0 = 19.0
+    lng0 = -102.0
+    gsd_target = 0.05
+    m_per_deg_lat = 111320.0
+    m_per_deg_lon = 111320.0 * math.cos(math.radians(lat0))
+    deg_y = gsd_target / m_per_deg_lat
+    deg_x = gsd_target / m_per_deg_lon
+    size = 64
+    transform = from_origin(lng0, lat0 + size * deg_y, deg_x, deg_y)
+    image = np.zeros((3, size, size), dtype=np.uint8)
+    image[:] = 120
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as handle:
+        path = Path(handle.name)
+    try:
+        with rasterio.open(
+            path,
+            "w",
+            driver="GTiff",
+            width=size,
+            height=size,
+            count=3,
+            dtype="uint8",
+            crs="EPSG:4326",
+            transform=transform,
+        ) as dataset:
+            dataset.write(image)
+        with rasterio.open(path) as dataset:
+            # Sin gsd_m en options: debe derivarlo del CRS geográfico.
+            got = _meters_per_pixel(dataset, None)
+            if got is None:
+                raise AssertionError("4326 debió producir GSD en metros")
+            if abs(got - gsd_target) / gsd_target > 0.08:
+                raise AssertionError(f"GSD 4326 fuera de rango: {got:.5f} vs {gsd_target}")
+            # provided manda
+            forced = _meters_per_pixel(dataset, 0.04)
+            if abs(forced - 0.04) > 1e-9:
+                raise AssertionError("provided gsd_m no se respetó")
+    finally:
+        path.unlink(missing_ok=True)
+
+
 def main() -> None:
     test_evidence_detect_tile()
     test_pattern_and_seed_grid()
     test_confirm_and_merge()
     test_analyze_grid_geotiff()
     test_appearance_rejects_grass()
+    test_meters_per_pixel_geographic()
     print(
         f"AirCI detector self-test OK ({DETECTOR_VERSION}): "
-        "pattern + seed_grid + confirm + appearance + merge + analyze_geotiff grid_v1"
+        "pattern + seed_grid + confirm + appearance + GSD4326 + merge + analyze_geotiff grid_v1"
     )
 
 

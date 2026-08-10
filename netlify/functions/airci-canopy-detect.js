@@ -301,6 +301,24 @@ exports.handler = async function handler(event) {
         error: 'Antes de analizar confirma los 10 árboles de calibración y sus perímetros.'
       });
     }
+    // GSD desde el navegador (p.ej. orto EPSG:4326). Evita NO_GSD sin redeploy Cloud.
+    const clientGsd = Number(options.gsd_m);
+    const gsdM =
+      Number.isFinite(clientGsd) && clientGsd > 0 && clientGsd <= 2
+        ? clientGsd
+        : Number.isFinite(Number(flight.gsd_m)) && Number(flight.gsd_m) > 0
+          ? Number(flight.gsd_m)
+          : null;
+    if (gsdM != null && !(Number(flight.gsd_m) > 0)) {
+      await supabase.from('airci_flights').update({ gsd_m: gsdM }).eq('id', flight.id);
+    }
+    if (gsdM == null) {
+      return json(400, {
+        ok: false,
+        error:
+          'NO_GSD: no se pudo medir la escala del orto. Recarga el GeoTIFF en el mapa e inténtalo de nuevo.'
+      });
+    }
     const row = {
       site_id: flight.site_id,
       flight_id: flight.id,
@@ -311,6 +329,7 @@ exports.handler = async function handler(event) {
       detector_mode: String(options.detector_mode || 'grid_v1').slice(0, 60),
       options_json: {
         detector_mode: String(options.detector_mode || 'grid_v1').slice(0, 60),
+        gsd_m: gsdM,
         min_canopy_m: Math.max(0.3, Math.min(Number(options.min_canopy_m) || 1.0, 12)),
         max_canopy_m: Math.max(1, Math.min(Number(options.max_canopy_m) || 12, 40)),
         expected_spacing_m: Math.max(

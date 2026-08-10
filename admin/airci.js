@@ -3229,18 +3229,28 @@
     calibrationVertexLayer = null;
   }
 
+  function ensureCalibrationPanes() {
+    if (!map || typeof L === 'undefined') return;
+    if (!map.getPane('airciCalibration')) {
+      var polyPane = map.createPane('airciCalibration');
+      polyPane.style.zIndex = '660';
+      // none: el pane no tapa el mapa; polígonos/vértices activan pointer-events.
+      polyPane.style.pointerEvents = 'none';
+    }
+    if (!map.getPane('airciCalibrationVerts')) {
+      var vertPane = map.createPane('airciCalibrationVerts');
+      // Encima del polígono para poder arrastrar puntos sin pelear con el relleno.
+      vertPane.style.zIndex = '675';
+      vertPane.style.pointerEvents = 'none';
+    }
+  }
+
   function renderCalibrationSamples() {
     clearCalibrationLayers();
     if (!map || typeof L === 'undefined') return;
-    if (!map.getPane('airciCalibration')) {
-      var pane = map.createPane('airciCalibration');
-      pane.style.zIndex = '660';
-      // none: solo polígonos/vértices reciben clic; si el pane es auto, tapa el mapa
-      // y «Añadir punto» no puede registrar el segundo clic.
-      pane.style.pointerEvents = 'none';
-    }
+    ensureCalibrationPanes();
     calibrationLayer = L.layerGroup({ pane: 'airciCalibration' }).addTo(map);
-    calibrationVertexLayer = L.layerGroup({ pane: 'airciCalibration' }).addTo(map);
+    calibrationVertexLayer = L.layerGroup({ pane: 'airciCalibrationVerts' }).addTo(map);
     calibrationSamples.forEach(function (sample, sampleIndex) {
       var selected = sampleIndex === calibrationSelectedIndex;
       var polygon = L.polygon(sample.latlngs, {
@@ -3248,7 +3258,9 @@
         color: selected ? '#1d4ed8' : '#0ea5e9',
         weight: selected ? 3 : 2,
         fillColor: '#38bdf8',
-        fillOpacity: 0.22,
+        // Con selección, menos relleno para no “comerse” los puntos visualmente.
+        fillOpacity: selected ? 0.12 : 0.22,
+        interactive: true,
         bubblingMouseEvents: false
       });
       polygon.bindTooltip('Muestra ' + (sampleIndex + 1) + ' · clic para editar');
@@ -3284,15 +3296,15 @@
       if (!selected) return;
       var center = calibrationCentroid(sample.latlngs);
       var moveMarker = L.marker(center, {
-        pane: 'airciCalibration',
+        pane: 'airciCalibrationVerts',
         draggable: true,
         keyboard: false,
-        zIndexOffset: 1000,
+        zIndexOffset: 2000,
         icon: L.divIcon({
           className: 'aci-calibration-move',
           html: '<i>↕</i>',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14]
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
         })
       });
       moveMarker.bindTooltip('Arrastra para mover toda la copa');
@@ -3328,10 +3340,16 @@
       calibrationVertexLayer.addLayer(moveMarker);
       sample.latlngs.forEach(function (point, pointIndex) {
         var marker = L.marker(point, {
-          pane: 'airciCalibration',
+          pane: 'airciCalibrationVerts',
           draggable: true,
           keyboard: false,
-          icon: L.divIcon({ className: 'aci-calibration-vertex', html: '<i></i>', iconSize: [12, 12], iconAnchor: [6, 6] })
+          zIndexOffset: 1800 + pointIndex,
+          icon: L.divIcon({
+            className: 'aci-calibration-vertex',
+            html: '<i></i>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+          })
         });
         marker.on('drag', function (event) {
           var latlng = event.target.getLatLng();
@@ -4202,8 +4220,19 @@
       syncCalibrationUi();
       return;
     }
+    var gsdM = estimateOrthoGsdM(currentGeoraster, lastBounds);
+    if (!(Number.isFinite(gsdM) && gsdM > 0)) {
+      setMapStatus(
+        'NO_GSD: el mapa no pudo medir la escala. Vuelve a cargar el GeoTIFF y confirma las 10 copas.',
+        'error'
+      );
+      return;
+    }
     setAnalyzeBusy(true);
-    setMapStatus('Creando análisis profesional del predio completo…', 'ok');
+    setMapStatus(
+      'Creando análisis profesional · GSD ' + (gsdM * 100).toFixed(1) + ' cm/px…',
+      'ok'
+    );
     var meta = collectMeta();
     var density = Number(meta.densidad_ha);
     var spacingFromDensity =
@@ -4222,6 +4251,7 @@
       flight_id: flightId,
       options: {
         detector_mode: 'grid_v1',
+        gsd_m: gsdM,
         expected_spacing_m: spacing,
         min_canopy_m: calibration.profile.min_canopy_m || 1,
         max_canopy_m: calibration.profile.max_canopy_m || 12,
@@ -5695,6 +5725,10 @@
     if (calibrationVertexLayer && map && map.hasLayer(calibrationVertexLayer) && calibrationVertexLayer.bringToFront) {
       calibrationVertexLayer.bringToFront();
     }
+    if (map.getPane('airciCalibrationVerts')) {
+      map.getPane('airciCalibrationVerts').style.zIndex = '675';
+      map.getPane('airciCalibrationVerts').style.pointerEvents = 'none';
+    }
     if (professionalEditLayer && map && map.hasLayer(professionalEditLayer) && professionalEditLayer.bringToFront) {
       professionalEditLayer.bringToFront();
     }
@@ -5874,6 +5908,45 @@
     };
   }
 
+  function estimateOrthoGsdM(georaster, bounds) {
+    if (!georaster) return null;
+    var proj = georaster.projection != null ? String(georaster.projection) : '';
+    var pw = Math.abs(Number(georaster.pixelWidth));
+    var ph = Math.abs(Number(georaster.pixelHeight));
+    var projected =
+      proj &&
+      proj !== '4326' &&
+      proj !== 'EPSG:4326' &&
+      Number.isFinite(pw) &&
+      pw > 0 &&
+      pw <= 2;
+    if (projected) {
+      if (Number.isFinite(ph) && ph > 0) return (pw + ph) / 2;
+      return pw;
+    }
+    // CRS geográfico o sin proyección usable: metros desde el bbox del mapa.
+    if (!bounds || !bounds.isValid || !bounds.isValid()) return null;
+    var w = Number(georaster.width);
+    var h = Number(georaster.height);
+    if (!(w > 0 && h > 0)) return null;
+    var west = bounds.getWest();
+    var east = bounds.getEast();
+    var south = bounds.getSouth();
+    var north = bounds.getNorth();
+    var midLat = (south + north) / 2;
+    var midLng = (west + east) / 2;
+    var hv =
+      window.AirCICanopy && typeof AirCICanopy.haversineM === 'function'
+        ? AirCICanopy.haversineM
+        : null;
+    if (!hv) return null;
+    var widthM = hv(midLat, west, midLat, east);
+    var heightM = hv(south, midLng, north, midLng);
+    var gsd = (widthM / w + heightM / h) / 2;
+    if (!Number.isFinite(gsd) || gsd <= 0 || gsd > 2) return null;
+    return gsd;
+  }
+
   async function renderGeotiffFromArrayBuffer(arrayBuffer, meta) {
     meta = meta || {};
     if (typeof parseGeoraster !== 'function' || typeof GeoRasterLayer === 'undefined') {
@@ -5922,13 +5995,7 @@
       height_px: georaster.height,
       bands: georaster.numberOfRasters || (georaster.rasters && georaster.rasters.length) || null,
       crs: georaster.projection != null ? String(georaster.projection) : null,
-      gsd_m:
-        georaster.projection != null &&
-        String(georaster.projection) !== '4326' &&
-        Number.isFinite(Math.abs(Number(georaster.pixelWidth))) &&
-        Math.abs(Number(georaster.pixelWidth)) > 0
-          ? Math.abs(Number(georaster.pixelWidth))
-          : null,
+      gsd_m: null,
       cloud: meta.cloud || 'Vista local',
       cloud_sub: meta.cloud_sub || 'pendiente de nube'
     };
@@ -5942,6 +6009,8 @@
         ];
       }
     } catch (e) {}
+    // GSD en metros: UTM/proyectado usa pixelWidth; 4326 usa bounds→haversine.
+    info.gsd_m = estimateOrthoGsdM(georaster, lastBounds);
 
     updateMetrics(info);
     setMapStatus(

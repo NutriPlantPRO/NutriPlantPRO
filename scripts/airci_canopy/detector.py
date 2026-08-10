@@ -591,10 +591,38 @@ def _in_core(
 def _meters_per_pixel(dataset: rasterio.io.DatasetReader, provided: float | None) -> float | None:
     if provided and provided > 0:
         return float(provided)
-    if dataset.crs and dataset.crs.is_projected:
+    if not dataset.crs:
+        return None
+    try:
         x_res, y_res = dataset.res
-        value = (abs(float(x_res)) + abs(float(y_res))) / 2.0
+    except Exception:
+        return None
+    ax = abs(float(x_res))
+    ay = abs(float(y_res))
+    if ax <= 0 or ay <= 0:
+        return None
+    if dataset.crs.is_projected:
+        value = (ax + ay) / 2.0
         return value if value > 0 else None
+    # Geographic CRS (p.ej. EPSG:4326): res está en grados → convertir a metros
+    # en el centro del raster. Sin esto, ortos WebODM/Leaflet en 4326 fallan NO_GSD.
+    if dataset.crs.is_geographic:
+        try:
+            bounds = dataset.bounds
+            center_lat = (float(bounds.top) + float(bounds.bottom)) / 2.0
+            center_lng = (float(bounds.left) + float(bounds.right)) / 2.0
+        except Exception:
+            return None
+        if not math.isfinite(center_lat) or abs(center_lat) > 90:
+            return None
+        # 1 px en X/Y → distancia real (haversine) en el centro
+        mx = _haversine_m(center_lat, center_lng, center_lat, center_lng + ax)
+        my = _haversine_m(center_lat, center_lng, center_lat + ay, center_lng)
+        value = (mx + my) / 2.0
+        # GSD de dron típico ≪ 2 m/px; rechazar basura
+        if not math.isfinite(value) or value <= 0 or value > 2.0:
+            return None
+        return float(value)
     return None
 
 
