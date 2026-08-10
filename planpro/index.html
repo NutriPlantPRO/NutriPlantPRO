@@ -760,6 +760,51 @@
     .np-storage-usage-pill[data-state='cached'] .np-storage-usage-sub {
       color: #94a3b8;
     }
+    .np-storage-float-tip {
+      position: fixed;
+      z-index: 10090;
+      left: 0;
+      top: 0;
+      max-width: min(360px, calc(100vw - 16px));
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 11.5px;
+      font-weight: 550;
+      line-height: 1.45;
+      letter-spacing: 0.01em;
+      text-align: left;
+      white-space: pre-line;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.42);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(3px);
+      transition: opacity 0.06s ease, transform 0.06s ease;
+    }
+    .np-storage-float-tip.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .np-storage-float-tip.is-above {
+      transform: translateY(-3px);
+    }
+    .np-storage-float-tip.is-above.is-visible {
+      transform: translateY(0);
+    }
+    .np-storage-float-tip[hidden] {
+      display: none !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .np-storage-float-tip {
+        transition: none;
+        transform: none;
+      }
+      .np-storage-float-tip.is-above {
+        transform: none;
+      }
+    }
     .np-fx-rate-pill {
       flex-shrink: 0;
       display: inline-flex;
@@ -11136,7 +11181,7 @@
               <button type="button" class="btn-mac-link" id="npWeatherRefreshBtn">Actualizar</button>
             </div>
           </div>
-          <button type="button" class="np-storage-usage-pill" id="npStorageUsageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" title="Archivos en Supabase · calculando…">
+          <button type="button" class="np-storage-usage-pill" id="npStorageUsageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" data-np-tip="Archivos en Supabase · calculando…">
             <span class="np-storage-usage-num" id="npStorageUsageNum">…</span>
             <span class="np-storage-usage-sub" id="npStorageUsageSub">NutriPlant nube</span>
           </button>
@@ -12582,7 +12627,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260806picksmodal2"></script>
-  <script src="../assets/planpro-invest-portfolio.js?v=20260806pf8"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260810a"></script>
   <script>
 (function () {
   'use strict';
@@ -12747,6 +12792,14 @@
     return hrs === 1 ? 'hace 1 h' : 'hace ' + hrs + ' h';
   }
 
+  function setPlanProStorageTip(btn, text) {
+    if (!btn) return;
+    var tip = String(text || '').trim();
+    if (tip) btn.setAttribute('data-np-tip', tip);
+    else btn.removeAttribute('data-np-tip');
+    btn.removeAttribute('title');
+  }
+
   function renderPlanProStorageUsage(data, errMsg, meta) {
     meta = meta || {};
     var btn = $('npStorageUsageBtn');
@@ -12761,7 +12814,7 @@
       if (planProStorageRpcMissing) {
         hint += ' Ejecuta supabase-plan-pro-storage-usage.sql en Supabase (SQL Editor).';
       }
-      btn.title = hint;
+      setPlanProStorageTip(btn, hint);
       btn.setAttribute('aria-label', hint);
       return;
     }
@@ -12806,7 +12859,7 @@
         lines.push('• ' + b.bucket_id + ': ' + formatPlanProStorageSize(b.bytes));
       });
     }
-    btn.title = lines.join('\n');
+    setPlanProStorageTip(btn, lines.join('\n'));
     btn.setAttribute(
       'aria-label',
       formatPlanProStorageGbLine(total, quotaGb) + ' usados en la nube NutriPlant'
@@ -14098,8 +14151,10 @@
       storageBtn.dataset.npWired = '1';
       storageBtn.addEventListener('click', function (e) {
         e.preventDefault();
+        hidePlanProStorageFloatTip();
         refreshPlanProStorageUsage({ force: true });
       });
+      wirePlanProStorageFloatTip(storageBtn);
     }
     var cloudBtn = $('npCloudSyncBtn');
     if (cloudBtn && cloudBtn.dataset.npWired !== '1') {
@@ -14123,6 +14178,70 @@
       npCloudFlushPendingEdits();
       npCloudSyncRender();
     });
+  }
+
+  function ensurePlanProStorageFloatTip() {
+    var tip = document.getElementById('npStorageFloatTip');
+    if (tip) return tip;
+    tip = document.createElement('div');
+    tip.id = 'npStorageFloatTip';
+    tip.className = 'np-storage-float-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    document.body.appendChild(tip);
+    return tip;
+  }
+
+  function hidePlanProStorageFloatTip() {
+    var tip = document.getElementById('npStorageFloatTip');
+    if (!tip) return;
+    tip.hidden = true;
+    tip.classList.remove('is-visible', 'is-above');
+  }
+
+  function placePlanProStorageFloatTip(btn) {
+    if (!btn) return;
+    var text = String(btn.getAttribute('data-np-tip') || '').trim();
+    if (!text) {
+      hidePlanProStorageFloatTip();
+      return;
+    }
+    btn.removeAttribute('title');
+    var tip = ensurePlanProStorageFloatTip();
+    tip.textContent = text;
+    tip.hidden = false;
+    tip.classList.add('is-visible');
+    tip.classList.remove('is-above');
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    var r = btn.getBoundingClientRect();
+    var tw = tip.offsetWidth || 0;
+    var th = tip.offsetHeight || 0;
+    var gap = 8;
+    var left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    var top = r.bottom + gap;
+    if (top + th > window.innerHeight - 8 && r.top - gap - th > 8) {
+      top = r.top - gap - th;
+      tip.classList.add('is-above');
+    }
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
+  }
+
+  function wirePlanProStorageFloatTip(btn) {
+    if (!btn || btn.dataset.npTipWired === '1') return;
+    btn.dataset.npTipWired = '1';
+    btn.addEventListener('pointerenter', function () {
+      placePlanProStorageFloatTip(btn);
+    });
+    btn.addEventListener('pointerleave', hidePlanProStorageFloatTip);
+    btn.addEventListener('focus', function () {
+      placePlanProStorageFloatTip(btn);
+    });
+    btn.addEventListener('blur', hidePlanProStorageFloatTip);
+    window.addEventListener('scroll', hidePlanProStorageFloatTip, true);
+    window.addEventListener('resize', hidePlanProStorageFloatTip);
   }
 
   /** Prioridad al crear apunte: '' | baja | media | alta (vacío = sin prioridad en ficha). */

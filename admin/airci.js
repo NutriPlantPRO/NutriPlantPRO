@@ -4528,6 +4528,63 @@
     } catch (e) {}
   }
 
+  function setStorageTip(btn, text) {
+    if (!btn) return;
+    var tip = String(text || '').trim();
+    if (tip) btn.setAttribute('data-np-tip', tip);
+    else btn.removeAttribute('data-np-tip');
+    btn.removeAttribute('title');
+  }
+
+  function hideAciStorageFloatTip() {
+    var tip = document.getElementById('aciStorageFloatTip');
+    if (!tip) return;
+    tip.hidden = true;
+    tip.classList.remove('is-visible', 'is-above');
+  }
+
+  function ensureAciStorageFloatTip() {
+    var tip = document.getElementById('aciStorageFloatTip');
+    if (tip) return tip;
+    tip = document.createElement('div');
+    tip.id = 'aciStorageFloatTip';
+    tip.className = 'aci-storage-float-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    document.body.appendChild(tip);
+    return tip;
+  }
+
+  function placeAciStorageFloatTip(btn) {
+    if (!btn) return;
+    var text = String(btn.getAttribute('data-np-tip') || '').trim();
+    if (!text) {
+      hideAciStorageFloatTip();
+      return;
+    }
+    btn.removeAttribute('title');
+    var tip = ensureAciStorageFloatTip();
+    tip.textContent = text;
+    tip.hidden = false;
+    tip.classList.add('is-visible');
+    tip.classList.remove('is-above');
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    var r = btn.getBoundingClientRect();
+    var tw = tip.offsetWidth || 0;
+    var th = tip.offsetHeight || 0;
+    var gap = 8;
+    var left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    var top = r.bottom + gap;
+    if (top + th > window.innerHeight - 8 && r.top - gap - th > 8) {
+      top = r.top - gap - th;
+      tip.classList.add('is-above');
+    }
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
+  }
+
   function renderStorageUsage(data, errMsg, meta) {
     var btn = document.getElementById('aciStorageBtn');
     var num = document.getElementById('aciStorageNum');
@@ -4542,7 +4599,7 @@
       if (storageUsageRpcMissing) {
         hint += ' Ejecuta supabase-plan-pro-storage-usage.sql en Supabase.';
       }
-      btn.title = hint;
+      setStorageTip(btn, hint);
       return;
     }
     var total = Number(data.total_bytes) || 0;
@@ -4577,7 +4634,7 @@
     otherBuckets.forEach(function (b) {
       lines.push('• ' + b.bucket_id + ': ' + storageFmtSize(b.bytes));
     });
-    btn.title = lines.join('\n');
+    setStorageTip(btn, lines.join('\n'));
     btn.setAttribute(
       'aria-label',
       storagePillLine(total, quotaGb) + ' · AirCI ' + storageFmtSize(airciBytes)
@@ -6435,8 +6492,19 @@
   if (storageBtn) {
     storageBtn.addEventListener('click', function (e) {
       e.preventDefault();
+      hideAciStorageFloatTip();
       refreshStorageUsage(true);
     });
+    storageBtn.addEventListener('pointerenter', function () {
+      placeAciStorageFloatTip(storageBtn);
+    });
+    storageBtn.addEventListener('pointerleave', hideAciStorageFloatTip);
+    storageBtn.addEventListener('focus', function () {
+      placeAciStorageFloatTip(storageBtn);
+    });
+    storageBtn.addEventListener('blur', hideAciStorageFloatTip);
+    window.addEventListener('scroll', hideAciStorageFloatTip, true);
+    window.addEventListener('resize', hideAciStorageFloatTip);
   }
 
   var toolsWrap = document.getElementById('aciToolsMenu');

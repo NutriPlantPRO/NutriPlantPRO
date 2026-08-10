@@ -396,6 +396,51 @@
             color: #b45309;
         }
         .admin-storage-pill[data-state="cached"] .admin-storage-sub { color: #94a3b8; }
+        .admin-storage-float-tip {
+            position: fixed;
+            z-index: 10090;
+            left: 0;
+            top: 0;
+            max-width: min(360px, calc(100vw - 16px));
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 11.5px;
+            font-weight: 550;
+            line-height: 1.45;
+            letter-spacing: 0.01em;
+            text-align: left;
+            white-space: pre-line;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.42);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(3px);
+            transition: opacity 0.06s ease, transform 0.06s ease;
+        }
+        .admin-storage-float-tip.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .admin-storage-float-tip.is-above {
+            transform: translateY(-3px);
+        }
+        .admin-storage-float-tip.is-above.is-visible {
+            transform: translateY(0);
+        }
+        .admin-storage-float-tip[hidden] {
+            display: none !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .admin-storage-float-tip {
+                transition: none;
+                transform: none;
+            }
+            .admin-storage-float-tip.is-above {
+                transform: none;
+            }
+        }
         .admin-storage-num {
             font-size: 12px;
             font-weight: 800;
@@ -1678,7 +1723,7 @@
                     <span class="admin-weather-num" id="adminWeatherNum">Clima …</span>
                     <span class="admin-weather-sub" id="adminWeatherSub">ubicación</span>
                 </button>
-                <button type="button" class="admin-storage-pill" id="adminStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" title="Archivos en Supabase · calculando…">
+                <button type="button" class="admin-storage-pill" id="adminStorageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" data-np-tip="Archivos en Supabase · calculando…">
                     <span class="admin-storage-num" id="adminStorageNum">…</span>
                     <span class="admin-storage-sub" id="adminStorageSub">NutriPlant nube</span>
                 </button>
@@ -3910,6 +3955,57 @@
                     localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data || {}, fetchedAt: Date.now() }));
                 } catch (e) {}
             }
+            function setTip(text) {
+                var tip = String(text || '').trim();
+                if (tip) btn.setAttribute('data-np-tip', tip);
+                else btn.removeAttribute('data-np-tip');
+                btn.removeAttribute('title');
+            }
+            function ensureTipEl() {
+                var tip = document.getElementById('adminStorageFloatTip');
+                if (tip) return tip;
+                tip = document.createElement('div');
+                tip.id = 'adminStorageFloatTip';
+                tip.className = 'admin-storage-float-tip';
+                tip.setAttribute('role', 'tooltip');
+                tip.hidden = true;
+                document.body.appendChild(tip);
+                return tip;
+            }
+            function hideTip() {
+                var tip = document.getElementById('adminStorageFloatTip');
+                if (!tip) return;
+                tip.hidden = true;
+                tip.classList.remove('is-visible', 'is-above');
+            }
+            function placeTip() {
+                var text = String(btn.getAttribute('data-np-tip') || '').trim();
+                if (!text) {
+                    hideTip();
+                    return;
+                }
+                btn.removeAttribute('title');
+                var tip = ensureTipEl();
+                tip.textContent = text;
+                tip.hidden = false;
+                tip.classList.add('is-visible');
+                tip.classList.remove('is-above');
+                tip.style.left = '0px';
+                tip.style.top = '0px';
+                var r = btn.getBoundingClientRect();
+                var tw = tip.offsetWidth || 0;
+                var th = tip.offsetHeight || 0;
+                var gap = 8;
+                var left = r.left + r.width / 2 - tw / 2;
+                left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+                var top = r.bottom + gap;
+                if (top + th > window.innerHeight - 8 && r.top - gap - th > 8) {
+                    top = r.top - gap - th;
+                    tip.classList.add('is-above');
+                }
+                tip.style.left = Math.round(left) + 'px';
+                tip.style.top = Math.round(top) + 'px';
+            }
             function render(data, errMsg, meta) {
                 meta = meta || {};
                 if (errMsg || !data) {
@@ -3918,7 +4014,7 @@
                     sub.textContent = 'NutriPlant nube';
                     var hint = errMsg || 'No se pudo leer el uso de archivos.';
                     if (rpcMissing) hint += ' Ejecuta supabase-plan-pro-storage-usage.sql en Supabase.';
-                    btn.title = hint;
+                    setTip(hint);
                     btn.setAttribute('aria-label', hint);
                     return;
                 }
@@ -3945,7 +4041,7 @@
                         lines.push('• ' + b.bucket_id + ': ' + fmtSize(b.bytes));
                     });
                 }
-                btn.title = lines.join('\n');
+                setTip(lines.join('\n'));
                 btn.setAttribute('aria-label', pillLine(total, quotaGb) + ' en la nube NutriPlant');
             }
             async function refresh(force) {
@@ -4001,8 +4097,15 @@
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
+                hideTip();
                 refresh(true);
             });
+            btn.addEventListener('pointerenter', placeTip);
+            btn.addEventListener('pointerleave', hideTip);
+            btn.addEventListener('focus', placeTip);
+            btn.addEventListener('blur', hideTip);
+            window.addEventListener('scroll', hideTip, true);
+            window.addEventListener('resize', hideTip);
             refresh(false);
             setInterval(function () {
                 if (!document.hidden) refresh(false);

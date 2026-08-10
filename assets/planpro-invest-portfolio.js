@@ -768,6 +768,34 @@
     }
   }
 
+  /** Tooltip Chart.js: fondo sólido (sin transparencia) y aparición rápida. */
+  function solidChartTooltip(extra) {
+    var base = {
+      backgroundColor: '#0f172a',
+      titleColor: '#f8fafc',
+      bodyColor: '#e2e8f0',
+      footerColor: '#cbd5e1',
+      borderColor: 'rgba(148, 163, 184, 0.35)',
+      borderWidth: 1,
+      cornerRadius: 8,
+      padding: 10,
+      displayColors: true,
+      boxPadding: 4,
+      caretSize: 6,
+      caretPadding: 8,
+      titleFont: { weight: '700', size: 12 },
+      bodyFont: { weight: '600', size: 11 },
+      animation: false,
+      animations: false
+    };
+    if (!extra) return base;
+    var out = Object.assign({}, base, extra);
+    if (extra.callbacks) {
+      out.callbacks = Object.assign({}, extra.callbacks);
+    }
+    return out;
+  }
+
   /** Texto en el centro del doughnut: total USD. */
   function doughnutCenterPlugin(totalText, subText) {
     return {
@@ -901,7 +929,7 @@
                 }
               },
               title: { display: false },
-              tooltip: {
+              tooltip: solidChartTooltip({
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.parsed || 0;
@@ -909,7 +937,7 @@
                     return ' ' + ctx.label + ': ' + fmtMoney(v) + ' (' + pct + '%)';
                   }
                 }
-              }
+              })
             }
           },
           plugins: [doughnutCenterPlugin(fmtMoney(t.total), 'total USD')]
@@ -985,7 +1013,7 @@
                 }
               },
               title: { display: false },
-              tooltip: {
+              tooltip: solidChartTooltip({
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.parsed || 0;
@@ -993,7 +1021,7 @@
                     return ' ' + ctx.label + ': ' + fmtMoney(v) + ' (' + pct + '%)';
                   }
                 }
-              }
+              })
             }
           },
           plugins: [doughnutCenterPlugin(fmtMoney(t.total), 'total USD')]
@@ -1112,7 +1140,7 @@
                 }
               },
               title: { display: false },
-              tooltip: {
+              tooltip: solidChartTooltip({
                 callbacks: {
                   label: function () {
                     return null;
@@ -1133,7 +1161,7 @@
                     ];
                   }
                 }
-              }
+              })
             },
             scales: {
               x: {
