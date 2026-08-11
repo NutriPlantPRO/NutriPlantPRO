@@ -5151,6 +5151,62 @@
             };
         }
 
+        /**
+         * Ciclos estimados cuyo cobro cae en el año calendario (estimado cada 5 meses
+         * desde activated_at hasta last_payment_date).
+         */
+        function adminEstimatePaidCyclesInCalendarYear(u, year) {
+            if (!adminUserHasPaidEvidence(u)) return 0;
+            var lastPay = adminParseDate(u.last_payment_date);
+            var start = adminParseDate(u.subscription_activated_at) || lastPay;
+            if (!start || !lastPay) return 0;
+            if (lastPay.getTime() < start.getTime()) lastPay = start;
+            var y = Number(year) || new Date().getFullYear();
+            var yearStart = new Date(y, 0, 1).getTime();
+            var yearEnd = new Date(y, 11, 31, 23, 59, 59, 999).getTime();
+            var totalCycles = adminEstimatePaidCyclesForUser(u);
+            if (totalCycles < 1) return 0;
+            var count = 0;
+            var i;
+            for (i = 0; i < totalCycles; i++) {
+                var payDate;
+                if (i === totalCycles - 1) {
+                    payDate = lastPay;
+                } else {
+                    payDate = new Date(start.getTime());
+                    payDate.setMonth(payDate.getMonth() + i * ADMIN_SUBSCRIPTION_CYCLE_MONTHS);
+                    if (payDate.getTime() > lastPay.getTime()) payDate = lastPay;
+                }
+                var t = payDate.getTime();
+                if (t >= yearStart && t <= yearEnd) count += 1;
+            }
+            return count;
+        }
+
+        /** Ingreso neto estimado del año calendario (cobros estimados en ese año). */
+        function adminYearPaidRevenueSummary(users, year) {
+            var y = Number(year) || new Date().getFullYear();
+            var people = 0;
+            var cycles = 0;
+            var renewals = 0; // personas con 2+ ciclos estimados en el año
+            (users || []).forEach(function (u) {
+                if (!u || u.isAdmin === true) return;
+                if (u.exclude_from_revenue === true) return;
+                var c = adminEstimatePaidCyclesInCalendarYear(u, y);
+                if (c < 1) return;
+                people += 1;
+                cycles += c;
+                if (c >= 2) renewals += 1;
+            });
+            return {
+                year: y,
+                people: people,
+                cycles: cycles,
+                renewals: renewals,
+                totalNetUsd: cycles * ADMIN_NET_REVENUE_PER_CYCLE_USD
+            };
+        }
+
         // 📋 FUNCIONES DE GESTIÓN
         async function showAllUsers(ev) {
             var endBusy = adminCloudBusyStart(ev, '☁️ Bajando…');
@@ -7813,6 +7869,8 @@
             const countingActive = users.filter(adminUserCountsTowardSubscriptionRevenue);
             const excludedActive = activeAll.filter(u => !adminUserCountsTowardSubscriptionRevenue(u));
             const lifetime = adminLifetimePaidRevenueSummary(users);
+            const yearNow = new Date().getFullYear();
+            const yearRev = adminYearPaidRevenueSummary(users, yearNow);
             const overview = {
                 total: users.length,
                 active: activeAll.length,
@@ -7828,7 +7886,12 @@
                 lifetimeCancelledPaid: lifetime.cancelledOrExpiredWhoPaid,
                 lifetimeActivePaid: lifetime.activeWhoPaid,
                 lifetimeActiveNoPay: lifetime.activeNoLastPayment,
-                lifetimeNextOverdue: lifetime.activeNextOverdue
+                lifetimeNextOverdue: lifetime.activeNextOverdue,
+                yearLabel: yearRev.year,
+                yearPeople: yearRev.people,
+                yearCycles: yearRev.cycles,
+                yearRenewals: yearRev.renewals,
+                yearNetUsd: yearRev.totalNetUsd
             };
             const CICLOS_POR_ANIO = 12 / 5;
             const equivAnual = overview.totalRevenuePerCycle * CICLOS_POR_ANIO;
@@ -7883,6 +7946,12 @@
                             <div style="color: #64748b; margin-top: 8px;">🏦 Total cobrado histórico (neto)</div>
                             <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Solo quien tiene <strong>last_payment_date</strong> de PayPal · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman</div>
                             <div style="color:#065f46;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.lifetimePeople} persona(s) con cobro · ${overview.lifetimeCycles} ciclo(s)${lifetimeExtraHtml}</div>
+                        </div>
+                        <div style="background: #fff7ed; padding: 20px; border-radius: 8px; border-left: 4px solid #f97316;">
+                            <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.yearNetUsd.toFixed(2)} USD</div>
+                            <div style="color: #64748b; margin-top: 8px;">📅 Ingreso total ${overview.yearLabel} (neto estimado)</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Cobros estimados en el año calendario · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · renovaciones = 2+ ciclos en el año</div>
+                            <div style="color:#9a3412;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.yearPeople} persona(s) · ${overview.yearCycles} ciclo(s)${overview.yearRenewals > 0 ? ' · 🔄 ' + overview.yearRenewals + ' con renovación (2+ ciclos)' : ''}</div>
                         </div>
                     </div>
                     <button onclick="closeDataViewer()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cerrar</button>
