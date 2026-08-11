@@ -1903,10 +1903,11 @@
                 
                 <div class="stat-card" style="background:#fff7ed;">
                     <div class="stat-number" id="totalRevenueLifetime">-</div>
-                    <div class="stat-label">🏦 Ingresos totales (USD neto)</div>
+                    <div class="stat-label">🏦 Ingresos totales históricos (USD neto)</div>
                     <div class="stat-sub" id="totalRevenueLifetimeNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                     <div class="stat-sub" id="totalRevenueLifetimeCount" style="margin-top:6px;font-size:12px;line-height:1.35;color:#9a3412;font-weight:700;"></div>
-                    <div class="stat-sub" id="totalRevenueYearLine" style="margin-top:6px;font-size:12px;line-height:1.35;color:#c2410c;font-weight:700;"></div>
+                    <div class="stat-sub" id="totalRevenueYearLine" style="margin-top:8px;font-size:12px;line-height:1.35;color:#c2410c;font-weight:700;"></div>
+                    <div class="stat-sub" id="totalRevenuePrevYearLine" style="margin-top:4px;font-size:12px;line-height:1.35;color:#b45309;font-weight:700;"></div>
                 </div>
                 
                 <div class="stat-card" style="background:#eff6ff;">
@@ -4191,13 +4192,13 @@
             if (lifeEl) lifeEl.textContent = '$' + stats.lifetimeNetUsd.toFixed(2);
             if (lifeNote) {
                 lifeNote.textContent =
-                    'Cobros reales PayPal · $' +
+                    'Histórico (todos los años) · cobros reales PayPal · $' +
                     ADMIN_NET_REVENUE_PER_CYCLE_USD +
-                    ' neto/ciclo · También en Resumen de Suscripciones';
+                    ' neto/ciclo · No incluye «No suma»';
             }
             if (lifeCount) {
                 lifeCount.textContent =
-                    '👥 ' +
+                    'Histórico: ' +
                     stats.lifetimePeople +
                     ' persona(s) · ' +
                     stats.lifetimeCycles +
@@ -4236,30 +4237,28 @@
                     stats.activeExcluded +
                     ' no suman';
             }
-            // Año calendario (async): cobros reales si hay tabla
+            // Año en curso + año pasado (async): cobros reales si hay tabla
             var yearLine = document.getElementById('totalRevenueYearLine');
-            if (yearLine) {
-                yearLine.textContent = '📅 ' + yearNow + ': calculando…';
-                adminFetchPaypalPaymentEventsForYear(yearNow).then(function (events) {
-                    var yearRev = adminYearPaidRevenueSummaryFromEvents(events, pool, yearNow);
-                    var el = document.getElementById('totalRevenueYearLine');
-                    if (!el) return;
-                    el.textContent =
-                        '📅 ' +
-                        yearRev.year +
-                        ': $' +
-                        yearRev.totalNetUsd.toFixed(2) +
-                        ' · ' +
-                        yearRev.people +
-                        ' persona(s) · ' +
-                        yearRev.cycles +
-                        ' ciclo(s)' +
-                        (yearRev.renewals > 0 ? ' · 🔄 ' + yearRev.renewals + ' con 2+ cobros' : '');
-                }).catch(function () {
-                    var el = document.getElementById('totalRevenueYearLine');
-                    if (el) el.textContent = '📅 ' + yearNow + ': —';
-                });
-            }
+            var prevYearLine = document.getElementById('totalRevenuePrevYearLine');
+            var yearPrev = yearNow - 1;
+            if (yearLine) yearLine.textContent = '📅 ' + yearNow + ' (en curso): calculando…';
+            if (prevYearLine) prevYearLine.textContent = '📅 ' + yearPrev + ': calculando…';
+            Promise.all([
+                adminFetchPaypalPaymentEventsForYear(yearNow),
+                adminFetchPaypalPaymentEventsForYear(yearPrev)
+            ]).then(function (pair) {
+                var yearRev = adminYearPaidRevenueSummaryFromEvents(pair[0], pool, yearNow);
+                var prevRev = adminYearPaidRevenueSummaryFromEvents(pair[1], pool, yearPrev);
+                var el = document.getElementById('totalRevenueYearLine');
+                var elPrev = document.getElementById('totalRevenuePrevYearLine');
+                if (el) el.textContent = adminFormatYearRevenueLine('📅 ' + yearRev.year + ' (en curso)', yearRev);
+                if (elPrev) elPrev.textContent = adminFormatYearRevenueLine('📅 ' + prevRev.year, prevRev);
+            }).catch(function () {
+                var el = document.getElementById('totalRevenueYearLine');
+                var elPrev = document.getElementById('totalRevenuePrevYearLine');
+                if (el) el.textContent = '📅 ' + yearNow + ' (en curso): —';
+                if (elPrev) elPrev.textContent = '📅 ' + yearPrev + ': —';
+            });
             document.getElementById('totalProjects').textContent = stats.totalProjects;
             document.getElementById('totalChats').textContent = stats.totalChats;
             document.getElementById('totalInteractions').textContent = stats.totalInteractions;
@@ -5209,13 +5208,43 @@
          * Ingreso del año desde paypal_payment_events (cobros reales).
          * Si la tabla aún no existe o viene vacía, fallback: last_payment en el año = 1 ciclo.
          */
+        function adminExcludedRevenueProfileIds(users) {
+            var excluded = Object.create(null);
+            (users || []).forEach(function (u) {
+                if (!u || u.id == null) return;
+                if (u.isAdmin === true || u.exclude_from_revenue === true) {
+                    excluded[String(u.id)] = true;
+                }
+            });
+            return excluded;
+        }
+
+        function adminFormatYearRevenueLine(prefix, yearRev) {
+            if (!yearRev) return prefix + ': —';
+            return (
+                prefix +
+                ': $' +
+                yearRev.totalNetUsd.toFixed(2) +
+                ' · ' +
+                yearRev.people +
+                ' persona(s) · ' +
+                yearRev.cycles +
+                ' ciclo(s)' +
+                (yearRev.renewals > 0 ? ' · 🔄 ' + yearRev.renewals + ' con 2+ cobros' : '')
+            );
+        }
+
         function adminYearPaidRevenueSummaryFromEvents(events, users, year) {
             var y = Number(year) || new Date().getFullYear();
+            var excluded = adminExcludedRevenueProfileIds(users);
             var byProfile = Object.create(null);
             var cycles = 0;
+            var rawEvents = 0;
             (events || []).forEach(function (ev) {
                 if (!ev || !ev.profile_id) return;
+                rawEvents += 1;
                 var pid = String(ev.profile_id);
+                if (excluded[pid]) return;
                 byProfile[pid] = (byProfile[pid] || 0) + 1;
                 cycles += 1;
             });
@@ -5225,7 +5254,7 @@
                 if (byProfile[pid] >= 2) renewals += 1;
             });
             // Si no hay eventos (SQL nuevo / sin deploy), fallback mínimo por last_payment en el año
-            if (cycles === 0 && users && users.length) {
+            if (cycles === 0 && rawEvents === 0 && users && users.length) {
                 var yearStart = new Date(y, 0, 1).getTime();
                 var yearEnd = new Date(y, 11, 31, 23, 59, 59, 999).getTime();
                 (users || []).forEach(function (u) {
@@ -5248,7 +5277,7 @@
                 cycles: cycles,
                 renewals: renewals,
                 totalNetUsd: cycles * ADMIN_NET_REVENUE_PER_CYCLE_USD,
-                fromEvents: (events || []).length > 0
+                fromEvents: rawEvents > 0
             };
         }
 
@@ -7939,8 +7968,13 @@
             const excludedActive = activeAll.filter(u => !adminUserCountsTowardSubscriptionRevenue(u));
             const lifetime = adminLifetimePaidRevenueSummary(users);
             const yearNow = new Date().getFullYear();
-            const yearEvents = await adminFetchPaypalPaymentEventsForYear(yearNow);
-            const yearRev = adminYearPaidRevenueSummaryFromEvents(yearEvents, users, yearNow);
+            const yearPrev = yearNow - 1;
+            const yearPair = await Promise.all([
+                adminFetchPaypalPaymentEventsForYear(yearNow),
+                adminFetchPaypalPaymentEventsForYear(yearPrev)
+            ]);
+            const yearRev = adminYearPaidRevenueSummaryFromEvents(yearPair[0], users, yearNow);
+            const prevYearRev = adminYearPaidRevenueSummaryFromEvents(yearPair[1], users, yearPrev);
             const overview = {
                 total: users.length,
                 active: activeAll.length,
@@ -7962,7 +7996,13 @@
                 yearCycles: yearRev.cycles,
                 yearRenewals: yearRev.renewals,
                 yearNetUsd: yearRev.totalNetUsd,
-                yearFromEvents: !!yearRev.fromEvents
+                yearFromEvents: !!yearRev.fromEvents,
+                prevYearLabel: prevYearRev.year,
+                prevYearPeople: prevYearRev.people,
+                prevYearCycles: prevYearRev.cycles,
+                prevYearRenewals: prevYearRev.renewals,
+                prevYearNetUsd: prevYearRev.totalNetUsd,
+                prevYearFromEvents: !!prevYearRev.fromEvents
             };
             const CICLOS_POR_ANIO = 12 / 5;
             const equivAnual = overview.totalRevenuePerCycle * CICLOS_POR_ANIO;
@@ -8015,14 +8055,20 @@
                         <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.lifetimeNetUsd.toFixed(2)} USD</div>
                             <div style="color: #64748b; margin-top: 8px;">🏦 Total cobrado histórico (neto)</div>
-                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Cobros reales PayPal (<strong>paypal_paid_cycles</strong>) · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Todos los años · cobros reales PayPal (<strong>paypal_paid_cycles</strong>) · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman · no incluye «No suma»</div>
                             <div style="color:#065f46;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.lifetimePeople} persona(s) con cobro · ${overview.lifetimeCycles} ciclo(s)${lifetimeExtraHtml}</div>
                         </div>
                         <div style="background: #fff7ed; padding: 20px; border-radius: 8px; border-left: 4px solid #f97316;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.yearNetUsd.toFixed(2)} USD</div>
-                            <div style="color: #64748b; margin-top: 8px;">📅 Ingreso total ${overview.yearLabel} (neto)</div>
+                            <div style="color: #64748b; margin-top: 8px;">📅 ${overview.yearLabel} en curso (neto)</div>
                             <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">${overview.yearFromEvents ? 'Cobros reales del año (paypal_payment_events)' : 'Sin eventos aún · fallback por last_payment en el año'} · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo</div>
                             <div style="color:#9a3412;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.yearPeople} persona(s) · ${overview.yearCycles} ciclo(s)${overview.yearRenewals > 0 ? ' · 🔄 ' + overview.yearRenewals + ' con 2+ cobros en el año' : ''}</div>
+                        </div>
+                        <div style="background: #fefce8; padding: 20px; border-radius: 8px; border-left: 4px solid #ca8a04;">
+                            <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.prevYearNetUsd.toFixed(2)} USD</div>
+                            <div style="color: #64748b; margin-top: 8px;">📅 ${overview.prevYearLabel} (año pasado, neto)</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">${overview.prevYearFromEvents ? 'Cobros reales del año (paypal_payment_events)' : 'Sin eventos aún · fallback por last_payment en el año'} · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo</div>
+                            <div style="color:#854d0e;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.prevYearPeople} persona(s) · ${overview.prevYearCycles} ciclo(s)${overview.prevYearRenewals > 0 ? ' · 🔄 ' + overview.prevYearRenewals + ' con 2+ cobros en el año' : ''}</div>
                         </div>
                     </div>
                     <button onclick="closeDataViewer()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cerrar</button>
