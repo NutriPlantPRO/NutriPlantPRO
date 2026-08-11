@@ -254,6 +254,94 @@ async function applySubscriptionStatus(params: {
   return { updated: 0, mode: "not_found" };
 }
 
+async function resolveProfileIdForSubscription(params: {
+  subscriptionId: string;
+  customUserId?: string | null;
+}): Promise<string | null> {
+  const { subscriptionId, customUserId } = params;
+  const bySub = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("paypal_subscription_id", subscriptionId)
+    .limit(1)
+    .maybeSingle();
+  if (!bySub.error && bySub.data?.id) return String(bySub.data.id);
+  if (customUserId && /^[0-9a-f-]{36}$/i.test(customUserId)) {
+    const byId = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", customUserId)
+      .limit(1)
+      .maybeSingle();
+    if (!byId.error && byId.data?.id) return String(byId.data.id);
+  }
+  return null;
+}
+
+/** Registra cobro real (idempotente por sale_id) y suma paypal_paid_cycles. */
+async function recordPayPalSaleCompleted(params: {
+  saleId: string | null;
+  subscriptionId: string;
+  paidAt: string | null;
+  amountUsd?: number | null;
+  customUserId?: string | null;
+}): Promise<{ recorded: boolean; profileId: string | null; cycles: number | null }> {
+  const { saleId, subscriptionId, paidAt, amountUsd, customUserId } = params;
+  const profileId = await resolveProfileIdForSubscription({
+    subscriptionId,
+    customUserId,
+  });
+  if (!profileId) {
+    return { recorded: false, profileId: null, cycles: null };
+  }
+
+  const paidAtIso = paidAt || new Date().toISOString();
+  const stableSaleId =
+    saleId ||
+    `fallback:${subscriptionId}:${paidAtIso.slice(0, 16)}`;
+
+  const insert = await supabase.from("paypal_payment_events").insert({
+    sale_id: stableSaleId,
+    profile_id: profileId,
+    paypal_subscription_id: subscriptionId,
+    paid_at: paidAtIso,
+    amount_usd: amountUsd != null && Number.isFinite(amountUsd) ? amountUsd : null,
+  });
+
+  // Duplicado (mismo sale_id) → no volver a sumar
+  if (insert.error) {
+    const msg = String(insert.error.message || "");
+    if (/duplicate|unique|23505/i.test(msg)) {
+      const cur = await supabase
+        .from("profiles")
+        .select("paypal_paid_cycles")
+        .eq("id", profileId)
+        .maybeSingle();
+      return {
+        recorded: false,
+        profileId,
+        cycles: cur.data?.paypal_paid_cycles != null ? Number(cur.data.paypal_paid_cycles) : null,
+      };
+    }
+    console.error("paypal_payment_events insert:", insert.error.message);
+    return { recorded: false, profileId, cycles: null };
+  }
+
+  const cur = await supabase
+    .from("profiles")
+    .select("paypal_paid_cycles")
+    .eq("id", profileId)
+    .maybeSingle();
+  const prev = Number(cur.data?.paypal_paid_cycles) || 0;
+  const next = prev + 1;
+  await supabase
+    .from("profiles")
+    .update({ paypal_paid_cycles: next, updated_at: new Date().toISOString() })
+    .eq("id", profileId);
+
+  return { recorded: true, profileId, cycles: next };
+}
+
 Deno.serve(async (req) => {
   // GET = diagnóstico de secrets (sin mostrar valores). Útil para comprobar sin esperar a PayPal.
   if (req.method === "GET") {
@@ -370,6 +458,15 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, ignored: true, event_type: eventType, reason: "No billing_agreement_id" });
     }
     const saleTime = asString(resource.create_time);
+    const saleId = asString(resource.id);
+    let amountUsd: number | null = null;
+    try {
+      const amountObj = (resource.amount ?? {}) as Json;
+      const total = asString(amountObj.total) || asString(amountObj.value);
+      if (total) amountUsd = Number(total);
+    } catch (_) {
+      /* ignore */
+    }
     let snapshot: Awaited<ReturnType<typeof getPayPalSubscriptionSnapshot>> | null = null;
     try {
       snapshot = await getPayPalSubscriptionSnapshot(subscriptionId);
@@ -383,12 +480,22 @@ Deno.serve(async (req) => {
       nextPaymentDate: snapshot?.nextBillingTime ?? null,
       customUserId: snapshot?.customUserId ?? null,
     });
+    const payment = await recordPayPalSaleCompleted({
+      saleId,
+      subscriptionId,
+      paidAt: snapshot?.lastPaymentTime ?? saleTime ?? null,
+      amountUsd,
+      customUserId: snapshot?.customUserId ?? null,
+    });
     return jsonResponse({
       ok: true,
       event_type: eventType,
       subscription_id: subscriptionId,
+      sale_id: saleId,
       profile_updates: result.updated,
       update_mode: result.mode,
+      payment_recorded: payment.recorded,
+      paypal_paid_cycles: payment.cycles,
     });
   }
 

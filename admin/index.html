@@ -1901,10 +1901,12 @@
                     <div class="stat-sub" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;">Todos: activos, inactivos y sin suscripción</div>
                 </div>
                 
-                <div class="stat-card">
-                    <div class="stat-number" id="activeSubscriptions">-</div>
-                    <div class="stat-label">✅ Suscripciones Activas</div>
-                    <div class="stat-sub" id="activeSubscriptionsBreakdown" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
+                <div class="stat-card" style="background:#fff7ed;">
+                    <div class="stat-number" id="totalRevenueLifetime">-</div>
+                    <div class="stat-label">🏦 Ingresos totales (USD neto)</div>
+                    <div class="stat-sub" id="totalRevenueLifetimeNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
+                    <div class="stat-sub" id="totalRevenueLifetimeCount" style="margin-top:6px;font-size:12px;line-height:1.35;color:#9a3412;font-weight:700;"></div>
+                    <div class="stat-sub" id="totalRevenueYearLine" style="margin-top:6px;font-size:12px;line-height:1.35;color:#c2410c;font-weight:700;"></div>
                 </div>
                 
                 <div class="stat-card" style="background:#eff6ff;">
@@ -1912,6 +1914,7 @@
                     <div class="stat-label">💰 Ingreso est. por ciclo (USD neto)</div>
                     <div class="stat-sub" id="estimatedRevenueCycleNote" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                     <div class="stat-sub" id="estimatedRevenueCycleCount" style="margin-top:6px;font-size:12px;line-height:1.35;color:#1e3a8a;font-weight:700;"></div>
+                    <div class="stat-sub" id="activeSubscriptionsInline" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;"></div>
                 </div>
                 
                 <div class="stat-card">
@@ -2265,7 +2268,8 @@
          */
         async function adminFetchAllProfilesWithSelectFallback(client) {
             var tiers = [
-                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_hydro_solutions, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly',
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, paypal_paid_cycles, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_hydro_solutions, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly',
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, paypal_paid_cycles, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_hydro_solutions, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project',
                 'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_hydro_solutions, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project',
                 'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project',
                 'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login'
@@ -2416,6 +2420,7 @@
                         last_payment_date: p.last_payment_date || null,
                         next_payment_date: p.next_payment_date || null,
                         paypal_subscription_id: p.paypal_subscription_id || null,
+                        paypal_paid_cycles: p.paypal_paid_cycles != null ? Number(p.paypal_paid_cycles) : 0,
                         created_at: p.created_at,
                         last_login: p.last_login || null,
                         projects_count: projectsByUser[p.id] || 0,
@@ -4158,6 +4163,8 @@
             const activeAll = pool.filter(function (u) { return u && u.subscription_status === 'active'; });
             const activeCounting = pool.filter(adminUserCountsTowardSubscriptionRevenue);
             const activeExcluded = activeAll.filter(function (u) { return !adminUserCountsTowardSubscriptionRevenue(u); });
+            const lifetime = adminLifetimePaidRevenueSummary(pool);
+            const yearNow = new Date().getFullYear();
             const stats = {
                 totalUsers: pool.length,
                 activeSubscriptions: activeAll.length,
@@ -4165,6 +4172,9 @@
                 activeExcluded: activeExcluded.length,
                 // Contable neto: $46/ciclo por activo que suma (tras comisión PayPal), no el $49 de lista.
                 revenuePerCycle: adminNetRevenuePerCycle(activeCounting.length),
+                lifetimeNetUsd: lifetime.totalNetUsd,
+                lifetimePeople: lifetime.people,
+                lifetimeCycles: lifetime.cycles,
                 totalProjects: getTotalProjects(),
                 totalChats: chatMetrics.totalMessages,
                 totalInteractions: chatMetrics.totalInteractions,
@@ -4175,19 +4185,28 @@
             
             // Actualizar UI
             document.getElementById('totalUsers').textContent = stats.totalUsers;
-            document.getElementById('activeSubscriptions').textContent = stats.activeSubscriptions;
-            var activeBreak = document.getElementById('activeSubscriptionsBreakdown');
-            if (activeBreak) {
-                activeBreak.innerHTML =
-                    '<span style="color:#1e3a8a;font-weight:800;">' +
-                    stats.activeCounting +
-                    ' suman ingreso</span> · ' +
-                    stats.activeExcluded +
-                    ' no suman (admin / «no suma»)';
+            var lifeEl = document.getElementById('totalRevenueLifetime');
+            var lifeNote = document.getElementById('totalRevenueLifetimeNote');
+            var lifeCount = document.getElementById('totalRevenueLifetimeCount');
+            if (lifeEl) lifeEl.textContent = '$' + stats.lifetimeNetUsd.toFixed(2);
+            if (lifeNote) {
+                lifeNote.textContent =
+                    'Cobros reales PayPal · $' +
+                    ADMIN_NET_REVENUE_PER_CYCLE_USD +
+                    ' neto/ciclo · También en Resumen de Suscripciones';
+            }
+            if (lifeCount) {
+                lifeCount.textContent =
+                    '👥 ' +
+                    stats.lifetimePeople +
+                    ' persona(s) · ' +
+                    stats.lifetimeCycles +
+                    ' ciclo(s)';
             }
             var revEl = document.getElementById('estimatedRevenueCycle');
             var revNote = document.getElementById('estimatedRevenueCycleNote');
             var revCount = document.getElementById('estimatedRevenueCycleCount');
+            var actInline = document.getElementById('activeSubscriptionsInline');
             if (revEl) revEl.textContent = '$' + stats.revenuePerCycle.toFixed(2);
             if (revNote) {
                 var equivAnualDash = stats.revenuePerCycle * (12 / 5);
@@ -4206,6 +4225,40 @@
                     (stats.activeExcluded > 0
                         ? ' · 📉 ' + stats.activeExcluded + ' activo(s) no suman'
                         : '');
+            }
+            if (actInline) {
+                actInline.innerHTML =
+                    '✅ Activas: <strong style="color:#1e3a8a;">' +
+                    stats.activeSubscriptions +
+                    '</strong> · ' +
+                    stats.activeCounting +
+                    ' suman ingreso · ' +
+                    stats.activeExcluded +
+                    ' no suman';
+            }
+            // Año calendario (async): cobros reales si hay tabla
+            var yearLine = document.getElementById('totalRevenueYearLine');
+            if (yearLine) {
+                yearLine.textContent = '📅 ' + yearNow + ': calculando…';
+                adminFetchPaypalPaymentEventsForYear(yearNow).then(function (events) {
+                    var yearRev = adminYearPaidRevenueSummaryFromEvents(events, pool, yearNow);
+                    var el = document.getElementById('totalRevenueYearLine');
+                    if (!el) return;
+                    el.textContent =
+                        '📅 ' +
+                        yearRev.year +
+                        ': $' +
+                        yearRev.totalNetUsd.toFixed(2) +
+                        ' · ' +
+                        yearRev.people +
+                        ' persona(s) · ' +
+                        yearRev.cycles +
+                        ' ciclo(s)' +
+                        (yearRev.renewals > 0 ? ' · 🔄 ' + yearRev.renewals + ' con 2+ cobros' : '');
+                }).catch(function () {
+                    var el = document.getElementById('totalRevenueYearLine');
+                    if (el) el.textContent = '📅 ' + yearNow + ': —';
+                });
             }
             document.getElementById('totalProjects').textContent = stats.totalProjects;
             document.getElementById('totalChats').textContent = stats.totalChats;
@@ -4588,7 +4641,18 @@
             }
             function getAdminPanelContext() {
                 var totalUsers = (document.getElementById('totalUsers') && document.getElementById('totalUsers').textContent) || '0';
-                var activeSubs = (document.getElementById('activeSubscriptions') && document.getElementById('activeSubscriptions').textContent) || '0';
+                var activeSubs = '0';
+                try {
+                    var usersCtx = typeof getAllUsers === 'function' ? getAllUsers() : [];
+                    activeSubs = String(usersCtx.filter(function (u) { return u && u.subscription_status === 'active'; }).length);
+                } catch (eAct) {
+                    var inlineAct = document.getElementById('activeSubscriptionsInline');
+                    if (inlineAct && inlineAct.textContent) {
+                        var mAct = inlineAct.textContent.match(/Activas:\s*(\d+)/i);
+                        if (mAct) activeSubs = mAct[1];
+                    }
+                }
+                var totalRev = (document.getElementById('totalRevenueLifetime') && document.getElementById('totalRevenueLifetime').textContent) || '—';
                 var totalProjects = (document.getElementById('totalProjects') && document.getElementById('totalProjects').textContent) || '0';
                 var totalChats = (document.getElementById('totalChats') && document.getElementById('totalChats').textContent) || '0';
                 var interactions = (document.getElementById('totalInteractions') && document.getElementById('totalInteractions').textContent) || '0';
@@ -4597,7 +4661,7 @@
                 var pending = (document.getElementById('pendingSubscriptions') && document.getElementById('pendingSubscriptions').textContent) || '0';
                 var lines = [
                     '--- RESUMEN DEL PANEL ---',
-                    'Registrados totales: ' + totalUsers + ' | Suscripciones activas: ' + activeSubs + ' | Proyectos totales: ' + totalProjects,
+                    'Registrados totales: ' + totalUsers + ' | Suscripciones activas: ' + activeSubs + ' | Ingresos totales (neto): ' + totalRev + ' | Proyectos totales: ' + totalProjects,
                     'Mensajes chat: ' + totalChats + ' | Interacciones IA: ' + interactions + ' | Costo chat total (USD): ' + costTotal + ' | Este mes: ' + costMonth + ' | Pendientes: ' + pending,
                     '',
                     '--- LISTA DE USUARIOS (nombre, email, teléfono, ubicación, suscripción) ---'
@@ -5083,26 +5147,16 @@
         }
 
         /**
-         * Ciclos cobrados estimados con activated_at → last_payment_date (PayPal).
-         * last_payment es el último cobro; el tramo desde activación estima cuántos ciclos hubo.
-         * Cancelados que sí tienen last_payment_date siguen contando.
+         * Ciclos cobrados REALES (paypal_paid_cycles del webhook).
+         * Fallback legacy: si hay last_payment y el contador aún no existe → 1.
+         * No estimar por meses entre fechas.
          */
         function adminEstimatePaidCyclesForUser(u) {
             if (!adminUserHasPaidEvidence(u)) return 0;
-            var lastPay = adminParseDate(u.last_payment_date);
-            var start = adminParseDate(u.subscription_activated_at) || lastPay;
-            var end = lastPay;
-            if (!start || !end) return 1;
-            if (end.getTime() < start.getTime()) end = start;
-            var months =
-                (end.getFullYear() - start.getFullYear()) * 12 +
-                (end.getMonth() - start.getMonth());
-            if (end.getDate() + 15 < start.getDate()) months -= 1;
-            if (months < 0) months = 0;
-            var cycles = Math.floor(months / ADMIN_SUBSCRIPTION_CYCLE_MONTHS) + 1;
-            if (cycles < 1) cycles = 1;
-            if (cycles > 120) cycles = 120;
-            return cycles;
+            var n = Number(u.paypal_paid_cycles);
+            if (Number.isFinite(n) && n >= 1) return Math.min(120, Math.floor(n));
+            // Backfill / antes del contador: un last_payment conocido = al menos 1 cobro
+            return 1;
         }
 
         /** Activo contable al que ya le pasó next_payment_date (falta renovación / cobro). */
@@ -5113,7 +5167,7 @@
             return next.getTime() < Date.now();
         }
 
-        /** Totales históricos según last_payment_date de PayPal (+ next_payment para “le falta cobro”). */
+        /** Totales históricos según cobros reales (paypal_paid_cycles). */
         function adminLifetimePaidRevenueSummary(users) {
             var people = 0;
             var cycles = 0;
@@ -5126,7 +5180,7 @@
                 if (u.exclude_from_revenue === true) return;
 
                 if (adminUserCountsTowardSubscriptionRevenue(u) && !adminParseDate(u.last_payment_date)) {
-                    activeNoLastPayment += 1; // activo / trial sin cobro PayPal aún
+                    activeNoLastPayment += 1;
                 }
                 if (adminUserNextPaymentOverdue(u)) {
                     activeNextOverdue += 1;
@@ -5152,59 +5206,74 @@
         }
 
         /**
-         * Ciclos estimados cuyo cobro cae en el año calendario (estimado cada 5 meses
-         * desde activated_at hasta last_payment_date).
+         * Ingreso del año desde paypal_payment_events (cobros reales).
+         * Si la tabla aún no existe o viene vacía, fallback: last_payment en el año = 1 ciclo.
          */
-        function adminEstimatePaidCyclesInCalendarYear(u, year) {
-            if (!adminUserHasPaidEvidence(u)) return 0;
-            var lastPay = adminParseDate(u.last_payment_date);
-            var start = adminParseDate(u.subscription_activated_at) || lastPay;
-            if (!start || !lastPay) return 0;
-            if (lastPay.getTime() < start.getTime()) lastPay = start;
+        function adminYearPaidRevenueSummaryFromEvents(events, users, year) {
             var y = Number(year) || new Date().getFullYear();
-            var yearStart = new Date(y, 0, 1).getTime();
-            var yearEnd = new Date(y, 11, 31, 23, 59, 59, 999).getTime();
-            var totalCycles = adminEstimatePaidCyclesForUser(u);
-            if (totalCycles < 1) return 0;
-            var count = 0;
-            var i;
-            for (i = 0; i < totalCycles; i++) {
-                var payDate;
-                if (i === totalCycles - 1) {
-                    payDate = lastPay;
-                } else {
-                    payDate = new Date(start.getTime());
-                    payDate.setMonth(payDate.getMonth() + i * ADMIN_SUBSCRIPTION_CYCLE_MONTHS);
-                    if (payDate.getTime() > lastPay.getTime()) payDate = lastPay;
-                }
-                var t = payDate.getTime();
-                if (t >= yearStart && t <= yearEnd) count += 1;
-            }
-            return count;
-        }
-
-        /** Ingreso neto estimado del año calendario (cobros estimados en ese año). */
-        function adminYearPaidRevenueSummary(users, year) {
-            var y = Number(year) || new Date().getFullYear();
-            var people = 0;
+            var byProfile = Object.create(null);
             var cycles = 0;
-            var renewals = 0; // personas con 2+ ciclos estimados en el año
-            (users || []).forEach(function (u) {
-                if (!u || u.isAdmin === true) return;
-                if (u.exclude_from_revenue === true) return;
-                var c = adminEstimatePaidCyclesInCalendarYear(u, y);
-                if (c < 1) return;
-                people += 1;
-                cycles += c;
-                if (c >= 2) renewals += 1;
+            (events || []).forEach(function (ev) {
+                if (!ev || !ev.profile_id) return;
+                var pid = String(ev.profile_id);
+                byProfile[pid] = (byProfile[pid] || 0) + 1;
+                cycles += 1;
             });
+            var people = Object.keys(byProfile).length;
+            var renewals = 0;
+            Object.keys(byProfile).forEach(function (pid) {
+                if (byProfile[pid] >= 2) renewals += 1;
+            });
+            // Si no hay eventos (SQL nuevo / sin deploy), fallback mínimo por last_payment en el año
+            if (cycles === 0 && users && users.length) {
+                var yearStart = new Date(y, 0, 1).getTime();
+                var yearEnd = new Date(y, 11, 31, 23, 59, 59, 999).getTime();
+                (users || []).forEach(function (u) {
+                    if (!adminUserHasPaidEvidence(u)) return;
+                    var lastPay = adminParseDate(u.last_payment_date);
+                    if (!lastPay) return;
+                    var t = lastPay.getTime();
+                    if (t < yearStart || t > yearEnd) return;
+                    var c = adminEstimatePaidCyclesForUser(u);
+                    // Sin historial de eventos no podemos repartir ciclos viejos al año:
+                    // solo contamos 1 cobro en el año si el último pago cayó este año.
+                    people += 1;
+                    cycles += 1;
+                    if (c >= 2) renewals += 1; // renovó alguna vez; el 2º+ puede ser este año
+                });
+            }
             return {
                 year: y,
                 people: people,
                 cycles: cycles,
                 renewals: renewals,
-                totalNetUsd: cycles * ADMIN_NET_REVENUE_PER_CYCLE_USD
+                totalNetUsd: cycles * ADMIN_NET_REVENUE_PER_CYCLE_USD,
+                fromEvents: (events || []).length > 0
             };
+        }
+
+        async function adminFetchPaypalPaymentEventsForYear(year) {
+            var y = Number(year) || new Date().getFullYear();
+            if (typeof window.getSupabaseClient !== 'function') return [];
+            var client = window.getSupabaseClient();
+            if (!client) return [];
+            try {
+                var from = y + '-01-01T00:00:00.000Z';
+                var to = y + '-12-31T23:59:59.999Z';
+                var res = await client
+                    .from('paypal_payment_events')
+                    .select('profile_id, paid_at, sale_id')
+                    .gte('paid_at', from)
+                    .lte('paid_at', to);
+                if (res.error) {
+                    console.warn('paypal_payment_events:', res.error.message);
+                    return [];
+                }
+                return res.data || [];
+            } catch (e) {
+                console.warn('paypal_payment_events fetch:', e);
+                return [];
+            }
         }
 
         // 📋 FUNCIONES DE GESTIÓN
@@ -7870,7 +7939,8 @@
             const excludedActive = activeAll.filter(u => !adminUserCountsTowardSubscriptionRevenue(u));
             const lifetime = adminLifetimePaidRevenueSummary(users);
             const yearNow = new Date().getFullYear();
-            const yearRev = adminYearPaidRevenueSummary(users, yearNow);
+            const yearEvents = await adminFetchPaypalPaymentEventsForYear(yearNow);
+            const yearRev = adminYearPaidRevenueSummaryFromEvents(yearEvents, users, yearNow);
             const overview = {
                 total: users.length,
                 active: activeAll.length,
@@ -7891,7 +7961,8 @@
                 yearPeople: yearRev.people,
                 yearCycles: yearRev.cycles,
                 yearRenewals: yearRev.renewals,
-                yearNetUsd: yearRev.totalNetUsd
+                yearNetUsd: yearRev.totalNetUsd,
+                yearFromEvents: !!yearRev.fromEvents
             };
             const CICLOS_POR_ANIO = 12 / 5;
             const equivAnual = overview.totalRevenuePerCycle * CICLOS_POR_ANIO;
@@ -7944,14 +8015,14 @@
                         <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.lifetimeNetUsd.toFixed(2)} USD</div>
                             <div style="color: #64748b; margin-top: 8px;">🏦 Total cobrado histórico (neto)</div>
-                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Solo quien tiene <strong>last_payment_date</strong> de PayPal · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Cobros reales PayPal (<strong>paypal_paid_cycles</strong>) · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman</div>
                             <div style="color:#065f46;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.lifetimePeople} persona(s) con cobro · ${overview.lifetimeCycles} ciclo(s)${lifetimeExtraHtml}</div>
                         </div>
                         <div style="background: #fff7ed; padding: 20px; border-radius: 8px; border-left: 4px solid #f97316;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.yearNetUsd.toFixed(2)} USD</div>
-                            <div style="color: #64748b; margin-top: 8px;">📅 Ingreso total ${overview.yearLabel} (neto estimado)</div>
-                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Cobros estimados en el año calendario · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · renovaciones = 2+ ciclos en el año</div>
-                            <div style="color:#9a3412;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.yearPeople} persona(s) · ${overview.yearCycles} ciclo(s)${overview.yearRenewals > 0 ? ' · 🔄 ' + overview.yearRenewals + ' con renovación (2+ ciclos)' : ''}</div>
+                            <div style="color: #64748b; margin-top: 8px;">📅 Ingreso total ${overview.yearLabel} (neto)</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">${overview.yearFromEvents ? 'Cobros reales del año (paypal_payment_events)' : 'Sin eventos aún · fallback por last_payment en el año'} · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo</div>
+                            <div style="color:#9a3412;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.yearPeople} persona(s) · ${overview.yearCycles} ciclo(s)${overview.yearRenewals > 0 ? ' · 🔄 ' + overview.yearRenewals + ' con 2+ cobros en el año' : ''}</div>
                         </div>
                     </div>
                     <button onclick="closeDataViewer()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cerrar</button>
