@@ -768,36 +768,101 @@
     }
   }
 
-  /** Tooltip Chart.js: fondo 100% sólido (sin alpha) y aparición rápida. */
+  /** Tooltip HTML sólido (Chart.js canvas siempre mezcla alpha al animar). */
+  function getOrCreatePfChartTip(chart) {
+    var parent = chart.canvas && chart.canvas.parentNode;
+    if (!parent) return null;
+    var tip = parent.querySelector('.np-inv-pf-chart-tip');
+    if (tip) return tip;
+    tip = document.createElement('div');
+    tip.className = 'np-inv-pf-chart-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    parent.appendChild(tip);
+    return tip;
+  }
+
+  function externalSolidChartTooltip(context) {
+    var chart = context.chart;
+    var tooltip = context.tooltip;
+    var tip = getOrCreatePfChartTip(chart);
+    if (!tip) return;
+
+    var bodyLines = [];
+    if (tooltip && tooltip.body && tooltip.body.length) {
+      tooltip.body.forEach(function (b) {
+        var line = (b.lines || []).join(' ').trim();
+        if (line) bodyLines.push(line);
+      });
+    }
+    var afterLines = [];
+    if (tooltip && tooltip.afterBody && tooltip.afterBody.length) {
+      tooltip.afterBody.forEach(function (line) {
+        if (line) afterLines.push(String(line));
+      });
+    }
+    var titleLines = (tooltip && tooltip.title) || [];
+
+    if (!tooltip || tooltip.opacity === 0 || (!bodyLines.length && !afterLines.length && !titleLines.length)) {
+      tip.hidden = true;
+      tip.classList.remove('is-visible');
+      return;
+    }
+
+    var html = '';
+    if (titleLines.length) {
+      html +=
+        '<div class="np-inv-pf-chart-tip__title">' +
+        escapeHtml(titleLines.join(' ')) +
+        '</div>';
+    }
+    bodyLines.forEach(function (line, i) {
+      var colors = (tooltip.labelColors && tooltip.labelColors[i]) || {};
+      var swatch = colors.backgroundColor || colors.borderColor || '#fff';
+      html +=
+        '<div class="np-inv-pf-chart-tip__row">' +
+        '<span class="np-inv-pf-chart-tip__swatch" style="background:' +
+        String(swatch).replace(/[;"<>]/g, '') +
+        '"></span>' +
+        '<span>' +
+        escapeHtml(line) +
+        '</span></div>';
+    });
+    afterLines.forEach(function (line) {
+      html +=
+        '<div class="np-inv-pf-chart-tip__row np-inv-pf-chart-tip__row--after">' +
+        escapeHtml(String(line)) +
+        '</div>';
+    });
+    tip.innerHTML = html;
+    tip.hidden = false;
+    tip.classList.add('is-visible');
+
+    var parentRect = tip.parentNode.getBoundingClientRect();
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    var tw = tip.offsetWidth || 0;
+    var th = tip.offsetHeight || 0;
+    var x = tooltip.caretX - tw / 2;
+    var y = tooltip.caretY - th - 10;
+    x = Math.max(4, Math.min(x, parentRect.width - tw - 4));
+    if (y < 4) y = tooltip.caretY + 14;
+    tip.style.left = Math.round(x) + 'px';
+    tip.style.top = Math.round(y) + 'px';
+  }
+
   function solidChartTooltip(extra) {
-    var base = {
-      // rgb() sin alpha — Chart.js a veces mezcla si usas rgba/hex con opacity
-      backgroundColor: 'rgb(22, 163, 74)',
-      titleColor: 'rgb(240, 253, 244)',
-      bodyColor: 'rgb(236, 253, 245)',
-      footerColor: 'rgb(220, 252, 231)',
-      borderColor: 'rgb(187, 247, 208)',
-      borderWidth: 1,
-      cornerRadius: 8,
-      padding: 10,
+    var out = {
+      enabled: false,
+      external: externalSolidChartTooltip,
       displayColors: true,
-      boxPadding: 4,
-      caretSize: 6,
-      caretPadding: 8,
-      titleFont: { weight: '700', size: 12 },
-      bodyFont: { weight: '600', size: 11 },
-      opacity: 1,
       animation: false,
-      animations: false
+      animations: false,
+      opacity: 1
     };
-    if (!extra) return base;
-    var out = Object.assign({}, base, extra);
-    if (extra.callbacks) {
+    if (extra && extra.callbacks) {
       out.callbacks = Object.assign({}, extra.callbacks);
     }
-    // Nunca dejar que callbacks/extra bajen la opacidad o metan alpha
-    out.opacity = 1;
-    out.backgroundColor = 'rgb(22, 163, 74)';
     return out;
   }
 

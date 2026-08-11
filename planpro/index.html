@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png" />
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png" />
   <link rel="manifest" href="/planpro.webmanifest" />
-  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260806picksmodal2" />
+  <link rel="stylesheet" href="../assets/planpro-invest.css?v=20260810tip1" />
   <script src="../config-no-traducir-terminos.js"></script>
   <script>
     (function () {
@@ -11250,10 +11250,12 @@
                 </a>
               </div>
             </div>
-            <div class="np-plan-menu-block" aria-label="Nutri PRO">
-              <span class="np-plan-menu-subblock-title">Plan PRO</span>
+            <div class="np-plan-menu-block" aria-label="Accesos rápidos">
+              <span class="np-plan-menu-subblock-title">Accesos rápidos</span>
               <div class="np-plan-nav-buttons">
-                <button type="button" class="btn-mac-nav btn-mac-nav-brand" id="npMenuOpenNutriPro">Nutri PRO · archivos</button>
+                <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login.html" target="_blank" rel="noopener noreferrer">Login</a>
+                <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Admin</a>
+                <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/admin/airci.html" target="_blank" rel="noopener noreferrer">AirCI</a>
               </div>
             </div>
             <div class="np-plan-menu-block np-plan-menu-block--accesos-portal" aria-label="Portal NutriPlant y pagos">
@@ -12627,7 +12629,7 @@
   <script src="../nutriplant-access-pin.js"></script>
   <script src="../assets/planpro-financial-data-service.js"></script>
   <script src="../assets/planpro-invest.js?v=20260806picksmodal2"></script>
-  <script src="../assets/planpro-invest-portfolio.js?v=20260810c"></script>
+  <script src="../assets/planpro-invest-portfolio.js?v=20260810d"></script>
   <script>
 (function () {
   'use strict';
@@ -37075,15 +37077,6 @@
       upl.dataset.npWired = '1';
       upl.addEventListener('click', function () {
         uploadNutriProPendingFiles();
-      });
-    }
-    var menuNutri = $('npMenuOpenNutriPro');
-    if (menuNutri && menuNutri.dataset.npWired !== '1') {
-      menuNutri.dataset.npWired = '1';
-      menuNutri.addEventListener('click', function () {
-        setPlanProAppMode('nutri-pro');
-        var bd = $('npPlanHeaderMenuBackdrop');
-        if (bd) bd.click();
       });
     }
     var subFiles = $('npNutriSubtabFiles');

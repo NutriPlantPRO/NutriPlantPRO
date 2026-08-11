@@ -1314,6 +1314,58 @@ html.np-inv-tv-touch-lock body {
   width: 100% !important;
   height: 100% !important;
 }
+.np-inv-pf-chart-tip {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  top: 0;
+  max-width: min(260px, calc(100% - 8px));
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(187, 247, 208, 0.55);
+  background: #16a34a;
+  color: #f0fdf4;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.05s ease;
+}
+.np-inv-pf-chart-tip.is-visible {
+  opacity: 1;
+}
+.np-inv-pf-chart-tip[hidden] {
+  display: none !important;
+}
+.np-inv-pf-chart-tip__title {
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #fff;
+}
+.np-inv-pf-chart-tip__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.np-inv-pf-chart-tip__row + .np-inv-pf-chart-tip__row {
+  margin-top: 3px;
+}
+.np-inv-pf-chart-tip__row--after {
+  display: block;
+  white-space: pre-line;
+  font-weight: 550;
+}
+.np-inv-pf-chart-tip__swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  margin-top: 2px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: #fff;
+}
 .np-inv-pf-chart-legend-note {
   margin: 0;
   padding: 0 4px 2px;
