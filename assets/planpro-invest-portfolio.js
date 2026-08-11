@@ -768,14 +768,15 @@
     }
   }
 
-  /** Tooltip Chart.js: fondo sólido (sin transparencia) y aparición rápida. */
+  /** Tooltip Chart.js: fondo 100% sólido (sin alpha) y aparición rápida. */
   function solidChartTooltip(extra) {
     var base = {
-      backgroundColor: '#0f172a',
-      titleColor: '#f8fafc',
-      bodyColor: '#e2e8f0',
-      footerColor: '#cbd5e1',
-      borderColor: 'rgba(148, 163, 184, 0.35)',
+      // rgb() sin alpha — Chart.js a veces mezcla si usas rgba/hex con opacity
+      backgroundColor: 'rgb(22, 163, 74)',
+      titleColor: 'rgb(240, 253, 244)',
+      bodyColor: 'rgb(236, 253, 245)',
+      footerColor: 'rgb(220, 252, 231)',
+      borderColor: 'rgb(187, 247, 208)',
       borderWidth: 1,
       cornerRadius: 8,
       padding: 10,
@@ -785,6 +786,7 @@
       caretPadding: 8,
       titleFont: { weight: '700', size: 12 },
       bodyFont: { weight: '600', size: 11 },
+      opacity: 1,
       animation: false,
       animations: false
     };
@@ -793,6 +795,9 @@
     if (extra.callbacks) {
       out.callbacks = Object.assign({}, extra.callbacks);
     }
+    // Nunca dejar que callbacks/extra bajen la opacidad o metan alpha
+    out.opacity = 1;
+    out.backgroundColor = 'rgb(22, 163, 74)';
     return out;
   }
 
