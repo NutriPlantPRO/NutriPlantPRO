@@ -256,9 +256,26 @@ button, input, select, textarea { font: inherit; }
 .aci-header__brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
   height: 100%;
+}
+
+.aci-header__divider {
+  flex: 0 0 auto;
+  width: 1px;
+  height: clamp(22px, 55%, 34px);
+  align-self: center;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(125, 211, 252, 0) 0%,
+    rgba(125, 211, 252, 0.55) 22%,
+    rgba(186, 230, 253, 0.85) 50%,
+    rgba(125, 211, 252, 0.55) 78%,
+    rgba(125, 211, 252, 0) 100%
+  );
+  box-shadow: 0 0 10px rgba(125, 211, 252, 0.25);
 }
 
 .aci-header__airci {
@@ -2152,6 +2169,8 @@ button, input, select, textarea { font: inherit; }
     height: clamp(24px, 5vw, 30px);
     max-width: min(120px, 28vw);
   }
+  .aci-header__brand { gap: 10px; }
+  .aci-header__divider { height: 22px; }
   .aci-header__storage {
     max-width: 170px;
     padding: 5px 8px;
@@ -2169,6 +2188,8 @@ button, input, select, textarea { font: inherit; }
   .aci-field--title { grid-column: 1 / -1; }
   .aci-header__airci { height: 32px; max-width: min(140px, 40vw); }
   .aci-header__np { height: 22px; max-width: min(96px, 26vw); }
+  .aci-header__brand { gap: 8px; }
+  .aci-header__divider { height: 18px; opacity: 0.9; }
   .aci-header__storage em { display: none; }
   .aci-metrics { grid-template-columns: 1fr 1fr; }
   .aci-header { min-height: 48px; padding: 3px 10px; }

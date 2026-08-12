@@ -2404,7 +2404,7 @@
                     projectsByUser[p.user_id]++;
                 });
                 window._adminCloudCache.users = (profiles || []).map(p => {
-                    const isAdmin = !!p.is_admin;
+                    const isAdmin = !!p.is_admin || String(p.email || '').trim().toLowerCase() === 'admin@nutriplantpro.com';
                     return {
                         id: p.id,
                         userId: p.id,
@@ -2436,7 +2436,7 @@
                         user_notes: p.user_notes || null,
                         chat_usage_current_month: p.chat_usage_current_month != null ? p.chat_usage_current_month : null,
                         chat_usage_month: p.chat_usage_month || null,
-                        exclude_from_revenue: p.exclude_from_revenue === true,
+                        exclude_from_revenue: isAdmin || p.exclude_from_revenue === true,
                         radar_credits_bonus: Math.max(0, Math.floor(Number(p.radar_credits_bonus != null ? p.radar_credits_bonus : 0))),
                         chat_blocked: p.chat_blocked === true,
                         chat_limit_monthly: p.chat_limit_monthly != null ? Number(p.chat_limit_monthly) : null
@@ -2648,6 +2648,14 @@
         // 🔐 SISTEMA DE AUTENTICACIÓN DE ADMINISTRADOR - MEJORADO Y SEGURO
         const ADMIN_EMAIL = 'admin@nutriplantpro.com';
         const ADMIN_PASSWORD = 'npja1502'; // Contraseña por defecto del admin
+
+        /** Cuenta dueño/admin: nunca suma en ingresos USD (aunque falte is_admin en profiles). */
+        function isNutriplantAdminAccount(u) {
+            if (!u) return false;
+            if (u.isAdmin === true || u.is_admin === true) return true;
+            var email = String(u.email || '').trim().toLowerCase();
+            return email === ADMIN_EMAIL;
+        }
 
         // 🔒 LÍMITE DE INTENTOS: 5 por dispositivo; bloqueo temporal solo en ESE navegador
         const ADMIN_MAX_ATTEMPTS = 5;
@@ -5212,7 +5220,7 @@
         
         /** Suscripción activa y sí suma a ingresos USD en resúmenes del admin (nube: exclude_from_revenue). */
         function adminUserCountsTowardSubscriptionRevenue(u) {
-            if (!u || u.isAdmin === true) return false;
+            if (!u || isNutriplantAdminAccount(u)) return false;
             if (u.subscription_status !== 'active') return false;
             if (u.exclude_from_revenue === true) return false;
             return true;
@@ -5236,7 +5244,7 @@
          * Sin esa fecha no suma en contabilidad histórica (trial / aún no cobrado).
          */
         function adminUserHasPaidEvidence(u) {
-            if (!u || u.isAdmin === true) return false;
+            if (!u || isNutriplantAdminAccount(u)) return false;
             if (u.exclude_from_revenue === true) return false;
             return !!adminParseDate(u.last_payment_date);
         }
@@ -5271,7 +5279,7 @@
             var activeNoLastPayment = 0;
             var activeNextOverdue = 0;
             (users || []).forEach(function (u) {
-                if (!u || u.isAdmin === true) return;
+                if (!u || isNutriplantAdminAccount(u)) return;
                 if (u.exclude_from_revenue === true) return;
 
                 if (adminUserCountsTowardSubscriptionRevenue(u) && !adminParseDate(u.last_payment_date)) {
@@ -5308,7 +5316,7 @@
             var excluded = Object.create(null);
             (users || []).forEach(function (u) {
                 if (!u || u.id == null) return;
-                if (u.isAdmin === true || u.exclude_from_revenue === true) {
+                if (isNutriplantAdminAccount(u) || u.exclude_from_revenue === true) {
                     excluded[String(u.id)] = true;
                 }
             });
@@ -6087,7 +6095,8 @@
                                     paypal_subscription_id: user.paypal_subscription_id || null,
                                     created_at: user.created_at || null,
                                     projects_count: projectsCount,
-                                    isAdmin: true
+                                    isAdmin: true,
+                                    exclude_from_revenue: true
                                 };
                                 continue;
                             }
@@ -6098,6 +6107,7 @@
                                 user.isAdmin = true;
                                 user.subscription_status = 'active';
                                 user.subscription_amount = 0; // Sin suscripción (es el dueño)
+                                user.exclude_from_revenue = true;
                                 user.password = user.password || 'npja1502'; // Contraseña por defecto
                                 
                                 // Guardar actualización del admin
@@ -6167,7 +6177,7 @@
                                 created_at: user.created_at || null,
                                 projects_count: projectsCount, // 📊 Número de proyectos del usuario
                                 isAdmin: isAdminUser,
-                                exclude_from_revenue: user.exclude_from_revenue === true
+                                exclude_from_revenue: isAdminUser || user.exclude_from_revenue === true
                             };
                             // 🟢 Sobrescribir con datos de Supabase si existen (admin siempre se mantiene Activa)
                             const cloudUser = cloudByEmail[user.email?.toLowerCase()];
@@ -6218,8 +6228,8 @@
                                 if (cloudUser.custom_granular_crops != null) userData.custom_granular_crops = cloudUser.custom_granular_crops;
                                 if (cloudUser.custom_ferti_crops != null) userData.custom_ferti_crops = cloudUser.custom_ferti_crops;
                                 if (cloudUser.custom_amendments != null) userData.custom_amendments = cloudUser.custom_amendments;
-                                // Contabilidad ingresos USD: la verdad está en Supabase
-                                if (!isAdminUser) userData.exclude_from_revenue = cloudUser.exclude_from_revenue === true;
+                                // Contabilidad ingresos USD: la verdad está en Supabase; admin nunca suma
+                                userData.exclude_from_revenue = isAdminUser || cloudUser.exclude_from_revenue === true;
                             }
                             users.push(userData);
                             processedEmails.add(user.email?.toLowerCase());
@@ -6294,7 +6304,7 @@
                             custom_granular_crops: cu.custom_granular_crops,
                             custom_ferti_crops: cu.custom_ferti_crops,
                             custom_amendments: cu.custom_amendments,
-                            exclude_from_revenue: !isAdmin && cu.exclude_from_revenue === true
+                            exclude_from_revenue: isAdmin || cu.exclude_from_revenue === true
                         });
                         processedEmails.add(cu.email?.toLowerCase());
                     }
@@ -8806,7 +8816,13 @@
                     var amount = parseFloat(value || 0);
                     displayValue = amount === 0 ? 'Sin suscripción' : ('$' + amount.toFixed(2) + ' USD');
                 } else if (col.format === 'bool_revenue') {
-                    displayValue = (value === true || value === 'true') ? '📉 No suma (manual/excl.)' : '✅ Cuenta en total';
+                    if (isNutriplantAdminAccount(item) || value === true || value === 'true') {
+                        displayValue = isNutriplantAdminAccount(item)
+                            ? '📉 No suma (admin)'
+                            : '📉 No suma (manual/excl.)';
+                    } else {
+                        displayValue = '✅ Cuenta en total';
+                    }
                 } else if (col.format === 'password') {
                     if (value && String(value).trim()) {
                         displayValue = value;
@@ -9436,7 +9452,15 @@
                             </small>
                         </div>
                         
-                        ${!isAdminUser ? `
+                        ${isAdminUser ? `
+                        <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; font-weight: 500; color: #475569;">
+                                <input type="checkbox" checked disabled
+                                       style="width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0;">
+                                <span>No sumar en ingresos USD (contabilidad)<br><small style="font-weight: 400; color: #64748b;">Fijo en tu cuenta admin: nunca cuenta en totales de ingreso (no hay cobro PayPal).</small></span>
+                            </label>
+                        </div>
+                        ` : `
                         <div style="padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;">
                             <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: 500; color: #92400e;">
                                 <input type="checkbox" id="edit-user-exclude-from-revenue" ${(user.exclude_from_revenue === true) ? 'checked' : ''}
@@ -9444,7 +9468,7 @@
                                 <span>No sumar en ingresos USD (contabilidad)<br><small style="font-weight: 400; color: #a16207;">Actívalo para pruebas o activaciones manuales sin cobro PayPal. Se guarda en Supabase y los totales de ingresos del admin lo respetan en cualquier equipo.</small></span>
                             </label>
                         </div>
-                        ` : ''}
+                        `}
                         
                         <!-- Límite de Chat IA (control de consumo) -->
                         <div style="padding: 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
@@ -11234,7 +11258,7 @@
                 subscription_amount: isAdminUser ? 0 : (existingUser.subscription_amount || (window.NUTRIPLANT_CONFIG ? window.NUTRIPLANT_CONFIG.getDefaultSubscriptionAmount() : 49.00)),
                 chat_blocked: document.getElementById('edit-user-chat-blocked').checked,
                 chat_limit_monthly: (function() { var v = document.getElementById('edit-user-chat-limit-monthly').value; if (v === '' || v === null) return -1; var n = parseInt(v, 10); return isNaN(n) ? -1 : Math.max(-1, n); })(),
-                exclude_from_revenue: isAdminUser ? false : !!(document.getElementById('edit-user-exclude-from-revenue') && document.getElementById('edit-user-exclude-from-revenue').checked),
+                exclude_from_revenue: isAdminUser ? true : !!(document.getElementById('edit-user-exclude-from-revenue') && document.getElementById('edit-user-exclude-from-revenue').checked),
                 radar_credits_bonus: (function() {
                     var el = document.getElementById('edit-user-radar-credits-bonus');
                     var raw = el && el.value != null ? String(el.value).trim() : '';
@@ -15981,7 +16005,7 @@
                                 <div><strong>Último Pago:</strong> ${lastPaymentDisplay}</div>
                                 <div><strong>Próximo Pago:</strong> ${nextPaymentDisplay}</div>
                                 <div style="grid-column: 1 / -1;"><strong>Subscription ID (PayPal):</strong> ${user.paypal_subscription_id ? `<code style="background:#e2e8f0;padding:2px 6px;border-radius:4px;font-size:13px;">${escapeHtml(user.paypal_subscription_id)}</code> — <small style="color:#64748b;">úsalo para buscar en paypal.com/billing/subscriptions</small>` : '—'}</div>
-                                <div><strong>Ingreso USD (panel admin):</strong> ${user.exclude_from_revenue === true ? '📉 No suma en totales de ingresos' : '✅ Cuenta en totales'}</div>
+                                <div><strong>Ingreso USD (panel admin):</strong> ${(isNutriplantAdminAccount(user) || user.exclude_from_revenue === true) ? '📉 No suma en totales de ingresos' : '✅ Cuenta en totales'}</div>
                             </div>
                         </div>
                         
@@ -19243,7 +19267,7 @@
             }
             var status = String(u.subscription_status || '').toLowerCase();
             if (status === 'active') {
-                if (u.exclude_from_revenue === true) {
+                if (isNutriplantAdminAccount(u) || u.exclude_from_revenue === true) {
                     return {
                         color: '#eab308',
                         title: 'Activo, pero no cuenta en el conteo de ingresos USD (no paga / excluido)',
