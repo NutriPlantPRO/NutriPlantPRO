@@ -1051,7 +1051,37 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
-                  <h4>${ft('total_supply', '📦 Aporte total (programa + agua)')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
+                  <div class="ferti-water-header-row">
+                    <h4>${ft('base_fertilization_supply', '🌱 Aporte de fertilización de base')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
+                    <label class="hydro-import-water-wrap" for="fertiImportGranularSelect">
+                      <span class="hydro-import-water-label">${ft('bring_from_granular_program', 'Traer de programa granular')}</span>
+                      <select id="fertiImportGranularSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_granular_title', 'Carga el aporte total del programa de Nutrición Granular de este proyecto')}">
+                        <option value="">${ft('select_granular_program', 'Seleccionar programa…')}</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_granular_hint', 'Carga el total aplicado en Nutrición Granular; también puedes ajustar estos valores manualmente.')}</div>
+                  <div class="nutrients-grid">
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseN" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiBaseLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseP2O5" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiBaseLabelK2O">K₂O:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseK2O" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiBaseLabelCaO">CaO:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseCaO" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiBaseLabelMgO">MgO:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseMgO" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseS" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiBaseLabelSO4">SO₄:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseSO4" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseFe" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseMn" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseB" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseZn" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseCu" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseMo" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiBaseLabelSiO2">SiO₂:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseSiO2" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><input type="number" class="nutrient-input ferti-base-input" id="fertiBaseCl" step="0.01" value="0.0"></div>
+                  </div>
+                </div>
+
+                <div class="summary-nutrients" style="margin-top: 16px;">
+                  <h4>${ft('total_supply_with_base', '📦 Aporte total (programa + agua + fertilización de base)')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiTotalWithWaterN">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiTotalWithWaterP2O5">0.0</span></div>
@@ -1130,9 +1160,15 @@ function sectionTemplate(name) {
           <!-- Pestaña Gráficas -->
           <div class="tab-content" id="graficas">
             <div class="charts-container">
-              <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+              <div class="ferti-chart-toolbar">
+                <div class="ferti-chart-edit-actions">
+                  <button class="btn btn-secondary btn-sm" onclick="toggleFertiChartEditMode()" id="toggleFertiChartEditBtn">${ft('adjust_chart', '✋ Ajustar en gráfica')}</button>
+                  <button class="btn btn-secondary btn-sm" onclick="undoFertiChartAdjustment()" id="undoFertiChartAdjustmentBtn" disabled>${ft('undo', '↶ Deshacer')}</button>
+                  <button class="btn btn-secondary btn-sm" onclick="restoreFertiChartEditBaseline()" id="restoreFertiChartBaselineBtn" disabled>${ft('restore_original', 'Restaurar original')}</button>
+                </div>
                 <button class="btn btn-info btn-sm" onclick="toggleFertiChartsOxideElemental()" id="toggleFertiChartsModeBtn">${ft('elemental', '🔄 Ver en Elemental')}</button>
               </div>
+              <div id="fertiChartEditNotice" class="ferti-chart-edit-notice" aria-live="polite"></div>
               <div id="fertiChartsWaterByStageWrap" class="ferti-charts-water-wrap"></div>
               <div class="fertirriego-graphs-watermark">
                 <img src="assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
@@ -18676,6 +18712,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     return legend + svg;
   }
   const waterContribution = prog.waterContribution || {};
+  const baseContribution = prog.baseContribution || {};
   const totalProgram = {};
   nutrients.forEach(n => { totalProgram[n] = hasWeekTotals ? 0 : null; });
   if (hasWeekTotals) {
@@ -18698,6 +18735,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
   const diff = {};
   nutrients.forEach(n => {
     let water = null;
+    let base = null;
     if (n === 'SO4') {
       const wSo4 = (waterContribution.SO4 !== undefined && waterContribution.SO4 !== null && waterContribution.SO4 !== '')
         ? toNum(waterContribution.SO4) : null;
@@ -18711,8 +18749,21 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
         ? toNum(waterContribution[n])
         : null;
     }
-    if (totalProgram[n] === null && water === null) totalWithWater[n] = null;
-    else totalWithWater[n] = (totalProgram[n] === null ? 0 : totalProgram[n]) + (water === null ? 0 : water);
+    if (n === 'SO4') {
+      const bSo4 = (baseContribution.SO4 !== undefined && baseContribution.SO4 !== null && baseContribution.SO4 !== '')
+        ? toNum(baseContribution.SO4) : null;
+      const bS = (baseContribution.S !== undefined && baseContribution.S !== null && baseContribution.S !== '')
+        ? toNum(baseContribution.S) : null;
+      if (bSo4 !== null || bS !== null) {
+        base = (bSo4 !== null ? bSo4 : 0) + (bS !== null ? bS * REPORT_S_TO_SO4_FERTI : 0);
+      }
+    } else {
+      base = (baseContribution[n] !== undefined && baseContribution[n] !== null && baseContribution[n] !== '')
+        ? toNum(baseContribution[n])
+        : null;
+    }
+    if (totalProgram[n] === null && water === null && base === null) totalWithWater[n] = null;
+    else totalWithWater[n] = (totalProgram[n] === null ? 0 : totalProgram[n]) + (water === null ? 0 : water) + (base === null ? 0 : base);
     diff[n] = (totalWithWater[n] === null || required[n] === null) ? null : (totalWithWater[n] - required[n]);
   });
   const totalDose = weeks.reduce((acc, w) => {
@@ -18861,7 +18912,9 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">${rt('Aporte por agua', 'Water nutrient supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true }, 'dose_mass_area')}</div>
-        <div class="report-subtitle">${rt('Aporte total (programa + agua)', 'Total supply (program + water)')} (${doseUnit}):</div>
+        <div class="report-subtitle">${rt('Aporte de fertilización de base', 'Base fertilization supply')} (${doseUnit}):</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(baseContribution, programModeIsElemental, false, null, 'dose_mass_area')}</div>
+        <div class="report-subtitle">${rt('Aporte total (programa + agua + fertilización de base)', 'Total supply (program + water + base fertilization)')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalWithWater, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">${rt('Requerimiento Real', 'Actual Requirement')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(required, programModeIsElemental, false, null, 'dose_mass_area')}</div>

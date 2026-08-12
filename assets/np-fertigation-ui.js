@@ -90,6 +90,20 @@
     anions_ranges: 'Anions: N-NO₃⁻ 20-80, P-H₂PO₄⁻ 1.25-10, S-SO₄²⁻ 10-70',
     cations_ranges: 'Cations: K⁺ 10-65, Ca²⁺ 22.5-62.5, Mg²⁺ 0.5-40',
     pct_col_hint: 'Triangle anions: 100% among NO₃+H₂PO₄+SO₄. Cl⁻ and NH₄⁺: % of the expanded total (see note). K+Ca+Mg cations: 100% in the triangle.',
+    adjust_chart: '✋ Adjust on chart', finish_chart_adjustment: '✓ Finish adjustment',
+    undo: '↶ Undo', restore_original: 'Restore original',
+    chart_drag_help: 'Drag a point. Fertilizer rates, nutrient supply, ppm, meq/L and ratios will be recalculated. Use 🔒 in the table to freeze a fertilizer.',
+    chart_adjust_no_source: 'That point cannot be reached with the unlocked fertilizers. Add a nutrient source or unlock a product.',
+    chart_lock_fertilizer: 'Freeze for chart adjustments',
+    base_fertilization_supply: '🌱 Base fertilization supply',
+    bring_from_granular_program: 'Bring from granular program',
+    bring_from_granular_title: 'Load the total supply from this project’s Granular Nutrition program',
+    select_granular_program: 'Select program…',
+    bring_from_granular_hint: 'Loads the total applied in Granular Nutrition; you can also adjust these values manually.',
+    granular_program_option: 'Granular program ({count} applications)',
+    linked_granular_program: 'Granular program linked',
+    no_granular_program: 'No saved granular program in this project',
+    total_supply_with_base: '📦 Total supply (program + water + base fertilization)',
     per_week_abbr: '/wk', per_month_abbr: '/mo'
   };
   var CROPS_EN = {
@@ -268,12 +282,107 @@
     return c * water / 1000;
   }
 
+  /**
+   * Ajusta una mezcla al nuevo aporte de un nutriente con el menor cambio relativo posible.
+   * La igualdad coefficients · amounts = target se respeta y ninguna dosis puede ser negativa.
+   * Los coeficientes en cero sirven también para representar fertilizantes bloqueados.
+   */
+  function adjustBlendToTarget(amounts, coefficients, target) {
+    var x = Array.isArray(amounts) ? amounts.map(function (v) {
+      v = Number(v);
+      return Number.isFinite(v) && v > 0 ? v : 0;
+    }) : [];
+    var a = Array.isArray(coefficients) ? coefficients.map(function (v) {
+      v = Number(v);
+      return Number.isFinite(v) && v > 0 ? v : 0;
+    }) : [];
+    var wanted = Math.max(0, Number(target) || 0);
+    if (x.length !== a.length) throw new TypeError('Dosis y coeficientes deben tener la misma longitud.');
+
+    var output = x.slice();
+    var free = [];
+    for (var i = 0; i < a.length; i += 1) if (a[i] > 1e-12) free.push(i);
+    if (!free.length) return { values: output, reachable: false, achieved: 0 };
+
+    /* La movilidad relativa mantiene la proporción de la mezcla existente. Para productos
+       todavía en cero deja una movilidad mínima que permite incorporarlos si hacen falta. */
+    var mobility = x.map(function (v) { var scale = Math.max(v, 1); return scale * scale; });
+    var guard = free.length + 1;
+    while (free.length && guard > 0) {
+      guard -= 1;
+      var baseContribution = 0;
+      var denominator = 0;
+      free.forEach(function (idx) {
+        baseContribution += a[idx] * x[idx];
+        denominator += a[idx] * a[idx] * mobility[idx];
+      });
+      if (denominator <= 1e-18) break;
+      var lambda = (wanted - baseContribution) / denominator;
+      var negatives = free.filter(function (idx) {
+        return x[idx] + lambda * a[idx] * mobility[idx] < 0;
+      });
+      if (!negatives.length) {
+        free.forEach(function (idx) {
+          output[idx] = Math.max(0, x[idx] + lambda * a[idx] * mobility[idx]);
+        });
+        break;
+      }
+      negatives.forEach(function (idx) { output[idx] = 0; });
+      free = free.filter(function (idx) { return negatives.indexOf(idx) === -1; });
+      /* Los límites activos quedan en cero; la siguiente proyección parte de las dosis
+         originales de las variables que aún están libres. */
+    }
+
+    var achieved = output.reduce(function (sum, value, idx) { return sum + value * a[idx]; }, 0);
+    var tolerance = Math.max(1e-7, wanted * 1e-7);
+    return { values: output, reachable: Math.abs(achieved - wanted) <= tolerance, achieved: achieved };
+  }
+
+  function aggregateGranularProgramContribution(program) {
+    var totals = {
+      N:0, P2O5:0, K2O:0, CaO:0, MgO:0, S:0, SO4:0,
+      Fe:0, Mn:0, B:0, Zn:0, Cu:0, Mo:0, SiO2:0, Cl:0
+    };
+    var applications = program && Array.isArray(program.applications) ? program.applications : [];
+    applications.forEach(function (application) {
+      var stored = application && application.results && typeof application.results === 'object'
+        ? application.results
+        : {};
+      var hasStored = Object.keys(totals).some(function (key) {
+        return (Number(stored[key]) || 0) !== 0;
+      }) || (Number(stored.N_NO3) || 0) !== 0 || (Number(stored.N_NH4) || 0) !== 0;
+      var result = stored;
+      if (!hasStored) {
+        var dose = Number(application && application.doseKgHa) || 0;
+        var composition = application && application.composition && typeof application.composition === 'object'
+          ? application.composition
+          : {};
+        result = {};
+        Object.keys(totals).forEach(function (key) {
+          result[key] = dose * (Number(composition[key]) || 0) / 100;
+        });
+      }
+      Object.keys(totals).forEach(function (key) {
+        if (key === 'S' || key === 'SO4') return;
+        var value = Number(result[key]);
+        if (Number.isFinite(value)) totals[key] += value;
+      });
+      if (!Number.isFinite(Number(result.N))) {
+        totals.N += (Number(result.N_NO3) || 0) + (Number(result.N_NH4) || 0);
+      }
+      totals.SO4 += (Number(result.SO4) || 0) + (Number(result.S) || 0) * 3;
+    });
+    return totals;
+  }
+
   return {
     getPrefs:prefs, t:t, unit:unit, fromSI:fromSI, toSI:toSI,
     inputFromSI:inputFromSI, resultFromSI:resultFromSI, quantityFromSI:quantityFromSI,
     cropName:cropName, materialName:materialName, stageName:stageName,
     chartYAxisTitle:chartYAxisTitle, chartDoseSeries:chartDoseSeries,
     concentrationPpmFromDose:concentrationPpmFromDose, doseFromConcentration:doseFromConcentration,
+    adjustBlendToTarget:adjustBlendToTarget,
+    aggregateGranularProgramContribution:aggregateGranularProgramContribution,
     withLanguage: withLanguage,
     withUnitSystem: withUnitSystem
   };

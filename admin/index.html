@@ -14166,10 +14166,11 @@
                     reqOxide[n] = effOk ? (adjVal / (effPct / 100)) : null;
                 });
                 const waterOx = fertirriegoProgram.waterContribution || {};
+                const baseContributionOx = fertirriegoProgram.baseContribution || {};
                 const fertiInsightsStageIdx = Math.max(0, Math.min(parseInt(fertirriegoProgram.chartSelectedStageIndex, 10) || 0, weeks.length - 1));
                 window._adminFertiInsightsCache = window._adminFertiInsightsCache || {};
                 window._adminFertiInsightsCache[project.id] = { program: fertirriegoProgram, waterOx: waterOx };
-                const summary = { aportado: {}, requerido: {}, aportadoAgua: {}, totalWithWater: {}, diferencia: {} };
+                const summary = { aportado: {}, requerido: {}, aportadoAgua: {}, aportadoBase: {}, totalWithWater: {}, diferencia: {} };
                 const display = (n, val) => {
                     if (val === null || val === undefined) return null;
                     if (!programIsElemental) return val;
@@ -14182,11 +14183,16 @@
                     if (n === 'SO4') {
                         waterVal = (parseFloat(waterOx.SO4) || 0) + (parseFloat(waterOx.S) || 0) * ADMIN_FERTI_S_TO_SO4;
                     }
-                    const totalOx = aportOx + waterVal;
+                    let baseVal = parseFloat(baseContributionOx[n]) || 0;
+                    if (n === 'SO4') {
+                        baseVal = (parseFloat(baseContributionOx.SO4) || 0) + (parseFloat(baseContributionOx.S) || 0) * ADMIN_FERTI_S_TO_SO4;
+                    }
+                    const totalOx = aportOx + waterVal + baseVal;
                     const diffOx = reqOx !== null && reqOx !== undefined ? (totalOx - reqOx) : null;
                     summary.aportado[n] = display(n, aportOx);
                     summary.requerido[n] = reqOx !== null && reqOx !== undefined ? display(n, reqOx) : null;
                     summary.aportadoAgua[n] = display(n, waterVal);
+                    summary.aportadoBase[n] = display(n, baseVal);
                     summary.totalWithWater[n] = display(n, totalOx);
                     summary.diferencia[n] = diffOx !== null && diffOx !== undefined ? display(n, diffOx) : null;
                 });
@@ -14293,7 +14299,16 @@
                                 </div>
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong style="color:#0369a1;font-size:13px;">📦 Aporte total (programa + agua) (Kg/Ha):</strong>
+                                <strong style="color:#047857;font-size:13px;">🌱 Aporte de fertilización de base (Kg/Ha):</strong>
+                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
+                                    ${summaryNutrients.map(n => {
+                                        const label = getAdminNutrientLabel(n, programIsElemental);
+                                        return `<div><strong>${label}:</strong> <span style="color:#047857;font-weight:600;">${formatAdminValue(n, summary.aportadoBase[n])}</span></div>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong style="color:#0369a1;font-size:13px;">📦 Aporte total (programa + agua + fertilización de base) (Kg/Ha):</strong>
                                 <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
                                         const label = getAdminNutrientLabel(n, programIsElemental);

@@ -2663,7 +2663,7 @@ function renderHydroFertTable() {
       return `<option value="${(m.id || '').replace(/"/g, '&quot;')}" ${m.id === selectedId ? 'selected' : ''}>${String(label).replace(/</g, '&lt;')}</option>`;
     }).join('');
   const tankOptions = (sel) => HYDRO_TANQUES.map(t =>
-    `<option value="${t}" ${t === (sel || 'A') ? 'selected' : ''}>${hydroT('Tanque', 'Tank')} ${t}</option>`
+    `<option value="${t}" data-tank="${t}" ${t === (sel || 'A') ? 'selected' : ''}>${hydroT('Tanque', 'Tank')} ${t}</option>`
   ).join('');
 
   const rows = hydroState.fertilizers.map(f => {
@@ -2684,7 +2684,7 @@ function renderHydroFertTable() {
       <td><input class="hydro-input" data-fert-id="${f.id}" data-fert-field="name" value="${(f.name || '').replace(/"/g, '&quot;')}" placeholder="${hydroT('Nombre', 'Name')}"></td>
       <td class="hydro-dose-readonly">${(parseFloat(f.dose || 0) > 0 ? parseFloat(f.dose).toFixed(1) : '—')}</td>
       ${contribCells}
-      <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank">${tankOptions(tank)}</select></td>
+      <td><select class="hydro-input hydro-tank-select" data-tank="${tank}" data-fert-id="${f.id}" data-fert-field="tank">${tankOptions(tank)}</select></td>
       <td class="hydro-kg-readonly">${totalDisplay.value > 0 ? hydroFormatProductAmountWithUnit(totalDisplay.value, totalDisplay.unit) : '—'}</td>
       <td class="hydro-cost-cell" style="text-align:right;">—</td>
       <td><button class="btn btn-secondary btn-sm hydro-remove-fert" data-fert-id="${f.id}">✕</button></td>
@@ -2728,7 +2728,7 @@ function renderHydroFertTable() {
       </td>
       <td class="hydro-dose-readonly">${(dose > 0 ? dose.toFixed(1) : '—')}</td>
       ${contribCells}
-      <td><select class="hydro-input hydro-tank-select" data-fert-id="${f.id}" data-fert-field="tank" title="${hydroT('Tanque', 'Tank')}">${tankOptions(tank)}</select></td>
+      <td><select class="hydro-input hydro-tank-select" data-tank="${tank}" data-fert-id="${f.id}" data-fert-field="tank" title="${hydroT('Tanque', 'Tank')}">${tankOptions(tank)}</select></td>
       <td class="hydro-kg-readonly">${totalCell}</td>
       <td class="hydro-cost-cell" style="text-align:right;white-space:nowrap;color:#0f766e;font-weight:600;">${costTxt}</td>
       <td><button class="btn btn-secondary btn-sm hydro-remove-fert" data-fert-id="${f.id}">✕</button></td>
@@ -3640,6 +3640,7 @@ function bindHydroEvents(container) {
       if (fert) {
         const nextTank = target.value || 'A';
         fert.tank = nextTank;
+        target.setAttribute('data-tank', nextTank);
         // Actualizar resumen por tanque sin reconstruir toda la tabla (evita “no cambió”).
         renderHydroVolumeCard();
         renderHydroFertTotals();

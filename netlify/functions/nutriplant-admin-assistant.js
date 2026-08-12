@@ -657,6 +657,50 @@ function summarizeFertirriego(program, stageIndexParam) {
     stages,
     chart_water_m3ha_by_stage: waterArr
   };
+  const nutrientKeys = ['P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2','Cl'];
+  const programContribution = { N_NO3: 0, N_NH4: 0 };
+  nutrientKeys.forEach(k => { programContribution[k] = 0; });
+  weeks.forEach(w => {
+    const totals = (w && w.totals) || {};
+    programContribution.N_NO3 += parseFloat(totals.N_NO3) || 0;
+    programContribution.N_NH4 += parseFloat(totals.N_NH4) || 0;
+    nutrientKeys.forEach(k => {
+      if (k === 'SO4') {
+        programContribution.SO4 += (parseFloat(totals.SO4) || 0) + (parseFloat(totals.S) || 0) * 3;
+      } else {
+        programContribution[k] += parseFloat(totals[k]) || 0;
+      }
+    });
+  });
+  const normalizeExternalContribution = (source) => {
+    const src = source && typeof source === 'object' ? source : {};
+    const normalized = { N: parseFloat(src.N) || 0 };
+    nutrientKeys.forEach(k => {
+      if (k === 'SO4') normalized.SO4 = (parseFloat(src.SO4) || 0) + (parseFloat(src.S) || 0) * 3;
+      else normalized[k] = parseFloat(src[k]) || 0;
+    });
+    return normalized;
+  };
+  const waterContribution = normalizeExternalContribution(program.waterContribution);
+  const baseContribution = normalizeExternalContribution(program.baseContribution);
+  const totalBalanceContribution = {
+    N: programContribution.N_NO3 + programContribution.N_NH4 + waterContribution.N + baseContribution.N
+  };
+  nutrientKeys.forEach(k => {
+    totalBalanceContribution[k] = programContribution[k] + waterContribution[k] + baseContribution[k];
+  });
+  out.program_contribution_kg_ha_oxide = programContribution;
+  out.water_contribution_kg_ha_oxide = waterContribution;
+  out.base_granular_contribution_kg_ha_oxide = baseContribution;
+  out.total_balance_contribution_kg_ha_oxide = totalBalanceContribution;
+  out.granular_program_linked = program.granularProgramLinked === true;
+  out.nitrogen_balance_rule = 'N total = N-NO3 del fertirriego + N-NH4 del fertirriego + N-NO3 del agua + N total del aporte granular/base.';
+  out.chart_adjustment = {
+    available: true,
+    saved_values_are_in_weeks: true,
+    locked_fertilizer_column_ids: Array.isArray(program.chartLockedColumnIds) ? program.chartLockedColumnIds : [],
+    note: 'Los ajustes hechos arrastrando puntos recalculan kgByCol/totals; las semanas devueltas ya contienen los valores guardados.'
+  };
   const idx =
     stageIndexParam != null && stageIndexParam !== ''
       ? Math.max(0, Math.min(parseInt(stageIndexParam, 10) || 0, weeks.length - 1))

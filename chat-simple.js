@@ -1429,11 +1429,11 @@ INSTRUCCIONES:
 - CUANDO pregunten teoría agronómica, relaciones entre nutrientes o criterios generales (sin pedirte que interpretes sus datos): puedes responder con lógica y conocimiento técnico general; si aplica, relaciona con lo que tienen en la pestaña y separa "Contexto del proyecto" vs "Conocimiento general".
 - No mezcles ni cites valores de otros proyectos del usuario. Si menciona "mi otro proyecto", indica que solo tienes contexto del proyecto actual.
 - Privacidad entre usuarios: los datos y el contexto que recibes corresponden ÚNICAMENTE al usuario que te escribe en esta sesión. Nunca cruces, menciones ni uses información de otros usuarios; cada conversación es de un solo usuario con sus proyectos y su perfil.
-- Granular vs Fertirriego: son dos módulos separados. Cada uno tiene su propio Requerimiento Nutricional y su propio Programa; los valores no son intercambiables. Si el usuario está en Nutrición Granular (o pregunta por granular), usa solo los datos del bloque "NUTRICIÓN GRANULAR". Si está en Fertirriego (o pregunta por fertirriego/gráficas de fertirriego), usa solo los datos del bloque "FERTIRRIEGO". No confundas requerimientos ni programas entre ambos.
+- Granular vs Fertirriego: son módulos separados y cada uno conserva su propio Requerimiento y Programa. Excepción explícita: Fertirriego puede importar el aporte total del programa granular como "fertilización de base"; cuando aparezca ese bloque, sí forma parte del balance total de Fertirriego. N granular permanece como N total; no inventes reparto NO₃/NH₄.
 - Solución Nutritiva vs Extracto de Pasta: son dos subpestañas distintas dentro de Análisis. Cada una tiene su propia lista de reportes, valores e ideales. No cruces ni mezcles datos entre ellas: si preguntan por solución nutritiva, usa solo el bloque "ANÁLISIS SOLUCIÓN NUTRITIVA"; si preguntan por extracto de pasta, usa solo el bloque "ANÁLISIS EXTRACTO DE PASTA".
 - Cultivos y fertilizantes personalizados: el usuario puede agregar cultivos personalizados y fertilizantes/materias personalizados tanto en Nutrición Granular como en Fertirriego. Cada módulo tiene su propia pestaña y ahí se gestionan los de ese módulo (los de Granular en la pestaña Nutrición Granular; los de Fertirriego en la pestaña Fertirriego). Si preguntan por "mis fertilizantes", "mis cultivos" o dónde agregar uno, usa el módulo en el que estén o del que hablen y di la pestaña correspondiente.
-- Resultados de los programas que el chat SÍ ve: En Nutrición Granular recibes la lista de aplicaciones guardadas (cada una con título, dosis kg/ha y materiales); puedes referirte a ellas como "las aplicaciones que tienes", "tu programa granular", etc. En Fertirriego recibes el número de semanas o meses, la unidad de tiempo (semana/mes), el modo (óxido o elemental), la lista de fertilizantes/materias y el aporte total del programa por nutriente (kg/ha); puedes referirte a "tu programa de fertirriego", "los aportes de tu programa", etc. Si el usuario agrega o cambia aplicaciones (granular) o semanas/dosis (fertirriego), tras guardar el proyecto esos datos pasan al contexto en la siguiente consulta.
-- Lógica de la plataforma en Fertirriego, Granular e Hidroponía (resumen): (1) Granular y Fertirriego permiten modo óxido o elemental; los valores en contexto están en el modo guardado. (2) Granular: Requerimiento define la meta; Programa son aplicaciones (dosis kg/ha y materiales) que cubren la meta. (3) Fertirriego: Requerimiento define la meta; Programa por semanas o meses genera aportes; Gráficas comparan aporte vs requerimiento. (4) Hidroponía: Solución por etapa = objetivo; Cálculo de fertilizantes resta agua y calcula dosis; si hay análisis de agua vinculado («Traer de análisis»), muestra/aplica la dosis de ácido al volumen de hidroponía y avisa si los m³ no coinciden (misma leyenda en admin y PDF, EN si el reporte está en inglés). Interpreta números y etiquetas según el bloque de datos.
+- Resultados de los programas que el chat SÍ ve: En Nutrición Granular recibes aplicaciones guardadas. En Fertirriego recibes semanas/meses, modo, fertilizantes, aportes por nutriente, aporte de agua y aporte granular/base vinculado. También sabes que los ajustes hechos arrastrando puntos quedan reflejados en las dosis y totales guardados, y qué columnas están bloqueadas.
+- Lógica de la plataforma en Fertirriego, Granular e Hidroponía (resumen): (1) Granular y Fertirriego permiten modo óxido o elemental. (2) Granular: Requerimiento define la meta; Programa son aplicaciones que la cubren. (3) Fertirriego: Programa + agua + fertilización de base granular forman el aporte total; N = NO₃ fertirriego + NH₄ fertirriego + NO₃ agua + N total granular. Arrastrar puntos en Gráficas reajusta fertilizantes y guarda los nuevos valores. (4) Hidroponía: Solución por etapa = objetivo; Cálculo de fertilizantes resta agua y calcula dosis.
 - Si existe una línea "Resultado en pantalla (prioridad alta...)" en ENMIENDAS, úsala como fuente principal para cantidades y aportes; cita esos números exactos en tu respuesta.
 - Si existen los bloques "🧪 Enmiendas Disponibles", "Meq a ajustar", "% Superficie de suelo considerada" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
 - Cómo saber si el usuario habla de datos de Enmienda o de la pestaña Análisis de Suelo: (1) "ANÁLISIS DE SUELO INICIAL" = único conjunto de valores (**meq/100g = cmol_c/kg**, CIC, etc.) usados en la pestaña Enmienda para el cálculo de enmiendas. (2) "ANÁLISIS DE SUELO (reportes)" = lista de reportes en la pestaña Análisis > Análisis de Suelo (cada uno con título, fecha, fertilidad, cationes, kg/ha). Si el usuario está en Enmienda o dice "los datos de enmienda", "lo que tengo en enmienda", "el análisis inicial" → usar el bloque INICIAL. Si está en la pestaña Análisis (subpestaña Análisis de Suelo) o dice "los reportes de análisis", "el análisis de suelo que cargué" (en contexto de reportes) → usar el bloque (reportes). Si no queda claro, responde usando el bloque que coincida con la pestaña donde está (snapshot "ANÁLISIS (pestaña actual)" indica si está en Análisis de Suelo = reportes) o aclara: "¿te refieres a los valores que usas en Enmienda (Análisis Inicial) o a uno de los reportes de la pestaña Análisis de Suelo?".
@@ -1454,7 +1454,7 @@ INSTRUCCIONES:
 - Para la herramienta: explica cálculos, interpretación de valores y dónde configurar algo.
 - Para nutrición vegetal: da recomendaciones técnicas, basadas en ciencia y en el manual; usa términos agronómicos correctos y nivel experto (relaciones, antagonismos, momentos de aplicación, diagnóstico integrado).
 - Sé conciso pero completo; usa formato markdown para mejor legibilidad.
-- GRÁFICAS DE FERTIRRIEGO: Si preguntan si "puedes ver las gráficas" o "las gráficas de fertirriego que tengo abiertas": NO digas que no puedes ver nada. Tienes los DATOS del proyecto (requerimiento nutricional, programa por semanas, cultivo, rendimiento, aportes del programa y del agua). Responde que tienes esos datos y puedes interpretarlos y dar recomendaciones; lo que no recibes es la imagen visual de la gráfica. Invita a que te describan qué ven (p. ej. qué nutriente está por encima o por debajo del requerimiento en qué etapas) o pregunten por un nutriente/mes concreto, y entonces das recomendaciones precisas con los números del contexto.
+- GRÁFICAS DE FERTIRRIEGO: Tienes los datos del proyecto (requerimiento, semanas/meses, aportes, agua, fertilización base y valores reajustados al arrastrar puntos), aunque no la imagen visual. Puedes interpretar un nutriente/etapa y explicar que mover un punto recalcula cantidades de los fertilizantes presentes, respeta columnas bloqueadas y guarda el resultado.
 - CURVAS 📊 EXTRACCIÓN POR ETAPA: Si preguntan por sus curvas de extracción, distribución % por etapa o kg/ha fenológicos: usa el bloque EXTRACCIÓN NUTRIMENTAL POR ETAPA (biblioteca personal + curva activa del proyecto). Tienes totales, % y kg/ha por etapa; no recibes la imagen de la gráfica pero sí los números para interpretar picos, déficits por etapa y coherencia con el programa de fertirriego/granular.
 - Si el usuario adjunta una imagen, interpreta su contenido (análisis, gráfica, planta, suelo, resultado de laboratorio, etc.) en contexto agronómico y responde en consecuencia usando también los datos del proyecto cuando aplique.
 - IMPORTANTE: cuando venga una imagen adjunta en el mensaje del usuario, asume que SÍ tienes visión habilitada y NUNCA respondas que "no puedes ver imágenes" o "no puedes interpretar adjuntos". En su lugar, describe lo que observas y pide zoom o re-subida solo si la imagen viene borrosa o incompleta.
@@ -2299,7 +2299,7 @@ ESTILO DE RESPUESTA:
   }
 
   getLiveFertirriegoBlocks() {
-    const out = { subsection: '', cultivo: '', rendimiento: '', tableSummary: '', macroIonicSummary: '', waterContributionSummary: '' };
+    const out = { subsection: '', cultivo: '', rendimiento: '', tableSummary: '', macroIonicSummary: '', waterContributionSummary: '', baseContributionSummary: '' };
     const activeBtn = document.querySelector('.fertirriego-tabs .tab-button.active');
     const tab = activeBtn && activeBtn.getAttribute('data-tab');
     if (tab === 'extraccion') out.subsection = 'Requerimiento Nutricional';
@@ -2345,6 +2345,12 @@ ESTILO DE RESPUESTA:
     if (waterN && waterN.value !== '' && parseFloat(waterN.value) !== 0) waterParts.push(`N-NO₃⁻:${waterN.value} kg/ha`);
     if (waterCl && waterCl.value !== '' && parseFloat(waterCl.value) !== 0) waterParts.push(`Cl⁻:${waterCl.value} kg/ha`);
     if (waterParts.length) out.waterContributionSummary = waterParts.join(', ');
+    const baseParts = [];
+    ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2','Cl'].forEach(n => {
+      const el = document.getElementById(`fertiBase${n}`);
+      if (el && el.value !== '' && parseFloat(el.value) !== 0) baseParts.push(`${n}:${el.value} kg/ha`);
+    });
+    if (baseParts.length) out.baseContributionSummary = baseParts.join(', ');
     return out;
   }
 
@@ -3062,7 +3068,7 @@ ESTILO DE RESPUESTA:
       if (project.fertirriego) {
         const f = project.fertirriego;
         context += '--- FERTIRRIEGO (Requerimiento + Programa + Gráficas) ---\n';
-        context += 'Las tres subsecciones están relacionadas: Requerimiento define la meta (kg/ha); Programa genera los aportes por etapa; Gráficas comparan aporte vs requerimiento. NO confundir con Nutrición Granular: son módulos distintos, cada uno con su propio requerimiento y programa. Los cultivos y fertilizantes/materias personalizados que el usuario agrega aquí corresponden a la pestaña Fertirriego.\n';
+        context += 'Las tres subsecciones están relacionadas: Requerimiento define la meta (kg/ha); Programa genera los aportes por etapa; Gráficas comparan aporte vs requerimiento. Nutrición Granular sigue siendo un módulo distinto, pero el usuario puede vincular su aporte total como "fertilización de base" dentro del balance de Fertirriego. Los cultivos y fertilizantes/materias personalizados que el usuario agrega aquí corresponden a la pestaña Fertirriego.\n';
         context += 'Subsección Requerimiento Nutricional (tabla: extracción/ton, extracción total, ajuste, eficiencia, requerimiento real):\n';
         context += `Cultivo (guardado): ${f.cropType || '—'}; Rendimiento objetivo: ${f.targetYield != null ? f.targetYield + ' ton/ha' : '—'}\n`;
         if (f.requirements && typeof f.requirements === 'object') {
@@ -3078,7 +3084,7 @@ ESTILO DE RESPUESTA:
             if (eff) context += `Eficiencia: ${eff}\n`;
           }
         }
-        context += 'Subsección Programa de Nutrición (semanas o meses, fertilizantes, aporte programa + agua):\n';
+        context += 'Subsección Programa de Nutrición (semanas o meses, fertilizantes, aporte programa + agua + fertilización de base granular):\n';
         const prog = f.program;
         if (prog && Array.isArray(prog.weeks) && prog.weeks.length) {
           const timeUnit = prog.timeUnit === 'mes' ? 'mes' : 'semana';
@@ -3102,6 +3108,17 @@ ESTILO DE RESPUESTA:
           if (waterOx.Cl != null && parseFloat(waterOx.Cl) !== 0) wParts.push(`Cl⁻(agua):${waterOx.Cl} kg/ha`);
           if (wParts.length) context += `Aporte por agua guardado: ${wParts.join(', ')}\n`;
         }
+        const baseOx = prog && prog.baseContribution;
+        if (baseOx && typeof baseOx === 'object') {
+          const baseParts = Object.entries(baseOx)
+            .filter(([k, v]) => k !== 'S' && v != null && parseFloat(v) !== 0)
+            .map(([k, v]) => `${k}:${Math.round(parseFloat(v) * 1000) / 1000} kg/ha`);
+          if (baseParts.length) {
+            context += `Aporte de fertilización de base traído de Nutrición Granular (valores canónicos en óxido): ${baseParts.join(', ')}. Vinculado: ${prog.granularProgramLinked === true ? 'sí' : 'no'}.\n`;
+          }
+        }
+        context += 'Regla de N del balance: N total disponible = N-NO₃ del fertirriego + N-NH₄ del fertirriego + N-NO₃ del agua + N total de fertilización granular/base.\n';
+        context += `Ajuste desde gráficas: disponible. Al arrastrar un punto se recalculan las dosis de fertilizantes y los totales de las semanas; los valores guardados arriba ya reflejan esos ajustes. Fertilizantes bloqueados para ajuste: ${prog && Array.isArray(prog.chartLockedColumnIds) && prog.chartLockedColumnIds.length ? prog.chartLockedColumnIds.join(', ') : 'ninguno'}.\n`;
         context += 'Subsección Gráficas: aportes vs requerimiento + Macro resumen iónico (% meq: triángulo N-P-S y K-Ca-Mg sin Cl/NH₄; ver MANUAL % meq) y diagrama ternario (fertilizante+agua).\n';
         context += '\n';
       }
@@ -3112,13 +3129,14 @@ ESTILO DE RESPUESTA:
       // BLOQUES EN VIVO FERTIRRIEGO (pantalla actual: subsección activa, cultivo, rendimiento, tabla requerimiento)
       if (snapshot.module === 'fertirriego') {
         const liveFerti = this.getLiveFertirriegoBlocks();
-        if (liveFerti.cultivo || liveFerti.rendimiento || liveFerti.tableSummary || liveFerti.subsection || liveFerti.macroIonicSummary || liveFerti.waterContributionSummary) {
+        if (liveFerti.cultivo || liveFerti.rendimiento || liveFerti.tableSummary || liveFerti.subsection || liveFerti.macroIonicSummary || liveFerti.waterContributionSummary || liveFerti.baseContributionSummary) {
           context += '--- BLOQUES FERTIRRIEGO (PANTALLA ACTUAL) ---\n';
           if (liveFerti.subsection) context += `Subsección visible: ${liveFerti.subsection}\n`;
           context += `Cultivo en pantalla: ${liveFerti.cultivo || '—'}\n`;
           context += `Rendimiento objetivo en pantalla: ${liveFerti.rendimiento || '—'} ton/ha\n`;
           if (liveFerti.tableSummary) context += `Tabla Requerimiento Nutricional (valores visibles):\n${liveFerti.tableSummary}\n`;
           if (liveFerti.waterContributionSummary) context += `Aporte por agua (pantalla Programa, kg/ha): ${liveFerti.waterContributionSummary} (N del agua = N-NO₃⁻ en gráficas iónicas)\n`;
+          if (liveFerti.baseContributionSummary) context += `Aporte de fertilización de base/granular (pantalla Programa, kg/ha): ${liveFerti.baseContributionSummary} (N granular = N total; no dividir artificialmente en NO₃/NH₄)\n`;
           if (liveFerti.macroIonicSummary) context += `Macro resumen iónico / ternario (etapa visible en Gráficas; interpretar % con MANUAL % meq): ${liveFerti.macroIonicSummary}\n`;
           context += '\n';
         }

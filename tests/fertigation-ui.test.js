@@ -77,6 +77,7 @@ module.exports = [
       assert.equal(ferti.t('week', 'Semana'), 'Week');
       assert.equal(ferti.t('stage_to_analyze', 'Etapa a analizar:'), 'Stage to analyze:');
       assert.equal(ferti.t('macro_summary', 'Macro resumen'), 'Macro summary');
+      assert.equal(ferti.t('base_fertilization_supply', 'Aporte de fertilización de base'), '🌱 Base fertilization supply');
     }
   },
   {
@@ -97,6 +98,47 @@ module.exports = [
       assert.equal(ferti.chartYAxisTitle(), 'Kg de nutriente');
       prefs.language = 'en';
       prefs.unit_system = 'us_customary';
+    }
+  },
+  {
+    name: 'fertirriego: ajuste gráfico alcanza el nutriente sin dosis negativas',
+    run: function () {
+      var result = ferti.adjustBlendToTarget([10, 20, 5], [0.1, 0.2, 0], 8);
+      assert.equal(result.reachable, true);
+      close(result.values[0] * 0.1 + result.values[1] * 0.2, 8, 1e-7);
+      assert.equal(result.values[2], 5);
+      result.values.forEach(function (value) { assert.ok(value >= 0); });
+
+      var decrease = ferti.adjustBlendToTarget([1, 20], [0.8, 0.1], 0.25);
+      assert.equal(decrease.reachable, true);
+      close(decrease.values[0] * 0.8 + decrease.values[1] * 0.1, 0.25, 1e-7);
+      decrease.values.forEach(function (value) { assert.ok(value >= 0); });
+    }
+  },
+  {
+    name: 'fertirriego: ajuste gráfico detecta mezcla sin fuente del nutriente',
+    run: function () {
+      var result = ferti.adjustBlendToTarget([10, 20], [0, 0], 5);
+      assert.equal(result.reachable, false);
+      assert.deepEqual(result.values, [10, 20]);
+    }
+  },
+  {
+    name: 'fertirriego: suma aporte del programa granular en forma óxido',
+    run: function () {
+      var totals = ferti.aggregateGranularProgramContribution({
+        applications: [
+          { results: { N: 10, P2O5: 4, K2O: 8, SO4: 2, S: 1, Zn: 0.2 } },
+          { results: { N_NO3: 3, N_NH4: 2, P2O5: 1, K2O: 2, S: 0.5, Zn: 0.1 } },
+          { doseKgHa: 100, composition: { N: 5, P2O5: 2, K2O: 3, S: 1 } }
+        ]
+      });
+      close(totals.N, 20);
+      close(totals.P2O5, 7);
+      close(totals.K2O, 13);
+      close(totals.SO4, 9.5);
+      close(totals.Zn, 0.3);
+      assert.equal(totals.S, 0);
     }
   }
 ];
