@@ -2,7 +2,9 @@
 
 OpenAPI **v2.13.0** · Misma función `nutriplantAdminQuery` · Solo usuario admin (RLS). Nutri PRO: `nutri_pro_catalog`, `nutri_pro_search`, `nutri_pro_ask`, `nutri_pro_file_inspect`; `plan_pro_item` incluye `nutri_refs`, grafo `relations_out` / `relations_in` (`hops` 1|2) y `nutri_graph_*` (archivo/link). Requiere `supabase-plan-pro-relations.sql` + `supabase-plan-pro-nutri-relations.sql`.
 
-**Invest PRO** (UI mercados en Plan PRO): ver Knowledge `docs/INVEST-PRO-CONOCIMIENTO-GPT.md`. Gráfica = **TradingView embebido**; listas ★ en Supabase. **Aún no** hay `action` en `nutriplantAdminQuery` para precios. El GPT debe orientar a la pestaña Invest PRO y **no inventar** cotizaciones.
+**Invest PRO** (UI mercados en Plan PRO): Knowledge `docs/INVEST-PRO-CONOCIMIENTO-GPT.md`.  
+Actions (OpenAPI **v2.14.0**): `invest_pro_overview`, `invest_pro_holdings`, `invest_pro_lists` — **solo lectura**.  
+Gráfica = TradingView embebido. Holdings = captura Schwab (no vivo). El GPT **no inventa** cotizaciones.
 
 ## Dos semáforos
 

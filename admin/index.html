@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - NutriPlant PRO</title>
+    <title>NutriPlant PRO - Panel de Administración</title>
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="NP Admin">
@@ -4726,13 +4726,108 @@
                 } catch (e) { lines.push('(Error al cargar últimas ubicaciones.)'); }
                 return lines.join('\n');
             }
-            function getAdminPanelSystemPrompt() {
+            async function getInvestProAdminContext() {
+                var lines = [];
+                lines.push('--- INVEST PRO (Plan PRO · mercados admin) ---');
+                lines.push('Dónde: Plan PRO → pestaña Invest PRO (/planpro/). Gráfica TradingView embebida; ★ listas; portafolio Schwab abajo.');
+                lines.push('Reglas: NO inventes precios ni % del día. Holdings = última captura (no cotización en vivo). Cotización en vivo = TradingView en la UI.');
+                try {
+                    if (typeof window.getSupabaseClient !== 'function') {
+                        lines.push('(Sin cliente Supabase: solo contexto estático.)');
+                        return lines.join('\n');
+                    }
+                    var client = window.getSupabaseClient();
+                    if (!client) {
+                        lines.push('(Sin sesión Supabase: solo contexto estático.)');
+                        return lines.join('\n');
+                    }
+                    var hRes = await client
+                        .from('plan_pro_invest_holdings')
+                        .select('symbol, asset_name, asset_type, quantity, price, market_value, target_shares, comments, as_of_date, updated_at')
+                        .order('market_value', { ascending: false })
+                        .limit(60);
+                    if (hRes.error) {
+                        lines.push('(Holdings: ' + (hRes.error.message || 'error') + ')');
+                    } else {
+                        var holdings = hRes.data || [];
+                        lines.push('Portafolio holdings (n=' + holdings.length + '; valores de captura Schwab):');
+                        if (!holdings.length) {
+                            lines.push('(Sin filas aún — subir capturas en Invest PRO.)');
+                        } else {
+                            var totalMv = 0;
+                            holdings.forEach(function (r) {
+                                var mv = Number(r.market_value);
+                                if (Number.isFinite(mv)) totalMv += mv;
+                                lines.push(
+                                    '- ' +
+                                        (r.symbol || '?') +
+                                        (r.asset_name ? ' · ' + r.asset_name : '') +
+                                        ' | qty ' +
+                                        (r.quantity != null ? r.quantity : '—') +
+                                        ' | px ' +
+                                        (r.price != null ? r.price : '—') +
+                                        ' | MV ' +
+                                        (r.market_value != null ? r.market_value : '—') +
+                                        (r.target_shares ? ' | obj ' + r.target_shares : '') +
+                                        (r.comments ? ' | nota: ' + String(r.comments).slice(0, 80) : '') +
+                                        (r.as_of_date ? ' | as_of ' + r.as_of_date : '')
+                                );
+                            });
+                            lines.push('Suma MV (filas mostradas): ' + Math.round(totalMv * 100) / 100);
+                        }
+                    }
+                    var lRes = await client
+                        .from('plan_pro_invest_lists')
+                        .select('id, name, is_default, sort_order')
+                        .order('sort_order', { ascending: true })
+                        .limit(30);
+                    if (lRes.error) {
+                        lines.push('(Listas: ' + (lRes.error.message || 'error') + ')');
+                    } else {
+                        var lists = lRes.data || [];
+                        lines.push('Listas ★ (n=' + lists.length + '): ' + (lists.map(function (l) {
+                            return (l.name || '?') + (l.is_default ? ' (default)' : '');
+                        }).join('; ') || 'ninguna'));
+                        var listIds = lists.map(function (l) { return l.id; }).filter(Boolean);
+                        if (listIds.length) {
+                            var wRes = await client
+                                .from('plan_pro_invest_watchlist')
+                                .select('list_id, symbol, asset_name, asset_type')
+                                .in('list_id', listIds)
+                                .order('sort_order', { ascending: true })
+                                .limit(120);
+                            if (!wRes.error && wRes.data && wRes.data.length) {
+                                var byList = {};
+                                lists.forEach(function (l) { byList[l.id] = []; });
+                                wRes.data.forEach(function (it) {
+                                    if (byList[it.list_id]) byList[it.list_id].push(it.symbol || '?');
+                                });
+                                lists.forEach(function (l) {
+                                    var syms = byList[l.id] || [];
+                                    lines.push('  · ' + (l.name || '?') + ': ' + (syms.length ? syms.join(', ') : '(vacía)'));
+                                });
+                            }
+                        }
+                    }
+                } catch (eInv) {
+                    lines.push('(Error cargando Invest PRO: ' + ((eInv && eInv.message) || eInv) + ')');
+                }
+                return lines.join('\n');
+            }
+            async function getAdminPanelSystemPrompt() {
                 var dataBlock = getAdminPanelContext();
+                var investBlock = '';
+                try {
+                    investBlock = await getInvestProAdminContext();
+                } catch (e) {
+                    investBlock = '--- INVEST PRO ---\n(No se pudo cargar contexto Invest.)';
+                }
                 return 'Eres un asistente del panel de administración de NutriPlant PRO. Tienes acceso a los mismos datos que ve el administrador en el panel: resumen de métricas, lista de usuarios (con nombre, email, teléfono, ubicación registrada y estado de suscripción), lista de proyectos (con cultivo y variedad) y última entrada al panel por usuario con ubicación aproximada (fecha/hora y coordenadas lat/lng de la última vez que entraron al dashboard). ' +
                     'También conoce el servicio **Alertas agroclimáticas / Pronóstico agroclimático**: panel dedicado en agroclimate.html (solicitudes con folio, predios, mapa, aprobar/pausar, WhatsApp manual y envío de correo). La herramienta pública está en /pronosticoclimatico/ (también en login y dashboard 🌤️). Alertas semanales: 1 predio/persona, aprobación admin, correo domingo 17:00 zona del predio, enlace ?token=; distinto de la suscripción NutriPlant PRO y del VPD 🌡️. ' +
+                    'También conoce **Invest PRO** (Plan PRO → Invest PRO): TradingView, listas ★ y portafolio Schwab. Los holdings del bloque INVEST PRO son de la última captura (no cotización en vivo). NO inventes precios; si pide precio en vivo, indica abrir Invest PRO / TradingView. ' +
                     'Puedes dar teléfono, ubicación registrada o última ubicación (última entrada al panel con coordenadas) cuando te lo pidan, si está en los datos. Si el administrador adjunta una imagen (gráfica, captura, tabla), interpreta su contenido en contexto del panel y responde en consecuencia. ' +
-                    'Usa estos datos para responder preguntas como "¿cuántos usuarios tengo en Jalisco?", "¿teléfono de [nombre]?", "¿última ubicación de [usuario]?", "¿quién tiene cultivo de aguacate?", "resume por ubicación", "¿qué es el Pronóstico agroclimático / cómo se aprueban alertas?", etc. Puedes platicar sobre análisis de mercado, ideas y apoyar la toma de decisiones con base en la data. ' +
-                    'No ejecutas ninguna acción (no borras, no modificas); solo conversas y asesoras. Responde siempre en español. Datos actuales del panel:\n\n' + dataBlock;
+                    'Usa estos datos para responder preguntas como "¿cuántos usuarios tengo en Jalisco?", "¿teléfono de [nombre]?", "¿última ubicación de [usuario]?", "¿quién tiene cultivo de aguacate?", "resume por ubicación", "¿qué es el Pronóstico agroclimático / cómo se aprueban alertas?", "¿qué tengo en el portafolio Invest / NVDA?", etc. Puedes platicar sobre análisis de mercado, ideas y apoyar la toma de decisiones con base en la data. ' +
+                    'No ejecutas ninguna acción (no borras, no modificas); solo conversas y asesoras. Responde siempre en español. Datos actuales del panel:\n\n' + dataBlock + '\n\n' + investBlock;
             }
             function sendAdminChat() {
                 if (adminChatRequestInFlight) return;
@@ -4761,7 +4856,7 @@
                 messagesEl.scrollTop = messagesEl.scrollHeight;
                 var imageToSend = adminPendingImage;
                 clearAdminPendingImage();
-                var systemContent = getAdminPanelSystemPrompt();
+                getAdminPanelSystemPrompt().then(function(systemContent) {
                 // Contexto: últimos N mensajes (admin tiene más memoria que usuario: usuario 6/12, admin 24)
                 var ADMIN_CHAT_CONTEXT_LIMIT = 24;
                 var allButLast = adminChatHistory.slice(0, -1);
@@ -4781,10 +4876,11 @@
                     body.imageBase64 = imageToSend.base64;
                     body.imageContentType = imageToSend.contentType || 'image/jpeg';
                 }
-                fetch(base + '/api/openai-assistant', {
+                return fetch(base + '/api/openai-assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
+                });
                 }).then(function(r) { return r.json(); }).then(function(data) {
                     var ind = document.getElementById('adminChatTypingIndicator');
                     if (ind) ind.remove();
@@ -8823,9 +8919,8 @@
             var filterableCols = (config.columns || []).filter(function (col) {
                 return col && col.filterable;
             });
-            var filtersCollapsedDefault =
-                typeof window.matchMedia === 'function' &&
-                window.matchMedia('(max-width: 720px)').matches;
+            // Preferencia del admin: minimizado/desplegado. Por defecto minimizado.
+            var filtersCollapsedDefault = getDataViewerFiltersCollapsedPref();
 
             // Construir HTML de la tabla con filtros
             let html = `
@@ -8951,6 +9046,24 @@
         }
         window.showDataViewerWithFilters = showDataViewerWithFilters;
 
+        var DATA_VIEWER_FILTERS_COLLAPSED_KEY = 'admin_data_viewer_filters_collapsed';
+
+        function getDataViewerFiltersCollapsedPref() {
+            try {
+                var raw = localStorage.getItem(DATA_VIEWER_FILTERS_COLLAPSED_KEY);
+                if (raw === '0' || raw === 'false') return false;
+                if (raw === '1' || raw === 'true') return true;
+            } catch (e) {}
+            // Sin preferencia guardada: arranca minimizado (escritorio y móvil).
+            return true;
+        }
+
+        function setDataViewerFiltersCollapsedPref(collapsed) {
+            try {
+                localStorage.setItem(DATA_VIEWER_FILTERS_COLLAPSED_KEY, collapsed ? '1' : '0');
+            } catch (e) {}
+        }
+
         function toggleDataViewerFilters() {
             var panel = document.getElementById('dataViewerFilters');
             var btn = document.getElementById('dataViewerFiltersToggle');
@@ -8964,6 +9077,7 @@
                 else body.removeAttribute('hidden');
             }
             if (chevron) chevron.textContent = collapsed ? '›' : '⌄';
+            setDataViewerFiltersCollapsedPref(collapsed);
         }
         window.toggleDataViewerFilters = toggleDataViewerFilters;
         

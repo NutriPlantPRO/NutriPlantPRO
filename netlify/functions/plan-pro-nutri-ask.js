@@ -188,7 +188,7 @@ exports.handler = async function handler(event) {
         'Prioriza «routes» para decirle al usuario DÓNDE está (Notebook PRO › … / Nutri PRO › …). ' +
         'Usa snippets de nutri.sources / unified_citations y preview de notebook.items para responder. ' +
         'Neuron PRO = cruces apunte↔archivo en routes kind=neuron. No inventes rutas. ' +
-        'Invest PRO = mercados en Plan PRO con gráfica TradingView embebida, Popular Picks, listas ★ y comparación ⇄ (hasta 6). No inventes precios; indícale Plan PRO → Invest PRO.'
+        'Invest PRO = mercados en Plan PRO (TradingView, ★ listas, portafolio Schwab). API: invest_pro_overview|holdings|lists. No inventes precios; holdings = captura, no vivo.'
     });
   } catch (err) {
     return jsonResponse(500, { ok: false, error: (err && err.message) || String(err) });

@@ -6657,17 +6657,307 @@ async function handleNutritionCatalogs(supabase, params) {
   return mod.handleNutritionCatalogs(supabase, params || {});
 }
 
+function investProSchemaMissing(error) {
+  const em = (error && error.message) || '';
+  return /plan_pro_invest|does not exist|schema cache/i.test(em);
+}
+
+async function resolveInvestAdminUserIds(supabase) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, is_admin')
+    .or('is_admin.eq.true,email.eq.admin@nutriplantpro.com')
+    .limit(20);
+  if (error) throw new Error('invest admin ids: ' + error.message);
+  const ids = (data || []).map((p) => p.id).filter(Boolean);
+  if (ids.length) return ids;
+  const owner = await getPlanProOwnerId(supabase);
+  return owner ? [owner] : [];
+}
+
+function investHoldingMatchesQ(row, q) {
+  if (!q) return true;
+  const hay = [
+    row.symbol,
+    row.asset_name,
+    row.asset_type,
+    row.comments,
+    row.target_shares
+  ]
+    .map((x) => String(x || '').toLowerCase())
+    .join(' ');
+  return hay.includes(q);
+}
+
+async function handleInvestProOverview(supabase) {
+  const userIds = await resolveInvestAdminUserIds(supabase);
+  let holdingsCount = 0;
+  let listsCount = 0;
+  let watchCount = 0;
+  let topSymbols = [];
+  let asOfHint = null;
+  let schemaHint = null;
+
+  if (userIds.length) {
+    const hRes = await supabase
+      .from('plan_pro_invest_holdings')
+      .select('symbol, market_value, as_of_date, updated_at')
+      .in('user_id', userIds)
+      .order('market_value', { ascending: false })
+      .limit(12);
+    if (hRes.error) {
+      if (investProSchemaMissing(hRes.error)) {
+        schemaHint = 'Falta SQL de holdings (supabase-plan-pro-invest-holdings.sql).';
+      } else {
+        throw new Error('invest holdings: ' + hRes.error.message);
+      }
+    } else {
+      const rows = hRes.data || [];
+      holdingsCount = rows.length;
+      topSymbols = rows.slice(0, 8).map((r) => r.symbol).filter(Boolean);
+      asOfHint = rows[0] && (rows[0].as_of_date || rows[0].updated_at) ? rows[0].as_of_date || rows[0].updated_at : null;
+      // count full: cheap head
+      const cnt = await supabase
+        .from('plan_pro_invest_holdings')
+        .select('id', { count: 'exact', head: true })
+        .in('user_id', userIds);
+      if (!cnt.error && cnt.count != null) holdingsCount = cnt.count;
+    }
+
+    const lRes = await supabase
+      .from('plan_pro_invest_lists')
+      .select('id', { count: 'exact', head: true })
+      .in('user_id', userIds);
+    if (lRes.error) {
+      if (!investProSchemaMissing(lRes.error)) throw new Error('invest lists: ' + lRes.error.message);
+    } else if (lRes.count != null) {
+      listsCount = lRes.count;
+    }
+
+    const wRes = await supabase
+      .from('plan_pro_invest_watchlist')
+      .select('id', { count: 'exact', head: true })
+      .in('user_id', userIds);
+    if (wRes.error) {
+      if (!investProSchemaMissing(wRes.error)) throw new Error('invest watchlist: ' + wRes.error.message);
+    } else if (wRes.count != null) {
+      watchCount = wRes.count;
+    }
+  }
+
+  return {
+    ok: true,
+    module: 'Invest PRO',
+    where: 'Plan PRO → pestaña Invest PRO (/planpro/)',
+    holdings_count: holdingsCount,
+    lists_count: listsCount,
+    watchlist_items_count: watchCount,
+    top_holding_symbols: topSymbols,
+    holdings_as_of_hint: asOfHint,
+    schema_hint: schemaHint,
+    rules: [
+      'Precios/valores de holdings = última captura Schwab (no cotización en vivo).',
+      'NO inventes precios, P/E ni % del día; cotización en vivo = TradingView en Invest PRO.',
+      'Para detalle: invest_pro_holdings o invest_pro_lists.',
+      'UI: TradingView embebido, ★ listas, comparación ⇄, portafolio abajo.'
+    ],
+    actions: {
+      holdings: { action: 'invest_pro_holdings', params: { q: 'NVDA', limit: 50 } },
+      lists: { action: 'invest_pro_lists', params: { q: 'tech', limit: 80 } }
+    }
+  };
+}
+
+async function handleInvestProHoldings(supabase, params) {
+  params = params || {};
+  const q = String(params.q || params.symbol || params.search || '')
+    .trim()
+    .toLowerCase();
+  const limit = Math.min(Math.max(Number(params.limit) || 80, 1), 200);
+  const userIds = await resolveInvestAdminUserIds(supabase);
+  if (!userIds.length) {
+    return { ok: true, holdings: [], count: 0, note: 'No hay perfil admin para filtrar holdings.' };
+  }
+
+  let query = supabase
+    .from('plan_pro_invest_holdings')
+    .select(
+      'symbol, asset_name, asset_type, quantity, price, price_change_pct, market_value, day_change_pct, cost_basis, gain_loss, gain_loss_pct, as_of_date, target_shares, comments, sort_order, updated_at'
+    )
+    .in('user_id', userIds)
+    .order('market_value', { ascending: false })
+    .limit(Math.min(limit * 3, 300));
+
+  const { data, error } = await query;
+  if (error) {
+    if (investProSchemaMissing(error)) {
+      return {
+        ok: false,
+        error: 'Tabla plan_pro_invest_holdings no existe. Ejecuta supabase-plan-pro-invest-holdings.sql.',
+        holdings: []
+      };
+    }
+    throw new Error('invest_pro_holdings: ' + error.message);
+  }
+
+  let rows = data || [];
+  if (q) rows = rows.filter((r) => investHoldingMatchesQ(r, q));
+  rows = rows.slice(0, limit);
+
+  let totalMv = 0;
+  let etfMv = 0;
+  let stockMv = 0;
+  rows.forEach((r) => {
+    const mv = Number(r.market_value);
+    if (!Number.isFinite(mv)) return;
+    totalMv += mv;
+    const t = String(r.asset_type || '').toLowerCase();
+    if (t.includes('etf')) etfMv += mv;
+    else stockMv += mv;
+  });
+
+  return {
+    ok: true,
+    count: rows.length,
+    filter_q: q || null,
+    disclaimer:
+      'Valores de la última captura/escaneo Schwab en Invest PRO. No son cotizaciones en vivo. No inventes precios faltantes.',
+    totals_in_result: {
+      market_value_sum: Math.round(totalMv * 100) / 100,
+      etf_market_value_sum: Math.round(etfMv * 100) / 100,
+      stock_market_value_sum: Math.round(stockMv * 100) / 100
+    },
+    holdings: rows.map((r) => ({
+      symbol: r.symbol,
+      name: r.asset_name || null,
+      type: r.asset_type || null,
+      quantity: r.quantity,
+      price: r.price,
+      market_value: r.market_value,
+      day_change_pct: r.day_change_pct,
+      gain_loss: r.gain_loss,
+      gain_loss_pct: r.gain_loss_pct,
+      cost_basis: r.cost_basis,
+      target_shares: r.target_shares || '',
+      comments: r.comments || '',
+      as_of_date: r.as_of_date || null,
+      updated_at: r.updated_at || null
+    })),
+    ui: 'Plan PRO → Invest PRO → Portafolio Schwab'
+  };
+}
+
+async function handleInvestProLists(supabase, params) {
+  params = params || {};
+  const q = String(params.q || params.list_name || params.search || '')
+    .trim()
+    .toLowerCase();
+  const limit = Math.min(Math.max(Number(params.limit) || 120, 1), 300);
+  const userIds = await resolveInvestAdminUserIds(supabase);
+  if (!userIds.length) {
+    return { ok: true, lists: [], items: [], count_lists: 0, count_items: 0 };
+  }
+
+  const listsRes = await supabase
+    .from('plan_pro_invest_lists')
+    .select('id, name, is_default, sort_order, created_at')
+    .in('user_id', userIds)
+    .order('sort_order', { ascending: true });
+  if (listsRes.error) {
+    if (investProSchemaMissing(listsRes.error)) {
+      return {
+        ok: false,
+        error: 'Tablas Invest listas no existen. Ejecuta supabase-plan-pro-invest-lists.sql.',
+        lists: [],
+        items: []
+      };
+    }
+    throw new Error('invest_pro_lists: ' + listsRes.error.message);
+  }
+
+  let lists = listsRes.data || [];
+  if (q) {
+    lists = lists.filter((l) => String(l.name || '').toLowerCase().includes(q));
+  }
+
+  const listIds = lists.map((l) => l.id);
+  let items = [];
+  if (listIds.length) {
+    const wRes = await supabase
+      .from('plan_pro_invest_watchlist')
+      .select('id, list_id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at')
+      .in('list_id', listIds)
+      .order('sort_order', { ascending: true })
+      .limit(limit);
+    if (wRes.error) {
+      if (!investProSchemaMissing(wRes.error)) throw new Error('invest watchlist: ' + wRes.error.message);
+    } else {
+      items = wRes.data || [];
+    }
+  } else {
+    // Sin listas filtradas: traer watchlist por user
+    const wRes = await supabase
+      .from('plan_pro_invest_watchlist')
+      .select('id, list_id, symbol, asset_name, asset_type, exchange, currency, sort_order, created_at')
+      .in('user_id', userIds)
+      .order('sort_order', { ascending: true })
+      .limit(limit);
+    if (wRes.error) {
+      if (!investProSchemaMissing(wRes.error)) throw new Error('invest watchlist: ' + wRes.error.message);
+    } else {
+      items = wRes.data || [];
+    }
+  }
+
+  if (q && items.length) {
+    const qSym = q;
+    items = items.filter((it) => {
+      const hay = [it.symbol, it.asset_name, it.asset_type].map((x) => String(x || '').toLowerCase()).join(' ');
+      return hay.includes(qSym);
+    });
+  }
+
+  const byList = {};
+  lists.forEach((l) => {
+    byList[l.id] = { id: l.id, name: l.name, is_default: !!l.is_default, symbols: [] };
+  });
+  items.forEach((it) => {
+    const bucket = byList[it.list_id];
+    if (bucket) {
+      bucket.symbols.push({
+        symbol: it.symbol,
+        name: it.asset_name || null,
+        type: it.asset_type || null,
+        exchange: it.exchange || null
+      });
+    }
+  });
+
+  return {
+    ok: true,
+    count_lists: lists.length,
+    count_items: items.length,
+    filter_q: q || null,
+    disclaimer: 'Listas ★ de Invest PRO (watchlist). No inventes cotizaciones; usa TradingView en la UI.',
+    lists: Object.keys(byList).map((id) => byList[id]),
+    ui: 'Plan PRO → Invest PRO → ★ Listas'
+  };
+}
+
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.13.0',
-    openapi_version: '2.13.0',
+    version: '2.14.0',
+    openapi_version: '2.14.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
         'En ChatGPT solo existe esta Action. admin_stats, nutri_pro_catalog, describe_api, etc. son valores del campo body.action, no tools aparte.',
       example_admin_stats: { action: 'admin_stats', params: {} },
       example_nutri_pro: { action: 'nutri_pro_catalog', params: {} },
+      example_invest_pro_overview: { action: 'invest_pro_overview', params: {} },
+      example_invest_pro_holdings: { action: 'invest_pro_holdings', params: { q: 'NVDA', limit: 50 } },
+      example_invest_pro_lists: { action: 'invest_pro_lists', params: { q: 'Mi portafolio' } },
       example_plan_pro_item_relations: {
         action: 'plan_pro_item',
         params: { q: 'calcio limón', hops: 2 }
@@ -6684,7 +6974,7 @@ async function handleDescribeApi() {
         action: 'nutri_pro_set_text',
         params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
       },
-      verify: 'Si describe_api devuelve version 2.13.0, el GPT tiene schema y token correctos.'
+      verify: 'Si describe_api devuelve version 2.14.0, el GPT tiene schema y token correctos.'
     },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
@@ -6711,6 +7001,7 @@ async function handleDescribeApi() {
         'plan_pro_create',
         'plan_pro_update'
       ],
+      invest_pro: ['invest_pro_overview', 'invest_pro_holdings', 'invest_pro_lists'],
       nutri_pro: [
         'nutri_pro_catalog',
         'nutri_pro_search',
@@ -6730,13 +7021,15 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Clima en vivo (Open-Meteo, solo lectura): project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*.',
+      'Reportes laboratorio (nube): project_analyses. Clima en vivo (Open-Meteo, solo lectura): project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*. Invest PRO: invest_pro_overview|holdings|lists (solo lectura; no inventar precios).',
     my_programs_gpt:
       'Escritura limitada y segura para laboratorio personal de Jesús: my_program_project_create/list/get/update. Solo opera proyectos del email admin configurado (default admin@nutriplantpro.com) marcados gptPersonalProgram=true y created_by_gpt=true. Nunca edita proyectos de suscriptores.',
     climate_gpt:
       'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot con lluvia/ET₀ mensual hasta 4 años en rainfall.years y et0.years; tiempo actual con rain_today_mm y et0_today_mm; rolling 1/7/30 d; calculadora balance). mode=live → tiempo_actual_ahora + lluvia/ET₀ del día. mode=rainfall_refresh → lluvia_et0_ahora (4 años en vivo). mode=rolling o all → rolling_windows_ahora + irrigation_quick_calc_live. Si preguntan por histórico mensual o gráficas, usa climate_saved.rainfall.years / et0.years. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
       'Archivos traen open_url. Preguntas: nutri_pro_ask. Si snippets no bastan: nutri_pro_file_inspect (archivo vivo Supabase, sin OCR API). Leer índice: nutri_pro_file_text. OCR API: nutri_pro_reindex mode=ocr. Corregir: nutri_pro_set_text. Texto NUEVO: nutri_pro_save. Binario: nutri_pro_upload_link. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+    invest_pro_gpt:
+      'invest_pro_overview / invest_pro_holdings / invest_pro_lists. Holdings = captura Schwab (no vivo). Cotización en vivo solo en TradingView UI. NO inventes precios. Ver docs/INVEST-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -6782,6 +7075,9 @@ const HANDLERS = {
   lab_analyses_catalog: (_sb, p) => handleLabAnalysesCatalog(p),
   manual_tecnico_catalog: (_sb, p) => handleManualTecnicoCatalog(p),
   nutrition_catalogs: (sb, p) => handleNutritionCatalogs(sb, p),
+  invest_pro_overview: (sb) => handleInvestProOverview(sb),
+  invest_pro_holdings: (sb, p) => handleInvestProHoldings(sb, p || {}),
+  invest_pro_lists: (sb, p) => handleInvestProLists(sb, p || {}),
   describe_api: () => handleDescribeApi()
 };
 
@@ -6791,9 +7087,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.13.0',
+      version: '2.14.0',
       description:
-        'v2.13.0 — nutri_pro_file_inspect: abre archivo vivo en Supabase (extract local, sin OCR API) cuando el índice no alcanza.'
+        'v2.14.0 — Invest PRO lectura: invest_pro_overview|holdings|lists. nutri_pro_file_inspect: archivo vivo sin OCR API.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -6802,7 +7098,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.13.0.',
+            'Única Action ChatGPT. Body: action + params. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.14.0.',
           requestBody: {
             required: true,
             content: {
@@ -6853,6 +7149,14 @@ function getOpenApiSpec() {
                   type: 'string',
                   description:
                     'project_climate: saved|live|rainfall_refresh|rolling|all · nutri_pro_reindex: text|ocr'
+                },
+                symbol: {
+                  type: 'string',
+                  description: 'invest_pro_holdings: filtro ticker (alias de q)'
+                },
+                list_name: {
+                  type: 'string',
+                  description: 'invest_pro_lists: filtro por nombre de lista (alias de q)'
                 },
                 nutri_file_id: { type: 'string', description: 'UUID archivo Nutri PRO' },
                 file_id: { type: 'string', description: 'Alias de nutri_file_id' },

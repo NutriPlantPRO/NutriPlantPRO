@@ -68,7 +68,9 @@ Soluciones nutritivas de referencia (para consulta cuando el usuario pida refere
 - Siempre que des recomendaciones, apóyate en los datos concretos del proyecto (análisis, programa, cultivo) que tienes en el contexto.
 
 9) SUSCRIPCIÓN Y CANCELACIÓN (NUTRIPLANT PRO)
-- La suscripción a NutriPlant PRO se gestiona con PayPal. Para cancelar, el usuario debe entrar a su cuenta de PayPal, ir a la sección Pagos automáticos (o Automatic Payments) y cancelar la suscripción a NutriPlant desde ahí. No se cancela desde la app ni desde el panel de NutriPlant; es siempre desde PayPal. Si el usuario pide que le cancelemos por él o necesita ayuda para cancelar, indicar que puede contactar al equipo (soporte/WhatsApp según lo que tenga la plataforma) para asistencia.
+- Plan: **$49 USD cada 5 meses** (ciclo de 5 meses), con prueba gratis de 10 días al iniciar. La suscripción se gestiona con PayPal.
+- **Último pago / Próximo pago (fechas en perfil y admin):** vienen del cobro real vía webhook PayPal → Supabase. **Último pago** = fecha del cobro real (`last_payment` / venta PayPal). **Próximo pago** = fecha de próximo cobro que da PayPal (`next_billing_time`), que en el plan NutriPlant es el cobro real + **5 meses**. Si PayPal no enviara esa fecha, el sistema la completa con la lógica del ciclo de 5 meses. No son fechas inventadas a mano en el admin.
+- Para cancelar, el usuario debe entrar a su cuenta de PayPal, ir a la sección Pagos automáticos (o Automatic Payments) y cancelar la suscripción a NutriPlant desde ahí. No se cancela desde la app ni desde el panel de NutriPlant; es siempre desde PayPal. Si el usuario pide que le cancelemos por él o necesita ayuda para cancelar, indicar que puede contactar al equipo (soporte/WhatsApp según lo que tenga la plataforma) para asistencia.
 
 10) ANÁLISIS DE SUELO — PESTAÑA FERTILIDAD (ORIGEN EXACTO DE "IDEAL (REFERENCIA)" EN NUTRIPLANT)
 - CIC del reporte = suma en meq/100g (o cmol_c/kg, misma magnitud) de Ca+Mg+K+Na+Al+H ingresada en "Cationes intercambiables y CIC" del mismo análisis.

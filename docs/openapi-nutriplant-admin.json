@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.13.0",
-    "description": "v2.13.0 — nutri_pro_file_inspect: abre archivo vivo en Supabase (extract local, sin OCR API) cuando el índice no alcanza. Una sola Action nutriplantAdminQuery."
+    "version": "2.14.0",
+    "description": "v2.14.0 — Invest PRO lectura: invest_pro_overview|holdings|lists. nutri_pro_file_inspect: archivo vivo sin OCR API. Una sola Action nutriplantAdminQuery."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. Verifica describe_api → version 2.13.0.",
+        "description": "Única Action ChatGPT. Body: action + params. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. Verifica describe_api → version 2.14.0.",
         "requestBody": {
           "required": true,
           "content": {
@@ -82,6 +82,9 @@
               "lab_analyses_catalog",
               "manual_tecnico_catalog",
               "nutrition_catalogs",
+              "invest_pro_overview",
+              "invest_pro_holdings",
+              "invest_pro_lists",
               "describe_api"
             ]
           },
@@ -103,7 +106,15 @@
               "crop": { "type": "string" },
               "q": {
                 "type": "string",
-                "description": "Búsqueda/pregunta; en nutri_pro_file_inspect filtra filas/fragmentos del archivo vivo"
+                "description": "Búsqueda/pregunta; invest_pro_holdings/lists: filtro símbolo o nombre de lista"
+              },
+              "symbol": {
+                "type": "string",
+                "description": "invest_pro_holdings: alias de q (ticker)"
+              },
+              "list_name": {
+                "type": "string",
+                "description": "invest_pro_lists: alias de q (nombre lista)"
               },
               "question": { "type": "string", "description": "nutri_pro_ask: alias de q" },
               "include_snippets": { "type": "boolean", "description": "nutri_pro_search: devolver fragmentos de texto" },
