@@ -5,7 +5,7 @@
 function fertProgUI() { return window.NpFertigationUI || null; }
 function fertProgT(key, es) { const ui = fertProgUI(); return ui ? ui.t(key, es) : es; }
 function fertProgUnit(kind, fallback) { const ui = fertProgUI(); return ui ? ui.unit(kind) : fallback; }
-function fertProgInputFromSI(value, kind) { const ui = fertProgUI(); return ui ? ui.inputFromSI(value, kind) : String(value); }
+function fertProgInputFromSI(value, kind, digits) { const ui = fertProgUI(); return ui ? ui.inputFromSI(value, kind, digits) : String(value); }
 function fertProgResultFromSI(value, kind, digits) {
   const ui = fertProgUI();
   return ui ? ui.resultFromSI(value, kind, digits) : fertiNum(value, digits == null ? 2 : digits);
@@ -1179,7 +1179,7 @@ function renderFertiWeeks() {
             </td>
             <td class="ferti-week-num-cell" style="text-align:center;">${idx+1}</td>
             ${fertiColumns.map(c => `
-              <td><input type="number" step="0.0001" value="${fertProgInputFromSI(week.kgByCol?.[c.id]||0, 'dose_mass_area')}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
+              <td><input type="number" step="0.01" value="${fertProgInputFromSI(week.kgByCol?.[c.id]||0, 'dose_mass_area', 2)}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
             `).join('')}
             ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgNutrientDisplay(week.totals?.[n]||0, n, n === 'SO4' ? (week.totals?.S || 0) : undefined)}</td>`).join('')}
           </tr>
