@@ -35,13 +35,29 @@ button,input,select,textarea { font:inherit; }
 .aa-metric { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:7px 10px; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:0 2px 8px #0f172a08; }
 .aa-metric small { color:var(--muted); font-size:10px; font-weight:700; line-height:1.2; }
 .aa-metric strong { display:block; margin-top:0; font-size:18px; line-height:1; }
-.aa-toolbar { display:flex; gap:9px; margin-bottom:8px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff; }
-.aa-toolbar input { flex:1; min-width:240px; }
+.aa-toolbar { display:flex; gap:9px; margin-bottom:8px; padding:8px 10px; border:1px solid var(--line); border-radius:12px; background:#fff; align-items:center; }
+.aa-toolbar input,
+.aa-toolbar select {
+  width:auto;
+  min-height:0;
+  height:36px;
+  padding:0 10px;
+  line-height:34px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:none;
+}
+.aa-toolbar input { flex:1; min-width:200px; }
+.aa-toolbar select { flex:0 1 220px; max-width:260px; cursor:pointer; appearance:auto; }
+.aa-toolbar input:focus,
+.aa-toolbar select:focus { border-color:#38bdf8; box-shadow:0 0 0 2px #38bdf825; }
 input,select,textarea { width:100%; min-height:40px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; outline:none; }
 input:focus,select:focus,textarea:focus { border-color:#38bdf8; box-shadow:0 0 0 3px #38bdf825; }
-.aa-view-buttons { display:flex; gap:5px; margin-left:auto; align-items:center; }
+.aa-view-buttons { display:flex; gap:5px; margin-left:auto; align-items:center; flex-shrink:0; }
 .aa-add-btn {
-  padding:7px 10px;
+  height:36px;
+  padding:0 10px;
   border:1px solid #86efac;
   border-radius:7px;
   color:#166534;
@@ -51,7 +67,17 @@ input:focus,select:focus,textarea:focus { border-color:#38bdf8; box-shadow:0 0 0
   font-weight:800;
   white-space:nowrap;
 }
-.aa-view-buttons button { padding:7px 9px; border:1px solid #cbd5e1; border-radius:7px; color:#334155; background:#fff; cursor:pointer; font-size:11px; font-weight:750; }
+.aa-view-buttons button {
+  height:36px;
+  padding:0 9px;
+  border:1px solid #cbd5e1;
+  border-radius:7px;
+  color:#334155;
+  background:#fff;
+  cursor:pointer;
+  font-size:11px;
+  font-weight:750;
+}
 .aa-action {
   display:inline-flex;
   align-items:center;
