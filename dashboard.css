@@ -5071,7 +5071,7 @@ html.embed-login body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 5px;
   padding: 3px;
   background: transparent;
@@ -5080,8 +5080,8 @@ html.embed-login body {
 }
 
 .ferti-col-lock-btn svg {
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -5089,16 +5089,24 @@ html.embed-login body {
   stroke-linejoin: round;
 }
 
+.ferti-col-lock-btn.is-unlocked {
+  color: #16a34a;
+}
+
 .ferti-col-lock-btn.is-unlocked:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #334155;
+  background: transparent;
+  color: #15803d;
+  transform: scale(1.08);
 }
 
 .ferti-col-lock-btn.is-locked {
-  background: #fef3c7;
-  border-color: #f59e0b;
-  color: #92400e;
+  background: transparent;
+  color: #dc2626;
+}
+
+.ferti-col-lock-btn.is-locked:hover {
+  color: #b91c1c;
+  transform: scale(1.08);
 }
 
 /* Marca de agua sobre las gráficas de Fertirriego */

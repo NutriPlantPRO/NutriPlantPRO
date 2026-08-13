@@ -1147,8 +1147,8 @@ function renderFertiWeeks() {
       ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
       : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante');
     const lockIcon = isChartLocked
-      ? '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="8.5" width="13" height="9" rx="2"></rect><path d="M6.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"></path><circle cx="10" cy="13" r="1"></circle></svg>'
-      : '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="8.5" width="13" height="9" rx="2"></rect><path d="M13.5 8.5V6a3.5 3.5 0 0 0-7 0"></path><circle cx="10" cy="13" r="1"></circle></svg>';
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"></rect><path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3"></path><circle cx="12" cy="15" r="1.2"></circle></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"></rect><path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v1"></path><circle cx="12" cy="15" r="1.2"></circle></svg>';
     return `
           <th style="min-width:110px;width:110px;position:relative;">
             <button type="button" title="${lockTitle}" aria-label="${lockTitle}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
