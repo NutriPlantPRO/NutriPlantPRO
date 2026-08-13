@@ -8,6 +8,8 @@
   let filtered = [];
   let map;
   let layer;
+  let baseLayers = null;
+  let activeBasemap = 'satellite';
 
   const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
   const dateTime = (v) => v ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(v)) : '—';
@@ -594,12 +596,73 @@
     }
   }
 
+  function addMapBrandLogo(mapInstance) {
+    if (!mapInstance || !window.L) return;
+    try {
+      if (mapInstance._npBrandLogoControl) {
+        mapInstance.removeControl(mapInstance._npBrandLogoControl);
+        mapInstance._npBrandLogoControl = null;
+      }
+    } catch (e) { /* ignore */ }
+    const BrandCtrl = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd() {
+        const wrap = L.DomUtil.create('div', 'np-map-brand-logo');
+        wrap.innerHTML = '<img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" draggable="false" />';
+        L.DomEvent.disableClickPropagation(wrap);
+        L.DomEvent.disableScrollPropagation(wrap);
+        return wrap;
+      }
+    });
+    const ctrl = new BrandCtrl();
+    ctrl.addTo(mapInstance);
+    mapInstance._npBrandLogoControl = ctrl;
+  }
+
+  function setBasemap(key) {
+    if (!map || !baseLayers || !baseLayers[key]) return;
+    Object.keys(baseLayers).forEach((k) => {
+      if (map.hasLayer(baseLayers[k])) map.removeLayer(baseLayers[k]);
+    });
+    baseLayers[key].addTo(map);
+    activeBasemap = key;
+    document.querySelectorAll('.aa-basemap-chip').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.basemap === key);
+    });
+  }
+
   function renderMap() {
     if (!window.L) return;
     if (!map) {
-      map = L.map('aa-map').setView([19.4326, -99.1332], 4);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+      const container = $('aa-map');
+      // Evitar mundo repetido a los lados al alejarse
+      const worldBounds = L.latLngBounds([[-85.05112878, -180], [85.05112878, 180]]);
+      const mapW = Math.max(container.clientWidth || 0, 640);
+      const minZ = Math.max(2, Math.ceil(Math.log2(mapW / 256)));
+      map = L.map(container, {
+        worldCopyJump: false,
+        maxBounds: worldBounds,
+        maxBoundsViscosity: 1.0,
+        minZoom: minZ
+      }).setView([19.4326, -99.1332], Math.max(4, minZ));
+
+      const tileOpts = { maxZoom: 19, noWrap: true, bounds: worldBounds };
+      baseLayers = {
+        satellite: L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          { ...tileOpts, attribution: '© Esri — Maxar, Earthstar Geographics' }
+        ),
+        relief: L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+          { ...tileOpts, attribution: '© Esri · Topografía' }
+        )
+      };
+      baseLayers[activeBasemap].addTo(map);
       layer = L.featureGroup().addTo(map);
+      addMapBrandLogo(map);
+      document.querySelectorAll('.aa-basemap-chip').forEach((btn) => {
+        btn.addEventListener('click', () => setBasemap(btn.dataset.basemap));
+      });
     }
     layer.clearLayers();
     filtered.forEach((r) => {
