@@ -1163,8 +1163,8 @@ function sectionTemplate(name) {
               <div class="ferti-chart-toolbar">
                 <div class="ferti-chart-edit-actions">
                   <button class="btn btn-secondary btn-sm" onclick="toggleFertiChartEditMode()" id="toggleFertiChartEditBtn">${ft('adjust_chart', '✋ Ajustar en gráfica')}</button>
-                  <button class="btn btn-secondary btn-sm" onclick="undoFertiChartAdjustment()" id="undoFertiChartAdjustmentBtn" disabled>${ft('undo', '↶ Deshacer')}</button>
-                  <button class="btn btn-secondary btn-sm" onclick="restoreFertiChartEditBaseline()" id="restoreFertiChartBaselineBtn" disabled>${ft('restore_original', 'Restaurar original')}</button>
+                  <button class="btn btn-secondary btn-sm" onclick="undoFertiChartAdjustment()" id="undoFertiChartAdjustmentBtn" style="display:none;" hidden>${ft('undo', '↶ Deshacer')}</button>
+                  <button class="btn btn-secondary btn-sm" onclick="restoreFertiChartEditBaseline()" id="restoreFertiChartBaselineBtn" style="display:none;" hidden>${ft('restore_original', 'Restaurar original')}</button>
                 </div>
                 <button class="btn btn-info btn-sm" onclick="toggleFertiChartsOxideElemental()" id="toggleFertiChartsModeBtn">${ft('elemental', '🔄 Ver en Elemental')}</button>
               </div>

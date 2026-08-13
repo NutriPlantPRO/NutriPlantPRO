@@ -1943,13 +1943,19 @@ function updateFertiChartEditControls() {
   }
   const undoBtn = document.getElementById('undoFertiChartAdjustmentBtn');
   if (undoBtn) {
+    const canUndo = !!fertiChartUndoSnapshot;
     undoBtn.textContent = fertProgT('undo', '↶ Deshacer');
-    undoBtn.disabled = !fertiChartUndoSnapshot;
+    undoBtn.disabled = !canUndo;
+    undoBtn.hidden = !canUndo;
+    undoBtn.style.display = canUndo ? '' : 'none';
   }
   const restoreBtn = document.getElementById('restoreFertiChartBaselineBtn');
   if (restoreBtn) {
+    const canRestore = !!(fertiChartEditMode && fertiChartEditBaseline && fertiChartUndoSnapshot);
     restoreBtn.textContent = fertProgT('restore_original', 'Restaurar original');
-    restoreBtn.disabled = !fertiChartEditMode || !fertiChartEditBaseline;
+    restoreBtn.disabled = !canRestore;
+    restoreBtn.hidden = !canRestore;
+    restoreBtn.style.display = canRestore ? '' : 'none';
   }
   if (fertiChartEditMode) {
     fertiSetChartEditNotice(
