@@ -1139,12 +1139,19 @@ function renderFertiWeeks() {
   // Encabezados de columnas de fertilizante (select compacto + botón X)
   const fertColsHeader = fertiColumns.map(c => {
     const m = materials.find(m => m.id === c.materialId);
+    const isChartLocked = fertiChartLockedColumnIds.indexOf(c.id) !== -1;
     const currentName = fertProgMaterial((m?.name) || fertProgT('select', 'Selecciona…'));
     const displayNamePlain = currentName + (m && m.unit === 'L' ? ' (L/ha)' : '');
     const displayNameHtml = currentName + (m && m.unit === 'L' ? ' <span class="unit-lha">(L/ha)</span>' : '');
+    const lockTitle = isChartLocked
+      ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
+      : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante');
+    const lockIcon = isChartLocked
+      ? '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="8.5" width="13" height="9" rx="2"></rect><path d="M6.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"></path><circle cx="10" cy="13" r="1"></circle></svg>'
+      : '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="8.5" width="13" height="9" rx="2"></rect><path d="M13.5 8.5V6a3.5 3.5 0 0 0-7 0"></path><circle cx="10" cy="13" r="1"></circle></svg>';
     return `
           <th style="min-width:110px;width:110px;position:relative;">
-            <button title="${fertProgT('chart_lock_fertilizer', 'Bloquear para ajustes desde la gráfica')}" class="ferti-col-lock-btn ${fertiChartLockedColumnIds.indexOf(c.id) !== -1 ? 'is-locked' : ''}" onclick="toggleFertiChartColumnLock('${c.id}')">${fertiChartLockedColumnIds.indexOf(c.id) !== -1 ? '🔒' : '🔓'}</button>
+            <button type="button" title="${lockTitle}" aria-label="${lockTitle}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
             <button title="Eliminar columna" class="ferti-col-remove-btn" onclick="removeFertiColumn('${c.id}')">✕</button>
             <div class="fert-col-title" title="${displayNamePlain}">${displayNameHtml}</div>
             <select class="ferti-col-select" onchange="onFertiColumnMaterialChange('${c.id}', this.value)">

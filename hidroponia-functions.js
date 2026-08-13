@@ -1025,11 +1025,11 @@ function renderHydroStageTable() {
       ? sol.label
       : hydroT('Elegir solución nutritiva', 'Choose nutrient solution');
     const pickerTitle = sol.selected ? sol.label : pickerAria;
-    // Vacío: icono + “Elegir” para que se lea como botón, no como celda en blanco.
-    const unlockIcon = '<svg class="hydro-solution-picker__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 8h-1V6a4 4 0 0 0-8 0h2a2 2 0 1 1 4 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-5 8.75a1.75 1.75 0 1 1 0-3.5 1.75 1.75 0 0 1 0 3.5z"/></svg>';
+    // Vacío: cursor de selección + “Elegir”; un candado sugería protección por error.
+    const selectIcon = '<svg class="hydro-solution-picker__icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4.2 2.8a1 1 0 0 1 1.08-.13l14.1 8.12a1 1 0 0 1-.25 1.84l-5.35 1.24 2.93 5.08a1 1 0 0 1-.37 1.37l-2.3 1.33a1 1 0 0 1-1.37-.37l-2.93-5.08-3.76 4a1 1 0 0 1-1.72-.66L3.87 3.6a1 1 0 0 1 .33-.8Zm2.16 3.04.25 11.17 2.62-2.8a1 1 0 0 1 1.6.2l3.08 5.34.57-.33-3.08-5.34a1 1 0 0 1 .64-1.47l3.75-.87-9.43-5.9Z"/></svg>';
     const pickerInner = sol.selected
       ? `<span class="hydro-solution-picker__label">${hydroEscapeAttr(sol.label)}</span>`
-      : `${unlockIcon}<span class="hydro-solution-picker__label">${hydroEscapeAttr(hydroT('Elegir', 'Choose'))}</span>`;
+      : `${selectIcon}<span class="hydro-solution-picker__label">${hydroEscapeAttr(hydroT('Elegir', 'Choose'))}</span>`;
     return `
       <tr data-stage-id="${stage.id}">
         <td>
