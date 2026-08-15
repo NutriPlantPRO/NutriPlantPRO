@@ -8089,18 +8089,22 @@ html.embed-login body {
   line-height: 1.4;
 }
 .ferti-soil-adj-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  margin-top: 8px;
+  display: block;
+  margin-top: 4px;
+  width: 148px;
   max-width: 100%;
+  overflow: hidden;
+}
+.ferti-soil-adj-wrap .hydro-import-water-label {
+  display: none;
 }
 .ferti-soil-adj-wrap .hydro-import-water-select {
-  min-width: 0;
-  width: 100%;
-  max-width: 190px;
-  padding: 5px 8px;
+  display: block;
+  min-width: 0 !important;
+  width: 148px !important;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
   font-size: 11px;
 }
 
@@ -8137,6 +8141,188 @@ html.embed-login body {
   background: #10b981;
   color: white;
 }
+
+.ferti-dist {
+  margin-top: 28px;
+}
+.ferti-dist-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 18px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.ferti-dist-title {
+  margin: 0 0 6px;
+  color: #0369a1;
+  font-size: 1.25rem;
+}
+.ferti-dist-lead {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.ferti-dist-catalog {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px dashed #93c5fd;
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+}
+.ferti-dist-catalog label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+.ferti-dist-catalog select,
+.ferti-dist-catalog input[type="text"],
+.ferti-dist-modal-box select {
+  min-width: 180px;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.ferti-dist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.ferti-dist .btn-ghost,
+.ferti-dist-modal .btn-ghost {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+.ferti-dist-hint {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+.ferti-dist-panel {
+  margin: 18px 0;
+}
+.ferti-dist-panel h4 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  color: #0f172a;
+}
+.ferti-dist-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ferti-dist-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #86efac;
+  background: #ecfdf5;
+  font-size: 12px;
+  color: #065f46;
+}
+.ferti-dist-scroll {
+  overflow-x: auto;
+  margin: 8px 0 12px;
+}
+.ferti-dist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 720px;
+}
+.ferti-dist-table th,
+.ferti-dist-table td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 8px;
+  text-align: right;
+}
+.ferti-dist-table th:first-child,
+.ferti-dist-table td:first-child {
+  text-align: left;
+  min-width: 120px;
+}
+.ferti-dist-table thead th {
+  background: #f1f5f9;
+}
+.ferti-dist-table tfoot td.ok { color: #15803d; font-weight: 700; }
+.ferti-dist-table tfoot td.bad { color: #c2410c; font-weight: 700; }
+.ferti-dist-table input[type="number"],
+.ferti-dist-table input[type="text"] {
+  width: 100%;
+  min-width: 64px;
+  padding: 5px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.ferti-dist-warn {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  font-size: 12px;
+}
+.ferti-dist-seg {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.ferti-dist-seg button {
+  border: 0;
+  background: #f1f5f9;
+  padding: 7px 14px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  color: #64748b;
+}
+.ferti-dist-seg button.is-on {
+  background: #16a34a;
+  color: #fff;
+}
+.ferti-dist-chart {
+  position: relative;
+  height: min(380px, 50vh);
+}
+.ferti-dist-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 100050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ferti-dist-modal[hidden] { display: none !important; }
+.ferti-dist-modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  max-width: 420px;
+  width: 100%;
+}
+.ferti-dist-modal-box select { width: 100%; }
 
 .req-steps-guide {
   margin-top: 14px;

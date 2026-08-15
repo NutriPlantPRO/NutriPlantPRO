@@ -186,6 +186,13 @@
   window.addEventListener('message', function (e) {
     if (!e.data || typeof e.data !== 'object') return;
     // Pronóstico agroclimático: revelar iframe solo cuando i18n ya aplicó (sin flash).
+    if (e.data.type === 'np-extraccion-etapa-ready') {
+      var extFrame = document.getElementById('extraccionEtapaCalculatorFrame');
+      if (extFrame && e.source === extFrame.contentWindow) {
+        extFrame.style.opacity = '1';
+      }
+      return;
+    }
     if (e.data.type === 'np-agro-ready') {
       var agroFrame = document.getElementById('agroclimateForecastFrame');
       if (agroFrame && e.source === agroFrame.contentWindow) {

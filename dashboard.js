@@ -966,6 +966,7 @@ function sectionTemplate(name) {
               <div class="fertirriego-table-container" id="fertirriegoTableContainer">
                 <!-- La tabla se generará dinámicamente con JavaScript -->
               </div>
+              <div id="fertiDistribucionBlock" class="ferti-dist"></div>
             </div>
           </div>
 

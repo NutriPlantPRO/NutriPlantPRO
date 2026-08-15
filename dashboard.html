@@ -18,7 +18,7 @@
   <script src="assets/np-lab-type-configs.js?v=20260805a"></script>
   <script src="assets/np-analysis-compare.js?v=20260805c"></script>
   <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
-  <script src="assets/np-fertigation-ui.js?v=20260815c"></script>
+  <script src="assets/np-fertigation-ui.js?v=20260815e"></script>
   <script src="assets/np-fertilizer-price.js"></script>
   <script src="assets/np-granular-ui.js?v=20260815a"></script>
   <script src="assets/np-amendment-ui.js?v=20260730e"></script>
@@ -50,7 +50,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260815d" />
+  <link rel="stylesheet" href="dashboard.css?v=20260815g" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -430,9 +430,10 @@
   <script src="ai-knowledge-base/ai-knowledge-base-complete.js"></script>
   <script src="ai-knowledge-base.js"></script>
   <script src="test-verification.js"></script>
-  <script src="fertirriego-functions.js?v=20260815c"></script>
+  <script src="fertirriego-functions.js?v=20260815f"></script>
+  <script src="fertirriego-distribucion.js?v=20260815b"></script>
   <script src="nutricion-granular-functions.js?v=20260807b"></script>
-  <script src="nutricion-granular-requerimiento-functions.js?v=20260815a"></script>
+  <script src="nutricion-granular-requerimiento-functions.js?v=20260815c"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260807b"></script>
   <script src="hidroponia-functions.js?v=20260807q"></script>
@@ -442,7 +443,7 @@
   <script src="climate-functions.js?v=20260801x"></script>
   <script src="analysis-report-render.js?v=20260815c"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260815c"></script>
+  <script src="dashboard.js?v=20260815d"></script>
   <script src="fertirriego-program-functions.js?v=20260807e"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=20260807a"></script>
@@ -5151,18 +5152,29 @@ CONTRATO:
       var frame = document.getElementById('extraccionEtapaCalculatorFrame');
       if (!modal) return;
       var frameKey = getExtraccionEtapaFrameKey();
-      var needsFullReload = !frame || _npExtraccionEtapaFrameKey !== frameKey;
-      if (frame && needsFullReload) {
-        try {
-          var pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260803a' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
+      var pid = '';
+      try {
+        pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
+      } catch (e) {}
+      var nextSrc = 'extraccion-etapa-free.html?ctx=dashboard&v=20260815b' + (pid ? '&pid=' + encodeURIComponent(pid) : '');
+      if (frame && _npExtraccionEtapaFrameKey !== frameKey) {
+        var alreadyLoaded = (frame.getAttribute('src') || '').indexOf('extraccion-etapa-free.html') !== -1;
+        if (!_npExtraccionEtapaFrameKey && alreadyLoaded) {
           _npExtraccionEtapaFrameKey = frameKey;
-        } catch (e) {
-          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&v=20260803a&t=' + Date.now();
+        } else {
+          frame.style.opacity = '0';
+          frame.src = nextSrc;
           _npExtraccionEtapaFrameKey = frameKey;
         }
       }
       modal.classList.add('show');
+      setTimeout(function () {
+        try {
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: 'np-extraccion-etapa-shown' }, '*');
+          }
+        } catch (err) {}
+      }, 50);
     }
     window.showExtraccionEtapaCalculator = showExtraccionEtapaCalculator;
 
@@ -7229,7 +7241,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260803a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260815b" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -8414,6 +8426,6 @@ CONTRATO:
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260815a"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260815b"></script>
 </body>
 </html>

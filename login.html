@@ -1864,12 +1864,18 @@
 
     function showExtraccionEtapaCalculator() {
       document.getElementById('extraccionEtapaCalculatorModal').style.display = 'flex';
+      setTimeout(function () {
+        try {
+          var frame = document.getElementById('extraccionEtapaCalculatorFrame');
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: 'np-extraccion-etapa-shown' }, '*');
+          }
+        } catch (err) {}
+      }, 50);
     }
     function closeExtraccionEtapaCalculator() {
       const modal = document.getElementById('extraccionEtapaCalculatorModal');
-      const frame = document.getElementById('extraccionEtapaCalculatorFrame');
       modal.style.display = 'none';
-      if (frame) frame.src = frame.src;
     }
 
     function showPeriodicTableNutrientsCalculator() {
@@ -2702,7 +2708,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260801g" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?v=20260815a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage"></iframe>
       </div>
     </div>
   </div>
@@ -4431,7 +4437,7 @@
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260815a"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260815b"></script>
   <script src="apply-no-traducir.js"></script>
   <script>
     (function initLoginSocialPanel() {

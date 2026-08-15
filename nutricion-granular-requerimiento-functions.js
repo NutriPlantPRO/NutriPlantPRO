@@ -553,9 +553,8 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
           <td>
             <strong>${granularReqT('soil_adjustment', 'Ajuste por niveles en suelo')}<br>(${granularReqUnit('dose_mass_area', 'kg/ha')})</strong>
             <label class="hydro-import-water-wrap ferti-soil-adj-wrap" for="granularImportSoilSelect">
-              <span class="hydro-import-water-label">${granularReqT('bring_from_soil_analysis', 'Traer de análisis')}</span>
-              <select id="granularImportSoilSelect" class="hydro-input hydro-import-water-select" title="${granularReqT('bring_from_soil_title', 'Elige un análisis de suelo: se usa la diferencia considerada del ciclo para ajustar el requerimiento. Si no eliges uno, se mantiene el valor actual.')}" onchange="window.granularOnSoilAnalysisSelect && window.granularOnSoilAnalysisSelect(this.value)">
-                <option value="">${granularReqT('select_soil_analysis', 'Seleccionar análisis…')}</option>
+              <select id="granularImportSoilSelect" class="hydro-input hydro-import-water-select" aria-label="${granularReqT('bring_from_soil_analysis', 'Traer de análisis')}" title="${granularReqT('bring_from_soil_title', 'Elige un análisis de suelo: se usa la diferencia considerada del ciclo para ajustar el requerimiento. Si no eliges uno, se mantiene el valor actual.')}" onchange="window.granularOnSoilAnalysisSelect && window.granularOnSoilAnalysisSelect(this.value)">
+                <option value="">${granularReqT('bring_from_soil_analysis', 'Traer de análisis')}</option>
               </select>
             </label>
           </td>
@@ -691,6 +690,11 @@ function granularSoilAnalysisLabel(analysis, index) {
   return granularReqT('soil_analysis_generic', 'Análisis de suelo') + ' #' + (index + 1);
 }
 
+function granularShortSelectLabel(label) {
+  var text = String(label || '');
+  return text.length > 28 ? text.slice(0, 27) + '…' : text;
+}
+
 function granularSoilConsideredOxideKgHa(analysis) {
   if (!analysis || !analysis.fertility) return null;
   var fert = analysis.fertility;
@@ -746,14 +750,15 @@ function granularRefreshSoilAnalysisSelect() {
   var select = document.getElementById('granularImportSoilSelect');
   if (!select) return;
   var list = granularGetProjectSoilAnalyses();
-  var placeholder = granularReqT('select_soil_analysis', 'Seleccionar análisis…');
+  var placeholder = granularReqT('bring_from_soil_analysis', 'Traer de análisis');
   var html = '<option value="">' + granularEscapeSelect(placeholder) + '</option>';
   if (!list.length) {
     html += '<option value="" disabled>' + granularEscapeSelect(granularReqT('no_soil_analyses', 'Sin análisis de suelo en este proyecto')) + '</option>';
   } else {
     html += list.map(function (analysis, index) {
       var id = granularEscapeSelect(analysis && analysis.id ? analysis.id : ('idx_' + index));
-      return '<option value="' + id + '">' + granularEscapeSelect(granularSoilAnalysisLabel(analysis, index)) + '</option>';
+      var full = granularSoilAnalysisLabel(analysis, index);
+      return '<option value="' + id + '" title="' + granularEscapeSelect(full) + '">' + granularEscapeSelect(granularShortSelectLabel(full)) + '</option>';
     }).join('');
   }
   select.innerHTML = html;
@@ -766,13 +771,6 @@ function granularRefreshSoilAnalysisSelect() {
     }
   }
   select.classList.toggle('is-linked', !!select.value);
-  var wrap = select.closest('.ferti-soil-adj-wrap');
-  var labelEl = wrap && wrap.querySelector('.hydro-import-water-label');
-  if (labelEl) {
-    labelEl.textContent = select.value
-      ? granularReqT('linked_soil_analysis', 'Análisis vinculado')
-      : granularReqT('bring_from_soil_analysis', 'Traer de análisis');
-  }
 }
 
 function granularWriteAdjOxide(nutrient, oxideKgHa) {

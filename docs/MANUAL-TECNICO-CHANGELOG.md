@@ -5,10 +5,11 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
-## 2026-08-15 — Traer de análisis de suelo en Fertirriego y Granular
+## 2026-08-15 — Distribución por etapa en Fertirriego + Traer de análisis de suelo
 
 ### Actualizado
 
+- **Fertirriego → Requerimiento:** bloque **Distribución [proyecto]** (kg = Requerimiento real; % por etapa). Catálogo compartido con 📊 dashboard; aplicar a otro proyecto (solo %/etapas).
 - **Fertirriego y Nutrición granular → Requerimiento:** desplegable **Traer de análisis** en Ajuste por niveles en suelo. Independientes entre sí. Fórmula: ajuste = max(0, extracción total − diferencia considerada del ciclo). Editar a mano desvincula.
 - Archivos: `programa-fertirriego-etapas.html`, `granular-mezclas.html`, `analisis-suelo-fertilidad-kgha.html`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`.
 

@@ -147,7 +147,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.6 Fertirriego programa
 
-**URL:** …/programa-fertirriego-etapas.html · Requerimiento → programa semanal/mensual → aporte agua N-NO₃ → gráficas. Lámina m³/ha.
+**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Distribución por etapa** → programa semanal/mensual → aporte agua N-NO₃ → gráficas. Lámina m³/ha.
+
+**Distribución (UI, bajo Requerimiento):** título **Distribución [proyecto]**. Totales = Requerimiento real (todos los nutrientes; no se agregan a mano). % por etapa (suma 100%). Catálogo compartido con 📊 del dashboard (no login). Aplicar a otro proyecto = copia etapas/%; kg se recalculan. El programa de fertirriego es independiente (más adelante: Programa vs distribución).
 
 **Aporte por agua (UI):** etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir un reporte Análisis → Agua se cargan kg/ha). Sin reportes: «Sin análisis de agua en este proyecto». Independiente del ajuste por suelo.
 

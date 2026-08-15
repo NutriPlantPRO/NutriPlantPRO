@@ -333,14 +333,10 @@
       color: var(--muted);
       line-height: 1.35;
     }
-    /* Evita parpadeo al abrir: no mostrar tablas hasta terminar carga local/nube */
-    body.np-booting header.hero,
-    body.np-booting section.panel {
+    /* Evita parpadeo al abrir: fondo estable hasta terminar carga local/nube e i18n */
+    html { background: var(--bg); }
+    body.np-booting {
       visibility: hidden;
-    }
-    body:not(.np-booting) header.hero,
-    body:not(.np-booting) section.panel {
-      visibility: visible;
     }
   </style>
 </head>
@@ -819,6 +815,14 @@
     isBootstrapping = false;
     requestAnimationFrame(function () {
       document.body.classList.remove('np-booting');
+      requestAnimationFrame(function () {
+        updateChart();
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'np-extraccion-etapa-ready' }, '*');
+          }
+        } catch (e) {}
+      });
     });
   }
 
@@ -1355,6 +1359,7 @@
     var filtered = chartFilteredNutrients();
 
     if (typeof Chart === 'undefined') return;
+    if (!canvas || canvas.clientWidth < 40) return;
 
     if (!filtered.length) {
       if (chartInst) {
@@ -1400,6 +1405,8 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
+        resizeDelay: 120,
         interaction: { mode: 'nearest', intersect: false, axis: 'xy' },
         plugins: {
           legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16 } },
@@ -1468,7 +1475,7 @@
     renderTotals();
     renderPctTable();
     renderKgTable();
-    updateChart();
+    if (!isBootstrapping) updateChart();
     schedulePersist();
   }
 
@@ -1558,7 +1565,16 @@
   }
 
   window.addEventListener('message', function (ev) {
-    if (!ev.data || ev.data.type !== 'np-extraccion-etapa-reload') return;
+    if (!ev.data || typeof ev.data !== 'object') return;
+    if (ev.data.type === 'np-extraccion-etapa-presets-changed') {
+      hydratePresets();
+      return;
+    }
+    if (ev.data.type === 'np-extraccion-etapa-shown') {
+      if (!isBootstrapping) updateChart();
+      return;
+    }
+    if (ev.data.type !== 'np-extraccion-etapa-reload') return;
     softReloadFromParent();
   });
 
