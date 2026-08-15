@@ -20691,7 +20691,7 @@ function createEmptySoilAnalysis() {
     date: '',
     physical: { texturalClass: '', saturationPoint: '', fieldCapacity: '', wiltingPoint: '', hydraulicConductivity: '', bulkDensity: '' },
     phSection: { ph: '', phBuffer: '', totalCarbonates: '', salinity: '' },
-    fertility: { pMethod: 'Bray', mo: '', nNo3: '', p: '', k: '', ca: '', mg: '', na: '', s: '', fe: '', mn: '', b: '', zn: '', cu: '', al: '', moly: '', ideal: {}, depthCm: 20, reachPct: 100 },
+    fertility: { pMethod: 'Bray', mo: '', nNo3: '', p: '', k: '', ca: '', mg: '', na: '', s: '', fe: '', mn: '', b: '', zn: '', cu: '', al: '', moly: '', ideal: {}, cycleFactorPct: {}, cycleFactorManual: {}, depthCm: 20, reachPct: 100 },
     cations: { ca: '', mg: '', k: '', na: '', al: '', h: '', cic: '', pctCa: '', pctMg: '', pctK: '', pctNa: '', pctAl: '', pctH: '' },
     ratios: { caMg: '', mgK: '', caMgK: '', caK: '' }
   };
@@ -20704,7 +20704,7 @@ function createExampleSoilAnalysis() {
   a.date = '2025-06-01';
   a.physical = { texturalClass: 'Franco Arcillo Arenoso', saturationPoint: '27.6', fieldCapacity: '14.5', wiltingPoint: '8.63', hydraulicConductivity: '9', bulkDensity: '1.32' };
   a.phSection = { ph: '5.98', phBuffer: '6.87', totalCarbonates: '0.01', salinity: '1.81' };
-  a.fertility = { pMethod: 'Bray', mo: '1.5', nNo3: '16.9', p: '284', k: '241', ca: '962', mg: '94.6', na: '25', s: '72.3', fe: '39.9', mn: '2.68', b: '0.6', zn: '72', cu: '9.11', al: '3.89', moly: '', ideal: {}, depthCm: 20, reachPct: 100 };
+  a.fertility = { pMethod: 'Bray', mo: '1.5', nNo3: '16.9', p: '284', k: '241', ca: '962', mg: '94.6', na: '25', s: '72.3', fe: '39.9', mn: '2.68', b: '0.6', zn: '72', cu: '9.11', al: '3.89', moly: '', ideal: {}, cycleFactorPct: {}, cycleFactorManual: {}, depthCm: 20, reachPct: 100 };
   a.cations = { ca: '4.8', mg: '0.78', k: '0.62', na: '0.09', al: '0.04', h: '0', cic: '6.33', pctCa: '75.8', pctMg: '12.3', pctK: '9.79', pctNa: '1.42', pctAl: '0.63', pctH: '0' };
   a.ratios = { caMg: '6.15', mgK: '1.26', caMgK: '9', caK: '7.74' };
   return a;
@@ -22900,6 +22900,34 @@ function createSoilAnalysisTabHTML() {
                   <label><span class="soil-field-lbl">CE (dS/m)</span> <input type="number" step="0.01" id="soil-phSection-salinity" data-group="phSection" data-field="salinity" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('phSection','salinity',this.value)"></label>
                 </div>
               </details>
+              <details class="soil-section" data-soil-section="cations">
+                <summary>⚗️ Cationes intercambiables y CIC</summary>
+                <div class="soil-cations-structure">
+                  <div class="soil-cations-meq-block">
+                    <p class="soil-block-title"><span class="notranslate" translate="no">Concentraciones (meq/100g o cmol⁺/kg)</span></p>
+                    <div class="soil-fields soil-fields-inline">
+                      <label class="notranslate" translate="no">Ca <input type="number" step="0.01" id="soil-cations-ca" data-group="cations" data-field="ca" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','ca',this.value)"></label>
+                      <label class="notranslate" translate="no">Mg <input type="number" step="0.01" id="soil-cations-mg" data-group="cations" data-field="mg" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','mg',this.value)"></label>
+                      <label class="notranslate" translate="no">K <input type="number" step="0.01" id="soil-cations-k" data-group="cations" data-field="k" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','k',this.value)"></label>
+                      <label class="notranslate" translate="no">Na <input type="number" step="0.01" id="soil-cations-na" data-group="cations" data-field="na" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','na',this.value)"></label>
+                      <label class="notranslate" translate="no">Al <input type="number" step="0.01" id="soil-cations-al" data-group="cations" data-field="al" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','al',this.value)"></label>
+                      <label class="notranslate" translate="no">H <input type="number" step="0.01" id="soil-cations-h" data-group="cations" data-field="h" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','h',this.value)"></label>
+                    </div>
+                  </div>
+                  <div class="soil-cations-pct-box">
+                    <p class="soil-block-title soil-block-title-blue">CIC y saturación (%)</p>
+                    <div class="soil-cations-pct-inner">
+                      <label class="soil-cic-label-blue notranslate" translate="no" title="${dashboardT('analysis.cic_sum_title', 'Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)')}" data-i18n-title="analysis.cic_sum_title"><strong>CIC (meq/100g o cmol⁺/kg)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Ca' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Ca"}'>% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Mg' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Mg"}'>% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'K' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"K"}'>% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Na' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Na"}'>% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Al' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Al"}'>% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'H' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"H"}'>% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
+                    </div>
+                  </div>
+                </div>
+              </details>
               <details class="soil-section" data-soil-section="fertility">
                 <summary>🧪 Fertilidad del suelo</summary>
                 <div class="soil-fertility-params">
@@ -22911,7 +22939,9 @@ function createSoilAnalysisTabHTML() {
                   <div class="soil-fertility-params-hint">
                     <strong>Base técnica de ajuste.</strong><br><span class="soil-fertility-disclaimer">Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.</span>
                     <br>En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
-                    <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
+                    <div class="soil-ideal-ref-actions">
+                      <button type="button" class="soil-btn-ideal-ref" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
+                    </div>
                   </div>
                 </div>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
@@ -22977,6 +23007,24 @@ function createSoilAnalysisTabHTML() {
                         <td><input type="number" step="0.01" id="soil-fertility-ideal-moly" class="fertirriego-input soil-fertility-input" onchange="window.saveSoilAnalysisIdealField && window.saveSoilAnalysisIdealField('moly',this.value)" onblur="window.saveSoilAnalysisIdealField && window.saveSoilAnalysisIdealField('moly',this.value)"></td>
                         <td><input type="number" step="0.01" id="soil-fertility-ideal-al" class="fertirriego-input soil-fertility-input" onchange="window.saveSoilAnalysisIdealField && window.saveSoilAnalysisIdealField('al',this.value)" onblur="window.saveSoilAnalysisIdealField && window.saveSoilAnalysisIdealField('al',this.value)"></td>
                       </tr>
+                      <tr class="soil-sufficiency-row">
+                        <td><strong title="${dashboardT('analysis.sufficiency_title', 'Porcentaje del nivel de laboratorio respecto al ideal. No se limita a 100%; un valor mayor indica exceso.')}" data-i18n-title="analysis.sufficiency_title">Suficiencia respecto al ideal (%)</strong></td>
+                        <td id="soil-suff-mo">—</td>
+                        <td id="soil-suff-nNo3">—</td>
+                        <td id="soil-suff-p">—</td>
+                        <td id="soil-suff-k">—</td>
+                        <td id="soil-suff-ca">—</td>
+                        <td id="soil-suff-mg">—</td>
+                        <td id="soil-suff-na">—</td>
+                        <td id="soil-suff-s">—</td>
+                        <td id="soil-suff-fe">—</td>
+                        <td id="soil-suff-mn">—</td>
+                        <td id="soil-suff-b">—</td>
+                        <td id="soil-suff-zn">—</td>
+                        <td id="soil-suff-cu">—</td>
+                        <td id="soil-suff-moly">—</td>
+                        <td id="soil-suff-al">—</td>
+                      </tr>
                       <tr class="soil-kgha-row">
                         <td><strong title="${dashboardT('analysis.kgha_diff_title', 'Diferencia en kg/ha: lo que hay (laboratorio) menos lo ideal. Negativo = falta aportar; positivo = exceso.')}" data-i18n-title="analysis.kgha_diff_title">kg/ha (diferencia)</strong><br><span style="font-weight:normal; font-size:10px; color:#64748b;"><span style="color:#0369a1;">−</span> falta, <span style="color:#0369a1;">+</span> exceso</span></td>
                         <td id="soil-kgha-mo"></td>
@@ -22998,32 +23046,43 @@ function createSoilAnalysisTabHTML() {
                     </tbody>
                   </table>
                 </div>
-              </details>
-              <details class="soil-section" data-soil-section="cations">
-                <summary>⚗️ Cationes intercambiables y CIC</summary>
-                <div class="soil-cations-structure">
-                  <div class="soil-cations-meq-block">
-                    <p class="soil-block-title"><span class="notranslate" translate="no">Concentraciones (meq/100g o cmol⁺/kg)</span></p>
-                    <div class="soil-fields soil-fields-inline">
-                      <label class="notranslate" translate="no">Ca <input type="number" step="0.01" id="soil-cations-ca" data-group="cations" data-field="ca" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','ca',this.value)"></label>
-                      <label class="notranslate" translate="no">Mg <input type="number" step="0.01" id="soil-cations-mg" data-group="cations" data-field="mg" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','mg',this.value)"></label>
-                      <label class="notranslate" translate="no">K <input type="number" step="0.01" id="soil-cations-k" data-group="cations" data-field="k" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','k',this.value)"></label>
-                      <label class="notranslate" translate="no">Na <input type="number" step="0.01" id="soil-cations-na" data-group="cations" data-field="na" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','na',this.value)"></label>
-                      <label class="notranslate" translate="no">Al <input type="number" step="0.01" id="soil-cations-al" data-group="cations" data-field="al" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','al',this.value)"></label>
-                      <label class="notranslate" translate="no">H <input type="number" step="0.01" id="soil-cations-h" data-group="cations" data-field="h" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','h',this.value)"></label>
-                    </div>
+                <div class="soil-cycle-adjustment">
+                  <div class="soil-cycle-adjustment-head">
+                    <strong>⚖️ Ajuste agronómico para el ciclo</strong>
+                    <span>Define qué porcentaje de la diferencia del suelo se considerará este ciclo. En faltantes indica cuánto corregir; en excesos, cuánto reconocer como aporte potencial del suelo.</span>
                   </div>
-                  <div class="soil-cations-pct-box">
-                    <p class="soil-block-title soil-block-title-blue">CIC y saturación (%)</p>
-                    <div class="soil-cations-pct-inner">
-                      <label class="soil-cic-label-blue notranslate" translate="no" title="${dashboardT('analysis.cic_sum_title', 'Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)')}" data-i18n-title="analysis.cic_sum_title"><strong>CIC (meq/100g o cmol⁺/kg)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Ca' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Ca"}'>% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Mg' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Mg"}'>% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'K' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"K"}'>% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Na' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Na"}'>% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Al' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Al"}'>% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'H' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"H"}'>% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
-                    </div>
+                  <div class="soil-cycle-adjustment-table-wrap">
+                    <table class="fertirriego-requirement-table soil-fertility-table soil-cycle-adjustment-table">
+                      <thead class="notranslate" translate="no">
+                        <tr>
+                          <th>Concepto</th><th>MO</th><th>N-NO<sub>3</sub><sup>&minus;</sup></th><th>P</th><th>K</th><th>Ca</th><th>Mg</th><th>Na</th><th>S</th><th>Fe</th><th>Mn</th><th>B</th><th>Zn</th><th>Cu</th><th>Mo</th><th>Al</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr class="soil-cycle-factor-row">
+                          <td><strong>Factor considerado este ciclo (%)</strong><br><span>Inicial: 10% si suficiencia ≥ 50%; 5% si es menor.</span></td>
+                          <td class="soil-cycle-locked">—</td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-nNo3" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('nNo3',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('nNo3',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-p" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('p',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('p',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-k" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('k',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('k',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-ca" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('ca',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('ca',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-mg" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('mg',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('mg',this.value)"></td>
+                          <td class="soil-cycle-locked">—</td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-s" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('s',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('s',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-fe" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('fe',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('fe',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-mn" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('mn',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('mn',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-b" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('b',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('b',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-zn" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('zn',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('zn',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-cu" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('cu',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('cu',this.value)"></td>
+                          <td><input type="number" min="0" max="100" step="1" id="soil-cycle-factor-moly" class="fertirriego-input soil-cycle-factor-input" onchange="window.saveSoilCycleFactor && window.saveSoilCycleFactor('moly',this.value)" onblur="window.saveSoilCycleFactor && window.saveSoilCycleFactor('moly',this.value)"></td>
+                          <td class="soil-cycle-locked">—</td>
+                        </tr>
+                        <tr class="soil-cycle-considered-row">
+                          <td><strong>Diferencia considerada (kg/ha)</strong><br><span>− corregir durante el ciclo · + aporte potencial del suelo</span></td>
+                          <td>—</td><td id="soil-cycle-considered-nNo3">—</td><td id="soil-cycle-considered-p">—</td><td id="soil-cycle-considered-k">—</td><td id="soil-cycle-considered-ca">—</td><td id="soil-cycle-considered-mg">—</td><td>—</td><td id="soil-cycle-considered-s">—</td><td id="soil-cycle-considered-fe">—</td><td id="soil-cycle-considered-mn">—</td><td id="soil-cycle-considered-b">—</td><td id="soil-cycle-considered-zn">—</td><td id="soil-cycle-considered-cu">—</td><td id="soil-cycle-considered-moly">—</td><td>—</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </details>
@@ -23158,6 +23217,27 @@ window.saveSoilAnalysisIdealField = function saveSoilAnalysisIdealField(field, v
   window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
 };
 
+window.saveSoilCycleFactor = function saveSoilCycleFactor(field, value) {
+  var wrap = document.getElementById('soil-analysis-form-wrap');
+  var id = wrap && wrap.getAttribute('data-current-id');
+  if (!id) return;
+  var analysis = window.getSoilAnalyses().find(function (a) { return a.id === id; });
+  if (!analysis || !analysis.fertility || ['mo', 'na', 'al'].indexOf(field) >= 0) return;
+  var fert = analysis.fertility;
+  if (!fert.cycleFactorPct || typeof fert.cycleFactorPct !== 'object') fert.cycleFactorPct = {};
+  if (!fert.cycleFactorManual || typeof fert.cycleFactorManual !== 'object') fert.cycleFactorManual = {};
+  var parsed = value !== '' ? parseFloat(value) : NaN;
+  if (isNaN(parsed)) {
+    delete fert.cycleFactorPct[field];
+    delete fert.cycleFactorManual[field];
+  } else {
+    fert.cycleFactorPct[field] = Math.max(0, Math.min(100, parsed));
+    fert.cycleFactorManual[field] = true;
+  }
+  window.saveSoilAnalysesToProject();
+  window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
+};
+
 window.updateSoilFertilityKgHa = function updateSoilFertilityKgHa() {
   var wrap = document.getElementById('soil-analysis-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -23173,22 +23253,51 @@ window.updateSoilFertilityKgHa = function updateSoilFertilityKgHa() {
   var factor = 0.1 * depth * bulk * (reach / 100);
   var fert = analysis.fertility || {};
   var ideal = (fert.ideal && typeof fert.ideal === 'object') ? fert.ideal : {};
+  var cycleFactors = (fert.cycleFactorPct && typeof fert.cycleFactorPct === 'object') ? fert.cycleFactorPct : {};
+  var cycleManual = (fert.cycleFactorManual && typeof fert.cycleFactorManual === 'object') ? fert.cycleFactorManual : {};
+  var cycleLocked = { mo: true, na: true, al: true };
   var keys = ['mo','nNo3','p','k','ca','mg','na','s','fe','mn','b','zn','cu','moly','al'];
   keys.forEach(function (key) {
     var v = fert[key];
     var lab = (v !== '' && v !== null && v !== undefined) ? parseFloat(v) : NaN;
     var idealVal = (ideal[key] !== '' && ideal[key] !== null && ideal[key] !== undefined) ? parseFloat(ideal[key]) : NaN;
     var el = document.getElementById('soil-kgha-' + key);
-    if (!el) return;
-    if (isNaN(lab)) { el.textContent = '—'; return; }
+    var suffEl = document.getElementById('soil-suff-' + key);
+    var factorInput = document.getElementById('soil-cycle-factor-' + key);
+    var consideredEl = document.getElementById('soil-cycle-considered-' + key);
+    var sufficiency = (!isNaN(lab) && !isNaN(idealVal) && idealVal !== 0) ? (lab / idealVal) * 100 : NaN;
+    if (suffEl) suffEl.textContent = isNaN(sufficiency) ? '—' : sufficiency.toFixed(1) + ' %';
+    if (isNaN(lab)) {
+      if (el) el.textContent = '—';
+      if (factorInput) factorInput.value = '';
+      if (consideredEl) consideredEl.textContent = '—';
+      return;
+    }
     // kg/ha = (nivel lab − ideal) × factor → positivo = exceso, negativo = falta
     var diff = isNaN(idealVal) ? lab : (lab - idealVal);
     var kgHa = diff * factor;
-    if (window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function') {
+    if (el && window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function') {
       var shown = window.NpAnalysisUI.fromSI(kgHa, 'dose_mass_area');
       el.textContent = Number(shown).toFixed(2);
-    } else {
+    } else if (el) {
       el.textContent = kgHa.toFixed(2);
+    }
+    if (cycleLocked[key]) return;
+    var savedFactor = parseFloat(cycleFactors[key]);
+    var cyclePct = cycleManual[key] && !isNaN(savedFactor)
+      ? Math.max(0, Math.min(100, savedFactor))
+      : (isNaN(sufficiency) ? NaN : (sufficiency >= 50 ? 10 : 5));
+    if (factorInput) factorInput.value = isNaN(cyclePct) ? '' : cyclePct;
+    if (consideredEl) {
+      if (isNaN(cyclePct) || isNaN(idealVal)) {
+        consideredEl.textContent = '—';
+      } else {
+        var consideredKgHa = kgHa * (cyclePct / 100);
+        var consideredShown = window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function'
+          ? window.NpAnalysisUI.fromSI(consideredKgHa, 'dose_mass_area')
+          : consideredKgHa;
+        consideredEl.textContent = Number(consideredShown).toFixed(2);
+      }
     }
   });
   analysisApplyUnits(document.getElementById('soil-analysis-tab-container'));
@@ -23325,7 +23434,7 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
   if (emptyEl) emptyEl.style.display = 'none';
   document.getElementById('soil-meta-title').value = analysisDisplayTitle(analysis.title || '');
   document.getElementById('soil-meta-date').value = analysis.date || '';
-  ['physical','phSection','fertility','cations','ratios'].forEach(function (group) {
+  ['physical','phSection','cations','fertility','ratios'].forEach(function (group) {
     if (!analysis[group]) return;
     Object.keys(analysis[group]).forEach(function (field) {
       if (group === 'fertility' && field === 'ideal') return;

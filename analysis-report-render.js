@@ -445,7 +445,11 @@
             var tbl = '<table class="admin-analysis-rel-table admin-soil-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Concepto', 'Concept') + '</th>';
             tableParams.forEach(function (p) { tbl += '<th>' + escapeHtml(getSoilParamLabel(grp, p)) + '</th>'; });
             tbl += '</tr></thead><tbody>';
-            var labCells = [], refCells = [], statusCells = [], kgHaCells = [];
+            var labCells = [], refCells = [], statusCells = [], sufficiencyCells = [], kgHaCells = [];
+            var cycleFactorCells = [], cycleConsideredCells = [];
+            var cycleFactors = (obj.fertility && obj.fertility.cycleFactorPct) || {};
+            var cycleManual = (obj.fertility && obj.fertility.cycleFactorManual) || {};
+            var cycleLocked = { mo: true, na: true, al: true };
             tableParams.forEach(function (p) {
                 var lab = labMap[p];
                 var idealVal = (idealSource[p] != null && idealSource[p] !== '') ? idealSource[p] : (idealMap[p] != null ? idealMap[p] : null);
@@ -464,13 +468,32 @@
                     var labNum = (lab !== undefined && lab !== null && lab !== '') ? parseFloat(String(lab).replace(',', '.')) : NaN;
                     var idealNum = (idealVal != null && idealVal !== '' && !isNaN(parseFloat(String(idealVal)))) ? parseFloat(String(idealVal).replace(',', '.')) : NaN;
                     var diff = isNaN(labNum) ? NaN : (isNaN(idealNum) ? labNum : (labNum - idealNum));
-                    var doseDiff = isNaN(diff) ? '—' : doseDifferenceDisplay(diff * factor);
+                    var kgHaDiff = isNaN(diff) ? NaN : diff * factor;
+                    var doseDiff = isNaN(kgHaDiff) ? '—' : doseDifferenceDisplay(kgHaDiff);
+                    var sufficiency = (!isNaN(labNum) && !isNaN(idealNum) && idealNum !== 0) ? (labNum / idealNum) * 100 : NaN;
+                    sufficiencyCells.push('<td>' + (isNaN(sufficiency) ? '—' : escapeHtml(formatNum(sufficiency, 1) + ' %')) + '</td>');
                     kgHaCells.push('<td>' + escapeHtml(doseDiff) + '</td>');
+                    if (cycleLocked[p]) {
+                        cycleFactorCells.push('<td>—</td>');
+                        cycleConsideredCells.push('<td>—</td>');
+                    } else {
+                        var savedCycleFactor = num(cycleFactors[p]);
+                        var cyclePct = cycleManual[p] && !isNaN(savedCycleFactor)
+                            ? Math.max(0, Math.min(100, savedCycleFactor))
+                            : (isNaN(sufficiency) ? NaN : (sufficiency >= 50 ? 10 : 5));
+                        var considered = (!isNaN(kgHaDiff) && !isNaN(idealNum) && !isNaN(cyclePct))
+                            ? doseDifferenceDisplay(kgHaDiff * cyclePct / 100)
+                            : '—';
+                        cycleFactorCells.push('<td>' + (isNaN(cyclePct) ? '—' : escapeHtml(formatNum(cyclePct, 1) + ' %')) + '</td>');
+                        cycleConsideredCells.push('<td>' + escapeHtml(considered) + '</td>');
+                    }
                 }
             });
             tbl += '<tr><td class="col-concept">' + tr('Dato laboratorio', 'Lab value') + '</td>' + labCells.join('') + '</tr>';
             tbl += '<tr><td class="col-concept">' + tr('Nivel ideal', 'Ideal level') + '</td>' + refCells.join('') + '</tr>';
             if (grp === 'fertility' && kgHaCells.length) {
+                tbl += '<tr><td class="col-concept">' + tr('Suficiencia respecto al ideal (%)', 'Sufficiency relative to ideal (%)') + '</td>' +
+                    sufficiencyCells.join('') + '</tr>';
                 tbl += '<tr class="admin-soil-kgha-row"><td class="col-concept">' +
                     (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (' + tr('diferencia', 'difference') + ')</td>' +
                     kgHaCells.join('') + '</tr>';
@@ -478,6 +501,20 @@
                 tbl += '<tr><td class="col-concept">' + tr('Estado', 'Status') + '</td>' + statusCells.join('') + '</tr>';
             }
             tbl += '</tbody></table>';
+            if (grp === 'fertility' && cycleFactorCells.length) {
+                tbl += '<div class="admin-analysis-group" style="margin-top:14px;"><div class="admin-analysis-group-title">' +
+                    tr('⚖️ Ajuste agronómico para el ciclo', '⚖️ Agronomic adjustment for the cycle') +
+                    '</div><p class="admin-analysis-legend">' +
+                    tr('Porcentaje editable de la diferencia que se considera durante este ciclo.', 'Editable percentage of the difference considered during this cycle.') +
+                    '</p><table class="admin-analysis-rel-table admin-soil-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' +
+                    tr('Concepto', 'Concept') + '</th>';
+                tableParams.forEach(function (p) { tbl += '<th>' + escapeHtml(getSoilParamLabel(grp, p)) + '</th>'; });
+                tbl += '</tr></thead><tbody><tr><td class="col-concept">' +
+                    tr('Factor considerado (%)', 'Considered factor (%)') + '</td>' + cycleFactorCells.join('') +
+                    '</tr><tr class="admin-soil-kgha-row"><td class="col-concept">' +
+                    tr('Diferencia considerada', 'Considered difference') + ' (' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ')</td>' +
+                    cycleConsideredCells.join('') + '</tr></tbody></table></div>';
+            }
             return out + tbl;
         }
 
@@ -672,7 +709,7 @@
             return tbl;
         }
 
-        var groupOrder = ['general', 'physical', 'phSection', 'fertility', 'cations', 'ratios', 'anions', 'micros', 'ideal', 'Otros'];
+        var groupOrder = ['general', 'physical', 'phSection', 'cations', 'fertility', 'ratios', 'anions', 'micros', 'ideal', 'Otros'];
         var orderedGroups = groupOrder.filter(function (g) { return byGroup[g]; }).concat(Object.keys(byGroup).filter(function (g) { return groupOrder.indexOf(g) < 0; }));
         var hasSoilTables = isSoilType && orderedGroups.some(function (g) { return g === 'physical' || g === 'phSection' || g === 'fertility'; });
         var hasRelated = orderedGroups.some(function (g) { return g === 'cations' || g === 'anions' || g === 'micros'; });

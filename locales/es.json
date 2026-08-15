@@ -708,6 +708,7 @@
     "cic_params_title": "CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual.",
     "ideal_ref_title": "Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).",
     "kgha_diff_title": "Diferencia en kg/ha: lo que hay (laboratorio) menos lo ideal. Negativo = falta aportar; positivo = exceso.",
+    "sufficiency_title": "Porcentaje del nivel de laboratorio respecto al ideal. No se limita a 100%; un valor mayor indica exceso.",
     "cic_sum_title": "Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)",
     "pct_cation_title": "Calculado: 100 × ({ion} meq / CIC)",
     "m3_riego_placeholder": "ej. 100",

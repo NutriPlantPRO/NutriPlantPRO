@@ -96,7 +96,17 @@
     }
     .input-matrix__grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 420px) {
+      .input-matrix__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 960px) {
+      .input-matrix__grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
     }
     .input-matrix .field {
       padding: 12px 14px;
@@ -281,15 +291,20 @@
       gap: 14px;
     }
     .embed-lead { display: none; }
-    html.embed-dashboard body {
+    html.embed-dashboard,
+    html.embed-login {
+      height: 100%;
+    }
+    html.embed-dashboard body,
+    html.embed-login body {
       padding: 10px 14px 16px;
       min-height: 0;
-      height: auto;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    html.embed-dashboard {
-      height: auto;
-    }
-    html.embed-dashboard .wrap {
+    html.embed-dashboard .wrap,
+    html.embed-login .wrap {
       max-width: none;
       width: 100%;
     }
@@ -309,6 +324,20 @@
     }
     html.embed-dashboard .card-intro .ref-box {
       margin-top: 0;
+    }
+    @media (max-width: 700px) {
+      html.embed-dashboard body,
+      html.embed-login body {
+        padding: 8px 10px 12px;
+      }
+      html.embed-dashboard .embed-lead,
+      html.embed-login .embed-lead {
+        font-size: 12px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+      }
+      .section-body { padding: 10px 12px 12px; }
+      .section-head { padding: 10px 12px; font-size: 14px; }
     }
     @media (min-width: 1000px) {
       html.embed-dashboard .tool-sections {

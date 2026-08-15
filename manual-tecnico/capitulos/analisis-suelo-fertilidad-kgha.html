@@ -128,6 +128,23 @@
       <strong>positivo = exceso</strong> respecto al ideal.
     </p>
 
+    <h3>Suficiencia y ajuste agronómico para el ciclo</h3>
+    <div class="mt-formula">
+      suficiencia (%) = (nivel_laboratorio / ideal) × 100<br>
+      diferencia_considerada = diferencia_kg/ha × (factor_del_ciclo / 100)
+    </div>
+    <p>
+      La suficiencia no se limita a 100 %: los valores superiores muestran cuánto excede el nivel de laboratorio al
+      ideal. Cuando el ideal es cero o no existe, la plataforma muestra «—» para evitar una división inválida.
+    </p>
+    <p>
+      El factor del ciclo es editable y funciona como punto de partida para el criterio del agrónomo. Su valor
+      automático inicial es <strong>10 % cuando la suficiencia es igual o mayor a 50 %</strong> y
+      <strong>5 % cuando es menor a 50 %</strong>. Un resultado negativo indica la parte del faltante que se decide
+      corregir; uno positivo, la parte del exceso que se reconoce como aporte potencial del suelo. MO, Na y Al no se
+      transfieren a este ajuste y se muestran con «—».
+    </p>
+
     <h3>Valores ideales de referencia</h3>
     <table class="mt-table">
       <thead>

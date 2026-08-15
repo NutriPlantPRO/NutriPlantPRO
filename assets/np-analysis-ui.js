@@ -67,8 +67,15 @@
     'Concepto': 'Concept',
     'Nivel (laboratorio)': 'Level (lab)',
     'Ideal (referencia)': 'Ideal (reference)',
+    'Suficiencia respecto al ideal (%)': 'Sufficiency relative to ideal (%)',
     'kg/ha (diferencia)': 'kg/ha (difference)',
     'lb/acre (diferencia)': 'lb/acre (difference)',
+    'Ajuste agronómico para el ciclo': 'Agronomic adjustment for the cycle',
+    'Define qué porcentaje de la diferencia del suelo se considerará este ciclo. En faltantes indica cuánto corregir; en excesos, cuánto reconocer como aporte potencial del suelo.': 'Defines what percentage of the soil difference will be considered this cycle. For deficits, it indicates how much to correct; for excesses, how much to recognize as potential soil contribution.',
+    'Factor considerado este ciclo (%)': 'Factor considered this cycle (%)',
+    'Inicial: 10% si suficiencia ≥ 50%; 5% si es menor.': 'Initial: 10% if sufficiency ≥ 50%; 5% if lower.',
+    'Diferencia considerada (kg/ha)': 'Considered difference (kg/ha)',
+    '− corregir durante el ciclo · + aporte potencial del suelo': '− correct during the cycle · + potential soil contribution',
     'falta': 'deficit',
     'exceso': 'excess',
     'Cationes intercambiables y CIC': 'Exchangeable cations and CEC',
@@ -332,6 +339,10 @@
     var kghaStrong = root.querySelector('.soil-kgha-row td strong');
     if (kghaStrong) {
       kghaStrong.textContent = doseSym + ' (' + t('diferencia', 'difference') + ')';
+    }
+    var consideredStrong = root.querySelector('.soil-cycle-considered-row td strong');
+    if (consideredStrong) {
+      consideredStrong.textContent = t('Diferencia considerada', 'Considered difference') + ' (' + doseSym + ')';
     }
 
     var aguaHeader = root.querySelector('#agua-form-wrap .soil-analysis-form-header');

@@ -8852,7 +8852,46 @@ html.embed-login body {
   cursor: pointer;
 }
 .soil-fertility-table thead .soil-fertility-p-method-header option { color: #0f172a; }
+.soil-sufficiency-row td { background: #f0f9ff; color: #075985; font-size: 12px; font-weight: 600; }
 .soil-kgha-row td { background: #f8fafc; color: #475569; font-size: 12px; border-top: 2px solid #0369a1; }
+.soil-cycle-adjustment {
+  margin-top: 14px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #bae6fd;
+  border-radius: 9px;
+}
+.soil-cycle-adjustment-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  color: #0c4a6e;
+}
+.soil-cycle-adjustment-head strong { font-size: 14px; }
+.soil-cycle-adjustment-head span { font-size: 12px; line-height: 1.4; color: #475569; }
+.soil-cycle-adjustment-table-wrap { overflow-x: auto; }
+.soil-cycle-adjustment-table .soil-cycle-factor-input {
+  width: 100%;
+  min-width: 52px;
+  box-sizing: border-box;
+}
+.soil-cycle-factor-row td:first-child,
+.soil-cycle-considered-row td:first-child { min-width: 190px; }
+.soil-cycle-factor-row td:first-child span,
+.soil-cycle-considered-row td:first-child span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+.soil-cycle-locked { color: #94a3b8; background: #f8fafc; font-weight: 700; }
+.soil-cycle-considered-row td {
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  border-top: 2px solid #38bdf8;
+}
 .soil-fertility-params {
   background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
   border: 1px solid #7dd3fc;
@@ -8877,6 +8916,35 @@ html.embed-login body {
   margin-top: 4px;
   padding-top: 6px;
   border-top: 1px solid rgba(3, 105, 161, 0.2);
+}
+.soil-ideal-ref-actions {
+  display: flex;
+  margin-top: 10px;
+}
+.soil-btn-ideal-ref {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #0369a1;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(3, 105, 161, 0.28);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.soil-btn-ideal-ref:hover {
+  background: #075985;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(3, 105, 161, 0.35);
+}
+.soil-btn-ideal-ref:active {
+  transform: translateY(0);
+  background: #0c4a6e;
 }
 .soil-fertility-disclaimer {
   display: inline-block;

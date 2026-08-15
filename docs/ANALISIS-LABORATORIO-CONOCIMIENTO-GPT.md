@@ -84,6 +84,16 @@ kg/ha = (nivel_laboratorio − ideal) × 0.1 × profundidad_cm × densidad_apare
 - Negativo = **falta**; positivo = **exceso**.
 - `profundidad_cm` y `suelo_explorado_%` en Fertilidad; densidad en Físico (default 1 g/cm³ si vacío).
 
+**Suficiencia y ajuste agronómico para el ciclo:**
+```
+suficiencia_pct = (nivel_laboratorio / ideal) × 100
+diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
+```
+- La suficiencia no se limita a 100 %. Si el ideal es cero o falta, se devuelve `null`/«—».
+- Factor inicial editable: 10 % si suficiencia ≥ 50 %; 5 % si es menor. Un factor editado se guarda en el reporte.
+- Negativo en diferencia considerada = parte del faltante a corregir; positivo = exceso reconocido como aporte potencial.
+- MO, Na y Al no usan factor del ciclo.
+
 **Cationes:** meq/100g y % saturación; CIC = suma catiónica del reporte.
 
 ---

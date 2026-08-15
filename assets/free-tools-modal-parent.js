@@ -7,7 +7,6 @@
   'use strict';
 
   var FIT_FRAME_IDS = {
-    waterHardnessCalculatorFrame: true,
     nMineralizableMoCalculatorFrame: true,
     agroclimateForecastFrame: true
   };
@@ -210,7 +209,7 @@
   window.resetFreeToolIframeHeight = function (frameId) {
     var frame = document.getElementById(frameId);
     if (!frame) return;
-    if (isMobileFit()) {
+    if (isMobileFit() && FIT_FRAME_IDS[frameId]) {
       frame.style.height = '320px';
     } else {
       frame.style.height = '100%';

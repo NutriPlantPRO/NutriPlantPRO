@@ -708,6 +708,7 @@
     "cic_params_title": "CEC comes from the Exchangeable cations and CEC section (sum Ca+Mg+K+Na+Al+H). Display only.",
     "ideal_ref_title": "Fills the Ideal row with general reference values (OM, N-NO₃, P by method, Na, S, micronutrients). K, Ca and Mg are calculated from CEC (ideal meq and conversion to ppm).",
     "kgha_diff_title": "Difference in kg/ha: lab amount minus ideal. Negative = deficit to supply; positive = excess.",
+    "sufficiency_title": "Lab level as a percentage of the ideal. It is not capped at 100%; a higher value indicates excess.",
     "cic_sum_title": "Calculated: sum of Ca+Mg+K+Na+Al+H (meq/100g or cmol⁺/kg)",
     "pct_cation_title": "Calculated: 100 × ({ion} meq / CEC)",
     "m3_riego_placeholder": "e.g. 100",

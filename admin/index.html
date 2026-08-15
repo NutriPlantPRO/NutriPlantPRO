@@ -18349,6 +18349,22 @@
             style.id = 'npAdminMapFloatStyles';
             style.textContent =
                 '#globalMapContainer,#connMapContainer{position:relative;}' +
+                '.np-admin-basemap-bar{position:absolute;z-index:1100;top:12px;right:12px;display:inline-flex;gap:4px;padding:4px;' +
+                'background:rgba(255,255,255,.96);border-radius:10px;box-shadow:0 1px 5px rgba(15,23,42,.28);border:1px solid rgba(15,23,42,.08);}' +
+                '.np-admin-basemap-chip{appearance:none;border:0;background:transparent;color:#334155;font:700 12px/1.2 system-ui,sans-serif;' +
+                'padding:8px 11px;border-radius:8px;cursor:pointer;}' +
+                '.np-admin-basemap-chip:hover{background:#f1f5f9;}' +
+                '.np-admin-basemap-chip.is-active{background:#0b3a6e;color:#fff;}' +
+                '@media (max-width:480px){.np-admin-basemap-chip{padding:7px 8px;font-size:11px;}.np-admin-basemap-bar{top:8px;right:8px;}}' +
+                '.np-admin-map-select{height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;' +
+                'font:600 13px/34px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:none;outline:none;min-width:0;}' +
+                '.np-admin-map-select:focus{border-color:#38bdf8;box-shadow:0 0 0 2px #38bdf825;}' +
+                '.np-admin-map-close{width:40px;height:40px;flex-shrink:0;border:1px solid #cbd5e1;border-radius:8px;background:#fff;' +
+                'color:#334155;font-size:24px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;}' +
+                '.np-admin-map-close:hover{background:#f8fafc;border-color:#94a3b8;color:#0f172a;}' +
+                '.np-admin-map-header{padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0;}' +
+                '.np-admin-map-header h2{margin:0;color:#1e293b;font-size:20px;line-height:1.2;}' +
+                '.np-admin-map-header p{margin:4px 0 0;color:#64748b;font-size:13px;line-height:1.4;}' +
                 '.np-admin-map-float{position:absolute;z-index:1200;left:50%;bottom:14px;transform:translateX(-50%);' +
                 'width:min(380px,calc(100% - 20px));max-height:min(72%,520px);overflow:auto;background:#fff;' +
                 'border-radius:12px;box-shadow:0 14px 40px rgba(15,23,42,.28);border:1px solid #e2e8f0;' +
@@ -18358,8 +18374,8 @@
                 'border:none;border-radius:8px;background:#f1f5f9;color:#475569;font-size:18px;line-height:1;cursor:pointer;z-index:2;}' +
                 '.np-admin-map-float__close:hover{background:#e2e8f0;color:#0f172a;}' +
                 '.np-admin-map-float__body{min-width:0;font-size:13px;color:#334155;line-height:1.45;}' +
-                '@media (min-width:900px){.np-admin-map-float{left:auto;right:16px;top:16px;bottom:auto;transform:none;' +
-                'max-height:calc(100% - 32px);width:min(400px,42%);}}' +
+                '@media (min-width:900px){.np-admin-map-float{left:auto;right:16px;top:62px;bottom:auto;transform:none;' +
+                'max-height:calc(100% - 78px);width:min(400px,42%);}}' +
                 '#globalMapContainer .leaflet-popup-pane,#connMapContainer .leaflet-popup-pane{z-index:650;}' +
                 '#globalMapContainer .leaflet-popup-content-wrapper,#connMapContainer .leaflet-popup-content-wrapper{' +
                 'border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.22);}' +
@@ -18367,6 +18383,49 @@
                 'margin:10px 12px;max-height:min(48vh,360px);overflow-y:auto;-webkit-overflow-scrolling:touch;}';
             document.head.appendChild(style);
         }
+
+        function mountAdminBasemapBar(container, options, activeKey, onSelect) {
+            if (!container) return;
+            var existing = container.querySelector('.np-admin-basemap-bar');
+            if (existing) existing.remove();
+            var bar = document.createElement('div');
+            bar.className = 'np-admin-basemap-bar';
+            bar.setAttribute('role', 'group');
+            bar.setAttribute('aria-label', 'Fondo del mapa');
+            (options || []).forEach(function (opt) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'np-admin-basemap-chip' + (opt.key === activeKey ? ' is-active' : '');
+                btn.setAttribute('data-basemap', opt.key);
+                btn.title = opt.title || opt.label;
+                btn.textContent = opt.label;
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelect(opt.key);
+                });
+                bar.appendChild(btn);
+            });
+            container.appendChild(bar);
+            if (window.L && L.DomEvent) {
+                try {
+                    L.DomEvent.disableClickPropagation(bar);
+                } catch (err) {}
+            }
+        }
+
+        function syncAdminBasemapChips(container, activeKey) {
+            if (!container) return;
+            container.querySelectorAll('.np-admin-basemap-chip').forEach(function (btn) {
+                btn.classList.toggle('is-active', btn.getAttribute('data-basemap') === activeKey);
+            });
+        }
+
+        var ADMIN_BASEMAP_OPTIONS = [
+            { key: 'streets', label: 'Calles', title: 'Mapa de calles' },
+            { key: 'satellite', label: 'Satélite', title: 'Imagen satelital' },
+            { key: 'topo', label: 'Relieve', title: 'Mapa de relieve / topografía' }
+        ];
 
         function showAdminMapFloatCard(containerId, html) {
             ensureAdminMapFloatStyles();
@@ -18610,19 +18669,15 @@
             globalMapModal.style.zIndex = '56000';
             
             const count = withPolygon.length;
+            ensureAdminMapFloatStyles();
             globalMapModal.innerHTML = `
                 <div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">
-                    <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0;">
+                    <div class="np-admin-map-header">
                         <div style="min-width:0;flex:1 1 220px;">
-                            <h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa global</h2>
-                            <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">${count} proyecto(s) con ubicación. Desde lejos verás banderitas/agrupaciones; al acercar, polígonos. Clic en uno para ver resumen.</p>
+                            <h2>🗺️ Mapa global</h2>
+                            <p>${count} proyecto(s) con ubicación. Desde lejos verás banderitas/agrupaciones; al acercar, polígonos. Clic en uno para ver resumen.</p>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <button id="globalMapViewToggleBtn" onclick="toggleGlobalMapView()" style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;" title="Alternar Calles · Satélite · Topografía">
-                                <span id="globalMapViewIcon">🛰️</span> <span id="globalMapViewText">Vista Satelital</span>
-                            </button>
-                            <button onclick="closeGlobalMapModal()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Cerrar">✕ Cerrar</button>
-                        </div>
+                        <button type="button" class="np-admin-map-close" onclick="closeGlobalMapModal()" title="Cerrar" aria-label="Cerrar">×</button>
                     </div>
                     <div id="globalMapContainer" style="flex: 1 1 0; min-height: max(180px, 28vh); border-radius: 0 0 12px 12px; position: relative; background: #0f172a;">
                         <div id="globalMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">
@@ -18749,6 +18804,7 @@
                 globalMapStreetLayer.addTo(globalMapInstance);
                 globalMapBaseView = 'streets';
                 globalMapSatelliteView = false;
+                mountAdminBasemapBar(container, ADMIN_BASEMAP_OPTIONS, 'streets', applyGlobalMapBaseLayer);
                 updateGlobalMapViewButton();
                 addNutriPlantMapBrandLogo(globalMapInstance);
                 wireAdminMapFloatDismissOnMapClick(globalMapInstance, 'globalMapContainer');
@@ -19172,33 +19228,17 @@
             }
             updateGlobalMapViewButton();
         }
+        window.applyGlobalMapBaseLayer = applyGlobalMapBaseLayer;
 
         function toggleGlobalMapView() {
             if (!globalMapInstance || !globalMapStreetLayer || !globalMapSatelliteLayer || !globalMapTopoLayer) return;
-            // Calles → Satélite → Topografía → Calles
             var order = { streets: 'satellite', satellite: 'topo', topo: 'streets' };
             applyGlobalMapBaseLayer(order[globalMapBaseView] || 'satellite');
         }
         window.toggleGlobalMapView = toggleGlobalMapView;
         
         function updateGlobalMapViewButton() {
-            const icon = document.getElementById('globalMapViewIcon');
-            const text = document.getElementById('globalMapViewText');
-            const btn = document.getElementById('globalMapViewToggleBtn');
-            if (!icon || !text) return;
-            if (globalMapBaseView === 'satellite') {
-                icon.textContent = '🗻';
-                text.textContent = 'Vista Topografía';
-                if (btn) btn.title = 'Siguiente: topografía (relieve / curvas)';
-            } else if (globalMapBaseView === 'topo') {
-                icon.textContent = '🗺️';
-                text.textContent = 'Vista Calles';
-                if (btn) btn.title = 'Siguiente: mapa de calles';
-            } else {
-                icon.textContent = '🛰️';
-                text.textContent = 'Vista Satelital';
-                if (btn) btn.title = 'Siguiente: satélite';
-            }
+            syncAdminBasemapChips(document.getElementById('globalMapContainer'), globalMapBaseView || 'streets');
         }
         
         function closeGlobalMapModal() {
@@ -19235,8 +19275,10 @@
         let connMapInstance = null;
         let connMapStreetLayer = null;
         let connMapSatelliteLayer = null;
+        let connMapTopoLayer = null;
         let connMapMarkerCluster = null;
         let connMapSatelliteView = false;
+        let connMapBaseView = 'streets';
         let connMapRawWithCoords = [];
         let connMapUsersById = {};
         let connMapRenderMarkers = null;
@@ -19406,24 +19448,23 @@
                 document.body.appendChild(modal);
             }
             modal.style.zIndex = '56000';
+            ensureAdminMapFloatStyles();
             modal.innerHTML = '<div class="conn-map-modal-panel" style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">' +
                 '<div class="conn-map-modal-header">' +
-                '<div class="conn-map-modal-title"><h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa de conexiones</h2>' +
-                '<p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">' + count + ' conexión(es) con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
+                '<div class="conn-map-modal-title"><h2>🗺️ Mapa de conexiones</h2>' +
+                '<p>' + count + ' conexión(es) con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
                 '<div class="conn-map-modal-toolbar">' +
-                '<select id="connMapModeFilter" onchange="applyConnectionsMapFilters()" class="conn-map-modal-select">' +
+                '<select id="connMapModeFilter" onchange="applyConnectionsMapFilters()" class="np-admin-map-select conn-map-modal-select">' +
                 '<option value="all_history">Todas las visitas</option>' +
-                '<option value="latest_per_user">Ultima ubicacion por usuario</option>' +
+                '<option value="latest_per_user">Última ubicación por usuario</option>' +
                 '</select>' +
-                '<select id="connMapPeriodFilter" onchange="applyConnectionsMapFilters()" class="conn-map-modal-select">' +
-                '<option value="all">Todo el historico</option>' +
+                '<select id="connMapPeriodFilter" onchange="applyConnectionsMapFilters()" class="np-admin-map-select conn-map-modal-select">' +
+                '<option value="all">Todo el histórico</option>' +
                 '<option value="week">Semana actual</option>' +
                 '<option value="month">Mes actual</option>' +
-                '<option value="year">Ano actual</option>' +
+                '<option value="year">Año actual</option>' +
                 '</select>' +
-                '<div class="conn-map-modal-actions">' +
-                '<button type="button" id="connMapViewToggleBtn" onclick="toggleConnectionsMapView()" class="conn-map-btn-sat"><span id="connMapViewIcon">🛰️</span> <span id="connMapViewText">Vista Satelital</span></button>' +
-                '<button type="button" onclick="closeConnectionsMapModal()" class="conn-map-btn-close" title="Cerrar">✕ Cerrar</button></div></div></div>' +
+                '<button type="button" onclick="closeConnectionsMapModal()" class="np-admin-map-close" title="Cerrar" aria-label="Cerrar">×</button></div></div>' +
                 '<div id="connMapSummaryBadge" style="padding: 8px 20px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #334155; background: #f8fafc;"></div>' +
                 '<div id="connMapContainer" style="flex: 1 1 auto; border-radius: 0 0 12px 12px; position: relative;">' +
                 '<div id="connMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">Cargando mapa...</div></div></div>' +
@@ -19433,22 +19474,19 @@
                 '#connMapModal .conn-map-modal-header{padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;flex-direction:column;gap:12px;align-items:stretch;box-sizing:border-box;max-width:100%;flex-shrink:0;}' +
                 '@media (min-width:900px){#connMapModal .conn-map-modal-header{flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 20px;}}' +
                 '#connMapModal .conn-map-modal-title{flex:1 1 260px;min-width:0;max-width:100%;}' +
+                '#connMapModal .conn-map-modal-title h2{margin:0;color:#1e293b;font-size:20px;line-height:1.2;}' +
+                '#connMapModal .conn-map-modal-title p{margin:4px 0 0;color:#64748b;font-size:13px;line-height:1.4;}' +
                 '@media (max-width:899px){#connMapModal .conn-map-modal-title{flex:0 1 auto;flex-basis:auto;}}' +
-                '#connMapModal .conn-map-modal-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;width:100%;max-width:100%;box-sizing:border-box;flex:1 1 280px;min-width:0;}' +
+                '#connMapModal .conn-map-modal-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;max-width:100%;box-sizing:border-box;flex:1 1 280px;min-width:0;}' +
                 '@media (max-width:899px){#connMapModal .conn-map-modal-toolbar{flex:0 1 auto;width:100%;flex-basis:auto;}}' +
                 '@media (min-width:900px){#connMapModal .conn-map-modal-toolbar{width:auto;max-width:100%;justify-content:flex-end;}}' +
                 '#connMapModal #connMapSummaryBadge{flex-shrink:0;}' +
                 '#connMapModal #connMapContainer{flex:1 1 0;min-height:max(180px,28vh);background:#0f172a;}' +
                 '#connMapModal #connMapContainer .leaflet-container{width:100%!important;height:100%!important;background:#0f172a;}' +
-                /* Misma ventanita flotante que Mapa global (no pantalla completa en landscape) */ +
                 '@media (orientation:landscape) and (max-height:900px){#connMapModal{align-items:center;justify-content:center;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));}#connMapModal .conn-map-modal-panel{width:min(96%,1400px)!important;max-width:1400px!important;height:min(94dvh,920px)!important;max-height:94dvh!important;border-radius:12px!important;}#connMapModal .conn-map-modal-header{padding:10px 14px;gap:8px;}#connMapModal .conn-map-modal-title p{margin:2px 0 0!important;}#connMapModal #connMapContainer{min-height:0;flex:1 1 0;}}' +
-                '#connMapModal .conn-map-modal-select{padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:13px;flex:1 1 140px;min-width:0;max-width:100%;box-sizing:border-box;}' +
-                '#connMapModal .conn-map-modal-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;justify-content:stretch;box-sizing:border-box;}' +
-                '@media (min-width:480px){#connMapModal .conn-map-modal-actions{width:auto;flex:1 1 auto;justify-content:flex-end;}}' +
-                '#connMapModal .conn-map-btn-sat{background:#10b981;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;flex:1 1 auto;min-width:0;text-align:center;}' +
-                '#connMapModal .conn-map-btn-close{background:#ef4444;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-size:14px;flex:1 1 auto;min-width:0;text-align:center;}' +
-                '@media (max-width:600px){#connMapModal .conn-map-modal-header{padding:10px 12px;gap:8px;}#connMapModal .conn-map-modal-title{flex:none;}#connMapModal .conn-map-modal-title h2{font-size:18px!important;line-height:1.2;}#connMapModal .conn-map-modal-title p{font-size:12px!important;line-height:1.3;margin-top:2px!important;}#connMapModal .conn-map-modal-toolbar{gap:6px;flex:none;width:100%;}#connMapModal .conn-map-modal-select{flex:1 1 calc(50% - 3px);padding:7px 8px;font-size:12px;}#connMapModal .conn-map-modal-actions{width:100%;gap:6px;flex-wrap:nowrap;}#connMapModal .conn-map-btn-sat,#connMapModal .conn-map-btn-close{padding:8px 10px;font-size:12px;line-height:1.2;flex:1 1 0;}#connMapModal #connMapSummaryBadge{padding:6px 12px;font-size:12px;}}' +
-                '@media (max-width:359px){#connMapModal .conn-map-modal-select{flex:1 1 100%;}#connMapModal .conn-map-modal-actions{flex-wrap:wrap;}#connMapModal .conn-map-btn-sat,#connMapModal .conn-map-btn-close{flex:1 1 100%;}}' +
+                '#connMapModal .conn-map-modal-select{flex:1 1 160px;min-width:0;max-width:100%;box-sizing:border-box;}' +
+                '@media (max-width:600px){#connMapModal .conn-map-modal-header{padding:10px 12px;gap:8px;}#connMapModal .conn-map-modal-title{flex:none;}#connMapModal .conn-map-modal-title h2{font-size:18px!important;line-height:1.2;}#connMapModal .conn-map-modal-title p{font-size:12px!important;line-height:1.3;margin-top:2px!important;}#connMapModal .conn-map-modal-toolbar{gap:6px;flex:none;width:100%;}#connMapModal .conn-map-modal-select{flex:1 1 calc(50% - 24px);}#connMapModal .np-admin-map-close{margin-left:auto;}#connMapModal #connMapSummaryBadge{padding:6px 12px;font-size:12px;}}' +
+                '@media (max-width:359px){#connMapModal .conn-map-modal-select{flex:1 1 100%;}}' +
                 '#connMapContainer .marker-cluster{background:linear-gradient(145deg,#fff 0%,#f1f5f9 100%)!important;border:2px solid #f59e0b!important;border-radius:50%!important;box-shadow:0 4px 14px rgba(0,0,0,0.2)!important;}#connMapContainer .marker-cluster div{background:transparent!important;color:#0f172a!important;font-weight:800!important;font-size:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;line-height:1!important;padding:0!important;margin:0!important;}#connMapContainer .marker-cluster span{display:block!important;line-height:1!important;}.conn-map-num-marker{background:none!important;border:none!important;}.conn-map-num-marker .conn-map-num{display:flex!important;align-items:center!important;justify-content:center!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;background:linear-gradient(145deg,#3b82f6 0%,#2563eb 100%)!important;color:#fff!important;font-weight:800!important;font-size:15px!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;line-height:1!important;}' +
                 '#connMapContainer .leaflet-top.leaflet-left{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:flex-start!important;gap:8px;}' +
                 '#connMapContainer .np-map-brand-logo{margin:10px 0 0 0!important;padding:6px 10px;background:rgba(255,255,255,0.96);border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,0.35);border:none;line-height:0;}' +
@@ -19496,10 +19534,18 @@
                     noWrap: true,
                     bounds: worldBounds
                 });
+                connMapTopoLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri · Topografía',
+                    maxZoom: 19,
+                    noWrap: true,
+                    bounds: worldBounds
+                });
                 connMapStreetLayer.addTo(connMapInstance);
                 connMapSatelliteView = false;
-                updateConnMapViewButton();
+                connMapBaseView = 'streets';
                 ensureAdminMapFloatStyles();
+                mountAdminBasemapBar(container, ADMIN_BASEMAP_OPTIONS, 'streets', setConnectionsMapBasemap);
+                updateConnMapViewButton();
                 addNutriPlantMapBrandLogo(connMapInstance);
                 wireAdminMapFloatDismissOnMapClick(connMapInstance, 'connMapContainer');
                 var allBounds = [];
@@ -19654,28 +19700,32 @@
         }
         window.applyConnectionsMapFilters = applyConnectionsMapFilters;
 
-        function toggleConnectionsMapView() {
-            if (!connMapInstance || !connMapStreetLayer || !connMapSatelliteLayer) return;
-            if (connMapSatelliteView) {
-                connMapInstance.removeLayer(connMapSatelliteLayer);
-                connMapStreetLayer.addTo(connMapInstance);
-                connMapSatelliteView = false;
-            } else {
-                connMapInstance.removeLayer(connMapStreetLayer);
-                connMapSatelliteLayer.addTo(connMapInstance);
-                connMapSatelliteView = true;
-            }
+        function setConnectionsMapBasemap(key) {
+            if (!connMapInstance || !connMapStreetLayer || !connMapSatelliteLayer || !connMapTopoLayer) return;
+            var layers = {
+                streets: connMapStreetLayer,
+                satellite: connMapSatelliteLayer,
+                topo: connMapTopoLayer
+            };
+            Object.keys(layers).forEach(function (k) {
+                try { if (connMapInstance.hasLayer(layers[k])) connMapInstance.removeLayer(layers[k]); } catch (e) {}
+            });
+            var next = layers[key] ? key : 'streets';
+            layers[next].addTo(connMapInstance);
+            connMapBaseView = next;
+            connMapSatelliteView = next === 'satellite';
             updateConnMapViewButton();
+        }
+        window.setConnectionsMapBasemap = setConnectionsMapBasemap;
+
+        function toggleConnectionsMapView() {
+            var order = { streets: 'satellite', satellite: 'topo', topo: 'streets' };
+            setConnectionsMapBasemap(order[connMapBaseView] || 'satellite');
         }
         window.toggleConnectionsMapView = toggleConnectionsMapView;
 
         function updateConnMapViewButton() {
-            var icon = document.getElementById('connMapViewIcon');
-            var text = document.getElementById('connMapViewText');
-            if (icon && text) {
-                icon.textContent = connMapSatelliteView ? '🗺️' : '🛰️';
-                text.textContent = connMapSatelliteView ? 'Vista Normal' : 'Vista Satelital';
-            }
+            syncAdminBasemapChips(document.getElementById('connMapContainer'), connMapBaseView || 'streets');
         }
 
         function closeConnectionsMapModal() {
@@ -19687,12 +19737,16 @@
                 connMapMarkerCluster = null;
                 if (connMapStreetLayer) try { connMapInstance.removeLayer(connMapStreetLayer); } catch (e) {};
                 if (connMapSatelliteLayer) try { connMapInstance.removeLayer(connMapSatelliteLayer); } catch (e) {};
+                if (connMapTopoLayer) try { connMapInstance.removeLayer(connMapTopoLayer); } catch (e) {};
                 connMapInstance.remove();
                 var container = document.getElementById('connMapContainer');
                 if (container) container.innerHTML = '';
                 connMapInstance = null;
                 connMapStreetLayer = null;
                 connMapSatelliteLayer = null;
+                connMapTopoLayer = null;
+                connMapBaseView = 'streets';
+                connMapSatelliteView = false;
             }
         }
         window.closeConnectionsMapModal = closeConnectionsMapModal;

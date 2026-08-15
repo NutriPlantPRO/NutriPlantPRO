@@ -774,6 +774,9 @@ function diffPct(val, opt) {
 function soilKgHaFromReport(a) {
   const fert = a.fertility || {};
   const ideal = fert.ideal || {};
+  const cycleFactors = fert.cycleFactorPct || {};
+  const cycleManual = fert.cycleFactorManual || {};
+  const cycleLocked = new Set(['mo', 'na', 'al']);
   const bulk = numOrNull(a.physical && a.physical.bulkDensity) || 1;
   const depth = numOrNull(fert.depthCm) || 20;
   const reach = numOrNull(fert.reachPct) || 100;
@@ -785,15 +788,28 @@ function soilKgHaFromReport(a) {
     const idealVal = numOrNull(ideal[key]);
     if (lab == null) return;
     const diff = idealVal == null ? lab : lab - idealVal;
+    const sufficiencyPct = idealVal != null && idealVal !== 0
+      ? Math.round((lab / idealVal) * 1000) / 10
+      : null;
+    const savedCycleFactor = numOrNull(cycleFactors[key]);
+    const cycleFactorPct = cycleLocked.has(key) || sufficiencyPct == null
+      ? null
+      : (cycleManual[key] && savedCycleFactor != null
+        ? Math.max(0, Math.min(100, savedCycleFactor))
+        : (sufficiencyPct >= 50 ? 10 : 5));
+    const kgHaAdjustment = Math.round(diff * factor * 100) / 100;
     out[key] = {
       lab_ppm: lab,
       ideal_ppm: idealVal,
       diff_ppm: idealVal == null ? null : Math.round((lab - idealVal) * 10) / 10,
-      kg_ha_adjustment: Math.round(diff * factor * 100) / 100
+      sufficiency_pct: sufficiencyPct,
+      kg_ha_adjustment: kgHaAdjustment,
+      cycle_factor_pct: cycleFactorPct,
+      cycle_considered_kg_ha: cycleFactorPct == null ? null : Math.round(kgHaAdjustment * cycleFactorPct) / 100
     };
   });
   return {
-    factor_formula: 'kg/ha = (lab − ideal) × 0.1 × profundidad_cm × densidad_aparente × (suelo_explorado_% / 100)',
+    factor_formula: 'kg/ha = (lab − ideal) × 0.1 × profundidad_cm × densidad_aparente × (suelo_explorado_% / 100); suficiencia = lab / ideal × 100; diferencia_considerada = kg/ha × factor_ciclo / 100',
     depth_cm: depth,
     bulk_density_g_cm3: bulk,
     root_reach_pct: reach,

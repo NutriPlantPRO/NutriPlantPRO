@@ -36,7 +36,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=46" />
+  <link rel="stylesheet" href="auth.css?v=47" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -920,14 +920,20 @@
     
     .calculator-btn .button-text {
       flex: 1;
-      text-align: center;
+      text-align: left;
       line-height: 1.3;
       min-width: 0;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
-    /* En ventana extendida: texto en un solo renglón */
-    @media (min-width: 520px) {
+    /* Escritorio ancho: cabe en un renglón */
+    @media (min-width: 1280px) {
       .calculator-btn .button-text {
         white-space: nowrap;
+        text-align: center;
+        overflow-wrap: normal;
+        word-break: normal;
       }
     }
     
@@ -1090,6 +1096,49 @@
       }
       .modal-tool-iframe-fit iframe {
         min-height: 280px;
+      }
+    }
+
+    /* Diagnóstico de agua: en cel/tablet usa casi toda la pantalla (evita el tope de 800px). */
+    @media (max-width: 1100px), (hover: none) and (pointer: coarse) {
+      #waterHardnessCalculatorModal.modal-overlay {
+        padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        box-sizing: border-box;
+      }
+      #waterHardnessCalculatorModal .modal,
+      #waterHardnessCalculatorModal .modal-water-hardness,
+      #waterHardnessCalculatorModal .modal-tool-iframe-fit {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        border-radius: 10px;
+      }
+      #waterHardnessCalculatorModal .modal-header {
+        padding: 10px 12px;
+        flex-shrink: 0;
+      }
+      #waterHardnessCalculatorModal .modal-title {
+        font-size: 1.05rem;
+        line-height: 1.25;
+      }
+      #waterHardnessCalculatorModal .modal-body,
+      #waterHardnessCalculatorModal .modal-tool-iframe-fit .modal-body {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        height: auto !important;
+      }
+      #waterHardnessCalculatorModal iframe {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
       }
     }
 
@@ -2553,7 +2602,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260801c" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260815a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>
@@ -4382,7 +4431,7 @@
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260801ah"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260815a"></script>
   <script src="apply-no-traducir.js"></script>
   <script>
     (function initLoginSocialPanel() {
