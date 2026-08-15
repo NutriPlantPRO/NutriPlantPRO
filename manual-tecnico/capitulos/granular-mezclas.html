@@ -94,8 +94,11 @@
     </div>
     <p><strong>Extracción total</strong> — demanda del cultivo al rendimiento objetivo (base editable por cultivo).</p>
     <p><strong>Ajuste por niveles en suelo</strong> — kg/ha editable por nutriente. Por defecto igual a la
-      extracción total; el agrónomo <strong>sube o baja</strong> kg según reservas o déficit del suelo
-      (criterio técnico, no obligatorio desde el reporte de laboratorio). Referencia en
+      extracción total. Junto al título hay un desplegable <strong>Traer de análisis</strong> (independiente
+      del de Fertirriego): si eliges un reporte de <strong>Análisis → Suelo</strong>, NutriPlant toma la
+      <em>diferencia considerada del ciclo</em> y corrige el ajuste: exceso se resta como aporte del suelo;
+      déficit se suma para corregir. Si no eliges análisis, el valor se queda como está. Al editar a mano
+      se desvincula el análisis. Referencia en
       <a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo: fertilidad y kg/ha</a>.</p>
     <p><strong>Eficiencia (%)</strong> — fracción esperada de aprovechamiento del fertilizante aplicado
       al suelo. En granular los valores predeterminados son más conservadores que en fertirriego
@@ -209,8 +212,11 @@
     </div>
     <p><strong>Total extraction</strong> — crop demand at the target yield (editable base per crop).</p>
     <p><strong>Adjustment by soil levels</strong> — editable kg/ha per nutrient. By default equal to
-      total extraction; the agronomist <strong>raises or lowers</strong> kg according to soil reserves or deficit
-      (technical judgment, not mandatory from the laboratory report). Reference in
+      total extraction. Next to the title there is a <strong>Bring from analysis</strong> dropdown
+      (independent from fertigation): if you pick a report from <strong>Analysis → Soil</strong>,
+      NutriPlant uses the <em>cycle considered difference</em> and corrects the adjustment: surplus
+      is subtracted as soil supply; deficit is added. If you do not pick an analysis, the value stays
+      as is. Editing by hand unlinks the analysis. Reference in
       <a href="analisis-suelo-fertilidad-kgha.html">Soil analysis: fertility and kg/ha</a>.</p>
     <p><strong>Efficiency (%)</strong> — expected fraction of applied fertilizer taken up
       from the soil. In granular, default values are more conservative than in fertigation

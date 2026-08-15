@@ -16380,6 +16380,9 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           color: #64748b;
           margin: 8px 0;
         }
+        .soil-sign-legend { font-weight: 700; font-size: 10px; }
+        .soil-sign-deficit { color: #9f1239 !important; font-weight: 700; }
+        .soil-sign-excess { color: #166534 !important; font-weight: 700; }
         .admin-analysis-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -23026,7 +23029,7 @@ function createSoilAnalysisTabHTML() {
                         <td id="soil-suff-al">—</td>
                       </tr>
                       <tr class="soil-kgha-row">
-                        <td><strong title="${dashboardT('analysis.kgha_diff_title', 'Diferencia en kg/ha: lo que hay (laboratorio) menos lo ideal. Negativo = falta aportar; positivo = exceso.')}" data-i18n-title="analysis.kgha_diff_title">kg/ha (diferencia)</strong><br><span style="font-weight:normal; font-size:10px; color:#64748b;"><span style="color:#0369a1;">−</span> falta, <span style="color:#0369a1;">+</span> exceso</span></td>
+                        <td><strong title="${dashboardT('analysis.kgha_diff_title', 'Diferencia en kg/ha: lo que hay (laboratorio) menos lo ideal. Negativo = falta aportar; positivo = exceso.')}" data-i18n-title="analysis.kgha_diff_title">kg/ha (diferencia)</strong><br><span class="soil-sign-legend"><span class="soil-sign-deficit">− falta</span>, <span class="soil-sign-excess">+ exceso</span></span></td>
                         <td id="soil-kgha-mo"></td>
                         <td id="soil-kgha-nNo3"></td>
                         <td id="soil-kgha-p"></td>
@@ -23078,7 +23081,7 @@ function createSoilAnalysisTabHTML() {
                           <td class="soil-cycle-locked">—</td>
                         </tr>
                         <tr class="soil-cycle-considered-row">
-                          <td><strong>Diferencia considerada (kg/ha)</strong><br><span>− corregir durante el ciclo · + aporte potencial del suelo</span></td>
+                          <td><strong>Diferencia considerada (kg/ha)</strong><br><span class="soil-sign-legend"><span class="soil-sign-deficit">− corregir durante el ciclo</span> · <span class="soil-sign-excess">+ aporte potencial del suelo</span></span></td>
                           <td>—</td><td id="soil-cycle-considered-nNo3">—</td><td id="soil-cycle-considered-p">—</td><td id="soil-cycle-considered-k">—</td><td id="soil-cycle-considered-ca">—</td><td id="soil-cycle-considered-mg">—</td><td>—</td><td id="soil-cycle-considered-s">—</td><td id="soil-cycle-considered-fe">—</td><td id="soil-cycle-considered-mn">—</td><td id="soil-cycle-considered-b">—</td><td id="soil-cycle-considered-zn">—</td><td id="soil-cycle-considered-cu">—</td><td id="soil-cycle-considered-moly">—</td><td>—</td>
                         </tr>
                       </tbody>
@@ -23238,6 +23241,25 @@ window.saveSoilCycleFactor = function saveSoilCycleFactor(field, value) {
   window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
 };
 
+function setSoilSignedDiffCell(el, kgHa) {
+  if (!el) return;
+  el.classList.remove('soil-sign-deficit', 'soil-sign-excess');
+  if (kgHa == null || isNaN(kgHa)) {
+    el.textContent = '—';
+    return;
+  }
+  var shown = (window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function')
+    ? Number(window.NpAnalysisUI.fromSI(kgHa, 'dose_mass_area'))
+    : Number(kgHa);
+  if (isNaN(shown)) {
+    el.textContent = '—';
+    return;
+  }
+  el.textContent = (shown > 0 ? '+' : '') + shown.toFixed(2);
+  if (shown < 0) el.classList.add('soil-sign-deficit');
+  else if (shown > 0) el.classList.add('soil-sign-excess');
+}
+
 window.updateSoilFertilityKgHa = function updateSoilFertilityKgHa() {
   var wrap = document.getElementById('soil-analysis-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -23268,36 +23290,25 @@ window.updateSoilFertilityKgHa = function updateSoilFertilityKgHa() {
     var sufficiency = (!isNaN(lab) && !isNaN(idealVal) && idealVal !== 0) ? (lab / idealVal) * 100 : NaN;
     if (suffEl) suffEl.textContent = isNaN(sufficiency) ? '—' : sufficiency.toFixed(1) + ' %';
     if (isNaN(lab)) {
-      if (el) el.textContent = '—';
+      setSoilSignedDiffCell(el, NaN);
       if (factorInput) factorInput.value = '';
-      if (consideredEl) consideredEl.textContent = '—';
+      setSoilSignedDiffCell(consideredEl, NaN);
       return;
     }
     // kg/ha = (nivel lab − ideal) × factor → positivo = exceso, negativo = falta
     var diff = isNaN(idealVal) ? lab : (lab - idealVal);
     var kgHa = diff * factor;
-    if (el && window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function') {
-      var shown = window.NpAnalysisUI.fromSI(kgHa, 'dose_mass_area');
-      el.textContent = Number(shown).toFixed(2);
-    } else if (el) {
-      el.textContent = kgHa.toFixed(2);
-    }
+    setSoilSignedDiffCell(el, kgHa);
     if (cycleLocked[key]) return;
     var savedFactor = parseFloat(cycleFactors[key]);
     var cyclePct = cycleManual[key] && !isNaN(savedFactor)
       ? Math.max(0, Math.min(100, savedFactor))
       : (isNaN(sufficiency) ? NaN : (sufficiency >= 50 ? 10 : 5));
     if (factorInput) factorInput.value = isNaN(cyclePct) ? '' : cyclePct;
-    if (consideredEl) {
-      if (isNaN(cyclePct) || isNaN(idealVal)) {
-        consideredEl.textContent = '—';
-      } else {
-        var consideredKgHa = kgHa * (cyclePct / 100);
-        var consideredShown = window.NpAnalysisUI && typeof window.NpAnalysisUI.fromSI === 'function'
-          ? window.NpAnalysisUI.fromSI(consideredKgHa, 'dose_mass_area')
-          : consideredKgHa;
-        consideredEl.textContent = Number(consideredShown).toFixed(2);
-      }
+    if (isNaN(cyclePct) || isNaN(idealVal)) {
+      setSoilSignedDiffCell(consideredEl, NaN);
+    } else {
+      setSoilSignedDiffCell(consideredEl, kgHa * (cyclePct / 100));
     }
   });
   analysisApplyUnits(document.getElementById('soil-analysis-tab-container'));

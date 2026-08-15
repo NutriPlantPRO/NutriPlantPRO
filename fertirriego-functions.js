@@ -148,6 +148,8 @@ let userIsChangingValue = false; // Bandera para evitar que se restauren valores
 let savedFertiAdjustments = null;
 let savedFertiEfficiencies = null;
 let savedFertiAdjustmentsAuto = true;
+let savedFertiSoilAnalysisId = '';
+let isApplyingFertiSoilAdj = false;
 let lastFertiCrop = null;
 let lastFertiTargetYield = null;
 let fertirriegoHydrationState = {
@@ -1045,10 +1047,14 @@ calculateNutrientRequirements = function(opts) {
         const adjValue = parseFloat(adjustment[nutrient]);
         const effValue = efficiency[nutrient] / 100;
         realRequirement[nutrient] = (adjValue / effValue).toFixed(2);
-
-        // Log reducido - solo para debugging si es necesario
-        // console.log(`📊 Fertirriego ${nutrient}: adj=${adjustment[nutrient]}, eff=${efficiency[nutrient]}, req=${realRequirement[nutrient]}`);
       }
+    });
+    fertiOverlaySoilAdjustments(totalExtraction, adjustment);
+    Object.keys(adjustment).forEach(function (nutrient) {
+      if (!nutrients.includes(nutrient)) return;
+      var adjValue = parseFloat(adjustment[nutrient]);
+      var effValue = (efficiency[nutrient] || 100) / 100;
+      realRequirement[nutrient] = (adjValue / effValue).toFixed(2);
     });
     
     // Logs detallados comentados para reducir ruido en consola
@@ -1142,6 +1148,186 @@ function convertFromElementalToOxide(nutrient, elementalValue) {
       return numValue;
   }
 }
+
+var FERTI_SOIL_ADJ_MAP = {
+  N: 'nNo3', P2O5: 'p', K2O: 'k', CaO: 'ca', MgO: 'mg', SO4: 's',
+  Fe: 'fe', Mn: 'mn', B: 'b', Zn: 'zn', Cu: 'cu', Mo: 'moly'
+};
+
+function fertiEscapeSelect(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fertiGetProjectSoilAnalyses() {
+  try {
+    if (typeof window.getSoilAnalyses === 'function') {
+      var list = window.getSoilAnalyses();
+      if (Array.isArray(list)) return list;
+    }
+  } catch (e) {}
+  try {
+    if (window.currentProject && Array.isArray(window.currentProject.soilAnalyses)) {
+      return window.currentProject.soilAnalyses;
+    }
+  } catch (e2) {}
+  return [];
+}
+
+function fertiFindSoilAnalysis(id) {
+  if (!id) return null;
+  return fertiGetProjectSoilAnalyses().find(function (a) { return a && a.id === id; }) || null;
+}
+
+function fertiSoilAnalysisLabel(analysis, index) {
+  var title = (analysis && analysis.title && String(analysis.title).trim()) || '';
+  var date = (analysis && analysis.date && String(analysis.date).trim()) || '';
+  if (title && date) return title + ' · ' + date;
+  if (title) return title;
+  if (date) return fertiT('soil_analysis_label', 'Análisis') + ' · ' + date;
+  return fertiT('soil_analysis_generic', 'Análisis de suelo') + ' #' + (index + 1);
+}
+
+function fertiSoilConsideredOxideKgHa(analysis) {
+  if (!analysis || !analysis.fertility) return null;
+  var fert = analysis.fertility;
+  var ideal = (fert.ideal && typeof fert.ideal === 'object') ? fert.ideal : {};
+  var bulk = parseFloat(analysis.physical && analysis.physical.bulkDensity) || 0;
+  if (bulk <= 0) bulk = 1;
+  var depth = parseFloat(fert.depthCm) || 20;
+  var reach = parseFloat(fert.reachPct) || 100;
+  var volFactor = 0.1 * depth * bulk * (reach / 100);
+  var cycleFactors = (fert.cycleFactorPct && typeof fert.cycleFactorPct === 'object') ? fert.cycleFactorPct : {};
+  var cycleManual = (fert.cycleFactorManual && typeof fert.cycleFactorManual === 'object') ? fert.cycleFactorManual : {};
+  var out = {};
+  Object.keys(FERTI_SOIL_ADJ_MAP).forEach(function (nutrient) {
+    var key = FERTI_SOIL_ADJ_MAP[nutrient];
+    var lab = parseFloat(fert[key]);
+    var idealVal = parseFloat(ideal[key]);
+    if (!isFinite(lab) || !isFinite(idealVal) || idealVal === 0) {
+      out[nutrient] = null;
+      return;
+    }
+    var kgHa = (lab - idealVal) * volFactor;
+    var sufficiency = (lab / idealVal) * 100;
+    var savedFactor = parseFloat(cycleFactors[key]);
+    var cyclePct = cycleManual[key] && isFinite(savedFactor)
+      ? Math.max(0, Math.min(100, savedFactor))
+      : (sufficiency >= 50 ? 10 : 5);
+    var consideredElem = kgHa * (cyclePct / 100);
+    var consideredOxide = convertFromElementalToOxide(nutrient, consideredElem);
+    out[nutrient] = isFinite(consideredOxide) ? consideredOxide : null;
+  });
+  return out;
+}
+
+function fertiOverlaySoilAdjustments(totalExtraction, adjustment) {
+  if (!savedFertiSoilAnalysisId) return adjustment;
+  var analysis = fertiFindSoilAnalysis(savedFertiSoilAnalysisId);
+  if (!analysis) {
+    savedFertiSoilAnalysisId = '';
+    return adjustment;
+  }
+  var considered = fertiSoilConsideredOxideKgHa(analysis);
+  if (!considered) return adjustment;
+  Object.keys(considered).forEach(function (n) {
+    if (considered[n] == null || !isFinite(considered[n])) return;
+    var total = parseFloat(totalExtraction && totalExtraction[n]) || 0;
+    adjustment[n] = Math.max(0, total - considered[n]);
+  });
+  savedFertiAdjustmentsAuto = false;
+  return adjustment;
+}
+
+function fertiRefreshSoilAnalysisSelect() {
+  var select = document.getElementById('fertiImportSoilSelect');
+  if (!select) return;
+  var list = fertiGetProjectSoilAnalyses();
+  var placeholder = fertiT('select_soil_analysis', 'Seleccionar análisis…');
+  var html = '<option value="">' + fertiEscapeSelect(placeholder) + '</option>';
+  if (!list.length) {
+    html += '<option value="" disabled>' + fertiEscapeSelect(fertiT('no_soil_analyses', 'Sin análisis de suelo en este proyecto')) + '</option>';
+  } else {
+    html += list.map(function (analysis, index) {
+      var id = fertiEscapeSelect(analysis && analysis.id ? analysis.id : ('idx_' + index));
+      return '<option value="' + id + '">' + fertiEscapeSelect(fertiSoilAnalysisLabel(analysis, index)) + '</option>';
+    }).join('');
+  }
+  select.innerHTML = html;
+  if (savedFertiSoilAnalysisId && list.some(function (a) { return a && a.id === savedFertiSoilAnalysisId; })) {
+    select.value = savedFertiSoilAnalysisId;
+  } else {
+    select.value = '';
+    if (savedFertiSoilAnalysisId && !list.some(function (a) { return a && a.id === savedFertiSoilAnalysisId; })) {
+      savedFertiSoilAnalysisId = '';
+    }
+  }
+  select.classList.toggle('is-linked', !!select.value);
+  var wrap = select.closest('.ferti-soil-adj-wrap');
+  var labelEl = wrap && wrap.querySelector('.hydro-import-water-label');
+  if (labelEl) {
+    labelEl.textContent = select.value
+      ? fertiT('linked_soil_analysis', 'Análisis vinculado')
+      : fertiT('bring_from_soil_analysis', 'Traer de análisis');
+  }
+}
+
+function fertiWriteAdjOxide(nutrient, oxideKgHa) {
+  var oxide = Math.max(0, parseFloat(oxideKgHa) || 0);
+  var adjInput = document.getElementById('ferti-adj-' + nutrient);
+  if (adjInput) {
+    var displayValue = fertiAdjInputFromSI(getConvertedValue(nutrient, oxide), nutrient);
+    var oldOnChange = adjInput.getAttribute('onchange');
+    adjInput.removeAttribute('onchange');
+    adjInput.value = displayValue;
+    if (oldOnChange) adjInput.setAttribute('onchange', oldOnChange);
+  }
+  if (!savedFertiAdjustments) savedFertiAdjustments = {};
+  savedFertiAdjustments[nutrient] = oxide;
+  var efficiencyInput = document.getElementById('ferti-eff-' + nutrient);
+  var efficiencyValue = efficiencyInput ? (parseFloat(efficiencyInput.value) || 1) : 1;
+  var reqCell = document.getElementById('ferti-req-' + nutrient);
+  if (reqCell) {
+    var realRequirement = oxide / (efficiencyValue / 100);
+    reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area', fertiAdjDisplayDigits(nutrient) === 1 ? 1 : 2);
+  }
+}
+
+window.fertiOnSoilAnalysisSelect = function fertiOnSoilAnalysisSelect(analysisId) {
+  savedFertiSoilAnalysisId = analysisId || '';
+  var nutrients = Object.keys(FERTI_SOIL_ADJ_MAP);
+  var totals = {};
+  nutrients.concat(['SiO2']).forEach(function (n) {
+    var cell = document.getElementById('extraccion-total-' + n);
+    var shown = cell ? parseFloat(String(cell.textContent || '').replace(',', '.')) : NaN;
+    var si = isFinite(shown) ? fertiInputToSI(shown, 'dose_mass_area') : 0;
+    totals[n] = isFertirriegoElementalMode ? convertFromElementalToOxide(n, si) : si;
+  });
+  isApplyingFertiSoilAdj = true;
+  try {
+    if (!savedFertiSoilAnalysisId) {
+      savedFertiAdjustmentsAuto = true;
+      nutrients.forEach(function (n) { fertiWriteAdjOxide(n, totals[n] || 0); });
+    } else {
+      var adjustment = {};
+      nutrients.forEach(function (n) { adjustment[n] = totals[n] || 0; });
+      fertiOverlaySoilAdjustments(totals, adjustment);
+      nutrients.forEach(function (n) { fertiWriteAdjOxide(n, adjustment[n]); });
+    }
+  } finally {
+    isApplyingFertiSoilAdj = false;
+  }
+  fertiRefreshSoilAnalysisSelect();
+  try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch (e) {}
+  if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
+    window.saveFertirriegoRequirementsImmediate({ force: true });
+  } else if (typeof window.saveFertirriegoRequirements === 'function') {
+    window.saveFertirriegoRequirements();
+  }
+};
 
 // Función para renderizar la tabla
 renderNutrientTable = function(extraction, totalExtraction, adjustment, efficiency, realRequirement, targetYield) {
@@ -1237,7 +1423,15 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
         
         <!-- Fila 3: Ajuste por niveles en suelo -->
         <tr>
-          <td><strong>${fertiT('soil_adjustment', 'Ajuste por niveles')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong></td>
+          <td>
+            <strong>${fertiT('soil_adjustment', 'Ajuste por niveles')}<br>(${fertiUnit('dose_mass_area', 'kg/ha')})</strong>
+            <label class="hydro-import-water-wrap ferti-soil-adj-wrap" for="fertiImportSoilSelect">
+              <span class="hydro-import-water-label">${fertiT('bring_from_soil_analysis', 'Traer de análisis')}</span>
+              <select id="fertiImportSoilSelect" class="hydro-input hydro-import-water-select" title="${fertiT('bring_from_soil_title', 'Elige un análisis de suelo: se usa la diferencia considerada del ciclo para ajustar el requerimiento. Si no eliges uno, se mantiene el valor actual.')}" onchange="window.fertiOnSoilAnalysisSelect && window.fertiOnSoilAnalysisSelect(this.value)">
+                <option value="">${fertiT('select_soil_analysis', 'Seleccionar análisis…')}</option>
+              </select>
+            </label>
+          </td>
           ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${fertiAdjInputFromSI(getConvertedValue(n, adjustment[n]), n)}" step="${fertiAdjStep(n)}" onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`).join('')}
         </tr>
         
@@ -1439,6 +1633,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
   
   // Iniciar aplicación de valores
   setTimeout(applyValues, 50);
+  setTimeout(function () { fertiRefreshSoilAnalysisSelect(); }, 60);
   
   // Actualizar el resumen del programa con los requerimientos actuales
   try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch {}
@@ -1506,19 +1701,25 @@ updateExtractionPerTon = function(nutrient, value) {
     // Actualizar el ajuste (por defecto igual a extracción total)
     const adjInput = document.getElementById(`ferti-adj-${nutrient}`);
     if (adjInput) {
-      // Mostrar en el formato actual (elemental u óxido)
-      const shownAdjustment = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
-      adjInput.value = fertiAdjInputFromSI(shownAdjustment, nutrient);
-      
-      // Recalcular requerimiento real - SIEMPRE usar valores en óxido
-      const efficiencyValue = parseFloat(document.getElementById(`ferti-eff-${nutrient}`).value) || 1;
-      const realRequirement = (parseFloat(totalExtraction) / (efficiencyValue / 100)).toFixed(2);
-      console.log('📊 Requerimiento real calculado:', realRequirement);
-      
-      const reqCell = document.getElementById(`ferti-req-${nutrient}`);
-      if (reqCell) {
-        const shownRequirement = isFertirriegoElementalMode ? getConvertedValue(nutrient, realRequirement) : realRequirement;
-        reqCell.textContent = fertiResultFromSI(shownRequirement, 'dose_mass_area');
+      if (savedFertiSoilAnalysisId && FERTI_SOIL_ADJ_MAP[nutrient]) {
+        var linkedAdj = {};
+        linkedAdj[nutrient] = parseFloat(totalExtraction);
+        var linkedTotal = {};
+        linkedTotal[nutrient] = parseFloat(totalExtraction);
+        fertiOverlaySoilAdjustments(linkedTotal, linkedAdj);
+        isApplyingFertiSoilAdj = true;
+        try { fertiWriteAdjOxide(nutrient, linkedAdj[nutrient]); }
+        finally { isApplyingFertiSoilAdj = false; }
+      } else {
+        const shownAdjustment = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
+        adjInput.value = fertiAdjInputFromSI(shownAdjustment, nutrient);
+        const efficiencyValue = parseFloat(document.getElementById(`ferti-eff-${nutrient}`).value) || 1;
+        const realRequirement = (parseFloat(totalExtraction) / (efficiencyValue / 100)).toFixed(2);
+        const reqCell = document.getElementById(`ferti-req-${nutrient}`);
+        if (reqCell) {
+          const shownRequirement = isFertirriegoElementalMode ? getConvertedValue(nutrient, realRequirement) : realRequirement;
+          reqCell.textContent = fertiResultFromSI(shownRequirement, 'dose_mass_area');
+        }
       }
       try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch {}
     }
@@ -1553,6 +1754,10 @@ updateAdjustment = function(nutrient, value) {
       return;
     }
     console.log('🔄 updateAdjustment (Fertirriego) llamado:', { nutrient, value });
+    if (!isApplyingFertiSoilAdj) {
+      savedFertiSoilAnalysisId = '';
+      fertiRefreshSoilAnalysisSelect();
+    }
     savedFertiAdjustmentsAuto = false;
     
     const efficiencyInput = document.getElementById(`ferti-eff-${nutrient}`);
@@ -2096,6 +2301,7 @@ function saveFertirriegoRequirements(options = {}) {
       adjustment, 
       efficiency, 
       adjustmentsAuto: savedFertiAdjustmentsAuto === true,
+      soilAnalysisId: savedFertiSoilAnalysisId || '',
       isElementalMode, 
       customCrops, 
       extractionOverrides, 
@@ -2479,6 +2685,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     savedFertiAdjustments = null;
     savedFertiEfficiencies = null;
     savedFertiAdjustmentsAuto = true;
+    savedFertiSoilAnalysisId = '';
     lastFertiCrop = null;
     lastFertiTargetYield = null;
     if (typeof window !== 'undefined') {
@@ -2888,6 +3095,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     });
     
     if (data) {
+      savedFertiSoilAnalysisId = (data.soilAnalysisId && String(data.soilAnalysisId)) || '';
       if (typeof data.adjustmentsAuto === 'boolean') {
         savedFertiAdjustmentsAuto = data.adjustmentsAuto;
       } else if (data.cropType && data.targetYield != null) {

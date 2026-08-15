@@ -5,6 +5,13 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-08-15 — Traer de análisis de suelo en Fertirriego y Granular
+
+### Actualizado
+
+- **Fertirriego y Nutrición granular → Requerimiento:** desplegable **Traer de análisis** en Ajuste por niveles en suelo. Independientes entre sí. Fórmula: ajuste = max(0, extracción total − diferencia considerada del ciclo). Editar a mano desvincula.
+- Archivos: `programa-fertirriego-etapas.html`, `granular-mezclas.html`, `analisis-suelo-fertilidad-kgha.html`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`.
+
 ## 2026-08-07 — Hidroponía ácido/auto-cálculo + costos · Knowledge GPT v2026.08.7
 
 ### Actualizado

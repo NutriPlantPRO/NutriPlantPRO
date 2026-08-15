@@ -8084,9 +8084,24 @@ html.embed-login body {
   color: #0369a1;
   font-size: 12px;
   padding: 10px;
-  max-width: 180px;
+  max-width: 220px;
   white-space: normal;
   line-height: 1.4;
+}
+.ferti-soil-adj-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 8px;
+  max-width: 100%;
+}
+.ferti-soil-adj-wrap .hydro-import-water-select {
+  min-width: 0;
+  width: 100%;
+  max-width: 190px;
+  padding: 5px 8px;
+  font-size: 11px;
 }
 
 .fertirriego-input {
@@ -8854,6 +8869,14 @@ html.embed-login body {
 .soil-fertility-table thead .soil-fertility-p-method-header option { color: #0f172a; }
 .soil-sufficiency-row td { background: #f0f9ff; color: #075985; font-size: 12px; font-weight: 600; }
 .soil-kgha-row td { background: #f8fafc; color: #475569; font-size: 12px; border-top: 2px solid #0369a1; }
+.soil-sign-legend {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.soil-sign-deficit { color: #9f1239 !important; font-weight: 700; }
+.soil-sign-excess { color: #166534 !important; font-weight: 700; }
 .soil-cycle-adjustment {
   margin-top: 14px;
   padding: 12px;

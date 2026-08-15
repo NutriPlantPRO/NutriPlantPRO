@@ -149,7 +149,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/programa-fertirriego-etapas.html · Requerimiento → programa semanal/mensual → aporte agua N-NO₃ → gráficas. Lámina m³/ha.
 
-**Aporte por agua (UI):** etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir un reporte Análisis → Agua se cargan kg/ha). Sin reportes: «Sin análisis de agua en este proyecto».
+**Aporte por agua (UI):** etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir un reporte Análisis → Agua se cargan kg/ha). Sin reportes: «Sin análisis de agua en este proyecto». Independiente del ajuste por suelo.
+
+**Ajuste por niveles en suelo (UI):** etiqueta «Traer de análisis» + desplegable (reportes Análisis → Suelo). Independiente del agua y de Nutrición granular. Si eliges un reporte: ajuste = max(0, extracción total − diferencia considerada del ciclo). Si no eliges, se queda como extracción total o lo editado. Editar a mano desvincula.
 
 **Costos del programa (USD/ha):** precio canónico **USD/t métrica** por material (`NpFertilizerPrice`; UI métrico USD/t · US customary USD/ton corta). Por columna de fertilizante: kg producto/ha = suma de dosis en el ciclo (si unidad L: L/ha × densidad) → costo = kg/ha × (USD/t ÷ 1000). **Costo total** = suma de columnas → **USD/ha** (o USD/acre). Solubles personalizados y overrides de precio se **comparten con Hidroponía**. Sin precio → 0 / «—». No inventar precios de mercado.
 
@@ -160,7 +162,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 ### 4.8 Granular: requerimiento, programa y mezclas
 
 **URL:** …/granular-mezclas.html  
-- **Requerimiento** (Dashboard → Nutrición granular): extracción total = kg/ton × rendimiento; requerimiento real = Ajuste ÷ (Eficiencia/100). Ajuste kg/ha editable por reservas/déficit suelo (criterio agrónomo; no obligatorio desde reporte lab). Eficiencias default granular: N 65 %, P₂O₅ 40 %, K₂O 85 %, CaO/MgO/SO₄ 85 %, micros 80 %, SiO₂ 85 % (editables).  
+- **Requerimiento** (Dashboard → Nutrición granular): extracción total = kg/ton × rendimiento; requerimiento real = Ajuste ÷ (Eficiencia/100). Ajuste kg/ha editable; desplegable **Traer de análisis** (reportes Análisis → Suelo) independiente de Fertirriego. Si eliges reporte: ajuste = max(0, extracción total − diferencia considerada del ciclo). Editar a mano desvincula. Eficiencias default granular: N 65 %, P₂O₅ 40 %, K₂O 85 %, CaO/MgO/SO₄ 85 %, micros 80 %, SiO₂ 85 % (editables).  
 - **Programa:** aplicaciones numeradas; **mezcla física** (% TM por material, habitualmente 100 %) o **fertilizante al 100 %**; dosis kg/ha por aplicación → aporte nutriente = dosis × (% nutriente en mezcla / 100). Total programa = suma de aplicaciones; resumen **Aporte − Requerimiento = Diferencia**. Sin aporte por agua (≠ fertirriego).  
 - **Formulación:** % nutriente en mezcla = Σ(% TM × % material); relación N-P₂O₅-K₂O normalizada al mínimo de los tres; kg/ha = dosis × %/100.  
 - **Costos (USD/ha):** kg producto/ha del material = dosis kg/ha × (% TM ÷ 100); costo = kg/ha × (USD/t ÷ 1000). Total aplicación / programa en **USD/ha** (USD/acre si US customary). Precio desde catálogo/overrides; sin precio → «—».  

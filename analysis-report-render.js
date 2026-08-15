@@ -63,6 +63,17 @@
             if (isNaN(n)) return '—';
             return formatNum(isUSUnits() ? n * 0.8921791216 : n, 2);
         }
+        function signedDoseCell(kgHa) {
+            var n = num(kgHa);
+            if (isNaN(n)) return '<td>—</td>';
+            var shown = num(doseDifferenceDisplay(n));
+            if (isNaN(shown)) return '<td>—</td>';
+            var color = shown < 0 ? '#9f1239' : (shown > 0 ? '#166534' : '');
+            var cls = shown < 0 ? 'soil-sign-deficit' : (shown > 0 ? 'soil-sign-excess' : '');
+            var text = (shown > 0 ? '+' : '') + formatNum(shown, 2);
+            var style = color ? ' style="color:' + color + ';font-weight:700;"' : '';
+            return '<td class="' + cls + '"' + style + '>' + escapeHtml(text) + '</td>';
+        }
         function bulkDensityDisplay(gcm3) {
             var n = num(gcm3);
             if (isNaN(n)) return '—';
@@ -469,10 +480,9 @@
                     var idealNum = (idealVal != null && idealVal !== '' && !isNaN(parseFloat(String(idealVal)))) ? parseFloat(String(idealVal).replace(',', '.')) : NaN;
                     var diff = isNaN(labNum) ? NaN : (isNaN(idealNum) ? labNum : (labNum - idealNum));
                     var kgHaDiff = isNaN(diff) ? NaN : diff * factor;
-                    var doseDiff = isNaN(kgHaDiff) ? '—' : doseDifferenceDisplay(kgHaDiff);
                     var sufficiency = (!isNaN(labNum) && !isNaN(idealNum) && idealNum !== 0) ? (labNum / idealNum) * 100 : NaN;
                     sufficiencyCells.push('<td>' + (isNaN(sufficiency) ? '—' : escapeHtml(formatNum(sufficiency, 1) + ' %')) + '</td>');
-                    kgHaCells.push('<td>' + escapeHtml(doseDiff) + '</td>');
+                    kgHaCells.push(signedDoseCell(kgHaDiff));
                     if (cycleLocked[p]) {
                         cycleFactorCells.push('<td>—</td>');
                         cycleConsideredCells.push('<td>—</td>');
@@ -482,10 +492,10 @@
                             ? Math.max(0, Math.min(100, savedCycleFactor))
                             : (isNaN(sufficiency) ? NaN : (sufficiency >= 50 ? 10 : 5));
                         var considered = (!isNaN(kgHaDiff) && !isNaN(idealNum) && !isNaN(cyclePct))
-                            ? doseDifferenceDisplay(kgHaDiff * cyclePct / 100)
-                            : '—';
+                            ? (kgHaDiff * cyclePct / 100)
+                            : NaN;
                         cycleFactorCells.push('<td>' + (isNaN(cyclePct) ? '—' : escapeHtml(formatNum(cyclePct, 1) + ' %')) + '</td>');
-                        cycleConsideredCells.push('<td>' + escapeHtml(considered) + '</td>');
+                        cycleConsideredCells.push(signedDoseCell(considered));
                     }
                 }
             });
@@ -495,7 +505,10 @@
                 tbl += '<tr><td class="col-concept">' + tr('Suficiencia respecto al ideal (%)', 'Sufficiency relative to ideal (%)') + '</td>' +
                     sufficiencyCells.join('') + '</tr>';
                 tbl += '<tr class="admin-soil-kgha-row"><td class="col-concept">' +
-                    (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (' + tr('diferencia', 'difference') + ')</td>' +
+                    (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (' + tr('diferencia', 'difference') + ')' +
+                    '<br><span class="soil-sign-legend" style="font-weight:700;font-size:10px;"><span class="soil-sign-deficit" style="color:#9f1239;">− ' +
+                    tr('falta', 'deficit') + '</span>, <span class="soil-sign-excess" style="color:#166534;">+ ' +
+                    tr('exceso', 'excess') + '</span></span></td>' +
                     kgHaCells.join('') + '</tr>';
             } else {
                 tbl += '<tr><td class="col-concept">' + tr('Estado', 'Status') + '</td>' + statusCells.join('') + '</tr>';
@@ -512,7 +525,10 @@
                 tbl += '</tr></thead><tbody><tr><td class="col-concept">' +
                     tr('Factor considerado (%)', 'Considered factor (%)') + '</td>' + cycleFactorCells.join('') +
                     '</tr><tr class="admin-soil-kgha-row"><td class="col-concept">' +
-                    tr('Diferencia considerada', 'Considered difference') + ' (' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ')</td>' +
+                    tr('Diferencia considerada', 'Considered difference') + ' (' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ')' +
+                    '<br><span class="soil-sign-legend" style="font-weight:700;font-size:10px;"><span class="soil-sign-deficit" style="color:#9f1239;">− ' +
+                    tr('corregir durante el ciclo', 'correct during the cycle') + '</span> · <span class="soil-sign-excess" style="color:#166534;">+ ' +
+                    tr('aporte potencial del suelo', 'potential soil contribution') + '</span></span></td>' +
                     cycleConsideredCells.join('') + '</tr></tbody></table></div>';
             }
             return out + tbl;
@@ -720,8 +736,8 @@
         var html = '<div class="admin-analysis-data-wrap">';
         if (hasSoilTables) {
             html += '<p class="admin-analysis-legend">' + tr(
-                '<strong>Propiedades físicas y pH y salinidad:</strong> Concepto + Dato laboratorio. <strong>Fertilidad:</strong> Dato laboratorio, Nivel ideal y ' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (diferencia).',
-                '<strong>Physical properties, pH and salinity:</strong> Concept + lab value. <strong>Fertility:</strong> Lab value, ideal level and ' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (difference).'
+                '<strong>Propiedades físicas y pH y salinidad:</strong> Concepto + Dato laboratorio. <strong>Cationes:</strong> meq y saturación CIC. <strong>Fertilidad:</strong> Dato laboratorio, suficiencia, ' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (diferencia) y ajuste agronómico del ciclo.',
+                '<strong>Physical properties, pH and salinity:</strong> Concept + lab value. <strong>Cations:</strong> meq and CEC saturation. <strong>Fertility:</strong> Lab value, sufficiency, ' + (isUSUnits() ? 'lb/acre' : 'kg/ha') + ' (difference) and cycle agronomic adjustment.'
             ) + '</p>';
         } else if (hasRelated) {
             html += '<p class="admin-analysis-legend">' + tr(
@@ -762,7 +778,7 @@
                 }
                 html += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">' + escapeHtml(title) + '</div>' + extra + content + '</div>';
             } else {
-                function skipSoilIdeal(r) { return isSoilType && ['physical', 'phSection', 'fertility'].indexOf(grp) >= 0 && (r.k === grp + '.ideal' || r.k.indexOf(grp + '.ideal.') === 0); }
+                function skipSoilIdeal(r) { return isSoilType && ['physical', 'phSection', 'fertility'].indexOf(grp) >= 0 && (r.k === grp + '.ideal' || r.k.indexOf(grp + '.ideal.') === 0 || r.k.indexOf('fertility.cycleFactorPct') === 0 || r.k.indexOf('fertility.cycleFactorManual') === 0); }
                 var cardItems = (items || []).filter(function (r) {
                     if (skipSoilIdeal(r)) return false;
                     if (isAguaType && grp === 'Otros') {
