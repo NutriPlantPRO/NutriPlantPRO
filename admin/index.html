@@ -7,10 +7,10 @@
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="NP Admin">
-    <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="../assets/pwa-icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png">
-    <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png">
+    <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png?v=20260815r">
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/pwa-icon-192.png?v=20260815r">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
+    <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
     <link rel="manifest" href="/admin.webmanifest">
     <link rel="stylesheet" href="../dashboard.css?v=20260815c">
     <script src="../subscription-config.js"></script>
@@ -10507,7 +10507,9 @@
                 var macroEl = chartTargets && chartTargets.macroEl;
                 var microEl = chartTargets && chartTargets.microEl;
                 if (!macroEl && !microEl) return;
-                var labels = (state.stages || []).map(adminExtraccionEtapaStage);
+                var labels = (state.stages || []).map(function (stage, index) {
+                    return adminExtraccionEtapaRowLabel(stage, index, state.axis);
+                });
                 var macroSets = adminBuildExtraccionEtapaChartDatasets(state, 'macro');
                 var microSets = adminBuildExtraccionEtapaChartDatasets(state, 'micro');
                 if (macroEl) {
@@ -10542,17 +10544,30 @@
             if (axis === 'mes') return 'Mensual';
             return 'Fenológica';
         }
+        function adminExtraccionEtapaPeriodLabel(axis, index) {
+            if (axis === 'semana') return 'Semana ' + (Number(index) + 1);
+            if (axis === 'mes') return 'Mes ' + (Number(index) + 1);
+            return '';
+        }
+        function adminExtraccionEtapaRowLabel(stage, index, axis) {
+            var pheno = adminExtraccionEtapaStage(stage);
+            var period = adminExtraccionEtapaPeriodLabel(axis, index);
+            return period ? pheno + ' · ' + period : pheno;
+        }
 
         function adminBuildExtraccionEtapaDetailHtml(state, chartIds) {
             if (!state) return '';
             var nutrients = state.nutrients || [];
             var stages = state.stages || [];
             var axisLabel = adminExtraccionEtapaAxisLabel(state.axis);
+            var showPeriod = state.axis === 'semana' || state.axis === 'mes';
+            var periodHead = state.axis === 'mes' ? 'Mes' : 'Semana';
             var waterDepths = Array.isArray(state.waterDepthByStageM3ha) ? state.waterDepthByStageM3ha : [];
             var totalsRow = nutrients.map(function (n) {
                 return '<td style="padding:6px;text-align:right;">' + (Number(n.total) || 0).toFixed(2) + '</td>';
             }).join('');
             var combinedHead = '<tr><th rowspan="2" style="padding:6px;text-align:left;">Etapa</th>' +
+                (showPeriod ? '<th rowspan="2" style="padding:6px;text-align:center;">' + periodHead + '</th>' : '') +
                 '<th rowspan="2" style="padding:6px;text-align:center;">Lámina objetivo<br>(m³/ha)</th>' +
                 nutrients.map(function (n) {
                     return '<th colspan="2" style="padding:6px;text-align:center;">' + escapeHtml(n.label) + '</th>';
@@ -10568,6 +10583,7 @@
                         '<td style="padding:6px;text-align:right;background:#f8fafc;">' + kgVal.toFixed(2) + '</td>';
                 }).join('');
                 return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(adminExtraccionEtapaStage(st)) + '</td>' +
+                    (showPeriod ? '<td style="padding:6px;text-align:center;font-weight:700;">' + escapeHtml(adminExtraccionEtapaPeriodLabel(state.axis, ri)) + '</td>' : '') +
                     '<td style="padding:6px;text-align:right;">' + (Number(waterDepths[ri]) || 0).toFixed(2) + '</td>' + cells + '</tr>';
             }).join('');
             var combinedFoot = nutrients.map(function (n) {
@@ -10618,7 +10634,7 @@
                             <table style="width:100%;min-width:640px;font-size:12px;border-collapse:collapse;background:#fff;border-radius:6px;">
                                 <thead>${combinedHead}</thead>
                                 <tbody>${combinedRows}</tbody>
-                                <tfoot><tr style="background:#f8fafc;"><td style="padding:6px;font-weight:700;">Σ</td><td></td>${combinedFoot}</tr></tfoot>
+                                <tfoot><tr style="background:#f8fafc;"><td style="padding:6px;font-weight:700;">Σ</td>${showPeriod ? '<td></td>' : ''}<td></td>${combinedFoot}</tr></tfoot>
                             </table>
                         </div>
                     </div>

@@ -11,7 +11,7 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 - **Fertirriego → Requerimiento:** bloque **Distribución [proyecto]** (kg = Requerimiento real; % por etapa). Catálogo compartido con 📊 dashboard; aplicar a otro proyecto (solo %/etapas).
 - **Fertirriego → Programa:** generador automático desde Distribución semanal/mensual; Ca primero, agua proporcional por lámina, límites sin sobreaporte, faltantes y balance iónico trazables; origen automático en PDF/admin y aviso si cambia la distribución.
-- **Fertirriego → Distribución objetivo:** la lámina de riego se captura por etapa/periodo junto a la curva objetivo (ya no en Gráficas) y viaja al generador; el título objetivo diferencia la meta de programas manuales o editados.
+- **Fertirriego → Distribución objetivo:** la lámina de riego se captura por etapa/periodo junto a la curva objetivo (ya no en Gráficas) y viaja al generador; el título objetivo diferencia la meta de programas manuales o editados. En semanal/mensual cada fila muestra fenología y número de semana o mes, alineado con el programa.
 - **Fertirriego y Nutrición granular → Requerimiento:** desplegable **Traer de análisis** en Ajuste por niveles en suelo. Independientes entre sí. Fórmula: ajuste = max(0, extracción total − diferencia considerada del ciclo). Editar a mano desvincula.
 - Archivos: `programa-fertirriego-etapas.html`, `granular-mezclas.html`, `analisis-suelo-fertilidad-kgha.html`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`.
 

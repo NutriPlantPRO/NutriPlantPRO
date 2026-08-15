@@ -10238,6 +10238,18 @@ function extraccionEtapaReportAxisLabel(axis, language) {
   return language === 'en' ? 'Phenological' : 'Fenológica';
 }
 
+function extraccionEtapaReportPeriodLabel(axis, index, language) {
+  if (axis === 'semana') return (language === 'en' ? 'Week ' : 'Semana ') + (Number(index) + 1);
+  if (axis === 'mes') return (language === 'en' ? 'Month ' : 'Mes ') + (Number(index) + 1);
+  return '';
+}
+
+function extraccionEtapaReportRowLabel(stage, index, axis, language) {
+  const pheno = extraccionEtapaReportStage(stage, language);
+  const period = extraccionEtapaReportPeriodLabel(axis, index, language);
+  return period ? pheno + ' · ' + period : pheno;
+}
+
 function buildExtraccionEtapaChartDatasets(state, group, unitSystem) {
   const idMap = group === 'macro' ? EXTRACTION_ETAPA_MACRO_IDS : EXTRACTION_ETAPA_MICRO_IDS;
   const filtered = (state.nutrients || []).filter(function(n) { return idMap[n.id]; });
@@ -10266,7 +10278,9 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback, reportOption
     const language = reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
     const unitSystem = reportOptions && reportOptions.unit_system === 'us_customary' ? 'us_customary' : 'metric';
     const unitLabel = unitSystem === 'us_customary' ? 'lb/acre' : 'kg/ha';
-    const labels = state.stages.map(function(stage) { return extraccionEtapaReportStage(stage, language); });
+    const labels = state.stages.map(function(stage, index) {
+      return extraccionEtapaReportRowLabel(stage, index, state.axis, language);
+    });
     const macroSets = buildExtraccionEtapaChartDatasets(state, 'macro', unitSystem);
     const microSets = buildExtraccionEtapaChartDatasets(state, 'micro', unitSystem);
     const W = 640;
@@ -20205,7 +20219,10 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
       reportNum(extraccionEtapaReportValue(n.total, unitSystem), 2) + '</td>';
   }).join('');
 
+  const showPeriod = state.axis === 'semana' || state.axis === 'mes';
+  const periodHead = state.axis === 'mes' ? rt('Mes', 'Month') : rt('Semana', 'Week');
   const combinedHead = '<tr><th rowspan="2">' + rt('Etapa', 'Stage') + '</th>' +
+    (showPeriod ? '<th rowspan="2">' + periodHead + '</th>' : '') +
     '<th rowspan="2">' + rt('Lámina objetivo', 'Target irrigation depth') + '<br>(' + waterUnit + ')</th>' +
     nutrients.map(function(n) {
       return '<th colspan="2">' + reportEscapeHtml(n.label) + '</th>';
@@ -20220,7 +20237,8 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
       return '<td>' + reportNum(pctVal, 1) + '</td><td class="report-ferti-stage-num">' + reportNum(kgVal, 2) + '</td>';
     }).join('');
     return '<tr><td class="report-ferti-stage-cell">' +
-      reportEscapeHtml(extraccionEtapaReportStage(st, reportLanguage)) + '</td>' +
+      reportEscapeHtml(extraccionEtapaReportStage(st, lang)) + '</td>' +
+      (showPeriod ? '<td class="report-ferti-stage-num">' + reportEscapeHtml(extraccionEtapaReportPeriodLabel(state.axis, ri, lang)) + '</td>' : '') +
       '<td class="report-ferti-stage-num">' + reportNum(reportWaterDepth(waterDepths[ri]), 2) + '</td>' + cells + '</tr>';
   }).join('');
   const combinedFoot = nutrients.map(function(n) {
@@ -20261,7 +20279,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
           <table class="report-app-table">
             <thead>${combinedHead}</thead>
             <tbody>${combinedRows}</tbody>
-            <tfoot><tr class="total-row"><td>Σ</td><td></td>${combinedFoot}</tr></tfoot>
+            <tfoot><tr class="total-row"><td>Σ</td>${showPeriod ? '<td></td>' : ''}<td></td>${combinedFoot}</tr></tfoot>
           </table>
         </div>
       </div>

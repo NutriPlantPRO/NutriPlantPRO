@@ -43,19 +43,19 @@
     dist_h1: '1. Actual requirement',
     dist_h1_hint: 'Every nutrient from the requirement table. Not edited here.',
     dist_h2: '2. Distribution by stage (% and dose)',
-    dist_h2_hint: 'Each nutrient: editable % and calculated {unit}. The % must sum to 100%.',
+    dist_h2_hint: 'Each nutrient: editable % and {unit}. The % must sum to 100%. If the program has the same periods, fertilizers follow this split.',
     dist_add_stage: 'Add stage',
     dist_axis: 'Stage type',
     dist_axis_pheno: 'Phenological',
     dist_axis_week: 'Weekly',
     dist_axis_month: 'Monthly',
-    dist_axis_warn: 'This renames the rows to {axis}. Percentages are kept. Continue?',
+    dist_axis_warn: 'This changes the period to {axis}. Phenology on each row is kept. Continue?',
     dist_h3: '3. Result',
     dist_per_stage: 'per stage',
     dist_water_title: '3. Target irrigation depth by stage',
     dist_water_help: 'Enter it here to proportionally deduct the water-analysis contribution and calculate ppm, meq/L and EC.',
     dist_h4: '4. Chart',
-    dist_chart_drag: 'Drag a point to adjust % and dose. The other stages are compensated so each nutrient still sums to 100%.',
+    dist_chart_drag: 'Drag a point to adjust the %. The other stages are compensated to 100%. kg/ha is recalculated; if the program has the same periods, fertilizers are adjusted too.',
     dist_macros: 'Macros',
     dist_micros: 'Micros',
     dist_stage: 'Stage',
@@ -152,9 +152,9 @@
     confirm_clear_catalog: 'Remove all custom soluble fertilizers from the catalog?',
     fertilizer_added: '✅ Fertilizer added',
     save_changes: 'Save changes', name_required: 'Enter a name', remove_week: 'Remove period',
-    remove_column: 'Remove column', establishment: 'Establishment', vegetative: 'Vegetative',
+    remove_column: 'Remove column', bud_break: 'Bud break', establishment: 'Establishment', vegetative: 'Vegetative',
     preflowering: 'Pre-flowering', flowering: 'Flowering', fruit_set: 'Fruit set',
-    filling: 'Fruit filling', harvest: 'Harvest',
+    filling: 'Fruit filling', maturity: 'Maturity', harvest: 'Harvest',
     macronutrients: 'Macronutrients', micronutrients: 'Micronutrients',
     chart_y_kg: 'Kg of nutrient', chart_y_lb: 'Lb of nutrient',
     stage_to_analyze: 'Stage to analyze:', lamina: 'Irrigation depth:', no_data: 'no data',
@@ -242,8 +242,9 @@
     'Urea': 'Urea'
   };
   var STAGES = {
-    Establecimiento:'establishment', Vegetativo:'vegetative', Prefloración:'preflowering',
-    Floración:'flowering', Amarre:'fruit_set', Llenado:'filling', Cosecha:'harvest'
+    Brotación:'bud_break', Establecimiento:'establishment', Vegetativo:'vegetative',
+    Prefloración:'preflowering', Floración:'flowering', Amarre:'fruit_set',
+    Llenado:'filling', Maduración:'maturity', Cosecha:'harvest'
   };
 
   var languageOverride = null;

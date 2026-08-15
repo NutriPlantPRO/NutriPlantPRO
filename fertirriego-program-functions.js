@@ -327,11 +327,14 @@ function updateFertiProgramTimeTitle() {
   if (microBtn) microBtn.textContent = fertProgT('micros', 'Micros');
 }
 
-function setFertiTimeUnit(unit) {
+function setFertiTimeUnit(unit, opts) {
   fertiTimeUnit = unit === 'mes' ? 'mes' : 'semana';
   updateFertiProgramTimeTitle();
   renderFertiWeeks();
   markFertiProgDirty();
+  if (!(opts && opts.fromDistribution) && typeof window.fertiDistSyncTimeUnit === 'function') {
+    window.fertiDistSyncTimeUnit(fertiTimeUnit);
+  }
 }
 
 // Materiales base + personalizados
@@ -1069,6 +1072,7 @@ function onWeekKgChange(weekId, colId, kg) {
   onWeekKgInput(weekId, colId, kg);
   // Re-render para reflejar aportes por nutriente en la fila y actualizar totales de la tabla
   renderFertiWeeks();
+  fertiPushProgramSplitToDistribution();
 }
 
 function syncFertiProgramFromDOM() {
@@ -1122,7 +1126,7 @@ function computeWeekTotals(week) {
 }
 
 function fertiProgramStageOptions(selected) {
-  const base = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
+  const base = ['Brotación','Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Maduración','Cosecha'];
   const current = String(selected || '').trim();
   const options = current && base.indexOf(current) < 0 ? [current].concat(base) : base;
   return options.map(st => `<option value="${fertiEscapeAttr(st)}" ${st === current ? 'selected' : ''}>${fertiEscapeAttr(fertProgStage(st))}</option>`).join('');
@@ -1312,9 +1316,10 @@ function fertiApplyAutomaticProgram(prepared) {
       const col = fertiColumns.find(c => c.materialId === row.materialId);
       if (col) kgByCol[col.id] = (Number(kgByCol[col.id]) || 0) + (Number(row.doseKgHa) || 0);
     });
+    const periodLabel = prepared.axis === 'mes' ? `Mes ${i + 1}` : `Semana ${i + 1}`;
     const week = {
       id:`week_auto_${stamp}_${i}`,
-      label:stage.name,
+      label:periodLabel,
       stage:stage.name,
       kgByCol,
       totals:{}
@@ -1439,8 +1444,8 @@ function renderFertiWeeks() {
       ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
       : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante');
     const lockIcon = isChartLocked
-      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"></rect><path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3"></path><circle cx="12" cy="15" r="1.2"></circle></svg>'
-      : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"></rect><path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v1"></path><circle cx="12" cy="15" r="1.2"></circle></svg>';
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0V11"></path></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0"></path></svg>';
     return `
           <th style="min-width:110px;width:110px;position:relative;">
             <button type="button" title="${lockTitle}" aria-label="${lockTitle}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
@@ -2313,7 +2318,13 @@ function fertiChartDisplayValue(nutrientKey, canonicalValue) {
   return parseFloat(fertProgResultFromSI(value, 'dose_mass_area', 8)) || 0;
 }
 
-function fertiAdjustStageNutrient(stageIndex, nutrientKey, displayedTarget, baseAmounts) {
+function fertiNutrientCoefficient(materialId, nutrientKey) {
+  const contrib = computeFertiContribFor(1, materialId);
+  if (nutrientKey === 'N') return (parseFloat(contrib.N_NO3) || 0) + (parseFloat(contrib.N_NH4) || 0);
+  return parseFloat(contrib[nutrientKey]) || 0;
+}
+
+function fertiAdjustStageNutrientCanonical(stageIndex, nutrientKey, canonicalTarget, baseAmounts) {
   const week = fertiWeeks[stageIndex];
   const ui = fertProgUI();
   if (!week || !ui || typeof ui.adjustBlendToTarget !== 'function') return { ok: false, reason: 'solver' };
@@ -2321,11 +2332,11 @@ function fertiAdjustStageNutrient(stageIndex, nutrientKey, displayedTarget, base
     if (Array.isArray(baseAmounts)) return Math.max(0, parseFloat(baseAmounts[idx]) || 0);
     return Math.max(0, parseFloat(week.kgByCol?.[c.id]) || 0);
   });
-  const actualCoefficients = fertiColumns.map(c => parseFloat(computeFertiContribFor(1, c.materialId)[nutrientKey]) || 0);
+  const actualCoefficients = fertiColumns.map(c => fertiNutrientCoefficient(c.materialId, nutrientKey));
   const coefficients = actualCoefficients.map((value, idx) => (
     fertiChartLockedColumnIds.indexOf(fertiColumns[idx].id) !== -1 ? 0 : value
   ));
-  const canonicalTarget = fertiChartCanonicalTarget(nutrientKey, displayedTarget);
+  canonicalTarget = Math.max(0, parseFloat(canonicalTarget) || 0);
   const lockedContribution = amounts.reduce((sum, amount, idx) => (
     coefficients[idx] === 0 ? sum + amount * actualCoefficients[idx] : sum
   ), 0);
@@ -2341,6 +2352,69 @@ function fertiAdjustStageNutrient(stageIndex, nutrientKey, displayedTarget, base
   fertiColumns.forEach((c, idx) => { week.kgByCol[c.id] = Math.max(0, result.values[idx]); });
   computeWeekTotals(week);
   return { ok: true, achieved: result.achieved + lockedContribution, target: canonicalTarget };
+}
+
+function fertiAdjustStageNutrient(stageIndex, nutrientKey, displayedTarget, baseAmounts) {
+  return fertiAdjustStageNutrientCanonical(
+    stageIndex,
+    nutrientKey,
+    fertiChartCanonicalTarget(nutrientKey, displayedTarget),
+    baseAmounts
+  );
+}
+
+function fertiApplyDistributionTargetsToProgram(nutrientKey, oxideKgByStage) {
+  if (!Array.isArray(fertiWeeks) || !Array.isArray(oxideKgByStage)) return false;
+  if (!fertiWeeks.length || fertiWeeks.length !== oxideKgByStage.length) return false;
+  if (!fertiColumns.length) return false;
+  oxideKgByStage.forEach((kg, index) => {
+    fertiAdjustStageNutrientCanonical(index, nutrientKey, kg);
+  });
+  renderFertiWeeks();
+  updateFertiSummary();
+  updateFertiCharts();
+  markFertiProgDirty();
+  return true;
+}
+window.fertiApplyDistributionTargetsToProgram = fertiApplyDistributionTargetsToProgram;
+
+function fertiDistributionSplitFromProgram() {
+  if (!Array.isArray(fertiWeeks) || !fertiWeeks.length) return null;
+  const getters = {
+    n: (week) => (Number(week.totals && week.totals.N_NO3) || 0) + (Number(week.totals && week.totals.N_NH4) || 0),
+    p: (week) => Number(week.totals && week.totals.P2O5) || 0,
+    k: (week) => Number(week.totals && week.totals.K2O) || 0,
+    ca: (week) => Number(week.totals && week.totals.CaO) || 0,
+    mg: (week) => Number(week.totals && week.totals.MgO) || 0,
+    s: (week) => Number(week.totals && week.totals.SO4) || 0,
+    fe: (week) => Number(week.totals && week.totals.Fe) || 0,
+    mn: (week) => Number(week.totals && week.totals.Mn) || 0,
+    b: (week) => Number(week.totals && week.totals.B) || 0,
+    zn: (week) => Number(week.totals && week.totals.Zn) || 0,
+    cu: (week) => Number(week.totals && week.totals.Cu) || 0,
+    mo: (week) => Number(week.totals && week.totals.Mo) || 0,
+    si: (week) => Number(week.totals && week.totals.SiO2) || 0
+  };
+  const splits = {};
+  Object.keys(getters).forEach(id => {
+    const vals = fertiWeeks.map(week => getters[id](week));
+    const sum = vals.reduce((a, b) => a + b, 0);
+    if (sum <= 1e-9) return;
+    let acc = 0;
+    splits[id] = vals.map((v, i) => {
+      if (i === vals.length - 1) return Math.round((100 - acc) * 10) / 10;
+      const p = Math.round((v / sum) * 1000) / 10;
+      acc += p;
+      return p;
+    });
+  });
+  return splits;
+}
+
+function fertiPushProgramSplitToDistribution() {
+  if (typeof window.fertiDistApplyProgramNutrientSplit !== 'function') return;
+  const splits = fertiDistributionSplitFromProgram();
+  if (splits) window.fertiDistApplyProgramNutrientSplit(splits);
 }
 
 function fertiRefreshChartsAfterGraphAdjustment() {
@@ -2421,6 +2495,7 @@ function fertiBindChartPointDragging(canvas, getChart) {
     updateFertiCharts();
     markFertiProgDirty();
     updateFertiChartEditControls();
+    fertiPushProgramSplitToDistribution();
   };
   canvas.addEventListener('pointerup', finish);
   canvas.addEventListener('pointercancel', finish);
@@ -3667,6 +3742,9 @@ function loadFertirriegoProgram() {
       console.log('ℹ️ No hay columnas guardadas - usando predefinidas');
     }
     fertiTimeUnit = (data && data.timeUnit) ? data.timeUnit : 'semana';
+    if (typeof window.fertiDistSyncTimeUnit === 'function') {
+      window.fertiDistSyncTimeUnit(fertiTimeUnit);
+    }
     fertiChartWaterByStageM3ha = (data && Array.isArray(data.chartWaterByStageM3ha)) ? data.chartWaterByStageM3ha.slice() : [];
     fertiChartSelectedStageIndex = (data && Number.isInteger(data.chartSelectedStageIndex)) ? data.chartSelectedStageIndex : 0;
     fertiChartLockedColumnIds = (data && Array.isArray(data.chartLockedColumnIds))
