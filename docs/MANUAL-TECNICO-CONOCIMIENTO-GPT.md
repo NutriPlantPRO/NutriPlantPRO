@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.08.7 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-08-07 · **v2026.08.7** (+ Hidroponía: ácido tanque C + auto-cálculo + costos USD lote; Fertirriego/Granular: costos USD/ha; UI «Seleccionar análisis…»)
+**Versión Knowledge:** 2026-08-15 · **v2026.08.15** (+ Fertirriego: Distribución semanal/mensual y generador automático sin sobreaportes, agua proporcional y faltantes trazables)
 
 ---
 
@@ -147,9 +147,11 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.6 Fertirriego programa
 
-**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Distribución por etapa** → programa semanal/mensual → aporte agua N-NO₃ → gráficas. Lámina m³/ha.
+**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Distribución objetivo por etapa** (% + lámina) → programa semanal/mensual → aporte agua N-NO₃ → gráficas.
 
-**Distribución (UI, bajo Requerimiento):** título **Distribución [proyecto]**. Totales = Requerimiento real (todos los nutrientes; no se agregan a mano). % por etapa (suma 100%). Catálogo compartido con 📊 del dashboard (no login). Aplicar a otro proyecto = copia etapas/%; kg se recalculan. El programa de fertirriego es independiente (más adelante: Programa vs distribución).
+**Distribución objetivo (UI, bajo Requerimiento):** título **Distribución objetivo [proyecto]** para distinguir la meta del programa real, que puede generarse, editarse o capturarse manualmente. Totales = Requerimiento real (todos los nutrientes; no se agregan a mano). % y lámina de riego objetivo por etapa/periodo; la lámina se captura aquí, no en Gráficas. Ejes: fenológico, semanal o mensual. Catálogo compartido con 📊 del dashboard (no login). Aplicar a otro proyecto = copia etapas/%; kg se recalculan y la lámina no se copia.
+
+**Generador automático:** en Programa, **Elaborar programa de fertirriego** requiere Distribución semanal o mensual y confirmación antes de reemplazar filas. Meta etapa = requerimiento real × %; agua etapa = aporte total agua × lámina etapa / suma de láminas; meta fertilizante = máx(0, meta − agua). Prioridad: nitrato de calcio (Ca), fuentes Mg, P/N/K/S y micros. Cada dosis se limita por todos los nutrientes: no sobrepasa metas; lo imposible queda como faltante. N-NO₃/N-NH₄ lo determinan los productos. Guarda origen/metas/diagnósticos, reporta **Programa vs distribución** en PDF/admin y marca desactualizado si cambia Distribución. Siempre revisar compatibilidad, solubilidad, CE, agua e inyección.
 
 **Aporte por agua (UI):** etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir un reporte Análisis → Agua se cargan kg/ha). Sin reportes: «Sin análisis de agua en este proyecto». Independiente del ajuste por suelo.
 

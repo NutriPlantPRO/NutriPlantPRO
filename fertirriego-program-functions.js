@@ -153,6 +153,8 @@ let fertiChartLockedColumnIds = [];
 let fertiChartUndoSnapshot = null;
 let fertiChartEditBaseline = null;
 let fertiActiveChartDrag = null;
+let fertiProgramGenerationMeta = null;
+let fertiProgramGenerationDiagnostics = null;
 
 const FERTI_NUTRIENTS = ['N_NO3','N_NH4','P','P2O5','K','K2O','Ca','CaO','Mg','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','Si','SiO2'];
 
@@ -1119,6 +1121,296 @@ function computeWeekTotals(week) {
   week.totals = totals;
 }
 
+function fertiProgramStageOptions(selected) {
+  const base = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
+  const current = String(selected || '').trim();
+  const options = current && base.indexOf(current) < 0 ? [current].concat(base) : base;
+  return options.map(st => `<option value="${fertiEscapeAttr(st)}" ${st === current ? 'selected' : ''}>${fertiEscapeAttr(fertProgStage(st))}</option>`).join('');
+}
+
+function fertiGeneratorFingerprint(state) {
+  if (!state || typeof state !== 'object') return '';
+  const compact = {
+    axis: state.axis || '',
+    stages: Array.isArray(state.stages) ? state.stages : [],
+    nutrients: Array.isArray(state.nutrients)
+      ? state.nutrients.map(n => [n.id, Number(n.total) || 0])
+      : [],
+    pct: state.pct || {},
+    waterDepthByStageM3ha: Array.isArray(state.waterDepthByStageM3ha) ? state.waterDepthByStageM3ha : []
+  };
+  try { return JSON.stringify(compact); } catch { return ''; }
+}
+
+function fertiGeneratorDistributionState() {
+  try {
+    if (typeof window.fertiDistExportState === 'function') {
+      const live = window.fertiDistExportState();
+      if (live) return live;
+    }
+    if (typeof window.fertiDistGetStoredState === 'function') {
+      const stored = window.fertiDistGetStoredState();
+      if (stored) return stored;
+    }
+  } catch {}
+  return null;
+}
+
+function fertiGeneratorTargetMap(state, stageIndex) {
+  const out = { N:0,P2O5:0,K2O:0,CaO:0,MgO:0,SO4:0,Fe:0,Mn:0,B:0,Zn:0,Cu:0,Mo:0,SiO2:0 };
+  const map = { n:'N',p:'P2O5',k:'K2O',ca:'CaO',mg:'MgO',s:'SO4',fe:'Fe',mn:'Mn',b:'B',zn:'Zn',cu:'Cu',mo:'Mo',si:'SiO2' };
+  (state && Array.isArray(state.nutrients) ? state.nutrients : []).forEach(n => {
+    const key = map[n.id];
+    if (!key) return;
+    const arr = state.pct && Array.isArray(state.pct[n.id]) ? state.pct[n.id] : [];
+    out[key] = (Number(n.total) || 0) * ((Number(arr[stageIndex]) || 0) / 100);
+  });
+  return out;
+}
+
+function fertiGeneratorWaterMap() {
+  const w = fertiWaterContributionOxide || {};
+  return {
+    N: Number(w.N) || 0,
+    P2O5: Number(w.P2O5) || 0,
+    K2O: Number(w.K2O) || 0,
+    CaO: Number(w.CaO) || 0,
+    MgO: Number(w.MgO) || 0,
+    SO4: (Number(w.SO4) || 0) + (Number(w.S) || 0) * FERTI_CONV.SO4_TO_S,
+    Fe: Number(w.Fe) || 0,
+    Mn: Number(w.Mn) || 0,
+    B: Number(w.B) || 0,
+    Zn: Number(w.Zn) || 0,
+    Cu: Number(w.Cu) || 0,
+    Mo: Number(w.Mo) || 0,
+    SiO2: Number(w.SiO2) || 0
+  };
+}
+
+function fertiGeneratorHasProgramDoses() {
+  return (fertiWeeks || []).some(w => Object.keys(w.kgByCol || {}).some(id => (Number(w.kgByCol[id]) || 0) > 0));
+}
+
+function fertiPrepareAutomaticProgram() {
+  const solver = window.NpFertigationProgramGenerator;
+  if (!solver || typeof solver.generate !== 'function') return { ok:false, reason:'solver-missing' };
+  const state = fertiGeneratorDistributionState();
+  if (!state || !Array.isArray(state.stages) || !state.stages.length) return { ok:false, reason:'distribution-missing' };
+  if (state.axis !== 'semana' && state.axis !== 'mes') return { ok:false, reason:'time-axis-required' };
+  const bad = (state.nutrients || []).filter(n => {
+    const sum = ((state.pct && state.pct[n.id]) || []).reduce((a, v) => a + (Number(v) || 0), 0);
+    return Math.abs(sum - 100) > 0.15;
+  });
+  if (bad.length) return { ok:false, reason:'distribution-invalid', nutrients:bad.map(n => n.label || n.id) };
+  const sourceDepths = Array.isArray(state.waterDepthByStageM3ha)
+    ? state.waterDepthByStageM3ha
+    : fertiChartWaterByStageM3ha;
+  const depths = state.stages.map((_, i) => Math.max(0, Number(sourceDepths[i]) || 0));
+  const generated = solver.generate({
+    axis: state.axis,
+    stages: state.stages,
+    targetsByStage: state.stages.map((_, i) => fertiGeneratorTargetMap(state, i)),
+    waterContribution: fertiGeneratorWaterMap(),
+    waterDepths: depths,
+    materials: getAllFertiMaterials()
+  });
+  generated.distribution = state;
+  generated.distributionFingerprint = fertiGeneratorFingerprint(state);
+  return generated;
+}
+
+function fertiGeneratorReasonMessage(prepared) {
+  const reason = prepared && prepared.reason;
+  if (reason === 'distribution-missing') return fertProgT('auto_no_distribution', 'Primero configura y guarda la Distribución del requerimiento.');
+  if (reason === 'time-axis-required') return fertProgT('auto_time_axis_required', 'En Distribución elige Semanal o Mensual antes de elaborar el programa.');
+  if (reason === 'distribution-invalid') {
+    return fertProgT('auto_distribution_invalid', 'La Distribución debe sumar 100% en cada nutriente. Revisa: ') + (prepared.nutrients || []).join(', ');
+  }
+  if (reason === 'water-depth-required') return fertProgT('auto_water_depth_required', 'Hay aporte de agua. Captura la lámina de riego de cada periodo en Gráficas antes de elaborar el programa.');
+  return fertProgT('auto_generator_unavailable', 'No fue posible preparar el generador automático.');
+}
+
+function closeFertiAutoProgramModal() {
+  const modal = document.getElementById('fertiAutoProgramModal');
+  if (modal) modal.remove();
+}
+
+function openFertiAutoProgramModal() {
+  const prepared = fertiPrepareAutomaticProgram();
+  if (!prepared.ok) {
+    if (window.showMessage) window.showMessage(fertiGeneratorReasonMessage(prepared), 'warning');
+    else alert(fertiGeneratorReasonMessage(prepared));
+    return;
+  }
+  closeFertiAutoProgramModal();
+  const state = prepared.distribution;
+  const distributionName = String(state.title || '')
+    .replace(/^(?:Distribución(?: objetivo)?|Objective distribution|Distribution)\s+/i, '')
+    .trim();
+  const materialNames = prepared.materialIds.map(id => {
+    const mat = getAllFertiMaterials().find(m => m && m.id === id);
+    return fertProgMaterial(mat ? (mat.name || id) : id);
+  });
+  const unresolvedStages = prepared.stages.filter(s => s.unresolved.length).length;
+  const excessStages = prepared.stages.filter(s => Object.keys(s.excess || {}).some(key => (Number(s.excess[key]) || 0) > 0.005)).length;
+  const waterMap = fertiGeneratorWaterMap();
+  const hasWaterContribution = Object.keys(waterMap).some(key => (Number(waterMap[key]) || 0) > 0.000001);
+  const availableWaterAnalyses = fertiGetProjectWaterAnalyses();
+  const waterSource = fertiWaterAnalysisId
+    ? fertProgT('auto_water_linked', 'análisis de agua vinculado')
+    : (hasWaterContribution ? fertProgT('auto_water_manual', 'aporte capturado manualmente') : fertProgT('auto_water_none', 'sin aporte nutrimental de agua'));
+  const overlay = document.createElement('div');
+  overlay.id = 'fertiAutoProgramModal';
+  overlay.className = 'ferti-auto-modal';
+  overlay._prepared = prepared;
+  overlay.innerHTML = `
+    <div class="ferti-auto-modal-box" role="dialog" aria-modal="true" aria-labelledby="fertiAutoProgramTitle">
+      <h3 id="fertiAutoProgramTitle">${fertiEscapeAttr(fertProgT('auto_title', 'Elaborar programa de fertirriego'))}</h3>
+      <p>${fertiEscapeAttr(fertProgT('auto_confirm_intro', 'Se reemplazarán las filas y fertilizantes del programa con una propuesta calculada desde Distribución.'))}</p>
+      <div class="ferti-auto-summary">
+        <div><strong>${fertiEscapeAttr(fertProgT('auto_source', 'Distribución objetivo'))}:</strong> ${fertiEscapeAttr(distributionName || state.title || '')}</div>
+        <div><strong>${fertiEscapeAttr(fertProgT('auto_periods', 'Periodos'))}:</strong> ${state.stages.length} · ${fertiEscapeAttr(state.axis === 'mes' ? fertProgT('monthly', 'Mensual') : fertProgT('weekly', 'Semanal'))}</div>
+        <div><strong>${fertiEscapeAttr(fertProgT('auto_water_rule', 'Agua'))}:</strong> ${fertiEscapeAttr(fertProgT('auto_water_proportional', 'se descuenta según la lámina de cada periodo'))}</div>
+        <div><strong>${fertiEscapeAttr(fertProgT('auto_water_source', 'Origen del agua'))}:</strong> ${fertiEscapeAttr(waterSource)}</div>
+        <div><strong>${fertiEscapeAttr(fertProgT('auto_materials', 'Fertilizantes'))}:</strong> ${fertiEscapeAttr(materialNames.join(', ') || fertProgT('none', 'Ninguno'))}</div>
+        ${unresolvedStages ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_unresolved_preview', 'La propuesta tendrá faltantes en {count} periodo(s); se mostrarán para revisión.').replace('{count}', unresolvedStages))}</div>` : ''}
+        ${excessStages ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_water_excess_preview', 'El agua por sí sola supera una o más metas en {count} periodo(s); el generador no añadirá fertilizante para esos nutrientes.').replace('{count}', excessStages))}</div>` : ''}
+        ${!fertiWaterAnalysisId && !hasWaterContribution && availableWaterAnalyses.length ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_water_analysis_available', 'Este proyecto tiene análisis de agua. Vincula el análisis correcto en Aporte por agua antes de aceptar si deseas descontarlo.'))}</div>` : ''}
+        ${fertiGeneratorHasProgramDoses() ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_replace_warning', 'El programa actual contiene dosis y será reemplazado.'))}</div>` : ''}
+      </div>
+      <p class="ferti-auto-disclaimer">${fertiEscapeAttr(fertProgT('auto_disclaimer', 'Es una propuesta agronómica. Revisa compatibilidad, solubilidad, calidad del agua y límites del sistema antes de aplicarla.'))}</p>
+      <div class="ferti-auto-actions">
+        <button type="button" class="btn btn-primary" id="fertiAutoAccept">${fertiEscapeAttr(fertProgT('accept', 'Aceptar'))}</button>
+        <button type="button" class="btn btn-secondary" id="fertiAutoCancel">${fertiEscapeAttr(fertProgT('cancel', 'Cancelar'))}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#fertiAutoCancel').addEventListener('click', closeFertiAutoProgramModal);
+  overlay.querySelector('#fertiAutoAccept').addEventListener('click', function () {
+    const result = overlay._prepared;
+    closeFertiAutoProgramModal();
+    fertiApplyAutomaticProgram(result);
+  });
+  overlay.addEventListener('click', function (event) {
+    if (event.target === overlay) closeFertiAutoProgramModal();
+  });
+}
+
+function fertiApplyAutomaticProgram(prepared) {
+  if (!prepared || !prepared.ok) return;
+  const materials = getAllFertiMaterials();
+  const stamp = Date.now();
+  fertiTimeUnit = prepared.axis === 'mes' ? 'mes' : 'semana';
+  fertiColumns = prepared.materialIds.map((materialId, i) => {
+    const mat = materials.find(m => m && m.id === materialId);
+    return { id:`col_auto_${stamp}_${i}`, materialId, name:mat ? (mat.name || materialId) : materialId };
+  });
+  fertiWeeks = prepared.stages.map((stage, i) => {
+    const kgByCol = {};
+    fertiColumns.forEach(col => { kgByCol[col.id] = 0; });
+    stage.rows.forEach(row => {
+      const col = fertiColumns.find(c => c.materialId === row.materialId);
+      if (col) kgByCol[col.id] = (Number(kgByCol[col.id]) || 0) + (Number(row.doseKgHa) || 0);
+    });
+    const week = {
+      id:`week_auto_${stamp}_${i}`,
+      label:stage.name,
+      stage:stage.name,
+      kgByCol,
+      totals:{}
+    };
+    computeWeekTotals(week);
+    return week;
+  });
+  fertiWeekCounter = fertiWeeks.length + 1;
+  fertiChartWaterByStageM3ha = prepared.stages.map(stage => Math.max(0, Number(stage.waterDepthM3Ha) || 0));
+  fertiChartLockedColumnIds = [];
+  fertiChartSelectedStageIndex = 0;
+  fertiProgramInitialized = true;
+  window.fertiProgramInitialized = true;
+  fertiProgramGenerationDiagnostics = prepared.stages.map(stage => ({
+    name:stage.name,
+    target:stage.target,
+    water:stage.water,
+    supplied:stage.supplied,
+    remaining:stage.remaining,
+    excess:stage.excess,
+    unresolved:stage.unresolved.slice()
+  }));
+  fertiProgramGenerationMeta = {
+    generatorVersion:1,
+    generatedAt:new Date().toISOString(),
+    distributionFingerprint:prepared.distributionFingerprint,
+    distributionUpdatedAt:Number(prepared.distribution.updatedAt) || 0,
+    distributionSnapshot:prepared.distribution,
+    axis:prepared.axis,
+    stageCount:prepared.stages.length,
+    targetsByStage:prepared.stages.map(stage => stage.target),
+    diagnostics:fertiProgramGenerationDiagnostics
+  };
+  renderFertiWeeks();
+  updateFertiSummary();
+  updateFertiCharts();
+  renderFertiAutomaticProgramStatus();
+  saveFertirriegoProgram();
+  if (window.showMessage) {
+    window.showMessage(
+      prepared.hasUnresolved || prepared.hasWaterExcess
+        ? fertProgT('auto_done_pending', 'Programa elaborado. Revisa los faltantes y el balance iónico antes de aplicarlo.')
+        : fertProgT('auto_done', 'Programa de fertirriego elaborado. Revisa las dosis y el balance iónico antes de aplicarlo.'),
+      prepared.hasUnresolved || prepared.hasWaterExcess ? 'warning' : 'success'
+    );
+  }
+}
+
+function fertiGenerationIsStale() {
+  if (!fertiProgramGenerationMeta || !fertiProgramGenerationMeta.distributionFingerprint) return false;
+  if (fertiProgramGenerationMeta.inputsChangedAfterGeneration === true) return true;
+  const currentDistribution = fertiGeneratorDistributionState();
+  if (!currentDistribution) return false;
+  return fertiGeneratorFingerprint(currentDistribution) !== fertiProgramGenerationMeta.distributionFingerprint;
+}
+
+function fertiMarkGenerationInputsChanged() {
+  if (!fertiProgramGenerationMeta) return;
+  fertiProgramGenerationMeta.inputsChangedAfterGeneration = true;
+  renderFertiAutomaticProgramStatus();
+}
+
+function renderFertiAutomaticProgramStatus() {
+  const host = document.getElementById('fertiAutoProgramStatus');
+  if (!host) return;
+  if (!fertiProgramGenerationMeta) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  const stale = fertiGenerationIsStale();
+  const diagnostics = Array.isArray(fertiProgramGenerationDiagnostics) ? fertiProgramGenerationDiagnostics : [];
+  const pending = diagnostics.filter(d => Array.isArray(d.unresolved) && d.unresolved.length);
+  const excess = diagnostics.filter(d => Object.keys(d.excess || {}).some(key => (Number(d.excess[key]) || 0) > 0.005));
+  const ionic = fertiWeeks.map((week, i) => {
+    const summary = getFertiStageIonicSummary(i, { includeWater:true });
+    if (!summary || !summary.meq) return '';
+    return `<li><strong>${fertiEscapeAttr(week.label || week.stage || String(i + 1))}</strong>: ` +
+      `Σ ${fertiEscapeAttr(fertProgT('anions', 'aniones'))} ${fertiNum(summary.sumAnionsMeq, 2)} meq/L · ` +
+      `Σ ${fertiEscapeAttr(fertProgT('cations', 'cationes'))} ${fertiNum(summary.sumCationsMeq, 2)} meq/L · ` +
+      `${fertiEscapeAttr(fertProgT('ce_ref', 'CE ref'))} ${fertiNum(summary.ceRefDsM, 2)} dS/m</li>`;
+  }).filter(Boolean).join('');
+  host.hidden = false;
+  host.className = `ferti-auto-status ${stale || pending.length || excess.length ? 'is-warning' : 'is-ok'}`;
+  host.innerHTML = `
+    <div class="ferti-auto-status-head">
+      <strong>${fertiEscapeAttr(stale
+        ? fertProgT('auto_stale', 'Programa desactualizado respecto a Distribución objetivo')
+        : fertProgT('auto_generated', 'Programa generado desde Distribución objetivo'))}</strong>
+      <span>${fertiEscapeAttr(fertiProgramGenerationMeta.generatedAt ? new Date(fertiProgramGenerationMeta.generatedAt).toLocaleString() : '')}</span>
+    </div>
+    ${pending.length ? `<p>${fertiEscapeAttr(fertProgT('auto_pending_detail', 'Faltantes: ') + pending.map(d => `${d.name}: ${d.unresolved.join(', ')}`).join(' · '))}</p>` : ''}
+    ${excess.length ? `<p>${fertiEscapeAttr(fertProgT('auto_water_excess', 'El aporte del agua supera la meta en: ') + excess.map(d => `${d.name}: ${Object.keys(d.excess || {}).filter(key => (Number(d.excess[key]) || 0) > 0.005).join(', ')}`).join(' · '))}</p>` : ''}
+    ${ionic ? `<details><summary>${fertiEscapeAttr(fertProgT('auto_ionic_summary', 'Balance iónico por periodo'))}</summary><ul>${ionic}</ul></details>` : ''}`;
+}
+
 // Render semanas
 function renderFertiWeeks() {
   const container = document.getElementById('fertiWeeksContainer');
@@ -1179,7 +1471,7 @@ function renderFertiWeeks() {
             <td class="ferti-stage-cell">
               <div style="display:flex; align-items:center; gap:6px;">
                 <select onchange="window.onChangeFertiStage && window.onChangeFertiStage('${week.id}', this.value)">
-                ${['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'].map(st => `<option value="${st}" ${st===week.stage?'selected':''}>${fertProgStage(st)}</option>`).join('')}
+                ${fertiProgramStageOptions(week.stage)}
                 </select>
                 <button title="Eliminar semana" class="ferti-week-remove-btn" onclick="removeFertiWeek('${week.id}')">✕</button>
               </div>
@@ -1736,6 +2028,7 @@ function fertiApplyWaterAnalysisById(analysisId) {
     fertiWaterContributionOxide,
     fertiWaterContributionFromAguaAnalysis(analysis)
   );
+  fertiMarkGenerationInputsChanged();
   markFertiProgDirty();
   updateFertiSummary();
   fertiRefreshWaterAnalysisSelect();
@@ -1838,6 +2131,7 @@ function initFertiWaterInputs() {
     const target = isWater ? fertiWaterContributionOxide : fertiBaseContributionOxide;
     if (target[key] !== oxideVal) {
       target[key] = oxideVal;
+      if (isWater) fertiMarkGenerationInputsChanged();
       markFertiProgDirty();
       updateFertiSummary();
     }
@@ -2141,7 +2435,13 @@ function fertiCationRangesText() {
 
 function fertiNormalizeChartWaterByStage() {
   const n = Array.isArray(fertiWeeks) ? fertiWeeks.length : 0;
-  const arr = Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.slice(0, n) : [];
+  let arr = Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.slice(0, n) : [];
+  try {
+    const dist = fertiGeneratorDistributionState();
+    if (dist && Array.isArray(dist.waterDepthByStageM3ha) && dist.waterDepthByStageM3ha.length) {
+      arr = dist.waterDepthByStageM3ha.slice(0, n);
+    }
+  } catch (e) {}
   while (arr.length < n) arr.push(0);
   fertiChartWaterByStageM3ha = arr.map(v => Math.max(0, parseFloat(v) || 0));
   if (!Number.isInteger(fertiChartSelectedStageIndex)) fertiChartSelectedStageIndex = 0;
@@ -2160,13 +2460,6 @@ function fertiNum(v, d = 2) {
   return n.toFixed(d);
 }
 
-function onFertiChartWaterByStageInput(idx, rawVal) {
-  fertiNormalizeChartWaterByStage();
-  fertiChartWaterByStageM3ha[idx] = Math.max(0, fertProgToSI(parseFloat(rawVal) || 0, 'volume_area'));
-  renderFertiChartsInsights();
-  markFertiProgDirty();
-}
-
 function onFertiChartStageSelect(idx) {
   fertiNormalizeChartWaterByStage();
   fertiChartSelectedStageIndex = Math.max(0, Math.min(parseInt(idx, 10) || 0, Math.max(0, fertiWeeks.length - 1)));
@@ -2177,21 +2470,13 @@ function onFertiChartStageSelect(idx) {
 function renderFertiChartWaterByStageInputs() {
   const wrap = document.getElementById('fertiChartsWaterByStageWrap');
   if (!wrap) return;
-  fertiNormalizeChartWaterByStage();
-  if (!fertiWeeks.length) { wrap.innerHTML = ''; return; }
-  const rows = fertiWeeks.map((w, i) => `
-    <div class="ferti-charts-water-item">
-      <label>${fertiStageSlotLabel(i)} · ${fertProgUnit('volume_area', 'm³/ha')}</label>
-      <input type="number" step="0.0001" min="0" value="${fertProgInputFromSI(fertiChartWaterByStageM3ha[i], 'volume_area')}" oninput="onFertiChartWaterByStageInput(${i}, this.value)">
-    </div>
-  `).join('');
-  wrap.innerHTML = `
-    <div class="ferti-charts-water-head">
-      <p class="ferti-charts-water-title">${fertProgT('irrigation_by_stage', '💧 Lámina de riego por etapa')} (${fertProgUnit('volume_area', 'm³/ha')})</p>
-      <p class="ferti-charts-water-note">${fertProgT('irrigation_help', 'Se usa para convertir aporte del programa de kg/ha a ppm y meq/L.')}</p>
-    </div>
-    <div class="ferti-charts-water-grid">${rows}</div>
-  `;
+  wrap.hidden = true;
+  wrap.innerHTML = '';
+}
+if (typeof window !== 'undefined') {
+  window.fertiGetProgramWaterByStage = function () {
+    return Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.slice() : [];
+  };
 }
 
 function fertiKgFromStageTotals(totals) {
@@ -2236,6 +2521,15 @@ function getFertiWaterKgElemental(fertNo3, fertNh4, waterOxOverride) {
     Cu: parseFloat(w.Cu) || 0,
     Mo: parseFloat(w.Mo) || 0
   };
+}
+
+function fertiWaterContributionForStage(waterOx, depths, stageIndex) {
+  const list = Array.isArray(depths) ? depths.map(v => Math.max(0, Number(v) || 0)) : [];
+  const totalDepth = list.reduce((sum, value) => sum + value, 0);
+  const factor = totalDepth > 0 ? (list[stageIndex] || 0) / totalDepth : 0;
+  const out = {};
+  Object.keys(waterOx || {}).forEach(key => { out[key] = (Number(waterOx[key]) || 0) * factor; });
+  return out;
 }
 
 function fertiMergeKg(a, b) {
@@ -2301,7 +2595,12 @@ function getFertiStageIonicSummary(stageIndex, opts) {
   const m3ha = parseFloat(fertiChartWaterByStageM3ha[stageIndex]) || 0;
   let kg = fertiKgFromStageTotals(w.totals || {});
   if (includeWater) {
-    const waterKg = getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4);
+    const waterByStage = fertiWaterContributionForStage(
+      fertiWaterContributionOxide,
+      fertiChartWaterByStageM3ha,
+      stageIndex
+    );
+    const waterKg = getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4, waterByStage);
     kg = fertiMergeKg(kg, waterKg);
   }
   return computeFertiIonicSummaryFromKg(kg, m3ha, w);
@@ -2439,7 +2738,7 @@ function renderFertiChartsInsights() {
     <div class="ferti-charts-insights-head">
       <label for="fertiChartsStageSelect">${fertProgT('stage_to_analyze', 'Etapa a analizar:')}</label>
       <select id="fertiChartsStageSelect" onchange="onFertiChartStageSelect(this.value)">${options}</select>
-      <span class="ferti-charts-water-note">${fertProgT('lamina', 'Lámina:')} ${laminaText}</span>
+      <span class="ferti-charts-water-note">${fertProgT('lamina', 'Lámina:')} <strong>${laminaText}</strong></span>
     </div>
     ${body}
   `;
@@ -2748,7 +3047,8 @@ function getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, opts
   const m3ha = waterArr[stageIndex] || 0;
   let kg = fertiKgFromStageTotals(week.totals || {});
   if (includeWater) {
-    kg = fertiMergeKg(kg, getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4, waterOx));
+    const waterByStage = fertiWaterContributionForStage(waterOx || {}, waterArr, stageIndex);
+    kg = fertiMergeKg(kg, getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4, waterByStage));
   }
   return computeFertiIonicSummaryFromKg(kg, m3ha, week);
 }
@@ -2806,9 +3106,11 @@ function buildFertiInsightsPivotTableReport(opts) {
     const lbl = fertiGetStageColLabelForPivot(opts.program, i);
     return '<th title="' + fertiEscapeInsightsLabel(lbl) + '">' + fertiEscapeInsightsLabel(lbl) + '</th>';
   }).join('');
-  const m3Row = '<tr><td class="report-ferti-stage-cell">Lámina (m³/ha)</td>' +
+  const waterUnit = fertProgUnit('volume_area', 'm³/ha');
+  const m3Row = '<tr><td class="report-ferti-stage-cell">' + fertiEscapeInsightsLabel(fertProgT('lamina', 'Lámina:') + ' (' + waterUnit + ')') + '</td>' +
     stageIndexes.map(function (i) {
-      return '<td class="report-ferti-stage-num">' + fertiNum(waterArr[i], 2) + '</td>';
+      const shown = fertProgUI() ? fertProgUI().fromSI(waterArr[i], 'volume_area') : (Number(waterArr[i]) || 0);
+      return '<td class="report-ferti-stage-num">' + fertiNum(shown, 2) + '</td>';
     }).join('') + '</tr>';
   const body = rowDefs.map(function (rd) {
     const cells = stageIndexes.map(function (si, ci) {
@@ -3244,6 +3546,7 @@ function saveFertirriegoProgram() {
       chartWaterByStageM3ha: Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.slice() : [],
       chartSelectedStageIndex: parseInt(fertiChartSelectedStageIndex, 10) || 0,
       chartLockedColumnIds: Array.isArray(fertiChartLockedColumnIds) ? fertiChartLockedColumnIds.slice() : [],
+      generationMeta: fertiProgramGenerationMeta,
       timestamp: new Date().toISOString()
     };
     const useCentralized = typeof window.projectStorage !== 'undefined';
@@ -3369,6 +3672,12 @@ function loadFertirriegoProgram() {
     fertiChartLockedColumnIds = (data && Array.isArray(data.chartLockedColumnIds))
       ? data.chartLockedColumnIds.filter(id => fertiColumns.some(c => c.id === id))
       : [];
+    fertiProgramGenerationMeta = data && data.generationMeta && typeof data.generationMeta === 'object'
+      ? data.generationMeta
+      : null;
+    fertiProgramGenerationDiagnostics = fertiProgramGenerationMeta && Array.isArray(fertiProgramGenerationMeta.diagnostics)
+      ? fertiProgramGenerationMeta.diagnostics
+      : null;
     if (data && data.waterContribution) {
       fertiWaterContributionOxide = { ...fertiWaterContributionOxide, ...data.waterContribution };
     } else {
@@ -3386,6 +3695,7 @@ function loadFertirriegoProgram() {
     fertiNormalizeChartWaterByStage();
     updateFertiProgramModeButtons();
     if (fertiWeeks.length === 0) addFertiWeek(); else { renderFertiWeeks(); updateFertiSummary(); }
+    renderFertiAutomaticProgramStatus();
     fertiProgramInitialized = true;
     if (typeof window !== 'undefined') {
       window.fertiProgramInitialized = true;
@@ -3407,6 +3717,8 @@ function initFertirriegoProgramUI() {
   fertiChartUndoSnapshot = null;
   fertiChartEditBaseline = null;
   fertiActiveChartDrag = null;
+  fertiProgramGenerationMeta = null;
+  fertiProgramGenerationDiagnostics = null;
   fertiWaterContributionOxide = {
     N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0,
     Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0, Cl: 0
@@ -3441,7 +3753,6 @@ function initFertirriegoProgramUI() {
   window.clearFertiCustomMaterials = clearFertiCustomMaterials;
   window.openEditFertiCustomMaterial = openEditFertiCustomMaterial;
   window.toggleFertiChartsOxideElemental = toggleFertiChartsOxideElemental;
-  window.onFertiChartWaterByStageInput = onFertiChartWaterByStageInput;
   window.onFertiChartStageSelect = onFertiChartStageSelect;
   window.toggleFertiChartEditMode = toggleFertiChartEditMode;
   window.toggleFertiChartColumnLock = toggleFertiChartColumnLock;
@@ -3453,6 +3764,8 @@ function initFertirriegoProgramUI() {
   window.flushFertiProgramIfDirty = flushFertiProgramIfDirty;
   window.fertiRefreshWaterAnalysisSelect = fertiRefreshWaterAnalysisSelect;
   window.fertiApplyWaterAnalysisById = fertiApplyWaterAnalysisById;
+  window.openFertiAutoProgramModal = openFertiAutoProgramModal;
+  window.closeFertiAutoProgramModal = closeFertiAutoProgramModal;
   // Cargar primero desde localStorage (sin esperar nube) para que el aporte del programa aparezca al instante
   function paintProgramNow() {
     doLoadFertiCustomMaterials();
@@ -3491,6 +3804,11 @@ document.addEventListener('DOMContentLoaded', () => {
       window.initFertirriegoProgramUI();
     }
   } catch {}
+});
+
+window.addEventListener('np:ferti-distribution-changed', function () {
+  try { renderFertiAutomaticProgramStatus(); } catch {}
+  try { renderFertiChartsInsights(); } catch {}
 });
 
 document.addEventListener('projectChanged', () => {

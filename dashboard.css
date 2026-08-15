@@ -8220,6 +8220,20 @@ html.embed-login body {
   font-size: 1rem;
   color: #0f172a;
 }
+.ferti-dist-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.ferti-dist-panel-head h4 {
+  margin: 0;
+}
+.ferti-dist-axis {
+  margin-bottom: 0;
+}
 .ferti-dist-totals {
   display: flex;
   flex-wrap: wrap;
@@ -8260,17 +8274,80 @@ html.embed-login body {
 .ferti-dist-table thead th {
   background: #f1f5f9;
 }
+.ferti-dist-table thead th[colspan="2"] {
+  text-align: center;
+  border-bottom: 0;
+}
+.ferti-dist-table th.ferti-dist-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+}
 .ferti-dist-table tfoot td.ok { color: #15803d; font-weight: 700; }
 .ferti-dist-table tfoot td.bad { color: #c2410c; font-weight: 700; }
 .ferti-dist-table input[type="number"],
-.ferti-dist-table input[type="text"] {
+.ferti-dist-table input[type="text"],
+.ferti-dist-table select.ferti-dist-stage {
   width: 100%;
   min-width: 64px;
   padding: 5px 6px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 12px;
+  font-family: inherit;
+  background: #fff;
 }
+.ferti-dist-table input[type="number"] {
+  min-width: 52px;
+}
+.ferti-dist-table select.ferti-dist-stage {
+  min-width: 128px;
+}
+.ferti-dist-kg {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: #0f172a;
+  background: #f8fafc;
+  font-size: 12px;
+}
+.ferti-dist-water {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #93c5fd;
+  border-left: 4px solid #2563eb;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+.ferti-dist-water-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ferti-dist-water-head h4,
+.ferti-dist-water-head p { margin: 0; }
+.ferti-dist-water-head p { color: #64748b; font-size: 12px; }
+.ferti-dist-water-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+}
+.ferti-dist-water-grid label {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e3a8a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ferti-dist-water-grid input { width: 100%; }
 .ferti-dist-warn {
   margin-top: 8px;
   padding: 8px 10px;
@@ -8304,6 +8381,15 @@ html.embed-login body {
   position: relative;
   height: min(380px, 50vh);
 }
+.ferti-dist-chart canvas {
+  touch-action: none;
+}
+.ferti-dist-chart.is-dragging {
+  cursor: grabbing;
+}
+.ferti-dist-chart.is-dragging canvas {
+  cursor: grabbing;
+}
 .ferti-dist-modal {
   position: fixed;
   inset: 0;
@@ -8323,6 +8409,71 @@ html.embed-login body {
   width: 100%;
 }
 .ferti-dist-modal-box select { width: 100%; }
+
+.ferti-auto-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.52);
+}
+.ferti-auto-modal-box {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  padding: 22px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+.ferti-auto-modal-box h3 { margin: 0 0 10px; color: #0f172a; }
+.ferti-auto-modal-box p { color: #475569; line-height: 1.5; }
+.ferti-auto-summary {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 13px;
+}
+.ferti-auto-warning {
+  padding: 8px 10px;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+}
+.ferti-auto-disclaimer { font-size: 12px; }
+.ferti-auto-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.ferti-auto-status {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 12px;
+}
+.ferti-auto-status.is-warning {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+.ferti-auto-status-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ferti-auto-status p { margin: 8px 0 0; }
+.ferti-auto-status details { margin-top: 8px; }
+.ferti-auto-status ul { margin: 8px 0 0; padding-left: 20px; }
 
 .req-steps-guide {
   margin-top: 14px;

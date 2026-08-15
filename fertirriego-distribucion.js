@@ -19,6 +19,7 @@
   ];
   var MACRO = { n: 1, p: 1, k: 1, ca: 1, mg: 1, s: 1 };
   var DEFAULT_STAGES = ['Brotación', 'Vegetativo', 'Floración', 'Llenado', 'Maduración'];
+  var PHENO_STAGES = ['Brotación', 'Establecimiento', 'Vegetativo', 'Prefloración', 'Floración', 'Amarre', 'Llenado', 'Maduración', 'Cosecha'];
   var DEFAULT_PCT = {
     n: [10, 30, 20, 30, 10],
     p: [15, 25, 25, 20, 15],
@@ -43,8 +44,12 @@
   var persistTimer = null;
   var chartInst = null;
   var chartGroup = 'macro';
+  var chartDrag = null;
   var mounted = false;
   var booting = false;
+  var lastAutoTitle = '';
+  var axis = 'pheno';
+  var waterDepthByStageM3ha = [];
 
   function t(key, es) {
     return typeof fertiT === 'function' ? fertiT(key, es) : es;
@@ -58,6 +63,10 @@
   }
   function stageLabel(name) {
     var raw = String(name == null ? '' : name);
+    var week = /^(?:Semana|Week)\s+(\d+)$/i.exec(raw);
+    if (week) return t('week', 'Semana') + ' ' + week[1];
+    var month = /^(?:Mes|Month)\s+(\d+)$/i.exec(raw);
+    if (month) return t('month', 'Mes') + ' ' + month[1];
     if (w.NpFertigationUI && typeof w.NpFertigationUI.stageName === 'function') {
       var fromUi = w.NpFertigationUI.stageName(raw);
       if (fromUi && fromUi !== raw) return fromUi;
@@ -66,6 +75,10 @@
   }
   function canonicalStage(display) {
     var value = String(display || '');
+    var week = /^(?:Semana|Week)\s+(\d+)$/i.exec(value);
+    if (week) return 'Semana ' + week[1];
+    var month = /^(?:Mes|Month)\s+(\d+)$/i.exec(value);
+    if (month) return 'Mes ' + month[1];
     for (var i = 0; i < STAGE_CANON.length; i++) {
       if (STAGE_CANON[i] === value || stageLabel(STAGE_CANON[i]) === value) return STAGE_CANON[i];
     }
@@ -74,6 +87,76 @@
       if (STAGE_EN[keys[j]] === value) return keys[j];
     }
     return value;
+  }
+  function detectAxis(list) {
+    var rows = Array.isArray(list) ? list : [];
+    if (!rows.length) return 'pheno';
+    var week = 0;
+    var month = 0;
+    rows.forEach(function (s) {
+      if (/^(?:Semana|Week)\s+\d+$/i.test(String(s))) week += 1;
+      else if (/^(?:Mes|Month)\s+\d+$/i.test(String(s))) month += 1;
+    });
+    if (week >= rows.length * 0.6) return 'semana';
+    if (month >= rows.length * 0.6) return 'mes';
+    return 'pheno';
+  }
+  function axisLabel(ax) {
+    if (ax === 'semana') return t('dist_axis_week', 'Semanal');
+    if (ax === 'mes') return t('dist_axis_month', 'Mensual');
+    return t('dist_axis_pheno', 'Fenológica');
+  }
+  function addStageLabel() {
+    if (axis === 'semana') return t('add_week', 'Agregar semana');
+    if (axis === 'mes') return t('add_month', 'Agregar mes');
+    return t('dist_add_stage', 'Agregar etapa');
+  }
+  function nameForAxis(ax, index) {
+    if (ax === 'semana') return 'Semana ' + (index + 1);
+    if (ax === 'mes') return 'Mes ' + (index + 1);
+    return PHENO_STAGES[index] || ('Etapa ' + (index + 1));
+  }
+  function nextAddName() {
+    if (axis === 'semana' || axis === 'mes') {
+      var re = axis === 'mes' ? /^(?:Mes|Month)\s+(\d+)$/i : /^(?:Semana|Week)\s+(\d+)$/i;
+      var max = 0;
+      stages.forEach(function (s) {
+        var m = re.exec(String(s));
+        if (m) max = Math.max(max, parseInt(m[1], 10) || 0);
+      });
+      return (axis === 'mes' ? 'Mes ' : 'Semana ') + (max + 1);
+    }
+    for (var i = 0; i < PHENO_STAGES.length; i++) {
+      if (stages.indexOf(PHENO_STAGES[i]) < 0) return PHENO_STAGES[i];
+    }
+    return 'Nueva etapa';
+  }
+  function stageOptionList() {
+    var opts;
+    var extra;
+    var i;
+    if (axis === 'semana') {
+      extra = Math.max(stages.length + 8, 12);
+      opts = [];
+      for (i = 1; i <= extra; i++) opts.push('Semana ' + i);
+      return opts;
+    }
+    if (axis === 'mes') {
+      extra = Math.max(stages.length + 6, 12);
+      opts = [];
+      for (i = 1; i <= extra; i++) opts.push('Mes ' + i);
+      return opts;
+    }
+    return PHENO_STAGES.slice();
+  }
+  function stageSelectHtml(st, ri) {
+    var canon = canonicalStage(st);
+    var opts = stageOptionList();
+    if (canon && opts.indexOf(canon) < 0) opts = [canon].concat(opts);
+    return '<select class="ferti-dist-stage" data-ri="' + ri + '">' +
+      opts.map(function (v) {
+        return '<option value="' + escapeHtml(v) + '"' + (v === canon ? ' selected' : '') + '>' + escapeHtml(stageLabel(v)) + '</option>';
+      }).join('') + '</select>';
   }
   function round1(n) {
     return Math.round(Number(n) * 10) / 10;
@@ -125,7 +208,7 @@
     return t('dist_project_fallback', 'proyecto');
   }
   function curveTitle(id) {
-    return t('dist_title_prefix', 'Distribución') + ' ' + projectName(id);
+    return t('dist_title_prefix', 'Distribución objetivo') + ' ' + projectName(id);
   }
   function userId() {
     return localStorage.getItem('nutriplant_user_id') || '';
@@ -161,6 +244,20 @@
   function doseUnit() {
     return typeof fertiUnit === 'function' ? fertiUnit('dose_mass_area', 'kg/ha') : 'kg/ha';
   }
+  function waterUnit() {
+    return typeof fertiUnit === 'function' ? fertiUnit('volume_area', 'm³/ha') : 'm³/ha';
+  }
+  function waterInputValue(siValue) {
+    if (typeof fertiInputFromSI === 'function') return fertiInputFromSI(siValue, 'volume_area', 4);
+    var ui = w.NpFertigationUI;
+    if (ui && typeof ui.inputFromSI === 'function') return ui.inputFromSI(siValue, 'volume_area', 4);
+    return String(parseFloat(siValue) || 0);
+  }
+  function waterToSI(value) {
+    var ui = w.NpFertigationUI;
+    if (ui && typeof ui.toSI === 'function') return Math.max(0, ui.toSI(value, 'volume_area') || 0);
+    return Math.max(0, parseFloat(value) || 0);
+  }
   function withUnit(es, key) {
     return t(key, es).replace(/\{unit\}/g, doseUnit());
   }
@@ -173,6 +270,8 @@
           : equalSplit(stages.length);
       }
     });
+    while (waterDepthByStageM3ha.length < stages.length) waterDepthByStageM3ha.push(0);
+    if (waterDepthByStageM3ha.length > stages.length) waterDepthByStageM3ha.length = stages.length;
   }
   function sumPct(id) {
     return (pct[id] || []).reduce(function (a, b) { return a + (parseFloat(b) || 0); }, 0);
@@ -195,7 +294,9 @@
         return { id: n.id, label: n.label, total: totals[n.id] || 0, optional: false };
       }),
       stages: stages.slice(),
-      pct: JSON.parse(JSON.stringify(pct))
+      pct: JSON.parse(JSON.stringify(pct)),
+      waterDepthByStageM3ha: waterDepthByStageM3ha.slice(),
+      axis: axis
     };
   }
 
@@ -217,6 +318,19 @@
       });
       pct = next;
     }
+    if (state.axis === 'semana' || state.axis === 'mes' || state.axis === 'pheno') {
+      axis = state.axis;
+    } else {
+      axis = detectAxis(stages);
+    }
+    var savedWater = Array.isArray(state.waterDepthByStageM3ha)
+      ? state.waterDepthByStageM3ha
+      : (Array.isArray(state.chartWaterByStageM3ha) ? state.chartWaterByStageM3ha : null);
+    if (savedWater) {
+      waterDepthByStageM3ha = savedWater.slice(0, stages.length).map(function (v) {
+        return Math.max(0, parseFloat(v) || 0);
+      });
+    }
     ensurePct();
   }
 
@@ -226,10 +340,18 @@
     if (!pid || !uid) return;
     var state = snapshotState();
     try {
+      localStorage.setItem('np_extraccion_etapa_' + uid + '_' + pid, JSON.stringify(state));
+    } catch (e0) {}
+    try {
       if (typeof w.nutriplantSaveExtractionStageToCloud === 'function') {
         w.nutriplantSaveExtractionStageToCloud({ userId: uid, projectId: pid, state: state });
       }
     } catch (e) {}
+    try {
+      w.dispatchEvent(new CustomEvent('np:ferti-distribution-changed', {
+        detail: { projectId: pid, updatedAt: state.updatedAt, axis: state.axis }
+      }));
+    } catch (e2) {}
   }
   function scheduleSave() {
     if (booting) return;
@@ -245,7 +367,10 @@
       if (typeof w.nutriplantLoadExtractionStageFromCloud === 'function') {
         var cloud = w.nutriplantLoadExtractionStageFromCloud({ userId: uid, projectId: pid });
         if (cloud && cloud.then) cloud = await cloud;
-        if (cloud && Array.isArray(cloud.stages)) return cloud;
+        if (cloud && Array.isArray(cloud.stages)) {
+          try { localStorage.setItem('np_extraccion_etapa_' + uid + '_' + pid, JSON.stringify(cloud)); } catch (e0) {}
+          return cloud;
+        }
       }
     } catch (e) {}
     try {
@@ -305,7 +430,7 @@
     return (
       '<div class="ferti-dist-card">' +
         '<h3 class="ferti-dist-title" id="fertiDistTitle"></h3>' +
-        '<p class="ferti-dist-lead">' + escapeHtml(withUnit('Reparte el Requerimiento real por etapa fenológica. Las dosis ({unit}) salen de la tabla de arriba; aquí diseñas los %.', 'dist_lead')) + '</p>' +
+        '<p class="ferti-dist-lead">' + escapeHtml(withUnit('Define la distribución objetivo del Requerimiento real por etapa o periodo. Después podrás compararla con un programa generado, editado o capturado manualmente.', 'dist_lead')) + '</p>' +
         '<div class="ferti-dist-catalog" aria-label="' + escapeHtml(t('dist_catalog', 'Catálogo de curvas')) + '">' +
           '<label>' + escapeHtml(t('dist_catalog', 'Catálogo de curvas')) +
             '<select id="fertiDistPresetSelect"><option value="">' + escapeHtml(t('dist_pick_curve', '— Elegir curva —')) + '</option></select>' +
@@ -326,15 +451,19 @@
           '<div class="ferti-dist-totals" id="fertiDistTotals"></div>' +
         '</div>' +
         '<div class="ferti-dist-panel">' +
-          '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (%)')) + '</h4>' +
-          '<p class="ferti-dist-hint">' + escapeHtml(t('dist_h2_hint', 'La suma de cada nutriente debe ser 100%.')) + '</p>' +
+          '<div class="ferti-dist-panel-head">' +
+            '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (% y dosis)')) + '</h4>' +
+            '<div class="ferti-dist-seg ferti-dist-axis" role="group" aria-label="' + escapeHtml(t('dist_axis', 'Tipo de etapa')) + '">' +
+              '<button type="button" data-axis="pheno">' + escapeHtml(t('dist_axis_pheno', 'Fenológica')) + '</button>' +
+              '<button type="button" data-axis="semana">' + escapeHtml(t('dist_axis_week', 'Semanal')) + '</button>' +
+              '<button type="button" data-axis="mes">' + escapeHtml(t('dist_axis_month', 'Mensual')) + '</button>' +
+            '</div>' +
+          '</div>' +
+          '<p class="ferti-dist-hint">' + escapeHtml(withUnit('Cada nutriente: % editable y {unit} calculado. La suma de % debe ser 100%.', 'dist_h2_hint')) + '</p>' +
           '<div class="ferti-dist-scroll"><table class="data ferti-dist-table" id="fertiDistPctTable"></table></div>' +
-          '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(t('dist_add_stage', 'Agregar etapa')) + '</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
+          '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
-        '</div>' +
-        '<div class="ferti-dist-panel">' +
-          '<h4>' + escapeHtml(t('dist_h3', '3. Resultado')) + ' (' + escapeHtml(unit) + ' ' + escapeHtml(t('dist_per_stage', 'por etapa')) + ')</h4>' +
-          '<div class="ferti-dist-scroll"><table class="data ferti-dist-table" id="fertiDistKgTable"></table></div>' +
         '</div>' +
         '<div class="ferti-dist-panel">' +
           '<h4>' + escapeHtml(t('dist_h4', '4. Gráfica')) + '</h4>' +
@@ -343,6 +472,7 @@
             '<button type="button" id="fertiDistChartMicro">' + escapeHtml(t('dist_micros', 'Micros')) + '</button>' +
           '</div>' +
           '<div id="fertiDistChartWrap" class="ferti-dist-chart"><canvas id="fertiDistChart"></canvas></div>' +
+          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_drag', 'Arrastra un punto para ajustar % y kg. Las demás etapas se compensan para que cada nutriente sume 100%.')) + '</p>' +
         '</div>' +
       '</div>' +
       '<div class="ferti-dist-modal" id="fertiDistApplyModal" hidden>' +
@@ -385,29 +515,72 @@
     }).join('');
   }
 
+  function kgFor(n, ri) {
+    return (totals[n.id] || 0) * ((parseFloat(pct[n.id] && pct[n.id][ri]) || 0) / 100);
+  }
+
   function renderPct() {
     var table = document.getElementById('fertiDistPctTable');
     if (!table) return;
-    var head = '<thead><tr><th>' + escapeHtml(t('dist_stage', 'Etapa')) + '</th>' +
-      NUTS.map(function (n) { return '<th>' + escapeHtml(nutLabel(n)) + ' %</th>'; }).join('') +
-      '<th></th></tr></thead>';
+    var unit = doseUnit();
+    var head = '<thead><tr><th rowspan="2">' + escapeHtml(t('dist_stage', 'Etapa')) + '</th>' +
+      NUTS.map(function (n) {
+        return '<th colspan="2">' + escapeHtml(nutLabel(n)) + '</th>';
+      }).join('') +
+      '<th rowspan="2"></th></tr><tr>' +
+      NUTS.map(function () {
+        return '<th class="ferti-dist-sub">%</th><th class="ferti-dist-sub">' + escapeHtml(unit) + '</th>';
+      }).join('') + '</tr></thead>';
     var body = '<tbody>' + stages.map(function (st, ri) {
       var cells = NUTS.map(function (n) {
         var v = pct[n.id] && pct[n.id][ri] != null ? pct[n.id][ri] : 0;
-        return '<td><input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="0.1" min="0" max="100"></td>';
+        return '<td><input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="0.1" min="0" max="100"></td>' +
+          '<td class="ferti-dist-kg" data-id="' + n.id + '" data-ri="' + ri + '">' + escapeHtml(fmtDose(kgFor(n, ri), n.ferti)) + '</td>';
       }).join('');
-      return '<tr><td><input type="text" class="ferti-dist-stage" data-ri="' + ri + '" value="' + escapeHtml(stageLabel(st)) + '" list="fertiDistStagePresets"></td>' +
+      return '<tr><td>' + stageSelectHtml(st, ri) + '</td>' +
         cells +
         '<td><button type="button" class="btn btn-ghost btn-sm ferti-dist-rm" data-ri="' + ri + '"' + (stages.length <= 1 ? ' disabled' : '') + '>' + escapeHtml(t('dist_remove_stage', 'Quitar')) + '</button></td></tr>';
     }).join('') + '</tbody>';
     var footCells = NUTS.map(function (n) {
       var s = round1(sumPct(n.id));
       var ok = Math.abs(s - 100) <= 0.15;
-      return '<td class="' + (ok ? 'ok' : 'bad') + '">' + s + '</td>';
+      return '<td colspan="2" class="' + (ok ? 'ok' : 'bad') + '">' + s + '%</td>';
     }).join('');
     var foot = '<tfoot><tr><th>Σ</th>' + footCells + '<th></th></tr></tfoot>';
     table.innerHTML = head + body + foot;
     refreshPctSums();
+  }
+
+  function refreshKgCells() {
+    var cells = document.querySelectorAll('#fertiDistPctTable .ferti-dist-kg');
+    for (var i = 0; i < cells.length; i++) {
+      var id = cells[i].getAttribute('data-id');
+      var ri = parseInt(cells[i].getAttribute('data-ri'), 10);
+      var n = null;
+      for (var j = 0; j < NUTS.length; j++) {
+        if (NUTS[j].id === id) { n = NUTS[j]; break; }
+      }
+      if (!n) continue;
+      cells[i].textContent = fmtDose(kgFor(n, ri), n.ferti);
+    }
+  }
+
+  function renderWaterByStage() {
+    var host = document.getElementById('fertiDistWaterByStage');
+    if (!host) return;
+    ensurePct();
+    host.innerHTML =
+      '<div class="ferti-dist-water-head">' +
+        '<h4>' + escapeHtml(t('dist_water_title', '3. Lámina de riego objetivo por etapa')) + ' (' + escapeHtml(waterUnit()) + ')</h4>' +
+        '<p>' + escapeHtml(t('dist_water_help', 'Captúrala aquí para descontar proporcionalmente el aporte del análisis de agua y calcular ppm, meq/L y CE.')) + '</p>' +
+      '</div>' +
+      '<div class="ferti-dist-water-grid">' +
+        stages.map(function (stage, i) {
+          return '<label><span>' + escapeHtml(stageLabel(stage)) + '</span>' +
+            '<input type="number" class="ferti-dist-water-input" data-ri="' + i + '" min="0" step="0.0001" value="' +
+            escapeHtml(waterInputValue(waterDepthByStageM3ha[i] || 0)) + '"></label>';
+        }).join('') +
+      '</div>';
   }
 
   function refreshPctSums() {
@@ -419,7 +592,7 @@
         if (!tds[i]) return;
         var s = round1(sumPct(n.id));
         var ok = Math.abs(s - 100) <= 0.15;
-        tds[i].textContent = String(s);
+        tds[i].textContent = s + '%';
         tds[i].className = ok ? 'ok' : 'bad';
       });
     }
@@ -428,21 +601,6 @@
       warn.hidden = !bad;
       warn.textContent = bad ? t('dist_sum_warn', 'La suma de % por nutriente debe ser 100%.') : '';
     }
-  }
-
-  function renderKg() {
-    var table = document.getElementById('fertiDistKgTable');
-    if (!table) return;
-    var head = '<thead><tr><th>' + escapeHtml(t('dist_stage', 'Etapa')) + '</th>' +
-      NUTS.map(function (n) { return '<th>' + escapeHtml(nutLabel(n)) + '</th>'; }).join('') + '</tr></thead>';
-    var body = '<tbody>' + stages.map(function (st, ri) {
-      var cells = NUTS.map(function (n) {
-        var kg = (totals[n.id] || 0) * ((parseFloat(pct[n.id] && pct[n.id][ri]) || 0) / 100);
-        return '<td>' + escapeHtml(fmtDose(kg, n.ferti)) + '</td>';
-      }).join('');
-      return '<tr><td>' + escapeHtml(stageLabel(st)) + '</td>' + cells + '</tr>';
-    }).join('') + '</tbody>';
-    table.innerHTML = head + body;
   }
 
   function ensureChartJs(cb) {
@@ -458,11 +616,146 @@
     document.head.appendChild(s);
   }
 
+  function applyPctKeepSum100(id, ri, target) {
+    ensurePct();
+    var arr = pct[id];
+    if (!arr || !arr.length) return;
+    if (arr.length === 1) {
+      arr[0] = 100;
+      return;
+    }
+    target = round1(Math.max(0, Math.min(100, target)));
+    var remain = round1(100 - target);
+    var others = [];
+    var i;
+    for (i = 0; i < arr.length; i++) {
+      if (i !== ri) others.push(i);
+    }
+    var weights = others.map(function (idx) { return Math.max(0, parseFloat(arr[idx]) || 0); });
+    var wsum = weights.reduce(function (a, b) { return a + b; }, 0);
+    arr[ri] = target;
+    if (wsum <= 0.0001) {
+      var base = round1(remain / others.length);
+      var acc = 0;
+      others.forEach(function (idx, k) {
+        arr[idx] = k === others.length - 1 ? round1(remain - acc) : base;
+        acc += arr[idx];
+      });
+      return;
+    }
+    var acc2 = 0;
+    others.forEach(function (idx, k) {
+      var v = k === others.length - 1
+        ? round1(remain - acc2)
+        : round1(remain * (weights[k] / wsum));
+      if (v < 0) v = 0;
+      arr[idx] = v;
+      acc2 += v;
+    });
+  }
+
+  function syncPctInputsFromData() {
+    var inputs = document.querySelectorAll('#fertiDistPctTable .ferti-dist-pct');
+    for (var i = 0; i < inputs.length; i++) {
+      var id = inputs[i].getAttribute('data-id');
+      var ri = parseInt(inputs[i].getAttribute('data-ri'), 10);
+      if (pct[id] && pct[id][ri] != null) inputs[i].value = pct[id][ri];
+    }
+    refreshKgCells();
+    refreshPctSums();
+  }
+
+  function nutFromId(id) {
+    for (var i = 0; i < NUTS.length; i++) {
+      if (NUTS[i].id === id) return NUTS[i];
+    }
+    return null;
+  }
+
+  function setChartHint(text) {
+    var el = document.getElementById('fertiDistChartHint');
+    if (el) el.textContent = text || t('dist_chart_drag', 'Arrastra un punto para ajustar % y kg. Las demás etapas se compensan para que cada nutriente sume 100%.');
+  }
+
+  function applyChartDragValue(nutId, ri, displayedKg) {
+    var n = nutFromId(nutId);
+    if (!n) return;
+    var totalShown = doseShownNumber(totals[n.id] || 0, n.ferti);
+    if (!(totalShown > 1e-9)) return;
+    var targetPct = (Math.max(0, displayedKg) / totalShown) * 100;
+    applyPctKeepSum100(nutId, ri, targetPct);
+    syncPctInputsFromData();
+    if (!chartInst || !chartInst.data || !chartInst.data.datasets) return;
+    chartInst.data.datasets.forEach(function (ds) {
+      if (ds._nutId !== nutId) return;
+      ds.data = stages.map(function (_, idx) { return doseShownNumber(kgFor(n, idx), n.ferti); });
+    });
+    try { chartInst.update('none'); } catch (e) { chartInst.update(); }
+  }
+
+  function bindChartDrag(canvas) {
+    if (!canvas || canvas._fertiDistDragBound) return;
+    canvas._fertiDistDragBound = true;
+    canvas.style.touchAction = 'none';
+    canvas.addEventListener('pointerdown', function (event) {
+      if (!chartInst || typeof chartInst.getElementsAtEventForMode !== 'function') return;
+      var hits = chartInst.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+      if (!hits || !hits.length) return;
+      var hit = hits[0];
+      var ds = chartInst.data.datasets[hit.datasetIndex];
+      if (!ds || !ds._nutId) return;
+      var n = nutFromId(ds._nutId);
+      if (!n || !(doseShownNumber(totals[n.id] || 0, n.ferti) > 1e-9)) return;
+      chartDrag = {
+        canvas: canvas,
+        nutId: ds._nutId,
+        ri: hit.index,
+        label: ds.label
+      };
+      try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
+      var wrap = document.getElementById('fertiDistChartWrap');
+      if (wrap) wrap.classList.add('is-dragging');
+      canvas.style.cursor = 'grabbing';
+      event.preventDefault();
+    });
+    canvas.addEventListener('pointermove', function (event) {
+      if (!chartDrag || chartDrag.canvas !== canvas) return;
+      var scale = chartInst && chartInst.scales && chartInst.scales.y;
+      if (!scale || typeof scale.getValueForPixel !== 'function') return;
+      var rect = canvas.getBoundingClientRect();
+      var displayed = Math.max(0, scale.getValueForPixel(event.clientY - rect.top));
+      applyChartDragValue(chartDrag.nutId, chartDrag.ri, displayed);
+      var n = nutFromId(chartDrag.nutId);
+      var kgTxt = n ? fmtDose(kgFor(n, chartDrag.ri), n.ferti) : '';
+      var pctTxt = pct[chartDrag.nutId] && pct[chartDrag.nutId][chartDrag.ri] != null
+        ? pct[chartDrag.nutId][chartDrag.ri] : '';
+      setChartHint(
+        stageLabel(stages[chartDrag.ri] || '') + ' · ' + (chartDrag.label || '') +
+        ': ' + pctTxt + '% · ' + kgTxt + ' ' + doseUnit()
+      );
+      event.preventDefault();
+    });
+    function finish(event) {
+      if (!chartDrag || chartDrag.canvas !== canvas) return;
+      chartDrag = null;
+      try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+      var wrap = document.getElementById('fertiDistChartWrap');
+      if (wrap) wrap.classList.remove('is-dragging');
+      canvas.style.cursor = '';
+      setChartHint('');
+      scheduleSave();
+    }
+    canvas.addEventListener('pointerup', finish);
+    canvas.addEventListener('pointercancel', finish);
+  }
+
   function renderChart() {
     var canvas = document.getElementById('fertiDistChart');
     if (!canvas || canvas.clientWidth < 40) return;
+    if (chartDrag) return;
     ensureChartJs(function () {
       if (!w.Chart || !document.getElementById('fertiDistChart')) return;
+      if (chartDrag) return;
       var filtered = NUTS.filter(function (n) {
         return chartGroup === 'macro' ? MACRO[n.id] : !MACRO[n.id];
       });
@@ -470,15 +763,17 @@
       var datasets = filtered.map(function (n, i) {
         return {
           label: nutLabel(n),
+          _nutId: n.id,
           data: stages.map(function (_, ri) {
-            var kgSi = (totals[n.id] || 0) * ((parseFloat(pct[n.id] && pct[n.id][ri]) || 0) / 100);
-            return doseShownNumber(kgSi, n.ferti);
+            return doseShownNumber(kgFor(n, ri), n.ferti);
           }),
           borderColor: COLORS[i % COLORS.length],
           backgroundColor: COLORS[i % COLORS.length] + '22',
           tension: 0.35,
           fill: false,
-          pointRadius: 3
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          pointHitRadius: 16
         };
       });
       if (chartInst) chartInst.destroy();
@@ -490,6 +785,12 @@
           maintainAspectRatio: false,
           animation: false,
           resizeDelay: 120,
+          interaction: { mode: 'nearest', intersect: true },
+          onHover: function (evt, elements) {
+            var target = canvas;
+            if (chartDrag) target.style.cursor = 'grabbing';
+            else target.style.cursor = (elements && elements.length) ? 'grab' : 'default';
+          },
           plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } },
           scales: {
             y: { beginAtZero: true, title: { display: true, text: doseUnit() } },
@@ -497,16 +798,40 @@
           }
         }
       });
+      bindChartDrag(canvas);
     });
+  }
+
+  function fillPresetTitle() {
+    var inp = document.getElementById('fertiDistPresetTitle');
+    if (!inp) return;
+    var next = curveTitle().slice(0, 80);
+    var current = (inp.value || '').trim();
+    if (!current || current === lastAutoTitle) inp.value = next;
+    lastAutoTitle = next;
+  }
+
+  function syncAxisUi() {
+    var wrap = document.querySelector('#fertiDistribucionBlock .ferti-dist-axis');
+    if (wrap) {
+      var buttons = wrap.querySelectorAll('[data-axis]');
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].classList.toggle('is-on', buttons[i].getAttribute('data-axis') === axis);
+      }
+    }
+    var add = document.getElementById('fertiDistAddStage');
+    if (add) add.textContent = '+ ' + addStageLabel();
   }
 
   function renderAll() {
     var title = document.getElementById('fertiDistTitle');
     if (title) title.textContent = '📊 ' + curveTitle();
+    fillPresetTitle();
+    syncAxisUi();
     renderPresetSelect();
     renderTotals();
     renderPct();
-    renderKg();
+    renderWaterByStage();
     renderChart();
   }
 
@@ -525,16 +850,25 @@
           pct[id][ri] = parseFloat(el.value) || 0;
           scheduleSave();
           refreshPctSums();
-          renderKg();
+          refreshKgCells();
           renderChart();
+          return;
         }
-        if (el.classList.contains('ferti-dist-stage')) {
-          var si = parseInt(el.getAttribute('data-ri'), 10);
-          stages[si] = canonicalStage(el.value);
+        if (el.classList.contains('ferti-dist-water-input')) {
+          var wi = parseInt(el.getAttribute('data-ri'), 10);
+          waterDepthByStageM3ha[wi] = waterToSI(el.value);
           scheduleSave();
         }
       });
       host.addEventListener('change', function (ev) {
+        var el = ev.target;
+        if (el && el.classList.contains('ferti-dist-stage')) {
+          var si = parseInt(el.getAttribute('data-ri'), 10);
+          stages[si] = canonicalStage(el.value);
+          scheduleSave();
+          renderChart();
+          return;
+        }
         if (ev.target && ev.target.id === 'fertiDistPresetSelect') {
           var del = document.getElementById('fertiDistDeletePreset');
           if (del) del.disabled = !ev.target.value;
@@ -551,14 +885,28 @@
         }
       });
       host.addEventListener('click', function (ev) {
+        var axisBtn = ev.target.closest && ev.target.closest('[data-axis]');
+        if (axisBtn && axisBtn.closest('.ferti-dist-axis')) {
+          setAxis(axisBtn.getAttribute('data-axis'));
+          return;
+        }
         var rm = ev.target.closest && ev.target.closest('.ferti-dist-rm');
         if (rm) {
           if (stages.length <= 1) return;
           var ri = parseInt(rm.getAttribute('data-ri'), 10);
-          stages.splice(ri, 1);
           NUTS.forEach(function (n) {
-            if (pct[n.id]) pct[n.id].splice(ri, 1);
+            var arr = pct[n.id];
+            if (!arr || !arr.length) return;
+            var rmv = parseFloat(arr[ri]) || 0;
+            if (ri > 0) {
+              arr[ri - 1] = round1((parseFloat(arr[ri - 1]) || 0) + rmv);
+            } else if (arr.length > 1) {
+              arr[1] = round1((parseFloat(arr[1]) || 0) + rmv);
+            }
+            arr.splice(ri, 1);
           });
+          waterDepthByStageM3ha.splice(ri, 1);
+          stages.splice(ri, 1);
           ensurePct();
           scheduleSave();
           renderAll();
@@ -568,7 +916,8 @@
 
     var add = document.getElementById('fertiDistAddStage');
     if (add) add.addEventListener('click', function () {
-      stages.push('Nueva etapa');
+      stages.push(nextAddName());
+      waterDepthByStageM3ha.push(0);
       NUTS.forEach(function (n) {
         var arr = pct[n.id] || [];
         if (!arr.length) {
@@ -592,15 +941,17 @@
       title = title.slice(0, 120);
       var st = snapshotState();
       st.title = title;
+      delete st.waterDepthByStageM3ha;
       presetsList.push({
         id: 'pex_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
         title: title,
         state: st,
         savedAt: Date.now()
       });
-      if (inp) inp.value = '';
       persistPresetsBucket();
       renderPresetSelect();
+      lastAutoTitle = '';
+      fillPresetTitle();
     });
 
     var delBtn = document.getElementById('fertiDistDeletePreset');
@@ -637,28 +988,29 @@
       if (macro) macro.classList.remove('is-on');
       renderChart();
     });
-
-    fillStageDatalist(host);
   }
 
-  function fillStageDatalist(host) {
-    var prev = document.getElementById('fertiDistStagePresets');
-    if (prev) prev.remove();
-    var dl = document.createElement('datalist');
-    dl.id = 'fertiDistStagePresets';
-    STAGE_SUGGEST.forEach(function (s) {
-      var o = document.createElement('option');
-      o.value = stageLabel(s);
-      dl.appendChild(o);
-    });
-    (host || hostEl()).appendChild(dl);
+  function setAxis(next) {
+    if (next !== 'semana' && next !== 'mes') next = 'pheno';
+    if (next === axis) return;
+    var warn = t('dist_axis_warn', 'Esto cambia los nombres de las filas a {axis}. Los % se conservan. ¿Continuar?')
+      .replace('{axis}', axisLabel(next).toLowerCase());
+    if (!confirm(warn)) return;
+    axis = next;
+    stages = stages.map(function (_, i) { return nameForAxis(axis, i); });
+    scheduleSave();
+    renderAll();
   }
 
   function listOtherProjects() {
     var cur = projectId();
     var list = [];
     try {
-      if (w.projectManager && typeof w.projectManager.getAllProjects === 'function') {
+      if (typeof w.np_loadProjects === 'function') {
+        list = w.np_loadProjects() || [];
+      } else if (w.nutriPlantStorage && typeof w.nutriPlantStorage.getAllProjects === 'function') {
+        list = w.nutriPlantStorage.getAllProjects() || [];
+      } else if (w.projectManager && typeof w.projectManager.getAllProjects === 'function') {
         list = w.projectManager.getAllProjects() || [];
       }
     } catch (e) {}
@@ -688,7 +1040,7 @@
     var others = listOtherProjects();
     sel.innerHTML = others.length
       ? others.map(function (p) {
-          return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.name || p.id) + '</option>';
+          return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.name || p.title || p.id) + '</option>';
         }).join('')
       : '<option value="">' + escapeHtml(t('dist_no_other', 'No hay otros proyectos')) + '</option>';
     modal.hidden = false;
@@ -710,6 +1062,7 @@
     var reqTotals = destReqTotals(dest);
     var state = snapshotState();
     state.title = curveTitle(destId);
+    state.waterDepthByStageM3ha = stages.map(function () { return 0; });
     state.nutrients = NUTS.map(function (n) {
       return { id: n.id, label: n.label, total: reqTotals[n.id] || 0, optional: false };
     });
@@ -737,25 +1090,57 @@
       host.innerHTML = shellHtml();
       bind();
       stages = DEFAULT_STAGES.slice();
+      axis = 'pheno';
       pct = {};
+      waterDepthByStageM3ha = [];
       ensurePct();
       NUTS.forEach(function (n) {
         if (totals[n.id] == null) totals[n.id] = 0;
       });
       var saved = await loadProjectCurve();
       if (saved) applyPctFromState(saved);
+      var migratedWater = false;
+      if (!saved || !Array.isArray(saved.waterDepthByStageM3ha)) {
+        try {
+          if (typeof w.fertiGetProgramWaterByStage === 'function') {
+            var legacyWater = w.fertiGetProgramWaterByStage();
+            if (Array.isArray(legacyWater) && legacyWater.length) {
+              waterDepthByStageM3ha = legacyWater.slice(0, stages.length).map(function (v) {
+                return Math.max(0, parseFloat(v) || 0);
+              });
+              ensurePct();
+              migratedWater = true;
+            }
+          }
+        } catch (e3) {}
+      }
       await hydratePresets();
       host.dataset.ready = '1';
       host.dataset.pid = pid;
       mounted = true;
       booting = false;
       renderAll();
+      if (migratedWater) saveProjectCurve();
       return;
     }
     renderAll();
   }
 
   w.fertiDistMount = mount;
+  w.fertiDistExportState = function () {
+    if (!mounted || !hostEl() || hostEl().dataset.ready !== '1') return null;
+    return JSON.parse(JSON.stringify(snapshotState()));
+  };
+  w.fertiDistGetStoredState = function () {
+    var pid = projectId();
+    var uid = userId();
+    if (!pid || !uid) return null;
+    try {
+      var raw = localStorage.getItem('np_extraccion_etapa_' + uid + '_' + pid);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {}
+    return null;
+  };
   w.fertiDistSyncFromRequirement = function (realRequirement) {
     applyTotals(realRequirement || {});
     if (!hostEl() || !hostEl().dataset.ready) {

@@ -11,14 +11,14 @@
   <meta name="theme-color" content="#0f172a" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260810a"></script>
+  <script src="assets/np-i18n.js?v=20260815a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-analysis-ui.js?v=20260815c"></script>
   <script src="assets/np-lab-type-configs.js?v=20260805a"></script>
   <script src="assets/np-analysis-compare.js?v=20260805c"></script>
   <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
-  <script src="assets/np-fertigation-ui.js?v=20260815e"></script>
+  <script src="assets/np-fertigation-ui.js?v=20260815l"></script>
   <script src="assets/np-fertilizer-price.js"></script>
   <script src="assets/np-granular-ui.js?v=20260815a"></script>
   <script src="assets/np-amendment-ui.js?v=20260730e"></script>
@@ -50,7 +50,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260815g" />
+  <link rel="stylesheet" href="dashboard.css?v=20260815l" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -431,7 +431,7 @@
   <script src="ai-knowledge-base.js"></script>
   <script src="test-verification.js"></script>
   <script src="fertirriego-functions.js?v=20260815f"></script>
-  <script src="fertirriego-distribucion.js?v=20260815b"></script>
+  <script src="fertirriego-distribucion.js?v=20260815i"></script>
   <script src="nutricion-granular-functions.js?v=20260807b"></script>
   <script src="nutricion-granular-requerimiento-functions.js?v=20260815c"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
@@ -443,8 +443,9 @@
   <script src="climate-functions.js?v=20260801x"></script>
   <script src="analysis-report-render.js?v=20260815c"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260815d"></script>
-  <script src="fertirriego-program-functions.js?v=20260807e"></script>
+  <script src="dashboard.js?v=20260815j"></script>
+  <script src="assets/np-fertigation-program-generator.js?v=20260815b"></script>
+  <script src="fertirriego-program-functions.js?v=20260815e"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=20260807a"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
@@ -6331,8 +6332,8 @@ CONTRATO:
 
         <div class="report-section-item" onclick="toggleReportSection('extraccionEtapa')" data-section="extraccionEtapa">
           <div class="report-section-info">
-            <div class="report-section-title" data-i18n="dashboard.reports_sec_extract_title">📊 Extracción nutrimental por etapa (%)</div>
-            <div class="report-section-description" data-i18n="dashboard.reports_sec_extract_desc" data-i18n-params='{"dose_unit":"kg/ha"}'>Extracción nutrimental por etapa fenológica (% y kg/ha) del proyecto activo</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_extract_title">📊 Distribución por etapa</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_extract_desc" data-i18n-params='{"dose_unit":"kg/ha"}'>Curva del proyecto: % y kg/ha por etapa, igual que en Fertirriego</div>
           </div>
         </div>
       </div>

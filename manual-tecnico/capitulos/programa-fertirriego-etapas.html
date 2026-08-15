@@ -114,15 +114,18 @@
     </div>
 
     <h3>1b. Distribución del requerimiento por etapa</h3>
-    <p>Debajo de la tabla de Requerimiento, bloque <strong>Distribución [nombre del proyecto]</strong>.
+    <p>Debajo de la tabla de Requerimiento, bloque <strong>Distribución objetivo [nombre del proyecto]</strong>.
       Toma el <strong>Requerimiento real</strong> de todos los nutrientes (sin agregar elementos a mano)
-      y reparte <strong>% por etapa fenológica</strong> (suma 100 % por nutriente). Resultado:
+      y reparte <strong>% por etapa</strong> (fenológica, semanal o mensual; suma 100 % por nutriente).
+      Cada etapa se elige en un desplegable. En la misma tabla, junto al % aparece la dosis
+      (kg/ha o lb/acre). Si se quita una etapa, su % pasa a la fila anterior y se recalculan las dosis.
+      Resultado:
       kg/ha etapa = requerimiento real × (% / 100). La curva se guarda en el proyecto.
       <strong>Guardar en catálogo</strong> comparte etapas y % con la herramienta 📊 del dashboard
       (no aparece en el login gratis). <strong>Aplicar a otro proyecto</strong> copia solo % y etapas;
       los kg se recalculan con el requerimiento de ese expediente. El programa de fertirriego es
-      independiente: si más adelante no sigue esta curva, el contraste se titula
-      <em>Programa vs distribución</em>.</p>
+      independiente: puede generarse, editarse o capturarse manualmente. Por eso esta curva se llama
+      <strong>objetivo</strong> y el contraste se titula <em>Programa vs distribución</em>.</p>
     <div class="mt-formula">kg/ha en etapa = Requerimiento real × (% / 100)</div>
 
     <h3>2. Programa de nutrición</h3>
@@ -146,6 +149,28 @@
       alimentan el resumen «Aporte del programa» y las curvas de Gráficas. Los números salen del
       catálogo de materiales (% en etiqueta o ficha del fertilizante), no de una tabla fija externa.
     </p>
+
+    <h3>2a. Generador automático desde Distribución</h3>
+    <p>En <strong>Distribución objetivo</strong> se captura una lámina de riego por etapa o periodo;
+      ya no se edita en Gráficas. El botón <strong>Elaborar programa de fertirriego</strong> prepara una propuesta únicamente
+      cuando Distribución está en modo <strong>Semanal</strong> o <strong>Mensual</strong>. Antes de
+      reemplazar las filas muestra una confirmación con periodos, fertilizantes, agua y faltantes.</p>
+    <div class="mt-formula">
+      Meta de etapa = Requerimiento real × (% de Distribución / 100)<br>
+      Agua de etapa = Aporte total del agua × (lámina etapa / suma de láminas)<br>
+      Meta para fertilizantes = máx(0, meta de etapa − agua de etapa)
+    </div>
+    <p>La secuencia prioriza nitrato de calcio para Ca, fuentes de Mg (nitrato y después sulfato),
+      fuentes P/N/K/S y finalmente micronutrientes. Cada dosis queda limitada por todos los nutrientes:
+      el motor <strong>no sobrepasa una meta</strong>. Si una composición impide cerrar exactamente,
+      conserva y muestra el faltante. La proporción N-NO₃/N-NH₄ resulta de los productos elegidos; no
+      se impone una relación fija. El resultado guarda origen, metas, agua, aportes y faltantes para
+      <em>Programa vs distribución</em> en dashboard, PDF y administración.</p>
+    <p>Si existe aporte de agua y no hay láminas por periodo, primero deben capturarse en
+      <strong>Distribución objetivo</strong>. Tras cambiar la distribución o sus láminas, el programa
+      se marca como <strong>desactualizado</strong>. La
+      propuesta no sustituye la revisión de compatibilidad de tanques, solubilidad, CE, análisis de
+      agua ni límites de inyección.</p>
 
     <h3>2b. Costos del programa (USD/ha)</h3>
     <p>
@@ -192,7 +217,7 @@
 
     <h2>Lámina de riego (m³/ha)</h2>
     <p>
-      En <strong>Gráficas</strong>, por cada semana/mes se captura el <strong>volumen de agua
+      En <strong>Requerimiento → Distribución objetivo</strong>, por cada semana/mes se captura el <strong>volumen de agua
       aplicado acumulado en esa etapa</strong> (m³/ha). Sin lámina &gt; 0 la plataforma muestra solo
       kg/ha del programa; <em>no</em> calcula ppm ni meq/L ni % iónicos de esa etapa.
     </p>
@@ -230,11 +255,12 @@
       cada vez), cada aplicación lleva ¼ del kg/ha y ¼ de la lámina. Al dividir numerador y denominador
       por 4, el <strong>ppm y los meq/L no cambian</strong>; tampoco los <strong>% meq</strong> entre
       aniones (N-P-S) ni entre cationes (K-Ca-Mg), porque todas las concentraciones escalan igual con
-      la lámina. Lo que sí cambia entre etapas es el acumulado de kg/ha del programa; la lámina de
-      Gráficas es la del periodo que estás analizando.</p>
+      la lámina. Lo que sí cambia entre etapas es el acumulado de kg/ha del programa; la lámina
+      objetivo es la del periodo que estás analizando.</p>
 
     <div class="mt-note">
-      <strong>En la plataforma:</strong> Fertirriego → Gráficas → «Lámina de riego por etapa (m³/ha)».
+      <strong>En la plataforma:</strong> Fertirriego → Requerimiento → Distribución objetivo →
+      «Lámina de riego objetivo por etapa».
       Dos tablas iónicas: solo fertilizante del programa vs fertilizante + agua (la mezcla real).
     </div>
 
@@ -302,7 +328,10 @@
     <h3>1b. Requirement distribution by stage</h3>
     <p>Below the Requirement table, block <strong>Distribution [project name]</strong>.
       It takes <strong>actual requirement</strong> for every nutrient (no manual add) and allocates
-      <strong>% by phenological stage</strong> (sum 100% per nutrient). Result:
+      <strong>% by stage</strong> (phenological, weekly or monthly; sum 100% per nutrient).
+      Each stage is chosen from a dropdown. The same table shows dose (kg/ha or lb/acre) next to %.
+      If a stage is removed, its % moves to the previous row and doses are recalculated.
+      Result:
       kg/ha stage = actual requirement × (% / 100). Saved on the project.
       <strong>Save to catalog</strong> shares stages and % with the dashboard 📊 tool
       (not shown on the free login). <strong>Apply to another project</strong> copies only % and stages;
