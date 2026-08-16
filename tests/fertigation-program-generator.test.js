@@ -43,6 +43,22 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(ids.includes('sulfato_magnesio'));
 })();
 
+(function tinyBulkSaltIsNotRepresentative() {
+  const result = generator.solveStage(
+    { N: 20, CaO: 0, MgO: 0.18, P2O5: 0, K2O: 0, SO4: 0.2 },
+    {},
+    materials
+  );
+  const ids = result.rows.map(row => row.materialId);
+  assert.ok(!ids.includes('sulfato_magnesio'), ids.join(','));
+  result.rows.forEach(row => {
+    const min = row.target === 'Fe' || row.target === 'Mn' || row.target === 'B' || row.target === 'Zn' || row.target === 'Cu' || row.target === 'Mo'
+      ? generator.MIN_MICRO_DOSE_KG_HA
+      : generator.MIN_BULK_DOSE_KG_HA;
+    assert.ok(row.doseKgHa + 1e-9 >= min, `${row.materialId} ${row.doseKgHa}`);
+  });
+})();
+
 (function waterIsDistributedByDepth() {
   const result = generator.proportionalWater({ N: 30, CaO: 12 }, [100, 200]);
   assert.strictEqual(result.ok, true);
@@ -80,6 +96,26 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(result.supplied.N <= 25 + 1e-8);
 })();
 
+(function mkpKeepsPotassiumOnDistributionLine() {
+  const risingK = [
+    { N: 20, CaO: 26, MgO: 6, P2O5: 14, K2O: 20, SO4: 12 },
+    { N: 22, CaO: 22, MgO: 6, P2O5: 13, K2O: 24, SO4: 14 },
+    { N: 24, CaO: 16, MgO: 6, P2O5: 12, K2O: 28, SO4: 16 }
+  ];
+  const delivered = risingK.map(t => generator.solveStage(t, {}, materials).totalWithWater.K2O);
+  assert.ok(delivered[1] + 1e-6 >= delivered[0] - 0.4, `K dip ${delivered.join(', ')}`);
+  assert.ok(delivered[2] + 1e-6 >= delivered[1] - 0.4, `K dip ${delivered.join(', ')}`);
+  risingK.forEach((t, i) => {
+    const r = generator.solveStage(t, {}, materials);
+    assert.ok(r.excess.K2O <= 1e-8, `K excess stage ${i}`);
+    assert.ok(r.excess.P2O5 <= 1e-8, `P excess stage ${i}`);
+    assert.ok(
+      r.totalWithWater.K2O >= t.K2O * 0.9 || r.unresolved.includes('K2O'),
+      `stage ${i} K ${r.totalWithWater.K2O} vs target ${t.K2O}`
+    );
+  });
+})();
+
 (function generatesWeeklyProgram() {
   const result = generator.generate({
     axis: 'semana',
@@ -96,6 +132,35 @@ function close(actual, expected, eps = 1e-6) {
   assert.strictEqual(result.stages.length, 2);
   close(result.stages[0].water.N, 1);
   close(result.stages[1].water.N, 2);
+})();
+
+(function acidFromWaterFollowsStageDepth() {
+  const withAcid = materials.concat([
+    { id: 'acido_nitrico_55', N_NO3: 12.2, unit: 'L', density: 1.33 }
+  ]);
+  const result = generator.generate({
+    axis: 'semana',
+    stages: ['Semana 1', 'Semana 2'],
+    targetsByStage: [
+      { N: 20, CaO: 10, K2O: 8, SO4: 6, P2O5: 4, MgO: 4 },
+      { N: 20, CaO: 10, K2O: 8, SO4: 6, P2O5: 4, MgO: 4 }
+    ],
+    waterContribution: {},
+    waterDepths: [100, 200],
+    materials: withAcid,
+    acid: { materialId: 'acido_nitrico_55', mlPerM3: 18.97, densityKgL: 1.33 }
+  });
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.materialIds[0], 'acido_nitrico_55');
+  const row0 = result.stages[0].rows.find(r => r.materialId === 'acido_nitrico_55');
+  const row1 = result.stages[1].rows.find(r => r.materialId === 'acido_nitrico_55');
+  assert.ok(row0, 'acid missing stage 0');
+  assert.ok(row1, 'acid missing stage 1');
+  close(row0.doseAmount, 1.897, 1e-6);
+  close(row1.doseAmount, 3.794, 1e-6);
+  close(row0.doseKgHa, 1.897 * 1.33, 1e-6);
+  assert.ok(result.stages[0].supplied.N > 0);
+  assert.ok(result.stages[0].rows[0].materialId === 'acido_nitrico_55');
 })();
 
 console.log('fertigation-program-generator tests passed');

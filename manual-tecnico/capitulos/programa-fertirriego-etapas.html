@@ -117,6 +117,7 @@
     <p>Debajo de la tabla de Requerimiento, bloque <strong>Distribución objetivo [nombre del proyecto]</strong>.
       Toma el <strong>Requerimiento real</strong> de todos los nutrientes (sin agregar elementos a mano)
       y reparte <strong>% por etapa</strong> (fenológica, semanal o mensual; suma 100 % por nutriente).
+      En la plataforma, el paso 5 de «Cómo usar esta tabla» apunta a este bloque.
       Cada etapa se elige en un desplegable. En la misma tabla, junto al % aparece la dosis
       (kg/ha o lb/acre). Si se quita una etapa, su % pasa a la fila anterior y se recalculan las dosis.
       Resultado:
@@ -191,7 +192,8 @@
     <p>
       Bloque editable en <strong>Programa de nutrición → Aporte por agua</strong>. UI: etiqueta
       <strong>Traer de análisis</strong> + desplegable <strong>Seleccionar análisis…</strong> (al elegir
-      un reporte de Análisis → Agua se cargan los kg/ha). Representa cuántos
+      un reporte de Análisis → Agua se cargan los kg/ha y la <strong>dosis de ácido</strong>,
+      igual que en Hidroponía). Representa cuántos
       <strong>kg/ha de cada elemento</strong> aporta el agua de riego durante el ciclo (referencia del
       proyecto), calculados desde el <strong>análisis de agua</strong> (meq/L y ppm) y el volumen de
       agua de referencia (m³). Fórmula típica para macros/micros en ppm:
@@ -208,6 +210,12 @@
       trata como <strong>N-NO₃⁻</strong>. El resumen suma <strong>programa + agua</strong>; la
       <strong>Diferencia</strong> = (aporte programa + aporte agua) − requerimiento real (negativo =
       falta cubrir; positivo = exceso).
+    </p>
+    <p>
+      La leyenda de ácido usa el mismo cálculo que Análisis → Agua e Hidroponía:
+      meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ meq/mL del ácido.
+      En el programa, <strong>L/ha de cada etapa = mL/m³ × lámina de esa etapa (m³/ha) ÷ 1000</strong>.
+      Al elaborar el programa automático el ácido entra primero y su N/P/S resta del faltante.
     </p>
 
     <h3>4. Gráficas</h3>
@@ -331,6 +339,7 @@
     <p>Below the Requirement table, block <strong>Distribution [project name]</strong>.
       It takes <strong>actual requirement</strong> for every nutrient (no manual add) and allocates
       <strong>% by stage</strong> (phenological, weekly or monthly; sum 100% per nutrient).
+      In the platform, step 5 of “How to use this table” points to this block.
       Each stage is chosen from a dropdown. The same table shows dose (kg/ha or lb/acre) next to %.
       If a stage is removed, its % moves to the previous row and doses are recalculated.
       Result:
@@ -380,7 +389,7 @@
     <p>
       Editable block under <strong>Nutrition program → Water contribution</strong>. UI: label
       <strong>Bring from analysis</strong> + dropdown <strong>Select analysis…</strong> (picking a report
-      from Analysis → Water loads kg/ha). It represents how many
+      from Analysis → Water loads kg/ha and the <strong>acid dose</strong>, same as Hydroponics). It represents how many
       <strong>kg/ha of each element</strong> irrigation water supplies over the cycle (project
       reference), calculated from the <strong>water analysis</strong> (meq/L and ppm) and the reference water
       volume (m³). Typical formula for macros/micros in ppm:
@@ -397,6 +406,12 @@
       treated as <strong>N-NO₃⁻</strong>. The summary adds <strong>program + water</strong>; the
       <strong>Difference</strong> = (program contribution + water contribution) − actual requirement (negative =
       shortfall; positive = excess).
+    </p>
+    <p>
+      The acid legend uses the same calculation as Analysis → Water and Hydroponics:
+      meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ acid meq/mL.
+      In the program, <strong>L/ha of each stage = mL/m³ × that stage’s depth (m³/ha) ÷ 1000</strong>.
+      When the automatic program is built, acid enters first and its N/P/S subtracts from the remaining need.
     </p>
 
     <h3>4. Charts</h3>

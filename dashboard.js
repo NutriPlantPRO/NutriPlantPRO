@@ -260,6 +260,13 @@ function refreshGranularDashboardChrome() {
   if (summaryHeadings[0]) summaryHeadings[0].textContent = granularT('total_supply', '💡 Aporte Total de Nutrientes') + ' (' + doseUnit + '):';
   if (summaryHeadings[1]) summaryHeadings[1].textContent = granularT('real_requirement', '🎯 Requerimiento Real') + ' (' + doseUnit + '):';
   if (summaryHeadings[2]) summaryHeadings[2].textContent = granularT('difference', '➖ Diferencia (Aporte - Requerimiento)') + ' (' + doseUnit + '):';
+  const granularDiffHint = root.querySelector('#granularDiffHint');
+  if (granularDiffHint) {
+    granularDiffHint.textContent = granularT(
+      'difference_fertigation_hint',
+      'Sugerencia: si el cultivo también lleva fertirriego, cubre el faltante (naranja) en ese programa.'
+    );
+  }
   const addButton = root.querySelector('#addApplicationBtn');
   if (addButton) addButton.textContent = granularT('add_application', '➕ Agregar Nueva Aplicación Granular');
 }
@@ -1026,12 +1033,12 @@ function sectionTemplate(name) {
                     <h4>${ft('water_supply', '💧 Aporte por agua')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                     <label class="hydro-import-water-wrap" for="fertiImportWaterSelect">
                       <span class="hydro-import-water-label">${ft('bring_from_analysis', 'Traer de análisis')}</span>
-                      <select id="fertiImportWaterSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_analysis_title', 'Elige un análisis de agua del proyecto: se cargan sus kg/ha en aporte por agua')}">
+                      <select id="fertiImportWaterSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_analysis_title', 'Elige un análisis: se cargan sus kg/ha y la dosis de ácido')}">
                         <option value="">${ft('select_water_analysis', 'Seleccionar análisis…')}</option>
                       </select>
                     </label>
                   </div>
-                  <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_analysis_hint', 'Elige un análisis de la lista para cargar sus valores, o escríbelos a mano.')}</div>
+                  <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_analysis_hint', 'Elige un análisis para cargar kg/ha y el ácido. El ácido del programa usa la lámina de cada etapa.')}</div>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelN">N-NO₃⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
@@ -1049,6 +1056,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelSiO2">SiO₂:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSiO2" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCl" step="0.01" value="0.0"></div>
                   </div>
+                  <div id="fertiAcidSummary" class="hydro-acid-summary"></div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
@@ -1732,6 +1740,7 @@ function sectionTemplate(name) {
 
               <div class="summary-nutrients summary-nutrients--granular-diff" style="margin-top: 16px;">
                 <h4>${granularT('difference', '➖ Diferencia (Aporte - Requerimiento)')} (${granularUnit('dose_mass_area', 'kg/ha')}):</h4>
+                <p id="granularDiffHint" class="granular-diff-hint">${granularT('difference_fertigation_hint', 'Sugerencia: si el cultivo también lleva fertirriego, cubre el faltante (naranja) en ese programa.')}</p>
                 <div class="nutrients-grid nutrients-grid--diff">
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="diffN">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="diffP2O5">0.0</span></div>
@@ -7120,15 +7129,6 @@ function initializeFertirriegoTabs() {
       }
     }
     
-    // Si se activó el tab de programa, inicializar UI del programa
-    if (tabId === 'programa') {
-      // PRIMERO: Cargar datos del proyecto
-      loadProjectData();
-      // SEGUNDO: Inicializar UI del programa
-      if (typeof window.initFertirriegoProgramUI === 'function') {
-        setTimeout(() => window.initFertirriegoProgramUI(), 0);
-      }
-    }
     // Remover clase active solo dentro del contenedor de Fertirriego
     fertContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     fertContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -7139,6 +7139,14 @@ function initializeFertirriegoTabs() {
       if (targetContent) {
         targetContent.classList.add('active');
       }
+
+    // Programa: cargar después de ocultar Requerimiento para que «Traer de análisis» no parpadee
+    if (tabId === 'programa') {
+      loadProjectData();
+      if (typeof window.initFertirriegoProgramUI === 'function') {
+        setTimeout(() => window.initFertirriegoProgramUI(), 0);
+      }
+    }
     
     // Si se activó el tab de gráficas: cargar programa (local, sin esperar nube) y pintar gráficas al instante
     if (tabId === 'graficas') {
@@ -10064,11 +10072,47 @@ window.shareReportView = async function(reportId) {
 
 const EXTRACTION_ETAPA_MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
 const EXTRACTION_ETAPA_MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true, si: true };
-const EXTRACTION_ETAPA_CHART_COLORS = [
-  '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2',
-  '#ca8a04', '#db2777', '#0d9488', '#4f46e5', '#64748b',
-  '#059669', '#b45309', '#be185d'
-];
+function npNutrientColor(key) {
+  if (window.NpFertigationUI && typeof window.NpFertigationUI.nutrientColor === 'function') {
+    return window.NpFertigationUI.nutrientColor(key);
+  }
+  const fallback = {
+    n: '#2563eb', N: '#2563eb', N_NO3: '#2563eb', N_NH4: '#3b82f6',
+    p: '#16a34a', P: '#16a34a', P2O5: '#16a34a',
+    k: '#ea580c', K: '#ea580c', K2O: '#ea580c',
+    ca: '#7c3aed', Ca: '#7c3aed', CaO: '#7c3aed',
+    mg: '#0891b2', Mg: '#0891b2', MgO: '#0891b2',
+    s: '#ca8a04', S: '#ca8a04', SO4: '#ca8a04',
+    Fe: '#db2777', fe: '#db2777', Mn: '#0d9488', mn: '#0d9488',
+    B: '#4f46e5', b: '#4f46e5', Zn: '#64748b', zn: '#64748b',
+    Cu: '#059669', cu: '#059669', Mo: '#b45309', mo: '#b45309',
+    Si: '#be185d', si: '#be185d'
+  };
+  return fallback[key] || '#64748b';
+}
+
+function npMacroChartColors() {
+  return {
+    N_NO3: npNutrientColor('N_NO3'),
+    N_NH4: npNutrientColor('N_NH4'),
+    P2O5: npNutrientColor('P2O5'),
+    K2O: npNutrientColor('K2O'),
+    CaO: npNutrientColor('CaO'),
+    MgO: npNutrientColor('MgO'),
+    SO4: npNutrientColor('SO4')
+  };
+}
+
+function npMicroChartColors() {
+  return {
+    Fe: npNutrientColor('Fe'),
+    Mn: npNutrientColor('Mn'),
+    B: npNutrientColor('B'),
+    Zn: npNutrientColor('Zn'),
+    Cu: npNutrientColor('Cu'),
+    Mo: npNutrientColor('Mo')
+  };
+}
 
 function loadChartJsForReport(callback) {
   if (typeof callback !== 'function') callback = function () {};
@@ -10275,13 +10319,12 @@ function buildExtraccionEtapaChartDatasets(state, group, unitSystem) {
   const idMap = group === 'macro' ? EXTRACTION_ETAPA_MACRO_IDS : EXTRACTION_ETAPA_MICRO_IDS;
   const filtered = (state.nutrients || []).filter(function(n) { return idMap[n.id]; });
   return filtered.map(function(n) {
-    const idx = (state.nutrients || []).findIndex(function(x) { return x.id === n.id; });
     return {
       label: n.label,
       data: (state.stages || []).map(function(_, ri) {
         return extraccionEtapaReportValue(extraccionEtapaKgHa(n, ri, state), unitSystem);
       }),
-      color: EXTRACTION_ETAPA_CHART_COLORS[(idx >= 0 ? idx : 0) % EXTRACTION_ETAPA_CHART_COLORS.length]
+      color: npNutrientColor(n.id)
     };
   });
 }
@@ -18484,6 +18527,7 @@ function createGranularSectionHTML(reportLanguage) {
         <div class="report-subtitle">${rt('Requerimiento real', 'Actual requirement')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(realRequirement, doseValue), programModeIsElemental, false)}</div>
         <div class="report-subtitle">${rt('Diferencia (Aporte - Requerimiento)', 'Difference (Supply − Requirement)')} (${doseUnit}):</div>
+        <p class="report-note" style="margin:4px 0 8px;">${rt('Sugerencia: si el cultivo también lleva fertirriego, cubre el faltante (naranja) en ese programa.', 'Tip: if the crop also uses fertigation, cover the deficit (orange) in that program.')}</p>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(diffProgram, doseValue), programModeIsElemental, true)}</div>
         <div class="report-subtitle">${priceLabels.totalCost} (${priceLabels.costAreaUnit}):</div>
         <div class="report-nutrient-wrap"><span class="report-nutrient-pill"><strong>${granularReportAreaCost(granularProgramCostUsdPerHa)}</strong></span></div>
@@ -18880,8 +18924,8 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
   `).join('');
 
   const chartLabels = weeks.map((w, i) => `${reportFertiIsMes ? rt('Mes', 'Month') : rt('Semana', 'Week')} ${i + 1}`);
-  const macroColors = { N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b' };
-  const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
+  const macroColors = npMacroChartColors();
+  const microColors = npMicroChartColors();
   let macroSeries = {
     N_NO3: weeks.map(w => toNum(w?.totals?.N_NO3)),
     N_NH4: weeks.map(w => toNum(w?.totals?.N_NH4)),
@@ -19013,6 +19057,36 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">${rt('Aporte por agua', 'Water nutrient supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true }, 'dose_mass_area')}</div>
+        ${(function () {
+          if (typeof window.NpHydroAcidLegend === 'undefined' || typeof window.NpHydroAcidLegend.buildHtml !== 'function') return '';
+          const agua = (currentProject && (currentProject.aguaAnalyses || currentProject.agua_analyses)) || [];
+          const analysisId = prog.waterAnalysisId || '';
+          const analysis = analysisId && Array.isArray(agua)
+            ? agua.find(a => a && a.id === analysisId)
+            : null;
+          if (!analysis && !analysisId) return '';
+          const depths = Array.isArray(prog.chartWaterByStageM3ha) ? prog.chartWaterByStageM3ha : [];
+          const totalDepth = depths.reduce((s, v) => s + (Number(v) || 0), 0);
+          const ml = window.NpHydroAcidLegend.calculate(analysis, totalDepth);
+          const cycleL = ml && ml.mlPerM3 > 0 ? (ml.mlPerM3 * totalDepth / 1000) : 0;
+          const extra = ml && ml.mlPerM3 > 0
+            ? '<p class="hydro-acid-summary-body" style="margin-top:6px;">' +
+              (reportLang === 'en'
+                ? ('In the fertigation program, acid is dosed per stage from irrigation depth: L/ha = mL/m³ × m³/ha ÷ 1000. Cycle (' + totalDepth.toFixed(2) + ' m³/ha): <strong>' + cycleL.toFixed(2) + ' L/ha</strong>.')
+                : ('En el programa, el ácido se dosifica por la lámina de cada etapa: L/ha = mL/m³ × m³/ha ÷ 1000. Ciclo (' + totalDepth.toFixed(2) + ' m³/ha): <strong>' + cycleL.toFixed(2) + ' L/ha</strong>.')) +
+              '</p>'
+            : '';
+          return window.NpHydroAcidLegend.buildHtml({
+            lang: reportLang,
+            analysis: analysis,
+            hydroVolumeM3: totalDepth,
+            linked: !!analysisId,
+            classPrefix: 'hydro',
+            wrap: true,
+            hideAppliedVolume: true,
+            extraHtml: extra
+          }) || '';
+        })()}
         <div class="report-subtitle">${rt('Aporte de fertilización de base', 'Base fertilization supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(baseContribution, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">${rt('Aporte total (programa + agua + fertilización de base)', 'Total supply (program + water + base fertilization)')} (${doseUnit}):</div>
@@ -20230,13 +20304,24 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
   const axisLabel = extraccionEtapaReportAxisLabel(state.axis, lang);
   const waterUnit = unitSystem === 'us_customary' ? 'US gal/acre' : 'm³/ha';
   const waterDepths = Array.isArray(state.waterDepthByStageM3ha) ? state.waterDepthByStageM3ha : [];
+  function distNutColor(n) {
+    return npNutrientColor(n && n.id);
+  }
+  function distNutHeadStyle(n) {
+    const c = distNutColor(n);
+    return 'color:' + c + ' !important;border-left:2px solid ' + c + ';';
+  }
+  function distNutStartStyle(n) {
+    const c = distNutColor(n);
+    return 'border-left:2px solid ' + c + ';color:' + c + ';';
+  }
   const reportWaterDepth = function (v) {
     const si = Number(v) || 0;
     return unitSystem === 'us_customary' ? si * 106.9067 : si;
   };
 
   const totalsRow = nutrients.map(function(n) {
-    return '<td class="report-ferti-stage-num">' +
+    return '<td class="report-ferti-stage-num" style="' + distNutStartStyle(n) + '">' +
       reportNum(extraccionEtapaReportValue(n.total, unitSystem), 2) + '</td>';
   }).join('');
 
@@ -20246,16 +20331,16 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
     (showPeriod ? '<th rowspan="2">' + periodHead + '</th>' : '') +
     '<th rowspan="2">' + rt('Lámina objetivo', 'Target irrigation depth') + '<br>(' + waterUnit + ')</th>' +
     nutrients.map(function(n) {
-      return '<th colspan="2">' + reportEscapeHtml(n.label) + '</th>';
+      return '<th colspan="2" style="' + distNutHeadStyle(n) + '">' + reportEscapeHtml(n.label) + '</th>';
     }).join('') + '</tr><tr>' +
-    nutrients.map(function() {
-      return '<th>%</th><th>' + massAreaUnit + '</th>';
+    nutrients.map(function(n) {
+      return '<th style="' + distNutHeadStyle(n) + '">%</th><th>' + massAreaUnit + '</th>';
     }).join('') + '</tr>';
   const combinedRows = stages.map(function(st, ri) {
     const cells = nutrients.map(function(n) {
       const pctVal = (state.pct[n.id] && state.pct[n.id][ri]) != null ? state.pct[n.id][ri] : 0;
       const kgVal = extraccionEtapaReportValue(extraccionEtapaKgHa(n, ri, state), unitSystem);
-      return '<td>' + reportNum(pctVal, 1) + '</td><td class="report-ferti-stage-num">' + reportNum(kgVal, 2) + '</td>';
+      return '<td style="' + distNutStartStyle(n) + 'font-weight:700;">' + reportNum(pctVal, 1) + '</td><td class="report-ferti-stage-num" style="color:#64748b;">' + reportNum(kgVal, 2) + '</td>';
     }).join('');
     return '<tr><td class="report-ferti-stage-cell">' +
       reportEscapeHtml(extraccionEtapaReportStage(st, lang)) + '</td>' +
@@ -20265,7 +20350,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
   const combinedFoot = nutrients.map(function(n) {
     const sum = extraccionEtapaSumPct(n.id, state);
     const ok = Math.abs(sum - 100) < 0.05;
-    return '<td colspan="2" style="' + (ok ? 'color:#059669;font-weight:700;' : 'color:#b45309;font-weight:700;') + '">' +
+    return '<td colspan="2" style="border-left:2px solid ' + distNutColor(n) + ';' + (ok ? 'color:#059669;font-weight:700;' : 'color:#b45309;font-weight:700;') + '">' +
       reportNum(sum, 1) + '%</td>';
   }).join('');
 
@@ -20289,7 +20374,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
         <div class="report-block-title">${rt('1. Requerimiento real', '1. Actual requirement')} (${massAreaUnit})</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
-            <thead><tr><th>${rt('Nutriente', 'Nutrient')}</th>${nutrients.map(function(n) { return '<th>' + reportEscapeHtml(n.label) + '</th>'; }).join('')}</tr></thead>
+            <thead><tr><th>${rt('Nutriente', 'Nutrient')}</th>${nutrients.map(function(n) { return '<th style="' + distNutHeadStyle(n) + '">' + reportEscapeHtml(n.label) + '</th>'; }).join('')}</tr></thead>
             <tbody><tr><td>${rt('Total ciclo', 'Cycle total')}</td>${totalsRow}</tr></tbody>
           </table>
         </div>

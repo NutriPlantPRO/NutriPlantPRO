@@ -27,7 +27,6 @@
     ca: [12, 28, 22, 28, 10],
     mg: [12, 28, 22, 28, 10]
   };
-  var COLORS = ['#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#db2777', '#0d9488', '#4f46e5', '#64748b', '#059669', '#b45309', '#be185d'];
   var POINT_STYLES = {
     n: 'circle', p: 'rect', k: 'triangle', ca: 'rectRot', mg: 'rectRounded', s: 'star',
     fe: 'circle', mn: 'rect', b: 'triangle', zn: 'rectRot', cu: 'star', mo: 'crossRot', si: 'rectRounded'
@@ -56,6 +55,7 @@
   var chartDrag = null;
   var chartFocusId = null;
   var chartPendingClear = false;
+  var tableChartTimer = null;
   var mounted = false;
   var booting = false;
   var lastAutoTitle = '';
@@ -479,7 +479,7 @@
             '</div>' +
             '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (% y dosis)')) + '</h4>' +
           '</div>' +
-          '<p class="ferti-dist-hint">' + escapeHtml(withUnit('Elige Semana o Mes para el cálculo de fertirriego. Cada nutriente: % y {unit} editables. La suma de % debe ser 100%.', 'dist_h2_hint')) + '</p>' +
+          '<p class="ferti-dist-hint">' + escapeHtml(withUnit('Elige Semana o Mes para el cálculo de fertirriego. Edita el %; la dosis ({unit}) sale del requerimiento. La suma de % debe ser 100%. Flechas: 1% · Mayús+flechas: 5% · Alt: 0.1%. También puedes escribir decimales.', 'dist_h2_hint')) + '</p>' +
           '<div class="ferti-dist-scroll"><table class="data ferti-dist-table" id="fertiDistPctTable"></table></div>' +
           '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
@@ -531,7 +531,7 @@
     var el = document.getElementById('fertiDistTotals');
     if (!el) return;
     el.innerHTML = NUTS.map(function (n) {
-      return '<span class="ferti-dist-chip"><strong>' + escapeHtml(nutLabel(n)) + '</strong> ' + escapeHtml(fmtDose(totals[n.id] || 0, n.ferti)) + '</span>';
+      return '<span class="ferti-dist-chip" ' + nutCss(n) + '><strong>' + escapeHtml(nutLabel(n)) + '</strong> ' + escapeHtml(fmtDose(totals[n.id] || 0, n.ferti)) + '</span>';
     }).join('');
   }
 
@@ -546,24 +546,24 @@
     var head = '<thead><tr><th rowspan="2" class="ferti-dist-stage-head">' + escapeHtml(t('dist_stage', 'Etapa')) + '</th>' +
       '<th rowspan="2" class="ferti-dist-period-head">' + escapeHtml(periodHeadLabel()) + '</th>' +
       NUTS.map(function (n) {
-        return '<th colspan="2" class="ferti-dist-nut-start">' + escapeHtml(nutLabel(n)) + '</th>';
+        return '<th colspan="2" class="ferti-dist-nut-start ferti-dist-nut-name" ' + nutCss(n) + '>' + escapeHtml(nutLabel(n)) + '</th>';
       }).join('') +
       '</tr><tr>' +
-      NUTS.map(function () {
-        return '<th class="ferti-dist-sub ferti-dist-nut-start">%</th><th class="ferti-dist-sub">' + escapeHtml(unit) + '</th>';
+      NUTS.map(function (n) {
+        return '<th class="ferti-dist-sub ferti-dist-nut-start ferti-dist-pct-head" ' + nutCss(n) + '>%</th><th class="ferti-dist-sub">' + escapeHtml(unit) + '</th>';
       }).join('') + '</tr></thead>';
     var body = '<tbody>' + stages.map(function (st, ri) {
       var cells = NUTS.map(function (n) {
         var v = pct[n.id] && pct[n.id][ri] != null ? pct[n.id][ri] : 0;
-        return '<td class="ferti-dist-pct-cell ferti-dist-nut-start"><input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="0.1" min="0" max="100"></td>' +
-          '<td class="ferti-dist-kg-cell"><input type="number" class="ferti-dist-kg-input" data-id="' + n.id + '" data-ri="' + ri + '" value="' + escapeHtml(doseInputValue(kgFor(n, ri), n.ferti)) + '" min="0" step="0.01"></td>';
+        return '<td class="ferti-dist-pct-cell ferti-dist-nut-start" ' + nutCss(n) + '><input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="any" min="0" max="100" inputmode="decimal" title="' + escapeHtml(t('dist_pct_nudge', 'Flechas: 1% · Mayús: 5% · Alt: 0.1%. También puedes escribir decimales.')) + '"></td>' +
+          '<td class="ferti-dist-kg-cell"><span class="ferti-dist-kg" data-id="' + n.id + '" data-ri="' + ri + '" title="' + escapeHtml(t('dist_kg_readonly', 'Dosis calculada: requerimiento × %. No se edita aquí.')) + '">' + escapeHtml(fmtDose(kgFor(n, ri), n.ferti)) + '</span></td>';
       }).join('');
       return '<tr>' + stageCellHtml(st, ri) + periodCellHtml(ri) + cells + '</tr>';
     }).join('') + '</tbody>';
     var footCells = NUTS.map(function (n) {
       var s = round1(sumPct(n.id));
       var ok = Math.abs(s - 100) <= 0.15;
-      return '<td colspan="2" class="ferti-dist-nut-start ' + (ok ? 'ok' : 'bad') + '">' + s + '%</td>';
+      return '<td colspan="2" class="ferti-dist-nut-start ferti-dist-sum ' + (ok ? 'ok' : 'bad') + '" ' + nutCss(n) + '>' + s + '%</td>';
     }).join('');
     var foot = '<tfoot><tr><th colspan="2">Σ</th>' + footCells + '</tr></tfoot>';
     table.innerHTML = head + body + foot;
@@ -571,15 +571,13 @@
   }
 
   function refreshKgCells() {
-    var cells = document.querySelectorAll('#fertiDistPctTable .ferti-dist-kg-input');
-    var active = document.activeElement;
+    var cells = document.querySelectorAll('#fertiDistPctTable .ferti-dist-kg');
     for (var i = 0; i < cells.length; i++) {
-      if (cells[i] === active) continue;
       var id = cells[i].getAttribute('data-id');
       var ri = parseInt(cells[i].getAttribute('data-ri'), 10);
       var n = nutFromId(id);
       if (!n) continue;
-      cells[i].value = doseInputValue(kgFor(n, ri), n.ferti);
+      cells[i].textContent = fmtDose(kgFor(n, ri), n.ferti);
     }
   }
 
@@ -613,7 +611,8 @@
         var s = round1(sumPct(n.id));
         var ok = Math.abs(s - 100) <= 0.15;
         tds[i].textContent = s + '%';
-        tds[i].className = 'ferti-dist-nut-start ' + (ok ? 'ok' : 'bad');
+        tds[i].className = 'ferti-dist-nut-start ferti-dist-sum ' + (ok ? 'ok' : 'bad');
+        tds[i].style.setProperty('--ferti-nut', colorForNut(n.id));
       });
     }
     var bad = NUTS.some(function (n) { return Math.abs(sumPct(n.id) - 100) > 0.15; });
@@ -763,10 +762,14 @@
     y.ticks.stepSize = next <= 50 ? 5 : 10;
   }
   function colorForNut(id) {
-    for (var i = 0; i < NUTS.length; i++) {
-      if (NUTS[i].id === id) return COLORS[i % COLORS.length];
+    if (w.NpFertigationUI && typeof w.NpFertigationUI.nutrientColor === 'function') {
+      return w.NpFertigationUI.nutrientColor(id);
     }
-    return COLORS[0];
+    var fallback = { n: '#2563eb', p: '#16a34a', k: '#ea580c', ca: '#7c3aed', mg: '#0891b2', s: '#ca8a04', fe: '#db2777', mn: '#0d9488', b: '#4f46e5', zn: '#64748b', cu: '#059669', mo: '#b45309', si: '#be185d' };
+    return fallback[id] || '#64748b';
+  }
+  function nutCss(n) {
+    return 'style="--ferti-nut:' + colorForNut(n && n.id) + '"';
   }
   function hexToRgba(hex, a) {
     var h = String(hex || '').replace('#', '');
@@ -781,16 +784,15 @@
     list.forEach(function (ds) {
       var color = colorForNut(ds._nutId);
       var on = !hasFocus || ds._nutId === chartFocusId;
-      ds.borderColor = on ? color : hexToRgba(color, 0.2);
-      ds.backgroundColor = on ? color : hexToRgba(color, 0.2);
-      ds.borderWidth = on ? (hasFocus ? 3.6 : 2.6) : 1.4;
-      ds.pointRadius = on ? (hasFocus ? 7 : 5) : 3;
+      ds.borderColor = on ? color : hexToRgba(color, 0.22);
+      ds.backgroundColor = on ? color : hexToRgba(color, 0.22);
+      ds.borderWidth = on ? (hasFocus ? 3.8 : 2.6) : 1.5;
+      ds.pointRadius = on ? (hasFocus ? 7 : 5) : 3.5;
       ds.pointHoverRadius = on ? (hasFocus ? 9 : 7) : 4;
-      ds.pointHitRadius = on ? (hasFocus ? 24 : 16) : 8;
-      ds.pointBackgroundColor = on ? color : hexToRgba(color, 0.2);
-      ds.pointBorderColor = on ? '#ffffff' : hexToRgba('#ffffff', 0.35);
+      ds.pointHitRadius = on ? (hasFocus ? 22 : 16) : 10;
+      ds.pointBackgroundColor = on ? color : hexToRgba(color, 0.22);
+      ds.pointBorderColor = on ? '#ffffff' : hexToRgba('#ffffff', 0.4);
       ds.pointBorderWidth = on ? 1.6 : 0.6;
-      ds.order = on && hasFocus ? 12 : 0;
       ds.pointStyle = POINT_STYLES[ds._nutId] || 'circle';
     });
   }
@@ -806,14 +808,57 @@
   function defaultChartHint() {
     return t('dist_chart_drag', 'Arrastra un punto para ajustar el %. Toca una curva o su nombre abajo para resaltarla si está cerca de otras. Las demás etapas se compensan a 100%. El kg/ha se recalcula; si el programa tiene los mismos periodos, también se ajustan los fertilizantes.');
   }
+  function chartIsLive() {
+    return !!(chartInst && chartInst.canvas && chartInst.ctx && chartInst.data && chartInst.data.datasets);
+  }
   function updateChartPctSeries(nutId) {
-    if (!chartInst || !chartInst.data || !chartInst.data.datasets) return;
+    if (!chartIsLive()) {
+      scheduleChartRender();
+      return;
+    }
     chartInst.data.datasets.forEach(function (ds) {
       if (nutId && ds._nutId !== nutId) return;
       ds.data = stages.map(function (_, idx) { return pctAt(ds._nutId, idx); });
     });
     applyChartYScale(!!chartDrag);
-    try { chartInst.update('none'); } catch (e) { chartInst.update(); }
+    try {
+      chartInst.update(chartDrag ? 'none' : undefined);
+    } catch (e) {
+      try { chartInst.update('none'); } catch (e2) { renderChart(); }
+    }
+  }
+  function applyPctFromTableInput(el) {
+    if (!el || !el.classList || !el.classList.contains('ferti-dist-pct')) return false;
+    if (!el.closest || !el.closest('#fertiDistPctTable')) return false;
+    var id = el.getAttribute('data-id');
+    var ri = parseInt(el.getAttribute('data-ri'), 10);
+    if (!id || !isFinite(ri)) return false;
+    if (!pct[id]) pct[id] = equalSplit(stages.length);
+    pct[id][ri] = parseFloat(el.value) || 0;
+    scheduleSave();
+    refreshPctSums();
+    refreshKgCells();
+    if (tableChartTimer) clearTimeout(tableChartTimer);
+    tableChartTimer = setTimeout(function () {
+      tableChartTimer = null;
+      updateChartPctSeries(id);
+    }, 16);
+    scheduleProgramPush(id);
+    return true;
+  }
+
+  function pctNudgeDelta(ev) {
+    if (ev.altKey) return 0.1;
+    if (ev.shiftKey) return 5;
+    return 1;
+  }
+
+  function nudgePctInput(el, direction, delta) {
+    var current = parseFloat(el.value);
+    if (!isFinite(current)) current = 0;
+    var next = round1(Math.max(0, Math.min(100, current + direction * delta)));
+    el.value = String(next);
+    applyPctFromTableInput(el);
   }
 
   function setChartHint(text) {
@@ -839,6 +884,23 @@
     updateChartPctSeries(nutId);
   }
 
+  function canvasLocalXY(canvas, event) {
+    var box = canvas.getBoundingClientRect();
+    return { x: event.clientX - box.left, y: event.clientY - box.top };
+  }
+  function eventInPlotArea(canvas, event) {
+    var area = chartInst && chartInst.chartArea;
+    if (!area) return false;
+    var p = canvasLocalXY(canvas, event);
+    return p.x >= area.left && p.x <= area.right && p.y >= area.top && p.y <= area.bottom;
+  }
+  function eventInLegend(canvas, event) {
+    var lg = chartInst && chartInst.legend;
+    if (!lg) return false;
+    var p = canvasLocalXY(canvas, event);
+    return p.x >= lg.left && p.x <= lg.right && p.y >= lg.top && p.y <= lg.bottom;
+  }
+
   function bindChartDrag(canvas) {
     if (!canvas || canvas._fertiDistDragBound) return;
     canvas._fertiDistDragBound = true;
@@ -846,13 +908,7 @@
     canvas.addEventListener('pointerdown', function (event) {
       chartPendingClear = false;
       if (!chartInst || typeof chartInst.getElementsAtEventForMode !== 'function') return;
-      var lg = chartInst.legend;
-      if (lg) {
-        var box = canvas.getBoundingClientRect();
-        var lx = event.clientX - box.left;
-        var ly = event.clientY - box.top;
-        if (lx >= lg.left && lx <= lg.right && ly >= lg.top && ly <= lg.bottom) return;
-      }
+      if (eventInLegend(canvas, event) || !eventInPlotArea(canvas, event)) return;
       var hits = chartInst.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true) || [];
       if (!Array.isArray(hits)) hits = Array.prototype.slice.call(hits);
       if (chartFocusId && hits.length) {
@@ -890,7 +946,7 @@
       if (!chartDrag.moved) {
         var dx = event.clientX - chartDrag.x;
         var dy = event.clientY - chartDrag.y;
-        if ((dx * dx) + (dy * dy) < 25) return;
+        if ((dx * dx) + (dy * dy) < 100) return;
         chartDrag.moved = true;
         if (chartFocusId !== chartDrag.nutId) setChartFocus(chartDrag.nutId);
       }
@@ -910,6 +966,10 @@
       event.preventDefault();
     });
     function finish(event) {
+      if (event && (eventInLegend(canvas, event) || !eventInPlotArea(canvas, event)) && !chartDrag) {
+        chartPendingClear = false;
+        return;
+      }
       if (chartPendingClear && !chartDrag) {
         chartPendingClear = false;
         setChartFocus(null);
@@ -923,10 +983,11 @@
       var wrap = document.getElementById('fertiDistChartWrap');
       if (wrap) wrap.classList.remove('is-dragging');
       canvas.style.cursor = '';
-      setChartFocus(nutId);
-      applyChartYScale(false);
-      try { chartInst.update('none'); } catch (e) { if (chartInst) chartInst.update(); }
-      if (moved) {
+      if (!moved) setChartFocus(nutId);
+      else {
+        applyChartYScale(false);
+        try { chartInst.update('none'); } catch (e) { if (chartInst) chartInst.update(); }
+        setChartHint('');
         scheduleSave();
         pushDistToProgram(nutId);
       }
@@ -1015,6 +1076,21 @@
       chartInst = new w.Chart(canvas, {
         type: 'line',
         data: { labels: labels, datasets: datasets },
+        plugins: [{
+          id: 'fertiDistFocusTop',
+          afterDatasetsDraw: function (chart) {
+            if (!chartFocusId) return;
+            var list = chart.data && chart.data.datasets || [];
+            for (var i = 0; i < list.length; i++) {
+              if (list[i]._nutId !== chartFocusId) continue;
+              var meta = chart.getDatasetMeta(i);
+              if (meta && !meta.hidden && meta.controller && typeof meta.controller.draw === 'function') {
+                meta.controller.draw();
+              }
+              break;
+            }
+          }
+        }],
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -1036,15 +1112,21 @@
                 usePointStyle: true,
                 pointStyleWidth: 12,
                 font: { size: 12, weight: '600' },
+                sort: function (a, b) {
+                  return (a.datasetIndex || 0) - (b.datasetIndex || 0);
+                },
                 generateLabels: function (chart) {
                   var items = w.Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                  items.sort(function (a, b) {
+                    return (a.datasetIndex || 0) - (b.datasetIndex || 0);
+                  });
                   items.forEach(function (item) {
                     var row = chart.data.datasets[item.datasetIndex];
                     if (!row) return;
                     var color = colorForNut(row._nutId);
                     item.fillStyle = color;
                     item.strokeStyle = color;
-                    item.lineWidth = 0;
+                    item.lineWidth = row._nutId === chartFocusId ? 2 : 0;
                     item.hidden = false;
                     item.pointStyle = POINT_STYLES[row._nutId] || 'rect';
                     item.fontStyle = row._nutId === chartFocusId ? 'bold' : 'normal';
@@ -1052,9 +1134,10 @@
                   return items;
                 }
               },
-              onClick: function (_evt, item, legend) {
+              onClick: function (evt, item, legend) {
                 var row = legend.chart.data.datasets[item.datasetIndex];
                 if (!row || !row._nutId) return;
+                if (evt && evt.native && evt.native.stopPropagation) evt.native.stopPropagation();
                 setChartFocus(chartFocusId === row._nutId ? null : row._nutId);
               }
             },
@@ -1077,7 +1160,7 @@
               ticks: { stepSize: yMax <= 50 ? 5 : 10 },
               title: { display: true, text: '%' }
             },
-            x: { ticks: { maxRotation: 40 } }
+            x: { ticks: { maxRotation: 40 }, offset: false }
           }
         }
       });
@@ -1128,33 +1211,6 @@
       host.dataset.delegated = '1';
       host.addEventListener('input', function (ev) {
         var el = ev.target;
-        if (el.classList.contains('ferti-dist-pct')) {
-          var id = el.getAttribute('data-id');
-          var ri = parseInt(el.getAttribute('data-ri'), 10);
-          if (!pct[id]) pct[id] = equalSplit(stages.length);
-          pct[id][ri] = parseFloat(el.value) || 0;
-          scheduleSave();
-          refreshPctSums();
-          refreshKgCells();
-          updateChartPctSeries(id);
-          scheduleProgramPush(id);
-          return;
-        }
-        if (el.classList.contains('ferti-dist-kg-input')) {
-          var kid = el.getAttribute('data-id');
-          var kri = parseInt(el.getAttribute('data-ri'), 10);
-          var kn = nutFromId(kid);
-          if (!kn) return;
-          var totalShown = doseShownNumber(totals[kn.id] || 0, kn.ferti);
-          if (totalShown > 1e-9) {
-            applyPctKeepSum100(kid, kri, (Math.max(0, parseFloat(el.value) || 0) / totalShown) * 100);
-            syncPctInputsFromData();
-            updateChartPctSeries(kid);
-            scheduleProgramPush(kid);
-            scheduleSave();
-          }
-          return;
-        }
         if (el.classList.contains('ferti-dist-water-input')) {
           var wi = parseInt(el.getAttribute('data-ri'), 10);
           waterDepthByStageM3ha[wi] = waterToSI(el.value);
@@ -1511,4 +1567,20 @@
     renderAll();
   }
   w.addEventListener('np:prefs-changed', rebuildPresentation);
+  if (!w._npFertiDistTableChartBound) {
+    w._npFertiDistTableChartBound = true;
+    document.addEventListener('input', function (ev) {
+      applyPctFromTableInput(ev.target);
+    }, true);
+    document.addEventListener('change', function (ev) {
+      applyPctFromTableInput(ev.target);
+    }, true);
+    document.addEventListener('keydown', function (ev) {
+      var el = ev.target;
+      if (!el || !el.classList || !el.classList.contains('ferti-dist-pct')) return;
+      if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+      ev.preventDefault();
+      nudgePctInput(el, ev.key === 'ArrowUp' ? 1 : -1, pctNudgeDelta(ev));
+    }, true);
+  }
 })(window);

@@ -3941,6 +3941,15 @@ html.embed-login body {
   display: none;
 }
 
+.ferti-acid-stage-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #0c4a6e;
+}
+.ferti-acid-stage-list li {
+  margin: 2px 0;
+}
+
 .hydro-acid-summary-title {
   margin: 0 0 4px 0;
   color: #0c4a6e;
@@ -6875,6 +6884,13 @@ html.embed-login body {
   margin-bottom: 6px;
   font-weight: 700;
 }
+.granular-diff-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+  font-weight: 500;
+}
 .nutrients-grid--diff {
   gap: 10px 12px;
 }
@@ -8255,10 +8271,13 @@ html.embed-login body {
   align-items: baseline;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid #86efac;
-  background: #ecfdf5;
+  border: 1px solid var(--ferti-nut, #86efac);
+  background: #fff;
   font-size: 12px;
-  color: #065f46;
+  color: #334155;
+}
+.ferti-dist-chip strong {
+  color: var(--ferti-nut, #065f46);
 }
 .ferti-dist-scroll {
   overflow-x: auto;
@@ -8310,8 +8329,15 @@ html.embed-login body {
   color: #64748b;
   text-align: center;
 }
+.ferti-dist-table thead th.ferti-dist-nut-name {
+  color: var(--ferti-nut, #0f172a);
+  font-weight: 800;
+}
+.ferti-dist-table thead th.ferti-dist-pct-head {
+  color: var(--ferti-nut, #64748b);
+}
 .ferti-dist-table .ferti-dist-nut-start {
-  border-left: 2px solid #475569;
+  border-left: 2px solid var(--ferti-nut, #475569);
 }
 .ferti-dist-table tfoot th,
 .ferti-dist-table tfoot td {
@@ -8344,6 +8370,9 @@ html.embed-login body {
   max-width: 46px;
   padding: 4px 3px;
   text-align: center;
+  color: var(--ferti-nut, #0f172a);
+  font-weight: 700;
+  border-color: var(--ferti-nut, #cbd5e1);
 }
 .ferti-dist-table select.ferti-dist-stage {
   min-width: 118px;
@@ -8354,7 +8383,7 @@ html.embed-login body {
   width: 58px;
   max-width: 64px;
   padding: 4px;
-  background: #f8fafc;
+  background: #f1f5f9;
 }
 .ferti-dist-table input.ferti-dist-kg-input {
   width: 56px;
@@ -8365,13 +8394,16 @@ html.embed-login body {
   font-variant-numeric: tabular-nums;
 }
 .ferti-dist-kg {
+  display: block;
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
-  color: #0f172a;
-  background: #f8fafc;
+  color: #475569;
+  background: transparent;
   font-size: 12px;
   min-width: 52px;
+  padding: 4px 3px;
+  cursor: default;
 }
 .ferti-dist-water {
   margin-top: 14px;

@@ -1245,7 +1245,7 @@
 
   .login-split__tools .calculator-btn .button-text {
     white-space: normal;
-    text-align: left;
+    text-align: center;
     font-size: 14px;
     line-height: 1.35;
     overflow: visible;

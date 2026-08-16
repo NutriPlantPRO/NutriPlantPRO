@@ -29,6 +29,7 @@
     req_step_2: 'Adjust removal per unit yield',
     req_step_3: 'Correct for soil supply or deficit',
     req_step_4: 'Adjust for fertilizer and system efficiency',
+    req_step_5: 'Split the actual requirement across the cycle (below: Objective distribution, % by stage and irrigation depth)',
     dist_title_prefix: 'Objective distribution',
     dist_project_fallback: 'project',
     dist_lead: 'Define the target split of actual requirement by stage or period. This objective can later be compared with a generated, edited or manually entered program.',
@@ -43,7 +44,9 @@
     dist_h1: '1. Actual requirement',
     dist_h1_hint: 'Every nutrient from the requirement table. Not edited here.',
     dist_h2: '2. Distribution by stage (% and dose)',
-    dist_h2_hint: 'Choose Week or Month for the fertigation calculation. Each nutrient: editable % and {unit}. The % must sum to 100%.',
+    dist_h2_hint: 'Choose Week or Month for the fertigation calculation. Edit the %; the dose ({unit}) comes from the requirement. The % must sum to 100%. Arrows: 1% · Shift+arrows: 5% · Alt: 0.1%. You can still type decimals.',
+    dist_pct_nudge: 'Arrows: 1% · Shift: 5% · Alt: 0.1%. Decimals can be typed.',
+    dist_kg_readonly: 'Calculated dose: requirement × %. Not edited here.',
     dist_add_stage: 'Add stage',
     dist_axis: 'Period',
     dist_axis_pheno: 'Phenological',
@@ -460,6 +463,29 @@
     return totals;
   }
 
+  var NUTRIENT_COLORS = {
+    N: '#2563eb', N_NO3: '#2563eb', N_NH4: '#3b82f6',
+    P: '#16a34a', P2O5: '#16a34a',
+    K: '#ea580c', K2O: '#ea580c',
+    Ca: '#7c3aed', CaO: '#7c3aed',
+    Mg: '#0891b2', MgO: '#0891b2',
+    S: '#ca8a04', SO4: '#ca8a04',
+    Fe: '#db2777', Mn: '#0d9488', B: '#4f46e5',
+    Zn: '#64748b', Cu: '#059669', Mo: '#b45309',
+    Si: '#be185d', SiO2: '#be185d'
+  };
+  var NUTRIENT_COLOR_ALIAS = {
+    n: 'N', p: 'P2O5', k: 'K2O', ca: 'CaO', mg: 'MgO', s: 'SO4',
+    fe: 'Fe', mn: 'Mn', b: 'B', zn: 'Zn', cu: 'Cu', mo: 'Mo', si: 'SiO2'
+  };
+  function nutrientColor(key) {
+    var raw = String(key == null ? '' : key);
+    if (NUTRIENT_COLORS[raw]) return NUTRIENT_COLORS[raw];
+    var mapped = NUTRIENT_COLOR_ALIAS[raw] || NUTRIENT_COLOR_ALIAS[raw.toLowerCase()];
+    if (mapped && NUTRIENT_COLORS[mapped]) return NUTRIENT_COLORS[mapped];
+    return '#64748b';
+  }
+
   return {
     getPrefs:prefs, t:t, unit:unit, fromSI:fromSI, toSI:toSI,
     inputFromSI:inputFromSI, resultFromSI:resultFromSI, quantityFromSI:quantityFromSI,
@@ -469,6 +495,7 @@
     adjustBlendToTarget:adjustBlendToTarget,
     aggregateGranularProgramContribution:aggregateGranularProgramContribution,
     withLanguage: withLanguage,
-    withUnitSystem: withUnitSystem
+    withUnitSystem: withUnitSystem,
+    nutrientColor: nutrientColor
   };
 });

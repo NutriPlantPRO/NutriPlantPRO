@@ -143,7 +143,17 @@
     ) + ')</span>';
   }
 
-  function buildAcidHtmlFromCalc(lang, calc, classPrefix) {
+  function appliedVolumeSentence(lang, volumeM3, totalLiters, extra) {
+    extra = extra || {};
+    if (extra.hideAppliedVolume) return '';
+    if (extra.appliedVolumeHtml) return extra.appliedVolumeHtml;
+    return t(lang, 'Para el volumen de aquí', 'For this volume') +
+      ' (' + (Number(volumeM3) || 0).toFixed(2) + ' m³): <strong>' +
+      (Number(totalLiters) || 0).toFixed(2) + ' L</strong>. ';
+  }
+
+  function buildAcidHtmlFromCalc(lang, calc, classPrefix, extra) {
+    extra = extra || {};
     var acidName = t(lang, calc.acid.nameEs, calc.acid.nameEn);
     var analysisVolText = calc.analysisVolumeM3 > 0
       ? (calc.analysisVolumeM3.toFixed(2) + ' m³')
@@ -162,14 +172,14 @@
       '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
       t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
       t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ' +
-      t(lang, 'Para el volumen de aquí', 'For this volume') + ' (' + calc.hydroVolumeM3.toFixed(2) + ' m³): <strong>' +
-      calc.totalLiters.toFixed(2) + ' L</strong>. ' +
+      appliedVolumeSentence(lang, calc.hydroVolumeM3, calc.totalLiters, extra) +
       warningSpan(lang, classPrefix) +
-      '</p>';
+      '</p>' + (extra.extraHtml || '');
   }
 
-  function buildAcidHtmlFromSummary(lang, summary, hydroVolumeM3Override, classPrefix) {
+  function buildAcidHtmlFromSummary(lang, summary, hydroVolumeM3Override, classPrefix, extra) {
     if (!summary || !summary.hasAcid) return '';
+    extra = extra || {};
     var hVol = hydroVolumeM3Override != null
       ? Math.max(0, parseFloat(hydroVolumeM3Override) || 0)
       : Math.max(0, parseFloat(summary.hydroVolumeM3) || 0);
@@ -199,10 +209,9 @@
       '<strong>' + mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
       t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
       t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ' +
-      t(lang, 'Para el volumen de aquí', 'For this volume') + ' (' + hVol.toFixed(2) + ' m³): <strong>' +
-      totalLiters.toFixed(2) + ' L</strong>. ' +
+      appliedVolumeSentence(lang, hVol, totalLiters, extra) +
       warningSpan(lang, classPrefix) +
-      '</p>';
+      '</p>' + ((extra && extra.extraHtml) || '');
   }
 
   /**
@@ -221,14 +230,19 @@
     var lang = opts.lang === 'en' ? 'en' : 'es';
     var classPrefix = opts.classPrefix || 'hydro';
     var hydroVol = Math.max(0, parseFloat(opts.hydroVolumeM3) || 0);
+    var extra = {
+      hideAppliedVolume: !!opts.hideAppliedVolume,
+      appliedVolumeHtml: opts.appliedVolumeHtml || '',
+      extraHtml: opts.extraHtml || ''
+    };
     var html = '';
 
     if (opts.analysis) {
       var calc = calculate(opts.analysis, hydroVol);
       if (calc) {
-        html = buildAcidHtmlFromCalc(lang, calc, classPrefix);
+        html = buildAcidHtmlFromCalc(lang, calc, classPrefix, extra);
       } else if (opts.summary && opts.summary.hasAcid) {
-        html = buildAcidHtmlFromSummary(lang, opts.summary, hydroVol, classPrefix);
+        html = buildAcidHtmlFromSummary(lang, opts.summary, hydroVol, classPrefix, extra);
       } else {
         var label = opts.analysisLabel ? (opts.analysisLabel + ': ') : '';
         html = label + t(lang,
@@ -237,7 +251,7 @@
         ) + ' ' + warningSpan(lang, classPrefix);
       }
     } else if (opts.summary && opts.summary.hasAcid) {
-      html = buildAcidHtmlFromSummary(lang, opts.summary, hydroVol, classPrefix);
+      html = buildAcidHtmlFromSummary(lang, opts.summary, hydroVol, classPrefix, extra);
     } else if (opts.linked || (opts.summary && opts.summary.waterAnalysisId)) {
       html = t(lang,
         'no hay un ácido válido calculado. Revísalo en Análisis → Agua.',

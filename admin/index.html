@@ -10339,9 +10339,9 @@
             const micros = { Fe: mk('Fe'), Mn: mk('Mn'), B: mk('B'), Zn: mk('Zn'), Cu: mk('Cu'), Mo: mk('Mo') };
 
             const macroColors = {
-                N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b'
+                N_NO3: '#2563eb', N_NH4: '#3b82f6', P2O5: '#16a34a', K2O: '#ea580c', CaO: '#7c3aed', MgO: '#0891b2', SO4: '#ca8a04'
             };
-            const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
+            const microColors = { Fe: '#db2777', Mn: '#0d9488', B: '#4f46e5', Zn: '#64748b', Cu: '#059669', Mo: '#b45309' };
 
             const programIsElemental = program.mode === true;
             let macroLabels = { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄' };
@@ -10385,11 +10385,30 @@
         // ===== Distribución nutrimental por etapa (Admin) =====
         var ADMIN_EXT_ETAPA_MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
         var ADMIN_EXT_ETAPA_MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true, si: true };
-        var ADMIN_EXT_ETAPA_CHART_COLORS = [
-            '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2',
-            '#ca8a04', '#db2777', '#0d9488', '#4f46e5', '#64748b',
-            '#059669', '#b45309', '#be185d'
-        ];
+        var ADMIN_NUTRIENT_COLORS = {
+            n: '#2563eb', N: '#2563eb', N_NO3: '#2563eb', N_NH4: '#3b82f6',
+            p: '#16a34a', P: '#16a34a', P2O5: '#16a34a',
+            k: '#ea580c', K: '#ea580c', K2O: '#ea580c',
+            ca: '#7c3aed', Ca: '#7c3aed', CaO: '#7c3aed',
+            mg: '#0891b2', Mg: '#0891b2', MgO: '#0891b2',
+            s: '#ca8a04', S: '#ca8a04', SO4: '#ca8a04',
+            fe: '#db2777', Fe: '#db2777', mn: '#0d9488', Mn: '#0d9488',
+            b: '#4f46e5', B: '#4f46e5', zn: '#64748b', Zn: '#64748b',
+            cu: '#059669', Cu: '#059669', mo: '#b45309', Mo: '#b45309',
+            si: '#be185d', Si: '#be185d'
+        };
+        function adminNutrientColor(key) {
+            var raw = String(key == null ? '' : key);
+            return ADMIN_NUTRIENT_COLORS[raw] || ADMIN_NUTRIENT_COLORS[raw.toLowerCase()] || '#64748b';
+        }
+        function adminDistNutHeadStyle(n) {
+            var c = adminNutrientColor(n && n.id);
+            return 'color:' + c + ';border-left:2px solid ' + c + ';';
+        }
+        function adminDistNutStartStyle(n) {
+            var c = adminNutrientColor(n && n.id);
+            return 'border-left:2px solid ' + c + ';color:' + c + ';';
+        }
 
         function adminNormalizeExtraccionEtapaState(raw) {
             if (!raw || typeof raw !== 'object') return null;
@@ -10492,11 +10511,10 @@
             var idMap = group === 'macro' ? ADMIN_EXT_ETAPA_MACRO_IDS : ADMIN_EXT_ETAPA_MICRO_IDS;
             var filtered = (state.nutrients || []).filter(function (n) { return idMap[n.id]; });
             return filtered.map(function (n) {
-                var idx = (state.nutrients || []).findIndex(function (x) { return x.id === n.id; });
                 return {
                     label: n.label,
                     data: (state.stages || []).map(function (_, ri) { return adminExtraccionEtapaKgHa(n, ri, state); }),
-                    color: ADMIN_EXT_ETAPA_CHART_COLORS[(idx >= 0 ? idx : 0) % ADMIN_EXT_ETAPA_CHART_COLORS.length]
+                    color: adminNutrientColor(n.id)
                 };
             });
         }
@@ -10564,23 +10582,23 @@
             var periodHead = state.axis === 'mes' ? 'Mes' : 'Semana';
             var waterDepths = Array.isArray(state.waterDepthByStageM3ha) ? state.waterDepthByStageM3ha : [];
             var totalsRow = nutrients.map(function (n) {
-                return '<td style="padding:6px;text-align:right;">' + (Number(n.total) || 0).toFixed(2) + '</td>';
+                return '<td style="padding:6px;text-align:right;' + adminDistNutStartStyle(n) + '">' + (Number(n.total) || 0).toFixed(2) + '</td>';
             }).join('');
             var combinedHead = '<tr><th rowspan="2" style="padding:6px;text-align:left;">Etapa</th>' +
                 (showPeriod ? '<th rowspan="2" style="padding:6px;text-align:center;">' + periodHead + '</th>' : '') +
                 '<th rowspan="2" style="padding:6px;text-align:center;">Lámina objetivo<br>(m³/ha)</th>' +
                 nutrients.map(function (n) {
-                    return '<th colspan="2" style="padding:6px;text-align:center;">' + escapeHtml(n.label) + '</th>';
+                    return '<th colspan="2" style="padding:6px;text-align:center;' + adminDistNutHeadStyle(n) + '">' + escapeHtml(n.label) + '</th>';
                 }).join('') + '</tr><tr>' +
-                nutrients.map(function () {
-                    return '<th style="padding:4px;text-align:center;font-size:11px;color:#64748b;">%</th><th style="padding:4px;text-align:center;font-size:11px;color:#64748b;">kg/ha</th>';
+                nutrients.map(function (n) {
+                    return '<th style="padding:4px;text-align:center;font-size:11px;' + adminDistNutHeadStyle(n) + '">%</th><th style="padding:4px;text-align:center;font-size:11px;color:#64748b;">kg/ha</th>';
                 }).join('') + '</tr>';
             var combinedRows = stages.map(function (st, ri) {
                 var cells = nutrients.map(function (n) {
                     var pctVal = (state.pct[n.id] && state.pct[n.id][ri] != null) ? state.pct[n.id][ri] : 0;
                     var kgVal = adminExtraccionEtapaKgHa(n, ri, state);
-                    return '<td style="padding:6px;text-align:center;">' + Number(pctVal).toFixed(1) + '</td>' +
-                        '<td style="padding:6px;text-align:right;background:#f8fafc;">' + kgVal.toFixed(2) + '</td>';
+                    return '<td style="padding:6px;text-align:center;font-weight:700;' + adminDistNutStartStyle(n) + '">' + Number(pctVal).toFixed(1) + '</td>' +
+                        '<td style="padding:6px;text-align:right;background:#f8fafc;color:#64748b;">' + kgVal.toFixed(2) + '</td>';
                 }).join('');
                 return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(adminExtraccionEtapaStage(st)) + '</td>' +
                     (showPeriod ? '<td style="padding:6px;text-align:center;font-weight:700;">' + escapeHtml(adminExtraccionEtapaPeriodLabel(state.axis, ri)) + '</td>' : '') +
@@ -10589,7 +10607,7 @@
             var combinedFoot = nutrients.map(function (n) {
                 var sum = adminExtraccionEtapaSumPct(n.id, state);
                 var ok = Math.abs(sum - 100) < 0.05;
-                return '<td colspan="2" style="padding:6px;text-align:center;font-weight:700;color:' + (ok ? '#059669' : '#b45309') + ';">' + sum.toFixed(1) + '%</td>';
+                return '<td colspan="2" style="padding:6px;text-align:center;font-weight:700;border-left:2px solid ' + adminNutrientColor(n.id) + ';color:' + (ok ? '#059669' : '#b45309') + ';">' + sum.toFixed(1) + '%</td>';
             }).join('');
             var updatedTxt = state.updatedAt
                 ? new Date(state.updatedAt).toLocaleString('es-MX')
@@ -10623,7 +10641,7 @@
                         <strong style="color:#1e293b;font-size:14px;">1. Requerimiento real (kg/ha)</strong>
                         <div style="overflow-x:auto;margin-top:6px;">
                             <table style="width:100%;min-width:480px;font-size:12px;border-collapse:collapse;background:#fff;border-radius:6px;">
-                                <thead><tr><th style="padding:6px;text-align:left;">Nutriente</th>${nutrients.map(function(n){return '<th style="padding:6px;text-align:center;">'+escapeHtml(n.label)+'</th>';}).join('')}</tr></thead>
+                                <thead><tr><th style="padding:6px;text-align:left;">Nutriente</th>${nutrients.map(function(n){return '<th style="padding:6px;text-align:center;'+adminDistNutHeadStyle(n)+'">'+escapeHtml(n.label)+'</th>';}).join('')}</tr></thead>
                                 <tbody><tr><td style="padding:6px;font-weight:600;">Total ciclo</td>${totalsRow}</tr></tbody>
                             </table>
                         </div>
@@ -13669,6 +13687,7 @@
                     </div>
                     <div style="margin-bottom: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Diferencia (Aporte - Requerimiento) (kg/ha):</strong>
+                        <p style="margin:6px 0 0;font-size:12px;color:#64748b;line-height:1.4;">Sugerencia: si el cultivo también lleva fertirriego, cubre el faltante (naranja) en ese programa.</p>
                         <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, programIsElemental);
@@ -14375,6 +14394,30 @@
                                     }).join('')}
                                 </div>
                             </div>
+                            ${(function () {
+                                if (!window.NpHydroAcidLegend || typeof window.NpHydroAcidLegend.buildHtml !== 'function') return '';
+                                const analysisId = fertirriegoProgram.waterAnalysisId || '';
+                                const agua = project.aguaAnalyses || project.agua_analyses || [];
+                                const analysis = analysisId && Array.isArray(agua) ? agua.find(a => a && a.id === analysisId) : null;
+                                if (!analysis && !analysisId) return '';
+                                const depths = Array.isArray(fertirriegoProgram.chartWaterByStageM3ha) ? fertirriegoProgram.chartWaterByStageM3ha : [];
+                                const totalDepth = depths.reduce((s, v) => s + (Number(v) || 0), 0);
+                                const calc = window.NpHydroAcidLegend.calculate(analysis, totalDepth);
+                                const cycleL = calc && calc.mlPerM3 > 0 ? (calc.mlPerM3 * totalDepth / 1000) : 0;
+                                const extra = calc && calc.mlPerM3 > 0
+                                    ? `<p style="margin-top:6px;">En el programa, el ácido se dosifica por la lámina de cada etapa: L/ha = mL/m³ × m³/ha ÷ 1000. Ciclo (${totalDepth.toFixed(2)} m³/ha): <strong>${cycleL.toFixed(2)} L/ha</strong>.</p>`
+                                    : '';
+                                return window.NpHydroAcidLegend.buildHtml({
+                                    lang: 'es',
+                                    analysis,
+                                    hydroVolumeM3: totalDepth,
+                                    linked: !!analysisId,
+                                    classPrefix: 'hydro',
+                                    wrap: true,
+                                    hideAppliedVolume: true,
+                                    extraHtml: extra
+                                }) || '';
+                            })()}
                             <div style="margin-bottom: 10px;">
                                 <strong style="color:#047857;font-size:13px;">🌱 Aporte de fertilización de base (Kg/Ha):</strong>
                                 <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">

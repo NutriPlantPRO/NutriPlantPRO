@@ -11,11 +11,14 @@
   'use strict';
 
   var TARGET_KEYS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  var MICRO_TARGETS = { Fe: 1, Mn: 1, B: 1, Zn: 1, Cu: 1, Mo: 1 };
+  var MIN_BULK_DOSE_KG_HA = 3;
+  var MIN_MICRO_DOSE_KG_HA = 0.05;
   var MATERIAL_SEQUENCE = [
     { id: 'nitrato_calcio_granular', target: 'CaO', order: 10 },
     { id: 'nitrato_magnesio', target: 'MgO', order: 20 },
-    { id: 'map', target: 'P2O5', order: 30 },
-    { id: 'mkp', target: 'P2O5', order: 31 },
+    { id: 'mkp', target: 'P2O5', order: 30 },
+    { id: 'map', target: 'P2O5', order: 31 },
     { id: 'nks', target: 'N', order: 40 },
     { id: 'sop', target: 'K2O', order: 41 },
     { id: 'sulfato_magnesio', target: 'MgO', order: 50 },
@@ -105,6 +108,10 @@
     return Math.max(0, max);
   }
 
+  function minPracticalDoseKg(targetKey) {
+    return MICRO_TARGETS[targetKey] ? MIN_MICRO_DOSE_KG_HA : MIN_BULK_DOSE_KG_HA;
+  }
+
   function solveStage(target, water, materials, options) {
     var opts = options || {};
     var tolerance = Math.max(1e-9, num(opts.tolerance) || 1e-7);
@@ -119,23 +126,136 @@
       if (m && m.id && !byId[m.id]) byId[m.id] = m;
     });
 
-    MATERIAL_SEQUENCE.forEach(function (step) {
+    function acidTargetKey(materialId) {
+      var s = String(materialId || '');
+      if (s.indexOf('fosforico') >= 0) return 'P2O5';
+      if (s.indexOf('sulfurico') >= 0) return 'SO4';
+      return 'N';
+    }
+
+    function rowAmountMeta(material, doseKgHa, extra) {
+      extra = extra || {};
+      var density = num(material && material.density) || num(extra.densityKgL) || 0;
+      var isLiquid = String(material && material.unit || '').toUpperCase() === 'L' && density > 0;
+      return {
+        doseAmount: isLiquid ? doseKgHa / density : doseKgHa,
+        amountUnit: isLiquid ? 'L' : 'kg',
+        densityKgL: density
+      };
+    }
+
+    function applyStep(step) {
       var material = byId[step.id];
-      if (!material) return;
+      if (!material) return 0;
       var contribution = materialContributionPerKg(material);
       var dose = maxSafeDose(contribution, remaining, step.target);
-      if (!(dose > tolerance)) return;
+      if (!(dose > tolerance)) return 0;
       var rowContribution = scaleMap(contribution, dose);
+      var existing = null;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].materialId === step.id) { existing = rows[i]; break; }
+      }
+      if (existing) {
+        existing.doseKgHa += dose;
+        existing.contribution = addMaps(existing.contribution, rowContribution);
+        var meta = rowAmountMeta(material, existing.doseKgHa, existing);
+        existing.doseAmount = meta.doseAmount;
+        existing.amountUnit = meta.amountUnit;
+      } else {
+        var amount = rowAmountMeta(material, dose, step);
+        rows.push({
+          materialId: step.id,
+          doseKgHa: dose,
+          doseAmount: amount.doseAmount,
+          amountUnit: amount.amountUnit,
+          target: step.target,
+          order: step.order,
+          contribution: rowContribution
+        });
+      }
+      supplied = addMaps(supplied, rowContribution);
+      remaining = subtractMaps(fertilizerTarget, supplied);
+      return dose;
+    }
+
+    function applyFixedAcid(acid, depthM3Ha) {
+      if (!acid || !(num(acid.mlPerM3) > 0) || !(num(depthM3Ha) > 0)) return 0;
+      var materialId = acid.materialId || 'acido_nitrico_55';
+      var material = byId[materialId];
+      if (!material) return 0;
+      var litersHa = num(acid.mlPerM3) * num(depthM3Ha) / 1000;
+      var density = num(material.density) || num(acid.densityKgL) || 1.33;
+      var kgHa = litersHa * density;
+      if (!(kgHa > tolerance) && !(litersHa > tolerance)) return 0;
+      var contribution = materialContributionPerKg(material);
+      var rowContribution = scaleMap(contribution, kgHa);
       rows.push({
-        materialId: step.id,
-        doseKgHa: dose,
-        target: step.target,
-        order: step.order,
-        contribution: rowContribution
+        materialId: materialId,
+        doseKgHa: kgHa,
+        doseAmount: litersHa,
+        amountUnit: 'L',
+        target: acidTargetKey(materialId),
+        order: 1,
+        contribution: rowContribution,
+        skipMinDose: true,
+        fixed: true
       });
       supplied = addMaps(supplied, rowContribution);
       remaining = subtractMaps(fertilizerTarget, supplied);
+      return kgHa;
+    }
+
+    function peekKFromNksSop() {
+      var rem = nonNegativeMap(remaining);
+      var k = 0;
+      [{ id: 'nks', target: 'N' }, { id: 'sop', target: 'K2O' }].forEach(function (step) {
+        var material = byId[step.id];
+        if (!material) return;
+        var contribution = materialContributionPerKg(material);
+        var dose = maxSafeDose(contribution, rem, step.target);
+        if (!(dose > tolerance)) return;
+        k += dose * contribution.K2O;
+        rem = subtractMaps(rem, scaleMap(contribution, dose));
+      });
+      return k;
+    }
+
+    applyFixedAcid(opts.acid, opts.waterDepthM3Ha);
+    applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
+    applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 20 });
+
+    var kNeedMkp = remaining.K2O - peekKFromNksSop();
+    if (byId.mkp && remaining.P2O5 > tolerance && kNeedMkp > tolerance) {
+      applyStep({ id: 'mkp', target: 'K2O', order: 30 });
+    }
+    applyStep({ id: 'map', target: 'P2O5', order: 31 });
+    applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
+
+    MATERIAL_SEQUENCE.forEach(function (step) {
+      if (step.id === 'nitrato_calcio_granular' || step.id === 'nitrato_magnesio' || step.id === 'map' || step.id === 'mkp') return;
+      applyStep(step);
     });
+
+    var guard = 0;
+    var progressed = true;
+    while (progressed && guard < 4) {
+      progressed = false;
+      guard += 1;
+      MATERIAL_SEQUENCE.forEach(function (step) {
+        if (applyStep(step) > 0) progressed = true;
+      });
+    }
+
+    var kept = [];
+    rows.forEach(function (row) {
+      if (row.skipMinDose || row.fixed || row.doseKgHa + 1e-9 >= minPracticalDoseKg(row.target)) {
+        kept.push(row);
+        return;
+      }
+      supplied = subtractMaps(supplied, row.contribution);
+    });
+    rows = kept;
+    remaining = subtractMaps(fertilizerTarget, supplied);
 
     var unresolved = TARGET_KEYS.filter(function (key) { return remaining[key] > tolerance; });
     var totalWithWater = addMaps(supplied, stageWater);
@@ -169,22 +289,35 @@
     var water = proportionalWater(data.waterContribution, data.waterDepths);
     if (!water.ok) return { ok: false, reason: water.reason, stages: [] };
     var results = stages.map(function (stage, index) {
-      var solved = solveStage(targets[index], water.byStage[index], data.materials, data.options);
+      var depth = Math.max(0, num(data.waterDepths && data.waterDepths[index]));
+      var solved = solveStage(targets[index], water.byStage[index], data.materials, Object.assign({}, data.options || {}, {
+        acid: data.acid || null,
+        waterDepthM3Ha: depth
+      }));
       solved.name = String(stage || '');
       solved.index = index;
-      solved.waterDepthM3Ha = Math.max(0, num(data.waterDepths && data.waterDepths[index]));
+      solved.waterDepthM3Ha = depth;
       return solved;
     });
     var used = {};
     results.forEach(function (stage) {
       stage.rows.forEach(function (row) { used[row.materialId] = true; });
     });
+    var acidId = data.acid && data.acid.materialId;
+    var materialIds = [];
+    if (acidId && used[acidId]) materialIds.push(acidId);
+    MATERIAL_SEQUENCE.forEach(function (x) {
+      if (used[x.id] && materialIds.indexOf(x.id) < 0) materialIds.push(x.id);
+    });
+    Object.keys(used).forEach(function (id) {
+      if (materialIds.indexOf(id) < 0) materialIds.push(id);
+    });
     return {
       ok: true,
       reason: '',
       axis: data.axis,
       stages: results,
-      materialIds: MATERIAL_SEQUENCE.map(function (x) { return x.id; }).filter(function (id) { return used[id]; }),
+      materialIds: materialIds,
       totalDepthM3Ha: water.totalDepth,
       hasUnresolved: results.some(function (stage) { return stage.unresolved.length > 0; }),
       hasWaterExcess: results.some(function (stage) {
@@ -196,6 +329,8 @@
   return {
     TARGET_KEYS: TARGET_KEYS.slice(),
     MATERIAL_SEQUENCE: MATERIAL_SEQUENCE.slice(),
+    MIN_BULK_DOSE_KG_HA: MIN_BULK_DOSE_KG_HA,
+    MIN_MICRO_DOSE_KG_HA: MIN_MICRO_DOSE_KG_HA,
     materialContributionPerKg: materialContributionPerKg,
     proportionalWater: proportionalWater,
     solveStage: solveStage,
