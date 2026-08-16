@@ -143,6 +143,19 @@
     ) + ')</span>';
   }
 
+  function analysisVolumeSentence(lang, aVol, analysisTotalLiters, extra) {
+    extra = extra || {};
+    if (extra.hideAnalysisVolume) return '';
+    var analysisVolText = aVol > 0
+      ? (Number(aVol).toFixed(2) + ' m³')
+      : t(lang, 'sin volumen en el análisis', 'no volume in the analysis');
+    var analysisLitersText = aVol > 0
+      ? (Number(analysisTotalLiters).toFixed(2) + ' L')
+      : t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
+    return t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
+      t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ';
+  }
+
   function appliedVolumeSentence(lang, volumeM3, totalLiters, extra) {
     extra = extra || {};
     if (extra.hideAppliedVolume) return '';
@@ -155,12 +168,6 @@
   function buildAcidHtmlFromCalc(lang, calc, classPrefix, extra) {
     extra = extra || {};
     var acidName = t(lang, calc.acid.nameEs, calc.acid.nameEn);
-    var analysisVolText = calc.analysisVolumeM3 > 0
-      ? (calc.analysisVolumeM3.toFixed(2) + ' m³')
-      : t(lang, 'sin volumen en el análisis', 'no volume in the analysis');
-    var analysisLitersText = calc.analysisVolumeM3 > 0
-      ? (calc.analysisTotalLiters.toFixed(2) + ' L')
-      : t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
     return '<div class="' + (classPrefix || 'hydro') + '-acid-summary-title"><strong>' +
       t(lang, 'Resumen de la dosis de ácido', 'Acid dose summary') + '</strong></div>' +
       '<p class="' + (classPrefix || 'hydro') + '-acid-summary-body">' +
@@ -170,8 +177,7 @@
       '(HCO₃⁻ ' + calc.hco3.toFixed(2) + ' + CO₃²⁻ ' + calc.co3.toFixed(2) +
       ' − ' + t(lang, 'residual', 'residual') + ' ' + calc.residualMeq.toFixed(2) + '). ' +
       '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
-      t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
-      t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ' +
+      analysisVolumeSentence(lang, calc.analysisVolumeM3, calc.analysisTotalLiters, extra) +
       appliedVolumeSentence(lang, calc.hydroVolumeM3, calc.totalLiters, extra) +
       warningSpan(lang, classPrefix) +
       '</p>' + (extra.extraHtml || '');
@@ -192,12 +198,6 @@
     var analysisTotalLiters = mlPerM3 * aVol / 1000;
     var totalLiters = mlPerM3 * hVol / 1000;
     var acidName = t(lang, summary.acidNameEs || '—', summary.acidNameEn || summary.acidNameEs || '—');
-    var analysisVolText = aVol > 0
-      ? (aVol.toFixed(2) + ' m³')
-      : t(lang, 'sin volumen en el análisis', 'no volume in the analysis');
-    var analysisLitersText = aVol > 0
-      ? (analysisTotalLiters.toFixed(2) + ' L')
-      : t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
     return '<div class="' + (classPrefix || 'hydro') + '-acid-summary-title"><strong>' +
       t(lang, 'Resumen de la dosis de ácido', 'Acid dose summary') + '</strong></div>' +
       '<p class="' + (classPrefix || 'hydro') + '-acid-summary-body">' +
@@ -207,8 +207,7 @@
       '(HCO₃⁻ ' + hco3.toFixed(2) + ' + CO₃²⁻ ' + co3.toFixed(2) +
       ' − ' + t(lang, 'residual', 'residual') + ' ' + residualMeq.toFixed(2) + '). ' +
       '<strong>' + mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
-      t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
-      t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ' +
+      analysisVolumeSentence(lang, aVol, analysisTotalLiters, extra) +
       appliedVolumeSentence(lang, hVol, totalLiters, extra) +
       warningSpan(lang, classPrefix) +
       '</p>' + ((extra && extra.extraHtml) || '');
@@ -224,6 +223,10 @@
    * @param {boolean} [opts.linked] - true si hay waterAnalysisId / análisis elegido
    * @param {'hydro'|'report'} [opts.classPrefix]
    * @param {boolean} [opts.wrap] - envolver en caja con borde
+   * @param {boolean} [opts.hideAppliedVolume]
+   * @param {boolean} [opts.hideAnalysisVolume] - fertirriego: no mezclar el m³ del análisis (lo pone el usuario; no es la lámina)
+   * @param {string} [opts.appliedVolumeHtml]
+   * @param {string} [opts.extraHtml]
    */
   function buildHtml(opts) {
     opts = opts || {};
@@ -232,6 +235,7 @@
     var hydroVol = Math.max(0, parseFloat(opts.hydroVolumeM3) || 0);
     var extra = {
       hideAppliedVolume: !!opts.hideAppliedVolume,
+      hideAnalysisVolume: !!opts.hideAnalysisVolume,
       appliedVolumeHtml: opts.appliedVolumeHtml || '',
       extraHtml: opts.extraHtml || ''
     };
@@ -294,6 +298,10 @@
       linked: !!id,
       classPrefix: opts.classPrefix || 'hydro',
       wrap: opts.wrap !== false,
+      hideAppliedVolume: !!opts.hideAppliedVolume,
+      hideAnalysisVolume: !!opts.hideAnalysisVolume,
+      appliedVolumeHtml: opts.appliedVolumeHtml || '',
+      extraHtml: opts.extraHtml || '',
       admin: !!opts.admin
     });
   }

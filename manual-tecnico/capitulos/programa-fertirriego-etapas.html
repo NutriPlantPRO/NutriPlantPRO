@@ -94,7 +94,11 @@
       defecto parte igual a la extracción total. Junto al título hay un desplegable
       <strong>Traer de análisis</strong>: si eliges un reporte de <strong>Análisis → Suelo</strong>,
       NutriPlant toma la <em>diferencia considerada del ciclo</em> (kg/ha o lb/acre) y corrige el
-      ajuste: exceso se resta como aporte del suelo; déficit se suma para corregir. Si no eliges
+      ajuste: exceso se resta como aporte del suelo; déficit se suma para corregir.
+      Si el suelo cubre <em>más</em> que la extracción, Fertirriego no apaga el nutriente:
+      deja un <strong>piso de mantenimiento</strong> (por defecto 25 % de la extracción, editable junto al desplegable; 0 % = sin piso).
+      Luego se aplica la eficiencia. Ejemplo: extracción P₂O₅ 88 kg/ha y exceso de suelo que daría ajuste 0 → con piso 25 % el ajuste queda 22 kg/ha; a 50 % de eficiencia el requerimiento real es 44 kg/ha.
+      Si no eliges
       análisis, el valor se queda como está (igual a la extracción total, o el que hayas editado).
       El agrónomo puede seguir subiendo o bajando a mano; al editar se desvincula el análisis.
       Ver criterio de referencia en
@@ -118,6 +122,7 @@
       Toma el <strong>Requerimiento real</strong> de todos los nutrientes (sin agregar elementos a mano)
       y reparte <strong>% por etapa</strong> (fenológica, semanal o mensual; suma 100 % por nutriente).
       En la plataforma, el paso 5 de «Cómo usar esta tabla» apunta a este bloque.
+      Encima de la tabla de % hay un <strong>Apoyo</strong> (solo en el editor del dashboard; no sale en PDF ni admin) para arrancar: Más → menos, Menos → más, Campana, Uniforme o Cerrar a 100 %, o copiar el % de un nutriente a otro (o a los demás). No impone una curva de cultivo: es un punto de partida; luego se afina celda a celda (flechas ±1 %, Mayús ±5 %, Alt ±0.1 %).
       Cada etapa se elige en un desplegable. En la misma tabla, junto al % aparece la dosis
       (kg/ha o lb/acre). Si se quita una etapa, su % pasa a la fila anterior y se recalculan las dosis.
       Resultado:
@@ -163,11 +168,14 @@
       Agua de etapa = Aporte total del agua × (lámina etapa / suma de láminas)<br>
       Meta para fertilizantes = máx(0, meta de etapa − agua de etapa)
     </div>
-    <p>La secuencia prioriza nitrato de calcio para Ca, fuentes de Mg (nitrato y después sulfato),
-      fuentes P/N/K/S y finalmente micronutrientes. Cada dosis queda limitada por todos los nutrientes:
+    <p>La secuencia es la del técnico en campo: ácido (si hay análisis de agua) → nitrato de calcio
+      (cubre Ca y aporta N) → <strong>MKP para P</strong> → MAP solo en etapas posteriores a
+      prefloración/floración/amarre (llenado, cosecha) si aún falta P, sin pasarse de N → NKS si falta N
+      → SOP para el K restante → nitrato de Mg solo si aún falta N; si no, sulfato de Mg.
+      El S no se fuerza. Al final, micronutrientes (quelatos, ácido bórico). Cada dosis queda limitada por todos los nutrientes:
       el motor <strong>no sobrepasa una meta</strong>. Si una composición impide cerrar exactamente,
-      conserva y muestra el faltante. La proporción N-NO₃/N-NH₄ resulta de los productos elegidos; no
-      se impone una relación fija. El resultado guarda origen, metas, agua, aportes y faltantes para
+      conserva y muestra el faltante. La proporción N-NO₃/N-NH₄ resulta de los productos (el MAP aporta NH₄);
+      no se impone una relación fija. El resultado guarda origen, metas, agua, aportes y faltantes para
       <em>Programa vs distribución</em> en dashboard, PDF y administración.</p>
     <p>Si existe aporte de agua y no hay láminas por periodo, primero deben capturarse en
       <strong>Distribución objetivo</strong>. Tras cambiar la distribución o sus láminas, el programa
@@ -214,7 +222,9 @@
     <p>
       La leyenda de ácido usa el mismo cálculo que Análisis → Agua e Hidroponía:
       meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ meq/mL del ácido.
+      El <strong>m³ del análisis</strong> lo define el usuario en ese reporte (un riego, el ciclo o, en hidroponía, el volumen de solución); no es la lámina de fertirriego.
       En el programa, <strong>L/ha de cada etapa = mL/m³ × lámina de esa etapa (m³/ha) ÷ 1000</strong>.
+      En pantalla, Fertirriego lista la lámina del ciclo y de cada etapa (m³/ha o US gal/acre, como el resto de unidades) con el ácido de esa lámina; no repite la fórmula y no mezcla el m³ del análisis.
       Al elaborar el programa automático el ácido entra primero y su N/P/S resta del faltante.
     </p>
 
@@ -315,11 +325,14 @@
       according to the crop base (editable). Numeric starting point.</p>
 
     <p><strong>Adjustment by soil levels</strong> — editable kg/ha column per nutrient. By
-      default it starts equal to total extraction; the agronomist can <strong>raise or lower</strong> those
-      kg according to the soil: if analysis or fertility indicates a <em>deficit</em>, increase the adjustment;
-      if there is usable <em>reserve or excess</em>, reduce it. It is not a mandatory automatic calculation
-      from the soil report: it is the net kg/ha the technician decides to fertilize before applying
-      efficiency. See the reference criterion in
+      default it starts equal to total extraction. Next to the title, <strong>Bring from analysis</strong>
+      uses a <strong>Analysis → Soil</strong> report: NutriPlant takes the <em>cycle considered difference</em>
+      and corrects the adjustment (excess subtracts as soil supply; deficit adds).
+      If soil covers <em>more</em> than extraction, fertigation does not zero the nutrient:
+      a <strong>maintenance floor</strong> remains (default 25% of extraction, editable next to the dropdown; 0% = no floor).
+      Efficiency is applied after that. Example: P₂O₅ extraction 88 kg/ha and a soil surplus that would make adjustment 0 → with a 25% floor, adjustment is 22 kg/ha; at 50% efficiency the actual requirement is 44 kg/ha.
+      If you do not pick a report, the value stays as it is. Editing by hand unlinks the analysis.
+      See the reference criterion in
       <a href="analisis-suelo-fertilidad-kgha.html">Soil analysis: fertility and kg/ha</a>.</p>
 
     <p><strong>Efficiency (%)</strong> — fraction of applied fertilizer expected to be used by the
@@ -340,6 +353,7 @@
       It takes <strong>actual requirement</strong> for every nutrient (no manual add) and allocates
       <strong>% by stage</strong> (phenological, weekly or monthly; sum 100% per nutrient).
       In the platform, step 5 of “How to use this table” points to this block.
+      Above the % table, <strong>Support</strong> (dashboard editor only; not in PDF or admin) starts a shape (high → low, low → high, bell, even, or scale to 100%) or copies % from one nutrient to another (or to the rest). It does not impose a crop curve: it is a starting point; then you fine-tune cell by cell (arrows ±1%, Shift ±5%, Alt ±0.1%).
       Each stage is chosen from a dropdown. The same table shows dose (kg/ha or lb/acre) next to %.
       If a stage is removed, its % moves to the previous row and doses are recalculated.
       Result:
@@ -371,6 +385,14 @@
       feed the “Program contribution” summary and the Charts curves. The numbers come from the
       materials catalog (% on the label or fertilizer sheet), not from a fixed external table.
     </p>
+
+    <h3>2a. Automatic generator from Distribution</h3>
+    <p>The sequence matches field practice: acid (if a water analysis is linked) → calcium nitrate
+      (covers Ca and supplies N) → <strong>MKP for P</strong> → MAP only after
+      preflowering/flowering/fruit set (filling, harvest) if P is still short, without exceeding N →
+      NKS if N is still short → SOP for remaining K → magnesium nitrate only if N is still short;
+      otherwise magnesium sulfate. S is not forced. Micronutrients last (chelates, boric acid).
+      Each dose is limited by every nutrient: the engine <strong>does not exceed a target</strong>.</p>
 
     <h3>2b. Program costs (USD/ha)</h3>
     <p>
@@ -410,7 +432,9 @@
     <p>
       The acid legend uses the same calculation as Analysis → Water and Hydroponics:
       meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ acid meq/mL.
+      The <strong>analysis m³</strong> is whatever the user entered on that report (one irrigation, the cycle, or, in hydroponics, the solution volume); it is not the fertigation irrigation depth.
       In the program, <strong>L/ha of each stage = mL/m³ × that stage’s depth (m³/ha) ÷ 1000</strong>.
+      On screen, Fertigation lists cycle and stage irrigation depth (m³/ha or US gal/acre, same as other units) with the acid for that depth; it does not repeat the formula and does not mix in the analysis m³.
       When the automatic program is built, acid enters first and its N/P/S subtracts from the remaining need.
     </p>
 

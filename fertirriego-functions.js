@@ -149,6 +149,7 @@ let savedFertiAdjustments = null;
 let savedFertiEfficiencies = null;
 let savedFertiAdjustmentsAuto = true;
 let savedFertiSoilAnalysisId = '';
+let savedFertiSoilAdjFloorPct = 25;
 let isApplyingFertiSoilAdj = false;
 let lastFertiCrop = null;
 let lastFertiTargetYield = null;
@@ -1149,6 +1150,7 @@ function convertFromElementalToOxide(nutrient, elementalValue) {
   }
 }
 
+var FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT = 25;
 var FERTI_SOIL_ADJ_MAP = {
   N: 'nNo3', P2O5: 'p', K2O: 'k', CaO: 'ca', MgO: 'mg', SO4: 's',
   Fe: 'fe', Mn: 'mn', B: 'b', Zn: 'zn', Cu: 'cu', Mo: 'moly'
@@ -1229,6 +1231,18 @@ function fertiSoilConsideredOxideKgHa(analysis) {
   return out;
 }
 
+function fertiSoilAdjFloorPct() {
+  var n = parseFloat(savedFertiSoilAdjFloorPct);
+  if (!isFinite(n)) return FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
+  return Math.max(0, Math.min(100, n));
+}
+
+function fertiSoilAdjWithFloor(total, considered) {
+  var tot = parseFloat(total) || 0;
+  var raw = Math.max(0, tot - (parseFloat(considered) || 0));
+  return Math.max(tot * (fertiSoilAdjFloorPct() / 100), raw);
+}
+
 function fertiOverlaySoilAdjustments(totalExtraction, adjustment) {
   if (!savedFertiSoilAnalysisId) return adjustment;
   var analysis = fertiFindSoilAnalysis(savedFertiSoilAnalysisId);
@@ -1241,7 +1255,7 @@ function fertiOverlaySoilAdjustments(totalExtraction, adjustment) {
   Object.keys(considered).forEach(function (n) {
     if (considered[n] == null || !isFinite(considered[n])) return;
     var total = parseFloat(totalExtraction && totalExtraction[n]) || 0;
-    adjustment[n] = Math.max(0, total - considered[n]);
+    adjustment[n] = fertiSoilAdjWithFloor(total, considered[n]);
   });
   savedFertiAdjustmentsAuto = false;
   return adjustment;
@@ -1313,6 +1327,22 @@ function fertiWriteAdjOxide(nutrient, oxideKgHa) {
     reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area', fertiAdjDisplayDigits(nutrient) === 1 ? 1 : 2);
   }
 }
+
+window.fertiOnSoilAdjFloorPct = function fertiOnSoilAdjFloorPct(value) {
+  var n = parseFloat(value);
+  savedFertiSoilAdjFloorPct = isFinite(n) ? Math.max(0, Math.min(100, n)) : FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
+  var inp = document.getElementById('fertiSoilAdjFloorPct');
+  if (inp) inp.value = String(savedFertiSoilAdjFloorPct);
+  if (savedFertiSoilAnalysisId) {
+    window.fertiOnSoilAnalysisSelect(savedFertiSoilAnalysisId);
+    return;
+  }
+  if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
+    window.saveFertirriegoRequirementsImmediate({ force: true });
+  } else if (typeof window.saveFertirriegoRequirements === 'function') {
+    window.saveFertirriegoRequirements();
+  }
+};
 
 window.fertiOnSoilAnalysisSelect = function fertiOnSoilAnalysisSelect(analysisId) {
   savedFertiSoilAnalysisId = analysisId || '';
@@ -1448,6 +1478,11 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
                 ${fertiSoilSelectOptionsHtml()}
               </select>
             </label>
+            <label class="ferti-soil-floor-wrap" for="fertiSoilAdjFloorPct" title="${fertiT('soil_adj_floor_title', 'Si el suelo cubre más que la extracción, queda al menos este % de la extracción (mantenimiento en fertirriego). Luego aplica la eficiencia. 0 % = sin piso.')}">
+              <span>${fertiT('soil_adj_floor', 'Piso')}</span>
+              <input type="number" id="fertiSoilAdjFloorPct" min="0" max="100" step="1" value="${fertiSoilAdjFloorPct()}" onchange="window.fertiOnSoilAdjFloorPct && window.fertiOnSoilAdjFloorPct(this.value)">
+              <span>%</span>
+            </label>
           </td>
           ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${fertiAdjInputFromSI(getConvertedValue(n, adjustment[n]), n)}" step="${fertiAdjStep(n)}" onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`).join('')}
         </tr>
@@ -1470,7 +1505,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
       <ol class="req-steps-guide__list">
         <li><span class="req-steps-guide__n">1</span><span>${fertiT('req_step_1', 'Selecciona tu cultivo y rendimiento objetivo')}</span></li>
         <li><span class="req-steps-guide__n">2</span><span>${fertiT('req_step_2', 'Ajusta la extracción por tonelada')}</span></li>
-        <li><span class="req-steps-guide__n">3</span><span>${fertiT('req_step_3', 'Corrige por aporte o déficit de tu suelo')}</span></li>
+        <li><span class="req-steps-guide__n">3</span><span>${fertiT('req_step_3', 'Corrige por aporte o déficit de tu suelo (piso: no se apaga el nutriente)')}</span></li>
         <li><span class="req-steps-guide__n">4</span><span>${fertiT('req_step_4', 'Ajusta por eficiencia del fertilizante y del sistema')}</span></li>
         <li><span class="req-steps-guide__n">5</span><span>${fertiT('req_step_5', 'Reparte el requerimiento real en el ciclo (abajo: Distribución objetivo, % por etapa y lámina)')}</span></li>
       </ol>
@@ -2323,6 +2358,7 @@ function saveFertirriegoRequirements(options = {}) {
       efficiency, 
       adjustmentsAuto: savedFertiAdjustmentsAuto === true,
       soilAnalysisId: savedFertiSoilAnalysisId || '',
+      soilAdjFloorPct: fertiSoilAdjFloorPct(),
       isElementalMode, 
       customCrops, 
       extractionOverrides, 
@@ -2707,6 +2743,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     savedFertiEfficiencies = null;
     savedFertiAdjustmentsAuto = true;
     savedFertiSoilAnalysisId = '';
+    savedFertiSoilAdjFloorPct = FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
     lastFertiCrop = null;
     lastFertiTargetYield = null;
     if (typeof window !== 'undefined') {
@@ -3117,6 +3154,10 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     
     if (data) {
       savedFertiSoilAnalysisId = (data.soilAnalysisId && String(data.soilAnalysisId)) || '';
+      var floorPct = parseFloat(data.soilAdjFloorPct);
+      savedFertiSoilAdjFloorPct = isFinite(floorPct)
+        ? Math.max(0, Math.min(100, floorPct))
+        : FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
       if (typeof data.adjustmentsAuto === 'boolean') {
         savedFertiAdjustmentsAuto = data.adjustmentsAuto;
       } else if (data.cropType && data.targetYield != null) {

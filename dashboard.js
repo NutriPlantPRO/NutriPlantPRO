@@ -19069,11 +19069,16 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
           const totalDepth = depths.reduce((s, v) => s + (Number(v) || 0), 0);
           const ml = window.NpHydroAcidLegend.calculate(analysis, totalDepth);
           const cycleL = ml && ml.mlPerM3 > 0 ? (ml.mlPerM3 * totalDepth / 1000) : 0;
+          const waterUnit = fertiUI ? fertiUI.unit('volume_area') : 'm³/ha';
+          const cycleDepthTxt = q(totalDepth, 'volume_area', waterUnit);
+          const cycleAcidTxt = fertiReportUnitSystem === 'us_customary'
+            ? q(cycleL / 1000, 'volume_area', waterUnit)
+            : (reportNum(cycleL, 2) + ' L/ha');
           const extra = ml && ml.mlPerM3 > 0
             ? '<p class="hydro-acid-summary-body" style="margin-top:6px;">' +
               (reportLang === 'en'
-                ? ('In the fertigation program, acid is dosed per stage from irrigation depth: L/ha = mL/m³ × m³/ha ÷ 1000. Cycle (' + totalDepth.toFixed(2) + ' m³/ha): <strong>' + cycleL.toFixed(2) + ' L/ha</strong>.')
-                : ('En el programa, el ácido se dosifica por la lámina de cada etapa: L/ha = mL/m³ × m³/ha ÷ 1000. Ciclo (' + totalDepth.toFixed(2) + ' m³/ha): <strong>' + cycleL.toFixed(2) + ' L/ha</strong>.')) +
+                ? ('Cycle irrigation depth (' + cycleDepthTxt + '): <strong>' + cycleAcidTxt + '</strong>.')
+                : ('Lámina del ciclo (' + cycleDepthTxt + '): <strong>' + cycleAcidTxt + '</strong>.')) +
               '</p>'
             : '';
           return window.NpHydroAcidLegend.buildHtml({
@@ -19084,6 +19089,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
             classPrefix: 'hydro',
             wrap: true,
             hideAppliedVolume: true,
+            hideAnalysisVolume: true,
             extraHtml: extra
           }) || '';
         })()}

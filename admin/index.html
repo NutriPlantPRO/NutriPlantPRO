@@ -12,14 +12,14 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
     <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
     <link rel="manifest" href="/admin.webmanifest">
-    <link rel="stylesheet" href="../dashboard.css?v=20260816f">
+    <link rel="stylesheet" href="../dashboard.css?v=20260816i">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js?v=20260815c"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260805a"></script>
     <script src="../assets/np-analysis-compare.js?v=20260816a"></script>
     <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
     <script src="../assets/hydro-solution-catalog.js"></script>
-    <script src="../assets/hydro-acid-legend.js"></script>
+    <script src="../assets/hydro-acid-legend.js?v=20260816h"></script>
     <script src="../assets/np-fertilizer-price.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
@@ -14405,7 +14405,7 @@
                                 const calc = window.NpHydroAcidLegend.calculate(analysis, totalDepth);
                                 const cycleL = calc && calc.mlPerM3 > 0 ? (calc.mlPerM3 * totalDepth / 1000) : 0;
                                 const extra = calc && calc.mlPerM3 > 0
-                                    ? `<p style="margin-top:6px;">En el programa, el ácido se dosifica por la lámina de cada etapa: L/ha = mL/m³ × m³/ha ÷ 1000. Ciclo (${totalDepth.toFixed(2)} m³/ha): <strong>${cycleL.toFixed(2)} L/ha</strong>.</p>`
+                                    ? `<p style="margin-top:6px;">Lámina del ciclo (${totalDepth.toFixed(2)} m³/ha): <strong>${cycleL.toFixed(2)} L/ha</strong>.</p>`
                                     : '';
                                 return window.NpHydroAcidLegend.buildHtml({
                                     lang: 'es',
@@ -14415,6 +14415,7 @@
                                     classPrefix: 'hydro',
                                     wrap: true,
                                     hideAppliedVolume: true,
+                                    hideAnalysisVolume: true,
                                     extraHtml: extra
                                 }) || '';
                             })()}

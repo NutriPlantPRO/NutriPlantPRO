@@ -2034,6 +2034,28 @@ function fertiGeneratorAcidInput() {
   };
 }
 
+function fertProgQuantity(value, kind) {
+  const ui = fertProgUI();
+  if (ui && typeof ui.quantityFromSI === 'function') return ui.quantityFromSI(value, kind);
+  return fertiNum(value, 2) + (kind === 'volume_area' ? ' m³/ha' : '');
+}
+
+function fertiAcidLaminaQty(m3ha) {
+  return fertProgQuantity(m3ha, 'volume_area');
+}
+
+function fertiAcidDoseHaQty(litersHa) {
+  const ui = fertProgUI();
+  let us = false;
+  try {
+    us = !!(ui && typeof ui.getPrefs === 'function' && ui.getPrefs().unit_system === 'us_customary');
+  } catch (e) {}
+  if (us && ui && typeof ui.resultFromSI === 'function') {
+    return ui.resultFromSI((Number(litersHa) || 0) / 1000, 'volume_area', 2) + ' ' + fertProgUnit('volume_area', 'US gal/acre');
+  }
+  return fertiNum(litersHa, 2) + ' L/ha';
+}
+
 function fertiRenderAcidSummary() {
   const wrap = document.getElementById('fertiAcidSummary');
   if (!wrap) return;
@@ -2056,25 +2078,21 @@ function fertiRenderAcidSummary() {
   if (calc && calc.mlPerM3 > 0) {
     const cycleLiters = calc.mlPerM3 * totalDepth / 1000;
     appliedVolumeHtml = lang === 'en'
-      ? ('For the cycle irrigation depth (' + totalDepth.toFixed(2) + ' m³/ha): <strong>' + cycleLiters.toFixed(2) + ' L/ha</strong>. ')
-      : ('Para la lámina del ciclo (' + totalDepth.toFixed(2) + ' m³/ha): <strong>' + cycleLiters.toFixed(2) + ' L/ha</strong>. ');
+      ? ('For the cycle irrigation depth (' + fertiAcidLaminaQty(totalDepth) + '): <strong>' + fertiAcidDoseHaQty(cycleLiters) + '</strong>. ')
+      : ('Para la lámina del ciclo (' + fertiAcidLaminaQty(totalDepth) + '): <strong>' + fertiAcidDoseHaQty(cycleLiters) + '</strong>. ');
     if (totalDepth > 0 && stages.length) {
-      extraHtml = '<p class="hydro-acid-summary-body" style="margin-top:6px;">' +
-        (lang === 'en'
-          ? 'In the program, acid is dosed per stage: L/ha = mL/m³ × stage depth (m³/ha) ÷ 1000.'
-          : 'En el programa, el ácido se dosifica por etapa: L/ha = mL/m³ × lámina de la etapa (m³/ha) ÷ 1000.') +
-        '</p><ul class="ferti-acid-stage-list">';
+      extraHtml = '<ul class="ferti-acid-stage-list">';
       stages.forEach(function (name, i) {
         const d = depths[i] || 0;
         extraHtml += '<li>' + fertiEscapeAttr(fertProgStage(name) || name) +
-          ' · ' + d.toFixed(2) + ' m³/ha → <strong>' + (calc.mlPerM3 * d / 1000).toFixed(2) + ' L/ha</strong></li>';
+          ' · ' + fertiAcidLaminaQty(d) + ' → <strong>' + fertiAcidDoseHaQty(calc.mlPerM3 * d / 1000) + '</strong></li>';
       });
       extraHtml += '</ul>';
     } else {
       extraHtml = '<p class="hydro-acid-summary-body" style="margin-top:6px;">' +
         (lang === 'en'
-          ? 'Enter the irrigation depth of each period in Distribution so the program can calculate L/ha of acid.'
-          : 'Captura la lámina de cada periodo en Distribución para calcular L/ha de ácido en el programa.') +
+          ? 'Enter the irrigation depth of each period in Distribution so the program can calculate acid per hectare.'
+          : 'Captura la lámina de cada periodo en Distribución para calcular el ácido por hectárea en el programa.') +
         '</p>';
     }
   }
@@ -2085,6 +2103,7 @@ function fertiRenderAcidSummary() {
     linked: !!fertiWaterAnalysisId,
     classPrefix: 'hydro',
     wrap: false,
+    hideAnalysisVolume: true,
     appliedVolumeHtml: appliedVolumeHtml,
     extraHtml: extraHtml
   });

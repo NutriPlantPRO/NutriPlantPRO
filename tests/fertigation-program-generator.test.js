@@ -96,6 +96,30 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(result.supplied.N <= 25 + 1e-8);
 })();
 
+(function mkpIsDefaultPhosphorusAndMapSkippedInFlower() {
+  const highPLowK = { N: 30, CaO: 26, MgO: 6, P2O5: 40, K2O: 8, SO4: 12 };
+  const flower = generator.solveStage(highPLowK, {}, materials, { stageName: 'Floración' });
+  const fill = generator.solveStage(highPLowK, {}, materials, { stageName: 'Llenado' });
+  const flowerIds = flower.rows.map(r => r.materialId);
+  assert.ok(flowerIds.includes('mkp'), flowerIds.join(','));
+  assert.ok(!flowerIds.includes('map'), 'MAP in flower: ' + flowerIds.join(','));
+  assert.ok(fill.rows.some(r => r.materialId === 'map'), 'MAP missing in fill');
+  assert.ok(flowerIds.indexOf('nitrato_calcio_granular') < flowerIds.indexOf('mkp'));
+})();
+
+(function magNitrateOnlyIfNitrogenRemains() {
+  const withN = generator.solveStage({ N: 8, MgO: 18, SO4: 20 }, {}, materials);
+  const noN = generator.solveStage({ N: 0, MgO: 18, SO4: 40 }, {}, materials);
+  assert.ok(withN.rows.some(r => r.materialId === 'nitrato_magnesio'));
+  assert.ok(!noN.rows.some(r => r.materialId === 'nitrato_magnesio'));
+  assert.ok(noN.rows.some(r => r.materialId === 'sulfato_magnesio'));
+})();
+
+(function sulfurIsNotForcedWithAmmoniumSulfate() {
+  const result = generator.solveStage({ N: 5, SO4: 40 }, {}, materials);
+  assert.ok(!result.rows.some(r => r.materialId === 'sulfato_amonio_soluble'));
+})();
+
 (function mkpKeepsPotassiumOnDistributionLine() {
   const risingK = [
     { N: 20, CaO: 26, MgO: 6, P2O5: 14, K2O: 20, SO4: 12 },

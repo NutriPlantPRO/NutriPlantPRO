@@ -16,13 +16,12 @@
   var MIN_MICRO_DOSE_KG_HA = 0.05;
   var MATERIAL_SEQUENCE = [
     { id: 'nitrato_calcio_granular', target: 'CaO', order: 10 },
-    { id: 'nitrato_magnesio', target: 'MgO', order: 20 },
     { id: 'mkp', target: 'P2O5', order: 30 },
     { id: 'map', target: 'P2O5', order: 31 },
     { id: 'nks', target: 'N', order: 40 },
     { id: 'sop', target: 'K2O', order: 41 },
+    { id: 'nitrato_magnesio', target: 'MgO', order: 45 },
     { id: 'sulfato_magnesio', target: 'MgO', order: 50 },
-    { id: 'sulfato_amonio_soluble', target: 'N', order: 51 },
     { id: 'fe_eddha', target: 'Fe', order: 60 },
     { id: 'quelato_mn', target: 'Mn', order: 61 },
     { id: 'acido_borico', target: 'B', order: 62 },
@@ -30,6 +29,14 @@
     { id: 'quelato_cu', target: 'Cu', order: 64 },
     { id: 'molibdato_sodio', target: 'Mo', order: 65 }
   ];
+  var MICRO_SEQUENCE = MATERIAL_SEQUENCE.filter(function (step) {
+    return MICRO_TARGETS[step.target];
+  });
+
+  function stageBlocksMap(name) {
+    var s = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return /preflor|floracion|\bflor\b|amarre|pre-?flower|flowering|\bflower\b|fruit.?set/.test(s);
+  }
 
   function num(v) {
     var n = Number(v);
@@ -205,45 +212,29 @@
       return kgHa;
     }
 
-    function peekKFromNksSop() {
-      var rem = nonNegativeMap(remaining);
-      var k = 0;
-      [{ id: 'nks', target: 'N' }, { id: 'sop', target: 'K2O' }].forEach(function (step) {
-        var material = byId[step.id];
-        if (!material) return;
-        var contribution = materialContributionPerKg(material);
-        var dose = maxSafeDose(contribution, rem, step.target);
-        if (!(dose > tolerance)) return;
-        k += dose * contribution.K2O;
-        rem = subtractMaps(rem, scaleMap(contribution, dose));
-      });
-      return k;
+    var allowMap = !stageBlocksMap(opts.stageName);
+
+    function applyMacroPass() {
+      applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
+      applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
+      if (allowMap) applyStep({ id: 'map', target: 'P2O5', order: 31 });
+      applyStep({ id: 'nks', target: 'N', order: 40 });
+      applyStep({ id: 'sop', target: 'K2O', order: 41 });
+      if (remaining.N > tolerance) applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 45 });
+      applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 50 });
+      MICRO_SEQUENCE.forEach(function (step) { applyStep(step); });
     }
 
     applyFixedAcid(opts.acid, opts.waterDepthM3Ha);
-    applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
-    applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 20 });
-
-    var kNeedMkp = remaining.K2O - peekKFromNksSop();
-    if (byId.mkp && remaining.P2O5 > tolerance && kNeedMkp > tolerance) {
-      applyStep({ id: 'mkp', target: 'K2O', order: 30 });
-    }
-    applyStep({ id: 'map', target: 'P2O5', order: 31 });
-    applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
-
-    MATERIAL_SEQUENCE.forEach(function (step) {
-      if (step.id === 'nitrato_calcio_granular' || step.id === 'nitrato_magnesio' || step.id === 'map' || step.id === 'mkp') return;
-      applyStep(step);
-    });
-
+    applyMacroPass();
     var guard = 0;
     var progressed = true;
-    while (progressed && guard < 4) {
-      progressed = false;
+    while (progressed && guard < 3) {
+      var before = rows.reduce(function (s, r) { return s + r.doseKgHa; }, 0);
+      applyMacroPass();
+      var after = rows.reduce(function (s, r) { return s + r.doseKgHa; }, 0);
+      progressed = after > before + tolerance;
       guard += 1;
-      MATERIAL_SEQUENCE.forEach(function (step) {
-        if (applyStep(step) > 0) progressed = true;
-      });
     }
 
     var kept = [];
@@ -292,7 +283,8 @@
       var depth = Math.max(0, num(data.waterDepths && data.waterDepths[index]));
       var solved = solveStage(targets[index], water.byStage[index], data.materials, Object.assign({}, data.options || {}, {
         acid: data.acid || null,
-        waterDepthM3Ha: depth
+        waterDepthM3Ha: depth,
+        stageName: stage
       }));
       solved.name = String(stage || '');
       solved.index = index;
@@ -334,6 +326,7 @@
     materialContributionPerKg: materialContributionPerKg,
     proportionalWater: proportionalWater,
     solveStage: solveStage,
-    generate: generate
+    generate: generate,
+    stageBlocksMap: stageBlocksMap
   };
 });
