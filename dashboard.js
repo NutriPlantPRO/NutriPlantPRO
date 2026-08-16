@@ -764,8 +764,8 @@ function sectionTemplate(name) {
       : ((window.NpPrefs && window.NpPrefs.get && window.NpPrefs.get().unit_system === 'us_customary') ? 'short ton/acre' : 't/ha');
     return `
       <div class="card">
-        <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h2 class="text-xl">📊 ${dashboardT('dashboard.home', 'Inicio')}</h2>
+        <div class="np-inicio-new-wrap">
+          <button id="btn-new-nutriplant" class="btn btn-pill btn-primary" type="button" title="Crear un nuevo proyecto NutriPlant" data-i18n="dashboard.new_project" data-i18n-title="dashboard.new_project_title" onclick="window.showNewProjectModal()">+ Nuevo NutriPlant</button>
         </div>
 
         <section>
@@ -1152,8 +1152,9 @@ function sectionTemplate(name) {
                     <button id="fertiViewMicroBtn" class="btn btn-secondary btn-sm" onclick="setFertiNutrientView('micro')">Micros</button>
                   </div>
                 </div>
-                <button type="button" class="btn btn-success btn-sm" id="fertiAutoProgramBtn" onclick="openFertiAutoProgramModal()">
-                  ${ft('auto_button', 'Elaborar programa de fertirriego')}
+                <button type="button" class="btn btn-sm np-brand-navy-btn ferti-auto-program-btn" id="fertiAutoProgramBtn" onclick="openFertiAutoProgramModal()">
+                  <span class="ferti-auto-program-btn-icon" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt="" width="18" height="18" decoding="async"></span>
+                  <span>${ft('auto_button', 'Elaborar programa de fertirriego')}</span>
                 </button>
               </div>
               <div id="fertiAutoProgramStatus" hidden></div>
@@ -1844,12 +1845,15 @@ function sectionTemplate(name) {
             </div>
 
             <div class="hydro-card">
-              <div class="hydro-card-header">
+              <div class="hydro-card-header hydro-fert-header">
                 <h3>🧮 ${hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)')}</h3>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <div class="hydro-fert-header-actions">
                   <button class="btn btn-secondary btn-sm" id="hydroAddFertBtn">➕ ${hydroT('Agregar fertilizante', 'Add fertilizer')}</button>
-                  <button class="btn btn-info btn-sm" id="hydroAutoCalculateBtn" type="button" title="${hydroT('Genera una propuesta automática con los requerimientos, el agua y el ácido seleccionado', 'Generates an automatic proposal from requirements, water, and the selected acid')}">✨ ${hydroT('Calcular solución automática', 'Calculate solution automatically')}</button>
                   <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="${hydroT('Ver, editar o eliminar fertilizantes personalizados y sus precios', 'View, edit, or delete custom fertilizers and their prices')}">${hydroT('Gestionar catálogo de fertilizantes y precios', 'Manage fertilizer catalog and prices')}</button>
+                  <button class="btn btn-sm np-brand-navy-btn" id="hydroAutoCalculateBtn" type="button" title="${hydroT('Genera una propuesta automática con los requerimientos, el agua y el ácido seleccionado', 'Generates an automatic proposal from requirements, water, and the selected acid')}">
+                    <img src="assets/N_Hoja_Blanca.png" alt="" class="np-brand-navy-btn-icon" width="18" height="18" decoding="async" aria-hidden="true">
+                    <span class="np-brand-navy-btn-label">${hydroT('Calcular solución automática', 'Calculate solution automatically')}</span>
+                  </button>
                 </div>
               </div>
               <div id="hydroVolumeCard" class="hydro-volume-card" style="margin-bottom:14px;"></div>
@@ -2572,6 +2576,11 @@ function selectSection(name, el) {
       var cachedFertiActive = document.querySelector('.fertirriego-container .tab-button.active');
       var cachedFertiTab = cachedFertiActive ? (cachedFertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
       setTimeout(function() { restoreScrollForKeyStabilized('Fertirriego|' + cachedFertiTab, 3, 90); }, 60);
+      if (cachedFertiTab === 'extraccion') {
+        setTimeout(function () {
+          if (typeof window.fertiDistRefreshChart === 'function') window.fertiDistRefreshChart();
+        }, 180);
+      }
       setTimeout(function() {
         forceCloudRefreshPromise.finally(function() {
           try { loadProjectData(); } catch (e) {}
@@ -2614,6 +2623,9 @@ function selectSection(name, el) {
         var fertiActive = document.querySelector('.fertirriego-container .tab-button.active');
         var fertiTab = fertiActive ? (fertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
         setTimeout(function() { restoreScrollForKey('Fertirriego|' + fertiTab); }, 120);
+        if (fertiTab === 'extraccion' && typeof window.fertiDistRefreshChart === 'function') {
+          setTimeout(function () { window.fertiDistRefreshChart(); }, 180);
+        }
       });
     }
   }
@@ -7147,6 +7159,15 @@ function initializeFertirriegoTabs() {
       } catch (e) {
         console.warn('⚠️ No se pudieron refrescar las gráficas de Fertirriego:', e);
       }
+    }
+
+    if (tabId === 'extraccion') {
+      requestAnimationFrame(function () {
+        if (typeof window.fertiDistRefreshChart === 'function') window.fertiDistRefreshChart();
+        requestAnimationFrame(function () {
+          if (typeof window.fertiDistRefreshChart === 'function') window.fertiDistRefreshChart();
+        });
+      });
     }
     
     // Persistir última subpestaña usada en Fertirriego por proyecto

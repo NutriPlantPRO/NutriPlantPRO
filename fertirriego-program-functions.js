@@ -1269,7 +1269,7 @@ function openFertiAutoProgramModal() {
   overlay._prepared = prepared;
   overlay.innerHTML = `
     <div class="ferti-auto-modal-box" role="dialog" aria-modal="true" aria-labelledby="fertiAutoProgramTitle">
-      <h3 id="fertiAutoProgramTitle">${fertiEscapeAttr(fertProgT('auto_title', 'Elaborar programa de fertirriego'))}</h3>
+      <h3 id="fertiAutoProgramTitle"><span class="ferti-auto-program-btn-icon" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt="" width="18" height="18" decoding="async"></span>${fertiEscapeAttr(fertProgT('auto_title', 'Elaborar programa de fertirriego'))}</h3>
       <p>${fertiEscapeAttr(fertProgT('auto_confirm_intro', 'Se reemplazarán las filas y fertilizantes del programa con una propuesta calculada desde Distribución.'))}</p>
       <div class="ferti-auto-summary">
         <div><strong>${fertiEscapeAttr(fertProgT('auto_source', 'Distribución objetivo'))}:</strong> ${fertiEscapeAttr(distributionName || state.title || '')}</div>

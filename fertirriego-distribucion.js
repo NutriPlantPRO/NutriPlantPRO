@@ -45,13 +45,15 @@
   var persistTimer = null;
   var programPushTimer = null;
   var distProgramSync = false;
+  var chartRetryTimer = null;
+  var chartSizeTimer = null;
   var chartInst = null;
   var chartGroup = 'macro';
   var chartDrag = null;
   var mounted = false;
   var booting = false;
   var lastAutoTitle = '';
-  var axis = 'pheno';
+  var axis = 'semana';
   var waterDepthByStageM3ha = [];
 
   function t(key, es) {
@@ -93,7 +95,7 @@
   }
   function detectAxis(list) {
     var rows = Array.isArray(list) ? list : [];
-    if (!rows.length) return 'pheno';
+    if (!rows.length) return 'semana';
     var week = 0;
     var month = 0;
     rows.forEach(function (s) {
@@ -102,17 +104,14 @@
     });
     if (week >= rows.length * 0.6) return 'semana';
     if (month >= rows.length * 0.6) return 'mes';
-    return 'pheno';
+    return 'semana';
   }
   function axisLabel(ax) {
-    if (ax === 'semana') return t('dist_axis_week', 'Semanal');
-    if (ax === 'mes') return t('dist_axis_month', 'Mensual');
-    return t('dist_axis_pheno', 'Fenológica');
+    if (ax === 'mes') return t('month', 'Mes');
+    return t('week', 'Semana');
   }
   function addStageLabel() {
-    if (axis === 'semana') return t('add_week', 'Agregar semana');
-    if (axis === 'mes') return t('add_month', 'Agregar mes');
-    return t('dist_add_stage', 'Agregar etapa');
+    return axis === 'mes' ? t('add_month', 'Agregar mes') : t('add_week', 'Agregar semana');
   }
   function isPeriodName(name) {
     return /^(?:Semana|Week|Mes|Month)\s+\d+$/i.test(String(name || ''));
@@ -128,21 +127,13 @@
     });
   }
   function periodLabel(index) {
-    if (axis === 'mes') return t('month', 'Mes') + ' ' + (index + 1);
-    if (axis === 'semana') return t('week', 'Semana') + ' ' + (index + 1);
-    return '';
+    return (axis === 'mes' ? t('month', 'Mes') : t('week', 'Semana')) + ' ' + (index + 1);
   }
   function rowDisplayLabel(st, index) {
-    var pheno = stageLabel(st);
-    var period = periodLabel(index);
-    return period ? pheno + ' · ' + period : pheno;
+    return stageLabel(st) + ' · ' + periodLabel(index);
   }
-  function timeSelectHtml() {
-    return '<select class="ferti-dist-time ferti-time-select" aria-label="' + escapeHtml(t('dist_axis', 'Tipo de etapa')) + '">' +
-      '<option value="pheno"' + (axis === 'pheno' ? ' selected' : '') + '>' + escapeHtml(t('dist_axis_pheno', 'Fenológica')) + '</option>' +
-      '<option value="semana"' + (axis === 'semana' ? ' selected' : '') + '>' + escapeHtml(t('week', 'Semana')) + '</option>' +
-      '<option value="mes"' + (axis === 'mes' ? ' selected' : '') + '>' + escapeHtml(t('month', 'Mes')) + '</option>' +
-      '</select>';
+  function periodHeadLabel() {
+    return axis === 'mes' ? t('month', 'Mes') : t('week', 'Semana');
   }
   function nextAddName() {
     for (var i = 0; i < PHENO_STAGES.length; i++) {
@@ -172,8 +163,7 @@
       '</div></td>';
   }
   function periodCellHtml(ri) {
-    var txt = axis === 'pheno' ? '—' : String(ri + 1);
-    return '<td class="ferti-dist-period-cell">' + escapeHtml(txt) + '</td>';
+    return '<td class="ferti-dist-period-cell">' + escapeHtml(String(ri + 1)) + '</td>';
   }
   function round1(n) {
     return Math.round(Number(n) * 10) / 10;
@@ -341,10 +331,11 @@
       });
       pct = next;
     }
-    if (state.axis === 'semana' || state.axis === 'mes' || state.axis === 'pheno') {
-      axis = state.axis;
+    if (state.axis === 'mes') {
+      axis = 'mes';
     } else {
-      axis = detectAxis(stages);
+      axis = state.axis === 'semana' ? 'semana' : detectAxis(stages);
+      if (axis !== 'mes') axis = 'semana';
     }
     normalizePhenologyNames();
     var savedWater = Array.isArray(state.waterDepthByStageM3ha)
@@ -476,14 +467,13 @@
         '</div>' +
         '<div class="ferti-dist-panel">' +
           '<div class="ferti-dist-panel-head">' +
-            '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (% y dosis)')) + '</h4>' +
-            '<div class="ferti-dist-seg ferti-dist-axis" role="group" aria-label="' + escapeHtml(t('dist_axis', 'Tipo de etapa')) + '">' +
-              '<button type="button" data-axis="pheno">' + escapeHtml(t('dist_axis_pheno', 'Fenológica')) + '</button>' +
-              '<button type="button" data-axis="semana">' + escapeHtml(t('dist_axis_week', 'Semanal')) + '</button>' +
-              '<button type="button" data-axis="mes">' + escapeHtml(t('dist_axis_month', 'Mensual')) + '</button>' +
+            '<div class="ferti-dist-seg ferti-dist-axis" role="group" aria-label="' + escapeHtml(t('dist_axis', 'Periodo')) + '">' +
+              '<button type="button" data-axis="semana">' + escapeHtml(t('week', 'Semana')) + '</button>' +
+              '<button type="button" data-axis="mes">' + escapeHtml(t('month', 'Mes')) + '</button>' +
             '</div>' +
+            '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (% y dosis)')) + '</h4>' +
           '</div>' +
-          '<p class="ferti-dist-hint">' + escapeHtml(withUnit('Cada nutriente: % y {unit} editables. La suma de % debe ser 100%. Si el programa tiene los mismos periodos, los fertilizantes se ajustan con este reparto.', 'dist_h2_hint')) + '</p>' +
+          '<p class="ferti-dist-hint">' + escapeHtml(withUnit('Elige Semana o Mes para el cálculo de fertirriego. Cada nutriente: % y {unit} editables. La suma de % debe ser 100%.', 'dist_h2_hint')) + '</p>' +
           '<div class="ferti-dist-scroll"><table class="data ferti-dist-table" id="fertiDistPctTable"></table></div>' +
           '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
@@ -548,7 +538,7 @@
     if (!table) return;
     var unit = doseUnit();
     var head = '<thead><tr><th rowspan="2" class="ferti-dist-stage-head">' + escapeHtml(t('dist_stage', 'Etapa')) + '</th>' +
-      '<th rowspan="2" class="ferti-dist-period-head">' + timeSelectHtml() + '</th>' +
+      '<th rowspan="2" class="ferti-dist-period-head">' + escapeHtml(periodHeadLabel()) + '</th>' +
       NUTS.map(function (n) {
         return '<th colspan="2" class="ferti-dist-nut-start">' + escapeHtml(nutLabel(n)) + '</th>';
       }).join('') +
@@ -811,9 +801,57 @@
     canvas.addEventListener('pointercancel', finish);
   }
 
+  function chartCanvasReady() {
+    var canvas = document.getElementById('fertiDistChart');
+    if (!canvas) return false;
+    var wrap = document.getElementById('fertiDistChartWrap') || canvas.parentElement;
+    var width = Math.max(canvas.clientWidth || 0, wrap ? wrap.clientWidth || 0 : 0);
+    var height = Math.max(canvas.clientHeight || 0, wrap ? wrap.clientHeight || 0 : 0);
+    return width >= 40 && height >= 40;
+  }
+  function scheduleChartRender() {
+    if (chartRetryTimer) return;
+    var tries = 0;
+    function tick() {
+      chartRetryTimer = null;
+      if (chartCanvasReady()) {
+        renderChart();
+        return;
+      }
+      tries += 1;
+      if (tries < 24) {
+        chartRetryTimer = setTimeout(tick, tries < 6 ? 50 : 120);
+      }
+    }
+    chartRetryTimer = setTimeout(tick, 0);
+  }
+  function observeChartHost() {
+    var wrap = document.getElementById('fertiDistChartWrap');
+    if (!wrap || typeof ResizeObserver === 'undefined') return;
+    if (wrap._fertiDistObs) return;
+    wrap._fertiDistObs = true;
+    var observer = new ResizeObserver(function () {
+      if (chartDrag) return;
+      if (chartSizeTimer) clearTimeout(chartSizeTimer);
+      chartSizeTimer = setTimeout(function () {
+        if (!chartCanvasReady()) return;
+        if (!chartInst) renderChart();
+        else {
+          try { chartInst.resize(); } catch (e) { renderChart(); }
+        }
+      }, 50);
+    });
+    observer.observe(wrap);
+  }
   function renderChart() {
     var canvas = document.getElementById('fertiDistChart');
-    if (!canvas || canvas.clientWidth < 40) return;
+    if (!canvas) return;
+    observeChartHost();
+    if (!chartCanvasReady()) {
+      ensureChartJs(function () {});
+      scheduleChartRender();
+      return;
+    }
     if (chartDrag) return;
     ensureChartJs(function () {
       if (!w.Chart || !document.getElementById('fertiDistChart')) return;
@@ -911,6 +949,8 @@
     renderPct();
     renderWaterByStage();
     renderChart();
+    observeChartHost();
+    scheduleChartRender();
   }
 
   function bind() {
@@ -956,10 +996,6 @@
       });
       host.addEventListener('change', function (ev) {
         var el = ev.target;
-        if (el && el.classList.contains('ferti-dist-time')) {
-          if (!setAxis(el.value)) el.value = axis;
-          return;
-        }
         if (el && el.classList.contains('ferti-dist-stage')) {
           var si = parseInt(el.getAttribute('data-ri'), 10);
           stages[si] = canonicalStage(el.value);
@@ -1097,19 +1133,11 @@
 
   function setAxis(next, opts) {
     opts = opts || {};
-    if (next !== 'semana' && next !== 'mes') next = 'pheno';
+    next = next === 'mes' ? 'mes' : 'semana';
     if (next === axis) return false;
-    if (!opts.silent) {
-      var crossingPheno = (axis === 'pheno') !== (next === 'pheno');
-      if (crossingPheno) {
-        var warn = t('dist_axis_warn', 'Esto cambia el periodo a {axis}. La fenología de cada fila se conserva. ¿Continuar?')
-          .replace('{axis}', axisLabel(next).toLowerCase());
-        if (!confirm(warn)) return false;
-      }
-    }
     axis = next;
     normalizePhenologyNames();
-    if (!opts.silent && (next === 'semana' || next === 'mes')) syncProgramTimeUnit(next);
+    if (!opts.silent) syncProgramTimeUnit(next);
     scheduleSave();
     renderAll();
     return true;
@@ -1203,7 +1231,7 @@
       host.innerHTML = shellHtml();
       bind();
       stages = DEFAULT_STAGES.slice();
-      axis = 'pheno';
+      axis = 'semana';
       pct = {};
       waterDepthByStageM3ha = [];
       ensurePct();
@@ -1239,16 +1267,22 @@
     renderAll();
   }
 
+  w.fertiDistRefreshChart = function () {
+    observeChartHost();
+    if (chartInst && chartCanvasReady()) {
+      try { chartInst.resize(); } catch (e) { renderChart(); }
+      return;
+    }
+    scheduleChartRender();
+  };
   w.fertiDistMount = mount;
   w.fertiDistSyncTimeUnit = function (unit) {
     var next = unit === 'mes' ? 'mes' : 'semana';
     if (axis === next) return;
-    if (axis !== 'semana' && axis !== 'mes') return;
     setAxis(next, { silent: true });
   };
   w.fertiDistApplyProgramNutrientSplit = function (splits) {
     if (distProgramSync || !splits || typeof splits !== 'object') return;
-    if (axis !== 'semana' && axis !== 'mes') return;
     var changed = false;
     distProgramSync = true;
     try {

@@ -3021,7 +3021,8 @@ function hydroApplyStaticTranslations() {
   setText('#hidro-calculo .hydro-card:nth-child(3) h3', '📉 ' + hydroT('Requerimiento total (ppm)', 'Total requirement (ppm)'));
   setText('#hidro-calculo .hydro-card:nth-child(4) h3', '🧮 ' + hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)'));
   setText('#hydroAddFertBtn', '➕ ' + hydroT('Agregar fertilizante', 'Add fertilizer'));
-  setText('#hydroAutoCalculateBtn', '✨ ' + hydroT('Calcular solución automática', 'Calculate solution automatically'));
+  const autoLabel = container.querySelector('#hydroAutoCalculateBtn .np-brand-navy-btn-label');
+  if (autoLabel) autoLabel.textContent = hydroT('Calcular solución automática', 'Calculate solution automatically');
   setText('#hydroManageCatalogBtn', hydroT('Gestionar catálogo de fertilizantes y precios', 'Manage fertilizer catalog and prices'));
   const autoCalculate = container.querySelector('#hydroAutoCalculateBtn');
   if (autoCalculate) autoCalculate.title = hydroT(
