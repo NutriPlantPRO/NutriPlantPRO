@@ -533,15 +533,13 @@
             '</div>' +
             '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (%)')) + '</h4>' +
           '</div>' +
-          '<p class="ferti-dist-hint">' + escapeHtml(t('dist_h2_hint', 'Elige Semana o Mes. Edita solo el % (suma 100% por nutriente). El requerimiento, el agua y el granular ya se ven arriba; aquí no se muestran kg para no confundir. Flechas: 1% · Mayús: 5% · Alt: 0.1%. Selecciona las etapas y pulsa Sugerir %; el ▾ también arranca una forma.')) + '</p>' +
-          '<p class="ferti-dist-credit-hint" id="fertiDistCreditsHint" hidden></p>' +
+          '<p class="ferti-dist-hint">' + escapeHtml(t('dist_h2_hint', 'Esta tabla es el % del requerimiento real por etapa. Semana o Mes es el mismo periodo que el Programa. Cada nutriente suma 100 %.')) + '</p>' +
           '<div class="ferti-dist-scroll"><table class="data ferti-dist-table" id="fertiDistPctTable"></table></div>' +
           '<div class="ferti-dist-table-actions">' +
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
-            '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistFromProgram" title="' + escapeHtml(t('dist_from_program_title', 'Toma las etapas y el aporte real del programa y pone el % como está hoy.')) + '">' + escapeHtml(t('dist_from_program', 'Acomodar % desde el programa')) + '</button>' +
+            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Sugerir % coloca una curva nueva según las etapas (no cambia el programa). Si ya hay programa, el % se acomoda solo. Si cambias una dosis, tabla y gráfica de % se mueven. Flechas 1 % · Mayús 5 % · Alt 0.1 %. El ▾ copia formas.')) + '</p>' +
           '</div>' +
-          '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Sugerir % arma una curva nueva (triángulos). Acomodar % desde el programa deja el programa como está y solo iguala los %. Aquí no se muestran kg.')) + '</p>' +
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
         '</div>' +
@@ -653,26 +651,7 @@
     return stageDoseBreakdown(n, ri).net;
   }
 
-  function refreshCreditsHint() {
-    var el = document.getElementById('fertiDistCreditsHint');
-    if (!el) return;
-    var credits = externalCredits;
-    var hasWater = NUTS.some(function (n) { return creditValue(credits.water, n) > 1e-9; });
-    var hasBase = NUTS.some(function (n) { return creditValue(credits.base, n) > 1e-9; });
-    if (!hasWater && !hasBase) {
-      el.hidden = true;
-      el.textContent = '';
-      return;
-    }
-    var sources = [];
-    if (hasWater) sources.push(t('dist_credit_water', 'agua'));
-    if (hasBase) sources.push(t('dist_credit_granular', 'programa granular'));
-    el.hidden = false;
-    el.textContent = t(
-      'dist_credit_hint',
-      'El agua y el granular ya se restan del requerimiento. Esta tabla solo reparte %; las dosis salen al elaborar el programa.'
-    );
-  }
+  function refreshCreditsHint() {}
 
   function renderPct() {
     closeAssistMenu();
@@ -736,7 +715,7 @@
     host.innerHTML =
       '<div class="ferti-dist-water-head">' +
         '<h4>' + escapeHtml(t('dist_water_title', '3. Lámina de riego objetivo por etapa')) + ' (' + escapeHtml(waterUnit()) + ')</h4>' +
-        '<p>' + escapeHtml(t('dist_water_help', 'Captúrala aquí para descontar proporcionalmente el aporte del análisis de agua y calcular ppm, meq/L y CE.')) + '</p>' +
+        '<p>' + escapeHtml(t('dist_water_help', 'Para repartir el aporte del análisis de agua y calcular ppm, meq/L y CE.')) + '</p>' +
       '</div>' +
       '<div class="ferti-dist-water-grid">' +
         stages.map(function (stage, i) {
@@ -888,6 +867,7 @@
     commitPctIds(NUTS.map(function (n) { return n.id; }));
     refreshKgCells();
     closeAssistMenu();
+    w._fertiDistKeepSuggestedPct = true;
     if (typeof w.showMessage === 'function') {
       w.showMessage(
         result && result.stagesInZone === false
@@ -922,23 +902,6 @@
       distProgramSync = false;
     }
     return true;
-  }
-  function applyPctFromProgram() {
-    if (typeof w.fertiAdoptDistributionFromProgram !== 'function') {
-      if (typeof w.showMessage === 'function') {
-        w.showMessage(t('dist_from_program_none', 'Este proyecto aún no tiene dosis en el programa.'), 'warning');
-      }
-      return;
-    }
-    var ok = w.fertiAdoptDistributionFromProgram();
-    if (typeof w.showMessage === 'function') {
-      w.showMessage(
-        ok
-          ? t('dist_from_program_done', 'Porcentajes acomodados según el programa actual. El programa no se cambió.')
-          : t('dist_from_program_none', 'Este proyecto aún no tiene dosis en el programa.'),
-        ok ? 'success' : 'warning'
-      );
-    }
   }
 
   function ensureChartJs(cb) {
@@ -1664,10 +1627,6 @@
     var suggestBtn = document.getElementById('fertiDistSuggestPct');
     if (suggestBtn) suggestBtn.addEventListener('click', function () {
       applySuggestPct();
-    });
-    var fromProgBtn = document.getElementById('fertiDistFromProgram');
-    if (fromProgBtn) fromProgBtn.addEventListener('click', function () {
-      applyPctFromProgram();
     });
 
     var add = document.getElementById('fertiDistAddStage');

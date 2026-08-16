@@ -1508,6 +1508,7 @@ function fertiApplyAutomaticProgram(prepared) {
   updateFertiSummary();
   updateFertiCharts();
   renderFertiAutomaticProgramStatus();
+  window._fertiDistKeepSuggestedPct = false;
   saveFertirriegoProgram();
   if (window.showMessage) {
     window.showMessage(
@@ -2762,13 +2763,34 @@ function fertiProgramLayoutForDistribution() {
   };
 }
 
+function fertiDistSplitDiffersFromProgram(dist, layout) {
+  if (!dist || !layout || !layout.splits) return true;
+  const stages = Array.isArray(dist.stages) ? dist.stages : [];
+  if (stages.length !== layout.periodCount) return true;
+  const macros = ['n', 'p', 'k', 'ca', 'mg', 's'];
+  const tol = 1.2;
+  for (let i = 0; i < macros.length; i++) {
+    const id = macros[i];
+    const want = layout.splits[id];
+    const have = dist.pct && dist.pct[id];
+    if (!Array.isArray(want) || want.length !== layout.periodCount) continue;
+    if (!Array.isArray(have) || have.length !== layout.periodCount) return true;
+    for (let j = 0; j < want.length; j++) {
+      if (Math.abs((Number(have[j]) || 0) - (Number(want[j]) || 0)) > tol) return true;
+    }
+  }
+  return false;
+}
+
 function fertiAdoptDistributionFromProgram(opts) {
   const layout = fertiProgramLayoutForDistribution();
   if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
   if (opts && opts.auto) {
+    if (window._fertiDistKeepSuggestedPct) return false;
     const dist = fertiGeneratorDistributionState();
-    const distLen = dist && Array.isArray(dist.stages) ? dist.stages.length : 0;
-    if (distLen === layout.periodCount) return false;
+    if (!fertiDistSplitDiffersFromProgram(dist, layout)) return false;
+  } else {
+    window._fertiDistKeepSuggestedPct = false;
   }
   return window.fertiDistAdoptFromProgram(layout);
 }

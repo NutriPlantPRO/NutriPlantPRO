@@ -8241,11 +8241,15 @@ html.embed-login body {
   border: 1px solid #cbd5e1;
 }
 .ferti-dist-hint {
-  flex-basis: 100%;
+  flex: 1 1 100%;
   margin: 4px 0 0;
+  max-width: 100%;
+  min-width: 0;
   font-size: 12px;
   color: #64748b;
   line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 .ferti-dist-nut-head {
   display: inline-flex;
@@ -8397,6 +8401,11 @@ html.embed-login body {
   gap: 8px;
   align-items: center;
   margin-top: 10px;
+  max-width: 100%;
+}
+.ferti-dist-table-actions .ferti-dist-hint {
+  flex: 1 1 100%;
+  margin: 2px 0 0;
 }
 .ferti-dist-nut-menu-suggest {
   color: #0369a1;
@@ -8540,31 +8549,37 @@ html.embed-login body {
   border-left: 4px solid #2563eb;
   border-radius: 10px;
   background: #f8fbff;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .ferti-dist-water-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin-bottom: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 .ferti-dist-water-head h4,
-.ferti-dist-water-head p { margin: 0; }
-.ferti-dist-water-head p { color: #64748b; font-size: 12px; }
+.ferti-dist-water-head p {
+  margin: 0;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.ferti-dist-water-head p { color: #64748b; font-size: 12px; line-height: 1.4; }
 .ferti-dist-water-grid {
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 8px;
-}
-@media (max-width: 1100px) {
-  .ferti-dist-water-grid {
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  }
 }
 .ferti-dist-water-grid label {
   display: grid;
   gap: 4px;
+  min-width: 0;
   padding: 8px;
   border: 1px solid #93c5fd;
   border-radius: 8px;
@@ -8572,6 +8587,7 @@ html.embed-login body {
   color: #1e3a8a;
   font-size: 11px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 .ferti-dist-water-grid label span small {
   display: block;

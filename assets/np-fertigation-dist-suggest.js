@@ -38,13 +38,13 @@
   var STAGE_PROFILES = {
     brotacion: { I: 8, an: { n: 48, p: 8, s: 44 }, cat: { k: 28, ca: 52, mg: 20 } },
     establecimiento: { I: 10, an: { n: 50, p: 8, s: 42 }, cat: { k: 28, ca: 52, mg: 20 } },
-    vegetativo: { I: 20, an: { n: 62, p: 5, s: 33 }, cat: { k: 30, ca: 50, mg: 20 } },
-    prefloracion: { I: 12, an: { n: 55, p: 6, s: 39 }, cat: { k: 30, ca: 50, mg: 20 } },
-    floracion: { I: 14, an: { n: 52, p: 6, s: 42 }, cat: { k: 28, ca: 52, mg: 20 } },
-    amarre: { I: 10, an: { n: 48, p: 5, s: 47 }, cat: { k: 26, ca: 54, mg: 20 } },
-    llenado: { I: 18, an: { n: 48, p: 5, s: 47 }, cat: { k: 48, ca: 35, mg: 17 } },
-    maduracion: { I: 8, an: { n: 38, p: 4, s: 58 }, cat: { k: 55, ca: 30, mg: 15 } },
-    cosecha: { I: 4, an: { n: 32, p: 4, s: 64 }, cat: { k: 50, ca: 32, mg: 18 } }
+    vegetativo: { I: 14, an: { n: 60, p: 6, s: 34 }, cat: { k: 32, ca: 48, mg: 20 } },
+    prefloracion: { I: 10, an: { n: 55, p: 7, s: 38 }, cat: { k: 30, ca: 50, mg: 20 } },
+    floracion: { I: 12, an: { n: 52, p: 6, s: 42 }, cat: { k: 32, ca: 48, mg: 20 } },
+    amarre: { I: 14, an: { n: 50, p: 5, s: 45 }, cat: { k: 34, ca: 46, mg: 20 } },
+    llenado: { I: 18, an: { n: 46, p: 4, s: 50 }, cat: { k: 44, ca: 39, mg: 17 } },
+    maduracion: { I: 14, an: { n: 40, p: 4, s: 56 }, cat: { k: 52, ca: 32, mg: 16 } },
+    cosecha: { I: 10, an: { n: 34, p: 4, s: 62 }, cat: { k: 50, ca: 32, mg: 18 } }
   };
 
   function num(v) {
@@ -66,19 +66,109 @@
       .trim();
   }
 
-  function profileFor(name) {
+  function stageKey(name) {
     var s = foldName(name);
-    if (!s) return FALLBACK;
-    if (/brotacion|bud\s*break/.test(s)) return STAGE_PROFILES.brotacion;
-    if (/establecimiento|establishment/.test(s)) return STAGE_PROFILES.establecimiento;
-    if (/vegetativo|vegetative/.test(s)) return STAGE_PROFILES.vegetativo;
-    if (/preflor|pre-?flower/.test(s)) return STAGE_PROFILES.prefloracion;
-    if (/floracion|\bflor\b|flowering|\bflower\b/.test(s)) return STAGE_PROFILES.floracion;
-    if (/amarre|fruit\s*set/.test(s)) return STAGE_PROFILES.amarre;
-    if (/llenado|filling/.test(s)) return STAGE_PROFILES.llenado;
-    if (/maduracion|maturity|ripen/.test(s)) return STAGE_PROFILES.maduracion;
-    if (/cosecha|harvest/.test(s)) return STAGE_PROFILES.cosecha;
-    return FALLBACK;
+    if (!s) return '';
+    if (/brotacion|bud\s*break/.test(s)) return 'brotacion';
+    if (/establecimiento|establishment/.test(s)) return 'establecimiento';
+    if (/vegetativo|vegetative/.test(s)) return 'vegetativo';
+    if (/preflor|pre-?flower/.test(s)) return 'prefloracion';
+    if (/floracion|\bflor\b|flowering|\bflower\b/.test(s)) return 'floracion';
+    if (/amarre|fruit\s*set/.test(s)) return 'amarre';
+    if (/llenado|filling/.test(s)) return 'llenado';
+    if (/maduracion|maturity|ripen/.test(s)) return 'maduracion';
+    if (/cosecha|harvest/.test(s)) return 'cosecha';
+    return '';
+  }
+
+  function profileFor(name) {
+    var key = stageKey(name);
+    return key && STAGE_PROFILES[key] ? STAGE_PROFILES[key] : FALLBACK;
+  }
+
+  function lerp(a, b, t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return num(a) + (num(b) - num(a)) * t;
+  }
+
+  function cloneProfile(pr) {
+    var src = pr || FALLBACK;
+    return {
+      I: Math.max(0.1, num(src.I)),
+      an: { n: num(src.an && src.an.n), p: num(src.an && src.an.p), s: num(src.an && src.an.s) },
+      cat: { k: num(src.cat && src.cat.k), ca: num(src.cat && src.cat.ca), mg: num(src.cat && src.cat.mg) }
+    };
+  }
+
+  function lerpProfile(a, b, t) {
+    a = cloneProfile(a);
+    b = cloneProfile(b);
+    return {
+      I: lerp(a.I, b.I, t),
+      an: { n: lerp(a.an.n, b.an.n, t), p: lerp(a.an.p, b.an.p, t), s: lerp(a.an.s, b.an.s, t) },
+      cat: { k: lerp(a.cat.k, b.cat.k, t), ca: lerp(a.cat.ca, b.cat.ca, t), mg: lerp(a.cat.mg, b.cat.mg, t) }
+    };
+  }
+
+  function snapPart(part, keys) {
+    var sum = 0;
+    var i;
+    for (i = 0; i < keys.length; i++) sum += Math.max(0, num(part[keys[i]]));
+    if (sum <= 1e-9) return part;
+    var out = {};
+    var acc = 0;
+    for (i = 0; i < keys.length; i++) {
+      var v = Math.max(0, num(part[keys[i]]));
+      if (i === keys.length - 1) {
+        out[keys[i]] = round1(100 - acc);
+      } else {
+        out[keys[i]] = round1(100 * v / sum);
+        acc += out[keys[i]];
+      }
+    }
+    return out;
+  }
+
+  function finishProfile(pr) {
+    var out = cloneProfile(pr);
+    out.an = snapPart(out.an, ['n', 'p', 's']);
+    out.cat = snapPart(out.cat, ['k', 'ca', 'mg']);
+    return out;
+  }
+
+  function profilesForStages(stages) {
+    var list = Array.isArray(stages) ? stages : [];
+    var out = [];
+    var i = 0;
+    while (i < list.length) {
+      var key = stageKey(list[i]);
+      var j = i + 1;
+      while (j < list.length && stageKey(list[j]) === key) j++;
+      var n = j - i;
+      var pr = cloneProfile(profileFor(list[i]));
+      var prevPr = i > 0 ? cloneProfile(profileFor(list[i - 1])) : pr;
+      var nextPr = j < list.length ? cloneProfile(profileFor(list[j])) : pr;
+      var k;
+      for (k = 0; k < n; k++) {
+        if (n === 1) {
+          out.push(finishProfile(pr));
+          continue;
+        }
+        var t = n === 1 ? 0 : k / (n - 1);
+        var start = lerpProfile(prevPr, pr, 0.35);
+        var end = lerpProfile(pr, nextPr, 0.45);
+        var blended = lerpProfile(start, end, t);
+        var iStart = lerp(prevPr.I, pr.I, 0.4);
+        var iPeak = pr.I * 1.11;
+        var iEnd = pr.I;
+        blended.I = t <= 0.67
+          ? lerp(iStart, iPeak, t / 0.67)
+          : lerp(iPeak, iEnd, (t - 0.67) / 0.33);
+        out.push(finishProfile(blended));
+      }
+      i = j;
+    }
+    return out;
   }
 
   function weightsToPct(weights) {
@@ -222,6 +312,7 @@
 
   function phenoWeights(stages) {
     var list = Array.isArray(stages) ? stages : [];
+    var profiles = profilesForStages(list);
     var safe = [];
     var n = [];
     var p = [];
@@ -231,7 +322,7 @@
     var s = [];
     var i;
     for (i = 0; i < list.length; i++) {
-      var pr = profileFor(list[i]);
+      var pr = profiles[i] || cloneProfile(FALLBACK);
       var I = Math.max(0.1, num(pr.I));
       safe.push(I);
       n.push(I * num(pr.an.n) * EQ.n);
@@ -316,6 +407,8 @@
     RANGES: RANGES,
     STAGE_PROFILES: STAGE_PROFILES,
     profileFor: profileFor,
+    stageKey: stageKey,
+    profilesForStages: profilesForStages,
     weightsToPct: weightsToPct,
     suggestPct: suggestPct,
     stageTernary: stageTernary,

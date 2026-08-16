@@ -67,15 +67,27 @@ module.exports = [
     }
   },
   {
-    name: 'sugerir %: preflor flor y amarre dejan Mg en 20 y suben Ca',
+    name: 'sugerir %: preflor flor y amarre dejan Mg en 20 y K sube despacio',
     run: function () {
       ['Prefloración', 'Floración', 'Amarre'].forEach(function (name) {
         var p = suggest.profileFor(name);
         assert.equal(p.cat.mg, 20);
-        assert.ok(p.cat.ca >= 50, name + ' Ca ' + p.cat.ca);
         assert.equal(p.cat.k + p.cat.ca + p.cat.mg, 100);
       });
-      assert.ok(suggest.profileFor('Amarre').cat.ca > suggest.profileFor('Prefloración').cat.ca);
+      assert.ok(suggest.profileFor('Amarre').cat.k > suggest.profileFor('Prefloración').cat.k);
+      assert.ok(suggest.profileFor('Amarre').cat.ca <= suggest.profileFor('Prefloración').cat.ca);
+    }
+  },
+  {
+    name: 'sugerir %: usa las etapas del usuario; si Llenado se repite, K no queda en bloque',
+    run: function () {
+      var stages = ['Prefloración', 'Floración', 'Amarre', 'Llenado', 'Llenado', 'Llenado', 'Llenado', 'Maduración'];
+      var pct = suggest.suggestPct(stages).pct;
+      assert.equal(pct.k.length, 8);
+      sum100(pct.k);
+      sum100(pct.n);
+      assert.ok(pct.k[3] < pct.k[5] || pct.k[3] < pct.k[6], 'K should ramp across repeated Llenado');
+      assert.notEqual(pct.k[3], pct.k[6]);
     }
   },
   {

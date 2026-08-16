@@ -151,21 +151,21 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **Distribución objetivo (UI, bajo Requerimiento):** título **Distribución objetivo [proyecto]**. Totales (chips) = Requerimiento real. **La tabla del editor muestra solo %** (no kg/ha): el requerimiento, el aporte de agua y el granular ya se ven en Requerimiento/Programa; las dosis se calculan al **Elaborar programa**. Periodo Semana o Mes (mismo eje que Programa). Cada fila = fenología + número. **Sugerir %** (junto a + Agregar semana/mes y primer ítem del ▾; solo dashboard) coloca % según etapas elegidas y busca zona Steiner en triángulos N-P-S y K-Ca-Mg. Si el ciclo ya sale de zona, avisa. ▾ también: más→menos, menos→más, campana, uniforme, cerrar 100 %, copiar %. Suma 100 % por nutriente. Lámina de riego objetivo por etapa se captura debajo (no en Gráficas). Catálogo 📊 (etapas/%; no kg). PDF/admin pueden listar kg al reportar el programa.
 
-**Sugerir % · perfiles objetivo de solución (meq % del triángulo, dentro de Steiner).** Aniones N-NO₃ / P-H₂PO₄ / S-SO₄ = 100. Cationes K / Ca / Mg = 100. Mg = 20 en preflor, flor y amarre; Ca sube hacia amarre; K espera a llenado. El % de dosis que pinta el botón se acerca a esto **sin salir de zona**; si el requerimiento del ciclo es muy N-alto o P-bajo, el ternario real de cada etapa queda cerca del ciclo, no clavado al perfil.
+**Sugerir % · perfiles objetivo de solución (meq % del triángulo, dentro de Steiner).** El suscriptor pone las etapas que quiera (no son 9 fijas). Cada fila usa el perfil de esa fenología; si la misma etapa se repite (p. ej. 4 Llenado), I y meq se rampan hacia la siguiente (curva tipo extracción, no bloque). Aniones N-NO₃ / P-H₂PO₄ / S-SO₄ = 100. Cationes K / Ca / Mg = 100. El % de Dist suma 100 % del **requerimiento real** de cada nutriente. Mg = 20 en brotación→amarre; K sube desde vegetativo/flor; Ca baja despacio. Si el ciclo ya sale de zona, el ternario queda cerca del ciclo y avisa.
 
-| Etapa | N | P | S | K | Ca | Mg |
-|---|---:|---:|---:|---:|---:|---:|
-| Brotación | 48 | 8 | 44 | 28 | 52 | 20 |
-| Establecimiento | 50 | 8 | 42 | 28 | 52 | 20 |
-| Vegetativo | 62 | 5 | 33 | 30 | 50 | 20 |
-| Prefloración | 55 | 6 | 39 | 30 | 50 | 20 |
-| Floración | 52 | 6 | 42 | 28 | 52 | 20 |
-| Amarre | 48 | 5 | 47 | 26 | 54 | 20 |
-| Llenado | 48 | 5 | 47 | 48 | 35 | 17 |
-| Maduración | 38 | 4 | 58 | 55 | 30 | 15 |
-| Cosecha | 32 | 4 | 64 | 50 | 32 | 18 |
+| Etapa | I | N | P | S | K | Ca | Mg |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Brotación | 8 | 48 | 8 | 44 | 28 | 52 | 20 |
+| Establecimiento | 10 | 50 | 8 | 42 | 28 | 52 | 20 |
+| Vegetativo | 14 | 60 | 6 | 34 | 32 | 48 | 20 |
+| Prefloración | 10 | 55 | 7 | 38 | 30 | 50 | 20 |
+| Floración | 12 | 52 | 6 | 42 | 32 | 48 | 20 |
+| Amarre | 14 | 50 | 5 | 45 | 34 | 46 | 20 |
+| Llenado | 18 | 46 | 4 | 50 | 44 | 39 | 17 |
+| Maduración | 14 | 40 | 4 | 56 | 52 | 32 | 16 |
+| Cosecha | 10 | 34 | 4 | 62 | 50 | 32 | 18 |
 
-**Sugerir % vs programa ya hecho:** Sugerir % arma curva nueva (no pisa el programa). **Acomodar % desde el programa** (junto a Sugerir %) toma etapas y kg reales del programa y pone el % como está; el programa no se cambia. Si el proyecto ya tenía programa y la Distribución tenía otro número de filas, al abrir se acomoda solo.
+**Sugerir % vs programa ya hecho:** Sugerir % arma curva nueva (no pisa el programa). Si el proyecto ya tiene dosis, Dist se acomoda sola al aporte real. Si cambias una dosis en Programa (o arrastras en Gráficas), el % de Dist y su gráfica se mueven. Si acabas de pulsar Sugerir % en esa sesión, no se pisa.
 
 **Generador automático:** en Programa, **Elaborar programa de fertirriego** requiere Distribución semanal o mensual y confirmación antes de reemplazar filas. Meta fertilizante etapa = máx(0, requerimiento − agua ciclo − granular/base) × %. El agua y el granular ya vienen descontados en esa meta (no se restan otra vez). Si hay análisis de agua vinculado con HCO₃⁻/CO₃²⁻, el **ácido entra primero** (misma dosis mL/m³ que Hidroponía): L/ha etapa = mL/m³ × lámina etapa (m³/ha) ÷ 1000; su N/P/S resta del faltante (no se recorta por el mínimo ~3 kg/ha). Secuencia de sales: **nitrato de calcio primero** (cubre Ca y aporta N desde el inicio) → **MKP para P** (también aporta K) → **MAP solo después de preflor/flor/amarre** (llenado/cosecha) si aún falta P, sin pasarse de N (el NH₄ viene del MAP) → NKS si falta N → SOP para el K que reste → nitrato de Mg **solo si aún falta N**, si no sulfato de Mg (el SO₄ del sulfato de Mg no bloquea el Mg). **No se usa cloruro de calcio en automático** (cultivos sensibles a Cl⁻); el producto sigue en catálogo por si el agrónomo lo agrega a mano. Si el N se llena antes que el Ca, el Ca que falte queda visible. **No se fuerza el S** (sulfato de amonio no entra solo para cerrar S). Luego micros (quelatos, B). Cada dosis se limita por todos los nutrientes: no sobrepasa metas; lo imposible queda como faltante. Sales a granel por debajo de ~3 kg/ha por periodo no se incluyen. Micros sí pueden ir en gramos. N-NO₃/N-NH₄ lo determinan los productos. Guarda origen/metas/diagnósticos, reporta **Programa vs distribución** en PDF/admin y marca desactualizado si cambia Distribución. Siempre revisar compatibilidad, solubilidad, CE, agua e inyección.
 
