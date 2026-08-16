@@ -10422,6 +10422,14 @@ function getFertirriegoProgramForReport() {
   return (currentProject && currentProject.fertirriegoProgram) || null;
 }
 
+function fertiSharedTimeUnitForReport(prog, distState) {
+  if (typeof window.pickFertiSharedTimeUnit === 'function') {
+    return window.pickFertiSharedTimeUnit(distState, prog);
+  }
+  if (distState && (distState.axis === 'mes' || distState.axis === 'semana')) return distState.axis;
+  return (prog && prog.timeUnit === 'mes') ? 'mes' : 'semana';
+}
+
 /**
  * Tras document.write en una ventana nueva, onload a veces no dispara; imprimimos con retardo
  * y respaldo por load para evitar pestaña en blanco aparente o diálogo de impresión que no abre.
@@ -18776,7 +18784,8 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     const cls = dividerClass ? ` class="${dividerClass}"` : '';
     return `<td${cls}>${v === null ? '—' : `${fromSI(v, 'dose_mass_area').toFixed(d(n))} ${doseUnit}`}</td>`;
   }
-  const reportFertiIsMes = prog.timeUnit === 'mes';
+  const reportFertiTimeUnit = fertiSharedTimeUnitForReport(prog, typeof getExtraccionEtapaStateForReport === 'function' ? getExtraccionEtapaStateForReport() : null);
+  const reportFertiIsMes = reportFertiTimeUnit === 'mes';
 
   function buildReportInlineSvgChart(labels, datasets) {
     if (!Array.isArray(labels) || !labels.length) {
@@ -20307,7 +20316,8 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
   const stages = state.stages || [];
   const projectTitle = (currentProject && (currentProject.name || currentProject.projectName)) || '';
   const heading = rt('Distribución objetivo', 'Objective distribution') + (projectTitle ? ' ' + projectTitle : '');
-  const axisLabel = extraccionEtapaReportAxisLabel(state.axis, lang);
+  const reportAxis = fertiSharedTimeUnitForReport(getFertirriegoProgramForReport(), state);
+  const axisLabel = extraccionEtapaReportAxisLabel(reportAxis, lang);
   const waterUnit = unitSystem === 'us_customary' ? 'US gal/acre' : 'm³/ha';
   const waterDepths = Array.isArray(state.waterDepthByStageM3ha) ? state.waterDepthByStageM3ha : [];
   function distNutColor(n) {
@@ -20331,8 +20341,8 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
       reportNum(extraccionEtapaReportValue(n.total, unitSystem), 2) + '</td>';
   }).join('');
 
-  const showPeriod = state.axis === 'semana' || state.axis === 'mes';
-  const periodHead = state.axis === 'mes' ? rt('Mes', 'Month') : rt('Semana', 'Week');
+  const showPeriod = reportAxis === 'semana' || reportAxis === 'mes';
+  const periodHead = reportAxis === 'mes' ? rt('Mes', 'Month') : rt('Semana', 'Week');
   const combinedHead = '<tr><th rowspan="2">' + rt('Etapa', 'Stage') + '</th>' +
     (showPeriod ? '<th rowspan="2">' + periodHead + '</th>' : '') +
     '<th rowspan="2">' + rt('Lámina objetivo', 'Target irrigation depth') + '<br>(' + waterUnit + ')</th>' +
@@ -20350,7 +20360,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
     }).join('');
     return '<tr><td class="report-ferti-stage-cell">' +
       reportEscapeHtml(extraccionEtapaReportStage(st, lang)) + '</td>' +
-      (showPeriod ? '<td class="report-ferti-stage-num">' + reportEscapeHtml(extraccionEtapaReportPeriodLabel(state.axis, ri, lang)) + '</td>' : '') +
+      (showPeriod ? '<td class="report-ferti-stage-num">' + reportEscapeHtml(extraccionEtapaReportPeriodLabel(reportAxis, ri, lang)) + '</td>' : '') +
       '<td class="report-ferti-stage-num">' + reportNum(reportWaterDepth(waterDepths[ri]), 2) + '</td>' + cells + '</tr>';
   }).join('');
   const combinedFoot = nutrients.map(function(n) {

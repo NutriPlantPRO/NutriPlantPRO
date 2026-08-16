@@ -82,6 +82,8 @@ module.exports = [
       assert.equal(ferti.t('auto_button', 'Elaborar programa de fertirriego'), 'Build fertigation program');
       assert.equal(ferti.t('auto_stale', 'Programa desactualizado respecto a Distribución objetivo'), 'Program is outdated relative to Objective Distribution');
       assert.equal(ferti.t('dist_title_prefix', 'Distribución objetivo'), 'Objective distribution');
+      assert.equal(ferti.t('dist_suggest_btn', 'Sugerir %'), 'Suggest %');
+      assert.equal(ferti.t('dist_h2', '2. Distribución por etapa (%)'), '2. Distribution by stage (%)');
       assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '3. Target irrigation depth by stage');
     }
   },

@@ -97,7 +97,7 @@
       ajuste: exceso se resta como aporte del suelo; déficit se suma para corregir.
       Si el suelo cubre <em>más</em> que la extracción, Fertirriego no apaga el nutriente:
       aplica automáticamente <strong>25 % de mantenimiento</strong> (25 % de la extracción en lugar de 0).
-      Si eso ocurrió, sale un aviso chico junto al desplegable; el agrónomo puede cambiar
+      Si eso ocurrió, sale un aviso debajo de la tabla con los nutrientes afectados; el agrónomo puede cambiar
       <em>solo esa casilla</em> sin desvincular el análisis. Volver a elegir el reporte reaplica el cálculo.
       Luego se aplica la eficiencia. Ejemplo: extracción P₂O₅ 88 kg/ha y exceso de suelo que daría ajuste 0 → el ajuste queda 22 kg/ha; a 50 % de eficiencia el requerimiento real es 44 kg/ha.
       Si no eliges
@@ -124,21 +124,22 @@
     <p>Debajo de la tabla de Requerimiento, bloque <strong>Distribución objetivo [nombre del proyecto]</strong>.
       Toma el <strong>Requerimiento real</strong> de todos los nutrientes (sin agregar elementos a mano)
       y reparte <strong>% por etapa</strong> (fenológica, semanal o mensual; suma 100 % por nutriente).
+      <strong>Semana o Mes</strong> es el mismo periodo que el desplegable Etapa del Programa: si cambias uno, se mueve el otro (también en reporte y admin).
       En la plataforma, el paso 5 de «Cómo usar esta tabla» apunta a este bloque.
-      En el título de cada nutriente hay un botón <strong>▾</strong> (solo editor del dashboard; no sale en PDF ni admin) para arrancar esa curva: Más → menos, Menos → más, Campana, Uniforme o Cerrar a 100 %, copiar el % de otro nutriente, o copiar este % a los demás. No impone una curva de cultivo: es un punto de partida; luego se afina celda a celda (flechas ±1 %, Mayús ±5 %, Alt ±0.1 %).
-      Cada etapa se elige en un desplegable. En la misma tabla, junto al % aparece lo
-      <strong>pendiente por fertirriego</strong> (kg/ha o lb/acre): la meta de la etapa menos
-      el aporte del agua (repartido por lámina) y el programa granular/base vinculado
-      (repartido según el % objetivo de cada nutriente). Si se quita una etapa, su % pasa a la fila anterior y se recalculan las dosis.
-      Resultado:
-      meta etapa = requerimiento real × (% / 100). La curva se guarda en el proyecto.
+      En el título de cada nutriente hay un botón <strong>▾</strong> (solo editor del dashboard; no sale en PDF ni admin). Ahí y junto a <strong>+ Agregar semana/mes</strong> está <strong>Sugerir %</strong>: con las etapas ya elegidas coloca un % de partida coordinado (más N en vegetativo, más K en llenado, más Ca/P al inicio; Mg 20 % en preflor/flor/amarre y Ca sube hacia amarre) y busca que cada etapa quede dentro de los rangos de los triángulos ternarios N-P-S y K-Ca-Mg (mismos rangos Steiner que en Gráficas e Hidroponía). Si el requerimiento del ciclo ya sale de esos rangos, ninguna distribución mete todas las etapas adentro; el botón igual coloca la curva y avisa. El ▾ también arranca una forma (Más → menos, Menos → más, Campana, Uniforme o Cerrar a 100 %) o copia % de/a otros. No impone una curva de cultivo: es un punto de partida; luego se afina celda a celda (flechas ±1 %, Mayús ±5 %, Alt ±0.1 %).
+      Si el proyecto ya tiene un programa con dosis, <strong>Acomodar % desde el programa</strong> (junto a Sugerir %) toma esas filas y el aporte real de fertilizante y pone el % como está hoy; el programa no se cambia. Sugerir % arma una curva nueva y no pisa el programa hasta que el agrónomo elabore uno.
+      <strong>La tabla del editor muestra solo %</strong> (no kg/ha): el requerimiento real, el aporte de agua y el granular ya se ven en Requerimiento/Programa; las dosis se calculan al elaborar el programa.
+      Cada etapa se elige en un desplegable.
+      Si se quita una etapa, su % pasa a la fila anterior.
+      Interno (no se muestra en la tabla):
+      pendiente ciclo = máx(0, requerimiento − agua − granular); kg etapa = pendiente × (% / 100). La curva se guarda en el proyecto.
       <strong>Guardar en catálogo</strong> comparte etapas y % con la herramienta 📊 del dashboard
       (no aparece en el login gratis). <strong>Aplicar a otro proyecto</strong> copia solo % y etapas;
       los kg se recalculan con el requerimiento de ese expediente. El programa de fertirriego es
       independiente: puede generarse, editarse o capturarse manualmente. Por eso esta curva se llama
       <strong>objetivo</strong> y el contraste se titula <em>Programa vs distribución</em>.</p>
     <div class="mt-formula">
-      Pendiente por fertirriego = máx(0, meta etapa − agua etapa − granular/base etapa)
+      Pendiente por fertirriego = máx(0, requerimiento − agua − granular) × (% / 100)
     </div>
 
     <h3>2. Programa de nutrición</h3>
@@ -177,9 +178,11 @@
       Meta para fertilizantes = máx(0, meta de etapa − agua de etapa − granular/base de etapa)
     </div>
     <p>La secuencia es la del técnico en campo: ácido (si hay análisis de agua) → nitrato de calcio
-      (cubre Ca y aporta N) → <strong>MKP para P</strong> → MAP solo en etapas posteriores a
+      (cubre Ca y aporta N desde el inicio) → <strong>MKP para P</strong> → MAP solo en etapas posteriores a
       prefloración/floración/amarre (llenado, cosecha) si aún falta P, sin pasarse de N → NKS si falta N
       → SOP para el K restante → nitrato de Mg solo si aún falta N; si no, sulfato de Mg.
+      <strong>No se usa cloruro de calcio en automático</strong> (cultivos sensibles a Cl⁻); queda en el
+      catálogo si el agrónomo lo agrega a mano. Si el N se llena antes que el Ca, el faltante de Ca se muestra.
       El S no se fuerza. Al final, micronutrientes (quelatos, ácido bórico). Cada dosis queda limitada por todos los nutrientes:
       el motor <strong>no sobrepasa una meta</strong>. Si una composición impide cerrar exactamente,
       conserva y muestra el faltante. La proporción N-NO₃/N-NH₄ resulta de los productos (el MAP aporta NH₄);
@@ -232,7 +235,7 @@
       meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ meq/mL del ácido.
       El <strong>m³ del análisis</strong> lo define el usuario en ese reporte (un riego, el ciclo o, en hidroponía, el volumen de solución); no es la lámina de fertirriego.
       En el programa, <strong>L/ha de cada etapa = mL/m³ × lámina de esa etapa (m³/ha) ÷ 1000</strong>.
-      En pantalla, Fertirriego lista la lámina del ciclo y de cada etapa (m³/ha o US gal/acre, como el resto de unidades) con el ácido de esa lámina; no repite la fórmula y no mezcla el m³ del análisis.
+      En pantalla, Fertirriego muestra mL/m³ y la lámina del ciclo con el ácido total (L/ha o US gal/acre); no lista etapa por etapa (eso va en el programa) y no mezcla el m³ del análisis.
       Al elaborar el programa automático el ácido entra primero y su N/P/S resta del faltante.
     </p>
 
@@ -360,12 +363,15 @@
     <p>Below the Requirement table, block <strong>Distribution [project name]</strong>.
       It takes <strong>actual requirement</strong> for every nutrient (no manual add) and allocates
       <strong>% by stage</strong> (phenological, weekly or monthly; sum 100% per nutrient).
+      <strong>Week or Month</strong> is the same period as the Stage dropdown in the Program: changing one moves the other (also in the report and admin).
       In the platform, step 5 of “How to use this table” points to this block.
-      Above the % table, <strong>Support</strong> (dashboard editor only; not in PDF or admin) starts a shape (high → low, low → high, bell, even, or scale to 100%) or copies % from one nutrient to another (or to the rest). It does not impose a crop curve: it is a starting point; then you fine-tune cell by cell (arrows ±1%, Shift ±5%, Alt ±0.1%).
-      Each stage is chosen from a dropdown. The same table shows dose (kg/ha or lb/acre) next to %.
-      If a stage is removed, its % moves to the previous row and doses are recalculated.
-      Result:
-      kg/ha stage = actual requirement × (% / 100). Saved on the project.
+      Above the % table, <strong>Suggest %</strong> (also first item in each nutrient <strong>▾</strong>; dashboard editor only; not in PDF or admin) fills a starting curve from the stages you already selected: more N in vegetative, more K in filling, more Ca/P early, Mg 20% in preflowering/flowering/fruit set with Ca rising toward fruit set, and it tries to keep each stage inside the N-P-S and K-Ca-Mg ternary ranges (same Steiner ranges as Charts and Hydroponics). If the cycle requirement is already outside those ranges, no split can put every stage inside; the button still fills the curve and warns. <strong>Support</strong> in ▾ also starts a shape (high → low, low → high, bell, even, or scale to 100%) or copies % from one nutrient to another (or to the rest). It does not impose a crop curve: it is a starting point; then you fine-tune cell by cell (arrows ±1%, Shift ±5%, Alt ±0.1%).
+      If the project already has a program with rates, <strong>Fit % from program</strong> (next to Suggest %) takes those rows and the actual fertilizer supply and sets the % as it is today; the program is not changed. Suggest % builds a new curve and does not overwrite the program until the agronomist generates one.
+      <strong>The editor table shows % only</strong> (no kg/ha): actual requirement, water supply and granular are already shown in Requirement/Program; doses are calculated when the program is built.
+      Each stage is chosen from a dropdown.
+      If a stage is removed, its % moves to the previous row.
+      Internal (not shown in the table):
+      pending cycle = max(0, requirement − water − granular); stage kg = pending × (% / 100). Saved on the project.
       <strong>Save to catalog</strong> shares stages and % with the dashboard 📊 tool
       (not shown on the free login). <strong>Apply to another project</strong> copies only % and stages;
       kg are recalculated from that file’s requirement. The fertigation program is independent:
@@ -396,10 +402,12 @@
 
     <h3>2a. Automatic generator from Distribution</h3>
     <p>The sequence matches field practice: acid (if a water analysis is linked) → calcium nitrate
-      (covers Ca and supplies N) → <strong>MKP for P</strong> → MAP only after
+      (covers Ca and supplies N from the start) → <strong>MKP for P</strong> → MAP only after
       preflowering/flowering/fruit set (filling, harvest) if P is still short, without exceeding N →
       NKS if N is still short → SOP for remaining K → magnesium nitrate only if N is still short;
-      otherwise magnesium sulfate. S is not forced. Micronutrients last (chelates, boric acid).
+      otherwise magnesium sulfate. <strong>Calcium chloride is not used automatically</strong>
+      (Cl-sensitive crops); it stays in the catalog if the agronomist adds it by hand. If N fills
+      before Ca, the Ca shortfall remains visible. S is not forced. Micronutrients last (chelates, boric acid).
       Each dose is limited by every nutrient: the engine <strong>does not exceed a target</strong>.</p>
 
     <h3>2b. Program costs (USD/ha)</h3>
@@ -442,7 +450,7 @@
       meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ acid meq/mL.
       The <strong>analysis m³</strong> is whatever the user entered on that report (one irrigation, the cycle, or, in hydroponics, the solution volume); it is not the fertigation irrigation depth.
       In the program, <strong>L/ha of each stage = mL/m³ × that stage’s depth (m³/ha) ÷ 1000</strong>.
-      On screen, Fertigation lists cycle and stage irrigation depth (m³/ha or US gal/acre, same as other units) with the acid for that depth; it does not repeat the formula and does not mix in the analysis m³.
+      On screen, Fertigation shows mL/m³ and the cycle irrigation depth with the total acid (L/ha or US gal/acre); it does not list stage by stage (that belongs in the program) and does not mix in the analysis m³.
       When the automatic program is built, acid enters first and its N/P/S subtracts from the remaining need.
     </p>
 

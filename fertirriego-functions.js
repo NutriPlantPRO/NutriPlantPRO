@@ -1268,9 +1268,12 @@ function fertiAdjLabel(nutrient) {
 function fertiSoilMaintHintText() {
   var labels = (savedFertiFloorNuts || []).map(fertiAdjLabel).filter(Boolean);
   if (!labels.length) return '';
+  var many = labels.length > 1;
   var template = fertiT(
-    'soil_maint_hint',
-    'Aviso: en {nuts} el suelo cubre más que la extracción. En lugar de 0 se aplicó 25 % de mantenimiento. Si quieres otro valor, cámbialo solo en esa casilla.'
+    many ? 'soil_maint_hint_many' : 'soil_maint_hint',
+    many
+      ? 'Aviso: en {nuts} el suelo cubre más que la extracción. En lugar de 0 se aplicó 25 % de mantenimiento. Si quieres otro valor, cámbialo solo en esas casillas.'
+      : 'Aviso: en {nuts} el suelo cubre más que la extracción. En lugar de 0 se aplicó 25 % de mantenimiento. Si quieres otro valor, cámbialo solo en esa casilla.'
   );
   return String(template).replace('{nuts}', labels.join(', '));
 }
@@ -1531,7 +1534,6 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
                 ${fertiSoilSelectOptionsHtml()}
               </select>
             </label>
-            <p id="fertiSoilMaintHint" class="ferti-soil-maint-hint"${fertiSoilMaintHintText() ? '' : ' hidden'}>${fertiEscapeSelect(fertiSoilMaintHintText())}</p>
           </td>
           ${nutrients.map(n => {
             var floorOn = (savedFertiFloorNuts || []).indexOf(n) >= 0;
@@ -1553,6 +1555,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
         </tr>
       </tbody>
     </table>
+    <p id="fertiSoilMaintHint" class="ferti-soil-maint-hint"${fertiSoilMaintHintText() ? '' : ' hidden'}>${fertiEscapeSelect(fertiSoilMaintHintText())}</p>
     <div class="req-steps-guide" aria-label="${fertiT('req_steps_title', 'Cómo usar esta tabla')}">
       <p class="req-steps-guide__title">${fertiT('req_steps_title', 'Cómo usar esta tabla')}</p>
       <ol class="req-steps-guide__list">

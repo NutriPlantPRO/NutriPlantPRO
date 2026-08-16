@@ -3941,15 +3941,6 @@ html.embed-login body {
   display: none;
 }
 
-.ferti-acid-stage-list {
-  margin: 6px 0 0;
-  padding-left: 18px;
-  color: #0c4a6e;
-}
-.ferti-acid-stage-list li {
-  margin: 2px 0;
-}
-
 .hydro-acid-summary-title {
   margin: 0 0 4px 0;
   color: #0c4a6e;
@@ -8133,16 +8124,16 @@ html.embed-login body {
   font-size: 11px;
 }
 .ferti-soil-maint-hint {
-  margin: 8px 0 0;
-  max-width: 260px;
-  font-size: 10.5px;
+  margin: 10px 0 0;
+  max-width: none;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   color: #9a3412;
   background: #fff7ed;
   border: 1px solid #fdba74;
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 8px 12px;
 }
 .ferti-soil-maint-hint[hidden] {
   display: none;
@@ -8400,6 +8391,21 @@ html.embed-login body {
 .ferti-dist-chip strong {
   color: var(--ferti-nut, #065f46);
 }
+.ferti-dist-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+.ferti-dist-nut-menu-suggest {
+  color: #0369a1;
+  background: #f0f9ff;
+  margin-bottom: 4px;
+}
+.ferti-dist-nut-menu-suggest:hover {
+  background: #e0f2fe;
+}
 .ferti-dist-scroll {
   overflow-x: auto;
   margin: 8px 0 12px;
@@ -8453,6 +8459,7 @@ html.embed-login body {
 .ferti-dist-table thead th.ferti-dist-nut-name {
   color: var(--ferti-nut, #0f172a);
   font-weight: 800;
+  text-align: center;
 }
 .ferti-dist-table thead th.ferti-dist-pct-head {
   color: var(--ferti-nut, #64748b);
@@ -8605,13 +8612,17 @@ html.embed-login body {
 }
 .ferti-dist-chart {
   position: relative;
-  height: min(380px, 50vh);
-  min-height: 240px;
+  width: 100%;
+  max-width: 100%;
+  height: min(420px, 55vh);
+  min-height: 280px;
 }
 .ferti-dist-chart canvas {
+  display: block;
   touch-action: none;
   width: 100% !important;
   height: 100% !important;
+  max-width: 100%;
 }
 .ferti-dist-chart.is-dragging {
   cursor: grabbing;

@@ -2,6 +2,7 @@ const assert = require('assert');
 const generator = require('../assets/np-fertigation-program-generator.js');
 
 const materials = [
+  { id: 'cacl2_dihidratado', CaO: 38.1, Cl: 48.2 },
   { id: 'nitrato_calcio_granular', N_NO3: 14.4, N_NH4: 1.1, CaO: 26 },
   { id: 'nitrato_magnesio', N_NO3: 10.8, MgO: 15 },
   { id: 'map', N_NH4: 12, P2O5: 61 },
@@ -30,6 +31,21 @@ function close(actual, expected, eps = 1e-6) {
   );
   assert.strictEqual(result.rows[0].materialId, 'nitrato_calcio_granular');
   generator.TARGET_KEYS.forEach(key => assert.ok(result.excess[key] <= 1e-8, `excess ${key}`));
+})();
+
+(function calciumNitrateCoversCaAndNWithoutChloride() {
+  const result = generator.solveStage(
+    { N: 5, CaO: 40, MgO: 0, P2O5: 0, K2O: 0, SO4: 0 },
+    {},
+    materials
+  );
+  const ids = result.rows.map(row => row.materialId);
+  assert.ok(ids.includes('nitrato_calcio_granular'));
+  assert.ok(!ids.includes('cacl2_dihidratado'), ids.join(','));
+  assert.ok(result.supplied.N > 0);
+  assert.ok(result.supplied.N <= 5 + 1e-8);
+  assert.ok(result.unresolved.includes('CaO'));
+  assert.ok(result.remaining.CaO > 0.25, result.remaining.CaO);
 })();
 
 (function magnesiumUsesNitrateThenSulfate() {

@@ -124,10 +124,12 @@
     });
   }
 
-  function maxSafeDose(contribution, remaining, targetKey) {
+  function maxSafeDose(contribution, remaining, targetKey, ignoreKeys) {
     if (!(contribution[targetKey] > 0) || !(remaining[targetKey] > 1e-10)) return 0;
+    var skip = ignoreKeys || [];
     var max = remaining[targetKey] / contribution[targetKey];
     TARGET_KEYS.forEach(function (key) {
+      if (skip.indexOf(key) >= 0) return;
       var c = contribution[key];
       if (!(c > 0)) return;
       max = Math.min(max, remaining[key] / c);
@@ -177,7 +179,7 @@
       var material = byId[step.id];
       if (!material) return 0;
       var contribution = materialContributionPerKg(material);
-      var dose = maxSafeDose(contribution, remaining, step.target);
+      var dose = maxSafeDose(contribution, remaining, step.target, step.ignoreKeys);
       if (!(dose > tolerance)) return 0;
       var rowContribution = scaleMap(contribution, dose);
       var existing = null;
@@ -243,7 +245,7 @@
       applyStep({ id: 'nks', target: 'N', order: 40 });
       applyStep({ id: 'sop', target: 'K2O', order: 41 });
       if (remaining.N > tolerance) applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 45 });
-      applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 50 });
+      applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 50, ignoreKeys: ['SO4'] });
       MICRO_SEQUENCE.forEach(function (step) { applyStep(step); });
     }
 

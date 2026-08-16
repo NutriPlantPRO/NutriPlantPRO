@@ -12,7 +12,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
     <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
     <link rel="manifest" href="/admin.webmanifest">
-    <link rel="stylesheet" href="../dashboard.css?v=20260816p">
+    <link rel="stylesheet" href="../dashboard.css?v=20260816v">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js?v=20260815c"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260805a"></script>
@@ -10848,6 +10848,14 @@
             return (timeUnit === 'mes' ? 'Mes' : 'Semana') + ' ' + (i + 1);
         }
 
+        function adminFertiSharedTimeUnit(program, distState) {
+            if (typeof window.pickFertiSharedTimeUnit === 'function') {
+                return window.pickFertiSharedTimeUnit(distState, program);
+            }
+            if (distState && (distState.axis === 'mes' || distState.axis === 'semana')) return distState.axis;
+            return (program && program.timeUnit === 'mes') ? 'mes' : 'semana';
+        }
+
         function adminFertiNormalizeWaterM3ha(program) {
             var weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
             var arr = Array.isArray(program && program.chartWaterByStageM3ha) ? program.chartWaterByStageM3ha.slice(0, weeks.length) : [];
@@ -13885,12 +13893,16 @@
                 project?.fertirriego,
                 project?.sections?.fertirriego
             ], adminScoreNutritionRequirements) || {};
-            const fertirriegoProgram = adminPickBestFromList([
+            const fertirriegoProgramRaw = adminPickBestFromList([
                 fertirriegoRoot?.program,
                 project?.fertirriegoProgram,
                 (project?.fertirriego && Array.isArray(project.fertirriego.weeks) ? project.fertirriego : null),
                 (project?.sections?.fertirriego && Array.isArray(project.sections.fertirriego.weeks) ? project.sections.fertirriego : null)
             ], adminScoreFertirriegoProgram);
+            const fertiSharedUnit = adminFertiSharedTimeUnit(fertirriegoProgramRaw, adminExtEtapaState);
+            const fertirriegoProgram = fertirriegoProgramRaw && typeof fertirriegoProgramRaw === 'object'
+                ? Object.assign({}, fertirriegoProgramRaw, { timeUnit: fertiSharedUnit })
+                : fertirriegoProgramRaw;
             const hasFertirriegoRequirements = fertirriegoRequirements && typeof fertirriegoRequirements === 'object' && (
                 fertirriegoRequirements.cropType || 
                 (fertirriegoRequirements.targetYield && fertirriegoRequirements.targetYield > 0) ||
@@ -15198,7 +15210,7 @@
             }
 
             if (adminExtEtapaState && extraccionEtapaChartIds) {
-                html += adminBuildExtraccionEtapaDetailHtml(adminExtEtapaState, extraccionEtapaChartIds);
+                html += adminBuildExtraccionEtapaDetailHtml(Object.assign({}, adminExtEtapaState, { axis: fertiSharedUnit }), extraccionEtapaChartIds);
             } else if (!adminUserExtLibraryBuilt || !adminUserExtLibraryBuilt.chartJobs || !adminUserExtLibraryBuilt.chartJobs.length) {
                 html += `
                 <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #94a3b8; margin-bottom: 20px;">
