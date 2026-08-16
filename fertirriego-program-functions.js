@@ -176,6 +176,7 @@ let fertiBaseContributionOxide = {
   Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0, Cl: 0
 };
 let fertiGranularProgramLinked = false;
+let fertiDistributionCreditSignature = '';
 // Gráficas: lámina de riego por etapa (m3/ha) y etapa seleccionada para análisis.
 let fertiChartWaterByStageM3ha = [];
 let fertiChartSelectedStageIndex = 0;
@@ -1203,8 +1204,8 @@ function fertiGeneratorTargetMap(state, stageIndex) {
   return out;
 }
 
-function fertiGeneratorWaterMap() {
-  const w = fertiWaterContributionOxide || {};
+function fertiGeneratorWaterMap(source) {
+  const w = source || fertiWaterContributionOxide || {};
   return {
     N: Number(w.N) || 0,
     P2O5: Number(w.P2O5) || 0,
@@ -1221,6 +1222,67 @@ function fertiGeneratorWaterMap() {
     SiO2: Number(w.SiO2) || 0
   };
 }
+
+function fertiGeneratorBaseMap(source) {
+  const b = source || fertiBaseContributionOxide || {};
+  return {
+    N: Number(b.N) || 0,
+    P2O5: Number(b.P2O5) || 0,
+    K2O: Number(b.K2O) || 0,
+    CaO: Number(b.CaO) || 0,
+    MgO: Number(b.MgO) || 0,
+    SO4: (Number(b.SO4) || 0) + (Number(b.S) || 0) * FERTI_CONV.SO4_TO_S,
+    Fe: Number(b.Fe) || 0,
+    Mn: Number(b.Mn) || 0,
+    B: Number(b.B) || 0,
+    Zn: Number(b.Zn) || 0,
+    Cu: Number(b.Cu) || 0,
+    Mo: Number(b.Mo) || 0,
+    SiO2: Number(b.SiO2) || 0
+  };
+}
+
+function fertiDistributionCreditsSnapshot() {
+  let waterSource = fertiWaterContributionOxide;
+  let baseSource = fertiBaseContributionOxide;
+  let waterLinked = !!fertiWaterAnalysisId;
+  let granularLinked = fertiGranularProgramLinked === true;
+  if (!fertiProgramInitialized) {
+    try {
+      const pid = fertiGetUnifiedProjectId();
+      const raw = pid ? localStorage.getItem(`nutriplant_project_${pid}`) : '';
+      const project = raw ? JSON.parse(raw) : null;
+      const saved = project && (
+        (project.fertirriego && project.fertirriego.program) ||
+        project.fertirriegoProgram
+      );
+      if (saved) {
+        waterSource = saved.waterContribution || waterSource;
+        baseSource = saved.baseContribution || baseSource;
+        waterLinked = !!saved.waterAnalysisId;
+        granularLinked = saved.granularProgramLinked === true;
+      }
+    } catch (e) {}
+  }
+  return {
+    water: fertiGeneratorWaterMap(waterSource),
+    base: fertiGeneratorBaseMap(baseSource),
+    waterLinked,
+    granularLinked
+  };
+}
+
+function fertiNotifyDistributionCreditsChanged() {
+  const snapshot = fertiDistributionCreditsSnapshot();
+  const signature = JSON.stringify(snapshot);
+  if (signature === fertiDistributionCreditSignature) return;
+  fertiDistributionCreditSignature = signature;
+  try {
+    window.dispatchEvent(new CustomEvent('np:ferti-credits-changed', { detail: snapshot }));
+  } catch (e) {}
+}
+
+window.fertiGetDistributionCredits = fertiDistributionCreditsSnapshot;
 
 function fertiGeneratorHasProgramDoses() {
   return (fertiWeeks || []).some(w => Object.keys(w.kgByCol || {}).some(id => (Number(w.kgByCol[id]) || 0) > 0));
@@ -1246,6 +1308,7 @@ function fertiPrepareAutomaticProgram() {
     stages: state.stages,
     targetsByStage: state.stages.map((_, i) => fertiGeneratorTargetMap(state, i)),
     waterContribution: fertiGeneratorWaterMap(),
+    baseContribution: fertiGeneratorBaseMap(),
     waterDepths: depths,
     materials: getAllFertiMaterials(),
     acid: fertiGeneratorAcidInput()
@@ -1291,6 +1354,8 @@ function openFertiAutoProgramModal() {
   const excessStages = prepared.stages.filter(s => Object.keys(s.excess || {}).some(key => (Number(s.excess[key]) || 0) > 0.005)).length;
   const waterMap = fertiGeneratorWaterMap();
   const hasWaterContribution = Object.keys(waterMap).some(key => (Number(waterMap[key]) || 0) > 0.000001);
+  const baseMap = fertiGeneratorBaseMap();
+  const hasBaseContribution = Object.keys(baseMap).some(key => (Number(baseMap[key]) || 0) > 0.000001);
   const availableWaterAnalyses = fertiGetProjectWaterAnalyses();
   const acidInput = fertiGeneratorAcidInput();
   const acidMat = acidInput && getAllFertiMaterials().find(m => m && m.id === acidInput.materialId);
@@ -1314,11 +1379,12 @@ function openFertiAutoProgramModal() {
         <div><strong>${fertiEscapeAttr(fertProgT('auto_periods', 'Periodos'))}:</strong> ${state.stages.length} · ${fertiEscapeAttr(state.axis === 'mes' ? fertProgT('monthly', 'Mensual') : fertProgT('weekly', 'Semanal'))}</div>
         <div><strong>${fertiEscapeAttr(fertProgT('auto_water_rule', 'Agua'))}:</strong> ${fertiEscapeAttr(fertProgT('auto_water_proportional', 'se descuenta según la lámina de cada periodo'))}</div>
         <div><strong>${fertiEscapeAttr(fertProgT('auto_water_source', 'Origen del agua'))}:</strong> ${fertiEscapeAttr(waterSource)}</div>
+        <div><strong>${fertiEscapeAttr(fertProgT('auto_base_rule', 'Programa granular/base'))}:</strong> ${fertiEscapeAttr(hasBaseContribution ? fertProgT('auto_base_subtracted', 'se descuenta proporcionalmente de la meta de cada nutriente') : fertProgT('auto_base_none', 'sin aporte vinculado'))}</div>
         <div><strong>${fertiEscapeAttr(fertProgT('auto_acid', 'Ácido'))}:</strong> ${fertiEscapeAttr(acidLabel)}</div>
         <div><strong>${fertiEscapeAttr(fertProgT('auto_acid_rule', 'Ácido por etapa'))}:</strong> ${fertiEscapeAttr(fertProgT('auto_acid_proportional', 'L/ha = mL/m³ × lámina de la etapa (m³/ha) ÷ 1000; entra primero y su N/P/S resta del faltante'))}</div>
         <div><strong>${fertiEscapeAttr(fertProgT('auto_materials', 'Fertilizantes'))}:</strong> ${fertiEscapeAttr(materialNames.join(', ') || fertProgT('none', 'Ninguno'))}</div>
         ${unresolvedStages ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_unresolved_preview', 'La propuesta tendrá faltantes en {count} periodo(s); se mostrarán para revisión.').replace('{count}', unresolvedStages))}</div>` : ''}
-        ${excessStages ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_water_excess_preview', 'El agua por sí sola supera una o más metas en {count} periodo(s); el generador no añadirá fertilizante para esos nutrientes.').replace('{count}', excessStages))}</div>` : ''}
+        ${excessStages ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_water_excess_preview', 'El agua o el programa granular/base superan una o más metas en {count} periodo(s); el generador no añadirá fertilizante para esos nutrientes.').replace('{count}', excessStages))}</div>` : ''}
         ${!fertiWaterAnalysisId && !hasWaterContribution && availableWaterAnalyses.length ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_water_analysis_available', 'Este proyecto tiene análisis de agua. Vincula el análisis correcto en Aporte por agua antes de aceptar si deseas descontarlo.'))}</div>` : ''}
         ${fertiGeneratorHasProgramDoses() ? `<div class="ferti-auto-warning">${fertiEscapeAttr(fertProgT('auto_replace_warning', 'El programa actual contiene dosis y será reemplazado.'))}</div>` : ''}
       </div>
@@ -1379,13 +1445,14 @@ function fertiApplyAutomaticProgram(prepared) {
     name:stage.name,
     target:stage.target,
     water:stage.water,
+    base:stage.base,
     supplied:stage.supplied,
     remaining:stage.remaining,
     excess:stage.excess,
     unresolved:stage.unresolved.slice()
   }));
   fertiProgramGenerationMeta = {
-    generatorVersion:2,
+    generatorVersion:3,
     generatedAt:new Date().toISOString(),
     distributionFingerprint:prepared.distributionFingerprint,
     distributionUpdatedAt:Number(prepared.distribution.updatedAt) || 0,
@@ -1940,6 +2007,7 @@ function updateFertiSummary() {
   try { fertiRefreshGranularProgramSelect(); } catch {}
   try { fertiRenderAcidSummary(); } catch {}
   try { updateFertiCharts(); } catch {}
+  fertiNotifyDistributionCreditsChanged();
 }
 
 function fertiWaterToOxide(key, value) {
@@ -2294,6 +2362,7 @@ function fertiApplyGranularProgram() {
     ...ui.aggregateGranularProgramContribution(program)
   };
   fertiGranularProgramLinked = true;
+  fertiMarkGenerationInputsChanged();
   markFertiProgDirty();
   updateFertiSummary();
   try { saveFertirriegoProgram(); } catch (e) {}
@@ -2318,7 +2387,7 @@ function initFertiWaterInputs() {
     const target = isWater ? fertiWaterContributionOxide : fertiBaseContributionOxide;
     if (target[key] !== oxideVal) {
       target[key] = oxideVal;
-      if (isWater) fertiMarkGenerationInputsChanged();
+      fertiMarkGenerationInputsChanged();
       markFertiProgDirty();
       updateFertiSummary();
     }
@@ -2329,8 +2398,10 @@ function initFertiWaterInputs() {
     if (el.id === 'fertiImportGranularSelect') {
       fertiGranularProgramLinked = el.value === 'current';
       if (!fertiGranularProgramLinked) {
+        fertiMarkGenerationInputsChanged();
         markFertiProgDirty();
         fertiRefreshGranularProgramSelect();
+        updateFertiSummary();
         return;
       }
       if (!fertiApplyGranularProgram() && window.showMessage) {
@@ -2563,6 +2634,17 @@ window.fertiApplyDistributionTargetsToProgram = fertiApplyDistributionTargetsToP
 
 function fertiDistributionSplitFromProgram() {
   if (!Array.isArray(fertiWeeks) || !fertiWeeks.length) return null;
+  const state = fertiGeneratorDistributionState();
+  const solver = window.NpFertigationProgramGenerator;
+  let waterByStage = fertiWeeks.map(() => ({}));
+  let baseByStage = fertiWeeks.map(() => ({}));
+  if (state && solver && state.stages.length === fertiWeeks.length) {
+    const targets = state.stages.map((_, i) => fertiGeneratorTargetMap(state, i));
+    const depths = state.stages.map((_, i) => Math.max(0, Number(state.waterDepthByStageM3ha?.[i]) || 0));
+    const water = solver.proportionalWater(fertiGeneratorWaterMap(), depths);
+    if (water.ok) waterByStage = water.byStage;
+    baseByStage = solver.proportionalBase(fertiGeneratorBaseMap(), targets);
+  }
   const getters = {
     n: (week) => (Number(week.totals && week.totals.N_NO3) || 0) + (Number(week.totals && week.totals.N_NH4) || 0),
     p: (week) => Number(week.totals && week.totals.P2O5) || 0,
@@ -2578,9 +2660,18 @@ function fertiDistributionSplitFromProgram() {
     mo: (week) => Number(week.totals && week.totals.Mo) || 0,
     si: (week) => Number(week.totals && week.totals.SiO2) || 0
   };
+  const externalKeys = {
+    n:'N', p:'P2O5', k:'K2O', ca:'CaO', mg:'MgO', s:'SO4',
+    fe:'Fe', mn:'Mn', b:'B', zn:'Zn', cu:'Cu', mo:'Mo', si:'SiO2'
+  };
   const splits = {};
   Object.keys(getters).forEach(id => {
-    const vals = fertiWeeks.map(week => getters[id](week));
+    const key = externalKeys[id];
+    const vals = fertiWeeks.map((week, index) => (
+      getters[id](week) +
+      (Number(waterByStage[index]?.[key]) || 0) +
+      (Number(baseByStage[index]?.[key]) || 0)
+    ));
     const sum = vals.reduce((a, b) => a + b, 0);
     if (sum <= 1e-9) return;
     let acc = 0;

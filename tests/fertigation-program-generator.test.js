@@ -74,6 +74,37 @@ function close(actual, expected, eps = 1e-6) {
   assert.strictEqual(result.reason, 'water-depth-required');
 })();
 
+(function granularBaseFollowsEachNutrientTargetCurve() {
+  const targets = [
+    { N: 10, P2O5: 30 },
+    { N: 30, P2O5: 10 }
+  ];
+  const byStage = generator.proportionalBase({ N: 20, P2O5: 8 }, targets);
+  close(byStage[0].N, 5);
+  close(byStage[1].N, 15);
+  close(byStage[0].P2O5, 6);
+  close(byStage[1].P2O5, 2);
+})();
+
+(function waterAndGranularBaseAreBothSubtracted() {
+  const result = generator.generate({
+    axis: 'semana',
+    stages: ['Semana 1', 'Semana 2'],
+    targetsByStage: [{ N: 10 }, { N: 30 }],
+    waterContribution: { N: 4 },
+    baseContribution: { N: 20 },
+    waterDepths: [100, 100],
+    materials
+  });
+  assert.strictEqual(result.ok, true);
+  close(result.stages[0].water.N, 2);
+  close(result.stages[0].base.N, 5);
+  close(result.stages[0].fertilizerTarget.N, 3);
+  close(result.stages[1].water.N, 2);
+  close(result.stages[1].base.N, 15);
+  close(result.stages[1].fertilizerTarget.N, 13);
+})();
+
 (function impossibleTargetStaysVisible() {
   const result = generator.solveStage({ SiO2: 5 }, {}, materials);
   assert.ok(result.unresolved.includes('SiO2'));

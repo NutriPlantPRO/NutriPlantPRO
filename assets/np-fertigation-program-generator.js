@@ -104,6 +104,26 @@
     };
   }
 
+  function proportionalBase(totalBase, targetsByStage) {
+    var targets = Array.isArray(targetsByStage) ? targetsByStage : [];
+    var base = nonNegativeMap(totalBase);
+    var cycleTarget = nonNegativeMap({});
+    targets.forEach(function (target) {
+      cycleTarget = addMaps(cycleTarget, nonNegativeMap(target));
+    });
+    return targets.map(function (target) {
+      var stageTarget = nonNegativeMap(target);
+      var out = {};
+      TARGET_KEYS.forEach(function (key) {
+        var share = cycleTarget[key] > 1e-10
+          ? stageTarget[key] / cycleTarget[key]
+          : (targets.length ? 1 / targets.length : 0);
+        out[key] = base[key] * share;
+      });
+      return out;
+    });
+  }
+
   function maxSafeDose(contribution, remaining, targetKey) {
     if (!(contribution[targetKey] > 0) || !(remaining[targetKey] > 1e-10)) return 0;
     var max = remaining[targetKey] / contribution[targetKey];
@@ -124,7 +144,9 @@
     var tolerance = Math.max(1e-9, num(opts.tolerance) || 1e-7);
     var stageTarget = nonNegativeMap(target);
     var stageWater = nonNegativeMap(water);
-    var fertilizerTarget = subtractMaps(stageTarget, stageWater);
+    var stageBase = nonNegativeMap(opts.base);
+    var externalContribution = addMaps(stageWater, stageBase);
+    var fertilizerTarget = subtractMaps(stageTarget, externalContribution);
     var remaining = nonNegativeMap(fertilizerTarget);
     var supplied = nonNegativeMap({});
     var rows = [];
@@ -249,7 +271,7 @@
     remaining = subtractMaps(fertilizerTarget, supplied);
 
     var unresolved = TARGET_KEYS.filter(function (key) { return remaining[key] > tolerance; });
-    var totalWithWater = addMaps(supplied, stageWater);
+    var totalWithWater = addMaps(supplied, externalContribution);
     var excess = {};
     TARGET_KEYS.forEach(function (key) {
       excess[key] = Math.max(0, totalWithWater[key] - stageTarget[key]);
@@ -257,6 +279,7 @@
     return {
       target: stageTarget,
       water: stageWater,
+      base: stageBase,
       fertilizerTarget: fertilizerTarget,
       supplied: supplied,
       totalWithWater: totalWithWater,
@@ -279,10 +302,12 @@
     }
     var water = proportionalWater(data.waterContribution, data.waterDepths);
     if (!water.ok) return { ok: false, reason: water.reason, stages: [] };
+    var base = proportionalBase(data.baseContribution, targets);
     var results = stages.map(function (stage, index) {
       var depth = Math.max(0, num(data.waterDepths && data.waterDepths[index]));
       var solved = solveStage(targets[index], water.byStage[index], data.materials, Object.assign({}, data.options || {}, {
         acid: data.acid || null,
+        base: base[index],
         waterDepthM3Ha: depth,
         stageName: stage
       }));
@@ -325,6 +350,7 @@
     MIN_MICRO_DOSE_KG_HA: MIN_MICRO_DOSE_KG_HA,
     materialContributionPerKg: materialContributionPerKg,
     proportionalWater: proportionalWater,
+    proportionalBase: proportionalBase,
     solveStage: solveStage,
     generate: generate,
     stageBlocksMap: stageBlocksMap

@@ -149,7 +149,8 @@ let savedFertiAdjustments = null;
 let savedFertiEfficiencies = null;
 let savedFertiAdjustmentsAuto = true;
 let savedFertiSoilAnalysisId = '';
-let savedFertiSoilAdjFloorPct = 25;
+let savedFertiAdjManual = {};
+let savedFertiFloorNuts = [];
 let isApplyingFertiSoilAdj = false;
 let lastFertiCrop = null;
 let lastFertiTargetYield = null;
@@ -1231,32 +1232,97 @@ function fertiSoilConsideredOxideKgHa(analysis) {
   return out;
 }
 
-function fertiSoilAdjFloorPct() {
-  var n = parseFloat(savedFertiSoilAdjFloorPct);
-  if (!isFinite(n)) return FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
-  return Math.max(0, Math.min(100, n));
-}
-
 function fertiSoilAdjWithFloor(total, considered) {
   var tot = parseFloat(total) || 0;
   var raw = Math.max(0, tot - (parseFloat(considered) || 0));
-  return Math.max(tot * (fertiSoilAdjFloorPct() / 100), raw);
+  var floorVal = tot * (FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT / 100);
+  var usedFloor = tot > 0 && floorVal > raw + 1e-9;
+  return { value: Math.max(floorVal, raw), usedFloor: usedFloor };
+}
+
+function fertiMarkFloorNut(nutrient, used) {
+  savedFertiFloorNuts = (savedFertiFloorNuts || []).filter(function (n) { return n !== nutrient; });
+  if (used) savedFertiFloorNuts.push(nutrient);
+}
+
+function fertiIsAdjManual(nutrient) {
+  return !!(savedFertiAdjManual && savedFertiAdjManual[nutrient]);
+}
+
+function fertiAdjLabel(nutrient) {
+  var elemental = (typeof window.isFertirriegoElementalMode === 'boolean')
+    ? window.isFertirriegoElementalMode
+    : isFertirriegoElementalMode;
+  if (elemental) {
+    if (nutrient === 'P2O5') return 'P';
+    if (nutrient === 'K2O') return 'K';
+    if (nutrient === 'CaO') return 'Ca';
+    if (nutrient === 'MgO') return 'Mg';
+    if (nutrient === 'SiO2') return 'Si';
+    if (nutrient === 'SO4') return 'S';
+  }
+  if (nutrient === 'SO4') return 'SO₄';
+  return nutrient;
+}
+
+function fertiSoilMaintHintText() {
+  var labels = (savedFertiFloorNuts || []).map(fertiAdjLabel).filter(Boolean);
+  if (!labels.length) return '';
+  var template = fertiT(
+    'soil_maint_hint',
+    'Aviso: en {nuts} el suelo cubre más que la extracción. En lugar de 0 se aplicó 25 % de mantenimiento. Si quieres otro valor, cámbialo solo en esa casilla.'
+  );
+  return String(template).replace('{nuts}', labels.join(', '));
+}
+
+function fertiRefreshSoilMaintHint() {
+  var el = document.getElementById('fertiSoilMaintHint');
+  if (!el) return;
+  var text = fertiSoilMaintHintText();
+  el.hidden = !text;
+  el.textContent = text || '';
+  FERTIRRIEGO_NUTRIENTS.forEach(function (n) {
+    var inp = document.getElementById('ferti-adj-' + n);
+    if (!inp) return;
+    var on = (savedFertiFloorNuts || []).indexOf(n) >= 0;
+    inp.classList.toggle('is-soil-maint', on);
+    if (on) {
+      inp.title = fertiT('soil_maint_cell', '25 % de mantenimiento: el suelo cubría más que la extracción. Puedes cambiar solo esta casilla.');
+    } else if (inp.getAttribute('title') === fertiT('soil_maint_cell', '25 % de mantenimiento: el suelo cubría más que la extracción. Puedes cambiar solo esta casilla.')) {
+      inp.removeAttribute('title');
+    }
+  });
 }
 
 function fertiOverlaySoilAdjustments(totalExtraction, adjustment) {
-  if (!savedFertiSoilAnalysisId) return adjustment;
+  if (!savedFertiSoilAnalysisId) {
+    savedFertiFloorNuts = [];
+    return adjustment;
+  }
   var analysis = fertiFindSoilAnalysis(savedFertiSoilAnalysisId);
   if (!analysis) {
     savedFertiSoilAnalysisId = '';
+    savedFertiFloorNuts = [];
     return adjustment;
   }
   var considered = fertiSoilConsideredOxideKgHa(analysis);
   if (!considered) return adjustment;
+  var incoming = Object.keys(totalExtraction || {});
+  var fullPass = incoming.length > 1;
+  var nextFloor = fullPass ? [] : (savedFertiFloorNuts || []).slice();
   Object.keys(considered).forEach(function (n) {
     if (considered[n] == null || !isFinite(considered[n])) return;
+    if (fertiIsAdjManual(n)) return;
     var total = parseFloat(totalExtraction && totalExtraction[n]) || 0;
-    adjustment[n] = fertiSoilAdjWithFloor(total, considered[n]);
+    var result = fertiSoilAdjWithFloor(total, considered[n]);
+    adjustment[n] = result.value;
+    if (fullPass) {
+      if (result.usedFloor) nextFloor.push(n);
+    } else {
+      fertiMarkFloorNut(n, result.usedFloor);
+    }
   });
+  if (fullPass) savedFertiFloorNuts = nextFloor;
   savedFertiAdjustmentsAuto = false;
   return adjustment;
 }
@@ -1328,24 +1394,10 @@ function fertiWriteAdjOxide(nutrient, oxideKgHa) {
   }
 }
 
-window.fertiOnSoilAdjFloorPct = function fertiOnSoilAdjFloorPct(value) {
-  var n = parseFloat(value);
-  savedFertiSoilAdjFloorPct = isFinite(n) ? Math.max(0, Math.min(100, n)) : FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
-  var inp = document.getElementById('fertiSoilAdjFloorPct');
-  if (inp) inp.value = String(savedFertiSoilAdjFloorPct);
-  if (savedFertiSoilAnalysisId) {
-    window.fertiOnSoilAnalysisSelect(savedFertiSoilAnalysisId);
-    return;
-  }
-  if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-    window.saveFertirriegoRequirementsImmediate({ force: true });
-  } else if (typeof window.saveFertirriegoRequirements === 'function') {
-    window.saveFertirriegoRequirements();
-  }
-};
-
 window.fertiOnSoilAnalysisSelect = function fertiOnSoilAnalysisSelect(analysisId) {
   savedFertiSoilAnalysisId = analysisId || '';
+  savedFertiAdjManual = {};
+  savedFertiFloorNuts = [];
   var nutrients = Object.keys(FERTI_SOIL_ADJ_MAP);
   var totals = {};
   nutrients.concat(['SiO2']).forEach(function (n) {
@@ -1369,6 +1421,7 @@ window.fertiOnSoilAnalysisSelect = function fertiOnSoilAnalysisSelect(analysisId
     isApplyingFertiSoilAdj = false;
   }
   fertiRefreshSoilAnalysisSelect();
+  fertiRefreshSoilMaintHint();
   try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch (e) {}
   if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
     window.saveFertirriegoRequirementsImmediate({ force: true });
@@ -1478,13 +1531,13 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
                 ${fertiSoilSelectOptionsHtml()}
               </select>
             </label>
-            <label class="ferti-soil-floor-wrap" for="fertiSoilAdjFloorPct" title="${fertiT('soil_adj_floor_title', 'Si el suelo cubre más que la extracción, queda al menos este % de la extracción (mantenimiento en fertirriego). Luego aplica la eficiencia. 0 % = sin piso.')}">
-              <span>${fertiT('soil_adj_floor', 'Piso')}</span>
-              <input type="number" id="fertiSoilAdjFloorPct" min="0" max="100" step="1" value="${fertiSoilAdjFloorPct()}" onchange="window.fertiOnSoilAdjFloorPct && window.fertiOnSoilAdjFloorPct(this.value)">
-              <span>%</span>
-            </label>
+            <p id="fertiSoilMaintHint" class="ferti-soil-maint-hint"${fertiSoilMaintHintText() ? '' : ' hidden'}>${fertiEscapeSelect(fertiSoilMaintHintText())}</p>
           </td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="ferti-adj-${n}" value="${fertiAdjInputFromSI(getConvertedValue(n, adjustment[n]), n)}" step="${fertiAdjStep(n)}" onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`).join('')}
+          ${nutrients.map(n => {
+            var floorOn = (savedFertiFloorNuts || []).indexOf(n) >= 0;
+            var floorTitle = floorOn ? ` title="${fertiEscapeSelect(fertiT('soil_maint_cell', '25 % de mantenimiento: el suelo cubría más que la extracción. Puedes cambiar solo esta casilla.'))}"` : '';
+            return `<td><input type="number" class="fertirriego-input${floorOn ? ' is-soil-maint' : ''}" id="ferti-adj-${n}" value="${fertiAdjInputFromSI(getConvertedValue(n, adjustment[n]), n)}" step="${fertiAdjStep(n)}"${floorTitle} onchange="updateAdjustment('${n}', fertiInputToSI(this.value, 'dose_mass_area'))"></td>`;
+          }).join('')}
         </tr>
         
         <!-- Fila 4: Eficiencia -->
@@ -1505,7 +1558,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
       <ol class="req-steps-guide__list">
         <li><span class="req-steps-guide__n">1</span><span>${fertiT('req_step_1', 'Selecciona tu cultivo y rendimiento objetivo')}</span></li>
         <li><span class="req-steps-guide__n">2</span><span>${fertiT('req_step_2', 'Ajusta la extracción por tonelada')}</span></li>
-        <li><span class="req-steps-guide__n">3</span><span>${fertiT('req_step_3', 'Corrige por aporte o déficit de tu suelo (piso: no se apaga el nutriente)')}</span></li>
+        <li><span class="req-steps-guide__n">3</span><span>${fertiT('req_step_3', 'Corrige por aporte o déficit de tu suelo (si el suelo cubre de más, queda 25 % de mantenimiento)')}</span></li>
         <li><span class="req-steps-guide__n">4</span><span>${fertiT('req_step_4', 'Ajusta por eficiencia del fertilizante y del sistema')}</span></li>
         <li><span class="req-steps-guide__n">5</span><span>${fertiT('req_step_5', 'Reparte el requerimiento real en el ciclo (abajo: Distribución objetivo, % por etapa y lámina)')}</span></li>
       </ol>
@@ -1757,7 +1810,7 @@ updateExtractionPerTon = function(nutrient, value) {
     // Actualizar el ajuste (por defecto igual a extracción total)
     const adjInput = document.getElementById(`ferti-adj-${nutrient}`);
     if (adjInput) {
-      if (savedFertiSoilAnalysisId && FERTI_SOIL_ADJ_MAP[nutrient]) {
+      if (savedFertiSoilAnalysisId && FERTI_SOIL_ADJ_MAP[nutrient] && !fertiIsAdjManual(nutrient)) {
         var linkedAdj = {};
         linkedAdj[nutrient] = parseFloat(totalExtraction);
         var linkedTotal = {};
@@ -1766,7 +1819,8 @@ updateExtractionPerTon = function(nutrient, value) {
         isApplyingFertiSoilAdj = true;
         try { fertiWriteAdjOxide(nutrient, linkedAdj[nutrient]); }
         finally { isApplyingFertiSoilAdj = false; }
-      } else {
+        fertiRefreshSoilMaintHint();
+      } else if (!fertiIsAdjManual(nutrient)) {
         const shownAdjustment = isFertirriegoElementalMode ? getConvertedValue(nutrient, totalExtraction) : totalExtraction;
         adjInput.value = fertiAdjInputFromSI(shownAdjustment, nutrient);
         const efficiencyValue = parseFloat(document.getElementById(`ferti-eff-${nutrient}`).value) || 1;
@@ -1811,8 +1865,10 @@ updateAdjustment = function(nutrient, value) {
     }
     console.log('🔄 updateAdjustment (Fertirriego) llamado:', { nutrient, value });
     if (!isApplyingFertiSoilAdj) {
-      savedFertiSoilAnalysisId = '';
-      fertiRefreshSoilAnalysisSelect();
+      if (!savedFertiAdjManual) savedFertiAdjManual = {};
+      savedFertiAdjManual[nutrient] = true;
+      fertiMarkFloorNut(nutrient, false);
+      fertiRefreshSoilMaintHint();
     }
     savedFertiAdjustmentsAuto = false;
     
@@ -2358,7 +2414,7 @@ function saveFertirriegoRequirements(options = {}) {
       efficiency, 
       adjustmentsAuto: savedFertiAdjustmentsAuto === true,
       soilAnalysisId: savedFertiSoilAnalysisId || '',
-      soilAdjFloorPct: fertiSoilAdjFloorPct(),
+      soilAdjManual: Object.keys(savedFertiAdjManual || {}).filter(function (n) { return savedFertiAdjManual[n]; }),
       isElementalMode, 
       customCrops, 
       extractionOverrides, 
@@ -2743,7 +2799,8 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     savedFertiEfficiencies = null;
     savedFertiAdjustmentsAuto = true;
     savedFertiSoilAnalysisId = '';
-    savedFertiSoilAdjFloorPct = FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
+    savedFertiAdjManual = {};
+    savedFertiFloorNuts = [];
     lastFertiCrop = null;
     lastFertiTargetYield = null;
     if (typeof window !== 'undefined') {
@@ -3154,10 +3211,13 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     
     if (data) {
       savedFertiSoilAnalysisId = (data.soilAnalysisId && String(data.soilAnalysisId)) || '';
-      var floorPct = parseFloat(data.soilAdjFloorPct);
-      savedFertiSoilAdjFloorPct = isFinite(floorPct)
-        ? Math.max(0, Math.min(100, floorPct))
-        : FERTI_SOIL_ADJ_FLOOR_PCT_DEFAULT;
+      savedFertiAdjManual = {};
+      savedFertiFloorNuts = [];
+      if (Array.isArray(data.soilAdjManual)) {
+        data.soilAdjManual.forEach(function (n) {
+          if (n) savedFertiAdjManual[n] = true;
+        });
+      }
       if (typeof data.adjustmentsAuto === 'boolean') {
         savedFertiAdjustmentsAuto = data.adjustmentsAuto;
       } else if (data.cropType && data.targetYield != null) {

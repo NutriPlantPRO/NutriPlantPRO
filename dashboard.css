@@ -8132,26 +8132,24 @@ html.embed-login body {
   padding: 4px 6px;
   font-size: 11px;
 }
-.ferti-soil-floor-wrap {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  width: 148px;
-  max-width: 100%;
-  font-size: 11px;
-  font-weight: 700;
-  color: #0369a1;
+.ferti-soil-maint-hint {
+  margin: 8px 0 0;
+  max-width: 260px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  padding: 6px 8px;
 }
-.ferti-soil-floor-wrap input {
-  width: 52px;
-  padding: 3px 4px;
-  border: 1px solid #bae6fd;
-  border-radius: 6px;
-  font-size: 12px;
-  font-family: inherit;
-  font-weight: 700;
-  text-align: center;
+.ferti-soil-maint-hint[hidden] {
+  display: none;
+}
+.fertirriego-input.is-soil-maint {
+  background: #fff7ed;
+  border-color: #fdba74;
 }
 
 .fertirriego-input {
@@ -8258,42 +8256,92 @@ html.embed-login body {
   color: #64748b;
   line-height: 1.4;
 }
-.ferti-dist-assist {
-  margin: 8px 0 10px;
-  padding: 10px 12px;
+.ferti-dist-nut-head {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.ferti-dist-nut-menu-btn {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.72;
+}
+.ferti-dist-nut-menu-btn:hover,
+.ferti-dist-nut-menu-btn[aria-expanded="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.72);
+}
+.ferti-dist-nut-menu {
+  position: fixed;
+  z-index: 100060;
+  min-width: 220px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 8px;
   border: 1px solid #bae6fd;
   border-radius: 10px;
-  background: #f8fbff;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
 }
-.ferti-dist-assist-title {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
+.ferti-dist-nut-menu-title {
+  margin: 0 0 6px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 800;
   color: #0369a1;
 }
-.ferti-dist-assist-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-  align-items: center;
-  margin-top: 6px;
+.ferti-dist-nut-menu-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #0f172a;
   font-size: 12px;
-  color: #334155;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
 }
-.ferti-dist-assist-row select {
-  min-width: 108px;
-  max-width: 160px;
+.ferti-dist-nut-menu-item:hover {
+  background: #f0f9ff;
+}
+.ferti-dist-nut-menu-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0;
+  padding: 8px 8px 6px;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+.ferti-dist-nut-menu-copy label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ferti-dist-nut-menu-copy select {
+  width: 100%;
   padding: 5px 8px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 12px;
   font-family: inherit;
   background: #fff;
-}
-.ferti-dist-assist .btn-sm {
-  padding: 5px 9px;
-  font-size: 12px;
 }
 
 .ferti-dist-panel {
@@ -8303,6 +8351,20 @@ html.embed-login body {
   margin: 0 0 6px;
   font-size: 1rem;
   color: #0f172a;
+}
+.ferti-dist-credit-hint {
+  margin: 8px 0 10px;
+  padding: 7px 10px;
+  border: 1px solid #7dd3fc;
+  border-radius: 8px;
+  background: #f0f9ff;
+  color: #075985;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.ferti-dist-credit-hint[hidden] {
+  display: none;
 }
 .ferti-dist-panel-head {
   display: flex;

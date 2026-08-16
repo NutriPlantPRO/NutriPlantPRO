@@ -96,11 +96,14 @@
       NutriPlant toma la <em>diferencia considerada del ciclo</em> (kg/ha o lb/acre) y corrige el
       ajuste: exceso se resta como aporte del suelo; déficit se suma para corregir.
       Si el suelo cubre <em>más</em> que la extracción, Fertirriego no apaga el nutriente:
-      deja un <strong>piso de mantenimiento</strong> (por defecto 25 % de la extracción, editable junto al desplegable; 0 % = sin piso).
-      Luego se aplica la eficiencia. Ejemplo: extracción P₂O₅ 88 kg/ha y exceso de suelo que daría ajuste 0 → con piso 25 % el ajuste queda 22 kg/ha; a 50 % de eficiencia el requerimiento real es 44 kg/ha.
+      aplica automáticamente <strong>25 % de mantenimiento</strong> (25 % de la extracción en lugar de 0).
+      Si eso ocurrió, sale un aviso chico junto al desplegable; el agrónomo puede cambiar
+      <em>solo esa casilla</em> sin desvincular el análisis. Volver a elegir el reporte reaplica el cálculo.
+      Luego se aplica la eficiencia. Ejemplo: extracción P₂O₅ 88 kg/ha y exceso de suelo que daría ajuste 0 → el ajuste queda 22 kg/ha; a 50 % de eficiencia el requerimiento real es 44 kg/ha.
       Si no eliges
       análisis, el valor se queda como está (igual a la extracción total, o el que hayas editado).
-      El agrónomo puede seguir subiendo o bajando a mano; al editar se desvincula el análisis.
+      El agrónomo puede seguir subiendo o bajando a mano; al cambiar una casilla el análisis
+      sigue vinculado y solo ese nutriente queda manual.
       Ver criterio de referencia en
       <a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo: fertilidad y kg/ha</a>.</p>
 
@@ -122,17 +125,21 @@
       Toma el <strong>Requerimiento real</strong> de todos los nutrientes (sin agregar elementos a mano)
       y reparte <strong>% por etapa</strong> (fenológica, semanal o mensual; suma 100 % por nutriente).
       En la plataforma, el paso 5 de «Cómo usar esta tabla» apunta a este bloque.
-      Encima de la tabla de % hay un <strong>Apoyo</strong> (solo en el editor del dashboard; no sale en PDF ni admin) para arrancar: Más → menos, Menos → más, Campana, Uniforme o Cerrar a 100 %, o copiar el % de un nutriente a otro (o a los demás). No impone una curva de cultivo: es un punto de partida; luego se afina celda a celda (flechas ±1 %, Mayús ±5 %, Alt ±0.1 %).
-      Cada etapa se elige en un desplegable. En la misma tabla, junto al % aparece la dosis
-      (kg/ha o lb/acre). Si se quita una etapa, su % pasa a la fila anterior y se recalculan las dosis.
+      En el título de cada nutriente hay un botón <strong>▾</strong> (solo editor del dashboard; no sale en PDF ni admin) para arrancar esa curva: Más → menos, Menos → más, Campana, Uniforme o Cerrar a 100 %, copiar el % de otro nutriente, o copiar este % a los demás. No impone una curva de cultivo: es un punto de partida; luego se afina celda a celda (flechas ±1 %, Mayús ±5 %, Alt ±0.1 %).
+      Cada etapa se elige en un desplegable. En la misma tabla, junto al % aparece lo
+      <strong>pendiente por fertirriego</strong> (kg/ha o lb/acre): la meta de la etapa menos
+      el aporte del agua (repartido por lámina) y el programa granular/base vinculado
+      (repartido según el % objetivo de cada nutriente). Si se quita una etapa, su % pasa a la fila anterior y se recalculan las dosis.
       Resultado:
-      kg/ha etapa = requerimiento real × (% / 100). La curva se guarda en el proyecto.
+      meta etapa = requerimiento real × (% / 100). La curva se guarda en el proyecto.
       <strong>Guardar en catálogo</strong> comparte etapas y % con la herramienta 📊 del dashboard
       (no aparece en el login gratis). <strong>Aplicar a otro proyecto</strong> copia solo % y etapas;
       los kg se recalculan con el requerimiento de ese expediente. El programa de fertirriego es
       independiente: puede generarse, editarse o capturarse manualmente. Por eso esta curva se llama
       <strong>objetivo</strong> y el contraste se titula <em>Programa vs distribución</em>.</p>
-    <div class="mt-formula">kg/ha en etapa = Requerimiento real × (% / 100)</div>
+    <div class="mt-formula">
+      Pendiente por fertirriego = máx(0, meta etapa − agua etapa − granular/base etapa)
+    </div>
 
     <h3>2. Programa de nutrición</h3>
     <p>Tabla por <strong>semana o mes</strong> (etapa fenológica + número de periodo). Por etapa:</p>
@@ -166,7 +173,8 @@
     <div class="mt-formula">
       Meta de etapa = Requerimiento real × (% de Distribución / 100)<br>
       Agua de etapa = Aporte total del agua × (lámina etapa / suma de láminas)<br>
-      Meta para fertilizantes = máx(0, meta de etapa − agua de etapa)
+      Granular/base de etapa = aporte total granular/base × (% objetivo / 100)<br>
+      Meta para fertilizantes = máx(0, meta de etapa − agua de etapa − granular/base de etapa)
     </div>
     <p>La secuencia es la del técnico en campo: ácido (si hay análisis de agua) → nitrato de calcio
       (cubre Ca y aporta N) → <strong>MKP para P</strong> → MAP solo en etapas posteriores a
