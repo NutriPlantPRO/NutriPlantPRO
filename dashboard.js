@@ -21793,9 +21793,11 @@ function createAguaTabHTML() {
           </div>
           <div id="agua-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
-              <label id="aw-m3-riego-label" style="margin-right:6px;">m³ agua de riego:</label>
-              <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" style="width:80px;" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
-              <span id="aw-m3-riego-equiv" class="aw-m3-riego-equiv" aria-live="polite" style="display:none;font-size:11px;color:#64748b;margin:0 8px 0 4px;white-space:nowrap;"></span>
+              <div class="aw-m3-riego-cell">
+                <label id="aw-m3-riego-label" for="aw-m3-riego">m³ agua de riego:</label>
+                <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
+                <span id="aw-m3-riego-equiv" class="aw-m3-riego-equiv" aria-live="polite"></span>
+              </div>
               <input type="text" id="aw-meta-title" placeholder="${dashboardT('analysis.meta_title_simple', 'Título')}" data-i18n-placeholder="analysis.meta_title_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','title',this.value)">
               <input type="text" id="aw-meta-date" placeholder="${dashboardT('analysis.meta_date_simple', 'Fecha')}" data-i18n-placeholder="analysis.meta_date_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentAguaAnalysis && window.deleteCurrentAguaAnalysis();">Eliminar</button>

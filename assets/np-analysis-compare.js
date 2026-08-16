@@ -795,6 +795,19 @@
             tr('analysis.pdf_review_close', isEnLang() ? 'Close' : 'Cerrar') +
           '">×</button>' +
         '</div>' +
+        '<div class="np-lab-pdf-modal__foot">' +
+          '<label class="np-lab-pdf-modal__new"><input type="checkbox" data-new checked> ' +
+            tr('analysis.pdf_review_as_new', 'Crear análisis nuevo (si no, aplica al actual)') +
+          '</label>' +
+          '<div class="np-lab-pdf-modal__foot-btns">' +
+            '<button type="button" class="btn btn-sm" data-act="cancel">' +
+              tr('analysis.pdf_review_cancel', 'Cancelar') +
+            '</button>' +
+            '<button type="button" class="btn btn-sm btn-success" data-act="apply">' +
+              tr('analysis.pdf_review_apply', 'Aplicar') +
+            '</button>' +
+          '</div>' +
+        '</div>' +
         '<p class="np-lab-pdf-modal__intro">' +
           tr('analysis.pdf_review_intro', 'Marca los campos a aplicar. Corrige o completa los vacíos. Luego confirma para llenar el análisis.') +
         '</p>' +
@@ -820,19 +833,6 @@
           '</button>' +
         '</div>' +
         '<div class="np-lab-pdf-modal__list"></div>' +
-        '<div class="np-lab-pdf-modal__foot">' +
-          '<label class="np-lab-pdf-modal__new"><input type="checkbox" data-new checked> ' +
-            tr('analysis.pdf_review_as_new', 'Crear análisis nuevo (si no, aplica al actual)') +
-          '</label>' +
-          '<div class="np-lab-pdf-modal__foot-btns">' +
-            '<button type="button" class="btn btn-sm" data-act="cancel">' +
-              tr('analysis.pdf_review_cancel', 'Cancelar') +
-            '</button>' +
-            '<button type="button" class="btn btn-sm btn-success" data-act="apply">' +
-              tr('analysis.pdf_review_apply', 'Aplicar') +
-            '</button>' +
-          '</div>' +
-        '</div>' +
       '</div>';
 
     var list = modal.querySelector('.np-lab-pdf-modal__list');

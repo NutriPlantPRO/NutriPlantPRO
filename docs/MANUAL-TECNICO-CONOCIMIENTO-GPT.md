@@ -305,7 +305,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.18 Agua RAS
 
-**URL:** …/analisis-agua-ras-sar.html · CE, pH, cationes, aniones, residual ácido. **RAS en app = campo manual.** Fórmula referencia: RAS = Na ÷ √((Ca+Mg)/2) en meq/L. Guías: &lt;3 bajo, 3–6 mod, &gt;6–8 alto riesgo sodio.
+**URL:** …/analisis-agua-ras-sar.html · CE, pH, cationes, aniones, residual ácido. **RAS en app = campo manual.** Fórmula referencia: RAS = Na ÷ √((Ca+Mg)/2) en meq/L. Guías: &lt;3 bajo, 3–6 mod, &gt;6–8 alto riesgo sodio. UI: el m³ (o gal US) de agua de riego va en celda azul en la cabecera del reporte; de ese volumen salen kg y L de ácido.
 
 ### 4.19 Foliar DOP
 

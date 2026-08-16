@@ -9040,7 +9040,9 @@ html.embed-login body {
 .np-lab-pdf-modal__panel {
   width: min(480px, 100%);
   max-height: min(90vh, 900px);
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
@@ -9053,6 +9055,7 @@ html.embed-login body {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 .np-lab-pdf-modal__head h3 {
   margin: 0;
@@ -9073,6 +9076,7 @@ html.embed-login body {
   font-size: 12px;
   color: #64748b;
   line-height: 1.45;
+  flex-shrink: 0;
 }
 .np-lab-pdf-modal__notes {
   background: #fffbeb;
@@ -9086,12 +9090,14 @@ html.embed-login body {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
+  flex-shrink: 0;
 }
 .np-lab-pdf-modal__list {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 52vh;
+  flex: 1 1 auto;
+  min-height: 140px;
   overflow: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -9178,12 +9184,15 @@ html.embed-login body {
   font-size: 12px;
 }
 .np-lab-pdf-modal__foot {
-  margin-top: 12px;
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 .np-lab-pdf-modal__new {
   font-size: 13px;
@@ -9258,6 +9267,47 @@ html.embed-login body {
   border-radius: 8px;
   background: transparent;
 }
+.aw-m3-riego-cell {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #0284c7;
+  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.18);
+}
+.aw-m3-riego-cell #aw-m3-riego-label {
+  margin: 0;
+  font-weight: 800;
+  font-size: 13px;
+  color: #0369a1;
+  white-space: nowrap;
+}
+.aw-m3-riego-cell #aw-m3-riego {
+  width: 104px;
+  padding: 6px 8px;
+  font-weight: 800;
+  font-size: 15px;
+  color: #0c4a6e;
+  border: 1.5px solid #0284c7;
+  border-radius: 6px;
+  background: #fff;
+}
+.aw-m3-riego-cell #aw-m3-riego:focus {
+  outline: none;
+  border-color: #0369a1;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.28);
+}
+.aw-m3-riego-cell .aw-m3-riego-equiv {
+  display: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: #075985;
+  white-space: nowrap;
+}
+
 .soil-input-inline {
   padding: 8px 12px;
   border: 1px solid #e2e8f0;
