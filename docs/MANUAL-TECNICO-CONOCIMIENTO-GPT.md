@@ -147,7 +147,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.6 Fertirriego programa
 
-**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Zona de equilibrio iónico** (apoyo, no PDF) → **Distribución objetivo por etapa** (% ) → programa semanal/mensual → aporte agua N-NO₃ → **Dinámica nutricional** (lámina + ppm/meq).
+**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Zona de equilibrio iónico** (apoyo, no PDF) → **Distribución objetivo por etapa** (% ) → programa semanal/mensual → aporte agua N-NO₃ → **Dinámica nutricional** (lámina + ppm/meq). En Programa, entre columnas de fertilizante hay un **+** para insertar el producto en esa posición (el botón de abajo sigue agregando al final).
 
 **Zona de equilibrio iónico (dashboard + admin, no PDF):** debajo de Requerimiento real, tablita de **3 columnas** — Zona (aniones N-P-S / cationes K-Ca-Mg) · % meq del **requerimiento real** vs rangos fijos (N 20–80, P 1.25–10, S 10–70, K 10–65, Ca 22.5–62.5, Mg 0.5–40; **no cambian** con idioma ni unidades) · ventana kg/ha o lb/acre para editar ese nutriente dejando los otros dos del triángulo fijos (o «No cierra»). Apoyo para armar el programa. Recalcula si cambia extracción, suelo, eficiencia o rendimiento. API `project_detail.sections.fertirriego.ionic_equilibrium`. Chat IA lee el bloque en vivo.
 

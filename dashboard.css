@@ -7340,6 +7340,53 @@ html.embed-login body {
   width: 122px;
   position: relative;
 }
+
+/* Hueco entre fertilizantes: el + elige dónde insertar la columna */
+#fertiWeeksContainer .materials-table th.ferti-insert-slot,
+#fertiWeeksContainer .materials-table td.ferti-insert-slot {
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  padding: 0;
+  border-left: 0;
+  border-right: 0;
+  background: #f8fafc;
+  vertical-align: middle;
+  text-align: center;
+}
+#fertiWeeksContainer .materials-table td.ferti-insert-slot {
+  background-image: linear-gradient(#e2e8f0, #e2e8f0);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1px 70%;
+}
+.ferti-insert-col-btn {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid #7dd3fc;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(14, 165, 233, 0.18);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.ferti-insert-col-btn:hover,
+.ferti-insert-col-btn:focus {
+  background: #0ea5e9;
+  color: #fff;
+  border-color: #0284c7;
+  transform: scale(1.12);
+  outline: none;
+}
 .fert-col-title {
   font-size: 11px;
   font-weight: 700;

@@ -1159,13 +1159,45 @@ function removeFertiWeek(weekId) {
   markFertiProgDirty();
 }
 
-// Columnas de fertilizante (nuevo modelo)
-function addFertiColumn() {
+function fertiColumnInsertIndex(insertIndex) {
+  const n = fertiColumns.length;
+  let idx = n;
+  if (typeof insertIndex === 'number' && Number.isFinite(insertIndex)) {
+    idx = Math.round(insertIndex);
+  } else if (typeof insertIndex === 'string' && insertIndex !== '') {
+    const parsed = parseInt(insertIndex, 10);
+    if (Number.isFinite(parsed)) idx = parsed;
+  }
+  if (idx < 0) idx = 0;
+  if (idx > n) idx = n;
+  return idx;
+}
+
+function fertiInsertColumnButton(index) {
+  const title = fertProgT('insert_fertilizer_here', 'Insertar fertilizante aquí');
+  return `<button type="button" class="ferti-insert-col-btn" title="${title}" aria-label="${title}" onclick="addFertiColumn(${index})">+</button>`;
+}
+
+function fertiJoinFertCols(renderSlot, renderCol) {
+  const parts = [renderSlot(0)];
+  fertiColumns.forEach((c, i) => {
+    parts.push(renderCol(c, i));
+    parts.push(renderSlot(i + 1));
+  });
+  return parts.join('');
+}
+
+// Columnas de fertilizante (nuevo modelo). Sin índice → al final. Con índice → en esa posición.
+function addFertiColumn(insertIndex) {
   const col = { id: 'col_' + Date.now(), materialId: '' };
-  fertiColumns.push(col);
+  fertiColumns.splice(fertiColumnInsertIndex(insertIndex), 0, col);
   fertiWeeks.forEach(w => { if (!w.kgByCol) w.kgByCol = {}; w.kgByCol[col.id] = 0; });
   renderFertiWeeks();
   markFertiProgDirty();
+  try {
+    const sel = document.querySelector('#fertiWeeksContainer select.ferti-col-select[data-col-id="' + col.id + '"]');
+    if (sel) sel.focus();
+  } catch {}
 }
 
 function removeFertiColumn(colId) {
@@ -1679,35 +1711,39 @@ function renderFertiWeeks() {
   const cols = getFertiProgramColumns();
   const headerMap = {N_NO3:'N(NO₃)',N_NH4:'N(NH₄)',P:'P',P2O5:'P₂O₅',K:'K',K2O:'K₂O',Ca:'Ca',CaO:'CaO',Mg:'Mg',MgO:'MgO',S:'S',SO4: fertProgElementalMode ? 'S' : 'SO₄',Fe:'Fe',Mn:'Mn',B:'B',Zn:'Zn',Cu:'Cu',Mo:'Mo',Si:'Si',SiO2:'SiO₂'};
 
-  // Encabezados de columnas de fertilizante (select compacto + botón X)
-  const fertColsHeader = fertiColumns.map(c => {
-    const m = materials.find(m => m.id === c.materialId);
-    const isChartLocked = fertiChartLockedColumnIds.indexOf(c.id) !== -1;
-    const currentName = fertProgMaterial((m?.name) || fertProgT('select', 'Selecciona…'));
-    const displayNamePlain = currentName + (m && m.unit === 'L' ? ' (L/ha)' : '');
-    const displayNameHtml = currentName + (m && m.unit === 'L' ? ' <span class="unit-lha">(L/ha)</span>' : '');
-    const lockTitle = isChartLocked
-      ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
-      : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante');
-    const lockIcon = isChartLocked
-      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0V11"></path></svg>'
-      : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0"></path></svg>';
-    return `
+  // Encabezados de columnas de fertilizante (select compacto + botón X). El + entre columnas elige dónde insertar.
+  const fertColsHeader = fertiJoinFertCols(
+    (slotIdx) => `<th class="ferti-insert-slot">${fertiInsertColumnButton(slotIdx)}</th>`,
+    (c) => {
+      const m = materials.find(mat => mat.id === c.materialId);
+      const isChartLocked = fertiChartLockedColumnIds.indexOf(c.id) !== -1;
+      const currentName = fertProgMaterial((m?.name) || fertProgT('select', 'Selecciona…'));
+      const displayNamePlain = currentName + (m && m.unit === 'L' ? ' (L/ha)' : '');
+      const displayNameHtml = currentName + (m && m.unit === 'L' ? ' <span class="unit-lha">(L/ha)</span>' : '');
+      const lockTitle = isChartLocked
+        ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
+        : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante');
+      const lockIcon = isChartLocked
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0V11"></path></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0"></path></svg>';
+      return `
           <th class="ferti-fert-col-head">
             <button type="button" title="${lockTitle}" aria-label="${lockTitle}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
             <button title="Eliminar columna" class="ferti-col-remove-btn" onclick="removeFertiColumn('${c.id}')">✕</button>
             <div class="fert-col-title" title="${displayNamePlain}">${displayNameHtml}</div>
-            <select class="ferti-col-select" onchange="onFertiColumnMaterialChange('${c.id}', this.value)">
+            <select class="ferti-col-select" data-col-id="${c.id}" onchange="onFertiColumnMaterialChange('${c.id}', this.value)">
               <option value="">${fertProgT('select', 'Selecciona…')}</option>
               ${buildOptions(c.materialId)}
             </select>
           </th>`;
-  }).join('');
+    }
+  );
 
   fertiWeeks.forEach(w => computeWeekTotals(w));
 
   // Fila de subtítulo centrado (un solo rótulo para todo el renglón)
-  const headerTotalCols = 2 + fertiColumns.length + cols.length;
+  const fertInsertSlotCount = fertiColumns.length + 1;
+  const headerTotalCols = 2 + fertiColumns.length + fertInsertSlotCount + cols.length;
 
   // Totales: por columna de fertilizante y por nutriente
   const fertColTotals = fertiColumns.map(c => {
@@ -1728,16 +1764,21 @@ function renderFertiWeeks() {
               </div>
             </td>
             <td class="ferti-week-num-cell" style="text-align:center;">${idx+1}</td>
-            ${fertiColumns.map(c => `
-              <td><input type="number" step="0.01" value="${fertProgInputFromSI(week.kgByCol?.[c.id]||0, 'dose_mass_area', 2)}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
-            `).join('')}
+            ${fertiJoinFertCols(
+              () => '<td class="ferti-insert-slot" aria-hidden="true"></td>',
+              (c) => `
+              <td><input type="number" step="0.01" value="${fertProgInputFromSI(week.kgByCol?.[c.id]||0, 'dose_mass_area', 2)}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>`
+            )}
             ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgNutrientDisplay(week.totals?.[n]||0, n, n === 'SO4' ? (week.totals?.S || 0) : undefined)}</td>`).join('')}
           </tr>
         `).join('');
   const totalsRowHtml = `
           <tr class="total-row">
             <td colspan="2" style="text-align:left;font-weight:700;">${fertProgT('total', 'TOTAL')}</td>
-            ${fertiColumns.map((c,i)=>`<td><div class="total-value">${fertProgResultFromSI(fertColTotals[i], 'dose_mass_area')}</div><div class="total-label-sm" title="${fertColNames[i]||''}">${(fertColNames[i]||'').slice(0,14)}</div></td>`).join('')}
+            ${fertiJoinFertCols(
+              () => '<td class="ferti-insert-slot" aria-hidden="true"></td>',
+              (c, i) => `<td><div class="total-value">${fertProgResultFromSI(fertColTotals[i], 'dose_mass_area')}</div><div class="total-label-sm" title="${fertColNames[i]||''}">${(fertColNames[i]||'').slice(0,14)}</div></td>`
+            )}
             ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertiProgNutrientDisplay(nutTotals[n]||0, n, n === 'SO4' ? (nutTotals.S || 0) : undefined)}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
           </tr>`;
 
@@ -1746,11 +1787,14 @@ function renderFertiWeeks() {
   const costBreak = fertiProgramCostBreakdownUsdHa();
   const fertColCostsUsdHa = costBreak.costs;
   const totalCostUsdHa = costBreak.total;
-  const costCells = fertiColumns.map((c, i) => {
-    const disp = priceApi ? priceApi.toDisplayAreaCost(fertColCostsUsdHa[i]) : fertColCostsUsdHa[i];
-    const txt = (disp > 0 && priceApi) ? priceApi.formatMoney(disp) : (disp > 0 ? disp.toFixed(2) : '—');
-    return `<td><div class="total-value" style="color:#0f766e;">${txt}</div><div class="total-label-sm" title="${fertColNames[i] || ''}">${(fertColNames[i] || '').slice(0, 14)}</div></td>`;
-  }).join('');
+  const costCells = fertiJoinFertCols(
+    () => '<td class="ferti-insert-slot" aria-hidden="true"></td>',
+    (c, i) => {
+      const disp = priceApi ? priceApi.toDisplayAreaCost(fertColCostsUsdHa[i]) : fertColCostsUsdHa[i];
+      const txt = (disp > 0 && priceApi) ? priceApi.formatMoney(disp) : (disp > 0 ? disp.toFixed(2) : '—');
+      return `<td><div class="total-value" style="color:#0f766e;">${txt}</div><div class="total-label-sm" title="${fertColNames[i] || ''}">${(fertColNames[i] || '').slice(0, 14)}</div></td>`;
+    }
+  );
   const totalCostDisp = priceApi ? priceApi.toDisplayAreaCost(totalCostUsdHa) : totalCostUsdHa;
   const totalCostTxt = (totalCostDisp > 0 && priceApi) ? priceApi.formatMoney(totalCostDisp) : (totalCostDisp > 0 ? totalCostDisp.toFixed(2) : '—');
   const costRowHtml = fertiColumns.length
@@ -1761,7 +1805,7 @@ function renderFertiWeeks() {
           </tr>
           <tr class="ferti-cost-total-row" style="background:#ccfbf1;">
             <td colspan="2" style="text-align:left;font-weight:800;color:#115e59;">${priceLabels.totalCost} (${priceLabels.costAreaUnit})</td>
-            <td colspan="${Math.max(1, fertiColumns.length)}" style="text-align:left;font-weight:800;color:#115e59;font-size:1.05rem;">${totalCostTxt} ${priceLabels.costAreaUnit}</td>
+            <td colspan="${Math.max(1, fertiColumns.length + fertInsertSlotCount)}" style="text-align:left;font-weight:800;color:#115e59;font-size:1.05rem;">${totalCostTxt} ${priceLabels.costAreaUnit}</td>
             ${cols.map((n, i) => `<td class="nut-col-cell ${i === 0 ? 'nut-start' : ''}"></td>`).join('')}
           </tr>`
     : '';
