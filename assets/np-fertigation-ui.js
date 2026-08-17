@@ -100,7 +100,7 @@
     dist_h4: '3. Distribution % chart',
     dist_chart_y: 'Distribution %',
     dist_chart_drag: 'Drag a point. The other stages of that nutrient compensate to 100%. If a program exists with the same periods, those doses rebalance. Tap a name to view only that curve.',
-    dist_chart_idle: 'Tap a nutrient name to view only that curve. Tap again or the background to show all. To move a point, press “Adjust on chart”. The % table can always be edited.',
+    dist_chart_idle: 'Drag a point to change the %. Tap a nutrient name to view only that curve; tap again or the background to show all.',
     dist_chart_focus: 'Only this curve in this chart. Tap its name or the background to show all.',
     dist_macros: 'Macros',
     dist_micros: 'Micros',

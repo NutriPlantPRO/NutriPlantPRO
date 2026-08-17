@@ -91,7 +91,7 @@ module.exports = [
       assert.equal(ferti.t('source_share_granular', 'Nutrición granular de base'), 'Base granular nutrition');
       assert.equal(ferti.t('ternary_drag_hint', 'Arrastra el cuadrado amarillo'), 'Drag the yellow square (anions) or the red circle (cations): fertilizer doses of this stage update, then % meq, meq/L, ppm and EC.');
       assert.equal(ferti.t('adjust_ternary', '✋ Ajustar en triángulo'), '✋ Adjust on triangle');
-      assert.equal(ferti.t('dist_chart_idle', 'Toca el nombre'), 'Tap a nutrient name to view only that curve. Tap again or the background to show all. To move a point, press “Adjust on chart”. The % table can always be edited.');
+      assert.equal(ferti.t('dist_chart_idle', 'Toca el nombre'), 'Drag a point to change the %. Tap a nutrient name to view only that curve; tap again or the background to show all.');
       assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '2. Target irrigation depth by stage');
     }
   },

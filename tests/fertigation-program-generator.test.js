@@ -48,15 +48,24 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(result.remaining.CaO > 0.25, result.remaining.CaO);
 })();
 
-(function magnesiumUsesNitrateThenSulfate() {
-  const result = generator.solveStage(
-    { N: 5, MgO: 20, SO4: 30, CaO: 0, P2O5: 0, K2O: 0 },
+(function magnesiumOneSourcePerStage() {
+  const needN = generator.solveStage(
+    { N: 10, MgO: 15, SO4: 30, CaO: 0, P2O5: 0, K2O: 0 },
     {},
     materials
   );
-  const ids = result.rows.map(row => row.materialId);
-  assert.ok(ids.includes('nitrato_magnesio'));
-  assert.ok(ids.includes('sulfato_magnesio'));
+  const needNIds = needN.rows.map(row => row.materialId);
+  assert.ok(needNIds.includes('nitrato_magnesio'), needNIds.join(','));
+  assert.ok(!needNIds.includes('sulfato_magnesio'), 'sulfate with nitrate: ' + needNIds.join(','));
+
+  const nClosed = generator.solveStage(
+    { N: 0, MgO: 20, SO4: 30, CaO: 0, P2O5: 0, K2O: 0 },
+    {},
+    materials
+  );
+  const nClosedIds = nClosed.rows.map(row => row.materialId);
+  assert.ok(nClosedIds.includes('sulfato_magnesio'), nClosedIds.join(','));
+  assert.ok(!nClosedIds.includes('nitrato_magnesio'), 'nitrate when N is closed: ' + nClosedIds.join(','));
 })();
 
 (function tinyBulkSaltIsNotRepresentative() {
@@ -154,23 +163,22 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(flowerIds.indexOf('nitrato_calcio_granular') < flowerIds.indexOf('mkp'));
 })();
 
-(function magSulfatePreferredWhenSulfurShort() {
+(function magNitrateWhenNitrogenRemainsEvenIfSulfurShort() {
   const result = generator.solveStage(
     { N: 80, CaO: 30, MgO: 16, P2O5: 12, K2O: 40, SO4: 50 },
     {},
     materials
   );
-  const mgS = result.rows.find(r => r.materialId === 'sulfato_magnesio');
-  const mgN = result.rows.find(r => r.materialId === 'nitrato_magnesio');
-  assert.ok(mgS && mgS.doseKgHa >= 3, 'expected Mg sulfate when SO4 is short: ' + result.rows.map(r => r.materialId).join(','));
-  assert.ok(result.supplied.SO4 > 20, 'SO4 contribution too low: ' + result.supplied.SO4);
-  if (mgN) assert.ok(mgS.doseKgHa + 1e-6 >= mgN.doseKgHa, 'Mg nitrate should not take the Mg slot while SO4 is short');
+  const ids = result.rows.map(r => r.materialId);
+  assert.ok(ids.includes('nitrato_magnesio'), 'expected Mg nitrate while N remains: ' + ids.join(','));
+  assert.ok(!ids.includes('sulfato_magnesio'), 'do not mix Mg sulfate while N is still short: ' + ids.join(','));
 })();
 
 (function magNitrateOnlyIfNitrogenRemains() {
-  const withN = generator.solveStage({ N: 8, MgO: 18, SO4: 20 }, {}, materials);
+  const withN = generator.solveStage({ N: 8, MgO: 18, SO4: 0 }, {}, materials);
   const noN = generator.solveStage({ N: 0, MgO: 18, SO4: 40 }, {}, materials);
   assert.ok(withN.rows.some(r => r.materialId === 'nitrato_magnesio'));
+  assert.ok(!withN.rows.some(r => r.materialId === 'sulfato_magnesio'));
   assert.ok(!noN.rows.some(r => r.materialId === 'nitrato_magnesio'));
   assert.ok(noN.rows.some(r => r.materialId === 'sulfato_magnesio'));
 })();
@@ -247,14 +255,26 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(result.stages[0].rows[0].materialId === 'acido_nitrico_55');
 })();
 
-(function sopBringsSulfateWithPotassium() {
+(function nksFillsPotassiumFirst() {
   const result = generator.solveStage(
-    { N: 30, CaO: 26, MgO: 10, P2O5: 8, K2O: 35, SO4: 18 },
+    { N: 50, CaO: 20, MgO: 6, P2O5: 8, K2O: 30, SO4: 12 },
     {},
     materials
   );
   const ids = result.rows.map(row => row.materialId);
-  assert.ok(ids.includes('sop'), 'SOP missing: ' + ids.join(','));
+  assert.ok(ids.includes('nks'), 'NKS missing: ' + ids.join(','));
+  assert.ok(!ids.includes('sop'), 'SOP should wait until N is full: ' + ids.join(','));
+  generator.TARGET_KEYS.forEach(key => assert.ok(result.excess[key] <= 1e-8, `excess ${key}`));
+})();
+
+(function sopComplementsPotassiumWhenNitrogenWouldOvershoot() {
+  const result = generator.solveStage(
+    { N: 16, CaO: 26, MgO: 8, P2O5: 8, K2O: 50, SO4: 30 },
+    {},
+    materials
+  );
+  const ids = result.rows.map(row => row.materialId);
+  assert.ok(ids.includes('sop'), 'SOP missing when N limits NKS: ' + ids.join(','));
   const sop = result.rows.find(row => row.materialId === 'sop');
   assert.ok(sop.doseKgHa + 1e-9 >= generator.MIN_BULK_DOSE_KG_HA, sop.doseKgHa);
   assert.ok(sop.contribution.SO4 > 1, sop.contribution.SO4);

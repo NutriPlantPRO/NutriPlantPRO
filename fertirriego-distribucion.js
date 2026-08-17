@@ -1205,9 +1205,7 @@
   }
   function fitDistChart() {
     if (chartDrag) return;
-    chartList().forEach(function (ch) {
-      try { ch.resize(); } catch (e) {}
-    });
+    chartList().forEach(flushDistChart);
   }
   function setChartFocus(id) {
     var next = id && nutFromId(id) ? id : null;
@@ -1227,10 +1225,7 @@
     setChartHint('');
   }
   function defaultChartHint() {
-    if (chartEditMode) {
-      return t('dist_chart_drag', 'Arrastra un punto. Las demás etapas de ese nutriente se compensan a 100%. Si hay programa con los mismos periodos, se reajustan esas dosis. Toca un nombre para ver solo esa curva.');
-    }
-    return t('dist_chart_idle', 'Toca el nombre de un nutriente para ver solo esa curva. Toca otra vez o el fondo para ver todas. Para mover un punto, pulsa «Ajustar en gráfica». La tabla de % se edita siempre.');
+    return t('dist_chart_idle', 'Arrastra un punto para cambiar el %. Toca el nombre de un nutriente para ver solo esa curva; toca otra vez o el fondo para ver todas.');
   }
 
   function clonePct() {
@@ -1353,10 +1348,15 @@
   function flushDistChart(chart) {
     if (!chart) return;
     try { if (typeof chart.stop === 'function') chart.stop(); } catch (e0) {}
+    if (!chartDrag) {
+      try { if (typeof chart.resize === 'function') chart.resize(); } catch (e1) {}
+    }
     try {
-      chart.update();
-    } catch (e) {
-      try { chart.render(); } catch (e2) {}
+      chart.update(chartDrag ? undefined : 'resize');
+    } catch (e2) {
+      try { chart.update(); } catch (e3) {
+        try { chart.render(); } catch (e4) {}
+      }
     }
   }
   function paintDistChart(opts) {
@@ -1368,6 +1368,9 @@
     var charts = opts.nutId ? [chartForNut(opts.nutId)] : liveCharts();
     if (chartDrag && chartDrag.chart) charts = [chartDrag.chart];
     charts.filter(Boolean).forEach(flushDistChart);
+    if (!chartDrag && opts.forceResize) {
+      requestAnimationFrame(function () { fitDistChart(); });
+    }
   }
   function chartPointCount(chart) {
     var ds = chart && chart.data && Array.isArray(chart.data.datasets) ? chart.data.datasets[0] : null;
@@ -1405,13 +1408,9 @@
     scheduleSave();
     refreshPctSums();
     refreshKgCells();
-    if (chartFocusId && chartFocusId !== id) {
-      setChartFocus(id);
-    } else if (chartDrag) {
-      updateChartPctSeries(id);
-    } else {
-      renderChart();
-    }
+    if (chartFocusId && chartFocusId !== id) setChartFocus(id);
+    else if (!liveCharts().length || chartsNeedRebuild()) renderChart();
+    else paintDistChart({ nutId: id, forceResize: true });
     scheduleProgramPush(id);
     return true;
   }
@@ -1566,8 +1565,9 @@
       if (!ds || !ds._nutId) return;
       if (!nutFromId(ds._nutId)) return;
       if (!chartEditMode) {
-        setChartFocus(chartFocusId === ds._nutId ? null : ds._nutId);
-        return;
+        chartEditMode = true;
+        chartEditBaseline = clonePct();
+        updateDistChartEditControls();
       }
       chartDrag = {
         canvas: canvas,
@@ -1585,7 +1585,7 @@
       if (wrap) wrap.classList.add('is-dragging');
       canvas.style.cursor = 'grabbing';
       event.preventDefault();
-    });
+    }, { capture: true, passive: false });
     canvas.addEventListener('pointermove', function (event) {
       if (!chartDrag || chartDrag.canvas !== canvas) return;
       if (!chartDrag.moved) {
@@ -1601,7 +1601,7 @@
         ': ' + (Math.round(displayed * 10) / 10) + '%'
       );
       event.preventDefault();
-    });
+    }, { capture: true, passive: false });
     function finish(event) {
       if (event && (eventInLegend(canvas, event) || !eventInPlotArea(canvas, event)) && !chartDrag) {
         chartPendingClear = false;
@@ -1621,7 +1621,7 @@
       var wrap = canvas.parentElement;
       if (wrap) wrap.classList.remove('is-dragging');
       canvas.style.cursor = '';
-      if (!moved) setChartFocus(nutId);
+      if (!moved) return;
       else {
         var ch = chartForNut(nutId);
         applyChartYScale(ch, MACRO[nutId] ? 'macro' : 'micro', false);
@@ -1634,8 +1634,8 @@
         pushDistToProgram(nutId);
       }
     }
-    canvas.addEventListener('pointerup', finish);
-    canvas.addEventListener('pointercancel', finish);
+    canvas.addEventListener('pointerup', finish, { capture: true, passive: false });
+    canvas.addEventListener('pointercancel', finish, { capture: true, passive: false });
   }
 
   function chartCanvasReady() {
@@ -2244,7 +2244,8 @@
         if (hostEl() && hostEl().dataset.ready === '1') {
           syncPctInputsFromData();
           refreshKgCells();
-          updateChartPctSeries();
+          if (!liveCharts().length || chartsNeedRebuild()) renderChart();
+          else paintDistChart({ forceResize: true });
         }
         scheduleSave();
       }
