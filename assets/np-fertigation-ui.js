@@ -97,11 +97,6 @@
     dist_per_stage: 'per stage',
     dist_water_title: '2. Target irrigation depth by stage',
     dist_water_help: 'Used to split the water-analysis contribution and to calculate ppm, meq/L and EC.',
-    dist_h4: '3. Distribution % chart',
-    dist_chart_y: 'Distribution %',
-    dist_chart_drag: 'Drag a point. The other stages of that nutrient compensate to 100%. If a program exists with the same periods, those doses rebalance. Tap a name to view only that curve.',
-    dist_chart_idle: 'Drag a point to change the %. Tap a nutrient name to view only that curve; tap again or the background to show all.',
-    dist_chart_focus: 'Only this curve in this chart. Tap its name or the background to show all.',
     dist_macros: 'Macros',
     dist_micros: 'Micros',
     dist_stage: 'Stage',
@@ -253,6 +248,8 @@
   /* Solo nombres descriptivos precargados. Abreviaturas (MAP, MKP, SOP, DAP, NKS…) quedan igual. */
   var MATERIALS_EN = {
     'Fosfonitrato': 'Phosphonitrate',
+    'Nitrato de Amonio': 'Ammonium Nitrate',
+    'Nitrato de amonio': 'Ammonium Nitrate',
     'Sulfato de Amonio Soluble': 'Soluble Ammonium Sulfate',
     'Sulfato de amonio soluble': 'Soluble Ammonium Sulfate',
     'KCl Soluble': 'Soluble KCl',

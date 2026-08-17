@@ -9569,7 +9569,6 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
     selectedSections.indexOf('fertigation') >= 0 &&
     typeof window.getFertiChartsDataUrlsForReport === 'function';
   const needRadar = selectedSections.indexOf('location') >= 0;
-  const needExtraccionEtapa = selectedSections.indexOf('extraccionEtapa') >= 0;
   const needClimate =
     selectedSections.indexOf('vpd') >= 0 &&
     typeof window.getClimateChartsDataUrlsForReport === 'function';
@@ -9647,25 +9646,9 @@ function loadChartImagesForReport(selectedSections, callback, reportOptions) {
 
   function finish(out) {
     function done(finalOut) {
-      var afterExtraccion = function (withExtraccion) {
-        appendLabCharts(withExtraccion, function (withLab) {
-          appendVpdCharts(withLab, callback);
-        });
-      };
-      if (!needExtraccionEtapa) {
-        afterExtraccion(finalOut);
-        return;
-      }
-      try {
-        const state = getExtraccionEtapaStateForReport();
-        getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
-          if (imgs && (imgs.macro || imgs.micro)) finalOut.extraccionEtapa = imgs;
-          afterExtraccion(finalOut);
-        }, reportOptions || {});
-      } catch (e) {
-        console.warn('loadChartImagesForReport extraccionEtapa:', e);
-        afterExtraccion(finalOut);
-      }
+      appendLabCharts(finalOut, function (withLab) {
+        appendVpdCharts(withLab, callback);
+      });
     }
 
     if (needClimate) {
@@ -20371,7 +20354,6 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
 
 function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
   const state = getExtraccionEtapaStateForReport();
-  const imgs = (chartImages && chartImages.extraccionEtapa) ? chartImages.extraccionEtapa : {};
   const unitSystem = reportUnitSystem === 'us_customary' ? 'us_customary' : 'metric';
   const massAreaUnit = unitSystem === 'us_customary' ? 'lb/acre' : 'kg/ha';
   const lang = reportLanguage === 'en' ? 'en' : 'es';
@@ -20443,13 +20425,6 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
       reportNum(sum, 1) + '%</td>';
   }).join('');
 
-  const macroImg = imgs.macro
-    ? '<img src="' + imgs.macro + '" alt="' + rt('Macros por etapa', 'Macros by stage') + '" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
-    : '<div class="report-note">' + rt('Sin macronutrientes configurados para graficar.', 'No macronutrients configured to chart.') + '</div>';
-  const microImg = imgs.micro
-    ? '<img src="' + imgs.micro + '" alt="' + rt('Micros por etapa', 'Micros by stage') + '" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
-    : '<div class="report-note">' + rt('Sin micronutrientes en la lista.', 'No micronutrients in the list.') + '</div>';
-
   return `
     <div class="section">
       <h2 class="section-title">📊 ${reportEscapeHtml(heading)}</h2>
@@ -20476,19 +20451,6 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
             <tbody>${combinedRows}</tbody>
             <tfoot><tr class="total-row"><td>Σ</td>${showPeriod ? '<td></td>' : ''}<td></td>${combinedFoot}</tr></tfoot>
           </table>
-        </div>
-      </div>
-      <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
-        <div class="report-block-title">${rt('3. Gráficas de % de distribución', '3. Distribution % charts')}</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
-          <div>
-            <div class="report-subtitle" style="margin-bottom:6px;">${rt('Macronutrientes (N, P, K, Ca, Mg, S)', 'Macronutrients (N, P, K, Ca, Mg, S)')}</div>
-            ${macroImg}
-          </div>
-          <div>
-            <div class="report-subtitle" style="margin-bottom:6px;">${rt('Micronutrientes (Fe, Mn, B, Zn, Cu, Mo, Si)', 'Micronutrients (Fe, Mn, B, Zn, Cu, Mo, Si)')}</div>
-            ${microImg}
-          </div>
         </div>
       </div>
     </div>`;
