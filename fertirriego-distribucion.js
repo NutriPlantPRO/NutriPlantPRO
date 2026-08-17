@@ -283,6 +283,19 @@
     }
     return n.ferti === 'SO4' ? 'SO₄' : n.label;
   }
+  function colorForNut(id) {
+    if (w.NpFertigationUI && typeof w.NpFertigationUI.nutrientColor === 'function') {
+      return w.NpFertigationUI.nutrientColor(id);
+    }
+    var fallback = {
+      n: '#2563eb', p: '#16a34a', k: '#ea580c', ca: '#7c3aed', mg: '#0891b2', s: '#ca8a04',
+      fe: '#db2777', mn: '#0d9488', b: '#4f46e5', zn: '#64748b', cu: '#059669', mo: '#b45309', si: '#be185d'
+    };
+    return fallback[id] || '#64748b';
+  }
+  function nutCss(n) {
+    return 'style="--ferti-nut:' + colorForNut(n && n.id) + '"';
+  }
   function oxideToShownSi(oxideSi, fertiKey) {
     var shown = parseFloat(oxideSi) || 0;
     if (typeof getConvertedValue === 'function') shown = parseFloat(getConvertedValue(fertiKey, shown)) || 0;
