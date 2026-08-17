@@ -62,14 +62,30 @@
   schedule = "0 * * * *"
   timeout = 60
 
-# Inicio: por defecto ir a login (la mayoría de equipos)
+# Inicio = login, URL limpia: https://nutriplantpro.com/  (sin login.html en la barra)
 [[redirects]]
   from = "/"
   to = "/login.html"
-  status = 302
+  status = 200
+  force = true
 
-# Si /index.html se abre sin pasar por la regla anterior, index.html redirige por JS/meta
-# y muestra la portada (logo + Manual + Iniciar sesión) como respaldo
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/login.html"
+  to = "/"
+  status = 301
+  force = true
+
+# Si alguien abre /index.html, misma URL limpia
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
+  force = true
 
 # AirCI — Crop Intelligence (panel admin interno)
 [[redirects]]
