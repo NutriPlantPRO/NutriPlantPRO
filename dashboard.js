@@ -15834,6 +15834,19 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           color: #1e293b;
           margin: 10px 0 6px;
         }
+        .report-program-cost {
+          margin: 0 0 12px;
+          padding: 10px 12px;
+          background: #f0fdf4;
+          border: 1px solid #86efac;
+          border-radius: 8px;
+          color: #166534;
+          font-weight: 700;
+          font-size: 14px;
+        }
+        .report-program-cost strong {
+          font-size: 1.12em;
+        }
         .report-mode-badge {
           display: inline-block;
           margin-left: 6px;
@@ -18573,6 +18586,7 @@ function createGranularSectionHTML(reportLanguage) {
       </div>
       <div class="report-block">
         <div class="report-block-title">${rt('🌱 Programa Granular', '🌱 Granular Program')} <span class="report-mode-badge">${programModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
+        ${reportProgramCostBanner(priceLabels.totalCost + ' (' + priceLabels.costAreaUnit + ')', granularReportAreaCost(granularProgramCostUsdPerHa))}
         <div class="report-subtitle">${rt('Aporte total', 'Total supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(totalProgram, doseValue), programModeIsElemental, false)}</div>
         <div class="report-subtitle">${rt('Requerimiento real', 'Actual requirement')} (${doseUnit}):</div>
@@ -18580,11 +18594,10 @@ function createGranularSectionHTML(reportLanguage) {
         <div class="report-subtitle">${rt('Diferencia (Aporte - Requerimiento)', 'Difference (Supply − Requirement)')} (${doseUnit}):</div>
         <p class="report-note" style="margin:4px 0 8px;">${rt('Sugerencia: si el cultivo también lleva fertirriego, cubre el faltante (naranja) en ese programa.', 'Tip: if the crop also uses fertigation, cover the deficit (orange) in that program.')}</p>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(diffProgram, doseValue), programModeIsElemental, true)}</div>
-        <div class="report-subtitle">${priceLabels.totalCost} (${priceLabels.costAreaUnit}):</div>
-        <div class="report-nutrient-wrap"><span class="report-nutrient-pill"><strong>${granularReportAreaCost(granularProgramCostUsdPerHa)}</strong></span></div>
       </div>
       <div class="report-block">
         <div class="report-block-title">${rt('Aplicaciones configuradas', 'Configured applications')} (${applications.length})</div>
+        ${reportProgramCostBanner(priceLabels.totalCost + ' (' + priceLabels.costAreaUnit + ')', granularReportAreaCost(granularProgramCostUsdPerHa))}
         ${applications.length ? applications.map(function(app, idx) {
           const appContribution = getAppContribution(app);
           return `
@@ -18613,6 +18626,10 @@ function reportEscapeHtml(s) {
   const div = document.createElement('div');
   div.textContent = String(s);
   return div.innerHTML;
+}
+
+function reportProgramCostBanner(label, amountTxt) {
+  return `<div class="report-program-cost">${reportEscapeHtml(label)}: <strong>${reportEscapeHtml(amountTxt)}</strong></div>`;
 }
 
 function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
@@ -18960,6 +18977,12 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     return priceApi ? priceApi.costUsdPerHaFromKgHa(kg, price) : 0;
   });
   const programTotalCostUsdHa = programDoseColumnCostsUsdHa.reduce((s, v) => s + (Number(v) || 0), 0);
+  const programTotalCostTxt = (() => {
+    const disp = priceApi ? priceApi.toDisplayAreaCost(programTotalCostUsdHa, fertiReportUnitSystem) : programTotalCostUsdHa;
+    return disp > 0
+      ? ((priceApi ? priceApi.formatMoney(disp) : Number(disp).toFixed(2)) + ' ' + priceLabels.costAreaUnit)
+      : '—';
+  })();
   const totalMacroCols = hasWeekTotals ? macroCols.map(n => {
     if (n === 'SO4') return weeks.reduce((acc, w) => acc + fertiReportMergedSo4KgFromTotals(w?.totals), 0);
     return weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0);
@@ -19118,6 +19141,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
       </div>
       <div class="report-block" style="border-color:#99f6e4;background:#f0fdfa;">
         <div class="report-block-title">💧 ${rt('Programa de Fertirriego', 'Fertigation Program')} <span class="report-mode-badge">${programModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
+        ${reportProgramCostBanner(priceLabels.totalCost + ' (' + priceLabels.costAreaUnit + ')', programTotalCostTxt)}
         ${!hasWeekTotals ? `<div class="report-note" style="margin-bottom:8px;">${rt('Sin totales guardados por', 'No saved totals per')} ${reportFertiIsMes ? rt('mes', 'month') : rt('semana', 'week')}. ${rt('El reporte no recalcula con catálogo interno.', 'The report does not recalculate with an internal catalog.')}</div>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
           <div><strong>${reportFertiIsMes ? rt('Meses', 'Months') : rt('Semanas', 'Weeks')}:</strong> ${weeks.length}</div>
@@ -19204,12 +19228,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
             </tr>
             <tr style="background:#ccfbf1;">
               <td colspan="2"><strong style="color:#115e59;">${priceLabels.totalCost} (${priceLabels.costAreaUnit})</strong></td>
-              <td colspan="${Math.max(1, programDoseColumns.length)}" style="color:#115e59;font-weight:800;">${
-                (() => {
-                  const disp = priceApi ? priceApi.toDisplayAreaCost(programTotalCostUsdHa, fertiReportUnitSystem) : programTotalCostUsdHa;
-                  return disp > 0 ? ((priceApi ? priceApi.formatMoney(disp) : disp.toFixed(2)) + ' ' + priceLabels.costAreaUnit) : '—';
-                })()
-              }</td>
+              <td colspan="${Math.max(1, programDoseColumns.length)}" style="color:#115e59;font-weight:800;">${programTotalCostTxt}</td>
             </tr>` : ''}
           </tbody>
         </table>
@@ -19726,6 +19745,7 @@ function createHidroponiaSectionHTML(reportLanguage) {
   return `
     <div class="section">
       <h2 class="section-title">🌱 ${rt('Hidroponía', 'Hydroponics')}</h2>
+      ${reportProgramCostBanner(hydroPriceLabels.totalCost + ' (' + hydroPriceLabels.costBatchUnit + ')', hydroBatchTotalTxt)}
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">✅ ${rt('Solución nutritiva por etapa (meq/L)', 'Nutrient solution by stage (meq/L)')}</div>
         <div class="report-kv">
@@ -19818,6 +19838,7 @@ function createHidroponiaSectionHTML(reportLanguage) {
       </div>
       <div class="report-block">
         <div class="report-block-title">🧮 ${rt('Fertilizantes', 'Fertilizers')}</div>
+        ${reportProgramCostBanner(hydroPriceLabels.totalCost + ' (' + hydroPriceLabels.costBatchUnit + ')', hydroBatchTotalTxt)}
         <div class="report-note report-table-legend" style="margin-bottom:10px;">
           ${rt(
             `Los valores por elemento (N, P, K, Ca, Mg, Fe, etc.) se expresan en <strong>ppm</strong> del aporte en la solución final. La columna <strong>Total producto</strong> corresponde a la cantidad total requerida para el volumen de agua configurado (${solidsLiquidsNote}).`,
