@@ -5187,7 +5187,7 @@ html.embed-login body {
 
 .ferti-charts-water-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
   gap: 6px;
 }
 
@@ -5198,13 +5198,26 @@ html.embed-login body {
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
 }
 
-.ferti-charts-water-item span {
+.ferti-charts-water-period,
+.ferti-charts-water-stage {
   display: block;
+  color: #1e3a8a;
+  line-height: 1.2;
+}
+
+.ferti-charts-water-period {
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ferti-charts-water-stage {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #1e3a8a;
-  margin-bottom: 3px;
-  line-height: 1.2;
+  margin: 1px 0 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ferti-charts-water-item input {

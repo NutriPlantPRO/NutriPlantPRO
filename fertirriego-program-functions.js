@@ -3072,7 +3072,8 @@ function renderFertiChartWaterByStageInputs() {
         const shown = fertProgInputFromSI(fertiChartWaterByStageM3ha[i] || 0, 'volume_area', 4);
         const current = i === fertiChartSelectedStageIndex ? ' is-current' : '';
         return '<label class="ferti-charts-water-item' + current + '">' +
-          '<span>' + fertiEscapeAttr(fertiStageSlotLabel(i)) + (stageShown ? ' · ' + fertiEscapeAttr(stageShown) : '') + '</span>' +
+          '<span class="ferti-charts-water-period">' + fertiEscapeAttr(fertiStageSlotLabel(i)) + '</span>' +
+          (stageShown ? '<span class="ferti-charts-water-stage">' + fertiEscapeAttr(stageShown) + '</span>' : '') +
           '<input type="number" min="0" step="0.0001" inputmode="decimal" data-ferti-chart-water="' + i + '" value="' + fertiEscapeAttr(shown) + '">' +
         '</label>';
       }).join('') +
