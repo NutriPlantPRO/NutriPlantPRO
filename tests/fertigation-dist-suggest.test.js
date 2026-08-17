@@ -39,17 +39,16 @@ module.exports = [
     }
   },
   {
-    name: 'sugerir %: con requerimiento típico cada etapa queda en zona Steiner',
+    name: 'sugerir %: con requerimiento típico cada nutriente tiene su curva (meq), ciclo en zona',
     run: function () {
       var stages = ['Brotación', 'Vegetativo', 'Floración', 'Llenado', 'Maduración', 'Establecimiento', 'Prefloración', 'Amarre'];
       var totals = { N: 253.3, P2O5: 42, K2O: 344.7, CaO: 187.2, MgO: 76.7, SO4: 234.8 };
       var out = suggest.suggestPct(stages, { totals: totals });
       assert.equal(out.cycleInZone, true);
-      assert.equal(out.stagesInZone, true);
-      var tris = suggest.stageTernary(stages, out.pct, totals);
-      tris.forEach(function (tri, i) {
-        assert.ok(suggest.ternaryInZone(tri), 'stage ' + stages[i] + ' ' + JSON.stringify(tri));
-      });
+      var veg = stages.indexOf('Vegetativo');
+      var lle = stages.indexOf('Llenado');
+      assert.notEqual(out.pct.n[veg], out.pct.k[veg]);
+      assert.ok(out.pct.k[lle] > out.pct.n[lle] || out.pct.k[lle] > out.pct.p[lle]);
       suggest.NUT_IDS.forEach(function (id) { sum100(out.pct[id]); });
     }
   },
@@ -100,6 +99,44 @@ module.exports = [
       assert.equal(out.stagesInZone, false);
       sum100(out.pct.n);
       sum100(out.pct.p);
+      assert.notEqual(out.pct.n[0], out.pct.p[0]);
+    }
+  },
+  {
+    name: 'sugerir %: no copia el mismo % a todos los nutrientes (curva meq)',
+    run: function () {
+      var stages = ['Prefloración', 'Prefloración', 'Amarre', 'Llenado', 'Llenado', 'Llenado', 'Llenado', 'Llenado'];
+      var totals = { N: 253.3, P2O5: 42, K2O: 344.7, CaO: 187.2, MgO: 76.7, SO4: 234.8 };
+      var pct = suggest.suggestPct(stages, { totals: totals }).pct;
+      var i;
+      var same = true;
+      for (i = 0; i < stages.length; i++) {
+        if (Math.abs(pct.n[i] - pct.k[i]) > 0.2 || Math.abs(pct.p[i] - pct.ca[i]) > 0.2) {
+          same = false;
+          break;
+        }
+      }
+      assert.equal(same, false);
+      assert.ok(pct.k[6] > pct.k[0], pct.k[6] + ' vs ' + pct.k[0]);
+      assert.ok(pct.p[0] > pct.k[0], pct.p[0] + ' vs ' + pct.k[0]);
+    }
+  },
+  {
+    name: 'sugerir %: Zn y B altos hasta amarre; Fe sigue el tamaño de etapa',
+    run: function () {
+      var stages = ['Brotación', 'Establecimiento', 'Prefloración', 'Floración', 'Amarre', 'Llenado', 'Maduración'];
+      var pct = suggest.suggestPct(stages).pct;
+      var bro = 0;
+      var flor = 3;
+      var amarre = 4;
+      var lle = 5;
+      var mad = 6;
+      sum100(pct.zn);
+      sum100(pct.b);
+      sum100(pct.fe);
+      assert.ok(pct.zn[bro] > pct.zn[mad], 'Zn early vs mad ' + pct.zn[bro] + ' vs ' + pct.zn[mad]);
+      assert.ok(pct.b[flor] > pct.b[lle] || pct.b[amarre] > pct.b[mad], 'B flower vs filling');
+      assert.ok(pct.fe[lle] > pct.fe[bro], 'Fe follows stage size');
     }
   }
 ];

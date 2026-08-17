@@ -11,7 +11,7 @@
   'use strict';
 
   var EN = {
-    requirements_tab: 'Nutrient Requirements', program_tab: 'Nutrition Program', charts_tab: 'Charts',
+    requirements_tab: 'Nutrient Requirements', program_tab: 'Nutrition Program', charts_tab: 'Nutrient Dynamics',
     requirements_title: '📋 Nutrient Requirements', program_title: '📘 Nutrition Program — Fertigation',
     crop: 'Crop:', target_yield: 'Target Yield', add_custom_crop: '➕ Add Custom Crop',
     elemental: '🔄 View as Elemental', oxide: '🔄 View as Oxide', concept: 'Item',
@@ -86,8 +86,8 @@
     dist_water_help: 'Used to split the water-analysis contribution and to calculate ppm, meq/L and EC.',
     dist_h4: '4. Distribution % chart',
     dist_chart_y: 'Distribution %',
-    dist_chart_drag: 'This chart is the Objective distribution %. Drag a point or edit the % table. Tap a curve or its name below to highlight it. Dragging compensates the other stages to 100%. If you edit doses in the Program (same periods), the % here updates too.',
-    dist_chart_focus: 'Highlighted. Drag its points; tap its name below or the chart background to show all curves.',
+    dist_chart_drag: 'This chart is the Objective distribution %. Drag a point or edit the % table. Tap a curve or its name to highlight it. Dragging compensates the other stages to 100%. If you edit doses in the Program (same periods), the % here updates too.',
+    dist_chart_focus: 'Highlighted. Drag its points; tap its name or the chart background to show all curves.',
     dist_macros: 'Macros',
     dist_micros: 'Micros',
     dist_stage: 'Stage',
@@ -121,7 +121,7 @@
     auto_no_distribution: 'First configure and save the requirement Distribution.',
     auto_time_axis_required: 'In Distribution, select Weekly or Monthly before building the program.',
     auto_distribution_invalid: 'Distribution must sum to 100% for every nutrient. Review: ',
-    auto_water_depth_required: 'There is a water contribution. Enter irrigation depth for every period in Charts before building the program.',
+    auto_water_depth_required: 'There is a water contribution. Enter irrigation depth for every period in Nutrient Dynamics before building the program.',
     auto_generator_unavailable: 'The automatic generator could not be prepared.',
     auto_done: 'Fertigation program built. Review rates and ionic balance before applying it.',
     auto_done_pending: 'Program built. Review deficits and ionic balance before applying it.',

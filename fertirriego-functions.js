@@ -1563,7 +1563,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
         <li><span class="req-steps-guide__n">2</span><span>${fertiT('req_step_2', 'Ajusta la extracción por tonelada')}</span></li>
         <li><span class="req-steps-guide__n">3</span><span>${fertiT('req_step_3', 'Corrige por aporte o déficit de tu suelo (si el suelo cubre de más, queda 25 % de mantenimiento)')}</span></li>
         <li><span class="req-steps-guide__n">4</span><span>${fertiT('req_step_4', 'Ajusta por eficiencia del fertilizante y del sistema')}</span></li>
-        <li><span class="req-steps-guide__n">5</span><span>${fertiT('req_step_5', 'Reparte el requerimiento real en el ciclo (abajo: Distribución objetivo, % por etapa y lámina)')}</span></li>
+        <li><span class="req-steps-guide__n">5</span><span>${fertiT('req_step_5', 'Reparte el requerimiento real en el ciclo (abajo: Distribución objetivo, % por etapa y lámina de riego)')}</span></li>
       </ol>
     </div>
   `;

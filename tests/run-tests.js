@@ -12,7 +12,8 @@ var suites = [
   require('./i18n.test.js'),
   require('./water-climate-ui.test.js'),
   require('./free-nutrition-ui.test.js'),
-  require('./fertigation-dist-suggest.test.js')
+  require('./fertigation-dist-suggest.test.js'),
+  require('./fertilizer-price.test.js')
 ];
 
 (async function () {

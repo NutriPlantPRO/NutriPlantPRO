@@ -33,18 +33,20 @@
   var FALLBACK = {
     I: 12,
     an: { n: 52, p: 5, s: 43 },
-    cat: { k: 35, ca: 45, mg: 20 }
+    cat: { k: 35, ca: 45, mg: 20 },
+    zn: 12,
+    b: 12
   };
   var STAGE_PROFILES = {
-    brotacion: { I: 8, an: { n: 48, p: 8, s: 44 }, cat: { k: 28, ca: 52, mg: 20 } },
-    establecimiento: { I: 10, an: { n: 50, p: 8, s: 42 }, cat: { k: 28, ca: 52, mg: 20 } },
-    vegetativo: { I: 14, an: { n: 60, p: 6, s: 34 }, cat: { k: 32, ca: 48, mg: 20 } },
-    prefloracion: { I: 10, an: { n: 55, p: 7, s: 38 }, cat: { k: 30, ca: 50, mg: 20 } },
-    floracion: { I: 12, an: { n: 52, p: 6, s: 42 }, cat: { k: 32, ca: 48, mg: 20 } },
-    amarre: { I: 14, an: { n: 50, p: 5, s: 45 }, cat: { k: 34, ca: 46, mg: 20 } },
-    llenado: { I: 18, an: { n: 46, p: 4, s: 50 }, cat: { k: 44, ca: 39, mg: 17 } },
-    maduracion: { I: 14, an: { n: 40, p: 4, s: 56 }, cat: { k: 52, ca: 32, mg: 16 } },
-    cosecha: { I: 10, an: { n: 34, p: 4, s: 62 }, cat: { k: 50, ca: 32, mg: 18 } }
+    brotacion: { I: 8, an: { n: 48, p: 8, s: 44 }, cat: { k: 28, ca: 52, mg: 20 }, zn: 18, b: 14 },
+    establecimiento: { I: 10, an: { n: 50, p: 8, s: 42 }, cat: { k: 28, ca: 52, mg: 20 }, zn: 16, b: 14 },
+    vegetativo: { I: 14, an: { n: 60, p: 6, s: 34 }, cat: { k: 32, ca: 48, mg: 20 }, zn: 12, b: 10 },
+    prefloracion: { I: 10, an: { n: 55, p: 7, s: 38 }, cat: { k: 30, ca: 50, mg: 20 }, zn: 16, b: 18 },
+    floracion: { I: 12, an: { n: 52, p: 6, s: 42 }, cat: { k: 32, ca: 48, mg: 20 }, zn: 16, b: 20 },
+    amarre: { I: 14, an: { n: 50, p: 5, s: 45 }, cat: { k: 34, ca: 46, mg: 20 }, zn: 15, b: 18 },
+    llenado: { I: 18, an: { n: 46, p: 4, s: 50 }, cat: { k: 44, ca: 39, mg: 17 }, zn: 10, b: 10 },
+    maduracion: { I: 14, an: { n: 40, p: 4, s: 56 }, cat: { k: 52, ca: 32, mg: 16 }, zn: 8, b: 7 },
+    cosecha: { I: 10, an: { n: 34, p: 4, s: 62 }, cat: { k: 50, ca: 32, mg: 18 }, zn: 7, b: 6 }
   };
 
   function num(v) {
@@ -96,7 +98,9 @@
     return {
       I: Math.max(0.1, num(src.I)),
       an: { n: num(src.an && src.an.n), p: num(src.an && src.an.p), s: num(src.an && src.an.s) },
-      cat: { k: num(src.cat && src.cat.k), ca: num(src.cat && src.cat.ca), mg: num(src.cat && src.cat.mg) }
+      cat: { k: num(src.cat && src.cat.k), ca: num(src.cat && src.cat.ca), mg: num(src.cat && src.cat.mg) },
+      zn: Math.max(0.1, num(src.zn) || 12),
+      b: Math.max(0.1, num(src.b) || 12)
     };
   }
 
@@ -106,7 +110,9 @@
     return {
       I: lerp(a.I, b.I, t),
       an: { n: lerp(a.an.n, b.an.n, t), p: lerp(a.an.p, b.an.p, t), s: lerp(a.an.s, b.an.s, t) },
-      cat: { k: lerp(a.cat.k, b.cat.k, t), ca: lerp(a.cat.ca, b.cat.ca, t), mg: lerp(a.cat.mg, b.cat.mg, t) }
+      cat: { k: lerp(a.cat.k, b.cat.k, t), ca: lerp(a.cat.ca, b.cat.ca, t), mg: lerp(a.cat.mg, b.cat.mg, t) },
+      zn: lerp(a.zn, b.zn, t),
+      b: lerp(a.b, b.b, t)
     };
   }
 
@@ -320,6 +326,8 @@
     var ca = [];
     var mg = [];
     var s = [];
+    var zn = [];
+    var b = [];
     var i;
     for (i = 0; i < list.length; i++) {
       var pr = profiles[i] || cloneProfile(FALLBACK);
@@ -331,6 +339,8 @@
       k.push(I * num(pr.cat.k) * EQ.k * CONV.K2O_TO_K);
       ca.push(I * num(pr.cat.ca) * EQ.ca * CONV.CaO_TO_Ca);
       mg.push(I * num(pr.cat.mg) * EQ.mg * CONV.MgO_TO_Mg);
+      zn.push(I * Math.max(0.1, num(pr.zn)));
+      b.push(I * Math.max(0.1, num(pr.b)));
     }
     var safePct = weightsToPct(safe);
     return {
@@ -341,6 +351,8 @@
       ca: weightsToPct(ca),
       mg: weightsToPct(mg),
       s: weightsToPct(s),
+      zn: weightsToPct(zn),
+      b: weightsToPct(b),
       micro: safePct.slice()
     };
   }
@@ -352,15 +364,20 @@
       k: blendPct(pheno.safe, pheno.k, alpha),
       ca: blendPct(pheno.safe, pheno.ca, alpha),
       mg: blendPct(pheno.safe, pheno.mg, alpha),
-      s: blendPct(pheno.safe, pheno.s, alpha)
+      s: blendPct(pheno.safe, pheno.s, alpha),
+      zn: (pheno.zn && pheno.zn.length) ? pheno.zn.slice() : pheno.micro.slice(),
+      b: (pheno.b && pheno.b.length) ? pheno.b.slice() : pheno.micro.slice()
     };
     var i;
     for (i = 0; i < NUT_IDS.length; i++) {
       if (MACRO_IDS.indexOf(NUT_IDS[i]) >= 0) continue;
+      if (NUT_IDS[i] === 'zn' || NUT_IDS[i] === 'b') continue;
       pct[NUT_IDS[i]] = pheno.micro.slice();
     }
     return pct;
   }
+
+  var MIN_PHENO = 0.65;
 
   function suggestPct(stages, options) {
     var list = Array.isArray(stages) ? stages.slice() : [];
@@ -372,11 +389,20 @@
     var pheno = phenoWeights(list);
     var totals = readTotals(options && options.totals);
     var checkZone = hasTernaryTotals(totals);
-    var lo = 0;
-    var hi = 1;
-    var best = assemble(pheno, checkZone ? 0 : 1);
-    var alpha = checkZone ? 0 : 1;
-    if (checkZone) {
+    var inCycle = checkZone && cycleInZone(totals);
+    if (!checkZone) {
+      return {
+        pct: assemble(pheno, 1),
+        alpha: 1,
+        cycleInZone: false,
+        stagesInZone: true
+      };
+    }
+    var alpha = inCycle ? MIN_PHENO : 1;
+    var best = assemble(pheno, alpha);
+    if (inCycle) {
+      var lo = MIN_PHENO;
+      var hi = 1;
       var step;
       for (step = 0; step < 14; step++) {
         var mid = (lo + hi) / 2;
@@ -389,16 +415,12 @@
           hi = mid;
         }
       }
-      if (!allStagesInZone(list, best, totals)) {
-        best = assemble(pheno, 0);
-        alpha = 0;
-      }
     }
     return {
       pct: best,
       alpha: alpha,
-      cycleInZone: checkZone ? cycleInZone(totals) : false,
-      stagesInZone: !checkZone || allStagesInZone(list, best, totals)
+      cycleInZone: inCycle,
+      stagesInZone: allStagesInZone(list, best, totals)
     };
   }
 

@@ -5,6 +5,14 @@
 function fertProgUI() { return window.NpFertigationUI || null; }
 function fertProgT(key, es) { const ui = fertProgUI(); return ui ? ui.t(key, es) : es; }
 function fertProgUnit(kind, fallback) { const ui = fertProgUI(); return ui ? ui.unit(kind) : fallback; }
+function fertProgUnitToHtml(kind, fallback) {
+  return String(fertProgUnit(kind, fallback) || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/cm³/g, 'cm<sup>3</sup>')
+    .replace(/m³/g, 'm<sup>3</sup>')
+    .replace(/cm3/g, 'cm<sup>3</sup>')
+    .replace(/m3/g, 'm<sup>3</sup>');
+}
 function fertProgInputFromSI(value, kind, digits) { const ui = fertProgUI(); return ui ? ui.inputFromSI(value, kind, digits) : String(value); }
 function fertProgResultFromSI(value, kind, digits) {
   const ui = fertProgUI();
@@ -123,30 +131,93 @@ function fertiGetPriceApi() {
 function fertiResolveMaterialPrice(materialId) {
   const api = fertiGetPriceApi();
   if (!api) return 0;
+  let overrides = fertiPriceOverrides;
+  if (!overrides || typeof overrides !== 'object' || !Object.keys(overrides).length) {
+    try { overrides = api.loadMergedPriceOverrides() || {}; } catch (e) { overrides = {}; }
+  }
+  const customItems = (Array.isArray(fertiCustomMaterials) && fertiCustomMaterials.length)
+    ? fertiCustomMaterials
+    : (fertiCustomMaterialsUser || []);
   return api.resolvePriceUsdPerTonne(materialId, {
-    customItems: fertiCustomMaterialsUser,
-    priceOverrides: fertiPriceOverrides
+    customItems: customItems,
+    priceOverrides: overrides
   });
+}
+
+function fertiCostUsdPerHaFromKg(kg, priceUsdPerTonne) {
+  const priceApi = fertiGetPriceApi();
+  if (priceApi && typeof priceApi.costUsdPerHaFromKgHa === 'function') {
+    return priceApi.costUsdPerHaFromKgHa(kg, priceUsdPerTonne) || 0;
+  }
+  const mass = parseFloat(kg) || 0;
+  const price = parseFloat(priceUsdPerTonne) || 0;
+  if (!(mass > 0) || !(price > 0)) return 0;
+  return (mass / 1000) * price;
+}
+
+function fertiProductKgFromAmount(amount, material) {
+  const priceApi = fertiGetPriceApi();
+  if (priceApi && typeof priceApi.productKgFromAmount === 'function') {
+    return priceApi.productKgFromAmount(amount, material);
+  }
+  const a = parseFloat(amount) || 0;
+  if (!(a > 0)) return 0;
+  const unit = String((material && material.unit) || '').toUpperCase();
+  const density = parseFloat(material && material.density);
+  if (unit === 'L' && density > 0) return a * density;
+  return a;
+}
+
+/** Totales de dosis y costo por columna (líquidos: L × densidad → kg × USD/t). */
+function fertiProgramCostBreakdownUsdHa() {
+  const materials = typeof getAllFertiMaterials === 'function' ? getAllFertiMaterials() : [];
+  const cols = Array.isArray(fertiColumns) ? fertiColumns : [];
+  const weeks = Array.isArray(fertiWeeks) ? fertiWeeks : [];
+  const colTotals = cols.map(c => {
+    let sum = 0;
+    weeks.forEach(w => {
+      if (!w || !c) return;
+      sum += parseFloat(w.kgByCol && w.kgByCol[c.id]) || 0;
+    });
+    return sum;
+  });
+  const costs = cols.map((c, i) => {
+    const mat = (materials || []).find(m => m && m.id === c.materialId);
+    const kg = fertiProductKgFromAmount(colTotals[i] || 0, mat);
+    return fertiCostUsdPerHaFromKg(kg, fertiResolveMaterialPrice(c && c.materialId));
+  });
+  const total = costs.reduce((s, v) => s + (v || 0), 0);
+  const totalDose = colTotals.reduce((s, v) => s + (v || 0), 0);
+  return { colTotals: colTotals, costs: costs, total: total, totalDose: totalDose };
 }
 
 /** Costo total del programa (USD/ha SI) a partir de kg/ha por columna × precio. */
 function fertiComputeProgramTotalCostUsdHa() {
+  try {
+    return fertiProgramCostBreakdownUsdHa().total || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function fertiPaintCycleHeaderCost(totalCostUsdHa) {
   const priceApi = fertiGetPriceApi();
-  if (!priceApi || !Array.isArray(fertiColumns) || !fertiColumns.length) return 0;
-  const materials = getAllFertiMaterials();
-  const colTotals = fertiColumns.map(() => 0);
-  (fertiWeeks || []).forEach(w => {
-    fertiColumns.forEach((c, i) => {
-      colTotals[i] += parseFloat(w.kgByCol && w.kgByCol[c.id]) || 0;
-    });
-  });
-  return fertiColumns.reduce((sum, c, i) => {
-    const mat = materials.find(m => m && m.id === c.materialId);
-    const amount = colTotals[i] || 0;
-    const kg = priceApi.productKgFromAmount(amount, mat);
-    const price = fertiResolveMaterialPrice(c.materialId);
-    return sum + (priceApi.costUsdPerHaFromKgHa(kg, price) || 0);
-  }, 0);
+  const priceLabels = priceApi ? priceApi.labels() : { costAreaUnit: 'USD/ha' };
+  const costUnitEl = document.getElementById('fertiTotalCostUnit');
+  if (costUnitEl) costUnitEl.textContent = priceLabels.costAreaUnit || 'USD/ha';
+  const costEl = document.querySelector('#programa #fertiTotalCost') || document.getElementById('fertiTotalCost');
+  if (!costEl) return;
+  const totalCostDisp = priceApi && typeof priceApi.toDisplayAreaCost === 'function'
+    ? priceApi.toDisplayAreaCost(totalCostUsdHa)
+    : totalCostUsdHa;
+  const n = Number(totalCostDisp);
+  if (Number.isFinite(n) && n > 0) {
+    costEl.textContent = (priceApi && typeof priceApi.formatMoney === 'function')
+      ? priceApi.formatMoney(n)
+      : n.toFixed(2);
+  } else {
+    costEl.textContent = '0.00';
+  }
 }
 
 function fertiPersistPriceOverrides(overrides) {
@@ -875,6 +946,7 @@ function openFertiPreloadedCatalogModal() {
       });
       fertiPersistPriceOverrides(next);
       try { renderFertiWeeks(); } catch (e) {}
+      try { updateFertiSummary(); } catch (e2) {}
       if (window.showMessage) window.showMessage(fertProgT('prices_saved', '✅ Precios guardados'), 'success');
       close();
     });
@@ -1367,7 +1439,7 @@ function fertiGeneratorReasonMessage(prepared) {
   if (reason === 'distribution-invalid') {
     return fertProgT('auto_distribution_invalid', 'La Distribución debe sumar 100% en cada nutriente. Revisa: ') + (prepared.nutrients || []).join(', ');
   }
-  if (reason === 'water-depth-required') return fertProgT('auto_water_depth_required', 'Hay aporte de agua. Captura la lámina de riego de cada periodo en Gráficas antes de elaborar el programa.');
+  if (reason === 'water-depth-required') return fertProgT('auto_water_depth_required', 'Hay aporte de agua. Captura la lámina de riego de cada periodo en Dinámica Nutricional antes de elaborar el programa.');
   return fertProgT('auto_generator_unavailable', 'No fue posible preparar el generador automático.');
 }
 
@@ -1649,14 +1721,9 @@ function renderFertiWeeks() {
 
   const priceApi = fertiGetPriceApi();
   const priceLabels = priceApi ? priceApi.labels() : { costPerProduct: 'Costo por producto', totalCost: 'Costo total', costAreaUnit: 'USD/ha' };
-  const fertColCostsUsdHa = fertiColumns.map((c, i) => {
-    const mat = materials.find(m => m && m.id === c.materialId);
-    const amount = fertColTotals[i] || 0;
-    const kg = priceApi ? priceApi.productKgFromAmount(amount, mat) : amount;
-    const price = fertiResolveMaterialPrice(c.materialId);
-    return priceApi ? priceApi.costUsdPerHaFromKgHa(kg, price) : 0;
-  });
-  const totalCostUsdHa = fertColCostsUsdHa.reduce((s, v) => s + (v || 0), 0);
+  const costBreak = fertiProgramCostBreakdownUsdHa();
+  const fertColCostsUsdHa = costBreak.costs;
+  const totalCostUsdHa = costBreak.total;
   const costCells = fertiColumns.map((c, i) => {
     const disp = priceApi ? priceApi.toDisplayAreaCost(fertColCostsUsdHa[i]) : fertColCostsUsdHa[i];
     const txt = (disp > 0 && priceApi) ? priceApi.formatMoney(disp) : (disp > 0 ? disp.toFixed(2) : '—');
@@ -1717,6 +1784,7 @@ function renderFertiWeeks() {
       <button class="btn btn-info btn-sm" onclick="openFertiNewMaterialModal()">📋 ${fertProgT('manage_catalog', 'Gestionar catálogo de fertilizantes y precios')}</button>
     </div>
   `;
+  try { fertiPaintCycleHeaderCost(totalCostUsdHa); } catch (ePaint) {}
 }
 
 function onChangeFertiStage(weekId, stage) {
@@ -1928,18 +1996,7 @@ function updateFertiSummary() {
   // Aporte total (mostramos por defecto óxidos más N fraccionado)
   const appsEl = document.getElementById('fertiTotalApplications'); if (appsEl) appsEl.textContent = String(fertiWeeks.length || 0);
   const doseEl = document.getElementById('fertiTotalDoseKgHa'); if (doseEl) doseEl.textContent = fertProgResultFromSI(totalKg, 'dose_mass_area');
-  const priceApi = fertiGetPriceApi();
-  const priceLabels = priceApi ? priceApi.labels() : { totalCost: fertProgT('total_cost', 'Costo total'), costAreaUnit: 'USD/ha' };
-  const totalCostUsdHa = fertiComputeProgramTotalCostUsdHa();
-  const totalCostDisp = priceApi ? priceApi.toDisplayAreaCost(totalCostUsdHa) : totalCostUsdHa;
-  const costEl = document.getElementById('fertiTotalCost');
-  if (costEl) {
-    costEl.textContent = (totalCostDisp > 0 && priceApi)
-      ? priceApi.formatMoney(totalCostDisp)
-      : (totalCostDisp > 0 ? totalCostDisp.toFixed(2) : '0.00');
-  }
-  const costUnitEl = document.getElementById('fertiTotalCostUnit');
-  if (costUnitEl) costUnitEl.textContent = priceLabels.costAreaUnit || 'USD/ha';
+  try { fertiPaintCycleHeaderCost(fertiComputeProgramTotalCostUsdHa()); } catch (eCost) {}
   set('fertiProgTotalN_NO3', totals.N_NO3); set('fertiProgTotalN_NH4', totals.N_NH4);
   set('fertiProgTotalP2O5', toElemental('P2O5', totals.P2O5)); set('fertiProgTotalK2O', toElemental('K2O', totals.K2O)); set('fertiProgTotalCaO', toElemental('CaO', totals.CaO)); set('fertiProgTotalMgO', toElemental('MgO', totals.MgO));
   set('fertiProgTotalS', totals.S);
@@ -3186,13 +3243,13 @@ function renderFertiChartsInsights() {
     `;
   }
   const laminaText = summaryFert && summaryFert.m3ha > 0
-    ? fertProgResultFromSI(summaryFert.m3ha, 'volume_area') + ' ' + fertProgUnit('volume_area', 'm³/ha')
+    ? fertProgResultFromSI(summaryFert.m3ha, 'volume_area') + ' ' + fertProgUnitToHtml('volume_area', 'm³/ha')
     : fertProgT('no_data', 'sin dato');
   wrap.innerHTML = `
     <div class="ferti-charts-insights-head">
       <label for="fertiChartsStageSelect">${fertProgT('stage_to_analyze', 'Etapa a analizar:')}</label>
       <select id="fertiChartsStageSelect" onchange="onFertiChartStageSelect(this.value)">${options}</select>
-      <span class="ferti-charts-water-note">${fertProgT('lamina', 'Lámina:')} <strong>${laminaText}</strong></span>
+      <span class="ferti-charts-water-note">${fertProgT('lamina', 'Lámina de riego:')} <strong>${laminaText}</strong></span>
     </div>
     ${body}
   `;
@@ -3559,8 +3616,8 @@ function buildFertiInsightsPivotTableReport(opts) {
     const lbl = fertiGetStageColLabelForPivot(opts.program, i);
     return '<th title="' + fertiEscapeInsightsLabel(lbl) + '">' + fertiEscapeInsightsLabel(lbl) + '</th>';
   }).join('');
-  const waterUnit = fertProgUnit('volume_area', 'm³/ha');
-  const m3Row = '<tr><td class="report-ferti-stage-cell">' + fertiEscapeInsightsLabel(fertProgT('lamina', 'Lámina:') + ' (' + waterUnit + ')') + '</td>' +
+  const waterUnit = fertProgUnitToHtml('volume_area', 'm³/ha');
+  const m3Row = '<tr><td class="report-ferti-stage-cell">' + fertiEscapeInsightsLabel(fertProgT('lamina', 'Lámina de riego:')) + ' (' + waterUnit + ')</td>' +
     stageIndexes.map(function (i) {
       const shown = fertProgUI() ? fertProgUI().fromSI(waterArr[i], 'volume_area') : (Number(waterArr[i]) || 0);
       return '<td class="report-ferti-stage-num">' + fertiNum(shown, 2) + '</td>';
@@ -3658,7 +3715,7 @@ function fertiReportDose(value, digits) {
 function fertiReportWater(value) {
   const ui = fertProgUI();
   const shown = ui ? ui.fromSI(value, 'volume_area') : Number(value || 0);
-  return fertiNum(shown, 2) + ' ' + (ui ? ui.unit('volume_area') : 'm³/ha');
+  return fertiNum(shown, 2) + ' ' + fertProgUnitToHtml('volume_area', 'm³/ha');
 }
 
 function renderFertiMacroIonicTableHtmlForReport(summary) {
@@ -3703,7 +3760,7 @@ function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3h
     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #cbd5e1;">
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:10px;">
         <strong style="color:#0f766e;font-size:14px;">${slotLabel} · ${stageName}</strong>
-        <span style="font-size:12px;color:#64748b;">${fertProgT('lamina', 'Lámina:')} <strong>${fertiReportWater(m3ha)}</strong></span>
+        <span style="font-size:12px;color:#64748b;">${fertProgT('lamina', 'Lámina de riego:')} <strong>${fertiReportWater(m3ha)}</strong></span>
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:12px;">
         <div style="font-weight:600;color:#166534;margin-bottom:10px;">${fertProgT('macro_summary', 'Macro resumen')}</div>
@@ -3757,7 +3814,7 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
       <div class="report-block" style="border-color:#fde68a;background:#fffbeb;">
         <div class="report-block-title">⚗️ ${rt('Relación ppm · meq/L · % (lámina de riego)', 'ppm · meq/L · % relationship (irrigation depth)')}</div>
         <div class="report-note" style="margin:0;">
-          ${rt('Captura', 'Enter')} <strong>${volUnit}</strong> ${rt('de lámina en Gráficas de Fertirriego para cada', 'irrigation depth in Fertigation Charts for each')} ${timeUnitLabel} (e.g. ${slotLabel}).
+          ${rt('Captura', 'Enter')} <strong>${volUnit}</strong> ${rt('de lámina en Dinámica Nutricional para cada', 'irrigation depth in Nutrient Dynamics for each')} ${timeUnitLabel} (e.g. ${slotLabel}).
           ${rt('Sin ese dato no se calculan ppm, meq/L ni % en el reporte.', 'Without that value, ppm, meq/L and % are not calculated in the report.')}
         </div>
       </div>`;
@@ -3774,11 +3831,11 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
   const introNote = useCompact
     ? `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
         <strong>${rt('Vista compacta', 'Compact view')}</strong> (${stageIndexes.length} ${rt('etapas con lámina', 'stages with depth')}): ${rt('tablas cruzadas por nutriente.', 'cross tables by nutrient.')}
-        ${rt('Base operativa:', 'Operating base:')} <strong>${rt('fertilizante + aporte de agua', 'fertilizer + water supply')}</strong>. ${rt('Lámina:', 'Depth:')} ${waterSummary}.
-        ${rt('Los % siguen la misma lógica que Gráficas (triángulos N-P-S y K-Ca-Mg; Cl⁻ y N-NH₄⁺ aparte).', 'Percentages follow the same Charts logic (N-P-S and K-Ca-Mg triangles; Cl⁻ and N-NH₄⁺ separate).')}
+        ${rt('Base operativa:', 'Operating base:')} <strong>${rt('fertilizante + aporte de agua', 'fertilizer + water supply')}</strong>. ${rt('Lámina de riego:', 'Irrigation depth:')} ${waterSummary}.
+        ${rt('Los % siguen la misma lógica que Dinámica Nutricional (triángulos N-P-S y K-Ca-Mg; Cl⁻ y N-NH₄⁺ aparte).', 'Percentages follow the same Nutrient Dynamics logic (N-P-S and K-Ca-Mg triangles; Cl⁻ and N-NH₄⁺ separate).')}
       </p>`
     : `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
-        ${rt('Lámina capturada en Gráficas:', 'Depth captured in Charts:')} ${waterSummary}.
+        ${rt('Lámina capturada en Dinámica Nutricional:', 'Depth captured in Nutrient Dynamics:')} ${waterSummary}.
       </p>`;
   return `
     <div class="report-block" style="border-color:#5eead4;background:#f0fdfa;">
@@ -4217,6 +4274,7 @@ function initFertirriegoProgramUI() {
   window.saveFertirriegoProgram = saveFertirriegoProgram;
   window.setFertiNutrientView = setFertiNutrientView;
   window.updateFertiSummary = updateFertiSummary;
+  window.fertiComputeProgramTotalCostUsdHa = fertiComputeProgramTotalCostUsdHa;
   window.updateFertiCharts = updateFertiCharts;
   window.resizeFertiCharts = resizeFertiCharts;
   window.getAllFertiMaterials = getAllFertiMaterials;

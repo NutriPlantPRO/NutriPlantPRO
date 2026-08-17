@@ -933,7 +933,7 @@ function sectionTemplate(name) {
           </button>
           <button class="tab-button" data-tab="graficas">
             <span class="tab-icon">📈</span>
-            <span class="tab-text">${ft('charts_tab', 'Gráficas')}</span>
+            <span class="tab-text">${ft('charts_tab', 'Dinámica Nutricional')}</span>
           </button>
         </div>
 
@@ -1170,7 +1170,7 @@ function sectionTemplate(name) {
             </div>
           </div>
 
-          <!-- Pestaña Gráficas -->
+          <!-- Pestaña Dinámica Nutricional -->
           <div class="tab-content" id="graficas">
             <div class="charts-container">
               <div class="ferti-chart-toolbar">
@@ -10072,6 +10072,25 @@ window.shareReportView = async function(reportId) {
 
 const EXTRACTION_ETAPA_MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
 const EXTRACTION_ETAPA_MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true, si: true };
+const EXTRACTION_ETAPA_POINT_STYLES = {
+  n: 'circle', p: 'rect', k: 'triangle', ca: 'rectRot', mg: 'rectRounded', s: 'star',
+  fe: 'circle', mn: 'rect', b: 'triangle', zn: 'rectRot', cu: 'rectRounded', mo: 'star', si: 'triangle'
+};
+function distChartSeriesDodge(index, count) {
+  if (!(count > 1)) return 0;
+  return (index - (count - 1) / 2) * 0.046;
+}
+function distChartNiceYMax(rawMax) {
+  if (!(rawMax > 0)) return 25;
+  if (rawMax >= 94.5) return 100;
+  var padded = rawMax + 8;
+  if (padded > 100) padded = 100;
+  var step = padded <= 50 ? 5 : 10;
+  var nice = Math.ceil(padded / step) * step;
+  if (nice > 100) nice = 100;
+  if (nice < 25) nice = 25;
+  return nice;
+}
 function npNutrientColor(key) {
   if (window.NpFertigationUI && typeof window.NpFertigationUI.nutrientColor === 'function') {
     return window.NpFertigationUI.nutrientColor(key);
@@ -10315,16 +10334,19 @@ function extraccionEtapaReportRowLabel(stage, index, axis, language) {
   return period ? pheno + ' · ' + period : pheno;
 }
 
-function buildExtraccionEtapaChartDatasets(state, group, unitSystem) {
+function buildExtraccionEtapaChartDatasets(state, group) {
   const idMap = group === 'macro' ? EXTRACTION_ETAPA_MACRO_IDS : EXTRACTION_ETAPA_MICRO_IDS;
   const filtered = (state.nutrients || []).filter(function(n) { return idMap[n.id]; });
-  return filtered.map(function(n) {
+  return filtered.map(function(n, di) {
+    const dodge = distChartSeriesDodge(di, filtered.length);
     return {
       label: n.label,
       data: (state.stages || []).map(function(_, ri) {
-        return extraccionEtapaReportValue(extraccionEtapaKgHa(n, ri, state), unitSystem);
+        const arr = (state.pct && state.pct[n.id]) || [];
+        return { x: ri + dodge, y: Number(arr[ri]) || 0 };
       }),
-      color: npNutrientColor(n.id)
+      color: npNutrientColor(n.id),
+      pointStyle: EXTRACTION_ETAPA_POINT_STYLES[n.id] || 'circle'
     };
   });
 }
@@ -10340,13 +10362,12 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback, reportOption
       return;
     }
     const language = reportOptions && reportOptions.language === 'en' ? 'en' : 'es';
-    const unitSystem = reportOptions && reportOptions.unit_system === 'us_customary' ? 'us_customary' : 'metric';
-    const unitLabel = unitSystem === 'us_customary' ? 'lb/acre' : 'kg/ha';
+    const yTitle = language === 'en' ? 'Distribution %' : '% de distribución';
     const labels = state.stages.map(function(stage, index) {
       return extraccionEtapaReportRowLabel(stage, index, state.axis, language);
     });
-    const macroSets = buildExtraccionEtapaChartDatasets(state, 'macro', unitSystem);
-    const microSets = buildExtraccionEtapaChartDatasets(state, 'micro', unitSystem);
+    const macroSets = buildExtraccionEtapaChartDatasets(state, 'macro');
+    const microSets = buildExtraccionEtapaChartDatasets(state, 'micro');
     const W = 640;
     const H = 320;
     const result = {};
@@ -10358,20 +10379,29 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback, reportOption
       canvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
       document.body.appendChild(canvas);
       let chart = null;
+      var dataMax = 0;
+      datasets.forEach(function (ds) {
+        (ds.data || []).forEach(function (pt) {
+          var y = pt && typeof pt === 'object' ? Number(pt.y) : Number(pt);
+          if (y > dataMax) dataMax = y;
+        });
+      });
+      var yMax = distChartNiceYMax(dataMax);
       try {
         chart = new Chart(canvas.getContext('2d'), {
           type: 'line',
           data: {
-            labels: labels,
             datasets: datasets.map(function(ds) {
               return {
                 label: ds.label,
                 data: ds.data,
                 borderColor: ds.color,
-                backgroundColor: 'transparent',
-                tension: 0.35,
-                borderWidth: 3,
-                pointRadius: 4
+                backgroundColor: ds.color,
+                tension: 0.32,
+                borderWidth: 2.6,
+                pointRadius: 5,
+                pointStyle: ds.pointStyle || 'circle',
+                fill: false
               };
             })
           },
@@ -10383,17 +10413,43 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback, reportOption
               legend: {
                 display: true,
                 position: 'bottom',
-                labels: { usePointStyle: true, boxWidth: 10, boxHeight: 10 }
+                labels: { usePointStyle: true, boxWidth: 12, boxHeight: 12, padding: 14, font: { size: 11, weight: '600' } }
+              },
+              tooltip: {
+                callbacks: {
+                  title: function (items) {
+                    var x = items && items[0] && items[0].parsed ? items[0].parsed.x : 0;
+                    var i = Math.round(Number(x) || 0);
+                    return labels[i] || '';
+                  }
+                }
               }
             },
             scales: {
               y: {
                 beginAtZero: true,
+                min: 0,
+                max: yMax,
+                ticks: { stepSize: yMax <= 50 ? 5 : 10 },
                 title: { display: true, text: yTitle }
               },
               x: {
-                title: { display: true, text: language === 'en' ? 'Stage' : 'Etapa' },
-                ticks: { maxRotation: 45, minRotation: 0 }
+                type: 'linear',
+                min: -0.22,
+                max: Math.max(0, labels.length - 1) + 0.22,
+                offset: false,
+                ticks: {
+                  stepSize: 1,
+                  autoSkip: false,
+                  maxRotation: 45,
+                  minRotation: 0,
+                  callback: function (val) {
+                    var i = Math.round(Number(val));
+                    if (Math.abs(Number(val) - i) > 1e-6) return '';
+                    if (i < 0 || i >= labels.length) return '';
+                    return labels[i];
+                  }
+                }
               }
             }
           }
@@ -10408,8 +10464,8 @@ function getExtraccionEtapaChartsDataUrlsForReport(state, callback, reportOption
       }
     }
 
-    if (macroSets.length) result.macro = renderOne(document.createElement('canvas'), macroSets, unitLabel);
-    if (microSets.length) result.micro = renderOne(document.createElement('canvas'), microSets, unitLabel);
+    if (macroSets.length) result.macro = renderOne(document.createElement('canvas'), macroSets, yTitle);
+    if (microSets.length) result.micro = renderOne(document.createElement('canvas'), microSets, yTitle);
     if (typeof callback === 'function') callback(result);
   });
 }
@@ -14564,15 +14620,9 @@ function openReportModal() {
   if (modal) {
     // Idioma y unidades del PDF = preferencias del usuario (sin selector aparte).
     try {
-      var doseUnit = 'kg/ha';
-      if (window.NpAgronomicUnits && typeof window.NpAgronomicUnits.unit === 'function') {
-        doseUnit = window.NpAgronomicUnits.unit('dose_mass_area') || doseUnit;
-      } else if (window.NpPrefs && window.NpPrefs.get().unit_system === 'us_customary') {
-        doseUnit = 'lb/acre';
-      }
       var extractDesc = modal.querySelector('[data-section="extraccionEtapa"] .report-section-description');
       if (extractDesc) {
-        extractDesc.setAttribute('data-i18n-params', JSON.stringify({ dose_unit: doseUnit }));
+        extractDesc.removeAttribute('data-i18n-params');
         extractDesc.setAttribute('data-i18n', 'dashboard.reports_sec_extract_desc');
       }
       if (window.NpI18n && typeof window.NpI18n.apply === 'function') {
@@ -18977,7 +19027,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
 
   const chartsBlock = (hasCharts || (weeks.length > 0 && hasWeekTotals)) ? `
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
-        <div class="report-block-title">📈 ${rt('Gráficas de Fertirriego', 'Fertigation Charts')}</div>
+        <div class="report-block-title">📈 ${rt('Dinámica Nutricional', 'Nutrient Dynamics')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
           <div>
             <div class="report-subtitle" style="margin-bottom:6px;">${rt('Macronutrientes', 'Macronutrients')}</div>
@@ -20343,20 +20393,16 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
 
   const showPeriod = reportAxis === 'semana' || reportAxis === 'mes';
   const periodHead = reportAxis === 'mes' ? rt('Mes', 'Month') : rt('Semana', 'Week');
-  const combinedHead = '<tr><th rowspan="2">' + rt('Etapa', 'Stage') + '</th>' +
-    (showPeriod ? '<th rowspan="2">' + periodHead + '</th>' : '') +
-    '<th rowspan="2">' + rt('Lámina objetivo', 'Target irrigation depth') + '<br>(' + waterUnit + ')</th>' +
+  const combinedHead = '<tr><th>' + rt('Etapa', 'Stage') + '</th>' +
+    (showPeriod ? '<th>' + periodHead + '</th>' : '') +
+    '<th>' + rt('Lámina objetivo', 'Target irrigation depth') + '<br>(' + waterUnit + ')</th>' +
     nutrients.map(function(n) {
-      return '<th colspan="2" style="' + distNutHeadStyle(n) + '">' + reportEscapeHtml(n.label) + '</th>';
-    }).join('') + '</tr><tr>' +
-    nutrients.map(function(n) {
-      return '<th style="' + distNutHeadStyle(n) + '">%</th><th>' + massAreaUnit + '</th>';
+      return '<th style="' + distNutHeadStyle(n) + '">' + reportEscapeHtml(n.label) + ' %</th>';
     }).join('') + '</tr>';
   const combinedRows = stages.map(function(st, ri) {
     const cells = nutrients.map(function(n) {
       const pctVal = (state.pct[n.id] && state.pct[n.id][ri]) != null ? state.pct[n.id][ri] : 0;
-      const kgVal = extraccionEtapaReportValue(extraccionEtapaKgHa(n, ri, state), unitSystem);
-      return '<td style="' + distNutStartStyle(n) + 'font-weight:700;">' + reportNum(pctVal, 1) + '</td><td class="report-ferti-stage-num" style="color:#64748b;">' + reportNum(kgVal, 2) + '</td>';
+      return '<td style="' + distNutStartStyle(n) + 'font-weight:700;">' + reportNum(pctVal, 1) + '</td>';
     }).join('');
     return '<tr><td class="report-ferti-stage-cell">' +
       reportEscapeHtml(extraccionEtapaReportStage(st, lang)) + '</td>' +
@@ -20366,7 +20412,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
   const combinedFoot = nutrients.map(function(n) {
     const sum = extraccionEtapaSumPct(n.id, state);
     const ok = Math.abs(sum - 100) < 0.05;
-    return '<td colspan="2" style="border-left:2px solid ' + distNutColor(n) + ';' + (ok ? 'color:#059669;font-weight:700;' : 'color:#b45309;font-weight:700;') + '">' +
+    return '<td style="border-left:2px solid ' + distNutColor(n) + ';' + (ok ? 'color:#059669;font-weight:700;' : 'color:#b45309;font-weight:700;') + '">' +
       reportNum(sum, 1) + '%</td>';
   }).join('');
 
@@ -20382,8 +20428,8 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
       <h2 class="section-title">📊 ${reportEscapeHtml(heading)}</h2>
       <p class="report-note" style="margin-top:0;">
         ${rt(
-          'Igual que en el dashboard: requerimiento real (' + massAreaUnit + '), lámina objetivo, % y dosis por etapa. Tipo: <strong>' + axisLabel + '</strong>. Guía de campo; validar en predio.',
-          'Same as the dashboard: actual requirement (' + massAreaUnit + '), target irrigation depth, % and dose by stage. Type: <strong>' + axisLabel + '</strong>. Field guide; validate on site.'
+          'Igual que en el dashboard: requerimiento real (' + massAreaUnit + ') y <strong>% del requerimiento por etapa</strong> (suma 100% por nutriente). Tipo: <strong>' + axisLabel + '</strong>. Las dosis del programa van en Fertirriego. Guía de campo; validar en predio.',
+          'Same as the dashboard: actual requirement (' + massAreaUnit + ') and <strong>% of requirement by stage</strong> (sums 100% per nutrient). Type: <strong>' + axisLabel + '</strong>. Program doses are in Fertigation. Field guide; validate on site.'
         )}
       </p>
       <div class="report-block" style="border-color:#bfdbfe;background:#eff6ff;">
@@ -20396,7 +20442,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
         </div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">${rt('2. Distribución objetivo por etapa (% y dosis)', '2. Objective distribution by stage (% and dose)')} · ${axisLabel}</div>
+        <div class="report-block-title">${rt('2. Distribución objetivo por etapa (% del requerimiento)', '2. Objective distribution by stage (% of requirement)')} · ${axisLabel}</div>
         <div class="report-table-wrap report-pdf-compact-table">
           <table class="report-app-table">
             <thead>${combinedHead}</thead>
@@ -20406,7 +20452,7 @@ function createExtraccionEtapaSectionHTML(chartImages, reportLanguage, reportUni
         </div>
       </div>
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
-        <div class="report-block-title">${rt('3. Gráficas', '3. Charts')} (${massAreaUnit} ${rt('por etapa', 'by stage')})</div>
+        <div class="report-block-title">${rt('3. Gráficas de % de distribución', '3. Distribution % charts')}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
           <div>
             <div class="report-subtitle" style="margin-bottom:6px;">${rt('Macronutrientes (N, P, K, Ca, Mg, S)', 'Macronutrients (N, P, K, Ca, Mg, S)')}</div>

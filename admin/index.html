@@ -8412,7 +8412,7 @@
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('extraccionEtapa')" data-section="extraccionEtapa">
                         <div class="report-section-info">
                             <div class="report-section-title">📊 Distribución objetivo por etapa</div>
-                            <div class="report-section-description">Curva del proyecto: % y kg/ha en la misma tabla, como en el dashboard</div>
+                            <div class="report-section-description">Curva del proyecto: % del requerimiento por etapa, igual que en el dashboard</div>
                         </div>
                     </div>
                 </div>
@@ -10003,17 +10003,60 @@
             document.head.appendChild(s);
         }
 
-        function buildAdminSvgChart(containerEl, labels, datasets) {
+        function adminSvgPoint(style, x, y, color, r) {
+            r = r == null ? 3 : r;
+            var xf = Number(x).toFixed(1);
+            var yf = Number(y).toFixed(1);
+            if (style === 'rect') {
+                return '<rect x="' + (x - r).toFixed(1) + '" y="' + (y - r).toFixed(1) + '" width="' + (r * 2).toFixed(1) + '" height="' + (r * 2).toFixed(1) + '" fill="' + color + '"/>';
+            }
+            if (style === 'triangle') {
+                return '<polygon points="' + xf + ',' + (y - r).toFixed(1) + ' ' + (x - r).toFixed(1) + ',' + (y + r).toFixed(1) + ' ' + (x + r).toFixed(1) + ',' + (y + r).toFixed(1) + '" fill="' + color + '"/>';
+            }
+            if (style === 'rectRot') {
+                return '<polygon points="' + xf + ',' + (y - r).toFixed(1) + ' ' + (x + r).toFixed(1) + ',' + yf + ' ' + xf + ',' + (y + r).toFixed(1) + ' ' + (x - r).toFixed(1) + ',' + yf + '" fill="' + color + '"/>';
+            }
+            if (style === 'rectRounded') {
+                return '<rect x="' + (x - r).toFixed(1) + '" y="' + (y - r).toFixed(1) + '" width="' + (r * 2).toFixed(1) + '" height="' + (r * 2).toFixed(1) + '" rx="1.8" fill="' + color + '"/>';
+            }
+            if (style === 'star') {
+                var s = r * 0.45;
+                return '<polygon points="' + xf + ',' + (y - r).toFixed(1) + ' ' + (x + s).toFixed(1) + ',' + (y - s).toFixed(1) + ' ' + (x + r).toFixed(1) + ',' + yf + ' ' + (x + s).toFixed(1) + ',' + (y + s).toFixed(1) + ' ' + xf + ',' + (y + r).toFixed(1) + ' ' + (x - s).toFixed(1) + ',' + (y + s).toFixed(1) + ' ' + (x - r).toFixed(1) + ',' + yf + ' ' + (x - s).toFixed(1) + ',' + (y - s).toFixed(1) + '" fill="' + color + '"/>';
+            }
+            return '<circle cx="' + xf + '" cy="' + yf + '" r="' + r + '" fill="' + color + '"/>';
+        }
+
+        function buildAdminSvgChart(containerEl, labels, datasets, opts) {
             if (!containerEl) return;
+            opts = opts || {};
+            const dodgeOn = !!opts.dodge;
             const width = 600;
             const height = 230;
             const padL = 40, padR = 10, padT = 10, padB = 80;
             const innerW = width - padL - padR;
             const innerH = height - padT - padB;
             const allValues = datasets.flatMap(d => d.data.map(v => parseFloat(v) || 0));
-            const maxVal = Math.max(1, ...allValues);
+            let maxVal = Math.max(1, ...allValues);
+            if (opts.pctScale) {
+                if (!(maxVal > 0)) maxVal = 25;
+                else {
+                    var padded = maxVal + 8;
+                    if (padded > 100) padded = 100;
+                    var niceStep = padded <= 50 ? 5 : 10;
+                    maxVal = Math.ceil(padded / niceStep) * niceStep;
+                    if (maxVal > 100) maxVal = 100;
+                    if (maxVal < 25) maxVal = 25;
+                }
+            }
             const xStep = labels.length > 1 ? innerW / (labels.length - 1) : 0;
-            const xAt = (i) => padL + (labels.length > 1 ? i * xStep : innerW / 2);
+            const nSeries = datasets.length;
+            const xCat = (i) => padL + (labels.length > 1 ? i * xStep : innerW / 2);
+            const xAt = (i, di) => {
+                const base = xCat(i);
+                if (!dodgeOn || nSeries < 2) return base;
+                const unit = xStep || innerW * 0.08;
+                return base + (di - (nSeries - 1) / 2) * 0.046 * unit;
+            };
             const yAt = (v) => padT + (1 - (v / maxVal)) * innerH;
             const gridLines = 4;
             let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="display:block;background:#fff;border-radius:6px;">`;
@@ -10026,23 +10069,23 @@
             svg += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${height - padB}" stroke="#cbd5e1" stroke-width="1" />`;
             svg += `<line x1="${padL}" y1="${height - padB}" x2="${width - padR}" y2="${height - padB}" stroke="#cbd5e1" stroke-width="1" />`;
             labels.forEach((lbl, i) => {
-                const x = xAt(i);
+                const x = xCat(i);
                 const safeLbl = String(lbl || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 // Etiquetas verticales para mejorar legibilidad cuando hay muchas semanas/meses
                 svg += `<text x="${x}" y="${height - padB + 8}" text-anchor="end" font-size="10" fill="#6b7280" transform="rotate(-90 ${x} ${height - padB + 8})">${safeLbl}</text>`;
             });
-            datasets.forEach(ds => {
-                const points = ds.data.map((v, i) => `${xAt(i)},${yAt(parseFloat(v) || 0)}`).join(' ');
+            datasets.forEach((ds, di) => {
+                const points = ds.data.map((v, i) => `${xAt(i, di)},${yAt(parseFloat(v) || 0)}`).join(' ');
                 const dashAttr = ds.strokeDasharray
                     ? ` stroke-dasharray="${String(ds.strokeDasharray).replace(/"/g, '')}"`
                     : (ds.dashed ? ' stroke-dasharray="7 5"' : '');
                 const strokeW = ds.strokeWidth != null ? ds.strokeWidth : 2;
                 svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="${strokeW}"${dashAttr} points="${points}" />`;
-                const cr = ds.pointRadius != null ? ds.pointRadius : 2.5;
+                const cr = ds.pointRadius != null ? ds.pointRadius : (dodgeOn ? 3.2 : 2.5);
                 ds.data.forEach((v, i) => {
-                    const x = xAt(i);
+                    const x = xAt(i, di);
                     const y = yAt(parseFloat(v) || 0);
-                    svg += `<circle cx="${x}" cy="${y}" r="${cr}" fill="${ds.color}" />`;
+                    svg += adminSvgPoint(ds.pointStyle, x, y, ds.color, cr);
                 });
             });
             svg += `</svg>`;
@@ -10385,6 +10428,10 @@
         // ===== Distribución nutrimental por etapa (Admin) =====
         var ADMIN_EXT_ETAPA_MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
         var ADMIN_EXT_ETAPA_MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true, si: true };
+        var ADMIN_EXT_POINT_STYLES = {
+            n: 'circle', p: 'rect', k: 'triangle', ca: 'rectRot', mg: 'rectRounded', s: 'star',
+            fe: 'circle', mn: 'rect', b: 'triangle', zn: 'rectRot', cu: 'rectRounded', mo: 'star', si: 'triangle'
+        };
         var ADMIN_NUTRIENT_COLORS = {
             n: '#2563eb', N: '#2563eb', N_NO3: '#2563eb', N_NH4: '#3b82f6',
             p: '#16a34a', P: '#16a34a', P2O5: '#16a34a',
@@ -10513,8 +10560,12 @@
             return filtered.map(function (n) {
                 return {
                     label: n.label,
-                    data: (state.stages || []).map(function (_, ri) { return adminExtraccionEtapaKgHa(n, ri, state); }),
-                    color: adminNutrientColor(n.id)
+                    data: (state.stages || []).map(function (_, ri) {
+                        var arr = (state.pct && state.pct[n.id]) || [];
+                        return Number(arr[ri]) || 0;
+                    }),
+                    color: adminNutrientColor(n.id),
+                    pointStyle: ADMIN_EXT_POINT_STYLES[n.id] || 'circle'
                 };
             });
         }
@@ -10534,14 +10585,14 @@
                     if (!macroSets.length) {
                         macroEl.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin macronutrientes configurados.</div>';
                     } else {
-                        buildAdminSvgChart(macroEl, labels, macroSets);
+                        buildAdminSvgChart(macroEl, labels, macroSets, { dodge: true, pctScale: true });
                     }
                 }
                 if (microEl) {
                     if (!microSets.length) {
                         microEl.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin micronutrientes (el usuario puede agregarlos en la herramienta 📊).</div>';
                     } else {
-                        buildAdminSvgChart(microEl, labels, microSets);
+                        buildAdminSvgChart(microEl, labels, microSets, { dodge: true, pctScale: true });
                     }
                 }
             } catch (e) {
@@ -10584,21 +10635,16 @@
             var totalsRow = nutrients.map(function (n) {
                 return '<td style="padding:6px;text-align:right;' + adminDistNutStartStyle(n) + '">' + (Number(n.total) || 0).toFixed(2) + '</td>';
             }).join('');
-            var combinedHead = '<tr><th rowspan="2" style="padding:6px;text-align:left;">Etapa</th>' +
-                (showPeriod ? '<th rowspan="2" style="padding:6px;text-align:center;">' + periodHead + '</th>' : '') +
-                '<th rowspan="2" style="padding:6px;text-align:center;">Lámina objetivo<br>(m³/ha)</th>' +
+            var combinedHead = '<tr><th style="padding:6px;text-align:left;">Etapa</th>' +
+                (showPeriod ? '<th style="padding:6px;text-align:center;">' + periodHead + '</th>' : '') +
+                '<th style="padding:6px;text-align:center;">Lámina objetivo<br>(m³/ha)</th>' +
                 nutrients.map(function (n) {
-                    return '<th colspan="2" style="padding:6px;text-align:center;' + adminDistNutHeadStyle(n) + '">' + escapeHtml(n.label) + '</th>';
-                }).join('') + '</tr><tr>' +
-                nutrients.map(function (n) {
-                    return '<th style="padding:4px;text-align:center;font-size:11px;' + adminDistNutHeadStyle(n) + '">%</th><th style="padding:4px;text-align:center;font-size:11px;color:#64748b;">kg/ha</th>';
+                    return '<th style="padding:6px;text-align:center;' + adminDistNutHeadStyle(n) + '">' + escapeHtml(n.label) + ' %</th>';
                 }).join('') + '</tr>';
             var combinedRows = stages.map(function (st, ri) {
                 var cells = nutrients.map(function (n) {
                     var pctVal = (state.pct[n.id] && state.pct[n.id][ri] != null) ? state.pct[n.id][ri] : 0;
-                    var kgVal = adminExtraccionEtapaKgHa(n, ri, state);
-                    return '<td style="padding:6px;text-align:center;font-weight:700;' + adminDistNutStartStyle(n) + '">' + Number(pctVal).toFixed(1) + '</td>' +
-                        '<td style="padding:6px;text-align:right;background:#f8fafc;color:#64748b;">' + kgVal.toFixed(2) + '</td>';
+                    return '<td style="padding:6px;text-align:center;font-weight:700;' + adminDistNutStartStyle(n) + '">' + Number(pctVal).toFixed(1) + '</td>';
                 }).join('');
                 return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(adminExtraccionEtapaStage(st)) + '</td>' +
                     (showPeriod ? '<td style="padding:6px;text-align:center;font-weight:700;">' + escapeHtml(adminExtraccionEtapaPeriodLabel(state.axis, ri)) + '</td>' : '') +
@@ -10607,7 +10653,7 @@
             var combinedFoot = nutrients.map(function (n) {
                 var sum = adminExtraccionEtapaSumPct(n.id, state);
                 var ok = Math.abs(sum - 100) < 0.05;
-                return '<td colspan="2" style="padding:6px;text-align:center;font-weight:700;border-left:2px solid ' + adminNutrientColor(n.id) + ';color:' + (ok ? '#059669' : '#b45309') + ';">' + sum.toFixed(1) + '%</td>';
+                return '<td style="padding:6px;text-align:center;font-weight:700;border-left:2px solid ' + adminNutrientColor(n.id) + ';color:' + (ok ? '#059669' : '#b45309') + ';">' + sum.toFixed(1) + '%</td>';
             }).join('');
             var updatedTxt = state.updatedAt
                 ? new Date(state.updatedAt).toLocaleString('es-MX')
@@ -10628,8 +10674,8 @@
             var descLead = chartIds.compact
                 ? 'Datos guardados en la biblioteca personal del usuario.'
                 : (curveTitle
-                    ? 'Curva <strong>' + escapeHtml(curveTitle) + '</strong> cargada en <strong>este proyecto</strong> (% y kg/ha en la misma tabla · ' + axisLabel + '). También en el reporte admin si marcas la sección correspondiente.'
-                    : 'Curva de <strong>Fertirriego → Distribución</strong> en este proyecto (% y kg/ha en la misma tabla · ' + axisLabel + '). También en el reporte admin si marcas la sección correspondiente.');
+                    ? 'Curva <strong>' + escapeHtml(curveTitle) + '</strong> cargada en <strong>este proyecto</strong> (% del requerimiento por etapa · ' + axisLabel + '). También en el reporte admin si marcas la sección correspondiente.'
+                    : 'Curva de <strong>Fertirriego → Distribución</strong> en este proyecto (% del requerimiento por etapa · ' + axisLabel + '). También en el reporte admin si marcas la sección correspondiente.');
             return `
                 <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 20px;">
                     <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 18px;">${heading}</h3>
@@ -10647,7 +10693,7 @@
                         </div>
                     </div>
                     <div style="margin-bottom: 14px;">
-                        <strong style="color:#1e293b;font-size:14px;">2. Distribución objetivo por etapa (% y kg/ha) · ${escapeHtml(axisLabel)}</strong>
+                        <strong style="color:#1e293b;font-size:14px;">2. Distribución objetivo por etapa (% del requerimiento) · ${escapeHtml(axisLabel)}</strong>
                         <div style="overflow-x:auto;margin-top:6px;">
                             <table style="width:100%;min-width:640px;font-size:12px;border-collapse:collapse;background:#fff;border-radius:6px;">
                                 <thead>${combinedHead}</thead>
@@ -10657,7 +10703,7 @@
                         </div>
                     </div>
                     <div>
-                        <strong style="color:#1e293b;font-size:14px;">3. Gráficas kg/ha por etapa</strong>
+                        <strong style="color:#1e293b;font-size:14px;">3. Gráficas de % de distribución</strong>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px;">
                             <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #bfdbfe;">
                                 <div style="font-size:13px;font-weight:600;color:#334155;margin-bottom:8px;">Macronutrientes</div>
@@ -11130,12 +11176,12 @@
                 '<select onchange="onAdminFertiChartStageSelect(\'' + safePid.replace(/'/g, "\\'") + '\', this.value)" style="flex:1;min-width:220px;max-width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;">' +
                 options +
                 '</select>' +
-                '<span style="font-size:12px;color:#64748b;">Lámina: <strong>' + (m3ha > 0 ? adminFertiNum(m3ha, 2) + ' m³/ha' : 'sin dato') + '</strong></span>' +
+                '<span style="font-size:12px;color:#64748b;">Lámina de riego: <strong>' + (m3ha > 0 ? adminFertiNum(m3ha, 2) + ' m<sup>3</sup>/ha' : 'sin dato') + '</strong></span>' +
                 '</div>';
             if (!summaryFert || m3ha <= 0) {
                 return head +
                     '<div style="padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;color:#92400e;font-size:12px;">' +
-                    'El usuario no capturó <strong>m³/ha</strong> de lámina en Gráficas para ' + escapeHtml(adminFertiStageSlotLabel(timeUnit, idx)) +
+                    'El usuario no capturó <strong>m³/ha</strong> de lámina en Dinámica Nutricional para ' + escapeHtml(adminFertiStageSlotLabel(timeUnit, idx)) +
                     '. Sin ese dato no se calculan ppm, meq/L ni %.</div>';
             }
             var stageName = escapeHtml(week.stage || week.label || 'Etapa');
@@ -11153,7 +11199,7 @@
                 adminRenderFertiMacroIonicTableHtml(summaryWithWater) +
                 '</div>' +
                 '</div>' +
-                '<div style="font-size:11px;color:#64748b;margin-top:10px;">Misma lógica que Gráficas del usuario. El aporte de agua viene del Programa de nutrición; si está en cero, ambas columnas coinciden.</div>' +
+                '<div style="font-size:11px;color:#64748b;margin-top:10px;">Misma lógica que Dinámica Nutricional del usuario. El aporte de agua viene del Programa de nutrición; si está en cero, ambas columnas coinciden.</div>' +
                 '</div>' +
                 '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">' +
                 '<div style="font-weight:600;color:#1d4ed8;margin-bottom:10px;">Micros · ' + slotLabel + ' (' + stageName + ')</div>' +
@@ -14517,6 +14563,7 @@
                                 </table>
                             </div>
                         </div>
+                        <div style="font-weight:700;color:#1e293b;font-size:16px;margin:4px 0 10px;">📈 Dinámica Nutricional</div>
                         <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
                             <div style="flex: 1; min-width: 320px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
                                 <div style="font-weight: 600; color: #1e293b; margin-bottom: 8px;">Macronutrientes</div>

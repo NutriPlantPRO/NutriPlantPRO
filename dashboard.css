@@ -8421,8 +8421,9 @@ html.embed-login body {
   padding: 0 8px 18px 0;
 }
 .ferti-dist-table {
-  width: max-content;
+  width: 100%;
   min-width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 12px;
   margin-bottom: 10px;
@@ -8436,13 +8437,17 @@ html.embed-login body {
 .ferti-dist-table th.ferti-dist-stage-head,
 .ferti-dist-table td.ferti-dist-stage-cell {
   text-align: left;
-  min-width: 168px;
+  width: 124px;
+  min-width: 108px;
+  max-width: 132px;
+  padding: 4px 5px;
 }
 .ferti-dist-table th.ferti-dist-period-head,
 .ferti-dist-table td.ferti-dist-period-cell {
   text-align: center;
-  min-width: 92px;
-  width: 92px;
+  width: 48px;
+  min-width: 44px;
+  max-width: 52px;
   font-weight: 700;
   color: #0f172a;
   background: #f8fafc;
@@ -8450,7 +8455,8 @@ html.embed-login body {
 .ferti-dist-stage-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
 }
 .ferti-dist-table thead th {
   background: #f1f5f9;
@@ -8473,9 +8479,6 @@ html.embed-login body {
 .ferti-dist-table thead th.ferti-dist-pct-head {
   color: var(--ferti-nut, #64748b);
 }
-.ferti-dist-table .ferti-dist-nut-start {
-  border-left: 2px solid var(--ferti-nut, #475569);
-}
 .ferti-dist-table tfoot th,
 .ferti-dist-table tfoot td {
   padding-top: 8px;
@@ -8487,7 +8490,7 @@ html.embed-login body {
 .ferti-dist-table input[type="text"],
 .ferti-dist-table select.ferti-dist-stage {
   width: 100%;
-  min-width: 64px;
+  min-width: 0;
   padding: 5px 6px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
@@ -8496,25 +8499,27 @@ html.embed-login body {
   background: #fff;
 }
 .ferti-dist-table td.ferti-dist-pct-cell {
-  width: 48px;
-  max-width: 52px;
-  padding: 4px;
+  width: auto;
+  min-width: 58px;
+  max-width: none;
+  padding: 4px 5px;
 }
 .ferti-dist-table input.ferti-dist-pct,
 .ferti-dist-table input[type="number"].ferti-dist-pct {
-  width: 46px;
-  min-width: 46px;
-  max-width: 46px;
-  padding: 4px 3px;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 5px 4px;
   text-align: center;
   color: var(--ferti-nut, #0f172a);
   font-weight: 700;
-  border-color: var(--ferti-nut, #cbd5e1);
 }
 .ferti-dist-table select.ferti-dist-stage {
-  min-width: 118px;
-  width: auto;
-  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  padding: 4px 4px;
 }
 .ferti-dist-table td.ferti-dist-kg-cell {
   width: 58px;
@@ -8571,6 +8576,11 @@ html.embed-login body {
   overflow-wrap: break-word;
 }
 .ferti-dist-water-head p { color: #64748b; font-size: 12px; line-height: 1.4; }
+.ferti-dist-water-head h4 sup {
+  font-size: 0.62em;
+  line-height: 0;
+  vertical-align: super;
+}
 .ferti-dist-water-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
@@ -8626,12 +8636,41 @@ html.embed-login body {
   background: #16a34a;
   color: #fff;
 }
+.ferti-dist-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .ferti-dist-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ferti-dist-chart-box {
+  background: #fff;
+  padding: 14px 12px 8px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ferti-dist-chart-box > h4 {
+  margin: 0 0 6px;
+  color: #374151;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+  flex: 0 0 auto;
+}
 .ferti-dist-chart {
   position: relative;
   width: 100%;
   max-width: 100%;
-  height: min(420px, 55vh);
-  min-height: 280px;
+  height: 300px;
+  min-height: 260px;
 }
 .ferti-dist-chart canvas {
   display: block;

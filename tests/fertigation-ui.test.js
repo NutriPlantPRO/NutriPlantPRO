@@ -76,7 +76,7 @@ module.exports = [
       assert.equal(ferti.t('macronutrients', 'Macronutrientes'), 'Macronutrients');
       assert.equal(ferti.t('week', 'Semana'), 'Week');
       assert.equal(ferti.t('stage_to_analyze', 'Etapa a analizar:'), 'Stage to analyze:');
-      assert.equal(ferti.t('lamina', 'Lámina:'), 'Irrigation depth:');
+      assert.equal(ferti.t('lamina', 'Lámina de riego:'), 'Irrigation depth:');
       assert.equal(ferti.t('macro_summary', 'Macro resumen'), 'Macro summary');
       assert.equal(ferti.t('base_fertilization_supply', 'Aporte de fertilización de base'), '🌱 Base fertilization supply');
       assert.equal(ferti.t('auto_button', 'Elaborar programa de fertirriego'), 'Build fertigation program');
