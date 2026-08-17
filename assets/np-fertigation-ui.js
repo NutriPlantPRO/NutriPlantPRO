@@ -60,13 +60,16 @@
     dist_catalog_hint: 'The catalog is yours (dashboard). It stores stages and %. Doses are recalculated in each project from its requirement.',
     dist_h2: '1. Distribution by stage (%)',
     dist_h2_hint: 'This table is the % of actual requirement by stage. Week or Month is the same period as the Program. Each nutrient sums to 100%.',
-    dist_pct_nudge: 'Arrows: 1% · Shift: 5% · Alt: 0.1%. Decimals can be typed.',
+    dist_pct_nudge: '− / + moves 1%. The bar sets the %. You can also type.',
+    dist_pct_minus: 'Down 1%',
+    dist_pct_plus: 'Up 1%',
+    dist_pct_bar: 'Set %',
     dist_assist_title: 'Support',
     dist_assist_btn: 'Support: starting % shape',
     dist_assist_in: 'Apply to',
     dist_suggest_btn: 'Suggest %',
     dist_suggest_title: 'Fills % from the stages you selected, aiming for an adequate solution in the N-P-S and K-Ca-Mg triangles.',
-    dist_suggest_hint: 'Adding or removing stages readjusts the % to the suggested curve. Suggest % restores that curve if you moved a value. If you edit a % and a program already exists with the same periods, those doses are rebalanced (no need to generate the proposal again). If you change a dose in the Program, the % here moves. Suggest % does not touch the program until you generate the automatic proposal. Arrows 1% · Shift 5% · Alt 0.1%.',
+    dist_suggest_hint: 'Adding or removing stages readjusts the % to the suggested curve. Suggest % restores that curve if you moved a value. If you edit a % and a program already exists with the same periods, those doses are rebalanced (no need to generate the proposal again). If you change a dose in the Program, the % here moves. Suggest % does not touch the program until you generate the automatic proposal. − / + moves 1%; the bar in each cell sets the %.',
     dist_suggest_done: 'Percentages filled from the stages, aiming for an adequate solution in the ternary triangles.',
     dist_suggest_out: 'Percentages filled from the stages. The cycle requirement is already outside the triangle ranges; review N-P-S or K-Ca-Mg.',
     dist_suggest_confirm: 'Replace the current % with the suggested curve from the selected stages? This does not change the program until you generate the automatic proposal.',
@@ -136,8 +139,11 @@
     auto_done_pending: 'Automatic proposal applied. Review deficits and ionic balance before using it.',
     auto_generated: 'Program generated from Objective Distribution',
     auto_stale: 'Program is outdated relative to Objective Distribution',
-    auto_pending_detail: 'Deficits: ',
-    auto_water_excess: 'Water supply exceeds the target in: ',
+    auto_pending_detail: 'Short: {list}',
+    auto_water_excess: 'Water exceeds target: {list}',
+    auto_period_one: 'period',
+    auto_period_many: 'periods',
+    auto_all_cycle: 'full cycle',
     auto_ionic_summary: 'Ionic balance by period',
     anions: 'anions',
     cations: 'cations',
@@ -534,6 +540,64 @@
     return '#64748b';
   }
 
+  function nutsFromDiagnostic(row, mode) {
+    if (mode === 'excess') {
+      var excess = row && row.excess && typeof row.excess === 'object' ? row.excess : {};
+      return Object.keys(excess).filter(function (key) {
+        return (Number(excess[key]) || 0) > 0.005;
+      });
+    }
+    return Array.isArray(row && row.unresolved) ? row.unresolved.filter(Boolean) : [];
+  }
+
+  function isMacroNutrient(nut) {
+    return ['N', 'P', 'P2O5', 'K', 'K2O', 'Ca', 'CaO', 'Mg', 'MgO', 'S', 'SO4', 'SO3'].indexOf(String(nut || '')) >= 0;
+  }
+
+  function formatNutrientPeriodEntry(nut, info, total) {
+    var periodWord = info.count === 1
+      ? t('auto_period_one', 'periodo')
+      : t('auto_period_many', 'periodos');
+    if (info.count === total && total > 1) {
+      return nut + ' · ' + t('auto_all_cycle', 'todo el ciclo') + ' (' + info.count + ' ' + periodWord + ')';
+    }
+    if (info.count === 1) return nut + ' (' + info.names[0] + ')';
+    var span = info.names.length === 1
+      ? info.names[0]
+      : info.names[0] + '–' + info.names[info.names.length - 1];
+    return nut + ' · ' + info.count + ' ' + periodWord + ' (' + span + ')';
+  }
+
+  function compactNutrientPeriodList(rows, mode) {
+    var list = Array.isArray(rows) ? rows : [];
+    var total = list.length;
+    var byNut = {};
+    var order = [];
+    list.forEach(function (row, i) {
+      nutsFromDiagnostic(row, mode).forEach(function (nut) {
+        if (!byNut[nut]) {
+          byNut[nut] = { count: 0, names: [] };
+          order.push(nut);
+        }
+        byNut[nut].count += 1;
+        var label = String(row && row.name != null ? row.name : '').trim() || String(i + 1);
+        label = stageName(label);
+        if (byNut[nut].names.indexOf(label) < 0) byNut[nut].names.push(label);
+      });
+    });
+    var macros = [];
+    var micros = [];
+    order.forEach(function (nut) {
+      var text = formatNutrientPeriodEntry(nut, byNut[nut], total);
+      if (isMacroNutrient(nut)) macros.push(text);
+      else micros.push(text);
+    });
+    var parts = [];
+    if (macros.length) parts.push(t('macros', 'Macros') + ': ' + macros.join(' · '));
+    if (micros.length) parts.push(t('micros', 'Micros') + ': ' + micros.join(' · '));
+    return parts.join('. ');
+  }
+
   function sourceSharePct(fertilizerKg, granularKg) {
     var f = Math.max(0, Number(fertilizerKg) || 0);
     var g = Math.max(0, Number(granularKg) || 0);
@@ -554,6 +618,7 @@
     adjustBlendToTarget:adjustBlendToTarget,
     aggregateGranularProgramContribution:aggregateGranularProgramContribution,
     sourceSharePct: sourceSharePct,
+    compactNutrientPeriodList: compactNutrientPeriodList,
     withLanguage: withLanguage,
     withUnitSystem: withUnitSystem,
     nutrientColor: nutrientColor

@@ -67,7 +67,7 @@ function fertProgMicroColors() {
 const FERT_SOLUBLES_DB = [
   // Nitrogenados
   { id: 'fosfonitrato_33_03_00', name: 'Fosfonitrato', N_NO3: 16.5, N_NH4: 16.5, P2O5: 3 },
-  { id: 'sulfonit_33_00_00_2s', name: 'Sulfonit 33-00-00 + 2S', N_NO3: 15.5, N_NH4: 17.5, S: 2 },
+  { id: 'sulfonit_33_00_00_2s', name: 'Sulfonit', N_NO3: 15.5, N_NH4: 17.5, S: 2 },
   { id: 'sulfato_amonio_soluble', name: 'Sulfato de Amonio Soluble', N_NO3: 0, N_NH4: 21, SO4: 72, S: 0 },
 
   // Fosfatos
@@ -1603,6 +1603,15 @@ function fertiApplyAutomaticProgram(prepared) {
   }
 }
 
+function fertiFormatAutoStatusList(diagnostics, mode, key, spanish) {
+  const ui = fertProgUI();
+  const list = ui && typeof ui.compactNutrientPeriodList === 'function'
+    ? ui.compactNutrientPeriodList(diagnostics, mode)
+    : '';
+  if (!list) return '';
+  return fertProgT(key, spanish).replace('{list}', list);
+}
+
 function fertiGenerationIsStale() {
   if (!fertiProgramGenerationMeta || !fertiProgramGenerationMeta.distributionFingerprint) return false;
   if (fertiProgramGenerationMeta.inputsChangedAfterGeneration === true) return true;
@@ -1646,8 +1655,8 @@ function renderFertiAutomaticProgramStatus() {
         : fertProgT('auto_generated', 'Programa generado desde Distribución objetivo'))}</strong>
       <span>${fertiEscapeAttr(fertiProgramGenerationMeta.generatedAt ? new Date(fertiProgramGenerationMeta.generatedAt).toLocaleString() : '')}</span>
     </div>
-    ${pending.length ? `<p>${fertiEscapeAttr(fertProgT('auto_pending_detail', 'Faltantes: ') + pending.map(d => `${d.name}: ${d.unresolved.join(', ')}`).join(' · '))}</p>` : ''}
-    ${excess.length ? `<p>${fertiEscapeAttr(fertProgT('auto_water_excess', 'El aporte del agua supera la meta en: ') + excess.map(d => `${d.name}: ${Object.keys(d.excess || {}).filter(key => (Number(d.excess[key]) || 0) > 0.005).join(', ')}`).join(' · '))}</p>` : ''}
+    ${pending.length ? `<p>${fertiEscapeAttr(fertiFormatAutoStatusList(diagnostics, 'unresolved', 'auto_pending_detail', 'Falta {list}'))}</p>` : ''}
+    ${excess.length ? `<p>${fertiEscapeAttr(fertiFormatAutoStatusList(diagnostics, 'excess', 'auto_water_excess', 'El agua supera la meta: {list}'))}</p>` : ''}
     ${ionic ? `<details><summary>${fertiEscapeAttr(fertProgT('auto_ionic_summary', 'Balance iónico por periodo'))}</summary><ul>${ionic}</ul></details>` : ''}`;
 }
 
@@ -1684,7 +1693,7 @@ function renderFertiWeeks() {
       ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0V11"></path></svg>'
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0"></path></svg>';
     return `
-          <th style="min-width:110px;width:110px;position:relative;">
+          <th class="ferti-fert-col-head">
             <button type="button" title="${lockTitle}" aria-label="${lockTitle}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
             <button title="Eliminar columna" class="ferti-col-remove-btn" onclick="removeFertiColumn('${c.id}')">✕</button>
             <div class="fert-col-title" title="${displayNamePlain}">${displayNameHtml}</div>

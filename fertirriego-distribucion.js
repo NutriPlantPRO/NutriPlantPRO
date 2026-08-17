@@ -546,7 +546,7 @@
           '<div class="ferti-dist-table-actions">' +
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
-            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. Flechas 1 % · Mayús 5 % · Alt 0.1 %.')) + '</p>' +
+            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. − / + mueve 1 %; la barrita de cada celda ajusta el %.')) + '</p>' +
           '</div>' +
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
@@ -671,7 +671,18 @@
     var body = '<tbody>' + stages.map(function (st, ri) {
       var cells = NUTS.map(function (n) {
         var v = pct[n.id] && pct[n.id][ri] != null ? pct[n.id][ri] : 0;
-        return '<td class="ferti-dist-pct-cell ferti-dist-nut-start" ' + nutCss(n) + '><input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="any" min="0" max="100" inputmode="decimal" title="' + escapeHtml(t('dist_pct_nudge', 'Flechas: 1% · Mayús: 5% · Alt: 0.1%. También puedes escribir decimales.')) + '"></td>';
+        var barW = Math.max(0, Math.min(100, Number(v) || 0));
+        var nudgeTitle = escapeHtml(t('dist_pct_nudge', '− / + mueve 1 %. La barrita ajusta el %. También puedes escribir.'));
+        return '<td class="ferti-dist-pct-cell ferti-dist-nut-start" ' + nutCss(n) + '>' +
+          '<div class="ferti-dist-pct-wrap">' +
+            '<button type="button" class="ferti-dist-pct-btn" data-dir="-1" tabindex="-1" aria-label="' + escapeHtml(t('dist_pct_minus', 'Bajar 1 %')) + '">−</button>' +
+            '<input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="any" min="0" max="100" inputmode="decimal" title="' + nudgeTitle + '">' +
+            '<button type="button" class="ferti-dist-pct-btn" data-dir="1" tabindex="-1" aria-label="' + escapeHtml(t('dist_pct_plus', 'Subir 1 %')) + '">+</button>' +
+            '<div class="ferti-dist-pct-bar" role="slider" tabindex="-1" aria-label="' + escapeHtml(t('dist_pct_bar', 'Ajustar %')) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + barW + '">' +
+              '<span class="ferti-dist-pct-bar-fill" style="width:' + barW + '%"></span>' +
+            '</div>' +
+          '</div>' +
+        '</td>';
       }).join('');
       return '<tr>' + stageCellHtml(st, ri) + periodCellHtml(ri) + cells + '</tr>';
     }).join('') + '</tbody>';
@@ -933,6 +944,7 @@
       var id = inputs[i].getAttribute('data-id');
       var ri = parseInt(inputs[i].getAttribute('data-ri'), 10);
       if (pct[id] && pct[id][ri] != null) inputs[i].value = pct[id][ri];
+      syncPctBar(inputs[i]);
     }
     refreshKgCells();
     refreshPctSums();
@@ -1000,7 +1012,30 @@
     refreshPctSums();
     refreshKgCells();
     scheduleProgramPush(id);
+    syncPctBar(el);
     return true;
+  }
+
+  function syncPctBar(input) {
+    if (!input || !input.closest) return;
+    var wrap = input.closest('.ferti-dist-pct-wrap');
+    var fill = wrap && wrap.querySelector('.ferti-dist-pct-bar-fill');
+    if (!fill) return;
+    var v = parseFloat(input.value);
+    if (!isFinite(v)) v = 0;
+    v = Math.max(0, Math.min(100, v));
+    fill.style.width = v + '%';
+    var bar = wrap.querySelector('.ferti-dist-pct-bar');
+    if (bar) {
+      bar.setAttribute('aria-valuenow', String(v));
+      bar.setAttribute('aria-valuetext', v + '%');
+    }
+  }
+
+  function pctFromBarEvent(bar, ev) {
+    var rect = bar.getBoundingClientRect();
+    var x = (ev.clientX - rect.left) / Math.max(1, rect.width);
+    return round1(Math.max(0, Math.min(100, x * 100)));
   }
 
   function pctNudgeDelta(ev) {
@@ -1160,6 +1195,36 @@
           copyPctToOthers();
           return;
         }
+        var pctBtn = ev.target.closest && ev.target.closest('.ferti-dist-pct-btn');
+        if (pctBtn) {
+          ev.preventDefault();
+          var wrap = pctBtn.closest('.ferti-dist-pct-wrap');
+          var input = wrap && wrap.querySelector('.ferti-dist-pct');
+          if (!input) return;
+          var dir = Number(pctBtn.getAttribute('data-dir')) || 0;
+          nudgePctInput(input, dir, 1);
+          input.focus();
+          return;
+        }
+      });
+      host.addEventListener('pointerdown', function (ev) {
+        var bar = ev.target.closest && ev.target.closest('.ferti-dist-pct-bar');
+        if (!bar || !host.contains(bar)) return;
+        ev.preventDefault();
+        var wrap = bar.closest('.ferti-dist-pct-wrap');
+        var input = wrap && wrap.querySelector('.ferti-dist-pct');
+        if (!input) return;
+        function move(e) {
+          input.value = String(pctFromBarEvent(bar, e));
+          applyPctFromTableInput(input);
+        }
+        move(ev);
+        function up() {
+          document.removeEventListener('pointermove', move);
+          document.removeEventListener('pointerup', up);
+        }
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', up);
       });
     }
 

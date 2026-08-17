@@ -92,6 +92,9 @@ module.exports = [
       assert.equal(ferti.t('ternary_drag_hint', 'Arrastra el cuadrado amarillo'), 'Drag the yellow square (anions) or the red circle (cations): fertilizer doses of this stage update, then % meq, meq/L, ppm and EC.');
       assert.equal(ferti.t('adjust_ternary', '✋ Ajustar en triángulo'), '✋ Adjust on triangle');
       assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '2. Target irrigation depth by stage');
+      assert.equal(ferti.t('dist_pct_nudge', '− / + mueve 1 %'), '− / + moves 1%. The bar sets the %. You can also type.');
+      assert.equal(ferti.t('auto_pending_detail', 'Falta {list}'), 'Short: {list}');
+      assert.equal(ferti.t('auto_all_cycle', 'todo el ciclo'), 'full cycle');
     }
   },
   {
@@ -163,6 +166,60 @@ module.exports = [
       assert.deepEqual(ferti.sourceSharePct(0, 12), { ferti: 0, granular: 100 });
       var split = ferti.sourceSharePct(1, 2);
       close(split.ferti + split.granular, 100, 1e-9);
+    }
+  },
+  {
+    name: 'fertirriego: recuadro de propuesta agrupa faltantes por nutriente',
+    run: function () {
+      prefs.language = 'es';
+      var allMg = [
+        { name: 'Prefloración', unresolved: ['MgO'] },
+        { name: 'Floración', unresolved: ['MgO'] },
+        { name: 'Amarre', unresolved: ['MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] }
+      ];
+      assert.equal(ferti.compactNutrientPeriodList(allMg, 'unresolved'), 'Macros: MgO · todo el ciclo (8 periodos)');
+      prefs.language = 'en';
+      assert.equal(ferti.compactNutrientPeriodList(allMg, 'unresolved'), 'Macros: MgO · full cycle (8 periods)');
+      prefs.language = 'es';
+      var mixed = [
+        { name: 'Prefloración', unresolved: [] },
+        { name: 'Floración', unresolved: ['N'] },
+        { name: 'Amarre', unresolved: ['N', 'MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] },
+        { name: 'Llenado', unresolved: ['MgO'] }
+      ];
+      assert.equal(
+        ferti.compactNutrientPeriodList(mixed, 'unresolved'),
+        'Macros: N · 2 periodos (Floración–Amarre) · MgO · 3 periodos (Amarre–Llenado)'
+      );
+      assert.equal(
+        ferti.compactNutrientPeriodList([{ name: 'Floración', unresolved: ['K2O'] }, { name: 'Amarre', unresolved: [] }], 'unresolved'),
+        'Macros: K2O (Floración)'
+      );
+      assert.equal(
+        ferti.compactNutrientPeriodList(
+          [
+            { name: 'Prefloración', unresolved: ['MgO', 'Fe'] },
+            { name: 'Floración', unresolved: ['MgO', 'Zn'] }
+          ],
+          'unresolved'
+        ),
+        'Macros: MgO · todo el ciclo (2 periodos). Micros: Fe (Prefloración) · Zn (Floración)'
+      );
+      assert.equal(
+        ferti.compactNutrientPeriodList(
+          [{ name: 'Prefloración', excess: { CaO: 0.1 } }, { name: 'Floración', excess: { CaO: 0.2 } }],
+          'excess'
+        ),
+        'Macros: CaO · todo el ciclo (2 periodos)'
+      );
+      prefs.language = 'en';
+      prefs.unit_system = 'us_customary';
     }
   }
 ];
