@@ -151,16 +151,16 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **Distribución objetivo (UI, bajo Requerimiento):** título **Distribución objetivo [proyecto]**. Totales (chips) = Requerimiento real. **La tabla del editor muestra solo %** (no kg/ha): el requerimiento, el aporte de agua y el granular ya se ven en Requerimiento/Programa; las dosis se calculan al **Elaborar programa**. Periodo Semana o Mes (mismo eje que Programa). Cada fila = fenología + número. **Sugerir %** (junto a + Agregar semana/mes y primer ítem del ▾; solo dashboard) coloca % según etapas elegidas y busca zona Steiner en triángulos N-P-S y K-Ca-Mg. Si el ciclo ya sale de zona, avisa. ▾ también: más→menos, menos→más, campana, uniforme, cerrar 100 %, copiar %. Suma 100 % por nutriente. Lámina de riego objetivo por etapa se captura debajo (no en Gráficas). Catálogo 📊 (etapas/%; no kg). PDF/admin pueden listar kg al reportar el programa.
 
-**Sugerir % · perfiles objetivo de solución (meq % del triángulo, dentro de Steiner).** El suscriptor pone las etapas que quiera (no son 9 fijas). Cada fila usa el perfil de esa fenología; si la misma etapa se repite (p. ej. 4 Llenado), I y meq se rampan hacia la siguiente (curva tipo extracción, no bloque). Aniones N-NO₃ / P-H₂PO₄ / S-SO₄ = 100. Cationes K / Ca / Mg = 100. El % de Dist suma 100 % del **requerimiento real** de cada nutriente (**N, P, K, Ca, Mg y S no copian el mismo %**: cada uno sigue la tabla meq). **Zn y B** van altos en brotación–establecimiento–preflor–flor–amarre y bajan un poco en llenado (como el P); Fe, Mn, Cu, Mo y Si siguen el tamaño de la etapa. Mg = 20 en brotación→amarre; K sube desde vegetativo/flor; Ca baja despacio. Si el ciclo ya sale de zona, igual pinta la curva meq y avisa; no aplana a la misma solución en todos los meses.
+**Sugerir % · perfiles objetivo de solución (meq % del triángulo, dentro de Steiner).** El suscriptor pone las etapas que quiera (no son 9 fijas). Cada fila usa el perfil de esa fenología; si la misma etapa se repite (p. ej. 4 Llenado), I y meq se rampan hacia la siguiente (curva tipo extracción, no bloque). Aniones N-NO₃ / P-H₂PO₄ / S-SO₄ = 100. Cationes K / Ca / Mg = 100. El % de Dist suma 100 % del **requerimiento real** de cada nutriente (**N, P, K, Ca, Mg y S no copian el mismo %**: cada uno sigue la tabla meq). **Zn y B** van altos en brotación–establecimiento–preflor–flor–amarre y bajan un poco en llenado (como el P); Fe, Mn, Cu, Mo y Si siguen el tamaño de la etapa. La intensidad (I) sube en rampa suave: vegetativo 14 → preflor 15 → flor 16 → amarre 17 → llenado 18 (no hay bajón vegetativo→flor). K y Ca se sostienen (Ca ~50 hasta preflor/flor; K alza ligera); Mg cede un poco en flor para darles sitio y recupera en llenado. Si el ciclo ya sale de zona, igual pinta la curva meq y avisa; no aplana a la misma solución en todos los meses.
 
 | Etapa | I | N | P | S | K | Ca | Mg |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Brotación | 8 | 48 | 8 | 44 | 28 | 52 | 20 |
-| Establecimiento | 10 | 50 | 8 | 42 | 28 | 52 | 20 |
-| Vegetativo | 14 | 60 | 6 | 34 | 32 | 48 | 20 |
-| Prefloración | 10 | 55 | 7 | 38 | 30 | 50 | 20 |
-| Floración | 12 | 52 | 6 | 42 | 32 | 48 | 20 |
-| Amarre | 14 | 50 | 5 | 45 | 34 | 46 | 20 |
+| Establecimiento | 11 | 50 | 8 | 42 | 30 | 52 | 18 |
+| Vegetativo | 14 | 60 | 6 | 34 | 32 | 50 | 18 |
+| Prefloración | 15 | 55 | 7 | 38 | 34 | 50 | 16 |
+| Floración | 16 | 52 | 6 | 42 | 36 | 49 | 15 |
+| Amarre | 17 | 50 | 5 | 45 | 38 | 47 | 15 |
 | Llenado | 18 | 46 | 4 | 50 | 44 | 39 | 17 |
 | Maduración | 14 | 40 | 4 | 56 | 52 | 32 | 16 |
 | Cosecha | 10 | 34 | 4 | 62 | 50 | 32 | 18 |

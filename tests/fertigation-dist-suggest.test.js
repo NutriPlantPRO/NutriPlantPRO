@@ -66,15 +66,24 @@ module.exports = [
     }
   },
   {
-    name: 'sugerir %: preflor flor y amarre dejan Mg en 20 y K sube despacio',
+    name: 'sugerir %: vegetativo→preflor al alza; K y Ca se sostienen hasta flor',
     run: function () {
-      ['Prefloración', 'Floración', 'Amarre'].forEach(function (name) {
-        var p = suggest.profileFor(name);
-        assert.equal(p.cat.mg, 20);
+      var veg = suggest.profileFor('Vegetativo');
+      var pre = suggest.profileFor('Prefloración');
+      var flor = suggest.profileFor('Floración');
+      var amarre = suggest.profileFor('Amarre');
+      [veg, pre, flor, amarre].forEach(function (p) {
         assert.equal(p.cat.k + p.cat.ca + p.cat.mg, 100);
       });
-      assert.ok(suggest.profileFor('Amarre').cat.k > suggest.profileFor('Prefloración').cat.k);
-      assert.ok(suggest.profileFor('Amarre').cat.ca <= suggest.profileFor('Prefloración').cat.ca);
+      assert.ok(pre.I > veg.I, 'I preflor > vegetativo');
+      assert.ok(flor.I >= pre.I, 'I flor ≥ preflor');
+      assert.ok(pre.cat.k >= veg.cat.k, 'K % no baja en preflor');
+      assert.ok(flor.cat.k >= pre.cat.k, 'K % sigue alza en flor');
+      assert.ok(pre.cat.ca >= veg.cat.ca, 'Ca se mantiene a preflor');
+      assert.ok(flor.cat.ca >= veg.cat.ca - 2, 'Ca no se corta en flor');
+      assert.ok(pre.I * pre.cat.k > veg.I * veg.cat.k);
+      assert.ok(pre.I * pre.cat.ca > veg.I * veg.cat.ca);
+      assert.ok(amarre.cat.k > pre.cat.k);
     }
   },
   {

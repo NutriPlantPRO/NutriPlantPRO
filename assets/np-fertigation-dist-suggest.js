@@ -39,11 +39,11 @@
   };
   var STAGE_PROFILES = {
     brotacion: { I: 8, an: { n: 48, p: 8, s: 44 }, cat: { k: 28, ca: 52, mg: 20 }, zn: 18, b: 14 },
-    establecimiento: { I: 10, an: { n: 50, p: 8, s: 42 }, cat: { k: 28, ca: 52, mg: 20 }, zn: 16, b: 14 },
-    vegetativo: { I: 14, an: { n: 60, p: 6, s: 34 }, cat: { k: 32, ca: 48, mg: 20 }, zn: 12, b: 10 },
-    prefloracion: { I: 10, an: { n: 55, p: 7, s: 38 }, cat: { k: 30, ca: 50, mg: 20 }, zn: 16, b: 18 },
-    floracion: { I: 12, an: { n: 52, p: 6, s: 42 }, cat: { k: 32, ca: 48, mg: 20 }, zn: 16, b: 20 },
-    amarre: { I: 14, an: { n: 50, p: 5, s: 45 }, cat: { k: 34, ca: 46, mg: 20 }, zn: 15, b: 18 },
+    establecimiento: { I: 11, an: { n: 50, p: 8, s: 42 }, cat: { k: 30, ca: 52, mg: 18 }, zn: 16, b: 14 },
+    vegetativo: { I: 14, an: { n: 60, p: 6, s: 34 }, cat: { k: 32, ca: 50, mg: 18 }, zn: 12, b: 10 },
+    prefloracion: { I: 15, an: { n: 55, p: 7, s: 38 }, cat: { k: 34, ca: 50, mg: 16 }, zn: 16, b: 18 },
+    floracion: { I: 16, an: { n: 52, p: 6, s: 42 }, cat: { k: 36, ca: 49, mg: 15 }, zn: 16, b: 20 },
+    amarre: { I: 17, an: { n: 50, p: 5, s: 45 }, cat: { k: 38, ca: 47, mg: 15 }, zn: 15, b: 18 },
     llenado: { I: 18, an: { n: 46, p: 4, s: 50 }, cat: { k: 44, ca: 39, mg: 17 }, zn: 10, b: 10 },
     maduracion: { I: 14, an: { n: 40, p: 4, s: 56 }, cat: { k: 52, ca: 32, mg: 16 }, zn: 8, b: 7 },
     cosecha: { I: 10, an: { n: 34, p: 4, s: 62 }, cat: { k: 50, ca: 32, mg: 18 }, zn: 7, b: 6 }

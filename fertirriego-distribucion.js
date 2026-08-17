@@ -559,14 +559,16 @@
           '<div id="fertiDistChartsGrid" class="ferti-dist-charts-grid">' +
             '<div class="ferti-dist-chart-box">' +
               '<h4 id="fertiDistMacroTitle">' + escapeHtml(t('macronutrients', 'Macronutrientes')) + '</h4>' +
+              '<div id="fertiDistMacroLegend" class="ferti-dist-chart-legend" role="group" aria-label="' + escapeHtml(t('macronutrients', 'Macronutrientes')) + '"></div>' +
               '<div id="fertiDistChartWrapMacro" class="ferti-dist-chart"><canvas id="fertiDistChartMacro"></canvas></div>' +
             '</div>' +
             '<div class="ferti-dist-chart-box">' +
               '<h4 id="fertiDistMicroTitle">' + escapeHtml(t('micronutrients', 'Micronutrientes')) + '</h4>' +
+              '<div id="fertiDistMicroLegend" class="ferti-dist-chart-legend" role="group" aria-label="' + escapeHtml(t('micronutrients', 'Micronutrientes')) + '"></div>' +
               '<div id="fertiDistChartWrapMicro" class="ferti-dist-chart"><canvas id="fertiDistChartMicro"></canvas></div>' +
             '</div>' +
           '</div>' +
-          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Arrastra un punto o edita la tabla de %. Toca una curva o su nombre para verla sola. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.')) + '</p>' +
+          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Toca el nombre de un nutriente para ver solo esa curva en esa gráfica. Toca otra vez o el fondo para ver todas. Arrastra un punto o edita la tabla de %. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.')) + '</p>' +
         '</div>' +
       '</div>' +
       '<div class="ferti-dist-nut-menu" id="fertiDistNutMenu" hidden role="menu">' +
@@ -1059,13 +1061,16 @@
   function chartForNut(nutId) {
     return MACRO[nutId] ? chartMacro : chartMicro;
   }
-  function visiblePctMax(group) {
-    var max = 0;
+  function visibleNutsForGroup(group) {
     var nuts = nutsForGroup(group);
     if (chartFocusId && ((group === 'macro') === !!MACRO[chartFocusId])) {
-      nuts = nuts.filter(function (n) { return n.id === chartFocusId; });
+      return nuts.filter(function (n) { return n.id === chartFocusId; });
     }
-    nuts.forEach(function (n) {
+    return nuts;
+  }
+  function visiblePctMax(group) {
+    var max = 0;
+    visibleNutsForGroup(group).forEach(function (n) {
       stages.forEach(function (_, ri) {
         var v = pctAt(n.id, ri);
         if (v > max) max = v;
@@ -1110,12 +1115,22 @@
   function nutCss(n) {
     return 'style="--ferti-nut:' + colorForNut(n && n.id) + '"';
   }
-  function hexToRgba(hex, a) {
-    var h = String(hex || '').replace('#', '');
-    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
-    var n = parseInt(h, 16);
-    if (!isFinite(n)) return 'rgba(37,99,235,' + a + ')';
-    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  function paintChartLegends() {
+    function fill(elId, group) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      var focusHere = chartFocusId && ((group === 'macro') === !!MACRO[chartFocusId]);
+      el.innerHTML = nutsForGroup(group).map(function (n) {
+        var on = chartFocusId === n.id;
+        var dim = focusHere && !on;
+        return '<button type="button" class="ferti-dist-chart-leg' + (on ? ' is-on' : '') + (dim ? ' is-dim' : '') +
+          '" data-nut="' + n.id + '" style="--ferti-nut:' + colorForNut(n.id) + '"' +
+          (on ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' +
+          escapeHtml(nutLabel(n)) + '</button>';
+      }).join('');
+    }
+    fill('fertiDistMacroLegend', 'macro');
+    fill('fertiDistMicroLegend', 'micro');
   }
   function applyChartTitles() {
     var macroTitle = document.getElementById('fertiDistMacroTitle');
@@ -1176,13 +1191,18 @@
   function setChartFocus(id) {
     var next = id && nutFromId(id) ? id : null;
     chartFocusId = next;
-    applyDatasetFocusStyles();
     applyChartTitles();
-    chartList().forEach(function (ch) {
-      var group = ch === chartMacro ? 'macro' : 'micro';
-      applyChartYScale(ch, group, false);
-      try { ch.update('none'); } catch (e) { try { ch.update(); } catch (e2) {} }
-    });
+    paintChartLegends();
+    if (chartDrag) {
+      applyDatasetFocusStyles();
+      chartList().forEach(function (ch) {
+        var group = ch === chartMacro ? 'macro' : 'micro';
+        applyChartYScale(ch, group, false);
+        try { ch.update('none'); } catch (e) { try { ch.update(); } catch (e2) {} }
+      });
+    } else {
+      renderChart();
+    }
     setChartHint('');
   }
   function defaultChartHint() {
@@ -1300,7 +1320,7 @@
     }
     if (chartFocusId) {
       var n = nutFromId(chartFocusId);
-      el.textContent = (n ? nutLabel(n) : '') + ' — ' + t('dist_chart_focus', 'Solo esta curva. Arrastra sus puntos; toca su nombre o el fondo de la gráfica para ver todas.');
+      el.textContent = (n ? nutLabel(n) : '') + ' — ' + t('dist_chart_focus', 'Solo esta curva en esta gráfica. Toca su nombre o el fondo para ver todas.');
       return;
     }
     el.textContent = defaultChartHint();
@@ -1449,7 +1469,6 @@
         var dy = event.clientY - chartDrag.y;
         if ((dx * dx) + (dy * dy) < 16) return;
         chartDrag.moved = true;
-        if (chartFocusId !== chartDrag.nutId) setChartFocus(chartDrag.nutId);
       }
       var displayed = pctFromCanvasY(canvas, event);
       applyChartDragValue(chartDrag.nutId, chartDrag.ri, displayed);
@@ -1537,7 +1556,7 @@
     observer.observe(wrap);
   }
   function buildDistDatasets(group) {
-    var filtered = nutsForGroup(group);
+    var filtered = visibleNutsForGroup(group);
     return filtered.map(function (n, di) {
       var color = colorForNut(n.id);
       var dodge = seriesDodge(di, filtered.length);
@@ -1577,38 +1596,7 @@
       },
       plugins: {
         legend: {
-          position: 'top',
-          labels: {
-            boxWidth: 10,
-            boxHeight: 10,
-            padding: 10,
-            usePointStyle: true,
-            pointStyleWidth: 10,
-            font: { size: 11, weight: '600' },
-            generateLabels: function (chart) {
-              var items = w.Chart.defaults.plugins.legend.labels.generateLabels(chart);
-              var focusIsMacro = chartFocusId ? !!MACRO[chartFocusId] : null;
-              items.forEach(function (item) {
-                var row = chart.data.datasets[item.datasetIndex];
-                if (!row) return;
-                var color = colorForNut(row._nutId);
-                var dim = !!(chartFocusId && focusIsMacro === !!MACRO[row._nutId] && row._nutId !== chartFocusId);
-                item.fillStyle = dim ? hexToRgba(color, 0.35) : color;
-                item.strokeStyle = dim ? hexToRgba(color, 0.35) : color;
-                item.lineWidth = row._nutId === chartFocusId ? 2.4 : 1.6;
-                item.hidden = false;
-                item.pointStyle = POINT_STYLES[row._nutId] || 'circle';
-                item.fontColor = dim ? '#94a3b8' : color;
-              });
-              return items;
-            }
-          },
-          onClick: function (evt, item, legend) {
-            var row = legend.chart.data.datasets[item.datasetIndex];
-            if (!row || !row._nutId) return;
-            if (evt && evt.native && evt.native.stopPropagation) evt.native.stopPropagation();
-            setChartFocus(chartFocusId === row._nutId ? null : row._nutId);
-          }
+          display: false
         },
         tooltip: {
           callbacks: {
@@ -1697,6 +1685,7 @@
       if (chartDrag) return;
       var labels = stages.map(function (st, i) { return rowDisplayLabel(st, i); });
       applyChartTitles();
+      paintChartLegends();
       chartMacro = destroyDistChart(chartMacro);
       chartMicro = destroyDistChart(chartMicro);
       chartMacro = createDistChart(document.getElementById('fertiDistChartMacro'), 'macro', labels);
@@ -1791,6 +1780,12 @@
         }
       });
       host.addEventListener('click', function (ev) {
+        var legendBtn = ev.target.closest && ev.target.closest('.ferti-dist-chart-leg');
+        if (legendBtn && host.contains(legendBtn)) {
+          var nutId = legendBtn.getAttribute('data-nut');
+          setChartFocus(chartFocusId === nutId ? null : nutId);
+          return;
+        }
         var axisBtn = ev.target.closest && ev.target.closest('[data-axis]');
         if (axisBtn && axisBtn.closest('.ferti-dist-axis')) {
           setAxis(axisBtn.getAttribute('data-axis'));
