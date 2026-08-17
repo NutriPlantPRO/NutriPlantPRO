@@ -1607,6 +1607,12 @@ function hydroDrawCombinedTernary(container, data) {
     `<text class="notranslate" translate="no" x="${bC.x}" y="${bC.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>`;
 
   /* SVG + texto: envolver en notranslate (Chrome Translate suele borrar o romper <text> en SVG) */
+  const hint = (data && Object.prototype.hasOwnProperty.call(data, 'dragHint'))
+    ? (data.dragHint || '')
+    : hydroT('Arrastra el cuadrado amarillo (aniones) o el círculo rojo (cationes): se actualizan % meq, meq/L, ppm y CE.', 'Drag the yellow square (anions) or the red circle (cations): % meq, meq/L, ppm, and EC update.');
+  const hintHtml = hint
+    ? `<p class="hydro-tern-drag-hint">${hint}</p>`
+    : '';
   container.innerHTML = `
     <div class="hydro-ternary-svg-wrap notranslate" translate="no">
     <svg xmlns="http://www.w3.org/2000/svg" class="notranslate hydro-ternary-chart-svg" translate="no" viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="xMidYMid meet" style="background:#fff;border-radius:8px;overflow:visible;display:block;max-width:100%;">
@@ -1620,8 +1626,10 @@ function hydroDrawCombinedTernary(container, data) {
       ${edgeLabels}
     </svg>
     </div>
-    <p class="hydro-tern-drag-hint">${hydroT('Arrastra el cuadrado amarillo (aniones) o el círculo rojo (cationes): se actualizan % meq, meq/L, ppm y CE.', 'Drag the yellow square (anions) or the red circle (cations): % meq, meq/L, ppm, and EC update.')}</p>
+    ${hintHtml}
   `;
+  container._ternGeom = hydroTernGeom;
+  if (data && data.bindHydroDrag === false) return;
   setupHydroTernaryDrag();
 }
 

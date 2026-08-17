@@ -257,6 +257,7 @@ let fertiChartLockedColumnIds = [];
 let fertiChartUndoSnapshot = null;
 let fertiChartEditBaseline = null;
 let fertiActiveChartDrag = null;
+let fertiTernDrag = null;
 let fertiProgramGenerationMeta = null;
 let fertiProgramGenerationDiagnostics = null;
 
@@ -2610,33 +2611,41 @@ function updateFertiChartEditControls() {
     wrap.classList.toggle('is-chart-editing', fertiChartEditMode);
     if (!fertiChartEditMode) wrap.classList.remove('is-chart-dragging');
   }
-  const toggleBtn = document.getElementById('toggleFertiChartEditBtn');
-  if (toggleBtn) {
-    toggleBtn.textContent = fertiChartEditMode
-      ? fertProgT('finish_chart_adjustment', '✓ Terminar ajuste')
-      : fertProgT('adjust_chart', '✋ Ajustar en gráfica');
-    toggleBtn.classList.toggle('btn-primary', fertiChartEditMode);
-    toggleBtn.classList.toggle('btn-secondary', !fertiChartEditMode);
+  const plot = document.getElementById('fertiChartsTernaryPlot');
+  if (plot) plot.classList.toggle('is-ternary-editable', !!fertiChartEditMode);
+  const hint = document.querySelector('#fertiChartsTernaryPlot .hydro-tern-drag-hint');
+  if (hint) {
+    hint.textContent = fertiChartEditMode
+      ? fertProgT('ternary_drag_hint', 'Arrastra el cuadrado amarillo (aniones) o el círculo rojo (cationes): se actualizan las dosis de fertilizante de esta etapa, luego % meq, meq/L, ppm y CE.')
+      : fertProgT('ternary_edit_help', 'Pulsa «Ajustar en triángulo» para arrastrar el cuadrado o el círculo y rebalancear las dosis de esta etapa.');
   }
-  const undoBtn = document.getElementById('undoFertiChartAdjustmentBtn');
-  if (undoBtn) {
-    const canUndo = !!fertiChartUndoSnapshot;
+  document.querySelectorAll('[data-ferti-chart-edit="toggle"]').forEach((btn) => {
+    const ternary = btn.getAttribute('data-ferti-edit-surface') === 'ternary';
+    btn.textContent = fertiChartEditMode
+      ? fertProgT('finish_chart_adjustment', '✓ Terminar ajuste')
+      : (ternary
+        ? fertProgT('adjust_ternary', '✋ Ajustar en triángulo')
+        : fertProgT('adjust_chart', '✋ Ajustar en gráfica'));
+    btn.classList.toggle('btn-primary', fertiChartEditMode);
+    btn.classList.toggle('btn-secondary', !fertiChartEditMode);
+  });
+  const canUndo = !!fertiChartUndoSnapshot;
+  document.querySelectorAll('[data-ferti-chart-edit="undo"]').forEach((undoBtn) => {
     undoBtn.textContent = fertProgT('undo', '↶ Deshacer');
     undoBtn.disabled = !canUndo;
     undoBtn.hidden = !canUndo;
     undoBtn.style.display = canUndo ? '' : 'none';
-  }
-  const restoreBtn = document.getElementById('restoreFertiChartBaselineBtn');
-  if (restoreBtn) {
-    const canRestore = !!(fertiChartEditMode && fertiChartEditBaseline && fertiChartUndoSnapshot);
+  });
+  const canRestore = !!(fertiChartEditMode && fertiChartEditBaseline && fertiChartUndoSnapshot);
+  document.querySelectorAll('[data-ferti-chart-edit="restore"]').forEach((restoreBtn) => {
     restoreBtn.textContent = fertProgT('restore_original', 'Restaurar original');
     restoreBtn.disabled = !canRestore;
     restoreBtn.hidden = !canRestore;
     restoreBtn.style.display = canRestore ? '' : 'none';
-  }
+  });
   if (fertiChartEditMode) {
     fertiSetChartEditNotice(
-      fertProgT('chart_drag_help', 'Arrastra un punto. Se recalcularán los fertilizantes, aportes, ppm, meq/L y relaciones. Usa 🔒 en la tabla para inmovilizar un fertilizante.')
+      fertProgT('chart_drag_help', 'Arrastra un punto de la curva o el cuadrado/círculo del triángulo. Se recalcularán los fertilizantes, aportes, ppm, meq/L y relaciones. Usa 🔒 en la tabla para inmovilizar un fertilizante.')
     );
   } else {
     fertiSetChartEditNotice('');
@@ -2646,6 +2655,7 @@ function updateFertiChartEditControls() {
 function toggleFertiChartEditMode() {
   fertiChartEditMode = !fertiChartEditMode;
   fertiActiveChartDrag = null;
+  fertiTernDrag = null;
   if (fertiChartEditMode) fertiChartEditBaseline = fertiCaptureDoseSnapshot();
   updateFertiChartEditControls();
 }
@@ -3316,8 +3326,229 @@ function renderFertiChartsSourceShare() {
     '</table></div>';
 }
 
+function fertiMeqToElementalKg(meq, ionKey, m3ha) {
+  const eq = FERTI_ION_EQ_WEIGHTS[ionKey];
+  if (!(eq > 0) || !(m3ha > 0)) return 0;
+  return (meq * eq * m3ha) / 1000;
+}
+
+function fertiRestoreStageDoseAmounts(stageIndex, amounts) {
+  const week = fertiWeeks[stageIndex];
+  if (!week || !Array.isArray(amounts)) return;
+  if (!week.kgByCol) week.kgByCol = {};
+  fertiColumns.forEach((c, idx) => {
+    week.kgByCol[c.id] = Math.max(0, parseFloat(amounts[idx]) || 0);
+  });
+  computeWeekTotals(week);
+}
+
+function fertiTernaryCanonicalFromPct(role, pTop, pLeft, pRight, sumMeq, waterKg, m3ha) {
+  let pa = Math.max(0, Number(pTop) || 0);
+  let pb = Math.max(0, Number(pLeft) || 0);
+  let pc = Math.max(0, Number(pRight) || 0);
+  const s = pa + pb + pc;
+  if (s > 0) { pa = (pa / s) * 100; pb = (pb / s) * 100; pc = (pc / s) * 100; }
+  const toCanonical = {
+    N_NO3: (kg) => kg,
+    P: (kg) => kg * FERTI_CONV.P2O5_TO_P,
+    SO4: (kg) => kg * FERTI_CONV.SO4_TO_S,
+    K: (kg) => kg * FERTI_CONV.K2O_TO_K,
+    Ca: (kg) => kg * FERTI_CONV.CaO_TO_Ca,
+    Mg: (kg) => kg * FERTI_CONV.MgO_TO_Mg
+  };
+  const specs = role === 'an'
+    ? [
+        { ion: 'N_NO3', pct: pa, programKey: 'N_NO3' },
+        { ion: 'P', pct: pb, programKey: 'P2O5' },
+        { ion: 'SO4', pct: pc, programKey: 'SO4' }
+      ]
+    : [
+        { ion: 'K', pct: pa, programKey: 'K2O' },
+        { ion: 'Ca', pct: pb, programKey: 'CaO' },
+        { ion: 'Mg', pct: pc, programKey: 'MgO' }
+      ];
+  return specs.map((spec) => {
+    const targetTotalKg = fertiMeqToElementalKg(sumMeq * spec.pct / 100, spec.ion, m3ha);
+    const fertKg = Math.max(0, targetTotalKg - (Number(waterKg && waterKg[spec.ion]) || 0));
+    return { programKey: spec.programKey, canonical: toCanonical[spec.ion](fertKg) };
+  });
+}
+
+function fertiApplyTernaryPctToStage(stageIndex, role, pTop, pLeft, pRight, opts) {
+  const week = fertiWeeks[stageIndex];
+  if (!week || !fertiColumns.length) return { ok: false, reason: 'no-stage' };
+  const m3ha = opts && opts.m3ha != null ? Number(opts.m3ha) : (parseFloat(fertiChartWaterByStageM3ha[stageIndex]) || 0);
+  if (!(m3ha > 0)) return { ok: false, reason: 'no-lamina' };
+  const waterKg = (opts && opts.waterKg) || {};
+  const sumMeq = Number(opts && opts.sumMeq) || 0;
+  if (!(sumMeq > 1e-9)) return { ok: false, reason: 'no-ions' };
+  if (Array.isArray(opts && opts.baseAmounts)) fertiRestoreStageDoseAmounts(stageIndex, opts.baseAmounts);
+  const targets = fertiTernaryCanonicalFromPct(role, pTop, pLeft, pRight, sumMeq, waterKg, m3ha);
+  let anyOk = false;
+  let lastFail = null;
+  for (let pass = 0; pass < 5; pass++) {
+    targets.forEach((spec) => {
+      const result = fertiAdjustStageNutrientCanonical(stageIndex, spec.programKey, spec.canonical);
+      if (result && result.ok) anyOk = true;
+      else if (result) lastFail = result;
+    });
+  }
+  return { ok: anyOk, reason: anyOk ? null : (lastFail && lastFail.reason) };
+}
+
+function fertiTernaryInfoText(summary) {
+  if (!summary || !summary.pct) return '';
+  return (
+    `${fertProgT('anions_triangle', 'Aniones (triángulo)')}: N-NO₃⁻ ${fertiNum(summary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summary.pct.SO4, 1)}% | ` +
+    `Cl⁻ ${fertiNum(summary.pct.Cl, 1)}% ${fertProgT('cl_outside_triangle', 'sobre aniones totales (fuera del triángulo)')} | ` +
+    `${fertProgT('cations_triangle', 'Cationes (triángulo)')}: K⁺ ${fertiNum(summary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summary.pct.Mg, 1)}% · ` +
+    `N-NH₄⁺ ${fertiNum(summary.pct.N_NH4, 1)}% ${fertProgT('nh4_outside_triangle', 'sobre cationes totales (fuera del triángulo)')}.`
+  );
+}
+
+function fertiPatchTernaryPlot(summary) {
+  const tri = document.getElementById('fertiChartsTernaryPlot');
+  const svg = tri && tri.querySelector('svg');
+  const geom = (tri && tri._ternGeom) || (typeof hydroTernGeom !== 'undefined' ? hydroTernGeom : null);
+  if (!svg || !geom || !summary || !summary.pct || typeof hydroBaryToXY !== 'function') return;
+  const norm3 = (a, b, c) => {
+    let pa = Math.max(0, Number(a) || 0);
+    let pb = Math.max(0, Number(b) || 0);
+    let pc = Math.max(0, Number(c) || 0);
+    const s = pa + pb + pc;
+    if (s > 0) { pa = (pa / s) * 100; pb = (pb / s) * 100; pc = (pc / s) * 100; }
+    return [pa, pb, pc];
+  };
+  const [pNO3, pH2PO4, pSO4] = norm3(summary.pct.N_NO3, summary.pct.P, summary.pct.SO4);
+  const [pK, pCa, pMg] = norm3(summary.pct.K, summary.pct.Ca, summary.pct.Mg);
+  const anPt = hydroBaryToXY(geom.vTop, geom.vLeft, geom.vRight, pNO3, pH2PO4, pSO4);
+  const catPt = hydroBaryToXY(geom.vTop, geom.vLeft, geom.vRight, pK, pCa, pMg);
+  const lay = typeof hydroTernMarkerLayout === 'function' ? hydroTernMarkerLayout(anPt, catPt) : { an: anPt, cat: catPt };
+  if (typeof hydroTernApplyMarkerAttrs === 'function') hydroTernApplyMarkerAttrs(svg, lay.an, lay.cat);
+  const triInfo = document.getElementById('fertiChartsTernaryInfo');
+  if (triInfo) triInfo.textContent = fertiTernaryInfoText(summary);
+}
+
+function fertiTernaryLiveSummary(stageIndex) {
+  return getFertiStageIonicSummary(stageIndex, { includeWater: true }) || getFertiStageIonicSummary(stageIndex);
+}
+
+function setupFertiTernaryDrag() {
+  const host = document.getElementById('fertiChartsStageInsightsWrap');
+  if (!host || host._fertiTernDragReady) return;
+  host._fertiTernDragReady = true;
+
+  function applyAt(clientX, clientY) {
+    const drag = fertiTernDrag;
+    if (!drag || !drag.role) return;
+    const plot = host.querySelector('#fertiChartsTernaryPlot');
+    const svg = plot && plot.querySelector('svg');
+    const geom = (plot && plot._ternGeom) || (typeof hydroTernGeom !== 'undefined' ? hydroTernGeom : null);
+    if (!svg || !geom || typeof hydroTernClientToSvg !== 'function' || typeof hydroXYToBaryPct !== 'function') return;
+    const p = hydroTernClientToSvg(svg, clientX, clientY);
+    const b = hydroXYToBaryPct(p.x, p.y, geom);
+    const result = fertiApplyTernaryPctToStage(drag.stageIndex, drag.role, b.top, b.left, b.right, {
+      baseAmounts: drag.baseAmounts,
+      waterKg: drag.waterKg,
+      sumMeq: drag.sumMeq,
+      m3ha: drag.m3ha
+    });
+    if (!result.ok) {
+      fertiSetChartEditNotice(
+        fertProgT('ternary_drag_no_source', 'No se puede alcanzar ese % del triángulo con los fertilizantes desbloqueados de esta etapa. Agrega una fuente o desbloquea un producto.'),
+        'warning'
+      );
+    } else {
+      fertiSetChartEditNotice('');
+    }
+    if (!drag.raf) {
+      drag.raf = requestAnimationFrame(function () {
+        drag.raf = null;
+        const summary = fertiTernaryLiveSummary(drag.stageIndex);
+        fertiPatchTernaryPlot(summary);
+        [fertiMacroChart, fertiMicroChart].forEach((chart) => {
+          if (!chart || !chart.data || !Array.isArray(chart.data.datasets)) return;
+          chart.data.datasets.forEach((ds) => {
+            const key = ds._fertiNutrientKey;
+            if (!key) return;
+            ds.data = fertiWeeks.map((w) => fertiChartDisplayValue(key, w.totals?.[key] || 0));
+          });
+          try { chart.update('none'); } catch (e) { try { chart.update(); } catch (e2) {} }
+        });
+      });
+    }
+  }
+
+  host.addEventListener('pointerdown', function (e) {
+    const plot = host.querySelector('#fertiChartsTernaryPlot');
+    if (!plot || !plot.contains(e.target)) return;
+    if (!fertiChartEditMode) return;
+    const role = e.target.getAttribute && e.target.getAttribute('data-tern-role');
+    if (role !== 'an' && role !== 'cat') return;
+    const idx = fertiChartSelectedStageIndex;
+    const week = fertiWeeks[idx];
+    if (!week) return;
+    const summary = fertiTernaryLiveSummary(idx);
+    if (!summary || !summary.meq) return;
+    const waterByStage = fertiWaterContributionForStage(
+      fertiWaterContributionOxide,
+      fertiChartWaterByStageM3ha,
+      idx
+    );
+    fertiTernDrag = {
+      role,
+      stageIndex: idx,
+      before: fertiCaptureDoseSnapshot(),
+      baseAmounts: fertiColumns.map((c) => Math.max(0, parseFloat(week.kgByCol?.[c.id]) || 0)),
+      waterKg: getFertiWaterKgElemental(0, 0, waterByStage),
+      sumMeq: role === 'an'
+        ? (Number(summary.sumAnionsTriangleMeq) || ((summary.meq.N_NO3 || 0) + (summary.meq.P || 0) + (summary.meq.SO4 || 0)))
+        : ((summary.meq.K || 0) + (summary.meq.Ca || 0) + (summary.meq.Mg || 0)),
+      m3ha: parseFloat(fertiChartWaterByStageM3ha[idx]) || 0,
+      raf: null
+    };
+    plot.classList.add('tern-dragging');
+    const svg = plot.querySelector('svg');
+    if (svg) {
+      svg.classList.add('tern-dragging');
+      svg.classList.remove('tern-dragging-an', 'tern-dragging-cat');
+      svg.classList.add(role === 'an' ? 'tern-dragging-an' : 'tern-dragging-cat');
+    }
+    try { host.setPointerCapture(e.pointerId); } catch (_) {}
+    applyAt(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+
+  host.addEventListener('pointermove', function (e) {
+    if (!fertiTernDrag || !fertiTernDrag.role) return;
+    applyAt(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+
+  function endDrag(e) {
+    const drag = fertiTernDrag;
+    if (!drag || !drag.role) return;
+    fertiTernDrag = null;
+    const plot = host.querySelector('#fertiChartsTernaryPlot');
+    if (plot) plot.classList.remove('tern-dragging');
+    const svg = plot && plot.querySelector('svg');
+    if (svg) svg.classList.remove('tern-dragging', 'tern-dragging-an', 'tern-dragging-cat');
+    try { host.releasePointerCapture(e.pointerId); } catch (_) {}
+    fertiChartUndoSnapshot = drag.before;
+    renderFertiWeeks();
+    updateFertiSummary();
+    updateFertiCharts();
+    markFertiProgDirty();
+    updateFertiChartEditControls();
+    fertiPushProgramSplitToDistribution();
+  }
+  host.addEventListener('pointerup', endDrag);
+  host.addEventListener('pointercancel', endDrag);
+}
+
 function renderFertiChartsInsights() {
   renderFertiChartsSourceShare();
+  if (fertiTernDrag && fertiTernDrag.role) return;
   const wrap = document.getElementById('fertiChartsStageInsightsWrap');
   if (!wrap) return;
   fertiNormalizeChartWaterByStage();
@@ -3357,8 +3588,15 @@ function renderFertiChartsInsights() {
         <div class="ferti-insight-legend">${macroLegend}</div>
       </div>
       <div class="ferti-insight-card ferti-insight-card--ternary">
-        <h5>${fertProgT('ternary_diagram', '📐 Diagrama ternario (aniones + cationes)')}</h5>
-        <p class="ferti-insight-ternary-note">${fertProgT('ternary_note', 'Basado en <strong>fertilizante + aporte de agua</strong> de la etapa seleccionada. Misma lógica que en Hidroponía · Solución por etapa: cuadrado amarillo = balance aniónico solo entre N-NO₃⁻, P-H₂PO₄⁻ y S-SO₄²⁻ (100%); el Cl⁻ suma en Σ aniones y en su % aparte, sin mover el punto del triángulo. Círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg.')}</p>
+        <div class="ferti-ternary-head">
+          <h5>${fertProgT('ternary_diagram', '📐 Diagrama ternario (aniones + cationes)')}</h5>
+          <div class="ferti-chart-edit-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-ferti-chart-edit="toggle" data-ferti-edit-surface="ternary" onclick="toggleFertiChartEditMode()">${fertProgT('adjust_ternary', '✋ Ajustar en triángulo')}</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-ferti-chart-edit="undo" onclick="undoFertiChartAdjustment()" hidden style="display:none;">${fertProgT('undo', '↶ Deshacer')}</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-ferti-chart-edit="restore" onclick="restoreFertiChartEditBaseline()" hidden style="display:none;">${fertProgT('restore_original', 'Restaurar original')}</button>
+          </div>
+        </div>
+        <p class="ferti-insight-ternary-note">${fertProgT('ternary_note', 'Basado en <strong>fertilizante + aporte de agua</strong> de la etapa seleccionada. Cuadrado amarillo = balance aniónico solo entre N-NO₃⁻, P-H₂PO₄⁻ y S-SO₄²⁻ (100%); el Cl⁻ suma en Σ aniones y en su % aparte, sin mover el punto del triángulo. Círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg. Arrastrar un marcador rebalancea las <strong>dosis de fertilizante de esta etapa</strong> (el agua no se mueve).')}</p>
         <div id="fertiChartsTernaryInfo" class="ferti-insight-muted-ternary notranslate" translate="no"></div>
         <div id="fertiChartsTernaryPlot" class="ferti-charts-ternary-plot hydro-triangle notranslate" translate="no"></div>
       </div>
@@ -3391,7 +3629,7 @@ function renderFertiChartsInsights() {
   `;
   if (summaryTernary && summaryTernary.m3ha > 0 && summaryTernary.pct && typeof hydroDrawCombinedTernary === 'function') {
     const tri = document.getElementById('fertiChartsTernaryPlot');
-    if (!tri) return;
+    if (tri) {
     const triInfo = document.getElementById('fertiChartsTernaryInfo');
     const anionZ = typeof hydroEquilibriumPolygonAnions === 'function' ? hydroEquilibriumPolygonAnions() : [];
     const catZ = typeof hydroEquilibriumPolygonCations === 'function' ? hydroEquilibriumPolygonCations() : [];
@@ -3403,16 +3641,17 @@ function renderFertiChartsInsights() {
       pCa: summaryTernary.pct.Ca,
       pMg: summaryTernary.pct.Mg,
       anionZone: anionZ,
-      cationZone: catZ
+      cationZone: catZ,
+      bindHydroDrag: false,
+      dragHint: fertiChartEditMode
+        ? fertProgT('ternary_drag_hint', 'Arrastra el cuadrado amarillo (aniones) o el círculo rojo (cationes): se actualizan las dosis de fertilizante de esta etapa, luego % meq, meq/L, ppm y CE.')
+        : fertProgT('ternary_edit_help', 'Pulsa «Ajustar en triángulo» para arrastrar el cuadrado o el círculo y rebalancear las dosis de esta etapa.')
     });
-    if (triInfo) {
-      triInfo.textContent =
-        `${fertProgT('anions_triangle', 'Aniones (triángulo)')}: N-NO₃⁻ ${fertiNum(summaryTernary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summaryTernary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summaryTernary.pct.SO4, 1)}% | ` +
-        `Cl⁻ ${fertiNum(summaryTernary.pct.Cl, 1)}% ${fertProgT('cl_outside_triangle', 'sobre aniones totales (fuera del triángulo)')} | ` +
-        `${fertProgT('cations_triangle', 'Cationes (triángulo)')}: K⁺ ${fertiNum(summaryTernary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summaryTernary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summaryTernary.pct.Mg, 1)}% · ` +
-        `N-NH₄⁺ ${fertiNum(summaryTernary.pct.N_NH4, 1)}% ${fertProgT('nh4_outside_triangle', 'sobre cationes totales (fuera del triángulo)')}.`;
+    if (triInfo) triInfo.textContent = fertiTernaryInfoText(summaryTernary);
     }
   }
+  setupFertiTernaryDrag();
+  updateFertiChartEditControls();
 }
 
 function loadChartJs(callback){

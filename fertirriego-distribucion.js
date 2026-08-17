@@ -55,6 +55,9 @@
   var chartMicro = null;
   var chartDrag = null;
   var chartFocusId = null;
+  var chartEditMode = false;
+  var chartEditBaseline = null;
+  var chartUndoPct = null;
   var assistNutId = null;
   var externalCredits = { water: {}, base: {}, waterLinked: false, granularLinked: false };
   var chartPendingClear = false;
@@ -550,8 +553,15 @@
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
         '</div>' +
-        '<div class="ferti-dist-panel">' +
-          '<h4>' + escapeHtml(t('dist_h4', '3. Gráfica de % de distribución')) + '</h4>' +
+        '<div class="ferti-dist-panel" id="fertiDistChartsPanel">' +
+          '<div class="ferti-dist-chart-toolbar">' +
+            '<h4>' + escapeHtml(t('dist_h4', '3. Gráfica de % de distribución')) + '</h4>' +
+            '<div class="ferti-chart-edit-actions">' +
+              '<button type="button" class="btn btn-secondary btn-sm" id="fertiDistChartEditToggle">' + escapeHtml(t('adjust_chart', '✋ Ajustar en gráfica')) + '</button>' +
+              '<button type="button" class="btn btn-secondary btn-sm" id="fertiDistChartUndoBtn" hidden style="display:none;">' + escapeHtml(t('undo', '↶ Deshacer')) + '</button>' +
+              '<button type="button" class="btn btn-secondary btn-sm" id="fertiDistChartRestoreBtn" hidden style="display:none;">' + escapeHtml(t('restore_original', 'Restaurar original')) + '</button>' +
+            '</div>' +
+          '</div>' +
           '<div id="fertiDistChartsGrid" class="ferti-dist-charts-grid">' +
             '<div class="ferti-dist-chart-box">' +
               '<h4 id="fertiDistMacroTitle">' + escapeHtml(t('macronutrients', 'Macronutrientes')) + '</h4>' +
@@ -564,7 +574,7 @@
               '<div id="fertiDistChartWrapMicro" class="ferti-dist-chart"><canvas id="fertiDistChartMicro"></canvas></div>' +
             '</div>' +
           '</div>' +
-          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Toca el nombre de un nutriente para ver solo esa curva en esa gráfica. Toca otra vez o el fondo para ver todas. Arrastra un punto o edita la tabla de %. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.')) + '</p>' +
+          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_idle', 'Toca el nombre de un nutriente para ver solo esa curva. Toca otra vez o el fondo para ver todas. Para mover un punto, pulsa «Ajustar en gráfica». La tabla de % se edita siempre.')) + '</p>' +
         '</div>' +
       '</div>' +
       '<div class="ferti-dist-nut-menu" id="fertiDistNutMenu" hidden role="menu">' +
@@ -906,6 +916,16 @@
     }
     return true;
   }
+  function requestSuggestPct(opts) {
+    opts = opts || {};
+    if (!opts.silent) {
+      var ok = window.confirm(
+        t('dist_suggest_confirm', '¿Reemplazar los % actuales por la curva sugerida según las etapas? No toca el programa hasta la propuesta automática.')
+      );
+      if (!ok) return false;
+    }
+    return applySuggestPct(opts);
+  }
   function adoptFromProgram(layout) {
     if (!layout || !Array.isArray(layout.stages) || !layout.stages.length) return false;
     distProgramSync = true;
@@ -1207,7 +1227,86 @@
     setChartHint('');
   }
   function defaultChartHint() {
-    return t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Arrastra un punto o edita la tabla de %. Toca una curva o su nombre para verla sola. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.');
+    if (chartEditMode) {
+      return t('dist_chart_drag', 'Arrastra un punto. Las demás etapas de ese nutriente se compensan a 100%. Si hay programa con los mismos periodos, se reajustan esas dosis. Toca un nombre para ver solo esa curva.');
+    }
+    return t('dist_chart_idle', 'Toca el nombre de un nutriente para ver solo esa curva. Toca otra vez o el fondo para ver todas. Para mover un punto, pulsa «Ajustar en gráfica». La tabla de % se edita siempre.');
+  }
+
+  function clonePct() {
+    ensurePct();
+    return JSON.parse(JSON.stringify(pct));
+  }
+
+  function restorePctSnapshot(saved) {
+    if (!saved) return false;
+    pct = JSON.parse(JSON.stringify(saved));
+    ensurePct();
+    try { renderPct(); } catch (e) {}
+    try { renderChart(); } catch (e2) {}
+    scheduleSave();
+    markDistDrivesProgram();
+    scheduleProgramPush();
+    return true;
+  }
+
+  function updateDistChartEditControls() {
+    var panel = document.getElementById('fertiDistChartsPanel');
+    if (panel) panel.classList.toggle('is-chart-editing', !!chartEditMode);
+    var toggleBtn = document.getElementById('fertiDistChartEditToggle');
+    if (toggleBtn) {
+      toggleBtn.textContent = chartEditMode
+        ? t('finish_chart_adjustment', '✓ Terminar ajuste')
+        : t('adjust_chart', '✋ Ajustar en gráfica');
+      toggleBtn.classList.toggle('btn-primary', !!chartEditMode);
+      toggleBtn.classList.toggle('btn-secondary', !chartEditMode);
+    }
+    var canUndo = !!(chartEditMode && chartUndoPct);
+    var undoBtn = document.getElementById('fertiDistChartUndoBtn');
+    if (undoBtn) {
+      undoBtn.textContent = t('undo', '↶ Deshacer');
+      undoBtn.disabled = !canUndo;
+      undoBtn.hidden = !canUndo;
+      undoBtn.style.display = canUndo ? '' : 'none';
+    }
+    var canRestore = !!(chartEditMode && chartEditBaseline && chartUndoPct);
+    var restoreBtn = document.getElementById('fertiDistChartRestoreBtn');
+    if (restoreBtn) {
+      restoreBtn.textContent = t('restore_original', 'Restaurar original');
+      restoreBtn.disabled = !canRestore;
+      restoreBtn.hidden = !canRestore;
+      restoreBtn.style.display = canRestore ? '' : 'none';
+    }
+    setChartHint('');
+  }
+
+  function toggleDistChartEditMode() {
+    chartEditMode = !chartEditMode;
+    chartDrag = null;
+    if (chartEditMode) {
+      chartEditBaseline = clonePct();
+      chartUndoPct = null;
+    } else {
+      chartEditBaseline = null;
+      chartUndoPct = null;
+    }
+    updateDistChartEditControls();
+  }
+
+  function undoDistChartAdjustment() {
+    if (!chartUndoPct) return;
+    var current = clonePct();
+    if (restorePctSnapshot(chartUndoPct)) {
+      chartUndoPct = current;
+      updateDistChartEditControls();
+    }
+  }
+
+  function restoreDistChartEditBaseline() {
+    if (!chartEditBaseline) return;
+    chartUndoPct = clonePct();
+    restorePctSnapshot(chartEditBaseline);
+    updateDistChartEditControls();
   }
   function liveCharts() {
     var ready = [];
@@ -1255,9 +1354,9 @@
     if (!chart) return;
     try { if (typeof chart.stop === 'function') chart.stop(); } catch (e0) {}
     try {
-      chart.update('none');
+      chart.update();
     } catch (e) {
-      try { chart.update(); } catch (e2) {}
+      try { chart.render(); } catch (e2) {}
     }
   }
   function paintDistChart(opts) {
@@ -1308,8 +1407,10 @@
     refreshKgCells();
     if (chartFocusId && chartFocusId !== id) {
       setChartFocus(id);
-    } else {
+    } else if (chartDrag) {
       updateChartPctSeries(id);
+    } else {
+      renderChart();
     }
     scheduleProgramPush(id);
     return true;
@@ -1464,6 +1565,10 @@
       var ds = chart.data.datasets[hit.datasetIndex];
       if (!ds || !ds._nutId) return;
       if (!nutFromId(ds._nutId)) return;
+      if (!chartEditMode) {
+        setChartFocus(chartFocusId === ds._nutId ? null : ds._nutId);
+        return;
+      }
       chartDrag = {
         canvas: canvas,
         chart: chart,
@@ -1472,7 +1577,8 @@
         label: ds.label,
         x: event.clientX,
         y: event.clientY,
-        moved: false
+        moved: false,
+        before: clonePct()
       };
       try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
       var wrap = canvas.parentElement;
@@ -1509,6 +1615,7 @@
       if (!chartDrag || chartDrag.canvas !== canvas) return;
       var nutId = chartDrag.nutId;
       var moved = !!chartDrag.moved;
+      var before = chartDrag.before;
       chartDrag = null;
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
       var wrap = canvas.parentElement;
@@ -1519,7 +1626,9 @@
         var ch = chartForNut(nutId);
         applyChartYScale(ch, MACRO[nutId] ? 'macro' : 'micro', false);
         paintDistChart({ nutId: nutId, forceResize: true });
+        if (before) chartUndoPct = before;
         setChartHint('');
+        updateDistChartEditControls();
         scheduleSave();
         markDistDrivesProgram();
         pushDistToProgram(nutId);
@@ -1753,6 +1862,7 @@
       observeChartHost();
       scheduleChartRender();
     } catch (eChart) {}
+    updateDistChartEditControls();
   }
 
   function markDistStructureEdited() {
@@ -1857,7 +1967,7 @@
         }
         var suggestMenuBtn = ev.target.closest && ev.target.closest('[data-suggest-pct]');
         if (suggestMenuBtn && suggestMenuBtn.closest('#fertiDistNutMenu')) {
-          applySuggestPct();
+          requestSuggestPct();
           return;
         }
         var shapeBtn = ev.target.closest && ev.target.closest('[data-shape]');
@@ -1878,7 +1988,7 @@
 
     var suggestBtn = document.getElementById('fertiDistSuggestPct');
     if (suggestBtn) suggestBtn.onclick = function () {
-      applySuggestPct();
+      requestSuggestPct();
     };
 
     var saveBtn = document.getElementById('fertiDistSavePreset');
@@ -1921,6 +2031,14 @@
     if (cancel) cancel.addEventListener('click', closeApplyModal);
     var go = document.getElementById('fertiDistApplyGo');
     if (go) go.addEventListener('click', applyToSelectedProject);
+
+    var distEditToggle = document.getElementById('fertiDistChartEditToggle');
+    if (distEditToggle) distEditToggle.onclick = toggleDistChartEditMode;
+    var distUndo = document.getElementById('fertiDistChartUndoBtn');
+    if (distUndo) distUndo.onclick = undoDistChartAdjustment;
+    var distRestore = document.getElementById('fertiDistChartRestoreBtn');
+    if (distRestore) distRestore.onclick = restoreDistChartEditBaseline;
+    updateDistChartEditControls();
   }
 
   function syncProgramTimeUnit(next) {

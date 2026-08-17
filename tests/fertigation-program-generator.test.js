@@ -154,6 +154,19 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(flowerIds.indexOf('nitrato_calcio_granular') < flowerIds.indexOf('mkp'));
 })();
 
+(function magSulfatePreferredWhenSulfurShort() {
+  const result = generator.solveStage(
+    { N: 80, CaO: 30, MgO: 16, P2O5: 12, K2O: 40, SO4: 50 },
+    {},
+    materials
+  );
+  const mgS = result.rows.find(r => r.materialId === 'sulfato_magnesio');
+  const mgN = result.rows.find(r => r.materialId === 'nitrato_magnesio');
+  assert.ok(mgS && mgS.doseKgHa >= 3, 'expected Mg sulfate when SO4 is short: ' + result.rows.map(r => r.materialId).join(','));
+  assert.ok(result.supplied.SO4 > 20, 'SO4 contribution too low: ' + result.supplied.SO4);
+  if (mgN) assert.ok(mgS.doseKgHa + 1e-6 >= mgN.doseKgHa, 'Mg nitrate should not take the Mg slot while SO4 is short');
+})();
+
 (function magNitrateOnlyIfNitrogenRemains() {
   const withN = generator.solveStage({ N: 8, MgO: 18, SO4: 20 }, {}, materials);
   const noN = generator.solveStage({ N: 0, MgO: 18, SO4: 40 }, {}, materials);

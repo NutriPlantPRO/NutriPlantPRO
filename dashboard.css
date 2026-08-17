@@ -4783,7 +4783,8 @@ html.embed-login body {
 .hydro-ternary-chart-svg.tern-dragging .tern-vis-cat { opacity: 0.45; }
 .hydro-ternary-chart-svg.tern-dragging-an .tern-vis-an { opacity: 1; }
 .hydro-ternary-chart-svg.tern-dragging-cat .tern-vis-cat { opacity: 1; }
-#hydroTriangleCombined.tern-dragging { touch-action: none; user-select: none; }
+#hydroTriangleCombined.tern-dragging,
+#fertiChartsTernaryPlot.tern-dragging { touch-action: none; user-select: none; }
 
 .hydro-triangle-box {
   margin-bottom: 20px;
@@ -4997,7 +4998,7 @@ html.embed-login body {
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   min-width: 430px;
-  min-height: 360px;
+  min-height: 470px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -5016,9 +5017,9 @@ html.embed-login body {
 .chart-container canvas {
   display: block;
   width: 100% !important;
-  min-height: 300px;
-  height: 300px !important;
-  max-height: 320px;
+  min-height: 390px;
+  height: 390px !important;
+  max-height: 420px;
   flex: 0 0 auto;
 }
 
@@ -5067,6 +5068,27 @@ html.embed-login body {
 
 .charts-container.is-chart-dragging .chart-container canvas {
   cursor: grabbing;
+}
+
+.ferti-ternary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.ferti-ternary-head h5 {
+  margin: 0;
+}
+.ferti-charts-ternary-plot:not(.is-ternary-editable) .tern-hit-an,
+.ferti-charts-ternary-plot:not(.is-ternary-editable) .tern-hit-cat {
+  cursor: default !important;
+  pointer-events: none;
+}
+.ferti-charts-ternary-plot.is-ternary-editable .tern-hit-an,
+.ferti-charts-ternary-plot.is-ternary-editable .tern-hit-cat {
+  cursor: grab !important;
 }
 
 .ferti-col-lock-btn {
@@ -8803,6 +8825,20 @@ html.embed-login body {
   background: #16a34a;
   color: #fff;
 }
+.ferti-dist-chart-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ferti-dist-chart-toolbar h4 {
+  margin: 0;
+}
+.ferti-dist-panel.is-chart-editing .ferti-dist-chart canvas {
+  cursor: grab;
+}
 .ferti-dist-charts-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8867,8 +8903,8 @@ html.embed-login body {
   position: relative;
   width: 100%;
   max-width: 100%;
-  height: 300px;
-  min-height: 260px;
+  height: 390px;
+  min-height: 340px;
 }
 .ferti-dist-chart canvas {
   display: block;

@@ -255,6 +255,16 @@
       });
     }
 
+    function applyMagnesium() {
+      if (remaining.SO4 > tolerance) {
+        applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45 });
+      }
+      if (remaining.N > tolerance) {
+        applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 46 });
+      }
+      applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 50, ignoreKeys: ['SO4'] });
+    }
+
     function applyMacroPass() {
       applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
       applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
@@ -262,8 +272,7 @@
       applySopForSulfate();
       applyStep({ id: 'nks', target: 'N', order: 40 });
       applyStep({ id: 'sop', target: 'K2O', order: 41 });
-      if (remaining.N > tolerance) applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 45 });
-      applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 50, ignoreKeys: ['SO4'] });
+      applyMagnesium();
       MICRO_SEQUENCE.forEach(function (step) { applyStep(step); });
     }
 

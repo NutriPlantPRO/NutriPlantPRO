@@ -1175,9 +1175,9 @@ function sectionTemplate(name) {
             <div class="charts-container">
               <div class="ferti-chart-toolbar">
                 <div class="ferti-chart-edit-actions">
-                  <button class="btn btn-secondary btn-sm" onclick="toggleFertiChartEditMode()" id="toggleFertiChartEditBtn">${ft('adjust_chart', '✋ Ajustar en gráfica')}</button>
-                  <button class="btn btn-secondary btn-sm" onclick="undoFertiChartAdjustment()" id="undoFertiChartAdjustmentBtn" style="display:none;" hidden>${ft('undo', '↶ Deshacer')}</button>
-                  <button class="btn btn-secondary btn-sm" onclick="restoreFertiChartEditBaseline()" id="restoreFertiChartBaselineBtn" style="display:none;" hidden>${ft('restore_original', 'Restaurar original')}</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="toggleFertiChartEditMode()" id="toggleFertiChartEditBtn" data-ferti-chart-edit="toggle" data-ferti-edit-surface="chart">${ft('adjust_chart', '✋ Ajustar en gráfica')}</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="undoFertiChartAdjustment()" id="undoFertiChartAdjustmentBtn" data-ferti-chart-edit="undo" style="display:none;" hidden>${ft('undo', '↶ Deshacer')}</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="restoreFertiChartEditBaseline()" id="restoreFertiChartBaselineBtn" data-ferti-chart-edit="restore" style="display:none;" hidden>${ft('restore_original', 'Restaurar original')}</button>
                 </div>
                 <button class="btn btn-info btn-sm" onclick="toggleFertiChartsOxideElemental()" id="toggleFertiChartsModeBtn">${ft('elemental', '🔄 Ver en Elemental')}</button>
               </div>
