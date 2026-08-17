@@ -32,10 +32,10 @@ const ORIGINAL_GRANULAR_CROP_EXTRACTION_DB = {
   'cebada': { N: 20, P2O5: 8, K2O: 15, CaO: 2.5, MgO: 1.5, S: 0, SO4: 10.5, Fe: 0.12, Mn: 0.1, B: 0.07, Zn: 0.22, Cu: 0.018, Mo: 0.05, SiO2: 0 }
 };
 
-// Eficiencia predeterminada para nutrición granular (diferente a fertirriego)
+// Eficiencia predeterminada para nutrición granular (mismos % que fertirriego; módulos independientes)
 const GRANULAR_DEFAULT_EFFICIENCY = {
-  N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, SO4: 85, 
-  Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85
+  N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, SO4: 90,
+  Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90
 };
 
 // Variable global para el modo de visualización

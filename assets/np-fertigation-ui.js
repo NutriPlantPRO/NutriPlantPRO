@@ -177,7 +177,7 @@
     enter_water: 'Enter this stage’s irrigation depth above to calculate ppm and meq/L.',
     charts_water_title: 'Irrigation depth by stage',
     charts_water_help: 'Used here for ppm, meq/L and EC. Same depths as in the Nutrition Program.',
-    program_water_help: 'Cycle sum = water kg/ha. Each stage = acid. Same in Dynamics.',
+    program_water_help: 'Cycle sum = water kg/ha. Each stage = acid. Dynamics uses this depth for ppm/meq.',
     fertilizer_supply: 'Fertilizer supply', fertilizer_water_supply: 'Fertilizer plus water supply',
     nutrient: 'Nutrient', group_pct: '% of group', no_custom: 'No custom fertilizers.',
     available_fertilizers: '📋 Available fertilizers (concentration %)',
@@ -235,6 +235,7 @@
     chart_adjust_no_source: 'That point cannot be reached with the unlocked fertilizers. Add a nutrient source or unlock a product.',
     chart_lock_fertilizer: 'Open: the chart can adjust this fertilizer',
     chart_unlock_fertilizer: 'Locked: click to allow chart adjustments',
+    chart_acid_locked: 'Locked: acid dose comes from water meq × each stage’s irrigation depth. The chart cannot change it.',
     base_fertilization_supply: '🌱 Base fertilization supply',
     bring_from_granular_program: 'Bring from granular program',
     bring_from_granular_title: 'Load the total supply from this project’s Granular Nutrition program',
@@ -614,6 +615,10 @@
     return { ferti: ferti, granular: Math.round((100 - ferti) * 10) / 10 };
   }
 
+  function acidLitersHa(mlPerM3, depthM3ha) {
+    return Math.max(0, Number(mlPerM3) || 0) * Math.max(0, Number(depthM3ha) || 0) / 1000;
+  }
+
   return {
     getPrefs:prefs, t:t, unit:unit, fromSI:fromSI, toSI:toSI,
     inputFromSI:inputFromSI, resultFromSI:resultFromSI, quantityFromSI:quantityFromSI,
@@ -624,6 +629,7 @@
     aggregateGranularProgramContribution:aggregateGranularProgramContribution,
     sourceSharePct: sourceSharePct,
     compactNutrientPeriodList: compactNutrientPeriodList,
+    acidLitersHa: acidLitersHa,
     withLanguage: withLanguage,
     withUnitSystem: withUnitSystem,
     nutrientColor: nutrientColor

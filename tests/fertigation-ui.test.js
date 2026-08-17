@@ -94,6 +94,7 @@ module.exports = [
       assert.equal(ferti.t('adjust_ternary', '✋ Ajustar en triángulo'), '✋ Adjust on triangle');
       assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '2. Target irrigation depth by stage');
       assert.equal(ferti.t('charts_water_title', 'Lámina de riego por etapa'), 'Irrigation depth by stage');
+      assert.equal(ferti.t('chart_acid_locked', 'Bloqueado: la dosis de ácido'), 'Locked: acid dose comes from water meq × each stage’s irrigation depth. The chart cannot change it.');
       assert.equal(ferti.t('analysis_cycle_lamina', 'Lámina total (análisis)'), 'Total depth (analysis)');
       assert.equal(ferti.t('dist_pct_nudge', 'La barrita ajusta el %'), 'The bar sets the %. You can also type the number.');
       assert.equal(ferti.t('auto_pending_detail', 'Falta {list}'), 'Short: {list}');
@@ -223,6 +224,15 @@ module.exports = [
       );
       prefs.language = 'en';
       prefs.unit_system = 'us_customary';
+    }
+  },
+  {
+    name: 'fertirriego: L/ha de ácido = mL/m³ × lámina de la etapa ÷ 1000',
+    run: function () {
+      close(ferti.acidLitersHa(129.31, 160), 20.6896, 1e-9);
+      close(ferti.acidLitersHa(129.31, 50), 6.4655, 1e-9);
+      close(ferti.acidLitersHa(129.31, 0), 0);
+      close(ferti.acidLitersHa(0, 200), 0);
     }
   }
 ];

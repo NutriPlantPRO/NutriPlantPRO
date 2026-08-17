@@ -5147,6 +5147,12 @@ html.embed-login body {
   transform: scale(1.08);
 }
 
+.ferti-col-lock-btn.is-acid-locked,
+.ferti-col-lock-btn.is-acid-locked:hover {
+  cursor: default;
+  transform: none;
+}
+
 /* Marca de agua sobre las gráficas de Fertirriego */
 .fertirriego-graphs-watermark {
   display: flex;
@@ -5200,47 +5206,54 @@ html.embed-login body {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 5px;
 }
 
 .ferti-charts-water-item {
+  display: inline-grid;
+  grid-template-columns: min-content;
+  justify-items: stretch;
   width: max-content;
   flex: 0 0 auto;
   border: 1px solid #bfdbfe;
   border-radius: 6px;
-  padding: 4px 5px 5px;
+  padding: 3px 4px 4px;
+  margin: 0;
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
 }
 
 .ferti-charts-water-period,
 .ferti-charts-water-stage {
   display: block;
+  width: max-content;
+  max-width: max-content;
   color: #1e3a8a;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .ferti-charts-water-period {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .ferti-charts-water-stage {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  margin: 1px 0 3px;
+  margin: 0 0 3px;
   white-space: nowrap;
 }
 
 .ferti-charts-water-item input {
-  width: 100%;
-  min-width: 0;
+  width: 0;
+  min-width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   border: 1px solid #93c5fd;
   border-radius: 5px;
-  padding: 3px 5px;
-  font-size: 0.8rem;
+  padding: 2px 3px;
+  font-size: 0.76rem;
   font-weight: 700;
   background: #ffffff;
   color: #0f172a;
@@ -8257,6 +8270,33 @@ html.embed-login body {
   outline: none;
   border-color: #0369a1;
   box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.1);
+}
+
+.fertirriego-inputs .ferti-charts-water-item {
+  display: inline-grid;
+  grid-template-columns: min-content;
+  width: max-content;
+  margin-bottom: 0;
+  font-weight: inherit;
+  color: inherit;
+  font-size: inherit;
+}
+
+.fertirriego-inputs .ferti-charts-water-item input,
+.fertirriego-inputs .ferti-charts-water-item input:focus {
+  width: 0;
+  min-width: 100%;
+  max-width: 100%;
+  padding: 2px 3px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid #93c5fd;
+  box-shadow: none;
+}
+
+.fertirriego-inputs .ferti-charts-water-item input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.16);
 }
 
 .fertirriego-table-container {

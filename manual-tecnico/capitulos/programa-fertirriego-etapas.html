@@ -262,6 +262,9 @@
       Las tablas kg de ese reporte usan ese volumen. En el programa,
       <strong>L/ha de cada etapa = mL/m³ × lámina de esa etapa (m³/ha) ÷ 1000</strong>
       (el ácido no usa el total del análisis).
+      Si editas la lámina de una etapa, esa L/ha y el aporte del ácido (N/P/S) se recalculan;
+      los kg/ha del agua usan la suma del ciclo. La columna de ácido queda con
+      <strong>candado cerrado</strong>: Dinámica Nutrimental no puede moverla (sale de los meq del agua, no de la gráfica).
       En pantalla, Fertirriego muestra mL/m³ y la lámina del ciclo con el ácido total (L/ha o US gal/acre); no lista etapa por etapa (eso va en el programa).
       Al elaborar el programa automático el ácido entra primero y su N/P/S resta del faltante.
     </p>
@@ -277,8 +280,8 @@
     <h2>Lámina de riego (m³/ha)</h2>
     <p>
       En <strong>Fertirriego → Programa</strong> (junto al aporte por agua y el ácido), por cada semana/mes se captura el
-      <strong>volumen de agua aplicado en esa etapa</strong> (m³/ha). La misma lámina se ve en
-      <strong>Dinámica nutricional</strong> para ppm, meq/L y CE. Sin lámina &gt; 0 no hay L/ha de ácido
+      <strong>volumen de agua aplicado en esa etapa</strong> (m³/ha). Dinámica nutricional <strong>usa</strong> esa lámina
+      para ppm, meq/L y CE (no se vuelve a capturar ahí). Sin lámina &gt; 0 no hay L/ha de ácido
       en el programa y la plataforma muestra solo kg/ha; <em>no</em> calcula ppm ni meq/L ni % iónicos de esa etapa.
     </p>
     <p>Con lámina, el aporte iónico de la etapa (fertilizante ± agua según tabla) se convierte así:</p>
@@ -319,8 +322,8 @@
       objetivo es la del periodo que estás analizando.</p>
 
     <div class="mt-note">
-      <strong>En la plataforma:</strong> Fertirriego → Programa (junto al ácido) y Dinámica nutricional →
-      «Lámina de riego por etapa» (mismos m³/ha).
+      <strong>En la plataforma:</strong> Fertirriego → Programa → «Lámina de riego por etapa» (junto al ácido).
+      Dinámica usa esos m³/ha para ppm/meq (selector de etapa muestra la lámina).
       Dos tablas iónicas: solo fertilizante del programa vs fertilizante + agua (la mezcla real).
     </div>
 
@@ -502,6 +505,9 @@
       That report’s kg tables use that volume. In the program,
       <strong>L/ha of each stage = mL/m³ × that stage’s depth (m³/ha) ÷ 1000</strong>
       (acid does not use the analysis total).
+      Editing a stage’s depth recalculates that L/ha and the acid’s N/P/S supply;
+      water kg/ha use the cycle sum. The acid column stays <strong>locked</strong>:
+      Nutrient Dynamics cannot change it (it comes from water meq, not from the chart).
       On screen, Fertigation shows mL/m³ and the cycle irrigation depth with the total acid (L/ha or US gal/acre); it does not list stage by stage (that belongs in the program).
       When the automatic program is built, acid enters first and its N/P/S subtracts from the remaining need.
     </p>
@@ -516,8 +522,9 @@
 
     <h2>Irrigation depth (m³/ha)</h2>
     <p>
-      Under <strong>Charts</strong>, for each week/month you enter the <strong>cumulative irrigation water
-      volume applied in that stage</strong> (m³/ha). Without depth &gt; 0 the platform shows only
+      Under <strong>Fertigation → Program</strong> (next to water contribution and acid), for each week/month you enter the
+      <strong>irrigation water volume applied in that stage</strong> (m³/ha). Nutrient Dynamics <strong>uses</strong> that depth
+      for ppm, meq/L and EC (it is not entered again there). Without depth &gt; 0 the platform shows only
       program kg/ha; it does <em>not</em> calculate ppm, meq/L, or ionic % for that stage.
     </p>
     <p>With depth, the stage’s ionic contribution (fertilizer ± water per the table) is converted as follows:</p>
@@ -558,7 +565,8 @@
       depth is that of the period you are analyzing.</p>
 
     <div class="mt-note">
-      <strong>In the platform:</strong> Fertigation → Charts → “Irrigation depth by stage (m³/ha)”.
+      <strong>In the platform:</strong> Fertigation → Program → “Irrigation depth by stage”.
+      Dynamics uses those m³/ha for ppm/meq (the stage selector shows the depth).
       Two ionic tables: program fertilizer only vs fertilizer + water (the real mix).
     </div>
 

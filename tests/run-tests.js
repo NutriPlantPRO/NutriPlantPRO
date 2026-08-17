@@ -13,7 +13,8 @@ var suites = [
   require('./water-climate-ui.test.js'),
   require('./free-nutrition-ui.test.js'),
   require('./fertigation-dist-suggest.test.js'),
-  require('./fertilizer-price.test.js')
+  require('./fertilizer-price.test.js'),
+  require('./lab-extract-bulk-density.test.js')
 ];
 
 (async function () {

@@ -31,13 +31,12 @@ Ambas secciones tienen estructuras muy similares porque parten de la misma base 
 **Nutrición Granular:**
 ```javascript
 GRANULAR_DEFAULT_EFFICIENCY = {
-  N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, 
-  Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85
+  N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, S: 90, SO4: 90,
+  Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90
 }
 ```
-- Eficiencias más bajas (fertilizantes sólidos/granulares)
-- N: 65% vs 75% en fertirriego
-- P2O5: 40% vs 50% en fertirriego
+- Mismos % predefinidos que fertirriego (módulos independientes)
+- Si el suscriptor ya los cambió, se usan los guardados
 
 **Fertirriego:**
 ```javascript

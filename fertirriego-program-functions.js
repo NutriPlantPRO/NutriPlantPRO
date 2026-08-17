@@ -1218,6 +1218,9 @@ function onFertiColumnMaterialChange(colId, materialId) {
   } catch {
     col.name = '';
   }
+  if (fertiIsWaterAcidMaterialId(materialId)) fertiEnsureWaterAcidColumnsLocked();
+  else fertiChartLockedColumnIds = fertiChartLockedColumnIds.filter(id => id !== colId);
+  try { fertiSyncProgramAcidFromLamina(); } catch (eAcidCol) {}
   renderFertiWeeks();
   updateFertiSummary();
   // Guardar inmediatamente para no perder la selección al cambiar de pestaña
@@ -1592,6 +1595,7 @@ function fertiApplyAutomaticProgram(prepared) {
   fertiWeekCounter = fertiWeeks.length + 1;
   fertiChartWaterByStageM3ha = prepared.stages.map(stage => Math.max(0, Number(stage.waterDepthM3Ha) || 0));
   fertiChartLockedColumnIds = [];
+  fertiEnsureWaterAcidColumnsLocked();
   fertiChartSelectedStageIndex = 0;
   fertiProgramInitialized = true;
   window.fertiProgramInitialized = true;
@@ -1714,19 +1718,22 @@ function renderFertiWeeks() {
     (slotIdx) => `<th class="ferti-insert-slot">${fertiInsertColumnButton(slotIdx)}</th>`,
     (c) => {
       const m = materials.find(mat => mat.id === c.materialId);
-      const isChartLocked = fertiChartLockedColumnIds.indexOf(c.id) !== -1;
+      const isWaterAcid = fertiIsWaterAcidColumn(c);
+      const isChartLocked = isWaterAcid || fertiChartLockedColumnIds.indexOf(c.id) !== -1;
       const currentName = fertProgMaterial((m?.name) || fertProgT('select', 'Selecciona…'));
       const displayNamePlain = currentName + (m && m.unit === 'L' ? ' (L/ha)' : '');
       const displayNameHtml = currentName + (m && m.unit === 'L' ? ' <span class="unit-lha">(L/ha)</span>' : '');
-      const lockTitle = isChartLocked
-        ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
-        : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante');
+      const lockTitle = isWaterAcid
+        ? fertProgT('chart_acid_locked', 'Bloqueado: la dosis de ácido sale de los meq del agua × la lámina de cada etapa. No se ajusta desde la gráfica.')
+        : (isChartLocked
+          ? fertProgT('chart_unlock_fertilizer', 'Bloqueado: haz clic para permitir ajustes desde la gráfica')
+          : fertProgT('chart_lock_fertilizer', 'Abierto: la gráfica puede ajustar este fertilizante'));
       const lockIcon = isChartLocked
         ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0V11"></path></svg>'
         : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.2a4 4 0 0 1 8 0"></path></svg>';
       return `
           <th class="ferti-fert-col-head">
-            <button type="button" title="${lockTitle}" aria-label="${lockTitle}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
+            <button type="button" title="${fertiEscapeAttr(lockTitle)}" aria-label="${fertiEscapeAttr(lockTitle)}" aria-pressed="${isChartLocked ? 'true' : 'false'}" class="ferti-col-lock-btn ${isChartLocked ? 'is-locked' : 'is-unlocked'}${isWaterAcid ? ' is-acid-locked' : ''}" onclick="toggleFertiChartColumnLock('${c.id}')">${lockIcon}</button>
             <button title="Eliminar columna" class="ferti-col-remove-btn" onclick="removeFertiColumn('${c.id}')">✕</button>
             <div class="fert-col-title" title="${displayNamePlain}">${displayNameHtml}</div>
             <select class="ferti-col-select" data-col-id="${c.id}" onchange="onFertiColumnMaterialChange('${c.id}', this.value)">
@@ -2477,9 +2484,11 @@ function fertiApplyWaterAnalysisById(analysisId) {
   );
   fertiMarkGenerationInputsChanged();
   markFertiProgDirty();
+  try { fertiSyncProgramAcidFromLamina(); } catch (eAcid) {}
   updateFertiSummary();
   fertiRefreshWaterAnalysisSelect();
   try { fertiRenderAcidSummary(); } catch (e) {}
+  try { renderFertiWeeks(); } catch (eWeeks) {}
   try { if (typeof saveFertirriegoProgram === 'function') saveFertirriegoProgram(); } catch (e) {}
   if (window.showMessage) {
     const legend = window.NpHydroAcidLegend;
@@ -2749,7 +2758,79 @@ function toggleFertiChartEditMode() {
   updateFertiChartEditControls();
 }
 
+function fertiIsWaterAcidMaterialId(materialId) {
+  const acid = fertiGeneratorAcidInput();
+  return !!(acid && acid.materialId && String(materialId || '') === String(acid.materialId));
+}
+
+function fertiIsWaterAcidColumn(col) {
+  return !!(col && fertiIsWaterAcidMaterialId(col.materialId));
+}
+
+function fertiWaterAcidColumnIds() {
+  return (fertiColumns || []).filter(fertiIsWaterAcidColumn).map(c => c.id);
+}
+
+function fertiEnsureWaterAcidColumnsLocked() {
+  let changed = false;
+  fertiWaterAcidColumnIds().forEach(id => {
+    if (fertiChartLockedColumnIds.indexOf(id) === -1) {
+      fertiChartLockedColumnIds.push(id);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function fertiIsChartColumnLocked(colId) {
+  if (fertiChartLockedColumnIds.indexOf(colId) !== -1) return true;
+  const col = (fertiColumns || []).find(c => c && c.id === colId);
+  return fertiIsWaterAcidColumn(col);
+}
+
+function fertiAcidLitersHaFromDepth(mlPerM3, depthM3ha) {
+  const ui = fertProgUI();
+  if (ui && typeof ui.acidLitersHa === 'function') return ui.acidLitersHa(mlPerM3, depthM3ha);
+  return Math.max(0, Number(mlPerM3) || 0) * Math.max(0, Number(depthM3ha) || 0) / 1000;
+}
+
+function fertiSyncProgramAcidFromLamina() {
+  fertiEnsureWaterAcidColumnsLocked();
+  const acid = fertiGeneratorAcidInput();
+  const cols = (fertiColumns || []).filter(c => acid && c.materialId === acid.materialId);
+  if (!acid || !cols.length || !Array.isArray(fertiWeeks) || !fertiWeeks.length) return false;
+  const depths = fertiAcidWaterDepths();
+  let changed = false;
+  fertiWeeks.forEach((week, i) => {
+    if (!week.kgByCol) week.kgByCol = {};
+    const litersHa = fertiAcidLitersHaFromDepth(acid.mlPerM3, depths[i] || 0);
+    let weekChanged = false;
+    cols.forEach(col => {
+      const prev = Number(week.kgByCol[col.id]) || 0;
+      if (Math.abs(prev - litersHa) > 1e-6) {
+        week.kgByCol[col.id] = litersHa;
+        weekChanged = true;
+      }
+    });
+    if (weekChanged) {
+      computeWeekTotals(week);
+      changed = true;
+    }
+  });
+  if (changed) {
+    markFertiProgDirty();
+    fertiMarkGenerationInputsChanged();
+  }
+  return changed;
+}
+
 function toggleFertiChartColumnLock(colId) {
+  const col = (fertiColumns || []).find(c => c && c.id === colId);
+  if (fertiIsWaterAcidColumn(col)) {
+    fertiEnsureWaterAcidColumnsLocked();
+    renderFertiWeeks();
+    return;
+  }
   const idx = fertiChartLockedColumnIds.indexOf(colId);
   if (idx === -1) fertiChartLockedColumnIds.push(colId);
   else fertiChartLockedColumnIds.splice(idx, 1);
@@ -2811,7 +2892,7 @@ function fertiAdjustStageNutrientCanonical(stageIndex, nutrientKey, canonicalTar
   });
   const actualCoefficients = fertiColumns.map(c => fertiNutrientCoefficient(c.materialId, nutrientKey));
   const coefficients = actualCoefficients.map((value, idx) => (
-    fertiChartLockedColumnIds.indexOf(fertiColumns[idx].id) !== -1 ? 0 : value
+    fertiIsChartColumnLocked(fertiColumns[idx].id) ? 0 : value
   ));
   canonicalTarget = Math.max(0, parseFloat(canonicalTarget) || 0);
   const lockedContribution = amounts.reduce((sum, amount, idx) => (
@@ -3178,9 +3259,12 @@ function renderFertiChartWaterByStageInputs() {
       return;
     }
     const isProgram = wrap.id === 'fertiProgramWaterByStageWrap';
-    const note = isProgram
-      ? fertProgT('program_water_help', 'Suma del ciclo = kg/ha del agua. Cada etapa = ácido. Igual en Dinámica.')
-      : fertProgT('charts_water_help', 'Se usa aquí para ppm, meq/L y CE. Es la misma lámina que en Programa.');
+    if (!isProgram) {
+      wrap.hidden = true;
+      wrap.innerHTML = '';
+      return;
+    }
+    const note = fertProgT('program_water_help', 'Suma del ciclo = kg/ha del agua. Cada etapa = ácido. Dinámica usa esta lámina para ppm/meq.');
     wrap.innerHTML =
       '<div class="ferti-charts-water-head">' +
         '<h4 class="ferti-charts-water-title">' + title + ' (' + unit + ')</h4>' +
@@ -3244,7 +3328,16 @@ function applyFertiChartWaterValue(i, displayValue) {
     if (input) input.value = shown;
   });
   try { fertiRenderAcidSummary(); } catch (eAcid) {}
-  renderFertiChartsInsights();
+  let acidChanged = false;
+  try { acidChanged = !!fertiSyncProgramAcidFromLamina(); } catch (eSync) {}
+  try { updateFertiSummary(); } catch (eSum) {}
+  if (acidChanged) {
+    renderFertiWeeks();
+    try { if (typeof updateFertiCharts === 'function') updateFertiCharts(); } catch (eCh) {}
+    try { fertiPushProgramSplitToDistribution(); } catch (ePush) {}
+  } else {
+    renderFertiChartsInsights();
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -4828,6 +4921,7 @@ function loadFertirriegoProgram() {
     fertiChartLockedColumnIds = (data && Array.isArray(data.chartLockedColumnIds))
       ? data.chartLockedColumnIds.filter(id => fertiColumns.some(c => c.id === id))
       : [];
+    try { fertiEnsureWaterAcidColumnsLocked(); } catch (eLock) {}
     fertiProgramGenerationMeta = data && data.generationMeta && typeof data.generationMeta === 'object'
       ? data.generationMeta
       : null;
@@ -4849,6 +4943,7 @@ function loadFertirriegoProgram() {
     fertiGranularProgramLinked = !!(data && data.granularProgramLinked);
     fertiWeeks.forEach(w => { if (!w.kgByCol) w.kgByCol = {}; fertiColumns.forEach(c => { if (w.kgByCol[c.id] == null) w.kgByCol[c.id] = 0; }); });
     fertiNormalizeChartWaterByStage();
+    try { fertiSyncProgramAcidFromLamina(); } catch (eAcidLoad) {}
     try {
       if (typeof window.fertiAdoptDistributionFromProgram === 'function') {
         window.fertiAdoptDistributionFromProgram({ auto: true });
@@ -4933,6 +5028,12 @@ function initFertirriegoProgramUI() {
     window._fertiAcidDistBound = true;
     window.addEventListener('np:ferti-distribution-changed', function () {
       try { fertiRenderAcidSummary(); } catch (e) {}
+      try {
+        if (fertiSyncProgramAcidFromLamina()) {
+          renderFertiWeeks();
+          updateFertiSummary();
+        }
+      } catch (e2) {}
     });
   }
   // Cargar primero desde localStorage (sin esperar nube) para que el aporte del programa aparezca al instante

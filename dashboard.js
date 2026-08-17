@@ -1198,7 +1198,6 @@ function sectionTemplate(name) {
                 </div>
               </div>
               <div id="fertiChartsSourceShareWrap" class="ferti-source-share" hidden></div>
-              <div id="fertiChartsWaterByStageWrap" class="ferti-charts-water-wrap" hidden></div>
               <div id="fertiChartsStageInsightsWrap" class="ferti-charts-insights-wrap"></div>
             </div>
           </div>
@@ -1448,7 +1447,7 @@ function sectionTemplate(name) {
 
         window.isGranularRequerimientoElementalMode = false;
         window.GRANULAR_CONVERSION_FACTORS = { P2O5_TO_P:2.291, P_TO_P2O5:2.291, K2O_TO_K:1.204, K_TO_K2O:1.204, CaO_TO_Ca:1.399, Ca_TO_CaO:1.399, MgO_TO_Mg:1.658, Mg_TO_MgO:1.658, SiO2_TO_Si:2.139, Si_TO_SiO2:2.139 };
-        window.GRANULAR_DEFAULT_EFFICIENCY = { N:65, P2O5:40, K2O:85, CaO:85, MgO:85, S:85, SO4:85, Fe:80, Mn:80, B:80, Zn:80, Cu:80, Mo:80, SiO2:85 };
+        window.GRANULAR_DEFAULT_EFFICIENCY = { N:75, P2O5:50, K2O:90, CaO:90, MgO:90, S:90, SO4:90, Fe:85, Mn:85, B:85, Zn:85, Cu:85, Mo:85, SiO2:90 };
         // 🚀 CRÍTICO: NO reinicializar GRANULAR_CROP_EXTRACTION_DB aquí porque podría sobrescribir overrides aplicados
         // Si el módulo nutricion-granular-requerimiento-functions.js carga, GRANULAR_CROP_EXTRACTION_DB ya está definido
         // y puede tener overrides aplicados. Reinicializarlo aquí sobrescribiría esos overrides.
@@ -18382,7 +18381,7 @@ function createGranularSectionHTML(reportLanguage) {
     totalExtraction[nutrient] = toNumber(extraction[nutrient]) * toNumber(yieldTarget);
   });
 
-  const GRANULAR_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
+  const GRANULAR_DEFAULT_EFF = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
   const rawAdj = req.adjustment || {};
   const rawEff = req.efficiency || {};
   const adjustment = {};

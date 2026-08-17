@@ -23,6 +23,7 @@ const {
   assertChatCredits,
   addUsageInSupabase
 } = require('./lib/chat-credits');
+const { resolveBulkDensity } = require('./lib/soil-extract-aliases');
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const MAX_BYTES = 4.5 * 1024 * 1024;
@@ -1000,6 +1001,8 @@ function normalizeSoilPayload(raw, lang) {
     (raw.unitHints && typeof raw.unitHints === 'object' && raw.unitHints) ||
     (raw.sourceUnits && typeof raw.sourceUnits === 'object' && raw.sourceUnits) ||
     {};
+  const bdResolved = resolveBulkDensity(base.physical, raw, base.notes);
+  if (bdResolved) base.physical.bulkDensity = bdResolved;
   normalizeEnglishPhysicalUnits(base, convertNotes, lang, unitHints);
   normalizeFertilityForms(base.fertility, convertNotes, lang);
   reconcileSoilCations(base.cations, convertNotes, lang);
@@ -1083,6 +1086,12 @@ function soilPrompt(lang) {
     '  * Si hay ambas filas, llena AMBAS con los valores exactos del lab (fila correcta → campo correcto).',
     '- phSection.salinity = CE en dS/m si aparece.',
     '- physical: % para saturación/CC/PMP; bulkDensity g/cm3; hydraulicConductivity cm/h.',
+    '- physical.bulkDensity = DENSIDAD APARENTE del suelo (g/cm³). Labs MX a menudo la ABREVIAN:',
+    '  "Dens. Aparente", "Dens. aparente", "Dens Aparente", "D.A.", "DA", "Dap",',
+    '  "¹Dens. Aparente" / "1Dens. Aparente" (el 1 o ¹ es NOTA AL PIE, no el valor),',
+    '  "Bulk density", "Bd". Ejemplo real: "¹Dens. Aparente   1.32   g/cm³" → bulkDensity="1.32".',
+    '  Rango típico 0.8–1.8 g/cm³. NUNCA uses el número de la nota al pie (1, 2, 3) como densidad.',
+    '  No confundas con densidad real/partícula (~2.65).',
     '- date en YYYY-MM-DD si puedes; title = lab/cliente/rancho si aparece.',
     '- confidence: "high" | "medium" | "low".',
     notesRule
