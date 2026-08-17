@@ -160,17 +160,10 @@
           out.push(finishProfile(pr));
           continue;
         }
-        var t = n === 1 ? 0 : k / (n - 1);
+        var t = k / (n - 1);
         var start = lerpProfile(prevPr, pr, 0.35);
         var end = lerpProfile(pr, nextPr, 0.45);
-        var blended = lerpProfile(start, end, t);
-        var iStart = lerp(prevPr.I, pr.I, 0.4);
-        var iPeak = pr.I * 1.11;
-        var iEnd = pr.I;
-        blended.I = t <= 0.67
-          ? lerp(iStart, iPeak, t / 0.67)
-          : lerp(iPeak, iEnd, (t - 0.67) / 0.33);
-        out.push(finishProfile(blended));
+        out.push(finishProfile(lerpProfile(start, end, t)));
       }
       i = j;
     }

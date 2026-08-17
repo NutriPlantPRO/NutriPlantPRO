@@ -381,7 +381,8 @@
       pct: JSON.parse(JSON.stringify(pct)),
       waterDepthByStageM3ha: waterDepthByStageM3ha.slice(),
       axis: axis,
-      drivesProgram: !!distDrivesProgram
+      drivesProgram: !!distDrivesProgram,
+      structureEdited: !!w._fertiDistStructureEdited
     };
   }
 
@@ -408,6 +409,7 @@
     }
     distDrivesProgram = state.drivesProgram === true;
     w._fertiDistDrivesProgram = distDrivesProgram;
+    if (state.structureEdited === true) w._fertiDistStructureEdited = true;
     normalizePhenologyNames();
     var savedWater = Array.isArray(state.waterDepthByStageM3ha)
       ? state.waterDepthByStageM3ha
@@ -821,7 +823,9 @@
     ensurePct();
     scheduleSave();
     syncPctInputsFromData();
-    updateChartPctSeries(ids && ids.length === 1 ? ids[0] : undefined);
+    if (!(opts && opts.skipChart)) {
+      updateChartPctSeries(ids && ids.length === 1 ? ids[0] : undefined);
+    }
     if (opts && opts.skipProgramPush) return;
     markDistDrivesProgram();
     scheduleProgramPush(ids && ids.length === 1 ? ids[0] : undefined);
@@ -888,7 +892,7 @@
         pct[n.id] = suggested[n.id].slice();
       }
     });
-    commitPctIds(NUTS.map(function (n) { return n.id; }), { skipProgramPush: true });
+    commitPctIds(NUTS.map(function (n) { return n.id; }), { skipProgramPush: true, skipChart: !!opts.skipChart });
     refreshKgCells();
     closeAssistMenu();
     w._fertiDistKeepSuggestedPct = true;
@@ -906,6 +910,7 @@
     if (!layout || !Array.isArray(layout.stages) || !layout.stages.length) return false;
     distProgramSync = true;
     try {
+      w._fertiDistStructureEdited = false;
       axis = layout.axis === 'mes' ? 'mes' : 'semana';
       stages = layout.stages.map(function (name) { return canonicalStage(name) || String(name || 'Nueva etapa'); });
       waterDepthByStageM3ha = Array.isArray(layout.waterDepths) ? layout.waterDepths.slice(0, stages.length) : [];
@@ -1267,6 +1272,11 @@
     charts.filter(Boolean).forEach(flushDistChart);
   }
   function updateChartPctSeries(nutId) {
+    var charts = liveCharts();
+    for (var i = 0; i < charts.length; i++) {
+      var labels = charts[i].data && charts[i].data.labels;
+      if (!Array.isArray(labels) || labels.length !== stages.length) return;
+    }
     paintDistChart({ nutId: nutId });
   }
   function applyPctFromTableInput(el) {
@@ -1281,7 +1291,11 @@
     scheduleSave();
     refreshPctSums();
     refreshKgCells();
-    paintDistChart();
+    if (chartFocusId && chartFocusId !== id) {
+      setChartFocus(id);
+    } else {
+      updateChartPctSeries(id);
+    }
     scheduleProgramPush(id);
     return true;
   }
@@ -1647,7 +1661,7 @@
     canvas.style.height = '';
     var chart = new w.Chart(canvas, {
       type: 'line',
-      data: { datasets: datasets },
+      data: { labels: labels.slice(), datasets: datasets },
       options: distChartOptions(canvas, labels, yMax)
     });
     bindChartDrag(canvas);
@@ -1714,11 +1728,49 @@
     syncAxisUi();
     renderPresetSelect();
     renderTotals();
-    renderPct();
-    renderWaterByStage();
-    renderChart();
-    observeChartHost();
-    scheduleChartRender();
+    try { renderPct(); } catch (ePct) {}
+    try { renderWaterByStage(); } catch (eWater) {}
+    try {
+      renderChart();
+      observeChartHost();
+      scheduleChartRender();
+    } catch (eChart) {}
+  }
+
+  function markDistStructureEdited() {
+    w._fertiDistKeepSuggestedPct = true;
+    w._fertiDistStructureEdited = true;
+    distDrivesProgram = true;
+    w._fertiDistDrivesProgram = true;
+  }
+
+  function refreshAfterStageCountChange() {
+    markDistStructureEdited();
+    try {
+      if (!applySuggestPct({ silent: true, skipChart: true })) ensurePct();
+    } catch (e) {
+      ensurePct();
+    }
+    try { saveProjectCurve(); } catch (e2) {}
+    renderAll();
+  }
+
+  function addDistStage() {
+    stages.push(nextAddName());
+    waterDepthByStageM3ha.push(0);
+    refreshAfterStageCountChange();
+  }
+
+  function removeDistStage(ri) {
+    if (stages.length <= 1) return;
+    ri = parseInt(ri, 10);
+    if (!isFinite(ri) || ri < 0 || ri >= stages.length) return;
+    NUTS.forEach(function (n) {
+      if (pct[n.id]) pct[n.id].splice(ri, 1);
+    });
+    waterDepthByStageM3ha.splice(ri, 1);
+    stages.splice(ri, 1);
+    refreshAfterStageCountChange();
   }
 
   function bind() {
@@ -1803,39 +1855,13 @@
           copyPctToOthers();
           return;
         }
-        var rm = ev.target.closest && ev.target.closest('.ferti-dist-rm');
-        if (rm) {
-          if (stages.length <= 1) return;
-          var ri = parseInt(rm.getAttribute('data-ri'), 10);
-          NUTS.forEach(function (n) {
-            if (pct[n.id]) pct[n.id].splice(ri, 1);
-          });
-          waterDepthByStageM3ha.splice(ri, 1);
-          stages.splice(ri, 1);
-          if (!applySuggestPct({ silent: true })) {
-            ensurePct();
-            scheduleSave();
-          }
-          renderAll();
-        }
       });
     }
 
     var suggestBtn = document.getElementById('fertiDistSuggestPct');
-    if (suggestBtn) suggestBtn.addEventListener('click', function () {
+    if (suggestBtn) suggestBtn.onclick = function () {
       applySuggestPct();
-    });
-
-    var add = document.getElementById('fertiDistAddStage');
-    if (add) add.addEventListener('click', function () {
-      stages.push(nextAddName());
-      waterDepthByStageM3ha.push(0);
-      if (!applySuggestPct({ silent: true })) {
-        ensurePct();
-        scheduleSave();
-      }
-      renderAll();
-    });
+    };
 
     var saveBtn = document.getElementById('fertiDistSavePreset');
     if (saveBtn) saveBtn.addEventListener('click', function () {
@@ -2136,12 +2162,21 @@
   });
   if (!w._npFertiDistTableChartBound) {
     w._npFertiDistTableChartBound = true;
-    document.addEventListener('input', function (ev) {
-      applyPctFromTableInput(ev.target);
-    }, true);
-    document.addEventListener('change', function (ev) {
-      applyPctFromTableInput(ev.target);
-    }, true);
+    document.addEventListener('click', function (ev) {
+      var host = hostEl();
+      if (!host || host.dataset.ready !== '1') return;
+      var addBtn = ev.target.closest && ev.target.closest('#fertiDistAddStage');
+      if (addBtn && host.contains(addBtn)) {
+        ev.preventDefault();
+        addDistStage();
+        return;
+      }
+      var rm = ev.target.closest && ev.target.closest('.ferti-dist-rm');
+      if (rm && host.contains(rm)) {
+        ev.preventDefault();
+        removeDistStage(rm.getAttribute('data-ri'));
+      }
+    });
     document.addEventListener('keydown', function (ev) {
       var el = ev.target;
       if (ev.key === 'Escape') closeAssistMenu();

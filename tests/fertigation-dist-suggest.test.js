@@ -147,5 +147,23 @@ module.exports = [
       assert.ok(pct.b[flor] > pct.b[lle] || pct.b[amarre] > pct.b[mad], 'B flower vs filling');
       assert.ok(pct.fe[lle] > pct.fe[bro], 'Fe follows stage size');
     }
+  },
+  {
+    name: 'sugerir %: tres Vegetativo no hacen campana en el mes de enmedio',
+    run: function () {
+      var stages = ['Brotación', 'Vegetativo', 'Vegetativo', 'Vegetativo', 'Prefloración'];
+      var pct = suggest.suggestPct(stages).pct;
+      var profiles = suggest.profilesForStages(stages);
+      function notBell(arr, a, b, c, label) {
+        assert.ok(!(arr[b] > arr[a] + 0.05 && arr[b] > arr[c] + 0.05), label + ' ' + [arr[a], arr[b], arr[c]].join(' → '));
+      }
+      notBell(pct.fe, 1, 2, 3, 'Fe');
+      notBell(pct.mn, 1, 2, 3, 'Mn');
+      notBell(pct.zn, 1, 2, 3, 'Zn');
+      notBell(pct.b, 1, 2, 3, 'B');
+      notBell([profiles[1].I, profiles[2].I, profiles[3].I], 0, 1, 2, 'I');
+      assert.ok(profiles[1].I <= profiles[2].I + 1e-6);
+      assert.ok(profiles[2].I <= profiles[3].I + 1e-6);
+    }
   }
 ];

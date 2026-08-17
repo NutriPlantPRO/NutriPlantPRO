@@ -2882,7 +2882,7 @@ function fertiAdoptDistributionFromProgram(opts) {
   const layout = fertiProgramLayoutForDistribution();
   const dist = fertiGeneratorDistributionState();
   if (opts && opts.auto) {
-    if (window._fertiDistKeepSuggestedPct) return false;
+    if (window._fertiDistKeepSuggestedPct || window._fertiDistStructureEdited) return false;
     if (fertiDistIsDrivingProgram(dist)) {
       return fertiApplyLiveDistributionToExistingProgram();
     }

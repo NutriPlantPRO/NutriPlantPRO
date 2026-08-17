@@ -8528,10 +8528,11 @@ html.embed-login body {
 .ferti-dist-table th.ferti-dist-stage-head,
 .ferti-dist-table td.ferti-dist-stage-cell {
   text-align: left;
-  width: 148px;
-  min-width: 140px;
-  max-width: 156px;
-  padding: 4px 4px;
+  width: 178px;
+  min-width: 168px;
+  max-width: 196px;
+  padding: 4px 6px;
+  overflow: visible;
 }
 .ferti-dist-table th.ferti-dist-period-head,
 .ferti-dist-table td.ferti-dist-period-cell {
