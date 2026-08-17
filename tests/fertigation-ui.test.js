@@ -93,7 +93,7 @@ module.exports = [
       assert.equal(ferti.t('adjust_ternary', '✋ Ajustar en triángulo'), '✋ Adjust on triangle');
       assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '2. Target irrigation depth by stage');
       assert.equal(ferti.t('charts_water_title', 'Lámina de riego por etapa'), 'Irrigation depth by stage');
-      assert.equal(ferti.t('dist_pct_nudge', '− / + mueve 1 %'), '− / + moves 1%. The bar sets the %. You can also type.');
+      assert.equal(ferti.t('dist_pct_nudge', 'La barrita ajusta el %'), 'The bar sets the %. You can also type the number.');
       assert.equal(ferti.t('auto_pending_detail', 'Falta {list}'), 'Short: {list}');
       assert.equal(ferti.t('auto_all_cycle', 'todo el ciclo'), 'full cycle');
     }

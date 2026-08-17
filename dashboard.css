@@ -5158,85 +5158,93 @@ html.embed-login body {
   background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
   border: 1px solid #cfe3ff;
   border-left: 4px solid #2563eb;
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
-  padding: 12px;
-  margin: 0 0 12px 0;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.07);
+  padding: 10px 10px 8px;
+  margin: 16px 0 12px;
 }
 
 .ferti-charts-water-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .ferti-charts-water-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .ferti-charts-water-note {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: #475569;
 }
 
 .ferti-charts-water-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 6px;
 }
 
 .ferti-charts-water-item {
   border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  padding: 8px;
+  border-radius: 6px;
+  padding: 5px 6px 6px;
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
 }
 
-.ferti-charts-water-item label {
+.ferti-charts-water-item span {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: #1e3a8a;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  line-height: 1.2;
 }
 
 .ferti-charts-water-item input {
   width: 100%;
   box-sizing: border-box;
-  border: 1.5px solid #60a5fa;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 0.85rem;
+  border: 1px solid #93c5fd;
+  border-radius: 5px;
+  padding: 3px 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
   background: #ffffff;
   color: #0f172a;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.ferti-charts-water-item input::-webkit-outer-spin-button,
+.ferti-charts-water-item input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .ferti-charts-water-item input:focus {
   outline: none;
   border-color: #1d4ed8;
-  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.18);
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.16);
 }
 
 .ferti-charts-water-item:hover {
   border-color: #93c5fd;
-  transform: translateY(-1px);
-  transition: all 0.18s ease;
 }
 
 .ferti-charts-water-item.is-current {
   border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.22);
   background: linear-gradient(180deg, #dbeafe 0%, #ffffff 100%);
 }
 
 .ferti-source-share {
-  margin: 12px 0 2px;
+  margin: 12px 0 0;
   background: #ffffff;
   border: 1px solid #dbeafe;
   border-left: 4px solid #0f766e;
@@ -8705,43 +8713,26 @@ html.embed-login body {
 }
 .ferti-dist-table td.ferti-dist-pct-cell {
   width: auto;
-  min-width: 108px;
+  min-width: 72px;
   max-width: none;
   padding: 6px 8px;
 }
 .ferti-dist-pct-wrap {
   display: grid;
-  grid-template-columns: 20px minmax(40px, 1fr) 20px;
+  grid-template-columns: minmax(48px, 1fr);
   grid-template-rows: auto 6px;
-  gap: 4px 8px;
+  gap: 4px;
   align-items: center;
-}
-.ferti-dist-pct-btn {
-  width: 20px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid #dbe3ee;
-  border-radius: 5px;
-  background: #f8fafc;
-  color: var(--ferti-nut, #334155);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-.ferti-dist-pct-btn:hover {
-  background: #fff;
-  border-color: var(--ferti-nut, #94a3b8);
 }
 .ferti-dist-table input.ferti-dist-pct,
 .ferti-dist-table input[type="number"].ferti-dist-pct {
   width: 100%;
-  min-width: 40px;
+  min-width: 48px;
   max-width: none;
-  padding: 5px 8px;
+  padding: 6px 4px;
   text-align: center;
   color: var(--ferti-nut, #0f172a);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   -moz-appearance: textfield;
   appearance: textfield;
@@ -8752,7 +8743,7 @@ html.embed-login body {
   margin: 0;
 }
 .ferti-dist-pct-bar {
-  grid-column: 2;
+  grid-column: 1;
   height: 6px;
   border-radius: 999px;
   background: #e2e8f0;

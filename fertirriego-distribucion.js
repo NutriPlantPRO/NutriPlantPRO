@@ -546,7 +546,7 @@
           '<div class="ferti-dist-table-actions">' +
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
-            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. − / + mueve 1 %; la barrita de cada celda ajusta el %.')) + '</p>' +
+            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. La barrita de cada celda ajusta el %; también puedes escribir el número.')) + '</p>' +
           '</div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
         '</div>' +
@@ -671,12 +671,10 @@
       var cells = NUTS.map(function (n) {
         var v = pct[n.id] && pct[n.id][ri] != null ? pct[n.id][ri] : 0;
         var barW = Math.max(0, Math.min(100, Number(v) || 0));
-        var nudgeTitle = escapeHtml(t('dist_pct_nudge', '− / + mueve 1 %. La barrita ajusta el %. También puedes escribir.'));
+        var nudgeTitle = escapeHtml(t('dist_pct_nudge', 'La barrita ajusta el %. También puedes escribir el número.'));
         return '<td class="ferti-dist-pct-cell ferti-dist-nut-start" ' + nutCss(n) + '>' +
           '<div class="ferti-dist-pct-wrap">' +
-            '<button type="button" class="ferti-dist-pct-btn" data-dir="-1" tabindex="-1" aria-label="' + escapeHtml(t('dist_pct_minus', 'Bajar 1 %')) + '">−</button>' +
             '<input type="number" class="ferti-dist-pct" data-id="' + n.id + '" data-ri="' + ri + '" value="' + v + '" step="any" min="0" max="100" inputmode="decimal" title="' + nudgeTitle + '">' +
-            '<button type="button" class="ferti-dist-pct-btn" data-dir="1" tabindex="-1" aria-label="' + escapeHtml(t('dist_pct_plus', 'Subir 1 %')) + '">+</button>' +
             '<div class="ferti-dist-pct-bar" role="slider" tabindex="-1" aria-label="' + escapeHtml(t('dist_pct_bar', 'Ajustar %')) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + barW + '">' +
               '<span class="ferti-dist-pct-bar-fill" style="width:' + barW + '%"></span>' +
             '</div>' +
