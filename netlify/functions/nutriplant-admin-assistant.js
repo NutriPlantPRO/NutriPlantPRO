@@ -556,6 +556,67 @@ function getFertirriegoProgram(data) {
   return null;
 }
 
+function getFertirriegoRequirements(data) {
+  if (!data || typeof data !== 'object') return null;
+  const f = data.fertirriego;
+  if (f && f.requirements && typeof f.requirements === 'object') return f.requirements;
+  if (f && typeof f === 'object' && (f.cropType || f.adjustment || f.efficiency || f.targetYield)) return f;
+  const sec = data.sections && data.sections.fertirriego;
+  if (sec && sec.requirements && typeof sec.requirements === 'object') return sec.requirements;
+  if (data.fertirriegoRequirements && typeof data.fertirriegoRequirements === 'object') return data.fertirriegoRequirements;
+  return null;
+}
+
+function realRequirementOxideFromReq(req) {
+  const adj = (req && req.adjustment) || {};
+  const eff = (req && req.efficiency) || {};
+  const defaultEff = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, SO4: 90 };
+  const out = {};
+  ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4'].forEach((k) => {
+    const a = parseFloat(adj[k]);
+    const eRaw = eff[k] != null && eff[k] !== '' ? parseFloat(eff[k]) : defaultEff[k];
+    const e = Number.isFinite(eRaw) && eRaw > 0 ? eRaw : defaultEff[k];
+    out[k] = Number.isFinite(a) ? a / (e / 100) : 0;
+  });
+  return out;
+}
+
+let distSuggestApi = null;
+function getDistSuggestApi() {
+  if (distSuggestApi) return distSuggestApi;
+  try {
+    const path = require('path');
+    distSuggestApi = require(path.join(__dirname, '../../assets/np-fertigation-dist-suggest.js'));
+  } catch (e) {
+    distSuggestApi = null;
+  }
+  return distSuggestApi;
+}
+
+function attachIonicEquilibrium(out, data) {
+  const target = out && typeof out === 'object' ? out : {};
+  const api = getDistSuggestApi();
+  const req = getFertirriegoRequirements(data);
+  if (!api || typeof api.cycleIonicBalance !== 'function') {
+    target.ionic_equilibrium = { available: false };
+    return target;
+  }
+  if (!req) {
+    target.ionic_equilibrium = {
+      available: false,
+      empty: true,
+      note: 'Sin requerimiento de fertirriego. Apoyo para armar el programa; no sale en PDF.'
+    };
+    return target;
+  }
+  const balance = api.cycleIonicBalance(realRequirementOxideFromReq(req));
+  target.ionic_equilibrium = typeof api.serializeIonicBalance === 'function'
+    ? api.serializeIonicBalance(balance)
+    : { empty: !!balance.empty, in_zone: !!balance.inZone, near_edge: !!balance.edge };
+  target.ionic_equilibrium.available = !balance.empty;
+  return target;
+}
+
 function fertiStageLabel(timeUnit, index) {
   const u = String(timeUnit || 'semana').toLowerCase();
   const isMes = u.includes('mes') || u === 'month' || u === 'months';
@@ -630,9 +691,12 @@ function computeFertiStageIonic(week, m3ha, timeUnit, stageIndex) {
   };
 }
 
-function summarizeFertirriego(program, stageIndexParam) {
+function summarizeFertirriego(program, stageIndexParam, data) {
   if (!program || !Array.isArray(program.weeks) || program.weeks.length === 0) {
-    return { has_program: false, message: 'No hay programa de fertirriego guardado.' };
+    return attachIonicEquilibrium(
+      { has_program: false, message: 'No hay programa de fertirriego guardado.' },
+      data
+    );
   }
   const weeks = program.weeks;
   const timeUnit = program.timeUnit || 'semana';
@@ -727,7 +791,7 @@ function summarizeFertirriego(program, stageIndexParam) {
   if (stageIndexParam != null && stageIndexParam !== '') {
     out.requested_stage = computeFertiStageIonic(weeks[idx], waterArr[idx], timeUnit, idx);
   }
-  return out;
+  return attachIonicEquilibrium(out, data);
 }
 
 function summarizeSoil(data) {
@@ -2216,7 +2280,7 @@ async function handleMyProgramProjectGet(supabase, params) {
     project: summarizeMyProgramProject(row),
     data: row.data || {},
     sections: {
-      fertirriego: summarizeFertirriego(getFertirriegoProgram(row.data || {}), params.fertirriego_stage_index ?? params.stage_index),
+      fertirriego: summarizeFertirriego(getFertirriegoProgram(row.data || {}), params.fertirriego_stage_index ?? params.stage_index, row.data || {}),
       granular: summarizeGranular(row.data || {})
     }
   };
@@ -2349,7 +2413,7 @@ async function handleProjectDetail(supabase, params) {
       location: summarizeLocation(data.location),
       soil: summarizeSoil(data),
       analyses: summarizeAllProjectAnalyses(data),
-      fertirriego: summarizeFertirriego(program, stageIdx),
+      fertirriego: summarizeFertirriego(program, stageIdx, data),
       granular: summarizeGranular(data),
       vpd_saved: summarizeVpdSaved(data.vpdAnalysis),
       climate: summarizeClimateAnalysis(data.climateAnalysis)

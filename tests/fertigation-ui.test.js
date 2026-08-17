@@ -83,6 +83,8 @@ module.exports = [
       assert.equal(ferti.t('auto_stale', 'Programa desactualizado respecto a Distribución objetivo'), 'Program is outdated relative to Objective Distribution');
       assert.equal(ferti.t('dist_title_prefix', 'Distribución objetivo'), 'Objective distribution');
       assert.equal(ferti.t('dist_suggest_btn', 'Sugerir %'), 'Suggest %');
+      assert.equal(ferti.t('ionic_eq_title', 'Zona de equilibrio iónico'), 'Ionic equilibrium zone');
+      assert.equal(ferti.t('ionic_eq_col_kg', 'Zona ({unit})'), 'Zone ({unit})');
       assert.equal(ferti.t('source_share_title', 'Aporte fertirriego vs nutrición granular'), 'Fertigation vs base granular supply');
       assert.equal(ferti.t('source_share_ferti', 'Fertirriego'), 'Fertigation');
       assert.equal(ferti.t('source_share_granular', 'Nutrición granular de base'), 'Base granular nutrition');

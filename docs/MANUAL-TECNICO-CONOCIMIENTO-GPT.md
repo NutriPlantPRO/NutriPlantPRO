@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.08.7 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-08-17 · **v2026.08.17** (+ Dinámica Nutricional: tabla % fertirriego vs % granular de base; PDF/admin/API)
+**Versión Knowledge:** 2026-08-17 · **v2026.08.17b** (+ Zona de equilibrio iónico bajo Requerimiento: dashboard/admin/API `ionic_equilibrium`; no PDF; % fijos, kg y % actuales siguen el req)
 
 ---
 
@@ -147,7 +147,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.6 Fertirriego programa
 
-**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Distribución objetivo por etapa** (% + lámina) → programa semanal/mensual → aporte agua N-NO₃ → gráficas.
+**URL:** …/programa-fertirriego-etapas.html · Requerimiento → **Zona de equilibrio iónico** (apoyo, no PDF) → **Distribución objetivo por etapa** (% + lámina) → programa semanal/mensual → aporte agua N-NO₃ → gráficas.
+
+**Zona de equilibrio iónico (dashboard + admin, no PDF):** debajo de Requerimiento real, tablita de **3 columnas** — Zona (aniones N-P-S / cationes K-Ca-Mg) · % meq del **requerimiento real** vs rangos fijos (N 20–80, P 1.25–10, S 10–70, K 10–65, Ca 22.5–62.5, Mg 0.5–40; **no cambian** con idioma ni unidades) · ventana kg/ha o lb/acre para editar ese nutriente dejando los otros dos del triángulo fijos (o «No cierra»). Apoyo para armar el programa. Recalcula si cambia extracción, suelo, eficiencia o rendimiento. API `project_detail.sections.fertirriego.ionic_equilibrium`. Chat IA lee el bloque en vivo.
 
 **Distribución objetivo (UI, bajo Requerimiento):** título **Distribución objetivo [proyecto]**. Totales (chips) = Requerimiento real. **La tabla del editor muestra solo %** (no kg/ha): el requerimiento, el aporte de agua y el granular ya se ven en Requerimiento/Programa; las dosis se calculan al **Elaborar programa**. Periodo Semana o Mes (mismo eje que Programa). Cada fila = fenología + número. **Sugerir %** (junto a + Agregar semana/mes y primer ítem del ▾; solo dashboard) coloca % según etapas elegidas y busca zona Steiner en triángulos N-P-S y K-Ca-Mg. Si el ciclo ya sale de zona, avisa. ▾ también: más→menos, menos→más, campana, uniforme, cerrar 100 %, copiar %. Suma 100 % por nutriente. Lámina de riego objetivo por etapa se captura debajo (no en Gráficas). Catálogo 📊 (etapas/%; no kg). PDF/admin pueden listar kg al reportar el programa.
 

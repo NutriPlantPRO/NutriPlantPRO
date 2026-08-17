@@ -25,7 +25,7 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza vers
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Pronóstico agroclimático / alertas)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b Comparar análisis tabla+gráficas + PDF)
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.17**: Dinámica Nutricional tabla % fertirriego vs % granular; PDF/admin/API `fertigation_vs_granular_share_pct`)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.17b**: Zona de equilibrio iónico bajo Requerimiento — dashboard/admin/API `ionic_equilibrium`; no PDF; + Dinámica % ferti vs granular)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.14: actions `invest_pro_overview|holdings|lists`)
@@ -88,6 +88,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 16. **“¿Cuánto vendió Yara en junio?”** (o cifra en un Excel) → `nutri_pro_ask` y si snippets no bastan → `nutri_pro_file_inspect` con `q`
 17. **“¿Dónde veo NVIDIA / mi portafolio / Invest PRO?”** → `invest_pro_overview` / `invest_pro_holdings` / `invest_pro_lists` + Knowledge INVEST-PRO (no inventar precios vivos)
 18. **“¿Cómo se calcula el ácido / costo en hidroponía / ferti / granular?”** → Knowledge MANUAL §4.6–4.9: ácido tanque C (L = mL/m³ × m³ ÷ 1000); costos = USD/t × kg (hidro = USD lote; ferti/granular = USD/ha); no inventar precios
+18.1. **“¿El requerimiento de [proyecto] está en zona de equilibrio iónico?”** → `project_detail` `ionic_equilibrium` (rangos % fijos; kg_min/max = ventana si editas ese nutriente; no va en PDF)
 
 **Redes en el día a día:** cuando publiques algo nuevo, pega el link al Socio en ChatGPT y redactáis juntos (ver flujo en `PUBLICACIONES-REDES` intro y en Instructions § fuente 5). Para que lo recuerde en futuros chats: añade la fila en §8 y re-sube el Knowledge #4 (o actualiza en Cursor y vuelve a subir).
 

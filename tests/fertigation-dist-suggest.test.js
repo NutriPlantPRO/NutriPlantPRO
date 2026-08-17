@@ -165,5 +165,35 @@ module.exports = [
       assert.ok(profiles[1].I <= profiles[2].I + 1e-6);
       assert.ok(profiles[2].I <= profiles[3].I + 1e-6);
     }
+  },
+  {
+    name: 'equilibrio iónico: % meq y zona salen del requerimiento óxido',
+    run: function () {
+      var ok = suggest.cycleIonicBalance({ N: 300, P2O5: 200, K2O: 444, CaO: 222, MgO: 111, SO4: 278 });
+      assert.equal(ok.empty, false);
+      assert.equal(ok.inZone, true);
+      assert.ok(ok.anions.n.pct > 60 && ok.anions.n.pct < 80);
+      assert.equal(ok.anions.n.lo, 20);
+      assert.equal(ok.anions.n.hi, 80);
+      var out = suggest.cycleIonicBalance({ N: 427, P2O5: 192, K2O: 1067, CaO: 71, MgO: 44, SO4: 80 });
+      assert.equal(out.inZone, false);
+      assert.equal(out.anions.n.flag, 'high');
+      assert.equal(out.cations.ca.flag, 'low');
+      assert.equal(ok.anions.n.kgClosed, true);
+      assert.ok(ok.anions.n.kgMin > 200 && ok.anions.n.kgMin < 320, String(ok.anions.n.kgMin));
+      assert.ok(ok.anions.n.kgMax > 400, String(ok.anions.n.kgMax));
+      assert.equal(out.anions.n.kgClosed, false);
+      assert.equal(out.cations.ca.kgClosed, true);
+      assert.ok(out.cations.ca.kgMin < out.cations.ca.kgMax);
+      var ser = suggest.serializeIonicBalance(ok);
+      assert.equal(ser.in_zone, true);
+      assert.deepEqual(ser.anions.N.range_pct, [20, 80]);
+      assert.equal(ser.anions.N.kg_range_closes, true);
+      assert.ok(ser.anions.N.kg_min != null && ser.anions.N.kg_max != null);
+      var serOut = suggest.serializeIonicBalance(out);
+      assert.equal(serOut.in_zone, false);
+      assert.equal(serOut.anions.N.kg_range_closes, false);
+      assert.equal(serOut.anions.N.kg_min, null);
+    }
   }
 ];

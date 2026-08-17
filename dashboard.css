@@ -8226,9 +8226,74 @@ html.embed-login body {
   border-radius: 8px;
   padding: 8px 12px;
 }
-.ferti-soil-maint-hint[hidden] {
-  display: none;
+.ferti-ionic-eq {
+  margin: 14px 0 12px;
+  max-width: 920px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 12px 14px 10px;
 }
+.ferti-ionic-eq-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ferti-ionic-eq-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+.ferti-ionic-eq-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ferti-ionic-eq-table th,
+.ferti-ionic-eq-table td {
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.ferti-ionic-eq-table thead th {
+  background: #e2e8f0;
+  font-size: 12px;
+  color: #334155;
+}
+.ferti-ionic-eq-table tbody th {
+  width: 22%;
+  background: #fff;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ferti-ionic-eq-ion {
+  display: inline-block;
+  margin: 0 14px 4px 0;
+  white-space: nowrap;
+}
+.ferti-ionic-eq-ion small {
+  color: #64748b;
+  font-weight: 500;
+}
+.ferti-ionic-eq-ion.is-out {
+  color: #c2410c;
+  font-weight: 700;
+}
+.ferti-ionic-eq-ion.is-edge {
+  color: #b45309;
+}
+.ferti-ionic-eq-status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ferti-ionic-eq-status.is-ok { color: #15803d; }
+.ferti-ionic-eq-status.is-edge { color: #b45309; }
+.ferti-ionic-eq-status.is-out { color: #c2410c; }
+.ferti-ionic-eq-status.is-empty { color: #64748b; font-weight: 600; }
 .fertirriego-input.is-soil-maint {
   background: #fff7ed;
   border-color: #fdba74;

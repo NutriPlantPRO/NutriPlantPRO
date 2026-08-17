@@ -21,6 +21,7 @@
     <script src="../assets/hydro-solution-catalog.js"></script>
     <script src="../assets/hydro-acid-legend.js?v=20260816h"></script>
     <script src="../assets/np-fertilizer-price.js"></script>
+    <script src="../assets/np-fertigation-dist-suggest.js?v=20260817d"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
@@ -11137,6 +11138,53 @@
             return html;
         }
 
+        function adminBuildFertiIonicEqHtml(realOxide) {
+            var api = window.NpFertigationDistSuggest;
+            if (!api || typeof api.cycleIonicBalance !== 'function') return '';
+            var b = api.cycleIonicBalance(realOxide && typeof realOxide === 'object' ? realOxide : {});
+            function fmtPct(ion, label) {
+                if (!ion || ion.pct == null) return '<div><strong>' + label + ':</strong> —</div>';
+                var flag = ion.flag === 'high' ? ' alto' : (ion.flag === 'low' ? ' bajo' : '');
+                var color = ion.ok ? '#166534' : '#b45309';
+                return '<div><strong>' + label + ':</strong> <span style="color:' + color + '">' + Number(ion.pct).toFixed(1) + '% (' + ion.lo + '–' + ion.hi + ')' + flag + '</span></div>';
+            }
+            function fmtKg(ion, label) {
+                if (!ion) return '<div><strong>' + label + ':</strong> —</div>';
+                if (!ion.kgClosed) return '<div><strong>' + label + ':</strong> No cierra</div>';
+                return '<div><strong>' + label + ':</strong> ' + Number(ion.kgMin).toFixed(1) + ' – ' + Number(ion.kgMax).toFixed(1) + ' kg/ha</div>';
+            }
+            var status = 'Sin N-P-S / K-Ca-Mg en requerimiento real.';
+            var statusColor = '#64748b';
+            if (!b.empty) {
+                if (b.inZone && b.edge) { status = 'Cerca del borde'; statusColor = '#b45309'; }
+                else if (b.inZone) { status = 'Ciclo en zona'; statusColor = '#166534'; }
+                else { status = 'Sale de zona'; statusColor = '#b91c1c'; }
+                var flags = [];
+                [['N', b.anions.n], ['P', b.anions.p], ['S', b.anions.s], ['K', b.cations.k], ['Ca', b.cations.ca], ['Mg', b.cations.mg]].forEach(function (pair) {
+                    if (pair[1] && pair[1].flag) flags.push(pair[0] + (pair[1].flag === 'high' ? ' alto' : ' bajo'));
+                });
+                if (flags.length) status += ' · ' + flags.join(' · ');
+            }
+            return (
+                '<div style="margin-top: 12px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' +
+                    '<strong style="color:#1e293b; font-size:14px;">Zona de equilibrio iónico</strong>' +
+                    '<p style="margin:6px 0 8px; font-size:12px; color:#64748b;">Apoyo para armar el programa (no va en PDF). % meq del requerimiento real. Los kg son el rango para editar ese nutriente dejando los otros fijos. Rangos % fijos; kg y % actuales se mueven si cambia extracción, suelo, eficiencia o rendimiento.</p>' +
+                    '<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; font-size:13px;">' +
+                        '<div><strong>Zona</strong><div style="margin-top:6px;">Aniones N-P-S</div><div style="margin-top:10px;">Cationes K-Ca-Mg</div></div>' +
+                        '<div><strong>% del ciclo (rango)</strong>' +
+                            '<div style="margin-top:6px;">' + fmtPct(b.anions.n, 'N') + fmtPct(b.anions.p, 'P') + fmtPct(b.anions.s, 'S') + '</div>' +
+                            '<div style="margin-top:6px;">' + fmtPct(b.cations.k, 'K') + fmtPct(b.cations.ca, 'Ca') + fmtPct(b.cations.mg, 'Mg') + '</div>' +
+                        '</div>' +
+                        '<div><strong>Zona (kg/ha)</strong>' +
+                            '<div style="margin-top:6px;">' + fmtKg(b.anions.n, 'N') + fmtKg(b.anions.p, 'P₂O₅') + fmtKg(b.anions.s, 'SO₄') + '</div>' +
+                            '<div style="margin-top:6px;">' + fmtKg(b.cations.k, 'K₂O') + fmtKg(b.cations.ca, 'CaO') + fmtKg(b.cations.mg, 'MgO') + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<p style="margin:8px 0 0; font-size:12px; font-weight:600; color:' + statusColor + ';">' + status + '</p>' +
+                '</div>'
+            );
+        }
+
         function adminFertiSourceSharePct(fertilizerKg, granularKg) {
             var f = Math.max(0, Number(fertilizerKg) || 0);
             var g = Math.max(0, Number(granularKg) || 0);
@@ -14230,6 +14278,14 @@
                         </div>
                     </div>
                 `;
+                const realOxideForIonic = {};
+                nutrients.forEach(n => {
+                    const adjOx = parseFloat(adjustment[n]) || 0;
+                    const eff = parseFloat(efficiency[n]);
+                    const e = (efficiency[n] != null && !isNaN(eff) && eff > 0) ? eff : null;
+                    if (e) realOxideForIonic[n] = adjOx / (e / 100);
+                });
+                html += adminBuildFertiIonicEqHtml(realOxideForIonic);
                 
                 html += `</div></div>`;
             }

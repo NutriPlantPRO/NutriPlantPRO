@@ -1925,7 +1925,7 @@ function sectionTemplate(name) {
     const howBuiltParamsAttr = JSON.stringify({ max_area: radarMaxArea }).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     const howBuiltHtml = rt(
       'radar.how_built_html',
-      'elige <strong>1 sola pasada</strong> Sentinel (la más clara sobre el predio), sin mezclar fechas ni rellenar con otras. Ventana 14 → 21 → 30 → 45 d; corta si ~100% útiles; si no, guarda lo mejor que den las pasadas (≥~5%). Capas: NDVI, NDMI, NDRE, RGB y nubes SCL. <strong>Máximo {max_area}</strong> por predio.',
+      'es de la <strong>fecha</strong> que ves en «Imagen»: una foto satelital de tu predio (la más clara de esos días, sin mezclar otras fechas). Elige la capa y pulsa «Ver imagen». <strong>Máximo {max_area}</strong>.',
       { max_area: radarMaxArea }
     );
     return `
@@ -2014,12 +2014,12 @@ function sectionTemplate(name) {
           </label>
           <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
-            <strong style="color:#14532d;" data-i18n="radar.how_built_label">${rt('radar.how_built_label', 'Cómo se arma:')}</strong>
+            <strong style="color:#14532d;" data-i18n="radar.how_built_label">${rt('radar.how_built_label', 'Esta imagen:')}</strong>
             <span data-i18n-html="radar.how_built_html" data-i18n-params="${howBuiltParamsAttr}">${howBuiltHtml}</span>
           </div>
           <div id="radarDemHint" style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.7);border:1px dashed #94a3b8;">
-            <strong style="color:#0f172a;" data-i18n="radar.dem_hint_label">${rt('radar.dem_hint_label', 'Relieve (pendiente):')}</strong>
-            <span data-i18n="radar.dem_hint_html">${rt('radar.dem_hint_html', 'capas fijas del predio (Copernicus DEM ~30 m): pendiente e altura. No usan créditos Radar ni cambian con cada Pilot/Lectura. Regenera solo si mueves el polígono.')}</span>
+            <strong style="color:#0f172a;" data-i18n="radar.dem_hint_label">${rt('radar.dem_hint_label', 'Relieve:')}</strong>
+            <span data-i18n-html="radar.dem_hint_html">${rt('radar.dem_hint_html', 'pendiente y altura de <strong>tu predio</strong>. No es satélite ni gasta créditos; solo se actualiza si mueves el polígono.')}</span>
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>

@@ -294,6 +294,127 @@
     return ternaryInZone(ternaryFromMeq(oxideToMeq(readTotals(totalsRaw))));
   }
 
+  function packIon(pct, bounds, groupSum) {
+    var value = round1(pct);
+    var has = groupSum > 1e-12;
+    var ok = !has || inRange(pct, bounds);
+    var span = bounds[1] - bounds[0];
+    var edge = has && ok && (pct <= bounds[0] + Math.max(2, span * 0.08) || pct >= bounds[1] - Math.max(2, span * 0.08));
+    var flag = '';
+    if (has && pct + 1e-6 < bounds[0]) flag = 'low';
+    else if (has && pct - 1e-6 > bounds[1]) flag = 'high';
+    return { pct: value, lo: bounds[0], hi: bounds[1], ok: ok, edge: edge, flag: flag, kgMin: null, kgMax: null, kgClosed: false };
+  }
+
+  function oxideFromMeqPart(key, meqVal) {
+    var v = Math.max(0, num(meqVal));
+    if (key === 'n') return v * EQ.n;
+    if (key === 'p') return v * EQ.p * CONV.P2O5_TO_P;
+    if (key === 's') return v * EQ.s * CONV.SO4_TO_S;
+    if (key === 'k') return v * EQ.k * CONV.K2O_TO_K;
+    if (key === 'ca') return v * EQ.ca * CONV.CaO_TO_Ca;
+    if (key === 'mg') return v * EQ.mg * CONV.MgO_TO_Mg;
+    return 0;
+  }
+
+  function meqRangeKeepingOthers(xKey, others) {
+    var O = 0;
+    Object.keys(others).forEach(function (k) { O += num(others[k]); });
+    var own = RANGES[xKey];
+    if (!own || O <= 1e-12) return { lo: 0, hi: 0, closed: false };
+    var lo = O * own[0] / (100 - own[0]);
+    var hi = O * own[1] / (100 - own[1]);
+    Object.keys(others).forEach(function (y) {
+      var yv = num(others[y]);
+      var r = RANGES[y];
+      if (!r || yv <= 1e-12) return;
+      var xmax = yv * 100 / r[0] - O;
+      var xmin = yv * 100 / r[1] - O;
+      if (xmin > lo) lo = xmin;
+      if (xmax < hi) hi = xmax;
+    });
+    if (lo < 0) lo = 0;
+    return { lo: lo, hi: hi, closed: lo <= hi + 1e-9 };
+  }
+
+  function attachKgRange(ion, key, meqMap, groupKeys) {
+    var others = {};
+    groupKeys.forEach(function (k) {
+      if (k !== key) others[k] = meqMap[k];
+    });
+    var mm = meqRangeKeepingOthers(key, others);
+    ion.kgClosed = mm.closed;
+    ion.kgMin = mm.closed ? round1(oxideFromMeqPart(key, mm.lo)) : null;
+    ion.kgMax = mm.closed ? round1(oxideFromMeqPart(key, mm.hi)) : null;
+    return ion;
+  }
+
+  function cycleIonicBalance(totalsRaw) {
+    var totals = readTotals(totalsRaw);
+    var empty = !hasTernaryTotals(totals);
+    var meq = oxideToMeq(totals);
+    var tri = ternaryFromMeq(meq);
+    var anions = {
+      n: packIon(tri.anions.n, RANGES.n, tri.anions.sum),
+      p: packIon(tri.anions.p, RANGES.p, tri.anions.sum),
+      s: packIon(tri.anions.s, RANGES.s, tri.anions.sum)
+    };
+    var cations = {
+      k: packIon(tri.cations.k, RANGES.k, tri.cations.sum),
+      ca: packIon(tri.cations.ca, RANGES.ca, tri.cations.sum),
+      mg: packIon(tri.cations.mg, RANGES.mg, tri.cations.sum)
+    };
+    attachKgRange(anions.n, 'n', meq, ['n', 'p', 's']);
+    attachKgRange(anions.p, 'p', meq, ['n', 'p', 's']);
+    attachKgRange(anions.s, 's', meq, ['n', 'p', 's']);
+    attachKgRange(cations.k, 'k', meq, ['k', 'ca', 'mg']);
+    attachKgRange(cations.ca, 'ca', meq, ['k', 'ca', 'mg']);
+    attachKgRange(cations.mg, 'mg', meq, ['k', 'ca', 'mg']);
+    var ions = [anions.n, anions.p, anions.s, cations.k, cations.ca, cations.mg];
+    var inZone = !empty && ions.every(function (ion) { return ion.ok; });
+    var edge = inZone && ions.some(function (ion) { return ion.edge; });
+    return {
+      empty: empty,
+      inZone: inZone,
+      edge: edge,
+      anions: anions,
+      cations: cations
+    };
+  }
+
+  function serializeIon(ion) {
+    if (!ion) return null;
+    return {
+      pct: ion.pct,
+      range_pct: [ion.lo, ion.hi],
+      in_range: !!ion.ok,
+      flag: ion.flag || null,
+      kg_min: ion.kgClosed ? ion.kgMin : null,
+      kg_max: ion.kgClosed ? ion.kgMax : null,
+      kg_range_closes: !!ion.kgClosed
+    };
+  }
+
+  function serializeIonicBalance(balance) {
+    var b = balance || cycleIonicBalance({});
+    return {
+      empty: !!b.empty,
+      in_zone: !!b.inZone,
+      near_edge: !!b.edge,
+      anions: {
+        N: serializeIon(b.anions && b.anions.n),
+        P: serializeIon(b.anions && b.anions.p),
+        S: serializeIon(b.anions && b.anions.s)
+      },
+      cations: {
+        K: serializeIon(b.cations && b.cations.k),
+        Ca: serializeIon(b.cations && b.cations.ca),
+        Mg: serializeIon(b.cations && b.cations.mg)
+      },
+      note: 'Apoyo para armar el programa. % meq del requerimiento real. kg_min/max = rango para editar ese nutriente dejando los otros fijos. No sale en PDF. Recalcula si cambia extracción, suelo, eficiencia o rendimiento. Rangos % fijos; kg y % actuales sí se mueven.'
+    };
+  }
+
   function allStagesInZone(stages, pct, totalsRaw) {
     var tris = stageTernary(stages, pct, totalsRaw);
     var i;
@@ -428,6 +549,8 @@
     suggestPct: suggestPct,
     stageTernary: stageTernary,
     ternaryInZone: ternaryInZone,
-    cycleInZone: cycleInZone
+    cycleInZone: cycleInZone,
+    cycleIonicBalance: cycleIonicBalance,
+    serializeIonicBalance: serializeIonicBalance
   };
 });

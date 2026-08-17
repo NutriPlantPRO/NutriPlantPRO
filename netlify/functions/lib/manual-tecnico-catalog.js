@@ -88,7 +88,7 @@ module.exports = {
       title: 'Programa de fertirriego por etapas',
       url: `${BASE}/capitulos/programa-fertirriego-etapas.html`,
       pillar: 'D — Fertirriego',
-      summary: 'Requerimiento kg/ha, programa por semana/mes, aporte agua N-NO3, costos USD/ha, lámina m³/ha.',
+      summary: 'Requerimiento kg/ha, zona de equilibrio iónico (apoyo, no PDF), programa por semana/mes, aporte agua N-NO3, costos USD/ha, lámina m³/ha.',
       status: 'published'
     },
     {

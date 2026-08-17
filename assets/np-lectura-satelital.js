@@ -639,8 +639,10 @@
             introHtml +
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
-            '<strong style="color:#14532d;" data-i18n="radar.how_built_label">' + t('radar.how_built_label', 'Cómo se arma:') + '</strong> ' +
-            t('radar.lectura_how_built_html', 'por periodo elige <strong>1 sola pasada</strong> Sentinel (la más clara; sin mediana ni relleno entre fechas).') +
+            '<strong style="color:#14532d;" data-i18n="radar.lectura_how_built_label">' + t('radar.lectura_how_built_label', 'Cada periodo:') + '</strong> ' +
+            '<span data-i18n-html="radar.lectura_how_built_html">' +
+            t('radar.lectura_how_built_html', 'tiene <strong>su fecha</strong> y <strong>una imagen satelital</strong> de esos días (la más clara), más clima y riego del mismo tramo. Se genera en segundo plano: puedes cerrar y luego pulsar «Mostrar imágenes».') +
+            '</span>' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
             '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;"><span data-i18n="radar.frecuencia">' + t('radar.frecuencia', 'Frecuencia') + '</span>' +

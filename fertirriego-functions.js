@@ -1394,6 +1394,7 @@ function fertiWriteAdjOxide(nutrient, oxideKgHa) {
   if (reqCell) {
     var realRequirement = oxide / (efficiencyValue / 100);
     reqCell.textContent = fertiResultFromSI(getConvertedValue(nutrient, realRequirement), 'dose_mass_area', fertiAdjDisplayDigits(nutrient) === 1 ? 1 : 2);
+    fertiSetIonicReqNutrient(nutrient, realRequirement);
   }
 }
 
@@ -1432,6 +1433,106 @@ window.fertiOnSoilAnalysisSelect = function fertiOnSoilAnalysisSelect(analysisId
     window.saveFertirriegoRequirements();
   }
 };
+
+function fertiIonicFmtPct(n) {
+  var v = Math.round(Number(n) * 10) / 10;
+  if (!isFinite(v)) return '0';
+  return Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : String(v);
+}
+
+function fertiIonicIonHtml(label, ion) {
+  var cls = !ion || ion.ok === false ? ' is-out' : (ion.edge ? ' is-edge' : '');
+  return '<span class="ferti-ionic-eq-ion' + cls + '"><strong>' + label + '</strong> ' +
+    fertiIonicFmtPct(ion && ion.pct) + '% <small>(' + fertiIonicFmtPct(ion && ion.lo) + '–' +
+    fertiIonicFmtPct(ion && ion.hi) + ')</small></span>';
+}
+
+function fertiIonicKgHtml(label, ion, nutrientKey) {
+  var cls = !ion || ion.ok === false ? ' is-out' : (ion.edge ? ' is-edge' : '');
+  if (!ion || !ion.kgClosed) {
+    return '<span class="ferti-ionic-eq-ion is-out"><strong>' + label + '</strong> ' +
+      fertiT('ionic_eq_no_kg', 'No cierra') + '</span>';
+  }
+  var digits = fertiAdjDisplayDigits(nutrientKey) === 1 ? 1 : 1;
+  var lo = fertiResultFromSI(getConvertedValue(nutrientKey, ion.kgMin), 'dose_mass_area', digits);
+  var hi = fertiResultFromSI(getConvertedValue(nutrientKey, ion.kgMax), 'dose_mass_area', digits);
+  return '<span class="ferti-ionic-eq-ion' + cls + '"><strong>' + label + '</strong> ' + lo + '–' + hi + '</span>';
+}
+
+function fertiIonicEqHtml(realRequirement) {
+  var api = window.NpFertigationDistSuggest;
+  var req = realRequirement && typeof realRequirement === 'object' ? realRequirement : (window._fertiIonicReqOxide || {});
+  var balance = (api && typeof api.cycleIonicBalance === 'function')
+    ? api.cycleIonicBalance(req)
+    : { empty: true, inZone: false, edge: false, anions: {}, cations: {} };
+  var statusCls = 'is-empty';
+  var statusTxt = fertiT('ionic_eq_empty', 'Faltan N, P, S, K, Ca o Mg en el requerimiento real.');
+  if (!balance.empty) {
+    if (balance.inZone && balance.edge) {
+      statusCls = 'is-edge';
+      statusTxt = fertiT('ionic_eq_edge', 'Cerca del borde');
+    } else if (balance.inZone) {
+      statusCls = 'is-ok';
+      statusTxt = fertiT('ionic_eq_ok', 'Ciclo en zona');
+    } else {
+      statusCls = 'is-out';
+      statusTxt = fertiT('ionic_eq_out', 'Sale de zona');
+    }
+    var flags = [];
+    [['N', balance.anions.n], ['P', balance.anions.p], ['S', balance.anions.s],
+     ['K', balance.cations.k], ['Ca', balance.cations.ca], ['Mg', balance.cations.mg]].forEach(function (pair) {
+      if (!pair[1] || !pair[1].flag) return;
+      flags.push(fertiT(pair[1].flag === 'high' ? 'ionic_eq_high' : 'ionic_eq_low', pair[1].flag === 'high' ? '{nut} alto' : '{nut} bajo').replace('{nut}', pair[0]));
+    });
+    if (flags.length) statusTxt += ' · ' + flags.join(' · ');
+  }
+  var kgHead = fertiT('ionic_eq_col_kg', 'Zona ({unit})').replace('{unit}', fertiUnit('dose_mass_area', 'kg/ha'));
+  return (
+    '<div class="ferti-ionic-eq" id="fertiIonicEqBlock">' +
+      '<h4 class="ferti-ionic-eq-title">' + fertiT('ionic_eq_title', 'Zona de equilibrio iónico') + '</h4>' +
+      '<p class="ferti-ionic-eq-hint">' + fertiT('ionic_eq_hint', '% meq del requerimiento real. Los kg son el rango para quedarte en zona si editas ese nutriente y dejas los otros como están. Aniones N-P-S · cationes K-Ca-Mg.') + '</p>' +
+      '<table class="ferti-ionic-eq-table">' +
+        '<thead><tr><th>' + fertiT('ionic_eq_col_zone', 'Zona') + '</th><th>' + fertiT('ionic_eq_col_pct', '% del ciclo (rango)') + '</th><th>' + kgHead + '</th></tr></thead>' +
+        '<tbody>' +
+          '<tr><th>' + fertiT('ionic_eq_anions', 'Aniones N-P-S') + '</th><td>' +
+            fertiIonicIonHtml('N', balance.anions.n) +
+            fertiIonicIonHtml('P', balance.anions.p) +
+            fertiIonicIonHtml('S', balance.anions.s) +
+          '</td><td>' +
+            fertiIonicKgHtml('N', balance.anions.n, 'N') +
+            fertiIonicKgHtml('P', balance.anions.p, 'P2O5') +
+            fertiIonicKgHtml('S', balance.anions.s, 'SO4') +
+          '</td></tr>' +
+          '<tr><th>' + fertiT('ionic_eq_cations', 'Cationes K-Ca-Mg') + '</th><td>' +
+            fertiIonicIonHtml('K', balance.cations.k) +
+            fertiIonicIonHtml('Ca', balance.cations.ca) +
+            fertiIonicIonHtml('Mg', balance.cations.mg) +
+          '</td><td>' +
+            fertiIonicKgHtml('K', balance.cations.k, 'K2O') +
+            fertiIonicKgHtml('Ca', balance.cations.ca, 'CaO') +
+            fertiIonicKgHtml('Mg', balance.cations.mg, 'MgO') +
+          '</td></tr>' +
+        '</tbody>' +
+      '</table>' +
+      '<p class="ferti-ionic-eq-status ' + statusCls + '">' + statusTxt + '</p>' +
+    '</div>'
+  );
+}
+
+function fertiSetIonicReqNutrient(nutrient, oxideKg) {
+  if (!window._fertiIonicReqOxide || typeof window._fertiIonicReqOxide !== 'object') window._fertiIonicReqOxide = {};
+  window._fertiIonicReqOxide[nutrient] = Math.max(0, parseFloat(oxideKg) || 0);
+  fertiPaintIonicEq();
+}
+
+function fertiPaintIonicEq() {
+  var host = document.getElementById('fertiIonicEqBlock');
+  if (!host) return;
+  var wrap = document.createElement('div');
+  wrap.innerHTML = fertiIonicEqHtml(window._fertiIonicReqOxide);
+  var next = wrap.firstElementChild;
+  if (next) host.replaceWith(next);
+}
 
 // Función para renderizar la tabla
 renderNutrientTable = function(extraction, totalExtraction, adjustment, efficiency, realRequirement, targetYield) {
@@ -1480,6 +1581,14 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
   console.log('✅ Container encontrado, renderizando tabla...');
   
   const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  window._fertiIonicReqOxide = {
+    N: Math.max(0, parseFloat(realRequirement && realRequirement.N) || 0),
+    P2O5: Math.max(0, parseFloat(realRequirement && realRequirement.P2O5) || 0),
+    K2O: Math.max(0, parseFloat(realRequirement && realRequirement.K2O) || 0),
+    CaO: Math.max(0, parseFloat(realRequirement && realRequirement.CaO) || 0),
+    MgO: Math.max(0, parseFloat(realRequirement && realRequirement.MgO) || 0),
+    SO4: Math.max(0, parseFloat(realRequirement && (realRequirement.SO4 != null ? realRequirement.SO4 : realRequirement.S)) || 0)
+  };
   
   // Función para obtener etiqueta según el modo
   function getLabel(nutrient) {
@@ -1556,6 +1665,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
       </tbody>
     </table>
     <p id="fertiSoilMaintHint" class="ferti-soil-maint-hint"${fertiSoilMaintHintText() ? '' : ' hidden'}>${fertiEscapeSelect(fertiSoilMaintHintText())}</p>
+    ${fertiIonicEqHtml(realRequirement)}
     <div class="req-steps-guide" aria-label="${fertiT('req_steps_title', 'Cómo usar esta tabla')}">
       <p class="req-steps-guide__title">${fertiT('req_steps_title', 'Cómo usar esta tabla')}</p>
       <ol class="req-steps-guide__list">
@@ -1832,6 +1942,7 @@ updateExtractionPerTon = function(nutrient, value) {
         if (reqCell) {
           const shownRequirement = isFertirriegoElementalMode ? getConvertedValue(nutrient, realRequirement) : realRequirement;
           reqCell.textContent = fertiResultFromSI(shownRequirement, 'dose_mass_area');
+          fertiSetIonicReqNutrient(nutrient, realRequirement);
         }
       }
       try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch {}
@@ -1890,6 +2001,7 @@ updateAdjustment = function(nutrient, value) {
     } else {
       console.warn(`⚠️ No se encontró celda req-${nutrient} para actualizar`);
     }
+    fertiSetIonicReqNutrient(nutrient, realRequirement);
     try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch {}
 
     if (!savedFertiAdjustments) savedFertiAdjustments = {};
@@ -1942,6 +2054,7 @@ updateEfficiency = function(nutrient, value) {
     } else {
       console.warn(`⚠️ No se encontró celda req-${nutrient} para actualizar`);
     }
+    fertiSetIonicReqNutrient(nutrient, realRequirement);
     try { if (window.updateFertiSummary) window.updateFertiSummary(); } catch {}
 
     if (!savedFertiEfficiencies) savedFertiEfficiencies = {};
