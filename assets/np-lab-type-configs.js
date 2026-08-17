@@ -179,7 +179,7 @@
   ].concat(PASTA_FIELDS);
 
   var AGUA_FIELDS = [
-    f('m3Riego', 'm³ riego', 'm3', 'general', false, 'general'),
+    f('m3Riego', 'Volumen ref.', 'm3', 'general', false, 'general'),
     f('acidResidualMeq', 'Residual ácido (meq)', 'meq', 'general', false, 'general'),
     f('general.ce', 'CE', 'other', 'general', true, 'general'),
     f('general.ph', 'pH', 'other', 'general', true, 'general'),

@@ -249,23 +249,23 @@
     var magSource = null;
     var nitrogenFillId = null;
 
-    function practicalDose(id, target) {
+    function practicalDose(id, target, ignoreKeys) {
       var material = byId[id];
       if (!material) return 0;
-      return maxSafeDose(materialContributionPerKg(material), remaining, target);
+      return maxSafeDose(materialContributionPerKg(material), remaining, target, ignoreKeys);
     }
 
     function applyLeftoverNitrogen() {
       if (!(remaining.N > tolerance)) return;
       if (nitrogenFillId) {
-        applyStep({ id: nitrogenFillId, target: 'N', order: 42 });
+        applyStep({ id: nitrogenFillId, target: 'N', order: 42, ignoreKeys: ['SO4'] });
         return;
       }
       var i;
       for (i = 0; i < NITROGEN_FILL_SEQUENCE.length; i++) {
         var step = NITROGEN_FILL_SEQUENCE[i];
-        if (practicalDose(step.id, 'N') + 1e-9 < MIN_BULK_DOSE_KG_HA) continue;
-        var dose = applyStep({ id: step.id, target: 'N', order: step.order });
+        if (practicalDose(step.id, 'N', ['SO4']) + 1e-9 < MIN_BULK_DOSE_KG_HA) continue;
+        var dose = applyStep({ id: step.id, target: 'N', order: step.order, ignoreKeys: ['SO4'] });
         if (dose > 0) {
           nitrogenFillId = step.id;
           return;
@@ -275,32 +275,35 @@
 
     function applyMagnesium() {
       if (magSource === 'sulfate') {
-        applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45 });
+        applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45, ignoreKeys: ['SO4'] });
         return;
       }
       if (magSource === 'nitrate') {
         applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 46 });
         return;
       }
-      if (practicalDose('sulfato_magnesio', 'MgO') + 1e-9 >= MIN_BULK_DOSE_KG_HA) {
-        var sulfateDose = applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45 });
-        if (sulfateDose > 0) magSource = 'sulfate';
+      // If N is still open enough for a bulk Mg nitrate dose, use it (Mg + leftover N).
+      // If N is already covered, Mg sulfate — S may go over (granular/water often already filled S).
+      if (practicalDose('nitrato_magnesio', 'MgO') + 1e-9 >= MIN_BULK_DOSE_KG_HA) {
+        var nitrateDose = applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 46 });
+        if (nitrateDose > 0) magSource = 'nitrate';
         return;
       }
-      var nitrateDose = applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 46 });
-      if (nitrateDose > 0) magSource = 'nitrate';
+      var sulfateDose = applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45, ignoreKeys: ['SO4'] });
+      if (sulfateDose > 0) magSource = 'sulfate';
     }
 
     function applyMacroPass() {
       // Acid already applied. Ca nitrate → Ca (+N). MKP → P (+K). MAP leftover P after flower.
-      // NKS → remaining K (+N). SOP only if N already full.
+      // NKS → remaining K (+N). Incidental SO₄ must not block K.
+      // SOP only if N already full and K remains (also not blocked by a full S).
       // Leftover N → Sulfonit (fosfonitrato if Sulfonit is missing). Not ammonium nitrate (not commercial).
-      // Mg sulfate first; Mg nitrate only if S is full.
+      // S is last: incidental SO₄ does not block N/K/Mg. Mg sulfate if N is covered; Mg nitrate if N still open.
       applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
       applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
       if (allowMap) applyStep({ id: 'map', target: 'P2O5', order: 31 });
-      applyStep({ id: 'nks', target: 'K2O', order: 40 });
-      applyStep({ id: 'sop', target: 'K2O', order: 41 });
+      applyStep({ id: 'nks', target: 'K2O', order: 40, ignoreKeys: ['SO4'] });
+      applyStep({ id: 'sop', target: 'K2O', order: 41, ignoreKeys: ['SO4'] });
       applyLeftoverNitrogen();
       applyMagnesium();
       MICRO_SEQUENCE.forEach(function (step) { applyStep(step); });

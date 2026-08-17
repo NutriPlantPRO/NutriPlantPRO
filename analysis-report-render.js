@@ -826,8 +826,8 @@
                 ? (isUS ? formatNum(litrosTotal * 0.2641720524, 2) + ' US gal' : formatNum(litrosTotal, 2) + ' L')
                 : '—';
             var volLabel = isUS
-                ? (en ? 'Irrigation water (total volume):' : 'Agua de riego (volumen total):')
-                : (en ? 'Irrigation water m³ (total volume):' : 'm³ agua de riego (volumen total):');
+                ? (en ? 'Reference volume (cycle / solution):' : 'Volumen de referencia (ciclo / solución):')
+                : (en ? 'Reference volume (cycle / solution):' : 'Volumen de referencia (ciclo / solución):');
             var doseLabel = isUS
                 ? (en ? 'Acid dose:' : 'Dosis de ácido:')
                 : (en ? 'mL acid / m³:' : 'mL ácido / m³:');

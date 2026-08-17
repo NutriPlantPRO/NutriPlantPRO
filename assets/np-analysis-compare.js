@@ -743,16 +743,16 @@
     rows.forEach(function (row) {
       if (row.path === 'm3Riego') {
         if (isUsUnits) {
-          row.label = tr('analysis.review_irrigation_gal', 'Agua riego');
+          row.label = tr('analysis.review_irrigation_gal', 'Volumen ref.');
           row.unit = 'US gal';
-          row.tip = tr('analysis.review_irrigation_gal_tip', 'Volumen de riego en galones US. Se guarda internamente en m³.');
+          row.tip = tr('analysis.review_irrigation_gal_tip', 'Fertirriego: lámina total del ciclo (US gal/acre). Hidroponía: US gal de solución o agua a inyectar.');
           if (row.value && isPlainNumericValue(row.value) && w.NpAnalysisUI && typeof w.NpAnalysisUI.volumeInputFromSI === 'function') {
             row.value = String(w.NpAnalysisUI.volumeInputFromSI(row.value));
           }
         } else {
-          row.label = tr('analysis.review_irrigation_m3', 'm³ riego');
+          row.label = tr('analysis.review_irrigation_m3', 'Volumen ref.');
           row.unit = 'm³';
-          row.tip = tr('analysis.review_irrigation_m3_tip', 'Volumen de riego en metros cúbicos.');
+          row.tip = tr('analysis.review_irrigation_m3_tip', 'Fertirriego: lámina total del ciclo (m³/ha). Hidroponía: m³ de solución o agua a inyectar.');
         }
         return;
       }

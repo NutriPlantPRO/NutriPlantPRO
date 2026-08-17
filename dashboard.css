@@ -9750,6 +9750,14 @@ html.embed-login body {
   color: #075985;
   white-space: nowrap;
 }
+.aw-m3-riego-cell .aw-m3-riego-hint {
+  flex: 1 1 100%;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: #075985;
+  white-space: normal;
+}
 
 .soil-input-inline {
   padding: 8px 12px;

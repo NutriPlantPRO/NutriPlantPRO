@@ -1038,7 +1038,7 @@ function sectionTemplate(name) {
                       </select>
                     </label>
                   </div>
-                  <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_analysis_hint', 'Elige un análisis para cargar kg/ha y el ácido. El ácido del programa usa la lámina de cada etapa.')}</div>
+                  <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_analysis_hint', 'Elige un análisis para cargar kg/ha y el ácido. Los kg/ha del agua usan la lámina total del ciclo (suma de etapas abajo). El ácido usa la lámina de cada etapa.')}</div>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelN">N-NO₃⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
@@ -1057,6 +1057,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCl" step="0.01" value="0.0"></div>
                   </div>
                   <div id="fertiAcidSummary" class="hydro-acid-summary"></div>
+                  <div id="fertiProgramWaterByStageWrap" class="ferti-charts-water-wrap" hidden></div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
@@ -21825,7 +21826,7 @@ function createAguaTabHTML() {
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Análisis de Agua</h2>
       <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de agua de riego. Columnas <span class="notranslate" translate="no">meq/L o mmolc/L</span> (mismo número para carga iónica) y ppm con conversión automática; sumas de cationes y aniones; aporte por volumen (m³) en kg elemento y óxido; y cálculo de ácido para neutralizar bicarbonatos/carbonatos.</p>
-      <p style="margin-bottom:14px;font-size:0.85rem;color:#475569;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #0ea5e9;">Los kilogramos en las tablas (elemento y óxido) son el aporte total para el volumen de agua de riego que indiques en cada reporte (campo m³ agua de riego).</p>
+      <p id="aw-m3-riego-box" style="margin-bottom:14px;font-size:0.85rem;color:#475569;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #0ea5e9;">Los kilogramos de las tablas de este reporte usan el volumen de referencia. En Fertirriego, al traer el análisis, el aporte kg/ha del programa usa la lámina total del ciclo (suma de etapas). En Hidroponía usa el volumen de solución o agua a inyectar.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
@@ -21846,9 +21847,10 @@ function createAguaTabHTML() {
           <div id="agua-form-wrap" class="soil-analysis-form-wrap" style="display: none;" data-current-id="">
             <div class="soil-analysis-form-header">
               <div class="aw-m3-riego-cell">
-                <label id="aw-m3-riego-label" for="aw-m3-riego">m³ agua de riego:</label>
-                <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
+                <label id="aw-m3-riego-label" for="aw-m3-riego">Volumen de referencia (m³):</label>
+                <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="${dashboardT('analysis.m3_riego_placeholder', 'ej. 100')}" data-i18n-placeholder="analysis.m3_riego_placeholder" title="${dashboardT('analysis.m3_riego_hint', 'Fertirriego: lámina total del ciclo (m³/ha). Hidroponía: m³ de solución o agua a inyectar.')}" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateVolumeEquiv && window.awUpdateVolumeEquiv(); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
                 <span id="aw-m3-riego-equiv" class="aw-m3-riego-equiv" aria-live="polite"></span>
+                <span id="aw-m3-riego-hint" class="aw-m3-riego-hint">Fertirriego: lámina total del ciclo (m³/ha). Hidroponía: m³ de solución o agua a inyectar.</span>
               </div>
               <input type="text" id="aw-meta-title" placeholder="${dashboardT('analysis.meta_title_simple', 'Título')}" data-i18n-placeholder="analysis.meta_title_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','title',this.value)">
               <input type="text" id="aw-meta-date" placeholder="${dashboardT('analysis.meta_date_simple', 'Fecha')}" data-i18n-placeholder="analysis.meta_date_simple" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','date',this.value)">

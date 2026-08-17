@@ -88,7 +88,11 @@
     'Columnas': 'Columns',
     'y ppm con conversión automática; sumas de cationes y aniones; aporte por volumen (m³) en kg elemento y óxido; y cálculo de ácido para neutralizar bicarbonatos/carbonatos.': 'and ppm with automatic conversion; cation and anion sums; contribution by volume (m³) as kg element and oxide; and acid calc to neutralize bicarbonates/carbonates.',
     'Los kilogramos en las tablas (elemento y óxido) son el aporte total para el volumen de agua de riego que indiques en cada reporte (campo m³ agua de riego).': 'Mass amounts in the tables (element and oxide) are the total contribution for the irrigation water volume you enter in each report (irrigation water volume field).',
+    'Los kilogramos de las tablas de este reporte usan el volumen de referencia. En Fertirriego, al traer el análisis, el aporte kg/ha del programa usa la lámina total del ciclo (suma de etapas). En Hidroponía usa el volumen de solución o agua a inyectar.': 'Mass amounts in this report’s tables use the reference volume. In Fertigation, bringing the analysis uses the total cycle irrigation depth (sum of stages) for program kg/ha. In Hydroponics it uses the solution or injection volume.',
     'm³ agua de riego:': 'Irrigation water m³:',
+    'Volumen de referencia (m³):': 'Reference volume (m³):',
+    'Fertirriego: lámina total del ciclo (m³/ha). Hidroponía: m³ de solución o agua a inyectar.': 'Fertigation: total cycle irrigation depth (m³/ha). Hydroponics: solution or injection volume (m³).',
+    'Fertirriego: lámina total del ciclo (US gal/acre). Hidroponía: US gal de solución o agua a inyectar.': 'Fertigation: total cycle irrigation depth (US gal/acre). Hydroponics: solution or injection volume (US gal).',
     'Agua de riego:': 'Irrigation water:',
     'CE, RAS y pH': 'EC, SAR and pH',
     'Cationes': 'Cations',
@@ -312,9 +316,16 @@
     var bdSym = 'g/cm³';
     var doseSym = unitSymbol('dose_mass_area');
     var massSym = unitSymbol('mass');
-    var volLabel = isUS()
-      ? t('Agua de riego', 'Irrigation water') + ' (' + unitSymbol('volume') + ')'
-      : t('m³ agua de riego', 'Irrigation water m³');
+    var volLabel = t('Volumen de referencia', 'Reference volume') + ' (' + (isUS() ? unitSymbol('volume') : 'm³') + ')';
+    var volHint = isUS()
+      ? t(
+          'Fertirriego: lámina total del ciclo (US gal/acre). Hidroponía: US gal de solución o agua a inyectar.',
+          'Fertigation: total cycle irrigation depth (US gal/acre). Hydroponics: solution or injection volume (US gal).'
+        )
+      : t(
+          'Fertirriego: lámina total del ciclo (m³/ha). Hidroponía: m³ de solución o agua a inyectar.',
+          'Fertigation: total cycle irrigation depth (m³/ha). Hydroponics: solution or injection volume (m³).'
+        );
 
     var bdInput = root.querySelector('#soil-physical-bulkDensity');
     var bdLabel = bdInput && bdInput.closest('label');
@@ -361,6 +372,16 @@
           ? t('ej. 26417', 'e.g. 26417')
           : t('ej. 100', 'e.g. 100');
         volInp.setAttribute('data-i18n-placeholder', isUS() ? 'analysis.gal_riego_placeholder' : 'analysis.m3_riego_placeholder');
+        volInp.setAttribute('title', volHint);
+      }
+      var volHintEl = aguaHeader.querySelector('#aw-m3-riego-hint');
+      if (volHintEl) volHintEl.textContent = volHint;
+      var volBox = root.querySelector('#aw-m3-riego-box');
+      if (volBox) {
+        volBox.textContent = t(
+          'Los kilogramos de las tablas de este reporte usan el volumen de referencia. En Fertirriego, al traer el análisis, el aporte kg/ha del programa usa la lámina total del ciclo (suma de etapas). En Hidroponía usa el volumen de solución o agua a inyectar.',
+          'Mass amounts in this report’s tables use the reference volume. In Fertigation, bringing the analysis uses the total cycle irrigation depth (sum of stages) for program kg/ha. In Hydroponics it uses the solution or injection volume.'
+        );
       }
     }
     updateAguaVolumeEquiv(root);

@@ -69,7 +69,7 @@
       <li><strong>Aniones:</strong> NO₃, SO₄, HCO₃, CO₃ (carbonatos en meq/L).</li>
       <li><strong>Residual ácido</strong> (meq/L) y tipo de ácido — enlaza con herramienta gratis de acondicionamiento.</li>
       <li><strong>Microelementos</strong> en ppm.</li>
-      <li><strong>Volumen</strong> m³ de riego (celda azul en la cabecera del reporte; de ahí salen los kg y el ácido).</li>
+      <li><strong>Volumen de referencia</strong> (celda azul): <strong>Fertirriego = lámina total del ciclo (m³/ha)</strong>; <strong>Hidroponía = m³ de solución o agua a inyectar</strong>. De ahí salen los kg de las tablas de este reporte. En Fertirriego → Programa, los kg/ha del aporte usan la suma de láminas por etapa si ya están capturadas.</li>
     </ul>
     <h2>RAS / SAR (fórmula de referencia)</h2>
     <div class="mt-formula">RAS = SAR = Na⁺ ÷ √((Ca²⁺ + Mg²⁺) / 2)<br>(Na, Ca y Mg en las mismas unidades, típicamente meq/L)</div>
@@ -82,7 +82,7 @@
       <li>&gt; 6–8 — riesgo alto de problemas de estructura y infiltración.</li>
     </ul>
     <h2>Enlace con programas</h2>
-    <p>En Fertirriego e Hidroponía, el <strong>aporte del agua</strong> resta del requerimiento (p. ej. N como N-NO₃⁻). Un agua alta en Na o bicarbonatos puede exigir acidificación o mezcla con otra fuente — ver <a href="agua-dureza-acidificacion-solubilidad.html">dureza y acidificación</a> y la herramienta gratis <code>agua-dureza-free.html</code>. En hidroponía y fertirriego, <strong>Seleccionar análisis…</strong> (etiqueta Traer de análisis) carga el aporte del agua y la leyenda de ácido (mL/m³). En hidroponía el ácido puede ir al tanque C (L = mL/m³ × m³ hidro ÷ 1000); en fertirriego entra primero al programa por la lámina de cada etapa (L/ha = mL/m³ × m³/ha ÷ 1000). También en admin y PDF.</p>
+    <p>En Fertirriego e Hidroponía, el <strong>aporte del agua</strong> resta del requerimiento (p. ej. N como N-NO₃⁻). Un agua alta en Na o bicarbonatos puede exigir acidificación o mezcla con otra fuente — ver <a href="agua-dureza-acidificacion-solubilidad.html">dureza y acidificación</a> y la herramienta gratis <code>agua-dureza-free.html</code>. En hidroponía y fertirriego, <strong>Seleccionar análisis…</strong> (etiqueta Traer de análisis) carga el aporte del agua y la leyenda de ácido (mL/m³). Los kg/ha de Fertirriego usan la lámina total del ciclo; el ácido entra primero al programa por la lámina de cada etapa (L/ha = mL/m³ × m³/ha ÷ 1000). En hidroponía el ácido puede ir al tanque C (L = mL/m³ × m³ hidro ÷ 1000). También en admin y PDF.</p>
     </div>
     <div data-mt-lang="en" hidden>
 <span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
@@ -96,7 +96,7 @@
       <li><strong>Anions:</strong> NO₃, SO₄, HCO₃, CO₃ (carbonates in meq/L).</li>
       <li><strong>Acid residual</strong> (meq/L) and acid type — links to the free conditioning tool.</li>
       <li><strong>Micronutrients</strong> in ppm.</li>
-      <li><strong>Volume</strong> irrigation m³ (blue cell in the report header; kg and acid come from that volume).</li>
+      <li><strong>Reference volume</strong> (blue cell): <strong>Fertigation = total cycle irrigation depth (m³/ha)</strong>; <strong>Hydroponics = m³ of solution or water to inject</strong>. That volume drives the kg tables in this report. In Fertigation → Program, water kg/ha use the sum of stage depths if they are already entered.</li>
     </ul>
     <h2>RAS / SAR (reference formula)</h2>
     <div class="mt-formula">RAS = SAR = Na⁺ ÷ √((Ca²⁺ + Mg²⁺) / 2)<br>(Na, Ca, and Mg in the same units, typically meq/L)</div>
@@ -109,7 +109,7 @@
       <li>&gt; 6–8 — high risk of structure and infiltration problems.</li>
     </ul>
     <h2>Link to programs</h2>
-    <p>In Fertigation and Hydroponics, the <strong>water contribution</strong> is subtracted from the requirement (e.g. N as N-NO₃⁻). Water high in Na or bicarbonates may require acidification or blending with another source — see <a href="agua-dureza-acidificacion-solubilidad.html">hardness and acidification</a> and the free tool <code>agua-dureza-free.html</code>. In hydroponics and fertigation, <strong>Select analysis…</strong> (Bring from analysis) loads the water supply and the acid legend (mL/m³). In hydroponics the acid may go to tank C (L = mL/m³ × hydro m³ ÷ 1000); in fertigation it enters the program first from each stage’s irrigation depth (L/ha = mL/m³ × m³/ha ÷ 1000). Also in admin and PDF.</p>
+    <p>In Fertigation and Hydroponics, the <strong>water contribution</strong> is subtracted from the requirement (e.g. N as N-NO₃⁻). Water high in Na or bicarbonates may require acidification or blending with another source — see <a href="agua-dureza-acidificacion-solubilidad.html">hardness and acidification</a> and the free tool <code>agua-dureza-free.html</code>. In hydroponics and fertigation, <strong>Select analysis…</strong> (Bring from analysis) loads the water supply and the acid legend (mL/m³). Fertigation kg/ha use the total cycle irrigation depth; acid enters the program first from each stage’s irrigation depth (L/ha = mL/m³ × m³/ha ÷ 1000). In hydroponics the acid may go to tank C (L = mL/m³ × hydro m³ ÷ 1000). Also in admin and PDF.</p>
     </div>
 
     <nav class="mt-chapter-nav"><a href="agua-dureza-acidificacion-solubilidad.html">Dureza y ácido →</a><a href="programa-fertirriego-etapas.html">Fertirriego →</a><a href="../index.html">Índice</a></nav>

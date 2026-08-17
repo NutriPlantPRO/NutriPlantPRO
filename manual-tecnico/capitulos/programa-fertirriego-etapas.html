@@ -188,24 +188,30 @@
       Granular/base de etapa = aporte total granular/base × (% objetivo / 100)<br>
       Meta para fertilizantes = máx(0, meta de etapa − agua de etapa − granular/base de etapa)
     </div>
-    <p>La secuencia es la del técnico en campo: ácido (si hay análisis de agua) → nitrato de calcio
+    <p>La secuencia es la del técnico en campo: el <strong>ácido elegido en el análisis de agua</strong>
+      (L/ha = mL/m³ × lámina de <strong>Programa</strong>; sin lámina no entra al programa) → nitrato de calcio
       (cubre Ca y aporta N) → <strong>MKP para P</strong> → MAP solo en etapas posteriores a
       prefloración/floración/amarre (llenado, cosecha) si aún falta P, sin pasarse de N →
-      <strong>NKS para el K restante</strong> (aporta N) → <strong>SOP solo si el N de esa etapa ya se llenó</strong>
-      y aún falta K → <strong>N restante con Sulfonit</strong> (si no hay: fosfonitrato).
+      <strong>NKS para el K restante</strong> (aporta N; el SO₄ incidental no bloquea el K: si el agua o el ácido
+      ya llenaron S, NKS entra igual y el SO₄ de más se reporta como exceso) →
+      <strong>SOP solo si el N de esa etapa ya se llenó</strong>
+      y aún falta K (tampoco se bloquea porque S ya esté lleno; SOP no aporta N) →
+      <strong>N restante con Sulfonit</strong> (si no hay: fosfonitrato).
       No se usa nitrato de amonio (no es comercial en el agro).
-      No se usa sulfato de amonio para forzar S.
-      Luego <strong>una sola fuente de Mg por etapa</strong>: sulfato de Mg de preferencia;
-      nitrato de Mg solo si el SO₄ ya no da.
+      No se usa sulfato de amonio para forzar S. El S se deja al final: si el granular o el agua ya lo
+      cubrieron, puede quedar pasado.
+      Luego <strong>una sola fuente de Mg por etapa</strong>: si el N ya está cubierto,
+      <strong>sulfato de Mg</strong> (el SO₄ de más se reporta); <strong>nitrato de Mg</strong> solo si aún falta N.
       <strong>No se usa cloruro de calcio en automático</strong> (cultivos sensibles a Cl⁻); queda en el
       catálogo si el agrónomo lo agrega a mano. Si el N se llena antes que el Ca, el faltante de Ca se muestra.
-      Al final, micronutrientes (quelatos, ácido bórico). Cada dosis queda limitada por todos los nutrientes:
-      el motor <strong>no sobrepasa una meta</strong>. Si una composición impide cerrar exactamente,
+      Al final, micronutrientes (quelatos, ácido bórico). Cada dosis queda limitada por los demás nutrientes
+      (N, P, Ca, Mg…): el motor <strong>no sobrepasa esas metas</strong>. Excepción: NKS, SOP y sulfato de Mg pueden
+      pasar SO₄ para cubrir K/Mg. Si una composición impide cerrar exactamente,
       conserva y muestra el faltante (recuadro naranja: todos los nutrientes, macros y micros; p. ej. «Macros: MgO · todo el ciclo», no etapa por etapa). La proporción N-NO₃/N-NH₄ resulta de los productos (el MAP aporta NH₄);
       no se impone una relación fija. El resultado guarda origen, metas, agua, aportes y faltantes para
       <em>Programa vs distribución</em> en dashboard, PDF y administración.</p>
     <p>Si existe aporte de agua y no hay láminas por periodo, primero deben capturarse en
-      <strong>Dinámica nutricional</strong>. Tras cambiar la distribución o sus láminas, el programa
+      <strong>Programa</strong> (casillas junto al ácido). Tras cambiar la distribución o sus láminas, el programa
       se marca como <strong>desactualizado</strong>. La
       propuesta no sustituye la revisión de compatibilidad de tanques, solubilidad, CE, análisis de
       agua ni límites de inyección.</p>
@@ -229,9 +235,10 @@
       <strong>Traer de análisis</strong> + desplegable <strong>Seleccionar análisis…</strong> (al elegir
       un reporte de Análisis → Agua se cargan los kg/ha y la <strong>dosis de ácido</strong>,
       igual que en Hidroponía). Representa cuántos
-      <strong>kg/ha de cada elemento</strong> aporta el agua de riego durante el ciclo (referencia del
-      proyecto), calculados desde el <strong>análisis de agua</strong> (meq/L y ppm) y el volumen de
-      agua de referencia (m³). Fórmula típica para macros/micros en ppm:
+      <strong>kg/ha de cada elemento</strong> aporta el agua de riego durante el ciclo.
+      Fórmula: kg elemento/ha ≈ ppm × volumen ÷ 1 000. En Programa el volumen es la
+      <strong>lámina total del ciclo</strong> (suma de etapas); si aún no hay lámina, usa el
+      <strong>volumen de referencia</strong> del análisis.
     </p>
     <div class="mt-formula">kg elemento/ha ≈ ppm × m³ agua ÷ 1 000</div>
     <div class="mt-formula-us">
@@ -249,9 +256,13 @@
     <p>
       La leyenda de ácido usa el mismo cálculo que Análisis → Agua e Hidroponía:
       meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ meq/mL del ácido.
-      El <strong>m³ del análisis</strong> lo define el usuario en ese reporte (un riego, el ciclo o, en hidroponía, el volumen de solución); no es la lámina de fertirriego.
-      En el programa, <strong>L/ha de cada etapa = mL/m³ × lámina de esa etapa (m³/ha) ÷ 1000</strong>.
-      En pantalla, Fertirriego muestra mL/m³ y la lámina del ciclo con el ácido total (L/ha o US gal/acre); no lista etapa por etapa (eso va en el programa) y no mezcla el m³ del análisis.
+      El campo de volumen en Análisis → Agua es de <strong>referencia</strong>:
+      <strong>Fertirriego = lámina total del ciclo (m³/ha)</strong>;
+      <strong>Hidroponía = m³ de solución o agua a inyectar</strong>.
+      Las tablas kg de ese reporte usan ese volumen. En el programa,
+      <strong>L/ha de cada etapa = mL/m³ × lámina de esa etapa (m³/ha) ÷ 1000</strong>
+      (el ácido no usa el total del análisis).
+      En pantalla, Fertirriego muestra mL/m³ y la lámina del ciclo con el ácido total (L/ha o US gal/acre); no lista etapa por etapa (eso va en el programa).
       Al elaborar el programa automático el ácido entra primero y su N/P/S resta del faltante.
     </p>
 
@@ -265,9 +276,10 @@
 
     <h2>Lámina de riego (m³/ha)</h2>
     <p>
-      En <strong>Fertirriego → Dinámica nutricional</strong>, por cada semana/mes se captura el <strong>volumen de agua
-      aplicado acumulado en esa etapa</strong> (m³/ha). Sin lámina &gt; 0 la plataforma muestra solo
-      kg/ha del programa; <em>no</em> calcula ppm ni meq/L ni % iónicos de esa etapa.
+      En <strong>Fertirriego → Programa</strong> (junto al aporte por agua y el ácido), por cada semana/mes se captura el
+      <strong>volumen de agua aplicado en esa etapa</strong> (m³/ha). La misma lámina se ve en
+      <strong>Dinámica nutricional</strong> para ppm, meq/L y CE. Sin lámina &gt; 0 no hay L/ha de ácido
+      en el programa y la plataforma muestra solo kg/ha; <em>no</em> calcula ppm ni meq/L ni % iónicos de esa etapa.
     </p>
     <p>Con lámina, el aporte iónico de la etapa (fertilizante ± agua según tabla) se convierte así:</p>
     <div class="mt-formula">
@@ -307,8 +319,8 @@
       objetivo es la del periodo que estás analizando.</p>
 
     <div class="mt-note">
-      <strong>En la plataforma:</strong> Fertirriego → Dinámica nutricional →
-      «Lámina de riego por etapa».
+      <strong>En la plataforma:</strong> Fertirriego → Programa (junto al ácido) y Dinámica nutricional →
+      «Lámina de riego por etapa» (mismos m³/ha).
       Dos tablas iónicas: solo fertilizante del programa vs fertilizante + agua (la mezcla real).
     </div>
 
@@ -463,9 +475,10 @@
       Editable block under <strong>Nutrition program → Water contribution</strong>. UI: label
       <strong>Bring from analysis</strong> + dropdown <strong>Select analysis…</strong> (picking a report
       from Analysis → Water loads kg/ha and the <strong>acid dose</strong>, same as Hydroponics). It represents how many
-      <strong>kg/ha of each element</strong> irrigation water supplies over the cycle (project
-      reference), calculated from the <strong>water analysis</strong> (meq/L and ppm) and the reference water
-      volume (m³). Typical formula for macros/micros in ppm:
+      <strong>kg/ha of each element</strong> irrigation water supplies over the cycle.
+      Formula: kg element/ha ≈ ppm × volume ÷ 1 000. In the Program the volume is the
+      <strong>total cycle irrigation depth</strong> (sum of stages); if there is still no depth, it uses the
+      analysis <strong>reference volume</strong>.
     </p>
     <div class="mt-formula">kg element/ha ≈ ppm × m³ water ÷ 1 000</div>
     <div class="mt-formula-us">
@@ -483,9 +496,13 @@
     <p>
       The acid legend uses the same calculation as Analysis → Water and Hydroponics:
       meq/L = (HCO₃⁻ + CO₃²⁻) − residual; mL/m³ = meq/L × 1000 ÷ acid meq/mL.
-      The <strong>analysis m³</strong> is whatever the user entered on that report (one irrigation, the cycle, or, in hydroponics, the solution volume); it is not the fertigation irrigation depth.
-      In the program, <strong>L/ha of each stage = mL/m³ × that stage’s depth (m³/ha) ÷ 1000</strong>.
-      On screen, Fertigation shows mL/m³ and the cycle irrigation depth with the total acid (L/ha or US gal/acre); it does not list stage by stage (that belongs in the program) and does not mix in the analysis m³.
+      The volume field in Analysis → Water is a <strong>reference</strong>:
+      <strong>Fertigation = total cycle irrigation depth (m³/ha)</strong>;
+      <strong>Hydroponics = m³ of solution or water to inject</strong>.
+      That report’s kg tables use that volume. In the program,
+      <strong>L/ha of each stage = mL/m³ × that stage’s depth (m³/ha) ÷ 1000</strong>
+      (acid does not use the analysis total).
+      On screen, Fertigation shows mL/m³ and the cycle irrigation depth with the total acid (L/ha or US gal/acre); it does not list stage by stage (that belongs in the program).
       When the automatic program is built, acid enters first and its N/P/S subtracts from the remaining need.
     </p>
 
