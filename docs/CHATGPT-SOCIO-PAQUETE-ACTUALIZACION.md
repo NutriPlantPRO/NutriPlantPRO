@@ -25,7 +25,7 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza vers
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Pronóstico agroclimático / alertas)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b Comparar análisis tabla+gráficas + PDF)
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.7**: Hidroponía ácido tanque C + auto-cálculo + costos USD lote; Fertirriego/Granular costos USD/ha; UI Seleccionar análisis…)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.17**: Dinámica Nutricional tabla % fertirriego vs % granular; PDF/admin/API `fertigation_vs_granular_share_pct`)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.14: actions `invest_pro_overview|holdings|lists`)

@@ -136,7 +136,9 @@ C) HIDROPONÍA · Cálculo de fertilizantes (bloque tras «Aporte total estimado
 - **Ácido y auto-cálculo:** con análisis vinculado, L ácido (volumen hidro) = mL/m³ × m³ ÷ 1000; entra **primero** en tanque **C** (modo producto); su aporte elemental (N/P/S según ácido) resta del faltante antes de sales. UI: etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir se cargan ppm + dosis de ácido).
 - **Costos (USD del lote):** costo fila = (kg equivalentes del producto para el volumen) × (precio USD/t ÷ 1000). Líquidos: kg = L × densidad. Sin precio → «—». Costo total = suma de filas.
 
-D) FERTIRRIEGO · Gráficas · Macro resumen iónico (por etapa/semana/mes, con m³/ha de lámina)
+D) FERTIRRIEGO · Gráficas · Dinámica Nutricional
+- Debajo de las curvas: tabla de 2 filas **% fertirriego vs % nutrición granular de base** por elemento (ciclo; no incluye agua; N granular = N total; las dos filas suman 100%).
+- Luego Macro resumen iónico (por etapa/semana/mes, con m³/ha de lámina):
 - Dos tablas lado a lado: (1) solo fertilizante del programa; (2) fertilizante + **aporte por agua** (Programa de nutrición). El ternario usa la mezcla **con agua**.
 - Misma lógica de % que B, con matices Fertirriego:
   · **Triángulo aniones (N-NO₃⁻, P, S)**: % = meq / (NO₃ + P + SO₄) × 100 → suman 100%.
@@ -1227,8 +1229,8 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Resultado del cálculo: el asistente ve la enmienda seleccionada, los valores usados para el cálculo (meq a ajustar, % suelo explorado) y los resultados obtenidos: tipo de enmienda, cantidad (kg/ha), aportes (p. ej. Ca²⁺, SO₄²⁻). Priorizar la línea "Resultado en pantalla (prioridad alta)" cuando exista.
 - Regla de signo: meq a ajustar >0 subir ese catión; <0 bajar. Priorizar correcciones que reducen riesgos de Na alto y desbalance catiónico.`,
       fertirriego: `
-- Fertirriego tiene tres subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; misma lógica que granular. Debajo: **Distribución objetivo** — tabla **solo % por etapa** (no muestra kg/ha: el requerimiento, el agua y el granular ya se ven aparte; las dosis salen al elaborar el programa). **Sugerir %** coloca una curva según las etapas elegidas y busca zona Steiner en triángulos N-P-S y K-Ca-Mg. (2) Programa de Nutrición: programa por semanas o por meses (el usuario elige la unidad de tiempo); fertilizantes/materias y dosis; aporte del programa y **aporte por agua** (kg/ha; el N del agua se etiqueta **N-NO₃⁻** y en gráficas iónicas se trata como nitrato); total (programa + agua). (3) Gráficas: curvas aporte vs requerimiento **y** Macro resumen iónico + diagrama ternario por etapa (requiere m³/ha de lámina). Relación: Requerimiento = meta; Distribución = % objetivo; Programa = aportes; Gráficas = comparación y balance iónico.
-- **Sugerir % · perfiles objetivo (meq % triángulo, aniones N-P-S / cationes K-Ca-Mg).** El usuario elige las etapas (no hay 9 fijas). Cada fila toma el perfil de esa fenología; si se repite (p. ej. varios Llenado), rampa hacia la siguiente. El % suma 100 % del requerimiento real. I en rampa suave (no baja vegetativo→flor): veg 14 → preflor 15 → flor 16 → amarre 17 → llenado 18. K y Ca se sostienen (Ca ~50 hasta preflor/flor; K alza ligera); Mg cede un poco en flor. **Zn y B** altos hasta amarre y bajan en llenado (como P); Fe/Mn/Cu/Mo/Si siguen el tamaño de etapa. Brotación 48/8/44 · 28/52/20. Establecimiento 50/8/42 · 30/52/18. Vegetativo 60/6/34 · 32/50/18. Prefloración 55/7/38 · 34/50/16. Floración 52/6/42 · 36/49/15. Amarre 50/5/45 · 38/47/15. Llenado 46/4/50 · 44/39/17. Maduración 40/4/56 · 52/32/16. Cosecha 34/4/62 · 50/32/18. Si el ciclo es muy N-alto, el ternario queda cerca del ciclo. Rangos Steiner: N 20–80, P 1.25–10, S 10–70, K 10–65, Ca 22.5–62.5, Mg 0.5–40.
+- Fertirriego tiene tres subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; misma lógica que granular. Debajo: **Distribución objetivo** — tabla **solo % por etapa** (no muestra kg/ha: el requerimiento, el agua y el granular ya se ven aparte; las dosis salen al elaborar el programa). **Sugerir %** coloca una curva según las etapas elegidas y busca zona Steiner en triángulos N-P-S y K-Ca-Mg. (2) Programa de Nutrición: programa por semanas o por meses (el usuario elige la unidad de tiempo); fertilizantes/materias y dosis; aporte del programa y **aporte por agua** (kg/ha; el N del agua se etiqueta **N-NO₃⁻** y en gráficas iónicas se trata como nitrato); total (programa + agua). (3) Gráficas: curvas de aporte por etapa **y** tabla de ciclo **% fertirriego vs % nutrición granular de base** por elemento (sin agua; N granular es N total). Debajo: Macro resumen iónico + diagrama ternario por etapa (requiere m³/ha de lámina). Relación: Requerimiento = meta; Distribución = % objetivo; Programa = aportes; Gráficas = comparación, origen del aporte y balance iónico.
+- **Sugerir % · perfiles objetivo (meq % triángulo, aniones N-P-S / cationes K-Ca-Mg).** El usuario elige las etapas (no hay 9 fijas). Cada fila toma el perfil de esa fenología; si se repite (p. ej. varios Llenado), rampa hacia la siguiente. El % suma 100 % del requerimiento real. I en rampa suave (no baja vegetativo→flor): veg 14 → preflor 15 → flor 16 → amarre 17 → llenado 18. K y Ca se sostienen (Ca ~50 hasta preflor/flor; K alza ligera); Mg cede un poco en flor. **Zn y B** altos hasta amarre y bajan en llenado (como P); Fe/Mn/Cu/Mo/Si siguen el tamaño de etapa. Brotación 46/8/46 · 28/52/20. Establecimiento 48/8/44 · 30/52/18. Vegetativo 56/6/38 · 32/50/18. Prefloración 52/7/41 · 34/50/16. Floración 50/6/44 · 36/49/15. Amarre 48/5/47 · 38/47/15. Llenado 46/4/50 · 44/39/17. Maduración 40/4/56 · 52/32/16. Cosecha 34/4/62 · 50/32/18. Si el ciclo es muy N-alto, el ternario queda cerca del ciclo. Rangos Steiner: N 20–80, P 1.25–10, S 10–70, K 10–65, Ca 22.5–62.5, Mg 0.5–40.
 - **Gráficas · % meq y ternario** (ver MANUAL % meq / BALANCE IÓNICO): dos tablas (solo fertilizante vs fertilizante+agua). Triángulo aniones: N-NO₃⁻ + P + S = 100% (Cl⁻ aparte, % sobre NO₃+P+S+Cl). Triángulo cationes: K+Ca+Mg = 100% (NH₄⁺ aparte, % sobre K+Ca+Mg+NH₄). El ternario en pantalla usa fertilizante+agua.
 - En Fertirriego y en Granular la plataforma permite cambiar entre modo óxido (P₂O₅, K₂O, CaO, MgO, SO₄...) y modo elemental (P, K, Ca, Mg, S...); los valores y etiquetas que ves en contexto corresponden al modo en que el usuario tiene guardado el proyecto. En Fertirriego el programa puede ser por semana o por mes; el asistente recibe en contexto la unidad de tiempo (semana/mes) y el modo (óxido/elemental), además de semanas/meses, fertilizantes y aporte total del programa.
 - En Fertirriego el usuario puede agregar cultivos personalizados y fertilizantes/materias personalizados; esos corresponden a la pestaña Fertirriego (cada módulo tiene su propia pestaña). El asistente recibe en contexto las semanas o meses, fertilizantes y aporte total del programa (kg/ha por nutriente), así que ve los resultados del programa de fertirriego.
@@ -1246,7 +1248,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Análisis de agua: etiqueta **«Traer de análisis»** + desplegable **«Seleccionar análisis…»**. Al elegir un reporte de Análisis → Agua se cargan ppm (macros, micros, Cl⁻) y la dosis de ácido; se restan del objetivo. N-NH₄⁺ y Mo del agua suelen quedar en 0 si el análisis no los trae.
 - **Leyenda de ácido y volumen (obligatorio):** (1) ácido del análisis (HNO₃ 55%, H₂SO₄ 98%, H₃PO₄ 75% o 85%); (2) meq necesarios = (HCO₃⁻ + CO₃²⁻) − residual (defecto 1 meq/L); (3) mL/m³ = meq × 1000 / meqPerMl; (4) L del m³ del análisis y **L del volumen de hidroponía** = mL/m³ × m³ hidro ÷ 1000; (5) aviso si m³ coinciden (~0,01); (6) revisar dosis. Misma leyenda en admin y PDF (EN si reporte EN).
 - **Ácido en el cálculo:** L del campo de producto = totales para el volumen hidro (no solo mL/m³). Al elegir ácido o al auto-calcular: modo producto, **tanque C**, aporte N/P/S del ácido (densidad × %) resta del faltante. IDs compartidos con Análisis → Agua.
-- **Calcular solución automática** (reemplaza filas): orden tipico — (0) ácido C primero → (1) nitrato Ca A (Ca) → (2) MAP/MKP B → (3) NKS B → (4) nitrato Mg A → (5) SOP B → (5b) nitrato Ca extra por N-NO₃ restante A → (6) sulfato amonio B → (7) sulfato Mg / S → (8) micros B. El S a menudo queda ligeramente sobre/bajo al cerrar con sulfatos.
+- **Propuesta automática** (reemplaza filas): orden tipico — (0) ácido C primero → (1) nitrato Ca A (Ca) → (2) MAP/MKP B → (3) NKS B → (4) nitrato Mg A → (5) SOP B → (5b) nitrato Ca extra por N-NO₃ restante A → (6) sulfato amonio B → (7) sulfato Mg / S → (8) micros B. El S a menudo queda ligeramente sobre/bajo al cerrar con sulfatos.
 - Catálogo solubles: precargado + personalizado (% elemental + precio); **solubles personalizados se comparten** con Fertirriego (mismos IDs). Catálogo de soluciones nutritivas aparte.
 - Fórmulas: requerimiento = objetivo − agua − aporte ácido ya restado en totales; aporte ppm = Σ(dosis × %/100); kg sólido = dosis_ppm × m³ ÷ 1000; L líquido = kg ÷ densidad o productTotalL; concentrado = m³ × L/m³; recargas = techo(concentrado ÷ tanque_L).
 - **Costos (USD del lote, no USD/ha):** costo fila = kg eq × (USD/t ÷ 1000); total = suma. Precio desde material personalizado / overrides (sincronizados con ferti). Sin precio → «—».
@@ -1433,8 +1435,8 @@ INSTRUCCIONES:
 - Granular vs Fertirriego: son módulos separados y cada uno conserva su propio Requerimiento y Programa. Excepción explícita: Fertirriego puede importar el aporte total del programa granular como "fertilización de base"; cuando aparezca ese bloque, sí forma parte del balance total de Fertirriego. N granular permanece como N total; no inventes reparto NO₃/NH₄.
 - Solución Nutritiva vs Extracto de Pasta: son dos subpestañas distintas dentro de Análisis. Cada una tiene su propia lista de reportes, valores e ideales. No cruces ni mezcles datos entre ellas: si preguntan por solución nutritiva, usa solo el bloque "ANÁLISIS SOLUCIÓN NUTRITIVA"; si preguntan por extracto de pasta, usa solo el bloque "ANÁLISIS EXTRACTO DE PASTA".
 - Cultivos y fertilizantes personalizados: el usuario puede agregar cultivos personalizados y fertilizantes/materias personalizados tanto en Nutrición Granular como en Fertirriego. Cada módulo tiene su propia pestaña y ahí se gestionan los de ese módulo (los de Granular en la pestaña Nutrición Granular; los de Fertirriego en la pestaña Fertirriego). Si preguntan por "mis fertilizantes", "mis cultivos" o dónde agregar uno, usa el módulo en el que estén o del que hablen y di la pestaña correspondiente.
-- Resultados de los programas que el chat SÍ ve: En Nutrición Granular recibes aplicaciones guardadas. En Fertirriego recibes semanas/meses, modo, fertilizantes, aportes por nutriente, aporte de agua y aporte granular/base vinculado. También sabes que los ajustes hechos arrastrando puntos quedan reflejados en las dosis y totales guardados, y qué columnas están bloqueadas.
-- Lógica de la plataforma en Fertirriego, Granular e Hidroponía (resumen): (1) Granular y Fertirriego permiten modo óxido o elemental. (2) Granular: Requerimiento define la meta; Programa son aplicaciones que la cubren. (3) Fertirriego: **Distribución objetivo** (bajo Requerimiento) es **solo %** por etapa (no kg; agua y granular ya se restan al elaborar el programa). Programa + agua + fertilización de base granular forman el aporte total; N = NO₃ fertirriego + NH₄ fertirriego + NO₃ agua + N total granular. Arrastrar puntos en Gráficas reajusta fertilizantes y guarda los nuevos valores. **Sugerir %** usa perfiles ternarios por etapa (I alza suave veg→preflor→flor; K y Ca se sostienen; el usuario pone las etapas que quiera; si se repiten, rampa). Si ya hay programa, Dist se acomoda sola al aporte real; cambiar una dosis mueve el % y la gráfica. **Elaborar programa:** nitrato de Ca primero (Ca + N desde el inicio); **no usa cloruro de Ca en automático** (Cl⁻; queda en catálogo a mano). (4) Hidroponía: Solución por etapa = objetivo; Cálculo de fertilizantes resta agua y calcula dosis.
+- Resultados de los programas que el chat SÍ ve: En Nutrición Granular recibes aplicaciones guardadas. En Fertirriego recibes semanas/meses, modo, fertilizantes, aportes por nutriente, aporte de agua, aporte granular/base vinculado y la tabla **% fertirriego vs % granular** del ciclo (sin agua). También sabes que los ajustes hechos arrastrando puntos quedan reflejados en las dosis y totales guardados, y qué columnas están bloqueadas.
+- Lógica de la plataforma en Fertirriego, Granular e Hidroponía (resumen): (1) Granular y Fertirriego permiten modo óxido o elemental. (2) Granular: Requerimiento define la meta; Programa son aplicaciones que la cubren. (3) Fertirriego: **Distribución objetivo** (bajo Requerimiento) es **solo %** por etapa (no kg; agua y granular ya se restan al elaborar el programa). Programa + agua + fertilización de base granular forman el aporte total; N = NO₃ fertirriego + NH₄ fertirriego + NO₃ agua + N total granular. Arrastrar puntos en Gráficas reajusta fertilizantes y guarda los nuevos valores. **Sugerir %** usa perfiles ternarios por etapa (I alza suave veg→preflor→flor; K y Ca se sostienen; el usuario pone las etapas que quiera; si se repiten, rampa). Si ya hay programa, Dist se acomoda sola al aporte real; cambiar una dosis mueve el % y la gráfica. **Propuesta automática de programa:** nitrato de Ca primero (Ca + N desde el inicio); **no usa cloruro de Ca en automático** (Cl⁻; queda en catálogo a mano); SOP entra ~1/3 del K restante para meter SO₄ desde el inicio, luego NKS y el SOP del K que quede. (4) Hidroponía: Solución por etapa = objetivo; Cálculo de fertilizantes resta agua y calcula dosis.
 - Si existe una línea "Resultado en pantalla (prioridad alta...)" en ENMIENDAS, úsala como fuente principal para cantidades y aportes; cita esos números exactos en tu respuesta.
 - Si existen los bloques "🧪 Enmiendas Disponibles", "Meq a ajustar", "% Superficie de suelo considerada" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
 - Cómo saber si el usuario habla de datos de Enmienda o de la pestaña Análisis de Suelo: (1) "ANÁLISIS DE SUELO INICIAL" = único conjunto de valores (**meq/100g = cmol_c/kg**, CIC, etc.) usados en la pestaña Enmienda para el cálculo de enmiendas. (2) "ANÁLISIS DE SUELO (reportes)" = lista de reportes en la pestaña Análisis > Análisis de Suelo (cada uno con título, fecha, fertilidad, cationes, kg/ha). Si el usuario está en Enmienda o dice "los datos de enmienda", "lo que tengo en enmienda", "el análisis inicial" → usar el bloque INICIAL. Si está en la pestaña Análisis (subpestaña Análisis de Suelo) o dice "los reportes de análisis", "el análisis de suelo que cargué" (en contexto de reportes) → usar el bloque (reportes). Si no queda claro, responde usando el bloque que coincida con la pestaña donde está (snapshot "ANÁLISIS (pestaña actual)" indica si está en Análisis de Suelo = reportes) o aclara: "¿te refieres a los valores que usas en Enmienda (Análisis Inicial) o a uno de los reportes de la pestaña Análisis de Suelo?".
@@ -2299,14 +2301,46 @@ ESTILO DE RESPUESTA:
     return out;
   }
 
+  buildFertiSourceShareChatLine(prog) {
+    if (!prog || !Array.isArray(prog.weeks) || !prog.weeks.length) return '';
+    const keys = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
+    const ferti = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 };
+    prog.weeks.forEach(w => {
+      const t = (w && w.totals) || {};
+      ferti.N += (parseFloat(t.N_NO3) || 0) + (parseFloat(t.N_NH4) || 0);
+      keys.forEach(k => {
+        if (k === 'N') return;
+        if (k === 'SO4') ferti.SO4 += (parseFloat(t.SO4) || 0) + (parseFloat(t.S) || 0) * 3;
+        else ferti[k] += parseFloat(t[k]) || 0;
+      });
+    });
+    const base = (prog && prog.baseContribution) || {};
+    const parts = keys.map(k => {
+      const f = Math.max(0, ferti[k] || 0);
+      const g = k === 'SO4'
+        ? (parseFloat(base.SO4) || 0) + (parseFloat(base.S) || 0) * 3
+        : (parseFloat(base[k]) || 0);
+      const tot = f + Math.max(0, g);
+      if (!(tot > 1e-12)) return null;
+      const fp = Math.round((1000 * f) / tot) / 10;
+      return `${k} ferti ${fp}% / granular ${Math.round((100 - fp) * 10) / 10}%`;
+    }).filter(Boolean);
+    if (!parts.length) return '';
+    return 'Tabla % fertirriego vs granular de base (ciclo, sin agua; N granular = N total): ' + parts.join('; ') + '.';
+  }
+
   getLiveFertirriegoBlocks() {
-    const out = { subsection: '', cultivo: '', rendimiento: '', tableSummary: '', macroIonicSummary: '', waterContributionSummary: '', baseContributionSummary: '' };
+    const out = { subsection: '', cultivo: '', rendimiento: '', tableSummary: '', macroIonicSummary: '', sourceShareSummary: '', waterContributionSummary: '', baseContributionSummary: '' };
     const activeBtn = document.querySelector('.fertirriego-tabs .tab-button.active');
     const tab = activeBtn && activeBtn.getAttribute('data-tab');
     if (tab === 'extraccion') out.subsection = 'Requerimiento Nutricional';
     else if (tab === 'programa') out.subsection = 'Programa de Nutrición';
     else if (tab === 'graficas') {
       out.subsection = 'Dinámica Nutricional';
+      const share = document.getElementById('fertiChartsSourceShareWrap');
+      if (share && !share.hidden && share.textContent) {
+        out.sourceShareSummary = share.innerText.replace(/\s+/g, ' ').trim().slice(0, 700);
+      }
       const insights = document.getElementById('fertiChartsStageInsightsWrap');
       if (insights && insights.textContent) {
         out.macroIonicSummary = insights.innerText.replace(/\s+/g, ' ').trim().slice(0, 1200);
@@ -3118,9 +3152,11 @@ ESTILO DE RESPUESTA:
             context += `Aporte de fertilización de base traído de Nutrición Granular (valores canónicos en óxido): ${baseParts.join(', ')}. Vinculado: ${prog.granularProgramLinked === true ? 'sí' : 'no'}.\n`;
           }
         }
+        const shareLine = this.buildFertiSourceShareChatLine(prog);
+        if (shareLine) context += shareLine + '\n';
         context += 'Regla de N del balance: N total disponible = N-NO₃ del fertirriego + N-NH₄ del fertirriego + N-NO₃ del agua + N total de fertilización granular/base.\n';
         context += `Ajuste desde gráficas: disponible. Al arrastrar un punto se recalculan las dosis de fertilizantes y los totales de las semanas; los valores guardados arriba ya reflejan esos ajustes. Fertilizantes bloqueados para ajuste: ${prog && Array.isArray(prog.chartLockedColumnIds) && prog.chartLockedColumnIds.length ? prog.chartLockedColumnIds.join(', ') : 'ninguno'}.\n`;
-        context += 'Subsección Gráficas: aportes vs requerimiento + Macro resumen iónico (% meq: triángulo N-P-S y K-Ca-Mg sin Cl/NH₄; ver MANUAL % meq) y diagrama ternario (fertilizante+agua).\n';
+        context += 'Subsección Gráficas: aportes vs requerimiento + tabla % fertirriego vs % granular de base (ciclo, sin agua) + Macro resumen iónico (% meq: triángulo N-P-S y K-Ca-Mg sin Cl/NH₄; ver MANUAL % meq) y diagrama ternario (fertilizante+agua).\n';
         context += '\n';
       }
 
@@ -3130,7 +3166,7 @@ ESTILO DE RESPUESTA:
       // BLOQUES EN VIVO FERTIRRIEGO (pantalla actual: subsección activa, cultivo, rendimiento, tabla requerimiento)
       if (snapshot.module === 'fertirriego') {
         const liveFerti = this.getLiveFertirriegoBlocks();
-        if (liveFerti.cultivo || liveFerti.rendimiento || liveFerti.tableSummary || liveFerti.subsection || liveFerti.macroIonicSummary || liveFerti.waterContributionSummary || liveFerti.baseContributionSummary) {
+        if (liveFerti.cultivo || liveFerti.rendimiento || liveFerti.tableSummary || liveFerti.subsection || liveFerti.macroIonicSummary || liveFerti.sourceShareSummary || liveFerti.waterContributionSummary || liveFerti.baseContributionSummary) {
           context += '--- BLOQUES FERTIRRIEGO (PANTALLA ACTUAL) ---\n';
           if (liveFerti.subsection) context += `Subsección visible: ${liveFerti.subsection}\n`;
           context += `Cultivo en pantalla: ${liveFerti.cultivo || '—'}\n`;
@@ -3138,6 +3174,7 @@ ESTILO DE RESPUESTA:
           if (liveFerti.tableSummary) context += `Tabla Requerimiento Nutricional (valores visibles):\n${liveFerti.tableSummary}\n`;
           if (liveFerti.waterContributionSummary) context += `Aporte por agua (pantalla Programa, kg/ha): ${liveFerti.waterContributionSummary} (N del agua = N-NO₃⁻ en gráficas iónicas)\n`;
           if (liveFerti.baseContributionSummary) context += `Aporte de fertilización de base/granular (pantalla Programa, kg/ha): ${liveFerti.baseContributionSummary} (N granular = N total; no dividir artificialmente en NO₃/NH₄)\n`;
+          if (liveFerti.sourceShareSummary) context += `Tabla % fertirriego vs granular (pantalla Dinámica; ciclo, sin agua): ${liveFerti.sourceShareSummary}\n`;
           if (liveFerti.macroIonicSummary) context += `Macro resumen iónico / ternario (etapa visible en Gráficas; interpretar % con MANUAL % meq): ${liveFerti.macroIonicSummary}\n`;
           context += '\n';
         }

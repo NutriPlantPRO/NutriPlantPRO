@@ -79,12 +79,14 @@ module.exports = [
       assert.equal(ferti.t('lamina', 'Lámina de riego:'), 'Irrigation depth:');
       assert.equal(ferti.t('macro_summary', 'Macro resumen'), 'Macro summary');
       assert.equal(ferti.t('base_fertilization_supply', 'Aporte de fertilización de base'), '🌱 Base fertilization supply');
-      assert.equal(ferti.t('auto_button', 'Elaborar programa de fertirriego'), 'Build fertigation program');
+      assert.equal(ferti.t('auto_button', 'Propuesta automática de programa'), 'Automatic program proposal');
       assert.equal(ferti.t('auto_stale', 'Programa desactualizado respecto a Distribución objetivo'), 'Program is outdated relative to Objective Distribution');
       assert.equal(ferti.t('dist_title_prefix', 'Distribución objetivo'), 'Objective distribution');
       assert.equal(ferti.t('dist_suggest_btn', 'Sugerir %'), 'Suggest %');
-      assert.equal(ferti.t('dist_h2', '2. Distribución por etapa (%)'), '2. Distribution by stage (%)');
-      assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '3. Target irrigation depth by stage');
+      assert.equal(ferti.t('source_share_title', 'Aporte fertirriego vs nutrición granular'), 'Fertigation vs base granular supply');
+      assert.equal(ferti.t('source_share_ferti', 'Fertirriego'), 'Fertigation');
+      assert.equal(ferti.t('source_share_granular', 'Nutrición granular de base'), 'Base granular nutrition');
+      assert.equal(ferti.t('dist_water_title', 'Lámina objetivo'), '2. Target irrigation depth by stage');
     }
   },
   {
@@ -146,6 +148,16 @@ module.exports = [
       close(totals.SO4, 9.5);
       close(totals.Zn, 0.3);
       assert.equal(totals.S, 0);
+    }
+  },
+  {
+    name: 'fertirriego: % aporte fertirriego vs granular suma 100',
+    run: function () {
+      assert.deepEqual(ferti.sourceSharePct(0, 0), { ferti: null, granular: null });
+      assert.deepEqual(ferti.sourceSharePct(80, 20), { ferti: 80, granular: 20 });
+      assert.deepEqual(ferti.sourceSharePct(0, 12), { ferti: 0, granular: 100 });
+      var split = ferti.sourceSharePct(1, 2);
+      close(split.ferti + split.granular, 100, 1e-9);
     }
   }
 ];

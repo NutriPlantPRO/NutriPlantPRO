@@ -10031,8 +10031,8 @@
             opts = opts || {};
             const dodgeOn = !!opts.dodge;
             const width = 600;
-            const height = 230;
-            const padL = 40, padR = 10, padT = 10, padB = 80;
+            const height = 250;
+            const padL = 40, padR = 10, padT = 10, padB = 118;
             const innerW = width - padL - padR;
             const innerH = height - padT - padB;
             const allValues = datasets.flatMap(d => d.data.map(v => parseFloat(v) || 0));
@@ -10361,7 +10361,12 @@
 
             const weeks = program.weeks || [];
             const timeUnit = program.timeUnit === 'mes' ? 'mes' : 'semana';
-            const labels = weeks.map((w, i) => `${timeUnit === 'mes' ? 'Mes' : 'Semana'} ${i + 1}`);
+            const labels = weeks.map((w, i) => {
+                const period = `${timeUnit === 'mes' ? 'Mes' : 'Semana'} ${i + 1}`;
+                const stage = String((w && (w.stage || w.label)) || '').trim();
+                if (!stage || stage === period || /^(?:Mes|Semana|Month|Week)\s+\d+$/i.test(stage)) return period;
+                return stage + ' ' + period;
+            });
             const hasTotals = weeks.some(w => w && w.totals);
             if (!hasTotals) {
                 macroContainer.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin totales guardados en el programa.</div>';
@@ -11130,6 +11135,90 @@
                 html += adminBuildFertiPivotTableHtml({ title: 'Micro · ppm (fertilizante + agua)', program: program, stageIndexes: chunk, summaries: summaries, waterArr: waterArr, rowDefs: microRows, decimals: 2, partSuffix: partSuffix });
             });
             return html;
+        }
+
+        function adminFertiSourceSharePct(fertilizerKg, granularKg) {
+            var f = Math.max(0, Number(fertilizerKg) || 0);
+            var g = Math.max(0, Number(granularKg) || 0);
+            var t = f + g;
+            if (!(t > 1e-12)) return { ferti: null, granular: null };
+            var ferti = Math.round((1000 * f) / t) / 10;
+            return { ferti: ferti, granular: Math.round((100 - ferti) * 10) / 10 };
+        }
+
+        function adminBuildFertiSourceShareHtml(program) {
+            var weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+            if (!weeks.length) return '';
+            var nuts = [
+                { id: 'N', label: 'N' },
+                { id: 'P2O5', label: 'P₂O₅' },
+                { id: 'K2O', label: 'K₂O' },
+                { id: 'CaO', label: 'CaO' },
+                { id: 'MgO', label: 'MgO' },
+                { id: 'SO4', label: 'SO₄' },
+                { id: 'Fe', label: 'Fe' },
+                { id: 'Mn', label: 'Mn' },
+                { id: 'B', label: 'B' },
+                { id: 'Zn', label: 'Zn' },
+                { id: 'Cu', label: 'Cu' },
+                { id: 'Mo', label: 'Mo' }
+            ];
+            var fertiKg = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 };
+            weeks.forEach(function (w) {
+                var t = (w && w.totals) || {};
+                fertiKg.N += (Number(t.N_NO3) || 0) + (Number(t.N_NH4) || 0);
+                fertiKg.P2O5 += Number(t.P2O5) || 0;
+                fertiKg.K2O += Number(t.K2O) || 0;
+                fertiKg.CaO += Number(t.CaO) || 0;
+                fertiKg.MgO += Number(t.MgO) || 0;
+                fertiKg.SO4 += (Number(t.SO4) || 0) + (Number(t.S) || 0) * 3;
+                fertiKg.Fe += Number(t.Fe) || 0;
+                fertiKg.Mn += Number(t.Mn) || 0;
+                fertiKg.B += Number(t.B) || 0;
+                fertiKg.Zn += Number(t.Zn) || 0;
+                fertiKg.Cu += Number(t.Cu) || 0;
+                fertiKg.Mo += Number(t.Mo) || 0;
+            });
+            var base = (program && program.baseContribution) || {};
+            var granKg = {
+                N: Number(base.N) || 0,
+                P2O5: Number(base.P2O5) || 0,
+                K2O: Number(base.K2O) || 0,
+                CaO: Number(base.CaO) || 0,
+                MgO: Number(base.MgO) || 0,
+                SO4: (Number(base.SO4) || 0) + (Number(base.S) || 0) * 3,
+                Fe: Number(base.Fe) || 0,
+                Mn: Number(base.Mn) || 0,
+                B: Number(base.B) || 0,
+                Zn: Number(base.Zn) || 0,
+                Cu: Number(base.Cu) || 0,
+                Mo: Number(base.Mo) || 0
+            };
+            var fmt = function (v) {
+                return (v == null || !isFinite(v)) ? '—' : adminFertiNum(v, 1) + '%';
+            };
+            var heads = nuts.map(function (n) {
+                var c = adminNutrientColor(n.id);
+                return '<th style="padding:6px;text-align:center;color:' + c + ';border-bottom:2px solid ' + c + ';">' + n.label + '</th>';
+            }).join('');
+            var fertiCells = nuts.map(function (n) {
+                return '<td style="padding:6px;text-align:center;font-weight:700;background:#eff6ff;">' + fmt(adminFertiSourceSharePct(fertiKg[n.id], granKg[n.id]).ferti) + '</td>';
+            }).join('');
+            var granCells = nuts.map(function (n) {
+                return '<td style="padding:6px;text-align:center;font-weight:700;background:#ecfdf5;">' + fmt(adminFertiSourceSharePct(fertiKg[n.id], granKg[n.id]).granular) + '</td>';
+            }).join('');
+            return (
+                '<div style="margin-bottom:12px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:12px;">' +
+                '<div style="font-weight:700;color:#134e4a;font-size:14px;margin-bottom:4px;">Aporte fertirriego vs nutrición granular</div>' +
+                '<div style="font-size:12px;color:#64748b;margin-bottom:8px;">Porcentaje del fertilizante aplicado en el ciclo (programa + granular). No incluye agua. El N granular es N total.</div>' +
+                '<div style="overflow-x:auto;">' +
+                '<table style="width:100%;min-width:720px;border-collapse:collapse;font-size:12px;background:#fff;border-radius:6px;">' +
+                '<thead><tr><th style="padding:6px;text-align:left;"></th>' + heads + '</tr></thead>' +
+                '<tbody>' +
+                '<tr><td style="padding:6px;font-weight:700;color:#1d4ed8;background:#eff6ff;white-space:nowrap;">Fertirriego</td>' + fertiCells + '</tr>' +
+                '<tr><td style="padding:6px;font-weight:700;color:#047857;background:#ecfdf5;white-space:nowrap;">Nutrición granular de base</td>' + granCells + '</tr>' +
+                '</tbody></table></div></div>'
+            );
         }
 
         function adminBuildFertiChartsInsightsHtml(program, waterOx, projectId, stageIndex) {
@@ -14574,6 +14663,7 @@
                                 <div id="${chartMicroWrapId}" style="width:100%;min-height:200px;color:#94a3b8;font-style:italic;">Cargando gráfica...</div>
                             </div>
                         </div>
+                        ${adminBuildFertiSourceShareHtml(fertirriegoProgram)}
                         <div style="margin-bottom:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
                             <div style="font-weight:600;color:#1e293b;font-size:15px;margin-bottom:8px;">📊 Relaciones por etapa (ppm · meq/L · %)</div>
                             <div id="${fertiInsightsWrapId}">

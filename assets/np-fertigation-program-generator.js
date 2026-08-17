@@ -14,6 +14,7 @@
   var MICRO_TARGETS = { Fe: 1, Mn: 1, B: 1, Zn: 1, Cu: 1, Mo: 1 };
   var MIN_BULK_DOSE_KG_HA = 3;
   var MIN_MICRO_DOSE_KG_HA = 0.05;
+  var SOP_K_SHARE = 0.32;
   var MATERIAL_SEQUENCE = [
     { id: 'nitrato_calcio_granular', target: 'CaO', order: 10 },
     { id: 'mkp', target: 'P2O5', order: 30 },
@@ -180,6 +181,9 @@
       if (!material) return 0;
       var contribution = materialContributionPerKg(material);
       var dose = maxSafeDose(contribution, remaining, step.target, step.ignoreKeys);
+      if (step.maxDose != null && isFinite(Number(step.maxDose))) {
+        dose = Math.min(dose, Math.max(0, num(step.maxDose)));
+      }
       if (!(dose > tolerance)) return 0;
       var rowContribution = scaleMap(contribution, dose);
       var existing = null;
@@ -238,10 +242,24 @@
 
     var allowMap = !stageBlocksMap(opts.stageName);
 
+    function applySopForSulfate() {
+      var material = byId['sop'];
+      if (!material) return 0;
+      var contribution = materialContributionPerKg(material);
+      if (!(contribution.K2O > 0) || !(remaining.SO4 > tolerance) || !(remaining.K2O > tolerance)) return 0;
+      return applyStep({
+        id: 'sop',
+        target: 'SO4',
+        order: 39,
+        maxDose: (remaining.K2O * SOP_K_SHARE) / contribution.K2O
+      });
+    }
+
     function applyMacroPass() {
       applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
       applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
       if (allowMap) applyStep({ id: 'map', target: 'P2O5', order: 31 });
+      applySopForSulfate();
       applyStep({ id: 'nks', target: 'N', order: 40 });
       applyStep({ id: 'sop', target: 'K2O', order: 41 });
       if (remaining.N > tolerance) applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 45 });
@@ -350,6 +368,7 @@
     MATERIAL_SEQUENCE: MATERIAL_SEQUENCE.slice(),
     MIN_BULK_DOSE_KG_HA: MIN_BULK_DOSE_KG_HA,
     MIN_MICRO_DOSE_KG_HA: MIN_MICRO_DOSE_KG_HA,
+    SOP_K_SHARE: SOP_K_SHARE,
     materialContributionPerKg: materialContributionPerKg,
     proportionalWater: proportionalWater,
     proportionalBase: proportionalBase,

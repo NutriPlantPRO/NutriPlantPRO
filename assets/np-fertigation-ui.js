@@ -44,9 +44,7 @@
     dist_apply_other: 'Apply to another project',
     dist_delete_catalog: '🗑 Remove from catalog',
     dist_catalog_hint: 'The catalog is yours (dashboard). It stores stages and %. Doses are recalculated in each project from its requirement.',
-    dist_h1: '1. Actual requirement',
-    dist_h1_hint: 'Every nutrient from the requirement table. Not edited here.',
-    dist_h2: '2. Distribution by stage (%)',
+    dist_h2: '1. Distribution by stage (%)',
     dist_h2_hint: 'This table is the % of actual requirement by stage. Week or Month is the same period as the Program. Each nutrient sums to 100%.',
     dist_pct_nudge: 'Arrows: 1% · Shift: 5% · Alt: 0.1%. Decimals can be typed.',
     dist_assist_title: 'Support',
@@ -54,7 +52,7 @@
     dist_assist_in: 'Apply to',
     dist_suggest_btn: 'Suggest %',
     dist_suggest_title: 'Fills % from the stages you selected, aiming for an adequate solution in the N-P-S and K-Ca-Mg triangles.',
-    dist_suggest_hint: 'If you edit a % and a program already exists with the same periods, those doses are rebalanced (no need to Build again). If you change a dose in the Program, the % here moves. Suggest % does not touch the program until you Build it. Arrows 1% · Shift 5% · Alt 0.1%.',
+    dist_suggest_hint: 'Adding or removing stages readjusts the % to the suggested curve. Suggest % restores that curve if you moved a value. If you edit a % and a program already exists with the same periods, those doses are rebalanced (no need to generate the proposal again). If you change a dose in the Program, the % here moves. Suggest % does not touch the program until you generate the automatic proposal. Arrows 1% · Shift 5% · Alt 0.1%.',
     dist_suggest_done: 'Percentages filled from the stages, aiming for an adequate solution in the ternary triangles.',
     dist_suggest_out: 'Percentages filled from the stages. The cycle requirement is already outside the triangle ranges; review N-P-S or K-Ca-Mg.',
     dist_shape_all: 'All nutrients',
@@ -80,11 +78,11 @@
     dist_axis_week: 'Weekly',
     dist_axis_month: 'Monthly',
     dist_axis_warn: 'This changes the period to {axis}. Phenology on each row is kept. Continue?',
-    dist_h3: '3. Result',
+    dist_h3: '2. Result',
     dist_per_stage: 'per stage',
-    dist_water_title: '3. Target irrigation depth by stage',
+    dist_water_title: '2. Target irrigation depth by stage',
     dist_water_help: 'Used to split the water-analysis contribution and to calculate ppm, meq/L and EC.',
-    dist_h4: '4. Distribution % chart',
+    dist_h4: '3. Distribution % chart',
     dist_chart_y: 'Distribution %',
     dist_chart_drag: 'This chart is the Objective distribution %. Tap a nutrient name to view only that curve in that chart. Tap again or the background to show all. Drag a point or edit the % table. Dragging compensates the other stages to 100%. If you edit doses in the Program (same periods), the % here updates too.',
     dist_chart_focus: 'Only this curve in this chart. Tap its name or the background to show all.',
@@ -101,8 +99,8 @@
     dist_no_other: 'No other projects',
     dist_replace_warn: 'That project already has a distribution. Replace stages and %?',
     dist_applied: 'Curve applied to',
-    auto_button: 'Build fertigation program',
-    auto_title: 'Build fertigation program',
+    auto_button: 'Automatic program proposal',
+    auto_title: 'Automatic program proposal',
     auto_confirm_intro: 'The program rows and fertilizers will be replaced with a proposal calculated from Distribution.',
     auto_source: 'Objective distribution',
     auto_periods: 'Periods',
@@ -123,8 +121,8 @@
     auto_distribution_invalid: 'Distribution must sum to 100% for every nutrient. Review: ',
     auto_water_depth_required: 'There is a water contribution. Enter irrigation depth for every period in Nutrient Dynamics before building the program.',
     auto_generator_unavailable: 'The automatic generator could not be prepared.',
-    auto_done: 'Fertigation program built. Review rates and ionic balance before applying it.',
-    auto_done_pending: 'Program built. Review deficits and ionic balance before applying it.',
+    auto_done: 'Automatic proposal applied. Review rates and ionic balance before using it.',
+    auto_done_pending: 'Automatic proposal applied. Review deficits and ionic balance before using it.',
     auto_generated: 'Program generated from Objective Distribution',
     auto_stale: 'Program is outdated relative to Objective Distribution',
     auto_pending_detail: 'Deficits: ',
@@ -219,6 +217,10 @@
     linked_granular_program: 'Granular program linked',
     no_granular_program: 'No saved granular program in this project',
     total_supply_with_base: '📦 Total supply (program + water + base fertilization)',
+    source_share_title: 'Fertigation vs base granular supply',
+    source_share_hint: 'Share of fertilizer applied in the cycle (program + granular). Water is not included. Granular N is total N.',
+    source_share_ferti: 'Fertigation',
+    source_share_granular: 'Base granular nutrition',
     per_week_abbr: '/wk', per_month_abbr: '/mo'
   };
   var CROPS_EN = {
@@ -514,6 +516,17 @@
     return '#64748b';
   }
 
+  function sourceSharePct(fertilizerKg, granularKg) {
+    var f = Math.max(0, Number(fertilizerKg) || 0);
+    var g = Math.max(0, Number(granularKg) || 0);
+    var t = f + g;
+    if (!(t > 1e-12)) return { ferti: null, granular: null };
+    var ferti = Math.round((1000 * f) / t) / 10;
+    if (ferti > 100) ferti = 100;
+    if (ferti < 0) ferti = 0;
+    return { ferti: ferti, granular: Math.round((100 - ferti) * 10) / 10 };
+  }
+
   return {
     getPrefs:prefs, t:t, unit:unit, fromSI:fromSI, toSI:toSI,
     inputFromSI:inputFromSI, resultFromSI:resultFromSI, quantityFromSI:quantityFromSI,
@@ -522,6 +535,7 @@
     concentrationPpmFromDose:concentrationPpmFromDose, doseFromConcentration:doseFromConcentration,
     adjustBlendToTarget:adjustBlendToTarget,
     aggregateGranularProgramContribution:aggregateGranularProgramContribution,
+    sourceSharePct: sourceSharePct,
     withLanguage: withLanguage,
     withUnitSystem: withUnitSystem,
     nutrientColor: nutrientColor

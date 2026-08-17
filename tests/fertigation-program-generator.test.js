@@ -234,4 +234,18 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(result.stages[0].rows[0].materialId === 'acido_nitrico_55');
 })();
 
+(function sopBringsSulfateWithPotassium() {
+  const result = generator.solveStage(
+    { N: 30, CaO: 26, MgO: 10, P2O5: 8, K2O: 35, SO4: 18 },
+    {},
+    materials
+  );
+  const ids = result.rows.map(row => row.materialId);
+  assert.ok(ids.includes('sop'), 'SOP missing: ' + ids.join(','));
+  const sop = result.rows.find(row => row.materialId === 'sop');
+  assert.ok(sop.doseKgHa + 1e-9 >= generator.MIN_BULK_DOSE_KG_HA, sop.doseKgHa);
+  assert.ok(sop.contribution.SO4 > 1, sop.contribution.SO4);
+  generator.TARGET_KEYS.forEach(key => assert.ok(result.excess[key] <= 1e-8, `excess ${key}`));
+})();
+
 console.log('fertigation-program-generator tests passed');

@@ -1495,7 +1495,7 @@ function openFertiAutoProgramModal() {
   overlay._prepared = prepared;
   overlay.innerHTML = `
     <div class="ferti-auto-modal-box" role="dialog" aria-modal="true" aria-labelledby="fertiAutoProgramTitle">
-      <h3 id="fertiAutoProgramTitle"><span class="ferti-auto-program-btn-icon" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt="" width="18" height="18" decoding="async"></span>${fertiEscapeAttr(fertProgT('auto_title', 'Elaborar programa de fertirriego'))}</h3>
+      <h3 id="fertiAutoProgramTitle"><span class="ferti-auto-program-btn-icon" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt="" width="18" height="18" decoding="async"></span>${fertiEscapeAttr(fertProgT('auto_title', 'Propuesta automática de programa'))}</h3>
       <p>${fertiEscapeAttr(fertProgT('auto_confirm_intro', 'Se reemplazarán las filas y fertilizantes del programa con una propuesta calculada desde Distribución.'))}</p>
       <div class="ferti-auto-summary">
         <div><strong>${fertiEscapeAttr(fertProgT('auto_source', 'Distribución objetivo'))}:</strong> ${fertiEscapeAttr(distributionName || state.title || '')}</div>
@@ -1595,8 +1595,8 @@ function fertiApplyAutomaticProgram(prepared) {
   if (window.showMessage) {
     window.showMessage(
       prepared.hasUnresolved || prepared.hasWaterExcess
-        ? fertProgT('auto_done_pending', 'Programa elaborado. Revisa los faltantes y el balance iónico antes de aplicarlo.')
-        : fertProgT('auto_done', 'Programa de fertirriego elaborado. Revisa las dosis y el balance iónico antes de aplicarlo.'),
+        ? fertProgT('auto_done_pending', 'Propuesta automática aplicada. Revisa los faltantes y el balance iónico antes de usarla.')
+        : fertProgT('auto_done', 'Propuesta automática aplicada. Revisa las dosis y el balance iónico antes de usarla.'),
       prepared.hasUnresolved || prepared.hasWaterExcess ? 'warning' : 'success'
     );
   }
@@ -1652,6 +1652,8 @@ function renderFertiAutomaticProgramStatus() {
 
 // Render semanas
 function renderFertiWeeks() {
+  const autoBtnLabel = document.getElementById('fertiAutoProgramBtnLabel');
+  if (autoBtnLabel) autoBtnLabel.textContent = fertProgT('auto_button', 'Propuesta automática de programa');
   const container = document.getElementById('fertiWeeksContainer');
   if (!container) return;
   updateFertiProgramTimeTitle();
@@ -3223,7 +3225,99 @@ function renderFertiMicroTableHtml(summary) {
         </table>`;
 }
 
+const FERTI_SOURCE_SHARE_NUTS = [
+  { id: 'N', oxide: 'N', elemental: 'N' },
+  { id: 'P2O5', oxide: 'P₂O₅', elemental: 'P' },
+  { id: 'K2O', oxide: 'K₂O', elemental: 'K' },
+  { id: 'CaO', oxide: 'CaO', elemental: 'Ca' },
+  { id: 'MgO', oxide: 'MgO', elemental: 'Mg' },
+  { id: 'SO4', oxide: 'SO₄', elemental: 'S' },
+  { id: 'Fe', oxide: 'Fe', elemental: 'Fe' },
+  { id: 'Mn', oxide: 'Mn', elemental: 'Mn' },
+  { id: 'B', oxide: 'B', elemental: 'B' },
+  { id: 'Zn', oxide: 'Zn', elemental: 'Zn' },
+  { id: 'Cu', oxide: 'Cu', elemental: 'Cu' },
+  { id: 'Mo', oxide: 'Mo', elemental: 'Mo' }
+];
+
+function fertiSourceSharePct(fertilizerKg, granularKg) {
+  const ui = fertProgUI();
+  if (ui && typeof ui.sourceSharePct === 'function') return ui.sourceSharePct(fertilizerKg, granularKg);
+  const f = Math.max(0, Number(fertilizerKg) || 0);
+  const g = Math.max(0, Number(granularKg) || 0);
+  const t = f + g;
+  if (!(t > 1e-12)) return { ferti: null, granular: null };
+  const ferti = Math.round((1000 * f) / t) / 10;
+  return { ferti: ferti, granular: Math.round((100 - ferti) * 10) / 10 };
+}
+
+function fertiProgramSupplyOxideTotals(weeks) {
+  const out = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 };
+  const list = Array.isArray(weeks) ? weeks : (fertiWeeks || []);
+  list.forEach(function (w) {
+    const t = (w && w.totals) || {};
+    out.N += (Number(t.N_NO3) || 0) + (Number(t.N_NH4) || 0);
+    out.P2O5 += Number(t.P2O5) || 0;
+    out.K2O += Number(t.K2O) || 0;
+    out.CaO += Number(t.CaO) || 0;
+    out.MgO += Number(t.MgO) || 0;
+    out.SO4 += (Number(t.SO4) || 0) + (Number(t.S) || 0) * FERTI_CONV.SO4_TO_S;
+    out.Fe += Number(t.Fe) || 0;
+    out.Mn += Number(t.Mn) || 0;
+    out.B += Number(t.B) || 0;
+    out.Zn += Number(t.Zn) || 0;
+    out.Cu += Number(t.Cu) || 0;
+    out.Mo += Number(t.Mo) || 0;
+  });
+  return out;
+}
+
+function fertiFormatSourceSharePct(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return fertiNum(value, 1) + '%';
+}
+
+function renderFertiChartsSourceShare() {
+  const host = document.getElementById('fertiChartsSourceShareWrap');
+  if (!host) return;
+  if (!Array.isArray(fertiWeeks) || !fertiWeeks.length) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  const programKg = fertiProgramSupplyOxideTotals();
+  const granularKg = fertiGeneratorBaseMap();
+  const elemental = !!fertiChartsElementalMode;
+  const heads = FERTI_SOURCE_SHARE_NUTS.map(function (n) {
+    const color = fertProgNutrientColor(n.id);
+    const label = elemental ? n.elemental : n.oxide;
+    return '<th style="color:' + color + ';border-bottom:2px solid ' + color + ';">' + fertiEscapeInsightsLabel(label) + '</th>';
+  }).join('');
+  const fertiCells = FERTI_SOURCE_SHARE_NUTS.map(function (n) {
+    const share = fertiSourceSharePct(programKg[n.id], granularKg[n.id]);
+    const empty = share.ferti == null;
+    return '<td class="' + (empty ? 'is-empty' : '') + '">' + fertiFormatSourceSharePct(share.ferti) + '</td>';
+  }).join('');
+  const granularCells = FERTI_SOURCE_SHARE_NUTS.map(function (n) {
+    const share = fertiSourceSharePct(programKg[n.id], granularKg[n.id]);
+    const empty = share.granular == null;
+    return '<td class="' + (empty ? 'is-empty' : '') + '">' + fertiFormatSourceSharePct(share.granular) + '</td>';
+  }).join('');
+  host.hidden = false;
+  host.innerHTML =
+    '<h5>' + fertiEscapeInsightsLabel(fertProgT('source_share_title', 'Aporte fertirriego vs nutrición granular')) + '</h5>' +
+    '<p class="ferti-source-share-hint">' + fertiEscapeInsightsLabel(fertProgT('source_share_hint', 'Porcentaje del fertilizante aplicado en el ciclo (programa + granular). No incluye agua. El N granular es N total.')) + '</p>' +
+    '<div class="ferti-source-share-scroll"><table class="ferti-source-share-table">' +
+      '<thead><tr><th></th>' + heads + '</tr></thead>' +
+      '<tbody>' +
+        '<tr><td>' + fertiEscapeInsightsLabel(fertProgT('source_share_ferti', 'Fertirriego')) + '</td>' + fertiCells + '</tr>' +
+        '<tr><td>' + fertiEscapeInsightsLabel(fertProgT('source_share_granular', 'Nutrición granular de base')) + '</td>' + granularCells + '</tr>' +
+      '</tbody>' +
+    '</table></div>';
+}
+
 function renderFertiChartsInsights() {
+  renderFertiChartsSourceShare();
   const wrap = document.getElementById('fertiChartsStageInsightsWrap');
   if (!wrap) return;
   fertiNormalizeChartWaterByStage();
@@ -3328,14 +3422,19 @@ function loadChartJs(callback){
   s.onload = callback; document.head.appendChild(s);
 }
 
-/** Eje X en gráficas: solo "Mes N" / "Semana N" (compacto; la etapa se ve en el selector y resumen). */
-function fertiChartSlotLabelAtIndex(timeUnit, index0) {
+/** Eje X en gráficas: etapa + periodo, ej. "Vegetativo Mes 1". Sin week = solo "Mes N" / "Semana N". */
+function fertiChartSlotLabelAtIndex(timeUnit, index0, week) {
   const slot = timeUnit === 'mes' ? fertProgT('month', 'Mes') : fertProgT('week', 'Semana');
-  return `${slot} ${index0 + 1}`;
+  const period = `${slot} ${index0 + 1}`;
+  const raw = week && (week.stage || week.label);
+  if (!raw) return period;
+  const stage = String(fertProgStage(raw) || '').trim();
+  if (!stage || stage === period || /^(?:Mes|Semana|Month|Week)\s+\d+$/i.test(stage)) return period;
+  return stage + ' ' + period;
 }
 
 function getFertiWeekLabels() {
-  return fertiWeeks.map((w, i) => fertiChartSlotLabelAtIndex(fertiTimeUnit, i));
+  return fertiWeeks.map((w, i) => fertiChartSlotLabelAtIndex(fertiTimeUnit, i, w));
 }
 
 /** Fuerza redibujo con tamaño correcto (p. ej. la pestaña Gráficas estuvo oculta y el canvas quedó en 0×0). */
@@ -3391,7 +3490,7 @@ function updateFertiCharts(){
     // autoSkip: en programas largos evita amontonamiento; NO usar maxTicksLimit aquí: en eje
     // tipo categoría (Mes 1, Mes 2, …) provoca en algunos entornos área de dibujo 0 o gráfico en blanco.
     const xTickAutoSkip = totalStages >= 10;
-    const xLabelBottomPad = xTickRotation >= 45 ? 34 : 28;
+    const xLabelBottomPad = xTickRotation >= 45 ? 48 : 40;
     const makeDataset = (label, data, color, nutrientKey) => ({
       label,
       data: fertProgChartDoseSeries(data),
@@ -3887,6 +3986,44 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
     </div>`;
 }
 
+function buildFertiSourceShareHtmlForReport(program, opts) {
+  opts = opts || {};
+  const isEn = opts.language === 'en';
+  const rt = function (es, en) { return isEn ? en : es; };
+  const weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+  if (!weeks.length) return '';
+  const elemental = opts.elemental === true;
+  const programKg = fertiProgramSupplyOxideTotals(weeks);
+  const granularKg = fertiGeneratorBaseMap(program && program.baseContribution);
+  const heads = FERTI_SOURCE_SHARE_NUTS.map(function (n) {
+    const color = fertProgNutrientColor(n.id);
+    const label = elemental ? n.elemental : n.oxide;
+    return '<th style="color:' + color + ';border-bottom:2px solid ' + color + ';">' + fertiEscapeInsightsLabel(label) + '</th>';
+  }).join('');
+  const fertiCells = FERTI_SOURCE_SHARE_NUTS.map(function (n) {
+    const share = fertiSourceSharePct(programKg[n.id], granularKg[n.id]);
+    return '<td>' + fertiFormatSourceSharePct(share.ferti) + '</td>';
+  }).join('');
+  const granularCells = FERTI_SOURCE_SHARE_NUTS.map(function (n) {
+    const share = fertiSourceSharePct(programKg[n.id], granularKg[n.id]);
+    return '<td>' + fertiFormatSourceSharePct(share.granular) + '</td>';
+  }).join('');
+  return `
+    <div class="report-block" style="border-color:#5eead4;background:#f0fdfa;">
+      <div class="report-block-title">${rt('Aporte fertirriego vs nutrición granular', 'Fertigation vs base granular supply')}</div>
+      <p class="report-note" style="margin:0 0 8px;">${rt('Porcentaje del fertilizante aplicado en el ciclo (programa + granular). No incluye agua. El N granular es N total.', 'Share of fertilizer applied in the cycle (program + granular). Water is not included. Granular N is total N.')}</p>
+      <div class="report-table-wrap">
+        <table class="report-app-table">
+          <thead><tr><th></th>${heads}</tr></thead>
+          <tbody>
+            <tr><td>${rt('Fertirriego', 'Fertigation')}</td>${fertiCells}</tr>
+            <tr><td>${rt('Nutrición granular de base', 'Base granular nutrition')}</td>${granularCells}</tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 /**
  * Genera imágenes de las gráficas Macro/Micro desde datos del programa (para PDF sin depender del DOM).
  * program = { weeks: [{ totals: { N_NO3, N_NH4, ... } }], timeUnit: 'mes'|'semana' }
@@ -3903,7 +4040,7 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
     const buildCharts = function () {
     const weeks = program.weeks;
     const timeUnit = program.timeUnit || 'semana';
-    const labels = weeks.map(function(w, i) { return fertiChartSlotLabelAtIndex(timeUnit, i); });
+    const labels = weeks.map(function(w, i) { return fertiChartSlotLabelAtIndex(timeUnit, i, w); });
     const totalStages = labels.length;
     const reportTickRotation = totalStages >= 16 ? 48 : 38;
     const reportTickAutoSkip = totalStages >= 10;
@@ -3964,7 +4101,7 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
-          layout: { padding: { bottom: 22 } },
+          layout: { padding: { bottom: 48 } },
           plugins: {
             legend: {
               display: true,
@@ -3996,7 +4133,7 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
-          layout: { padding: { bottom: 22 } },
+          layout: { padding: { bottom: 48 } },
           plugins: {
             legend: {
               display: true,
@@ -4037,6 +4174,7 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
 window.getFertiChartsDataUrlsForReport = getFertiChartsDataUrlsForReport;
 window.buildFertiChartsInsightsHtmlForReport = buildFertiChartsInsightsHtmlForReport;
 window.buildFertiChartsInsightsCompactHtmlForReport = buildFertiChartsInsightsCompactHtmlForReport;
+window.buildFertiSourceShareHtmlForReport = buildFertiSourceShareHtmlForReport;
 window.FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD = FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD;
 
 function toggleFertiChartsOxideElemental(){

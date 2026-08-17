@@ -695,6 +695,24 @@ function summarizeFertirriego(program, stageIndexParam) {
   out.total_balance_contribution_kg_ha_oxide = totalBalanceContribution;
   out.granular_program_linked = program.granularProgramLinked === true;
   out.nitrogen_balance_rule = 'N total = N-NO3 del fertirriego + N-NH4 del fertirriego + N-NO3 del agua + N total del aporte granular/base.';
+  const sourceSharePct = (fertilizerKg, granularKg) => {
+    const f = Math.max(0, Number(fertilizerKg) || 0);
+    const g = Math.max(0, Number(granularKg) || 0);
+    const t = f + g;
+    if (!(t > 1e-12)) return null;
+    const ferti = Math.round((1000 * f) / t) / 10;
+    return { fertigation_pct: ferti, granular_pct: Math.round((100 - ferti) * 10) / 10 };
+  };
+  const shareKeys = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
+  const fertigationVsGranularSharePct = {};
+  shareKeys.forEach((k) => {
+    const fertiKg = k === 'N'
+      ? programContribution.N_NO3 + programContribution.N_NH4
+      : programContribution[k];
+    fertigationVsGranularSharePct[k] = sourceSharePct(fertiKg, baseContribution[k]);
+  });
+  out.fertigation_vs_granular_share_pct = fertigationVsGranularSharePct;
+  out.fertigation_vs_granular_share_note = 'Porcentaje del fertilizante aplicado en el ciclo (programa + granular). No incluye agua. N granular es N total. Las dos filas suman 100% por elemento.';
   out.chart_adjustment = {
     available: true,
     saved_values_are_in_weeks: true,

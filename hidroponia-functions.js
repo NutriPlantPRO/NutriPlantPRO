@@ -2229,8 +2229,8 @@ function hydroAutoCalculateSolution() {
   const stage = hydroGetActiveStage();
   if (!stage) return;
   if (hydroState.fertilizers.length && !window.confirm(hydroT(
-    'El cálculo automático reemplazará las filas actuales de fertilizantes. ¿Continuar?',
-    'Automatic calculation will replace the current fertilizer rows. Continue?'
+    'La propuesta automática reemplazará las filas actuales de fertilizantes. ¿Continuar?',
+    'The automatic proposal will replace the current fertilizer rows. Continue?'
   ))) return;
 
   const materials = getAllHydroMaterials();
@@ -3022,7 +3022,7 @@ function hydroApplyStaticTranslations() {
   setText('#hidro-calculo .hydro-card:nth-child(4) h3', '🧮 ' + hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)'));
   setText('#hydroAddFertBtn', '➕ ' + hydroT('Agregar fertilizante', 'Add fertilizer'));
   const autoLabel = container.querySelector('#hydroAutoCalculateBtn .np-brand-navy-btn-label');
-  if (autoLabel) autoLabel.textContent = hydroT('Calcular solución automática', 'Calculate solution automatically');
+  if (autoLabel) autoLabel.textContent = hydroT('Propuesta automática', 'Automatic proposal');
   setText('#hydroManageCatalogBtn', hydroT('Gestionar catálogo de fertilizantes y precios', 'Manage fertilizer catalog and prices'));
   const autoCalculate = container.querySelector('#hydroAutoCalculateBtn');
   if (autoCalculate) autoCalculate.title = hydroT(

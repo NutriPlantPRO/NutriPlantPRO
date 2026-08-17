@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.08.7 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-08-16 · **v2026.08.16** (+ Fertirriego: ácido del análisis de agua por lámina de etapa, igual que Hidroponía)
+**Versión Knowledge:** 2026-08-17 · **v2026.08.17** (+ Dinámica Nutricional: tabla % fertirriego vs % granular de base; PDF/admin/API)
 
 ---
 
@@ -155,19 +155,19 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 | Etapa | I | N | P | S | K | Ca | Mg |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Brotación | 8 | 48 | 8 | 44 | 28 | 52 | 20 |
-| Establecimiento | 11 | 50 | 8 | 42 | 30 | 52 | 18 |
-| Vegetativo | 14 | 60 | 6 | 34 | 32 | 50 | 18 |
-| Prefloración | 15 | 55 | 7 | 38 | 34 | 50 | 16 |
-| Floración | 16 | 52 | 6 | 42 | 36 | 49 | 15 |
-| Amarre | 17 | 50 | 5 | 45 | 38 | 47 | 15 |
+| Brotación | 8 | 46 | 8 | 46 | 28 | 52 | 20 |
+| Establecimiento | 11 | 48 | 8 | 44 | 30 | 52 | 18 |
+| Vegetativo | 14 | 56 | 6 | 38 | 32 | 50 | 18 |
+| Prefloración | 15 | 52 | 7 | 41 | 34 | 50 | 16 |
+| Floración | 16 | 50 | 6 | 44 | 36 | 49 | 15 |
+| Amarre | 17 | 48 | 5 | 47 | 38 | 47 | 15 |
 | Llenado | 18 | 46 | 4 | 50 | 44 | 39 | 17 |
 | Maduración | 14 | 40 | 4 | 56 | 52 | 32 | 16 |
 | Cosecha | 10 | 34 | 4 | 62 | 50 | 32 | 18 |
 
 **Sugerir % vs programa ya hecho:** Sugerir % arma curva nueva (no pisa el programa). Si el proyecto ya tiene dosis, Dist se acomoda sola al aporte real. Si cambias una dosis en Programa (o arrastras en Gráficas), el % de Dist y su gráfica se mueven. Si acabas de pulsar Sugerir % en esa sesión, no se pisa.
 
-**Generador automático:** en Programa, **Elaborar programa de fertirriego** requiere Distribución semanal o mensual y confirmación antes de reemplazar filas. Meta fertilizante etapa = máx(0, requerimiento − agua ciclo − granular/base) × %. El agua y el granular ya vienen descontados en esa meta (no se restan otra vez). Si hay análisis de agua vinculado con HCO₃⁻/CO₃²⁻, el **ácido entra primero** (misma dosis mL/m³ que Hidroponía): L/ha etapa = mL/m³ × lámina etapa (m³/ha) ÷ 1000; su N/P/S resta del faltante (no se recorta por el mínimo ~3 kg/ha). Secuencia de sales: **nitrato de calcio primero** (cubre Ca y aporta N desde el inicio) → **MKP para P** (también aporta K) → **MAP solo después de preflor/flor/amarre** (llenado/cosecha) si aún falta P, sin pasarse de N (el NH₄ viene del MAP) → NKS si falta N → SOP para el K que reste → nitrato de Mg **solo si aún falta N**, si no sulfato de Mg (el SO₄ del sulfato de Mg no bloquea el Mg). **No se usa cloruro de calcio en automático** (cultivos sensibles a Cl⁻); el producto sigue en catálogo por si el agrónomo lo agrega a mano. Si el N se llena antes que el Ca, el Ca que falte queda visible. **No se fuerza el S** (sulfato de amonio no entra solo para cerrar S). Luego micros (quelatos, B). Cada dosis se limita por todos los nutrientes: no sobrepasa metas; lo imposible queda como faltante. Sales a granel por debajo de ~3 kg/ha por periodo no se incluyen. Micros sí pueden ir en gramos. N-NO₃/N-NH₄ lo determinan los productos. Guarda origen/metas/diagnósticos, reporta **Programa vs distribución** en PDF/admin y marca desactualizado si cambia Distribución. Siempre revisar compatibilidad, solubilidad, CE, agua e inyección.
+**Generador automático:** en Programa, **Propuesta automática de programa** requiere Distribución semanal o mensual y confirmación antes de reemplazar filas. Meta fertilizante etapa = máx(0, requerimiento − agua ciclo − granular/base) × %. El agua y el granular ya vienen descontados en esa meta (no se restan otra vez). Si hay análisis de agua vinculado con HCO₃⁻/CO₃²⁻, el **ácido entra primero** (misma dosis mL/m³ que Hidroponía): L/ha etapa = mL/m³ × lámina etapa (m³/ha) ÷ 1000; su N/P/S resta del faltante (no se recorta por el mínimo ~3 kg/ha). Secuencia de sales: **nitrato de calcio primero** (cubre Ca y aporta N desde el inicio) → **MKP para P** (también aporta K) → **MAP solo después de preflor/flor/amarre** (llenado/cosecha) si aún falta P, sin pasarse de N (el NH₄ viene del MAP) → **SOP cubre ~1/3 del K restante para meter SO₄ desde el inicio** (el NKS solo no alcanza S) → NKS si falta N → SOP del K que quede → nitrato de Mg **solo si aún falta N**, si no sulfato de Mg (el SO₄ del sulfato de Mg no bloquea el Mg). **No se usa cloruro de calcio en automático** (cultivos sensibles a Cl⁻); el producto sigue en catálogo por si el agrónomo lo agrega a mano. Si el N se llena antes que el Ca, el Ca que falte queda visible. **No se fuerza el S** (sulfato de amonio no entra solo para cerrar S). Luego micros (quelatos, B). Cada dosis se limita por todos los nutrientes: no sobrepasa metas; lo imposible queda como faltante. Sales a granel por debajo de ~3 kg/ha por periodo no se incluyen. Micros sí pueden ir en gramos. N-NO₃/N-NH₄ lo determinan los productos. Guarda origen/metas/diagnósticos, reporta **Programa vs distribución** en PDF/admin y marca desactualizado si cambia Distribución. Siempre revisar compatibilidad, solubilidad, CE, agua e inyección.
 
 **Aporte por agua (UI):** etiqueta «Traer de análisis» + desplegable «Seleccionar análisis…» (al elegir un reporte Análisis → Agua se cargan kg/ha **y la leyenda de ácido**, igual que Hidroponía). El **m³ del análisis** lo pone el usuario en ese reporte (un riego, el ciclo o, en hidroponía, el volumen de solución); no es la lámina de fertirriego. En Fertirriego la leyenda muestra **mL/m³** y la **lámina del ciclo** (m³/ha o US gal/acre según preferencia) con el ácido total; no lista etapa por etapa ni muestra la fórmula ni mezcla el m³ del análisis. Sin reportes: «Sin análisis de agua en este proyecto». Independiente del ajuste por suelo.
 
@@ -178,6 +178,8 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 ### 4.7 Gráficas iónicas fertirriego
 
 **URL:** …/fertirriego-graficas-ionicas.html · Fertilizante solo vs + agua; ternarios; Cl aparte.
+
+**Dinámica Nutricional (dashboard, PDF y admin):** debajo de las curvas hay una tabla de **2 filas** — **% fertirriego** vs **% nutrición granular de base** — con una columna por elemento. Es el **ciclo** (no la etapa del selector). No incluye agua. N granular = N total. Las dos filas suman 100% por nutriente. API admin `project_detail`: `fertigation_vs_granular_share_pct`. Luego: etapa a analizar + Macro resumen iónico.
 
 ### 4.8 Granular: requerimiento, programa y mezclas
 
@@ -201,7 +203,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
   4. Se muestran L según el **m³ del análisis** y L según el **volumen de agua de hidroponía**.
   5. Aviso si esos m³ coinciden o no (tolerancia ≈ 0,01 m³) + recordatorio de revisar la dosis.
 - **Ácido en filas:** el campo L es el **volumen total para el m³ de hidroponía** (no solo mL/m³). Modo producto, **tanque C**; aporte N/P/S (densidad × %) resta del faltante. Mismos IDs que Análisis → Agua.
-- **Calcular solución automática** (reemplaza filas): (0) ácido C primero → nitrato Ca A → MAP/MKP B → NKS B → nitrato Mg A → SOP B → nitrato Ca extra por N-NO₃ restante → sulfato amonio → sulfato Mg/S → micros. El S suele quedar ligeramente sobre/bajo.
+- **Propuesta automática** (reemplaza filas): (0) ácido C primero → nitrato Ca A → MAP/MKP B → NKS B → nitrato Mg A → SOP B → nitrato Ca extra por N-NO₃ restante → sulfato amonio → sulfato Mg/S → micros. El S suele quedar ligeramente sobre/bajo.
 - Catálogo de soluciones (Steiner/Hoagland/… + propias). Solubles personalizados **compartidos con Fertirriego**.
 - **Costos (USD del lote, no por ha):** kg eq del producto para el volumen × (USD/t ÷ 1000); líquidos kg = L × densidad. Total = suma de filas. Precios sincronizados con ferti.
 

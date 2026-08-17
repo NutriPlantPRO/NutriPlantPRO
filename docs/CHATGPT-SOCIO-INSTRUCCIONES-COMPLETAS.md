@@ -51,7 +51,7 @@ RADAR CRÉDITOS: ≤30 ha=1 · >30 ha=2 · >100 ha=3 por gen.; tope 20/mes.
 
 PARAMS: project_name|id; type|report_id|latest_only; q; email; request_id; tool_id|tab_id|chapter_id; hops (plan_pro_item); symbol|list_name (Invest)
 
-Fertirriego · Distribución: editor **solo %**. **Sugerir %** = curva nueva (Steiner). Si ya hay programa, el % se acomoda solo; cambiar una dosis mueve tabla y gráfica. Perfiles → MANUAL §4.6.
+Fertirriego · Distribución: editor **solo %**. **Sugerir %** = curva nueva (Steiner). Si ya hay programa, el % se acomoda solo; cambiar una dosis mueve tabla y gráfica. Dinámica: tabla ciclo **% ferti vs % granular** (sin agua). Perfiles → MANUAL §4.6–4.7.
 
 ¿Ambiguo? Charla, admin, proyecto, Plan/Nutri/Invest PRO, Radar, lab, calculadora, manual, flujo plataforma, redes (URL nueva = editorial juntos).
 

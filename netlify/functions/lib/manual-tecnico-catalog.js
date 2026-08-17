@@ -97,7 +97,7 @@ module.exports = {
       title: 'Gráficas iónicas en fertirriego',
       url: `${BASE}/capitulos/fertirriego-graficas-ionicas.html`,
       pillar: 'D — Fertirriego',
-      summary: 'Macro resumen iónico: fertilizante solo vs con agua; ternarios; % meq con Cl aparte.',
+      summary: 'Curvas + tabla % fertirriego vs granular (ciclo, sin agua); Macro resumen iónico fertilizante vs +agua; ternarios; % meq con Cl aparte.',
       status: 'published'
     },
     {

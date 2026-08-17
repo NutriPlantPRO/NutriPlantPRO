@@ -512,7 +512,6 @@
   }
 
   function shellHtml() {
-    var unit = doseUnit();
     return (
       '<div class="ferti-dist-card">' +
         '<h3 class="ferti-dist-title" id="fertiDistTitle"></h3>' +
@@ -532,30 +531,25 @@
           '<p class="ferti-dist-hint">' + escapeHtml(t('dist_catalog_hint', 'El catálogo es tuyo (dashboard). Guarda etapas y %. Las dosis se recalculan en cada proyecto con su requerimiento.')) + '</p>' +
         '</div>' +
         '<div class="ferti-dist-panel">' +
-          '<h4>' + escapeHtml(t('dist_h1', '1. Requerimiento real')) + ' (' + escapeHtml(unit) + ')</h4>' +
-          '<p class="ferti-dist-hint">' + escapeHtml(t('dist_h1_hint', 'Todos los elementos de la tabla de requerimiento. No se editan aquí.')) + '</p>' +
-          '<div class="ferti-dist-totals" id="fertiDistTotals"></div>' +
-        '</div>' +
-        '<div class="ferti-dist-panel">' +
           '<div class="ferti-dist-panel-head">' +
             '<div class="ferti-dist-seg ferti-dist-axis" role="group" aria-label="' + escapeHtml(t('dist_axis', 'Periodo')) + '">' +
               '<button type="button" data-axis="semana">' + escapeHtml(t('week', 'Semana')) + '</button>' +
               '<button type="button" data-axis="mes">' + escapeHtml(t('month', 'Mes')) + '</button>' +
             '</div>' +
-            '<h4>' + escapeHtml(t('dist_h2', '2. Distribución por etapa (%)')) + '</h4>' +
+            '<h4>' + escapeHtml(t('dist_h2', '1. Distribución por etapa (%)')) + '</h4>' +
           '</div>' +
           '<p class="ferti-dist-hint">' + escapeHtml(t('dist_h2_hint', 'Esta tabla es el % del requerimiento real por etapa. Semana o Mes es el mismo periodo que el Programa. Cada nutriente suma 100 %.')) + '</p>' +
           '<div class="ferti-dist-scroll"><table class="data ferti-dist-table" id="fertiDistPctTable"></table></div>' +
           '<div class="ferti-dist-table-actions">' +
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
-            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta Elaborar de nuevo). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta Elaborar. Flechas 1 % · Mayús 5 % · Alt 0.1 %.')) + '</p>' +
+            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. Flechas 1 % · Mayús 5 % · Alt 0.1 %.')) + '</p>' +
           '</div>' +
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
         '</div>' +
         '<div class="ferti-dist-panel">' +
-          '<h4>' + escapeHtml(t('dist_h4', '4. Gráfica de % de distribución')) + '</h4>' +
+          '<h4>' + escapeHtml(t('dist_h4', '3. Gráfica de % de distribución')) + '</h4>' +
           '<div id="fertiDistChartsGrid" class="ferti-dist-charts-grid">' +
             '<div class="ferti-dist-chart-box">' +
               '<h4 id="fertiDistMacroTitle">' + escapeHtml(t('macronutrients', 'Macronutrientes')) + '</h4>' +
@@ -732,7 +726,7 @@
     ensurePct();
     host.innerHTML =
       '<div class="ferti-dist-water-head">' +
-        '<h4>' + escapeHtml(t('dist_water_title', '3. Lámina de riego objetivo por etapa')) + ' (' + unitToHtml(waterUnit()) + ')</h4>' +
+        '<h4>' + escapeHtml(t('dist_water_title', '2. Lámina de riego objetivo por etapa')) + ' (' + unitToHtml(waterUnit()) + ')</h4>' +
         '<p>' + escapeHtml(t('dist_water_help', 'Para repartir el aporte del análisis de agua y calcular ppm, meq/L y CE.')) + '</p>' +
       '</div>' +
       '<div class="ferti-dist-water-grid">' +
@@ -881,13 +875,14 @@
     });
     return out;
   }
-  function applySuggestPct() {
+  function applySuggestPct(opts) {
+    opts = opts || {};
     var api = w.NpFertigationDistSuggest;
-    if (!api || typeof api.suggestPct !== 'function') return;
+    if (!api || typeof api.suggestPct !== 'function') return false;
     ensurePct();
     var result = api.suggestPct(stages, { totals: pendingTotalsOxide() });
     var suggested = result && result.pct ? result.pct : result;
-    if (!suggested) return;
+    if (!suggested) return false;
     NUTS.forEach(function (n) {
       if (suggested[n.id] && suggested[n.id].length === stages.length) {
         pct[n.id] = suggested[n.id].slice();
@@ -897,7 +892,7 @@
     refreshKgCells();
     closeAssistMenu();
     w._fertiDistKeepSuggestedPct = true;
-    if (typeof w.showMessage === 'function') {
+    if (!opts.silent && typeof w.showMessage === 'function') {
       w.showMessage(
         result && result.stagesInZone === false
           ? t('dist_suggest_out', 'Porcentajes colocados según las etapas. El requerimiento del ciclo ya sale de los rangos de los triángulos; revisa N-P-S o K-Ca-Mg.')
@@ -905,6 +900,7 @@
         result && result.stagesInZone === false ? 'warning' : 'success'
       );
     }
+    return true;
   }
   function adoptFromProgram(layout) {
     if (!layout || !Array.isArray(layout.stages) || !layout.stages.length) return false;
@@ -1198,7 +1194,7 @@
       chartList().forEach(function (ch) {
         var group = ch === chartMacro ? 'macro' : 'micro';
         applyChartYScale(ch, group, false);
-        try { ch.update('none'); } catch (e) { try { ch.update(); } catch (e2) {} }
+        flushDistChart(ch);
       });
     } else {
       renderChart();
@@ -1249,6 +1245,17 @@
     });
     return true;
   }
+  function flushDistChart(chart) {
+    if (!chart) return;
+    try {
+      chart.update();
+    } catch (e) {
+      try { chart.update('none'); } catch (e2) {}
+    }
+    try {
+      if (typeof chart.render === 'function') chart.render();
+    } catch (e3) {}
+  }
   function paintDistChart(opts) {
     opts = opts || {};
     if (!writeChartPctData(opts.nutId)) {
@@ -1257,14 +1264,7 @@
     }
     var charts = opts.nutId ? [chartForNut(opts.nutId)] : liveCharts();
     if (chartDrag && chartDrag.chart) charts = [chartDrag.chart];
-    charts.filter(Boolean).forEach(function (chart) {
-      try {
-        chart.update('none');
-        if (typeof chart.draw === 'function') chart.draw();
-      } catch (e) {
-        try { chart.update(); } catch (e2) { renderChart(); }
-      }
-    });
+    charts.filter(Boolean).forEach(flushDistChart);
   }
   function updateChartPctSeries(nutId) {
     paintDistChart({ nutId: nutId });
@@ -1281,18 +1281,7 @@
     scheduleSave();
     refreshPctSums();
     refreshKgCells();
-    if (!liveChart() || !writeChartPctData()) {
-      scheduleChartRender();
-    } else {
-      try {
-        liveCharts().forEach(function (chart) {
-          chart.update('none');
-          if (typeof chart.draw === 'function') chart.draw();
-        });
-      } catch (e) {
-        renderChart();
-      }
-    }
+    paintDistChart();
     scheduleProgramPush(id);
     return true;
   }
@@ -1819,20 +1808,14 @@
           if (stages.length <= 1) return;
           var ri = parseInt(rm.getAttribute('data-ri'), 10);
           NUTS.forEach(function (n) {
-            var arr = pct[n.id];
-            if (!arr || !arr.length) return;
-            var rmv = parseFloat(arr[ri]) || 0;
-            if (ri > 0) {
-              arr[ri - 1] = round1((parseFloat(arr[ri - 1]) || 0) + rmv);
-            } else if (arr.length > 1) {
-              arr[1] = round1((parseFloat(arr[1]) || 0) + rmv);
-            }
-            arr.splice(ri, 1);
+            if (pct[n.id]) pct[n.id].splice(ri, 1);
           });
           waterDepthByStageM3ha.splice(ri, 1);
           stages.splice(ri, 1);
-          ensurePct();
-          scheduleSave();
+          if (!applySuggestPct({ silent: true })) {
+            ensurePct();
+            scheduleSave();
+          }
           renderAll();
         }
       });
@@ -1847,18 +1830,10 @@
     if (add) add.addEventListener('click', function () {
       stages.push(nextAddName());
       waterDepthByStageM3ha.push(0);
-      NUTS.forEach(function (n) {
-        var arr = pct[n.id] || [];
-        if (!arr.length) {
-          pct[n.id] = equalSplit(stages.length);
-          return;
-        }
-        var last = parseFloat(arr[arr.length - 1]) || 0;
-        var a = round1(last / 2);
-        arr[arr.length - 1] = a;
-        arr.push(round1(last - a));
-      });
-      scheduleSave();
+      if (!applySuggestPct({ silent: true })) {
+        ensurePct();
+        scheduleSave();
+      }
       renderAll();
     });
 

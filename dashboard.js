@@ -1162,7 +1162,7 @@ function sectionTemplate(name) {
                 </div>
                 <button type="button" class="btn btn-sm np-brand-navy-btn ferti-auto-program-btn" id="fertiAutoProgramBtn" onclick="openFertiAutoProgramModal()">
                   <span class="ferti-auto-program-btn-icon" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt="" width="18" height="18" decoding="async"></span>
-                  <span>${ft('auto_button', 'Elaborar programa de fertirriego')}</span>
+                  <span id="fertiAutoProgramBtnLabel">${ft('auto_button', 'Propuesta automática de programa')}</span>
                 </button>
               </div>
               <div id="fertiAutoProgramStatus" hidden></div>
@@ -1195,6 +1195,7 @@ function sectionTemplate(name) {
                   <canvas id="fertiMicroChart"></canvas>
                 </div>
               </div>
+              <div id="fertiChartsSourceShareWrap" class="ferti-source-share" hidden></div>
               <div id="fertiChartsStageInsightsWrap" class="ferti-charts-insights-wrap"></div>
             </div>
           </div>
@@ -1861,7 +1862,7 @@ function sectionTemplate(name) {
                   <button class="btn btn-info btn-sm" id="hydroManageCatalogBtn" type="button" title="${hydroT('Ver, editar o eliminar fertilizantes personalizados y sus precios', 'View, edit, or delete custom fertilizers and their prices')}">${hydroT('Gestionar catálogo de fertilizantes y precios', 'Manage fertilizer catalog and prices')}</button>
                   <button class="btn btn-sm np-brand-navy-btn" id="hydroAutoCalculateBtn" type="button" title="${hydroT('Genera una propuesta automática con los requerimientos, el agua y el ácido seleccionado', 'Generates an automatic proposal from requirements, water, and the selected acid')}">
                     <img src="assets/N_Hoja_Blanca.png" alt="" class="np-brand-navy-btn-icon" width="18" height="18" decoding="async" aria-hidden="true">
-                    <span class="np-brand-navy-btn-label">${hydroT('Calcular solución automática', 'Calculate solution automatically')}</span>
+                    <span class="np-brand-navy-btn-label">${hydroT('Propuesta automática', 'Automatic proposal')}</span>
                   </button>
                 </div>
               </div>
@@ -18841,7 +18842,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     if (!Array.isArray(labels) || !labels.length) {
       return `<div class="report-note">No hay ${reportFertiIsMes ? 'meses' : 'semanas'} configurados para graficar.</div>`;
     }
-    const width = 640, height = 320, padL = 42, padR = 16, padT = 12, padB = 90;
+    const width = 640, height = 340, padL = 42, padR = 16, padT = 12, padB = 118;
     const plotW = Math.max(1, width - padL - padR);
     const plotH = Math.max(1, height - padT - padB);
     let maxY = 0;
@@ -18982,7 +18983,15 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     </tr>
   `).join('');
 
-  const chartLabels = weeks.map((w, i) => `${reportFertiIsMes ? rt('Mes', 'Month') : rt('Semana', 'Week')} ${i + 1}`);
+  const chartLabels = weeks.map((w, i) => {
+    const period = `${reportFertiIsMes ? rt('Mes', 'Month') : rt('Semana', 'Week')} ${i + 1}`;
+    let stage = String(w?.stage || w?.label || '').trim();
+    try {
+      if (fertiUI && typeof fertiUI.stageName === 'function') stage = String(fertiUI.stageName(stage, reportLang) || stage).trim();
+    } catch (eStageLbl) {}
+    if (!stage || stage === period || /^(?:Mes|Semana|Month|Week)\s+\d+$/i.test(stage)) return period;
+    return stage + ' ' + period;
+  });
   const macroColors = npMacroChartColors();
   const microColors = npMicroChartColors();
   let macroSeries = {
@@ -19044,6 +19053,9 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
         </div>
       </div>
   ` : '';
+  const sourceShareBlock = (weeks.length > 0 && typeof window.buildFertiSourceShareHtmlForReport === 'function')
+    ? window.buildFertiSourceShareHtmlForReport(prog, { language: reportLang, elemental: programModeIsElemental })
+    : '';
   const fertiInsightsBlock = (weeks.length > 0 && typeof window.buildFertiChartsInsightsHtmlForReport === 'function')
     ? window.buildFertiChartsInsightsHtmlForReport(prog, waterContribution, { language: reportLang })
     : '';
@@ -19233,6 +19245,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
       </div>
       ${generationBlock}
       ${chartsBlock}
+      ${sourceShareBlock}
       ${fertiInsightsBlock}
     </div>
   `;
