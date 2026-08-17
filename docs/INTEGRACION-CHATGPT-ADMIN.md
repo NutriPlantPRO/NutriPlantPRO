@@ -105,9 +105,10 @@ Body: `{ "action": "...", "params": { ... } }`
 
 | `action` | Para qué sirve | Ejemplo de pregunta en ChatGPT |
 |----------|----------------|--------------------------------|
-| `admin_stats` | Totales: usuarios, activos 30d, pendientes, proyectos | “Oye socio, ¿cuántos activos en 30 días?” |
-| `list_users` | Lista filtrada (status, búsqueda nombre/email) | “Lista pendientes de suscripción” |
-| `user_summary` | Perfil + última visita + nº proyectos | “¿Última conexión de Francisco Jiménez?” |
+| `admin_stats` | Totales: usuarios, activos 30d, pendientes, proyectos, **billing** (vencidos / próximos 30 días) | “Oye socio, ¿cuántos activos en 30 días?” |
+| `subscription_roster` | Lista compacta: estado + último pago + próximo pago | “¿Cuántos usuarios tengo, cuándo pagaron y cuándo les toca?” |
+| `list_users` | Lista filtrada (status, búsqueda nombre/email) + fechas de cobro | “Lista pendientes de suscripción” |
+| `user_summary` | Perfil + última visita + nº proyectos + fechas de cobro | “¿Última conexión de Francisco Jiménez?” |
 | `search_projects` | Por usuario, cultivo, nombre | “Proyectos de aguacate de Francisco” |
 | `project_summary` | Resumen: ubicación, cultivo, suelo, programas | “¿Qué programa de nutrición tiene en NutriPlant?” |
 | `project_analyses` | Reportes de las 6 pestañas Análisis | “¿Qué análisis foliares tiene y cómo va el N vs óptimo?” |

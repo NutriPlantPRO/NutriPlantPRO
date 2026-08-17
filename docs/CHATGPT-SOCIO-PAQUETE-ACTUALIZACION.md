@@ -29,10 +29,10 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza vers
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.14: actions `invest_pro_overview|holdings|lists`)
-7. `docs/SUSCRIPCION-ADMIN-CONOCIMIENTO-GPT.md` ← **subir** (PayPal: último/próximo pago = cobro real + 5 meses; ingresos admin / `exclude_from_revenue`)
+7. `docs/SUSCRIPCION-ADMIN-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.15: `subscription_roster` — lista con último/próximo pago; no inventar fechas)
 
-También pega de nuevo el bloque Instructions de `docs/CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` (pide describe_api → **2.14.0**).
-Reimporta OpenAPI: https://nutriplantpro.com/api/admin-assistant/openapi.json (**v2.14.0**).
+También pega de nuevo el bloque Instructions de `docs/CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` (pide describe_api → **2.15.0**).
+Reimporta OpenAPI: https://nutriplantpro.com/api/admin-assistant/openapi.json (**v2.15.0**).
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
 
@@ -50,9 +50,9 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Preferible Import URL `https://nutriplantpro.com/api/admin-assistant/openapi.json` (o sube `docs/openapi-nutriplant-admin.json` **v2.13.0**). Una sola Action `nutriplantAdminQuery`.
+2. Preferible Import URL `https://nutriplantpro.com/api/admin-assistant/openapi.json` (o sube `docs/openapi-nutriplant-admin.json` **v2.15.0**). Una sola Action `nutriplantAdminQuery`.
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
-4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.13.0**. Si dice «action no disponible», reimporta schema o revisa token.
+4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.15.0**. Si dice «action no disponible», reimporta schema o revisa token.
 
 ---
 
@@ -65,7 +65,8 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 
 ## Paso E — Pruebas rápidas en el chat
 
-1. “Oye socio, ¿cuántos usuarios activos en 30 días?” → `admin_stats`
+1. “Oye socio, ¿cuántos usuarios tengo, cuándo pagaron y cuándo les toca?” → `subscription_roster` (tabla último/próximo pago; no inventar fechas)
+1b. “¿Cuántos usuarios activos en 30 días?” → `admin_stats`
 2. “Análisis foliar del proyecto [nombre]” → `project_analyses` type foliar
 3. “Último análisis de suelo de [nombre] con kg/ha” → `project_analyses` suelo + `latest_only`
 4. “¿Cómo funciona la calculadora gratis de solución nutritiva?” → Knowledge o `free_tools_catalog` hidro_solucion
@@ -100,6 +101,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 
 | Action | Para qué |
 |--------|----------|
+| `subscription_roster` | **v2.15** Lista compacta de suscriptores: último pago + próximo pago (no inventar fechas) |
 | `nutri_pro_file_inspect` | **v2.13** Abrir archivo vivo en Supabase (extract local, sin OCR API) cuando ask no alcanza |
 | `project_analyses` | **Valores reales** guardados (6 tipos) |
 | `lab_analyses_catalog` | Flujo, criterios, claves JSON |

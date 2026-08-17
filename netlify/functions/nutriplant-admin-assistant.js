@@ -12,7 +12,10 @@
  */
 
 const PROFILE_SELECT =
-  'id, email, name, is_admin, phone, profession, location, crops, subscription_status, subscription_amount, created_at, last_login, exclude_from_revenue';
+  'id, email, name, is_admin, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_paid_cycles, cancelled_by_admin, created_at, last_login, exclude_from_revenue';
+
+const PROFILE_SELECT_FALLBACK =
+  'id, email, name, is_admin, phone, profession, location, crops, subscription_status, subscription_amount, last_payment_date, next_payment_date, created_at, last_login, exclude_from_revenue';
 
 const ADMIN_EMAIL_LC = 'admin@nutriplantpro.com';
 
@@ -126,7 +129,10 @@ function normalizeParams(body) {
     'status',
     'crop',
     'limit',
-    'active_last_30_days'
+    'active_last_30_days',
+    'overdue',
+    'due_soon',
+    'sort'
   ];
   passthrough.forEach((key) => {
     const v = src[key];
@@ -235,6 +241,98 @@ function parseMaybeJsonObject(value, fallback) {
   return fallback == null ? null : fallback;
 }
 
+/** YYYY-MM-DD for GPT (no inventar; vacío = sin fecha en Supabase). */
+function isoDateOnly(raw) {
+  if (raw == null || raw === '') return null;
+  const s = String(raw);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + mo + '-' + day;
+}
+
+function paidCyclesOf(p) {
+  const n = Number(p && p.paypal_paid_cycles);
+  if (Number.isFinite(n) && n >= 1) return Math.min(120, Math.floor(n));
+  if (p && p.last_payment_date) return 1;
+  return 0;
+}
+
+function startOfTodayMs() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function dateOnlyMs(raw) {
+  const s = isoDateOnly(raw);
+  if (!s) return null;
+  const d = new Date(s + 'T00:00:00');
+  return Number.isNaN(d.getTime()) ? null : d.getTime();
+}
+
+function compareByNextPayment(a, b) {
+  const am = dateOnlyMs(a.next_payment_date);
+  const bm = dateOnlyMs(b.next_payment_date);
+  if (am == null && bm == null) {
+    return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'es');
+  }
+  if (am == null) return 1;
+  if (bm == null) return -1;
+  return am - bm;
+}
+
+function billingCompactUser(u) {
+  return {
+    name: u.name || (u.email ? String(u.email).split('@')[0] : 'Sin nombre'),
+    email: u.email || '',
+    status: (u.subscription_status || u.status || 'inactive').toLowerCase(),
+    last_payment_date: isoDateOnly(u.last_payment_date),
+    next_payment_date: isoDateOnly(u.next_payment_date)
+  };
+}
+
+/** overdue / due in next 30 days from last_payment_date + next_payment_date (no estimar). */
+function billingSummaryFromUsers(users) {
+  const today = startOfTodayMs();
+  const in30 = today + 30 * 24 * 60 * 60 * 1000;
+  const overdue = [];
+  const dueNext30 = [];
+  let activeWithoutLastPayment = 0;
+  (users || []).forEach((u) => {
+    const status = (u.subscription_status || u.status || 'inactive').toLowerCase();
+    if (status === 'active' && !isoDateOnly(u.last_payment_date)) activeWithoutLastPayment += 1;
+    const nextMs = dateOnlyMs(u.next_payment_date);
+    if (nextMs == null) return;
+    if (status !== 'active' && status !== 'cancelled') return;
+    if (nextMs < today) overdue.push(u);
+    else if (nextMs <= in30) dueNext30.push(u);
+  });
+  overdue.sort(compareByNextPayment);
+  dueNext30.sort(compareByNextPayment);
+  return {
+    overdue_count: overdue.length,
+    due_next_30_days_count: dueNext30.length,
+    active_without_last_payment_count: activeWithoutLastPayment,
+    overdue: overdue.map(billingCompactUser),
+    due_next_30_days: dueNext30.map(billingCompactUser)
+  };
+}
+
+function subscriptionStatusCounts(users) {
+  const byStatus = { active: 0, pending: 0, cancelled: 0, expired: 0, inactive: 0, other: 0 };
+  (users || []).forEach((u) => {
+    const s = (u.subscription_status || 'inactive').toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(byStatus, s)) byStatus[s] += 1;
+    else byStatus.other += 1;
+  });
+  return byStatus;
+}
+
 /** Misma lógica que getActiveUsers() en admin/index.html */
 function countActiveUsers30d(profiles, visits) {
   const thirtyDaysAgoMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
@@ -253,17 +351,29 @@ function countActiveUsers30d(profiles, visits) {
 }
 
 async function fetchProfiles(supabase) {
-  const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT);
-  if (error) throw new Error('profiles: ' + (error.message || error));
-  return data || [];
+  const selects = [PROFILE_SELECT, PROFILE_SELECT_FALLBACK];
+  let lastError = null;
+  for (let i = 0; i < selects.length; i++) {
+    const { data, error } = await supabase.from('profiles').select(selects[i]);
+    if (!error) return data || [];
+    lastError = error;
+  }
+  throw new Error('profiles: ' + ((lastError && lastError.message) || lastError));
 }
 
-const PROFILE_STATS_SELECT = 'id, email, is_admin, subscription_status, last_login';
+const PROFILE_STATS_SELECT =
+  'id, email, name, is_admin, subscription_status, last_login, last_payment_date, next_payment_date, paypal_paid_cycles, exclude_from_revenue';
+const PROFILE_STATS_SELECT_FALLBACK = 'id, email, name, is_admin, subscription_status, last_login, last_payment_date, next_payment_date';
 
 async function fetchProfilesForAdminStats(supabase) {
-  const { data, error } = await supabase.from('profiles').select(PROFILE_STATS_SELECT);
-  if (error) throw new Error('profiles: ' + (error.message || error));
-  return data || [];
+  const selects = [PROFILE_STATS_SELECT, PROFILE_STATS_SELECT_FALLBACK];
+  let lastError = null;
+  for (let i = 0; i < selects.length; i++) {
+    const { data, error } = await supabase.from('profiles').select(selects[i]);
+    if (!error) return data || [];
+    lastError = error;
+  }
+  throw new Error('profiles: ' + ((lastError && lastError.message) || lastError));
 }
 
 async function fetchRecentVisitsForActive30d(supabase) {
@@ -316,6 +426,12 @@ function publicUserRow(p, projectsCount) {
     location: p.location || null,
     subscription_status: p.subscription_status || 'inactive',
     subscription_amount: parseFloat(p.subscription_amount) || 0,
+    last_payment_date: isoDateOnly(p.last_payment_date),
+    next_payment_date: isoDateOnly(p.next_payment_date),
+    subscription_activated_at: isoDateOnly(p.subscription_activated_at),
+    paid_cycles: paidCyclesOf(p),
+    cancelled_by_admin: p.cancelled_by_admin === true,
+    exclude_from_revenue: p.exclude_from_revenue === true,
     created_at: p.created_at,
     last_login: p.last_login,
     projects_count: projectsCount || 0
@@ -341,12 +457,8 @@ async function handleAdminStats(supabase) {
     fetchProjectsCount(supabase)
   ]);
   const subscribers = profiles.filter(isSubscriberProfile);
-  const byStatus = { active: 0, pending: 0, cancelled: 0, expired: 0, inactive: 0, other: 0 };
-  subscribers.forEach((u) => {
-    const s = (u.subscription_status || 'inactive').toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(byStatus, s)) byStatus[s] += 1;
-    else byStatus.other += 1;
-  });
+  const byStatus = subscriptionStatusCounts(subscribers);
+  const billing = billingSummaryFromUsers(subscribers);
   const active30 = countActiveUsers30d(profiles, visits);
   return {
     ok: true,
@@ -355,10 +467,33 @@ async function handleAdminStats(supabase) {
     total_users: subscribers.length,
     active_users_last_30_days: active30,
     subscriptions: byStatus,
+    billing: {
+      overdue_count: billing.overdue_count,
+      due_next_30_days_count: billing.due_next_30_days_count,
+      active_without_last_payment_count: billing.active_without_last_payment_count,
+      overdue: billing.overdue,
+      due_next_30_days: billing.due_next_30_days
+    },
     total_projects: totalProjects,
     note:
-      'Usuarios activos (30 días): último login en profiles o entrada al dashboard en dashboard_visits.'
+      'Usuarios activos (30 días): último login en profiles o entrada al dashboard. Fechas de cobro: last_payment_date / next_payment_date (no inventar). Lista completa con fechas → subscription_roster o list_users.'
   };
+}
+
+function applyBillingDateFilters(list, params) {
+  const days = Math.min(Math.max(parseInt(params.days_ahead, 10) || 0, 0), 365);
+  const wantOverdue = params.overdue === true || params.overdue === 'true';
+  const wantDueSoon = params.due_soon === true || params.due_soon === 'true' || days > 0;
+  if (!wantOverdue && !wantDueSoon) return list;
+  const today = startOfTodayMs();
+  const horizon = today + (days || 30) * 24 * 60 * 60 * 1000;
+  return list.filter((u) => {
+    const nextMs = dateOnlyMs(u.next_payment_date);
+    if (nextMs == null) return false;
+    if (wantOverdue && nextMs < today) return true;
+    if (wantDueSoon && nextMs >= today && nextMs <= horizon) return true;
+    return false;
+  });
 }
 
 async function handleListUsers(supabase, params) {
@@ -369,7 +504,8 @@ async function handleListUsers(supabase, params) {
     projectsByUser[p.user_id] = (projectsByUser[p.user_id] || 0) + 1;
   });
 
-  let list = profiles.filter(isSubscriberProfile);
+  const subscribers = profiles.filter(isSubscriberProfile);
+  let list = subscribers;
   const status = (params.subscription_status || params.status || '').trim().toLowerCase();
   if (status) list = list.filter((u) => (u.subscription_status || '').toLowerCase() === status);
 
@@ -399,14 +535,71 @@ async function handleListUsers(supabase, params) {
     list = list.filter((u) => activeIds.has(u.id));
   }
 
-  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 100, 1), 200);
+  list = applyBillingDateFilters(list, params);
+  list = list.slice().sort(compareByNextPayment);
+
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 200, 1), 400);
+  const truncated = list.length > limit;
   list = list.slice(0, limit);
 
   return {
     ok: true,
     domain: 'admin',
     count: list.length,
-    users: list.map((u) => publicUserRow(u, projectsByUser[u.id] || 0))
+    truncated,
+    total_users: subscribers.length,
+    subscriptions: subscriptionStatusCounts(subscribers),
+    billing: billingSummaryFromUsers(subscribers),
+    users: list.map((u) => publicUserRow(u, projectsByUser[u.id] || 0)),
+    how_to_answer:
+      'Tabla: Nombre | Estado | Último pago (last_payment_date) | Próximo pago (next_payment_date). Fechas YYYY-MM-DD tal cual. null = «sin fecha» (NO inventar ni sumar 5 meses).'
+  };
+}
+
+/** Lista compacta de suscriptores con último/próximo cobro — pregunta frecuente del admin. */
+async function handleSubscriptionRoster(supabase, params) {
+  const profiles = await fetchProfiles(supabase);
+  const subscribers = profiles.filter(isSubscriberProfile);
+  let list = subscribers;
+  const status = (params.subscription_status || params.status || '').trim().toLowerCase();
+  if (status) list = list.filter((u) => (u.subscription_status || '').toLowerCase() === status);
+
+  const q = (params.q || params.search || params.email || '').trim().toLowerCase();
+  if (q) {
+    list = list.filter((u) => {
+      const name = (u.name || '').toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }
+
+  list = applyBillingDateFilters(list, params);
+  list = list.slice().sort(compareByNextPayment);
+
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 200, 1), 400);
+  const truncated = list.length > limit;
+  list = list.slice(0, limit);
+
+  return {
+    ok: true,
+    domain: 'admin',
+    generated_at: new Date().toISOString(),
+    total_users: subscribers.length,
+    count: list.length,
+    truncated,
+    subscriptions: subscriptionStatusCounts(subscribers),
+    billing: billingSummaryFromUsers(subscribers),
+    users: list.map((u) => ({
+      name: u.name || (u.email ? String(u.email).split('@')[0] : 'Sin nombre'),
+      email: u.email || '',
+      status: (u.subscription_status || 'inactive').toLowerCase(),
+      last_payment_date: isoDateOnly(u.last_payment_date),
+      next_payment_date: isoDateOnly(u.next_payment_date),
+      paid_cycles: paidCyclesOf(u),
+      amount_usd: parseFloat(u.subscription_amount) || 0
+    })),
+    how_to_answer:
+      'Empieza con total_users, overdue_count y due_next_30_days_count. Luego tabla: Nombre | Estado | Último pago | Próximo pago. Fechas YYYY-MM-DD tal cual. null = «sin fecha» (NO inventar ni calcular +5 meses). Ciclo real = $49 / 5 meses; paid_cycles = cobros PayPal reales.'
   };
 }
 
@@ -437,6 +630,8 @@ async function handleUserSummary(supabase, params) {
     multiple_matches: matches.length > 1,
     other_matches_count: matches.length > 1 ? matches.length - 1 : 0,
     user: publicUserRow(user, projects.length),
+    billing_note:
+      'last_payment_date = último cobro PayPal real. next_payment_date = próximo cobro. null = sin fecha (no inventar ni sumar 5 meses).',
     last_dashboard_visit: latest
       ? {
           visited_at: latest.visited_at,
@@ -7089,13 +7284,15 @@ async function handleInvestProLists(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.14.0',
-    openapi_version: '2.14.0',
+    version: '2.15.0',
+    openapi_version: '2.15.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
         'En ChatGPT solo existe esta Action. admin_stats, nutri_pro_catalog, describe_api, etc. son valores del campo body.action, no tools aparte.',
       example_admin_stats: { action: 'admin_stats', params: {} },
+      example_subscription_roster: { action: 'subscription_roster', params: {} },
+      example_list_users: { action: 'list_users', params: {} },
       example_nutri_pro: { action: 'nutri_pro_catalog', params: {} },
       example_invest_pro_overview: { action: 'invest_pro_overview', params: {} },
       example_invest_pro_holdings: { action: 'invest_pro_holdings', params: { q: 'NVDA', limit: 50 } },
@@ -7116,10 +7313,10 @@ async function handleDescribeApi() {
         action: 'nutri_pro_set_text',
         params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
       },
-      verify: 'Si describe_api devuelve version 2.14.0, el GPT tiene schema y token correctos.'
+      verify: 'Si describe_api devuelve version 2.15.0, el GPT tiene schema y token correctos.'
     },
     domains: {
-      admin: ['admin_stats', 'list_users', 'user_summary'],
+      admin: ['admin_stats', 'list_users', 'user_summary', 'subscription_roster'],
       nutriplant_projects: [
         'search_projects',
         'project_detail',
@@ -7163,7 +7360,7 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Clima en vivo (Open-Meteo, solo lectura): project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*. Invest PRO: invest_pro_overview|holdings|lists (solo lectura; no inventar precios).',
+      'Suscriptores / cuándo pagaron / cuándo les toca: subscription_roster (lista compacta last_payment_date + next_payment_date; no inventar fechas). Totales: admin_stats. Un usuario: user_summary. Reportes laboratorio (nube): project_analyses. Clima: project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*. Invest PRO: invest_pro_overview|holdings|lists (solo lectura; no inventar precios).',
     my_programs_gpt:
       'Escritura limitada y segura para laboratorio personal de Jesús: my_program_project_create/list/get/update. Solo opera proyectos del email admin configurado (default admin@nutriplantpro.com) marcados gptPersonalProgram=true y created_by_gpt=true. Nunca edita proyectos de suscriptores.',
     climate_gpt:
@@ -7183,6 +7380,7 @@ const HANDLERS = {
   admin_stats: (sb, p) => handleAdminStats(sb, p),
   list_users: (sb, p) => handleListUsers(sb, p),
   user_summary: (sb, p) => handleUserSummary(sb, p),
+  subscription_roster: (sb, p) => handleSubscriptionRoster(sb, p),
   search_projects: (sb, p) => handleSearchProjects(sb, p),
   project_detail: (sb, p) => handleProjectDetail(sb, p),
   project_analyses: (sb, p) => handleProjectAnalyses(sb, p),
@@ -7229,9 +7427,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.14.0',
+      version: '2.15.0',
       description:
-        'v2.14.0 — Invest PRO lectura: invest_pro_overview|holdings|lists. nutri_pro_file_inspect: archivo vivo sin OCR API.'
+        'v2.15.0 — subscription_roster: lista compacta de suscriptores con last_payment_date y next_payment_date. Invest PRO lectura. nutri_pro_file_inspect.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -7240,7 +7438,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.14.0.',
+            'Única Action ChatGPT. Body: action + params. Suscriptores/pagos: subscription_roster. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.15.0.',
           requestBody: {
             required: true,
             content: {
@@ -7279,6 +7477,14 @@ function getOpenApiSpec() {
                 },
                 area_slug: { type: 'string' },
                 days_ahead: { type: 'integer' },
+                overdue: {
+                  type: 'boolean',
+                  description: 'subscription_roster / list_users: solo next_payment_date vencida'
+                },
+                due_soon: {
+                  type: 'boolean',
+                  description: 'subscription_roster / list_users: próximo cobro en 30 días (o days_ahead)'
+                },
                 email: { type: 'string' },
                 search: { type: 'string' },
                 crop: { type: 'string' },

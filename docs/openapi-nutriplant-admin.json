@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.14.0",
-    "description": "v2.14.0 — Invest PRO lectura: invest_pro_overview|holdings|lists. nutri_pro_file_inspect: archivo vivo sin OCR API. Una sola Action nutriplantAdminQuery."
+    "version": "2.15.0",
+    "description": "v2.15.0 — subscription_roster: suscriptores con last_payment_date y next_payment_date. Invest PRO lectura. nutri_pro_file_inspect. Una sola Action nutriplantAdminQuery."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. Verifica describe_api → version 2.14.0.",
+        "description": "Única Action ChatGPT. Body: action + params. Suscriptores/pagos: subscription_roster. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. Verifica describe_api → version 2.15.0.",
         "requestBody": {
           "required": true,
           "content": {
@@ -48,6 +48,7 @@
               "admin_stats",
               "list_users",
               "user_summary",
+              "subscription_roster",
               "search_projects",
               "project_detail",
               "project_analyses",
@@ -181,6 +182,14 @@
               "reopen": { "type": "boolean" },
               "append_note": { "type": "string", "description": "plan_pro_update: añadir texto a nota" },
               "days_ahead": { "type": "integer" },
+              "overdue": {
+                "type": "boolean",
+                "description": "subscription_roster / list_users: solo next_payment_date vencida"
+              },
+              "due_soon": {
+                "type": "boolean",
+                "description": "subscription_roster / list_users: próximo cobro en 30 días (o days_ahead)"
+              },
               "include_overdue": { "type": "boolean" },
               "limit": { "type": "integer" },
               "max_chars": {

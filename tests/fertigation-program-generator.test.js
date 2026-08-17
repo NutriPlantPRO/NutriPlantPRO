@@ -4,7 +4,6 @@ const generator = require('../assets/np-fertigation-program-generator.js');
 const materials = [
   { id: 'cacl2_dihidratado', CaO: 38.1, Cl: 48.2 },
   { id: 'nitrato_calcio_granular', N_NO3: 14.4, N_NH4: 1.1, CaO: 26 },
-  { id: 'nitrato_amonio', N_NO3: 16.5, N_NH4: 16.5 },
   { id: 'nitrato_magnesio', N_NO3: 10.8, MgO: 15 },
   { id: 'map', N_NH4: 12, P2O5: 61 },
   { id: 'mkp', P2O5: 52, K2O: 34 },
@@ -166,16 +165,17 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(flowerIds.indexOf('nitrato_calcio_granular') < flowerIds.indexOf('mkp'));
 })();
 
-(function leftoverNitrogenUsesAmmoniumNitrateNotMagnesiumNitrate() {
+(function leftoverNitrogenUsesSulfonitNotMagnesiumNitrate() {
   const result = generator.solveStage(
     { N: 80, CaO: 30, MgO: 16, P2O5: 12, K2O: 40, SO4: 50 },
     {},
     materials
   );
   const ids = result.rows.map(r => r.materialId);
-  assert.ok(ids.includes('nitrato_amonio'), 'expected ammonium nitrate for leftover N: ' + ids.join(','));
+  assert.ok(ids.includes('sulfonit_33_00_00_2s'), 'expected Sulfonit for leftover N: ' + ids.join(','));
   assert.ok(ids.includes('sulfato_magnesio'), 'expected Mg sulfate while S remains: ' + ids.join(','));
   assert.ok(!ids.includes('nitrato_magnesio'), 'do not chase leftover N with Mg nitrate: ' + ids.join(','));
+  assert.ok(!ids.includes('nitrato_amonio'), ids.join(','));
   assert.ok(!ids.includes('sulfato_amonio_soluble'), ids.join(','));
 })();
 
@@ -189,14 +189,14 @@ function close(actual, expected, eps = 1e-6) {
 })();
 
 (function leftoverNitrogenPrefersSulfonitOverFosfonitrato() {
-  const withoutAn = materials.filter(m => m.id !== 'nitrato_amonio');
-  const sulfonit = generator.solveStage({ N: 20, SO4: 10, P2O5: 8 }, {}, withoutAn.filter(m => m.id !== 'mkp' && m.id !== 'map'));
+  const sulfonit = generator.solveStage({ N: 20, SO4: 10, P2O5: 8 }, {}, materials.filter(m => m.id !== 'mkp' && m.id !== 'map'));
   const ids = sulfonit.rows.map(r => r.materialId);
   assert.ok(ids.includes('sulfonit_33_00_00_2s'), ids.join(','));
   assert.ok(!ids.includes('fosfonitrato_33_03_00'), 'fosfonitrato should wait: ' + ids.join(','));
+  assert.ok(!ids.includes('nitrato_amonio'), ids.join(','));
   assert.ok(!ids.includes('sulfato_amonio_soluble'));
 
-  const onlyFosfo = withoutAn.filter(m => m.id !== 'sulfonit_33_00_00_2s' && m.id !== 'mkp' && m.id !== 'map');
+  const onlyFosfo = materials.filter(m => m.id !== 'sulfonit_33_00_00_2s' && m.id !== 'mkp' && m.id !== 'map');
   const fosfo = generator.solveStage({ N: 20, P2O5: 8 }, {}, onlyFosfo);
   assert.ok(fosfo.rows.some(r => r.materialId === 'fosfonitrato_33_03_00'), fosfo.rows.map(r => r.materialId).join(','));
 })();
