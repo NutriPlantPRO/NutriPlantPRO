@@ -5212,13 +5212,16 @@ html.embed-login body {
 
 .ferti-charts-water-item {
   display: inline-grid;
-  grid-template-columns: min-content;
+  grid-template-columns: 1fr;
   justify-items: stretch;
-  width: max-content;
-  flex: 0 0 auto;
+  width: 6.5rem;
+  min-width: 6.5rem;
+  max-width: 6.5rem;
+  box-sizing: border-box;
+  flex: 0 0 6.5rem;
   border: 1px solid #bfdbfe;
   border-radius: 6px;
-  padding: 3px 4px 4px;
+  padding: 4px 5px 5px;
   margin: 0;
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
 }
@@ -5226,8 +5229,10 @@ html.embed-login body {
 .ferti-charts-water-period,
 .ferti-charts-water-stage {
   display: block;
-  width: max-content;
-  max-width: max-content;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #1e3a8a;
   line-height: 1.15;
 }
@@ -5275,12 +5280,6 @@ html.embed-login body {
 
 .ferti-charts-water-item:hover {
   border-color: #93c5fd;
-}
-
-.ferti-charts-water-item.is-current {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.22);
-  background: linear-gradient(180deg, #dbeafe 0%, #ffffff 100%);
 }
 
 .ferti-source-share {
@@ -8274,8 +8273,10 @@ html.embed-login body {
 
 .fertirriego-inputs .ferti-charts-water-item {
   display: inline-grid;
-  grid-template-columns: min-content;
-  width: max-content;
+  grid-template-columns: 1fr;
+  width: 6.5rem;
+  min-width: 6.5rem;
+  max-width: 6.5rem;
   margin-bottom: 0;
   font-weight: inherit;
   color: inherit;

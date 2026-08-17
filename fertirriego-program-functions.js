@@ -3274,8 +3274,7 @@ function renderFertiChartWaterByStageInputs() {
         slots.map(function (slot) {
           const stageShown = slot.stage ? fertProgStage(slot.stage) : '';
           const shown = fertProgInputFromSI(fertiChartWaterByStageM3ha[slot.i] || 0, 'volume_area', 4);
-          const current = slot.i === fertiChartSelectedStageIndex ? ' is-current' : '';
-          return '<label class="ferti-charts-water-item' + current + '">' +
+          return '<label class="ferti-charts-water-item">' +
             '<span class="ferti-charts-water-period">' + fertiEscapeAttr(slot.label) + '</span>' +
             (stageShown ? '<span class="ferti-charts-water-stage">' + fertiEscapeAttr(stageShown) + '</span>' : '') +
             '<input type="number" min="0" step="0.0001" inputmode="decimal" size="5" data-ferti-chart-water="' + slot.i + '" value="' + fertiEscapeAttr(shown) + '">' +
@@ -3291,7 +3290,7 @@ function syncFertiChartWaterHighlight(wrap) {
     if (!host) return;
     const items = host.querySelectorAll('.ferti-charts-water-item');
     for (let i = 0; i < items.length; i++) {
-      items[i].classList.toggle('is-current', i === fertiChartSelectedStageIndex);
+      items[i].classList.remove('is-current');
     }
   });
 }
