@@ -1036,6 +1036,7 @@ function sectionTemplate(name) {
                       <select id="fertiImportWaterSelect" class="hydro-input hydro-import-water-select" title="${ft('bring_from_analysis_title', 'Elige un análisis: se cargan sus kg/ha y la dosis de ácido')}">
                         <option value="">${ft('select_water_analysis', 'Seleccionar análisis…')}</option>
                       </select>
+                      <span id="fertiLinkedWaterLamina" class="ferti-linked-water-lamina" hidden></span>
                     </label>
                   </div>
                   <div class="hydro-muted" style="margin:4px 0 8px;font-size:0.82rem;">${ft('bring_from_analysis_hint', 'Elige un análisis para cargar kg/ha y el ácido. Los kg/ha del agua usan la lámina total del ciclo (suma de etapas abajo). El ácido usa la lámina de cada etapa.')}</div>

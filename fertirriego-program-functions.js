@@ -2426,6 +2426,24 @@ function fertiRefreshWaterAnalysisSelect() {
       ? fertProgT('linked_water_analysis', 'Análisis vinculado')
       : fertProgT('bring_from_analysis', 'Traer de análisis');
   }
+  fertiRenderLinkedAnalysisLamina();
+}
+
+function fertiRenderLinkedAnalysisLamina() {
+  const el = document.getElementById('fertiLinkedWaterLamina');
+  if (!el) return;
+  const analysis = fertiGetLinkedWaterAnalysis();
+  if (!analysis) {
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  const m3 = parseFloat(analysis.m3Riego);
+  const qty = Number.isFinite(m3) && m3 > 0
+    ? fertProgQuantity(m3, 'volume_area')
+    : '—';
+  el.hidden = false;
+  el.textContent = fertProgT('analysis_cycle_lamina', 'Lámina total (análisis)') + ': ' + qty;
 }
 
 function fertiCycleLaminaM3ha() {
@@ -2621,6 +2639,7 @@ function initFertiWaterInputs() {
       fertiWaterAnalysisId = null;
       markFertiProgDirty();
       try { fertiRenderAcidSummary(); } catch (err) {}
+      try { fertiRenderLinkedAnalysisLamina(); } catch (err) {}
       try { if (typeof saveFertirriegoProgram === 'function') saveFertirriegoProgram(); } catch (err) {}
       return;
     }
@@ -3160,7 +3179,7 @@ function renderFertiChartWaterByStageInputs() {
     }
     const isProgram = wrap.id === 'fertiProgramWaterByStageWrap';
     const note = isProgram
-      ? fertProgT('program_water_help', 'm³/ha de cada periodo. La suma del ciclo es el volumen para los kg/ha del aporte por agua. Con cada etapa se calcula el ácido (L/ha). La misma lámina se usa en Dinámica nutricional para ppm y meq/L.')
+      ? fertProgT('program_water_help', 'Suma del ciclo = kg/ha del agua. Cada etapa = ácido. Igual en Dinámica.')
       : fertProgT('charts_water_help', 'Se usa aquí para ppm, meq/L y CE. Es la misma lámina que en Programa.');
     wrap.innerHTML =
       '<div class="ferti-charts-water-head">' +
@@ -3175,7 +3194,7 @@ function renderFertiChartWaterByStageInputs() {
           return '<label class="ferti-charts-water-item' + current + '">' +
             '<span class="ferti-charts-water-period">' + fertiEscapeAttr(slot.label) + '</span>' +
             (stageShown ? '<span class="ferti-charts-water-stage">' + fertiEscapeAttr(stageShown) + '</span>' : '') +
-            '<input type="number" min="0" step="0.0001" inputmode="decimal" data-ferti-chart-water="' + slot.i + '" value="' + fertiEscapeAttr(shown) + '">' +
+            '<input type="number" min="0" step="0.0001" inputmode="decimal" size="5" data-ferti-chart-water="' + slot.i + '" value="' + fertiEscapeAttr(shown) + '">' +
           '</label>';
         }).join('') +
       '</div>';

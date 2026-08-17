@@ -3914,6 +3914,13 @@ html.embed-login body {
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(14, 165, 233, 0.15);
 }
+.ferti-linked-water-lamina {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  white-space: nowrap;
+  line-height: 1.2;
+}
 .hydro-import-water-select:hover,
 .hydro-import-water-select:focus {
   border-color: #0284c7;
@@ -5166,9 +5173,9 @@ html.embed-login body {
 
 .ferti-charts-water-head {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 4px 12px;
   margin-bottom: 6px;
 }
 
@@ -5177,24 +5184,31 @@ html.embed-login body {
   font-size: 0.85rem;
   font-weight: 700;
   color: #0f172a;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .ferti-charts-water-note {
   margin: 0;
   font-size: 0.72rem;
   color: #475569;
+  flex: 1 1 14rem;
+  min-width: 0;
 }
 
 .ferti-charts-water-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 6px;
 }
 
 .ferti-charts-water-item {
+  width: max-content;
+  flex: 0 0 auto;
   border: 1px solid #bfdbfe;
   border-radius: 6px;
-  padding: 5px 6px 6px;
+  padding: 4px 5px 5px;
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
 }
 
@@ -5215,13 +5229,13 @@ html.embed-login body {
   font-size: 0.68rem;
   font-weight: 600;
   margin: 1px 0 3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .ferti-charts-water-item input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
   border: 1px solid #93c5fd;
   border-radius: 5px;
