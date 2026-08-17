@@ -152,7 +152,7 @@
     accept: 'Accept',
     none: 'None',
     cycle_summary: '📊 Full-Cycle Summary', weeks: 'Number of Weeks:', months: 'Number of Months:',
-    total_dose: 'Total Dose', total_cost: 'Total cost', program_supply: '💡 Nutrition program supply',
+    total_dose: 'Total Dose', total_cost: 'Total cost', program_supply: '💡 Fertigation program supply',
     water_supply: '💧 Water nutrient supply', total_supply: '📦 Total supply (program + water)',
     ce_ref: 'Reference EC',
     bring_from_analysis: 'Bring from analysis',

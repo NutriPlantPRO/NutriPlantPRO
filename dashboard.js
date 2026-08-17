@@ -257,7 +257,7 @@ function refreshGranularDashboardChrome() {
   }
   const summaryHeadings = root.querySelectorAll('#granularPrograma .summary-nutrients > h4');
   const doseUnit = granularUnit('dose_mass_area', 'kg/ha');
-  if (summaryHeadings[0]) summaryHeadings[0].textContent = granularT('total_supply', '💡 Aporte Total de Nutrientes') + ' (' + doseUnit + '):';
+  if (summaryHeadings[0]) summaryHeadings[0].textContent = granularT('total_supply', '💡 Aporte del programa granular') + ' (' + doseUnit + '):';
   if (summaryHeadings[1]) summaryHeadings[1].textContent = granularT('real_requirement', '🎯 Requerimiento Real') + ' (' + doseUnit + '):';
   if (summaryHeadings[2]) summaryHeadings[2].textContent = granularT('difference', '➖ Diferencia (Aporte - Requerimiento)') + ' (' + doseUnit + '):';
   const granularDiffHint = root.querySelector('#granularDiffHint');
@@ -1007,7 +1007,7 @@ function sectionTemplate(name) {
                 </div>
 
                 <div class="summary-nutrients">
-                  <h4>${ft('program_supply', '💡 Aporte del programa de nutrición')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
+                  <h4>${ft('program_supply', '💡 Aporte del programa de fertirriego')} (${fUnit('dose_mass_area', 'kg/ha')}):</h4>
                   <div class="nutrients-grid">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N(NO₃):</span><span class="nutrient-value" id="fertiProgTotalN_NO3">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N(NH₄):</span><span class="nutrient-value" id="fertiProgTotalN_NH4">0.0</span></div>
@@ -1666,7 +1666,7 @@ function sectionTemplate(name) {
               </div>
               
               <div class="summary-nutrients">
-                <h4>${granularT('total_supply', '💡 Aporte Total de Nutrientes')} (${granularUnit('dose_mass_area', 'kg/ha')}):</h4>
+                <h4>${granularT('total_supply', '💡 Aporte del programa granular')} (${granularUnit('dose_mass_area', 'kg/ha')}):</h4>
                      <div class="nutrients-grid">
                        <div class="nutrient-item">
                          <span class="nutrient-label notranslate" translate="no">N:</span>
@@ -18587,7 +18587,7 @@ function createGranularSectionHTML(reportLanguage) {
       <div class="report-block">
         <div class="report-block-title">${rt('🌱 Programa Granular', '🌱 Granular Program')} <span class="report-mode-badge">${programModeIsElemental ? rt('Modo Elemental', 'Elemental Mode') : rt('Modo Óxido', 'Oxide Mode')}</span></div>
         ${reportProgramCostBanner(priceLabels.totalCost + ' (' + priceLabels.costAreaUnit + ')', granularReportAreaCost(granularProgramCostUsdPerHa))}
-        <div class="report-subtitle">${rt('Aporte total', 'Total supply')} (${doseUnit}):</div>
+        <div class="report-subtitle">${rt('Aporte del programa granular', 'Granular program supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(totalProgram, doseValue), programModeIsElemental, false)}</div>
         <div class="report-subtitle">${rt('Requerimiento real', 'Actual requirement')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${renderNutrientPills(convertNutrientMap(realRequirement, doseValue), programModeIsElemental, false)}</div>
@@ -19147,7 +19147,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
           <div><strong>${reportFertiIsMes ? rt('Meses', 'Months') : rt('Semanas', 'Weeks')}:</strong> ${weeks.length}</div>
           <div><strong>${rt('Dosis total', 'Total rate')}:</strong> ${q(totalDose, 'dose_mass_area', doseUnit)}</div>
         </div>
-        <div class="report-subtitle">${rt('Aporte del programa de nutrición', 'Nutrition program supply')} (${doseUnit}):</div>
+        <div class="report-subtitle">${rt('Aporte del programa de fertirriego', 'Fertigation program supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false, null, 'dose_mass_area')}</div>
         <div class="report-subtitle">${rt('Aporte por agua', 'Water nutrient supply')} (${doseUnit}):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true }, 'dose_mass_area')}</div>

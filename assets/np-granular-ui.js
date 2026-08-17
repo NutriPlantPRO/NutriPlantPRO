@@ -26,7 +26,7 @@
     total_cost: 'Total cost',
     price: 'Price',
     cost: 'Cost',
-    total_supply: '💡 Total Nutrient Supply',
+    total_supply: '💡 Granular program supply',
     real_requirement: '🎯 Actual Requirement',
     difference: '➖ Difference (Supply − Requirement)',
     difference_fertigation_hint: 'Tip: if the crop also uses fertigation, cover the deficit (orange) in that program.',
