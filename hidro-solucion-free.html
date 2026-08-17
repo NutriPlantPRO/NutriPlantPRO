@@ -1102,8 +1102,43 @@
     .fert-aporte-btn--calc { background: #2563eb; color: #fff; }
     .fert-aporte-btn--save { background: #16a34a; color: #fff; }
     .fert-aporte-btn--mini { padding: 4px 8px; font-size: 11px; }
-    .hydro-solution-picker { margin-left: auto; border: 1.5px solid #16a34a; color: #15803d; background: #fff; border-radius: 8px; padding: 7px 12px; font-weight: 700; cursor: pointer; }
-    .hydro-solution-picker.is-selected { background: #16a34a; border-color: #15803d; color: #fff; }
+    .hydro-free-design-header {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .hydro-free-design-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .hydro-free-design-title-row h3 {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .hydro-free-solution .hydro-solution-picker {
+      width: auto;
+      min-width: 0;
+      max-width: 100%;
+      flex: 0 1 auto;
+      margin-left: 0;
+      overflow: visible;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.25;
+      padding: 7px 14px;
+      font-size: 13px;
+      border: 1.5px solid #16a34a;
+      color: #15803d;
+      background: #fff;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hydro-free-solution .hydro-solution-picker.is-selected { background: #16a34a; border-color: #15803d; color: #fff; }
     .hydro-solution-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 16px; background: rgba(15,23,42,.55); }
     .hydro-solution-modal__card { width: min(1100px,100%); max-height: 85vh; overflow: auto; background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 24px 60px rgba(15,23,42,.25); }
     .hydro-solution-modal__head { display:flex; gap:12px; align-items:center; justify-content:space-between; }
@@ -1136,10 +1171,12 @@
       <div id="hydroPanelDesign" class="hydro-main-panel active" role="tabpanel" aria-labelledby="hydroTabBtnDesign">
       <div class="tab-content active" id="hidro-solucion">
         <div class="hydro-card">
-          <div class="hydro-card-header">
-            <h3>🧪 Diseño de solución nutritiva</h3>
-            <button type="button" class="hydro-solution-picker" id="hydroSolutionPickerBtn">Soluciones nutritivas</button>
-            <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;" title="Con CE: arrastra el triángulo (actualiza % meq, meq/L y ppm). Sin CE al arrastrar: reparte 30 meq/L solo en N-P-S y K-Ca-Mg; NH₄⁺ no se autocompleta.">CE + triángulo, o edita <strong>meq/L</strong> / <strong>ppm</strong>. Sin CE: <strong>30 meq/L</strong> en el triángulo; <strong>N-NH₄⁺</strong> aparte.</p>
+          <div class="hydro-card-header hydro-free-design-header">
+            <div class="hydro-free-design-title-row">
+              <h3>🧪 Diseño de solución nutritiva</h3>
+              <button type="button" class="hydro-solution-picker" id="hydroSolutionPickerBtn" title="Soluciones nutritivas">Soluciones nutritivas</button>
+            </div>
+            <p class="hydro-muted" style="margin:0;font-size:0.8rem;" title="Con CE: arrastra el triángulo (actualiza % meq, meq/L y ppm). Sin CE al arrastrar: reparte 30 meq/L solo en N-P-S y K-Ca-Mg; NH₄⁺ no se autocompleta.">CE + triángulo, o edita <strong>meq/L</strong> / <strong>ppm</strong>. Sin CE: <strong>30 meq/L</strong> en el triángulo; <strong>N-NH₄⁺</strong> aparte.</p>
             <div id="hydroNitrogenSummaryText" class="hydro-n-summary"></div>
           </div>
           <div id="hydroMeqTableWrap" class="hydro-table-wrap hydro-table-block" data-label="meq/L"></div>
@@ -1562,13 +1599,14 @@
       var button = document.getElementById('hydroSolutionPickerBtn');
       if (!button) return;
       var stage = hydroGetActiveStage();
-      if (stage && stage.solutionId && stage.name) {
-        button.textContent = stage.name;
-        button.classList.add('is-selected');
-      } else {
-        button.textContent = hydroUiT('Soluciones nutritivas', 'Nutrient solutions');
-        button.classList.remove('is-selected');
-      }
+      var label = (stage && stage.solutionId && stage.name)
+        ? String(stage.name)
+        : hydroUiT('Soluciones nutritivas', 'Nutrient solutions');
+      button.textContent = label;
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      if (stage && stage.solutionId && stage.name) button.classList.add('is-selected');
+      else button.classList.remove('is-selected');
     }
 
     function hydroComputeMacroPpm(stage) {

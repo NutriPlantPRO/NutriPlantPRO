@@ -8437,9 +8437,9 @@ html.embed-login body {
 .ferti-dist-table th.ferti-dist-stage-head,
 .ferti-dist-table td.ferti-dist-stage-cell {
   text-align: left;
-  width: 124px;
-  min-width: 108px;
-  max-width: 132px;
+  width: 172px;
+  min-width: 160px;
+  max-width: 196px;
   padding: 4px 5px;
 }
 .ferti-dist-table th.ferti-dist-period-head,
@@ -8519,7 +8519,7 @@ html.embed-login body {
   width: 100%;
   max-width: 100%;
   flex: 1 1 auto;
-  padding: 4px 4px;
+  padding: 4px 22px 4px 6px;
 }
 .ferti-dist-table td.ferti-dist-kg-cell {
   width: 58px;

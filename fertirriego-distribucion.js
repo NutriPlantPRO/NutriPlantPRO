@@ -48,6 +48,7 @@
   var persistTimer = null;
   var programPushTimer = null;
   var distProgramSync = false;
+  var distDrivesProgram = false;
   var chartRetryTimer = null;
   var chartSizeTimer = null;
   var chartMacro = null;
@@ -137,7 +138,7 @@
     return (axis === 'mes' ? t('month', 'Mes') : t('week', 'Semana')) + ' ' + (index + 1);
   }
   function rowDisplayLabel(st, index) {
-    return [stageLabel(st), periodLabel(index)];
+    return stageLabel(st) + ' ' + periodLabel(index);
   }
   function periodHeadLabel() {
     return axis === 'mes' ? t('month', 'Mes') : t('week', 'Semana');
@@ -379,7 +380,8 @@
       stages: stages.slice(),
       pct: JSON.parse(JSON.stringify(pct)),
       waterDepthByStageM3ha: waterDepthByStageM3ha.slice(),
-      axis: axis
+      axis: axis,
+      drivesProgram: !!distDrivesProgram
     };
   }
 
@@ -404,6 +406,8 @@
     if (state.axis === 'mes' || state.axis === 'semana') {
       axis = state.axis;
     }
+    distDrivesProgram = state.drivesProgram === true;
+    w._fertiDistDrivesProgram = distDrivesProgram;
     normalizePhenologyNames();
     var savedWater = Array.isArray(state.waterDepthByStageM3ha)
       ? state.waterDepthByStageM3ha
@@ -545,7 +549,7 @@
           '<div class="ferti-dist-table-actions">' +
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistAddStage">+ ' + escapeHtml(addStageLabel()) + '</button>' +
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
-            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Sugerir % coloca una curva nueva según las etapas (no cambia el programa). Si ya hay programa, el % se acomoda solo. Si cambias una dosis, tabla y gráfica de % se mueven. Flechas 1 % · Mayús 5 % · Alt 0.1 %. El ▾ copia formas.')) + '</p>' +
+            '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta Elaborar de nuevo). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta Elaborar. Flechas 1 % · Mayús 5 % · Alt 0.1 %.')) + '</p>' +
           '</div>' +
           '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
@@ -562,7 +566,7 @@
               '<div id="fertiDistChartWrapMicro" class="ferti-dist-chart"><canvas id="fertiDistChartMicro"></canvas></div>' +
             '</div>' +
           '</div>' +
-          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Arrastra un punto o edita la tabla de %. Toca una curva o su nombre para resaltarla. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.')) + '</p>' +
+          '<p class="ferti-dist-hint" id="fertiDistChartHint">' + escapeHtml(t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Arrastra un punto o edita la tabla de %. Toca una curva o su nombre para verla sola. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.')) + '</p>' +
         '</div>' +
       '</div>' +
       '<div class="ferti-dist-nut-menu" id="fertiDistNutMenu" hidden role="menu">' +
@@ -808,11 +812,22 @@
       btns[i].setAttribute('aria-expanded', btns[i].getAttribute('data-assist') === id ? 'true' : 'false');
     }
   }
-  function commitPctIds(ids) {
+  function markDistDrivesProgram() {
+    distDrivesProgram = true;
+    w._fertiDistDrivesProgram = true;
+    w._fertiDistKeepSuggestedPct = false;
+  }
+  function markProgramDrivesDist() {
+    distDrivesProgram = false;
+    w._fertiDistDrivesProgram = false;
+  }
+  function commitPctIds(ids, opts) {
     ensurePct();
     scheduleSave();
     syncPctInputsFromData();
     updateChartPctSeries(ids && ids.length === 1 ? ids[0] : undefined);
+    if (opts && opts.skipProgramPush) return;
+    markDistDrivesProgram();
     scheduleProgramPush(ids && ids.length === 1 ? ids[0] : undefined);
   }
   function applyShape(kind, ids) {
@@ -876,7 +891,7 @@
         pct[n.id] = suggested[n.id].slice();
       }
     });
-    commitPctIds(NUTS.map(function (n) { return n.id; }));
+    commitPctIds(NUTS.map(function (n) { return n.id; }), { skipProgramPush: true });
     refreshKgCells();
     closeAssistMenu();
     w._fertiDistKeepSuggestedPct = true;
@@ -1007,13 +1022,19 @@
     var n = nutId ? nutFromId(nutId) : null;
     var list = n ? [n] : NUTS.slice();
     distProgramSync = true;
+    var applied = false;
     try {
       list.forEach(function (nut) {
         var oxideKg = stages.map(function (_, ri) {
           return kgFor(nut, ri);
         });
-        w.fertiApplyDistributionTargetsToProgram(programKeyFor(nut), oxideKg);
+        if (typeof w.fertiApplyDistributionTargetsToProgram === 'function') {
+          applied = !!w.fertiApplyDistributionTargetsToProgram(programKeyFor(nut), oxideKg, { silent: true }) || applied;
+        }
       });
+      if (applied && typeof w.fertiFlushDistributionProgramPaint === 'function') {
+        w.fertiFlushDistributionProgramPaint();
+      }
     } catch (e) {}
     distProgramSync = false;
   }
@@ -1040,7 +1061,11 @@
   }
   function visiblePctMax(group) {
     var max = 0;
-    nutsForGroup(group).forEach(function (n) {
+    var nuts = nutsForGroup(group);
+    if (chartFocusId && ((group === 'macro') === !!MACRO[chartFocusId])) {
+      nuts = nuts.filter(function (n) { return n.id === chartFocusId; });
+    }
+    nuts.forEach(function (n) {
       stages.forEach(function (_, ri) {
         var v = pctAt(n.id, ri);
         if (v > max) max = v;
@@ -1092,10 +1117,24 @@
     if (!isFinite(n)) return 'rgba(37,99,235,' + a + ')';
     return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
   }
-  function applyDatasetFocusStyles(datasets) {
+  function applyChartTitles() {
+    var macroTitle = document.getElementById('fertiDistMacroTitle');
+    var microTitle = document.getElementById('fertiDistMicroTitle');
+    var macroBase = t('macronutrients', 'Macronutrientes');
+    var microBase = t('micronutrients', 'Micronutrientes');
+    var n = chartFocusId ? nutFromId(chartFocusId) : null;
+    var label = n ? nutLabel(n) : '';
+    if (macroTitle) {
+      macroTitle.textContent = (n && MACRO[chartFocusId]) ? (macroBase + ' · ' + label) : macroBase;
+    }
+    if (microTitle) {
+      microTitle.textContent = (n && !MACRO[chartFocusId]) ? (microBase + ' · ' + label) : microBase;
+    }
+  }
+  function applyDatasetFocusStyles(datasets, chart) {
     if (!datasets) {
       chartList().forEach(function (ch) {
-        if (ch && ch.data) applyDatasetFocusStyles(ch.data.datasets);
+        if (ch && ch.data) applyDatasetFocusStyles(ch.data.datasets, ch);
       });
       return;
     }
@@ -1104,18 +1143,28 @@
     datasets.forEach(function (ds, i) {
       var color = colorForNut(ds._nutId);
       var sameGroup = !hasFocus || focusIsMacro === !!MACRO[ds._nutId];
-      var on = !hasFocus || !sameGroup || ds._nutId === chartFocusId;
-      ds.order = hasFocus && ds._nutId === chartFocusId ? 20 : i;
-      ds.borderColor = on ? color : hexToRgba(color, 0.38);
+      var isFocus = hasFocus && ds._nutId === chartFocusId;
+      var hide = hasFocus && sameGroup && !isFocus;
+      ds.hidden = hide;
+      if (chart && typeof chart.setDatasetVisibility === 'function') {
+        try { chart.setDatasetVisibility(i, !hide); } catch (e) {}
+      }
+      ds.order = isFocus ? 20 : i;
+      ds.borderColor = color;
       ds.backgroundColor = 'transparent';
-      ds.borderWidth = on ? (hasFocus && ds._nutId === chartFocusId ? 2.8 : 2) : 1.4;
-      ds.pointRadius = on ? (hasFocus && ds._nutId === chartFocusId ? 5 : 3.2) : 2.4;
-      ds.pointHoverRadius = on ? (hasFocus && ds._nutId === chartFocusId ? 7 : 4.5) : 3;
-      ds.pointHitRadius = on ? (hasFocus && ds._nutId === chartFocusId ? 22 : 16) : 10;
-      ds.pointBackgroundColor = on ? color : hexToRgba(color, 0.38);
-      ds.pointBorderColor = on ? '#ffffff' : hexToRgba('#ffffff', 0.45);
-      ds.pointBorderWidth = on ? 1.4 : 0.6;
+      ds.borderWidth = isFocus ? 2.8 : 2;
+      ds.pointRadius = isFocus ? 5 : 3.2;
+      ds.pointHoverRadius = isFocus ? 7 : 4.5;
+      ds.pointHitRadius = isFocus ? 22 : 16;
+      ds.pointBackgroundColor = color;
+      ds.pointBorderColor = '#ffffff';
+      ds.pointBorderWidth = 1.4;
       ds.pointStyle = POINT_STYLES[ds._nutId] || 'circle';
+      var dodge = isFocus ? 0 : (ds._dodgeBase != null ? ds._dodgeBase : ds._dodge);
+      if (ds._dodge !== dodge) {
+        ds._dodge = dodge;
+        writeSeriesData(ds, stages.map(function (_, idx) { return pctAt(ds._nutId, idx); }));
+      }
     });
   }
   function fitDistChart() {
@@ -1128,13 +1177,16 @@
     var next = id && nutFromId(id) ? id : null;
     chartFocusId = next;
     applyDatasetFocusStyles();
+    applyChartTitles();
     chartList().forEach(function (ch) {
+      var group = ch === chartMacro ? 'macro' : 'micro';
+      applyChartYScale(ch, group, false);
       try { ch.update('none'); } catch (e) { try { ch.update(); } catch (e2) {} }
     });
     setChartHint('');
   }
   function defaultChartHint() {
-    return t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Arrastra un punto o edita la tabla de %. Toca una curva o su nombre para resaltarla. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.');
+    return t('dist_chart_drag', 'Esta gráfica es el % de Distribución objetivo. Arrastra un punto o edita la tabla de %. Toca una curva o su nombre para verla sola. Las demás etapas se compensan a 100% al arrastrar. Si editas dosis en Programa (mismos periodos), el % de acá también se actualiza.');
   }
   function liveCharts() {
     var ready = [];
@@ -1205,6 +1257,7 @@
     if (!id || !isFinite(ri)) return false;
     if (!pct[id]) pct[id] = equalSplit(stages.length);
     pct[id][ri] = parseFloat(el.value) || 0;
+    markDistDrivesProgram();
     scheduleSave();
     refreshPctSums();
     refreshKgCells();
@@ -1247,7 +1300,7 @@
     }
     if (chartFocusId) {
       var n = nutFromId(chartFocusId);
-      el.textContent = (n ? nutLabel(n) : '') + ' — ' + t('dist_chart_focus', 'Resaltado. Arrastra sus puntos; toca su nombre o el fondo de la gráfica para ver todas las curvas.');
+      el.textContent = (n ? nutLabel(n) : '') + ' — ' + t('dist_chart_focus', 'Solo esta curva. Arrastra sus puntos; toca su nombre o el fondo de la gráfica para ver todas.');
       return;
     }
     el.textContent = defaultChartHint();
@@ -1431,6 +1484,7 @@
         paintDistChart({ nutId: nutId, forceResize: true });
         setChartHint('');
         scheduleSave();
+        markDistDrivesProgram();
         pushDistToProgram(nutId);
       }
     }
@@ -1491,6 +1545,7 @@
         label: nutLabel(n),
         _nutId: n.id,
         _dodge: dodge,
+        _dodgeBase: dodge,
         data: stages.map(function (_, ri) {
           return pctPoint(n.id, ri, dodge);
         }),
@@ -1507,7 +1562,7 @@
     var nStages = labels.length;
     var xTickRotation = nStages >= 16 ? 48 : 38;
     var xTickAutoSkip = nStages >= 10;
-    var xLabelBottomPad = xTickRotation >= 45 ? 34 : 28;
+    var xLabelBottomPad = xTickRotation >= 45 ? 52 : 44;
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -1532,16 +1587,18 @@
             font: { size: 11, weight: '600' },
             generateLabels: function (chart) {
               var items = w.Chart.defaults.plugins.legend.labels.generateLabels(chart);
+              var focusIsMacro = chartFocusId ? !!MACRO[chartFocusId] : null;
               items.forEach(function (item) {
                 var row = chart.data.datasets[item.datasetIndex];
                 if (!row) return;
                 var color = colorForNut(row._nutId);
-                item.fillStyle = color;
-                item.strokeStyle = color;
+                var dim = !!(chartFocusId && focusIsMacro === !!MACRO[row._nutId] && row._nutId !== chartFocusId);
+                item.fillStyle = dim ? hexToRgba(color, 0.35) : color;
+                item.strokeStyle = dim ? hexToRgba(color, 0.35) : color;
                 item.lineWidth = row._nutId === chartFocusId ? 2.4 : 1.6;
                 item.hidden = false;
                 item.pointStyle = POINT_STYLES[row._nutId] || 'circle';
-                item.fontColor = color;
+                item.fontColor = dim ? '#94a3b8' : color;
               });
               return items;
             }
@@ -1639,10 +1696,7 @@
       if (!w.Chart || !document.getElementById('fertiDistChartMacro') || !document.getElementById('fertiDistChartMicro')) return;
       if (chartDrag) return;
       var labels = stages.map(function (st, i) { return rowDisplayLabel(st, i); });
-      var macroTitle = document.getElementById('fertiDistMacroTitle');
-      var microTitle = document.getElementById('fertiDistMicroTitle');
-      if (macroTitle) macroTitle.textContent = t('macronutrients', 'Macronutrientes');
-      if (microTitle) microTitle.textContent = t('micronutrients', 'Micronutrientes');
+      applyChartTitles();
       chartMacro = destroyDistChart(chartMacro);
       chartMicro = destroyDistChart(chartMicro);
       chartMacro = createDistChart(document.getElementById('fertiDistChartMacro'), 'macro', labels);
@@ -1964,6 +2018,8 @@
       stages = DEFAULT_STAGES.slice();
       axis = 'semana';
       pct = {};
+      distDrivesProgram = false;
+      w._fertiDistDrivesProgram = false;
       waterDepthByStageM3ha = [];
       ensurePct();
       NUTS.forEach(function (n) {
@@ -2035,11 +2091,15 @@
     return axis === 'mes' ? 'mes' : 'semana';
   };
   w.fertiDistAdoptFromProgram = adoptFromProgram;
+  w.fertiDistDrivesProgram = function () {
+    return !!distDrivesProgram || w._fertiDistDrivesProgram === true;
+  };
   w.fertiDistApplyProgramNutrientSplit = function (splits) {
     if (distProgramSync || !splits || typeof splits !== 'object') return;
     var changed = false;
     distProgramSync = true;
     try {
+      markProgramDrivesDist();
       NUTS.forEach(function (n) {
         var arr = splits[n.id];
         if (!Array.isArray(arr) || arr.length !== stages.length) return;

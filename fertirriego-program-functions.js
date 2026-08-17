@@ -234,6 +234,7 @@ let fertiProgramInitialized = false;
 // Estado de autosave (Programa)
 let fertiProgDirty = false;
 let fertiProgAutoTimer = null;
+let fertiDistPushTimer = null;
 let fertiChartsResizeTimer = null;
 let fertiWaterInputsBound = false;
 let fertiWaterContributionOxide = {
@@ -1198,11 +1199,19 @@ function onWeekKgInput(weekId, colId, kg) {
   computeWeekTotals(week);
   updateFertiSummary();
   markFertiProgDirty();
+  if (fertiDistPushTimer) clearTimeout(fertiDistPushTimer);
+  fertiDistPushTimer = setTimeout(function () {
+    fertiDistPushTimer = null;
+    fertiPushProgramSplitToDistribution();
+  }, 280);
 }
 
 function onWeekKgChange(weekId, colId, kg) {
   onWeekKgInput(weekId, colId, kg);
-  // Re-render para reflejar aportes por nutriente en la fila y actualizar totales de la tabla
+  if (fertiDistPushTimer) {
+    clearTimeout(fertiDistPushTimer);
+    fertiDistPushTimer = null;
+  }
   renderFertiWeeks();
   fertiPushProgramSplitToDistribution();
 }
@@ -1581,6 +1590,7 @@ function fertiApplyAutomaticProgram(prepared) {
   updateFertiCharts();
   renderFertiAutomaticProgramStatus();
   window._fertiDistKeepSuggestedPct = false;
+  window._fertiDistDrivesProgram = false;
   saveFertirriegoProgram();
   if (window.showMessage) {
     window.showMessage(
@@ -2729,20 +2739,47 @@ function fertiAdjustStageNutrient(stageIndex, nutrientKey, displayedTarget, base
   );
 }
 
-function fertiApplyDistributionTargetsToProgram(nutrientKey, oxideKgByStage) {
+function fertiApplyDistributionTargetsToProgram(nutrientKey, oxideKgByStage, opts) {
   if (!Array.isArray(fertiWeeks) || !Array.isArray(oxideKgByStage)) return false;
   if (!fertiWeeks.length || fertiWeeks.length !== oxideKgByStage.length) return false;
   if (!fertiColumns.length) return false;
   oxideKgByStage.forEach((kg, index) => {
     fertiAdjustStageNutrientCanonical(index, nutrientKey, kg);
   });
+  if (!(opts && opts.silent)) fertiFlushDistributionProgramPaint();
+  return true;
+}
+window.fertiApplyDistributionTargetsToProgram = fertiApplyDistributionTargetsToProgram;
+
+function fertiFlushDistributionProgramPaint() {
   renderFertiWeeks();
   updateFertiSummary();
   updateFertiCharts();
   markFertiProgDirty();
+}
+window.fertiFlushDistributionProgramPaint = fertiFlushDistributionProgramPaint;
+
+function fertiApplyLiveDistributionToExistingProgram() {
+  const state = fertiGeneratorDistributionState();
+  if (!state || !Array.isArray(state.stages) || !Array.isArray(fertiWeeks)) return false;
+  if (!fertiWeeks.length || state.stages.length !== fertiWeeks.length || !fertiColumns.length) return false;
+  const keys = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  keys.forEach(key => {
+    const oxideKg = fertiWeeks.map((_, i) => Number(fertiGeneratorTargetMap(state, i)[key]) || 0);
+    oxideKg.forEach((kg, index) => {
+      fertiAdjustStageNutrientCanonical(index, key, kg);
+    });
+  });
+  fertiFlushDistributionProgramPaint();
   return true;
 }
-window.fertiApplyDistributionTargetsToProgram = fertiApplyDistributionTargetsToProgram;
+
+function fertiDistIsDrivingProgram(dist) {
+  if (window._fertiDistKeepSuggestedPct) return false;
+  if (window._fertiDistDrivesProgram === true) return true;
+  if (typeof window.fertiDistDrivesProgram === 'function' && window.fertiDistDrivesProgram()) return true;
+  return !!(dist && dist.drivesProgram === true);
+}
 
 function fertiDistributionSplitFromProgram(opts) {
   if (!Array.isArray(fertiWeeks) || !fertiWeeks.length) return null;
@@ -2841,13 +2878,18 @@ function fertiDistSplitDiffersFromProgram(dist, layout) {
 
 function fertiAdoptDistributionFromProgram(opts) {
   const layout = fertiProgramLayoutForDistribution();
-  if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
+  const dist = fertiGeneratorDistributionState();
   if (opts && opts.auto) {
     if (window._fertiDistKeepSuggestedPct) return false;
-    const dist = fertiGeneratorDistributionState();
+    if (fertiDistIsDrivingProgram(dist)) {
+      return fertiApplyLiveDistributionToExistingProgram();
+    }
+    if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
     if (!fertiDistSplitDiffersFromProgram(dist, layout)) return false;
   } else {
     window._fertiDistKeepSuggestedPct = false;
+    window._fertiDistDrivesProgram = false;
+    if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
   }
   return window.fertiDistAdoptFromProgram(layout);
 }
