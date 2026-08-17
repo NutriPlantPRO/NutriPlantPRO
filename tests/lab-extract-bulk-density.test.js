@@ -38,5 +38,32 @@ module.exports = [
         '1.40'
       );
     }
+  },
+  {
+    name: 'extractor suelo: no toma cond. hidraulica ni % de la tabla fisica',
+    run: function () {
+      var table = [
+        'Clase Textural Franco Arenoso',
+        '1Punto de Saturacion 27.6 % Mod. Bajo',
+        '1Capacidad de Campo 14.5 % Mod. Bajo',
+        '1Punto March. Perm. 8.63 % Mod. Bajo',
+        '1Cond. Hidraulica 9.00 cm/hr Muy Alto',
+        '1Dens. Aparente 1.32 g/cm³'
+      ].join('\n');
+      assert.equal(aliases.salvageBulkDensityFromText(table), '1.32');
+      assert.equal(
+        aliases.resolveBulkDensity({ bulkDensity: '9.00' }, { notes: table }, ''),
+        '1.32'
+      );
+    }
+  },
+  {
+    name: 'extractor suelo: reconoce g/cm3, g/cc, Mg/m3, kg/m3 y peso volumetrico',
+    run: function () {
+      assert.equal(aliases.salvageBulkDensityFromText('Peso volumetrico 1.45 g/cc'), '1.45');
+      assert.equal(aliases.salvageBulkDensityFromText('Densidad aparente 1.28 Mg/m³'), '1.28');
+      assert.equal(aliases.salvageBulkDensityFromText('Bulk density 1320 kg/m3'), '1.32');
+      assert.equal(aliases.salvageBulkDensityFromText('Dens. Ap. 1.18 g/cm3'), '1.18');
+    }
   }
 ];

@@ -23,7 +23,7 @@ const {
   assertChatCredits,
   addUsageInSupabase
 } = require('./lib/chat-credits');
-const { resolveBulkDensity } = require('./lib/soil-extract-aliases');
+const { resolveBulkDensity, looksPlausibleGcm3 } = require('./lib/soil-extract-aliases');
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const MAX_BYTES = 4.5 * 1024 * 1024;
@@ -361,7 +361,7 @@ function parseQtyWithUnit(raw) {
     .replace(/\s+/g, ' ');
   if (!t) return null;
   const m = t.match(
-    /^(-?[\d.,]+)\s*(in(?:ch(?:es)?)?|"|ft|feet|cm|mm|g\/?cm3|g\/?cc|g\s*cm-3|lb\/?ft3|lb\/?ft³|pcf|in\/?h(?:r|our)?|cm\/?h(?:r|our)?|mmhos\/?cm|mmho\/?cm|ms\/?cm|ds\/?m|ppm|mg\/?kg|lb\/?ac(?:re)?|lbs\/?ac(?:re)?)?\s*$/i
+    /^(-?[\d.,]+)\s*(in(?:ch(?:es)?)?|"|ft|feet|cm|mm|g\/?cm[3³]|g\/?cc|g\s*cm-3|mg\/?m[3³]|t\/?m[3³]|kg\/?m[3³]|lb\/?ft[3³]|pcf|in\/?h(?:r|our)?|cm\/?h(?:r|our)?|mmhos\/?cm|mmho\/?cm|ms\/?cm|ds\/?m|ppm|mg\/?kg|lb\/?ac(?:re)?|lbs\/?ac(?:re)?)?\s*$/i
   );
   if (!m) {
     const only = normalizeDecimalText(t);
@@ -378,8 +378,9 @@ function parseQtyWithUnit(raw) {
     .replace(/hr/g, 'h');
   if (unit === '"' || unit === 'inch' || unit === 'inches') unit = 'in';
   if (unit === 'feet') unit = 'ft';
-  if (unit === 'g/cc' || unit === 'gcm-3' || unit === 'gcm3') unit = 'g/cm3';
+  if (unit === 'g/cc' || unit === 'gcm-3' || unit === 'gcm3' || unit === 'mg/m3' || unit === 't/m3') unit = 'g/cm3';
   if (unit === 'lb/ft³' || unit === 'pcf') unit = 'lb/ft3';
+  if (unit === 'kg/m3') unit = 'kg/m3';
   if (unit === 'mmho/cm' || unit === 'mmhos/cm' || unit === 'ms/cm') unit = 'dS/m';
   if (unit === 'ds/m') unit = 'dS/m';
   if (unit === 'lbs/acre' || unit === 'lb/acre' || unit === 'lbs/ac' || unit === 'lb/ac') unit = 'lb/acre';
@@ -400,7 +401,8 @@ function canonUnitHint(raw) {
   if (/^(ft|feet)$/.test(u)) return 'ft';
   if (/^(cm)$/.test(u)) return 'cm';
   if (/^(mm)$/.test(u)) return 'mm';
-  if (/^(g\/?cm3|g\/?cc|gcm3)$/.test(u)) return 'g/cm3';
+  if (/^(g\/?cm3|g\/?cc|gcm3|mg\/?m3|t\/?m3)$/.test(u)) return 'g/cm3';
+  if (/^(kg\/?m3)$/.test(u)) return 'kg/m3';
   if (/^(lb\/?ft3|pcf)$/.test(u)) return 'lb/ft3';
   if (/^(in\/?h|in\/?hr)$/.test(u)) return 'in/h';
   if (/^(cm\/?h|cm\/?hr)$/.test(u)) return 'cm/h';
@@ -485,6 +487,9 @@ function normalizeEnglishPhysicalUnits(base, notesArr, lang, unitHints) {
       let converted = false;
       if (unit === 'lb/ft3') {
         gcm3 = parsed.num * 0.016018463;
+        converted = true;
+      } else if (unit === 'kg/m3' || hint === 'kg/m3') {
+        gcm3 = parsed.num / 1000;
         converted = true;
       } else if (!unit && hint === 'lb/ft3') {
         gcm3 = parsed.num * 0.016018463;
@@ -1003,6 +1008,9 @@ function normalizeSoilPayload(raw, lang) {
     {};
   const bdResolved = resolveBulkDensity(base.physical, raw, base.notes);
   if (bdResolved) base.physical.bulkDensity = bdResolved;
+  else if (!looksPlausibleGcm3(parseFloat(String(base.physical.bulkDensity || '').replace(',', '.')))) {
+    base.physical.bulkDensity = '';
+  }
   normalizeEnglishPhysicalUnits(base, convertNotes, lang, unitHints);
   normalizeFertilityForms(base.fertility, convertNotes, lang);
   reconcileSoilCations(base.cations, convertNotes, lang);
@@ -1086,11 +1094,15 @@ function soilPrompt(lang) {
     '  * Si hay ambas filas, llena AMBAS con los valores exactos del lab (fila correcta → campo correcto).',
     '- phSection.salinity = CE en dS/m si aparece.',
     '- physical: % para saturación/CC/PMP; bulkDensity g/cm3; hydraulicConductivity cm/h.',
-    '- physical.bulkDensity = DENSIDAD APARENTE del suelo (g/cm³). Labs MX a menudo la ABREVIAN:',
-    '  "Dens. Aparente", "Dens. aparente", "Dens Aparente", "D.A.", "DA", "Dap",',
-    '  "¹Dens. Aparente" / "1Dens. Aparente" (el 1 o ¹ es NOTA AL PIE, no el valor),',
-    '  "Bulk density", "Bd". Ejemplo real: "¹Dens. Aparente   1.32   g/cm³" → bulkDensity="1.32".',
-    '  Rango típico 0.8–1.8 g/cm³. NUNCA uses el número de la nota al pie (1, 2, 3) como densidad.',
+    '- physical.bulkDensity = DENSIDAD APARENTE del suelo (g/cm³). Labs la escriben distinto:',
+    '  Títulos: "Densidad aparente", "Dens. Aparente", "Dens. aparente", "Dens Aparente",',
+    '  "Dens. Ap.", "D.A.", "DA", "Dap", "Peso volumétrico", "Densidad volumétrica",',
+    '  "Bulk density", "Bulk dens.", "Bd", "Apparent density".',
+    '  "¹Dens. Aparente" / "1Dens. Aparente": el 1 o ¹ es NOTA AL PIE, no el valor.',
+    '  Unidades (mismo valor físico): g/cm³, g/cm3, g/cc, Mg/m³, t/m³. kg/m³ = ÷1000 (1320 → 1.32).',
+    '  USA: lb/ft³ o pcf → g/cm³ (×0.016018). Ejemplo: "¹Dens. Aparente  1.32  g/cm³" → "1.32".',
+    '  Rango típico 0.8–1.8 g/cm³. NUNCA uses el 1/2/3 de la nota al pie.',
+    '  NUNCA copies Cond. Hidráulica (cm/hr, p.ej. 9.00), % saturación/CC/PMP, ni textura.',
     '  No confundas con densidad real/partícula (~2.65).',
     '- date en YYYY-MM-DD si puedes; title = lab/cliente/rancho si aparece.',
     '- confidence: "high" | "medium" | "low".',
