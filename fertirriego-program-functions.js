@@ -2268,9 +2268,7 @@ function fertiProgramWaterDepths(stageCount) {
 }
 
 function fertiAcidWaterDepths() {
-  const state = fertiGeneratorDistributionState();
-  const n = state && Array.isArray(state.stages) ? state.stages.length
-    : (Array.isArray(fertiWeeks) ? fertiWeeks.length : 0);
+  const n = fertiWaterSlotCount();
   if (n) return fertiProgramWaterDepths(n);
   return Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.map(v => Math.max(0, Number(v) || 0)) : [];
 }
@@ -3168,8 +3166,27 @@ function fertiCationRangesText() {
   return fertProgT('cations_ranges', 'Cationes: K⁺ 10-65, Ca²⁺ 22.5-62.5, Mg²⁺ 0.5-40');
 }
 
+function fertiDistributionStages() {
+  try {
+    const state = fertiGeneratorDistributionState();
+    if (state && Array.isArray(state.stages) && state.stages.length) {
+      return {
+        stages: state.stages,
+        axis: (state.axis === 'mes' || state.axis === 'semana') ? state.axis : ''
+      };
+    }
+  } catch (e) {}
+  return { stages: [], axis: '' };
+}
+
+function fertiWaterSlotCount() {
+  const distN = fertiDistributionStages().stages.length;
+  const weekN = Array.isArray(fertiWeeks) ? fertiWeeks.length : 0;
+  return Math.max(distN, weekN);
+}
+
 function fertiNormalizeChartWaterByStage() {
-  const n = Array.isArray(fertiWeeks) ? fertiWeeks.length : 0;
+  const n = fertiWaterSlotCount();
   let arr = Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.slice(0, n) : [];
   while (arr.length < n) arr.push(0);
   try {
@@ -3207,25 +3224,26 @@ function onFertiChartStageSelect(idx) {
 }
 
 function fertiWaterStageSlots() {
-  if (Array.isArray(fertiWeeks) && fertiWeeks.length) {
-    return fertiWeeks.map((week, i) => ({
+  const dist = fertiDistributionStages();
+  const weekN = Array.isArray(fertiWeeks) ? fertiWeeks.length : 0;
+  const n = Math.max(dist.stages.length, weekN);
+  if (!n) return [];
+  const axis = dist.axis || fertiTimeUnit;
+  const unit = axis === 'mes' ? fertProgT('month', 'Mes') : fertProgT('week', 'Semana');
+  const slots = [];
+  for (let i = 0; i < n; i++) {
+    const week = fertiWeeks && fertiWeeks[i];
+    const distName = dist.stages[i];
+    const stage = (distName != null && String(distName).trim())
+      ? distName
+      : ((week && week.stage) || '');
+    slots.push({
       i: i,
-      stage: week.stage || '',
-      label: fertiStageSlotLabel(i)
-    }));
+      stage: stage,
+      label: unit + ' ' + (i + 1)
+    });
   }
-  try {
-    const state = fertiGeneratorDistributionState();
-    if (state && Array.isArray(state.stages) && state.stages.length) {
-      const unit = state.axis === 'mes' ? fertProgT('month', 'Mes') : fertProgT('week', 'Semana');
-      return state.stages.map((name, i) => ({
-        i: i,
-        stage: name || '',
-        label: unit + ' ' + (i + 1)
-      }));
-    }
-  } catch (e) {}
-  return [];
+  return slots;
 }
 
 function fertiWaterInputWraps() {
@@ -5026,6 +5044,7 @@ function initFertirriegoProgramUI() {
   if (!window._fertiAcidDistBound) {
     window._fertiAcidDistBound = true;
     window.addEventListener('np:ferti-distribution-changed', function () {
+      try { renderFertiChartWaterByStageInputs(); } catch (e0) {}
       try { fertiRenderAcidSummary(); } catch (e) {}
       try {
         if (fertiSyncProgramAcidFromLamina()) {
@@ -5077,6 +5096,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('np:ferti-distribution-changed', function () {
   try { renderFertiAutomaticProgramStatus(); } catch {}
+  try { renderFertiChartWaterByStageInputs(); } catch {}
   try { renderFertiChartsInsights(); } catch {}
 });
 
