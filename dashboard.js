@@ -16102,6 +16102,13 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           line-height: 1.12;
           padding: 4px 3px;
         }
+        .report-col-unit {
+          display: block;
+          font-weight: 600;
+          font-size: 0.92em;
+          color: #475569;
+          letter-spacing: 0;
+        }
         .report-table-wrap.report-pdf-compact-table .report-app-table th:first-child,
         .report-table-wrap.report-pdf-compact-table .report-app-table td:first-child {
           width: 11.5%;
@@ -18828,12 +18835,19 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
   function fertiNutrientTd(n, totals, dividerClass) {
     const v = display(n, fertiNutrientRaw(n, totals), programModeIsElemental);
     const cls = dividerClass ? ` class="${dividerClass}"` : '';
-    return `<td${cls}>${v === null ? '—' : `${fromSI(v, 'dose_mass_area').toFixed(d(n))} ${doseUnit}`}</td>`;
+    return `<td${cls}>${v === null ? '—' : fromSI(v, 'dose_mass_area').toFixed(d(n))}</td>`;
   }
   function fertiNutrientTdVal(n, rawVal, dividerClass) {
     const v = display(n, rawVal, programModeIsElemental);
     const cls = dividerClass ? ` class="${dividerClass}"` : '';
-    return `<td${cls}>${v === null ? '—' : `${fromSI(v, 'dose_mass_area').toFixed(d(n))} ${doseUnit}`}</td>`;
+    return `<td${cls}>${v === null ? '—' : fromSI(v, 'dose_mass_area').toFixed(d(n))}</td>`;
+  }
+  function fertiColUnitHead(name, extraClass) {
+    const cls = extraClass ? ` class="${extraClass}"` : '';
+    return `<th${cls}>${name}<br><span class="report-col-unit">${doseUnit}</span></th>`;
+  }
+  function fertiDoseNum(siKg) {
+    return reportNum(fromSI(toNum(siKg), 'dose_mass_area'), 2);
   }
   const reportFertiTimeUnit = fertiSharedTimeUnitForReport(prog, typeof getExtraccionEtapaStateForReport === 'function' ? getExtraccionEtapaStateForReport() : null);
   const reportFertiIsMes = reportFertiTimeUnit === 'mes';
@@ -18971,7 +18985,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     <tr>
       ${fertiReportEtapaTd(w?.stage)}
       ${fertiReportNumTd(idx + 1)}
-      ${programDoseColumns.map(c => `<td>${q(toNum(w?.kgByCol?.[c.id]), 'dose_mass_area', doseUnit)}</td>`).join('')}
+      ${programDoseColumns.map(c => `<td>${fertiDoseNum(w?.kgByCol?.[c.id])}</td>`).join('')}
     </tr>
   `).join('');
   const nutrientAporteRows = weeks.map((w, idx) => `
@@ -19184,7 +19198,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
             <tr>
               <th>${rt('Etapa', 'Stage')}</th>
               <th>#</th>
-              ${programDoseColumnNames.map(name => `<th>${reportEscapeHtml(name)}</th>`).join('')}
+              ${programDoseColumnNames.map(name => fertiColUnitHead(reportEscapeHtml(name))).join('')}
             </tr>
           </thead>
           <tbody>
@@ -19192,7 +19206,7 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
-              ${programDoseColumnTotals.map(v => `<td>${q(v, 'dose_mass_area', doseUnit)}</td>`).join('')}
+              ${programDoseColumnTotals.map(v => `<td>${fertiDoseNum(v)}</td>`).join('')}
             </tr>
             ${programDoseColumns.length ? `
             <tr style="background:#f0fdfa;">
@@ -19227,8 +19241,8 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
             <tr>
               <th>${rt('Etapa', 'Stage')}</th>
               <th>#</th>
-              ${macroCols.map(n => `<th>${label(n, programModeIsElemental)}</th>`).join('')}
-              ${microCols.map((n, i) => `<th class="${i === 0 ? 'report-divider-left' : ''}">${label(n, programModeIsElemental)}</th>`).join('')}
+              ${macroCols.map(n => fertiColUnitHead(label(n, programModeIsElemental))).join('')}
+              ${microCols.map((n, i) => fertiColUnitHead(label(n, programModeIsElemental), i === 0 ? 'report-divider-left' : '')).join('')}
             </tr>
           </thead>
           <tbody>

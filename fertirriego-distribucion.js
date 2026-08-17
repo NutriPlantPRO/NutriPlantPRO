@@ -1230,8 +1230,8 @@
     var dodge = Number(ds._dodge) || 0;
     var list = Array.isArray(values) ? values : [];
     ds.data = list.map(function (y, ri) {
-      if (y && typeof y === 'object' && y.y != null) return { x: ri + dodge, y: Number(y.y) || 0 };
-      return { x: ri + dodge, y: Number(y) || 0 };
+      var val = (y && typeof y === 'object' && y.y != null) ? Number(y.y) || 0 : Number(y) || 0;
+      return { x: ri + dodge, y: val };
     });
   }
   function writeChartPctData(nutId) {
@@ -1242,6 +1242,7 @@
     charts.forEach(function (chart) {
       if (!chart.data || !Array.isArray(chart.data.datasets)) return;
       var group = chart === chartMacro ? 'macro' : 'micro';
+      chart.data.labels = stages.map(function (st, idx) { return rowDisplayLabel(st, idx); });
       chart.data.datasets.forEach(function (ds) {
         if (nutId && ds._nutId !== nutId) return;
         writeSeriesData(ds, stages.map(function (_, idx) { return pctAt(ds._nutId, idx); }));
@@ -1252,30 +1253,44 @@
   }
   function flushDistChart(chart) {
     if (!chart) return;
+    try { if (typeof chart.stop === 'function') chart.stop(); } catch (e0) {}
     try {
-      chart.update();
+      chart.update('none');
     } catch (e) {
-      try { chart.update('none'); } catch (e2) {}
+      try { chart.update(); } catch (e2) {}
     }
-    try {
-      if (typeof chart.render === 'function') chart.render();
-    } catch (e3) {}
   }
   function paintDistChart(opts) {
     opts = opts || {};
     if (!writeChartPctData(opts.nutId)) {
-      scheduleChartRender();
+      if (!chartDrag) scheduleChartRender();
       return;
     }
     var charts = opts.nutId ? [chartForNut(opts.nutId)] : liveCharts();
     if (chartDrag && chartDrag.chart) charts = [chartDrag.chart];
     charts.filter(Boolean).forEach(flushDistChart);
   }
-  function updateChartPctSeries(nutId) {
+  function chartPointCount(chart) {
+    var ds = chart && chart.data && Array.isArray(chart.data.datasets) ? chart.data.datasets[0] : null;
+    return ds && Array.isArray(ds.data) ? ds.data.length : 0;
+  }
+  function chartsNeedRebuild() {
     var charts = liveCharts();
-    for (var i = 0; i < charts.length; i++) {
-      var labels = charts[i].data && charts[i].data.labels;
-      if (!Array.isArray(labels) || labels.length !== stages.length) return;
+    if (!charts.length) return true;
+    var i;
+    for (i = 0; i < charts.length; i++) {
+      if (chartPointCount(charts[i]) !== stages.length) return true;
+    }
+    return false;
+  }
+  function updateChartPctSeries(nutId) {
+    if (!liveCharts().length) {
+      scheduleChartRender();
+      return;
+    }
+    if (!chartDrag && chartsNeedRebuild()) {
+      renderChart();
+      return;
     }
     paintDistChart({ nutId: nutId });
   }
@@ -1590,7 +1605,6 @@
       maintainAspectRatio: false,
       animation: false,
       resizeDelay: 0,
-      clip: false,
       layout: { padding: { top: 6, right: 6, left: 2, bottom: xLabelBottomPad } },
       interaction: { mode: 'nearest', intersect: false, axis: 'xy' },
       onHover: function (evt, elements) {
@@ -1652,6 +1666,10 @@
   }
   function createDistChart(canvas, group, labels) {
     if (!canvas || !w.Chart) return null;
+    try {
+      var existing = w.Chart.getChart && w.Chart.getChart(canvas);
+      if (existing && typeof existing.destroy === 'function') existing.destroy();
+    } catch (e0) {}
     var datasets = buildDistDatasets(group);
     applyDatasetFocusStyles(datasets);
     var yMax = niceChartYMax(visiblePctMax(group));
@@ -2072,7 +2090,8 @@
 
   w.fertiDistRefreshChart = function () {
     observeChartHost();
-    paintDistChart({ forceResize: true });
+    if (!liveCharts().length || chartsNeedRebuild()) scheduleChartRender();
+    else paintDistChart({ forceResize: true });
   };
   w.fertiDistMount = mount;
   w.fertiDistSyncTimeUnit = function (unit) {

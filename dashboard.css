@@ -8228,7 +8228,9 @@ html.embed-login body {
 }
 .ferti-ionic-eq {
   margin: 14px 0 12px;
-  max-width: 920px;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
@@ -8264,14 +8266,17 @@ html.embed-login body {
   color: #334155;
 }
 .ferti-ionic-eq-table tbody th {
-  width: 22%;
+  width: 18%;
   background: #fff;
   font-weight: 700;
   color: #0f172a;
 }
+.ferti-ionic-eq-table tbody td {
+  width: 41%;
+}
 .ferti-ionic-eq-ion {
   display: inline-block;
-  margin: 0 14px 4px 0;
+  margin: 0 28px 4px 0;
   white-space: nowrap;
 }
 .ferti-ionic-eq-ion small {
