@@ -1196,6 +1196,7 @@ function sectionTemplate(name) {
                 </div>
               </div>
               <div id="fertiChartsSourceShareWrap" class="ferti-source-share" hidden></div>
+              <div id="fertiChartsWaterByStageWrap" class="ferti-charts-water-wrap" hidden></div>
               <div id="fertiChartsStageInsightsWrap" class="ferti-charts-insights-wrap"></div>
             </div>
           </div>

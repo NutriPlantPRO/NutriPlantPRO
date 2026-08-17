@@ -3044,9 +3044,76 @@ function onFertiChartStageSelect(idx) {
 function renderFertiChartWaterByStageInputs() {
   const wrap = document.getElementById('fertiChartsWaterByStageWrap');
   if (!wrap) return;
-  wrap.hidden = true;
-  wrap.innerHTML = '';
+  fertiNormalizeChartWaterByStage();
+  if (!fertiWeeks.length) {
+    wrap.hidden = true;
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.hidden = false;
+  ensureFertiChartWaterBound(wrap);
+  const active = document.activeElement;
+  const editingAttr = (active && wrap.contains(active)) ? active.getAttribute('data-ferti-chart-water') : null;
+  const existing = wrap.querySelectorAll('[data-ferti-chart-water]');
+  if (editingAttr != null && existing.length === fertiWeeks.length) {
+    syncFertiChartWaterHighlight(wrap);
+    return;
+  }
+  const unit = fertProgUnitToHtml('volume_area', 'm³/ha');
+  wrap.innerHTML =
+    '<div class="ferti-charts-water-head">' +
+      '<h4 class="ferti-charts-water-title">' + fertProgT('charts_water_title', 'Lámina de riego por etapa') + ' (' + unit + ')</h4>' +
+      '<p class="ferti-charts-water-note">' + fertProgT('charts_water_help', 'Se usa aquí para ppm, meq/L y CE. También reparte el aporte del análisis de agua en el programa.') + '</p>' +
+    '</div>' +
+    '<div class="ferti-charts-water-grid">' +
+      fertiWeeks.map((week, i) => {
+        const stageRaw = week.stage || '';
+        const stageShown = stageRaw ? fertProgStage(stageRaw) : '';
+        const shown = fertProgInputFromSI(fertiChartWaterByStageM3ha[i] || 0, 'volume_area', 4);
+        const current = i === fertiChartSelectedStageIndex ? ' is-current' : '';
+        return '<label class="ferti-charts-water-item' + current + '">' +
+          '<span>' + fertiEscapeAttr(fertiStageSlotLabel(i)) + (stageShown ? ' · ' + fertiEscapeAttr(stageShown) : '') + '</span>' +
+          '<input type="number" min="0" step="0.0001" inputmode="decimal" data-ferti-chart-water="' + i + '" value="' + fertiEscapeAttr(shown) + '">' +
+        '</label>';
+      }).join('') +
+    '</div>';
 }
+
+function syncFertiChartWaterHighlight(wrap) {
+  const host = wrap || document.getElementById('fertiChartsWaterByStageWrap');
+  if (!host) return;
+  const items = host.querySelectorAll('.ferti-charts-water-item');
+  for (let i = 0; i < items.length; i++) {
+    items[i].classList.toggle('is-current', i === fertiChartSelectedStageIndex);
+  }
+}
+
+function ensureFertiChartWaterBound(wrap) {
+  if (!wrap || wrap.dataset.bound === '1') return;
+  wrap.dataset.bound = '1';
+  wrap.addEventListener('input', function (ev) {
+    const el = ev.target;
+    if (!el || !el.getAttribute || el.getAttribute('data-ferti-chart-water') == null) return;
+    applyFertiChartWaterValue(parseInt(el.getAttribute('data-ferti-chart-water'), 10), el.value);
+  });
+}
+
+function applyFertiChartWaterValue(i, displayValue) {
+  fertiNormalizeChartWaterByStage();
+  i = parseInt(i, 10);
+  if (!isFinite(i) || i < 0 || i >= fertiWeeks.length) return;
+  fertiChartWaterByStageM3ha[i] = Math.max(0, fertProgToSI(displayValue, 'volume_area') || 0);
+  if (typeof window.fertiDistSetWaterByStage === 'function') {
+    try { window.fertiDistSetWaterByStage(fertiChartWaterByStageM3ha.slice()); } catch (e) {}
+  }
+  if (typeof fertiRefreshLinkedWaterKgFromLamina === 'function') {
+    try { fertiRefreshLinkedWaterKgFromLamina(); } catch (e2) {}
+  }
+  fertiMarkGenerationInputsChanged();
+  markFertiProgDirty();
+  renderFertiChartsInsights();
+}
+
 if (typeof window !== 'undefined') {
   window.fertiGetProgramWaterByStage = function () {
     return Array.isArray(fertiChartWaterByStageM3ha) ? fertiChartWaterByStageM3ha.slice() : [];
@@ -3577,7 +3644,7 @@ function renderFertiChartsInsights() {
   ).replace('{cations}', fertiCationRangesText()).replace('{anions}', fertiAnionRangesText());
   let body = '';
   if (!summaryFert || summaryFert.m3ha <= 0) {
-    body = `<div class="ferti-insight-alert">${fertProgT('enter_water', 'Ingresa agua aplicada para esta etapa para calcular ppm y meq/L.')} <strong>${fertProgUnit('volume_area', 'm³/ha')}</strong></div>`;
+    body = `<div class="ferti-insight-alert">${fertProgT('enter_water', 'Captura la lámina de esta etapa arriba para calcular ppm y meq/L.')} <strong>${fertProgUnit('volume_area', 'm³/ha')}</strong></div>`;
   } else {
     const stageRaw = (summaryFert.stage && summaryFert.stage.stage) || '';
     const stageLabel = stageRaw ? fertProgStage(stageRaw) : fertProgT('stage', 'Etapa');
@@ -3636,6 +3703,7 @@ function renderFertiChartsInsights() {
     </div>
     ${body}
   `;
+  syncFertiChartWaterHighlight();
   if (summaryTernary && summaryTernary.m3ha > 0 && summaryTernary.pct && typeof hydroDrawCombinedTernary === 'function') {
     const tri = document.getElementById('fertiChartsTernaryPlot');
     if (tri) {

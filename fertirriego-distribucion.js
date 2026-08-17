@@ -548,7 +548,6 @@
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
             '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. − / + mueve 1 %; la barrita de cada celda ajusta el %.')) + '</p>' +
           '</div>' +
-          '<div class="ferti-dist-water" id="fertiDistWaterByStage"></div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
         '</div>' +
       '</div>' +
@@ -718,25 +717,7 @@
     refreshCreditsHint();
   }
 
-  function renderWaterByStage() {
-    var host = document.getElementById('fertiDistWaterByStage');
-    if (!host) return;
-    ensurePct();
-    host.innerHTML =
-      '<div class="ferti-dist-water-head">' +
-        '<h4>' + escapeHtml(t('dist_water_title', '2. Lámina de riego objetivo por etapa')) + ' (' + unitToHtml(waterUnit()) + ')</h4>' +
-        '<p>' + escapeHtml(t('dist_water_help', 'Para repartir el aporte del análisis de agua y calcular ppm, meq/L y CE.')) + '</p>' +
-      '</div>' +
-      '<div class="ferti-dist-water-grid">' +
-        stages.map(function (stage, i) {
-          var period = periodLabel(i);
-          return '<label><span>' + escapeHtml(stageLabel(stage)) +
-            (period ? '<small>' + escapeHtml(period) + '</small>' : '') + '</span>' +
-            '<input type="number" class="ferti-dist-water-input" data-ri="' + i + '" min="0" step="0.0001" value="' +
-            escapeHtml(waterInputValue(waterDepthByStageM3ha[i] || 0)) + '"></label>';
-        }).join('') +
-      '</div>';
-  }
+  function renderWaterByStage() {}
 
   function refreshPctSums() {
     var table = document.getElementById('fertiDistPctTable');
@@ -1484,6 +1465,16 @@
   w.fertiDistExportState = function () {
     if (!mounted || !hostEl() || hostEl().dataset.ready !== '1') return null;
     return JSON.parse(JSON.stringify(snapshotState()));
+  };
+  w.fertiDistSetWaterByStage = function (arr) {
+    ensurePct();
+    var n = stages.length;
+    if (!n) return;
+    var next = [];
+    var i;
+    for (i = 0; i < n; i++) next[i] = Math.max(0, Number(arr && arr[i]) || 0);
+    waterDepthByStageM3ha = next;
+    scheduleSave();
   };
   w.fertiDistGetStoredState = function () {
     var pid = projectId();
