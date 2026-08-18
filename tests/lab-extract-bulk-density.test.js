@@ -65,5 +65,19 @@ module.exports = [
       assert.equal(aliases.salvageBulkDensityFromText('Bulk density 1320 kg/m3'), '1.32');
       assert.equal(aliases.salvageBulkDensityFromText('Dens. Ap. 1.18 g/cm3'), '1.18');
     }
+  },
+  {
+    name: 'extractor suelo: si DA no ronda 0.8-1.4 pone 1 (el usuario la edita)',
+    run: function () {
+      assert.equal(aliases.finalizeBulkDensity('1.18'), '1.18');
+      assert.equal(aliases.finalizeBulkDensity('1.32'), '1.32');
+      assert.equal(aliases.finalizeBulkDensity('0.80'), '0.80');
+      assert.equal(aliases.finalizeBulkDensity('1.40'), '1.40');
+      assert.equal(aliases.finalizeBulkDensity(''), '1');
+      assert.equal(aliases.finalizeBulkDensity('9.00'), '1');
+      assert.equal(aliases.finalizeBulkDensity('0.3'), '1');
+      assert.equal(aliases.finalizeBulkDensity('1.85'), '1');
+      assert.equal(aliases.finalizeBulkDensity('2.65'), '1');
+    }
   }
 ];

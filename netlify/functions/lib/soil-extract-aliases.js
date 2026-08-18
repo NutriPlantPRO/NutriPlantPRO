@@ -32,6 +32,21 @@ function looksPlausibleGcm3(n) {
   return Number.isFinite(n) && n >= 0.6 && n <= 2.2;
 }
 
+/** Rango agrícola habitual (~0.8–1.3). Fuera de ahí el extractor pone 1 y el usuario lo edita. */
+var TYPICAL_BD_MIN = 0.8;
+var TYPICAL_BD_MAX = 1.4;
+var DEFAULT_BD = '1';
+
+function looksTypicalExtractedGcm3(n) {
+  return Number.isFinite(n) && n >= TYPICAL_BD_MIN && n <= TYPICAL_BD_MAX;
+}
+
+function finalizeBulkDensity(raw) {
+  var n = toNum(raw);
+  if (looksTypicalExtractedGcm3(n)) return keepNumText(raw, n);
+  return DEFAULT_BD;
+}
+
 function looksLikeFootnote(raw) {
   var s = asStr(raw);
   return /^(1|2|3)$/.test(s);
@@ -175,5 +190,7 @@ function resolveBulkDensity(physical, rawRoot, extraText) {
 module.exports = {
   salvageBulkDensityFromText: salvageBulkDensityFromText,
   resolveBulkDensity: resolveBulkDensity,
-  looksPlausibleGcm3: looksPlausibleGcm3
+  looksPlausibleGcm3: looksPlausibleGcm3,
+  looksTypicalExtractedGcm3: looksTypicalExtractedGcm3,
+  finalizeBulkDensity: finalizeBulkDensity
 };

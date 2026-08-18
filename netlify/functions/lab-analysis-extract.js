@@ -23,7 +23,7 @@ const {
   assertChatCredits,
   addUsageInSupabase
 } = require('./lib/chat-credits');
-const { resolveBulkDensity, looksPlausibleGcm3 } = require('./lib/soil-extract-aliases');
+const { resolveBulkDensity, looksPlausibleGcm3, finalizeBulkDensity } = require('./lib/soil-extract-aliases');
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const MAX_BYTES = 4.5 * 1024 * 1024;
@@ -1012,6 +1012,7 @@ function normalizeSoilPayload(raw, lang) {
     base.physical.bulkDensity = '';
   }
   normalizeEnglishPhysicalUnits(base, convertNotes, lang, unitHints);
+  base.physical.bulkDensity = finalizeBulkDensity(base.physical.bulkDensity);
   normalizeFertilityForms(base.fertility, convertNotes, lang);
   reconcileSoilCations(base.cations, convertNotes, lang);
   if (limitHints.length) {
@@ -1101,7 +1102,8 @@ function soilPrompt(lang) {
     '  "¹Dens. Aparente" / "1Dens. Aparente": el 1 o ¹ es NOTA AL PIE, no el valor.',
     '  Unidades (mismo valor físico): g/cm³, g/cm3, g/cc, Mg/m³, t/m³. kg/m³ = ÷1000 (1320 → 1.32).',
     '  USA: lb/ft³ o pcf → g/cm³ (×0.016018). Ejemplo: "¹Dens. Aparente  1.32  g/cm³" → "1.32".',
-    '  Rango típico 0.8–1.8 g/cm³. NUNCA uses el 1/2/3 de la nota al pie.',
+    '  Rango típico 0.8–1.4 g/cm³. NUNCA uses el 1/2/3 de la nota al pie.
+  Si no hay un valor claro en ese rango, deja bulkDensity vacío (el sistema pondrá 1).',
     '  NUNCA copies Cond. Hidráulica (cm/hr, p.ej. 9.00), % saturación/CC/PMP, ni textura.',
     '  No confundas con densidad real/partícula (~2.65).',
     '- date en YYYY-MM-DD si puedes; title = lab/cliente/rancho si aparece.',
