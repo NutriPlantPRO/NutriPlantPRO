@@ -1719,6 +1719,8 @@ function summarizeIrrigationQuickCalc(iqc, rolling) {
     crop_name: iqc.cropName || null,
     period_days: periodDays,
     kc,
+    kc_stage: typeof iqc.kcStage === 'string' && iqc.kcStage.trim() ? iqc.kcStage.trim() : null,
+    kc_updated_at: iqc.kcUpdatedAt || null,
     etc_mm: etc,
     et0_mm: et0,
     et0_source: et0Source,

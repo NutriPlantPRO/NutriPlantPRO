@@ -3245,13 +3245,15 @@ function np_getElevScaleRange() {
 function np_updateRadarScaleTicks(index) {
   const ticks = document.getElementById('radarScaleTicks');
   const panel = document.getElementById('radarNdviPanel');
+  const scale = document.getElementById('radarNdviScale');
   const wrap = document.getElementById('radarScaleBarWrap');
   if (!ticks) return;
   const idx = np_normalizeRadarIndex(index);
-  if (panel) {
-    panel.classList.toggle('radar-scale-slope', idx === 'slope');
-    panel.classList.toggle('radar-scale-elev', idx === 'elev');
-  }
+  [panel, scale].forEach((el) => {
+    if (!el) return;
+    el.classList.toggle('radar-scale-slope', idx === 'slope');
+    el.classList.toggle('radar-scale-elev', idx === 'elev');
+  });
   if (wrap) wrap.style.width = idx === 'slope' || idx === 'elev' ? '240px' : '150px';
 
   if (idx !== 'slope' && idx !== 'elev') {

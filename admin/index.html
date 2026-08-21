@@ -17,7 +17,7 @@
     <script src="../analysis-report-render.js?v=20260815c"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260805a"></script>
     <script src="../assets/np-analysis-compare.js?v=20260816a"></script>
-    <script src="../assets/np-irrigation-balance-core.js?v=20260801p"></script>
+    <script src="../assets/np-irrigation-balance-core.js?v=20260821kc"></script>
     <script src="../assets/hydro-solution-catalog.js"></script>
     <script src="../assets/hydro-acid-legend.js?v=20260816h"></script>
     <script src="../assets/np-fertilizer-price.js"></script>
@@ -10184,6 +10184,7 @@
             return {
                 cropName: typeof iqc.cropName === 'string' ? iqc.cropName : '',
                 kc: iqc.kc != null && !isNaN(Number(iqc.kc)) ? Number(iqc.kc) : null,
+                kcStage: typeof iqc.kcStage === 'string' ? iqc.kcStage : '',
                 periodDays: iqc.periodDays === 1 || iqc.periodDays === 30 ? iqc.periodDays : 7,
                 irrigationValue:
                     iqc.irrigationValue != null && !isNaN(Number(iqc.irrigationValue)) ? Number(iqc.irrigationValue) : null,
@@ -10233,7 +10234,8 @@
             if (typeof window.NpIrrBalance.buildReportBlockHtml !== 'function') return '';
             return window.NpIrrBalance.buildReportBlockHtml(res, {
                 cropName: st.cropName ? escapeHtml(st.cropName) : '',
-                kc: st.kc
+                kc: st.kc,
+                kcStage: st.kcStage ? escapeHtml(st.kcStage) : ''
             });
         }
 
@@ -10243,6 +10245,9 @@
             const et0 = ca.et0;
             const live = ca.lastReading;
             let out = '';
+            if (window.NpIrrBalance && typeof window.NpIrrBalance.buildKcUsedHtml === 'function') {
+                out += window.NpIrrBalance.buildKcUsedHtml(ca, { escapeHtml: escapeHtml });
+            }
             if (rain && rain.monthsPrev) {
                 out += adminBuildClimateMonthlyTableHtml('🌧️ Precipitación acumulada (mm/mes)', '#0369a1', rain, 'rain');
             }
@@ -15203,11 +15208,15 @@
                 (vpdAnalysis.currentRangeTable && Array.isArray(vpdAnalysis.currentRangeTable.summaryRows) && vpdAnalysis.currentRangeTable.summaryRows.length > 0) ||
                 (vpdAnalysis.rangeTables && Array.isArray(vpdAnalysis.rangeTables) && vpdAnalysis.rangeTables.length > 0)
             );
+            const adminClimateAnalysis = project.climateAnalysis || (project.data && project.data.climateAnalysis) || null;
+            const adminClimateHtml = typeof adminBuildClimateSectionHtml === 'function'
+                ? adminBuildClimateSectionHtml(adminClimateAnalysis)
+                : '';
                 html += `
                 <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
                     <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">
                         🌤️ Clima (VPD)
-                        ${!hasVPDData ? '<span style="color: #64748b; font-size: 14px; font-weight: normal; margin-left: 8px;">(Sin datos)</span>' : ''}
+                        ${!hasVPDData && !adminClimateHtml ? '<span style="color: #64748b; font-size: 14px; font-weight: normal; margin-left: 8px;">(Sin datos)</span>' : ''}
                     </h3>
                     ${hasVPDData 
                         ? `<div style="background: white; padding: 16px; border-radius: 6px;">
@@ -15375,13 +15384,11 @@
                                     </div>
                                 </div>
                             ` : ''}
-                            ${(function() {
-                                const ca = project.climateAnalysis || (project.data && project.data.climateAnalysis) || null;
-                                return adminBuildClimateSectionHtml(ca);
-                            })()}
                         </div>`
-                        : '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>'
+                        : ''
                     }
+                    ${adminClimateHtml || ''}
+                    ${!hasVPDData && !adminClimateHtml ? '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>' : ''}
                 </div>
             `;
 
@@ -18059,6 +18066,31 @@
                 (lecturaState && lecturaState.endDate ? ' · fecha final ' + esc(String(lecturaState.endDate)) : '') +
                 (lecturaState && lecturaState.franja_pct != null ? ' · franja ' + esc(String(lecturaState.franja_pct)) + '%' : '');
 
+            var adminKcMeta = null;
+            try {
+                var ctxPKc = window._adminViewProjectContext;
+                var caForKc =
+                    (ctxPKc && ctxPKc.project && (ctxPKc.project.climateAnalysis ||
+                        (ctxPKc.project.data && ctxPKc.project.data.climateAnalysis))) ||
+                    null;
+                if (window.NpIrrBalance && typeof window.NpIrrBalance.readKcMetaFromClimate === 'function') {
+                    adminKcMeta = window.NpIrrBalance.readKcMetaFromClimate(caForKc);
+                } else if (caForKc && caForKc.irrigationQuickCalc) {
+                    var kRaw = caForKc.irrigationQuickCalc.kc;
+                    adminKcMeta = {
+                        kc: kRaw != null && Number.isFinite(Number(kRaw)) ? Number(kRaw) : null,
+                        cropName: caForKc.irrigationQuickCalc.cropName || '',
+                        kcStage: caForKc.irrigationQuickCalc.kcStage || ''
+                    };
+                }
+            } catch (eKcMeta) {
+                adminKcMeta = null;
+            }
+            var adminKcUsedHtml = '';
+            if (adminKcMeta && adminKcMeta.kc != null && window.NpIrrBalance && typeof window.NpIrrBalance.buildKcUsedHtml === 'function') {
+                adminKcUsedHtml = window.NpIrrBalance.buildKcUsedHtml(adminKcMeta, { escapeHtml: esc });
+            }
+
             var tableRows = rows.map(function (r) {
                 var it = r.request_id ? byId[String(r.request_id)] : null;
                 var ndvi = (it && it.ndvi_mean != null) ? it.ndvi_mean : r.ndvi_mean;
@@ -18081,20 +18113,10 @@
 
             var chartHtml = '';
             if (typeof window.buildLecturaChartDataUrlForReport === 'function' && rows.length) {
-                var adminLecturaKc = null;
-                try {
-                    var ctxP = window._adminViewProjectContext;
-                    if (ctxP && String(ctxP.projectId) === String(projectId) && ctxP.project) {
-                        var caAdmin =
-                            ctxP.project.climateAnalysis ||
-                            (ctxP.project.data && ctxP.project.data.climateAnalysis) ||
-                            null;
-                        if (caAdmin && caAdmin.irrigationQuickCalc && caAdmin.irrigationQuickCalc.kc != null) {
-                            var kNum = Number(caAdmin.irrigationQuickCalc.kc);
-                            if (Number.isFinite(kNum) && kNum >= 0) adminLecturaKc = kNum;
-                        }
-                    }
-                } catch (eKc) { /* ignore */ }
+                var adminLecturaKc =
+                    adminKcMeta && adminKcMeta.kc != null && Number.isFinite(Number(adminKcMeta.kc))
+                        ? Number(adminKcMeta.kc)
+                        : null;
                 var chartUrl = window.buildLecturaChartDataUrlForReport(rows, {
                     franja_pct: lecturaState && lecturaState.franja_pct != null ? lecturaState.franja_pct : null,
                     kc: adminLecturaKc
@@ -18220,6 +18242,7 @@
                 '<div style="padding:16px 18px 22px;">' +
                 apiWarn +
                 runSelectHtml +
+                (adminKcUsedHtml || '') +
                 '<p style="margin:0 0 10px;font-size:13px;color:#475569;">' + esc(params) + '</p>' +
                 '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
                 '<thead><tr style="background:#ecfdf5;color:#14532d;">' +

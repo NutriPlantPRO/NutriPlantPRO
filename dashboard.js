@@ -2011,16 +2011,6 @@ function sectionTemplate(name) {
             <strong style="color:#0f172a;" data-i18n="radar.dem_hint_label">${rt('radar.dem_hint_label', 'Relieve:')}</strong>
             <span data-i18n-html="radar.dem_hint_html">${rt('radar.dem_hint_html', 'pendiente y altura de <strong>tu predio</strong>. No gasta créditos; solo se actualiza si mueves el polígono.')}</span>
           </div>
-          <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
-            <span id="radarScaleTitle" style="font-weight:600;color:#166534;">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
-            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
-            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
-              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
-              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
-            </div>
-            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
-            <span id="radarNdviHelp" style="color:#166534;">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
-          </div>
           <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
           <div class="radar-generate-row">
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar Pilot')}</button>
@@ -2031,21 +2021,33 @@ function sectionTemplate(name) {
 
         <div class="radar-map-stack">
         <div class="radar-view-bar" role="group" aria-label="${rt('radar.view_bar_label', 'Ver en el mapa')}">
-          <span class="radar-view-bar__kicker" data-i18n="radar.view_bar_label">${rt('radar.view_bar_label', 'Ver en el mapa')}</span>
-          <label class="radar-view-bar__layer">
-            <span data-i18n="radar.layer">${rt('radar.layer', 'Capa')}</span>
-            <select id="radarIndexSelect">
-              <option value="ndvi" selected data-i18n="radar.option_ndvi">${rt('radar.option_ndvi', 'NDVI vigor')}</option>
-              <option value="ndmi" data-i18n="radar.option_ndmi">${rt('radar.option_ndmi', 'NDMI humedad del dosel')}</option>
-              <option value="ndre" data-i18n="radar.option_ndre">${rt('radar.option_ndre', 'NDRE clorofila / dosel')}</option>
-              <option value="rgb" data-i18n="radar.option_rgb">${rt('radar.option_rgb', 'RGB vista natural')}</option>
-              <option value="clouds" data-i18n="radar.option_clouds">${rt('radar.option_clouds', '☁️ Nubes y sombras')}</option>
-              <option value="slope" data-i18n="radar.option_slope">${rt('radar.option_slope', 'Pendiente del predio')}</option>
-              <option value="elev" data-i18n="radar.option_elev">${rt('radar.option_elev', 'Altura del predio')}</option>
-            </select>
-          </label>
-          <button type="button" id="radarBtnView" class="radar-view-btn">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
-          <button type="button" id="radarBtnHide" class="radar-hide-btn" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
+          <div class="radar-view-bar__controls">
+            <span class="radar-view-bar__kicker" data-i18n="radar.view_bar_label">${rt('radar.view_bar_label', 'Ver en el mapa')}</span>
+            <label class="radar-view-bar__layer">
+              <span data-i18n="radar.layer">${rt('radar.layer', 'Capa')}</span>
+              <select id="radarIndexSelect">
+                <option value="ndvi" selected data-i18n="radar.option_ndvi">${rt('radar.option_ndvi', 'NDVI vigor')}</option>
+                <option value="ndmi" data-i18n="radar.option_ndmi">${rt('radar.option_ndmi', 'NDMI humedad del dosel')}</option>
+                <option value="ndre" data-i18n="radar.option_ndre">${rt('radar.option_ndre', 'NDRE clorofila / dosel')}</option>
+                <option value="rgb" data-i18n="radar.option_rgb">${rt('radar.option_rgb', 'RGB vista natural')}</option>
+                <option value="clouds" data-i18n="radar.option_clouds">${rt('radar.option_clouds', '☁️ Nubes y sombras')}</option>
+                <option value="slope" data-i18n="radar.option_slope">${rt('radar.option_slope', 'Pendiente del predio')}</option>
+                <option value="elev" data-i18n="radar.option_elev">${rt('radar.option_elev', 'Altura del predio')}</option>
+              </select>
+            </label>
+            <button type="button" id="radarBtnView" class="radar-view-btn">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
+            <button type="button" id="radarBtnHide" class="radar-hide-btn" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
+          </div>
+          <div id="radarNdviScale" class="radar-view-bar__scale">
+            <span id="radarScaleTitle">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
+            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
+            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
+              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
+              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
+            </div>
+            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
+            <span id="radarNdviHelp">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
+          </div>
         </div>
         <div class="map-container">
           <div id="map" class="map"></div>
@@ -17572,6 +17574,41 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       ? ' · ' + rtSafe('Franja regada:', 'Irrigated strip:') + ' ' + Number(lectura.franja_pct) + '%'
       : '');
 
+  var lecturaKcMeta = null;
+  if (window.NpIrrBalance && typeof window.NpIrrBalance.readSharedProjectKcMeta === 'function') {
+    lecturaKcMeta = window.NpIrrBalance.readSharedProjectKcMeta(
+      typeof currentProject !== 'undefined' ? currentProject : null
+    );
+  } else {
+    try {
+      var iqcL =
+        typeof currentProject !== 'undefined' &&
+        currentProject &&
+        currentProject.climateAnalysis &&
+        currentProject.climateAnalysis.irrigationQuickCalc;
+      if (iqcL && iqcL.kc != null) {
+        lecturaKcMeta = {
+          kc: Number(iqcL.kc),
+          cropName: iqcL.cropName || '',
+          kcStage: iqcL.kcStage || ''
+        };
+      }
+    } catch (eKcPdf) {
+      lecturaKcMeta = null;
+    }
+  }
+  var lecturaKcUsedHtml = '';
+  if (
+    lecturaKcMeta &&
+    lecturaKcMeta.kc != null &&
+    window.NpIrrBalance &&
+    typeof window.NpIrrBalance.buildKcUsedHtml === 'function'
+  ) {
+    lecturaKcUsedHtml = window.NpIrrBalance.buildKcUsedHtml(lecturaKcMeta, {
+      escapeHtml: reportEscapeHtml
+    });
+  }
+
   function fmt(v, dec) {
     if (v == null || !Number.isFinite(Number(v))) return '—';
     return Number(v).toFixed(dec == null ? 2 : dec);
@@ -17788,6 +17825,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     '<div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:4px;">📈 ' +
     title +
     '</div>' +
+    (lecturaKcUsedHtml || '') +
     '<div class="report-note-inline" style="margin-bottom:4px;">' +
     paramsLine +
     '</div>' +
@@ -20353,11 +20391,15 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
       unit_system: reportUnitSystem
     });
   }
+  var kcUsedBlock = '';
+  if (window.NpIrrBalance && typeof window.NpIrrBalance.buildKcUsedHtml === 'function') {
+    kcUsedBlock = window.NpIrrBalance.buildKcUsedHtml(ca, { escapeHtml: reportEscapeHtml });
+  }
   var soilWaterBlock = '';
   if (window.NpSoilWaterBridge && typeof window.NpSoilWaterBridge.buildReportHtml === 'function') {
     soilWaterBlock = window.NpSoilWaterBridge.buildReportHtml(reportEscapeHtml);
   }
-  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock && !soilWaterBlock) return '';
+  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock && !soilWaterBlock && !kcUsedBlock) return '';
   var satNote =
     '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
     '<strong>' + rt('Nota:', 'Note:') + '</strong> ' +
@@ -20370,6 +20412,7 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
     '<div class="section">' +
     '<h2 class="section-title" style="margin-top:24px;">🌧️ ' + rt('Clima — Lluvia, ET₀ y tiempo actual', 'Climate — Rain, ET₀ and current weather') + '</h2>' +
     satNote +
+    (kcUsedBlock || '') +
     (rainTable ? '<div class="report-block"><div class="report-block-title">' + rt('Precipitación', 'Precipitation') + ' (' + depthUnit + '/' + rt('mes', 'month') + ')</div>' + rainTable + '</div>' : '') +
     (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (' + depthUnit + '/' + rt('mes', 'month') + ', ' + rt('suma diaria', 'daily sum') + ')</div>' + et0Table + '</div>' : '') +
     (combinedChartBlock || '') +

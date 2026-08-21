@@ -13,6 +13,49 @@
   var MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var lecturaChart = null;
   var lecturaChartPrefsFp = '';
+  var LECTURA_LANE_COLORS = ['#2563eb', '#0f766e', '#ca8a04', '#c2410c', '#7c3aed', '#be123c'];
+  function lecturaLaneColor(i) {
+    return LECTURA_LANE_COLORS[Math.abs(Number(i) || 0) % LECTURA_LANE_COLORS.length];
+  }
+  function highlightLecturaPeriod(index) {
+    var nodes = document.querySelectorAll('[data-lectura-period]');
+    var has = index != null && index !== '';
+    nodes.forEach(function (el) {
+      var on = has && el.getAttribute('data-lectura-period') === String(index);
+      el.classList.toggle('is-hot', on);
+      el.classList.toggle('is-dim', has && !on);
+    });
+  }
+  var lecturaPeriodLanesPlugin = {
+    id: 'lecturaPeriodLanes',
+    afterDraw: function (chart) {
+      var x = chart.scales && chart.scales.x;
+      var area = chart.chartArea;
+      if (!x || !area) return;
+      var ctx = chart.ctx;
+      var n = (x.ticks || []).length;
+      if (!n) return;
+      ctx.save();
+      for (var i = 0; i < n; i++) {
+        var left = i === 0 ? area.left : (x.getPixelForValue(i - 1) + x.getPixelForValue(i)) / 2;
+        var right = i === n - 1 ? area.right : (x.getPixelForValue(i) + x.getPixelForValue(i + 1)) / 2;
+        if (i > 0) {
+          ctx.strokeStyle = 'rgba(100, 116, 139, 0.32)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(Math.round(left) + 0.5, area.top);
+          ctx.lineTo(Math.round(left) + 0.5, area.bottom);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        var w = Math.max(16, right - left - 12);
+        ctx.fillStyle = lecturaLaneColor(i);
+        ctx.fillRect(left + (right - left - w) / 2, area.bottom - 4, w, 4);
+      }
+      ctx.restore();
+    }
+  };
   var lecturaPollTimer = null;
   var lecturaRefreshInFlight = false;
   var lecturaLastAutoRefreshAt = 0;
@@ -661,18 +704,17 @@
               '<input type="date" id="lecturaEndDate" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
             '</label>' +
             '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;" data-i18n="radar.btn_generate_history">' + t('radar.btn_generate_history', '🛰 Generar histórico') + '</button>' +
-            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" data-i18n="radar.btn_show_images" data-i18n-title="radar.btn_show_images_title" title="' + t('radar.btn_show_images_title', 'Trae y muestra las imágenes NDVI/NDMI/NDRE/RGB guardadas, revisa periodos pendientes y completa clima si falta.') + '">' + t('radar.btn_show_images', '👁 Mostrar imágenes') + '</button>' +
           '</div>' +
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
-          '<div id="lecturaRunsWrap" style="margin-top:10px;display:none;">' +
-            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">' +
-              '<span data-i18n="radar.saved_blocks">' + t('radar.saved_blocks', 'Bloques guardados (lecturas / imágenes pasadas)') + '</span>' +
-              '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-                '<select id="lecturaRunSelect" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;max-width:100%;flex:1;min-width:180px;"></select>' +
-                '<button type="button" id="lecturaBtnDeleteRun" class="btn" style="font-size:12px;padding:6px 10px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;" data-i18n="radar.btn_delete_block" data-i18n-title="radar.btn_delete_block_title" title="' + t('radar.btn_delete_block_title', 'Borrar de la nube este bloque (imágenes y lectura)') + '">' + t('radar.btn_delete_block', '🗑 Borrar bloque') + '</button>' +
-              '</div>' +
-            '</label>' +
-            '<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;" data-i18n="radar.saved_blocks_help">' + t('radar.saved_blocks_help', 'Si generas otro bloque de periodos, el anterior queda aquí para seguir viendo su tabla e imágenes.') + '</div>' +
+          '<div class="lectura-view-bar" role="group" aria-label="' + t('radar.lectura_view_label', 'Ver imágenes') + '">' +
+            '<span class="radar-view-bar__kicker" data-i18n="radar.lectura_view_label">' + t('radar.lectura_view_label', 'Ver imágenes') + '</span>' +
+            '<button type="button" id="lecturaBtnRefresh" class="radar-view-btn" data-i18n="radar.btn_show_images" data-i18n-title="radar.btn_show_images_title" title="' + t('radar.btn_show_images_title', 'Trae y muestra las imágenes NDVI/NDMI/NDRE/RGB guardadas, revisa periodos pendientes y completa clima si falta.') + '">' + t('radar.btn_show_images', '👁 Mostrar imágenes') + '</button>' +
+            '<div id="lecturaRunsWrap" class="radar-snapshot-picker" style="display:none;">' +
+              '<span class="radar-snapshot-picker__label" data-i18n="radar.saved_blocks">' + t('radar.saved_blocks', 'Bloques guardados') + '</span>' +
+              '<select id="lecturaRunSelect" class="radar-snapshot-picker__select"></select>' +
+              '<button type="button" id="lecturaBtnDeleteRun" class="radar-snapshot-picker__delete" data-i18n="radar.btn_delete_block" data-i18n-title="radar.btn_delete_block_title" title="' + t('radar.btn_delete_block_title', 'Borrar de la nube este bloque (imágenes y lectura)') + '">' + t('radar.btn_delete_block', '🗑 Borrar bloque') + '</button>' +
+            '</div>' +
+            '<div class="lectura-view-bar__help" data-i18n="radar.saved_blocks_help">' + t('radar.saved_blocks_help', 'Si generas otro bloque de periodos, el anterior queda aquí para seguir viendo su tabla e imágenes.') + '</div>' +
           '</div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
@@ -680,13 +722,22 @@
         '<div id="lecturaChartWrap" style="margin-top:14px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;">' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
             '<div style="font-weight:700;color:#0f172a;font-size:14px;" data-i18n="radar.chart_by_period">' + t('radar.chart_by_period', 'Gráfica por periodo') + '</div>' +
-            '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
+            '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end;">' +
+              '<label class="lectura-kc-box" title="' + t('radar.lectura_kc_title', 'Kc del cultivo (mismo valor que en Clima). ETc = ET₀ × Kc.') + '">' +
+                '<span data-i18n="radar.lectura_kc_label">' + t('radar.lectura_kc_label', 'Kc') + '</span>' +
+                '<input type="number" id="lectura-kc" min="0" max="2" step="0.01" placeholder="0.90">' +
+              '</label>' +
+              (window.NpIrrBalance && typeof window.NpIrrBalance.getKcOpenTableButtonHtml === 'function'
+                ? window.NpIrrBalance.getKcOpenTableButtonHtml('lectura')
+                : '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="lectura">📋 ' + t('radar.btn_kc_table', 'Ver tabla') + '</button>') +
+              '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
+            '</div>' +
           '</div>' +
           '<div style="position:relative;width:100%;height:240px;min-height:240px;">' +
             '<canvas id="lecturaChart"></canvas>' +
           '</div>' +
           '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;" data-i18n="radar.chart_help" id="lecturaChartHelp">' +
-            t('radar.chart_help', 'Izquierda: NDVI / NDMI / NDRE. Derecha: {unit} (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (<0.5 azul, 0.5–1.5 verde, >1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).', { unit: lecturaDepthUnit() }) +
+            t('radar.chart_help', 'Izquierda: NDVI / NDMI / NDRE. Derecha: {unit} (ET₀, ETc si hay Kc, lluvia, riego). Barras tenues: horas VPD del periodo (<0.5 azul, 0.5–1.5 verde, >1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).', { unit: lecturaDepthUnit() }) +
           '</div>' +
         '</div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
@@ -1284,9 +1335,50 @@
       ';color:' + (on ? '#fff' : '#475569') +
       ';border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;';
   }
+  function fillLecturaKcInput() {
+    var inp = document.getElementById('lectura-kc');
+    if (!inp || document.activeElement === inp) return;
+    var kc = getClimateKcForLectura();
+    inp.value = kc != null ? String(Math.round(kc * 100) / 100) : '';
+  }
+
+  var lecturaKcChartTimer = null;
+  function persistLecturaKcFromInput() {
+    var inp = document.getElementById('lectura-kc');
+    if (!inp) return;
+    var raw = String(inp.value || '').trim();
+    var kc = raw === '' ? null : parseFloat(raw);
+    if (kc != null && !(Number.isFinite(kc) && kc >= 0)) return;
+    lastLecturaKcShown = kc;
+    if (window.NpIrrBalance && typeof window.NpIrrBalance.writeSharedProjectKc === 'function') {
+      window.NpIrrBalance.writeSharedProjectKc(kc, null);
+    }
+    if (lecturaKcChartTimer) clearTimeout(lecturaKcChartTimer);
+    lecturaKcChartTimer = setTimeout(function () {
+      var st = loadState();
+      if (st) {
+        renderChartToggles(st);
+        renderChart(st);
+      }
+    }, 180);
+  }
+
+  var lastLecturaKcShown = undefined;
+  function syncLecturaKcFromShared() {
+    fillLecturaKcInput();
+    var kc = getClimateKcForLectura();
+    if (kc === lastLecturaKcShown) return;
+    lastLecturaKcShown = kc;
+    var st = loadState();
+    if (!st) return;
+    renderChartToggles(st);
+    renderChart(st);
+  }
+
   function renderChartToggles(state) {
     var box = document.getElementById('lecturaChartToggles');
     if (!box) return;
+    fillLecturaKcInput();
     var kc = getClimateKcForLectura();
     var chips = [
       { key: 'ndvi', label: 'NDVI', color: '#16a34a' },
@@ -1658,11 +1750,15 @@
     try {
       lecturaChart = new Chart(canvas.getContext('2d'), {
         type: 'bar',
+        plugins: [lecturaPeriodLanesPlugin],
         data: { labels: labels, datasets: ds },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
+          onHover: function (evt, els) {
+            highlightLecturaPeriod(els && els.length ? els[0].index : null);
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -1727,7 +1823,17 @@
             }
           },
           scales: {
-            x: { stacked: true, ticks: { maxRotation: 40, font: { size: 10 } } },
+            x: {
+              stacked: true,
+              ticks: {
+                maxRotation: 40,
+                font: { size: 10 },
+                callback: function (value, index) {
+                  var label = this.getLabelForValue(value);
+                  return (index + 1) + ' · ' + label;
+                }
+              }
+            },
             yIdx: {
               type: 'linear',
               position: 'left',
@@ -1769,6 +1875,12 @@
       console.warn('Lectura Satelital chart', err);
       destroyLecturaChart();
       lecturaChartPrefsFp = '';
+    }
+    if (canvas && !canvas.dataset.lecturaHoverBound) {
+      canvas.dataset.lecturaHoverBound = '1';
+      canvas.addEventListener('mouseleave', function () {
+        highlightLecturaPeriod(null);
+      });
     }
   }
 
@@ -1890,7 +2002,7 @@
       if (key === 'clouds') return r.cloud_mask_signed_url || null;
       return null;
     }
-    function miniCard(r, key, label, color) {
+    function miniCard(r, key, label, color, periodIdx) {
       var omitted = !!r.image_omitted && !(r.signed_url || r.ndmi_signed_url || r.ndre_signed_url || r.rgb_signed_url || r.cloud_mask_signed_url);
       var incomplete = !omitted && !!(r.image_incomplete || r.error_code === 'radar_incomplete_coverage');
       var url = omitted ? null : miniCardUrl(r, key);
@@ -1926,8 +2038,11 @@
             })
           : '') +
         meta;
-      return '<figure style="margin:0;min-width:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:6px;">' +
+      var lane = lecturaLaneColor(periodIdx);
+      var n = Number(periodIdx) + 1;
+      return '<figure class="lectura-mini-card" data-lectura-period="' + periodIdx + '" style="--lane:' + lane + ';margin:0;min-width:0;border:1px solid #e2e8f0;border-top:4px solid ' + lane + ';border-radius:10px;background:#fff;padding:6px;">' +
         '<figcaption style="font-size:10.5px;line-height:1.25;font-weight:800;color:' + color + ';margin:0 0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.label || '') + '">' +
+          '<span class="lectura-period-chip" style="background:' + lane + ';">' + n + '</span> ' +
           esc(r.label || '') +
           (incomplete ? ' <span style="color:#b45309;">*</span>' : '') +
         '</figcaption>' +
@@ -1948,32 +2063,33 @@
       '</figure>';
     }
     var html =
-      '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 8px;">' + lecturaT('radar.gallery_title', 'Imágenes comparativas por periodo') + '</div>' +
+      '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 2px;">' + lecturaT('radar.gallery_title', 'Imágenes comparativas por periodo') + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin:0 0 8px;line-height:1.4;">' + lecturaT('radar.gallery_align_hint', 'El mismo número y color une cada columna de la gráfica con su imagen de abajo.') + '</div>' +
       '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;overflow-x:auto;">' +
         '<div style="font-size:12px;font-weight:800;color:#166534;margin:0 0 4px;">' + lecturaT('radar.gallery_ndvi', 'NDVI — vigor vegetativo') + '</div>' +
         scaleLegend('ndvi') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
-          rows.map(function (r) { return miniCard(r, 'ndvi', 'NDVI', '#166534'); }).join('') +
+          rows.map(function (r, i) { return miniCard(r, 'ndvi', 'NDVI', '#166534', i); }).join('') +
         '</div>' +
         '<div style="font-size:12px;font-weight:800;color:#0369a1;margin:14px 0 4px;">' + lecturaT('radar.gallery_ndmi', 'NDMI — humedad del dosel') + '</div>' +
         scaleLegend('ndmi') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
-          rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
+          rows.map(function (r, i) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1', i); }).join('') +
         '</div>' +
         '<div style="font-size:12px;font-weight:800;color:#0f766e;margin:14px 0 4px;">' + lecturaT('radar.gallery_ndre', 'NDRE — clorofila y estado del dosel') + '</div>' +
         scaleLegend('ndre') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
-          rows.map(function (r) { return miniCard(r, 'ndre', 'NDRE', '#0f766e'); }).join('') +
+          rows.map(function (r, i) { return miniCard(r, 'ndre', 'NDRE', '#0f766e', i); }).join('') +
         '</div>' +
         '<div style="font-size:12px;font-weight:800;color:#334155;margin:14px 0 4px;">' + lecturaT('radar.gallery_rgb', 'RGB — vista natural del predio') + '</div>' +
         scaleLegend('rgb') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
-          rows.map(function (r) { return miniCard(r, 'rgb', 'RGB', '#334155'); }).join('') +
+          rows.map(function (r, i) { return miniCard(r, 'rgb', 'RGB', '#334155', i); }).join('') +
         '</div>' +
         '<div style="font-size:12px;font-weight:800;color:#6d28d9;margin:14px 0 4px;">' + lecturaT('radar.gallery_clouds', '☁️ Nubes y sombras — máscara SCL') + '</div>' +
         scaleLegend('clouds') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
-          rows.map(function (r) { return miniCard(r, 'clouds', lecturaT('radar.clouds_label', 'Nubes SCL'), '#6d28d9'); }).join('') +
+          rows.map(function (r, i) { return miniCard(r, 'clouds', lecturaT('radar.clouds_label', 'Nubes SCL'), '#6d28d9', i); }).join('') +
         '</div>' +
         '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">' +
           lecturaT(
@@ -1991,6 +2107,14 @@
         openLecturaLightbox(img.src, img.getAttribute('data-zoom-title') || '', img.getAttribute('data-zoom-sub') || '');
       });
     });
+    el.querySelectorAll('[data-lectura-period]').forEach(function (card) {
+      card.addEventListener('mouseenter', function () {
+        highlightLecturaPeriod(card.getAttribute('data-lectura-period'));
+      });
+      card.addEventListener('mouseleave', function () {
+        highlightLecturaPeriod(null);
+      });
+    });
   }
 
   function renderRunSelector(state) {
@@ -2005,7 +2129,7 @@
       if (delBtn) delBtn.disabled = true;
       return;
     }
-    wrap.style.display = 'block';
+    wrap.style.display = 'flex';
     sel.disabled = false;
     if (delBtn) delBtn.disabled = false;
     sel.innerHTML = runs
@@ -2672,6 +2796,7 @@
       if (e && state.endDate) e.value = state.endDate;
     }
     updateCostHint();
+    fillLecturaKcInput();
     if (state) {
       renderAll(state);
       var needsHours = (state.rows || []).some(function (r) { return r.vpd_hours_low == null; });
@@ -2689,6 +2814,17 @@
     if (refBtn) refBtn.addEventListener('click', refreshLectura);
     if (countSel) countSel.addEventListener('change', updateCostHint);
     if (freqSel) freqSel.addEventListener('change', updateCostHint);
+    var kcInp = document.getElementById('lectura-kc');
+    if (kcInp) {
+      kcInp.addEventListener('input', persistLecturaKcFromInput);
+      kcInp.addEventListener('change', persistLecturaKcFromInput);
+    }
+    if (!window.__npLecturaKcBound) {
+      window.__npLecturaKcBound = true;
+      window.addEventListener('np:kc-changed', function () {
+        syncLecturaKcFromShared();
+      });
+    }
     var runSel = document.getElementById('lecturaRunSelect');
     if (runSel) {
       runSel.addEventListener('change', function () {

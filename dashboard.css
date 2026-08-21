@@ -10197,6 +10197,7 @@ html.embed-login body {
 }
 
 /* Pilot Radar (Copernicus) — icono casi invisible junto a «Quitar capa» */
+#radarNdviScale .radar-scale-bar-wrap,
 .radar-ndvi-panel .radar-scale-bar-wrap {
   display: inline-flex;
   flex-direction: column;
@@ -10206,6 +10207,7 @@ html.embed-login body {
   gap: 2px;
   vertical-align: middle;
 }
+#radarNdviScale .radar-scale-bar,
 .radar-ndvi-panel .radar-scale-bar {
   display: block;
   width: 100%;
@@ -10214,6 +10216,7 @@ html.embed-login body {
   border: 1px solid rgba(15, 23, 42, 0.12);
   box-sizing: border-box;
 }
+#radarNdviScale .radar-scale-ticks,
 .radar-ndvi-panel .radar-scale-ticks {
   position: relative;
   height: 16px;
@@ -10221,9 +10224,11 @@ html.embed-login body {
   margin: 0;
   padding: 0;
 }
+#radarNdviScale .radar-scale-ticks[hidden],
 .radar-ndvi-panel .radar-scale-ticks[hidden] {
   display: none !important;
 }
+#radarNdviScale .radar-scale-tick,
 .radar-ndvi-panel .radar-scale-tick {
   position: absolute;
   top: 0;
@@ -10233,14 +10238,17 @@ html.embed-login body {
   align-items: center;
   pointer-events: none;
 }
+#radarNdviScale .radar-scale-tick--start,
 .radar-ndvi-panel .radar-scale-tick--start {
   transform: translateX(0);
   align-items: flex-start;
 }
+#radarNdviScale .radar-scale-tick--end,
 .radar-ndvi-panel .radar-scale-tick--end {
   transform: translateX(-100%);
   align-items: flex-end;
 }
+#radarNdviScale .radar-scale-tick::before,
 .radar-ndvi-panel .radar-scale-tick::before {
   content: '';
   width: 1px;
@@ -10248,6 +10256,7 @@ html.embed-login body {
   background: #64748b;
   margin-bottom: 1px;
 }
+#radarNdviScale .radar-scale-tick-label,
 .radar-ndvi-panel .radar-scale-tick-label {
   font-size: 10px;
   font-weight: 700;
@@ -10255,10 +10264,14 @@ html.embed-login body {
   line-height: 1;
   white-space: nowrap;
 }
+#radarNdviScale.radar-scale-slope #radarScaleTitle,
+#radarNdviScale.radar-scale-slope #radarNdviHelp,
 .radar-ndvi-panel.radar-scale-slope #radarScaleTitle,
 .radar-ndvi-panel.radar-scale-slope #radarNdviHelp {
   color: #57534e;
 }
+#radarNdviScale.radar-scale-elev #radarScaleTitle,
+#radarNdviScale.radar-scale-elev #radarNdviHelp,
 .radar-ndvi-panel.radar-scale-elev #radarScaleTitle,
 .radar-ndvi-panel.radar-scale-elev #radarNdviHelp {
   color: #1e3a8a;
@@ -10418,12 +10431,46 @@ html.embed-login body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 10px;
+  justify-content: space-between;
+  gap: 8px 12px;
   padding: 8px 12px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
   border-bottom: none;
   border-radius: 12px 12px 0 0;
+}
+
+.radar-view-bar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  min-width: 0;
+}
+
+.radar-view-bar__scale {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 8px;
+  margin-left: auto;
+  max-width: min(520px, 100%);
+  font-size: 11px;
+  color: #374151;
+}
+
+.radar-view-bar__scale #radarScaleTitle {
+  font-weight: 700;
+  color: #166534;
+  white-space: nowrap;
+}
+
+.radar-view-bar__scale #radarNdviHelp {
+  color: #166534;
+  flex-basis: 100%;
+  text-align: right;
+  line-height: 1.35;
 }
 
 .radar-view-bar__kicker {
@@ -10515,6 +10562,72 @@ html.embed-login body {
 
 .radar-map-stack .map-container {
   border-radius: 0 0 12px 12px;
+}
+
+.lectura-view-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+.lectura-view-bar .radar-snapshot-picker {
+  flex: 1 1 260px;
+}
+.lectura-view-bar__help {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.lectura-kc-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.lectura-kc-box input {
+  width: 68px;
+  padding: 5px 7px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.lectura-period-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-right: 2px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: middle;
+}
+.lectura-mini-card {
+  transition: box-shadow 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+.lectura-mini-card.is-hot {
+  box-shadow: 0 0 0 2px var(--lane, #2563eb);
+  transform: translateY(-1px);
+  z-index: 1;
+}
+.lectura-mini-card.is-dim {
+  opacity: 0.42;
 }
 
 @media (max-width: 720px) {

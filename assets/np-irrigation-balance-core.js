@@ -956,6 +956,21 @@
       '.np-irr-kc-field{display:flex;flex-direction:column;gap:0;align-self:start;max-width:100%;}' +
       '.np-irr-kc-field input{margin-bottom:0;}' +
       '.np-irr-kc-scroll-hint{margin-top:4px!important;}' +
+      '.np-irr-kc-open-btn{display:inline-flex;align-items:center;gap:4px;margin:0;padding:5px 10px;font-size:11px;font-weight:800;font-family:inherit;line-height:1.2;color:#0369a1;background:#fff;border:1.5px solid #0284c7;border-radius:8px;cursor:pointer;white-space:nowrap;}' +
+      '.np-irr-kc-open-btn:hover{background:#e0f2fe;}' +
+      '.np-irr-kc-pick{cursor:pointer;}' +
+      '.np-irr-kc-pick:hover{background:#e0f2fe;}' +
+      '.np-kc-ref-modal[hidden]{display:none!important;}' +
+      '.np-kc-ref-modal{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.55);display:flex;align-items:center;justify-content:center;padding:18px;}' +
+      '.np-kc-ref-panel{background:#fff;border-radius:14px;width:min(720px,100%);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(15,23,42,0.35);overflow:hidden;}' +
+      '.np-kc-ref-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px 10px;border-bottom:1px solid #e2e8f0;}' +
+      '.np-kc-ref-kicker{margin:0;font-size:11px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:#0369a1;}' +
+      '.np-kc-ref-title{margin:2px 0 0;font-size:16px;font-weight:800;color:#0f172a;}' +
+      '.np-kc-ref-close{border:none;background:#f1f5f9;color:#334155;width:32px;height:32px;border-radius:999px;font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;}' +
+      '.np-kc-ref-close:hover{background:#e2e8f0;}' +
+      '.np-kc-ref-help{margin:0;padding:8px 16px;font-size:12px;line-height:1.45;color:#475569;background:#f8fafc;}' +
+      '.np-kc-ref-search{margin:10px 16px;width:calc(100% - 32px);padding:8px 10px;border:1px solid #bae6fd;border-radius:8px;font-size:13px;box-sizing:border-box;}' +
+      '.np-kc-ref-table-wrap{margin:0 16px 16px;overflow:auto;border:1px solid #e0f2fe;border-radius:8px;max-height:min(52vh,420px);background:#fff;}' +
       '.np-irr-value-unit{display:flex;align-items:stretch;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;width:100%;max-width:220px;}' +
       '.np-irr-value-unit input{flex:1;min-width:0;border:none!important;border-radius:0!important;box-shadow:none!important;padding:10px 12px;font-size:14px;}' +
       '.np-irr-value-unit select{width:auto;min-width:4.25rem;flex-shrink:0;border:none!important;border-left:1px solid #cbd5e1!important;border-radius:0!important;background:#f8fafc;font-weight:700;color:#0369a1;padding:10px 10px;font-size:14px;cursor:pointer;}' +
@@ -990,6 +1005,220 @@
 
   ensureIrrCalcStyles();
 
+  function irrEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function kcFieldIds(prefix) {
+    prefix = prefix || 'climate';
+    if (prefix === 'irr') return { kc: 'irr-kc', crop: 'irr-crop' };
+    if (prefix === 'lectura') return { kc: 'lectura-kc', crop: 'lectura-crop' };
+    return { kc: prefix + '-irr-kc', crop: prefix + '-irr-crop' };
+  }
+
+  function readKcMetaFromClimate(ca) {
+    var iqc = ca && ca.irrigationQuickCalc;
+    if (!iqc || typeof iqc !== 'object') {
+      return { kc: null, cropName: '', kcStage: '', kcUpdatedAt: null };
+    }
+    var kc =
+      iqc.kc != null && Number.isFinite(Number(iqc.kc)) && Number(iqc.kc) >= 0 ? Number(iqc.kc) : null;
+    return {
+      kc: kc,
+      cropName: typeof iqc.cropName === 'string' ? iqc.cropName.trim() : '',
+      kcStage: typeof iqc.kcStage === 'string' ? iqc.kcStage.trim() : '',
+      kcUpdatedAt: iqc.kcUpdatedAt || null
+    };
+  }
+
+  function readSharedProjectKcMeta(proj) {
+    proj = proj || w.currentProject;
+    var ca = proj && (proj.climateAnalysis || (proj.data && proj.data.climateAnalysis));
+    return readKcMetaFromClimate(ca);
+  }
+
+  function formatKcLabel(kc) {
+    if (kc == null || !Number.isFinite(Number(kc))) return '—';
+    return (Math.round(Number(kc) * 100) / 100).toFixed(2);
+  }
+
+  function buildKcUsedHtml(meta, opts) {
+    opts = opts || {};
+    var esc =
+      typeof opts.escapeHtml === 'function'
+        ? opts.escapeHtml
+        : function (s) {
+            return String(s == null ? '' : s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+          };
+    var data = meta && typeof meta === 'object' && 'kc' in meta ? meta : readKcMetaFromClimate(meta);
+    var kc = data && data.kc != null && Number.isFinite(Number(data.kc)) ? Number(data.kc) : null;
+    if (kc == null) return '';
+    var extra = '';
+    if (data.cropName) extra += irrT('Cultivo: ', 'Crop: ') + esc(data.cropName);
+    if (data.kcStage) extra += (extra ? ' · ' : '') + irrT('Etapa: ', 'Stage: ') + esc(data.kcStage);
+    return (
+      '<div class="np-kc-used-box" style="margin:0 0 12px;padding:10px 12px;background:#ecfeff;border:1.5px solid #22d3ee;border-radius:8px;">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#0e7490;">' +
+      irrT('Kc usado por el usuario', 'Kc used by the user') +
+      '</div>' +
+      '<div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">Kc = ' +
+      formatKcLabel(kc) +
+      '</div>' +
+      (extra ? '<div style="font-size:13px;color:#334155;margin-top:2px;">' + extra + '</div>' : '') +
+      '<div style="font-size:11px;color:#64748b;margin-top:4px;">' +
+      irrT(
+        'ETc = ET₀ × Kc. Queda guardado en el proyecto (Clima y Lectura Satelital).',
+        'ETc = ET₀ × Kc. Saved on the project (Climate and Satellite Reading).'
+      ) +
+      '</div></div>'
+    );
+  }
+
+  function writeSharedProjectKc(kc, cropName, stage) {
+    try {
+      var proj = w.currentProject;
+      if (proj) {
+        if (!proj.climateAnalysis || typeof proj.climateAnalysis !== 'object') proj.climateAnalysis = {};
+        if (!proj.climateAnalysis.irrigationQuickCalc || typeof proj.climateAnalysis.irrigationQuickCalc !== 'object') {
+          proj.climateAnalysis.irrigationQuickCalc = {};
+        }
+        var st = proj.climateAnalysis.irrigationQuickCalc;
+        if (kc != null && Number.isFinite(Number(kc)) && Number(kc) >= 0) {
+          st.kc = Number(kc);
+          st.kcUpdatedAt = new Date().toISOString();
+        } else {
+          st.kc = null;
+        }
+        if (cropName) st.cropName = String(cropName);
+        if (stage != null && String(stage).trim()) st.kcStage = String(stage).trim();
+        proj.climateAnalysis.lastUpdated = new Date().toISOString();
+        if (typeof w.persistClimateAnalysis === 'function') w.persistClimateAnalysis();
+      }
+      var val = kc != null && Number.isFinite(Number(kc)) ? String(kc) : '';
+      ['climate-irr-kc', 'climate-chart-kc', 'lectura-kc', 'irr-kc'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = val;
+      });
+      if (cropName) {
+        ['climate-irr-crop', 'lectura-crop', 'irr-crop'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el && document.activeElement !== el && !String(el.value || '').trim()) el.value = cropName;
+        });
+      }
+    } catch (e) {}
+    try {
+      w.dispatchEvent(
+        new CustomEvent('np:kc-changed', {
+          detail: { kc: kc, cropName: cropName || null, kcStage: stage || null }
+        })
+      );
+    } catch (e2) {}
+  }
+
+  function applyKcPick(kc, cropName, prefix, stage) {
+    var ids = kcFieldIds(prefix);
+    var kcEl = document.getElementById(ids.kc);
+    if (kcEl) {
+      kcEl.value = String(kc);
+      try {
+        kcEl.dispatchEvent(new Event('input', { bubbles: true }));
+        kcEl.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch (e) {}
+    }
+    if (cropName) {
+      var cropEl = document.getElementById(ids.crop);
+      if (cropEl) {
+        var label = cropName + (stage ? ' — ' + stage : '');
+        cropEl.value = label;
+        try {
+          cropEl.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (e2) {}
+      }
+    }
+    writeSharedProjectKc(kc, cropName, stage);
+    closeKcReferenceModal();
+  }
+
+  function closeKcReferenceModal() {
+    var modal = document.getElementById('np-kc-ref-modal');
+    if (modal) modal.hidden = true;
+  }
+
+  function ensureKcReferenceModal() {
+    var existing = document.getElementById('np-kc-ref-modal');
+    if (existing) return existing;
+    var modal = document.createElement('div');
+    modal.id = 'np-kc-ref-modal';
+    modal.className = 'np-kc-ref-modal';
+    modal.hidden = true;
+    modal.innerHTML =
+      '<div class="np-kc-ref-panel" role="dialog" aria-modal="true" aria-labelledby="np-kc-ref-title">' +
+        '<div class="np-kc-ref-head">' +
+          '<div>' +
+            '<p class="np-kc-ref-kicker">' + irrT('Referencia orientativa FAO-56', 'FAO-56 indicative reference') + '</p>' +
+            '<h2 class="np-kc-ref-title" id="np-kc-ref-title">' + irrT('Tabla Kc — elige cultivo y etapa', 'Kc table — pick crop and stage') + '</h2>' +
+          '</div>' +
+          '<button type="button" class="np-kc-ref-close" data-np-kc-close="1" aria-label="' + irrT('Cerrar', 'Close') + '">×</button>' +
+        '</div>' +
+        '<p class="np-kc-ref-help">' +
+          irrT(
+            'Pulsa una fila para usar el <strong>Kc medio</strong> del rango. Luego puedes editarlo. Es referencia; valida en campo.',
+            'Tap a row to use the <strong>mid-range Kc</strong>. You can edit it afterwards. Reference only; validate in the field.'
+          ) +
+        '</p>' +
+        '<input id="np-kc-ref-search" class="np-kc-ref-search" type="search" placeholder="' + irrT('Buscar cultivo o etapa…', 'Search crop or stage…') + '">' +
+        '<div class="np-kc-ref-table-wrap">' +
+          '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+            '<thead><tr style="background:#f0f9ff;position:sticky;top:0;">' +
+              '<th style="padding:8px;text-align:left;">' + irrT('Cultivo', 'Crop') + '</th>' +
+              '<th style="padding:8px;text-align:left;">' + irrT('Etapa', 'Stage') + '</th>' +
+              '<th style="padding:8px;text-align:center;">' + irrT('Kc (rango FAO)', 'Kc (FAO range)') + '</th>' +
+            '</tr></thead>' +
+            '<tbody id="np-kc-ref-tbody"></tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal || (e.target && e.target.getAttribute && e.target.getAttribute('data-np-kc-close'))) {
+        closeKcReferenceModal();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal && !modal.hidden) closeKcReferenceModal();
+    });
+    var search = document.getElementById('np-kc-ref-search');
+    if (search) {
+      search.addEventListener('input', function () {
+        renderFaoKcTable('np-kc-ref-tbody', search.value, '');
+      });
+    }
+    return modal;
+  }
+
+  function openKcReferenceModal(prefix) {
+    prefix = prefix || 'climate';
+    var modal = ensureKcReferenceModal();
+    modal.setAttribute('data-kc-prefix', prefix);
+    modal.hidden = false;
+    var search = document.getElementById('np-kc-ref-search');
+    var cropEl = document.getElementById(kcFieldIds(prefix).crop);
+    var q = cropEl && String(cropEl.value || '').trim() ? String(cropEl.value).trim() : '';
+    if (search) {
+      search.value = q;
+      search.focus();
+    }
+    renderFaoKcTable('np-kc-ref-tbody', q, q);
+  }
+
   function getKcFieldHintHtml(idPrefix) {
     idPrefix = idPrefix || 'climate';
     return (
@@ -1000,26 +1229,39 @@
       'cursor:pointer;text-align:left;width:100%;font-family:inherit;">' +
       '📋 ' +
       irrT(
-        'Puedes tomar <strong>Kc de referencia</strong> de la tabla FAO-56 abajo. ',
-        'You can take a <strong>reference Kc</strong> from the FAO-56 table below. '
+        'Puedes tomar <strong>Kc de referencia</strong> de la tabla FAO-56. ',
+        'You can take a <strong>reference Kc</strong> from the FAO-56 table. '
       ) +
-      '<span style="font-weight:700;white-space:nowrap;">↓ ' +
+      '<span style="font-weight:700;white-space:nowrap;">' +
       irrT('Ver tabla', 'View table') +
       '</span></button>'
     );
   }
 
-  function scrollToKcTable(idPrefix) {
+  function getKcOpenTableButtonHtml(idPrefix) {
     idPrefix = idPrefix || 'climate';
-    var details = document.getElementById(idPrefix + '-fao-kc-details');
-    if (!details) return;
-    if (!details.open) details.open = true;
-    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    details.style.transition = 'box-shadow 0.35s ease';
-    details.style.boxShadow = '0 0 0 3px rgba(14,165,233,0.38)';
-    setTimeout(function () {
-      details.style.boxShadow = '';
-    }, 2000);
+    return (
+      '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="' +
+      idPrefix +
+      '">📋 ' +
+      irrT('Ver tabla', 'View table') +
+      '</button>'
+    );
+  }
+
+  function prefixFromKcNode(node) {
+    if (!node || !node.closest) return 'climate';
+    var modal = node.closest('#np-kc-ref-modal');
+    if (modal) return modal.getAttribute('data-kc-prefix') || 'climate';
+    var tbody = node.closest('tbody');
+    var tid = tbody && tbody.id ? String(tbody.id) : '';
+    if (tid.indexOf('irr-') === 0) return 'irr';
+    if (tid.indexOf('lectura-') === 0) return 'lectura';
+    return 'climate';
+  }
+
+  function scrollToKcTable(idPrefix) {
+    openKcReferenceModal(idPrefix || 'climate');
   }
 
   function scrollToRootReachTable(idPrefix) {
@@ -1058,10 +1300,23 @@
     if (bindKcScrollHints._bound) return;
     bindKcScrollHints._bound = true;
     document.addEventListener('click', function (e) {
-      var kcBtn = e.target.closest('.np-irr-kc-scroll-hint');
+      var kcBtn = e.target.closest('.np-irr-kc-scroll-hint, .np-irr-kc-open-btn');
       if (kcBtn) {
         e.preventDefault();
-        scrollToKcTable(kcBtn.getAttribute('data-kc-prefix') || 'climate');
+        openKcReferenceModal(kcBtn.getAttribute('data-kc-prefix') || 'climate');
+        return;
+      }
+      var pick = e.target.closest('.np-irr-kc-pick');
+      if (pick) {
+        e.preventDefault();
+        var mid = parseFloat(pick.getAttribute('data-kc-mid'));
+        if (!Number.isFinite(mid)) return;
+        applyKcPick(
+          mid,
+          pick.getAttribute('data-crop') || '',
+          prefixFromKcNode(pick),
+          pick.getAttribute('data-stage') || ''
+        );
         return;
       }
       var reachBtn = e.target.closest('.np-irr-root-reach-scroll-hint');
@@ -1234,9 +1489,21 @@
           String(row.crop || '')
             .toLowerCase()
             .indexOf(cropQ) >= 0);
+      var mid = round2((Number(row.kcMin) + Number(row.kcMax)) / 2);
+      var useTip = irrIsEn()
+        ? 'Use mid-range Kc ' + mid.toFixed(2)
+        : 'Usar Kc medio ' + mid.toFixed(2);
       html +=
-        '<tr style="border-bottom:1px solid #e5e7eb;' +
+        '<tr class="np-irr-kc-pick" data-kc-mid="' +
+        mid +
+        '" data-crop="' +
+        irrEsc(crop) +
+        '" data-stage="' +
+        irrEsc(stage) +
+        '" style="border-bottom:1px solid #e5e7eb;' +
         (highlight ? 'background:#ecfdf5;' : '') +
+        '" title="' +
+        irrEsc(useTip) +
         '">' +
         '<td style="padding:6px 8px;">' +
         crop +
@@ -1266,10 +1533,18 @@
         String(meta.cropName) +
         '</p>';
     }
+    if (meta.kcStage) {
+      metaHtml +=
+        '<p style="margin:0 0 6px;font-size:13px;color:#334155;"><strong>' +
+        irrT('Etapa:', 'Stage:') +
+        '</strong> ' +
+        String(meta.kcStage) +
+        '</p>';
+    }
     if (meta.kc != null && Number.isFinite(Number(meta.kc))) {
       metaHtml +=
         '<p style="margin:0 0 10px;font-size:13px;color:#334155;"><strong>Kc:</strong> ' +
-        fmtMm(meta.kc) +
+        formatKcLabel(meta.kc) +
         '</p>';
     }
     return (
@@ -1311,6 +1586,14 @@
     getNoteHtml: getNoteHtml,
     getKcDetailsHtml: getKcDetailsHtml,
     getKcFieldHintHtml: getKcFieldHintHtml,
+    getKcOpenTableButtonHtml: getKcOpenTableButtonHtml,
+    openKcReferenceModal: openKcReferenceModal,
+    applyKcPick: applyKcPick,
+    writeSharedProjectKc: writeSharedProjectKc,
+    readKcMetaFromClimate: readKcMetaFromClimate,
+    readSharedProjectKcMeta: readSharedProjectKcMeta,
+    buildKcUsedHtml: buildKcUsedHtml,
+    formatKcLabel: formatKcLabel,
     ensureIrrCalcStyles: ensureIrrCalcStyles,
     scrollToKcTable: scrollToKcTable,
     scrollToRootReachTable: scrollToRootReachTable,

@@ -186,6 +186,8 @@
     return {
       cropName: '',
       kc: null,
+      kcStage: '',
+      kcUpdatedAt: null,
       periodDays: 7,
       irrigationValue: null,
       irrigationUnit: 'm3',
@@ -203,6 +205,8 @@
   }
 
   function migrateIrrigationQuickCalcState(st) {
+    if (st.kcStage == null) st.kcStage = '';
+    if (st.kcUpdatedAt == null) st.kcUpdatedAt = null;
     if (st.useManualEt0 == null) st.useManualEt0 = false;
     if (st.manualEt0 == null) st.manualEt0 = null;
     if (st.useManualRain == null) st.useManualRain = false;
@@ -351,6 +355,9 @@
     } catch (e) {
       console.warn('persistClimateAnalysis', e);
     }
+    try {
+      window.dispatchEvent(new CustomEvent('np:kc-changed'));
+    } catch (e2) {}
   }
 
   function aggregateDailyByMonth(dailyTimes, dailyValues, yearFilter) {
@@ -556,6 +563,8 @@
     return {
       cropName: typeof raw.cropName === 'string' ? raw.cropName : '',
       kc: raw.kc != null && Number.isFinite(Number(raw.kc)) ? Number(raw.kc) : null,
+      kcStage: typeof raw.kcStage === 'string' ? raw.kcStage : '',
+      kcUpdatedAt: raw.kcUpdatedAt || null,
       periodDays: raw.periodDays === 1 || raw.periodDays === 30 ? raw.periodDays : 7,
       irrigationValue:
         raw.irrigationValue != null && Number.isFinite(Number(raw.irrigationValue)) ? Number(raw.irrigationValue) : null,
@@ -984,7 +993,7 @@
         '" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         (window.NpIrrBalance && window.NpIrrBalance.getKcFieldHintHtml
           ? window.NpIrrBalance.getKcFieldHintHtml('climate')
-          : '<p style="margin:4px 0 0;font-size:11px;color:#0369a1;">Consulta la tabla Kc FAO-56 abajo.</p>') +
+          : '<p style="margin:4px 0 0;font-size:11px;color:#0369a1;">Consulta la tabla Kc FAO-56.</p>') +
         '</div></div>' +
         '</div>' +
         '<div class="np-irr-calc-row-3">' +
@@ -2724,7 +2733,8 @@
     if (escapeHtmlFn && cropName) cropName = escapeHtmlFn(cropName);
     return window.NpIrrBalance.buildReportBlockHtml(pack.results, {
       cropName: cropName,
-      kc: pack.state.kc
+      kc: pack.state.kc,
+      kcStage: pack.state.kcStage || ''
     });
   }
   window.getClimateIrrigationQuickCalcSummary = getClimateIrrigationQuickCalcSummary;

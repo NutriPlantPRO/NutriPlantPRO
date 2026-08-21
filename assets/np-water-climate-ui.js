@@ -499,7 +499,7 @@
     'Usar mi lluvia (pluviómetro,': 'Use my rainfall (rain gauge,',
     'Ej. Limón, aguacate…': 'E.g. Lemon, avocado…',
     'Sin valor precargado': 'No preset value',
-    'Consulta la tabla Kc FAO-56 abajo.': 'See the FAO-56 Kc table below.',
+    'Consulta la tabla Kc FAO-56.': 'See the FAO-56 Kc table.',
     'Volumen en franja (m³)': 'Strip volume',
     'Volumen total aplicado en la': 'Total volume applied in the',
     'zona humedecida': 'wetted zone',
