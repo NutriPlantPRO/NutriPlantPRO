@@ -5179,8 +5179,9 @@ function np_isSupabaseUuid(userId) {
 
 /**
  * Validación de pertenencia del proyecto para evitar falsos positivos.
- * - Usuario Supabase (UUID): si hay caché cloud cargado, validar contra esa lista.
- *   Si todavía no está cargada, permitir temporalmente y delegar seguridad real a RLS/backend.
+ * - Usuario Supabase (UUID): la nube (RLS) es la fuente de verdad. No exigir que el ID
+ *   esté ya en el caché de tarjetas: dos proyectos pueden llamarse igual y el caché
+ *   a veces llega tarde o filtra de más. Solo negar si la copia local tiene otro user_id.
  * - Usuario localStorage: validar contra userProfile.projects.
  */
 function np_userOwnsProject(projectId) {
@@ -5188,12 +5189,19 @@ function np_userOwnsProject(projectId) {
 
   const userId = localStorage.getItem('nutriplant_user_id');
   if (!userId) return false;
+  const pid = String(projectId);
 
   if (np_isSupabaseUuid(userId)) {
-    const userProjects = np_loadProjects();
-    if (Array.isArray(userProjects) && userProjects.length > 0) {
-      return userProjects.some(p => p && p.id === projectId);
-    }
+    try {
+      const raw =
+        localStorage.getItem('nutriplant_project_' + pid) ||
+        localStorage.getItem('nutriplant-project-' + pid);
+      if (raw && raw.charAt(0) === '{') {
+        const p = JSON.parse(raw);
+        const owner = p && (p.user_id || p.userId);
+        if (owner && String(owner) !== String(userId)) return false;
+      }
+    } catch (e) {}
     return true;
   }
 
@@ -5203,7 +5211,7 @@ function np_userOwnsProject(projectId) {
     if (!userData) return false;
 
     const userProfile = JSON.parse(userData);
-    return !!(userProfile && Array.isArray(userProfile.projects) && userProfile.projects.includes(projectId));
+    return !!(userProfile && Array.isArray(userProfile.projects) && userProfile.projects.includes(pid));
   } catch (e) {
     console.error('❌ Error validando propiedad del proyecto:', e);
     return false;
