@@ -10307,7 +10307,226 @@ html.embed-login body {
   cursor: wait;
 }
 
-/* Relieve DEM: distinto del Pilot (azul) y de Estado/Ver (gris) */
+/* Generar (Pilot/relieve) vs ver en mapa: filas y estilos distintos */
+.radar-snapshot-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  max-width: 100%;
+  padding: 7px 10px;
+  background: #fff;
+  border: 1.5px solid #166534;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(20, 83, 45, 0.08);
+}
+.radar-snapshot-picker__label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #14532d;
+  white-space: nowrap;
+}
+.radar-snapshot-picker__select {
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: min(420px, 100%);
+  border: 1px solid #166534;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #f0fdf4;
+  color: #14532d;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: auto;
+}
+.radar-snapshot-picker__select:disabled {
+  cursor: default;
+  opacity: 0.78;
+  background: #f8fafc;
+  border-color: #86efac;
+  color: #3f6212;
+}
+.radar-snapshot-picker__select:not(:disabled):hover,
+.radar-snapshot-picker__select:not(:disabled):focus {
+  outline: none;
+  border-color: #14532d;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.15);
+}
+.radar-snapshot-picker__delete {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 6px 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  cursor: pointer;
+  appearance: none;
+}
+.radar-snapshot-picker__delete:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.radar-ndvi-panel .radar-generate-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  flex-basis: 100%;
+}
+
+.radar-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  color: #64748b;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: none;
+  appearance: none;
+}
+.radar-status-btn:hover {
+  color: #334155;
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+.radar-status-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.radar-map-stack {
+  margin-top: 8px;
+}
+
+.radar-view-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.radar-view-bar__kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #475569;
+  margin-right: 4px;
+}
+
+.radar-view-bar__layer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.radar-view-bar__layer select {
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 180px;
+  max-width: min(280px, 100%);
+  cursor: pointer;
+}
+
+.radar-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  line-height: 1.2;
+  color: #0f766e;
+  background: #fff;
+  border: 1.5px solid #0f766e;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: none;
+  appearance: none;
+}
+.radar-view-btn:hover {
+  color: #fff;
+  background: #0f766e;
+  border-color: #0f766e;
+}
+.radar-view-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.radar-hide-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: none;
+  appearance: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.radar-hide-btn:hover {
+  color: #334155;
+  background: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+}
+.radar-hide-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.radar-map-stack .map-container {
+  border-radius: 0 0 12px 12px;
+}
+
+@media (max-width: 720px) {
+  .radar-view-bar__layer,
+  .radar-view-bar__layer select {
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+}
+
+/* Relieve DEM: distinto del Pilot (azul) y de Ver en mapa (teal/gris) */
 #radarBtnGenerateDem.radar-dem-btn,
 .radar-ndvi-panel #radarBtnGenerateDem.radar-dem-btn {
   background: #b45309;

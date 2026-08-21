@@ -1927,7 +1927,7 @@ function sectionTemplate(name) {
     const howBuiltParamsAttr = JSON.stringify({ max_area: radarMaxArea }).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     const howBuiltHtml = rt(
       'radar.how_built_html',
-      'es de la <strong>fecha</strong> que ves en «Imagen»: una foto satelital de tu predio (la más clara de esos días, sin mezclar otras fechas). Elige la capa y pulsa «Ver imagen». <strong>Máximo {max_area}</strong>.',
+      'es de la <strong>fecha</strong> que ves en «Imágenes guardadas»: una foto satelital de tu predio (la más clara de esos días, sin mezclar otras fechas). Elige la capa y pulsa «Ver imagen». <strong>Máximo {max_area}</strong>.',
       { max_area: radarMaxArea }
     );
     return `
@@ -1995,24 +1995,12 @@ function sectionTemplate(name) {
             <span id="radarCreditsLabel" class="radar-credits-badge__value">—</span>
             <span id="radarCreditsCost" class="radar-credits-badge__cost"></span>
           </div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;">
-            <span data-i18n="radar.layer">${rt('radar.layer', 'Capa')}</span>
-            <select id="radarIndexSelect" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:700;">
-              <option value="ndvi" selected data-i18n="radar.option_ndvi">${rt('radar.option_ndvi', 'NDVI vigor')}</option>
-              <option value="ndmi" data-i18n="radar.option_ndmi">${rt('radar.option_ndmi', 'NDMI humedad del dosel')}</option>
-              <option value="ndre" data-i18n="radar.option_ndre">${rt('radar.option_ndre', 'NDRE clorofila / dosel')}</option>
-              <option value="rgb" data-i18n="radar.option_rgb">${rt('radar.option_rgb', 'RGB vista natural')}</option>
-              <option value="clouds" data-i18n="radar.option_clouds">${rt('radar.option_clouds', '☁️ Nubes y sombras')}</option>
-              <option value="slope" data-i18n="radar.option_slope">${rt('radar.option_slope', 'Pendiente del predio')}</option>
-              <option value="elev" data-i18n="radar.option_elev">${rt('radar.option_elev', 'Altura del predio')}</option>
-            </select>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
-            <span data-i18n="radar.image">${rt('radar.image', 'Imagen')}</span>
-            <select id="radarSnapshotSelect" disabled data-i18n-title="radar.snapshot_title" title="${rt('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto')}" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:600;min-width:160px;max-width:min(280px,100%);">
+          <label class="radar-snapshot-picker">
+            <span class="radar-snapshot-picker__label" data-i18n="radar.saved_images">${rt('radar.saved_images', 'Imágenes guardadas')}</span>
+            <select id="radarSnapshotSelect" class="radar-snapshot-picker__select" disabled data-i18n-title="radar.snapshot_title" title="${rt('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto')}">
               <option value="" data-i18n="radar.no_saved_images">${rt('radar.no_saved_images', 'Sin imágenes guardadas')}</option>
             </select>
-            <button type="button" id="radarBtnDeleteSnapshot" class="btn" style="font-size:12px;padding:5px 8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;font-weight:700;cursor:pointer;" data-i18n="radar.btn_delete_image" data-i18n-title="radar.btn_delete_image_title" title="${rt('radar.btn_delete_image_title', 'Borrar de la nube la imagen seleccionada')}">${rt('radar.btn_delete_image', '🗑 Borrar')}</button>
+            <button type="button" id="radarBtnDeleteSnapshot" class="radar-snapshot-picker__delete" data-i18n="radar.btn_delete_image" data-i18n-title="radar.btn_delete_image_title" title="${rt('radar.btn_delete_image_title', 'Borrar de la nube la imagen seleccionada')}">${rt('radar.btn_delete_image', '🗑 Borrar')}</button>
           </label>
           <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
@@ -2021,7 +2009,7 @@ function sectionTemplate(name) {
           </div>
           <div id="radarDemHint" style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.7);border:1px dashed #94a3b8;">
             <strong style="color:#0f172a;" data-i18n="radar.dem_hint_label">${rt('radar.dem_hint_label', 'Relieve:')}</strong>
-            <span data-i18n-html="radar.dem_hint_html">${rt('radar.dem_hint_html', 'pendiente y altura de <strong>tu predio</strong>. No es satélite ni gasta créditos; solo se actualiza si mueves el polígono.')}</span>
+            <span data-i18n-html="radar.dem_hint_html">${rt('radar.dem_hint_html', 'pendiente y altura de <strong>tu predio</strong>. No gasta créditos; solo se actualiza si mueves el polígono.')}</span>
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
@@ -2034,15 +2022,31 @@ function sectionTemplate(name) {
             <span id="radarNdviHelp" style="color:#166534;">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
           </div>
           <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
+          <div class="radar-generate-row">
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar Pilot')}</button>
             <button type="button" id="radarBtnGenerateDem" class="btn radar-dem-btn" style="font-size: 13px;" data-i18n="radar.btn_generate_dem">${rt('radar.btn_generate_dem', '⛰ Generar relieve')}</button>
-            <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;" data-i18n="radar.btn_status">${rt('radar.btn_status', '🔄 Estado')}</button>
-            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
-            <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
+            <button type="button" id="radarBtnRefresh" class="radar-status-btn" data-i18n="radar.btn_status">${rt('radar.btn_status', '🔄 Estado')}</button>
           </div>
         </div>
-        
+
+        <div class="radar-map-stack">
+        <div class="radar-view-bar" role="group" aria-label="${rt('radar.view_bar_label', 'Ver en el mapa')}">
+          <span class="radar-view-bar__kicker" data-i18n="radar.view_bar_label">${rt('radar.view_bar_label', 'Ver en el mapa')}</span>
+          <label class="radar-view-bar__layer">
+            <span data-i18n="radar.layer">${rt('radar.layer', 'Capa')}</span>
+            <select id="radarIndexSelect">
+              <option value="ndvi" selected data-i18n="radar.option_ndvi">${rt('radar.option_ndvi', 'NDVI vigor')}</option>
+              <option value="ndmi" data-i18n="radar.option_ndmi">${rt('radar.option_ndmi', 'NDMI humedad del dosel')}</option>
+              <option value="ndre" data-i18n="radar.option_ndre">${rt('radar.option_ndre', 'NDRE clorofila / dosel')}</option>
+              <option value="rgb" data-i18n="radar.option_rgb">${rt('radar.option_rgb', 'RGB vista natural')}</option>
+              <option value="clouds" data-i18n="radar.option_clouds">${rt('radar.option_clouds', '☁️ Nubes y sombras')}</option>
+              <option value="slope" data-i18n="radar.option_slope">${rt('radar.option_slope', 'Pendiente del predio')}</option>
+              <option value="elev" data-i18n="radar.option_elev">${rt('radar.option_elev', 'Altura del predio')}</option>
+            </select>
+          </label>
+          <button type="button" id="radarBtnView" class="radar-view-btn">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
+          <button type="button" id="radarBtnHide" class="radar-hide-btn" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
+        </div>
         <div class="map-container">
           <div id="map" class="map"></div>
           <div class="map-overlay">
@@ -2051,6 +2055,7 @@ function sectionTemplate(name) {
               <p data-i18n="radar.map_dblclick">${rt('radar.map_dblclick', '🔄 Haz doble clic para cerrar el polígono')}</p>
             </div>
           </div>
+        </div>
         </div>
         </div>
         <div class="radar-tab-content" id="radarTabLectura" style="display:none;">
