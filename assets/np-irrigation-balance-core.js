@@ -1164,7 +1164,7 @@
         '<div class="np-kc-ref-head">' +
           '<div>' +
             '<p class="np-kc-ref-kicker">' + irrT('Referencia orientativa FAO-56', 'FAO-56 indicative reference') + '</p>' +
-            '<h2 class="np-kc-ref-title" id="np-kc-ref-title">' + irrT('Tabla Kc — elige cultivo y etapa', 'Kc table — pick crop and stage') + '</h2>' +
+            '<h2 class="np-kc-ref-title" id="np-kc-ref-title">' + irrT('Tabla rango FAO', 'FAO range table') + '</h2>' +
           '</div>' +
           '<button type="button" class="np-kc-ref-close" data-np-kc-close="1" aria-label="' + irrT('Cerrar', 'Close') + '">×</button>' +
         '</div>' +
@@ -1375,7 +1375,7 @@
       KC_WRAP_STYLE +
       '">' +
       '<summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#0369a1;font-size:14px;">📋 ' +
-      irrT('Tabla de referencia Kc (FAO-56)', 'Kc reference table (FAO-56)') +
+      irrT('Tabla rango FAO', 'FAO range table') +
       '</summary>' +
       '<div style="padding:0 14px 14px;">' +
       '<input type="search" id="' +

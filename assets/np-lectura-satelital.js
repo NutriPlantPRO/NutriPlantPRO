@@ -723,13 +723,15 @@
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
             '<div style="font-weight:700;color:#0f172a;font-size:14px;" data-i18n="radar.chart_by_period">' + t('radar.chart_by_period', 'Gráfica por periodo') + '</div>' +
             '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end;">' +
-              '<label class="lectura-kc-box" title="' + t('radar.lectura_kc_title', 'Kc del cultivo (mismo valor que en Clima). ETc = ET₀ × Kc.') + '">' +
+            '<div class="lectura-kc-combo" title="' + t('radar.lectura_kc_title', 'Kc del cultivo (mismo valor que en Clima). ETc = ET₀ × Kc.') + '">' +
+              '<label class="lectura-kc-box">' +
                 '<span data-i18n="radar.lectura_kc_label">' + t('radar.lectura_kc_label', 'Kc') + '</span>' +
                 '<input type="number" id="lectura-kc" min="0" max="2" step="0.01" placeholder="0.90">' +
               '</label>' +
               (window.NpIrrBalance && typeof window.NpIrrBalance.getKcOpenTableButtonHtml === 'function'
                 ? window.NpIrrBalance.getKcOpenTableButtonHtml('lectura')
                 : '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="lectura">📋 ' + t('radar.btn_kc_table', 'Ver tabla') + '</button>') +
+            '</div>' +
               '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
             '</div>' +
           '</div>' +

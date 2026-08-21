@@ -10323,15 +10323,20 @@ html.embed-login body {
 /* Generar (Pilot/relieve) vs ver en mapa: filas y estilos distintos */
 .radar-snapshot-picker {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px 10px;
   max-width: 100%;
+  min-width: 0;
   padding: 7px 10px;
   background: #fff;
   border: 1.5px solid #166534;
   border-radius: 10px;
   box-shadow: 0 1px 2px rgba(20, 83, 45, 0.08);
+}
+.radar-snapshot-picker.is-loading {
+  border-color: #86efac;
+  background: #f0fdf4;
 }
 .radar-snapshot-picker__label {
   font-size: 11px;
@@ -10340,10 +10345,11 @@ html.embed-login body {
   text-transform: uppercase;
   color: #14532d;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 .radar-snapshot-picker__select {
-  flex: 1 1 220px;
-  min-width: 180px;
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: min(420px, 100%);
   border: 1px solid #166534;
   border-radius: 8px;
@@ -10354,6 +10360,18 @@ html.embed-login body {
   font-weight: 700;
   cursor: pointer;
   appearance: auto;
+}
+.radar-snapshot-picker.is-loading .radar-snapshot-picker__select {
+  color: #3f6212;
+  font-weight: 600;
+  font-style: italic;
+  background: #ecfdf5;
+  border-style: dashed;
+  animation: radar-snapshot-pulse 1.1s ease-in-out infinite;
+}
+@keyframes radar-snapshot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 .radar-snapshot-picker__select:disabled {
   cursor: default;
@@ -10370,6 +10388,7 @@ html.embed-login body {
   box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.15);
 }
 .radar-snapshot-picker__delete {
+  flex: 0 0 auto;
   font-size: 12px;
   font-weight: 700;
   font-family: inherit;
@@ -10380,6 +10399,10 @@ html.embed-login body {
   border-radius: 8px;
   cursor: pointer;
   appearance: none;
+  white-space: nowrap;
+}
+.radar-snapshot-picker__delete[hidden] {
+  display: none !important;
 }
 .radar-snapshot-picker__delete:hover {
   background: #fee2e2;
@@ -10429,48 +10452,65 @@ html.embed-login body {
 
 .radar-view-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
+  justify-content: flex-start;
+  gap: 10px 14px;
   padding: 8px 12px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
   border-bottom: none;
   border-radius: 12px 12px 0 0;
+  overflow-x: auto;
 }
 
 .radar-view-bar__controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px 10px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .radar-view-bar__scale {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   gap: 6px 8px;
-  margin-left: auto;
-  max-width: min(520px, 100%);
-  font-size: 11px;
+  margin-left: 0;
+  flex: 0 0 auto;
+  max-width: none;
+  font-size: 10px;
   color: #374151;
 }
 
-.radar-view-bar__scale #radarScaleTitle {
-  font-weight: 700;
-  color: #166534;
+.radar-view-bar__scale #radarScaleTitle,
+.radar-view-bar__scale #radarNdviHelp {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
+  border: 0;
 }
 
-.radar-view-bar__scale #radarNdviHelp {
+.radar-view-bar__scale #radarScaleLow,
+.radar-view-bar__scale #radarScaleHigh {
+  white-space: nowrap;
+  font-weight: 700;
   color: #166534;
-  flex-basis: 100%;
-  text-align: right;
-  line-height: 1.35;
+  line-height: 1.2;
+}
+
+.radar-view-bar__scale .radar-scale-bar-wrap,
+#radarNdviScale .radar-scale-bar-wrap {
+  width: 132px;
+  max-width: 132px;
 }
 
 .radar-view-bar__kicker {
@@ -10585,22 +10625,40 @@ html.embed-login body {
   line-height: 1.4;
 }
 
+.lectura-kc-combo {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1.5px solid #0284c7;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
 .lectura-kc-box {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 0 8px 0 10px;
   font-size: 12px;
   font-weight: 800;
   color: #0f172a;
 }
+.lectura-kc-combo .lectura-kc-box input,
 .lectura-kc-box input {
-  width: 68px;
-  padding: 5px 7px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  width: 56px;
+  padding: 5px 6px;
+  border: none;
+  background: transparent;
+  border-radius: 0;
   font-size: 12px;
   font-weight: 700;
   color: #0f172a;
+  outline: none;
+}
+.lectura-kc-combo .np-irr-kc-open-btn {
+  border: none;
+  border-left: 1.5px solid #0284c7;
+  border-radius: 0;
+  margin: 0;
 }
 
 .lectura-period-chip {

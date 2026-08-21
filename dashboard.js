@@ -1995,12 +1995,12 @@ function sectionTemplate(name) {
             <span id="radarCreditsLabel" class="radar-credits-badge__value">—</span>
             <span id="radarCreditsCost" class="radar-credits-badge__cost"></span>
           </div>
-          <label class="radar-snapshot-picker">
+          <label class="radar-snapshot-picker is-loading">
             <span class="radar-snapshot-picker__label" data-i18n="radar.saved_images">${rt('radar.saved_images', 'Imágenes guardadas')}</span>
             <select id="radarSnapshotSelect" class="radar-snapshot-picker__select" disabled data-i18n-title="radar.snapshot_title" title="${rt('radar.snapshot_title', 'Imágenes Radar guardadas de este proyecto')}">
-              <option value="" data-i18n="radar.no_saved_images">${rt('radar.no_saved_images', 'Sin imágenes guardadas')}</option>
+              <option value="" data-i18n="radar.loading_saved_images">${rt('radar.loading_saved_images', 'Cargando de la nube…')}</option>
             </select>
-            <button type="button" id="radarBtnDeleteSnapshot" class="radar-snapshot-picker__delete" data-i18n="radar.btn_delete_image" data-i18n-title="radar.btn_delete_image_title" title="${rt('radar.btn_delete_image_title', 'Borrar de la nube la imagen seleccionada')}">${rt('radar.btn_delete_image', '🗑 Borrar')}</button>
+            <button type="button" id="radarBtnDeleteSnapshot" class="radar-snapshot-picker__delete" hidden data-i18n="radar.btn_delete_image" data-i18n-title="radar.btn_delete_image_title" title="${rt('radar.btn_delete_image_title', 'Borrar de la nube la imagen seleccionada')}">${rt('radar.btn_delete_image', '🗑 Borrar')}</button>
           </label>
           <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
@@ -2021,6 +2021,16 @@ function sectionTemplate(name) {
 
         <div class="radar-map-stack">
         <div class="radar-view-bar" role="group" aria-label="${rt('radar.view_bar_label', 'Ver en el mapa')}">
+          <div id="radarNdviScale" class="radar-view-bar__scale" title="${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}">
+            <span id="radarScaleTitle">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
+            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
+            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
+              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
+              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
+            </div>
+            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
+            <span id="radarNdviHelp">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
+          </div>
           <div class="radar-view-bar__controls">
             <span class="radar-view-bar__kicker" data-i18n="radar.view_bar_label">${rt('radar.view_bar_label', 'Ver en el mapa')}</span>
             <label class="radar-view-bar__layer">
@@ -2037,16 +2047,6 @@ function sectionTemplate(name) {
             </label>
             <button type="button" id="radarBtnView" class="radar-view-btn">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
             <button type="button" id="radarBtnHide" class="radar-hide-btn" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
-          </div>
-          <div id="radarNdviScale" class="radar-view-bar__scale">
-            <span id="radarScaleTitle">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
-            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
-            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
-              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
-              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
-            </div>
-            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
-            <span id="radarNdviHelp">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
           </div>
         </div>
         <div class="map-container">

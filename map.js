@@ -3336,6 +3336,8 @@ function np_updateRadarScaleUi(indexOverride) {
   if (title) title.textContent = cfg.title;
   if (bar) bar.style.background = cfg.gradient;
   if (help) help.textContent = cfg.help;
+  const scaleEl = document.getElementById('radarNdviScale');
+  if (scaleEl) scaleEl.title = [cfg.title, cfg.help].filter(Boolean).join(' — ');
 
   if (idx === 'slope') {
     const range = np_getSlopeScaleRange();
@@ -3550,7 +3552,11 @@ function np_formatRadarSceneMetaHtml(snap) {
     );
   }
   if (Number.isFinite(avgCloud)) {
-    detail.push(np_radarT('radar.clouds_approx', 'nubes ~{pct}%', { pct: avgCloud }));
+    detail.push(
+      np_radarT('radar.clouds_approx', 'nubes ~{pct}%', {
+        pct: (Math.round(avgCloud * 10) / 10).toFixed(1)
+      })
+    );
   }
   if (Number.isFinite(validPct)) {
     const warn = validPct < 40;
@@ -3654,6 +3660,28 @@ function np_persistRadarSnapshotSelection(requestId) {
   }
 }
 
+function np_setRadarSnapshotPickerUi(state) {
+  const picker = document.querySelector('.radar-ndvi-panel .radar-snapshot-picker');
+  const sel = document.getElementById('radarSnapshotSelect');
+  const del = document.getElementById('radarBtnDeleteSnapshot');
+  const mode = state === 'ready' || state === 'empty' || state === 'loading' ? state : 'empty';
+  if (picker) {
+    picker.classList.toggle('is-loading', mode === 'loading');
+  }
+  if (del) {
+    if (mode === 'ready') del.removeAttribute('hidden');
+    else del.setAttribute('hidden', '');
+  }
+  if (mode === 'loading' && sel) {
+    sel.disabled = true;
+    sel.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = np_radarT('radar.loading_saved_images', 'Cargando de la nube…');
+    sel.appendChild(opt);
+  }
+}
+
 function np_populateRadarSnapshotSelect(history, preferredId) {
   const sel = document.getElementById('radarSnapshotSelect');
   if (!sel) return;
@@ -3667,6 +3695,7 @@ function np_populateRadarSnapshotSelect(history, preferredId) {
     opt.textContent = np_radarT('radar.no_pilot_images', 'Sin imágenes Pilot guardadas');
     sel.appendChild(opt);
     sel.disabled = true;
+    np_setRadarSnapshotPickerUi('empty');
     return;
   }
   list.forEach((item, idx) => {
@@ -3678,6 +3707,7 @@ function np_populateRadarSnapshotSelect(history, preferredId) {
   sel.disabled = false;
   const match = list.find((h) => String(h.id) === String(prev));
   sel.value = match ? String(match.id) : String(list[0].id);
+  np_setRadarSnapshotPickerUi('ready');
 }
 
 function np_snapshotFromRadarApi(data) {
@@ -4653,6 +4683,11 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     cost: 'Saldo del mes',
     tone: 'ok'
   });
+  const hadHistory =
+    window.__nutriplantRadarNdviStatus &&
+    Array.isArray(window.__nutriplantRadarNdviStatus.history) &&
+    window.__nutriplantRadarNdviStatus.history.some((h) => h && !h.lectura);
+  if (!hadHistory) np_setRadarSnapshotPickerUi('loading');
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
