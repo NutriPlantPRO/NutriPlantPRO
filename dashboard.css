@@ -10204,7 +10204,7 @@ html.embed-login body {
   align-items: stretch;
   width: 220px;
   max-width: min(220px, 100%);
-  gap: 2px;
+  gap: 3px;
   vertical-align: middle;
 }
 #radarNdviScale .radar-scale-bar,
@@ -10219,8 +10219,11 @@ html.embed-login body {
 #radarNdviScale .radar-scale-ticks,
 .radar-ndvi-panel .radar-scale-ticks {
   position: relative;
-  height: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   width: 100%;
+  min-height: 18px;
   margin: 0;
   padding: 0;
 }
@@ -10228,41 +10231,70 @@ html.embed-login body {
 .radar-ndvi-panel .radar-scale-ticks[hidden] {
   display: none !important;
 }
-#radarNdviScale .radar-scale-tick,
-.radar-ndvi-panel .radar-scale-tick {
+#radarNdviScale .radar-scale-tick-marks,
+.radar-ndvi-panel .radar-scale-tick-marks {
+  position: relative;
+  height: 5px;
+  width: 100%;
+}
+#radarNdviScale .radar-scale-mark,
+.radar-ndvi-panel .radar-scale-mark {
   position: absolute;
   top: 0;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
-}
-#radarNdviScale .radar-scale-tick--start,
-.radar-ndvi-panel .radar-scale-tick--start {
-  transform: translateX(0);
-  align-items: flex-start;
-}
-#radarNdviScale .radar-scale-tick--end,
-.radar-ndvi-panel .radar-scale-tick--end {
-  transform: translateX(-100%);
-  align-items: flex-end;
-}
-#radarNdviScale .radar-scale-tick::before,
-.radar-ndvi-panel .radar-scale-tick::before {
-  content: '';
   width: 1px;
   height: 5px;
   background: #64748b;
-  margin-bottom: 1px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+#radarNdviScale .radar-scale-mark--start,
+.radar-ndvi-panel .radar-scale-mark--start {
+  transform: translateX(0);
+}
+#radarNdviScale .radar-scale-mark--end,
+.radar-ndvi-panel .radar-scale-mark--end {
+  transform: translateX(-100%);
+}
+#radarNdviScale .radar-scale-mark--mid,
+.radar-ndvi-panel .radar-scale-mark--mid {
+  width: 2px;
+  height: 6px;
+  background: #0f172a;
+  border-radius: 1px;
+}
+#radarNdviScale .radar-scale-tick-labels,
+.radar-ndvi-panel .radar-scale-tick-labels {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  pointer-events: none;
 }
 #radarNdviScale .radar-scale-tick-label,
 .radar-ndvi-panel .radar-scale-tick-label {
   font-size: 10px;
   font-weight: 700;
   color: #334155;
-  line-height: 1;
+  line-height: 1.15;
   white-space: nowrap;
+  flex: 0 1 auto;
+}
+#radarNdviScale .radar-scale-tick-label--start,
+.radar-ndvi-panel .radar-scale-tick-label--start {
+  text-align: left;
+}
+#radarNdviScale .radar-scale-tick-label--mid,
+.radar-ndvi-panel .radar-scale-tick-label--mid {
+  text-align: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #0f172a;
+  font-weight: 800;
+}
+#radarNdviScale .radar-scale-tick-label--end,
+.radar-ndvi-panel .radar-scale-tick-label--end {
+  text-align: right;
 }
 #radarNdviScale.radar-scale-slope #radarScaleTitle,
 #radarNdviScale.radar-scale-slope #radarNdviHelp,
@@ -10417,6 +10449,20 @@ html.embed-login body {
   width: 100%;
   flex-basis: 100%;
 }
+.radar-ndvi-panel .radar-save-field-btn {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: #15803d;
+  border: 1px solid #166534;
+  white-space: nowrap;
+}
+.radar-ndvi-panel .radar-save-field-btn:hover {
+  background: #166534;
+  border-color: #14532d;
+  color: #fff;
+}
 
 .radar-status-btn {
   display: inline-flex;
@@ -10454,7 +10500,7 @@ html.embed-login body {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 10px 14px;
   padding: 8px 12px;
   background: #f1f5f9;
@@ -10470,16 +10516,16 @@ html.embed-login body {
   align-items: center;
   gap: 8px 10px;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
 }
 
 .radar-view-bar__scale {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 6px 8px;
-  margin-left: 0;
+  margin-left: auto;
   flex: 0 0 auto;
   max-width: none;
   font-size: 10px;
@@ -10511,6 +10557,13 @@ html.embed-login body {
 #radarNdviScale .radar-scale-bar-wrap {
   width: 132px;
   max-width: 132px;
+}
+.radar-view-bar__scale.radar-scale-elev .radar-scale-bar-wrap,
+.radar-view-bar__scale.radar-scale-slope .radar-scale-bar-wrap,
+#radarNdviScale.radar-scale-elev .radar-scale-bar-wrap,
+#radarNdviScale.radar-scale-slope .radar-scale-bar-wrap {
+  width: 210px;
+  max-width: min(210px, 42vw);
 }
 
 .radar-view-bar__kicker {

@@ -372,7 +372,7 @@ async function getLatestFailedPilotJob(supabase, userId, projectId) {
     id: failed.id,
     created_at: failed.created_at,
     status: 'error',
-    error_message: failed.meta?.error_message || 'No se pudo generar Pilot',
+    error_message: failed.meta?.error_message || 'No se pudo generar la imagen satelital',
     error_code: /radar_low_coverage|cobertura satelital útil|píxeles válidos/i.test(
       String(failed.meta?.error_message || '')
     )
@@ -994,7 +994,7 @@ async function processPilotJob(supabase, requestId, userId) {
     }
     await patchJobMeta(supabase, requestId, userId, {
       status: 'error',
-      error_message: e.message || 'No se pudo generar Pilot',
+      error_message: e.message || 'No se pudo generar la imagen satelital',
       failed_at: new Date().toISOString(),
       credits_from_bonus: 0,
       credits_from_bonus_restored: alreadyRestored || fromBonus > 0

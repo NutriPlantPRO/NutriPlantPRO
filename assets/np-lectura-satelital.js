@@ -672,7 +672,7 @@
         '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px;">' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">' +
             '<div style="font-weight:700;color:#14532d;font-size:15px;" data-i18n="radar.lectura_title">' + t('radar.lectura_title', '📈 Lectura Satelital — histórico del predio') + '</div>' +
-            '<div id="lecturaCreditsBadge" class="radar-credits-badge" data-i18n-title="radar.lectura_credits_title" title="' + t('radar.lectura_credits_title', 'Mismo saldo de créditos Radar que Pilot') + '">' +
+            '<div id="lecturaCreditsBadge" class="radar-credits-badge" data-i18n-title="radar.lectura_credits_title" title="' + t('radar.lectura_credits_title', 'Mismo saldo de créditos Radar que la imagen satelital') + '">' +
               '<span class="radar-credits-badge__kicker" data-i18n="radar.credits_kicker">' + t('radar.credits_kicker', 'Créditos Radar:') + '</span>' +
               '<span id="lecturaCreditsLabel" class="radar-credits-badge__value">—</span>' +
               '<span id="lecturaCreditsCost" class="radar-credits-badge__cost"></span>' +

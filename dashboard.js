@@ -1974,8 +1974,7 @@ function sectionTemplate(name) {
           <div class="location-controls">
             <button id="centerOnUserLocation" class="btn btn-primary" type="button" data-i18n="radar.my_location" onclick="if(window.np_centerOnUserLocationFromUi){window.np_centerOnUserLocationFromUi(event);}">${rt('radar.my_location', '📍 Mi Ubicación')}</button>
             <button id="toggleCoordinateInput" class="btn btn-secondary" data-i18n="radar.coordinates">${rt('radar.coordinates', '✍️ Coordenadas')}</button>
-            <button id="clearPolygon" class="btn btn-secondary" data-i18n="radar.clear">${rt('radar.clear', 'Limpiar')}</button>
-            <button id="saveLocation" class="btn" data-i18n="radar.save_field">${rt('radar.save_field', 'Guardar Predio')}</button>
+            <button id="clearPolygon" class="btn btn-secondary" data-i18n="radar.clear">${rt('radar.clear', 'Eliminar polígono')}</button>
           </div>
         </div>
         <div id="coordinateInputPanel" style="display:none;margin:10px 0 0;padding:10px;border:1px dashed #bfdbfe;border-radius:10px;background:#f8fbff;">
@@ -1990,7 +1989,7 @@ function sectionTemplate(name) {
 
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
           <div style="font-weight: 600; color: #14532d;" data-i18n="radar.crop_title">${rt('radar.crop_title', '🛰️ Radar del cultivo')}</div>
-          <div id="radarCreditsBadge" class="radar-credits-badge" data-i18n-title="radar.credits_badge_title" title="${rt('radar.credits_badge_title', 'Créditos Radar del mes (Pilot y Lectura Satelital)')}">
+          <div id="radarCreditsBadge" class="radar-credits-badge" data-i18n-title="radar.credits_badge_title" title="${rt('radar.credits_badge_title', 'Créditos Radar del mes (imagen satelital y Lectura Satelital)')}">
             <span class="radar-credits-badge__kicker" data-i18n="radar.credits_kicker">${rt('radar.credits_kicker', 'Créditos Radar:')}</span>
             <span id="radarCreditsLabel" class="radar-credits-badge__value">—</span>
             <span id="radarCreditsCost" class="radar-credits-badge__cost"></span>
@@ -2002,7 +2001,7 @@ function sectionTemplate(name) {
             </select>
             <button type="button" id="radarBtnDeleteSnapshot" class="radar-snapshot-picker__delete" hidden data-i18n="radar.btn_delete_image" data-i18n-title="radar.btn_delete_image_title" title="${rt('radar.btn_delete_image_title', 'Borrar de la nube la imagen seleccionada')}">${rt('radar.btn_delete_image', '🗑 Borrar')}</button>
           </label>
-          <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen Pilot.')}</span>
+          <span id="radarStatusHint" class="radar-hint-info">${rt('radar.status_hint_default', 'Sincroniza el predio a la nube, luego genera la imagen satelital.')}</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;" data-i18n="radar.how_built_label">${rt('radar.how_built_label', 'Esta imagen:')}</strong>
             <span data-i18n-html="radar.how_built_html" data-i18n-params="${howBuiltParamsAttr}">${howBuiltHtml}</span>
@@ -2013,24 +2012,15 @@ function sectionTemplate(name) {
           </div>
           <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
           <div class="radar-generate-row">
-            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar Pilot')}</button>
+            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;" data-i18n="radar.btn_generate">${rt('radar.btn_generate', '🛰 Generar / actualizar imagen satelital')}</button>
             <button type="button" id="radarBtnGenerateDem" class="btn radar-dem-btn" style="font-size: 13px;" data-i18n="radar.btn_generate_dem">${rt('radar.btn_generate_dem', '⛰ Generar relieve')}</button>
             <button type="button" id="radarBtnRefresh" class="radar-status-btn" data-i18n="radar.btn_status">${rt('radar.btn_status', '🔄 Estado')}</button>
+            <button type="button" id="saveLocation" class="btn radar-save-field-btn" data-i18n="radar.save_field">${rt('radar.save_field', '💾 Guardar Predio')}</button>
           </div>
         </div>
 
         <div class="radar-map-stack">
         <div class="radar-view-bar" role="group" aria-label="${rt('radar.view_bar_label', 'Ver en el mapa')}">
-          <div id="radarNdviScale" class="radar-view-bar__scale" title="${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}">
-            <span id="radarScaleTitle">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
-            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
-            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
-              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
-              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
-            </div>
-            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
-            <span id="radarNdviHelp">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
-          </div>
           <div class="radar-view-bar__controls">
             <span class="radar-view-bar__kicker" data-i18n="radar.view_bar_label">${rt('radar.view_bar_label', 'Ver en el mapa')}</span>
             <label class="radar-view-bar__layer">
@@ -2047,6 +2037,16 @@ function sectionTemplate(name) {
             </label>
             <button type="button" id="radarBtnView" class="radar-view-btn">${rt('radar.btn_view', '👁 Ver imagen {label}', { label: 'NDVI' })}</button>
             <button type="button" id="radarBtnHide" class="radar-hide-btn" data-i18n="radar.btn_hide">${rt('radar.btn_hide', '🙈 Ocultar capa')}</button>
+          </div>
+          <div id="radarNdviScale" class="radar-view-bar__scale" title="${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}">
+            <span id="radarScaleTitle">${rt('radar.scale_ndvi_title', 'Escala NDVI relativa al predio')}</span>
+            <span id="radarScaleLow">${rt('radar.scale_low', 'Menor nivel del predio')}</span>
+            <div id="radarScaleBarWrap" class="radar-scale-bar-wrap">
+              <span id="radarScaleBar" class="radar-scale-bar" style="background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);"></span>
+              <div id="radarScaleTicks" class="radar-scale-ticks" hidden></div>
+            </div>
+            <span id="radarScaleHigh">${rt('radar.scale_high', 'Mayor nivel del predio')}</span>
+            <span id="radarNdviHelp">${rt('radar.scale_ndvi_help', 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.')}</span>
           </div>
         </div>
         <div class="map-container">
@@ -9425,7 +9425,7 @@ async function fetchRadarImagesDataUrlsForReport() {
       (snap.images && snap.images.rgb && snap.images.rgb.signed_url);
     const meta = snap.meta || {};
     out.generatedAt = snap.created_at || null;
-    out.source = meta.pilot || meta.engine === 'cdse_pilot' ? 'Pilot Copernicus/Sentinel-2' : (meta.source || 'Sentinel-2');
+    out.source = meta.pilot || meta.engine === 'cdse_pilot' ? 'Imagen satelital Copernicus/Sentinel-2' : (meta.source || 'Sentinel-2');
     out.creditsCharged = meta.credits_charged != null ? Number(meta.credits_charged) : null;
     out.sentinelPeriod =
       meta.date_start && meta.date_end ? meta.date_start + ' – ' + meta.date_end : '';

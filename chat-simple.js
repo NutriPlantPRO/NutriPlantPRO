@@ -1949,7 +1949,7 @@ ESTILO DE RESPUESTA:
           );
         } else {
           lines.push(
-            'Sin imágenes Radar guardadas: sincronizar predio a la nube y pulsar Generar / actualizar Pilot en Ubicación.'
+            'Sin imágenes Radar guardadas: sincronizar predio a la nube y pulsar Generar / actualizar imagen satelital en Ubicación.'
           );
         }
         const history = Array.isArray(status.history) ? status.history : [];

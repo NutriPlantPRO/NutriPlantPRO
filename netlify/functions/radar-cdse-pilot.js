@@ -286,7 +286,7 @@ exports.handler = async (event) => {
       return jsonResponse(409, {
         error: 'pilot_job_active',
         message:
-          'Ya hay una imagen Pilot generándose para este predio. Revisa «Estado» en unos minutos; no hace falta volver a pulsar Generar.',
+          'Ya hay una imagen satelital generándose para este predio. Revisa «Estado» en unos minutos; no hace falta volver a pulsar Generar.',
         request: { id: active.id, created_at: active.created_at },
         pending_job: { id: active.id, created_at: active.created_at, status: active.meta?.status || 'pending' }
       });

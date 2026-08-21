@@ -436,14 +436,14 @@ class NutriPlantMap {
           this.showMessage(
             np_radarT(
               'radar.msg_already_saved',
-              '⚠️ Ya hay un polígono guardado. Usa el botón "Limpiar" para eliminarlo antes de dibujar uno nuevo.'
+              '⚠️ Ya hay un polígono guardado. Usa el botón «Eliminar polígono» para eliminarlo antes de dibujar uno nuevo.'
             ),
             'warning'
           );
           this.setInstructionsKey(
             'radar.instr_already_saved',
             null,
-            '⚠️ Ya hay un polígono guardado. Usa el botón "Limpiar" para eliminarlo.'
+            '⚠️ Ya hay un polígono guardado. Usa el botón «Eliminar polígono» para eliminarlo.'
           );
           return; // NO permitir dibujar
         }
@@ -3060,7 +3060,7 @@ const RADAR_INDEX_CONFIG = {
     title: 'Pendiente relativa del predio',
     low: 'Más plano',
     high: 'Más inclinado',
-    help: 'Pendiente (%) del relieve (Copernicus DEM ~30 m). Crema/gris = más plano; café oscuro = más pendiente. Capa fija: no cambia con Pilot.',
+    help: 'Pendiente (%) del relieve (Copernicus DEM ~30 m). Crema/gris = más plano; café oscuro = más pendiente. Capa fija: no cambia con la imagen satelital.',
     gradient: 'linear-gradient(90deg,#f8f5f0,#e8e0d4,#d4c4a8,#c4a574,#a67c52,#8b5e3c,#6b4423,#4a2f1a,#2d1b0e)',
     shownText: 'Pendiente del predio en mapa.',
     loadingText: 'Cargando pendiente del predio en el mapa...'
@@ -3242,6 +3242,48 @@ function np_getElevScaleRange() {
   return { min, max, mean: Number.isFinite(Number(meta.elev_mean)) ? Number(meta.elev_mean) : null };
 }
 
+function np_renderRadarScaleTickRow(points) {
+  const safe = (Array.isArray(points) ? points : []).slice(0, 3).map(function (item, i, arr) {
+    const t = Math.max(0, Math.min(1, Number(item.t) || 0));
+    return {
+      t: t,
+      label: String(item.label || ''),
+      align: i === 0 ? 'start' : i === arr.length - 1 ? 'end' : 'mid'
+    };
+  });
+  if (!safe.length) return '';
+  const marks = safe
+    .map(function (item) {
+      return (
+        '<span class="radar-scale-mark radar-scale-mark--' +
+        item.align +
+        '" style="left:' +
+        item.t * 100 +
+        '%"></span>'
+      );
+    })
+    .join('');
+  // Etiquetas siempre en inicio / medio / fin (space-between) para que no se amontonen.
+  const labels = safe
+    .map(function (item) {
+      return (
+        '<span class="radar-scale-tick-label radar-scale-tick-label--' +
+        item.align +
+        '">' +
+        item.label +
+        '</span>'
+      );
+    })
+    .join('');
+  return (
+    '<div class="radar-scale-tick-marks" aria-hidden="true">' +
+    marks +
+    '</div><div class="radar-scale-tick-labels">' +
+    labels +
+    '</div>'
+  );
+}
+
 function np_updateRadarScaleTicks(index) {
   const ticks = document.getElementById('radarScaleTicks');
   const panel = document.getElementById('radarNdviPanel');
@@ -3254,7 +3296,10 @@ function np_updateRadarScaleTicks(index) {
     el.classList.toggle('radar-scale-slope', idx === 'slope');
     el.classList.toggle('radar-scale-elev', idx === 'elev');
   });
-  if (wrap) wrap.style.width = idx === 'slope' || idx === 'elev' ? '240px' : '150px';
+  if (wrap) {
+    wrap.style.width = '';
+    wrap.style.maxWidth = '';
+  }
 
   if (idx !== 'slope' && idx !== 'elev') {
     ticks.hidden = true;
@@ -3278,21 +3323,7 @@ function np_updateRadarScaleTicks(index) {
           { t: 0.5, label: '7.5%' },
           { t: 1, label: '15%' }
         ];
-    ticks.innerHTML = fallback
-      .map(function (item, i) {
-        const align =
-          i === 0 ? 'radar-scale-tick--start' : i === fallback.length - 1 ? 'radar-scale-tick--end' : '';
-        return (
-          '<span class="radar-scale-tick ' +
-          align +
-          '" style="left:' +
-          item.t * 100 +
-          '%"><span class="radar-scale-tick-label">' +
-          item.label +
-          '</span></span>'
-        );
-      })
-      .join('');
+    ticks.innerHTML = np_renderRadarScaleTickRow(fallback);
     ticks.hidden = false;
     return;
   }
@@ -3301,27 +3332,17 @@ function np_updateRadarScaleTicks(index) {
     range.mean != null && range.mean >= range.min && range.mean <= range.max
       ? range.mean
       : (range.min + range.max) / 2;
+  // Marca media en su posición real; si queda muy pegada a un extremo, la anclamos
+  // al centro visual para que el valor medio se lea separado.
+  let tMid = (mid - range.min) / (range.max - range.min);
+  if (!Number.isFinite(tMid)) tMid = 0.5;
+  if (tMid < 0.28 || tMid > 0.72) tMid = 0.5;
   const points = [
     { t: 0, label: fmt(range.min) },
-    { t: (mid - range.min) / (range.max - range.min), label: fmt(mid) },
+    { t: tMid, label: fmt(mid) },
     { t: 1, label: fmt(range.max) }
   ];
-  ticks.innerHTML = points
-    .map(function (item, i) {
-      const left = Math.max(0, Math.min(1, item.t)) * 100;
-      const align =
-        i === 0 ? 'radar-scale-tick--start' : i === points.length - 1 ? 'radar-scale-tick--end' : '';
-      return (
-        '<span class="radar-scale-tick ' +
-        align +
-        '" style="left:' +
-        left +
-        '%"><span class="radar-scale-tick-label">' +
-        item.label +
-        '</span></span>'
-      );
-    })
-    .join('');
+  ticks.innerHTML = np_renderRadarScaleTickRow(points);
   ticks.hidden = false;
 }
 
@@ -3385,7 +3406,7 @@ function np_updateRadarActionLabels(indexOverride) {
   }
   if (hideBtn) hideBtn.textContent = np_radarT('radar.btn_hide', '🙈 Ocultar capa');
   if (genBtn && !genBtn.classList.contains('radar-loading')) {
-    genBtn.textContent = np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
+    genBtn.textContent = np_radarT('radar.btn_generate', '🛰 Generar / actualizar imagen satelital');
     genBtn.dataset.originalText = genBtn.textContent;
   }
   if (statusBtn) statusBtn.textContent = np_radarT('radar.btn_status', '🔄 Estado');
@@ -3692,7 +3713,7 @@ function np_populateRadarSnapshotSelect(history, preferredId) {
   if (!list.length) {
     const opt = document.createElement('option');
     opt.value = '';
-    opt.textContent = np_radarT('radar.no_pilot_images', 'Sin imágenes Pilot guardadas');
+    opt.textContent = np_radarT('radar.no_pilot_images', 'Sin imágenes satelitales guardadas');
     sel.appendChild(opt);
     sel.disabled = true;
     np_setRadarSnapshotPickerUi('empty');
@@ -3879,11 +3900,11 @@ function np_setRadarBusy(isBusy, message) {
 
   if (generateBtn) {
     if (isBusy) {
-      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
-      generateBtn.textContent = np_radarT('radar.btn_generating', '⏳ Generando Pilot...');
+      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || np_radarT('radar.btn_generate', '🛰 Generar / actualizar imagen satelital');
+      generateBtn.textContent = np_radarT('radar.btn_generating', '⏳ Generando imagen satelital...');
       generateBtn.classList.add('radar-loading');
     } else {
-      generateBtn.textContent = generateBtn.dataset.originalText || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
+      generateBtn.textContent = generateBtn.dataset.originalText || np_radarT('radar.btn_generate', '🛰 Generar / actualizar imagen satelital');
       generateBtn.classList.remove('radar-loading');
     }
   }
@@ -3897,7 +3918,7 @@ function np_setRadarBusy(isBusy, message) {
   if (isBusy && hint) {
     hint.textContent =
       message ||
-      'Generando imágenes Pilot NDVI y NDMI... puede tardar ~1–2 min. Si termina y no ves el mapa, pulsa «Ver imagen».';
+      'Generando imagen satelital (NDVI y NDMI)... puede tardar ~1–2 min. Si termina y no ves el mapa, pulsa «Ver imagen».';
   }
 }
 
@@ -3944,11 +3965,11 @@ function np_pilotUserErrorMessage(status, data) {
   const errorKey = String((data && (data.error || data.code)) || '').toLowerCase();
   const serverMsg = String((data && data.message) || '');
   let code = 9000;
-  let message = 'No se pudo generar el Pilot en este momento. Intenta de nuevo en unos minutos.';
+  let message = 'No se pudo generar la imagen satelital en este momento. Intenta de nuevo en unos minutos.';
 
   if (status === 401) {
     code = 4011;
-    message = 'Tu sesión expiró. Vuelve a iniciar sesión e intenta generar el Pilot otra vez.';
+    message = 'Tu sesión expiró. Vuelve a iniciar sesión e intenta generar la imagen satelital otra vez.';
   } else if (status === 403) {
     code = 4031;
     message = 'No se pudo validar el acceso a este proyecto. Vuelve a seleccionar el proyecto e intenta de nuevo.';
@@ -3957,7 +3978,7 @@ function np_pilotUserErrorMessage(status, data) {
     message = 'No se encontró el proyecto en la nube. Sincroniza el proyecto e intenta de nuevo.';
   } else if (status === 429 || errorKey.includes('quota')) {
     code = 4291;
-    message = 'No hay créditos Radar suficientes para generar Pilot este mes.';
+    message = 'No hay créditos Radar suficientes para generar imagen satelital este mes.';
   } else if (errorKey.includes('radar_area_too_large') || /Radar máximo\s+\d+\s*ha/i.test(serverMsg)) {
     code = 4002;
     message =
@@ -3985,11 +4006,11 @@ function np_pilotUserErrorMessage(status, data) {
     code = 5041;
     message = /STAC search HTTP/i.test(serverMsg)
       ? np_pilotFriendlyErrorMessage(serverMsg)
-      : 'El Pilot tardó más de lo esperado. Intenta de nuevo en unos minutos.';
+      : 'La imagen satelital tardó más de lo esperado. Intenta de nuevo en unos minutos.';
   } else if (status === 409 || errorKey.includes('pilot_job_active')) {
     code = 4091;
     message =
-      'Ya hay una imagen Pilot generándose para este predio. Revisa «Estado» en unos minutos; no hace falta volver a pulsar Generar.';
+      'Ya hay una imagen satelital generándose para este predio. Revisa «Estado» en unos minutos; no hace falta volver a pulsar Generar.';
   }
 
   return message + '\n\nCódigo: ' + code;
@@ -4041,7 +4062,7 @@ function np_buildPilotSendingHintHtml() {
 function np_buildPilotReadyHintHtml(label) {
   const layer = np_escapeHtml(label || 'NDVI');
   return (
-    '<span class="radar-hint-key">Imagen Pilot lista</span> y guardada en la nube. Pulsa ' +
+    '<span class="radar-hint-key">Imagen satelital lista</span> y guardada en la nube. Pulsa ' +
     '<span class="radar-hint-action">Ver imagen ' +
     layer +
     '</span> para verla en el mapa.'
@@ -4050,7 +4071,7 @@ function np_buildPilotReadyHintHtml(label) {
 
 function np_buildPilotDuplicateHintHtml() {
   return (
-    '<span class="radar-hint-em">Ya hay una imagen Pilot generándose</span> para este predio. ' +
+    '<span class="radar-hint-em">Ya hay una imagen satelital generándose</span> para este predio. ' +
     'Revisa <span class="radar-hint-action">Estado</span> en unos minutos; ' +
     '<span class="radar-hint-key">no hace falta volver a pulsar Generar</span>.'
   );
@@ -4076,13 +4097,13 @@ function np_setPilotPendingUi(isPending, messageKind) {
   if (generateBtn) {
     if (isPending) {
       if (!generateBtn.dataset.originalText) {
-        generateBtn.dataset.originalText = generateBtn.textContent || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
+        generateBtn.dataset.originalText = generateBtn.textContent || np_radarT('radar.btn_generate', '🛰 Generar / actualizar imagen satelital');
       }
       generateBtn.textContent = np_radarT('radar.btn_generating_cloud', '⏳ Generando en la nube…');
       generateBtn.classList.add('radar-loading');
       generateBtn.disabled = true;
     } else {
-      generateBtn.textContent = generateBtn.dataset.originalText || np_radarT('radar.btn_generate', '🛰 Generar / actualizar Pilot');
+      generateBtn.textContent = generateBtn.dataset.originalText || np_radarT('radar.btn_generate', '🛰 Generar / actualizar imagen satelital');
       generateBtn.classList.remove('radar-loading');
       generateBtn.disabled = false;
     }
@@ -4178,7 +4199,7 @@ function np_updatePilotLayerButtonUi() {
   const idx = np_getPilotRadarIndex();
   const cfg = np_getRadarIndexConfig(idx);
   btn.textContent = cfg.label;
-  btn.title = 'Pilot: mostrando ' + cfg.label + ' (clic para ciclar NDVI → NDMI → NDRE → RGB → Nubes)';
+  btn.title = 'Imagen satelital: mostrando ' + cfg.label + ' (clic para ciclar NDVI → NDMI → NDRE → RGB → Nubes)';
   btn.setAttribute('aria-pressed', idx !== 'ndvi' ? 'true' : 'false');
 }
 
@@ -4785,7 +4806,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     np_setRadarCreditsBadge({
       value: creditValue,
       cost:
-        (costLine || 'Costo Pilot según hectáreas') +
+        (costLine || 'Costo según hectáreas') +
         ' · usados ' +
         u +
         ' · base ' +
@@ -4805,7 +4826,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       np_setRadarStatusHint(
         lowCoverage
           ? 'Probamos las pasadas Sentinel de <span class="radar-hint-em">14–45 días</span> y ninguna quedó lo bastante despejada sobre este predio (sin relleno entre fechas). Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>'
-          : 'El Pilot no pudo generar la imagen. ' +
+          : 'No se pudo generar la imagen satelital. ' +
               np_escapeHtml(np_pilotFriendlyErrorMessage(failed.error_message)) +
               ' Revisa Estado e intenta de nuevo.',
         { html: true, variant: 'warn' }
@@ -4827,14 +4848,14 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
         );
       } else if (lastPilotError && lastPilotError.code === 5041) {
         np_setRadarStatusHint(
-          'El último intento de Pilot tardó demasiado y no se guardó imagen. Intenta de nuevo en <span class="radar-hint-em">unos minutos</span>. Código: <span class="radar-hint-em">5041</span>',
+          'El último intento tardó demasiado y no se guardó imagen. Intenta de nuevo en <span class="radar-hint-em">unos minutos</span>. Código: <span class="radar-hint-em">5041</span>',
           { html: true, variant: 'warn' }
         );
       } else {
         np_setRadarStatusHint(
           costLine
-            ? costLine + '. ' + np_radarT('radar.status_hint_first', 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.')
-            : np_radarT('radar.status_hint_first', 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'),
+            ? costLine + '. ' + np_radarT('radar.status_hint_first', 'Sincroniza el predio a la nube, luego genera la primera imagen satelital.')
+            : np_radarT('radar.status_hint_first', 'Sincroniza el predio a la nube, luego genera la primera imagen satelital.'),
           { variant: 'info' }
         );
       }
@@ -4946,7 +4967,7 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     if (st?.ok && hasLayer) {
       np_updateRadarStatusHintFromSelection();
     } else if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
-      hint.textContent = 'Capa Pilot: ' + cfg.label + '. Pulsa «Ver imagen» o «Generar / actualizar Pilot».';
+      hint.textContent = 'Capa satelital: ' + cfg.label + '. Pulsa «Ver imagen» o «Generar / actualizar imagen satelital».';
     }
   });
   document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
@@ -4990,13 +5011,13 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
   }
   if (window.__nutriplantPilotPending) {
     alert(
-      'Ya hay una imagen Pilot generándose para este predio.\n\nRevisa «Estado» en unos minutos; se guardará en la nube aunque cierres NutriPlant.\n\nCódigo: 4091'
+      'Ya hay una imagen satelital generándose para este predio.\n\nRevisa «Estado» en unos minutos; se guardará en la nube aunque cierres NutriPlant.\n\nCódigo: 4091'
     );
     return;
   }
   const polygon = np_polygonCoordsForPilot();
   if (!polygon) {
-    alert('Traza y guarda un polígono del predio antes de generar Radar Pilot.');
+    alert('Traza y guarda un polígono del predio antes de generar la imagen satelital.');
     return;
   }
   const bounds = np_getPolygonBoundsFromMap();
@@ -5036,7 +5057,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       prevRadarCreatedAt = np_getRadarLatestCreatedAtFromStatus(window.__nutriplantRadarNdviStatus);
       if (window.__nutriplantRadarNdviStatus?.pending_job) {
         alert(
-          'Ya hay una imagen Pilot generándose para este predio.\n\nRevisa «Estado» en unos minutos.\n\nCódigo: 4091'
+          'Ya hay una imagen satelital generándose para este predio.\n\nRevisa «Estado» en unos minutos.\n\nCódigo: 4091'
         );
         np_syncPilotPendingFromStatus(window.__nutriplantRadarNdviStatus);
         return;
@@ -5167,13 +5188,13 @@ window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
 window.deleteRadarNdviSnapshot = async function deleteRadarNdviSnapshot() {
   const requestId = np_getSelectedRadarRequestId();
   if (!requestId) {
-    alert(np_radarT('radar.delete_image_none', 'Selecciona una imagen Pilot para borrar.'));
+    alert(np_radarT('radar.delete_image_none', 'Selecciona una imagen satelital para borrar.'));
     return;
   }
   const ok = window.confirm(
     np_radarT(
       'radar.delete_image_confirm',
-      '¿Borrar esta imagen Pilot de la nube?\n\nSe eliminará el archivo (NDVI/NDMI/NDRE/RGB) y ya no aparecerá en el selector. Esta acción no se puede deshacer.'
+      '¿Borrar esta imagen satelital de la nube?\n\nSe eliminará el archivo (NDVI/NDMI/NDRE/RGB) y ya no aparecerá en el selector. Esta acción no se puede deshacer.'
     )
   );
   if (!ok) return;
