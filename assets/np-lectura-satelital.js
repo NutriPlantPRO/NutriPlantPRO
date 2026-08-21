@@ -1,7 +1,7 @@
 /**
  * Lectura Satelital — histórico por periodos (quincenal/mensual) del predio.
  * Combina NDVI/NDMI/NDRE/RGB (Pilot Sentinel-2 por rango de fechas) con clima (Open-Meteo:
- * VPD promedio, ET₀ acumulada, lluvia acumulada) y riego manual por periodo.
+ * VPD promedio/mín/máx, ET₀ acumulada, lluvia acumulada) y riego manual por periodo.
  *
  * Reutiliza helpers globales de map.js (np_getRadarAccessToken, np_polygonCoordsForPilot,
  * getNutriPlantApiBase) y de dashboard.js (calculateVPDAdvanced/Simple).
@@ -61,6 +61,8 @@
   var lecturaLastAutoRefreshAt = 0;
   /** Firma de la tabla montada (evita parpadeo al solo actualizar métricas). */
   var lecturaTableSig = '';
+  /** Filas actuales de la gráfica (tooltip lee de aquí en soft-update). */
+  var lecturaChartRows = [];
   var lecturaSeriesVis = {
     ndvi: true,
     ndmi: true,
@@ -560,7 +562,7 @@
     }
     return r && Number.isFinite(Number(r.vpd)) ? Number(r.vpd) : null;
   }
-  /** Promedio + horas por rango (igual criterio que Clima: <0.5 / 0.5–1.5 / >1.5). */
+  /** Promedio + min/máx + horas por rango (igual criterio que Clima: <0.5 / 0.5–1.5 / >1.5). */
   function computeVpdStats(hourly, startIso, endIso) {
     var t = hourly.temperature_2m || [];
     var rh = hourly.relative_humidity_2m || [];
@@ -586,6 +588,8 @@
       // Serie horaria vacía: no inventar 0/0/0, dejar nulos para reintentar.
       return {
         vpd_mean: null,
+        vpd_min: null,
+        vpd_max: null,
         vpd_hours_low: null,
         vpd_hours_opt: null,
         vpd_hours_high: null,
@@ -593,10 +597,14 @@
         vpd_hours_expected: expected
       };
     }
+    var vmin = vals.length ? Math.min.apply(null, vals) : null;
+    var vmax = vals.length ? Math.max.apply(null, vals) : null;
     return {
       vpd_mean: vals.length
         ? Math.round((vals.reduce(function (a, b) { return a + b; }, 0) / vals.length) * 100) / 100
         : null,
+      vpd_min: vmin != null ? Math.round(vmin * 100) / 100 : null,
+      vpd_max: vmax != null ? Math.round(vmax * 100) / 100 : null,
       vpd_hours_low: low,
       vpd_hours_opt: opt,
       vpd_hours_high: high,
@@ -607,6 +615,8 @@
   async function fetchClimateForPeriod(center, period) {
     var out = {
       vpd_mean: null,
+      vpd_min: null,
+      vpd_max: null,
       et0_sum: null,
       rain_sum: null,
       vpd_hours_low: null,
@@ -626,6 +636,8 @@
       var hourly = await fetchHourly(center.lat, center.lng, period.date_start, period.date_end);
       var st = computeVpdStats(hourly, period.date_start, period.date_end);
       out.vpd_mean = st.vpd_mean;
+      out.vpd_min = st.vpd_min;
+      out.vpd_max = st.vpd_max;
       out.vpd_hours_low = st.vpd_hours_low;
       out.vpd_hours_opt = st.vpd_hours_opt;
       out.vpd_hours_high = st.vpd_hours_high;
@@ -730,7 +742,7 @@
               '</label>' +
               (window.NpIrrBalance && typeof window.NpIrrBalance.getKcOpenTableButtonHtml === 'function'
                 ? window.NpIrrBalance.getKcOpenTableButtonHtml('lectura')
-                : '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="lectura">📋 ' + t('radar.btn_kc_table', 'Ver tabla') + '</button>') +
+                : '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="lectura">📋 ' + t('radar.btn_kc_table', 'Rangos FAO') + '</button>') +
             '</div>' +
               '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
             '</div>' +
@@ -1005,6 +1017,7 @@
   function lecturaTableSignature(state) {
     if (!state || !state.rows || !state.rows.length) return '';
     return (
+      'vpdminmax1|' +
       String(state.activeRunId || '') +
       '|' +
       lecturaPrefsFingerprint() +
@@ -1050,6 +1063,8 @@
       setLecturaFieldCell(tr, 'ndmi', fmtNum(r.ndmi_mean, 3), false);
       setLecturaFieldCell(tr, 'ndre', fmtNum(r.ndre_mean, 3), false);
       setLecturaFieldCell(tr, 'vpd', fmtNum(r.vpd_mean, 2), false);
+      setLecturaFieldCell(tr, 'vpd_max', fmtNum(r.vpd_max, 2), false);
+      setLecturaFieldCell(tr, 'vpd_min', fmtNum(r.vpd_min, 2), false);
       setLecturaFieldCell(tr, 'vpd_low', fmtNum(r.vpd_hours_low, 0), false);
       setLecturaFieldCell(tr, 'vpd_opt', fmtNum(r.vpd_hours_opt, 0), false);
       setLecturaFieldCell(tr, 'vpd_high', fmtNum(r.vpd_hours_high, 0), false);
@@ -1149,7 +1164,24 @@
       ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
       ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
       ['NDRE prom', 'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.', false, null],
-      ['VPD prom (kPa)', 'VPD promedio horario del periodo.', false, null],
+      [
+        lecturaT('radar.col_vpd_avg', 'VPD prom (kPa)'),
+        lecturaT('radar.col_vpd_avg_title', 'VPD promedio horario del periodo.'),
+        false,
+        null
+      ],
+      [
+        lecturaT('radar.col_vpd_max', 'VPD máx (kPa)'),
+        lecturaT('radar.col_vpd_max_title', 'VPD máximo horario del periodo.'),
+        false,
+        null
+      ],
+      [
+        lecturaT('radar.col_vpd_min', 'VPD mín (kPa)'),
+        lecturaT('radar.col_vpd_min_title', 'VPD mínimo horario del periodo.'),
+        false,
+        null
+      ],
       ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
       ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
       ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false, null],
@@ -1240,6 +1272,8 @@
         '<td data-field="ndmi" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
         '<td data-field="ndre" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndre_mean, 3) + '</td>' +
         '<td data-field="vpd" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
+        '<td data-field="vpd_max" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;color:#7f1d1d;font-weight:700;" title="' + esc(lecturaT('radar.col_vpd_max_title', 'VPD máximo horario del periodo.')) + '">' + fmtNum(r.vpd_max, 2) + '</td>' +
+        '<td data-field="vpd_min" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;color:#1d4ed8;font-weight:700;" title="' + esc(lecturaT('radar.col_vpd_min_title', 'VPD mínimo horario del periodo.')) + '">' + fmtNum(r.vpd_min, 2) + '</td>' +
         '<td data-field="vpd_low" style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_low_title', 'Horas VPD bajo')) + '">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
         '<td data-field="vpd_opt" style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_opt_title', 'Horas VPD óptimo')) + '">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
         '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto')) + '">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
@@ -1262,7 +1296,7 @@
       '<div style="font-size:11px;color:#64748b;margin-top:6px;">' +
       lecturaT(
         'radar.table_footnote',
-        'ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego {unit} y {vol}</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).',
+        'ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom / máx / mín = promedio, máximo y mínimo horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego {unit} y {vol}</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).',
         { unit: depthU, vol: volU }
       ) +
       (cropHa == null
@@ -1487,6 +1521,7 @@
     }
     // Mismo orden que las miniaturas: más reciente a la izquierda.
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
+    lecturaChartRows = rows;
     var labels = rows.map(function (r) { return r.label; });
     var iHa = irrigatedHa(state);
     var depthU = lecturaDepthUnit();
@@ -1790,7 +1825,7 @@
                   var isVpdHours = ctx.dataset && ctx.dataset.yAxisID === 'yHours';
                   if (!isVpdHours) return text;
                   var i = ctx.dataIndex;
-                  var r = rows[i];
+                  var r = lecturaChartRows[i] || rows[i];
                   if (!r) return text;
                   var den =
                     r.vpd_hours_expected != null && Number(r.vpd_hours_expected) > 0
@@ -1809,7 +1844,7 @@
                 footer: function (items) {
                   if (!items || !items.length) return '';
                   var i = items[0].dataIndex;
-                  var r = rows[i];
+                  var r = lecturaChartRows[i] || rows[i];
                   if (!r) return '';
                   var tot = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
                   var exp = r.vpd_hours_expected != null ? r.vpd_hours_expected : periodHoursExpected(r.date_start, r.date_end);
@@ -1820,6 +1855,23 @@
                     });
                   }
                   return lecturaT('radar.vpd_hours_footer_short', 'Horas VPD: {tot} h', { tot: tot });
+                },
+                afterBody: function (items) {
+                  if (!items || !items.length) return [];
+                  var r = lecturaChartRows[items[0].dataIndex] || rows[items[0].dataIndex];
+                  if (!r) return [];
+                  var lines = [];
+                  if (r.vpd_max != null && Number.isFinite(Number(r.vpd_max))) {
+                    lines.push(
+                      lecturaT('radar.tooltip_vpd_max', 'VPD máximo') + ': ' + Number(r.vpd_max).toFixed(2) + ' kPa'
+                    );
+                  }
+                  if (r.vpd_min != null && Number.isFinite(Number(r.vpd_min))) {
+                    lines.push(
+                      lecturaT('radar.tooltip_vpd_min', 'VPD mínimo') + ': ' + Number(r.vpd_min).toFixed(2) + ' kPa'
+                    );
+                  }
+                  return lines;
                 }
               }
             }
@@ -2421,6 +2473,8 @@
           Number(row.vpd_hours_high) === 0;
         var needsClimate =
           row.vpd_mean == null ||
+          row.vpd_min == null ||
+          row.vpd_max == null ||
           row.et0_sum == null ||
           row.rain_sum == null ||
           row.vpd_hours_low == null ||
@@ -2430,6 +2484,8 @@
         try {
           var clim = await fetchClimateForPeriod(center, { date_start: row.date_start, date_end: row.date_end });
           if (clim.vpd_mean != null) row.vpd_mean = clim.vpd_mean;
+          if (clim.vpd_min != null) row.vpd_min = clim.vpd_min;
+          if (clim.vpd_max != null) row.vpd_max = clim.vpd_max;
           if (clim.et0_sum != null) row.et0_sum = clim.et0_sum;
           if (clim.rain_sum != null) row.rain_sum = clim.rain_sum;
           if (clim.vpd_hours_low != null) {
@@ -2439,6 +2495,8 @@
             row.vpd_hours_total = clim.vpd_hours_total;
             row.vpd_hours_expected = clim.vpd_hours_expected;
             if (row.vpd_mean == null) row.vpd_mean = clim.vpd_mean;
+            if (row.vpd_min == null) row.vpd_min = clim.vpd_min;
+            if (row.vpd_max == null) row.vpd_max = clim.vpd_max;
           }
         } catch (e) { console.warn('Lectura clima:', e); }
       }
@@ -2611,7 +2669,7 @@
           request_id: match.id || null,
           status: 'pending',
           ndvi_mean: null, ndmi_mean: null, ndre_mean: null,
-          vpd_mean: null, et0_sum: null, rain_sum: null,
+          vpd_mean: null, vpd_min: null, vpd_max: null, et0_sum: null, rain_sum: null,
           vpd_hours_low: null, vpd_hours_opt: null, vpd_hours_high: null,
           vpd_hours_total: null,
           vpd_hours_expected: periodHoursExpected(p.date_start, p.date_end),
@@ -2801,7 +2859,9 @@
     fillLecturaKcInput();
     if (state) {
       renderAll(state);
-      var needsHours = (state.rows || []).some(function (r) { return r.vpd_hours_low == null; });
+      var needsHours = (state.rows || []).some(function (r) {
+        return r.vpd_hours_low == null || r.vpd_min == null || r.vpd_max == null;
+      });
       if (needsHours) enrichClimateAndFinish(state);
       autoShowLecturaImages();
     }

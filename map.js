@@ -3363,26 +3363,19 @@ function np_updateRadarScaleUi(indexOverride) {
   if (idx === 'slope') {
     const range = np_getSlopeScaleRange();
     if (low) {
-      low.textContent = range
-        ? np_radarT('radar.scale_slope_low_val', 'Plano {v}', { v: np_formatSlopePct(range.min) })
-        : cfg.low;
+      // Números van en los ticks bajo la barra; laterales solo etiqueta.
+      low.textContent = range ? np_radarT('radar.scale_slope_side_low', 'Plano') : cfg.low;
     }
     if (high) {
-      high.textContent = range
-        ? np_radarT('radar.scale_slope_high_val', 'Inclinado {v}', { v: np_formatSlopePct(range.max) })
-        : cfg.high;
+      high.textContent = range ? np_radarT('radar.scale_slope_side_high', 'Inclinado') : cfg.high;
     }
   } else if (idx === 'elev') {
     const range = np_getElevScaleRange();
     if (low) {
-      low.textContent = range
-        ? np_radarT('radar.scale_elev_low_val', 'Baja {v}', { v: np_formatElevM(range.min) })
-        : cfg.low;
+      low.textContent = range ? np_radarT('radar.scale_elev_side_low', 'Baja') : cfg.low;
     }
     if (high) {
-      high.textContent = range
-        ? np_radarT('radar.scale_elev_high_val', 'Alta {v}', { v: np_formatElevM(range.max) })
-        : cfg.high;
+      high.textContent = range ? np_radarT('radar.scale_elev_side_high', 'Alta') : cfg.high;
     }
   } else {
     if (low) low.textContent = cfg.low;

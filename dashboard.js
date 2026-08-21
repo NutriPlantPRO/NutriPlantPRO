@@ -9539,6 +9539,8 @@ async function fetchLecturaSatelitalForReport() {
         ndmi_mean: (it && it.ndmi_mean != null) ? it.ndmi_mean : r.ndmi_mean,
         ndre_mean: (it && it.ndre_mean != null) ? it.ndre_mean : r.ndre_mean,
         vpd_mean: r.vpd_mean,
+        vpd_min: r.vpd_min,
+        vpd_max: r.vpd_max,
         vpd_hours_low: r.vpd_hours_low,
         vpd_hours_opt: r.vpd_hours_opt,
         vpd_hours_high: r.vpd_hours_high,
@@ -17664,6 +17666,12 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.vpd_mean, 2) +
       '</td>' +
+      '<td style="padding:6px 8px;text-align:center;color:#7f1d1d;font-weight:700;">' +
+      fmt(r.vpd_max, 2) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;color:#1d4ed8;font-weight:700;">' +
+      fmt(r.vpd_min, 2) +
+      '</td>' +
       '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.et0_sum, 1) +
       '</td>' +
@@ -17697,9 +17705,10 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     '<div class="report-lectura-table-wrap">' +
     '<table class="report-lectura-table" style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
     '<colgroup>' +
-    '<col style="width:5%"><col style="width:5%"><col style="width:19%">' +
-    '<col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%">' +
-    '<col style="width:9%"><col style="width:9%"><col style="width:12.5%"><col style="width:12.5%">' +
+    '<col style="width:4%"><col style="width:4%"><col style="width:16%">' +
+    '<col style="width:6%"><col style="width:6%"><col style="width:6%">' +
+    '<col style="width:6%"><col style="width:6%"><col style="width:6%">' +
+    '<col style="width:8%"><col style="width:8%"><col style="width:12%"><col style="width:12%">' +
     '</colgroup>' +
     '<thead><tr style="background:#dbeafe;color:#1e3a8a;">' +
     [
@@ -17709,7 +17718,9 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       { h: 'NDVI', st: '' },
       { h: 'NDMI', st: '' },
       { h: 'NDRE', st: '' },
-      { h: 'VPD', st: '' },
+      { h: rtSafe('VPD prom', 'Avg VPD'), st: '' },
+      { h: rtSafe('VPD máx', 'Max VPD'), st: '' },
+      { h: rtSafe('VPD mín', 'Min VPD'), st: '' },
       { h: rtSafe('ET₀ acum mm', 'ET₀ sum mm'), st: '' },
       { h: rtSafe('Lluvia acum mm', 'Rain sum mm'), st: '' },
       {

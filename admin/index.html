@@ -1642,7 +1642,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../assets/np-lectura-satelital.js?v=202607171330"></script>
+    <script src="../assets/np-lectura-satelital.js?v=20260821vpdMM"></script>
     <script src="../assets/np-vpd-range-charts.js?v=20260803a"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
@@ -13397,7 +13397,9 @@
                                             <th style="padding:6px 8px;text-align:center;">NDVI</th>
                                             <th style="padding:6px 8px;text-align:center;">NDMI</th>
                                             <th style="padding:6px 8px;text-align:center;">NDRE</th>
-                                            <th style="padding:6px 8px;text-align:center;">VPD</th>
+                                            <th style="padding:6px 8px;text-align:center;">VPD prom</th>
+                                            <th style="padding:6px 8px;text-align:center;" title="VPD máximo horario del periodo">VPD máx</th>
+                                            <th style="padding:6px 8px;text-align:center;" title="VPD mínimo horario del periodo">VPD mín</th>
                                             <th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th>
                                             <th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>
                                             <th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>
@@ -13425,6 +13427,8 @@
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.ndmi_mean,3)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.ndre_mean,3)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.vpd_mean,2)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;color:#7f1d1d;font-weight:700;">'+n(r.vpd_max,2)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;color:#1d4ed8;font-weight:700;">'+n(r.vpd_min,2)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.et0_sum,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.rain_sum,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">'+n(r.riego_mm,1)+'</td>'+
@@ -18104,6 +18108,8 @@
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(ndmi, 3) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(ndre, 3) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.vpd_mean, 2) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;color:#7f1d1d;font-weight:700;">' + fmt(r.vpd_max, 2) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;color:#1d4ed8;font-weight:700;">' + fmt(r.vpd_min, 2) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.et0_sum, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.rain_sum, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">' + fmt(r.riego_mm, 1) + '</td>' +
@@ -18247,7 +18253,10 @@
                 '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
                 '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
                 '<th style="padding:6px 8px;text-align:left;">Periodo</th><th style="padding:6px 8px;text-align:center;">NDVI</th><th style="padding:6px 8px;text-align:center;">NDMI</th><th style="padding:6px 8px;text-align:center;">NDRE</th>' +
-                '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
+                '<th style="padding:6px 8px;text-align:center;">VPD prom</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="VPD máximo horario del periodo">VPD máx</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="VPD mínimo horario del periodo">VPD mín</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
                 '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>' +
                 '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;" title="Mismo riego que mm">Riego m³</th>' +
                 '<th style="padding:6px 8px;text-align:center;">Estado</th>' +
