@@ -11008,3 +11008,160 @@ html.embed-login body {
   min-width: 0;
 }
 
+/* Lectura Satelital — tabla compacta para pantalla socio */
+.lectura-table-wrap {
+  margin-top: 14px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: inset -10px 0 14px -12px rgba(30, 58, 138, 0.14);
+}
+.lectura-data-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 11px;
+  background: #fff;
+}
+.lectura-data-table th,
+.lectura-data-table td {
+  padding: 4px 5px;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.lectura-data-table thead th {
+  background: #dbeafe;
+  color: #1e3a8a;
+  border: 1px solid #93c5fd;
+  font-weight: 800;
+  font-size: 10px;
+  white-space: normal;
+}
+.lectura-data-table__th--riego-l,
+.lectura-data-table__th--riego-r,
+.lectura-data-table td.lectura-data-table__td--riego-l,
+.lectura-data-table td.lectura-data-table__td--riego-r {
+  background: #ecfdf5;
+  color: #115e59;
+  border-color: #5eead4;
+  font-weight: 800;
+}
+.lectura-data-table__th--riego-l,
+.lectura-data-table td.lectura-data-table__td--riego-l {
+  border-left: 3px solid #0d9488;
+}
+.lectura-data-table__th--riego-r,
+.lectura-data-table td.lectura-data-table__td--riego-r {
+  border-right: 3px solid #0d9488;
+}
+.lectura-data-table td.lectura-data-table__td--riego-l,
+.lectura-data-table td.lectura-data-table__td--riego-r {
+  background: #f0fdfa;
+}
+.lectura-data-table thead th:nth-child(1),
+.lectura-data-table thead th:nth-child(2),
+.lectura-data-table thead th:nth-child(3),
+.lectura-data-table tbody td:nth-child(1),
+.lectura-data-table tbody td:nth-child(2),
+.lectura-data-table tbody td:nth-child(3) {
+  position: sticky;
+  z-index: 2;
+  background: #fff;
+}
+.lectura-data-table thead th:nth-child(1),
+.lectura-data-table thead th:nth-child(2),
+.lectura-data-table thead th:nth-child(3) {
+  z-index: 4;
+  background: #dbeafe;
+}
+.lectura-data-table th:nth-child(1),
+.lectura-data-table td:nth-child(1) {
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
+  left: 0;
+}
+.lectura-data-table th:nth-child(2),
+.lectura-data-table td:nth-child(2) {
+  width: 38px;
+  min-width: 38px;
+  max-width: 38px;
+  left: 34px;
+}
+.lectura-data-table th:nth-child(3),
+.lectura-data-table td:nth-child(3) {
+  min-width: 86px;
+  max-width: 104px;
+  left: 72px;
+  box-shadow: 6px 0 10px -8px rgba(15, 23, 42, 0.22);
+}
+.lectura-data-table tbody tr:nth-child(even) td:nth-child(1),
+.lectura-data-table tbody tr:nth-child(even) td:nth-child(2),
+.lectura-data-table tbody tr:nth-child(even) td:nth-child(3) {
+  background: #f8fbff;
+}
+.lectura-data-table td[data-field="vpd_max"],
+.lectura-data-table td[data-field="vpd_high"] {
+  color: #7f1d1d;
+  font-weight: 700;
+}
+.lectura-data-table td[data-field="vpd_min"],
+.lectura-data-table td[data-field="vpd_low"] {
+  color: #1d4ed8;
+}
+.lectura-data-table td[data-field="vpd_opt"] {
+  color: #16a34a;
+}
+.lectura-data-table td[data-field="etc"] {
+  font-weight: 700;
+  color: #475569;
+}
+.lectura-data-table td[data-field="rain_riego"] {
+  font-weight: 700;
+  color: #0e7490;
+}
+.lectura-data-table tbody td {
+  border-top: 1px solid #dbeafe;
+}
+.lectura-data-table tbody td:nth-child(1) {
+  font-weight: 800;
+  color: #1e3a8a;
+}
+.lectura-data-table tbody td:nth-child(2) {
+  font-weight: 700;
+  color: #334155;
+}
+.lectura-data-table tbody td:nth-child(3) {
+  font-weight: 700;
+  color: #14532d;
+  white-space: nowrap;
+  text-align: left;
+}
+.lectura-data-table input[type="number"] {
+  width: 58px;
+  max-width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 4px;
+  font-size: 11px;
+  text-align: right;
+}
+@media (max-width: 1280px) {
+  .lectura-data-table {
+    font-size: 10px;
+    min-width: 900px;
+  }
+  .lectura-data-table th,
+  .lectura-data-table td {
+    padding: 3px 4px;
+  }
+}
+

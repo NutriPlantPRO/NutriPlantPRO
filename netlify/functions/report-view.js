@@ -164,55 +164,77 @@ function withSharedViewChrome(reportHtml, options) {
     }
   </style>`;
   const chromeScript = `<script>
-function npSharedReportPrint(){
-  var pw=window.open('about:blank','_blank');
-  if(!pw){
-    alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF completo.');
-    return;
-  }
+function npCollectReportPrintHtml(doc){
+  doc=doc||document;
   var parts=[];
-  var wm=document.querySelector('.report-watermark-corner');
+  var wm=doc.querySelector('.report-watermark-corner');
   if(wm)parts.push(wm.outerHTML);
-  var main=document.querySelector('.report-main');
+  var main=doc.querySelector('.report-main');
   if(main){
     parts.push(main.outerHTML);
   }else{
-    Array.prototype.forEach.call(document.body.children,function(el){
+    Array.prototype.forEach.call(doc.body.children,function(el){
       if(!el||!el.classList)return;
       if(el.classList.contains('np-shared-topbar')||el.classList.contains('np-shared-note'))return;
       parts.push(el.outerHTML);
     });
   }
-  if(!parts.length){
-    alert('No se encontró el contenido del reporte para imprimir.');
-    try{pw.close();}catch(e){}
-    return;
-  }
-  var headNodes=document.head.cloneNode(true).childNodes;
+  return parts.join('');
+}
+function npBuildPrintDocumentHtml(sourceDoc){
   var headHtml='';
+  var headNodes=sourceDoc.head.childNodes;
   for(var i=0;i<headNodes.length;i++){
     var node=headNodes[i];
     if(!node||node.id==='np-shared-view-style')continue;
     if(node.outerHTML)headHtml+=node.outerHTML;
     else if(node.nodeType===3&&node.textContent.trim())headHtml+=node.textContent;
   }
-  var lang=document.documentElement.getAttribute('lang')||'es';
-  var html='<!DOCTYPE html><html lang="'+lang+'" class="notranslate" translate="no"><head>'+headHtml+
-    '<title>NutriPlant PRO - Reporte</title></head><body class="notranslate" translate="no">'+parts.join('')+'</body></html>';
+  headHtml+='<style>@media print{html,body{overflow:visible!important;height:auto!important;min-height:0!important;max-height:none!important;position:static!important}.report-main,.section,.project-info,.header,.footer,.report-block{overflow:visible!important;max-height:none!important;height:auto!important}}</style>';
+  var lang=sourceDoc.documentElement.getAttribute('lang')||'es';
+  return '<!DOCTYPE html><html lang="'+lang+'" class="notranslate" translate="no"><head>'+headHtml+
+    '<title>NutriPlant PRO - Reporte</title></head><body class="notranslate" translate="no">'+
+    npCollectReportPrintHtml(sourceDoc)+'</body></html>';
+}
+function npWaitForImages(doc,cb,maxMs){
+  maxMs=maxMs||15000;
+  var imgs=doc.querySelectorAll('img');
+  var pending=0;
+  imgs.forEach(function(img){
+    if(!img.getAttribute('src'))return;
+    if(!img.complete)pending++;
+  });
+  if(!pending){cb();return;}
+  var done=false;
+  function finish(){
+    if(done)return;
+    pending--;
+    if(pending<=0){done=true;cb();}
+  }
+  imgs.forEach(function(img){
+    if(!img.getAttribute('src')||img.complete)return;
+    img.addEventListener('load',finish);
+    img.addEventListener('error',finish);
+  });
+  setTimeout(function(){if(!done){done=true;cb();}},maxMs);
+}
+function npOpenPrintWindow(sourceDoc){
+  var pw=window.open('about:blank','_blank');
+  if(!pw){
+    alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF completo.');
+    return null;
+  }
+  var html=npBuildPrintDocumentHtml(sourceDoc);
   pw.document.open();
   pw.document.write(html);
   pw.document.close();
-  var fired=false;
-  function doPrint(){
-    if(fired)return;
-    fired=true;
-    try{pw.focus();pw.print();}catch(e){}
-  }
-  try{
-    if(pw.document&&pw.document.readyState==='complete'){setTimeout(doPrint,400);return;}
-    pw.addEventListener('load',function(){setTimeout(doPrint,400);});
-    setTimeout(doPrint,1200);
-  }catch(e){setTimeout(doPrint,500);}
+  npWaitForImages(pw.document,function(){
+    setTimeout(function(){try{pw.focus();pw.print();}catch(e){}},350);
+  },15000);
+  return pw;
+}
+function npSharedReportPrint(){
+  npOpenPrintWindow(document);
 }
 </script>`;
   const chromeHeader = `<header class="np-shared-topbar">
@@ -294,7 +316,8 @@ function storageShellPage(signedUrl) {
     .np-share-loading{padding:24px 16px;color:#64748b;font:14px/1.45 system-ui,sans-serif}
     @media print{
       .np-shared-topbar,.np-shared-note,.np-share-loading{display:none!important}
-      #np-share-frame{height:100vh}
+      html,body{overflow:visible!important;height:auto!important;max-height:none!important}
+      #np-share-frame{height:auto!important;min-height:0!important;border:0}
     }
   </style>
 </head>
@@ -311,6 +334,61 @@ function storageShellPage(signedUrl) {
   <p id="np-share-loading" class="np-share-loading">Cargando reporte…</p>
   <iframe id="np-share-frame" title="Reporte NutriPlant PRO" hidden></iframe>
   <script>
+  function npCollectReportPrintHtml(doc){
+    doc=doc||document;
+    var parts=[];
+    var wm=doc.querySelector('.report-watermark-corner');
+    if(wm)parts.push(wm.outerHTML);
+    var main=doc.querySelector('.report-main');
+    if(main){parts.push(main.outerHTML);}
+    else{
+      Array.prototype.forEach.call(doc.body.children,function(el){
+        if(!el||!el.classList)return;
+        if(el.classList.contains('np-shared-topbar')||el.classList.contains('np-shared-note'))return;
+        parts.push(el.outerHTML);
+      });
+    }
+    return parts.join('');
+  }
+  function npBuildPrintDocumentHtml(sourceDoc){
+    var headHtml='';
+    var headNodes=sourceDoc.head.childNodes;
+    for(var i=0;i<headNodes.length;i++){
+      var node=headNodes[i];
+      if(!node||node.id==='np-shared-view-style')continue;
+      if(node.outerHTML)headHtml+=node.outerHTML;
+      else if(node.nodeType===3&&node.textContent.trim())headHtml+=node.textContent;
+    }
+    headHtml+='<style>@media print{html,body{overflow:visible!important;height:auto!important;min-height:0!important;max-height:none!important;position:static!important}.report-main,.section,.project-info,.header,.footer,.report-block{overflow:visible!important;max-height:none!important;height:auto!important}}</style>';
+    var lang=sourceDoc.documentElement.getAttribute('lang')||'es';
+    return '<!DOCTYPE html><html lang="'+lang+'" class="notranslate" translate="no"><head>'+headHtml+
+      '<title>NutriPlant PRO - Reporte</title></head><body class="notranslate" translate="no">'+
+      npCollectReportPrintHtml(sourceDoc)+'</body></html>';
+  }
+  function npWaitForImages(doc,cb,maxMs){
+    maxMs=maxMs||15000;
+    var imgs=doc.querySelectorAll('img');
+    var pending=0;
+    imgs.forEach(function(img){if(!img.getAttribute('src'))return;if(!img.complete)pending++;});
+    if(!pending){cb();return;}
+    var done=false;
+    function finish(){if(done)return;pending--;if(pending<=0){done=true;cb();}}
+    imgs.forEach(function(img){
+      if(!img.getAttribute('src')||img.complete)return;
+      img.addEventListener('load',finish);
+      img.addEventListener('error',finish);
+    });
+    setTimeout(function(){if(!done){done=true;cb();}},maxMs);
+  }
+  function npOpenPrintWindow(sourceDoc){
+    var pw=window.open('about:blank','_blank');
+    if(!pw){alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF completo.');return null;}
+    pw.document.open();
+    pw.document.write(npBuildPrintDocumentHtml(sourceDoc));
+    pw.document.close();
+    npWaitForImages(pw.document,function(){setTimeout(function(){try{pw.focus();pw.print();}catch(e){}},350);},15000);
+    return pw;
+  }
   (function(){
     var url=${srcJson};
     var frame=document.getElementById('np-share-frame');
@@ -352,36 +430,18 @@ function storageShellPage(signedUrl) {
       .catch(function(){ loadViaSrc(); });
 
     document.getElementById('np-share-print-btn').addEventListener('click',function(){
-      var pw=null;
+      var srcDoc=null;
       try{
         if(frame&&frame.contentDocument&&frame.contentDocument.documentElement){
-          pw=window.open('about:blank','_blank');
-          if(!pw){
-            alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');
-            return;
-          }
-          pw.document.open();
-          pw.document.write(frame.contentDocument.documentElement.outerHTML);
-          pw.document.close();
+          srcDoc=frame.contentDocument;
         }
-      }catch(e){ pw=null; }
-      if(!pw){
-        pw=window.open(url,'_blank');
-        if(!pw){
-          alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');
-          return;
-        }
+      }catch(e){ srcDoc=null; }
+      if(srcDoc){
+        npOpenPrintWindow(srcDoc);
+        return;
       }
-      var fired=false;
-      function doPrint(){
-        if(fired)return;
-        fired=true;
-        try{pw.focus();pw.print();}catch(e2){}
-      }
-      try{
-        pw.addEventListener('load',function(){setTimeout(doPrint,500);});
-        setTimeout(doPrint,2000);
-      }catch(e3){setTimeout(doPrint,800);}
+      var pw=window.open(url,'_blank');
+      if(!pw){alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF.');}
     });
   })();
   </script>

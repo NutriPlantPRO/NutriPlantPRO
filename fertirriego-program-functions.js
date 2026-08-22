@@ -4622,6 +4622,10 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
     const totalStages = labels.length;
     const reportTickRotation = totalStages >= 16 ? 48 : 38;
     const reportTickAutoSkip = totalStages >= 10;
+    const reportLabelBottomPad = reportTickRotation >= 45 ? 48 : 40;
+    const chartStroke = totalStages >= 24 ? 1.6 : (totalStages >= 16 ? 1.8 : 2.0);
+    const chartPoint = chartStroke + 0.25;
+    const chartPointBorder = Math.max(1.2, chartStroke - 0.2);
     function mk(n) { return weeks.map(function(w) { return parseFloat(w.totals && w.totals[n]) || 0; }); }
     var macros = { N_NO3: mk('N_NO3'), N_NH4: mk('N_NH4'), P2O5: mk('P2O5'), K2O: mk('K2O'), CaO: mk('CaO'), MgO: mk('MgO'), SO4: mk('SO4') };
     var micros = { Fe: mk('Fe'), Mn: mk('Mn'), B: mk('B'), Zn: mk('Zn'), Cu: mk('Cu'), Mo: mk('Mo') };
@@ -4641,13 +4645,59 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
       macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'S' };
     }
     function present(series) { return fertProgChartDoseSeries(series); }
+    function makeReportDataset(label, data, color) {
+      return {
+        label: label,
+        data: present(data),
+        borderColor: color,
+        backgroundColor: 'transparent',
+        tension: 0.3,
+        borderWidth: chartStroke,
+        pointRadius: chartPoint,
+        pointBorderWidth: chartPointBorder,
+        pointBackgroundColor: color,
+        pointBorderColor: '#ffffff'
+      };
+    }
     var yTitle = fertProgChartYAxisTitle();
     var xTitle = fertProgT('stage', 'Etapa');
     var reportScaleOpts = {
       y: { beginAtZero: true, title: { display: true, text: yTitle } },
       x: { type: 'category', title: { display: true, text: xTitle }, ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, autoSkipPadding: 4 } }
     };
-    var W = 480, H = 280;
+    var reportLegendOpts = {
+      display: true,
+      position: 'top',
+      labels: {
+        usePointStyle: true,
+        pointStyle: 'circle',
+        boxWidth: 10,
+        boxHeight: 10,
+        generateLabels: function (chart) {
+          return chart.data.datasets.map(function (ds, i) {
+            return {
+              text: ds.label || '',
+              fillStyle: ds.borderColor,
+              strokeStyle: ds.borderColor,
+              lineWidth: ds.borderWidth || chartStroke,
+              hidden: !chart.isDatasetVisible(i),
+              datasetIndex: i,
+              fontColor: ds.borderColor,
+              pointStyle: 'circle'
+            };
+          });
+        }
+      }
+    };
+    var reportChartOptions = {
+      responsive: false,
+      maintainAspectRatio: false,
+      animation: false,
+      layout: { padding: { bottom: reportLabelBottomPad, top: 6, left: 2, right: 6 } },
+      plugins: { legend: reportLegendOpts },
+      scales: reportScaleOpts
+    };
+    var W = 640, H = 340;
     var macroCanvas = document.createElement('canvas');
     macroCanvas.width = W;
     macroCanvas.height = H;
@@ -4666,65 +4716,31 @@ function getFertiChartsDataUrlsForReport(program, callback, reportOptions) {
         data: {
           labels: labels,
           datasets: [
-            { label: 'N(NO3)', data: present(macros.N_NO3), borderColor: macroColors.N_NO3, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'N(NH4)', data: present(macros.N_NH4), borderColor: macroColors.N_NH4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.P2O5, data: present(macros.P2O5), borderColor: macroColors.P2O5, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.K2O, data: present(macros.K2O), borderColor: macroColors.K2O, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.CaO, data: present(macros.CaO), borderColor: macroColors.CaO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.MgO, data: present(macros.MgO), borderColor: macroColors.MgO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.SO4, data: present(macros.SO4), borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            makeReportDataset('N(NO3)', macros.N_NO3, macroColors.N_NO3),
+            makeReportDataset('N(NH4)', macros.N_NH4, macroColors.N_NH4),
+            makeReportDataset(macroLabels.P2O5, macros.P2O5, macroColors.P2O5),
+            makeReportDataset(macroLabels.K2O, macros.K2O, macroColors.K2O),
+            makeReportDataset(macroLabels.CaO, macros.CaO, macroColors.CaO),
+            makeReportDataset(macroLabels.MgO, macros.MgO, macroColors.MgO),
+            makeReportDataset(macroLabels.SO4, macros.SO4, macroColors.SO4)
           ]
         },
-        options: {
-          responsive: false,
-          maintainAspectRatio: false,
-          animation: false,
-          layout: { padding: { bottom: 48 } },
-          plugins: {
-            legend: {
-              display: true,
-              labels: {
-                usePointStyle: true,
-                pointStyle: 'circle',
-                boxWidth: 10,
-                boxHeight: 10
-              }
-            }
-          },
-          scales: reportScaleOpts
-        }
+        options: reportChartOptions
       });
       chartMicro = new Chart(microCanvas.getContext('2d'), {
         type: 'line',
         data: {
           labels: labels,
           datasets: [
-            { label: 'Fe', data: present(micros.Fe), borderColor: microColors.Fe, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Mn', data: present(micros.Mn), borderColor: microColors.Mn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'B', data: present(micros.B), borderColor: microColors.B, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Zn', data: present(micros.Zn), borderColor: microColors.Zn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Cu', data: present(micros.Cu), borderColor: microColors.Cu, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Mo', data: present(micros.Mo), borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            makeReportDataset('Fe', micros.Fe, microColors.Fe),
+            makeReportDataset('Mn', micros.Mn, microColors.Mn),
+            makeReportDataset('B', micros.B, microColors.B),
+            makeReportDataset('Zn', micros.Zn, microColors.Zn),
+            makeReportDataset('Cu', micros.Cu, microColors.Cu),
+            makeReportDataset('Mo', micros.Mo, microColors.Mo)
           ]
         },
-        options: {
-          responsive: false,
-          maintainAspectRatio: false,
-          animation: false,
-          layout: { padding: { bottom: 48 } },
-          plugins: {
-            legend: {
-              display: true,
-              labels: {
-                usePointStyle: true,
-                pointStyle: 'circle',
-                boxWidth: 10,
-                boxHeight: 10
-              }
-            }
-          },
-          scales: reportScaleOpts
-        }
+        options: reportChartOptions
       });
       result.macro = (chartMacro && chartMacro.toBase64Image) ? chartMacro.toBase64Image() : macroCanvas.toDataURL('image/png');
       result.micro = (chartMicro && chartMicro.toBase64Image) ? chartMicro.toBase64Image() : microCanvas.toDataURL('image/png');

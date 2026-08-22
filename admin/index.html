@@ -10031,9 +10031,9 @@
             if (!containerEl) return;
             opts = opts || {};
             const dodgeOn = !!opts.dodge;
-            const width = 600;
-            const height = 250;
-            const padL = 40, padR = 10, padT = 10, padB = 118;
+            const width = opts.width || 600;
+            const height = opts.height || 250;
+            const padL = 40, padR = 10, padT = 10, padB = opts.fertiLineCharts ? 118 : 118;
             const innerW = width - padL - padR;
             const innerH = height - padT - padB;
             const allValues = datasets.flatMap(d => d.data.map(v => parseFloat(v) || 0));
@@ -10080,13 +10080,17 @@
                 const dashAttr = ds.strokeDasharray
                     ? ` stroke-dasharray="${String(ds.strokeDasharray).replace(/"/g, '')}"`
                     : (ds.dashed ? ' stroke-dasharray="7 5"' : '');
-                const strokeW = ds.strokeWidth != null ? ds.strokeWidth : 2;
+                const strokeW = ds.strokeWidth != null ? ds.strokeWidth : (opts.fertiLineCharts ? 1.8 : 2);
                 svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="${strokeW}"${dashAttr} points="${points}" />`;
-                const cr = ds.pointRadius != null ? ds.pointRadius : (dodgeOn ? 3.2 : 2.5);
+                const cr = ds.pointRadius != null ? ds.pointRadius : (opts.fertiLineCharts ? 2.2 : (dodgeOn ? 3.2 : 2.5));
                 ds.data.forEach((v, i) => {
                     const x = xAt(i, di);
                     const y = yAt(parseFloat(v) || 0);
-                    svg += adminSvgPoint(ds.pointStyle, x, y, ds.color, cr);
+                    if (opts.fertiLineCharts) {
+                        svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${cr}" fill="${ds.color}" stroke="#ffffff" stroke-width="0.9" />`;
+                    } else {
+                        svg += adminSvgPoint(ds.pointStyle, x, y, ds.color, cr);
+                    }
                 });
             });
             svg += `</svg>`;
@@ -10429,8 +10433,9 @@
                 { label: 'Cu', data: micros.Cu, color: microColors.Cu },
                 { label: 'Mo', data: micros.Mo, color: microColors.Mo }
             ];
-                buildAdminSvgChart(macroContainer, labels, macroDatasets);
-                buildAdminSvgChart(microContainer, labels, microDatasets);
+            const fertiChartOpts = { fertiLineCharts: true, width: 640, height: 340 };
+                buildAdminSvgChart(macroContainer, labels, macroDatasets, fertiChartOpts);
+                buildAdminSvgChart(microContainer, labels, microDatasets, fertiChartOpts);
             } catch (e) {
                 console.warn('⚠️ Error renderizando gráficas de Fertirriego (admin):', e);
             }
@@ -14541,53 +14546,9 @@
                         ${microCols.map((n, i) => `<td style="padding:8px;border:1px solid #e2e8f0;${i === 0 ? dividerBorder : ''}text-align:right;">${displayMicro(n, microTotals[i])}</td>`).join('')}
                     </tr>
                 `;
-                const generationMeta = fertirriegoProgram.generationMeta && typeof fertirriegoProgram.generationMeta === 'object'
-                    ? fertirriegoProgram.generationMeta
-                    : null;
-                const generationDiagnostics = generationMeta && Array.isArray(generationMeta.diagnostics)
-                    ? generationMeta.diagnostics
-                    : [];
-                const generationKeys = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-                const generationMapText = function(map) {
-                    const values = generationKeys
-                        .filter(key => (Number(map && map[key]) || 0) > 0.005)
-                        .map(key => `${key}: ${formatAdminValue(key, Number(map && map[key]) || 0)}`);
-                    return values.length ? values.join(' · ') : '—';
-                };
-                const generationBlock = generationMeta ? `
-                    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;margin-bottom:12px;">
-                        <div style="font-weight:700;color:#92400e;margin-bottom:6px;">🤖 Programa vs distribución</div>
-                        <div style="font-size:12px;color:#92400e;margin-bottom:8px;">
-                            <strong>Origen:</strong> generación automática desde Distribución objetivo ·
-                            <strong>Generado:</strong> ${escapeHtml(generationMeta.generatedAt || '—')} ·
-                            <strong>Regla:</strong> sin sobrepasar metas; agua proporcional a la lámina.
-                        </div>
-                        <div style="overflow:auto;">
-                            <table style="width:100%;border-collapse:collapse;font-size:11px;">
-                                <thead><tr>
-                                    <th style="padding:6px;border:1px solid #fde68a;text-align:left;">Periodo</th>
-                                    <th style="padding:6px;border:1px solid #fde68a;text-align:left;">Meta</th>
-                                    <th style="padding:6px;border:1px solid #fde68a;text-align:left;">Agua</th>
-                                    <th style="padding:6px;border:1px solid #fde68a;text-align:left;">Programa</th>
-                                    <th style="padding:6px;border:1px solid #fde68a;text-align:left;">Faltante</th>
-                                    <th style="padding:6px;border:1px solid #fde68a;text-align:left;">Exceso inevitable del agua</th>
-                                </tr></thead>
-                                <tbody>${generationDiagnostics.map((d, i) => `
-                                    <tr>
-                                        <td style="padding:6px;border:1px solid #fde68a;">${escapeHtml(d.name || String(i + 1))}</td>
-                                        <td style="padding:6px;border:1px solid #fde68a;">${generationMapText(d.target)}</td>
-                                        <td style="padding:6px;border:1px solid #fde68a;">${generationMapText(d.water)}</td>
-                                        <td style="padding:6px;border:1px solid #fde68a;">${generationMapText(d.supplied)}</td>
-                                        <td style="padding:6px;border:1px solid #fde68a;">${generationMapText(d.remaining)}</td>
-                                        <td style="padding:6px;border:1px solid #fde68a;">${generationMapText(d.excess)}</td>
-                                    </tr>`).join('') || '<tr><td colspan="6" style="padding:6px;border:1px solid #fde68a;">Sin diagnóstico guardado.</td></tr>'}</tbody>
-                            </table>
-                        </div>
-                    </div>` : '';
                 html += `
                     <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid #86efac;">
                         <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px; font-weight: 600;">💧 Programa de Fertirriego</h4>
-                        ${generationBlock}
                         ${!hasProgramTotals ? '<div style="margin-bottom:10px;padding:8px 10px;background:#fffbeb;border:1px dashed #f59e0b;border-radius:6px;color:#92400e;font-size:12px;">No hay totales guardados por semana en este programa. El admin no recalcula con catálogo interno; muestra solo lo guardado.</div>' : ''}
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
                             <div style="font-weight:600;color:#1e293b;margin-bottom:8px;">📊 Resumen Total del Ciclo</div>

@@ -19053,9 +19053,9 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
     });
     datasets.forEach(ds => {
       const points = ds.data.map((v, i) => `${xAt(i)},${yAt(v)}`).join(' ');
-      svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="2" points="${points}" />`;
+      svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="1.8" points="${points}" />`;
       ds.data.forEach((v, i) => {
-        svg += `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="2.4" fill="${ds.color}" />`;
+        svg += `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="2.2" fill="${ds.color}" stroke="#ffffff" stroke-width="0.9" />`;
       });
     });
     svg += '</svg>';
@@ -19251,43 +19251,6 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
   const fertiInsightsBlock = (weeks.length > 0 && typeof window.buildFertiChartsInsightsHtmlForReport === 'function')
     ? window.buildFertiChartsInsightsHtmlForReport(prog, waterContribution, { language: reportLang })
     : '';
-  const generationMeta = prog.generationMeta && typeof prog.generationMeta === 'object' ? prog.generationMeta : null;
-  const generationDiagnostics = generationMeta && Array.isArray(generationMeta.diagnostics) ? generationMeta.diagnostics : [];
-  const generationKeys = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-  const generationMapText = (map, onlyPositive) => generationKeys
-    .filter(key => !onlyPositive || toNum(map && map[key]) > 0.005)
-    .map(key => `${label(key, false)} ${reportNum(fromSI(toNum(map && map[key]), 'dose_mass_area'), 2)}`)
-    .join(' · ') || '—';
-  const generationBlock = generationMeta ? `
-      <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">🤖 ${rt('Programa vs distribución', 'Program vs distribution')}</div>
-        <div class="report-note" style="margin-bottom:8px;">
-          <strong>${rt('Origen:', 'Source:')}</strong> ${rt('generación automática desde Distribución objetivo', 'automatic generation from Objective Distribution')}
-          · <strong>${rt('Generado:', 'Generated:')}</strong> ${reportEscapeHtml(generationMeta.generatedAt ? reportFormatDateTime(generationMeta.generatedAt, reportLang) : '—')}
-          · <strong>${rt('Regla:', 'Rule:')}</strong> ${rt('sin sobrepasar metas; el agua se reparte por lámina', 'do not exceed targets; water is allocated by irrigation depth')}
-        </div>
-        <div class="report-table-wrap">
-          <table class="report-app-table">
-            <thead><tr>
-              <th>${rt('Periodo', 'Period')}</th>
-              <th>${rt('Meta de distribución', 'Distribution target')} (${doseUnit})</th>
-              <th>${rt('Aporte de agua', 'Water supply')} (${doseUnit})</th>
-              <th>${rt('Aporte del programa', 'Program supply')} (${doseUnit})</th>
-              <th>${rt('Faltante', 'Deficit')} (${doseUnit})</th>
-              <th>${rt('Exceso inevitable del agua', 'Unavoidable water excess')} (${doseUnit})</th>
-            </tr></thead>
-            <tbody>${generationDiagnostics.map((d, i) => `
-              <tr>
-                <td>${reportEscapeHtml(d.name || `${reportFertiIsMes ? rt('Mes', 'Month') : rt('Semana', 'Week')} ${i + 1}`)}</td>
-                <td>${generationMapText(d.target, true)}</td>
-                <td>${generationMapText(d.water, true)}</td>
-                <td>${generationMapText(d.supplied, true)}</td>
-                <td>${generationMapText(d.remaining, true)}</td>
-                <td>${generationMapText(d.excess, true)}</td>
-              </tr>`).join('') || `<tr><td colspan="6">${rt('Sin diagnóstico guardado.', 'No saved diagnostics.')}</td></tr>`}</tbody>
-          </table>
-        </div>
-      </div>` : '';
 
   return `
     <div class="section">
@@ -19431,7 +19394,6 @@ function createFertigationSectionHTML(chartImages, reportLanguage, reportUnitSys
         </table>
         </div>
       </div>
-      ${generationBlock}
       ${chartsBlock}
       ${sourceShareBlock}
       ${fertiInsightsBlock}

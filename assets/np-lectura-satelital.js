@@ -850,7 +850,7 @@
           '</div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
-        '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
+        '<div id="lecturaTableWrap" class="lectura-table-wrap"></div>' +
         '<div id="lecturaChartWrap" style="margin-top:14px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;overflow:visible;position:relative;">' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
             '<div style="font-weight:700;color:#0f172a;font-size:14px;" data-i18n="radar.chart_by_period">' + t('radar.chart_by_period', 'Gráfica por periodo') + '</div>' +
@@ -1221,7 +1221,6 @@
     var cropHa = getCropHa();
     var pct = getFranjaPct(state);
     var iHa = irrigatedHa(state);
-    var inpStyle = 'width:72px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;text-align:right;';
     var sig = lecturaTableSignature(state);
 
     var volU = lecturaVolumeUnit();
@@ -1255,20 +1254,6 @@
     var riegoM3Header =
       lecturaT('radar.riego_m3_header', 'Riego') + ' <span style="' + unitBox + '">' + volU + '</span> / ' + haLabel;
 
-    // lámina primero (junto a ET₀/lluvia); m³ después — mismo riego, dos unidades.
-    var riegoThL =
-      'padding:9px 10px;text-align:center;white-space:nowrap;background:#ecfdf5;color:#115e59;' +
-      'border:1px solid #5eead4;border-left:3px solid #0d9488;font-weight:800;font-size:12px;';
-    var riegoThR =
-      'padding:9px 10px;text-align:center;white-space:nowrap;background:#ecfdf5;color:#115e59;' +
-      'border:1px solid #5eead4;border-right:3px solid #0d9488;font-weight:800;font-size:12px;';
-    var riegoTdL =
-      'padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;background:#f0fdfa;' +
-      'border-left:3px solid #0d9488;';
-    var riegoTdR =
-      'padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;background:#f0fdfa;' +
-      'border-right:3px solid #0d9488;';
-
     var headers = [
       ['ID', lecturaT('radar.period_id_title', 'Identificador del periodo (P1, P2…).'), false, null],
       [
@@ -1283,9 +1268,9 @@
         false,
         null
       ],
-      ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
-      ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
-      ['NDRE prom', 'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.', false, null],
+      ['NDVI', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
+      ['NDMI', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
+      ['NDRE', 'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.', false, null],
       [
         lecturaT('radar.col_vpd_avg', 'VPD prom (kPa)'),
         lecturaT('radar.col_vpd_avg_title', 'VPD promedio horario del periodo.'),
@@ -1304,30 +1289,30 @@
         false,
         null
       ],
-      ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
-      ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
-      ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false, null],
+      ['h &lt;0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
+      ['h 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
+      ['h &gt;1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false, null],
       [
-        lecturaT('radar.et0_acum_header', 'ET₀ acum ({unit})', { unit: depthU }),
-        lecturaT('radar.et0_acum_title', 'ET₀ acumulada durante todo el periodo.'),
+        'ET₀',
+        lecturaT('radar.et0_acum_title', 'ET₀ acumulada durante todo el periodo.') + ' (' + depthU + ')',
         false,
         null
       ],
       [
-        lecturaT('radar.etc_acum_header', 'ETc acum ({unit})', { unit: depthU }),
-        lecturaT('radar.etc_acum_title', 'ETc = ET₀ × Kc (mismo Kc que en Clima).'),
+        'ETc',
+        lecturaT('radar.etc_acum_title', 'ETc = ET₀ × Kc (mismo Kc que en Clima).') + ' (' + depthU + ')',
         false,
         null
       ],
       [
-        lecturaT('radar.rain_acum_header', 'Lluvia acum ({unit})', { unit: depthU }),
-        lecturaT('radar.rain_acum_title', 'Lluvia acumulada durante todo el periodo.'),
+        lecturaT('radar.rain_chip', 'Lluvia'),
+        lecturaT('radar.rain_acum_title', 'Lluvia acumulada durante todo el periodo.') + ' (' + depthU + ')',
         false,
         null
       ],
       [
-        lecturaT('radar.rain_riego_header', 'Lluvia + Riego ({unit})', { unit: depthU }),
-        lecturaT('radar.rain_riego_title', 'Suma de lluvia acumulada y riego (lámina) del periodo.'),
+        lecturaT('radar.rain_riego_chip', 'Lluvia + Riego'),
+        lecturaT('radar.rain_riego_title', 'Suma de lluvia acumulada y riego (lámina) del periodo.') + ' (' + depthU + ')',
         false,
         null
       ],
@@ -1350,14 +1335,13 @@
         null
       ]
     ];
-    var thStyle =
-      'padding:9px 10px;text-align:center;white-space:nowrap;background:#dbeafe;color:#1e3a8a;' +
-      'border:1px solid #93c5fd;font-weight:800;font-size:12px;';
-    html += '<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;background:#fff;border:1px solid #93c5fd;border-radius:10px;overflow:hidden;">' +
-      '<thead><tr>' +
+    var thClass = 'lectura-data-table__th';
+    html += '<table class="lectura-data-table"><thead><tr>' +
       headers.map(function (h) {
-        var st = h[3] === 'riegoL' ? riegoThL : h[3] === 'riegoR' ? riegoThR : thStyle;
-        return '<th title="' + esc(h[1]) + '" style="' + st + '">' + (h[2] ? h[0] : esc(h[0])) + '</th>';
+        var cls = thClass;
+        if (h[3] === 'riegoL') cls += ' lectura-data-table__th--riego-l';
+        else if (h[3] === 'riegoR') cls += ' lectura-data-table__th--riego-r';
+        return '<th class="' + cls + '" title="' + esc(h[1]) + '">' + (h[2] ? h[0] : esc(h[0])) + '</th>';
       }).join('') +
       '</tr></thead><tbody>';
     function expandedTip(r) {
@@ -1387,45 +1371,42 @@
     var kcTable = getClimateKcForLectura();
     rows.forEach(function (r, rowIdx) {
       var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
-      var rowBg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fbff';
       var tip = expandedTip(r);
       var days = periodDaysCount(r);
-      html += '<tr data-lectura-index="' + r.index + '" style="background:' + rowBg + ';">' +
-        '<td style="padding:8px 10px;text-align:center;font-weight:800;color:#1e3a8a;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.period_id_title', 'ID del periodo')) + '">' +
+      html += '<tr data-lectura-index="' + r.index + '">' +
+        '<td title="' + esc(lecturaT('radar.period_id_title', 'ID del periodo')) + '">' +
           esc(periodIdLabel(r)) +
         '</td>' +
-        '<td style="padding:8px 10px;text-align:center;font-weight:700;color:#334155;border-top:1px solid #dbeafe;" title="' +
-          esc((r.date_start || '') + ' → ' + (r.date_end || '')) +
-        '">' +
+        '<td title="' + esc((r.date_start || '') + ' → ' + (r.date_end || '')) + '">' +
           (days != null ? days : '—') +
         '</td>' +
-        '<td style="padding:8px 10px;font-weight:700;color:#14532d;white-space:nowrap;border-top:1px solid #dbeafe;">' + esc(r.label || '') +
+        '<td>' + esc(r.label || '') +
           (r.lookback_expanded
             ? ' <span title="' + esc(tip) + '" style="color:#b45309;cursor:help;">*</span>'
             : '') + '</td>' +
-        '<td data-field="ndvi" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
-        '<td data-field="ndmi" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
-        '<td data-field="ndre" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndre_mean, 3) + '</td>' +
-        '<td data-field="vpd" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
-        '<td data-field="vpd_max" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;color:#7f1d1d;font-weight:700;" title="' + esc(lecturaT('radar.col_vpd_max_title', 'VPD máximo horario del periodo.')) + '">' + fmtNum(r.vpd_max, 2) + '</td>' +
-        '<td data-field="vpd_min" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;color:#1d4ed8;font-weight:700;" title="' + esc(lecturaT('radar.col_vpd_min_title', 'VPD mínimo horario del periodo.')) + '">' + fmtNum(r.vpd_min, 2) + '</td>' +
-        '<td data-field="vpd_low" style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_low_title', 'Horas VPD bajo')) + '">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
-        '<td data-field="vpd_opt" style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_opt_title', 'Horas VPD óptimo')) + '">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
-        '<td data-field="vpd_high" style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="' + esc(lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto')) + '">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
-        '<td data-field="et0" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtDepth(r.et0_sum) + '</td>' +
-        '<td data-field="etc" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;font-weight:700;color:#475569;" title="' + esc(lecturaT('radar.etc_acum_title', 'ETc = ET₀ × Kc (mismo Kc que en Clima).')) + '">' + fmtDepth(etcMmForRow(r, kcTable)) + '</td>' +
-        '<td data-field="rain" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtDepth(r.rain_sum) + '</td>' +
-        '<td data-field="rain_riego" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;font-weight:700;color:#0e7490;" title="' + esc(lecturaT('radar.rain_riego_title', 'Suma de lluvia acumulada y riego (lámina) del periodo.')) + '">' + fmtDepth(rainPlusRiegoMm(r, iHa)) + '</td>' +
-        '<td style="' + riegoTdL + '" title="' + esc(lecturaT('radar.riego_mm_cell_title', 'Mismo riego que {vol} (lámina en franja, {unit})', { unit: depthU, vol: volU })) + '">' +
+        '<td data-field="ndvi">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
+        '<td data-field="ndmi">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
+        '<td data-field="ndre">' + fmtNum(r.ndre_mean, 3) + '</td>' +
+        '<td data-field="vpd">' + fmtNum(r.vpd_mean, 2) + '</td>' +
+        '<td data-field="vpd_max" title="' + esc(lecturaT('radar.col_vpd_max_title', 'VPD máximo horario del periodo.')) + '">' + fmtNum(r.vpd_max, 2) + '</td>' +
+        '<td data-field="vpd_min" title="' + esc(lecturaT('radar.col_vpd_min_title', 'VPD mínimo horario del periodo.')) + '">' + fmtNum(r.vpd_min, 2) + '</td>' +
+        '<td data-field="vpd_low" title="' + esc(lecturaT('radar.vpd_hours_low_title', 'Horas VPD bajo')) + '">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
+        '<td data-field="vpd_opt" title="' + esc(lecturaT('radar.vpd_hours_opt_title', 'Horas VPD óptimo')) + '">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
+        '<td data-field="vpd_high" title="' + esc(lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto')) + '">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
+        '<td data-field="et0">' + fmtDepth(r.et0_sum) + '</td>' +
+        '<td data-field="etc" title="' + esc(lecturaT('radar.etc_acum_title', 'ETc = ET₀ × Kc (mismo Kc que en Clima).')) + '">' + fmtDepth(etcMmForRow(r, kcTable)) + '</td>' +
+        '<td data-field="rain">' + fmtDepth(r.rain_sum) + '</td>' +
+        '<td data-field="rain_riego" title="' + esc(lecturaT('radar.rain_riego_title', 'Suma de lluvia acumulada y riego (lámina) del periodo.')) + '">' + fmtDepth(rainPlusRiegoMm(r, iHa)) + '</td>' +
+        '<td class="lectura-data-table__td--riego-l" title="' + esc(lecturaT('radar.riego_mm_cell_title', 'Mismo riego que {vol} (lámina en franja, {unit})', { unit: depthU, vol: volU })) + '">' +
           '<input type="number" min="0" step="' + (lecturaUsesInches() ? '0.01' : '0.1') + '" value="' + esc(depthInputValue(mmVal)) +
-          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_mm_input_title', 'Lámina en franja regada (mismo riego que {vol})', { vol: volU })) + '"' +
+          '" data-riego-mm-index="' + r.index + '" placeholder="0" title="' + esc(lecturaT('radar.riego_mm_input_title', 'Lámina en franja regada (mismo riego que {vol})', { vol: volU })) + '"' +
           (iHa == null ? ' disabled' : '') + '>' +
         '</td>' +
-        '<td style="' + riegoTdR + '" title="' + esc(lecturaT('radar.riego_m3_cell_title', 'Mismo riego que {unit} (volumen del polígono)', { unit: depthU, vol: volU })) + '">' +
+        '<td class="lectura-data-table__td--riego-r" title="' + esc(lecturaT('radar.riego_m3_cell_title', 'Mismo riego que {unit} (volumen del polígono)', { unit: depthU, vol: volU })) + '">' +
           '<input type="number" min="0" step="' + (lecturaUsesInches() ? '1' : '0.1') + '" value="' + esc(volumeInputValue(r.riego_m3)) +
-          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que {unit}', { ha: haLabel, unit: depthU, vol: volU })) + '">' +
+          '" data-riego-m3-index="' + r.index + '" placeholder="0" title="' + esc(lecturaT('radar.riego_m3_input_title', 'Volumen total referido al polígono ({ha}) — mismo riego que {unit}', { ha: haLabel, unit: depthU, vol: volU })) + '">' +
         '</td>' +
-        '<td data-field="status" style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
+        '<td data-field="status">' + statusBadge(r) + '</td>' +
       '</tr>';
     });
     html += '</tbody></table>';
