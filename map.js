@@ -4493,15 +4493,13 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   // DEM (relieve): opacidad alta — el blur no debe dejarlo “lavado”/transparente.
   const containerOpacity =
     isPilotLayer || isDemLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
-  // DEM ~30 m: difuminar bloques (pendiente más que altura). Pilot: sin filtro. GEE legacy: saturación.
-  // Pendiente: blur base; en draw() se ajusta según tamaño en pantalla (predios chicos = cuadros enormes).
-  let visualFilter = isSlopeLayer
-    ? 'blur(6px) contrast(1.14) saturate(1.2) brightness(0.96)'
-    : isDemLayer
-      ? 'blur(1.75px) contrast(1.08) saturate(1.08)'
-      : isPilotLayer
-        ? 'none'
-        : 'saturate(1.35) contrast(1.15)';
+  // DEM ~30 m: ligero suavizado (misma intensidad pendiente/altura). Sin blur fuerte:
+  // la pendiente quedaba ilegible en mapa, PDF y admin.
+  let visualFilter = isDemLayer
+    ? 'blur(1.2px) contrast(1.08) saturate(1.08)'
+    : isPilotLayer
+      ? 'none'
+      : 'saturate(1.35) contrast(1.15)';
   const overlay = new google.maps.OverlayView();
   overlay.onAdd = function() {
     const div = document.createElement('div');
@@ -4519,9 +4517,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Radar ' + np_getRadarIndexConfig(indexForLabel).label;
-    img.className = isDemLayer
-      ? 'np-dem-smooth-img' + (isSlopeLayer ? ' np-dem-smooth-slope' : '')
-      : '';
+    img.className = isDemLayer ? 'np-dem-smooth-img' : '';
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.display = 'block';
@@ -4561,13 +4557,6 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     this.div.style.width = Math.max(width, 2) + 'px';
     this.div.style.height = Math.max(height, 2) + 'px';
     this.div.style.display = 'block';
-    // Pendiente: más zoom / predio chico → cuadros DEM más grandes → más blur (sin lavar el color).
-    if (this._npIsSlopeLayer && this._npImg) {
-      const edge = Math.max(width, height);
-      const blurPx = Math.max(5, Math.min(16, Math.round(edge * 0.028)));
-      this._npImg.style.filter =
-        'blur(' + blurPx + 'px) contrast(1.14) saturate(1.2) brightness(0.96)';
-    }
     console.log('🛰️ Radar overlay draw:', { left, top, width, height });
   };
   overlay.onRemove = function() {

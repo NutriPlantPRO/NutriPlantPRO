@@ -1061,24 +1061,18 @@
     var data = meta && typeof meta === 'object' && 'kc' in meta ? meta : readKcMetaFromClimate(meta);
     var kc = data && data.kc != null && Number.isFinite(Number(data.kc)) ? Number(data.kc) : null;
     if (kc == null) return '';
-    var extra = '';
-    if (data.cropName) extra += irrT('Cultivo: ', 'Crop: ') + esc(data.cropName);
-    if (data.kcStage) extra += (extra ? ' · ' : '') + irrT('Etapa: ', 'Stage: ') + esc(data.kcStage);
+    var bits = ['Kc = ' + formatKcLabel(kc)];
+    if (data.cropName) bits.push(irrT('Cultivo: ', 'Crop: ') + esc(data.cropName));
+    if (data.kcStage) bits.push(irrT('Etapa: ', 'Stage: ') + esc(data.kcStage));
+    // Nota discreta (reporte/admin): el valor se ve, sin caja llamativa ni tipografía hero.
     return (
-      '<div class="np-kc-used-box" style="margin:0 0 12px;padding:10px 12px;background:#ecfeff;border:1.5px solid #22d3ee;border-radius:8px;">' +
-      '<div style="font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#0e7490;">' +
-      irrT('Kc usado por el usuario', 'Kc used by the user') +
-      '</div>' +
-      '<div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">Kc = ' +
-      formatKcLabel(kc) +
-      '</div>' +
-      (extra ? '<div style="font-size:13px;color:#334155;margin-top:2px;">' + extra + '</div>' : '') +
-      '<div style="font-size:11px;color:#64748b;margin-top:4px;">' +
-      irrT(
-        'ETc = ET₀ × Kc. Queda guardado en el proyecto (Clima y Lectura Satelital).',
-        'ETc = ET₀ × Kc. Saved on the project (Climate and Satellite Reading).'
-      ) +
-      '</div></div>'
+      '<div class="np-kc-used-box" style="margin:0 0 8px;padding:5px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;line-height:1.4;color:#475569;">' +
+      '<span style="font-weight:700;color:#334155;">' +
+      bits.join(' · ') +
+      '</span>' +
+      '<span style="color:#94a3b8;"> · ' +
+      irrT('ETc = ET₀ × Kc (Clima / Lectura)', 'ETc = ET₀ × Kc (Climate / Reading)') +
+      '</span></div>'
     );
   }
 

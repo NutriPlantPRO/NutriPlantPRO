@@ -17278,9 +17278,8 @@ function createLocationDemMapHTML(demSlope, rt) {
     const statsLine = statsArr.length
       ? `<div class="report-note-inline" style="margin-top:6px;">${statsArr.join(' · ')}</div>`
       : '';
-    // Igualar la pendiente al suavizado del Dashboard: el DEM es ~30 m y sin
-    // este blur los píxeles de la grilla se marcan demasiado al imprimir.
-    const blurPx = softBlur ? '5px' : '1.2px';
+    // Suavizado ligero (igual pendiente/altura): el blur fuerte dejaba la pendiente ilegible.
+    const blurPx = '1.2px';
     const slopeCls = softBlur ? ' np-dem-smooth-slope' : '';
     return `
       <div class="report-keep-together" style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:8px;">

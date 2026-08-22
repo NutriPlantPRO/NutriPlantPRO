@@ -461,12 +461,12 @@ async function renderDemSlopePng(dem, opts) {
   const elevRaw = await readDemElevationMosaic(urls, bbox4326, outW, outH);
   // Stats con valores crudos; suavizado solo para visualización (sin bloques ~30 m).
   const elevStats = elevStatsInPolygon(elevRaw, outW, outH, polygon, bbox4326);
-  // Pre-suavizar DEM antes de pendiente: reduce escalones del grid ~30 m en el gradiente.
-  const elevForSlope = smoothFloatGrid(elevRaw, outW, outH, 4, 2);
+  // Pre-suavizar DEM antes de pendiente (ligero): evita escalones sin lavar el detalle.
+  const elevForSlope = smoothFloatGrid(elevRaw, outW, outH, 2, 1);
   const slopeRaw = computeSlopePercent(elevForSlope, outW, outH, bbox4326);
   const elev = smoothFloatGrid(elevRaw, outW, outH, 3);
-  // Pendiente: kernel más ancho + más pases (en predios chicos el DEM ~30 m se ve a cuadros).
-  const slope = smoothFloatGrid(slopeRaw, outW, outH, 7, 2);
+  // Pendiente: mismo orden de suavizado que altura (antes 7×2 + PNG strong = muy difusa).
+  const slope = smoothFloatGrid(slopeRaw, outW, outH, 3, 1);
 
   const elevFallback = {
     ...ELEV_VIS,
@@ -482,7 +482,7 @@ async function renderDemSlopePng(dem, opts) {
       requireCoverage: false,
       label: 'Pendiente',
       demSmooth: true,
-      demSmoothStrong: true
+      demSmoothStrong: false
     }),
     indexToPngBuffer(elev, elevFallback, outW, outH, polygon, bbox4326, {
       requireCoverage: false,
