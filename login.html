@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=49" />
+  <link rel="stylesheet" href="auth.css?v=50" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -4492,33 +4492,27 @@
         return Math.max(280, Math.min(500, width));
       }
 
-      function facebookEmbedHeight(container) {
-        var h = Math.floor((container && container.clientHeight) || 0);
-        if (!h) {
-          var body = container && container.closest('.login-social-pane__body');
-          h = Math.floor((body && body.clientHeight) || 0);
-        }
-        if (!h) {
-          var panels = root.querySelector('.login-social-panels');
-          h = Math.floor((panels && panels.clientHeight) || 0) - 48;
-        }
-        if (!h) h = 320;
-        // No empujar el CTA fuera del panel
-        return Math.max(220, Math.min(480, h));
-      }
-
       var fbResizeTimer = null;
+      var fbLastMountedWidth = 0;
+      var fbEmbedHeightCache = null;
+      var fbEmbedHeightMode = null;
+
+      function facebookEmbedHeight() {
+        var mode = window.innerWidth < 700 ? 'mobile' : 'desktop';
+        if (fbEmbedHeightMode === mode && fbEmbedHeightCache) return fbEmbedHeightCache;
+        fbEmbedHeightMode = mode;
+        fbEmbedHeightCache = mode === 'mobile' ? 340 : 380;
+        return fbEmbedHeightCache;
+      }
 
       function mountFacebookEmbed(container, force) {
         if (!container) return;
         var width = facebookEmbedWidth(container);
-        var fbHeight = facebookEmbedHeight(container);
+        var fbHeight = facebookEmbedHeight();
         var prevWidth = parseInt(container.dataset.fbWidth, 10) || 0;
-        var prevHeight = parseInt(container.dataset.fbHeight, 10) || 0;
         if (
           !force &&
-          Math.abs(prevWidth - width) <= 6 &&
-          Math.abs(prevHeight - fbHeight) <= 6 &&
+          Math.abs(prevWidth - width) <= 8 &&
           container.querySelector('iframe')
         ) {
           return;
@@ -4548,18 +4542,16 @@
         iframe.style.minHeight = fbHeight + 'px';
         container.appendChild(iframe);
         container.dataset.loaded = '1';
+        fbLastMountedWidth = width;
       }
 
       function scheduleFacebookEmbedRefresh(container) {
         if (!container) return;
-        function refresh() {
-          mountFacebookEmbed(container, false);
-        }
+        mountFacebookEmbed(container, true);
         window.requestAnimationFrame(function () {
-          window.requestAnimationFrame(refresh);
-        });
-        [120, 450, 1100].forEach(function (ms) {
-          window.setTimeout(refresh, ms);
+          window.requestAnimationFrame(function () {
+            mountFacebookEmbed(container, false);
+          });
         });
       }
 
@@ -4567,8 +4559,11 @@
         if (!container) return;
         window.clearTimeout(fbResizeTimer);
         fbResizeTimer = window.setTimeout(function () {
-          mountFacebookEmbed(container, false);
-        }, 160);
+          var width = facebookEmbedWidth(container);
+          if (!container.querySelector('iframe') || Math.abs(width - fbLastMountedWidth) > 8) {
+            mountFacebookEmbed(container, false);
+          }
+        }, 220);
       }
 
       function loadTikTokEmbed() {
@@ -4668,11 +4663,6 @@
             }
           }
         }
-        var fbPane = root.querySelector('[data-social-panel="facebook"]');
-        var fbContainer = fbPane && fbPane.querySelector('[data-social-embed="facebook"]');
-        if (fbContainer && fbPane && fbPane.classList.contains('active')) {
-          mountFacebookEmbed(fbContainer, false);
-        }
       }
 
       function showSocialTab(id) {
@@ -4697,28 +4687,30 @@
         });
       });
 
-      window.addEventListener('resize', syncSocialPanelHeight);
+      window.addEventListener('resize', function () {
+        var mode = window.innerWidth < 700 ? 'mobile' : 'desktop';
+        if (mode !== fbEmbedHeightMode && fbEmbedHost) {
+          fbEmbedHeightCache = null;
+          mountFacebookEmbed(fbEmbedHost, true);
+        }
+        syncSocialPanelHeight();
+      });
       window.addEventListener('load', syncSocialPanelHeight);
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(syncSocialPanelHeight);
       }
       var toolsCol = document.querySelector('.login-split__tools');
       var loginCol = document.querySelector('.login-split__login');
-      var socialPanels = root.querySelector('.login-social-panels');
       var fbEmbedHost = root.querySelector('[data-social-embed="facebook"]');
       if (window.ResizeObserver) {
         var ro = new window.ResizeObserver(syncSocialPanelHeight);
         if (toolsCol) ro.observe(toolsCol);
         if (loginCol) ro.observe(loginCol);
-        ro.observe(root);
-        if (socialPanels) ro.observe(socialPanels);
         if (fbEmbedHost) {
           var fbRo = new window.ResizeObserver(function () {
             queueFacebookEmbedResize(fbEmbedHost);
           });
           fbRo.observe(fbEmbedHost);
-          var fbBody = fbEmbedHost.closest('.login-social-pane__body');
-          if (fbBody) fbRo.observe(fbBody);
         }
       }
       window.setTimeout(syncSocialPanelHeight, 400);

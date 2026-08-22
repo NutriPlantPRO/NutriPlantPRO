@@ -15437,7 +15437,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       <title>NutriPlant PRO</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;1,700;1,800&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="${reportCssHref}">
       <style>
         body {
@@ -15475,15 +15475,25 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           text-align: center;
           margin-bottom: 4px;
         }
-        .logo-wordmark {
+        .logo-text {
           display: block;
-          width: auto;
-          height: 48px;
-          max-width: min(300px, 88vw);
-          margin: 0 auto 4px;
-          object-fit: contain;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+          font-weight: 800;
+          font-style: italic;
+          font-size: 2rem;
+          line-height: 1.05;
+          letter-spacing: -0.02em;
+        }
+        .logo-text-brand {
+          color: #1e3a8a;
+        }
+        .logo-text-pro {
+          color: #2563eb;
+          font-size: 0.68em;
+          font-weight: 800;
+          font-style: italic;
+          letter-spacing: 0.06em;
+          vertical-align: baseline;
         }
         .logo-icon {
           display: block;
@@ -15495,12 +15505,12 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           print-color-adjust: exact;
         }
         .header h1 {
-          font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
-          font-weight: 800;
-          font-size: 1.55rem;
+          font-family: 'Inter', 'Arial', sans-serif;
+          font-weight: 700;
+          font-size: 1.35rem;
           color: #1e3a8a;
-          letter-spacing: 0.02em;
-          line-height: 1.15;
+          letter-spacing: 0.01em;
+          line-height: 1.2;
           margin: 8px 0 0;
         }
         .project-info {
@@ -16930,7 +16940,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       <div class="report-main">
         <div class="header">
           <div class="logo">
-            <img src="${reportAssetBase}NutriPlant_PRO_blue.png" alt="NutriPlant PRO" class="logo-wordmark">
+            <span class="logo-text" aria-label="NutriPlant PRO"><span class="logo-text-brand">NutriPlant</span><span class="logo-text-pro"> PRO</span></span>
             <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="logo-icon" aria-hidden="true">
           </div>
           <h1>${rt('Reporte de Análisis Agrícola', 'Agricultural Analysis Report')}</h1>

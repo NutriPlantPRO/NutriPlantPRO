@@ -811,14 +811,19 @@
   background: #fff;
 }
 
+.login-social-pane[data-social-panel="facebook"] .login-social-pane__body {
+  overflow: hidden;
+}
+
 .login-social-pane__embed--facebook {
   display: block;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
-  min-height: 240px;
-  /* Un poco de aire arriba ayuda a que el header del plugin (nombre + seguidores) no se sienta aplastado */
+  height: 340px;
+  min-height: 340px;
+  max-height: 340px;
   padding: 8px 0 4px;
 }
 
@@ -827,7 +832,23 @@
   width: 100% !important;
   max-width: 100%;
   margin: 0;
-  min-height: 240px;
+  height: 340px !important;
+  min-height: 340px;
+  max-height: 340px;
+}
+
+@media (min-width: 700px) {
+  .login-social-pane__embed--facebook {
+    height: 380px;
+    min-height: 380px;
+    max-height: 380px;
+  }
+
+  .login-social-pane__embed--facebook iframe {
+    height: 380px !important;
+    min-height: 380px;
+    max-height: 380px;
+  }
 }
 
 .login-social-pane__embed--instagram iframe {
@@ -1064,7 +1085,9 @@
 
   .login-social-pane__embed--facebook,
   .login-social-pane__embed--facebook iframe {
-    min-height: 280px;
+    height: 340px;
+    min-height: 340px;
+    max-height: 340px;
   }
 }
 
@@ -1205,8 +1228,16 @@
   }
 
   .login-social-pane__embed--facebook {
-    min-height: 0;
+    height: 380px;
+    min-height: 380px;
+    max-height: 380px;
     padding: 8px 0 0;
+  }
+
+  .login-social-pane__embed--facebook iframe {
+    height: 380px !important;
+    min-height: 380px;
+    max-height: 380px;
   }
 
   .login-social-pane.active {
