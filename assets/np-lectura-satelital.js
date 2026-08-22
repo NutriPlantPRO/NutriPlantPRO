@@ -144,7 +144,7 @@
 
   function lecturaPrefsFingerprint() {
     var p = lecturaPrefs();
-    return p.language + '|' + p.unit_system + '|tipOrder3';
+    return p.language + '|' + p.unit_system + '|tipClamp2';
   }
   /** Canonical mm → display depth (in or mm). */
   function depthFromMm(mm) {
@@ -205,10 +205,10 @@
     var parent = canvas && canvas.parentElement;
     if (!parent) return;
     if (!parent.style.height || parent.clientHeight < 40) {
-      parent.style.height = '240px';
+      parent.style.height = '280px';
       parent.style.position = 'relative';
       parent.style.width = '100%';
-      parent.style.minHeight = '240px';
+      parent.style.minHeight = '280px';
     }
   }
 
@@ -755,7 +755,7 @@
               '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
             '</div>' +
           '</div>' +
-          '<div style="position:relative;width:100%;height:240px;min-height:240px;">' +
+          '<div style="position:relative;width:100%;height:280px;min-height:280px;overflow:visible;">' +
             '<canvas id="lecturaChart"></canvas>' +
           '</div>' +
           '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;" data-i18n="radar.chart_help" id="lecturaChartHelp">' +
@@ -1502,6 +1502,33 @@
     document.head.appendChild(s);
   }
 
+  function ensureLecturaTooltipPositioner() {
+    if (typeof Chart === 'undefined' || !Chart.Tooltip || !Chart.Tooltip.positioners) return;
+    if (Chart.Tooltip.positioners.lecturaSafe) return;
+    Chart.Tooltip.positioners.lecturaSafe = function (items, eventPosition) {
+      var avg =
+        Chart.Tooltip.positioners.average &&
+        Chart.Tooltip.positioners.average.call(this, items, eventPosition);
+      var nearest =
+        Chart.Tooltip.positioners.nearest &&
+        Chart.Tooltip.positioners.nearest.call(this, items, eventPosition);
+      var base = avg || nearest || eventPosition || { x: 0, y: 0 };
+      var chart = this.chart;
+      if (!chart || !chart.chartArea) return base;
+      var area = chart.chartArea;
+      var x = base.x;
+      var y = base.y;
+      // Mes/periodo “chico” (barra baja): anclar más arriba para que el cuadrito no se corte abajo.
+      var lowBand = area.top + (area.bottom - area.top) * 0.55;
+      if (y > lowBand) {
+        y = area.top + (area.bottom - area.top) * 0.32;
+      }
+      x = Math.max(area.left + 8, Math.min(area.right - 8, x));
+      y = Math.max(area.top + 12, Math.min(area.bottom - 24, y));
+      return { x: x, y: y };
+    };
+  }
+
   function destroyLecturaChart() {
     if (lecturaChart) {
       try { lecturaChart.destroy(); } catch (e) {}
@@ -1810,6 +1837,7 @@
       return;
     }
     try {
+      ensureLecturaTooltipPositioner();
       lecturaChart = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         plugins: [lecturaPeriodLanesPlugin],
@@ -1824,6 +1852,16 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              position: 'lecturaSafe',
+              yAlign: 'bottom',
+              xAlign: 'center',
+              caretPadding: 10,
+              padding: 12,
+              boxPadding: 4,
+              bodySpacing: 3,
+              titleSpacing: 4,
+              footerMarginTop: 0,
+              displayColors: true,
               filter: function (item) {
                 // Horas VPD van al final (después de máx/mín), no en el bloque principal.
                 return !(item && item.dataset && item.dataset.yAxisID === 'yHours');
@@ -1917,13 +1955,7 @@
                     if (opt) lines.push(opt);
                     if (lo) lines.push(lo);
                   }
-                  return lines;
-                },
-                footer: function (items) {
-                  if (!items || !items.length) return '';
-                  var i = items[0].dataIndex;
-                  var r = lecturaChartRows[i] || rows[i];
-                  if (!r) return '';
+                  // Resumen dentro del mismo cuadrito (evita que el footer se corte en meses chicos).
                   var tot =
                     (Number(r.vpd_hours_low) || 0) +
                     (Number(r.vpd_hours_opt) || 0) +
@@ -1932,13 +1964,23 @@
                     r.vpd_hours_expected != null
                       ? r.vpd_hours_expected
                       : periodHoursExpected(r.date_start, r.date_end);
+                  lines.push(sep);
                   if (exp != null) {
-                    return lecturaT('radar.vpd_hours_footer', 'Horas VPD: {tot} / {exp} h del periodo', {
-                      tot: tot,
-                      exp: exp
-                    });
+                    lines.push(
+                      lecturaT('radar.vpd_hours_footer', 'Horas VPD: {tot} / {exp} h del periodo', {
+                        tot: tot,
+                        exp: exp
+                      })
+                    );
+                  } else {
+                    lines.push(
+                      lecturaT('radar.vpd_hours_footer_short', 'Horas VPD: {tot} h', { tot: tot })
+                    );
                   }
-                  return lecturaT('radar.vpd_hours_footer_short', 'Horas VPD: {tot} h', { tot: tot });
+                  return lines;
+                },
+                footer: function () {
+                  return '';
                 }
               }
             }
