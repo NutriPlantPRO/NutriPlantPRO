@@ -3017,8 +3017,26 @@ function fertiDistributionSplitFromProgram(opts) {
 
 function fertiPushProgramSplitToDistribution() {
   if (typeof window.fertiDistApplyProgramNutrientSplit !== 'function') return;
-  const splits = fertiDistributionSplitFromProgram({ fertilizerOnly: true });
-  if (splits) window.fertiDistApplyProgramNutrientSplit(splits);
+  if (!Array.isArray(fertiWeeks) || !fertiWeeks.length) return;
+  fertiWeeks.forEach(w => computeWeekTotals(w));
+  const layout = fertiProgramLayoutForDistribution();
+  if (!layout || !layout.splits) return;
+
+  let distCount = 0;
+  try {
+    const dist = fertiGeneratorDistributionState();
+    if (dist && Array.isArray(dist.stages)) distCount = dist.stages.length;
+  } catch (e) {}
+
+  // Si el programa y la distribución no tienen los mismos periodos, copiar etapas + % completos.
+  if (distCount !== layout.periodCount) {
+    if (typeof window.fertiDistAdoptFromProgram === 'function') {
+      window.fertiDistAdoptFromProgram(layout);
+    }
+    return;
+  }
+
+  window.fertiDistApplyProgramNutrientSplit(layout.splits);
 }
 
 function fertiProgramLayoutForDistribution() {
@@ -3074,6 +3092,7 @@ function fertiAdoptDistributionFromProgram(opts) {
   return window.fertiDistAdoptFromProgram(layout);
 }
 window.fertiAdoptDistributionFromProgram = fertiAdoptDistributionFromProgram;
+window.fertiPushProgramSplitToDistribution = fertiPushProgramSplitToDistribution;
 
 function fertiRefreshChartsAfterGraphAdjustment() {
   fertiWeeks.forEach(w => computeWeekTotals(w));

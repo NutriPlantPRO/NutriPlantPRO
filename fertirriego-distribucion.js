@@ -1385,12 +1385,12 @@
   function distChartNiceYMax(rawMax) {
     if (!(rawMax > 0)) return 25;
     if (rawMax >= 94.5) return 100;
-    var padded = rawMax + 8;
+    var padded = rawMax + 4;
     if (padded > 100) padded = 100;
     var step = padded <= 50 ? 5 : 10;
     var nice = Math.ceil(padded / step) * step;
     if (nice > 100) nice = 100;
-    if (nice < 25) nice = 25;
+    if (nice < 20) nice = 20;
     return nice;
   }
 
@@ -1505,7 +1505,12 @@
           beginAtZero: true,
           suggestedMax: yMax,
           max: yMax,
-          title: { display: true, text: t('dist_chart_y', '% de distribución') }
+          title: { display: true, text: t('dist_chart_y', '% de distribución') },
+          ticks: {
+            stepSize: yMax <= 50 ? 5 : 10,
+            precision: 0
+          },
+          grid: { drawTicks: true }
         },
         x: {
           type: 'category',
@@ -1751,11 +1756,11 @@
       if (changed) {
         ensurePct();
         if (hostEl() && hostEl().dataset.ready === '1') {
-          syncPctInputsFromData();
-          refreshKgCells();
+          renderAll();
+        } else {
+          scheduleSave();
+          scheduleDistChartRefresh();
         }
-        scheduleSave();
-        scheduleDistChartRefresh();
       }
     } finally {
       distProgramSync = false;

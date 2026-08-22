@@ -778,9 +778,68 @@
       }
     });
     var isUsVol = isUsUnits;
+    var isSoilReview = typeCfg.id === 'soil';
+    function buildReviewIntroHtml() {
+      if (isSoilReview) {
+        var soilIntro =
+          '<p class="np-lab-pdf-modal__intro np-lab-pdf-modal__intro--compact">' +
+            tr(
+              'analysis.pdf_review_intro_soil',
+              'Marca campos, corrige vacíos y aplica. Revisa bien la densidad aparente (g/cm³).'
+            ) +
+          '</p>' +
+          '<details class="np-lab-pdf-modal__hints">' +
+            '<summary>' +
+              tr('analysis.pdf_review_more_hints', 'Más ayuda (límites, unidades…)') +
+            '</summary>' +
+            '<p class="np-lab-pdf-modal__hint np-lab-pdf-modal__hint--limits">' +
+              tr(
+                'analysis.pdf_review_limits_hint',
+                'Si ves valores como &lt;25 o ND (límite de detección), cámbialos a un número antes de aplicar, o déjalos sin marcar.'
+              ) +
+            '</p>' +
+            '<p class="np-lab-pdf-modal__hint np-lab-pdf-modal__hint--units">' +
+              tr(
+                'analysis.pdf_review_units_hint',
+                'Cada campo muestra su unidad (ppm, meq, %, cm…). Toca la etiqueta de unidad para ver qué valor va ahí.'
+              ) +
+            '</p>' +
+          '</details>';
+        if (fields && fields.notes) {
+          soilIntro +=
+            '<details class="np-lab-pdf-modal__notes-details">' +
+              '<summary>' +
+                tr('analysis.pdf_review_notes_toggle', 'Notas de conversión del PDF') +
+              '</summary>' +
+              '<p class="np-lab-pdf-modal__notes">' +
+                String(fields.notes).replace(/</g, '&lt;') +
+              '</p>' +
+            '</details>';
+        }
+        return soilIntro;
+      }
+      return (
+        '<p class="np-lab-pdf-modal__intro">' +
+          tr('analysis.pdf_review_intro', 'Marca los campos a aplicar. Corrige o completa los vacíos. Luego confirma para llenar el análisis.') +
+        '</p>' +
+        '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#b45309;">' +
+          tr(
+            'analysis.pdf_review_limits_hint',
+            'Si ves valores como &lt;25 o ND (límite de detección), cámbialos a un número antes de aplicar, o déjalos sin marcar.'
+          ) +
+        '</p>' +
+        '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#0369a1;">' +
+          tr(
+            'analysis.pdf_review_units_hint',
+            'Cada campo muestra su unidad (ppm, meq, %, cm…). Revisa sinónimos EN/ES del lab antes de aplicar.'
+          ) +
+        '</p>' +
+        (fields && fields.notes ? '<p class="np-lab-pdf-modal__notes">' + String(fields.notes).replace(/</g, '&lt;') + '</p>' : '')
+      );
+    }
     var modal = document.createElement('div');
     modal.id = 'npLabPdfReviewModal';
-    modal.className = 'np-lab-pdf-modal';
+    modal.className = 'np-lab-pdf-modal' + (isSoilReview ? ' np-lab-pdf-modal--soil' : '');
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.innerHTML =
@@ -808,22 +867,7 @@
             '</button>' +
           '</div>' +
         '</div>' +
-        '<p class="np-lab-pdf-modal__intro">' +
-          tr('analysis.pdf_review_intro', 'Marca los campos a aplicar. Corrige o completa los vacíos. Luego confirma para llenar el análisis.') +
-        '</p>' +
-        '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#b45309;">' +
-          tr(
-            'analysis.pdf_review_limits_hint',
-            'Si ves valores como &lt;25 o ND (límite de detección), cámbialos a un número antes de aplicar, o déjalos sin marcar.'
-          ) +
-        '</p>' +
-        '<p class="np-lab-pdf-modal__intro" style="margin-top:-4px;color:#0369a1;">' +
-          tr(
-            'analysis.pdf_review_units_hint',
-            'Cada campo muestra su unidad (ppm, meq, %, cm…). Revisa sinónimos EN/ES del lab antes de aplicar.'
-          ) +
-        '</p>' +
-        (fields && fields.notes ? '<p class="np-lab-pdf-modal__notes">' + String(fields.notes).replace(/</g, '&lt;') + '</p>' : '') +
+        buildReviewIntroHtml() +
         '<div class="np-lab-pdf-modal__actions-top">' +
           '<button type="button" class="btn btn-sm" data-act="all">' +
             tr('analysis.pdf_review_select_valued', 'Seleccionar todos con valor') +
@@ -872,7 +916,9 @@
         }
         if (unit === 'ppm' || unit === 'meq') prevUnit = unit;
         var item = document.createElement('label');
-        item.className = 'np-lab-pdf-modal__row';
+        item.className =
+          'np-lab-pdf-modal__row' +
+          (isSoilReview && row.path === 'physical.bulkDensity' ? ' np-lab-pdf-modal__row--bulk-density' : '');
         var unitHtml = row.unit
           ? '<span class="np-lab-pdf-modal__unit" title="' +
             escapeAttr(row.tip || row.unit) +

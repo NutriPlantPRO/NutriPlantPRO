@@ -7196,6 +7196,11 @@ function initializeFertirriegoTabs() {
     }
 
     if (tabId === 'extraccion') {
+      try {
+        if (typeof window.fertiPushProgramSplitToDistribution === 'function') {
+          window.fertiPushProgramSplitToDistribution();
+        }
+      } catch (ePush) {}
       requestAnimationFrame(function () {
         if (typeof window.fertiDistRefreshChart === 'function') window.fertiDistRefreshChart();
         requestAnimationFrame(function () {
