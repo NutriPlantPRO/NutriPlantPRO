@@ -2727,8 +2727,19 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 @media (max-width: 640px) {
+  /* Celular: 2×2 (superficie | perímetro / centro | altitud), no una columna. */
   .location-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .location-stats .stat-item {
+    padding: 8px 6px;
+  }
+  .location-stats .stat-label {
+    font-size: 10px;
+  }
+  .location-stats .stat-value {
+    font-size: 12px;
   }
 }
 
@@ -10656,6 +10667,8 @@ html.embed-login body {
 
 .radar-map-stack .map-container {
   border-radius: 0 0 12px 12px;
+  /* Contiene el stacking de la brújula: sin esto, z-index alto pinta encima del sidebar al hacer scroll. */
+  isolation: isolate;
 }
 
 .radar-north-badge-float {
@@ -10665,7 +10678,8 @@ html.embed-login body {
   right: auto;
   bottom: 28px;
   left: 12px;
-  z-index: 950;
+  /* Bajo: solo encima del mapa, nunca del menú lateral (sidebar z-index 40). */
+  z-index: 5;
   pointer-events: none;
 }
 
