@@ -432,7 +432,7 @@ function bootAnalysisSection(sectionName, opts) {
     if (content) content.classList.add('restoring-scroll');
   }
   function finishScroll() {
-    restoreScrollForKeyStabilized(sectionName, 4, 70);
+    restoreScrollForKey(sectionName, { finalize: true });
   }
   if (opts.reusedCachedDom) {
     requestAnimationFrame(finishScroll);
@@ -441,7 +441,10 @@ function bootAnalysisSection(sectionName, opts) {
   requestAnimationFrame(function () {
     if (typeof opts.init === 'function') opts.init();
     if (typeof opts.restore === 'function') opts.restore();
-    setTimeout(finishScroll, opts.scrollDelayMs || 180);
+    // La selección restaurada ya está pintada: mostrar en el siguiente frame.
+    // Antes se esperaba ~460 ms para estabilizar el scroll y la navegación
+    // entre análisis se sentía lenta aunque el DOM ya estuviera listo.
+    requestAnimationFrame(finishScroll);
   });
 }
 function bindAnalysisSectionScrollSave(scrollKey, tabContainerId, saveFn) {
