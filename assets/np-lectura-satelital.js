@@ -144,7 +144,7 @@
 
   function lecturaPrefsFingerprint() {
     var p = lecturaPrefs();
-    return p.language + '|' + p.unit_system;
+    return p.language + '|' + p.unit_system + '|tipOrder3';
   }
   /** Canonical mm → display depth (in or mm). */
   function depthFromMm(mm) {
@@ -218,7 +218,15 @@
       var ok = Number(overrideKc);
       return ok >= 0 ? ok : null;
     }
-    var proj = getProject();
+    try {
+      if (window.NpIrrBalance && typeof window.NpIrrBalance.readSharedProjectKcMeta === 'function') {
+        var meta = window.NpIrrBalance.readSharedProjectKcMeta(window.currentProject || getProject());
+        if (meta && meta.kc != null && Number.isFinite(Number(meta.kc)) && Number(meta.kc) >= 0) {
+          return Number(meta.kc);
+        }
+      }
+    } catch (eMeta) { /* fall through */ }
+    var proj = getProject() || (typeof window.currentProject !== 'undefined' ? window.currentProject : null);
     if (!proj || !proj.climateAnalysis || typeof proj.climateAnalysis !== 'object') return null;
     var iqc = proj.climateAnalysis.irrigationQuickCalc;
     if (!iqc || iqc.kc == null) return null;
@@ -284,7 +292,7 @@
           frequency: 'mensual',
           date_start: startIso,
           date_end: endIsoP,
-          label: MESES[first.getMonth()] + ' ' + first.getFullYear()
+          label: (lecturaPrefs().language === 'en' ? MESES_EN : MESES_ES)[first.getMonth()] + ' ' + first.getFullYear()
         });
       }
     } else {
@@ -738,11 +746,11 @@
             '<div class="lectura-kc-combo" title="' + t('radar.lectura_kc_title', 'Kc del cultivo (mismo valor que en Clima). ETc = ET₀ × Kc.') + '">' +
               '<label class="lectura-kc-box">' +
                 '<span data-i18n="radar.lectura_kc_label">' + t('radar.lectura_kc_label', 'Kc') + '</span>' +
-                '<input type="number" id="lectura-kc" min="0" max="2" step="0.01" placeholder="0.90">' +
+                '<input type="number" id="lectura-kc" min="0" max="2" step="0.01" placeholder="" inputmode="decimal" aria-label="Kc">' +
               '</label>' +
               (window.NpIrrBalance && typeof window.NpIrrBalance.getKcOpenTableButtonHtml === 'function'
                 ? window.NpIrrBalance.getKcOpenTableButtonHtml('lectura')
-                : '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="lectura">📋 ' + t('radar.btn_kc_table', 'Rangos FAO') + '</button>') +
+                : '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="lectura">📋 <span data-i18n="radar.btn_kc_table">' + t('radar.btn_kc_table', 'Rangos FAO') + '</span></button>') +
             '</div>' +
               '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
             '</div>' +
@@ -1375,7 +1383,13 @@
     var inp = document.getElementById('lectura-kc');
     if (!inp || document.activeElement === inp) return;
     var kc = getClimateKcForLectura();
-    inp.value = kc != null ? String(Math.round(kc * 100) / 100) : '';
+    if (kc != null) {
+      inp.value = String(Math.round(kc * 100) / 100);
+      return;
+    }
+    // No borrar un valor que el usuario acaba de poner si aún no está en el proyecto.
+    if (String(inp.value || '').trim() !== '') return;
+    inp.value = '';
   }
 
   var lecturaKcChartTimer = null;
@@ -1401,9 +1415,20 @@
 
   var lastLecturaKcShown = undefined;
   function syncLecturaKcFromShared() {
-    fillLecturaKcInput();
+    var detailKc =
+      arguments.length && arguments[0] && arguments[0].detail && arguments[0].detail.kc != null
+        ? Number(arguments[0].detail.kc)
+        : null;
+    if (detailKc != null && Number.isFinite(detailKc) && detailKc >= 0) {
+      var inp = document.getElementById('lectura-kc');
+      if (inp) inp.value = String(Math.round(detailKc * 100) / 100);
+      lastLecturaKcShown = detailKc;
+    } else {
+      fillLecturaKcInput();
+    }
     var kc = getClimateKcForLectura();
-    if (kc === lastLecturaKcShown) return;
+    if (kc == null && detailKc != null && Number.isFinite(detailKc)) kc = detailKc;
+    if (kc === lastLecturaKcShown && detailKc == null) return;
     lastLecturaKcShown = kc;
     var st = loadState();
     if (!st) return;
@@ -1799,34 +1824,71 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              filter: function (item) {
+                // Horas VPD van al final (después de máx/mín), no en el bloque principal.
+                return !(item && item.dataset && item.dataset.yAxisID === 'yHours');
+              },
               itemSort: function (a, b) {
-                function vpdRank(label) {
-                  var s = String(label || '');
-                  if (!/VPD/i.test(s)) return null;
-                  if (/>\s*1\.5/i.test(s)) return 1;
-                  if (/0\.5\s*[–-]\s*1\.5/i.test(s)) return 2;
-                  if (/<\s*0\.5/i.test(s)) return 3;
-                  return null;
+                function tipRank(ds) {
+                  if (!ds) return 99;
+                  var lab = String(ds.label || '');
+                  if (lab === 'NDVI') return 1;
+                  if (lab === 'NDMI') return 2;
+                  if (lab === 'NDRE') return 3;
+                  if (/ET[₀0]/i.test(lab) && !/^ETc/i.test(lab)) return 10;
+                  if (/^ETc/i.test(lab)) return 11;
+                  if (/Lluvia|Rain/i.test(lab)) return 12;
+                  if (/Riego|Irrigation/i.test(lab)) return 13;
+                  if (ds.yAxisID === 'yMm') return 14;
+                  if (ds.yAxisID === 'yIdx') return 5;
+                  return 50;
                 }
-                var ra = vpdRank(a.dataset && a.dataset.label);
-                var rb = vpdRank(b.dataset && b.dataset.label);
-                if (ra != null && rb != null) return ra - rb;
-                return (a.datasetIndex || 0) - (b.datasetIndex || 0);
+                return tipRank(a.dataset) - tipRank(b.dataset);
               },
               callbacks: {
                 label: function (ctx) {
                   var label = (ctx.dataset && ctx.dataset.label) || '';
                   var raw = ctx.parsed && ctx.parsed.y != null ? ctx.parsed.y : ctx.raw;
+                  var text;
                   if (raw == null || !Number.isFinite(Number(raw))) {
-                    return label ? label + ': —' : '—';
+                    text = label ? label + ': —' : '—';
+                  } else {
+                    var v = Number(raw);
+                    text = label ? label + ': ' + v : String(v);
                   }
-                  var v = Number(raw);
-                  var text = label ? label + ': ' + v : String(v);
-                  var isVpdHours = ctx.dataset && ctx.dataset.yAxisID === 'yHours';
-                  if (!isVpdHours) return text;
-                  var i = ctx.dataIndex;
-                  var r = lecturaChartRows[i] || rows[i];
-                  if (!r) return text;
+                  // Separador PRO tras el último índice satelital visible.
+                  var lab = String(label);
+                  var afterSat =
+                    lab === 'NDRE' ||
+                    (lab === 'NDMI' && !lecturaSeriesVis.ndre) ||
+                    (lab === 'NDVI' && !lecturaSeriesVis.ndmi && !lecturaSeriesVis.ndre);
+                  if (afterSat) return [text, '──────────────'];
+                  return text;
+                },
+                afterBody: function (items) {
+                  if (!items || !items.length) return [];
+                  var idx = items[0].dataIndex;
+                  var r = lecturaChartRows[idx] || rows[idx];
+                  if (!r) return [];
+                  var sep = '──────────────';
+                  var lines = [sep];
+                  if (r.vpd_max != null && Number.isFinite(Number(r.vpd_max))) {
+                    lines.push(
+                      lecturaT('radar.tooltip_vpd_max', 'VPD máximo') +
+                        ': ' +
+                        Number(r.vpd_max).toFixed(2) +
+                        ' kPa'
+                    );
+                  }
+                  if (r.vpd_min != null && Number.isFinite(Number(r.vpd_min))) {
+                    lines.push(
+                      lecturaT('radar.tooltip_vpd_min', 'VPD mínimo') +
+                        ': ' +
+                        Number(r.vpd_min).toFixed(2) +
+                        ' kPa'
+                    );
+                  }
+                  lines.push(sep);
                   var den =
                     r.vpd_hours_expected != null && Number(r.vpd_hours_expected) > 0
                       ? Number(r.vpd_hours_expected)
@@ -1837,17 +1899,39 @@
                       (Number(r.vpd_hours_opt) || 0) +
                       (Number(r.vpd_hours_high) || 0);
                   }
-                  if (!(den > 0)) return text;
-                  var pct = Math.round((v / den) * 1000) / 10;
-                  return text + ' (' + pct + '%)';
+                  function hourLine(labelKey, fallback, hours) {
+                    if (hours == null || !Number.isFinite(Number(hours))) return null;
+                    var h = Number(hours);
+                    var base = lecturaT(labelKey, fallback) + ': ' + h;
+                    if (den > 0) {
+                      var pct = Math.round((h / den) * 1000) / 10;
+                      return base + ' (' + pct + '%)';
+                    }
+                    return base;
+                  }
+                  if (lecturaSeriesVis.vpd) {
+                    var hi = hourLine('radar.vpd_hours_high_label', 'Horas VPD >1.5', r.vpd_hours_high);
+                    var opt = hourLine('radar.vpd_hours_opt_label', 'Horas VPD 0.5–1.5', r.vpd_hours_opt);
+                    var lo = hourLine('radar.vpd_hours_low_label', 'Horas VPD <0.5', r.vpd_hours_low);
+                    if (hi) lines.push(hi);
+                    if (opt) lines.push(opt);
+                    if (lo) lines.push(lo);
+                  }
+                  return lines;
                 },
                 footer: function (items) {
                   if (!items || !items.length) return '';
                   var i = items[0].dataIndex;
                   var r = lecturaChartRows[i] || rows[i];
                   if (!r) return '';
-                  var tot = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
-                  var exp = r.vpd_hours_expected != null ? r.vpd_hours_expected : periodHoursExpected(r.date_start, r.date_end);
+                  var tot =
+                    (Number(r.vpd_hours_low) || 0) +
+                    (Number(r.vpd_hours_opt) || 0) +
+                    (Number(r.vpd_hours_high) || 0);
+                  var exp =
+                    r.vpd_hours_expected != null
+                      ? r.vpd_hours_expected
+                      : periodHoursExpected(r.date_start, r.date_end);
                   if (exp != null) {
                     return lecturaT('radar.vpd_hours_footer', 'Horas VPD: {tot} / {exp} h del periodo', {
                       tot: tot,
@@ -1855,23 +1939,6 @@
                     });
                   }
                   return lecturaT('radar.vpd_hours_footer_short', 'Horas VPD: {tot} h', { tot: tot });
-                },
-                afterBody: function (items) {
-                  if (!items || !items.length) return [];
-                  var r = lecturaChartRows[items[0].dataIndex] || rows[items[0].dataIndex];
-                  if (!r) return [];
-                  var lines = [];
-                  if (r.vpd_max != null && Number.isFinite(Number(r.vpd_max))) {
-                    lines.push(
-                      lecturaT('radar.tooltip_vpd_max', 'VPD máximo') + ': ' + Number(r.vpd_max).toFixed(2) + ' kPa'
-                    );
-                  }
-                  if (r.vpd_min != null && Number.isFinite(Number(r.vpd_min))) {
-                    lines.push(
-                      lecturaT('radar.tooltip_vpd_min', 'VPD mínimo') + ': ' + Number(r.vpd_min).toFixed(2) + ' kPa'
-                    );
-                  }
-                  return lines;
                 }
               }
             }
@@ -2883,8 +2950,8 @@
     }
     if (!window.__npLecturaKcBound) {
       window.__npLecturaKcBound = true;
-      window.addEventListener('np:kc-changed', function () {
-        syncLecturaKcFromShared();
+      window.addEventListener('np:kc-changed', function (ev) {
+        syncLecturaKcFromShared(ev);
       });
     }
     var runSel = document.getElementById('lecturaRunSelect');

@@ -1956,7 +1956,7 @@
         chart_by_period: "Chart by period",
         lectura_kc_label: "Kc",
         lectura_kc_title: "Crop Kc (same value as in Climate). ETc = ET₀ × Kc.",
-        btn_kc_table: "FAO ranges",
+        btn_kc_table: "FAO Kc ranges",
         chart_help: "Left: NDVI / NDMI / NDRE. Right: {unit} (ET₀, ETc if there is Kc, rainfall, irrigation). Soft bars: period VPD hours (<0.5 blue, 0.5–1.5 green, >1.5 dark red). Total ≈ period hours (15 d = 360 h).",
         biweekly: "Biweekly",
         monthly: "Monthly",

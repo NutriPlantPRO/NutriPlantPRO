@@ -1085,7 +1085,13 @@
   function writeSharedProjectKc(kc, cropName, stage) {
     try {
       var proj = w.currentProject;
+      if ((!proj || !proj.id) && w.nutriPlantMap && typeof w.nutriPlantMap.getCurrentProject === 'function') {
+        try { proj = w.nutriPlantMap.getCurrentProject() || proj; } catch (eMap) {}
+      }
       if (proj) {
+        if (!w.currentProject || w.currentProject !== proj) {
+          try { w.currentProject = proj; } catch (eAssign) {}
+        }
         if (!proj.climateAnalysis || typeof proj.climateAnalysis !== 'object') proj.climateAnalysis = {};
         if (!proj.climateAnalysis.irrigationQuickCalc || typeof proj.climateAnalysis.irrigationQuickCalc !== 'object') {
           proj.climateAnalysis.irrigationQuickCalc = {};
@@ -1102,15 +1108,15 @@
         proj.climateAnalysis.lastUpdated = new Date().toISOString();
         if (typeof w.persistClimateAnalysis === 'function') w.persistClimateAnalysis();
       }
-      var val = kc != null && Number.isFinite(Number(kc)) ? String(kc) : '';
+      var val = kc != null && Number.isFinite(Number(kc)) ? String(Math.round(Number(kc) * 100) / 100) : '';
       ['climate-irr-kc', 'climate-chart-kc', 'lectura-kc', 'irr-kc'].forEach(function (id) {
         var el = document.getElementById(id);
-        if (el && document.activeElement !== el) el.value = val;
+        if (el) el.value = val;
       });
       if (cropName) {
         ['climate-irr-crop', 'lectura-crop', 'irr-crop'].forEach(function (id) {
           var el = document.getElementById(id);
-          if (el && document.activeElement !== el && !String(el.value || '').trim()) el.value = cropName;
+          if (el && !String(el.value || '').trim()) el.value = cropName;
         });
       }
     } catch (e) {}
@@ -1123,11 +1129,14 @@
     } catch (e2) {}
   }
 
-  function applyKcPick(kc, cropName, prefix, stage) {
+  function applyKcPick(kc, cropName, prefix, stage, rangeMeta) {
+    var mid = Number(kc);
+    if (!Number.isFinite(mid)) return;
+    mid = Math.round(mid * 100) / 100;
     var ids = kcFieldIds(prefix);
     var kcEl = document.getElementById(ids.kc);
     if (kcEl) {
-      kcEl.value = String(kc);
+      kcEl.value = String(mid);
       try {
         kcEl.dispatchEvent(new Event('input', { bubbles: true }));
         kcEl.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1143,8 +1152,46 @@
         } catch (e2) {}
       }
     }
-    writeSharedProjectKc(kc, cropName, stage);
+    writeSharedProjectKc(mid, cropName, stage);
+    // Reafirmar el input (por si un sync vacío lo limpió).
+    if (kcEl) kcEl.value = String(mid);
     closeKcReferenceModal();
+    showKcPickNotice(mid, cropName, stage, rangeMeta);
+  }
+
+  function showKcPickNotice(mid, cropName, stage, rangeMeta) {
+    var minV = rangeMeta && Number.isFinite(Number(rangeMeta.min)) ? Number(rangeMeta.min) : null;
+    var maxV = rangeMeta && Number.isFinite(Number(rangeMeta.max)) ? Number(rangeMeta.max) : null;
+    var rangeTxt =
+      minV != null && maxV != null
+        ? ' (' +
+          irrT('promedio del rango', 'mid-range of') +
+          ' ' +
+          minV.toFixed(2) +
+          '–' +
+          maxV.toFixed(2) +
+          ')'
+        : ' (' + irrT('promedio del rango FAO', 'FAO mid-range') + ')';
+    var who = cropName ? cropName + (stage ? ' · ' + stage : '') + ': ' : '';
+    var msg = who + 'Kc = ' + mid.toFixed(2) + rangeTxt;
+    try {
+      var old = document.getElementById('np-kc-pick-toast');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      var toast = document.createElement('div');
+      toast.id = 'np-kc-pick-toast';
+      toast.setAttribute('role', 'status');
+      toast.textContent = msg;
+      toast.style.cssText =
+        'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:100001;' +
+        'max-width:min(520px,92vw);padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;' +
+        'color:#fff;background:#0f766e;box-shadow:0 10px 28px rgba(15,23,42,0.28);text-align:center;';
+      document.body.appendChild(toast);
+      setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 3200);
+    } catch (eToast) {
+      try { window.alert(msg); } catch (eAlert) {}
+    }
   }
 
   function closeKcReferenceModal() {
@@ -1170,8 +1217,8 @@
         '</div>' +
         '<p class="np-kc-ref-help">' +
           irrT(
-            'Pulsa una fila para usar el <strong>Kc medio</strong> del rango. Luego puedes editarlo. Es referencia; valida en campo.',
-            'Tap a row to use the <strong>mid-range Kc</strong>. You can edit it afterwards. Reference only; validate in the field.'
+            'Pulsa una fila para usar el <strong>Kc medio</strong> del rango (promedio de los 2 valores FAO). Luego puedes editarlo. Es referencia; valida en campo.',
+            'Tap a row to use the <strong>mid-range Kc</strong> (average of the 2 FAO values). You can edit it afterwards. Reference only; validate in the field.'
           ) +
         '</p>' +
         '<input id="np-kc-ref-search" class="np-kc-ref-search" type="search" placeholder="' + irrT('Buscar cultivo o etapa…', 'Search crop or stage…') + '">' +
@@ -1240,12 +1287,18 @@
 
   function getKcOpenTableButtonHtml(idPrefix) {
     idPrefix = idPrefix || 'climate';
+    var label = irrT('Rangos FAO', 'FAO Kc ranges');
+    try {
+      if (w.NpI18n && typeof w.NpI18n.t === 'function') {
+        label = w.NpI18n.t('radar.btn_kc_table', label) || label;
+      }
+    } catch (eI18n) { /* keep label */ }
     return (
       '<button type="button" class="np-irr-kc-open-btn" data-kc-prefix="' +
       idPrefix +
-      '">📋 ' +
-      irrT('Ver tabla', 'View table') +
-      '</button>'
+      '">📋 <span data-i18n="radar.btn_kc_table">' +
+      label +
+      '</span></button>'
     );
   }
 
@@ -1315,7 +1368,11 @@
           mid,
           pick.getAttribute('data-crop') || '',
           prefixFromKcNode(pick),
-          pick.getAttribute('data-stage') || ''
+          pick.getAttribute('data-stage') || '',
+          {
+            min: parseFloat(pick.getAttribute('data-kc-min')),
+            max: parseFloat(pick.getAttribute('data-kc-max'))
+          }
         );
         return;
       }
@@ -1491,16 +1548,32 @@
             .indexOf(cropQ) >= 0);
       var mid = round2((Number(row.kcMin) + Number(row.kcMax)) / 2);
       var useTip = irrIsEn()
-        ? 'Use mid-range Kc ' + mid.toFixed(2)
-        : 'Usar Kc medio ' + mid.toFixed(2);
+        ? 'Use mid-range Kc ' +
+          mid.toFixed(2) +
+          ' (average of ' +
+          Number(row.kcMin).toFixed(2) +
+          '–' +
+          Number(row.kcMax).toFixed(2) +
+          ')'
+        : 'Usar Kc medio ' +
+          mid.toFixed(2) +
+          ' (promedio de ' +
+          Number(row.kcMin).toFixed(2) +
+          '–' +
+          Number(row.kcMax).toFixed(2) +
+          ')';
       html +=
         '<tr class="np-irr-kc-pick" data-kc-mid="' +
-        mid +
+        mid.toFixed(2) +
+        '" data-kc-min="' +
+        Number(row.kcMin).toFixed(2) +
+        '" data-kc-max="' +
+        Number(row.kcMax).toFixed(2) +
         '" data-crop="' +
         irrEsc(crop) +
         '" data-stage="' +
         irrEsc(stage) +
-        '" style="border-bottom:1px solid #e5e7eb;' +
+        '" style="border-bottom:1px solid #e5e7eb;cursor:pointer;' +
         (highlight ? 'background:#ecfdf5;' : '') +
         '" title="' +
         irrEsc(useTip) +
@@ -1510,10 +1583,13 @@
         '</td><td style="padding:6px 8px;color:#475569;">' +
         stage +
         '</td><td style="padding:6px 8px;text-align:center;font-weight:600;">' +
-        row.kcMin.toFixed(2) +
+        Number(row.kcMin).toFixed(2) +
         ' – ' +
-        row.kcMax.toFixed(2) +
-        '</td></tr>';
+        Number(row.kcMax).toFixed(2) +
+        '<div style="font-size:10px;font-weight:700;color:#0f766e;margin-top:2px;">' +
+        (irrIsEn() ? 'mid ' : 'medio ') +
+        mid.toFixed(2) +
+        '</div></td></tr>';
     });
     body.innerHTML =
       html ||
