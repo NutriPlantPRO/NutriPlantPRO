@@ -371,6 +371,45 @@ function restoreScrollForKeyStabilized(scrollKey, attempts, intervalMs) {
   }
   runAttempt();
 }
+function bootAnalysisSection(sectionName, opts) {
+  opts = opts || {};
+  var content = document.querySelector('.content');
+  if (content && typeof sectionScrollPositions[sectionName] === 'number' && sectionScrollPositions[sectionName] > 0) {
+    content.classList.add('restoring-scroll');
+  }
+  function finishScroll() {
+    restoreScrollForKeyStabilized(sectionName, 8, 110);
+  }
+  if (opts.reusedCachedDom) {
+    requestAnimationFrame(finishScroll);
+    return;
+  }
+  requestAnimationFrame(function () {
+    if (typeof opts.init === 'function') opts.init();
+    if (typeof opts.restore === 'function') opts.restore();
+    setTimeout(finishScroll, opts.scrollDelayMs || 420);
+  });
+}
+function bindAnalysisSectionScrollSave(scrollKey, tabContainerId, saveFn) {
+  if (!window._npAnalysisScrollBound) window._npAnalysisScrollBound = {};
+  if (window._npAnalysisScrollBound[scrollKey]) return;
+  window._npAnalysisScrollBound[scrollKey] = true;
+  var scrollSaveTimer = null;
+  window.addEventListener('scroll', function () {
+    if (!document.getElementById(tabContainerId)) return;
+    if (scrollSaveTimer) clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(function () {
+      sectionScrollPositions[scrollKey] = getScrollPosition();
+      if (typeof saveFn === 'function') saveFn();
+    }, 180);
+  }, { passive: true });
+}
+function applyAnalysisScrollFromState(scrollKey, state, tabContainerId, saveFn) {
+  if (state && typeof state.scrollY === 'number' && state.scrollY >= 0) {
+    sectionScrollPositions[scrollKey] = state.scrollY;
+  }
+  bindAnalysisSectionScrollSave(scrollKey, tabContainerId, saveFn);
+}
 function getCurrentSubTabForSection(sectionName) {
   if (sectionName === 'Nutricion Granular') {
     var btn = document.querySelector('.nutricion-granular-container .tab-button.active');
@@ -2385,6 +2424,9 @@ function selectSection(name, el) {
     view.setAttribute('data-render-project-id', (currentProject && currentProject.id) ? String(currentProject.id) : '');
   }
 
+  // No heredar scroll de la sección anterior (evita aterrizar al final de la página).
+  setScrollPosition(0);
+
   // Agregar indicador de proyecto en todas las secciones
   if (!reusedCachedDom) addProjectIndicator(view);
   
@@ -2411,90 +2453,43 @@ function selectSection(name, el) {
     }, 100);
   }
 
-  // Inicializar pestaña Análisis de Suelo (listado y formulario) y restaurar estado (secciones abiertas, análisis seleccionado)
+  // Inicializar pestañas de Análisis (listado, formulario, scroll estable)
   if (name === "Análisis: Suelo") {
-    if (content && sectionScrollPositions['Análisis: Suelo']) content.classList.add('restoring-scroll');
-    if (reusedCachedDom) {
-      requestAnimationFrame(() => {
-        restoreScrollForKeyStabilized('Análisis: Suelo', 3, 80);
-      });
-    } else {
-      requestAnimationFrame(() => {
-        if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab();
-        if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState();
-        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 4, 85); }, 80);
-      });
-    }
-  }
-  
-  // Inicializar pestaña Análisis: Solución Nutritiva (misma estructura que Análisis de Suelo)
-  if (name === "Análisis: Solución Nutritiva") {
-    if (content && sectionScrollPositions['Análisis: Solución Nutritiva']) content.classList.add('restoring-scroll');
-    if (reusedCachedDom) {
-      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 3, 85); });
-    } else {
-      requestAnimationFrame(() => {
-        if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab();
-        if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState();
-        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 5, 90); }, 120);
-      });
-    }
-  }
-
-  // Inicializar pestaña Análisis: Extracto de Pasta
-  if (name === "Análisis: Extracto de Pasta") {
-    if (content && sectionScrollPositions['Análisis: Extracto de Pasta']) content.classList.add('restoring-scroll');
-    if (reusedCachedDom) {
-      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 3, 85); });
-    } else {
-      requestAnimationFrame(() => {
-        if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab();
-        if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState();
-        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 5, 90); }, 120);
-      });
-    }
-  }
-
-  // Inicializar pestaña Análisis: Agua
-  if (name === "Análisis: Agua") {
-    if (content && sectionScrollPositions['Análisis: Agua']) content.classList.add('restoring-scroll');
-    if (reusedCachedDom) {
-      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Agua', 3, 85); });
-    } else {
-      requestAnimationFrame(() => {
-        if (typeof window.initAguaTab === 'function') window.initAguaTab();
-        if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState();
-        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 5, 90); }, 120);
-      });
-    }
-  }
-
-  // Inicializar pestaña Análisis: Foliar (DOP)
-  if (name === "Análisis: Foliar") {
-    if (content && sectionScrollPositions['Análisis: Foliar']) content.classList.add('restoring-scroll');
-    if (reusedCachedDom) {
-      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Foliar', 3, 85); });
-    } else {
-      requestAnimationFrame(() => {
-        if (typeof window.initFoliarTab === 'function') window.initFoliarTab();
-        if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState();
-        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 5, 90); }, 120);
-      });
-    }
-  }
-
-  // Inicializar pestaña Análisis: Fruta (ICC)
-  if (name === "Análisis: Fruta") {
-    if (content && sectionScrollPositions['Análisis: Fruta']) content.classList.add('restoring-scroll');
-    if (reusedCachedDom) {
-      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Fruta', 3, 85); });
-    } else {
-      requestAnimationFrame(() => {
-        if (typeof window.initFrutaTab === 'function') window.initFrutaTab();
-        if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState();
-        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 5, 90); }, 120);
-      });
-    }
+    bootAnalysisSection('Análisis: Suelo', {
+      reusedCachedDom: reusedCachedDom,
+      init: function () { if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab(); },
+      restore: function () { if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState(); }
+    });
+  } else if (name === "Análisis: Solución Nutritiva") {
+    bootAnalysisSection('Análisis: Solución Nutritiva', {
+      reusedCachedDom: reusedCachedDom,
+      init: function () { if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab(); },
+      restore: function () { if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState(); }
+    });
+  } else if (name === "Análisis: Extracto de Pasta") {
+    bootAnalysisSection('Análisis: Extracto de Pasta', {
+      reusedCachedDom: reusedCachedDom,
+      init: function () { if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab(); },
+      restore: function () { if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState(); }
+    });
+  } else if (name === "Análisis: Agua") {
+    bootAnalysisSection('Análisis: Agua', {
+      reusedCachedDom: reusedCachedDom,
+      init: function () { if (typeof window.initAguaTab === 'function') window.initAguaTab(); },
+      restore: function () { if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState(); }
+    });
+  } else if (name === "Análisis: Foliar") {
+    bootAnalysisSection('Análisis: Foliar', {
+      reusedCachedDom: reusedCachedDom,
+      init: function () { if (typeof window.initFoliarTab === 'function') window.initFoliarTab(); },
+      restore: function () { if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState(); }
+    });
+  } else if (name === "Análisis: Fruta") {
+    bootAnalysisSection('Análisis: Fruta', {
+      reusedCachedDom: reusedCachedDom,
+      init: function () { if (typeof window.initFrutaTab === 'function') window.initFrutaTab(); },
+      restore: function () { if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState(); }
+    });
   }
   
   // CARGAR DATOS DEL PROYECTO cuando entramos a una sección que lo requiere
@@ -21452,7 +21447,7 @@ window.saveSolucionNutritivaUIState = function saveSolucionNutritivaUIState() {
   });
   try {
     var key = 'nutriplant_solucion_nutritiva_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections }));
+    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition() }));
   } catch (e) { console.warn('saveSolucionNutritivaUIState', e); }
 };
 
@@ -21486,6 +21481,12 @@ window.restoreSolucionNutritivaUIState = function restoreSolucionNutritivaUIStat
         }
       });
     }
+    applyAnalysisScrollFromState(
+      'Análisis: Solución Nutritiva',
+      state,
+      'solucion-nutritiva-tab-container',
+      window.saveSolucionNutritivaUIState
+    );
   } catch (e) { console.warn('restoreSolucionNutritivaUIState', e); }
 };
 
@@ -21911,7 +21912,7 @@ window.saveExtractoPastaUIState = function saveExtractoPastaUIState() {
   sections.forEach(function(d) { if (d.open) openSections.push(d.getAttribute('data-ep-section')); });
   try {
     var key = 'nutriplant_extracto_pasta_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections }));
+    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition() }));
   } catch (e) { console.warn('saveExtractoPastaUIState', e); }
 };
 
@@ -21945,6 +21946,12 @@ window.restoreExtractoPastaUIState = function restoreExtractoPastaUIState() {
         }
       });
     }
+    applyAnalysisScrollFromState(
+      'Análisis: Extracto de Pasta',
+      state,
+      'extracto-pasta-tab-container',
+      window.saveExtractoPastaUIState
+    );
   } catch (e) { console.warn('restoreExtractoPastaUIState', e); }
 };
 
@@ -22455,7 +22462,7 @@ window.saveAguaUIState = function saveAguaUIState() {
   document.querySelectorAll('#agua-form-wrap .soil-section[data-aw-section]').forEach(function(d) { if (d.open) openSections.push(d.getAttribute('data-aw-section')); });
   try {
     var key = 'nutriplant_agua_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections }));
+    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition() }));
   } catch (e) { console.warn('saveAguaUIState', e); }
 };
 
@@ -22489,6 +22496,12 @@ window.restoreAguaUIState = function restoreAguaUIState() {
         }
       });
     }
+    applyAnalysisScrollFromState(
+      'Análisis: Agua',
+      state,
+      'agua-tab-container',
+      window.saveAguaUIState
+    );
   } catch (e) { console.warn('restoreAguaUIState', e); }
 };
 
@@ -22773,7 +22786,7 @@ window.saveFoliarUIState = function saveFoliarUIState() {
   document.querySelectorAll('#foliar-form-wrap .soil-section[data-f-section]').forEach(function(d) { if (d.open) openSections.push(d.getAttribute('data-f-section')); });
   try {
     var key = 'nutriplant_foliar_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections }));
+    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition() }));
   } catch (e) { console.warn('saveFoliarUIState', e); }
 };
 
@@ -22801,6 +22814,12 @@ window.restoreFoliarUIState = function restoreFoliarUIState() {
         if (e.target && e.target.matches && e.target.matches('details[data-f-section]') && typeof window.saveFoliarUIState === 'function') window.saveFoliarUIState();
       });
     }
+    applyAnalysisScrollFromState(
+      'Análisis: Foliar',
+      state,
+      'foliar-tab-container',
+      window.saveFoliarUIState
+    );
   } catch (e) { console.warn('restoreFoliarUIState', e); }
 };
 
@@ -23224,7 +23243,7 @@ window.saveFrutaUIState = function saveFrutaUIState() {
   document.querySelectorAll('#fruta-form-wrap .soil-section[data-fru-section]').forEach(function(d) { if (d.open) openSections.push(d.getAttribute('data-fru-section')); });
   try {
     var key = 'nutriplant_fruta_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections }));
+    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition() }));
   } catch (e) { console.warn('saveFrutaUIState', e); }
 };
 
@@ -23252,6 +23271,12 @@ window.restoreFrutaUIState = function restoreFrutaUIState() {
         if (e.target && e.target.matches && e.target.matches('details[data-fru-section]') && typeof window.saveFrutaUIState === 'function') window.saveFrutaUIState();
       });
     }
+    applyAnalysisScrollFromState(
+      'Análisis: Fruta',
+      state,
+      'fruta-tab-container',
+      window.saveFrutaUIState
+    );
   } catch (e) { console.warn('restoreFrutaUIState', e); }
 };
 
@@ -24661,7 +24686,11 @@ window.saveSoilAnalysisUIState = function saveSoilAnalysisUIState() {
   });
   try {
     var key = 'nutriplant_soil_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections }));
+    localStorage.setItem(key, JSON.stringify({
+      selectedId: selectedId,
+      openSections: openSections,
+      scrollY: getScrollPosition()
+    }));
   } catch (e) { console.warn('saveSoilAnalysisUIState', e); }
 };
 
@@ -24687,6 +24716,9 @@ window.restoreSoilAnalysisUIState = function restoreSoilAnalysisUIState() {
         d.open = openSections.indexOf(section) !== -1;
       });
     }
+    if (typeof state.scrollY === 'number' && state.scrollY >= 0) {
+      sectionScrollPositions['Análisis: Suelo'] = state.scrollY;
+    }
     var container = document.querySelector('.soil-analysis-sections');
     if (container && !container._soilToggleBound) {
       container._soilToggleBound = true;
@@ -24696,6 +24728,12 @@ window.restoreSoilAnalysisUIState = function restoreSoilAnalysisUIState() {
         }
       });
     }
+    applyAnalysisScrollFromState(
+      'Análisis: Suelo',
+      state,
+      'soil-analysis-tab-container',
+      window.saveSoilAnalysisUIState
+    );
   } catch (e) { console.warn('restoreSoilAnalysisUIState', e); }
 };
 
