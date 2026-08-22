@@ -1087,9 +1087,10 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   flex-direction: column;
 }
 
-/* Restauración de scroll sin fade para evitar parpadeo visible al volver de sección */
+/* Ocultar brevemente mientras se ajusta el scroll (evita parpadeo arriba→abajo) */
 .content.restoring-scroll {
-  opacity: 1;
+  opacity: 0;
+  pointer-events: none;
   transition: none;
 }
 
@@ -10392,11 +10393,10 @@ html.embed-login body {
 .np-dem-smooth-img {
   image-rendering: auto !important;
   -ms-interpolation-mode: bicubic;
-  filter: blur(1.2px);
+  filter: blur(1.6px);
 }
 .np-dem-smooth-img.np-dem-smooth-slope {
-  /* Compat: ya no se difumina más que la altura */
-  filter: blur(1.2px) contrast(1.06) saturate(1.06);
+  filter: blur(1.6px) contrast(1.06) saturate(1.06);
 }
 
 .radar-ndvi-panel .radar-pilot-trigger {

@@ -4471,6 +4471,37 @@ function np_formatRadarLocationNote(overlayCtx, snap) {
   return '';
 }
 
+/** Suaviza transiciones entre píxeles DEM (pendiente/altura) sin cambiar la paleta. */
+function np_smoothDemRasterFromImage(img, scaleFactor) {
+  if (!img) return null;
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!(w > 0 && h > 0)) return null;
+  const scale = Math.min(Math.max(Number(scaleFactor) || 2, 1.5), 3);
+  const hi = document.createElement('canvas');
+  hi.width = Math.max(2, Math.round(w * scale));
+  hi.height = Math.max(2, Math.round(h * scale));
+  const hctx = hi.getContext('2d');
+  if (!hctx) return null;
+  hctx.imageSmoothingEnabled = true;
+  hctx.imageSmoothingQuality = 'high';
+  hctx.drawImage(img, 0, 0, hi.width, hi.height);
+  const out = document.createElement('canvas');
+  out.width = w;
+  out.height = h;
+  const octx = out.getContext('2d');
+  if (!octx) return null;
+  octx.imageSmoothingEnabled = true;
+  octx.imageSmoothingQuality = 'high';
+  octx.drawImage(hi, 0, 0, w, h);
+  try {
+    return out.toDataURL('image/png');
+  } catch (e) {
+    return null;
+  }
+}
+window.np_smoothDemRasterFromImage = np_smoothDemRasterFromImage;
+
 function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   if (typeof google === 'undefined' || !google.maps || !nutriPlantMap || !nutriPlantMap.map) return;
   if (radarGroundOverlay) {
@@ -4493,10 +4524,9 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   // DEM (relieve): opacidad alta — el blur no debe dejarlo “lavado”/transparente.
   const containerOpacity =
     isPilotLayer || isDemLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
-  // DEM ~30 m: ligero suavizado (misma intensidad pendiente/altura). Sin blur fuerte:
-  // la pendiente quedaba ilegible en mapa, PDF y admin.
+  // DEM ~30 m: suavizado ligero entre píxeles (pendiente y altura).
   let visualFilter = isDemLayer
-    ? 'blur(1.2px) contrast(1.08) saturate(1.08)'
+    ? 'blur(1.6px) contrast(1.08) saturate(1.08)'
     : isPilotLayer
       ? 'none'
       : 'saturate(1.35) contrast(1.15)';
@@ -4530,6 +4560,14 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     this._npIsDemLayer = isDemLayer;
     this._npImg = img;
     img.onload = () => {
+      if (this._npIsDemLayer && this._npImg === img && img.dataset.npDemSmoothed !== '1') {
+        const smoothUrl = np_smoothDemRasterFromImage(img, 2);
+        if (smoothUrl) {
+          img.dataset.npDemSmoothed = '1';
+          img.src = smoothUrl;
+          return;
+        }
+      }
       console.log('✅ Imagen Radar cargada en overlay');
       if (typeof overlay.draw === 'function') overlay.draw();
     };

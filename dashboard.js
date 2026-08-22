@@ -345,17 +345,19 @@ function setScrollPosition(pos) {
     window.scrollTo(0, pos);
   } catch (e) {}
 }
-function restoreScrollForKey(scrollKey) {
+function restoreScrollForKey(scrollKey, opts) {
+  opts = opts || {};
   var pos = sectionScrollPositions[scrollKey];
   var content = document.querySelector('.content');
   if (typeof pos === 'number' && pos > 0) {
-    // Restauración inmediata + verificación en el siguiente frame para evitar "salto" visible.
     setScrollPosition(pos);
-    requestAnimationFrame(function() {
-      setScrollPosition(pos);
-      if (content) content.classList.remove('restoring-scroll');
-    });
-  } else if (content) {
+    if (opts.finalize) {
+      requestAnimationFrame(function () {
+        setScrollPosition(pos);
+        if (content) content.classList.remove('restoring-scroll');
+      });
+    }
+  } else if (opts.finalize && content) {
     content.classList.remove('restoring-scroll');
   }
 }
@@ -363,7 +365,8 @@ function restoreScrollForKeyStabilized(scrollKey, attempts, intervalMs) {
   var tries = (typeof attempts === 'number' && attempts > 0) ? attempts : 4;
   var interval = (typeof intervalMs === 'number' && intervalMs > 0) ? intervalMs : 90;
   function runAttempt() {
-    restoreScrollForKey(scrollKey);
+    var isLast = tries <= 1;
+    restoreScrollForKey(scrollKey, { finalize: isLast });
     tries--;
     if (tries > 0) {
       setTimeout(runAttempt, interval);
@@ -371,14 +374,39 @@ function restoreScrollForKeyStabilized(scrollKey, attempts, intervalMs) {
   }
   runAttempt();
 }
+var ANALYSIS_SCROLL_STORAGE_KEYS = {
+  'Análisis: Suelo': 'nutriplant_soil_ui_',
+  'Análisis: Solución Nutritiva': 'nutriplant_solucion_nutritiva_ui_',
+  'Análisis: Extracto de Pasta': 'nutriplant_extracto_pasta_ui_',
+  'Análisis: Agua': 'nutriplant_agua_ui_',
+  'Análisis: Foliar': 'nutriplant_foliar_ui_',
+  'Análisis: Fruta': 'nutriplant_fruta_ui_'
+};
+function getAnalysisScrollHint(sectionName) {
+  var mem = sectionScrollPositions[sectionName];
+  if (typeof mem === 'number' && mem > 0) return mem;
+  if (!currentProject || !currentProject.id) return 0;
+  var prefix = ANALYSIS_SCROLL_STORAGE_KEYS[sectionName];
+  if (!prefix) return 0;
+  try {
+    var raw = localStorage.getItem(prefix + currentProject.id);
+    if (!raw) return 0;
+    var state = JSON.parse(raw);
+    if (typeof state.scrollY === 'number' && state.scrollY > 0) return state.scrollY;
+  } catch (e) {}
+  return 0;
+}
 function bootAnalysisSection(sectionName, opts) {
   opts = opts || {};
   var content = document.querySelector('.content');
-  if (content && typeof sectionScrollPositions[sectionName] === 'number' && sectionScrollPositions[sectionName] > 0) {
-    content.classList.add('restoring-scroll');
+  var targetScroll = getAnalysisScrollHint(sectionName);
+  if (targetScroll > 0) {
+    sectionScrollPositions[sectionName] = targetScroll;
+    setScrollPosition(targetScroll);
+    if (content) content.classList.add('restoring-scroll');
   }
   function finishScroll() {
-    restoreScrollForKeyStabilized(sectionName, 8, 110);
+    restoreScrollForKeyStabilized(sectionName, 4, 70);
   }
   if (opts.reusedCachedDom) {
     requestAnimationFrame(finishScroll);
@@ -387,7 +415,7 @@ function bootAnalysisSection(sectionName, opts) {
   requestAnimationFrame(function () {
     if (typeof opts.init === 'function') opts.init();
     if (typeof opts.restore === 'function') opts.restore();
-    setTimeout(finishScroll, opts.scrollDelayMs || 420);
+    setTimeout(finishScroll, opts.scrollDelayMs || 260);
   });
 }
 function bindAnalysisSectionScrollSave(scrollKey, tabContainerId, saveFn) {
@@ -2425,7 +2453,17 @@ function selectSection(name, el) {
   }
 
   // No heredar scroll de la sección anterior (evita aterrizar al final de la página).
-  setScrollPosition(0);
+  var incomingScrollHint = getAnalysisScrollHint(name);
+  if (incomingScrollHint > 0) {
+    sectionScrollPositions[name] = incomingScrollHint;
+    setScrollPosition(incomingScrollHint);
+    if (content) content.classList.add('restoring-scroll');
+  } else if (typeof sectionScrollPositions[name] === 'number' && sectionScrollPositions[name] > 0) {
+    setScrollPosition(sectionScrollPositions[name]);
+    if (content) content.classList.add('restoring-scroll');
+  } else {
+    setScrollPosition(0);
+  }
 
   // Agregar indicador de proyecto en todas las secciones
   if (!reusedCachedDom) addProjectIndicator(view);
@@ -2436,7 +2474,7 @@ function selectSection(name, el) {
     if (content && sectionScrollPositions[name]) content.classList.add('restoring-scroll');
     requestAnimationFrame(function() {
       if (reusedCachedDom) restoreScrollForKeyStabilized(name, 3, 80);
-      else restoreScrollForKey(name);
+      else restoreScrollForKey(name, { finalize: true });
     });
   }
   
@@ -17279,7 +17317,7 @@ function createLocationDemMapHTML(demSlope, rt) {
       ? `<div class="report-note-inline" style="margin-top:6px;">${statsArr.join(' · ')}</div>`
       : '';
     // Suavizado ligero (igual pendiente/altura): el blur fuerte dejaba la pendiente ilegible.
-    const blurPx = '1.2px';
+    const blurPx = '1.6px';
     const slopeCls = softBlur ? ' np-dem-smooth-slope' : '';
     return `
       <div class="report-keep-together" style="min-width:0;border:1px solid #d6d3d1;background:#fff;border-radius:8px;padding:8px;">

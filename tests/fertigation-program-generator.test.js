@@ -62,6 +62,28 @@ function close(actual, expected, eps = 1e-6) {
   assert.ok(result.excess.SO4 > 0, 'Mg sulfate may pass SO4');
 })();
 
+(function magnesiumSulfateWhenSulfateStillOpen() {
+  const result = generator.solveStage(
+    { N: 20, MgO: 15, SO4: 25, CaO: 0, P2O5: 0, K2O: 0 },
+    {},
+    materials
+  );
+  const ids = result.rows.map(row => row.materialId);
+  assert.ok(ids.includes('sulfato_magnesio'), ids.join(','));
+  assert.ok(!ids.includes('nitrato_magnesio'), 'sulfate when SO4 still open: ' + ids.join(','));
+})();
+
+(function leftoverSulfateUsesMagnesiumSulfateWhenMagnesiumClosed() {
+  const result = generator.solveStage(
+    { N: 0, MgO: 0, SO4: 40, CaO: 0, P2O5: 0, K2O: 0 },
+    {},
+    materials
+  );
+  const ids = result.rows.map(row => row.materialId);
+  assert.ok(ids.includes('sulfato_magnesio'), ids.join(','));
+  assert.ok(result.supplied.SO4 > 35, result.supplied.SO4);
+})();
+
 (function magnesiumNitrateWhenNitrogenStillOpenAndNoNFill() {
   const slim = materials.filter(m => m.id !== 'sulfonit_33_00_00_2s' && m.id !== 'fosfonitrato_33_03_00');
   const result = generator.solveStage(

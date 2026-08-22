@@ -280,7 +280,9 @@
     function applyMagnesium() {
       if (!(remaining.MgO > tolerance)) return;
       if (magSource === 'sulfate') {
-        applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45, ignoreKeys: ['SO4'] });
+        var sulfateStep = { id: 'sulfato_magnesio', target: 'MgO', order: 45 };
+        if (sulfateTargetAlreadyMet()) sulfateStep.ignoreKeys = ['SO4'];
+        applyStep(sulfateStep);
         return;
       }
       if (magSource === 'nitrate') {
@@ -291,8 +293,15 @@
         }
         if (remaining.MgO > tolerance) magSource = null;
       }
-      // When S is already covered (water/granular/acid), prefer Mg nitrate to avoid more SO₄.
-      // Otherwise use Mg nitrate while N still has room for a bulk dose.
+      // Si aún falta SO₄, sulfato de Mg aporta S y Mg (respeta techo de S).
+      if (!sulfateTargetAlreadyMet()) {
+        var sulfateForS = applyStep({ id: 'sulfato_magnesio', target: 'MgO', order: 45 });
+        if (sulfateForS > 0) {
+          magSource = 'sulfate';
+          return;
+        }
+      }
+      // S cubierto: nitrato de Mg aprovecha N residual sin subir SO₄.
       var nitrateRoom = practicalDose('nitrato_magnesio', 'MgO');
       if (nitrateRoom > tolerance && (sulfateTargetAlreadyMet() || nitrateRoom + 1e-9 >= MIN_BULK_DOSE_KG_HA)) {
         var nitrateDose = applyStep({ id: 'nitrato_magnesio', target: 'MgO', order: 46 });
@@ -307,12 +316,18 @@
       }
     }
 
+    function applyLeftoverSulfate() {
+      if (!(remaining.SO4 > tolerance)) return;
+      if (remaining.MgO > tolerance) return;
+      if (remaining.N > tolerance) return;
+      var hadMgSulfate = rows.some(function (row) { return row.materialId === 'sulfato_magnesio'; });
+      if (hadMgSulfate && fertilizerTarget.MgO > tolerance && fertilizerTarget.SO4 > tolerance) {
+        if (remaining.SO4 < fertilizerTarget.SO4 * 0.25) return;
+      }
+      applyStep({ id: 'sulfato_magnesio', target: 'SO4', order: 47, ignoreKeys: ['MgO'] });
+    }
+
     function applyMacroPass() {
-      // Acid already applied. Ca nitrate → Ca (+N). MKP → P (+K). MAP leftover P after flower.
-      // NKS → remaining K (+N). Incidental SO₄ must not block K.
-      // SOP only if N already full and K remains (also not blocked by a full S).
-      // Mg before leftover N: if S is already covered, Mg nitrate uses N first; Sulfonit is last for N.
-      // Mg sulfate only when N is full and Mg nitrate cannot close Mg (SO₄ excess is reported).
       applyStep({ id: 'nitrato_calcio_granular', target: 'CaO', order: 10 });
       applyStep({ id: 'mkp', target: 'P2O5', order: 30 });
       if (allowMap) applyStep({ id: 'map', target: 'P2O5', order: 31 });
@@ -320,6 +335,7 @@
       applyStep({ id: 'sop', target: 'K2O', order: 41, ignoreKeys: ['SO4'] });
       applyMagnesium();
       applyLeftoverNitrogen();
+      applyLeftoverSulfate();
       MICRO_SEQUENCE.forEach(function (step) { applyStep(step); });
     }
 

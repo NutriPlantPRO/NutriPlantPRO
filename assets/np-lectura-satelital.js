@@ -215,6 +215,15 @@
     }
   }
 
+  function parseLecturaKcInputValue() {
+    var inp = document.getElementById('lectura-kc');
+    if (!inp) return null;
+    var raw = String(inp.value || '').trim();
+    if (raw === '') return null;
+    var kc = parseFloat(raw);
+    return Number.isFinite(kc) && kc >= 0 ? kc : null;
+  }
+
   /** Kc desde Clima (balance) o override (PDF/admin). ETc = ET₀ × Kc. */
   function getClimateKcForLectura(overrideKc) {
     if (overrideKc != null && Number.isFinite(Number(overrideKc))) {
@@ -230,11 +239,15 @@
       }
     } catch (eMeta) { /* fall through */ }
     var proj = getProject() || (typeof window.currentProject !== 'undefined' ? window.currentProject : null);
-    if (!proj || !proj.climateAnalysis || typeof proj.climateAnalysis !== 'object') return null;
-    var iqc = proj.climateAnalysis.irrigationQuickCalc;
-    if (!iqc || iqc.kc == null) return null;
-    var kc = Number(iqc.kc);
-    return Number.isFinite(kc) && kc >= 0 ? kc : null;
+    if (proj && proj.climateAnalysis && typeof proj.climateAnalysis === 'object') {
+      var iqc = proj.climateAnalysis.irrigationQuickCalc;
+      if (iqc && iqc.kc != null) {
+        var kcProj = Number(iqc.kc);
+        if (Number.isFinite(kcProj) && kcProj >= 0) return kcProj;
+      }
+    }
+    // Fallback: valor en el input de Lectura (p. ej. recién escrito y aún no en proyecto).
+    return parseLecturaKcInputValue();
   }
 
   function etcSeriesFromRows(rows, kc) {
@@ -1518,6 +1531,14 @@
     inp.value = '';
   }
 
+  function refreshLecturaKcDependentUi(state) {
+    if (!state) state = loadState();
+    if (!state) return;
+    patchTableLive(state);
+    renderChartToggles(state);
+    renderChart(state);
+  }
+
   var lecturaKcChartTimer = null;
   function persistLecturaKcFromInput() {
     var inp = document.getElementById('lectura-kc');
@@ -1531,11 +1552,7 @@
     }
     if (lecturaKcChartTimer) clearTimeout(lecturaKcChartTimer);
     lecturaKcChartTimer = setTimeout(function () {
-      var st = loadState();
-      if (st) {
-        renderChartToggles(st);
-        renderChart(st);
-      }
+      refreshLecturaKcDependentUi(loadState());
     }, 180);
   }
 
@@ -1556,10 +1573,7 @@
     if (kc == null && detailKc != null && Number.isFinite(detailKc)) kc = detailKc;
     if (kc === lastLecturaKcShown && detailKc == null) return;
     lastLecturaKcShown = kc;
-    var st = loadState();
-    if (!st) return;
-    renderChartToggles(st);
-    renderChart(st);
+    refreshLecturaKcDependentUi(loadState());
   }
 
   function renderChartToggles(state) {

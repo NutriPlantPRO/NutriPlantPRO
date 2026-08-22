@@ -353,8 +353,8 @@ function smoothFloatGrid(src, width, height, passes, radius) {
  */
 async function demRgbaToSmoothPng(rgba, width, height, opts) {
   const stronger = opts && opts.strong === true;
-  const scale = stronger ? 4 : 2;
-  const blurSigma = stronger ? 4.2 : 1.35;
+  const scale = stronger ? 4 : 3;
+  const blurSigma = stronger ? 4.2 : 1.85;
   // Opacidad plena donde hay color (el blur no debe “lavar” el overlay a transparente).
   const hardened = Buffer.from(rgba);
   for (let i = 3; i < hardened.length; i += 4) {
@@ -464,9 +464,9 @@ async function renderDemSlopePng(dem, opts) {
   // Pre-suavizar DEM antes de pendiente (ligero): evita escalones sin lavar el detalle.
   const elevForSlope = smoothFloatGrid(elevRaw, outW, outH, 2, 1);
   const slopeRaw = computeSlopePercent(elevForSlope, outW, outH, bbox4326);
-  const elev = smoothFloatGrid(elevRaw, outW, outH, 3);
-  // Pendiente: mismo orden de suavizado que altura (antes 7×2 + PNG strong = muy difusa).
-  const slope = smoothFloatGrid(slopeRaw, outW, outH, 3, 1);
+  const elev = smoothFloatGrid(elevRaw, outW, outH, 4);
+  // Pendiente: mismo suavizado que altura + difuminado inter-pixel al colorear.
+  const slope = smoothFloatGrid(slopeRaw, outW, outH, 4, 1);
 
   const elevFallback = {
     ...ELEV_VIS,
