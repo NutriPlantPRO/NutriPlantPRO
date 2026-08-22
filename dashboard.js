@@ -10575,8 +10575,15 @@ function scheduleReportPrintWhenReady(printWindow) {
       return Promise.resolve();
     }
   }
+  function waitForFonts() {
+    try {
+      var doc = printWindow.document;
+      if (doc && doc.fonts && doc.fonts.ready) return doc.fonts.ready.catch(function () {});
+    } catch (e) {}
+    return Promise.resolve();
+  }
   function printAfterImages() {
-    waitForImages().then(function () {
+    Promise.all([waitForImages(), waitForFonts()]).then(function () {
       setTimeout(doPrint, 250);
     }).catch(function () {
       setTimeout(doPrint, 400);
@@ -15428,6 +15435,9 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="google" content="notranslate">
       <title>NutriPlant PRO</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="${reportCssHref}">
       <style>
         body {
@@ -15463,15 +15473,17 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
         .logo {
           display: inline-block;
           text-align: center;
-          font-size: 2rem;
-          font-weight: 800;
-          color: #1e3a8a;
-          letter-spacing: 0.2px;
           margin-bottom: 4px;
         }
-        .logo-text {
+        .logo-wordmark {
           display: block;
-          line-height: 1.05;
+          width: auto;
+          height: 48px;
+          max-width: min(300px, 88vw);
+          margin: 0 auto 4px;
+          object-fit: contain;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         .logo-icon {
           display: block;
@@ -15479,6 +15491,17 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           height: 34px;
           object-fit: contain;
           margin: 5px auto 0;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .header h1 {
+          font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+          font-weight: 800;
+          font-size: 1.55rem;
+          color: #1e3a8a;
+          letter-spacing: 0.02em;
+          line-height: 1.15;
+          margin: 8px 0 0;
         }
         .project-info {
           background: #fff;
@@ -16907,8 +16930,8 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       <div class="report-main">
         <div class="header">
           <div class="logo">
-            <span class="logo-text">NutriPlant PRO</span>
-            <img src="${reportAssetBase}N_Hoja_Azul.png" alt="NutriPlant PRO" class="logo-icon">
+            <img src="${reportAssetBase}NutriPlant_PRO_blue.png" alt="NutriPlant PRO" class="logo-wordmark">
+            <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="logo-icon" aria-hidden="true">
           </div>
           <h1>${rt('Reporte de Análisis Agrícola', 'Agricultural Analysis Report')}</h1>
           ${adminReportNoteHtml}

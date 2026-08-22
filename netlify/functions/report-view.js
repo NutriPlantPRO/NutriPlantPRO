@@ -229,7 +229,14 @@ function npOpenPrintWindow(sourceDoc){
   pw.document.write(html);
   pw.document.close();
   npWaitForImages(pw.document,function(){
-    setTimeout(function(){try{pw.focus();pw.print();}catch(e){}},350);
+    function doPrint(){
+      setTimeout(function(){try{pw.focus();pw.print();}catch(e){}},350);
+    }
+    try{
+      if(pw.document.fonts&&pw.document.fonts.ready){
+        pw.document.fonts.ready.then(doPrint).catch(doPrint);
+      }else doPrint();
+    }catch(e){doPrint();}
   },15000);
   return pw;
 }
@@ -386,7 +393,14 @@ function storageShellPage(signedUrl) {
     pw.document.open();
     pw.document.write(npBuildPrintDocumentHtml(sourceDoc));
     pw.document.close();
-    npWaitForImages(pw.document,function(){setTimeout(function(){try{pw.focus();pw.print();}catch(e){}},350);},15000);
+    npWaitForImages(pw.document,function(){
+      function doPrint(){setTimeout(function(){try{pw.focus();pw.print();}catch(e){}},350);}
+      try{
+        if(pw.document.fonts&&pw.document.fonts.ready){
+          pw.document.fonts.ready.then(doPrint).catch(doPrint);
+        }else doPrint();
+      }catch(e){doPrint();}
+    },15000);
     return pw;
   }
   (function(){

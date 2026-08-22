@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=48" />
+  <link rel="stylesheet" href="auth.css?v=49" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -4476,8 +4476,17 @@
       }
 
       function facebookEmbedWidth(container) {
-        var width = Math.floor((container && container.clientWidth) || 0);
-        if (!width) width = Math.floor(root.clientWidth - 40);
+        if (!container) return 340;
+        var width = 0;
+        var el = container;
+        while (el && !width) {
+          var rect = el.getBoundingClientRect();
+          width = Math.floor(rect.width || el.clientWidth || 0);
+          if (width < 40) width = 0;
+          el = el.parentElement;
+        }
+        if (!width) width = Math.floor((root && root.getBoundingClientRect().width) || root.clientWidth || 0) - 40;
+        if (!width) width = Math.floor(window.innerWidth || 0) - 48;
         if (!width) width = 340;
         // Mismo ancho que la caja: si pedimos más (ej. 420 en caja de 340), FB comprime y tapa nombre/seguidores.
         return Math.max(280, Math.min(500, width));
@@ -4498,14 +4507,18 @@
         return Math.max(220, Math.min(480, h));
       }
 
+      var fbResizeTimer = null;
+
       function mountFacebookEmbed(container, force) {
         if (!container) return;
         var width = facebookEmbedWidth(container);
         var fbHeight = facebookEmbedHeight(container);
+        var prevWidth = parseInt(container.dataset.fbWidth, 10) || 0;
+        var prevHeight = parseInt(container.dataset.fbHeight, 10) || 0;
         if (
           !force &&
-          container.dataset.fbWidth === String(width) &&
-          container.dataset.fbHeight === String(fbHeight) &&
+          Math.abs(prevWidth - width) <= 6 &&
+          Math.abs(prevHeight - fbHeight) <= 6 &&
           container.querySelector('iframe')
         ) {
           return;
@@ -4520,7 +4533,7 @@
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
             '&height=' + fbHeight +
-            '&small_header=true&adapt_container_width=false&hide_cover=true&show_facepile=false',
+            '&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false',
           'NutriPlant PRO en Facebook',
           {
             scrolling: 'no',
@@ -4529,12 +4542,33 @@
             height: fbHeight
           }
         );
-        iframe.style.width = width + 'px';
+        iframe.style.width = '100%';
         iframe.style.maxWidth = '100%';
         iframe.style.height = fbHeight + 'px';
         iframe.style.minHeight = fbHeight + 'px';
         container.appendChild(iframe);
         container.dataset.loaded = '1';
+      }
+
+      function scheduleFacebookEmbedRefresh(container) {
+        if (!container) return;
+        function refresh() {
+          mountFacebookEmbed(container, false);
+        }
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(refresh);
+        });
+        [120, 450, 1100].forEach(function (ms) {
+          window.setTimeout(refresh, ms);
+        });
+      }
+
+      function queueFacebookEmbedResize(container) {
+        if (!container) return;
+        window.clearTimeout(fbResizeTimer);
+        fbResizeTimer = window.setTimeout(function () {
+          mountFacebookEmbed(container, false);
+        }, 160);
       }
 
       function loadTikTokEmbed() {
@@ -4558,7 +4592,7 @@
         if (!container) return;
 
         if (id === 'facebook') {
-          mountFacebookEmbed(container, false);
+          scheduleFacebookEmbedRefresh(container);
           return;
         }
 
@@ -4636,7 +4670,7 @@
         }
         var fbPane = root.querySelector('[data-social-panel="facebook"]');
         var fbContainer = fbPane && fbPane.querySelector('[data-social-embed="facebook"]');
-        if (fbContainer && fbPane && !fbPane.hidden) {
+        if (fbContainer && fbPane && fbPane.classList.contains('active')) {
           mountFacebookEmbed(fbContainer, false);
         }
       }
@@ -4670,10 +4704,22 @@
       }
       var toolsCol = document.querySelector('.login-split__tools');
       var loginCol = document.querySelector('.login-split__login');
+      var socialPanels = root.querySelector('.login-social-panels');
+      var fbEmbedHost = root.querySelector('[data-social-embed="facebook"]');
       if (window.ResizeObserver) {
         var ro = new window.ResizeObserver(syncSocialPanelHeight);
         if (toolsCol) ro.observe(toolsCol);
         if (loginCol) ro.observe(loginCol);
+        ro.observe(root);
+        if (socialPanels) ro.observe(socialPanels);
+        if (fbEmbedHost) {
+          var fbRo = new window.ResizeObserver(function () {
+            queueFacebookEmbedResize(fbEmbedHost);
+          });
+          fbRo.observe(fbEmbedHost);
+          var fbBody = fbEmbedHost.closest('.login-social-pane__body');
+          if (fbBody) fbRo.observe(fbBody);
+        }
       }
       window.setTimeout(syncSocialPanelHeight, 400);
       window.setTimeout(syncSocialPanelHeight, 1200);
