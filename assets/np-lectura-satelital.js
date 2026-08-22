@@ -454,6 +454,17 @@
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  /** Encabezado de tabla en 2 renglones (título + unidad/subtítulo). */
+  function lecturaThTwoLines(line1, line2Html) {
+    var l2 =
+      line2Html != null && String(line2Html).trim() !== ''
+        ? '<span class="lectura-th-l2">' + line2Html + '</span>'
+        : '';
+    return '<span class="lectura-th-lines"><span class="lectura-th-l1">' + esc(line1) + '</span>' + l2 + '</span>';
+  }
+  function lecturaThUnit(unit) {
+    return '<span class="lectura-th-unit">' + esc(unit) + '</span>';
+  }
 
   // ---------- persistencia (bloques / runs) ----------
   var MAX_LECTURA_RUNS = 8;
@@ -1137,7 +1148,7 @@
   function lecturaTableSignature(state) {
     if (!state || !state.rows || !state.rows.length) return '';
     return (
-      'vpdminmax1|etcRainRiego1|' +
+      'vpdminmax1|etcRainRiego1|hdr2lines1|' +
       String(state.activeRunId || '') +
       '|' +
       lecturaPrefsFingerprint() +
@@ -1244,76 +1255,108 @@
       '</span>' +
     '</div>';
 
-    var unitBox =
-      'display:inline-block;padding:1px 6px;margin:0 1px;border:1px solid #0f766e;border-radius:5px;' +
-      'background:#ccfbf1;color:#115e59;font-weight:800;font-size:11px;line-height:1.35;';
     var haLabel = cropHa != null ? fmtAreaHa(cropHa, 2) : ('— ' + areaU);
     var depthU = lecturaDepthUnit();
-    var riegoMmHeader =
-      lecturaT('radar.riego_depth_header', 'Riego') + ' <span style="' + unitBox + '">' + depthU + '</span>';
-    var riegoM3Header =
-      lecturaT('radar.riego_m3_header', 'Riego') + ' <span style="' + unitBox + '">' + volU + '</span> / ' + haLabel;
+    var kpa = lecturaT('radar.kpa_unit', 'kPa');
+    var riegoMmHeader = lecturaThTwoLines(
+      lecturaT('radar.riego_depth_header', 'Riego'),
+      lecturaThUnit(depthU)
+    );
+    var riegoM3Header = lecturaThTwoLines(
+      lecturaT('radar.riego_m3_header', 'Riego'),
+      lecturaThUnit(volU) + ' <span class="lectura-th-l2-plain">/ ' + esc(haLabel) + '</span>'
+    );
 
     var headers = [
-      ['ID', lecturaT('radar.period_id_title', 'Identificador del periodo (P1, P2…).'), false, null],
+      [lecturaThTwoLines('ID', ''), lecturaT('radar.period_id_title', 'Identificador del periodo (P1, P2…).'), true, null],
       [
-        lecturaT('radar.col_days', 'Días'),
+        lecturaThTwoLines(lecturaT('radar.col_days', 'Días'), lecturaT('radar.col_days_sub', 'del periodo')),
         lecturaT('radar.col_days_title', 'Cantidad de días del periodo (fecha inicio → fin, inclusive).'),
-        false,
+        true,
         null
       ],
       [
-        lecturaT('radar.col_period', 'Periodo'),
+        lecturaThTwoLines(lecturaT('radar.col_period', 'Periodo'), lecturaT('radar.col_period_sub', 'fechas')),
         lecturaT('radar.col_period_title', 'Rango de fechas del periodo analizado.'),
-        false,
+        true,
         null
       ],
-      ['NDVI', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
-      ['NDMI', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
-      ['NDRE', 'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.', false, null],
       [
-        lecturaT('radar.col_vpd_avg', 'VPD prom (kPa)'),
+        lecturaThTwoLines('NDVI', lecturaT('radar.col_ndvi_sub', 'prom')),
+        'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.',
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines('NDMI', lecturaT('radar.col_ndmi_sub', 'prom')),
+        'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.',
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines('NDRE', lecturaT('radar.col_ndre_sub', 'prom')),
+        'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.',
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines(lecturaT('radar.col_vpd_avg_short', 'VPD prom'), lecturaThUnit(kpa)),
         lecturaT('radar.col_vpd_avg_title', 'VPD promedio horario del periodo.'),
-        false,
+        true,
         null
       ],
       [
-        lecturaT('radar.col_vpd_max', 'VPD máx (kPa)'),
+        lecturaThTwoLines(lecturaT('radar.col_vpd_max_short', 'VPD máx'), lecturaThUnit(kpa)),
         lecturaT('radar.col_vpd_max_title', 'VPD máximo horario del periodo.'),
-        false,
+        true,
         null
       ],
       [
-        lecturaT('radar.col_vpd_min', 'VPD mín (kPa)'),
+        lecturaThTwoLines(lecturaT('radar.col_vpd_min_short', 'VPD mín'), lecturaThUnit(kpa)),
         lecturaT('radar.col_vpd_min_title', 'VPD mínimo horario del periodo.'),
-        false,
-        null
-      ],
-      ['h &lt;0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
-      ['h 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
-      ['h &gt;1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false, null],
-      [
-        'ET₀',
-        lecturaT('radar.et0_acum_title', 'ET₀ acumulada durante todo el periodo.') + ' (' + depthU + ')',
-        false,
+        true,
         null
       ],
       [
-        'ETc',
-        lecturaT('radar.etc_acum_title', 'ETc = ET₀ × Kc (mismo Kc que en Clima).') + ' (' + depthU + ')',
-        false,
+        lecturaThTwoLines(lecturaT('radar.vpd_hours_low_short', 'Horas VPD'), '&lt; 0.5 ' + esc(kpa)),
+        lecturaT('radar.vpd_hours_low_title', 'Horas VPD bajo'),
+        true,
         null
       ],
       [
-        lecturaT('radar.rain_chip', 'Lluvia'),
-        lecturaT('radar.rain_acum_title', 'Lluvia acumulada durante todo el periodo.') + ' (' + depthU + ')',
-        false,
+        lecturaThTwoLines(lecturaT('radar.vpd_hours_opt_short', 'Horas VPD'), '0.5–1.5 ' + esc(kpa)),
+        lecturaT('radar.vpd_hours_opt_title', 'Horas VPD óptimo'),
+        true,
         null
       ],
       [
-        lecturaT('radar.rain_riego_chip', 'Lluvia + Riego'),
-        lecturaT('radar.rain_riego_title', 'Suma de lluvia acumulada y riego (lámina) del periodo.') + ' (' + depthU + ')',
-        false,
+        lecturaThTwoLines(lecturaT('radar.vpd_hours_high_short', 'Horas VPD'), '&gt; 1.5 ' + esc(kpa)),
+        lecturaT('radar.vpd_hours_high_title', 'Horas VPD alto'),
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines(lecturaT('radar.et0_acum_short', 'ET₀ acum'), lecturaThUnit(depthU)),
+        lecturaT('radar.et0_acum_title', 'ET₀ acumulada durante todo el periodo.'),
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines(lecturaT('radar.etc_acum_short', 'ETc acum'), lecturaThUnit(depthU)),
+        lecturaT('radar.etc_acum_title', 'ETc = ET₀ × Kc (mismo Kc que en Clima).'),
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines(lecturaT('radar.rain_acum_short', 'Lluvia acum'), lecturaThUnit(depthU)),
+        lecturaT('radar.rain_acum_title', 'Lluvia acumulada durante todo el periodo.'),
+        true,
+        null
+      ],
+      [
+        lecturaThTwoLines(lecturaT('radar.rain_riego_short', 'Lluvia + Riego'), lecturaThUnit(depthU)),
+        lecturaT('radar.rain_riego_title', 'Suma de lluvia acumulada y riego (lámina) del periodo.'),
+        true,
         null
       ],
       [
@@ -1329,14 +1372,26 @@
         'riegoR'
       ],
       [
-        lecturaT('radar.col_status', 'Estado'),
+        lecturaThTwoLines(lecturaT('radar.col_status', 'Estado'), lecturaT('radar.col_status_sub', 'satélite')),
         lecturaT('radar.col_status_title', 'Estado de la imagen satelital del periodo.'),
-        false,
+        true,
         null
       ]
     ];
+    var colgroup =
+      '<colgroup>' +
+      '<col class="lectura-col lectura-col-id">' +
+      '<col class="lectura-col lectura-col-days">' +
+      '<col class="lectura-col lectura-col-period">' +
+      '<col class="lectura-col lectura-col-idx"><col class="lectura-col lectura-col-idx"><col class="lectura-col lectura-col-idx">' +
+      '<col class="lectura-col lectura-col-vpd"><col class="lectura-col lectura-col-vpd"><col class="lectura-col lectura-col-vpd">' +
+      '<col class="lectura-col lectura-col-vpdh"><col class="lectura-col lectura-col-vpdh"><col class="lectura-col lectura-col-vpdh">' +
+      '<col class="lectura-col lectura-col-mm"><col class="lectura-col lectura-col-mm"><col class="lectura-col lectura-col-mm"><col class="lectura-col lectura-col-mm">' +
+      '<col class="lectura-col lectura-col-riego"><col class="lectura-col lectura-col-riego">' +
+      '<col class="lectura-col lectura-col-status">' +
+      '</colgroup>';
     var thClass = 'lectura-data-table__th';
-    html += '<table class="lectura-data-table"><thead><tr>' +
+    html += '<table class="lectura-data-table">' + colgroup + '<thead><tr>' +
       headers.map(function (h) {
         var cls = thClass;
         if (h[3] === 'riegoL') cls += ' lectura-data-table__th--riego-l';
@@ -1414,7 +1469,7 @@
       '<div style="font-size:11px;color:#64748b;margin-top:6px;">' +
       lecturaT(
         'radar.table_footnote',
-        'ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom / máx / mín = promedio, máximo y mínimo horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego {unit} y {vol}</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).',
+        '<span style="color:#0f766e;font-weight:700;">Riego {unit}</span> y <span style="color:#0f766e;font-weight:700;">{vol}</span> son el <strong>mismo riego</strong>: editas uno y se convierte el otro. <span style="color:#b45309;">*</span> la imagen usó el <strong>mes calendario</strong>; clima y riego siguen en los 15 días del periodo.',
         { unit: depthU, vol: volU }
       ) +
       (cropHa == null

@@ -895,7 +895,7 @@
         status_incomplete_reason: "Imagen incompleta por nubosidad.",
         status_generating: "⏳ Generando…",
         history_complete: "✔ Histórico completo. Edita el riego en volumen o {unit} (con % de franja arriba) para completar la correlación.",
-        table_footnote: "ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom / máx / mín = promedio, máximo y mínimo horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style=\"color:#0f766e;font-weight:700;\">Riego {unit} y {vol}</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style=\"color:#b45309;\">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días)."
+        table_footnote: "<span style=\"color:#0f766e;font-weight:700;\">Riego {unit}</span> y <span style=\"color:#0f766e;font-weight:700;\">{vol}</span> son el <strong>mismo riego</strong>: editas uno y se convierte el otro. <span style=\"color:#b45309;\">*</span> la imagen usó el <strong>mes calendario</strong>; clima y riego siguen en los 15 días del periodo."
       },
       analysis: {
         meta_title_placeholder: "Título (ej. Rancho Agrícola Junio 2025)",
@@ -2077,7 +2077,7 @@
         status_incomplete_reason: "Incomplete image due to cloud cover.",
         status_generating: "⏳ Generating…",
         history_complete: "✔ History complete. Edit irrigation volume or {unit} (strip % above) to finish the correlation.",
-        table_footnote: "ID = period identifier (P1…). Days = period length (start→end inclusive). NDVI, NDMI and NDRE are not translated: they are satellite indices. ET₀ and rain are period totals; VPD avg / max / min = hourly average, maximum and minimum. VPD hours: low &lt;0.5 · optimal 0.5–1.5 · high &gt;1.5 (total ≈ period hours; 15 d = 360 h). <span style=\"color:#0f766e;font-weight:700;\">Irrigation {unit} and {vol}</span> are the <strong>same irrigation</strong> (green outline): edit one and the other converts. <span style=\"color:#b45309;\">*</span> biweek expanded to the <strong>calendar month</strong> only for the image (climate/irrigation stay on the 15 days)."
+        table_footnote: "<span style=\"color:#0f766e;font-weight:700;\">Irrigation {unit}</span> and <span style=\"color:#0f766e;font-weight:700;\">{vol}</span> are the <strong>same irrigation</strong>: edit one and the other converts. <span style=\"color:#b45309;\">*</span> the image used the full <strong>calendar month</strong>; climate and irrigation stay on the 15-day period."
       },
       analysis: {
         meta_title_placeholder: "Title (e.g. Agricultural Ranch June 2025)",

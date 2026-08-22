@@ -689,7 +689,7 @@
     "status_incomplete_reason": "Incomplete image due to cloud cover.",
     "status_generating": "⏳ Generating…",
     "history_complete": "✔ History complete. Edit irrigation in m³ or {unit} (strip % above) to finish the correlation.",
-    "table_footnote": "ID = period identifier (P1…). Days = period length (start→end inclusive). NDVI, NDMI and NDRE are not translated: they are satellite indices. ET₀ and rain are period totals; VPD avg = hourly average. VPD hours: low <0.5 · optimal 0.5–1.5 · high >1.5 (total ≈ period hours; 15 d = 360 h). <span style=\"color:#0f766e;font-weight:700;\">Irrigation {unit} and m³</span> are the <strong>same irrigation</strong> (green outline): edit one and the other converts. <span style=\"color:#b45309;\">*</span> biweek expanded to the <strong>calendar month</strong> only for the image (climate/irrigation stay on the 15 days)."
+    "table_footnote": "<span style=\"color:#0f766e;font-weight:700;\">Irrigation {unit}</span> and <span style=\"color:#0f766e;font-weight:700;\">{vol}</span> are the <strong>same irrigation</strong>: edit one and the other converts. <span style=\"color:#b45309;\">*</span> the image used the full <strong>calendar month</strong>; climate and irrigation stay on the 15-day period."
   },
   "analysis": {
     "meta_title_placeholder": "Title (e.g. Agricultural Ranch June 2025)",
