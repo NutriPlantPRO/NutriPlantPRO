@@ -14,6 +14,7 @@
   var lecturaChart = null;
   var lecturaChartPrefsFp = '';
   var lecturaChartSeriesFp = '';
+  var lecturaChartWaterFp = '';
   var LECTURA_LANE_COLORS = ['#2563eb', '#0f766e', '#ca8a04', '#c2410c', '#7c3aed', '#be123c'];
   function lecturaLaneColor(i) {
     return LECTURA_LANE_COLORS[Math.abs(Number(i) || 0) % LECTURA_LANE_COLORS.length];
@@ -1439,6 +1440,8 @@
         state.franja_pct = Number.isFinite(v) ? Math.min(100, Math.max(1, Math.round(v))) : 100;
         syncRiegoMmFromM3(state);
         saveState(state);
+        lecturaChartWaterFp = '';
+        destroyLecturaChart();
         renderTable(state);
         renderChart(state);
       });
@@ -1458,6 +1461,8 @@
         if (mmInp) mmInp.value = depthInputValue(row.riego_mm);
         var rrCell = wrap.querySelector('tr[data-lectura-index="' + idx + '"] [data-field="rain_riego"]');
         if (rrCell) rrCell.textContent = fmtDepth(rainPlusRiegoMm(row, irrigatedHa(state)));
+        lecturaChartWaterFp = '';
+        destroyLecturaChart();
         renderChart(state);
       });
     });
@@ -1487,6 +1492,8 @@
         if (m3Inp) m3Inp.value = volumeInputValue(row.riego_m3);
         var rrCellMm = wrap.querySelector('tr[data-lectura-index="' + idx + '"] [data-field="rain_riego"]');
         if (rrCellMm) rrCellMm.textContent = fmtDepth(rainPlusRiegoMm(row, iHaNow));
+        lecturaChartWaterFp = '';
+        destroyLecturaChart();
         renderChart(state);
       });
     });
@@ -1807,6 +1814,7 @@
       lecturaChart = null;
     }
     lecturaChartSeriesFp = '';
+    lecturaChartWaterFp = '';
     var canvas = document.getElementById('lecturaChart');
     if (canvas && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
       try {
@@ -1853,7 +1861,22 @@
     var iHa = irrigatedHa(state);
     var depthU = lecturaDepthUnit();
     var prefsFp = lecturaPrefsFingerprint();
-    var forceRebuild = prefsFp !== lecturaChartPrefsFp || !lecturaChartIsAlive();
+    var waterFp = rows
+      .map(function (r) {
+        return [
+          r.rain_sum,
+          riegoMmForRow(r, iHa),
+          rainPlusRiegoMm(r, iHa),
+          r.et0_sum,
+          getClimateKcForLectura()
+        ].join(':');
+      })
+      .join('|');
+    // Lluvia/riego/ETc: soft-update de Chart.js a veces no redibuja hasta cambiar de pestaña.
+    var forceRebuild =
+      prefsFp !== lecturaChartPrefsFp ||
+      waterFp !== lecturaChartWaterFp ||
+      !lecturaChartIsAlive();
     var hoursMax = 24;
     rows.forEach(function (r) {
       var exp = r.vpd_hours_expected != null
@@ -2094,9 +2117,11 @@
           }
         }
         try {
-          lecturaChart.update('none');
+          // 'active' fuerza reparseo de datos (update('none') dejaba Lluvia+Riego pegada a lluvia).
+          lecturaChart.update('active');
           lecturaChartPrefsFp = prefsFp;
           lecturaChartSeriesFp = seriesFp;
+          lecturaChartWaterFp = waterFp;
           var togglesBox = document.getElementById('lecturaChartToggles');
           if (togglesBox && !togglesBox.children.length) renderChartToggles(state);
           requestAnimationFrame(function () {
@@ -2105,6 +2130,7 @@
               if (lecturaChart && !lecturaChartHostReady(lecturaChart.canvas)) {
                 lecturaChartPrefsFp = '';
                 lecturaChartSeriesFp = '';
+                lecturaChartWaterFp = '';
                 destroyLecturaChart();
                 renderChart(state);
               }
@@ -2124,6 +2150,7 @@
     if (!lecturaChartHostReady(canvas)) {
       lecturaChartPrefsFp = '';
       lecturaChartSeriesFp = '';
+      lecturaChartWaterFp = '';
       if (!window.__lecturaChartDeferPending) {
         window.__lecturaChartDeferPending = true;
         var tries = 0;
@@ -2220,6 +2247,7 @@
       });
       lecturaChartPrefsFp = prefsFp;
       lecturaChartSeriesFp = seriesFp;
+      lecturaChartWaterFp = waterFp;
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           try {
