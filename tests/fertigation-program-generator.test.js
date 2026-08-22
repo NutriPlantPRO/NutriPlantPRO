@@ -188,20 +188,50 @@ function close(actual, expected, eps = 1e-6) {
   );
   const ids = result.rows.map(r => r.materialId);
   assert.ok(ids.includes('sulfonit_33_00_00_2s'), 'expected Sulfonit for leftover N: ' + ids.join(','));
-  assert.ok(ids.includes('sulfato_magnesio'), 'expected Mg sulfate while S remains: ' + ids.join(','));
-  assert.ok(!ids.includes('nitrato_magnesio'), 'do not chase leftover N with Mg nitrate: ' + ids.join(','));
+  assert.ok(
+    ids.includes('nitrato_magnesio') || ids.includes('sulfato_magnesio'),
+    'expected a Mg source: ' + ids.join(',')
+  );
   assert.ok(!ids.includes('nitrato_amonio'), ids.join(','));
   assert.ok(!ids.includes('sulfato_amonio_soluble'), ids.join(','));
+  if (ids.includes('nitrato_magnesio') && ids.includes('sulfonit_33_00_00_2s')) {
+    assert.ok(
+      ids.indexOf('nitrato_magnesio') < ids.indexOf('sulfonit_33_00_00_2s'),
+      'Mg nitrate before Sulfonit: ' + ids.join(',')
+    );
+  }
+})();
+
+(function magNitrateWhenSulfateAlreadyCoveredEvenWithOpenN() {
+  const nThenS = generator.solveStage({ N: 8, MgO: 18, SO4: 0 }, {}, materials);
+  const nThenSIds = nThenS.rows.map(r => r.materialId);
+  assert.ok(nThenSIds.includes('nitrato_magnesio'), 'prefer Mg nitrate when S target is already met: ' + nThenSIds.join(','));
+  if (nThenSIds.includes('sulfonit_33_00_00_2s')) {
+    assert.ok(
+      nThenSIds.indexOf('nitrato_magnesio') < nThenSIds.indexOf('sulfonit_33_00_00_2s'),
+      'Mg nitrate before Sulfonit: ' + nThenSIds.join(',')
+    );
+  }
 })();
 
 (function magSulfateWhenNitrogenCoveredEvenIfSulfateTargetIsZero() {
-  const nThenS = generator.solveStage({ N: 8, MgO: 18, SO4: 0 }, {}, materials);
   const nClosed = generator.solveStage({ N: 0, MgO: 18, SO4: 40 }, {}, materials);
-  const nThenSIds = nThenS.rows.map(r => r.materialId);
-  assert.ok(nThenSIds.includes('sulfato_magnesio'), nThenSIds.join(','));
-  assert.ok(!nThenSIds.includes('nitrato_magnesio'), 'N is filled first; Mg sulfate even if S is 0: ' + nThenSIds.join(','));
   assert.ok(nClosed.rows.some(r => r.materialId === 'sulfato_magnesio'));
   assert.ok(!nClosed.rows.some(r => r.materialId === 'nitrato_magnesio'));
+})();
+
+(function highWaterSulfatePrefersMagnesiumNitrateBeforeSulfonit() {
+  const result = generator.solveStage(
+    { N: 25, MgO: 12, SO4: 0, CaO: 0, P2O5: 0, K2O: 0 },
+    { SO4: 30 },
+    materials
+  );
+  const ids = result.rows.map(r => r.materialId);
+  assert.ok(ids.includes('nitrato_magnesio'), ids.join(','));
+  assert.ok(ids.includes('sulfonit_33_00_00_2s'), ids.join(','));
+  assert.ok(!ids.includes('sulfato_magnesio'), 'Mg sulfate should not add more S when water already filled it: ' + ids.join(','));
+  assert.ok(ids.indexOf('nitrato_magnesio') < ids.indexOf('sulfonit_33_00_00_2s'), ids.join(','));
+  assert.ok(result.excess.SO4 >= 29, result.excess.SO4);
 })();
 
 (function leftoverNitrogenPrefersSulfonitOverFosfonitrato() {

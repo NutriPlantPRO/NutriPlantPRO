@@ -548,6 +548,18 @@
             '<button type="button" class="btn btn-info btn-sm" id="fertiDistSuggestPct" title="' + escapeHtml(t('dist_suggest_title', 'Coloca % según las etapas elegidas, buscando una solución adecuada en los triángulos N-P-S y K-Ca-Mg.')) + '">' + escapeHtml(t('dist_suggest_btn', 'Sugerir %')) + '</button>' +
             '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. La barrita de cada celda ajusta el %; también puedes escribir el número.')) + '</p>' +
           '</div>' +
+          '<div class="ferti-dist-charts-wrap">' +
+            '<div class="charts-grid ferti-dist-charts-grid">' +
+              '<div class="chart-container ferti-dist-chart-box">' +
+                '<h4 id="fertiDistMacroChartTitle">' + escapeHtml(t('macronutrients', 'Macronutrientes')) + '</h4>' +
+                '<canvas id="fertiDistMacroChart" aria-label="' + escapeHtml(t('dist_chart_macro', 'Distribución % macronutrientes')) + '"></canvas>' +
+              '</div>' +
+              '<div class="chart-container ferti-dist-chart-box">' +
+                '<h4 id="fertiDistMicroChartTitle">' + escapeHtml(t('micronutrients', 'Micronutrientes')) + '</h4>' +
+                '<canvas id="fertiDistMicroChart" aria-label="' + escapeHtml(t('dist_chart_micro', 'Distribución % micronutrientes')) + '"></canvas>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
           '<div class="ferti-dist-warn" id="fertiDistWarn" hidden></div>' +
         '</div>' +
       '</div>' +
@@ -799,6 +811,7 @@
     scheduleSave();
     syncPctInputsFromData();
     refreshKgCells();
+    scheduleDistChartRefresh();
     if (opts && opts.skipProgramPush) return;
     markDistDrivesProgram();
     scheduleProgramPush(ids && ids.length === 1 ? ids[0] : undefined);
@@ -992,6 +1005,7 @@
     refreshKgCells();
     scheduleProgramPush(id);
     syncPctBar(el);
+    scheduleDistChartRefresh();
     return true;
   }
 
@@ -1061,6 +1075,7 @@
     renderTotals();
     try { renderPct(); } catch (ePct) {}
     try { renderWaterByStage(); } catch (eWater) {}
+    scheduleDistChartRefresh();
   }
 
   function markDistStructureEdited() {
@@ -1128,6 +1143,7 @@
           stages[si] = canonicalStage(el.value);
           scheduleSave();
           renderWaterByStage();
+          scheduleDistChartRefresh();
           return;
         }
         if (ev.target && ev.target.id === 'fertiDistPresetSelect') {
@@ -1348,6 +1364,290 @@
     alert(t('dist_applied', 'Curva aplicada a') + ' ' + projectName(destId));
   }
 
+  var distMacroChart = null;
+  var distMicroChart = null;
+  var distChartRaf = 0;
+  var distChartResizeTimer = null;
+  var DIST_MACRO_IDS = { n: 1, p: 1, k: 1, ca: 1, mg: 1, s: 1 };
+  var DIST_MICRO_IDS = { fe: 1, mn: 1, b: 1, zn: 1, cu: 1, mo: 1, si: 1 };
+
+  function destroyDistCharts() {
+    if (distMacroChart) {
+      try { distMacroChart.destroy(); } catch (e) {}
+      distMacroChart = null;
+    }
+    if (distMicroChart) {
+      try { distMicroChart.destroy(); } catch (e) {}
+      distMicroChart = null;
+    }
+  }
+
+  function distChartNiceYMax(rawMax) {
+    if (!(rawMax > 0)) return 25;
+    if (rawMax >= 94.5) return 100;
+    var padded = rawMax + 8;
+    if (padded > 100) padded = 100;
+    var step = padded <= 50 ? 5 : 10;
+    var nice = Math.ceil(padded / step) * step;
+    if (nice > 100) nice = 100;
+    if (nice < 25) nice = 25;
+    return nice;
+  }
+
+  function distChartGroupMax(idMap) {
+    var max = 0;
+    NUTS.forEach(function (n) {
+      if (!idMap[n.id]) return;
+      (pct[n.id] || []).forEach(function (v) {
+        var y = Number(v) || 0;
+        if (y > max) max = y;
+      });
+    });
+    return max;
+  }
+
+  function distChartLabels() {
+    return stages.map(function (st, i) { return rowDisplayLabel(st, i); });
+  }
+
+  function loadDistChartJs(callback) {
+    if (typeof callback !== 'function') callback = function () {};
+    if (typeof w.loadChartJs === 'function') {
+      w.loadChartJs(callback);
+      return;
+    }
+    if (w.Chart) {
+      callback();
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+    s.onload = callback;
+    document.head.appendChild(s);
+  }
+
+  function distChartStyle(totalStages) {
+    var chartStroke = totalStages >= 24 ? 1.6 : (totalStages >= 16 ? 1.8 : 2.0);
+    var chartPoint = chartStroke + 0.25;
+    var xTickRotation = totalStages >= 16 ? 48 : 38;
+    var xTickAutoSkip = totalStages >= 10;
+    var xLabelBottomPad = xTickRotation >= 45 ? 48 : 40;
+    return {
+      chartStroke: chartStroke,
+      chartPoint: chartPoint,
+      chartPointHover: chartPoint + 1.1,
+      chartPointBorder: Math.max(1.2, chartStroke - 0.2),
+      xTickRotation: xTickRotation,
+      xTickAutoSkip: xTickAutoSkip,
+      xLabelBottomPad: xLabelBottomPad
+    };
+  }
+
+  function distChartMakeDataset(n, style) {
+    var color = colorForNut(n.id);
+    return {
+      label: nutLabel(n),
+      data: stages.map(function (_, ri) { return pctAt(n.id, ri); }),
+      borderColor: color,
+      backgroundColor: 'transparent',
+      tension: 0.3,
+      borderWidth: style.chartStroke,
+      pointRadius: style.chartPoint,
+      pointHoverRadius: style.chartPointHover,
+      pointHitRadius: Math.max(9, style.chartPointHover + 2),
+      pointBorderWidth: style.chartPointBorder,
+      pointBackgroundColor: color,
+      pointBorderColor: '#ffffff'
+    };
+  }
+
+  function distChartMakeOptions(style, yMax) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 180, easing: 'easeOutQuad' },
+      layout: { padding: { bottom: style.xLabelBottomPad, top: 6, left: 2, right: 6 } },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            boxWidth: 10,
+            boxHeight: 10,
+            generateLabels: function (chart) {
+              return chart.data.datasets.map(function (ds, i) {
+                return {
+                  text: ds.label || '',
+                  fillStyle: ds.borderColor,
+                  strokeStyle: ds.borderColor,
+                  lineWidth: ds.borderWidth || 2,
+                  hidden: !chart.isDatasetVisible(i),
+                  datasetIndex: i,
+                  fontColor: ds.borderColor,
+                  pointStyle: 'circle'
+                };
+              });
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              var val = ctx.parsed && ctx.parsed.y != null ? ctx.parsed.y : 0;
+              return (ctx.dataset.label || '') + ': ' + (Math.round(val * 10) / 10) + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: yMax,
+          max: yMax,
+          title: { display: true, text: t('dist_chart_y', '% de distribución') }
+        },
+        x: {
+          type: 'category',
+          title: { display: true, text: t('stage', 'Etapa') },
+          ticks: {
+            minRotation: style.xTickRotation,
+            maxRotation: style.xTickRotation,
+            autoSkip: style.xTickAutoSkip,
+            autoSkipPadding: 4
+          }
+        }
+      }
+    };
+  }
+
+  function distChartSyncSeries(chart, labels, datasets, options) {
+    chart.data.labels = labels.slice();
+    datasets.forEach(function (next, idx) {
+      var curr = chart.data.datasets[idx];
+      if (curr) {
+        Object.assign(curr, next);
+        curr.data = Array.isArray(next.data) ? next.data.slice() : next.data;
+      } else {
+        chart.data.datasets.push({ label: next.label, data: next.data.slice(), borderColor: next.borderColor, backgroundColor: next.backgroundColor, tension: next.tension, borderWidth: next.borderWidth, pointRadius: next.pointRadius, pointHoverRadius: next.pointHoverRadius, pointHitRadius: next.pointHitRadius, pointBorderWidth: next.pointBorderWidth, pointBackgroundColor: next.pointBackgroundColor, pointBorderColor: next.pointBorderColor });
+      }
+    });
+    chart.data.datasets.length = datasets.length;
+    chart.options = options;
+    chart.update();
+  }
+
+  function distChartDestroyIfOrphaned(chart) {
+    if (!chart) return null;
+    try {
+      if (!chart.canvas || !chart.canvas.isConnected) {
+        try { chart.destroy(); } catch (e) {}
+        return null;
+      }
+    } catch (e2) {
+      try { chart.destroy(); } catch (e3) {}
+      return null;
+    }
+    return chart;
+  }
+
+  function distChartBuildDatasets(idMap, style) {
+    return NUTS.filter(function (n) { return idMap[n.id]; }).map(function (n) {
+      return distChartMakeDataset(n, style);
+    });
+  }
+
+  function distChartPaintOne(canvasId, chartRef, idMap, style, yMax, labels) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return chartRef;
+    var datasets = distChartBuildDatasets(idMap, style);
+    var options = distChartMakeOptions(style, yMax);
+    chartRef = distChartDestroyIfOrphaned(chartRef);
+    if (!chartRef) {
+      try {
+        chartRef = new w.Chart(ctx.getContext('2d'), {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: options
+        });
+      } catch (e) {
+        console.warn('Dist chart create:', canvasId, e);
+        chartRef = null;
+      }
+      return chartRef;
+    }
+    try {
+      distChartSyncSeries(chartRef, labels, datasets, options);
+    } catch (e2) {
+      console.warn('Dist chart sync, recreando', canvasId, e2);
+      try { chartRef.destroy(); } catch (e3) {}
+      chartRef = null;
+      try {
+        chartRef = new w.Chart(ctx.getContext('2d'), {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: distChartMakeOptions(style, yMax)
+        });
+      } catch (e4) {
+        console.warn('Dist chart recreate:', canvasId, e4);
+      }
+    }
+    return chartRef;
+  }
+
+  function resizeDistCharts() {
+    try {
+      if (distMacroChart && typeof distMacroChart.resize === 'function') distMacroChart.resize();
+    } catch (e) {}
+    try {
+      if (distMicroChart && typeof distMicroChart.resize === 'function') distMicroChart.resize();
+    } catch (e2) {}
+  }
+
+  function refreshDistCharts() {
+    if (!hostEl() || hostEl().dataset.ready !== '1') return;
+    if (!document.getElementById('fertiDistMacroChart') && !document.getElementById('fertiDistMicroChart')) return;
+    loadDistChartJs(function () {
+      if (typeof w.Chart === 'undefined') return;
+      var labels = distChartLabels();
+      var totalStages = labels.length;
+      if (!totalStages) return;
+      var style = distChartStyle(totalStages);
+      var macroTitle = document.getElementById('fertiDistMacroChartTitle');
+      if (macroTitle) macroTitle.textContent = t('macronutrients', 'Macronutrientes');
+      var microTitle = document.getElementById('fertiDistMicroChartTitle');
+      if (microTitle) microTitle.textContent = t('micronutrients', 'Micronutrientes');
+      var macroYMax = distChartNiceYMax(distChartGroupMax(DIST_MACRO_IDS));
+      var microYMax = distChartNiceYMax(distChartGroupMax(DIST_MICRO_IDS));
+      distMacroChart = distChartPaintOne('fertiDistMacroChart', distMacroChart, DIST_MACRO_IDS, style, macroYMax, labels);
+      distMicroChart = distChartPaintOne('fertiDistMicroChart', distMicroChart, DIST_MICRO_IDS, style, microYMax, labels);
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          resizeDistCharts();
+          setTimeout(resizeDistCharts, 120);
+        });
+      });
+    });
+  }
+
+  function scheduleDistChartRefresh() {
+    if (distChartRaf) return;
+    distChartRaf = w.requestAnimationFrame(function () {
+      distChartRaf = 0;
+      refreshDistCharts();
+    });
+  }
+
+  if (!w._npFertiDistChartsResizeBound) {
+    w._npFertiDistChartsResizeBound = true;
+    w.addEventListener('resize', function () {
+      if (distChartResizeTimer) clearTimeout(distChartResizeTimer);
+      distChartResizeTimer = setTimeout(function () {
+        if (hostEl() && hostEl().dataset.ready === '1') resizeDistCharts();
+      }, 120);
+    });
+  }
+
   async function mount(realRequirement) {
     var host = hostEl();
     if (!host) return;
@@ -1419,7 +1719,7 @@
     renderAll();
   }
 
-  w.fertiDistRefreshChart = function () {};
+  w.fertiDistRefreshChart = refreshDistCharts;
   w.fertiDistMount = mount;
   w.fertiDistSyncTimeUnit = function (unit) {
     var next = unit === 'mes' ? 'mes' : 'semana';
@@ -1455,6 +1755,7 @@
           refreshKgCells();
         }
         scheduleSave();
+        scheduleDistChartRefresh();
       }
     } finally {
       distProgramSync = false;
@@ -1497,6 +1798,7 @@
   function rebuildPresentation() {
     var host = hostEl();
     if (!host || host.dataset.ready !== '1') return;
+    destroyDistCharts();
     host.innerHTML = shellHtml();
     bind();
     renderAll();

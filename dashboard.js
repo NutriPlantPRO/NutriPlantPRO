@@ -24057,6 +24057,39 @@ window.openSoilPdfExtract = function openSoilPdfExtract() {
   if (input) input.click();
 };
 
+function parseLabExtractApiResponse(res, rawBody) {
+  var data = {};
+  if (rawBody) {
+    try { data = JSON.parse(rawBody); } catch (e) { data = {}; }
+  }
+  if (data && data.ok && data.fields) {
+    return { ok: true, data: data };
+  }
+  var errMsg = (data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.');
+  if (data && (data.code === 'quota_exceeded' || data.code === 'quota_preventive_block')) {
+    errMsg = dashboardT(
+      'analysis.pdf_quota',
+      'Sin créditos de IA suficientes. Cada extracción PDF cuesta {n} créditos (misma bolsa que el chat).',
+      { n: (data.credits_required != null ? data.credits_required : 3) }
+    );
+    if (data.error) errMsg = data.error;
+  } else if (data && data.code === 'chat_blocked') {
+    errMsg = data.error || dashboardT('analysis.pdf_chat_blocked', 'La IA está deshabilitada para tu cuenta.');
+  } else if (!data.error && res && (res.status === 504 || res.status === 502 || res.status === 408)) {
+    errMsg = dashboardT(
+      'analysis.pdf_extract_timeout',
+      'La extracción tardó demasiado en el servidor. Vuelve a intentar con un PDF más liviano o exporta una sola página como imagen.'
+    );
+  } else if (!data.error && res && res.status >= 400) {
+    errMsg = dashboardT(
+      'analysis.pdf_extract_http',
+      'Error del servidor al extraer (HTTP {status}). Vuelve a intentar en unos segundos.',
+      { status: res.status }
+    );
+  }
+  return { ok: false, error: errMsg, data: data };
+}
+
 window.handleSoilPdfFile = async function handleSoilPdfFile(file) {
   if (!file) return;
   if (!currentProject || !currentProject.id) {
@@ -24112,22 +24145,13 @@ window.handleSoilPdfFile = async function handleSoilPdfFile(file) {
         fileBase64: base64
       })
     });
-    var data = await res.json().catch(function () { return {}; });
-    if (!res.ok || !data.ok || !data.fields) {
-      var errMsg = (data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.');
-      if (data && (data.code === 'quota_exceeded' || data.code === 'quota_preventive_block')) {
-        errMsg = dashboardT(
-          'analysis.pdf_quota',
-          'Sin créditos de IA suficientes. Cada extracción PDF cuesta {n} créditos (misma bolsa que el chat).',
-          { n: (data.credits_required != null ? data.credits_required : 3) }
-        );
-        if (data.error) errMsg = data.error;
-      } else if (data && data.code === 'chat_blocked') {
-        errMsg = data.error || dashboardT('analysis.pdf_chat_blocked', 'La IA está deshabilitada para tu cuenta.');
-      }
-      alert(errMsg);
+    var rawBody = await res.text();
+    var parsed = parseLabExtractApiResponse(res, rawBody);
+    if (!parsed.ok) {
+      alert(parsed.error);
       return;
     }
+    var data = parsed.data;
     if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.openSoilReviewModal !== 'function') {
       window.applySoilExtractedFields(data.fields, { asNew: true });
       return;
@@ -24453,22 +24477,13 @@ window.handleLabPdfFile = async function handleLabPdfFile(type, file) {
         fileBase64: base64
       })
     });
-    var data = await res.json().catch(function () { return {}; });
-    if (!res.ok || !data.ok || !data.fields) {
-      var errMsg = (data && data.error) || dashboardT('analysis.pdf_extract_failed', 'No se pudieron extraer datos.');
-      if (data && (data.code === 'quota_exceeded' || data.code === 'quota_preventive_block')) {
-        errMsg = dashboardT(
-          'analysis.pdf_quota',
-          'Sin créditos de IA suficientes. Cada extracción PDF cuesta {n} créditos (misma bolsa que el chat).',
-          { n: (data.credits_required != null ? data.credits_required : 3) }
-        );
-        if (data.error) errMsg = data.error;
-      } else if (data && data.code === 'chat_blocked') {
-        errMsg = data.error || dashboardT('analysis.pdf_chat_blocked', 'La IA está deshabilitada para tu cuenta.');
-      }
-      alert(errMsg);
+    var rawBody = await res.text();
+    var parsed = parseLabExtractApiResponse(res, rawBody);
+    if (!parsed.ok) {
+      alert(parsed.error);
       return;
     }
+    var data = parsed.data;
     if (!window.NpAnalysisCompare || typeof window.NpAnalysisCompare.openLabReviewModal !== 'function') {
       if (type === 'agua' || type === 'solucion_nutritiva' || type === 'extracto_pasta') {
         window.fillMissingIonicMeqPpm(data.fields, type);

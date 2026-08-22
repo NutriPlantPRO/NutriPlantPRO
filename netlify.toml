@@ -45,6 +45,12 @@
   timeout = 60
   external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
 
+[functions."lab-analysis-extract"]
+  timeout = 60
+
+[functions."invest-portfolio-extract"]
+  timeout = 60
+
 [functions."nutri-pro-extract-background"]
   timeout = 900
   external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]

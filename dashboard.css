@@ -8740,6 +8740,22 @@ html.embed-login body {
   flex: 1 1 100%;
   margin: 2px 0 0;
 }
+.ferti-dist-charts-wrap {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+.ferti-dist-charts-grid {
+  min-width: 720px;
+}
+.ferti-dist-chart-box {
+  min-width: 0;
+  min-height: 420px;
+}
+.ferti-dist-chart-box canvas {
+  min-height: 320px;
+  height: 320px !important;
+  max-height: 340px;
+}
 .ferti-dist-nut-menu-suggest {
   color: #0369a1;
   background: #f0f9ff;
