@@ -135,12 +135,28 @@
     document.head.appendChild(configScript);
   }
 
+  function upgradeExternalPortalLinks(flags) {
+    document.querySelectorAll('.mt-nav a[href*="login.html"]').forEach(function (link) {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    });
+    document.querySelectorAll('.mt-portal-btn--manual:not(.mt-portal-btn--active)').forEach(function (link) {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    });
+    document.querySelectorAll('.mt-portal-btn--autoria:not(.mt-portal-btn--active), .mt-autoria-btn[href*="autoria"]:not(.mt-autoria-btn--active):not([aria-current="page"])').forEach(function (link) {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    });
+  }
+
   function init() {
     var base = assetBase();
     var flags = pageFlags();
     loadGoogleAnalytics(base, flags);
     upgradeAutoriaBtn(base, flags);
     insertManualBtn(base, flags);
+    upgradeExternalPortalLinks(flags);
     hideBrandSubtitle();
     upgradeAutoriaTitle(base, flags);
     if (window.NpManualI18n && typeof window.NpManualI18n.apply === 'function') {

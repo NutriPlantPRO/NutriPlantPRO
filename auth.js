@@ -211,24 +211,39 @@ function npHideAdminDestinationChooser() {
   modal.style.display = 'none';
 }
 
+function npOpenInNewTab(url) {
+  if (!url) return false;
+  var win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win) {
+    location.href = url;
+    return false;
+  }
+  try { win.opener = null; } catch (e) {}
+  return true;
+}
+
 function npGoAdminDestination(dest) {
   dest = String(dest || '').trim().toLowerCase();
   if (dest === 'dashboard' || dest === 'pro' || dest === 'nutriplant') {
-    location.href = 'dashboard.html';
+    npHideAdminDestinationChooser();
+    npOpenInNewTab('dashboard.html');
     return;
   }
   if (dest === 'admin') {
     npMarkOwnerAdminSession();
-    location.href = NP_ADMIN_PANEL_URL;
+    npHideAdminDestinationChooser();
+    npOpenInNewTab(NP_ADMIN_PANEL_URL);
     return;
   }
   if (dest === 'planpro' || dest === 'plan_pro' || dest === 'plan-pro') {
-    location.href = NP_PLANPRO_PANEL_URL;
+    npHideAdminDestinationChooser();
+    npOpenInNewTab(NP_PLANPRO_PANEL_URL);
     return;
   }
   if (dest === 'airci' || dest === 'air_ci' || dest === 'air-ci') {
     npMarkOwnerAdminSession();
-    location.href = NP_AIRCI_PANEL_URL;
+    npHideAdminDestinationChooser();
+    npOpenInNewTab(NP_AIRCI_PANEL_URL);
     return;
   }
 }

@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=50" />
+  <link rel="stylesheet" href="auth.css?v=51" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -154,6 +154,10 @@
             <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual auth-preferences-bar__manual" target="_blank" rel="noopener noreferrer" title="Manual técnico público" data-i18n-title="auth.manual_aria">
               <img src="assets/N_Hoja_Azul.png" alt="" class="auth-portal-cta__icon" width="16" height="16" decoding="async">
               <span data-i18n="auth.manual">Manual Técnico</span>
+            </a>
+            <a href="manual-tecnico/autoria.html" class="auth-portal-cta auth-portal-cta--autoria auth-preferences-bar__autoria" target="_blank" rel="noopener noreferrer" title="Autoría de NutriPlant PRO" data-i18n-title="about.authorship">
+              <img src="assets/marca%20JA.png" alt="" class="auth-portal-cta__icon" width="16" height="16" decoding="async">
+              <span data-i18n="about.authorship">Autoría de NutriPlant PRO</span>
             </a>
             <div class="auth-preferences-bar__contact">
               <span class="auth-preferences-bar__contact-label" data-i18n="auth.contact_us">Contáctanos:</span>
@@ -524,7 +528,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-supabase.js?v=1762793900"></script>
-  <script src="auth.js?v=20260802a"></script>
+  <script src="auth.js?v=20260822newtab"></script>
   
   <!-- Modal de Calculadora de Conversión -->
   <div id="conversionCalculatorModal" class="modal-overlay">
@@ -3323,6 +3327,10 @@
             var u = new URL(a.getAttribute('href'), window.location.href);
             u.searchParams.set('lang', lang);
             a.setAttribute('href', u.pathname + u.search + u.hash);
+            if (!a.getAttribute('target')) {
+              a.setAttribute('target', '_blank');
+              a.setAttribute('rel', 'noopener noreferrer');
+            }
           } catch (e) { /* ignore */ }
         });
       } catch (e2) { /* ignore */ }

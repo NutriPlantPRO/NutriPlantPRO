@@ -249,7 +249,8 @@
   min-width: 0;
 }
 
-.auth-preferences-bar__manual {
+.auth-preferences-bar__manual,
+.auth-preferences-bar__autoria {
   flex-shrink: 0;
   padding: 6px 12px;
   font-size: 12px;
@@ -258,7 +259,8 @@
   box-sizing: border-box;
 }
 
-.auth-preferences-bar__manual .auth-portal-cta__icon {
+.auth-preferences-bar__manual .auth-portal-cta__icon,
+.auth-preferences-bar__autoria .auth-portal-cta__icon {
   width: 15px;
   height: 15px;
 }
