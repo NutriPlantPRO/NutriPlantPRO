@@ -17628,6 +17628,24 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     return (Number(a.index) || 0) - (Number(b.index) || 0);
   });
 
+  var pdfKc =
+    lecturaKcMeta && lecturaKcMeta.kc != null && Number.isFinite(Number(lecturaKcMeta.kc))
+      ? Number(lecturaKcMeta.kc)
+      : null;
+  function pdfEtc(r) {
+    if (pdfKc == null || r == null || r.et0_sum == null || !Number.isFinite(Number(r.et0_sum))) return null;
+    return Math.round(Number(r.et0_sum) * pdfKc * 10) / 10;
+  }
+  function pdfRainRiego(r) {
+    if (!r) return null;
+    var rain = r.rain_sum != null ? Number(r.rain_sum) : null;
+    var riego = r.riego_mm != null ? Number(r.riego_mm) : null;
+    var hasRain = rain != null && Number.isFinite(rain);
+    var hasRiego = riego != null && Number.isFinite(riego);
+    if (!hasRain && !hasRiego) return null;
+    return Math.round(((hasRain ? rain : 0) + (hasRiego ? riego : 0)) * 10) / 10;
+  }
+
   let tableRows = '';
   rows.forEach(function (r) {
     const star = r.lookback_expanded ? ' *' : '';
@@ -17675,8 +17693,14 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.et0_sum, 1) +
       '</td>' +
+      '<td style="padding:6px 8px;text-align:center;font-weight:700;color:#475569;">' +
+      fmt(pdfEtc(r), 1) +
+      '</td>' +
       '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.rain_sum, 1) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;font-weight:700;color:#0e7490;">' +
+      fmt(pdfRainRiego(r), 1) +
       '</td>' +
       '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">' +
       fmt(r.riego_mm, 1) +
@@ -17705,10 +17729,11 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     '<div class="report-lectura-table-wrap">' +
     '<table class="report-lectura-table" style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
     '<colgroup>' +
-    '<col style="width:4%"><col style="width:4%"><col style="width:16%">' +
-    '<col style="width:6%"><col style="width:6%"><col style="width:6%">' +
-    '<col style="width:6%"><col style="width:6%"><col style="width:6%">' +
-    '<col style="width:8%"><col style="width:8%"><col style="width:12%"><col style="width:12%">' +
+    '<col style="width:4%"><col style="width:4%"><col style="width:14%">' +
+    '<col style="width:5%"><col style="width:5%"><col style="width:5%">' +
+    '<col style="width:5%"><col style="width:5%"><col style="width:5%">' +
+    '<col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:7%">' +
+    '<col style="width:9%"><col style="width:9%">' +
     '</colgroup>' +
     '<thead><tr style="background:#dbeafe;color:#1e3a8a;">' +
     [
@@ -17722,7 +17747,9 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       { h: rtSafe('VPD máx', 'Max VPD'), st: '' },
       { h: rtSafe('VPD mín', 'Min VPD'), st: '' },
       { h: rtSafe('ET₀ acum mm', 'ET₀ sum mm'), st: '' },
+      { h: rtSafe('ETc acum mm', 'ETc sum mm'), st: '' },
       { h: rtSafe('Lluvia acum mm', 'Rain sum mm'), st: '' },
+      { h: rtSafe('Lluvia + Riego mm', 'Rain + Irrigation mm'), st: '' },
       {
         h: riegoMmHeader,
         st: 'background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;'

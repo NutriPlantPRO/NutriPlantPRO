@@ -13401,7 +13401,9 @@
                                             <th style="padding:6px 8px;text-align:center;" title="VPD máximo horario del periodo">VPD máx</th>
                                             <th style="padding:6px 8px;text-align:center;" title="VPD mínimo horario del periodo">VPD mín</th>
                                             <th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th>
+                                            <th style="padding:6px 8px;text-align:center;" title="ETc = ET₀ × Kc">ETc acum</th>
                                             <th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>
+                                            <th style="padding:6px 8px;text-align:center;" title="Lluvia + riego (lámina) del periodo">Lluvia + Riego</th>
                                             <th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>
                                             <th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;" title="Mismo riego que mm">Riego m³</th>
                                             <th style="padding:6px 8px;text-align:center;">Estado</th>
@@ -13409,6 +13411,23 @@
                                           <tbody>
                                             ${lecturaRows.slice().sort(function(a,b){return (a.index||0)-(b.index||0);}).map(function(r){
                                               function n(v,d){ return (v==null||!Number.isFinite(Number(v)))?'—':Number(v).toFixed(d); }
+                                              var lectKc = null;
+                                              try {
+                                                var iqc = project && project.climateAnalysis && project.climateAnalysis.irrigationQuickCalc;
+                                                if (iqc && iqc.kc != null && Number.isFinite(Number(iqc.kc))) lectKc = Number(iqc.kc);
+                                              } catch (eKc) { lectKc = null; }
+                                              function etcN(row){
+                                                if (lectKc == null || row.et0_sum == null || !Number.isFinite(Number(row.et0_sum))) return '—';
+                                                return n(Number(row.et0_sum) * lectKc, 1);
+                                              }
+                                              function rainRiegoN(row){
+                                                var rain = row.rain_sum != null ? Number(row.rain_sum) : null;
+                                                var riego = row.riego_mm != null ? Number(row.riego_mm) : null;
+                                                var hasRain = rain != null && Number.isFinite(rain);
+                                                var hasRiego = riego != null && Number.isFinite(riego);
+                                                if (!hasRain && !hasRiego) return '—';
+                                                return n((hasRain ? rain : 0) + (hasRiego ? riego : 0), 1);
+                                              }
                                               var pid = (r.index!=null&&Number.isFinite(Number(r.index))&&Number(r.index)>=0) ? ('P'+(Number(r.index)+1)) : '—';
                                               var days = '—';
                                               if (r.date_start && r.date_end) {
@@ -13430,7 +13449,9 @@
                                                 '<td style="padding:6px 8px;text-align:center;color:#7f1d1d;font-weight:700;">'+n(r.vpd_max,2)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;color:#1d4ed8;font-weight:700;">'+n(r.vpd_min,2)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.et0_sum,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;font-weight:700;color:#475569;">'+etcN(r)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.rain_sum,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;font-weight:700;color:#0e7490;">'+rainRiegoN(r)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">'+n(r.riego_mm,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-right:3px solid #0d9488;">'+n(r.riego_m3,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+String(r.status||'—')+'</td>'+
@@ -18102,6 +18123,21 @@
                 var ndre = (it && it.ndre_mean != null) ? it.ndre_mean : r.ndre_mean;
                 var expanded = !!(it && it.lookback_expanded) || !!r.lookback_expanded;
                 var st = (it && it.status) || r.status || '—';
+                var etcVal = '—';
+                if (adminKcMeta && adminKcMeta.kc != null && Number.isFinite(Number(adminKcMeta.kc)) &&
+                    r.et0_sum != null && Number.isFinite(Number(r.et0_sum))) {
+                    etcVal = fmt(Number(r.et0_sum) * Number(adminKcMeta.kc), 1);
+                }
+                var rainRiegoVal = '—';
+                (function () {
+                    var rain = r.rain_sum != null ? Number(r.rain_sum) : null;
+                    var riego = r.riego_mm != null ? Number(r.riego_mm) : null;
+                    var hasRain = rain != null && Number.isFinite(rain);
+                    var hasRiego = riego != null && Number.isFinite(riego);
+                    if (hasRain || hasRiego) {
+                        rainRiegoVal = fmt((hasRain ? rain : 0) + (hasRiego ? riego : 0), 1);
+                    }
+                })();
                 return '<tr style="border-top:1px solid #e2e8f0;">' +
                     '<td style="padding:6px 8px;font-weight:600;color:#14532d;">' + esc(r.label || '') + (expanded ? ' *' : '') + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(ndvi, 3) + '</td>' +
@@ -18111,7 +18147,9 @@
                     '<td style="padding:6px 8px;text-align:center;color:#7f1d1d;font-weight:700;">' + fmt(r.vpd_max, 2) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;color:#1d4ed8;font-weight:700;">' + fmt(r.vpd_min, 2) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.et0_sum, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;font-weight:700;color:#475569;">' + etcVal + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.rain_sum, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;font-weight:700;color:#0e7490;">' + rainRiegoVal + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">' + fmt(r.riego_mm, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-right:3px solid #0d9488;">' + fmt(r.riego_m3, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + esc(st) + '</td></tr>';
@@ -18256,7 +18294,10 @@
                 '<th style="padding:6px 8px;text-align:center;">VPD prom</th>' +
                 '<th style="padding:6px 8px;text-align:center;" title="VPD máximo horario del periodo">VPD máx</th>' +
                 '<th style="padding:6px 8px;text-align:center;" title="VPD mínimo horario del periodo">VPD mín</th>' +
-                '<th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="ETc = ET₀ × Kc">ETc acum</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
+                '<th style="padding:6px 8px;text-align:center;" title="Lluvia + riego (lámina) del periodo">Lluvia + Riego</th>' +
                 '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>' +
                 '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;" title="Mismo riego que mm">Riego m³</th>' +
                 '<th style="padding:6px 8px;text-align:center;">Estado</th>' +
