@@ -382,6 +382,29 @@ var ANALYSIS_SCROLL_STORAGE_KEYS = {
   'Análisis: Foliar': 'nutriplant_foliar_ui_',
   'Análisis: Fruta': 'nutriplant_fruta_ui_'
 };
+function readAnalysisUIState(sectionName) {
+  if (!currentProject || !currentProject.id) return null;
+  var prefix = ANALYSIS_SCROLL_STORAGE_KEYS[sectionName];
+  if (!prefix) return null;
+  try {
+    var raw = localStorage.getItem(prefix + currentProject.id);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+function hasPendingAnalysisRestore(sectionName) {
+  var state = readAnalysisUIState(sectionName);
+  return !!(state && state.selectedId);
+}
+function resetAnalysisFormPanelIfEmpty(wrap, emptyEl, pendingSelectedId) {
+  if (!pendingSelectedId) {
+    if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
+    if (emptyEl) emptyEl.style.display = 'block';
+  } else if (emptyEl) {
+    emptyEl.style.display = 'none';
+  }
+}
 function getAnalysisScrollHint(sectionName) {
   var mem = sectionScrollPositions[sectionName];
   if (typeof mem === 'number' && mem > 0) return mem;
@@ -400,9 +423,12 @@ function bootAnalysisSection(sectionName, opts) {
   opts = opts || {};
   var content = document.querySelector('.content');
   var targetScroll = getAnalysisScrollHint(sectionName);
-  if (targetScroll > 0) {
-    sectionScrollPositions[sectionName] = targetScroll;
-    setScrollPosition(targetScroll);
+  var pendingAnalysisRestore = !opts.reusedCachedDom && hasPendingAnalysisRestore(sectionName);
+  if (targetScroll > 0 || pendingAnalysisRestore) {
+    if (targetScroll > 0) {
+      sectionScrollPositions[sectionName] = targetScroll;
+      setScrollPosition(targetScroll);
+    }
     if (content) content.classList.add('restoring-scroll');
   }
   function finishScroll() {
@@ -415,7 +441,7 @@ function bootAnalysisSection(sectionName, opts) {
   requestAnimationFrame(function () {
     if (typeof opts.init === 'function') opts.init();
     if (typeof opts.restore === 'function') opts.restore();
-    setTimeout(finishScroll, opts.scrollDelayMs || 260);
+    setTimeout(finishScroll, opts.scrollDelayMs || 180);
   });
 }
 function bindAnalysisSectionScrollSave(scrollKey, tabContainerId, saveFn) {
@@ -15483,17 +15509,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           font-size: 2rem;
           line-height: 1.05;
           letter-spacing: -0.02em;
-        }
-        .logo-text-brand {
           color: #1e3a8a;
-        }
-        .logo-text-pro {
-          color: #2563eb;
-          font-size: 0.68em;
-          font-weight: 800;
-          font-style: italic;
-          letter-spacing: 0.06em;
-          vertical-align: baseline;
         }
         .logo-icon {
           display: block;
@@ -16940,7 +16956,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
       <div class="report-main">
         <div class="header">
           <div class="logo">
-            <span class="logo-text" aria-label="NutriPlant PRO"><span class="logo-text-brand">NutriPlant</span><span class="logo-text-pro"> PRO</span></span>
+            <span class="logo-text">NutriPlant PRO</span>
             <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="logo-icon" aria-hidden="true">
           </div>
           <h1>${rt('Reporte de Análisis Agrícola', 'Agricultural Analysis Report')}</h1>
@@ -21457,8 +21473,7 @@ window.initSolucionNutritivaTab = function initSolucionNutritivaTab() {
   window.renderSolucionNutritivaList && window.renderSolucionNutritivaList();
   var wrap = document.getElementById('solucion-nutritiva-form-wrap');
   var emptyEl = document.getElementById('solucion-nutritiva-form-empty');
-  if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
-  if (emptyEl) emptyEl.style.display = 'block';
+  resetAnalysisFormPanelIfEmpty(wrap, emptyEl, (readAnalysisUIState('Análisis: Solución Nutritiva') || {}).selectedId || '');
   window.wireLabPdfCompare && window.wireLabPdfCompare({
     type: 'solucion_nutritiva',
     hostId: 'sn-analysis-compare-host',
@@ -21924,8 +21939,7 @@ window.initExtractoPastaTab = function initExtractoPastaTab() {
   window.renderExtractoPastaList && window.renderExtractoPastaList();
   var wrap = document.getElementById('extracto-pasta-form-wrap');
   var emptyEl = document.getElementById('extracto-pasta-form-empty');
-  if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
-  if (emptyEl) emptyEl.style.display = 'block';
+  resetAnalysisFormPanelIfEmpty(wrap, emptyEl, (readAnalysisUIState('Análisis: Extracto de Pasta') || {}).selectedId || '');
   window.wireLabPdfCompare && window.wireLabPdfCompare({
     type: 'extracto_pasta',
     hostId: 'ep-analysis-compare-host',
@@ -22475,8 +22489,7 @@ window.initAguaTab = function initAguaTab() {
   window.renderAguaList && window.renderAguaList();
   var wrap = document.getElementById('agua-form-wrap');
   var emptyEl = document.getElementById('agua-form-empty');
-  if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
-  if (emptyEl) emptyEl.style.display = 'block';
+  resetAnalysisFormPanelIfEmpty(wrap, emptyEl, (readAnalysisUIState('Análisis: Agua') || {}).selectedId || '');
   window.wireLabPdfCompare && window.wireLabPdfCompare({
     type: 'agua',
     hostId: 'aw-analysis-compare-host',
@@ -22799,8 +22812,7 @@ window.initFoliarTab = function initFoliarTab() {
   window.renderFoliarList && window.renderFoliarList();
   var wrap = document.getElementById('foliar-form-wrap');
   var emptyEl = document.getElementById('foliar-form-empty');
-  if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
-  if (emptyEl) emptyEl.style.display = 'block';
+  resetAnalysisFormPanelIfEmpty(wrap, emptyEl, (readAnalysisUIState('Análisis: Foliar') || {}).selectedId || '');
   window.wireLabPdfCompare && window.wireLabPdfCompare({
     type: 'foliar',
     hostId: 'foliar-analysis-compare-host',
@@ -23256,8 +23268,7 @@ window.initFrutaTab = function initFrutaTab() {
   window.renderFrutaList && window.renderFrutaList();
   var wrap = document.getElementById('fruta-form-wrap');
   var emptyEl = document.getElementById('fruta-form-empty');
-  if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
-  if (emptyEl) emptyEl.style.display = 'block';
+  resetAnalysisFormPanelIfEmpty(wrap, emptyEl, (readAnalysisUIState('Análisis: Fruta') || {}).selectedId || '');
   window.wireLabPdfCompare && window.wireLabPdfCompare({
     type: 'fruta',
     hostId: 'fruta-analysis-compare-host',
@@ -24084,15 +24095,20 @@ window.renderSoilAnalysesList = function renderSoilAnalysesList() {
 window.initSoilAnalysesTab = function initSoilAnalysesTab() {
   window.getSoilAnalyses();
   window.renderSoilAnalysesList && window.renderSoilAnalysesList();
+  var pendingSelectedId = (readAnalysisUIState('Análisis: Suelo') || {}).selectedId || '';
   const wrap = document.getElementById('soil-analysis-form-wrap');
   const emptyEl = document.getElementById('soil-analysis-form-empty');
-  if (wrap) { wrap.style.display = 'none'; wrap.setAttribute('data-current-id', ''); }
-  if (emptyEl) emptyEl.style.display = 'block';
+  resetAnalysisFormPanelIfEmpty(wrap, emptyEl, pendingSelectedId);
   var compareHost = document.getElementById('soil-analysis-compare-host');
   if (compareHost && window.NpAnalysisCompare && typeof window.NpAnalysisCompare.mountSoilCompare === 'function') {
-    window._soilCompareState = window.NpAnalysisCompare.mountSoilCompare(compareHost, {
-      getAnalyses: function () { return window.getSoilAnalyses() || []; }
-    });
+    if (compareHost.dataset.npMounted === '1' && window._soilCompareState && typeof window._soilCompareState.refresh === 'function') {
+      window._soilCompareState.refresh();
+    } else {
+      compareHost.dataset.npMounted = '1';
+      window._soilCompareState = window.NpAnalysisCompare.mountSoilCompare(compareHost, {
+        getAnalyses: function () { return window.getSoilAnalyses() || []; }
+      });
+    }
   }
   var fileInput = document.getElementById('soilPdfFileInput');
   if (fileInput && fileInput.dataset.npWired !== '1') {
@@ -24444,10 +24460,15 @@ window.wireLabPdfCompare = function wireLabPdfCompare(opts) {
   opts = opts || {};
   var host = document.getElementById(opts.hostId);
   if (host && window.NpAnalysisCompare && typeof window.NpAnalysisCompare.mountLabCompare === 'function') {
-    window[opts.stateKey] = window.NpAnalysisCompare.mountLabCompare(host, {
-      type: opts.type,
-      getAnalyses: opts.getAnalyses
-    });
+    if (host.dataset.npMounted === '1' && window[opts.stateKey] && typeof window[opts.stateKey].refresh === 'function') {
+      window[opts.stateKey].refresh();
+    } else {
+      host.dataset.npMounted = '1';
+      window[opts.stateKey] = window.NpAnalysisCompare.mountLabCompare(host, {
+        type: opts.type,
+        getAnalyses: opts.getAnalyses
+      });
+    }
   }
   var fileInput = document.getElementById(opts.inputId);
   if (fileInput && fileInput.dataset.npWired !== '1') {
