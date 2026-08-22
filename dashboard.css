@@ -10657,6 +10657,18 @@ html.embed-login body {
   border-radius: 0 0 12px 12px;
 }
 
+.radar-north-badge-float {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 950;
+  pointer-events: none;
+}
+
+.radar-north-badge-float .radar-north-badge {
+  pointer-events: none;
+}
+
 .lectura-view-bar {
   display: flex;
   flex-wrap: wrap;

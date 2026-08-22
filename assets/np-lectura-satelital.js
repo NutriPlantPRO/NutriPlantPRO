@@ -13,6 +13,7 @@
   var MESES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var lecturaChart = null;
   var lecturaChartPrefsFp = '';
+  var lecturaChartSeriesFp = '';
   var LECTURA_LANE_COLORS = ['#2563eb', '#0f766e', '#ca8a04', '#c2410c', '#7c3aed', '#be123c'];
   function lecturaLaneColor(i) {
     return LECTURA_LANE_COLORS[Math.abs(Number(i) || 0) % LECTURA_LANE_COLORS.length];
@@ -252,19 +253,93 @@
     return Math.round(et0 * Number(kc) * 10) / 10;
   }
 
-  /** Lluvia + riego (mm SI) del periodo. */
+  /** Lluvia + riego (mm SI) del periodo. Misma resolución de riego que la serie «Riego». */
   function rainPlusRiegoMm(r, iHa) {
     if (!r) return null;
     var rain = r.rain_sum != null ? Number(r.rain_sum) : null;
-    var riego =
-      r.riego_mm != null && Number.isFinite(Number(r.riego_mm))
-        ? Number(r.riego_mm)
-        : m3ToMm(r.riego_m3, iHa);
+    var riegoMm = null;
+    if (r.riego_mm != null && Number.isFinite(Number(r.riego_mm))) {
+      riegoMm = Number(r.riego_mm);
+    } else {
+      riegoMm = m3ToMm(r.riego_m3, iHa);
+    }
     var hasRain = rain != null && Number.isFinite(rain);
-    var hasRiego = riego != null && Number.isFinite(Number(riego));
+    var hasRiego = riegoMm != null && Number.isFinite(riegoMm);
     if (!hasRain && !hasRiego) return null;
-    return Math.round(((hasRain ? rain : 0) + (hasRiego ? Number(riego) : 0)) * 10) / 10;
+    return Math.round(((hasRain ? rain : 0) + (hasRiego ? riegoMm : 0)) * 10) / 10;
   }
+
+  /** Lámina de riego (mm SI) para gráfica/tabla — misma regla en todas las series. */
+  function riegoMmForRow(r, iHa) {
+    if (!r) return null;
+    if (r.riego_mm != null && Number.isFinite(Number(r.riego_mm))) return Number(r.riego_mm);
+    return m3ToMm(r.riego_m3, iHa);
+  }
+
+  /** Brújula «Norte arriba» — misma orientación en Radar / Lectura / PDF / admin. */
+  function createRadarNorthBadgeHTML(opts) {
+    opts = opts || {};
+    var size = opts.size === 'sm' || opts.size === 'pdf' || opts.size === 'md' ? opts.size : 'md';
+    var inline = !!opts.inline;
+    var tFn =
+      typeof opts.t === 'function'
+        ? opts.t
+        : function (key, fallback) {
+            return lecturaT(key, fallback);
+          };
+    var title = tFn('radar.north_up_title', 'Norte arriba');
+    var hint = tFn(
+      'radar.north_up_hint',
+      'En todas estas imágenes el norte apunta hacia arriba (arriba = norte).'
+    );
+    var box = size === 'sm' ? 42 : size === 'pdf' ? 38 : 50;
+    var fontN = size === 'sm' ? 12 : size === 'pdf' ? 11 : 13;
+    var fontLbl = size === 'sm' ? 8 : size === 'pdf' ? 8 : 9;
+    var wrapStyle = inline
+      ? 'display:inline-flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'width:' +
+        box +
+        'px;height:' +
+        box +
+        'px;border-radius:10px;background:rgba(255,255,255,0.94);' +
+        'border:1px solid #cbd5e1;box-shadow:0 2px 8px rgba(15,23,42,0.12);' +
+        'color:#0f172a;line-height:1;flex-shrink:0;vertical-align:middle;'
+      : 'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'width:' +
+        box +
+        'px;height:' +
+        box +
+        'px;border-radius:10px;background:rgba(255,255,255,0.94);' +
+        'border:1px solid #cbd5e1;box-shadow:0 2px 8px rgba(15,23,42,0.12);color:#0f172a;line-height:1;';
+    var svgH = size === 'md' ? 20 : 16;
+    return (
+      '<div class="radar-north-badge" role="img" aria-label="' +
+      esc(hint) +
+      '" title="' +
+      esc(hint) +
+      '" style="' +
+      wrapStyle +
+      '">' +
+      '<svg width="' +
+      (svgH + 4) +
+      '" height="' +
+      svgH +
+      '" viewBox="0 0 24 20" aria-hidden="true" focusable="false">' +
+      '<polygon points="12,1 16,11 12,9 8,11" fill="#0f172a"/>' +
+      '<line x1="12" y1="9" x2="12" y2="18" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>' +
+      '</svg>' +
+      '<span style="font-size:' +
+      fontN +
+      'px;font-weight:900;letter-spacing:0.04em;margin-top:1px;">N</span>' +
+      '<span style="font-size:' +
+      fontLbl +
+      'px;font-weight:700;color:#475569;margin-top:1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;">' +
+      esc(title) +
+      '</span>' +
+      '</div>'
+    );
+  }
+  window.createRadarNorthBadgeHTML = createRadarNorthBadgeHTML;
 
   // ---------- utilidades de fecha ----------
   function todayIso() {
@@ -1731,6 +1806,7 @@
       try { lecturaChart.destroy(); } catch (e) {}
       lecturaChart = null;
     }
+    lecturaChartSeriesFp = '';
     var canvas = document.getElementById('lecturaChart');
     if (canvas && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
       try {
@@ -1768,6 +1844,8 @@
       ensureChartJs(function () { renderChart(state); });
       return;
     }
+    if (state.franja_pct == null) state.franja_pct = suggestFranjaPct();
+    syncRiegoMmFromM3(state);
     // Mismo orden que las miniaturas: más reciente a la izquierda.
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
     lecturaChartRows = rows;
@@ -1798,6 +1876,7 @@
     var ds = [
       {
         type: 'bar',
+        seriesKey: 'vpdLow',
         label: vpdLowLabel,
         yAxisID: 'yHours',
         data: rows.map(function (r) { return r.vpd_hours_low; }),
@@ -1812,6 +1891,7 @@
       },
       {
         type: 'bar',
+        seriesKey: 'vpdOpt',
         label: vpdOptLabel,
         yAxisID: 'yHours',
         data: rows.map(function (r) { return r.vpd_hours_opt; }),
@@ -1826,6 +1906,7 @@
       },
       {
         type: 'bar',
+        seriesKey: 'vpdHigh',
         label: vpdHighLabel,
         yAxisID: 'yHours',
         data: rows.map(function (r) { return r.vpd_hours_high; }),
@@ -1840,6 +1921,7 @@
       },
       {
         type: 'line',
+        seriesKey: 'ndvi',
         label: 'NDVI',
         yAxisID: 'yIdx',
         data: rows.map(function (r) { return r.ndvi_mean; }),
@@ -1854,6 +1936,7 @@
       },
       {
         type: 'line',
+        seriesKey: 'ndmi',
         label: 'NDMI',
         yAxisID: 'yIdx',
         data: rows.map(function (r) { return r.ndmi_mean; }),
@@ -1868,6 +1951,7 @@
       },
       {
         type: 'line',
+        seriesKey: 'ndre',
         label: 'NDRE',
         yAxisID: 'yIdx',
         data: rows.map(function (r) { return r.ndre_mean; }),
@@ -1882,6 +1966,7 @@
       },
       {
         type: 'line',
+        seriesKey: 'et0',
         label: lecturaT('radar.et0_acum_header', 'ET₀ acum ({unit})', { unit: depthU }),
         yAxisID: 'yMm',
         data: rows.map(function (r) { return depthSeriesFromMm(r.et0_sum); }),
@@ -1897,6 +1982,7 @@
       },
       {
         type: 'line',
+        seriesKey: 'rain',
         label: lecturaT('radar.rain_acum_header', 'Lluvia acum ({unit})', { unit: depthU }),
         yAxisID: 'yMm',
         data: rows.map(function (r) { return depthSeriesFromMm(r.rain_sum); }),
@@ -1912,11 +1998,11 @@
       },
       {
         type: 'line',
+        seriesKey: 'riego',
         label: lecturaT('radar.riego_chip', 'Riego {unit}', { unit: depthU }),
         yAxisID: 'yMm',
         data: rows.map(function (r) {
-          var mm = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
-          return depthSeriesFromMm(mm);
+          return depthSeriesFromMm(riegoMmForRow(r, iHa));
         }),
         borderColor: '#7c3aed',
         backgroundColor: '#7c3aed',
@@ -1930,6 +2016,7 @@
       },
       {
         type: 'line',
+        seriesKey: 'rainRiego',
         label: lecturaT('radar.rain_riego_header', 'Lluvia + Riego ({unit})', { unit: depthU }),
         yAxisID: 'yMm',
         data: rows.map(function (r) {
@@ -1937,7 +2024,6 @@
         }),
         borderColor: '#0e7490',
         backgroundColor: '#0e7490',
-        borderDash: [1, 0],
         tension: 0.3,
         spanGaps: true,
         pointRadius: 3,
@@ -1952,6 +2038,7 @@
       var kcLabel = Math.round(kc * 100) / 100;
       ds.splice(7, 0, {
         type: 'line',
+        seriesKey: 'etc',
         label: 'ETc (Kc=' + kcLabel + ') ' + depthU,
         yAxisID: 'yMm',
         data: etcData,
@@ -1970,8 +2057,11 @@
     ensureLecturaChartHostSize(canvas);
     var yMmTitle = depthU + ' (ET₀ / ETc / ' +
       (lecturaPrefs().language === 'en' ? 'rain / irrigation / rain+irrigation)' : 'lluvia / riego / lluvia+riego)');
+    var seriesFp = ds.map(function (d) { return d.seriesKey || d.label; }).join('|');
+    if (seriesFp !== lecturaChartSeriesFp) forceRebuild = true;
 
-    // Soft-update only when prefs unchanged AND canvas has a real size (not blank from hidden tab).
+    // Soft-update by seriesKey (not index): ETc splice used to shift indexes and leave
+    // «Lluvia + Riego» stuck with the rain series values.
     if (
       !forceRebuild &&
       lecturaChartIsAlive() &&
@@ -1981,37 +2071,49 @@
       Array.isArray(lecturaChart.data.datasets) &&
       lecturaChart.data.datasets.length === ds.length
     ) {
-      lecturaChart.data.datasets.forEach(function (oldDs, i) {
-        var neu = ds[i];
-        if (!neu) return;
-        oldDs.data = neu.data;
+      var oldByKey = {};
+      var softOk = true;
+      lecturaChart.data.datasets.forEach(function (oldDs) {
+        if (oldDs && oldDs.seriesKey) oldByKey[oldDs.seriesKey] = oldDs;
+      });
+      ds.forEach(function (neu) {
+        var oldDs = neu.seriesKey ? oldByKey[neu.seriesKey] : null;
+        if (!oldDs) {
+          softOk = false;
+          return;
+        }
+        oldDs.data = Array.isArray(neu.data) ? neu.data.slice() : neu.data;
         oldDs.hidden = neu.hidden;
         if (neu.label) oldDs.label = neu.label;
       });
-      if (lecturaChart.options && lecturaChart.options.scales) {
-        if (lecturaChart.options.scales.yHours) lecturaChart.options.scales.yHours.max = hoursMax;
-        if (lecturaChart.options.scales.yMm && lecturaChart.options.scales.yMm.title) {
-          lecturaChart.options.scales.yMm.title.text = yMmTitle;
+      if (softOk) {
+        if (lecturaChart.options && lecturaChart.options.scales) {
+          if (lecturaChart.options.scales.yHours) lecturaChart.options.scales.yHours.max = hoursMax;
+          if (lecturaChart.options.scales.yMm && lecturaChart.options.scales.yMm.title) {
+            lecturaChart.options.scales.yMm.title.text = yMmTitle;
+          }
         }
-      }
-      try {
-        lecturaChart.update('none');
-        var togglesBox = document.getElementById('lecturaChartToggles');
-        if (togglesBox && !togglesBox.children.length) renderChartToggles(state);
-        requestAnimationFrame(function () {
-          try {
-            if (lecturaChart) lecturaChart.resize();
-            // Soft path left blank (0×0 after update) → hard rebuild next tick.
-            if (lecturaChart && !lecturaChartHostReady(lecturaChart.canvas)) {
-              lecturaChartPrefsFp = '';
-              destroyLecturaChart();
-              renderChart(state);
-            }
-          } catch (eR) {}
-        });
-        return;
-      } catch (e) {
-        /* fall through to rebuild */
+        try {
+          lecturaChart.update('none');
+          lecturaChartPrefsFp = prefsFp;
+          lecturaChartSeriesFp = seriesFp;
+          var togglesBox = document.getElementById('lecturaChartToggles');
+          if (togglesBox && !togglesBox.children.length) renderChartToggles(state);
+          requestAnimationFrame(function () {
+            try {
+              if (lecturaChart) lecturaChart.resize();
+              if (lecturaChart && !lecturaChartHostReady(lecturaChart.canvas)) {
+                lecturaChartPrefsFp = '';
+                lecturaChartSeriesFp = '';
+                destroyLecturaChart();
+                renderChart(state);
+              }
+            } catch (eR) {}
+          });
+          return;
+        } catch (e) {
+          /* fall through to rebuild */
+        }
       }
     }
     renderChartToggles(state);
@@ -2021,6 +2123,7 @@
     // Tab still hidden (Radar Polígono): defer until host has size — avoid Chart.js blank canvas.
     if (!lecturaChartHostReady(canvas)) {
       lecturaChartPrefsFp = '';
+      lecturaChartSeriesFp = '';
       if (!window.__lecturaChartDeferPending) {
         window.__lecturaChartDeferPending = true;
         var tries = 0;
@@ -2116,6 +2219,7 @@
         }
       });
       lecturaChartPrefsFp = prefsFp;
+      lecturaChartSeriesFp = seriesFp;
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           try {
@@ -2315,9 +2419,14 @@
       '</figure>';
     }
     var html =
-      '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 2px;">' + lecturaT('radar.gallery_title', 'Imágenes comparativas por periodo') + '</div>' +
-      '<div style="font-size:11px;color:#64748b;margin:0 0 8px;line-height:1.4;">' + lecturaT('radar.gallery_align_hint', 'El mismo número y color une cada columna de la gráfica con su imagen de abajo.') + '</div>' +
-      '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;overflow-x:auto;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:4px 0 2px;">' +
+        '<div style="min-width:0;flex:1;">' +
+          '<div style="font-weight:700;color:#0f172a;font-size:14px;">' + lecturaT('radar.gallery_title', 'Imágenes comparativas por periodo') + '</div>' +
+          '<div style="font-size:11px;color:#64748b;margin:2px 0 0;line-height:1.4;">' + lecturaT('radar.gallery_align_hint', 'El mismo número y color une cada columna de la gráfica con su imagen de abajo.') + '</div>' +
+        '</div>' +
+        createRadarNorthBadgeHTML({ size: 'sm', inline: true }) +
+      '</div>' +
+      '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;overflow-x:auto;position:relative;">' +
         '<div style="font-size:12px;font-weight:800;color:#166534;margin:0 0 4px;">' + lecturaT('radar.gallery_ndvi', 'NDVI — vigor vegetativo') + '</div>' +
         scaleLegend('ndvi') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
@@ -3271,8 +3380,7 @@
               label: lecturaT('radar.riego_chip', 'Riego {unit}', { unit: lecturaDepthUnit() }),
               yAxisID: 'yMm',
               data: sorted.map(function (r) {
-                var mm = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
-                return depthSeriesFromMm(mm);
+                return depthSeriesFromMm(riegoMmForRow(r, iHa));
               }),
               borderColor: '#7c3aed',
               borderDash: [6, 3],

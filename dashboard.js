@@ -2051,6 +2051,14 @@ function sectionTemplate(name) {
         </div>
         <div class="map-container">
           <div id="map" class="map"></div>
+          <div class="radar-north-badge-float" aria-hidden="false">
+            ${typeof window.createRadarNorthBadgeHTML === 'function'
+              ? window.createRadarNorthBadgeHTML({
+                  size: 'md',
+                  t: function (key, fallback) { return rt(key, fallback); }
+                })
+              : ''}
+          </div>
           <div class="map-overlay">
             <div class="instructions">
               <p data-i18n="radar.map_click">${rt('radar.map_click', '📍 Haz clic en el mapa para trazar tu parcela')}</p>
@@ -17550,7 +17558,25 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
     cell(rgbCap, radar.rgbDataUrl, 'RGB', false, '#334155');
   return `
     <div style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;">
-      <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">${title}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;color:#14532d;">${title}</div>
+        ${typeof window.createRadarNorthBadgeHTML === 'function'
+          ? window.createRadarNorthBadgeHTML({
+              size: 'pdf',
+              inline: true,
+              t: function (key, fallback) {
+                if (key === 'radar.north_up_title') return rt('Norte arriba', 'North up');
+                if (key === 'radar.north_up_hint') {
+                  return rt(
+                    'En todas estas imágenes el norte apunta hacia arriba (arriba = norte).',
+                    'In all these images north points up (up = north).'
+                  );
+                }
+                return fallback;
+              }
+            })
+          : ''}
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;align-items:start;">${cols}</div>
       ${dateLine}
       ${metaLine}
@@ -17851,8 +17877,26 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     }
     gallery =
       '<div style="margin-top:10px;">' +
-      '<div style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:2px;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px;">' +
+      '<div style="font-size:12px;font-weight:700;color:#14532d;">' +
       rtSafe('Imágenes por periodo (miniaturas)', 'Images by period (thumbnails)') +
+      '</div>' +
+      (typeof window.createRadarNorthBadgeHTML === 'function'
+        ? window.createRadarNorthBadgeHTML({
+            size: 'pdf',
+            inline: true,
+            t: function (key, fallback) {
+              if (key === 'radar.north_up_title') return rtSafe('Norte arriba', 'North up');
+              if (key === 'radar.north_up_hint') {
+                return rtSafe(
+                  'En todas estas imágenes el norte apunta hacia arriba (arriba = norte).',
+                  'In all these images north points up (up = north).'
+                );
+              }
+              return fallback;
+            }
+          })
+        : '') +
       '</div>' +
       layerBlock('NDVI', '#166534', ndviRow, 'ndvi') +
       layerBlock('NDMI', '#0369a1', ndmiRow, 'ndmi') +

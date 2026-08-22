@@ -1642,7 +1642,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../assets/np-lectura-satelital.js?v=20260821mesFix"></script>
+    <script src="../assets/np-lectura-satelital.js?v=20260821northBadge"></script>
     <script src="../assets/np-vpd-range-charts.js?v=20260803a"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
@@ -17435,6 +17435,11 @@
                 '<p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Mostrando generación del <strong>' + esc(created) + '</strong> · ' + esc(String(sourceLabel)) + periodLabel + selectedCreditsLabel + '</p>' +
                 estimatedPassesPanel +
                 sentinelMapButton +
+                '<div style="display:flex;align-items:center;justify-content:flex-end;margin:0 0 8px;">' +
+                (typeof window.createRadarNorthBadgeHTML === 'function'
+                    ? window.createRadarNorthBadgeHTML({ size: 'sm', inline: true })
+                    : '') +
+                '</div>' +
                 '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
                 blockNdvi +
                 blockNdmi +
@@ -17574,8 +17579,13 @@
                 '<button type="button" onclick="focusRadarSentinelMapAdmin(\'project\')" style="padding:7px 10px;border:1px solid #86efac;background:#f0fdf4;color:#166534;border-radius:7px;font-weight:700;cursor:pointer;">Acercar al predio</button>' +
                 '<button type="button" onclick="closeRadarSentinelMapAdmin()" style="border:0;background:#e2e8f0;color:#334155;border-radius:7px;padding:7px 11px;font-weight:700;cursor:pointer;">✕ Cerrar</button>' +
                 '</div></div>' +
-                '<div id="radarSentinelMapAdminCanvas" style="flex:1;min-height:360px;background:#e2e8f0;"></div>' +
-                '<div style="padding:8px 14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:11px;">Azul: huella de la escena Sentinel · Verde: predio · NDVI superpuesto. Fechas futuras orientativas según revisita nominal de 5 días.</div>' +
+                '<div id="radarSentinelMapAdminCanvas" style="flex:1;min-height:360px;background:#e2e8f0;position:relative;"></div>' +
+                '<div style="padding:8px 14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">' +
+                '<span>Azul: huella de la escena Sentinel · Verde: predio · NDVI superpuesto. Fechas futuras orientativas según revisita nominal de 5 días.</span>' +
+                (typeof window.createRadarNorthBadgeHTML === 'function'
+                    ? window.createRadarNorthBadgeHTML({ size: 'sm', inline: true })
+                    : '') +
+                '</div>' +
                 '</div>';
             document.body.appendChild(modal);
 
@@ -18252,9 +18262,16 @@
                         '<span style="color:#64748b;line-height:1.35;">' + c.tip + '</span></div>';
                 }
                 gallery =
-                    '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI / NDRE / RGB / Nubes</div>' +
-                    '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * quincena ampliada al mes calendario solo para la imagen.</p>' +
-                    '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px;">NDVI — vigor vegetativo</div>' +
+                    '<div style="margin-top:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">' +
+                    '<div style="min-width:0;flex:1;">' +
+                    '<div style="font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI / NDRE / RGB / Nubes</div>' +
+                    '<p style="margin:4px 0 0;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * quincena ampliada al mes calendario solo para la imagen.</p>' +
+                    '</div>' +
+                    (typeof window.createRadarNorthBadgeHTML === 'function'
+                        ? window.createRadarNorthBadgeHTML({ size: 'sm', inline: true })
+                        : '') +
+                    '</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#166534;margin:8px 0 4px;">NDVI — vigor vegetativo</div>' +
                     adminScaleLegend('ndvi') +
                     '<div style="' + grid + '">' + ndviRow + '</div>' +
                     '<div style="font-size:12px;font-weight:700;color:#0369a1;margin:12px 0 4px;">NDMI — humedad del dosel</div>' +
