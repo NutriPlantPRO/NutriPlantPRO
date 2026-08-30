@@ -1,6 +1,6 @@
 /**
  * Modales de herramientas gratis:
- * - Ajusta altura del iframe al contenido en móvil vertical.
+ * - Ajusta altura del iframe al contenido (desktop y móvil), con tope de viewport.
  * - Bloquea el scroll de la página de atrás (evita que el modal se “pegue” a los bordes en iPhone).
  */
 (function () {
@@ -8,7 +8,10 @@
 
   var FIT_FRAME_IDS = {
     nMineralizableMoCalculatorFrame: true,
-    agroclimateForecastFrame: true
+    agroclimateForecastFrame: true,
+    waterHardnessCalculatorFrame: true,
+    hydroPulseIrrigationToolFrame: true,
+    hydroSolutionCalculatorFrame: true
   };
 
   var scrollLockCount = 0;
@@ -20,17 +23,20 @@
   }
 
   function maxIframeHeight() {
-    return Math.max(280, Math.floor(window.innerHeight * 0.92) - 72);
+    var ratio = isMobileFit() ? 0.92 : 0.96;
+    return Math.max(280, Math.floor(window.innerHeight * ratio) - 72);
   }
 
   function applyFrameHeight(frame, height) {
     if (!frame || !FIT_FRAME_IDS[frame.id]) return;
-    if (!isMobileFit()) {
-      frame.style.height = '100%';
-      return;
-    }
-    var h = Math.min(Math.max(280, height), maxIframeHeight());
+    var h = Math.min(Math.max(280, Math.ceil(Number(height) || 0)), maxIframeHeight());
     frame.style.height = h + 'px';
+    frame.style.minHeight = '0';
+    var modal = frame.closest && frame.closest('.modal');
+    if (modal) {
+      modal.style.height = 'auto';
+      modal.style.maxHeight = isMobileFit() ? '92dvh' : '96vh';
+    }
   }
 
   function isScrollableEl(el) {
@@ -216,10 +222,12 @@
   window.resetFreeToolIframeHeight = function (frameId) {
     var frame = document.getElementById(frameId);
     if (!frame) return;
-    if (isMobileFit() && FIT_FRAME_IDS[frameId]) {
-      frame.style.height = '320px';
-    } else {
-      frame.style.height = '100%';
+    var starter = Math.min(isMobileFit() ? 320 : 520, maxIframeHeight());
+    frame.style.height = starter + 'px';
+    var modal = frame.closest && frame.closest('.modal');
+    if (modal) {
+      modal.style.height = 'auto';
+      modal.style.maxHeight = isMobileFit() ? '92dvh' : '96vh';
     }
   };
 
@@ -230,8 +238,9 @@
   window.addEventListener('resize', function () {
     Object.keys(FIT_FRAME_IDS).forEach(function (id) {
       var frame = document.getElementById(id);
-      if (!frame || isMobileFit()) return;
-      frame.style.height = '100%';
+      if (!frame || !frame.style.height) return;
+      var px = parseInt(frame.style.height, 10);
+      if (!isNaN(px)) applyFrameHeight(frame, px);
     });
   });
 
