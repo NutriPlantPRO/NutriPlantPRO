@@ -286,9 +286,40 @@ function hydroSaveCustomSolutions() {
   };
   profile.customHydroSolutions = bucket;
   try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
+  // Misma lista en la clave del iframe (si no, «Eliminar» en dashboard y el free tool la vuelve a subir).
+  try {
+    localStorage.setItem('nutriplant_hydro_custom_solutions_v1', JSON.stringify({ items: hydroCustomSolutionsUser || [] }));
+  } catch (eMirror) { /* ignore */ }
+  try {
+    const frame = document.getElementById('hydroSolutionToolFrame') ||
+      document.querySelector('iframe[src*="hidro-solucion-free"]');
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({
+        type: 'np-hydro-cycle-hydrate',
+        customSolutions: hydroCustomSolutionsUser || [],
+        customCyclePrograms: (typeof hydroGetCustomCycleProgramsSnapshot === 'function')
+          ? hydroGetCustomCycleProgramsSnapshot()
+          : undefined
+      }, '*');
+    }
+  } catch (eFrame) { /* ignore */ }
   try {
     if (typeof window.nutriplantSyncCustomHydroSolutionsToCloud === 'function') {
-      window.nutriplantSyncCustomHydroSolutionsToCloud(userId, bucket);
+      const p = window.nutriplantSyncCustomHydroSolutionsToCloud(userId, bucket);
+      if (p && typeof p.then === 'function') {
+        p.then(function () { /* ok */ }).catch(function (err) {
+          console.warn('Sync soluciones hidropónicas falló:', err);
+          if (window.showMessage) {
+            window.showMessage(
+              hydroT(
+                'No se pudo guardar el catálogo en la nube. Revisa que exista la columna custom_hydro_solutions (SQL).',
+                'Could not save the catalog to the cloud. Check that the custom_hydro_solutions column exists (SQL).'
+              ),
+              'warning'
+            );
+          }
+        });
+      }
     }
   } catch (e) { console.warn('Sync soluciones hidropónicas:', e); }
 }
@@ -936,7 +967,7 @@ function hydroOpenSolutionCatalog(opts) {
     ? '<tr class="hydro-cycle-catalog-sep"><td colspan="15"><strong>' + hydroT('Mis soluciones', 'My solutions') + '</strong> — ' + hydroT('del usuario (cualquier proyecto)', 'user-level (any project)') + '</td></tr>'
     : '';
   const progSep = '<tr class="hydro-cycle-catalog-sep"><td colspan="15"><strong>' + hydroT('Mis programas del ciclo', 'My cycle programs') + '</strong> — ' +
-    hydroT('guardados con «Al catálogo»; elige una etapa para usarla aquí en el dashboard', 'saved with “To catalog”; choose a stage to use it here in the dashboard') + '</td></tr>';
+    hydroT('elige una etapa; Eliminar borra todo el programa (todas sus etapas)', 'choose a stage; Delete removes the whole program (all its stages)') + '</td></tr>';
   const litRows = all.slice(0, builtInLen).map(function (recipe, index) {
     const isSelected = selectedId && recipe.id === selectedId;
     const chooseCls = 'hydro-solution-choose' + (isSelected ? ' is-selected' : '');
@@ -956,20 +987,50 @@ function hydroOpenSolutionCatalog(opts) {
       '<td><button type="button" class="' + chooseCls + '" data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' + chooseLabel + '</button>' +
       ' <button type="button" class="hydro-solution-choose-secondary" data-hydro-solution-edit="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Editar', 'Edit') + '</button><button type="button" class="hydro-solution-choose-secondary" data-hydro-solution-delete="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Eliminar', 'Delete') + '</button></td></tr>';
   }).join('');
-  const progRows = cycleRecipes.length
-    ? cycleRecipes.map(function (recipe) {
+  // Un solo «Eliminar» por programa (bloque completo); cada etapa solo tiene Elegir.
+  let progRows = '';
+  if (!cycleRecipes.length) {
+    progRows = '<tr><td colspan="15" style="color:#64748b;">' +
+      hydroT('Aún no hay programas. En Programa del ciclo usa «Al catálogo» y vuelve aquí.', 'No programs yet. In Cycle program use “To catalog”, then come back here.') +
+      '</td></tr>';
+  } else {
+    const byProg = {};
+    const progOrder = [];
+    cycleRecipes.forEach(function (recipe) {
+      const pid = String(recipe.programId || recipe.id);
+      if (!byProg[pid]) {
+        byProg[pid] = [];
+        progOrder.push(pid);
+      }
+      byProg[pid].push(recipe);
+    });
+    progRows = progOrder.map(function (pid) {
+      const list = byProg[pid];
+      const progTitle = String((list[0].name || '').split(' · ')[0] || list[0].name || 'Programa');
+      const head = '<tr class="hydro-cycle-catalog-sep hydro-cycle-catalog-prog-head"><td colspan="14"><strong>' +
+        hydroEscapeAttr(progTitle) + '</strong> <small>(' + list.length + ' ' + hydroT('etapas', 'stages') + ')</small></td>' +
+        '<td><button type="button" class="hydro-solution-choose-secondary" data-hydro-cycle-prog-delete="' +
+        hydroEscapeAttr(pid) + '" title="' +
+        hydroEscapeAttr(hydroT('Borra todas las etapas de este programa', 'Deletes all stages of this program')) + '">' +
+        hydroT('Eliminar programa', 'Delete program') + '</button></td></tr>';
+      const stageRows = list.map(function (recipe) {
         const isSelected = selectedId && recipe.id === selectedId;
         const chooseCls = 'hydro-solution-choose' + (isSelected ? ' is-selected' : '');
         const chooseLabel = isSelected ? hydroT('Seleccionado', 'Selected') : hydroT('Elegir', 'Choose');
-        return '<tr' + (isSelected ? ' class="hydro-solution-row-selected hydro-cycle-catalog-custom"' : ' class="hydro-cycle-catalog-custom"') + ' data-hydro-recipe-id="' + hydroEscapeAttr(recipe.id) + '"><td><strong>' + hydroEscapeAttr(recipe.name) + '</strong> <small>(' + hydroT('programa', 'program') + ')</small></td>' +
+        const stageLabel = String(recipe.name || '').indexOf(' · ') >= 0
+          ? String(recipe.name).split(' · ').slice(1).join(' · ')
+          : recipe.name;
+        return '<tr' + (isSelected ? ' class="hydro-solution-row-selected hydro-cycle-catalog-custom"' : ' class="hydro-cycle-catalog-custom"') +
+          ' data-hydro-recipe-id="' + hydroEscapeAttr(recipe.id) + '"><td style="padding-left:1.25rem;">' +
+          hydroEscapeAttr(stageLabel) + ' <small>(' + hydroT('etapa', 'stage') + ')</small></td>' +
           macroKeys.map(k => '<td>' + (recipe.meq[k] || 0) + '</td>').join('') +
           microKeys.map(k => '<td>' + (recipe.ppm[k] || 0) + '</td>').join('') +
-          '<td><button type="button" class="' + chooseCls + '" data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' + chooseLabel + '</button>' +
-          ' <button type="button" class="hydro-solution-choose-secondary" data-hydro-cycle-prog-delete="' + hydroEscapeAttr(String(recipe.programId || '')) + '">' + hydroT('Eliminar programa', 'Delete program') + '</button></td></tr>';
-      }).join('')
-    : '<tr><td colspan="15" style="color:#64748b;">' +
-      hydroT('Aún no hay programas. En Programa del ciclo usa «Al catálogo» y vuelve aquí.', 'No programs yet. In Cycle program use “To catalog”, then come back here.') +
-      '</td></tr>';
+          '<td><button type="button" class="' + chooseCls + '" data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' +
+          chooseLabel + '</button></td></tr>';
+      }).join('');
+      return head + stageRows;
+    }).join('');
+  }
   const rows = litSep + litRows + progSep + progRows + mySep + myRows;
   const overlay = document.createElement('div');
   overlay.className = 'hydro-solution-modal';
@@ -1110,7 +1171,10 @@ function hydroOpenSolutionCatalog(opts) {
     if (edit) { showDraftRow(edit.getAttribute('data-hydro-solution-edit')); return; }
     const del = event.target.closest('[data-hydro-solution-delete]');
     if (del && window.confirm(hydroT('¿Eliminar esta solución propia?', 'Delete this custom solution?'))) {
-      hydroCustomSolutionsUser = hydroCustomSolutionsUser.filter(item => item.id !== del.getAttribute('data-hydro-solution-delete'));
+      const delId = String(del.getAttribute('data-hydro-solution-delete') || '');
+      hydroCustomSolutionsUser = (hydroCustomSolutionsUser || []).filter(function (item) {
+        return String(item && item.id) !== delId;
+      });
       hydroSaveCustomSolutions();
       setTimeout(function () {
         hydroOpenSolutionCatalog({ fromMemory: true });

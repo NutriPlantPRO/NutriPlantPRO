@@ -834,8 +834,8 @@
     if (st && st.programName) suggested = st.programName;
     var name = window.prompt(
       t(
-        'Título del programa del ciclo (se guardan todas las etapas de la tabla):',
-        'Cycle program title (all stages in the table will be saved):'
+        'Título del programa. Mismo título = actualiza ese; título NUEVO = se agrega otro (no borra el anterior):',
+        'Program title. Same title = update that one; NEW title = adds another (does not delete the previous):'
       ),
       suggested
     );
@@ -846,9 +846,16 @@
       return;
     }
     var items = loadCustomCyclePrograms();
-    var programId = st && st.programId ? String(st.programId) : '';
+    var nameKey = name.toLowerCase();
+    // Solo actualizar si ya existe uno con EL MISMO título.
+    // Si cambias el título (ej. 1.3 → 1.4), se crea uno NUEVO (antes pisaba el viejo por programId).
+    var idx = items.findIndex(function (it) {
+      return String(it.name || '').toLowerCase() === nameKey;
+    });
     var entry = {
-      id: programId && programId.indexOf('cycleprog_') === 0 ? programId : ('cycleprog_' + Date.now()),
+      id: idx >= 0
+        ? items[idx].id
+        : ('cycleprog_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
       name: name,
       type: 'cycle',
       stages: snap.stages.map(function (s) {
@@ -864,11 +871,7 @@
       activeStageId: snap.activeStageId,
       updatedAt: new Date().toISOString()
     };
-    var idx = items.findIndex(function (it) {
-      return it.id === entry.id || String(it.name || '').toLowerCase() === name.toLowerCase();
-    });
     if (idx >= 0) {
-      entry.id = items[idx].id;
       items[idx] = entry;
     } else {
       items.push(entry);
@@ -879,7 +882,6 @@
     }
     saveCustomCyclePrograms(items);
     if (api && api.onCatalogSaved) api.onCatalogSaved(entry);
-    // Abrir la lista correcta al instante (evita buscar en «Mis soluciones» del catálogo Steiner).
     try {
       openCycleProgramsCatalog(api);
     } catch (eOpen) {

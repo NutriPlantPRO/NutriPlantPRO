@@ -1035,8 +1035,14 @@
           custom_hydro_solutions: payload,
           updated_at: new Date().toISOString()
         }).eq('id', userId);
-        if (error) console.warn('⚠️ Supabase sync soluciones hidropónicas:', error.message);
-      } catch (e) { console.warn('⚠️ syncUserCustomHydroSolutions:', e); }
+        if (error) {
+          console.warn('⚠️ Supabase sync soluciones hidropónicas:', error.message);
+          throw error;
+        }
+      } catch (e) {
+        console.warn('⚠️ syncUserCustomHydroSolutions:', e);
+        throw e;
+      }
     },
 
     fetchUserCustomHydroCyclePrograms: async function(userId) {
