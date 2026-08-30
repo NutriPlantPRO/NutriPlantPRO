@@ -473,13 +473,14 @@
   function lineChartSvg(labels, series, yLabel, opts) {
     opts = opts || {};
     var w = 640;
-    var h = 280;
-    var padL = 44;
-    var padR = 16;
+    var h = 288;
+    var padL = 46;
+    // Margen derecho amplio: la última etapa (punto + etiqueta + banda) no queda oculta.
+    var padR = 56;
     var padT = 16;
     var showPheno = !!opts.showPheno;
     var showRelations = !!opts.showRelations;
-    var padB = (showRelations || showPheno) ? 52 : 40;
+    var padB = (showRelations || showPheno) ? 56 : 44;
     var n = labels.length;
     if (n < 1) return '<p class="hydro-muted">' + escapeAttr(t('Agrega etapas para ver la gráfica.', 'Add stages to see the chart.')) + '</p>';
     var allVals = [];
@@ -490,13 +491,21 @@
     yMax = yMax * 1.15 || 1;
     var plotW = w - padL - padR;
     var plotH = h - padT - padB;
+    // Inset horizontal: 1ª y última etapa no van al borde del plot (espacio para bolitas/etiquetas).
+    var xInset = n <= 1 ? 0 : Math.max(14, Math.min(28, plotW * 0.045));
     function xAt(i) {
-      return padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+      if (n === 1) return padL + plotW / 2;
+      return padL + xInset + (i / (n - 1)) * (plotW - 2 * xInset);
     }
     function yAt(v) {
       return padT + plotH - ((Number(v) || 0) / yMax) * plotH;
     }
-    var bandHalf = n === 1 ? plotW * 0.28 : Math.min(52, plotW / Math.max(1, n - 1) * 0.42);
+    function shortLabel(lab) {
+      var s = String(lab == null ? '' : lab);
+      if (s.length <= 12) return s;
+      return s.slice(0, 11) + '…';
+    }
+    var bandHalf = n === 1 ? plotW * 0.28 : Math.min(44, (plotW - 2 * xInset) / Math.max(1, n - 1) * 0.38);
     var bands = '';
     var stageTags = '';
     if (showPheno && Array.isArray(opts.stages)) {
@@ -505,8 +514,8 @@
         var cx = xAt(i);
         bands += '<rect x="' + (cx - bandHalf) + '" y="' + padT + '" width="' + (bandHalf * 2) + '" height="' + plotH +
           '" fill="' + ph.fill + '" stroke="' + ph.color + '" stroke-width="0.8" stroke-opacity="0.35" rx="6"/>';
-        stageTags += '<rect x="' + (cx - 22) + '" y="' + (h - 36) + '" width="44" height="14" rx="7" fill="' + ph.color + '"/>' +
-          '<text x="' + cx + '" y="' + (h - 26) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">' +
+        stageTags += '<rect x="' + (cx - 22) + '" y="' + (h - 40) + '" width="44" height="14" rx="7" fill="' + ph.color + '"/>' +
+          '<text x="' + cx + '" y="' + (h - 30) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">' +
           escapeAttr(ph.short) + '</text>';
       });
     }
@@ -541,7 +550,8 @@
       });
     });
     var xLabels = labels.map(function (lab, i) {
-      return '<text x="' + xAt(i) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="10" fill="#475569">' + escapeAttr(lab) + '</text>';
+      return '<text x="' + xAt(i) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="10" fill="#475569">' +
+        escapeAttr(shortLabel(lab)) + '</text>';
     }).join('');
     var hasIonGroups = series.some(function (s) { return s.group === 'anion' || s.group === 'cation'; });
     var legend = series.map(function (s) {
@@ -594,14 +604,15 @@
       : '';
     var hitPads = '';
     if (showRelations) {
+      var stepX = n === 1 ? plotW : Math.max(28, (plotW - 2 * xInset) / Math.max(1, n - 1));
       for (var i = 0; i < n; i++) {
         var hx = xAt(i);
-        var hw = n === 1 ? plotW : Math.max(28, plotW / Math.max(1, n - 1));
+        var hw = n === 1 ? plotW : stepX;
         hitPads += '<rect class="hydro-cycle-chart-hit" data-stage-idx="' + i + '" x="' + (hx - hw / 2) + '" y="' + padT + '" width="' + hw + '" height="' + plotH + '" fill="transparent"/>';
       }
     }
     var svg =
-      '<svg class="hydro-cycle-line-svg" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="' + escapeAttr(yLabel) + '">' +
+      '<svg class="hydro-cycle-line-svg" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="' + escapeAttr(yLabel) + '" style="overflow:visible">' +
       bands + grid + paths + guide + stageTags + xLabels + hitPads +
       '<text x="12" y="' + (padT + plotH / 2) + '" transform="rotate(-90 12 ' + (padT + plotH / 2) + ')" text-anchor="middle" font-size="11" fill="#64748b">' + escapeAttr(yLabel) + '</text>' +
       '</svg>';
@@ -707,6 +718,38 @@
     wrap.addEventListener('mouseleave', hide);
   }
 
+  function phenoLogicSummaryHtml() {
+    return (
+      '<aside class="hydro-cycle-pheno-summary" aria-label="' + escapeAttr(t('Cómo se estima el perfil', 'How the profile is estimated')) + '">' +
+        '<div class="hydro-cycle-pheno-summary__title">' +
+          escapeAttr(t('Resumen: de dónde sale Veg / Preflor / Flor / Prod', 'Summary: where Veg / Preflor / Flor / Prod come from')) +
+        '</div>' +
+        '<p class="hydro-cycle-pheno-summary__lead">' +
+          escapeAttr(t(
+            'Orientativo (no es diagnóstico). Se basa sobre todo en K/N y CE; el Ca entra solo vía %K en cationes.',
+            'Indicative (not a diagnosis). Driven mainly by K/N and EC; Ca only affects %K among cations.'
+          )) +
+        '</p>' +
+        '<ul class="hydro-cycle-pheno-summary__list">' +
+          '<li><strong style="color:#16a34a">' + escapeAttr(t('Vegetativa', 'Vegetative')) + '</strong> — ' +
+            escapeAttr(t('K/N bajo (N domina) y/o CE baja.', 'Low K/N (N dominates) and/or low EC.')) + '</li>' +
+          '<li><strong style="color:#0284c7">' + escapeAttr(t('Prefloración', 'Pre-flowering')) + '</strong> — ' +
+            escapeAttr(t('K/N ≈ 0.9–1.2 (N y K equilibrados).', 'K/N ≈ 0.9–1.2 (N and K balanced).')) + '</li>' +
+          '<li><strong style="color:#d97706">' + escapeAttr(t('Floración', 'Flowering')) + '</strong> — ' +
+            escapeAttr(t('K/N alto y %K catiónico elevado.', 'High K/N and elevated cationic %K.')) + '</li>' +
+          '<li><strong style="color:#7c3aed">' + escapeAttr(t('Producción', 'Production')) + '</strong> — ' +
+            escapeAttr(t('K/N muy alto + CE alta o %K muy alto.', 'Very high K/N + high EC or very high %K.')) + '</li>' +
+        '</ul>' +
+        '<p class="hydro-cycle-pheno-summary__note">' +
+          '<strong>K/N</strong> = K⁺ ÷ (N-NO₃⁻ + N-NH₄⁺) ' +
+          escapeAttr(t('en meq/L', 'in meq/L')) + '. ' +
+          '<strong>%K</strong> = K ÷ (K+Ca+Mg) × 100. ' +
+          escapeAttr(t('Pasa el cursor por una etapa para ver el detalle.', 'Hover a stage for the detail.')) +
+        '</p>' +
+      '</aside>'
+    );
+  }
+
   function renderCharts(hostMeq, hostPpm, stages) {
     var labels = stages.map(function (s) { return s.name || '—'; });
     var meqSeries = [
@@ -730,7 +773,7 @@
           'Pasa el cursor por una etapa: relaciones + perfil fenológico.',
           'Hover a stage: ratios + phenology profile.'
         )
-      });
+      }) + phenoLogicSummaryHtml();
       bindChartRelations(hostMeq, stages, meqRelationsHtml, '[data-hydro-meq-chart]');
     }
     if (hostPpm) {

@@ -3050,13 +3050,40 @@ function hydroAcidMeqNeutralizedByRow(f, materials) {
   };
 }
 
+function hydroAcidDisplayName(acidId, fallbackName) {
+  const meta = HYDRO_WATER_ACIDS[acidId] ||
+    (window.NpHydroAcidLegend && window.NpHydroAcidLegend.ACIDS && window.NpHydroAcidLegend.ACIDS[acidId]) ||
+    null;
+  if (meta) {
+    const lang = hydroUiLang();
+    if (lang === 'en' && meta.nameEn) return meta.nameEn;
+    if (meta.nameEs) return meta.nameEs;
+    if (meta.nameEn) return meta.nameEn;
+  }
+  return hydroMaterialDisplayName(fallbackName || hydroT('Ácido', 'Acid'));
+}
+
 function hydroAcidMeqHintHtml(f, materials) {
   const info = hydroAcidMeqNeutralizedByRow(f, materials);
   if (!info) return '';
   const meqTxt = info.meqPerL > 0 ? info.meqPerL.toFixed(2) : '0';
-  const mat = materials.find(m => m && m.id === f.materialId) ||
-    (hydroIsAcidMaterialId(f.materialId) ? hydroResolveAcidMaterial(f.materialId, materials) : null);
-  const name = hydroMaterialDisplayName((mat && mat.name) || f.name || hydroT('Ácido', 'Acid'));
+  // meq/L: unidad iónica de la plataforma (igual en métrico y US customary).
+  const meqUnit = 'meq/L';
+  const name = hydroAcidDisplayName(f.materialId, f.name);
+  let doseBit = '';
+  try {
+    const total = hydroFertRowProductTotal(f, materials);
+    if (total && parseFloat(total.value) > 0) {
+      const shown = String(total.unit || '').toLowerCase() === 'kg'
+        ? hydroDisplayMassKg(total.value)
+        : hydroDisplayLiquidL(total.value);
+      const u = (shown && shown.unit) ? shown.unit : hydroUnitLabel(hydroDisplayUnit(String(total.unit || '').toLowerCase() === 'kg' ? 'mass' : 'liquid_volume'));
+      const v = (shown && shown.value != null) ? hydroFormatProductAmount(shown.value) : '';
+      if (v) {
+        doseBit = ' (' + hydroT('dosis', 'dose') + ' <strong>' + v + ' ' + hydroEscapeAttr(String(u)) + '</strong>)';
+      }
+    }
+  } catch (eDose) { /* ignore */ }
   let targetBit = '';
   try {
     const ctx = hydroResolveAcidContext();
@@ -3066,7 +3093,7 @@ function hydroAcidMeqHintHtml(f, materials) {
     if (need != null && need > 0) {
       const diff = Math.abs(info.meqPerL - need);
       const ok = diff <= 0.05;
-      targetBit = ' · ' + hydroT('objetivo del análisis', 'analysis target') + ': <strong>' + need.toFixed(2) + ' meq/L</strong>' +
+      targetBit = ' · ' + hydroT('objetivo del análisis', 'analysis target') + ': <strong>' + need.toFixed(2) + ' ' + meqUnit + '</strong>' +
         (ok
           ? ' <span style="color:#15803d;">✓</span>'
           : ' <span style="color:#c2410c;">(' + hydroT('ajusta dosis si no coincide', 'adjust dose if it does not match') + ')</span>');
@@ -3075,9 +3102,10 @@ function hydroAcidMeqHintHtml(f, materials) {
   return {
     name: name,
     meqTxt: meqTxt,
-    html: `<span class="hydro-acid-meq-note-item"><strong>${hydroEscapeAttr(name)}</strong>: ` +
+    html: `<span class="hydro-acid-meq-note-item"><strong>${hydroEscapeAttr(name)}</strong>${doseBit}: ` +
       hydroT('con esta dosis se neutralizan ≈', 'with this dose ≈') +
-      ` <strong>${meqTxt}</strong> ${hydroT('meq/L de alcalinidad (HCO₃⁻+CO₃²⁻)', 'meq/L of alkalinity (HCO₃⁻+CO₃²⁻)')}` +
+      ` <strong>${meqTxt}</strong> ${meqUnit} ` +
+      hydroT('de alcalinidad (HCO₃⁻+CO₃²⁻)', 'of alkalinity (HCO₃⁻+CO₃²⁻)') +
       targetBit + '</span>'
   };
 }

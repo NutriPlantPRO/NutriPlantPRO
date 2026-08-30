@@ -437,7 +437,7 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260830citricNoVol"></script>
-  <script src="hidroponia-functions.js?v=20260830acidMeqTxt"></script>
+  <script src="hidroponia-functions.js?v=20260830acidI18n"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
@@ -5266,7 +5266,7 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830multiProg';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830phenoBox';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
         // Misma herramienta + misma versión de cache. Si solo cambia v=, recarga una vez (no en cada apertura).
