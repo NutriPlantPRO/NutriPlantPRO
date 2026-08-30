@@ -14,7 +14,7 @@
   <script src="assets/np-i18n.js?v=20260830hydroCycleEn"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-analysis-ui.js?v=20260830citricKg"></script>
+  <script src="assets/np-analysis-ui.js?v=20260830citricNoVol"></script>
   <script src="assets/np-lab-type-configs.js?v=20260817a"></script>
   <script src="assets/np-analysis-compare.js?v=20260817a"></script>
   <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
@@ -436,15 +436,15 @@
   <script src="nutricion-granular-functions.js?v=20260807b"></script>
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
-  <script src="assets/hydro-acid-legend.js?v=20260830citricKg"></script>
-  <script src="hidroponia-functions.js?v=20260830citricKg"></script>
+  <script src="assets/hydro-acid-legend.js?v=20260830citricNoVol"></script>
+  <script src="hidroponia-functions.js?v=20260830catalogFix"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260821kc"></script>
-  <script src="analysis-report-render.js?v=20260830citricKg"></script>
+  <script src="analysis-report-render.js?v=20260830citricNoVol"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260830citricKg"></script>
+  <script src="dashboard.js?v=20260830citricNoVol"></script>
   <script src="assets/np-fertigation-program-generator.js?v=20260817h"></script>
   <script src="fertirriego-program-functions.js?v=20260817q"></script>
   <script src="ai-knowledge-expansion.js"></script>
@@ -5266,7 +5266,7 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830cycleU';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830catalogFix';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
         var sameTool = cur.indexOf('hidro-solucion-free.html') !== -1 && cur.indexOf('v=20260830cycleU') !== -1;
@@ -5304,10 +5304,14 @@ CONTRATO:
             var custom = (typeof window.hydroGetCustomSolutionsSnapshot === 'function')
               ? window.hydroGetCustomSolutionsSnapshot()
               : [];
+            var cyclePrograms = (typeof window.hydroGetCustomCycleProgramsSnapshot === 'function')
+              ? window.hydroGetCustomCycleProgramsSnapshot()
+              : [];
             frame.contentWindow.postMessage({
               type: 'np-hydro-cycle-hydrate',
               cycleProgram: cycle,
               customSolutions: custom,
+              customCyclePrograms: cyclePrograms,
               language: langNow()
             }, '*');
           } catch (ePush) { /* ignore */ }
@@ -5360,8 +5364,16 @@ CONTRATO:
         if (!event || !event.data) return;
         var t = event.data.type;
         if (t === 'np-hydro-custom-solutions') {
-          if (typeof window.hydroMergeCustomSolutionsFromExternal === 'function') {
+          if (typeof window.hydroReplaceCustomSolutionsFromExternal === 'function') {
+            window.hydroReplaceCustomSolutionsFromExternal(event.data.items || []);
+          } else if (typeof window.hydroMergeCustomSolutionsFromExternal === 'function') {
             window.hydroMergeCustomSolutionsFromExternal(event.data.items || []);
+          }
+          return;
+        }
+        if (t === 'np-hydro-custom-cycle-programs') {
+          if (typeof window.hydroReplaceCustomCycleProgramsFromExternal === 'function') {
+            window.hydroReplaceCustomCycleProgramsFromExternal(event.data.items || []);
           }
           return;
         }
@@ -7423,7 +7435,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830citricKg" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830citricNoVol" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7455,7 +7467,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830cycleU" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830catalogFix" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

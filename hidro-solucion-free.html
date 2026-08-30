@@ -1456,12 +1456,12 @@
           <div class="hydro-card-header">
             <h3 data-i18n="free_tools.hydro_cycle_heading">📊 Programa del ciclo</h3>
             <p class="hydro-muted" style="margin:6px 0 0;font-size:0.85rem;" data-i18n-html="free_tools.hydro_cycle_intro_html">
-              Arma etapas con título libre (Etapa 1, Floración…). Puedes partir del <strong>catálogo</strong> por etapa (Steiner, Hoagland…), editar meq/ppm, <strong>arrastrar</strong> el ternario y ver las <strong>gráficas</strong>. Con <strong>Al catálogo</strong> guardas toda la tabla como un programa (te pide un título).
+              Arma etapas con título libre (Etapa 1, Floración…). Puedes partir del <strong>catálogo</strong> por etapa (Steiner, Hoagland…), editar meq/ppm, <strong>arrastrar</strong> el ternario y ver las <strong>gráficas</strong>. Con <strong>Al catálogo</strong> guardas <em>toda la tabla</em> como un <strong>programa</strong> → ábrelo en <strong>Mis programas</strong> (no es una solución individual de «Mis soluciones»).
             </p>
           </div>
           <div class="hydro-cycle-toolbar">
             <button type="button" class="hydro-cycle-btn hydro-cycle-btn--primary" data-hydro-cycle-add data-i18n="free_tools.hydro_cycle_add">+ Agregar etapa</button>
-            <button type="button" class="hydro-cycle-btn hydro-cycle-btn--save" data-hydro-cycle-save-catalog data-i18n="free_tools.hydro_cycle_save_program" title="Guarda todas las etapas de la tabla en tu catálogo" data-i18n-title="free_tools.hydro_cycle_save_program_title">Al catálogo</button>
+            <button type="button" class="hydro-cycle-btn hydro-cycle-btn--save" data-hydro-cycle-save-catalog data-i18n="free_tools.hydro_cycle_save_program" title="Guarda todas las etapas como programa → Mis programas" data-i18n-title="free_tools.hydro_cycle_save_program_title">Al catálogo</button>
             <button type="button" class="hydro-cycle-btn" data-hydro-cycle-load-programs data-i18n="free_tools.hydro_cycle_my_programs">Mis programas</button>
             <button type="button" class="hydro-cycle-btn" data-hydro-cycle-use-design data-i18n="free_tools.hydro_cycle_use_design">Usar etapa activa en Diseño</button>
           </div>
@@ -1569,7 +1569,7 @@
   <script src="assets/fert-formula-engine.js"></script>
   <script src="assets/hydro-fert-aporte-catalog.js?v=20260535"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
-  <script src="assets/hydro-cycle-program.js?v=20260830ionMarks"></script>
+  <script src="assets/hydro-cycle-program.js?v=20260830catalogFix"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
@@ -4227,14 +4227,14 @@
           }
           if (Array.isArray(data.customSolutions) && window.NpHydroCycleProgram) {
             try {
-              var local = window.NpHydroCycleProgram.loadCustomSolutions() || [];
-              var byId = {};
-              local.concat(data.customSolutions).forEach(function (it) {
-                if (!it || !it.id) return;
-                byId[it.id] = it;
-              });
-              window.NpHydroCycleProgram.saveCustomSolutions(Object.keys(byId).map(function (k) { return byId[k]; }));
+              // Dashboard = fuente de verdad (incluye lista vacía tras eliminar).
+              window.NpHydroCycleProgram.saveCustomSolutions(data.customSolutions, { silent: true });
             } catch (eCat) { /* ignore */ }
+          }
+          if (Array.isArray(data.customCyclePrograms) && window.NpHydroCycleProgram) {
+            try {
+              window.NpHydroCycleProgram.saveCustomCyclePrograms(data.customCyclePrograms, { silent: true });
+            } catch (eProg) { /* ignore */ }
           }
           if (data.cycleProgram && Array.isArray(data.cycleProgram.stages) && data.cycleProgram.stages.length) {
             window._hydroCycleProgramLoaded = data.cycleProgram;

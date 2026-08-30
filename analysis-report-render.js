@@ -842,8 +842,6 @@
                             ? formatNum(lbTot * 16, 1) + ' oz'
                             : formatNum(lbTot, 2) + ' lb')
                         : '—';
-                    if (mlPerM3 > 0) doseDisp += ' (' + formatNum(mlPerM3 * 0.128, 2) + ' fl oz/1000 gal equiv.)';
-                    if (litrosTotal > 0) totalDisp += ' (' + formatNum(litrosTotal * 0.2641720524, 2) + ' US gal equiv.)';
                 } else {
                     doseDisp = mlPerM3 > 0
                         ? (kgPerM3 < 1 && kgPerM3 > 0
@@ -855,8 +853,6 @@
                             ? formatNum(kgTotal * 1000, 0) + ' g'
                             : formatNum(kgTotal, 2) + ' kg')
                         : '—';
-                    if (mlPerM3 > 0) doseDisp += ' (' + formatNum(mlPerM3, 2) + ' mL/m³ equiv.)';
-                    if (litrosTotal > 0) totalDisp += ' (' + formatNum(litrosTotal, 2) + ' L equiv.)';
                 }
                 doseLabel = en ? 'Acid (mass) / volume:' : 'Ácido (masa) / volumen:';
                 totalLabel = en ? 'Acid (total mass):' : 'Ácido (masa total):';

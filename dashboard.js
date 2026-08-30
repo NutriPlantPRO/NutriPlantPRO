@@ -22156,7 +22156,7 @@ var AGUA_ACIDS = [
   { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2, noteEs: 'Aporta SO₄²⁻ (~96 % m/m)', noteEn: 'Contributes SO₄²⁻ (~96% w/w)' },
   { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12.0, densityKgL: 1.57, nH: 3, noteEs: 'Aporta P₂O₅ (~54 % m/m)', noteEn: 'Contributes P₂O₅ (~54% w/w)' },
   { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3, noteEs: 'Aporta P₂O₅ (~61 % m/m)', noteEn: 'Contributes P₂O₅ (~61% w/w)' },
-  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, solidPowder: true, noteEs: 'Polvo soluble anhidro; dosificar por masa (kg/g). Densidad ~1.665 kg/L solo para equivalencia volumétrica; solo acidifica', noteEn: 'Anhydrous soluble powder; dose by mass (kg/lb). Density ~1.665 kg/L only for volume equivalence; acidifies only' }
+  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, solidPowder: true, noteEs: 'Polvo soluble anhidro; dosificar por masa (kg/g). No uses litros: la densidad es solo un dato técnico del cálculo interno; solo acidifica', noteEn: 'Anhydrous soluble powder; dose by mass (kg/lb). Do not use liters: density is only an internal calc factor; acidifies only' }
 ];
 
 function aguaAcidLabel(name) {
@@ -22192,9 +22192,7 @@ function aguaAcidSpecsHtml(acid) {
   var rows = [
     [t('Fórmula', 'Formula'), acid.formula || '—'],
     [t('Pureza', 'Purity'), (acid.purityPct != null ? acid.purityPct + '%' : '—')],
-    [t('Densidad', 'Density'), aguaAcidDensityText(acid.densityKgL) + (isSolid
-      ? ' <span style="color:#64748b;font-weight:400;">(' + t('equiv. vol.', 'vol. equiv.') + ')</span>'
-      : '')],
+    [t('Densidad', 'Density'), aguaAcidDensityText(acid.densityKgL)],
     [t('Fuerza', 'Strength'), (acid.meqPerMl != null ? acid.meqPerMl + ' meq/mL' : '—')],
     [t('H⁺ útiles / mol', 'Useful H⁺ / mol'), (acid.nH != null ? String(acid.nH) : '—')]
   ];

@@ -383,17 +383,8 @@
   }
 
   function acidSolidVolumeHint(mlPerM3, litersTotal) {
-    var parts = [];
-    if (Number.isFinite(Number(mlPerM3))) {
-      var volDose = formatAcidDoseMlPerM3(mlPerM3, 2);
-      if (volDose && volDose !== '—') parts.push(volDose);
-    }
-    if (Number.isFinite(Number(litersTotal)) && Number(litersTotal) > 0) {
-      parts.push(formatAcidTotalLiters(litersTotal, 2));
-    }
-    if (!parts.length) return '';
-    return ' <span style="font-size:0.8rem;color:#64748b;">(' +
-      t('equiv. vol.', 'vol. equiv.') + ' ' + parts.join(' · ') + ')</span>';
+    /* Polvo: no mostrar “equiv. vol.” junto a la dosis (confunde). La masa es lo que se dosifica. */
+    return '';
   }
 
   function acidLiquidMassHint(kg) {

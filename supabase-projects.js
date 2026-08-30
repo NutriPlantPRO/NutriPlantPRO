@@ -1039,6 +1039,35 @@
       } catch (e) { console.warn('⚠️ syncUserCustomHydroSolutions:', e); }
     },
 
+    fetchUserCustomHydroCyclePrograms: async function(userId) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return null;
+      const client = getClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client.from('profiles').select('custom_hydro_cycle_programs').eq('id', userId).single();
+        if (error || !data) return null;
+        return data.custom_hydro_cycle_programs && typeof data.custom_hydro_cycle_programs === 'object'
+          ? data.custom_hydro_cycle_programs
+          : null;
+      } catch (e) { return null; }
+    },
+
+    syncUserCustomHydroCyclePrograms: async function(userId, customHydroCyclePrograms) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return;
+      const client = getClient();
+      if (!client) return;
+      try {
+        const payload = customHydroCyclePrograms && typeof customHydroCyclePrograms === 'object'
+          ? customHydroCyclePrograms
+          : { items: [] };
+        const { error } = await client.from('profiles').update({
+          custom_hydro_cycle_programs: payload,
+          updated_at: new Date().toISOString()
+        }).eq('id', userId);
+        if (error) console.warn('⚠️ Supabase sync programas del ciclo:', error.message);
+      } catch (e) { console.warn('⚠️ syncUserCustomHydroCyclePrograms:', e); }
+    },
+
     /** Biblioteca de curvas extracción/etapa del usuario (profiles.extraccion_etapa_presets) */
     fetchUserExtraccionEtapaPresets: async function(userId) {
       if (!userId || !UUID_REGEX.test(String(userId))) return null;
@@ -1455,6 +1484,20 @@
   window.nutriplantFetchCustomHydroSolutionsFromCloud = function(userId) {
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserCustomHydroSolutions) {
       return window.nutriplantSupabaseProjects.fetchUserCustomHydroSolutions(userId);
+    }
+    return Promise.resolve(null);
+  };
+
+  window.nutriplantSyncCustomHydroCycleProgramsToCloud = function(userId, programs) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncUserCustomHydroCyclePrograms) {
+      return window.nutriplantSupabaseProjects.syncUserCustomHydroCyclePrograms(userId, programs);
+    }
+    return Promise.resolve();
+  };
+
+  window.nutriplantFetchCustomHydroCycleProgramsFromCloud = function(userId) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserCustomHydroCyclePrograms) {
+      return window.nutriplantSupabaseProjects.fetchUserCustomHydroCyclePrograms(userId);
     }
     return Promise.resolve(null);
   };

@@ -259,28 +259,63 @@ function hydroSaveCustomSolutions() {
   } catch (e) { console.warn('Sync soluciones hidropónicas:', e); }
 }
 
+/** Reemplazo total desde el iframe (lista autoritativa: altas y bajas). */
+function hydroReplaceCustomSolutionsFromExternal(items) {
+  const catalog = window.NpHydroSolutionCatalog;
+  const list = Array.isArray(items) ? items : [];
+  hydroCustomSolutionsUser = list
+    .map(function (raw) { return catalog && catalog.normalize ? catalog.normalize(raw) : raw; })
+    .filter(function (entry) { return entry && entry.id; });
+  hydroSaveCustomSolutions();
+}
+
+/** @deprecated Preferir hydroReplaceCustomSolutionsFromExternal para no “resucitar” eliminadas. */
 function hydroMergeCustomSolutionsFromExternal(items) {
   if (!Array.isArray(items) || !items.length) return;
-  hydroLoadCustomSolutionsSync();
-  const catalog = window.NpHydroSolutionCatalog;
-  let changed = false;
-  items.forEach(function (raw) {
-    const entry = catalog && catalog.normalize ? catalog.normalize(raw) : raw;
-    if (!entry || !entry.id) return;
-    const idx = hydroCustomSolutionsUser.findIndex(function (it) { return it.id === entry.id || it.name === entry.name; });
-    if (idx >= 0) {
-      hydroCustomSolutionsUser[idx] = Object.assign({}, hydroCustomSolutionsUser[idx], entry);
-    } else {
-      hydroCustomSolutionsUser.push(entry);
-    }
-    changed = true;
-  });
-  if (changed) hydroSaveCustomSolutions();
+  hydroReplaceCustomSolutionsFromExternal(
+    (hydroGetCustomSolutionsSnapshot() || []).concat(items)
+  );
 }
+window.hydroReplaceCustomSolutionsFromExternal = hydroReplaceCustomSolutionsFromExternal;
 window.hydroMergeCustomSolutionsFromExternal = hydroMergeCustomSolutionsFromExternal;
 window.hydroGetCustomSolutionsSnapshot = function () {
   hydroLoadCustomSolutionsSync();
   return Array.isArray(hydroCustomSolutionsUser) ? hydroCustomSolutionsUser.slice() : [];
+};
+
+let hydroCustomCycleProgramsUser = [];
+
+function hydroLoadCustomCycleProgramsSync() {
+  const profile = hydroLoadUserProfile();
+  hydroCustomCycleProgramsUser = Array.isArray(profile?.customHydroCyclePrograms?.items)
+    ? profile.customHydroCyclePrograms.items
+    : [];
+}
+
+function hydroSaveCustomCyclePrograms() {
+  const userId = hydroGetCurrentUserId();
+  if (!userId) return;
+  const profile = hydroLoadUserProfile() || {};
+  profile.customHydroCyclePrograms = { items: hydroCustomCycleProgramsUser };
+  try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
+  try {
+    if (typeof window.nutriplantSyncCustomHydroCycleProgramsToCloud === 'function') {
+      window.nutriplantSyncCustomHydroCycleProgramsToCloud(userId, profile.customHydroCyclePrograms);
+    }
+  } catch (e) { console.warn('Sync programas del ciclo:', e); }
+}
+
+function hydroReplaceCustomCycleProgramsFromExternal(items) {
+  const list = Array.isArray(items) ? items : [];
+  hydroCustomCycleProgramsUser = list.filter(function (it) {
+    return it && it.name && Array.isArray(it.stages) && it.stages.length;
+  });
+  hydroSaveCustomCyclePrograms();
+}
+window.hydroReplaceCustomCycleProgramsFromExternal = hydroReplaceCustomCycleProgramsFromExternal;
+window.hydroGetCustomCycleProgramsSnapshot = function () {
+  hydroLoadCustomCycleProgramsSync();
+  return Array.isArray(hydroCustomCycleProgramsUser) ? hydroCustomCycleProgramsUser.slice() : [];
 };
 
 function hydroLoadCustomSolutions() {
@@ -292,6 +327,19 @@ function hydroLoadCustomSolutions() {
     hydroCustomSolutionsUser = bucket.items;
     const profile = hydroLoadUserProfile() || {};
     profile.customHydroSolutions = bucket;
+    try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
+  }).catch(function () {});
+}
+
+function hydroLoadCustomCyclePrograms() {
+  hydroLoadCustomCycleProgramsSync();
+  const userId = hydroGetCurrentUserId();
+  if (!userId || typeof window.nutriplantFetchCustomHydroCycleProgramsFromCloud !== 'function') return;
+  window.nutriplantFetchCustomHydroCycleProgramsFromCloud(userId).then(function (bucket) {
+    if (!bucket || !Array.isArray(bucket.items)) return;
+    hydroCustomCycleProgramsUser = bucket.items;
+    const profile = hydroLoadUserProfile() || {};
+    profile.customHydroCyclePrograms = bucket;
     try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
   }).catch(function () {});
 }
@@ -4067,6 +4115,7 @@ function initHydroponiaUI() {
   hydroEnsureDefaults();
   hydroLoadCustomMaterials();
   hydroLoadCustomSolutions();
+  hydroLoadCustomCyclePrograms();
   initHydroponiaTabs();
   hydroRestoreLastTab();
   hydroApplyStaticTranslations();

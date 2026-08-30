@@ -166,10 +166,12 @@
     }
   }
 
-  function saveCustomSolutions(items) {
+  function saveCustomSolutions(items, opts) {
+    opts = opts || {};
     try {
       localStorage.setItem(CUSTOM_LS_KEY, JSON.stringify({ items: items || [] }));
     } catch (e) { /* ignore */ }
+    if (opts.silent) return;
     try {
       if (root.parent && root.parent !== root && /embed=dashboard/.test(location.search || '')) {
         root.parent.postMessage({
@@ -194,10 +196,12 @@
     }
   }
 
-  function saveCustomCyclePrograms(items) {
+  function saveCustomCyclePrograms(items, opts) {
+    opts = opts || {};
     try {
       localStorage.setItem(CUSTOM_CYCLE_KEY, JSON.stringify({ items: items || [] }));
     } catch (e) { /* ignore */ }
+    if (opts.silent) return;
     try {
       if (root.parent && root.parent !== root && /embed=dashboard/.test(location.search || '')) {
         root.parent.postMessage({
@@ -877,12 +881,18 @@
     if (api && api.onCatalogSaved) api.onCatalogSaved(entry);
     if (window.showMessage) {
       window.showMessage(
-        t('Programa guardado en tu catálogo (' + entry.stages.length + ' etapas).', 'Program saved to your catalog (' + entry.stages.length + ' stages).'),
+        t(
+          'Programa guardado. Ábrelo en «Mis programas» (no es una solución individual del catálogo Steiner).',
+          'Program saved. Open it in “My programs” (it is not a single Steiner-style solution).'
+        ),
         'success'
       );
     } else {
       window.alert(
-        t('Programa guardado en tu catálogo (' + entry.stages.length + ' etapas).', 'Program saved to your catalog (' + entry.stages.length + ' stages).')
+        t(
+          'Programa guardado. Ábrelo en «Mis programas» (no es una solución individual del catálogo Steiner).',
+          'Program saved. Open it in “My programs” (it is not a single Steiner-style solution).'
+        )
       );
     }
   }

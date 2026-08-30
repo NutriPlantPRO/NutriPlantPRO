@@ -583,7 +583,7 @@
       { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2, noteEs: 'Aporta SO₄²⁻ (~96 % m/m)', noteEn: 'Contributes SO₄²⁻ (~96% w/w)' },
       { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12.0, densityKgL: 1.57, nH: 3, noteEs: 'Aporta P₂O₅ (~54 % m/m)', noteEn: 'Contributes P₂O₅ (~54% w/w)' },
       { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3, noteEs: 'Aporta P₂O₅ (~61 % m/m)', noteEn: 'Contributes P₂O₅ (~61% w/w)' },
-      { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, noteEs: 'Polvo soluble anhidro; dosificar por masa (kg/g). Densidad ~1.665 kg/L solo para equivalencia volumétrica; solo acidifica', noteEn: 'Anhydrous soluble powder; dose by mass (kg/lb). Density ~1.665 kg/L only for volume equivalence; acidifies only' }
+      { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, noteEs: 'Polvo soluble anhidro; dosificar por masa (kg/g). No uses litros: la densidad es solo un dato técnico del cálculo interno; solo acidifica', noteEn: 'Anhydrous soluble powder; dose by mass (kg/lb). Do not use liters: density is only an internal calc factor; acidifies only' }
     ];
 
     const el = {
@@ -904,10 +904,10 @@
         : '—';
       const note = en ? (acid.noteEn || acid.noteEs || '') : (acid.noteEs || '');
       const doseLine = isSolid
-        ? `${wt('Dosis', 'Dose')} = <strong>${massPerVolText}</strong> ${wt('de polvo', 'of powder')} <span class="muted">(${wt('equiv. vol.', 'vol. equiv.')} ${doseText})</span>`
+        ? `${wt('Dosis', 'Dose')} = <strong>${massPerVolText}</strong> ${wt('de polvo', 'of powder')}`
         : `${wt('Dosis', 'Dose')} = <strong>${doseText}</strong> ${wt('de ácido', 'of acid')}`;
       const totalLine = isSolid
-        ? `${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${massText}</strong> ${wt('de polvo', 'of powder')} <span class="muted">(${wt('equiv. vol.', 'vol. equiv.')} ${totalAcidText})</span>`
+        ? `${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${massText}</strong> ${wt('de polvo', 'of powder')}`
         : `${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${totalAcidText}</strong> ${wt('de ácido', 'of acid')} · ${wt('aprox.', 'approx.')} <strong>${massText}</strong>`;
       el.acidResult.innerHTML = `
         <strong>${wt('Resultado con', 'Result with')} ${waterUI.translateString(acid.name)}:</strong><br>
@@ -919,7 +919,7 @@
           ${isSolid ? wt('Forma', 'Form') + ': <strong>' + wt('Polvo soluble', 'Soluble powder') + '</strong> · ' : ''}
           ${wt('Fórmula', 'Formula')}: <span class="notranslate" translate="no">${acid.formula || '—'}</span> ·
           ${wt('Pureza', 'Purity')}: <span class="notranslate" translate="no">${acid.purityPct != null ? acid.purityPct + '%' : '—'}</span> ·
-          ${wt('Densidad', 'Density')}: <span class="notranslate" translate="no">${densTxt}</span>${isSolid ? ' <span class="muted">(' + wt('equiv. vol.', 'vol. equiv.') + ')</span>' : ''}<br>
+          ${wt('Densidad', 'Density')}: <span class="notranslate" translate="no">${densTxt}</span><br>
           ${wt('Fuerza', 'Strength')}: <span class="notranslate" translate="no">${acid.meqPerMl} meq/mL</span> ·
           ${wt('H⁺ útiles / mol', 'Useful H⁺ / mol')}: <span class="notranslate" translate="no">${acid.nH != null ? acid.nH : '—'}</span>
           ${note ? '<br><span class="muted">' + note + '</span>' : ''}

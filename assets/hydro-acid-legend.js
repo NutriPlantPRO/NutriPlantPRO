@@ -37,9 +37,7 @@
 
   function dosePrimaryHtml(lang, calc) {
     if (isSolidPowder(calc.acidId || calc.acid)) {
-      return '<strong>' + formatSolidMassPerM3(calc.kgPerM3) + '</strong>' +
-        ' <span style="color:#64748b;font-size:0.92em;">(' + t(lang, 'equiv. vol.', 'vol. equiv.') + ' ' +
-        calc.mlPerM3.toFixed(2) + ' mL/m³)</span>';
+      return '<strong>' + formatSolidMassPerM3(calc.kgPerM3) + '</strong>';
     }
     return '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong>';
   }
@@ -182,9 +180,7 @@
       analysisLitersText = t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
     } else if (extra.solidPowder && Number.isFinite(extra.analysisTotalKg)) {
       analysisLitersText = formatSolidMassKg(lang, extra.analysisTotalKg) + ' ' +
-        t(lang, 'de polvo', 'of powder') +
-        ' <span style="color:#64748b;">(' + Number(analysisTotalLiters).toFixed(2) + ' L ' +
-        t(lang, 'equiv.', 'equiv.') + ')</span>';
+        t(lang, 'de polvo', 'of powder');
     } else {
       analysisLitersText = Number(analysisTotalLiters).toFixed(2) + ' L';
     }
@@ -200,9 +196,7 @@
       return t(lang, 'Para el volumen de aquí', 'For this volume') +
         ' (' + (Number(volumeM3) || 0).toFixed(2) + ' m³): <strong>' +
         formatSolidMassKg(lang, extra.totalKg) + '</strong> ' +
-        t(lang, 'de polvo', 'of powder') +
-        ' <span style="color:#64748b;">(' + (Number(totalLiters) || 0).toFixed(2) + ' L ' +
-        t(lang, 'equiv.', 'equiv.') + ')</span>. ';
+        t(lang, 'de polvo', 'of powder') + '. ';
     }
     return t(lang, 'Para el volumen de aquí', 'For this volume') +
       ' (' + (Number(volumeM3) || 0).toFixed(2) + ' m³): <strong>' +
