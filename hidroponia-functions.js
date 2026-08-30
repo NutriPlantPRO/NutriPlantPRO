@@ -3324,7 +3324,9 @@ function renderHydroNitrogenSummary() {
   const pctNo3 = nTotal > 0 ? (nNo3 / nTotal) * 100 : 0;
   const pctNh4 = nTotal > 0 ? (nNh4 / nTotal) * 100 : 0;
   const stageName = stage.name || hydroT('Solución nutritiva', 'Nutrient solution');
-  infoEl.textContent = `${stageName} · Suma de N (meq/L): ${nTotal.toFixed(2)} · % Nitrato: ${pctNo3.toFixed(1)}% · % Amonio: ${pctNh4.toFixed(1)}%.`;
+  // Nombre del programa/etapa en negrita para que se note en el resumen.
+  infoEl.innerHTML = `<strong style="color:#0f172a;font-weight:700;">${hydroEscapeAttr(stageName)}</strong>` +
+    ` · Suma de N (meq/L): ${nTotal.toFixed(2)} · % Nitrato: ${pctNo3.toFixed(1)}% · % Amonio: ${pctNh4.toFixed(1)}%.`;
 }
 
 function renderHydroAll() {
