@@ -24,11 +24,21 @@
     html.embed-dashboard body {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      height: 100%;
+    }
+    html.embed-dashboard body {
+      padding: 10px 12px 16px;
+      box-sizing: border-box;
     }
     .hydroponia-container {
       margin: 0;
       max-width: 100%;
       min-width: 0;
+    }
+    html.embed-dashboard .hydroponia-container,
+    html.embed-dashboard .hydro-free-solution {
+      max-width: none;
+      width: 100%;
     }
     .hydro-free-solution .hydroponia-content,
     .hydro-free-solution .hydro-card {
@@ -571,7 +581,7 @@
     .hydro-cycle-actions { white-space: nowrap; }
     .hydro-cycle-grid {
       display: grid;
-      grid-template-columns: minmax(280px, 480px) 1fr;
+      grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.35fr);
       gap: 14px;
       margin-top: 14px;
     }
@@ -744,10 +754,11 @@
       margin: 0;
       padding: 0 0 0 1.1rem;
       display: grid;
-      gap: 4px;
+      gap: 6px;
     }
     .hydro-cycle-pheno-summary__list li {
       margin: 0;
+      max-width: 100%;
     }
     .hydro-cycle-pheno-summary__note {
       margin: 8px 0 0;
@@ -1606,7 +1617,7 @@
   <script src="assets/fert-formula-engine.js"></script>
   <script src="assets/hydro-fert-aporte-catalog.js?v=20260535"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
-  <script src="assets/hydro-cycle-program.js?v=20260830phenoBox"></script>
+  <script src="assets/hydro-cycle-program.js?v=20260830phenoMore"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];

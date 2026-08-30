@@ -726,24 +726,37 @@
         '</div>' +
         '<p class="hydro-cycle-pheno-summary__lead">' +
           escapeAttr(t(
-            'Orientativo (no es diagnóstico). Se basa sobre todo en K/N y CE; el Ca entra solo vía %K en cationes.',
-            'Indicative (not a diagnosis). Driven mainly by K/N and EC; Ca only affects %K among cations.'
+            'Orientativo (no es diagnóstico). Se basa sobre todo en K/N y CE; el Ca entra solo vía %K en cationes (K÷(K+Ca+Mg)).',
+            'Indicative (not a diagnosis). Driven mainly by K/N and EC; Ca only affects %K among cations (K÷(K+Ca+Mg)).'
           )) +
         '</p>' +
         '<ul class="hydro-cycle-pheno-summary__list">' +
           '<li><strong style="color:#16a34a">' + escapeAttr(t('Vegetativa', 'Vegetative')) + '</strong> — ' +
-            escapeAttr(t('K/N bajo (N domina) y/o CE baja.', 'Low K/N (N dominates) and/or low EC.')) + '</li>' +
+            escapeAttr(t(
+              'K/N bajo (N domina, p. ej. ≤ 0.95) y/o CE baja (< 1.4 dS/m); también si el N-NO₃⁻ es muy alto frente al N total.',
+              'Low K/N (N dominates, e.g. ≤ 0.95) and/or low EC (< 1.4 dS/m); also if N-NO₃⁻ is very high vs total N.'
+            )) + '</li>' +
           '<li><strong style="color:#0284c7">' + escapeAttr(t('Prefloración', 'Pre-flowering')) + '</strong> — ' +
-            escapeAttr(t('K/N ≈ 0.9–1.2 (N y K equilibrados).', 'K/N ≈ 0.9–1.2 (N and K balanced).')) + '</li>' +
+            escapeAttr(t(
+              'K/N ≈ 0.9–1.2 (N y K equilibrados) con CE intermedia (sin extremos bajos ni muy altos); paso de vegetativo a floración.',
+              'K/N ≈ 0.9–1.2 (N and K balanced) with intermediate EC (not very low nor very high); vegetative → flowering shift.'
+            )) + '</li>' +
           '<li><strong style="color:#d97706">' + escapeAttr(t('Floración', 'Flowering')) + '</strong> — ' +
-            escapeAttr(t('K/N alto y %K catiónico elevado.', 'High K/N and elevated cationic %K.')) + '</li>' +
+            escapeAttr(t(
+              'K/N alto (> 1.15) y %K catiónico elevado (≥ 34%); CE suele subir respecto a vegetativo.',
+              'High K/N (> 1.15) and elevated cationic %K (≥ 34%); EC often rises vs vegetative.'
+            )) + '</li>' +
           '<li><strong style="color:#7c3aed">' + escapeAttr(t('Producción', 'Production')) + '</strong> — ' +
-            escapeAttr(t('K/N muy alto + CE alta o %K muy alto.', 'Very high K/N + high EC or very high %K.')) + '</li>' +
+            escapeAttr(t(
+              'K/N muy alto (> 1.45) y CE alta (≥ 2.0 dS/m) o %K muy alto (≥ 38%); tipicamente llenado / demanda de K.',
+              'Very high K/N (> 1.45) and high EC (≥ 2.0 dS/m) or very high %K (≥ 38%); typically filling / K demand.'
+            )) + '</li>' +
         '</ul>' +
         '<p class="hydro-cycle-pheno-summary__note">' +
           '<strong>K/N</strong> = K⁺ ÷ (N-NO₃⁻ + N-NH₄⁺) ' +
           escapeAttr(t('en meq/L', 'in meq/L')) + '. ' +
           '<strong>%K</strong> = K ÷ (K+Ca+Mg) × 100. ' +
+          '<strong>CE</strong> ' + escapeAttr(t('en dS/m (de la etapa).', 'in dS/m (from the stage).')) + ' ' +
           escapeAttr(t('Pasa el cursor por una etapa para ver el detalle.', 'Hover a stage for the detail.')) +
         '</p>' +
       '</aside>'
