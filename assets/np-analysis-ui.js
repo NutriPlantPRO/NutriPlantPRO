@@ -152,6 +152,7 @@
     'Ácido Sulfúrico 98%': 'Sulfuric Acid 98%',
     'Ácido Fosfórico 75%': 'Phosphoric Acid 75%',
     'Ácido Fosfórico 85%': 'Phosphoric Acid 85%',
+    'Ácido Cítrico Anhidro 99.5%': 'Citric Acid Anhydrous 99.5%',
     'Macronutrientes en fruta (%)': 'Fruit macronutrients (%)',
     'Calcio en Fruta (mg/100 g MF)': 'Fruit Calcium (mg/100 g FW)',
     'Calidad de Fruta': 'Fruit Quality',

@@ -309,7 +309,7 @@
   "dashboard": {
     "document_title": "Panel — NutriPlant Pro",
     "home": "Inicio",
-    "hydroponics": "Hidroponía",
+    "hydroponics": "Solución Nutritiva",
     "fertigation": "Fertirriego",
     "report": "Reporte",
     "project": "Proyecto",
@@ -340,6 +340,7 @@
     "tool_oxide": "Conversor Óxido ↔ Elemental",
     "tool_units": "Conversor de unidades (ppm/mmol/meq)",
     "tool_hydro": "Diseño de solución nutritiva",
+    "tool_hydro_pulse": "Pulso de riego en hidroponía",
     "tool_n": "Estimación de N mineralizable",
     "tool_water": "Diagnóstico de agua y acondicionamiento",
     "tool_soil_water": "Agua en suelo y textura",

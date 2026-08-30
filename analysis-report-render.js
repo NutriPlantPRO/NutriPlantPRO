@@ -145,7 +145,8 @@
             { id: 'acido_nitrico_55', name: tr('Ácido Nítrico 55%', 'Nitric Acid 55%'), meqPerMl: 11.6 },
             { id: 'acido_sulfurico_98', name: tr('Ácido Sulfúrico 98%', 'Sulfuric Acid 98%'), meqPerMl: 36.7 },
             { id: 'acido_fosforico_75', name: tr('Ácido Fosfórico 75%', 'Phosphoric Acid 75%'), meqPerMl: 12.0 },
-            { id: 'acido_fosforico_85', name: tr('Ácido Fosfórico 85%', 'Phosphoric Acid 85%'), meqPerMl: 14.6 }
+            { id: 'acido_fosforico_85', name: tr('Ácido Fosfórico 85%', 'Phosphoric Acid 85%'), meqPerMl: 14.6 },
+            { id: 'acido_citrico_anhidro', name: tr('Ácido Cítrico Anhidro 99.5%', 'Citric Acid Anhydrous 99.5%'), meqPerMl: 25.9 }
         ];
         var SOIL_PHYSICAL_LABELS = {
             texturalClass: tr('Clase textural', 'Textural class'),

@@ -2034,7 +2034,7 @@ _Valores de referencia técnica en kg/ton (orden igual al dashboard)_
 
   shouldHandleAcidCatalogQuery(message) {
     const normalized = this.normalizeCropQuery(message);
-    const hasAcidIntent = /(acido|ácido|nitrico|fosforico|sulfurico|borico|hno3|h3po4|h2so4|densidad|litro|kg eq|precargad)/.test(normalized);
+    const hasAcidIntent = /(acido|ácido|nitrico|fosforico|sulfurico|citrico|cítrico|borico|hno3|h3po4|h2so4|c6h8o7|densidad|litro|kg eq|precargad)/.test(normalized);
     const mentionsContext = /(agua|hidro|hidropon|ferti|fertirriego)/.test(normalized);
     return hasAcidIntent && (mentionsContext || normalized.includes('acido') || normalized.includes('ácido'));
   }
@@ -3041,9 +3041,9 @@ ${microTable}
 
   getCurrentViewType() {
     const title = document.querySelector('.top h1')?.textContent?.trim();
-    if (title?.includes('Análisis')) return 'analysis';
-    if (title?.includes('Fertirriego')) return 'fertigation';
-    if (title?.includes('Hidroponía')) return 'hydroponics';
+    if (title?.includes('Análisis') || title?.includes('Analysis')) return 'analysis';
+    if (title?.includes('Fertirriego') || title?.includes('Fertigation')) return 'fertigation';
+    if (title?.includes('Hidroponía') || title?.includes('Hydroponics') || (title?.includes('Solución Nutritiva') && !title?.includes('Análisis')) || (title?.includes('Nutrient Solution') && !title?.includes('Analysis'))) return 'hydroponics';
     if (title?.includes('Inicio')) return 'home';
     return 'unknown';
   }

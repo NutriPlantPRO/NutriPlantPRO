@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#0f172a" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260821northBadge"></script>
+  <script src="assets/np-i18n.js?v=20260830cycle"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-analysis-ui.js?v=20260817a"></script>
@@ -50,7 +50,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png?v=20260815r">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260822lectura-table" />
+  <link rel="stylesheet" href="dashboard.css?v=20260830cycle" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -229,6 +229,7 @@
           <button type="button" id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showConversionCalculator()" data-np-tooltip="Conversor Óxido ↔ Elemental" data-i18n-title="dashboard.tool_oxide" data-i18n-aria-label="dashboard.tool_oxide" aria-label="Conversor Óxido ↔ Elemental">🧮</button>
           <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Conversor de unidades (ppm/mmol/meq)" data-i18n-title="dashboard.tool_units" data-i18n-aria-label="dashboard.tool_units" aria-label="Conversor de unidades (ppm/mmol/meq)">🧪</button>
           <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" data-i18n-title="dashboard.tool_hydro" data-i18n-aria-label="dashboard.tool_hydro" aria-label="Diseño de solución nutritiva">💧</button>
+          <button type="button" id="btn-hydro-pulse-irrigation-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroPulseIrrigationTool()" data-np-tooltip="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" data-i18n-aria-label="dashboard.tool_hydro_pulse" aria-label="Pulso de riego en hidroponía">⏱️</button>
           <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" data-i18n-aria-label="dashboard.tool_n" aria-label="Estimación de N mineralizable">🌱</button>
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" data-i18n-aria-label="dashboard.tool_water" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
           <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" data-i18n-aria-label="dashboard.tool_soil_water" aria-label="Agua en suelo y textura">🪨</button>
@@ -436,18 +437,18 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260816h"></script>
-  <script src="hidroponia-functions.js?v=20260817b"></script>
+  <script src="hidroponia-functions.js?v=20260830cycle"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260821kc"></script>
   <script src="analysis-report-render.js?v=20260817a"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260822analysisFast"></script>
+  <script src="dashboard.js?v=20260830cycle"></script>
   <script src="assets/np-fertigation-program-generator.js?v=20260817h"></script>
   <script src="fertirriego-program-functions.js?v=20260817q"></script>
   <script src="ai-knowledge-expansion.js"></script>
-  <script src="chat-simple.js?v=20260821satImg"></script>
+  <script src="chat-simple.js?v=20260830solucionNutritiva"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
   <script src="map.js?v=20260821slopeSharp"></script>
   <script src="assets/np-lectura-satelital.js?v=20260821chartWater"></script>
@@ -500,6 +501,9 @@
       }
       if (typeof showHydroSolutionCalculator !== 'undefined') {
         window.showHydroSolutionCalculator = showHydroSolutionCalculator;
+      }
+      if (typeof showHydroPulseIrrigationTool !== 'undefined') {
+        window.showHydroPulseIrrigationTool = showHydroPulseIrrigationTool;
       }
       if (typeof showMeasureUnitsCalculator !== 'undefined') {
         window.showMeasureUnitsCalculator = showMeasureUnitsCalculator;
@@ -1501,7 +1505,7 @@
         recommendations: ['Nitrato de potasio', 'Fosfato monoamónico', 'Sulfato de magnesio', 'Ácido nítrico']
       },
       hidroponia: {
-        name: 'Hidroponía',
+        name: 'Solución Nutritiva',
         icon: '🌱',
         expertise: 'Soluciones nutritivas, EC, pH, sistemas hidropónicos',
         formulas: ['EC = Σ(Concentración × Factor)', 'pH = -log[H⁺]'],
@@ -4304,7 +4308,7 @@ PREGUNTA DEL USUARIO: "${message}"`;
       const userInfo = conversationContext.userInfo;
       const currentSection = detectCurrentSection();
       const project = getProjectDataForChat();
-      const sectionNames = { enmienda: 'Enmienda (CIC / cálculo de enmiendas)', fertirriego: 'Fertirriego', hidroponia: 'Hidroponía', analisis: 'Análisis', extracto: 'Extracto de pasta', ubicacion: 'Radar Satelital', reportes: 'Reportes', configuracion: 'Configuración' };
+      const sectionNames = { enmienda: 'Enmienda (CIC / cálculo de enmiendas)', fertirriego: 'Fertirriego', hidroponia: 'Solución Nutritiva', analisis: 'Análisis', extracto: 'Extracto de pasta', ubicacion: 'Radar Satelital', reportes: 'Reportes', configuracion: 'Configuración' };
 
       let context = `Eres NutriPlant Assistant, un experto en nutrición vegetal y análisis de suelos especializado en la plataforma NutriPlant PRO.
 
@@ -4495,7 +4499,7 @@ SECCIÓN ACTUAL (pestaña donde está el usuario): ${sectionNames[currentSection
         const hydro = project.hidroponia || project.sections?.hidroponia;
         if (hydro && (hydro.stages?.length || hydro.solutions)) {
           const stages = hydro.stages?.length || 0;
-          context += `Hidroponía: ${stages} etapas; soluciones nutritivas configuradas.\n`;
+          context += `Hidroponía / Solución Nutritiva (Proyecto): ${stages} etapas; soluciones nutritivas configuradas.\n`;
         }
         const enm = project.amendments || project.enmiendas || project.sections?.enmiendas || project.sections?.amendments;
         if (enm && (enm.results || enm.selected?.length)) {
@@ -5231,9 +5235,17 @@ CONTRATO:
     }
     window.closeNMineralizableMoCalculator = closeNMineralizableMoCalculator;
 
-    function showHydroSolutionCalculator() {
+    function showHydroSolutionCalculator(opts) {
       var modal = document.getElementById('hydroSolutionCalculatorModal');
+      var frame = document.getElementById('hydroSolutionCalculatorFrame');
       if (!modal) return;
+      opts = opts || {};
+      if (frame) {
+        var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830cycle';
+        if (tab) base += '&tab=' + encodeURIComponent(tab);
+        if (frame.getAttribute('src') !== base) frame.src = base;
+      }
       modal.classList.add('show');
     }
     window.showHydroSolutionCalculator = showHydroSolutionCalculator;
@@ -5245,6 +5257,31 @@ CONTRATO:
       if (frame) frame.src = frame.src;
     }
     window.closeHydroSolutionCalculator = closeHydroSolutionCalculator;
+
+    window.addEventListener('message', function (event) {
+      try {
+        if (!event || !event.data || event.data.type !== 'np-hydro-custom-solutions') return;
+        if (typeof window.hydroMergeCustomSolutionsFromExternal === 'function') {
+          window.hydroMergeCustomSolutionsFromExternal(event.data.items || []);
+        }
+      } catch (e) { /* ignore */ }
+    });
+
+    function showHydroPulseIrrigationTool() {
+      var modal = document.getElementById('hydroPulseIrrigationToolModal');
+      if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('hydroPulseIrrigationToolFrame');
+      modal.classList.add('show');
+    }
+    window.showHydroPulseIrrigationTool = showHydroPulseIrrigationTool;
+
+    function closeHydroPulseIrrigationTool() {
+      var modal = document.getElementById('hydroPulseIrrigationToolModal');
+      var frame = document.getElementById('hydroPulseIrrigationToolFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeHydroPulseIrrigationTool = closeHydroPulseIrrigationTool;
 
     function showSoilWaterTextureTool() {
       var modal = document.getElementById('soilWaterTextureToolModal');
@@ -6289,8 +6326,8 @@ CONTRATO:
 
         <div class="report-section-item" onclick="toggleReportSection('hidroponia')" data-section="hidroponia">
           <div class="report-section-info">
-            <div class="report-section-title" data-i18n="dashboard.reports_sec_hydro_title">💧 Hidroponía</div>
-            <div class="report-section-description" data-i18n="dashboard.reports_sec_hydro_desc">Configuración y resultados del programa hidropónico</div>
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_hydro_title">💧 Solución Nutritiva</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_hydro_desc">Solución por etapa y cálculo de fertilizantes (hidroponía)</div>
           </div>
         </div>
 
@@ -7305,7 +7342,23 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260816a" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830cycle" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pulso de riego en hidroponía -->
+  <div id="hydroPulseIrrigationToolModal" class="modal-overlay" onclick="if(event.target===this) closeHydroPulseIrrigationTool();">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="dashboard.tool_hydro_pulse">⏱️ Pulso de riego en hidroponía</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeHydroPulseIrrigationTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260830a" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

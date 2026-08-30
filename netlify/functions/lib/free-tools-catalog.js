@@ -61,6 +61,14 @@ module.exports = {
         'CE objetivo → meq/L, % meq (triángulos N-P-S y K-Ca-Mg), ppm. Cl⁻ suma a CE. Triángulos arrastrables. N-NH₄ fuera del triángulo catiónico; Cl fuera del aniónico. Didáctica global; distinta de pestaña Hidroponía del proyecto (esa sí guarda en nube por proyecto).'
     },
     {
+      id: 'hidro_pulso_riego',
+      title: 'Pulso de riego en hidroponía',
+      file: 'hidro-pulso-riego-free.html',
+      lsKey: 'nutriplant_free_hidro_pulso_riego_v1',
+      summary:
+        'L y minutos del pulso: V × (% ATD) × (% agotamiento) ÷ (1 − % drenaje). Macetas, goteros/maceta y caudal L/h. Desplegable de sustratos orientativos (coco, perlita, lana de roca…). Persistencia localStorage.'
+    },
+    {
       id: 'agua_dureza',
       title: 'Diagnóstico de agua y acondicionamiento',
       file: 'agua-dureza-free.html',

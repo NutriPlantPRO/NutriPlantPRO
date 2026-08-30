@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/free-tools-embed.js"></script>
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <title>Pulso de riego en hidroponía — NutriPlant PRO</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --teal: #0d9488;
+      --teal-soft: #ecfdf5;
+      --sky: #0284c7;
+      --sky-soft: #eff6ff;
+      --amber: #c2410c;
+      --amber-soft: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+    .card-hero {
+      padding: 16px 18px;
+      background: linear-gradient(135deg, #ecfdf5 0%, #e0f2fe 100%);
+      border-bottom: 1px solid #cbd5e1;
+    }
+    h1 { font-size: 18px; margin: 0 0 8px; color: #0f172a; }
+    p.note { margin: 0; color: var(--muted); line-height: 1.5; }
+    .embed-lead {
+      display: none;
+      margin: 0 0 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: linear-gradient(135deg, #ecfdf5 0%, #e0f2fe 100%);
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    html.embed-dashboard .card-intro,
+    html.embed-login .card-intro { display: none; }
+    html.embed-dashboard .embed-lead,
+    html.embed-login .embed-lead { display: block; }
+    html.embed-dashboard body,
+    html.embed-login body { padding: 10px 14px 16px; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      background: linear-gradient(90deg, #0d9488 0%, #14b8a6 50%, #38bdf8 100%);
+    }
+    .section-head--sky {
+      background: linear-gradient(90deg, #0369a1 0%, #0ea5e9 50%, #38bdf8 100%);
+    }
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.25);
+      font-size: 13px;
+    }
+    .section-body { padding: 14px 16px 16px; }
+    .section-note {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px) {
+      .grid--2 { grid-template-columns: 1fr 1fr; }
+      .grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .field label {
+      display: block;
+      font-weight: 600;
+      font-size: 12px;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .field .hint {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .field input[type="number"],
+    .field select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+    .field input:focus,
+    .field select:focus {
+      outline: none;
+      border-color: #14b8a6;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+    }
+    .results-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 560px) {
+      .results-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .result-tile {
+      border: 1px solid #a7f3d0;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 100%);
+      padding: 14px 16px;
+    }
+    .result-tile--main {
+      border-color: #7dd3fc;
+      background: linear-gradient(180deg, #eff6ff 0%, #f0f9ff 100%);
+      grid-column: 1 / -1;
+    }
+    .result-tile--amber {
+      border-color: #fdba74;
+      background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+    }
+    .result-tile .label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #047857;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .result-tile--main .label { color: #0369a1; }
+    .result-tile--amber .label { color: #c2410c; }
+    .result-tile .value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 4px;
+    }
+    .result-tile .sub {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .formula-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.55;
+    }
+    .formula-box code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      color: #0f172a;
+    }
+    .warn {
+      margin-top: 12px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #92400e;
+      line-height: 1.45;
+    }
+    .steps {
+      margin: 10px 0 0;
+      padding-left: 1.15rem;
+      color: #475569;
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card card-intro">
+      <div class="card-hero">
+        <h1 data-i18n-pulse="title">💧 Pulso de riego en hidroponía</h1>
+        <p class="note" data-i18n-pulse="lead">
+          Calcula litros y minutos del pulso según volumen del contenedor, agua disponible del sustrato, agotamiento, drenaje, macetas y goteros.
+        </p>
+      </div>
+    </div>
+    <p class="embed-lead" data-i18n-pulse="lead">
+      Calcula litros y minutos del pulso según volumen del contenedor, agua disponible del sustrato, agotamiento, drenaje, macetas y goteros.
+    </p>
+
+    <div class="card">
+      <h2 class="section-head">
+        <span class="section-badge">1</span>
+        <span data-i18n-pulse="sec_inputs">Contenedor, sustrato y criterio</span>
+      </h2>
+      <div class="section-body">
+        <p class="section-note" data-i18n-pulse="sec_inputs_note">
+          Lo ideal: reponer el agotamiento permitido de la agua disponible y añadir el % de drenaje para lavar sales.
+        </p>
+        <div class="grid grid--2">
+          <div class="field">
+            <label for="volContainer" data-i18n-pulse="lbl_vol">Volumen del contenedor (L)</label>
+            <input id="volContainer" type="number" min="0.1" step="0.1" value="13" />
+            <p class="hint" data-i18n-pulse="hint_vol">Ej. bolsa o maceta de 13 L.</p>
+          </div>
+          <div class="field">
+            <label for="substrate" data-i18n-pulse="lbl_substrate">Sustrato (orientativo)</label>
+            <select id="substrate"></select>
+            <p class="hint" data-i18n-pulse="hint_substrate">Al elegir, se sugiere un % de agua disponible; puedes editarlo.</p>
+          </div>
+          <div class="field">
+            <label for="awPct" data-i18n-pulse="lbl_aw">Agua totalmente disponible (% del volumen)</label>
+            <input id="awPct" type="number" min="0.1" max="100" step="0.1" value="15" />
+            <p class="hint" data-i18n-pulse="hint_aw">Fracción del contenedor que es agua útil para la planta.</p>
+          </div>
+          <div class="field">
+            <label for="depletionPct" data-i18n-pulse="lbl_depletion">Agotamiento para volver a regar (%)</label>
+            <input id="depletionPct" type="number" min="0.1" max="100" step="0.1" value="5" />
+            <p class="hint" data-i18n-pulse="hint_depletion">% de esa agua disponible que dejas bajar antes del siguiente pulso.</p>
+          </div>
+          <div class="field">
+            <label for="drainPct" data-i18n-pulse="lbl_drain">Drenaje deseado (%)</label>
+            <input id="drainPct" type="number" min="0" max="90" step="0.1" value="30" />
+            <p class="hint" data-i18n-pulse="hint_drain">Ej. 30% → se divide entre 0,70 para cubrir el lavado.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-head section-head--sky">
+        <span class="section-badge">2</span>
+        <span data-i18n-pulse="sec_system">Sistema: macetas y goteros</span>
+      </h2>
+      <div class="section-body">
+        <div class="grid grid--3">
+          <div class="field">
+            <label for="pots" data-i18n-pulse="lbl_pots">Total de macetas</label>
+            <input id="pots" type="number" min="1" step="1" value="1" />
+          </div>
+          <div class="field">
+            <label for="drippersPerPot" data-i18n-pulse="lbl_drippers">Goteros por maceta</label>
+            <input id="drippersPerPot" type="number" min="1" step="1" value="1" />
+          </div>
+          <div class="field">
+            <label for="dripperLph" data-i18n-pulse="lbl_flow">Caudal del gotero (L/h)</label>
+            <input id="dripperLph" type="number" min="0.1" step="0.1" value="3" />
+            <p class="hint" data-i18n-pulse="hint_flow">Ej. gotero de 3 L/h.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-head">
+        <span class="section-badge">3</span>
+        <span data-i18n-pulse="sec_results">Resultado del pulso</span>
+      </h2>
+      <div class="section-body">
+        <div class="results-grid" id="resultsGrid"></div>
+        <ol class="steps" id="stepsList"></ol>
+        <div class="formula-box" id="formulaBox"></div>
+        <div class="warn" data-i18n-pulse="warn">
+          Orientativo: valida en campo el % de drenaje real, la retención del sustrato y la uniformidad de goteros. No sustituye un ensayo de drenaje.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function () {
+  'use strict';
+
+  var SUBSTRATES = [
+    { id: 'custom', aw: null, es: 'Personalizado', en: 'Custom' },
+    { id: 'coco', aw: 30, es: 'Fibra de coco (~30%)', en: 'Coco coir (~30%)' },
+    { id: 'peat', aw: 35, es: 'Turba / peat mix (~35%)', en: 'Peat mix (~35%)' },
+    { id: 'rockwool', aw: 40, es: 'Lana de roca (~40%)', en: 'Rockwool (~40%)' },
+    { id: 'perlite', aw: 15, es: 'Perlita (~15%)', en: 'Perlite (~15%)' },
+    { id: 'vermiculite', aw: 25, es: 'Vermiculita (~25%)', en: 'Vermiculite (~25%)' },
+    { id: 'leca', aw: 8, es: 'Arcilla expandida / LECA (~8%)', en: 'Expanded clay / LECA (~8%)' },
+    { id: 'bark', aw: 20, es: 'Corteza de pino (~20%)', en: 'Pine bark (~20%)' },
+    { id: 'coco_perlite_70', aw: 25, es: 'Coco–perlita 70/30 (~25%)', en: 'Coco–perlite 70/30 (~25%)' },
+    { id: 'coco_perlite_50', aw: 20, es: 'Coco–perlita 50/50 (~20%)', en: 'Coco–perlite 50/50 (~20%)' }
+  ];
+
+  var I18N = {
+    es: {
+      title: '💧 Pulso de riego en hidroponía',
+      lead: 'Calcula litros y minutos del pulso según volumen del contenedor, agua disponible del sustrato, agotamiento, drenaje, macetas y goteros.',
+      sec_inputs: 'Contenedor, sustrato y criterio',
+      sec_inputs_note: 'Lo ideal: reponer el agotamiento permitido de la agua disponible y añadir el % de drenaje para lavar sales.',
+      lbl_vol: 'Volumen del contenedor (L)',
+      hint_vol: 'Ej. bolsa o maceta de 13 L.',
+      lbl_substrate: 'Sustrato (orientativo)',
+      hint_substrate: 'Al elegir, se sugiere un % de agua disponible; puedes editarlo.',
+      lbl_aw: 'Agua totalmente disponible (% del volumen)',
+      hint_aw: 'Fracción del contenedor que es agua útil para la planta.',
+      lbl_depletion: 'Agotamiento para volver a regar (%)',
+      hint_depletion: '% de esa agua disponible que dejas bajar antes del siguiente pulso.',
+      lbl_drain: 'Drenaje deseado (%)',
+      hint_drain: 'Ej. 30% → se divide entre 0,70 para cubrir el lavado.',
+      sec_system: 'Sistema: macetas y goteros',
+      lbl_pots: 'Total de macetas',
+      lbl_drippers: 'Goteros por maceta',
+      lbl_flow: 'Caudal del gotero (L/h)',
+      hint_flow: 'Ej. gotero de 3 L/h.',
+      sec_results: 'Resultado del pulso',
+      res_net: 'Agua a reponer (sin drenaje)',
+      res_applied: 'Pulso por maceta (con drenaje)',
+      res_minutes: 'Minutos de riego del pulso',
+      res_total_l: 'Litros totales del pulso',
+      res_drippers: 'Goteros en el sistema',
+      res_flow: 'Caudal total del sistema',
+      per_pot: 'por maceta',
+      all_pots: 'todas las macetas en paralelo',
+      step1: 'Agua disponible en el contenedor',
+      step2: 'Agotamiento a reponer (sin drenaje)',
+      step3: 'Factor de eficiencia por drenaje',
+      step4: 'Litros aplicados por maceta',
+      step5: 'Caudal por maceta y tiempo',
+      formula: 'Fórmulas',
+      warn: 'Orientativo: valida en campo el % de drenaje real, la retención del sustrato y la uniformidad de goteros. No sustituye un ensayo de drenaje.',
+      invalid: 'Revisa los valores: volumen, %, macetas, goteros y caudal deben ser válidos. El drenaje debe ser menor a 100%.',
+      unit_l: 'L',
+      unit_lph: 'L/h',
+      unit_min: 'min'
+    },
+    en: {
+      title: '💧 Hydroponic irrigation pulse',
+      lead: 'Compute pulse liters and minutes from container volume, substrate available water, depletion, drainage, pots and drippers.',
+      sec_inputs: 'Container, substrate and criterion',
+      sec_inputs_note: 'Ideal: refill the allowed depletion of available water and add drainage % to leach salts.',
+      lbl_vol: 'Container volume (L)',
+      hint_vol: 'E.g. 13 L bag or pot.',
+      lbl_substrate: 'Substrate (indicative)',
+      hint_substrate: 'Selecting suggests an available-water %; you can edit it.',
+      lbl_aw: 'Total available water (% of volume)',
+      hint_aw: 'Fraction of the container that is plant-available water.',
+      lbl_depletion: 'Depletion before next pulse (%)',
+      hint_depletion: '% of that available water you allow to drop before the next pulse.',
+      lbl_drain: 'Target drainage (%)',
+      hint_drain: 'E.g. 30% → divide by 0.70 to cover leaching.',
+      sec_system: 'System: pots and drippers',
+      lbl_pots: 'Total pots',
+      lbl_drippers: 'Drippers per pot',
+      lbl_flow: 'Dripper flow (L/h)',
+      hint_flow: 'E.g. 3 L/h dripper.',
+      sec_results: 'Pulse result',
+      res_net: 'Water to refill (no drainage)',
+      res_applied: 'Pulse per pot (with drainage)',
+      res_minutes: 'Irrigation minutes per pulse',
+      res_total_l: 'Total pulse liters',
+      res_drippers: 'Drippers in the system',
+      res_flow: 'Total system flow',
+      per_pot: 'per pot',
+      all_pots: 'all pots in parallel',
+      step1: 'Available water in the container',
+      step2: 'Depletion to refill (no drainage)',
+      step3: 'Efficiency factor from drainage',
+      step4: 'Applied liters per pot',
+      step5: 'Flow per pot and time',
+      formula: 'Formulas',
+      warn: 'Indicative only: validate real drainage %, substrate retention and dripper uniformity in the field. Not a substitute for a drainage trial.',
+      invalid: 'Check values: volume, %, pots, drippers and flow must be valid. Drainage must be under 100%.',
+      unit_l: 'L',
+      unit_lph: 'L/h',
+      unit_min: 'min'
+    }
+  };
+
+  function lang() {
+    try {
+      var p = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+      return p && p.language === 'en' ? 'en' : 'es';
+    } catch (e) {
+      return 'es';
+    }
+  }
+
+  function t(key) {
+    var pack = I18N[lang()] || I18N.es;
+    return pack[key] != null ? pack[key] : (I18N.es[key] || key);
+  }
+
+  function num(id) {
+    var el = document.getElementById(id);
+    var v = parseFloat(el && el.value);
+    return Number.isFinite(v) ? v : NaN;
+  }
+
+  function fmt(n, d) {
+    if (!Number.isFinite(n)) return '—';
+    var x = Number(n);
+    var s = x.toFixed(d == null ? 2 : d);
+    return s.replace(/\.?0+$/, '') === '' ? '0' : (Math.abs(x) >= 100 ? x.toFixed(d == null ? 1 : d) : s);
+  }
+
+  function applyI18n() {
+    document.querySelectorAll('[data-i18n-pulse]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-pulse');
+      if (key && t(key)) el.textContent = t(key);
+    });
+    var sel = document.getElementById('substrate');
+    var cur = sel.value;
+    sel.innerHTML = SUBSTRATES.map(function (s) {
+      var label = lang() === 'en' ? s.en : s.es;
+      return '<option value="' + s.id + '">' + label + '</option>';
+    }).join('');
+    if (cur) sel.value = cur;
+  }
+
+  function calc() {
+    var V = num('volContainer');
+    var aw = num('awPct') / 100;
+    var dep = num('depletionPct') / 100;
+    var drain = num('drainPct') / 100;
+    var pots = num('pots');
+    var drippers = num('drippersPerPot');
+    var lph = num('dripperLph');
+
+    var grid = document.getElementById('resultsGrid');
+    var steps = document.getElementById('stepsList');
+    var formula = document.getElementById('formulaBox');
+
+    if (!(V > 0) || !(aw > 0) || !(dep > 0) || !(drain >= 0 && drain < 1) ||
+        !(pots >= 1) || !(drippers >= 1) || !(lph > 0)) {
+      grid.innerHTML = '<div class="result-tile result-tile--amber"><div class="label">!</div><div class="value" style="font-size:1rem;">' + t('invalid') + '</div></div>';
+      steps.innerHTML = '';
+      formula.innerHTML = '';
+      return;
+    }
+
+    var awL = V * aw;
+    var netL = V * aw * dep;
+    var eff = 1 - drain;
+    var appliedL = netL / eff;
+    var flowPerPot = drippers * lph;
+    var minutes = (appliedL / flowPerPot) * 60;
+    var totalL = appliedL * pots;
+    var totalDrippers = pots * drippers;
+    var totalFlow = totalDrippers * lph;
+
+    grid.innerHTML =
+      '<div class="result-tile result-tile--main">' +
+        '<div class="label">' + t('res_minutes') + '</div>' +
+        '<div class="value">' + fmt(minutes, 1) + ' <span style="font-size:1rem;font-weight:600;color:#64748b;">' + t('unit_min') + '</span></div>' +
+        '<div class="sub">' + t('all_pots') + ' · ' + fmt(flowPerPot, 2) + ' ' + t('unit_lph') + ' / ' + t('per_pot') + '</div>' +
+      '</div>' +
+      '<div class="result-tile">' +
+        '<div class="label">' + t('res_applied') + '</div>' +
+        '<div class="value">' + fmt(appliedL, 3) + ' <span class="unit-suffix">' + t('unit_l') + '</span></div>' +
+        '<div class="sub">' + t('per_pot') + '</div>' +
+      '</div>' +
+      '<div class="result-tile">' +
+        '<div class="label">' + t('res_net') + '</div>' +
+        '<div class="value">' + fmt(netL, 3) + ' <span class="unit-suffix">' + t('unit_l') + '</span></div>' +
+        '<div class="sub">' + fmt(awL, 2) + ' ' + t('unit_l') + ' AU × ' + fmt(dep * 100, 1) + '%</div>' +
+      '</div>' +
+      '<div class="result-tile result-tile--amber">' +
+        '<div class="label">' + t('res_total_l') + '</div>' +
+        '<div class="value">' + fmt(totalL, 2) + ' <span class="unit-suffix">' + t('unit_l') + '</span></div>' +
+        '<div class="sub">' + fmt(pots, 0) + ' × ' + fmt(appliedL, 3) + ' L</div>' +
+      '</div>' +
+      '<div class="result-tile">' +
+        '<div class="label">' + t('res_drippers') + '</div>' +
+        '<div class="value">' + fmt(totalDrippers, 0) + '</div>' +
+        '<div class="sub">' + fmt(pots, 0) + ' × ' + fmt(drippers, 0) + '</div>' +
+      '</div>' +
+      '<div class="result-tile">' +
+        '<div class="label">' + t('res_flow') + '</div>' +
+        '<div class="value">' + fmt(totalFlow, 2) + ' <span class="unit-suffix">' + t('unit_lph') + '</span></div>' +
+      '</div>';
+
+    steps.innerHTML =
+      '<li><strong>' + t('step1') + ':</strong> ' + fmt(V, 2) + ' × ' + fmt(aw * 100, 1) + '% = <strong>' + fmt(awL, 3) + ' L</strong></li>' +
+      '<li><strong>' + t('step2') + ':</strong> ' + fmt(V, 2) + ' × ' + fmt(aw * 100, 1) + '% × ' + fmt(dep * 100, 1) + '% = <strong>' + fmt(netL, 3) + ' L</strong></li>' +
+      '<li><strong>' + t('step3') + ':</strong> 1 − ' + fmt(drain * 100, 1) + '% = <strong>' + fmt(eff, 2) + '</strong></li>' +
+      '<li><strong>' + t('step4') + ':</strong> ' + fmt(netL, 3) + ' ÷ ' + fmt(eff, 2) + ' = <strong>' + fmt(appliedL, 3) + ' L</strong></li>' +
+      '<li><strong>' + t('step5') + ':</strong> (' + fmt(appliedL, 3) + ' ÷ ' + fmt(flowPerPot, 2) + ') × 60 = <strong>' + fmt(minutes, 1) + ' min</strong></li>';
+
+    formula.innerHTML =
+      '<strong>' + t('formula') + '</strong><br>' +
+      '<code>L_neto = V × (ATD/100) × (agotamiento/100)</code><br>' +
+      '<code>L_pulso = L_neto ÷ (1 − drenaje/100)</code><br>' +
+      '<code>min = (L_pulso ÷ (goteros × L/h)) × 60</code><br>' +
+      '<code>L_total = L_pulso × macetas</code>';
+  }
+
+  function onSubstrateChange() {
+    var id = document.getElementById('substrate').value;
+    var found = SUBSTRATES.filter(function (s) { return s.id === id; })[0];
+    if (found && found.aw != null) {
+      document.getElementById('awPct').value = String(found.aw);
+    }
+    calc();
+  }
+
+  function bind() {
+    ['volContainer', 'awPct', 'depletionPct', 'drainPct', 'pots', 'drippersPerPot', 'dripperLph'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.addEventListener('input', calc);
+      el.addEventListener('change', calc);
+    });
+    document.getElementById('substrate').addEventListener('change', onSubstrateChange);
+  }
+
+  applyI18n();
+  bind();
+
+  if (window.NpFreeLocalPersist && typeof window.NpFreeLocalPersist.bind === 'function') {
+    window.NpFreeLocalPersist.bind('hidro_pulso_riego', function () {
+      return {
+        volContainer: document.getElementById('volContainer').value,
+        substrate: document.getElementById('substrate').value,
+        awPct: document.getElementById('awPct').value,
+        depletionPct: document.getElementById('depletionPct').value,
+        drainPct: document.getElementById('drainPct').value,
+        pots: document.getElementById('pots').value,
+        drippersPerPot: document.getElementById('drippersPerPot').value,
+        dripperLph: document.getElementById('dripperLph').value
+      };
+    }, function (d) {
+      if (!d) return;
+      ['volContainer', 'awPct', 'depletionPct', 'drainPct', 'pots', 'drippersPerPot', 'dripperLph'].forEach(function (id) {
+        if (d[id] != null) document.getElementById(id).value = d[id];
+      });
+      if (d.substrate) document.getElementById('substrate').value = d.substrate;
+    });
+  }
+
+  calc();
+
+  try {
+    if (window.NpPrefs && typeof window.NpPrefs.onChange === 'function') {
+      window.NpPrefs.onChange(function () {
+        applyI18n();
+        calc();
+      });
+    }
+  } catch (e) { /* ignore */ }
+})();
+  </script>
+</body>
+</html>

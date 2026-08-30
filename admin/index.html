@@ -8390,7 +8390,7 @@
                     </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('hidroponia')" data-section="hidroponia">
                         <div class="report-section-info">
-                            <div class="report-section-title">💧 Hidroponía</div>
+                            <div class="report-section-title">💧 Solución Nutritiva</div>
                             <div class="report-section-description">Solución nutritiva por etapa</div>
                         </div>
                     </div>
@@ -9943,7 +9943,8 @@
             { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', SO4: 96, S: 0, unit: 'L', density: 1.84 },
             { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', P2O5: 54, unit: 'L', density: 1.57 },
             { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', P2O5: 61, unit: 'L', density: 1.685 },
-            { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', N_NO3: 12.2, unit: 'L', density: 1.33 }
+            { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', N_NO3: 12.2, unit: 'L', density: 1.33 },
+            { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', unit: 'L', density: 1.665 }
         ];
 
         function adminGetFertiMaterials(project) {
@@ -13249,7 +13250,7 @@
                                 amendments: 'Enmiendas',
                                 granular: 'Nutrición Granular',
                                 fertigation: 'Fertirriego',
-                                hidroponia: 'Hidroponía',
+                                hidroponia: 'Solución Nutritiva',
                                 vpd: 'Clima (VPD)',
                                 extraccionEtapa: 'Distribución objetivo por etapa'
                             };
@@ -14736,7 +14737,7 @@
             html += `
                 <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
                     <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">
-                        🌱 Hidroponía
+                        🌱 Solución Nutritiva
                         ${!hasHidroponiaData ? '<span style="color: #64748b; font-size: 14px; font-weight: normal; margin-left: 8px;">(Sin datos)</span>' : ''}
                     </h3>
             `;
@@ -15999,7 +16000,7 @@
                 '</div></details>';
 
             // Hidroponía – fertilizantes (orden: N_NH4, N_NO3, P, S, K, Ca, Mg, Fe, Mn, B, Zn, Cu, Mo)
-            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">💧 Fertilizantes (Hidroponía)</summary><div style="margin-top:8px;">' +
+            html += '<details style="background:#fff;padding:12px;border-radius:6px;border:1px solid #e5e7eb;"><summary style="cursor:pointer;font-weight:500;">💧 Fertilizantes (Solución Nutritiva)</summary><div style="margin-top:8px;">' +
                 listWithComposition(hydroItems, function(x) { return formatComposition(x, null, ADMIN_HYDRO_ORDER) + adminPriceLine(x); }) +
                 adminPriceOverridesBlock(hydroPriceOv, 'Precios precargados (USD/t)') +
                 '</div></details>';

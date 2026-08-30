@@ -85,6 +85,13 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 - **Persistencia:** `nutriplant_hydro_solucion_free_v1`.
 - **No es** la pestaña Hidroponía del proyecto (esa calcula aporte de fertilizantes y guarda en el proyecto).
 
+### ⏱️ Pulso de riego en hidroponía (`hidro-pulso-riego-free.html`)
+
+- **Fórmula:** `L_neto = V × (ATD%/100) × (agotamiento%/100)`; `L_pulso = L_neto ÷ (1 − drenaje%/100)`; `min = (L_pulso ÷ (goteros_por_maceta × L/h)) × 60`; `L_total = L_pulso × macetas`.
+- Desplegable de sustratos orientativos (coco, perlita, lana de roca, etc.) que sugiere % ATD editable.
+- **Persistencia:** `nutriplant_free_hidro_pulso_riego_v1`.
+- Login + icono dashboard ⏱️.
+
 ### 💦 Diagnóstico de agua (`agua-dureza-free.html`)
 
 - Dureza total (ppm CaCO₃, meq/L, °dH/°eH/°fH), Ca/Mg de laboratorio, ácidos para neutralizar HCO₃/CO₃ con residual y volumen (L o m³).

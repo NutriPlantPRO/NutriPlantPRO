@@ -302,6 +302,7 @@ function getSectionDisplayName(name) {
 function getSectionInternalName(displayOrInternal) {
   if (title && title.dataset && title.dataset.npSection) return title.dataset.npSection;
   if (displayOrInternal === 'Radar Satelital' || displayOrInternal === 'Satellite Radar') return 'Ubicación';
+  if (displayOrInternal === 'Solución Nutritiva' || displayOrInternal === 'Nutrient Solution') return 'Hidroponia';
   return displayOrInternal;
 }
 
@@ -1894,10 +1895,16 @@ function sectionTemplate(name) {
         <div class="hydroponia-content">
           <div class="tab-content active" id="hidro-solucion">
             <div class="hydro-card">
-              <div class="hydro-card-header">
-                <h3>🧪 ${hydroT('Solución nutritiva', 'Nutrient solution')}</h3>
-                
-                <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
+              <div class="hydro-card-header" style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px;">
+                <div>
+                  <h3>🧪 ${hydroT('Solución nutritiva', 'Nutrient solution')}</h3>
+                  <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" id="hydroCycleProgramBtn"
+                  onclick="window.showHydroSolutionCalculator && window.showHydroSolutionCalculator({tab:'program'})"
+                  title="${hydroT('Abrir programa del ciclo (etapas, gráficas y catálogo)', 'Open cycle program (stages, charts, and catalog)')}">
+                  📊 ${hydroT('Programa del ciclo', 'Cycle program')}
+                </button>
               </div>
               <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
               <div id="hydroMeqPercentWrap" class="hydro-table-wrap" style="margin-top:12px;"></div>
@@ -2004,7 +2011,7 @@ function sectionTemplate(name) {
             <li>${dashboardT('dashboard.reports_info_amendments', 'Enmiendas')}</li>
             <li>${dashboardT('dashboard.reports_info_granular', 'Nutrición granular')}</li>
             <li>${dashboardT('dashboard.reports_info_fertigation', 'Fertirriego')}</li>
-            <li>${dashboardT('dashboard.reports_info_hydro', 'Hidroponía')}</li>
+            <li>${dashboardT('dashboard.reports_info_hydro', 'Solución Nutritiva')}</li>
             <li>${dashboardT('dashboard.reports_info_climate', 'Clima (VPD, lluvia, ET₀, tiempo actual)')}</li>
             <li>${dashboardT('dashboard.reports_info_note', 'La lista guarda metadatos (secciones, fecha, idioma); el PDF se genera al pulsar Descargar. Con cuenta en la nube se sincroniza el historial entre dispositivos.')}</li>
           </ul>
@@ -3055,7 +3062,7 @@ function renderProjectCards(p) {
       <button class="sb-chip" data-section="enmienda">🚜 <span class="text">${dashboardT('dashboard.amendment', 'Enmienda')}</span></button>
       <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">${dashboardT('dashboard.granular', 'Nutrición Granular')}</span></button>
       <button class="sb-chip" data-section="fertirriego">📈 <span class="text">${dashboardT('dashboard.fertigation', 'Fertirriego')}</span></button>
-      <button class="sb-chip" data-section="hidroponia">💧 <span class="text">${dashboardT('dashboard.hydroponics', 'Hidroponía')}</span></button>
+      <button class="sb-chip" data-section="hidroponia">💧 <span class="text">${dashboardT('dashboard.hydroponics', 'Solución Nutritiva')}</span></button>
     </div>
   `;
   sbStack.appendChild(card1);
@@ -11259,8 +11266,8 @@ function reportUiSectionLabel(sectionId) {
     amendments: ['dashboard.reports_section_amendments', 'Enmiendas'],
     granular: ['dashboard.reports_section_granular', 'Nutrición granular'],
     fertigation: ['dashboard.reports_section_fertigation', 'Fertirriego'],
-    hidroponia: ['dashboard.reports_section_hydro', 'Hidroponía'],
-    hydroponics: ['dashboard.reports_section_hydro', 'Hidroponía'],
+    hidroponia: ['dashboard.reports_section_hydro', 'Solución Nutritiva'],
+    hydroponics: ['dashboard.reports_section_hydro', 'Solución Nutritiva'],
     vpd: ['dashboard.reports_section_climate', 'Clima'],
     climate: ['dashboard.reports_section_climate', 'Clima'],
     labanalyses: ['dashboard.reports_section_lab', 'Análisis de laboratorio'],
@@ -17188,6 +17195,8 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['📈 Fertirriego', '📈 Fertigation'],
     ['💧 Hidroponía', '💧 Hydroponics'],
     ['🌱 Hidroponía', '🌱 Hydroponics'],
+    ['💧 Solución Nutritiva', '💧 Nutrient Solution'],
+    ['🌱 Solución Nutritiva', '🌱 Nutrient Solution'],
     ['🧪 Análisis de laboratorio', '🧪 Lab analyses'],
     ['Análisis de laboratorio', 'Lab analyses'],
     ['Comparar análisis (tabla y gráficas)', 'Compare analyses (table and charts)'],
@@ -19928,7 +19937,7 @@ function createHidroponiaSectionHTML(reportLanguage) {
   );
   return `
     <div class="section">
-      <h2 class="section-title">🌱 ${rt('Hidroponía', 'Hydroponics')}</h2>
+      <h2 class="section-title">🌱 ${rt('Solución Nutritiva', 'Nutrient Solution')}</h2>
       ${reportProgramCostBanner(hydroPriceLabels.totalCost + ' (' + hydroPriceLabels.costBatchUnit + ')', hydroBatchTotalTxt)}
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">✅ ${rt('Solución nutritiva por etapa (meq/L)', 'Nutrient solution by stage (meq/L)')}</div>
@@ -22011,7 +22020,9 @@ var AGUA_ACIDS = [
   { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6, densityKgL: 1.37 },
   { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7, densityKgL: 1.84 },
   { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0, densityKgL: 1.57 },
-  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6, densityKgL: 1.69 }
+  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6, densityKgL: 1.69 },
+  // C₆H₈O₇ anhidro 99.5%, 3 H⁺, ρ 1.665 kg/L → 25.9 meq/mL. Solo acidifica (sin N/P/K).
+  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', meqPerMl: 25.9, densityKgL: 1.665 }
 ];
 function aguaAcidLabel(name) {
   return window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function'

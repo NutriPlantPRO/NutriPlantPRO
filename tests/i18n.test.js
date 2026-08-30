@@ -10,7 +10,7 @@ module.exports = [
       i18n.setLanguage('en', { persist: false, apply: false });
       assert.equal(i18n.t('dashboard.home'), 'Home');
       assert.equal(i18n.t('dashboard.logout'), 'Sign out');
-      assert.equal(i18n.t('dashboard.hydroponics'), 'Hydroponics');
+      assert.equal(i18n.t('dashboard.hydroponics'), 'Nutrient Solution');
       assert.equal(i18n.t('dashboard.new_project'), '+ New NutriPlant');
       assert.equal(i18n.t('dashboard.recent_projects'), 'Recent projects');
       assert.equal(i18n.t('dashboard.edit_nutriplant'), 'Edit NUTRIPLANT');
@@ -27,7 +27,8 @@ module.exports = [
       assert.equal(i18n.t('analysis.meta_title_simple'), 'Title');
       assert.equal(i18n.t('radar.vpd_hours_low_title'), 'Low VPD hours');
       assert.equal(i18n.t('profile.user_info_title'), 'User Information');
-      assert.equal(i18n.t('free_tools.hydro_tab_design'), '1 · Target design');
+      assert.equal(i18n.t('free_tools.hydro_tab_design'), '2 · Target design');
+      assert.equal(i18n.t('free_tools.hydro_tab_cycle'), '1 · Cycle program');
       // Datos de usuario / títulos de proyecto no son claves i18n
       assert.equal(i18n.t('Aguacate Lote 3'), 'Aguacate Lote 3');
       assert.equal(i18n.t('Hola'), 'Hola');

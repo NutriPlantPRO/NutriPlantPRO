@@ -223,6 +223,7 @@
     'Ácido Fosfórico': 'Phosphoric Acid',
     'Ácido Fosfórico 75%': 'Phosphoric Acid 75%',
     'Ácido Fosfórico 85%': 'Phosphoric Acid 85%',
+    'Ácido Cítrico Anhidro 99.5%': 'Citric Acid Anhydrous 99.5%',
     'Resultado con': 'Result with',
     'Dosis': 'Dose',
     'Volumen usado': 'Volume used',

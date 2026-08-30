@@ -111,7 +111,9 @@ const FERT_SOLUBLES_DB = [
   { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', SO4: 96, S: 0, unit: 'L', density: 1.84 },
   { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', P2O5: 54, unit: 'L', density: 1.57 },
   { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', P2O5: 61, unit: 'L', density: 1.685 },
-  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', N_NO3: 12.2, unit: 'L', density: 1.33 }
+  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', N_NO3: 12.2, unit: 'L', density: 1.33 },
+  // Solo acidifica (C₆H₈O₇); sin aporte mineral a la solución nutritiva
+  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', unit: 'L', density: 1.665 }
 ];
 
 // Estado del programa

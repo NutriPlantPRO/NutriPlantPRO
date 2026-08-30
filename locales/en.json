@@ -309,7 +309,7 @@
   "dashboard": {
     "document_title": "Dashboard — NutriPlant Pro",
     "home": "Home",
-    "hydroponics": "Hydroponics",
+    "hydroponics": "Nutrient Solution",
     "fertigation": "Fertigation",
     "report": "Report",
     "project": "Project",
@@ -340,6 +340,7 @@
     "tool_oxide": "Oxide ↔ Elemental converter",
     "tool_units": "Unit converter (ppm/mmol/meq)",
     "tool_hydro": "Nutrient solution design",
+    "tool_hydro_pulse": "Hydroponic irrigation pulse",
     "tool_n": "Mineralizable N estimate",
     "tool_water": "Water diagnosis and conditioning",
     "tool_soil_water": "Soil water and texture",

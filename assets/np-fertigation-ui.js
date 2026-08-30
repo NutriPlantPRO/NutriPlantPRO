@@ -303,6 +303,8 @@
     'Ácido fosfórico 85%': 'Phosphoric Acid 85%',
     'Ácido Nítrico 55%': 'Nitric Acid 55%',
     'Ácido nítrico 55%': 'Nitric Acid 55%',
+    'Ácido Cítrico Anhidro 99.5%': 'Citric Acid Anhydrous 99.5%',
+    'Ácido cítrico anhidro 99.5%': 'Citric Acid Anhydrous 99.5%',
     'Urea': 'Urea'
   };
   var STAGES = {

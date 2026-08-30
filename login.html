@@ -313,6 +313,11 @@
           <span class="button-text" data-i18n="dashboard.tool_hydro">Diseño de solución nutritiva</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroPulseIrrigationTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">⏱️</span>
+          <span class="button-text" data-i18n="dashboard.tool_hydro_pulse">Pulso de riego en hidroponía</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">💦</span>
           <span class="button-text" data-i18n="dashboard.tool_water">Diagnóstico de agua y acondicionamiento</span>
@@ -1688,6 +1693,17 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showHydroPulseIrrigationTool() {
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('hydroPulseIrrigationToolFrame');
+      document.getElementById('hydroPulseIrrigationToolModal').style.display = 'flex';
+    }
+    function closeHydroPulseIrrigationTool() {
+      const modal = document.getElementById('hydroPulseIrrigationToolModal');
+      const frame = document.getElementById('hydroPulseIrrigationToolFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     // Diagnóstico de agua y acondicionamiento (gratis en login, independiente)
     function showWaterHardnessCalculator() {
       const modal = document.getElementById('waterHardnessCalculatorModal');
@@ -1997,6 +2013,10 @@
       const hydroSolutionModal = document.getElementById('hydroSolutionCalculatorModal');
       if (e.target === hydroSolutionModal) {
         closeHydroSolutionCalculator();
+      }
+      const hydroPulseIrrigationModal = document.getElementById('hydroPulseIrrigationToolModal');
+      if (e.target === hydroPulseIrrigationModal) {
+        closeHydroPulseIrrigationTool();
       }
       const measureUnitsModal = document.getElementById('measureUnitsCalculatorModal');
       if (e.target === measureUnitsModal) {
@@ -2596,6 +2616,22 @@
       </div>
       <div class="modal-body">
         <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?v=20260816a" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pulso de riego en hidroponía -->
+  <div id="hydroPulseIrrigationToolModal" class="modal-overlay">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="dashboard.tool_hydro_pulse">⏱️ Pulso de riego en hidroponía</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeHydroPulseIrrigationTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=login&v=20260830a" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse"></iframe>
       </div>
     </div>
   </div>
