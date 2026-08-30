@@ -8394,6 +8394,12 @@
                             <div class="report-section-description">Solución nutritiva por etapa</div>
                         </div>
                     </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('hydroCycle')" data-section="hydroCycle">
+                        <div class="report-section-info">
+                            <div class="report-section-title">📊 Programa del ciclo</div>
+                            <div class="report-section-description">Etapas del ciclo (meq, %, ppm)</div>
+                        </div>
+                    </div>
                     <div class="report-section-group" data-section-group="labAnalyses" style="margin-bottom:10px;">
                         <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('labAnalyses')" data-section="labAnalyses">
                             <div class="report-section-info">
@@ -13251,7 +13257,9 @@
                                 granular: 'Nutrición Granular',
                                 fertigation: 'Fertirriego',
                                 hidroponia: 'Solución Nutritiva',
+                                hydroCycle: 'Programa del ciclo',
                                 vpd: 'Clima (VPD)',
+                                labAnalyses: 'Análisis de laboratorio',
                                 extraccionEtapa: 'Distribución objetivo por etapa'
                             };
                             const sectionsText = sections.length
@@ -15092,6 +15100,96 @@
                 html += '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>';
             }
             html += `</div>`;
+
+            // Programa del ciclo (multi-etapa del modal / free tool)
+            const cycleProg = (hasHidroponiaData && hidroponia.cycleProgram && typeof hidroponia.cycleProgram === 'object')
+                ? hidroponia.cycleProgram
+                : null;
+            const cycleStages = (cycleProg && Array.isArray(cycleProg.stages)) ? cycleProg.stages : [];
+            const hasCycleData = cycleStages.length > 0;
+            html += `
+                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #22c55e; margin-top: 16px;">
+                    <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">
+                        📊 Programa del ciclo
+                        ${!hasCycleData ? '<span style="color: #64748b; font-size: 14px; font-weight: normal; margin-left: 8px;">(Sin datos)</span>' : ''}
+                    </h3>
+            `;
+            if (hasCycleData) {
+                const cycleName = cycleProg.programName ? String(cycleProg.programName).trim() : '';
+                if (cycleName) {
+                    html += `<p style="margin:0 0 12px;font-size:13px;color:#166534;"><strong>Programa:</strong> ${escapeHtml(cycleName)}</p>`;
+                }
+                const cycleMeqRows = cycleStages.map(stage => {
+                    const meq = stage.meq || {};
+                    const ce = adminHydroComputeCE(meq).toFixed(2);
+                    const cells = HYDRO_MEQ_NUTRIENTS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(meq[n]) || 0).toFixed(1)}</td>`).join('');
+                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td><td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${ce}</td>${cells}</tr>`;
+                }).join('');
+                const cycleMeqHeader = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">${adminHydroLabel(n)} (meq/L)</th>`).join('');
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: #1e293b; font-size: 14px;">🧪 Etapas del ciclo (meq/L)</strong>
+                        <div style="overflow-x: auto; margin-top: 8px;">
+                            <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+                                <thead><tr style="background:#dcfce7;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th><th style="padding:6px 8px;border:1px solid #cbd5e1;">CE (dS/m)</th>${cycleMeqHeader}</tr></thead>
+                                <tbody>${cycleMeqRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                const cyclePctRows = cycleStages.map(stage => {
+                    const meq = stage.meq || {};
+                    const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+                    const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+                    const totalCations = sumKCaMg + (parseFloat(meq.N_NH4) || 0);
+                    const pct = {};
+                    HYDRO_MEQ_NUTRIENTS.forEach(n => {
+                        const val = parseFloat(meq[n]) || 0;
+                        if (HYDRO_ANIONS.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
+                        else if (HYDRO_CATIONS_TRIANGLE.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
+                        else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
+                    });
+                    const cells = HYDRO_MEQ_NUTRIENTS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${pct[n].toFixed(1)}</td>`).join('');
+                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td>${cells}</tr>`;
+                }).join('');
+                const cyclePctHeader = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">${adminHydroLabel(n)} % meq</th>`).join('');
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: #1e293b; font-size: 14px;">📊 % meq por etapa</strong>
+                        <div style="overflow-x: auto; margin-top: 8px;">
+                            <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+                                <thead><tr style="background:#dcfce7;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${cyclePctHeader}</tr></thead>
+                                <tbody>${cyclePctRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                const cyclePpmRows = cycleStages.map(stage => {
+                    const meq = stage.meq || {};
+                    const macroPpm = adminHydroMacroPpm(meq);
+                    const ppm = stage.ppm || {};
+                    const macroCells = HYDRO_MEQ_NUTRIENTS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(macroPpm[n] != null ? macroPpm[n] : (parseFloat(ppm[n]) || 0)).toFixed(1)}</td>`).join('');
+                    const microCells = HYDRO_MICROS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm[n]) || 0).toFixed(2)}</td>`).join('');
+                    const clCell = `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm.Cl) || 0).toFixed(1)}</td>`;
+                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td>${macroCells}${microCells}${clCell}</tr>`;
+                }).join('');
+                const cyclePpmHeaderMacro = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel(n)} ppm</th>`).join('');
+                const cyclePpmHeaderMicro = HYDRO_MICROS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel(n)} ppm</th>`).join('');
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: #1e293b; font-size: 14px;">📐 Etapas del ciclo (ppm)</strong>
+                        <div style="overflow-x: auto; margin-top: 8px;">
+                            <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+                                <thead><tr style="background:#dcfce7;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${cyclePpmHeaderMacro}${cyclePpmHeaderMicro}<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel('Cl')} ppm</th></tr></thead>
+                                <tbody>${cyclePpmRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += '<p style="color: #94a3b8; font-style: italic; margin: 0;">El usuario aún no ha guardado un programa del ciclo en este proyecto.</p>';
+            }
+            html += `</div>`;
             
             // ========== ANÁLISIS (mismo orden que las pestañas) ==========
             // Los seis tipos muestran comparativa + detalle por reporte.
@@ -15704,8 +15802,8 @@
             }
         };
 
-        var ADMIN_REPORT_ALLOWED_SECTIONS = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
-        var ADMIN_REPORT_SECTION_ORDER = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
+        var ADMIN_REPORT_ALLOWED_SECTIONS = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'hydroCycle', 'labAnalyses', 'extraccionEtapa'];
+        var ADMIN_REPORT_SECTION_ORDER = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'hydroCycle', 'labAnalyses', 'extraccionEtapa'];
 
         window.openAdminCustomReportModal = function () {
             var ctx = window._adminViewProjectContext;

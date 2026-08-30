@@ -9,16 +9,64 @@
   var MACROS = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
   var MICROS = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
   var CUSTOM_LS_KEY = 'nutriplant_hydro_custom_solutions_v1';
+  var CUSTOM_CYCLE_KEY = 'nutriplant_hydro_custom_cycle_programs_v1';
+  /** Herramienta gratis / login: tope local. Dashboard (embed): sin tope (nube). */
+  var FREE_CUSTOM_SOLUTION_LIMIT = 4;
+
+  function isDashboardEmbed() {
+    try {
+      return /[?&]embed=dashboard(?:&|$)/.test(location.search || '');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function customSolutionLimit() {
+    return isDashboardEmbed() ? Infinity : FREE_CUSTOM_SOLUTION_LIMIT;
+  }
+
+  function canAddCustomSolution(items, updatingId) {
+    items = items || [];
+    var limit = customSolutionLimit();
+    if (!isFinite(limit)) return { ok: true, limit: limit, count: items.length };
+    if (updatingId && items.some(function (it) { return it.id === updatingId; })) {
+      return { ok: true, limit: limit, count: items.length };
+    }
+    return {
+      ok: items.length < limit,
+      limit: limit,
+      count: items.length
+    };
+  }
+  // Aniones: familia amarillo/ámbar (claros → oscuros). Cationes: familia rojo/rosa (vivos → suaves).
+  // Tonos bien separados para leer las líneas sin dudar.
   var COLORS = {
-    N_NO3: '#ca8a04', P: '#a16207', S: '#854d0e',
-    K: '#dc2626', Ca: '#b91c1c', Mg: '#f87171', N_NH4: '#be123c',
+    N_NO3: '#eab308',  // amarillo vivo
+    P: '#f97316',      // naranja ámbar (sigue en caliente/aniones)
+    S: '#78350f',      // marrón profundo
+    K: '#ef4444',      // rojo vivo
+    Ca: '#9f1239',     // vino / carmín (no se confunde con K)
+    Mg: '#fda4af',     // rosa claro
+    N_NH4: '#be123c',
     Fe: '#2563eb', Mn: '#7c3aed', Zn: '#0891b2', B: '#059669', Cu: '#d97706', Mo: '#64748b'
   };
 
   function t(es, en) {
     try {
+      // En embed, el idioma del dashboard padre manda (misma sesión).
+      if (/[?&]embed=dashboard(?:&|$)/.test(location.search || '') && root.parent && root.parent !== root) {
+        try {
+          var pp = root.parent.NpPrefs && typeof root.parent.NpPrefs.get === 'function'
+            ? root.parent.NpPrefs.get()
+            : null;
+          if (pp && pp.language === 'en') return en;
+          if (root.parent.NpI18n && typeof root.parent.NpI18n.getLanguage === 'function' &&
+              root.parent.NpI18n.getLanguage() === 'en') return en;
+        } catch (eParent) { /* cross-origin */ }
+      }
       if (root.NpFreeNutritionUI && root.NpFreeNutritionUI.prefs().language === 'en') return en;
       if (typeof root.NpI18n !== 'undefined' && root.NpI18n.getLanguage && root.NpI18n.getLanguage() === 'en') return en;
+      if (root.NpPrefs && typeof root.NpPrefs.get === 'function' && root.NpPrefs.get().language === 'en') return en;
     } catch (e) { /* ignore */ }
     return es;
   }
@@ -61,10 +109,25 @@
     });
   }
 
+  function colClassMacro(k) {
+    var cls = [];
+    if (k === 'N_NH4') cls.push('hydro-col-nh4');
+    if (k === 'K') cls.push('hydro-ion-divide');
+    return cls.join(' ');
+  }
+
+  function colClassMicro(k, idx) {
+    return idx === 0 ? 'hydro-micro-start' : '';
+  }
+
+  function defaultStageName(n) {
+    return t('Etapa', 'Stage') + ' ' + n;
+  }
+
   function defaultStage(name) {
     return {
       id: 'cyc_' + Date.now() + '_' + Math.floor(Math.random() * 1e4),
-      name: name || t('Nueva etapa', 'New stage'),
+      name: name || defaultStageName(1),
       solutionId: '',
       ce: '0.00',
       meq: { N_NH4: 0, N_NO3: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Cl: 0 },
@@ -73,10 +136,11 @@
   }
 
   function normalizeStage(raw, i) {
-    var base = defaultStage(t('Etapa', 'Stage') + ' ' + (i + 1));
+    var base = defaultStage(defaultStageName(i + 1));
     if (!raw || typeof raw !== 'object') return base;
     base.id = raw.id ? String(raw.id) : base.id;
-    base.name = raw.name != null ? String(raw.name) : base.name;
+    var rawName = raw.name != null ? String(raw.name).trim() : '';
+    base.name = rawName || defaultStageName(i + 1);
     base.solutionId = raw.solutionId ? String(raw.solutionId) : '';
     MACROS.concat(['Cl']).forEach(function (k) {
       base.meq[k] = round2(raw.meq && raw.meq[k]);
@@ -110,6 +174,34 @@
       if (root.parent && root.parent !== root && /embed=dashboard/.test(location.search || '')) {
         root.parent.postMessage({
           type: 'np-hydro-custom-solutions',
+          items: items || []
+        }, '*');
+      }
+    } catch (e2) { /* ignore */ }
+  }
+
+  function loadCustomCyclePrograms() {
+    try {
+      var raw = localStorage.getItem(CUSTOM_CYCLE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      var items = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.items) ? parsed.items : []);
+      return items.filter(function (it) {
+        return it && it.name && Array.isArray(it.stages) && it.stages.length;
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCustomCyclePrograms(items) {
+    try {
+      localStorage.setItem(CUSTOM_CYCLE_KEY, JSON.stringify({ items: items || [] }));
+    } catch (e) { /* ignore */ }
+    try {
+      if (root.parent && root.parent !== root && /embed=dashboard/.test(location.search || '')) {
+        root.parent.postMessage({
+          type: 'np-hydro-custom-cycle-programs',
           items: items || []
         }, '*');
       }
@@ -186,13 +278,174 @@
       '</svg>';
   }
 
-  function lineChartSvg(labels, series, yLabel) {
+  function paintTernary(host, stage, api, opts) {
+    if (opts && typeof opts.renderTernary === 'function') {
+      try {
+        if (opts.renderTernary(host, stage, api) === true) return;
+      } catch (e) { /* fallback */ }
+    }
+    renderMiniTernary(host, stage);
+  }
+
+  function ratioTxt(a, b) {
+    var x = Number(a) || 0;
+    var y = Number(b) || 0;
+    if (y < 0.005) return x < 0.005 ? '—' : '∞';
+    return (x / y).toFixed(2);
+  }
+
+  function pctPart(v, sum) {
+    if (sum < 0.005) return '0';
+    return ((100 * (Number(v) || 0) / sum)).toFixed(0);
+  }
+
+  /**
+   * Orientación fenológica por relaciones (K/N, %K catiónico, %NO₃, CE).
+   * Misma idea que el chat hidro: no es diagnóstico cerrado, solo lectura rápida.
+   */
+  function inferPhenologyFromMeq(stage) {
+    var empty = {
+      id: 'vacio',
+      label: t('Sin datos', 'No data'),
+      short: '—',
+      color: '#cbd5e1',
+      fill: 'rgba(148,163,184,0.12)',
+      why: t('Captura meq para estimar el perfil.', 'Enter meq values to estimate the profile.')
+    };
+    if (!stage || !stage.meq) return empty;
+    var no3 = parseFloat(stage.meq.N_NO3) || 0;
+    var nh4 = parseFloat(stage.meq.N_NH4) || 0;
+    var k = parseFloat(stage.meq.K) || 0;
+    var ca = parseFloat(stage.meq.Ca) || 0;
+    var mg = parseFloat(stage.meq.Mg) || 0;
+    var p = parseFloat(stage.meq.P) || 0;
+    var s = parseFloat(stage.meq.S) || 0;
+    var nTotal = no3 + nh4;
+    var sumCat = k + ca + mg;
+    var sumAn = no3 + p + s;
+    if (nTotal + sumCat + sumAn < 0.05) return empty;
+    var ce = parseFloat(stage.ce);
+    if (isNaN(ce)) ce = computeCE(stage);
+    var kToN = nTotal > 0.01 ? k / nTotal : (k > 0 ? 99 : 0);
+    var no3Pct = nTotal > 0.01 ? (100 * no3 / nTotal) : 0;
+    var kPctCat = sumCat > 0.01 ? (100 * k / sumCat) : 0;
+
+    var profiles = {
+      vegetativa: {
+        id: 'vegetativa',
+        label: t('Vegetativa', 'Vegetative'),
+        short: t('Veg', 'Veg'),
+        color: '#16a34a',
+        fill: 'rgba(22,163,74,0.14)'
+      },
+      floracion: {
+        id: 'floracion',
+        label: t('Floración', 'Flowering'),
+        short: t('Flor', 'Flor'),
+        color: '#d97706',
+        fill: 'rgba(217,119,6,0.16)'
+      },
+      produccion: {
+        id: 'produccion',
+        label: t('Producción', 'Production'),
+        short: t('Prod', 'Prod'),
+        color: '#7c3aed',
+        fill: 'rgba(124,58,237,0.14)'
+      },
+      transicion: {
+        id: 'transicion',
+        label: t('Prefloración', 'Pre-flowering'),
+        short: t('Preflor', 'Preflor'),
+        color: '#0284c7',
+        fill: 'rgba(2,132,199,0.12)'
+      }
+    };
+
+    var pick = profiles.transicion;
+    var why = t('Perfil intermedio (K/N equilibrado): entre vegetativo y floración.', 'Intermediate profile (balanced K/N): between vegetative and flowering.');
+
+    if (ce < 1.4 && kToN <= 0.85) {
+      pick = profiles.vegetativa;
+      why = t('CE baja y K/N bajo → empuje vegetativo / establecimiento.', 'Low EC and low K/N → vegetative / establishment push.');
+    } else if (kToN < 0.95 && no3Pct >= 80) {
+      pick = profiles.vegetativa;
+      why = t('N (nítrico) domina frente a K → tipicamente vegetativo.', 'N (nitrate) dominates vs K → typically vegetative.');
+    } else if (kToN > 1.45 && (ce >= 2.0 || kPctCat >= 38)) {
+      pick = profiles.produccion;
+      why = t('K/N alto y K fuerte en cationes → tipicamente producción / llenado.', 'High K/N and strong K in cations → typically production / filling.');
+    } else if (kToN > 1.15 && kPctCat >= 34) {
+      pick = profiles.floracion;
+      why = t('K más protagonista (K/N y %K) → tipicamente floración / amarre.', 'K more dominant (K/N and %K) → typically flowering / fruit set.');
+    } else if (kToN >= 0.9 && kToN <= 1.2) {
+      pick = profiles.transicion;
+      why = t('K/N equilibrado → prefloración (paso de vegetativo a floración).', 'Balanced K/N → pre-flowering (vegetative → flowering shift).');
+    } else if (kToN <= 1.0) {
+      pick = profiles.vegetativa;
+      why = t('K/N ≤ 1 → sesgo vegetativo.', 'K/N ≤ 1 → vegetative bias.');
+    } else {
+      pick = profiles.floracion;
+      why = t('K/N > 1 sin extremo → sesgo floración.', 'K/N > 1 without extremes → flowering bias.');
+    }
+
+    return Object.assign({}, pick, {
+      why: why,
+      kToN: kToN,
+      kPctCat: kPctCat,
+      no3Pct: no3Pct,
+      ce: ce
+    });
+  }
+
+  function meqRelationsHtml(stage) {
+    if (!stage || !stage.meq) return '';
+    var no3 = parseFloat(stage.meq.N_NO3) || 0;
+    var p = parseFloat(stage.meq.P) || 0;
+    var s = parseFloat(stage.meq.S) || 0;
+    var k = parseFloat(stage.meq.K) || 0;
+    var ca = parseFloat(stage.meq.Ca) || 0;
+    var mg = parseFloat(stage.meq.Mg) || 0;
+    var sumAn = no3 + p + s;
+    var sumCat = k + ca + mg;
+    var name = stage.name || '—';
+    var ph = inferPhenologyFromMeq(stage);
+    return (
+      '<div class="hydro-cycle-tip-head">' + escapeAttr(name) +
+        ' · CE ' + escapeAttr(String(stage.ce != null ? stage.ce : computeCE(stage))) + '</div>' +
+      '<div class="hydro-cycle-tip-pheno" style="border-color:' + ph.color + '">' +
+        '<span class="hydro-cycle-tip-pheno-dot" style="background:' + ph.color + '"></span>' +
+        '<div><strong>' + escapeAttr(ph.label) + '</strong>' +
+        '<div class="hydro-cycle-tip-muted">' + escapeAttr(ph.why) + '</div>' +
+        '<div class="hydro-cycle-tip-muted">K/N ' + (ph.kToN != null && isFinite(ph.kToN) ? ph.kToN.toFixed(2) : '—') +
+        ' · %K cat. ' + (ph.kPctCat != null ? ph.kPctCat.toFixed(0) : '—') + '%</div></div>' +
+      '</div>' +
+      '<div class="hydro-cycle-tip-grid">' +
+        '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--an">' +
+          '<div class="hydro-cycle-tip-label">' + t('Aniones', 'Anions') + '</div>' +
+          '<div>NO₃/P <strong>' + ratioTxt(no3, p) + '</strong> · NO₃/S <strong>' + ratioTxt(no3, s) + '</strong> · P/S <strong>' + ratioTxt(p, s) + '</strong></div>' +
+          '<div class="hydro-cycle-tip-muted">N:P:S = ' + pctPart(no3, sumAn) + ':' + pctPart(p, sumAn) + ':' + pctPart(s, sumAn) + '%</div>' +
+        '</div>' +
+        '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--cat">' +
+          '<div class="hydro-cycle-tip-label">' + t('Cationes', 'Cations') + '</div>' +
+          '<div>K/Ca <strong>' + ratioTxt(k, ca) + '</strong> · K/Mg <strong>' + ratioTxt(k, mg) + '</strong> · Ca/Mg <strong>' + ratioTxt(ca, mg) + '</strong></div>' +
+          '<div class="hydro-cycle-tip-muted">K:Ca:Mg = ' + pctPart(k, sumCat) + ':' + pctPart(ca, sumCat) + ':' + pctPart(mg, sumCat) + '%</div>' +
+        '</div>' +
+        '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--all">' +
+          '<div class="hydro-cycle-tip-label">' + t('Balance', 'Balance') + '</div>' +
+          '<div>Σan/Σcat <strong>' + ratioTxt(sumAn, sumCat) + '</strong> · K/N <strong>' + ratioTxt(k, no3) + '</strong> · N/K <strong>' + ratioTxt(no3, k) + '</strong></div>' +
+          '<div class="hydro-cycle-tip-muted">Σan ' + sumAn.toFixed(1) + ' · Σcat ' + sumCat.toFixed(1) + ' meq/L</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function lineChartSvg(labels, series, yLabel, opts) {
+    opts = opts || {};
     var w = 640;
-    var h = 260;
+    var h = 280;
     var padL = 44;
     var padR = 16;
     var padT = 16;
-    var padB = 40;
+    var padB = opts.showRelations ? 52 : 40;
     var n = labels.length;
     if (n < 1) return '<p class="hydro-muted">' + escapeAttr(t('Agrega etapas para ver la gráfica.', 'Add stages to see the chart.')) + '</p>';
     var allVals = [];
@@ -209,6 +462,20 @@
     function yAt(v) {
       return padT + plotH - ((Number(v) || 0) / yMax) * plotH;
     }
+    var bandHalf = n === 1 ? plotW * 0.28 : Math.min(52, plotW / Math.max(1, n - 1) * 0.42);
+    var bands = '';
+    var stageTags = '';
+    if (opts.showRelations && Array.isArray(opts.stages)) {
+      opts.stages.forEach(function (st, i) {
+        var ph = inferPhenologyFromMeq(st);
+        var cx = xAt(i);
+        bands += '<rect x="' + (cx - bandHalf) + '" y="' + padT + '" width="' + (bandHalf * 2) + '" height="' + plotH +
+          '" fill="' + ph.fill + '" stroke="' + ph.color + '" stroke-width="0.8" stroke-opacity="0.35" rx="6"/>';
+        stageTags += '<rect x="' + (cx - 22) + '" y="' + (h - 36) + '" width="44" height="14" rx="7" fill="' + ph.color + '"/>' +
+          '<text x="' + cx + '" y="' + (h - 26) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">' +
+          escapeAttr(ph.short) + '</text>';
+      });
+    }
     var grid = '';
     for (var g = 0; g <= 4; g++) {
       var gy = padT + (plotH * g / 4);
@@ -220,24 +487,142 @@
     series.forEach(function (s) {
       var pts = (s.data || []).map(function (v, i) { return xAt(i) + ',' + yAt(v); }).join(' ');
       var color = s.color || '#2563eb';
-      paths += '<polyline fill="none" stroke="' + color + '" stroke-width="2.2" points="' + pts + '"/>';
+      paths += '<polyline fill="none" stroke="' + color + '" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/>';
       (s.data || []).forEach(function (v, i) {
-        paths += '<circle cx="' + xAt(i) + '" cy="' + yAt(v) + '" r="4" fill="' + color + '" stroke="#fff" stroke-width="1.5"/>';
+        paths += '<circle cx="' + xAt(i) + '" cy="' + yAt(v) + '" r="4.5" fill="' + color + '" stroke="#fff" stroke-width="1.6"/>';
       });
     });
     var xLabels = labels.map(function (lab, i) {
-      return '<text x="' + xAt(i) + '" y="' + (h - 12) + '" text-anchor="middle" font-size="10" fill="#475569">' + escapeAttr(lab) + '</text>';
+      return '<text x="' + xAt(i) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="10" fill="#475569">' + escapeAttr(lab) + '</text>';
     }).join('');
-    var legend = series.map(function (s, i) {
+    var legend = series.map(function (s) {
       return '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;color:#334155;">' +
         '<i style="width:10px;height:10px;border-radius:50%;background:' + (s.color || '#2563eb') + ';display:inline-block;"></i>' +
         escapeAttr(s.label) + '</span>';
     }).join('');
-    return '<div class="hydro-cycle-chart-legend">' + legend + '</div>' +
+    var phenoLegend = '';
+    if (opts.showRelations) {
+      phenoLegend =
+        '<div class="hydro-cycle-pheno-legend">' +
+          '<span class="hydro-cycle-pheno-chip" style="--c:#16a34a">' + t('Vegetativa', 'Vegetative') + '</span>' +
+          '<span class="hydro-cycle-pheno-chip" style="--c:#0284c7">' + t('Prefloración', 'Pre-flowering') + '</span>' +
+          '<span class="hydro-cycle-pheno-chip" style="--c:#d97706">' + t('Floración', 'Flowering') + '</span>' +
+          '<span class="hydro-cycle-pheno-chip" style="--c:#7c3aed">' + t('Producción', 'Production') + '</span>' +
+          '<span class="hydro-cycle-pheno-note">' + t(
+            'Sombras = perfil estimado por K/N (orientativo). Azul = prefloración (equilibrio N–K).',
+            'Shades = profile estimated from K/N (indicative). Blue = pre-flowering (N–K balance).'
+          ) + '</span>' +
+        '</div>';
+    }
+    var guide = opts.showRelations
+      ? '<line class="hydro-cycle-chart-guide" x1="' + xAt(0) + '" y1="' + padT + '" x2="' + xAt(0) + '" y2="' + (padT + plotH) + '" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" opacity="0"/>'
+      : '';
+    var hitPads = '';
+    if (opts.showRelations) {
+      for (var i = 0; i < n; i++) {
+        var hx = xAt(i);
+        var hw = n === 1 ? plotW : Math.max(28, plotW / Math.max(1, n - 1));
+        hitPads += '<rect class="hydro-cycle-chart-hit" data-stage-idx="' + i + '" x="' + (hx - hw / 2) + '" y="' + padT + '" width="' + hw + '" height="' + plotH + '" fill="transparent"/>';
+      }
+    }
+    var svg =
       '<svg class="hydro-cycle-line-svg" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="' + escapeAttr(yLabel) + '">' +
-      grid + paths + xLabels +
+      bands + grid + paths + guide + stageTags + xLabels + hitPads +
       '<text x="12" y="' + (padT + plotH / 2) + '" transform="rotate(-90 12 ' + (padT + plotH / 2) + ')" text-anchor="middle" font-size="11" fill="#64748b">' + escapeAttr(yLabel) + '</text>' +
       '</svg>';
+
+    if (!opts.showRelations) {
+      return '<div class="hydro-cycle-chart-legend">' + legend + '</div>' + svg;
+    }
+
+    return (
+      '<div class="hydro-cycle-chart-legend">' + legend + '</div>' +
+      phenoLegend +
+      '<p class="hydro-cycle-chart-hint">' + escapeAttr(t(
+        'Pasa el cursor por una etapa: relaciones + perfil fenológico estimado.',
+        'Hover a stage: ratios + estimated phenology profile.'
+      )) + '</p>' +
+      '<div class="hydro-cycle-chart-interactive" data-hydro-meq-chart>' +
+        svg +
+        '<div class="hydro-cycle-chart-tip" hidden></div>' +
+      '</div>'
+    );
+  }
+
+  function bindMeqChartRelations(host, stages) {
+    if (!host) return;
+    var wrap = host.querySelector('[data-hydro-meq-chart]');
+    if (!wrap || wrap._bound) return;
+    wrap._bound = true;
+    var tip = wrap.querySelector('.hydro-cycle-chart-tip');
+    var svg = wrap.querySelector('svg');
+    var guide = wrap.querySelector('.hydro-cycle-chart-guide');
+    if (!tip || !svg) return;
+
+    function showAt(idx, clientX, clientY) {
+      var stage = stages[idx];
+      if (!stage) return;
+      tip.hidden = false;
+      tip.innerHTML = meqRelationsHtml(stage);
+      if (guide) {
+        var n = stages.length;
+        var w = 640;
+        var padL = 44;
+        var padR = 16;
+        var plotW = w - padL - padR;
+        var x = padL + (n === 1 ? plotW / 2 : (idx / (n - 1)) * plotW);
+        guide.setAttribute('x1', String(x));
+        guide.setAttribute('x2', String(x));
+        guide.setAttribute('opacity', '1');
+      }
+      var rect = wrap.getBoundingClientRect();
+      var left = clientX - rect.left + 12;
+      var top = clientY - rect.top + 12;
+      tip.style.left = '0px';
+      tip.style.top = '0px';
+      var tw = tip.offsetWidth || 280;
+      var th = tip.offsetHeight || 120;
+      if (left + tw > rect.width - 8) left = Math.max(8, rect.width - tw - 8);
+      if (top + th > rect.height - 8) top = Math.max(8, clientY - rect.top - th - 12);
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+
+    function hide() {
+      tip.hidden = true;
+      if (guide) guide.setAttribute('opacity', '0');
+    }
+
+    wrap.addEventListener('mousemove', function (ev) {
+      var hit = ev.target.closest && ev.target.closest('[data-stage-idx]');
+      if (!hit) {
+        // nearest stage by x in SVG coords
+        var pt = svg.createSVGPoint();
+        pt.x = ev.clientX;
+        pt.y = ev.clientY;
+        var ctm = svg.getScreenCTM();
+        if (!ctm) { hide(); return; }
+        var sp = pt.matrixTransform(ctm.inverse());
+        var n = stages.length;
+        var padL = 44;
+        var padR = 16;
+        var plotW = 640 - padL - padR;
+        var best = 0;
+        var bestD = Infinity;
+        for (var i = 0; i < n; i++) {
+          var x = padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+          var d = Math.abs(sp.x - x);
+          if (d < bestD) { bestD = d; best = i; }
+        }
+        if (sp.x < padL - 20 || sp.x > 640 - padR + 20) { hide(); return; }
+        showAt(best, ev.clientX, ev.clientY);
+        return;
+      }
+      var idx = parseInt(hit.getAttribute('data-stage-idx'), 10);
+      if (isNaN(idx)) { hide(); return; }
+      showAt(idx, ev.clientX, ev.clientY);
+    });
+    wrap.addEventListener('mouseleave', hide);
   }
 
   function renderCharts(hostMeq, hostPpm, stages) {
@@ -253,7 +638,10 @@
     var ppmSeries = MICROS.map(function (k) {
       return { label: k, color: COLORS[k], data: stages.map(function (s) { return parseFloat(s.ppm[k]) || 0; }) };
     });
-    if (hostMeq) hostMeq.innerHTML = lineChartSvg(labels, meqSeries, 'meq/L');
+    if (hostMeq) {
+      hostMeq.innerHTML = lineChartSvg(labels, meqSeries, 'meq/L', { showRelations: true, stages: stages });
+      bindMeqChartRelations(hostMeq, stages);
+    }
     if (hostPpm) hostPpm.innerHTML = lineChartSvg(labels, ppmSeries, 'ppm');
   }
 
@@ -291,7 +679,11 @@
     var litRows = bags.builtIn.map(function (r) { return rowHtml(r, false); }).join('');
     var myRows = bags.custom.map(function (r) { return rowHtml(r, true); }).join('');
     var sep = bags.custom.length
-      ? '<tr class="hydro-cycle-catalog-sep"><td colspan="' + (MACROS.length + MICROS.length + 2) + '"><strong>' + t('Mis soluciones', 'My solutions') + '</strong> — ' + t('disponibles en cualquier proyecto (con cuenta)', 'available in any project (with account)') + '</td></tr>'
+      ? '<tr class="hydro-cycle-catalog-sep"><td colspan="' + (MACROS.length + MICROS.length + 2) + '"><strong>' + t('Mis soluciones', 'My solutions') + '</strong> — ' +
+        (isDashboardEmbed()
+          ? t('cuenta / nube, sin límite', 'account / cloud, no limit')
+          : (bags.custom.length + '/' + FREE_CUSTOM_SOLUTION_LIMIT + ' · ' + t('límite versión gratis', 'free version limit'))) +
+        '</td></tr>'
       : '';
     var litSep = '<tr class="hydro-cycle-catalog-sep"><td colspan="' + (MACROS.length + MICROS.length + 2) + '"><strong>' + t('Literatura', 'Literature') + '</strong></td></tr>';
 
@@ -327,7 +719,135 @@
     document.body.appendChild(overlay);
   }
 
+  function saveCycleProgramToCatalog(api) {
+    if (!api) return;
+    var snap = api.snapshot();
+    if (!snap.stages || !snap.stages.length) {
+      window.alert(t('Agrega al menos una etapa antes de guardar.', 'Add at least one stage before saving.'));
+      return;
+    }
+    var st = api.getState && api.getState();
+    var suggested = '';
+    if (st && st.programName) suggested = st.programName;
+    var name = window.prompt(
+      t(
+        'Título del programa del ciclo (se guardan todas las etapas de la tabla):',
+        'Cycle program title (all stages in the table will be saved):'
+      ),
+      suggested
+    );
+    if (name == null) return;
+    name = String(name).trim();
+    if (!name) {
+      window.alert(t('Necesitas un título para guardar el programa.', 'You need a title to save the program.'));
+      return;
+    }
+    var items = loadCustomCyclePrograms();
+    var programId = st && st.programId ? String(st.programId) : '';
+    var entry = {
+      id: programId && programId.indexOf('cycleprog_') === 0 ? programId : ('cycleprog_' + Date.now()),
+      name: name,
+      type: 'cycle',
+      stages: snap.stages.map(function (s) {
+        return {
+          id: s.id,
+          name: s.name,
+          solutionId: s.solutionId || '',
+          ce: s.ce,
+          meq: Object.assign({}, s.meq),
+          ppm: Object.assign({}, s.ppm)
+        };
+      }),
+      activeStageId: snap.activeStageId,
+      updatedAt: new Date().toISOString()
+    };
+    var idx = items.findIndex(function (it) {
+      return it.id === entry.id || String(it.name || '').toLowerCase() === name.toLowerCase();
+    });
+    if (idx >= 0) {
+      entry.id = items[idx].id;
+      items[idx] = entry;
+    } else {
+      items.push(entry);
+    }
+    if (st) {
+      st.programId = entry.id;
+      st.programName = entry.name;
+    }
+    saveCustomCyclePrograms(items);
+    if (api && api.onCatalogSaved) api.onCatalogSaved(entry);
+    if (window.showMessage) {
+      window.showMessage(
+        t('Programa guardado en tu catálogo (' + entry.stages.length + ' etapas).', 'Program saved to your catalog (' + entry.stages.length + ' stages).'),
+        'success'
+      );
+    } else {
+      window.alert(
+        t('Programa guardado en tu catálogo (' + entry.stages.length + ' etapas).', 'Program saved to your catalog (' + entry.stages.length + ' stages).')
+      );
+    }
+  }
+
+  function openCycleProgramsCatalog(api) {
+    var items = loadCustomCyclePrograms();
+    var overlay = document.createElement('div');
+    overlay.className = 'hydro-solution-modal';
+    var rows = items.length
+      ? items.map(function (p) {
+          var n = (p.stages && p.stages.length) || 0;
+          return '<tr data-cycle-prog-id="' + escapeAttr(p.id) + '">' +
+            '<td><strong>' + escapeAttr(p.name) + '</strong><br><small>' + n + ' ' + t('etapas', 'stages') + '</small></td>' +
+            '<td><button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(p.id) + '">' + t('Cargar', 'Load') + '</button> ' +
+            '<button type="button" class="hydro-cycle-btn hydro-cycle-btn--danger" data-cycle-prog-del="' + escapeAttr(p.id) + '">' + t('Eliminar', 'Delete') + '</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="2" class="hydro-muted">' + escapeAttr(t('Aún no tienes programas guardados. Usa «Al catálogo» para guardar toda la tabla.', 'You have no saved programs yet. Use “To catalog” to save the whole table.')) + '</td></tr>';
+
+    overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
+      '<div class="hydro-solution-modal__head"><div><h2>' + t('Mis programas del ciclo', 'My cycle programs') + '</h2><p>' +
+      t('Carga un programa completo (todas las etapas) o elimínalo del catálogo.', 'Load a full program (all stages) or delete it from the catalog.') +
+      '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
+      '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + t('Programa', 'Program') + '</th><th></th></tr></thead><tbody>' +
+      rows + '</tbody></table></div></section>';
+
+    overlay.addEventListener('click', function (ev) {
+      if (ev.target === overlay || ev.target.closest('[data-hydro-catalog-close]')) {
+        overlay.remove();
+        return;
+      }
+      var del = ev.target.closest('[data-cycle-prog-del]');
+      if (del) {
+        var delId = del.getAttribute('data-cycle-prog-del');
+        var next = loadCustomCyclePrograms().filter(function (it) { return it.id !== delId; });
+        saveCustomCyclePrograms(next);
+        overlay.remove();
+        openCycleProgramsCatalog(api);
+        return;
+      }
+      var loadBtn = ev.target.closest('[data-cycle-prog-load]');
+      if (!loadBtn) return;
+      var id = loadBtn.getAttribute('data-cycle-prog-load');
+      var prog = loadCustomCyclePrograms().find(function (it) { return it.id === id; });
+      if (!prog || !api) {
+        overlay.remove();
+        return;
+      }
+      var st = api.getState();
+      st.stages = (prog.stages || []).map(function (s, i) { return normalizeStage(s, i); });
+      if (!st.stages.length) st.stages = [normalizeStage({ name: defaultStageName(1) }, 0)];
+      st.activeStageId = prog.activeStageId && st.stages.some(function (s) { return s.id === prog.activeStageId; })
+        ? prog.activeStageId
+        : st.stages[0].id;
+      st.programId = prog.id;
+      st.programName = prog.name;
+      api.render();
+      api.persist();
+      overlay.remove();
+    });
+    document.body.appendChild(overlay);
+  }
+
   function saveStageToCatalog(stage, api) {
+    // Legacy: una sola etapa como solución nutritiva (ya no se usa en UI del ciclo).
     if (!stage) return;
     var name = String(stage.name || '').trim();
     if (!name) {
@@ -354,6 +874,14 @@
       entry.id = items[idx].id;
       items[idx] = entry;
     } else {
+      var gate = canAddCustomSolution(items, null);
+      if (!gate.ok) {
+        window.alert(t(
+          'En la versión gratis puedes guardar hasta ' + gate.limit + ' soluciones propias (' + gate.count + '/' + gate.limit + '). En el dashboard (con cuenta) no hay límite y se guardan en la nube.',
+          'In the free version you can save up to ' + gate.limit + ' custom solutions (' + gate.count + '/' + gate.limit + '). In the dashboard (with an account) there is no limit and they sync to the cloud.'
+        ));
+        return;
+      }
       items.push(entry);
     }
     stage.solutionId = entry.id;
@@ -367,9 +895,18 @@
     opts = opts || {};
     var state = {
       stages: Array.isArray(opts.stages) && opts.stages.length
-        ? opts.stages.map(normalizeStage)
-        : [normalizeStage({ name: t('Vegetativa', 'Vegetative') }, 0)],
-      activeStageId: opts.activeStageId || null
+        ? opts.stages.map(function (s, i) {
+            var st = normalizeStage(s, i);
+            // Migrar placeholder antiguo del feature
+            if (/^vegetativ[ao]?$/i.test(st.name) || /^vegetative$/i.test(st.name) || /^vegeta$/i.test(st.name)) {
+              st.name = defaultStageName(i + 1);
+            }
+            return st;
+          })
+        : [normalizeStage({ name: defaultStageName(1) }, 0)],
+      activeStageId: opts.activeStageId || null,
+      programId: opts.programId || '',
+      programName: opts.programName || ''
     };
     if (!state.activeStageId || !state.stages.some(function (s) { return s.id === state.activeStageId; })) {
       state.activeStageId = state.stages[0].id;
@@ -385,13 +922,38 @@
       },
       setStages: function (stages, activeId) {
         state.stages = (stages || []).map(normalizeStage);
-        if (!state.stages.length) state.stages = [normalizeStage({ name: t('Vegetativa', 'Vegetative') }, 0)];
+        if (!state.stages.length) state.stages = [normalizeStage({ name: defaultStageName(1) }, 0)];
         state.activeStageId = activeId && state.stages.some(function (s) { return s.id === activeId; })
           ? activeId
           : state.stages[0].id;
       },
       persist: function () {
         if (typeof opts.onChange === 'function') opts.onChange(api.snapshot());
+      },
+      refreshCharts: function () {
+        var rootEl = opts.root;
+        if (!rootEl) return;
+        renderCharts(
+          rootEl.querySelector('[data-hydro-cycle-chart-meq]'),
+          rootEl.querySelector('[data-hydro-cycle-chart-ppm]'),
+          state.stages
+        );
+      },
+      /** Actualiza ternario + gráficas sin rearmar la tabla (evita parpadeo al cambiar de pestaña). */
+      refreshVisuals: function () {
+        var rootEl = opts.root;
+        if (!rootEl) return;
+        var tableHost = rootEl.querySelector('[data-hydro-cycle-table]');
+        if (!tableHost || !tableHost.querySelector('.hydro-cycle-table')) {
+          api.render();
+          return;
+        }
+        paintTernary(rootEl.querySelector('[data-hydro-cycle-ternary]'), api.getActive(), api, opts);
+        renderCharts(
+          rootEl.querySelector('[data-hydro-cycle-chart-meq]'),
+          rootEl.querySelector('[data-hydro-cycle-chart-ppm]'),
+          state.stages
+        );
       },
       snapshot: function () {
         return {
@@ -405,7 +967,9 @@
               ppm: Object.assign({}, s.ppm)
             };
           }),
-          activeStageId: state.activeStageId
+          activeStageId: state.activeStageId,
+          programId: state.programId || '',
+          programName: state.programName || ''
         };
       },
       onCatalogSaved: opts.onCatalogSaved || null,
@@ -420,33 +984,39 @@
           var head =
             '<thead><tr>' +
             '<th>' + t('Etapa', 'Stage') + '</th>' +
-            '<th>CE</th>' +
-            MACROS.map(function (k) { return '<th>' + labelMacro(k) + '<br><span class="hydro-th-unit">meq/L</span></th>'; }).join('') +
-            MICROS.map(function (k) { return '<th>' + k + '<br><span class="hydro-th-unit">ppm</span></th>'; }).join('') +
+            '<th>' + t('CE', 'EC') + '</th>' +
+            MACROS.map(function (k) {
+              return '<th class="' + colClassMacro(k) + '">' + labelMacro(k) + '<br><span class="hydro-th-unit">meq/L</span></th>';
+            }).join('') +
+            MICROS.map(function (k, idx) {
+              return '<th class="' + colClassMicro(k, idx) + '">' + k + '<br><span class="hydro-th-unit">ppm</span></th>';
+            }).join('') +
             '<th></th></tr></thead>';
           var body = state.stages.map(function (s) {
             var active = s.id === state.activeStageId ? ' is-active' : '';
             syncMacroPpm(s);
             s.ce = String(computeCE(s));
             return '<tr class="hydro-cycle-row' + active + '" data-cycle-stage="' + escapeAttr(s.id) + '">' +
-              '<td><input type="text" class="hydro-input hydro-cycle-name" data-cycle-field="name" value="' + escapeAttr(s.name) + '" placeholder="' + escapeAttr(t('Ej. Vegetativa', 'E.g. Vegetative')) + '"></td>' +
+              '<td class="hydro-cycle-stage-cell">' +
+                '<span class="hydro-cycle-active-mark" title="' + escapeAttr(t('Etapa activa', 'Active stage')) + '" aria-hidden="true">✓</span>' +
+                '<input type="text" class="hydro-input hydro-cycle-name" data-cycle-field="name" value="' + escapeAttr(s.name) + '" placeholder="' + escapeAttr(defaultStageName(1)) + '">' +
+              '</td>' +
               '<td><span class="hydro-cycle-ce">' + escapeAttr(s.ce) + '</span></td>' +
               MACROS.map(function (k) {
-                return '<td><input type="number" step="0.01" min="0" class="hydro-input" data-cycle-field="meq" data-cycle-key="' + k + '" value="' + round2(s.meq[k]).toFixed(2) + '"></td>';
+                return '<td class="' + colClassMacro(k) + '"><input type="number" step="0.01" min="0" class="hydro-input" data-cycle-field="meq" data-cycle-key="' + k + '" value="' + round2(s.meq[k]).toFixed(2) + '"></td>';
               }).join('') +
-              MICROS.map(function (k) {
-                return '<td><input type="number" step="0.01" min="0" class="hydro-input" data-cycle-field="ppm" data-cycle-key="' + k + '" value="' + round2(s.ppm[k]).toFixed(2) + '"></td>';
+              MICROS.map(function (k, idx) {
+                return '<td class="' + colClassMicro(k, idx) + '"><input type="number" step="0.01" min="0" class="hydro-input" data-cycle-field="ppm" data-cycle-key="' + k + '" value="' + round2(s.ppm[k]).toFixed(2) + '"></td>';
               }).join('') +
               '<td class="hydro-cycle-actions">' +
-                '<button type="button" class="hydro-cycle-btn" data-cycle-catalog>' + t('Catálogo', 'Catalog') + '</button> ' +
-                '<button type="button" class="hydro-cycle-btn hydro-cycle-btn--save" data-cycle-save-catalog title="' + escapeAttr(t('Guardar esta etapa en tu catálogo de soluciones', 'Save this stage to your solution catalog')) + '">' + t('Al catálogo', 'To catalog') + '</button> ' +
+                '<button type="button" class="hydro-cycle-btn" data-cycle-catalog title="' + escapeAttr(t('Cargar una solución del catálogo en esta etapa', 'Load a catalog solution into this stage')) + '">' + t('Catálogo', 'Catalog') + '</button> ' +
                 '<button type="button" class="hydro-cycle-btn hydro-cycle-btn--danger" data-cycle-delete>' + t('Quitar', 'Remove') + '</button>' +
               '</td></tr>';
           }).join('');
           tableHost.innerHTML =
             '<div class="hydro-table-scroll"><table class="hydro-table hydro-cycle-table">' + head + '<tbody>' + body + '</tbody></table></div>';
         }
-        renderMiniTernary(ternHost, api.getActive());
+        paintTernary(ternHost, api.getActive(), api, opts);
         renderCharts(meqChart, ppmChart, state.stages);
       },
       mount: function () {
@@ -465,10 +1035,6 @@
           var sid = row.getAttribute('data-cycle-stage');
           if (ev.target.closest('[data-cycle-catalog]')) {
             openCatalogForStage(sid, api);
-            return;
-          }
-          if (ev.target.closest('[data-cycle-save-catalog]')) {
-            saveStageToCatalog(api.getStage(sid), api);
             return;
           }
           if (ev.target.closest('[data-cycle-delete]')) {
@@ -503,7 +1069,7 @@
             var ceEl = row.querySelector('.hydro-cycle-ce');
             if (ceEl) ceEl.textContent = st.ce;
             state.activeStageId = st.id;
-            renderMiniTernary(rootEl.querySelector('[data-hydro-cycle-ternary]'), st);
+            paintTernary(rootEl.querySelector('[data-hydro-cycle-ternary]'), st, api, opts);
             renderCharts(rootEl.querySelector('[data-hydro-cycle-chart-meq]'), rootEl.querySelector('[data-hydro-cycle-chart-ppm]'), state.stages);
             api.persist();
           }
@@ -520,7 +1086,7 @@
           var sid = row.getAttribute('data-cycle-stage');
           if (sid && sid !== state.activeStageId) {
             state.activeStageId = sid;
-            renderMiniTernary(rootEl.querySelector('[data-hydro-cycle-ternary]'), api.getActive());
+            paintTernary(rootEl.querySelector('[data-hydro-cycle-ternary]'), api.getActive(), api, opts);
             rootEl.querySelectorAll('.hydro-cycle-row').forEach(function (tr) {
               tr.classList.toggle('is-active', tr.getAttribute('data-cycle-stage') === sid);
             });
@@ -529,7 +1095,7 @@
         var addBtn = rootEl.querySelector('[data-hydro-cycle-add]');
         if (addBtn) {
           addBtn.addEventListener('click', function () {
-            var st = defaultStage(t('Etapa', 'Stage') + ' ' + (state.stages.length + 1));
+            var st = defaultStage(defaultStageName(state.stages.length + 1));
             state.stages.push(st);
             state.activeStageId = st.id;
             api.render();
@@ -542,6 +1108,18 @@
             if (typeof opts.onUseInDesign === 'function') opts.onUseInDesign(api.getActive());
           });
         }
+        var saveProgBtn = rootEl.querySelector('[data-hydro-cycle-save-catalog]');
+        if (saveProgBtn) {
+          saveProgBtn.addEventListener('click', function () {
+            saveCycleProgramToCatalog(api);
+          });
+        }
+        var loadProgBtn = rootEl.querySelector('[data-hydro-cycle-load-programs]');
+        if (loadProgBtn) {
+          loadProgBtn.addEventListener('click', function () {
+            openCycleProgramsCatalog(api);
+          });
+        }
         api.render();
       }
     };
@@ -552,10 +1130,17 @@
     create: createApi,
     loadCustomSolutions: loadCustomSolutions,
     saveCustomSolutions: saveCustomSolutions,
+    loadCustomCyclePrograms: loadCustomCyclePrograms,
+    saveCustomCyclePrograms: saveCustomCyclePrograms,
     getAllCatalogSolutions: getAllCatalogSolutions,
     normalizeStage: normalizeStage,
     defaultStage: defaultStage,
-    CUSTOM_LS_KEY: CUSTOM_LS_KEY
+    customSolutionLimit: customSolutionLimit,
+    canAddCustomSolution: canAddCustomSolution,
+    isDashboardEmbed: isDashboardEmbed,
+    FREE_CUSTOM_SOLUTION_LIMIT: FREE_CUSTOM_SOLUTION_LIMIT,
+    CUSTOM_LS_KEY: CUSTOM_LS_KEY,
+    CUSTOM_CYCLE_KEY: CUSTOM_CYCLE_KEY
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 

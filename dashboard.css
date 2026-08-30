@@ -3988,6 +3988,21 @@ html.embed-login body {
   color: #c2410c;
 }
 
+.hydro-acid-meq-note {
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #9a3412;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.hydro-acid-meq-note-item strong {
+  color: #c2410c;
+}
+
 .hydro-volume-match-note {
   display: inline-block;
   margin-top: 2px;
@@ -4049,6 +4064,13 @@ html.embed-login body {
 .hydro-table th.hydro-micro-start,
 .hydro-table td.hydro-micro-start {
   border-left: 3px solid #93c5fd;
+  padding-left: 10px;
+}
+
+/* Separador aniones | cationes (antes de K⁺) */
+.hydro-table th.hydro-ion-divide,
+.hydro-table td.hydro-ion-divide {
+  border-left: 3px solid rgba(148, 163, 184, 0.85);
   padding-left: 10px;
 }
 
@@ -4214,14 +4236,29 @@ html.embed-login body {
   font-size: 13px;
   cursor: pointer;
 }
-.hydro-solution-modal__table tr.hydro-cycle-catalog-sep td,
-.hydro-solution-modal table tr.hydro-cycle-catalog-sep td {
-  background: #f1f5f9 !important;
-  text-align: left !important;
-  font-size: 12px;
-  color: #334155;
-  padding: 10px 8px !important;
-  white-space: normal !important;
+.hydro-cycle-program-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #1d4ed8 !important;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+  white-space: nowrap;
+}
+.hydro-cycle-program-btn:hover,
+.hydro-cycle-program-btn:focus-visible {
+  background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%) !important;
+  color: #fff !important;
+  outline: none;
+}
+.hydro-cycle-program-btn__icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  filter: brightness(0) invert(1);
 }
 .hydro-solution-choose {
   min-width: 112px;

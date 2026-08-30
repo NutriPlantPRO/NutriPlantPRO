@@ -225,7 +225,8 @@ let hydroState = {
   fertilizers: [],
   volumeWaterM3: 100,
   tankVolumeL: 1000,
-  injectionRateLperM3: 10
+  injectionRateLperM3: 10,
+  cycleProgram: null
 };
 
 // Catálogo de fertilizantes solubles personalizados (hidroponía, concentración elemental %)
@@ -677,7 +678,10 @@ function hydroSaveData() {
       fertilizerTotalsPpm,
       fertilizerTotalsMeq,
       fertilizerTotalsPctMeq,
-      customMaterials: { items: Array.isArray(hydroCustomMaterialsUser) ? hydroCustomMaterialsUser : [] }
+      customMaterials: { items: Array.isArray(hydroCustomMaterialsUser) ? hydroCustomMaterialsUser : [] },
+      cycleProgram: hydroState.cycleProgram && typeof hydroState.cycleProgram === 'object'
+        ? hydroState.cycleProgram
+        : null
     };
     if (window.projectStorage) {
       window.projectStorage.saveSection('hidroponia', payload, pid);
@@ -1044,6 +1048,13 @@ function hydroSchedulePpmLayoutSync(focusInfo) {
   }, HYDRO_PPM_LAYOUT_MS);
 }
 
+  function hydroMeqColClass(n) {
+    var cls = [];
+    if (n === 'N_NH4') cls.push('hydro-col-nh4');
+    if (n === 'K') cls.push('hydro-ion-divide');
+    return cls.join(' ');
+  }
+
 function renderHydroStageTable() {
   const meqWrap = document.getElementById('hydroMeqTableWrap');
   const ppmWrap = document.getElementById('hydroPpmTableWrap');
@@ -1076,7 +1087,7 @@ function renderHydroStageTable() {
         <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
         ${HYDRO_MEQ_NUTRIENTS.map(n => {
           const mv = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
-          return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" value="${hydroRound2(mv).toFixed(2)}"></td>`;
+          return `<td class="${hydroMeqColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" value="${hydroRound2(mv).toFixed(2)}"></td>`;
         }).join('')}
       </tr>
     `;
@@ -1089,7 +1100,7 @@ function renderHydroStageTable() {
           <tr>
             <th>${hydroT('Solución nutritiva', 'Nutrient solution')}</th>
             <th>CE (dS/m)</th>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroMeqColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
           </tr>
         </thead>
         <tbody>${meqRows}</tbody>
@@ -1111,7 +1122,7 @@ function renderHydroStageTable() {
           const vAttr = useLive
             ? hydroEscapeAttr(hydroPpmTyping.raw)
             : hydroEscapeAttr((macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1));
-          return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input hydro-ppm-macro" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
+          return `<td class="${hydroMeqColClass(n)}"><input class="hydro-input hydro-ppm-macro" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
         }).join('')}
         ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
         <td class="hydro-col-cl hydro-col-cl-after-micros"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="Cl" type="number" step="0.01" value="${stage.ppm?.Cl ?? 0}"></td>
@@ -1126,7 +1137,7 @@ function renderHydroStageTable() {
           <tr>
             <th>${hydroT('Solución nutritiva', 'Nutrient solution')}</th>
             <th>CE (dS/m)</th>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroMeqColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
             ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
             <th class="hydro-col-cl hydro-col-cl-after-micros">${hydroLabelHtml('Cl')} <span class="notranslate" translate="no">ppm</span></th>
           </tr>
@@ -1155,7 +1166,7 @@ function renderHydroStageTable() {
     return `
       <tr>
         <td>${hydroEscapeAttr(hydroStageSolutionCellLabel(stage))}</td>
-        ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
+        ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${hydroMeqColClass(n)}">${pct[n].toFixed(1)}</td>`).join('')}
       </tr>
     `;
   }).join('');
@@ -1166,7 +1177,7 @@ function renderHydroStageTable() {
         <thead>
           <tr>
             <th>${hydroT('Solución nutritiva', 'Nutrient solution')}</th>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroMeqColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
           </tr>
         </thead>
         <tbody>${pctRows}</tbody>
@@ -1802,11 +1813,11 @@ function hydroPpmFromAguaAnalysis(analysis) {
 const HYDRO_WATER_ACIDS = (typeof window !== 'undefined' && window.NpHydroAcidLegend && window.NpHydroAcidLegend.ACIDS)
   ? window.NpHydroAcidLegend.ACIDS
   : {
-    acido_nitrico_55: { nameEs: 'Ácido Nítrico 55%', nameEn: 'Nitric Acid 55%', meqPerMl: 11.6, densityKgL: 1.37 },
-    acido_sulfurico_98: { nameEs: 'Ácido Sulfúrico 98%', nameEn: 'Sulfuric Acid 98%', meqPerMl: 36.7, densityKgL: 1.84 },
-    acido_fosforico_75: { nameEs: 'Ácido Fosfórico 75%', nameEn: 'Phosphoric Acid 75%', meqPerMl: 12, densityKgL: 1.57 },
-    acido_fosforico_85: { nameEs: 'Ácido Fosfórico 85%', nameEn: 'Phosphoric Acid 85%', meqPerMl: 14.6, densityKgL: 1.69 },
-    acido_citrico_anhidro: { nameEs: 'Ácido Cítrico Anhidro 99.5%', nameEn: 'Citric Acid Anhydrous 99.5%', meqPerMl: 25.9, densityKgL: 1.665 }
+    acido_nitrico_55: { nameEs: 'Ácido Nítrico 55%', nameEn: 'Nitric Acid 55%', meqPerMl: 11.6, densityKgL: 1.37, purityPct: 55, formula: 'HNO₃' },
+    acido_sulfurico_98: { nameEs: 'Ácido Sulfúrico 98%', nameEn: 'Sulfuric Acid 98%', meqPerMl: 36.7, densityKgL: 1.84, purityPct: 98, formula: 'H₂SO₄' },
+    acido_fosforico_75: { nameEs: 'Ácido Fosfórico 75%', nameEn: 'Phosphoric Acid 75%', meqPerMl: 12, densityKgL: 1.57, purityPct: 75, formula: 'H₃PO₄' },
+    acido_fosforico_85: { nameEs: 'Ácido Fosfórico 85%', nameEn: 'Phosphoric Acid 85%', meqPerMl: 14.6, densityKgL: 1.69, purityPct: 85, formula: 'H₃PO₄' },
+    acido_citrico_anhidro: { nameEs: 'Ácido Cítrico Anhidro 99.5%', nameEn: 'Citric Acid Anhydrous 99.5%', meqPerMl: 25.9, densityKgL: 1.665, purityPct: 99.5, formula: 'C₆H₈O₇' }
   };
 
 function hydroGetSelectedWaterAnalysis() {
@@ -2202,6 +2213,14 @@ function hydroIsAcidMaterialId(id) {
     s.indexOf('acido_citrico') >= 0;
 }
 
+/** Quelatos de micros (EDTA, EDDHA, EDHA, DTPA…): van con Ca en tanque A. */
+function hydroIsChelatedMicroMaterial(matOrId) {
+  const id = typeof matOrId === 'string' ? matOrId : (matOrId && matOrId.id) || '';
+  const name = (matOrId && typeof matOrId === 'object') ? String(matOrId.name || '') : '';
+  const s = (String(id) + ' ' + name).toLowerCase();
+  return /edta|eddha|\bedha\b|dtpa|quelato|chelat/.test(s);
+}
+
 function hydroAcidElementForId(id) {
   const s = String(id || '');
   if (s.indexOf('nitrico') >= 0) return 'N_NO3';
@@ -2394,7 +2413,8 @@ function hydroAutoCalculateSolution() {
     }
   }
 
-  // 8) Micronutrientes, uno por elemento (después de macros/sulfatos).
+  // 8) Micronutrientes: quelatos (EDTA/EDDHA/EDHA/DTPA) → tanque A con nitrato de Ca;
+  //    el resto (B, Mo, sales no queladas) → tanque B.
   [
     ['fe_eddha', 'Fe'],
     ['quelato_mn', 'Mn'],
@@ -2402,7 +2422,11 @@ function hydroAutoCalculateSolution() {
     ['quelato_zn', 'Zn'],
     ['quelato_cu', 'Cu'],
     ['molibdato_sodio', 'Mo']
-  ].forEach((pair, index) => addTargetRow(pair[0], pair[1], remaining(pair[1]), 'B', 60 + index));
+  ].forEach((pair, index) => {
+    const mat = byId(pair[0]);
+    const chelated = hydroIsChelatedMicroMaterial(mat || pair[0]);
+    addTargetRow(pair[0], pair[1], remaining(pair[1]), chelated ? 'A' : 'B', (chelated ? 15 : 60) + index);
+  });
 
   hydroState.fertilizers.sort((a, b) => (a.autoOrder || 50) - (b.autoOrder || 50));
   renderHydroFertTable();
@@ -2565,10 +2589,10 @@ function hydroBuildFertMeqContributionHtml(totals) {
       <div class="hydro-table-scroll hydro-table-colored">
         <table class="hydro-table hydro-table-colored hydro-table-compact">
           <thead><tr>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroMeqColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
           </tr></thead>
           <tbody><tr>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${hydroMeqColClass(n)}">${pct[n].toFixed(1)}</td>`).join('')}
           </tr></tbody>
         </table>
       </div>
@@ -2728,10 +2752,25 @@ function hydroAcidMeqHintHtml(f, materials) {
   const info = hydroAcidMeqNeutralizedByRow(f, materials);
   if (!info) return '';
   const meqTxt = info.meqPerL > 0 ? info.meqPerL.toFixed(2) : '0';
-  return `<div class="hydro-acid-meq-hint" title="${hydroT(
-    'Alcalinidad (meq/L de HCO₃⁻ + CO₃²⁻) que neutralizaría esta dosis de ácido con el volumen de agua actual',
-    'Alkalinity (meq/L of HCO₃⁻ + CO₃²⁻) this acid dose would neutralize at the current water volume'
-  )}">≈ <strong>${meqTxt}</strong> ${hydroT('meq/L alcalinidad (HCO₃⁻+CO₃²⁻)', 'meq/L alkalinity (HCO₃⁻+CO₃²⁻)')}</div>`;
+  const mat = materials.find(m => m && m.id === f.materialId) ||
+    (hydroIsAcidMaterialId(f.materialId) ? hydroResolveAcidMaterial(f.materialId, materials) : null);
+  const name = hydroMaterialDisplayName((mat && mat.name) || f.name || hydroT('Ácido', 'Acid'));
+  return {
+    name: name,
+    meqTxt: meqTxt,
+    html: `<span class="hydro-acid-meq-note-item"><strong>${hydroEscapeAttr(name)}</strong>: ≈ <strong>${meqTxt}</strong> ${hydroT('meq/L alcalinidad (HCO₃⁻+CO₃²⁻)', 'meq/L alkalinity (HCO₃⁻+CO₃²⁻)')}</span>`
+  };
+}
+
+function hydroAcidMeqNotesBanner(fertRows, materials) {
+  const bits = [];
+  (fertRows || []).forEach(function (f) {
+    if (!hydroIsAcidMaterialId(f.materialId)) return;
+    const tip = hydroAcidMeqHintHtml(f, materials);
+    if (tip && tip.html) bits.push(tip.html);
+  });
+  if (!bits.length) return '';
+  return `<p class="hydro-acid-meq-note" role="note">${bits.join(' · ')}</p>`;
 }
 
 function hydroMaterialDisplayName(name) {
@@ -2812,14 +2851,10 @@ function renderHydroFertTable() {
         'Ideal: L from HCO₃⁻/CO₃²⁻ in the analysis (Bring from analysis). You can also set an element ppm and see the volume here.'
       )
       : hydroT('Volumen total del producto para el volumen de agua', 'Total product volume for the configured water volume');
-    const acidMeqHint = isAcid ? hydroAcidMeqHintHtml(f, materials) : '';
     const totalCell = isLiquid
-      ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:stretch;">
-          <div style="display:flex;align-items:center;gap:6px;">
+      ? `<div style="display:flex;align-items:center;gap:6px;">
             <input class="hydro-input hydro-product-total-input" data-fert-id="${f.id}" data-fert-field="productTotalL" type="number" step="0.001" min="0" value="${liquidDisplay.value > 0 ? hydroFormatProductAmount(liquidDisplay.value) : ''}" placeholder="${liquidDisplay.unit} ${hydroT('total', 'total')}" title="${acidTotalTitle}">
             <span class="hydro-muted" style="white-space:nowrap;">${liquidDisplay.unit}</span>
-          </div>
-          ${acidMeqHint}
         </div>`
       : `${totalDisplay.value > 0 ? hydroFormatProductAmountWithUnit(totalDisplay.value, totalDisplay.unit) : '—'}`;
     return `
@@ -2852,12 +2887,17 @@ function renderHydroFertTable() {
     : (batchTotalUsd > 0 ? batchTotalUsd.toFixed(2) : '—');
 
   const headerCells = HYDRO_PPM_NUTRIENTS.map(n => `<th class="hydro-contrib-th ${thClass(n)}">${hydroLabelHtml(n)}</th>`).join('');
+  const acidNotes = hydroAcidMeqNotesBanner(hydroState.fertilizers, materials);
   wrap.innerHTML = `
-    <p class="hydro-legend-elemental" style="margin:0 0 8px 0;font-size:0.9rem;color:#64748b;">${hydroT('Concentración elemental (%). Puedes trabajar por ppm de un elemento (flujo tradicional) o, en líquidos, escribir el total de producto (L) para calcular ppm aportadas.', 'Elemental concentration (%). Work from an element target in ppm, or enter the total liquid product volume to calculate contributed ppm.')}</p>
-    <p class="hydro-legend-acid" style="margin:0 0 10px 0;font-size:0.86rem;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;line-height:1.4;">${hydroT(
-      '<strong>Ácidos — dos formas:</strong> (1) <em>Ideal</em>: en <strong>Total producto (L)</strong> pon la dosis según HCO₃⁻/CO₃²⁻ del análisis (Traer de análisis o el resumen de ácido arriba). (2) Si quieres una prueba por <strong>ppm de un elemento</strong> (N del nítrico, P del fosfórico…), escribe esa ppm en la celda del elemento y se calcula el volumen. Debajo de L se indica cuántos <strong>meq/L de alcalinidad</strong> (carbonatos/bicarbonatos) neutralizaría esa dosis.',
-      '<strong>Acids — two ways:</strong> (1) <em>Ideal</em>: in <strong>Total product (L)</strong> enter the dose from HCO₃⁻/CO₃²⁻ in the analysis (Bring from analysis or the acid summary above). (2) For a trial by <strong>element ppm</strong> (N from nitric, P from phosphoric…), type that ppm in the element cell and the volume is calculated. Under L you see how many <strong>meq/L of alkalinity</strong> (carbonates/bicarbonates) that dose would neutralize.'
+    <p class="hydro-legend-elemental" style="margin:0 0 6px 0;font-size:0.88rem;color:#64748b;">${hydroT(
+      'Concentración elemental (%). Ppm de un nutriente o, en líquidos, total de producto (L).',
+      'Elemental concentration (%). Nutrient ppm, or for liquids total product (L).'
     )}</p>
+    <p class="hydro-legend-acid" style="margin:0 0 8px 0;font-size:0.84rem;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:7px 10px;line-height:1.35;">${hydroT(
+      '<strong>Ácidos:</strong> ideal = L desde HCO₃⁻/CO₃²⁻ (Traer de análisis). Alternativa = ppm de un elemento (N, P…) y se calcula el volumen.',
+      '<strong>Acids:</strong> ideal = L from HCO₃⁻/CO₃²⁻ (Bring from analysis). Alternative = element ppm (N, P…) and volume is calculated.'
+    )}</p>
+    ${acidNotes}
     <div class="hydro-table-scroll hydro-table-colored">
       <table class="hydro-table hydro-table-colored hydro-fert-contrib-table">
         <thead>
@@ -3899,7 +3939,8 @@ function initHydroponiaUI() {
     fertilizers: [],
     volumeWaterM3: 100,
     tankVolumeL: 1000,
-    injectionRateLperM3: 10
+    injectionRateLperM3: 10,
+    cycleProgram: null
   };
   const saved = hydroLoadData();
   if (saved) {
@@ -3912,7 +3953,8 @@ function initHydroponiaUI() {
       fertilizers: Array.isArray(saved.fertilizers) ? saved.fertilizers : [],
       volumeWaterM3: saved.volumeWaterM3 != null ? saved.volumeWaterM3 : 100,
       tankVolumeL: saved.tankVolumeL != null ? saved.tankVolumeL : 1000,
-      injectionRateLperM3: saved.injectionRateLperM3 != null ? saved.injectionRateLperM3 : 10
+      injectionRateLperM3: saved.injectionRateLperM3 != null ? saved.injectionRateLperM3 : 10,
+      cycleProgram: saved.cycleProgram && typeof saved.cycleProgram === 'object' ? saved.cycleProgram : null
     };
   }
   hydroState.volumeWaterM3 = hydroState.volumeWaterM3 != null ? hydroState.volumeWaterM3 : 100;
@@ -3963,6 +4005,40 @@ window.hydroFormatProductAmountWithUnit = hydroFormatProductAmountWithUnit;
 window.initHydroponiaUI = initHydroponiaUI;
 window.saveHydroponiaData = hydroSaveData;
 window.hydroFlushSaveNow = hydroFlushSaveNow;
+window.hydroSetCycleProgram = function (snap) {
+  if (!snap || typeof snap !== 'object') {
+    hydroState.cycleProgram = null;
+  } else {
+    hydroState.cycleProgram = {
+      stages: Array.isArray(snap.stages) ? snap.stages : [],
+      activeStageId: snap.activeStageId || null,
+      programId: snap.programId || '',
+      programName: snap.programName || ''
+    };
+  }
+  try {
+    if (window.currentProject) {
+      window.currentProject.hidroponia = window.currentProject.hidroponia || {};
+      window.currentProject.hidroponia.cycleProgram = hydroState.cycleProgram
+        ? JSON.parse(JSON.stringify(hydroState.cycleProgram))
+        : null;
+    }
+  } catch (e) { /* ignore */ }
+  if (typeof hydroFlushSaveNow === 'function') hydroFlushSaveNow();
+  else hydroScheduleSave();
+};
+window.hydroGetCycleProgramSnapshot = function () {
+  if (hydroState.cycleProgram && typeof hydroState.cycleProgram === 'object') {
+    return JSON.parse(JSON.stringify(hydroState.cycleProgram));
+  }
+  try {
+    const h = window.currentProject && window.currentProject.hidroponia;
+    if (h && h.cycleProgram && typeof h.cycleProgram === 'object') {
+      return JSON.parse(JSON.stringify(h.cycleProgram));
+    }
+  } catch (e2) { /* ignore */ }
+  return null;
+};
 window.openHydroNewMaterialModal = openHydroNewMaterialModal;
 window.openEditHydroCustomMaterial = openEditHydroCustomMaterial;
 window.openHydroPreloadedCatalogModal = openHydroPreloadedCatalogModal;

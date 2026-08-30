@@ -65,8 +65,17 @@
     html.embed-login .card-intro { display: none; }
     html.embed-dashboard .embed-lead,
     html.embed-login .embed-lead { display: block; }
+    html.embed-dashboard .wrap,
+    html.embed-login .wrap {
+      max-width: none;
+      width: 100%;
+    }
     html.embed-dashboard body,
-    html.embed-login body { padding: 10px 14px 16px; }
+    html.embed-login body {
+      padding: 10px 14px 16px;
+      min-height: 100%;
+      background: #f8fafc;
+    }
     .section-head {
       display: flex;
       align-items: center;
@@ -135,6 +144,36 @@
       outline: none;
       border-color: #14b8a6;
       box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+    }
+    .btn-sub-action {
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1px solid #99f6e4;
+      background: #f0fdfa;
+      color: #0f766e;
+    }
+    .btn-sub-action:hover { background: #ccfbf1; }
+    .btn-sub-action--primary {
+      border-color: #0d9488;
+      background: #0d9488;
+      color: #fff;
+    }
+    .btn-sub-action--primary:hover { background: #0f766e; }
+    .btn-sub-action--danger {
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .btn-sub-action--danger:hover { background: #fee2e2; }
+    .custom-sub-form {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid #a5f3fc;
+      border-radius: 10px;
+      background: #f0f9ff;
     }
     .results-grid {
       display: grid;
@@ -245,7 +284,27 @@
           <div class="field">
             <label for="substrate" data-i18n-pulse="lbl_substrate">Sustrato (orientativo)</label>
             <select id="substrate"></select>
-            <p class="hint" data-i18n-pulse="hint_substrate">Al elegir, se sugiere un % de agua disponible; puedes editarlo.</p>
+            <div class="substrate-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+              <button type="button" id="btnAddSubstrate" class="btn-sub-action" data-i18n-pulse="btn_add_sub">＋ Agregar personalizado</button>
+              <button type="button" id="btnDelSubstrate" class="btn-sub-action btn-sub-action--danger" hidden data-i18n-pulse="btn_del_sub">Eliminar</button>
+            </div>
+            <div id="customSubstrateForm" class="custom-sub-form" hidden>
+              <div class="grid grid--2" style="margin:0;">
+                <div class="field" style="margin:0;">
+                  <label for="customSubName" data-i18n-pulse="lbl_custom_name">Nombre del sustrato</label>
+                  <input id="customSubName" type="text" maxlength="60" placeholder="Ej. Mix finca A" />
+                </div>
+                <div class="field" style="margin:0;">
+                  <label for="customSubAw" data-i18n-pulse="lbl_custom_aw">% agua disponible</label>
+                  <input id="customSubAw" type="number" min="0.1" max="100" step="0.1" value="20" />
+                </div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+                <button type="button" id="btnSaveSubstrate" class="btn-sub-action btn-sub-action--primary" data-i18n-pulse="btn_save_sub">Guardar en lista</button>
+                <button type="button" id="btnCancelSubstrate" class="btn-sub-action" data-i18n-pulse="btn_cancel_sub">Cancelar</button>
+              </div>
+            </div>
+            <p class="hint" data-i18n-pulse="hint_substrate">Al elegir, se sugiere un % de agua disponible. Puedes agregar el tuyo con nombre y %.</p>
           </div>
           <div class="field">
             <label for="awPct" data-i18n-pulse="lbl_aw">Agua totalmente disponible (% del volumen)</label>
@@ -310,8 +369,7 @@
 (function () {
   'use strict';
 
-  var SUBSTRATES = [
-    { id: 'custom', aw: null, es: 'Personalizado', en: 'Custom' },
+  var BUILTIN_SUBSTRATES = [
     { id: 'coco', aw: 30, es: 'Fibra de coco (~30%)', en: 'Coco coir (~30%)' },
     { id: 'peat', aw: 35, es: 'Turba / peat mix (~35%)', en: 'Peat mix (~35%)' },
     { id: 'rockwool', aw: 40, es: 'Lana de roca (~40%)', en: 'Rockwool (~40%)' },
@@ -323,6 +381,49 @@
     { id: 'coco_perlite_50', aw: 20, es: 'Coco–perlita 50/50 (~20%)', en: 'Coco–perlite 50/50 (~20%)' }
   ];
 
+  var CUSTOM_LS_KEY = 'nutriplant_free_hidro_pulso_substrates_v1';
+  var userSubstrates = [];
+
+  function loadUserSubstrates() {
+    try {
+      var raw = localStorage.getItem(CUSTOM_LS_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(function (s) {
+        return s && s.id && s.name && Number(s.aw) > 0;
+      }).map(function (s) {
+        return {
+          id: String(s.id),
+          aw: Number(s.aw),
+          name: String(s.name).slice(0, 60),
+          custom: true
+        };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveUserSubstrates() {
+    try {
+      localStorage.setItem(CUSTOM_LS_KEY, JSON.stringify(userSubstrates.map(function (s) {
+        return { id: s.id, name: s.name, aw: s.aw };
+      })));
+    } catch (e) { /* quota */ }
+  }
+
+  function allSubstrates() {
+    var customs = userSubstrates.map(function (s) {
+      var label = s.name + ' (~' + s.aw + '%)';
+      return { id: s.id, aw: s.aw, es: label, en: label, custom: true };
+    });
+    return customs.concat(BUILTIN_SUBSTRATES);
+  }
+
+  function findSubstrate(id) {
+    return allSubstrates().filter(function (s) { return s.id === id; })[0] || null;
+  }
+
   var I18N = {
     es: {
       title: '💧 Pulso de riego en hidroponía',
@@ -332,7 +433,18 @@
       lbl_vol: 'Volumen del contenedor (L)',
       hint_vol: 'Ej. bolsa o maceta de 13 L.',
       lbl_substrate: 'Sustrato (orientativo)',
-      hint_substrate: 'Al elegir, se sugiere un % de agua disponible; puedes editarlo.',
+      hint_substrate: 'Al elegir, se sugiere un % de agua disponible. Puedes agregar el tuyo con nombre y %.',
+      btn_add_sub: '＋ Agregar personalizado',
+      btn_del_sub: 'Eliminar',
+      btn_save_sub: 'Guardar en lista',
+      btn_cancel_sub: 'Cancelar',
+      lbl_custom_name: 'Nombre del sustrato',
+      lbl_custom_aw: '% agua disponible',
+      opt_builtin: 'Catálogo',
+      opt_custom: 'Mis sustratos',
+      err_name: 'Escribe un nombre para el sustrato.',
+      err_aw: 'Indica un % de agua disponible válido (0.1–100).',
+      confirm_del: '¿Eliminar este sustrato personalizado?',
       lbl_aw: 'Agua totalmente disponible (% del volumen)',
       hint_aw: 'Fracción del contenedor que es agua útil para la planta.',
       lbl_depletion: 'Agotamiento para volver a regar (%)',
@@ -373,7 +485,18 @@
       lbl_vol: 'Container volume (L)',
       hint_vol: 'E.g. 13 L bag or pot.',
       lbl_substrate: 'Substrate (indicative)',
-      hint_substrate: 'Selecting suggests an available-water %; you can edit it.',
+      hint_substrate: 'Selecting suggests an available-water %. You can add your own with name and %.',
+      btn_add_sub: '＋ Add custom',
+      btn_del_sub: 'Delete',
+      btn_save_sub: 'Save to list',
+      btn_cancel_sub: 'Cancel',
+      lbl_custom_name: 'Substrate name',
+      lbl_custom_aw: 'Available water %',
+      opt_builtin: 'Catalog',
+      opt_custom: 'My substrates',
+      err_name: 'Enter a substrate name.',
+      err_aw: 'Enter a valid available-water % (0.1–100).',
+      confirm_del: 'Delete this custom substrate?',
       lbl_aw: 'Total available water (% of volume)',
       hint_aw: 'Fraction of the container that is plant-available water.',
       lbl_depletion: 'Depletion before next pulse (%)',
@@ -440,13 +563,87 @@
       var key = el.getAttribute('data-i18n-pulse');
       if (key && t(key)) el.textContent = t(key);
     });
+    fillSubstrateSelect();
+  }
+
+  function fillSubstrateSelect(preferId) {
     var sel = document.getElementById('substrate');
-    var cur = sel.value;
-    sel.innerHTML = SUBSTRATES.map(function (s) {
+    var cur = preferId || sel.value;
+    var html = '';
+    if (userSubstrates.length) {
+      html += '<optgroup label="' + t('opt_custom') + '">';
+      userSubstrates.forEach(function (s) {
+        html += '<option value="' + s.id + '">' + escapeHtml(s.name) + ' (~' + s.aw + '%)</option>';
+      });
+      html += '</optgroup>';
+    }
+    html += '<optgroup label="' + t('opt_builtin') + '">';
+    BUILTIN_SUBSTRATES.forEach(function (s) {
       var label = lang() === 'en' ? s.en : s.es;
-      return '<option value="' + s.id + '">' + label + '</option>';
-    }).join('');
-    if (cur) sel.value = cur;
+      html += '<option value="' + s.id + '">' + label + '</option>';
+    });
+    html += '</optgroup>';
+    sel.innerHTML = html;
+    if (cur && findSubstrate(cur)) sel.value = cur;
+    else if (BUILTIN_SUBSTRATES[3]) sel.value = BUILTIN_SUBSTRATES[3].id; // perlita default
+    updateDelButton();
+  }
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function updateDelButton() {
+    var btn = document.getElementById('btnDelSubstrate');
+    var found = findSubstrate(document.getElementById('substrate').value);
+    btn.hidden = !(found && found.custom);
+  }
+
+  function showCustomForm(show) {
+    document.getElementById('customSubstrateForm').hidden = !show;
+    if (show) {
+      var aw = num('awPct');
+      if (aw > 0) document.getElementById('customSubAw').value = String(aw);
+      document.getElementById('customSubName').focus();
+    }
+  }
+
+  function addCustomSubstrate() {
+    var name = String(document.getElementById('customSubName').value || '').trim();
+    var aw = parseFloat(document.getElementById('customSubAw').value);
+    if (!name) {
+      window.alert(t('err_name'));
+      return;
+    }
+    if (!(aw > 0 && aw <= 100)) {
+      window.alert(t('err_aw'));
+      return;
+    }
+    var id = 'user_' + Date.now().toString(36);
+    userSubstrates.unshift({ id: id, name: name.slice(0, 60), aw: aw, custom: true });
+    saveUserSubstrates();
+    document.getElementById('awPct').value = String(aw);
+    fillSubstrateSelect(id);
+    showCustomForm(false);
+    document.getElementById('customSubName').value = '';
+    calc();
+  }
+
+  function deleteCustomSubstrate() {
+    var id = document.getElementById('substrate').value;
+    var found = findSubstrate(id);
+    if (!(found && found.custom)) return;
+    if (!window.confirm(t('confirm_del'))) return;
+    userSubstrates = userSubstrates.filter(function (s) { return s.id !== id; });
+    saveUserSubstrates();
+    fillSubstrateSelect(BUILTIN_SUBSTRATES[3] ? BUILTIN_SUBSTRATES[3].id : BUILTIN_SUBSTRATES[0].id);
+    var next = findSubstrate(document.getElementById('substrate').value);
+    if (next && next.aw != null) document.getElementById('awPct').value = String(next.aw);
+    calc();
   }
 
   function calc() {
@@ -527,11 +724,11 @@
   }
 
   function onSubstrateChange() {
-    var id = document.getElementById('substrate').value;
-    var found = SUBSTRATES.filter(function (s) { return s.id === id; })[0];
+    var found = findSubstrate(document.getElementById('substrate').value);
     if (found && found.aw != null) {
       document.getElementById('awPct').value = String(found.aw);
     }
+    updateDelButton();
     calc();
   }
 
@@ -542,8 +739,17 @@
       el.addEventListener('change', calc);
     });
     document.getElementById('substrate').addEventListener('change', onSubstrateChange);
+    document.getElementById('btnAddSubstrate').addEventListener('click', function () {
+      showCustomForm(true);
+    });
+    document.getElementById('btnCancelSubstrate').addEventListener('click', function () {
+      showCustomForm(false);
+    });
+    document.getElementById('btnSaveSubstrate').addEventListener('click', addCustomSubstrate);
+    document.getElementById('btnDelSubstrate').addEventListener('click', deleteCustomSubstrate);
   }
 
+  userSubstrates = loadUserSubstrates();
   applyI18n();
   bind();
 
@@ -564,7 +770,8 @@
       ['volContainer', 'awPct', 'depletionPct', 'drainPct', 'pots', 'drippersPerPot', 'dripperLph'].forEach(function (id) {
         if (d[id] != null) document.getElementById(id).value = d[id];
       });
-      if (d.substrate) document.getElementById('substrate').value = d.substrate;
+      if (d.substrate) fillSubstrateSelect(d.substrate);
+      updateDelButton();
     });
   }
 

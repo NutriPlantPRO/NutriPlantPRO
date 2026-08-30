@@ -153,6 +153,19 @@
     'Ácido Fosfórico 75%': 'Phosphoric Acid 75%',
     'Ácido Fosfórico 85%': 'Phosphoric Acid 85%',
     'Ácido Cítrico Anhidro 99.5%': 'Citric Acid Anhydrous 99.5%',
+    'Especificaciones del ácido': 'Acid specifications',
+    'Fórmula': 'Formula',
+    'Pureza': 'Purity',
+    'Densidad': 'Density',
+    'Fuerza': 'Strength',
+    'H⁺ útiles / mol': 'Useful H⁺ / mol',
+    'Aporta N-NO₃ (~12.2 % m/m)': 'Contributes N-NO₃ (~12.2% w/w)',
+    'Aporta SO₄²⁻ (~96 % m/m)': 'Contributes SO₄²⁻ (~96% w/w)',
+    'Aporta P₂O₅ (~54 % m/m)': 'Contributes P₂O₅ (~54% w/w)',
+    'Aporta P₂O₅ (~61 % m/m)': 'Contributes P₂O₅ (~61% w/w)',
+    'Anhidro; densidad verdadera ~1.665 kg/L; solo acidifica': 'Anhydrous; true density ~1.665 kg/L; acidifies only',
+    'Dosis de ácido:': 'Acid dose:',
+    'Ácido (volumen total):': 'Acid (total volume):',
     'Macronutrientes en fruta (%)': 'Fruit macronutrients (%)',
     'Calcio en Fruta (mg/100 g MF)': 'Fruit Calcium (mg/100 g FW)',
     'Calidad de Fruta': 'Fruit Quality',
@@ -440,6 +453,14 @@
         ? t('En base a (agua):', 'Based on (water):')
         : t('En base a (m³ agua):', 'Based on (water m³):');
     }
+
+    root.querySelectorAll('.agua-field-lbl, .aw-acid-results > span:nth-child(odd), .aw-acid-dosis-box > span:nth-child(odd), [data-aw-section="acid"] > summary').forEach(function (el) {
+      if (!el || el.id) return;
+      var raw = el.getAttribute('data-label-es') || el.textContent;
+      if (!el.getAttribute('data-label-es')) el.setAttribute('data-label-es', raw);
+      var next = translateString(el.getAttribute('data-label-es'));
+      if (next) el.textContent = next;
+    });
   }
 
   function updateAguaVolumeEquiv(root) {

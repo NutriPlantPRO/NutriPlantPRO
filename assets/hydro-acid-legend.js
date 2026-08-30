@@ -6,12 +6,11 @@
   'use strict';
 
   var ACIDS = {
-    acido_nitrico_55: { nameEs: 'Ácido Nítrico 55%', nameEn: 'Nitric Acid 55%', meqPerMl: 11.6, densityKgL: 1.37 },
-    acido_sulfurico_98: { nameEs: 'Ácido Sulfúrico 98%', nameEn: 'Sulfuric Acid 98%', meqPerMl: 36.7, densityKgL: 1.84 },
-    acido_fosforico_75: { nameEs: 'Ácido Fosfórico 75%', nameEn: 'Phosphoric Acid 75%', meqPerMl: 12, densityKgL: 1.57 },
-    acido_fosforico_85: { nameEs: 'Ácido Fosfórico 85%', nameEn: 'Phosphoric Acid 85%', meqPerMl: 14.6, densityKgL: 1.69 },
-    // C₆H₈O₇ anhidro ~99.5%: triprótico; ρ verdadera 1.665 kg/L → ~25.9 meq/mL. No aporta N/P/K.
-    acido_citrico_anhidro: { nameEs: 'Ácido Cítrico Anhidro 99.5%', nameEn: 'Citric Acid Anhydrous 99.5%', meqPerMl: 25.9, densityKgL: 1.665 }
+    acido_nitrico_55: { nameEs: 'Ácido Nítrico 55%', nameEn: 'Nitric Acid 55%', formula: 'HNO₃', purityPct: 55, meqPerMl: 11.6, densityKgL: 1.37, nH: 1 },
+    acido_sulfurico_98: { nameEs: 'Ácido Sulfúrico 98%', nameEn: 'Sulfuric Acid 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2 },
+    acido_fosforico_75: { nameEs: 'Ácido Fosfórico 75%', nameEn: 'Phosphoric Acid 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12, densityKgL: 1.57, nH: 3 },
+    acido_fosforico_85: { nameEs: 'Ácido Fosfórico 85%', nameEn: 'Phosphoric Acid 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3 },
+    acido_citrico_anhidro: { nameEs: 'Ácido Cítrico Anhidro 99.5%', nameEn: 'Citric Acid Anhydrous 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3 }
   };
 
   function t(lang, es, en) {

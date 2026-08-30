@@ -142,11 +142,11 @@
         }
         var RATIO_LABELS = { camg: 'Ca/Mg', mgk: 'Mg/K', camgk: '(Ca+Mg)/K', cak: 'Ca/K' };
         var AGUA_ACIDS = [
-            { id: 'acido_nitrico_55', name: tr('Ácido Nítrico 55%', 'Nitric Acid 55%'), meqPerMl: 11.6 },
-            { id: 'acido_sulfurico_98', name: tr('Ácido Sulfúrico 98%', 'Sulfuric Acid 98%'), meqPerMl: 36.7 },
-            { id: 'acido_fosforico_75', name: tr('Ácido Fosfórico 75%', 'Phosphoric Acid 75%'), meqPerMl: 12.0 },
-            { id: 'acido_fosforico_85', name: tr('Ácido Fosfórico 85%', 'Phosphoric Acid 85%'), meqPerMl: 14.6 },
-            { id: 'acido_citrico_anhidro', name: tr('Ácido Cítrico Anhidro 99.5%', 'Citric Acid Anhydrous 99.5%'), meqPerMl: 25.9 }
+            { id: 'acido_nitrico_55', name: tr('Ácido Nítrico 55%', 'Nitric Acid 55%'), meqPerMl: 11.6, densityKgL: 1.37, purityPct: 55, formula: 'HNO₃' },
+            { id: 'acido_sulfurico_98', name: tr('Ácido Sulfúrico 98%', 'Sulfuric Acid 98%'), meqPerMl: 36.7, densityKgL: 1.84, purityPct: 98, formula: 'H₂SO₄' },
+            { id: 'acido_fosforico_75', name: tr('Ácido Fosfórico 75%', 'Phosphoric Acid 75%'), meqPerMl: 12.0, densityKgL: 1.57, purityPct: 75, formula: 'H₃PO₄' },
+            { id: 'acido_fosforico_85', name: tr('Ácido Fosfórico 85%', 'Phosphoric Acid 85%'), meqPerMl: 14.6, densityKgL: 1.69, purityPct: 85, formula: 'H₃PO₄' },
+            { id: 'acido_citrico_anhidro', name: tr('Ácido Cítrico Anhidro 99.5%', 'Citric Acid Anhydrous 99.5%'), meqPerMl: 25.9, densityKgL: 1.665, purityPct: 99.5, formula: 'C₆H₈O₇' }
         ];
         var SOIL_PHYSICAL_LABELS = {
             texturalClass: tr('Clase textural', 'Textural class'),
@@ -848,6 +848,16 @@
             html += '<span>' + (en ? 'Target residual (meq/L):' : 'Residual objetivo (meq/L):') + '</span><span>' + formatNum(residualMeq) + '</span>';
             html += '<span>' + (en ? 'meq/L to neutralize:' : 'Meq/L a neutralizar:') + '</span><span><strong>' + formatNum(meqPerLNeutralizar) + '</strong></span>';
             html += '<span>' + (en ? 'Selected acid:' : 'Ácido seleccionado:') + '</span><span><span style="display:inline-block;padding:4px 10px;border:1px solid #86efac;background:#dcfce7;color:#14532d;border-radius:999px;font-weight:700;">' + escapeHtml(acid ? acid.name : acidId || '—') + '</span></span>';
+            if (acid) {
+                var densTxt = acid.densityKgL
+                    ? (isUS
+                        ? formatNum(acid.densityKgL, 3) + ' kg/L (' + formatNum(acid.densityKgL * 8.345404, 2) + ' lb/gal)'
+                        : formatNum(acid.densityKgL, 3) + ' kg/L')
+                    : '—';
+                html += '<span>' + (en ? 'Acid specs:' : 'Especificaciones:') + '</span><span class="notranslate" translate="no">' +
+                    escapeHtml((acid.formula || '—') + ' · ' + (acid.purityPct != null ? acid.purityPct + '%' : '—') + ' · ' + densTxt + ' · ' + (acid.meqPerMl != null ? acid.meqPerMl + ' meq/mL' : '—')) +
+                    '</span>';
+            }
             html += '<span>' + volLabel + '</span><span><span style="display:inline-block;padding:4px 10px;border:1px solid #bbf7d0;background:#f7fee7;color:#166534;border-radius:8px;font-weight:700;">' + escapeHtml(volDisp) + '</span></span>';
             html += '<span>' + doseLabel + '</span><span>' + escapeHtml(doseDisp) + '</span>';
             html += '<span>' + totalLabel + '</span><span><strong>' + escapeHtml(totalDisp) + '</strong></span>';

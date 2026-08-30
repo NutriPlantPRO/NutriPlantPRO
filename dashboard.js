@@ -1900,10 +1900,11 @@ function sectionTemplate(name) {
                   <h3>🧪 ${hydroT('Solución nutritiva', 'Nutrient solution')}</h3>
                   <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
                 </div>
-                <button type="button" class="btn btn-secondary btn-sm" id="hydroCycleProgramBtn"
-                  onclick="window.showHydroSolutionCalculator && window.showHydroSolutionCalculator({tab:'program'})"
+                <button type="button" class="btn btn-sm hydro-cycle-program-btn" id="hydroCycleProgramBtn"
+                  onclick="window.showHydroSolutionCalculator && window.showHydroSolutionCalculator({tab:'program', only:'cycle'})"
                   title="${hydroT('Abrir programa del ciclo (etapas, gráficas y catálogo)', 'Open cycle program (stages, charts, and catalog)')}">
-                  📊 ${hydroT('Programa del ciclo', 'Cycle program')}
+                  <img src="assets/N_Hoja_Azul.png" alt="" class="hydro-cycle-program-btn__icon" width="18" height="18">
+                  <span>${hydroT('Programa del ciclo', 'Cycle program')}</span>
                 </button>
               </div>
               <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
@@ -2012,6 +2013,7 @@ function sectionTemplate(name) {
             <li>${dashboardT('dashboard.reports_info_granular', 'Nutrición granular')}</li>
             <li>${dashboardT('dashboard.reports_info_fertigation', 'Fertirriego')}</li>
             <li>${dashboardT('dashboard.reports_info_hydro', 'Solución Nutritiva')}</li>
+            <li>${dashboardT('dashboard.reports_info_hydro_cycle', 'Programa del ciclo (etapas meq/%/ppm)')}</li>
             <li>${dashboardT('dashboard.reports_info_climate', 'Clima (VPD, lluvia, ET₀, tiempo actual)')}</li>
             <li>${dashboardT('dashboard.reports_info_note', 'La lista guarda metadatos (secciones, fecha, idioma); el PDF se genera al pulsar Descargar. Con cuenta en la nube se sincroniza el historial entre dispositivos.')}</li>
           </ul>
@@ -11268,6 +11270,8 @@ function reportUiSectionLabel(sectionId) {
     fertigation: ['dashboard.reports_section_fertigation', 'Fertirriego'],
     hidroponia: ['dashboard.reports_section_hydro', 'Solución Nutritiva'],
     hydroponics: ['dashboard.reports_section_hydro', 'Solución Nutritiva'],
+    hydrocycle: ['dashboard.reports_section_hydro_cycle', 'Programa del ciclo'],
+    hydro_cycle: ['dashboard.reports_section_hydro_cycle', 'Programa del ciclo'],
     vpd: ['dashboard.reports_section_climate', 'Clima'],
     climate: ['dashboard.reports_section_climate', 'Clima'],
     labanalyses: ['dashboard.reports_section_lab', 'Análisis de laboratorio'],
@@ -14889,8 +14893,8 @@ function updateGenerateButton() {
   }
 }
 
-const REPORT_ALLOWED_SECTIONS = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
-const REPORT_SECTION_ORDER = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'labAnalyses', 'extraccionEtapa'];
+const REPORT_ALLOWED_SECTIONS = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'hydroCycle', 'labAnalyses', 'extraccionEtapa'];
+const REPORT_SECTION_ORDER = ['location', 'vpd', 'amendments', 'granular', 'fertigation', 'hidroponia', 'hydroCycle', 'labAnalyses', 'extraccionEtapa'];
 
 function normalizeReportSections(sections) {
   if (!Array.isArray(sections)) return [];
@@ -17110,6 +17114,9 @@ function createSectionHTML(sectionId, chartImages, reportLanguage, reportUnitSys
       break;
     case 'hidroponia':
       html += createHidroponiaSectionHTML(lang);
+      break;
+    case 'hydroCycle':
+      html += createHydroCycleProgramSectionHTML(lang);
       break;
     case 'extraccionEtapa':
       html += createExtraccionEtapaSectionHTML(chartImages, lang, reportUnitSystem);
@@ -20180,6 +20187,134 @@ function createHidroponiaSectionHTML(reportLanguage) {
   `;
 }
 
+/** PDF opcional: Programa del ciclo (etapas multi-fase, independiente del diseño activo). */
+function createHydroCycleProgramSectionHTML(reportLanguage) {
+  const reportLang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = (es, en) => reportLang === 'en' ? en : es;
+  const h = currentProject.hidroponia || {};
+  const cp = (h.cycleProgram && typeof h.cycleProgram === 'object') ? h.cycleProgram : null;
+  const stages = (cp && Array.isArray(cp.stages)) ? cp.stages : [];
+  const programName = (cp && cp.programName) ? String(cp.programName).trim() : '';
+  const meqNutrients = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
+  const microNutrients = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
+  function label(n) {
+    const map = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', Cl: 'Cl⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺' };
+    return map[n] || n;
+  }
+  function toNum(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  function stageCe(stage) {
+    const raw = parseFloat(stage && stage.ce);
+    if (Number.isFinite(raw) && raw > 0) return raw;
+    if (typeof window.hydroComputeCE === 'function') {
+      try { return Number(window.hydroComputeCE(stage)) || 0; } catch (e) { return 0; }
+    }
+    const meq = (stage && stage.meq) || {};
+    const sum = meqNutrients.reduce((a, k) => a + toNum(meq[k]), 0);
+    return sum > 0 ? sum * 0.1 : 0;
+  }
+  const noStages = rt('Sin etapas en el programa del ciclo.', 'No stages in the cycle program.');
+  const rowsMeq = stages.map(stage => {
+    const meq = stage.meq || {};
+    return `<tr>
+      <td>${reportEscapeHtml(stage.name || rt('Etapa', 'Stage'))}</td>
+      <td>${stageCe(stage).toFixed(2)}</td>
+      ${meqNutrients.map(n => `<td>${toNum(meq[n]).toFixed(1)}</td>`).join('')}
+    </tr>`;
+  }).join('');
+  const hydroAnions = ['N_NO3', 'P', 'S'];
+  const hydroCationsTriangle = ['K', 'Ca', 'Mg'];
+  const rowsPct = stages.map(stage => {
+    const meq = stage.meq || {};
+    const sumAnions = hydroAnions.reduce((acc, n) => acc + toNum(meq[n]), 0);
+    const sumKCaMg = hydroCationsTriangle.reduce((acc, n) => acc + toNum(meq[n]), 0);
+    const totalCations = sumKCaMg + toNum(meq.N_NH4);
+    const pct = {};
+    meqNutrients.forEach(n => {
+      const val = toNum(meq[n]);
+      if (hydroAnions.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
+      else if (hydroCationsTriangle.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
+      else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
+    });
+    return `<tr>
+      <td>${reportEscapeHtml(stage.name || rt('Etapa', 'Stage'))}</td>
+      ${meqNutrients.map(n => `<td>${pct[n].toFixed(1)}</td>`).join('')}
+    </tr>`;
+  }).join('');
+  const rowsPpm = stages.map(stage => {
+    const meq = stage.meq || {};
+    const ppm = stage.ppm || {};
+    let macroPpm = {};
+    if (typeof window.hydroComputeMacroPpm === 'function') {
+      try { macroPpm = window.hydroComputeMacroPpm(stage) || {}; } catch (e) { macroPpm = {}; }
+    }
+    const eqW = { N_NO3: 14, N_NH4: 14, P: 31, S: 16.03, K: 39.1, Ca: 20.04, Mg: 12.15 };
+    meqNutrients.forEach(n => {
+      if (macroPpm[n] == null) macroPpm[n] = toNum(meq[n]) * (eqW[n] || 0);
+    });
+    return `<tr>
+      <td>${reportEscapeHtml(stage.name || rt('Etapa', 'Stage'))}</td>
+      ${meqNutrients.map(n => `<td>${toNum(macroPpm[n] != null ? macroPpm[n] : ppm[n]).toFixed(1)}</td>`).join('')}
+      ${microNutrients.map(n => `<td>${toNum(ppm[n]).toFixed(2)}</td>`).join('')}
+      <td>${toNum(ppm.Cl).toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+  const active = stages.find(s => cp && cp.activeStageId && s.id === cp.activeStageId) || stages[0] || null;
+  let ternaryHtml = '';
+  if (active) {
+    const meq = active.meq || {};
+    const sumAn = hydroAnions.reduce((acc, n) => acc + toNum(meq[n]), 0);
+    const sumKCM = hydroCationsTriangle.reduce((acc, n) => acc + toNum(meq[n]), 0);
+    const pNO3 = sumAn > 0 ? (toNum(meq.N_NO3) / sumAn) * 100 : 33.3;
+    const pH2PO4 = sumAn > 0 ? (toNum(meq.P) / sumAn) * 100 : 33.3;
+    const pSO4 = sumAn > 0 ? (toNum(meq.S) / sumAn) * 100 : 33.3;
+    const pK = sumKCM > 0 ? (toNum(meq.K) / sumKCM) * 100 : 33.3;
+    const pCa = sumKCM > 0 ? (toNum(meq.Ca) / sumKCM) * 100 : 33.3;
+    const pMg = sumKCM > 0 ? (toNum(meq.Mg) / sumKCM) * 100 : 33.3;
+    ternaryHtml = `<div class="report-block" style="border-color:#86efac;background:#f0fdf4;">
+      <div class="report-block-title">📐 ${rt('Diagrama ternario (etapa activa)', 'Ternary diagram (active stage)')}</div>
+      <div class="report-note" style="margin-bottom:8px;"><strong>${reportEscapeHtml(active.name || '')}</strong></div>
+      ${typeof buildReportHydroTriangleSvg === 'function' ? buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) : ''}
+    </div>`;
+  }
+  return `
+    <div class="section">
+      <h2 class="section-title">📊 ${rt('Programa del ciclo', 'Cycle program')}</h2>
+      ${programName ? `<div class="report-note" style="margin-bottom:12px;">${rt('Programa', 'Program')}: <strong>${reportEscapeHtml(programName)}</strong></div>` : ''}
+      <div class="report-block" style="border-color:#86efac;background:#f0fdf4;">
+        <div class="report-block-title">✅ ${rt('Etapas del ciclo (meq/L)', 'Cycle stages (meq/L)')}</div>
+        <div class="report-table-wrap report-hydro-table-wrap">
+        <table class="report-app-table">
+          <thead><tr><th>${rt('Etapa', 'Stage')}</th><th>${rt('CE (dS/m)', 'EC (dS/m)')}</th>${meqNutrients.map(n => `<th>${label(n)} (meq/L)</th>`).join('')}</tr></thead>
+          <tbody>${rowsMeq || `<tr><td colspan="${meqNutrients.length + 2}" style="text-align:center;color:#64748b;">${noStages}</td></tr>`}</tbody>
+        </table>
+        </div>
+      </div>
+      <div class="report-block" style="border-color:#86efac;background:#f0fdf4;">
+        <div class="report-block-title">📊 ${rt('Peso en % de meq', 'Weight in % meq')}</div>
+        <div class="report-table-wrap report-hydro-table-wrap">
+        <table class="report-app-table">
+          <thead><tr><th>${rt('Etapa', 'Stage')}</th>${meqNutrients.map(n => `<th>${label(n)} % meq</th>`).join('')}</tr></thead>
+          <tbody>${rowsPct || `<tr><td colspan="${meqNutrients.length + 1}" style="text-align:center;color:#64748b;">${noStages}</td></tr>`}</tbody>
+        </table>
+        </div>
+      </div>
+      ${ternaryHtml}
+      <div class="report-block" style="border-color:#86efac;background:#f0fdf4;">
+        <div class="report-block-title">📐 ${rt('Etapas del ciclo (ppm)', 'Cycle stages (ppm)')}</div>
+        <div class="report-table-wrap report-hydro-table-wrap">
+        <table class="report-app-table">
+          <thead><tr><th>${rt('Etapa', 'Stage')}</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}<th>${label('Cl')} ppm</th></tr></thead>
+          <tbody>${rowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 2}" style="text-align:center;color:#64748b;">${noStages}</td></tr>`}</tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSystem) {
   const reportLang = reportLanguage === 'en' ? 'en' : 'es';
   const rt = (es, en) => reportLang === 'en' ? en : es;
@@ -22015,19 +22150,59 @@ window.restoreExtractoPastaUIState = function restoreExtractoPastaUIState() {
 };
 
 // ========== ANÁLISIS DE AGUA (sumas meq, m³ riego, kg elemento/óxido, ácido neutralización) ==========
-/* Neutralización HCO₃⁻/CO₃²⁻: volumen = (meq/L × 1000) / meqPerMl por m³. meqPerMl integra pureza y “fuerza” del ácido comercial (no hay campo densidad aparte). Ej. H₂SO₄ 98%: ~36.7 meq/mL equivale a ρ≈1,84 g/mL y 2 H⁺ útiles por mol. */
+/* Neutralización HCO₃⁻/CO₃²⁻: volumen = (meq/L × 1000) / meqPerMl por m³. */
 var AGUA_ACIDS = [
-  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6, densityKgL: 1.37 },
-  { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7, densityKgL: 1.84 },
-  { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0, densityKgL: 1.57 },
-  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6, densityKgL: 1.69 },
-  // C₆H₈O₇ anhidro 99.5%, 3 H⁺, ρ 1.665 kg/L → 25.9 meq/mL. Solo acidifica (sin N/P/K).
-  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', meqPerMl: 25.9, densityKgL: 1.665 }
+  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', formula: 'HNO₃', purityPct: 55, meqPerMl: 11.6, densityKgL: 1.37, nH: 1, noteEs: 'Aporta N-NO₃ (~12.2 % m/m)', noteEn: 'Contributes N-NO₃ (~12.2% w/w)' },
+  { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2, noteEs: 'Aporta SO₄²⁻ (~96 % m/m)', noteEn: 'Contributes SO₄²⁻ (~96% w/w)' },
+  { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12.0, densityKgL: 1.57, nH: 3, noteEs: 'Aporta P₂O₅ (~54 % m/m)', noteEn: 'Contributes P₂O₅ (~54% w/w)' },
+  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3, noteEs: 'Aporta P₂O₅ (~61 % m/m)', noteEn: 'Contributes P₂O₅ (~61% w/w)' },
+  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, noteEs: 'Anhidro; densidad verdadera ~1.665 kg/L; solo acidifica', noteEn: 'Anhydrous; true density ~1.665 kg/L; acidifies only' }
 ];
+
 function aguaAcidLabel(name) {
   return window.NpAnalysisUI && typeof window.NpAnalysisUI.translateString === 'function'
     ? window.NpAnalysisUI.translateString(name)
     : name;
+}
+
+function aguaAcidDensityText(rhoKgL) {
+  var rho = parseFloat(rhoKgL);
+  if (!(rho > 0)) return '—';
+  var ui = window.NpAnalysisUI;
+  var isUS = ui && typeof ui.isUS === 'function' ? ui.isUS() : false;
+  var en = ui && ui.prefs && ui.prefs().language === 'en';
+  if (isUS) {
+    var lbGal = rho * 8.345404;
+    return rho.toFixed(3) + ' kg/L (' + lbGal.toFixed(2) + ' lb/gal)';
+  }
+  return rho.toFixed(3) + ' kg/L';
+}
+
+function aguaAcidSpecsHtml(acid) {
+  if (!acid) return '';
+  var ui = window.NpAnalysisUI;
+  var t = function (es, en) {
+    return ui && typeof ui.t === 'function' ? ui.t(es, en) : es;
+  };
+  var en = ui && ui.prefs && ui.prefs().language === 'en';
+  var note = en ? (acid.noteEn || acid.noteEs || '') : (acid.noteEs || '');
+  var rows = [
+    [t('Fórmula', 'Formula'), acid.formula || '—'],
+    [t('Pureza', 'Purity'), (acid.purityPct != null ? acid.purityPct + '%' : '—')],
+    [t('Densidad', 'Density'), aguaAcidDensityText(acid.densityKgL)],
+    [t('Fuerza', 'Strength'), (acid.meqPerMl != null ? acid.meqPerMl + ' meq/mL' : '—')],
+    [t('H⁺ útiles / mol', 'Useful H⁺ / mol'), (acid.nH != null ? String(acid.nH) : '—')]
+  ];
+  var body = rows.map(function (r) {
+    return '<div style="display:contents;"><span style="color:#166534;">' + r[0] + ':</span><span class="notranslate" translate="no">' + r[1] + '</span></div>';
+  }).join('');
+  if (note) {
+    body += '<div style="grid-column:1/-1;margin-top:4px;color:#64748b;font-size:0.82rem;">' + note + '</div>';
+  }
+  return '<div class="aw-acid-specs" style="margin-top:10px;padding:10px 12px;border:1px dashed #86efac;border-radius:8px;background:#f7fee7;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:0.86rem;">' +
+    '<div style="grid-column:1/-1;font-weight:700;color:#166534;margin-bottom:2px;">' + t('Especificaciones del ácido', 'Acid specifications') + '</div>' +
+    body +
+    '</div>';
 }
 
 function createEmptyAguaAnalysis() {
@@ -22161,6 +22336,7 @@ function createAguaTabHTML() {
                   <span>mL ácido / m³:</span><span id="aw-acid-per-m3">—</span>
                   <span>L ácido (volumen total):</span><span id="aw-acid-total">—</span>
                 </div>
+                <div id="aw-acid-specs-host"></div>
               </details>
             </div>
           </div>
@@ -22405,6 +22581,8 @@ window.awUpdateAcid = function awUpdateAcid() {
     document.getElementById('aw-acid-m3-ref').textContent = m3
       ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
       : '—';
+    var specsHost0 = document.getElementById('aw-acid-specs-host');
+    if (specsHost0) specsHost0.innerHTML = aguaAcidSpecsHtml(acid);
     analysisApplyUnits(document.getElementById('agua-tab-container'));
     return;
   }
@@ -22423,6 +22601,8 @@ window.awUpdateAcid = function awUpdateAcid() {
   document.getElementById('aw-acid-total').innerHTML = m3
     ? ((window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidTotalLiters(litersTotal, 2) : litersTotal.toFixed(2) + ' L') + awAcidKgSpan(kgTotal))
     : '—';
+  var specsHost = document.getElementById('aw-acid-specs-host');
+  if (specsHost) specsHost.innerHTML = aguaAcidSpecsHtml(acid);
   analysisApplyUnits(document.getElementById('agua-tab-container'));
 };
 

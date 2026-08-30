@@ -335,6 +335,7 @@
         document_title: "Panel",
         home: "Inicio",
         hydroponics: "Solución Nutritiva",
+        hydro_cycle_program: "Programa del ciclo",
         fertigation: "Fertirriego",
         report: "Reporte",
         project: "Proyecto",
@@ -460,6 +461,7 @@
         reports_info_granular: "Nutrición granular",
         reports_info_fertigation: "Fertirriego",
         reports_info_hydro: "Solución Nutritiva",
+        reports_info_hydro_cycle: "Programa del ciclo (etapas meq/%/ppm)",
         reports_info_climate: "Clima (VPD, lluvia, ET₀, tiempo actual)",
         reports_info_note: "La lista guarda metadatos (secciones, fecha, idioma); el PDF se genera al pulsar Descargar. Con cuenta en la nube se sincroniza el historial entre dispositivos.",
         reports_empty_title: "📋 No hay reportes generados aún",
@@ -491,6 +493,8 @@
         reports_sec_fertigation_desc: "Programa de fertirriego y recomendaciones nutricionales",
         reports_sec_hydro_title: "💧 Solución Nutritiva",
         reports_sec_hydro_desc: "Solución por etapa y cálculo de fertilizantes (hidroponía)",
+        reports_sec_hydro_cycle_title: "📊 Programa del ciclo",
+        reports_sec_hydro_cycle_desc: "Etapas del ciclo de solución nutritiva (meq, %, ppm y ternario)",
         reports_sec_climate_title: "🌤️ Clima",
         reports_sec_climate_desc: "VPD, lluvia acumulada, ET₀ y lectura meteorológica",
         reports_sec_lab_title: "🧪 Análisis de laboratorio",
@@ -508,6 +512,7 @@
         reports_section_granular: "Nutrición granular",
         reports_section_fertigation: "Fertirriego",
         reports_section_hydro: "Solución Nutritiva",
+        reports_section_hydro_cycle: "Programa del ciclo",
         reports_section_climate: "Clima",
         reports_section_lab: "Análisis de laboratorio",
         reports_section_extract: "Distribución por etapa",
@@ -547,7 +552,19 @@
         hydro_title: "💧 Diseño de solución nutritiva",
         hydro_tab_cycle: "1 · Programa del ciclo",
         hydro_tab_design: "2 · Diseño objetivo",
-        hydro_tab_fert: "3 · Aporte fertilizantes"
+        hydro_tab_fert: "3 · Aporte fertilizantes",
+        hydro_cycle_heading: "📊 Programa del ciclo",
+        hydro_cycle_intro_html: "Arma etapas con título libre (Etapa 1, Floración…). Puedes partir del <strong>catálogo</strong> por etapa (Steiner, Hoagland…), editar meq/ppm, <strong>arrastrar</strong> el ternario y ver las <strong>gráficas</strong>. Con <strong>Al catálogo</strong> guardas toda la tabla como un programa (te pide un título).",
+        hydro_cycle_add: "+ Agregar etapa",
+        hydro_cycle_use_design: "Usar etapa activa en Diseño",
+        hydro_cycle_save_program: "Al catálogo",
+        hydro_cycle_save_program_title: "Guarda todas las etapas de la tabla en tu catálogo",
+        hydro_cycle_my_programs: "Mis programas",
+        hydro_cycle_stages_label: "Etapas del ciclo",
+        hydro_cycle_ternary_label: "Diagrama ternario (etapa activa)",
+        hydro_cycle_chart_meq_label: "Gráfica meq/L (macros)",
+        hydro_cycle_chart_ppm_label: "Gráfica ppm (micros)",
+        hydro_cycle_title_only: "📊 Programa del ciclo"
       },
       radar: {
         tab_crop: "Radar del cultivo",
@@ -1518,6 +1535,7 @@
         document_title: "Dashboard",
         home: "Home",
         hydroponics: "Nutrient Solution",
+        hydro_cycle_program: "Cycle program",
         fertigation: "Fertigation",
         report: "Report",
         project: "Project",
@@ -1643,6 +1661,7 @@
         reports_info_granular: "Granular nutrition",
         reports_info_fertigation: "Fertigation",
         reports_info_hydro: "Nutrient Solution",
+        reports_info_hydro_cycle: "Cycle program (meq/%/ppm stages)",
         reports_info_climate: "Climate (VPD, rainfall, ET₀, current weather)",
         reports_info_note: "The list stores metadata (sections, date, language); the PDF is generated when you press Download. With a cloud account, history syncs across devices.",
         reports_empty_title: "📋 No reports generated yet",
@@ -1674,6 +1693,8 @@
         reports_sec_fertigation_desc: "Fertigation program and nutritional recommendations",
         reports_sec_hydro_title: "💧 Nutrient Solution",
         reports_sec_hydro_desc: "Stage solution and fertilizer calculation (hydroponics)",
+        reports_sec_hydro_cycle_title: "📊 Cycle program",
+        reports_sec_hydro_cycle_desc: "Nutrient solution cycle stages (meq, %, ppm and ternary)",
         reports_sec_climate_title: "🌤️ Climate",
         reports_sec_climate_desc: "VPD, accumulated rainfall, ET₀, and weather reading",
         reports_sec_lab_title: "🧪 Lab analyses",
@@ -1691,6 +1712,7 @@
         reports_section_granular: "Granular nutrition",
         reports_section_fertigation: "Fertigation",
         reports_section_hydro: "Nutrient Solution",
+        reports_section_hydro_cycle: "Cycle program",
         reports_section_climate: "Climate",
         reports_section_lab: "Lab analyses",
         reports_section_extract: "Distribution by stage",
@@ -1730,7 +1752,19 @@
         hydro_title: "💧 Nutrient solution design",
         hydro_tab_cycle: "1 · Cycle program",
         hydro_tab_design: "2 · Target design",
-        hydro_tab_fert: "3 · Fertilizer supply"
+        hydro_tab_fert: "3 · Fertilizer supply",
+        hydro_cycle_heading: "📊 Cycle program",
+        hydro_cycle_intro_html: "Build stages with free titles (Stage 1, Flowering…). Load a <strong>catalog</strong> solution per stage (Steiner, Hoagland…), edit meq/ppm, <strong>drag</strong> the ternary and see the <strong>charts</strong>. Use <strong>To catalog</strong> to save the whole table as a program (it asks for a title).",
+        hydro_cycle_add: "+ Add stage",
+        hydro_cycle_use_design: "Use active stage in Design",
+        hydro_cycle_save_program: "To catalog",
+        hydro_cycle_save_program_title: "Save all stages in the table to your catalog",
+        hydro_cycle_my_programs: "My programs",
+        hydro_cycle_stages_label: "Cycle stages",
+        hydro_cycle_ternary_label: "Ternary diagram (active stage)",
+        hydro_cycle_chart_meq_label: "meq/L chart (macros)",
+        hydro_cycle_chart_ppm_label: "ppm chart (micros)",
+        hydro_cycle_title_only: "📊 Cycle program"
       },
       radar: {
         tab_crop: "Crop Radar",
@@ -2472,6 +2506,12 @@
     });
     collect(root, 'data-i18n-html').forEach(function (element) {
       element.innerHTML = t(element.getAttribute('data-i18n-html'), readParams(element));
+    });
+    collect(root, 'data-i18n-label').forEach(function (element) {
+      element.setAttribute(
+        'data-label',
+        t(element.getAttribute('data-i18n-label'), readParams(element))
+      );
     });
     stampLegalLangLinks(root);
     return root;

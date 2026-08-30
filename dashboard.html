@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#0f172a" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260830cycle"></script>
+  <script src="assets/np-i18n.js?v=20260830hydroCycleEn"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-analysis-ui.js?v=20260817a"></script>
@@ -50,7 +50,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png?v=20260815r">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260830cycle" />
+  <link rel="stylesheet" href="dashboard.css?v=20260830acidNote" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -437,14 +437,14 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260816h"></script>
-  <script src="hidroponia-functions.js?v=20260830cycle"></script>
+  <script src="hidroponia-functions.js?v=20260830cycleSave"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260821kc"></script>
   <script src="analysis-report-render.js?v=20260817a"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260830cycle"></script>
+  <script src="dashboard.js?v=20260830hydroCycleEn"></script>
   <script src="assets/np-fertigation-program-generator.js?v=20260817h"></script>
   <script src="fertirriego-program-functions.js?v=20260817q"></script>
   <script src="ai-knowledge-expansion.js"></script>
@@ -779,12 +779,22 @@
       flex-direction: column;
       overflow: hidden;
     }
+    .modal-tool-iframe-full .modal-header {
+      flex-shrink: 0;
+    }
     .modal-tool-iframe-full .modal-body {
       flex: 1;
       min-height: 0;
       padding: 0;
       height: auto;
       overflow: hidden;
+    }
+    .modal-tool-iframe-full iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
     }
     @media (max-width: 767px) {
       .modal-tool-iframe-fit {
@@ -5240,11 +5250,78 @@ CONTRATO:
       var frame = document.getElementById('hydroSolutionCalculatorFrame');
       if (!modal) return;
       opts = opts || {};
+      var only = opts.only === 'cycle' || opts.only === 'program';
+      var titleEl = modal.querySelector('.modal-title');
+      if (titleEl) {
+        if (only) {
+          titleEl.textContent = (typeof dashboardT === 'function')
+            ? ('📊 ' + dashboardT('dashboard.hydro_cycle_program', 'Programa del ciclo'))
+            : '📊 Programa del ciclo';
+        } else if (typeof dashboardT === 'function') {
+          titleEl.textContent = dashboardT('dashboard.tool_hydro', '💧 Diseño de solución nutritiva');
+        } else {
+          titleEl.textContent = '💧 Diseño de solución nutritiva';
+        }
+      }
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830cycle';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830cycleO';
         if (tab) base += '&tab=' + encodeURIComponent(tab);
-        if (frame.getAttribute('src') !== base) frame.src = base;
+        if (only) base += '&only=cycle';
+        var cur = '';
+        try { cur = frame.getAttribute('src') || frame.src || ''; } catch (e) { cur = ''; }
+        // Solo recargar si cambian tab/only (o aún no cargó). Evita parpadeo al reabrir.
+        var curPath = '';
+        try {
+          var u = new URL(cur, location.href);
+          curPath = u.pathname.split('/').pop() + u.search;
+        } catch (e2) {
+          curPath = cur;
+        }
+        if (!cur || cur.indexOf('about:blank') === 0 || curPath.indexOf(base) === -1) {
+          frame.src = base;
+        } else {
+          try {
+            frame.contentWindow.postMessage({
+              type: 'np-hydro-show',
+              tab: tab || (only ? 'program' : ''),
+              only: only ? 'cycle' : '',
+              language: (function () {
+                try {
+                  var pr = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+                  if (pr && pr.language === 'en') return 'en';
+                  if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' && window.NpI18n.getLanguage() === 'en') return 'en';
+                } catch (eL) { /* ignore */ }
+                return 'es';
+              })()
+            }, '*');
+          } catch (e3) { /* ignore */ }
+        }
+        // Hidratar programa del ciclo + catálogo desde el proyecto / perfil del usuario.
+        setTimeout(function () {
+          try {
+            var cycle = (typeof window.hydroGetCycleProgramSnapshot === 'function')
+              ? window.hydroGetCycleProgramSnapshot()
+              : (window.currentProject && window.currentProject.hidroponia && window.currentProject.hidroponia.cycleProgram) || null;
+            var custom = (typeof window.hydroGetCustomSolutionsSnapshot === 'function')
+              ? window.hydroGetCustomSolutionsSnapshot()
+              : [];
+            if (frame.contentWindow) {
+              var lang = 'es';
+              try {
+                var pr = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+                if (pr && pr.language === 'en') lang = 'en';
+                else if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' && window.NpI18n.getLanguage() === 'en') lang = 'en';
+              } catch (eLang) { /* ignore */ }
+              frame.contentWindow.postMessage({
+                type: 'np-hydro-cycle-hydrate',
+                cycleProgram: cycle,
+                customSolutions: custom,
+                language: lang
+              }, '*');
+            }
+          } catch (e4) { /* ignore */ }
+        }, 220);
       }
       modal.classList.add('show');
     }
@@ -5252,17 +5329,25 @@ CONTRATO:
 
     function closeHydroSolutionCalculator() {
       var modal = document.getElementById('hydroSolutionCalculatorModal');
-      var frame = document.getElementById('hydroSolutionCalculatorFrame');
       if (modal) modal.classList.remove('show');
-      if (frame) frame.src = frame.src;
+      // No reiniciar iframe al cerrar: evita parpadeo al volver a abrir.
     }
     window.closeHydroSolutionCalculator = closeHydroSolutionCalculator;
 
     window.addEventListener('message', function (event) {
       try {
-        if (!event || !event.data || event.data.type !== 'np-hydro-custom-solutions') return;
-        if (typeof window.hydroMergeCustomSolutionsFromExternal === 'function') {
-          window.hydroMergeCustomSolutionsFromExternal(event.data.items || []);
+        if (!event || !event.data) return;
+        var t = event.data.type;
+        if (t === 'np-hydro-custom-solutions') {
+          if (typeof window.hydroMergeCustomSolutionsFromExternal === 'function') {
+            window.hydroMergeCustomSolutionsFromExternal(event.data.items || []);
+          }
+          return;
+        }
+        if (t === 'np-hydro-cycle-program') {
+          if (typeof window.hydroSetCycleProgram === 'function') {
+            window.hydroSetCycleProgram(event.data.cycleProgram || null);
+          }
         }
       } catch (e) { /* ignore */ }
     });
@@ -6331,6 +6416,13 @@ CONTRATO:
           </div>
         </div>
 
+        <div class="report-section-item" onclick="toggleReportSection('hydroCycle')" data-section="hydroCycle">
+          <div class="report-section-info">
+            <div class="report-section-title" data-i18n="dashboard.reports_sec_hydro_cycle_title">📊 Programa del ciclo</div>
+            <div class="report-section-description" data-i18n="dashboard.reports_sec_hydro_cycle_desc">Etapas del ciclo de solución nutritiva (meq, %, ppm y ternario)</div>
+          </div>
+        </div>
+
         <div class="report-section-group" data-section-group="labAnalyses">
           <div class="report-section-item" onclick="toggleReportSection('labAnalyses')" data-section="labAnalyses">
             <div class="report-section-info">
@@ -7310,7 +7402,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260815a" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830d" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7342,7 +7434,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830cycle" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830cycleO" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7358,7 +7450,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260830a" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260830c" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
