@@ -2659,7 +2659,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=login&v=20260830c" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=login&v=20260830e" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -2677,7 +2677,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830d" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830citricKg" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>
@@ -4573,7 +4573,8 @@
         var mode = window.innerWidth < 700 ? 'mobile' : 'desktop';
         if (fbEmbedHeightMode === mode && fbEmbedHeightCache) return fbEmbedHeightCache;
         fbEmbedHeightMode = mode;
-        fbEmbedHeightCache = mode === 'mobile' ? 340 : 380;
+        // Mismo alto que auth.css (.login-social-pane__embed--facebook): evita recortar logo/nombre de la página.
+        fbEmbedHeightCache = mode === 'mobile' ? 360 : 400;
         return fbEmbedHeightCache;
       }
 

@@ -79,22 +79,42 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 
 ### 💧 Diseño de solución nutritiva (`hidro-solucion-free.html`)
 
-- **Flujo didáctico:** CE objetivo → meq/L → % meq → ppm; triángulos **aniónico** (NO₃, P, SO₄) y **catiónico** (K, Ca, Mg) arrastrables.
+- **Tres pestañas:** (1) **Programa del ciclo** — etapas con título, catálogo Steiner/Hoagland/propias, ternario de la etapa activa, gráficas meq/ppm (aniones ■ línea continua; cationes ● punteada; tips macros/micros). (2) **Diseño objetivo** — CE → meq/L → % meq → ppm; triángulos arrastrables. (3) **Aporte fertilizantes**.
 - **Cl⁻** entra en la **suma de CE**; en % meq de triángulo aniónico **no** entra (va aparte con leyenda N-NO₃ vs Cl).
 - **N-NH₄⁺** fuera del triángulo K-Ca-Mg; su % es sobre K+Ca+Mg+NH₄.
-- **Persistencia:** `nutriplant_hydro_solucion_free_v1`.
-- **No es** la pestaña Hidroponía del proyecto (esa calcula aporte de fertilizantes y guarda en el proyecto).
+- **Login / gratis:** persistencia local (`nutriplant_hydro_solucion_free_v1` / programas propios en LS).
+- **Dashboard PRO:** botón «Programa del ciclo» en Solución Nutritiva abre la misma UI en modal; el plan multi-etapa se guarda en el proyecto como **`hidroponia.cycleProgram`** (nombre, etapas meq/ppm, activa). Visible en **admin**. En Reportes PDF: casilla **Programa del ciclo** (`hydroCycle`), **independiente** de la sección Hidroponía (diseño activo + fertilizantes).
+- **No confundir con:** Análisis → Solución Nutritiva (laboratorio) ni con «Solución por etapa» del módulo PRO (diseño de una etapa activa para cálculo de sales).
+
+**API Socio:** `free_tools_catalog` con `tool_id: "hidro_solucion"`.
 
 ### ⏱️ Pulso de riego en hidroponía (`hidro-pulso-riego-free.html`)
 
-- **Fórmula:** `L_neto = V × (ATD%/100) × (agotamiento%/100)`; `L_pulso = L_neto ÷ (1 − drenaje%/100)`; `min = (L_pulso ÷ (goteros_por_maceta × L/h)) × 60`; `L_total = L_pulso × macetas`.
-- Desplegable de sustratos orientativos (coco, perlita, lana de roca, etc.) que sugiere % ATD editable.
-- **Persistencia:** `nutriplant_free_hidro_pulso_riego_v1`.
-- Login + icono dashboard ⏱️.
+**Qué hace:** calcula **litros y minutos** del pulso de riego en contenedor (hidroponía/sustrato) según volumen, agua disponible (ATD), agotamiento, drenaje, macetas y goteros.
+
+**Dónde:** login (modal) + icono ⏱️ en barra del dashboard PRO. No es la pestaña Clima ni el balance hídrico 🌧️ de suelo.
+
+**Flujo UI:**
+1. **Contenedor, sustrato y criterio** — V (L); % ATD (catálogo orientativo: coco, perlita, lana de roca… o sustrato personalizado); % agotamiento permitido; % drenaje (lavado de sales). Criterio ideal: reponer el agotamiento de la ATD y sumar el % de drenaje.
+2. **Sistema de riego** — nº macetas, goteros/maceta, caudal L/h por gotero.
+3. **Resultados** — L netos (sin drenaje), L pulso/maceta (con drenaje), minutos del pulso, L total del turno.
+
+**Fórmulas:**
+- `L_neto = V × (ATD%/100) × (agotamiento%/100)`
+- `L_pulso = L_neto ÷ (1 − drenaje%/100)`
+- `min = (L_pulso ÷ (goteros_por_maceta × L/h)) × 60`
+- `L_total = L_pulso × macetas`
+
+**Persistencia:** solo `nutriplant_free_hidro_pulso_riego_v1` (navegador). No se guarda en el proyecto nube.
+
+**API Socio:** `free_tools_catalog` con `tool_id: "hidro_pulso_riego"`.
+
+**Errores a evitar:** confundir con lámina/balance 🌧️ de suelo; inventar % ATD sin decir que el catálogo es orientativo; omitir que el drenaje debe validarse en campo.
 
 ### 💦 Diagnóstico de agua (`agua-dureza-free.html`)
 
 - Dureza total (ppm CaCO₃, meq/L, °dH/°eH/°fH), Ca/Mg de laboratorio, ácidos para neutralizar HCO₃/CO₃ con residual y volumen (L o m³).
+- **Ácidos en catálogo (misma lógica que Análisis → Agua, Hidroponía, admin y PDF):** HNO₃ 55% (11,6 meq/mL; **aporta N-NO₃**; líquido → **mL/m³ y L**), H₂SO₄ 98% (36,7; S; líquido), H₃PO₄ 75%/85% (P; líquido), **Ácido Cítrico Anhidro 99.5%** (**polvo soluble**; 25,9 meq/mL; C₆H₈O₇; **solo acidifica, sin N/P/K**; UI primaria **g/m³ o kg** / **oz o lb** en US customary; mL/L solo equivalencia volumétrica con densidad ~1,665).
 
 ### 🌡️ VPD (`vpd-free.html`)
 

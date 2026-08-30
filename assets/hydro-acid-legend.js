@@ -10,11 +10,38 @@
     acido_sulfurico_98: { nameEs: 'Ácido Sulfúrico 98%', nameEn: 'Sulfuric Acid 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2 },
     acido_fosforico_75: { nameEs: 'Ácido Fosfórico 75%', nameEn: 'Phosphoric Acid 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12, densityKgL: 1.57, nH: 3 },
     acido_fosforico_85: { nameEs: 'Ácido Fosfórico 85%', nameEn: 'Phosphoric Acid 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3 },
-    acido_citrico_anhidro: { nameEs: 'Ácido Cítrico Anhidro 99.5%', nameEn: 'Citric Acid Anhydrous 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3 }
+    acido_citrico_anhidro: { nameEs: 'Ácido Cítrico Anhidro 99.5%', nameEn: 'Citric Acid Anhydrous 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, solidPowder: true }
   };
 
   function t(lang, es, en) {
     return lang === 'en' ? en : es;
+  }
+
+  function isSolidPowder(acidOrId) {
+    var id = typeof acidOrId === 'string' ? acidOrId : (acidOrId && acidOrId.id) || '';
+    if (String(id).indexOf('citrico') >= 0) return true;
+    return !!(acidOrId && acidOrId.solidPowder);
+  }
+
+  function formatSolidMassKg(lang, kg) {
+    var n = Number(kg) || 0;
+    if (n > 0 && n < 1) return (n * 1000).toFixed(0) + ' g';
+    return n.toFixed(2) + ' kg';
+  }
+
+  function formatSolidMassPerM3(kg) {
+    var n = Number(kg) || 0;
+    if (n > 0 && n < 1) return (n * 1000).toFixed(0) + ' g/m³';
+    return n.toFixed(2) + ' kg/m³';
+  }
+
+  function dosePrimaryHtml(lang, calc) {
+    if (isSolidPowder(calc.acidId || calc.acid)) {
+      return '<strong>' + formatSolidMassPerM3(calc.kgPerM3) + '</strong>' +
+        ' <span style="color:#64748b;font-size:0.92em;">(' + t(lang, 'equiv. vol.', 'vol. equiv.') + ' ' +
+        calc.mlPerM3.toFixed(2) + ' mL/m³)</span>';
+    }
+    return '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong>';
   }
 
   function analysisVolumeM3(analysis) {
@@ -150,9 +177,17 @@
     var analysisVolText = aVol > 0
       ? (Number(aVol).toFixed(2) + ' m³')
       : t(lang, 'sin volumen en el análisis', 'no volume in the analysis');
-    var analysisLitersText = aVol > 0
-      ? (Number(analysisTotalLiters).toFixed(2) + ' L')
-      : t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
+    var analysisLitersText;
+    if (!(aVol > 0)) {
+      analysisLitersText = t(lang, 'sin L totales (falta m³ en el análisis)', 'no total L (analysis m³ missing)');
+    } else if (extra.solidPowder && Number.isFinite(extra.analysisTotalKg)) {
+      analysisLitersText = formatSolidMassKg(lang, extra.analysisTotalKg) + ' ' +
+        t(lang, 'de polvo', 'of powder') +
+        ' <span style="color:#64748b;">(' + Number(analysisTotalLiters).toFixed(2) + ' L ' +
+        t(lang, 'equiv.', 'equiv.') + ')</span>';
+    } else {
+      analysisLitersText = Number(analysisTotalLiters).toFixed(2) + ' L';
+    }
     return t(lang, 'Volumen de agua en Análisis', 'Water volume in Analysis') + ': <strong>' + analysisVolText + '</strong> → ' +
       t(lang, 'ácido total', 'total acid') + ' <strong>' + analysisLitersText + '</strong>. ';
   }
@@ -161,6 +196,14 @@
     extra = extra || {};
     if (extra.hideAppliedVolume) return '';
     if (extra.appliedVolumeHtml) return extra.appliedVolumeHtml;
+    if (extra.solidPowder && Number.isFinite(extra.totalKg)) {
+      return t(lang, 'Para el volumen de aquí', 'For this volume') +
+        ' (' + (Number(volumeM3) || 0).toFixed(2) + ' m³): <strong>' +
+        formatSolidMassKg(lang, extra.totalKg) + '</strong> ' +
+        t(lang, 'de polvo', 'of powder') +
+        ' <span style="color:#64748b;">(' + (Number(totalLiters) || 0).toFixed(2) + ' L ' +
+        t(lang, 'equiv.', 'equiv.') + ')</span>. ';
+    }
     return t(lang, 'Para el volumen de aquí', 'For this volume') +
       ' (' + (Number(volumeM3) || 0).toFixed(2) + ' m³): <strong>' +
       (Number(totalLiters) || 0).toFixed(2) + ' L</strong>. ';
@@ -169,17 +212,24 @@
   function buildAcidHtmlFromCalc(lang, calc, classPrefix, extra) {
     extra = extra || {};
     var acidName = t(lang, calc.acid.nameEs, calc.acid.nameEn);
+    var solid = isSolidPowder(calc.acidId || calc.acid);
+    var volExtra = Object.assign({}, extra, {
+      solidPowder: solid,
+      analysisTotalKg: calc.analysisTotalKg,
+      totalKg: calc.totalKg
+    });
     return '<div class="' + (classPrefix || 'hydro') + '-acid-summary-title"><strong>' +
       t(lang, 'Resumen de la dosis de ácido', 'Acid dose summary') + '</strong></div>' +
       '<p class="' + (classPrefix || 'hydro') + '-acid-summary-body">' +
-      '<strong>' + acidName + '</strong>. ' +
+      '<strong>' + acidName + '</strong>' +
+      (solid ? ' (' + t(lang, 'polvo soluble', 'soluble powder') + ')' : '') + '. ' +
       t(lang, 'meq a neutralizar (HCO₃⁻ + CO₃²⁻ − residual)', 'meq to neutralize (HCO₃⁻ + CO₃²⁻ − residual)') +
       ': <strong>' + calc.neededMeqL.toFixed(2) + ' meq/L</strong> ' +
       '(HCO₃⁻ ' + calc.hco3.toFixed(2) + ' + CO₃²⁻ ' + calc.co3.toFixed(2) +
       ' − ' + t(lang, 'residual', 'residual') + ' ' + calc.residualMeq.toFixed(2) + '). ' +
-      '<strong>' + calc.mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
-      analysisVolumeSentence(lang, calc.analysisVolumeM3, calc.analysisTotalLiters, extra) +
-      appliedVolumeSentence(lang, calc.hydroVolumeM3, calc.totalLiters, extra) +
+      dosePrimaryHtml(lang, calc) + '. ' +
+      analysisVolumeSentence(lang, calc.analysisVolumeM3, calc.analysisTotalLiters, volExtra) +
+      appliedVolumeSentence(lang, calc.hydroVolumeM3, calc.totalLiters, volExtra) +
       warningSpan(lang, classPrefix) +
       '</p>' + (extra.extraHtml || '');
   }
@@ -198,18 +248,30 @@
     var residualMeq = Number.isFinite(parseFloat(summary.residualMeq)) ? Math.max(0, parseFloat(summary.residualMeq)) : 1;
     var analysisTotalLiters = mlPerM3 * aVol / 1000;
     var totalLiters = mlPerM3 * hVol / 1000;
-    var acidName = t(lang, summary.acidNameEs || '—', summary.acidNameEn || summary.acidNameEs || '—');
+    var acidMeta = ACIDS[summary.acidId] || {};
+    var density = (typeof acidMeta.densityKgL === 'number' && acidMeta.densityKgL > 0) ? acidMeta.densityKgL : 1.5;
+    var kgPerM3 = (mlPerM3 / 1000) * density;
+    var analysisTotalKg = analysisTotalLiters * density;
+    var totalKg = totalLiters * density;
+    var solid = isSolidPowder(summary.acidId || acidMeta);
+    var acidName = t(lang, summary.acidNameEs || acidMeta.nameEs || '—', summary.acidNameEn || acidMeta.nameEn || summary.acidNameEs || '—');
+    var volExtra = Object.assign({}, extra, {
+      solidPowder: solid,
+      analysisTotalKg: analysisTotalKg,
+      totalKg: totalKg
+    });
     return '<div class="' + (classPrefix || 'hydro') + '-acid-summary-title"><strong>' +
       t(lang, 'Resumen de la dosis de ácido', 'Acid dose summary') + '</strong></div>' +
       '<p class="' + (classPrefix || 'hydro') + '-acid-summary-body">' +
-      '<strong>' + acidName + '</strong>. ' +
+      '<strong>' + acidName + '</strong>' +
+      (solid ? ' (' + t(lang, 'polvo soluble', 'soluble powder') + ')' : '') + '. ' +
       t(lang, 'meq a neutralizar (HCO₃⁻ + CO₃²⁻ − residual)', 'meq to neutralize (HCO₃⁻ + CO₃²⁻ − residual)') +
       ': <strong>' + neededMeqL.toFixed(2) + ' meq/L</strong> ' +
       '(HCO₃⁻ ' + hco3.toFixed(2) + ' + CO₃²⁻ ' + co3.toFixed(2) +
       ' − ' + t(lang, 'residual', 'residual') + ' ' + residualMeq.toFixed(2) + '). ' +
-      '<strong>' + mlPerM3.toFixed(2) + ' mL/m³</strong>. ' +
-      analysisVolumeSentence(lang, aVol, analysisTotalLiters, extra) +
-      appliedVolumeSentence(lang, hVol, totalLiters, extra) +
+      dosePrimaryHtml(lang, { acidId: summary.acidId, acid: acidMeta, mlPerM3: mlPerM3, kgPerM3: kgPerM3 }) + '. ' +
+      analysisVolumeSentence(lang, aVol, analysisTotalLiters, volExtra) +
+      appliedVolumeSentence(lang, hVol, totalLiters, volExtra) +
       warningSpan(lang, classPrefix) +
       '</p>' + ((extra && extra.extraHtml) || '');
   }

@@ -118,7 +118,7 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 
 - Volumen m³ riego (contexto).
 - CE, pH, RAS; Ca, Mg, K, Na; NO₃, SO₄, HCO₃, CO₃ (meq en carbonatos).
-- Residual ácido (meq/L), tipo de ácido — enlaza con herramienta gratis de acondicionamiento de agua.
+- Residual ácido (meq/L) + tipo de ácido. Catálogo: **HNO₃ 55%** (líquido; aporta N-NO₃; UI mL/m³ y L), H₂SO₄ 98%, H₃PO₄ 75%/85%, **Ácido Cítrico Anhidro 99.5%** (**polvo**; 25,9 meq/mL; solo acidifica; UI **g/kg** o **oz/lb** US; volumen solo equiv.). Misma lógica en Hidroponía (tanque C, cítrico en kg), PDF, admin y agua-dureza gratis.
 - Micros ppm.
 
 ---

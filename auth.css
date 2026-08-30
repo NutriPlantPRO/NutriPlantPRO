@@ -817,16 +817,17 @@
   overflow: hidden;
 }
 
+/* FB Page Plugin: el padding interno recortaba el encabezado (logo + nombre). Caja = alto del iframe. */
 .login-social-pane__embed--facebook {
   display: block;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
-  height: 340px;
-  min-height: 340px;
-  max-height: 340px;
-  padding: 8px 0 4px;
+  height: 360px;
+  min-height: 360px;
+  max-height: 360px;
+  padding: 0;
 }
 
 .login-social-pane__embed--facebook iframe {
@@ -834,22 +835,17 @@
   width: 100% !important;
   max-width: 100%;
   margin: 0;
-  height: 340px !important;
-  min-height: 340px;
-  max-height: 340px;
+  border: 0;
+  height: 100% !important;
+  min-height: 100%;
+  max-height: 100%;
 }
 
 @media (min-width: 700px) {
   .login-social-pane__embed--facebook {
-    height: 380px;
-    min-height: 380px;
-    max-height: 380px;
-  }
-
-  .login-social-pane__embed--facebook iframe {
-    height: 380px !important;
-    min-height: 380px;
-    max-height: 380px;
+    height: 400px;
+    min-height: 400px;
+    max-height: 400px;
   }
 }
 
@@ -1087,9 +1083,9 @@
 
   .login-social-pane__embed--facebook,
   .login-social-pane__embed--facebook iframe {
-    height: 340px;
-    min-height: 340px;
-    max-height: 340px;
+    height: 360px;
+    min-height: 360px;
+    max-height: 360px;
   }
 }
 
@@ -1230,16 +1226,16 @@
   }
 
   .login-social-pane__embed--facebook {
-    height: 380px;
-    min-height: 380px;
-    max-height: 380px;
-    padding: 8px 0 0;
+    height: 400px;
+    min-height: 400px;
+    max-height: 400px;
+    padding: 0;
   }
 
   .login-social-pane__embed--facebook iframe {
-    height: 380px !important;
-    min-height: 380px;
-    max-height: 380px;
+    height: 100% !important;
+    min-height: 100%;
+    max-height: 100%;
   }
 
   .login-social-pane.active {

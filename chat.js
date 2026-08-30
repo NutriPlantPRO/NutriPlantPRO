@@ -1270,31 +1270,50 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
       context += `\n`;
     }
 
-    // Hidroponía en Nutriplant: etapa activa y perfil iónico para diagnóstico fenológico.
+    // Hidroponía en Nutriplant: etapa activa, perfil iónico y programa del ciclo.
     const hydro = (fullProject && fullProject.sections && fullProject.sections.hidroponia)
       ? fullProject.sections.hidroponia
       : (fullProject && fullProject.hidroponia) ? fullProject.hidroponia : null;
-    if (hydro && Array.isArray(hydro.stages) && hydro.stages.length > 0) {
-      const activeStage = hydro.stages.find((s) => s.id === hydro.activeStageId) || hydro.stages[0];
-      if (activeStage) {
-        const meq = activeStage.meq || {};
-        const nNo3 = Number(meq.N_NO3) || 0;
-        const nNh4 = Number(meq.N_NH4) || 0;
-        const nTotal = nNo3 + nNh4;
-        const k = Number(meq.K) || 0;
-        const ca = Number(meq.Ca) || 0;
-        const mg = Number(meq.Mg) || 0;
-        const p = Number(meq.P) || 0;
-        const s = Number(meq.S) || 0;
-        const ce = Number(activeStage.ce) || ((nNo3 + nNh4 + p + s + k + ca + mg) / 20);
-        const no3Pct = nTotal > 0 ? (nNo3 * 100 / nTotal) : 0;
-        const nh4Pct = nTotal > 0 ? (nNh4 * 100 / nTotal) : 0;
-        const kToN = nTotal > 0 ? (k / nTotal) : 0;
-        context += `HIDROPONÍA (etapa activa):\n`;
-        context += `• Etapa seleccionada: ${String(activeStage.name || '—')}.\n`;
-        context += `• CE: ${ce.toFixed(2)} dS/m.\n`;
-        context += `• Macros meq/L: N-NO3 ${nNo3.toFixed(2)}, N-NH4 ${nNh4.toFixed(2)}, P ${p.toFixed(2)}, S ${s.toFixed(2)}, K ${k.toFixed(2)}, Ca ${ca.toFixed(2)}, Mg ${mg.toFixed(2)}.\n`;
-        context += `• Indicadores: K/N ${kToN.toFixed(2)}, NO3 ${no3Pct.toFixed(1)}%, NH4 ${nh4Pct.toFixed(1)}% del N total.\n\n`;
+    if (hydro) {
+      if (Array.isArray(hydro.stages) && hydro.stages.length > 0) {
+        const activeStage = hydro.stages.find((s) => s.id === hydro.activeStageId) || hydro.stages[0];
+        if (activeStage) {
+          const meq = activeStage.meq || {};
+          const nNo3 = Number(meq.N_NO3) || 0;
+          const nNh4 = Number(meq.N_NH4) || 0;
+          const nTotal = nNo3 + nNh4;
+          const k = Number(meq.K) || 0;
+          const ca = Number(meq.Ca) || 0;
+          const mg = Number(meq.Mg) || 0;
+          const p = Number(meq.P) || 0;
+          const s = Number(meq.S) || 0;
+          const ce = Number(activeStage.ce) || ((nNo3 + nNh4 + p + s + k + ca + mg) / 20);
+          const no3Pct = nTotal > 0 ? (nNo3 * 100 / nTotal) : 0;
+          const nh4Pct = nTotal > 0 ? (nNh4 * 100 / nTotal) : 0;
+          const kToN = nTotal > 0 ? (k / nTotal) : 0;
+          context += `HIDROPONÍA (etapa activa):\n`;
+          context += `• Etapa seleccionada: ${String(activeStage.name || '—')}.\n`;
+          context += `• CE: ${ce.toFixed(2)} dS/m.\n`;
+          context += `• Macros meq/L: N-NO3 ${nNo3.toFixed(2)}, N-NH4 ${nNh4.toFixed(2)}, P ${p.toFixed(2)}, S ${s.toFixed(2)}, K ${k.toFixed(2)}, Ca ${ca.toFixed(2)}, Mg ${mg.toFixed(2)}.\n`;
+          context += `• Indicadores: K/N ${kToN.toFixed(2)}, NO3 ${no3Pct.toFixed(1)}%, NH4 ${nh4Pct.toFixed(1)}% del N total.\n\n`;
+        }
+      }
+      const cp = hydro.cycleProgram;
+      if (cp && Array.isArray(cp.stages) && cp.stages.length > 0) {
+        const meqKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
+        context += `PROGRAMA DEL CICLO (hidroponia.cycleProgram; ≠ etapa de diseño activo):\n`;
+        if (cp.programName) context += `• Nombre: ${String(cp.programName).trim()}.\n`;
+        context += `• Etapas: ${cp.stages.map((s) => s.name || s.id || '—').join(', ')}.\n`;
+        cp.stages.slice(0, 8).forEach((st) => {
+          const meq = st.meq || {};
+          const parts = meqKeys
+            .map((k) => (Number(meq[k]) || 0) !== 0 ? `${k} ${Number(meq[k]).toFixed(1)}` : null)
+            .filter(Boolean)
+            .join(', ');
+          const mark = cp.activeStageId && st.id === cp.activeStageId ? ' [activa]' : '';
+          context += `• ${st.name || st.id || 'Etapa'}${mark}${parts ? `: ${parts} meq/L` : ''}.\n`;
+        });
+        context += `• PDF opcional: sección «Programa del ciclo» (hydroCycle). Admin muestra el mismo bloque.\n\n`;
       }
     }
 

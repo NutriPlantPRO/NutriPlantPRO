@@ -14,7 +14,7 @@
   <script src="assets/np-i18n.js?v=20260830hydroCycleEn"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-analysis-ui.js?v=20260817a"></script>
+  <script src="assets/np-analysis-ui.js?v=20260830citricKg"></script>
   <script src="assets/np-lab-type-configs.js?v=20260817a"></script>
   <script src="assets/np-analysis-compare.js?v=20260817a"></script>
   <script src="assets/np-water-climate-ui.js?v=20260801y"></script>
@@ -436,19 +436,19 @@
   <script src="nutricion-granular-functions.js?v=20260807b"></script>
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
-  <script src="assets/hydro-acid-legend.js?v=20260816h"></script>
-  <script src="hidroponia-functions.js?v=20260830cycleSave"></script>
+  <script src="assets/hydro-acid-legend.js?v=20260830citricKg"></script>
+  <script src="hidroponia-functions.js?v=20260830citricKg"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260821kc"></script>
-  <script src="analysis-report-render.js?v=20260817a"></script>
+  <script src="analysis-report-render.js?v=20260830citricKg"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260830hydroCycleEn"></script>
+  <script src="dashboard.js?v=20260830citricKg"></script>
   <script src="assets/np-fertigation-program-generator.js?v=20260817h"></script>
   <script src="fertirriego-program-functions.js?v=20260817q"></script>
   <script src="ai-knowledge-expansion.js"></script>
-  <script src="chat-simple.js?v=20260830solucionNutritiva"></script>
+  <script src="chat-simple.js?v=20260830citricKgChat"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
   <script src="map.js?v=20260821slopeSharp"></script>
   <script src="assets/np-lectura-satelital.js?v=20260821chartWater"></script>
@@ -5265,63 +5265,84 @@ CONTRATO:
       }
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830cycleO';
-        if (tab) base += '&tab=' + encodeURIComponent(tab);
-        if (only) base += '&only=cycle';
+        // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830cycleU';
         var cur = '';
-        try { cur = frame.getAttribute('src') || frame.src || ''; } catch (e) { cur = ''; }
-        // Solo recargar si cambian tab/only (o aún no cargó). Evita parpadeo al reabrir.
-        var curPath = '';
+        try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
+        var sameTool = cur.indexOf('hidro-solucion-free.html') !== -1 && cur.indexOf('v=20260830cycleU') !== -1;
+        var loaded = false;
         try {
-          var u = new URL(cur, location.href);
-          curPath = u.pathname.split('/').pop() + u.search;
-        } catch (e2) {
-          curPath = cur;
+          loaded = !!(frame.contentWindow && frame.contentDocument &&
+            frame.contentDocument.readyState === 'complete' &&
+            frame.contentDocument.location &&
+            String(frame.contentDocument.location.href || '').indexOf('hidro-solucion-free') !== -1);
+        } catch (eDoc) {
+          loaded = false;
         }
-        if (!cur || cur.indexOf('about:blank') === 0 || curPath.indexOf(base) === -1) {
-          frame.src = base;
-        } else {
+
+        function langNow() {
           try {
+            var pr = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
+            if (pr && pr.language === 'en') return 'en';
+            if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' && window.NpI18n.getLanguage() === 'en') return 'en';
+          } catch (eL) { /* ignore */ }
+          return 'es';
+        }
+
+        function pushHydroState() {
+          try {
+            if (!frame.contentWindow) return;
             frame.contentWindow.postMessage({
               type: 'np-hydro-show',
               tab: tab || (only ? 'program' : ''),
               only: only ? 'cycle' : '',
-              language: (function () {
-                try {
-                  var pr = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
-                  if (pr && pr.language === 'en') return 'en';
-                  if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' && window.NpI18n.getLanguage() === 'en') return 'en';
-                } catch (eL) { /* ignore */ }
-                return 'es';
-              })()
+              language: langNow()
             }, '*');
-          } catch (e3) { /* ignore */ }
-        }
-        // Hidratar programa del ciclo + catálogo desde el proyecto / perfil del usuario.
-        setTimeout(function () {
-          try {
             var cycle = (typeof window.hydroGetCycleProgramSnapshot === 'function')
               ? window.hydroGetCycleProgramSnapshot()
               : (window.currentProject && window.currentProject.hidroponia && window.currentProject.hidroponia.cycleProgram) || null;
             var custom = (typeof window.hydroGetCustomSolutionsSnapshot === 'function')
               ? window.hydroGetCustomSolutionsSnapshot()
               : [];
-            if (frame.contentWindow) {
-              var lang = 'es';
-              try {
-                var pr = window.NpPrefs && typeof window.NpPrefs.get === 'function' ? window.NpPrefs.get() : null;
-                if (pr && pr.language === 'en') lang = 'en';
-                else if (window.NpI18n && typeof window.NpI18n.getLanguage === 'function' && window.NpI18n.getLanguage() === 'en') lang = 'en';
-              } catch (eLang) { /* ignore */ }
-              frame.contentWindow.postMessage({
-                type: 'np-hydro-cycle-hydrate',
-                cycleProgram: cycle,
-                customSolutions: custom,
-                language: lang
-              }, '*');
-            }
-          } catch (e4) { /* ignore */ }
-        }, 220);
+            frame.contentWindow.postMessage({
+              type: 'np-hydro-cycle-hydrate',
+              cycleProgram: cycle,
+              customSolutions: custom,
+              language: langNow()
+            }, '*');
+          } catch (ePush) { /* ignore */ }
+        }
+
+        if (!sameTool || cur.indexOf('about:blank') === 0) {
+          // Primera carga (o cambio de versión): ocultar hasta listo para no ver el flash.
+          frame.style.opacity = '0';
+          frame.style.transition = 'opacity 0.15s ease';
+          var onReady = function () {
+            frame.removeEventListener('load', onReady);
+            pushHydroState();
+            requestAnimationFrame(function () {
+              frame.style.opacity = '1';
+            });
+          };
+          frame.addEventListener('load', onReady);
+          frame.src = base;
+        } else {
+          frame.style.opacity = '1';
+          // Ya cargado: solo cambiar pestaña/modo, sin recargar.
+          if (loaded) {
+            pushHydroState();
+          } else {
+            frame.style.opacity = '0';
+            var onReady2 = function () {
+              frame.removeEventListener('load', onReady2);
+              pushHydroState();
+              requestAnimationFrame(function () {
+                frame.style.opacity = '1';
+              });
+            };
+            frame.addEventListener('load', onReady2);
+          }
+        }
       }
       modal.classList.add('show');
     }
@@ -7402,7 +7423,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830d" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260830citricKg" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7434,7 +7455,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830cycleO" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830cycleU" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7450,7 +7471,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260830c" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260830e" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

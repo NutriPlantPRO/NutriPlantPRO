@@ -38,15 +38,15 @@
       count: items.length
     };
   }
-  // Aniones: familia amarillo/ámbar (claros → oscuros). Cationes: familia rojo/rosa (vivos → suaves).
-  // Tonos bien separados para leer las líneas sin dudar.
+  // Aniones (familia ámbar/amarillo) vs cationes (familia rojo/rosa), tonos bien separados.
+  // En gráficas meq: aniones = ■ + línea continua; cationes = ● + línea punteada (como el ternario).
   var COLORS = {
     N_NO3: '#eab308',  // amarillo vivo
-    P: '#f97316',      // naranja ámbar (sigue en caliente/aniones)
-    S: '#78350f',      // marrón profundo
+    P: '#a16207',      // dorado oscuro (ya no naranja cerca del rojo de K)
+    S: '#57534e',      // piedra / gris-marrón
     K: '#ef4444',      // rojo vivo
-    Ca: '#9f1239',     // vino / carmín (no se confunde con K)
-    Mg: '#fda4af',     // rosa claro
+    Ca: '#9f1239',     // vino
+    Mg: '#fb7185',     // rosa
     N_NH4: '#be123c',
     Fe: '#2563eb', Mn: '#7c3aed', Zn: '#0891b2', B: '#059669', Cu: '#d97706', Mo: '#64748b'
   };
@@ -409,32 +409,60 @@
     var name = stage.name || '—';
     var ph = inferPhenologyFromMeq(stage);
     return (
+      '<div class="hydro-cycle-tip hydro-cycle-tip--compact-inner">' +
       '<div class="hydro-cycle-tip-head">' + escapeAttr(name) +
-        ' · CE ' + escapeAttr(String(stage.ce != null ? stage.ce : computeCE(stage))) + '</div>' +
-      '<div class="hydro-cycle-tip-pheno" style="border-color:' + ph.color + '">' +
-        '<span class="hydro-cycle-tip-pheno-dot" style="background:' + ph.color + '"></span>' +
-        '<div><strong>' + escapeAttr(ph.label) + '</strong>' +
-        '<div class="hydro-cycle-tip-muted">' + escapeAttr(ph.why) + '</div>' +
-        '<div class="hydro-cycle-tip-muted">K/N ' + (ph.kToN != null && isFinite(ph.kToN) ? ph.kToN.toFixed(2) : '—') +
-        ' · %K cat. ' + (ph.kPctCat != null ? ph.kPctCat.toFixed(0) : '—') + '%</div></div>' +
-      '</div>' +
-      '<div class="hydro-cycle-tip-grid">' +
+        ' · CE ' + escapeAttr(String(stage.ce != null ? stage.ce : computeCE(stage))) +
+        ' · <span style="color:' + ph.color + '">' + escapeAttr(ph.short) + '</span></div>' +
+      '<div class="hydro-cycle-tip-grid hydro-cycle-tip-grid--compact">' +
         '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--an">' +
-          '<div class="hydro-cycle-tip-label">' + t('Aniones', 'Anions') + '</div>' +
+          '<div class="hydro-cycle-tip-label">' + t('Aniones', 'Anions') +
+            ' <span class="hydro-cycle-tip-muted">N:P:S ' + pctPart(no3, sumAn) + ':' + pctPart(p, sumAn) + ':' + pctPart(s, sumAn) + '%</span></div>' +
           '<div>NO₃/P <strong>' + ratioTxt(no3, p) + '</strong> · NO₃/S <strong>' + ratioTxt(no3, s) + '</strong> · P/S <strong>' + ratioTxt(p, s) + '</strong></div>' +
-          '<div class="hydro-cycle-tip-muted">N:P:S = ' + pctPart(no3, sumAn) + ':' + pctPart(p, sumAn) + ':' + pctPart(s, sumAn) + '%</div>' +
         '</div>' +
         '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--cat">' +
-          '<div class="hydro-cycle-tip-label">' + t('Cationes', 'Cations') + '</div>' +
+          '<div class="hydro-cycle-tip-label">' + t('Cationes', 'Cations') +
+            ' <span class="hydro-cycle-tip-muted">K:Ca:Mg ' + pctPart(k, sumCat) + ':' + pctPart(ca, sumCat) + ':' + pctPart(mg, sumCat) + '%</span></div>' +
           '<div>K/Ca <strong>' + ratioTxt(k, ca) + '</strong> · K/Mg <strong>' + ratioTxt(k, mg) + '</strong> · Ca/Mg <strong>' + ratioTxt(ca, mg) + '</strong></div>' +
-          '<div class="hydro-cycle-tip-muted">K:Ca:Mg = ' + pctPart(k, sumCat) + ':' + pctPart(ca, sumCat) + ':' + pctPart(mg, sumCat) + '%</div>' +
         '</div>' +
         '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--all">' +
           '<div class="hydro-cycle-tip-label">' + t('Balance', 'Balance') + '</div>' +
           '<div>Σan/Σcat <strong>' + ratioTxt(sumAn, sumCat) + '</strong> · K/N <strong>' + ratioTxt(k, no3) + '</strong> · N/K <strong>' + ratioTxt(no3, k) + '</strong></div>' +
-          '<div class="hydro-cycle-tip-muted">Σan ' + sumAn.toFixed(1) + ' · Σcat ' + sumCat.toFixed(1) + ' meq/L</div>' +
         '</div>' +
-      '</div>'
+      '</div></div>'
+    );
+  }
+
+  function ppmRelationsHtml(stage) {
+    if (!stage || !stage.ppm) return '';
+    var fe = parseFloat(stage.ppm.Fe) || 0;
+    var mn = parseFloat(stage.ppm.Mn) || 0;
+    var zn = parseFloat(stage.ppm.Zn) || 0;
+    var b = parseFloat(stage.ppm.B) || 0;
+    var cu = parseFloat(stage.ppm.Cu) || 0;
+    var mo = parseFloat(stage.ppm.Mo) || 0;
+    var sum = fe + mn + zn + b + cu + mo;
+    var sumMet = fe + mn + zn;
+    var name = stage.name || '—';
+    return (
+      '<div class="hydro-cycle-tip hydro-cycle-tip--compact-inner">' +
+      '<div class="hydro-cycle-tip-head">' + escapeAttr(name) +
+        ' · Σmicros <strong>' + (sum > 0 ? sum.toFixed(2) : '0') + '</strong> ppm</div>' +
+      '<div class="hydro-cycle-tip-grid hydro-cycle-tip-grid--compact">' +
+        '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--fe">' +
+          '<div class="hydro-cycle-tip-label">' + t('Metales', 'Metals') +
+            ' <span class="hydro-cycle-tip-muted">Fe:Mn:Zn ' + pctPart(fe, sumMet) + ':' + pctPart(mn, sumMet) + ':' + pctPart(zn, sumMet) + '%</span></div>' +
+          '<div>Fe/Mn <strong>' + ratioTxt(fe, mn) + '</strong> · Fe/Zn <strong>' + ratioTxt(fe, zn) + '</strong> · Mn/Zn <strong>' + ratioTxt(mn, zn) + '</strong></div>' +
+        '</div>' +
+        '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--b">' +
+          '<div class="hydro-cycle-tip-label">' + t('Con B / Cu', 'With B / Cu') + '</div>' +
+          '<div>Fe/B <strong>' + ratioTxt(fe, b) + '</strong> · Zn/B <strong>' + ratioTxt(zn, b) + '</strong> · Fe/Cu <strong>' + ratioTxt(fe, cu) + '</strong> · Zn/Cu <strong>' + ratioTxt(zn, cu) + '</strong></div>' +
+        '</div>' +
+        '<div class="hydro-cycle-tip-block hydro-cycle-tip-block--mo">' +
+          '<div class="hydro-cycle-tip-label">' + t('Perfil', 'Profile') +
+            ' <span class="hydro-cycle-tip-muted">% ' + t('del total', 'of total') + '</span></div>' +
+          '<div>Fe <strong>' + pctPart(fe, sum) + '</strong>% · Mn <strong>' + pctPart(mn, sum) + '</strong>% · Zn <strong>' + pctPart(zn, sum) + '</strong>% · B <strong>' + pctPart(b, sum) + '</strong>% · Cu <strong>' + pctPart(cu, sum) + '</strong>% · Mo <strong>' + pctPart(mo, sum) + '</strong>%</div>' +
+        '</div>' +
+      '</div></div>'
     );
   }
 
@@ -445,7 +473,9 @@
     var padL = 44;
     var padR = 16;
     var padT = 16;
-    var padB = opts.showRelations ? 52 : 40;
+    var showPheno = !!opts.showPheno;
+    var showRelations = !!opts.showRelations;
+    var padB = (showRelations || showPheno) ? 52 : 40;
     var n = labels.length;
     if (n < 1) return '<p class="hydro-muted">' + escapeAttr(t('Agrega etapas para ver la gráfica.', 'Add stages to see the chart.')) + '</p>';
     var allVals = [];
@@ -465,7 +495,7 @@
     var bandHalf = n === 1 ? plotW * 0.28 : Math.min(52, plotW / Math.max(1, n - 1) * 0.42);
     var bands = '';
     var stageTags = '';
-    if (opts.showRelations && Array.isArray(opts.stages)) {
+    if (showPheno && Array.isArray(opts.stages)) {
       opts.stages.forEach(function (st, i) {
         var ph = inferPhenologyFromMeq(st);
         var cx = xAt(i);
@@ -487,21 +517,62 @@
     series.forEach(function (s) {
       var pts = (s.data || []).map(function (v, i) { return xAt(i) + ',' + yAt(v); }).join(' ');
       var color = s.color || '#2563eb';
-      paths += '<polyline fill="none" stroke="' + color + '" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/>';
+      var isAnion = s.group === 'anion';
+      var isCation = s.group === 'cation';
+      var dash = isCation ? ' stroke-dasharray="7 5"' : '';
+      var sw = isAnion || isCation ? '2.6' : '2.8';
+      paths += '<polyline fill="none" stroke="' + color + '" stroke-width="' + sw + '"' + dash +
+        ' stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/>';
       (s.data || []).forEach(function (v, i) {
-        paths += '<circle cx="' + xAt(i) + '" cy="' + yAt(v) + '" r="4.5" fill="' + color + '" stroke="#fff" stroke-width="1.6"/>';
+        var cx = xAt(i);
+        var cy = yAt(v);
+        if (isAnion) {
+          // Cuadrado (igual que el ternario: aniones)
+          paths += '<rect x="' + (cx - 4.5) + '" y="' + (cy - 4.5) + '" width="9" height="9" rx="1.2" fill="' + color +
+            '" stroke="#fff" stroke-width="1.5"/>';
+        } else {
+          // Bolita (cationes / micros)
+          paths += '<circle cx="' + cx + '" cy="' + cy + '" r="4.5" fill="' + color + '" stroke="#fff" stroke-width="1.6"/>';
+        }
       });
     });
     var xLabels = labels.map(function (lab, i) {
       return '<text x="' + xAt(i) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="10" fill="#475569">' + escapeAttr(lab) + '</text>';
     }).join('');
+    var hasIonGroups = series.some(function (s) { return s.group === 'anion' || s.group === 'cation'; });
     var legend = series.map(function (s) {
+      var color = s.color || '#2563eb';
+      var mark;
+      if (s.group === 'anion') {
+        mark = '<i style="width:9px;height:9px;border-radius:1.5px;background:' + color +
+          ';display:inline-block;box-shadow:0 0 0 1px #fff,0 0 0 2px ' + color + ';"></i>';
+      } else if (s.group === 'cation') {
+        mark = '<i style="width:10px;height:10px;border-radius:50%;background:' + color +
+          ';display:inline-block;box-shadow:0 0 0 1px #fff;"></i>' +
+          '<i style="width:12px;height:0;border-top:2px dashed ' + color + ';display:inline-block;margin-left:2px;"></i>';
+      } else {
+        mark = '<i style="width:10px;height:10px;border-radius:50%;background:' + color + ';display:inline-block;"></i>';
+      }
       return '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;color:#334155;">' +
-        '<i style="width:10px;height:10px;border-radius:50%;background:' + (s.color || '#2563eb') + ';display:inline-block;"></i>' +
-        escapeAttr(s.label) + '</span>';
+        mark + escapeAttr(s.label) + '</span>';
     }).join('');
+    if (hasIonGroups) {
+      legend +=
+        '<span class="hydro-cycle-ion-key" style="display:inline-flex;align-items:center;gap:10px;margin-left:4px;font-size:10px;color:#64748b;">' +
+          '<span style="display:inline-flex;align-items:center;gap:4px;">' +
+            '<i style="width:8px;height:8px;background:#eab308;display:inline-block;border-radius:1px;"></i>' +
+            '<span style="border-top:2px solid #64748b;width:14px;display:inline-block;"></span> ' +
+            escapeAttr(t('Aniones', 'Anions')) +
+          '</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:4px;">' +
+            '<i style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></i>' +
+            '<span style="border-top:2px dashed #64748b;width:14px;display:inline-block;"></span> ' +
+            escapeAttr(t('Cationes', 'Cations')) +
+          '</span>' +
+        '</span>';
+    }
     var phenoLegend = '';
-    if (opts.showRelations) {
+    if (showPheno) {
       phenoLegend =
         '<div class="hydro-cycle-pheno-legend">' +
           '<span class="hydro-cycle-pheno-chip" style="--c:#16a34a">' + t('Vegetativa', 'Vegetative') + '</span>' +
@@ -514,11 +585,11 @@
           ) + '</span>' +
         '</div>';
     }
-    var guide = opts.showRelations
+    var guide = showRelations
       ? '<line class="hydro-cycle-chart-guide" x1="' + xAt(0) + '" y1="' + padT + '" x2="' + xAt(0) + '" y2="' + (padT + plotH) + '" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" opacity="0"/>'
       : '';
     var hitPads = '';
-    if (opts.showRelations) {
+    if (showRelations) {
       for (var i = 0; i < n; i++) {
         var hx = xAt(i);
         var hw = n === 1 ? plotW : Math.max(28, plotW / Math.max(1, n - 1));
@@ -531,27 +602,30 @@
       '<text x="12" y="' + (padT + plotH / 2) + '" transform="rotate(-90 12 ' + (padT + plotH / 2) + ')" text-anchor="middle" font-size="11" fill="#64748b">' + escapeAttr(yLabel) + '</text>' +
       '</svg>';
 
-    if (!opts.showRelations) {
-      return '<div class="hydro-cycle-chart-legend">' + legend + '</div>' + svg;
+    if (!showRelations) {
+      return '<div class="hydro-cycle-chart-legend">' + legend + '</div>' + phenoLegend + svg;
     }
+
+    var wrapAttr = opts.wrapAttr || 'data-hydro-meq-chart';
+    var hint = opts.hint || t(
+      'Pasa el cursor por una etapa: relaciones + perfil fenológico estimado.',
+      'Hover a stage: ratios + estimated phenology profile.'
+    );
 
     return (
       '<div class="hydro-cycle-chart-legend">' + legend + '</div>' +
       phenoLegend +
-      '<p class="hydro-cycle-chart-hint">' + escapeAttr(t(
-        'Pasa el cursor por una etapa: relaciones + perfil fenológico estimado.',
-        'Hover a stage: ratios + estimated phenology profile.'
-      )) + '</p>' +
-      '<div class="hydro-cycle-chart-interactive" data-hydro-meq-chart>' +
+      '<p class="hydro-cycle-chart-hint">' + escapeAttr(hint) + '</p>' +
+      '<div class="hydro-cycle-chart-interactive" ' + wrapAttr + '>' +
         svg +
-        '<div class="hydro-cycle-chart-tip" hidden></div>' +
+        '<div class="hydro-cycle-chart-tip hydro-cycle-chart-tip--compact" hidden></div>' +
       '</div>'
     );
   }
 
-  function bindMeqChartRelations(host, stages) {
-    if (!host) return;
-    var wrap = host.querySelector('[data-hydro-meq-chart]');
+  function bindChartRelations(host, stages, htmlBuilder, wrapSelector) {
+    if (!host || typeof htmlBuilder !== 'function') return;
+    var wrap = host.querySelector(wrapSelector || '[data-hydro-meq-chart]');
     if (!wrap || wrap._bound) return;
     wrap._bound = true;
     var tip = wrap.querySelector('.hydro-cycle-chart-tip');
@@ -563,40 +637,44 @@
       var stage = stages[idx];
       if (!stage) return;
       tip.hidden = false;
-      tip.innerHTML = meqRelationsHtml(stage);
+      tip.innerHTML = htmlBuilder(stage);
+      wrap.classList.add('is-tip-open');
+      var tipHost = wrap.closest('.hydro-table-block');
+      if (tipHost) tipHost.classList.add('hydro-cycle-tip-host');
       if (guide) {
         var n = stages.length;
-        var w = 640;
         var padL = 44;
         var padR = 16;
-        var plotW = w - padL - padR;
+        var plotW = 640 - padL - padR;
         var x = padL + (n === 1 ? plotW / 2 : (idx / (n - 1)) * plotW);
         guide.setAttribute('x1', String(x));
         guide.setAttribute('x2', String(x));
         guide.setAttribute('opacity', '1');
       }
       var rect = wrap.getBoundingClientRect();
-      var left = clientX - rect.left + 12;
-      var top = clientY - rect.top + 12;
+      var left = clientX - rect.left + 10;
+      var top = clientY - rect.top + 10;
       tip.style.left = '0px';
       tip.style.top = '0px';
-      var tw = tip.offsetWidth || 280;
-      var th = tip.offsetHeight || 120;
-      if (left + tw > rect.width - 8) left = Math.max(8, rect.width - tw - 8);
-      if (top + th > rect.height - 8) top = Math.max(8, clientY - rect.top - th - 12);
+      var tw = tip.offsetWidth || 220;
+      var th = tip.offsetHeight || 90;
+      if (left + tw > rect.width - 6) left = Math.max(6, rect.width - tw - 6);
+      if (top + th > rect.height - 6) top = Math.max(6, clientY - rect.top - th - 10);
       tip.style.left = left + 'px';
       tip.style.top = top + 'px';
     }
 
     function hide() {
       tip.hidden = true;
+      wrap.classList.remove('is-tip-open');
+      var tipHost = wrap.closest('.hydro-table-block');
+      if (tipHost) tipHost.classList.remove('hydro-cycle-tip-host');
       if (guide) guide.setAttribute('opacity', '0');
     }
 
     wrap.addEventListener('mousemove', function (ev) {
       var hit = ev.target.closest && ev.target.closest('[data-stage-idx]');
       if (!hit) {
-        // nearest stage by x in SVG coords
         var pt = svg.createSVGPoint();
         pt.x = ev.clientX;
         pt.y = ev.clientY;
@@ -628,21 +706,42 @@
   function renderCharts(hostMeq, hostPpm, stages) {
     var labels = stages.map(function (s) { return s.name || '—'; });
     var meqSeries = [
-      { label: 'N-NO₃⁻', color: COLORS.N_NO3, data: stages.map(function (s) { return parseFloat(s.meq.N_NO3) || 0; }) },
-      { label: 'P', color: COLORS.P, data: stages.map(function (s) { return parseFloat(s.meq.P) || 0; }) },
-      { label: 'S', color: COLORS.S, data: stages.map(function (s) { return parseFloat(s.meq.S) || 0; }) },
-      { label: 'K⁺', color: COLORS.K, data: stages.map(function (s) { return parseFloat(s.meq.K) || 0; }) },
-      { label: 'Ca²⁺', color: COLORS.Ca, data: stages.map(function (s) { return parseFloat(s.meq.Ca) || 0; }) },
-      { label: 'Mg²⁺', color: COLORS.Mg, data: stages.map(function (s) { return parseFloat(s.meq.Mg) || 0; }) }
+      { label: 'N-NO₃⁻', color: COLORS.N_NO3, group: 'anion', data: stages.map(function (s) { return parseFloat(s.meq.N_NO3) || 0; }) },
+      { label: 'P', color: COLORS.P, group: 'anion', data: stages.map(function (s) { return parseFloat(s.meq.P) || 0; }) },
+      { label: 'S', color: COLORS.S, group: 'anion', data: stages.map(function (s) { return parseFloat(s.meq.S) || 0; }) },
+      { label: 'K⁺', color: COLORS.K, group: 'cation', data: stages.map(function (s) { return parseFloat(s.meq.K) || 0; }) },
+      { label: 'Ca²⁺', color: COLORS.Ca, group: 'cation', data: stages.map(function (s) { return parseFloat(s.meq.Ca) || 0; }) },
+      { label: 'Mg²⁺', color: COLORS.Mg, group: 'cation', data: stages.map(function (s) { return parseFloat(s.meq.Mg) || 0; }) }
     ];
     var ppmSeries = MICROS.map(function (k) {
       return { label: k, color: COLORS[k], data: stages.map(function (s) { return parseFloat(s.ppm[k]) || 0; }) };
     });
     if (hostMeq) {
-      hostMeq.innerHTML = lineChartSvg(labels, meqSeries, 'meq/L', { showRelations: true, stages: stages });
-      bindMeqChartRelations(hostMeq, stages);
+      hostMeq.innerHTML = lineChartSvg(labels, meqSeries, 'meq/L', {
+        showRelations: true,
+        showPheno: true,
+        stages: stages,
+        wrapAttr: 'data-hydro-meq-chart',
+        hint: t(
+          'Pasa el cursor por una etapa: relaciones + perfil fenológico.',
+          'Hover a stage: ratios + phenology profile.'
+        )
+      });
+      bindChartRelations(hostMeq, stages, meqRelationsHtml, '[data-hydro-meq-chart]');
     }
-    if (hostPpm) hostPpm.innerHTML = lineChartSvg(labels, ppmSeries, 'ppm');
+    if (hostPpm) {
+      hostPpm.innerHTML = lineChartSvg(labels, ppmSeries, 'ppm', {
+        showRelations: true,
+        showPheno: false,
+        stages: stages,
+        wrapAttr: 'data-hydro-ppm-chart',
+        hint: t(
+          'Pasa el cursor por una etapa: relaciones entre micros (ppm).',
+          'Hover a stage: micronutrient ratios (ppm).'
+        )
+      });
+      bindChartRelations(hostPpm, stages, ppmRelationsHtml, '[data-hydro-ppm-chart]');
+    }
   }
 
   function applyRecipeToStage(stage, recipe) {

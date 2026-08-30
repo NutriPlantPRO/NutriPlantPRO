@@ -118,7 +118,7 @@
     { id: 'acido_nitrico_55', name: 'Ácido nítrico 55%', formula: 'HNO₃ (55%)', N_NO3: 12.2, unit: 'L', density: 1.33 },
     { id: 'acido_fosforico_75', name: 'Ácido fosfórico 75%', formula: 'H₃PO₄ (75%)', P2O5: 54, unit: 'L', density: 1.57 },
     { id: 'acido_sulfurico_98', name: 'Ácido sulfúrico 98%', formula: 'H₂SO₄ (98%)', SO4: 96, unit: 'L', density: 1.84 },
-    { id: 'acido_citrico_anhidro', name: 'Ácido cítrico anhidro 99.5%', formula: 'C₆H₈O₇ (99.5%)', unit: 'L', density: 1.665 }
+    { id: 'acido_citrico_anhidro', name: 'Ácido cítrico anhidro 99.5%', formula: 'C₆H₈O₇ (99.5%)', unit: 'kg', density: 1.665 }
   ];
 
   var BUILTIN = RAW_FERTI.map(mapRawToEntry);

@@ -117,6 +117,21 @@
     'meq/L o mmolc/L ácido necesarios:': 'meq/L or mmolc/L acid needed:',
     'mL ácido / m³:': 'mL acid / m³:',
     'L ácido (volumen total):': 'L acid (total volume):',
+    'kg ácido / m³:': 'kg acid / m³:',
+    'g ácido / m³:': 'g acid / m³:',
+    'Ácido (masa) / volumen:': 'Acid (mass) / volume:',
+    'kg ácido (masa total):': 'kg acid (total mass):',
+    'Ácido (masa total):': 'Acid (total mass):',
+    'Forma': 'Form',
+    'Polvo soluble': 'Soluble powder',
+    'equiv. vol.': 'vol. equiv.',
+    'Ácido Cítrico Anhidro 99.5%': 'Citric Acid Anhydrous 99.5%',
+    'Anhidro; densidad verdadera ~1.665 kg/L; solo acidifica': 'Anhydrous powder; density ~1.665 kg/L for volume equiv.; acidifies only',
+    'Polvo soluble anhidro; dosificar por masa (kg/g). Densidad ~1.665 kg/L solo para equivalencia volumétrica; solo acidifica':
+      'Anhydrous soluble powder; dose by mass (kg/lb). Density ~1.665 kg/L only for volume equivalence; acidifies only',
+    'Resultado en kg (o g) de polvo y total según el volumen indicado.': 'Result in kg (or g) of powder and total for the stated volume.',
+    'Resultado en lb (u oz) de polvo y total según el volumen indicado.': 'Result in lb (or oz) of powder and total for the stated volume.',
+    'Resultado en fl oz/1000 gal y galones totales según el volumen indicado.': 'Result in fl oz/1000 gal and total gallons for the stated volume.',
     'Características generales': 'General characteristics',
     'Relación nutrimental': 'Nutrient ratio',
     'Ratios calculados': 'Calculated ratios',
@@ -306,6 +321,86 @@
     return Number(liters).toFixed(d) + ' L';
   }
 
+  /** Ácido cítrico anhidro = polvo soluble (dosificar por masa). */
+  function isAcidSolidPowder(acidOrId) {
+    var id = typeof acidOrId === 'string'
+      ? acidOrId
+      : (acidOrId && (acidOrId.id || acidOrId.acidId)) || '';
+    return String(id).toLowerCase().indexOf('citrico') >= 0;
+  }
+
+  /**
+   * Masa de ácido sólido: métrico kg/g; US customary lb/oz.
+   * @param {number} kg
+   * @param {number} [digits]
+   */
+  function formatAcidSolidMass(kg, digits) {
+    var n = Number(kg);
+    if (!Number.isFinite(n)) return '—';
+    var en = prefs().language === 'en';
+    if (isUS()) {
+      var lb = n * 2.20462262185;
+      if (Math.abs(lb) > 0 && Math.abs(lb) < 1) {
+        var oz = lb * 16;
+        var od = digits == null ? 1 : digits;
+        return oz.toFixed(od) + (en ? ' oz' : ' oz');
+      }
+      var ld = digits == null ? 2 : digits;
+      return lb.toFixed(ld) + (en ? ' lb' : ' lb');
+    }
+    if (Math.abs(n) > 0 && Math.abs(n) < 1) {
+      var gd = digits == null ? 0 : digits;
+      return (n * 1000).toFixed(gd) + (en ? ' g' : ' g');
+    }
+    var kd = digits == null ? 2 : digits;
+    return n.toFixed(kd) + (en ? ' kg' : ' kg');
+  }
+
+  /**
+   * Masa de ácido sólido por volumen de agua: kg/m³ o g/m³; US lb/1000 gal u oz/1000 gal.
+   * 1 kg/m³ ≈ 8.345 lb / 1000 US gal.
+   */
+  function formatAcidSolidMassPerVolume(kgPerM3, digits) {
+    var n = Number(kgPerM3);
+    if (!Number.isFinite(n)) return '—';
+    var en = prefs().language === 'en';
+    if (isUS()) {
+      var lbPer1000gal = n * 8.345404;
+      if (Math.abs(lbPer1000gal) > 0 && Math.abs(lbPer1000gal) < 1) {
+        var oz = lbPer1000gal * 16;
+        var od = digits == null ? 1 : digits;
+        return oz.toFixed(od) + (en ? ' oz/1000 gal' : ' oz/1000 gal');
+      }
+      var ld = digits == null ? 2 : digits;
+      return lbPer1000gal.toFixed(ld) + (en ? ' lb/1000 gal' : ' lb/1000 gal');
+    }
+    if (Math.abs(n) > 0 && Math.abs(n) < 1) {
+      var gd = digits == null ? 0 : digits;
+      return (n * 1000).toFixed(gd) + (en ? ' g/m³' : ' g/m³');
+    }
+    var kd = digits == null ? 2 : digits;
+    return n.toFixed(kd) + (en ? ' kg/m³' : ' kg/m³');
+  }
+
+  function acidSolidVolumeHint(mlPerM3, litersTotal) {
+    var parts = [];
+    if (Number.isFinite(Number(mlPerM3))) {
+      var volDose = formatAcidDoseMlPerM3(mlPerM3, 2);
+      if (volDose && volDose !== '—') parts.push(volDose);
+    }
+    if (Number.isFinite(Number(litersTotal)) && Number(litersTotal) > 0) {
+      parts.push(formatAcidTotalLiters(litersTotal, 2));
+    }
+    if (!parts.length) return '';
+    return ' <span style="font-size:0.8rem;color:#64748b;">(' +
+      t('equiv. vol.', 'vol. equiv.') + ' ' + parts.join(' · ') + ')</span>';
+  }
+
+  function acidLiquidMassHint(kg) {
+    if (!Number.isFinite(Number(kg))) return '';
+    return ' <span style="font-size:0.8rem;color:#64748b;">(' + formatMassKg(kg, 2) + ')</span>';
+  }
+
   function translateString(input) {
     var output = String(input == null ? '' : input);
     if (prefs().language !== 'en') return output;
@@ -422,10 +517,19 @@
     root.querySelectorAll('th, summary, #agua-tab-container > p').forEach(rewriteMassLabels);
 
     var acidHelp = root.querySelector('[data-aw-section="acid"] > p');
+    var acidSelect = root.querySelector('#aw-acid-select');
+    var solidPowder = acidSelect && isAcidSolidPowder(acidSelect.value);
     if (acidHelp) {
-      var helpEs = isUS()
-        ? 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en fl oz/1000 gal y galones totales según el volumen indicado.'
-        : 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en mL/m³ y litros totales según el volumen indicado.';
+      var helpEs;
+      if (solidPowder) {
+        helpEs = isUS()
+          ? 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en lb (u oz) de polvo y total según el volumen indicado.'
+          : 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en kg (o g) de polvo y total según el volumen indicado.';
+      } else {
+        helpEs = isUS()
+          ? 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en fl oz/1000 gal y galones totales según el volumen indicado.'
+          : 'Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (meq/L o mmolc/L). Resultado en mL/m³ y litros totales según el volumen indicado.';
+      }
       acidHelp.textContent = translateString(helpEs);
     }
 
@@ -437,15 +541,27 @@
 
     var acidPer = root.querySelector('#aw-acid-per-m3');
     if (acidPer && acidPer.previousElementSibling) {
-      acidPer.previousElementSibling.textContent = isUS()
-        ? t('Dosis de ácido:', 'Acid dose:') + ' (' + unitSymbol('acid_dose_volume_volume') + ')'
-        : t('mL ácido / m³:', 'mL acid / m³:');
+      if (solidPowder) {
+        acidPer.previousElementSibling.textContent = isUS()
+          ? t('Ácido (masa) / volumen:', 'Acid (mass) / volume:')
+          : t('kg ácido / m³:', 'kg acid / m³:');
+      } else {
+        acidPer.previousElementSibling.textContent = isUS()
+          ? t('Dosis de ácido:', 'Acid dose:') + ' (' + unitSymbol('acid_dose_volume_volume') + ')'
+          : t('mL ácido / m³:', 'mL acid / m³:');
+      }
     }
     var acidTotal = root.querySelector('#aw-acid-total');
     if (acidTotal && acidTotal.previousElementSibling) {
-      acidTotal.previousElementSibling.textContent = isUS()
-        ? t('Ácido (volumen total):', 'Acid (total volume):')
-        : t('L ácido (volumen total):', 'L acid (total volume):');
+      if (solidPowder) {
+        acidTotal.previousElementSibling.textContent = isUS()
+          ? t('Ácido (masa total):', 'Acid (total mass):')
+          : t('kg ácido (masa total):', 'kg acid (total mass):');
+      } else {
+        acidTotal.previousElementSibling.textContent = isUS()
+          ? t('Ácido (volumen total):', 'Acid (total volume):')
+          : t('L ácido (volumen total):', 'L acid (total volume):');
+      }
     }
     var acidM3Ref = root.querySelector('#aw-acid-m3-ref');
     if (acidM3Ref && acidM3Ref.previousElementSibling) {
@@ -454,7 +570,7 @@
         : t('En base a (m³ agua):', 'Based on (water m³):');
     }
 
-    root.querySelectorAll('.agua-field-lbl, .aw-acid-results > span:nth-child(odd), .aw-acid-dosis-box > span:nth-child(odd), [data-aw-section="acid"] > summary').forEach(function (el) {
+    root.querySelectorAll('.agua-field-lbl, .aw-acid-results > span:nth-child(odd), [data-aw-section="acid"] > summary').forEach(function (el) {
       if (!el || el.id) return;
       var raw = el.getAttribute('data-label-es') || el.textContent;
       if (!el.getAttribute('data-label-es')) el.setAttribute('data-label-es', raw);
@@ -547,6 +663,11 @@
     volumeInputToSI: volumeInputToSI,
     formatAcidDoseMlPerM3: formatAcidDoseMlPerM3,
     formatAcidTotalLiters: formatAcidTotalLiters,
+    isAcidSolidPowder: isAcidSolidPowder,
+    formatAcidSolidMass: formatAcidSolidMass,
+    formatAcidSolidMassPerVolume: formatAcidSolidMassPerVolume,
+    acidSolidVolumeHint: acidSolidVolumeHint,
+    acidLiquidMassHint: acidLiquidMassHint,
     applyUnitLabels: applyUnitLabels,
     updateAguaVolumeEquiv: updateAguaVolumeEquiv,
     bindBulkDensityHint: bindBulkDensityHint,

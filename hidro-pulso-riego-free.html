@@ -304,22 +304,22 @@
                 <button type="button" id="btnCancelSubstrate" class="btn-sub-action" data-i18n-pulse="btn_cancel_sub">Cancelar</button>
               </div>
             </div>
-            <p class="hint" data-i18n-pulse="hint_substrate">Al elegir, se sugiere un % de agua disponible. Puedes agregar el tuyo con nombre y %.</p>
+            <p class="hint" data-i18n-pulse="hint_substrate">Sí: al elegir se rellena el % de agua disponible abajo (orientativo). Ajústalo si mides en campo o agrega el tuyo.</p>
           </div>
           <div class="field">
             <label for="awPct" data-i18n-pulse="lbl_aw">Agua totalmente disponible (% del volumen)</label>
             <input id="awPct" type="number" min="0.1" max="100" step="0.1" value="15" />
-            <p class="hint" data-i18n-pulse="hint_aw">Fracción del contenedor que es agua útil para la planta.</p>
+            <p class="hint" data-i18n-pulse="hint_aw">Sugerido típico: 8–40% según sustrato (perlita ~15, coco ~30, lana ~40). El catálogo lo propone al elegir.</p>
           </div>
           <div class="field">
             <label for="depletionPct" data-i18n-pulse="lbl_depletion">Agotamiento para volver a regar (%)</label>
-            <input id="depletionPct" type="number" min="0.1" max="100" step="0.1" value="5" />
-            <p class="hint" data-i18n-pulse="hint_depletion">% de esa agua disponible que dejas bajar antes del siguiente pulso.</p>
+            <input id="depletionPct" type="number" min="0.1" max="100" step="0.1" value="20" />
+            <p class="hint" data-i18n-pulse="hint_depletion">Sugerido típico: 15–30% del agua disponible (más bajo = pulsos más frecuentes). Por defecto 20%.</p>
           </div>
           <div class="field">
             <label for="drainPct" data-i18n-pulse="lbl_drain">Drenaje deseado (%)</label>
-            <input id="drainPct" type="number" min="0" max="90" step="0.1" value="30" />
-            <p class="hint" data-i18n-pulse="hint_drain">Ej. 30% → se divide entre 0,70 para cubrir el lavado.</p>
+            <input id="drainPct" type="number" min="0" max="90" step="0.1" value="25" />
+            <p class="hint" data-i18n-pulse="hint_drain">Sugerido típico: 15–30% (ej. 25% → se divide entre 0,75 para cubrir el lavado).</p>
           </div>
         </div>
       </div>
@@ -433,7 +433,7 @@
       lbl_vol: 'Volumen del contenedor (L)',
       hint_vol: 'Ej. bolsa o maceta de 13 L.',
       lbl_substrate: 'Sustrato (orientativo)',
-      hint_substrate: 'Al elegir, se sugiere un % de agua disponible. Puedes agregar el tuyo con nombre y %.',
+      hint_substrate: 'Sí: al elegir se rellena el % de agua disponible abajo (orientativo). Ajústalo si mides en campo o agrega el tuyo.',
       btn_add_sub: '＋ Agregar personalizado',
       btn_del_sub: 'Eliminar',
       btn_save_sub: 'Guardar en lista',
@@ -446,11 +446,11 @@
       err_aw: 'Indica un % de agua disponible válido (0.1–100).',
       confirm_del: '¿Eliminar este sustrato personalizado?',
       lbl_aw: 'Agua totalmente disponible (% del volumen)',
-      hint_aw: 'Fracción del contenedor que es agua útil para la planta.',
+      hint_aw: 'Sugerido típico: 8–40% según sustrato (perlita ~15, coco ~30, lana ~40). El catálogo lo propone al elegir.',
       lbl_depletion: 'Agotamiento para volver a regar (%)',
-      hint_depletion: '% de esa agua disponible que dejas bajar antes del siguiente pulso.',
+      hint_depletion: 'Sugerido típico: 15–30% del agua disponible (más bajo = pulsos más frecuentes). Por defecto 20%.',
       lbl_drain: 'Drenaje deseado (%)',
-      hint_drain: 'Ej. 30% → se divide entre 0,70 para cubrir el lavado.',
+      hint_drain: 'Sugerido típico: 15–30% (ej. 25% → se divide entre 0,75 para cubrir el lavado).',
       sec_system: 'Sistema: macetas y goteros',
       lbl_pots: 'Total de macetas',
       lbl_drippers: 'Goteros por maceta',
@@ -485,7 +485,7 @@
       lbl_vol: 'Container volume (L)',
       hint_vol: 'E.g. 13 L bag or pot.',
       lbl_substrate: 'Substrate (indicative)',
-      hint_substrate: 'Selecting suggests an available-water %. You can add your own with name and %.',
+      hint_substrate: 'Yes: choosing fills the available-water % below (indicative). Adjust if you measure in the field, or add your own.',
       btn_add_sub: '＋ Add custom',
       btn_del_sub: 'Delete',
       btn_save_sub: 'Save to list',
@@ -498,11 +498,11 @@
       err_aw: 'Enter a valid available-water % (0.1–100).',
       confirm_del: 'Delete this custom substrate?',
       lbl_aw: 'Total available water (% of volume)',
-      hint_aw: 'Fraction of the container that is plant-available water.',
+      hint_aw: 'Typical range: 8–40% by substrate (perlite ~15, coco ~30, rockwool ~40). Catalog fills it when you pick one.',
       lbl_depletion: 'Depletion before next pulse (%)',
-      hint_depletion: '% of that available water you allow to drop before the next pulse.',
+      hint_depletion: 'Typical: 15–30% of available water (lower = more frequent pulses). Default 20%.',
       lbl_drain: 'Target drainage (%)',
-      hint_drain: 'E.g. 30% → divide by 0.70 to cover leaching.',
+      hint_drain: 'Typical: 15–30% (e.g. 25% → divide by 0.75 to cover leaching).',
       sec_system: 'System: pots and drippers',
       lbl_pots: 'Total pots',
       lbl_drippers: 'Drippers per pot',

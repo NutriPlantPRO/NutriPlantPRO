@@ -23,9 +23,9 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza versiones viejas):
 
-1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Pronóstico agroclimático / alertas)
-2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b Comparar análisis tabla+gráficas + PDF)
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.17b**: Zona de equilibrio iónico bajo Requerimiento — dashboard/admin/API `ionic_equilibrium`; no PDF; + Dinámica % ferti vs granular)
+1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Programa del ciclo + Pulso + cítrico polvo por masa)
+2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b + ácidos: cítrico polvo g/kg·oz/lb)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.30c**: cítrico polvo por masa g/kg·oz/lb; Pulso; cycleProgram)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.14: actions `invest_pro_overview|holdings|lists`)
@@ -70,6 +70,9 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 2. “Análisis foliar del proyecto [nombre]” → `project_analyses` type foliar
 3. “Último análisis de suelo de [nombre] con kg/ha” → `project_analyses` suelo + `latest_only`
 4. “¿Cómo funciona la calculadora gratis de solución nutritiva?” → Knowledge o `free_tools_catalog` hidro_solucion
+4.0b. **“¿Qué es el Programa del ciclo en Solución Nutritiva?”** → Knowledge HERRAMIENTAS §💧 / MANUAL §4.9–4.10: multi-etapa, `cycleProgram`, PDF `hydroCycle`, admin; ≠ diseño activo ≠ lab
+4.0c. **“¿Cómo funciona el Pulso de riego en hidroponía?”** → Knowledge HERRAMIENTAS §⏱️ / `free_tools_catalog` `hidro_pulso_riego` (V, ATD, agotamiento, drenaje → L y min)
+4.0d. **“¿Qué ácidos hay / cítrico vs nítrico?”** → HNO₃ líquido aporta N-NO₃ (mL/L); **cítrico = polvo** por masa g/kg o oz/lb US (25,9 meq/mL; solo acidifica); MANUAL §4.9 + HERRAMIENTAS agua-dureza
 4.1. **“¿Qué es el Pronóstico agroclimático / alertas semanales?”** → Knowledge HERRAMIENTAS § Pronóstico o `free_tools_catalog` tool `pronostico_agroclimatico` (admin: `agroclimate.html`)
 5. “¿Qué pestañas hay en Análisis?” → `lab_analyses_catalog`
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`

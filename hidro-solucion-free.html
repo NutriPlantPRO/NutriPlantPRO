@@ -8,7 +8,7 @@
   <script src="assets/np-i18n.js?v=20260830cycleI18n2"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-hydro-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260830cycleEn"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260830tipMicro"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js"></script>
   <title>Diseño de solución nutritiva</title>
@@ -606,47 +606,70 @@
     }
     .hydro-cycle-chart-interactive {
       position: relative;
+      overflow: visible;
+      z-index: 1;
+    }
+    .hydro-cycle-chart-interactive.is-tip-open {
+      z-index: 40;
     }
     .hydro-cycle-chart-hit { cursor: crosshair; }
     .hydro-cycle-chart-tip {
       position: absolute;
-      z-index: 5;
-      min-width: 240px;
-      max-width: min(360px, 92%);
-      padding: 10px 12px;
-      border-radius: 10px;
+      z-index: 50;
+      min-width: 200px;
+      max-width: min(280px, 90%);
+      padding: 7px 9px;
+      border-radius: 9px;
       background: rgba(15, 23, 42, 0.94);
       color: #f8fafc;
-      font-size: 11px;
-      line-height: 1.45;
+      font-size: 10px;
+      line-height: 1.35;
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
       pointer-events: none;
     }
+    .hydro-cycle-chart-tip--compact {
+      max-width: min(268px, 88%);
+    }
+    /* La tarjeta meq/ppm por encima de la hermana mientras el tip está abierto */
+    .hydro-free-solution .hydro-table-block.hydro-cycle-tip-host {
+      position: relative;
+      z-index: 35;
+      overflow: visible;
+    }
+    .hydro-cycle-grid > div {
+      overflow: visible;
+    }
     .hydro-cycle-tip-head {
       font-weight: 700;
-      font-size: 12px;
-      margin-bottom: 8px;
+      font-size: 11px;
+      margin-bottom: 5px;
       color: #fff;
     }
-    .hydro-cycle-tip-grid { display: grid; gap: 8px; }
+    .hydro-cycle-tip-grid { display: grid; gap: 5px; }
+    .hydro-cycle-tip-grid--compact { gap: 4px; }
     .hydro-cycle-tip-block {
-      padding: 6px 8px;
-      border-radius: 8px;
+      padding: 4px 6px;
+      border-radius: 6px;
       background: rgba(255, 255, 255, 0.06);
       border-left: 3px solid #94a3b8;
     }
     .hydro-cycle-tip-block--an { border-left-color: #eab308; }
     .hydro-cycle-tip-block--cat { border-left-color: #ef4444; }
     .hydro-cycle-tip-block--all { border-left-color: #38bdf8; }
+    .hydro-cycle-tip-block--fe { border-left-color: #2563eb; }
+    .hydro-cycle-tip-block--b { border-left-color: #059669; }
+    .hydro-cycle-tip-block--mo { border-left-color: #7c3aed; }
     .hydro-cycle-tip-label {
       font-weight: 700;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
       color: #e2e8f0;
+      font-size: 10px;
     }
     .hydro-cycle-tip-muted {
-      margin-top: 2px;
+      margin-top: 0;
       color: #94a3b8;
-      font-size: 10px;
+      font-size: 9px;
+      font-weight: 500;
     }
     .hydro-cycle-tip-block strong { color: #fff; font-variant-numeric: tabular-nums; }
     .hydro-cycle-tip-pheno {
@@ -730,6 +753,18 @@
     }
     html.hydro-cycle-only .np-free-tool-title::after {
       content: none;
+    }
+    /* Desde el botón del dashboard el modal ya trae el título: sin subtítulo duplicado. */
+    html.embed-dashboard.hydro-cycle-only .np-free-tool-head,
+    html.embed-dashboard.hydro-cycle-only #hydroPanelCycle .hydro-card-header > h3,
+    html.embed-dashboard.hydro-cycle-only #hydroPanelCycle .hydro-card-header [data-i18n="free_tools.hydro_cycle_heading"] {
+      display: none !important;
+    }
+    html.embed-dashboard.hydro-cycle-only #hydroPanelCycle .hydro-card-header {
+      margin-bottom: 4px;
+    }
+    html.embed-dashboard.hydro-cycle-only #hydroPanelCycle .hydro-card-header .hydro-muted {
+      margin-top: 0 !important;
     }
     .hydro-main-panel { display: none; }
     .hydro-main-panel.active { display: block; }
@@ -1534,7 +1569,7 @@
   <script src="assets/fert-formula-engine.js"></script>
   <script src="assets/hydro-fert-aporte-catalog.js?v=20260535"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
-  <script src="assets/hydro-cycle-program.js?v=20260830cycleEn"></script>
+  <script src="assets/hydro-cycle-program.js?v=20260830ionMarks"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
@@ -2262,6 +2297,8 @@
           items.push(entry);
         }
         window.NpHydroCycleProgram.saveCustomSolutions(items);
+        bags.custom = items.slice();
+        bags.all = bags.builtIn.concat(bags.custom);
         const active = hydroGetActiveStage();
         if (active) {
           active.solutionId = entry.id;
@@ -2269,7 +2306,10 @@
         }
         hydroRefreshSolutionPickerLabel();
         hydroScheduleSave();
-        hydroOpenSolutionCatalog();
+        // Reabrir tras el click para que la fila nueva se vea al instante.
+        setTimeout(function () {
+          hydroOpenSolutionCatalog();
+        }, 0);
       }
 
       overlay.addEventListener('click', function (event) {
@@ -2300,7 +2340,9 @@
           const id = del.getAttribute('data-hydro-solution-delete');
           const next = (window.NpHydroCycleProgram.loadCustomSolutions() || []).filter(function (item) { return item.id !== id; });
           window.NpHydroCycleProgram.saveCustomSolutions(next);
-          hydroOpenSolutionCatalog();
+          setTimeout(function () {
+            hydroOpenSolutionCatalog();
+          }, 0);
         }
       });
       document.body.appendChild(overlay);
@@ -4230,7 +4272,14 @@
           else if (data.tab === 'fert') hydroActiveMainTab = 2;
           else if (data.tab === '') { /* keep current */ }
         }
-        switchHydroMainTab(hydroActiveMainTab);
+        // Cambio de modo suave: no rearmar todo si ya estamos en la pestaña correcta.
+        var panel = document.getElementById('hydroPanelCycle');
+        var alreadyCycle = panel && panel.classList.contains('active') && hydroActiveMainTab === 0;
+        if (only && alreadyCycle && hydroCycleApi) {
+          if (typeof hydroCycleApi.refreshVisuals === 'function') hydroCycleApi.refreshVisuals();
+        } else {
+          switchHydroMainTab(hydroActiveMainTab);
+        }
       } catch (e) { /* ignore */ }
     });
 

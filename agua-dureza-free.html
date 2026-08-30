@@ -583,7 +583,7 @@
       { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2, noteEs: 'Aporta SO₄²⁻ (~96 % m/m)', noteEn: 'Contributes SO₄²⁻ (~96% w/w)' },
       { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12.0, densityKgL: 1.57, nH: 3, noteEs: 'Aporta P₂O₅ (~54 % m/m)', noteEn: 'Contributes P₂O₅ (~54% w/w)' },
       { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3, noteEs: 'Aporta P₂O₅ (~61 % m/m)', noteEn: 'Contributes P₂O₅ (~61% w/w)' },
-      { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, noteEs: 'Anhidro; densidad verdadera ~1.665 kg/L; solo acidifica', noteEn: 'Anhydrous; true density ~1.665 kg/L; acidifies only' }
+      { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, noteEs: 'Polvo soluble anhidro; dosificar por masa (kg/g). Densidad ~1.665 kg/L solo para equivalencia volumétrica; solo acidifica', noteEn: 'Anhydrous soluble powder; dose by mass (kg/lb). Density ~1.665 kg/L only for volume equivalence; acidifies only' }
     ];
 
     const el = {
@@ -875,32 +875,51 @@
       const kgPerM3Water = (mlPerM3 / 1000) * rho;
       const kgTotal = totalLAcid * rho;
 
+      const en = waterUI.prefs().language === 'en';
+      const isUS = waterUI.prefs().unit_system === 'us_customary';
+      const isSolid = String(acid.id || '').indexOf('citrico') >= 0;
       const doseText = waterUI.resultFromSI(mlPerM3, 'acid_dose_volume_volume', 2);
-      const totalAcidText = waterUI.prefs().unit_system === 'us_customary'
+      const totalAcidText = isUS
         ? window.NpUnits.formatQuantity(window.NpUnits.convert(totalLAcid / 1000, 'm3', 'US fl oz'), 'US fl oz', waterUI.prefs().locale, 2)
         : f(totalLAcid, 3) + ' L (' + f(totalMl, 1) + ' mL)';
       // Masa del ácido: kg en métrico; lb en US customary (misma masa física).
-      const massText = waterUI.prefs().unit_system === 'us_customary'
+      const massText = isUS
         ? window.NpUnits.formatQuantity(window.NpUnits.convert(kgTotal, 'kg', 'lb'), 'lb', waterUI.prefs().locale, 3)
         : f(kgTotal, 3) + ' kg';
-      const en = waterUI.prefs().language === 'en';
-      const isUS = waterUI.prefs().unit_system === 'us_customary';
+      let massPerVolText;
+      if (isUS) {
+        const lbPer1000 = kgPerM3Water * 8.345404;
+        massPerVolText = (lbPer1000 > 0 && lbPer1000 < 1)
+          ? f(lbPer1000 * 16, 1) + ' oz/1000 gal'
+          : f(lbPer1000, 2) + ' lb/1000 gal';
+      } else if (kgPerM3Water > 0 && kgPerM3Water < 1) {
+        massPerVolText = f(kgPerM3Water * 1000, 0) + ' g/m³';
+      } else {
+        massPerVolText = f(kgPerM3Water, 2) + ' kg/m³';
+      }
       const densTxt = acid.densityKgL > 0
         ? (isUS
           ? f(acid.densityKgL, 3) + ' kg/L (' + f(acid.densityKgL * 8.345404, 2) + ' lb/gal)'
           : f(acid.densityKgL, 3) + ' kg/L')
         : '—';
       const note = en ? (acid.noteEn || acid.noteEs || '') : (acid.noteEs || '');
+      const doseLine = isSolid
+        ? `${wt('Dosis', 'Dose')} = <strong>${massPerVolText}</strong> ${wt('de polvo', 'of powder')} <span class="muted">(${wt('equiv. vol.', 'vol. equiv.')} ${doseText})</span>`
+        : `${wt('Dosis', 'Dose')} = <strong>${doseText}</strong> ${wt('de ácido', 'of acid')}`;
+      const totalLine = isSolid
+        ? `${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${massText}</strong> ${wt('de polvo', 'of powder')} <span class="muted">(${wt('equiv. vol.', 'vol. equiv.')} ${totalAcidText})</span>`
+        : `${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${totalAcidText}</strong> ${wt('de ácido', 'of acid')} · ${wt('aprox.', 'approx.')} <strong>${massText}</strong>`;
       el.acidResult.innerHTML = `
         <strong>${wt('Resultado con', 'Result with')} ${waterUI.translateString(acid.name)}:</strong><br>
         ${wt('Meq/L a neutralizar', 'meq/L to neutralize')} = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
-        ${wt('Dosis', 'Dose')} = <strong>${doseText}</strong> ${wt('de ácido', 'of acid')}<br>
-        ${wt('Para', 'For')} <strong>${f(vol.inputValue, 3)} ${vol.unit.replace('m3', 'm³')}</strong> ${wt('de agua', 'of water')}: <strong>${totalAcidText}</strong> ${wt('de ácido', 'of acid')} · ${wt('aprox.', 'approx.')} <strong>${massText}</strong>
+        ${doseLine}<br>
+        ${totalLine}
         <div style="margin-top:10px;padding:10px 12px;border:1px dashed #7dd3fc;border-radius:8px;background:#f0f9ff;font-size:12.5px;line-height:1.45;">
           <strong>${wt('Especificaciones del ácido', 'Acid specifications')}</strong><br>
+          ${isSolid ? wt('Forma', 'Form') + ': <strong>' + wt('Polvo soluble', 'Soluble powder') + '</strong> · ' : ''}
           ${wt('Fórmula', 'Formula')}: <span class="notranslate" translate="no">${acid.formula || '—'}</span> ·
           ${wt('Pureza', 'Purity')}: <span class="notranslate" translate="no">${acid.purityPct != null ? acid.purityPct + '%' : '—'}</span> ·
-          ${wt('Densidad', 'Density')}: <span class="notranslate" translate="no">${densTxt}</span><br>
+          ${wt('Densidad', 'Density')}: <span class="notranslate" translate="no">${densTxt}</span>${isSolid ? ' <span class="muted">(' + wt('equiv. vol.', 'vol. equiv.') + ')</span>' : ''}<br>
           ${wt('Fuerza', 'Strength')}: <span class="notranslate" translate="no">${acid.meqPerMl} meq/mL</span> ·
           ${wt('H⁺ útiles / mol', 'Useful H⁺ / mol')}: <span class="notranslate" translate="no">${acid.nH != null ? acid.nH : '—'}</span>
           ${note ? '<br><span class="muted">' + note + '</span>' : ''}

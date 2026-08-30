@@ -58,7 +58,7 @@ module.exports = {
       file: 'hidro-solucion-free.html',
       lsKey: 'nutriplant_hydro_solucion_free_v1',
       summary:
-        'CE objetivo → meq/L, % meq (triángulos N-P-S y K-Ca-Mg), ppm. Cl⁻ suma a CE. Triángulos arrastrables. N-NH₄ fuera del triángulo catiónico; Cl fuera del aniónico. Didáctica global; distinta de pestaña Hidroponía del proyecto (esa sí guarda en nube por proyecto).'
+        'Pestañas: (1) Programa del ciclo (etapas, catálogo Steiner/propias, ternario, gráficas meq/ppm); (2) Diseño CE→meq/%→ppm, triángulos N-P-S y K-Ca-Mg; (3) Aporte fertilizantes. Cl⁻ suma a CE; NH₄ fuera del triángulo catiónico. En PRO el programa se guarda en hidroponia.cycleProgram (PDF hydroCycle + admin). Distinto de Análisis→Solución Nutritiva (lab) y de Solución por etapa del cálculo de sales.'
     },
     {
       id: 'hidro_pulso_riego',
@@ -66,7 +66,7 @@ module.exports = {
       file: 'hidro-pulso-riego-free.html',
       lsKey: 'nutriplant_free_hidro_pulso_riego_v1',
       summary:
-        'L y minutos del pulso: V × (% ATD) × (% agotamiento) ÷ (1 − % drenaje). Macetas, goteros/maceta y caudal L/h. Desplegable de sustratos orientativos (coco, perlita, lana de roca…). Persistencia localStorage.'
+        'L y minutos del pulso en contenedor: L_neto = V×(ATD%)×(agotamiento%); L_pulso = L_neto/(1−drenaje%); min con goteros×L/h; L_total × macetas. Catálogo ATD (coco, perlita, lana…) + sustratos propios. Criterio: reponer agotamiento + drenaje para lavar sales. Solo localStorage; ≠ balance hídrico de suelo.'
     },
     {
       id: 'agua_dureza',
@@ -74,7 +74,7 @@ module.exports = {
       file: 'agua-dureza-free.html',
       lsKey: 'nutriplant_free_agua_dureza_v1',
       summary:
-        'Dureza (ppm CaCO₃, meq/L, °dH/°eH/°fH), Ca/Mg de laboratorio, neutralización con ácidos (HCO₃/CO₃, residual, volumen).'
+        'Dureza (ppm CaCO₃, meq/L, °dH/°eH/°fH), Ca/Mg de laboratorio, neutralización HCO₃/CO₃ con residual y volumen. Ácidos líquidos: HNO₃ 55% (aporta N-NO₃), H₂SO₄ 98%, H₃PO₄ 75/85 → mL/m³ y L. Cítrico anhidro 99.5% = polvo: UI primaria g/kg (oz/lb US); mL/L solo equiv. vol.'
     },
       {
       id: 'vpd',

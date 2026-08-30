@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.08.7 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-08-17 · **v2026.08.17b** (+ Zona de equilibrio iónico bajo Requerimiento: dashboard/admin/API `ionic_equilibrium`; no PDF; % fijos, kg y % actuales siguen el req)
+**Versión Knowledge:** 2026-08-30 · **v2026.08.30c** (+ cítrico polvo por masa g/kg·oz/lb; líquidos mL/L; Pulso; cycleProgram)
 
 ---
 
@@ -192,26 +192,34 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Costos (USD/ha):** kg producto/ha del material = dosis kg/ha × (% TM ÷ 100); costo = kg/ha × (USD/t ÷ 1000). Total aplicación / programa en **USD/ha** (USD/acre si US customary). Precio desde catálogo/overrides; sin precio → «—».  
 - **Gratis** (`granular-mix-free`): solo formulación de mezcla + kg/ha según dosis (localStorage). **Proyecto nube:** requerimiento + programa + resumen + costos. Modo óxido/elemental como fertirriego.
 
-### 4.9 Hidroponía por etapa
+### 4.9 Hidroponía / Solución Nutritiva (proyecto)
 
-**URL:** …/hidroponia-solucion-por-etapa.html · Proyecto nube; etapas; CE ≈ Σmeq/20; tanques A–E; agua relleno resta objetivo. ≠ herramienta gratis didáctica.
+**URL:** …/hidroponia-solucion-por-etapa.html · Menú Proyecto: **Solución Nutritiva** (tag interno `hidroponia`). Etapas de diseño; CE ≈ Σmeq/20; tanques A–E; agua relleno resta objetivo.
+
+**Programa del ciclo (aparte del diseño activo):** botón en la pestaña abre `hidro-solucion-free` (pestaña 1). Plan multi-etapa → `hidroponia.cycleProgram`. Admin lo muestra. PDF: sección opcional **`hydroCycle` / Programa del ciclo** (≠ sección Hidroponía del reporte). Ver también §4.10.
 
 **Agua y ácido en Cálculo de fertilizantes (lógica de producto):**
 - UI: etiqueta **«Traer de análisis»** + desplegable **«Seleccionar análisis…»**. Al elegir un reporte Análisis → Agua se cargan ppm (macros, micros, Cl⁻) y la dosis de ácido.
 - **Leyenda de ácido / volumen** (UI, panel admin y PDF; EN si el reporte está en inglés):
-  1. Ácido del análisis: HNO₃ 55 % (11,6 meq/mL), H₂SO₄ 98 % (36,7), H₃PO₄ 75 % (12,0) o 85 % (14,6).
+  1. Ácidos del análisis: **HNO₃ 55 %** (11,6 meq/mL; aporta **N-NO₃**; **líquido** → UI/PDF/admin en mL/m³ y L), H₂SO₄ 98 % (36,7; aporta S; líquido), H₃PO₄ 75 % (12,0) o 85 % (14,6; aporta P; líquido), **Ácido Cítrico Anhidro 99.5 %** (**polvo soluble**; 25,9 meq/mL; C₆H₈O₇ triprótico; densidad ~1,665 kg/L solo para equivalencia; **solo acidifica — no aporta N, P ni K**; UI/PDF/admin primaria en **g/m³ o kg** / **oz o lb** US; mL/L = *equiv. vol.*).
   2. meq/L a neutralizar = (HCO₃⁻ + CO₃²⁻) − residual objetivo (defecto 1 meq/L).
   3. mL/m³ = meq/L × 1000 ÷ meqPerMl del ácido; L totales = mL/m³ × m³ ÷ 1000.
   4. Se muestran L según el **m³ del análisis** y L según el **volumen de agua de hidroponía**.
   5. Aviso si esos m³ coinciden o no (tolerancia ≈ 0,01 m³) + recordatorio de revisar la dosis.
-- **Ácido en filas:** el campo L es el **volumen total para el m³ de hidroponía** (no solo mL/m³). Modo producto, **tanque C**; aporte N/P/S (densidad × %) resta del faltante. Mismos IDs que Análisis → Agua.
+- **Ácido en filas:** líquidos = campo **L** (volumen total para el m³ de hidroponía). **Cítrico polvo = campo kg** (masa). Modo producto, **tanque C**; aporte N/P/S (densidad × %) resta del faltante (**cítrico = 0**). Mismos IDs que Análisis → Agua.
 - **Propuesta automática** (reemplaza filas): (0) ácido C primero → nitrato Ca A → MAP/MKP B → NKS B → nitrato Mg A → SOP B → nitrato Ca extra por N-NO₃ restante → sulfato amonio → sulfato Mg/S → micros. El S suele quedar ligeramente sobre/bajo.
 - Catálogo de soluciones (Steiner/Hoagland/… + propias). Solubles personalizados **compartidos con Fertirriego**.
 - **Costos (USD del lote, no por ha):** kg eq del producto para el volumen × (USD/t ÷ 1000); líquidos kg = L × densidad. Total = suma de filas. Precios sincronizados con ferti.
 
-### 4.10 Solución didáctica (gratis)
+### 4.10 Solución didáctica + Programa del ciclo + Pulso de riego (gratis / modal PRO)
 
-**URL:** …/diseno-solucion-nutritiva-didactica.html · login localStorage; triángulos, CE, Cl, NH₄.
+**URL solución:** `hidro-solucion-free.html` · login localStorage; en PRO también modal desde Solución Nutritiva.
+
+- Pestañas: **Programa del ciclo** | Diseño objetivo | Aporte fertilizantes.
+- Triángulos, CE, Cl, NH₄; catálogo Steiner/propias; gráficas meq/ppm.
+- En PRO el programa se sincroniza al proyecto (`cycleProgram`); PDF `hydroCycle`; admin.
+
+**Pulso de riego:** `hidro-pulso-riego-free.html` (⏱️). `L_neto = V×ATD%×agotamiento%`; `L_pulso = L_neto/(1−drenaje%)`; minutos con goteros×L/h; × macetas. Catálogo ATD orientativo. Solo localStorage. Ver HERRAMIENTAS §⏱️.
 
 ### 4.11 VPD y Radar Satelital (NDVI / NDMI / NDRE / RGB + relieve DEM)
 

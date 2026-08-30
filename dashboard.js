@@ -22156,7 +22156,7 @@ var AGUA_ACIDS = [
   { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', formula: 'H₂SO₄', purityPct: 98, meqPerMl: 36.7, densityKgL: 1.84, nH: 2, noteEs: 'Aporta SO₄²⁻ (~96 % m/m)', noteEn: 'Contributes SO₄²⁻ (~96% w/w)' },
   { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', formula: 'H₃PO₄', purityPct: 75, meqPerMl: 12.0, densityKgL: 1.57, nH: 3, noteEs: 'Aporta P₂O₅ (~54 % m/m)', noteEn: 'Contributes P₂O₅ (~54% w/w)' },
   { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', formula: 'H₃PO₄', purityPct: 85, meqPerMl: 14.6, densityKgL: 1.69, nH: 3, noteEs: 'Aporta P₂O₅ (~61 % m/m)', noteEn: 'Contributes P₂O₅ (~61% w/w)' },
-  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, noteEs: 'Anhidro; densidad verdadera ~1.665 kg/L; solo acidifica', noteEn: 'Anhydrous; true density ~1.665 kg/L; acidifies only' }
+  { id: 'acido_citrico_anhidro', name: 'Ácido Cítrico Anhidro 99.5%', formula: 'C₆H₈O₇', purityPct: 99.5, meqPerMl: 25.9, densityKgL: 1.665, nH: 3, solidPowder: true, noteEs: 'Polvo soluble anhidro; dosificar por masa (kg/g). Densidad ~1.665 kg/L solo para equivalencia volumétrica; solo acidifica', noteEn: 'Anhydrous soluble powder; dose by mass (kg/lb). Density ~1.665 kg/L only for volume equivalence; acidifies only' }
 ];
 
 function aguaAcidLabel(name) {
@@ -22185,14 +22185,22 @@ function aguaAcidSpecsHtml(acid) {
     return ui && typeof ui.t === 'function' ? ui.t(es, en) : es;
   };
   var en = ui && ui.prefs && ui.prefs().language === 'en';
+  var isSolid = (ui && typeof ui.isAcidSolidPowder === 'function')
+    ? ui.isAcidSolidPowder(acid)
+    : !!(acid.solidPowder || (String(acid.id || '').indexOf('citrico') >= 0));
   var note = en ? (acid.noteEn || acid.noteEs || '') : (acid.noteEs || '');
   var rows = [
     [t('Fórmula', 'Formula'), acid.formula || '—'],
     [t('Pureza', 'Purity'), (acid.purityPct != null ? acid.purityPct + '%' : '—')],
-    [t('Densidad', 'Density'), aguaAcidDensityText(acid.densityKgL)],
+    [t('Densidad', 'Density'), aguaAcidDensityText(acid.densityKgL) + (isSolid
+      ? ' <span style="color:#64748b;font-weight:400;">(' + t('equiv. vol.', 'vol. equiv.') + ')</span>'
+      : '')],
     [t('Fuerza', 'Strength'), (acid.meqPerMl != null ? acid.meqPerMl + ' meq/mL' : '—')],
     [t('H⁺ útiles / mol', 'Useful H⁺ / mol'), (acid.nH != null ? String(acid.nH) : '—')]
   ];
+  if (isSolid) {
+    rows.splice(2, 0, [t('Forma', 'Form'), t('Polvo soluble', 'Soluble powder')]);
+  }
   var body = rows.map(function (r) {
     return '<div style="display:contents;"><span style="color:#166534;">' + r[0] + ':</span><span class="notranslate" translate="no">' + r[1] + '</span></div>';
   }).join('');
@@ -22569,17 +22577,25 @@ window.awUpdateAcid = function awUpdateAcid() {
   document.getElementById('aw-acid-residual-ref').textContent = residualMeq.toFixed(2);
   document.getElementById('aw-acid-meq-needed').textContent = meqPerL > 0 ? meqPerL.toFixed(2) : '0';
   var rho = typeof acid.densityKgL === 'number' && acid.densityKgL > 0 ? acid.densityKgL : 1.5;
-  function awAcidKgSpan(kg) {
-    var massTxt = window.NpAnalysisUI ? window.NpAnalysisUI.formatMassKg(kg, 2) : (kg.toFixed(2) + ' kg');
-    return ' <span style="font-size:0.8rem;color:#64748b;">(' + massTxt + ')</span>';
-  }
+  var ui = window.NpAnalysisUI;
+  var isSolid = ui && typeof ui.isAcidSolidPowder === 'function'
+    ? ui.isAcidSolidPowder(acid)
+    : !!(acid.solidPowder || String(acidId || '').indexOf('citrico') >= 0);
   if (meqPerL <= 0 || !acid.meqPerMl) {
-    var zeroDose = window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidDoseMlPerM3(0, 2) : '0.00 mL';
-    var zeroTot = window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidTotalLiters(0, 2) : '0.00 L';
-    document.getElementById('aw-acid-per-m3').innerHTML = meqPerL <= 0 ? zeroDose + awAcidKgSpan(0) : '—';
-    document.getElementById('aw-acid-total').innerHTML = (meqPerL <= 0 && m3) ? zeroTot + awAcidKgSpan(0) : '—';
+    if (isSolid) {
+      var zeroMass = ui && ui.formatAcidSolidMassPerVolume ? ui.formatAcidSolidMassPerVolume(0, 2) : '0 g/m³';
+      var zeroMassTot = ui && ui.formatAcidSolidMass ? ui.formatAcidSolidMass(0, 2) : '0 kg';
+      document.getElementById('aw-acid-per-m3').innerHTML = meqPerL <= 0 ? zeroMass : '—';
+      document.getElementById('aw-acid-total').innerHTML = (meqPerL <= 0 && m3) ? zeroMassTot : '—';
+    } else {
+      var zeroDose = ui ? ui.formatAcidDoseMlPerM3(0, 2) : '0.00 mL';
+      var zeroTot = ui ? ui.formatAcidTotalLiters(0, 2) : '0.00 L';
+      var zeroMassHint = ui && ui.acidLiquidMassHint ? ui.acidLiquidMassHint(0) : ' <span style="font-size:0.8rem;color:#64748b;">(0 kg)</span>';
+      document.getElementById('aw-acid-per-m3').innerHTML = meqPerL <= 0 ? zeroDose + zeroMassHint : '—';
+      document.getElementById('aw-acid-total').innerHTML = (meqPerL <= 0 && m3) ? zeroTot + zeroMassHint : '—';
+    }
     document.getElementById('aw-acid-m3-ref').textContent = m3
-      ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
+      ? (ui ? ui.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
       : '—';
     var specsHost0 = document.getElementById('aw-acid-specs-host');
     if (specsHost0) specsHost0.innerHTML = aguaAcidSpecsHtml(acid);
@@ -22592,15 +22608,26 @@ window.awUpdateAcid = function awUpdateAcid() {
   var kgPerM3Water = (mlPerM3 / 1000) * rho;
   var kgTotal = litersTotal * rho;
   document.getElementById('aw-acid-m3-ref').textContent = m3
-    ? (window.NpAnalysisUI ? window.NpAnalysisUI.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
+    ? (ui ? ui.formatVolumeM3(m3, 2) : m3.toFixed(2) + ' m³')
     : '—';
-  /* Volumen 2 decimales; kg derivado de volumen × densidad típica del ácido comercial (aprox.). */
-  document.getElementById('aw-acid-per-m3').innerHTML =
-    (window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidDoseMlPerM3(mlPerM3, 2) : mlPerM3.toFixed(2) + ' mL') +
-    awAcidKgSpan(kgPerM3Water);
-  document.getElementById('aw-acid-total').innerHTML = m3
-    ? ((window.NpAnalysisUI ? window.NpAnalysisUI.formatAcidTotalLiters(litersTotal, 2) : litersTotal.toFixed(2) + ' L') + awAcidKgSpan(kgTotal))
-    : '—';
+  if (isSolid) {
+    /* Polvo: masa principal; volumen equivalente entre paréntesis. */
+    document.getElementById('aw-acid-per-m3').innerHTML =
+      (ui && ui.formatAcidSolidMassPerVolume ? ui.formatAcidSolidMassPerVolume(kgPerM3Water, 2) : (kgPerM3Water.toFixed(2) + ' kg/m³')) +
+      (ui && ui.acidSolidVolumeHint ? ui.acidSolidVolumeHint(mlPerM3, null) : '');
+    document.getElementById('aw-acid-total').innerHTML = m3
+      ? ((ui && ui.formatAcidSolidMass ? ui.formatAcidSolidMass(kgTotal, 2) : kgTotal.toFixed(2) + ' kg') +
+        (ui && ui.acidSolidVolumeHint ? ui.acidSolidVolumeHint(null, litersTotal) : ''))
+      : '—';
+  } else {
+    document.getElementById('aw-acid-per-m3').innerHTML =
+      (ui ? ui.formatAcidDoseMlPerM3(mlPerM3, 2) : mlPerM3.toFixed(2) + ' mL') +
+      (ui && ui.acidLiquidMassHint ? ui.acidLiquidMassHint(kgPerM3Water) : '');
+    document.getElementById('aw-acid-total').innerHTML = m3
+      ? ((ui ? ui.formatAcidTotalLiters(litersTotal, 2) : litersTotal.toFixed(2) + ' L') +
+        (ui && ui.acidLiquidMassHint ? ui.acidLiquidMassHint(kgTotal) : ''))
+      : '—';
+  }
   var specsHost = document.getElementById('aw-acid-specs-host');
   if (specsHost) specsHost.innerHTML = aguaAcidSpecsHtml(acid);
   analysisApplyUnits(document.getElementById('agua-tab-container'));

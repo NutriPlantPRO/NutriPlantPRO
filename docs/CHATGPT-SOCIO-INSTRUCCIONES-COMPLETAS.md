@@ -53,6 +53,12 @@ PARAMS: project_name|id; type|report_id|latest_only; q; email; request_id; tool_
 
 Fertirriego · Requerimiento: **Zona de equilibrio iónico** (3 col: zona / % meq / kg ventana; no PDF; sí admin/API `ionic_equilibrium`). Dist: editor **solo %** (sin gráfica de %). **Sugerir %** = curva nueva (Steiner). Si ya hay programa, el % se acomoda solo; cambiar una dosis mueve el % de Dist. Dinámica: tabla ciclo **% ferti vs % granular** (sin agua). Perfiles → MANUAL §4.6–4.7.
 
+**Solución Nutritiva / Programa del ciclo:** en PRO, botón «Programa del ciclo» → modal multi-etapa (`hidro-solucion-free`); se guarda `hidroponia.cycleProgram`; admin + PDF casilla **Programa del ciclo** (`hydroCycle`). ≠ Solución por etapa (diseño activo) ≠ Análisis lab. Knowledge HERRAMIENTAS §💧 + MANUAL §4.9–4.10; API `free_tools_catalog` `hidro_solucion`.
+
+**Pulso de riego ⏱️:** `hidro-pulso-riego-free` — L/min del pulso (V, ATD, agotamiento, drenaje, macetas, goteros). API `hidro_pulso_riego`. Solo LS; ≠ balance 🌧️ suelo.
+
+**Ácidos (Agua / Hidro / acondicionamiento / PDF / admin):** HNO₃ 55% (aporta N-NO₃; líquido mL/L), H₂SO₄, H₃PO₄ 75/85 (líquidos). **Cítrico anhidro 99.5% = polvo soluble**: dosificar por **masa** (g/kg métrico; oz/lb US); 25,9 meq/mL; solo acidifica (sin N/P/K); mL/L solo equiv. vol. Tanque C.
+
 ¿Ambiguo? Charla, admin, proyecto, Plan/Nutri/Invest PRO, Radar, lab, calculadora, manual, flujo plataforma, redes (URL nueva = editorial juntos).
 
 --- FIN ---

@@ -146,7 +146,7 @@
             { id: 'acido_sulfurico_98', name: tr('Ácido Sulfúrico 98%', 'Sulfuric Acid 98%'), meqPerMl: 36.7, densityKgL: 1.84, purityPct: 98, formula: 'H₂SO₄' },
             { id: 'acido_fosforico_75', name: tr('Ácido Fosfórico 75%', 'Phosphoric Acid 75%'), meqPerMl: 12.0, densityKgL: 1.57, purityPct: 75, formula: 'H₃PO₄' },
             { id: 'acido_fosforico_85', name: tr('Ácido Fosfórico 85%', 'Phosphoric Acid 85%'), meqPerMl: 14.6, densityKgL: 1.69, purityPct: 85, formula: 'H₃PO₄' },
-            { id: 'acido_citrico_anhidro', name: tr('Ácido Cítrico Anhidro 99.5%', 'Citric Acid Anhydrous 99.5%'), meqPerMl: 25.9, densityKgL: 1.665, purityPct: 99.5, formula: 'C₆H₈O₇' }
+            { id: 'acido_citrico_anhidro', name: tr('Ácido Cítrico Anhidro 99.5%', 'Citric Acid Anhydrous 99.5%'), meqPerMl: 25.9, densityKgL: 1.665, purityPct: 99.5, formula: 'C₆H₈O₇', solidPowder: true }
         ];
         var SOIL_PHYSICAL_LABELS = {
             texturalClass: tr('Clase textural', 'Textural class'),
@@ -813,28 +813,70 @@
             var meqPerM3 = meqPerLNeutralizar * 1000;
             var mlPerM3 = acid && acid.meqPerMl ? (meqPerM3 / acid.meqPerMl) : 0;
             var litrosTotal = m3 ? ((mlPerM3 * m3) / 1000) : 0;
+            var rho = acid && acid.densityKgL > 0 ? acid.densityKgL : 1.5;
+            var kgPerM3 = (mlPerM3 / 1000) * rho;
+            var kgTotal = litrosTotal * rho;
             var isUS = isUSUnits();
             var en = isEnLang();
+            var isSolid = !!(acid && (acid.solidPowder || String(acid.id || '').indexOf('citrico') >= 0));
             // Conversiones explícitas con el sistema del reporte. No depender de
             // las preferencias que tenga abierta la interfaz al generar el PDF.
             var volDisp = m3 > 0
                 ? (isUS ? formatNum(m3 * 264.1720524, 2) + ' US gal' : formatNum(m3, 2) + ' m³')
                 : '—';
-            var doseDisp = mlPerM3 > 0
-                ? (isUS ? formatNum(mlPerM3 * 0.128, 2) + ' fl oz/1000 gal' : formatNum(mlPerM3, 2) + ' mL/m³')
-                : '—';
-            var totalDisp = litrosTotal > 0
-                ? (isUS ? formatNum(litrosTotal * 0.2641720524, 2) + ' US gal' : formatNum(litrosTotal, 2) + ' L')
-                : '—';
+            var doseDisp;
+            var totalDisp;
+            var doseLabel;
+            var totalLabel;
+            if (isSolid) {
+                if (isUS) {
+                    var lbPer1000 = kgPerM3 * 8.345404;
+                    doseDisp = mlPerM3 > 0
+                        ? (lbPer1000 < 1 && lbPer1000 > 0
+                            ? formatNum(lbPer1000 * 16, 1) + ' oz/1000 gal'
+                            : formatNum(lbPer1000, 2) + ' lb/1000 gal')
+                        : '—';
+                    var lbTot = kgTotal * 2.20462262185;
+                    totalDisp = litrosTotal > 0
+                        ? (lbTot < 1 && lbTot > 0
+                            ? formatNum(lbTot * 16, 1) + ' oz'
+                            : formatNum(lbTot, 2) + ' lb')
+                        : '—';
+                    if (mlPerM3 > 0) doseDisp += ' (' + formatNum(mlPerM3 * 0.128, 2) + ' fl oz/1000 gal equiv.)';
+                    if (litrosTotal > 0) totalDisp += ' (' + formatNum(litrosTotal * 0.2641720524, 2) + ' US gal equiv.)';
+                } else {
+                    doseDisp = mlPerM3 > 0
+                        ? (kgPerM3 < 1 && kgPerM3 > 0
+                            ? formatNum(kgPerM3 * 1000, 0) + ' g/m³'
+                            : formatNum(kgPerM3, 2) + ' kg/m³')
+                        : '—';
+                    totalDisp = litrosTotal > 0
+                        ? (kgTotal < 1 && kgTotal > 0
+                            ? formatNum(kgTotal * 1000, 0) + ' g'
+                            : formatNum(kgTotal, 2) + ' kg')
+                        : '—';
+                    if (mlPerM3 > 0) doseDisp += ' (' + formatNum(mlPerM3, 2) + ' mL/m³ equiv.)';
+                    if (litrosTotal > 0) totalDisp += ' (' + formatNum(litrosTotal, 2) + ' L equiv.)';
+                }
+                doseLabel = en ? 'Acid (mass) / volume:' : 'Ácido (masa) / volumen:';
+                totalLabel = en ? 'Acid (total mass):' : 'Ácido (masa total):';
+            } else {
+                doseDisp = mlPerM3 > 0
+                    ? (isUS ? formatNum(mlPerM3 * 0.128, 2) + ' fl oz/1000 gal' : formatNum(mlPerM3, 2) + ' mL/m³')
+                    : '—';
+                totalDisp = litrosTotal > 0
+                    ? (isUS ? formatNum(litrosTotal * 0.2641720524, 2) + ' US gal' : formatNum(litrosTotal, 2) + ' L')
+                    : '—';
+                doseLabel = isUS
+                    ? (en ? 'Acid dose:' : 'Dosis de ácido:')
+                    : (en ? 'mL acid / m³:' : 'mL ácido / m³:');
+                totalLabel = isUS
+                    ? (en ? 'Acid (total volume):' : 'Ácido (volumen total):')
+                    : (en ? 'L acid (total volume):' : 'L ácido (volumen total):');
+            }
             var volLabel = isUS
                 ? (en ? 'Reference volume (cycle / solution):' : 'Volumen de referencia (ciclo / solución):')
                 : (en ? 'Reference volume (cycle / solution):' : 'Volumen de referencia (ciclo / solución):');
-            var doseLabel = isUS
-                ? (en ? 'Acid dose:' : 'Dosis de ácido:')
-                : (en ? 'mL acid / m³:' : 'mL ácido / m³:');
-            var totalLabel = isUS
-                ? (en ? 'Acid (total volume):' : 'Ácido (volumen total):')
-                : (en ? 'L acid (total volume):' : 'L ácido (volumen total):');
 
             html += '<div class="admin-analysis-group" style="border:2px solid #16a34a;background:#f0fdf4;border-radius:10px;padding:14px;margin-top:16px;">';
             html += '<div class="admin-analysis-group-title" style="color:#166534;">🧪 ' +
