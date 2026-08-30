@@ -2513,17 +2513,35 @@ function hydroResolveAcidMaterial(acidId, materials) {
   return fallback;
 }
 
-/** Dosis de ácido desde análisis: L (líquidos) o kg (cítrico polvo = L × densidad). */
+/** Dosis de ácido desde análisis: L (líquidos) o kg (cítrico polvo = L × densidad).
+ * Si se pide otro ácido (preferredAcidId), recalcula mL/m³ con el mismo meq a neutralizar
+ * y el meqPerMl del ácido nuevo (no reutiliza la dosis del ácido del análisis). */
 function hydroAcidDoseLitersFromAnalysis(preferredAcidId) {
   const acidCtx = hydroResolveAcidContext();
   const calc = acidCtx && acidCtx.calc;
   const vol = Math.max(0, parseFloat(hydroState.volumeWaterM3) || 0);
-  if (!calc || !(calc.mlPerM3 > 0) || !(vol > 0)) {
+  if (!calc || !(vol > 0)) {
     return { liters: 0, massKg: 0, productAmount: 0, acidId: preferredAcidId || null, calc: null };
   }
   const acidId = preferredAcidId || calc.acidId || 'acido_nitrico_55';
-  const liters = (calc.mlPerM3 * vol) / 1000;
-  const density = (calc.acid && calc.acid.densityKgL > 0) ? calc.acid.densityKgL : 1.5;
+  const acidMeta = HYDRO_WATER_ACIDS[acidId] ||
+    (calc.acid && calc.acidId === acidId ? calc.acid : null) ||
+    HYDRO_WATER_ACIDS.acido_nitrico_55;
+  if (!acidMeta || !(acidMeta.meqPerMl > 0)) {
+    return { liters: 0, massKg: 0, productAmount: 0, acidId: acidId, calc: calc };
+  }
+  const neededMeqL = Number.isFinite(parseFloat(calc.neededMeqL))
+    ? Math.max(0, parseFloat(calc.neededMeqL))
+    : null;
+  // Mismos meq a bajar (HCO₃⁻+CO₃²⁻−residual); distinta potencia → distinta dosis.
+  const mlPerM3 = (neededMeqL != null)
+    ? (neededMeqL * 1000 / acidMeta.meqPerMl)
+    : (parseFloat(calc.mlPerM3) || 0);
+  if (!(mlPerM3 > 0)) {
+    return { liters: 0, massKg: 0, productAmount: 0, acidId: acidId, calc: calc, mlPerM3: 0 };
+  }
+  const liters = (mlPerM3 * vol) / 1000;
+  const density = (acidMeta.densityKgL > 0) ? acidMeta.densityKgL : 1.5;
   const massKg = liters * density;
   const isCitric = String(acidId).indexOf('citrico') >= 0;
   return {
@@ -2532,7 +2550,9 @@ function hydroAcidDoseLitersFromAnalysis(preferredAcidId) {
     productAmount: isCitric ? massKg : liters,
     acidId: acidId,
     calc: calc,
-    mlPerM3: calc.mlPerM3
+    mlPerM3: mlPerM3,
+    neededMeqL: neededMeqL,
+    meqPerMl: acidMeta.meqPerMl
   };
 }
 
@@ -3037,10 +3057,28 @@ function hydroAcidMeqHintHtml(f, materials) {
   const mat = materials.find(m => m && m.id === f.materialId) ||
     (hydroIsAcidMaterialId(f.materialId) ? hydroResolveAcidMaterial(f.materialId, materials) : null);
   const name = hydroMaterialDisplayName((mat && mat.name) || f.name || hydroT('Ácido', 'Acid'));
+  let targetBit = '';
+  try {
+    const ctx = hydroResolveAcidContext();
+    const need = ctx && ctx.calc && Number.isFinite(parseFloat(ctx.calc.neededMeqL))
+      ? Math.max(0, parseFloat(ctx.calc.neededMeqL))
+      : null;
+    if (need != null && need > 0) {
+      const diff = Math.abs(info.meqPerL - need);
+      const ok = diff <= 0.05;
+      targetBit = ' · ' + hydroT('objetivo del análisis', 'analysis target') + ': <strong>' + need.toFixed(2) + ' meq/L</strong>' +
+        (ok
+          ? ' <span style="color:#15803d;">✓</span>'
+          : ' <span style="color:#c2410c;">(' + hydroT('ajusta dosis si no coincide', 'adjust dose if it does not match') + ')</span>');
+    }
+  } catch (eT) { /* ignore */ }
   return {
     name: name,
     meqTxt: meqTxt,
-    html: `<span class="hydro-acid-meq-note-item"><strong>${hydroEscapeAttr(name)}</strong>: ≈ <strong>${meqTxt}</strong> ${hydroT('meq/L alcalinidad (HCO₃⁻+CO₃²⁻)', 'meq/L alkalinity (HCO₃⁻+CO₃²⁻)')}</span>`
+    html: `<span class="hydro-acid-meq-note-item"><strong>${hydroEscapeAttr(name)}</strong>: ` +
+      hydroT('con esta dosis se neutralizan ≈', 'with this dose ≈') +
+      ` <strong>${meqTxt}</strong> ${hydroT('meq/L de alcalinidad (HCO₃⁻+CO₃²⁻)', 'meq/L of alkalinity (HCO₃⁻+CO₃²⁻)')}` +
+      targetBit + '</span>'
   };
 }
 
@@ -3052,7 +3090,8 @@ function hydroAcidMeqNotesBanner(fertRows, materials) {
     if (tip && tip.html) bits.push(tip.html);
   });
   if (!bits.length) return '';
-  return `<p class="hydro-acid-meq-note" role="note">${bits.join(' · ')}</p>`;
+  return `<p class="hydro-acid-meq-note" role="note" style="margin:0 0 10px 0;font-size:0.88rem;color:#9a3412;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 11px;line-height:1.4;">` +
+    `<strong>${hydroT('Neutralización', 'Neutralization')}:</strong> ` + bits.join('<br>') + '</p>';
 }
 
 function hydroMaterialDisplayName(name) {
