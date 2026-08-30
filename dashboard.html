@@ -437,7 +437,7 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260830citricNoVol"></script>
-  <script src="hidroponia-functions.js?v=20260830catalogFix"></script>
+  <script src="hidroponia-functions.js?v=20260830progCat2"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
@@ -5266,10 +5266,15 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830catalogFix';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830progCatalog';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
-        var sameTool = cur.indexOf('hidro-solucion-free.html') !== -1 && cur.indexOf('v=20260830cycleU') !== -1;
+        // Misma herramienta + misma versión de cache. Si solo cambia v=, recarga una vez (no en cada apertura).
+        var verWanted = (base.match(/[?&]v=([^&]*)/) || [])[1] || '';
+        var sameTool = cur.indexOf('hidro-solucion-free.html') !== -1 &&
+          cur.indexOf('embed=dashboard') !== -1 &&
+          cur.indexOf('about:blank') === -1 &&
+          (!verWanted || cur.indexOf('v=' + verWanted) !== -1);
         var loaded = false;
         try {
           loaded = !!(frame.contentWindow && frame.contentDocument &&
@@ -5318,9 +5323,9 @@ CONTRATO:
         }
 
         if (!sameTool || cur.indexOf('about:blank') === 0) {
-          // Primera carga (o cambio de versión): ocultar hasta listo para no ver el flash.
+          // Solo la primera vez (o si el src no es esta herramienta).
           frame.style.opacity = '0';
-          frame.style.transition = 'opacity 0.15s ease';
+          frame.style.transition = 'opacity 0.12s ease';
           var onReady = function () {
             frame.removeEventListener('load', onReady);
             pushHydroState();
@@ -5330,22 +5335,22 @@ CONTRATO:
           };
           frame.addEventListener('load', onReady);
           frame.src = base;
-        } else {
+        } else if (loaded) {
+          // Ya en memoria: sin reload ni fade.
           frame.style.opacity = '1';
-          // Ya cargado: solo cambiar pestaña/modo, sin recargar.
-          if (loaded) {
+          frame.style.transition = '';
+          pushHydroState();
+        } else {
+          // Src correcto pero documento aún no listo (primer paint): esperar load una vez.
+          frame.style.opacity = '0';
+          var onReady2 = function () {
+            frame.removeEventListener('load', onReady2);
             pushHydroState();
-          } else {
-            frame.style.opacity = '0';
-            var onReady2 = function () {
-              frame.removeEventListener('load', onReady2);
-              pushHydroState();
-              requestAnimationFrame(function () {
-                frame.style.opacity = '1';
-              });
-            };
-            frame.addEventListener('load', onReady2);
-          }
+            requestAnimationFrame(function () {
+              frame.style.opacity = '1';
+            });
+          };
+          frame.addEventListener('load', onReady2);
         }
       }
       modal.classList.add('show');

@@ -1569,7 +1569,7 @@
   <script src="assets/fert-formula-engine.js"></script>
   <script src="assets/hydro-fert-aporte-catalog.js?v=20260535"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
-  <script src="assets/hydro-cycle-program.js?v=20260830catalogFix"></script>
+  <script src="assets/hydro-cycle-program.js?v=20260830progCatalog"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
@@ -4213,16 +4213,21 @@
         var data = event && event.data;
         if (!data || !data.type) return;
         if (data.type === 'np-hydro-cycle-hydrate') {
+          var langChangedHyd = false;
           if (data.language === 'en' || data.language === 'es') {
             try {
-              if (window.NpI18n) {
-                window.NpI18n.setLanguage(data.language, { persist: false });
-                window.NpI18n.apply(document);
+              var curLangHyd = (window.NpI18n && typeof window.NpI18n.getLanguage === 'function')
+                ? window.NpI18n.getLanguage() : '';
+              if (curLangHyd !== data.language) {
+                langChangedHyd = true;
+                if (window.NpI18n) {
+                  window.NpI18n.setLanguage(data.language, { persist: false });
+                  window.NpI18n.apply(document);
+                }
+                if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
+                  window.NpFreeNutritionUI.applyLanguage();
+                }
               }
-              if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
-                window.NpFreeNutritionUI.applyLanguage();
-              }
-              if (hydroCycleApi && typeof hydroCycleApi.render === 'function') hydroCycleApi.render();
             } catch (eLangHyd) { /* ignore */ }
           }
           if (Array.isArray(data.customSolutions) && window.NpHydroCycleProgram) {
@@ -4237,31 +4242,47 @@
             } catch (eProg) { /* ignore */ }
           }
           if (data.cycleProgram && Array.isArray(data.cycleProgram.stages) && data.cycleProgram.stages.length) {
+            var stagesSame = false;
+            try {
+              var curSt = hydroCycleApi && typeof hydroCycleApi.getState === 'function' ? hydroCycleApi.getState() : null;
+              stagesSame = !!(curSt && curSt.stages &&
+                JSON.stringify(curSt.stages) === JSON.stringify(data.cycleProgram.stages) &&
+                String(curSt.activeStageId || '') === String(data.cycleProgram.activeStageId || ''));
+            } catch (eSame) { stagesSame = false; }
             window._hydroCycleProgramLoaded = data.cycleProgram;
-            if (hydroCycleApi && typeof hydroCycleApi.setStages === 'function') {
+            if (stagesSame) {
+              if (langChangedHyd && hydroCycleApi && typeof hydroCycleApi.render === 'function') hydroCycleApi.render();
+            } else if (hydroCycleApi && typeof hydroCycleApi.setStages === 'function') {
               hydroCycleApi.setStages(data.cycleProgram.stages, data.cycleProgram.activeStageId);
               if (data.cycleProgram.programId) hydroCycleApi.getState().programId = data.cycleProgram.programId;
               if (data.cycleProgram.programName) hydroCycleApi.getState().programName = data.cycleProgram.programName;
               if (typeof hydroCycleApi.render === 'function') hydroCycleApi.render();
               else if (typeof hydroCycleApi.refreshVisuals === 'function') hydroCycleApi.refreshVisuals();
             }
+          } else if (langChangedHyd && hydroCycleApi && typeof hydroCycleApi.render === 'function') {
+            hydroCycleApi.render();
           }
           return;
         }
         if (data.type !== 'np-hydro-show') return;
         if (data.language === 'en' || data.language === 'es') {
           try {
-            if (window.NpI18n) {
-              window.NpI18n.setLanguage(data.language, { persist: false });
-              window.NpI18n.apply(document);
+            var curLangShow = (window.NpI18n && typeof window.NpI18n.getLanguage === 'function')
+              ? window.NpI18n.getLanguage() : '';
+            if (curLangShow !== data.language) {
+              if (window.NpI18n) {
+                window.NpI18n.setLanguage(data.language, { persist: false });
+                window.NpI18n.apply(document);
+              }
+              if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
+                window.NpFreeNutritionUI.applyLanguage();
+              }
+              if (hydroCycleApi && typeof hydroCycleApi.render === 'function') hydroCycleApi.render();
             }
-            if (window.NpFreeNutritionUI && typeof window.NpFreeNutritionUI.applyLanguage === 'function') {
-              window.NpFreeNutritionUI.applyLanguage();
-            }
-            if (hydroCycleApi && typeof hydroCycleApi.render === 'function') hydroCycleApi.render();
           } catch (eLangShow) { /* ignore */ }
         }
         var only = data.only === 'cycle' || data.only === 'program';
+        var wasOnly = document.documentElement.classList.contains('hydro-cycle-only');
         if (only) {
           document.documentElement.classList.add('hydro-cycle-only');
           hydroActiveMainTab = 0;
@@ -4272,10 +4293,12 @@
           else if (data.tab === 'fert') hydroActiveMainTab = 2;
           else if (data.tab === '') { /* keep current */ }
         }
-        // Cambio de modo suave: no rearmar todo si ya estamos en la pestaña correcta.
+        // Cambio de modo suave: no rearmar ni redibujar charts si ya estamos en el mismo modo.
         var panel = document.getElementById('hydroPanelCycle');
         var alreadyCycle = panel && panel.classList.contains('active') && hydroActiveMainTab === 0;
-        if (only && alreadyCycle && hydroCycleApi) {
+        if (only && alreadyCycle && wasOnly) {
+          /* noop — evita parpadeo al reabrir */
+        } else if (only && alreadyCycle && hydroCycleApi) {
           if (typeof hydroCycleApi.refreshVisuals === 'function') hydroCycleApi.refreshVisuals();
         } else {
           switchHydroMainTab(hydroActiveMainTab);

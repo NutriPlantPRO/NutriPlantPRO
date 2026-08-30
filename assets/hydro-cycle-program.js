@@ -879,21 +879,26 @@
     }
     saveCustomCyclePrograms(items);
     if (api && api.onCatalogSaved) api.onCatalogSaved(entry);
-    if (window.showMessage) {
-      window.showMessage(
-        t(
-          'Programa guardado. Ábrelo en «Mis programas» (no es una solución individual del catálogo Steiner).',
-          'Program saved. Open it in “My programs” (it is not a single Steiner-style solution).'
-        ),
-        'success'
-      );
-    } else {
-      window.alert(
-        t(
-          'Programa guardado. Ábrelo en «Mis programas» (no es una solución individual del catálogo Steiner).',
-          'Program saved. Open it in “My programs” (it is not a single Steiner-style solution).'
-        )
-      );
+    // Abrir la lista correcta al instante (evita buscar en «Mis soluciones» del catálogo Steiner).
+    try {
+      openCycleProgramsCatalog(api);
+    } catch (eOpen) {
+      if (window.showMessage) {
+        window.showMessage(
+          t(
+            'Programa guardado. También aparece en el catálogo del dashboard (Solución nutritiva → botón verde), por etapa.',
+            'Program saved. It also appears in the dashboard catalog (Nutrient solution → green button), by stage.'
+          ),
+          'success'
+        );
+      } else {
+        window.alert(
+          t(
+            'Programa guardado. También aparece en el catálogo del dashboard (Solución nutritiva → botón verde), por etapa.',
+            'Program saved. It also appears in the dashboard catalog (Nutrient solution → green button), by stage.'
+          )
+        );
+      }
     }
   }
 
@@ -906,14 +911,16 @@
           var n = (p.stages && p.stages.length) || 0;
           return '<tr data-cycle-prog-id="' + escapeAttr(p.id) + '">' +
             '<td><strong>' + escapeAttr(p.name) + '</strong><br><small>' + n + ' ' + t('etapas', 'stages') + '</small></td>' +
-            '<td><button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(p.id) + '">' + t('Cargar', 'Load') + '</button> ' +
+            '<td><button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(p.id) + '" title="' +
+            escapeAttr(t('Sustituye las etapas de la tabla actual por este programa', 'Replace the current table stages with this program')) + '">' +
+            t('Cargar en la tabla', 'Load into table') + '</button> ' +
             '<button type="button" class="hydro-cycle-btn hydro-cycle-btn--danger" data-cycle-prog-del="' + escapeAttr(p.id) + '">' + t('Eliminar', 'Delete') + '</button></td></tr>';
         }).join('')
       : '<tr><td colspan="2" class="hydro-muted">' + escapeAttr(t('Aún no tienes programas guardados. Usa «Al catálogo» para guardar toda la tabla.', 'You have no saved programs yet. Use “To catalog” to save the whole table.')) + '</td></tr>';
 
     overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
       '<div class="hydro-solution-modal__head"><div><h2>' + t('Mis programas del ciclo', 'My cycle programs') + '</h2><p>' +
-      t('Carga un programa completo (todas las etapas) o elimínalo del catálogo.', 'Load a full program (all stages) or delete it from the catalog.') +
+      t('«Cargar en la tabla» sustituye las etapas en Programa del ciclo. En el dashboard, el catálogo de Solución nutritiva también lista cada etapa para Elegir.', '“Load into table” replaces stages in Cycle program. In the dashboard, the Nutrient solution catalog also lists each stage to Choose.') +
       '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
       '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + t('Programa', 'Program') + '</th><th></th></tr></thead><tbody>' +
       rows + '</tbody></table></div></section>';

@@ -79,8 +79,10 @@ function hydroResolveStageSolution(stage) {
   const catalog = window.NpHydroSolutionCatalog;
   const custom = typeof hydroCustomSolutionsUser !== 'undefined' ? hydroCustomSolutionsUser : [];
   const all = catalog && typeof catalog.all === 'function' ? catalog.all(custom) : [];
+  const cycleRecipes = hydroCycleProgramRecipes();
+  const pool = all.concat(cycleRecipes);
   if (stage.solutionId) {
-    const byId = all.find(function (r) { return r.id === stage.solutionId; });
+    const byId = pool.find(function (r) { return r.id === stage.solutionId; });
     return {
       selected: true,
       id: stage.solutionId,
@@ -88,12 +90,36 @@ function hydroResolveStageSolution(stage) {
     };
   }
   if (stage.name) {
-    const byName = all.find(function (r) { return r.name === stage.name; });
+    const byName = pool.find(function (r) { return r.name === stage.name; });
     if (byName) {
       return { selected: true, id: byName.id, label: byName.name };
     }
   }
   return { selected: false, id: '', label: '' };
+}
+
+/** Etapas de «Mis programas» como recetas seleccionables en el catálogo del dashboard. */
+function hydroCycleProgramRecipes() {
+  const out = [];
+  (hydroCustomCycleProgramsUser || []).forEach(function (prog) {
+    if (!prog || !Array.isArray(prog.stages)) return;
+    prog.stages.forEach(function (st, i) {
+      if (!st) return;
+      const sid = String(st.id || ('i' + i));
+      const stageName = String(st.name || ('Etapa ' + (i + 1))).trim();
+      const progName = String(prog.name || 'Programa').trim();
+      out.push({
+        id: 'cycleprog_stage:' + String(prog.id || '') + ':' + sid,
+        name: progName + ' · ' + stageName,
+        source: 'Programa del ciclo',
+        programId: prog.id,
+        meq: Object.assign({}, st.meq || {}),
+        ppm: Object.assign({}, st.ppm || {}),
+        _fromCycleProgram: true
+      });
+    });
+  });
+  return out;
 }
 
 function hydroStageSolutionCellLabel(stage) {
@@ -843,10 +869,31 @@ function hydroOpenSolutionCatalog(opts) {
   hydroCloseSolutionCatalogOverlays();
   if (!(opts && opts.fromMemory)) {
     hydroLoadCustomSolutionsSync();
+    hydroLoadCustomCycleProgramsSync();
+  }
+  // Si la nube trae programas después, refrescar el modal una vez.
+  if (!(opts && opts.fromMemory) && !(opts && opts._skipCloudRefresh)) {
+    const beforeIds = (hydroCustomCycleProgramsUser || []).map(function (p) { return p && p.id; }).join('|');
+    const userId = hydroGetCurrentUserId();
+    if (userId && typeof window.nutriplantFetchCustomHydroCycleProgramsFromCloud === 'function') {
+      window.nutriplantFetchCustomHydroCycleProgramsFromCloud(userId).then(function (bucket) {
+        if (!bucket || !Array.isArray(bucket.items)) return;
+        const afterIds = bucket.items.map(function (p) { return p && p.id; }).join('|');
+        if (afterIds === beforeIds) return;
+        hydroCustomCycleProgramsUser = bucket.items;
+        const profile = hydroLoadUserProfile() || {};
+        profile.customHydroCyclePrograms = bucket;
+        try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
+        if (document.querySelector('.hydro-solution-modal')) {
+          hydroOpenSolutionCatalog({ fromMemory: true, _skipCloudRefresh: true });
+        }
+      }).catch(function () {});
+    }
   }
   const macroKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
   const microKeys = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
   const all = catalog.all(hydroCustomSolutionsUser);
+  const cycleRecipes = hydroCycleProgramRecipes();
   const activeBefore = hydroGetActiveStage();
   const selectedId = hydroResolveStageSolution(activeBefore).id;
   const builtInLen = catalog.builtIn.length;
@@ -854,6 +901,8 @@ function hydroOpenSolutionCatalog(opts) {
   const mySep = hydroCustomSolutionsUser.length
     ? '<tr class="hydro-cycle-catalog-sep"><td colspan="15"><strong>' + hydroT('Mis soluciones', 'My solutions') + '</strong> — ' + hydroT('del usuario (cualquier proyecto)', 'user-level (any project)') + '</td></tr>'
     : '';
+  const progSep = '<tr class="hydro-cycle-catalog-sep"><td colspan="15"><strong>' + hydroT('Mis programas del ciclo', 'My cycle programs') + '</strong> — ' +
+    hydroT('guardados con «Al catálogo»; elige una etapa para usarla aquí en el dashboard', 'saved with “To catalog”; choose a stage to use it here in the dashboard') + '</td></tr>';
   const litRows = all.slice(0, builtInLen).map(function (recipe, index) {
     const isSelected = selectedId && recipe.id === selectedId;
     const chooseCls = 'hydro-solution-choose' + (isSelected ? ' is-selected' : '');
@@ -873,7 +922,21 @@ function hydroOpenSolutionCatalog(opts) {
       '<td><button type="button" class="' + chooseCls + '" data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' + chooseLabel + '</button>' +
       ' <button type="button" class="hydro-solution-choose-secondary" data-hydro-solution-edit="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Editar', 'Edit') + '</button><button type="button" class="hydro-solution-choose-secondary" data-hydro-solution-delete="' + hydroEscapeAttr(recipe.id) + '">' + hydroT('Eliminar', 'Delete') + '</button></td></tr>';
   }).join('');
-  const rows = litSep + litRows + mySep + myRows;
+  const progRows = cycleRecipes.length
+    ? cycleRecipes.map(function (recipe) {
+        const isSelected = selectedId && recipe.id === selectedId;
+        const chooseCls = 'hydro-solution-choose' + (isSelected ? ' is-selected' : '');
+        const chooseLabel = isSelected ? hydroT('Seleccionado', 'Selected') : hydroT('Elegir', 'Choose');
+        return '<tr' + (isSelected ? ' class="hydro-solution-row-selected hydro-cycle-catalog-custom"' : ' class="hydro-cycle-catalog-custom"') + ' data-hydro-recipe-id="' + hydroEscapeAttr(recipe.id) + '"><td><strong>' + hydroEscapeAttr(recipe.name) + '</strong> <small>(' + hydroT('programa', 'program') + ')</small></td>' +
+          macroKeys.map(k => '<td>' + (recipe.meq[k] || 0) + '</td>').join('') +
+          microKeys.map(k => '<td>' + (recipe.ppm[k] || 0) + '</td>').join('') +
+          '<td><button type="button" class="' + chooseCls + '" data-hydro-solution-choose="' + hydroEscapeAttr(recipe.id) + '">' + chooseLabel + '</button>' +
+          ' <button type="button" class="hydro-solution-choose-secondary" data-hydro-cycle-prog-delete="' + hydroEscapeAttr(String(recipe.programId || '')) + '">' + hydroT('Eliminar programa', 'Delete program') + '</button></td></tr>';
+      }).join('')
+    : '<tr><td colspan="15" style="color:#64748b;">' +
+      hydroT('Aún no hay programas. En Programa del ciclo usa «Al catálogo» y vuelve aquí.', 'No programs yet. In Cycle program use “To catalog”, then come back here.') +
+      '</td></tr>';
+  const rows = litSep + litRows + progSep + progRows + mySep + myRows;
   const overlay = document.createElement('div');
   overlay.className = 'hydro-solution-modal';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:16px;background:rgba(15,23,42,.55)';
@@ -985,9 +1048,22 @@ function hydroOpenSolutionCatalog(opts) {
     if (event.target.closest('[data-hydro-solution-new]')) { showDraftRow(null); return; }
     if (event.target.closest('[data-hydro-draft-cancel]')) { removeDraftRow(); return; }
     if (event.target.closest('[data-hydro-draft-save]')) { saveDraftRow(); return; }
+    const delProg = event.target.closest('[data-hydro-cycle-prog-delete]');
+    if (delProg && window.confirm(hydroT('¿Eliminar este programa del ciclo completo?', 'Delete this entire cycle program?'))) {
+      const pid = delProg.getAttribute('data-hydro-cycle-prog-delete');
+      hydroCustomCycleProgramsUser = (hydroCustomCycleProgramsUser || []).filter(function (p) {
+        return String(p.id) !== String(pid);
+      });
+      hydroSaveCustomCyclePrograms();
+      setTimeout(function () {
+        hydroOpenSolutionCatalog({ fromMemory: true });
+      }, 0);
+      return;
+    }
     const choose = event.target.closest('[data-hydro-solution-choose]');
     if (choose && !choose.hasAttribute('data-hydro-draft-save')) {
-      const recipe = all.find(item => item.id === choose.getAttribute('data-hydro-solution-choose'));
+      const chooseId = choose.getAttribute('data-hydro-solution-choose');
+      const recipe = all.find(item => item.id === chooseId) || cycleRecipes.find(item => item.id === chooseId);
       const active = hydroGetActiveStage();
       catalog.apply(recipe, active);
       active.ce = hydroComputeCE(active).toFixed(2);
