@@ -264,23 +264,31 @@ let hydroState = {
 // Catálogo de fertilizantes solubles personalizados (hidroponía, concentración elemental %)
 let hydroCustomMaterialsUser = [];
 let hydroCustomSolutionsUser = [];
+/** Marca local: evita que un fetch viejo de la nube “resucite” soluciones ya borradas. */
+let hydroCustomSolutionsWriteAt = 0;
 
 function hydroLoadCustomSolutionsSync() {
   const profile = hydroLoadUserProfile();
-  hydroCustomSolutionsUser = Array.isArray(profile?.customHydroSolutions?.items)
-    ? profile.customHydroSolutions.items
-    : [];
+  const bucket = profile && profile.customHydroSolutions;
+  hydroCustomSolutionsUser = Array.isArray(bucket?.items) ? bucket.items : [];
+  const t = hydroCloudBucketTime(bucket);
+  if (t > hydroCustomSolutionsWriteAt) hydroCustomSolutionsWriteAt = t;
 }
 
 function hydroSaveCustomSolutions() {
   const userId = hydroGetCurrentUserId();
   if (!userId) return;
+  hydroCustomSolutionsWriteAt = Date.now();
   const profile = hydroLoadUserProfile() || {};
-  profile.customHydroSolutions = { items: hydroCustomSolutionsUser };
+  const bucket = {
+    items: hydroCustomSolutionsUser,
+    updatedAt: new Date(hydroCustomSolutionsWriteAt).toISOString()
+  };
+  profile.customHydroSolutions = bucket;
   try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
   try {
     if (typeof window.nutriplantSyncCustomHydroSolutionsToCloud === 'function') {
-      window.nutriplantSyncCustomHydroSolutionsToCloud(userId, profile.customHydroSolutions);
+      window.nutriplantSyncCustomHydroSolutionsToCloud(userId, bucket);
     }
   } catch (e) { console.warn('Sync soluciones hidropónicas:', e); }
 }
@@ -310,23 +318,30 @@ window.hydroGetCustomSolutionsSnapshot = function () {
 };
 
 let hydroCustomCycleProgramsUser = [];
+let hydroCustomCycleProgramsWriteAt = 0;
 
 function hydroLoadCustomCycleProgramsSync() {
   const profile = hydroLoadUserProfile();
-  hydroCustomCycleProgramsUser = Array.isArray(profile?.customHydroCyclePrograms?.items)
-    ? profile.customHydroCyclePrograms.items
-    : [];
+  const bucket = profile && profile.customHydroCyclePrograms;
+  hydroCustomCycleProgramsUser = Array.isArray(bucket?.items) ? bucket.items : [];
+  const t = hydroCloudBucketTime(bucket);
+  if (t > hydroCustomCycleProgramsWriteAt) hydroCustomCycleProgramsWriteAt = t;
 }
 
 function hydroSaveCustomCyclePrograms() {
   const userId = hydroGetCurrentUserId();
   if (!userId) return;
+  hydroCustomCycleProgramsWriteAt = Date.now();
   const profile = hydroLoadUserProfile() || {};
-  profile.customHydroCyclePrograms = { items: hydroCustomCycleProgramsUser };
+  const bucket = {
+    items: hydroCustomCycleProgramsUser,
+    updatedAt: new Date(hydroCustomCycleProgramsWriteAt).toISOString()
+  };
+  profile.customHydroCyclePrograms = bucket;
   try { localStorage.setItem('nutriplant_user_' + userId, JSON.stringify(profile)); } catch (e) {}
   try {
     if (typeof window.nutriplantSyncCustomHydroCycleProgramsToCloud === 'function') {
-      window.nutriplantSyncCustomHydroCycleProgramsToCloud(userId, profile.customHydroCyclePrograms);
+      window.nutriplantSyncCustomHydroCycleProgramsToCloud(userId, bucket);
     }
   } catch (e) { console.warn('Sync programas del ciclo:', e); }
 }
@@ -344,12 +359,23 @@ window.hydroGetCustomCycleProgramsSnapshot = function () {
   return Array.isArray(hydroCustomCycleProgramsUser) ? hydroCustomCycleProgramsUser.slice() : [];
 };
 
+function hydroCloudBucketTime(bucket) {
+  if (!bucket || typeof bucket !== 'object') return 0;
+  const t = Date.parse(bucket.updatedAt || bucket.updated_at || '');
+  return Number.isFinite(t) ? t : 0;
+}
+
 function hydroLoadCustomSolutions() {
   hydroLoadCustomSolutionsSync();
   const userId = hydroGetCurrentUserId();
   if (!userId || typeof window.nutriplantFetchCustomHydroSolutionsFromCloud !== 'function') return;
+  const fetchStarted = Date.now();
   window.nutriplantFetchCustomHydroSolutionsFromCloud(userId).then(function (bucket) {
     if (!bucket || !Array.isArray(bucket.items)) return;
+    // No pisar un borrado/guardado local más reciente (ni un fetch en vuelo atrasado).
+    if (hydroCustomSolutionsWriteAt >= fetchStarted) return;
+    const cloudAt = hydroCloudBucketTime(bucket);
+    if (cloudAt && hydroCustomSolutionsWriteAt && cloudAt < hydroCustomSolutionsWriteAt) return;
     hydroCustomSolutionsUser = bucket.items;
     const profile = hydroLoadUserProfile() || {};
     profile.customHydroSolutions = bucket;
@@ -361,8 +387,12 @@ function hydroLoadCustomCyclePrograms() {
   hydroLoadCustomCycleProgramsSync();
   const userId = hydroGetCurrentUserId();
   if (!userId || typeof window.nutriplantFetchCustomHydroCycleProgramsFromCloud !== 'function') return;
+  const fetchStarted = Date.now();
   window.nutriplantFetchCustomHydroCycleProgramsFromCloud(userId).then(function (bucket) {
     if (!bucket || !Array.isArray(bucket.items)) return;
+    if (hydroCustomCycleProgramsWriteAt >= fetchStarted) return;
+    const cloudAt = hydroCloudBucketTime(bucket);
+    if (cloudAt && hydroCustomCycleProgramsWriteAt && cloudAt < hydroCustomCycleProgramsWriteAt) return;
     hydroCustomCycleProgramsUser = bucket.items;
     const profile = hydroLoadUserProfile() || {};
     profile.customHydroCyclePrograms = bucket;
@@ -871,13 +901,17 @@ function hydroOpenSolutionCatalog(opts) {
     hydroLoadCustomSolutionsSync();
     hydroLoadCustomCycleProgramsSync();
   }
-  // Si la nube trae programas después, refrescar el modal una vez.
+  // Si la nube trae programas más nuevos, refrescar el modal una vez (sin resucitar borrados locales).
   if (!(opts && opts.fromMemory) && !(opts && opts._skipCloudRefresh)) {
     const beforeIds = (hydroCustomCycleProgramsUser || []).map(function (p) { return p && p.id; }).join('|');
+    const fetchStarted = Date.now();
     const userId = hydroGetCurrentUserId();
     if (userId && typeof window.nutriplantFetchCustomHydroCycleProgramsFromCloud === 'function') {
       window.nutriplantFetchCustomHydroCycleProgramsFromCloud(userId).then(function (bucket) {
         if (!bucket || !Array.isArray(bucket.items)) return;
+        if (hydroCustomCycleProgramsWriteAt >= fetchStarted) return;
+        const cloudAt = hydroCloudBucketTime(bucket);
+        if (cloudAt && hydroCustomCycleProgramsWriteAt && cloudAt < hydroCustomCycleProgramsWriteAt) return;
         const afterIds = bucket.items.map(function (p) { return p && p.id; }).join('|');
         if (afterIds === beforeIds) return;
         hydroCustomCycleProgramsUser = bucket.items;

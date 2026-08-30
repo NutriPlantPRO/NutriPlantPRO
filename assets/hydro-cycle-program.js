@@ -906,31 +906,35 @@
     var overlay = document.createElement('div');
     overlay.className = 'hydro-solution-modal';
     var stages = (prog && prog.stages) || [];
-    var macroKeys = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
     var stageRows = stages.length
       ? stages.map(function (s, i) {
           var meq = s.meq || {};
+          var ppm = s.ppm || {};
           return '<tr><td><strong>' + escapeAttr(s.name || (t('Etapa', 'Stage') + ' ' + (i + 1))) + '</strong></td>' +
             '<td>' + escapeAttr(String(s.ce != null ? s.ce : '')) + '</td>' +
-            macroKeys.map(function (k) {
+            MACROS.map(function (k) {
               return '<td>' + escapeAttr(String(round2(meq[k] || 0))) + '</td>';
             }).join('') +
-            '<td>' + escapeAttr(String(round2((s.ppm && s.ppm.Fe) || 0))) + '</td></tr>';
+            MICROS.map(function (k) {
+              return '<td>' + escapeAttr(String(round2(ppm[k] || 0))) + '</td>';
+            }).join('') + '</tr>';
         }).join('')
-      : '<tr><td colspan="9" class="hydro-muted">' + escapeAttr(t('Este programa no tiene etapas.', 'This program has no stages.')) + '</td></tr>';
+      : '<tr><td colspan="' + (2 + MACROS.length + MICROS.length) + '" class="hydro-muted">' +
+        escapeAttr(t('Este programa no tiene etapas.', 'This program has no stages.')) + '</td></tr>';
 
     overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
       '<div class="hydro-solution-modal__head"><div><h2>' + escapeAttr(t('Vista del programa', 'Program preview')) + ': ' + escapeAttr(prog.name || '') + '</h2><p>' +
-      t('Así quedó guardado. «Usar en la tabla» lo pone en ETAPAS DEL CICLO (la tabla de atrás).', 'This is how it was saved. “Use in table” puts it into CYCLE STAGES (the table behind).') +
+      t('Macros en meq/L y micros en ppm (Fe, Mn, Zn, B, Cu, Mo). Desplaza la tabla a la derecha si hace falta. «Usar en la tabla» lo pone en ETAPAS DEL CICLO.', 'Macros in meq/L and micros in ppm (Fe, Mn, Zn, B, Cu, Mo). Scroll the table right if needed. “Use in table” puts it into CYCLE STAGES.') +
       '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;">' +
       '<button type="button" class="hydro-cycle-btn" data-cycle-prog-back>' + t('← Volver a la lista', '← Back to list') + '</button> ' +
       '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(prog.id) + '">' +
       t('Usar en la tabla de etapas', 'Use in stages table') + '</button></div>' +
-      '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr>' +
+      '<div class="hydro-table-scroll" style="overflow:auto;max-width:100%;"><table class="hydro-solution-modal__table"><thead><tr>' +
       '<th>' + t('Etapa', 'Stage') + '</th><th>CE</th>' +
-      macroKeys.map(function (k) { return '<th>' + escapeAttr(k) + '</th>'; }).join('') +
-      '<th>Fe</th></tr></thead><tbody>' + stageRows + '</tbody></table></div></section>';
+      MACROS.map(function (k) { return '<th>' + escapeAttr(k) + '<br><small>meq/L</small></th>'; }).join('') +
+      MICROS.map(function (k) { return '<th>' + escapeAttr(k) + '<br><small>ppm</small></th>'; }).join('') +
+      '</tr></thead><tbody>' + stageRows + '</tbody></table></div></section>';
 
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-hydro-catalog-close]')) {
