@@ -549,6 +549,9 @@
             '<p class="ferti-dist-hint" id="fertiDistSuggestHint">' + escapeHtml(t('dist_suggest_hint', 'Al agregar o quitar etapas, el % se reajusta solo a la curva sugerida. El botón Sugerir % vuelve a esa curva si moviste un valor. Si editas un % y ya hay programa con los mismos periodos, se reajustan esas dosis (no hace falta generar de nuevo la propuesta). Si cambias una dosis en Programa, el % de acá se mueve. Sugerir % no toca el programa hasta la propuesta automática. La barrita de cada celda ajusta el %; también puedes escribir el número.')) + '</p>' +
           '</div>' +
           '<div class="ferti-dist-charts-wrap">' +
+            '<p class="ferti-dist-chart-edit-hint" id="fertiDistChartEditHint">' +
+              escapeHtml(t('dist_chart_edit_hint', 'Selecciona un elemento en la leyenda para verlo solo y arrastra sus puntos. Las demás etapas se reajustan proporcionalmente para conservar 100%.')) +
+            '</p>' +
             '<div class="charts-grid ferti-dist-charts-grid">' +
               '<div class="chart-container ferti-dist-chart-box">' +
                 '<h4 id="fertiDistMacroChartTitle">' + escapeHtml(t('macronutrients', 'Macronutrientes')) + '</h4>' +
@@ -1368,6 +1371,8 @@
   var distMicroChart = null;
   var distChartRaf = 0;
   var distChartResizeTimer = null;
+  var distChartSelected = { macro: null, micro: null };
+  var distActiveChartDrag = null;
   var DIST_MACRO_IDS = { n: 1, p: 1, k: 1, ca: 1, mg: 1, s: 1 };
   var DIST_MICRO_IDS = { fe: 1, mn: 1, b: 1, zn: 1, cu: 1, mo: 1, si: 1 };
 
@@ -1447,6 +1452,7 @@
     var color = colorForNut(n.id);
     return {
       label: nutLabel(n),
+      _fertiDistNutId: n.id,
       data: stages.map(function (_, ri) { return pctAt(n.id, ri); }),
       borderColor: color,
       backgroundColor: 'transparent',
@@ -1461,7 +1467,35 @@
     };
   }
 
-  function distChartMakeOptions(style, yMax) {
+  function distChartApplySelection(chart, group) {
+    if (!chart || !chart.data || !Array.isArray(chart.data.datasets)) return;
+    var selectedId = distChartSelected[group] || null;
+    var hasSelected = selectedId && chart.data.datasets.some(function (dataset) {
+      return dataset._fertiDistNutId === selectedId;
+    });
+    if (!hasSelected) {
+      selectedId = null;
+      distChartSelected[group] = null;
+    }
+    chart.data.datasets.forEach(function (dataset, index) {
+      chart.setDatasetVisibility(index, !selectedId || dataset._fertiDistNutId === selectedId);
+    });
+    if (chart.canvas && chart.canvas.classList) {
+      chart.canvas.classList.toggle('is-dist-chart-selected', !!selectedId);
+      chart.canvas.setAttribute('aria-describedby', 'fertiDistChartEditHint');
+    }
+  }
+
+  function distChartSelectFromLegend(chart, group, datasetIndex) {
+    if (!chart || !chart.data || !chart.data.datasets[datasetIndex]) return;
+    var nutrientId = chart.data.datasets[datasetIndex]._fertiDistNutId;
+    if (!nutrientId) return;
+    distChartSelected[group] = distChartSelected[group] === nutrientId ? null : nutrientId;
+    distChartApplySelection(chart, group);
+    try { chart.update('none'); } catch (e) { chart.update(); }
+  }
+
+  function distChartMakeOptions(style, yMax, group) {
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -1470,12 +1504,19 @@
       plugins: {
         legend: {
           position: 'top',
+          onClick: function (event, item, legend) {
+            if (event && event.native && typeof event.native.preventDefault === 'function') {
+              event.native.preventDefault();
+            }
+            distChartSelectFromLegend(legend.chart, group, item.datasetIndex);
+          },
           labels: {
             usePointStyle: true,
             pointStyle: 'circle',
             boxWidth: 10,
             boxHeight: 10,
             generateLabels: function (chart) {
+              var selectedId = distChartSelected[group] || null;
               return chart.data.datasets.map(function (ds, i) {
                 return {
                   text: ds.label || '',
@@ -1484,7 +1525,7 @@
                   lineWidth: ds.borderWidth || 2,
                   hidden: !chart.isDatasetVisible(i),
                   datasetIndex: i,
-                  fontColor: ds.borderColor,
+                  fontColor: !selectedId || selectedId === ds._fertiDistNutId ? ds.borderColor : '#94a3b8',
                   pointStyle: 'circle'
                 };
               });
@@ -1526,7 +1567,7 @@
     };
   }
 
-  function distChartSyncSeries(chart, labels, datasets, options) {
+  function distChartSyncSeries(chart, labels, datasets, options, group) {
     chart.data.labels = labels.slice();
     datasets.forEach(function (next, idx) {
       var curr = chart.data.datasets[idx];
@@ -1534,11 +1575,14 @@
         Object.assign(curr, next);
         curr.data = Array.isArray(next.data) ? next.data.slice() : next.data;
       } else {
-        chart.data.datasets.push({ label: next.label, data: next.data.slice(), borderColor: next.borderColor, backgroundColor: next.backgroundColor, tension: next.tension, borderWidth: next.borderWidth, pointRadius: next.pointRadius, pointHoverRadius: next.pointHoverRadius, pointHitRadius: next.pointHitRadius, pointBorderWidth: next.pointBorderWidth, pointBackgroundColor: next.pointBackgroundColor, pointBorderColor: next.pointBorderColor });
+        chart.data.datasets.push(Object.assign({}, next, {
+          data: Array.isArray(next.data) ? next.data.slice() : next.data
+        }));
       }
     });
     chart.data.datasets.length = datasets.length;
     chart.options = options;
+    distChartApplySelection(chart, group);
     chart.update();
   }
 
@@ -1562,11 +1606,11 @@
     });
   }
 
-  function distChartPaintOne(canvasId, chartRef, idMap, style, yMax, labels) {
+  function distChartPaintOne(canvasId, chartRef, idMap, style, yMax, labels, group) {
     var ctx = document.getElementById(canvasId);
     if (!ctx) return chartRef;
     var datasets = distChartBuildDatasets(idMap, style);
-    var options = distChartMakeOptions(style, yMax);
+    var options = distChartMakeOptions(style, yMax, group);
     chartRef = distChartDestroyIfOrphaned(chartRef);
     if (!chartRef) {
       try {
@@ -1575,6 +1619,8 @@
           data: { labels: labels, datasets: datasets },
           options: options
         });
+        distChartApplySelection(chartRef, group);
+        chartRef.update('none');
       } catch (e) {
         console.warn('Dist chart create:', canvasId, e);
         chartRef = null;
@@ -1582,7 +1628,7 @@
       return chartRef;
     }
     try {
-      distChartSyncSeries(chartRef, labels, datasets, options);
+      distChartSyncSeries(chartRef, labels, datasets, options, group);
     } catch (e2) {
       console.warn('Dist chart sync, recreando', canvasId, e2);
       try { chartRef.destroy(); } catch (e3) {}
@@ -1591,13 +1637,107 @@
         chartRef = new w.Chart(ctx.getContext('2d'), {
           type: 'line',
           data: { labels: labels, datasets: datasets },
-          options: distChartMakeOptions(style, yMax)
+          options: distChartMakeOptions(style, yMax, group)
         });
+        distChartApplySelection(chartRef, group);
+        chartRef.update('none');
       } catch (e4) {
         console.warn('Dist chart recreate:', canvasId, e4);
       }
     }
     return chartRef;
+  }
+
+  function distSyncPctColumnInputs(nutrientId) {
+    var inputs = document.querySelectorAll('#fertiDistPctTable .ferti-dist-pct');
+    for (var i = 0; i < inputs.length; i += 1) {
+      if (inputs[i].getAttribute('data-id') !== nutrientId) continue;
+      var rowIndex = parseInt(inputs[i].getAttribute('data-ri'), 10);
+      if (pct[nutrientId] && pct[nutrientId][rowIndex] != null) {
+        inputs[i].value = pct[nutrientId][rowIndex];
+      }
+      syncPctBar(inputs[i]);
+    }
+    refreshKgCells();
+    refreshPctSums();
+  }
+
+  function distChartUpdatePctData(nutrientId) {
+    [distMacroChart, distMicroChart].forEach(function (chart) {
+      if (!chart || !chart.data || !Array.isArray(chart.data.datasets)) return;
+      var dataset = chart.data.datasets.find(function (item) {
+        return item._fertiDistNutId === nutrientId;
+      });
+      if (!dataset) return;
+      dataset.data = stages.map(function (_, rowIndex) { return pctAt(nutrientId, rowIndex); });
+      try { chart.update('none'); } catch (e) { chart.update(); }
+    });
+  }
+
+  function distSetChartDragging(canvas, active) {
+    if (canvas && canvas.classList) canvas.classList.toggle('is-dist-chart-dragging', !!active);
+    var box = canvas && canvas.closest ? canvas.closest('.ferti-dist-chart-box') : null;
+    if (box && box.classList) box.classList.toggle('is-dist-chart-dragging', !!active);
+  }
+
+  function distBindChartPointDragging(canvas, getChart, group) {
+    if (!canvas || canvas._fertiDistPointDragBound) return;
+    canvas._fertiDistPointDragBound = true;
+
+    canvas.addEventListener('pointerdown', function (event) {
+      var selectedId = distChartSelected[group];
+      if (!selectedId) return;
+      var chart = getChart();
+      if (!chart || typeof chart.getElementsAtEventForMode !== 'function') return;
+      var hits = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+      if (!hits || !hits.length) return;
+      var hit = hits[0];
+      var dataset = chart.data.datasets[hit.datasetIndex];
+      if (!dataset || dataset._fertiDistNutId !== selectedId || !stages[hit.index]) return;
+      distActiveChartDrag = {
+        canvas: canvas,
+        chart: chart,
+        group: group,
+        nutrientId: selectedId,
+        stageIndex: hit.index,
+        pointerId: event.pointerId
+      };
+      try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
+      distSetChartDragging(canvas, true);
+      event.preventDefault();
+    });
+
+    canvas.addEventListener('pointermove', function (event) {
+      var drag = distActiveChartDrag;
+      if (!drag || drag.canvas !== canvas || drag.pointerId !== event.pointerId) return;
+      var scale = drag.chart && drag.chart.scales && drag.chart.scales.y;
+      var editApi = w.NpFertigationDistEdit;
+      if (!scale || typeof scale.getValueForPixel !== 'function' ||
+          !editApi || typeof editApi.redistributePctAtStage !== 'function') return;
+      var rect = canvas.getBoundingClientRect();
+      var yPixel = event.clientY - rect.top;
+      var nextValue = Math.max(0, Math.min(100, scale.getValueForPixel(yPixel)));
+      pct[drag.nutrientId] = editApi.redistributePctAtStage(
+        pct[drag.nutrientId],
+        drag.stageIndex,
+        nextValue
+      );
+      distSyncPctColumnInputs(drag.nutrientId);
+      distChartUpdatePctData(drag.nutrientId);
+      event.preventDefault();
+    });
+
+    var finish = function (event) {
+      var drag = distActiveChartDrag;
+      if (!drag || drag.canvas !== canvas || drag.pointerId !== event.pointerId) return;
+      distActiveChartDrag = null;
+      try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+      distSetChartDragging(canvas, false);
+      commitPctIds([drag.nutrientId]);
+      event.preventDefault();
+    };
+    canvas.addEventListener('pointerup', finish);
+    canvas.addEventListener('pointercancel', finish);
   }
 
   function resizeDistCharts() {
@@ -1624,8 +1764,10 @@
       if (microTitle) microTitle.textContent = t('micronutrients', 'Micronutrientes');
       var macroYMax = distChartNiceYMax(distChartGroupMax(DIST_MACRO_IDS));
       var microYMax = distChartNiceYMax(distChartGroupMax(DIST_MICRO_IDS));
-      distMacroChart = distChartPaintOne('fertiDistMacroChart', distMacroChart, DIST_MACRO_IDS, style, macroYMax, labels);
-      distMicroChart = distChartPaintOne('fertiDistMicroChart', distMicroChart, DIST_MICRO_IDS, style, microYMax, labels);
+      distMacroChart = distChartPaintOne('fertiDistMacroChart', distMacroChart, DIST_MACRO_IDS, style, macroYMax, labels, 'macro');
+      distMicroChart = distChartPaintOne('fertiDistMicroChart', distMicroChart, DIST_MICRO_IDS, style, microYMax, labels, 'micro');
+      distBindChartPointDragging(document.getElementById('fertiDistMacroChart'), function () { return distMacroChart; }, 'macro');
+      distBindChartPointDragging(document.getElementById('fertiDistMicroChart'), function () { return distMicroChart; }, 'micro');
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           resizeDistCharts();
@@ -1670,6 +1812,8 @@
       pct = {};
       distDrivesProgram = false;
       w._fertiDistDrivesProgram = false;
+      distChartSelected = { macro: null, micro: null };
+      distActiveChartDrag = null;
       waterDepthByStageM3ha = [];
       ensurePct();
       NUTS.forEach(function (n) {

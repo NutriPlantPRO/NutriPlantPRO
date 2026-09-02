@@ -1268,8 +1268,12 @@
     overflow: visible;
     height: auto;
     min-height: 44px;
-    padding: 10px 12px;
+    padding: 10px 40px;
     align-items: center;
+  }
+
+  .login-split__tools .calculator-btn .calculator-icon {
+    left: 12px;
   }
 
   .login-split__tools .calculator-btn .button-text {
@@ -1335,7 +1339,11 @@
   }
 
   .login-split__tools .calculator-btn {
-    padding: 12px 20px;
+    padding: 12px 44px;
+  }
+
+  .login-split__tools .calculator-btn .calculator-icon {
+    left: 14px;
   }
 
   .login-split__tools .calculator-btn .button-text {

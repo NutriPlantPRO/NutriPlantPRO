@@ -1767,7 +1767,7 @@
         hydro_cycle_title_only: "📊 Cycle program"
       },
       radar: {
-        tab_crop: "Crop Radar",
+        tab_crop: "🗺️ Crop Radar",
         tab_reading: "Satellite Reading",
         title_button: "Satellite Radar",
         surface: "Area:",

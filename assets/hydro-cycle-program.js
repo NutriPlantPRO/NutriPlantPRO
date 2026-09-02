@@ -559,7 +559,8 @@
       var mark;
       if (s.group === 'anion') {
         mark = '<i style="width:9px;height:9px;border-radius:1.5px;background:' + color +
-          ';display:inline-block;box-shadow:0 0 0 1px #fff,0 0 0 2px ' + color + ';"></i>';
+          ';display:inline-block;box-shadow:0 0 0 1px #fff,0 0 0 2px ' + color + ';"></i>' +
+          '<i style="width:12px;height:0;border-top:2px solid ' + color + ';display:inline-block;margin-left:2px;"></i>';
       } else if (s.group === 'cation') {
         mark = '<i style="width:10px;height:10px;border-radius:50%;background:' + color +
           ';display:inline-block;box-shadow:0 0 0 1px #fff;"></i>' +
@@ -960,39 +961,144 @@
     }
   }
 
-  function openCycleProgramPreview(prog, api, onBack) {
+  function openCycleProgramPreview(prog, api, onBack, opts) {
+    opts = opts || {};
+    var editable = !!opts.edit;
     var overlay = document.createElement('div');
     overlay.className = 'hydro-solution-modal';
-    var stages = (prog && prog.stages) || [];
-    var stageRows = stages.length
-      ? stages.map(function (s, i) {
-          var meq = s.meq || {};
-          var ppm = s.ppm || {};
-          return '<tr><td><strong>' + escapeAttr(s.name || (t('Etapa', 'Stage') + ' ' + (i + 1))) + '</strong></td>' +
-            '<td>' + escapeAttr(String(s.ce != null ? s.ce : '')) + '</td>' +
+    var stages = ((prog && prog.stages) || []).map(function (s, i) { return normalizeStage(s, i); });
+    var inputStyle = 'width:64px;max-width:100%;padding:4px 6px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;text-align:center;';
+    var nameInputStyle = 'min-width:100px;width:100%;max-width:140px;padding:4px 6px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;font-weight:600;';
+
+    function stageRowsHtml(list) {
+      if (!list.length) {
+        return '<tr><td colspan="' + (2 + MACROS.length + MICROS.length) + '" class="hydro-muted">' +
+          escapeAttr(t('Este programa no tiene etapas.', 'This program has no stages.')) + '</td></tr>';
+      }
+      return list.map(function (s, i) {
+        var meq = s.meq || {};
+        var ppm = s.ppm || {};
+        var ceVal = s.ce != null && s.ce !== '' ? s.ce : computeCE(s);
+        if (editable) {
+          return '<tr data-cycle-edit-row="' + i + '">' +
+            '<td><input type="text" class="hydro-input" data-edit-field="name" style="' + nameInputStyle + '" value="' +
+              escapeAttr(s.name || (t('Etapa', 'Stage') + ' ' + (i + 1))) + '"></td>' +
+            '<td><span class="hydro-cycle-ce" data-edit-ce>' + escapeAttr(String(ceVal)) + '</span></td>' +
             MACROS.map(function (k) {
-              return '<td>' + escapeAttr(String(round2(meq[k] || 0))) + '</td>';
+              return '<td><input type="number" step="0.01" min="0" class="hydro-input" data-edit-field="meq" data-edit-key="' +
+                k + '" style="' + inputStyle + '" value="' + round2(meq[k] || 0).toFixed(2) + '"></td>';
             }).join('') +
             MICROS.map(function (k) {
-              return '<td>' + escapeAttr(String(round2(ppm[k] || 0))) + '</td>';
+              return '<td><input type="number" step="0.01" min="0" class="hydro-input" data-edit-field="ppm" data-edit-key="' +
+                k + '" style="' + inputStyle + '" value="' + round2(ppm[k] || 0).toFixed(2) + '"></td>';
             }).join('') + '</tr>';
-        }).join('')
-      : '<tr><td colspan="' + (2 + MACROS.length + MICROS.length) + '" class="hydro-muted">' +
-        escapeAttr(t('Este programa no tiene etapas.', 'This program has no stages.')) + '</td></tr>';
+        }
+        return '<tr><td><strong>' + escapeAttr(s.name || (t('Etapa', 'Stage') + ' ' + (i + 1))) + '</strong></td>' +
+          '<td>' + escapeAttr(String(ceVal)) + '</td>' +
+          MACROS.map(function (k) {
+            return '<td>' + escapeAttr(String(round2(meq[k] || 0))) + '</td>';
+          }).join('') +
+          MICROS.map(function (k) {
+            return '<td>' + escapeAttr(String(round2(ppm[k] || 0))) + '</td>';
+          }).join('') + '</tr>';
+      }).join('');
+    }
+
+    var titleLabel = editable
+      ? t('Editar programa', 'Edit program')
+      : t('Vista del programa', 'Program preview');
+    var helpText = editable
+      ? t(
+        'Cambia título, etapas, meq/L y ppm. La CE se recalcula. «Guardar cambios» actualiza el programa en Mis programas.',
+        'Edit title, stages, meq/L and ppm. EC is recalculated. “Save changes” updates the program in My programs.'
+      )
+      : t(
+        'Macros en meq/L y micros en ppm (Fe, Mn, Zn, B, Cu, Mo). Desplaza la tabla a la derecha si hace falta. «Usar en la tabla» lo pone en ETAPAS DEL CICLO.',
+        'Macros in meq/L and micros in ppm (Fe, Mn, Zn, B, Cu, Mo). Scroll the table right if needed. “Use in table” puts it into CYCLE STAGES.'
+      );
+
+    var nameBlock = editable
+      ? '<label style="display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:#334155;">' +
+        escapeAttr(t('Título', 'Title')) +
+        ' <input type="text" class="hydro-input" data-cycle-prog-name style="flex:1;min-width:160px;max-width:320px;padding:6px 10px;font-size:14px;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;" value="' +
+        escapeAttr(prog.name || '') + '"></label>'
+      : '';
+
+    var actionBtns =
+      '<button type="button" class="hydro-cycle-btn" data-cycle-prog-back>' + t('← Volver a la lista', '← Back to list') + '</button> ';
+    if (editable) {
+      actionBtns +=
+        '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-save="' + escapeAttr(prog.id) + '">' +
+        t('Guardar cambios', 'Save changes') + '</button> ';
+    } else {
+      actionBtns +=
+        '<button type="button" class="hydro-cycle-btn" data-cycle-prog-edit="' + escapeAttr(prog.id) + '">' +
+        t('Editar', 'Edit') + '</button> ';
+    }
+    actionBtns +=
+      '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(prog.id) + '">' +
+      t('Usar en la tabla de etapas', 'Use in stages table') + '</button>';
 
     overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
-      '<div class="hydro-solution-modal__head"><div><h2>' + escapeAttr(t('Vista del programa', 'Program preview')) + ': ' + escapeAttr(prog.name || '') + '</h2><p>' +
-      t('Macros en meq/L y micros en ppm (Fe, Mn, Zn, B, Cu, Mo). Desplaza la tabla a la derecha si hace falta. «Usar en la tabla» lo pone en ETAPAS DEL CICLO.', 'Macros in meq/L and micros in ppm (Fe, Mn, Zn, B, Cu, Mo). Scroll the table right if needed. “Use in table” puts it into CYCLE STAGES.') +
-      '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;">' +
-      '<button type="button" class="hydro-cycle-btn" data-cycle-prog-back>' + t('← Volver a la lista', '← Back to list') + '</button> ' +
-      '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(prog.id) + '">' +
-      t('Usar en la tabla de etapas', 'Use in stages table') + '</button></div>' +
+      '<div class="hydro-solution-modal__head"><div><h2>' + escapeAttr(titleLabel) +
+      (editable ? '' : ': ' + escapeAttr(prog.name || '')) +
+      '</h2><p>' + helpText + '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
+      nameBlock +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;">' + actionBtns + '</div>' +
       '<div class="hydro-table-scroll" style="overflow:auto;max-width:100%;"><table class="hydro-solution-modal__table"><thead><tr>' +
       '<th>' + t('Etapa', 'Stage') + '</th><th>CE</th>' +
-      MACROS.map(function (k) { return '<th>' + escapeAttr(k) + '<br><small>meq/L</small></th>'; }).join('') +
+      MACROS.map(function (k) { return '<th>' + escapeAttr(labelMacro(k)) + '<br><small>meq/L</small></th>'; }).join('') +
       MICROS.map(function (k) { return '<th>' + escapeAttr(k) + '<br><small>ppm</small></th>'; }).join('') +
-      '</tr></thead><tbody>' + stageRows + '</tbody></table></div></section>';
+      '</tr></thead><tbody>' + stageRowsHtml(stages) + '</tbody></table></div></section>';
+
+    function readEditedStages() {
+      var rows = overlay.querySelectorAll('[data-cycle-edit-row]');
+      var out = [];
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        var base = stages[r] || normalizeStage({ name: defaultStageName(r + 1) }, r);
+        var draft = {
+          id: base.id,
+          name: (row.querySelector('[data-edit-field="name"]') || {}).value || base.name,
+          solutionId: base.solutionId || '',
+          meq: Object.assign({}, base.meq),
+          ppm: Object.assign({}, base.ppm)
+        };
+        MACROS.forEach(function (k) {
+          var inp = row.querySelector('[data-edit-field="meq"][data-edit-key="' + k + '"]');
+          draft.meq[k] = round2(inp ? inp.value : draft.meq[k]);
+        });
+        MICROS.forEach(function (k) {
+          var inp = row.querySelector('[data-edit-field="ppm"][data-edit-key="' + k + '"]');
+          draft.ppm[k] = round2(inp ? inp.value : draft.ppm[k]);
+        });
+        syncMacroPpm(draft);
+        draft.ce = String(computeCE(draft));
+        out.push(draft);
+      }
+      return out;
+    }
+
+    function refreshCeLabels() {
+      if (!editable) return;
+      var rows = overlay.querySelectorAll('[data-cycle-edit-row]');
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        var meq = {};
+        MACROS.forEach(function (k) {
+          var inp = row.querySelector('[data-edit-field="meq"][data-edit-key="' + k + '"]');
+          meq[k] = round2(inp ? inp.value : 0);
+        });
+        var ceEl = row.querySelector('[data-edit-ce]');
+        if (ceEl) ceEl.textContent = String(computeCE({ meq: meq }));
+      }
+    }
+
+    if (editable) {
+      overlay.addEventListener('input', function (ev) {
+        if (ev.target && ev.target.getAttribute('data-edit-field') === 'meq') refreshCeLabels();
+      });
+    }
 
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-hydro-catalog-close]')) {
@@ -1004,16 +1110,87 @@
         if (typeof onBack === 'function') onBack();
         return;
       }
+      var editBtn = ev.target.closest('[data-cycle-prog-edit]');
+      if (editBtn) {
+        overlay.remove();
+        openCycleProgramPreview(prog, api, onBack, { edit: true });
+        return;
+      }
+      var saveBtn = ev.target.closest('[data-cycle-prog-save]');
+      if (saveBtn) {
+        var newName = String((overlay.querySelector('[data-cycle-prog-name]') || {}).value || '').trim();
+        if (!newName) {
+          window.alert(t('Necesitas un título para guardar el programa.', 'You need a title to save the program.'));
+          return;
+        }
+        var editedStages = readEditedStages();
+        if (!editedStages.length) {
+          window.alert(t('Este programa no tiene etapas.', 'This program has no stages.'));
+          return;
+        }
+        var items = loadCustomCyclePrograms();
+        var nameKey = newName.toLowerCase();
+        var other = items.find(function (it) {
+          return it.id !== prog.id && String(it.name || '').toLowerCase() === nameKey;
+        });
+        if (other) {
+          window.alert(t(
+            'Ya existe otro programa con ese título. Elige otro nombre.',
+            'Another program already has that title. Choose a different name.'
+          ));
+          return;
+        }
+        var idx = items.findIndex(function (it) { return it.id === prog.id; });
+        var entry = {
+          id: prog.id,
+          name: newName,
+          type: 'cycle',
+          stages: editedStages.map(function (s) {
+            return {
+              id: s.id,
+              name: s.name,
+              solutionId: s.solutionId || '',
+              ce: s.ce,
+              meq: Object.assign({}, s.meq),
+              ppm: Object.assign({}, s.ppm)
+            };
+          }),
+          activeStageId: prog.activeStageId && editedStages.some(function (s) { return s.id === prog.activeStageId; })
+            ? prog.activeStageId
+            : editedStages[0].id,
+          updatedAt: new Date().toISOString()
+        };
+        if (idx >= 0) items[idx] = entry;
+        else items.push(entry);
+        saveCustomCyclePrograms(items);
+        if (api && api.getState) {
+          var stSave = api.getState();
+          if (stSave && stSave.programId === prog.id) {
+            stSave.programName = entry.name;
+          }
+        }
+        if (api && api.onCatalogSaved) api.onCatalogSaved(entry);
+        if (window.showMessage) {
+          window.showMessage(t('Programa actualizado.', 'Program updated.'), 'success');
+        }
+        overlay.remove();
+        openCycleProgramPreview(entry, api, onBack, { edit: false });
+        return;
+      }
       var loadBtn = ev.target.closest('[data-cycle-prog-load]');
       if (!loadBtn || !api) return;
+      var loadStages = editable ? readEditedStages() : stages;
+      var loadName = editable
+        ? String((overlay.querySelector('[data-cycle-prog-name]') || {}).value || prog.name || '').trim() || prog.name
+        : prog.name;
       var st = api.getState();
-      st.stages = stages.map(function (s, i) { return normalizeStage(s, i); });
+      st.stages = loadStages.map(function (s, i) { return normalizeStage(s, i); });
       if (!st.stages.length) st.stages = [normalizeStage({ name: defaultStageName(1) }, 0)];
       st.activeStageId = prog.activeStageId && st.stages.some(function (s) { return s.id === prog.activeStageId; })
         ? prog.activeStageId
         : st.stages[0].id;
       st.programId = prog.id;
-      st.programName = prog.name;
+      st.programName = loadName;
       api.render();
       api.persist();
       overlay.remove();
@@ -1034,6 +1211,9 @@
             '<button type="button" class="hydro-cycle-btn" data-cycle-prog-view="' + escapeAttr(p.id) + '" title="' +
             escapeAttr(t('Ver las etapas y valores guardados', 'View saved stages and values')) + '">' +
             t('Ver programa', 'View program') + '</button> ' +
+            '<button type="button" class="hydro-cycle-btn" data-cycle-prog-edit="' + escapeAttr(p.id) + '" title="' +
+            escapeAttr(t('Editar título, etapas y valores del programa', 'Edit program title, stages and values')) + '">' +
+            t('Editar', 'Edit') + '</button> ' +
             '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(p.id) + '" title="' +
             escapeAttr(t('Pone este programa en la tabla ETAPAS DEL CICLO (detrás de esta ventana)', 'Puts this program into the CYCLE STAGES table (behind this window)')) + '">' +
             t('Usar en la tabla', 'Use in table') + '</button> ' +
@@ -1043,7 +1223,7 @@
 
     overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
       '<div class="hydro-solution-modal__head"><div><h2>' + t('Mis programas del ciclo', 'My cycle programs') + '</h2><p>' +
-      t('Esto no abre otra pantalla. «Ver programa» muestra cómo quedó. «Usar en la tabla» reemplaza las filas de ETAPAS DEL CICLO detrás de esta ventana.', 'This does not open another screen. “View program” shows how it was saved. “Use in table” replaces the CYCLE STAGES rows behind this window.') +
+      t('Esto no abre otra pantalla. «Editar» cambia valores del programa. «Usar en la tabla» reemplaza las filas de ETAPAS DEL CICLO detrás de esta ventana.', 'This does not open another screen. “Edit” changes program values. “Use in table” replaces the CYCLE STAGES rows behind this window.') +
       '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
       '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + t('Programa', 'Program') + '</th><th>' + t('Acciones', 'Actions') + '</th></tr></thead><tbody>' +
       rows + '</tbody></table></div></section>';
@@ -1074,6 +1254,15 @@
         saveCustomCyclePrograms(next);
         overlay.remove();
         openCycleProgramsCatalog(api);
+        return;
+      }
+      var editListBtn = ev.target.closest('[data-cycle-prog-edit]');
+      if (editListBtn) {
+        var editId = editListBtn.getAttribute('data-cycle-prog-edit');
+        var editProg = loadCustomCyclePrograms().find(function (it) { return it.id === editId; });
+        if (!editProg) return;
+        overlay.remove();
+        openCycleProgramPreview(editProg, api, function () { openCycleProgramsCatalog(api); }, { edit: true });
         return;
       }
       var viewBtn = ev.target.closest('[data-cycle-prog-view]');

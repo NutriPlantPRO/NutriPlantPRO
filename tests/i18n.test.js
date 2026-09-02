@@ -17,8 +17,8 @@ module.exports = [
       assert.equal(i18n.t('dashboard.active_project'), 'Active project:');
       assert.equal(i18n.t('dashboard.save_data'), '💾 Save Data');
       assert.equal(i18n.t('radar.tab_crop'), '🗺️ Crop Radar');
-      assert.equal(i18n.t('radar.btn_generate'), '🛰 Generate / update Pilot');
-      assert.equal(i18n.t('radar.save_field'), 'Save Field');
+      assert.equal(i18n.t('radar.btn_generate'), '🛰 Generate / update satellite image');
+      assert.equal(i18n.t('radar.save_field'), '💾 Save Field');
       assert.equal(
         i18n.t('analysis.depth_title'),
         'Depth of the soil layer considered in the analysis (e.g. 0-20 cm)'

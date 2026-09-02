@@ -129,6 +129,8 @@
     'Anhidro; densidad verdadera ~1.665 kg/L; solo acidifica': 'Anhydrous powder; density ~1.665 kg/L for volume equiv.; acidifies only',
     'Polvo soluble anhidro; dosificar por masa (kg/g). Densidad ~1.665 kg/L solo para equivalencia volumétrica; solo acidifica':
       'Anhydrous soluble powder; dose by mass (kg/lb). Density ~1.665 kg/L only for volume equivalence; acidifies only',
+    'Polvo soluble anhidro; dosificar por masa (kg/g). No uses litros: la densidad es solo un dato técnico del cálculo interno; solo acidifica. Nota técnica: el cálculo considera la neutralización estequiométrica completa, donde el ácido cítrico puede aportar hasta 3 equivalentes de H⁺ por mol. En acondicionamiento a un pH objetivo, la capacidad efectiva depende del pH final y del equilibrio ácido–base.':
+      'Anhydrous soluble powder; dose by mass (kg/lb). Do not use liters: density is only an internal calc factor; acidifies only. Technical note: the calculation assumes full stoichiometric neutralization, where citric acid can supply up to 3 H⁺ equivalents per mole. When conditioning to a target pH, effective capacity depends on final pH and acid–base equilibrium.',
     'Resultado en kg (o g) de polvo y total según el volumen indicado.': 'Result in kg (or g) of powder and total for the stated volume.',
     'Resultado en lb (u oz) de polvo y total según el volumen indicado.': 'Result in lb (or oz) of powder and total for the stated volume.',
     'Resultado en fl oz/1000 gal y galones totales según el volumen indicado.': 'Result in fl oz/1000 gal and total gallons for the stated volume.',

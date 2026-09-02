@@ -8804,6 +8804,16 @@ html.embed-login body {
   margin-top: 20px;
   overflow-x: auto;
 }
+.ferti-dist-chart-edit-hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 12px;
+  line-height: 1.4;
+}
 .ferti-dist-charts-grid {
   min-width: 720px;
 }
@@ -8815,6 +8825,15 @@ html.embed-login body {
   min-height: 420px;
   height: 420px !important;
   max-height: 440px;
+}
+.ferti-dist-chart-box canvas.is-dist-chart-selected {
+  cursor: grab;
+  touch-action: none;
+}
+.ferti-dist-chart-box canvas.is-dist-chart-dragging,
+.ferti-dist-chart-box.is-dist-chart-dragging canvas {
+  cursor: grabbing;
+  user-select: none;
 }
 .ferti-dist-nut-menu-suggest {
   color: #0369a1;

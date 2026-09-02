@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=51" />
+  <link rel="stylesheet" href="auth.css?v=52" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -902,16 +902,21 @@
     }
     
     .calculator-btn {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 12px 20px;
+      gap: 0;
+      padding: 12px 44px;
       width: 100%;
       box-sizing: border-box;
     }
     
     .calculator-btn .calculator-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -923,13 +928,14 @@
       font-size: 18px;
       line-height: 1;
       flex-shrink: 0;
-      flex-grow: 0;
       margin: 0;
       padding: 0;
+      pointer-events: none;
     }
     
     .calculator-btn .button-text {
-      flex: 0 1 auto;
+      flex: 1 1 auto;
+      width: 100%;
       text-align: center;
       line-height: 1.3;
       min-width: 0;
@@ -2666,7 +2672,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=login&v=20260830fitH" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=login&v=20260902citricNote" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>

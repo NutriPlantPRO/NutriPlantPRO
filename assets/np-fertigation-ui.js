@@ -70,6 +70,7 @@
     dist_suggest_btn: 'Suggest %',
     dist_suggest_title: 'Fills % from the stages you selected, aiming for an adequate solution in the N-P-S and K-Ca-Mg triangles.',
     dist_suggest_hint: 'Adding or removing stages readjusts the % to the suggested curve. Suggest % restores that curve if you moved a value. If you edit a % and a program already exists with the same periods, those doses are rebalanced (no need to generate the proposal again). If you change a dose in the Program, the % here moves. Suggest % does not touch the program until you generate the automatic proposal. The bar in each cell sets the %; you can also type the number.',
+    dist_chart_edit_hint: 'Select an element in the legend to view it alone, then drag its points. The other stages are adjusted proportionally to preserve 100%.',
     dist_suggest_done: 'Percentages filled from the stages, aiming for an adequate solution in the ternary triangles.',
     dist_suggest_out: 'Percentages filled from the stages. The cycle requirement is already outside the triangle ranges; review N-P-S or K-Ca-Mg.',
     dist_suggest_confirm: 'Replace the current % with the suggested curve from the selected stages? This does not change the program until you generate the automatic proposal.',

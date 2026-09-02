@@ -372,6 +372,7 @@
     'Resultado orientativo: sensible a DA, profundidad, % de superficie considerada y T': 'Indicative result: sensitive to BD, depth, considered surface % and T',
     'A Datos de entrada': 'A Input data',
     'B Tasa anual de mineralización': 'B Annual mineralization rate',
+    'Resultados': 'Results',
     'C Resultados': 'C Results',
     'Solubilidad e índice salino (IS)': 'Solubility and salt index (SI)',
     'Consulta combinada inspirada en la referencia NutriPlant PRO: solubilidad en agua (rangos típicos, 20–25 °C; varían con pureza y grado técnico/granulado del proveedor) e índice salino tomando': 'Combined lookup inspired by the NutriPlant PRO reference: water solubility (typical ranges, 20–25 °C; vary with purity and technical/granular grade) and salt index using',
