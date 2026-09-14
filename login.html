@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=52" />
+  <link rel="stylesheet" href="auth.css?v=53" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -2953,7 +2953,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914o2" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
+        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914ishT5" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -4662,16 +4662,13 @@
 
       var fbResizeTimer = null;
       var fbLastMountedWidth = 0;
-      var fbEmbedHeightCache = null;
-      var fbEmbedHeightMode = null;
+      var fbLastMountedHeight = 0;
 
       function facebookEmbedHeight() {
-        var mode = window.innerWidth < 700 ? 'mobile' : 'desktop';
-        if (fbEmbedHeightMode === mode && fbEmbedHeightCache) return fbEmbedHeightCache;
-        fbEmbedHeightMode = mode;
-        // Mismo alto que auth.css (.login-social-pane__embed--facebook): evita recortar logo/nombre de la página.
-        fbEmbedHeightCache = mode === 'mobile' ? 360 : 400;
-        return fbEmbedHeightCache;
+        if (window.innerWidth < 700) return 360;
+        var box = root.querySelector('[data-social-embed="facebook"]');
+        var h = box ? Math.round(box.clientHeight || box.getBoundingClientRect().height || 0) : 0;
+        return h >= 180 ? h : 400;
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4679,9 +4676,11 @@
         var width = facebookEmbedWidth(container);
         var fbHeight = facebookEmbedHeight();
         var prevWidth = parseInt(container.dataset.fbWidth, 10) || 0;
+        var prevHeight = parseInt(container.dataset.fbHeight, 10) || 0;
         if (
           !force &&
           Math.abs(prevWidth - width) <= 8 &&
+          Math.abs(prevHeight - fbHeight) <= 16 &&
           container.querySelector('iframe')
         ) {
           return;
@@ -4712,6 +4711,7 @@
         container.appendChild(iframe);
         container.dataset.loaded = '1';
         fbLastMountedWidth = width;
+        fbLastMountedHeight = fbHeight;
       }
 
       function scheduleFacebookEmbedRefresh(container) {
@@ -4799,22 +4799,24 @@
             panelsMobile.style.height = '';
           }
         } else {
-          // Alto natural de herramientas (sin stretch) − login − gap. Tope duro para no alargar la página.
           var tools = document.querySelector('.login-split__tools');
           var login = document.querySelector('.login-split__login');
+          var split = document.querySelector('.login-split');
           if (tools && login) {
             var gap = 16;
+            if (split) {
+              var gapPx = parseFloat(window.getComputedStyle(split).rowGap || window.getComputedStyle(split).gap);
+              if (gapPx) gap = Math.round(gapPx);
+            }
             var toolsH = Math.round(tools.scrollHeight || tools.offsetHeight || 0);
             var loginH = Math.round(login.offsetHeight || 0);
             var available = toolsH - loginH - gap;
             if (available < 280) available = 280;
-            if (available > 640) available = 640;
             root.style.height = available + 'px';
             root.style.minHeight = available + 'px';
             root.style.maxHeight = available + 'px';
             var panels = root.querySelector('.login-social-panels');
             if (panels) {
-              // Título + tabs + CTA + paddings: deja el botón “Ver página” completo
               var titleEl = root.querySelector('.login-social-panel__title');
               var subEl = root.querySelector('.login-social-panel__subtitle');
               var tabsEl = root.querySelector('.login-social-tabs');
@@ -4829,6 +4831,10 @@
               panels.style.minHeight = panelsH + 'px';
               panels.style.height = panelsH + 'px';
               panels.style.maxHeight = panelsH + 'px';
+            }
+            var fbBox = root.querySelector('[data-social-embed="facebook"]');
+            if (fbBox && root.querySelector('[data-social-tab="facebook"].active')) {
+              mountFacebookEmbed(fbBox, false);
             }
           }
         }

@@ -843,9 +843,9 @@
 
 @media (min-width: 700px) {
   .login-social-pane__embed--facebook {
-    height: 400px;
-    min-height: 400px;
-    max-height: 400px;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
   }
 }
 
@@ -1171,10 +1171,9 @@
   .login-split {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    grid-template-rows: auto auto;
+    grid-template-rows: auto 1fr;
     gap: 16px;
-    /* start: evita que herramientas se estire al infinito con el embed de FB */
-    align-items: start;
+    align-items: stretch;
   }
 
   .login-split__left {
@@ -1193,11 +1192,10 @@
     grid-row: 2;
     display: flex;
     flex-direction: column;
-    align-self: start;
-    /* Alto lo fija JS = (alto natural de herramientas − login − gap) */
+    align-self: stretch;
     height: auto;
     min-height: 280px;
-    max-height: 720px;
+    max-height: none;
     padding: 18px 20px 18px;
     overflow: hidden;
     box-sizing: border-box;
@@ -1206,7 +1204,7 @@
   .login-split__tools {
     grid-column: 2;
     grid-row: 1 / -1;
-    align-self: start;
+    align-self: stretch;
     height: auto;
     padding: 20px 16px 18px;
   }
@@ -1226,9 +1224,10 @@
   }
 
   .login-social-pane__embed--facebook {
-    height: 400px;
-    min-height: 400px;
-    max-height: 400px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
     padding: 0;
   }
 

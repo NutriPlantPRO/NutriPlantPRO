@@ -50,6 +50,8 @@ El backend lee todo por variables de entorno; no hace falta tocar código.
 | `SUPABASE_URL` | Para que el admin pueda cambiar el correo de un usuario en Supabase Auth (mismo valor que en `supabase-config.js`) | Opcional; si no está, el admin solo actualiza perfil, no el correo de acceso |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave **service_role** del proyecto (Settings → API). Solo la usa el servidor para actualizar email en Auth | Opcional; nunca exponer en el frontend |
 | `NUTRIPLANT_ADMIN_KEY` | Clave que valida las peticiones del panel admin (por defecto la misma que `?k=...` en la URL del admin) | Opcional; si no está, se usa el valor por defecto del código |
+| `NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET` | Firma OAuth del **plugin público** ChatGPT (`/mcp`). Distinta del token Socio. | Obligatoria para «Conectar cuenta»; el criterio público funciona sin ella |
+| `NUTRIPLANT_PUBLIC_ORIGIN` | Origen canónico del plugin (default `https://nutriplantpro.com`) | Opcional |
 
 **Editar correo desde el panel admin:**  
 Si configuras `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el servidor, al guardar un usuario con el correo cambiado el backend actualizará también Supabase Auth. Así el usuario podrá iniciar sesión con el nuevo correo. Si no configuras esas variables, el perfil (y localStorage) se actualizan pero el login seguirá siendo con el correo antiguo; en ese caso usa el SQL siguiente.

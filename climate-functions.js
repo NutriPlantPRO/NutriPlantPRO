@@ -2820,35 +2820,43 @@
       wcT('% del riego aplicado que cuenta en el ISH', '% of applied irrigation used in ISH') +
       '" style="width:64px;padding:6px 8px;border:1px solid #86efac;border-radius:8px;font-size:14px;font-weight:700;color:#14532d;text-align:right;background:#fff;">' +
       '<span style="font-size:13px;font-weight:700;color:#14532d;">%</span></div></div>' +
-      '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;">' +
-      '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f1f5f9;">' +
-      '<th style="padding:6px;">#</th><th style="padding:6px;">' +
+      '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;-webkit-overflow-scrolling:touch;">' +
+      '<table style="width:max-content;max-width:none;border-collapse:collapse;font-size:12px;table-layout:auto;"><thead><tr style="background:#f1f5f9;">' +
+      '<th style="padding:6px 8px;white-space:nowrap;">#</th><th style="padding:6px 8px;white-space:nowrap;">' +
       wcT('Semana', 'Week') +
-      '</th><th style="padding:6px;">' +
+      '</th><th style="padding:6px 8px;white-space:nowrap;">' +
       wcT('Lluvia', 'Rain') +
       ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px;">ET₀ ' +
+      '</th><th style="padding:6px 8px;white-space:nowrap;">ET₀ ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px;background:#ecfdf5;color:#14532d;min-width:168px;">' +
+      '</th><th style="padding:6px 8px;background:#ecfdf5;color:#14532d;min-width:168px;white-space:nowrap;">' +
       wcT('Riego', 'Irrig.') +
       '<div style="font-size:10px;font-weight:600;color:#15803d;margin-top:2px;">' +
       climateDepthUnit() +
       ' · ' +
       climateVolAreaUnit() +
       '</div>' +
-      '</th><th style="padding:6px;">ETc ' +
+      '</th><th style="padding:6px 8px;white-space:nowrap;">ETc ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px;">D ' +
+      '</th><th style="padding:6px 8px;white-space:nowrap;min-width:88px;" title="' +
+      wcT('Déficit hídrico de la semana', 'Weekly water deficit') +
+      '">' +
+      wcT('Déficit', 'Deficit') +
+      ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px;">E ' +
+      '</th><th style="padding:6px 8px;white-space:nowrap;min-width:88px;" title="' +
+      wcT('Exceso hídrico de la semana', 'Weekly water excess') +
+      '">' +
+      wcT('Exceso', 'Excess') +
+      ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px;">ISH</th>' +
+      '</th><th style="padding:6px 8px;white-space:nowrap;">ISH</th>' +
       '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>' +
-      '<p style="margin:10px 0 12px;font-size:11px;color:#94a3b8;">' +
+      '<p style="margin:10px 0 12px;font-size:12px;color:#64748b;line-height:1.45;">' +
       wcT(
-        'D = déficit · E = exceso · ISH = 100 × [1 − Σ(D + Fp·E) / Σ ETc]',
-        'D = deficit · E = excess · ISH = 100 × [1 − Σ(D + Fp·E) / Σ ETc]'
+        '<strong>Déficit</strong> = faltó agua vs ETc · <strong>Exceso</strong> = sobró agua vs ETc. ISH = 100 × [1 − Σ(Déficit + Fp·Exceso) / Σ ETc]',
+        '<strong>Deficit</strong> = water short vs ETc · <strong>Excess</strong> = water surplus vs ETc. ISH = 100 × [1 − Σ(Deficit + Fp·Excess) / Σ ETc]'
       ) +
       '</p>' +
       '<div id="climate-ish-hero" style="display:none;margin-bottom:12px;padding:14px;border-radius:10px;border:1px solid #99f6e4;background:linear-gradient(135deg,#ecfeff,#f0fdf4);"></div>' +
@@ -2861,7 +2869,8 @@
         'Water-related yield ceiling over the crop cycle.'
       ) +
       '</p>' +
-      '<canvas id="climate-ish-chart" width="800" height="280" style="width:100%;height:280px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;margin-bottom:12px;"></canvas>' +
+      '<div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;">' +
+      '<canvas id="climate-ish-chart" width="800" height="280" style="display:block;width:100%;min-width:520px;height:280px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"></canvas></div>' +
       '<div style="margin-top:12px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">' +
       '<strong>' +
       wcT('Estimado metodológico.', 'Methodological estimate.') +

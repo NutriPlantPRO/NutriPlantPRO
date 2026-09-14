@@ -9,7 +9,7 @@
   <script src="assets/np-i18n.js?v=20260730a"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260914ishU2"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260914ishT5"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Rendimiento hídrico (ISH) — NutriPlant PRO</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -50,12 +50,33 @@
     }
     .ish-big { font-size: 42px; font-weight: 800; color: #0f766e; line-height: 1; }
     .ish-band { font-size: 14px; font-weight: 700; }
-    .table-wrap { overflow: auto; max-height: 420px; border: 1px solid #e2e8f0; border-radius: 8px; }
-    table.ish-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    table.ish-table th, table.ish-table td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .table-wrap {
+      overflow: auto;
+      max-height: 420px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Ancho por contenido: no se estira en pantallas anchas; scroll horizontal si es angosta */
+    table.ish-table {
+      width: max-content;
+      max-width: none;
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: auto;
+    }
+    table.ish-table th, table.ish-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
     table.ish-table th { background: #f1f5f9; position: sticky; top: 0; z-index: 1; }
-    table.ish-table input { width: 72px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; }
+    table.ish-table input { width: 72px; max-width: 72px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box; }
     table.ish-table th.ish-th-riego { min-width: 168px; vertical-align: middle; background: #ecfdf5; color: #14532d; }
+    table.ish-table th.ish-th-de { min-width: 72px; }
+    .ish-th-sub { display: block; font-size: 10px; font-weight: 600; color: #64748b; margin-top: 2px; line-height: 1.2; }
     .ish-eff-card {
       margin: 0 0 10px; padding: 12px 14px;
       background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;
@@ -78,7 +99,17 @@
     }
     .ish-riego-pair input { width: 56px; }
     .ish-riego-pair span { font-size: 10px; color: #64748b; font-weight: 600; }
-    #ish-chart { width: 100%; height: 280px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .ish-chart-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #ish-chart {
+      display: block;
+      width: 100%;
+      min-width: 520px;
+      height: 280px;
+      max-height: 320px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
     .chk { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569; margin-top: 10px; }
   </style>
 </head>
@@ -143,7 +174,7 @@
           <p class="hint">Sin Kc no hay ETc ni ISH. Usa el botón <strong>Rangos FAO</strong>.</p>
         </div>
         <div class="field">
-          <label for="ish-fp">Fp (exceso)</label>
+          <label for="ish-fp" id="ish-l-fp">Fp (exceso)</label>
           <input id="ish-fp" type="number" min="0" max="1" step="0.05" value="0.25" />
           <p class="hint" id="ish-fp-help"></p>
         </div>
@@ -174,15 +205,18 @@
               <div class="ish-th-units"><span data-np-unit-label="water_depth">mm</span> · <span data-np-unit-label="volume_area">m³/ha</span></div>
             </th>
             <th>ETc <span data-np-unit-label="water_depth">mm</span></th>
-            <th>D <span data-np-unit-label="water_depth">mm</span></th>
-            <th>E <span data-np-unit-label="water_depth">mm</span></th>
+            <th id="ish-th-deficit" class="ish-th-de" title="Déficit hídrico de la semana">Déficit <span data-np-unit-label="water_depth">mm</span></th>
+            <th id="ish-th-excess" class="ish-th-de" title="Exceso hídrico de la semana">Exceso <span data-np-unit-label="water_depth">mm</span></th>
             <th>ISH acum.</th>
           </tr>
         </thead>
         <tbody id="ish-tbody"></tbody>
       </table>
     </div>
-    <p style="margin:12px 0 0;font-size:11px;color:#94a3b8;">D = déficit · E = exceso · ISH = 100 × [1 − Σ(D + Fp·E) / Σ ETc]</p>
+    <p id="ish-legend-de" style="margin:12px 0 0;font-size:12px;color:#64748b;line-height:1.45;">
+      <strong>Déficit</strong> = faltó agua vs ETc · <strong>Exceso</strong> = sobró agua vs ETc.
+      ISH = 100 × [1 − Σ(Déficit + Fp·Exceso) / Σ ETc]
+    </p>
 
     <div class="ish-hero" id="ish-hero" style="display:none;">
       <div>
@@ -197,7 +231,9 @@
 
     <h3 style="margin:16px 0 6px;font-size:15px;color:#0f172a;font-weight:800;">Rendimiento agrícola</h3>
     <p class="hint" style="margin:0 0 8px;">Evolución del techo de rendimiento por agua en el ciclo.</p>
-    <canvas id="ish-chart" width="800" height="280" aria-label="Gráfica rendimiento agrícola"></canvas>
+    <div class="ish-chart-wrap">
+      <canvas id="ish-chart" width="800" height="280" aria-label="Gráfica rendimiento agrícola"></canvas>
+    </div>
 
     <div style="margin-top:14px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">
       <strong>Estimado metodológico.</strong> El ISH y la curva son una <strong>estimación</strong> según esta fórmula (balance semanal lluvia/riego vs ETc, con Fp en excesos). Orientan el techo de rendimiento <em>relativo al agua</em>; <strong>no predicen la cosecha real</strong> (también pesan nutrición, sanidad, variedad, suelo, manejo). Validar siempre en campo.<br><br>
@@ -303,6 +339,29 @@
         : langEn
           ? ISH.IRR_EFF_HELP_EN
           : ISH.IRR_EFF_HELP_ES;
+    }
+    var thDef = document.getElementById('ish-th-deficit');
+    if (thDef) {
+      thDef.title = t('Déficit hídrico de la semana', 'Weekly water deficit');
+      thDef.innerHTML = t('Déficit', 'Deficit') + ' <span data-np-unit-label="water_depth"></span>';
+    }
+    var thExc = document.getElementById('ish-th-excess');
+    if (thExc) {
+      thExc.title = t('Exceso hídrico de la semana', 'Weekly water excess');
+      thExc.innerHTML = t('Exceso', 'Excess') + ' <span data-np-unit-label="water_depth"></span>';
+    }
+    var lFp = document.getElementById('ish-l-fp');
+    if (lFp) lFp.textContent = t('Fp (exceso)', 'Fp (excess)');
+    var legend = document.getElementById('ish-legend-de');
+    if (legend) {
+      legend.classList.add('notranslate');
+      legend.setAttribute('translate', 'no');
+      legend.innerHTML =
+        '<strong>' + t('Déficit', 'Deficit') + '</strong> = ' +
+        t('faltó agua vs ETc', 'water short vs ETc') +
+        ' · <strong>' + t('Exceso', 'Excess') + '</strong> = ' +
+        t('sobró agua vs ETc', 'water surplus vs ETc') +
+        '. ISH = 100 × [1 − Σ(' + t('Déficit', 'Deficit') + ' + Fp·' + t('Exceso', 'Excess') + ') / Σ ETc]';
     }
     if (UI && UI.applyLanguage) UI.applyLanguage(document.body);
     if (UI && UI.refreshUnitLabels) UI.refreshUnitLabels();
@@ -672,6 +731,11 @@
     if (window.NpFreePersist && window.NpFreePersist.bind) {
       persist = window.NpFreePersist.bind('ish_rendimiento', getPersistState, applyPersistState);
     }
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () { drawChart({ weeks: weeks }); }, 150);
+    });
     if (!weeks.length) ensureWeeksFromDates(false);
     recalculate();
 
