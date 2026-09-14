@@ -234,6 +234,7 @@
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" data-i18n-aria-label="dashboard.tool_water" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
           <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" data-i18n-aria-label="dashboard.tool_soil_water" aria-label="Agua en suelo y textura">🪨</button>
           <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" data-i18n-aria-label="dashboard.tool_irrigation" aria-label="Lámina de riego y balance hídrico">🌧️</button>
+          <button type="button" id="btn-ish-rendimiento-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showIshRendimientoTool()" data-np-tooltip="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" data-i18n-aria-label="dashboard.tool_ish" aria-label="Rendimiento hídrico (ISH)">📈</button>
           <button type="button" id="btn-vpd-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showVPDCalculator()" data-np-tooltip="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" data-i18n-aria-label="dashboard.tool_vpd" aria-label="Estimador de déficit de presión de vapor">🌡️</button>
           <button type="button" id="btn-agroclimate-forecast" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showAgroclimateForecast()" data-np-tooltip="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" data-i18n-aria-label="dashboard.tool_weather" aria-label="Pronóstico agroclimático">🌤️</button>
           <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" data-i18n-aria-label="dashboard.tool_solubility_salt" aria-label="Solubilidad e índice salino">🧂</button>
@@ -441,8 +442,9 @@
   <script src="hidroponia-functions.js?v=20260830acidI18n"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
+  <script src="assets/np-ish-core.js?v=20260914a"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
-  <script src="climate-functions.js?v=20260821kc"></script>
+  <script src="climate-functions.js?v=20260914ish"></script>
   <script src="analysis-report-render.js?v=20260830citricNoVol"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
   <script src="dashboard.js?v=20260902citricNote"></script>
@@ -535,6 +537,9 @@
       }
       if (typeof showLaminaRiegoTool !== 'undefined') {
         window.showLaminaRiegoTool = showLaminaRiegoTool;
+      }
+      if (typeof showIshRendimientoTool !== 'undefined') {
+        window.showIshRendimientoTool = showIshRendimientoTool;
       }
       if (typeof showVPDCalculator !== 'undefined') {
         window.showVPDCalculator = showVPDCalculator;
@@ -5445,6 +5450,21 @@ CONTRATO:
     }
     window.closeLaminaRiegoTool = closeLaminaRiegoTool;
 
+    function showIshRendimientoTool() {
+      var modal = document.getElementById('ishRendimientoToolModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showIshRendimientoTool = showIshRendimientoTool;
+
+    function closeIshRendimientoTool() {
+      var modal = document.getElementById('ishRendimientoToolModal');
+      var frame = document.getElementById('ishRendimientoToolFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeIshRendimientoTool = closeIshRendimientoTool;
+
     function showVPDCalculator() {
       var modal = document.getElementById('vpdCalculatorModal');
       if (!modal) return;
@@ -7562,6 +7582,22 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260805a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal rendimiento hídrico ISH -->
+  <div id="ishRendimientoToolModal" class="modal-overlay" onclick="if(event.target===this) closeIshRendimientoTool();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="dashboard.tool_ish">📈 Rendimiento hídrico (ISH)</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeIshRendimientoTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=dashboard&v=20260914a" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>

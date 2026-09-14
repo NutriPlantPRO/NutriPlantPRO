@@ -211,6 +211,16 @@ module.exports = {
         'Mapa/GPS, Open-Meteo ETo/lluvia, balance 1 y 7 d. Kc editable; riego franja solo m³; ajuste almacén suelo manual (déficit/exceso) + «Sugerir desde 🪨 suelo»; total integrado clima ± almacén; superficie cultivo/franja; tablas Kc y % sistema.'
     },
     {
+      id: 'ish_rendimiento',
+      title: 'Rendimiento hídrico (ISH)',
+      file: 'ish-rendimiento-free.html',
+      lsKey: 'nutriplant_free_ish_rendimiento_v1',
+      summary:
+        'Índice de Satisfacción Hídrica del ciclo (semanas, máx. 52): mapa/GPS, fechas, Kc + FAO, Fp (default 0,25), lluvia/ET₀ satélite o manual, riego opcional. ISH = 100×[1−Σ(D+Fp·E)/ΣETc]. Misma física en Clima PRO pestaña Rendimiento hídrico. Persistencia LS; ≠ lámina de riego.',
+      formula: 'ISH = 100 * [1 - sum(Di + Fp*Ei) / sum(ETc_i)]',
+      proEquivalent: 'Dashboard — Clima → Rendimiento hídrico'
+    },
+    {
       id: 'solubilidad_is',
       title: 'Solubilidad e índice salino',
       file: 'solubilidad-indice-salino-free.html',

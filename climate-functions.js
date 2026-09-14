@@ -180,6 +180,31 @@
     } else {
       migrateIrrigationQuickCalcState(p.climateAnalysis.irrigationQuickCalc);
     }
+    if (!p.climateAnalysis.ish || typeof p.climateAnalysis.ish !== 'object') {
+      p.climateAnalysis.ish = defaultIshState();
+    } else {
+      migrateIshState(p.climateAnalysis.ish);
+    }
+  }
+
+  function defaultIshState() {
+    return {
+      cycleStart: null,
+      cycleEnd: null,
+      fp: 0.25,
+      macroTunnelNoRain: false,
+      weeks: [],
+      result: null
+    };
+  }
+
+  function migrateIshState(st) {
+    if (st.cycleStart == null) st.cycleStart = null;
+    if (st.cycleEnd == null) st.cycleEnd = null;
+    if (st.fp == null || !Number.isFinite(Number(st.fp))) st.fp = 0.25;
+    if (st.macroTunnelNoRain == null) st.macroTunnelNoRain = false;
+    if (!Array.isArray(st.weeks)) st.weeks = [];
+    if (st.result == null) st.result = null;
   }
 
   function defaultIrrigationQuickCalcState() {
@@ -2402,6 +2427,11 @@
     if (p && p.climateAnalysis && p.climateAnalysis.lastReading) {
       renderClimateLiveReading(p.climateAnalysis.lastReading);
     }
+    if (document.getElementById('climate-ish-panel')) {
+      try {
+        renderClimateIshPanel();
+      } catch (eIsh) {}
+    }
   }
 
   function climateSaveLastTab(tabId) {
@@ -2418,7 +2448,7 @@
       ensureClimateAnalysisStructures();
       if (getProject().climateAnalysis.lastTab) last = getProject().climateAnalysis.lastTab;
     } catch (e) {}
-    var valid = ['climate-vpd', 'climate-rainfall', 'climate-live'];
+    var valid = ['climate-vpd', 'climate-rainfall', 'climate-ish', 'climate-live'];
     if (valid.indexOf(last) < 0) last = 'climate-vpd';
     container.querySelectorAll('.tab-button').forEach(function (b) {
       b.classList.remove('active');
@@ -2460,6 +2490,9 @@
         renderClimateRainfallTables();
         renderIrrigationQuickCalc();
         if (climateRainfallViewMode === 'charts') resizeClimateCharts();
+      }
+      if (tabId === 'climate-ish') {
+        renderClimateIshPanel();
       }
       if (tabId === 'climate-live') {
         var p = getProject();
@@ -2557,6 +2590,433 @@
     );
   }
 
+  function createClimateIshTabHTML(hasPolygon, loc) {
+    if (!hasPolygon) {
+      return (
+        '<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:16px;">' +
+        '<p style="margin:0;color:#92400e;">⚠️ ' +
+        wcT(
+          'Agrega un polígono en <strong>Ubicación</strong> para calcular el rendimiento hídrico (ISH).',
+          'Add a polygon in <strong>Location</strong> to calculate hydric yield (ISH).'
+        ) +
+        '</p></div>'
+      );
+    }
+    return (
+      '<div class="card" style="padding:24px;" id="climate-ish-root">' +
+      '<h3 style="margin:0 0 8px 0;color:#0f766e;">📈 ' +
+      wcT('Rendimiento hídrico (ISH)', 'Hydric yield (ISH)') +
+      '</h3>' +
+      '<p style="margin:0 0 12px 0;font-size:14px;color:#64748b;">' +
+      wcT(
+        'Índice de Satisfacción Hídrica del ciclo (semanas). Punto del predio:',
+        'Crop-cycle Water Satisfaction Index (weekly). Field point:'
+      ) +
+      ' <strong>' +
+      loc.lat.toFixed(5) +
+      ', ' +
+      loc.lng.toFixed(5) +
+      '</strong>.</p>' +
+      '<div id="climate-ish-panel"></div>' +
+      '</div>'
+    );
+  }
+
+  function getIshState() {
+    ensureClimateAnalysisStructures();
+    return getProject().climateAnalysis.ish;
+  }
+
+  function getIshKc() {
+    var st = getProject().climateAnalysis.irrigationQuickCalc || {};
+    return st.kc != null && Number.isFinite(Number(st.kc)) ? Number(st.kc) : null;
+  }
+
+  function setIshKcFromPanel(kc) {
+    var el = document.getElementById('climate-ish-kc');
+    if (el) el.value = kc != null ? String(kc) : '';
+    if (window.NpIrrBalance && typeof window.NpIrrBalance.writeSharedProjectKc === 'function') {
+      window.NpIrrBalance.writeSharedProjectKc(kc, null, null);
+    } else {
+      var st = getProject().climateAnalysis.irrigationQuickCalc;
+      st.kc = kc;
+      persistClimateAnalysis();
+    }
+  }
+
+  function renderClimateIshPanel() {
+    var ISH = window.NpIsh;
+    var host = document.getElementById('climate-ish-panel');
+    if (!host || !ISH) return;
+    ensureClimateAnalysisStructures();
+    var ish = getIshState();
+    var kc = getIshKc();
+    var today = ISH.todayIso();
+    var start = ish.cycleStart || ISH.addDaysIso(today, -84);
+    var end = ish.cycleEnd || today;
+    var fp = ish.fp != null ? ish.fp : ISH.DEFAULT_FP;
+    var weeks = Array.isArray(ish.weeks) ? ish.weeks : [];
+    var result = ish.result;
+
+    host.innerHTML =
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px;">' +
+      '<div><label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">' +
+      wcT('Fecha inicio', 'Start date') +
+      '</label><input type="date" id="climate-ish-start" value="' +
+      (start || '') +
+      '" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></div>' +
+      '<div><label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">' +
+      wcT('Fecha fin (vacío = hoy)', 'End date (empty = today)') +
+      '</label><input type="date" id="climate-ish-end" value="' +
+      (ish.cycleEnd || '') +
+      '" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></div>' +
+      '<div><label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Kc</label>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+      '<input type="number" id="climate-ish-kc" min="0" max="2" step="0.01" value="' +
+      (kc != null ? kc : '') +
+      '" placeholder="' +
+      wcT('Sin valor', 'No value') +
+      '" style="flex:1;min-width:90px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">' +
+      '<span id="climate-ish-kc-btn"></span></div>' +
+      '<input type="hidden" id="climate-ish-crop" value="">' +
+      '</div>' +
+      '<div><label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Fp</label>' +
+      '<input type="number" id="climate-ish-fp" min="0" max="1" step="0.05" value="' +
+      fp +
+      '" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">' +
+      '<p style="margin:4px 0 0;font-size:11px;color:#64748b;">' +
+      (climatePrefs().language === 'en' ? ISH.FP_HELP_EN : ISH.FP_HELP_ES) +
+      '</p></div></div>' +
+      '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;margin-bottom:12px;">' +
+      '<input type="checkbox" id="climate-ish-macro"' +
+      (ish.macroTunnelNoRain ? ' checked' : '') +
+      '> ' +
+      wcT('Macrotúnel / invernadero (lluvia = 0)', 'Macro-tunnel / greenhouse (rain = 0)') +
+      '</label>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' +
+      '<button type="button" id="climate-ish-fetch" class="btn" style="padding:10px 14px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">🌧️ ' +
+      wcT('Obtener lluvia y ET₀ del ciclo', 'Get cycle rainfall and ET₀') +
+      '</button>' +
+      '<button type="button" id="climate-ish-suggest-irr" class="btn" style="padding:10px 14px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;">💧 ' +
+      wcT('Usar riego de Lluvia/Riego (si 7 d)', 'Use Rain/Irrigation water (if 7 d)') +
+      '</button>' +
+      '<button type="button" id="climate-ish-recalc" class="btn" style="padding:10px 14px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">📊 ' +
+      wcT('Calcular ISH', 'Calculate ISH') +
+      '</button></div>' +
+      '<p id="climate-ish-status" style="margin:0 0 12px;font-size:13px;color:#64748b;"></p>' +
+      '<div id="climate-ish-hero" style="display:none;margin-bottom:12px;padding:14px;border-radius:10px;border:1px solid #99f6e4;background:linear-gradient(135deg,#ecfeff,#f0fdf4);"></div>' +
+      '<canvas id="climate-ish-chart" width="800" height="200" style="width:100%;height:200px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;margin-bottom:12px;"></canvas>' +
+      '<div id="climate-ish-kc-wrap" style="margin-bottom:12px;"></div>' +
+      '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f1f5f9;">' +
+      '<th style="padding:6px;">#</th><th style="padding:6px;">' +
+      wcT('Semana', 'Week') +
+      '</th><th style="padding:6px;">' +
+      wcT('Lluvia', 'Rain') +
+      '</th><th style="padding:6px;">ET₀</th><th style="padding:6px;">' +
+      wcT('Riego', 'Irrig.') +
+      '</th><th style="padding:6px;">ETc</th><th style="padding:6px;">D</th><th style="padding:6px;">E</th><th style="padding:6px;">ISH</th>' +
+      '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>';
+
+    var btnHost = document.getElementById('climate-ish-kc-btn');
+    if (btnHost && window.NpIrrBalance && window.NpIrrBalance.getKcOpenTableButtonHtml) {
+      btnHost.innerHTML = window.NpIrrBalance.getKcOpenTableButtonHtml('climate-ish');
+    }
+    var kcWrap = document.getElementById('climate-ish-kc-wrap');
+    if (kcWrap && window.NpIrrBalance && window.NpIrrBalance.getKcDetailsHtml) {
+      kcWrap.innerHTML = window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'climate-ish' });
+      window.NpIrrBalance.renderFaoKcTable('climate-ish-fao-kc-tbody', '', '');
+      var searchEl = document.getElementById('climate-ish-fao-kc-search');
+      if (searchEl) {
+        searchEl.oninput = function () {
+          window.NpIrrBalance.renderFaoKcTable('climate-ish-fao-kc-tbody', searchEl.value, '');
+        };
+      }
+    }
+
+    fillClimateIshTable(weeks, result);
+    drawClimateIshChart(result && result.weeks ? result.weeks : weeks);
+    updateClimateIshHero(result);
+
+    document.getElementById('climate-ish-fetch').onclick = fetchClimateIshClimate;
+    document.getElementById('climate-ish-recalc').onclick = function () {
+      persistClimateIshFromDom(true);
+    };
+    document.getElementById('climate-ish-suggest-irr').onclick = suggestClimateIshIrrigation;
+    ['climate-ish-start', 'climate-ish-end', 'climate-ish-kc', 'climate-ish-fp', 'climate-ish-macro'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.onchange = function () {
+        if (id === 'climate-ish-kc') {
+          var v = el.value === '' ? null : parseFloat(el.value);
+          setIshKcFromPanel(Number.isFinite(v) ? v : null);
+        }
+        persistClimateIshFromDom(id === 'climate-ish-kc' || id === 'climate-ish-fp' || id === 'climate-ish-macro');
+      };
+    });
+    var tbody = document.getElementById('climate-ish-tbody');
+    if (tbody) {
+      tbody.oninput = function (e) {
+        var inp = e.target.closest('input[data-f]');
+        if (!inp) return;
+        var tr = inp.closest('tr[data-i]');
+        if (!tr) return;
+        var i = Number(tr.getAttribute('data-i'));
+        var st = getIshState();
+        if (!st.weeks[i]) return;
+        var f = inp.getAttribute('data-f');
+        var num = inp.value === '' ? null : parseFloat(inp.value);
+        st.weeks[i][f] = Number.isFinite(num) ? num : null;
+        if (f === 'rain_mm') st.weeks[i].rainSource = inp.value === '' ? null : 'manual';
+        if (f === 'et0_mm') st.weeks[i].et0Source = inp.value === '' ? null : 'manual';
+        if (f === 'irrigation_mm') st.weeks[i].irrigationSource = inp.value === '' ? null : 'manual';
+        persistClimateIshFromDom(true);
+      };
+    }
+  }
+
+  function fillClimateIshTable(weeks, result) {
+    var tb = document.getElementById('climate-ish-tbody');
+    if (!tb) return;
+    var rows = (result && result.weeks) || weeks || [];
+    if (!rows.length) {
+      tb.innerHTML =
+        '<tr><td colspan="9" style="padding:14px;color:#64748b;text-align:center;">' +
+        wcT('Define fechas y obtén clima del ciclo.', 'Set dates and fetch cycle climate.') +
+        '</td></tr>';
+      return;
+    }
+    tb.innerHTML = rows
+      .map(function (w, i) {
+        return (
+          '<tr data-i="' +
+          i +
+          '"><td style="padding:6px;text-align:center;">' +
+          (i + 1) +
+          '</td><td style="padding:6px;white-space:nowrap;font-size:11px;">' +
+          String(w.weekStart || '').slice(5) +
+          '→' +
+          String(w.weekEnd || '').slice(5) +
+          '</td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="0.1" data-f="rain_mm" value="' +
+          (w.rain_mm != null ? w.rain_mm : '') +
+          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="0.1" data-f="et0_mm" value="' +
+          (w.et0_mm != null ? w.et0_mm : '') +
+          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="0.1" data-f="irrigation_mm" value="' +
+          (w.irrigation_mm != null ? w.irrigation_mm : '') +
+          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:6px;text-align:center;">' +
+          (w.etc_mm != null ? w.etc_mm : '—') +
+          '</td><td style="padding:6px;text-align:center;">' +
+          (w.deficit_mm != null ? w.deficit_mm : '—') +
+          '</td><td style="padding:6px;text-align:center;">' +
+          (w.excess_mm != null ? w.excess_mm : '—') +
+          '</td><td style="padding:6px;text-align:center;font-weight:700;">' +
+          (w.ish_cumulative != null ? w.ish_cumulative + '%' : '—') +
+          '</td></tr>'
+        );
+      })
+      .join('');
+  }
+
+  function updateClimateIshHero(result) {
+    var hero = document.getElementById('climate-ish-hero');
+    if (!hero) return;
+    if (!result || !result.ok) {
+      hero.style.display = result && result.error ? 'block' : 'none';
+      if (result && result.error) {
+        hero.innerHTML =
+          '<div style="color:#64748b;font-size:13px;">' +
+          (climatePrefs().language === 'en' ? result.errorEn || result.error : result.error) +
+          '</div>';
+      }
+      return;
+    }
+    var band = result.band;
+    hero.style.display = 'block';
+    hero.innerHTML =
+      '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">' +
+      '<div><div style="font-size:12px;color:#64748b;font-weight:600;">ISH</div>' +
+      '<div style="font-size:36px;font-weight:800;color:#0f766e;line-height:1;">' +
+      result.ish +
+      '%</div></div>' +
+      '<div><div style="font-weight:700;color:' +
+      (band ? band.color : '#0f172a') +
+      ';">' +
+      (band ? (climatePrefs().language === 'en' ? band.labelEn : band.labelEs) : '') +
+      '</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Σ ETc ' +
+      result.sumEtc +
+      ' mm · Fp ' +
+      result.fp +
+      '</div></div></div>';
+  }
+
+  function drawClimateIshChart(rows) {
+    var canvas = document.getElementById('climate-ish-chart');
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, w, h);
+    if (!rows || !rows.length) return;
+    var pad = { l: 36, r: 12, t: 12, b: 20 };
+    var plotW = w - pad.l - pad.r;
+    var plotH = h - pad.t - pad.b;
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.beginPath();
+    for (var g = 0; g <= 4; g++) {
+      var y = pad.t + (plotH * g) / 4;
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + plotW, y);
+    }
+    ctx.stroke();
+    var n = rows.length;
+    var stepX = plotW / Math.max(n, 1);
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    var started = false;
+    rows.forEach(function (row, i) {
+      var yv = row.yield_relative != null ? row.yield_relative : row.ish_cumulative;
+      if (yv == null) return;
+      var x0 = pad.l + i * stepX;
+      var x1 = pad.l + (i + 1) * stepX;
+      var y = pad.t + plotH * (1 - yv / 100);
+      if (!started) {
+        ctx.moveTo(x0, y);
+        started = true;
+      } else ctx.lineTo(x0, y);
+      ctx.lineTo(x1, y);
+    });
+    if (started) ctx.stroke();
+  }
+
+  function persistClimateIshFromDom(recompute) {
+    var ISH = window.NpIsh;
+    if (!ISH) return;
+    ensureClimateAnalysisStructures();
+    var st = getIshState();
+    var startEl = document.getElementById('climate-ish-start');
+    var endEl = document.getElementById('climate-ish-end');
+    var fpEl = document.getElementById('climate-ish-fp');
+    var macroEl = document.getElementById('climate-ish-macro');
+    st.cycleStart = startEl && startEl.value ? startEl.value : null;
+    st.cycleEnd = endEl && endEl.value ? endEl.value : null;
+    st.fp = ISH.clampFp(fpEl ? fpEl.value : 0.25);
+    st.macroTunnelNoRain = !!(macroEl && macroEl.checked);
+    var end = st.cycleEnd || ISH.todayIso();
+    if (st.cycleStart) {
+      var v = ISH.validateCycle(st.cycleStart, end);
+      var status = document.getElementById('climate-ish-status');
+      if (!v.ok) {
+        if (status) status.textContent = climatePrefs().language === 'en' ? v.errorEn : v.error;
+        persistClimateAnalysis();
+        return;
+      }
+      var slots = ISH.buildWeekSlots(v.cycleStart, v.cycleEnd);
+      st.weeks = ISH.mergeWeeksPreserveManual(st.weeks, slots);
+    }
+    if (recompute) {
+      var kcEl = document.getElementById('climate-ish-kc');
+      var kc = kcEl && kcEl.value !== '' ? parseFloat(kcEl.value) : getIshKc();
+      var result = ISH.computeIsh({
+        weeks: st.weeks,
+        kc: Number.isFinite(kc) ? kc : null,
+        fp: st.fp,
+        macroTunnelNoRain: st.macroTunnelNoRain
+      });
+      st.weeks = result.weeks;
+      st.result = result.ok
+        ? {
+            ish: result.ish,
+            sumEtc: result.sumEtc,
+            sumPenalty: result.sumPenalty,
+            fp: result.fp,
+            band: result.band,
+            updatedAt: result.updatedAt
+          }
+        : { error: result.error, errorEn: result.errorEn, updatedAt: new Date().toISOString() };
+      fillClimateIshTable(st.weeks, result);
+      drawClimateIshChart(result.weeks);
+      updateClimateIshHero(result);
+    }
+    persistClimateAnalysis();
+  }
+
+  async function fetchClimateIshClimate() {
+    var ISH = window.NpIsh;
+    var loc = getLocation();
+    var status = document.getElementById('climate-ish-status');
+    var btn = document.getElementById('climate-ish-fetch');
+    if (!ISH || !loc) {
+      alert(wcT('Define el polígono en Ubicación.', 'Define the polygon in Location.'));
+      return;
+    }
+    persistClimateIshFromDom(false);
+    var st = getIshState();
+    if (!st.cycleStart) {
+      if (status) status.textContent = wcT('Indica fecha de inicio.', 'Enter a start date.');
+      return;
+    }
+    var end = st.cycleEnd || ISH.todayIso();
+    var v = ISH.validateCycle(st.cycleStart, end);
+    if (!v.ok) {
+      if (status) status.textContent = climatePrefs().language === 'en' ? v.errorEn : v.error;
+      return;
+    }
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = wcT('Consultando satélite…', 'Fetching satellite…');
+    try {
+      var daily = await ISH.fetchCycleClimate(loc.lat, loc.lng, v.cycleStart, v.cycleEnd);
+      var slots = ISH.buildWeekSlots(v.cycleStart, v.cycleEnd);
+      st.weeks = ISH.applySatelliteToWeeks(ISH.mergeWeeksPreserveManual(st.weeks, slots), daily, {
+        preserveManual: true
+      });
+      if (status) {
+        status.textContent =
+          wcT('Clima cargado · ', 'Climate loaded · ') +
+          st.weeks.length +
+          wcT(' semanas.', ' weeks.');
+      }
+      persistClimateIshFromDom(true);
+    } catch (err) {
+      if (status) status.textContent = err && err.message ? err.message : wcT('Error de clima', 'Climate error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function suggestClimateIshIrrigation() {
+    var ISH = window.NpIsh;
+    if (!ISH) return;
+    ensureClimateAnalysisStructures();
+    var st = getIshState();
+    var iqc = getProject().climateAnalysis.irrigationQuickCalc || {};
+    var sug = ISH.suggestIrrigationFromBalance(iqc, st.weeks);
+    var status = document.getElementById('climate-ish-status');
+    if (!sug) {
+      if (status) {
+        status.textContent = wcT(
+          'Solo se usa el riego de Lluvia/Riego si el periodo está en 7 días y hay valor.',
+          'Rain/Irrigation water is used only if the period is 7 days and a value exists.'
+        );
+      }
+      return;
+    }
+    if (!st.weeks[sug.weekIndex]) return;
+    st.weeks[sug.weekIndex].irrigation_mm = sug.irrigation_mm;
+    st.weeks[sug.weekIndex].irrigationSource = 'balance';
+    if (status) {
+      status.textContent =
+        wcT('Riego de 7 d aplicado a la semana ', '7-day irrigation applied to week ') +
+        (sug.weekIndex + 1) +
+        ' (' +
+        sug.irrigation_mm +
+        ' mm).';
+    }
+    persistClimateIshFromDom(true);
+  }
+
   function createClimateLiveTabHTML(hasPolygon, loc) {
     if (!hasPolygon) {
       return (
@@ -2580,6 +3040,74 @@
     );
   }
 
+  function getClimateIshReportHtml(escapeHtml, opts) {
+    opts = opts || {};
+    var lang = opts.language === 'en' ? 'en' : 'es';
+    var rt = function (es, en) {
+      return lang === 'en' ? en : es;
+    };
+    ensureClimateAnalysisStructures();
+    var ish = getProject().climateAnalysis.ish;
+    if (!ish || !ish.result || ish.result.ish == null) return '';
+    var esc = typeof escapeHtml === 'function' ? escapeHtml : function (s) {
+      return String(s == null ? '' : s);
+    };
+    var weeks = Array.isArray(ish.weeks) ? ish.weeks : [];
+    var rows = weeks
+      .slice(0, 52)
+      .map(function (w, i) {
+        return (
+          '<tr><td style="padding:4px 6px;text-align:center;">' +
+          (i + 1) +
+          '</td><td style="padding:4px 6px;white-space:nowrap;">' +
+          esc(String(w.weekStart || '').slice(5)) +
+          '→' +
+          esc(String(w.weekEnd || '').slice(5)) +
+          '</td><td style="padding:4px 6px;text-align:center;">' +
+          (w.rain_mm != null ? w.rain_mm : '—') +
+          '</td><td style="padding:4px 6px;text-align:center;">' +
+          (w.et0_mm != null ? w.et0_mm : '—') +
+          '</td><td style="padding:4px 6px;text-align:center;">' +
+          (w.irrigation_mm != null ? w.irrigation_mm : '—') +
+          '</td><td style="padding:4px 6px;text-align:center;">' +
+          (w.etc_mm != null ? w.etc_mm : '—') +
+          '</td><td style="padding:4px 6px;text-align:center;font-weight:700;">' +
+          (w.ish_cumulative != null ? w.ish_cumulative + '%' : '—') +
+          '</td></tr>'
+        );
+      })
+      .join('');
+    return (
+      '<div class="report-block"><div class="report-block-title">📈 ' +
+      rt('Rendimiento hídrico (ISH)', 'Hydric yield (ISH)') +
+      '</div>' +
+      '<p style="margin:0 0 8px;font-size:13px;"><strong>ISH:</strong> ' +
+      ish.result.ish +
+      '% · ' +
+      rt('Ciclo', 'Cycle') +
+      ': ' +
+      esc(ish.cycleStart || '—') +
+      ' → ' +
+      esc(ish.cycleEnd || rt('hoy', 'today')) +
+      ' · Fp ' +
+      (ish.fp != null ? ish.fp : 0.25) +
+      '</p>' +
+      (rows
+        ? '<div class="report-table-wrap"><table class="report-admin-table" style="font-size:11px;"><thead><tr>' +
+          '<th>#</th><th>' +
+          rt('Semana', 'Week') +
+          '</th><th>' +
+          rt('Lluvia', 'Rain') +
+          '</th><th>ET₀</th><th>' +
+          rt('Riego', 'Irrig.') +
+          '</th><th>ETc</th><th>ISH</th></tr></thead><tbody>' +
+          rows +
+          '</tbody></table></div>'
+        : '') +
+      '</div>'
+    );
+  }
+
   window.ensureClimateAnalysisStructures = ensureClimateAnalysisStructures;
   window.fetchClimateRainfallAndET0 = fetchClimateRainfallAndET0;
   window.fetchClimateLiveReading = fetchClimateLiveReading;
@@ -2590,7 +3118,10 @@
   window.loadClimateSavedData = loadClimateSavedData;
   window.initClimateTabs = initClimateTabs;
   window.createClimateRainfallTabHTML = createClimateRainfallTabHTML;
+  window.createClimateIshTabHTML = createClimateIshTabHTML;
   window.createClimateLiveTabHTML = createClimateLiveTabHTML;
+  window.renderClimateIshPanel = renderClimateIshPanel;
+  window.getClimateIshReportHtml = getClimateIshReportHtml;
   window.persistClimateAnalysis = persistClimateAnalysis;
 
   function buildReportCombinedChartDatasets(rain, et0) {

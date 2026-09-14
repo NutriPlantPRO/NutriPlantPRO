@@ -1017,6 +1017,8 @@
     prefix = prefix || 'climate';
     if (prefix === 'irr') return { kc: 'irr-kc', crop: 'irr-crop' };
     if (prefix === 'lectura') return { kc: 'lectura-kc', crop: 'lectura-crop' };
+    if (prefix === 'ish') return { kc: 'ish-kc', crop: 'ish-crop' };
+    if (prefix === 'climate-ish') return { kc: 'climate-ish-kc', crop: 'climate-ish-crop' };
     return { kc: prefix + '-irr-kc', crop: prefix + '-irr-crop' };
   }
 
@@ -1103,12 +1105,12 @@
         if (typeof w.persistClimateAnalysis === 'function') w.persistClimateAnalysis();
       }
       var val = kc != null && Number.isFinite(Number(kc)) ? String(Math.round(Number(kc) * 100) / 100) : '';
-      ['climate-irr-kc', 'climate-chart-kc', 'lectura-kc', 'irr-kc'].forEach(function (id) {
+      ['climate-irr-kc', 'climate-chart-kc', 'lectura-kc', 'irr-kc', 'ish-kc', 'climate-ish-kc'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.value = val;
       });
       if (cropName) {
-        ['climate-irr-crop', 'lectura-crop', 'irr-crop'].forEach(function (id) {
+        ['climate-irr-crop', 'lectura-crop', 'irr-crop', 'ish-crop', 'climate-ish-crop'].forEach(function (id) {
           var el = document.getElementById(id);
           if (el && !String(el.value || '').trim()) el.value = cropName;
         });
@@ -1304,6 +1306,8 @@
     var tid = tbody && tbody.id ? String(tbody.id) : '';
     if (tid.indexOf('irr-') === 0) return 'irr';
     if (tid.indexOf('lectura-') === 0) return 'lectura';
+    if (tid.indexOf('climate-ish-') === 0) return 'climate-ish';
+    if (tid.indexOf('ish-') === 0) return 'ish';
     return 'climate';
   }
 

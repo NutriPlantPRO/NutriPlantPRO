@@ -20676,6 +20676,13 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
       unit_system: reportUnitSystem
     });
   }
+  var ishBlock = '';
+  if (typeof window.getClimateIshReportHtml === 'function') {
+    ishBlock = window.getClimateIshReportHtml(reportEscapeHtml, {
+      language: reportLanguage,
+      unit_system: reportUnitSystem
+    });
+  }
   var kcUsedBlock = '';
   if (window.NpIrrBalance && typeof window.NpIrrBalance.buildKcUsedHtml === 'function') {
     kcUsedBlock = window.NpIrrBalance.buildKcUsedHtml(ca, { escapeHtml: reportEscapeHtml });
@@ -20684,7 +20691,7 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
   if (window.NpSoilWaterBridge && typeof window.NpSoilWaterBridge.buildReportHtml === 'function') {
     soilWaterBlock = window.NpSoilWaterBridge.buildReportHtml(reportEscapeHtml);
   }
-  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock && !soilWaterBlock && !kcUsedBlock) return '';
+  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock && !ishBlock && !soilWaterBlock && !kcUsedBlock) return '';
   var satNote =
     '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
     '<strong>' + rt('Nota:', 'Note:') + '</strong> ' +
@@ -20703,6 +20710,7 @@ function createClimateReportSectionHTML(chartImages, reportLanguage, reportUnitS
     (combinedChartBlock || '') +
     (liveBlock ? '<div class="report-block"><div class="report-block-title">' + rt('Última lectura', 'Latest reading') + '</div>' + liveBlock + '</div>' : '') +
     (irrBlock || '') +
+    (ishBlock || '') +
     (soilWaterBlock || '') +
     '</div>'
   );
@@ -25798,6 +25806,10 @@ function createClimateSectionHTML() {
     typeof window.createClimateRainfallTabHTML === 'function'
       ? window.createClimateRainfallTabHTML(hasPolygon, loc)
       : '<p>Pestaña lluvia no disponible.</p>';
+  var ishTab =
+    typeof window.createClimateIshTabHTML === 'function'
+      ? window.createClimateIshTabHTML(hasPolygon, loc)
+      : '<p>Pestaña ISH no disponible.</p>';
   var liveTab =
     typeof window.createClimateLiveTabHTML === 'function'
       ? window.createClimateLiveTabHTML(hasPolygon, loc)
@@ -25813,6 +25825,11 @@ function createClimateSectionHTML() {
     '<div class="climate-tabs hydroponia-tabs">' +
     '<button type="button" class="tab-button active" data-tab="climate-vpd"><span class="tab-icon">🌡️</span><span class="tab-text">VPD</span></button>' +
     '<button type="button" class="tab-button" data-tab="climate-rainfall"><span class="tab-icon">🌧️</span><span class="tab-text">Lluvia/Riego</span></button>' +
+    '<button type="button" class="tab-button" data-tab="climate-ish"><span class="tab-icon">📈</span><span class="tab-text">' +
+    (window.NpWaterClimateUI && typeof window.NpWaterClimateUI.t === 'function'
+      ? window.NpWaterClimateUI.t('Rendimiento hídrico', 'Hydric yield')
+      : 'Rendimiento hídrico') +
+    '</span></button>' +
     '<button type="button" class="tab-button" data-tab="climate-live"><span class="tab-icon">🌤️</span><span class="tab-text">Tiempo actual</span></button>' +
     '</div>' +
     '<div class="climate-content">' +
@@ -25821,6 +25838,9 @@ function createClimateSectionHTML() {
     '</div>' +
     '<div class="tab-content" id="climate-rainfall">' +
     rainfallTab +
+    '</div>' +
+    '<div class="tab-content" id="climate-ish">' +
+    ishTab +
     '</div>' +
     '<div class="tab-content" id="climate-live">' +
     liveTab +

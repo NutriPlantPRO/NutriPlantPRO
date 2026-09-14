@@ -10281,7 +10281,41 @@
                 out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4>' + liveWhen + '<div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div><div>Lluvia (hoy): ' + (liveRain != null ? Number(liveRain).toFixed(1) + ' mm' : '—') + '</div><div>ET₀ (hoy): ' + (liveEt0 != null ? Number(liveEt0).toFixed(1) + ' mm' : '—') + '</div></div></div>';
             }
             out += adminBuildIrrigationQuickCalcHtml(ca);
+            out += adminBuildIshHtml(ca);
             return out;
+        }
+
+        function adminBuildIshHtml(ca) {
+            if (!ca || !ca.ish || !ca.ish.result || ca.ish.result.ish == null) return '';
+            var ish = ca.ish;
+            var weeks = Array.isArray(ish.weeks) ? ish.weeks : [];
+            var rows = weeks.slice(0, 52).map(function (w, i) {
+                return (
+                    '<tr><td style="padding:4px 6px;text-align:center;">' + (i + 1) +
+                    '</td><td style="padding:4px 6px;">' + escapeHtml(String(w.weekStart || '').slice(5)) +
+                    '→' + escapeHtml(String(w.weekEnd || '').slice(5)) +
+                    '</td><td style="padding:4px 6px;text-align:center;">' + (w.rain_mm != null ? w.rain_mm : '—') +
+                    '</td><td style="padding:4px 6px;text-align:center;">' + (w.et0_mm != null ? w.et0_mm : '—') +
+                    '</td><td style="padding:4px 6px;text-align:center;">' + (w.irrigation_mm != null ? w.irrigation_mm : '—') +
+                    '</td><td style="padding:4px 6px;text-align:center;">' + (w.etc_mm != null ? w.etc_mm : '—') +
+                    '</td><td style="padding:4px 6px;text-align:center;font-weight:700;">' +
+                    (w.ish_cumulative != null ? w.ish_cumulative + '%' : '—') +
+                    '</td></tr>'
+                );
+            }).join('');
+            return (
+                '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">' +
+                '<h4 style="margin:0 0 8px 0;color:#0f766e;">📈 Rendimiento hídrico (ISH)</h4>' +
+                '<p style="margin:0 0 8px;font-size:13px;"><strong>ISH:</strong> ' + ish.result.ish +
+                '% · Ciclo: ' + escapeHtml(ish.cycleStart || '—') + ' → ' + escapeHtml(ish.cycleEnd || 'hoy') +
+                ' · Fp ' + (ish.fp != null ? ish.fp : 0.25) + '</p>' +
+                (rows
+                    ? '<div style="overflow:auto;max-height:280px;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#f1f5f9;">' +
+                      '<th style="padding:4px;">#</th><th style="padding:4px;">Semana</th><th style="padding:4px;">Lluvia</th><th style="padding:4px;">ET₀</th><th style="padding:4px;">Riego</th><th style="padding:4px;">ETc</th><th style="padding:4px;">ISH</th>' +
+                      '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+                    : '') +
+                '</div>'
+            );
         }
 
         function adminMonthsToChartData(monthsObj, maxMonth) {

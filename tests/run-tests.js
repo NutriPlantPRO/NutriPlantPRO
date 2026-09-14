@@ -15,7 +15,8 @@ var suites = [
   require('./fertigation-dist-suggest.test.js'),
   require('./fertigation-dist-edit.test.js'),
   require('./fertilizer-price.test.js'),
-  require('./lab-extract-bulk-density.test.js')
+  require('./lab-extract-bulk-density.test.js'),
+  require('./ish-core.test.js')
 ];
 
 (async function () {
