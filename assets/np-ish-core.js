@@ -17,11 +17,17 @@
 
   var MAX_WEEKS = 52;
   var DEFAULT_FP = 0.25;
+  /** % del riego aplicado que cuenta en el balance ISH (100 = todo cuenta). */
+  var DEFAULT_IRRIGATION_EFFECTIVE_PCT = 100;
   var ARCHIVE_THRESHOLD_DAYS = 92;
   var FP_HELP_ES =
     'Fp pondera el exceso de agua frente al déficit (default 0,25). 0 = solo sequía; 1 = exceso igual que déficit.';
   var FP_HELP_EN =
     'Fp weights excess water vs deficit (default 0.25). 0 = drought only; 1 = excess equals deficit.';
+  var IRR_EFF_HELP_ES =
+    '% efectivo: fracción del riego aplicado que entra al balance (pérdidas / eficiencia). 100 = todo cuenta. 1 mm = 10 m³/ha.';
+  var IRR_EFF_HELP_EN =
+    'Effective %: fraction of applied irrigation used in the balance (losses / efficiency). 100 = all counts. 1 mm = 10 m³/ha.';
 
   function round1(n) {
     if (n == null || !Number.isFinite(Number(n))) return null;
@@ -81,6 +87,25 @@
   function daysFromTodayToStart(startIso) {
     var n = daysBetween(startIso, todayIso());
     return n == null ? null : n;
+  }
+
+  /** 1 mm sobre 1 ha = 10 m³/ha. */
+  function mmToM3PerHa(mm) {
+    if (mm == null || !Number.isFinite(Number(mm))) return null;
+    return round1(Number(mm) * 10);
+  }
+
+  function m3PerHaToMm(m3Ha) {
+    if (m3Ha == null || !Number.isFinite(Number(m3Ha))) return null;
+    return round1(Number(m3Ha) / 10);
+  }
+
+  function clampIrrigationEffectivePct(pct) {
+    var n = pct == null || pct === '' ? DEFAULT_IRRIGATION_EFFECTIVE_PCT : Number(pct);
+    if (!Number.isFinite(n)) return DEFAULT_IRRIGATION_EFFECTIVE_PCT;
+    if (n < 0) return 0;
+    if (n > 100) return 100;
+    return Math.round(n * 10) / 10;
   }
 
   function clampFp(fp) {
@@ -204,6 +229,8 @@
   function computeIsh(input) {
     var kc = input && input.kc != null ? Number(input.kc) : null;
     var fp = clampFp(input && input.fp);
+    var irrEffPct = clampIrrigationEffectivePct(input && input.irrigationEffectivePct);
+    var irrEffFactor = irrEffPct / 100;
     var macro = !!(input && input.macroTunnelNoRain);
     var weeksIn = (input && input.weeks) || [];
     var sumEtc = 0;
@@ -212,10 +239,11 @@
       var row = Object.assign({}, w);
       var rain = macro ? 0 : row.rain_mm != null && Number.isFinite(Number(row.rain_mm)) ? Number(row.rain_mm) : 0;
       var et0 = row.et0_mm != null && Number.isFinite(Number(row.et0_mm)) ? Number(row.et0_mm) : null;
-      var irr =
+      var irrApplied =
         row.irrigation_mm != null && Number.isFinite(Number(row.irrigation_mm))
           ? Number(row.irrigation_mm)
           : 0;
+      var irr = round1(irrApplied * irrEffFactor);
       var etc = null;
       var deficit = null;
       var excess = null;
@@ -227,6 +255,12 @@
         sumEtc += etc;
         sumPenalty += deficit + fp * excess;
       }
+      row.irrigation_m3_ha =
+        row.irrigation_mm != null && Number.isFinite(Number(row.irrigation_mm))
+          ? mmToM3PerHa(row.irrigation_mm)
+          : null;
+      row.irrigation_effective_mm =
+        row.irrigation_mm != null && Number.isFinite(Number(row.irrigation_mm)) ? irr : null;
       row.etc_mm = etc;
       row.deficit_mm = deficit;
       row.excess_mm = excess;
@@ -245,6 +279,7 @@
         errorEn: 'Enter Kc to compute ETc and ISH',
         weeks: weeks,
         fp: fp,
+        irrigationEffectivePct: irrEffPct,
         kc: kc,
         ish: null,
         sumEtc: null,
@@ -258,6 +293,7 @@
         errorEn: 'No cumulative ETc: fetch ET₀ or enter manual values',
         weeks: weeks,
         fp: fp,
+        irrigationEffectivePct: irrEffPct,
         kc: kc,
         ish: null,
         sumEtc: 0,
@@ -266,18 +302,16 @@
     }
 
     ish = round1(Math.max(0, Math.min(100, 100 * (1 - sumPenalty / sumEtc))));
+    // Curva de rendimiento relativo (estilo GEOSMET): denominador = Σ ETc del ciclo.
+    // Así el techo solo baja o se mantiene; una semana buena no “recupera” merma ya contabilizada.
     var runningPenalty = 0;
-    var runningEtc = 0;
     weeks = weeks.map(function (row) {
       var out = Object.assign({}, row);
       if (out.etc_mm != null) {
-        runningEtc += out.etc_mm;
         runningPenalty += (out.deficit_mm || 0) + fp * (out.excess_mm || 0);
-        out.ish_cumulative =
-          runningEtc > 0
-            ? round1(Math.max(0, Math.min(100, 100 * (1 - runningPenalty / runningEtc))))
-            : null;
-        out.yield_relative = out.ish_cumulative;
+        var y = round1(Math.max(0, Math.min(100, 100 * (1 - runningPenalty / sumEtc))));
+        out.ish_cumulative = y;
+        out.yield_relative = y;
       }
       return out;
     });
@@ -286,6 +320,7 @@
       ok: true,
       weeks: weeks,
       fp: fp,
+      irrigationEffectivePct: irrEffPct,
       kc: kc,
       ish: ish,
       sumEtc: round1(sumEtc),
@@ -311,14 +346,16 @@
     return (nextSlots || []).map(function (slot) {
       var prev = byStart[slot.weekStart];
       if (!prev) return slot;
+      // Conservar clima ya cargado (satélite o manual) e riego al rearmar semanas.
+      // Antes solo se preservaba «manual» y el resto volvía a null → borraba el fetch.
       return {
         index: slot.index,
         weekStart: slot.weekStart,
         weekEnd: slot.weekEnd,
-        rain_mm: prev.rainSource === 'manual' ? prev.rain_mm : slot.rain_mm,
-        rainSource: prev.rainSource === 'manual' ? 'manual' : slot.rainSource,
-        et0_mm: prev.et0Source === 'manual' ? prev.et0_mm : slot.et0_mm,
-        et0Source: prev.et0Source === 'manual' ? 'manual' : slot.et0Source,
+        rain_mm: prev.rain_mm,
+        rainSource: prev.rainSource,
+        et0_mm: prev.et0_mm,
+        et0Source: prev.et0Source,
         irrigation_mm: prev.irrigation_mm,
         irrigationSource: prev.irrigationSource,
         etc_mm: null,
@@ -478,13 +515,19 @@
   return {
     MAX_WEEKS: MAX_WEEKS,
     DEFAULT_FP: DEFAULT_FP,
+    DEFAULT_IRRIGATION_EFFECTIVE_PCT: DEFAULT_IRRIGATION_EFFECTIVE_PCT,
     FP_HELP_ES: FP_HELP_ES,
     FP_HELP_EN: FP_HELP_EN,
+    IRR_EFF_HELP_ES: IRR_EFF_HELP_ES,
+    IRR_EFF_HELP_EN: IRR_EFF_HELP_EN,
     todayIso: todayIso,
     parseIso: parseIso,
     addDaysIso: addDaysIso,
     daysBetween: daysBetween,
     clampFp: clampFp,
+    clampIrrigationEffectivePct: clampIrrigationEffectivePct,
+    mmToM3PerHa: mmToM3PerHa,
+    m3PerHaToMm: m3PerHaToMm,
     validateCycle: validateCycle,
     buildWeekSlots: buildWeekSlots,
     applySatelliteToWeeks: applySatelliteToWeeks,

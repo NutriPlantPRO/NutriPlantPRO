@@ -5258,10 +5258,15 @@
          * Fallback legacy: si hay last_payment y el contador aún no existe → 1.
          * No estimar por meses entre fechas.
          */
+        function adminPaidCyclesNumber(raw) {
+            var n = Number(raw);
+            return Number.isFinite(n) && n >= 0 ? Math.min(120, Math.floor(n)) : 0;
+        }
+
         function adminEstimatePaidCyclesForUser(u) {
             if (!adminUserHasPaidEvidence(u)) return 0;
-            var n = Number(u.paypal_paid_cycles);
-            if (Number.isFinite(n) && n >= 1) return Math.min(120, Math.floor(n));
+            var n = adminPaidCyclesNumber(u && u.paypal_paid_cycles);
+            if (n >= 1) return n;
             // Backfill / antes del contador: un last_payment conocido = al menos 1 cobro
             return 1;
         }
@@ -6178,6 +6183,7 @@
                                 last_payment_date: user.last_payment_date || null,
                                 next_payment_date: user.next_payment_date || null,
                                 paypal_subscription_id: user.paypal_subscription_id || null,
+                                paypal_paid_cycles: adminPaidCyclesNumber(user.paypal_paid_cycles),
                                 created_at: user.created_at || null,
                                 projects_count: projectsCount, // 📊 Número de proyectos del usuario
                                 isAdmin: isAdminUser,
@@ -6207,6 +6213,7 @@
                                 userData.last_payment_date = cloudUser.last_payment_date != null && cloudUser.last_payment_date !== '' ? cloudUser.last_payment_date : null;
                                 userData.next_payment_date = cloudUser.next_payment_date != null && cloudUser.next_payment_date !== '' ? cloudUser.next_payment_date : null;
                                 userData.paypal_subscription_id = cloudUser.paypal_subscription_id != null && cloudUser.paypal_subscription_id !== '' ? cloudUser.paypal_subscription_id : (userData.paypal_subscription_id || null);
+                                userData.paypal_paid_cycles = adminPaidCyclesNumber(cloudUser.paypal_paid_cycles);
                                 // Completar campos de perfil desde nube cuando en panel local estén vacíos.
                                 const hasLocalLocation = (
                                     (typeof userData.location === 'string' && userData.location.trim()) ||
@@ -6297,6 +6304,7 @@
                             last_payment_date: cu.last_payment_date || null,
                             next_payment_date: cu.next_payment_date || null,
                             paypal_subscription_id: cu.paypal_subscription_id || null,
+                            paypal_paid_cycles: adminPaidCyclesNumber(cu.paypal_paid_cycles),
                             created_at: cu.created_at,
                             last_login: cu.last_login || null,
                             projects_count: parseInt(cu.projects_count ?? 0, 10) || 0,
@@ -6368,6 +6376,10 @@
                 });
                 if (chosen.exclude_from_revenue === true || other.exclude_from_revenue === true) out.exclude_from_revenue = true;
                 else if (chosen.exclude_from_revenue === false || other.exclude_from_revenue === false) out.exclude_from_revenue = false;
+                out.paypal_paid_cycles = Math.max(
+                    adminPaidCyclesNumber(chosen.paypal_paid_cycles),
+                    adminPaidCyclesNumber(other.paypal_paid_cycles)
+                );
                 return out;
             };
             const byEmail = new Map();
@@ -6473,6 +6485,7 @@
                     u.last_payment_date = (cu.last_payment_date != null && cu.last_payment_date !== '') ? cu.last_payment_date : null;
                     u.next_payment_date = (cu.next_payment_date != null && cu.next_payment_date !== '') ? cu.next_payment_date : null;
                     u.paypal_subscription_id = (cu.paypal_subscription_id != null && cu.paypal_subscription_id !== '') ? cu.paypal_subscription_id : null;
+                    u.paypal_paid_cycles = adminPaidCyclesNumber(cu.paypal_paid_cycles);
                 });
             }
             return result;
@@ -8109,18 +8122,20 @@
             try {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionsOverview: load from cloud', e); } }
             const users = getAllUsers();
+            const cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
+            const revenuePool = cloudUsers.length > 0 ? cloudUsers : users;
             const activeAll = users.filter(u => u.subscription_status === 'active');
             const countingActive = users.filter(adminUserCountsTowardSubscriptionRevenue);
             const excludedActive = activeAll.filter(u => !adminUserCountsTowardSubscriptionRevenue(u));
-            const lifetime = adminLifetimePaidRevenueSummary(users);
+            const lifetime = adminLifetimePaidRevenueSummary(revenuePool);
             const yearNow = new Date().getFullYear();
             const yearPrev = yearNow - 1;
             const yearPair = await Promise.all([
                 adminFetchPaypalPaymentEventsForYear(yearNow),
                 adminFetchPaypalPaymentEventsForYear(yearPrev)
             ]);
-            const yearRev = adminYearPaidRevenueSummaryFromEvents(yearPair[0], users, yearNow);
-            const prevYearRev = adminYearPaidRevenueSummaryFromEvents(yearPair[1], users, yearPrev);
+            const yearRev = adminYearPaidRevenueSummaryFromEvents(yearPair[0], revenuePool, yearNow);
+            const prevYearRev = adminYearPaidRevenueSummaryFromEvents(yearPair[1], revenuePool, yearPrev);
             const overview = {
                 total: users.length,
                 active: activeAll.length,
@@ -8201,7 +8216,7 @@
                         <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">$${overview.lifetimeNetUsd.toFixed(2)} USD</div>
                             <div style="color: #64748b; margin-top: 8px;">🏦 Total cobrado histórico (neto)</div>
-                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Todos los años · cobros reales PayPal (<strong>paypal_paid_cycles</strong>) · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · cancelados con pago sí suman · no incluye «No suma»</div>
+                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Mismo total que la tarjeta de afuera · todos los años · cobros reales PayPal (<strong>paypal_paid_cycles</strong>) · $${ADMIN_NET_REVENUE_PER_CYCLE_USD}/ciclo · renovaciones (2+ ciclos) sí suman · cancelados con pago sí suman · no incluye «No suma»</div>
                             <div style="color:#065f46;font-size:12px;margin-top:8px;line-height:1.35;font-weight:700;">👥 ${overview.lifetimePeople} persona(s) con cobro · ${overview.lifetimeCycles} ciclo(s)${lifetimeExtraHtml}</div>
                         </div>
                         <div style="background: #fff7ed; padding: 20px; border-radius: 8px; border-left: 4px solid #f97316;">
@@ -10296,7 +10311,11 @@
                     '→' + escapeHtml(String(w.weekEnd || '').slice(5)) +
                     '</td><td style="padding:4px 6px;text-align:center;">' + (w.rain_mm != null ? w.rain_mm : '—') +
                     '</td><td style="padding:4px 6px;text-align:center;">' + (w.et0_mm != null ? w.et0_mm : '—') +
-                    '</td><td style="padding:4px 6px;text-align:center;">' + (w.irrigation_mm != null ? w.irrigation_mm : '—') +
+                    '</td><td style="padding:4px 6px;text-align:center;">' +
+                    (w.irrigation_mm != null
+                      ? w.irrigation_mm +
+                        (w.irrigation_m3_ha != null ? ' mm / ' + w.irrigation_m3_ha + ' m³/ha' : ' mm')
+                      : '—') +
                     '</td><td style="padding:4px 6px;text-align:center;">' + (w.etc_mm != null ? w.etc_mm : '—') +
                     '</td><td style="padding:4px 6px;text-align:center;font-weight:700;">' +
                     (w.ish_cumulative != null ? w.ish_cumulative + '%' : '—') +
@@ -10308,7 +10327,14 @@
                 '<h4 style="margin:0 0 8px 0;color:#0f766e;">📈 Rendimiento hídrico (ISH)</h4>' +
                 '<p style="margin:0 0 8px;font-size:13px;"><strong>ISH:</strong> ' + ish.result.ish +
                 '% · Ciclo: ' + escapeHtml(ish.cycleStart || '—') + ' → ' + escapeHtml(ish.cycleEnd || 'hoy') +
-                ' · Fp ' + (ish.fp != null ? ish.fp : 0.25) + '</p>' +
+                ' · Fp ' + (ish.fp != null ? ish.fp : 0.25) +
+                ' · riego efectivo ' +
+                (ish.irrigationEffectivePct != null
+                  ? ish.irrigationEffectivePct
+                  : ish.result.irrigationEffectivePct != null
+                    ? ish.result.irrigationEffectivePct
+                    : 100) +
+                '%</p>' +
                 (rows
                     ? '<div style="overflow:auto;max-height:280px;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#f1f5f9;">' +
                       '<th style="padding:4px;">#</th><th style="padding:4px;">Semana</th><th style="padding:4px;">Lluvia</th><th style="padding:4px;">ET₀</th><th style="padding:4px;">Riego</th><th style="padding:4px;">ETc</th><th style="padding:4px;">ISH</th>' +
@@ -16270,7 +16296,7 @@
                     if (client) {
                         const { data: freshProfile, error: freshErr } = await client
                             .from('profiles')
-                            .select('name, phone, profession, location, crops, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status, user_notes, radar_credits_bonus, chat_blocked, chat_limit_monthly')
+                            .select('name, phone, profession, location, crops, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, paypal_paid_cycles, subscription_amount, subscription_status, user_notes, radar_credits_bonus, chat_blocked, chat_limit_monthly')
                             .eq('id', userIdText)
                             .maybeSingle();
                         if (!freshErr && freshProfile) {
@@ -16285,6 +16311,7 @@
                                 last_payment_date: freshProfile.last_payment_date || user.last_payment_date || null,
                                 next_payment_date: freshProfile.next_payment_date || user.next_payment_date || null,
                                 paypal_subscription_id: freshProfile.paypal_subscription_id || user.paypal_subscription_id || null,
+                                paypal_paid_cycles: freshProfile.paypal_paid_cycles != null ? Number(freshProfile.paypal_paid_cycles) : user.paypal_paid_cycles,
                                 subscription_status: freshProfile.subscription_status || user.subscription_status,
                                 subscription_amount: freshProfile.subscription_amount ?? user.subscription_amount,
                                 user_notes: freshProfile.user_notes != null ? freshProfile.user_notes : user.user_notes,
@@ -16458,6 +16485,7 @@
                                 <div><strong>Monto:</strong> ${user.subscription_amount != null && user.subscription_amount !== '' && parseFloat(user.subscription_amount) > 0 ? `$${parseFloat(user.subscription_amount).toFixed(2)} USD` : 'Sin suscripción'}</div>
                                 <div><strong>Último Pago:</strong> ${lastPaymentDisplay}</div>
                                 <div><strong>Próximo Pago:</strong> ${nextPaymentDisplay}</div>
+                                <div><strong>Ciclos cobrados (PayPal):</strong> ${adminPaidCyclesNumber(user.paypal_paid_cycles) || (user.last_payment_date ? 1 : 0)}</div>
                                 <div style="grid-column: 1 / -1;"><strong>Subscription ID (PayPal):</strong> ${user.paypal_subscription_id ? `<code style="background:#e2e8f0;padding:2px 6px;border-radius:4px;font-size:13px;">${escapeHtml(user.paypal_subscription_id)}</code> — <small style="color:#64748b;">úsalo para buscar en paypal.com/billing/subscriptions</small>` : '—'}</div>
                                 <div><strong>Ingreso USD (panel admin):</strong> ${(isNutriplantAdminAccount(user) || user.exclude_from_revenue === true) ? '📉 No suma en totales de ingresos' : '✅ Cuenta en totales'}</div>
                             </div>

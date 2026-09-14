@@ -11305,3 +11305,24 @@ html.embed-login body {
   }
 }
 
+
+/* ISH Clima PRO — botones sin hover .btn (letra blanca sobre fondo blanco) */
+#climate-ish-panel .climate-ish-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+#climate-ish-panel .climate-ish-btn--sky:hover {
+  background: #0369a1 !important;
+  color: #fff !important;
+}
+#climate-ish-panel .climate-ish-btn--teal:hover {
+  background: #0f766e !important;
+  color: #fff !important;
+}
+#climate-ish-panel .climate-ish-btn--ghost:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}

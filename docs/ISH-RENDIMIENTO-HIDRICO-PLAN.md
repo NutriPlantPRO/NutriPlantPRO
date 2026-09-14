@@ -46,6 +46,8 @@ En la diapositiva GEOSMET, el déficit (\(D\)) entra **completo** al castigo; el
 **UI (una sola línea de ayuda, no más):**  
 «\(F_p\) pondera el exceso de agua frente al déficit (default 0,25). 0 = solo sequía; 1 = exceso igual que déficit.»
 
+**Curva de rendimiento relativo (cerrado):** usa \(\sum ETc\) **del ciclo completo** en el denominador semana a semana. El techo **solo baja o se mantiene** (estilo GEOSMET). Una semana buena no recupera merma ya contabilizada. El ISH final del ciclo es el mismo número al cierre.
+
 **Periodo de agregación (cerrado):** **semana** (gratis y PRO), tope **52 semanas** (~1 año).  
 No pasar a quincenas (15 d / 26 periodos) solo por “saturación”: Open-Meteo se pide **una vez** (diario del ciclo) y el cliente agrega; 52 filas son manejables. Quincena tapa más los escalones de la gráfica.  
 Día = ruido; mes tapa golpes. El fertirriego puede seguir en día/semana/mes; ISH **no** hereda esa unidad.

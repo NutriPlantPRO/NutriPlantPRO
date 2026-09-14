@@ -192,6 +192,7 @@
       cycleStart: null,
       cycleEnd: null,
       fp: 0.25,
+      irrigationEffectivePct: 100,
       macroTunnelNoRain: false,
       weeks: [],
       result: null
@@ -202,6 +203,11 @@
     if (st.cycleStart == null) st.cycleStart = null;
     if (st.cycleEnd == null) st.cycleEnd = null;
     if (st.fp == null || !Number.isFinite(Number(st.fp))) st.fp = 0.25;
+    if (st.irrigationEffectivePct == null || !Number.isFinite(Number(st.irrigationEffectivePct))) {
+      st.irrigationEffectivePct = 100;
+    } else if (window.NpIsh && window.NpIsh.clampIrrigationEffectivePct) {
+      st.irrigationEffectivePct = window.NpIsh.clampIrrigationEffectivePct(st.irrigationEffectivePct);
+    }
     if (st.macroTunnelNoRain == null) st.macroTunnelNoRain = false;
     if (!Array.isArray(st.weeks)) st.weeks = [];
     if (st.result == null) st.result = null;
@@ -2669,7 +2675,13 @@
       wcT('Fecha fin (vacío = hoy)', 'End date (empty = today)') +
       '</label><input type="date" id="climate-ish-end" value="' +
       (ish.cycleEnd || '') +
-      '" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></div>' +
+      '" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></div></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' +
+      '<button type="button" id="climate-ish-fetch" class="climate-ish-btn climate-ish-btn--sky" style="padding:10px 14px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">🌧️ ' +
+      wcT('Obtener lluvia y ET₀ del ciclo', 'Get cycle rainfall and ET₀') +
+      '</button></div>' +
+      '<p id="climate-ish-status" style="margin:0 0 12px;font-size:13px;color:#64748b;"></p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px;">' +
       '<div><label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Kc</label>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
       '<input type="number" id="climate-ish-kc" min="0" max="2" step="0.01" value="' +
@@ -2694,44 +2706,83 @@
       wcT('Macrotúnel / invernadero (lluvia = 0)', 'Macro-tunnel / greenhouse (rain = 0)') +
       '</label>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' +
-      '<button type="button" id="climate-ish-fetch" class="btn" style="padding:10px 14px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">🌧️ ' +
-      wcT('Obtener lluvia y ET₀ del ciclo', 'Get cycle rainfall and ET₀') +
-      '</button>' +
-      '<button type="button" id="climate-ish-suggest-irr" class="btn" style="padding:10px 14px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;">💧 ' +
+      '<button type="button" id="climate-ish-suggest-irr" class="climate-ish-btn climate-ish-btn--ghost" style="padding:10px 14px;background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;">💧 ' +
       wcT('Usar riego de Lluvia/Riego (si 7 d)', 'Use Rain/Irrigation water (if 7 d)') +
       '</button>' +
-      '<button type="button" id="climate-ish-recalc" class="btn" style="padding:10px 14px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">📊 ' +
+      '<button type="button" id="climate-ish-recalc" class="climate-ish-btn climate-ish-btn--teal" style="padding:10px 14px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">📊 ' +
       wcT('Calcular ISH', 'Calculate ISH') +
       '</button></div>' +
-      '<p id="climate-ish-status" style="margin:0 0 12px;font-size:13px;color:#64748b;"></p>' +
-      '<div id="climate-ish-hero" style="display:none;margin-bottom:12px;padding:14px;border-radius:10px;border:1px solid #99f6e4;background:linear-gradient(135deg,#ecfeff,#f0fdf4);"></div>' +
-      '<canvas id="climate-ish-chart" width="800" height="200" style="width:100%;height:200px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;margin-bottom:12px;"></canvas>' +
-      '<div id="climate-ish-kc-wrap" style="margin-bottom:12px;"></div>' +
+      '<h4 style="margin:12px 0 6px;font-size:15px;color:#0f172a;">' +
+      wcT('Tabla semanal (editable)', 'Weekly table (editable)') +
+      '</h4>' +
+      '<p style="margin:0 0 8px;font-size:12px;color:#64748b;">' +
+      wcT(
+        'Los datos de la tabla alimentan el ISH y la curva. Riego en mm o m³/ha; % efectivo arriba en Riego.',
+        'Table data feeds ISH and the curve. Irrigation in mm or m³/ha; effective % in the Irrig. header.'
+      ) +
+      '</p>' +
       '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;">' +
       '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f1f5f9;">' +
       '<th style="padding:6px;">#</th><th style="padding:6px;">' +
       wcT('Semana', 'Week') +
       '</th><th style="padding:6px;">' +
       wcT('Lluvia', 'Rain') +
-      '</th><th style="padding:6px;">ET₀</th><th style="padding:6px;">' +
+      '</th><th style="padding:6px;">ET₀</th><th style="padding:6px;background:#ecfdf5;color:#14532d;vertical-align:top;min-width:140px;">' +
       wcT('Riego', 'Irrig.') +
+      '<div style="margin:6px auto 4px;padding:6px 8px;max-width:150px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:11px;font-weight:700;color:#14532d;line-height:1.3;">' +
+      '<div>' +
+      wcT('% efectivo', 'Effective %') +
+      '</div>' +
+      '<input type="number" id="climate-ish-irr-eff" min="0" max="100" step="1" value="' +
+      (ish.irrigationEffectivePct != null ? ish.irrigationEffectivePct : 100) +
+      '" title="' +
+      wcT('% del riego aplicado que cuenta en el ISH', '% of applied irrigation used in ISH') +
+      '" style="width:52px;margin:4px 2px 0;padding:3px 4px;border:1px solid #86efac;border-radius:6px;font-size:12px;font-weight:700;color:#14532d;text-align:right;background:#fff;">' +
+      '</div><div style="font-size:10px;font-weight:600;color:#15803d;margin-top:2px;">mm · m³/ha</div>' +
       '</th><th style="padding:6px;">ETc</th><th style="padding:6px;">D</th><th style="padding:6px;">E</th><th style="padding:6px;">ISH</th>' +
-      '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>';
+      '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>' +
+      '<p style="margin:8px 0 0;font-size:11px;color:#64748b;">' +
+      (window.NpIsh
+        ? climatePrefs().language === 'en'
+          ? window.NpIsh.IRR_EFF_HELP_EN
+          : window.NpIsh.IRR_EFF_HELP_ES
+        : wcT(
+            '1 mm = 10 m³/ha. Edita mm o m³/ha; el % efectivo define qué fracción entra al balance.',
+            '1 mm = 10 m³/ha. Edit mm or m³/ha; effective % sets what fraction enters the balance.'
+          )) +
+      '</p>' +
+      '<p style="margin:10px 0 12px;font-size:11px;color:#94a3b8;">D = déficit · E = exceso · ISH = 100 × [1 − Σ(D + Fp·E) / Σ ETc]</p>' +
+      '<div id="climate-ish-hero" style="display:none;margin-bottom:12px;padding:14px;border-radius:10px;border:1px solid #99f6e4;background:linear-gradient(135deg,#ecfeff,#f0fdf4);"></div>' +
+      '<h4 style="margin:0 0 4px;font-size:15px;color:#0f172a;">' +
+      wcT('Rendimiento agrícola', 'Agricultural yield') +
+      '</h4>' +
+      '<p style="margin:0 0 8px;font-size:12px;color:#64748b;">' +
+      wcT(
+        'Curva del techo relativo por agua (solo baja). Eje Y = rendimiento % · Eje X = tiempo (semanas).',
+        'Water-related relative yield ceiling (only falls). Y = yield % · X = time (weeks).'
+      ) +
+      '</p>' +
+      '<canvas id="climate-ish-chart" width="800" height="240" style="width:100%;height:240px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;margin-bottom:12px;"></canvas>' +
+      '<div style="margin-top:12px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">' +
+      '<strong>' +
+      wcT('Estimado metodológico.', 'Methodological estimate.') +
+      '</strong> ' +
+      wcT(
+        'El ISH y la curva son una estimación según esta fórmula. Orientan el techo de rendimiento relativo al agua; no predicen la cosecha real. Validar en campo.',
+        'ISH and the curve are an estimate from this formula. They indicate the water-related yield ceiling; they do not predict actual harvest. Validate in the field.'
+      ) +
+      '<br><br><strong>' +
+      wcT('Lectura del % que aparece:', 'How to read the % shown:') +
+      '</strong> ' +
+      wcT(
+        '≥85 % agua casi no limita · 70–85 % estrés acumulado · <70 % techo hídrico tocado (estrés fuerte en el modelo). Mismo semáforo del resultado ISH — no veredicto comercial.',
+        '≥85% water barely limiting · 70–85% accumulated stress · <70% hydric ceiling hit (strong model stress). Same bands as the ISH result — not a commercial verdict.'
+      ) +
+      '</div>';
 
     var btnHost = document.getElementById('climate-ish-kc-btn');
     if (btnHost && window.NpIrrBalance && window.NpIrrBalance.getKcOpenTableButtonHtml) {
       btnHost.innerHTML = window.NpIrrBalance.getKcOpenTableButtonHtml('climate-ish');
-    }
-    var kcWrap = document.getElementById('climate-ish-kc-wrap');
-    if (kcWrap && window.NpIrrBalance && window.NpIrrBalance.getKcDetailsHtml) {
-      kcWrap.innerHTML = window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'climate-ish' });
-      window.NpIrrBalance.renderFaoKcTable('climate-ish-fao-kc-tbody', '', '');
-      var searchEl = document.getElementById('climate-ish-fao-kc-search');
-      if (searchEl) {
-        searchEl.oninput = function () {
-          window.NpIrrBalance.renderFaoKcTable('climate-ish-fao-kc-tbody', searchEl.value, '');
-        };
-      }
     }
 
     fillClimateIshTable(weeks, result);
@@ -2743,7 +2794,7 @@
       persistClimateIshFromDom(true);
     };
     document.getElementById('climate-ish-suggest-irr').onclick = suggestClimateIshIrrigation;
-    ['climate-ish-start', 'climate-ish-end', 'climate-ish-kc', 'climate-ish-fp', 'climate-ish-macro'].forEach(function (id) {
+    ['climate-ish-start', 'climate-ish-end', 'climate-ish-kc', 'climate-ish-fp', 'climate-ish-irr-eff', 'climate-ish-macro'].forEach(function (id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.onchange = function () {
@@ -2751,8 +2802,22 @@
           var v = el.value === '' ? null : parseFloat(el.value);
           setIshKcFromPanel(Number.isFinite(v) ? v : null);
         }
-        persistClimateIshFromDom(id === 'climate-ish-kc' || id === 'climate-ish-fp' || id === 'climate-ish-macro');
+        persistClimateIshFromDom(
+          id === 'climate-ish-kc' ||
+            id === 'climate-ish-fp' ||
+            id === 'climate-ish-irr-eff' ||
+            id === 'climate-ish-macro'
+        );
       };
+      if (id === 'climate-ish-irr-eff' || id === 'climate-ish-fp' || id === 'climate-ish-kc') {
+        el.oninput = function () {
+          if (id === 'climate-ish-kc') {
+            var v2 = el.value === '' ? null : parseFloat(el.value);
+            setIshKcFromPanel(Number.isFinite(v2) ? v2 : null);
+          }
+          persistClimateIshFromDom(true);
+        };
+      }
     });
     var tbody = document.getElementById('climate-ish-tbody');
     if (tbody) {
@@ -2766,10 +2831,17 @@
         if (!st.weeks[i]) return;
         var f = inp.getAttribute('data-f');
         var num = inp.value === '' ? null : parseFloat(inp.value);
-        st.weeks[i][f] = Number.isFinite(num) ? num : null;
-        if (f === 'rain_mm') st.weeks[i].rainSource = inp.value === '' ? null : 'manual';
-        if (f === 'et0_mm') st.weeks[i].et0Source = inp.value === '' ? null : 'manual';
-        if (f === 'irrigation_mm') st.weeks[i].irrigationSource = inp.value === '' ? null : 'manual';
+        var ISH = window.NpIsh;
+        if (f === 'irrigation_m3_ha') {
+          st.weeks[i].irrigation_mm =
+            Number.isFinite(num) && ISH ? ISH.m3PerHaToMm(num) : Number.isFinite(num) ? Math.round((num / 10) * 10) / 10 : null;
+          st.weeks[i].irrigationSource = inp.value === '' ? null : 'manual';
+        } else {
+          st.weeks[i][f] = Number.isFinite(num) ? num : null;
+          if (f === 'rain_mm') st.weeks[i].rainSource = inp.value === '' ? null : 'manual';
+          if (f === 'et0_mm') st.weeks[i].et0Source = inp.value === '' ? null : 'manual';
+          if (f === 'irrigation_mm') st.weeks[i].irrigationSource = inp.value === '' ? null : 'manual';
+        }
         persistClimateIshFromDom(true);
       };
     }
@@ -2786,8 +2858,29 @@
         '</td></tr>';
       return;
     }
+    var ISH = window.NpIsh;
+    var active = document.activeElement;
+    var focusI = null;
+    var focusF = null;
+    var selStart = null;
+    var selEnd = null;
+    if (active && active.getAttribute && active.closest) {
+      var trA = active.closest('tr[data-i]');
+      if (trA && tb.contains(trA)) {
+        focusI = trA.getAttribute('data-i');
+        focusF = active.getAttribute('data-f');
+        selStart = typeof active.selectionStart === 'number' ? active.selectionStart : null;
+        selEnd = typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+      }
+    }
     tb.innerHTML = rows
       .map(function (w, i) {
+        var m3 =
+          w.irrigation_mm != null && Number.isFinite(Number(w.irrigation_mm))
+            ? ISH
+              ? ISH.mmToM3PerHa(w.irrigation_mm)
+              : Math.round(Number(w.irrigation_mm) * 10 * 10) / 10
+            : '';
         return (
           '<tr data-i="' +
           i +
@@ -2801,9 +2894,18 @@
           (w.rain_mm != null ? w.rain_mm : '') +
           '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="0.1" data-f="et0_mm" value="' +
           (w.et0_mm != null ? w.et0_mm : '') +
-          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="0.1" data-f="irrigation_mm" value="' +
+          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px;text-align:center;background:#f0fdf4;">' +
+          '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin:2px 0;">' +
+          '<input type="number" min="0" step="0.1" data-f="irrigation_mm" value="' +
           (w.irrigation_mm != null ? w.irrigation_mm : '') +
-          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:6px;text-align:center;">' +
+          '" aria-label="Riego mm" style="width:64px;padding:4px;border:1px solid #86efac;border-radius:6px;">' +
+          '<span style="font-size:10px;color:#64748b;font-weight:600;min-width:36px;text-align:left;">mm</span></div>' +
+          '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin:2px 0;">' +
+          '<input type="number" min="0" step="0.1" data-f="irrigation_m3_ha" value="' +
+          m3 +
+          '" aria-label="Riego m3/ha" style="width:64px;padding:4px;border:1px solid #86efac;border-radius:6px;">' +
+          '<span style="font-size:10px;color:#64748b;font-weight:600;min-width:36px;text-align:left;">m³/ha</span></div>' +
+          '</td><td style="padding:6px;text-align:center;">' +
           (w.etc_mm != null ? w.etc_mm : '—') +
           '</td><td style="padding:6px;text-align:center;">' +
           (w.deficit_mm != null ? w.deficit_mm : '—') +
@@ -2815,6 +2917,17 @@
         );
       })
       .join('');
+    if (focusI != null && focusF) {
+      var el = tb.querySelector('tr[data-i="' + focusI + '"] input[data-f="' + focusF + '"]');
+      if (el) {
+        el.focus();
+        try {
+          if (typeof selStart === 'number' && typeof el.setSelectionRange === 'function') {
+            el.setSelectionRange(selStart, selEnd != null ? selEnd : selStart);
+          }
+        } catch (e) {}
+      }
+    }
   }
 
   function updateClimateIshHero(result) {
@@ -2846,7 +2959,11 @@
       result.sumEtc +
       ' mm · Fp ' +
       result.fp +
-      '</div></div></div>';
+      ' · ' +
+      wcT('riego efectivo', 'eff. irrig.') +
+      ' ' +
+      result.irrigationEffectivePct +
+      '%</div></div></div>';
   }
 
   function drawClimateIshChart(rows) {
@@ -2856,13 +2973,14 @@
     var w = canvas.width;
     var h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#f8fafc';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
     if (!rows || !rows.length) return;
-    var pad = { l: 36, r: 12, t: 12, b: 20 };
+    var pad = { l: 52, r: 18, t: 18, b: 36 };
     var plotW = w - pad.l - pad.r;
     var plotH = h - pad.t - pad.b;
     ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     for (var g = 0; g <= 4; g++) {
       var y = pad.t + (plotH * g) / 4;
@@ -2870,10 +2988,30 @@
       ctx.lineTo(pad.l + plotW, y);
     }
     ctx.stroke();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(pad.l, pad.t);
+    ctx.lineTo(pad.l, pad.t + plotH);
+    ctx.lineTo(pad.l + plotW, pad.t + plotH);
+    ctx.stroke();
+    ctx.fillStyle = '#475569';
+    ctx.font = '11px system-ui';
+    [100, 75, 50, 25, 0].forEach(function (lab, i) {
+      ctx.fillText(String(lab), 18, pad.t + (plotH * i) / 4 + 4);
+    });
+    ctx.save();
+    ctx.translate(14, pad.t + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#334155';
+    ctx.font = '600 12px system-ui';
+    ctx.fillText(wcT('Rendimiento (%)', 'Yield (%)'), 0, 0);
+    ctx.restore();
     var n = rows.length;
     var stepX = plotW / Math.max(n, 1);
-    ctx.strokeStyle = '#dc2626';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#0f766e';
+    ctx.lineWidth = 2.75;
+    ctx.lineJoin = 'round';
     ctx.beginPath();
     var started = false;
     rows.forEach(function (row, i) {
@@ -2889,6 +3027,11 @@
       ctx.lineTo(x1, y);
     });
     if (started) ctx.stroke();
+    ctx.fillStyle = '#334155';
+    ctx.font = '600 12px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(wcT('Tiempo (semanas)', 'Time (weeks)'), pad.l + plotW / 2, h - 10);
+    ctx.textAlign = 'left';
   }
 
   function persistClimateIshFromDom(recompute) {
@@ -2899,10 +3042,14 @@
     var startEl = document.getElementById('climate-ish-start');
     var endEl = document.getElementById('climate-ish-end');
     var fpEl = document.getElementById('climate-ish-fp');
+    var irrEffEl = document.getElementById('climate-ish-irr-eff');
     var macroEl = document.getElementById('climate-ish-macro');
     st.cycleStart = startEl && startEl.value ? startEl.value : null;
     st.cycleEnd = endEl && endEl.value ? endEl.value : null;
     st.fp = ISH.clampFp(fpEl ? fpEl.value : 0.25);
+    st.irrigationEffectivePct = ISH.clampIrrigationEffectivePct(
+      irrEffEl ? irrEffEl.value : st.irrigationEffectivePct
+    );
     st.macroTunnelNoRain = !!(macroEl && macroEl.checked);
     var end = st.cycleEnd || ISH.todayIso();
     if (st.cycleStart) {
@@ -2923,6 +3070,7 @@
         weeks: st.weeks,
         kc: Number.isFinite(kc) ? kc : null,
         fp: st.fp,
+        irrigationEffectivePct: st.irrigationEffectivePct,
         macroTunnelNoRain: st.macroTunnelNoRain
       });
       st.weeks = result.weeks;
@@ -2932,6 +3080,7 @@
             sumEtc: result.sumEtc,
             sumPenalty: result.sumPenalty,
             fp: result.fp,
+            irrigationEffectivePct: result.irrigationEffectivePct,
             band: result.band,
             updatedAt: result.updatedAt
           }
@@ -2973,10 +3122,19 @@
         preserveManual: true
       });
       if (status) {
+        var withEt0 = 0;
+        for (var wi = 0; wi < st.weeks.length; wi++) {
+          if (st.weeks[wi].et0_mm != null) withEt0 += 1;
+        }
         status.textContent =
           wcT('Clima cargado · ', 'Climate loaded · ') +
           st.weeks.length +
-          wcT(' semanas.', ' weeks.');
+          wcT(' semanas', ' weeks') +
+          ' · ET₀ en ' +
+          withEt0 +
+          '/' +
+          st.weeks.length +
+          '.';
       }
       persistClimateIshFromDom(true);
     } catch (err) {
@@ -3068,7 +3226,10 @@
           '</td><td style="padding:4px 6px;text-align:center;">' +
           (w.et0_mm != null ? w.et0_mm : '—') +
           '</td><td style="padding:4px 6px;text-align:center;">' +
-          (w.irrigation_mm != null ? w.irrigation_mm : '—') +
+          (w.irrigation_mm != null
+            ? w.irrigation_mm +
+              (w.irrigation_m3_ha != null ? ' / ' + w.irrigation_m3_ha + ' m³/ha' : '')
+            : '—') +
           '</td><td style="padding:4px 6px;text-align:center;">' +
           (w.etc_mm != null ? w.etc_mm : '—') +
           '</td><td style="padding:4px 6px;text-align:center;font-weight:700;">' +
@@ -3091,7 +3252,15 @@
       esc(ish.cycleEnd || rt('hoy', 'today')) +
       ' · Fp ' +
       (ish.fp != null ? ish.fp : 0.25) +
-      '</p>' +
+      ' · ' +
+      rt('riego efectivo', 'eff. irrig.') +
+      ' ' +
+      (ish.irrigationEffectivePct != null
+        ? ish.irrigationEffectivePct
+        : ish.result && ish.result.irrigationEffectivePct != null
+          ? ish.result.irrigationEffectivePct
+          : 100) +
+      '%</p>' +
       (rows
         ? '<div class="report-table-wrap"><table class="report-admin-table" style="font-size:11px;"><thead><tr>' +
           '<th>#</th><th>' +

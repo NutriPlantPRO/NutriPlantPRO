@@ -211,39 +211,77 @@ function npHideAdminDestinationChooser() {
   modal.style.display = 'none';
 }
 
-function npOpenInNewTab(url) {
+function npIsInstalledAppShell() {
+  try {
+    if (typeof window.matchMedia === 'function') {
+      if (window.matchMedia('(display-mode: standalone)').matches) return true;
+      if (window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+      if (window.matchMedia('(display-mode: window-controls-overlay)').matches) return true;
+    }
+    if (navigator.standalone === true) return true;
+  } catch (e) {}
+  return false;
+}
+
+/**
+ * Navega a un panel interno. En la app Mac (Chrome «Abrir como ventana»),
+ * window.open(_blank) abre una 2ª ventana del Panel — por eso ahí siempre
+ * se usa la misma ventana.
+ */
+function npNavigateApp(url, opts) {
+  opts = opts || {};
   if (!url) return false;
-  var win = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!win) {
-    location.href = url;
+  var sameWindow = opts.sameWindow === true || npIsInstalledAppShell();
+  if (sameWindow) {
+    try {
+      location.assign(url);
+    } catch (e) {
+      location.href = url;
+    }
     return false;
   }
-  try { win.opener = null; } catch (e) {}
+  var win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win) {
+    try {
+      location.assign(url);
+    } catch (e2) {
+      location.href = url;
+    }
+    return false;
+  }
+  try {
+    win.opener = null;
+  } catch (e3) {}
   return true;
+}
+
+function npOpenInNewTab(url) {
+  return npNavigateApp(url, { sameWindow: false });
 }
 
 function npGoAdminDestination(dest) {
   dest = String(dest || '').trim().toLowerCase();
   if (dest === 'dashboard' || dest === 'pro' || dest === 'nutriplant') {
     npHideAdminDestinationChooser();
-    npOpenInNewTab('dashboard.html');
+    // Siempre misma ventana: evita 2 «Panel» en la app Mac.
+    npNavigateApp('dashboard.html', { sameWindow: true });
     return;
   }
   if (dest === 'admin') {
     npMarkOwnerAdminSession();
     npHideAdminDestinationChooser();
-    npOpenInNewTab(NP_ADMIN_PANEL_URL);
+    npNavigateApp(NP_ADMIN_PANEL_URL);
     return;
   }
   if (dest === 'planpro' || dest === 'plan_pro' || dest === 'plan-pro') {
     npHideAdminDestinationChooser();
-    npOpenInNewTab(NP_PLANPRO_PANEL_URL);
+    npNavigateApp(NP_PLANPRO_PANEL_URL);
     return;
   }
   if (dest === 'airci' || dest === 'air_ci' || dest === 'air-ci') {
     npMarkOwnerAdminSession();
     npHideAdminDestinationChooser();
-    npOpenInNewTab(NP_AIRCI_PANEL_URL);
+    npNavigateApp(NP_AIRCI_PANEL_URL);
     return;
   }
 }
@@ -259,7 +297,7 @@ function npAfterOwnerAdminAuthenticated(email, submitBtn, originalText) {
     var next = (p.get('next') || '').trim();
     if (next) {
       setTimeout(function () {
-        location.href = npGetSafeLoginNextUrl();
+        location.replace(npGetSafeLoginNextUrl());
       }, 600);
       return true;
     }
@@ -289,6 +327,9 @@ function npAfterOwnerAdminAuthenticated(email, submitBtn, originalText) {
 window.npShowAdminDestinationChooser = npShowAdminDestinationChooser;
 window.npGoAdminDestination = npGoAdminDestination;
 window.npIsOwnerAdminEmail = npIsOwnerAdminEmail;
+window.npIsInstalledAppShell = npIsInstalledAppShell;
+window.npNavigateApp = npNavigateApp;
+window.npOpenInNewTab = npOpenInNewTab;
 
 // Si estamos en dashboard y no hay sesión, redirige a login:
 if (location.pathname.endsWith("dashboard.html") && !localStorage.getItem(AUTH_KEY)) {
@@ -408,7 +449,7 @@ if (form) {
             localStorage.removeItem('currentProjectId');
             if (npAfterOwnerAdminAuthenticated(emailNorm, submitBtn, originalText)) return;
             showSuccess(authT("auth.welcome_admin", "¡Bienvenido Administrador! Ingresando..."));
-            setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
+            setTimeout(() => { location.replace(npGetSafeLoginNextUrl()); }, 1000);
             return;
           }
         } catch (e) { console.warn('Admin Supabase sign-in falló, usando modo local:', e); }
@@ -448,7 +489,7 @@ if (form) {
       localStorage.removeItem('currentProjectId');
       if (npAfterOwnerAdminAuthenticated(emailNorm, submitBtn, originalText)) return;
       showSuccess(authT("auth.welcome_admin", "¡Bienvenido Administrador! Ingresando..."));
-      setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
+      setTimeout(() => { location.replace(npGetSafeLoginNextUrl()); }, 1000);
       return;
     }
     
@@ -480,7 +521,7 @@ if (form) {
           const name = result.user?.name || email.split('@')[0];
           clearLoginFailures();
           showSuccess(authT("auth.welcome_user", "¡Bienvenido, {name}! Ingresando...", { name: name }));
-          setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
+          setTimeout(() => { location.replace(npGetSafeLoginNextUrl()); }, 1000);
           return;
         }
         if (result.error && result.error !== 'Supabase no configurado') {
@@ -635,7 +676,7 @@ if (form) {
     
     // Redirigir después de un breve delay
     setTimeout(() => {
-      location.href = npGetSafeLoginNextUrl();
+      location.replace(npGetSafeLoginNextUrl());
     }, 1000);
   });
   

@@ -43,7 +43,36 @@ module.exports = [
       assert.equal(r.ish, 62.5);
       assert.equal(r.weeks[0].deficit_mm, 10);
       assert.equal(r.weeks[1].excess_mm, 20);
-      assert.ok(r.weeks[1].ish_cumulative != null);
+      // Semana 1: penalty 10 / 40 → 75 %. Semana 2: penalty 15 / 40 → 62.5 % (solo baja).
+      assert.equal(r.weeks[0].ish_cumulative, 75);
+      assert.equal(r.weeks[1].ish_cumulative, 62.5);
+      assert.equal(r.weeks[1].ish_cumulative, r.ish);
+    }
+  },
+  {
+    name: 'ISH: curva de rendimiento no recupera tras estrés',
+    run: function () {
+      var weeks = [
+        {
+          weekStart: '2026-01-01',
+          weekEnd: '2026-01-07',
+          rain_mm: 0,
+          et0_mm: 20,
+          irrigation_mm: 0
+        },
+        {
+          weekStart: '2026-01-08',
+          weekEnd: '2026-01-14',
+          rain_mm: 40,
+          et0_mm: 20,
+          irrigation_mm: 0
+        }
+      ];
+      // D1=20, E2=20*0.25=5 con Fp 0.25; sumEtc=40; Y1=50 %, Y2=37.5 % (no sube).
+      var r = NpIsh.computeIsh({ weeks: weeks, kc: 1, fp: 0.25 });
+      assert.equal(r.weeks[0].ish_cumulative, 50);
+      assert.equal(r.weeks[1].ish_cumulative, 37.5);
+      assert.ok(r.weeks[1].ish_cumulative <= r.weeks[0].ish_cumulative);
     }
   },
   {
@@ -106,6 +135,62 @@ module.exports = [
       );
       assert.ok(sug);
       assert.equal(sug.irrigation_mm, 50);
+    }
+  },
+  {
+    name: 'ISH: merge conserva satélite (no solo manual)',
+    run: function () {
+      var prev = [
+        {
+          weekStart: '2026-01-01',
+          weekEnd: '2026-01-07',
+          rain_mm: 12,
+          rainSource: 'satellite',
+          et0_mm: 18,
+          et0Source: 'satellite',
+          irrigation_mm: 5,
+          irrigationSource: 'manual'
+        }
+      ];
+      var slots = NpIsh.buildWeekSlots('2026-01-01', '2026-01-07');
+      var merged = NpIsh.mergeWeeksPreserveManual(prev, slots);
+      assert.equal(merged[0].rain_mm, 12);
+      assert.equal(merged[0].et0_mm, 18);
+      assert.equal(merged[0].rainSource, 'satellite');
+      assert.equal(merged[0].irrigation_mm, 5);
+    }
+  },
+  {
+    name: 'ISH: mm ↔ m³/ha y % efectivo en el balance',
+    run: function () {
+      assert.equal(NpIsh.mmToM3PerHa(25), 250);
+      assert.equal(NpIsh.m3PerHaToMm(250), 25);
+      assert.equal(NpIsh.clampIrrigationEffectivePct(null), 100);
+      assert.equal(NpIsh.clampIrrigationEffectivePct(150), 100);
+      assert.equal(NpIsh.clampIrrigationEffectivePct(-5), 0);
+
+      var weeks = [
+        {
+          weekStart: '2026-01-01',
+          weekEnd: '2026-01-07',
+          rain_mm: 0,
+          et0_mm: 20,
+          irrigation_mm: 20
+        }
+      ];
+      // 100% efectivo → supply=20, D=0 → ISH 100
+      var full = NpIsh.computeIsh({ weeks: weeks, kc: 1, fp: 0.25, irrigationEffectivePct: 100 });
+      assert.equal(full.ok, true);
+      assert.equal(full.ish, 100);
+      assert.equal(full.weeks[0].irrigation_m3_ha, 200);
+      assert.equal(full.weeks[0].irrigation_effective_mm, 20);
+
+      // 50% efectivo → supply=10, D=10, ETc=20 → ISH 50
+      var half = NpIsh.computeIsh({ weeks: weeks, kc: 1, fp: 0.25, irrigationEffectivePct: 50 });
+      assert.equal(half.ok, true);
+      assert.equal(half.ish, 50);
+      assert.equal(half.weeks[0].irrigation_effective_mm, 10);
+      assert.equal(half.irrigationEffectivePct, 50);
     }
   }
 ];
