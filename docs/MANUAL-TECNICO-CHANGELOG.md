@@ -5,6 +5,29 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-09-14 — Uniformidad de riego
+
+### Nuevo
+
+- Capítulo **Uniformidad de riego** (`uniformidad-riego.html`): DU 25%, CU Christiansen, EU Keller–Karmeli, lotes + muestras, fertirriego realmente distribuido. Gratis login/dashboard 🎯.
+- Knowledge: `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (**v2026.09.14**, 28 capítulos), Chat IA, Instructions GPT Socio, catálogos `manual_tecnico_catalog` / `free_tools_catalog` (`uniformidad_riego`).
+- UI **ES/EN** + sistema de unidades del usuario (métrico / US customary); física interna SI.
+
+## 2026-09-14 — Ventanas de Aplicación Foliar
+
+### Nuevo
+
+- Capítulo **Ventanas de Aplicación Foliar** (`ventanas-aplicacion-foliar.html`): 1 zona/lote; matriz horaria T, HR, viento, DPV aire y lluvia; factor limitante. Gratis login/dashboard 🍃.
+- Knowledge: `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (**v2026.09.14**, 27 capítulos), Chat IA, Instructions GPT Socio, catálogos `manual_tecnico_catalog` / `free_tools_catalog` (`ventanas_foliar`).
+- UI **ES/EN** + sistema de unidades del usuario (T °C/°F, viento km/h/mph); física interna SI.
+
+## 2026-09-14 — Rendimiento hídrico (ISH)
+
+### Nuevo
+
+- Capítulo **Rendimiento hídrico (ISH)** (`ish-rendimiento-hidrico.html`): índice de satisfacción hídrica del ciclo; fórmula, semanas, Fp, riego mm↔m³/ha, gratis + Clima PRO. Distinto de lámina/balance de periodo.
+- Knowledge: `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (**v2026.09.14**, 26 capítulos), Chat IA (`chat-simple.js`), Instructions GPT Socio, catálogos `manual_tecnico_catalog` / `free_tools_catalog` (`ish_rendimiento`).
+
 ## 2026-08-15 — Distribución por etapa en Fertirriego + Traer de análisis de suelo
 
 ### Actualizado

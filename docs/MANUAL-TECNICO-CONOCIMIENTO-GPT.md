@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.08.7 · **25 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.09.14 · **28 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-08-30 · **v2026.08.30c** (+ cítrico polvo por masa g/kg·oz/lb; líquidos mL/L; Pulso; cycleProgram)
+**Versión Knowledge:** 2026-09-14 · **v2026.09.14** (+ uniformidad 🎯 y foliar 🍃 con UI ES/EN + métrico/US; ISH ≠ lámina/balance de periodo)
 
 ---
 
@@ -59,6 +59,9 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `diseno-solucion-nutritiva-didactica` | Solución didáctica (gratis) | D |
 | `vpd-deficit-presion-vapor` | VPD, Radar NDVI/NDMI/NDRE/RGB | E |
 | `balance-hidrico-riego-clima` | Balance hídrico y riego rápido (Clima) | E |
+| `ish-rendimiento-hidrico` | Rendimiento hídrico (ISH) | E |
+| `ventanas-aplicacion-foliar` | Ventanas de Aplicación Foliar | E |
+| `uniformidad-riego` | Uniformidad de riego | E |
 | `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
 | `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
 | `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti | F |
@@ -261,6 +264,59 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | PDF | Reporte Clima puede incluir balance guardado + bloque 🪨 suelo (sesión navegador) |
 
 **API admin:** `project_climate` mode=saved (snapshot) | live | rainfall_refresh | rolling | **all** (recomendado «actualizado»). Campos live: `rolling_windows_ahora`, `irrigation_quick_calc_live`. Solo lectura; no altera al suscriptor.
+
+### 4.11c Rendimiento hídrico — ISH (Clima)
+
+**URL:** …/ish-rendimiento-hidrico.html · **Gratis:** login/dashboard 📈 · **PRO:** Clima → **Rendimiento hídrico**.
+
+| Concepto | Detalle |
+|----------|---------|
+| Pregunta | ¿Qué % del techo de rendimiento **relativo al agua** sostiene el ciclo? |
+| Fórmula | `ISH = 100 × [1 − Σ(Dᵢ + Fₚ·Eᵢ) / Σ ETcᵢ]`; ETc = ET₀ × Kc; D = déficit; E = exceso; Fp default **0,25** |
+| Agregación | Semanas, máx. **52**; curva de rendimiento relativo **solo baja o se mantiene** (Σ ETc del ciclo completo) |
+| Entradas | Fechas; lluvia/ET₀ satélite o manual; Kc; Fp; riego opcional mm ↔ m³/ha + % efectivo; macrotúnel = lluvia 0 |
+| Gratis vs PRO | Mapa/GPS vs centro polígono; LS `nutriplant_free_ish_rendimiento_v1` vs `climateAnalysis.ish`; PRO: sync Kc, traer riego de Lluvia/Riego si periodo = 7 d, PDF/Admin |
+| Lectura | ≥85 % / 70–85 % / &lt;70 % (modelo); **no** es predicción de cosecha comercial |
+| ≠ | `lamina_riego` / balance 1–7–30 d (m³ a aplicar). Manual balance-hidrico-riego-clima |
+
+**API Socio:** `free_tools_catalog` `tool_id: "ish_rendimiento"` · capítulo `ish_rendimiento_hidrico`. Core: `assets/np-ish-core.js`.
+
+### 4.11d Ventanas de Aplicación Foliar
+
+**URL:** …/ventanas-aplicacion-foliar.html · **Gratis:** login/dashboard 🍃. **No** hay pestaña PRO de clima (v1).
+
+| Concepto | Detalle |
+|----------|---------|
+| Pregunta | ¿A qué hora pulverizar en **este** lote? |
+| Alcance | **1 zona / 1 lote** (un punto de mapa). No compara varios predios. |
+| Variables | **Sweet spot** T 15–25 °C · HR 50–70 % · viento 2–8 km/h. Banda publicación T 18–28 · HR &gt;60 · viento 3–12 · DPV 0,3–1,2 kPa · 0 mm / sin lluvia ~2 h |
+| Regla | `clase = máx(T, HR, viento, DPV, lluvia)` — factor limitante |
+| DPV | Aire (Magnus); ≠ VPD avanzado con T hoja |
+| Horizonte | ~3 d horarios Open-Meteo; **24 h** (incluye noche; filtro opcional 05–20 h) |
+| UI | **ES/EN** + métrico/US del perfil (T °C/°F, viento km/h/mph); física SI |
+| Persistencia | LS `nutriplant_free_ventanas_foliar_v1` |
+| ≠ | `vpd` (cálculo puntual) · `pronostico_agroclimatico` (tabla diaria + alertas) |
+
+**API Socio:** `free_tools_catalog` `tool_id: "ventanas_foliar"` · capítulo `ventanas_aplicacion_foliar`. Core: `assets/np-foliar-window-core.js`.
+
+### 4.11e Uniformidad de riego
+
+**URL:** …/uniformidad-riego.html · **Gratis:** login/dashboard 🎯. **No** hay pestaña PRO (v1).
+
+| Concepto | Detalle |
+|----------|---------|
+| Pregunta | ¿Cómo se reparte el agua (y el fertirriego) entre goteros/zonas? |
+| Pantalla | Varios lotes, título editable, **Muestra 1, 2, 3…**. Unidad al inicio: L/h, mL/cm³, mm o inglesas |
+| Campo | DU 25% = media del cuarto bajo / media; CU Christiansen; CV; goteros cortos |
+| Agua | mm y m³/ha (1 mm = 10 m³/ha) o in / US gal/acre; con horas + marco, o lámina directa |
+| Fertirriego | hereda DU: cuarto bajo ≈ dosis × DU/100; zona alta ≈ dosis × qmáx/q̄ |
+| Diseño | `EU = 100 × (1 − 1.27 × CVf / √ep) × (qmin / q̄)`; q = qn × (P/Pn)^x |
+| Bandas DU | ≥90 / 80–90 / 70–80 / &lt;70 |
+| UI | **ES/EN** + métrico/US (mm↔in, m³/ha↔gal/acre, kg/ha↔lb/acre, MCA↔PSI, L/h↔gph); física SI |
+| Persistencia | LS `nutriplant_free_uniformidad_riego_v1` |
+| ≠ | `lamina_riego` · `ish_rendimiento` · `hidro_pulso_riego` |
+
+**API Socio:** `free_tools_catalog` `tool_id: "uniformidad_riego"` · capítulo `uniformidad_riego`. Core: `assets/np-irrigation-uniformity-core.js`.
 
 ### 4.12 Dureza, acidificación y solubilidad (agua)
 

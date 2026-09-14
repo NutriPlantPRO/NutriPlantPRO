@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Uniformidad de riego — Manual NutriPlant PRO</title>
+  <meta name="description" content="Uniformidad de riego: DU 25%, CU Christiansen, EU Keller–Karmeli, goteros de bajo caudal y fertirriego realmente distribuido. Herramienta gratuita NutriPlant PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/uniformidad-riego.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Uniformidad de riego",
+  "description": "DU del cuarto bajo, CU Christiansen y EU Keller–Karmeli. Muestras por lote, lámina/m³ y nutrientes realmente aplicados.",
+  "url": "https://nutriplantpro.com/manual-tecnico/capitulos/uniformidad-riego.html",
+  "inLanguage": "es",
+  "datePublished": "2026-09-14",
+  "dateModified": "2026-09-14",
+  "author": {
+    "@type": "Person",
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com/manual-tecnico/autoria.html"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "NutriPlant PRO",
+    "url": "https://nutriplantpro.com",
+    "logo": "https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Manual Técnico NutriPlant PRO",
+    "url": "https://nutriplantpro.com/manual-tecnico/index.html"
+  }
+}
+  </script>
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Agua y clima</p>
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
+
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-09</span>
+    <h1>Uniformidad de riego</h1>
+    <h2>Resumen</h2>
+    <p>
+      Un sistema puede aplicar <strong>el volumen correcto en promedio</strong> y, aun así,
+      dejar zonas en déficit. La herramienta mide cómo se reparte el agua entre goteros o
+      captadores: varias tablas (lotes) con muestras numeradas, unidad elegida al inicio
+      (L/h, mL/cm³, mm o inglesas), y el impacto en el <strong>fertirriego realmente distribuido</strong>.
+    </p>
+
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li><strong>Herramienta gratuita</strong> (login / dashboard): icono 🎯 <strong>Uniformidad de riego</strong>.</li>
+      <li>Dos pestañas: <strong>Campo</strong> (DU 25% / CU) y <strong>Diseño</strong> (EU Keller–Karmeli).</li>
+      <li>Persistencia: <code>nutriplant_free_uniformidad_riego_v1</code>.</li>
+      <li>La interfaz sigue el <strong>idioma</strong> (ES/EN) y el <strong>sistema de unidades</strong> (métrico o US customary: mm↔in, m³/ha↔gal/acre, kg/ha↔lb/acre, MCA↔PSI, L/h↔gph). El cálculo interno permanece en SI.</li>
+      <li>No es lámina/balance 🌧️ (m³ a aplicar), ni ISH 📈 (techo de ciclo), ni pulso ⏱️ (L y minutos en hidroponía).</li>
+    </ul>
+
+    <h2>Campo: DU, CU y cuarto bajo</h2>
+    <p>
+      El usuario arma uno o más lotes (título editable: Lote 1, Casa sombra…).
+      En cada lote agrega <strong>Muestra 1, 2, 3…</strong>. Puede medir caudal del gotero,
+      volumen captado (con minutos) o lámina.
+    </p>
+    <div class="mt-formula">DU 25% = 100 × (media del 25% más bajo) / (media total)</div>
+    <p>
+      El tamaño del cuarto bajo es <strong>n/4 redondeado</strong> (mínimo 1).
+      Es el criterio ASAE / FAO de <em>distribution uniformity</em>.
+      En paralelo: <strong>CU de Christiansen</strong>
+      <code>100 × (1 − Σ|qᵢ − q̄| / (n·q̄))</code> y CV de las muestras.
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>DU 25%</th><th>Lectura NutriPlant</th></tr></thead>
+      <tbody>
+        <tr><td>≥ 90%</td><td>Excelente</td></tr>
+        <tr><td>80–90%</td><td>Buena</td></tr>
+        <tr><td>70–80%</td><td>Aceptable</td></tr>
+        <tr><td>&lt; 70%</td><td>Baja — revisar sistema</td></tr>
+      </tbody>
+    </table>
+    <p>Recomendado: ≥4 muestras para un cálculo mínimo; <strong>≥16 goteros</strong> para un DU de campo fiable.</p>
+
+    <h2>Agua aplicada y fertirriego</h2>
+    <p>
+      Con caudal medio, horas del evento y marco (hilera × gotero) se estima lámina:
+      L/m² = mm. <strong>1 mm = 10 m³/ha</strong>.
+      El cuarto bajo recibe aproximadamente <code>DU/100</code> de esa lámina.
+    </p>
+    <p>
+      Si hay dosis prevista (kg/ha) o concentración (kg/m³ × m³/ha), el fertirriego
+      <strong>hereda la desuniformidad del agua</strong>:
+    </p>
+    <ul>
+      <li>Zona media ≈ dosis prevista.</li>
+      <li>Cuarto bajo ≈ dosis × DU/100.</li>
+      <li>Zona alta ≈ dosis × (q<sub>máx</sub> / q̄).</li>
+    </ul>
+    <p>El nutriente viaja con el agua: no hay “fertirriego uniforme” sobre un riego desuniforme.</p>
+
+    <h2>Diseño: EU Keller–Karmeli</h2>
+    <div class="mt-formula">EU = 100 × (1 − 1.27 × CVf / √ep) × (q<sub>min</sub> / q̄)</div>
+    <p>
+      q = q<sub>n</sub> × (P / P<sub>n</sub>)<sup>x</sup> (x típico 0,5).
+      La hidráulica simplificada replica el ejemplo de tabla crítica:
+      P<sub>máx</sub> ≈ P entrada; P<sub>mín</sub> = entrada − fricción principal − fricción de lateral + desnivel a favor.
+      Ejemplo: CVf 0,03, ep 2, q<sub>n</sub> 0,51 L/h, P<sub>n</sub> 5,5 MCA, P<sub>in</sub> 11,25 MCA → <strong>EU ≈ 91,1%</strong>.
+    </p>
+
+    <div class="mt-warn">
+      <p>Orientativo. No sustituye aforos de campo, manómetros ni la decisión del técnico. Un DU alto no garantiza lámina suficiente (eso es el balance 🌧️).</p>
+    </div>
+
+    <h2>Herramientas relacionadas</h2>
+    <ul>
+      <li><a href="balance-hidrico-riego-clima.html">Balance hídrico</a> — cuántos m³ aplicar en 1/7/30 d.</li>
+      <li><a href="ish-rendimiento-hidrico.html">Rendimiento hídrico (ISH)</a> — techo de ciclo por agua.</li>
+      <li><a href="programa-fertirriego-etapas.html">Fertirriego</a> — programa de kg/ha; esta herramienta dice cómo se <em>reparten</em>.</li>
+    </ul>
+    </div>
+
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-09</span>
+    <h1>Irrigation uniformity</h1>
+    <h2>Summary</h2>
+    <p>
+      A system can apply the right average volume and still leave zones short.
+      The tool measures how water is split among emitters or catch cans: several plot tables
+      with numbered samples, unit chosen up front (L/h, mL/cm³, mm or imperial), and the
+      impact on <strong>fertigation actually delivered</strong>.
+    </p>
+    <h2>Where it is in the app</h2>
+    <ul>
+      <li><strong>Free tool</strong> (login / dashboard): 🎯 <strong>Irrigation uniformity</strong>.</li>
+      <li>Tabs: <strong>Field</strong> (DU 25% / CU) and <strong>Design</strong> (Keller–Karmeli EU).</li>
+      <li>Persistence: <code>nutriplant_free_uniformidad_riego_v1</code>.</li>
+      <li>UI follows user <strong>language</strong> (ES/EN) and <strong>unit system</strong> (metric or US customary: mm↔in, m³/ha↔gal/acre, kg/ha↔lb/acre, MCA↔PSI, L/h↔gph). Physics stay SI.</li>
+      <li>Not irrigation depth 🌧️, not ISH 📈, not the hydroponic pulse ⏱️.</li>
+    </ul>
+    <h2>Field DU</h2>
+    <div class="mt-formula">DU 25% = 100 × (low-quarter mean) / (overall mean)</div>
+    <p>Low-quarter count = n/4 rounded (min. 1). Bands: ≥90 excellent · 80–90 good · 70–80 acceptable · &lt;70 poor. Prefer ≥16 emitters per plot.</p>
+    <h2>Fertigation</h2>
+    <p>Nutrients travel with the water. Low quarter dose ≈ intended dose × DU/100. 1 mm = 10 m³/ha.</p>
+    <h2>Design EU</h2>
+    <div class="mt-formula">EU = 100 × (1 − 1.27 × CVf / √ep) × (q<sub>min</sub> / q̄)</div>
+    <h2>Related tools</h2>
+    <ul>
+      <li><a href="balance-hidrico-riego-clima.html">Water balance</a>.</li>
+      <li><a href="ish-rendimiento-hidrico.html">Hydric yield (ISH)</a>.</li>
+    </ul>
+    </div>
+
+    <nav class="mt-chapter-nav"><a href="../index.html">Índice</a> · <a href="balance-hidrico-riego-clima.html">Balance hídrico</a> · <a href="ish-rendimiento-hidrico.html">ISH</a></nav>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260822newtab"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
+</body>
+</html>

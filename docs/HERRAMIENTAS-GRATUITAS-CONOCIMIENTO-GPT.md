@@ -20,6 +20,7 @@
 |-----------|-----------|
 | Usuario pregunta por un **cliente/suscriptor** | Usar Actions: `project_detail`, `project_analyses`, etc. **No** asumir datos de calculadoras gratis. |
 | Usuario pregunta **cómo funciona** una calculadora gratis | Usar este documento o `free_tools_catalog`. Explicar fórmulas, denominadores de %, límites. |
+| Usuario en **inglés** o **US customary** | Las herramientas de agua/clima (incl. 🍃 foliar y 🎯 uniformidad) siguen idioma + sistema de unidades del perfil; la física interna es SI. |
 | Usuario dice “en mi pantalla sale X” sin datos | No inventar X; pedir captura o valores, o explicar el criterio de cálculo. |
 | Confundir gratis vs PRO | Hidro **gratis** = didáctica global; Hidroponía **proyecto** = por etapa + fertilizantes + guardado en `projects.data`. |
 
@@ -148,6 +149,23 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 **API Socio:** `free_tools_catalog` con `tool_id: "pronostico_agroclimatico"`.
 
 **Errores a evitar:** confundir con VPD gratis; asumir que generar lectura = ya hay alerta activa; inventar folio/estado de un solicitante sin panel admin; decir que es parte del plan $49/5 meses de NutriPlant PRO.
+
+### 🍃 Ventanas de Aplicación Foliar (`ventanas-foliar-free.html`)
+
+- **Qué es:** clasifica **hora por hora (24 h, incluye noche)** si el ambiente favorece pulverizar en **un solo lote**. Semáforo de 5 colores. **No** compara varias zonas/fincas.
+- **Sweet spot (muy favorable, criterio de aplicación):** T **15–25 °C**, HR **50–70 %**, viento **2–8 km/h** (las tres a la vez). DPV aire **0,3–1,2 kPa**, lluvia **0 mm** y sin lluvia ~2 h.
+- **Banda más amplia (publicación NutriPlant, referencia):** T 18–28 °C, HR &gt; 60 %, viento 3–12 km/h. Fuera del sweet spot pero dentro de esa banda suele ser **favorable**.
+- **Regla:** `clase = máx(T, HR, viento, DPV, lluvia)` — manda el **factor limitante**. DPV = Magnus del **aire** (no T hoja).
+- **UI:** matriz ~**3 días** Open-Meteo **24 h** (se puede filtrar 05–20 h); toca una hora → interpretación. Noche: aviso de inversión/rocío. Lista «Mejores ventanas». **Idioma ES/EN** y unidades **métrico / US customary** del perfil (T °C/°F, viento km/h/mph); física interna SI.
+- **Dónde:** login (debajo de Pronóstico agroclimático) y dashboard icono 🍃.
+- **Persistencia:** `nutriplant_free_ventanas_foliar_v1`.
+- **≠** VPD 🌡️ (cálculo puntual) · Pronóstico agroclimático 🌤️ (tabla diaria + alertas) · Clima PRO.
+- **API Socio:** `free_tools_catalog` `tool_id: "ventanas_foliar"`. Manual: `ventanas-aplicacion-foliar`. Core: `assets/np-foliar-window-core.js`.
+
+**GPT — errores a evitar:**
+- Inventar varias filas tipo Arandas/Guzmán/Zamora: en NutriPlant es **un lote**.
+- Confundir con análisis foliar DOP (laboratorio).
+- Tratar el color como receta de producto o dosis.
 
 ### 🚜 Enmiendas por CIC (`enmienda-free.html`)
 
@@ -280,6 +298,43 @@ N_min (kg N/ha/año) = 10 000 × (P/100) × DA × 1 000 × (R/100) × (MO/100) �
 - **Login:** botón debajo de «Agua en suelo y textura». **Dashboard:** icono 🌧️ en barra de calculadoras.
 - **API Socio:** `free_tools_catalog` con `tool_id: "lamina_riego"`.
 - **Gratis vs PRO:** la herramienta gratis usa **coordenadas que el usuario elige**; el **proyecto suscriptor** usa polígono del predio + datos guardados en `climateAnalysis` (4 años mensuales, rolling 1/7/30, balance con enlace a análisis de suelo del proyecto).
+
+### 📈 Rendimiento hídrico — ISH (`ish-rendimiento-free.html`)
+
+- **Qué es:** **Índice de Satisfacción Hídrica (ISH)** del ciclo → techo de **rendimiento relativo al agua** (no predice cosecha comercial).
+- **Fórmula:** `ISH = 100 × [1 − Σ(Dᵢ + Fₚ·Eᵢ) / Σ ETcᵢ]`. Semanas (máx. **52**). Curva **solo baja o se mantiene** (denominador = Σ ETc del ciclo completo).
+- **Dónde:** login/dashboard (icono 📈). **PRO:** Clima → subpestaña **Rendimiento hídrico** (misma física; polígono + nube `climateAnalysis.ish`).
+- **Entradas:** fechas de ciclo; mapa/GPS/lat-lng (gratis) o centro de polígono (PRO); **Obtener lluvia y ET₀** (Open-Meteo) o manual; **Kc** + tabla FAO; **Fp** default **0,25**; macrotúnel = lluvia 0; riego opcional por semana **mm ↔ m³/ha** (1 mm = 10 m³/ha; US: in · US gal/acre) + **% efectivo**.
+- **PRO extra:** traer riego de Lluvia/Riego **solo si el periodo allá es 7 días**; sync Kc con balance; PDF/Admin.
+- **Lectura orientativa:** ≥85 % agua casi no limita (modelo); 70–85 % estrés acumulado; &lt;70 % techo hídrico tocado. Validar en campo.
+- **≠ lámina_riego / balance:** esa responde «¿cuántos m³ en 1/7/30 d?»; ISH responde «¿cuánto del techo hídrico del ciclo se sostuvo?».
+- **Persistencia:** `nutriplant_free_ish_rendimiento_v1` (localStorage).
+- **API Socio:** `free_tools_catalog` con `tool_id: "ish_rendimiento"`. Manual: capítulo `ish-rendimiento-hidrico`.
+- **Core:** `assets/np-ish-core.js` (misma lógica free + PRO).
+
+**GPT — preguntas frecuentes:**
+- «¿ISH = rendimiento real?» → **No**; techo relativo al agua. Nutrición, sanidad, variedad, etc. también pesan.
+- «¿Por qué la curva no sube?» → el modelo acumula merma con Σ ETc del ciclo; una semana buena no borra déficit previo.
+- «¿Fp?» → pondera exceso frente a déficit (0 = solo sequía; 1 = exceso = déficit). Default 0,25.
+- «¿Misma que lámina?» → **No**. Lámina = balance de periodo / m³ a aplicar; ISH = satisfacción del ciclo.
+
+### 🎯 Uniformidad de riego (`uniformidad-riego-free.html`)
+
+- **Qué es:** cómo se **reparte** el agua (y el fertirriego) entre goteros o zonas. Varios **lotes** con título editable y **Muestra 1, 2, 3…**. Unidad al inicio: caudal L/h (o gph), volumen mL/cm³/L/fl oz/gal, o lámina mm/in.
+- **Campo:** caudal individual y promedio; **DU 25%** = media del 25% más bajo / media total (n/4 redondeado); **CU Christiansen**; CV; filas en rojo = cuarto bajo; agua **mm y m³/ha** (1 mm = 10 m³/ha) o **in y US gal/acre** si US customary, si hay horas + marco de plantación o lámina.
+- **Fertirriego:** el nutriente viaja con el agua. Cuarto bajo ≈ dosis prevista × DU/100; zona alta ≈ dosis × (qmáx/q̄). Opcional: kg/ha (o lb/acre) o kg/m³ (o lb/1000 US gal).
+- **Diseño EU (Keller–Karmeli):** `EU = 100 × (1 − 1.27 × CVf / √ep) × (qmin / q̄)`; `q = qn × (P/Pn)^x` (x típico 0,5). Ejemplo de tabla crítica: CVf 0,03, ep 2, qn 0,51 L/h, Pn 5,5 MCA, Pin 11,25 MCA → **EU 91,1%**. Presiones **MCA o PSI** y caudal **L/h o gph** según perfil.
+- **UI:** **Idioma ES/EN** + métrico/US del usuario; física interna SI (mm, L/h, MCA, kg/ha).
+- **Bandas DU:** ≥90 excelente · 80–90 buena · 70–80 aceptable · &lt;70 revisar sistema. Recomendado ≥16 goteros/lote.
+- **Dónde:** login (junto a ISH) y dashboard icono 🎯.
+- **Persistencia:** `nutriplant_free_uniformidad_riego_v1`.
+- **≠** lámina 🌧️ (m³ a aplicar) · ISH 📈 (techo de ciclo) · pulso ⏱️ (L y minutos en hidro).
+- **API Socio:** `free_tools_catalog` `tool_id: "uniformidad_riego"`. Manual: `uniformidad-riego`. Core: `assets/np-irrigation-uniformity-core.js`.
+
+**GPT — errores a evitar:**
+- Confundir DU de campo (muestras) con EU de diseño (presiones + CVf).
+- Decir que un DU alto basta: no dice si la lámina es suficiente (eso es el balance).
+- Inventar que el fertirriego se reparte más uniforme que el agua.
 
 ### 🧂 Solubilidad e índice salino (`solubilidad-indice-salino-free.html`)
 

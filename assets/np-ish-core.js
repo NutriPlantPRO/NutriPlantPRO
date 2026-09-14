@@ -25,9 +25,15 @@
   var FP_HELP_EN =
     'Fp weights excess water vs deficit (default 0.25). 0 = drought only; 1 = excess equals deficit.';
   var IRR_EFF_HELP_ES =
-    '% efectivo: fracción del riego aplicado que entra al balance (pérdidas / eficiencia). 100 = todo cuenta. 1 mm = 10 m³/ha.';
+    'Fracción del riego aplicado que realmente entra al balance del ISH (pérdidas, eficiencia del sistema). 100 = todo cuenta; 80 = solo el 80 % del riego que capturas.';
   var IRR_EFF_HELP_EN =
-    'Effective %: fraction of applied irrigation used in the balance (losses / efficiency). 100 = all counts. 1 mm = 10 m³/ha.';
+    'Fraction of applied irrigation that enters the ISH balance (losses, system efficiency). 100 = all counts; 80 = only 80% of the irrigation you enter.';
+  var IRR_EFF_CONV_METRIC_ES = ' Conversión: 1 mm = 10 m³/ha.';
+  var IRR_EFF_CONV_METRIC_EN = ' Conversion: 1 mm = 10 m³/ha.';
+  var IRR_EFF_CONV_US_ES =
+    ' Unidades de pantalla: in y US gal/acre (se convierten solos; internamente 1 mm = 10 m³/ha).';
+  var IRR_EFF_CONV_US_EN =
+    ' Display units: in and US gal/acre (auto-convert; stored as 1 mm = 10 m³/ha).';
 
   function round1(n) {
     if (n == null || !Number.isFinite(Number(n))) return null;
@@ -512,6 +518,140 @@
     return { weekIndex: targetIdx, irrigation_mm: mm };
   }
 
+  function weekLabelStep(n) {
+    if (n > 40) return 4;
+    if (n > 26) return 3;
+    if (n > 16) return 2;
+    return 1;
+  }
+
+  function formatWeekTick(row, index) {
+    var start = row && row.weekStart ? String(row.weekStart).slice(5) : '';
+    return 'S' + (index + 1) + (start ? ' · ' + start : '');
+  }
+
+  /**
+   * Gráfica de rendimiento relativo (escalones). HiDPI + ejes nítidos + ticks X en diagonal.
+   * options: { language: 'es'|'en', emptyText }
+   */
+  function drawYieldChart(canvas, rows, options) {
+    options = options || {};
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.min(window.devicePixelRatio, 2.5) : 1;
+    var cssW = canvas.clientWidth || Number(canvas.getAttribute('width')) || 800;
+    var cssH = canvas.clientHeight || Number(canvas.getAttribute('height')) || 260;
+    if (cssW < 40) cssW = 800;
+    if (cssH < 40) cssH = 260;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cssW, cssH);
+
+    var langEn = options.language === 'en';
+    var emptyText =
+      options.emptyText ||
+      (langEn ? 'No data yet' : 'Sin datos aún');
+    if (!rows || !rows.length) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 14px Inter, system-ui, sans-serif';
+      ctx.fillText(emptyText, 24, cssH / 2);
+      return;
+    }
+
+    var pad = { l: 58, r: 20, t: 22, b: 78 };
+    var plotW = cssW - pad.l - pad.r;
+    var plotH = cssH - pad.t - pad.b;
+    var n = rows.length;
+    var stepX = plotW / Math.max(n, 1);
+    var fontUi = 'Inter, system-ui, -apple-system, sans-serif';
+
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var g = 0; g <= 4; g++) {
+      var gy = pad.t + (plotH * g) / 4;
+      ctx.moveTo(pad.l, gy);
+      ctx.lineTo(pad.l + plotW, gy);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, pad.t);
+    ctx.lineTo(pad.l, pad.t + plotH);
+    ctx.lineTo(pad.l + plotW, pad.t + plotH);
+    ctx.stroke();
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '600 12px ' + fontUi;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    [100, 75, 50, 25, 0].forEach(function (lab, i) {
+      ctx.fillText(String(lab), pad.l - 10, pad.t + (plotH * i) / 4);
+    });
+
+    ctx.save();
+    ctx.translate(16, pad.t + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '700 13px ' + fontUi;
+    ctx.fillText(langEn ? 'Yield (%)' : 'Rendimiento (%)', 0, 0);
+    ctx.restore();
+
+    ctx.strokeStyle = '#0f766e';
+    ctx.lineWidth = 2.75;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < n; i++) {
+      var row = rows[i];
+      var yv = row.yield_relative != null ? row.yield_relative : row.ish_cumulative;
+      if (yv == null || !Number.isFinite(Number(yv))) continue;
+      var x0 = pad.l + i * stepX;
+      var x1 = pad.l + (i + 1) * stepX;
+      var y = pad.t + plotH * (1 - Number(yv) / 100);
+      if (!started) {
+        ctx.moveTo(x0, y);
+        started = true;
+      } else {
+        ctx.lineTo(x0, y);
+      }
+      ctx.lineTo(x1, y);
+    }
+    if (started) ctx.stroke();
+
+    var tickEvery = weekLabelStep(n);
+    ctx.fillStyle = '#334155';
+    ctx.font = '600 10px ' + fontUi;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (var ti = 0; ti < n; ti++) {
+      if (!(ti === 0 || ti === n - 1 || ti % tickEvery === 0)) continue;
+      var cx = pad.l + ti * stepX + stepX / 2;
+      ctx.save();
+      ctx.translate(cx, pad.t + plotH + 10);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(formatWeekTick(rows[ti], ti), 0, 0);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '700 12px ' + fontUi;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(langEn ? 'Time (weeks)' : 'Tiempo (semanas)', pad.l + plotW / 2, cssH - 12);
+    ctx.textAlign = 'left';
+  }
+
   return {
     MAX_WEEKS: MAX_WEEKS,
     DEFAULT_FP: DEFAULT_FP,
@@ -520,6 +660,24 @@
     FP_HELP_EN: FP_HELP_EN,
     IRR_EFF_HELP_ES: IRR_EFF_HELP_ES,
     IRR_EFF_HELP_EN: IRR_EFF_HELP_EN,
+    IRR_EFF_CONV_METRIC_ES: IRR_EFF_CONV_METRIC_ES,
+    IRR_EFF_CONV_METRIC_EN: IRR_EFF_CONV_METRIC_EN,
+    IRR_EFF_CONV_US_ES: IRR_EFF_CONV_US_ES,
+    IRR_EFF_CONV_US_EN: IRR_EFF_CONV_US_EN,
+    irrigationEffectiveHelp: function (lang, unitSystem) {
+      var en = lang === 'en';
+      var us = unitSystem === 'us_customary';
+      return (
+        (en ? IRR_EFF_HELP_EN : IRR_EFF_HELP_ES) +
+        (us
+          ? en
+            ? IRR_EFF_CONV_US_EN
+            : IRR_EFF_CONV_US_ES
+          : en
+            ? IRR_EFF_CONV_METRIC_EN
+            : IRR_EFF_CONV_METRIC_ES)
+      );
+    },
     todayIso: todayIso,
     parseIso: parseIso,
     addDaysIso: addDaysIso,
@@ -536,6 +694,7 @@
     mergeWeeksPreserveManual: mergeWeeksPreserveManual,
     fetchCycleClimate: fetchCycleClimate,
     suggestIrrigationFromBalance: suggestIrrigationFromBalance,
+    drawYieldChart: drawYieldChart,
     round1: round1,
     round2: round2
   };

@@ -4,7 +4,7 @@
  * Mantener alineado con docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-  version: '2026-07-22',
+      version: '2026-09-14',
   scope:
     'Herramientas HTML en iframe/modal sin cuenta (y Pronóstico agroclimático también como servicio de alertas semanales con registro). Persistencia de calculadoras: localStorage del navegador (no Supabase), salvo el flujo de alertas agroclimáticas aprobado. Misma lógica en login.html y dashboard (iconos barra).',
   persistence: {
@@ -97,7 +97,7 @@ module.exports = {
       ],
       adminPanel: 'admin/agroclimate.html',
       summary:
-        'Lectura gratuita por punto (mapa/GPS/coords) + Kc: ~7 d histórico + ~7 d pronóstico (T, HR, rocío, Rad máx W/m², VPD, ETo, ETc=ETo×Kc, lluvia; gráfica horas VPD + lluvia/ETo/ETc). Distinto de vpd-free y de Clima PRO. Opcional: solicitar alerta semanal (1 predio); folio WA → aprobación admin → correo domingo 17:00 TZ predio con enlace token + PDF. WA manual; no Meta API. Kc/coords permanentes vía WA/admin.',
+        'Lectura gratuita por punto (mapa/GPS/coords) + Kc: ~7 d histórico + ~7 d pronóstico (T, HR, rocío, Rad máx W/m², VPD, ETo, ETc=ETo×Kc, lluvia; gráfica horas VPD + lluvia/ETo/ETc). Distinto de vpd-free, ventanas_foliar y de Clima PRO. Opcional: solicitar alerta semanal (1 predio); folio WA → aprobación admin → correo domingo 17:00 TZ predio con enlace token + PDF. WA manual; no Meta API. Kc/coords permanentes vía WA/admin.',
       metrics: [
         'temp_min_max_C',
         'humidity_min_max_pct',
@@ -116,6 +116,21 @@ module.exports = {
         approvalRequired: true,
         statuses: ['pending_whatsapp', 'pending_review', 'active', 'paused', 'rejected', 'unsubscribed']
       }
+    },
+    {
+      id: 'ventanas_foliar',
+      title: 'Ventanas de Aplicación Foliar',
+      file: 'ventanas-foliar-free.html',
+      lsKey: 'nutriplant_free_ventanas_foliar_v1',
+      manualChapter: 'ventanas_aplicacion_foliar',
+      summary:
+        'Una sola zona/lote. Matriz horaria 24 h (~3 d, Open-Meteo) T, HR, viento, DPV aire y lluvia. Sweet spot (muy favorable): T 15–25 °C, HR 50–70 %, viento 2–8 km/h (intersección). Banda publicación NutriPlant más amplia: T 18–28, HR >60, viento 3–12, DPV 0.3–1.2. Factor limitante. Incluye noche. UI ES/EN + métrico/US (°C/°F, km/h/mph); física SI. Persistencia LS. ≠ VPD 🌡️ ≠ Pronóstico 🌤️. No sustituye etiqueta.',
+      ranges: {
+        sweet_spot: { temperature_C: '15-25', rh_pct: '50-70', wind_kmh: '2-8' },
+        publication_band: { temperature_C: '18-28', rh_pct: '>60', wind_kmh: '3-12', vpd_kPa: '0.3-1.2' },
+        rain_mm: '0 during spray + no immediate rain (next 2 h)'
+      },
+      rule: 'overall_class = max(temp, rh, wind, vpd, rain)'
     },
     {
       id: 'enmienda',
@@ -215,10 +230,26 @@ module.exports = {
       title: 'Rendimiento hídrico (ISH)',
       file: 'ish-rendimiento-free.html',
       lsKey: 'nutriplant_free_ish_rendimiento_v1',
+      manualChapter: 'ish_rendimiento_hidrico',
       summary:
         'Índice de Satisfacción Hídrica del ciclo (semanas, máx. 52): mapa/GPS, fechas, Kc + FAO, Fp (default 0,25), lluvia/ET₀ satélite o manual, riego opcional mm ↔ m³/ha con % efectivo. ISH = 100×[1−Σ(D+Fp·E)/ΣETc]. Misma física en Clima PRO pestaña Rendimiento hídrico. Persistencia LS; ≠ lámina de riego.',
       formula: 'ISH = 100 * [1 - sum(Di + Fp*Ei) / sum(ETc_i)]',
       proEquivalent: 'Dashboard — Clima → Rendimiento hídrico'
+    },
+    {
+      id: 'uniformidad_riego',
+      title: 'Uniformidad de riego',
+      file: 'uniformidad-riego-free.html',
+      lsKey: 'nutriplant_free_uniformidad_riego_v1',
+      manualChapter: 'uniformidad_riego',
+      summary:
+        'Varios lotes con título editable y muestras numeradas (Muestra 1, 2, 3…). Unidad al inicio: caudal L/h o gph, volumen mL/cm³/L/fl oz/gal, o lámina mm/in. Campo: caudal individual y medio, DU 25% (cuarto bajo), CU Christiansen, CV, goteros/zonas cortos, agua mm y m³/ha (o in y gal/acre), fertirriego kg/ha o lb/acre en zona baja/media/alta (el nutriente hereda la DU). Diseño: EU Keller–Karmeli EU=100×(1−1.27×CVf/√ep)×(qmin/q̄). UI ES/EN + métrico/US (MCA↔PSI). Bandas DU ≥90 / 80–90 / 70–80 / <70. ≠ lámina_riego ≠ ISH ≠ hidro_pulso_riego.',
+      formulas: {
+        du25: '100 * low_quarter_mean / overall_mean',
+        cu: '100 * (1 - sum(|qi-qavg|) / (n*qavg))',
+        eu: '100 * (1 - 1.27 * CVf / sqrt(ep)) * (qmin / qavg)',
+        q_from_p: 'qn * (P / Pn)^x'
+      }
     },
     {
       id: 'solubilidad_is',
@@ -269,7 +300,7 @@ module.exports = {
   gptRules: [
     'No inventar números que el usuario ve en pantalla: si no tienes su captura, explica fórmulas y criterios de la herramienta.',
     'Distinguir herramienta gratuita (local) vs módulo de proyecto suscriptor (guardado en Supabase).',
-    'Pronóstico agroclimático ≠ VPD gratis ≠ pestaña Clima PRO. Alertas semanales requieren aprobación en admin/agroclimate.html; no inventar folios/estados.',
+    'Pronóstico agroclimático ≠ VPD gratis ≠ Ventanas de aplicación foliar ≠ pestaña Clima PRO. Alertas semanales requieren aprobación en admin/agroclimate.html; no inventar folios/estados.',
     'Para datos de un cliente suscriptor usar Actions: project_detail, project_analyses, etc.',
     'Para “¿cómo funciona la calculadora de X?” usar este catálogo o action free_tools_catalog.',
     'Persistencia gratuita: solo este navegador; no sustituye backup ni proyecto en nube (excepto alertas agroclimáticas aprobadas en nube).'

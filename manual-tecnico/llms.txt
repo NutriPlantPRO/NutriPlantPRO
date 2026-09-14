@@ -1,7 +1,7 @@
 # NutriPlant PRO — Manual Técnico (para crawlers e IA)
 
 > Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
-> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.07.1 · 25 capítulos.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.09.14 · 28 capítulos.
 
 ## Sitio
 
@@ -26,6 +26,9 @@
 - https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/ish-rendimiento-hidrico.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/ventanas-aplicacion-foliar.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/uniformidad-riego.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/interacciones-mulder-compatibilidad.html
@@ -50,5 +53,8 @@
 - Atlas de Aminoácidos Vegetales: 20 aminoácidos proteinogénicos; filtros por estrés, fenología y formulación; evidencia Alta/Media/Baja; no convertir rutas metabólicas en promesas de campo
 - Huella de carbono fertilizantes (CO₂e, ruta por fertilizante, equiv. km pick-up A vs B; NK+Mg no en catálogo — mezcla comercial): ver capítulo huella-carbono-fertilizantes
 - Balance hídrico (Clima): ETc=ETo×Kc; déficit climático/cultivo; riego mm/m³; franja regada; ver capítulo balance-hidrico-riego-clima
+- Rendimiento hídrico (ISH): ISH=100×[1−Σ(D+Fp·E)/ΣETc]; semanas máx. 52; techo relativo al agua (≠ lámina de periodo); ver capítulo ish-rendimiento-hidrico
+- Ventanas de aplicación foliar: 1 zona/lote; matriz horaria T·HR·viento·DPV aire·lluvia; factor limitante; ver capítulo ventanas-aplicacion-foliar
+- Uniformidad de riego: DU 25% / CU / EU Keller–Karmeli; lotes y muestras; fertirriego hereda DU; ver capítulo uniformidad-riego
 
-Actualizado: 2026-08-07
+Actualizado: 2026-09-14

@@ -39,7 +39,7 @@ MIS PROGRAMAS GPT: my_program_project_create/list/get/update (solo personal admi
 RADAR: radar_project/search/overview (signed_url ~1h; otra fecha: request_id)
 CATÁLOGOS: lab_analyses_catalog, free_tools_catalog, manual_tecnico_catalog, describe_api
 
-CLIMA (project_climate): ET₀ y lluvia van juntas, mismos años (hasta 4). saved= snapshot nube; live= tiempo actual; all= actualizado. Detalle en Knowledge/manual cap. balance-hidrico.
+CLIMA (project_climate): ET₀ y lluvia van juntas, mismos años (hasta 4). saved= snapshot nube; live= tiempo actual; all= actualizado. Detalle en Knowledge/manual: balance-hidrico + **ish-rendimiento-hidrico**.
 
 LAB: ppm, ideales, kg/ha, DOP, ICC. «Último X» → type + latest_only.
 
@@ -56,6 +56,12 @@ Fertirriego · Requerimiento: **Zona de equilibrio iónico** (3 col: zona / % me
 **Solución Nutritiva / Programa del ciclo:** en PRO, botón «Programa del ciclo» → modal multi-etapa (`hidro-solucion-free`); se guarda `hidroponia.cycleProgram`; admin + PDF casilla **Programa del ciclo** (`hydroCycle`). ≠ Solución por etapa (diseño activo) ≠ Análisis lab. Knowledge HERRAMIENTAS §💧 + MANUAL §4.9–4.10; API `free_tools_catalog` `hidro_solucion`.
 
 **Pulso de riego ⏱️:** `hidro-pulso-riego-free` — L/min del pulso (V, ATD, agotamiento, drenaje, macetas, goteros). API `hidro_pulso_riego`. Solo LS; ≠ balance 🌧️ suelo.
+
+**ISH 📈:** `ish_rendimiento` — techo de rendimiento relativo al agua del ciclo (semanas). Fórmula en HERRAMIENTAS/MANUAL; ≠ lámina 🌧️. PRO: Clima → Rendimiento hídrico.
+
+**Uniformidad 🎯:** `uniformidad_riego` — lotes + muestras; DU 25% / CU / EU Keller–Karmeli; fertirriego hereda DU. UI **ES/EN** + métrico/US. ≠ lámina 🌧️ ≠ ISH 📈 ≠ pulso ⏱️. MANUAL `uniformidad-riego`.
+
+**Ventanas foliar 🍃:** `ventanas_foliar` — **1 lote**, matriz **24 h** T/HR/viento/DPV/lluvia. Sweet spot T 15–25 °C · HR 50–70 % · viento 2–8 km/h (UI °F/mph si US). ≠ VPD 🌡️ ≠ Pronóstico 🌤️. MANUAL `ventanas-aplicacion-foliar`.
 
 **Ácidos (Agua / Hidro / acondicionamiento / PDF / admin):** HNO₃ 55% (aporta N-NO₃; líquido mL/L), H₂SO₄, H₃PO₄ 75/85 (líquidos). **Cítrico anhidro 99.5% = polvo soluble**: dosificar por **masa** (g/kg métrico; oz/lb US); 25,9 meq/mL; solo acidifica (sin N/P/K); mL/L solo equiv. vol. Tanque C.
 

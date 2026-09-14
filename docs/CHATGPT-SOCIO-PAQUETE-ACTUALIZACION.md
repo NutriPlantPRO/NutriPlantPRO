@@ -23,9 +23,9 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza versiones viejas):
 
-1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (Programa del ciclo + Pulso + cítrico polvo por masa)
+1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (**ISH 📈 + uniformidad 🎯 + foliar 🍃** ES/EN + métrico/US + Programa del ciclo + Pulso + cítrico)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b + ácidos: cítrico polvo g/kg·oz/lb)
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.08.30c**: cítrico polvo por masa g/kg·oz/lb; Pulso; cycleProgram)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.09.14**: + uniformidad 🎯 y foliar 🍃 UI ES/EN + métrico/US; 28 capítulos)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.14: actions `invest_pro_overview|holdings|lists`)
@@ -80,6 +80,9 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 6.2. **“¿Qué es Comparar análisis / tablas y gráficas en Reportes?”** → Knowledge ANALISIS §3b + MANUAL §4.3
 7. **“¿Cómo calculamos kg/ha en fertilidad del suelo? Cita la URL pública”** → `manual_tecnico_catalog` chapter `analisis_suelo_fertilidad_kgha` o Knowledge MANUAL
 8. **“¿Cómo calcula NutriPlant el balance hídrico de riego?”** → `manual_tecnico_catalog` chapter `balance_hidrico_riego_clima` o Knowledge MANUAL §4.11b
+8.0b. **“¿Qué es el Rendimiento hídrico / ISH?”** → HERRAMIENTAS §📈 / MANUAL §4.11c / `free_tools_catalog` `ish_rendimiento` / capítulo `ish_rendimiento_hidrico` — **≠** lámina (m³ en 1/7/30 d)
+8.0c. **“¿A qué hora pulverizo / ventanas de aplicación foliar?”** → HERRAMIENTAS §🍃 / MANUAL §4.11d / `free_tools_catalog` `ventanas_foliar` / capítulo `ventanas_aplicacion_foliar` — **1 lote**; UI ES/EN + °C/°F y km/h/mph; ≠ VPD puntual ≠ Pronóstico agroclimático
+8.0d. **“¿Cómo va la uniformidad de riego / DU / EU / fertirriego realmente aplicado?”** → HERRAMIENTAS §🎯 / MANUAL §4.11e / `free_tools_catalog` `uniformidad_riego` / capítulo `uniformidad_riego` — lotes + muestras; UI ES/EN + métrico/US; ≠ lámina ≠ ISH ≠ pulso
 8.1. **“¿Qué aminoácidos ayudan más bajo estrés hídrico o salino?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` + `free_tools_catalog` tool `atlas_aminoacidos_vegetales`
 8.2. **“¿Qué hormona manda en floración / qué nutrientes en etapa vegetativa?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` (§ ciclo hormonal) + `free_tools_catalog` tool `atlas_aminoacidos_vegetales` pestaña Ciclo hormonal
 9. **“¿Qué balance hídrico tiene el proyecto [nombre]?”** → `project_climate` mode=saved (`irrigation_quick_calc`)

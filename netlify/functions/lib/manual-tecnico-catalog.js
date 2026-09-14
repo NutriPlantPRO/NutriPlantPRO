@@ -5,9 +5,9 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-07-16',
+  version: '2026-09-14',
   scope:
-    'Biblioteca HTML pública, sin cuenta. 25 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO (incluye Radar Satelital / Lectura Satelital).',
+    'Biblioteca HTML pública, sin cuenta. 28 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO (incluye Radar Satelital / Lectura Satelital + ISH + ventanas de aplicación foliar + uniformidad de riego).',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -125,7 +125,37 @@ module.exports = {
       url: `${BASE}/capitulos/balance-hidrico-riego-clima.html`,
       pillar: 'E — Agua y clima',
       summary:
-        'Clima → Lluvia y ET₀ + lámina riego. ETc=ETo×Kc; balance m³; riego solo m³; ajuste almacén suelo manual + total integrado; «Sugerir desde 🪨 suelo»; franja regada; mm/m³; PDF bloque 🪨. Validar en campo.',
+        'Clima → Lluvia y ET₀ + lámina riego. ETc=ETo×Kc; balance m³; riego solo m³; ajuste almacén suelo manual + total integrado; «Sugerir desde 🪨 suelo»; franja regada; mm/m³; PDF bloque 🪨. Validar en campo. ≠ ISH (rendimiento hídrico de ciclo).',
+      status: 'published'
+    },
+    {
+      id: 'ish_rendimiento_hidrico',
+      slug: 'ish-rendimiento-hidrico',
+      title: 'Rendimiento hídrico (ISH)',
+      url: `${BASE}/capitulos/ish-rendimiento-hidrico.html`,
+      pillar: 'E — Agua y clima',
+      summary:
+        'ISH = 100×[1−Σ(D+Fp·E)/ΣETc]. Semanas (máx. 52); lluvia/ET₀ satélite o manual; Kc; Fp default 0,25; riego mm↔m³/ha + % efectivo. Curva de techo de rendimiento por agua (solo baja). Gratis + Clima PRO. ≠ lámina/balance de periodo.',
+      status: 'published'
+    },
+    {
+      id: 'ventanas_aplicacion_foliar',
+      slug: 'ventanas-aplicacion-foliar',
+      title: 'Ventanas de Aplicación Foliar',
+      url: `${BASE}/capitulos/ventanas-aplicacion-foliar.html`,
+      pillar: 'E — Agua y clima',
+      summary:
+        'Una sola zona/lote. Matriz 24 h (~3 d) T, HR, viento, DPV y lluvia. Sweet spot T 15–25 °C / HR 50–70 % / viento 2–8 km/h. Semáforo 5 colores; factor limitante. UI ES/EN + métrico/US. Gratis login/dashboard 🍃. ≠ VPD puntual ≠ Pronóstico agroclimático.',
+      status: 'published'
+    },
+    {
+      id: 'uniformidad_riego',
+      slug: 'uniformidad-riego',
+      title: 'Uniformidad de riego',
+      url: `${BASE}/capitulos/uniformidad-riego.html`,
+      pillar: 'E — Agua y clima',
+      summary:
+        'Lotes con muestras numeradas. DU 25% (cuarto bajo), CU Christiansen, EU Keller–Karmeli. Agua mm/m³/ha (o in/gal/acre) y fertirriego realmente distribuido (dosis × DU/100 en el cuarto bajo). UI ES/EN + métrico/US. Gratis login/dashboard 🎯. ≠ lámina ≠ ISH ≠ pulso hidro.',
       status: 'published'
     },
     {

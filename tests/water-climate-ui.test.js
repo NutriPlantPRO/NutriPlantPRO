@@ -52,6 +52,37 @@ module.exports = [
     }
   },
   {
+    name: 'agua/clima: foliar y uniformidad (T, viento, marco, dosis, área captador)',
+    run: function () {
+      usePrefs({ language: 'en', unit_system: 'us_customary', locale: 'en-US' });
+      [
+        ['temperature', 20],
+        ['speed', 8],
+        ['spacing', 1.5],
+        ['dose_mass_area', 50],
+        ['concentration_mass_volume', 1.2],
+        ['small_area', 100]
+      ].forEach(function (sample) {
+        close(ui.toSI(ui.fromSI(sample[1], sample[0]), sample[0]), sample[1], 1e-9);
+      });
+      assert.equal(ui.unit('temperature'), 'F');
+      assert.equal(ui.unit('speed'), 'mph');
+      assert.equal(ui.unit('spacing'), 'ft');
+      assert.equal(ui.unit('dose_mass_area'), 'lb/acre');
+      assert.equal(ui.unit('small_area'), 'in2');
+      close(ui.fromSI(0, 'temperature'), 32, 1e-12);
+      close(ui.fromSI(8, 'speed'), 8 * 0.621371192, 1e-6);
+      close(ui.fromSI(1.5, 'spacing'), 1.5 / 0.3048, 1e-9);
+      usePrefs({ language: 'es', unit_system: 'metric', locale: 'es-MX' });
+      assert.equal(ui.unit('temperature'), 'C');
+      assert.equal(ui.unit('spacing'), 'm');
+      assert.equal(ui.t('Uniformidad de riego', 'Irrigation uniformity'), 'Uniformidad de riego');
+      usePrefs({ language: 'en', unit_system: 'metric', locale: 'en-US' });
+      assert.equal(ui.t('Uniformidad de riego', 'Irrigation uniformity'), 'Irrigation uniformity');
+      assert.equal(ui.t('Ventanas de Aplicación Foliar', 'Foliar Application Windows'), 'Foliar Application Windows');
+    }
+  },
+  {
     name: 'agua/clima: lámina y volumen por área conservan igualdad física',
     run: function () {
       var depthMm = 25.4;

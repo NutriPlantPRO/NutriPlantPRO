@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rendimiento hídrico (ISH) — Manual NutriPlant PRO</title>
+  <meta name="description" content="Índice de Satisfacción Hídrica (ISH): balance semanal lluvia/riego vs ETc, Fp, % efectivo, curva de techo de rendimiento por agua. Gratis y Clima PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/ish-rendimiento-hidrico.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Rendimiento hídrico (ISH)",
+  "description": "Índice de Satisfacción Hídrica del ciclo: semanas, lluvia, ET₀, Kc, riego opcional y curva de techo de rendimiento por agua.",
+  "url": "https://nutriplantpro.com/manual-tecnico/capitulos/ish-rendimiento-hidrico.html",
+  "inLanguage": "es",
+  "datePublished": "2026-09-14",
+  "dateModified": "2026-09-14",
+  "author": {
+    "@type": "Person",
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com/manual-tecnico/autoria.html"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "NutriPlant PRO",
+    "url": "https://nutriplantpro.com",
+    "logo": "https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Manual Técnico NutriPlant PRO",
+    "url": "https://nutriplantpro.com/manual-tecnico/index.html"
+  }
+}
+  </script>
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
+
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-09</span>
+    <h1>Rendimiento hídrico (ISH)</h1>
+    <h2>Resumen</h2>
+    <p>
+      El <strong>Índice de Satisfacción Hídrica (ISH)</strong> estima qué porcentaje del
+      <strong>techo de rendimiento relativo al agua</strong> sostiene el ciclo, a partir de un balance
+      <strong>semanal</strong> de lluvia + riego frente a la demanda del cultivo (ETc).
+      Complementa el <a href="balance-hidrico-riego-clima.html">balance hídrico / lámina de riego</a>
+      (¿cuántos m³ aplicar en un periodo?) y el <a href="vpd-deficit-presion-vapor.html">VPD / Radar</a>.
+      <strong>No predice la cosecha comercial</strong> (también pesan nutrición, sanidad, variedad, suelo y manejo).
+    </p>
+
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li><strong>Herramienta gratuita</strong> (login / dashboard): icono 📈 <strong>Rendimiento hídrico (ISH)</strong>.</li>
+      <li><strong>Dashboard PRO</strong> → pestaña <strong>Clima</strong> → subpestaña <strong>Rendimiento hídrico</strong> (después de Lluvia/Riego).</li>
+      <li>Gratis: mapa / GPS / lat-lng. PRO: centro del <strong>polígono</strong> del proyecto.</li>
+      <li>Persistencia gratis: <code>nutriplant_free_ish_rendimiento_v1</code>. PRO: <code>climateAnalysis.ish</code>.</li>
+      <li>Kc compartido con Lluvia/Riego / Lectura (mismo valor de proyecto cuando aplica).</li>
+    </ul>
+
+    <h2>Fórmula</h2>
+    <div class="mt-formula">ISH = 100 × [1 − Σ(D<sub>i</sub> + F<sub>p</sub>·E<sub>i</sub>) / Σ ETc<sub>i</sub>]</div>
+    <ul>
+      <li><strong>ETc<sub>i</sub></strong> = ET₀<sub>i</sub> × Kc (semana <em>i</em>).</li>
+      <li><strong>D<sub>i</sub></strong> (déficit) = max(0, ETc − (lluvia + riego efectivo)).</li>
+      <li><strong>E<sub>i</sub></strong> (exceso) = max(0, (lluvia + riego efectivo) − ETc).</li>
+      <li><strong>F<sub>p</sub></strong> pondera el exceso frente al déficit (default <strong>0,25</strong>). 0 = solo sequía; 1 = exceso igual que déficit.</li>
+    </ul>
+    <p>
+      Agregación: <strong>semanas</strong>, máximo <strong>52</strong>. La curva de rendimiento relativo
+      <strong>solo baja o se mantiene</strong> (denominador = Σ ETc del ciclo completo): una semana buena no “recupera” merma ya contabilizada.
+    </p>
+
+    <h2>Entradas principales</h2>
+    <ul>
+      <li><strong>Fechas de ciclo</strong> + botón <strong>Obtener lluvia y ET₀</strong> (satélite Open-Meteo) o captura manual.</li>
+      <li><strong>Kc</strong> + tabla FAO-56 de consulta.</li>
+      <li><strong>Fp</strong> (una línea de ayuda junto al campo).</li>
+      <li><strong>Macrotúnel / invernadero:</strong> lluvia = 0.</li>
+      <li><strong>Riego opcional</strong> por semana: <strong>mm</strong> o <strong>m³/ha</strong> (1 mm = 10 m³/ha; en US: in · US gal/acre). Se convierten solos.</li>
+      <li><strong>% efectivo del riego:</strong> fracción del aplicado que entra al balance (pérdidas / eficiencia). Default 100.</li>
+      <li>PRO: botón para <strong>traer riego de Lluvia/Riego</strong> solo si el periodo allá es <strong>7 días</strong> y hay valor.</li>
+    </ul>
+
+    <h2>Lectura del resultado</h2>
+    <ul>
+      <li><strong>≥ 85 %</strong> — el agua casi no limita (en el modelo).</li>
+      <li><strong>70–85 %</strong> — estrés hídrico acumulado.</li>
+      <li><strong>&lt; 70 %</strong> — techo hídrico tocado (estrés fuerte en el modelo).</li>
+    </ul>
+    <div class="mt-warn">
+      <p>
+        Estimado metodológico. Orientan el techo de rendimiento <em>relativo al agua</em>;
+        <strong>no son un veredicto de rendimiento comercial</strong>. Validar siempre en campo.
+      </p>
+    </div>
+
+    <h2>Qué no es este módulo</h2>
+    <ul>
+      <li>No sustituye <a href="balance-hidrico-riego-clima.html">lámina / balance</a> (m³ a aplicar en 1/7/30 d).</li>
+      <li>No es Pronóstico agroclimático ni Radar / Lectura satelital.</li>
+      <li>No consume créditos Radar.</li>
+    </ul>
+
+    <h2>Relación con otras herramientas</h2>
+    <ul>
+      <li><a href="balance-hidrico-riego-clima.html">Balance hídrico</a> — cuánto regar en un periodo corto.</li>
+      <li><a href="uniformidad-riego.html">Uniformidad de riego</a> — cómo se reparte el agua y el fertirriego (DU/EU); distinto del techo de ciclo.</li>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD y Radar</a> — demanda atmosférica e índices.</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">Agua en suelo</a> — almacén físico (CC/PMP), distinto del ISH de ciclo.</li>
+    </ul>
+    </div>
+
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-09</span>
+    <h1>Hydric yield (ISH)</h1>
+    <h2>Summary</h2>
+    <p>
+      The <strong>Water Satisfaction Index (ISH)</strong> estimates what share of the
+      <strong>water-related relative yield ceiling</strong> the cycle can sustain, from a
+      <strong>weekly</strong> balance of rain + irrigation versus crop demand (ETc).
+      It complements the <a href="balance-hidrico-riego-clima.html">water balance / irrigation depth</a>
+      tool (how many m³ to apply in a period) and <a href="vpd-deficit-presion-vapor.html">VPD / Radar</a>.
+      <strong>It does not predict commercial harvest</strong> (nutrition, pests, variety, soil and management also matter).
+    </p>
+
+    <h2>Where it is in the app</h2>
+    <ul>
+      <li><strong>Free tool</strong> (login / dashboard): 📈 <strong>Hydric yield (ISH)</strong>.</li>
+      <li><strong>PRO dashboard</strong> → <strong>Climate</strong> → <strong>Hydric yield</strong> tab (after Rain/Irrigation).</li>
+      <li>Free: map / GPS / lat-lng. PRO: project <strong>polygon</strong> center.</li>
+      <li>Free persistence: <code>nutriplant_free_ish_rendimiento_v1</code>. PRO: <code>climateAnalysis.ish</code>.</li>
+    </ul>
+
+    <h2>Formula</h2>
+    <div class="mt-formula">ISH = 100 × [1 − Σ(D<sub>i</sub> + F<sub>p</sub>·E<sub>i</sub>) / Σ ETc<sub>i</sub>]</div>
+    <p>
+      Weekly aggregation, max <strong>52</strong> weeks. The relative yield curve
+      <strong>only falls or holds</strong> (full-cycle Σ ETc in the denominator).
+    </p>
+
+    <h2>Key inputs</h2>
+    <ul>
+      <li>Cycle dates + satellite rain/ET₀ (or manual), Kc, Fp (default 0.25), optional greenhouse (rain = 0).</li>
+      <li>Optional weekly irrigation: <strong>mm</strong> or <strong>m³/ha</strong> (1 mm = 10 m³/ha; US: in · US gal/acre) with <strong>effective %</strong>.</li>
+      <li>PRO: pull irrigation from Rain/Irrigation only if that period is <strong>7 days</strong>.</li>
+    </ul>
+
+    <h2>How to read the %</h2>
+    <ul>
+      <li><strong>≥ 85%</strong> — water barely limiting (in the model).</li>
+      <li><strong>70–85%</strong> — accumulated water stress.</li>
+      <li><strong>&lt; 70%</strong> — hydric ceiling hit.</li>
+    </ul>
+    <div class="mt-warn">
+      <p>Methodological estimate — not a commercial yield verdict. Always validate in the field.</p>
+    </div>
+
+    <h2>Related tools</h2>
+    <ul>
+      <li><a href="balance-hidrico-riego-clima.html">Water balance</a> — how much to irrigate in a short period.</li>
+      <li><a href="uniformidad-riego.html">Irrigation uniformity</a> — how water and fertigation are split (DU/EU); different from the cycle ceiling.</li>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD and Radar</a>.</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">Soil water</a> — physical store (FC/PWP).</li>
+    </ul>
+    </div>
+
+    <nav class="mt-chapter-nav"><a href="../index.html">Índice</a> · <a href="balance-hidrico-riego-clima.html">Balance hídrico</a> · <a href="vpd-deficit-presion-vapor.html">VPD y Radar</a></nav>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260822newtab"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
+</body>
+</html>

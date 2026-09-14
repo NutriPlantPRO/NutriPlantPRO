@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-units-core.js?v=20260914i18n2"></script>
+  <script src="assets/np-agronomic-units.js?v=20260730a"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260914i18n2"></script>
+  <script src="assets/free-tools-embed.js"></script>
+  <title>Uniformidad de riego — NutriPlant PRO</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; }
+    .wrap { position: relative; background: #fff; border-radius: 12px; padding: 16px; }
+    html.embed-login .np-free-tool-head { display: none; }
+    html.embed-login body { padding: 12px 14px 16px; }
+    .title { margin: 0 0 8px; font-size: 22px; color: #0f766e; font-weight: 800; }
+    .intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b; }
+    .card { border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #99f6e4; background: #fff; }
+    .card-note { background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tab {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid #99f6e4; background: #fff;
+      font-size: 13px; font-weight: 700; cursor: pointer; color: #0f766e;
+    }
+    .tab.active { background: #0f766e; color: #fff; border-color: #0f766e; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .field input, .field select {
+      width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px;
+      font-size: 14px; box-sizing: border-box;
+    }
+    .kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+    .kind {
+      display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px;
+      border: 2px solid #ccfbf1; border-radius: 10px; cursor: pointer; background: #f0fdfa;
+      font-size: 13px; font-weight: 700; color: #115e59;
+    }
+    .kind input { margin-top: 2px; }
+    .kind.active { border-color: #0d9488; background: #ccfbf1; }
+    .kind span { display: block; font-size: 11px; font-weight: 500; color: #64748b; }
+    .btn {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer; color: #0f172a;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+      color: #fff; border-color: #0f766e;
+    }
+    .btn-ghost { color: #b91c1c; border-color: #fecaca; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .lot {
+      border: 2px solid #99f6e4; border-radius: 12px; padding: 14px; margin-bottom: 14px; background: #f0fdfa;
+    }
+    .lot-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .lot-head input.title-in {
+      flex: 1; min-width: 140px; font-size: 16px; font-weight: 800; color: #0f766e;
+      border: 0; border-bottom: 2px dashed #5eead4; background: transparent; padding: 4px 2px;
+    }
+    table.samples { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border-radius: 8px; overflow: hidden; }
+    table.samples th, table.samples td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    table.samples th { background: #ccfbf1; color: #115e59; }
+    table.samples input { width: 100%; min-width: 72px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+    .table-wrap { overflow-x: auto; }
+    table.samples tr.low td { background: #fef2f2; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; }
+    .stat { background: #fff; border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px; }
+    .stat b { display: block; font-size: 18px; color: #0f766e; }
+    .stat span { font-size: 11px; color: #64748b; font-weight: 600; }
+    .warn { font-size: 12px; color: #b91c1c; margin: 8px 0 0; font-weight: 600; }
+    .ok { font-size: 12px; color: #166534; margin: 8px 0 0; font-weight: 600; }
+    .fert { margin-top: 10px; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; font-size: 13px; color: #854d0e; line-height: 1.45; }
+    .hidden { display: none !important; }
+    .eu-hero { font-size: 36px; font-weight: 800; color: #0f766e; margin: 8px 0; }
+    .key { margin-top: 8px; padding: 12px; background: #ecfdf5; border-radius: 10px; font-size: 12px; color: #14532d; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="np-free-tool-head">
+      <h2 class="title np-free-tool-title" id="ur-title">🎯 Uniformidad de riego</h2>
+      <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+    </div>
+    <p class="intro" id="ur-intro"></p>
+    <div class="card card-note" id="ur-note"></div>
+
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="field" id="ur-tab-field">Campo · DU / CU</button>
+      <button type="button" class="tab" data-tab="eu" id="ur-tab-eu">Diseño · EU Keller–Karmeli</button>
+    </div>
+
+    <div id="pane-field">
+      <div class="card">
+        <h3 style="margin:0 0 6px;color:#0f766e;font-size:16px;" id="ur-h-kind">1 · Qué mediste</h3>
+        <div class="kinds">
+          <label class="kind active" data-kind="flow"><input type="radio" name="ur-kind" value="flow" checked> <div id="ur-k-flow">Caudal<br><span>L/h o gal/h del gotero</span></div></label>
+          <label class="kind" data-kind="volume"><input type="radio" name="ur-kind" value="volume"> <div id="ur-k-vol">Volumen captado<br><span>mL, cm³, oz, gal</span></div></label>
+          <label class="kind" data-kind="depth"><input type="radio" name="ur-kind" value="depth"> <div id="ur-k-dep">Lámina<br><span>mm o pulgadas</span></div></label>
+        </div>
+        <div class="grid">
+          <div class="field">
+            <label for="ur-unit" id="ur-l-unit">Unidad de las muestras</label>
+            <select id="ur-unit"></select>
+          </div>
+          <div class="field vol-only hidden">
+            <label for="ur-min" id="ur-l-min">Tiempo de captura (min)</label>
+            <input id="ur-min" type="number" step="0.1" min="0" value="15" />
+          </div>
+          <div class="field vol-only hidden">
+            <label for="ur-area" id="ur-l-area">Área del captador (<span data-np-unit-label="small_area">cm²</span>), opcional</label>
+            <input id="ur-area" type="number" step="0.1" min="0" placeholder="" />
+          </div>
+          <div class="field">
+            <label for="ur-hours" id="ur-l-hours">Horas de riego del evento</label>
+            <input id="ur-hours" type="number" step="0.1" min="0" value="1" />
+          </div>
+          <div class="field">
+            <label for="ur-row" id="ur-l-row">Distancia entre hileras (<span data-np-unit-label="spacing">m</span>)</label>
+            <input id="ur-row" type="number" step="0.01" min="0" value="" />
+          </div>
+          <div class="field">
+            <label for="ur-emit" id="ur-l-emit">Distancia entre goteros (<span data-np-unit-label="spacing">m</span>)</label>
+            <input id="ur-emit" type="number" step="0.01" min="0" value="" />
+          </div>
+          <div class="field">
+            <label for="ur-dose" id="ur-l-dose">Dosis fertirriego prevista (<span data-np-unit-label="dose_mass_area">kg/ha</span>)</label>
+            <input id="ur-dose" type="number" step="0.01" min="0" placeholder="" />
+          </div>
+          <div class="field">
+            <label for="ur-conc" id="ur-l-conc">Concentración (<span data-np-unit-label="concentration_mass_volume">kg/m³</span>), opcional</label>
+            <input id="ur-conc" type="number" step="0.001" min="0" placeholder="" />
+          </div>
+          <div class="field">
+            <label for="ur-cvf" id="ur-l-cvf">CVf fabricante (opcional)</label>
+            <input id="ur-cvf" type="number" step="0.001" min="0" placeholder="ej. 0.03" />
+          </div>
+          <div class="field">
+            <label for="ur-ep" id="ur-l-ep">Goteros por planta ep</label>
+            <input id="ur-ep" type="number" step="1" min="1" placeholder="ej. 2" />
+          </div>
+        </div>
+        <p class="key" id="ur-hint-units"></p>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
+          <h3 style="margin:0;color:#0f766e;font-size:16px;" id="ur-h-lots">2 · Lotes y muestras</h3>
+          <div class="row-actions" style="margin:0;">
+            <button type="button" class="btn" id="ur-btn-demo">Ejemplo de campo</button>
+            <button type="button" class="btn btn-primary" id="ur-btn-add-lot">+ Lote</button>
+          </div>
+        </div>
+        <p class="intro" style="margin:8px 0 12px;" id="ur-lots-help"></p>
+        <div id="ur-lots"></div>
+      </div>
+    </div>
+
+    <div id="pane-eu" class="hidden">
+      <div class="card">
+        <h3 style="margin:0 0 8px;color:#0f766e;font-size:16px;" id="ur-h-eu">Uniformidad de emisión (diseño)</h3>
+        <p class="intro" id="ur-eu-intro"></p>
+        <p><button type="button" class="btn" id="ur-btn-eu-ex">Cargar ejemplo (91,1 %)</button></p>
+        <div class="grid">
+          <div class="field"><label for="eu-qn" id="eu-l-qn">Q nominal (L/h)</label><input id="eu-qn" type="number" step="0.001" value=""></div>
+          <div class="field"><label for="eu-pn" id="eu-l-pn">P nominal (MCA)</label><input id="eu-pn" type="number" step="0.01" value=""></div>
+          <div class="field"><label for="eu-x" id="eu-l-x">x (exponente)</label><input id="eu-x" type="number" step="0.01" value="0.5"></div>
+          <div class="field"><label for="eu-cvf" id="eu-l-cvf-des">CVf</label><input id="eu-cvf" type="number" step="0.001" value="0.03"></div>
+          <div class="field"><label for="eu-ep" id="eu-l-ep-des">ep (goteros/planta)</label><input id="eu-ep" type="number" step="1" value="2"></div>
+          <div class="field"><label for="eu-pin" id="eu-l-pin">P entrada válvula (MCA)</label><input id="eu-pin" type="number" step="0.01" value=""></div>
+          <div class="field"><label for="eu-fmain" id="eu-l-fmain">Fricción hasta última lateral (MCA)</label><input id="eu-fmain" type="number" step="0.01" value=""></div>
+          <div class="field"><label for="eu-flat" id="eu-l-flat">Fricción de la lateral (MCA)</label><input id="eu-flat" type="number" step="0.01" value=""></div>
+          <div class="field"><label for="eu-slope" id="eu-l-slope">Desnivel a favor (MCA)</label><input id="eu-slope" type="number" step="0.01" value=""></div>
+        </div>
+        <div id="eu-out" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/np-irrigation-uniformity-core.js?v=20260914ur1"></script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+(function () {
+  'use strict';
+  var U = window.NpIrrigationUniformity;
+  var UI = window.NpWaterClimateUI;
+  var persist;
+  var lots = [U.emptyLot('Lote 1', 4)];
+  var tab = 'field';
+  var euSi = { qnLph: 0.51, pnMca: 5.5, pinMca: 11.25, fmainMca: 2, flatMca: 1.5, slopeMca: 1 };
+  var syncingEu = false;
+
+  function prefs() {
+    try {
+      return window.NpPrefs && window.NpPrefs.get ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' };
+    } catch (e) {
+      return { language: 'es', unit_system: 'metric' };
+    }
+  }
+  function t(es, en) {
+    if (UI && typeof UI.t === 'function') return UI.t(es, en);
+    return prefs().language === 'en' ? en : es;
+  }
+  function imperial() { return prefs().unit_system === 'us_customary'; }
+  function kind() {
+    var el = document.querySelector('input[name="ur-kind"]:checked');
+    return el ? el.value : 'flow';
+  }
+  function unitsFor(k) {
+    if (k === 'depth') return imperial() ? ['in', 'mm'] : ['mm', 'in'];
+    if (k === 'volume') return imperial() ? ['US fl oz', 'US gal', 'mL', 'cm3', 'L'] : ['mL', 'cm3', 'L', 'US fl oz', 'US gal'];
+    return imperial() ? ['gph', 'L/h'] : ['L/h', 'gph'];
+  }
+  function fillUnits(keep) {
+    var sel = document.getElementById('ur-unit');
+    var opts = unitsFor(kind());
+    var cur = keep || sel.value;
+    sel.innerHTML = opts.map(function (u) {
+      return '<option value="' + u + '"' + (u === cur ? ' selected' : '') + '>' + u + '</option>';
+    }).join('');
+    if (opts.indexOf(sel.value) < 0) sel.value = opts[0];
+  }
+  function readBound(id, kind) {
+    if (UI && typeof UI.read === 'function') {
+      var v = UI.read(id, kind);
+      if (v != null) return v;
+    }
+    var n = Number(document.getElementById(id).value);
+    return Number.isFinite(n) ? n : null;
+  }
+  function extra() {
+    return {
+      kind: kind(),
+      unit: document.getElementById('ur-unit').value,
+      catchMinutes: document.getElementById('ur-min').value,
+      catchAreaCm2: readBound('ur-area', 'small_area'),
+      irrigHours: document.getElementById('ur-hours').value,
+      rowM: readBound('ur-row', 'spacing'),
+      emitM: readBound('ur-emit', 'spacing'),
+      doseKgHa: readBound('ur-dose', 'dose_mass_area'),
+      concKgM3: readBound('ur-conc', 'concentration_mass_volume'),
+      cvf: document.getElementById('ur-cvf').value || null,
+      ep: document.getElementById('ur-ep').value || null
+    };
+  }
+  function sampleLabel(i) { return t('Muestra', 'Sample') + ' ' + (i + 1); }
+  function fmt(v, d) {
+    var n = U.round(v, d == null ? 2 : d);
+    return n == null ? '—' : String(n).replace('.', t(',', '.'));
+  }
+  function coreErr(msg) {
+    if (!msg) return '';
+    if (prefs().language !== 'en') return msg;
+    var map = {
+      'Sin muestras numéricas.': 'Need numeric samples.',
+      'La media es 0.': 'Mean is 0.',
+      'CVf del fabricante inválido.': 'Invalid manufacturer CVf.',
+      'Goteros por planta (ep) debe ser > 0.': 'Emitters per plant (ep) must be > 0.',
+      'qmin y q medio requeridos.': 'qmin and mean q are required.',
+      'Presión de entrada requerida.': 'Inlet pressure is required.'
+    };
+    return map[msg] || msg;
+  }
+  function fmtUi(valueSi, kind, digits) {
+    if (valueSi == null || !Number.isFinite(Number(valueSi))) return '—';
+    if (UI && UI.resultFromSI) return UI.resultFromSI(Number(valueSi), kind, digits);
+    return fmt(valueSi, digits);
+  }
+  function fmtFlowLph(lph) {
+    if (lph == null || !Number.isFinite(Number(lph))) return '—';
+    if (imperial()) return fmt(Number(lph) / 3.785411784, 3) + ' gph';
+    return fmt(lph, 3) + ' L/h';
+  }
+  function fmtPressure(mca) {
+    if (mca == null || !Number.isFinite(Number(mca))) return '—';
+    if (imperial()) return fmt(U.mcaToPsi(mca), 2) + ' PSI';
+    return fmt(mca, 2) + ' MCA';
+  }
+  function fmtVolEvent(l) {
+    if (l == null || !Number.isFinite(Number(l))) return '—';
+    if (imperial()) return fmt(Number(l) / 3.785411784, 2) + ' gal';
+    return fmt(l, 2) + ' L';
+  }
+  function sampleUnit() { return document.getElementById('ur-unit').value; }
+  function fmtCanonical(v) {
+    if (v == null) return '—';
+    var k = kind();
+    var u = sampleUnit();
+    if (k === 'depth' && u === 'in') return fmt(v / 25.4, 3);
+    if ((k === 'flow' || k === 'volume') && u === 'gph') return fmt(v / 3.785411784, 3);
+    return fmt(v, 3);
+  }
+  function canonicalLabel() {
+    var u = sampleUnit();
+    var k = kind();
+    if (k === 'depth') return t('Lámina', 'Depth') + ' (' + u + ')';
+    if (k === 'volume') return t('Caudal', 'Flow') + ' (' + (imperial() ? 'gph' : 'L/h') + ')';
+    return t('Caudal', 'Flow') + ' (' + u + ')';
+  }
+  function pressureUnit() { return imperial() ? 'PSI' : 'MCA'; }
+  function flowUnit() { return imperial() ? 'gph' : 'L/h'; }
+  function writeEuDisplay() {
+    syncingEu = true;
+    var qnEl = document.getElementById('eu-qn');
+    if (qnEl) qnEl.value = imperial() ? U.round(euSi.qnLph / 3.785411784, 3) : euSi.qnLph;
+    function p(id, mca) {
+      var el = document.getElementById(id);
+      if (el) el.value = imperial() ? U.round(U.mcaToPsi(mca), 2) : mca;
+    }
+    p('eu-pn', euSi.pnMca);
+    p('eu-pin', euSi.pinMca);
+    p('eu-fmain', euSi.fmainMca);
+    p('eu-flat', euSi.flatMca);
+    p('eu-slope', euSi.slopeMca);
+    syncingEu = false;
+  }
+  function readEuDisplay() {
+    if (syncingEu) return;
+    var qn = Number(document.getElementById('eu-qn').value);
+    if (Number.isFinite(qn)) euSi.qnLph = imperial() ? qn * 3.785411784 : qn;
+    function p(id, key) {
+      var n = Number(document.getElementById(id).value);
+      if (!Number.isFinite(n)) return;
+      euSi[key] = imperial() ? U.psiToMca(n) : n;
+    }
+    p('eu-pn', 'pnMca');
+    p('eu-pin', 'pinMca');
+    p('eu-fmain', 'fmainMca');
+    p('eu-flat', 'flatMca');
+    p('eu-slope', 'slopeMca');
+  }
+  function kindChanged() {
+    document.querySelectorAll('.kind').forEach(function (el) {
+      el.classList.toggle('active', el.getAttribute('data-kind') === kind());
+    });
+    document.querySelectorAll('.vol-only').forEach(function (el) {
+      el.classList.toggle('hidden', kind() !== 'volume');
+    });
+    fillUnits();
+    renderLots();
+  }
+  function analyzeOne(lot) {
+    var samples = (lot.samples || []).map(function (s, i) {
+      return { label: sampleLabel(i), value: s.value };
+    });
+    return U.analyzeLot(samples, extra());
+  }
+  function renderLotStats(lot, i) {
+    var r = analyzeOne(lot);
+    var host = document.getElementById('lot-stats-' + i);
+    var tbody = document.querySelector('#lot-table-' + i + ' tbody');
+    if (tbody) {
+      Array.prototype.forEach.call(tbody.rows, function (tr, ri) {
+        var row = r.rows && r.rows[ri];
+        tr.classList.toggle('low', !!(row && row.lowQuarter));
+        var qCell = tr.querySelector('[data-q]');
+        var pCell = tr.querySelector('[data-p]');
+        if (qCell) qCell.textContent = row && row.canonical != null ? fmtCanonical(row.canonical) : '—';
+        if (pCell) pCell.textContent = row && row.pctOfMean != null ? fmt(row.pctOfMean, 0) + '%' : '—';
+      });
+    }
+    if (!host) return;
+    if (!r.ok) {
+      host.innerHTML = '<p class="warn">' + (coreErr(r.error) || t('Faltan muestras numéricas.', 'Need numeric samples.')) + '</p>';
+      return;
+    }
+    var band = r.band || {};
+    var rec = r.recommended === 'ok'
+      ? t('Muestra de campo suficiente (≥16).', 'Field sample size OK (≥16).')
+      : r.recommended === 'minimo'
+        ? t('Mínimo útil (≥4). Lo ideal en campo son ≥16 goteros.', 'Minimum (≥4). Field DU is stronger with ≥16 emitters.')
+        : t('Pocas muestras: el DU 25% es inestable.', 'Too few samples: low-quarter DU is unstable.');
+    var waterLine = '';
+    if (r.water && r.water.mm != null) {
+      waterLine = '<div class="stat"><b>' + fmtUi(r.water.mm, 'water_depth', 2) + '</b><span>' + t('Agua media (lámina)', 'Mean applied depth') + '</span></div>' +
+        '<div class="stat"><b>' + fmtUi(r.water.m3ha, 'volume_area', 1) + '</b><span>' + t('Volumen por ha', 'Volume per acre/ha') + '</span></div>';
+      if (r.waterLow && r.waterLow.mm != null) {
+        waterLine += '<div class="stat"><b>' + fmtUi(r.waterLow.mm, 'water_depth', 2) + '</b><span>' + t('Cuarto bajo (lámina)', 'Low quarter depth') + '</span></div>';
+      }
+    } else if (r.water && r.water.lPerEmitter != null) {
+      waterLine = '<div class="stat"><b>' + fmtVolEvent(r.water.lPerEmitter) + '</b><span>' + t('Por gotero (evento)', 'Per emitter (event)') + '</span></div>';
+    }
+    var fert = '';
+    if (r.fert) {
+      fert = '<div class="fert"><strong>' + t('Fertirriego realmente distribuido', 'Fertigation actually distributed') + '</strong><br>' +
+        t('Zona media', 'Average zone') + ': <b>' + fmtUi(r.fert.doseAvgKgHa, 'dose_mass_area', 2) + '</b> · ' +
+        t('Cuarto bajo', 'Low quarter') + ': <b>' + fmtUi(r.fert.doseLowKgHa, 'dose_mass_area', 2) + '</b> · ' +
+        t('Zona alta', 'High zone') + ': <b>' + fmtUi(r.fert.doseHighKgHa, 'dose_mass_area', 2) + '</b>. ' +
+        t('El cuarto bajo deja de recibir', 'The low quarter misses') + ' <b>' + fmtUi(r.fert.gapKgHa, 'dose_mass_area', 2) + '</b> ' +
+        t('respecto a la dosis prevista. El nutriente viaja con el agua: misma desuniformidad.', 'vs the intended dose. Nutrients travel with the water: same non-uniformity.') +
+        '</div>';
+    }
+    var euLine = '';
+    if (r.euField && r.euField.ok) {
+      euLine = '<div class="stat"><b>' + fmt(r.euField.eu, 1) + '%</b><span>EU ' + t('campo (Keller)', 'field (Keller)') + '</span></div>';
+    }
+    host.innerHTML =
+      '<div class="stats">' +
+        '<div class="stat"><b>' + fmtCanonical(r.mean) + '</b><span>' + t('Promedio', 'Average') + ' (' + canonicalLabel() + ')</span></div>' +
+        '<div class="stat"><b>' + fmtCanonical(r.min) + ' → ' + fmtCanonical(r.max) + '</b><span>' + t('Mín – máx', 'Min – max') + '</span></div>' +
+        '<div class="stat"><b style="color:' + (band.color || '#0f766e') + '">' + fmt(r.du, 1) + '%</b><span>DU 25% · ' + (prefs().language === 'en' ? band.labelEn : band.labelEs) + '</span></div>' +
+        '<div class="stat"><b>' + fmt(r.cu, 1) + '%</b><span>CU Christiansen</span></div>' +
+        '<div class="stat"><b>' + fmt(r.cvPct, 1) + '%</b><span>CV</span></div>' +
+        '<div class="stat"><b>' + fmt(100 * r.qminOverQavg, 1) + '%</b><span>q<sub>min</sub> / q̄</span></div>' +
+        euLine + waterLine +
+      '</div>' +
+      '<p class="' + (r.recommended === 'pocas' ? 'warn' : 'ok') + '">' + rec + '</p>' +
+      (r.lowLabels && r.lowLabels.length
+        ? '<p class="warn">' + t('Cuarto bajo (goteros/zonas cortos):', 'Low quarter (short emitters/zones):') + ' ' + r.lowLabels.join(', ') + '</p>'
+        : '') +
+      fert;
+  }
+  function renderLots() {
+    var host = document.getElementById('ur-lots');
+    host.innerHTML = lots.map(function (lot, i) {
+      var rows = (lot.samples || []).map(function (s, si) {
+        return '<tr>' +
+          '<td style="width:72px;font-weight:700;color:#0f766e;">' + sampleLabel(si) + '</td>' +
+          '<td><input type="number" step="any" min="0" data-lot="' + i + '" data-row="' + si + '" value="' + (s.value == null ? '' : s.value) + '"></td>' +
+          '<td data-q>—</td><td data-p>—</td>' +
+          '<td style="width:44px;"><button type="button" class="btn btn-ghost" data-del-row="' + i + ':' + si + '" title="×">×</button></td>' +
+          '</tr>';
+      }).join('');
+      return '<div class="lot" data-lot="' + i + '">' +
+        '<div class="lot-head">' +
+          '<input class="title-in" data-title="' + i + '" value="' + String(lot.title || '').replace(/"/g, '&quot;') + '">' +
+          (lots.length > 1 ? '<button type="button" class="btn btn-ghost" data-del-lot="' + i + '">' + t('Quitar lote', 'Remove plot') + '</button>' : '') +
+        '</div>' +
+        '<div class="table-wrap"><table class="samples" id="lot-table-' + i + '"><thead><tr>' +
+          '<th>#</th><th>' + t('Lectura', 'Reading') + '</th><th>' + canonicalLabel() + '</th><th>% ' + t('media', 'mean') + '</th><th></th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '<div class="row-actions">' +
+          '<button type="button" class="btn" data-add-row="' + i + '">+ ' + t('Muestra', 'Sample') + '</button>' +
+        '</div>' +
+        '<div id="lot-stats-' + i + '"></div>' +
+      '</div>';
+    }).join('');
+    lots.forEach(function (lot, i) { renderLotStats(lot, i); });
+  }
+  function refreshAllStats() {
+    lots.forEach(function (lot, i) { renderLotStats(lot, i); });
+  }
+  function nextLotTitle() {
+    return t('Lote', 'Plot') + ' ' + (lots.length + 1);
+  }
+  function renderEu() {
+    var hyd = U.designPressures({
+      pinMca: euSi.pinMca,
+      frictionMainMca: euSi.fmainMca,
+      frictionLateralMca: euSi.flatMca,
+      slopeFavorMca: euSi.slopeMca
+    });
+    var qn = euSi.qnLph;
+    var pn = euSi.pnMca;
+    var x = Number(document.getElementById('eu-x').value);
+    var qmin = U.flowFromPressure(qn, hyd.pMin, pn, x);
+    var qavg = U.flowFromPressure(qn, hyd.pAvg, pn, x);
+    var qmax = U.flowFromPressure(qn, hyd.pMax, pn, x);
+    var eu = U.emissionUniformity({
+      cvf: document.getElementById('eu-cvf').value,
+      ep: document.getElementById('eu-ep').value,
+      qmin: qmin,
+      qavg: qavg
+    });
+    var band = eu.ok ? U.duBand(eu.eu) : null;
+    var host = document.getElementById('eu-out');
+    if (!hyd.ok) {
+      host.innerHTML = '<p class="warn">' + coreErr(hyd.error) + '</p>';
+      return;
+    }
+    host.innerHTML =
+      '<div class="stats">' +
+        '<div class="stat"><b>' + fmtPressure(hyd.pAB) + '</b><span>P A→B</span></div>' +
+        '<div class="stat"><b>' + fmtPressure(hyd.pFirstEnd) + '</b><span>' + t('Fin 1ª lateral', 'End of 1st lateral') + '</span></div>' +
+        '<div class="stat"><b>' + fmtPressure(hyd.pLastEnd) + '</b><span>' + t('P mín (último emisor)', 'P min (last emitter)') + '</span></div>' +
+        '<div class="stat"><b>' + fmtPressure(hyd.pAvg) + '</b><span>P ' + t('media', 'avg') + '</span></div>' +
+        '<div class="stat"><b>' + fmtPressure(hyd.pMax) + '</b><span>P máx</span></div>' +
+        '<div class="stat"><b>' + fmtFlowLph(qmin) + '</b><span>q<sub>min</sub></span></div>' +
+        '<div class="stat"><b>' + fmtFlowLph(qavg) + '</b><span>q̄</span></div>' +
+        '<div class="stat"><b>' + fmtFlowLph(qmax) + '</b><span>q<sub>máx</sub></span></div>' +
+      '</div>' +
+          (eu.ok
+        ? '<div class="eu-hero" style="color:' + (band && band.color || '#0f766e') + '">EU = ' + fmt(eu.eu, 1) + '%</div>' +
+          '<p class="ok">q<sub>min</sub>/q̄ = ' + fmt(eu.qminOverQavg, 4) + ' · ' +
+          t('factor de fabricación', 'manufacturer factor') + ' = ' + fmt(eu.manufacturerFactor, 4) +
+          (band ? ' · ' + (prefs().language === 'en' ? band.labelEn : band.labelEs) : '') + '</p>' +
+          '<p class="key">EU = 100 × (1 − 1.27 × CVf / √ep) × (q<sub>min</sub> / q̄)</p>' +
+          (Math.abs(euSi.qnLph - 0.51) < 1e-6 && Math.abs(euSi.pnMca - 5.5) < 1e-6
+            ? '<p class="intro">' + t(
+              'Si redondeas qmin = 0,643 L/h y q̄ = 0,687 L/h como en la tabla crítica, EU = 91,1%. Aquí se usa el valor sin ese recorte (≈91,0%).',
+              'If you round qmin = 0.643 L/h and q̄ = 0.687 L/h as in the critical-table example, EU = 91.1%. Here the unrounded value is used (≈91.0%).'
+            ) + '</p>'
+            : '')
+        : '<p class="warn">' + (eu.error || '') + '</p>');
+  }
+  function setTab(name) {
+    tab = name;
+    document.getElementById('pane-field').classList.toggle('hidden', name !== 'field');
+    document.getElementById('pane-eu').classList.toggle('hidden', name !== 'eu');
+    document.querySelectorAll('.tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === name);
+    });
+    if (name === 'eu') renderEu();
+  }
+  function refreshCopy() {
+    var title = document.getElementById('ur-title');
+    if (title) title.textContent = t('🎯 Uniformidad de riego', '🎯 Irrigation uniformity');
+    document.title = t('Uniformidad de riego — NutriPlant PRO', 'Irrigation uniformity — NutriPlant PRO');
+    document.getElementById('ur-intro').innerHTML = t(
+      'Varios <strong>lotes</strong>, cada uno con <strong>muestras numeradas</strong>. Elige unidad al inicio (mm, cm³, L/h o unidades inglesas). El fertirriego hereda la desuniformidad del agua: el cuarto bajo también recibe menos nutriente.',
+      'Several <strong>plots</strong>, each with numbered <strong>samples</strong>. Pick a unit first (mm, cm³, L/h or imperial). Fertigation inherits irrigation non-uniformity: the low quarter also gets less nutrient.'
+    );
+    document.getElementById('ur-note').innerHTML = t(
+      'DU 25% = media del 25% más bajo / media total (ASAE/FAO). CU = Christiansen. EU de diseño = Keller–Karmeli. Orientativo; validar en campo. Recomendado ≥16 goteros por lote.',
+      'DU 25% = low-quarter mean / overall mean (ASAE/FAO). CU = Christiansen. Design EU = Keller–Karmeli. Indicative; validate in the field. ≥16 emitters per plot recommended.'
+    );
+    document.getElementById('ur-tab-field').textContent = t('Campo · DU / CU', 'Field · DU / CU');
+    document.getElementById('ur-tab-eu').textContent = t('Diseño · EU Keller–Karmeli', 'Design · Keller–Karmeli EU');
+    document.getElementById('ur-h-kind').textContent = t('1 · Qué mediste', '1 · What you measured');
+    document.getElementById('ur-k-flow').innerHTML = t('Caudal<br><span>L/h o gal/h del gotero</span>', 'Flow<br><span>L/h or gph at the emitter</span>');
+    document.getElementById('ur-k-vol').innerHTML = t('Volumen captado<br><span>mL, cm³, oz, gal</span>', 'Caught volume<br><span>mL, cm³, oz, gal</span>');
+    document.getElementById('ur-k-dep').innerHTML = t('Lámina<br><span>mm o pulgadas</span>', 'Depth<br><span>mm or inches</span>');
+    document.getElementById('ur-l-unit').textContent = t('Unidad de las muestras', 'Sample unit');
+    document.getElementById('ur-l-min').textContent = t('Tiempo de captura (min)', 'Catch time (min)');
+    document.getElementById('ur-l-area').innerHTML = t('Área del captador', 'Catch can area') +
+      ' (<span data-np-unit-label="small_area"></span>), ' + t('opcional', 'optional');
+    document.getElementById('ur-l-hours').textContent = t('Horas de riego del evento', 'Irrigation hours of the event');
+    document.getElementById('ur-l-row').innerHTML = t('Distancia entre hileras', 'Row spacing') +
+      ' (<span data-np-unit-label="spacing"></span>)';
+    document.getElementById('ur-l-emit').innerHTML = t('Distancia entre goteros', 'Emitter spacing') +
+      ' (<span data-np-unit-label="spacing"></span>)';
+    document.getElementById('ur-l-dose').innerHTML = t('Dosis fertirriego prevista', 'Intended fertigation dose') +
+      ' (<span data-np-unit-label="dose_mass_area"></span>)';
+    document.getElementById('ur-l-conc').innerHTML = t('Concentración', 'Concentration') +
+      ' (<span data-np-unit-label="concentration_mass_volume"></span>), ' + t('opcional', 'optional');
+    document.getElementById('ur-l-cvf').textContent = t('CVf fabricante (opcional)', 'Manufacturer CVf (optional)');
+    document.getElementById('ur-l-ep').textContent = t('Goteros por planta ep', 'Emitters per plant ep');
+    document.getElementById('ur-hint-units').textContent = imperial()
+      ? t(
+        '1 in ≈ 27 154 US gal/acre. Con caudal + horas + marco se estima lámina. DU ≥90 excelente · 80–90 buena · 70–80 aceptable · <70 revisar sistema.',
+        '1 in ≈ 27,154 US gal/acre. Flow + hours + spacing estimates depth. DU ≥90 excellent · 80–90 good · 70–80 acceptable · <70 check the system.'
+      )
+      : t(
+        '1 mm = 10 m³/ha. Con caudal + horas + marco de plantación se estima lámina. DU ≥90 excelente · 80–90 buena · 70–80 aceptable · <70 revisar sistema.',
+        '1 mm = 10 m³/ha. Flow + hours + spacing estimates depth. DU ≥90 excellent · 80–90 good · 70–80 acceptable · <70 check the system.'
+      );
+    document.getElementById('ur-h-lots').textContent = t('2 · Lotes y muestras', '2 · Plots and samples');
+    document.getElementById('ur-btn-demo').textContent = t('Ejemplo de campo', 'Field example');
+    document.getElementById('ur-btn-add-lot').textContent = '+ ' + t('Lote', 'Plot');
+    document.getElementById('ur-lots-help').textContent = t(
+      'Edita el título (Lote 1, Casa sombra, etc.). Cada fila es una muestra. Las filas en rojo son el cuarto bajo.',
+      'Edit the title (Plot 1, Shade house, etc.). Each row is a sample. Red rows are the low quarter.'
+    );
+    document.getElementById('ur-h-eu').textContent = t('Uniformidad de emisión (diseño)', 'Emission uniformity (design)');
+    document.getElementById('ur-eu-intro').innerHTML = t(
+      'EU teórica a partir de presiones de la red y CVf. El ejemplo reproduce EU = 91,1% (qn 0,51 L/h, Pn 5,5 MCA, Pin 11,25 MCA, 2 laterales/surco).',
+      'Theoretical EU from network pressures and CVf. The example reproduces EU = 91.1% (qn 0.51 L/h, Pn 5.5 mwc, Pin 11.25 mwc, 2 laterals/row).'
+    );
+    document.getElementById('ur-btn-eu-ex').textContent = t('Cargar ejemplo (91,1 %)', 'Load example (91.1%)');
+    document.getElementById('eu-l-qn').textContent = t('Q nominal', 'Nominal Q') + ' (' + flowUnit() + ')';
+    document.getElementById('eu-l-pn').textContent = t('P nominal', 'Nominal P') + ' (' + pressureUnit() + ')';
+    document.getElementById('eu-l-x').textContent = t('x (exponente)', 'x (exponent)');
+    document.getElementById('eu-l-cvf-des').textContent = 'CVf';
+    document.getElementById('eu-l-ep-des').textContent = t('ep (goteros/planta)', 'ep (emitters/plant)');
+    document.getElementById('eu-l-pin').textContent = t('P entrada válvula', 'Valve inlet P') + ' (' + pressureUnit() + ')';
+    document.getElementById('eu-l-fmain').textContent = t('Fricción hasta última lateral', 'Friction to last lateral') + ' (' + pressureUnit() + ')';
+    document.getElementById('eu-l-flat').textContent = t('Fricción de la lateral', 'Lateral friction') + ' (' + pressureUnit() + ')';
+    document.getElementById('eu-l-slope').textContent = t('Desnivel a favor', 'Favorable slope') + ' (' + pressureUnit() + ')';
+    fillUnits(sampleUnit());
+    writeEuDisplay();
+    if (UI && UI.applyLanguage) UI.applyLanguage(document.body);
+    if (UI && UI.refreshUnitLabels) UI.refreshUnitLabels();
+    renderLots();
+    renderEu();
+  }
+  function getPersistState() {
+    return {
+      tab: tab,
+      kind: kind(),
+      unit: document.getElementById('ur-unit').value,
+      catchMinutes: document.getElementById('ur-min').value,
+      catchAreaCm2: readBound('ur-area', 'small_area'),
+      irrigHours: document.getElementById('ur-hours').value,
+      rowM: readBound('ur-row', 'spacing'),
+      emitM: readBound('ur-emit', 'spacing'),
+      doseKgHa: readBound('ur-dose', 'dose_mass_area'),
+      concKgM3: readBound('ur-conc', 'concentration_mass_volume'),
+      cvf: document.getElementById('ur-cvf').value,
+      ep: document.getElementById('ur-ep').value,
+      lots: lots,
+      eu: {
+        qn: euSi.qnLph,
+        pn: euSi.pnMca,
+        x: document.getElementById('eu-x').value,
+        cvf: document.getElementById('eu-cvf').value,
+        ep: document.getElementById('eu-ep').value,
+        pin: euSi.pinMca,
+        fmain: euSi.fmainMca,
+        flat: euSi.flatMca,
+        slope: euSi.slopeMca
+      }
+    };
+  }
+  function applyPersistState(d) {
+    if (!d || typeof d !== 'object') return;
+    if (d.kind) {
+      var radio = document.querySelector('input[name="ur-kind"][value="' + d.kind + '"]');
+      if (radio) radio.checked = true;
+    }
+    fillUnits(d.unit);
+    if (d.catchMinutes != null) document.getElementById('ur-min').value = d.catchMinutes;
+    if (d.irrigHours != null) document.getElementById('ur-hours').value = d.irrigHours;
+    if (d.cvf != null) document.getElementById('ur-cvf').value = d.cvf;
+    if (d.ep != null) document.getElementById('ur-ep').value = d.ep;
+    function writeIf(id, val, kind) {
+      if (val == null || val === '') return;
+      var n = Number(val);
+      if (!Number.isFinite(n)) return;
+      if (UI && UI.write) UI.write(id, n, kind);
+      else document.getElementById(id).value = n;
+    }
+    writeIf('ur-area', d.catchAreaCm2, 'small_area');
+    writeIf('ur-row', d.rowM, 'spacing');
+    writeIf('ur-emit', d.emitM, 'spacing');
+    writeIf('ur-dose', d.doseKgHa, 'dose_mass_area');
+    writeIf('ur-conc', d.concKgM3, 'concentration_mass_volume');
+    if (d.eu) {
+      if (d.eu.qn != null && d.eu.qn !== '') euSi.qnLph = Number(d.eu.qn);
+      if (d.eu.pn != null && d.eu.pn !== '') euSi.pnMca = Number(d.eu.pn);
+      if (d.eu.pin != null && d.eu.pin !== '') euSi.pinMca = Number(d.eu.pin);
+      if (d.eu.fmain != null && d.eu.fmain !== '') euSi.fmainMca = Number(d.eu.fmain);
+      if (d.eu.flat != null && d.eu.flat !== '') euSi.flatMca = Number(d.eu.flat);
+      if (d.eu.slope != null && d.eu.slope !== '') euSi.slopeMca = Number(d.eu.slope);
+      if (d.eu.x != null) document.getElementById('eu-x').value = d.eu.x;
+      if (d.eu.cvf != null) document.getElementById('eu-cvf').value = d.eu.cvf;
+      if (d.eu.ep != null) document.getElementById('eu-ep').value = d.eu.ep;
+    }
+    writeEuDisplay();
+    if (Array.isArray(d.lots) && d.lots.length) {
+      lots = d.lots.map(function (lot, i) {
+        var samples = (lot.samples || []).map(function (s) {
+          return { value: s && s.value != null ? s.value : '' };
+        });
+        if (!samples.length) samples = [{ value: '' }, { value: '' }, { value: '' }, { value: '' }];
+        return { title: lot.title || (t('Lote', 'Plot') + ' ' + (i + 1)), samples: samples };
+      });
+    }
+    document.querySelectorAll('.kind').forEach(function (el) {
+      el.classList.toggle('active', el.getAttribute('data-kind') === kind());
+    });
+    document.querySelectorAll('.vol-only').forEach(function (el) {
+      el.classList.toggle('hidden', kind() !== 'volume');
+    });
+    if (d.tab) setTab(d.tab);
+    renderLots();
+    renderEu();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    lots = [U.emptyLot(t('Lote 1', 'Plot 1'), 4)];
+    fillUnits();
+    if (UI && typeof UI.init === 'function') {
+      UI.init({
+        fields: {
+          'ur-row': 'spacing',
+          'ur-emit': 'spacing',
+          'ur-dose': 'dose_mass_area',
+          'ur-conc': 'concentration_mass_volume',
+          'ur-area': 'small_area'
+        },
+        refresh: refreshCopy
+      });
+    }
+    document.querySelectorAll('input[name="ur-kind"]').forEach(function (el) {
+      el.addEventListener('change', kindChanged);
+    });
+    document.querySelectorAll('.tab').forEach(function (btn) {
+      btn.addEventListener('click', function () { setTab(btn.getAttribute('data-tab')); });
+    });
+    document.getElementById('ur-btn-add-lot').addEventListener('click', function () {
+      lots.push(U.emptyLot(nextLotTitle(), 4));
+      renderLots();
+    });
+    document.getElementById('ur-btn-demo').addEventListener('click', function () {
+      document.querySelector('input[name="ur-kind"][value="flow"]').checked = true;
+      fillUnits('L/h');
+      document.getElementById('ur-unit').value = 'L/h';
+      document.getElementById('ur-hours').value = '1';
+      if (UI && UI.write) {
+        UI.write('ur-row', 1.5, 'spacing');
+        UI.write('ur-emit', 0.3, 'spacing');
+        UI.write('ur-dose', 50, 'dose_mass_area');
+      } else {
+        document.getElementById('ur-dose').value = '50';
+      }
+      kindChanged();
+      lots = [{
+        title: t('Lote 1', 'Plot 1'),
+        samples: [10, 10, 10, 10, 8, 8, 6, 6].map(function (v) { return { value: v }; })
+      }];
+      renderLots();
+      if (persist && persist.saveNow) persist.saveNow();
+    });
+    document.getElementById('ur-btn-eu-ex').addEventListener('click', function () {
+      euSi = { qnLph: 0.51, pnMca: 5.5, pinMca: 11.25, fmainMca: 2, flatMca: 1.5, slopeMca: 1 };
+      document.getElementById('eu-x').value = '0.5';
+      document.getElementById('eu-cvf').value = '0.03';
+      document.getElementById('eu-ep').value = '2';
+      writeEuDisplay();
+      renderEu();
+      if (persist && persist.saveNow) persist.saveNow();
+    });
+    document.getElementById('ur-lots').addEventListener('input', function (e) {
+      var title = e.target.getAttribute('data-title');
+      if (title != null) {
+        lots[Number(title)].title = e.target.value;
+        return;
+      }
+      var lot = e.target.getAttribute('data-lot');
+      var row = e.target.getAttribute('data-row');
+      if (lot == null || row == null) return;
+      lots[Number(lot)].samples[Number(row)].value = e.target.value;
+      renderLotStats(lots[Number(lot)], Number(lot));
+    });
+    document.getElementById('ur-lots').addEventListener('click', function (e) {
+      var add = e.target.closest('[data-add-row]');
+      if (add) {
+        var i = Number(add.getAttribute('data-add-row'));
+        lots[i].samples.push({ value: '' });
+        renderLots();
+        return;
+      }
+      var delRow = e.target.closest('[data-del-row]');
+      if (delRow) {
+        var parts = delRow.getAttribute('data-del-row').split(':');
+        var li = Number(parts[0]);
+        var ri = Number(parts[1]);
+        if (lots[li].samples.length > 1) lots[li].samples.splice(ri, 1);
+        renderLots();
+        return;
+      }
+      var delLot = e.target.closest('[data-del-lot]');
+      if (delLot && lots.length > 1) {
+        lots.splice(Number(delLot.getAttribute('data-del-lot')), 1);
+        renderLots();
+      }
+    });
+    ['ur-unit', 'ur-min', 'ur-area', 'ur-hours', 'ur-row', 'ur-emit', 'ur-dose', 'ur-conc', 'ur-cvf', 'ur-ep'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', refreshAllStats);
+      document.getElementById(id).addEventListener('change', refreshAllStats);
+    });
+    ['eu-qn', 'eu-pn', 'eu-x', 'eu-cvf', 'eu-ep', 'eu-pin', 'eu-fmain', 'eu-flat', 'eu-slope'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', function () {
+        readEuDisplay();
+        renderEu();
+      });
+    });
+    if (window.NpFreePersist && window.NpFreePersist.bind) {
+      persist = window.NpFreePersist.bind('uniformidad_riego', getPersistState, applyPersistState);
+    }
+    if (readBound('ur-row', 'spacing') == null && UI && UI.write) UI.write('ur-row', 1.5, 'spacing');
+    if (readBound('ur-emit', 'spacing') == null && UI && UI.write) UI.write('ur-emit', 0.3, 'spacing');
+    writeEuDisplay();
+    refreshCopy();
+  });
+})();
+  </script>
+</body>
+</html>

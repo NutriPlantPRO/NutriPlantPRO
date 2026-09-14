@@ -146,6 +146,27 @@
       keywords: 'balance hídrico riego ETo ETc Kc déficit lluvia franja regada m3 almacén suelo puente agua en suelo total integrado sugerir desde suelo macrotúnel pluviómetro satélite Open-Meteo clima alcance raíz conversor magnitudes copa cama mm m3'
     },
     {
+      href: 'capitulos/ish-rendimiento-hidrico.html',
+      icon: '📈',
+      pillar: 'E · Agua y clima',
+      title: 'Rendimiento hídrico (ISH)',
+      keywords: 'ISH índice satisfacción hídrica rendimiento hídrico techo rendimiento agua semanas ETc ET0 Kc Fp déficit exceso riego mm m3/ha % efectivo Open-Meteo clima ciclo curva solo baja hydric yield water satisfaction'
+    },
+    {
+      href: 'capitulos/ventanas-aplicacion-foliar.html',
+      icon: '🍃',
+      pillar: 'E · Agua y clima',
+      title: 'Ventanas de Aplicación Foliar',
+      keywords: 'ventanas foliar pulverización spray horario DPV VPD humedad viento deriva lluvia lote zona matriz horaria aplicación foliar foliar application windows'
+    },
+    {
+      href: 'capitulos/uniformidad-riego.html',
+      icon: '🎯',
+      pillar: 'E · Agua y clima',
+      title: 'Uniformidad de riego',
+      keywords: 'uniformidad riego DU CU EU Keller Karmeli cuarto bajo gotero caudal fertirriego lámina m3/ha Christiansen distribution uniformity emission uniformity irrigation uniformity'
+    },
+    {
       href: 'capitulos/agua-dureza-acidificacion-solubilidad.html',
       icon: '💧',
       pillar: 'E · Agua y clima',

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ventanas de Aplicación Foliar — Manual NutriPlant PRO</title>
+  <meta name="description" content="Ventanas de aplicación foliar: una sola zona, matriz horaria T, HR, viento, DPV y lluvia. Semáforo de pulverización. Herramienta gratuita NutriPlant PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/ventanas-aplicacion-foliar.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Ventanas de Aplicación Foliar",
+  "description": "Una zona/lote. Clasificación horaria de temperatura, humedad relativa, viento, DPV y precipitación para pulverización foliar.",
+  "url": "https://nutriplantpro.com/manual-tecnico/capitulos/ventanas-aplicacion-foliar.html",
+  "inLanguage": "es",
+  "datePublished": "2026-09-14",
+  "dateModified": "2026-09-14",
+  "author": {
+    "@type": "Person",
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com/manual-tecnico/autoria.html"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "NutriPlant PRO",
+    "url": "https://nutriplantpro.com",
+    "logo": "https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Manual Técnico NutriPlant PRO",
+    "url": "https://nutriplantpro.com/manual-tecnico/index.html"
+  }
+}
+  </script>
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
+
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-09</span>
+    <h1>Ventanas de Aplicación Foliar</h1>
+    <h2>Resumen</h2>
+    <p>
+      La herramienta clasifica, <strong>hora por hora y en una sola zona</strong>, si las condiciones
+      ambientales favorecen una pulverización foliar eficiente y segura: menos deriva, menos evaporación
+      de la gota, sin lavado por lluvia, mejor permanencia y absorción.
+      No compara varios predios a la vez (eso sería otro producto): un punto de mapa = un lote.
+    </p>
+
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li><strong>Herramienta gratuita</strong> (login / dashboard): icono 🍃 <strong>Ventanas de Aplicación Foliar</strong>.</li>
+      <li>Mapa / GPS / lat-lng (igual que VPD). Persistencia: <code>nutriplant_free_ventanas_foliar_v1</code>.</li>
+      <li>La interfaz sigue el <strong>idioma</strong> (ES/EN) y el <strong>sistema de unidades</strong> del usuario (métrico: °C y km/h; US customary: °F y mph). El cálculo interno permanece en SI.</li>
+      <li>No es el estimador VPD 🌡️ ni el Pronóstico agroclimático 🌤️ ni la pestaña Clima PRO.</li>
+    </ul>
+
+    <h2>Variables</h2>
+    <p>
+      El <strong>sweet spot</strong> (intersección; verde más oscuro) es el criterio clásico de pulverización:
+      temperatura <strong>15–25 °C</strong>, humedad relativa <strong>50–70 %</strong> y viento <strong>2–8 km/h</strong>.
+      Las tres deben coincidir. DPV aire <strong>0,3–1,2 kPa</strong> y <strong>0 mm</strong> de lluvia (sin lluvia inmediata ~2 h).
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>Variable</th><th>Sweet spot (muy favorable)</th><th>Banda publicación NutriPlant</th></tr></thead>
+      <tbody>
+        <tr><td>Temperatura</td><td>15–25 °C</td><td>18–28 °C</td></tr>
+        <tr><td>Humedad relativa</td><td>50–70 %</td><td>&gt; 60 %</td></tr>
+        <tr><td>Viento</td><td>2–8 km/h</td><td>3–12 km/h</td></tr>
+        <tr><td>DPV (aire)</td><td colspan="2">0,3–1,2 kPa</td></tr>
+        <tr><td>Precipitación</td><td colspan="2">0 mm en la hora y sin lluvia inmediata (~2 h)</td></tr>
+      </tbody>
+    </table>
+    <p>Los rangos se pueden ajustar en la herramienta. Fuera del sweet spot pero dentro de la banda más amplia suele clasificar como <strong>favorable</strong>.</p>
+
+    <h2>Cómo se clasifica</h2>
+    <p>
+      Cada hora recibe un semáforo de 5 colores. El resultado de la hora es el
+      <strong>factor limitante</strong>: manda el peor indicador.
+    </p>
+    <div class="mt-formula">clase hora = máx(T, HR, viento, DPV, lluvia)</div>
+    <p>
+      DPV = déficit de presión de vapor del <strong>aire</strong> (Magnus/Tetens; no T hoja).
+      Útil para evaporación de la gota, no es el VPD avanzado de transpiración de planta.
+      Un DPV <em>alto</em> (tarde seca) limita fuerte; un DPV muy bajo (mañana húmeda) queda en
+      <strong>precaución</strong> (rocío), no en rojo.
+    </p>
+    <ul>
+      <li><strong>Muy favorable / Favorable</strong> — ambiente apto para cubrir y absorber.</li>
+      <li><strong>Precaución</strong> — se puede aplicar con criterio (deriva, secado o lluvia próxima).</li>
+      <li><strong>Desfavorable / Muy desfavorable</strong> — mejor esperar otra hora.</li>
+    </ul>
+    <p>
+      Ejemplos: T 20 °C, HR 60 %, viento 5 km/h (las tres en el sweet spot) →
+      <strong>muy favorable</strong>. 07:00 h con T 22 °C y HR 78 % (HR un poco arriba de 70 %) →
+      <strong>favorable</strong>. 14:00 h con T 31 °C, HR 43 %, viento 16 km/h, DPV 2,10 kPa →
+      <strong>desfavorable</strong>.
+    </p>
+
+    <h2>Lectura práctica</h2>
+    <ul>
+      <li>Matriz de ~<strong>3 días</strong> en <strong>24 horas</strong> (incluye quien aplica de noche). Se puede filtrar 05–20 h. Open-Meteo horario.</li>
+      <li>De noche: HR alta + viento calmo suele salir en <strong>precaución</strong> (rocío / inversión), no en verde oscuro.</li>
+      <li>Las mejores ventanas suelen ser <strong>mañana y final de tarde</strong> cuando coinciden T, HR y viento del sweet spot y baja el DPV.</li>
+      <li>Estimación satelital en un punto. Microclima del dosel, inversión, boquilla y etiqueta mandan en campo.</li>
+    </ul>
+    <div class="mt-warn">
+      <p>Orientativo. No sustituye la etiqueta del producto ni la decisión del técnico.</p>
+    </div>
+
+    <h2>Herramientas relacionadas</h2>
+    <ul>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — cálculo puntual (simple o con T hoja).</li>
+      <li><a href="balance-hidrico-riego-clima.html">Balance hídrico</a> — lámina / m³ a regar.</li>
+    </ul>
+    </div>
+
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-09</span>
+    <h1>Foliar Application Windows</h1>
+    <h2>Summary</h2>
+    <p>
+      The tool classifies, <strong>hour by hour in a single zone</strong>, whether conditions favor
+      an efficient, safer foliar spray: less drift, less droplet evaporation, no rain wash-off,
+      better persistence and uptake. It does not compare several fields at once: one map point = one plot.
+    </p>
+
+    <h2>Where it is in the app</h2>
+    <ul>
+      <li><strong>Free tool</strong> (login / dashboard): 🍃 <strong>Foliar Application Windows</strong>.</li>
+      <li>Map / GPS / lat-lng (same as VPD). Persistence: <code>nutriplant_free_ventanas_foliar_v1</code>.</li>
+      <li>UI follows the user <strong>language</strong> (ES/EN) and <strong>unit system</strong> (metric: °C and km/h; US customary: °F and mph). Physics stay SI.</li>
+      <li>Not the VPD estimator, not the agroclimate forecast, not the PRO Climate tab.</li>
+    </ul>
+
+    <h2>Default ranges</h2>
+    <p>
+      The <strong>sweet spot</strong> (very favorable) is the classic spray intersection:
+      <strong>15–25 °C</strong>, RH <strong>50–70%</strong>, wind <strong>2–8 km/h</strong>.
+      Wider NutriPlant publication band: T 18–28 °C, RH &gt; 60%, wind 3–12 km/h. Air VPD 0.3–1.2 kPa; 0 mm rain.
+      The hourly matrix is <strong>24 h</strong> (night included).
+    </p>
+
+    <h2>How it is classified</h2>
+    <p>Each hour gets a 5-color band. The hour result is the <strong>limiting factor</strong> (worst indicator wins).</p>
+    <div class="mt-formula">hour class = max(T, RH, wind, VPD, rain)</div>
+    <p>Air VPD (Magnus/Tetens; not leaf temperature) — droplet evaporation, not the advanced plant-transpiration VPD.</p>
+
+    <h2>Related tools</h2>
+    <ul>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — point calculator.</li>
+      <li><a href="balance-hidrico-riego-clima.html">Water balance</a> — irrigation depth.</li>
+    </ul>
+    </div>
+
+    <nav class="mt-chapter-nav"><a href="../index.html">Índice</a> · <a href="vpd-deficit-presion-vapor.html">VPD y Radar</a> · <a href="balance-hidrico-riego-clima.html">Balance hídrico</a></nav>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260822newtab"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
+</body>
+</html>

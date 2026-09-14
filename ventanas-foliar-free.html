@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
+  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-units-core.js?v=20260914i18n2"></script>
+  <script src="assets/np-agronomic-units.js?v=20260730a"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260914i18n2"></script>
+  <script src="assets/free-tools-embed.js"></script>
+  <title>Ventanas de Aplicación Foliar — NutriPlant PRO</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    body { margin: 0; padding: 16px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; }
+    .wrap { position: relative; background: #fff; border-radius: 12px; padding: 16px; }
+    html.embed-login .np-free-tool-head { display: none; }
+    html.embed-login body { padding: 12px 14px 16px; }
+    .title { margin: 0 0 8px; font-size: 22px; color: #14532d; font-weight: 800; }
+    .intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b; }
+    #fw-map { height: 220px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1; }
+    .coord-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .coord-row label, .field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 4px; }
+    .coord-row input, .field input, .field select {
+      width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;
+    }
+    .map-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .map-actions button, .btn {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer; color: #0f172a;
+    }
+    .btn-primary, .map-actions button.primary {
+      background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+      color: #fff; border-color: #166534;
+    }
+    .btn:disabled, .map-actions button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .card { border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .card-loc { background: #f0fdf4; border: 2px solid #86efac; }
+    .card-note { background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+    .vars { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+    .var {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;
+    }
+    .var strong { display: block; font-size: 13px; color: #14532d; }
+    .var span { font-size: 11px; color: #64748b; }
+    .benefits { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; font-size: 12px; color: #334155; }
+    .benefits div { background: #ecfdf5; border-radius: 8px; padding: 8px 10px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; font-weight: 600; margin: 10px 0 0; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+    .fw-day { margin-bottom: 10px; }
+    .fw-day-name { font-size: 12px; font-weight: 800; color: #14532d; text-transform: capitalize; margin-bottom: 4px; }
+    .fw-hours { display: flex; gap: 2px; overflow-x: auto; padding-bottom: 4px; }
+    .fw-cell {
+      min-width: 36px; flex: 1; height: 42px; border-radius: 6px; border: 0; cursor: pointer;
+      color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 4px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+    }
+    .fw-cell.selected { outline: 2px solid #0f172a; outline-offset: 1px; }
+    .fw-cell.now { box-shadow: inset 0 0 0 2px #fff; }
+    .interp { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 720px) { .interp { grid-template-columns: 1fr 1fr; } }
+    .ok-card, .bad-card, .mid-card {
+      border-radius: 12px; padding: 14px; font-size: 13px; line-height: 1.45;
+    }
+    .ok-card { background: #f0fdf4; border: 1px solid #86efac; }
+    .bad-card { background: #fef2f2; border: 1px solid #fecaca; }
+    .mid-card { background: #fffbeb; border: 1px solid #fde68a; }
+    .result { font-size: 18px; font-weight: 800; margin-top: 8px; }
+    .windows { display: flex; flex-wrap: wrap; gap: 8px; }
+    .win {
+      background: #ecfdf5; border: 1px solid #86efac; border-radius: 999px; padding: 6px 12px;
+      font-size: 12px; font-weight: 700; color: #14532d;
+    }
+    details.ranges { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+    details.ranges summary { cursor: pointer; font-weight: 700; color: #334155; }
+    .ranges-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; }
+    .chk { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569; margin: 8px 0; }
+    .key { margin-top: 12px; padding: 12px; background: #ecfdf5; border-radius: 10px; font-size: 12px; color: #14532d; font-weight: 600; }
+    .ref-card {
+      background: linear-gradient(180deg, #f0fdf4 0%, #ecfeff 100%);
+      border: 1px solid #86efac; border-radius: 12px; padding: 14px; margin: 12px 0 0;
+    }
+    .ref-card h4 { margin: 0 0 6px; font-size: 13px; color: #14532d; }
+    .ref-card p { margin: 0 0 10px; font-size: 12px; color: #475569; line-height: 1.45; }
+    .venn { display: flex; flex-wrap: wrap; gap: 8px; }
+    .venn span {
+      display: inline-flex; align-items: center; justify-content: center; text-align: center;
+      min-width: 120px; flex: 1; padding: 10px 8px; border-radius: 999px;
+      border: 2px solid #16a34a; background: rgba(22,163,74,.12);
+      font-size: 12px; font-weight: 800; color: #14532d;
+    }
+    .ref-pub { margin: 10px 0 0; font-size: 11px; color: #64748b; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="np-free-tool-head">
+      <h2 class="title np-free-tool-title" id="fw-title">🍃 Ventanas de Aplicación Foliar</h2>
+      <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+    </div>
+    <p class="intro" id="fw-intro">
+      <strong>Una sola zona / un lote.</strong>
+      Clasifica hora por hora si el ambiente favorece cobertura, permanencia y absorción.
+      Reduce deriva, evaporación de la gota y lavado por lluvia.
+    </p>
+    <div class="card card-note" id="fw-note">
+      Nota: temperatura, humedad, viento, DPV y lluvia son <strong>estimaciones</strong> satelitales en el punto del predio. Validar en campo. No sustituye etiqueta del producto.
+    </div>
+
+    <div class="card card-loc">
+      <h3 style="margin:0 0 8px;color:#166534;font-size:17px;" id="fw-h-loc">🗺️ Ubicación del predio</h3>
+      <p style="margin:0 0 12px;font-size:13px;color:#166534;" id="fw-loc-help">Mapa, GPS o lat/lng (como en VPD). Un punto = un lote.</p>
+      <div class="field" style="margin-bottom:10px;">
+        <label for="fw-lote" id="fw-l-lote">Nombre del lote (opcional)</label>
+        <input id="fw-lote" type="text" value="Lote 1" maxlength="40" />
+      </div>
+      <div class="coord-row">
+        <div>
+          <label for="fw-lat">Latitud</label>
+          <input id="fw-lat" type="number" step="any" placeholder="ej. 19.4326" />
+        </div>
+        <div>
+          <label for="fw-lng">Longitud</label>
+          <input id="fw-lng" type="number" step="any" placeholder="ej. -99.1332" />
+        </div>
+      </div>
+      <div class="map-actions">
+        <button type="button" id="fw-btn-geo">📍 Mi ubicación</button>
+        <button type="button" id="fw-btn-fetch" class="primary">🍃 Obtener ventanas de pulverización</button>
+      </div>
+      <p id="fw-geo-status" style="font-size:12px;color:#64748b;min-height:1.2em;margin:0 0 8px;"></p>
+      <div id="fw-map"></div>
+    </div>
+
+    <div class="card" style="border:1px solid #bbf7d0;background:#fff;">
+      <h3 style="margin:0 0 8px;color:#14532d;" id="fw-h-vars">2 · Variables evaluadas</h3>
+      <div class="vars" id="fw-vars"></div>
+      <div class="ref-card">
+        <h4 id="fw-h-sweet">Sweet spot de aplicación (intersección)</h4>
+        <p id="fw-sweet-p">Rangos del criterio clásico de pulverización. <strong>Muy favorable</strong> cuando coinciden las tres, con DPV en rango y sin lluvia. Sirve también de noche (inversión, rocío, calma).</p>
+        <div class="venn" id="fw-venn"></div>
+        <p class="ref-pub" id="fw-ref-pub"></p>
+      </div>
+      <div class="benefits" id="fw-benefits"></div>
+      <details class="ranges" style="margin-top:12px;">
+        <summary id="fw-ranges-sum">Ajustar rangos (producto / cultivo)</summary>
+        <div class="ranges-grid">
+          <div class="field"><label id="fw-l-tmin">T min <span data-np-unit-label="temperature">°C</span></label><input id="fw-tmin" type="number" step="0.1"></div>
+          <div class="field"><label id="fw-l-tmax">T max <span data-np-unit-label="temperature">°C</span></label><input id="fw-tmax" type="number" step="0.1"></div>
+          <div class="field"><label id="fw-l-rhmin">HR min %</label><input id="fw-rhmin" type="number" step="1"></div>
+          <div class="field"><label id="fw-l-rhmax">HR max %</label><input id="fw-rhmax" type="number" step="1"></div>
+          <div class="field"><label id="fw-l-wmin">Viento min <span data-np-unit-label="speed">km/h</span></label><input id="fw-wmin" type="number" step="0.1"></div>
+          <div class="field"><label id="fw-l-wmax">Viento max <span data-np-unit-label="speed">km/h</span></label><input id="fw-wmax" type="number" step="0.1"></div>
+          <div class="field"><label id="fw-l-vmin">DPV min kPa</label><input id="fw-vmin" type="number" step="0.1"></div>
+          <div class="field"><label id="fw-l-vmax">DPV max kPa</label><input id="fw-vmax" type="number" step="0.1"></div>
+        </div>
+        <p class="chk" style="flex-wrap:wrap;gap:8px;">
+          <button type="button" class="btn" id="fw-btn-reset">Restaurar sweet spot</button>
+          <button type="button" class="btn" id="fw-btn-pub">Usar banda publicación NutriPlant</button>
+        </p>
+      </details>
+    </div>
+
+    <div class="card" style="border:1px solid #bbf7d0;background:#fff;">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+        <h3 style="margin:0;color:#14532d;" id="fw-h-matrix">3 · Matriz horaria — <span id="fw-lote-label">Lote 1</span></h3>
+        <label class="chk" style="margin:0;"><input type="checkbox" id="fw-24h" checked> <span id="fw-24h-lab">24 horas (incluye noche)</span></label>
+      </div>
+      <p style="margin:8px 0 10px;font-size:12px;color:#64748b;" id="fw-matrix-help">Las 24 h del día, para quien aplica de noche. Desmarca si solo quieres 05–20 h. Toca una hora para ver el detalle.</p>
+      <div id="fw-matrix"></div>
+      <div class="legend" id="fw-legend"></div>
+      <p id="fw-status" style="margin:10px 0 0;font-size:12px;color:#64748b;"></p>
+    </div>
+
+    <div class="card" style="border:1px solid #bbf7d0;background:#fff;">
+      <h3 style="margin:0 0 8px;color:#14532d;" id="fw-h-windows">Mejores ventanas</h3>
+      <div class="windows" id="fw-windows"></div>
+    </div>
+
+    <div class="card" style="border:1px solid #bbf7d0;background:#fff;">
+      <h3 style="margin:0 0 8px;color:#14532d;" id="fw-h-interp">4 · Interpretación de la hora</h3>
+      <div class="interp" id="fw-interp"></div>
+      <div class="key" id="fw-key">Clave agronómica: no solo importa aplicar, sino aplicar cuando el ambiente favorece cobertura, permanencia y absorción.</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="assets/np-free-geolocation.js?v=202606201700"></script>
+  <script src="assets/np-foliar-window-core.js?v=20260914fw2"></script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+(function () {
+  'use strict';
+  var FW = window.NpFoliarWindow;
+  var UI = window.NpWaterClimateUI;
+  var map, marker, persist, rows = [], selected = null, langEn = false;
+
+  function prefs() {
+    try {
+      return window.NpPrefs && window.NpPrefs.get ? window.NpPrefs.get() : { language: 'es', unit_system: 'metric' };
+    } catch (e) {
+      return { language: 'es', unit_system: 'metric' };
+    }
+  }
+  function t(es, en) {
+    if (UI && typeof UI.t === 'function') return UI.t(es, en);
+    return (prefs().language === 'en') ? en : es;
+  }
+  function imperial() { return prefs().unit_system === 'us_customary'; }
+  function setStatus(msg) {
+    var el = document.getElementById('fw-status');
+    if (el) el.textContent = msg || '';
+  }
+  function setGeoStatus(msg) {
+    var el = document.getElementById('fw-geo-status');
+    if (el) el.textContent = msg || '';
+  }
+  function fmtTemp(c) {
+    if (c == null) return '—';
+    if (UI && UI.resultFromSI) return UI.resultFromSI(c, 'temperature', 1);
+    return imperial() ? (Math.round((c * 9 / 5 + 32) * 10) / 10) + ' °F' : c + ' °C';
+  }
+  function fmtWind(kmh) {
+    if (kmh == null) return '—';
+    if (UI && UI.resultFromSI) return UI.resultFromSI(kmh, 'speed', 1);
+    return imperial() ? (Math.round(kmh * 0.621371 * 10) / 10) + ' mph' : kmh + ' km/h';
+  }
+  function fmtRain(mm) {
+    if (mm == null) return '—';
+    if (UI && UI.resultFromSI) return UI.resultFromSI(mm, 'water_depth', 1);
+    return mm + ' mm';
+  }
+  function readSi(id, kind) {
+    if (UI && typeof UI.read === 'function') {
+      var v = UI.read(id, kind);
+      if (v != null) return v;
+    }
+    var n = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(n) ? n : null;
+  }
+  function writeSi(id, value, kind) {
+    if (value == null || !Number.isFinite(Number(value))) {
+      var el0 = document.getElementById(id);
+      if (el0) el0.value = '';
+      return;
+    }
+    if (UI && typeof UI.write === 'function') {
+      UI.write(id, value, kind);
+      return;
+    }
+    document.getElementById(id).value = value;
+  }
+  function rangeLabel(kind, min, max, digits) {
+    if (min == null || max == null) return '—';
+    if (UI && UI.fromSI && UI.resultFromSI) {
+      var a = UI.resultFromSI(min, kind, digits);
+      var b = UI.resultFromSI(max, kind, digits);
+      var unit = (a.match(/\s+(\S+)$/) || [])[1] || '';
+      var n1 = a.replace(/\s+\S+$/, '').trim();
+      var n2 = b.replace(/\s+\S+$/, '').trim();
+      return unit ? (n1 + '–' + n2 + ' ' + unit) : (n1 + '–' + n2);
+    }
+    return min + '–' + max;
+  }
+  function readRanges() {
+    return FW.cloneRanges({
+      tempC: {
+        idealMin: readSi('fw-tmin', 'temperature'),
+        idealMax: readSi('fw-tmax', 'temperature')
+      },
+      rhPct: {
+        idealMin: document.getElementById('fw-rhmin').value,
+        idealMax: document.getElementById('fw-rhmax').value
+      },
+      windKmh: {
+        idealMin: readSi('fw-wmin', 'speed'),
+        idealMax: readSi('fw-wmax', 'speed')
+      },
+      vpdKpa: {
+        idealMin: document.getElementById('fw-vmin').value,
+        idealMax: document.getElementById('fw-vmax').value
+      }
+    });
+  }
+  function writeRanges(r) {
+    var x = FW.cloneRanges(r);
+    writeSi('fw-tmin', x.tempC.idealMin, 'temperature');
+    writeSi('fw-tmax', x.tempC.idealMax, 'temperature');
+    document.getElementById('fw-rhmin').value = x.rhPct.idealMin;
+    var rhMax = document.getElementById('fw-rhmax');
+    if (rhMax) rhMax.value = x.rhPct.idealMax != null ? x.rhPct.idealMax : '';
+    writeSi('fw-wmin', x.windKmh.idealMin, 'speed');
+    writeSi('fw-wmax', x.windKmh.idealMax, 'speed');
+    document.getElementById('fw-vmin').value = x.vpdKpa.idealMin;
+    document.getElementById('fw-vmax').value = x.vpdKpa.idealMax;
+  }
+  function show24() { return !!document.getElementById('fw-24h').checked; }
+  function displayOpts() {
+    return {
+      hourStart: FW.DEFAULT_HOUR_START,
+      hourEnd: FW.DEFAULT_HOUR_END,
+      show24h: show24()
+    };
+  }
+  function coords() {
+    return {
+      lat: parseFloat(document.getElementById('fw-lat').value),
+      lng: parseFloat(document.getElementById('fw-lng').value)
+    };
+  }
+  function applyCoords(lat, lng, move) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    document.getElementById('fw-lat').value = lat.toFixed(6);
+    document.getElementById('fw-lng').value = lng.toFixed(6);
+    if (marker && move !== false) {
+      marker.setLatLng([lat, lng]);
+      map.setView([lat, lng], Math.max(map.getZoom(), 10));
+    }
+  }
+  function renderVars() {
+    var r = readRanges();
+    var rainTxt = t('0 durante la aplicación y sin lluvia inmediata', '0 during spraying and no immediate rain');
+    document.getElementById('fw-vars').innerHTML =
+      '<div class="var"><strong>🌡️ ' + t('Temperatura', 'Temperature') + '</strong><span>' + t('ideal', 'ideal') + ' ' + rangeLabel('temperature', r.tempC.idealMin, r.tempC.idealMax, 0) + '</span></div>' +
+      '<div class="var"><strong>💧 ' + t('Humedad relativa', 'Relative humidity') + '</strong><span>' + t('ideal', 'ideal') + ' ' +
+      r.rhPct.idealMin +
+      (r.rhPct.idealMax != null ? '–' + r.rhPct.idealMax : '+') +
+      ' %</span></div>' +
+      '<div class="var"><strong>💨 ' + t('Viento', 'Wind') + '</strong><span>' + t('ideal', 'ideal') + ' ' + rangeLabel('speed', r.windKmh.idealMin, r.windKmh.idealMax, 1) + '</span></div>' +
+      '<div class="var"><strong>🍃 DPV</strong><span>' + t('ideal', 'ideal') + ' ' + r.vpdKpa.idealMin + '–' + r.vpdKpa.idealMax + ' kPa</span></div>' +
+      '<div class="var"><strong>🌧️ ' + t('Precipitación', 'Precipitation') + '</strong><span>' + rainTxt + '</span></div>';
+  }
+  function renderLegend() {
+    document.getElementById('fw-legend').innerHTML = FW.CLASSES.map(function (c) {
+      return '<span><i style="background:' + c.color + '"></i>' + (langEn ? c.labelEn : c.labelEs) + '</span>';
+    }).join('');
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function isNow(row) {
+    if (!row || !row.time) return false;
+    var now = new Date();
+    return row.date === now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) &&
+      row.hour === now.getHours();
+  }
+  function renderMatrix() {
+    var host = document.getElementById('fw-matrix');
+    var lote = (document.getElementById('fw-lote').value || t('Lote 1', 'Plot 1')).trim();
+    document.getElementById('fw-lote-label').textContent = lote || t('Lote 1', 'Plot 1');
+    if (!rows.length) {
+      host.innerHTML = '<p style="color:#64748b;font-size:13px;">' +
+        t('Elige un punto, genera el clima y toca una hora.', 'Pick a point, fetch weather and tap an hour.') +
+        '</p>';
+      return;
+    }
+    var days = FW.groupByDate(rows, displayOpts());
+    host.innerHTML = days.map(function (day) {
+      var cells = day.hours.map(function (h) {
+        var sel = selected && selected.time === h.time ? ' selected' : '';
+        var now = isNow(h) ? ' now' : '';
+        return '<button type="button" class="fw-cell' + sel + now + '" data-time="' + h.time +
+          '" style="background:' + h.classInfo.color + '" title="' + pad(h.hour) + ':00 · ' +
+          (langEn ? h.classInfo.labelEn : h.classInfo.labelEs) + '">' + pad(h.hour) + 'h</button>';
+      }).join('');
+      return '<div class="fw-day"><div class="fw-day-name">' + FW.weekdayLabel(day.date, langEn ? 'en' : 'es') +
+        '</div><div class="fw-hours">' + cells + '</div></div>';
+    }).join('');
+  }
+  function renderWindows() {
+    var host = document.getElementById('fw-windows');
+    var wins = FW.bestWindows(rows, displayOpts());
+    if (!wins.length) {
+      host.innerHTML = '<span style="color:#64748b;font-size:13px;">' +
+        t('No hay horas favorables en el periodo visible.', 'No favorable hours in the visible period.') +
+        '</span>';
+      return;
+    }
+    host.innerHTML = wins.map(function (w) {
+      var info = FW.classInfo(w.bestClass);
+      return '<span class="win" style="border-color:' + info.color + '">' +
+        FW.weekdayLabel(w.date, langEn ? 'en' : 'es') + ' · ' +
+        FW.formatHourRange(w.startHour, w.endHour) + '</span>';
+    }).join('');
+  }
+  function limitingLabel(key) {
+    var map = {
+      temp: t('Temperatura', 'Temperature'),
+      rh: t('Humedad relativa', 'Relative humidity'),
+      wind: t('Viento', 'Wind'),
+      vpd: 'DPV',
+      rain: t('Precipitación', 'Precipitation')
+    };
+    return map[key] || key;
+  }
+  function renderInterp() {
+    var host = document.getElementById('fw-interp');
+    if (!selected) {
+      host.innerHTML = '<div class="mid-card">' +
+        t('Toca una hora de la matriz para ver T, HR, viento, DPV y lluvia.', 'Tap an hour in the matrix to see T, RH, wind, VPD and rain.') +
+        '</div>';
+      return;
+    }
+    var h = selected;
+    var good = h.classId <= 1;
+    var cls = good ? 'ok-card' : (h.classId === 2 ? 'mid-card' : 'bad-card');
+    var mark = good ? '✓' : (h.classId === 2 ? '!' : '✕');
+    var nightNote = '';
+    if (h.hour != null && (h.hour >= 21 || h.hour < 5)) {
+      nightNote = '<div style="margin-top:6px;font-size:12px;color:#9a3412;">' +
+        t('Noche: vigila inversión (viento muy calmo), rocío (HR alta / DPV bajo) y visibilidad. El sweet spot sigue siendo ' + rangeLabel('temperature', 15, 25, 0) + ', HR 50–70 % y viento ' + rangeLabel('speed', 2, 8, 1) + '.',
+          'Night: watch inversion (very calm wind), dew (high RH / low VPD) and visibility. Sweet spot remains ' + rangeLabel('temperature', 15, 25, 0) + ', RH 50–70% and wind ' + rangeLabel('speed', 2, 8, 1) + '.') +
+        '</div>';
+    }
+    var limit = h.limiting && h.limiting.length
+      ? t('Factor que más limita: ', 'Main limiting factor: ') + h.limiting.map(limitingLabel).join(', ')
+      : t('Las tres del sweet spot coinciden (T, HR y viento), con DPV y lluvia en rango.',
+        'All three sweet-spot variables coincide (T, RH and wind), with VPD and rain in range.');
+    host.innerHTML =
+      '<div class="' + cls + '">' +
+        '<div style="font-size:12px;color:#64748b;">' + pad(h.hour) + ':00 · ' + (document.getElementById('fw-lote').value || t('Lote 1', 'Plot 1')) + '</div>' +
+        '<div style="margin-top:6px;">T ' + fmtTemp(h.tempC) + ' · HR ' + (h.rhPct != null ? h.rhPct + ' %' : '—') +
+        ' · ' + t('Viento', 'Wind') + ' ' + fmtWind(h.windKmh) + '</div>' +
+        '<div>DPV ' + (h.vpdKpa != null ? h.vpdKpa + ' kPa' : '—') + ' · ' + t('Lluvia', 'Rain') + ' ' + fmtRain(h.rainMm) +
+        (h.rainNextMm ? ' · +2 h ' + fmtRain(h.rainNextMm) : '') + '</div>' +
+        '<div class="result" style="color:' + h.classInfo.color + '">' + mark + ' ' +
+        t('Resultado: ', 'Result: ') + (langEn ? h.classInfo.labelEn : h.classInfo.labelEs) + '</div>' +
+        '<div style="margin-top:6px;font-size:12px;color:#475569;">' + limit + '</div>' +
+        nightNote +
+      '</div>' +
+      '<div class="mid-card">' +
+        t('Cuando coinciden alta temperatura, baja humedad relativa, viento elevado y DPV alto, cae la eficiencia de la pulverización.',
+          'When high temperature, low humidity, strong wind and high VPD coincide, spray efficiency drops.') +
+      '</div>';
+  }
+  function reclassify() {
+    if (!rows.length) {
+      renderVars();
+      renderLegend();
+      renderMatrix();
+      renderWindows();
+      renderInterp();
+      return;
+    }
+    var ranges = readRanges();
+    rows = rows.map(function (h) {
+      var next = FW.classifyHour(h, ranges);
+      next.time = h.time;
+      next.date = h.date;
+      next.hour = h.hour;
+      return next;
+    });
+    if (selected && selected.time) {
+      selected = rows.filter(function (r) { return r.time === selected.time; })[0] || rows[0];
+    }
+    renderVars();
+    renderLegend();
+    renderMatrix();
+    renderWindows();
+    renderInterp();
+  }
+  function refreshCopy() {
+    langEn = prefs().language === 'en';
+    var title = document.getElementById('fw-title');
+    if (title) title.textContent = t('🍃 Ventanas de Aplicación Foliar', '🍃 Foliar Application Windows');
+    document.title = t('Ventanas de Aplicación Foliar — NutriPlant PRO', 'Foliar Application Windows — NutriPlant PRO');
+    var intro = document.getElementById('fw-intro');
+    if (intro) intro.innerHTML = t(
+      '<strong>Una sola zona / un lote.</strong> Clasifica hora por hora si el ambiente favorece cobertura, permanencia y absorción. Reduce deriva, evaporación de la gota y lavado por lluvia.',
+      '<strong>A single zone / one plot.</strong> Classifies hour by hour whether conditions favor coverage, persistence and uptake. Reduces drift, droplet evaporation and rain wash-off.'
+    );
+    var note = document.getElementById('fw-note');
+    if (note) note.innerHTML = t(
+      'Nota: temperatura, humedad, viento, DPV y lluvia son <strong>estimaciones</strong> satelitales en el punto del predio. Validar en campo. No sustituye etiqueta del producto.',
+      'Note: temperature, humidity, wind, VPD and rain are satellite <strong>estimates</strong> at the field point. Validate in the field. Does not replace the product label.'
+    );
+    setTxt('fw-h-loc', t('🗺️ Ubicación del predio', '🗺️ Field location'));
+    setTxt('fw-loc-help', t('Mapa, GPS o lat/lng (como en VPD). Un punto = un lote.', 'Map, GPS or lat/lng (same as VPD). One point = one plot.'));
+    setTxt('fw-l-lote', t('Nombre del lote (opcional)', 'Plot name (optional)'));
+    var loteEl = document.getElementById('fw-lote');
+    if (loteEl && (!loteEl.value || loteEl.value === 'Lote 1' || loteEl.value === 'Plot 1')) {
+      loteEl.value = t('Lote 1', 'Plot 1');
+      loteEl.placeholder = t('Lote 1', 'Plot 1');
+    }
+    setTxt('fw-btn-geo', t('📍 Mi ubicación', '📍 My location'));
+    setTxt('fw-btn-fetch', t('🍃 Obtener ventanas de pulverización', '🍃 Get spray windows'));
+    setTxt('fw-h-vars', t('2 · Variables evaluadas', '2 · Variables scored'));
+    setTxt('fw-h-sweet', t('Sweet spot de aplicación (intersección)', 'Application sweet spot (intersection)'));
+    var sweetP = document.getElementById('fw-sweet-p');
+    if (sweetP) sweetP.innerHTML = t(
+      'Rangos del criterio clásico de pulverización. <strong>Muy favorable</strong> cuando coinciden las tres, con DPV en rango y sin lluvia. Sirve también de noche (inversión, rocío, calma).',
+      'Classic spray-window ranges. <strong>Very favorable</strong> when all three coincide, with VPD in range and no rain. Also used at night (inversion, dew, calm).'
+    );
+    var ss = FW.SWEET_SPOT;
+    var venn = document.getElementById('fw-venn');
+    if (venn) {
+      venn.innerHTML =
+        '<span>' + t('Humedad relativa', 'Relative humidity') + '<br>50–70 %</span>' +
+        '<span>' + t('Temperatura', 'Temperature') + '<br>' + rangeLabel('temperature', ss.tempC.idealMin, ss.tempC.idealMax, 0) + '</span>' +
+        '<span>' + t('Viento', 'Wind') + '<br>' + rangeLabel('speed', ss.windKmh.idealMin, ss.windKmh.idealMax, 1) + '</span>';
+    }
+    var pub = FW.PUBLICATION_RANGES;
+    var ref = document.getElementById('fw-ref-pub');
+    if (ref) {
+      ref.innerHTML = t(
+        'Referencia más amplia (publicación NutriPlant): T ' + rangeLabel('temperature', pub.tempC.idealMin, pub.tempC.idealMax, 0) +
+          ' · HR &gt; 60 % · viento ' + rangeLabel('speed', pub.windKmh.idealMin, pub.windKmh.idealMax, 1) +
+          ' · DPV 0,3–1,2 kPa. Fuera del sweet spot pero dentro de esa banda suele quedar en <strong>favorable</strong>.',
+        'Wider NutriPlant publication band: T ' + rangeLabel('temperature', pub.tempC.idealMin, pub.tempC.idealMax, 0) +
+          ' · RH &gt; 60% · wind ' + rangeLabel('speed', pub.windKmh.idealMin, pub.windKmh.idealMax, 1) +
+          ' · VPD 0.3–1.2 kPa. Outside the sweet spot but inside this band usually stays <strong>favorable</strong>.'
+      );
+    }
+    var ben = document.getElementById('fw-benefits');
+    if (ben) {
+      ben.innerHTML =
+        '<div>💨 ' + t('Reduce riesgo de deriva', 'Lowers drift risk') + '</div>' +
+        '<div>💧 ' + t('Disminuye evaporación de la gota', 'Lowers droplet evaporation') + '</div>' +
+        '<div>🌧️ ' + t('Evita lavado por lluvia', 'Avoids rain wash-off') + '</div>' +
+        '<div>🍃 ' + t('Mejora permanencia y absorción foliar', 'Improves foliar persistence and uptake') + '</div>';
+    }
+    setTxt('fw-ranges-sum', t('Ajustar rangos (producto / cultivo)', 'Adjust ranges (product / crop)'));
+    setLabelUnit('fw-l-tmin', t('T min', 'T min'), 'temperature');
+    setLabelUnit('fw-l-tmax', t('T max', 'T max'), 'temperature');
+    setTxt('fw-l-rhmin', t('HR min %', 'RH min %'));
+    setTxt('fw-l-rhmax', t('HR max %', 'RH max %'));
+    setLabelUnit('fw-l-wmin', t('Viento min', 'Wind min'), 'speed');
+    setLabelUnit('fw-l-wmax', t('Viento max', 'Wind max'), 'speed');
+    setTxt('fw-l-vmin', t('DPV min kPa', 'VPD min kPa'));
+    setTxt('fw-l-vmax', t('DPV max kPa', 'VPD max kPa'));
+    setTxt('fw-btn-reset', t('Restaurar sweet spot', 'Restore sweet spot') + ' (' +
+      rangeLabel('temperature', ss.tempC.idealMin, ss.tempC.idealMax, 0) + ' · 50–70 % · ' +
+      rangeLabel('speed', ss.windKmh.idealMin, ss.windKmh.idealMax, 1) + ')');
+    setTxt('fw-btn-pub', t('Usar banda publicación NutriPlant', 'Use NutriPlant publication band'));
+    var loteNow = document.getElementById('fw-lote');
+    var loteName = (loteNow && loteNow.value) || t('Lote 1', 'Plot 1');
+    var matrixH = document.getElementById('fw-h-matrix');
+    if (matrixH) {
+      matrixH.innerHTML = t('3 · Matriz horaria — ', '3 · Hourly matrix — ') +
+        '<span id="fw-lote-label">' + loteName + '</span>';
+    }
+    setTxt('fw-24h-lab', t('24 horas (incluye noche)', '24 hours (night included)'));
+    setTxt('fw-matrix-help', t(
+      'Las 24 h del día, para quien aplica de noche. Desmarca si solo quieres 05–20 h. Toca una hora para ver el detalle.',
+      'All 24 hours, including night spraying. Uncheck for 05–20 h only. Tap an hour for detail.'
+    ));
+    setTxt('fw-h-windows', t('Mejores ventanas', 'Best windows'));
+    setTxt('fw-h-interp', t('4 · Interpretación de la hora', '4 · Hour interpretation'));
+    setTxt('fw-key', t(
+      'Clave agronómica: no solo importa aplicar, sino aplicar cuando el ambiente favorece cobertura, permanencia y absorción.',
+      'Agronomic key: it is not only about spraying, but spraying when the environment favors coverage, persistence and uptake.'
+    ));
+    if (UI && UI.applyLanguage) UI.applyLanguage(document.body);
+    if (UI && UI.refreshUnitLabels) UI.refreshUnitLabels();
+    reclassify();
+  }
+  function setTxt(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function setLabelUnit(id, text, kind) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = text + ' <span data-np-unit-label="' + kind + '"></span>';
+  }
+  async function fetchWindows() {
+    var c = coords();
+    if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) {
+      alert(t('Indica latitud y longitud o elige un punto en el mapa.', 'Enter lat/lng or pick a map point.'));
+      return;
+    }
+    var btn = document.getElementById('fw-btn-fetch');
+    if (btn) btn.disabled = true;
+    setStatus(t('Consultando clima horario…', 'Fetching hourly weather…'));
+    try {
+      var data = await FW.fetchHourly(c.lat, c.lng, FW.FORECAST_DAYS);
+      rows = FW.classifySeries(data.hours, readRanges());
+      selected = rows.filter(isNow)[0] || rows.filter(function (r) {
+        return FW.inDisplayHours(r.hour, FW.DEFAULT_HOUR_START, FW.DEFAULT_HOUR_END, show24());
+      })[0] || rows[0] || null;
+      setStatus(
+        t('3 días · 24 h · 1 lote. Estimación satelital — validar en campo.', '3 days · 24 h · 1 plot. Satellite estimate — validate in the field.')
+      );
+      reclassify();
+      if (persist && persist.saveNow) persist.saveNow();
+    } catch (err) {
+      var msg = err && err.message ? err.message : t('No se pudo obtener el clima', 'Could not fetch weather');
+      setStatus(msg);
+      alert(msg);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+  function useMyLocation() {
+    setGeoStatus(t('Obteniendo GPS…', 'Getting GPS…'));
+    var done = function (lat, lng) {
+      applyCoords(lat, lng, true);
+      setGeoStatus(t('Ubicación aplicada. Un punto = un lote.', 'Location applied. One point = one plot.'));
+    };
+    if (window.NpFreeGeo && typeof window.NpFreeGeo.requestLocation === 'function') {
+      window.NpFreeGeo.requestLocation({ retry: true, t: t }).then(
+        function (pos) { done(pos.coords.latitude, pos.coords.longitude); },
+        function (err) { setGeoStatus(err && err.message ? err.message : t('No se pudo leer GPS. Elige un punto en el mapa.', 'Could not read GPS. Pick a map point.')); }
+      );
+      return;
+    }
+    if (!navigator.geolocation) {
+      setGeoStatus(t('GPS no disponible', 'GPS unavailable'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { done(pos.coords.latitude, pos.coords.longitude); },
+      function () { setGeoStatus(t('No se pudo leer GPS. Elige un punto en el mapa.', 'Could not read GPS. Pick a map point.')); },
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  }
+  function initMap() {
+    map = L.map('fw-map').setView([23.6, -102.5], 5);
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Imágenes © <a href="https://www.esri.com/">Esri</a> — Maxar, Earthstar Geographics'
+      }
+    ).addTo(map);
+    marker = L.marker([23.6, -102.5], { draggable: true }).addTo(map);
+    marker.on('dragend', function () {
+      var ll = marker.getLatLng();
+      applyCoords(ll.lat, ll.lng, false);
+    });
+    map.on('click', function (e) {
+      marker.setLatLng(e.latlng);
+      applyCoords(e.latlng.lat, e.latlng.lng, false);
+    });
+    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 200);
+  }
+  function getPersistState() {
+    return {
+      lat: document.getElementById('fw-lat').value,
+      lng: document.getElementById('fw-lng').value,
+      lote: document.getElementById('fw-lote').value,
+      show24: show24(),
+      ranges: readRanges()
+    };
+  }
+  function applyPersistState(d) {
+    if (!d) return;
+    if (d.lat != null) document.getElementById('fw-lat').value = d.lat;
+    if (d.lng != null) document.getElementById('fw-lng').value = d.lng;
+    if (d.lote != null) document.getElementById('fw-lote').value = d.lote;
+    if (d.show24 != null) document.getElementById('fw-24h').checked = !!d.show24;
+    if (d.ranges) writeRanges(d.ranges);
+    var lat = parseFloat(d.lat);
+    var lng = parseFloat(d.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && marker) applyCoords(lat, lng, true);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (UI && typeof UI.init === 'function') {
+      UI.init({
+        fields: {
+          'fw-tmin': 'temperature',
+          'fw-tmax': 'temperature',
+          'fw-wmin': 'speed',
+          'fw-wmax': 'speed'
+        },
+        refresh: refreshCopy
+      });
+    }
+    writeRanges(FW.DEFAULT_RANGES);
+    initMap();
+    renderVars();
+    renderLegend();
+    renderMatrix();
+    renderWindows();
+    renderInterp();
+    document.getElementById('fw-btn-geo').addEventListener('click', useMyLocation);
+    document.getElementById('fw-btn-fetch').addEventListener('click', fetchWindows);
+    document.getElementById('fw-btn-reset').addEventListener('click', function () {
+      writeRanges(FW.DEFAULT_RANGES);
+      reclassify();
+    });
+    document.getElementById('fw-btn-pub').addEventListener('click', function () {
+      writeRanges(FW.PUBLICATION_RANGES);
+      reclassify();
+    });
+    document.getElementById('fw-24h').addEventListener('change', reclassify);
+    document.getElementById('fw-lote').addEventListener('input', function () {
+      document.getElementById('fw-lote-label').textContent = this.value || t('Lote 1', 'Plot 1');
+      renderInterp();
+    });
+    document.getElementById('fw-matrix').addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-time]');
+      if (!btn) return;
+      selected = rows.filter(function (r) { return r.time === btn.getAttribute('data-time'); })[0] || null;
+      renderMatrix();
+      renderInterp();
+    });
+    ['fw-tmin', 'fw-tmax', 'fw-rhmin', 'fw-rhmax', 'fw-wmin', 'fw-wmax', 'fw-vmin', 'fw-vmax'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', reclassify);
+    });
+    if (window.NpFreePersist && window.NpFreePersist.bind) {
+      persist = window.NpFreePersist.bind('ventanas_foliar', getPersistState, applyPersistState);
+    }
+    refreshCopy();
+  });
+})();
+  </script>
+</body>
+</html>

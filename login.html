@@ -333,6 +333,11 @@
           <span class="button-text" data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVentanasFoliarTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🍃</span>
+          <span class="button-text" data-i18n="dashboard.tool_foliar_windows">Ventanas de Aplicación Foliar</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🚜</span>
           <span class="button-text" data-i18n="dashboard.tool_amendment">Balance de enmiendas por CIC</span>
@@ -391,6 +396,11 @@
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showIshRendimientoTool()" style="margin-top: 12px;">
           <span class="calculator-icon">📈</span>
           <span class="button-text" data-i18n="dashboard.tool_ish">Rendimiento hídrico (ISH)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showUniformidadRiegoTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🎯</span>
+          <span class="button-text" data-i18n="dashboard.tool_uniformidad_riego">Uniformidad de riego</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
@@ -1787,6 +1797,26 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showVentanasFoliarTool() {
+      document.getElementById('ventanasFoliarToolModal').style.display = 'flex';
+    }
+    function closeVentanasFoliarTool() {
+      const modal = document.getElementById('ventanasFoliarToolModal');
+      const frame = document.getElementById('ventanasFoliarToolFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
+    function showUniformidadRiegoTool() {
+      document.getElementById('uniformidadRiegoToolModal').style.display = 'flex';
+    }
+    function closeUniformidadRiegoTool() {
+      const modal = document.getElementById('uniformidadRiegoToolModal');
+      const frame = document.getElementById('uniformidadRiegoToolFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function showFertilizerSolubilitySaltTool() {
       document.getElementById('fertilizerSolubilitySaltModal').style.display = 'flex';
     }
@@ -2107,6 +2137,10 @@
       const ishRendimientoModal = document.getElementById('ishRendimientoToolModal');
       if (e.target === ishRendimientoModal) {
         closeIshRendimientoTool();
+      }
+      const uniformidadRiegoModal = document.getElementById('uniformidadRiegoToolModal');
+      if (e.target === uniformidadRiegoModal) {
+        closeUniformidadRiegoTool();
       }
       const fertilizerSolubilitySaltModal = document.getElementById('fertilizerSolubilitySaltModal');
       if (e.target === fertilizerSolubilitySaltModal) {
@@ -2919,7 +2953,39 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914j" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
+        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914o2" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal uniformidad de riego -->
+  <div id="uniformidadRiegoToolModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="dashboard.tool_uniformidad_riego">🎯 Uniformidad de riego</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeUniformidadRiegoTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260914ur2" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal ventanas de aplicación foliar -->
+  <div id="ventanasFoliarToolModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="dashboard.tool_foliar_windows">🍃 Ventanas de Aplicación Foliar</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeVentanasFoliarTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="ventanasFoliarToolFrame" src="ventanas-foliar-free.html?embed=login&v=20260914fw3" title="Ventanas de Aplicación Foliar" data-i18n-title="dashboard.tool_foliar_windows" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
