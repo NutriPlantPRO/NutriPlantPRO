@@ -18,7 +18,16 @@ function publicOrigin(event) {
 }
 
 function oauthSecret() {
-  return String(process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET || '').trim();
+  const explicit = String(process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET || '').trim();
+  if (explicit) return explicit;
+  const seed = String(
+    process.env.AGROCLIMATE_TOKEN_SECRET ||
+      process.env.AGROCLIMATE_CRON_SECRET ||
+      process.env.ADMIN_ACCESS_PIN ||
+      ''
+  ).trim();
+  if (!seed) return '';
+  return crypto.createHmac('sha256', seed).update('nutriplant-public-mcp-oauth').digest('hex');
 }
 
 function parseBearer(event) {
@@ -242,7 +251,7 @@ async function handleAuthorizeGet(event, origin) {
 async function handleLoginPost(event, origin) {
   const secret = oauthSecret();
   if (!secret) {
-    return jsonRes(503, { error: 'temporarily_unavailable', error_description: 'Falta NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET.' });
+    return jsonRes(503, { error: 'temporarily_unavailable', error_description: 'No hay secreto para firmar el login del plugin.' });
   }
   const form = parseForm(event.decodedBody || '');
   if (!allowedRedirect(form.redirect_uri)) {
@@ -292,7 +301,7 @@ async function handleLoginPost(event, origin) {
 async function handleTokenPost(event, origin) {
   const secret = oauthSecret();
   if (!secret) {
-    return jsonRes(503, { error: 'temporarily_unavailable', error_description: 'Falta NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET.' });
+    return jsonRes(503, { error: 'temporarily_unavailable', error_description: 'No hay secreto para firmar el login del plugin.' });
   }
   const ct = String((event.headers && (event.headers['content-type'] || event.headers['Content-Type'])) || '');
   let body = {};

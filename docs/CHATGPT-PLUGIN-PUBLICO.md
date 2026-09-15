@@ -31,10 +31,10 @@ Con sesión de suscriptor: `list_my_projects`, `get_my_project`.
 3. Sin cuenta: VPD, 1 meq de Ca → nitrato de calcio, capítulos del manual.
 4. Conectar cuenta → login NutriPlant → “mis proyectos”.
 
-## Variable nueva (solo OAuth del plugin)
+## Variable OAuth (opcional)
 
-En Netlify, **distinta** del token admin:
+No hace falta una variable nueva en Netlify (el paquete de env ya está al tope de 4 KB de Lambda).
 
-`NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET` — cadena larga aleatoria. Firma códigos OAuth. Si falta, el criterio público sigue; “Conectar cuenta” no.
+El plugin firma el login con un derivado de un secreto **que ya existe** (`AGROCLIMATE_TOKEN_SECRET`, o si no `AGROCLIMATE_CRON_SECRET` / `ADMIN_ACCESS_PIN`). No usa el token del Socio.
 
-Nunca reutilizar `NUTRIPLANT_ADMIN_GPT_TOKEN`.
+Si más adelante hay hueco en las variables, se puede poner `NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET` y esa gana. No es obligatorio.

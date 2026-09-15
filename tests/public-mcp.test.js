@@ -96,6 +96,25 @@ module.exports = [
     }
   },
   {
+    name: 'Público: OAuth deriva secreto de variable ya existente',
+    run: function () {
+      var prev = process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET;
+      var prevAgro = process.env.AGROCLIMATE_TOKEN_SECRET;
+      delete process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET;
+      process.env.AGROCLIMATE_TOKEN_SECRET = 'seed-agro-test';
+      var a = mcpAuth.oauthSecret();
+      var b = mcpAuth.oauthSecret();
+      assert.ok(a && a.length === 64);
+      assert.equal(a, b);
+      process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET = 'explicit-wins';
+      assert.equal(mcpAuth.oauthSecret(), 'explicit-wins');
+      if (prev == null) delete process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET;
+      else process.env.NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET = prev;
+      if (prevAgro == null) delete process.env.AGROCLIMATE_TOKEN_SECRET;
+      else process.env.AGROCLIMATE_TOKEN_SECRET = prevAgro;
+    }
+  },
+  {
     name: 'Público: MCP initialize no pide admin',
     run: async function () {
       var res = await handler(
