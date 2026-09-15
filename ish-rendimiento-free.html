@@ -130,16 +130,16 @@
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: hidden;
     }
     #ish-chart {
       display: block;
       width: 100% !important;
       max-width: 100%;
       min-width: 0;
-      height: 280px;
-      max-height: 320px;
+      height: 340px;
+      min-height: 300px;
+      max-height: 420px;
       background: #fff;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
@@ -292,7 +292,7 @@
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260801p"></script>
-  <script src="assets/np-ish-core.js?v=20260914i4"></script>
+  <script src="assets/np-ish-core.js?v=20260914i5"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -816,9 +816,13 @@
     var chartWrap = document.querySelector('.ish-chart-wrap');
     if (chartWrap && window.ResizeObserver) {
       var chartRoTimer;
+      var lastChartW = 0;
       new window.ResizeObserver(function () {
+        var w = Math.floor(chartWrap.clientWidth || 0);
+        if (Math.abs(w - lastChartW) < 12) return;
+        lastChartW = w;
         clearTimeout(chartRoTimer);
-        chartRoTimer = setTimeout(function () { drawChart({ weeks: weeks }); }, 80);
+        chartRoTimer = setTimeout(function () { drawChart({ weeks: weeks }); }, 120);
       }).observe(chartWrap);
     }
     if (!weeks.length) ensureWeeksFromDates(false);

@@ -541,19 +541,19 @@
     var ctx = canvas.getContext('2d');
     var dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.min(window.devicePixelRatio, 2.5) : 1;
     var parent = canvas.parentElement;
-    var parentW = parent ? parent.clientWidth || parent.getBoundingClientRect().width : 0;
-    var cssW = parentW >= 40 ? Math.floor(parentW) : canvas.clientWidth || 0;
-    if (cssW < 40) cssW = Number(canvas.getAttribute('width')) || 640;
-    var cssH = canvas.clientHeight || Number(canvas.getAttribute('height')) || 280;
-    if (cssH < 40) cssH = 280;
-    canvas.width = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
-    // Ancho fluido: no fijar px (antes quedaba ~800px y se veía “a la mitad”).
+    var parentW = parent ? Math.floor(parent.clientWidth || parent.getBoundingClientRect().width || 0) : 0;
+    var cssW = parentW >= 40 ? parentW : canvas.clientWidth || 0;
+    if (cssW < 40) cssW = 640;
+    // Altura proporcional: evita gráfica aplastada en modales anchos.
+    var cssH = Math.round(Math.min(420, Math.max(300, cssW * 0.36)));
+    // CSS antes del bitmap: si no, canvas.width=cssW*dpr ensancha el layout y se “recorre”.
+    canvas.style.display = 'block';
+    canvas.style.boxSizing = 'border-box';
     canvas.style.width = '100%';
     canvas.style.maxWidth = '100%';
     canvas.style.height = cssH + 'px';
-    canvas.style.display = 'block';
-    canvas.style.boxSizing = 'border-box';
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
     ctx.fillStyle = '#ffffff';

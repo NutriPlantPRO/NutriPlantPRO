@@ -20,7 +20,15 @@
     html.embed-login body { padding: 12px 14px 16px; }
     .title { margin: 0 0 8px; font-size: 22px; color: #14532d; font-weight: 800; }
     .intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b; }
-    #fw-map { height: 220px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1; }
+    #fw-map {
+      height: 220px;
+      min-height: 220px;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #86efac;
+      z-index: 1;
+      background: #e2e8f0;
+    }
     .coord-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
     .coord-row label, .field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 4px; }
     .coord-row input, .field input, .field select {
@@ -246,7 +254,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-foliar-window-core.js?v=20260914fw5"></script>
+  <script src="assets/np-foliar-window-core.js?v=20260914fw6"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -709,8 +717,28 @@
       { enableHighAccuracy: true, timeout: 12000 }
     );
   }
+  function ensureMapSize() {
+    if (!map) return;
+    try {
+      map.invalidateSize({ animate: false });
+    } catch (e) {}
+  }
+  function scheduleMapRefresh() {
+    [50, 200, 500, 1000].forEach(function (ms) {
+      setTimeout(ensureMapSize, ms);
+    });
+  }
   function initMap() {
-    map = L.map('fw-map').setView([23.6, -102.5], 5);
+    var el = document.getElementById('fw-map');
+    if (!el) return;
+    if (!window.L || typeof window.L.map !== 'function') {
+      el.innerHTML =
+        '<p style="margin:0;padding:16px;font-size:13px;color:#b91c1c;font-weight:600;">' +
+        t('No se pudo cargar el mapa. Revisa la conexión e intenta de nuevo.', 'Could not load the map. Check your connection and try again.') +
+        '</p>';
+      return;
+    }
+    map = L.map(el, { scrollWheelZoom: true }).setView([23.6, -102.5], 5);
     L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
@@ -727,7 +755,32 @@
       marker.setLatLng(e.latlng);
       applyCoords(e.latlng.lat, e.latlng.lng, false);
     });
-    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 200);
+    scheduleMapRefresh();
+    if (typeof IntersectionObserver === 'function') {
+      var io = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) scheduleMapRefresh();
+          });
+        },
+        { threshold: 0.05 }
+      );
+      io.observe(el);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') scheduleMapRefresh();
+    });
+    window.addEventListener('message', function (ev) {
+      var data = ev && ev.data;
+      if (!data || typeof data !== 'object') return;
+      if (
+        data.type === 'np-free-tool-shown' ||
+        data.type === 'np-foliar-shown' ||
+        data.type === 'np-map-refresh'
+      ) {
+        scheduleMapRefresh();
+      }
+    });
   }
   function getPersistState() {
     return {

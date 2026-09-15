@@ -2883,8 +2883,8 @@
         'Water-related yield ceiling over the crop cycle.'
       ) +
       '</p>' +
-      '<div style="width:100%;max-width:100%;box-sizing:border-box;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;">' +
-      '<canvas id="climate-ish-chart" height="280" style="display:block;width:100%;max-width:100%;min-width:0;height:280px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;box-sizing:border-box;"></canvas></div>' +
+      '<div style="width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden;margin-bottom:12px;">' +
+      '<canvas id="climate-ish-chart" height="340" style="display:block;width:100%;max-width:100%;min-width:0;height:340px;min-height:300px;max-height:420px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;box-sizing:border-box;"></canvas></div>' +
       '<div style="margin-top:12px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">' +
       '<strong>' +
       wcT('Estimado metodológico.', 'Methodological estimate.') +
@@ -3150,7 +3150,11 @@
         climateIshChartRo = null;
       }
       var t;
+      var lastW = 0;
       climateIshChartRo = new window.ResizeObserver(function () {
+        var w = Math.floor(wrap.clientWidth || 0);
+        if (Math.abs(w - lastW) < 12) return;
+        lastW = w;
         clearTimeout(t);
         t = setTimeout(function () {
           var c2 = document.getElementById('climate-ish-chart');
@@ -3158,7 +3162,7 @@
           window.NpIsh.drawYieldChart(c2, climateIshChartLastRows, {
             language: climatePrefs().language === 'en' ? 'en' : 'es'
           });
-        }, 80);
+        }, 120);
       });
       climateIshChartRo.observe(wrap);
     }
