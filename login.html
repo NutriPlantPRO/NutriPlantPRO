@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=54" />
+  <link rel="stylesheet" href="auth.css?v=55" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -4665,10 +4665,10 @@
       var fbLastMountedHeight = 0;
 
       function facebookEmbedHeight(container) {
-        if (window.innerWidth < 700) return 360;
+        if (window.innerWidth < 700) return 300;
         var box = container || root.querySelector('[data-social-embed="facebook"]');
         var h = box ? Math.round(box.clientHeight || box.getBoundingClientRect().height || 0) : 0;
-        return h >= 180 ? h : 400;
+        return h >= 180 ? h : 320;
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4809,21 +4809,29 @@
         if (syncingSocialHeight) return;
         syncingSocialHeight = true;
         try {
-          if (window.innerWidth < 700) {
-            root.style.minHeight = '';
-            root.style.maxHeight = '';
-            root.style.height = '';
-            var panelsMobile = root.querySelector('.login-social-panels');
-            if (panelsMobile) {
-              panelsMobile.style.minHeight = '';
-              panelsMobile.style.height = '';
-              panelsMobile.style.maxHeight = '';
-            }
+          var panelsMobile = root.querySelector('.login-social-panels');
+          var clearEmbedHeights = function () {
             root.querySelectorAll('[data-social-embed]').forEach(function (el) {
               el.style.height = '';
               el.style.minHeight = '';
               el.style.maxHeight = '';
             });
+            root.querySelectorAll('.login-social-pane__body').forEach(function (el) {
+              el.style.height = '';
+              el.style.minHeight = '';
+              el.style.maxHeight = '';
+            });
+          };
+          if (window.innerWidth < 700) {
+            root.style.minHeight = '';
+            root.style.maxHeight = '';
+            root.style.height = '';
+            if (panelsMobile) {
+              panelsMobile.style.minHeight = '';
+              panelsMobile.style.height = '';
+              panelsMobile.style.maxHeight = '';
+            }
+            clearEmbedHeights();
             return;
           }
           var tools = document.querySelector('.login-split__tools');
@@ -4836,33 +4844,53 @@
             if (gapPx) gap = Math.round(gapPx);
           }
           var available = toolsNaturalHeight(tools) - Math.round(login.offsetHeight || 0) - gap;
-          if (available < 280) available = 280;
+          if (available < 300) available = 300;
+          // Alto objetivo alineado a herramientas; permite un poco más para no cortar el CTA.
           root.style.height = available + 'px';
           root.style.minHeight = available + 'px';
-          root.style.maxHeight = available + 'px';
+          root.style.maxHeight = 'none';
           var titleEl = root.querySelector('.login-social-panel__title');
           var subEl = root.querySelector('.login-social-panel__subtitle');
           var tabsEl = root.querySelector('.login-social-tabs');
-          var ctaEl = root.querySelector('.login-social-pane.active > .login-social-card__cta');
+          var activePane = root.querySelector('.login-social-pane.active');
+          var ctaEl = activePane ? activePane.querySelector(':scope > .login-social-card__cta') : null;
+          var bodyEl = activePane ? activePane.querySelector('.login-social-pane__body') : null;
+          var padY = 40;
           var topChrome =
             (titleEl ? titleEl.offsetHeight : 22) +
             (subEl ? subEl.offsetHeight : 18) +
             (tabsEl ? tabsEl.offsetHeight : 44) +
-            36;
-          var ctaH = ctaEl ? ctaEl.offsetHeight + 12 : 52;
+            padY;
+          var ctaH = ctaEl ? Math.ceil(ctaEl.getBoundingClientRect().height) + 14 : 54;
           var panels = root.querySelector('.login-social-panels');
           if (panels) {
-            var panelsH = Math.max(180, available - topChrome);
+            var panelsH = Math.max(200, available - topChrome);
             panels.style.height = panelsH + 'px';
             panels.style.minHeight = panelsH + 'px';
             panels.style.maxHeight = panelsH + 'px';
             void panels.offsetHeight;
-            var embedBox = root.querySelector('.login-social-pane.active [data-social-embed]');
+            var bodyH = Math.max(160, panelsH - ctaH);
+            if (bodyEl) {
+              // Tope para scroll; no forzar height → menos hueco blanco entre preview y CTA.
+              bodyEl.style.height = '';
+              bodyEl.style.minHeight = '0';
+              bodyEl.style.maxHeight = bodyH + 'px';
+              bodyEl.style.overflowY = 'auto';
+            }
+            var embedBox = activePane ? activePane.querySelector('[data-social-embed]') : null;
             if (embedBox) {
-              var embedH = Math.max(180, panelsH - ctaH);
-              embedBox.style.height = embedH + 'px';
-              embedBox.style.minHeight = embedH + 'px';
-              embedBox.style.maxHeight = embedH + 'px';
+              var embedId = embedBox.getAttribute('data-social-embed');
+              // Solo Facebook necesita altura fija (plugin). El resto evita hueco blanco forzado.
+              if (embedId === 'facebook') {
+                var fbH = Math.min(bodyH, 320);
+                embedBox.style.height = fbH + 'px';
+                embedBox.style.minHeight = fbH + 'px';
+                embedBox.style.maxHeight = fbH + 'px';
+              } else {
+                embedBox.style.height = '';
+                embedBox.style.minHeight = '';
+                embedBox.style.maxHeight = '';
+              }
             }
           }
           var fbBox = root.querySelector('[data-social-embed="facebook"]');

@@ -685,7 +685,7 @@
 .login-social-panel.auth-card {
   display: flex;
   flex-direction: column;
-  padding: 22px 20px 18px;
+  padding: 22px 20px 22px;
   margin-top: 0;
   overflow: visible;
 }
@@ -769,20 +769,23 @@
 .login-social-tab.active[data-social-tab="tiktok"] { border-color: #0f172a; background: #f8fafc; color: #0f172a; }
 .login-social-tab.active[data-social-tab="whatsapp"] { border-color: #25d366; background: #ecfdf5; color: #128c7e; }
 
+/* Flujo normal (no absolute): el CTA nunca queda fuera del recorte del panel. */
 .login-social-panels {
   position: relative;
   flex: 1 1 auto;
-  min-height: 340px;
-  overflow: hidden;
+  min-height: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .login-social-pane {
   display: none;
-  position: absolute;
-  inset: 0;
+  position: static;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
+  gap: 12px;
 }
 
 .login-social-pane.active {
@@ -790,12 +793,15 @@
 }
 
 .login-social-pane__body {
-  flex: 1 1 auto;
-  min-height: 120px;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: min(420px, 58vh);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .login-social-pane__embed {
@@ -803,7 +809,7 @@
   overflow: hidden;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  min-height: 280px;
+  min-height: 0;
 }
 
 .login-social-pane__embed iframe {
@@ -813,20 +819,16 @@
   background: #fff;
 }
 
-.login-social-pane[data-social-panel="facebook"] .login-social-pane__body {
-  overflow: hidden;
-}
-
-/* FB Page Plugin: el padding interno recortaba el encabezado (logo + nombre). Caja = alto del iframe. */
+/* FB Page Plugin: alto fijo razonable; el CTA queda debajo en el flujo. */
 .login-social-pane__embed--facebook {
   display: block;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
-  height: 360px;
-  min-height: 360px;
-  max-height: 360px;
+  height: 320px;
+  min-height: 320px;
+  max-height: 320px;
   padding: 0;
 }
 
@@ -841,31 +843,27 @@
   max-height: 100%;
 }
 
-@media (min-width: 700px) {
-  .login-social-pane__embed--facebook {
-    height: 100%;
-    min-height: 0;
-    max-height: none;
-  }
-}
-
 .login-social-pane__embed--instagram iframe {
-  min-height: 460px;
+  min-height: 360px;
+  max-height: 400px;
 }
 
 .login-social-pane__embed--youtube iframe {
   aspect-ratio: 16 / 9;
-  min-height: 220px;
+  min-height: 200px;
+  max-height: 280px;
+  height: auto;
 }
 
 .login-social-pane__embed--linkedin {
   padding: 0;
-  min-height: 360px;
+  min-height: 280px;
   margin-top: 10px;
 }
 
 .login-social-pane__embed--linkedin iframe {
-  min-height: 360px;
+  min-height: 280px;
+  max-height: 360px;
 }
 
 .login-social-linkedin-head {
@@ -934,7 +932,7 @@
   border-radius: 14px;
   padding: 18px 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
-  min-height: 280px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1005,12 +1003,12 @@
 }
 
 .login-social-pane > .login-social-card__cta {
-  flex-shrink: 0;
-  flex-grow: 0;
-  margin-top: 10px;
-  margin-bottom: 2px;
+  flex: 0 0 auto;
+  margin-top: 0;
+  margin-bottom: 0;
   position: relative;
   z-index: 2;
+  box-sizing: border-box;
 }
 
 /* Cel / Fold cerrado: TODO apilado — preferencias → login → herramientas → redes */
@@ -1066,7 +1064,7 @@
 
   .login-social-panel.auth-card {
     order: 3;
-    padding: 24px 20px 20px;
+    padding: 24px 20px 24px;
     overflow: visible;
   }
 
@@ -1076,16 +1074,21 @@
   }
 
   .login-social-panels {
-    min-height: 360px;
+    min-height: 0;
     height: auto !important;
     max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .login-social-pane__body {
+    max-height: min(400px, 55vh);
   }
 
   .login-social-pane__embed--facebook,
   .login-social-pane__embed--facebook iframe {
-    height: 360px;
-    min-height: 360px;
-    max-height: 360px;
+    height: 300px;
+    min-height: 300px;
+    max-height: 300px;
   }
 }
 
@@ -1194,10 +1197,10 @@
     flex-direction: column;
     align-self: start;
     height: auto;
-    min-height: 280px;
+    min-height: 0;
     max-height: none;
-    padding: 18px 20px 18px;
-    overflow: hidden;
+    padding: 18px 20px 22px;
+    overflow: visible;
     box-sizing: border-box;
   }
 
@@ -1210,24 +1213,31 @@
   }
 
   .login-social-panels {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     height: auto;
     max-height: none;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  .login-social-pane__body {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: min(380px, 52vh);
   }
 
   .login-social-pane__embed {
+    flex: 0 1 auto;
     min-height: 0;
   }
 
   .login-social-pane__embed--facebook {
-    height: auto;
-    min-height: 0;
-    max-height: none;
-    flex: 1 1 auto;
+    height: 320px;
+    min-height: 320px;
+    max-height: 320px;
+    flex: 0 0 auto;
     padding: 0;
   }
 
@@ -1238,15 +1248,9 @@
   }
 
   .login-social-pane.active {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-  }
-
-  .login-social-pane__body,
-  .login-social-pane__embed {
-    flex: 1 1 auto;
     min-height: 0;
   }
 
@@ -1362,6 +1366,11 @@
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+}
+
+/* Redes: no recortar el CTA inferior (gana a .auth-card overflow). */
+.login-social-panel.auth-card {
+  overflow: visible;
 }
 
 .auth-card::before {
