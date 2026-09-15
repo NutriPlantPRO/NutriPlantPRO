@@ -685,31 +685,31 @@
 .login-social-panel.auth-card {
   display: flex;
   flex-direction: column;
-  padding: 22px 20px 22px;
+  padding: 16px 16px 14px;
   margin-top: 0;
   overflow: visible;
 }
 
 .login-social-panel__title {
-  margin: 0 0 4px;
-  font-size: 17px;
+  margin: 0 0 2px;
+  font-size: 16px;
   font-weight: 800;
   color: #0f172a;
   text-align: center;
 }
 
 .login-social-panel__subtitle {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   font-size: 12px;
   color: #64748b;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .login-social-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   flex-shrink: 0;
 }
 
@@ -720,8 +720,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 7px 2px;
+  gap: 2px;
+  padding: 6px 2px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background: #f8fafc;
@@ -769,7 +769,7 @@
 .login-social-tab.active[data-social-tab="tiktok"] { border-color: #0f172a; background: #f8fafc; color: #0f172a; }
 .login-social-tab.active[data-social-tab="whatsapp"] { border-color: #25d366; background: #ecfdf5; color: #128c7e; }
 
-/* Flujo normal (no absolute): el CTA nunca queda fuera del recorte del panel. */
+/* Pane en flujo: el body crece y el CTA queda siempre debajo, sin hueco muerto. */
 .login-social-panels {
   position: relative;
   flex: 1 1 auto;
@@ -783,9 +783,10 @@
   display: none;
   position: static;
   flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: visible;
-  gap: 12px;
+  gap: 8px;
 }
 
 .login-social-pane.active {
@@ -793,15 +794,17 @@
 }
 
 .login-social-pane__body {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
-  max-height: min(420px, 58vh);
+  max-height: min(480px, 62vh);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   padding-right: 2px;
   -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
 }
 
 .login-social-pane__embed {
@@ -810,6 +813,7 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   min-height: 0;
+  flex: 1 1 auto;
 }
 
 .login-social-pane__embed iframe {
@@ -819,17 +823,18 @@
   background: #fff;
 }
 
-/* FB Page Plugin: alto fijo razonable; el CTA queda debajo en el flujo. */
+/* FB: el alto real lo marca JS según el espacio libre hasta el CTA. */
 .login-social-pane__embed--facebook {
   display: block;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
-  height: 320px;
-  min-height: 320px;
-  max-height: 320px;
+  height: 380px;
+  min-height: 280px;
+  max-height: none;
   padding: 0;
+  flex: 1 1 auto;
 }
 
 .login-social-pane__embed--facebook iframe {
@@ -840,12 +845,20 @@
   border: 0;
   height: 100% !important;
   min-height: 100%;
-  max-height: 100%;
+}
+
+.login-social-pane__embed--instagram {
+  flex: 1 1 auto;
+  min-height: 320px;
 }
 
 .login-social-pane__embed--instagram iframe {
-  min-height: 360px;
-  max-height: 400px;
+  height: 100%;
+  min-height: 320px;
+}
+
+.login-social-pane__embed--youtube {
+  flex: 0 0 auto;
 }
 
 .login-social-pane__embed--youtube iframe {
@@ -857,13 +870,14 @@
 
 .login-social-pane__embed--linkedin {
   padding: 0;
-  min-height: 280px;
-  margin-top: 10px;
+  margin-top: 8px;
+  flex: 1 1 auto;
+  min-height: 260px;
 }
 
 .login-social-pane__embed--linkedin iframe {
-  min-height: 280px;
-  max-height: 360px;
+  height: 100%;
+  min-height: 260px;
 }
 
 .login-social-linkedin-head {
@@ -930,12 +944,13 @@
 .login-social-whatsapp-card {
   border: 1px solid #bbf7d0;
   border-radius: 14px;
-  padding: 18px 16px;
+  padding: 16px 14px;
   background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
   min-height: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .login-social-whatsapp-card__hero {
@@ -1064,13 +1079,13 @@
 
   .login-social-panel.auth-card {
     order: 3;
-    padding: 24px 20px 24px;
+    padding: 18px 16px 16px;
     overflow: visible;
   }
 
   .login-social-tab {
     font-size: 9px;
-    padding: 8px 3px;
+    padding: 7px 3px;
   }
 
   .login-social-panels {
@@ -1081,14 +1096,14 @@
   }
 
   .login-social-pane__body {
-    max-height: min(400px, 55vh);
+    max-height: min(520px, 68vh);
   }
 
   .login-social-pane__embed--facebook,
   .login-social-pane__embed--facebook iframe {
-    height: 300px;
-    min-height: 300px;
-    max-height: 300px;
+    height: 420px;
+    min-height: 320px;
+    max-height: 520px;
   }
 }
 
@@ -1199,7 +1214,7 @@
     height: auto;
     min-height: 0;
     max-height: none;
-    padding: 18px 20px 22px;
+    padding: 14px 16px 12px;
     overflow: visible;
     box-sizing: border-box;
   }
@@ -1213,45 +1228,47 @@
   }
 
   .login-social-panels {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
     height: auto;
     max-height: none;
     display: flex;
     flex-direction: column;
-    overflow: visible;
+    overflow: hidden;
+  }
+
+  .login-social-pane.active {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
   }
 
   .login-social-pane__body {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
-    max-height: min(380px, 52vh);
+    max-height: none;
+    height: auto;
   }
 
   .login-social-pane__embed {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
   }
 
   .login-social-pane__embed--facebook {
-    height: 320px;
-    min-height: 320px;
-    max-height: 320px;
-    flex: 0 0 auto;
+    height: 100%;
+    min-height: 240px;
+    max-height: none;
+    flex: 1 1 auto;
     padding: 0;
   }
 
   .login-social-pane__embed--facebook iframe {
     height: 100% !important;
     min-height: 100%;
-    max-height: 100%;
-  }
-
-  .login-social-pane.active {
-    flex: 0 1 auto;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+    max-height: none;
   }
 
   .login-split__login,

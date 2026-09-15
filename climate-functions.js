@@ -3040,28 +3040,32 @@
           '" data-f="et0_mm" value="' +
           depthInputValue(w.et0_mm) +
           '" style="width:100%;max-width:84px;padding:5px 6px;border:1px solid #cbd5e1;border-radius:6px;text-align:center;box-sizing:border-box;"></td><td style="padding:6px;text-align:center;vertical-align:middle;background:#f0fdf4;">' +
-          '<div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:0 4px;">' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;">' +
+          '<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;padding:0 2px;white-space:nowrap;">' +
+          '<span style="display:inline-flex;flex:0 0 auto;align-items:center;gap:4px;white-space:nowrap;">' +
           '<input type="number" min="0" step="' +
           dStep +
           '" data-f="irrigation_mm" value="' +
           depthInputValue(w.irrigation_mm) +
-          '" aria-label="Riego ' +
+          '" aria-label="Irrigation ' +
           depthU +
-          '" style="width:64px;padding:5px 6px;border:1px solid #86efac;border-radius:6px;text-align:center;box-sizing:border-box;">' +
-          '<span style="font-size:11px;color:#64748b;font-weight:700;white-space:nowrap;">' +
+          '" title="' +
           depthU +
+          '" style="width:56px;min-width:48px;padding:5px 4px;border:1px solid #86efac;border-radius:6px;text-align:center;box-sizing:border-box;">' +
+          '<span style="font-size:10px;color:#64748b;font-weight:700;white-space:nowrap;">' +
+          (climateUsesInches() ? 'in' : depthU) +
           '</span></span>' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;">' +
+          '<span style="display:inline-flex;flex:0 0 auto;align-items:center;gap:4px;white-space:nowrap;">' +
           '<input type="number" min="0" step="' +
           (climateUsesInches() ? '1' : '0.1') +
           '" data-f="irrigation_m3_ha" value="' +
           volAreaInputValue(m3Ha) +
-          '" aria-label="Riego ' +
+          '" aria-label="Irrigation ' +
           volU +
-          '" style="width:64px;padding:5px 6px;border:1px solid #86efac;border-radius:6px;text-align:center;box-sizing:border-box;">' +
-          '<span style="font-size:11px;color:#64748b;font-weight:700;white-space:nowrap;">' +
+          '" title="' +
           volU +
+          '" style="width:56px;min-width:48px;padding:5px 4px;border:1px solid #86efac;border-radius:6px;text-align:center;box-sizing:border-box;">' +
+          '<span style="font-size:10px;color:#64748b;font-weight:700;white-space:nowrap;">' +
+          (climateUsesInches() ? 'gal/ac' : volU) +
           '</span></span></div>' +
           '</td><td style="padding:8px 6px;text-align:center;vertical-align:middle;">' +
           (w.etc_mm != null ? roundDepthDisplay(depthFromMm(w.etc_mm)) : '—') +

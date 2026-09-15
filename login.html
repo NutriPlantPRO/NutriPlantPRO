@@ -7,7 +7,7 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
   <script defer src="assets/np-i18n.js?v=20260802a"></script>
-  <script defer src="assets/np-units-core.js?v=20260730a"></script>
+  <script defer src="assets/np-units-core.js?v=20260914u2"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
   <link rel="icon" type="image/png" href="assets/pwa-icon-192.png?v=20260815r">
@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=55" />
+  <link rel="stylesheet" href="auth.css?v=56" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -2953,7 +2953,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914ishT7" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
+        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914ishT8" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2969,7 +2969,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260914ur4" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
+        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260914ur6" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
       </div>
     </div>
   </div>
@@ -4665,10 +4665,12 @@
       var fbLastMountedHeight = 0;
 
       function facebookEmbedHeight(container) {
-        if (window.innerWidth < 700) return 300;
+        if (window.innerWidth < 700) {
+          return Math.min(520, Math.max(360, Math.round(window.innerHeight * 0.55)));
+        }
         var box = container || root.querySelector('[data-social-embed="facebook"]');
         var h = box ? Math.round(box.clientHeight || box.getBoundingClientRect().height || 0) : 0;
-        return h >= 180 ? h : 320;
+        return h >= 200 ? h : 420;
       }
 
       function mountFacebookEmbed(container, force) {
@@ -4809,7 +4811,6 @@
         if (syncingSocialHeight) return;
         syncingSocialHeight = true;
         try {
-          var panelsMobile = root.querySelector('.login-social-panels');
           var clearEmbedHeights = function () {
             root.querySelectorAll('[data-social-embed]').forEach(function (el) {
               el.style.height = '';
@@ -4821,17 +4822,26 @@
               el.style.minHeight = '';
               el.style.maxHeight = '';
             });
+            var panelsClear = root.querySelector('.login-social-panels');
+            if (panelsClear) {
+              panelsClear.style.minHeight = '';
+              panelsClear.style.height = '';
+              panelsClear.style.maxHeight = '';
+            }
           };
           if (window.innerWidth < 700) {
             root.style.minHeight = '';
             root.style.maxHeight = '';
             root.style.height = '';
-            if (panelsMobile) {
-              panelsMobile.style.minHeight = '';
-              panelsMobile.style.height = '';
-              panelsMobile.style.maxHeight = '';
-            }
             clearEmbedHeights();
+            var fbMobile = root.querySelector('[data-social-embed="facebook"]');
+            if (fbMobile && root.querySelector('[data-social-tab="facebook"].active')) {
+              var mobileH = facebookEmbedHeight(fbMobile);
+              fbMobile.style.height = mobileH + 'px';
+              fbMobile.style.minHeight = mobileH + 'px';
+              fbMobile.style.maxHeight = mobileH + 'px';
+              mountFacebookEmbed(fbMobile, false);
+            }
             return;
           }
           var tools = document.querySelector('.login-split__tools');
@@ -4844,53 +4854,62 @@
             if (gapPx) gap = Math.round(gapPx);
           }
           var available = toolsNaturalHeight(tools) - Math.round(login.offsetHeight || 0) - gap;
-          if (available < 300) available = 300;
-          // Alto objetivo alineado a herramientas; permite un poco más para no cortar el CTA.
+          if (available < 320) available = 320;
           root.style.height = available + 'px';
           root.style.minHeight = available + 'px';
-          root.style.maxHeight = 'none';
+          root.style.maxHeight = available + 'px';
           var titleEl = root.querySelector('.login-social-panel__title');
           var subEl = root.querySelector('.login-social-panel__subtitle');
           var tabsEl = root.querySelector('.login-social-tabs');
           var activePane = root.querySelector('.login-social-pane.active');
-          var ctaEl = activePane ? activePane.querySelector(':scope > .login-social-card__cta') : null;
+          var ctaEl = activePane ? activePane.querySelector('.login-social-card__cta') : null;
           var bodyEl = activePane ? activePane.querySelector('.login-social-pane__body') : null;
-          var padY = 40;
+          var padY = 28;
           var topChrome =
-            (titleEl ? titleEl.offsetHeight : 22) +
-            (subEl ? subEl.offsetHeight : 18) +
-            (tabsEl ? tabsEl.offsetHeight : 44) +
+            (titleEl ? titleEl.offsetHeight : 20) +
+            (subEl ? subEl.offsetHeight : 16) +
+            (tabsEl ? tabsEl.offsetHeight : 40) +
             padY;
-          var ctaH = ctaEl ? Math.ceil(ctaEl.getBoundingClientRect().height) + 14 : 54;
+          var ctaH = ctaEl ? Math.ceil(ctaEl.getBoundingClientRect().height) + 10 : 50;
           var panels = root.querySelector('.login-social-panels');
           if (panels) {
-            var panelsH = Math.max(200, available - topChrome);
+            var panelsH = Math.max(220, available - topChrome);
             panels.style.height = panelsH + 'px';
             panels.style.minHeight = panelsH + 'px';
             panels.style.maxHeight = panelsH + 'px';
             void panels.offsetHeight;
-            var bodyH = Math.max(160, panelsH - ctaH);
+            // Preview usa TODO el alto libre; el CTA queda fijo abajo (sin hueco entre ambos).
+            var bodyH = Math.max(180, panelsH - ctaH);
             if (bodyEl) {
-              // Tope para scroll; no forzar height → menos hueco blanco entre preview y CTA.
-              bodyEl.style.height = '';
-              bodyEl.style.minHeight = '0';
+              bodyEl.style.height = bodyH + 'px';
+              bodyEl.style.minHeight = bodyH + 'px';
               bodyEl.style.maxHeight = bodyH + 'px';
               bodyEl.style.overflowY = 'auto';
             }
             var embedBox = activePane ? activePane.querySelector('[data-social-embed]') : null;
             if (embedBox) {
               var embedId = embedBox.getAttribute('data-social-embed');
-              // Solo Facebook necesita altura fija (plugin). El resto evita hueco blanco forzado.
-              if (embedId === 'facebook') {
-                var fbH = Math.min(bodyH, 320);
-                embedBox.style.height = fbH + 'px';
-                embedBox.style.minHeight = fbH + 'px';
-                embedBox.style.maxHeight = fbH + 'px';
-              } else {
+              if (embedId === 'youtube') {
+                // YouTube 16:9: no estirar; evita franja blanca enorme.
                 embedBox.style.height = '';
                 embedBox.style.minHeight = '';
                 embedBox.style.maxHeight = '';
+              } else if (embedId === 'linkedin') {
+                var liHead = activePane.querySelector('.login-social-linkedin-head');
+                var liHeadH = liHead ? Math.ceil(liHead.getBoundingClientRect().height) + 8 : 0;
+                var liH = Math.max(200, bodyH - liHeadH);
+                embedBox.style.height = liH + 'px';
+                embedBox.style.minHeight = liH + 'px';
+                embedBox.style.maxHeight = liH + 'px';
+              } else {
+                embedBox.style.height = bodyH + 'px';
+                embedBox.style.minHeight = bodyH + 'px';
+                embedBox.style.maxHeight = bodyH + 'px';
               }
+            }
+            var waCard = activePane ? activePane.querySelector('.login-social-whatsapp-card') : null;
+            if (waCard) {
+              waCard.style.minHeight = Math.max(200, bodyH - 8) + 'px';
             }
           }
           var fbBox = root.querySelector('[data-social-embed="facebook"]');

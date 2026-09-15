@@ -7,7 +7,7 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-units-core.js?v=20260914i18n2"></script>
+  <script src="assets/np-units-core.js?v=20260914u2"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-water-climate-ui.js?v=20260914i18n2"></script>
   <script src="assets/free-tools-embed.js"></script>
@@ -29,7 +29,7 @@
     .tab.active { background: #0f766e; color: #fff; border-color: #0f766e; }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px 10px;
       align-items: stretch;
     }
@@ -40,14 +40,19 @@
       height: 100%;
     }
     .field label {
-      display: flex;
-      align-items: flex-end;
-      min-height: 2.75em;
+      display: block;
+      min-height: 2.6em;
       margin: 0 0 6px;
       font-size: 12px;
       font-weight: 600;
       color: #475569;
-      line-height: 1.25;
+      line-height: 1.3;
+      overflow-wrap: break-word;
+    }
+    .field label [data-np-unit-label] {
+      white-space: nowrap;
+      font-weight: 700;
+      color: #0f766e;
     }
     .field input, .field select {
       width: 100%;
@@ -86,27 +91,57 @@
       flex: 1; min-width: 140px; font-size: 16px; font-weight: 800; color: #0f766e;
       border: 0; border-bottom: 2px dashed #5eead4; background: transparent; padding: 4px 2px;
     }
-    table.samples { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border-radius: 8px; overflow: hidden; }
-    table.samples th, table.samples td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
-    table.samples th { background: #ccfbf1; color: #115e59; }
-    table.samples th.th-lectura,
-    table.samples td.lectura-cell {
-      width: 1%;
-      white-space: nowrap;
-      padding-right: 28px; /* aire antes de Caudal / % media */
+    table.samples {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
     }
+    table.samples col.c-idx { width: 18%; }
+    table.samples col.c-lectura { width: 34%; }
+    table.samples col.c-q { width: 20%; }
+    table.samples col.c-pct { width: 18%; }
+    table.samples col.c-del { width: 44px; }
+    table.samples th, table.samples td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+      vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    table.samples th { background: #ccfbf1; color: #115e59; font-weight: 700; }
     table.samples th.th-q,
-    table.samples td[data-q] { padding-left: 16px; }
+    table.samples td[data-q],
+    table.samples th.th-pct,
+    table.samples td[data-p] {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    table.samples td.idx-cell {
+      font-weight: 700;
+      color: #0f766e;
+      white-space: nowrap;
+    }
+    table.samples td.del-cell {
+      text-align: center;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
     .lectura-wrap {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 8px;
       max-width: 100%;
     }
     .lectura-wrap input {
-      width: 92px;
-      min-width: 92px;
-      max-width: 110px;
+      width: 5.5rem;
+      min-width: 4.5rem;
+      max-width: 7rem;
+      flex: 0 0 auto;
       padding: 6px 8px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
@@ -114,19 +149,46 @@
     }
     .lectura-unit {
       display: inline-block;
-      min-width: 3.25em;
+      flex: 0 0 auto;
       font-size: 12px;
       font-weight: 800;
       color: #0f766e;
       letter-spacing: 0.01em;
+      white-space: nowrap;
     }
-    .table-wrap { overflow-x: auto; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table.samples tr.low td { background: #fef2f2; }
-    table.samples input { width: 100%; min-width: 72px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; }
-    .stat { background: #fff; border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px; }
-    .stat b { display: block; font-size: 18px; color: #0f766e; }
-    .stat span { font-size: 11px; color: #64748b; font-weight: 600; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+      align-items: stretch;
+    }
+    .stat {
+      background: #fff;
+      border: 1px solid #ccfbf1;
+      border-radius: 10px;
+      padding: 10px;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .stat b {
+      display: block;
+      font-size: 17px;
+      color: #0f766e;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .stat span {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 600;
+      line-height: 1.3;
+    }
     .warn { font-size: 12px; color: #b91c1c; margin: 8px 0 0; font-weight: 600; }
     .ok { font-size: 12px; color: #166534; margin: 8px 0 0; font-weight: 600; }
     .fert { margin-top: 10px; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; font-size: 13px; color: #854d0e; line-height: 1.45; }
@@ -484,13 +546,13 @@
     host.innerHTML = lots.map(function (lot, i) {
       var rows = (lot.samples || []).map(function (s, si) {
         return '<tr>' +
-          '<td style="width:72px;font-weight:700;color:#0f766e;">' + sampleLabel(si) + '</td>' +
+          '<td class="idx-cell">' + sampleLabel(si) + '</td>' +
           '<td class="lectura-cell"><div class="lectura-wrap">' +
             '<input type="number" step="any" min="0" data-lot="' + i + '" data-row="' + si + '" value="' + (s.value == null ? '' : s.value) + '" aria-label="' + t('Lectura', 'Reading') + ' ' + unit + '">' +
             '<span class="lectura-unit">' + unit + '</span>' +
           '</div></td>' +
           '<td data-q>—</td><td data-p>—</td>' +
-          '<td style="width:44px;"><button type="button" class="btn btn-ghost" data-del-row="' + i + ':' + si + '" title="×">×</button></td>' +
+          '<td class="del-cell"><button type="button" class="btn btn-ghost" data-del-row="' + i + ':' + si + '" title="×">×</button></td>' +
           '</tr>';
       }).join('');
       return '<div class="lot" data-lot="' + i + '">' +
@@ -498,8 +560,16 @@
           '<input class="title-in" data-title="' + i + '" value="' + String(lot.title || '').replace(/"/g, '&quot;') + '">' +
           (lots.length > 1 ? '<button type="button" class="btn btn-ghost" data-del-lot="' + i + '">' + t('Quitar lote', 'Remove plot') + '</button>' : '') +
         '</div>' +
-        '<div class="table-wrap"><table class="samples" id="lot-table-' + i + '"><thead><tr>' +
-          '<th>#</th><th class="th-lectura">' + lecturaHeader() + '</th><th class="th-q">' + canonicalLabel() + '</th><th>% ' + t('media', 'mean') + '</th><th></th>' +
+        '<div class="table-wrap"><table class="samples" id="lot-table-' + i + '">' +
+          '<colgroup>' +
+            '<col class="c-idx">' +
+            '<col class="c-lectura">' +
+            '<col class="c-q">' +
+            '<col class="c-pct">' +
+            '<col class="c-del">' +
+          '</colgroup>' +
+          '<thead><tr>' +
+          '<th>#</th><th class="th-lectura">' + lecturaHeader() + '</th><th class="th-q">' + canonicalLabel() + '</th><th class="th-pct">% ' + t('media', 'mean') + '</th><th></th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
         '<div class="row-actions">' +
           '<button type="button" class="btn" data-add-row="' + i + '">+ ' + t('Muestra', 'Sample') + '</button>' +
@@ -606,10 +676,10 @@
       ' (<span data-np-unit-label="spacing"></span>)';
     document.getElementById('ur-l-emit').innerHTML = t('Distancia entre goteros', 'Emitter spacing') +
       ' (<span data-np-unit-label="spacing"></span>)';
-    document.getElementById('ur-l-dose').innerHTML = t('Dosis fertirriego prevista', 'Intended fertigation dose') +
+    document.getElementById('ur-l-dose').innerHTML = t('Dosis fertirriego', 'Fertigation dose') +
       ' (<span data-np-unit-label="dose_mass_area"></span>)';
     document.getElementById('ur-l-conc').innerHTML = t('Concentración', 'Concentration') +
-      ' (<span data-np-unit-label="concentration_mass_volume"></span>), ' + t('opcional', 'optional');
+      ' (<span data-np-unit-label="concentration_mass_volume"></span>) · ' + t('opcional', 'optional');
     document.getElementById('ur-l-cvf').textContent = t('CVf fabricante (opcional)', 'Manufacturer CVf (optional)');
     document.getElementById('ur-l-ep').textContent = t('Goteros por planta ep', 'Emitters per plant ep');
     document.getElementById('ur-hint-units').textContent = imperial()

@@ -153,7 +153,7 @@
     'g/L': { magnitude: 'concentration_mass_volume', symbol: 'g/L', factor: 1 },
     'lb/1000 US gal': {
       magnitude: 'concentration_mass_volume',
-      symbol: 'lb/1000 US gal',
+      symbol: 'lb/1000 gal',
       factor: KG_PER_LB / (1000 * M3_PER_US_GAL)
     },
     'lb/100 US gal': {

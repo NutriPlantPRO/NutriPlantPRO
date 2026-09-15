@@ -7,7 +7,7 @@
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-i18n.js?v=20260730a"></script>
-  <script src="assets/np-units-core.js?v=20260730a"></script>
+  <script src="assets/np-units-core.js?v=20260914u2"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-water-climate-ui.js?v=20260914ishT5"></script>
   <script src="assets/free-tools-embed.js"></script>
@@ -74,12 +74,12 @@
       word-wrap: break-word;
     }
     table.ish-table th { background: #f1f5f9; position: sticky; top: 0; z-index: 1; line-height: 1.25; }
-    table.ish-table col.ish-c-num { width: 4%; }
-    table.ish-table col.ish-c-week { width: 12%; }
-    table.ish-table col.ish-c-in { width: 9%; }
-    table.ish-table col.ish-c-riego { width: 22%; }
-    table.ish-table col.ish-c-out { width: 9%; }
-    table.ish-table col.ish-c-ish { width: 8%; }
+    table.ish-table col.ish-c-num { width: 3.5%; }
+    table.ish-table col.ish-c-week { width: 11%; }
+    table.ish-table col.ish-c-in { width: 8.5%; }
+    table.ish-table col.ish-c-riego { width: 28%; }
+    table.ish-table col.ish-c-out { width: 8.5%; }
+    table.ish-table col.ish-c-ish { width: 7.5%; }
     table.ish-table input {
       width: 100%;
       max-width: 84px;
@@ -94,22 +94,26 @@
     table.ish-table th.ish-th-de { font-size: 11px; }
     .ish-th-sub { display: block; font-size: 10px; font-weight: 600; color: #64748b; margin-top: 2px; line-height: 1.2; }
     .ish-th-units { font-size: 10px; font-weight: 600; color: #15803d; margin-top: 2px; }
-    .ish-riego-cell { text-align: center; }
+    .ish-riego-cell { text-align: center; min-width: 0; }
     .ish-riego-row {
       display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding: 0 4px;
+      gap: 8px;
+      padding: 0 2px;
+      white-space: nowrap;
     }
     .ish-riego-pair {
       display: inline-flex;
+      flex: 0 0 auto;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      white-space: nowrap;
     }
-    .ish-riego-pair input { width: 64px; max-width: 64px; }
-    .ish-riego-pair span { font-size: 11px; color: #64748b; font-weight: 700; white-space: nowrap; }
+    .ish-riego-pair input { width: 56px; max-width: 56px; min-width: 48px; }
+    .ish-riego-pair span { font-size: 10px; color: #64748b; font-weight: 700; white-space: nowrap; }
     .ish-eff-card {
       margin: 0 0 10px; padding: 12px 14px;
       background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;
@@ -326,6 +330,13 @@
     } catch (e) {}
     return usesImperial() ? 'US gal/acre' : 'm³/ha';
   }
+  /** Etiqueta corta en celdas: evita que in + gal/ac se partan en dos filas. */
+  function depthUnitCell() {
+    return usesImperial() ? 'in' : (depthUnit() || 'mm');
+  }
+  function volAreaUnitCell() {
+    return usesImperial() ? 'gal/ac' : (volAreaUnit() || 'm³/ha');
+  }
   function depthStep() {
     return usesImperial() ? '0.01' : '0.1';
   }
@@ -496,6 +507,8 @@
     }
     var dU = depthUnit();
     var vU = volAreaUnit();
+    var dCell = depthUnitCell();
+    var vCell = volAreaUnitCell();
     var dS = depthStep();
     var vS = usesImperial() ? '1' : '0.1';
     var macroOn = readMacro();
@@ -514,10 +527,10 @@
         '<td class="ish-riego-cell"><div class="ish-riego-row">' +
           '<div class="ish-riego-pair"><input type="number" min="0" step="' + dS + '" data-f="irrigation_mm" value="' +
           depthInputVal(w.irrigation_mm) +
-          '" aria-label="Riego ' + dU + '" /><span>' + dU + '</span></div>' +
+          '" aria-label="Irrigation ' + dU + '" title="' + dU + '" /><span>' + dCell + '</span></div>' +
           '<div class="ish-riego-pair"><input type="number" min="0" step="' + vS + '" data-f="irrigation_m3_ha" value="' +
           volAreaInputVal(m3Ha) +
-          '" aria-label="Riego ' + vU + '" /><span>' + vU + '</span></div>' +
+          '" aria-label="Irrigation ' + vU + '" title="' + vU + '" /><span>' + vCell + '</span></div>' +
         '</div></td>' +
         '<td>' + (w.etc_mm != null ? depthInputVal(w.etc_mm) : '—') + '</td>' +
         '<td>' + (w.deficit_mm != null ? depthInputVal(w.deficit_mm) : '—') + '</td>' +
