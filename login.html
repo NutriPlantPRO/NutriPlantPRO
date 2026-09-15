@@ -4664,9 +4664,9 @@
       var fbLastMountedWidth = 0;
       var fbLastMountedHeight = 0;
 
-      function facebookEmbedHeight() {
+      function facebookEmbedHeight(container) {
         if (window.innerWidth < 700) return 360;
-        var box = root.querySelector('[data-social-embed="facebook"]');
+        var box = container || root.querySelector('[data-social-embed="facebook"]');
         var h = box ? Math.round(box.clientHeight || box.getBoundingClientRect().height || 0) : 0;
         return h >= 180 ? h : 400;
       }
@@ -4674,7 +4674,7 @@
       function mountFacebookEmbed(container, force) {
         if (!container) return;
         var width = facebookEmbedWidth(container);
-        var fbHeight = facebookEmbedHeight();
+        var fbHeight = facebookEmbedHeight(container);
         var prevWidth = parseInt(container.dataset.fbWidth, 10) || 0;
         var prevHeight = parseInt(container.dataset.fbHeight, 10) || 0;
         if (
@@ -4729,7 +4729,12 @@
         window.clearTimeout(fbResizeTimer);
         fbResizeTimer = window.setTimeout(function () {
           var width = facebookEmbedWidth(container);
-          if (!container.querySelector('iframe') || Math.abs(width - fbLastMountedWidth) > 8) {
+          var height = facebookEmbedHeight(container);
+          if (
+            !container.querySelector('iframe') ||
+            Math.abs(width - fbLastMountedWidth) > 8 ||
+            Math.abs(height - fbLastMountedHeight) > 16
+          ) {
             mountFacebookEmbed(container, false);
           }
         }, 220);
@@ -4820,17 +4825,26 @@
               var titleEl = root.querySelector('.login-social-panel__title');
               var subEl = root.querySelector('.login-social-panel__subtitle');
               var tabsEl = root.querySelector('.login-social-tabs');
-              var ctaEl = root.querySelector('.login-social-pane.active > .login-social-card__cta');
               var chrome =
                 (titleEl ? titleEl.offsetHeight : 22) +
                 (subEl ? subEl.offsetHeight : 18) +
                 (tabsEl ? tabsEl.offsetHeight : 44) +
-                (ctaEl ? ctaEl.offsetHeight + 14 : 56) +
                 36;
               var panelsH = Math.max(180, available - chrome);
               panels.style.minHeight = panelsH + 'px';
               panels.style.height = panelsH + 'px';
               panels.style.maxHeight = panelsH + 'px';
+              void panels.offsetHeight;
+              var bodyEl = root.querySelector('.login-social-pane.active .login-social-pane__body');
+              var embedBox = root.querySelector('.login-social-pane.active [data-social-embed]');
+              if (bodyEl && embedBox) {
+                var embedH = Math.round(bodyEl.clientHeight || 0);
+                if (embedH >= 180) {
+                  embedBox.style.height = embedH + 'px';
+                  embedBox.style.minHeight = embedH + 'px';
+                  embedBox.style.maxHeight = embedH + 'px';
+                }
+              }
             }
             var fbBox = root.querySelector('[data-social-embed="facebook"]');
             if (fbBox && root.querySelector('[data-social-tab="facebook"].active')) {
@@ -4863,11 +4877,6 @@
       });
 
       window.addEventListener('resize', function () {
-        var mode = window.innerWidth < 700 ? 'mobile' : 'desktop';
-        if (mode !== fbEmbedHeightMode && fbEmbedHost) {
-          fbEmbedHeightCache = null;
-          mountFacebookEmbed(fbEmbedHost, true);
-        }
         syncSocialPanelHeight();
       });
       window.addEventListener('load', syncSocialPanelHeight);
@@ -4876,17 +4885,10 @@
       }
       var toolsCol = document.querySelector('.login-split__tools');
       var loginCol = document.querySelector('.login-split__login');
-      var fbEmbedHost = root.querySelector('[data-social-embed="facebook"]');
       if (window.ResizeObserver) {
         var ro = new window.ResizeObserver(syncSocialPanelHeight);
         if (toolsCol) ro.observe(toolsCol);
         if (loginCol) ro.observe(loginCol);
-        if (fbEmbedHost) {
-          var fbRo = new window.ResizeObserver(function () {
-            queueFacebookEmbedResize(fbEmbedHost);
-          });
-          fbRo.observe(fbEmbedHost);
-        }
       }
       window.setTimeout(syncSocialPanelHeight, 400);
       window.setTimeout(syncSocialPanelHeight, 1200);
