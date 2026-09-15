@@ -540,14 +540,20 @@
     if (!canvas || !canvas.getContext) return;
     var ctx = canvas.getContext('2d');
     var dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.min(window.devicePixelRatio, 2.5) : 1;
-    var cssW = canvas.clientWidth || Number(canvas.getAttribute('width')) || 800;
-    var cssH = canvas.clientHeight || Number(canvas.getAttribute('height')) || 260;
-    if (cssW < 40) cssW = 800;
-    if (cssH < 40) cssH = 260;
+    var parent = canvas.parentElement;
+    var parentW = parent ? parent.clientWidth || parent.getBoundingClientRect().width : 0;
+    var cssW = parentW >= 40 ? Math.floor(parentW) : canvas.clientWidth || 0;
+    if (cssW < 40) cssW = Number(canvas.getAttribute('width')) || 640;
+    var cssH = canvas.clientHeight || Number(canvas.getAttribute('height')) || 280;
+    if (cssH < 40) cssH = 280;
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
-    canvas.style.width = cssW + 'px';
+    // Ancho fluido: no fijar px (antes quedaba ~800px y se veía “a la mitad”).
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = '100%';
     canvas.style.height = cssH + 'px';
+    canvas.style.display = 'block';
+    canvas.style.boxSizing = 'border-box';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
     ctx.fillStyle = '#ffffff';

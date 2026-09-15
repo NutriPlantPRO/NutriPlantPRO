@@ -126,16 +126,24 @@
       font-size: 14px; font-weight: 700; color: #14532d; text-align: right; background: #fff;
     }
     .ish-eff-card__row span { font-size: 13px; font-weight: 700; color: #14532d; }
-    .ish-chart-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ish-chart-wrap {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     #ish-chart {
       display: block;
-      width: 100%;
-      min-width: 520px;
+      width: 100% !important;
+      max-width: 100%;
+      min-width: 0;
       height: 280px;
       max-height: 320px;
       background: #fff;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
+      box-sizing: border-box;
     }
     .chk { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569; margin-top: 10px; }
   </style>
@@ -271,7 +279,7 @@
     <h3 style="margin:16px 0 6px;font-size:15px;color:#0f172a;font-weight:800;">Rendimiento agrícola</h3>
     <p class="hint" style="margin:0 0 8px;">Evolución del techo de rendimiento por agua en el ciclo.</p>
     <div class="ish-chart-wrap">
-      <canvas id="ish-chart" width="800" height="280" aria-label="Gráfica rendimiento agrícola"></canvas>
+      <canvas id="ish-chart" height="280" aria-label="Gráfica rendimiento agrícola"></canvas>
     </div>
 
     <div style="margin-top:14px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">
@@ -284,7 +292,7 @@
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260801p"></script>
-  <script src="assets/np-ish-core.js?v=20260914i3"></script>
+  <script src="assets/np-ish-core.js?v=20260914i4"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -548,9 +556,13 @@
     var canvas = document.getElementById('ish-chart');
     if (!canvas || !ISH.drawYieldChart) return;
     var rows = (result && result.weeks) || weeks;
-    ISH.drawYieldChart(canvas, rows, {
+    var opts = {
       language: prefs().language === 'en' ? 'en' : 'es',
       emptyText: t('Sin datos aún', 'No data yet')
+    };
+    // Esperar layout del modal/iframe para tomar el ancho real del contenedor.
+    window.requestAnimationFrame(function () {
+      ISH.drawYieldChart(canvas, rows, opts);
     });
   }
 
@@ -801,6 +813,14 @@
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () { drawChart({ weeks: weeks }); }, 150);
     });
+    var chartWrap = document.querySelector('.ish-chart-wrap');
+    if (chartWrap && window.ResizeObserver) {
+      var chartRoTimer;
+      new window.ResizeObserver(function () {
+        clearTimeout(chartRoTimer);
+        chartRoTimer = setTimeout(function () { drawChart({ weeks: weeks }); }, 80);
+      }).observe(chartWrap);
+    }
     if (!weeks.length) ensureWeeksFromDates(false);
     recalculate();
 

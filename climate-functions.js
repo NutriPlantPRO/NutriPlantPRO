@@ -2883,8 +2883,8 @@
         'Water-related yield ceiling over the crop cycle.'
       ) +
       '</p>' +
-      '<div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;">' +
-      '<canvas id="climate-ish-chart" width="800" height="280" style="display:block;width:100%;min-width:520px;height:280px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"></canvas></div>' +
+      '<div style="width:100%;max-width:100%;box-sizing:border-box;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;">' +
+      '<canvas id="climate-ish-chart" height="280" style="display:block;width:100%;max-width:100%;min-width:0;height:280px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;box-sizing:border-box;"></canvas></div>' +
       '<div style="margin-top:12px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">' +
       '<strong>' +
       wcT('Estimado metodológico.', 'Methodological estimate.') +
@@ -3128,13 +3128,40 @@
       '%</div></div></div>';
   }
 
+  var climateIshChartRo = null;
+  var climateIshChartLastRows = [];
   function drawClimateIshChart(rows) {
     var canvas = document.getElementById('climate-ish-chart');
     var ISH = window.NpIsh;
     if (!canvas || !ISH || !ISH.drawYieldChart) return;
-    ISH.drawYieldChart(canvas, rows || [], {
-      language: climatePrefs().language === 'en' ? 'en' : 'es'
+    climateIshChartLastRows = rows || [];
+    var lang = climatePrefs().language === 'en' ? 'en' : 'es';
+    window.requestAnimationFrame(function () {
+      var c = document.getElementById('climate-ish-chart');
+      if (!c || !window.NpIsh) return;
+      window.NpIsh.drawYieldChart(c, climateIshChartLastRows, { language: lang });
     });
+    var wrap = canvas.parentElement;
+    if (wrap && window.ResizeObserver) {
+      if (climateIshChartRo) {
+        try {
+          climateIshChartRo.disconnect();
+        } catch (e) {}
+        climateIshChartRo = null;
+      }
+      var t;
+      climateIshChartRo = new window.ResizeObserver(function () {
+        clearTimeout(t);
+        t = setTimeout(function () {
+          var c2 = document.getElementById('climate-ish-chart');
+          if (!c2 || !window.NpIsh) return;
+          window.NpIsh.drawYieldChart(c2, climateIshChartLastRows, {
+            language: climatePrefs().language === 'en' ? 'en' : 'es'
+          });
+        }, 80);
+      });
+      climateIshChartRo.observe(wrap);
+    }
   }
 
   function persistClimateIshFromDom(recompute) {

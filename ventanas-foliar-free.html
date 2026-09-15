@@ -246,14 +246,14 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-foliar-window-core.js?v=20260914fw4"></script>
+  <script src="assets/np-foliar-window-core.js?v=20260914fw5"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
   'use strict';
   var FW = window.NpFoliarWindow;
   var UI = window.NpWaterClimateUI;
-  var map, marker, persist, rows = [], selected = null, langEn = false;
+  var map, marker, persist, rows = [], selected = null, langEn = false, generatedAt = null;
 
   function prefs() {
     try {
@@ -270,6 +270,34 @@
   function setStatus(msg) {
     var el = document.getElementById('fw-status');
     if (el) el.textContent = msg || '';
+  }
+  function formatGeneratedAt(ts) {
+    if (ts == null) return '';
+    var d = new Date(ts);
+    if (!Number.isFinite(d.getTime())) return '';
+    try {
+      return d.toLocaleString(langEn || prefs().language === 'en' ? 'en-US' : 'es-MX', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+    } catch (e) {
+      return d.toISOString();
+    }
+  }
+  function refreshMatrixStatus() {
+    if (!rows.length) {
+      setStatus('');
+      return;
+    }
+    var line = t(
+      '3 días · 24 h · 1 lote. Estimación satelital — validar en campo.',
+      '3 days · 24 h · 1 plot. Satellite estimate — validate in the field.'
+    );
+    var when = formatGeneratedAt(generatedAt);
+    if (when) {
+      line += ' · ' + t('Generado:', 'Generated:') + ' ' + when;
+    }
+    setStatus(line);
   }
   function setGeoStatus(msg) {
     var el = document.getElementById('fw-geo-status');
@@ -620,6 +648,7 @@
     if (UI && UI.applyLanguage) UI.applyLanguage(document.body);
     if (UI && UI.refreshUnitLabels) UI.refreshUnitLabels();
     reclassify();
+    refreshMatrixStatus();
   }
   function setTxt(id, text) {
     var el = document.getElementById(id);
@@ -642,12 +671,11 @@
     try {
       var data = await FW.fetchHourly(c.lat, c.lng, FW.FORECAST_DAYS);
       rows = FW.classifySeries(data.hours, readRanges());
+      generatedAt = Date.now();
       selected = rows.filter(isNow)[0] || rows.filter(function (r) {
         return FW.inDisplayHours(r.hour, FW.DEFAULT_HOUR_START, FW.DEFAULT_HOUR_END, show24());
       })[0] || rows[0] || null;
-      setStatus(
-        t('3 días · 24 h · 1 lote. Estimación satelital — validar en campo.', '3 days · 24 h · 1 plot. Satellite estimate — validate in the field.')
-      );
+      refreshMatrixStatus();
       reclassify();
       if (persist && persist.saveNow) persist.saveNow();
     } catch (err) {
@@ -707,7 +735,10 @@
       lng: document.getElementById('fw-lng').value,
       lote: document.getElementById('fw-lote').value,
       show24: show24(),
-      ranges: readRanges()
+      ranges: readRanges(),
+      generatedAt: generatedAt,
+      selectedTime: selected && selected.time ? selected.time : null,
+      rows: rows
     };
   }
   function applyPersistState(d) {
@@ -717,6 +748,14 @@
     if (d.lote != null) document.getElementById('fw-lote').value = d.lote;
     if (d.show24 != null) document.getElementById('fw-24h').checked = !!d.show24;
     if (d.ranges) writeRanges(d.ranges);
+    if (d.generatedAt != null) generatedAt = d.generatedAt;
+    if (Array.isArray(d.rows) && d.rows.length) {
+      rows = d.rows;
+      if (d.selectedTime) {
+        selected = rows.filter(function (r) { return r.time === d.selectedTime; })[0] || null;
+      }
+      if (!selected) selected = rows[0] || null;
+    }
     var lat = parseFloat(d.lat);
     var lng = parseFloat(d.lng);
     if (Number.isFinite(lat) && Number.isFinite(lng) && marker) applyCoords(lat, lng, true);
@@ -770,7 +809,10 @@
       persist = window.NpFreePersist.bind('ventanas_foliar', getPersistState, applyPersistState);
     }
     refreshCopy();
-  });
+    if (rows.length) {
+      reclassify();
+      refreshMatrixStatus();
+    }
 })();
   </script>
 </body>
