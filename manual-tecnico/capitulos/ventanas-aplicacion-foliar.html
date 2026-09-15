@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/ventanas-aplicacion-foliar.html",
   "inLanguage": "es",
   "datePublished": "2026-09-14",
-  "dateModified": "2026-09-14",
+  "dateModified": "2026-09-15",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -70,15 +70,15 @@
 
     <h2>Variables</h2>
     <p>
-      El <strong>sweet spot</strong> (intersección; verde más oscuro) es el criterio clásico de pulverización:
-      temperatura <strong>15–25 °C</strong>, humedad relativa <strong>50–70 %</strong> y viento <strong>2–8 km/h</strong>.
+      El <strong>sweet spot</strong> (intersección; verde más oscuro) es el criterio de pulverización foliar NutriPlant:
+      temperatura <strong>15–25 °C</strong>, humedad relativa <strong>50–80 %</strong> y viento <strong>2–8 km/h</strong>.
       Las tres deben coincidir. DPV aire <strong>0,3–1,2 kPa</strong> y <strong>0 mm</strong> de lluvia (sin lluvia inmediata ~2 h).
     </p>
     <table class="mt-table">
       <thead><tr><th>Variable</th><th>Sweet spot (muy favorable)</th><th>Banda publicación NutriPlant</th></tr></thead>
       <tbody>
         <tr><td>Temperatura</td><td>15–25 °C</td><td>18–28 °C</td></tr>
-        <tr><td>Humedad relativa</td><td>50–70 %</td><td>&gt; 60 %</td></tr>
+        <tr><td>Humedad relativa</td><td>50–80 %</td><td>&gt; 60 %</td></tr>
         <tr><td>Viento</td><td>2–8 km/h</td><td>3–12 km/h</td></tr>
         <tr><td>DPV (aire)</td><td colspan="2">0,3–1,2 kPa</td></tr>
         <tr><td>Precipitación</td><td colspan="2">0 mm en la hora y sin lluvia inmediata (~2 h)</td></tr>
@@ -88,24 +88,107 @@
 
     <h2>Cómo se clasifica</h2>
     <p>
-      Cada hora recibe un semáforo de 5 colores. El resultado de la hora es el
-      <strong>factor limitante</strong>: manda el peor indicador.
+      Cada hora recibe <strong>cinco notas</strong> (0 a 4). No se promedian:
+      el resultado de la hora es el <strong>factor limitante</strong> (el peor indicador).
     </p>
     <div class="mt-formula">clase hora = máx(T, HR, viento, DPV, lluvia)</div>
+    <table class="mt-table">
+      <thead><tr><th>Nota</th><th>Semáforo</th><th>Lectura</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>Muy favorable</td><td>Ambiente apto para cubrir y absorber</td></tr>
+        <tr><td>1</td><td>Favorable</td><td>Apto, con un factor un poco fuera</td></tr>
+        <tr><td>2</td><td>Precaución</td><td>Se puede aplicar con criterio (deriva, rocío o lluvia próxima)</td></tr>
+        <tr><td>3</td><td>Desfavorable</td><td>Mejor esperar otra hora</td></tr>
+        <tr><td>4</td><td>Muy desfavorable</td><td>No aplicar (lluvia, calor extremo, deriva fuerte)</td></tr>
+      </tbody>
+    </table>
     <p>
-      DPV = déficit de presión de vapor del <strong>aire</strong> (Magnus/Tetens; no T hoja).
-      Útil para evaporación de la gota, no es el VPD avanzado de transpiración de planta.
-      Un DPV <em>alto</em> (tarde seca) limita fuerte; un DPV muy bajo (mañana húmeda) queda en
-      <strong>precaución</strong> (rocío), no en rojo.
+      Las tablas usan el <strong>default NutriPlant</strong>. Si el usuario cambia min/max en la herramienta,
+      las distancias se miden desde esos límites (misma lógica). El cálculo interno es SI (°C, km/h, kPa, mm);
+      °F y mph son solo presentación.
     </p>
-    <ul>
-      <li><strong>Muy favorable / Favorable</strong> — ambiente apto para cubrir y absorber.</li>
-      <li><strong>Precaución</strong> — se puede aplicar con criterio (deriva, secado o lluvia próxima).</li>
-      <li><strong>Desfavorable / Muy desfavorable</strong> — mejor esperar otra hora.</li>
-    </ul>
+
+    <h3>Temperatura (ideal 15–25 °C)</h3>
+    <p>Se mide qué tan lejos está del rango, por arriba o por abajo.</p>
+    <table class="mt-table">
+      <thead><tr><th>Valor</th><th>Distancia al rango</th><th>Clase</th></tr></thead>
+      <tbody>
+        <tr><td>15–25 °C</td><td>0</td><td>Muy favorable</td></tr>
+        <tr><td>13–15 o 25–27 °C</td><td>≤ 2 °C</td><td>Favorable</td></tr>
+        <tr><td>11–13 o 27–29 °C</td><td>≤ 4 °C</td><td>Precaución</td></tr>
+        <tr><td>8–11 o 29–32 °C</td><td>≤ 7 °C</td><td>Desfavorable</td></tr>
+        <tr><td>&lt; 8 o &gt; 32 °C</td><td>&gt; 7 °C</td><td>Muy desfavorable</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Humedad relativa (ideal 50–80 %)</h3>
+    <p>
+      Es <strong>asimétrica</strong>: arriba de 80 % (costa; la gota dura más) se castiga suave;
+      abajo de 50 % (aire seco; evaporación) se castiga más. La HR alta nunca llega a
+      <strong>muy desfavorable</strong>.
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>HR</th><th>Lado</th><th>Clase</th></tr></thead>
+      <tbody>
+        <tr><td>50–80 %</td><td>Dentro</td><td>Muy favorable</td></tr>
+        <tr><td>81–90 %</td><td>Arriba (+1 a +10)</td><td>Favorable</td></tr>
+        <tr><td>91–100 %</td><td>Arriba (+11 a +20)</td><td>Precaución</td></tr>
+        <tr><td>40–49 %</td><td>Abajo (−1 a −10)</td><td>Precaución</td></tr>
+        <tr><td>30–39 %</td><td>Abajo (−11 a −20)</td><td>Desfavorable</td></tr>
+        <tr><td>&lt; 30 %</td><td>Abajo (&gt; 20)</td><td>Muy desfavorable</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Viento (ideal 2–8 km/h)</h3>
+    <table class="mt-table">
+      <thead><tr><th>Viento</th><th>Clase</th><th>Por qué</th></tr></thead>
+      <tbody>
+        <tr><td>2–8 km/h</td><td>Muy favorable</td><td>Cobertura y poca deriva</td></tr>
+        <tr><td>1–2 km/h</td><td>Favorable</td><td>Calma: vigilar inversión</td></tr>
+        <tr><td>&lt; 1 km/h</td><td>Precaución</td><td>Inversión / gota que no viaja</td></tr>
+        <tr><td>8–10 km/h</td><td>Favorable</td><td>Deriva ligera</td></tr>
+        <tr><td>10–12 km/h</td><td>Precaución</td><td>Deriva</td></tr>
+        <tr><td>12–16 km/h</td><td>Desfavorable</td><td>Deriva fuerte</td></tr>
+        <tr><td>&gt; 16 km/h</td><td>Muy desfavorable</td><td>No pulverizar</td></tr>
+      </tbody>
+    </table>
+
+    <h3>DPV del aire (ideal 0,3–1,2 kPa)</h3>
+    <p>
+      Déficit de presión de vapor del <strong>aire</strong> (Magnus/Tetens; no T hoja).
+      Útil para evaporación de la gota; no es el VPD avanzado de transpiración de planta
+      (<a href="vpd-deficit-presion-vapor.html">capítulo VPD</a>).
+      Un DPV <em>alto</em> (tarde seca) limita fuerte; un DPV muy bajo (mañana húmeda / rocío)
+      queda en <strong>precaución</strong>, no en rojo.
+    </p>
+    <div class="mt-formula">e<sub>s</sub> = 0,6108 × exp(17,27 × T / (T + 237,3))<br>DPV = e<sub>s</sub> × (1 − HR/100)</div>
+    <table class="mt-table">
+      <thead><tr><th>DPV</th><th>Clase</th><th>Lectura</th></tr></thead>
+      <tbody>
+        <tr><td>0,30–1,20 kPa</td><td>Muy favorable</td><td>La gota ni se seca ni queda eternamente</td></tr>
+        <tr><td>0,15–0,30 kPa</td><td>Favorable</td><td>Un poco húmedo</td></tr>
+        <tr><td>&lt; 0,15 kPa</td><td>Precaución</td><td>Rocío (nunca rojo por DPV bajo)</td></tr>
+        <tr><td>1,20–1,60 kPa</td><td>Precaución</td><td>Se evapora de más</td></tr>
+        <tr><td>1,60–2,20 kPa</td><td>Desfavorable</td><td>Quema la gota</td></tr>
+        <tr><td>&gt; 2,20 kPa</td><td>Muy desfavorable</td><td>Tarde seca</td></tr>
+      </tbody>
+    </table>
+    <p>Arriba de 1,2 kPa no hay banda <em>favorable</em>: brinca a precaución. El DPV alto sí quema la gota.</p>
+
+    <h3>Lluvia (quiere 0 mm)</h3>
+    <table class="mt-table">
+      <thead><tr><th>Condición</th><th>Clase</th></tr></thead>
+      <tbody>
+        <tr><td>0 mm en la hora, &lt; 0,2 mm en las próximas 2 h, probabilidad &lt; 50 %</td><td>Muy favorable</td></tr>
+        <tr><td>Probabilidad 50–69 %</td><td>Favorable</td></tr>
+        <tr><td>Probabilidad ≥ 70 %, o ≥ 0,2 mm en las próximas 2 h</td><td>Precaución</td></tr>
+        <tr><td>≥ 0,1 mm en esa hora, o ≥ 2 mm en las próximas 2 h</td><td>Desfavorable</td></tr>
+        <tr><td>≥ 0,5 mm en esa hora</td><td>Muy desfavorable</td></tr>
+      </tbody>
+    </table>
     <p>
       Ejemplos: T 20 °C, HR 60 %, viento 5 km/h (las tres en el sweet spot) →
-      <strong>muy favorable</strong>. 07:00 h con T 22 °C y HR 78 % (HR un poco arriba de 70 %) →
+      <strong>muy favorable</strong>. 08:00 h con T 18,7 °C y HR 81 % (HR un poco arriba de 80 %; típico de costa) →
       <strong>favorable</strong>. 14:00 h con T 31 °C, HR 43 %, viento 16 km/h, DPV 2,10 kPa →
       <strong>desfavorable</strong>.
     </p>
@@ -148,16 +231,116 @@
 
     <h2>Default ranges</h2>
     <p>
-      The <strong>sweet spot</strong> (very favorable) is the classic spray intersection:
-      <strong>15–25 °C</strong>, RH <strong>50–70%</strong>, wind <strong>2–8 km/h</strong>.
+      The <strong>sweet spot</strong> (very favorable) is the NutriPlant foliar spray intersection:
+      <strong>15–25 °C</strong>, RH <strong>50–80%</strong>, wind <strong>2–8 km/h</strong>.
       Wider NutriPlant publication band: T 18–28 °C, RH &gt; 60%, wind 3–12 km/h. Air VPD 0.3–1.2 kPa; 0 mm rain.
       The hourly matrix is <strong>24 h</strong> (night included).
     </p>
 
     <h2>How it is classified</h2>
-    <p>Each hour gets a 5-color band. The hour result is the <strong>limiting factor</strong> (worst indicator wins).</p>
+    <p>
+      Each hour gets <strong>five scores</strong> (0 to 4). They are not averaged:
+      the hour result is the <strong>limiting factor</strong> (worst indicator wins).
+    </p>
     <div class="mt-formula">hour class = max(T, RH, wind, VPD, rain)</div>
-    <p>Air VPD (Magnus/Tetens; not leaf temperature) — droplet evaporation, not the advanced plant-transpiration VPD.</p>
+    <table class="mt-table">
+      <thead><tr><th>Score</th><th>Band</th><th>Reading</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>Very favorable</td><td>Fit for coverage and uptake</td></tr>
+        <tr><td>1</td><td>Favorable</td><td>Fit, with one factor slightly off</td></tr>
+        <tr><td>2</td><td>Caution</td><td>Apply with judgment (drift, dew, or rain soon)</td></tr>
+        <tr><td>3</td><td>Unfavorable</td><td>Wait for another hour</td></tr>
+        <tr><td>4</td><td>Very unfavorable</td><td>Do not spray (rain, extreme heat, strong drift)</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Tables use the <strong>NutriPlant default</strong>. If the user changes min/max in the tool,
+      distances are measured from those limits (same logic). Physics stay SI (°C, km/h, kPa, mm);
+      °F and mph are display only.
+    </p>
+
+    <h3>Temperature (ideal 15–25 °C)</h3>
+    <p>Distance from the band, above or below.</p>
+    <table class="mt-table">
+      <thead><tr><th>Value</th><th>Distance</th><th>Class</th></tr></thead>
+      <tbody>
+        <tr><td>15–25 °C</td><td>0</td><td>Very favorable</td></tr>
+        <tr><td>13–15 or 25–27 °C</td><td>≤ 2 °C</td><td>Favorable</td></tr>
+        <tr><td>11–13 or 27–29 °C</td><td>≤ 4 °C</td><td>Caution</td></tr>
+        <tr><td>8–11 or 29–32 °C</td><td>≤ 7 °C</td><td>Unfavorable</td></tr>
+        <tr><td>&lt; 8 or &gt; 32 °C</td><td>&gt; 7 °C</td><td>Very unfavorable</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Relative humidity (ideal 50–80%)</h3>
+    <p>
+      <strong>Asymmetric</strong>: above 80% (coast; droplet lasts longer) is a light penalty;
+      below 50% (dry air; evaporation) is harsher. High RH never reaches
+      <strong>very unfavorable</strong>.
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>RH</th><th>Side</th><th>Class</th></tr></thead>
+      <tbody>
+        <tr><td>50–80%</td><td>Inside</td><td>Very favorable</td></tr>
+        <tr><td>81–90%</td><td>Above (+1 to +10)</td><td>Favorable</td></tr>
+        <tr><td>91–100%</td><td>Above (+11 to +20)</td><td>Caution</td></tr>
+        <tr><td>40–49%</td><td>Below (−1 to −10)</td><td>Caution</td></tr>
+        <tr><td>30–39%</td><td>Below (−11 to −20)</td><td>Unfavorable</td></tr>
+        <tr><td>&lt; 30%</td><td>Below (&gt; 20)</td><td>Very unfavorable</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Wind (ideal 2–8 km/h)</h3>
+    <table class="mt-table">
+      <thead><tr><th>Wind</th><th>Class</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>2–8 km/h</td><td>Very favorable</td><td>Coverage, little drift</td></tr>
+        <tr><td>1–2 km/h</td><td>Favorable</td><td>Calm: watch inversion</td></tr>
+        <tr><td>&lt; 1 km/h</td><td>Caution</td><td>Inversion / droplet does not travel</td></tr>
+        <tr><td>8–10 km/h</td><td>Favorable</td><td>Light drift</td></tr>
+        <tr><td>10–12 km/h</td><td>Caution</td><td>Drift</td></tr>
+        <tr><td>12–16 km/h</td><td>Unfavorable</td><td>Strong drift</td></tr>
+        <tr><td>&gt; 16 km/h</td><td>Very unfavorable</td><td>Do not spray</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Air VPD (ideal 0.3–1.2 kPa)</h3>
+    <p>
+      Air vapor-pressure deficit (Magnus/Tetens; not leaf temperature) — droplet evaporation,
+      not the advanced plant-transpiration VPD (<a href="vpd-deficit-presion-vapor.html">VPD chapter</a>).
+      High VPD (dry afternoon) is a hard limit; very low VPD (wet morning / dew) stays
+      <strong>caution</strong>, not red.
+    </p>
+    <div class="mt-formula">e<sub>s</sub> = 0.6108 × exp(17.27 × T / (T + 237.3))<br>VPD = e<sub>s</sub> × (1 − RH/100)</div>
+    <table class="mt-table">
+      <thead><tr><th>VPD</th><th>Class</th><th>Reading</th></tr></thead>
+      <tbody>
+        <tr><td>0.30–1.20 kPa</td><td>Very favorable</td><td>Droplet neither dries nor stays forever</td></tr>
+        <tr><td>0.15–0.30 kPa</td><td>Favorable</td><td>A bit wet</td></tr>
+        <tr><td>&lt; 0.15 kPa</td><td>Caution</td><td>Dew (never red for low VPD)</td></tr>
+        <tr><td>1.20–1.60 kPa</td><td>Caution</td><td>Evaporates too fast</td></tr>
+        <tr><td>1.60–2.20 kPa</td><td>Unfavorable</td><td>Burns the droplet</td></tr>
+        <tr><td>&gt; 2.20 kPa</td><td>Very unfavorable</td><td>Dry afternoon</td></tr>
+      </tbody>
+    </table>
+    <p>Above 1.2 kPa there is no <em>favorable</em> band: it jumps to caution. High VPD does burn the droplet.</p>
+
+    <h3>Rain (wants 0 mm)</h3>
+    <table class="mt-table">
+      <thead><tr><th>Condition</th><th>Class</th></tr></thead>
+      <tbody>
+        <tr><td>0 mm this hour, &lt; 0.2 mm in the next 2 h, probability &lt; 50%</td><td>Very favorable</td></tr>
+        <tr><td>Probability 50–69%</td><td>Favorable</td></tr>
+        <tr><td>Probability ≥ 70%, or ≥ 0.2 mm in the next 2 h</td><td>Caution</td></tr>
+        <tr><td>≥ 0.1 mm this hour, or ≥ 2 mm in the next 2 h</td><td>Unfavorable</td></tr>
+        <tr><td>≥ 0.5 mm this hour</td><td>Very unfavorable</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Examples: T 20 °C, RH 60%, wind 5 km/h → <strong>very favorable</strong>.
+      08:00 with T 18.7 °C and RH 81% (just above 80%; typical coast) → <strong>favorable</strong>.
+      14:00 with T 31 °C, RH 43%, wind 16 km/h, VPD 2.10 kPa → <strong>unfavorable</strong>.
+    </p>
 
     <h2>Related tools</h2>
     <ul>

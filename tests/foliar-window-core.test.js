@@ -31,8 +31,10 @@ module.exports = [
     }
   },
   {
-    name: 'Foliar: ejemplo 07:00 HR 78 (fuera 50–70) queda favorable, no rojo',
+    name: 'Foliar: sweet spot HR llega a 80 (costa); 78 queda muy favorable',
     run: function () {
+      assert.equal(FW.SWEET_SPOT.rhPct.idealMax, 80);
+      assert.equal(FW.DEFAULT_RANGES.rhPct.idealMax, 80);
       var r = FW.classifyHour({
         tempC: 22,
         rhPct: 78,
@@ -41,10 +43,26 @@ module.exports = [
         rainMm: 0,
         rainNextMm: 0
       });
-      assert.equal(r.classId, 1);
-      assert.equal(r.scores.rh, 1);
+      assert.equal(r.classId, 0);
+      assert.equal(r.scores.rh, 0);
       assert.equal(r.scores.temp, 0);
       assert.equal(r.scores.wind, 0);
+    }
+  },
+  {
+    name: 'Foliar: HR 81 (un poco arriba de 80) es favorable, no precaución',
+    run: function () {
+      var r = FW.classifyHour({
+        tempC: 18.7,
+        rhPct: 81,
+        windKmh: 7.9,
+        vpdKpa: 0.41,
+        rainMm: 0,
+        rainNextMm: 0
+      });
+      assert.equal(r.classId, 1);
+      assert.equal(r.scores.rh, 1);
+      assert.equal(r.classInfo.key, 'favorable');
     }
   },
   {

@@ -124,9 +124,9 @@ module.exports = {
       lsKey: 'nutriplant_free_ventanas_foliar_v1',
       manualChapter: 'ventanas_aplicacion_foliar',
       summary:
-        'Una sola zona/lote. Matriz horaria 24 h (~3 d, Open-Meteo) T, HR, viento, DPV aire y lluvia. Sweet spot (muy favorable): T 15–25 °C, HR 50–70 %, viento 2–8 km/h (intersección). Banda publicación NutriPlant más amplia: T 18–28, HR >60, viento 3–12, DPV 0.3–1.2. Factor limitante. Incluye noche. UI ES/EN + métrico/US (°C/°F, km/h/mph); física SI. Persistencia LS. ≠ VPD 🌡️ ≠ Pronóstico 🌤️. No sustituye etiqueta.',
+        'Una sola zona/lote. Matriz horaria 24 h (~3 d, Open-Meteo) T, HR, viento, DPV aire y lluvia. Sweet spot (muy favorable): T 15–25 °C, HR 50–80 %, viento 2–8 km/h (intersección). Banda publicación NutriPlant más amplia: T 18–28, HR >60, viento 3–12, DPV 0.3–1.2. Factor limitante. Incluye noche. UI ES/EN + métrico/US (°C/°F, km/h/mph); física SI. Persistencia LS. ≠ VPD 🌡️ ≠ Pronóstico 🌤️. No sustituye etiqueta.',
       ranges: {
-        sweet_spot: { temperature_C: '15-25', rh_pct: '50-70', wind_kmh: '2-8' },
+        sweet_spot: { temperature_C: '15-25', rh_pct: '50-80', wind_kmh: '2-8' },
         publication_band: { temperature_C: '18-28', rh_pct: '>60', wind_kmh: '3-12', vpd_kPa: '0.3-1.2' },
         rain_mm: '0 during spray + no immediate rain (next 2 h)'
       },

@@ -145,7 +145,7 @@ module.exports = {
       url: `${BASE}/capitulos/ventanas-aplicacion-foliar.html`,
       pillar: 'E — Agua y clima',
       summary:
-        'Una sola zona/lote. Matriz 24 h (~3 d) T, HR, viento, DPV y lluvia. Sweet spot T 15–25 °C / HR 50–70 % / viento 2–8 km/h. Semáforo 5 colores; factor limitante. UI ES/EN + métrico/US. Gratis login/dashboard 🍃. ≠ VPD puntual ≠ Pronóstico agroclimático.',
+        'Una sola zona/lote. Matriz 24 h (~3 d) T, HR, viento, DPV y lluvia. Sweet spot T 15–25 °C / HR 50–80 % / viento 2–8 km/h. Semáforo 5 colores por factor limitante; escalones por variable en el capítulo. UI ES/EN + métrico/US. Gratis login/dashboard 🍃. ≠ VPD puntual ≠ Pronóstico agroclimático.',
       status: 'published'
     },
     {

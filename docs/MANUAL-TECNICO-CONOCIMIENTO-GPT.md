@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.09.14 · **28 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.09.15 · **28 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-09-14 · **v2026.09.14** (+ uniformidad 🎯 y foliar 🍃 con UI ES/EN + métrico/US; ISH ≠ lámina/balance de periodo)
+**Versión Knowledge:** 2026-09-15 · **v2026.09.15** (foliar 🍃: HR 50–80 + escalones de semáforo en el capítulo; + uniformidad 🎯 UI ES/EN + métrico/US; ISH ≠ lámina/balance de periodo)
 
 ---
 
@@ -289,8 +289,8 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 |----------|---------|
 | Pregunta | ¿A qué hora pulverizar en **este** lote? |
 | Alcance | **1 zona / 1 lote** (un punto de mapa). No compara varios predios. |
-| Variables | **Sweet spot** T 15–25 °C · HR 50–70 % · viento 2–8 km/h. Banda publicación T 18–28 · HR &gt;60 · viento 3–12 · DPV 0,3–1,2 kPa · 0 mm / sin lluvia ~2 h |
-| Regla | `clase = máx(T, HR, viento, DPV, lluvia)` — factor limitante |
+| Variables | **Sweet spot** T 15–25 °C · HR 50–80 % · viento 2–8 km/h. Banda publicación T 18–28 · HR &gt;60 · viento 3–12 · DPV 0,3–1,2 kPa · 0 mm / sin lluvia ~2 h |
+| Regla | `clase = máx(T, HR, viento, DPV, lluvia)` — factor limitante. Escalones default: T ±2/4/7 °C; HR asimétrica (81–90 favorable, &lt;50 más dura; alta nunca rojo oscuro); viento &lt;1 precaución / &gt;16 muy desfavorable; DPV &lt;0,15 precaución (no rojo), &gt;1,2 salta a precaución; lluvia ≥0,5 mm hora = muy desfavorable. Si el usuario cambia min/max, las distancias salen de esos límites. |
 | DPV | Aire (Magnus); ≠ VPD avanzado con T hoja |
 | Horizonte | ~3 d horarios Open-Meteo; **24 h** (incluye noche; filtro opcional 05–20 h) |
 | UI | **ES/EN** + métrico/US del perfil (T °C/°F, viento km/h/mph); física SI |

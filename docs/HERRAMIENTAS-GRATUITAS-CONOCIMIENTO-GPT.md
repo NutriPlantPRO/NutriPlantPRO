@@ -153,9 +153,9 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 ### 🍃 Ventanas de Aplicación Foliar (`ventanas-foliar-free.html`)
 
 - **Qué es:** clasifica **hora por hora (24 h, incluye noche)** si el ambiente favorece pulverizar en **un solo lote**. Semáforo de 5 colores. **No** compara varias zonas/fincas.
-- **Sweet spot (muy favorable, criterio de aplicación):** T **15–25 °C**, HR **50–70 %**, viento **2–8 km/h** (las tres a la vez). DPV aire **0,3–1,2 kPa**, lluvia **0 mm** y sin lluvia ~2 h.
+- **Sweet spot (muy favorable, criterio de aplicación):** T **15–25 °C**, HR **50–80 %**, viento **2–8 km/h** (las tres a la vez). DPV aire **0,3–1,2 kPa**, lluvia **0 mm** y sin lluvia ~2 h. Techo 80 % (no 70): costa/trópico; rocío lo atrapa el DPV bajo.
 - **Banda más amplia (publicación NutriPlant, referencia):** T 18–28 °C, HR &gt; 60 %, viento 3–12 km/h. Fuera del sweet spot pero dentro de esa banda suele ser **favorable**.
-- **Regla:** `clase = máx(T, HR, viento, DPV, lluvia)` — manda el **factor limitante**. DPV = Magnus del **aire** (no T hoja).
+- **Regla:** `clase = máx(T, HR, viento, DPV, lluvia)` — manda el **factor limitante**. DPV = Magnus del **aire** (no T hoja). Escalones default (capítulo público): T ±2/4/7 °C; HR asimétrica (suave 81–90, dura &lt;50); viento calma &lt;1 vs deriva &gt;16; DPV bajo &lt;0,15 = precaución no rojo, alto &gt;1,2 salta a precaución; lluvia 0,1 mm hora / 0,5 mm rojo / prob 50–70 %. Si el usuario cambia min/max, las distancias salen de esos límites.
 - **UI:** matriz ~**3 días** Open-Meteo **24 h** (se puede filtrar 05–20 h); toca una hora → interpretación. Noche: aviso de inversión/rocío. Lista «Mejores ventanas». **Idioma ES/EN** y unidades **métrico / US customary** del perfil (T °C/°F, viento km/h/mph); física interna SI.
 - **Dónde:** login (debajo de Pronóstico agroclimático) y dashboard icono 🍃.
 - **Persistencia:** `nutriplant_free_ventanas_foliar_v1`.

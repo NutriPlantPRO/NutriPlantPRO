@@ -254,7 +254,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-foliar-window-core.js?v=20260914fw6"></script>
+  <script src="assets/np-foliar-window-core.js?v=20260915fw1"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -511,8 +511,8 @@
     var nightNote = '';
     if (h.hour != null && (h.hour >= 21 || h.hour < 5)) {
       nightNote = '<div style="margin-top:6px;font-size:12px;color:#9a3412;">' +
-        t('Noche: vigila inversión (viento muy calmo), rocío (HR alta / DPV bajo) y visibilidad. El sweet spot sigue siendo ' + rangeLabel('temperature', 15, 25, 0) + ', HR 50–70 % y viento ' + rangeLabel('speed', 2, 8, 1) + '.',
-          'Night: watch inversion (very calm wind), dew (high RH / low VPD) and visibility. Sweet spot remains ' + rangeLabel('temperature', 15, 25, 0) + ', RH 50–70% and wind ' + rangeLabel('speed', 2, 8, 1) + '.') +
+        t('Noche: vigila inversión (viento muy calmo), rocío (HR alta / DPV bajo) y visibilidad. El sweet spot sigue siendo ' + rangeLabel('temperature', 15, 25, 0) + ', HR ' + FW.SWEET_SPOT.rhPct.idealMin + '–' + FW.SWEET_SPOT.rhPct.idealMax + ' % y viento ' + rangeLabel('speed', 2, 8, 1) + '.',
+          'Night: watch inversion (very calm wind), dew (high RH / low VPD) and visibility. Sweet spot remains ' + rangeLabel('temperature', 15, 25, 0) + ', RH ' + FW.SWEET_SPOT.rhPct.idealMin + '–' + FW.SWEET_SPOT.rhPct.idealMax + '% and wind ' + rangeLabel('speed', 2, 8, 1) + '.') +
         '</div>';
     }
     var limit = h.limiting && h.limiting.length
@@ -598,7 +598,7 @@
     var venn = document.getElementById('fw-venn');
     if (venn) {
       venn.innerHTML =
-        '<span>' + t('Humedad relativa', 'Relative humidity') + '<br>50–70 %</span>' +
+        '<span>' + t('Humedad relativa', 'Relative humidity') + '<br>' + ss.rhPct.idealMin + '–' + ss.rhPct.idealMax + ' %</span>' +
         '<span>' + t('Temperatura', 'Temperature') + '<br>' + rangeLabel('temperature', ss.tempC.idealMin, ss.tempC.idealMax, 0) + '</span>' +
         '<span>' + t('Viento', 'Wind') + '<br>' + rangeLabel('speed', ss.windKmh.idealMin, ss.windKmh.idealMax, 1) + '</span>';
     }
@@ -632,7 +632,7 @@
     setTxt('fw-l-vmin', t('DPV min kPa', 'VPD min kPa'));
     setTxt('fw-l-vmax', t('DPV max kPa', 'VPD max kPa'));
     setTxt('fw-btn-reset', t('Restaurar sweet spot', 'Restore sweet spot') + ' (' +
-      rangeLabel('temperature', ss.tempC.idealMin, ss.tempC.idealMax, 0) + ' · 50–70 % · ' +
+      rangeLabel('temperature', ss.tempC.idealMin, ss.tempC.idealMax, 0) + ' · ' + ss.rhPct.idealMin + '–' + ss.rhPct.idealMax + ' % · ' +
       rangeLabel('speed', ss.windKmh.idealMin, ss.windKmh.idealMax, 1) + ')');
     setTxt('fw-btn-pub', t('Usar banda publicación NutriPlant', 'Use NutriPlant publication band'));
     var loteNow = document.getElementById('fw-lote');
@@ -800,7 +800,14 @@
     if (d.lng != null) document.getElementById('fw-lng').value = d.lng;
     if (d.lote != null) document.getElementById('fw-lote').value = d.lote;
     if (d.show24 != null) document.getElementById('fw-24h').checked = !!d.show24;
-    if (d.ranges) writeRanges(d.ranges);
+    if (d.ranges) {
+      /* Migrar default viejo 50–70 → 50–80 (costa). Si el usuario lo dejó en 70 a propósito, lo puede volver a bajar. */
+      var rh = d.ranges.rhPct || {};
+      if (Number(rh.idealMin) === 50 && Number(rh.idealMax) === 70) {
+        d.ranges.rhPct.idealMax = 80;
+      }
+      writeRanges(d.ranges);
+    }
     if (d.generatedAt != null) generatedAt = d.generatedAt;
     if (Array.isArray(d.rows) && d.rows.length) {
       rows = d.rows;

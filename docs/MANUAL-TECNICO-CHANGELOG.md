@@ -5,6 +5,14 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-09-15 — Ventanas foliar: HR 50–80 %
+
+### Actualizado
+
+- Sweet spot de **humedad relativa 50–80 %** (antes 50–70 %). Techo 70 % pintaba de precaución mañanas de costa (~81 % HR) aunque T, viento y DPV estuvieran bien. Rocío / inversión siguen limitados por DPV bajo.
+- Capítulo público: tablas de **escalones** por factor (T, HR asimétrica, viento, DPV, lluvia) en ES/EN; coincide con `np-foliar-window-core.js`.
+- Core `assets/np-foliar-window-core.js`, herramienta `ventanas-foliar-free.html` (migra LS viejo 50–70 → 50–80), capítulo `ventanas-aplicacion-foliar.html`, catálogos y knowledge GPT.
+
 ## 2026-09-14 — Uniformidad de riego
 
 ### Nuevo

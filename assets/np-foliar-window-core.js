@@ -60,12 +60,14 @@
 
   /**
    * Sweet spot de aplicación (intersección T ∩ HR ∩ viento).
-   * Criterio clásico de pulverización: T 15–25 °C, HR 50–70 %, viento 2–8 km/h.
+   * T 15–25 °C, HR 50–80 %, viento 2–8 km/h.
+   * Techo HR 80 (no 70): costa/trópico; HR alta favorece permanencia de la gota.
+   * Rocío / inversión los atrapa el DPV bajo, no un techo de 70 %.
    * Manda el semáforo «muy favorable» cuando las tres coinciden (+ DPV y sin lluvia).
    */
   var SWEET_SPOT = {
     tempC: { idealMin: 15, idealMax: 25 },
-    rhPct: { idealMin: 50, idealMax: 70 },
+    rhPct: { idealMin: 50, idealMax: 80 },
     windKmh: { idealMin: 2, idealMax: 8 }
   };
 
@@ -81,7 +83,7 @@
   /** Default de la herramienta = sweet spot + DPV/lluvia de la publicación. */
   var DEFAULT_RANGES = {
     tempC: { idealMin: 15, idealMax: 25 },
-    rhPct: { idealMin: 50, idealMax: 70 },
+    rhPct: { idealMin: 50, idealMax: 80 },
     windKmh: { idealMin: 2, idealMax: 8 },
     vpdKpa: { idealMin: 0.3, idealMax: 1.2 },
     rainMm: { hourMax: 0.1, next2hMax: 0.2 }

@@ -61,7 +61,7 @@ Fertirriego · Requerimiento: **Zona de equilibrio iónico** (3 col: zona / % me
 
 **Uniformidad 🎯:** `uniformidad_riego` — lotes + muestras; DU 25% / CU / EU Keller–Karmeli; fertirriego hereda DU. UI **ES/EN** + métrico/US. ≠ lámina 🌧️ ≠ ISH 📈 ≠ pulso ⏱️. MANUAL `uniformidad-riego`.
 
-**Ventanas foliar 🍃:** `ventanas_foliar` — **1 lote**, matriz **24 h** T/HR/viento/DPV/lluvia. Sweet spot T 15–25 °C · HR 50–70 % · viento 2–8 km/h (UI °F/mph si US). ≠ VPD 🌡️ ≠ Pronóstico 🌤️. MANUAL `ventanas-aplicacion-foliar`.
+**Ventanas foliar 🍃:** `ventanas_foliar` — **1 lote**, matriz **24 h** T/HR/viento/DPV/lluvia. Sweet spot T 15–25 °C · HR 50–80 % · viento 2–8 km/h (UI °F/mph si US). ≠ VPD 🌡️ ≠ Pronóstico 🌤️. MANUAL `ventanas-aplicacion-foliar`.
 
 **Ácidos (Agua / Hidro / acondicionamiento / PDF / admin):** HNO₃ 55% (aporta N-NO₃; líquido mL/L), H₂SO₄, H₃PO₄ 75/85 (líquidos). **Cítrico anhidro 99.5% = polvo soluble**: dosificar por **masa** (g/kg métrico; oz/lb US); 25,9 meq/mL; solo acidifica (sin N/P/K); mL/L solo equiv. vol. Tanque C.
 
