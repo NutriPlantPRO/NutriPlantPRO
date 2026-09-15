@@ -27,11 +27,37 @@
       font-size: 13px; font-weight: 700; cursor: pointer; color: #0f766e;
     }
     .tab.active { background: #0f766e; color: #fff; border-color: #0f766e; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-    .field label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+      gap: 12px 10px;
+      align-items: stretch;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      height: 100%;
+    }
+    .field label {
+      display: flex;
+      align-items: flex-end;
+      min-height: 2.75em;
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      line-height: 1.25;
+    }
     .field input, .field select {
-      width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px;
-      font-size: 14px; box-sizing: border-box;
+      width: 100%;
+      margin-top: auto;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      min-height: 38px;
     }
     .kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 8px 0 12px; }
     .kind {
@@ -60,12 +86,43 @@
       flex: 1; min-width: 140px; font-size: 16px; font-weight: 800; color: #0f766e;
       border: 0; border-bottom: 2px dashed #5eead4; background: transparent; padding: 4px 2px;
     }
-    table.samples { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border-radius: 8px; overflow: hidden; }
-    table.samples th, table.samples td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    table.samples { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border-radius: 8px; overflow: hidden; }
+    table.samples th, table.samples td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
     table.samples th { background: #ccfbf1; color: #115e59; }
-    table.samples input { width: 100%; min-width: 72px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+    table.samples th.th-lectura,
+    table.samples td.lectura-cell {
+      width: 1%;
+      white-space: nowrap;
+      padding-right: 28px; /* aire antes de Caudal / % media */
+    }
+    table.samples th.th-q,
+    table.samples td[data-q] { padding-left: 16px; }
+    .lectura-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+    }
+    .lectura-wrap input {
+      width: 92px;
+      min-width: 92px;
+      max-width: 110px;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .lectura-unit {
+      display: inline-block;
+      min-width: 3.25em;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f766e;
+      letter-spacing: 0.01em;
+    }
     .table-wrap { overflow-x: auto; }
     table.samples tr.low td { background: #fef2f2; }
+    table.samples input { width: 100%; min-width: 72px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; }
     .stat { background: #fff; border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px; }
     .stat b { display: block; font-size: 18px; color: #0f766e; }
@@ -284,6 +341,15 @@
     return fmt(l, 2) + ' L';
   }
   function sampleUnit() { return document.getElementById('ur-unit').value; }
+  function lecturaHeader() {
+    return t('Lectura', 'Reading') + ' (<span class="ur-unit-live">' + sampleUnit() + '</span>)';
+  }
+  function syncSampleUnitLabels() {
+    var u = sampleUnit();
+    document.querySelectorAll('.lectura-unit, .ur-unit-live').forEach(function (el) {
+      el.textContent = u;
+    });
+  }
   function fmtCanonical(v) {
     if (v == null) return '—';
     var k = kind();
@@ -414,11 +480,15 @@
   }
   function renderLots() {
     var host = document.getElementById('ur-lots');
+    var unit = sampleUnit();
     host.innerHTML = lots.map(function (lot, i) {
       var rows = (lot.samples || []).map(function (s, si) {
         return '<tr>' +
           '<td style="width:72px;font-weight:700;color:#0f766e;">' + sampleLabel(si) + '</td>' +
-          '<td><input type="number" step="any" min="0" data-lot="' + i + '" data-row="' + si + '" value="' + (s.value == null ? '' : s.value) + '"></td>' +
+          '<td class="lectura-cell"><div class="lectura-wrap">' +
+            '<input type="number" step="any" min="0" data-lot="' + i + '" data-row="' + si + '" value="' + (s.value == null ? '' : s.value) + '" aria-label="' + t('Lectura', 'Reading') + ' ' + unit + '">' +
+            '<span class="lectura-unit">' + unit + '</span>' +
+          '</div></td>' +
           '<td data-q>—</td><td data-p>—</td>' +
           '<td style="width:44px;"><button type="button" class="btn btn-ghost" data-del-row="' + i + ':' + si + '" title="×">×</button></td>' +
           '</tr>';
@@ -429,7 +499,7 @@
           (lots.length > 1 ? '<button type="button" class="btn btn-ghost" data-del-lot="' + i + '">' + t('Quitar lote', 'Remove plot') + '</button>' : '') +
         '</div>' +
         '<div class="table-wrap"><table class="samples" id="lot-table-' + i + '"><thead><tr>' +
-          '<th>#</th><th>' + t('Lectura', 'Reading') + '</th><th>' + canonicalLabel() + '</th><th>% ' + t('media', 'mean') + '</th><th></th>' +
+          '<th>#</th><th class="th-lectura">' + lecturaHeader() + '</th><th class="th-q">' + canonicalLabel() + '</th><th>% ' + t('media', 'mean') + '</th><th></th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
         '<div class="row-actions">' +
           '<button type="button" class="btn" data-add-row="' + i + '">+ ' + t('Muestra', 'Sample') + '</button>' +
@@ -440,6 +510,11 @@
     lots.forEach(function (lot, i) { renderLotStats(lot, i); });
   }
   function refreshAllStats() {
+    syncSampleUnitLabels();
+    var ths = document.querySelectorAll('th.th-lectura');
+    Array.prototype.forEach.call(ths, function (th) { th.innerHTML = lecturaHeader(); });
+    var thQs = document.querySelectorAll('th.th-q');
+    Array.prototype.forEach.call(thQs, function (th) { th.textContent = canonicalLabel(); });
     lots.forEach(function (lot, i) { renderLotStats(lot, i); });
   }
   function nextLotTitle() {

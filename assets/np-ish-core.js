@@ -243,7 +243,9 @@
     var sumPenalty = 0;
     var weeks = weeksIn.map(function (w) {
       var row = Object.assign({}, w);
-      var rain = macro ? 0 : row.rain_mm != null && Number.isFinite(Number(row.rain_mm)) ? Number(row.rain_mm) : 0;
+      var rainStored =
+        row.rain_mm != null && Number.isFinite(Number(row.rain_mm)) ? Number(row.rain_mm) : 0;
+      var rain = macro ? 0 : rainStored;
       var et0 = row.et0_mm != null && Number.isFinite(Number(row.et0_mm)) ? Number(row.et0_mm) : null;
       var irrApplied =
         row.irrigation_mm != null && Number.isFinite(Number(row.irrigation_mm))
@@ -270,10 +272,9 @@
       row.etc_mm = etc;
       row.deficit_mm = deficit;
       row.excess_mm = excess;
-      if (macro) {
-        row.rain_mm = 0;
-        row.rainSource = row.rainSource || 'manual';
-      }
+      // Macrotúnel: lluvia = 0 solo en el balance. No borrar rain_mm (al desmarcar se recupera).
+      row.rain_used_mm = rain;
+      row.macroRainIgnored = macro;
       return row;
     });
 

@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=53" />
+  <link rel="stylesheet" href="auth.css?v=54" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -2953,7 +2953,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914ishT5" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
+        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=login&v=20260914ishT7" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -2969,7 +2969,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260914ur2" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
+        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260914ur4" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
       </div>
     </div>
   </div>
@@ -2985,7 +2985,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ventanasFoliarToolFrame" src="ventanas-foliar-free.html?embed=login&v=20260914fw3" title="Ventanas de Aplicación Foliar" data-i18n-title="dashboard.tool_foliar_windows" allow="geolocation 'self'"></iframe>
+        <iframe id="ventanasFoliarToolFrame" src="ventanas-foliar-free.html?embed=login&v=20260914fw4" title="Ventanas de Aplicación Foliar" data-i18n-title="dashboard.tool_foliar_windows" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>
@@ -4793,64 +4793,84 @@
         }
       }
 
+      var syncingSocialHeight = false;
+
+      function toolsNaturalHeight(toolsEl) {
+        var cs = window.getComputedStyle(toolsEl);
+        var pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        var banner = toolsEl.querySelector('.login-free-tools-banner');
+        var list = toolsEl.querySelector('.login-tools-scroll');
+        var inner = (banner ? banner.offsetHeight : 0) + (list ? list.scrollHeight : 0);
+        if (inner > 80) return Math.round(inner + pad);
+        return Math.round(toolsEl.offsetHeight || 0);
+      }
+
       function syncSocialPanelHeight() {
-        if (window.innerWidth < 700) {
-          root.style.minHeight = '';
-          root.style.maxHeight = '';
-          root.style.height = '';
-          var panelsMobile = root.querySelector('.login-social-panels');
-          if (panelsMobile) {
-            panelsMobile.style.minHeight = '';
-            panelsMobile.style.height = '';
+        if (syncingSocialHeight) return;
+        syncingSocialHeight = true;
+        try {
+          if (window.innerWidth < 700) {
+            root.style.minHeight = '';
+            root.style.maxHeight = '';
+            root.style.height = '';
+            var panelsMobile = root.querySelector('.login-social-panels');
+            if (panelsMobile) {
+              panelsMobile.style.minHeight = '';
+              panelsMobile.style.height = '';
+              panelsMobile.style.maxHeight = '';
+            }
+            root.querySelectorAll('[data-social-embed]').forEach(function (el) {
+              el.style.height = '';
+              el.style.minHeight = '';
+              el.style.maxHeight = '';
+            });
+            return;
           }
-        } else {
           var tools = document.querySelector('.login-split__tools');
           var login = document.querySelector('.login-split__login');
           var split = document.querySelector('.login-split');
-          if (tools && login) {
-            var gap = 16;
-            if (split) {
-              var gapPx = parseFloat(window.getComputedStyle(split).rowGap || window.getComputedStyle(split).gap);
-              if (gapPx) gap = Math.round(gapPx);
-            }
-            var toolsH = Math.round(tools.scrollHeight || tools.offsetHeight || 0);
-            var loginH = Math.round(login.offsetHeight || 0);
-            var available = toolsH - loginH - gap;
-            if (available < 280) available = 280;
-            root.style.height = available + 'px';
-            root.style.minHeight = available + 'px';
-            root.style.maxHeight = available + 'px';
-            var panels = root.querySelector('.login-social-panels');
-            if (panels) {
-              var titleEl = root.querySelector('.login-social-panel__title');
-              var subEl = root.querySelector('.login-social-panel__subtitle');
-              var tabsEl = root.querySelector('.login-social-tabs');
-              var chrome =
-                (titleEl ? titleEl.offsetHeight : 22) +
-                (subEl ? subEl.offsetHeight : 18) +
-                (tabsEl ? tabsEl.offsetHeight : 44) +
-                36;
-              var panelsH = Math.max(180, available - chrome);
-              panels.style.minHeight = panelsH + 'px';
-              panels.style.height = panelsH + 'px';
-              panels.style.maxHeight = panelsH + 'px';
-              void panels.offsetHeight;
-              var bodyEl = root.querySelector('.login-social-pane.active .login-social-pane__body');
-              var embedBox = root.querySelector('.login-social-pane.active [data-social-embed]');
-              if (bodyEl && embedBox) {
-                var embedH = Math.round(bodyEl.clientHeight || 0);
-                if (embedH >= 180) {
-                  embedBox.style.height = embedH + 'px';
-                  embedBox.style.minHeight = embedH + 'px';
-                  embedBox.style.maxHeight = embedH + 'px';
-                }
-              }
-            }
-            var fbBox = root.querySelector('[data-social-embed="facebook"]');
-            if (fbBox && root.querySelector('[data-social-tab="facebook"].active')) {
-              mountFacebookEmbed(fbBox, false);
+          if (!tools || !login) return;
+          var gap = 16;
+          if (split) {
+            var gapPx = parseFloat(window.getComputedStyle(split).rowGap || window.getComputedStyle(split).gap);
+            if (gapPx) gap = Math.round(gapPx);
+          }
+          var available = toolsNaturalHeight(tools) - Math.round(login.offsetHeight || 0) - gap;
+          if (available < 280) available = 280;
+          root.style.height = available + 'px';
+          root.style.minHeight = available + 'px';
+          root.style.maxHeight = available + 'px';
+          var titleEl = root.querySelector('.login-social-panel__title');
+          var subEl = root.querySelector('.login-social-panel__subtitle');
+          var tabsEl = root.querySelector('.login-social-tabs');
+          var ctaEl = root.querySelector('.login-social-pane.active > .login-social-card__cta');
+          var topChrome =
+            (titleEl ? titleEl.offsetHeight : 22) +
+            (subEl ? subEl.offsetHeight : 18) +
+            (tabsEl ? tabsEl.offsetHeight : 44) +
+            36;
+          var ctaH = ctaEl ? ctaEl.offsetHeight + 12 : 52;
+          var panels = root.querySelector('.login-social-panels');
+          if (panels) {
+            var panelsH = Math.max(180, available - topChrome);
+            panels.style.height = panelsH + 'px';
+            panels.style.minHeight = panelsH + 'px';
+            panels.style.maxHeight = panelsH + 'px';
+            void panels.offsetHeight;
+            var embedBox = root.querySelector('.login-social-pane.active [data-social-embed]');
+            if (embedBox) {
+              var embedH = Math.max(180, panelsH - ctaH);
+              embedBox.style.height = embedH + 'px';
+              embedBox.style.minHeight = embedH + 'px';
+              embedBox.style.maxHeight = embedH + 'px';
             }
           }
+          var fbBox = root.querySelector('[data-social-embed="facebook"]');
+          if (fbBox && root.querySelector('[data-social-tab="facebook"].active')) {
+            mountFacebookEmbed(fbBox, false);
+          }
+        } finally {
+          syncingSocialHeight = false;
         }
       }
 

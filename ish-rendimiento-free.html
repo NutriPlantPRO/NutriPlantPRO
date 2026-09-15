@@ -56,27 +56,60 @@
       border: 1px solid #e2e8f0;
       border-radius: 8px;
       -webkit-overflow-scrolling: touch;
+      width: 100%;
     }
-    /* Ancho por contenido: no se estira en pantallas anchas; scroll horizontal si es angosta */
+    /* Llena el ancho del modal; columnas repartidas hacia los lados */
     table.ish-table {
-      width: max-content;
-      max-width: none;
+      width: 100%;
+      min-width: 720px;
       border-collapse: collapse;
       font-size: 12px;
-      table-layout: auto;
+      table-layout: fixed;
     }
     table.ish-table th, table.ish-table td {
-      padding: 6px 8px;
+      padding: 8px 6px;
       border-bottom: 1px solid #e2e8f0;
       text-align: center;
-      white-space: nowrap;
       vertical-align: middle;
+      word-wrap: break-word;
     }
-    table.ish-table th { background: #f1f5f9; position: sticky; top: 0; z-index: 1; }
-    table.ish-table input { width: 72px; max-width: 72px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box; }
-    table.ish-table th.ish-th-riego { min-width: 168px; vertical-align: middle; background: #ecfdf5; color: #14532d; }
-    table.ish-table th.ish-th-de { min-width: 72px; }
+    table.ish-table th { background: #f1f5f9; position: sticky; top: 0; z-index: 1; line-height: 1.25; }
+    table.ish-table col.ish-c-num { width: 4%; }
+    table.ish-table col.ish-c-week { width: 12%; }
+    table.ish-table col.ish-c-in { width: 9%; }
+    table.ish-table col.ish-c-riego { width: 22%; }
+    table.ish-table col.ish-c-out { width: 9%; }
+    table.ish-table col.ish-c-ish { width: 8%; }
+    table.ish-table input {
+      width: 100%;
+      max-width: 84px;
+      padding: 5px 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    table.ish-table th.ish-th-riego { vertical-align: middle; background: #ecfdf5; color: #14532d; }
+    table.ish-table th.ish-th-de { font-size: 11px; }
     .ish-th-sub { display: block; font-size: 10px; font-weight: 600; color: #64748b; margin-top: 2px; line-height: 1.2; }
+    .ish-th-units { font-size: 10px; font-weight: 600; color: #15803d; margin-top: 2px; }
+    .ish-riego-cell { text-align: center; }
+    .ish-riego-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 0 4px;
+    }
+    .ish-riego-pair {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ish-riego-pair input { width: 64px; max-width: 64px; }
+    .ish-riego-pair span { font-size: 11px; color: #64748b; font-weight: 700; white-space: nowrap; }
     .ish-eff-card {
       margin: 0 0 10px; padding: 12px 14px;
       background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;
@@ -89,16 +122,6 @@
       font-size: 14px; font-weight: 700; color: #14532d; text-align: right; background: #fff;
     }
     .ish-eff-card__row span { font-size: 13px; font-weight: 700; color: #14532d; }
-    .ish-th-units { font-size: 10px; font-weight: 600; color: #15803d; margin-top: 2px; }
-    .ish-riego-cell { text-align: center; white-space: nowrap; }
-    .ish-riego-row {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap;
-    }
-    .ish-riego-pair {
-      display: inline-flex; align-items: center; gap: 3px;
-    }
-    .ish-riego-pair input { width: 56px; }
-    .ish-riego-pair span { font-size: 10px; color: #64748b; font-weight: 600; }
     .ish-chart-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     #ish-chart {
       display: block;
@@ -180,6 +203,7 @@
         </div>
       </div>
       <label class="chk"><input type="checkbox" id="ish-macro" /> Macrotúnel / invernadero (lluvia = 0)</label>
+      <p class="hint" id="ish-macro-hint" style="margin-top:4px;"></p>
     </div>
 
     <h3 style="margin:16px 0 8px;font-size:15px;color:#0f172a;">Tabla semanal (editable)</h3>
@@ -194,6 +218,17 @@
     </div>
     <div class="table-wrap">
       <table class="ish-table">
+        <colgroup>
+          <col class="ish-c-num" />
+          <col class="ish-c-week" />
+          <col class="ish-c-in" />
+          <col class="ish-c-in" />
+          <col class="ish-c-riego" />
+          <col class="ish-c-out" />
+          <col class="ish-c-out" />
+          <col class="ish-c-out" />
+          <col class="ish-c-ish" />
+        </colgroup>
         <thead>
           <tr>
             <th>#</th>
@@ -245,7 +280,7 @@
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260801p"></script>
-  <script src="assets/np-ish-core.js?v=20260914i2"></script>
+  <script src="assets/np-ish-core.js?v=20260914i3"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -339,6 +374,20 @@
         : langEn
           ? ISH.IRR_EFF_HELP_EN
           : ISH.IRR_EFF_HELP_ES;
+    }
+    var macroHint = document.getElementById('ish-macro-hint');
+    if (macroHint) {
+      macroHint.classList.add('notranslate');
+      macroHint.setAttribute('translate', 'no');
+      macroHint.textContent = readMacro()
+        ? t(
+          'Activo: el ISH usa lluvia = 0. Los mm de la tabla se conservan; al desmarcar vuelven a contar sin volver a descargar.',
+          'On: ISH uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
+        )
+        : t(
+          'Apagado: cuenta la lluvia de la tabla (satélite o manual).',
+          'Off: table rainfall (satellite or manual) counts in the balance.'
+        );
     }
     var thDef = document.getElementById('ish-th-deficit');
     if (thDef) {
@@ -449,16 +498,18 @@
     var vU = volAreaUnit();
     var dS = depthStep();
     var vS = usesImperial() ? '1' : '0.1';
+    var macroOn = readMacro();
     tb.innerHTML = weeks.map(function (w, i) {
       var m3Ha =
         w.irrigation_mm != null && Number.isFinite(Number(w.irrigation_mm))
           ? ISH.mmToM3PerHa(w.irrigation_mm)
           : null;
+      var rainDis = macroOn ? ' disabled title="' + t('No cuenta en el cálculo (macrotúnel)', 'Ignored in the calculation (high tunnel)') + '"' : '';
       return (
         '<tr data-i="' + i + '">' +
         '<td>' + (i + 1) + '</td>' +
         '<td style="white-space:nowrap;font-size:11px;">' + w.weekStart.slice(5) + ' → ' + w.weekEnd.slice(5) + '</td>' +
-        '<td><input type="number" min="0" step="' + dS + '" data-f="rain_mm" value="' + depthInputVal(w.rain_mm) + '" /></td>' +
+        '<td><input type="number" min="0" step="' + dS + '" data-f="rain_mm" value="' + depthInputVal(w.rain_mm) + '"' + rainDis + ' /></td>' +
         '<td><input type="number" min="0" step="' + dS + '" data-f="et0_mm" value="' + depthInputVal(w.et0_mm) + '" /></td>' +
         '<td class="ish-riego-cell"><div class="ish-riego-row">' +
           '<div class="ish-riego-pair"><input type="number" min="0" step="' + dS + '" data-f="irrigation_mm" value="' +
@@ -501,6 +552,7 @@
     weeks = result.weeks;
     renderTable(focusOpts);
     drawChart(result);
+    refreshCopy();
     var hero = document.getElementById('ish-hero');
     if (result.ok) {
       hero.style.display = 'flex';

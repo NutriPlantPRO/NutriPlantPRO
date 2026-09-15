@@ -26,35 +26,35 @@
       key: 'muy_favorable',
       labelEs: 'Muy favorable',
       labelEn: 'Very favorable',
-      color: '#166534'
+      color: '#1a5f36'
     },
     {
       id: 1,
       key: 'favorable',
       labelEs: 'Favorable',
       labelEn: 'Favorable',
-      color: '#4ade80'
+      color: '#6bbf82'
     },
     {
       id: 2,
       key: 'precaucion',
       labelEs: 'Precaución',
       labelEn: 'Caution',
-      color: '#facc15'
+      color: '#d9b84a'
     },
     {
       id: 3,
       key: 'desfavorable',
       labelEs: 'Desfavorable',
       labelEn: 'Unfavorable',
-      color: '#f97316'
+      color: '#d9844a'
     },
     {
       id: 4,
       key: 'muy_desfavorable',
       labelEs: 'Muy desfavorable',
       labelEn: 'Very unfavorable',
-      color: '#ef4444'
+      color: '#c75f5f'
     }
   ];
 

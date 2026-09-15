@@ -2767,12 +2767,23 @@
       '<p style="margin:4px 0 0;font-size:11px;color:#64748b;">' +
       (climatePrefs().language === 'en' ? ISH.FP_HELP_EN : ISH.FP_HELP_ES) +
       '</p></div></div>' +
-      '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;margin-bottom:12px;">' +
+      '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;margin-bottom:4px;">' +
       '<input type="checkbox" id="climate-ish-macro"' +
       (ish.macroTunnelNoRain ? ' checked' : '') +
       '> ' +
       wcT('Macrotúnel / invernadero (lluvia = 0)', 'Macro-tunnel / greenhouse (rain = 0)') +
       '</label>' +
+      '<p id="climate-ish-macro-hint" style="margin:0 0 12px;font-size:11px;color:#64748b;line-height:1.4;">' +
+      (ish.macroTunnelNoRain
+        ? wcT(
+          'Activo: el ISH usa lluvia = 0. Los mm de la tabla se conservan; al desmarcar vuelven a contar sin volver a descargar.',
+          'On: ISH uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
+        )
+        : wcT(
+          'Apagado: cuenta la lluvia de la tabla (satélite o manual).',
+          'Off: table rainfall (satellite or manual) counts in the balance.'
+        )) +
+      '</p>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' +
       '<button type="button" id="climate-ish-suggest-irr" class="climate-ish-btn climate-ish-btn--ghost" style="padding:10px 14px;background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;">💧 ' +
       wcT(
@@ -2820,38 +2831,41 @@
       wcT('% del riego aplicado que cuenta en el ISH', '% of applied irrigation used in ISH') +
       '" style="width:64px;padding:6px 8px;border:1px solid #86efac;border-radius:8px;font-size:14px;font-weight:700;color:#14532d;text-align:right;background:#fff;">' +
       '<span style="font-size:13px;font-weight:700;color:#14532d;">%</span></div></div>' +
-      '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;-webkit-overflow-scrolling:touch;">' +
-      '<table style="width:max-content;max-width:none;border-collapse:collapse;font-size:12px;table-layout:auto;"><thead><tr style="background:#f1f5f9;">' +
-      '<th style="padding:6px 8px;white-space:nowrap;">#</th><th style="padding:6px 8px;white-space:nowrap;">' +
+      '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;-webkit-overflow-scrolling:touch;width:100%;">' +
+      '<table style="width:100%;min-width:720px;border-collapse:collapse;font-size:12px;table-layout:fixed;"><colgroup>' +
+      '<col style="width:4%"><col style="width:12%"><col style="width:9%"><col style="width:9%">' +
+      '<col style="width:22%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%">' +
+      '</colgroup><thead><tr style="background:#f1f5f9;">' +
+      '<th style="padding:8px 6px;vertical-align:middle;">#</th><th style="padding:8px 6px;vertical-align:middle;">' +
       wcT('Semana', 'Week') +
-      '</th><th style="padding:6px 8px;white-space:nowrap;">' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;">' +
       wcT('Lluvia', 'Rain') +
       ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px 8px;white-space:nowrap;">ET₀ ' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;">ET₀ ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px 8px;background:#ecfdf5;color:#14532d;min-width:168px;white-space:nowrap;">' +
+      '</th><th style="padding:8px 6px;background:#ecfdf5;color:#14532d;vertical-align:middle;">' +
       wcT('Riego', 'Irrig.') +
       '<div style="font-size:10px;font-weight:600;color:#15803d;margin-top:2px;">' +
       climateDepthUnit() +
       ' · ' +
       climateVolAreaUnit() +
       '</div>' +
-      '</th><th style="padding:6px 8px;white-space:nowrap;">ETc ' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;">ETc ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px 8px;white-space:nowrap;min-width:88px;" title="' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;font-size:11px;" title="' +
       wcT('Déficit hídrico de la semana', 'Weekly water deficit') +
       '">' +
       wcT('Déficit', 'Deficit') +
       ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px 8px;white-space:nowrap;min-width:88px;" title="' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;font-size:11px;" title="' +
       wcT('Exceso hídrico de la semana', 'Weekly water excess') +
       '">' +
       wcT('Exceso', 'Excess') +
       ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:6px 8px;white-space:nowrap;">ISH</th>' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;">ISH</th>' +
       '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>' +
       '<p style="margin:10px 0 12px;font-size:12px;color:#64748b;line-height:1.45;">' +
       wcT(
@@ -2979,6 +2993,7 @@
     var depthU = climateDepthUnit();
     var volU = climateVolAreaUnit();
     var dStep = climateDepthStep();
+    var macroOn = !!(getIshState() && getIshState().macroTunnelNoRain);
     var active = document.activeElement;
     var focusI = null;
     var focusF = null;
@@ -3004,51 +3019,57 @@
         return (
           '<tr data-i="' +
           i +
-          '"><td style="padding:6px;text-align:center;">' +
+          '"><td style="padding:8px 6px;text-align:center;vertical-align:middle;">' +
           (i + 1) +
-          '</td><td style="padding:6px;white-space:nowrap;font-size:11px;">' +
+          '</td><td style="padding:8px 6px;font-size:11px;text-align:center;vertical-align:middle;">' +
           String(w.weekStart || '').slice(5) +
           '→' +
           String(w.weekEnd || '').slice(5) +
-          '</td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="' +
+          '</td><td style="padding:6px;text-align:center;vertical-align:middle;"><input type="number" min="0" step="' +
           dStep +
           '" data-f="rain_mm" value="' +
           depthInputValue(w.rain_mm) +
-          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px;text-align:center;"><input type="number" min="0" step="' +
+          '"' +
+          (macroOn
+            ? ' disabled title="' +
+              wcT('No cuenta en el cálculo (macrotúnel)', 'Ignored in the calculation (high tunnel)') +
+              '"'
+            : '') +
+          ' style="width:100%;max-width:84px;padding:5px 6px;border:1px solid #cbd5e1;border-radius:6px;text-align:center;box-sizing:border-box;"></td><td style="padding:6px;text-align:center;vertical-align:middle;"><input type="number" min="0" step="' +
           dStep +
           '" data-f="et0_mm" value="' +
           depthInputValue(w.et0_mm) +
-          '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:6px;"></td><td style="padding:4px 6px;text-align:center;background:#f0fdf4;white-space:nowrap;">' +
-          '<div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">' +
-          '<span style="display:inline-flex;align-items:center;gap:3px;">' +
+          '" style="width:100%;max-width:84px;padding:5px 6px;border:1px solid #cbd5e1;border-radius:6px;text-align:center;box-sizing:border-box;"></td><td style="padding:6px;text-align:center;vertical-align:middle;background:#f0fdf4;">' +
+          '<div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:0 4px;">' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;">' +
           '<input type="number" min="0" step="' +
           dStep +
           '" data-f="irrigation_mm" value="' +
           depthInputValue(w.irrigation_mm) +
           '" aria-label="Riego ' +
           depthU +
-          '" style="width:56px;padding:4px;border:1px solid #86efac;border-radius:6px;">' +
-          '<span style="font-size:10px;color:#64748b;font-weight:600;">' +
+          '" style="width:64px;padding:5px 6px;border:1px solid #86efac;border-radius:6px;text-align:center;box-sizing:border-box;">' +
+          '<span style="font-size:11px;color:#64748b;font-weight:700;white-space:nowrap;">' +
           depthU +
           '</span></span>' +
-          '<span style="display:inline-flex;align-items:center;gap:3px;">' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;">' +
           '<input type="number" min="0" step="' +
           (climateUsesInches() ? '1' : '0.1') +
           '" data-f="irrigation_m3_ha" value="' +
           volAreaInputValue(m3Ha) +
           '" aria-label="Riego ' +
           volU +
-          '" style="width:56px;padding:4px;border:1px solid #86efac;border-radius:6px;">' +
-          '<span style="font-size:10px;color:#64748b;font-weight:600;">' +
+          '" style="width:64px;padding:5px 6px;border:1px solid #86efac;border-radius:6px;text-align:center;box-sizing:border-box;">' +
+          '<span style="font-size:11px;color:#64748b;font-weight:700;white-space:nowrap;">' +
           volU +
           '</span></span></div>' +
-          '</td><td style="padding:6px;text-align:center;">' +
+          '</td><td style="padding:8px 6px;text-align:center;vertical-align:middle;">' +
           (w.etc_mm != null ? roundDepthDisplay(depthFromMm(w.etc_mm)) : '—') +
-          '</td><td style="padding:6px;text-align:center;">' +
+          '</td><td style="padding:8px 6px;text-align:center;vertical-align:middle;">' +
           (w.deficit_mm != null ? roundDepthDisplay(depthFromMm(w.deficit_mm)) : '—') +
-          '</td><td style="padding:6px;text-align:center;">' +
+          '</td><td style="padding:8px 6px;text-align:center;vertical-align:middle;">' +
           (w.excess_mm != null ? roundDepthDisplay(depthFromMm(w.excess_mm)) : '—') +
-          '</td><td style="padding:6px;text-align:center;font-weight:700;">' +
+          '</td><td style="padding:8px 6px;text-align:center;vertical-align:middle;font-weight:700;">' +
           (w.ish_cumulative != null ? w.ish_cumulative + '%' : '—') +
           '</td></tr>'
         );
@@ -3129,6 +3150,18 @@
       irrEffEl ? irrEffEl.value : st.irrigationEffectivePct
     );
     st.macroTunnelNoRain = !!(macroEl && macroEl.checked);
+    var macroHint = document.getElementById('climate-ish-macro-hint');
+    if (macroHint) {
+      macroHint.textContent = st.macroTunnelNoRain
+        ? wcT(
+          'Activo: el ISH usa lluvia = 0. Los mm de la tabla se conservan; al desmarcar vuelven a contar sin volver a descargar.',
+          'On: ISH uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
+        )
+        : wcT(
+          'Apagado: cuenta la lluvia de la tabla (satélite o manual).',
+          'Off: table rainfall (satellite or manual) counts in the balance.'
+        );
+    }
     var end = st.cycleEnd || ISH.todayIso();
     if (st.cycleStart) {
       var v = ISH.validateCycle(st.cycleStart, end);

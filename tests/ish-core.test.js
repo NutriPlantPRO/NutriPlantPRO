@@ -117,8 +117,22 @@ module.exports = [
         fp: 0.25,
         macroTunnelNoRain: true
       });
-      assert.equal(r.weeks[0].rain_mm, 0);
+      // Conserva la lluvia satélite; solo el balance usa 0
+      assert.equal(r.weeks[0].rain_mm, 10);
+      assert.equal(r.weeks[0].rain_used_mm, 0);
+      assert.equal(r.weeks[0].macroRainIgnored, true);
       assert.equal(r.weeks[0].deficit_mm, 4);
+
+      var off = NpIsh.computeIsh({
+        weeks: r.weeks,
+        kc: 1,
+        fp: 0.25,
+        macroTunnelNoRain: false
+      });
+      assert.equal(off.weeks[0].rain_mm, 10);
+      assert.equal(off.weeks[0].rain_used_mm, 10);
+      assert.equal(off.weeks[0].macroRainIgnored, false);
+      assert.equal(off.weeks[0].deficit_mm, 0);
     }
   },
   {
