@@ -220,12 +220,8 @@
   status = 200
   force = true
 
-# OpenAI Plugins Directory — domain verification token (env OPENAI_APPS_CHALLENGE)
-[[redirects]]
-  from = "/.well-known/openai-apps-challenge"
-  to = "/.netlify/functions/openai-apps-challenge"
-  status = 200
-  force = true
+# Domain verification OpenAI: archivo estático `.well-known/openai-apps-challenge`
+# (sin variable Netlify — el paquete de env Lambda ya está al tope ~4 KB).
 
 [[redirects]]
   from = "/api/admin-assistant"

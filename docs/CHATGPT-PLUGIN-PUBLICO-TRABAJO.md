@@ -114,7 +114,7 @@ No “parches pedorros”. Oleadas que **cubren la plataforma**:
 | **3** | Resto del catálogo free tools (fórmula composición, Mulder, N mineralizable, solubilidad/IS, pulso hidro, pronóstico, magnitudes, extracción etapa, agua suelo, compatibilidad, huella carbono) | **Hecha en repo** (2026-09-16) |
 | **4** | Lectura cuenta profunda + **flow_status / siguiente paso** | **Hecha en repo** (2026-09-16): labs 6 tipos con cifras, enmiendas CIC, ferti/hidro/cycleProgram/granular, VPD, clima, extracción; `section`/`stage_index` |
 | **5** | Cruces (foliar↔VPD↔programa), deep links a UI | **Hecha en repo** (2026-09-16): `interpret_project_cross`, `project_deep_links`, `cross_manual_signals`; `get_my_project` + `deep_links`/`cross`; dashboard `?np_project=&np_section=` |
-| **6** | Probar · pegar skill · directorio OpenAI | **Deploy prod OK** (MCP `0.6.0`, 33 tools, OAuth well-known). Paquete: `CHATGPT-PLUGIN-PUBLICO-OLEADA-6.md`. **Pendiente manual:** pegar skill en ChatGPT, pruebas E/F, `OPENAI_APPS_CHALLENGE` + submit Plugins Directory |
+| **6** | Probar · pegar skill · directorio OpenAI | **Deploy prod OK** (MCP `0.6.0`). Paquete: `CHATGPT-PLUGIN-PUBLICO-OLEADA-6.md`. **Pendiente manual:** pegar skill, pruebas E/F, challenge estático + submit directorio. **No** meter env nuevas (tope 4 KB; OAuth MCP ya deriva de secretos existentes) |
 
 Cada oleada se mide contra las tablas 3.1–3.3: ¿seguimos cortos respecto a la plataforma? Si sí, no celebrar.
 

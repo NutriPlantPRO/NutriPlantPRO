@@ -21,7 +21,7 @@ Archivos clave en prod:
 - `/mcp` → `nutriplant-public-mcp`
 - `/.well-known/oauth-protected-resource`
 - `/.well-known/oauth-authorization-server`
-- `/.well-known/openai-apps-challenge` (token del portal; ver Paso G)
+- `/.well-known/openai-apps-challenge` (archivo estático en el repo; **no** variable Netlify)
 - Deep links: `https://nutriplantpro.com/dashboard.html?np_project=<id>&np_section=<clave>`
 
 ---
@@ -161,13 +161,19 @@ https://developers.openai.com/plugins/deploy/submission
 | **Terms** | `https://nutriplantpro.com/terminos-condiciones.html` |
 | **Support** | email de soporte NutriPlant |
 
-### G2 — Domain verification
+### G2 — Domain verification (sin variable Netlify nueva)
+
+El paquete de env de Lambda ya está al tope (~4 KB). **No** crear `OPENAI_APPS_CHALLENGE` en Netlify.
+
+Igual que el OAuth del MCP público: no metimos `NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET`; se deriva de `AGROCLIMATE_TOKEN_SECRET` (u otras ya existentes).
+
+Para el challenge de OpenAI el token tiene que ser **exacto**, así que va en archivo estático:
 
 1. En el portal, copiar el token del challenge.
-2. Netlify → Site env: `OPENAI_APPS_CHALLENGE=<token exacto>`.
-3. Redeploy si hace falta.
-4. `curl -sS https://nutriplantpro.com/.well-known/openai-apps-challenge` → token en texto plano.
-5. **Verify Domain** en el portal.
+2. En el repo, abrir `.well-known/openai-apps-challenge` y dejar **solo** el token (una línea, sin espacios de más).
+3. Commit + push a `main` (Netlify publica el archivo).
+4. Comprobar: `https://nutriplantpro.com/.well-known/openai-apps-challenge` → el token en texto plano.
+5. En el portal: **Verify Domain**.
 
 ### G3 — Annotations (ya en `/mcp`)
 
@@ -218,7 +224,7 @@ Capturas: chat sin cuenta; chat con cuenta + deep link; dashboard `np_section=fo
 - [ ] Skill pegada en conector ChatGPT
 - [ ] Pasos E + F OK
 - [ ] Deep link dashboard OK
-- [ ] `OPENAI_APPS_CHALLENGE` + Verify Domain
+- [ ] `.well-known/openai-apps-challenge` con el token del portal + Verify Domain (sin env nueva)
 - [ ] 5+3 test cases + demo account en portal
 - [ ] Submission enviada / publicada
 
