@@ -223,9 +223,9 @@ Capturas: chat sin cuenta; chat con cuenta + deep link; dashboard `np_section=fo
 - [x] Smoke `/mcp` + OAuth OK (33 tools; `cross_manual_signals` ok)
 - [x] Conector ChatGPT Actualizar + tools oleada 5 visibles
 - [x] Pruebas sin cuenta / con cuenta (VPD, meq, list projects, get_my_project, cross + deep link)
-- [ ] Deep link dashboard abierto en el navegador (opcional: clic al link Clima/VPD)
-- [ ] `.well-known/openai-apps-challenge` con el token del portal + Verify Domain (sin env nueva)
-- [ ] 5+3 test cases + demo account en portal
-- [ ] Submission enviada / publicada
+- [x] Domain verified (token en `.well-known/openai-apps-challenge`)
+- [x] Submit for Review enviado (v1.0.0 estado **Review**; correo OpenAI Case **C-96yiQQoWUL3u**)
+- [ ] OpenAI aprueba → pulsar **Publish** en el portal
+- [ ] Aparece en el Plugins Directory público
 
-Cuando el checklist esté cerrado, marcar oleada 6 **hecha** en `CHATGPT-PLUGIN-PUBLICO-TRABAJO.md`.
+Cuando esté **Published** en el directorio, marcar oleada 6 **hecha** en `CHATGPT-PLUGIN-PUBLICO-TRABAJO.md`.
