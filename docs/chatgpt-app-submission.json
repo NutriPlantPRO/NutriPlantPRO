@@ -3,7 +3,7 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "NutriPlant PRO",
-    "subtitle": "Consultor y calculadora de nutrición vegetal",
+    "subtitle": "Nutrición vegetal + VPD",
     "description": "NutriPlant PRO conecta ChatGPT con el método y las herramientas de nutriplantpro.com. Sin cuenta: cálculos (meq, VPD, ISH, CIC, riego, etc.) y capítulos del manual técnico. Con cuenta (OAuth): consulta de solo lectura de tus proyectos (labs, programas, clima) y deep links al dashboard. No es panel admin. Orientativo: decide el agrónomo.",
     "category": "PRODUCTIVITY"
   },
