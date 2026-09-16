@@ -2,9 +2,11 @@
 
 Producto acordado. **No es el GPT Socio.** El Socio (`/api/admin-assistant` + token admin) no se toca.
 
+**Documento de producto (definición viva):** [`CHATGPT-PLUGIN-PUBLICO-TRABAJO.md`](./CHATGPT-PLUGIN-PUBLICO-TRABAJO.md)
+
 ## Qué es
 
-**NutriPlant PRO** en ChatGPT: criterio agronómico del [manual técnico](https://nutriplantpro.com/manual-tecnico/) + cálculos de las herramientas gratis. El usuario puede **conectar su cuenta de suscriptor** (mismo correo y contraseña de la web) y consultar **solo sus** proyectos.
+**NutriPlant PRO** en ChatGPT: puente entre el cerebro amplio de ChatGPT y el **tuétano** de la plataforma (método, cálculos, y —si conecta— consulta de **su** cuenta). El `@` sube el piso sin un prompt enorme. No es el Socio.
 
 | | Plugin público | Socio (privado) |
 |---|---|---|
@@ -18,18 +20,11 @@ Producto acordado. **No es el GPT Socio.** El Socio (`/api/admin-assistant` + to
 - **Skill** (`docs/CHATGPT-PLUGIN-PUBLICO-SKILL.md`): piso técnico alto desde el mensaje 1. No “empieza principiante”.
 - **Tools:** calculan y citan URL. Crecen por oleadas. El cerebro ya nace completo.
 
-## Oleada 1 (esta implementación)
+## Oleadas (repo)
 
-Públicas (sin login): `lookup_chapter`, `list_catalog`, `convert_nutrient_units`, `calculate_vpd`, `interpret_context`, `salt_from_meq`.
+Oleadas 1–5 en código. **Oleada 6 (sacar a prod):** [`CHATGPT-PLUGIN-PUBLICO-OLEADA-6.md`](./CHATGPT-PLUGIN-PUBLICO-OLEADA-6.md) — deploy, smoke `/mcp`, pegar skill, pruebas, Plugins Directory OpenAI.
 
-Con sesión de suscriptor: `list_my_projects`, `get_my_project`.
-
-## Probar en ChatGPT (después del deploy)
-
-1. Settings → Apps & Connectors → Developer mode.
-2. Crear conector → URL `https://nutriplantpro.com/mcp`.
-3. Sin cuenta: VPD, 1 meq de Ca → nitrato de calcio, capítulos del manual.
-4. Conectar cuenta → login NutriPlant → “mis proyectos”.
+Skill: `docs/CHATGPT-PLUGIN-PUBLICO-SKILL.md`.
 
 ## Variable OAuth (opcional)
 

@@ -263,10 +263,91 @@ function lookupChapter(params) {
   };
 }
 
+function freeToolUrl(tool) {
+  if (!tool) return LOGIN_URL;
+  if (Array.isArray(tool.urls) && tool.urls[0]) {
+    const u = String(tool.urls[0]);
+    if (u.indexOf('http') === 0) return u;
+    return 'https://nutriplantpro.com' + (u.charAt(0) === '/' ? u : '/' + u);
+  }
+  const file = String(tool.file || '').trim();
+  if (!file || /login\.html/i.test(file) || /modal/i.test(file)) return LOGIN_URL;
+  if (file.indexOf('http') === 0) return file;
+  const path = file.replace(/\s*\(.*$/, '').replace(/\/?$/, '');
+  if (!path) return LOGIN_URL;
+  if (/\.html$/i.test(path) || /\/$/.test(file)) {
+    return 'https://nutriplantpro.com/' + path.replace(/^\//, '');
+  }
+  return 'https://nutriplantpro.com/' + path.replace(/^\//, '');
+}
+
+function freeToolCite(tool) {
+  if (!tool) return null;
+  const chId = tool.manualChapter || tool.manual_chapter || null;
+  let chapter = null;
+  if (chId) {
+    const found = findChapter(chId);
+    if (found.ok) chapter = chapterCite(found.chapter);
+  }
+  return {
+    id: tool.id,
+    title: tool.title,
+    summary: tool.summary,
+    url: freeToolUrl(tool),
+    manual_chapter: chId,
+    chapter: chapter
+  };
+}
+
+function findFreeTool(q) {
+  const query = String(q || '')
+    .trim()
+    .toLowerCase();
+  if (!query) return { ok: false, error: 'Indica q (id o nombre de herramienta gratis).' };
+  const tools = freeToolsCatalog.tools || [];
+  let hit = tools.find((t) => String(t.id).toLowerCase() === query);
+  if (hit) return { ok: true, tool: hit, match: 'id' };
+  const scored = tools
+    .map((t) => {
+      const blob = (t.id + ' ' + t.title + ' ' + (t.summary || '')).toLowerCase();
+      let score = 0;
+      query.split(/\s+/).forEach((w) => {
+        if (w.length < 2) return;
+        if (blob.indexOf(w) >= 0) score += 1;
+      });
+      if (String(t.title).toLowerCase().indexOf(query) >= 0) score += 3;
+      return { t, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+  if (!scored.length) return { ok: false, error: 'No hay herramienta gratis para: ' + q };
+  return {
+    ok: true,
+    tool: scored[0].t,
+    match: 'search',
+    alternatives: scored.slice(1, 4).map((x) => freeToolCite(x.t))
+  };
+}
+
+function lookupFreeTool(params) {
+  const found = findFreeTool(params && (params.q || params.tool_id || params.id));
+  if (!found.ok) return found;
+  return {
+    ok: true,
+    domain: 'nutriplant_public',
+    tool: freeToolCite(found.tool),
+    match: found.match,
+    alternatives: found.alternatives || [],
+    note:
+      'Misma lógica que la calculadora gratis en la web. Si aún no hay tool de cálculo en el chat para este tema, usa esta URL + el capítulo.'
+  };
+}
+
 function listCatalog() {
   return {
     ok: true,
     domain: 'nutriplant_public',
+    flow_chapter: chapterCite(findChapter('flujo-nutriplant-pro').chapter),
     manual: {
       version: manualCatalog.version,
       index: MANUAL_INDEX,
@@ -276,13 +357,10 @@ function listCatalog() {
     free_tools: {
       version: freeToolsCatalog.version,
       login: LOGIN_URL,
-      tools: (freeToolsCatalog.tools || []).map((t) => ({
-        id: t.id,
-        title: t.title,
-        summary: t.summary,
-        manual_chapter: t.manualChapter || t.manual_chapter || null
-      }))
-    }
+      tools: (freeToolsCatalog.tools || []).map((t) => freeToolCite(t))
+    },
+    wall:
+      'Plugin público: manual + free tools + (si sesión) su cuenta. No admin, Socio, Plan PRO, AirCI, Invest PRO.'
   };
 }
 
@@ -493,6 +571,7 @@ module.exports = {
   VPD_OPT_MIN,
   VPD_OPT_MAX,
   lookupChapter,
+  lookupFreeTool,
   listCatalog,
   convertNutrientUnits,
   calculateVpd,
@@ -500,6 +579,7 @@ module.exports = {
   saltFromMeq,
   findChapter,
   chapterCite,
+  freeToolCite,
   resolveNutrient,
   elementalPctFromSalt
 };

@@ -220,6 +220,13 @@
   status = 200
   force = true
 
+# OpenAI Plugins Directory — domain verification token (env OPENAI_APPS_CHALLENGE)
+[[redirects]]
+  from = "/.well-known/openai-apps-challenge"
+  to = "/.netlify/functions/openai-apps-challenge"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/admin-assistant"
   to = "/.netlify/functions/nutriplant-admin-assistant"

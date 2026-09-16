@@ -93,7 +93,7 @@ async function handleMcpMessage(msg, event, origin) {
     return mcpResult(id, {
       protocolVersion: PROTOCOL,
       capabilities: { tools: { listChanged: false } },
-      serverInfo: { name: 'NutriPlant PRO', version: '0.1.0' },
+      serverInfo: { name: 'NutriPlant PRO', version: '0.6.0' },
       instructions: tools.PUBLIC_INSTRUCTIONS
     });
   }
