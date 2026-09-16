@@ -213,8 +213,8 @@ Capturas: chat sin cuenta; chat con cuenta + deep link; dashboard `np_section=fo
 
 ## Checklist de cierre
 
-- [ ] Deploy `main` verde
-- [ ] Smoke `/mcp` + OAuth OK
+- [x] Deploy `main` verde (commit `ac5c98c6`, MCP prod `0.6.0`)
+- [x] Smoke `/mcp` + OAuth OK (33 tools; `cross_manual_signals` ok)
 - [ ] Skill pegada en conector ChatGPT
 - [ ] Pasos E + F OK
 - [ ] Deep link dashboard OK
