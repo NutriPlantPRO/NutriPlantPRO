@@ -1580,7 +1580,7 @@
         tool_water: "Water diagnosis and conditioning",
         tool_soil_water: "Soil water and texture",
         tool_irrigation: "Irrigation depth and water balance",
-        tool_ish: "Hydric yield (ISH)",
+        tool_ish: "Hydric yield (WSI)",
         tool_uniformidad_riego: "Irrigation uniformity",
         tool_vpd: "Vapor pressure deficit estimator",
         tool_weather: "Agroclimate forecast",

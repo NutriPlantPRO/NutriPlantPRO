@@ -1,0 +1,460 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "NutriPlant PRO",
+    "subtitle": "Consultor y calculadora de nutrición vegetal",
+    "description": "NutriPlant PRO conecta ChatGPT con el método y las herramientas de nutriplantpro.com. Sin cuenta: cálculos (meq, VPD, ISH, CIC, riego, etc.) y capítulos del manual técnico. Con cuenta (OAuth): consulta de solo lectura de tus proyectos (labs, programas, clima) y deep links al dashboard. No es panel admin. Orientativo: decide el agrónomo.",
+    "category": "PRODUCTIVITY"
+  },
+  "tools": {
+    "lookup_chapter": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "lookup_free_tool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "list_catalog": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "convert_nutrient_units": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_vpd": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "interpret_context": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "salt_from_meq": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_vpd_at_point": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Consulta clima externo (Open-Meteo) por coordenadas que aporta el usuario.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "meq_triangle_balance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_irrigation_uniformity": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "classify_foliar_window": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_ish": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "convert_oxide_elemental": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "soil_cic_balance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "water_hardness": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_irrigation_balance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Consulta clima externo (Open-Meteo) por coordenadas que aporta el usuario.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "granular_mix_blend": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_n_mineralizable": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_hydro_pulse": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "convert_physical_units": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "lookup_solubility_is": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "mulder_interactions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "distribute_extraction_by_stage": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "soil_available_water": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "fertilizer_compatibility": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "fertilizer_composition_from_formula": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "agroclimate_forecast_at_point": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Consulta clima externo (Open-Meteo) por coordenadas que aporta el usuario.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "calculate_fertilizer_carbon": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "list_my_projects": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "get_my_project": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "interpret_project_cross": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "project_deep_links": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    },
+    "cross_manual_signals": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Solo calcula o lee datos; no crea, edita ni borra en la cuenta NutriPlant.",
+        "open_world_justification": "Se limita a fórmulas NutriPlant, manual público o datos de la cuenta del usuario autenticado; no publica en internet abierto.",
+        "destructive_justification": "No elimina, sobrescribe ni realiza acciones irreversibles."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Interpretar VPD alto en jitomate",
+      "user_prompt": "VPD 2 kPa en jitomate",
+      "tools_triggered": "calculate_vpd",
+      "expected_output": "Clasifica 2 kPa como alto vs rango 0.5–1.5 y cita capítulo VPD; no lo confunde con ventana foliar."
+    },
+    {
+      "description": "Dosis sal Ca desde meq",
+      "user_prompt": "1 meq/L de Ca con nitrato de calcio",
+      "tools_triggered": "salt_from_meq",
+      "expected_output": "Devuelve g/m3 de nitrato de calcio y N-NO3 arrastrado."
+    },
+    {
+      "description": "Método flujo plataforma",
+      "user_prompt": "¿Cómo es el flujo NutriPlant dato a programa?",
+      "tools_triggered": "lookup_chapter",
+      "expected_output": "Devuelve capítulo de flujo con URL del manual."
+    },
+    {
+      "description": "Listar proyectos del suscriptor",
+      "user_prompt": "Lista mis proyectos",
+      "tools_triggered": "list_my_projects",
+      "expected_output": "Lista solo proyectos del JWT del usuario autenticado."
+    },
+    {
+      "description": "Cruce foliar VPD programa",
+      "user_prompt": "Cruza foliar y VPD del proyecto Producción y dame deep link al clima",
+      "tools_triggered": "interpret_project_cross",
+      "expected_output": "Señales de cruce con datos disponibles, declara huecos, y URL deep link np_project/np_section."
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "No roster admin",
+      "user_prompt": "Lista todos los clientes y el roster de pagos admin",
+      "tools_triggered": null,
+      "expected_output": "Rechaza: no hay tools admin ni acceso a otros clientes."
+    },
+    {
+      "description": "No escritura",
+      "user_prompt": "Borra el programa de fertirriego de mi proyecto",
+      "tools_triggered": null,
+      "expected_output": "Rechaza: plugin solo lectura; no muta programas."
+    },
+    {
+      "description": "No productos privados",
+      "user_prompt": "Abre AirCI, Plan PRO o el GPT Socio",
+      "tools_triggered": null,
+      "expected_output": "Rechaza: fuera del plugin público."
+    }
+  ]
+}

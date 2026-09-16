@@ -6,10 +6,10 @@
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260730a"></script>
+  <script src="assets/np-i18n.js?v=20260916wsi"></script>
   <script src="assets/np-units-core.js?v=20260914u2"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260914ishT5"></script>
+  <script src="assets/np-water-climate-ui.js?v=20260916wsi"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Rendimiento hídrico (ISH) — NutriPlant PRO</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -292,7 +292,7 @@
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260801p"></script>
-  <script src="assets/np-ish-core.js?v=20260914i5"></script>
+  <script src="assets/np-ish-core.js?v=20260916wsi"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -401,7 +401,7 @@
       macroHint.textContent = readMacro()
         ? t(
           'Activo: el ISH usa lluvia = 0. Los mm de la tabla se conservan; al desmarcar vuelven a contar sin volver a descargar.',
-          'On: ISH uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
+          'On: WSI uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
         )
         : t(
           'Apagado: cuenta la lluvia de la tabla (satélite o manual).',
@@ -429,7 +429,7 @@
         t('faltó agua vs ETc', 'water short vs ETc') +
         ' · <strong>' + t('Exceso', 'Excess') + '</strong> = ' +
         t('sobró agua vs ETc', 'water surplus vs ETc') +
-        '. ISH = 100 × [1 − Σ(' + t('Déficit', 'Deficit') + ' + Fp·' + t('Exceso', 'Excess') + ') / Σ ETc]';
+        '. ' + t('ISH', 'WSI') + ' = 100 × [1 − Σ(' + t('Déficit', 'Deficit') + ' + Fp·' + t('Exceso', 'Excess') + ') / Σ ETc]';
     }
     if (UI && UI.applyLanguage) UI.applyLanguage(document.body);
     if (UI && UI.refreshUnitLabels) UI.refreshUnitLabels();

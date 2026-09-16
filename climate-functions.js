@@ -2671,7 +2671,7 @@
         '<p style="margin:0;color:#92400e;">⚠️ ' +
         wcT(
           'Agrega un polígono en <strong>Ubicación</strong> para calcular el rendimiento hídrico (ISH).',
-          'Add a polygon in <strong>Location</strong> to calculate hydric yield (ISH).'
+          'Add a polygon in <strong>Location</strong> to calculate hydric yield (WSI).'
         ) +
         '</p></div>'
       );
@@ -2679,7 +2679,7 @@
     return (
       '<div class="card" style="padding:24px;" id="climate-ish-root">' +
       '<h3 style="margin:0 0 8px 0;color:#0f766e;">📈 ' +
-      wcT('Rendimiento hídrico (ISH)', 'Hydric yield (ISH)') +
+      wcT('Rendimiento hídrico (ISH)', 'Hydric yield (WSI)') +
       '</h3>' +
       '<p style="margin:0 0 12px 0;font-size:14px;color:#64748b;">' +
       wcT(
@@ -2777,7 +2777,7 @@
       (ish.macroTunnelNoRain
         ? wcT(
           'Activo: el ISH usa lluvia = 0. Los mm de la tabla se conservan; al desmarcar vuelven a contar sin volver a descargar.',
-          'On: ISH uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
+          'On: WSI uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
         )
         : wcT(
           'Apagado: cuenta la lluvia de la tabla (satélite o manual).',
@@ -2792,7 +2792,7 @@
       ) +
       '</button>' +
       '<button type="button" id="climate-ish-recalc" class="climate-ish-btn climate-ish-btn--teal" style="padding:10px 14px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">📊 ' +
-      wcT('Calcular ISH', 'Calculate ISH') +
+      wcT('Calcular ISH', 'Calculate WSI') +
       '</button></div>' +
       '<p style="margin:0 0 10px;font-size:11px;color:#64748b;">' +
       wcT(
@@ -2806,7 +2806,7 @@
       '<p style="margin:0 0 8px;font-size:12px;color:#64748b;">' +
       wcT(
         'Los datos de la tabla alimentan el ISH y la curva. Riego en lámina o volumen por área (lado a lado).',
-        'Table data feeds ISH and the curve. Irrigation as depth or volume per area (side by side).'
+        'Table data feeds WSI and the curve. Irrigation as depth or volume per area (side by side).'
       ) +
       '</p>' +
       '<div style="margin:0 0 10px;padding:12px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;">' +
@@ -2821,14 +2821,14 @@
           )
         : wcT(
             'Fracción del riego aplicado que realmente entra al balance del ISH. 100 = todo cuenta.',
-            'Fraction of applied irrigation that enters the ISH balance. 100 = all counts.'
+            'Fraction of applied irrigation that enters the WSI balance. 100 = all counts.'
           )) +
       '</p>' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
       '<input type="number" id="climate-ish-irr-eff" min="0" max="100" step="1" value="' +
       (ish.irrigationEffectivePct != null ? ish.irrigationEffectivePct : 100) +
       '" title="' +
-      wcT('% del riego aplicado que cuenta en el ISH', '% of applied irrigation used in ISH') +
+      wcT('% del riego aplicado que cuenta en el ISH', '% of applied irrigation used in WSI') +
       '" style="width:64px;padding:6px 8px;border:1px solid #86efac;border-radius:8px;font-size:14px;font-weight:700;color:#14532d;text-align:right;background:#fff;">' +
       '<span style="font-size:13px;font-weight:700;color:#14532d;">%</span></div></div>' +
       '<div style="overflow:auto;max-height:380px;border:1px solid #e2e8f0;border-radius:8px;-webkit-overflow-scrolling:touch;width:100%;">' +
@@ -2865,12 +2865,14 @@
       wcT('Exceso', 'Excess') +
       ' ' +
       climateDepthUnit() +
-      '</th><th style="padding:8px 6px;vertical-align:middle;">ISH</th>' +
+      '</th><th style="padding:8px 6px;vertical-align:middle;">' +
+      wcT('ISH', 'WSI') +
+      '</th>' +
       '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>' +
       '<p style="margin:10px 0 12px;font-size:12px;color:#64748b;line-height:1.45;">' +
       wcT(
         '<strong>Déficit</strong> = faltó agua vs ETc · <strong>Exceso</strong> = sobró agua vs ETc. ISH = 100 × [1 − Σ(Déficit + Fp·Exceso) / Σ ETc]',
-        '<strong>Deficit</strong> = water short vs ETc · <strong>Excess</strong> = water surplus vs ETc. ISH = 100 × [1 − Σ(Deficit + Fp·Excess) / Σ ETc]'
+        '<strong>Deficit</strong> = water short vs ETc · <strong>Excess</strong> = water surplus vs ETc. WSI = 100 × [1 − Σ(Deficit + Fp·Excess) / Σ ETc]'
       ) +
       '</p>' +
       '<div id="climate-ish-hero" style="display:none;margin-bottom:12px;padding:14px;border-radius:10px;border:1px solid #99f6e4;background:linear-gradient(135deg,#ecfeff,#f0fdf4);"></div>' +
@@ -2891,14 +2893,14 @@
       '</strong> ' +
       wcT(
         'El ISH y la curva son una estimación según esta fórmula. Orientan el techo de rendimiento relativo al agua; no predicen la cosecha real. Validar en campo.',
-        'ISH and the curve are an estimate from this formula. They indicate the water-related yield ceiling; they do not predict actual harvest. Validate in the field.'
+        'WSI and the curve are an estimate from this formula. They indicate the water-related yield ceiling; they do not predict actual harvest. Validate in the field.'
       ) +
       '<br><br><strong>' +
       wcT('Lectura del % que aparece:', 'How to read the % shown:') +
       '</strong> ' +
       wcT(
         '≥85 % agua casi no limita · 70–85 % estrés acumulado · <70 % techo hídrico tocado (estrés fuerte en el modelo). Mismo semáforo del resultado ISH — no veredicto comercial.',
-        '≥85% water barely limiting · 70–85% accumulated stress · <70% hydric ceiling hit (strong model stress). Same bands as the ISH result — not a commercial verdict.'
+        '≥85% water barely limiting · 70–85% accumulated stress · <70% hydric ceiling hit (strong model stress). Same bands as the WSI result — not a commercial verdict.'
       ) +
       '</div>';
 
@@ -3109,7 +3111,9 @@
     hero.style.display = 'block';
     hero.innerHTML =
       '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">' +
-      '<div><div style="font-size:12px;color:#64748b;font-weight:600;">ISH</div>' +
+      '<div><div style="font-size:12px;color:#64748b;font-weight:600;">' +
+      wcT('ISH', 'WSI') +
+      '</div>' +
       '<div style="font-size:36px;font-weight:800;color:#0f766e;line-height:1;">' +
       result.ish +
       '%</div></div>' +
@@ -3190,7 +3194,7 @@
       macroHint.textContent = st.macroTunnelNoRain
         ? wcT(
           'Activo: el ISH usa lluvia = 0. Los mm de la tabla se conservan; al desmarcar vuelven a contar sin volver a descargar.',
-          'On: ISH uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
+          'On: WSI uses rainfall = 0. Table mm are kept; uncheck to count them again without re-fetching.'
         )
         : wcT(
           'Apagado: cuenta la lluvia de la tabla (satélite o manual).',
@@ -3404,9 +3408,11 @@
         .join('');
       return (
         '<div class="report-block"><div class="report-block-title">📈 ' +
-        rt('Rendimiento hídrico (ISH)', 'Hydric yield (ISH)') +
+        rt('Rendimiento hídrico (ISH)', 'Hydric yield (WSI)') +
         '</div>' +
-        '<p style="margin:0 0 8px;font-size:13px;"><strong>ISH:</strong> ' +
+        '<p style="margin:0 0 8px;font-size:13px;"><strong>' +
+        rt('ISH', 'WSI') +
+        ':</strong> ' +
         ish.result.ish +
         '% · ' +
         rt('Ciclo', 'Cycle') +
@@ -3439,7 +3445,9 @@
             rt('Riego', 'Irrig.') +
             '</th><th>ETc (' +
             depthU +
-            ')</th><th>ISH</th></tr></thead><tbody>' +
+            ')</th><th>' +
+            rt('ISH', 'WSI') +
+            '</th></tr></thead><tbody>' +
             rows +
             '</tbody></table></div>'
           : '') +

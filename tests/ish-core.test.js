@@ -206,5 +206,16 @@ module.exports = [
       assert.equal(half.weeks[0].irrigation_effective_mm, 10);
       assert.equal(half.irrigationEffectivePct, 50);
     }
+  },
+  {
+    name: 'ISH: acrónimo y ticks S/W según idioma',
+    run: function () {
+      assert.equal(NpIsh.acronym('es'), 'ISH');
+      assert.equal(NpIsh.acronym('en'), 'WSI');
+      var row = { weekStart: '2026-06-24' };
+      assert.equal(NpIsh.formatWeekTick(row, 0, false), 'S1 · 06-24');
+      assert.equal(NpIsh.formatWeekTick(row, 0, true), 'W1 · 06-24');
+      assert.equal(NpIsh.formatWeekTick(row, 11, true), 'W12 · 06-24');
+    }
   }
 ];

@@ -27,7 +27,7 @@
   var IRR_EFF_HELP_ES =
     'Fracción del riego aplicado que realmente entra al balance del ISH (pérdidas, eficiencia del sistema). 100 = todo cuenta; 80 = solo el 80 % del riego que capturas.';
   var IRR_EFF_HELP_EN =
-    'Fraction of applied irrigation that enters the ISH balance (losses, system efficiency). 100 = all counts; 80 = only 80% of the irrigation you enter.';
+    'Fraction of applied irrigation that enters the WSI balance (losses, system efficiency). 100 = all counts; 80 = only 80% of the irrigation you enter.';
   var IRR_EFF_CONV_METRIC_ES = ' Conversión: 1 mm = 10 m³/ha.';
   var IRR_EFF_CONV_METRIC_EN = ' Conversion: 1 mm = 10 m³/ha.';
   var IRR_EFF_CONV_US_ES =
@@ -283,7 +283,7 @@
       return {
         ok: false,
         error: 'Indica Kc para calcular ETc e ISH',
-        errorEn: 'Enter Kc to compute ETc and ISH',
+        errorEn: 'Enter Kc to compute ETc and WSI',
         weeks: weeks,
         fp: fp,
         irrigationEffectivePct: irrEffPct,
@@ -526,9 +526,13 @@
     return 1;
   }
 
-  function formatWeekTick(row, index) {
+  function acronym(lang) {
+    return lang === 'en' || lang === true ? 'WSI' : 'ISH';
+  }
+
+  function formatWeekTick(row, index, langEn) {
     var start = row && row.weekStart ? String(row.weekStart).slice(5) : '';
-    return 'S' + (index + 1) + (start ? ' · ' + start : '');
+    return (langEn ? 'W' : 'S') + (index + 1) + (start ? ' · ' + start : '');
   }
 
   /**
@@ -647,7 +651,7 @@
       ctx.save();
       ctx.translate(cx, pad.t + plotH + 10);
       ctx.rotate(-Math.PI / 4);
-      ctx.fillText(formatWeekTick(rows[ti], ti), 0, 0);
+      ctx.fillText(formatWeekTick(rows[ti], ti, langEn), 0, 0);
       ctx.restore();
     }
 
@@ -702,6 +706,8 @@
     fetchCycleClimate: fetchCycleClimate,
     suggestIrrigationFromBalance: suggestIrrigationFromBalance,
     drawYieldChart: drawYieldChart,
+    acronym: acronym,
+    formatWeekTick: formatWeekTick,
     round1: round1,
     round2: round2
   };
