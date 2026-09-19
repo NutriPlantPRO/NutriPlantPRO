@@ -87,6 +87,26 @@
       <li>CE y Na elevados sugieren revisar calidad de agua, drenaje y enmiendas (ver <a href="enmiendas-balance-cic.html">enmiendas y CIC</a>).</li>
       <li>La muestra depende de <strong>profundidad, humedad y hora de muestreo</strong>; un solo punto no define el ciclo completo.</li>
     </ul>
+    <h2>Relación con la solución nutritiva (Hidroponía)</h2>
+    <p>
+      En <strong>Solución Nutritiva → Cálculo de fertilizantes</strong> puedes <strong>Traer de análisis</strong> un extracto de pasta
+      al final del cálculo. <strong>No se resta como el agua</strong>: el agua sí resta del faltante; la pasta es referencia de rizósfera.
+    </p>
+    <p>
+      <strong>Steiner (1961)</strong> define la composición y el <strong>equilibrio iónico</strong> de la solución nutritiva
+      (meq/L y rangos en triángulos aniones/cationes). <strong>No prescribe</strong> restar el extracto de pasta 1:1 del objetivo.
+      NutriPlant adapta ese criterio de equilibrio así:
+    </p>
+    <div class="mt-formula">
+      Si pasta &gt; objetivo → bajaría sugerida (ppm) = (pasta − objetivo) × f<br>
+      f editable (p. ej. 0,25 / 0,30 / 0,50). Si pasta ≤ objetivo → no sugiere bajar.
+    </div>
+    <ul>
+      <li>El botón <strong>Aplicar sugerencia al objetivo</strong> baja el objetivo (ppm/meq) <strong>una vez por análisis</strong>; no vuelve a restar la pasta sola.</li>
+      <li>Puedes cambiar <strong>f</strong> a menos o más según tu criterio; es heurística de manejo, no norma de laboratorio.</li>
+      <li>Tras aplicar, revisa fertilizantes o <strong>Propuesta automática</strong> (el faltante cambia porque cambió el objetivo).</li>
+    </ul>
+    <p>Detalle de UI también en <a href="hidroponia-solucion-por-etapa.html">Hidroponía: solución por etapa</a>.</p>
     <h2>RAS y CE</h2>
     <p>CE del extracto se interpreta como salinidad de la solución del suelo en pasta; umbrales dependen del cultivo y del sistema (campo abierto vs sustrato). RAS: campo manual; fórmula de referencia en <a href="analisis-agua-ras-sar.html">análisis de agua</a>.</p>
     <h2>Relación con otros capítulos</h2>
@@ -131,6 +151,26 @@
       <li>Elevated EC and Na suggest reviewing water quality, drainage, and amendments (see <a href="enmiendas-balance-cic.html">amendments and CEC</a>).</li>
       <li>The sample depends on <strong>depth, moisture, and sampling time</strong>; a single point does not define the full cycle.</li>
     </ul>
+    <h2>Link to nutrient solution (Hydroponics)</h2>
+    <p>
+      In <strong>Nutrient solution → Fertilizer calculation</strong> you can <strong>Bring from analysis</strong> a paste extract
+      at the end of the calc. <strong>It is not subtracted like water</strong>: water does reduce the requirement; paste is a rhizosphere reference.
+    </p>
+    <p>
+      <strong>Steiner (1961)</strong> defines nutrient-solution composition and <strong>ionic balance</strong>
+      (meq/L and anion/cation ternary ranges). It does <strong>not prescribe</strong> subtracting paste extract 1:1 from the target.
+      NutriPlant adapts that balance idea as:
+    </p>
+    <div class="mt-formula">
+      If paste &gt; target → suggested cut (ppm) = (paste − target) × f<br>
+      Editable f (e.g. 0.25 / 0.30 / 0.50). If paste ≤ target → no cut suggested.
+    </div>
+    <ul>
+      <li><strong>Apply suggestion to target</strong> lowers the target (ppm/meq) <strong>once per analysis</strong>; paste is not subtracted again by itself.</li>
+      <li>You can set <strong>f</strong> lower or higher; it is a management heuristic, not a lab standard.</li>
+      <li>After applying, review fertilizers or <strong>Automatic proposal</strong> (the requirement changes because the target changed).</li>
+    </ul>
+    <p>UI detail also in <a href="hidroponia-solucion-por-etapa.html">Hydroponics: solution by stage</a>.</p>
     <h2>SAR and EC</h2>
     <p>Extract EC is interpreted as salinity of the soil solution at paste; thresholds depend on crop and system (open field vs substrate). SAR: manual field; reference formula in <a href="analisis-agua-ras-sar.html">water analysis</a>.</p>
     <h2>Relation to other chapters</h2>

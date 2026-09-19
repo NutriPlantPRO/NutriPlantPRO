@@ -4681,6 +4681,92 @@ html.embed-login body {
   color: #15803d;
 }
 
+/* Extracto de pasta: comparación vs solución aplicada (no resta del cálculo) */
+.hydro-paste-factor-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 10px 0;
+  font-size: 0.88rem;
+  color: #334155;
+}
+.hydro-paste-factor-row label {
+  font-weight: 600;
+}
+.hydro-paste-factor-presets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.hydro-paste-f-preset.is-active {
+  background: #5b21b6;
+  border-color: #5b21b6;
+  color: #fff;
+}
+.hydro-paste-factor-row #hydroPasteAdjustFactor {
+  width: 4.5rem;
+  max-width: 100%;
+}
+.hydro-paste-factor-hint {
+  flex: 1 1 12rem;
+  font-size: 0.8rem;
+}
+.hydro-paste-method {
+  margin: 0 0 12px 0;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #334155;
+  line-height: 1.45;
+}
+.hydro-paste-manual-link {
+  margin-left: 4px;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+.hydro-paste-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.hydro-paste-actions .np-brand-navy-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.hydro-paste-compare-note {
+  margin-top: 12px;
+}
+.hydro-paste-compare-box {
+  padding: 10px 12px;
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #5b21b6;
+  line-height: 1.45;
+}
+.hydro-paste-empty {
+  opacity: 0.55;
+}
+.hydro-paste-excess {
+  color: #b45309;
+  font-weight: 700;
+}
+.hydro-paste-deficit {
+  color: #0369a1;
+  font-weight: 600;
+}
+.hydro-paste-suggest {
+  color: #9a3412;
+  font-weight: 800;
+}
+
 /* Cálculo por volumen de agua */
 .hydro-volume-card {
   background: #f0f9ff;

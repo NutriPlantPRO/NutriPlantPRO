@@ -24,8 +24,8 @@ Sube el repo (o deploy manual) para que existan en producción:
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza versiones viejas):
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← **re-subir** (**ISH 📈 + uniformidad 🎯 + foliar 🍃** HR 50–80 + escalones; ES/EN + métrico/US + Programa del ciclo + Pulso + cítrico)
-2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b + ácidos: cítrico polvo g/kg·oz/lb)
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.09.15**: foliar 🍃 HR 50–80 + escalones de semáforo; + uniformidad 🎯 UI ES/EN + métrico/US; 28 capítulos)
+2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md` ← **re-subir** (§3b + ácidos: cítrico polvo g/kg·oz/lb + **§4.3 pasta ↔ hidro: f editable, Aplicar 1×**)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **re-subir** (**v2026.09.19**: foliar 🍃 HR 50–80 + escalones; + uniformidad 🎯; **§4.9/§4.17 extracto de pasta en cálculo hidro**; 28 capítulos)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
 5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.13: `nutri_pro_file_inspect` archivo vivo sin OCR API)
 6. `docs/INVEST-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.14: actions `invest_pro_overview|holdings|lists`)
@@ -73,6 +73,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 4.0b. **“¿Qué es el Programa del ciclo en Solución Nutritiva?”** → Knowledge HERRAMIENTAS §💧 / MANUAL §4.9–4.10: multi-etapa, `cycleProgram`, PDF `hydroCycle`, admin; ≠ diseño activo ≠ lab
 4.0c. **“¿Cómo funciona el Pulso de riego en hidroponía?”** → Knowledge HERRAMIENTAS §⏱️ / `free_tools_catalog` `hidro_pulso_riego` (V, ATD, agotamiento, drenaje → L y min)
 4.0d. **“¿Qué ácidos hay / cítrico vs nítrico?”** → HNO₃ líquido aporta N-NO₃ (mL/L); **cítrico = polvo** por masa g/kg o oz/lb US (25,9 meq/mL; solo acidifica); MANUAL §4.9 + HERRAMIENTAS agua-dureza
+4.0e. **“¿Cómo se usa el extracto de pasta en el cálculo de fertilizantes / por qué no resta como el agua?”** → Knowledge MANUAL §4.9+§4.17 + ANALISIS §4.3: pasta = rizósfera; bajaría = exceso × f; Aplicar 1×; Steiner ≠ resta 1:1
 4.1. **“¿Qué es el Pronóstico agroclimático / alertas semanales?”** → Knowledge HERRAMIENTAS § Pronóstico o `free_tools_catalog` tool `pronostico_agroclimatico` (admin: `agroclimate.html`)
 5. “¿Qué pestañas hay en Análisis?” → `lab_analyses_catalog`
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`

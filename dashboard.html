@@ -441,7 +441,8 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260830citricNoVol"></script>
-  <script src="hidroponia-functions.js?v=20260830acidI18n"></script>
+  <script src="assets/hydro-paste-compare-report.js?v=20260919pasta"></script>
+  <script src="hidroponia-functions.js?v=20260919pasta"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
   <script src="assets/np-ish-core.js?v=20260916wsi"></script>
@@ -920,7 +921,28 @@
       }
     }
 
-    /* Herramientas densas (mapa/cálculos/tablas): más campo visual, como Diseño de solución nutritiva */
+    /* Herramientas densas: casi toda la ventana (Mac + tablet + cel), como Diseño de solución */
+    #soilWaterTextureToolModal.modal-overlay.show,
+    #laminaRiegoToolModal.modal-overlay.show,
+    #ishRendimientoToolModal.modal-overlay.show,
+    #uniformidadRiegoToolModal.modal-overlay.show,
+    #vpdCalculatorModal.modal-overlay.show,
+    #agroclimateForecastModal.modal-overlay.show,
+    #ventanasFoliarToolModal.modal-overlay.show,
+    #fertilizerSolubilitySaltModal.modal-overlay.show,
+    #fertilizerCarbonCalculatorModal.modal-overlay.show,
+    #extraccionEtapaCalculatorModal.modal-overlay.show,
+    #periodicTableNutrientsModal.modal-overlay.show,
+    #aminoAcidsAtlasModal.modal-overlay.show,
+    #nutrientInteractionsToolModal.modal-overlay.show,
+    #fertilizerCompatibilityModal.modal-overlay.show,
+    #granularMixCalculatorModal.modal-overlay.show,
+    #fertilizerCompositionCalculatorModal.modal-overlay.show {
+      padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      box-sizing: border-box;
+    }
     #soilWaterTextureToolModal .modal,
     #soilWaterTextureToolModal .modal-tool-iframe-full,
     #soilWaterTextureToolModal .modal-tool-iframe-fit,
@@ -969,185 +991,93 @@
     #fertilizerCompositionCalculatorModal .modal,
     #fertilizerCompositionCalculatorModal .modal-tool-iframe-full,
     #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit {
-      width: min(98vw, 100%) !important;
+      width: 100% !important;
       max-width: none !important;
-      max-height: 96vh;
+      height: 100% !important;
+      max-height: none !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      border-radius: 12px;
+      overflow: hidden;
     }
-    @media (max-width: 1100px), (hover: none) and (pointer: coarse) {
-      #soilWaterTextureToolModal.modal-overlay.show,
-      #laminaRiegoToolModal.modal-overlay.show,
-      #ishRendimientoToolModal.modal-overlay.show,
-      #uniformidadRiegoToolModal.modal-overlay.show,
-      #vpdCalculatorModal.modal-overlay.show,
-      #agroclimateForecastModal.modal-overlay.show,
-      #ventanasFoliarToolModal.modal-overlay.show,
-      #fertilizerSolubilitySaltModal.modal-overlay.show,
-      #fertilizerCarbonCalculatorModal.modal-overlay.show,
-      #extraccionEtapaCalculatorModal.modal-overlay.show,
-      #periodicTableNutrientsModal.modal-overlay.show,
-      #aminoAcidsAtlasModal.modal-overlay.show,
-      #nutrientInteractionsToolModal.modal-overlay.show,
-      #fertilizerCompatibilityModal.modal-overlay.show,
-      #granularMixCalculatorModal.modal-overlay.show,
-      #fertilizerCompositionCalculatorModal.modal-overlay.show {
-        padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
-        align-items: stretch !important;
-        justify-content: stretch !important;
-        box-sizing: border-box;
-      }
-      #soilWaterTextureToolModal .modal,
-      #soilWaterTextureToolModal .modal-tool-iframe-full,
-      #soilWaterTextureToolModal .modal-tool-iframe-fit,
-      #laminaRiegoToolModal .modal,
-      #laminaRiegoToolModal .modal-tool-iframe-full,
-      #laminaRiegoToolModal .modal-tool-iframe-fit,
-      #ishRendimientoToolModal .modal,
-      #ishRendimientoToolModal .modal-tool-iframe-full,
-      #ishRendimientoToolModal .modal-tool-iframe-fit,
-      #uniformidadRiegoToolModal .modal,
-      #uniformidadRiegoToolModal .modal-tool-iframe-full,
-      #uniformidadRiegoToolModal .modal-tool-iframe-fit,
-      #vpdCalculatorModal .modal,
-      #vpdCalculatorModal .modal-tool-iframe-full,
-      #vpdCalculatorModal .modal-tool-iframe-fit,
-      #agroclimateForecastModal .modal,
-      #agroclimateForecastModal .modal-tool-iframe-full,
-      #agroclimateForecastModal .modal-tool-iframe-fit,
-      #ventanasFoliarToolModal .modal,
-      #ventanasFoliarToolModal .modal-tool-iframe-full,
-      #ventanasFoliarToolModal .modal-tool-iframe-fit,
-      #fertilizerSolubilitySaltModal .modal,
-      #fertilizerSolubilitySaltModal .modal-tool-iframe-full,
-      #fertilizerSolubilitySaltModal .modal-tool-iframe-fit,
-      #fertilizerCarbonCalculatorModal .modal,
-      #fertilizerCarbonCalculatorModal .modal-tool-iframe-full,
-      #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit,
-      #extraccionEtapaCalculatorModal .modal,
-      #extraccionEtapaCalculatorModal .modal-tool-iframe-full,
-      #extraccionEtapaCalculatorModal .modal-tool-iframe-fit,
-      #periodicTableNutrientsModal .modal,
-      #periodicTableNutrientsModal .modal-tool-iframe-full,
-      #periodicTableNutrientsModal .modal-tool-iframe-fit,
-      #aminoAcidsAtlasModal .modal,
-      #aminoAcidsAtlasModal .modal-tool-iframe-full,
-      #aminoAcidsAtlasModal .modal-tool-iframe-fit,
-      #nutrientInteractionsToolModal .modal,
-      #nutrientInteractionsToolModal .modal-tool-iframe-full,
-      #nutrientInteractionsToolModal .modal-tool-iframe-fit,
-      #fertilizerCompatibilityModal .modal,
-      #fertilizerCompatibilityModal .modal-tool-iframe-full,
-      #fertilizerCompatibilityModal .modal-tool-iframe-fit,
-      #granularMixCalculatorModal .modal,
-      #granularMixCalculatorModal .modal-tool-iframe-full,
-      #granularMixCalculatorModal .modal-tool-iframe-fit,
-      #fertilizerCompositionCalculatorModal .modal,
-      #fertilizerCompositionCalculatorModal .modal-tool-iframe-full,
-      #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit {
-        width: 100% !important;
-        max-width: none !important;
-        height: 100% !important;
-        max-height: none !important;
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        border-radius: 12px;
-      }
-      #soilWaterTextureToolModal .modal-header,
-      #laminaRiegoToolModal .modal-header,
-      #ishRendimientoToolModal .modal-header,
-      #uniformidadRiegoToolModal .modal-header,
-      #vpdCalculatorModal .modal-header,
-      #agroclimateForecastModal .modal-header,
-      #ventanasFoliarToolModal .modal-header,
-      #fertilizerSolubilitySaltModal .modal-header,
-      #fertilizerCarbonCalculatorModal .modal-header,
-      #extraccionEtapaCalculatorModal .modal-header,
-      #periodicTableNutrientsModal .modal-header,
-      #aminoAcidsAtlasModal .modal-header,
-      #nutrientInteractionsToolModal .modal-header,
-      #fertilizerCompatibilityModal .modal-header,
-      #granularMixCalculatorModal .modal-header,
-      #fertilizerCompositionCalculatorModal .modal-header {
-        padding: 10px 12px;
-        flex-shrink: 0;
-      }
-      #soilWaterTextureToolModal .modal-title,
-      #laminaRiegoToolModal .modal-title,
-      #ishRendimientoToolModal .modal-title,
-      #uniformidadRiegoToolModal .modal-title,
-      #vpdCalculatorModal .modal-title,
-      #agroclimateForecastModal .modal-title,
-      #ventanasFoliarToolModal .modal-title,
-      #fertilizerSolubilitySaltModal .modal-title,
-      #fertilizerCarbonCalculatorModal .modal-title,
-      #extraccionEtapaCalculatorModal .modal-title,
-      #periodicTableNutrientsModal .modal-title,
-      #aminoAcidsAtlasModal .modal-title,
-      #nutrientInteractionsToolModal .modal-title,
-      #fertilizerCompatibilityModal .modal-title,
-      #granularMixCalculatorModal .modal-title,
-      #fertilizerCompositionCalculatorModal .modal-title {
-        font-size: 1.05rem;
-        line-height: 1.25;
-      }
-      #soilWaterTextureToolModal .modal-body,
-      #soilWaterTextureToolModal .modal-tool-iframe-fit .modal-body,
-      #laminaRiegoToolModal .modal-body,
-      #laminaRiegoToolModal .modal-tool-iframe-fit .modal-body,
-      #ishRendimientoToolModal .modal-body,
-      #ishRendimientoToolModal .modal-tool-iframe-fit .modal-body,
-      #uniformidadRiegoToolModal .modal-body,
-      #uniformidadRiegoToolModal .modal-tool-iframe-fit .modal-body,
-      #vpdCalculatorModal .modal-body,
-      #vpdCalculatorModal .modal-tool-iframe-fit .modal-body,
-      #agroclimateForecastModal .modal-body,
-      #agroclimateForecastModal .modal-tool-iframe-fit .modal-body,
-      #ventanasFoliarToolModal .modal-body,
-      #ventanasFoliarToolModal .modal-tool-iframe-fit .modal-body,
-      #fertilizerSolubilitySaltModal .modal-body,
-      #fertilizerSolubilitySaltModal .modal-tool-iframe-fit .modal-body,
-      #fertilizerCarbonCalculatorModal .modal-body,
-      #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit .modal-body,
-      #extraccionEtapaCalculatorModal .modal-body,
-      #extraccionEtapaCalculatorModal .modal-tool-iframe-fit .modal-body,
-      #periodicTableNutrientsModal .modal-body,
-      #periodicTableNutrientsModal .modal-tool-iframe-fit .modal-body,
-      #aminoAcidsAtlasModal .modal-body,
-      #aminoAcidsAtlasModal .modal-tool-iframe-fit .modal-body,
-      #nutrientInteractionsToolModal .modal-body,
-      #nutrientInteractionsToolModal .modal-tool-iframe-fit .modal-body,
-      #fertilizerCompatibilityModal .modal-body,
-      #fertilizerCompatibilityModal .modal-tool-iframe-fit .modal-body,
-      #granularMixCalculatorModal .modal-body,
-      #granularMixCalculatorModal .modal-tool-iframe-fit .modal-body,
-      #fertilizerCompositionCalculatorModal .modal-body,
-      #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit .modal-body {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        overflow: hidden !important;
-        padding: 0 !important;
-        height: auto !important;
-      }
-      #soilWaterTextureToolModal iframe,
-      #laminaRiegoToolModal iframe,
-      #ishRendimientoToolModal iframe,
-      #uniformidadRiegoToolModal iframe,
-      #vpdCalculatorModal iframe,
-      #agroclimateForecastModal iframe,
-      #ventanasFoliarToolModal iframe,
-      #fertilizerSolubilitySaltModal iframe,
-      #fertilizerCarbonCalculatorModal iframe,
-      #extraccionEtapaCalculatorModal iframe,
-      #periodicTableNutrientsModal iframe,
-      #aminoAcidsAtlasModal iframe,
-      #nutrientInteractionsToolModal iframe,
-      #fertilizerCompatibilityModal iframe,
-      #granularMixCalculatorModal iframe,
-      #fertilizerCompositionCalculatorModal iframe {
-        width: 100% !important;
-        height: 100% !important;
-        min-height: 0 !important;
-      }
+    #soilWaterTextureToolModal .modal-header,
+    #laminaRiegoToolModal .modal-header,
+    #ishRendimientoToolModal .modal-header,
+    #uniformidadRiegoToolModal .modal-header,
+    #vpdCalculatorModal .modal-header,
+    #agroclimateForecastModal .modal-header,
+    #ventanasFoliarToolModal .modal-header,
+    #fertilizerSolubilitySaltModal .modal-header,
+    #fertilizerCarbonCalculatorModal .modal-header,
+    #extraccionEtapaCalculatorModal .modal-header,
+    #periodicTableNutrientsModal .modal-header,
+    #aminoAcidsAtlasModal .modal-header,
+    #nutrientInteractionsToolModal .modal-header,
+    #fertilizerCompatibilityModal .modal-header,
+    #granularMixCalculatorModal .modal-header,
+    #fertilizerCompositionCalculatorModal .modal-header {
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+    #soilWaterTextureToolModal .modal-body,
+    #soilWaterTextureToolModal .modal-tool-iframe-fit .modal-body,
+    #laminaRiegoToolModal .modal-body,
+    #laminaRiegoToolModal .modal-tool-iframe-fit .modal-body,
+    #ishRendimientoToolModal .modal-body,
+    #ishRendimientoToolModal .modal-tool-iframe-fit .modal-body,
+    #uniformidadRiegoToolModal .modal-body,
+    #uniformidadRiegoToolModal .modal-tool-iframe-fit .modal-body,
+    #vpdCalculatorModal .modal-body,
+    #vpdCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #agroclimateForecastModal .modal-body,
+    #agroclimateForecastModal .modal-tool-iframe-fit .modal-body,
+    #ventanasFoliarToolModal .modal-body,
+    #ventanasFoliarToolModal .modal-tool-iframe-fit .modal-body,
+    #fertilizerSolubilitySaltModal .modal-body,
+    #fertilizerSolubilitySaltModal .modal-tool-iframe-fit .modal-body,
+    #fertilizerCarbonCalculatorModal .modal-body,
+    #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #extraccionEtapaCalculatorModal .modal-body,
+    #extraccionEtapaCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #periodicTableNutrientsModal .modal-body,
+    #periodicTableNutrientsModal .modal-tool-iframe-fit .modal-body,
+    #aminoAcidsAtlasModal .modal-body,
+    #aminoAcidsAtlasModal .modal-tool-iframe-fit .modal-body,
+    #nutrientInteractionsToolModal .modal-body,
+    #nutrientInteractionsToolModal .modal-tool-iframe-fit .modal-body,
+    #fertilizerCompatibilityModal .modal-body,
+    #fertilizerCompatibilityModal .modal-tool-iframe-fit .modal-body,
+    #granularMixCalculatorModal .modal-body,
+    #granularMixCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #fertilizerCompositionCalculatorModal .modal-body,
+    #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit .modal-body {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      height: auto !important;
+    }
+    #soilWaterTextureToolModal iframe,
+    #laminaRiegoToolModal iframe,
+    #ishRendimientoToolModal iframe,
+    #uniformidadRiegoToolModal iframe,
+    #vpdCalculatorModal iframe,
+    #agroclimateForecastModal iframe,
+    #ventanasFoliarToolModal iframe,
+    #fertilizerSolubilitySaltModal iframe,
+    #fertilizerCarbonCalculatorModal iframe,
+    #extraccionEtapaCalculatorModal iframe,
+    #periodicTableNutrientsModal iframe,
+    #aminoAcidsAtlasModal iframe,
+    #nutrientInteractionsToolModal iframe,
+    #fertilizerCompatibilityModal iframe,
+    #granularMixCalculatorModal iframe,
+    #fertilizerCompositionCalculatorModal iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      transition: none !important;
     }
 
     .modal-close {
@@ -5424,6 +5354,7 @@ CONTRATO:
     function showPeriodicTableNutrientsCalculator() {
       var modal = document.getElementById('periodicTableNutrientsModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('periodicTableNutrientsFrame');
       modal.classList.add('show');
     }
     window.showPeriodicTableNutrientsCalculator = showPeriodicTableNutrientsCalculator;
@@ -5439,6 +5370,7 @@ CONTRATO:
     function showAminoAcidsAtlasTool() {
       var modal = document.getElementById('aminoAcidsAtlasModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('aminoAcidsAtlasFrame');
       modal.classList.add('show');
     }
     window.showAminoAcidsAtlasTool = showAminoAcidsAtlasTool;
@@ -5476,6 +5408,7 @@ CONTRATO:
           _npExtraccionEtapaFrameKey = frameKey;
         }
       }
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('extraccionEtapaCalculatorFrame');
       modal.classList.add('show');
       setTimeout(function () {
         try {
@@ -5496,6 +5429,7 @@ CONTRATO:
     function showFertilizerCompatibilityCalculator() {
       var modal = document.getElementById('fertilizerCompatibilityModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('fertilizerCompatibilityFrame');
       modal.classList.add('show');
     }
     window.showFertilizerCompatibilityCalculator = showFertilizerCompatibilityCalculator;
@@ -5720,6 +5654,7 @@ CONTRATO:
     function showLaminaRiegoTool() {
       var modal = document.getElementById('laminaRiegoToolModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('laminaRiegoToolFrame');
       modal.classList.add('show');
     }
     window.showLaminaRiegoTool = showLaminaRiegoTool;
@@ -5735,6 +5670,7 @@ CONTRATO:
     function showIshRendimientoTool() {
       var modal = document.getElementById('ishRendimientoToolModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('ishRendimientoToolFrame');
       modal.classList.add('show');
     }
     window.showIshRendimientoTool = showIshRendimientoTool;
@@ -5750,6 +5686,7 @@ CONTRATO:
     function showUniformidadRiegoTool() {
       var modal = document.getElementById('uniformidadRiegoToolModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('uniformidadRiegoToolFrame');
       modal.classList.add('show');
     }
     window.showUniformidadRiegoTool = showUniformidadRiegoTool;
@@ -5765,6 +5702,7 @@ CONTRATO:
     function showVentanasFoliarTool() {
       var modal = document.getElementById('ventanasFoliarToolModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('ventanasFoliarToolFrame');
       modal.classList.add('show');
       var frame = document.getElementById('ventanasFoliarToolFrame');
       if (frame && frame.contentWindow) {
@@ -5790,6 +5728,7 @@ CONTRATO:
     function showVPDCalculator() {
       var modal = document.getElementById('vpdCalculatorModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('vpdCalculatorFrame');
       modal.classList.add('show');
     }
     window.showVPDCalculator = showVPDCalculator;
@@ -5855,6 +5794,7 @@ CONTRATO:
     function showFertilizerSolubilitySaltTool() {
       var modal = document.getElementById('fertilizerSolubilitySaltModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('fertilizerSolubilitySaltFrame');
       modal.classList.add('show');
     }
     window.showFertilizerSolubilitySaltTool = showFertilizerSolubilitySaltTool;
@@ -5870,6 +5810,7 @@ CONTRATO:
     function showFertilizerCarbonCalculator() {
       var modal = document.getElementById('fertilizerCarbonCalculatorModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('fertilizerCarbonCalculatorFrame');
       modal.classList.add('show');
     }
     window.showFertilizerCarbonCalculator = showFertilizerCarbonCalculator;
@@ -5885,6 +5826,7 @@ CONTRATO:
     function showNutrientInteractionsTool() {
       var modal = document.getElementById('nutrientInteractionsToolModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('nutrientInteractionsToolFrame');
       modal.classList.add('show');
     }
     window.showNutrientInteractionsTool = showNutrientInteractionsTool;
@@ -5900,6 +5842,7 @@ CONTRATO:
     function showFertilizerCompositionCalculator() {
       var modal = document.getElementById('fertilizerCompositionCalculatorModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('fertilizerCompositionCalculatorFrame');
       modal.classList.add('show');
     }
     window.showFertilizerCompositionCalculator = showFertilizerCompositionCalculator;
@@ -5915,6 +5858,7 @@ CONTRATO:
     function showGranularMixCalculator() {
       var modal = document.getElementById('granularMixCalculatorModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('granularMixCalculatorFrame');
       modal.classList.add('show');
     }
     window.showGranularMixCalculator = showGranularMixCalculator;
@@ -9008,6 +8952,6 @@ CONTRATO:
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260830fitH"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260919noFlick"></script>
 </body>
 </html>

@@ -20,6 +20,7 @@
     <script src="../assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
     <script src="../assets/hydro-solution-catalog.js"></script>
     <script src="../assets/hydro-acid-legend.js?v=20260830citricNoVol"></script>
+    <script src="../assets/hydro-paste-compare-report.js?v=20260919pasta"></script>
     <script src="../assets/np-fertilizer-price.js"></script>
     <script src="../assets/np-fertigation-dist-suggest.js?v=20260817d"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15155,6 +15156,17 @@
                         }
                     }
                 }
+            }
+            if (hasHidroponiaData && typeof window.hydroBuildPasteCompareReportHtml === 'function') {
+                const pastaList = Array.isArray(project.extractoPastaAnalyses) ? project.extractoPastaAnalyses
+                    : (Array.isArray(project.extracto_pasta_analyses) ? project.extracto_pasta_analyses : []);
+                html += window.hydroBuildPasteCompareReportHtml({
+                    lang: 'es',
+                    hidroponia: hidroponia,
+                    pasteAnalyses: pastaList,
+                    labelFn: typeof adminHydroLabel === 'function' ? adminHydroLabel : undefined,
+                    mode: 'admin'
+                }) || '';
             }
             if (!hasHidroponiaData) {
                 html += '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>';

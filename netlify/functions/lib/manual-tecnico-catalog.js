@@ -250,7 +250,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-extracto-pasta.html`,
       pillar: 'C — Análisis pasta',
       summary:
-        'extractoPastaAnalyses[]; misma UI iónica que solución; interpretar rizósfera/salinidad; API type extracto_pasta.',
+        'extractoPastaAnalyses[]; rizósfera ≠ agua; en hidro: comparar pasta vs objetivo, f editable, Aplicar 1×/análisis; Steiner = equilibrio iónico, no resta 1:1.',
       status: 'published'
     },
     {

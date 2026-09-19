@@ -2031,6 +2031,44 @@ function sectionTemplate(name) {
               <div id="hydroFertRemaining" class="hydro-grid hydro-grid-remaining" style="margin-top:8px;font-size:0.85rem;opacity:0.92;"></div>
               <div id="hydroValidationNote" class="hydro-validation-note" style="margin-top:12px;"></div>
             </div>
+
+            <div class="hydro-card" id="hydroPasteCompareCard">
+              <div class="hydro-card-header">
+                <div class="hydro-water-header-row">
+                  <h3>🧪📋 ${hydroT('Extracto de pasta (referencia rizósfera)', 'Paste extract (rhizosphere reference)')}</h3>
+                  <label class="hydro-import-water-wrap" for="hydroImportPasteSelect">
+                    <span class="hydro-import-water-label">${hydroT('Traer de análisis', 'Bring from analysis')}</span>
+                    <select id="hydroImportPasteSelect" class="hydro-input hydro-import-water-select" title="${hydroT('Elige un extracto de pasta del proyecto: se cargan sus ppm para comparar con la solución aplicada', 'Pick a project paste extract: its ppm are loaded to compare with the applied solution')}">
+                      <option value="">${hydroT('Seleccionar análisis…', 'Select analysis…')}</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="hydro-muted">${hydroT('No se resta del cálculo (a diferencia del agua). Compara la rizósfera con el objetivo y sugiere bajar solo una fracción editable del exceso. «Aplicar» baja el objetivo una vez por análisis.', 'Unlike water, it is not subtracted from the calculation. Compares the rhizosphere with the target and suggests lowering only an editable fraction of any excess. “Apply” lowers the target once per analysis.')}</div>
+              </div>
+              <div class="hydro-paste-factor-row">
+                <label for="hydroPasteAdjustFactor">${hydroT('Fracción del exceso (f)', 'Excess fraction (f)')}</label>
+                <div class="hydro-paste-factor-presets" role="group" aria-label="${hydroT('Criterios rápidos', 'Quick criteria')}">
+                  <button type="button" class="btn btn-sm btn-secondary hydro-paste-f-preset" data-paste-f="0.25">25%</button>
+                  <button type="button" class="btn btn-sm btn-secondary hydro-paste-f-preset" data-paste-f="0.30">30%</button>
+                  <button type="button" class="btn btn-sm btn-secondary hydro-paste-f-preset" data-paste-f="0.50">50%</button>
+                </div>
+                <input type="number" id="hydroPasteAdjustFactor" class="hydro-input" min="0" max="1" step="0.05" value="0.30" title="${hydroT('Editable: bajaría = (pasta − objetivo) × f solo si pasta &gt; objetivo. Heurística NutriPlant, no resta 1:1.', 'Editable: suggested cut = (paste − target) × f only if paste &gt; target. NutriPlant heuristic, not 1:1 subtraction.')}">
+                <span class="hydro-muted hydro-paste-factor-hint">${hydroT('Puedes poner menos o más (0–1). Steiner guía el equilibrio iónico; este % es criterio editable de manejo.', 'Set lower or higher (0–1). Steiner guides ionic balance; this % is an editable management criterion.')}</span>
+              </div>
+              <div class="hydro-paste-method" id="hydroPasteMethodBox">
+                <strong>${hydroT('Cómo se obtiene', 'How it is obtained')}:</strong>
+                ${hydroT(
+                  'Steiner (1961) define la composición y el equilibrio iónico de la solución nutritiva (meq/L, triángulos); no indica restar el extracto de pasta 1:1 del objetivo. Aquí: si pasta &gt; objetivo → bajaría = (pasta − objetivo) × f. El agua sí se resta del cálculo; la pasta no. «Aplicar sugerencia» baja el objetivo una vez por análisis.',
+                  'Steiner (1961) defines nutrient-solution composition and ionic balance (meq/L, ternaries); it does not say to subtract paste extract 1:1 from the target. Here: if paste &gt; target → cut = (paste − target) × f. Water is subtracted in the calc; paste is not. “Apply suggestion” lowers the target once per analysis.'
+                )}
+                <a class="hydro-paste-manual-link" href="manual-tecnico/capitulos/analisis-extracto-pasta.html" target="_blank" rel="noopener noreferrer">${hydroT('Ver manual', 'See manual')}</a>
+              </div>
+              <div id="hydroPastePpmGrid" class="hydro-grid"></div>
+              <div id="hydroPasteDiffGrid" class="hydro-grid hydro-grid-remaining" style="margin-top:10px;"></div>
+              <div id="hydroPasteSuggestGrid" class="hydro-grid hydro-grid-remaining" style="margin-top:8px;"></div>
+              <div class="hydro-paste-actions" id="hydroPasteActions"></div>
+              <div id="hydroPasteCompareNote" class="hydro-paste-compare-note"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -20341,6 +20379,17 @@ function createHidroponiaSectionHTML(reportLanguage) {
         <div class="report-block-title">${rt('📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻ (sobre meq/L)', '📎 N-NO₃⁻ / N-NH₄⁺ and N-NO₃⁻ / Cl⁻ ratio (over meq/L)')}</div>
         <div class="report-note" style="margin-bottom:0;line-height:1.5;">${lineF}${lineF && lineS ? '<br><br>' : ''}${lineS}</div>
       </div>`;
+      })()}
+      ${(function () {
+        if (typeof window.hydroBuildPasteCompareReportHtml !== 'function') return '';
+        const pastaList = (currentProject && (currentProject.extractoPastaAnalyses || currentProject.extracto_pasta_analyses)) || [];
+        return window.hydroBuildPasteCompareReportHtml({
+          lang: reportLang,
+          hidroponia: h,
+          pasteAnalyses: Array.isArray(pastaList) ? pastaList : [],
+          labelFn: label,
+          mode: 'report'
+        }) || '';
       })()}
     </div>
   `;

@@ -211,6 +211,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
   5. Aviso si esos m³ coinciden o no (tolerancia ≈ 0,01 m³) + recordatorio de revisar la dosis.
 - **Ácido en filas:** líquidos = campo **L** (volumen total para el m³ de hidroponía). **Cítrico polvo = campo kg** (masa). Modo producto, **tanque C**; aporte N/P/S (densidad × %) resta del faltante (**cítrico = 0**). Mismos IDs que Análisis → Agua.
 - **Propuesta automática** (reemplaza filas): (0) ácido C primero → nitrato Ca A → MAP/MKP B → NKS B → nitrato Mg A → SOP B → nitrato Ca extra por N-NO₃ restante → sulfato amonio → sulfato Mg/S → micros. El S suele quedar ligeramente sobre/bajo.
+- **Extracto de pasta (bloque final del cálculo):** «Traer de análisis» desde Análisis → Extracto de pasta. **No resta del faltante** (agua sí). Compara pasta vs objetivo; si pasta &gt; objetivo → bajaría = (pasta − objetivo) × **f** (editable 0,25/0,30/0,50 u otro). Steiner = equilibrio iónico (meq/triángulos), **no** resta 1:1 de pasta. Botón **Aplicar sugerencia al objetivo** (1× por análisis; luego «Permitir otra vez»). Tras aplicar → revisar ferts / propuesta automática. Ver §4.17.
 - Catálogo de soluciones (Steiner/Hoagland/… + propias). Solubles personalizados **compartidos con Fertirriego**.
 - **Costos (USD del lote, no por ha):** kg eq del producto para el volumen × (USD/t ÷ 1000); líquidos kg = L × densidad. Total = suma de filas. Precios sincronizados con ferti.
 
@@ -386,6 +387,8 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 ### 4.17 Extracto de pasta
 
 **URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva; interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. ≠ solución nutritiva lab.
+
+**Cruce con Hidroponía (Cálculo de fertilizantes):** Traer de análisis al final del cálculo. Pasta **no** resta del faltante (agua sí). Diff = pasta − objetivo; sugerencia = exceso × f (f editable). Aplicar baja el objetivo 1× por análisis. Steiner (1961) = composición/equilibrio iónico de la solución; **no** prescribe restar pasta 1:1. Ver también §4.9.
 
 ### 4.18 Agua RAS
 

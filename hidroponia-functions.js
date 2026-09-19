@@ -254,6 +254,10 @@ let hydroState = {
   activeStageId: null,
   water: {},
   waterAnalysisId: null,
+  pasteAnalysisId: null,
+  pastePpm: null,
+  pasteAdjustFactor: 0.3,
+  pasteSuggestionAppliedId: null,
   fertilizers: [],
   volumeWaterM3: 100,
   tankVolumeL: 1000,
@@ -814,6 +818,13 @@ function hydroSaveData() {
       injectionRateLperM3: hydroState.injectionRateLperM3,
       water: hydroState.water,
       waterAnalysisId: hydroState.waterAnalysisId || null,
+      pasteAnalysisId: hydroState.pasteAnalysisId || null,
+      pastePpm: hydroState.pastePpm && typeof hydroState.pastePpm === 'object' ? hydroState.pastePpm : null,
+      pasteAdjustFactor: (function () {
+        const f = parseFloat(hydroState.pasteAdjustFactor);
+        return Number.isFinite(f) ? Math.min(1, Math.max(0, f)) : 0.3;
+      })(),
+      pasteSuggestionAppliedId: hydroState.pasteSuggestionAppliedId || null,
       acidDoseSummary: (typeof hydroBuildAcidDoseSummary === 'function') ? hydroBuildAcidDoseSummary() : null,
       fertilizers: fertilizersToSave,
       fertilizerTotalsPpm,
@@ -2421,6 +2432,412 @@ function hydroApplyWaterAnalysisById(analysisId) {
   return true;
 }
 
+function hydroGetProjectPasteAnalyses() {
+  try {
+    if (typeof window.getExtractoPastaAnalyses === 'function') {
+      const list = window.getExtractoPastaAnalyses();
+      if (Array.isArray(list)) return list;
+    }
+  } catch (e) {}
+  try {
+    const project = (window.projectManager && window.projectManager.getCurrentProject)
+      ? window.projectManager.getCurrentProject()
+      : (window.currentProject || null);
+    if (project && Array.isArray(project.extractoPastaAnalyses)) return project.extractoPastaAnalyses;
+  } catch (e) {}
+  try {
+    const pid = hydroGetProjectId();
+    if (pid && window.projectStorage && typeof window.projectStorage.loadSection === 'function') {
+      const section = window.projectStorage.loadSection('extractoPastaAnalyses', pid);
+      if (Array.isArray(section)) return section;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function hydroPasteAnalysisLabel(analysis, index) {
+  const title = (analysis && analysis.title && String(analysis.title).trim()) || '';
+  const date = (analysis && analysis.date && String(analysis.date).trim()) || '';
+  if (title && date) return title + ' · ' + date;
+  if (title) return title;
+  if (date) return hydroT('Extracto de pasta', 'Paste extract') + ' · ' + date;
+  return hydroT('Extracto de pasta', 'Paste extract') + ' #' + (index + 1);
+}
+
+function hydroPpmFromPasteAnalysis(analysis) {
+  const cations = (analysis && analysis.cations) || {};
+  const anions = (analysis && analysis.anions) || {};
+  const micros = (analysis && analysis.micros) || {};
+  const num = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return {
+    N_NH4: num(micros.n_nh4),
+    N_NO3: num(anions.no3_ppm),
+    P: num(anions.po4_ppm),
+    S: num(anions.so4_ppm),
+    K: num(cations.k_ppm),
+    Ca: num(cations.ca_ppm),
+    Mg: num(cations.mg_ppm),
+    Fe: num(micros.fe),
+    Mn: num(micros.mn),
+    B: num(micros.b),
+    Zn: num(micros.zn),
+    Cu: num(micros.cu),
+    Mo: num(micros.mo),
+    Cl: num(anions.cl_ppm)
+  };
+}
+
+function hydroGetPasteAdjustFactor() {
+  const f = parseFloat(hydroState.pasteAdjustFactor);
+  if (!Number.isFinite(f)) return 0.3;
+  return Math.min(1, Math.max(0, f));
+}
+
+/** Objetivo de solución (ppm) de la etapa activa. */
+function hydroGetObjectivePpm() {
+  const stage = hydroGetActiveStage();
+  const out = {};
+  HYDRO_PPM_NUTRIENTS.forEach(n => {
+    out[n] = parseFloat(stage && stage.ppm ? stage.ppm[n] : 0) || 0;
+  });
+  return out;
+}
+
+/** Solución aplicada estimada (ppm) = aporte fertilizantes + agua (diagnóstico). */
+function hydroGetAppliedSolutionPpm(totals) {
+  const fert = totals || hydroGetFertTotalsPpm() || {};
+  const water = hydroState.water || {};
+  const out = {};
+  HYDRO_PPM_NUTRIENTS.forEach(n => {
+    out[n] = (parseFloat(fert[n]) || 0) + (parseFloat(water[n]) || 0);
+  });
+  return out;
+}
+
+function hydroEmptyPastePpm() {
+  const out = {};
+  HYDRO_PPM_NUTRIENTS.forEach(n => { out[n] = 0; });
+  return out;
+}
+
+/** Sugerencias de baja del objetivo: solo si pasta > objetivo. */
+function hydroGetPasteSuggestions() {
+  const paste = hydroState.pastePpm;
+  if (!paste || !hydroState.pasteAnalysisId) return null;
+  const objective = hydroGetObjectivePpm();
+  const factor = hydroGetPasteAdjustFactor();
+  const cuts = {};
+  let any = false;
+  HYDRO_PPM_NUTRIENTS.forEach(n => {
+    const excess = (parseFloat(paste[n]) || 0) - (parseFloat(objective[n]) || 0);
+    const cut = excess > 0.01 ? excess * factor : 0;
+    cuts[n] = cut;
+    if (cut > 0.01) any = true;
+  });
+  return { cuts, factor, any, objective };
+}
+
+function hydroPasteSuggestionAlreadyApplied() {
+  return !!(
+    hydroState.pasteAnalysisId &&
+    hydroState.pasteSuggestionAppliedId &&
+    hydroState.pasteSuggestionAppliedId === hydroState.pasteAnalysisId
+  );
+}
+
+function hydroSetPasteAdjustFactor(f, opts) {
+  opts = opts || {};
+  const n = parseFloat(f);
+  hydroState.pasteAdjustFactor = Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0.3;
+  const factorInput = document.getElementById('hydroPasteAdjustFactor');
+  if (factorInput && document.activeElement !== factorInput) {
+    factorInput.value = String(hydroGetPasteAdjustFactor());
+  }
+  document.querySelectorAll('.hydro-paste-f-preset').forEach(btn => {
+    const bf = parseFloat(btn.getAttribute('data-paste-f'));
+    btn.classList.toggle('is-active', Math.abs(bf - hydroGetPasteAdjustFactor()) < 0.001);
+  });
+  if (!opts.skipRender) renderHydroPasteCompare();
+  if (!opts.skipSave) hydroScheduleSave();
+}
+
+function hydroRefreshPasteAnalysisSelect() {
+  const select = document.getElementById('hydroImportPasteSelect');
+  if (!select) return;
+  const previous = select.value;
+  const list = hydroGetProjectPasteAnalyses();
+  const placeholder = hydroT('Seleccionar análisis…', 'Select analysis…');
+  let html = `<option value="">${placeholder}</option>`;
+  if (!list.length) {
+    html += `<option value="" disabled>${hydroT('Sin extracto de pasta en este proyecto', 'No paste extracts in this project')}</option>`;
+  } else {
+    html += list.map((analysis, index) => {
+      const id = hydroEscapeAttr(analysis && analysis.id ? analysis.id : ('idx_' + index));
+      const label = hydroEscapeAttr(hydroPasteAnalysisLabel(analysis, index));
+      return `<option value="${id}" data-hydro-paste-index="${index}">${label}</option>`;
+    }).join('');
+  }
+  select.innerHTML = html;
+  const selectedId = hydroState.pasteAnalysisId || previous || '';
+  if (selectedId && list.some(a => a && a.id === selectedId)) select.value = selectedId;
+  else select.value = '';
+  select.title = hydroT(
+    'Elige un extracto de pasta: se cargan sus ppm para comparar (no restan del cálculo)',
+    'Pick a paste extract: its ppm are loaded for comparison (they are not subtracted from the calculation)'
+  );
+  select.classList.toggle('is-linked', !!(select.value));
+  const labelEl = select.closest('.hydro-import-water-wrap')?.querySelector('.hydro-import-water-label');
+  if (labelEl) {
+    labelEl.textContent = select.value
+      ? hydroT('Análisis vinculado', 'Linked analysis')
+      : hydroT('Traer de análisis', 'Bring from analysis');
+  }
+  select.onchange = function () {
+    const analysisId = select.value;
+    select.classList.toggle('is-linked', !!analysisId);
+    if (labelEl) {
+      labelEl.textContent = analysisId
+        ? hydroT('Análisis vinculado', 'Linked analysis')
+        : hydroT('Traer de análisis', 'Bring from analysis');
+    }
+    if (!analysisId) {
+      hydroState.pasteAnalysisId = null;
+      hydroState.pastePpm = null;
+      hydroState.pasteSuggestionAppliedId = null;
+      renderHydroPasteCompare();
+      hydroScheduleSave();
+      return;
+    }
+    const ok = hydroApplyPasteAnalysisById(analysisId);
+    if (!ok && window.showMessage) {
+      window.showMessage(hydroT('No se encontró ese extracto de pasta.', 'That paste extract was not found.'), 'warning');
+    }
+  };
+  hydroSetPasteAdjustFactor(hydroGetPasteAdjustFactor(), { skipRender: true, skipSave: true });
+}
+
+function hydroApplyPasteAnalysisById(analysisId) {
+  if (!analysisId) return false;
+  const list = hydroGetProjectPasteAnalyses();
+  let analysis = list.find(a => a && a.id === analysisId);
+  if (!analysis && String(analysisId).indexOf('idx_') === 0) {
+    const idx = parseInt(String(analysisId).slice(4), 10);
+    if (Number.isFinite(idx) && list[idx]) analysis = list[idx];
+  }
+  if (!analysis) return false;
+  const newId = analysis.id || analysisId;
+  if (hydroState.pasteAnalysisId !== newId) {
+    hydroState.pasteSuggestionAppliedId = null;
+  }
+  hydroState.pasteAnalysisId = newId;
+  hydroState.pastePpm = hydroPpmFromPasteAnalysis(analysis);
+  renderHydroPasteCompare();
+  hydroScheduleSave();
+  if (window.showMessage) {
+    window.showMessage(
+      hydroT(
+        'Ppm del extracto de pasta cargadas (solo referencia; no restan del cálculo).',
+        'Paste extract ppm loaded (reference only; not subtracted from the calculation).'
+      ),
+      'success'
+    );
+  }
+  return true;
+}
+
+/** Aplica la bajaría sugerida al objetivo de solución (una vez por análisis). */
+function hydroApplyPasteSuggestionToObjective(opts) {
+  opts = opts || {};
+  const stage = hydroGetActiveStage();
+  if (!stage) {
+    if (window.showMessage) {
+      window.showMessage(hydroT('No hay etapa/solución activa.', 'No active stage/solution.'), 'warning');
+    }
+    return false;
+  }
+  if (!hydroState.pasteAnalysisId || !hydroState.pastePpm) {
+    if (window.showMessage) {
+      window.showMessage(hydroT('Primero trae un extracto de pasta.', 'Bring a paste extract first.'), 'warning');
+    }
+    return false;
+  }
+  if (!opts.force && hydroPasteSuggestionAlreadyApplied()) {
+    if (window.showMessage) {
+      window.showMessage(
+        hydroT(
+          'Ya aplicaste la sugerencia con este análisis. Usa «Permitir otra vez» si quieres volver a bajar el objetivo.',
+          'You already applied the suggestion with this analysis. Use “Allow again” if you want to lower the target once more.'
+        ),
+        'warning'
+      );
+    }
+    return false;
+  }
+  const pack = hydroGetPasteSuggestions();
+  if (!pack || !pack.any) {
+    if (window.showMessage) {
+      window.showMessage(
+        hydroT(
+          'No hay exceso en pasta vs objetivo: nada que bajar con el f actual.',
+          'No paste excess vs target: nothing to lower with the current f.'
+        ),
+        'info'
+      );
+    }
+    return false;
+  }
+  stage.ppm = stage.ppm || {};
+  HYDRO_PPM_NUTRIENTS.forEach(n => {
+    const cut = pack.cuts[n] || 0;
+    if (cut > 0.01) {
+      stage.ppm[n] = Math.max(0, hydroRound2((parseFloat(stage.ppm[n]) || 0) - cut));
+    }
+  });
+  const ppmRow = {};
+  HYDRO_MEQ_NUTRIENTS.forEach(n => { ppmRow[n] = parseFloat(stage.ppm[n]) || 0; });
+  stage.meq = Object.assign({}, stage.meq || {}, hydroMeqFromMacroPpm(ppmRow));
+  const microsCl = {};
+  HYDRO_MICROS.concat(['Cl']).forEach(n => { microsCl[n] = parseFloat(stage.ppm[n]) || 0; });
+  Object.assign(stage.ppm, hydroComputeMacroPpm(stage), microsCl);
+
+  hydroState.pasteSuggestionAppliedId = hydroState.pasteAnalysisId;
+  renderHydroAll();
+  hydroScheduleSave();
+  if (window.showMessage) {
+    window.showMessage(
+      hydroT(
+        'Objetivo de solución ajustado (f=' + pack.factor.toFixed(2) + '). La pasta no se vuelve a restar sola. Revisa fertilizantes / propuesta automática.',
+        'Solution target adjusted (f=' + pack.factor.toFixed(2) + '). Paste is not subtracted again by itself. Review fertilizers / automatic proposal.'
+      ),
+      'success'
+    );
+  }
+  return true;
+}
+
+function renderHydroPasteCompare() {
+  const ppmGrid = document.getElementById('hydroPastePpmGrid');
+  const diffGrid = document.getElementById('hydroPasteDiffGrid');
+  const suggestGrid = document.getElementById('hydroPasteSuggestGrid');
+  const noteEl = document.getElementById('hydroPasteCompareNote');
+  const actionsEl = document.getElementById('hydroPasteActions');
+  if (!ppmGrid) return;
+
+  hydroRefreshPasteAnalysisSelect();
+
+  const linked = !!(hydroState.pasteAnalysisId && hydroState.pastePpm);
+  const paste = linked ? hydroState.pastePpm : hydroEmptyPastePpm();
+  const objective = hydroGetObjectivePpm();
+  const factor = hydroGetPasteAdjustFactor();
+  const already = hydroPasteSuggestionAlreadyApplied();
+
+  const itemClass = (n) =>
+    n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : (n === 'Cl' ? ' hydro-grid-item-cl hydro-grid-item-cl-tail' : ''));
+
+  ppmGrid.innerHTML =
+    `<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;">${hydroT('Niveles en extracto de pasta (ppm)', 'Paste extract levels (ppm)')}</div>` +
+    HYDRO_PPM_NUTRIENTS.map(n => `
+    <div class="hydro-grid-item${itemClass(n)}${linked ? '' : ' hydro-paste-empty'}">
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
+      <span class="hydro-grid-value">${(parseFloat(paste[n]) || 0).toFixed(2)}</span>
+    </div>
+  `).join('');
+
+  if (!diffGrid || !suggestGrid) return;
+
+  if (!linked) {
+    diffGrid.innerHTML = '';
+    suggestGrid.innerHTML = '';
+    if (actionsEl) actionsEl.innerHTML = '';
+    if (noteEl) {
+      noteEl.innerHTML = `<div class="hydro-paste-compare-box">${hydroT(
+        'Selecciona un análisis en Análisis → Extracto de pasta (o «Traer de análisis») para comparar con el objetivo.',
+        'Select an analysis under Analysis → Paste extract (or “Bring from analysis”) to compare with the target.'
+      )}</div>`;
+    }
+    return;
+  }
+
+  const pack = hydroGetPasteSuggestions();
+
+  diffGrid.innerHTML =
+    `<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:4px;font-size:0.9rem;">📊 ${hydroT('Diferencia (ppm): Pasta − Objetivo de solución', 'Difference (ppm): Paste − Solution target')}</div>` +
+    HYDRO_PPM_NUTRIENTS.map(n => {
+      const p = parseFloat(paste[n]) || 0;
+      const o = parseFloat(objective[n]) || 0;
+      const diff = p - o;
+      const valueClass = diff > 0.01 ? ' hydro-remaining-positive hydro-paste-excess' : (diff < -0.01 ? ' hydro-remaining-negative hydro-paste-deficit' : '');
+      return `
+    <div class="hydro-grid-item${itemClass(n)}">
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
+      <span class="hydro-grid-value${valueClass}">${diff >= 0 ? '+' : ''}${diff.toFixed(2)}</span>
+    </div>
+  `;
+    }).join('');
+
+  suggestGrid.innerHTML =
+    `<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:4px;font-size:0.9rem;">✂️ ${hydroT('Bajaría sugerida del objetivo (ppm) = exceso × f (solo si pasta &gt; objetivo)', 'Suggested target cut (ppm) = excess × f (only if paste &gt; target)')}</div>` +
+    HYDRO_PPM_NUTRIENTS.map(n => {
+      const suggest = (pack && pack.cuts[n]) || 0;
+      const valueClass = suggest > 0.01 ? ' hydro-paste-suggest' : '';
+      return `
+    <div class="hydro-grid-item${itemClass(n)}">
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
+      <span class="hydro-grid-value${valueClass}">${suggest > 0 ? '−' : ''}${suggest.toFixed(2)}</span>
+    </div>
+  `;
+    }).join('');
+
+  if (actionsEl) {
+    const disabled = already || !(pack && pack.any);
+    const applyLabel = already
+      ? hydroT('Sugerencia ya aplicada a este análisis', 'Suggestion already applied for this analysis')
+      : hydroT('Aplicar sugerencia al objetivo', 'Apply suggestion to target');
+    actionsEl.innerHTML = `
+      <button type="button" class="btn btn-sm np-brand-navy-btn" id="hydroPasteApplyBtn" ${disabled ? 'disabled' : ''} title="${hydroT('Baja el objetivo de solución con la bajaría sugerida. No vuelve a restar la pasta sola.', 'Lowers the solution target by the suggested cut. Does not subtract paste again by itself.')}">
+        <span class="np-brand-navy-btn-label">${applyLabel}</span>
+      </button>
+      ${already ? `<button type="button" class="btn btn-sm btn-secondary" id="hydroPasteAllowAgainBtn">${hydroT('Permitir aplicar otra vez', 'Allow apply again')}</button>` : ''}
+    `;
+    const applyBtn = document.getElementById('hydroPasteApplyBtn');
+    if (applyBtn) {
+      applyBtn.onclick = function () { hydroApplyPasteSuggestionToObjective(); };
+    }
+    const againBtn = document.getElementById('hydroPasteAllowAgainBtn');
+    if (againBtn) {
+      againBtn.onclick = function () {
+        hydroState.pasteSuggestionAppliedId = null;
+        renderHydroPasteCompare();
+        hydroScheduleSave();
+      };
+    }
+  }
+
+  if (noteEl) {
+    noteEl.innerHTML = `<div class="hydro-paste-compare-box">
+      <strong>${hydroT('Importante', 'Important')}:</strong>
+      ${hydroT(
+        'El agua sí resta del faltante. La pasta no. «Aplicar» solo baja el objetivo (ppm/meq) una vez por análisis; después la sugerencia se recalcula y no se vuelve a restar sola. Ajusta f (25/30/50 % o el valor que quieras). Revisa CE, drenaje y antagonismos.',
+        'Water does subtract from the requirement. Paste does not. “Apply” only lowers the target (ppm/meq) once per analysis; then the suggestion recalculates and is not subtracted again by itself. Adjust f (25/30/50% or any value). Check EC, drainage, and antagonisms.'
+      )}
+      <br><span class="hydro-muted">${hydroT('f actual', 'Current f')}: ${factor.toFixed(2)}${already ? ' · ' + hydroT('ya aplicado', 'already applied') : ''}</span>
+    </div>`;
+  }
+}
+
+/** PDF/admin: usa assets/hydro-paste-compare-report.js (NpHydroPasteCompare). */
+function hydroBuildPasteCompareReportHtml(opts) {
+  if (window.NpHydroPasteCompare && typeof window.NpHydroPasteCompare.buildHtml === 'function') {
+    return window.NpHydroPasteCompare.buildHtml(opts);
+  }
+  return '';
+}
+window.hydroBuildPasteCompareReportHtml = hydroBuildPasteCompareReportHtml;
+window.hydroPpmFromPasteAnalysis = hydroPpmFromPasteAnalysis;
+
 function renderHydroMissing() {
   const grid = document.getElementById('hydroMissingGrid');
   const stage = hydroGetActiveStage();
@@ -3366,6 +3783,8 @@ function renderHydroFertTotals() {
         ${hydroT('Para', 'For')} <strong>${waterShown.toFixed(2)} ${waterUnit}</strong> ${hydroT('de agua, los totales mostrados por tanque producen exactamente las ppm del aporte total estimado.', 'of water, the totals shown by tank produce exactly the ppm in the estimated total contribution.')}
       </div>`;
   }
+
+  renderHydroPasteCompare();
 }
 
 function renderHydroVolumeCard() {
@@ -3505,6 +3924,7 @@ function renderHydroAll() {
   renderHydroVolumeCard();
   renderHydroFertTable();
   renderHydroFertTotals();
+  renderHydroPasteCompare();
 }
 
 function hydroApplyStaticTranslations() {
@@ -3528,6 +3948,35 @@ function hydroApplyStaticTranslations() {
   hydroRefreshWaterAnalysisSelect();
   setText('#hidro-calculo .hydro-card:nth-child(3) h3', '📉 ' + hydroT('Requerimiento total (ppm)', 'Total requirement (ppm)'));
   setText('#hidro-calculo .hydro-card:nth-child(4) h3', '🧮 ' + hydroT('Fertilizantes disponibles (elemental)', 'Available fertilizers (elemental)'));
+  setText('#hydroPasteCompareCard h3', '🧪📋 ' + hydroT('Extracto de pasta (referencia rizósfera)', 'Paste extract (rhizosphere reference)'));
+  const pasteMuted = container.querySelector('#hydroPasteCompareCard .hydro-card-header .hydro-muted');
+  if (pasteMuted) {
+    pasteMuted.textContent = hydroT(
+      'No se resta del cálculo (a diferencia del agua). Compara la rizósfera con el objetivo y sugiere bajar solo una fracción editable del exceso. «Aplicar» baja el objetivo una vez por análisis.',
+      'Unlike water, it is not subtracted from the calculation. Compares the rhizosphere with the target and suggests lowering only an editable fraction of any excess. “Apply” lowers the target once per analysis.'
+    );
+  }
+  const pasteFactorLabel = container.querySelector('label[for="hydroPasteAdjustFactor"]');
+  if (pasteFactorLabel) {
+    pasteFactorLabel.textContent = hydroT('Fracción del exceso (f)', 'Excess fraction (f)');
+  }
+  const pasteFactorHint = container.querySelector('.hydro-paste-factor-hint');
+  if (pasteFactorHint) {
+    pasteFactorHint.textContent = hydroT(
+      'Puedes poner menos o más (0–1). Steiner guía el equilibrio iónico; este % es criterio editable de manejo.',
+      'Set lower or higher (0–1). Steiner guides ionic balance; this % is an editable management criterion.'
+    );
+  }
+  const pasteMethod = container.querySelector('#hydroPasteMethodBox');
+  if (pasteMethod) {
+    pasteMethod.innerHTML = `<strong>${hydroT('Cómo se obtiene', 'How it is obtained')}:</strong> ` +
+      hydroT(
+        'Steiner (1961) define la composición y el equilibrio iónico de la solución nutritiva (meq/L, triángulos); no indica restar el extracto de pasta 1:1 del objetivo. Aquí: si pasta > objetivo → bajaría = (pasta − objetivo) × f. El agua sí se resta del cálculo; la pasta no. «Aplicar sugerencia» baja el objetivo una vez por análisis.',
+        'Steiner (1961) defines nutrient-solution composition and ionic balance (meq/L, ternaries); it does not say to subtract paste extract 1:1 from the target. Here: if paste > target → cut = (paste − target) × f. Water is subtracted in the calc; paste is not. “Apply suggestion” lowers the target once per analysis.'
+      ) +
+      ` <a class="hydro-paste-manual-link" href="manual-tecnico/capitulos/analisis-extracto-pasta.html" target="_blank" rel="noopener noreferrer">${hydroT('Ver manual', 'See manual')}</a>`;
+  }
+  hydroRefreshPasteAnalysisSelect();
   setText('#hydroAddFertBtn', '➕ ' + hydroT('Agregar fertilizante', 'Add fertilizer'));
   const autoLabel = container.querySelector('#hydroAutoCalculateBtn .np-brand-navy-btn-label');
   if (autoLabel) autoLabel.textContent = hydroT('Propuesta automática', 'Automatic proposal');
@@ -3873,6 +4322,12 @@ function bindHydroEvents(container) {
   });
 
   container.addEventListener('click', (e) => {
+    const pastePreset = e.target.closest('.hydro-paste-f-preset');
+    if (pastePreset) {
+      e.preventDefault();
+      hydroSetPasteAdjustFactor(pastePreset.getAttribute('data-paste-f'));
+      return;
+    }
     const picker = e.target.closest('[data-hydro-solution-picker]');
     if (picker) {
       const stageId = picker.getAttribute('data-stage-id') ||
@@ -3918,6 +4373,10 @@ function bindHydroEvents(container) {
         const rv = rate > 0 ? 1000 / rate : NaN;
         ratioEl.textContent = !isNaN(rv) ? '1:' + (Number.isInteger(rv) ? rv : rv.toFixed(1)) : '—';
       }
+      return;
+    }
+    if (input.id === 'hydroPasteAdjustFactor') {
+      hydroSetPasteAdjustFactor(input.value);
       return;
     }
     const stageId = input.getAttribute('data-stage-id');
@@ -4021,8 +4480,12 @@ function bindHydroEvents(container) {
 
   container.addEventListener('change', (e) => {
     const target = e.target;
-    // hydroImportWaterSelect usa su propio onchange en hydroRefreshWaterAnalysisSelect
-    if (target && target.id === 'hydroImportWaterSelect') return;
+    // hydroImportWaterSelect / hydroImportPasteSelect usan su propio onchange
+    if (target && (target.id === 'hydroImportWaterSelect' || target.id === 'hydroImportPasteSelect')) return;
+    if (target && target.id === 'hydroPasteAdjustFactor') {
+      hydroSetPasteAdjustFactor(target.value);
+      return;
+    }
     const stageId = target.getAttribute('data-stage-id');
     if (stageId) {
       hydroState.activeStageId = stageId;
@@ -4300,6 +4763,10 @@ function initHydroponiaUI() {
     activeStageId: null,
     water: {},
     waterAnalysisId: null,
+    pasteAnalysisId: null,
+    pastePpm: null,
+    pasteAdjustFactor: 0.3,
+    pasteSuggestionAppliedId: null,
     acidDoseSummary: null,
     fertilizers: [],
     volumeWaterM3: 100,
@@ -4309,11 +4776,16 @@ function initHydroponiaUI() {
   };
   const saved = hydroLoadData();
   if (saved) {
+    const savedFactor = parseFloat(saved.pasteAdjustFactor);
     hydroState = {
       stages: Array.isArray(saved.stages) ? saved.stages : [],
       activeStageId: saved.activeStageId || null,
       water: saved.water || {},
       waterAnalysisId: saved.waterAnalysisId || null,
+      pasteAnalysisId: saved.pasteAnalysisId || null,
+      pastePpm: saved.pastePpm && typeof saved.pastePpm === 'object' ? saved.pastePpm : null,
+      pasteAdjustFactor: Number.isFinite(savedFactor) ? Math.min(1, Math.max(0, savedFactor)) : 0.3,
+      pasteSuggestionAppliedId: saved.pasteSuggestionAppliedId || null,
       acidDoseSummary: saved.acidDoseSummary || null,
       fertilizers: Array.isArray(saved.fertilizers) ? saved.fertilizers : [],
       volumeWaterM3: saved.volumeWaterM3 != null ? saved.volumeWaterM3 : 100,
@@ -4355,6 +4827,24 @@ function initHydroponiaUI() {
   });
   // Rehidratar / auto-vincular dosis de ácido (mL/m³) desde Análisis → Agua.
   hydroEnsureAcidLinkFromProject();
+  // Rehidratar ppm de extracto de pasta si hay vínculo guardado.
+  if (hydroState.pasteAnalysisId) {
+    try {
+      const list = hydroGetProjectPasteAnalyses();
+      const linked = list.find(a => a && a.id === hydroState.pasteAnalysisId);
+      if (linked) hydroState.pastePpm = hydroPpmFromPasteAnalysis(linked);
+      else {
+        hydroState.pasteAnalysisId = null;
+        hydroState.pastePpm = null;
+      }
+    } catch (ePaste) {
+      hydroState.pasteAnalysisId = null;
+      hydroState.pastePpm = null;
+    }
+  } else {
+    hydroState.pastePpm = null;
+    hydroState.pasteSuggestionAppliedId = null;
+  }
   hydroEnsureDefaults();
   hydroLoadCustomMaterials();
   hydroLoadCustomSolutions();

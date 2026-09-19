@@ -55,6 +55,8 @@ Fertirriego · Requerimiento: **Zona de equilibrio iónico** (3 col: zona / % me
 
 **Solución Nutritiva / Programa del ciclo:** en PRO, botón «Programa del ciclo» → modal multi-etapa (`hidro-solucion-free`); se guarda `hidroponia.cycleProgram`; admin + PDF casilla **Programa del ciclo** (`hydroCycle`). ≠ Solución por etapa (diseño activo) ≠ Análisis lab. Knowledge HERRAMIENTAS §💧 + MANUAL §4.9–4.10; API `free_tools_catalog` `hidro_solucion`.
 
+**Extracto de pasta en Cálculo (hidro):** Traer de análisis al final. **No resta** como agua. Si pasta&gt;objetivo → (pasta−objetivo)×f (f editable). Aplicar 1×/análisis. Steiner = equilibrio iónico, no resta 1:1. MANUAL §4.9 + §4.17; Knowledge ANALISIS §4.3.
+
 **Pulso de riego ⏱️:** `hidro-pulso-riego-free` — L/min del pulso (V, ATD, agotamiento, drenaje, macetas, goteros). API `hidro_pulso_riego`. Solo LS; ≠ balance 🌧️ suelo.
 
 **ISH 📈:** `ish_rendimiento` — techo de rendimiento relativo al agua del ciclo (semanas). Fórmula en HERRAMIENTAS/MANUAL; ≠ lámina 🌧️. PRO: Clima → Rendimiento hídrico.

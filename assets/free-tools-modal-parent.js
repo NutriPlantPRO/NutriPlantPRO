@@ -6,12 +6,32 @@
 (function () {
   'use strict';
 
+  /* Fit al contenido (crecen con postMessage). */
   var FIT_FRAME_IDS = {
     nMineralizableMoCalculatorFrame: true,
-    agroclimateForecastFrame: true,
     waterHardnessCalculatorFrame: true,
     hydroPulseIrrigationToolFrame: true,
     hydroSolutionCalculatorFrame: true
+  };
+
+  /* Llenan la ventana con CSS: NO cambiar altura por JS (evita parpadeo al abrir). */
+  var FILL_FRAME_IDS = {
+    agroclimateForecastFrame: true,
+    soilWaterTextureToolFrame: true,
+    laminaRiegoToolFrame: true,
+    ishRendimientoToolFrame: true,
+    uniformidadRiegoToolFrame: true,
+    vpdCalculatorFrame: true,
+    ventanasFoliarToolFrame: true,
+    fertilizerSolubilitySaltFrame: true,
+    fertilizerCarbonCalculatorFrame: true,
+    extraccionEtapaCalculatorFrame: true,
+    periodicTableNutrientsFrame: true,
+    aminoAcidsAtlasFrame: true,
+    nutrientInteractionsToolFrame: true,
+    fertilizerCompatibilityFrame: true,
+    granularMixCalculatorFrame: true,
+    fertilizerCompositionCalculatorFrame: true
   };
 
   var scrollLockCount = 0;
@@ -27,8 +47,20 @@
     return Math.max(280, Math.floor(window.innerHeight * ratio) - 72);
   }
 
+  function clearInlineFrameSize(frame) {
+    if (!frame) return;
+    frame.style.height = '';
+    frame.style.minHeight = '';
+    var modal = frame.closest && frame.closest('.modal');
+    if (modal) {
+      modal.style.height = '';
+      modal.style.maxHeight = '';
+    }
+  }
+
   function applyFrameHeight(frame, height) {
     if (!frame || !FIT_FRAME_IDS[frame.id]) return;
+    if (FILL_FRAME_IDS[frame.id]) return;
     var h = Math.min(Math.max(280, Math.ceil(Number(height) || 0)), maxIframeHeight());
     frame.style.height = h + 'px';
     frame.style.minHeight = '0';
@@ -222,6 +254,11 @@
   window.resetFreeToolIframeHeight = function (frameId) {
     var frame = document.getElementById(frameId);
     if (!frame) return;
+    /* Modales densos a pantalla completa: no arrancar chicos ni animar el alto. */
+    if (FILL_FRAME_IDS[frameId]) {
+      clearInlineFrameSize(frame);
+      return;
+    }
     var starter = Math.min(isMobileFit() ? 320 : 520, maxIframeHeight());
     frame.style.height = starter + 'px';
     var modal = frame.closest && frame.closest('.modal');

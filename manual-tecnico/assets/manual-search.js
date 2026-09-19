@@ -66,7 +66,7 @@
       icon: '🔬',
       pillar: 'C · Análisis',
       title: 'Extracto de pasta saturada',
-      keywords: 'extracto pasta saturada suelo rizósfera disponibilidad laboratorio CE pH'
+      keywords: 'extracto pasta saturada suelo rizósfera disponibilidad laboratorio CE pH Steiner objetivo f aplicar sugerencia hidroponía'
     },
     {
       href: 'capitulos/analisis-agua-ras-sar.html',

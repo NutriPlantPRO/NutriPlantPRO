@@ -111,6 +111,7 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 
 - CE, pH, RAS; cationes/aniones ppm; ideales.
 - Interpretación: disponibilidad en condición de saturación — validar con campo y cultivo.
+- **En Hidroponía → Cálculo:** se puede «Traer de análisis» al final. **No resta** como el agua. Si pasta &gt; objetivo → bajaría = (pasta − objetivo) × f (f editable). Botón Aplicar baja el objetivo 1×/análisis. Steiner = equilibrio iónico, no resta 1:1. Manual: `analisis-extracto-pasta` + `hidroponia-solucion-por-etapa`.
 
 ---
 
