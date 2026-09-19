@@ -38,11 +38,17 @@ body {
   background: var(--page);
   max-width: 100%;
 }
-/* Solo móvil: recortar desborde. En Safari Mac, overflow-x en html/body
-   recorta el sidebar al expandir y botones del borde (p. ej. Guardar). */
+/* Solo móvil: evitar desborde horizontal sin bloquear el pinch-zoom de Safari */
 @media (max-width: 768px) {
   html, body {
-    overflow-x: clip;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+  .layout,
+  .content {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
   }
 }
 
@@ -546,7 +552,10 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     align-items: stretch !important;
     width: 100% !important;
     text-align: left !important;
-    gap: 20px !important;
+    gap: 4px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
   .sidebar.open:not(.sidebar-minimized) .sb-chip {
@@ -560,6 +569,9 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     border: none !important;
     min-width: 32px !important;
     min-height: 32px !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
   }
 
   .sidebar.open:not(.sidebar-minimized) .sb-chip span.text {
@@ -773,6 +785,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   margin-top: 8px;
   transition: none;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 
@@ -870,7 +884,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   overflow: hidden;
 }
 
-/* Ambas tarjetas del mismo tamaño */
+/* Ambas tarjetas del mismo tamaño (colapsado: iconos absolutos) */
 .sb-card .sb-chiprow {
   height: 190px;
   min-height: 190px;
@@ -882,6 +896,27 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   justify-content: flex-start;
   align-items: flex-start;
   overflow: hidden;
+}
+
+/* Expandido (hover / Safari clase / móvil abierto): mostrar TODAS las pestañas */
+.sidebar:hover .sb-card,
+.sidebar.is-hover-expanded .sb-card,
+.sidebar.open:not(.sidebar-minimized) .sb-card {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex-shrink: 0;
+}
+.sidebar:hover .sb-card .sb-chiprow,
+.sidebar.is-hover-expanded .sb-card .sb-chiprow,
+.sidebar.open:not(.sidebar-minimized) .sb-card .sb-chiprow {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  gap: 4px !important;
+  align-items: stretch !important;
 }
 
 .sb-card .title {
@@ -2451,13 +2486,20 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   .content.inicio-page {
     padding-left: 14px;
     padding-right: 14px;
-    overflow-x: clip;
+    overflow-x: hidden;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
   .content.inicio-page .card,
   .content.inicio-page #np-projects-list,
-  .content.inicio-page .np-project-card {
+  .content.inicio-page .np-project-card,
+  .content.inicio-page .header-buttons,
+  .content.inicio-page .top {
     max-width: 100%;
     min-width: 0;
+    box-sizing: border-box;
   }
   /* Fila título + ordenar: que no desborde el ancho */
   .content.inicio-page .card > section > .row {
@@ -2560,12 +2602,13 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 
 /* ===== CHIPS ABIERTOS - MISMO ORDEN ===== */
 .sidebar:hover .sb-chiprow,
-.sidebar.is-hover-expanded .sb-chiprow {
+.sidebar.is-hover-expanded .sb-chiprow,
+.sidebar.open:not(.sidebar-minimized) .sb-chiprow {
   flex-direction: column !important;
   justify-content: flex-start !important;
   align-items: stretch !important;
   width: 100% !important;
-  gap: 20px !important;
+  gap: 4px !important;
 }
 
 .sidebar:not(:hover):not(.is-hover-expanded) .sb-chip {
@@ -2583,7 +2626,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 
 /* ===== CHIPS ABIERTOS - TEXTO IZQUIERDA A DERECHA ===== */
 .sidebar:hover .sb-chip,
-.sidebar.is-hover-expanded .sb-chip {
+.sidebar.is-hover-expanded .sb-chip,
+.sidebar.open:not(.sidebar-minimized) .sb-chip {
   width: auto !important;
   height: 32px !important;
   border-radius: 16px !important;
@@ -2600,7 +2644,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 .sidebar:hover .sb-chip span.text,
-.sidebar.is-hover-expanded .sb-chip span.text {
+.sidebar.is-hover-expanded .sb-chip span.text,
+.sidebar.open:not(.sidebar-minimized) .sb-chip span.text {
   opacity: 1 !important;
   visibility: visible !important;
   width: auto !important;
