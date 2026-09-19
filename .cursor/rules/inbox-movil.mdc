@@ -1,0 +1,17 @@
+---
+description: Capturar ideas (iPhone / anota / inbox) en docs/INBOX-MOVIL.md sin tocar código.
+alwaysApply: true
+---
+
+# Inbox móvil
+
+Si el usuario **captura** (anota, inbox, se me ocurrió, para después, no implementes, dictado de idea) y **no** pide implementar:
+
+1. Añade una entrada arriba en `docs/INBOX-MOVIL.md`.
+2. No cambies código de producto ni otros docs.
+3. En iPhone / cloud agent: commit de ese archivo, rama `inbox/…`, PR a `main`, y pega la URL del PR.
+4. En la Mac, si ya está en este chat de trabajo: pregunta si lo anotas o lo hacemos ahora.
+
+Si pide implementar, ignora este flujo.
+
+Skill: `.cursor/skills/inbox-movil/SKILL.md`
