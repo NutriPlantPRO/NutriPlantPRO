@@ -92,26 +92,25 @@
       border: 0; border-bottom: 2px dashed #5eead4; background: transparent; padding: 4px 2px;
     }
     table.samples {
-      width: 100%;
-      table-layout: fixed;
+      width: max(100%, 34rem);
+      min-width: 34rem;
+      table-layout: auto;
       border-collapse: collapse;
       font-size: 12px;
       background: #fff;
       border-radius: 8px;
-      overflow: hidden;
     }
-    table.samples col.c-idx { width: 18%; }
-    table.samples col.c-lectura { width: 34%; }
-    table.samples col.c-q { width: 20%; }
-    table.samples col.c-pct { width: 18%; }
+    table.samples col.c-idx { width: 7.5rem; }
+    table.samples col.c-lectura { width: 11rem; }
+    table.samples col.c-q { width: 6.5rem; }
+    table.samples col.c-pct { width: 5.5rem; }
     table.samples col.c-del { width: 44px; }
     table.samples th, table.samples td {
       padding: 6px 8px;
       border-bottom: 1px solid #e2e8f0;
       text-align: left;
       vertical-align: middle;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     table.samples th { background: #ccfbf1; color: #115e59; font-weight: 700; }
     table.samples th.th-q,
@@ -156,7 +155,12 @@
       letter-spacing: 0.01em;
       white-space: nowrap;
     }
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      overscroll-behavior-x: contain;
+    }
     table.samples tr.low td { background: #fef2f2; }
     .stats {
       display: grid;

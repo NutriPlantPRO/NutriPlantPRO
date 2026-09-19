@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title data-i18n="dashboard.document_title">Panel</title>
   
   <!-- ===== NUTRIPLANT PRO BRANDING ===== -->
@@ -50,7 +50,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png?v=20260815r">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260919catH" />
+  <link rel="stylesheet" href="dashboard.css?v=20260919iosHome2" />
   <link rel="stylesheet" href="chat.css?v=20260919toolsRestore" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -655,6 +655,10 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .btn-success {
@@ -871,6 +875,49 @@
         height: auto !important;
       }
       #waterHardnessCalculatorModal iframe {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+      }
+    }
+
+    /* Diseño de solución nutritiva: en celular usa el ancho, sin huecos laterales */
+    @media (max-width: 768px) {
+      #hydroSolutionCalculatorModal.modal-overlay.show {
+        padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        box-sizing: border-box;
+      }
+      #hydroSolutionCalculatorModal .modal,
+      #hydroSolutionCalculatorModal .modal-tool-iframe-full,
+      #hydroSolutionCalculatorModal .modal-tool-iframe-fit {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        border-radius: 12px;
+      }
+      #hydroSolutionCalculatorModal .modal-header {
+        padding: 10px 12px;
+        flex-shrink: 0;
+      }
+      #hydroSolutionCalculatorModal .modal-title {
+        font-size: 1.05rem;
+        line-height: 1.25;
+      }
+      #hydroSolutionCalculatorModal .modal-body,
+      #hydroSolutionCalculatorModal .modal-tool-iframe-fit .modal-body {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        height: auto !important;
+      }
+      #hydroSolutionCalculatorModal iframe {
         width: 100% !important;
         height: 100% !important;
         min-height: 0 !important;
@@ -5288,7 +5335,7 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260830phenoMore';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260919sidePad';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
         // Misma herramienta + misma versión de cache. Si solo cambia v=, recarga una vez (no en cada apertura).
@@ -7549,7 +7596,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260830fitH" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260919sidePad" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7661,7 +7708,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=dashboard&v=20260914ur6" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=dashboard&v=20260919urScroll" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

@@ -1190,6 +1190,49 @@
       }
     }
 
+    @media (max-width: 768px) {
+      #hydroSolutionCalculatorModal.modal-overlay.show,
+      #hydroSolutionCalculatorModal.modal-overlay {
+        padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        box-sizing: border-box;
+      }
+      #hydroSolutionCalculatorModal .modal,
+      #hydroSolutionCalculatorModal .modal-tool-iframe-full,
+      #hydroSolutionCalculatorModal .modal-tool-iframe-fit {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        border-radius: 12px;
+      }
+      #hydroSolutionCalculatorModal .modal-header {
+        padding: 10px 12px;
+        flex-shrink: 0;
+      }
+      #hydroSolutionCalculatorModal .modal-title {
+        font-size: 1.05rem;
+        line-height: 1.25;
+      }
+      #hydroSolutionCalculatorModal .modal-body,
+      #hydroSolutionCalculatorModal .modal-tool-iframe-fit .modal-body {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        height: auto !important;
+      }
+      #hydroSolutionCalculatorModal iframe {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+      }
+    }
+
     .modal-granular-mix {
       max-width: 1280px;
       width: 96%;
@@ -2701,7 +2744,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=login&v=20260830fitH" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=login&v=20260919sidePad" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro"></iframe>
       </div>
     </div>
   </div>
@@ -2979,7 +3022,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260914ur6" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
+        <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=login&v=20260919urScroll" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego"></iframe>
       </div>
     </div>
   </div>

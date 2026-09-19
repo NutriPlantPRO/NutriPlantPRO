@@ -26,12 +26,17 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html, body { height: 100%; max-width: 100%; }
+html { overflow-x: hidden; }
 body {
   margin: 0;
   font-family: system-ui, Arial, sans-serif;
   color: #0f172a;
   background: var(--page);
+}
+body.np-dashboard {
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* ===== HEADER SUPERIOR ===== */
@@ -119,7 +124,8 @@ body {
     justify-content: flex-start;
     gap: 5px;
     padding: 0 10px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
   .site-header .brand-logo {
     height: 30px;
@@ -135,12 +141,12 @@ body {
     transform: scale(1.02);
   }
   .site-header .auth-header-manual-link {
-    margin-left: 0 !important;
-    margin-right: 4px !important;
+    margin-left: auto !important;
+    margin-right: 6px !important;
     flex: 0 0 auto;
   }
   .site-header .social-links {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
     gap: 2px;
     justify-content: flex-end;
@@ -169,6 +175,9 @@ body {
   min-height: calc(100vh - 48px); 
   min-height: calc(var(--app-vh, 100dvh) - 48px); /* Evita huecos al cambiar barras del navegador móvil */
   padding-left: var(--sidebar-w);   /* <-- RESERVA FIJA PARA EL SIDEBAR (ajuste #1) */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ===== SIDEBAR ===== */
@@ -329,6 +338,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   .layout {
     min-height: calc(100svh - 48px);
     min-height: calc(var(--app-vh, 100dvh) - 48px);
+    overflow-x: hidden;
   }
 
   .content {
@@ -338,10 +348,27 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     flex-direction: column;
   }
 
+  .content.inicio-page {
+    padding: 12px 10px 16px;
+    padding-top: 60px;
+  }
+
+  .content.inicio-page .view,
+  .content.inicio-page #view {
+    padding: 10px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .content.inicio-page .top h1 {
+    font-size: 1.5rem;
+  }
+
   /* Reserva el espacio vertical para que el footer quede abajo sin position: fixed */
   #view {
     flex: 1 0 auto;
     min-height: 0;
+    max-width: 100%;
   }
 
   .sidebar {
@@ -388,6 +415,16 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   .site-footer {
     margin-top: 12px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .footer-content {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .footer-contact {
+    justify-content: flex-start;
   }
 
   /* Fondo semitransparente al expandir: tocar fuera minimiza (iPhone y Android igual) */
@@ -1128,6 +1165,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Ocultar brevemente mientras se ajusta el scroll (evita parpadeo arriba→abajo) */
@@ -1168,6 +1207,9 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   margin-bottom: 18px;
   gap: 10px;
   overflow: visible;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .top h1 {
@@ -1379,10 +1421,18 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     width: auto !important;
   }
   .header-buttons {
-    gap: 8px;
+    gap: 6px;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .top {
-    gap: 10px;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
@@ -2015,6 +2065,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   padding: 16px;
   min-height: 220px;
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* ===== TARJETAS (CONTENIDO PRINCIPAL) ===== */
@@ -2164,16 +2216,18 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   flex-shrink: 0;
 }
 @media (max-width: 640px) {
-  .auth-header-manual-link span.auth-header-manual-link__label-long,
-  .auth-header-manual-link span.auth-header-manual-link__label-short {
+  .auth-header-manual-link span.auth-header-manual-link__label-long {
     display: none;
   }
+  .auth-header-manual-link span.auth-header-manual-link__label-short {
+    display: inline;
+  }
   .auth-header-manual-link {
-    padding: 0;
-    width: 30px;
+    padding: 0 10px;
+    width: auto;
     justify-content: center;
-    gap: 0;
-    margin-right: 4px !important;
+    gap: 6px;
+    margin-right: 6px !important;
     flex-shrink: 0;
   }
 }
@@ -2425,7 +2479,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   flex-wrap: nowrap;
 }
 
-/* Inicio responsive: en cel/tablet siguen viéndose como tarjetas (grid), no lista */
+/* Inicio responsive: tablet 2 columnas; iPhone 1 columna a todo el ancho */
 @media (max-width: 1200px) {
   .grid-3:not(#np-projects-list) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2449,28 +2503,79 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   }
 }
 
-/* Solo el select de ordenar en Inicio: 16px evita auto-zoom de Safari al tocarlo */
+/* iPhone / ventana angosta: una tarjeta por fila, sin recortes ni zoom-out de Safari */
 @media (max-width: 768px) {
   #np-project-sort,
   .np-project-sort {
     font-size: 16px !important;
+    width: 100%;
+    max-width: 100%;
   }
-}
 
-@media (max-width: 420px) {
-  #np-projects-list {
+  #np-projects-list,
+  #np-projects-list.grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .content.inicio-page .view .card {
+    padding: 12px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .content.inicio-page #view .card > section > .row {
+    flex-direction: column;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
     gap: 8px;
   }
+
+  #np-sync-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .np-inicio-new-wrap #btn-new-nutriplant.btn-primary,
+  #btn-new-nutriplant.btn-primary {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
   #np-projects-list .np-project-card {
-    padding: 9px 9px 8px;
-    border-radius: 10px;
+    padding: 14px 14px 12px;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
+
   #np-projects-list .np-project-card__title {
-    font-size: 13px;
+    font-size: 16px;
   }
+
+  #np-projects-list .np-project-card__meta {
+    font-size: 12px;
+  }
+
+  #np-projects-list .np-project-card__updated {
+    font-size: 11px;
+  }
+
   #np-projects-list .np-project-card .btn {
-    font-size: 10px;
-    padding: 4px 4px;
+    font-size: 13px;
+    padding: 9px 8px;
+    min-height: 40px;
+  }
+
+  .project-indicator-global {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .project-indicator-content {
+    flex-wrap: wrap;
   }
 }
 

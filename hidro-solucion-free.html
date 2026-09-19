@@ -23,7 +23,8 @@
     html.embed-dashboard {
       height: 100%;
     }
-    html.embed-dashboard body {
+    html.embed-dashboard body,
+    html.embed-login body {
       min-height: 100%;
       height: auto;
       overflow-x: auto;
@@ -38,9 +39,37 @@
       min-width: 0;
     }
     html.embed-dashboard .hydroponia-container,
-    html.embed-dashboard .hydro-free-solution {
+    html.embed-login .hydroponia-container,
+    html.embed-dashboard .hydro-free-solution,
+    html.embed-login .hydro-free-solution {
       max-width: none;
       width: 100%;
+      padding: 0;
+    }
+    @media (max-width: 768px) {
+      html.embed-dashboard body,
+      html.embed-login body {
+        padding: 6px 6px 12px;
+      }
+      .hydro-free-solution .hydro-card {
+        padding: 10px;
+        border-radius: 12px;
+      }
+      .hydro-free-solution .hydro-table-block {
+        padding: 10px 8px 12px;
+      }
+      .hydro-free-solution .hydro-card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .hydro-card-ternary-wrap .hydro-card-header {
+        padding-right: 0;
+      }
+      .hydro-main-tabs {
+        padding: 0;
+        gap: 6px;
+      }
     }
     .hydro-free-solution .hydroponia-content,
     .hydro-free-solution .hydro-card {
