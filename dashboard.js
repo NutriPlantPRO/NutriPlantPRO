@@ -2445,8 +2445,6 @@ function selectSection(name, el) {
   if (content) {
     if (name === 'Inicio') {
       content.classList.add('inicio-page');
-      setTimeout(npStabilizeInicioMobileLayout, 0);
-      setTimeout(npStabilizeInicioMobileLayout, 350);
     } else {
       content.classList.remove('inicio-page');
     }
@@ -6993,27 +6991,6 @@ function np_renderProjects(){
     }
   };
   np_applyProjectOpenButtonsState();
-  npStabilizeInicioMobileLayout();
-}
-
-/** Evita que Safari iPhone “vuelva a acercar” Inicio tras re-render (nube/lista).
- *  No toca el scale: solo corrige scroll horizontal si el layout se pasó de ancho. */
-function npStabilizeInicioMobileLayout() {
-  try {
-    if (window.innerWidth > 768) return;
-    var content = document.querySelector('.content.inicio-page');
-    if (!content) return;
-    if (window.scrollX || window.pageXOffset) {
-      window.scrollTo(0, window.scrollY || window.pageYOffset || 0);
-    }
-    if (document.documentElement) document.documentElement.scrollLeft = 0;
-    if (document.body) document.body.scrollLeft = 0;
-    requestAnimationFrame(function () {
-      if (window.scrollX || window.pageXOffset) {
-        window.scrollTo(0, window.scrollY || window.pageYOffset || 0);
-      }
-    });
-  } catch (e) {}
 }
 
 // Funciones globales para el modal de cultivo personalizado (compartido entre Fertirriego y Granular)

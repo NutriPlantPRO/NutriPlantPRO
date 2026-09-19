@@ -27,29 +27,11 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
 body {
   margin: 0;
   font-family: system-ui, Arial, sans-serif;
   color: #0f172a;
   background: var(--page);
-  max-width: 100%;
-}
-/* Solo móvil: evitar desborde horizontal sin bloquear el pinch-zoom de Safari */
-@media (max-width: 768px) {
-  html, body {
-    overflow-x: hidden;
-    max-width: 100%;
-  }
-  .layout,
-  .content {
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: hidden;
-  }
 }
 
 /* ===== HEADER SUPERIOR ===== */
@@ -170,12 +152,6 @@ body {
   body.np-ios-touch .social-links svg {
     width: 18px;
     height: 18px;
-  }
-  /* iPhone: controles ≥16px = Safari no acerca la página al tocar */
-  body.np-ios-touch input,
-  body.np-ios-touch select,
-  body.np-ios-touch textarea {
-    font-size: 16px !important;
   }
 }
 
@@ -2477,54 +2453,10 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   }
 }
 
-/* Celular estrecho (iPhone): 1 columna — 2 cols aprietan y Safari hace zoom raro */
-@media (max-width: 640px) {
-  #np-projects-list {
-    grid-template-columns: 1fr !important;
-    gap: 10px;
-  }
-  .content.inicio-page {
-    padding-left: 14px;
-    padding-right: 14px;
-    overflow-x: hidden;
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .content.inicio-page .card,
-  .content.inicio-page #np-projects-list,
-  .content.inicio-page .np-project-card,
-  .content.inicio-page .header-buttons,
-  .content.inicio-page .top {
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-  }
-  /* Fila título + ordenar: que no desborde el ancho */
-  .content.inicio-page .card > section > .row {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  #np-sync-wrap {
-    width: 100%;
-    min-width: 0;
-  }
-  #np-project-sort {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    font-size: 16px !important; /* iOS no hace zoom al tocar selects < 16px */
-    padding: 10px 12px;
-  }
-  /* Inputs/selects del inicio: mínimo 16px evita auto-zoom de Safari */
-  .content.inicio-page input,
-  .content.inicio-page select,
-  .content.inicio-page textarea,
-  dialog input,
-  dialog select,
-  dialog textarea {
+/* Solo el select de ordenar en Inicio: 16px evita auto-zoom de Safari al tocarlo */
+@media (max-width: 768px) {
+  #np-project-sort,
+  .np-project-sort {
     font-size: 16px !important;
   }
 }
