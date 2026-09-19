@@ -920,6 +920,236 @@
       }
     }
 
+    /* Herramientas densas (mapa/cálculos/tablas): más campo visual, como Diseño de solución nutritiva */
+    #soilWaterTextureToolModal .modal,
+    #soilWaterTextureToolModal .modal-tool-iframe-full,
+    #soilWaterTextureToolModal .modal-tool-iframe-fit,
+    #laminaRiegoToolModal .modal,
+    #laminaRiegoToolModal .modal-tool-iframe-full,
+    #laminaRiegoToolModal .modal-tool-iframe-fit,
+    #ishRendimientoToolModal .modal,
+    #ishRendimientoToolModal .modal-tool-iframe-full,
+    #ishRendimientoToolModal .modal-tool-iframe-fit,
+    #uniformidadRiegoToolModal .modal,
+    #uniformidadRiegoToolModal .modal-tool-iframe-full,
+    #uniformidadRiegoToolModal .modal-tool-iframe-fit,
+    #vpdCalculatorModal .modal,
+    #vpdCalculatorModal .modal-tool-iframe-full,
+    #vpdCalculatorModal .modal-tool-iframe-fit,
+    #agroclimateForecastModal .modal,
+    #agroclimateForecastModal .modal-tool-iframe-full,
+    #agroclimateForecastModal .modal-tool-iframe-fit,
+    #ventanasFoliarToolModal .modal,
+    #ventanasFoliarToolModal .modal-tool-iframe-full,
+    #ventanasFoliarToolModal .modal-tool-iframe-fit,
+    #fertilizerSolubilitySaltModal .modal,
+    #fertilizerSolubilitySaltModal .modal-tool-iframe-full,
+    #fertilizerSolubilitySaltModal .modal-tool-iframe-fit,
+    #fertilizerCarbonCalculatorModal .modal,
+    #fertilizerCarbonCalculatorModal .modal-tool-iframe-full,
+    #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit,
+    #extraccionEtapaCalculatorModal .modal,
+    #extraccionEtapaCalculatorModal .modal-tool-iframe-full,
+    #extraccionEtapaCalculatorModal .modal-tool-iframe-fit,
+    #periodicTableNutrientsModal .modal,
+    #periodicTableNutrientsModal .modal-tool-iframe-full,
+    #periodicTableNutrientsModal .modal-tool-iframe-fit,
+    #aminoAcidsAtlasModal .modal,
+    #aminoAcidsAtlasModal .modal-tool-iframe-full,
+    #aminoAcidsAtlasModal .modal-tool-iframe-fit,
+    #nutrientInteractionsToolModal .modal,
+    #nutrientInteractionsToolModal .modal-tool-iframe-full,
+    #nutrientInteractionsToolModal .modal-tool-iframe-fit,
+    #fertilizerCompatibilityModal .modal,
+    #fertilizerCompatibilityModal .modal-tool-iframe-full,
+    #fertilizerCompatibilityModal .modal-tool-iframe-fit,
+    #granularMixCalculatorModal .modal,
+    #granularMixCalculatorModal .modal-tool-iframe-full,
+    #granularMixCalculatorModal .modal-tool-iframe-fit,
+    #fertilizerCompositionCalculatorModal .modal,
+    #fertilizerCompositionCalculatorModal .modal-tool-iframe-full,
+    #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit {
+      width: min(98vw, 100%) !important;
+      max-width: none !important;
+      max-height: 96vh;
+    }
+    @media (max-width: 1100px), (hover: none) and (pointer: coarse) {
+      #soilWaterTextureToolModal.modal-overlay.show,
+      #laminaRiegoToolModal.modal-overlay.show,
+      #ishRendimientoToolModal.modal-overlay.show,
+      #uniformidadRiegoToolModal.modal-overlay.show,
+      #vpdCalculatorModal.modal-overlay.show,
+      #agroclimateForecastModal.modal-overlay.show,
+      #ventanasFoliarToolModal.modal-overlay.show,
+      #fertilizerSolubilitySaltModal.modal-overlay.show,
+      #fertilizerCarbonCalculatorModal.modal-overlay.show,
+      #extraccionEtapaCalculatorModal.modal-overlay.show,
+      #periodicTableNutrientsModal.modal-overlay.show,
+      #aminoAcidsAtlasModal.modal-overlay.show,
+      #nutrientInteractionsToolModal.modal-overlay.show,
+      #fertilizerCompatibilityModal.modal-overlay.show,
+      #granularMixCalculatorModal.modal-overlay.show,
+      #fertilizerCompositionCalculatorModal.modal-overlay.show {
+        padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        box-sizing: border-box;
+      }
+      #soilWaterTextureToolModal .modal,
+      #soilWaterTextureToolModal .modal-tool-iframe-full,
+      #soilWaterTextureToolModal .modal-tool-iframe-fit,
+      #laminaRiegoToolModal .modal,
+      #laminaRiegoToolModal .modal-tool-iframe-full,
+      #laminaRiegoToolModal .modal-tool-iframe-fit,
+      #ishRendimientoToolModal .modal,
+      #ishRendimientoToolModal .modal-tool-iframe-full,
+      #ishRendimientoToolModal .modal-tool-iframe-fit,
+      #uniformidadRiegoToolModal .modal,
+      #uniformidadRiegoToolModal .modal-tool-iframe-full,
+      #uniformidadRiegoToolModal .modal-tool-iframe-fit,
+      #vpdCalculatorModal .modal,
+      #vpdCalculatorModal .modal-tool-iframe-full,
+      #vpdCalculatorModal .modal-tool-iframe-fit,
+      #agroclimateForecastModal .modal,
+      #agroclimateForecastModal .modal-tool-iframe-full,
+      #agroclimateForecastModal .modal-tool-iframe-fit,
+      #ventanasFoliarToolModal .modal,
+      #ventanasFoliarToolModal .modal-tool-iframe-full,
+      #ventanasFoliarToolModal .modal-tool-iframe-fit,
+      #fertilizerSolubilitySaltModal .modal,
+      #fertilizerSolubilitySaltModal .modal-tool-iframe-full,
+      #fertilizerSolubilitySaltModal .modal-tool-iframe-fit,
+      #fertilizerCarbonCalculatorModal .modal,
+      #fertilizerCarbonCalculatorModal .modal-tool-iframe-full,
+      #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit,
+      #extraccionEtapaCalculatorModal .modal,
+      #extraccionEtapaCalculatorModal .modal-tool-iframe-full,
+      #extraccionEtapaCalculatorModal .modal-tool-iframe-fit,
+      #periodicTableNutrientsModal .modal,
+      #periodicTableNutrientsModal .modal-tool-iframe-full,
+      #periodicTableNutrientsModal .modal-tool-iframe-fit,
+      #aminoAcidsAtlasModal .modal,
+      #aminoAcidsAtlasModal .modal-tool-iframe-full,
+      #aminoAcidsAtlasModal .modal-tool-iframe-fit,
+      #nutrientInteractionsToolModal .modal,
+      #nutrientInteractionsToolModal .modal-tool-iframe-full,
+      #nutrientInteractionsToolModal .modal-tool-iframe-fit,
+      #fertilizerCompatibilityModal .modal,
+      #fertilizerCompatibilityModal .modal-tool-iframe-full,
+      #fertilizerCompatibilityModal .modal-tool-iframe-fit,
+      #granularMixCalculatorModal .modal,
+      #granularMixCalculatorModal .modal-tool-iframe-full,
+      #granularMixCalculatorModal .modal-tool-iframe-fit,
+      #fertilizerCompositionCalculatorModal .modal,
+      #fertilizerCompositionCalculatorModal .modal-tool-iframe-full,
+      #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        border-radius: 12px;
+      }
+      #soilWaterTextureToolModal .modal-header,
+      #laminaRiegoToolModal .modal-header,
+      #ishRendimientoToolModal .modal-header,
+      #uniformidadRiegoToolModal .modal-header,
+      #vpdCalculatorModal .modal-header,
+      #agroclimateForecastModal .modal-header,
+      #ventanasFoliarToolModal .modal-header,
+      #fertilizerSolubilitySaltModal .modal-header,
+      #fertilizerCarbonCalculatorModal .modal-header,
+      #extraccionEtapaCalculatorModal .modal-header,
+      #periodicTableNutrientsModal .modal-header,
+      #aminoAcidsAtlasModal .modal-header,
+      #nutrientInteractionsToolModal .modal-header,
+      #fertilizerCompatibilityModal .modal-header,
+      #granularMixCalculatorModal .modal-header,
+      #fertilizerCompositionCalculatorModal .modal-header {
+        padding: 10px 12px;
+        flex-shrink: 0;
+      }
+      #soilWaterTextureToolModal .modal-title,
+      #laminaRiegoToolModal .modal-title,
+      #ishRendimientoToolModal .modal-title,
+      #uniformidadRiegoToolModal .modal-title,
+      #vpdCalculatorModal .modal-title,
+      #agroclimateForecastModal .modal-title,
+      #ventanasFoliarToolModal .modal-title,
+      #fertilizerSolubilitySaltModal .modal-title,
+      #fertilizerCarbonCalculatorModal .modal-title,
+      #extraccionEtapaCalculatorModal .modal-title,
+      #periodicTableNutrientsModal .modal-title,
+      #aminoAcidsAtlasModal .modal-title,
+      #nutrientInteractionsToolModal .modal-title,
+      #fertilizerCompatibilityModal .modal-title,
+      #granularMixCalculatorModal .modal-title,
+      #fertilizerCompositionCalculatorModal .modal-title {
+        font-size: 1.05rem;
+        line-height: 1.25;
+      }
+      #soilWaterTextureToolModal .modal-body,
+      #soilWaterTextureToolModal .modal-tool-iframe-fit .modal-body,
+      #laminaRiegoToolModal .modal-body,
+      #laminaRiegoToolModal .modal-tool-iframe-fit .modal-body,
+      #ishRendimientoToolModal .modal-body,
+      #ishRendimientoToolModal .modal-tool-iframe-fit .modal-body,
+      #uniformidadRiegoToolModal .modal-body,
+      #uniformidadRiegoToolModal .modal-tool-iframe-fit .modal-body,
+      #vpdCalculatorModal .modal-body,
+      #vpdCalculatorModal .modal-tool-iframe-fit .modal-body,
+      #agroclimateForecastModal .modal-body,
+      #agroclimateForecastModal .modal-tool-iframe-fit .modal-body,
+      #ventanasFoliarToolModal .modal-body,
+      #ventanasFoliarToolModal .modal-tool-iframe-fit .modal-body,
+      #fertilizerSolubilitySaltModal .modal-body,
+      #fertilizerSolubilitySaltModal .modal-tool-iframe-fit .modal-body,
+      #fertilizerCarbonCalculatorModal .modal-body,
+      #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit .modal-body,
+      #extraccionEtapaCalculatorModal .modal-body,
+      #extraccionEtapaCalculatorModal .modal-tool-iframe-fit .modal-body,
+      #periodicTableNutrientsModal .modal-body,
+      #periodicTableNutrientsModal .modal-tool-iframe-fit .modal-body,
+      #aminoAcidsAtlasModal .modal-body,
+      #aminoAcidsAtlasModal .modal-tool-iframe-fit .modal-body,
+      #nutrientInteractionsToolModal .modal-body,
+      #nutrientInteractionsToolModal .modal-tool-iframe-fit .modal-body,
+      #fertilizerCompatibilityModal .modal-body,
+      #fertilizerCompatibilityModal .modal-tool-iframe-fit .modal-body,
+      #granularMixCalculatorModal .modal-body,
+      #granularMixCalculatorModal .modal-tool-iframe-fit .modal-body,
+      #fertilizerCompositionCalculatorModal .modal-body,
+      #fertilizerCompositionCalculatorModal .modal-tool-iframe-fit .modal-body {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        height: auto !important;
+      }
+      #soilWaterTextureToolModal iframe,
+      #laminaRiegoToolModal iframe,
+      #ishRendimientoToolModal iframe,
+      #uniformidadRiegoToolModal iframe,
+      #vpdCalculatorModal iframe,
+      #agroclimateForecastModal iframe,
+      #ventanasFoliarToolModal iframe,
+      #fertilizerSolubilitySaltModal iframe,
+      #fertilizerCarbonCalculatorModal iframe,
+      #extraccionEtapaCalculatorModal iframe,
+      #periodicTableNutrientsModal iframe,
+      #aminoAcidsAtlasModal iframe,
+      #nutrientInteractionsToolModal iframe,
+      #fertilizerCompatibilityModal iframe,
+      #granularMixCalculatorModal iframe,
+      #fertilizerCompositionCalculatorModal iframe {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+      }
+    }
+
     .modal-close {
       background: none;
       border: none;
@@ -5474,6 +5704,7 @@ CONTRATO:
     function showSoilWaterTextureTool() {
       var modal = document.getElementById('soilWaterTextureToolModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('soilWaterTextureToolFrame');
       modal.classList.add('show');
     }
     window.showSoilWaterTextureTool = showSoilWaterTextureTool;
@@ -7487,7 +7718,7 @@ CONTRATO:
 
   <!-- Modal Tabla Periódica de Nutrientes -->
   <div id="periodicTableNutrientsModal" class="modal-overlay" onclick="if(event.target===this) closePeriodicTableNutrientsCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 95vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_periodic">Tabla Periódica (Nutrientes Esenciales)</h2>
         <div class="modal-header-trailing">
@@ -7495,7 +7726,7 @@ CONTRATO:
           <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
+      <div class="modal-body">
         <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=dashboard&v=20260801g" title="Tabla Periódica (Nutrientes Esenciales)" data-i18n-title="dashboard.tool_periodic" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7503,7 +7734,7 @@ CONTRATO:
 
   <!-- Modal Atlas Fisiológico Vegetal -->
   <div id="aminoAcidsAtlasModal" class="modal-overlay" onclick="if(event.target===this) closeAminoAcidsAtlasTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 95vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_atlas">Atlas Fisiológico Vegetal</h2>
         <div class="modal-header-trailing">
@@ -7511,7 +7742,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeAminoAcidsAtlasTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(95vh - 68px);">
+      <div class="modal-body">
         <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260803a" title="Atlas Fisiológico Vegetal" data-i18n-title="dashboard.tool_atlas" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7519,7 +7750,7 @@ CONTRATO:
 
   <!-- Modal Distribución nutrimental por etapa -->
   <div id="extraccionEtapaCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeExtraccionEtapaCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_extraction_stage">📊 Distribución nutrimental por etapa (%)</h2>
         <div class="modal-header-trailing">
@@ -7527,7 +7758,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260919a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7535,7 +7766,7 @@ CONTRATO:
 
   <!-- Modal Compatibilidad de fertilizantes -->
   <div id="fertilizerCompatibilityModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCompatibilityCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_compatibility">Compatibilidad de fertilizantes</h2>
         <div class="modal-header-trailing">
@@ -7543,7 +7774,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeFertilizerCompatibilityCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html?v=20260801h" title="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7615,7 +7846,7 @@ CONTRATO:
 
   <!-- Modal agua disponible / triángulo textura -->
   <div id="soilWaterTextureToolModal" class="modal-overlay" onclick="if(event.target===this) closeSoilWaterTextureTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_soil_water">🪨 Agua en suelo y textura</h2>
         <div class="modal-header-trailing">
@@ -7623,15 +7854,15 @@ CONTRATO:
           <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260801n" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      <div class="modal-body">
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html?v=20260919soilWin" title="Agua en suelo y textura" data-i18n-title="dashboard.tool_soil_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
 
   <!-- Modal estimador VPD (herramienta gratuita) -->
   <div id="vpdCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeVPDCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_vpd">🌡️ Estimador de déficit de presión de vapor</h2>
         <div class="modal-header-trailing">
@@ -7639,7 +7870,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeVPDCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=20260805a" title="Estimador de déficit de presión de vapor" data-i18n-title="dashboard.tool_vpd" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
@@ -7647,7 +7878,7 @@ CONTRATO:
 
   <!-- Modal Pronóstico agroclimático (herramienta gratuita + alertas) -->
   <div id="agroclimateForecastModal" class="modal-overlay" onclick="if(event.target===this) closeAgroclimateForecast();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">🌤️ <span data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span></h2>
         <div class="modal-header-trailing">
@@ -7655,7 +7886,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeAgroclimateForecast()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="agroclimateForecastFrame" src="about:blank" data-agro-src="pronosticoclimatico/?embed=dashboard" title="Pronóstico agroclimático" data-i18n-title="dashboard.tool_weather" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;opacity:0;transition:opacity .15s ease;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
@@ -7663,7 +7894,7 @@ CONTRATO:
 
   <!-- Modal lámina de riego / balance hídrico -->
   <div id="laminaRiegoToolModal" class="modal-overlay" onclick="if(event.target===this) closeLaminaRiegoTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_irrigation">🌧️ Lámina de riego y balance hídrico</h2>
         <div class="modal-header-trailing">
@@ -7671,7 +7902,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard&v=20260805a" title="Lámina de riego y balance hídrico" data-i18n-title="dashboard.tool_irrigation" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
@@ -7679,7 +7910,7 @@ CONTRATO:
 
   <!-- Modal rendimiento hídrico ISH -->
   <div id="ishRendimientoToolModal" class="modal-overlay" onclick="if(event.target===this) closeIshRendimientoTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_ish">📈 Rendimiento hídrico (ISH)</h2>
         <div class="modal-header-trailing">
@@ -7687,7 +7918,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeIshRendimientoTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=dashboard&v=20260919riegoCol" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
@@ -7695,7 +7926,7 @@ CONTRATO:
 
   <!-- Modal uniformidad de riego -->
   <div id="uniformidadRiegoToolModal" class="modal-overlay" onclick="if(event.target===this) closeUniformidadRiegoTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_uniformidad_riego">🎯 Uniformidad de riego</h2>
         <div class="modal-header-trailing">
@@ -7703,7 +7934,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeUniformidadRiegoTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="uniformidadRiegoToolFrame" src="uniformidad-riego-free.html?embed=dashboard&v=20260919urScroll" title="Uniformidad de riego" data-i18n-title="dashboard.tool_uniformidad_riego" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7711,7 +7942,7 @@ CONTRATO:
 
   <!-- Modal ventanas de aplicación foliar -->
   <div id="ventanasFoliarToolModal" class="modal-overlay" onclick="if(event.target===this) closeVentanasFoliarTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_foliar_windows">🍃 Ventanas de Aplicación Foliar</h2>
         <div class="modal-header-trailing">
@@ -7719,7 +7950,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeVentanasFoliarTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="ventanasFoliarToolFrame" src="ventanas-foliar-free.html?embed=dashboard&v=20260915fw1" title="Ventanas de Aplicación Foliar" data-i18n-title="dashboard.tool_foliar_windows" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
@@ -7727,7 +7958,7 @@ CONTRATO:
 
   <!-- Modal solubilidad e índice salino -->
   <div id="fertilizerSolubilitySaltModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerSolubilitySaltTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_solubility_salt">🧂 Solubilidad e índice salino</h2>
         <div class="modal-header-trailing">
@@ -7735,7 +7966,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html?v=20260801s" title="Solubilidad e índice salino" data-i18n-title="dashboard.tool_solubility_salt" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7743,7 +7974,7 @@ CONTRATO:
 
   <!-- Modal huella de carbono de fertilizantes -->
   <div id="fertilizerCarbonCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCarbonCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_fertilizer_carbon">🌍 Huella de carbono de fertilizantes</h2>
         <div class="modal-header-trailing">
@@ -7751,7 +7982,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeFertilizerCarbonCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260801s" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7759,7 +7990,7 @@ CONTRATO:
 
   <!-- Modal Interacciones y movilidad nutrimental -->
   <div id="nutrientInteractionsToolModal" class="modal-overlay" onclick="if(event.target===this) closeNutrientInteractionsTool();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_interactions">Interacciones y movilidad nutrimental</h2>
         <div class="modal-header-trailing">
@@ -7767,7 +7998,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeNutrientInteractionsTool()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html?v=20260801h" title="Interacciones y movilidad nutrimental" data-i18n-title="dashboard.tool_interactions" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7775,7 +8006,7 @@ CONTRATO:
 
   <!-- Modal formulación de mezclas granulares -->
   <div id="granularMixCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeGranularMixCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">📦 <span data-i18n="dashboard.tool_granular_mix">Formulación de mezclas granulares</span></h2>
         <div class="modal-header-trailing">
@@ -7783,7 +8014,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeGranularMixCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=dashboard&v=20260801f" title="Formulación de mezclas granulares" data-i18n-title="dashboard.tool_granular_mix" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
@@ -7791,7 +8022,7 @@ CONTRATO:
 
   <!-- Modal Composición de fertilizantes -->
   <div id="fertilizerCompositionCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCompositionCalculator();">
-    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_fertilizer_composition">⚗️ Composición de fertilizantes (%)</h2>
         <div class="modal-header-trailing">
@@ -7799,7 +8030,7 @@ CONTRATO:
           <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+      <div class="modal-body">
         <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260801a" title="Composición de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_composition" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
