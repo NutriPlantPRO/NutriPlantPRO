@@ -769,6 +769,7 @@ function initializeSidebar() {
   if (isCompactTouchViewport() && sidebar) {
     sidebar.style.transform = 'translateX(0)';
     sidebar.classList.add('open', 'sidebar-minimized');
+    sidebar.classList.remove('is-hover-expanded');
     if (sidebarOverlay) sidebarOverlay.classList.remove('show');
     document.body.style.overflow = '';
   }
@@ -838,6 +839,8 @@ function openSidebar() {
     sidebar.style.transform = 'translateX(0)';
     sidebar.classList.add('open');
     sidebar.classList.remove('sidebar-minimized');
+    // iPhone no tiene :hover: sin esta clase el CSS deja el texto oculto hasta tocar
+    if (isCompactTouchViewport()) sidebar.classList.add('is-hover-expanded');
   }
   if (isCompactTouchViewport()) {
     setCompactTouchSidebarOverlayVisible(true);
@@ -852,7 +855,11 @@ function openSidebar() {
 function expandSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  if (sidebar) sidebar.classList.remove('sidebar-minimized');
+  if (sidebar) {
+    sidebar.classList.remove('sidebar-minimized');
+    // iPhone: mostrar letras al abrir sin depender de :hover
+    if (isCompactTouchViewport()) sidebar.classList.add('is-hover-expanded');
+  }
   if (isCompactTouchViewport()) {
     setCompactTouchSidebarOverlayVisible(true);
   } else {
@@ -865,7 +872,10 @@ function expandSidebar() {
 // Función para minimizar sidebar en móvil (barra estrecha, sin overlay)
 function minimizeSidebar() {
   const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.classList.add('sidebar-minimized');
+  if (sidebar) {
+    sidebar.classList.add('sidebar-minimized');
+    if (isCompactTouchViewport()) sidebar.classList.remove('is-hover-expanded');
+  }
   setCompactTouchSidebarOverlayVisible(false);
   syncIOSSidebarHitTarget();
 }

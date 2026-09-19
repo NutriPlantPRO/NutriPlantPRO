@@ -113,43 +113,51 @@ body {
   height: 20px;
 }
 
-@media (max-width: 640px) {
-  body.np-ios-touch .brandline {
+@media (max-width: 768px) {
+  /* Franja superior: logo + manual + redes en flujo (antes solo body.np-ios-touch) */
+  .site-header .brandline {
     justify-content: flex-start;
     gap: 5px;
     padding: 0 10px;
     overflow: hidden;
   }
-  body.np-ios-touch .brand-logo {
+  .site-header .brand-logo {
     height: 30px;
     max-width: 76px;
     position: static;
+    left: auto;
+    top: auto;
     flex: 0 0 auto;
     object-fit: contain;
     transform: none;
   }
-  body.np-ios-touch .brand-logo:hover {
+  .site-header .brand-logo:hover {
     transform: scale(1.02);
   }
-  body.np-ios-touch .social-links {
+  .site-header .auth-header-manual-link {
+    margin-left: 0 !important;
+    margin-right: 4px !important;
+    flex: 0 0 auto;
+  }
+  .site-header .social-links {
     flex: 1 1 auto;
     min-width: 0;
     gap: 2px;
-    justify-content: flex-start;
+    justify-content: flex-end;
     overflow-x: auto;
     overflow-y: hidden;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
-  body.np-ios-touch .social-links::-webkit-scrollbar { display: none; }
-  body.np-ios-touch .social-links .social-btn,
-  body.np-ios-touch .social-links a {
+  .site-header .social-links::-webkit-scrollbar { display: none; }
+  .site-header .social-links .social-btn,
+  .site-header .social-links a {
     flex: 0 0 28px;
     width: 28px !important;
     height: 28px !important;
   }
-  body.np-ios-touch .social-links svg {
+  .site-header .social-links svg {
     width: 18px;
     height: 18px;
   }
@@ -479,7 +487,10 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     min-height: 32px !important;
   }
 
-  /* En touch no hay :hover; si está abierto (y no minimizado), forzar vista expandida */
+  /* En touch no hay :hover; si está abierto (y no minimizado), forzar vista expandida.
+     Especificidad alta para ganar a .sidebar:not(:hover):not(.is-hover-expanded)… */
+  .sidebar.open:not(.sidebar-minimized):not(:hover):not(.is-hover-expanded) .sidebar a .label,
+  .sidebar.open:not(.sidebar-minimized):not(:hover):not(.is-hover-expanded) .sidebar a.active .label,
   .sidebar.open:not(.sidebar-minimized) .sidebar a .label,
   .sidebar.open:not(.sidebar-minimized) .sidebar a.active .label {
     display: inline !important;
@@ -492,6 +503,20 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     left: auto !important;
     font-size: inherit !important;
     line-height: inherit !important;
+    clip: auto !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized):not(:hover):not(.is-hover-expanded) .sb-title-card .text,
+  .sidebar.open:not(.sidebar-minimized):not(:hover):not(.is-hover-expanded) .sb-card .title .text,
+  .sidebar.open:not(.sidebar-minimized):not(:hover):not(.is-hover-expanded) .sb-chip span.text,
+  .sidebar.open:not(.sidebar-minimized):not(:hover):not(.is-hover-expanded) .logout .logout-text {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
   }
 
   .sidebar.open:not(.sidebar-minimized) nav a {
