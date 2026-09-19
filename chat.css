@@ -381,7 +381,7 @@
   border: 1px solid var(--chat-border);
   border-radius: 20px;
   padding: 10px 16px;
-  font-size: 14px;
+  font-size: 16px; /* 16px evita auto-zoom de Safari iOS al enfocar */
   resize: none;
   max-height: 100px;
   min-height: 40px;

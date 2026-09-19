@@ -513,14 +513,33 @@ function isCompactTouchViewport() {
 function isIOSLikeTouchDevice() {
   const ua = navigator.userAgent || '';
   const platform = navigator.platform || '';
-  return /iPhone|iPad|iPod/.test(ua) ||
-    /iPhone|iPad|iPod/.test(platform) ||
-    (/Mac/.test(platform) && 'ontouchend' in document);
+  if (/iPhone|iPod/.test(ua) || /iPhone|iPod/.test(platform)) return true;
+  if (/iPad/.test(ua) || /iPad/.test(platform)) return true;
+  // iPadOS 13+ se presenta como Mac; Mac de escritorio (Safari) NO es iOS.
+  // Antes: (/Mac/ && 'ontouchend' in document) → true en Safari Mac y rompía el sidebar.
+  if (/Mac/.test(platform) || /Mac OS X/.test(ua)) {
+    const touchPoints = typeof navigator.maxTouchPoints === 'number' ? navigator.maxTouchPoints : 0;
+    if (touchPoints <= 1) return false;
+    try {
+      // Mac con mouse/trackpad fino: hover disponible → escritorio
+      if (window.matchMedia('(hover: hover)').matches &&
+          window.matchMedia('(pointer: fine)').matches) {
+        return false;
+      }
+    } catch (e) {}
+    return true; // iPadOS disfrazado de Mac
+  }
+  return false;
 }
 
 function ensureIOSSidebarHitTarget() {
   if (!document.body.classList.contains('np-dashboard')) return null;
-  if (!isIOSLikeTouchDevice()) return null;
+  if (!isIOSLikeTouchDevice()) {
+    document.body.classList.remove('np-ios-touch');
+    const existing = document.getElementById('np-ios-sidebar-hit-target');
+    if (existing) existing.classList.remove('show');
+    return null;
+  }
 
   document.body.classList.add('np-ios-touch');
 
@@ -664,27 +683,42 @@ function handleCompactTouchSidebarInteraction(e) {
   }
 }
 
-// Función para manejar la visibilidad del texto en el sidebar
+/* Función para manejar la visibilidad del texto en el sidebar */
 function handleSidebarTextVisibility() {
   if (isCompactTouchViewport()) return;
   const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
   const labels = sidebar.querySelectorAll('.sidebar a .label');
-  
-  if (sidebar.matches(':hover')) {
-    // Sidebar expandido - mostrar texto
+  const expanded = sidebar.matches(':hover') || sidebar.classList.contains('is-hover-expanded');
+
+  if (expanded) {
+    sidebar.classList.add('is-hover-expanded');
     labels.forEach(label => {
       label.style.display = 'inline';
       label.style.opacity = '1';
       label.style.visibility = 'visible';
+      label.style.position = 'static';
+      label.style.width = 'auto';
+      label.style.left = 'auto';
+      label.style.fontSize = '';
+      label.style.overflow = 'visible';
     });
   } else {
-    // Sidebar colapsado - ocultar texto
+    sidebar.classList.remove('is-hover-expanded');
     labels.forEach(label => {
       label.style.display = 'none';
       label.style.opacity = '0';
       label.style.visibility = 'hidden';
     });
   }
+}
+
+function setDesktopSidebarHover(expanded) {
+  if (isCompactTouchViewport()) return;
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  sidebar.classList.toggle('is-hover-expanded', !!expanded);
+  handleSidebarTextVisibility();
 }
 
 // Función para inicializar el sidebar
@@ -695,11 +729,13 @@ function initializeSidebar() {
   const sidebarOverlay = document.getElementById('sidebar-overlay');
   
   if (sidebar) {
-    // Funcionalidad desktop (hover)
+    // Funcionalidad desktop (hover) — clase extra para Safari Mac ( :hover solo a veces falla )
     if (!isCompactTouchViewport()) {
-      sidebar.addEventListener('mouseenter', handleSidebarTextVisibility);
-      sidebar.addEventListener('mouseleave', handleSidebarTextVisibility);
-      handleSidebarTextVisibility();
+      sidebar.classList.remove('np-ios-touch-open');
+      document.body.classList.remove('np-ios-touch');
+      sidebar.addEventListener('mouseenter', function () { setDesktopSidebarHover(true); });
+      sidebar.addEventListener('mouseleave', function () { setDesktopSidebarHover(false); });
+      setDesktopSidebarHover(false);
     }
 
     // Touch compacto: expandir al tocar barra; minimizar al tocar fuera (iOS no dispara click bien)
@@ -876,7 +912,7 @@ function sectionTemplate(name) {
           <div class="row" style="justify-content:space-between; align-items:center; margin:6px 0 10px;">
             <h3 class="text-xl" style="margin:0;">📁 ${dashboardT('dashboard.recent_projects', 'Proyectos recientes')}</h3>
             <div id="np-sync-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <select id="np-project-sort" style="font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer;" title="${dashboardT('dashboard.sort_title', 'Ordenar proyectos en esta vista')}">
+              <select id="np-project-sort" class="np-project-sort" title="${dashboardT('dashboard.sort_title', 'Ordenar proyectos en esta vista')}">
                 <option value="updated_desc">🕒 ${dashboardT('dashboard.sort_newest', 'Orden: Más recientes primero')}</option>
                 <option value="updated_asc">🕒 ${dashboardT('dashboard.sort_oldest', 'Orden: Más antiguos primero')}</option>
                 <option value="title_asc">🔤 ${dashboardT('dashboard.sort_az', 'Orden: A → Z')}</option>

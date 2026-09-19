@@ -27,11 +27,23 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 body {
   margin: 0;
   font-family: system-ui, Arial, sans-serif;
   color: #0f172a;
   background: var(--page);
+  max-width: 100%;
+}
+/* Solo móvil: recortar desborde. En Safari Mac, overflow-x en html/body
+   recorta el sidebar al expandir y botones del borde (p. ej. Guardar). */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: clip;
+  }
 }
 
 /* ===== HEADER SUPERIOR ===== */
@@ -152,6 +164,12 @@ body {
   body.np-ios-touch .social-links svg {
     width: 18px;
     height: 18px;
+  }
+  /* iPhone: controles ≥16px = Safari no acerca la página al tocar */
+  body.np-ios-touch input,
+  body.np-ios-touch select,
+  body.np-ios-touch textarea {
+    font-size: 16px !important;
   }
 }
 
@@ -407,7 +425,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     opacity: 0 !important;
     visibility: hidden !important;
     position: absolute !important;
-    left: -9999px !important;
+    left: 0 !important;
     font-size: 0 !important;
     line-height: 0 !important;
     padding: 0 !important;
@@ -423,11 +441,19 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   .sidebar.open.sidebar-minimized .sb-title-card .text,
   .sidebar.open.sidebar-minimized .sb-card .title .text,
   .sidebar.open.sidebar-minimized .sb-chip span.text,
-  .sidebar.open.sidebar-minimized .logout .logout-text {
+  .sidebar.open.sidebar-minimized .logout .logout-text,
+  .sidebar.open.sidebar-minimized .no-project-message,
+  .sidebar.open.sidebar-minimized .no-project-message p {
     opacity: 0 !important;
     visibility: hidden !important;
     width: 0 !important;
+    height: 0 !important;
+    max-width: 0 !important;
     overflow: hidden !important;
+    white-space: nowrap !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    pointer-events: none !important;
   }
 
   /* En algunos móviles el pseudo-hover queda "pegado" al tocar.
@@ -438,11 +464,13 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   .sidebar.open.sidebar-minimized:hover .sb-card .title .text,
   .sidebar.open.sidebar-minimized:hover .sb-chip span.text,
   .sidebar.open.sidebar-minimized:hover .logout .logout-text,
+  .sidebar.open.sidebar-minimized:hover .no-project-message,
   .sidebar.open.sidebar-minimized:hover .no-project-message p {
     opacity: 0 !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
+    max-width: 0 !important;
     overflow: hidden !important;
   }
 
@@ -634,8 +662,9 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   transform: translate(-50%, -50%) scale(1.05);
 }
 
-.sidebar:hover { 
-  width: var(--sidebar-w-expanded); 
+.sidebar:hover,
+.sidebar.is-hover-expanded {
+  width: var(--sidebar-w-expanded);
 }
 
 /* ===== MENÚ DEL SIDEBAR ===== */
@@ -664,8 +693,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* Ocultar texto pero mantener el espacio exacto */
-.sidebar:not(:hover) .sidebar a .label,
-.sidebar:not(:hover) .sidebar a.active .label {
+.sidebar:not(:hover):not(.is-hover-expanded) .sidebar a .label,
+.sidebar:not(:hover):not(.is-hover-expanded) .sidebar a.active .label {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -673,7 +702,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   opacity: 0 !important;
   visibility: hidden !important;
   position: absolute !important;
-  left: -9999px !important;
+  left: 0 !important;
   font-size: 0 !important;
   line-height: 0 !important;
   padding: 0 !important;
@@ -683,7 +712,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* Centrar solo el icono cuando está colapsado */
-.sidebar:not(:hover) nav a {
+.sidebar:not(:hover):not(.is-hover-expanded) nav a {
   justify-content: center !important;
 }
 
@@ -709,7 +738,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* Mostrar texto cuando sidebar está expandido */
-.sidebar:hover .sidebar a .label {
+.sidebar:hover .sidebar a .label,
+.sidebar.is-hover-expanded .sidebar a .label {
   display: inline !important;
   width: auto !important;
   height: auto !important;
@@ -718,6 +748,9 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   visibility: visible !important;
   position: static !important;
   left: auto !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  clip: auto !important;
 }
 
 .sidebar a.disabled { 
@@ -771,7 +804,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* Ocultar texto pero mantener el espacio exacto */
-.sidebar:not(:hover) .sb-title-card .text {
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-title-card .text {
   color: transparent !important;
   user-select: none !important;
   width: auto !important;
@@ -885,7 +918,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* Ocultar texto pero mantener el espacio exacto */
-.sidebar:not(:hover) .sb-card .title .text {
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-card .title .text {
   color: transparent !important;
   user-select: none !important;
   width: auto !important;
@@ -913,20 +946,23 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* Mostrar texto de las tarjetas cuando sidebar está expandido */
-.sidebar:hover .sb-card .title .text {
+.sidebar:hover .sb-card .title .text,
+.sidebar.is-hover-expanded .sb-card .title .text {
   opacity: 1 !important;
   visibility: visible !important;
   color: inherit !important;
 }
 
 /* Centrar solo el icono cuando está colapsado */
-.sidebar:not(:hover) .sb-card .title .t {
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-card .title .t {
   justify-content: center !important;
 }
 
 /* Posicionar iconos cuando sidebar está expandido */
 .sidebar:hover .sb-card .info-icon,
-.sidebar:hover .sb-card .analysis-icon {
+.sidebar:hover .sb-card .analysis-icon,
+.sidebar.is-hover-expanded .sb-card .info-icon,
+.sidebar.is-hover-expanded .sb-card .analysis-icon {
   position: static;
   left: auto;
   top: auto;
@@ -2309,6 +2345,18 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   color: #047857;
 }
 
+.np-project-sort {
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  max-width: 100%;
+  min-width: 0;
+}
+
 #np-projects-list .np-project-card .btn[data-act="open"]:hover {
   background: #ecfdf5;
   border-color: #059669;
@@ -2394,6 +2442,51 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   }
 }
 
+/* Celular estrecho (iPhone): 1 columna — 2 cols aprietan y Safari hace zoom raro */
+@media (max-width: 640px) {
+  #np-projects-list {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  .content.inicio-page {
+    padding-left: 14px;
+    padding-right: 14px;
+    overflow-x: clip;
+  }
+  .content.inicio-page .card,
+  .content.inicio-page #np-projects-list,
+  .content.inicio-page .np-project-card {
+    max-width: 100%;
+    min-width: 0;
+  }
+  /* Fila título + ordenar: que no desborde el ancho */
+  .content.inicio-page .card > section > .row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  #np-sync-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+  #np-project-sort {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    font-size: 16px !important; /* iOS no hace zoom al tocar selects < 16px */
+    padding: 10px 12px;
+  }
+  /* Inputs/selects del inicio: mínimo 16px evita auto-zoom de Safari */
+  .content.inicio-page input,
+  .content.inicio-page select,
+  .content.inicio-page textarea,
+  dialog input,
+  dialog select,
+  dialog textarea {
+    font-size: 16px !important;
+  }
+}
+
 @media (max-width: 420px) {
   #np-projects-list {
     gap: 8px;
@@ -2426,7 +2519,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* ===== OCULTAR TEXTO CUANDO SIDEBAR COLAPSADO ===== */
-.sidebar:not(:hover) .sb-chip span.text { 
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-chip span.text { 
   opacity: 0 !important;
   visibility: hidden !important;
   width: 0 !important;
@@ -2434,13 +2527,13 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   transition: opacity 0.3s ease, visibility 0.3s ease !important;
 }
 
-.sidebar:not(:hover) .sb-chip { 
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-chip { 
   padding: 6px; 
   justify-content: center; 
 }
 
 /* ===== MANTENER ORDEN DE LOS CHIPS ===== */
-.sidebar:not(:hover) .sb-chiprow {
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-chiprow {
   display: flex !important;
   flex-direction: column !important;
   gap: 20px !important;
@@ -2466,7 +2559,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 .sb-chip[data-section="fruta"] { top: 150px; left: 0; }
 
 /* ===== CHIPS ABIERTOS - MISMO ORDEN ===== */
-.sidebar:hover .sb-chiprow {
+.sidebar:hover .sb-chiprow,
+.sidebar.is-hover-expanded .sb-chiprow {
   flex-direction: column !important;
   justify-content: flex-start !important;
   align-items: stretch !important;
@@ -2474,7 +2568,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   gap: 20px !important;
 }
 
-.sidebar:not(:hover) .sb-chip {
+.sidebar:not(:hover):not(.is-hover-expanded) .sb-chip {
   width: 32px !important;
   height: 32px !important;
   border-radius: 50% !important;
@@ -2488,7 +2582,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* ===== CHIPS ABIERTOS - TEXTO IZQUIERDA A DERECHA ===== */
-.sidebar:hover .sb-chip {
+.sidebar:hover .sb-chip,
+.sidebar.is-hover-expanded .sb-chip {
   width: auto !important;
   height: 32px !important;
   border-radius: 16px !important;
@@ -2499,12 +2594,17 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   border: none !important;
   min-width: 32px !important;
   min-height: 32px !important;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
 }
 
-.sidebar:hover .sb-chip span.text {
+.sidebar:hover .sb-chip span.text,
+.sidebar.is-hover-expanded .sb-chip span.text {
   opacity: 1 !important;
   visibility: visible !important;
   width: auto !important;
+  overflow: visible !important;
 }
 
 /* ===== TÍTULOS ESTABLES ===== */
@@ -2593,7 +2693,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* ===== BOTÓN CERRAR SESIÓN COLAPSADO ===== */
-.sidebar:not(:hover) .logout {
+.sidebar:not(:hover):not(.is-hover-expanded) .logout {
   width: 40px !important;
   height: 40px !important;
   min-width: 40px !important;
@@ -2607,11 +2707,11 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   gap: 0 !important;
 }
 
-.sidebar:not(:hover) .logout .logout-text {
+.sidebar:not(:hover):not(.is-hover-expanded) .logout .logout-text {
   display: none !important;
 }
 
-.sidebar:not(:hover) .logout .logout-icon {
+.sidebar:not(:hover):not(.is-hover-expanded) .logout .logout-icon {
   font-size: 16px !important;
   margin: 0 !important;
 }
@@ -2620,7 +2720,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   display: block;
   flex-shrink: 0;
 }
-.sidebar:not(:hover) .logout .logout-icon svg {
+.sidebar:not(:hover):not(.is-hover-expanded) .logout .logout-icon svg {
   width: 18px !important;
   height: 18px !important;
 }
@@ -8643,6 +8743,29 @@ html.embed-login body {
   line-height: 1.4;
   white-space: normal;
   overflow-wrap: break-word;
+}
+.ferti-dist-catalog-status {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.ferti-dist-catalog-status--ok {
+  color: #065f46;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+}
+.ferti-dist-catalog-status--warn {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+.ferti-dist-catalog-status--error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
 }
 .ferti-dist-nut-head {
   display: inline-flex;

@@ -107,10 +107,10 @@
     .panel .hint strong { color: #334155; }
 
     .totals-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-end;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 10px;
+      align-items: stretch;
       margin-bottom: 12px;
     }
     .totals-wrap label {
@@ -120,21 +120,24 @@
       font-size: 11px;
       font-weight: 700;
       color: #334155;
-      min-width: 72px;
+      min-width: 0;
+      width: 100%;
     }
     .totals-wrap input {
-      width: 88px;
-      padding: 8px 10px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 8px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       font-size: 14px;
     }
     .totals-wrap .nut-wrap {
       position: relative;
-      padding: 8px 10px 10px;
+      padding: 8px 8px 10px;
       border-radius: 10px;
       border: 1px solid var(--green-border);
       background: var(--green-bg);
+      min-width: 0;
     }
     .totals-wrap .nut-wrap.optional {
       border-color: #bfdbfe;
@@ -143,7 +146,7 @@
     .totals-wrap .nut-wrap .rm-nut {
       position: absolute;
       top: 2px;
-      right: 4px;
+      right: 2px;
       border: 0;
       background: transparent;
       color: #94a3b8;
@@ -153,6 +156,20 @@
       padding: 2px 4px;
     }
     .totals-wrap .nut-wrap .rm-nut:hover { color: #dc2626; }
+
+    /* Vista celular: exactamente 3 nutrientes por fila */
+    @media (max-width: 640px) {
+      .totals-wrap {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .totals-wrap label { font-size: 10px; }
+      .totals-wrap input {
+        padding: 7px 6px;
+        font-size: 13px;
+      }
+      .totals-wrap .nut-wrap { padding: 6px 6px 8px; }
+    }
 
     .btn-row {
       display: flex;

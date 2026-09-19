@@ -531,6 +531,7 @@
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistApplyOther">' + escapeHtml(t('dist_apply_other', 'Aplicar a otro proyecto')) + '</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" id="fertiDistDeletePreset" disabled>' + escapeHtml(t('dist_delete_catalog', '🗑 Eliminar del catálogo')) + '</button>' +
           '</div>' +
+          '<p class="ferti-dist-hint" id="fertiDistCatalogStatus" role="status" aria-live="polite" hidden></p>' +
           '<p class="ferti-dist-hint">' + escapeHtml(t('dist_catalog_hint', 'El catálogo es tuyo (dashboard). Guarda etapas y %. Las dosis se recalculan en cada proyecto con su requerimiento.')) + '</p>' +
         '</div>' +
         '<div class="ferti-dist-panel">' +
@@ -596,10 +597,10 @@
     );
   }
 
-  function renderPresetSelect() {
+  function renderPresetSelect(selectId) {
     var sel = document.getElementById('fertiDistPresetSelect');
     if (!sel) return;
-    var current = sel.value;
+    var current = selectId || sel.value;
     sel.innerHTML = '<option value="">' + escapeHtml(t('dist_pick_curve', '— Elegir curva —')) + '</option>';
     presetsList.slice().sort(function (a, b) {
       return String(a.title || '').localeCompare(String(b.title || ''), 'es');
@@ -612,6 +613,48 @@
     if (presetsList.some(function (p) { return p.id === current; })) sel.value = current;
     var del = document.getElementById('fertiDistDeletePreset');
     if (del) del.disabled = !sel.value;
+    syncSaveCatalogButtonLabel();
+  }
+
+  function syncSaveCatalogButtonLabel() {
+    var saveBtn = document.getElementById('fertiDistSavePreset');
+    var sel = document.getElementById('fertiDistPresetSelect');
+    if (!saveBtn) return;
+    if (sel && sel.value) {
+      saveBtn.textContent = t('dist_update_catalog', '💾 Actualizar en catálogo');
+    } else {
+      saveBtn.textContent = t('dist_save_catalog', '💾 Guardar en catálogo');
+    }
+  }
+
+  var catalogStatusTimer = null;
+  function setCatalogStatus(message, kind) {
+    var el = document.getElementById('fertiDistCatalogStatus');
+    if (!el) return;
+    if (catalogStatusTimer) {
+      clearTimeout(catalogStatusTimer);
+      catalogStatusTimer = null;
+    }
+    if (!message) {
+      el.hidden = true;
+      el.textContent = '';
+      el.className = 'ferti-dist-hint';
+      return;
+    }
+    el.hidden = false;
+    el.textContent = message;
+    el.className = 'ferti-dist-hint ferti-dist-catalog-status ferti-dist-catalog-status--' + (kind || 'info');
+    catalogStatusTimer = setTimeout(function () {
+      el.hidden = true;
+      el.textContent = '';
+      el.className = 'ferti-dist-hint';
+      catalogStatusTimer = null;
+    }, 4500);
+  }
+
+  function notifyCatalog(message, type) {
+    setCatalogStatus(message, type === 'error' ? 'error' : type === 'warning' ? 'warn' : 'ok');
+    if (typeof w.showMessage === 'function') w.showMessage(message, type || 'success');
   }
 
   function renderTotals() {
@@ -1152,6 +1195,7 @@
         if (ev.target && ev.target.id === 'fertiDistPresetSelect') {
           var del = document.getElementById('fertiDistDeletePreset');
           if (del) del.disabled = !ev.target.value;
+          syncSaveCatalogButtonLabel();
           var id = ev.target.value;
           if (!id) return;
           var p = null;
@@ -1160,8 +1204,14 @@
           }
           if (!p || !p.state) return;
           applyPctFromState(p.state);
+          var titleInp = document.getElementById('fertiDistPresetTitle');
+          if (titleInp) {
+            titleInp.value = (p.title || curveTitle()).slice(0, 120);
+            lastAutoTitle = titleInp.value;
+          }
           scheduleSave();
           renderAll();
+          syncSaveCatalogButtonLabel();
         }
       });
       host.addEventListener('click', function (ev) {
@@ -1233,23 +1283,75 @@
 
     var saveBtn = document.getElementById('fertiDistSavePreset');
     if (saveBtn) saveBtn.addEventListener('click', function () {
+      if (saveBtn.disabled || saveBtn.dataset.busy === '1') {
+        notifyCatalog(
+          t('dist_save_wait', '⏳ Ya se guardó. Espera un momento antes de volver a pulsar.'),
+          'warning'
+        );
+        return;
+      }
       var inp = document.getElementById('fertiDistPresetTitle');
       var title = inp && inp.value ? inp.value.trim() : '';
       if (!title) title = curveTitle();
       title = title.slice(0, 120);
+      if (!title) {
+        notifyCatalog(
+          t('dist_save_need_title', '⚠️ Ponle un título a la curva antes de guardarla en el catálogo.'),
+          'warning'
+        );
+        if (inp) inp.focus();
+        return;
+      }
       var st = snapshotState();
       st.title = title;
       delete st.waterDepthByStageM3ha;
-      presetsList.push({
-        id: 'pex_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
-        title: title,
-        state: st,
-        savedAt: Date.now()
-      });
-      persistPresetsBucket();
-      renderPresetSelect();
+      var sel = document.getElementById('fertiDistPresetSelect');
+      var selectedId = sel && sel.value ? sel.value : '';
+      var existing = null;
+      if (selectedId) {
+        for (var i = 0; i < presetsList.length; i++) {
+          if (presetsList[i].id === selectedId) {
+            existing = presetsList[i];
+            break;
+          }
+        }
+      }
+      var savedId;
+      if (existing) {
+        existing.title = title;
+        existing.state = st;
+        existing.savedAt = Date.now();
+        savedId = existing.id;
+        persistPresetsBucket();
+        renderPresetSelect(savedId);
+        notifyCatalog(
+          t('dist_updated', '✅ Curva actualizada en el catálogo') + ': «' + title + '»',
+          'success'
+        );
+      } else {
+        savedId = 'pex_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+        presetsList.push({
+          id: savedId,
+          title: title,
+          state: st,
+          savedAt: Date.now()
+        });
+        persistPresetsBucket();
+        renderPresetSelect(savedId);
+        notifyCatalog(
+          t('dist_saved', '✅ Curva agregada al catálogo') + ': «' + title + '»',
+          'success'
+        );
+      }
       lastAutoTitle = '';
       fillPresetTitle();
+      saveBtn.dataset.busy = '1';
+      saveBtn.disabled = true;
+      setTimeout(function () {
+        saveBtn.dataset.busy = '';
+        saveBtn.disabled = false;
+        syncSaveCatalogButtonLabel();
+      }, 2000);
     });
 
     var delBtn = document.getElementById('fertiDistDeletePreset');
@@ -1262,7 +1364,11 @@
       if (!confirm(t('dist_confirm_del', '¿Eliminar la curva «') + titleDel + t('dist_confirm_del_2', '» del catálogo?'))) return;
       presetsList = presetsList.filter(function (p) { return p.id !== id; });
       persistPresetsBucket();
-      renderPresetSelect();
+      renderPresetSelect('');
+      notifyCatalog(
+        t('dist_deleted', '🗑 Curva eliminada del catálogo') + (titleDel ? ': «' + titleDel + '»' : ''),
+        'success'
+      );
     });
 
     var applyBtn = document.getElementById('fertiDistApplyOther');

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
   <title data-i18n="dashboard.document_title">Panel</title>
   
   <!-- ===== NUTRIPLANT PRO BRANDING ===== -->
@@ -18,7 +18,7 @@
   <script src="assets/np-lab-type-configs.js?v=20260817a"></script>
   <script src="assets/np-analysis-compare.js?v=20260817a"></script>
   <script src="assets/np-water-climate-ui.js?v=20260916wsi"></script>
-  <script src="assets/np-fertigation-ui.js?v=20260902distDrag"></script>
+  <script src="assets/np-fertigation-ui.js?v=20260919distUpd"></script>
   <script src="assets/np-fertilizer-price.js"></script>
   <script src="assets/np-granular-ui.js?v=20260816a"></script>
   <script src="assets/np-amendment-ui.js?v=20260730e"></script>
@@ -50,8 +50,8 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png?v=20260815r">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260914ishBtn" />
-  <link rel="stylesheet" href="chat.css?v=1762797600" />
+  <link rel="stylesheet" href="dashboard.css?v=20260919distSave" />
+  <link rel="stylesheet" href="chat.css?v=20260919iosZoom" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -436,7 +436,7 @@
   <script src="fertirriego-functions.js?v=20260817e"></script>
   <script src="assets/np-fertigation-dist-suggest.js?v=20260817d"></script>
   <script src="assets/np-fertigation-dist-edit.js?v=20260902a"></script>
-  <script src="fertirriego-distribucion.js?v=20260902distDrag"></script>
+  <script src="fertirriego-distribucion.js?v=20260919distUpd"></script>
   <script src="nutricion-granular-functions.js?v=20260807b"></script>
   <script src="nutricion-granular-requerimiento-functions.js?v=20260816a"></script>
   <script src="assets/hydro-solution-catalog.js"></script>
@@ -449,7 +449,7 @@
   <script src="climate-functions.js?v=20260916wsi"></script>
   <script src="analysis-report-render.js?v=20260830citricNoVol"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260902citricNote"></script>
+  <script src="dashboard.js?v=20260919safariSide"></script>
   <script src="assets/np-fertigation-program-generator.js?v=20260817h"></script>
   <script src="fertirriego-program-functions.js?v=20260817q"></script>
   <script src="ai-knowledge-expansion.js"></script>
@@ -5193,7 +5193,7 @@ CONTRATO:
       try {
         pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
       } catch (e) {}
-      var nextSrc = 'extraccion-etapa-free.html?ctx=dashboard&v=20260817c' + (pid ? '&pid=' + encodeURIComponent(pid) : '');
+      var nextSrc = 'extraccion-etapa-free.html?ctx=dashboard&v=20260919a' + (pid ? '&pid=' + encodeURIComponent(pid) : '');
       if (frame) {
         var cur = frame.getAttribute('src') || '';
         var stale = cur.indexOf('v=20260817c') === -1;
@@ -7485,7 +7485,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260817c" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard&v=20260919a" title="Distribución nutrimental por etapa" data-i18n-title="dashboard.tool_extraction_stage" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
