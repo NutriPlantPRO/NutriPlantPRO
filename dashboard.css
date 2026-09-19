@@ -136,19 +136,15 @@ body {
   }
   .site-header .auth-header-manual-link {
     margin-left: auto !important;
-    margin-right: 6px !important;
+    margin-right: 4px !important;
     flex: 0 0 auto;
   }
   .site-header .social-links {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
     gap: 2px;
     justify-content: flex-end;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow: hidden;
   }
   .site-header .social-links::-webkit-scrollbar { display: none; }
   .site-header .social-links .social-btn,
@@ -1141,9 +1137,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 .content.inicio-page {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   position: relative;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: hidden;
 }
 
 .content.inicio-page::before {
@@ -2167,18 +2160,16 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   flex-shrink: 0;
 }
 @media (max-width: 640px) {
-  .auth-header-manual-link span.auth-header-manual-link__label-long {
+  .auth-header-manual-link span.auth-header-manual-link__label-long,
+  .auth-header-manual-link span.auth-header-manual-link__label-short {
     display: none;
   }
-  .auth-header-manual-link span.auth-header-manual-link__label-short {
-    display: inline;
-  }
   .auth-header-manual-link {
-    padding: 0 10px;
-    width: auto;
+    padding: 0;
+    width: 30px;
     justify-content: center;
-    gap: 6px;
-    margin-right: 6px !important;
+    gap: 0;
+    margin-right: 4px !important;
     flex-shrink: 0;
   }
 }
@@ -2430,7 +2421,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   flex-wrap: nowrap;
 }
 
-/* Inicio: en cel/tablet mismas 2 columnas que la laptop, sin recorte ni zoom-out */
+/* Inicio responsive: en cel/tablet siguen viéndose como tarjetas (grid), no lista */
 @media (max-width: 1200px) {
   .grid-3:not(#np-projects-list) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2459,9 +2450,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   #np-project-sort,
   .np-project-sort {
     font-size: 16px !important;
-  }
-  .content.inicio-page #np-projects-list .np-project-card {
-    min-width: 0;
   }
 }
 
