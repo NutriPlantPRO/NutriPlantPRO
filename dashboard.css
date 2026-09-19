@@ -338,22 +338,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     flex-direction: column;
   }
 
-  .content.inicio-page {
-    padding: 12px 10px 16px;
-    padding-top: 60px;
-  }
-
-  .content.inicio-page .view,
-  .content.inicio-page #view {
-    padding: 10px;
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .content.inicio-page .top h1 {
-    font-size: 1.5rem;
-  }
-
   /* Reserva el espacio vertical para que el footer quede abajo sin position: fixed */
   #view {
     flex: 1 0 auto;
@@ -1159,6 +1143,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   position: relative;
   min-width: 0;
   max-width: 100%;
+  overflow-x: hidden;
 }
 
 .content.inicio-page::before {
@@ -2445,7 +2430,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   flex-wrap: nowrap;
 }
 
-/* Inicio responsive: tablet 2 columnas; iPhone 1 columna a todo el ancho */
+/* Inicio: en cel/tablet mismas 2 columnas que la laptop, sin recorte ni zoom-out */
 @media (max-width: 1200px) {
   .grid-3:not(#np-projects-list) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2469,69 +2454,31 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   }
 }
 
-/* iPhone / ventana angosta: una tarjeta por fila, sin recortes ni zoom-out de Safari */
+/* Solo el select de ordenar en Inicio: 16px evita auto-zoom de Safari al tocarlo */
 @media (max-width: 768px) {
-  .content.inicio-page #np-project-sort,
-  .content.inicio-page .np-project-sort {
+  #np-project-sort,
+  .np-project-sort {
     font-size: 16px !important;
-    width: 100%;
-    max-width: 100%;
   }
-
-  .content.inicio-page #np-projects-list,
-  .content.inicio-page #np-projects-list.grid-3 {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .content.inicio-page .view .card {
-    padding: 12px;
+  .content.inicio-page #np-projects-list .np-project-card {
     min-width: 0;
-    max-width: 100%;
   }
+}
 
-  .content.inicio-page #view .card > section > .row {
-    flex-direction: column;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
+@media (max-width: 420px) {
+  #np-projects-list {
     gap: 8px;
   }
-
-  #np-sync-wrap {
-    width: 100%;
-    min-width: 0;
+  #np-projects-list .np-project-card {
+    padding: 9px 9px 8px;
+    border-radius: 10px;
   }
-
-  .np-inicio-new-wrap #btn-new-nutriplant.btn-primary {
-    width: 100%;
-    justify-content: center;
-    min-height: 44px;
-  }
-
-  .content.inicio-page   .content.inicio-page #np-projects-list .np-project-card {
-    padding: 14px 14px 12px;
-    border-radius: 14px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-  }
-
-  .content.inicio-page #np-projects-list .np-project-card__title {
-    font-size: 16px;
-  }
-
-  .content.inicio-page #np-projects-list .np-project-card__meta {
-    font-size: 12px;
-  }
-
-  .content.inicio-page #np-projects-list .np-project-card__updated {
-    font-size: 11px;
-  }
-
-  .content.inicio-page #np-projects-list .np-project-card .btn {
+  #np-projects-list .np-project-card__title {
     font-size: 13px;
-    padding: 9px 8px;
-    min-height: 40px;
+  }
+  #np-projects-list .np-project-card .btn {
+    font-size: 10px;
+    padding: 4px 4px;
   }
 }
 
