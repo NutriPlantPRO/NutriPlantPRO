@@ -780,6 +780,8 @@ function initializeSidebar() {
 
 // Sincroniza el alto visible real del viewport móvil para evitar "huecos"
 // cuando el navegador muestra/oculta sus barras al hacer scroll.
+// IMPORTANTE (iPhone): no tocar --app-vh mientras el usuario hace pinch-zoom;
+// si no, Safari recalcula el layout y “regresa” el zoom solo (sobre todo en Inicio).
 function initMobileViewportHeightSync() {
   if (window._npViewportSyncInitialized) return;
   window._npViewportSyncInitialized = true;
@@ -787,9 +789,14 @@ function initMobileViewportHeightSync() {
   const applyViewportHeight = () => {
     if (window.innerWidth > 768 && !isCompactTouchViewport()) return;
     const vv = window.visualViewport;
+    if (vv && typeof vv.scale === 'number' && Math.abs(vv.scale - 1) > 0.02) {
+      return; // pinch en curso: no pelear con el zoom del usuario
+    }
     const height = vv && vv.height ? vv.height : window.innerHeight;
     if (!height || !Number.isFinite(height)) return;
-    document.documentElement.style.setProperty('--app-vh', height + 'px');
+    const next = height + 'px';
+    if (document.documentElement.style.getPropertyValue('--app-vh') === next) return;
+    document.documentElement.style.setProperty('--app-vh', next);
   };
 
   let rafId = null;
@@ -804,11 +811,10 @@ function initMobileViewportHeightSync() {
   applyViewportHeight();
   window.addEventListener('resize', scheduleApply, { passive: true });
   window.addEventListener('orientationchange', scheduleApply, { passive: true });
-  window.addEventListener('scroll', scheduleApply, { passive: true });
-
+  // Solo resize del visualViewport (barras del browser). NO scroll: en pinch dispara
+  // y hacía que el zoom se “regresara” solo en iPhone.
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', scheduleApply, { passive: true });
-    window.visualViewport.addEventListener('scroll', scheduleApply, { passive: true });
   }
 }
 

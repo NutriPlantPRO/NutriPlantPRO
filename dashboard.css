@@ -528,10 +528,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     align-items: stretch !important;
     width: 100% !important;
     text-align: left !important;
-    gap: 4px !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
+    gap: 20px !important;
   }
 
   .sidebar.open:not(.sidebar-minimized) .sb-chip {
@@ -545,9 +542,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     border: none !important;
     min-width: 32px !important;
     min-height: 32px !important;
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
   }
 
   .sidebar.open:not(.sidebar-minimized) .sb-chip span.text {
@@ -761,8 +755,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   margin-top: 8px;
   transition: none;
   min-height: 0;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
 }
 
 
@@ -860,7 +852,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   overflow: hidden;
 }
 
-/* Ambas tarjetas del mismo tamaño (colapsado: iconos absolutos) */
+/* Ambas tarjetas del mismo tamaño */
 .sb-card .sb-chiprow {
   height: 190px;
   min-height: 190px;
@@ -872,27 +864,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   justify-content: flex-start;
   align-items: flex-start;
   overflow: hidden;
-}
-
-/* Expandido (hover / Safari clase / móvil abierto): mostrar TODAS las pestañas */
-.sidebar:hover .sb-card,
-.sidebar.is-hover-expanded .sb-card,
-.sidebar.open:not(.sidebar-minimized) .sb-card {
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
-  flex-shrink: 0;
-}
-.sidebar:hover .sb-card .sb-chiprow,
-.sidebar.is-hover-expanded .sb-card .sb-chiprow,
-.sidebar.open:not(.sidebar-minimized) .sb-card .sb-chiprow {
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
-  gap: 4px !important;
-  align-items: stretch !important;
 }
 
 .sb-card .title {
@@ -2534,13 +2505,12 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 
 /* ===== CHIPS ABIERTOS - MISMO ORDEN ===== */
 .sidebar:hover .sb-chiprow,
-.sidebar.is-hover-expanded .sb-chiprow,
-.sidebar.open:not(.sidebar-minimized) .sb-chiprow {
+.sidebar.is-hover-expanded .sb-chiprow {
   flex-direction: column !important;
   justify-content: flex-start !important;
   align-items: stretch !important;
   width: 100% !important;
-  gap: 4px !important;
+  gap: 20px !important;
 }
 
 .sidebar:not(:hover):not(.is-hover-expanded) .sb-chip {
@@ -2558,8 +2528,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 
 /* ===== CHIPS ABIERTOS - TEXTO IZQUIERDA A DERECHA ===== */
 .sidebar:hover .sb-chip,
-.sidebar.is-hover-expanded .sb-chip,
-.sidebar.open:not(.sidebar-minimized) .sb-chip {
+.sidebar.is-hover-expanded .sb-chip {
   width: auto !important;
   height: 32px !important;
   border-radius: 16px !important;
@@ -2570,18 +2539,13 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   border: none !important;
   min-width: 32px !important;
   min-height: 32px !important;
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
 }
 
 .sidebar:hover .sb-chip span.text,
-.sidebar.is-hover-expanded .sb-chip span.text,
-.sidebar.open:not(.sidebar-minimized) .sb-chip span.text {
+.sidebar.is-hover-expanded .sb-chip span.text {
   opacity: 1 !important;
   visibility: visible !important;
   width: auto !important;
-  overflow: visible !important;
 }
 
 /* ===== TÍTULOS ESTABLES ===== */
@@ -8405,11 +8369,30 @@ html.embed-login body {
 .fertirriego-inputs select,
 .fertirriego-inputs input {
   width: 100%;
-  padding: 10px;
+  box-sizing: border-box;
+  min-height: 42px;
+  height: 42px;
+  padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
+  line-height: 1.25;
+  font-family: inherit;
+  color: inherit;
+  background-color: #fff;
+  vertical-align: middle;
   transition: border-color 0.3s ease;
+}
+
+/* Safari: el <select> queda más bajo que el input number si usa appearance nativo */
+.fertirriego-inputs select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
 }
 
 .fertirriego-inputs select:focus,
@@ -8436,11 +8419,16 @@ html.embed-login body {
   width: 0;
   min-width: 100%;
   max-width: 100%;
+  min-height: 0;
+  height: auto;
   padding: 2px 3px;
   font-size: 0.76rem;
   font-weight: 700;
   border: 1px solid #93c5fd;
   box-shadow: none;
+  -webkit-appearance: auto;
+  appearance: auto;
+  background-image: none;
 }
 
 .fertirriego-inputs .ferti-charts-water-item input:focus {
