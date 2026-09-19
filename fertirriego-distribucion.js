@@ -40,6 +40,7 @@
   var stages = DEFAULT_STAGES.slice();
   var pct = {};
   var presetsList = [];
+  var activePresetId = '';
   var persistTimer = null;
   var programPushTimer = null;
   var distProgramSync = false;
@@ -383,7 +384,8 @@
       waterDepthByStageM3ha: waterDepthByStageM3ha.slice(),
       axis: axis,
       drivesProgram: !!distDrivesProgram,
-      structureEdited: !!w._fertiDistStructureEdited
+      structureEdited: !!w._fertiDistStructureEdited,
+      activePresetId: activePresetId || ''
     };
   }
 
@@ -411,6 +413,7 @@
     distDrivesProgram = state.drivesProgram === true;
     w._fertiDistDrivesProgram = distDrivesProgram;
     if (state.structureEdited === true) w._fertiDistStructureEdited = true;
+    activePresetId = typeof state.activePresetId === 'string' ? state.activePresetId : '';
     normalizePhenologyNames();
     var savedWater = Array.isArray(state.waterDepthByStageM3ha)
       ? state.waterDepthByStageM3ha
@@ -1117,7 +1120,7 @@
     if (title) title.textContent = '📊 ' + curveTitle();
     fillPresetTitle();
     syncAxisUi();
-    renderPresetSelect();
+    renderPresetSelect(activePresetId);
     renderTotals();
     try { renderPct(); } catch (ePct) {}
     try { renderWaterByStage(); } catch (eWater) {}
@@ -1197,13 +1200,19 @@
           if (del) del.disabled = !ev.target.value;
           syncSaveCatalogButtonLabel();
           var id = ev.target.value;
-          if (!id) return;
+          activePresetId = id || '';
+          if (!id) {
+            scheduleSave();
+            return;
+          }
           var p = null;
           for (var i = 0; i < presetsList.length; i++) {
             if (presetsList[i].id === id) { p = presetsList[i]; break; }
           }
           if (!p || !p.state) return;
           applyPctFromState(p.state);
+          activePresetId = id;
+          markDistDrivesProgram();
           var titleInp = document.getElementById('fertiDistPresetTitle');
           if (titleInp) {
             titleInp.value = (p.title || curveTitle()).slice(0, 120);
@@ -1322,6 +1331,7 @@
         existing.state = st;
         existing.savedAt = Date.now();
         savedId = existing.id;
+        activePresetId = savedId;
         persistPresetsBucket();
         renderPresetSelect(savedId);
         notifyCatalog(
@@ -1336,6 +1346,7 @@
           state: st,
           savedAt: Date.now()
         });
+        activePresetId = savedId;
         persistPresetsBucket();
         renderPresetSelect(savedId);
         notifyCatalog(
@@ -1345,6 +1356,8 @@
       }
       lastAutoTitle = '';
       fillPresetTitle();
+      markDistDrivesProgram();
+      scheduleSave();
       saveBtn.dataset.busy = '1';
       saveBtn.disabled = true;
       setTimeout(function () {
@@ -1363,8 +1376,10 @@
       presetsList.forEach(function (p) { if (p.id === id) titleDel = p.title; });
       if (!confirm(t('dist_confirm_del', '¿Eliminar la curva «') + titleDel + t('dist_confirm_del_2', '» del catálogo?'))) return;
       presetsList = presetsList.filter(function (p) { return p.id !== id; });
+      if (activePresetId === id) activePresetId = '';
       persistPresetsBucket();
       renderPresetSelect('');
+      scheduleSave();
       notifyCatalog(
         t('dist_deleted', '🗑 Curva eliminada del catálogo') + (titleDel ? ': «' + titleDel + '»' : ''),
         'success'
@@ -1916,6 +1931,7 @@
       stages = DEFAULT_STAGES.slice();
       axis = 'semana';
       pct = {};
+      activePresetId = '';
       distDrivesProgram = false;
       w._fertiDistDrivesProgram = false;
       distChartSelected = { macro: null, micro: null };
@@ -1964,11 +1980,15 @@
         try { w.setFertiTimeUnit(axis, { fromDistribution: true }); } catch (e5) {}
       }
       if (migratedWater) saveProjectCurve();
-      try {
-        if (typeof w.fertiAdoptDistributionFromProgram === 'function') {
-          w.fertiAdoptDistributionFromProgram({ auto: true });
-        }
-      } catch (e6) {}
+      // Si ya hay curva del proyecto, no pisarla con la del programa al recargar/otro equipo
+      var hasSavedCurve = !!(saved && Array.isArray(saved.stages) && saved.stages.length);
+      if (!hasSavedCurve) {
+        try {
+          if (typeof w.fertiAdoptDistributionFromProgram === 'function') {
+            w.fertiAdoptDistributionFromProgram({ auto: true });
+          }
+        } catch (e6) {}
+      }
       return;
     }
     renderAll();

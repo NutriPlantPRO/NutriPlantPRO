@@ -94,15 +94,24 @@
     table.ish-table th.ish-th-de { font-size: 11px; }
     .ish-th-sub { display: block; font-size: 10px; font-weight: 600; color: #64748b; margin-top: 2px; line-height: 1.2; }
     .ish-th-units { font-size: 10px; font-weight: 600; color: #15803d; margin-top: 2px; }
-    .ish-riego-cell { text-align: center; min-width: 0; }
+    /* Columna Riego completa (mismo verde del título) + separación de columnas vecinas */
+    .ish-riego-cell {
+      text-align: center;
+      min-width: 0;
+      background: #ecfdf5;
+      border-left: 2px solid #86efac;
+      border-right: 2px solid #86efac;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
     .ish-riego-row {
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 0 2px;
+      gap: 10px;
+      padding: 2px 4px;
       white-space: nowrap;
     }
     .ish-riego-pair {
@@ -112,8 +121,31 @@
       gap: 4px;
       white-space: nowrap;
     }
-    .ish-riego-pair input { width: 56px; max-width: 56px; min-width: 48px; }
-    .ish-riego-pair span { font-size: 10px; color: #64748b; font-weight: 700; white-space: nowrap; }
+    .ish-riego-pair input {
+      width: 56px;
+      max-width: 56px;
+      min-width: 48px;
+      border-color: #86efac;
+      background: #fff;
+    }
+    .ish-riego-pair span { font-size: 10px; color: #166534; font-weight: 700; white-space: nowrap; }
+    @media (max-width: 640px) {
+      table.ish-table col.ish-c-riego { width: 34%; }
+      .ish-riego-cell {
+        padding-left: 10px;
+        padding-right: 10px;
+        border-left-width: 3px;
+        border-right-width: 3px;
+      }
+      .ish-riego-row { gap: 12px; padding: 4px 6px; }
+      .ish-riego-pair { gap: 5px; }
+      .ish-riego-pair input {
+        width: 52px;
+        max-width: 52px;
+        min-width: 44px;
+        padding: 5px 4px;
+      }
+    }
     .ish-eff-card {
       margin: 0 0 10px; padding: 12px 14px;
       background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;
