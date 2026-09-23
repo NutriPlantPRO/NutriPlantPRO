@@ -1172,7 +1172,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   max-width: 100%;
   margin: 0 auto 0 0;
   line-height: 1.2;
-  color: #1e3a8a;
+  color: var(--brand-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
