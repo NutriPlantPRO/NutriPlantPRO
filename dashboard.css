@@ -1167,11 +1167,15 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 .top h1 {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
-  margin: 0;
+  margin: 0 auto 0 0;
   line-height: 1.2;
+  color: #1e3a8a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Herramientas: dos renglones bajo el título, alineados a la derecha */
@@ -1199,6 +1203,18 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   padding-bottom: 2px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+}
+.header-buttons-row--utils {
+  align-items: center;
+  overflow: visible;
+}
+.header-buttons-utils {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 .header-buttons-row::-webkit-scrollbar {
   height: 6px;
@@ -1404,6 +1420,7 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   font-weight: 700;
   font-size: 2rem;
   position: relative;
+  overflow: visible;
 }
 
 .content.inicio-page .top h1::after {

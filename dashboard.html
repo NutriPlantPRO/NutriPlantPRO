@@ -51,7 +51,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png?v=20260815r">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260923userIcon" />
+  <link rel="stylesheet" href="dashboard.css?v=20260923titleRow" />
   <link rel="stylesheet" href="chat.css?v=20260919toolsRestore" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -225,9 +225,10 @@
     <!-- Contenido principal -->
     <main class="content">
       <header class="top">
-        <h1 id="sectionTitle" data-np-section="Inicio">Inicio</h1>
         <div class="header-buttons">
           <div class="header-buttons-row header-buttons-row--utils">
+          <h1 id="sectionTitle" data-np-section="Inicio">Inicio</h1>
+          <div class="header-buttons-utils">
           <button type="button" id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showConversionCalculator()" data-np-tooltip="Conversor Óxido ↔ Elemental" data-i18n-title="dashboard.tool_oxide" data-i18n-aria-label="dashboard.tool_oxide" aria-label="Conversor Óxido ↔ Elemental">🧮</button>
           <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Conversor de unidades (ppm/mmol/meq)" data-i18n-title="dashboard.tool_units" data-i18n-aria-label="dashboard.tool_units" aria-label="Conversor de unidades (ppm/mmol/meq)">🧪</button>
           <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Conversor de magnitudes físicas" data-i18n-title="dashboard.tool_measure_units" data-i18n-aria-label="dashboard.tool_measure_units" aria-label="Conversor de magnitudes físicas">📐</button>
@@ -248,6 +249,7 @@
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </button>
+          </div>
           </div>
           <div class="header-buttons-row header-buttons-row--tools">
           <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" data-i18n-title="dashboard.tool_hydro" data-i18n-aria-label="dashboard.tool_hydro" aria-label="Diseño de solución nutritiva">💧</button>
