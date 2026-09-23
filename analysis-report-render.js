@@ -198,8 +198,12 @@
         var isSolucionType = !isSoilType && !isAguaType && !isExtractoType;
         var isFoliarType = !isSoilType && !isAguaType && !!obj.macros && !!obj.micros && !obj.calidad && !obj.calcio;
         var isFrutaType = !isSoilType && !isAguaType && !!obj.macros && !!obj.micros && !!obj.calidad && !!obj.calcio;
-        var FOLIAR_OPTIMAL_MACRO = { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 };
-        var FOLIAR_OPTIMAL_MICRO = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 };
+        var FOLIAR_OPTIMAL_MACRO = (typeof window !== 'undefined' && window.NpFoliarRatios && window.NpFoliarRatios.DEFAULT_MACRO)
+            ? window.NpFoliarRatios.DEFAULT_MACRO
+            : { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 };
+        var FOLIAR_OPTIMAL_MICRO = (typeof window !== 'undefined' && window.NpFoliarRatios && window.NpFoliarRatios.DEFAULT_MICRO)
+            ? window.NpFoliarRatios.DEFAULT_MICRO
+            : { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 };
         var FRUTA_OPTIMAL_MACRO = { N: 1.80, P: 0.25, K: 1.50, Ca: 0.25, Mg: 0.20, S: 0.18 };
         var FRUTA_OPTIMAL_MICRO = { Fe: 80, Mn: 40, Zn: 35, Cu: 10, B: 50, Mo: 0.5 };
         var FRUTA_OPTIMAL_CALIDAD = { materiaSeca: 15, brix: 12, firmeza: 5, acidezTitulable: 0.5 };
@@ -253,6 +257,26 @@
             return { icon: icon, status: status };
         }
 
+        function buildFoliarRatioTable(isEn) {
+            var api = global.NpFoliarRatios || (typeof globalThis !== 'undefined' ? globalThis.NpFoliarRatios : null);
+            if (!api || typeof api.evaluateAnalysis !== 'function') return '';
+            var ratioRows = api.evaluateAnalysis(obj).map(function (r) {
+                var st = foliarDOPIconStatus(isFinite(r.dop) ? r.dop : null);
+                var actual = isFinite(r.actual) ? api.formatRatio(r.actual) : '—';
+                var ideal = isFinite(r.ideal) ? api.formatRatio(r.ideal) : '—';
+                var dDisp = isFinite(r.dop) ? (st.icon + ' ' + (r.dop >= 0 ? '+' : '') + formatNum(r.dop, 1) + '%') : '—';
+                return '<tr><td class="col-concept">' + escapeHtml(r.label) + '</td><td>' + escapeHtml(actual) + '</td><td>' + escapeHtml(ideal) + '</td><td>' + escapeHtml(dDisp) + '</td><td>' + escapeHtml(st.status) + '</td></tr>';
+            }).join('');
+            var title = isEn ? 'Nutrient ratios' : 'Relaciones nutrimentales';
+            var hRel = isEn ? 'Ratio' : 'Relación';
+            var hAct = isEn ? 'Actual' : 'Real';
+            var hIdeal = isEn ? 'Ideal' : 'Ideal';
+            var hDev = isEn ? 'Deviation' : 'Desviación';
+            var hSt = isEn ? 'Status' : 'Estado';
+            return '<div class="admin-analysis-group"><div class="admin-analysis-group-title">' + title + '</div>' +
+                '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + hRel + '</th><th>' + hAct + '</th><th>' + hIdeal + '</th><th>' + hDev + '</th><th>' + hSt + '</th></tr></thead><tbody>' + ratioRows + '</tbody></table></div>';
+        }
+
         function buildFoliarReadOnly() {
             function row(n, value, optimal, isMacro) {
                 var v = parseFloat(String(value == null ? '' : value).replace(',', '.'));
@@ -286,6 +310,7 @@
                 out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (%)</th><th>Optimum (%)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrients (ppm)</div>';
                 out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Element</th><th>Result (ppm)</th><th>Optimum (ppm)</th><th>DOP</th><th>Status</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += buildFoliarRatioTable(true);
                 out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Visual rule:</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
             } else {
                 out += '<p class="admin-analysis-legend"><strong>DOP</strong> = ((Valor − Óptimo) / Óptimo) × 100.</p>';
@@ -293,6 +318,7 @@
                 out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (%)</th><th>Óptimo (%)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + macroRows + '</tbody></table></div>';
                 out += '<div class="admin-analysis-group"><div class="admin-analysis-group-title">Micronutrientes (ppm)</div>';
                 out += '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th><th>Resultado (ppm)</th><th>Óptimo (ppm)</th><th>DOP</th><th>Estado</th></tr></thead><tbody>' + microRows + '</tbody></table></div>';
+                out += buildFoliarRatioTable(false);
                 out += '<div class="admin-analysis-group" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><strong>Regla visual (fija):</strong> 🟢 |DOP| ≤ 10% &nbsp;|&nbsp; 🔶 10–25% &nbsp;|&nbsp; 🟠 25–50% &nbsp;|&nbsp; 🔴 &gt;50%</div>';
             }
             out += '</div>';

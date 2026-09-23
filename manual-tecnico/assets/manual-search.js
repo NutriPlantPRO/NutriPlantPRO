@@ -80,7 +80,7 @@
       icon: '🔬',
       pillar: 'C · Análisis',
       title: 'Análisis foliar: DOP frente al óptimo',
-      keywords: 'foliar hoja DOP desviación óptimo mg/kg tejido diagnóstico nutriente'
+      keywords: 'foliar hoja DOP desviación óptimo mg/kg tejido diagnóstico nutriente relaciones Ca/K P/Zn K/Mg Ca/B N/K Fe/Mn'
     },
     {
       href: 'capitulos/analisis-fruta-icc.html',

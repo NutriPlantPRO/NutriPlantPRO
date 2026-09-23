@@ -69,8 +69,9 @@ module.exports = {
       id: 'foliar',
       label: 'Análisis foliar',
       storageKey: 'foliarAnalyses',
-      sections: ['Macros %', 'Micros ppm', 'Óptimo editable', 'DOP %'],
-      criteria: 'DOP=(valor−óptimo)/óptimo×100; semáforo en app. Óptimos default por nutriente.'
+      sections: ['Macros %', 'Micros ppm', 'Óptimo editable', 'DOP %', 'Relaciones nutrimentales'],
+      criteria:
+        'DOP=(valor−óptimo)/óptimo×100. Relaciones (N/K, Ca/K, P/Zn, etc.): real=resultados, ideal=óptimos del mismo reporte; P/Zn y Ca/B pasan macro % a ppm (×10000). Misma desviación/semáforo que DOP. Óptimos default por nutriente.'
     },
     {
       id: 'fruta',

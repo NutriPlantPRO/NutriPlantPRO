@@ -1310,7 +1310,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Análisis de Agua — RAS / SAR (obligatorio si preguntan la fórmula): En NutriPlant el campo RAS es un valor que el usuario ingresa a mano; la plataforma NO lo calcula automáticamente desde Na/Ca/Mg. La fórmula estándar de riego (RAS = SAR, Sodium Adsorption Ratio) con cationes en meq/L es: RAS = Na⁺ / √((Ca²⁺ + Mg²⁺)/2). Usar siempre Na, Ca y Mg en las mismas unidades (meq/L), que es como están en la tabla de cationes del análisis. No inventar otra fórmula. Interpretación orientativa (literatura general, depende de suelo y cultivo): RAS &lt; 3 suele considerarse bajo riesgo de sodio; 3–6 moderado; &gt;6–8 riesgo alto — son guías, no reglas fijas.
 - Análisis de Agua — Aporte del agua (lógica que el chat debe entender): Los valores del agua se ingresan en meq/L y ppm (conversión automática). El campo de volumen de referencia: Fertirriego = lámina total del ciclo (m³/ha); Hidroponía = m³ de solución o agua a inyectar. Las tablas kg del reporte usan ese volumen (kg = ppm × m³ / 1000). En Fertirriego → Programa, al traer el análisis, los kg/ha usan la suma de láminas por etapa si ya están capturadas (si no, el volumen del análisis). Cationes Ca, Mg, Na, K → kg elemento y kg CaO, MgO, K₂O, Na₂O según factores de conversión (ej. Ca→CaO ×1.399, Mg→MgO ×1.658, K→K₂O ×1.205); aniones SO4→kg S, PO4→kg P, NO3→kg N (en forma elemental); micronutrientes B, Fe, Mn, Cu, Zn (ppm) → kg elemento = ppm × m³ / 1000. Así el usuario ve cuánto aporta el agua en macro y micro en modo elemental u óxido como en el resto de la plataforma.
 - Análisis de Agua — Ácido para neutralizar (lógica que el chat debe entender): (1) Residual objetivo (meq/L): "colchón" de alcalinidad; defecto 1 meq/L. (2) Meq/L ácido = (HCO₃⁻ + CO₃²⁻) − residual; si ≤ 0, no hace falta ácido. (3) Ácidos: Nítrico 55% (11.6 meq/mL, aporta N-NO₃, **líquido → UI mL/m³ y L**), Sulfúrico 98% (36.7), Fosfórico 75%/85% (12.0/14.6), **Cítrico Anhidro 99.5%** (25.9 meq/mL; **polvo soluble**; solo acidifica, sin N/P/K; **UI primaria g/m³ o kg** métrico / **oz o lb** US; mL/L solo *equiv. vol.*; densidad ~1.665 kg/L para esa equivalencia). Misma regla en herramienta gratis 💦 acondicionamiento, admin y PDF. (4) Cálculo interno: meq/m³ = meq/L×1000; mL/m³ = meq/m³÷meqPerMl; L = mL/m³×m³/1000; kg polvo = L×densidad. (5) Hidroponía «Traer de análisis»: misma dosis; cítrico en fila de producto en **kg** (tanque C).
-- Análisis Foliar (DOP): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: título, fecha, Eliminar. El chat ve los valores que el usuario ingresa: resultado del laboratorio (macros en % MS: N, P, K, Ca, Mg, S; micros en ppm: Fe, Mn, Zn, Cu, B, Mo), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el DOP % resultante.
+- Análisis Foliar (DOP): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: título, fecha, Eliminar. El chat ve los valores que el usuario ingresa: resultado del laboratorio (macros en % MS: N, P, K, Ca, Mg, S; micros en ppm: Fe, Mn, Zn, Cu, B, Mo), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el DOP % resultante. Debajo del DOP hay Relaciones nutrimentales (N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B): real = resultados, ideal = óptimos del mismo análisis (si editan un óptimo, la ideal se recalcula). En P/Zn y Ca/B el macro (% MS) se pasa a ppm (×10 000). Desviación = ((real − ideal) / ideal) × 100; misma regla visual que DOP. No hay ideales de relación aparte: salen de los óptimos.
 - DOP (Diagnosis and Recommendation Integrated System): DOP = ((Valor − Óptimo) / Óptimo) × 100. Indica en porcentaje cuánto se desvía el resultado del óptimo: negativo = por debajo del óptimo (déficit), positivo = por encima (exceso). Sirve para evaluar niveles nutrimentales en el cultivo y apoyar la toma de decisiones (correcciones, ajustes al programa de fertilización, priorización de nutrientes a reforzar o reducir). Regla de interpretación en NutriPlant: 🟢 |DOP| ≤ 10% óptimo; 🔶 10–25% atención; 🟠 25–50% deficiencia o exceso marcado; 🔴 &gt;50% muy bajo o muy alto. Si el usuario ha editado los óptimos en un análisis, el chat puede notarlo (en contexto aparecen "opt" y el DOP calculado con ese óptimo) y aportar criterio técnico cuando consulte (por ejemplo explicar el significado del DOP, sugerir ajustes o cruzar con suelo/programa).
 - Análisis de Fruta (ICC): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte el chat ve los valores que el usuario ingresa (resultado de laboratorio), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el ICC % resultante. Secciones: (1) Macronutrientes en fruta (%): N, P, K, Ca, Mg, S — Resultado, Óptimo editable, ICC y Estado; (2) Micronutrientes (ppm): Fe, Mn, Zn, Cu, B, Mo — Resultado, Óptimo editable, ICC y Estado; (3) Calidad de fruta: Materia Seca (%), °Brix, Firmeza (kg/cm²), Acidez titulable (%) — Resultado, Óptimo editable, ICC y Estado; (4) Calcio en fruta (mg/100 g MF): Ca total, % Ca soluble, % Ca ligado, % Ca insoluble — Resultado, Óptimo editable, Estado (semáforo). Regla visual: 🟢 |ICC| ≤ 10% | 🟡 10–25% | 🟠 25–50% | 🔴 &gt;50%. Si el usuario modifica un valor óptimo, el chat puede notarlo (en contexto aparecen "opt" e ICC con ese óptimo) y dar criterio técnico.
 - **Comparar análisis (tabla y gráficas):** en cada subpestaña de Análisis, si hay varios reportes, aparece el bloque «Comparar análisis (tabla y gráficas)» / «Compare analyses (table and charts)». Cada columna = un análisis (se activa/desactiva). Tablas por bloque de parámetros; gráficas solo donde aplica (ej. suelo: macros, micros, % CIC; pH/físicos suelen ser solo tabla). El mismo bloque se incluye en **Reportes PDF** (tablas + imágenes de gráficas). El chat debe saber que el usuario puede comparar histórico en pantalla y en PDF; al interpretar, alinear reportes por fecha/título sin inventar valores.
@@ -2751,7 +2751,7 @@ ESTILO DE RESPUESTA:
   }
 
   getLiveFoliarBlocks() {
-    const out = { visible: false, reportTitles: [], currentId: '', currentTitle: '', currentDate: '', macrosSummary: null, microsSummary: null };
+    const out = { visible: false, reportTitles: [], currentId: '', currentTitle: '', currentDate: '', macrosSummary: null, microsSummary: null, ratiosSummary: null };
     const container = document.getElementById('foliar-tab-container');
     if (!container) return out;
     out.visible = true;
@@ -2784,6 +2784,19 @@ ESTILO DE RESPUESTA:
         out.microsSummary = {};
         if (feEl && feEl.value !== '') out.microsSummary.Fe = feEl.value;
         if (bEl && bEl.value !== '') out.microsSummary.B = bEl.value;
+      }
+      if (window.NpFoliarRatios && Array.isArray(window.NpFoliarRatios.RATIOS)) {
+        const ratioParts = [];
+        window.NpFoliarRatios.RATIOS.forEach((def) => {
+          const actEl = document.getElementById('f-ratio-actual-' + def.id);
+          const ideEl = document.getElementById('f-ratio-ideal-' + def.id);
+          const dopEl = document.getElementById('f-ratio-dop-' + def.id);
+          const actual = actEl && actEl.textContent && actEl.textContent !== '—' ? actEl.textContent.trim() : '';
+          const ideal = ideEl && ideEl.textContent && ideEl.textContent !== '—' ? ideEl.textContent.trim() : '';
+          const dop = dopEl && dopEl.textContent && dopEl.textContent !== '—' ? dopEl.textContent.trim() : '';
+          if (actual || ideal) ratioParts.push({ label: def.label, actual, ideal, dop });
+        });
+        if (ratioParts.length) out.ratiosSummary = ratioParts;
       }
     }
     return out;
@@ -3475,8 +3488,18 @@ ESTILO DE RESPUESTA:
                 if (u.B != null) parts.push(`B ${u.B}`);
                 if (parts.length) context += `Micros (ppm): ${parts.join(', ')}. `;
               }
+              if (liveFoliar.ratiosSummary && liveFoliar.ratiosSummary.length) {
+                const rtxt = liveFoliar.ratiosSummary.map((r) => {
+                  let s = r.label;
+                  if (r.actual) s += ` real:${r.actual}`;
+                  if (r.ideal) s += ` ideal:${r.ideal}`;
+                  if (r.dop) s += ` ${r.dop}`;
+                  return s;
+                }).join('; ');
+                context += `Relaciones nutrimentales (real vs ideal): ${rtxt}. `;
+              }
             }
-            context += 'Cada reporte tiene Macronutrientes (% MS) y Micronutrimentos (ppm) con Resultado, Óptimo editable, DOP y Estado (regla 🟢🔶🟠🔴).\n';
+            context += 'Cada reporte tiene Macronutrientes (% MS), Micronutrientes (ppm) y Relaciones nutrimentales (real, ideal, desviación; mismo semáforo 🟢🔶🟠🔴 que DOP). No hay ideales de relación aparte: salen de los óptimos.\n';
           }
         }
         const liveFruta = this.getLiveFrutaBlocks();
@@ -3590,6 +3613,15 @@ ESTILO DE RESPUESTA:
           const v = mic[n]; const o = optMicro[n] != null && optMicro[n] !== '' ? optMicro[n] : defMicro[n];
           if (v != null && v !== '') { const d = dop(v, o); parts.push(`${n}:${v}${o != null ? ` opt:${o}` : ''}${d != null ? ` DOP:${d >= 0 ? '+' : ''}${d.toFixed(1)}%` : ''}`); }
         });
+        if (typeof window !== 'undefined' && window.NpFoliarRatios && typeof window.NpFoliarRatios.evaluateAnalysis === 'function') {
+          const ratioParts = [];
+          window.NpFoliarRatios.evaluateAnalysis(a).forEach((r) => {
+            if (!isFinite(r.actual) || !isFinite(r.ideal)) return;
+            const fmt = window.NpFoliarRatios.formatRatio;
+            ratioParts.push(`${r.label} real:${fmt(r.actual)} ideal:${fmt(r.ideal)}${isFinite(r.dop) ? ` DOP:${r.dop >= 0 ? '+' : ''}${r.dop.toFixed(1)}%` : ''}`);
+          });
+          if (ratioParts.length) parts.push('relaciones: ' + ratioParts.join(', '));
+        }
         const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
         return t + (parts.length ? ' — ' + parts.join('; ') : '');
       };

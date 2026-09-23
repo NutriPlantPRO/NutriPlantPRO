@@ -73,10 +73,20 @@
     .field label {
       display: block; font-weight: 600; font-size: 12px; color: #334155; margin-bottom: 6px;
     }
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px 16px;
+    }
     .field input[type="number"], .field input[type="text"] {
       width: 100%; max-width: 220px;
       border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 10px; font-size: 14px;
       background: #fff;
+    }
+    @media (min-width: 620px) {
+      .fields-grid { grid-template-columns: 1fr 1fr; }
+      .field input[type="number"], .field input[type="text"] { max-width: none; }
+      .field--wide { grid-column: 1 / -1; }
     }
     .field input:focus {
       outline: none; border-color: #14b8a6;
@@ -152,15 +162,16 @@
     }
     html.embed-dashboard body {
       padding: 10px 14px 16px;
-      min-height: 0;
+      min-height: 100%;
       height: auto;
     }
     html.embed-dashboard {
-      height: auto;
+      height: 100%;
     }
     html.embed-dashboard .wrap {
       max-width: none;
       width: 100%;
+      min-height: 100%;
     }
     html.embed-dashboard .card-intro {
       display: none;
@@ -177,10 +188,10 @@
       line-height: 1.45;
     }
     .embed-lead { display: none; }
-    @media (min-width: 900px) {
+    @media (min-width: 720px) {
       html.embed-dashboard .tool-main-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
         gap: 16px;
         align-items: start;
       }
@@ -195,10 +206,13 @@
       }
       html.embed-dashboard .field input[type="number"],
       html.embed-dashboard .field input[type="text"] {
-        max-width: 280px;
+        max-width: none;
       }
       html.embed-dashboard .results-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+      }
+      html.embed-dashboard .result-tile--highlight {
+        grid-column: 1 / -1;
       }
     }
     @media (min-width: 1200px) {
@@ -235,6 +249,7 @@
       <div class="section-body">
         <p class="section-note">Introduce porcentajes como números (ej. 2 para 2 %). Valores por defecto orientativos.</p>
 
+        <div class="fields-grid">
         <div class="field">
           <label for="inMO">Materia orgánica del suelo</label>
           <div class="field-inline">
@@ -267,6 +282,7 @@
             <span class="unit">%</span>
           </div>
           <p class="section-note" style="margin-top:6px;">Sugerido por defecto en NutriPlant: <strong>70 %</strong>. Para frutales/aguacate suele usarse con frecuencia <strong>50–70 %</strong> según sistema.</p>
+        </div>
         </div>
 
         <details class="advanced">
@@ -378,7 +394,7 @@
   </div>
 
   <script>
-    if (/[?&]embed=dashboard(?:&|$)/.test(location.search || '')) {
+    if (/[?&]embed=(?:login|dashboard)(?:&|$)/.test(location.search || '')) {
       document.documentElement.classList.add('embed-dashboard');
     }
     function parseNum(el, fallback) {

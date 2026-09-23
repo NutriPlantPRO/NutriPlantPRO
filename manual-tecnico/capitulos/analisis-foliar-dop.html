@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Análisis foliar: DOP frente al óptimo — Manual NutriPlant PRO</title>
-  <meta name="description" content="Análisis foliar en NutriPlant: nivel de laboratorio, óptimo de referencia y desviación porcentual (DOP).">
+  <meta name="description" content="Análisis foliar en NutriPlant: DOP frente al óptimo y relaciones nutrimentales (real vs ideal) de Ca/K, P/Zn y los pares principales.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Análisis foliar: DOP frente al óptimo",
-  "description": "Análisis foliar en NutriPlant: nivel de laboratorio, óptimo de referencia y desviación porcentual (DOP).",
+  "description": "Análisis foliar en NutriPlant: DOP frente al óptimo y relaciones nutrimentales (real vs ideal).",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-21",
+  "dateModified": "2026-09-23",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -58,31 +58,93 @@
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
     
     <div data-mt-lang="es">
-<span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-09</span>
     <h1>Análisis foliar: DOP frente al óptimo</h1>
     <h2>Resumen</h2>
-    <p>En <strong>Análisis → Análisis Foliar</strong>, cada nutriente se compara con un <strong>óptimo de referencia</strong> (mg/kg o % según laboratorio). La <strong>DOP</strong> (desviación porcentual del óptimo) indica si el tejido está por encima o debajo del rango objetivo.</p>
-    <h2>Cálculo</h2>
+    <p>En <strong>Análisis → Análisis Foliar</strong>, cada nutriente se compara con un <strong>óptimo de referencia</strong> (mg/kg o % según laboratorio). La <strong>DOP</strong> (desviación porcentual del óptimo) indica si el tejido está por encima o debajo del rango objetivo. Debajo, las <strong>relaciones nutrimentales</strong> (Ca/K, P/Zn y las principales) salen de los mismos resultados e ideales: no hay que capturar un ideal de relación aparte.</p>
+    <h2>Cálculo DOP</h2>
     <div class="mt-formula">DOP (%) = ((Nivel − Óptimo) / Óptimo) × 100</div>
     <p>Positivo: por encima del óptimo. Negativo: por debajo.</p>
+    <h2>Relaciones nutrimentales</h2>
+    <p>La relación <strong>real</strong> usa los resultados; la <strong>ideal</strong> usa los óptimos del mismo análisis. Si el técnico edita un óptimo, la ideal se recalcula. La desviación de la relación usa la misma fórmula y el mismo semáforo que la DOP.</p>
+    <div class="mt-formula">Relación = A / B &nbsp;·&nbsp; Desviación (%) = ((real − ideal) / ideal) × 100</div>
+    <p>En <strong>P/Zn</strong> y <strong>Ca/B</strong> el macro (% MS) se pasa a ppm (× 10 000) para comparar en la misma unidad.</p>
+    <table class="mt-table">
+      <thead><tr><th>Relación</th><th>Lectura agronómica</th></tr></thead>
+      <tbody>
+        <tr><td>N / K</td><td>Vigor vs llenado</td></tr>
+        <tr><td>N / P</td><td>Proteína vs energía</td></tr>
+        <tr><td>N / S</td><td>Proteína</td></tr>
+        <tr><td>Ca / K</td><td>Calcio vs potasio</td></tr>
+        <tr><td>K / Mg</td><td>Antagonismo clásico</td></tr>
+        <tr><td>Ca / Mg</td><td>Balance catiónico</td></tr>
+        <tr><td>K / (Ca + Mg)</td><td>Equilibrio de cationes / calidad</td></tr>
+        <tr><td>P / Zn</td><td>Antagonismo P–Zn (P en ppm)</td></tr>
+        <tr><td>Fe / Mn</td><td>Antagonismo de micros</td></tr>
+        <tr><td>Ca / B</td><td>Pared celular / calidad (Ca en ppm)</td></tr>
+      </tbody>
+    </table>
+    <p>Las mismas relaciones aparecen en la pestaña, en admin y en el PDF (detalle y tabla comparativa). No se grafican juntas: las escalas no son comparables (Ca/K ~0,5 frente a Ca/B ~200).</p>
+    <h2>Semáforo NutriPlant</h2>
+    <table class="mt-table">
+      <thead><tr><th>|DOP| o |desviación de relación|</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>≤ 10 %</td><td>Verde — óptimo</td></tr>
+        <tr><td>10 – 25 %</td><td>Ámbar — atención</td></tr>
+        <tr><td>25 – 50 %</td><td>Naranja — desviación marcada</td></tr>
+        <tr><td>&gt; 50 %</td><td>Rojo — muy bajo o muy alto</td></tr>
+      </tbody>
+    </table>
     <h2>Uso agronómico</h2>
     <ul>
       <li>Cruzar con suelo y programa: foliar bajo en K + suelo bajo en K → reforzar K.</li>
+      <li>La DOP mira cada elemento solo; la relación mira el balance (ej. Ca bajo y K alto → Ca/K aún más desbalanceado).</li>
       <li>Foliar es diagnóstico del estado del cultivo en el momento del muestreo, no recomendación automática de dosis.</li>
       <li>El técnico define si ajusta fertirriego, foliar o suelo.</li>
     </ul>
     </div>
     <div data-mt-lang="en" hidden>
-<span class="mt-badge">NutriPlant PRO methodology · 2026-05</span>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-09</span>
     <h1>Foliar analysis: DOP versus the optimum</h1>
     <h2>Summary</h2>
-    <p>In <strong>Analysis → Foliar Analysis</strong>, each nutrient is compared with a <strong>reference optimum</strong> (mg/kg or % depending on the laboratory). The <strong>DOP</strong> (deviation from optimum percentage) indicates whether the tissue is above or below the target range.</p>
-    <h2>Calculation</h2>
+    <p>In <strong>Analysis → Foliar Analysis</strong>, each nutrient is compared with a <strong>reference optimum</strong> (mg/kg or % depending on the laboratory). The <strong>DOP</strong> (deviation from optimum percentage) indicates whether the tissue is above or below the target range. Below that, <strong>nutrient ratios</strong> (Ca/K, P/Zn and the main ones) come from the same results and optima: there is no separate ideal-ratio field to type in.</p>
+    <h2>DOP calculation</h2>
     <div class="mt-formula">DOP (%) = ((Level − Optimum) / Optimum) × 100</div>
     <p>Positive: above the optimum. Negative: below.</p>
+    <h2>Nutrient ratios</h2>
+    <p>The <strong>actual</strong> ratio uses lab results; the <strong>ideal</strong> ratio uses the optima of the same report. If the technician edits an optimum, the ideal updates. Ratio deviation uses the same formula and the same traffic light as DOP.</p>
+    <div class="mt-formula">Ratio = A / B &nbsp;·&nbsp; Deviation (%) = ((actual − ideal) / ideal) × 100</div>
+    <p>For <strong>P/Zn</strong> and <strong>Ca/B</strong> the macro (% DM) is converted to ppm (× 10,000) so both sides share one unit.</p>
+    <table class="mt-table">
+      <thead><tr><th>Ratio</th><th>Agronomic reading</th></tr></thead>
+      <tbody>
+        <tr><td>N / K</td><td>Vigor vs fruit fill</td></tr>
+        <tr><td>N / P</td><td>Protein vs energy</td></tr>
+        <tr><td>N / S</td><td>Protein</td></tr>
+        <tr><td>Ca / K</td><td>Calcium vs potassium</td></tr>
+        <tr><td>K / Mg</td><td>Classic antagonism</td></tr>
+        <tr><td>Ca / Mg</td><td>Cation balance</td></tr>
+        <tr><td>K / (Ca + Mg)</td><td>Cation balance / quality</td></tr>
+        <tr><td>P / Zn</td><td>P–Zn antagonism (P in ppm)</td></tr>
+        <tr><td>Fe / Mn</td><td>Micronutrient antagonism</td></tr>
+        <tr><td>Ca / B</td><td>Cell wall / quality (Ca in ppm)</td></tr>
+      </tbody>
+    </table>
+    <p>The same ratios appear in the tab, in admin, and in the PDF (report detail and compare table). They are not charted together: the scales are not comparable (Ca/K ~0.5 vs Ca/B ~200).</p>
+    <h2>NutriPlant traffic light</h2>
+    <table class="mt-table">
+      <thead><tr><th>|DOP| or |ratio deviation|</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>≤ 10%</td><td>Green — optimal</td></tr>
+        <tr><td>10 – 25%</td><td>Amber — attention</td></tr>
+        <tr><td>25 – 50%</td><td>Orange — marked deviation</td></tr>
+        <tr><td>&gt; 50%</td><td>Red — very low or very high</td></tr>
+      </tbody>
+    </table>
     <h2>Agronomic use</h2>
     <ul>
       <li>Cross-check with soil and program: low foliar K + low soil K → reinforce K.</li>
+      <li>DOP looks at each element alone; the ratio looks at the balance (e.g. low Ca and high K → Ca/K even more off).</li>
       <li>Foliar is a diagnosis of crop status at sampling time, not an automatic dose recommendation.</li>
       <li>The technician decides whether to adjust fertigation, foliar sprays, or soil.</li>
     </ul>

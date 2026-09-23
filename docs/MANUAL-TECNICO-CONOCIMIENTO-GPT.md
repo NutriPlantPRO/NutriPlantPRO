@@ -396,7 +396,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.19 Foliar DOP
 
-**URL:** …/analisis-foliar-dop.html · DOP % = ((nivel−óptimo)/óptimo)×100.
+**URL:** …/analisis-foliar-dop.html · DOP % = ((nivel−óptimo)/óptimo)×100. **Relaciones nutrimentales** debajo del DOP: real = resultados; ideal = óptimos del mismo análisis (si editan un óptimo, la ideal se recalcula). Pares: N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B. P/Zn y Ca/B: macro % MS ×10 000 → ppm. Desviación = ((real−ideal)/ideal)×100; mismo semáforo que DOP. Pestaña + admin + PDF. No hay ideales de relación aparte.
 
 ### 4.20 Fruta ICC
 

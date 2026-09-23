@@ -130,6 +130,7 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 - Micros en **ppm** (Fe, Mn, Zn, Cu, B, Mo).
 - **DOP %** = (resultado − óptimo) / óptimo × 100.
 - Óptimos por defecto editables (ej. N 3 %, P 0,275 %, Fe 150 ppm…).
+- **Relaciones nutrimentales** (debajo del DOP, también admin/PDF): N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B. Real = resultados; ideal = óptimos del mismo reporte (si editan un óptimo, la ideal se recalcula). P/Zn y Ca/B: macro % × 10 000 → ppm. Desviación = ((real − ideal) / ideal) × 100; mismo semáforo que DOP. No hay ideales de relación aparte.
 
 ---
 

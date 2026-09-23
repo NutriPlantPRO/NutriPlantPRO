@@ -14,9 +14,10 @@
   <script src="assets/np-i18n.js?v=20260916wsi"></script>
   <script src="assets/np-units-core.js?v=20260914u2"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-analysis-ui.js?v=20260902citricNote"></script>
-  <script src="assets/np-lab-type-configs.js?v=20260817a"></script>
-  <script src="assets/np-analysis-compare.js?v=20260817a"></script>
+  <script src="assets/np-analysis-ui.js?v=20260923ratios"></script>
+  <script src="assets/np-foliar-ratios-core.js?v=20260923ratios"></script>
+  <script src="assets/np-lab-type-configs.js?v=20260923ratios"></script>
+  <script src="assets/np-analysis-compare.js?v=20260923ratios"></script>
   <script src="assets/np-water-climate-ui.js?v=20260916wsi"></script>
   <script src="assets/np-fertigation-ui.js?v=20260919distUpd"></script>
   <script src="assets/np-fertilizer-price.js"></script>
@@ -50,7 +51,7 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-512.png?v=20260815r">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=20260919manIcon" />
+  <link rel="stylesheet" href="dashboard.css?v=20260923userIcon" />
   <link rel="stylesheet" href="chat.css?v=20260919toolsRestore" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -226,8 +227,29 @@
       <header class="top">
         <h1 id="sectionTitle" data-np-section="Inicio">Inicio</h1>
         <div class="header-buttons">
+          <div class="header-buttons-row header-buttons-row--utils">
           <button type="button" id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showConversionCalculator()" data-np-tooltip="Conversor Óxido ↔ Elemental" data-i18n-title="dashboard.tool_oxide" data-i18n-aria-label="dashboard.tool_oxide" aria-label="Conversor Óxido ↔ Elemental">🧮</button>
           <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Conversor de unidades (ppm/mmol/meq)" data-i18n-title="dashboard.tool_units" data-i18n-aria-label="dashboard.tool_units" aria-label="Conversor de unidades (ppm/mmol/meq)">🧪</button>
+          <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Conversor de magnitudes físicas" data-i18n-title="dashboard.tool_measure_units" data-i18n-aria-label="dashboard.tool_measure_units" aria-label="Conversor de magnitudes físicas">📐</button>
+          <button type="button" id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSimpleCalculator()" data-np-tooltip="Calculadora simple" data-i18n-title="dashboard.tool_simple_calculator" data-i18n-aria-label="dashboard.tool_simple_calculator" aria-label="Calculadora simple">
+            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
+          </button>
+          <button type="button" id="btn-notes-block" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNotesBlockModal()" data-np-tooltip="Bloque de notas" data-i18n-title="dashboard.tool_notes" data-i18n-aria-label="dashboard.tool_notes" aria-label="Bloque de notas">
+            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+          </button>
+          <button type="button" id="btn-user-info" class="btn btn-pill btn-user np-dash-tooltip" onclick="window.showUserInfoModal()" data-np-tooltip="Información de usuario" data-i18n-title="dashboard.tool_user" data-i18n-aria-label="dashboard.tool_user" aria-label="Información de usuario">
+            <svg class="btn-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            <svg class="btn-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+          </div>
+          <div class="header-buttons-row header-buttons-row--tools">
           <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" data-i18n-title="dashboard.tool_hydro" data-i18n-aria-label="dashboard.tool_hydro" aria-label="Diseño de solución nutritiva">💧</button>
           <button type="button" id="btn-hydro-pulse-irrigation-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroPulseIrrigationTool()" data-np-tooltip="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" data-i18n-aria-label="dashboard.tool_hydro_pulse" aria-label="Pulso de riego en hidroponía">⏱️</button>
           <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" data-i18n-aria-label="dashboard.tool_n" aria-label="Estimación de N mineralizable">🌱</button>
@@ -248,20 +270,7 @@
           <button type="button" id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompatibilityCalculator()" data-np-tooltip="Compatibilidad de fertilizantes" data-i18n-title="dashboard.tool_compatibility" data-i18n-aria-label="dashboard.tool_compatibility" aria-label="Compatibilidad de fertilizantes">🔺</button>
           <button type="button" id="btn-granular-mix-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showGranularMixCalculator()" data-np-tooltip="Formulación de mezclas granulares" data-i18n-title="dashboard.tool_granular_mix" data-i18n-aria-label="dashboard.tool_granular_mix" aria-label="Formulación de mezclas granulares">📦</button>
           <button type="button" id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompositionCalculator()" data-np-tooltip="Composición de fertilizantes (%)" data-i18n-title="dashboard.tool_fertilizer_composition" data-i18n-aria-label="dashboard.tool_fertilizer_composition" aria-label="Composición de fertilizantes (porcentaje)">⚗️</button>
-          <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Conversor de magnitudes físicas" data-i18n-title="dashboard.tool_measure_units" data-i18n-aria-label="dashboard.tool_measure_units" aria-label="Conversor de magnitudes físicas">📐</button>
-          <button type="button" id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSimpleCalculator()" data-np-tooltip="Calculadora simple" data-i18n-title="dashboard.tool_simple_calculator" data-i18n-aria-label="dashboard.tool_simple_calculator" aria-label="Calculadora simple">
-            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
-          </button>
-          <button type="button" id="btn-notes-block" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNotesBlockModal()" data-np-tooltip="Bloque de notas" data-i18n-title="dashboard.tool_notes" data-i18n-aria-label="dashboard.tool_notes" aria-label="Bloque de notas">
-            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-          </button>
-          <button type="button" id="btn-user-info" class="btn btn-pill btn-user np-dash-tooltip" onclick="window.showUserInfoModal()" data-np-tooltip="Información de usuario" data-i18n-title="dashboard.tool_user" data-i18n-aria-label="dashboard.tool_user" aria-label="Información de usuario">
-            <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
+          </div>
         </div>
       </header>
 
@@ -448,13 +457,13 @@
   <script src="assets/np-ish-core.js?v=20260916wsi"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
   <script src="climate-functions.js?v=20260916wsi"></script>
-  <script src="analysis-report-render.js?v=20260830citricNoVol"></script>
+  <script src="analysis-report-render.js?v=20260923ratios"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
-  <script src="dashboard.js?v=20260919iosLbl"></script>
+  <script src="dashboard.js?v=20260923ratios"></script>
   <script src="assets/np-fertigation-program-generator.js?v=20260817h"></script>
   <script src="fertirriego-program-functions.js?v=20260817q"></script>
   <script src="ai-knowledge-expansion.js"></script>
-  <script src="chat-simple.js?v=20260830citricKgChat"></script>
+  <script src="chat-simple.js?v=20260923ratios"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
   <script src="map.js?v=20260821slopeSharp"></script>
   <script src="assets/np-lectura-satelital.js?v=20260821chartWater"></script>
@@ -654,8 +663,15 @@
     /* Estilos para botones del header */
     .header-buttons {
       display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .header-buttons-row {
+      display: flex;
       gap: 10px;
       align-items: center;
+      justify-content: flex-end;
     }
 
     .btn-success {
@@ -1074,6 +1090,78 @@
     #fertilizerCompatibilityModal iframe,
     #granularMixCalculatorModal iframe,
     #fertilizerCompositionCalculatorModal iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      transition: none !important;
+    }
+
+    /* Pulso, agua, CIC, N mineralizable, solución: a pantalla, sin crecer al abrir */
+    #hydroPulseIrrigationToolModal.modal-overlay.show,
+    #waterHardnessCalculatorModal.modal-overlay.show,
+    #amendmentCalculatorModal.modal-overlay.show,
+    #nMineralizableMoCalculatorModal.modal-overlay.show,
+    #hydroSolutionCalculatorModal.modal-overlay.show {
+      padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      box-sizing: border-box;
+    }
+    #hydroPulseIrrigationToolModal .modal,
+    #hydroPulseIrrigationToolModal .modal-tool-iframe-full,
+    #hydroPulseIrrigationToolModal .modal-tool-iframe-fit,
+    #waterHardnessCalculatorModal .modal,
+    #waterHardnessCalculatorModal .modal-tool-iframe-full,
+    #waterHardnessCalculatorModal .modal-tool-iframe-fit,
+    #amendmentCalculatorModal .modal,
+    #amendmentCalculatorModal .modal-enmienda,
+    #amendmentCalculatorModal .modal-tool-iframe-full,
+    #amendmentCalculatorModal .modal-tool-iframe-fit,
+    #nMineralizableMoCalculatorModal .modal,
+    #nMineralizableMoCalculatorModal .modal-tool-iframe-full,
+    #nMineralizableMoCalculatorModal .modal-tool-iframe-fit,
+    #hydroSolutionCalculatorModal .modal,
+    #hydroSolutionCalculatorModal .modal-tool-iframe-full,
+    #hydroSolutionCalculatorModal .modal-tool-iframe-fit {
+      width: 100% !important;
+      max-width: none !important;
+      height: 100% !important;
+      max-height: none !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #hydroPulseIrrigationToolModal .modal-header,
+    #waterHardnessCalculatorModal .modal-header,
+    #amendmentCalculatorModal .modal-header,
+    #nMineralizableMoCalculatorModal .modal-header,
+    #hydroSolutionCalculatorModal .modal-header {
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+    #hydroPulseIrrigationToolModal .modal-body,
+    #hydroPulseIrrigationToolModal .modal-tool-iframe-fit .modal-body,
+    #waterHardnessCalculatorModal .modal-body,
+    #waterHardnessCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #amendmentCalculatorModal .modal-body,
+    #amendmentCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #nMineralizableMoCalculatorModal .modal-body,
+    #nMineralizableMoCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #hydroSolutionCalculatorModal .modal-body,
+    #hydroSolutionCalculatorModal .modal-tool-iframe-fit .modal-body {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      height: auto !important;
+    }
+    #hydroPulseIrrigationToolModal iframe,
+    #waterHardnessCalculatorModal iframe,
+    #amendmentCalculatorModal iframe,
+    #nMineralizableMoCalculatorModal iframe,
+    #hydroSolutionCalculatorModal iframe {
       width: 100% !important;
       height: 100% !important;
       min-height: 0 !important;
@@ -7735,7 +7823,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260902citricNote" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=20260923fill" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7751,7 +7839,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260830fitH" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard&v=20260923fill" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7783,7 +7871,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260830fitH" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=dashboard&v=20260923fill" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -8952,6 +9040,6 @@ CONTRATO:
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260919noFlick"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260923fill"></script>
 </body>
 </html>

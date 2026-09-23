@@ -6,13 +6,8 @@
 (function () {
   'use strict';
 
-  /* Fit al contenido (crecen con postMessage). */
-  var FIT_FRAME_IDS = {
-    nMineralizableMoCalculatorFrame: true,
-    waterHardnessCalculatorFrame: true,
-    hydroPulseIrrigationToolFrame: true,
-    hydroSolutionCalculatorFrame: true
-  };
+  /* Fit al contenido (crecen con postMessage). Vacío: las densas van a FILL. */
+  var FIT_FRAME_IDS = {};
 
   /* Llenan la ventana con CSS: NO cambiar altura por JS (evita parpadeo al abrir). */
   var FILL_FRAME_IDS = {
@@ -31,7 +26,12 @@
     nutrientInteractionsToolFrame: true,
     fertilizerCompatibilityFrame: true,
     granularMixCalculatorFrame: true,
-    fertilizerCompositionCalculatorFrame: true
+    fertilizerCompositionCalculatorFrame: true,
+    nMineralizableMoCalculatorFrame: true,
+    waterHardnessCalculatorFrame: true,
+    hydroPulseIrrigationToolFrame: true,
+    hydroSolutionCalculatorFrame: true,
+    amendmentCalculatorFrame: true
   };
 
   var scrollLockCount = 0;

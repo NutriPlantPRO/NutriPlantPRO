@@ -164,7 +164,8 @@ module.exports = {
       title: 'Análisis foliar: DOP frente al óptimo',
       url: `${BASE}/capitulos/analisis-foliar-dop.html`,
       pillar: 'C — Análisis foliar',
-      summary: 'DOP % = ((nivel−óptimo)/óptimo)×100; cruce con suelo y programa.',
+      summary:
+        'DOP % = ((nivel−óptimo)/óptimo)×100. Relaciones nutrimentales (N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B): real = resultados, ideal = óptimos del mismo análisis; si editan un óptimo, la ideal se recalcula. P/Zn y Ca/B: macro % MS ×10 000 a ppm. Misma desviación y semáforo que DOP. Pestaña, admin y PDF. ≠ receta de dosis.',
       status: 'published'
     },
     {

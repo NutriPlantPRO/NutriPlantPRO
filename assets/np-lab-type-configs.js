@@ -235,8 +235,37 @@
 
   var FOLIAR_BLOCKS = [
     { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)', chartType: 'line', chart: true },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'line', chart: true }
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'line', chart: true },
+    { id: 'ratios', title: 'Relaciones nutrimentales', titleEn: 'Nutrient ratios', chart: false }
   ];
+
+  function foliarRatioFields() {
+    var defs = (w.NpFoliarRatios && w.NpFoliarRatios.RATIOS) || [];
+    return defs.map(function (def) {
+      return {
+        path: 'ratio.' + def.id,
+        label: def.label,
+        labelEn: def.label,
+        unit: 'ratio',
+        block: 'ratios',
+        chartable: false,
+        section: 'ratios',
+        tip: def.label,
+        tipEn: def.label,
+        getValue: function (a) {
+          var api = w.NpFoliarRatios;
+          if (!api || typeof api.evaluateAnalysis !== 'function') return '';
+          var rows = api.evaluateAnalysis(a || {});
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].id === def.id && isFinite(rows[i].actual)) return rows[i].actual;
+          }
+          return '';
+        }
+      };
+    });
+  }
+
+  var FOLIAR_RATIO_FIELDS = foliarRatioFields();
 
   var FOLIAR_REVIEW_SECTIONS = [
     { id: 'meta', titleKey: 'analysis.review_sec_meta', title: 'General', titleEn: 'General' },
@@ -314,12 +343,12 @@
     foliar: {
       id: 'foliar',
       aliases: ['leaf', 'foliage'],
-      fields: FOLIAR_FIELDS,
+      fields: FOLIAR_FIELDS.concat(FOLIAR_RATIO_FIELDS),
       blocks: FOLIAR_BLOCKS,
       reviewSections: FOLIAR_REVIEW_SECTIONS,
       reviewFields: FOLIAR_REVIEW_FIELDS,
       hint:
-        'Cada columna es un análisis foliar. Gráficas: macros (% MS) y micros (ppm).',
+        'Cada columna es un análisis foliar. Gráficas: macros (% MS) y micros (ppm). Tabla de relaciones nutrimentales (real vs ideal del mismo análisis).',
       reviewTitle: 'Revisar datos detectados (foliar)'
     },
     fruta: {

@@ -1174,10 +1174,20 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   line-height: 1.2;
 }
 
-/* Herramientas: siempre renglón propio bajo el título, alineadas a la derecha */
+/* Herramientas: dos renglones bajo el título, alineados a la derecha */
 .header-buttons {
   display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
+  align-items: stretch;
+  gap: 8px;
+  overflow: visible;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+.header-buttons-row {
+  display: flex;
   flex-wrap: nowrap;
   align-items: stretch;
   justify-content: flex-end;
@@ -1190,14 +1200,14 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
-.header-buttons::-webkit-scrollbar {
+.header-buttons-row::-webkit-scrollbar {
   height: 6px;
 }
-.header-buttons::-webkit-scrollbar-track {
+.header-buttons-row::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 3px;
 }
-.header-buttons::-webkit-scrollbar-thumb {
+.header-buttons-row::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
@@ -1375,6 +1385,9 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
     width: auto !important;
   }
   .header-buttons {
+    gap: 6px;
+  }
+  .header-buttons-row {
     gap: 8px;
   }
   .top {
@@ -7141,12 +7154,23 @@ html.embed-login body {
   margin-right: 8px !important;
 }
 
-/* ===== BOTÓN DE USUARIO (3 rayitas - mismo verde que Guardar Datos) ===== */
+/* ===== BOTÓN DE USUARIO (rayitas + persona, mismo verde que Guardar Datos) ===== */
 .btn-user {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   color: #ffffff !important;
   border: none !important;
   font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 16px !important;
+  min-width: 72px;
+}
+.btn-user .btn-user-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .btn-user:hover {

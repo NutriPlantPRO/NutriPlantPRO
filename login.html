@@ -1408,6 +1408,85 @@
       transition: none !important;
     }
 
+    /* Pulso, agua, CIC, N mineralizable, solución: a pantalla, sin crecer al abrir */
+    #hydroPulseIrrigationToolModal.modal-overlay.show,
+    #hydroPulseIrrigationToolModal.modal-overlay,
+    #waterHardnessCalculatorModal.modal-overlay.show,
+    #waterHardnessCalculatorModal.modal-overlay,
+    #amendmentCalculatorModal.modal-overlay.show,
+    #amendmentCalculatorModal.modal-overlay,
+    #nMineralizableMoCalculatorModal.modal-overlay.show,
+    #nMineralizableMoCalculatorModal.modal-overlay,
+    #hydroSolutionCalculatorModal.modal-overlay.show,
+    #hydroSolutionCalculatorModal.modal-overlay {
+      padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      box-sizing: border-box;
+    }
+    #hydroPulseIrrigationToolModal .modal,
+    #hydroPulseIrrigationToolModal .modal-tool-iframe-full,
+    #hydroPulseIrrigationToolModal .modal-tool-iframe-fit,
+    #waterHardnessCalculatorModal .modal,
+    #waterHardnessCalculatorModal .modal-water-hardness,
+    #waterHardnessCalculatorModal .modal-tool-iframe-full,
+    #waterHardnessCalculatorModal .modal-tool-iframe-fit,
+    #amendmentCalculatorModal .modal,
+    #amendmentCalculatorModal .modal-enmienda,
+    #amendmentCalculatorModal .modal-tool-iframe-full,
+    #amendmentCalculatorModal .modal-tool-iframe-fit,
+    #nMineralizableMoCalculatorModal .modal,
+    #nMineralizableMoCalculatorModal .modal-n-mineralizable-mo,
+    #nMineralizableMoCalculatorModal .modal-tool-iframe-full,
+    #nMineralizableMoCalculatorModal .modal-tool-iframe-fit,
+    #hydroSolutionCalculatorModal .modal,
+    #hydroSolutionCalculatorModal .modal-tool-iframe-full,
+    #hydroSolutionCalculatorModal .modal-tool-iframe-fit {
+      width: 100% !important;
+      max-width: none !important;
+      height: 100% !important;
+      max-height: none !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #hydroPulseIrrigationToolModal .modal-header,
+    #waterHardnessCalculatorModal .modal-header,
+    #amendmentCalculatorModal .modal-header,
+    #nMineralizableMoCalculatorModal .modal-header,
+    #hydroSolutionCalculatorModal .modal-header {
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+    #hydroPulseIrrigationToolModal .modal-body,
+    #hydroPulseIrrigationToolModal .modal-tool-iframe-fit .modal-body,
+    #waterHardnessCalculatorModal .modal-body,
+    #waterHardnessCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #amendmentCalculatorModal .modal-body,
+    #amendmentCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #nMineralizableMoCalculatorModal .modal-body,
+    #nMineralizableMoCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #hydroSolutionCalculatorModal .modal-body,
+    #hydroSolutionCalculatorModal .modal-tool-iframe-fit .modal-body {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      height: auto !important;
+    }
+    #hydroPulseIrrigationToolModal iframe,
+    #waterHardnessCalculatorModal iframe,
+    #amendmentCalculatorModal iframe,
+    #nMineralizableMoCalculatorModal iframe,
+    #hydroSolutionCalculatorModal iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      transition: none !important;
+    }
+
     .modal-granular-mix {
       max-width: 1280px;
       width: 96%;
@@ -2161,6 +2240,7 @@
     // Balance de enmiendas por CIC (gratis en login, sin persistencia)
     function showAmendmentCalculator() {
       const modal = document.getElementById('amendmentCalculatorModal');
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('amendmentCalculatorFrame');
       modal.style.display = 'flex';
     }
 
@@ -2964,14 +3044,14 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=login&v=20260830fitH" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroPulseIrrigationToolFrame" src="hidro-pulso-riego-free.html?embed=login&v=20260923fill" title="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
 
   <!-- Modal de Diagnóstico de agua y acondicionamiento -->
   <div id="waterHardnessCalculatorModal" class="modal-overlay">
-    <div class="modal modal-water-hardness modal-tool-iframe-fit">
+    <div class="modal modal-water-hardness modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_water">
           💦 Diagnóstico de agua y acondicionamiento
@@ -2982,7 +3062,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=login&v=20260902citricNote" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=login&v=20260923fill" title="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water"></iframe>
       </div>
     </div>
   </div>
@@ -3023,7 +3103,7 @@
 
   <!-- Modal de Balance de enmiendas por CIC -->
   <div id="amendmentCalculatorModal" class="modal-overlay">
-    <div class="modal modal-enmienda">
+    <div class="modal modal-enmienda modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">
           🚜 <span data-i18n="dashboard.tool_amendment">Balance de enmiendas por CIC</span>
@@ -3034,7 +3114,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=20260801f" title="Balance de enmiendas por CIC" data-i18n-title="dashboard.tool_amendment"></iframe>
+        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=20260923fill" title="Balance de enmiendas por CIC" data-i18n-title="dashboard.tool_amendment"></iframe>
       </div>
     </div>
   </div>
@@ -3153,7 +3233,7 @@
 
   <!-- Modal N mineralizable desde MO -->
   <div id="nMineralizableMoCalculatorModal" class="modal-overlay">
-    <div class="modal modal-n-mineralizable-mo modal-tool-iframe-fit">
+    <div class="modal modal-n-mineralizable-mo modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="dashboard.tool_n">🌱 Estimación de N mineralizable</h2>
         <div class="modal-header-trailing">
@@ -3162,7 +3242,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260830fitH" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=login&v=20260923fill" title="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n"></iframe>
       </div>
     </div>
   </div>
@@ -4863,7 +4943,7 @@
       });
     })();
   </script>
-  <script src="assets/free-tools-modal-parent.js?v=20260919noFlick"></script>
+  <script src="assets/free-tools-modal-parent.js?v=20260923fill"></script>
   <script src="apply-no-traducir.js"></script>
   <script>
     (function initLoginSocialPanel() {

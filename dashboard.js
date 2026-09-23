@@ -21228,8 +21228,8 @@ function createLabAnalysesReportSectionHTML(chartImages, lang, reportUnitSystem)
     <div class="section" style="border-left-color:#0ea5e9;">
       <h2 class="section-title">🧪 ${rt('Análisis de laboratorio', 'Lab analyses')}</h2>
       <p class="report-note" style="margin-top:0;">${rt(
-        'Tablas y gráficas comparativas. En agua, foliar y fruta también el detalle de cada reporte (ácido, DOP e ICC).',
-        'Compare tables and charts. For water, foliar and fruit also each report detail (acid, DOP and CQI).'
+        'Tablas y gráficas comparativas. En agua, foliar y fruta también el detalle de cada reporte (ácido, DOP, relaciones e ICC).',
+        'Compare tables and charts. For water, foliar and fruit also each report detail (acid, DOP, ratios and CQI).'
       )}</p>
       ${body}
     </div>
@@ -22987,8 +22987,12 @@ window.restoreAguaUIState = function restoreAguaUIState() {
 };
 
 // ========== ANÁLISIS FOLIAR (DOP) ==========
-var FOLIAR_OPTIMAL_MACRO = { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 }; // % MS
-var FOLIAR_OPTIMAL_MICRO = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 }; // ppm
+var FOLIAR_OPTIMAL_MACRO = (typeof window !== 'undefined' && window.NpFoliarRatios && window.NpFoliarRatios.DEFAULT_MACRO)
+  ? window.NpFoliarRatios.DEFAULT_MACRO
+  : { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 }; // % MS
+var FOLIAR_OPTIMAL_MICRO = (typeof window !== 'undefined' && window.NpFoliarRatios && window.NpFoliarRatios.DEFAULT_MICRO)
+  ? window.NpFoliarRatios.DEFAULT_MICRO
+  : { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 }; // ppm
 
 function createEmptyFoliarAnalysis() {
   return {
@@ -23020,6 +23024,10 @@ function createFoliarTabHTML() {
   }).join('');
   var microRows = ['Fe','Mn','Zn','Cu','B','Mo'].map(function(n) {
     return '<tr><td class="notranslate" translate="no">' + n + '</td><td><input type="number" step="0.01" id="f-micro-' + n + '" class="fertirriego-input" data-f-nutrient="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'micros\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td><input type="number" step="0.01" id="f-opt-micro-' + n + '" class="fertirriego-input" style="width:70px;" data-f-opt="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'optimalMicro\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td id="f-dop-micro-' + n + '">—</td><td id="f-status-micro-' + n + '">—</td></tr>';
+  }).join('');
+  var foliarRatioDefs = (window.NpFoliarRatios && window.NpFoliarRatios.RATIOS) || [];
+  var ratioRows = foliarRatioDefs.map(function(def) {
+    return '<tr><td class="notranslate" translate="no">' + def.label + '</td><td id="f-ratio-actual-' + def.id + '">—</td><td id="f-ratio-ideal-' + def.id + '">—</td><td id="f-ratio-dop-' + def.id + '">—</td><td id="f-ratio-status-' + def.id + '">—</td></tr>';
   }).join('');
   var html = `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="foliar-tab-container">
@@ -23069,6 +23077,16 @@ function createFoliarTabHTML() {
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>Resultado (ppm)</th><th>Óptimo (ppm)</th><th>DOP</th><th>Estado</th></tr></thead>
                     <tbody>${microRows}</tbody>
+                  </table>
+                </div>
+              </details>
+              <details class="soil-section" data-f-section="ratios" open>
+                <summary>⚖️ Relaciones nutrimentales</summary>
+                <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Relación real = resultado A / resultado B. Relación ideal = óptimo A / óptimo B; si editas un óptimo, la ideal se recalcula. En P/Zn y Ca/B el macro (% MS) se pasa a ppm (×10 000). Desviación = ((real − ideal) / ideal) × 100; misma regla visual que DOP.</p>
+                <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
+                  <table class="fertirriego-requirement-table soil-fertility-table">
+                    <thead><tr><th>Relación</th><th>Real</th><th>Ideal</th><th>Desviación</th><th>Estado</th></tr></thead>
+                    <tbody>${ratioRows}</tbody>
                   </table>
                 </div>
               </details>
@@ -23177,6 +23195,28 @@ window.foliarUpdateDOP = function foliarUpdateDOP() {
     if (dopEl) dopEl.textContent = !isNaN(dop) ? res.icon + ' ' + (dop >= 0 ? '+' : '') + dop.toFixed(1) + '%' : '—';
     if (statusEl) statusEl.textContent = res.status;
   });
+  window.foliarUpdateRatios && window.foliarUpdateRatios();
+};
+
+window.foliarUpdateRatios = function foliarUpdateRatios() {
+  var api = window.NpFoliarRatios;
+  if (!api || typeof api.evaluateAnalysis !== 'function') return;
+  var wrap = document.getElementById('foliar-form-wrap');
+  var id = wrap && wrap.getAttribute('data-current-id');
+  if (!id) return;
+  var a = window.getFoliarAnalyses().find(function(x) { return x.id === id; });
+  if (!a) return;
+  api.evaluateAnalysis(a).forEach(function(row) {
+    var actualEl = document.getElementById('f-ratio-actual-' + row.id);
+    var idealEl = document.getElementById('f-ratio-ideal-' + row.id);
+    var dopEl = document.getElementById('f-ratio-dop-' + row.id);
+    var statusEl = document.getElementById('f-ratio-status-' + row.id);
+    if (actualEl) actualEl.textContent = isFinite(row.actual) ? api.formatRatio(row.actual) : '—';
+    if (idealEl) idealEl.textContent = isFinite(row.ideal) ? api.formatRatio(row.ideal) : '—';
+    var res = foliarDOPIconStatus(isFinite(row.dop) ? row.dop : null);
+    if (dopEl) dopEl.textContent = isFinite(row.dop) ? res.icon + ' ' + (row.dop >= 0 ? '+' : '') + row.dop.toFixed(1) + '%' : '—';
+    if (statusEl) statusEl.textContent = res.status;
+  });
 };
 
 window.selectFoliarAnalysis = function selectFoliarAnalysis(id) {
@@ -23266,7 +23306,7 @@ window.saveFoliarUIState = function saveFoliarUIState() {
   document.querySelectorAll('#foliar-form-wrap .soil-section[data-f-section]').forEach(function(d) { if (d.open) openSections.push(d.getAttribute('data-f-section')); });
   try {
     var key = 'nutriplant_foliar_ui_' + currentProject.id;
-    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition() }));
+    localStorage.setItem(key, JSON.stringify({ selectedId: selectedId, openSections: openSections, scrollY: getScrollPosition(), ratiosSeen: true }));
   } catch (e) { console.warn('saveFoliarUIState', e); }
 };
 
@@ -23283,8 +23323,14 @@ window.restoreFoliarUIState = function restoreFoliarUIState() {
       window.selectFoliarAnalysis(selectedId);
     }
     if (openSections.length > 0) {
+      var ratiosSeen = !!state.ratiosSeen;
       document.querySelectorAll('#foliar-form-wrap .soil-section[data-f-section]').forEach(function(d) {
-        d.open = openSections.indexOf(d.getAttribute('data-f-section')) !== -1;
+        var sectionKey = d.getAttribute('data-f-section');
+        if (sectionKey === 'ratios' && !ratiosSeen) {
+          d.open = true;
+        } else {
+          d.open = openSections.indexOf(sectionKey) !== -1;
+        }
       });
     }
     var container = document.querySelector('#foliar-form-wrap .soil-analysis-sections');

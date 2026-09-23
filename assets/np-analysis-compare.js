@@ -161,7 +161,7 @@
   }
 
   function unitSuffix(unit) {
-    if (!unit || unit === 'other') return '';
+    if (!unit || unit === 'other' || unit === 'ratio') return '';
     if (unit === 'pct') return ' (%)';
     if (unit === 'ppm') return ' (ppm)';
     if (unit === 'meq') return ' (meq)';
@@ -216,7 +216,7 @@
   function formatCompareValue(v, row) {
     if (v == null || !Number.isFinite(v)) return '—';
     var block = row && row.block;
-    if (block === 'cec_pct' || block === 'ratios' || (row && row.unit === 'pct')) {
+    if (block === 'cec_pct' || block === 'ratios' || (row && row.unit === 'pct') || (row && row.unit === 'ratio')) {
       return Number(v).toFixed(2);
     }
     return String(v);
@@ -290,7 +290,9 @@
       var unit = field.unit || 'other';
       var label = fieldLabel(field);
       var values = analyses.map(function (a) {
-        var raw = getByPath(a, field.path);
+        var raw = (typeof field.getValue === 'function')
+          ? field.getValue(a)
+          : getByPath(a, field.path);
         if (field.path === 'calidad.firmeza' && usFirm) {
           var n = numOrNull(raw);
           return n == null ? null : n * 14.223343307;

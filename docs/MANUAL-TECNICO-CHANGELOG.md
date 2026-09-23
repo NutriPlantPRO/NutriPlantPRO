@@ -5,6 +5,14 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-09-23 — Foliar: relaciones nutrimentales
+
+### Actualizado
+
+- Capítulo `analisis-foliar-dop.html`: sección **Relaciones nutrimentales** (real vs ideal derivados de resultados y óptimos; P/Zn y Ca/B en ppm; mismo semáforo que DOP). ES/EN.
+- Catálogo `manual_tecnico_catalog`, búsqueda del manual, Knowledge ANALISIS + MANUAL, `lab-analyses-catalog` foliar.
+- App: pestaña Foliar + admin + PDF (detalle y compare). No hace falta re-pegar Instructions del GPT Socio.
+
 ## 2026-09-15 — Ventanas foliar: HR 50–80 %
 
 ### Actualizado
