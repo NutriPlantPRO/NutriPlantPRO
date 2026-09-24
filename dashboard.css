@@ -9874,6 +9874,12 @@ html.embed-login body {
 .np-analysis-compare__chart-card[data-block="macros"] { border-color: #fcd34d; }
 .np-analysis-compare__chart-card[data-block="micros"] { border-color: #c4b5fd; }
 .np-analysis-compare__chart-card[data-block="cec_pct"] { border-color: #fdba74; }
+.np-analysis-compare__chart-cap {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #64748b;
+}
 .np-analysis-compare__chart-wrap {
   height: 240px;
   position: relative;

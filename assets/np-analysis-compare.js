@@ -214,6 +214,49 @@
     return Number.isFinite(n) ? n : null;
   }
 
+  /** Óptimo foliar/fruta: macros.N → optimalMacro.N */
+  function optimalPathForField(path) {
+    var p = String(path || '');
+    if (p.indexOf('macros.') === 0) return 'optimalMacro.' + p.slice(7);
+    if (p.indexOf('micros.') === 0) return 'optimalMicro.' + p.slice(7);
+    if (p.indexOf('calidad.') === 0) return 'optimalCalidad.' + p.slice(8);
+    if (p.indexOf('calcio.') === 0) return 'optimalCalcio.' + p.slice(7);
+    return null;
+  }
+
+  /** Banda verde DOP/ICC: |desvío| ≤ 10% del óptimo. */
+  var FOLIAR_RANGE_PCT = 0.10;
+
+  function rangeFromOptimal(opt) {
+    if (opt == null || !Number.isFinite(opt) || opt === 0) return null;
+    return { min: opt * (1 - FOLIAR_RANGE_PCT), max: opt * (1 + FOLIAR_RANGE_PCT), opt: opt };
+  }
+
+  function dopAbsPct(value, opt) {
+    if (value == null || opt == null || !Number.isFinite(value) || !Number.isFinite(opt) || opt === 0) return null;
+    return Math.abs(((value - opt) / opt) * 100);
+  }
+
+  function candleStatusColor(value, opt, fallback) {
+    var abs = dopAbsPct(value, opt);
+    if (abs == null) return fallback || '#2563eb';
+    if (abs <= 10) return '#16a34a';
+    if (abs <= 25) return '#d97706';
+    if (abs <= 50) return '#ea580c';
+    return '#dc2626';
+  }
+
+  function candleScaleMax(value, opt) {
+    var nums = [];
+    if (value != null && Number.isFinite(value)) nums.push(value);
+    var rng = rangeFromOptimal(opt);
+    if (rng) {
+      nums.push(rng.min, rng.max, rng.opt);
+    }
+    if (!nums.length) return null;
+    return Math.max.apply(null, nums);
+  }
+
   /** CEC % y relaciones: 2 decimales; el resto sin forzar (labs ya vienen redondeados). */
   function formatCompareValue(v, row) {
     if (v == null || !Number.isFinite(v)) return '—';
@@ -305,13 +348,25 @@
         unit = 'psi';
         label = isEnLang() ? 'Firmness' : 'Firmeza';
       }
+      var optPath = optimalPathForField(field.path);
+      var optima = optPath
+        ? analyses.map(function (a) {
+            var rawOpt = getByPath(a, optPath);
+            if (field.path === 'calidad.firmeza' && usFirm) {
+              var on = numOrNull(rawOpt);
+              return on == null ? null : on * 14.223343307;
+            }
+            return numOrNull(rawOpt);
+          })
+        : analyses.map(function () { return null; });
       return {
         path: field.path,
         label: label,
         unit: unit,
         chartable: field.chartable !== false,
         block: field.block || 'other',
-        values: values
+        values: values,
+        optima: optima
       };
     });
   }
@@ -378,7 +433,83 @@
     return tr('analysis.compare_axis_value', 'Valor');
   }
 
-  function renderBlockChart(canvas, rows, analyses, selectedIds, chartType, chartKey, state) {
+  function ensureCandlePlugin() {
+    if (!w.Chart || w.Chart._npFoliarCandleReg) return;
+    try {
+      if (w.Chart.registry && typeof w.Chart.registry.getPlugin === 'function' && w.Chart.registry.getPlugin('npFoliarCandle')) {
+        w.Chart._npFoliarCandleReg = true;
+        return;
+      }
+    } catch (eReg) {}
+    w.Chart.register({
+      id: 'npFoliarCandle',
+      afterDatasetsDraw: function (chart) {
+        drawFoliarCandles(chart);
+      }
+    });
+    w.Chart._npFoliarCandleReg = true;
+  }
+
+  function drawFoliarCandles(chart) {
+    var pack = chart.$npCandles;
+    if (!pack || !pack.series || !pack.series.length) return;
+    var yScale = chart.scales && chart.scales.y;
+    if (!yScale) return;
+    var ctx = chart.ctx;
+    ctx.save();
+    pack.series.forEach(function (serie, dsIndex) {
+      var meta = chart.getDatasetMeta(dsIndex);
+      if (!meta || !meta.data) return;
+      meta.data.forEach(function (bar, i) {
+        var pt = serie.points[i];
+        if (!pt || !bar) return;
+        var x = bar.x;
+        var half = Math.max(5, (bar.width || 18) / 2);
+        var value = pt.value;
+        var rng = pt.range;
+        if (rng) {
+          var yLo = yScale.getPixelForValue(rng.min);
+          var yHi = yScale.getPixelForValue(rng.max);
+          var top = Math.min(yLo, yHi);
+          var h = Math.max(3, Math.abs(yHi - yLo));
+          ctx.fillStyle = analysisColorWash(serie.color, '4d');
+          ctx.strokeStyle = serie.color + '99';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(x - half, top, half * 2, h, 3);
+          else ctx.rect(x - half, top, half * 2, h);
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (value == null || !Number.isFinite(value)) return;
+        var yVal = yScale.getPixelForValue(value);
+        var mark = candleStatusColor(value, rng && rng.opt, serie.color);
+        if (rng && (value < rng.min || value > rng.max)) {
+          var yEdge = yScale.getPixelForValue(value < rng.min ? rng.min : rng.max);
+          ctx.strokeStyle = mark;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, yEdge);
+          ctx.lineTo(x, yVal);
+          ctx.stroke();
+        }
+        if (!rng) {
+          var y0 = yScale.getPixelForValue(0);
+          ctx.fillStyle = analysisColorWash(serie.color, '99');
+          ctx.fillRect(x - half * 0.7, Math.min(y0, yVal), half * 1.4, Math.max(2, Math.abs(y0 - yVal)));
+        }
+        ctx.fillStyle = mark;
+        ctx.fillRect(x - half, yVal - 2.5, half * 2, 5);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - half, yVal - 2.5, half * 2, 5);
+      });
+    });
+    ctx.restore();
+  }
+
+  function renderBlockChart(canvas, rows, analyses, selectedIds, chartType, chartKey, state, extraOpts) {
+    extraOpts = extraOpts || {};
     if (!canvas || !w.Chart) return;
     if (state.charts && state.charts[chartKey]) {
       try { state.charts[chartKey].destroy(); } catch (e) {}
@@ -395,42 +526,105 @@
     var labels = chartRows.map(function (r) {
       return chartLabelForRow(r);
     });
+    var isCandle = chartType === 'candle';
     var isBar = chartType === 'bar';
+    if (isCandle) ensureCandlePlugin();
+
     var datasets = selected.map(function (item) {
       var color = analysisColor(item.index);
       return {
         label: analysisLabel(item.analysis, item.index),
         data: chartRows.map(function (r) {
           var v = r.values[item.index];
+          var opt = (r.optima && r.optima[item.index]) || null;
+          if (isCandle) return candleScaleMax(v, opt);
           return v == null ? null : v;
         }),
         borderColor: color,
-        backgroundColor: isBar ? color + 'cc' : color + '33',
-        borderWidth: isBar ? 1 : 2,
+        backgroundColor: isCandle ? 'rgba(0,0,0,0)' : (isBar ? color + 'cc' : color + '33'),
+        borderWidth: isCandle ? 0 : (isBar ? 1 : 2),
         tension: 0.25,
         spanGaps: true,
         fill: false,
-        maxBarThickness: 28
+        maxBarThickness: isCandle ? 36 : 28,
+        pointRadius: isCandle ? 0 : (isBar ? 0 : 3)
       };
     });
 
+    var candlePack = isCandle
+      ? {
+          series: selected.map(function (item) {
+            return {
+              color: analysisColor(item.index),
+              points: chartRows.map(function (r) {
+                var v = r.values[item.index];
+                var opt = (r.optima && r.optima[item.index]) || null;
+                return { value: v, range: rangeFromOptimal(opt) };
+              })
+            };
+          })
+        }
+      : null;
+
     if (!state.charts) state.charts = {};
-    state.charts[chartKey] = new w.Chart(canvas.getContext('2d'), {
-      type: isBar ? 'bar' : 'line',
+    var chart = new w.Chart(canvas.getContext('2d'), {
+      type: isBar || isCandle ? 'bar' : 'line',
       data: { labels: labels, datasets: datasets },
       options: {
-        responsive: true,
+        responsive: extraOpts.responsive !== false,
         maintainAspectRatio: false,
+        animation: extraOpts.animation === false ? false : undefined,
+        devicePixelRatio: extraOpts.devicePixelRatio || undefined,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+          legend: {
+            position: extraOpts.legendPosition || 'bottom',
+            labels: {
+              boxWidth: 12,
+              font: { size: 10 },
+              generateLabels: isCandle
+                ? function (ch) {
+                    return selected.map(function (item, i) {
+                      var color = analysisColor(item.index);
+                      return {
+                        text: analysisLabel(item.analysis, item.index),
+                        fillStyle: color,
+                        strokeStyle: color,
+                        hidden: false,
+                        datasetIndex: i
+                      };
+                    });
+                  }
+                : undefined
+            }
+          },
           tooltip: {
             callbacks: {
               label: function (ctx) {
-                var v = ctx.parsed.y;
-                if (v == null) return ctx.dataset.label + ': —';
                 var rowMeta = chartRows[ctx.dataIndex];
-                return ctx.dataset.label + ': ' + formatCompareValue(v, rowMeta);
+                var serie = selected[ctx.datasetIndex];
+                if (!rowMeta || !serie) return ctx.dataset.label + ': —';
+                var v = rowMeta.values[serie.index];
+                var opt = rowMeta.optima ? rowMeta.optima[serie.index] : null;
+                var rng = rangeFromOptimal(opt);
+                var line = ctx.dataset.label + ': ' + formatCompareValue(v, rowMeta);
+                if (rng) {
+                  line +=
+                    '  ·  ' +
+                    tr('analysis.compare_candle_range', 'rango {min}–{max}', {
+                      min: formatCompareValue(rng.min, rowMeta),
+                      max: formatCompareValue(rng.max, rowMeta)
+                    });
+                  var abs = dopAbsPct(v, opt);
+                  if (abs != null) {
+                    line +=
+                      '  ·  ' +
+                      (abs <= 10
+                        ? tr('analysis.compare_candle_in', 'dentro')
+                        : tr('analysis.compare_candle_out', 'fuera'));
+                  }
+                }
+                return line;
               }
             }
           }
@@ -451,6 +645,8 @@
         }
       }
     });
+    if (candlePack) chart.$npCandles = candlePack;
+    state.charts[chartKey] = chart;
   }
 
   function getTypeConfig(type) {
@@ -494,11 +690,20 @@
     };
 
     var chartsHtml = blocksCatalog.filter(function (b) { return b.chart; }).map(function (b) {
+      var cap = b.chartType === 'candle'
+        ? '<p class="np-analysis-compare__chart-cap">' +
+            tr(
+              'analysis.compare_candle_hint',
+              'Vela por elemento: la franja opaca es el rango óptimo (±10% DOP). La marca es el valor. Si está fuera, la línea llega hasta el valor.'
+            ) +
+          '</p>'
+        : '';
       return (
         '<div class="np-analysis-compare__chart-card" data-block="' + b.id + '">' +
           '<h4 class="np-analysis-compare__chart-title">' +
             sectionTitle(b) +
           '</h4>' +
+          cap +
           '<div class="np-analysis-compare__chart-wrap">' +
             '<canvas id="' + uid + '_' + b.id + '" aria-label="' + sectionTitle(b) + '"></canvas>' +
           '</div>' +
@@ -1046,6 +1251,7 @@
     mountSoilCompare: mountSoilCompare,
     openLabReviewModal: openLabReviewModal,
     openSoilReviewModal: openSoilReviewModal,
-    analysisLabel: analysisLabel
+    analysisLabel: analysisLabel,
+    renderBlockChart: renderBlockChart
   };
 })(typeof window !== 'undefined' ? window : this);

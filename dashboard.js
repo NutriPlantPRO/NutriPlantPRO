@@ -21327,6 +21327,39 @@ function captureLabCompareChartsForReport(callback, reportOptions) {
     canvas.style.cssText = 'position:fixed;left:-9999px;top:0;width:' + W + 'px;height:' + H + 'px;opacity:1;pointer-events:none;z-index:-1;';
     document.body.appendChild(canvas);
 
+    if (block.chartType === 'candle' && typeof window.NpAnalysisCompare.renderBlockChart === 'function') {
+      var selectedIds = {};
+      analyses.forEach(function (a) { if (a && a.id) selectedIds[a.id] = true; });
+      var state = { charts: {} };
+      window.NpAnalysisCompare.renderBlockChart(
+        canvas,
+        blockRows,
+        analyses,
+        selectedIds,
+        'candle',
+        block.id,
+        state,
+        { responsive: false, animation: false, devicePixelRatio: 2, legendPosition: 'top' }
+      );
+      var candleChart = state.charts[block.id];
+      var candleUrl = null;
+      try {
+        if (candleChart && typeof candleChart.update === 'function') candleChart.update('none');
+        if (candleChart && typeof candleChart.toBase64Image === 'function') {
+          candleUrl = candleChart.toBase64Image('image/png', 1);
+        } else {
+          candleUrl = canvas.toDataURL('image/png');
+        }
+        if (!candleUrl || candleUrl.length < 500) candleUrl = null;
+      } catch (eCandle) {
+        console.warn('lab PDF candle chart', block.id, eCandle);
+        candleUrl = null;
+      }
+      try { if (candleChart) candleChart.destroy(); } catch (eD) { /* ignore */ }
+      try { if (canvas.parentNode) canvas.parentNode.removeChild(canvas); } catch (eR) { /* ignore */ }
+      return candleUrl;
+    }
+
     var isBar = block.chartType === 'bar';
     var labelFn = window.NpAnalysisCompare.analysisLabel;
     var datasets = analyses.map(function (a, idx) {

@@ -234,8 +234,8 @@
   ];
 
   var FOLIAR_BLOCKS = [
-    { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)', chartType: 'line', chart: true },
-    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'line', chart: true },
+    { id: 'macros', titleKey: 'analysis.block_macros_pct', title: 'Macros (% MS)', chartType: 'candle', chart: true },
+    { id: 'micros', titleKey: 'analysis.block_micros', title: 'Micros (ppm)', chartType: 'candle', chart: true },
     { id: 'ratios', title: 'Relaciones nutrimentales', titleEn: 'Nutrient ratios', chart: false }
   ];
 
@@ -348,7 +348,7 @@
       reviewSections: FOLIAR_REVIEW_SECTIONS,
       reviewFields: FOLIAR_REVIEW_FIELDS,
       hint:
-        'Cada columna es un análisis foliar. Gráficas: macros (% MS) y micros (ppm). Tabla de relaciones nutrimentales (real vs ideal del mismo análisis).',
+        'Cada columna es un análisis foliar. Gráficas tipo vela: franja = rango óptimo (±10% DOP); marca = valor. Tabla de relaciones nutrimentales (real vs ideal del mismo análisis).',
       reviewTitle: 'Revisar datos detectados (foliar)'
     },
     fruta: {
