@@ -31,3 +31,13 @@ https://github.com/NutriPlantPRO/NutriPlantPRO/pulls
 ## Entradas
 
 <!-- El agente inserta cada idea DEBAJO de este heading, más reciente primero. -->
+
+### 2026-09-23 18:35 — Migrar GPT Socio Admin a plugin (OpenAI)
+
+- **Estado:** nueva
+- **Fuente:** Mac
+- **Tema:** plugin
+
+Banner de OpenAI: migrar GPTs a complementos (deadline 11 dic 2026). Jesús: “mejor otro día con calma… ya lo ponte como pendiente.” No picar **Migrar** a ciegas. El botón no deja el Socio igual: hay que verificar Actions (`nutriplantAdminQuery`), Knowledge (ANALISIS/MANUAL) y 3 preguntas reales. El plugin público (directorio) es otro trámite.
+
+**Para la Mac:** el día que lo trabajemos, migrar con calma, checar Actions/skill/Knowledge y no dar por cerrado el Socio hasta que responda activos, un proyecto y un análisis.
