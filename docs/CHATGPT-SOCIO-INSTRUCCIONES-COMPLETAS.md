@@ -4,7 +4,7 @@ Copia el bloque **INICIO → FIN** en ChatGPT → Instructions (GPT) o Skill (co
 
 Knowledge: HERRAMIENTAS + ANALISIS-LABORATORIO + MANUAL-TECNICO + PUBLICACIONES-REDES + NUTRI-PRO-CONOCIMIENTO-GPT + **INVEST-PRO-CONOCIMIENTO-GPT** + **SUSCRIPCION-ADMIN**  
 OpenAPI (GPT, hasta el 11 dic 2026): `openapi-nutriplant-admin.json` **v2.15.0** (Import URL: https://nutriplantpro.com/api/admin-assistant/openapi.json).  
-Complemento: MCP `https://nutriplantpro.com/mcp-admin` — misma tool `nutriplantAdminQuery`. Guía: `docs/CHATGPT-SOCIO-MCP.md`.  
+Complemento: MCP `https://nutriplantpro.com/mcp-admin` — misma tool `nutriplantAdminQuery`. **Mapa vivo (qué está instalado, cómo actualizar):** `docs/CHATGPT-SOCIO-MCP.md`.  
 Tras conectar, verifica con describe_api → debe responder `version: 2.15.0`.
 
 ---

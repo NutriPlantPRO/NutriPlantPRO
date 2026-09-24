@@ -1,0 +1,34 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "nutriplant-socio-admin",
+  "version": "1.0.0",
+  "description": "Socio privado de Jesús Avila. Admin, pagos, proyectos, Plan/Nutri/Invest PRO.",
+  "author": {
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com"
+  },
+  "homepage": "https://nutriplantpro.com",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Nutriplant Socio Admin",
+        "shortDescription": "Socio estratégico privado de NutriPlant.",
+        "longDescription": "Asistente privado de Jesús Avila. Consulta admin, suscriptores, proyectos, Plan PRO, Nutri PRO e Invest PRO vía MCP /mcp-admin. No es el plugin público NutriPlant PRO.",
+        "developerName": "Jesús Avila Mendoza",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://nutriplantpro.com",
+        "privacyPolicyURL": "https://nutriplantpro.com/politicas-privacidad.html",
+        "termsOfServiceURL": "https://nutriplantpro.com/terminos-condiciones.html",
+        "defaultPrompt": [
+          "¿Cuántos activos en 30 días?",
+          "¿Cuántos usuarios tengo, cuándo pagaron y cuándo les toca?",
+          "Lista pendientes Plan PRO"
+        ],
+        "brandColor": "#0B1F4A",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png"
+      }
+    }
+  }
+}

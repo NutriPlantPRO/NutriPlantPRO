@@ -137,15 +137,10 @@ Tras deploy del repo con Fase 3:
 
 ---
 
-## Paso G — Complemento MCP (migración GPT → plugin ChatGPT)
+## Paso G — Complemento MCP (hecho 2026-09-24)
 
-OpenAI retira Custom GPT el **11 dic 2026**. Las Actions no se migran. Puerta nueva (ya en repo):
+Migración hecha. Mapa de qué está instalado, qué no tocar y cómo actualizar: **`docs/CHATGPT-SOCIO-MCP.md`**.
 
-- Guía: `docs/CHATGPT-SOCIO-MCP.md`
 - URL: `https://nutriplantpro.com/mcp-admin`
-- Misma tool `nutriplantAdminQuery` + mismo `NUTRIPLANT_ADMIN_GPT_TOKEN`
-- **No** es `https://nutriplantpro.com/mcp` (plugin público)
-
-Orden: deploy → smoke curl → conector Developer mode → probar describe_api / roster → **después** pulsar «Migrar a un complemento».
-
-*Listo para una sola actualización en ChatGPT.*
+- Día a día: **Nutriplant Socio Admin** (icono N). Manguera: **NutriPlant App Private**. Público: **NutriPlant PRO** (no mezclar).
+- GPT viejo: no se usa. Actions no existen en el complemento.
