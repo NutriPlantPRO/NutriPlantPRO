@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.09.15 · **28 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-09-24 · **v2026.09.24b** (SN/pasta: % suma meq; suelo: ideales CIC/relaciones)
+**Versión Knowledge:** 2026-09-24 · **v2026.09.24c** (SN/pasta: columna % meq; suelo: ideales CIC/relaciones)
 
 ---
 
@@ -390,11 +390,11 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.16 Solución nutritiva (lab)
 
-**URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). **% suma** junto a meq: catión/(K+Ca+Mg+Na); anión/(NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Suma 100 % por grupo. ≠ triángulo Steiner. Semáforo: Ideal vacío → Ref.; con Ideal → ±10 % de ese número. Rangos SN_REF_DEFAULT; diff = lab − ideal. Pestaña + admin + PDF. ≠ extracto pasta ≠ diseño didáctico gratis.
+**URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). **% meq** junto a meq: catión/(K+Ca+Mg+Na); anión/(NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Suma 100 % por grupo. ≠ triángulo Steiner. Semáforo: Ideal vacío → Ref.; con Ideal → ±10 % de ese número. Rangos SN_REF_DEFAULT; diff = lab − ideal. Pestaña + admin + PDF. ≠ extracto pasta ≠ diseño didáctico gratis.
 
 ### 4.17 Extracto de pasta
 
-**URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva (incl. **% suma** meq y semáforo vs Ideal/Ref.). Interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. Pestaña + admin + PDF. ≠ solución nutritiva lab.
+**URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva (incl. **% meq** y semáforo vs Ideal/Ref.). Interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. Pestaña + admin + PDF. ≠ solución nutritiva lab.
 
 **Cruce con Hidroponía (Cálculo de fertilizantes):** Traer de análisis al final del cálculo. Pasta **no** resta del faltante (agua sí). Diff = pasta − objetivo; sugerencia = exceso × f (f editable). Aplicar baja el objetivo 1× por análisis. Steiner (1961) = composición/equilibrio iónico de la solución; **no** prescribe restar pasta 1:1. Ver también §4.9.
 

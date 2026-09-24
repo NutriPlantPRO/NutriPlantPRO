@@ -241,7 +241,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-solucion-nutritiva-lab.html`,
       pillar: 'C — Análisis solución',
       summary:
-        'solucionNutritivaAnalyses[]; CE/pH/RAS; cationes/aniones meq↔ppm; % suma (ion/total del grupo; ≠ Steiner); semáforo vs Ideal ±10% o vs Ref.; SN_REF_DEFAULT; diff lab−ideal; admin+PDF; ≠ extracto pasta ni herramienta gratis.',
+        'solucionNutritivaAnalyses[]; CE/pH/RAS; cationes/aniones meq↔ppm; % meq (ion/total del grupo; ≠ Steiner); semáforo vs Ideal ±10% o vs Ref.; SN_REF_DEFAULT; diff lab−ideal; admin+PDF; ≠ extracto pasta ni herramienta gratis.',
       status: 'published'
     },
     {
@@ -251,7 +251,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-extracto-pasta.html`,
       pillar: 'C — Análisis pasta',
       summary:
-        'extractoPastaAnalyses[]; rizósfera ≠ agua; % suma meq y semáforo igual que solución (admin+PDF). En hidro: comparar pasta vs objetivo, f editable, Aplicar 1×/análisis; Steiner = equilibrio iónico, no resta 1:1.',
+        'extractoPastaAnalyses[]; rizósfera ≠ agua; % meq y semáforo igual que solución (admin+PDF). En hidro: comparar pasta vs objetivo, f editable, Aplicar 1×/análisis; Steiner = equilibrio iónico, no resta 1:1.',
       status: 'published'
     },
     {

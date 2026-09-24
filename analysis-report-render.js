@@ -717,7 +717,7 @@
             if (!isSoilType) {
                 if (isSolucionType || isExtractoType) {
                     var sTbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Elemento', 'Element') + '</th>';
-                    if (hasMeqPpm) sTbl += '<th>meq/L</th><th>' + tr('% suma', '% of sum') + '</th><th>ppm</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
+                    if (hasMeqPpm) sTbl += '<th>meq/L</th><th>' + tr('% meq', '% meq') + '</th><th>ppm</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
                     else sTbl += '<th>' + tr('Análisis (ppm)', 'Analysis (ppm)') + '</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
                     sTbl += '</tr></thead><tbody>';
                     var meqSum = 0;
