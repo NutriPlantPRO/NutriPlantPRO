@@ -21,6 +21,7 @@
     'Semáforo: si llenas Ideal, se mide contra ese número (±10 % verde); si no, contra la franja Ref.': 'Traffic light: if you fill Ideal, it is judged against that number (±10% green); if empty, against the Ref. range.',
     '% suma': '% meq',
     '% meq': '% meq',
+    'Total': 'Total',
     'DOP (Desviación del Óptimo Porcentual): DOP = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'DOP (Deviation from Optimum Percentage): DOP = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
     'ICC (Índice Comparativo de Calidad): ICC = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'CQI (Comparative Quality Index): CQI = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
     'Macronutrientes (% MS)': 'Macronutrients (% DM)',

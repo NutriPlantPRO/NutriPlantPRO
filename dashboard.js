@@ -21651,6 +21651,13 @@ function updateFluidIonPctTable(prefix, analysis) {
         analysis[group][k + '_pct'] = pct == null ? '' : Number(pct.toFixed(1));
       }
     });
+    var sumEl = document.getElementById(prefix + '-sum-' + group + '-meq');
+    var pctEl = document.getElementById(prefix + '-sum-' + group + '-pct');
+    if (sumEl) sumEl.textContent = sum > 0 ? sum.toFixed(2) : '—';
+    if (pctEl) pctEl.textContent = sum > 0 ? '100' : '—';
+    if (analysis && analysis[group]) {
+      analysis[group].total_meq = sum > 0 ? Number(sum.toFixed(2)) : '';
+    }
   }
   apply(FLUID_CATION_MEQ_KEYS, 'cations');
   apply(FLUID_ANION_MEQ_KEYS, 'anions');
@@ -21722,6 +21729,9 @@ function createSolucionNutritivaTabHTML() {
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="sn-mg-meq" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-mg" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-mg-ppm" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="sn-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','mg',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td id="sn-diff-mg">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="sn-na-meq" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-na" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-na-ppm" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td>—</td><td id="sn-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','na',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td id="sn-diff-na">—</td></tr>
                     </tbody>
+                    <tfoot>
+                      <tr class="sn-ion-total-row"><td>${dashboardT('analysis.fluid_total', 'Total')}</td><td class="sn-ion-total-meq"><span id="sn-sum-cations-meq">—</span></td><td class="sn-ion-pct-cell"><span id="sn-sum-cations-pct" class="sn-ion-pct">—</span></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    </tfoot>
                   </table>
                 </div>
               </details>
@@ -21738,6 +21748,9 @@ function createSolucionNutritivaTabHTML() {
                       <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="sn-hco3-meq" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','meq',this);"></td><td class="sn-ion-pct-cell"><span id="sn-pct-hco3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-hco3-ppm" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','ppm',this);"></td><td>—</td><td id="sn-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','hco3',this.value);"></td><td id="sn-diff-hco3">—</td></tr>
                       <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="sn-co3-meq" class="fertirriego-input" data-sn-macro="CO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('CO3','meq',this);"></td><td class="sn-ion-pct-cell"><span id="sn-pct-co3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-co3-ppm" class="fertirriego-input" data-sn-macro="CO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('CO3','ppm',this);"></td><td>—</td><td id="sn-ref-co3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-co3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','co3',this.value);"></td><td id="sn-diff-co3">—</td></tr>
                     </tbody>
+                    <tfoot>
+                      <tr class="sn-ion-total-row"><td>${dashboardT('analysis.fluid_total', 'Total')}</td><td class="sn-ion-total-meq"><span id="sn-sum-anions-meq">—</span></td><td class="sn-ion-pct-cell"><span id="sn-sum-anions-pct" class="sn-ion-pct">—</span></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    </tfoot>
                   </table>
                 </div>
               </details>
@@ -22106,6 +22119,9 @@ function createExtractoPastaTabHTML() {
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="ep-mg-meq" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-mg" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-mg-ppm" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="ep-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','mg',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td id="ep-diff-mg">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="ep-na-meq" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-na" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-na-ppm" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td>ideal &lt;50</td><td id="ep-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','na',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td id="ep-diff-na">—</td></tr>
                     </tbody>
+                    <tfoot>
+                      <tr class="sn-ion-total-row"><td>${dashboardT('analysis.fluid_total', 'Total')}</td><td class="sn-ion-total-meq"><span id="ep-sum-cations-meq">—</span></td><td class="sn-ion-pct-cell"><span id="ep-sum-cations-pct" class="sn-ion-pct">—</span></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    </tfoot>
                   </table>
                 </div>
               </details>
@@ -22122,6 +22138,9 @@ function createExtractoPastaTabHTML() {
                       <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="ep-hco3-meq" class="fertirriego-input" data-ep-macro="HCO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('HCO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-hco3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-hco3-ppm" class="fertirriego-input" data-ep-macro="HCO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('HCO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td>ideal &lt;120</td><td id="ep-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','hco3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td id="ep-diff-hco3">—</td></tr>
                       <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="ep-co3-meq" class="fertirriego-input" data-ep-macro="CO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('CO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-co3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.01" id="ep-co3-ppm" class="fertirriego-input" data-ep-macro="CO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('CO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td>ideal 0</td><td id="ep-ref-co3" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-co3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','co3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td id="ep-diff-co3">—</td></tr>
                     </tbody>
+                    <tfoot>
+                      <tr class="sn-ion-total-row"><td>${dashboardT('analysis.fluid_total', 'Total')}</td><td class="sn-ion-total-meq"><span id="ep-sum-anions-meq">—</span></td><td class="sn-ion-pct-cell"><span id="ep-sum-anions-pct" class="sn-ion-pct">—</span></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    </tfoot>
                   </table>
                 </div>
               </details>

@@ -7317,6 +7317,10 @@ async function handleDescribeApi() {
       },
       verify: 'Si describe_api devuelve version 2.15.0, el GPT tiene schema y token correctos.'
     },
+    mcp: {
+      url: nutriProPublicBaseUrl() + '/mcp-admin',
+      note: 'Puerta MCP privada del Socio (complemento ChatGPT). No es /mcp público.'
+    },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary', 'subscription_roster'],
       nutriplant_projects: [
@@ -7557,13 +7561,16 @@ function getOpenApiSpec() {
 }
 
 module.exports.runAdminAction = async function runAdminAction(action, params) {
-  const supabase = await getSupabase();
-  if (!supabase) {
-    return { ok: false, error: 'Supabase no configurado (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).' };
-  }
   const fn = HANDLERS[action];
   if (!fn) {
     return { ok: false, error: 'Acción desconocida: ' + action };
+  }
+  if (action === 'describe_api') {
+    return fn(null, params || {});
+  }
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return { ok: false, error: 'Supabase no configurado (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).' };
   }
   return fn(supabase, params || {});
 };

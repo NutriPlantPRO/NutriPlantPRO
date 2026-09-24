@@ -1,6 +1,6 @@
 # Plugin público NutriPlant PRO (ChatGPT)
 
-Producto acordado. **No es el GPT Socio.** El Socio (`/api/admin-assistant` + token admin) no se toca.
+Producto acordado. **No es el GPT Socio.** El Socio vive en `/api/admin-assistant` y, para el complemento ChatGPT, en `/mcp-admin` (`docs/CHATGPT-SOCIO-MCP.md`). El token admin no se usa aquí.
 
 **Documento de producto (definición viva):** [`CHATGPT-PLUGIN-PUBLICO-TRABAJO.md`](./CHATGPT-PLUGIN-PUBLICO-TRABAJO.md)
 
@@ -11,7 +11,7 @@ Producto acordado. **No es el GPT Socio.** El Socio (`/api/admin-assistant` + to
 | | Plugin público | Socio (privado) |
 |---|---|---|
 | Quién | Cualquiera en ChatGPT | Solo Jesús |
-| Puerta | `https://nutriplantpro.com/mcp` | `/api/admin-assistant` |
+| Puerta | `https://nutriplantpro.com/mcp` | `/mcp-admin` + `/api/admin-assistant` |
 | Secreto | Ninguno (login del usuario, opcional) | `NUTRIPLANT_ADMIN_GPT_TOKEN` |
 | Datos | Manual + fórmulas; si hay sesión, **sus** lotes | Todos los clientes, pagos, admin |
 

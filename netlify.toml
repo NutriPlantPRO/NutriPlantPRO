@@ -67,6 +67,9 @@
 [functions."nutriplant-public-mcp"]
   timeout = 26
 
+[functions."nutriplant-admin-mcp"]
+  timeout = 26
+
 [functions."agroclimate-weekly"]
   schedule = "0 * * * *"
   timeout = 60
@@ -181,6 +184,31 @@
 [[redirects]]
   from = "/api/admin/agroclimate"
   to = "/.netlify/functions/agroclimate-admin"
+  status = 200
+  force = true
+
+# Socio Admin MCP (privado). Debe ir ANTES de los well-known públicos.
+[[redirects]]
+  from = "/mcp-admin"
+  to = "/.netlify/functions/nutriplant-admin-mcp"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/mcp-admin/*"
+  to = "/.netlify/functions/nutriplant-admin-mcp"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/.well-known/oauth-protected-resource/mcp-admin"
+  to = "/.netlify/functions/nutriplant-admin-mcp"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/.well-known/oauth-authorization-server/mcp-admin"
+  to = "/.netlify/functions/nutriplant-admin-mcp"
   status = 200
   force = true
 

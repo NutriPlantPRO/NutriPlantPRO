@@ -149,7 +149,7 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 
 - General: CE (dS/m), pH, RAS.
 - Cationes y aniones en **ppm**; fila ideal editable.
-- **% meq (junto a meq):** cada catión / suma de cationes (K+Ca+Mg+Na); cada anión / suma de aniones (NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Suma 100 % dentro del grupo. ≠ triángulo Steiner (ahí Cl y NH₄ van aparte). **Misma columna en dashboard, admin y PDF.**
+- **% meq (junto a meq):** cada catión / suma de cationes (K+Ca+Mg+Na); cada anión / suma de aniones (NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Fila **Total** = Σ meq del grupo y **100** en % meq. ≠ triángulo Steiner (ahí Cl y NH₄ van aparte). **Misma columna en dashboard, admin y PDF.**
 - Diff = laboratorio − ideal (ppm).
 - Referencias internas por nutriente (rangos SN en código).
 - **Semáforo:** si Ideal está vacío → franja Ref. Si el usuario llena Ideal → se mide contra ese número (±10 % verde, como DOP). La Ref. se queda como guía de literatura, no pisa el criterio del técnico.
@@ -159,7 +159,7 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 ### 4.3 Extracto de pasta saturada
 
 - CE, pH, RAS; cationes/aniones ppm; ideales.
-- **% meq (junto a meq):** igual que solución: % sobre el total de cationes y % sobre el total de aniones (todos los de la tabla). **Dashboard, admin y PDF.**
+- **% meq (junto a meq):** igual que solución: % sobre el total de cationes y % sobre el total de aniones (todos los de la tabla). Fila **Total** = Σ meq + 100. **Dashboard, admin y PDF.**
 - **Semáforo:** igual que solución: vacío → Ref.; con Ideal → ±10 % de ese número. 79 vs ideal 80 = verde, aunque Ref. sea 200–300.
 - Interpretación: disponibilidad en condición de saturación — validar con campo y cultivo.
 - **En Hidroponía → Cálculo:** se puede «Traer de análisis» al final. **No resta** como el agua. Si pasta &gt; objetivo → bajaría = (pasta − objetivo) × f (f editable). Botón Aplicar baja el objetivo 1×/análisis. Steiner = equilibrio iónico, no resta 1:1. Manual: `analisis-extracto-pasta` + `hidroponia-solucion-por-etapa`.

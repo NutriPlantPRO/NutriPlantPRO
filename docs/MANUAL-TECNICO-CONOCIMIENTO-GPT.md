@@ -390,7 +390,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.16 Solución nutritiva (lab)
 
-**URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). **% meq** junto a meq: catión/(K+Ca+Mg+Na); anión/(NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Suma 100 % por grupo. ≠ triángulo Steiner. Semáforo: Ideal vacío → Ref.; con Ideal → ±10 % de ese número. Rangos SN_REF_DEFAULT; diff = lab − ideal. Pestaña + admin + PDF. ≠ extracto pasta ≠ diseño didáctico gratis.
+**URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). **% meq** junto a meq: catión/(K+Ca+Mg+Na); anión/(NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Fila Total = Σ meq del grupo y 100 %. ≠ triángulo Steiner. Semáforo: Ideal vacío → Ref.; con Ideal → ±10 % de ese número. Rangos SN_REF_DEFAULT; diff = lab − ideal. Pestaña + admin + PDF. ≠ extracto pasta ≠ diseño didáctico gratis.
 
 ### 4.17 Extracto de pasta
 

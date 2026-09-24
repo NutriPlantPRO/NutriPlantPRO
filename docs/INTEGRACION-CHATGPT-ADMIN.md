@@ -283,6 +283,7 @@ GPT: [plan_pro_week] 3 ítems alta prioridad: …
 
 | Archivo | Rol |
 |---------|-----|
+| `netlify/functions/nutriplant-admin-mcp.js` | MCP privado `/mcp-admin` (complemento ChatGPT) |
 | `netlify/functions/openai-assistant.js` | Chat de usuarios en la app (referencia de proxy) |
 | `admin/index.html` | Lógica admin + chat interno (`getAdminPanelContext`) |
 | `fertirriego-program-functions.js` | Cálculo ppm/meq/% |
@@ -295,14 +296,13 @@ GPT: [plan_pro_week] 3 ítems alta prioridad: …
 
 ## 14. Siguiente paso inmediato
 
-**Fase 1 código listo.** Falta:
+API admin + MCP Socio están en repo. Guía del complemento: `docs/CHATGPT-SOCIO-MCP.md`.
 
-1. Poner `NUTRIPLANT_ADMIN_GPT_TOKEN` en Netlify y hacer **deploy**.
-2. Probar `curl` contra `https://nutriplantpro.com/api/admin-assistant`.
-3. Crear GPT privado → Actions → importar `docs/openapi-nutriplant-admin.json` → Auth Bearer con el mismo token.
-
-Cuando quieras continuar, di: *“socio, Fase 2 proyectos / fertirriego”* o *“configurar el GPT”*.
+1. `NUTRIPLANT_ADMIN_GPT_TOKEN` en Netlify + deploy.
+2. Probar `curl` contra `/api/admin-assistant` y `/mcp-admin`.
+3. GPT (hasta 11 dic 2026): Actions → OpenAPI v2.15.0 + Bearer.
+4. Complemento: conector Developer mode → `https://nutriplantpro.com/mcp-admin` (misma tool, sin Action OpenAPI).
 
 ---
 
-*Última actualización: mayo 2026 — documento vivo; ir marcando checkboxes según avancemos.*
+*Última actualización: septiembre 2026 — documento vivo; ir marcando checkboxes según avancemos.*

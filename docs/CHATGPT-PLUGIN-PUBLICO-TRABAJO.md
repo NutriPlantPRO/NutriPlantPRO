@@ -137,7 +137,7 @@ Público ≠ Socio · solo su JWT en cuenta · solo lectura cuenta hasta oleada 
 Queda **fuera** de `@NutriPlant PRO` / `/mcp` público:
 
 - Panel **admin** y cualquier URL/herramienta de administración  
-- **GPT Socio** / `admin-assistant` / token admin  
+- **GPT Socio** / `admin-assistant` / `/mcp-admin` / token admin  
 - **Plan PRO** (cerebro digital / notebook privado)  
 - **Nutri PRO** (archivos/conocimiento privado del admin o módulos no públicos)  
 - **Invest PRO** u otros módulos solo-admin  

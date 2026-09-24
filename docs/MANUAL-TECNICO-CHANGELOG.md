@@ -9,7 +9,7 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ### Actualizado
 
-- Capítulos `analisis-solucion-nutritiva-lab.html` y `analisis-extracto-pasta.html` (ES/EN): columna **% meq** junto a meq (todos los iones del grupo; ≠ Steiner); semáforo vs Ideal ±10 % o vs Ref. Admin + PDF usan el mismo render.
+- Capítulos `analisis-solucion-nutritiva-lab.html` y `analisis-extracto-pasta.html` (ES/EN): columna **% meq** junto a meq (todos los iones del grupo; ≠ Steiner); fila **Total** = Σ meq + 100; semáforo vs Ideal ±10 % o vs Ref. Admin + PDF usan el mismo render.
 - Capítulo `analisis-suelo-fertilidad-kgha.html`: saturación CIC e ideales de relaciones (Ca/Mg 6, etc.) en pestaña, admin y PDF.
 - Knowledge ANALISIS + MANUAL §4.3 / §4.16–4.17, catálogo `manual_tecnico_catalog`. No hace falta re-pegar Instructions.
 

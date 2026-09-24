@@ -49,14 +49,14 @@ module.exports = {
       label: 'Solución nutritiva (extracto o licor)',
       storageKey: 'solucionNutritivaAnalyses',
       sections: ['General CE/pH/RAS', 'Cationes meq/% meq/ppm', 'Aniones meq/% meq/ppm', 'Micros', 'Ideal editable vs lab'],
-      criteria: 'Diff ppm vs ideal por nutriente; referencias SN_REF_DEFAULT en app. Semáforo: Ideal vacío → franja Ref.; con Ideal → ±10% de ese número (no de la Ref.). % meq junto a meq: ion/total cationes o aniones (todos los de la tabla; ≠ Steiner). Misma columna en dashboard, admin y PDF.'
+      criteria: 'Diff ppm vs ideal por nutriente; referencias SN_REF_DEFAULT en app. Semáforo: Ideal vacío → franja Ref.; con Ideal → ±10% de ese número (no de la Ref.). % meq junto a meq: ion/total cationes o aniones (todos los de la tabla; ≠ Steiner). Fila Total = Σ meq del grupo y 100. Misma columna en dashboard, admin y PDF.'
     },
     {
       id: 'extracto_pasta',
       label: 'Extracto de pasta saturada',
       storageKey: 'extractoPastaAnalyses',
       sections: ['CE/pH/RAS', 'Cationes y aniones meq/% meq/ppm', 'Ideal'],
-      criteria: 'Saturación paste; interpretar disponibilidad en rizósfera con cautela. Semáforo: igual que solución (Ideal vacío → franja Ref.; con Ideal → ±10% de ese número). % meq junto a meq: igual que solución. Dashboard, admin y PDF.'
+      criteria: 'Saturación paste; interpretar disponibilidad en rizósfera con cautela. Semáforo: igual que solución (Ideal vacío → franja Ref.; con Ideal → ±10% de ese número). % meq junto a meq: igual que solución. Fila Total = Σ meq + 100. Dashboard, admin y PDF.'
     },
     {
       id: 'agua',

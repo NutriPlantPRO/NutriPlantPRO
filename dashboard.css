@@ -10202,6 +10202,16 @@ html.embed-login body {
   font-weight: 700;
   color: #0369a1;
 }
+.sn-ion-total-row td {
+  background: #f0f9ff;
+  font-weight: 700;
+  color: #0f172a;
+  border-top: 1px solid #bae6fd;
+}
+.sn-ion-total-meq {
+  font-size: 13px;
+  color: #0369a1;
+}
 .sn-ref-badge { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; }
 .sn-ref-badge.is-vs-ideal { flex-direction: column; gap: 2px; }
 .sn-status-vs {

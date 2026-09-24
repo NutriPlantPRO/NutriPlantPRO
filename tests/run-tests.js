@@ -20,7 +20,8 @@ var suites = [
   require('./foliar-window-core.test.js'),
   require('./foliar-ratios-core.test.js'),
   require('./irrigation-uniformity-core.test.js'),
-  require('./public-mcp.test.js')
+  require('./public-mcp.test.js'),
+  require('./admin-mcp.test.js')
 ];
 
 (async function () {

@@ -1,17 +1,17 @@
 'use strict';
 
 /**
- * MCP público NutriPlant PRO — ChatGPT plugin.
- * NO importar nutriplant-admin-assistant ni el token admin.
- * El Socio vive en /mcp-admin (nutriplant-admin-mcp).
+ * MCP privado Socio Admin — complemento ChatGPT.
+ * NO mezclar con /mcp (plugin público).
  *
- * Rutas: /mcp  /mcp/oauth/*  /.well-known/oauth-*
+ * Rutas: /mcp-admin  /mcp-admin/oauth/*  /.well-known/oauth-*-/mcp-admin
  */
 
-const auth = require('./lib/public-mcp-auth');
-const tools = require('./lib/public-mcp-tools');
+const auth = require('./lib/admin-mcp-auth');
+const tools = require('./lib/admin-mcp-tools');
 
 const PROTOCOL = '2025-03-26';
+const VERSION = '1.0.0';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -52,9 +52,9 @@ function json(status, body, extra) {
 
 function wwwAuth(origin) {
   return (
-    'Bearer realm="NutriPlant PRO", resource_metadata="' +
+    'Bearer realm="NutriPlant Socio Admin", resource_metadata="' +
     origin +
-    '/.well-known/oauth-protected-resource"'
+    '/.well-known/oauth-protected-resource/mcp-admin"'
   );
 }
 
@@ -77,6 +77,17 @@ function textResult(obj) {
   };
 }
 
+function isAdminMcpPath(path) {
+  return (
+    path === '/mcp-admin' ||
+    path.startsWith('/mcp-admin/') ||
+    path === '/.well-known/oauth-protected-resource/mcp-admin' ||
+    path === '/.well-known/oauth-authorization-server/mcp-admin' ||
+    path.endsWith('/nutriplant-admin-mcp') ||
+    path === '/.netlify/functions/nutriplant-admin-mcp'
+  );
+}
+
 async function handleMcpMessage(msg, event, origin) {
   if (!msg || msg.jsonrpc !== '2.0') {
     return mcpError(msg && msg.id, -32600, 'JSON-RPC 2.0 requerido.');
@@ -94,8 +105,8 @@ async function handleMcpMessage(msg, event, origin) {
     return mcpResult(id, {
       protocolVersion: PROTOCOL,
       capabilities: { tools: { listChanged: false } },
-      serverInfo: { name: 'NutriPlant PRO', version: '0.6.0' },
-      instructions: tools.PUBLIC_INSTRUCTIONS
+      serverInfo: { name: 'NutriPlant Socio Admin', version: VERSION },
+      instructions: tools.ADMIN_INSTRUCTIONS
     });
   }
 
@@ -107,25 +118,18 @@ async function handleMcpMessage(msg, event, origin) {
   if (method === 'prompts/list') return mcpResult(id, { prompts: [] });
 
   if (method === 'tools/call') {
+    const verified = auth.verifyAdminBearer(event);
+    if (!verified.ok) {
+      return mcpError(id, -32001, verified.error, verified.status || 401, {
+        'WWW-Authenticate': wwwAuth(origin)
+      });
+    }
     const name = msg.params && msg.params.name;
     const args = (msg.params && msg.params.arguments) || {};
     if (!name) return mcpError(id, -32602, 'Falta params.name');
 
-    let user = null;
-    const bearer = auth.parseBearer(event);
-    if (bearer) {
-      const verified = await auth.verifySubscriber(bearer);
-      if (verified.ok) user = verified;
-    }
-
-    if (tools.toolNeedsAuth(name) && !user) {
-      return mcpError(id, -32001, 'Se requiere iniciar sesión de suscriptor NutriPlant PRO (Conectar cuenta).', 401, {
-        'WWW-Authenticate': wwwAuth(origin)
-      });
-    }
-
     try {
-      const out = await tools.callTool(name, args, user);
+      const out = await tools.callTool(name, args);
       const failed = out && out.ok === false;
       const payload = textResult(out);
       if (failed) payload.isError = true;
@@ -149,47 +153,47 @@ exports.handler = async function (event) {
 
   event.decodedBody = decodeBody(event);
 
-  if (path === '/.well-known/oauth-protected-resource' || path === '/.well-known/oauth-protected-resource/mcp') {
+  if (path === '/.well-known/oauth-protected-resource/mcp-admin') {
     return json(200, auth.protectedResourceMeta(origin));
   }
-  if (path === '/.well-known/oauth-authorization-server' || path === '/.well-known/oauth-authorization-server/mcp') {
+  if (path === '/.well-known/oauth-authorization-server/mcp-admin') {
     return json(200, auth.authorizationServerMeta(origin));
   }
 
-  if (path === '/mcp/oauth/authorize' && method === 'GET') {
-    const res = await auth.handleAuthorizeGet(event, origin);
-    return withCors(res);
+  if (path === '/mcp-admin/oauth/authorize' && method === 'GET') {
+    return withCors(await auth.handleAuthorizeGet(event, origin));
   }
-  if (path === '/mcp/oauth/login' && method === 'POST') {
-    const res = await auth.handleLoginPost(event, origin);
-    return withCors(res);
+  if (path === '/mcp-admin/oauth/login' && method === 'POST') {
+    return withCors(await auth.handleLoginPost(event, origin));
   }
-  if (path === '/mcp/oauth/token' && method === 'POST') {
-    const res = await auth.handleTokenPost(event, origin);
-    return withCors(res);
+  if (path === '/mcp-admin/oauth/token' && method === 'POST') {
+    return withCors(await auth.handleTokenPost(event, origin));
   }
-  if (path === '/mcp/oauth/register' && method === 'POST') {
+  if (path === '/mcp-admin/oauth/register' && method === 'POST') {
     return withCors(auth.handleRegister());
   }
-  if (path === '/mcp/oauth/userinfo' && method === 'GET') {
-    const res = await auth.handleUserInfo(event);
-    return withCors(res);
+  if (path === '/mcp-admin/oauth/userinfo' && method === 'GET') {
+    return withCors(auth.handleUserInfo(event));
   }
 
-  const isMcp = path === '/mcp' || path.endsWith('/nutriplant-public-mcp') || path === '/.netlify/functions/nutriplant-public-mcp';
+  if (!isAdminMcpPath(path)) {
+    return json(404, { error: 'not_found', path, socio: true });
+  }
 
-  if (isMcp && method === 'GET') {
+  if (method === 'GET') {
     return json(200, {
       ok: true,
-      name: 'NutriPlant PRO',
-      mcp: origin + '/mcp',
-      manual: 'https://nutriplantpro.com/manual-tecnico/',
-      socio: false,
-      note: 'POST JSON-RPC MCP. El GPT Socio no vive aquí.'
+      name: 'NutriPlant Socio Admin',
+      mcp: origin + '/mcp-admin',
+      version: VERSION,
+      api: '2.15.0',
+      socio: true,
+      public_plugin: false,
+      note: 'POST JSON-RPC MCP privado. El plugin público vive en /mcp.'
     });
   }
 
-  if (isMcp && method === 'POST') {
+  if (method === 'POST') {
     let parsed;
     try {
       parsed = JSON.parse(event.decodedBody || '{}');
@@ -199,8 +203,7 @@ exports.handler = async function (event) {
     if (Array.isArray(parsed)) {
       const parts = [];
       for (let i = 0; i < parsed.length; i += 1) {
-        const res = await handleMcpMessage(parsed[i], event, origin);
-        parts.push(res);
+        parts.push(await handleMcpMessage(parsed[i], event, origin));
       }
       if (parts.length === 1) return parts[0];
       return json(

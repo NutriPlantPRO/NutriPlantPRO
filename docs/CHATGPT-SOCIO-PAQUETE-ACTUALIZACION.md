@@ -135,4 +135,17 @@ Tras deploy del repo con Fase 3:
 1. Guía: `docs/SEARCH-CONSOLE-FASE-3.md` (verificar dominio + enviar `sitemap.xml`).
 2. En el repo ya están: JSON-LD `Article` en capítulos, `FAQPage` en FAQ, `CollectionPage` en índice, `ProfilePage` en autoría; `llms.txt` con **22** URLs de capítulo + flujo.
 
+---
+
+## Paso G — Complemento MCP (migración GPT → plugin ChatGPT)
+
+OpenAI retira Custom GPT el **11 dic 2026**. Las Actions no se migran. Puerta nueva (ya en repo):
+
+- Guía: `docs/CHATGPT-SOCIO-MCP.md`
+- URL: `https://nutriplantpro.com/mcp-admin`
+- Misma tool `nutriplantAdminQuery` + mismo `NUTRIPLANT_ADMIN_GPT_TOKEN`
+- **No** es `https://nutriplantpro.com/mcp` (plugin público)
+
+Orden: deploy → smoke curl → conector Developer mode → probar describe_api / roster → **después** pulsar «Migrar a un complemento».
+
 *Listo para una sola actualización en ChatGPT.*

@@ -678,7 +678,7 @@
                 var r = items[i];
                 var parts = r.k.split('.');
                 var part = (parts[1] || '').trim();
-                if (/_pct$/i.test(part)) continue;
+                if (/_pct$/i.test(part) || /^total_meq$/i.test(part)) continue;
                 var m = part.match(/^(.+?)_(meq|ppm)$/);
                 var param = m ? m[1] : part;
                 if (!param) continue;
@@ -755,6 +755,12 @@
                         }
                         sTbl += '</tr>';
                     });
+                    if (hasMeqPpm) {
+                        sTbl += '<tr class="sn-ion-total-row"><td class="col-concept">' + tr('Total', 'Total') + '</td>';
+                        sTbl += '<td>' + (meqSum > 0 ? escapeHtml(formatNum(meqSum)) : '—') + '</td>';
+                        sTbl += '<td>' + (meqSum > 0 ? '100' : '—') + '</td>';
+                        sTbl += '<td></td><td></td><td></td></tr>';
+                    }
                     sTbl += '</tbody></table>';
                     return sTbl;
                 }
