@@ -5,7 +5,7 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-09-14',
+  version: '2026-09-24',
   scope:
     'Biblioteca HTML pública, sin cuenta. 28 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO (incluye Radar Satelital / Lectura Satelital + ISH + ventanas de aplicación foliar + uniformidad de riego).',
   publicUrls: {
@@ -49,7 +49,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-suelo-fertilidad-kgha.html`,
       pillar: 'C — Análisis de laboratorio',
       summary:
-        'Fertilidad: lab vs ideal; kg/ha=(lab−ideal)×0.1×prof×DA×(%raíz/100). K/Ca/Mg desde CIC 5/70/13%. El ppm de P/micros/B solo vale con el extractante. P Bray 40 / Olsen 25 / Mehlich 40. Fe-Mn-Zn-Cu: DTPA 20-20-3-1.5 o Mehlich 50-20-3-2 (un selector). B: agua caliente 1 o Mehlich 1.2. Otro no pisa. Ideales editables. No comparar métodos 1:1.',
+        'Fertilidad: lab vs ideal; kg/ha=(lab−ideal)×0.1×prof×DA×(%raíz/100). K/Ca/Mg desde CIC 5/70/13%. Saturación CIC ideal: Ca 65–75, Mg 10–15, K 3–7, Na 0–1, Al 0–1, H 0–10. Relaciones meq: Ca/Mg 6, Mg/K 3.5, (Ca+Mg)/K 18, Ca/K 14 (admin+PDF). El ppm de P/micros/B solo vale con el extractante. P Bray 40 / Olsen 25 / Mehlich 40. Fe-Mn-Zn-Cu: DTPA 20-20-3-1.5 o Mehlich 50-20-3-2 (un selector). B: agua caliente 1 o Mehlich 1.2. Otro no pisa. Ideales editables. No comparar métodos 1:1.',
       status: 'published'
     },
     {
@@ -165,7 +165,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-foliar-dop.html`,
       pillar: 'C — Análisis foliar',
       summary:
-        'DOP % = ((nivel−óptimo)/óptimo)×100. Relaciones nutrimentales (N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B): real = resultados, ideal = óptimos del mismo análisis; si editan un óptimo, la ideal se recalcula. P/Zn y Ca/B: macro % MS ×10 000 a ppm. Misma desviación y semáforo que DOP. Pestaña, admin y PDF. ≠ receta de dosis.',
+        'DOP % = ((nivel−óptimo)/óptimo)×100. Relaciones nutrimentales (N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B): real = resultados, ideal = óptimos del mismo análisis; si editan un óptimo, la ideal se recalcula. P/Zn y Ca/B: macro % MS ×10 000 a ppm. Misma desviación y semáforo que DOP. Comparar análisis: velas en % del óptimo de esa columna; franja DOP ±10% (90–110%); punto = lab; óp./id. por columna (no un óptimo único). Pestaña, admin y PDF. ≠ receta de dosis.',
       status: 'published'
     },
     {
@@ -241,7 +241,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-solucion-nutritiva-lab.html`,
       pillar: 'C — Análisis solución',
       summary:
-        'solucionNutritivaAnalyses[]; CE/pH/RAS; cationes/aniones meq↔ppm; SN_REF_DEFAULT; diff lab−ideal; ≠ extracto pasta ni herramienta gratis.',
+        'solucionNutritivaAnalyses[]; CE/pH/RAS; cationes/aniones meq↔ppm; % suma (ion/total del grupo; ≠ Steiner); semáforo vs Ideal ±10% o vs Ref.; SN_REF_DEFAULT; diff lab−ideal; admin+PDF; ≠ extracto pasta ni herramienta gratis.',
       status: 'published'
     },
     {
@@ -251,7 +251,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-extracto-pasta.html`,
       pillar: 'C — Análisis pasta',
       summary:
-        'extractoPastaAnalyses[]; rizósfera ≠ agua; en hidro: comparar pasta vs objetivo, f editable, Aplicar 1×/análisis; Steiner = equilibrio iónico, no resta 1:1.',
+        'extractoPastaAnalyses[]; rizósfera ≠ agua; % suma meq y semáforo igual que solución (admin+PDF). En hidro: comparar pasta vs objetivo, f editable, Aplicar 1×/análisis; Steiner = equilibrio iónico, no resta 1:1.',
       status: 'published'
     },
     {

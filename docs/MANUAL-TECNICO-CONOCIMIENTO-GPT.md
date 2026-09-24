@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.09.15 · **28 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-09-23 · **v2026.09.23** (suelo: método de extracción P/micros/B; + foliar relaciones)
+**Versión Knowledge:** 2026-09-24 · **v2026.09.24b** (SN/pasta: % suma meq; suelo: ideales CIC/relaciones)
 
 ---
 
@@ -119,13 +119,15 @@ kg/ha = (lab − ideal) × factor
 
 Ideales K/Ca/Mg desde CIC (5/70/13 %) — no dependen del extractante de P/micros.
 
+**Cationes / relaciones:** saturación CIC ideal (bajo cada %): Ca 65–75 · Mg 10–15 · K 3–7 · Na 0–1 · Al 0–1 · H 0–10. Relaciones (meq): Ca/Mg 6 · Mg/K 3,5 · (Ca+Mg)/K 18 · Ca/K 14. Fijas NutriPlant; se muestran bajo el cálculo. Pestaña + comparar + admin + PDF.
+
 **Método de extracción (obligatorio para interpretar P y micros).** Un ppm no es universal. UI en cabecera de Fertilidad:
 - **P:** Bray 40 · Olsen 25 · Merich/Mehlich 3 → 40. Selector propio; al cambiar pisa el ideal de P.
 - **Fe/Mn/Zn/Cu:** un selector (columna Fe) DTPA (20 / 20 / 3 / 1,5) · Merich (50 / 20 / 3 / 2) · Otro (no pisa). Aplica a los cuatro.
 - **B:** selector propio. Agua caliente 1 · Merich 1,2 · Otro (no pisa). B no va con DTPA.
 Ideales editables; se guardan en ese `soilAnalyses[]`. Recargar usa el método actual. No compares Bray vs Olsen ni DTPA vs Mehlich 3 como si fueran la misma escala. Si el lab no declara extractante, pregúntalo o asume default de app y decláralo. Orientativo, no dosis automática.
 
-**Comparar análisis (tabla + gráficas):** en cada subpestaña Análisis (Suelo, Solución, Extracto, Agua, Foliar, Fruta), si hay ≥2 reportes, el bloque **«Comparar análisis (tabla y gráficas)»** alinea columnas por análisis (activar/desactivar). Tablas por bloque; gráficas solo donde aporta (ej. suelo: macros/micros/% CIC; pH y físicos suelen ser tabla). Mismo bloque sale en **Reportes PDF** (tablas + capturas de gráficas). No sustituye el detalle por reporte ni inventa datos: lee los reportes guardados del proyecto.
+**Comparar análisis (tabla + gráficas):** en cada subpestaña Análisis (Suelo, Solución, Extracto, Agua, Foliar, Fruta), si hay ≥2 reportes, el bloque **«Comparar análisis (tabla y gráficas)»** alinea columnas por análisis (activar/desactivar). Tablas por bloque; gráficas solo donde aporta (ej. suelo: macros/micros/% CIC; pH y físicos suelen ser tabla). **Foliar:** macros/micros en **velas**, no líneas de ppm/% crudo. Cada columna usa **su** óptimo (el del reporte; si falta, default NutriPlant). Eje Y = % del óptimo. Franja verde = DOP ±10 % (90–110 %). Punto = valor lab. En tablas, pastilla óp./id. = de esa columna. Relaciones solo tabla. Mismo bloque en **admin y PDF**. No sustituye el detalle por reporte ni inventa datos.
 
 ### 4.4 Enmiendas CIC
 
@@ -388,11 +390,11 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.16 Solución nutritiva (lab)
 
-**URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). Rangos SN_REF_DEFAULT; ideal editable; diff = lab − ideal. ≠ extracto pasta ≠ diseño didáctico gratis.
+**URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). **% suma** junto a meq: catión/(K+Ca+Mg+Na); anión/(NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Suma 100 % por grupo. ≠ triángulo Steiner. Semáforo: Ideal vacío → Ref.; con Ideal → ±10 % de ese número. Rangos SN_REF_DEFAULT; diff = lab − ideal. Pestaña + admin + PDF. ≠ extracto pasta ≠ diseño didáctico gratis.
 
 ### 4.17 Extracto de pasta
 
-**URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva; interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. ≠ solución nutritiva lab.
+**URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva (incl. **% suma** meq y semáforo vs Ideal/Ref.). Interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. Pestaña + admin + PDF. ≠ solución nutritiva lab.
 
 **Cruce con Hidroponía (Cálculo de fertilizantes):** Traer de análisis al final del cálculo. Pasta **no** resta del faltante (agua sí). Diff = pasta − objetivo; sugerencia = exceso × f (f editable). Aplicar baja el objetivo 1× por análisis. Steiner (1961) = composición/equilibrio iónico de la solución; **no** prescribe restar pasta 1:1. Ver también §4.9.
 
@@ -402,7 +404,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.19 Foliar DOP
 
-**URL:** …/analisis-foliar-dop.html · DOP % = ((nivel−óptimo)/óptimo)×100. **Relaciones nutrimentales** debajo del DOP: real = resultados; ideal = óptimos del mismo análisis (si editan un óptimo, la ideal se recalcula). Pares: N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B. P/Zn y Ca/B: macro % MS ×10 000 → ppm. Desviación = ((real−ideal)/ideal)×100; mismo semáforo que DOP. Pestaña + admin + PDF. No hay ideales de relación aparte.
+**URL:** …/analisis-foliar-dop.html · DOP % = ((nivel−óptimo)/óptimo)×100. **Relaciones nutrimentales** debajo del DOP: real = resultados; ideal = óptimos del mismo análisis (si editan un óptimo, la ideal se recalcula). Pares: N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B. P/Zn y Ca/B: macro % MS ×10 000 → ppm. Desviación = ((real−ideal)/ideal)×100; mismo semáforo que DOP. Pestaña + admin + PDF. No hay ideales de relación aparte. **Comparar análisis:** velas en % del óptimo de **esa columna**; franja DOP ±10 %; punto = lab; óp./id. por columna. No un óptimo único para todas las columnas.
 
 ### 4.20 Fruta ICC
 

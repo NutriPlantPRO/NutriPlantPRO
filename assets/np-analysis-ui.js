@@ -18,6 +18,8 @@
     'Análisis de Fruta (ICC)': 'Fruit Analysis (CQI)',
     'Análisis de solución nutritiva o extracto de pasta saturada. Macros en meq/L y ppm (conversión automática). Rangos de referencia y diferencia vs ideal:': 'Nutrient solution or saturated paste extract analysis. Macros in meq/L and ppm (automatic conversion). Reference ranges and difference vs ideal:',
     'Análisis de extracto de pasta saturada. Datos generales, aniones, cationes, micronutrimentos y relación nutrimental. Referencias en ppm. Diferencia vs ideal:': 'Saturated paste extract analysis. General data, anions, cations, micronutrients and nutrient ratios. References in ppm. Difference vs ideal:',
+    'Semáforo: si llenas Ideal, se mide contra ese número (±10 % verde); si no, contra la franja Ref.': 'Traffic light: if you fill Ideal, it is judged against that number (±10% green); if empty, against the Ref. range.',
+    '% suma': '% of sum',
     'DOP (Desviación del Óptimo Porcentual): DOP = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'DOP (Deviation from Optimum Percentage): DOP = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
     'ICC (Índice Comparativo de Calidad): ICC = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar:': 'CQI (Comparative Quality Index): CQI = ((Value − Optimum) / Optimum) × 100. Optima are editable and saved only in this analysis. Same visual rule as leaf:',
     'Macronutrientes (% MS)': 'Macronutrients (% DM)',

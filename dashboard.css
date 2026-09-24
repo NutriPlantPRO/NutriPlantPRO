@@ -9809,14 +9809,19 @@ html.embed-login body {
   text-align: left;
   white-space: nowrap;
 }
+.np-analysis-compare__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
 .np-analysis-compare__table th {
   position: sticky;
   top: 0;
-  background: #f8fafc;
-  z-index: 2;
+  background: #ffffff;
+  z-index: 5;
   font-weight: 800;
   color: #0f172a;
-  box-shadow: 0 1px 0 #e2e8f0;
+  box-shadow: 0 2px 0 #ffffff;
 }
 .np-analysis-compare__table th.is-on {
   /* color/fondo de título = color de serie (inline en JS) */
@@ -9858,6 +9863,28 @@ html.embed-login body {
 .np-analysis-compare__table td:not(:first-child) {
   max-width: 9.5rem;
   text-align: center;
+}
+.np-analysis-compare__td-param {
+  white-space: nowrap;
+  font-weight: 700;
+  color: #0f172a;
+}
+.np-analysis-compare__td-val {
+  line-height: 1.25;
+}
+.np-analysis-compare__val {
+  display: block;
+}
+.np-analysis-compare__param-opt {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #64748b;
+  background: #f1f5f9;
 }
 .np-analysis-compare__charts {
   display: grid;
@@ -10155,7 +10182,35 @@ html.embed-login body {
 .soil-analysis-card-date { font-size: 12px; color: #64748b; margin-top: 4px; }
 
 /* Solución Nutritiva: Estado como bolitas de color (alineado al título) */
-.sn-ref-badge { display: flex; align-items: center; justify-content: center; min-height: 24px; }
+.sn-ion-pct-th {
+  width: 3.4em;
+  min-width: 3.2em;
+  max-width: 4.2em;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.sn-ion-pct-cell {
+  width: 3.4em;
+  text-align: center;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+.sn-ion-pct {
+  display: inline-block;
+  min-width: 2.4em;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369a1;
+}
+.sn-ref-badge { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; }
+.sn-ref-badge.is-vs-ideal { flex-direction: column; gap: 2px; }
+.sn-status-vs {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: #0369a1;
+  letter-spacing: 0.02em;
+}
 .sn-status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .sn-status-dot.sn-ref-ok { background: #16a34a; }
 .sn-status-dot.sn-ref-low { background: #eab308; }
@@ -10576,6 +10631,19 @@ html.embed-login body {
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
+}
+.soil-ratio-ideal {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #0369a1;
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.28);
+  width: fit-content;
 }
 .soil-ratio-value-wrap {
   display: inline-flex;

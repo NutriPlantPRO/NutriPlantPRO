@@ -23,6 +23,22 @@
     return c;
   }
 
+  /** Pastel opaco (sin alfa) para que las filas no se vean a través del título. */
+  function analysisColorSolidTint(color, whiteMix) {
+    var c = String(color || '#2563eb').replace('#', '');
+    if (c.length === 3) c = c.charAt(0) + c.charAt(0) + c.charAt(1) + c.charAt(1) + c.charAt(2) + c.charAt(2);
+    if (c.length !== 6) return '#ffffff';
+    var mix = whiteMix == null ? 0.88 : whiteMix;
+    var r = parseInt(c.slice(0, 2), 16);
+    var g = parseInt(c.slice(2, 4), 16);
+    var b = parseInt(c.slice(4, 6), 16);
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) return '#ffffff';
+    return 'rgb(' +
+      Math.round(r + (255 - r) * mix) + ',' +
+      Math.round(g + (255 - g) * mix) + ',' +
+      Math.round(b + (255 - b) * mix) + ')';
+  }
+
   var SOIL_FIELDS = [
     { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH', unit: 'other', chartable: true, block: 'ph' },
     { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer', unit: 'other', chartable: true, block: 'ph' },
@@ -57,10 +73,10 @@
     { path: 'cations.pctMg', labelKey: 'analysis.f_pct_mg', label: '% Mg', unit: 'pct', chartable: true, block: 'cec_pct' },
     { path: 'cations.pctK', labelKey: 'analysis.f_pct_k', label: '% K', unit: 'pct', chartable: true, block: 'cec_pct' },
     { path: 'cations.pctNa', labelKey: 'analysis.f_pct_na', label: '% Na', unit: 'pct', chartable: true, block: 'cec_pct' },
-    { path: 'ratios.caMg', labelKey: 'analysis.f_ratio_ca_mg', label: 'Ca/Mg', unit: 'other', chartable: false, block: 'ratios' },
-    { path: 'ratios.mgK', labelKey: 'analysis.f_ratio_mg_k', label: 'Mg/K', unit: 'other', chartable: false, block: 'ratios' },
-    { path: 'ratios.caMgK', labelKey: 'analysis.f_ratio_ca_mg_k', label: '(Ca+Mg)/K', unit: 'other', chartable: false, block: 'ratios' },
-    { path: 'ratios.caK', labelKey: 'analysis.f_ratio_ca_k', label: 'Ca/K', unit: 'other', chartable: false, block: 'ratios' }
+    { path: 'ratios.caMg', labelKey: 'analysis.f_ratio_ca_mg', label: 'Ca/Mg', unit: 'other', chartable: false, block: 'ratios', getIdeal: function () { return 6; } },
+    { path: 'ratios.mgK', labelKey: 'analysis.f_ratio_mg_k', label: 'Mg/K', unit: 'other', chartable: false, block: 'ratios', getIdeal: function () { return 3.5; } },
+    { path: 'ratios.caMgK', labelKey: 'analysis.f_ratio_ca_mg_k', label: '(Ca+Mg)/K', unit: 'other', chartable: false, block: 'ratios', getIdeal: function () { return 18; } },
+    { path: 'ratios.caK', labelKey: 'analysis.f_ratio_ca_k', label: 'Ca/K', unit: 'other', chartable: false, block: 'ratios', getIdeal: function () { return 14; } }
   ];
 
   /** Orden y metadatos de bloques (tabla + gráficas). */
@@ -184,6 +200,36 @@
     if (/\(%\)|°Brix|\(kg\/cm| \(psi\)|\(mg\/100|\(ppm\)|\(meq\)/i.test(base)) return base;
     if (row.unit === 'brix' && /brix/i.test(base)) return base;
     return base + unitSuffix(row.unit);
+  }
+
+  function referenceOptForRow(row) {
+    var list = (row && row.optima ? row.optima : []).filter(function (n) {
+      return n != null && Number.isFinite(n) && n !== 0;
+    });
+    if (!list.length) return null;
+    var first = list[0];
+    var mixed = list.some(function (n) { return Math.abs(n - first) > 1e-6; });
+    return { value: first, mixed: mixed, kind: row && row.block === 'ratios' ? 'ideal' : 'opt' };
+  }
+
+  function formatParamRef(row) {
+    var ref = referenceOptForRow(row);
+    if (!ref || ref.mixed) return '';
+    var n = formatCompareValue(ref.value, row);
+    if (ref.kind === 'ideal') {
+      return tr('analysis.compare_ideal_short', 'id. {n}', { n: n });
+    }
+    return tr('analysis.compare_opt_short', 'óp. {n}', { n: n });
+  }
+
+  function formatOptForIndex(row, index) {
+    var opt = row && row.optima ? row.optima[index] : null;
+    if (opt == null || !Number.isFinite(opt) || opt === 0) return '';
+    var n = formatCompareValue(opt, row);
+    if (row.block === 'ratios') {
+      return tr('analysis.compare_ideal_short', 'id. {n}', { n: n });
+    }
+    return tr('analysis.compare_opt_short', 'óp. {n}', { n: n });
   }
 
   function getByPath(obj, path) {
@@ -338,15 +384,12 @@
       th.appendChild(one);
     }
     var color = analysisColor(index);
+    var solid = analysisColorSolidTint(color, opts.on ? 0.86 : 0.94);
     th.style.color = color;
     th.style.borderTop = '3px solid ' + color;
-    if (opts.on) {
-      th.style.background = analysisColorWash(color, '18');
-      th.style.opacity = '1';
-    } else {
-      th.style.background = '#f8fafc';
-      th.style.opacity = '0.72';
-    }
+    th.style.background = solid;
+    th.style.opacity = '1';
+    th.style.boxShadow = '0 2px 0 ' + solid;
   }
 
   function buildCompareRows(analyses, catalog) {
@@ -371,16 +414,17 @@
         label = isEnLang() ? 'Firmness' : 'Firmeza';
       }
       var optPath = optimalPathForField(field.path);
-      var optima = optPath
-        ? analyses.map(function (a) {
-            var rawOpt = getByPath(a, optPath);
-            if (field.path === 'calidad.firmeza' && usFirm) {
-              var on = numOrNull(rawOpt);
-              return on == null ? null : on * 14.223343307;
-            }
-            return numOrNull(rawOpt);
-          })
-        : analyses.map(function () { return null; });
+      var optima = analyses.map(function (a) {
+        if (typeof field.getIdeal === 'function') return numOrNull(field.getIdeal(a));
+        var rawOpt = optPath ? getByPath(a, optPath) : '';
+        if (field.path === 'calidad.firmeza' && usFirm) {
+          var on = numOrNull(rawOpt);
+          return on == null ? null : on * 14.223343307;
+        }
+        var saved = numOrNull(rawOpt);
+        if (saved != null) return saved;
+        return defaultFoliarOptForPath(field.path);
+      });
       return {
         path: field.path,
         label: label,
@@ -718,7 +762,7 @@
         ? '<p class="np-analysis-compare__chart-cap">' +
             tr(
               'analysis.compare_candle_hint',
-              'Se lee fácil: 100% = óptimo. La franja verde es ±10% (DOP en rango). Cada puntito de color es un reporte. Si cae en la franja, está bien; si se sale, está alto o bajo.'
+              '% del óptimo (eje Y). Franja = DOP ±10%. Punto = valor del análisis.'
             ) +
           '</p>'
         : '';
@@ -814,11 +858,30 @@
         blockRows.forEach(function (row) {
           var trEl = document.createElement('tr');
           var td0 = document.createElement('td');
-          td0.textContent = chartLabelForRow(row);
+          td0.className = 'np-analysis-compare__td-param';
+          var nameEl = document.createElement('span');
+          nameEl.className = 'np-analysis-compare__param-name';
+          nameEl.textContent = chartLabelForRow(row);
+          td0.appendChild(nameEl);
           trEl.appendChild(td0);
-          row.values.forEach(function (v) {
+          row.values.forEach(function (v, vi) {
             var td = document.createElement('td');
-            td.textContent = formatCompareValue(v, row);
+            td.className = 'np-analysis-compare__td-val';
+            var valEl = document.createElement('span');
+            valEl.className = 'np-analysis-compare__val';
+            valEl.textContent = formatCompareValue(v, row);
+            td.appendChild(valEl);
+            var optTxt = formatOptForIndex(row, vi);
+            if (optTxt) {
+              var optEl = document.createElement('span');
+              optEl.className = 'np-analysis-compare__param-opt';
+              optEl.textContent = optTxt;
+              var col = analysisColor(vi);
+              optEl.style.color = col;
+              optEl.style.background = analysisColorWash(col, '22');
+              optEl.style.boxShadow = 'inset 0 0 0 1px ' + analysisColorWash(col, '40');
+              td.appendChild(optEl);
+            }
             trEl.appendChild(td);
           });
           tbody.appendChild(trEl);
@@ -1276,6 +1339,8 @@
     openLabReviewModal: openLabReviewModal,
     openSoilReviewModal: openSoilReviewModal,
     analysisLabel: analysisLabel,
-    renderBlockChart: renderBlockChart
+    renderBlockChart: renderBlockChart,
+    formatParamRef: formatParamRef,
+    formatOptForIndex: formatOptForIndex
   };
 })(typeof window !== 'undefined' ? window : this);

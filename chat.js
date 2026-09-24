@@ -378,7 +378,7 @@ class NutriPlantChat {
       chatBubble = document.createElement('div');
       chatBubble.id = 'chatBubble';
     chatBubble.className = 'chat-bubble';
-      chatBubble.innerHTML = '<div class="chat-icon"><span class="chat-text">IA</span><img src="assets/N_Hoja_Blanca.png" alt="NutriPlant PRO" class="chat-logo"></div>';
+      chatBubble.innerHTML = '<div class="chat-icon"><span class="chat-text">AI</span><img src="assets/N_Hoja_Blanca.png" alt="NutriPlant PRO" class="chat-logo"></div>';
     document.body.appendChild(chatBubble);
     console.log('✅ Burbuja del chat creada');
     } else {

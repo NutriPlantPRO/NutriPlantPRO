@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Análisis foliar: DOP frente al óptimo — Manual NutriPlant PRO</title>
-  <meta name="description" content="Análisis foliar en NutriPlant: DOP frente al óptimo y relaciones nutrimentales (real vs ideal) de Ca/K, P/Zn y los pares principales.">
+  <meta name="description" content="Análisis foliar en NutriPlant: DOP frente al óptimo, relaciones nutrimentales y comparar análisis en velas (% del óptimo, DOP ±10 %).">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Análisis foliar: DOP frente al óptimo",
-  "description": "Análisis foliar en NutriPlant: DOP frente al óptimo y relaciones nutrimentales (real vs ideal).",
+  "description": "Análisis foliar en NutriPlant: DOP frente al óptimo, relaciones nutrimentales y comparar análisis en velas (% del óptimo).",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-09-23",
+  "dateModified": "2026-09-24",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -61,7 +61,7 @@
 <span class="mt-badge">Metodología NutriPlant PRO · 2026-09</span>
     <h1>Análisis foliar: DOP frente al óptimo</h1>
     <h2>Resumen</h2>
-    <p>En <strong>Análisis → Análisis Foliar</strong>, cada nutriente se compara con un <strong>óptimo de referencia</strong> (mg/kg o % según laboratorio). La <strong>DOP</strong> (desviación porcentual del óptimo) indica si el tejido está por encima o debajo del rango objetivo. Debajo, las <strong>relaciones nutrimentales</strong> (Ca/K, P/Zn y las principales) salen de los mismos resultados e ideales: no hay que capturar un ideal de relación aparte.</p>
+    <p>En <strong>Análisis → Análisis Foliar</strong>, cada nutriente se compara con un <strong>óptimo de referencia</strong> (mg/kg o % según laboratorio). La <strong>DOP</strong> (desviación porcentual del óptimo) indica si el tejido está por encima o debajo del rango objetivo. Debajo, las <strong>relaciones nutrimentales</strong> (Ca/K, P/Zn y las principales) salen de los mismos resultados e ideales: no hay que capturar un ideal de relación aparte. Si hay varios reportes, <strong>Comparar análisis</strong> grafica macros y micros en velas: cada columna contra <strong>su</strong> óptimo.</p>
     <h2>Cálculo DOP</h2>
     <div class="mt-formula">DOP (%) = ((Nivel − Óptimo) / Óptimo) × 100</div>
     <p>Positivo: por encima del óptimo. Negativo: por debajo.</p>
@@ -85,6 +85,9 @@
       </tbody>
     </table>
     <p>Las mismas relaciones aparecen en la pestaña, en admin y en el PDF (detalle y tabla comparativa). No se grafican juntas: las escalas no son comparables (Ca/K ~0,5 frente a Ca/B ~200).</p>
+    <h2>Comparar análisis (gráfica de velas)</h2>
+    <p>Con dos o más reportes, el bloque <strong>Comparar análisis</strong> alinea columnas (se activan o desactivan). Macros y micros no van en líneas de ppm o % crudo: cada columna usa <strong>el óptimo de ese análisis</strong> (el guardado en el reporte; si falta, el default NutriPlant). El eje Y es <strong>% del óptimo</strong> de esa columna. La franja verde es <strong>DOP ±10 %</strong> (90–110 %). El punto es el valor de laboratorio. En las tablas, la pastilla óp./id. es el óptimo o la ideal <strong>de esa columna</strong>, no un número único para todas. Igual en admin y en el PDF.</p>
+    <div class="mt-formula">% del óptimo (eje Y). Franja = DOP ±10%. Punto = valor del análisis.</div>
     <h2>Semáforo NutriPlant</h2>
     <table class="mt-table">
       <thead><tr><th>|DOP| o |desviación de relación|</th><th>Estado</th></tr></thead>
@@ -107,7 +110,7 @@
 <span class="mt-badge">NutriPlant PRO methodology · 2026-09</span>
     <h1>Foliar analysis: DOP versus the optimum</h1>
     <h2>Summary</h2>
-    <p>In <strong>Analysis → Foliar Analysis</strong>, each nutrient is compared with a <strong>reference optimum</strong> (mg/kg or % depending on the laboratory). The <strong>DOP</strong> (deviation from optimum percentage) indicates whether the tissue is above or below the target range. Below that, <strong>nutrient ratios</strong> (Ca/K, P/Zn and the main ones) come from the same results and optima: there is no separate ideal-ratio field to type in.</p>
+    <p>In <strong>Analysis → Foliar Analysis</strong>, each nutrient is compared with a <strong>reference optimum</strong> (mg/kg or % depending on the laboratory). The <strong>DOP</strong> (deviation from optimum percentage) indicates whether the tissue is above or below the target range. Below that, <strong>nutrient ratios</strong> (Ca/K, P/Zn and the main ones) come from the same results and optima: there is no separate ideal-ratio field to type in. With several reports, <strong>Compare analyses</strong> plots macros and micros as candles: each column against <strong>its own</strong> optimum.</p>
     <h2>DOP calculation</h2>
     <div class="mt-formula">DOP (%) = ((Level − Optimum) / Optimum) × 100</div>
     <p>Positive: above the optimum. Negative: below.</p>
@@ -131,6 +134,9 @@
       </tbody>
     </table>
     <p>The same ratios appear in the tab, in admin, and in the PDF (report detail and compare table). They are not charted together: the scales are not comparable (Ca/K ~0.5 vs Ca/B ~200).</p>
+    <h2>Compare analyses (candle chart)</h2>
+    <p>With two or more reports, the <strong>Compare analyses</strong> block aligns columns (on/off). Macros and micros are not plotted as raw ppm or % lines: each column uses <strong>that report’s optimum</strong> (the value stored on the report; if missing, the NutriPlant default). The Y-axis is <strong>% of that column’s optimum</strong>. The green band is <strong>DOP ±10%</strong> (90–110%). The dot is the lab value. In the tables, the opt./id. chip is the optimum or ideal <strong>of that column</strong>, not one shared number. Same view in admin and in the PDF.</p>
+    <div class="mt-formula">% of optimum (Y-axis). Band = DOP ±10%. Dot = lab value.</div>
     <h2>NutriPlant traffic light</h2>
     <table class="mt-table">
       <thead><tr><th>|DOP| or |ratio deviation|</th><th>Status</th></tr></thead>

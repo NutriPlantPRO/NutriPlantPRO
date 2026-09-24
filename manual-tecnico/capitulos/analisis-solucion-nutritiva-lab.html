@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/analisis-solucion-nutritiva-lab.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-21",
+  "dateModified": "2026-09-24",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -70,11 +70,17 @@
     <h2>Qué captura cada reporte</h2>
     <ul>
       <li><strong>General:</strong> CE (dS/m), pH, RAS (campo numérico manual).</li>
-      <li><strong>Cationes:</strong> Ca, Mg, K, Na en <strong>meq/L y ppm</strong> (sincronización automática en pantalla).</li>
-      <li><strong>Aniones:</strong> N-NO₃⁻, P (H₂PO₄⁻), S (SO₄²⁻), Cl⁻, HCO₃⁻, CO₃²⁻ en meq/L y ppm.</li>
+      <li><strong>Cationes:</strong> Ca, Mg, K, Na en <strong>meq/L y ppm</strong> (sincronización automática en pantalla) y <strong>% suma</strong> junto a meq.</li>
+      <li><strong>Aniones:</strong> N-NO₃⁻, P (H₂PO₄⁻), S (SO₄²⁻), Cl⁻, HCO₃⁻, CO₃²⁻ en meq/L y ppm, con <strong>% suma</strong>.</li>
       <li><strong>Microelementos:</strong> B, Fe, Mn, Zn, Cu, Mo (ppm).</li>
       <li><strong>Ideal (opcional):</strong> ppm objetivo por nutriente, editable por reporte.</li>
     </ul>
+    <h2>% suma (cationes y aniones)</h2>
+    <p>Junto a cada meq/L la app muestra el <strong>porcentaje sobre el total del grupo</strong> (misma columna en dashboard, admin y PDF):</p>
+    <div class="mt-formula">% catión = meq / (K + Ca + Mg + Na) × 100<br>% anión = meq / (NO₃ + H₂PO₄ + SO₄ + Cl + HCO₃ + CO₃) × 100</div>
+    <p>Cada grupo suma 100 %. Incluye <strong>todos</strong> los iones de la tabla. <strong>No es el triángulo Steiner</strong> (ahí Cl y NH₄ van aparte; ver <a href="porcentaje-meq-aniones-cationes.html">% meq</a>). Sirve para ver la relación iónica del análisis de laboratorio.</p>
+    <h2>Semáforo</h2>
+    <p>Si <strong>Ideal</strong> está vacío, la luz mira la franja Ref. Si el técnico llena Ideal, se mide contra <strong>ese</strong> número (±10 % verde, como DOP). La Ref. se queda como guía de literatura.</p>
     <h2>Conversión meq/L ↔ ppm</h2>
     <p>En la app, al editar meq/L o ppm de un ion, el otro se actualiza con el peso equivalente del elemento (misma lógica que en todo NutriPlant):</p>
     <div class="mt-formula">ppm ≈ meq/L × peso equivalente (g/eq)<br>Ejemplos: Ca 20,04 · Mg 12,15 · K 39,1 · NO₃ 14 · PO₄ 31 · SO₄ 16,03</div>
@@ -119,11 +125,17 @@
     <h2>What each report captures</h2>
     <ul>
       <li><strong>General:</strong> EC (dS/m), pH, SAR (manual numeric field).</li>
-      <li><strong>Cations:</strong> Ca, Mg, K, Na in <strong>meq/L and ppm</strong> (automatic on-screen sync).</li>
-      <li><strong>Anions:</strong> N-NO₃⁻, P (H₂PO₄⁻), S (SO₄²⁻), Cl⁻, HCO₃⁻, CO₃²⁻ in meq/L and ppm.</li>
+      <li><strong>Cations:</strong> Ca, Mg, K, Na in <strong>meq/L and ppm</strong> (automatic on-screen sync) and <strong>% of sum</strong> next to meq.</li>
+      <li><strong>Anions:</strong> N-NO₃⁻, P (H₂PO₄⁻), S (SO₄²⁻), Cl⁻, HCO₃⁻, CO₃²⁻ in meq/L and ppm, with <strong>% of sum</strong>.</li>
       <li><strong>Micronutrients:</strong> B, Fe, Mn, Zn, Cu, Mo (ppm).</li>
       <li><strong>Ideal (optional):</strong> target ppm per nutrient, editable per report.</li>
     </ul>
+    <h2>% of sum (cations and anions)</h2>
+    <p>Next to each meq/L the app shows the <strong>percentage of that group’s total</strong> (same column in dashboard, admin, and PDF):</p>
+    <div class="mt-formula">cation % = meq / (K + Ca + Mg + Na) × 100<br>anion % = meq / (NO₃ + H₂PO₄ + SO₄ + Cl + HCO₃ + CO₃) × 100</div>
+    <p>Each group adds to 100%. It includes <strong>all</strong> ions in the table. <strong>This is not the Steiner triangle</strong> (there Cl and NH₄ sit aside; see <a href="porcentaje-meq-aniones-cationes.html">% meq</a>). It shows the lab report’s ionic share.</p>
+    <h2>Traffic light</h2>
+    <p>If <strong>Ideal</strong> is empty, the light uses the Ref. band. If the technician fills Ideal, it is judged against <strong>that</strong> number (±10% green, like DOP). Ref. stays as literature guidance.</p>
     <h2>meq/L ↔ ppm conversion</h2>
     <p>In the app, when you edit meq/L or ppm for an ion, the other updates with the element’s equivalent weight (same logic across NutriPlant):</p>
     <div class="mt-formula">ppm ≈ meq/L × equivalent weight (g/eq)<br>Examples: Ca 20.04 · Mg 12.15 · K 39.1 · NO₃ 14 · PO₄ 31 · SO₄ 16.03</div>

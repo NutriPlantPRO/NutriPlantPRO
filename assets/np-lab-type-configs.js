@@ -108,6 +108,14 @@
     };
   }
 
+  function ionPctField(group, key, label, block, section) {
+    return Object.assign(f(group + '.' + key + '_pct', label, 'pct', block, false, section), {
+      getValue: function (a) {
+        return w.npFluidIonPct ? w.npFluidIonPct(a, group, key) : null;
+      }
+    });
+  }
+
   var SN_FIELDS = [
     f('general.ce', 'CE', 'other', 'general', true, 'general'),
     f('general.ph', 'pH', 'other', 'general', true, 'general'),
@@ -120,6 +128,10 @@
     f('cations.ca_meq', 'Ca', 'meq', 'cations_meq', false, 'cations'),
     f('cations.mg_meq', 'Mg', 'meq', 'cations_meq', false, 'cations'),
     f('cations.na_meq', 'Na', 'meq', 'cations_meq', false, 'cations'),
+    ionPctField('cations', 'k', '% K', 'cations_meq', 'cations'),
+    ionPctField('cations', 'ca', '% Ca', 'cations_meq', 'cations'),
+    ionPctField('cations', 'mg', '% Mg', 'cations_meq', 'cations'),
+    ionPctField('cations', 'na', '% Na', 'cations_meq', 'cations'),
     f('anions.no3_ppm', 'N-NO₃', 'ppm', 'anions_ppm', true, 'anions'),
     f('anions.po4_ppm', 'P', 'ppm', 'anions_ppm', true, 'anions'),
     f('anions.so4_ppm', 'S-SO₄', 'ppm', 'anions_ppm', true, 'anions'),
@@ -132,6 +144,12 @@
     f('anions.cl_meq', 'Cl', 'meq', 'anions_meq', false, 'anions'),
     f('anions.hco3_meq', 'HCO₃', 'meq', 'anions_meq', false, 'anions'),
     f('anions.co3_meq', 'CO₃', 'meq', 'anions_meq', false, 'anions'),
+    ionPctField('anions', 'no3', '% N-NO₃', 'anions_meq', 'anions'),
+    ionPctField('anions', 'po4', '% P', 'anions_meq', 'anions'),
+    ionPctField('anions', 'so4', '% S-SO₄', 'anions_meq', 'anions'),
+    ionPctField('anions', 'cl', '% Cl', 'anions_meq', 'anions'),
+    ionPctField('anions', 'hco3', '% HCO₃', 'anions_meq', 'anions'),
+    ionPctField('anions', 'co3', '% CO₃', 'anions_meq', 'anions'),
     f('micros.b', 'B', 'ppm', 'micros', true, 'micros'),
     f('micros.fe', 'Fe', 'ppm', 'micros', true, 'micros'),
     f('micros.mn', 'Mn', 'ppm', 'micros', true, 'micros'),
@@ -258,6 +276,15 @@
           var rows = api.evaluateAnalysis(a || {});
           for (var i = 0; i < rows.length; i++) {
             if (rows[i].id === def.id && isFinite(rows[i].actual)) return rows[i].actual;
+          }
+          return '';
+        },
+        getIdeal: function (a) {
+          var api = w.NpFoliarRatios;
+          if (!api || typeof api.evaluateAnalysis !== 'function') return '';
+          var rows = api.evaluateAnalysis(a || {});
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].id === def.id && isFinite(rows[i].ideal)) return rows[i].ideal;
           }
           return '';
         }

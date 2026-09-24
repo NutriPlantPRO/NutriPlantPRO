@@ -1,7 +1,8 @@
 # NutriPlant PRO — Análisis de laboratorio (6 pestañas) · Conocimiento GPT
 
 **Uso:** sube este archivo al GPT privado **junto con** `HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`.  
-**Datos reales del suscriptor:** la API `project_analyses` (Supabase `projects.data`).
+**Datos reales del suscriptor:** la API `project_analyses` (Supabase `projects.data`).  
+**Versión Knowledge:** 2026-09-24 · % suma SN/pasta (dashboard + admin + PDF) · suelo CIC/relaciones ya en §4.1
 
 ---
 
@@ -54,11 +55,12 @@ Cada elemento es un **reporte** con `id`, `title`, `date` y secciones propias.
 Cuando hay **varios reportes** del mismo tipo en un proyecto, la app muestra el bloque **«Comparar análisis (tabla y gráficas)»** (i18n ES/EN):
 
 1. **Columnas:** cada análisis es una columna; el usuario activa/desactiva cuáles entran en la comparación/gráficas.
-2. **Tablas por bloque** (ej. suelo: pH, físicos/MO, macros ppm, micros ppm, % CIC, cationes meq, relaciones).
+2. **Tablas por bloque** (ej. suelo: pH, físicos/MO, macros ppm, micros ppm, % CIC, cationes meq, relaciones). En foliar (y donde hay óp./id.), la pastilla de cada celda es el óptimo o la ideal **de esa columna**, no un número compartido para todas.
 3. **Gráficas** solo en bloques chartables (suelo: macros línea, micros línea, % CIC barras). pH/físicos suelen ser **solo tabla**.
-4. **Otros tipos** (solución, extracto, agua, foliar, fruta): mismo patrón con sus bloques (macros/micros/calidad/etc.).
-5. **Reportes PDF:** al incluir Análisis, el PDF lleva las tablas comparativas + imágenes de las gráficas (no solo el detalle individual).
-6. **Admin / ChatGPT:** los valores siguen en `project_analyses`; la UI de comparación es del dashboard/PDF. Al interpretar histórico, puedes alinear varios reportes del mismo `type` por fecha/título como hace la app.
+4. **Foliar (velas):** macros y micros no van en líneas de ppm/% crudo. Cada columna usa **el óptimo de ese reporte** (el guardado; si falta, default NutriPlant). Eje Y = **% del óptimo** de esa columna. Franja verde = **DOP ±10 %** (90–110 %). Punto = valor de laboratorio. Leyenda: `% del óptimo (eje Y). Franja = DOP ±10%. Punto = valor del análisis.` Las relaciones nutrimentales van en tabla, no en la misma gráfica (escalas distintas).
+5. **Otros tipos** (solución, extracto, agua, fruta): mismo patrón de columnas/tablas con sus bloques (macros/micros/calidad/etc.).
+6. **Reportes PDF y admin:** mismas tablas + capturas de gráficas (velas foliares incluidas). No solo el detalle individual.
+7. **Admin / ChatGPT:** los valores siguen en `project_analyses`; la UI de comparación es del dashboard/PDF. Al interpretar histórico, alinea reportes del mismo `type` por fecha/título y, en foliar, compara cada nutriente contra **el óptimo de ese reporte**, no contra un óptimo único del proyecto.
 
 No inventar series ni promedios si la API no los trae; leer cada reporte.
 
@@ -69,6 +71,10 @@ No inventar series ni promedios si la API no los trae; leer cada reporte.
 ### 4.1 Análisis de suelo
 
 **Secciones:** Físico · pH y sales · Fertilidad · Cationes intercambiables · Relaciones.
+
+**Cationes — saturación CIC (ideal, debajo de cada %):** Ca 65–75 · Mg 10–15 · K 3–7 · Na 0–1 · Al 0–1 · H 0–10. La CIC no tiene un ideal único (depende de textura). Objetivos de cálculo kg/ha: Ca 70 %, Mg 13 %, K 5 %.
+
+**Relaciones entre cationes (desde meq; ideal fijo NutriPlant debajo de cada cálculo):** Ca/Mg = 6 · Mg/K = 3,5 · (Ca+Mg)/K = 18 · Ca/K = 14. Semáforo ±5 % de esa referencia (mín. 0,15). Mismo criterio en comparar, admin y PDF. No se editan por reporte.
 
 **Fertilidad — fila Ideal (referencia):**
 - **K, Ca, Mg (ppm):** si hay CIC (meq/100g en Cationes):  
@@ -143,14 +149,18 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 
 - General: CE (dS/m), pH, RAS.
 - Cationes y aniones en **ppm**; fila ideal editable.
+- **% suma (junto a meq):** cada catión / suma de cationes (K+Ca+Mg+Na); cada anión / suma de aniones (NO₃+H₂PO₄+SO₄+Cl+HCO₃+CO₃). Suma 100 % dentro del grupo. ≠ triángulo Steiner (ahí Cl y NH₄ van aparte). **Misma columna en dashboard, admin y PDF.**
 - Diff = laboratorio − ideal (ppm).
 - Referencias internas por nutriente (rangos SN en código).
+- **Semáforo:** si Ideal está vacío → franja Ref. Si el usuario llena Ideal → se mide contra ese número (±10 % verde, como DOP). La Ref. se queda como guía de literatura, no pisa el criterio del técnico.
 
 ---
 
 ### 4.3 Extracto de pasta saturada
 
 - CE, pH, RAS; cationes/aniones ppm; ideales.
+- **% suma (junto a meq):** igual que solución: % sobre el total de cationes y % sobre el total de aniones (todos los de la tabla). **Dashboard, admin y PDF.**
+- **Semáforo:** igual que solución: vacío → Ref.; con Ideal → ±10 % de ese número. 79 vs ideal 80 = verde, aunque Ref. sea 200–300.
 - Interpretación: disponibilidad en condición de saturación — validar con campo y cultivo.
 - **En Hidroponía → Cálculo:** se puede «Traer de análisis» al final. **No resta** como el agua. Si pasta &gt; objetivo → bajaría = (pasta − objetivo) × f (f editable). Botón Aplicar baja el objetivo 1×/análisis. Steiner = equilibrio iónico, no resta 1:1. Manual: `analisis-extracto-pasta` + `hidroponia-solucion-por-etapa`.
 
@@ -172,6 +182,7 @@ diferencia_considerada = kg_ha_ajuste × (factor_ciclo_pct / 100)
 - **DOP %** = (resultado − óptimo) / óptimo × 100.
 - Óptimos por defecto editables (ej. N 3 %, P 0,275 %, Fe 150 ppm…).
 - **Relaciones nutrimentales** (debajo del DOP, también admin/PDF): N/K, N/P, N/S, Ca/K, K/Mg, Ca/Mg, K/(Ca+Mg), P/Zn, Fe/Mn, Ca/B. Real = resultados; ideal = óptimos del mismo reporte (si editan un óptimo, la ideal se recalcula). P/Zn y Ca/B: macro % × 10 000 → ppm. Desviación = ((real − ideal) / ideal) × 100; mismo semáforo que DOP. No hay ideales de relación aparte.
+- **Comparar análisis (velas):** si hay ≥2 reportes, macros/micros se grafican como velas en **% del óptimo de esa columna**. Franja = DOP ±10 % (90–110 %). Punto = valor lab. En la tabla, óp./id. = el de esa columna. Igual en admin y PDF. Ver §3b.
 
 ---
 

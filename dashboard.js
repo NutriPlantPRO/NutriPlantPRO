@@ -105,6 +105,49 @@ function analysisRefTitle(kind) {
   return dashboardT(pair[0], pair[1]);
 }
 
+/** Semáforo SN/pasta: si hay ideal, ±10 % verde (como DOP); si no, la franja Ref. */
+function analysisFluidStatusKindVsIdeal(value, ideal) {
+  if (value == null || isNaN(value) || ideal == null || isNaN(ideal)) return 'none';
+  if (Math.abs(ideal) < 1e-12) return Math.abs(value) < 1e-9 ? 'ok' : 'high';
+  var pct = Math.abs((value - ideal) / ideal) * 100;
+  if (pct <= 10) return 'ok';
+  return value < ideal ? 'low' : 'high';
+}
+
+function analysisFluidStatusDotHtml(kind, vsIdeal) {
+  var clsMap = {
+    none: 'sn-ref-none',
+    ok: 'sn-ref-ok',
+    low: 'sn-ref-low',
+    high: 'sn-ref-high',
+    ideal: 'sn-ref-ok',
+    risk: 'sn-ref-high',
+    caution: 'sn-ref-low'
+  };
+  var title = analysisRefTitle(kind);
+  if (kind !== 'none') {
+    title += ' · ' + (vsIdeal
+      ? dashboardT('analysis.status_vs_ideal', 'vs tu ideal')
+      : dashboardT('analysis.status_vs_ref', 'vs ref.'));
+  }
+  var mark = (vsIdeal && kind !== 'none')
+    ? '<span class="sn-status-vs">id.</span>'
+    : '';
+  return mark + '<span class="sn-status-dot ' + (clsMap[kind] || 'sn-ref-none') + '" title="' + title + '"></span>';
+}
+
+function setAnalysisFluidStatus(refEl, value, idealVal, refKindFn) {
+  if (!refEl) return;
+  var vsIdeal = idealVal != null && !isNaN(idealVal);
+  var kind;
+  if (value == null || isNaN(value)) kind = 'none';
+  else if (vsIdeal) kind = analysisFluidStatusKindVsIdeal(value, idealVal);
+  else kind = typeof refKindFn === 'function' ? refKindFn() : 'none';
+  if (kind == null) kind = 'none';
+  refEl.innerHTML = analysisFluidStatusDotHtml(kind, vsIdeal && kind !== 'none');
+  refEl.className = 'sn-ref-badge' + (vsIdeal && kind !== 'none' ? ' is-vs-ideal' : '');
+}
+
 function radarT(key, fallback, params) {
   return dashboardT(key, fallback, params);
 }
@@ -21144,7 +21187,15 @@ function buildLabCompareSectionHTML(type, analyses, chartImages, rt, accent) {
       html += '<tr class="' + (ri % 2 ? 'report-lab-row-alt' : '') + '"><td class="report-lab-td-param">' + reportEscapeHtml(paramLabel) + '</td>';
       (row.values || []).forEach(function (v, vi) {
         var color = reportLabAnalysisColor(vi);
-        html += '<td class="report-lab-td-val" style="color:' + color + ';">' + reportEscapeHtml(formatLabCompareCellValue(v, row)) + '</td>';
+        var optTxt = (window.NpAnalysisCompare && typeof window.NpAnalysisCompare.formatOptForIndex === 'function')
+          ? window.NpAnalysisCompare.formatOptForIndex(row, vi)
+          : '';
+        html += '<td class="report-lab-td-val" style="color:' + color + ';">' +
+          reportEscapeHtml(formatLabCompareCellValue(v, row)) +
+          (optTxt ? '<div style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;color:' +
+            color + ';background:' + color + '22;">' +
+            reportEscapeHtml(optTxt) + '</div>' : '') +
+          '</td>';
       });
       html += '</tr>';
     });
@@ -21156,8 +21207,8 @@ function buildLabCompareSectionHTML(type, analyses, chartImages, rt, accent) {
       if (block.chartType === 'candle') {
         html += '<p class="report-lab-chart-note" style="margin:0 0 8px;font-size:11px;color:#64748b;">' +
           reportEscapeHtml(rt(
-            '100% = óptimo. Franja verde = ±10% DOP. Cada color es un reporte: dentro de la franja está bien; fuera está alto o bajo.',
-            '100% = optimum. Green band = ±10% DOP. Each color is a report: inside the band is OK; outside is high or low.'
+            '% del óptimo (eje Y). Franja = DOP ±10%. Punto = valor del análisis.',
+            '% of optimum (Y-axis). Band = DOP ±10%. Dot = lab value.'
           )) +
           '</p>';
       }
@@ -21562,6 +21613,48 @@ function createExampleSoilAnalysis() {
 
 // ========== SOLUCIÓN NUTRITIVA (misma estructura que Análisis de Suelo) ==========
 var SN_EQ_WEIGHTS = { N_NO3: 14, NO3: 14, N_NH4: 14, P: 31, S: 16.03, K: 39.1, Ca: 20.04, Mg: 12.15, Na: 23, SO4: 16.03, HCO3: 61, Cl: 35.45, CO3: 30, PO4: 31 };
+var FLUID_CATION_MEQ_KEYS = ['k', 'ca', 'mg', 'na'];
+var FLUID_ANION_MEQ_KEYS = ['no3', 'po4', 'so4', 'cl', 'hco3', 'co3'];
+
+/** % de cada ion sobre la suma meq del grupo (todos los de la tabla; ≠ triángulo Steiner). */
+window.npFluidIonPct = function npFluidIonPct(analysis, group, key) {
+  var keys = group === 'cations' ? FLUID_CATION_MEQ_KEYS : FLUID_ANION_MEQ_KEYS;
+  var bag = analysis && analysis[group];
+  if (!bag) return null;
+  var sum = 0;
+  keys.forEach(function (k) {
+    var n = parseFloat(bag[k + '_meq']);
+    if (!isNaN(n) && n > 0) sum += n;
+  });
+  if (sum <= 0) return null;
+  var n = parseFloat(bag[key + '_meq']);
+  if (isNaN(n) || n < 0) n = 0;
+  return (n / sum) * 100;
+};
+
+function updateFluidIonPctTable(prefix, analysis) {
+  function apply(keys, group) {
+    var meqs = {};
+    var sum = 0;
+    keys.forEach(function (k) {
+      var el = document.getElementById(prefix + '-' + k + '-meq');
+      var n = el ? parseFloat(el.value) : NaN;
+      meqs[k] = (!isNaN(n) && n > 0) ? n : 0;
+      sum += meqs[k];
+    });
+    if (analysis && !analysis[group]) analysis[group] = {};
+    keys.forEach(function (k) {
+      var el = document.getElementById(prefix + '-pct-' + k);
+      var pct = sum > 0 ? (meqs[k] / sum) * 100 : null;
+      if (el) el.textContent = pct == null ? '—' : pct.toFixed(1);
+      if (analysis && analysis[group]) {
+        analysis[group][k + '_pct'] = pct == null ? '' : Number(pct.toFixed(1));
+      }
+    });
+  }
+  apply(FLUID_CATION_MEQ_KEYS, 'cations');
+  apply(FLUID_ANION_MEQ_KEYS, 'anions');
+}
 var SN_REF_DEFAULT = { N: [140,200], P: [30,60], K: [180,300], Ca: [140,220], Mg: [40,70], S: [60,110], Fe: [1.5,3], Mn: [0.3,1], Zn: [0.05,0.3], Cu: [0.03,0.1], B: [0.3,0.6], Mo: [0.03,0.08] };
 
 function createEmptySolucionNutritivaAnalysis() {
@@ -21585,7 +21678,7 @@ function createSolucionNutritivaTabHTML() {
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Solución Nutritiva</h2>
-      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de solución nutritiva o extracto de pasta saturada. Macros en meq/L y ppm (conversión automática). Rangos de referencia y diferencia vs ideal: <strong>(-)</strong> falta, <strong>(+)</strong> exceso.</p>
+      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de solución nutritiva o extracto de pasta saturada. Macros en meq/L y ppm (conversión automática). Rangos de referencia y diferencia vs ideal: <strong>(-)</strong> falta, <strong>(+)</strong> exceso. Semáforo: si llenas Ideal, se mide contra ese número (±10 % verde); si no, contra la franja Ref.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
@@ -21622,12 +21715,12 @@ function createSolucionNutritivaTabHTML() {
                 <summary>⚗️ Cationes (meq/L y ppm)</summary>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>meq/L</th><th class="sn-ion-pct-th" title="${dashboardT('analysis.fluid_pct_cat_title', 'Porcentaje de cada catión sobre la suma de cationes (meq)')}">% suma</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
                     <tbody class="notranslate" translate="no">
-                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="sn-k-meq" class="fertirriego-input" data-sn-macro="K" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td><input type="number" step="0.1" id="sn-k-ppm" class="fertirriego-input" data-sn-macro="K" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td>180 – 300</td><td id="sn-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','k',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td id="sn-diff-k">—</td></tr>
-                      <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="sn-ca-meq" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td><input type="number" step="0.1" id="sn-ca-ppm" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td>140 – 220</td><td id="sn-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','ca',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td id="sn-diff-ca">—</td></tr>
-                      <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="sn-mg-meq" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td><input type="number" step="0.1" id="sn-mg-ppm" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="sn-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','mg',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td id="sn-diff-mg">—</td></tr>
-                      <tr><td>Na⁺</td><td><input type="number" step="0.01" id="sn-na-meq" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td><input type="number" step="0.1" id="sn-na-ppm" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td>—</td><td id="sn-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','na',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td id="sn-diff-na">—</td></tr>
+                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="sn-k-meq" class="fertirriego-input" data-sn-macro="K" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-k" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-k-ppm" class="fertirriego-input" data-sn-macro="K" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('K','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td>180 – 300</td><td id="sn-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','k',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','k');"></td><td id="sn-diff-k">—</td></tr>
+                      <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="sn-ca-meq" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-ca" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-ca-ppm" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td>140 – 220</td><td id="sn-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','ca',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td id="sn-diff-ca">—</td></tr>
+                      <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="sn-mg-meq" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-mg" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-mg-ppm" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="sn-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','mg',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td id="sn-diff-mg">—</td></tr>
+                      <tr><td>Na⁺</td><td><input type="number" step="0.01" id="sn-na-meq" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-na" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-na-ppm" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td>—</td><td id="sn-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','na',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td id="sn-diff-na">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -21636,14 +21729,14 @@ function createSolucionNutritivaTabHTML() {
                 <summary>⚗️ Aniones (meq/L y ppm)</summary>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>meq/L</th><th class="sn-ion-pct-th" title="${dashboardT('analysis.fluid_pct_an_title', 'Porcentaje de cada anión sobre la suma de aniones (meq)')}">% suma</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
                     <tbody class="notranslate" translate="no">
-                      <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="sn-no3-meq" class="fertirriego-input" data-sn-macro="NO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('NO3','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','no3');"></td><td><input type="number" step="0.1" id="sn-no3-ppm" class="fertirriego-input" data-sn-macro="NO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('NO3','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','no3');"></td><td>140 – 200</td><td id="sn-ref-no3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-no3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','no3',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','no3');"></td><td id="sn-diff-no3">—</td></tr>
-                      <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="sn-po4-meq" class="fertirriego-input" data-sn-macro="PO4" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('PO4','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','po4');"></td><td><input type="number" step="0.1" id="sn-po4-ppm" class="fertirriego-input" data-sn-macro="PO4" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('PO4','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','po4');"></td><td>30 – 60</td><td id="sn-ref-po4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-po4" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','po4',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','po4');"></td><td id="sn-diff-po4">—</td></tr>
-                      <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="sn-so4-meq" class="fertirriego-input" data-sn-macro="SO4" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('SO4','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td><input type="number" step="0.1" id="sn-so4-ppm" class="fertirriego-input" data-sn-macro="SO4" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('SO4','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td>60 – 110</td><td id="sn-ref-so4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-so4" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','so4',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td id="sn-diff-so4">—</td></tr>
-                      <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="sn-cl-meq" class="fertirriego-input" data-sn-macro="Cl" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Cl','meq',this);"></td><td><input type="number" step="0.1" id="sn-cl-ppm" class="fertirriego-input" data-sn-macro="Cl" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Cl','ppm',this);"></td><td>—</td><td id="sn-ref-cl" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-cl" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','cl',this.value);"></td><td id="sn-diff-cl">—</td></tr>
-                      <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="sn-hco3-meq" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','meq',this);"></td><td><input type="number" step="0.1" id="sn-hco3-ppm" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','ppm',this);"></td><td>—</td><td id="sn-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','hco3',this.value);"></td><td id="sn-diff-hco3">—</td></tr>
-                      <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="sn-co3-meq" class="fertirriego-input" data-sn-macro="CO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('CO3','meq',this);"></td><td><input type="number" step="0.1" id="sn-co3-ppm" class="fertirriego-input" data-sn-macro="CO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('CO3','ppm',this);"></td><td>—</td><td id="sn-ref-co3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-co3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','co3',this.value);"></td><td id="sn-diff-co3">—</td></tr>
+                      <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="sn-no3-meq" class="fertirriego-input" data-sn-macro="NO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('NO3','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','no3');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-no3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-no3-ppm" class="fertirriego-input" data-sn-macro="NO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('NO3','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','no3');"></td><td>140 – 200</td><td id="sn-ref-no3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-no3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','no3',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','no3');"></td><td id="sn-diff-no3">—</td></tr>
+                      <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="sn-po4-meq" class="fertirriego-input" data-sn-macro="PO4" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('PO4','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','po4');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-po4" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-po4-ppm" class="fertirriego-input" data-sn-macro="PO4" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('PO4','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','po4');"></td><td>30 – 60</td><td id="sn-ref-po4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-po4" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','po4',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','po4');"></td><td id="sn-diff-po4">—</td></tr>
+                      <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="sn-so4-meq" class="fertirriego-input" data-sn-macro="SO4" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('SO4','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td class="sn-ion-pct-cell"><span id="sn-pct-so4" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-so4-ppm" class="fertirriego-input" data-sn-macro="SO4" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('SO4','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td>60 – 110</td><td id="sn-ref-so4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-so4" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','so4',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td id="sn-diff-so4">—</td></tr>
+                      <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="sn-cl-meq" class="fertirriego-input" data-sn-macro="Cl" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Cl','meq',this);"></td><td class="sn-ion-pct-cell"><span id="sn-pct-cl" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-cl-ppm" class="fertirriego-input" data-sn-macro="Cl" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Cl','ppm',this);"></td><td>—</td><td id="sn-ref-cl" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-cl" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','cl',this.value);"></td><td id="sn-diff-cl">—</td></tr>
+                      <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="sn-hco3-meq" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','meq',this);"></td><td class="sn-ion-pct-cell"><span id="sn-pct-hco3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-hco3-ppm" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','ppm',this);"></td><td>—</td><td id="sn-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','hco3',this.value);"></td><td id="sn-diff-hco3">—</td></tr>
+                      <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="sn-co3-meq" class="fertirriego-input" data-sn-macro="CO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('CO3','meq',this);"></td><td class="sn-ion-pct-cell"><span id="sn-pct-co3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="sn-co3-ppm" class="fertirriego-input" data-sn-macro="CO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('CO3','ppm',this);"></td><td>—</td><td id="sn-ref-co3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-co3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','co3',this.value);"></td><td id="sn-diff-co3">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -21744,26 +21837,28 @@ window.saveSolucionNutritivaField = function saveSolucionNutritivaField(group, f
 
 window.snSyncMeqPpm = function snSyncMeqPpm(macro, fromUnit, inputEl) {
   var val = parseFloat(inputEl.value);
-  if (isNaN(val)) return;
   var w = SN_EQ_WEIGHTS[macro];
-  if (!w) return;
   var key = (macro === 'NO3' ? 'no3' : macro === 'PO4' ? 'po4' : macro === 'SO4' ? 'so4' : macro === 'HCO3' ? 'hco3' : macro === 'CO3' ? 'co3' : macro.toLowerCase());
   var meqEl = document.getElementById('sn-' + key + '-meq');
   var ppmEl = document.getElementById('sn-' + key + '-ppm');
-  if (!meqEl || !ppmEl) return;
-  if (fromUnit === 'meq') ppmEl.value = (val * w).toFixed(2);
-  else meqEl.value = (val / w).toFixed(2);
   var wrap = document.getElementById('solucion-nutritiva-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
-  if (!id) return;
-  var a = window.getSolucionNutritivaAnalyses().find(function(x) { return x.id === id; });
-  if (!a) return;
-  var keyMeq = key + '_meq', keyPpm = key + '_ppm';
-  var isCation = ['Ca','Mg','Na','K'].indexOf(macro) !== -1;
-  if (isCation && a.cations) { a.cations[keyMeq] = meqEl.value; a.cations[keyPpm] = ppmEl.value; }
-  if (!isCation && a.anions) { a.anions[keyMeq] = meqEl.value; a.anions[keyPpm] = ppmEl.value; }
-  window.saveSolucionNutritivaAnalysesToProject();
-  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_snCompareState');
+  var a = id ? window.getSolucionNutritivaAnalyses().find(function(x) { return x.id === id; }) : null;
+  if (!isNaN(val) && w && meqEl && ppmEl) {
+    if (fromUnit === 'meq') ppmEl.value = (val * w).toFixed(2);
+    else meqEl.value = (val / w).toFixed(2);
+    if (a) {
+      var keyMeq = key + '_meq', keyPpm = key + '_ppm';
+      var isCation = ['Ca','Mg','Na','K'].indexOf(macro) !== -1;
+      if (isCation && a.cations) { a.cations[keyMeq] = meqEl.value; a.cations[keyPpm] = ppmEl.value; }
+      if (!isCation && a.anions) { a.anions[keyMeq] = meqEl.value; a.anions[keyPpm] = ppmEl.value; }
+    }
+  }
+  updateFluidIonPctTable('sn', a);
+  if (a) {
+    window.saveSolucionNutritivaAnalysesToProject();
+    window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_snCompareState');
+  }
 };
 
 window.snUpdateMicroRef = function snUpdateMicroRef() {
@@ -21779,7 +21874,12 @@ window.snUpdateMicroRef = function snUpdateMicroRef() {
     var refEl = document.getElementById('sn-ref-' + key);
     var diffEl = document.getElementById('sn-diff-' + key);
     var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
-    if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
+    setAnalysisFluidStatus(refEl, val, idealVal, function () {
+      var r = ranges[key];
+      if (!r) return 'none';
+      if (val >= r[0] && val <= r[1]) return 'ok';
+      return val < r[0] ? 'low' : 'high';
+    });
     if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = val - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
   });
 };
@@ -21797,14 +21897,11 @@ window.snUpdateMacroRef = function snUpdateMacroRef(group, key) {
   var refEl = document.getElementById('sn-ref-' + key);
   var diffEl = document.getElementById('sn-diff-' + key);
   var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
-  if (refEl) {
-    if (isNaN(ppmVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-    else if (r) {
-      if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-    } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; }
-  }
+  setAnalysisFluidStatus(refEl, ppmVal, idealVal, function () {
+    if (!r) return 'none';
+    if (ppmVal >= r[0] && ppmVal <= r[1]) return 'ok';
+    return ppmVal < r[0] ? 'low' : 'high';
+  });
   if (diffEl && !isNaN(idealVal) && !isNaN(ppmVal)) { var d = ppmVal - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
 };
 
@@ -21839,6 +21936,7 @@ window.selectSolucionNutritivaAnalysis = function selectSolucionNutritivaAnalysi
   window.snUpdateMicroRef && window.snUpdateMicroRef();
   ['ca','mg','k','na'].forEach(function(k) { window.snUpdateMacroRef && window.snUpdateMacroRef('cations', k); });
   ['no3','po4','so4','cl','hco3','co3'].forEach(function(k) { window.snUpdateMacroRef && window.snUpdateMacroRef('anions', k); });
+  updateFluidIonPctTable('sn', a);
   if (typeof window.saveSolucionNutritivaUIState === 'function') window.saveSolucionNutritivaUIState();
 };
 
@@ -21964,7 +22062,7 @@ function createExtractoPastaTabHTML() {
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Extracto de Pasta</h2>
-      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de extracto de pasta saturada. Datos generales, aniones, cationes, micronutrimentos y relación nutrimental. Referencias en ppm. Diferencia vs ideal: <strong>(-)</strong> falta, <strong>(+)</strong> exceso.</p>
+      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de extracto de pasta saturada. Datos generales, aniones, cationes, micronutrimentos y relación nutrimental. Referencias en ppm. Diferencia vs ideal: <strong>(-)</strong> falta, <strong>(+)</strong> exceso. Semáforo: si llenas Ideal, se mide contra ese número (±10 % verde); si no, contra la franja Ref.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
@@ -22001,12 +22099,12 @@ function createExtractoPastaTabHTML() {
                 <summary>⚗️ Cationes (meq/L y ppm)</summary>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>meq/L</th><th class="sn-ion-pct-th" title="${dashboardT('analysis.fluid_pct_cat_title', 'Porcentaje de cada catión sobre la suma de cationes (meq)')}">% suma</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
                     <tbody class="notranslate" translate="no">
-                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="ep-k-meq" class="fertirriego-input" data-ep-macro="K" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td><input type="number" step="0.1" id="ep-k-ppm" class="fertirriego-input" data-ep-macro="K" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td>200 – 300</td><td id="ep-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','k',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td id="ep-diff-k">—</td></tr>
-                      <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="ep-ca-meq" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td><input type="number" step="0.1" id="ep-ca-ppm" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td>150 – 220</td><td id="ep-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','ca',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td id="ep-diff-ca">—</td></tr>
-                      <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="ep-mg-meq" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td><input type="number" step="0.1" id="ep-mg-ppm" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="ep-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','mg',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td id="ep-diff-mg">—</td></tr>
-                      <tr><td>Na⁺</td><td><input type="number" step="0.01" id="ep-na-meq" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td><input type="number" step="0.1" id="ep-na-ppm" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td>ideal &lt;50</td><td id="ep-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','na',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td id="ep-diff-na">—</td></tr>
+                      <tr><td>K⁺</td><td><input type="number" step="0.01" id="ep-k-meq" class="fertirriego-input" data-ep-macro="K" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-k" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-k-ppm" class="fertirriego-input" data-ep-macro="K" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('K','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td>200 – 300</td><td id="ep-ref-k" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-k" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','k',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','k');"></td><td id="ep-diff-k">—</td></tr>
+                      <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="ep-ca-meq" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-ca" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-ca-ppm" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td>150 – 220</td><td id="ep-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','ca',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td id="ep-diff-ca">—</td></tr>
+                      <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="ep-mg-meq" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-mg" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-mg-ppm" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="ep-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','mg',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td id="ep-diff-mg">—</td></tr>
+                      <tr><td>Na⁺</td><td><input type="number" step="0.01" id="ep-na-meq" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-na" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-na-ppm" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td>ideal &lt;50</td><td id="ep-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','na',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td id="ep-diff-na">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -22015,14 +22113,14 @@ function createExtractoPastaTabHTML() {
                 <summary>⚗️ Aniones (meq/L y ppm)</summary>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>meq/L</th><th class="sn-ion-pct-th" title="${dashboardT('analysis.fluid_pct_an_title', 'Porcentaje de cada anión sobre la suma de aniones (meq)')}">% suma</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
                     <tbody class="notranslate" translate="no">
-                      <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="ep-no3-meq" class="fertirriego-input" data-ep-macro="NO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('NO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td><input type="number" step="0.1" id="ep-no3-ppm" class="fertirriego-input" data-ep-macro="NO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('NO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td>150 – 200</td><td id="ep-ref-no3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-no3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','no3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td id="ep-diff-no3">—</td></tr>
-                      <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="ep-po4-meq" class="fertirriego-input" data-ep-macro="PO4" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('PO4','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td><input type="number" step="0.01" id="ep-po4-ppm" class="fertirriego-input" data-ep-macro="PO4" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('PO4','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td>30 – 60</td><td id="ep-ref-po4" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-po4" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','po4',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td id="ep-diff-po4">—</td></tr>
-                      <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="ep-so4-meq" class="fertirriego-input" data-ep-macro="SO4" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('SO4','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td><input type="number" step="0.1" id="ep-so4-ppm" class="fertirriego-input" data-ep-macro="SO4" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('SO4','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td>60 – 110</td><td id="ep-ref-so4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-so4" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','so4',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td id="ep-diff-so4">—</td></tr>
-                      <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="ep-cl-meq" class="fertirriego-input" data-ep-macro="Cl" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Cl','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','cl');"></td><td><input type="number" step="0.1" id="ep-cl-ppm" class="fertirriego-input" data-ep-macro="Cl" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Cl','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','cl');"></td><td>ideal &lt;70</td><td id="ep-ref-cl" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-cl" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','cl',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','cl');"></td><td id="ep-diff-cl">—</td></tr>
-                      <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="ep-hco3-meq" class="fertirriego-input" data-ep-macro="HCO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('HCO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td><input type="number" step="0.1" id="ep-hco3-ppm" class="fertirriego-input" data-ep-macro="HCO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('HCO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td>ideal &lt;120</td><td id="ep-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','hco3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td id="ep-diff-hco3">—</td></tr>
-                      <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="ep-co3-meq" class="fertirriego-input" data-ep-macro="CO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('CO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td><input type="number" step="0.01" id="ep-co3-ppm" class="fertirriego-input" data-ep-macro="CO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('CO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td>ideal 0</td><td id="ep-ref-co3" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-co3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','co3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td id="ep-diff-co3">—</td></tr>
+                      <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="ep-no3-meq" class="fertirriego-input" data-ep-macro="NO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('NO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td class="sn-ion-pct-cell"><span id="ep-pct-no3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-no3-ppm" class="fertirriego-input" data-ep-macro="NO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('NO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td>150 – 200</td><td id="ep-ref-no3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-no3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','no3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td id="ep-diff-no3">—</td></tr>
+                      <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="ep-po4-meq" class="fertirriego-input" data-ep-macro="PO4" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('PO4','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-po4" class="sn-ion-pct">—</span></td><td><input type="number" step="0.01" id="ep-po4-ppm" class="fertirriego-input" data-ep-macro="PO4" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('PO4','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td>30 – 60</td><td id="ep-ref-po4" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-po4" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','po4',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td id="ep-diff-po4">—</td></tr>
+                      <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="ep-so4-meq" class="fertirriego-input" data-ep-macro="SO4" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('SO4','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-so4" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-so4-ppm" class="fertirriego-input" data-ep-macro="SO4" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('SO4','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td>60 – 110</td><td id="ep-ref-so4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-so4" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','so4',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td id="ep-diff-so4">—</td></tr>
+                      <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="ep-cl-meq" class="fertirriego-input" data-ep-macro="Cl" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Cl','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','cl');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-cl" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-cl-ppm" class="fertirriego-input" data-ep-macro="Cl" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Cl','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','cl');"></td><td>ideal &lt;70</td><td id="ep-ref-cl" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-cl" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','cl',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','cl');"></td><td id="ep-diff-cl">—</td></tr>
+                      <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="ep-hco3-meq" class="fertirriego-input" data-ep-macro="HCO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('HCO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-hco3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.1" id="ep-hco3-ppm" class="fertirriego-input" data-ep-macro="HCO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('HCO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td>ideal &lt;120</td><td id="ep-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','hco3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','hco3');"></td><td id="ep-diff-hco3">—</td></tr>
+                      <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="ep-co3-meq" class="fertirriego-input" data-ep-macro="CO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('CO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td class="sn-ion-pct-cell"><span id="ep-pct-co3" class="sn-ion-pct">—</span></td><td><input type="number" step="0.01" id="ep-co3-ppm" class="fertirriego-input" data-ep-macro="CO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('CO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td>ideal 0</td><td id="ep-ref-co3" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-co3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','co3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','co3');"></td><td id="ep-diff-co3">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -22139,27 +22237,29 @@ window.saveExtractoPastaField = function saveExtractoPastaField(group, field, va
 
 window.epSyncMeqPpm = function epSyncMeqPpm(macro, fromUnit, inputEl) {
   var val = parseFloat(inputEl.value);
-  if (isNaN(val)) return;
   var w = SN_EQ_WEIGHTS[macro];
-  if (!w) return;
   var key = (macro === 'NO3' ? 'no3' : macro === 'PO4' ? 'po4' : macro === 'SO4' ? 'so4' : macro === 'HCO3' ? 'hco3' : macro === 'CO3' ? 'co3' : macro.toLowerCase());
   var meqEl = document.getElementById('ep-' + key + '-meq');
   var ppmEl = document.getElementById('ep-' + key + '-ppm');
-  if (!meqEl || !ppmEl) return;
-  if (fromUnit === 'meq') ppmEl.value = (val * w).toFixed(2);
-  else meqEl.value = (val / w).toFixed(2);
   var wrap = document.getElementById('extracto-pasta-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
-  if (!id) return;
-  var a = window.getExtractoPastaAnalyses().find(function(x) { return x.id === id; });
-  if (!a) return;
-  var keyMeq = key + '_meq', keyPpm = key + '_ppm';
-  var isCation = ['Ca','Mg','Na','K'].indexOf(macro) !== -1;
-  if (isCation && a.cations) { a.cations[keyMeq] = meqEl.value; a.cations[keyPpm] = ppmEl.value; }
-  if (!isCation && a.anions) { a.anions[keyMeq] = meqEl.value; a.anions[keyPpm] = ppmEl.value; }
-  window.saveExtractoPastaAnalysesToProject();
-  if (typeof window.epUpdateRatiosRef === 'function') window.epUpdateRatiosRef();
-  window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_epCompareState');
+  var a = id ? window.getExtractoPastaAnalyses().find(function(x) { return x.id === id; }) : null;
+  if (!isNaN(val) && w && meqEl && ppmEl) {
+    if (fromUnit === 'meq') ppmEl.value = (val * w).toFixed(2);
+    else meqEl.value = (val / w).toFixed(2);
+    if (a) {
+      var keyMeq = key + '_meq', keyPpm = key + '_ppm';
+      var isCation = ['Ca','Mg','Na','K'].indexOf(macro) !== -1;
+      if (isCation && a.cations) { a.cations[keyMeq] = meqEl.value; a.cations[keyPpm] = ppmEl.value; }
+      if (!isCation && a.anions) { a.anions[keyMeq] = meqEl.value; a.anions[keyPpm] = ppmEl.value; }
+    }
+  }
+  updateFluidIonPctTable('ep', a);
+  if (a) {
+    window.saveExtractoPastaAnalysesToProject();
+    if (typeof window.epUpdateRatiosRef === 'function') window.epUpdateRatiosRef();
+    window.scheduleLabCompareRefresh && window.scheduleLabCompareRefresh('_epCompareState');
+  }
 };
 
 // Referencias en ppm: rango [min,max] o ideal/riesgo { idealMax, riskMin }
@@ -22195,33 +22295,31 @@ window.epUpdateMacroRef = function epUpdateMacroRef(group, key) {
     ppmVal = sPpm;
   }
 
-  if (refEl) {
-    if (isNaN(ppmVal) && key !== 'co3') { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-    else if (key === 'co3') {
-      if (isNaN(meqVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (meqVal <= EP_REF_PPM.co3.maxMeq) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-    } else if (key === 'na' || key === 'cl' || key === 'hco3') {
-      var th = EP_REF_PPM[key];
-      if (ppmVal <= th.idealMax) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ideal') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal >= th.riskMin) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('risk') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('caution') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-    } else if (key === 'po4') {
-      var r = EP_P_REF;
-      if (isNaN(ppmVal)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-    } else {
-      var r = EP_REF_PPM[key];
-      if (!r || !Array.isArray(r)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal >= r[0] && ppmVal <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else if (ppmVal < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; }
-      else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; }
+  var cmpPpm = data && data[key + '_ppm'] !== undefined && data[key + '_ppm'] !== '' ? parseFloat(data[key + '_ppm']) : NaN;
+  var statusVal = !isNaN(idealVal) ? cmpPpm : (key === 'co3' ? meqVal : ppmVal);
+  setAnalysisFluidStatus(refEl, statusVal, idealVal, function () {
+    if (key === 'co3') {
+      if (isNaN(meqVal)) return 'none';
+      return meqVal <= EP_REF_PPM.co3.maxMeq ? 'ok' : 'high';
     }
-  }
+    if (isNaN(ppmVal) && key !== 'co3') return 'none';
+    if (key === 'na' || key === 'cl' || key === 'hco3') {
+      var th = EP_REF_PPM[key];
+      if (ppmVal <= th.idealMax) return 'ideal';
+      if (ppmVal >= th.riskMin) return 'risk';
+      return 'caution';
+    }
+    if (key === 'po4') {
+      if (isNaN(ppmVal)) return 'none';
+      if (ppmVal >= EP_P_REF[0] && ppmVal <= EP_P_REF[1]) return 'ok';
+      return ppmVal < EP_P_REF[0] ? 'low' : 'high';
+    }
+    var rr = EP_REF_PPM[key];
+    if (!rr || !Array.isArray(rr)) return 'none';
+    if (ppmVal >= rr[0] && ppmVal <= rr[1]) return 'ok';
+    return ppmVal < rr[0] ? 'low' : 'high';
+  });
   if (diffEl && !isNaN(idealVal)) {
-    var cmpPpm = data && data[key + '_ppm'] ? parseFloat(data[key + '_ppm']) : NaN;
     if (!isNaN(cmpPpm)) { var d = cmpPpm - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else diffEl.textContent = '—';
   } else if (diffEl) diffEl.textContent = '—';
 };
@@ -22243,7 +22341,12 @@ window.epUpdateMicroRef = function epUpdateMicroRef() {
     var refEl = document.getElementById('ep-ref-' + key);
     var diffEl = document.getElementById('ep-diff-' + key);
     var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
-    if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="' + analysisRefTitle('none') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="' + analysisRefTitle('ok') + '"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="' + analysisRefTitle('low') + '"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="' + analysisRefTitle('high') + '"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
+    setAnalysisFluidStatus(refEl, val, idealVal, function () {
+      var r = ranges[key];
+      if (!r) return 'none';
+      if (val >= r[0] && val <= r[1]) return 'ok';
+      return val < r[0] ? 'low' : 'high';
+    });
     if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = val - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
   });
 };
@@ -22305,6 +22408,7 @@ window.selectExtractoPastaAnalysis = function selectExtractoPastaAnalysis(id) {
   ['ca','mg','k','na'].forEach(function(k) { window.epUpdateMacroRef && window.epUpdateMacroRef('cations', k); });
   ['no3','po4','so4','cl','hco3','co3'].forEach(function(k) { window.epUpdateMacroRef && window.epUpdateMacroRef('anions', k); });
   window.epUpdateRatiosRef && window.epUpdateRatiosRef();
+  updateFluidIonPctTable('ep', a);
   if (typeof window.saveExtractoPastaUIState === 'function') window.saveExtractoPastaUIState();
 };
 
@@ -23914,12 +24018,12 @@ function createSoilAnalysisTabHTML() {
                     <p class="soil-block-title soil-block-title-blue">CIC y saturación (%)</p>
                     <div class="soil-cations-pct-inner">
                       <label class="soil-cic-label-blue notranslate" translate="no" title="${dashboardT('analysis.cic_sum_title', 'Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)')}" data-i18n-title="analysis.cic_sum_title"><strong>CIC (meq/100g o cmol⁺/kg)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Ca' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Ca"}'>% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Mg' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Mg"}'>% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'K' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"K"}'>% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Na' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Na"}'>% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Al' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Al"}'>% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'H' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"H"}'>% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Ca' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Ca"}'>% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '65–75' })}</span></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Mg' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Mg"}'>% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '10–15' })}</span></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'K' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"K"}'>% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '3–7' })}</span></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Na' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Na"}'>% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '0–1' })}</span></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'Al' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"Al"}'>% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '0–1' })}</span></label>
+                      <label class="notranslate" translate="no" title="${dashboardT('analysis.pct_cation_title', 'Calculado: 100 × ({ion} meq / CIC)', { ion: 'H' })}" data-i18n-title="analysis.pct_cation_title" data-i18n-params='{"ion":"H"}'>% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '0–10' })}</span></label>
                     </div>
                   </div>
                 </div>
@@ -24123,12 +24227,12 @@ function createSoilAnalysisTabHTML() {
               <details class="soil-section" data-soil-section="ratios">
                 <summary>📊 Relaciones entre cationes (calculadas desde <span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>)</summary>
                 <div class="soil-ratios-structure">
-                  <p class="soil-ratios-ref-title notranslate" translate="no">Valores de referencia: Ca/Mg = 6 · Mg/K = 3.5 · (Ca+Mg)/K = 18 · Ca/K = 14</p>
+                  <p class="soil-ratios-ref-title">${dashboardT('analysis.soil_ratio_ideal_hint', 'Ideal NutriPlant debajo de cada relación (desde meq).')}</p>
                   <div class="soil-fields soil-ratios-grid">
-                    <label class="notranslate" translate="no">Ca/Mg <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMg" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMg" aria-hidden="true"></span></span></label>
-                    <label class="notranslate" translate="no">Mg/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-mgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-mgK" aria-hidden="true"></span></span></label>
-                    <label class="notranslate" translate="no">(Ca+Mg)/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMgK" aria-hidden="true"></span></span></label>
-                    <label class="notranslate" translate="no">Ca/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caK" aria-hidden="true"></span></span></label>
+                    <label class="notranslate" translate="no">Ca/Mg <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMg" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMg" aria-hidden="true"></span></span><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '6' })}</span></label>
+                    <label class="notranslate" translate="no">Mg/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-mgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-mgK" aria-hidden="true"></span></span><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '3.5' })}</span></label>
+                    <label class="notranslate" translate="no">(Ca+Mg)/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMgK" aria-hidden="true"></span></span><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '18' })}</span></label>
+                    <label class="notranslate" translate="no">Ca/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caK" aria-hidden="true"></span></span><span class="soil-ratio-ideal">${dashboardT('analysis.compare_ideal_short', 'id. {n}', { n: '14' })}</span></label>
                   </div>
                 </div>
               </details>

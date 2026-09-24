@@ -615,7 +615,39 @@
             html += '</tr></thead><tbody><tr>';
             html += '<td style="' + tdStyle + '">' + val('cic') + '</td>';
             CATION_PCT_COLS.forEach(function (p) { html += '<td style="' + tdStyle + '">' + pctVal(p) + '</td>'; });
+            html += '</tr><tr>';
+            html += '<td style="' + tdStyle + ';font-size:11px;color:#0369a1;font-weight:600;">' + tr('Ideal saturación', 'Saturation ideal') + '</td>';
+            CATION_PCT_COLS.forEach(function (p) {
+                html += '<td style="' + tdStyle + ';font-size:11px;color:#0369a1;font-weight:700;">id. ' + (CATION_PCT_REF[p] || '—') + '</td>';
+            });
             html += '</tr></tbody></table></div></div></div>';
+            return html;
+        }
+
+        var SOIL_RATIO_IDEALS = { caMg: 6, mgK: 3.5, caMgK: 18, caK: 14 };
+        function buildSoilRatiosTable() {
+            var r = obj.ratios || {};
+            var keys = [
+                { id: 'caMg', label: 'Ca/Mg' },
+                { id: 'mgK', label: 'Mg/K' },
+                { id: 'caMgK', label: '(Ca+Mg)/K' },
+                { id: 'caK', label: 'Ca/K' }
+            ];
+            var tableStyle = 'width:100%;border-collapse:collapse;font-size:0.9rem;';
+            var thStyle = 'padding:10px 12px;text-align:center;border:1px solid #e2e8f0;background:#f8fafc;font-weight:600;color:#334155;';
+            var tdStyle = 'padding:10px 12px;text-align:center;border:1px solid #e2e8f0;';
+            var html = '<table style="' + tableStyle + '"><thead><tr>';
+            html += '<th style="' + thStyle + '">' + tr('Relación', 'Ratio') + '</th>';
+            html += '<th style="' + thStyle + '">' + tr('Calculada', 'Calculated') + '</th>';
+            html += '<th style="' + thStyle + '">' + tr('Ideal', 'Ideal') + '</th>';
+            html += '</tr></thead><tbody>';
+            keys.forEach(function (row) {
+                var v = r[row.id];
+                html += '<tr><td style="' + tdStyle + '">' + row.label + '</td>';
+                html += '<td style="' + tdStyle + '">' + (v != null && v !== '' ? formatNum(v) : '—') + '</td>';
+                html += '<td style="' + tdStyle + ';font-size:11px;color:#0369a1;font-weight:700;">id. ' + SOIL_RATIO_IDEALS[row.id] + '</td></tr>';
+            });
+            html += '</tbody></table>';
             return html;
         }
 
@@ -646,6 +678,7 @@
                 var r = items[i];
                 var parts = r.k.split('.');
                 var part = (parts[1] || '').trim();
+                if (/_pct$/i.test(part)) continue;
                 var m = part.match(/^(.+?)_(meq|ppm)$/);
                 var param = m ? m[1] : part;
                 if (!param) continue;
@@ -684,9 +717,16 @@
             if (!isSoilType) {
                 if (isSolucionType || isExtractoType) {
                     var sTbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">' + tr('Elemento', 'Element') + '</th>';
-                    if (hasMeqPpm) sTbl += '<th>meq/L</th><th>ppm</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
+                    if (hasMeqPpm) sTbl += '<th>meq/L</th><th>' + tr('% suma', '% of sum') + '</th><th>ppm</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
                     else sTbl += '<th>' + tr('Análisis (ppm)', 'Analysis (ppm)') + '</th><th>' + tr('Ideal (opc.)', 'Ideal (optional)') + '</th><th>' + tr('Diferencia', 'Difference') + '</th>';
                     sTbl += '</tr></thead><tbody>';
+                    var meqSum = 0;
+                    if (hasMeqPpm) {
+                        params.forEach(function (p) {
+                            var mn = parseFloat(String((paramKeys[p] && paramKeys[p].meq) != null ? paramKeys[p].meq : '').replace(',', '.'));
+                            if (!isNaN(mn) && mn > 0) meqSum += mn;
+                        });
+                    }
                     params.forEach(function (p) {
                         var row = paramKeys[p] || {};
                         var idealVal = idealKey(p);
@@ -700,7 +740,10 @@
                         }
                         sTbl += '<tr><td class="col-concept">' + escapeHtml(fluidParamLabel(p)) + '</td>';
                         if (hasMeqPpm) {
+                            var meqN = parseFloat(String(row.meq == null ? '' : row.meq).replace(',', '.'));
+                            var pctTxt = (meqSum > 0 && !isNaN(meqN)) ? (meqN / meqSum * 100).toFixed(1) : '—';
                             sTbl += '<td>' + escapeHtml(formatNum(row.meq)) + '</td>';
+                            sTbl += '<td>' + escapeHtml(pctTxt) + '</td>';
                             sTbl += '<td>' + escapeHtml(formatNum(row.ppm)) + '</td>';
                             sTbl += '<td>' + escapeHtml(idealVal != null && String(idealVal).trim() !== '' ? formatNum(idealVal) : '—') + '</td>';
                             sTbl += '<td>' + escapeHtml(diff) + '</td>';
@@ -808,6 +851,7 @@
             if (isAguaType && grp === 'general') content = buildWaterGeneralCards();
             if (isSoilType && (grp === 'physical' || grp === 'phSection' || grp === 'fertility')) content = buildSoilStyleTable(grp);
             if (!content && isSoilType && grp === 'cations') content = buildSoilCationsTable();
+            if (!content && isSoilType && grp === 'ratios') content = buildSoilRatiosTable();
             if (!content && (grp === 'cations' || grp === 'anions')) content = buildRelatedTable(grp, true);
             if (!content && grp === 'micros') content = buildRelatedTable(grp, false);
             if (content) {
