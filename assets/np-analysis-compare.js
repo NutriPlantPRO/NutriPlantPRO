@@ -232,6 +232,33 @@
     return { min: opt * (1 - FOLIAR_RANGE_PCT), max: opt * (1 + FOLIAR_RANGE_PCT), opt: opt };
   }
 
+  function defaultFoliarOptForPath(path) {
+    var api = w.NpFoliarRatios;
+    var p = String(path || '');
+    var key = p.split('.')[1];
+    if (!key) return null;
+    if (p.indexOf('macros.') === 0) {
+      var macros = (api && api.DEFAULT_MACRO) || { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 };
+      return numOrNull(macros[key]);
+    }
+    if (p.indexOf('micros.') === 0) {
+      var micros = (api && api.DEFAULT_MICRO) || { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 };
+      return numOrNull(micros[key]);
+    }
+    return null;
+  }
+
+  function resolveCandleOpt(row, analysisIndex) {
+    var saved = row && row.optima ? row.optima[analysisIndex] : null;
+    if (saved != null && Number.isFinite(saved) && saved !== 0) return saved;
+    return defaultFoliarOptForPath(row && row.path);
+  }
+
+  function pctOfOpt(value, opt) {
+    if (value == null || opt == null || !Number.isFinite(value) || !Number.isFinite(opt) || opt === 0) return null;
+    return (value / opt) * 100;
+  }
+
   function dopAbsPct(value, opt) {
     if (value == null || opt == null || !Number.isFinite(value) || !Number.isFinite(opt) || opt === 0) return null;
     return Math.abs(((value - opt) / opt) * 100);
@@ -247,14 +274,9 @@
   }
 
   function candleScaleMax(value, opt) {
-    var nums = [];
-    if (value != null && Number.isFinite(value)) nums.push(value);
-    var rng = rangeFromOptimal(opt);
-    if (rng) {
-      nums.push(rng.min, rng.max, rng.opt);
-    }
-    if (!nums.length) return null;
-    return Math.max.apply(null, nums);
+    var pct = pctOfOpt(value, opt);
+    if (pct == null) return 110;
+    return Math.max(110, pct);
   }
 
   /** CEC % y relaciones: 2 decimales; el resto sin forzar (labs ya vienen redondeados). */
@@ -454,38 +476,40 @@
     var pack = chart.$npCandles;
     if (!pack || !pack.series || !pack.series.length) return;
     var yScale = chart.scales && chart.scales.y;
+    var xScale = chart.scales && chart.scales.x;
     if (!yScale) return;
     var ctx = chart.ctx;
     ctx.save();
+    var y90 = yScale.getPixelForValue(90);
+    var y110 = yScale.getPixelForValue(110);
+    var y100 = yScale.getPixelForValue(100);
+    var left = (xScale && xScale.left) || yScale.left;
+    var right = (xScale && xScale.right) || (chart.chartArea && chart.chartArea.right) || left + 200;
+    var area = chart.chartArea || {};
+    if (area.left != null) left = area.left;
+    if (area.right != null) right = area.right;
+    ctx.fillStyle = 'rgba(22, 163, 74, 0.16)';
+    ctx.fillRect(left, Math.min(y90, y110), Math.max(0, right - left), Math.max(6, Math.abs(y110 - y90)));
+    ctx.strokeStyle = 'rgba(22, 163, 74, 0.55)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(left, y100);
+    ctx.lineTo(right, y100);
+    ctx.stroke();
+    ctx.setLineDash([]);
     pack.series.forEach(function (serie, dsIndex) {
       var meta = chart.getDatasetMeta(dsIndex);
       if (!meta || !meta.data) return;
       meta.data.forEach(function (bar, i) {
         var pt = serie.points[i];
-        if (!pt || !bar) return;
+        if (!pt || !bar || pt.pct == null) return;
         var x = bar.x;
-        var half = Math.max(5, (bar.width || 18) / 2);
-        var value = pt.value;
-        var rng = pt.range;
-        if (rng) {
-          var yLo = yScale.getPixelForValue(rng.min);
-          var yHi = yScale.getPixelForValue(rng.max);
-          var top = Math.min(yLo, yHi);
-          var h = Math.max(3, Math.abs(yHi - yLo));
-          ctx.fillStyle = analysisColorWash(serie.color, '4d');
-          ctx.strokeStyle = serie.color + '99';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          if (ctx.roundRect) ctx.roundRect(x - half, top, half * 2, h, 3);
-          else ctx.rect(x - half, top, half * 2, h);
-          ctx.fill();
-          ctx.stroke();
-        }
-        if (value == null || !Number.isFinite(value)) return;
-        var yVal = yScale.getPixelForValue(value);
-        var mark = candleStatusColor(value, rng && rng.opt, serie.color);
-        if (rng && (value < rng.min || value > rng.max)) {
-          var yEdge = yScale.getPixelForValue(value < rng.min ? rng.min : rng.max);
+        var half = Math.max(6, (bar.width || 18) / 2);
+        var yVal = yScale.getPixelForValue(pt.pct);
+        var mark = candleStatusColor(pt.value, pt.opt, serie.color);
+        if (pt.pct < 90 || pt.pct > 110) {
+          var yEdge = yScale.getPixelForValue(pt.pct < 90 ? 90 : 110);
           ctx.strokeStyle = mark;
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -493,16 +517,15 @@
           ctx.lineTo(x, yVal);
           ctx.stroke();
         }
-        if (!rng) {
-          var y0 = yScale.getPixelForValue(0);
-          ctx.fillStyle = analysisColorWash(serie.color, '99');
-          ctx.fillRect(x - half * 0.7, Math.min(y0, yVal), half * 1.4, Math.max(2, Math.abs(y0 - yVal)));
-        }
-        ctx.fillStyle = mark;
-        ctx.fillRect(x - half, yVal - 2.5, half * 2, 5);
+        ctx.fillStyle = serie.color;
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x - half, yVal - 2.5, half * 2, 5);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(x, yVal, Math.min(6, half * 0.45), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = mark;
+        ctx.fillRect(x - half, yVal - 2, half * 2, 4);
       });
     });
     ctx.restore();
@@ -536,8 +559,7 @@
         label: analysisLabel(item.analysis, item.index),
         data: chartRows.map(function (r) {
           var v = r.values[item.index];
-          var opt = (r.optima && r.optima[item.index]) || null;
-          if (isCandle) return candleScaleMax(v, opt);
+          if (isCandle) return candleScaleMax(v, resolveCandleOpt(r, item.index));
           return v == null ? null : v;
         }),
         borderColor: color,
@@ -558,8 +580,8 @@
               color: analysisColor(item.index),
               points: chartRows.map(function (r) {
                 var v = r.values[item.index];
-                var opt = (r.optima && r.optima[item.index]) || null;
-                return { value: v, range: rangeFromOptimal(opt) };
+                var opt = resolveCandleOpt(r, item.index);
+                return { value: v, opt: opt, pct: pctOfOpt(v, opt) };
               })
             };
           })
@@ -605,24 +627,23 @@
                 var serie = selected[ctx.datasetIndex];
                 if (!rowMeta || !serie) return ctx.dataset.label + ': —';
                 var v = rowMeta.values[serie.index];
-                var opt = rowMeta.optima ? rowMeta.optima[serie.index] : null;
-                var rng = rangeFromOptimal(opt);
+                var opt = resolveCandleOpt(rowMeta, serie.index);
+                var pct = pctOfOpt(v, opt);
                 var line = ctx.dataset.label + ': ' + formatCompareValue(v, rowMeta);
-                if (rng) {
+                if (opt != null) {
                   line +=
                     '  ·  ' +
-                    tr('analysis.compare_candle_range', 'rango {min}–{max}', {
-                      min: formatCompareValue(rng.min, rowMeta),
-                      max: formatCompareValue(rng.max, rowMeta)
+                    tr('analysis.compare_candle_opt', 'óptimo {opt}', {
+                      opt: formatCompareValue(opt, rowMeta)
                     });
-                  var abs = dopAbsPct(v, opt);
-                  if (abs != null) {
-                    line +=
-                      '  ·  ' +
-                      (abs <= 10
-                        ? tr('analysis.compare_candle_in', 'dentro')
-                        : tr('analysis.compare_candle_out', 'fuera'));
-                  }
+                }
+                if (pct != null) {
+                  line += '  ·  ' + pct.toFixed(0) + '%';
+                  line +=
+                    '  ·  ' +
+                    (Math.abs(pct - 100) <= 10
+                      ? tr('analysis.compare_candle_in', 'dentro')
+                      : tr('analysis.compare_candle_out', 'fuera'));
                 }
                 return line;
               }
@@ -637,8 +658,11 @@
             type: 'linear',
             position: 'left',
             beginAtZero: true,
+            suggestedMax: isCandle ? 130 : undefined,
             title: (function () {
-              var yt = yAxisTitleForRows(chartRows);
+              var yt = isCandle
+                ? tr('analysis.compare_candle_axis', '% del óptimo')
+                : yAxisTitleForRows(chartRows);
               return { display: !!yt, text: yt || '', font: { size: 11 } };
             })()
           }
@@ -694,7 +718,7 @@
         ? '<p class="np-analysis-compare__chart-cap">' +
             tr(
               'analysis.compare_candle_hint',
-              'Vela por elemento: la franja opaca es el rango óptimo (±10% DOP). La marca es el valor. Si está fuera, la línea llega hasta el valor.'
+              'Se lee fácil: 100% = óptimo. La franja verde es ±10% (DOP en rango). Cada puntito de color es un reporte. Si cae en la franja, está bien; si se sale, está alto o bajo.'
             ) +
           '</p>'
         : '';

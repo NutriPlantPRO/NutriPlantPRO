@@ -21153,6 +21153,14 @@ function buildLabCompareSectionHTML(type, analyses, chartImages, rt, accent) {
     if (block.chart && chartsByBlock[block.id]) {
       html += '<div class="report-lab-chart-card">';
       html += '<div class="report-lab-chart-caption">📈 ' + reportEscapeHtml(blockTitle) + '</div>';
+      if (block.chartType === 'candle') {
+        html += '<p class="report-lab-chart-note" style="margin:0 0 8px;font-size:11px;color:#64748b;">' +
+          reportEscapeHtml(rt(
+            '100% = óptimo. Franja verde = ±10% DOP. Cada color es un reporte: dentro de la franja está bien; fuera está alto o bajo.',
+            '100% = optimum. Green band = ±10% DOP. Each color is a report: inside the band is OK; outside is high or low.'
+          )) +
+          '</p>';
+      }
       html += '<img src="' + chartsByBlock[block.id] + '" alt="' + reportEscapeHtml(rt('Gráfica', 'Chart') + ' ' + blockTitle) + '">';
       html += '</div>';
     }

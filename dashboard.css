@@ -9796,7 +9796,8 @@ html.embed-login body {
 }
 .np-analysis-compare__table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 12px;
   min-width: 0;
   background: #fff;
@@ -9812,9 +9813,10 @@ html.embed-login body {
   position: sticky;
   top: 0;
   background: #f8fafc;
-  z-index: 1;
+  z-index: 2;
   font-weight: 800;
   color: #0f172a;
+  box-shadow: 0 1px 0 #e2e8f0;
 }
 .np-analysis-compare__table th.is-on {
   /* color/fondo de título = color de serie (inline en JS) */

@@ -348,7 +348,7 @@
       reviewSections: FOLIAR_REVIEW_SECTIONS,
       reviewFields: FOLIAR_REVIEW_FIELDS,
       hint:
-        'Cada columna es un análisis foliar. Gráficas tipo vela: franja = rango óptimo (±10% DOP); marca = valor. Tabla de relaciones nutrimentales (real vs ideal del mismo análisis).',
+        'Cada columna es un análisis foliar. Gráfica: 100% = óptimo; franja verde = ±10% DOP; cada color es un reporte. Tabla de relaciones nutrimentales (real vs ideal del mismo análisis).',
       reviewTitle: 'Revisar datos detectados (foliar)'
     },
     fruta: {
