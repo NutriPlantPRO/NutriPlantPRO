@@ -10330,19 +10330,40 @@ html.embed-login body {
 
 .soil-fertility-table-wrap { margin-top: 8px; }
 .soil-fertility-table .fertirriego-input { width: 100%; min-width: 52px; box-sizing: border-box; }
-.soil-fertility-th-p { vertical-align: top; padding-top: 6px; }
+.soil-fertility-table thead .soil-fertility-method-row th {
+  padding: 8px 4px 2px;
+  vertical-align: middle;
+  height: 34px;
+  border-bottom: none;
+}
+.soil-fertility-table thead .soil-fertility-method-row th:has(select) {
+  min-width: 78px;
+}
+.soil-fertility-table thead .soil-fertility-label-row th {
+  padding: 2px 6px 10px;
+  vertical-align: middle;
+  border-top: none;
+}
+.soil-fertility-method-slot {
+  display: block;
+  height: 22px;
+}
 .soil-fertility-p-method-header {
   display: block;
   width: 100%;
-  margin-top: 4px;
-  padding: 2px 4px;
+  min-width: 0;
+  height: 22px;
+  margin: 0;
+  padding: 1px 2px;
   font-size: 10px;
+  line-height: 1.2;
   border: 1px solid rgba(255,255,255,0.5);
   border-radius: 4px;
   background: #fff;
   color: #0369a1;
   font-weight: 600;
   cursor: pointer;
+  box-sizing: border-box;
 }
 .soil-fertility-table thead .soil-fertility-p-method-header option { color: #0f172a; }
 .soil-sufficiency-row td { background: #f0f9ff; color: #075985; font-size: 12px; font-weight: 600; }

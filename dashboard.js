@@ -23893,7 +23893,7 @@ function createSoilAnalysisTabHTML() {
                   </div>
                   <div class="soil-fertility-params-hint">
                     <strong>Base técnica de ajuste.</strong><br><span class="soil-fertility-disclaimer">Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.</span>
-                    <br>En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4). Ideales de Fe, Mn, Zn y Cu: referencia sugerida para el método elegido en Fe (DTPA por defecto). Boro: método propio (agua caliente por defecto). Si el informe usa otro extractante, edita el ideal; no compares cifras entre métodos.
+                    <br>En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4). Ideales de Fe, Mn, Zn y Cu: referencia sugerida para el método elegido en esos cuatro (DTPA por defecto). Boro: método propio (agua caliente por defecto). Si el informe usa otro extractante, edita el ideal; no compares cifras entre métodos.
                     <div class="soil-ideal-ref-actions">
                       <button type="button" class="soil-btn-ideal-ref" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micros DTPA, B agua caliente). K, Ca y Mg se calculan desde la CIC. Si el lab usó otro extractante, edita el ideal.')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
                     </div>
@@ -23902,31 +23902,61 @@ function createSoilAnalysisTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead class="notranslate" translate="no">
-                      <tr>
-                        <th>Concepto</th>
-                        <th>MO %</th>
-                        <th>N-NO<sub>3</sub><sup>&minus;</sup> ppm</th>
-                        <th class="soil-fertility-th-p">P (ppm)<br><select id="soil-fertility-pMethod" class="soil-fertility-p-method-header" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','pMethod',this.value); window.onSoilPMethodChange && window.onSoilPMethodChange(this.value);">
+                      <tr class="soil-fertility-method-row">
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><select id="soil-fertility-pMethod" class="soil-fertility-p-method-header" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','pMethod',this.value); window.onSoilPMethodChange && window.onSoilPMethodChange(this.value);">
                             <option value="Bray">Bray</option>
                             <option value="Olsen">Olsen</option>
                             <option value="Merich">Merich</option>
                           </select></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><select id="soil-fertility-microMethod" class="soil-fertility-p-method-header soil-fertility-micro-method-select" title="${dashboardT('analysis.micro_method_title', 'Método de Fe, Mn, Zn y Cu. Al cambiar aplica a los cuatro.')}" data-i18n-title="analysis.micro_method_title" onchange="window.onSoilMicroMethodSelect && window.onSoilMicroMethodSelect(this);">
+                            <option value="DTPA">DTPA</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
+                        <th><select class="soil-fertility-p-method-header soil-fertility-micro-method-select" title="${dashboardT('analysis.micro_method_title', 'Método de Fe, Mn, Zn y Cu. Al cambiar aplica a los cuatro.')}" data-i18n-title="analysis.micro_method_title" onchange="window.onSoilMicroMethodSelect && window.onSoilMicroMethodSelect(this);">
+                            <option value="DTPA">DTPA</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
+                        <th><select id="soil-fertility-bMethod" class="soil-fertility-p-method-header" title="${dashboardT('analysis.b_method_title', 'Método de boro (aparte de Fe, Mn, Zn y Cu).')}" data-i18n-title="analysis.b_method_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','bMethod',this.value); window.onSoilBMethodChange && window.onSoilBMethodChange(this.value);">
+                            <option value="AguaCaliente">${dashboardT('analysis.b_method_hot_water', 'Agua caliente')}</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
+                        <th><select class="soil-fertility-p-method-header soil-fertility-micro-method-select" title="${dashboardT('analysis.micro_method_title', 'Método de Fe, Mn, Zn y Cu. Al cambiar aplica a los cuatro.')}" data-i18n-title="analysis.micro_method_title" onchange="window.onSoilMicroMethodSelect && window.onSoilMicroMethodSelect(this);">
+                            <option value="DTPA">DTPA</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
+                        <th><select class="soil-fertility-p-method-header soil-fertility-micro-method-select" title="${dashboardT('analysis.micro_method_title', 'Método de Fe, Mn, Zn y Cu. Al cambiar aplica a los cuatro.')}" data-i18n-title="analysis.micro_method_title" onchange="window.onSoilMicroMethodSelect && window.onSoilMicroMethodSelect(this);">
+                            <option value="DTPA">DTPA</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                        <th><span class="soil-fertility-method-slot" aria-hidden="true"></span></th>
+                      </tr>
+                      <tr class="soil-fertility-label-row">
+                        <th>Concepto</th>
+                        <th>MO %</th>
+                        <th>N-NO<sub>3</sub><sup>&minus;</sup> ppm</th>
+                        <th>P (ppm)</th>
                         <th>K ppm</th>
                         <th>Ca ppm</th>
                         <th>Mg ppm</th>
                         <th>Na ppm</th>
                         <th>S ppm</th>
-                        <th class="soil-fertility-th-p">Fe ppm<br><select id="soil-fertility-microMethod" class="soil-fertility-p-method-header" title="${dashboardT('analysis.micro_method_title', 'Método de Fe, Mn, Zn y Cu. Al cambiar aplica a los cuatro.')}" data-i18n-title="analysis.micro_method_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','microMethod',this.value); window.onSoilMicroMethodChange && window.onSoilMicroMethodChange(this.value);">
-                            <option value="DTPA">DTPA</option>
-                            <option value="Merich">Merich</option>
-                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
-                          </select></th>
+                        <th>Fe ppm</th>
                         <th>Mn ppm</th>
-                        <th class="soil-fertility-th-p">B ppm<br><select id="soil-fertility-bMethod" class="soil-fertility-p-method-header" title="${dashboardT('analysis.b_method_title', 'Método de boro (aparte de Fe, Mn, Zn y Cu).')}" data-i18n-title="analysis.b_method_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','bMethod',this.value); window.onSoilBMethodChange && window.onSoilBMethodChange(this.value);">
-                            <option value="AguaCaliente">${dashboardT('analysis.b_method_hot_water', 'Agua caliente')}</option>
-                            <option value="Merich">Merich</option>
-                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
-                          </select></th>
+                        <th>B ppm</th>
                         <th>Zn ppm</th>
                         <th>Cu ppm</th>
                         <th>Mo ppm</th>
@@ -24373,6 +24403,23 @@ window.onSoilPMethodChange = function onSoilPMethodChange(method) {
   window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
 };
 
+window.syncSoilMicroMethodSelects = function syncSoilMicroMethodSelects(method, sourceEl) {
+  var val = (method || 'DTPA').trim() || 'DTPA';
+  document.querySelectorAll('.soil-fertility-micro-method-select').forEach(function (el) {
+    if (el !== sourceEl) el.value = val;
+  });
+  var canonical = document.getElementById('soil-fertility-microMethod');
+  if (canonical && canonical !== sourceEl) canonical.value = val;
+};
+
+window.onSoilMicroMethodSelect = function onSoilMicroMethodSelect(el) {
+  if (!el) return;
+  var method = el.value;
+  window.syncSoilMicroMethodSelects(method, el);
+  window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility', 'microMethod', method);
+  window.onSoilMicroMethodChange && window.onSoilMicroMethodChange(method);
+};
+
 window.onSoilMicroMethodChange = function onSoilMicroMethodChange(method) {
   var analysis = soilFertilityCurrentAnalysis();
   if (!analysis) return;
@@ -24459,7 +24506,7 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
       var raw = analysis[group][field];
       if (raw === undefined || raw === null || raw === '') {
         if (group === 'fertility' && field === 'pMethod') { el.value = 'Bray'; return; }
-        if (group === 'fertility' && field === 'microMethod') { el.value = 'DTPA'; return; }
+        if (group === 'fertility' && field === 'microMethod') { el.value = 'DTPA'; window.syncSoilMicroMethodSelects && window.syncSoilMicroMethodSelects('DTPA', el); return; }
         if (group === 'fertility' && field === 'bMethod') { el.value = 'AguaCaliente'; return; }
         el.value = '';
         return;
@@ -24475,6 +24522,9 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
         }
       }
       el.value = raw;
+      if (group === 'fertility' && field === 'microMethod') {
+        window.syncSoilMicroMethodSelects && window.syncSoilMicroMethodSelects(el.value, el);
+      }
     });
   });
   analysisApplyUnits(document.getElementById('soil-analysis-tab-container'));
