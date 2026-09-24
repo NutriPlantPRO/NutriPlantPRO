@@ -73,9 +73,50 @@ No inventar series ni promedios si la API no los trae; leer cada reporte.
 **Fertilidad — fila Ideal (referencia):**
 - **K, Ca, Mg (ppm):** si hay CIC (meq/100g en Cationes):  
   `meq_ideal = CIC × fracción` (K 5 %, Ca 70 %, Mg 13 % de saturación).  
-  `ppm = meq × factor` (K×391, Ca×200,4, Mg×121,5).
-- **P (ppm):** según método (Bray ~40, Olsen ~25, Mehlich 3 ~40 por defecto en app).
-- **Otros nutrientes / MO / N-NO₃:** referencias fijas NutriPlant (botón recargar ideales).
+  `ppm = meq × factor` (K×391, Ca×200,4, Mg×121,5).  
+  **No dependen del extractante de P/micros:** salen de saturación de CIC (habitualmente cationes en acetato de amonio).
+- **P, Fe/Mn/Zn/Cu y B:** el **método de extracción es obligatorio para interpretar**. Un ppm no es universal: es lo que ese extractante sacó. Ver §4.1.1.
+- **Otros (MO, N-NO₃, Na, S, Mo, Al):** referencias fijas NutriPlant (botón recargar). N-NO₃ suele ser KCl; MO Walkley-Black o combustión — no usan el selector de P/micros.
+
+#### 4.1.1 Métodos de extracción (P, micros, B) — criterio que el GPT debe aplicar
+
+**Regla de oro:** no compares ni interpretes un valor de laboratorio **sin el método**. 20 ppm de Fe en DTPA no es lo mismo que 20 ppm en Mehlich 3. 25 ppm de P Olsen no es 25 ppm Bray. Si el suscriptor pega un informe y no dice el extractante, **pregúntalo** o usa el método guardado en el reporte (`fertility.pMethod`, `fertility.microMethod`, `fertility.bMethod`). Si falta el campo, asume defaults de la app (P Bray, micros DTPA, B agua caliente) y **decláralo**.
+
+**En la UI (cabecera de la tabla Fertilidad, mismo estilo):**
+- **P:** selector propio `Bray` | `Olsen` | `Merich` (Mehlich 3). Al cambiar **pisa** el ideal de P.
+- **Fe, Mn, Zn, Cu:** **un** selector en la columna Fe (`DTPA` | `Merich` | `Otro`). Aplica a los cuatro. Al cambiar **pisa** esos cuatro ideales (excepto `Otro`, que no toca cifras).
+- **B:** selector propio (`AguaCaliente` | `Merich` | `Otro`). No viaja con DTPA. Al cambiar **pisa** el ideal de B (excepto `Otro`).
+- Los ideales **siguen editables**. Se guardan en `fertility.ideal` + el método, en **ese reporte** (`soilAnalyses[]` → nube). No es un default global de la cuenta.
+- Si el usuario **vuelve a cambiar el método**, la app **vuelve a poner** el default de ese método y pisa lo editado.
+- Botón **Recargar valores ideales:** rellena generales + P/micros/B según el método **actualmente seleccionado**; K/Ca/Mg desde CIC si hay.
+
+**Defaults de la app (ppm, fila Ideal) al elegir método:**
+
+| Método | Qué rellena |
+|--------|-------------|
+| P Bray | P = 40 |
+| P Olsen | P = 25 |
+| P Merich (Mehlich 3) | P = 40 |
+| Micros DTPA | Fe 20 · Mn 20 · Zn 3 · Cu 1,5 |
+| Micros Merich | Fe 50 · Mn 20 · Zn 3 · Cu 2 |
+| Micros Otro | no cambia Fe/Mn/Zn/Cu |
+| B Agua caliente | B = 1 |
+| B Merich | B = 1,2 |
+| B Otro | no cambia B |
+
+Esos números son **punto de partida NutriPlant**, no un estándar internacional. Mehlich 3 suele extraer **más** que DTPA en Fe (y a menudo Cu); por eso el ideal de Fe sube a 50. El agrónomo puede editar.
+
+**Qué no tiene selector (y por qué):**
+- K, Ca, Mg → CIC (acetato de amonio típico).
+- N-NO₃, MO, Na, S, Mo, Al → no se interpretan con el menú de P/micros. S y Mo también dependen del extractante en lab, pero en app solo hay nota/ideal general.
+
+**Cómo debe hablar el GPT:**
+1. Lee `pMethod`, `microMethod`, `bMethod` del reporte (API `project_analyses` type `suelo`).
+2. Al citar ppm de P/Fe/Mn/Zn/Cu/B, **nombra el método** («Fe 39,9 ppm DTPA»).
+3. **No compares** dos reportes (ni lab vs literatura) si el extractante es distinto, salvo que expliques que las cifras no son 1:1.
+4. Si el método del PDF/lab no coincide con el selector del reporte, di que hay que **alinear el selector o editar el ideal**.
+5. kg/ha y suficiencia usan el **ideal guardado** (el editado, no necesariamente el default).
+6. En Comparar análisis: si dos columnas tienen distinto `pMethod`/`microMethod`/`bMethod`, avisa que el gráfico de ppm mezcla extractantes.
 
 **kg/ha (ajuste):**
 ```

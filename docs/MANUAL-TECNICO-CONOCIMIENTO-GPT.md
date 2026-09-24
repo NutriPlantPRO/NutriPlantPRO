@@ -4,7 +4,7 @@
 **Versión manual web:** v2026.09.15 · **28 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-09-15 · **v2026.09.15** (foliar 🍃: HR 50–80 + escalones de semáforo en el capítulo; + uniformidad 🎯 UI ES/EN + métrico/US; ISH ≠ lámina/balance de periodo)
+**Versión Knowledge:** 2026-09-23 · **v2026.09.23** (suelo: método de extracción P/micros/B; + foliar relaciones)
 
 ---
 
@@ -117,7 +117,13 @@ factor = 0,1 × profundidad_cm × densidad × (suelo_explorado_% / 100)
 kg/ha = (lab − ideal) × factor
 ```
 
-Ideales K/Ca/Mg desde CIC (5/70/13 %). P: Bray 40, Olsen 25, Mehlich 40 ppm. Orientativo, no dosis automática.
+Ideales K/Ca/Mg desde CIC (5/70/13 %) — no dependen del extractante de P/micros.
+
+**Método de extracción (obligatorio para interpretar P y micros).** Un ppm no es universal. UI en cabecera de Fertilidad:
+- **P:** Bray 40 · Olsen 25 · Merich/Mehlich 3 → 40. Selector propio; al cambiar pisa el ideal de P.
+- **Fe/Mn/Zn/Cu:** un selector (columna Fe) DTPA (20 / 20 / 3 / 1,5) · Merich (50 / 20 / 3 / 2) · Otro (no pisa). Aplica a los cuatro.
+- **B:** selector propio. Agua caliente 1 · Merich 1,2 · Otro (no pisa). B no va con DTPA.
+Ideales editables; se guardan en ese `soilAnalyses[]`. Recargar usa el método actual. No compares Bray vs Olsen ni DTPA vs Mehlich 3 como si fueran la misma escala. Si el lab no declara extractante, pregúntalo o asume default de app y decláralo. Orientativo, no dosis automática.
 
 **Comparar análisis (tabla + gráficas):** en cada subpestaña Análisis (Suelo, Solución, Extracto, Agua, Foliar, Fruta), si hay ≥2 reportes, el bloque **«Comparar análisis (tabla y gráficas)»** alinea columnas por análisis (activar/desactivar). Tablas por bloque; gráficas solo donde aporta (ej. suelo: macros/micros/% CIC; pH y físicos suelen ser tabla). Mismo bloque sale en **Reportes PDF** (tablas + capturas de gráficas). No sustituye el detalle por reporte ni inventa datos: lee los reportes guardados del proyecto.
 

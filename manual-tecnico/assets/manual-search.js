@@ -38,7 +38,7 @@
       icon: '🌱',
       pillar: 'B · Suelo y enmiendas',
       title: 'Análisis de suelo: fertilidad, ideales y kg/ha de ajuste',
-      keywords: 'suelo fertilidad kg/ha ideal ajuste requerimiento CIC P K Ca Mg micros laboratorio'
+      keywords: 'suelo fertilidad kg/ha ideal ajuste requerimiento CIC P K Ca Mg micros laboratorio método extracción Bray Olsen Mehlich DTPA boro agua caliente Fe Zn'
     },
     {
       href: 'capitulos/enmiendas-balance-cic.html',

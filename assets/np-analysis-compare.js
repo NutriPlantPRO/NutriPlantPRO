@@ -99,6 +99,8 @@
     { path: 'fertility.mo', labelKey: 'analysis.f_om', label: 'MO', section: 'physical', unit: '%', tipKey: 'analysis.unit_tip_om', tip: 'Materia orgánica en porcentaje' },
     { path: 'fertility.depthCm', labelKey: 'analysis.f_depth', label: 'Profundidad', section: 'physical', unit: 'cm', tipKey: 'analysis.unit_tip_cm', tip: 'Profundidad de muestreo en centímetros (canónico NutriPlant)' },
     { path: 'fertility.pMethod', labelKey: 'analysis.f_p_method', label: 'Método P', section: 'physical', unit: '', tipKey: 'analysis.unit_tip_p_method', tip: 'Método de extracción de P (Olsen, Bray, Mehlich…)' },
+    { path: 'fertility.microMethod', labelKey: 'analysis.f_micro_method', label: 'Método Fe/Mn/Zn/Cu', section: 'physical', unit: '', tipKey: 'analysis.unit_tip_micro_method', tip: 'Extractante de Fe, Mn, Zn y Cu (DTPA, Mehlich 3 u otro)' },
+    { path: 'fertility.bMethod', labelKey: 'analysis.f_b_method', label: 'Método B', section: 'physical', unit: '', tipKey: 'analysis.unit_tip_b_method', tip: 'Extractante de boro (agua caliente, Mehlich 3 u otro)' },
     { path: 'phSection.ph', labelKey: 'analysis.f_ph', label: 'pH', section: 'ph', unit: 'pH', tipKey: 'analysis.unit_tip_ph', tip: 'pH del suelo (sin unidad; escala 0–14)' },
     { path: 'phSection.phBuffer', labelKey: 'analysis.f_ph_buffer', label: 'pH Buffer', section: 'ph', unit: 'pH', tipKey: 'analysis.unit_tip_ph_buf', tip: 'pH buffer / SMP si el lab lo reporta' },
     { path: 'fertility.nNo3', labelKey: 'analysis.f_n_no3', label: 'N-NO₃', section: 'macros', unit: 'ppm', tipKey: 'analysis.unit_tip_ppm', tip: 'Nitrógeno nítrico elemental en ppm (mg/kg)' },
@@ -701,7 +703,9 @@
       title: 1,
       date: 1,
       'physical.texturalClass': 1,
-      'fertility.pMethod': 1
+      'fertility.pMethod': 1,
+      'fertility.microMethod': 1,
+      'fertility.bMethod': 1
     });
   }
 
@@ -723,7 +727,7 @@
     var existing = document.getElementById('npLabPdfReviewModal');
     if (existing) existing.remove();
 
-    var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1 };
+    var textPaths = { title: 1, date: 1, 'physical.texturalClass': 1, 'fertility.pMethod': 1, 'fertility.microMethod': 1, 'fertility.bMethod': 1 };
     var rows = flattenDetectedForType(fields || {}, typeCfg.reviewFields, textPaths);
     var isUsUnits = !!(w.NpAnalysisUI && typeof w.NpAnalysisUI.isUS === 'function' && w.NpAnalysisUI.isUS());
     var KGCM2_TO_PSI = 14.223343307;

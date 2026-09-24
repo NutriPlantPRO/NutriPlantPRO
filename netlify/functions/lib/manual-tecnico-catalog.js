@@ -49,7 +49,7 @@ module.exports = {
       url: `${BASE}/capitulos/analisis-suelo-fertilidad-kgha.html`,
       pillar: 'C — Análisis de laboratorio',
       summary:
-        'Fertilidad del suelo en reportes Análisis: nivel lab vs ideal; kg/ha = (lab−ideal)×0.1×profundidad×densidad×(%suelo explorado/100). Ideales K/Ca/Mg desde CIC (5/70/13%). P según Bray/Olsen/Mehlich.',
+        'Fertilidad: lab vs ideal; kg/ha=(lab−ideal)×0.1×prof×DA×(%raíz/100). K/Ca/Mg desde CIC 5/70/13%. El ppm de P/micros/B solo vale con el extractante. P Bray 40 / Olsen 25 / Mehlich 40. Fe-Mn-Zn-Cu: DTPA 20-20-3-1.5 o Mehlich 50-20-3-2 (un selector). B: agua caliente 1 o Mehlich 1.2. Otro no pisa. Ideales editables. No comparar métodos 1:1.',
       status: 'published'
     },
     {

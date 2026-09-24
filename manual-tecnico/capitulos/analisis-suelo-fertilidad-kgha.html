@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-21",
+  "dateModified": "2026-09-23",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -110,8 +110,31 @@
       <li><strong>Propiedades físicas</strong> — Densidad aparente (g/cm³).</li>
       <li><strong>Fertilidad</strong> — Profundidad considerada (cm) y % de suelo explorado por raíces.</li>
       <li><strong>Cationes y CIC</strong> — Para recalcular ideales de K, Ca y Mg desde la CIC del mismo reporte.</li>
-      <li><strong>Método de P</strong> — Bray, Olsen o Mehlich 3 (define el ideal de fósforo).</li>
+      <li><strong>Método de P</strong> — Bray, Olsen o Mehlich 3 (Merich). Al cambiar, rellena el ideal de P (editable).</li>
+      <li><strong>Método de micros (Fe, Mn, Zn, Cu)</strong> — Un selector en la columna Fe: DTPA, Mehlich 3 u Otro. Aplica a los cuatro; al cambiar rellena esos ideales (Otro no pisa).</li>
+      <li><strong>Método de B</strong> — Selector propio: agua caliente, Mehlich 3 u Otro. El boro no se extrae con DTPA.</li>
     </ul>
+
+    <h2>Método de extracción: por qué importa</h2>
+    <p>
+      El laboratorio no mide «todo el nutriente del suelo». Mide lo que <strong>un extractante concreto</strong> es
+      capaz de disolver. Por eso <strong>un ppm no es universal</strong>: 25 ppm de P Olsen no es lo mismo que
+      25 ppm Bray; 20 ppm de Fe DTPA no es 20 ppm Mehlich 3. Interpretar un análisis de suelo
+      <strong>sin conocer el método</strong> es el error más frecuente al copiar un informe a la tabla.
+    </p>
+    <p>
+      En Fertilidad, el método se elige en la <strong>cabecera de la tabla</strong> (mismo estilo que el selector de P).
+      Al cambiar Bray/Olsen/Mehlich o DTPA/Mehlich, la app <strong>rellena la fila Ideal</strong> con el default de
+      ese extractante. Esos números <strong>siguen editables</strong> y se guardan en <em>ese</em> reporte (nube).
+      Si vuelves a cambiar el método, NutriPlant <strong>vuelve a poner</strong> el default y pisa lo editado.
+      <strong>Otro</strong> declara que el lab usó un extractante distinto y <strong>no cambia cifras</strong>: edita el ideal a mano.
+    </p>
+    <div class="mt-warn">
+      <strong>No compares extractantes como si fueran la misma escala.</strong>
+      Dos reportes del mismo lote con P Bray vs P Olsen, o Fe DTPA vs Fe Mehlich 3, no se restan ni se grafican
+      1:1. Alinea el selector con el informe o edita el ideal. K, Ca y Mg no usan este menú: salen de la CIC
+      (cationes intercambiables, habitualmente acetato de amonio).
+    </div>
 
     <h2>Cálculo en NutriPlant PRO</h2>
 
@@ -151,14 +174,17 @@
         <tr><th>Nutriente / parámetro</th><th>Origen del ideal en NutriPlant</th></tr>
       </thead>
       <tbody>
-        <tr><td>K, Ca, Mg</td><td>CIC del análisis (meq/100 g): meq ideal = CIC × fracción (K 5 %, Ca 70 %, Mg 13 %); ppm = meq × factor (K ×391, Ca ×200,4, Mg ×121,5)</td></tr>
-        <tr><td>P</td><td>Bray 40 ppm · Olsen 25 ppm · Mehlich 3 (Merich) 40 ppm</td></tr>
-        <tr><td>MO, N-NO₃, Na, S, micronutrientes</td><td>Referencias agronómicas generales (p. ej. MO 3 %, N-NO₃ 20 ppm, Na 0, S 15, Fe 20, Mn 20, Zn 3, Cu 1,5, B 1, Mo 0,1, Al 0)</td></tr>
+        <tr><td>K, Ca, Mg</td><td>CIC del análisis (meq/100 g): meq ideal = CIC × fracción (K 5 %, Ca 70 %, Mg 13 %); ppm = meq × factor (K ×391, Ca ×200,4, Mg ×121,5). No dependen del extractante de P/micros.</td></tr>
+        <tr><td>P</td><td>Según selector: Bray 40 ppm · Olsen 25 ppm · Mehlich 3 (Merich) 40 ppm. Editable.</td></tr>
+        <tr><td>Fe, Mn, Zn, Cu</td><td>Un selector (columna Fe). DTPA: Fe 20 · Mn 20 · Zn 3 · Cu 1,5. Mehlich 3: Fe 50 · Mn 20 · Zn 3 · Cu 2. Otro: no pisa. Editables. Mehlich 3 suele extraer más Fe (y a menudo Cu) que DTPA.</td></tr>
+        <tr><td>B</td><td>Selector propio. Agua caliente 1 ppm · Mehlich 3 1,2 ppm · Otro no pisa. Editable. El B no viaja con DTPA.</td></tr>
+        <tr><td>MO, N-NO₃, Na, S, Mo, Al</td><td>Referencias generales (MO 3 %, N-NO₃ 20 ppm, Na 0, S 15, Mo 0,1, Al 0). Sin selector de extractante en app.</td></tr>
       </tbody>
     </table>
     <p>
-      El botón <strong>Recargar valores ideales de referencia</strong> aplica esos generales y, si hay CIC en
-      Cationes, recalcula K, Ca y Mg desde saturaciones objetivo fijas.
+      El botón <strong>Recargar valores ideales de referencia</strong> aplica esos generales según el
+      <strong>método actualmente elegido</strong> (P, micros y B) y, si hay CIC en Cationes, recalcula K, Ca y Mg
+      desde saturaciones objetivo fijas.
     </p>
     <div class="mt-warn">
       <strong>Criterio agronómico:</strong> los ideales de <strong>K, Ca y Mg</strong> se derivan de la CIC del
@@ -230,8 +256,32 @@
       <li><strong>Physical properties</strong> — Bulk density (g/cm³).</li>
       <li><strong>Fertility</strong> — Depth considered (cm) and % of soil explored by roots.</li>
       <li><strong>Cations and CEC</strong> — To recalculate K, Ca, and Mg ideals from the CEC of the same report.</li>
-      <li><strong>P method</strong> — Bray, Olsen, or Mehlich 3 (defines the phosphorus ideal).</li>
+      <li><strong>P method</strong> — Bray, Olsen, or Mehlich 3 (Merich). Changing it fills the P ideal (still editable).</li>
+      <li><strong>Micronutrient method (Fe, Mn, Zn, Cu)</strong> — One selector on the Fe column: DTPA, Mehlich 3, or Other. Applies to all four; changing it fills those ideals (Other does not overwrite).</li>
+      <li><strong>B method</strong> — Own selector: hot water, Mehlich 3, or Other. Boron is not extracted with DTPA.</li>
     </ul>
+
+    <h2>Extraction method: why it matters</h2>
+    <p>
+      The lab does not measure “all the nutrient in the soil”. It measures what a <strong>given extractant</strong>
+      can dissolve. A <strong>ppm is not universal</strong>: 25 ppm Olsen P is not 25 ppm Bray; 20 ppm DTPA Fe is
+      not 20 ppm Mehlich 3. Reading a soil test <strong>without the method</strong> is the most common error when
+      pasting a report into the table.
+    </p>
+    <p>
+      In Fertility, the method is chosen in the <strong>table header</strong> (same control style as P). Changing
+      Bray/Olsen/Mehlich or DTPA/Mehlich <strong>fills the Ideal row</strong> with that extractant’s default.
+      Those numbers stay <strong>editable</strong> and are saved on <em>that</em> report (cloud). Changing the method
+      again <strong>restores</strong> the default and overwrites a hand edit.
+      <strong>Other</strong> means the lab used a different extractant and <strong>does not change figures</strong>:
+      edit the ideal by hand.
+    </p>
+    <div class="mt-warn">
+      <strong>Do not compare extractants as if they shared one scale.</strong>
+      Two reports from the same field with Bray P vs Olsen P, or DTPA Fe vs Mehlich 3 Fe, must not be subtracted
+      or charted 1:1. Match the selector to the lab report or edit the ideal. K, Ca, and Mg do not use this menu:
+      they come from CEC (exchangeable cations, typically ammonium acetate).
+    </div>
 
     <h2>Calculation in NutriPlant PRO</h2>
 
@@ -258,13 +308,16 @@
         <tr><th>Nutrient / parameter</th><th>Origin of the ideal in NutriPlant</th></tr>
       </thead>
       <tbody>
-        <tr><td>K, Ca, Mg</td><td>CEC from the analysis (meq/100 g): ideal meq = CEC × fraction (K 5 %, Ca 70 %, Mg 13 %); ppm = meq × factor (K ×391, Ca ×200.4, Mg ×121.5)</td></tr>
-        <tr><td>P</td><td>Bray 40 ppm · Olsen 25 ppm · Mehlich 3 (Merich) 40 ppm</td></tr>
-        <tr><td>OM, N-NO₃, Na, S, micronutrients</td><td>General agronomic references (e.g. OM 3 %, N-NO₃ 20 ppm, Na 0, S 15, Fe 20, Mn 20, Zn 3, Cu 1.5, B 1, Mo 0.1, Al 0)</td></tr>
+        <tr><td>K, Ca, Mg</td><td>CEC from the analysis (meq/100 g): ideal meq = CEC × fraction (K 5 %, Ca 70 %, Mg 13 %); ppm = meq × factor (K ×391, Ca ×200.4, Mg ×121.5). Not tied to the P/micro extractant.</td></tr>
+        <tr><td>P</td><td>From the selector: Bray 40 ppm · Olsen 25 ppm · Mehlich 3 (Merich) 40 ppm. Editable.</td></tr>
+        <tr><td>Fe, Mn, Zn, Cu</td><td>One selector (Fe column). DTPA: Fe 20 · Mn 20 · Zn 3 · Cu 1.5. Mehlich 3: Fe 50 · Mn 20 · Zn 3 · Cu 2. Other: does not overwrite. Editable. Mehlich 3 usually extracts more Fe (and often Cu) than DTPA.</td></tr>
+        <tr><td>B</td><td>Own selector. Hot water 1 ppm · Mehlich 3 1.2 ppm · Other does not overwrite. Editable. B does not travel with DTPA.</td></tr>
+        <tr><td>OM, N-NO₃, Na, S, Mo, Al</td><td>General references (OM 3 %, N-NO₃ 20 ppm, Na 0, S 15, Mo 0.1, Al 0). No extractant selector in the app.</td></tr>
       </tbody>
     </table>
     <p>
-      The <strong>Reload reference ideal values</strong> button applies those general defaults and, if CEC is present under
+      The <strong>Reload reference ideal values</strong> button applies those general defaults for the
+      <strong>currently selected method</strong> (P, micros, and B) and, if CEC is present under
       Cations, recalculates K, Ca, and Mg from fixed target saturations.
     </p>
     <div class="mt-warn">

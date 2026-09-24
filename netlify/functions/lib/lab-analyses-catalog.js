@@ -42,7 +42,7 @@ module.exports = {
       storageKey: 'soilAnalyses',
       sections: ['Físico', 'pH y sales', 'Fertilidad (ppm + ideal + kg/ha)', 'Cationes meq y %', 'Relaciones Ca:Mg'],
       criteria:
-        'Ideal K/Ca/Mg ppm desde CIC×saturación (5/70/13%). kg/ha=(lab−ideal)×0.1×profundidad×DA×(%raíz/100). P ideal según Bray/Olsen/Mehlich.'
+        'Ideal K/Ca/Mg ppm desde CIC×saturación (5/70/13%), no del extractante de P/micros. kg/ha=(lab−ideal)×0.1×profundidad×DA×(%raíz/100). Un ppm no es universal: hay que conocer el método. P: Bray 40 / Olsen 25 / Mehlich 40. Fe/Mn/Zn/Cu: un selector DTPA 20-20-3-1.5 / Mehlich 50-20-3-2 / Otro (no pisa). B: agua caliente 1 / Mehlich 1.2 / Otro. Ideales editables; guardados en el reporte. No comparar extractantes distintos 1:1.'
     },
     {
       id: 'solucion_nutritiva',

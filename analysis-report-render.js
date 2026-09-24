@@ -163,7 +163,10 @@
             salinity: tr('Salinidad CE dS/m', 'EC (dS/m)')
         };
         var SOIL_FERTILITY_LABELS = {
-            pMethod: tr('Método P', 'P method'), mo: 'MO %', nNo3: 'N-NO₃ ppm',
+            pMethod: tr('Método P', 'P method'),
+            microMethod: tr('Método Fe/Mn/Zn/Cu', 'Fe/Mn/Zn/Cu method'),
+            bMethod: tr('Método B', 'B method'),
+            mo: 'MO %', nNo3: 'N-NO₃ ppm',
             p: 'P', k: 'K', ca: 'Ca', mg: 'Mg', na: 'Na', s: 'S', fe: 'Fe',
             mn: 'Mn', b: 'B', zn: 'Zn', cu: 'Cu', moly: 'Mo', al: 'Al',
             depthCm: tr('Profundidad (cm)', 'Depth (cm)'),
@@ -455,7 +458,7 @@
                 tbl += '</tr></tbody></table>';
                 return tbl;
             }
-            var FERTILITY_CONTEXT_KEYS = ['pMethod', 'depthCm', 'reachPct'];
+            var FERTILITY_CONTEXT_KEYS = ['pMethod', 'microMethod', 'bMethod', 'depthCm', 'reachPct'];
             var tableParams;
             if (grp === 'fertility') {
                 var fertilityParams = params.filter(function (p) { return FERTILITY_CONTEXT_KEYS.indexOf(p) < 0; });
@@ -465,10 +468,22 @@
                 tableParams = params;
             }
             var out = '';
-            if (grp === 'fertility' && (labMap.pMethod != null || labMap.depthCm != null || labMap.reachPct != null)) {
+            if (grp === 'fertility' && (labMap.pMethod != null || labMap.microMethod != null || labMap.bMethod != null || labMap.depthCm != null || labMap.reachPct != null)) {
                 var parts = [];
+                function methodLabel(raw) {
+                    var s = String(raw || '').trim();
+                    if (s === 'AguaCaliente') return tr('Agua caliente', 'Hot water');
+                    if (s === 'Otro') return tr('Otro', 'Other');
+                    return s;
+                }
                 if (labMap.pMethod !== undefined && labMap.pMethod !== null && String(labMap.pMethod).trim() !== '') {
-                    parts.push(tr('Método P: ', 'P method: ') + escapeHtml(String(labMap.pMethod).trim()));
+                    parts.push(tr('Método P: ', 'P method: ') + escapeHtml(methodLabel(labMap.pMethod)));
+                }
+                if (labMap.microMethod !== undefined && labMap.microMethod !== null && String(labMap.microMethod).trim() !== '') {
+                    parts.push(tr('Método Fe/Mn/Zn/Cu: ', 'Fe/Mn/Zn/Cu method: ') + escapeHtml(methodLabel(labMap.microMethod)));
+                }
+                if (labMap.bMethod !== undefined && labMap.bMethod !== null && String(labMap.bMethod).trim() !== '') {
+                    parts.push(tr('Método B: ', 'B method: ') + escapeHtml(methodLabel(labMap.bMethod)));
                 }
                 if (labMap.depthCm !== undefined && labMap.depthCm !== null && String(labMap.depthCm).trim() !== '') {
                     parts.push(tr('Profundidad: ', 'Depth: ') + escapeHtml(depthDisplay(labMap.depthCm)));

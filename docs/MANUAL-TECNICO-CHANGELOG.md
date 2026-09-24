@@ -5,6 +5,14 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-09-23 — Suelo: método de extracción P / micros / B
+
+### Actualizado
+
+- Capítulo `analisis-suelo-fertilidad-kgha.html` (ES/EN): por qué el ppm no es universal; selectores de P, Fe/Mn/Zn/Cu y B; defaults editables; no comparar extractantes 1:1.
+- Knowledge ANALISIS §4.1.1, MANUAL §4.3, catálogos `lab_analyses_catalog` / `manual_tecnico_catalog`.
+- App: mismos selectores en Fertilidad; ideales se pisan al cambiar método (excepto «Otro»).
+
 ## 2026-09-23 — Foliar: relaciones nutrimentales
 
 ### Actualizado

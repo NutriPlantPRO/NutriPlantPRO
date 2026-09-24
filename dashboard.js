@@ -21500,7 +21500,7 @@ function createEmptySoilAnalysis() {
     date: '',
     physical: { texturalClass: '', saturationPoint: '', fieldCapacity: '', wiltingPoint: '', hydraulicConductivity: '', bulkDensity: '' },
     phSection: { ph: '', phBuffer: '', totalCarbonates: '', salinity: '' },
-    fertility: { pMethod: 'Bray', mo: '', nNo3: '', p: '', k: '', ca: '', mg: '', na: '', s: '', fe: '', mn: '', b: '', zn: '', cu: '', al: '', moly: '', ideal: {}, cycleFactorPct: {}, cycleFactorManual: {}, depthCm: 20, reachPct: 100 },
+    fertility: { pMethod: 'Bray', microMethod: 'DTPA', bMethod: 'AguaCaliente', mo: '', nNo3: '', p: '', k: '', ca: '', mg: '', na: '', s: '', fe: '', mn: '', b: '', zn: '', cu: '', al: '', moly: '', ideal: {}, cycleFactorPct: {}, cycleFactorManual: {}, depthCm: 20, reachPct: 100 },
     cations: { ca: '', mg: '', k: '', na: '', al: '', h: '', cic: '', pctCa: '', pctMg: '', pctK: '', pctNa: '', pctAl: '', pctH: '' },
     ratios: { caMg: '', mgK: '', caMgK: '', caK: '' }
   };
@@ -21513,7 +21513,7 @@ function createExampleSoilAnalysis() {
   a.date = '2025-06-01';
   a.physical = { texturalClass: 'Franco Arcillo Arenoso', saturationPoint: '27.6', fieldCapacity: '14.5', wiltingPoint: '8.63', hydraulicConductivity: '9', bulkDensity: '1.32' };
   a.phSection = { ph: '5.98', phBuffer: '6.87', totalCarbonates: '0.01', salinity: '1.81' };
-  a.fertility = { pMethod: 'Bray', mo: '1.5', nNo3: '16.9', p: '284', k: '241', ca: '962', mg: '94.6', na: '25', s: '72.3', fe: '39.9', mn: '2.68', b: '0.6', zn: '72', cu: '9.11', al: '3.89', moly: '', ideal: {}, cycleFactorPct: {}, cycleFactorManual: {}, depthCm: 20, reachPct: 100 };
+  a.fertility = { pMethod: 'Bray', microMethod: 'DTPA', bMethod: 'AguaCaliente', mo: '1.5', nNo3: '16.9', p: '284', k: '241', ca: '962', mg: '94.6', na: '25', s: '72.3', fe: '39.9', mn: '2.68', b: '0.6', zn: '72', cu: '9.11', al: '3.89', moly: '', ideal: {}, cycleFactorPct: {}, cycleFactorManual: {}, depthCm: 20, reachPct: 100 };
   a.cations = { ca: '4.8', mg: '0.78', k: '0.62', na: '0.09', al: '0.04', h: '0', cic: '6.33', pctCa: '75.8', pctMg: '12.3', pctK: '9.79', pctNa: '1.42', pctAl: '0.63', pctH: '0' };
   a.ratios = { caMg: '6.15', mgK: '1.26', caMgK: '9', caK: '7.74' };
   return a;
@@ -23893,9 +23893,9 @@ function createSoilAnalysisTabHTML() {
                   </div>
                   <div class="soil-fertility-params-hint">
                     <strong>Base técnica de ajuste.</strong><br><span class="soil-fertility-disclaimer">Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.</span>
-                    <br>En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
+                    <br>En kg/ha se considera solo la superficie de suelo indicada en la profundidad dada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4). Ideales de Fe, Mn, Zn y Cu: referencia sugerida para el método elegido en Fe (DTPA por defecto). Boro: método propio (agua caliente por defecto). Si el informe usa otro extractante, edita el ideal; no compares cifras entre métodos.
                     <div class="soil-ideal-ref-actions">
-                      <button type="button" class="soil-btn-ideal-ref" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
+                      <button type="button" class="soil-btn-ideal-ref" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="${dashboardT('analysis.ideal_ref_title', 'Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micros DTPA, B agua caliente). K, Ca y Mg se calculan desde la CIC. Si el lab usó otro extractante, edita el ideal.')}" data-i18n-title="analysis.ideal_ref_title">Recargar valores ideales de referencia</button>
                     </div>
                   </div>
                 </div>
@@ -23916,9 +23916,17 @@ function createSoilAnalysisTabHTML() {
                         <th>Mg ppm</th>
                         <th>Na ppm</th>
                         <th>S ppm</th>
-                        <th>Fe ppm</th>
+                        <th class="soil-fertility-th-p">Fe ppm<br><select id="soil-fertility-microMethod" class="soil-fertility-p-method-header" title="${dashboardT('analysis.micro_method_title', 'Método de Fe, Mn, Zn y Cu. Al cambiar aplica a los cuatro.')}" data-i18n-title="analysis.micro_method_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','microMethod',this.value); window.onSoilMicroMethodChange && window.onSoilMicroMethodChange(this.value);">
+                            <option value="DTPA">DTPA</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
                         <th>Mn ppm</th>
-                        <th>B ppm</th>
+                        <th class="soil-fertility-th-p">B ppm<br><select id="soil-fertility-bMethod" class="soil-fertility-p-method-header" title="${dashboardT('analysis.b_method_title', 'Método de boro (aparte de Fe, Mn, Zn y Cu).')}" data-i18n-title="analysis.b_method_title" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','bMethod',this.value); window.onSoilBMethodChange && window.onSoilBMethodChange(this.value);">
+                            <option value="AguaCaliente">${dashboardT('analysis.b_method_hot_water', 'Agua caliente')}</option>
+                            <option value="Merich">Merich</option>
+                            <option value="Otro">${dashboardT('analysis.method_other', 'Otro')}</option>
+                          </select></th>
                         <th>Zn ppm</th>
                         <th>Cu ppm</th>
                         <th>Mo ppm</th>
@@ -24327,44 +24335,89 @@ window.applyIdealFromCIC = function applyIdealFromCIC() {
   window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
 };
 
-// Ideales de referencia generales (no dependen de CIC): MO, N-NO3, P por método, Na, S, micronutrientes. P Bray 40 ppm, Olsen 25, Mehlich 3 (Merich) 40.
+// Ideales de referencia generales (no dependen de CIC). P/micros/B según método; el usuario puede editarlos.
 var SOIL_GENERAL_IDEAL = { mo: 3, nNo3: 20, na: 0, s: 15, fe: 20, mn: 20, zn: 3, cu: 1.5, b: 1, moly: 0.1, al: 0 };
 var SOIL_IDEAL_P_BY_METHOD = { Bray: 40, Olsen: 25, Merich: 40 };
+var SOIL_IDEAL_MICRO_BY_METHOD = {
+  DTPA: { fe: 20, mn: 20, zn: 3, cu: 1.5 },
+  Merich: { fe: 50, mn: 20, zn: 3, cu: 2 }
+};
+var SOIL_IDEAL_B_BY_METHOD = { AguaCaliente: 1, Merich: 1.2 };
 
-window.onSoilPMethodChange = function onSoilPMethodChange(method) {
+function soilFertilityCurrentAnalysis() {
   var wrap = document.getElementById('soil-analysis-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
-  if (!id) return;
+  if (!id) return null;
   var list = window.getSoilAnalyses();
   var analysis = list.find(function (a) { return a.id === id; });
-  if (!analysis || !analysis.fertility) return;
+  if (!analysis || !analysis.fertility) return null;
   if (!analysis.fertility.ideal) analysis.fertility.ideal = {};
+  return analysis;
+}
+
+function soilApplyIdealFields(map) {
+  Object.keys(map).forEach(function (key) {
+    var el = document.getElementById('soil-fertility-ideal-' + key);
+    if (el) el.value = map[key];
+  });
+}
+
+window.onSoilPMethodChange = function onSoilPMethodChange(method) {
+  var analysis = soilFertilityCurrentAnalysis();
+  if (!analysis) return;
   var methodKey = (method || '').trim();
   var pIdeal = SOIL_IDEAL_P_BY_METHOD[methodKey] != null ? SOIL_IDEAL_P_BY_METHOD[methodKey] : 40;
   analysis.fertility.ideal.p = pIdeal;
   window.saveSoilAnalysesToProject();
-  var el = document.getElementById('soil-fertility-ideal-p');
-  if (el) el.value = pIdeal;
+  soilApplyIdealFields({ p: pIdeal });
+  window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
+};
+
+window.onSoilMicroMethodChange = function onSoilMicroMethodChange(method) {
+  var analysis = soilFertilityCurrentAnalysis();
+  if (!analysis) return;
+  var defaults = SOIL_IDEAL_MICRO_BY_METHOD[(method || '').trim()];
+  if (!defaults) return;
+  analysis.fertility.ideal.fe = defaults.fe;
+  analysis.fertility.ideal.mn = defaults.mn;
+  analysis.fertility.ideal.zn = defaults.zn;
+  analysis.fertility.ideal.cu = defaults.cu;
+  window.saveSoilAnalysesToProject();
+  soilApplyIdealFields(defaults);
+  window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
+};
+
+window.onSoilBMethodChange = function onSoilBMethodChange(method) {
+  var analysis = soilFertilityCurrentAnalysis();
+  if (!analysis) return;
+  var bIdeal = SOIL_IDEAL_B_BY_METHOD[(method || '').trim()];
+  if (bIdeal == null) return;
+  analysis.fertility.ideal.b = bIdeal;
+  window.saveSoilAnalysesToProject();
+  soilApplyIdealFields({ b: bIdeal });
   window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();
 };
 
 window.applyGeneralIdealReferences = function applyGeneralIdealReferences() {
-  var wrap = document.getElementById('soil-analysis-form-wrap');
-  var id = wrap && wrap.getAttribute('data-current-id');
-  if (!id) return;
-  var list = window.getSoilAnalyses();
-  var analysis = list.find(function (a) { return a.id === id; });
+  var analysis = soilFertilityCurrentAnalysis();
   if (!analysis) return;
-  if (!analysis.fertility.ideal) analysis.fertility.ideal = {};
   var method = (analysis.fertility.pMethod || 'Bray').trim();
   var pIdeal = SOIL_IDEAL_P_BY_METHOD[method] != null ? SOIL_IDEAL_P_BY_METHOD[method] : 40;
+  var microDefaults = SOIL_IDEAL_MICRO_BY_METHOD[(analysis.fertility.microMethod || 'DTPA').trim()] || SOIL_IDEAL_MICRO_BY_METHOD.DTPA;
+  var bIdeal = SOIL_IDEAL_B_BY_METHOD[(analysis.fertility.bMethod || 'AguaCaliente').trim()];
+  if (bIdeal == null) bIdeal = SOIL_GENERAL_IDEAL.b;
   Object.keys(SOIL_GENERAL_IDEAL).forEach(function (key) {
     analysis.fertility.ideal[key] = SOIL_GENERAL_IDEAL[key];
   });
   analysis.fertility.ideal.p = pIdeal;
+  analysis.fertility.ideal.fe = microDefaults.fe;
+  analysis.fertility.ideal.mn = microDefaults.mn;
+  analysis.fertility.ideal.zn = microDefaults.zn;
+  analysis.fertility.ideal.cu = microDefaults.cu;
+  analysis.fertility.ideal.b = bIdeal;
   window.saveSoilAnalysesToProject();
   var ids = ['mo','nNo3','p','na','s','fe','mn','zn','cu','b','moly','al'];
-  var vals = [SOIL_GENERAL_IDEAL.mo, SOIL_GENERAL_IDEAL.nNo3, pIdeal, SOIL_GENERAL_IDEAL.na, SOIL_GENERAL_IDEAL.s, SOIL_GENERAL_IDEAL.fe, SOIL_GENERAL_IDEAL.mn, SOIL_GENERAL_IDEAL.zn, SOIL_GENERAL_IDEAL.cu, SOIL_GENERAL_IDEAL.b, SOIL_GENERAL_IDEAL.moly, SOIL_GENERAL_IDEAL.al];
+  var vals = [SOIL_GENERAL_IDEAL.mo, SOIL_GENERAL_IDEAL.nNo3, pIdeal, SOIL_GENERAL_IDEAL.na, SOIL_GENERAL_IDEAL.s, microDefaults.fe, microDefaults.mn, microDefaults.zn, microDefaults.cu, bIdeal, SOIL_GENERAL_IDEAL.moly, SOIL_GENERAL_IDEAL.al];
   ids.forEach(function (key, i) {
     var el = document.getElementById('soil-fertility-ideal-' + key);
     if (el) el.value = vals[i];
@@ -24405,6 +24458,9 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
       if (!el) return;
       var raw = analysis[group][field];
       if (raw === undefined || raw === null || raw === '') {
+        if (group === 'fertility' && field === 'pMethod') { el.value = 'Bray'; return; }
+        if (group === 'fertility' && field === 'microMethod') { el.value = 'DTPA'; return; }
+        if (group === 'fertility' && field === 'bMethod') { el.value = 'AguaCaliente'; return; }
         el.value = '';
         return;
       }
@@ -24785,7 +24841,7 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
         limitNotes.push(groupName + '.' + k + '=' + s);
         return;
       }
-      if (numericOnly && !isPlainNumericValue(s) && k !== 'pMethod' && k !== 'texturalClass') {
+      if (numericOnly && !isPlainNumericValue(s) && k !== 'pMethod' && k !== 'microMethod' && k !== 'bMethod' && k !== 'texturalClass') {
         // Texto raro en campo numérico: no forzar al input number
         limitNotes.push(groupName + '.' + k + '=' + s);
         return;
@@ -24810,7 +24866,7 @@ window.applySoilExtractedFields = function applySoilExtractedFields(fields, opts
       if (v === undefined || v === null) return;
       var s = String(v).trim();
       if (s === '') return;
-      if (k === 'pMethod') {
+      if (k === 'pMethod' || k === 'microMethod' || k === 'bMethod') {
         analysis.fertility[k] = s;
         return;
       }
