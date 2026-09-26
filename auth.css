@@ -410,6 +410,7 @@
 .auth-preference-field select {
   -webkit-appearance: none;
   appearance: none;
+  field-sizing: content;
   width: auto;
   max-width: 100%;
   height: 26px;

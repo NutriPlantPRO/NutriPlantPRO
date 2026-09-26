@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=61" />
+  <link rel="stylesheet" href="auth.css?v=62" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -3764,6 +3764,26 @@
             opt.textContent = showFull ? t(fullKey, fullFb) : t(shortKey, shortFb);
             opt.setAttribute('title', t(fullKey, fullFb));
           });
+          if (!showFull) fitAuthPrefSelects();
+        }
+
+        function fitAuthPrefSelect(el) {
+          if (!el || el.selectedIndex < 0) return;
+          var opt = el.options[el.selectedIndex];
+          var text = opt && opt.textContent ? String(opt.textContent).trim() : '';
+          if (!text) return;
+          var cs = window.getComputedStyle(el);
+          var probe = document.createElement('span');
+          probe.textContent = text;
+          probe.style.cssText = 'position:absolute;left:-9999px;top:0;white-space:nowrap;visibility:hidden;font-family:' + cs.fontFamily + ';font-size:' + cs.fontSize + ';font-weight:' + cs.fontWeight + ';letter-spacing:' + cs.letterSpacing;
+          document.body.appendChild(probe);
+          el.style.width = Math.ceil(probe.getBoundingClientRect().width + 18) + 'px';
+          probe.remove();
+        }
+
+        function fitAuthPrefSelects() {
+          fitAuthPrefSelect(languageSelect);
+          fitAuthPrefSelect(unitSystemSelect);
         }
 
         languageSelect.value = prefs.language;
@@ -3799,6 +3819,7 @@
           unitSystemSelect.value = next.unit_system;
           document.documentElement.setAttribute('data-np-unit-system', next.unit_system);
           syncAuthUnitOptionLabels('short');
+          fitAuthPrefSelects();
           if (typeof window.npSyncManualLinksLang === 'function') window.npSyncManualLinksLang();
         });
 
