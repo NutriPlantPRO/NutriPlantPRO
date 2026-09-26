@@ -209,6 +209,7 @@
         value_evolution_label: "Evolución:",
         value_evolution: "Aprender, ajustar y mejorar de forma continua.",
         authorship: "Autoría de NutriPlant PRO",
+        authorship_short: "Autoría",
         privacy_policy: "Políticas de privacidad",
         terms: "Términos y Condiciones"
       },
@@ -1434,6 +1435,7 @@
         value_evolution_label: "Evolution:",
         value_evolution: "Learn, adjust, and improve continuously.",
         authorship: "NutriPlant PRO authorship",
+        authorship_short: "Authorship",
         privacy_policy: "Privacy policy",
         terms: "Terms and Conditions"
       },

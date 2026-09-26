@@ -248,6 +248,14 @@
   min-width: 0;
 }
 
+.auth-preferences-bar__docs {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .auth-preferences-bar__manual,
 .auth-preferences-bar__autoria {
   flex-shrink: 0;
@@ -1442,9 +1450,9 @@
 
 .auth-card-logo {
   /* Un poco más grande en la tarjeta de login */
-  height: clamp(8.6rem, 18vw, 10.4rem);
+  height: clamp(9.6rem, 20vw, 12rem);
   width: auto;
-  max-width: min(100%, 28.5rem);
+  max-width: min(100%, 32rem);
   object-fit: contain;
   filter: drop-shadow(0 4px 16px rgba(37, 99, 235, 0.3));
 }
@@ -1752,8 +1760,8 @@
   }
   
   .auth-card-logo {
-    height: clamp(7.25rem, 26vw, 8.75rem);
-    max-width: min(100%, 23rem);
+    height: clamp(8.1rem, 30vw, 10rem);
+    max-width: min(100%, 26rem);
   }
 }
 
