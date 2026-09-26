@@ -819,10 +819,46 @@
     stage.ce = String(computeCE(stage));
   }
 
-  function openCatalogForStage(stageId, api) {
+  function applyCycleProgram(prog, api) {
+    if (!prog || !api) return;
+    var st = api.getState();
+    st.stages = (prog.stages || []).map(function (s, i) { return normalizeStage(s, i); });
+    if (!st.stages.length) st.stages = [normalizeStage({ name: defaultStageName(1) }, 0)];
+    st.activeStageId = prog.activeStageId && st.stages.some(function (s) { return s.id === prog.activeStageId; })
+      ? prog.activeStageId
+      : st.stages[0].id;
+    st.programId = prog.id;
+    st.programName = prog.name;
+    api.render();
+    api.persist();
+  }
+
+  function cycleProgramRowsHtml() {
+    var items = loadCustomCyclePrograms();
+    if (!items.length) {
+      return '<tr><td colspan="2" class="hydro-muted">' + escapeAttr(t(
+        'Aún no hay programas. Usa «Guardar programa» para dejar toda la tabla aquí, junto a las soluciones.',
+        'No programs yet. Use “Save program” to keep the whole table here, next to the solutions.'
+      )) + '</td></tr>';
+    }
+    return items.map(function (p) {
+      var n = (p.stages && p.stages.length) || 0;
+      return '<tr data-cycle-prog-id="' + escapeAttr(p.id) + '">' +
+        '<td><strong>' + escapeAttr(p.name) + '</strong><br><small>' + n + ' ' + t('etapas', 'stages') + '</small></td>' +
+        '<td style="white-space:nowrap;">' +
+        '<button type="button" class="hydro-cycle-btn" data-cycle-prog-view="' + escapeAttr(p.id) + '">' + t('Ver programa', 'View program') + '</button> ' +
+        '<button type="button" class="hydro-cycle-btn" data-cycle-prog-edit="' + escapeAttr(p.id) + '">' + t('Editar', 'Edit') + '</button> ' +
+        '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(p.id) + '">' +
+        t('Usar en la tabla', 'Use in table') + '</button> ' +
+        '<button type="button" class="hydro-cycle-btn hydro-cycle-btn--danger" data-cycle-prog-del="' + escapeAttr(p.id) + '">' + t('Eliminar', 'Delete') + '</button></td></tr>';
+    }).join('');
+  }
+
+  function openCatalogForStage(stageId, api, focusPrograms) {
     var bags = getAllCatalogSolutions();
-    var cat = root.NpHydroSolutionCatalog;
-    var stage = api.getStage(stageId);
+    var stage = api && api.getStage ? api.getStage(stageId) : null;
+    if (!stage && api && api.getActive) stage = api.getActive();
+    if (stage && !stageId) stageId = stage.id;
     var selectedId = stage && stage.solutionId ? stage.solutionId : '';
 
     function rowHtml(recipe, custom) {
@@ -847,17 +883,66 @@
       : '';
     var litSep = '<tr class="hydro-cycle-catalog-sep"><td colspan="' + (MACROS.length + MICROS.length + 2) + '"><strong>' + t('Literatura', 'Literature') + '</strong></td></tr>';
 
+    function reopenCatalog(toPrograms) {
+      openCatalogForStage(stageId, api, toPrograms);
+    }
+
     var overlay = document.createElement('div');
     overlay.className = 'hydro-solution-modal';
     overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
-      '<div class="hydro-solution-modal__head"><div><h2>' + t('Catálogo de soluciones nutritivas', 'Nutrient solution catalog') + '</h2><p>' + t('Macros en meq/L y micros en ppm. Elegir copia valores a la etapa (puedes editar después).', 'Macros in meq/L and micros in ppm. Choose copies values into the stage (you can edit after).') + '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
+      '<div class="hydro-solution-modal__head"><div><h2>' + t('Catálogo', 'Catalog') + '</h2><p>' +
+      t('Mismo lugar: <strong>soluciones</strong> (Elegir = una etapa) y <strong>programas</strong> (Usar = toda la tabla).',
+        'Same place: <strong>solutions</strong> (Choose = one stage) and <strong>programs</strong> (Use = whole table).') +
+      '</p></div><button type="button" data-hydro-catalog-close aria-label="Close" class="hydro-solution-modal__close">×</button></div>' +
+      '<h3 class="hydro-catalog-h3">' + t('Soluciones (una etapa)', 'Solutions (one stage)') + '</h3>' +
+      '<p class="hydro-muted" style="margin:0 0 8px;font-size:0.85rem;">' +
+      t('Elegir copia meq/ppm a la etapa activa. Puedes editar después.', 'Choose copies meq/ppm into the active stage. You can edit after.') +
+      '</p>' +
       '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + t('Solución', 'Solution') + '</th>' +
       MACROS.map(function (k) { return '<th>' + labelMacro(k) + '<br>meq/L</th>'; }).join('') +
       MICROS.map(function (k) { return '<th>' + k + '<br>ppm</th>'; }).join('') +
-      '<th></th></tr></thead><tbody>' + litSep + litRows + sep + myRows + '</tbody></table></div></section>';
+      '<th></th></tr></thead><tbody>' + litSep + litRows + sep + myRows + '</tbody></table></div>' +
+      '<div data-hydro-catalog-programs>' +
+      '<h3 class="hydro-catalog-h3">' + t('Programas del ciclo', 'Cycle programs') + '</h3>' +
+      '<p class="hydro-muted" style="margin:0 0 8px;font-size:0.85rem;">' +
+      t('«Usar en la tabla» reemplaza todas las filas de etapas.', '“Use in table” replaces every stage row.') +
+      '</p>' +
+      '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + t('Programa', 'Program') + '</th><th>' + t('Acciones', 'Actions') + '</th></tr></thead><tbody>' +
+      cycleProgramRowsHtml() + '</tbody></table></div></div></section>';
 
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-hydro-catalog-close]')) {
+        overlay.remove();
+        return;
+      }
+      var del = ev.target.closest('[data-cycle-prog-del]');
+      if (del) {
+        var delId = del.getAttribute('data-cycle-prog-del');
+        saveCustomCyclePrograms(loadCustomCyclePrograms().filter(function (it) { return it.id !== delId; }));
+        overlay.remove();
+        reopenCatalog(true);
+        return;
+      }
+      var editListBtn = ev.target.closest('[data-cycle-prog-edit]');
+      if (editListBtn) {
+        var editProg = loadCustomCyclePrograms().find(function (it) { return it.id === editListBtn.getAttribute('data-cycle-prog-edit'); });
+        if (!editProg) return;
+        overlay.remove();
+        openCycleProgramPreview(editProg, api, function () { reopenCatalog(true); }, { edit: true });
+        return;
+      }
+      var viewBtn = ev.target.closest('[data-cycle-prog-view]');
+      if (viewBtn) {
+        var viewProg = loadCustomCyclePrograms().find(function (it) { return it.id === viewBtn.getAttribute('data-cycle-prog-view'); });
+        if (!viewProg) return;
+        overlay.remove();
+        openCycleProgramPreview(viewProg, api, function () { reopenCatalog(true); });
+        return;
+      }
+      var loadBtn = ev.target.closest('[data-cycle-prog-load]');
+      if (loadBtn) {
+        var prog = loadCustomCyclePrograms().find(function (it) { return it.id === loadBtn.getAttribute('data-cycle-prog-load'); });
+        applyCycleProgram(prog, api);
         overlay.remove();
         return;
       }
@@ -865,11 +950,10 @@
       if (!btn) return;
       var id = btn.getAttribute('data-hydro-cycle-choose');
       var recipe = bags.all.find(function (r) { return r.id === id; });
-      var st = api.getStage(stageId);
+      var st = (stageId && api.getStage) ? api.getStage(stageId) : (api.getActive && api.getActive());
       if (recipe && st) {
         var keepName = st.name;
         applyRecipeToStage(st, recipe);
-        // Conservar el título de etapa del programa; el nombre del catálogo queda en solutionId
         if (keepName) st.name = keepName;
         api.render();
         api.persist();
@@ -877,6 +961,12 @@
       overlay.remove();
     });
     document.body.appendChild(overlay);
+    if (focusPrograms) {
+      var progBox = overlay.querySelector('[data-hydro-catalog-programs]');
+      if (progBox && typeof progBox.scrollIntoView === 'function') {
+        setTimeout(function () { progBox.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 30);
+      }
+    }
   }
 
   function saveCycleProgramToCatalog(api) {
@@ -1042,7 +1132,7 @@
     overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
       '<div class="hydro-solution-modal__head"><div><h2>' + escapeAttr(titleLabel) +
       (editable ? '' : ': ' + escapeAttr(prog.name || '')) +
-      '</h2><p>' + helpText + '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
+      '</h2><p>' + helpText + '</p></div><button type="button" data-hydro-catalog-close aria-label="Close" class="hydro-solution-modal__close">×</button></div>' +
       nameBlock +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;">' + actionBtns + '</div>' +
       '<div class="hydro-table-scroll" style="overflow:auto;max-width:100%;"><table class="hydro-solution-modal__table"><thead><tr>' +
@@ -1199,89 +1289,8 @@
   }
 
   function openCycleProgramsCatalog(api) {
-    var items = loadCustomCyclePrograms();
-    var overlay = document.createElement('div');
-    overlay.className = 'hydro-solution-modal';
-    var rows = items.length
-      ? items.map(function (p) {
-          var n = (p.stages && p.stages.length) || 0;
-          return '<tr data-cycle-prog-id="' + escapeAttr(p.id) + '">' +
-            '<td><strong>' + escapeAttr(p.name) + '</strong><br><small>' + n + ' ' + t('etapas', 'stages') + '</small></td>' +
-            '<td style="white-space:nowrap;">' +
-            '<button type="button" class="hydro-cycle-btn" data-cycle-prog-view="' + escapeAttr(p.id) + '" title="' +
-            escapeAttr(t('Ver las etapas y valores guardados', 'View saved stages and values')) + '">' +
-            t('Ver programa', 'View program') + '</button> ' +
-            '<button type="button" class="hydro-cycle-btn" data-cycle-prog-edit="' + escapeAttr(p.id) + '" title="' +
-            escapeAttr(t('Editar título, etapas y valores del programa', 'Edit program title, stages and values')) + '">' +
-            t('Editar', 'Edit') + '</button> ' +
-            '<button type="button" class="hydro-solution-modal__choose" data-cycle-prog-load="' + escapeAttr(p.id) + '" title="' +
-            escapeAttr(t('Pone este programa en la tabla ETAPAS DEL CICLO (detrás de esta ventana)', 'Puts this program into the CYCLE STAGES table (behind this window)')) + '">' +
-            t('Usar en la tabla', 'Use in table') + '</button> ' +
-            '<button type="button" class="hydro-cycle-btn hydro-cycle-btn--danger" data-cycle-prog-del="' + escapeAttr(p.id) + '">' + t('Eliminar', 'Delete') + '</button></td></tr>';
-        }).join('')
-      : '<tr><td colspan="2" class="hydro-muted">' + escapeAttr(t('Aún no tienes programas guardados. Usa «Al catálogo» para guardar toda la tabla.', 'You have no saved programs yet. Use “To catalog” to save the whole table.')) + '</td></tr>';
-
-    overlay.innerHTML = '<section class="hydro-solution-modal__card" role="dialog" aria-modal="true">' +
-      '<div class="hydro-solution-modal__head"><div><h2>' + t('Mis programas del ciclo', 'My cycle programs') + '</h2><p>' +
-      t('Esto no abre otra pantalla. «Editar» cambia valores del programa. «Usar en la tabla» reemplaza las filas de ETAPAS DEL CICLO detrás de esta ventana.', 'This does not open another screen. “Edit” changes program values. “Use in table” replaces the CYCLE STAGES rows behind this window.') +
-      '</p></div><button type="button" data-hydro-catalog-close aria-label="Close">×</button></div>' +
-      '<div class="hydro-table-scroll"><table class="hydro-solution-modal__table"><thead><tr><th>' + t('Programa', 'Program') + '</th><th>' + t('Acciones', 'Actions') + '</th></tr></thead><tbody>' +
-      rows + '</tbody></table></div></section>';
-
-    function applyProgram(prog) {
-      if (!prog || !api) return;
-      var st = api.getState();
-      st.stages = (prog.stages || []).map(function (s, i) { return normalizeStage(s, i); });
-      if (!st.stages.length) st.stages = [normalizeStage({ name: defaultStageName(1) }, 0)];
-      st.activeStageId = prog.activeStageId && st.stages.some(function (s) { return s.id === prog.activeStageId; })
-        ? prog.activeStageId
-        : st.stages[0].id;
-      st.programId = prog.id;
-      st.programName = prog.name;
-      api.render();
-      api.persist();
-    }
-
-    overlay.addEventListener('click', function (ev) {
-      if (ev.target === overlay || ev.target.closest('[data-hydro-catalog-close]')) {
-        overlay.remove();
-        return;
-      }
-      var del = ev.target.closest('[data-cycle-prog-del]');
-      if (del) {
-        var delId = del.getAttribute('data-cycle-prog-del');
-        var next = loadCustomCyclePrograms().filter(function (it) { return it.id !== delId; });
-        saveCustomCyclePrograms(next);
-        overlay.remove();
-        openCycleProgramsCatalog(api);
-        return;
-      }
-      var editListBtn = ev.target.closest('[data-cycle-prog-edit]');
-      if (editListBtn) {
-        var editId = editListBtn.getAttribute('data-cycle-prog-edit');
-        var editProg = loadCustomCyclePrograms().find(function (it) { return it.id === editId; });
-        if (!editProg) return;
-        overlay.remove();
-        openCycleProgramPreview(editProg, api, function () { openCycleProgramsCatalog(api); }, { edit: true });
-        return;
-      }
-      var viewBtn = ev.target.closest('[data-cycle-prog-view]');
-      if (viewBtn) {
-        var viewId = viewBtn.getAttribute('data-cycle-prog-view');
-        var viewProg = loadCustomCyclePrograms().find(function (it) { return it.id === viewId; });
-        if (!viewProg) return;
-        overlay.remove();
-        openCycleProgramPreview(viewProg, api, function () { openCycleProgramsCatalog(api); });
-        return;
-      }
-      var loadBtn = ev.target.closest('[data-cycle-prog-load]');
-      if (!loadBtn) return;
-      var id = loadBtn.getAttribute('data-cycle-prog-load');
-      var prog = loadCustomCyclePrograms().find(function (it) { return it.id === id; });
-      applyProgram(prog);
-      overlay.remove();
-    });
-    document.body.appendChild(overlay);
+    var active = api && api.getActive ? api.getActive() : null;
+    openCatalogForStage(active && active.id, api, true);
   }
 
   function saveStageToCatalog(stage, api) {

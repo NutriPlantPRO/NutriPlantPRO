@@ -1002,7 +1002,7 @@ function hydroOpenSolutionCatalog(opts) {
   let progRows = '';
   if (!cycleRecipes.length) {
     progRows = '<tr><td colspan="15" style="color:#64748b;">' +
-      hydroT('Aún no hay programas. En Programa del ciclo usa «Al catálogo» y vuelve aquí.', 'No programs yet. In Cycle program use “To catalog”, then come back here.') +
+      hydroT('Aún no hay programas. En Programa del ciclo usa «Guardar programa» (quedan en el mismo catálogo).', 'No programs yet. In Cycle program use “Save program” (they live in the same catalog).') +
       '</td></tr>';
   } else {
     const byProg = {};
