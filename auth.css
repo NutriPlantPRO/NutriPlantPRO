@@ -658,6 +658,13 @@
     height: 28px;
   }
 
+  .auth-card-logo {
+    height: auto;
+    width: min(92%, 20.5rem);
+    max-width: 100%;
+    max-height: 13.5rem;
+  }
+
   .registration-preferences-slot {
     padding: 0 12px 10px;
   }
@@ -1760,8 +1767,10 @@
   }
   
   .auth-card-logo {
-    height: clamp(8.1rem, 30vw, 10rem);
-    max-width: min(100%, 26rem);
+    height: auto;
+    width: min(92%, 20.5rem);
+    max-width: 100%;
+    max-height: 13.5rem;
   }
 }
 
