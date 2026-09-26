@@ -173,14 +173,14 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: nowrap;
-  gap: 12px 18px;
+  gap: 8px 16px;
   width: 100%;
-  padding: 9px 12px 8px;
+  padding: 5px 12px;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
   z-index: 5;
 }
 
@@ -188,8 +188,8 @@
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 3px;
-  border-radius: 12px 12px 0 0;
+  height: 2px;
+  border-radius: 10px 10px 0 0;
   background: linear-gradient(90deg, #2563eb 0%, #16a34a 100%);
   pointer-events: none;
 }
@@ -230,10 +230,9 @@
 
 .auth-preferences-bar__controls {
   flex: 0 0 auto;
-  display: grid;
-  /* Mismo ancho fijo ≈ "US customary" */
-  grid-template-columns: repeat(2, 140px);
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px 14px;
   width: auto;
   max-width: none;
 }
@@ -252,17 +251,39 @@
 .auth-preferences-bar__manual,
 .auth-preferences-bar__autoria {
   flex-shrink: 0;
-  padding: 6px 12px;
-  font-size: 12px;
+  height: auto;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.2;
-  height: 32px;
   box-sizing: border-box;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.auth-preferences-bar__manual.auth-portal-cta--manual,
+.auth-preferences-bar__autoria.auth-portal-cta--autoria {
+  background: none;
+  border: none;
+  color: #1e3a5f;
+}
+
+.auth-preferences-bar__manual.auth-portal-cta--manual:hover,
+.auth-preferences-bar__autoria.auth-portal-cta--autoria:hover {
+  background: none;
+  border: none;
+  color: #0f172a;
+  transform: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .auth-preferences-bar__manual .auth-portal-cta__icon,
 .auth-preferences-bar__autoria .auth-portal-cta__icon {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 
 .auth-preferences-bar__contact {
@@ -287,9 +308,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 7px;
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
@@ -351,11 +372,11 @@
 
 .auth-preference-field {
   min-width: 0;
-  padding: 4px 6px 5px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   position: relative;
   z-index: 1;
 }
@@ -365,7 +386,7 @@
   display: block;
 }
 
-.auth-preference-field label {
+.auth-preference-field label:not(.auth-sr-only) {
   margin: 0 2px 3px;
   color: #2563eb;
   font-size: 10px;
@@ -379,31 +400,40 @@
 }
 
 .auth-preference-field select {
-  width: 100%;
-  height: 32px;
-  min-height: 32px;
-  padding: 4px 28px 4px 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  width: auto;
+  max-width: 100%;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 16px 0 2px;
   color: #0f172a;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  background-color: #fff;
-  border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  line-height: 26px;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  background-size: 10px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
 }
 
 .auth-preference-field select:hover {
-  background-color: #fff;
-  border-color: #94a3b8;
+  background-color: transparent;
+  color: #0f172a;
 }
 
 .auth-preference-field select:focus-visible {
   outline: 2px solid rgba(37, 99, 235, 0.28);
   outline-offset: 2px;
-  border-color: #2563eb;
-  background-color: #fff;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.08);
+  border: none;
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .auth-preference-field small {
@@ -454,7 +484,7 @@
 }
 
 #registrationModal .registration-preferences-slot .auth-preferences-bar {
-  padding: 7px 8px 6px;
+  padding: 4px 8px;
   gap: 8px;
   box-shadow: none;
 }
@@ -464,12 +494,12 @@
 }
 
 #registrationModal .registration-preferences-slot .auth-preference-field {
-  padding: 4px 5px 5px;
+  padding: 0;
 }
 
 #registrationModal .registration-preferences-slot .auth-preference-field select {
-  height: 34px;
-  min-height: 34px;
+  height: 26px;
+  min-height: 26px;
   font-size: 13px;
 }
 
@@ -531,15 +561,15 @@
   }
 
   #registrationModal .registration-preferences-slot .auth-preferences-bar__controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    width: 100%;
+    display: flex;
+    gap: 12px;
+    width: auto;
   }
 
   #registrationModal .registration-preferences-slot .auth-preference-field select {
-    height: 36px;
-    min-height: 36px;
-    font-size: 14px;
+    height: 28px;
+    min-height: 28px;
+    font-size: 13px;
   }
 
   #registrationModal .modal-body {
@@ -566,26 +596,27 @@
 
 @media (max-width: 699px) {
   .auth-preferences-bar {
-    align-items: stretch;
+    align-items: center;
     flex-direction: column;
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 11px 9px 9px;
-    border-radius: 12px;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 10px;
   }
 
   .auth-preferences-bar__prefs {
     flex-direction: row;
-    align-items: stretch;
+    align-items: center;
     gap: 10px;
     width: 100%;
+    justify-content: center;
   }
 
   .auth-preferences-bar__controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    width: 100%;
-    max-width: 300px;
+    display: flex;
+    gap: 12px;
+    width: auto;
+    max-width: none;
     margin-left: auto;
     margin-right: auto;
     flex: 0 1 auto;
@@ -594,31 +625,29 @@
   .auth-preferences-bar__portal {
     justify-content: center;
     width: 100%;
-    padding-top: 8px;
-    margin-top: 2px;
+    padding-top: 6px;
+    margin-top: 0;
     border-top: 1px solid #eef2f7;
   }
 
   .auth-preference-field {
-    padding: 4px 5px 5px;
-  }
-
-  .auth-preference-field label {
-    margin: 0 1px 3px;
-    font-size: 9px;
-    letter-spacing: 0.01em;
+    padding: 0;
   }
 
   .auth-preference-field select {
-    height: 36px;
-    min-height: 36px;
-    font-size: 12px;
-    padding: 3px 22px 3px 6px;
+    height: 28px;
+    min-height: 28px;
+    font-size: 13px;
+    padding: 0 16px 0 2px;
   }
 
   .auth-preferences-bar__manual,
+  .auth-preferences-bar__autoria {
+    height: auto;
+  }
+
   .auth-preferences-bar__contact-btn {
-    height: 36px;
+    height: 28px;
   }
 
   .registration-preferences-slot {
@@ -632,7 +661,8 @@
 
 @media (max-width: 380px) {
   .auth-preferences-bar__controls {
-    grid-template-columns: 1fr;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 
@@ -1132,7 +1162,7 @@
   .auth-page #authPreferencesHome {
     width: 100%;
     max-width: none;
-    margin: 0 0 12px;
+    margin: 0 0 10px;
     padding: 0;
     box-sizing: border-box;
   }
@@ -1146,7 +1176,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
     align-items: center;
     gap: 16px;
-    padding: 10px 18px 9px;
+    padding: 4px 16px;
   }
 
   .auth-page .auth-preferences-bar__prefs {
@@ -1161,8 +1191,8 @@
   }
 
   .auth-page .auth-preferences-bar__controls {
-    grid-template-columns: repeat(2, 140px);
-    gap: 8px;
+    display: flex;
+    gap: 14px;
     max-width: none;
     width: max-content;
     margin-left: auto;
@@ -1412,9 +1442,9 @@
 
 .auth-card-logo {
   /* Un poco más grande en la tarjeta de login */
-  height: clamp(7.75rem, 16vw, 9.25rem);
+  height: clamp(8.6rem, 18vw, 10.4rem);
   width: auto;
-  max-width: min(100%, 26rem);
+  max-width: min(100%, 28.5rem);
   object-fit: contain;
   filter: drop-shadow(0 4px 16px rgba(37, 99, 235, 0.3));
 }
@@ -1722,8 +1752,8 @@
   }
   
   .auth-card-logo {
-    height: clamp(6.5rem, 24vw, 7.75rem);
-    max-width: min(100%, 21rem);
+    height: clamp(7.25rem, 26vw, 8.75rem);
+    max-width: min(100%, 23rem);
   }
 }
 

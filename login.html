@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=56" />
+  <link rel="stylesheet" href="auth.css?v=58" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -129,7 +129,7 @@
             <h2 id="authPreferencesTitle" class="auth-sr-only" data-i18n="auth.preferences">Preferencias</h2>
             <div class="auth-preferences-bar__controls">
               <div class="auth-preference-field">
-                <label for="authLanguage" data-i18n="profile.language">Idioma</label>
+                <label for="authLanguage" class="auth-sr-only" data-i18n="profile.language">Idioma</label>
                 <select id="authLanguage" name="language" aria-describedby="authLanguageHelp">
                   <option value="es" data-i18n="selector.spanish">Español</option>
                   <option value="en" data-i18n="selector.english">Inglés</option>
@@ -139,7 +139,7 @@
                 </small>
               </div>
               <div class="auth-preference-field">
-                <label for="authUnitSystem" data-i18n="profile.unit_system">Sistema de unidades</label>
+                <label for="authUnitSystem" class="auth-sr-only" data-i18n="profile.unit_system">Sistema de unidades</label>
                 <select id="authUnitSystem" name="unit_system" aria-describedby="authUnitSystemHelp">
                   <option value="metric" data-i18n="selector.metric" data-label-full-key="selector.metric_full">Métrico</option>
                   <option value="us_customary" data-i18n="selector.us_customary" data-label-full-key="selector.us_customary_full">US customary</option>
@@ -160,7 +160,7 @@
               <span data-i18n="about.authorship">Autoría de NutriPlant PRO</span>
             </a>
             <div class="auth-preferences-bar__contact">
-              <span class="auth-preferences-bar__contact-label" data-i18n="auth.contact_us">Contáctanos:</span>
+              <span class="auth-preferences-bar__contact-label auth-sr-only" data-i18n="auth.contact_us">Contáctanos:</span>
               <a href="mailto:admin@nutriplantpro.com" class="auth-preferences-bar__contact-btn auth-preferences-bar__contact-btn--mail">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
