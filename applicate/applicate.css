@@ -118,13 +118,14 @@ body.ap-body {
   margin-top: 8px;
   padding: 14px;
   border-radius: 10px;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #fff;
+  border: 1.5px solid #1e3a8a;
+  color: #334155;
   font-size: 14px;
   line-height: 1.45;
   text-align: center;
 }
-.ap-soon-box strong { color: #86efac; display: block; font-size: 16px; margin-bottom: 4px; }
+.ap-soon-box strong { color: #1e3a8a; display: block; font-size: 16px; margin-bottom: 4px; }
 
 /* Dashboard */
 .ap-app { display: none; min-height: 100vh; background: #f8fafc; }

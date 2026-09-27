@@ -9,3 +9,5 @@ Checklist. Si algo falla, anota el mensaje exacto de Supabase.
 5. RLS Enabled en cada una.
 
 No crea cursos publicados. El dashboard muestra el recuadro vacío hasta que carguemos uno.
+
+Si ya viste **Success. No rows returned**, el SQL quedó bien (es normal: no inserta filas, solo crea tablas).

@@ -334,9 +334,9 @@ Applicate es **otro producto de PayPal**: pago **único** por curso (Checkout / 
 
 Al picar Comprar → PayPal → paga ese curso → webhook o retorno confirma → fila en `aplicate_purchases` (origen `paypal`) → aparece en Mis cursos.
 
-**Llaves:** la app de PayPal de NutriPlant **ya existe** (`PAYPAL_CLIENT_ID` / `SECRET` en Netlify y en secretos de Supabase). Opinión: **reutilizar esa misma app**. No abras otra cuenta ni llenes Netlify de env nuevas. El `PLAN_ID` de la suscripción PRO **no** se usa aquí; se crea una orden de un solo pago (el precio va en el curso, tabla `aplicate_courses`).
+**Llaves:** la app de PayPal de NutriPlant **ya existe** (`PAYPAL_CLIENT_ID` / `SECRET` en Netlify y en secretos de Supabase). **Reutilizar esa misma app.** No abras otra cuenta ni llenes Netlify de env nuevas. El `PLAN_ID` de la suscripción PRO **no** se usa aquí; se crea una orden de un solo pago (el precio va en el curso, tabla `aplicate_courses`).
 
-Si en el dashboard de PayPal hay que activar “pagos únicos” o un webhook extra de captura: se hace en PayPal, no es una llave nueva en Netlify. Cuando toque ejecutar, se anota el paso a paso (como `PASO-A-PASO-PAYPAL-LIVE.md`, pero de orden única).
+**Precio:** no un plan fijo de $30 en PayPal. Cada curso tiene el suyo. Si los dos primeros van a 30 USD, pones `30` en cada ficha. Pasos: `docs/PASOS-PAYPAL-APLICATE.md`.
 
 ### 6.3 Transferencia — WhatsApp (el de NutriPlant)
 

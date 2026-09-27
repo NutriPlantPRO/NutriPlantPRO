@@ -1882,14 +1882,15 @@
   text-decoration: none;
   color: inherit;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #0f172a 0%, #0b1f17 70%, #14532d 160%);
-  border: 1px solid rgba(74, 222, 128, 0.28);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #fff;
+  border: 1.5px solid #1e3a8a;
+  box-shadow: none;
+  transition: border-color 0.15s ease;
 }
 .login-applicate-teaser:hover,
 .login-applicate-teaser:focus-visible {
-  border-color: rgba(134, 239, 172, 0.5);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  border-color: #166534;
+  box-shadow: none;
   outline: none;
 }
 .login-applicate-teaser__logo {
@@ -1915,7 +1916,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #86efac;
+  color: #166534;
   line-height: 1.15;
 }
 .login-applicate-teaser__soon {
@@ -1923,7 +1924,7 @@
   font-size: 15px;
   font-weight: 800;
   line-height: 1.15;
-  color: #fff;
+  color: #1e3a8a;
 }
 .login-applicate-teaser__line {
   display: none;
