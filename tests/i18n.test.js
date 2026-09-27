@@ -27,8 +27,8 @@ module.exports = [
       assert.equal(i18n.t('analysis.meta_title_simple'), 'Title');
       assert.equal(i18n.t('radar.vpd_hours_low_title'), 'Low VPD hours');
       assert.equal(i18n.t('profile.user_info_title'), 'User Information');
-      assert.equal(i18n.t('free_tools.hydro_tab_design'), '2 · Target design');
-      assert.equal(i18n.t('free_tools.hydro_tab_cycle'), '1 · Cycle program');
+      assert.equal(i18n.t('free_tools.hydro_tab_design'), 'Target design');
+      assert.equal(i18n.t('free_tools.hydro_tab_cycle'), 'Cycle program');
       // Datos de usuario / títulos de proyecto no son claves i18n
       assert.equal(i18n.t('Aguacate Lote 3'), 'Aguacate Lote 3');
       assert.equal(i18n.t('Hola'), 'Hola');

@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#0f172a" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260926saveCat"></script>
+  <script src="assets/np-i18n.js?v=20260927tabs"></script>
   <script src="assets/np-units-core.js?v=20260914u2"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
   <script src="assets/np-analysis-ui.js?v=20260924meqSum"></script>
@@ -5587,7 +5587,7 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260926closeX';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260927tabs';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
         // Misma herramienta + misma versión de cache. Si solo cambia v=, recarga una vez (no en cada apertura).
@@ -7859,7 +7859,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260926closeX" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260927tabs" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

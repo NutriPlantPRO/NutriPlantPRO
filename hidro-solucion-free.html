@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script src="assets/np-prefs.js"></script>
-  <script src="assets/np-i18n.js?v=20260926oneCat"></script>
+  <script src="assets/np-i18n.js?v=20260927tabs"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-hydro-units.js?v=20260730a"></script>
-  <script src="assets/np-free-nutrition-ui.js?v=20260926oneCat"></script>
+  <script src="assets/np-free-nutrition-ui.js?v=20260927tabs"></script>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <script src="assets/free-tools-embed.js?v=20260830fitH"></script>
   <title>Diseño de solución nutritiva</title>
@@ -876,7 +876,7 @@
       flex: 1 1 auto;
       display: flex;
       flex-wrap: wrap;
-      align-items: flex-end;
+      align-items: stretch;
       gap: 0;
       min-width: 0;
       background: linear-gradient(118deg, #eff6ff 0%, #e8eeff 42%, #f0fdf4 100%);
@@ -901,11 +901,16 @@
     .fert-aporte-field select,
     .fert-aporte-field input[type="number"],
     .fert-aporte-field input[type="text"] {
+      display: block;
+      width: 100%;
+      height: 42px;
+      box-sizing: border-box;
       padding: 9px 11px;
       border: 1px solid rgba(148, 163, 184, 0.45);
       border-radius: 9px;
       font-size: 13px;
       font-weight: 600;
+      line-height: 22px;
       min-width: 0;
       background: #fff;
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -918,7 +923,10 @@
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
     }
     .fert-aporte-field--product {
-      flex: 1.35 1 180px;
+      flex: 1.35 1 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
       background: rgba(255, 255, 255, 0.72);
     }
     .fert-aporte-field--product label { color: #1e40af; }
@@ -928,6 +936,9 @@
     }
     .fert-aporte-field--formula {
       flex: 1.15 1 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
       background: rgba(255, 255, 255, 0.55);
     }
     .fert-aporte-field--formula label { color: #4338ca; }
@@ -1548,9 +1559,9 @@
   <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
       <div class="hydro-main-tabs" role="tablist" aria-label="Secciones solución nutritiva" data-i18n-aria-label="free_tools.hydro_tabs_aria">
-        <button type="button" role="tab" class="hydro-tab-cycle" id="hydroTabBtnCycle" aria-selected="true" aria-controls="hydroPanelCycle" data-i18n="free_tools.hydro_tab_cycle">1 · Programa del ciclo</button>
-        <button type="button" role="tab" id="hydroTabBtnDesign" aria-selected="false" aria-controls="hydroPanelDesign" data-i18n="free_tools.hydro_tab_design">2 · Diseño objetivo</button>
-        <button type="button" role="tab" id="hydroTabBtnFert" aria-selected="false" aria-controls="hydroPanelFert" data-i18n="free_tools.hydro_tab_fert">3 · Aporte fertilizantes</button>
+        <button type="button" role="tab" class="hydro-tab-cycle" id="hydroTabBtnCycle" aria-selected="true" aria-controls="hydroPanelCycle" data-i18n="free_tools.hydro_tab_cycle">Programa del ciclo</button>
+        <button type="button" role="tab" id="hydroTabBtnDesign" aria-selected="false" aria-controls="hydroPanelDesign" data-i18n="free_tools.hydro_tab_design">Diseño objetivo</button>
+        <button type="button" role="tab" id="hydroTabBtnFert" aria-selected="false" aria-controls="hydroPanelFert" data-i18n="free_tools.hydro_tab_fert">Aporte fertilizantes</button>
       </div>
 
       <div id="hydroPanelCycle" class="hydro-main-panel active hydro-cycle-panel" role="tabpanel" aria-labelledby="hydroTabBtnCycle">
