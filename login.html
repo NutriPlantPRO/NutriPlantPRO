@@ -6,7 +6,7 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=20260925authShort"></script>
+  <script defer src="assets/np-i18n.js?v=20260927applicateShell"></script>
   <script defer src="assets/np-units-core.js?v=20260914u2"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=62" />
+  <link rel="stylesheet" href="auth.css?v=64" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -274,6 +274,26 @@
       </div>
 
       <div class="auth-card login-split__tools">
+
+        <a
+          class="login-applicate-teaser"
+          href="/applicate/"
+          data-i18n-aria-label="auth.applicate_teaser_aria"
+          aria-label="Applicate, próximamente"
+        >
+          <img
+            src="assets/Applicate Logo.png"
+            alt="Applicate"
+            class="login-applicate-teaser__logo"
+            width="132"
+            height="34"
+            decoding="async"
+          />
+          <div class="login-applicate-teaser__copy">
+            <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitación</p>
+            <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Próximamente</p>
+          </div>
+        </a>
 
         <!-- Invitación a calculadoras sin registro (usuarios curiosos) -->
         <div class="login-free-tools-banner">
@@ -5156,6 +5176,7 @@
         var pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
         var banner = toolsEl.querySelector('.login-free-tools-banner');
         var list = toolsEl.querySelector('.login-tools-scroll');
+        /* El teaser de Applicate no entra en esta cuenta: si suma, el panel de redes se alarga. */
         var inner = (banner ? banner.offsetHeight : 0) + (list ? list.scrollHeight : 0);
         if (inner > 80) return Math.round(inner + pad);
         return Math.round(toolsEl.offsetHeight || 0);

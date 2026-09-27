@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="auth.applicate_soon_title">Applicate · Próximamente</title>
+  <script src="../assets/np-prefs-bootstrap.js"></script>
+  <script defer src="../assets/np-prefs.js"></script>
+  <script defer src="../assets/np-i18n.js?v=20260927applicateData"></script>
+  <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png?v=20260815r">
+  <meta name="description" content="Applicate by NutriPlant PRO — cursos y constancias. Próximamente.">
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://nutriplantpro.com/applicate">
+  <link rel="stylesheet" href="applicate.css?v=5">
+</head>
+<body class="ap-body">
+  <header class="ap-top" id="apTopGate">
+    <img class="ap-top__logo" src="../assets/Applicate Logo.png" alt="Applicate by NutriPlant PRO">
+    <a class="ap-top__back" href="/" data-i18n="auth.applicate_soon_back">Volver a NutriPlant PRO</a>
+  </header>
+
+  <div id="apGate" class="ap-gate">
+    <section class="ap-card">
+      <h1 data-i18n="auth.login_title">Iniciar sesión</h1>
+      <p class="ap-lead" data-i18n="auth.applicate_login_lead">Correo y contraseña. El acceso público abre próximamente.</p>
+      <div id="apLoginMsg" class="ap-msg" role="status"></div>
+      <form id="apLoginForm">
+        <div class="ap-field">
+          <label for="apLoginEmail" data-i18n="auth.email">Correo electrónico</label>
+          <input id="apLoginEmail" name="email" type="email" autocomplete="username" required>
+        </div>
+        <div class="ap-field">
+          <label for="apLoginPass" data-i18n="auth.password">Contraseña</label>
+          <input id="apLoginPass" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="ap-btn" type="submit" id="apLoginBtn" data-i18n="auth.login_action">Iniciar sesión</button>
+      </form>
+    </section>
+
+    <section class="ap-card">
+      <h2 data-i18n="auth.register_link">Crear Nueva Cuenta</h2>
+      <p class="ap-lead" data-i18n="auth.applicate_reg_lead">Así será el registro. Aún no se puede enviar.</p>
+      <div id="apRegMsg" class="ap-msg" role="status"></div>
+      <form id="apRegForm">
+        <div class="ap-field">
+          <label for="apRegName" data-i18n="auth.applicate_full_name">Nombre completo</label>
+          <input id="apRegName" name="full_name" type="text" autocomplete="name">
+        </div>
+        <div class="ap-field">
+          <label for="apRegEmail" data-i18n="auth.email">Correo electrónico</label>
+          <input id="apRegEmail" name="email" type="email" autocomplete="email">
+        </div>
+        <div class="ap-field">
+          <label data-i18n="auth.phone">Teléfono</label>
+          <div class="ap-row-phone">
+            <select id="apRegPhoneCode" name="phone_code">
+              <option value="+52" selected>México +52</option>
+              <option value="+1">USA / Canadá +1</option>
+              <option value="+54">Argentina +54</option>
+              <option value="+57">Colombia +57</option>
+              <option value="+51">Perú +51</option>
+              <option value="+56">Chile +56</option>
+              <option value="+34">España +34</option>
+              <option value="other" data-i18n="auth.other">Otro</option>
+            </select>
+            <input id="apRegPhoneOther" type="tel" hidden placeholder="+" data-i18n-placeholder="auth.custom_code">
+            <input id="apRegPhone" name="phone" type="tel" autocomplete="tel" data-i18n-placeholder="auth.phone_number" placeholder="Número">
+          </div>
+        </div>
+        <div class="ap-row">
+          <div class="ap-field">
+            <label for="apRegCountry" data-i18n="auth.country">País</label>
+            <input id="apRegCountry" name="country" type="text" autocomplete="country-name">
+          </div>
+          <div class="ap-field">
+            <label for="apRegState" data-i18n="auth.state">Estado / provincia</label>
+            <input id="apRegState" name="state" type="text">
+          </div>
+        </div>
+        <div class="ap-field">
+          <label for="apRegPostal" data-i18n="auth.postal_code">Código postal</label>
+          <input id="apRegPostal" name="postal" type="text" autocomplete="postal-code">
+        </div>
+        <div class="ap-field">
+          <label for="apRegProfession" data-i18n="auth.profession">Profesión</label>
+          <select id="apRegProfession" name="profession">
+            <option value="" data-i18n="auth.select_profession">Selecciona una profesión</option>
+            <option value="Agrónomo" data-i18n="auth.profession_agronomist">Agrónomo</option>
+            <option value="Técnico">Técnico</option>
+            <option value="Productor">Productor</option>
+            <option value="Asesor">Asesor</option>
+            <option value="Estudiante">Estudiante</option>
+            <option value="Docente">Docente</option>
+            <option value="Otra" data-i18n="auth.other">Otra</option>
+          </select>
+        </div>
+        <div class="ap-row">
+          <div class="ap-field">
+            <label for="apRegPass" data-i18n="auth.password">Contraseña</label>
+            <input id="apRegPass" name="new-password" type="password" autocomplete="new-password">
+          </div>
+          <div class="ap-field">
+            <label for="apRegPass2" data-i18n="auth.confirm_password">Confirmar contraseña</label>
+            <input id="apRegPass2" name="new-password-confirm" type="password" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="ap-soon-box">
+          <strong data-i18n="auth.applicate_teaser_soon">Próximamente</strong>
+          <span data-i18n="auth.applicate_reg_blocked">El registro abre próximamente.</span>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="apApp" class="ap-app">
+    <aside class="ap-side" id="apSide">
+      <div class="ap-side__brand" role="img" aria-label="Applicate"></div>
+      <nav class="ap-nav">
+        <button type="button" class="is-on" data-ap-nav="inicio"><span class="ap-ico">⌂</span><span class="ap-lbl" data-i18n="auth.applicate_nav_home">Inicio</span></button>
+        <button type="button" data-ap-nav="cursos"><span class="ap-ico">▶</span><span class="ap-lbl" data-i18n="auth.applicate_nav_courses">Mis cursos</span></button>
+        <button type="button" data-ap-nav="biblio"><span class="ap-ico">☰</span><span class="ap-lbl" data-i18n="auth.applicate_nav_library">Biblioteca</span></button>
+        <button type="button" data-ap-nav="const"><span class="ap-ico">✪</span><span class="ap-lbl" data-i18n="auth.applicate_nav_certs">Constancias</span></button>
+        <button type="button" data-ap-nav="perfil"><span class="ap-ico">●</span><span class="ap-lbl" data-i18n="auth.applicate_nav_profile">Mi perfil</span></button>
+      </nav>
+    </aside>
+
+    <div class="ap-shell">
+      <header class="ap-head">
+        <input class="ap-head__search" type="search" disabled data-i18n-placeholder="auth.applicate_search" placeholder="Buscar (próximamente)">
+        <div class="ap-head__right">
+          <div class="ap-avatar" title="Admin">NP</div>
+        </div>
+      </header>
+
+      <main class="ap-main">
+        <div class="ap-admin-bar">
+          <span data-i18n="auth.applicate_admin_preview">Vista previa admin · el público aún no entra.</span>
+          <button type="button" class="ap-btn ap-btn-ghost" id="apLogoutBtn" data-i18n="auth.applicate_logout">Salir</button>
+        </div>
+        <p class="ap-msg warn" id="apTablesNote" hidden></p>
+
+        <section class="ap-panel is-on" data-ap-panel="inicio">
+          <div class="ap-hero">
+            <div class="ap-hero__copy">
+              <h2 data-i18n="auth.applicate_welcome">Bienvenido a Applicate</h2>
+              <p data-i18n="auth.applicate_soon_lead">Formación técnica para una agricultura más productiva y sostenible.</p>
+            </div>
+          </div>
+          <div class="ap-section-title">
+            <h3 data-i18n="auth.applicate_available">Cursos disponibles</h3>
+            <span class="ap-count" id="apCourseCount">Disponibles 0 · Comprados 0</span>
+          </div>
+          <div class="ap-grid" id="apCourseGrid">
+            <article class="ap-slot is-locked">
+              <div class="ap-slot__cover" data-i18n="auth.applicate_slot_cover">Portada cuando se suba</div>
+              <div class="ap-slot__body">
+                <h3 data-i18n="auth.applicate_slot_title">Espacio del primer curso</h3>
+                <p data-i18n="auth.applicate_slot_line">Vacío por ahora. Al cargar el curso aquí se verá la portada y el candado o Ver.</p>
+                <div class="ap-slot__actions">
+                  <button type="button" class="ap-lock-btn" data-ap-buy>
+                    <span class="ap-lock" aria-hidden="true">🔒</span>
+                    <span data-i18n="auth.applicate_buy">Comprar</span>
+                  </button>
+                  <button type="button" class="ap-save-btn" data-ap-save data-i18n="auth.applicate_save">Guardar</button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="ap-panel" data-ap-panel="cursos">
+          <div class="ap-section-title">
+            <h2 data-i18n="auth.applicate_nav_courses">Mis cursos</h2>
+            <span class="ap-count" id="apOwnedCount">0</span>
+          </div>
+          <p class="ap-muted" data-i18n="auth.applicate_empty_owned">Los que se compren o tú asignes aparecen aquí, abiertos, de por vida.</p>
+          <ul class="ap-list" id="apOwnedList">
+            <li class="ap-list__empty" data-i18n="auth.applicate_empty_owned_box">Todavía no hay cursos asignados.</li>
+          </ul>
+        </section>
+
+        <section class="ap-panel" data-ap-panel="biblio">
+          <h2 data-i18n="auth.applicate_nav_library">Biblioteca</h2>
+          <div class="ap-split" style="margin-top:14px;">
+            <div class="ap-box">
+              <h3 data-i18n="auth.applicate_owned">Para ver (comprados)</h3>
+              <ul class="ap-list" id="apBiblioOwned">
+                <li class="ap-list__empty" data-i18n="auth.applicate_empty_owned_box">Todavía no hay cursos asignados.</li>
+              </ul>
+            </div>
+            <div class="ap-box">
+              <h3 data-i18n="auth.applicate_saved">Guardados para después</h3>
+              <ul class="ap-list" id="apBiblioSaved">
+                <li class="ap-list__empty" data-i18n="auth.applicate_empty_saved">Aquí irán los que se marquen para más tarde.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="ap-panel" data-ap-panel="const">
+          <h2 data-i18n="auth.applicate_nav_certs">Constancias</h2>
+          <p class="ap-muted" data-i18n="auth.applicate_empty_certs">Al terminar un curso, la constancia sale aquí.</p>
+          <ul class="ap-list" id="apCertList"></ul>
+          <article class="ap-diploma" aria-hidden="true">
+            <div class="ap-diploma__logos">
+              <img src="../assets/Applicate Logo.png" alt="">
+              <img src="../assets/NutriPlant_PRO_blue.png" alt="">
+            </div>
+            <p class="ap-diploma__word">CONSTANCIA</p>
+            <p class="ap-diploma__course" data-i18n="auth.applicate_diploma_course">Título del curso (cuando exista)</p>
+            <div class="ap-diploma__sign">
+              <strong>José de Jesús Ávila Mendoza</strong>
+              <span>NutriPlant PRO</span>
+            </div>
+          </article>
+        </section>
+
+        <section class="ap-panel" data-ap-panel="perfil">
+          <h2 data-i18n="auth.applicate_nav_profile">Mi perfil</h2>
+          <p class="ap-muted" data-i18n="auth.applicate_admin_profile">Entraste con la cuenta admin de NutriPlant PRO. Esta vista es solo para ir construyendo Applicate.</p>
+          <div id="apProfileBox"></div>
+        </section>
+
+        <section class="ap-panel" data-ap-panel="aula">
+          <div class="ap-aula-head">
+            <button type="button" class="ap-btn ap-btn-ghost" data-ap-nav="inicio" data-i18n="auth.applicate_back">← Inicio</button>
+            <h2 id="apAulaTitle" data-i18n="auth.applicate_aula_title">Aula del curso</h2>
+          </div>
+          <div class="ap-tabs">
+            <button type="button" class="is-on" data-ap-tab="clases" data-i18n="auth.applicate_tab_lessons">Clases</button>
+            <button type="button" data-ap-tab="archivos" data-i18n="auth.applicate_tab_files">Archivos</button>
+          </div>
+          <div data-ap-tabpanel="clases">
+            <div class="ap-video" id="apVideoStage">
+              <div id="apVideoInner">
+                <div class="ap-video__play">▶</div>
+                <div data-i18n="auth.applicate_video_empty">El video se ve aquí. Pantalla completa o en esta ventana, con el marco de Applicate.</div>
+              </div>
+              <button type="button" class="ap-video__fs" id="apVideoFs" data-i18n="auth.applicate_video_fs">Pantalla completa</button>
+            </div>
+            <ul class="ap-list" id="apLessonList"></ul>
+          </div>
+          <div data-ap-tabpanel="archivos" hidden>
+            <div class="ap-files" id="apFilesBox" data-i18n="auth.applicate_files_empty">PDF, Excel o Word del curso. Vacío hasta que se carguen por terminal.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="ap-sheet" id="apBuySheet" hidden>
+    <div class="ap-sheet__card" role="dialog" aria-labelledby="apBuyTitle">
+      <h3 id="apBuyTitle" data-i18n="auth.applicate_buy_title">Comprar curso</h3>
+      <p class="ap-muted" data-i18n="auth.applicate_buy_lead">Elige cómo pagar. PayPal habilita solo. Transferencia: te escribo y yo lo abro en admin.</p>
+      <div id="apBuyMsg" class="ap-msg" role="status"></div>
+      <button type="button" class="ap-btn" id="apBuyPaypal" data-i18n="auth.applicate_buy_paypal">Pagar con PayPal</button>
+      <a class="ap-btn ap-btn-wa" id="apBuyWa" target="_blank" rel="noopener noreferrer" href="https://wa.me/13868044542?text=Hola%2C%20quiero%20pagar%20un%20curso%20de%20Applicate%20por%20transferencia.">
+        <span data-i18n="auth.applicate_buy_wa">Pagar por transferencia · WhatsApp</span>
+      </a>
+      <button type="button" class="ap-sheet__close" id="apBuyClose" data-i18n="common.cancel">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="applicate-data.js?v=1"></script>
+  <script src="applicate-gate.js?v=4"></script>
+</body>
+</html>

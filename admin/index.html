@@ -26,6 +26,7 @@
     <script src="../assets/np-fertigation-dist-suggest.js?v=20260817d"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
+    <script src="../applicate/applicate-data.js?v=1"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
     <script src="../nutriplant-access-pin.js"></script>
     <style>
@@ -1977,6 +1978,11 @@
                     <div class="stat-number" id="pendingSubscriptions">-</div>
                     <div class="stat-label">⏳ Suscripciones Pendientes</div>
                 </div>
+                <div class="stat-card" style="background:#ecfdf5;">
+                    <div class="stat-number" id="applicateStudentsCount">0</div>
+                    <div class="stat-label">🎓 Alumnos Applicate</div>
+                    <div class="stat-sub" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;">Registro independiente de PRO (`aplicate_profiles`).</div>
+                </div>
             </div>
             
             <div class="admin-sections">
@@ -2026,6 +2032,17 @@
                 </div>
                 
                 <div class="admin-section">
+                    <h3 class="section-title">🎓 Applicate</h3>
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 10px;">Alumnos, catálogo y habilitar cursos (independiente de la suscripción PRO). Mapa: usa el de conexiones con capa Applicate, cuando exista.</p>
+                    <button class="btn-admin" onclick="showApplicateAdmin('alumnos', event)">Ver alumnos</button>
+                    <button class="btn-admin secondary" onclick="showApplicateAdmin('asignar', event)">Asignar cursos</button>
+                    <button class="btn-admin secondary" onclick="showApplicateAdmin('catalogo', event)">Catálogo de cursos</button>
+                    <button class="btn-admin secondary" onclick="showApplicateAdmin('compras', event)">Compras / habilitaciones</button>
+                    <button class="btn-admin secondary" onclick="showApplicateAdmin('exportar', event)">Exportar alumnos</button>
+                    <a class="btn-admin secondary" href="../applicate/" style="display:inline-block;text-decoration:none;text-align:center;">Abrir Applicate</a>
+                </div>
+
+                <div class="admin-section">
                     <h3 class="section-title">📊 Entradas al panel</h3>
                     <p style="color: #64748b; font-size: 14px; margin-bottom: 10px;">Cuántas veces entran los suscriptores al dashboard por mes (throttle 1 por hora). Ubicación aproximada por IP para el mapa.</p>
                     <button class="btn-admin" onclick="showDashboardVisits(event)">Ver entradas por usuario / mes</button>
@@ -2055,6 +2072,8 @@
                 -->
             </div>
             
+            <div id="applicateAdminView" style="display:none;margin:18px 0 8px;padding:16px 16px 14px;background:#fff;border:1px solid #bbf7d0;border-radius:12px;"></div>
+
             <div id="dashboardMessageZone" style="margin-top: 24px; margin-bottom: 8px; min-height: 0;">
                 <div id="dashboardErrorMessage" class="error-message" style="display: none;"></div>
                 <div id="dashboardSuccessMessage" class="success-message" style="display: none;"></div>
@@ -4289,6 +4308,9 @@
             if (elAdminMonth) elAdminMonth.textContent = (localAdmin ? localAdmin.month_usd_est : 0).toFixed(4);
             document.getElementById('activeUsers').textContent = stats.activeUsers;
             document.getElementById('pendingSubscriptions').textContent = stats.pendingSubscriptions;
+            if (typeof window.refreshApplicateStudentCount === 'function') {
+                window.refreshApplicateStudentCount();
+            }
             // TU USO (CHAT ADMIN): Supabase cuenta en todos los equipos (mismo criterio que usuarios: estimado por petición)
             if (typeof window.getSupabaseClient === 'function') {
                 var supabaseClient = window.getSupabaseClient();
@@ -20287,6 +20309,279 @@
             }
         }
         window.closeConnectionsMapModal = closeConnectionsMapModal;
+
+        function applicateAdminEsc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function applicateAdminClient() {
+            return (typeof window.getSupabaseClient === 'function' && window.getSupabaseClient()) || null;
+        }
+
+        function applicateAdminData() {
+            return window.ApplicateData || null;
+        }
+
+        function applicateAdminFmtDate(iso) {
+            if (!iso) return '—';
+            try { return new Date(iso).toLocaleString(); } catch (e) { return String(iso); }
+        }
+
+        window.refreshApplicateStudentCount = async function () {
+            var el = document.getElementById('applicateStudentsCount');
+            var d = applicateAdminData();
+            var sb = applicateAdminClient();
+            if (!el || !d || !sb) return;
+            var ping = await d.pingTables(sb);
+            if (!ping || !ping.ok) {
+                el.textContent = '—';
+                return;
+            }
+            var students = await d.listStudents(sb);
+            el.textContent = String((students || []).length);
+        };
+
+        window.showApplicateAdmin = async function (view, ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            var box = document.getElementById('applicateAdminView');
+            if (!box) return;
+            var titles = {
+                alumnos: 'Alumnos Applicate',
+                asignar: 'Asignar cursos',
+                catalogo: 'Catálogo de cursos',
+                compras: 'Compras / habilitaciones',
+                exportar: 'Exportar alumnos'
+            };
+            box.style.display = 'block';
+            box.innerHTML = '<h3 style="margin:0 0 8px;color:#14532d;">🎓 ' + applicateAdminEsc(titles[view] || 'Applicate') + '</h3><p style="color:#64748b;">Cargando…</p>';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            var d = applicateAdminData();
+            var sb = applicateAdminClient();
+            if (!d || !sb) {
+                box.innerHTML = '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Applicate</h3><p>No hay cliente Supabase. Revisa sesión admin.</p>';
+                return;
+            }
+            var ping = await d.pingTables(sb);
+            if (!ping || !ping.ok) {
+                box.innerHTML =
+                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 ' + applicateAdminEsc(titles[view] || 'Applicate') + '</h3>' +
+                    '<p style="color:#b45309;line-height:1.5;">Aún no existen las tablas. En Supabase SQL Editor corre <code>supabase-aplicate-tables.sql</code> (pasos en <code>docs/PASOS-SUPABASE-APLICATE.md</code>).</p>' +
+                    (ping && ping.error ? '<p style="color:#64748b;font-size:13px;">' + applicateAdminEsc(ping.error) + '</p>' : '');
+                return;
+            }
+
+            var students = await d.listStudents(sb);
+            var courses = await d.listAllCourses(sb);
+            var purchases = await d.listAllPurchases(sb);
+            var courseName = {};
+            (courses || []).forEach(function (c) { courseName[c.id] = c.title || c.id; });
+            var studentName = {};
+            (students || []).forEach(function (s) { studentName[s.id] = (s.full_name || s.email || s.id); });
+
+            function tableWrap(html) {
+                return '<div style="overflow:auto;margin-top:10px;">' + html + '</div>';
+            }
+            function th() {
+                return 'style="text-align:left;padding:8px 10px;border-bottom:1px solid #bbf7d0;font-size:13px;color:#14532d;"';
+            }
+            function td() {
+                return 'style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:top;"';
+            }
+
+            if (view === 'alumnos') {
+                var rows = (students || []).map(function (s) {
+                    return '<tr><td ' + td() + '>' + applicateAdminEsc(s.full_name || '—') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(s.email || '') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc([s.phone_code, s.phone].filter(Boolean).join(' ') || '—') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(s.country || '—') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(s.profession || '—') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(applicateAdminFmtDate(s.created_at)) + '</td></tr>';
+                }).join('');
+                box.innerHTML =
+                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Alumnos Applicate</h3>' +
+                    '<p style="margin:0 0 8px;color:#334155;">' + (students || []).length + ' en <code>aplicate_profiles</code>. El registro público sigue cerrado.</p>' +
+                    tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+                        '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Teléfono</th><th ' + th() + '>País</th><th ' + th() + '>Profesión</th><th ' + th() + '>Alta</th>' +
+                        '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="6">Todavía no hay alumnos.</td></tr>') + '</tbody></table>');
+                return;
+            }
+
+            if (view === 'catalogo') {
+                var cRows = (courses || []).map(function (c) {
+                    var pubLabel = c.published ? 'Publicado' : 'Borrador';
+                    return '<tr><td ' + td() + '>' + applicateAdminEsc(c.title || '—') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(c.summary || '') + '</td><td ' + td() + '>' +
+                        (c.price_usd != null ? '$' + Number(c.price_usd).toFixed(2) : '—') + '</td><td ' + td() + '>' +
+                        pubLabel + '</td><td ' + td() + '>' +
+                        '<button type="button" class="btn-admin secondary" data-ap-pub="' + applicateAdminEsc(c.id) + '" data-ap-on="' + (c.published ? '0' : '1') + '">' +
+                        (c.published ? 'Ocultar' : 'Publicar') + '</button></td></tr>';
+                }).join('');
+                box.innerHTML =
+                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Catálogo de cursos</h3>' +
+                    '<p style="margin:0 0 10px;color:#334155;">Los borradores no se ven en el dashboard del alumno. No publiques hasta que el material esté cargado.</p>' +
+                    '<form id="apAdminCourseForm" style="display:grid;gap:8px;max-width:520px;margin-bottom:14px;">' +
+                        '<input name="course_title" required placeholder="Título (aún puede ser interno)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<textarea name="course_summary" placeholder="Resumen" rows="2" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></textarea>' +
+                        '<input name="course_price" type="number" min="0" step="0.01" placeholder="Precio USD (opcional)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<button type="submit" class="btn-admin">Guardar borrador</button>' +
+                        '<div id="apAdminCourseMsg" style="font-size:13px;color:#64748b;"></div>' +
+                    '</form>' +
+                    tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+                        '<th ' + th() + '>Título</th><th ' + th() + '>Resumen</th><th ' + th() + '>Precio</th><th ' + th() + '>Estado</th><th ' + th() + '></th>' +
+                        '</tr></thead><tbody>' + (cRows || '<tr><td ' + td() + ' colspan="5">0 cursos. El alumno ve el recuadro vacío.</td></tr>') + '</tbody></table>');
+                var form = document.getElementById('apAdminCourseForm');
+                if (form) {
+                    form.addEventListener('submit', async function (e) {
+                        e.preventDefault();
+                        var msg = document.getElementById('apAdminCourseMsg');
+                        var res = await d.createCourse(sb, {
+                            title: form.course_title.value,
+                            summary: form.course_summary.value,
+                            price_usd: form.course_price.value
+                        });
+                        if (msg) msg.textContent = res.ok ? 'Borrador guardado. Sigue oculto para el público.' : (res.error || 'No se pudo guardar');
+                        if (res.ok) window.showApplicateAdmin('catalogo');
+                    });
+                }
+                box.querySelectorAll('[data-ap-pub]').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        var ok = confirm(btn.getAttribute('data-ap-on') === '1'
+                            ? '¿Publicar este curso? El alumno lo verá en el catálogo.'
+                            : '¿Ocultar este curso del catálogo público?');
+                        if (!ok) return;
+                        await d.setPublished(sb, btn.getAttribute('data-ap-pub'), btn.getAttribute('data-ap-on') === '1');
+                        window.showApplicateAdmin('catalogo');
+                    });
+                });
+                return;
+            }
+
+            if (view === 'asignar') {
+                var optStudents = (students || []).map(function (s) {
+                    return '<option value="' + applicateAdminEsc(s.id) + '">' + applicateAdminEsc((s.full_name || '') + ' · ' + (s.email || '')) + '</option>';
+                }).join('');
+                var optCourses = (courses || []).map(function (c) {
+                    return '<option value="' + applicateAdminEsc(c.id) + '">' + applicateAdminEsc((c.title || 'Sin título') + (c.published ? '' : ' (borrador)')) + '</option>';
+                }).join('');
+                box.innerHTML =
+                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Asignar cursos</h3>' +
+                    '<p style="margin:0 0 10px;color:#334155;">Transferencia, regalo o promo. También puedes buscar por correo (PRO o Applicate) y emitir constancia.</p>' +
+                    '<form id="apAdminAssignForm" style="display:grid;gap:8px;max-width:560px;">' +
+                        '<label>Alumno ya en Applicate<br><select name="user_id" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"><option value="">—</option>' + optStudents + '</select></label>' +
+                        '<label>O correo (crea fila de alumno si hace falta)<br><input name="email" type="email" placeholder="admin@nutriplantpro.com" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                        '<label>Curso<br><select name="course_id" required style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' + (optCourses || '<option value="">No hay cursos</option>') + '</select></label>' +
+                        '<label>Origen<br><select name="source" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                            '<option value="admin">admin</option><option value="transferencia">transferencia</option>' +
+                            '<option value="regalo">regalo</option><option value="promo">promo</option><option value="paypal">paypal</option>' +
+                        '</select></label>' +
+                        '<input name="note" placeholder="Nota (opcional)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" name="cert"> Emitir constancia ahora</label>' +
+                        '<button type="submit" class="btn-admin">Habilitar curso</button>' +
+                        '<div id="apAdminAssignMsg" style="font-size:13px;color:#64748b;"></div>' +
+                    '</form>';
+                var aform = document.getElementById('apAdminAssignForm');
+                if (aform) {
+                    aform.addEventListener('submit', async function (e) {
+                        e.preventDefault();
+                        var msg = document.getElementById('apAdminAssignMsg');
+                        var userId = String(aform.user_id.value || '').trim();
+                        var email = String(aform.email.value || '').trim();
+                        var courseId = String(aform.course_id.value || '').trim();
+                        if (!courseId) {
+                            if (msg) msg.textContent = 'Falta el curso.';
+                            return;
+                        }
+                        var sessionUser = null;
+                        try {
+                            var sess = await sb.auth.getUser();
+                            sessionUser = sess && sess.data && sess.data.user;
+                        } catch (err) { /* ignore */ }
+                        if (!userId && email) {
+                            userId = await d.findUserIdByEmail(sb, email);
+                        }
+                        if (!userId && sessionUser && email && String(sessionUser.email || '').toLowerCase() === email.toLowerCase()) {
+                            userId = sessionUser.id;
+                        }
+                        if (!userId) {
+                            if (msg) msg.textContent = 'No encontré ese correo en profiles ni en aplicate_profiles.';
+                            return;
+                        }
+                        var ensure = await d.ensureStudentRow(sb, userId, {
+                            email: email || (studentName[userId] || ''),
+                            full_name: studentName[userId] || ''
+                        });
+                        if (!ensure.ok) {
+                            if (msg) msg.textContent = ensure.error || 'No se pudo crear el alumno.';
+                            return;
+                        }
+                        var assigned = await d.assignCourse(sb, userId, courseId, aform.source.value, aform.note.value, sessionUser && sessionUser.id);
+                        if (!assigned.ok) {
+                            if (msg) msg.textContent = assigned.error || 'No se pudo asignar.';
+                            return;
+                        }
+                        if (aform.cert.checked) {
+                            var cert = await d.issueCertificate(sb, userId, courseId);
+                            if (!cert.ok) {
+                                if (msg) msg.textContent = 'Curso habilitado, pero la constancia falló: ' + (cert.error || '');
+                                if (typeof window.refreshApplicateStudentCount === 'function') window.refreshApplicateStudentCount();
+                                return;
+                            }
+                        }
+                        if (msg) msg.textContent = 'Curso habilitado de por vida.';
+                        if (typeof window.refreshApplicateStudentCount === 'function') window.refreshApplicateStudentCount();
+                    });
+                }
+                return;
+            }
+
+            if (view === 'compras') {
+                var pRows = (purchases || []).map(function (p) {
+                    return '<tr><td ' + td() + '>' + applicateAdminEsc(studentName[p.user_id] || p.user_id) + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(courseName[p.course_id] || p.course_id) + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(p.source || '') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(p.note || '') + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(applicateAdminFmtDate(p.created_at)) + '</td></tr>';
+                }).join('');
+                box.innerHTML =
+                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Compras / habilitaciones</h3>' +
+                    '<p style="margin:0 0 8px;color:#334155;">PayPal (cuando se conecte), transferencia, regalo o promo. ' + (purchases || []).length + ' fila(s).</p>' +
+                    tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+                        '<th ' + th() + '>Alumno</th><th ' + th() + '>Curso</th><th ' + th() + '>Origen</th><th ' + th() + '>Nota</th><th ' + th() + '>Fecha</th>' +
+                        '</tr></thead><tbody>' + (pRows || '<tr><td ' + td() + ' colspan="5">Tabla vacía hasta la primera habilitación.</td></tr>') + '</tbody></table>');
+                return;
+            }
+
+            if (view === 'exportar') {
+                var csv = ['nombre,correo,telefono,pais,estado,profesion,alta'];
+                (students || []).forEach(function (s) {
+                    function cell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+                    csv.push([s.full_name, s.email, [s.phone_code, s.phone].filter(Boolean).join(' '), s.country, s.state, s.profession, s.created_at].map(cell).join(','));
+                });
+                box.innerHTML =
+                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Exportar alumnos</h3>' +
+                    '<p style="margin:0 0 10px;color:#334155;">' + (students || []).length + ' fila(s) en CSV.</p>' +
+                    '<button type="button" class="btn-admin" id="apAdminExportBtn">Descargar CSV</button>';
+                var exp = document.getElementById('apAdminExportBtn');
+                if (exp) {
+                    exp.addEventListener('click', function () {
+                        var blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8' });
+                        var a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'applicate-alumnos.csv';
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                    });
+                }
+                return;
+            }
+
+            box.innerHTML = '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Applicate</h3><p>Vista no reconocida.</p>';
+        };
         
     </script>
     <script src="../apply-no-traducir.js"></script>

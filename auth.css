@@ -1867,6 +1867,68 @@
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
 }
 
+/* Applicate — franja compacta (no estira la columna ni el panel de redes) */
+.login-applicate-teaser {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
+  margin: 0 0 12px;
+  padding: 0 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #0f172a 0%, #0b1f17 70%, #14532d 160%);
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.login-applicate-teaser:hover,
+.login-applicate-teaser:focus-visible {
+  border-color: rgba(134, 239, 172, 0.5);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  outline: none;
+}
+.login-applicate-teaser__logo {
+  flex-shrink: 0;
+  height: 34px;
+  width: auto;
+  max-width: 132px;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+}
+.login-applicate-teaser__copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+}
+.login-applicate-teaser__kicker {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #86efac;
+  line-height: 1.15;
+}
+.login-applicate-teaser__soon {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+}
+.login-applicate-teaser__line {
+  display: none;
+}
+
 /* Login: recuadro verde herramientas gratuitas — logo N hoja azul + texto al ancho útil */
 .login-free-tools-banner {
   display: flex;
