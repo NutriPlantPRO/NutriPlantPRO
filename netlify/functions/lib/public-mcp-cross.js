@@ -7,7 +7,6 @@ const core = require('./public-mcp-core');
 const deep = require('./public-mcp-subscriber-read');
 
 const DASHBOARD_URL = 'https://nutriplantpro.com/dashboard.html';
-const LOGIN_URL = 'https://nutriplantpro.com/login.html';
 const VPD_OPT_MIN = 0.5;
 const VPD_OPT_MAX = 1.5;
 
@@ -52,12 +51,8 @@ function buildDashboardDeepLink(projectId, sectionKey) {
   const qs = params.toString();
   return {
     url: DASHBOARD_URL + (qs ? '?' + qs : ''),
-    login_url: LOGIN_URL,
     section_key: sec ? sec.key : null,
-    section_select: sec ? sec.select : null,
-    section_label: sec ? sec.label : null,
-    note:
-      'Abre dashboard ya logueado. El dashboard lee np_project + np_section y abre proyecto/sección. Sin sesión → login.'
+    section_label: sec ? sec.label : null
   };
 }
 
@@ -75,7 +70,6 @@ function projectDeepLinks(projectId, projectName) {
   ];
   return {
     ok: true,
-    domain: 'nutriplant_subscriber',
     project_id: projectId || null,
     project_name: projectName || null,
     dashboard_home: DASHBOARD_URL,
@@ -86,9 +80,7 @@ function projectDeepLinks(projectId, projectName) {
         label: built.section_label,
         url: built.url
       };
-    }),
-    free_tools_hub: LOGIN_URL,
-    note: 'Deep links al UI del suscriptor. Requiere cuenta iniciada en el navegador.'
+    })
   };
 }
 
@@ -285,7 +277,6 @@ function crossProjectSignals(data, params) {
 
   return {
     ok: true,
-    domain: 'nutriplant_subscriber',
     snapshot: {
       foliar_ca: foliarCa,
       foliar_k: foliarK,
@@ -312,8 +303,7 @@ function crossProjectSignals(data, params) {
       foliar_window: chapter('ventanas-aplicacion-foliar'),
       meq: chapter('porcentaje-meq-aniones-cationes')
     },
-    all_module_links: links.links,
-    note: 'Cruce orientativo sobre datos del expediente. Decide el agrónomo.'
+    all_module_links: links.links
   };
 }
 

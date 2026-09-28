@@ -358,9 +358,7 @@ function listCatalog() {
       version: freeToolsCatalog.version,
       login: LOGIN_URL,
       tools: (freeToolsCatalog.tools || []).map((t) => freeToolCite(t))
-    },
-    wall:
-      'Plugin público: manual + free tools + (si sesión) su cuenta. No admin, Socio, Plan PRO, AirCI, Invest PRO.'
+    }
   };
 }
 

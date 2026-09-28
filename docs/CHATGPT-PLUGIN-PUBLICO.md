@@ -33,3 +33,13 @@ No hace falta una variable nueva en Netlify (el paquete de env ya está al tope 
 El plugin firma el login con un derivado de un secreto **que ya existe** (`AGROCLIMATE_TOKEN_SECRET`, o si no `AGROCLIMATE_CRON_SECRET` / `ADMIN_ACCESS_PIN`). No usa el token del Socio.
 
 Si más adelante hay hueco en las variables, se puede poner `NUTRIPLANT_PUBLIC_MCP_OAUTH_SECRET` y esa gana. No es obligatorio.
+
+## Rechazo OpenAI (privacidad) — corregido
+
+OpenAI rechazó v1.0.0: *“returns user-related data not disclosed in your privacy policy”*.
+
+Ajuste:
+- Tools de suscriptor **ya no** devuelven `email`, `user_id`, `wall` ni `api_hint` en el payload.
+- `politicas-privacidad.html` tiene sección **Complemento / plugin de ChatGPT** (ES/EN) listando qué categorías sí se devuelven con sesión.
+
+Tras deploy: en ChatGPT Plugins → NutriPlant PRO → **Actualizar**, luego reenviar en el dashboard de OpenAI.

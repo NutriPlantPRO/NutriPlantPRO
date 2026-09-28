@@ -91,6 +91,8 @@ body.ap-body {
   font-weight: 800;
   font-size: 15px;
   cursor: pointer;
+  box-sizing: border-box;
+  text-align: center;
 }
 .ap-btn:disabled { opacity: 0.65; cursor: wait; }
 .ap-btn:hover:not(:disabled) { background: #15803d; }
@@ -145,9 +147,16 @@ body.ap-body {
   width: 232px;
 }
 .ap-side__brand {
-  height: 44px;
-  margin: 0 6px 18px;
-  background: url("../assets/Applicate Logo.png") center / contain no-repeat;
+  height: 52px;
+  margin: 0 4px 16px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background-color: #fff;
+  background-image: url("../assets/Applicate Logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  box-sizing: border-box;
 }
 .ap-nav { display: flex; flex-direction: column; gap: 4px; }
 .ap-nav button {
@@ -407,10 +416,30 @@ body.ap-body {
   border-radius: 16px;
   padding: 22px 20px 16px;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+  box-sizing: border-box;
+  text-align: center;
 }
-.ap-sheet__card h3 { margin: 0 0 8px; }
-.ap-sheet__card .ap-btn { margin-top: 10px; }
-.ap-btn-wa { background: #128c7e; text-decoration: none; }
+.ap-sheet__card h3 {
+  margin: 0 0 8px;
+  text-align: left;
+}
+.ap-sheet__card .ap-muted {
+  text-align: left;
+}
+.ap-sheet__card .ap-btn {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 10px;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+.ap-btn-wa {
+  background: #128c7e;
+  text-decoration: none;
+  color: #fff;
+}
 .ap-btn-wa:hover { background: #0e7a6e; }
 .ap-sheet__close {
   display: block;
@@ -421,6 +450,8 @@ body.ap-body {
   color: #64748b;
   font-weight: 700;
   cursor: pointer;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .ap-panel { display: none; }

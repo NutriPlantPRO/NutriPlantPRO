@@ -199,8 +199,6 @@ async function listMyProjects(user) {
   if (!got.ok) return got;
   return {
     ok: true,
-    domain: 'nutriplant_subscriber',
-    owner: { user_id: user.userId, email: user.email },
     count: got.rows.length,
     projects: got.rows.map((r) => ({
       id: r.id,
@@ -208,8 +206,7 @@ async function listMyProjects(user) {
       crop: cropOf(r.data),
       updated_at: r.updated_at,
       modules: summarizeProject(r).modules
-    })),
-    wall: 'Solo proyectos cuyo user_id coincide con el JWT del suscriptor. No hay roster admin.'
+    }))
   };
 }
 
@@ -250,8 +247,6 @@ async function getMyProject(user, params) {
     !params.section;
   const out = {
     ok: true,
-    domain: 'nutriplant_subscriber',
-    owner: { user_id: user.userId, email: user.email },
     project,
     flow_status: flowStatus(project),
     detail: deepRead,
@@ -268,10 +263,7 @@ async function getMyProject(user, params) {
       deepRead.labs && deepRead.labs.agua && deepRead.labs.agua.reports && deepRead.labs.agua.reports[0]
         ? deepRead.labs.agua.reports[0]
         : null,
-    programs: deepRead.programs || null,
-    api_hint:
-      'Params: project_id|q, section=all|labs|programs|enmiendas|vpd|clima|extraccion|cross|fertirriego|hidro|granular, type, stage_index, latest_only, cross=true.',
-    wall: 'Lectura restringida a este user_id. Sin token admin. Sin otros clientes. Sin Plan PRO / AirCI / admin. Solo lectura.'
+    programs: deepRead.programs || null
   };
   if (wantCross) {
     out.cross = cross.crossProjectSignals(data, {
