@@ -1597,10 +1597,41 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
+            height: calc(100dvh - 24px);
             max-height: calc(100dvh - 24px);
-            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             overscroll-behavior: contain;
+        }
+        #applicateAdminModal #applicateAdminView {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: auto;
             -webkit-overflow-scrolling: touch;
+        }
+        #applicateAdminModal .ap-admin-pages {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 16px 0 4px;
+        }
+        #applicateAdminModal .ap-admin-page {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 10px;
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: #fff;
+            color: #0f172a;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #applicateAdminModal .ap-admin-page.is-on {
+            background: #1e3a8a;
+            border-color: #1e3a8a;
+            color: #fff;
         }
         /* Mapas (proyecto / global / conexiones): por encima del visor de datos y de modales de edición. */
         #mapModal,
@@ -20555,6 +20586,16 @@
             function tableWrap(html) {
                 return '<div style="overflow:auto;margin-top:10px;">' + html + '</div>';
             }
+            function applicateAdminPager(page, total, pageSize) {
+                var pages = Math.max(1, Math.ceil(total / pageSize));
+                if (pages <= 1) return '';
+                var html = '<nav class="ap-admin-pages" aria-label="Páginas">';
+                var i;
+                for (i = 1; i <= pages; i++) {
+                    html += '<button type="button" class="ap-admin-page' + (i === page ? ' is-on' : '') + '" data-ap-page="' + i + '">' + i + '</button>';
+                }
+                return html + '</nav>';
+            }
             function th() {
                 return 'style="text-align:left;padding:8px 10px;border-bottom:1px solid #bbf7d0;font-size:13px;color:#14532d;"';
             }
@@ -20563,6 +20604,7 @@
             }
 
             if (view === 'alumnos') {
+                if (ev) window._apAdminAlumnosPage = 1;
                 var byCert = {};
                 (certificates || []).forEach(function (c) {
                     if (!byCert[c.user_id]) byCert[c.user_id] = [];
@@ -20576,7 +20618,7 @@
                 var courseOptions = (courses || []).map(function (c) {
                     return '<option value="' + applicateAdminEsc(c.id) + '">' + applicateAdminEsc((c.title || 'Sin título') + (c.price_usd != null ? ' · $' + Number(c.price_usd).toFixed(0) : '')) + '</option>';
                 }).join('');
-                var rows = (students || []).map(function (s) {
+                var allStudentRows = (students || []).map(function (s) {
                     var owned = byStudent[s.id] || [];
                     var ownedIds = {};
                     owned.forEach(function (p) { ownedIds[p.course_id] = true; });
@@ -20611,15 +20653,31 @@
                             : (courses.length ? 'Ya tiene todos' : 'No hay cursos en el catálogo')) +
                         '<div style="margin-top:8px;"><button type="button" class="btn-admin secondary" data-ap-edit="' + applicateAdminEsc(s.id) + '">Editar datos</button></div>' +
                         '</td></tr>';
-                }).join('');
-                box.innerHTML =
-                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Alumnos Applicate</h3>' +
-                    '<p style="margin:0 0 8px;color:#334155;">' + (students || []).length + ' alumno(s). Cada curso que pagó o que tú autorizas queda en la nube, de por vida. ' + (courseOptions ? '' : 'Primero guarda un curso en Catálogo.') + '</p>' +
-                    '<div id="apAdminStudentEdit"></div>' +
-                    tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
-                        '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Cursos (nube)</th><th ' + th() + '>Constancias</th><th ' + th() + '>Agregar</th>' +
-                        '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="5">Todavía no hay alumnos.</td></tr>') + '</tbody></table>');
-                box.querySelectorAll('[data-ap-give]').forEach(function (btn) {
+                });
+                function paintAlumnos() {
+                    var pageSize = 10;
+                    var pages = Math.max(1, Math.ceil(allStudentRows.length / pageSize));
+                    var page = window._apAdminAlumnosPage || 1;
+                    if (page > pages) page = pages;
+                    if (page < 1) page = 1;
+                    window._apAdminAlumnosPage = page;
+                    var rows = allStudentRows.slice((page - 1) * pageSize, page * pageSize).join('');
+                    box.innerHTML =
+                        '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Alumnos Applicate</h3>' +
+                        '<p style="margin:0 0 8px;color:#334155;">' + (students || []).length + ' alumno(s). Cada curso que pagó o que tú autorizas queda en la nube, de por vida. ' + (courseOptions ? '' : 'Primero guarda un curso en Catálogo.') + '</p>' +
+                        '<div id="apAdminStudentEdit"></div>' +
+                        tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+                            '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Cursos (nube)</th><th ' + th() + '>Constancias</th><th ' + th() + '>Agregar</th>' +
+                            '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="5">Todavía no hay alumnos.</td></tr>') + '</tbody></table>') +
+                        applicateAdminPager(page, allStudentRows.length, pageSize);
+                    box.querySelectorAll('[data-ap-page]').forEach(function (pageBtn) {
+                        pageBtn.addEventListener('click', function () {
+                            window._apAdminAlumnosPage = parseInt(pageBtn.getAttribute('data-ap-page'), 10) || 1;
+                            paintAlumnos();
+                            box.scrollTop = 0;
+                        });
+                    });
+                    box.querySelectorAll('[data-ap-give]').forEach(function (btn) {
                     btn.addEventListener('click', async function () {
                         var userId = btn.getAttribute('data-ap-give');
                         var sel = box.querySelector('[data-ap-course-for="' + userId + '"]');
@@ -20692,6 +20750,8 @@
                         holder.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     });
                 });
+                }
+                paintAlumnos();
                 return;
             }
 
@@ -20842,19 +20902,38 @@
             }
 
             if (view === 'compras') {
-                var pRows = (purchases || []).map(function (p) {
-                    return '<tr><td ' + td() + '>' + applicateAdminEsc(studentName[p.user_id] || p.user_id) + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(courseName[p.course_id] || p.course_id) + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(p.source || '') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(p.note || '') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(applicateAdminFmtDate(p.created_at)) + '</td></tr>';
-                }).join('');
-                box.innerHTML =
-                    '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Compras / habilitaciones</h3>' +
-                    '<p style="margin:0 0 8px;color:#334155;">PayPal (cuando se conecte), transferencia, regalo o promo. ' + (purchases || []).length + ' fila(s).</p>' +
-                    tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
-                        '<th ' + th() + '>Alumno</th><th ' + th() + '>Curso</th><th ' + th() + '>Origen</th><th ' + th() + '>Nota</th><th ' + th() + '>Fecha</th>' +
-                        '</tr></thead><tbody>' + (pRows || '<tr><td ' + td() + ' colspan="5">Tabla vacía hasta la primera habilitación.</td></tr>') + '</tbody></table>');
+                if (ev) window._apAdminComprasPage = 1;
+                function paintCompras() {
+                    var pageSize = 10;
+                    var all = purchases || [];
+                    var pages = Math.max(1, Math.ceil(all.length / pageSize));
+                    var page = window._apAdminComprasPage || 1;
+                    if (page > pages) page = pages;
+                    if (page < 1) page = 1;
+                    window._apAdminComprasPage = page;
+                    var pRows = all.slice((page - 1) * pageSize, page * pageSize).map(function (p) {
+                        return '<tr><td ' + td() + '>' + applicateAdminEsc(studentName[p.user_id] || p.user_id) + '</td><td ' + td() + '>' +
+                            applicateAdminEsc(courseName[p.course_id] || p.course_id) + '</td><td ' + td() + '>' +
+                            applicateAdminEsc(p.source || '') + '</td><td ' + td() + '>' +
+                            applicateAdminEsc(p.note || '') + '</td><td ' + td() + '>' +
+                            applicateAdminEsc(applicateAdminFmtDate(p.created_at)) + '</td></tr>';
+                    }).join('');
+                    box.innerHTML =
+                        '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Compras / habilitaciones</h3>' +
+                        '<p style="margin:0 0 8px;color:#334155;">PayPal (cuando se conecte), transferencia, regalo o promo. ' + all.length + ' fila(s).</p>' +
+                        tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+                            '<th ' + th() + '>Alumno</th><th ' + th() + '>Curso</th><th ' + th() + '>Origen</th><th ' + th() + '>Nota</th><th ' + th() + '>Fecha</th>' +
+                            '</tr></thead><tbody>' + (pRows || '<tr><td ' + td() + ' colspan="5">Tabla vacía hasta la primera habilitación.</td></tr>') + '</tbody></table>') +
+                        applicateAdminPager(page, all.length, pageSize);
+                    box.querySelectorAll('[data-ap-page]').forEach(function (pageBtn) {
+                        pageBtn.addEventListener('click', function () {
+                            window._apAdminComprasPage = parseInt(pageBtn.getAttribute('data-ap-page'), 10) || 1;
+                            paintCompras();
+                            box.scrollTop = 0;
+                        });
+                    });
+                }
+                paintCompras();
                 return;
             }
 
