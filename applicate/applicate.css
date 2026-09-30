@@ -740,6 +740,24 @@ body.ap-body {
 .ap-cert__go { color: #1e3a8a; font-size: 13px; font-weight: 700; flex-shrink: 0; }
 .ap-cert-back { width: auto; margin: 0 0 12px; }
 .ap-diploma-fit { width: 100%; overflow: hidden; }
+.ap-pdf-shot {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  width: 920px;
+  background: #fff;
+  z-index: -1;
+  pointer-events: none;
+}
+.ap-pdf-shot .ap-diploma {
+  display: block !important;
+  height: 620px !important;
+  transform: none !important;
+}
+.ap-pdf-shot .ap-diploma__kicker { margin: 28px 0 0 !important; }
+.ap-pdf-shot .ap-diploma__name { margin: 14px auto 12px !important; }
+.ap-pdf-shot .ap-diploma__course { margin: 28px auto 0 !important; }
+.ap-pdf-shot .ap-diploma__sign { margin: 48px auto 36px !important; }
 
 /* Constancia */
 .ap-diploma {
@@ -1118,5 +1136,23 @@ body.ap-body {
     transform: none;
   }
   .ap-side__brand { cursor: pointer; }
+  .ap-side,
+  .ap-side button,
+  .ap-side__brand {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
   .ap-main { padding: 16px 14px 40px; }
+}
+@media (max-width: 960px) and (hover: none) {
+  .ap-nav button:hover,
+  .ap-side__out:hover {
+    background: transparent;
+    color: #e2e8f0;
+  }
+  .ap-nav button.is-on,
+  .ap-nav button.is-on:hover {
+    background: #1d4ed8;
+    color: #fff;
+  }
 }

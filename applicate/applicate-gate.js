@@ -418,7 +418,7 @@
       if (!src && presenter === DEFAULT_PRESENTER) src = '../assets/firma José de Jesús Avila Mendoza.png';
       if (src) {
         signEl.onerror = function () { signEl.hidden = true; };
-        signEl.src = src;
+        signEl.src = encodeURI(src);
         signEl.hidden = false;
       } else {
         signEl.removeAttribute('src');
@@ -523,35 +523,71 @@
     });
   }
 
+  function waitSheetImages(root) {
+    var imgs = root.querySelectorAll('img');
+    return Promise.all(Array.prototype.map.call(imgs, function (img) {
+      if (!img.getAttribute('src') || img.hidden) return Promise.resolve();
+      if (img.complete) return Promise.resolve();
+      return new Promise(function (resolve) {
+        var done = function () { resolve(); };
+        img.addEventListener('load', done, { once: true });
+        img.addEventListener('error', done, { once: true });
+        setTimeout(done, 4000);
+      });
+    }));
+  }
+
   async function downloadDiploma() {
     var sheet = $('apDiploma');
     var btn = $('apDipPdf');
-    if (!sheet) return;
-    if (btn) btn.disabled = true;
-    var fit = $('apDiplomaFit');
-    var prevTransform = sheet.style.transform;
-    var prevHeight = fit ? fit.style.height : '';
-    sheet.style.transform = 'none';
-    if (fit) fit.style.height = '';
+    if (!sheet || (btn && btn.disabled)) return;
+    var label = btn ? btn.textContent : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Creando PDF…';
+    }
+    var host = document.createElement('div');
+    host.className = 'ap-pdf-shot';
+    host.setAttribute('aria-hidden', 'true');
+    var clone = sheet.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.transform = 'none';
+    host.appendChild(clone);
+    document.body.appendChild(host);
     try {
+      await waitSheetImages(clone);
+      await new Promise(function (resolve) { setTimeout(resolve, 40); });
       var html2pdf = await loadHtml2Pdf();
       var open = state.openCert;
       var course = (open && open.course) || (state.certs[0] && courseById(state.certs[0].course_id)) || (state.courses && state.courses[0]);
-      var title = (course && course.title) || 'constancia';
-      await html2pdf().set({
-        margin: 8,
-        filename: 'constancia-' + title.replace(/\s+/g, '-').toLowerCase() + '.pdf',
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      var title = ((course && course.title) || 'constancia').replace(/[^\w\-]+/g, '-').replace(/-+/g, '-').toLowerCase();
+      var job = html2pdf().set({
+        margin: 6,
+        filename: 'constancia-' + title + '.pdf',
+        image: { type: 'jpeg', quality: 0.92 },
+        html2canvas: {
+          scale: 1.5,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          imageTimeout: 8000,
+          width: 920,
+          windowWidth: 920
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      }).from(sheet).save();
+      }).from(clone).save();
+      var timeout = new Promise(function (_, reject) {
+        setTimeout(function () { reject(new Error('timeout')); }, 20000);
+      });
+      await Promise.race([job, timeout]);
     } catch (e) {
       alert('No se pudo crear el PDF. Intenta de nuevo.');
     } finally {
-      sheet.style.transform = prevTransform;
-      if (fit) fit.style.height = prevHeight;
-      fitDiploma();
-      if (btn) btn.disabled = false;
+      if (host.parentNode) host.parentNode.removeChild(host);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = label || 'Descargar PDF';
+      }
     }
   }
 
@@ -911,14 +947,16 @@
     var side = $('apSide');
     document.querySelectorAll('[data-ap-nav]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        if (narrowSide() && side && !side.classList.contains('is-open')) {
+        if (narrowSide() && side) {
           e.preventDefault();
           e.stopPropagation();
-          side.classList.add('is-open');
+          var wasOpen = side.classList.contains('is-open');
+          openPanel(btn.getAttribute('data-ap-nav'));
+          if (wasOpen) side.classList.remove('is-open');
+          else side.classList.add('is-open');
           return;
         }
         openPanel(btn.getAttribute('data-ap-nav'));
-        if (side && narrowSide()) side.classList.remove('is-open');
       });
     });
     var logout = $('apLogoutBtn');
@@ -937,6 +975,14 @@
         if (!narrowSide()) return;
         e.stopPropagation();
         side.classList.toggle('is-open');
+      });
+    }
+    if (side) {
+      side.addEventListener('click', function (e) {
+        if (!narrowSide() || side.classList.contains('is-open')) return;
+        if (e.target.closest && e.target.closest('[data-ap-nav], .ap-side__out, .ap-side__brand')) return;
+        e.stopPropagation();
+        side.classList.add('is-open');
       });
     }
     document.addEventListener('click', function (e) {
