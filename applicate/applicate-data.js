@@ -70,7 +70,7 @@
 
   async function listStudents(sb) {
     if (!sb) return [];
-    var res = await sb.from('aplicate_profiles').select('id, full_name, email, phone, phone_code, country, state, profession, created_at').order('created_at', { ascending: false });
+    var res = await sb.from('aplicate_profiles').select('id, full_name, email, phone, phone_code, country, state, postal, profession, created_at').order('created_at', { ascending: false });
     if (res.error) return [];
     return res.data || [];
   }
@@ -94,7 +94,8 @@
     if (paypalId) row.paypal_id = paypalId;
     var res = await sb.from('aplicate_purchases').upsert(row, { onConflict: 'user_id,course_id' });
     if (res.error) return { ok: false, error: res.error.message };
-    return { ok: true };
+    var cert = await issueCertificate(sb, userId, courseId, null, null);
+    return { ok: true, folio: cert && cert.folio };
   }
 
   async function setCourseMeta(sb, courseId, fields) {
@@ -116,12 +117,24 @@
         summary: 'Sin portada todavía. Precio de prueba.',
         price_usd: 30,
         sort_order: 1,
-        presenter: 'José de Jesús Ávila Mendoza'
+        presenter: 'Ing. José de Jesús Ávila Mendoza'
       });
     }
     var first = all[0];
-    if (first.price_usd == null || first.price_usd === '') {
-      var upd = await sb.from('aplicate_courses').update({ price_usd: 30 }).eq('id', first.id);
+    var patch = {};
+    if (first.price_usd == null || first.price_usd === '') patch.price_usd = 30;
+    var bare = String(first.presenter || '').replace(/^ing\.?\s+/i, '').trim().toLowerCase();
+    var withIng = 'Ing. José de Jesús Ávila Mendoza';
+    if ((!bare || bare === 'josé de jesús ávila mendoza' || bare === 'jose de jesus avila mendoza') && String(first.presenter || '').trim() !== withIng) {
+      patch.presenter = withIng;
+    }
+    if (Object.keys(patch).length) {
+      var upd = await sb.from('aplicate_courses').update(patch).eq('id', first.id);
+      if (upd.error && patch.presenter && /presenter|column/i.test(upd.error.message || '')) {
+        delete patch.presenter;
+        if (Object.keys(patch).length) upd = await sb.from('aplicate_courses').update(patch).eq('id', first.id);
+        else upd = { error: null };
+      }
       if (upd.error) return { ok: false, error: upd.error.message };
     }
     return { ok: true, id: first.id };
@@ -196,11 +209,96 @@
     return { ok: true };
   }
 
+  async function updateStudent(sb, userId, fields) {
+    if (!sb || !userId) return { ok: false, error: 'faltan datos' };
+    var text = function (v) { return String(v == null ? '' : v).trim(); };
+    var row = {
+      full_name: text(fields && fields.full_name),
+      email: text(fields && fields.email),
+      phone: text(fields && fields.phone) || null,
+      phone_code: text(fields && fields.phone_code) || null,
+      country: text(fields && fields.country) || null,
+      state: text(fields && fields.state) || null,
+      postal: text(fields && fields.postal) || null,
+      profession: text(fields && fields.profession) || null
+    };
+    var res = await sb.from('aplicate_profiles').update(row).eq('id', userId);
+    if (res.error) return { ok: false, error: res.error.message };
+    return { ok: true };
+  }
+
   async function getProfile(sb, userId) {
     if (!sb || !userId) return null;
     var res = await sb.from('aplicate_profiles').select('id, full_name, email, phone, phone_code, country, state, postal, profession').eq('id', userId).maybeSingle();
-    if (res.error) return null;
-    return res.data || null;
+    var data = res.error ? null : (res.data || null);
+    var current = data && data.full_name ? String(data.full_name).trim() : '';
+    if (!current || current.indexOf('@') !== -1) {
+      var pro = await sb.from('profiles').select('name, email').eq('id', userId).maybeSingle();
+      var proName = pro.data && pro.data.name ? String(pro.data.name).trim() : '';
+      if (proName && proName.indexOf('@') === -1) {
+        if (!data) data = { id: userId, full_name: proName, email: (pro.data && pro.data.email) || '' };
+        else data.full_name = proName;
+      }
+    }
+    return data;
+  }
+
+  function countryCode(country) {
+    var raw = String(country || '').trim();
+    if (!raw) return 'XX';
+    var key = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    var known = {
+      mexico: 'MX',
+      'estados unidos': 'US',
+      'united states': 'US',
+      usa: 'US',
+      canada: 'CA',
+      colombia: 'CO',
+      peru: 'PE',
+      chile: 'CL',
+      argentina: 'AR',
+      espana: 'ES',
+      spain: 'ES',
+      guatemala: 'GT',
+      ecuador: 'EC',
+      bolivia: 'BO',
+      'costa rica': 'CR',
+      panama: 'PA',
+      honduras: 'HN',
+      'el salvador': 'SV',
+      nicaragua: 'NI',
+      'republica dominicana': 'DO',
+      brasil: 'BR',
+      brazil: 'BR',
+      uruguay: 'UY',
+      paraguay: 'PY',
+      venezuela: 'VE'
+    };
+    if (known[key]) return known[key];
+    if (/^[a-z]{2}$/i.test(key)) return key.toUpperCase();
+    var letters = key.replace(/[^a-z]/g, '');
+    return (letters.slice(0, 2) || 'XX').toUpperCase();
+  }
+
+  function nameInitial(name) {
+    var n = String(name || '').trim();
+    if (!n || n.indexOf('@') !== -1) return 'X';
+    var ch = n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').charAt(0);
+    return (ch || 'X').toUpperCase();
+  }
+
+  function makeFolio(when, country, fullName) {
+    var d = when instanceof Date && !isNaN(when.getTime()) ? when : new Date();
+    function pad(n) { return n < 10 ? '0' + n : String(n); }
+    var stamp = String(d.getFullYear()) + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes());
+    return countryCode(country) + '-' + nameInitial(fullName) + '-' + stamp;
+  }
+
+  async function listAllCertificates(sb) {
+    if (!sb) return [];
+    var res = await sb.from('aplicate_certificates').select('id, user_id, course_id, folio, issued_at').order('issued_at', { ascending: false });
+    if (res.error) return [];
+    return res.data || [];
   }
 
   async function listCertificates(sb, userId) {
@@ -210,17 +308,43 @@
     return res.data || [];
   }
 
-  async function issueCertificate(sb, userId, courseId) {
+  async function issueCertificate(sb, userId, courseId, person, issuedAt) {
     if (!sb || !userId || !courseId) return { ok: false, error: 'faltan datos' };
-    var folio = 'AP-' + Date.now().toString(36).toUpperCase();
+    var existing = await sb.from('aplicate_certificates').select('folio').eq('user_id', userId).eq('course_id', courseId).maybeSingle();
+    if (existing.data && existing.data.folio) return { ok: true, folio: existing.data.folio, already: true };
+    var who = person || {};
+    if (!who.full_name || !who.country) {
+      var prof = await sb.from('aplicate_profiles').select('full_name, country').eq('id', userId).maybeSingle();
+      if (prof.data) {
+        if (!who.full_name) who.full_name = prof.data.full_name || '';
+        if (!who.country) who.country = prof.data.country || '';
+      }
+    }
+    var when = issuedAt ? new Date(issuedAt) : new Date();
+    if (isNaN(when.getTime())) when = new Date();
+    var folio = makeFolio(when, who.country, who.full_name);
     var res = await sb.from('aplicate_certificates').upsert({
       user_id: userId,
       course_id: courseId,
       folio: folio,
-      issued_at: new Date().toISOString()
+      issued_at: when.toISOString()
     }, { onConflict: 'user_id,course_id' });
     if (res.error) return { ok: false, error: res.error.message };
     return { ok: true, folio: folio };
+  }
+
+  async function ensurePurchaseCertificates(sb, purchases, people) {
+    if (!sb || !purchases || !purchases.length) return;
+    var byId = {};
+    (people || []).forEach(function (p) {
+      if (p && p.id) byId[p.id] = p;
+    });
+    var i;
+    for (i = 0; i < purchases.length; i++) {
+      var row = purchases[i];
+      if (!row || !row.user_id || !row.course_id) continue;
+      await issueCertificate(sb, row.user_id, row.course_id, byId[row.user_id] || null, row.created_at || null);
+    }
   }
 
   async function logVisit(sb, userId) {
@@ -266,9 +390,13 @@
     setCourseMeta: setCourseMeta,
     findUserIdByEmail: findUserIdByEmail,
     ensureStudentRow: ensureStudentRow,
+    updateStudent: updateStudent,
     getProfile: getProfile,
     listCertificates: listCertificates,
+    listAllCertificates: listAllCertificates,
+    ensurePurchaseCertificates: ensurePurchaseCertificates,
     issueCertificate: issueCertificate,
+    makeFolio: makeFolio,
     logVisit: logVisit
   };
 })(window);

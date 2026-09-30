@@ -26,7 +26,7 @@
     <script src="../assets/np-fertigation-dist-suggest.js?v=20260817d"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
-    <script src="../applicate/applicate-data.js?v=1"></script>
+    <script src="../applicate/applicate-data.js?v=6"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
     <script src="../nutriplant-access-pin.js"></script>
     <style>
@@ -19851,6 +19851,11 @@
         let connMapRawWithCoords = [];
         let connMapUsersById = {};
         let connMapRenderMarkers = null;
+        let connMapSource = 'pro';
+        let connMapProVisits = [];
+        let connMapApplicateVisits = [];
+        let connMapProUsers = {};
+        let connMapApplicateUsers = {};
 
         function getConnectionsPeriodStart(periodKey) {
             var now = new Date();
@@ -19883,6 +19888,13 @@
 
         /** Semáforo mapa conexiones: verde activo (cuenta USD), amarillo activo sin ingreso, rojo no activo. */
         function getConnectionsUserSemaforo(uid) {
+            if (connMapSource === 'applicate') {
+                return {
+                    color: '#16a34a',
+                    title: 'Visita en Applicate',
+                    short: 'Applicate'
+                };
+            }
             var u = connMapUsersById[uid] || null;
             if (!u) {
                 return {
@@ -19986,29 +19998,102 @@
             badge.textContent = modeLabel + ' | ' + periodLabel + ' | Visitas: ' + (visitsList || []).length + ' | Usuarios: ' + users.size;
         }
 
+        async function loadApplicateMapPack() {
+            var client = (typeof applicateAdminClient === 'function') ? applicateAdminClient() : null;
+            var d = (typeof applicateAdminData === 'function') ? applicateAdminData() : null;
+            var users = {};
+            try {
+                getAllUsers().forEach(function (u) {
+                    var id = u && (u.id || u.userId);
+                    if (id) users[id] = u;
+                });
+            } catch (e) { /* ignore */ }
+            if (!client) return { visits: [], users: users };
+            var res = await client.from('aplicate_visits').select('id, user_id, visited_at, lat, lng').order('visited_at', { ascending: false });
+            var visits = (!res || res.error || !Array.isArray(res.data)) ? [] : res.data;
+            if (d && d.listStudents) {
+                try {
+                    var students = await d.listStudents(client);
+                    (students || []).forEach(function (s) {
+                        if (!s || !s.id) return;
+                        var prev = users[s.id] || {};
+                        users[s.id] = Object.assign({}, prev, {
+                            id: s.id,
+                            name: s.full_name || prev.name || '',
+                            full_name: s.full_name || prev.full_name || '',
+                            email: s.email || prev.email || ''
+                        });
+                    });
+                } catch (e) { /* ignore */ }
+            }
+            return { visits: visits, users: users };
+        }
+
+        function connMapCoordsOnly(visits) {
+            var withCoords = (visits || []).filter(function (v) {
+                var lat = v && (v.lat != null) ? parseFloat(v.lat) : NaN;
+                var lng = v && (v.lng != null) ? parseFloat(v.lng) : NaN;
+                return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+            });
+            withCoords.sort(function (a, b) {
+                var ta = (a.visited_at ? new Date(a.visited_at).getTime() : 0);
+                var tb = (b.visited_at ? new Date(b.visited_at).getTime() : 0);
+                return tb - ta;
+            });
+            return withCoords;
+        }
+
+        function updateConnectionsMapIntro() {
+            var p = document.getElementById('connMapIntro');
+            if (!p) return;
+            var product = connMapSource === 'applicate' ? 'Applicate' : 'NutriPlant PRO';
+            var n = (connMapRawWithCoords || []).length;
+            p.textContent = n + ' conexión(es) de ' + product + ' con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.';
+        }
+
+        function setConnectionsMapSource(source) {
+            connMapSource = source === 'applicate' ? 'applicate' : 'pro';
+            connMapRawWithCoords = connMapSource === 'applicate' ? connMapApplicateVisits : connMapProVisits;
+            connMapUsersById = connMapSource === 'applicate' ? connMapApplicateUsers : connMapProUsers;
+            var proBtn = document.getElementById('connMapSourcePro');
+            var apBtn = document.getElementById('connMapSourceApplicate');
+            if (proBtn) proBtn.classList.toggle('is-on', connMapSource === 'pro');
+            if (apBtn) apBtn.classList.toggle('is-on', connMapSource === 'applicate');
+            var logo = document.querySelector('#connMapContainer .np-map-brand-logo img');
+            if (logo) {
+                if (connMapSource === 'applicate') {
+                    logo.src = '../assets/Applicate Logo.png';
+                    logo.alt = 'Applicate';
+                } else {
+                    logo.src = '../assets/NutriPlant_PRO_blue.png';
+                    logo.alt = 'NutriPlant PRO';
+                }
+            }
+            updateConnectionsMapIntro();
+            if (typeof applyConnectionsMapFilters === 'function') applyConnectionsMapFilters();
+        }
+        window.setConnectionsMapSource = setConnectionsMapSource;
+
         async function showConnectionsMap(ev) {
             var endBusy = (typeof window.adminCloudBusyStart === 'function')
                 ? window.adminCloudBusyStart(ev, '☁️ Bajando…')
                 : function () {};
             try {
             try { await ensureAdminDashboardVisitsLoaded({ force: false }); } catch (e) { console.warn('showConnectionsMap: load visits', e); }
+            var applicatePack = { visits: [], users: {} };
+            try { applicatePack = await loadApplicateMapPack(); } catch (e) { console.warn('showConnectionsMap: aplicate visits', e); }
             var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
             var users = getAllUsers();
             var byId = {};
             users.forEach(function(u) { byId[u.id || u.userId] = u; });
-            var withCoords = visits.filter(function(v) {
-                var lat = v && (v.lat != null) ? parseFloat(v.lat) : NaN;
-                var lng = v && (v.lng != null) ? parseFloat(v.lng) : NaN;
-                return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-            });
-            withCoords.sort(function(a, b) {
-                var ta = (a.visited_at ? new Date(a.visited_at).getTime() : 0);
-                var tb = (b.visited_at ? new Date(b.visited_at).getTime() : 0);
-                return tb - ta;
-            });
-            connMapRawWithCoords = withCoords;
-            connMapUsersById = byId;
-            var count = withCoords.length;
+            connMapProVisits = connMapCoordsOnly(visits);
+            connMapProUsers = byId;
+            connMapApplicateVisits = connMapCoordsOnly(applicatePack.visits);
+            connMapApplicateUsers = applicatePack.users || {};
+            connMapSource = 'pro';
+            connMapRawWithCoords = connMapProVisits;
+            connMapUsersById = connMapProUsers;
+            var count = connMapProVisits.length;
             var modal = document.getElementById('connMapModal');
             if (!modal) {
                 modal = document.createElement('div');
@@ -20021,8 +20106,12 @@
             modal.innerHTML = '<div class="conn-map-modal-panel" style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">' +
                 '<div class="conn-map-modal-header">' +
                 '<div class="conn-map-modal-title"><h2>🗺️ Mapa de conexiones</h2>' +
-                '<p>' + count + ' conexión(es) con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
+                '<p id="connMapIntro">' + count + ' conexión(es) de NutriPlant PRO con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
                 '<div class="conn-map-modal-toolbar">' +
+                '<div class="conn-map-source" role="group" aria-label="Producto">' +
+                '<button type="button" id="connMapSourcePro" class="is-on" onclick="setConnectionsMapSource(\'pro\')">NutriPlant PRO</button>' +
+                '<button type="button" id="connMapSourceApplicate" onclick="setConnectionsMapSource(\'applicate\')">Applicate</button>' +
+                '</div>' +
                 '<select id="connMapModeFilter" onchange="applyConnectionsMapFilters()" class="np-admin-map-select conn-map-modal-select">' +
                 '<option value="all_history">Todas las visitas</option>' +
                 '<option value="latest_per_user">Última ubicación por usuario</option>' +
@@ -20054,6 +20143,11 @@
                 '#connMapModal #connMapContainer .leaflet-container{width:100%!important;height:100%!important;background:#0f172a;}' +
                 '@media (orientation:landscape) and (max-height:900px){#connMapModal{align-items:center;justify-content:center;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));}#connMapModal .conn-map-modal-panel{width:min(96%,1400px)!important;max-width:1400px!important;height:min(94dvh,920px)!important;max-height:94dvh!important;border-radius:12px!important;}#connMapModal .conn-map-modal-header{padding:10px 14px;gap:8px;}#connMapModal .conn-map-modal-title p{margin:2px 0 0!important;}#connMapModal #connMapContainer{min-height:0;flex:1 1 0;}}' +
                 '#connMapModal .conn-map-modal-select{flex:1 1 160px;min-width:0;max-width:100%;box-sizing:border-box;}' +
+                '#connMapModal .conn-map-source{display:flex;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden;flex:1 1 240px;min-width:0;}' +
+                '#connMapModal .conn-map-source button{appearance:none;border:0;background:#fff;color:#334155;font-weight:700;font-size:13px;padding:8px 12px;cursor:pointer;flex:1;}' +
+                '#connMapModal .conn-map-source button + button{border-left:1px solid #cbd5e1;}' +
+                '#connMapModal .conn-map-source button.is-on{background:#1e3a8a;color:#fff;}' +
+                '#connMapModal #connMapSourceApplicate.is-on{background:#166534;color:#fff;}' +
                 '@media (max-width:600px){#connMapModal .conn-map-modal-header{padding:10px 12px;gap:8px;}#connMapModal .conn-map-modal-title{flex:none;}#connMapModal .conn-map-modal-title h2{font-size:18px!important;line-height:1.2;}#connMapModal .conn-map-modal-title p{font-size:12px!important;line-height:1.3;margin-top:2px!important;}#connMapModal .conn-map-modal-toolbar{gap:6px;flex:none;width:100%;}#connMapModal .conn-map-modal-select{flex:1 1 calc(50% - 24px);}#connMapModal .np-admin-map-close{margin-left:auto;}#connMapModal #connMapSummaryBadge{padding:6px 12px;font-size:12px;}}' +
                 '@media (max-width:359px){#connMapModal .conn-map-modal-select{flex:1 1 100%;}}' +
                 '#connMapContainer .marker-cluster{background:linear-gradient(145deg,#fff 0%,#f1f5f9 100%)!important;border:2px solid #f59e0b!important;border-radius:50%!important;box-shadow:0 4px 14px rgba(0,0,0,0.2)!important;}#connMapContainer .marker-cluster div{background:transparent!important;color:#0f172a!important;font-weight:800!important;font-size:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;line-height:1!important;padding:0!important;margin:0!important;}#connMapContainer .marker-cluster span{display:block!important;line-height:1!important;}.conn-map-num-marker{background:none!important;border:none!important;}.conn-map-num-marker .conn-map-num{display:flex!important;align-items:center!important;justify-content:center!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;background:linear-gradient(145deg,#3b82f6 0%,#2563eb 100%)!important;color:#fff!important;font-weight:800!important;font-size:15px!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;line-height:1!important;}' +
@@ -20062,13 +20156,6 @@
                 '#connMapContainer .np-map-brand-logo img{height:34px;width:auto;max-width:150px;display:block;object-fit:contain;}' +
                 '</style>';
             modal.style.display = 'flex';
-            if (count === 0) {
-                var loadEl = document.getElementById('connMapLoading');
-                if (loadEl) loadEl.remove();
-                var c = document.getElementById('connMapContainer');
-                if (c) c.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:16px;">No hay conexiones con ubicación registrada aún. Las nuevas entradas al panel guardarán lat/lng aproximado por IP.</div>';
-                return;
-            }
 
             function initConnMap() {
                 var container = document.getElementById('connMapContainer');
@@ -20200,11 +20287,13 @@
                             '<strong>Ultima:</strong> ' + lastDate +
                             '<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0;">' +
                             '<div style="font-weight:600;margin-bottom:4px;">Desglose por usuario:</div>' +
-                            '<div style="font-size:11px;color:#64748b;margin:0 0 6px 0;line-height:1.35;">' +
+                            (connMapSource === 'applicate'
+                                ? '<div style="font-size:11px;color:#166534;margin:0 0 6px 0;">Visitas de Applicate.</div>'
+                                : ('<div style="font-size:11px;color:#64748b;margin:0 0 6px 0;line-height:1.35;">' +
                             '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:4px;vertical-align:middle;"></span>Activo · ' +
                             '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#eab308;margin:0 4px 0 8px;vertical-align:middle;"></span>Activo sin USD · ' +
                             '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin:0 4px 0 8px;vertical-align:middle;"></span>No activo' +
-                            '</div>' +
+                            '</div>')) +
                             '<ol style="margin:0;padding-left:18px;font-size:12px;max-height:150px;overflow:auto;">' + (usersDetail || '<li>Sin detalle</li>') + '</ol>' +
                             '</div>';
                         var numToShow = usersTotal;
@@ -20409,6 +20498,11 @@
             var students = await d.listStudents(sb);
             var courses = await d.listAllCourses(sb);
             var purchases = await d.listAllPurchases(sb);
+            var certificates = d.listAllCertificates ? await d.listAllCertificates(sb) : [];
+            if (d.ensurePurchaseCertificates) {
+                await d.ensurePurchaseCertificates(sb, purchases, students);
+                certificates = d.listAllCertificates ? await d.listAllCertificates(sb) : certificates;
+            }
             var courseName = {};
             (courses || []).forEach(function (c) { courseName[c.id] = c.title || c.id; });
             var studentName = {};
@@ -20425,6 +20519,11 @@
             }
 
             if (view === 'alumnos') {
+                var byCert = {};
+                (certificates || []).forEach(function (c) {
+                    if (!byCert[c.user_id]) byCert[c.user_id] = [];
+                    byCert[c.user_id].push(c);
+                });
                 var byStudent = {};
                 (purchases || []).forEach(function (p) {
                     if (!byStudent[p.user_id]) byStudent[p.user_id] = [];
@@ -20442,25 +20541,40 @@
                             return applicateAdminEsc((courseName[p.course_id] || 'Curso') + ' · ' + (p.source || ''));
                         }).join('<br>')
                         : 'Ninguno';
+                    var certsOf = byCert[s.id] || [];
+                    var certHtml = certsOf.length
+                        ? certsOf.map(function (c) {
+                            var when = '';
+                            if (c.issued_at) {
+                                var dt = new Date(c.issued_at);
+                                if (!isNaN(dt.getTime())) when = dt.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+                            }
+                            return applicateAdminEsc(courseName[c.course_id] || 'Curso') +
+                                '<br><span style="color:#14532d;font-weight:700;">Folio ' + applicateAdminEsc(c.folio || '—') + '</span>' +
+                                (when ? '<br><span style="color:#64748b;">' + applicateAdminEsc(when) + '</span>' : '');
+                        }).join('<div style="height:8px;"></div>')
+                        : 'Ninguna';
                     var addOptions = (courses || []).filter(function (c) { return !ownedIds[c.id]; }).map(function (c) {
                         return '<option value="' + applicateAdminEsc(c.id) + '">' + applicateAdminEsc(c.title || 'Sin título') + '</option>';
                     }).join('');
                     return '<tr><td ' + td() + '>' + applicateAdminEsc(s.full_name || '—') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(s.email || '') + '</td><td ' + td() + '>' + ownedHtml + '</td><td ' + td() + '>' +
+                        applicateAdminEsc(s.email || '') + '</td><td ' + td() + '>' + ownedHtml + '</td><td ' + td() + '>' + certHtml + '</td><td ' + td() + '>' +
                         (addOptions
                             ? '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
                                 '<select data-ap-course-for="' + applicateAdminEsc(s.id) + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' + addOptions + '</select>' +
                                 '<button type="button" class="btn-admin secondary" data-ap-give="' + applicateAdminEsc(s.id) + '">Agregar curso</button>' +
                               '</div>'
                             : (courses.length ? 'Ya tiene todos' : 'No hay cursos en el catálogo')) +
+                        '<div style="margin-top:8px;"><button type="button" class="btn-admin secondary" data-ap-edit="' + applicateAdminEsc(s.id) + '">Editar datos</button></div>' +
                         '</td></tr>';
                 }).join('');
                 box.innerHTML =
                     '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Alumnos Applicate</h3>' +
                     '<p style="margin:0 0 8px;color:#334155;">' + (students || []).length + ' alumno(s). Cada curso que pagó o que tú autorizas queda en la nube, de por vida. ' + (courseOptions ? '' : 'Primero guarda un curso en Catálogo.') + '</p>' +
+                    '<div id="apAdminStudentEdit"></div>' +
                     tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
-                        '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Cursos (nube)</th><th ' + th() + '>Agregar</th>' +
-                        '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="4">Todavía no hay alumnos.</td></tr>') + '</tbody></table>');
+                        '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Cursos (nube)</th><th ' + th() + '>Constancias</th><th ' + th() + '>Agregar</th>' +
+                        '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="5">Todavía no hay alumnos.</td></tr>') + '</tbody></table>');
                 box.querySelectorAll('[data-ap-give]').forEach(function (btn) {
                     btn.addEventListener('click', async function () {
                         var userId = btn.getAttribute('data-ap-give');
@@ -20482,18 +20596,70 @@
                         window.showApplicateAdmin('alumnos');
                     });
                 });
+                box.querySelectorAll('[data-ap-edit]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var userId = btn.getAttribute('data-ap-edit');
+                        var student = (students || []).filter(function (s) { return s.id === userId; })[0];
+                        var holder = document.getElementById('apAdminStudentEdit');
+                        if (!student || !holder) return;
+                        holder.innerHTML =
+                            '<form id="apAdminStudentForm" style="display:grid;gap:8px;max-width:520px;margin:0 0 14px;padding:12px;border:1px solid #bbf7d0;border-radius:12px;background:#f0fdf4;">' +
+                            '<strong style="color:#14532d;">Editar datos del alumno</strong>' +
+                            '<p style="margin:0;color:#64748b;font-size:12px;">Se guarda en la nube. El alumno lo ve en Mi perfil al recargar. La contraseña y el correo con el que entra no se cambian aquí.</p>' +
+                            '<label>Nombre completo<br><input name="full_name" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>Correo en el perfil<br><input name="email" type="email" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>Código de teléfono<br><input name="phone_code" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>Teléfono<br><input name="phone" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>País<br><input name="country" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>Estado / provincia<br><input name="state" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>Código postal<br><input name="postal" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<label>Profesión<br><input name="profession" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
+                            '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+                            '<button type="submit" class="btn-admin">Guardar en la nube</button>' +
+                            '<button type="button" class="btn-admin secondary" id="apAdminStudentCancel">Cancelar</button>' +
+                            '</div>' +
+                            '<div id="apAdminStudentMsg" style="font-size:13px;color:#64748b;"></div>' +
+                            '</form>';
+                        var form = document.getElementById('apAdminStudentForm');
+                        ['full_name', 'email', 'phone_code', 'phone', 'country', 'state', 'postal', 'profession'].forEach(function (key) {
+                            if (form[key]) form[key].value = student[key] || '';
+                        });
+                        var cancel = document.getElementById('apAdminStudentCancel');
+                        if (cancel) cancel.addEventListener('click', function () { holder.innerHTML = ''; });
+                        form.addEventListener('submit', async function (e) {
+                            e.preventDefault();
+                            var msg = document.getElementById('apAdminStudentMsg');
+                            var saved = await d.updateStudent(sb, student.id, {
+                                full_name: form.full_name.value,
+                                email: form.email.value,
+                                phone_code: form.phone_code.value,
+                                phone: form.phone.value,
+                                country: form.country.value,
+                                state: form.state.value,
+                                postal: form.postal.value,
+                                profession: form.profession.value
+                            });
+                            if (!saved.ok) {
+                                if (msg) msg.textContent = saved.error || 'No se pudo guardar.';
+                                return;
+                            }
+                            window.showApplicateAdmin('alumnos');
+                        });
+                        holder.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    });
+                });
                 return;
             }
 
             if (view === 'catalogo') {
                 var cRows = (courses || []).map(function (c) {
                     var pubLabel = c.published ? 'Publicado' : 'Borrador';
-                    return '<tr><td ' + td() + '>' + applicateAdminEsc(c.title || '—') + '<div style="margin-top:6px;color:#64748b;font-size:12px;">Ponente: ' + applicateAdminEsc(c.presenter || 'José de Jesús Ávila Mendoza') + '</div></td><td ' + td() + '>' +
+                    return '<tr><td ' + td() + '>' + applicateAdminEsc(c.title || '—') + '<div style="margin-top:6px;color:#64748b;font-size:12px;">Ponente: ' + applicateAdminEsc(c.presenter || 'Ing. José de Jesús Ávila Mendoza') + '</div></td><td ' + td() + '>' +
                         applicateAdminEsc(c.summary || '') + '</td><td ' + td() + '>' +
                         (c.price_usd != null ? '$' + Number(c.price_usd).toFixed(2) : '—') + '</td><td ' + td() + '>' +
                         pubLabel + '</td><td ' + td() + '>' +
                         '<div style="display:grid;gap:6px;min-width:180px;">' +
-                        '<input data-ap-presenter="' + applicateAdminEsc(c.id) + '" value="' + applicateAdminEsc(c.presenter || 'José de Jesús Ávila Mendoza') + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<input data-ap-presenter="' + applicateAdminEsc(c.id) + '" value="' + applicateAdminEsc(c.presenter || 'Ing. José de Jesús Ávila Mendoza') + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<input data-ap-sign="' + applicateAdminEsc(c.id) + '" value="' + applicateAdminEsc(c.signature_url || '') + '" placeholder="URL firma PNG" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<button type="button" class="btn-admin secondary" data-ap-meta="' + applicateAdminEsc(c.id) + '">Guardar ponente</button>' +
                         '</div>' +
@@ -20507,7 +20673,7 @@
                         '<input name="course_title" required placeholder="Título (aún puede ser interno)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<textarea name="course_summary" placeholder="Resumen" rows="2" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></textarea>' +
                         '<input name="course_price" type="number" min="0" step="0.01" placeholder="Precio USD (opcional)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
-                        '<input name="course_presenter" value="José de Jesús Ávila Mendoza" placeholder="Ponente" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<input name="course_presenter" value="Ing. José de Jesús Ávila Mendoza" placeholder="Ponente" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<input name="course_signature" placeholder="URL de la firma (PNG), cuando la subas" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<button type="submit" class="btn-admin">Guardar borrador</button>' +
                         '<div id="apAdminCourseMsg" style="font-size:13px;color:#64748b;"></div>' +
@@ -20569,7 +20735,7 @@
                 }).join('');
                 box.innerHTML =
                     '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Asignar cursos</h3>' +
-                    '<p style="margin:0 0 10px;color:#334155;">Transferencia, regalo o promo. También puedes buscar por correo (PRO o Applicate) y emitir constancia.</p>' +
+                    '<p style="margin:0 0 10px;color:#334155;">Transferencia, regalo o promo. Al habilitar el curso, la constancia queda desde ese momento. Descargarla es de cada quien.</p>' +
                     '<form id="apAdminAssignForm" style="display:grid;gap:8px;max-width:560px;">' +
                         '<label>Alumno ya en Applicate<br><select name="user_id" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"><option value="">—</option>' + optStudents + '</select></label>' +
                         '<label>O correo (crea fila de alumno si hace falta)<br><input name="email" type="email" placeholder="admin@nutriplantpro.com" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></label>' +
@@ -20579,7 +20745,6 @@
                             '<option value="regalo">regalo</option><option value="promo">promo</option><option value="paypal">paypal</option>' +
                         '</select></label>' +
                         '<input name="note" placeholder="Nota (opcional)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
-                        '<label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" name="cert"> Emitir constancia ahora</label>' +
                         '<button type="submit" class="btn-admin">Habilitar curso</button>' +
                         '<div id="apAdminAssignMsg" style="font-size:13px;color:#64748b;"></div>' +
                     '</form>';
@@ -20623,15 +20788,9 @@
                             if (msg) msg.textContent = assigned.error || 'No se pudo asignar.';
                             return;
                         }
-                        if (aform.cert.checked) {
-                            var cert = await d.issueCertificate(sb, userId, courseId);
-                            if (!cert.ok) {
-                                if (msg) msg.textContent = 'Curso habilitado, pero la constancia falló: ' + (cert.error || '');
-                                if (typeof window.refreshApplicateStudentCount === 'function') window.refreshApplicateStudentCount();
-                                return;
-                            }
-                        }
-                        if (msg) msg.textContent = 'Curso habilitado de por vida.';
+                        if (msg) msg.textContent = assigned.folio
+                            ? ('Curso habilitado de por vida. Folio ' + assigned.folio + '.')
+                            : 'Curso habilitado de por vida. La constancia queda con el curso.';
                         if (typeof window.refreshApplicateStudentCount === 'function') window.refreshApplicateStudentCount();
                     });
                 }

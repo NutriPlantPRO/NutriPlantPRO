@@ -1895,9 +1895,9 @@
 }
 .login-applicate-teaser__logo {
   flex-shrink: 0;
-  height: 34px;
+  height: 44px;
   width: auto;
-  max-width: 132px;
+  max-width: 168px;
   object-fit: contain;
   object-position: left center;
   display: block;
@@ -1952,11 +1952,11 @@
   min-height: 0;
 }
 .login-free-tools-banner__logo {
-  height: 100%;
+  height: auto;
   width: auto;
-  max-height: 5.75rem;
-  min-height: 2.75rem;
-  max-width: clamp(52px, 18vw, 88px);
+  max-height: 3.15rem;
+  min-height: 0;
+  max-width: 58px;
   object-fit: contain;
   object-position: left center;
   display: block;
@@ -1977,7 +1977,8 @@
     padding: 10px 12px;
   }
   .login-free-tools-banner__logo {
-    max-width: 56px;
+    max-width: 48px;
+    max-height: 2.6rem;
   }
 }
 

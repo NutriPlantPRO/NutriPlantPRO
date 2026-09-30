@@ -5,16 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title data-i18n="auth.applicate_soon_title">Applicate · Próximamente</title>
   <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Applicate">
   <script src="../assets/np-prefs-bootstrap.js"></script>
   <script defer src="../assets/np-prefs.js"></script>
-  <script defer src="../assets/np-i18n.js?v=20260930applicateLegal"></script>
+  <script defer src="../assets/np-i18n.js?v=20260930applicateSearch"></script>
+  <link rel="manifest" href="applicate.webmanifest">
   <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png?v=20260815r">
   <meta name="description" content="Applicate by NutriPlant PRO — cursos y constancias. Próximamente.">
   <meta name="robots" content="noindex">
   <link rel="canonical" href="https://nutriplantpro.com/applicate">
-  <link rel="stylesheet" href="applicate.css?v=15">
+  <link rel="stylesheet" href="applicate.css?v=24">
 </head>
 <body class="ap-body">
   <header class="ap-top" id="apTopGate">
@@ -139,9 +143,12 @@
 
     <div class="ap-shell">
       <header class="ap-head">
-        <input class="ap-head__search" type="search" disabled data-i18n-placeholder="auth.applicate_search" placeholder="Buscar (próximamente)">
+        <input id="apCourseSearch" class="ap-head__search" type="search" data-i18n-placeholder="auth.applicate_search" placeholder="Buscar cursos" autocomplete="off">
         <div class="ap-head__right">
-          <div class="ap-avatar" title="Admin">NP</div>
+          <div class="ap-student" id="apStudentChip">
+            <span class="ap-student__label" data-i18n="auth.applicate_student_label">Alumno</span>
+            <span class="ap-student__name" id="apStudentName">Nombre del alumno</span>
+          </div>
         </div>
       </header>
 
@@ -214,37 +221,55 @@
 
         <section class="ap-panel" data-ap-panel="const">
           <h2 data-i18n="auth.applicate_nav_certs">Constancias</h2>
-          <p class="ap-muted" data-i18n="auth.applicate_empty_certs">Al terminar un curso, la constancia sale aquí.</p>
-          <ul class="ap-list" id="apCertList"></ul>
-          <article class="ap-diploma" id="apDiploma">
+          <div id="apCertIndex">
+            <p class="ap-muted" id="apCertLead" data-i18n="auth.applicate_cert_lead">Elige una constancia para verla y descargarla.</p>
+            <p class="ap-muted" id="apCertEmpty" hidden data-i18n="auth.applicate_empty_certs">Cuando el curso está pagado o habilitado, la constancia sale aquí.</p>
+            <ul class="ap-cert-list" id="apCertList"></ul>
+          </div>
+          <div id="apCertView" hidden>
+            <button type="button" class="ap-btn ap-btn-ghost ap-cert-back" id="apCertBack" data-i18n="auth.applicate_cert_back">← Volver al listado</button>
+            <div class="ap-diploma-fit" id="apDiplomaFit">
+            <article class="ap-diploma" id="apDiploma">
             <div class="ap-diploma__bar"></div>
             <div class="ap-diploma__logos">
               <img src="../assets/Applicate Logo.png" alt="Applicate">
               <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
             </div>
             <p class="ap-diploma__word">CONSTANCIA</p>
+            <div class="ap-diploma__ornament" aria-hidden="true"></div>
             <p class="ap-diploma__kicker">Se extiende a</p>
             <p class="ap-diploma__name" id="apDipName">Nombre del alumno</p>
             <p class="ap-diploma__line">por haber completado la formación</p>
             <p class="ap-diploma__course" id="apDipCourse">Espacio del primer curso</p>
             <div class="ap-diploma__meta">
               <span id="apDipDate"></span>
-              <span id="apDipFolio">Folio de ejemplo</span>
+              <span id="apDipFolio">Folio</span>
             </div>
+            <div class="ap-diploma__bar ap-diploma__bar--foot"></div>
             <div class="ap-diploma__sign">
               <img id="apDipSign" alt="" hidden>
               <span class="ap-diploma__signline"></span>
-              <strong id="apDipPresenter">José de Jesús Ávila Mendoza</strong>
+              <strong id="apDipPresenter">Ing. José de Jesús Ávila Mendoza</strong>
               <span>Ponente</span>
             </div>
+            <div class="ap-diploma__qr">
+              <img src="../assets/qr-nutriplantpro.png" alt="nutriplantpro.com" width="64" height="64">
+              <span>nutriplantpro.com</span>
+            </div>
           </article>
+            </div>
           <button type="button" class="ap-btn ap-diploma__download" id="apDipPdf">Descargar PDF</button>
+          </div>
         </section>
 
         <section class="ap-panel" data-ap-panel="perfil">
           <h2 data-i18n="auth.applicate_nav_profile">Mi perfil</h2>
           <p class="ap-muted" data-i18n="auth.applicate_admin_profile">Entraste con la cuenta admin de NutriPlant PRO. Esta vista es solo para ir construyendo Applicate.</p>
           <div id="apProfileBox"></div>
+          <div class="ap-profile-edit">
+            <p data-i18n="auth.applicate_profile_edit_note">¿Quieres corregir un dato? Pídemelo por WhatsApp y lo actualizo en tu perfil.</p>
+            <a class="ap-btn ap-btn-wa" id="apProfileWa" target="_blank" rel="noopener noreferrer" href="https://wa.me/13868044542?text=Hola%2C%20quiero%20editar%20los%20datos%20de%20mi%20perfil%20en%20Applicate." data-i18n="auth.applicate_profile_edit_btn">Quiero editar mis datos</a>
+          </div>
         </section>
 
         <section class="ap-panel" data-ap-panel="aula">
@@ -285,6 +310,7 @@
     <div class="ap-sheet__card" role="dialog" aria-labelledby="apBuyTitle">
       <h3 id="apBuyTitle" data-i18n="auth.applicate_buy_title">Comprar curso</h3>
       <p class="ap-muted" data-i18n="auth.applicate_buy_lead">Elige cómo pagar. PayPal habilita solo. Transferencia: te escribo y yo lo abro en admin.</p>
+      <p class="ap-muted ap-fx" data-i18n="auth.applicate_fx">Otras monedas, al tipo de cambio del día del cobro.</p>
       <div id="apBuyMsg" class="ap-msg" role="status"></div>
       <div id="apPaypalButtons"></div>
       <a class="ap-btn ap-btn-wa" id="apBuyWa" target="_blank" rel="noopener noreferrer" href="https://wa.me/13868044542?text=Hola%2C%20quiero%20pagar%20un%20curso%20de%20Applicate%20por%20transferencia.">
@@ -296,7 +322,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../supabase-config.js"></script>
-  <script src="applicate-data.js?v=3"></script>
-  <script src="applicate-gate.js?v=11"></script>
+  <script src="applicate-data.js?v=8"></script>
+  <script src="applicate-gate.js?v=20"></script>
 </body>
 </html>

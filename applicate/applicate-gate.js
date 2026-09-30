@@ -13,8 +13,10 @@
     courses: [],
     catalog: [],
     purchases: [],
+    searchQuery: '',
     saves: [],
     certs: [],
+    openCert: null,
     profile: null,
     buyCourseId: null,
     aulaCourseId: null
@@ -185,6 +187,9 @@
         '<div class="ap-slot__body">' +
           '<h3>' + esc(course.title || t('auth.applicate_slot_title', 'Curso')) + '</h3>' +
           '<p class="ap-slot__price">' + esc(priceLabel(course)) + '</p>' +
+          (course.price_usd != null && course.price_usd !== ''
+            ? '<p class="ap-slot__fx">' + esc(t('auth.applicate_fx', 'Otras monedas, al tipo de cambio del día del cobro.')) + '</p>'
+            : '') +
           '<p>' + esc(course.summary || '') + '</p>' +
           '<div class="ap-slot__actions">' +
             action +
@@ -195,6 +200,16 @@
         '</div>' +
       '</article>'
     );
+  }
+
+  function catalogForView() {
+    var list = state.catalog || [];
+    var q = String(state.searchQuery || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (!q) return list;
+    return list.filter(function (c) {
+      var blob = ((c.title || '') + ' ' + (c.summary || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return blob.indexOf(q) !== -1;
+    });
   }
 
   function renderCatalog() {
@@ -212,7 +227,12 @@
       grid.innerHTML = emptySlotHtml();
       return;
     }
-    grid.innerHTML = state.catalog.map(courseCardHtml).join('');
+    var shown = catalogForView();
+    if (!shown.length) {
+      grid.innerHTML = '<p class="ap-muted">' + esc(t('auth.applicate_search_empty', 'Ningún curso coincide con la búsqueda.')) + '</p>';
+      return;
+    }
+    grid.innerHTML = shown.map(courseCardHtml).join('');
   }
 
   function listItemCourse(course, extra) {
@@ -252,7 +272,49 @@
     if (savedEl) savedEl.innerHTML = savedHtml;
   }
 
-  var DEFAULT_PRESENTER = 'José de Jesús Ávila Mendoza';
+  var DEFAULT_PRESENTER = 'Ing. José de Jesús Ávila Mendoza';
+
+  function presenterKey(name) {
+    return String(name || '')
+      .replace(/^ing\.?\s+/i, '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function displayPresenter(name) {
+    var raw = String(name || '').trim();
+    if (!raw || presenterKey(raw) === 'jose de jesus avila mendoza') return DEFAULT_PRESENTER;
+    return raw;
+  }
+
+  function studentDisplayName() {
+    var meta = (state.user && state.user.user_metadata) || {};
+    var picks = [
+      state.profile && state.profile.full_name,
+      state.profile && state.profile.name,
+      meta.full_name,
+      meta.name
+    ];
+    var i;
+    for (i = 0; i < picks.length; i++) {
+      var n = String(picks[i] || '').trim();
+      if (n && n.indexOf('@') === -1) return n;
+    }
+    return 'Nombre del alumno';
+  }
+
+  function folioLabel(cert) {
+    if (cert && cert.folio) return 'Folio ' + cert.folio;
+    var d = data();
+    var name = studentDisplayName();
+    if (name === 'Nombre del alumno') name = '';
+    var code = d && d.makeFolio
+      ? d.makeFolio(new Date(), state.profile && state.profile.country, name)
+      : '';
+    return 'Folio ' + (code || '—');
+  }
 
   function fillDiploma(cert, course) {
     var nameEl = $('apDipName');
@@ -261,16 +323,16 @@
     var folioEl = $('apDipFolio');
     var presenterEl = $('apDipPresenter');
     var signEl = $('apDipSign');
-    var student = (state.profile && state.profile.full_name) || (state.user && state.user.email) || 'Nombre del alumno';
+    var student = studentDisplayName();
     var when = cert && cert.issued_at ? new Date(cert.issued_at) : new Date();
     var dateText = when.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
     if (nameEl) nameEl.textContent = student;
     if (courseEl) courseEl.textContent = (course && course.title) || 'Espacio del primer curso';
     if (dateEl) dateEl.textContent = dateText;
-    if (folioEl) folioEl.textContent = cert && cert.folio ? ('Folio ' + cert.folio) : 'Folio de ejemplo';
-    if (presenterEl) presenterEl.textContent = (course && course.presenter) || DEFAULT_PRESENTER;
+    if (folioEl) folioEl.textContent = folioLabel(cert);
+    if (presenterEl) presenterEl.textContent = displayPresenter(course && course.presenter);
     if (signEl) {
-      var presenter = (course && course.presenter) || DEFAULT_PRESENTER;
+      var presenter = displayPresenter(course && course.presenter);
       var src = (course && course.signature_url) || '';
       if (!src && presenter === DEFAULT_PRESENTER) src = '../assets/firma José de Jesús Avila Mendoza.png';
       if (src) {
@@ -284,21 +346,81 @@
     }
   }
 
+  function certEntries() {
+    if (state.certs && state.certs.length) {
+      return state.certs.map(function (c) {
+        return { key: c.id, cert: c, course: courseById(c.course_id), preview: false };
+      });
+    }
+    if (state.isAdmin && state.courses && state.courses[0]) {
+      return [{ key: 'preview', cert: null, course: state.courses[0], preview: true }];
+    }
+    return [];
+  }
+
+  function certDateShort(cert) {
+    var when = cert && cert.issued_at ? new Date(cert.issued_at) : null;
+    if (!when || isNaN(when.getTime())) return '';
+    return when.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function showCertIndex() {
+    var index = $('apCertIndex');
+    var view = $('apCertView');
+    if (index) index.hidden = false;
+    if (view) view.hidden = true;
+    state.openCert = null;
+  }
+
+  function openCertEntry(entry) {
+    if (!entry) return;
+    state.openCert = entry;
+    fillDiploma(entry.cert, entry.course);
+    var index = $('apCertIndex');
+    var view = $('apCertView');
+    if (index) index.hidden = true;
+    if (view) view.hidden = false;
+    fitDiploma();
+  }
+
+  function fitDiploma() {
+    var fit = $('apDiplomaFit');
+    var sheet = $('apDiploma');
+    if (!fit || !sheet) return;
+    sheet.style.transform = 'none';
+    var scale = Math.min(1, fit.clientWidth / sheet.offsetWidth);
+    if (scale < 0.999) {
+      sheet.style.transform = 'scale(' + scale + ')';
+      sheet.style.transformOrigin = 'top left';
+      fit.style.height = Math.ceil(sheet.offsetHeight * scale) + 'px';
+    } else {
+      sheet.style.transform = '';
+      fit.style.height = '';
+    }
+  }
+
   function renderCerts() {
     var box = $('apCertList');
-    var cert = state.certs && state.certs[0];
-    var course = cert ? courseById(cert.course_id) : (state.courses && state.courses[0]);
-    fillDiploma(cert, course);
+    var lead = $('apCertLead');
+    var empty = $('apCertEmpty');
+    showCertIndex();
+    var entries = certEntries();
+    if (lead) lead.hidden = !entries.length;
+    if (empty) empty.hidden = !!entries.length;
     if (!box) return;
-    if (!state.certs.length) {
-      box.innerHTML = '';
-      return;
-    }
-    box.innerHTML = state.certs.map(function (c) {
-      var item = courseById(c.course_id);
+    box.innerHTML = entries.map(function (entry) {
+      var title = (entry.course && entry.course.title) || 'Curso';
+      var date = entry.preview
+        ? t('auth.applicate_cert_preview', 'Vista previa')
+        : (certDateShort(entry.cert) || '—');
+      var folio = folioLabel(entry.cert);
+      var meta = folio ? (date + ' · ' + folio) : date;
       return (
-        '<li><strong>' + esc((item && item.title) || 'Curso') + '</strong>' +
-        '<span class="ap-list__meta">' + esc(t('auth.applicate_cert_folio', 'Folio') + ': ' + (c.folio || '—')) + '</span></li>'
+        '<li><button type="button" class="ap-cert" data-ap-cert="' + esc(entry.key) + '">' +
+          '<span class="ap-cert__main"><strong>' + esc(title) + '</strong>' +
+          '<span class="ap-cert__sub">' + esc(meta) + '</span></span>' +
+          '<span class="ap-cert__go">' + esc(t('auth.applicate_view', 'Ver')) + '</span>' +
+        '</button></li>'
       );
     }).join('');
   }
@@ -325,9 +447,15 @@
     var btn = $('apDipPdf');
     if (!sheet) return;
     if (btn) btn.disabled = true;
+    var fit = $('apDiplomaFit');
+    var prevTransform = sheet.style.transform;
+    var prevHeight = fit ? fit.style.height : '';
+    sheet.style.transform = 'none';
+    if (fit) fit.style.height = '';
     try {
       var html2pdf = await loadHtml2Pdf();
-      var course = (state.certs[0] && courseById(state.certs[0].course_id)) || (state.courses && state.courses[0]);
+      var open = state.openCert;
+      var course = (open && open.course) || (state.certs[0] && courseById(state.certs[0].course_id)) || (state.courses && state.courses[0]);
       var title = (course && course.title) || 'constancia';
       await html2pdf().set({
         margin: 8,
@@ -339,18 +467,21 @@
     } catch (e) {
       alert('No se pudo crear el PDF. Intenta de nuevo.');
     } finally {
+      sheet.style.transform = prevTransform;
+      if (fit) fit.style.height = prevHeight;
+      fitDiploma();
       if (btn) btn.disabled = false;
     }
   }
 
   function renderProfile() {
     var box = $('apProfileBox');
-    var avatar = document.querySelector('.ap-avatar');
+    var nameEl = $('apStudentName');
     var email = (state.user && state.user.email) || '';
-    var name = (state.profile && state.profile.full_name) || email.split('@')[0] || 'NP';
-    if (avatar) {
-      avatar.textContent = name.slice(0, 2).toUpperCase();
-      avatar.title = email || name;
+    var name = studentDisplayName();
+    if (nameEl) {
+      nameEl.textContent = name;
+      nameEl.title = name;
     }
     if (!box) return;
     var p = state.profile || {};
@@ -360,8 +491,15 @@
         '<div><dt>' + esc(t('auth.email', 'Correo electrónico')) + '</dt><dd>' + esc(p.email || email) + '</dd></div>' +
         '<div><dt>' + esc(t('auth.phone', 'Teléfono')) + '</dt><dd>' + esc([p.phone_code, p.phone].filter(Boolean).join(' ') || '—') + '</dd></div>' +
         '<div><dt>' + esc(t('auth.country', 'País')) + '</dt><dd>' + esc(p.country || '—') + '</dd></div>' +
+        '<div><dt>' + esc(t('auth.state', 'Estado / provincia')) + '</dt><dd>' + esc(p.state || '—') + '</dd></div>' +
+        '<div><dt>' + esc(t('auth.postal_code', 'Código postal')) + '</dt><dd>' + esc(p.postal || '—') + '</dd></div>' +
         '<div><dt>' + esc(t('auth.profession', 'Profesión')) + '</dt><dd>' + esc(p.profession || '—') + '</dd></div>' +
       '</dl>';
+    var wa = $('apProfileWa');
+    if (wa) {
+      var ask = 'Hola, quiero editar los datos de mi perfil en Applicate. Mi correo es ' + (p.email || email || '') + '.';
+      wa.href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(ask);
+    }
   }
 
   function youtubeId(url) {
@@ -471,8 +609,11 @@
     state.catalog = state.isAdmin ? (all || []).slice() : (published || []).slice();
     state.purchases = await d.listPurchases(state.client, state.user.id);
     state.saves = await d.listSaves(state.client, state.user.id);
-    state.certs = await d.listCertificates(state.client, state.user.id);
     state.profile = await d.getProfile(state.client, state.user.id);
+    if (d.ensurePurchaseCertificates) {
+      await d.ensurePurchaseCertificates(state.client, state.purchases, [state.profile || { id: state.user.id }]);
+    }
+    state.certs = await d.listCertificates(state.client, state.user.id);
     renderCatalog();
     renderLists();
     renderCerts();
@@ -686,7 +827,7 @@
     document.querySelectorAll('[data-ap-nav]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         openPanel(btn.getAttribute('data-ap-nav'));
-        if (side && window.matchMedia('(max-width: 720px)').matches) {
+        if (side && window.matchMedia('(max-width: 960px)').matches) {
           side.classList.remove('is-open');
         }
       });
@@ -694,7 +835,7 @@
     var brand = side && side.querySelector('.ap-side__brand');
     if (brand && side) {
       brand.addEventListener('click', function () {
-        if (window.matchMedia('(max-width: 720px)').matches) {
+        if (window.matchMedia('(max-width: 960px)').matches) {
           side.classList.toggle('is-open');
         }
       });
@@ -754,8 +895,31 @@
     bindNav();
     bindAula();
     bindBuy();
+    var courseSearch = $('apCourseSearch');
+    if (courseSearch) {
+      courseSearch.addEventListener('input', function () {
+        state.searchQuery = courseSearch.value;
+        renderCatalog();
+      });
+    }
     var pdfBtn = $('apDipPdf');
     if (pdfBtn) pdfBtn.addEventListener('click', downloadDiploma);
+    var certBack = $('apCertBack');
+    if (certBack) certBack.addEventListener('click', showCertIndex);
+    var certList = $('apCertList');
+    if (certList) {
+      certList.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-ap-cert]');
+        if (!btn) return;
+        var key = btn.getAttribute('data-ap-cert');
+        var entry = certEntries().filter(function (item) { return item.key === key; })[0];
+        openCertEntry(entry);
+      });
+    }
+    window.addEventListener('resize', function () {
+      var view = $('apCertView');
+      if (view && !view.hidden) fitDiploma();
+    });
     bindDelegates();
     openPanel('inicio');
 

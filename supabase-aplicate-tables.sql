@@ -215,6 +215,18 @@ DROP POLICY IF EXISTS aplicate_certs_own ON public.aplicate_certificates;
 CREATE POLICY aplicate_certs_own ON public.aplicate_certificates
   FOR SELECT USING (user_id = auth.uid() OR public.is_admin_user());
 
+DROP POLICY IF EXISTS aplicate_certs_paid_insert ON public.aplicate_certificates;
+CREATE POLICY aplicate_certs_paid_insert ON public.aplicate_certificates
+  FOR INSERT
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM public.aplicate_purchases p
+      WHERE p.user_id = auth.uid()
+        AND p.course_id = course_id
+    )
+  );
+
 DROP POLICY IF EXISTS aplicate_certs_admin ON public.aplicate_certificates;
 CREATE POLICY aplicate_certs_admin ON public.aplicate_certificates
   FOR ALL USING (public.is_admin_user())

@@ -399,6 +399,36 @@ async function grantApplicateFromPaypal(eventType: string, resource: Json): Prom
     console.error("aplicate purchase upsert:", error.message);
     return "error";
   }
+  const already = await supabase
+    .from("aplicate_certificates")
+    .select("folio")
+    .eq("user_id", ref.userId)
+    .eq("course_id", ref.courseId)
+    .maybeSingle();
+  if (!already.data?.folio) {
+    const profile = await supabase
+      .from("aplicate_profiles")
+      .select("full_name, country")
+      .eq("id", ref.userId)
+      .maybeSingle();
+    const when = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const countryRaw = String(profile.data?.country || "").trim().toLowerCase();
+    const country = countryRaw.startsWith("mex") ? "MX"
+      : countryRaw.startsWith("est") || countryRaw === "usa" || countryRaw.startsWith("united") ? "US"
+      : countryRaw.length === 2 ? countryRaw.toUpperCase()
+      : (countryRaw.replace(/[^a-z]/g, "").slice(0, 2).toUpperCase() || "XX");
+    const name = String(profile.data?.full_name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const initial = (name.replace(/[^A-Za-z]/g, "").charAt(0) || "X").toUpperCase();
+    const folio = country + "-" + initial + "-" + when.getFullYear() + pad(when.getMonth() + 1) + pad(when.getDate()) + "-" + pad(when.getHours()) + pad(when.getMinutes());
+    const cert = await supabase.from("aplicate_certificates").upsert({
+      user_id: ref.userId,
+      course_id: ref.courseId,
+      folio,
+      issued_at: when.toISOString(),
+    }, { onConflict: "user_id,course_id" });
+    if (cert.error) console.error("aplicate certificate:", cert.error.message);
+  }
   return "granted";
 }
 
