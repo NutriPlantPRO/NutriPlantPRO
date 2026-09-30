@@ -14,6 +14,7 @@
     catalog: [],
     purchases: [],
     searchQuery: '',
+    coursePage: 1,
     saves: [],
     certs: [],
     openCert: null,
@@ -202,6 +203,58 @@
     );
   }
 
+  function renderSearchList() {
+    var list = $('apSearchList');
+    var q = String(state.searchQuery || '').trim();
+    if (!list) return;
+    if (!q) {
+      list.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+    var matches = catalogForView();
+    list.hidden = false;
+    if (!matches.length) {
+      list.innerHTML = '<li class="ap-search__empty">' + esc(t('auth.applicate_search_empty', 'Ningún curso coincide con la búsqueda.')) + '</li>';
+      return;
+    }
+    var owned = ownedSet();
+    list.innerHTML = matches.map(function (c) {
+      var hint = owned[c.id]
+        ? t('auth.applicate_open', 'Abrir')
+        : t('auth.applicate_nav_home', 'Inicio');
+      return '<li><button type="button" data-ap-search="' + esc(c.id) + '">' +
+        '<span>' + esc(c.title || t('auth.applicate_slot_title', 'Curso')) + '</span>' +
+        '<span class="ap-search__meta">' + esc(hint) + '</span>' +
+      '</button></li>';
+    }).join('');
+  }
+
+  function pickSearchCourse(id) {
+    var course = courseById(id);
+    var list = $('apSearchList');
+    var input = $('apCourseSearch');
+    if (list) list.hidden = true;
+    if (!course) return;
+    if (ownedSet()[id]) {
+      if (input) input.value = '';
+      state.searchQuery = '';
+      renderCatalog();
+      openAula(id);
+      return;
+    }
+    state.searchQuery = course.title || '';
+    if (input) input.value = state.searchQuery;
+    var matches = catalogForView();
+    var idx = -1;
+    matches.forEach(function (c, i) { if (c.id === course.id) idx = i; });
+    state.coursePage = idx >= 0 ? Math.floor(idx / COURSE_PAGE_SIZE) + 1 : 1;
+    openPanel('inicio');
+    renderCatalog();
+    var grid = $('apCourseGrid');
+    if (grid && grid.scrollIntoView) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function catalogForView() {
     var list = state.catalog || [];
     var q = String(state.searchQuery || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -210,6 +263,28 @@
       var blob = ((c.title || '') + ' ' + (c.summary || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return blob.indexOf(q) !== -1;
     });
+  }
+
+  var COURSE_PAGE_SIZE = 12;
+
+  function renderCoursePages(total) {
+    var nav = $('apCoursePages');
+    if (!nav) return;
+    var pages = Math.max(1, Math.ceil(total / COURSE_PAGE_SIZE));
+    if (state.coursePage > pages) state.coursePage = pages;
+    if (state.coursePage < 1) state.coursePage = 1;
+    if (pages <= 1) {
+      nav.hidden = true;
+      nav.innerHTML = '';
+      return;
+    }
+    var html = '';
+    var i;
+    for (i = 1; i <= pages; i++) {
+      html += '<button type="button" class="ap-page' + (i === state.coursePage ? ' is-on' : '') + '" data-ap-page="' + i + '">' + i + '</button>';
+    }
+    nav.innerHTML = html;
+    nav.hidden = false;
   }
 
   function renderCatalog() {
@@ -225,14 +300,20 @@
     if (!grid) return;
     if (!state.catalog.length) {
       grid.innerHTML = emptySlotHtml();
+      renderCoursePages(0);
       return;
     }
     var shown = catalogForView();
     if (!shown.length) {
       grid.innerHTML = '<p class="ap-muted">' + esc(t('auth.applicate_search_empty', 'Ningún curso coincide con la búsqueda.')) + '</p>';
+      renderCoursePages(0);
       return;
     }
-    grid.innerHTML = shown.map(courseCardHtml).join('');
+    var pages = Math.max(1, Math.ceil(shown.length / COURSE_PAGE_SIZE));
+    if (state.coursePage > pages) state.coursePage = pages;
+    var start = (state.coursePage - 1) * COURSE_PAGE_SIZE;
+    grid.innerHTML = shown.slice(start, start + COURSE_PAGE_SIZE).map(courseCardHtml).join('');
+    renderCoursePages(shown.length);
   }
 
   function listItemCourse(course, extra) {
@@ -899,7 +980,24 @@
     if (courseSearch) {
       courseSearch.addEventListener('input', function () {
         state.searchQuery = courseSearch.value;
+        state.coursePage = 1;
         renderCatalog();
+        renderSearchList();
+      });
+      courseSearch.addEventListener('focus', renderSearchList);
+    }
+    document.addEventListener('click', function (e) {
+      var wrap = document.querySelector('.ap-search');
+      var list = $('apSearchList');
+      if (!wrap || !list || wrap.contains(e.target)) return;
+      list.hidden = true;
+    });
+    var searchList = $('apSearchList');
+    if (searchList) {
+      searchList.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('[data-ap-search]');
+        if (!btn) return;
+        pickSearchCourse(btn.getAttribute('data-ap-search'));
       });
     }
     var pdfBtn = $('apDipPdf');
@@ -920,6 +1018,17 @@
       var view = $('apCertView');
       if (view && !view.hidden) fitDiploma();
     });
+    var coursePages = $('apCoursePages');
+    if (coursePages) {
+      coursePages.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('[data-ap-page]');
+        if (!btn) return;
+        state.coursePage = parseInt(btn.getAttribute('data-ap-page'), 10) || 1;
+        renderCatalog();
+        var grid = $('apCourseGrid');
+        if (grid && grid.scrollIntoView) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
     bindDelegates();
     openPanel('inicio');
 

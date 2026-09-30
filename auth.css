@@ -1953,22 +1953,18 @@
   text-align: left;
 }
 .login-free-tools-banner__aside {
-  flex-shrink: 0;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  align-self: stretch;
-  min-height: 0;
 }
 .login-free-tools-banner__logo {
-  height: auto;
-  width: auto;
-  max-height: 3.15rem;
-  min-height: 0;
-  max-width: 58px;
-  object-fit: contain;
-  object-position: left center;
   display: block;
+  height: 46px;
+  width: auto;
+  max-width: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .login-free-tools-banner__text {
   margin: 0;
@@ -1986,8 +1982,8 @@
     padding: 10px 12px;
   }
   .login-free-tools-banner__logo {
-    max-width: 48px;
-    max-height: 2.6rem;
+    height: 40px;
+    max-width: 46px;
   }
 }
 

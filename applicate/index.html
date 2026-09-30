@@ -12,13 +12,13 @@
   <meta name="apple-mobile-web-app-title" content="Applicate">
   <script src="../assets/np-prefs-bootstrap.js"></script>
   <script defer src="../assets/np-prefs.js"></script>
-  <script defer src="../assets/np-i18n.js?v=20260930applicateSearch"></script>
+  <script defer src="../assets/np-i18n.js?v=20260930applicateBuyLead"></script>
   <link rel="manifest" href="applicate.webmanifest">
   <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png?v=20260815r">
   <meta name="description" content="Applicate by NutriPlant PRO — cursos y constancias. Próximamente.">
   <meta name="robots" content="noindex">
   <link rel="canonical" href="https://nutriplantpro.com/applicate">
-  <link rel="stylesheet" href="applicate.css?v=24">
+  <link rel="stylesheet" href="applicate.css?v=28">
 </head>
 <body class="ap-body">
   <header class="ap-top" id="apTopGate">
@@ -143,7 +143,10 @@
 
     <div class="ap-shell">
       <header class="ap-head">
-        <input id="apCourseSearch" class="ap-head__search" type="search" data-i18n-placeholder="auth.applicate_search" placeholder="Buscar cursos" autocomplete="off">
+        <div class="ap-search">
+          <input id="apCourseSearch" class="ap-head__search" type="search" data-i18n-placeholder="auth.applicate_search" placeholder="Buscar cursos" autocomplete="off">
+          <ul class="ap-search__list" id="apSearchList" hidden></ul>
+        </div>
         <div class="ap-head__right">
           <div class="ap-student" id="apStudentChip">
             <span class="ap-student__label" data-i18n="auth.applicate_student_label">Alumno</span>
@@ -188,6 +191,7 @@
               </div>
             </article>
           </div>
+          <nav class="ap-pages" id="apCoursePages" hidden aria-label="Páginas de cursos"></nav>
         </section>
 
         <section class="ap-panel" data-ap-panel="cursos">
@@ -236,7 +240,6 @@
               <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
             </div>
             <p class="ap-diploma__word">CONSTANCIA</p>
-            <div class="ap-diploma__ornament" aria-hidden="true"></div>
             <p class="ap-diploma__kicker">Se extiende a</p>
             <p class="ap-diploma__name" id="apDipName">Nombre del alumno</p>
             <p class="ap-diploma__line">por haber completado la formación</p>
@@ -309,7 +312,7 @@
   <div class="ap-sheet" id="apBuySheet" hidden>
     <div class="ap-sheet__card" role="dialog" aria-labelledby="apBuyTitle">
       <h3 id="apBuyTitle" data-i18n="auth.applicate_buy_title">Comprar curso</h3>
-      <p class="ap-muted" data-i18n="auth.applicate_buy_lead">Elige cómo pagar. PayPal habilita solo. Transferencia: te escribo y yo lo abro en admin.</p>
+      <p class="ap-muted" data-i18n="auth.applicate_buy_lead">PayPal o tarjeta abren el curso al momento. Si pagas por transferencia, escríbeme por WhatsApp y lo dejo listo.</p>
       <p class="ap-muted ap-fx" data-i18n="auth.applicate_fx">Otras monedas, al tipo de cambio del día del cobro.</p>
       <div id="apBuyMsg" class="ap-msg" role="status"></div>
       <div id="apPaypalButtons"></div>
@@ -323,6 +326,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../supabase-config.js"></script>
   <script src="applicate-data.js?v=8"></script>
-  <script src="applicate-gate.js?v=20"></script>
+  <script src="applicate-gate.js?v=22"></script>
 </body>
 </html>
