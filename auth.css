@@ -1873,9 +1873,9 @@
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  height: 52px;
-  min-height: 52px;
-  max-height: 52px;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
   margin: 0 0 12px;
   padding: 0 12px;
   border-radius: 10px;
@@ -1923,8 +1923,17 @@
   margin: 0;
   font-size: 15px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.1;
   color: #1e3a8a;
+}
+.login-applicate-teaser__when {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: #64748b;
 }
 .login-applicate-teaser__line {
   display: none;
