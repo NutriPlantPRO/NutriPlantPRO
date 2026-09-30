@@ -129,7 +129,10 @@ function isLikelyPayPalEvent(headers: Headers, eventBody: Json): boolean {
   const resource = (eventBody.resource ?? {}) as Json;
   const subId = asString(resource.id) ?? asString(resource.billing_agreement_id) ?? "";
   const allowedType =
-    eventType.startsWith("BILLING.SUBSCRIPTION.") || eventType === "PAYMENT.SALE.COMPLETED";
+    eventType.startsWith("BILLING.SUBSCRIPTION.") ||
+    eventType === "PAYMENT.SALE.COMPLETED" ||
+    eventType === "PAYMENT.CAPTURE.COMPLETED" ||
+    eventType === "CHECKOUT.ORDER.COMPLETED";
 
   return ua.includes("paypal/") && eventId.startsWith("WH-") && allowedType && !!subId;
 }
@@ -342,6 +345,63 @@ async function recordPayPalSaleCompleted(params: {
   return { recorded: true, profileId, cycles: next };
 }
 
+function aplicateRef(custom: string | null): { userId: string; courseId: string } | null {
+  if (!custom || !custom.startsWith("ap:")) return null;
+  const parts = custom.split(":");
+  if (parts.length !== 3) return null;
+  const userId = parts[1];
+  const courseId = parts[2];
+  if (!/^[0-9a-f-]{36}$/i.test(userId) || !/^[0-9a-f-]{36}$/i.test(courseId)) return null;
+  return { userId, courseId };
+}
+
+function aplicateAmount(resource: Json): number | null {
+  const amount = (resource.amount ?? {}) as Json;
+  const direct = asString(amount.value) || asString(amount.total);
+  if (direct) {
+    const n = Number(direct);
+    return isNaN(n) ? null : n;
+  }
+  const units = Array.isArray(resource.purchase_units) ? resource.purchase_units as Json[] : [];
+  const unit = units[0] || {};
+  const unitAmount = (unit.amount ?? {}) as Json;
+  const unitValue = asString(unitAmount.value);
+  if (!unitValue) return null;
+  const n = Number(unitValue);
+  return isNaN(n) ? null : n;
+}
+
+function aplicateCustom(resource: Json): string | null {
+  const direct = asString(resource.custom_id);
+  if (direct) return direct;
+  const units = Array.isArray(resource.purchase_units) ? resource.purchase_units as Json[] : [];
+  return asString((units[0] || {}).custom_id);
+}
+
+async function grantApplicateFromPaypal(eventType: string, resource: Json): Promise<string> {
+  const status = asString(resource.status) || "";
+  if (status && status !== "COMPLETED") return "ignored_status";
+  const ref = aplicateRef(aplicateCustom(resource));
+  if (!ref) return "ignored_no_ref";
+  const paid = aplicateAmount(resource);
+  const course = await supabase.from("aplicate_courses").select("price_usd").eq("id", ref.courseId).maybeSingle();
+  const expected = Number(course.data?.price_usd);
+  if (!expected || paid == null || paid + 0.001 < expected) return "ignored_amount";
+  const captureId = eventType === "PAYMENT.CAPTURE.COMPLETED" ? asString(resource.id) : null;
+  const { error } = await supabase.from("aplicate_purchases").upsert({
+    user_id: ref.userId,
+    course_id: ref.courseId,
+    source: "paypal",
+    paypal_id: captureId,
+    note: "PayPal " + expected.toFixed(2) + " USD",
+  }, { onConflict: "user_id,course_id" });
+  if (error) {
+    console.error("aplicate purchase upsert:", error.message);
+    return "error";
+  }
+  return "granted";
+}
+
 Deno.serve(async (req) => {
   // GET = diagnóstico de secrets (sin mostrar valores). Útil para comprobar sin esperar a PayPal.
   if (req.method === "GET") {
@@ -450,6 +510,11 @@ Deno.serve(async (req) => {
 
   const eventType = String(payload.event_type ?? "");
   const resource = (payload.resource ?? {}) as Json;
+
+  if (eventType === "PAYMENT.CAPTURE.COMPLETED" || eventType === "CHECKOUT.ORDER.COMPLETED") {
+    const granted = await grantApplicateFromPaypal(eventType, resource);
+    return jsonResponse({ ok: true, event_type: eventType, aplicate: granted });
+  }
 
   // PAYMENT.SALE.COMPLETED: cobro realizado (p. ej. tras fin del trial). resource.id = sale id, subscription = billing_agreement_id
   if (eventType === "PAYMENT.SALE.COMPLETED") {

@@ -71,7 +71,7 @@
     return res.data || [];
   }
 
-  async function assignCourse(sb, userId, courseId, source, note, assignedBy) {
+  async function assignCourse(sb, userId, courseId, source, note, assignedBy, paypalId) {
     if (!sb || !userId || !courseId) return { ok: false, error: 'faltan datos' };
     var row = {
       user_id: userId,
@@ -80,9 +80,29 @@
       note: note || null,
       assigned_by: assignedBy || null
     };
+    if (paypalId) row.paypal_id = paypalId;
     var res = await sb.from('aplicate_purchases').upsert(row, { onConflict: 'user_id,course_id' });
     if (res.error) return { ok: false, error: res.error.message };
     return { ok: true };
+  }
+
+  async function ensureTrialCourse(sb) {
+    if (!sb) return { ok: false, error: 'sin cliente' };
+    var all = await listAllCourses(sb);
+    if (!all.length) {
+      return createCourse(sb, {
+        title: 'Espacio del primer curso',
+        summary: 'Sin portada todavía. Precio de prueba.',
+        price_usd: 30,
+        sort_order: 1
+      });
+    }
+    var first = all[0];
+    if (first.price_usd == null || first.price_usd === '') {
+      var upd = await sb.from('aplicate_courses').update({ price_usd: 30 }).eq('id', first.id);
+      if (upd.error) return { ok: false, error: upd.error.message };
+    }
+    return { ok: true, id: first.id };
   }
 
   async function pingTables(sb) {
@@ -210,6 +230,7 @@
     listStudents: listStudents,
     listAllPurchases: listAllPurchases,
     assignCourse: assignCourse,
+    ensureTrialCourse: ensureTrialCourse,
     pingTables: pingTables,
     createCourse: createCourse,
     setPublished: setPublished,

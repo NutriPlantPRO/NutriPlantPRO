@@ -184,7 +184,8 @@
         '<div class="ap-slot__cover">' + cover + '</div>' +
         '<div class="ap-slot__body">' +
           '<h3>' + esc(course.title || t('auth.applicate_slot_title', 'Curso')) + '</h3>' +
-          '<p>' + esc(course.summary || priceLabel(course)) + '</p>' +
+          '<p class="ap-slot__price">' + esc(priceLabel(course)) + '</p>' +
+          '<p>' + esc(course.summary || '') + '</p>' +
           '<div class="ap-slot__actions">' +
             action +
             '<button type="button" class="ap-save-btn' + (saved ? ' is-on' : '') + '" data-ap-save="' + esc(course.id) + '">' +
@@ -390,10 +391,13 @@
       renderProfile();
       return;
     }
+    if (state.isAdmin && d.ensureTrialCourse) {
+      await d.ensureTrialCourse(state.client);
+    }
     var published = await d.listPublishedCourses(state.client);
     var all = state.isAdmin ? await d.listAllCourses(state.client) : published;
     state.courses = all || published || [];
-    state.catalog = (published || []).slice();
+    state.catalog = state.isAdmin ? (all || []).slice() : (published || []).slice();
     state.purchases = await d.listPurchases(state.client, state.user.id);
     state.saves = await d.listSaves(state.client, state.user.id);
     state.certs = await d.listCertificates(state.client, state.user.id);
@@ -410,6 +414,112 @@
     return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text);
   }
 
+  function paypalAmount(course) {
+    var n = course && course.price_usd != null ? Number(course.price_usd) : NaN;
+    if (!n || isNaN(n) || n <= 0) return '';
+    return n.toFixed(2);
+  }
+
+  async function paypalClientId() {
+    try {
+      var r = await fetch('/api/paypal-config', { method: 'GET' });
+      var j = r.ok ? await r.json() : null;
+      if (j && j.clientId) return String(j.clientId);
+    } catch (e) { /* ignore */ }
+    return '';
+  }
+
+  function loadPaypalSdk(clientId) {
+    return new Promise(function (resolve, reject) {
+      if (window.paypal && window.paypal.Buttons && window._apPaypalMode === 'capture') {
+        resolve(window.paypal);
+        return;
+      }
+      var previous = document.querySelector('script[data-ap-paypal="1"]');
+      if (previous) previous.parentNode.removeChild(previous);
+      var s = document.createElement('script');
+      s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) + '&currency=USD&intent=capture';
+      s.async = true;
+      s.setAttribute('data-ap-paypal', '1');
+      s.onload = function () {
+        window._apPaypalMode = 'capture';
+        resolve(window.paypal);
+      };
+      s.onerror = function () { reject(new Error('sdk')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function mountPaypalButtons(course) {
+    var slot = $('apPaypalButtons');
+    if (!slot) return;
+    slot.innerHTML = '';
+    var amount = paypalAmount(course);
+    if (!amount || !course || !course.id) {
+      showMsg($('apBuyMsg'), 'warn', t('auth.applicate_price_tba', 'Precio al publicar'));
+      return;
+    }
+    var clientId = await paypalClientId();
+    if (!clientId) {
+      showMsg($('apBuyMsg'), 'err', t('auth.applicate_paypal_site', 'PayPal live se abre en nutriplantpro.com/applicate.'));
+      return;
+    }
+    var sdk;
+    try {
+      sdk = await loadPaypalSdk(clientId);
+    } catch (e) {
+      showMsg($('apBuyMsg'), 'err', t('auth.applicate_paypal_fail', 'No se pudo abrir PayPal. Intenta de nuevo.'));
+      return;
+    }
+    if (!sdk || !sdk.Buttons) return;
+    sdk.Buttons({
+      style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
+      createOrder: function (data, actions) {
+        return actions.order.create({
+          intent: 'CAPTURE',
+          purchase_units: [{
+            amount: { currency_code: 'USD', value: amount },
+            description: (course.title || 'Applicate').slice(0, 120),
+            custom_id: 'ap:' + state.user.id + ':' + course.id
+          }]
+        });
+      },
+      onApprove: function (data, actions) {
+        return actions.order.capture().then(async function (details) {
+          var cap = details && details.purchase_units && details.purchase_units[0] && details.purchase_units[0].payments && details.purchase_units[0].payments.captures && details.purchase_units[0].payments.captures[0];
+          var status = (cap && cap.status) || (details && details.status) || '';
+          if (status !== 'COMPLETED') {
+            showMsg($('apBuyMsg'), 'warn', t('auth.applicate_paypal_fail', 'No se pudo abrir PayPal. Intenta de nuevo.'));
+            return;
+          }
+          var d = dataApi();
+          var captureId = (cap && cap.id) || (details && details.id) || '';
+          await d.ensureStudentRow(state.client, state.user.id, {
+            email: state.user.email || '',
+            full_name: (state.profile && state.profile.full_name) || ''
+          });
+          var saved = await d.assignCourse(state.client, state.user.id, course.id, 'paypal', 'PayPal ' + amount + ' USD', state.user.id, captureId);
+          if (!saved.ok) {
+            showMsg($('apBuyMsg'), 'err', saved.error || t('auth.applicate_paypal_fail', 'No se pudo abrir PayPal. Intenta de nuevo.'));
+            return;
+          }
+          closeBuySheet();
+          await refreshDashboard();
+        });
+      },
+      onCancel: function () {
+        showMsg($('apBuyMsg'), 'warn', t('auth.applicate_paypal_cancel', 'Pago cancelado.'));
+      },
+      onError: function () {
+        showMsg($('apBuyMsg'), 'err', t('auth.applicate_paypal_fail', 'No se pudo abrir PayPal. Intenta de nuevo.'));
+      }
+    }).render(slot);
+  }
+
+  function dataApi() {
+    return data();
+  }
+
   function openBuySheet(courseId) {
     state.buyCourseId = courseId || null;
     var sheet = $('apBuySheet');
@@ -422,6 +532,7 @@
       : t('auth.applicate_buy_title', 'Comprar curso');
     if (wa) wa.href = waHref(course);
     if (sheet) sheet.hidden = false;
+    mountPaypalButtons(course);
   }
 
   function closeBuySheet() {
@@ -500,26 +611,32 @@
   }
 
   function bindNav() {
+    var side = $('apSide');
     document.querySelectorAll('[data-ap-nav]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         openPanel(btn.getAttribute('data-ap-nav'));
+        if (side && window.matchMedia('(max-width: 720px)').matches) {
+          side.classList.remove('is-open');
+        }
       });
     });
+    var brand = side && side.querySelector('.ap-side__brand');
+    if (brand && side) {
+      brand.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 720px)').matches) {
+          side.classList.toggle('is-open');
+        }
+      });
+    }
   }
 
   function bindBuy() {
     var sheet = $('apBuySheet');
     var close = $('apBuyClose');
-    var paypal = $('apBuyPaypal');
     if (close) close.addEventListener('click', closeBuySheet);
     if (sheet) {
       sheet.addEventListener('click', function (e) {
         if (e.target === sheet) closeBuySheet();
-      });
-    }
-    if (paypal) {
-      paypal.addEventListener('click', function () {
-        showMsg($('apBuyMsg'), 'warn', t('auth.applicate_buy_paypal_soon', 'PayPal de cursos se conecta al lanzar. Por ahora usa WhatsApp o espera.'));
       });
     }
   }
@@ -567,6 +684,25 @@
     var logoutBtn = $('apLogoutBtn');
     var regForm = $('apRegForm');
 
+    var regSheet = $('apRegSheet');
+    var openReg = $('apOpenReg');
+    var closeReg = $('apRegClose');
+    function showReg() {
+      if (!regSheet) return;
+      hideMsg($('apRegMsg'));
+      regSheet.hidden = false;
+    }
+    function hideReg() {
+      if (!regSheet) return;
+      regSheet.hidden = true;
+    }
+    if (openReg) openReg.addEventListener('click', showReg);
+    if (closeReg) closeReg.addEventListener('click', hideReg);
+    if (regSheet) {
+      regSheet.addEventListener('click', function (e) {
+        if (e.target === regSheet) hideReg();
+      });
+    }
     if (regForm) {
       regForm.addEventListener('submit', function (e) {
         e.preventDefault();

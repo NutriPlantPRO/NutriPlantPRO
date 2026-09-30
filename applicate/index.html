@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="Applicate">
   <script src="../assets/np-prefs-bootstrap.js"></script>
   <script defer src="../assets/np-prefs.js"></script>
-  <script defer src="../assets/np-i18n.js?v=20260927applicateData"></script>
+  <script defer src="../assets/np-i18n.js?v=20260930applicateLogo"></script>
   <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png?v=20260815r">
   <meta name="description" content="Applicate by NutriPlant PRO — cursos y constancias. Próximamente.">
   <meta name="robots" content="noindex">
   <link rel="canonical" href="https://nutriplantpro.com/applicate">
-  <link rel="stylesheet" href="applicate.css?v=8">
+  <link rel="stylesheet" href="applicate.css?v=12">
 </head>
 <body class="ap-body">
   <header class="ap-top" id="apTopGate">
@@ -36,13 +36,22 @@
           <label for="apLoginPass" data-i18n="auth.password">Contraseña</label>
           <input id="apLoginPass" name="password" type="password" autocomplete="current-password" required>
         </div>
-        <button class="ap-btn" type="submit" id="apLoginBtn" data-i18n="auth.login_action">Iniciar sesión</button>
+        <button class="ap-btn" type="submit" id="apLoginBtn" data-i18n="auth.login_action">Entrar</button>
       </form>
+      <p class="ap-login-foot">
+        <span data-i18n="auth.no_account">¿No tienes cuenta?</span>
+        <button type="button" class="ap-login-foot__link" id="apOpenReg" data-i18n="auth.register_link">Crear cuenta</button>
+      </p>
     </section>
+  </div>
 
-    <section class="ap-card">
-      <h2 data-i18n="auth.register_link">Crear Nueva Cuenta</h2>
-      <p class="ap-lead" data-i18n="auth.applicate_reg_lead">Así será el registro. Aún no se puede enviar.</p>
+  <div class="ap-sheet" id="apRegSheet" hidden>
+    <div class="ap-sheet__card ap-sheet__card--reg" role="dialog" aria-labelledby="apRegTitle">
+      <div class="ap-sheet__head">
+        <h3 id="apRegTitle" data-i18n="auth.register_title">Crear cuenta</h3>
+        <button type="button" class="ap-sheet__x" id="apRegClose" aria-label="Cerrar">×</button>
+      </div>
+      <p class="ap-muted" data-i18n="auth.applicate_reg_lead">Así será el registro. Aún no se puede enviar.</p>
       <div id="apRegMsg" class="ap-msg" role="status"></div>
       <form id="apRegForm">
         <div class="ap-field">
@@ -107,12 +116,9 @@
             <input id="apRegPass2" name="new-password-confirm" type="password" autocomplete="new-password">
           </div>
         </div>
-        <div class="ap-soon-box">
-          <strong data-i18n="auth.applicate_teaser_soon">Próximamente</strong>
-          <span data-i18n="auth.applicate_reg_blocked">El registro abre próximamente.</span>
-        </div>
+        <button class="ap-btn" type="submit" id="apRegBtn" data-i18n="auth.register_title">Crear cuenta</button>
       </form>
-    </section>
+    </div>
   </div>
 
   <div id="apApp" class="ap-app">
@@ -125,6 +131,10 @@
         <button type="button" data-ap-nav="const"><span class="ap-ico">✪</span><span class="ap-lbl" data-i18n="auth.applicate_nav_certs">Constancias</span></button>
         <button type="button" data-ap-nav="perfil"><span class="ap-ico">●</span><span class="ap-lbl" data-i18n="auth.applicate_nav_profile">Mi perfil</span></button>
       </nav>
+      <button type="button" class="ap-side__out" id="apLogoutBtn">
+        <span class="ap-ico">↪</span>
+        <span class="ap-lbl" data-i18n="auth.applicate_logout">Salir</span>
+      </button>
     </aside>
 
     <div class="ap-shell">
@@ -138,14 +148,16 @@
       <main class="ap-main">
         <div class="ap-admin-bar">
           <span data-i18n="auth.applicate_admin_preview">Vista previa admin · el público aún no entra.</span>
-          <button type="button" class="ap-btn ap-btn-ghost" id="apLogoutBtn" data-i18n="auth.applicate_logout">Salir</button>
         </div>
         <p class="ap-msg warn" id="apTablesNote" hidden></p>
 
         <section class="ap-panel is-on" data-ap-panel="inicio">
           <div class="ap-hero">
             <div class="ap-hero__copy">
-              <h2 data-i18n="auth.applicate_welcome">Bienvenido a Applicate</h2>
+              <h2 class="ap-hero__title">
+                <span data-i18n="auth.applicate_welcome">Bienvenido a</span>
+                <img class="ap-hero__logo" src="../assets/Applicate Logo.png" alt="Applicate">
+              </h2>
               <p data-i18n="auth.applicate_soon_lead">Formación técnica para una agricultura más productiva y sostenible.</p>
             </div>
           </div>
@@ -256,7 +268,7 @@
       <h3 id="apBuyTitle" data-i18n="auth.applicate_buy_title">Comprar curso</h3>
       <p class="ap-muted" data-i18n="auth.applicate_buy_lead">Elige cómo pagar. PayPal habilita solo. Transferencia: te escribo y yo lo abro en admin.</p>
       <div id="apBuyMsg" class="ap-msg" role="status"></div>
-      <button type="button" class="ap-btn" id="apBuyPaypal" data-i18n="auth.applicate_buy_paypal">Pagar con PayPal</button>
+      <div id="apPaypalButtons"></div>
       <a class="ap-btn ap-btn-wa" id="apBuyWa" target="_blank" rel="noopener noreferrer" href="https://wa.me/13868044542?text=Hola%2C%20quiero%20pagar%20un%20curso%20de%20Applicate%20por%20transferencia.">
         <span data-i18n="auth.applicate_buy_wa">Pagar por transferencia · WhatsApp</span>
       </a>
@@ -266,7 +278,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../supabase-config.js"></script>
-  <script src="applicate-data.js?v=1"></script>
-  <script src="applicate-gate.js?v=4"></script>
+  <script src="applicate-data.js?v=2"></script>
+  <script src="applicate-gate.js?v=7"></script>
 </body>
 </html>
