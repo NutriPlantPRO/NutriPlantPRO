@@ -1,9 +1,12 @@
 {
+  "id": "/applicate",
   "name": "Applicate",
   "short_name": "Applicate",
+  "description": "Cursos y constancias de Applicate by NutriPlant PRO.",
   "start_url": "/applicate",
   "scope": "/applicate",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
