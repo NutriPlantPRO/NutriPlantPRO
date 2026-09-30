@@ -743,8 +743,11 @@ body.ap-body {
 /* Constancia */
 .ap-diploma {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 920px;
   max-width: none;
+  height: 620px;
   min-height: 620px;
   margin: 0;
   padding: 28px 40px 36px;
@@ -780,7 +783,7 @@ body.ap-body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin: 8px 0 22px;
+  margin: 8px 0 8px;
 }
 .ap-diploma__logos img { height: 58px; width: auto; max-width: 46%; object-fit: contain; }
 .ap-diploma__word {
@@ -789,7 +792,7 @@ body.ap-body {
   font-weight: 700;
   font-size: 28px;
   color: #1e3a8a;
-  margin: 0 0 14px;
+  margin: 0;
 }
 .ap-diploma__word::after {
   content: "";
@@ -807,10 +810,11 @@ body.ap-body {
   color: #64748b;
   font-size: 14px;
 }
+.ap-diploma__kicker { margin-top: auto; }
 .ap-diploma__name {
   width: fit-content;
   max-width: 100%;
-  margin: 8px auto 10px;
+  margin: 16px auto 14px;
   padding: 0 8px 6px;
   text-align: center;
   font-family: Georgia, "Times New Roman", serif;
@@ -824,7 +828,7 @@ body.ap-body {
 .ap-diploma__course {
   width: fit-content;
   max-width: 86%;
-  margin: 14px auto 0;
+  margin: auto auto 0;
   padding: 0 4px 4px;
   text-align: center;
   color: #166534;
@@ -847,7 +851,7 @@ body.ap-body {
   font-size: 13px;
 }
 .ap-diploma__sign {
-  margin: 112px auto 8px;
+  margin: auto auto 48px;
   max-width: 280px;
   text-align: center;
 }
