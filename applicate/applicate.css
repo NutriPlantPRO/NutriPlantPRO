@@ -446,7 +446,7 @@ body.ap-body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 12px;
+  gap: 8px 4px;
 }
 .ap-hero__logo {
   height: clamp(72px, 9vw, 104px);
