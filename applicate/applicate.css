@@ -208,10 +208,10 @@ body.ap-body {
   width: 232px;
 }
 .ap-side__brand {
-  height: 52px;
-  margin: 0 4px 16px;
-  padding: 6px 8px;
-  border-radius: 10px;
+  height: 64px;
+  margin: 0 0 14px;
+  padding: 4px 3px;
+  border-radius: 12px;
   background-color: #fff;
   background-image: url("../assets/Applicate Logo.png");
   background-repeat: no-repeat;
@@ -782,19 +782,19 @@ body.ap-body {
   gap: 16px;
   margin: 8px 0 22px;
 }
-.ap-diploma__logos img { height: 46px; width: auto; max-width: 46%; object-fit: contain; }
+.ap-diploma__logos img { height: 58px; width: auto; max-width: 46%; object-fit: contain; }
 .ap-diploma__word {
   text-align: center;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   font-weight: 700;
-  font-size: 22px;
+  font-size: 28px;
   color: #1e3a8a;
-  margin: 0 0 16px;
+  margin: 0 0 14px;
 }
 .ap-diploma__word::after {
   content: "";
   display: block;
-  width: 140px;
+  width: 168px;
   height: 3px;
   margin: 10px auto 0;
   border-radius: 2px;
@@ -828,21 +828,26 @@ body.ap-body {
   padding: 0 4px 4px;
   text-align: center;
   color: #166534;
-  font-size: 30px;
+  font-size: 36px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   border-bottom: 2px solid #86efac;
 }
 .ap-diploma__meta {
+  position: absolute;
+  left: 36px;
+  bottom: 28px;
+  z-index: 1;
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 22px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin: 0;
   color: #64748b;
-  font-size: 12px;
+  font-size: 13px;
 }
 .ap-diploma__sign {
-  margin: 64px auto 8px;
+  margin: 112px auto 8px;
   max-width: 280px;
   text-align: center;
 }
@@ -1079,7 +1084,14 @@ body.ap-body {
   .ap-side.is-open,
   .ap-app.is-on .ap-side.is-open,
   .ap-app.is-on .ap-side.is-open:hover {
-    width: min(248px, 86vw);
+    position: fixed;
+    z-index: 50;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: min(260px, 86vw);
+    box-shadow: 12px 0 32px rgba(15, 23, 42, 0.35);
   }
   .ap-nav { flex-direction: column; flex-wrap: nowrap; }
   .ap-app.is-on .ap-side:hover .ap-nav button .ap-lbl,
