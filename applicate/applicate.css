@@ -452,6 +452,7 @@ body.ap-body {
   height: clamp(72px, 9vw, 104px);
   width: auto;
   max-width: min(420px, 100%);
+  margin-left: -22px;
   object-fit: contain;
   display: block;
 }
