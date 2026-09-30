@@ -449,9 +449,9 @@ body.ap-body {
   gap: 10px 12px;
 }
 .ap-hero__logo {
-  height: clamp(46px, 6.2vw, 68px);
+  height: clamp(72px, 9vw, 104px);
   width: auto;
-  max-width: min(280px, 100%);
+  max-width: min(420px, 100%);
   object-fit: contain;
   display: block;
 }
