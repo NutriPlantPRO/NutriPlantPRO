@@ -1983,6 +1983,16 @@
                     <div class="stat-label">🎓 Alumnos Applicate</div>
                     <div class="stat-sub" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;">Registro independiente de PRO (`aplicate_profiles`).</div>
                 </div>
+                <div class="stat-card" style="background:#ecfdf5;">
+                    <div class="stat-number" id="applicateSoldCount">0</div>
+                    <div class="stat-label">🎓 Cursos vendidos</div>
+                    <div class="stat-sub" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;">PayPal y transferencia. Regalos y promos no cuentan.</div>
+                </div>
+                <div class="stat-card" style="background:#ecfdf5;">
+                    <div class="stat-number" id="applicateRevenue">$0.00</div>
+                    <div class="stat-label">🎓 Ingresos Applicate</div>
+                    <div class="stat-sub" style="margin-top:6px;font-size:12px;line-height:1.35;color:#64748b;">Suma del precio actual de cada curso vendido.</div>
+                </div>
             </div>
             
             <div class="admin-sections">
@@ -20333,16 +20343,37 @@
 
         window.refreshApplicateStudentCount = async function () {
             var el = document.getElementById('applicateStudentsCount');
+            var soldEl = document.getElementById('applicateSoldCount');
+            var revEl = document.getElementById('applicateRevenue');
             var d = applicateAdminData();
             var sb = applicateAdminClient();
             if (!el || !d || !sb) return;
             var ping = await d.pingTables(sb);
             if (!ping || !ping.ok) {
                 el.textContent = '—';
+                if (soldEl) soldEl.textContent = '—';
+                if (revEl) revEl.textContent = '—';
                 return;
             }
             var students = await d.listStudents(sb);
             el.textContent = String((students || []).length);
+            var purchases = await d.listAllPurchases(sb);
+            var courses = await d.listAllCourses(sb);
+            var price = {};
+            (courses || []).forEach(function (c) {
+                price[c.id] = c.price_usd != null && c.price_usd !== '' ? Number(c.price_usd) : 0;
+            });
+            var paidSources = { paypal: true, transferencia: true };
+            var sold = 0;
+            var revenue = 0;
+            (purchases || []).forEach(function (p) {
+                if (!paidSources[p.source]) return;
+                sold += 1;
+                var n = price[p.course_id];
+                if (n && !isNaN(n)) revenue += n;
+            });
+            if (soldEl) soldEl.textContent = String(sold);
+            if (revEl) revEl.textContent = '$' + revenue.toFixed(2);
         };
 
         window.showApplicateAdmin = async function (view, ev) {
@@ -20394,30 +20425,78 @@
             }
 
             if (view === 'alumnos') {
+                var byStudent = {};
+                (purchases || []).forEach(function (p) {
+                    if (!byStudent[p.user_id]) byStudent[p.user_id] = [];
+                    byStudent[p.user_id].push(p);
+                });
+                var courseOptions = (courses || []).map(function (c) {
+                    return '<option value="' + applicateAdminEsc(c.id) + '">' + applicateAdminEsc((c.title || 'Sin título') + (c.price_usd != null ? ' · $' + Number(c.price_usd).toFixed(0) : '')) + '</option>';
+                }).join('');
                 var rows = (students || []).map(function (s) {
+                    var owned = byStudent[s.id] || [];
+                    var ownedIds = {};
+                    owned.forEach(function (p) { ownedIds[p.course_id] = true; });
+                    var ownedHtml = owned.length
+                        ? owned.map(function (p) {
+                            return applicateAdminEsc((courseName[p.course_id] || 'Curso') + ' · ' + (p.source || ''));
+                        }).join('<br>')
+                        : 'Ninguno';
+                    var addOptions = (courses || []).filter(function (c) { return !ownedIds[c.id]; }).map(function (c) {
+                        return '<option value="' + applicateAdminEsc(c.id) + '">' + applicateAdminEsc(c.title || 'Sin título') + '</option>';
+                    }).join('');
                     return '<tr><td ' + td() + '>' + applicateAdminEsc(s.full_name || '—') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(s.email || '') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc([s.phone_code, s.phone].filter(Boolean).join(' ') || '—') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(s.country || '—') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(s.profession || '—') + '</td><td ' + td() + '>' +
-                        applicateAdminEsc(applicateAdminFmtDate(s.created_at)) + '</td></tr>';
+                        applicateAdminEsc(s.email || '') + '</td><td ' + td() + '>' + ownedHtml + '</td><td ' + td() + '>' +
+                        (addOptions
+                            ? '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+                                '<select data-ap-course-for="' + applicateAdminEsc(s.id) + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' + addOptions + '</select>' +
+                                '<button type="button" class="btn-admin secondary" data-ap-give="' + applicateAdminEsc(s.id) + '">Agregar curso</button>' +
+                              '</div>'
+                            : (courses.length ? 'Ya tiene todos' : 'No hay cursos en el catálogo')) +
+                        '</td></tr>';
                 }).join('');
                 box.innerHTML =
                     '<h3 style="margin:0 0 8px;color:#14532d;">🎓 Alumnos Applicate</h3>' +
-                    '<p style="margin:0 0 8px;color:#334155;">' + (students || []).length + ' en <code>aplicate_profiles</code>. El registro público sigue cerrado.</p>' +
+                    '<p style="margin:0 0 8px;color:#334155;">' + (students || []).length + ' alumno(s). Cada curso que pagó o que tú autorizas queda en la nube, de por vida. ' + (courseOptions ? '' : 'Primero guarda un curso en Catálogo.') + '</p>' +
                     tableWrap('<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
-                        '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Teléfono</th><th ' + th() + '>País</th><th ' + th() + '>Profesión</th><th ' + th() + '>Alta</th>' +
-                        '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="6">Todavía no hay alumnos.</td></tr>') + '</tbody></table>');
+                        '<th ' + th() + '>Nombre</th><th ' + th() + '>Correo</th><th ' + th() + '>Cursos (nube)</th><th ' + th() + '>Agregar</th>' +
+                        '</tr></thead><tbody>' + (rows || '<tr><td ' + td() + ' colspan="4">Todavía no hay alumnos.</td></tr>') + '</tbody></table>');
+                box.querySelectorAll('[data-ap-give]').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        var userId = btn.getAttribute('data-ap-give');
+                        var sel = box.querySelector('[data-ap-course-for="' + userId + '"]');
+                        var courseId = sel ? sel.value : '';
+                        if (!courseId) return;
+                        btn.disabled = true;
+                        var sessionUser = null;
+                        try {
+                            var sess = await sb.auth.getUser();
+                            sessionUser = sess && sess.data && sess.data.user;
+                        } catch (err) { /* ignore */ }
+                        var assigned = await d.assignCourse(sb, userId, courseId, 'admin', 'Autorizado desde la tabla de alumnos', sessionUser && sessionUser.id);
+                        btn.disabled = false;
+                        if (!assigned.ok) {
+                            alert(assigned.error || 'No se pudo guardar el curso.');
+                            return;
+                        }
+                        window.showApplicateAdmin('alumnos');
+                    });
+                });
                 return;
             }
 
             if (view === 'catalogo') {
                 var cRows = (courses || []).map(function (c) {
                     var pubLabel = c.published ? 'Publicado' : 'Borrador';
-                    return '<tr><td ' + td() + '>' + applicateAdminEsc(c.title || '—') + '</td><td ' + td() + '>' +
+                    return '<tr><td ' + td() + '>' + applicateAdminEsc(c.title || '—') + '<div style="margin-top:6px;color:#64748b;font-size:12px;">Ponente: ' + applicateAdminEsc(c.presenter || 'José de Jesús Ávila Mendoza') + '</div></td><td ' + td() + '>' +
                         applicateAdminEsc(c.summary || '') + '</td><td ' + td() + '>' +
                         (c.price_usd != null ? '$' + Number(c.price_usd).toFixed(2) : '—') + '</td><td ' + td() + '>' +
                         pubLabel + '</td><td ' + td() + '>' +
+                        '<div style="display:grid;gap:6px;min-width:180px;">' +
+                        '<input data-ap-presenter="' + applicateAdminEsc(c.id) + '" value="' + applicateAdminEsc(c.presenter || 'José de Jesús Ávila Mendoza') + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<input data-ap-sign="' + applicateAdminEsc(c.id) + '" value="' + applicateAdminEsc(c.signature_url || '') + '" placeholder="URL firma PNG" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<button type="button" class="btn-admin secondary" data-ap-meta="' + applicateAdminEsc(c.id) + '">Guardar ponente</button>' +
+                        '</div>' +
                         '<button type="button" class="btn-admin secondary" data-ap-pub="' + applicateAdminEsc(c.id) + '" data-ap-on="' + (c.published ? '0' : '1') + '">' +
                         (c.published ? 'Ocultar' : 'Publicar') + '</button></td></tr>';
                 }).join('');
@@ -20428,6 +20507,8 @@
                         '<input name="course_title" required placeholder="Título (aún puede ser interno)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<textarea name="course_summary" placeholder="Resumen" rows="2" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></textarea>' +
                         '<input name="course_price" type="number" min="0" step="0.01" placeholder="Precio USD (opcional)" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<input name="course_presenter" value="José de Jesús Ávila Mendoza" placeholder="Ponente" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                        '<input name="course_signature" placeholder="URL de la firma (PNG), cuando la subas" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">' +
                         '<button type="submit" class="btn-admin">Guardar borrador</button>' +
                         '<div id="apAdminCourseMsg" style="font-size:13px;color:#64748b;"></div>' +
                     '</form>' +
@@ -20442,7 +20523,9 @@
                         var res = await d.createCourse(sb, {
                             title: form.course_title.value,
                             summary: form.course_summary.value,
-                            price_usd: form.course_price.value
+                            price_usd: form.course_price.value,
+                            presenter: form.course_presenter.value,
+                            signature_url: form.course_signature.value
                         });
                         if (msg) msg.textContent = res.ok ? 'Borrador guardado. Sigue oculto para el público.' : (res.error || 'No se pudo guardar');
                         if (res.ok) window.showApplicateAdmin('catalogo');
@@ -20455,6 +20538,22 @@
                             : '¿Ocultar este curso del catálogo público?');
                         if (!ok) return;
                         await d.setPublished(sb, btn.getAttribute('data-ap-pub'), btn.getAttribute('data-ap-on') === '1');
+                        window.showApplicateAdmin('catalogo');
+                    });
+                });
+                box.querySelectorAll('[data-ap-meta]').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        var id = btn.getAttribute('data-ap-meta');
+                        var presenter = box.querySelector('[data-ap-presenter="' + id + '"]');
+                        var sign = box.querySelector('[data-ap-sign="' + id + '"]');
+                        var saved = await d.setCourseMeta(sb, id, {
+                            presenter: presenter ? presenter.value : '',
+                            signature_url: sign ? sign.value : ''
+                        });
+                        if (!saved.ok) {
+                            alert(saved.error || 'No se guardó. Corre en Supabase el ALTER de presenter en supabase-aplicate-tables.sql.');
+                            return;
+                        }
                         window.showApplicateAdmin('catalogo');
                     });
                 });

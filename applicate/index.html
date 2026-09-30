@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="Applicate">
   <script src="../assets/np-prefs-bootstrap.js"></script>
   <script defer src="../assets/np-prefs.js"></script>
-  <script defer src="../assets/np-i18n.js?v=20260930applicateLogo"></script>
+  <script defer src="../assets/np-i18n.js?v=20260930applicateLegal"></script>
   <link rel="icon" type="image/png" href="../assets/pwa-icon-192.png?v=20260815r">
   <meta name="description" content="Applicate by NutriPlant PRO — cursos y constancias. Próximamente.">
   <meta name="robots" content="noindex">
   <link rel="canonical" href="https://nutriplantpro.com/applicate">
-  <link rel="stylesheet" href="applicate.css?v=12">
+  <link rel="stylesheet" href="applicate.css?v=15">
 </head>
 <body class="ap-body">
   <header class="ap-top" id="apTopGate">
@@ -216,18 +216,29 @@
           <h2 data-i18n="auth.applicate_nav_certs">Constancias</h2>
           <p class="ap-muted" data-i18n="auth.applicate_empty_certs">Al terminar un curso, la constancia sale aquí.</p>
           <ul class="ap-list" id="apCertList"></ul>
-          <article class="ap-diploma" aria-hidden="true">
+          <article class="ap-diploma" id="apDiploma">
+            <div class="ap-diploma__bar"></div>
             <div class="ap-diploma__logos">
-              <img src="../assets/Applicate Logo.png" alt="">
-              <img src="../assets/NutriPlant_PRO_blue.png" alt="">
+              <img src="../assets/Applicate Logo.png" alt="Applicate">
+              <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
             </div>
             <p class="ap-diploma__word">CONSTANCIA</p>
-            <p class="ap-diploma__course" data-i18n="auth.applicate_diploma_course">Título del curso (cuando exista)</p>
+            <p class="ap-diploma__kicker">Se extiende a</p>
+            <p class="ap-diploma__name" id="apDipName">Nombre del alumno</p>
+            <p class="ap-diploma__line">por haber completado la formación</p>
+            <p class="ap-diploma__course" id="apDipCourse">Espacio del primer curso</p>
+            <div class="ap-diploma__meta">
+              <span id="apDipDate"></span>
+              <span id="apDipFolio">Folio de ejemplo</span>
+            </div>
             <div class="ap-diploma__sign">
-              <strong>José de Jesús Ávila Mendoza</strong>
-              <span>NutriPlant PRO</span>
+              <img id="apDipSign" alt="" hidden>
+              <span class="ap-diploma__signline"></span>
+              <strong id="apDipPresenter">José de Jesús Ávila Mendoza</strong>
+              <span>Ponente</span>
             </div>
           </article>
+          <button type="button" class="ap-btn ap-diploma__download" id="apDipPdf">Descargar PDF</button>
         </section>
 
         <section class="ap-panel" data-ap-panel="perfil">
@@ -247,6 +258,9 @@
           </div>
           <div data-ap-tabpanel="clases">
             <div class="ap-video" id="apVideoStage">
+              <div class="ap-video__mark" aria-hidden="true">
+                <img src="../assets/Applicate Logo.png" alt="">
+              </div>
               <div id="apVideoInner">
                 <div class="ap-video__play">▶</div>
                 <div data-i18n="auth.applicate_video_empty">El video se ve aquí. Pantalla completa o en esta ventana, con el marco de Applicate.</div>
@@ -259,6 +273,10 @@
             <div class="ap-files" id="apFilesBox" data-i18n="auth.applicate_files_empty">PDF, Excel o Word del curso. Vacío hasta que se carguen por terminal.</div>
           </div>
         </section>
+        <footer class="ap-legal">
+          <p><strong>© 2026 NutriPlant PRO®</strong>. <span data-i18n="auth.applicate_legal_mark">Marca registrada. Todos los derechos reservados.</span></p>
+          <p data-i18n="auth.applicate_legal_body">Applicate es una plataforma de NutriPlant PRO. El software, los cursos y su contenido están protegidos. Queda prohibida su copia, distribución o uso sin autorización.</p>
+        </footer>
       </main>
     </div>
   </div>
@@ -278,7 +296,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../supabase-config.js"></script>
-  <script src="applicate-data.js?v=2"></script>
-  <script src="applicate-gate.js?v=7"></script>
+  <script src="applicate-data.js?v=3"></script>
+  <script src="applicate-gate.js?v=11"></script>
 </body>
 </html>

@@ -5,18 +5,29 @@
     return sb || null;
   }
 
-  async function listPublishedCourses(sb) {
+  var COURSE_COLS = 'id, title, summary, price_usd, cover_url, published, sort_order, created_at, presenter, signature_url';
+  var COURSE_COLS_BASE = 'id, title, summary, price_usd, cover_url, published, sort_order, created_at';
+
+  async function selectCourses(sb, onlyPublished) {
     if (!sb) return [];
-    var res = await sb.from('aplicate_courses').select('id, title, summary, price_usd, cover_url, published, sort_order').eq('published', true).order('sort_order', { ascending: true });
+    var q = sb.from('aplicate_courses').select(COURSE_COLS).order('sort_order', { ascending: true });
+    if (onlyPublished) q = q.eq('published', true);
+    var res = await q;
+    if (res.error && /presenter|signature_url|column/i.test(res.error.message || '')) {
+      q = sb.from('aplicate_courses').select(COURSE_COLS_BASE).order('sort_order', { ascending: true });
+      if (onlyPublished) q = q.eq('published', true);
+      res = await q;
+    }
     if (res.error) return [];
     return res.data || [];
   }
 
+  async function listPublishedCourses(sb) {
+    return selectCourses(sb, true);
+  }
+
   async function listAllCourses(sb) {
-    if (!sb) return [];
-    var res = await sb.from('aplicate_courses').select('id, title, summary, price_usd, cover_url, published, sort_order, created_at').order('sort_order', { ascending: true });
-    if (res.error) return [];
-    return res.data || [];
+    return selectCourses(sb, false);
   }
 
   async function listPurchases(sb, userId) {
@@ -86,6 +97,16 @@
     return { ok: true };
   }
 
+  async function setCourseMeta(sb, courseId, fields) {
+    if (!sb || !courseId) return { ok: false, error: 'faltan datos' };
+    var row = {};
+    if (fields && fields.presenter != null) row.presenter = String(fields.presenter).trim();
+    if (fields && fields.signature_url != null) row.signature_url = String(fields.signature_url).trim();
+    var res = await sb.from('aplicate_courses').update(row).eq('id', courseId);
+    if (res.error) return { ok: false, error: res.error.message };
+    return { ok: true };
+  }
+
   async function ensureTrialCourse(sb) {
     if (!sb) return { ok: false, error: 'sin cliente' };
     var all = await listAllCourses(sb);
@@ -94,7 +115,8 @@
         title: 'Espacio del primer curso',
         summary: 'Sin portada todavía. Precio de prueba.',
         price_usd: 30,
-        sort_order: 1
+        sort_order: 1,
+        presenter: 'José de Jesús Ávila Mendoza'
       });
     }
     var first = all[0];
@@ -127,7 +149,14 @@
       var n = Number(row.price_usd);
       if (!isNaN(n)) payload.price_usd = n;
     }
+    if (row && row.presenter) payload.presenter = String(row.presenter).trim();
+    if (row && row.signature_url) payload.signature_url = String(row.signature_url).trim();
     var res = await sb.from('aplicate_courses').insert(payload).select('id').single();
+    if (res.error && payload.presenter && /presenter|signature_url|column/i.test(res.error.message || '')) {
+      delete payload.presenter;
+      delete payload.signature_url;
+      res = await sb.from('aplicate_courses').insert(payload).select('id').single();
+    }
     if (res.error) return { ok: false, error: res.error.message };
     return { ok: true, id: res.data && res.data.id };
   }
@@ -234,6 +263,7 @@
     pingTables: pingTables,
     createCourse: createCourse,
     setPublished: setPublished,
+    setCourseMeta: setCourseMeta,
     findUserIdByEmail: findUserIdByEmail,
     ensureStudentRow: ensureStudentRow,
     getProfile: getProfile,

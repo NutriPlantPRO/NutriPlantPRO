@@ -252,24 +252,95 @@
     if (savedEl) savedEl.innerHTML = savedHtml;
   }
 
+  var DEFAULT_PRESENTER = 'José de Jesús Ávila Mendoza';
+
+  function fillDiploma(cert, course) {
+    var nameEl = $('apDipName');
+    var courseEl = $('apDipCourse');
+    var dateEl = $('apDipDate');
+    var folioEl = $('apDipFolio');
+    var presenterEl = $('apDipPresenter');
+    var signEl = $('apDipSign');
+    var student = (state.profile && state.profile.full_name) || (state.user && state.user.email) || 'Nombre del alumno';
+    var when = cert && cert.issued_at ? new Date(cert.issued_at) : new Date();
+    var dateText = when.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    if (nameEl) nameEl.textContent = student;
+    if (courseEl) courseEl.textContent = (course && course.title) || 'Espacio del primer curso';
+    if (dateEl) dateEl.textContent = dateText;
+    if (folioEl) folioEl.textContent = cert && cert.folio ? ('Folio ' + cert.folio) : 'Folio de ejemplo';
+    if (presenterEl) presenterEl.textContent = (course && course.presenter) || DEFAULT_PRESENTER;
+    if (signEl) {
+      var presenter = (course && course.presenter) || DEFAULT_PRESENTER;
+      var src = (course && course.signature_url) || '';
+      if (!src && presenter === DEFAULT_PRESENTER) src = '../assets/firma José de Jesús Avila Mendoza.png';
+      if (src) {
+        signEl.onerror = function () { signEl.hidden = true; };
+        signEl.src = src;
+        signEl.hidden = false;
+      } else {
+        signEl.removeAttribute('src');
+        signEl.hidden = true;
+      }
+    }
+  }
+
   function renderCerts() {
     var box = $('apCertList');
-    var diplomaCourse = document.querySelector('.ap-diploma__course');
+    var cert = state.certs && state.certs[0];
+    var course = cert ? courseById(cert.course_id) : (state.courses && state.courses[0]);
+    fillDiploma(cert, course);
+    if (!box) return;
     if (!state.certs.length) {
-      if (box) box.innerHTML = '';
-      if (diplomaCourse) diplomaCourse.textContent = t('auth.applicate_diploma_course', 'Título del curso (cuando exista)');
+      box.innerHTML = '';
       return;
     }
-    var first = courseById(state.certs[0].course_id);
-    if (diplomaCourse) diplomaCourse.textContent = (first && first.title) || t('auth.applicate_diploma_course', 'Título del curso (cuando exista)');
-    if (!box) return;
     box.innerHTML = state.certs.map(function (c) {
-      var course = courseById(c.course_id);
+      var item = courseById(c.course_id);
       return (
-        '<li><strong>' + esc((course && course.title) || 'Curso') + '</strong>' +
+        '<li><strong>' + esc((item && item.title) || 'Curso') + '</strong>' +
         '<span class="ap-list__meta">' + esc(t('auth.applicate_cert_folio', 'Folio') + ': ' + (c.folio || '—')) + '</span></li>'
       );
     }).join('');
+  }
+
+  function loadHtml2Pdf() {
+    return new Promise(function (resolve, reject) {
+      if (window.html2pdf) {
+        resolve(window.html2pdf);
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js';
+      s.onload = function () {
+        if (window.html2pdf) resolve(window.html2pdf);
+        else reject(new Error('pdf'));
+      };
+      s.onerror = function () { reject(new Error('pdf')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function downloadDiploma() {
+    var sheet = $('apDiploma');
+    var btn = $('apDipPdf');
+    if (!sheet) return;
+    if (btn) btn.disabled = true;
+    try {
+      var html2pdf = await loadHtml2Pdf();
+      var course = (state.certs[0] && courseById(state.certs[0].course_id)) || (state.courses && state.courses[0]);
+      var title = (course && course.title) || 'constancia';
+      await html2pdf().set({
+        margin: 8,
+        filename: 'constancia-' + title.replace(/\s+/g, '-').toLowerCase() + '.pdf',
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      }).from(sheet).save();
+    } catch (e) {
+      alert('No se pudo crear el PDF. Intenta de nuevo.');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   function renderProfile() {
@@ -313,7 +384,7 @@
       return;
     }
     if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
-      inner.innerHTML = '<video controls src="' + esc(url) + '"></video>';
+      inner.innerHTML = '<video controls controlsList="nofullscreen" playsinline src="' + esc(url) + '"></video>';
       return;
     }
     inner.innerHTML = '<a class="ap-btn" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(t('auth.applicate_open', 'Abrir')) + '</a>';
@@ -660,12 +731,20 @@
     });
     var fs = $('apVideoFs');
     var stage = $('apVideoStage');
+    function syncFsLabel() {
+      if (!fs || !stage) return;
+      var on = document.fullscreenElement === stage;
+      fs.textContent = on
+        ? t('auth.applicate_video_exit', 'Salir de pantalla completa')
+        : t('auth.applicate_video_fs', 'Pantalla completa');
+    }
     if (fs && stage) {
       fs.addEventListener('click', function () {
         if (!stage.requestFullscreen) return;
-        if (document.fullscreenElement) document.exitFullscreen();
+        if (document.fullscreenElement === stage) document.exitFullscreen();
         else stage.requestFullscreen();
       });
+      document.addEventListener('fullscreenchange', syncFsLabel);
     }
   }
 
@@ -675,6 +754,8 @@
     bindNav();
     bindAula();
     bindBuy();
+    var pdfBtn = $('apDipPdf');
+    if (pdfBtn) pdfBtn.addEventListener('click', downloadDiploma);
     bindDelegates();
     openPanel('inicio');
 

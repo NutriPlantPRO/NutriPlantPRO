@@ -228,6 +228,10 @@ DROP POLICY IF EXISTS aplicate_visits_select ON public.aplicate_visits;
 CREATE POLICY aplicate_visits_select ON public.aplicate_visits
   FOR SELECT USING (user_id = auth.uid() OR public.is_admin_user());
 
+ALTER TABLE public.aplicate_courses
+  ADD COLUMN IF NOT EXISTS presenter text,
+  ADD COLUMN IF NOT EXISTS signature_url text;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON
   public.aplicate_profiles,
   public.aplicate_courses,
