@@ -5045,6 +5045,50 @@ html.embed-login body {
   color: #64748b;
   line-height: 1.35;
 }
+.hydro-pheno-readout-host {
+  margin-top: 10px;
+}
+.hydro-pheno-readout {
+  margin: 0;
+  padding: 10px 12px 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #94a3b8;
+  background: #f8fafc;
+  color: #334155;
+}
+.hydro-pheno-readout--empty {
+  background: #fff;
+}
+.hydro-pheno-readout__kicker {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+.hydro-pheno-readout__stage {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.hydro-pheno-readout__why {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1e293b;
+}
+.hydro-pheno-readout__metrics {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+}
+.hydro-pheno-readout__note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #64748b;
+}
 .hydro-ternary-chart-svg.tern-dragging { cursor: grabbing; }
 .hydro-ternary-chart-svg.tern-dragging .tern-vis-an { opacity: 0.45; }
 .hydro-ternary-chart-svg.tern-dragging .tern-vis-cat { opacity: 0.45; }

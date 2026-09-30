@@ -2019,6 +2019,7 @@ function sectionTemplate(name) {
               </div>
               <div id="hydroTriangleInfoCombined" class="hydro-muted" style="margin-bottom:8px;"></div>
               <div id="hydroTriangleCombined" class="hydro-triangle"></div>
+              <div id="hydroPhenoReadout" class="hydro-pheno-readout-host"></div>
             </div>
           </div>
 

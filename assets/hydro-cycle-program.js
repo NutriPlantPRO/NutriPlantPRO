@@ -400,6 +400,44 @@
     });
   }
 
+  /** Lectura viva del perfil (etapa + criterio). La usa el diseño de solución, bajo el ternario. */
+  function phenologyReadoutHtml(stage) {
+    var ph = inferPhenologyFromMeq(stage);
+    var kicker = t('Perfil fenológico estimado', 'Estimated phenological profile');
+    if (!ph || ph.id === 'vacio') {
+      return (
+        '<aside class="hydro-pheno-readout hydro-pheno-readout--empty" aria-live="polite">' +
+          '<div class="hydro-pheno-readout__kicker">' + escapeAttr(kicker) + '</div>' +
+          '<p class="hydro-pheno-readout__why">' + escapeAttr(ph && ph.why ? ph.why : '') + '</p>' +
+        '</aside>'
+      );
+    }
+    var kn = (typeof ph.kToN === 'number' && isFinite(ph.kToN))
+      ? (ph.kToN >= 90 ? '∞' : ph.kToN.toFixed(2))
+      : '—';
+    var kpct = (typeof ph.kPctCat === 'number' && isFinite(ph.kPctCat)) ? ph.kPctCat.toFixed(0) : '—';
+    var ceTxt = (typeof ph.ce === 'number' && isFinite(ph.ce)) ? ph.ce.toFixed(2) : '—';
+    return (
+      '<aside class="hydro-pheno-readout" aria-live="polite" style="border-left-color:' + ph.color + '">' +
+        '<div class="hydro-pheno-readout__kicker">' + escapeAttr(kicker) + '</div>' +
+        '<div class="hydro-pheno-readout__stage" style="color:' + ph.color + '">' + escapeAttr(ph.label) + '</div>' +
+        '<p class="hydro-pheno-readout__why">' + escapeAttr(ph.why) + '</p>' +
+        '<p class="hydro-pheno-readout__metrics">' +
+          escapeAttr(t('Criterio', 'Criterion')) + ': ' +
+          '<strong>K/N</strong> ' + kn +
+          ' · <strong>%K</strong> ' + kpct + '%' +
+          ' · <strong>CE</strong> ' + ceTxt + ' dS/m' +
+        '</p>' +
+        '<p class="hydro-pheno-readout__note">' +
+          escapeAttr(t(
+            'Misma lectura del Programa del ciclo: K/N = K⁺ ÷ (N-NO₃⁻ + N-NH₄⁺), %K = K ÷ (K+Ca+Mg) y CE en dS/m. Orientativa.',
+            'Same reading as the Cycle program: K/N = K⁺ ÷ (N-NO₃⁻ + N-NH₄⁺), %K = K ÷ (K+Ca+Mg) and EC in dS/m. Indicative.'
+          )) +
+        '</p>' +
+      '</aside>'
+    );
+  }
+
   function meqRelationsHtml(stage) {
     if (!stage || !stage.meq) return '';
     var no3 = parseFloat(stage.meq.N_NO3) || 0;
@@ -1580,6 +1618,8 @@
     loadCustomCyclePrograms: loadCustomCyclePrograms,
     saveCustomCyclePrograms: saveCustomCyclePrograms,
     getAllCatalogSolutions: getAllCatalogSolutions,
+    inferPhenologyFromMeq: inferPhenologyFromMeq,
+    phenologyReadoutHtml: phenologyReadoutHtml,
     normalizeStage: normalizeStage,
     defaultStage: defaultStage,
     customSolutionLimit: customSolutionLimit,

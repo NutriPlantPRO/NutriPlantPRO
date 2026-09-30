@@ -1667,6 +1667,17 @@ function hydroTernaryPercents(stage) {
   };
 }
 
+function hydroPaintPhenoReadout(stage) {
+  const host = document.getElementById('hydroPhenoReadout');
+  if (!host) return;
+  const api = window.NpHydroCycleProgram;
+  if (!api || typeof api.phenologyReadoutHtml !== 'function') {
+    host.innerHTML = '';
+    return;
+  }
+  host.innerHTML = api.phenologyReadoutHtml(stage || null);
+}
+
 function hydroPatchTriangleMarkers(stage) {
   const wrap = document.getElementById('hydroTriangleCombined');
   const svg = wrap && wrap.querySelector('svg');
@@ -1697,18 +1708,28 @@ function hydroTernClientToSvg(svg, clientX, clientY) {
   return { x: sp.x, y: sp.y };
 }
 
+function hydroRefreshEquilibriumReadout(stage) {
+  if (!stage) {
+    hydroPaintPhenoReadout(null);
+    return;
+  }
+  stage.ce = hydroComputeCE(stage).toFixed(2);
+  hydroPatchTriangleMarkers(stage);
+  const info = document.getElementById('hydroTriangleInfoCombined');
+  if (info) {
+    const p = hydroTernaryPercents(stage);
+    info.textContent = `${hydroT('Aniones', 'Anions')}: N-NO₃⁻ ${p.pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${p.pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${p.pSO4.toFixed(1)}% | ${hydroT('Cationes', 'Cations')}: K⁺ ${p.pK.toFixed(1)}% · Ca²⁺ ${p.pCa.toFixed(1)}% · Mg²⁺ ${p.pMg.toFixed(1)}%`;
+  }
+  hydroPaintPhenoReadout(stage);
+}
+
 function hydroRenderFromTriangleDrag(skipTriangleRedraw) {
   const stage = hydroGetActiveStage();
   if (!stage) return;
   stage.ce = hydroComputeCE(stage).toFixed(2);
   stage.ppm = Object.assign({}, stage.ppm || {}, hydroComputeMacroPpm(stage));
   if (skipTriangleRedraw) {
-    hydroPatchTriangleMarkers(stage);
-    const info = document.getElementById('hydroTriangleInfoCombined');
-    if (info) {
-      const p = hydroTernaryPercents(stage);
-      info.textContent = `${hydroT('Aniones', 'Anions')}: N-NO₃⁻ ${p.pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${p.pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${p.pSO4.toFixed(1)}% | ${hydroT('Cationes', 'Cations')}: K⁺ ${p.pK.toFixed(1)}% · Ca²⁺ ${p.pCa.toFixed(1)}% · Mg²⁺ ${p.pMg.toFixed(1)}%`;
-    }
+    hydroRefreshEquilibriumReadout(stage);
     // Actualizar solo valores visibles de meq/CE/ppm sin rearmar tablas (arrastre fluido)
     const root = document.querySelector('.hydroponia-container') || document;
     const id = stage.id;
@@ -1952,6 +1973,7 @@ function renderHydroTriangle() {
   if (!stage) {
     container.innerHTML = `<div class="hydro-muted">${hydroT('Selecciona una etapa para ver el diagrama.', 'Select a stage to view the diagram.')}</div>`;
     if (info) info.textContent = '';
+    hydroPaintPhenoReadout(null);
     return;
   }
 
@@ -1977,6 +1999,7 @@ function renderHydroTriangle() {
   if (info) {
     info.textContent = `${hydroT('Aniones', 'Anions')}: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}% | ${hydroT('Cationes', 'Cations')}: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}%`;
   }
+  hydroPaintPhenoReadout(stage);
 }
 
 function renderHydroObjective() {
@@ -4391,6 +4414,9 @@ function bindHydroEvents(container) {
       if (type === 'meq' && nutrient) {
         stage.meq = stage.meq || {};
         stage.meq[nutrient] = hydroRound2(parseFloat(input.value) || 0);
+        hydroRefreshEquilibriumReadout(stage);
+        const ceEl = input.closest('tr') && input.closest('tr').querySelector('input[data-field="ce"]');
+        if (ceEl) ceEl.value = stage.ce;
       } else if (type === 'ppm' && nutrient) {
         if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
           const fi = hydroSavePpmInputFocusState(input);
