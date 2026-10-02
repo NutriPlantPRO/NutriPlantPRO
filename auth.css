@@ -1123,12 +1123,20 @@
     width: 100%;
   }
 
-  .login-split__tools {
+  .login-applicate-teaser {
     order: 2;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .login-split__tools {
+    order: 3;
   }
 
   .login-social-panel.auth-card {
-    order: 3;
+    order: 4;
     padding: 18px 16px 16px;
     overflow: visible;
   }
@@ -1895,37 +1903,37 @@
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
 }
 
-/* Applicate — franja compacta (no estira la columna ni el panel de redes) */
+/* Applicate. Teléfono: franja entre acceso y herramientas.
+   Computadora: tarjeta entre acceso y redes; el alto lo pone el script. */
 .login-applicate-teaser {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 10px;
-  height: 58px;
-  min-height: 58px;
-  max-height: 58px;
-  margin: 0 0 12px;
-  padding: 0 12px;
-  border-radius: 10px;
+  gap: 12px;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: inherit;
   box-sizing: border-box;
   background: #fff;
   border: 1.5px solid #1e3a8a;
-  box-shadow: none;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
   transition: border-color 0.15s ease;
 }
 .login-applicate-teaser:hover,
 .login-applicate-teaser:focus-visible {
   border-color: #166534;
-  box-shadow: none;
   outline: none;
 }
 .login-applicate-teaser__logo {
   flex-shrink: 0;
-  height: 44px;
+  height: 52px;
   width: auto;
-  max-width: 168px;
+  max-width: 58%;
   object-fit: contain;
   object-position: left center;
   display: block;
@@ -1937,6 +1945,44 @@
   flex-direction: column;
   justify-content: center;
   gap: 1px;
+}
+
+@media (min-width: 700px) {
+  .login-applicate-teaser {
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 18px;
+    min-height: 220px;
+    padding: 28px 28px 24px;
+    border-radius: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  .login-applicate-teaser::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  }
+  .login-applicate-teaser__logo {
+    height: auto;
+    width: auto;
+    max-width: 86%;
+    max-height: var(--ap-logo, 120px);
+    object-position: center;
+  }
+  .login-applicate-teaser__copy {
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+  }
 }
 .login-applicate-teaser__kicker {
   margin: 0;
@@ -1965,6 +2011,18 @@
 }
 .login-applicate-teaser__line {
   display: none;
+}
+
+@media (min-width: 700px) {
+  .login-applicate-teaser__kicker {
+    font-size: 12px;
+  }
+  .login-applicate-teaser__soon {
+    font-size: 22px;
+  }
+  .login-applicate-teaser__when {
+    font-size: 13px;
+  }
 }
 
 /* Login: recuadro verde herramientas gratuitas — logo N hoja azul + texto al ancho útil */

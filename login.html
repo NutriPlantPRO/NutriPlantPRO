@@ -272,6 +272,27 @@
         </div>
       </div>
 
+      <a
+        class="login-applicate-teaser"
+        href="/applicate/"
+        data-i18n-aria-label="auth.applicate_teaser_aria"
+        aria-label="Applicate, registro gratis, próximamente"
+      >
+        <img
+          src="assets/Applicate Logo.png"
+          alt="Applicate"
+          class="login-applicate-teaser__logo"
+          width="280"
+          height="96"
+          decoding="async"
+        />
+        <div class="login-applicate-teaser__copy">
+          <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitaciones y formación</p>
+          <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Registro gratis</p>
+          <p class="login-applicate-teaser__when" data-i18n="auth.applicate_teaser_when">Próximamente</p>
+        </div>
+      </a>
+
       <aside class="login-social-panel auth-card" aria-label="Redes sociales NutriPlant PRO" data-i18n-aria-label="auth.social_aria">
         <h2 class="login-social-panel__title" data-i18n="auth.social_title">Síguenos en redes</h2>
         <p class="login-social-panel__subtitle" data-i18n="auth.social_subtitle">Contenido técnico, novedades y comunidad agronómica.</p>
@@ -380,27 +401,6 @@
 
 
       <div class="auth-card login-split__tools">
-
-        <a
-          class="login-applicate-teaser"
-          href="/applicate/"
-          data-i18n-aria-label="auth.applicate_teaser_aria"
-          aria-label="Applicate, registro gratis, próximamente"
-        >
-          <img
-            src="assets/Applicate Logo.png"
-            alt="Applicate"
-            class="login-applicate-teaser__logo"
-            width="168"
-            height="44"
-            decoding="async"
-          />
-          <div class="login-applicate-teaser__copy">
-            <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitaciones y formación</p>
-            <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Registro gratis</p>
-            <p class="login-applicate-teaser__when" data-i18n="auth.applicate_teaser_when">Próximamente</p>
-          </div>
-        </a>
 
         <!-- Invitación a calculadoras sin registro (usuarios curiosos) -->
         <div class="login-free-tools-banner">
@@ -5264,10 +5264,17 @@
               panelsClear.style.maxHeight = '';
             }
           };
+          var teaser = document.querySelector('.login-applicate-teaser');
           if (window.innerWidth < 700) {
             root.style.minHeight = '';
             root.style.maxHeight = '';
             root.style.height = '';
+            if (teaser) {
+              teaser.style.height = '';
+              teaser.style.minHeight = '';
+              teaser.style.maxHeight = '';
+              teaser.style.removeProperty('--ap-logo');
+            }
             clearEmbedHeights();
             var fbMobile = root.querySelector('[data-social-embed="facebook"]');
             if (fbMobile && root.querySelector('[data-social-tab="facebook"].active')) {
@@ -5279,9 +5286,30 @@
             }
             return;
           }
-          /* Alto estable en escritorio. Si sigue la lista de herramientas,
-             cada botón nuevo alarga redes y abre el hueco bajo el acceso. */
-          var available = 492;
+          /* Escritorio: Applicate ocupa la diferencia entre el acceso y redes.
+             Redes se queda en un alto cómodo. Las dos columnas cierran juntas. */
+          var toolsCol = document.querySelector('.login-split__tools');
+          var loginCol = document.querySelector('.login-split__login');
+          var leftCol = document.querySelector('.login-split__left');
+          var toolsH = toolsCol ? toolsCol.getBoundingClientRect().height : 0;
+          var loginH = loginCol ? loginCol.getBoundingClientRect().height : 0;
+          var gap = 24;
+          if (leftCol) {
+            var gapCss = window.getComputedStyle(leftCol).rowGap || window.getComputedStyle(leftCol).gap;
+            var gapN = parseFloat(gapCss);
+            if (gapN) gap = gapN;
+          }
+          var socialTarget = 460;
+          var leftover = toolsH > loginH ? toolsH - loginH - gap * 2 : socialTarget + 260;
+          var applicateH = Math.max(240, Math.round(leftover - socialTarget));
+          var available = Math.max(360, Math.round(leftover - applicateH));
+          if (teaser) {
+            teaser.style.height = applicateH + 'px';
+            teaser.style.minHeight = applicateH + 'px';
+            teaser.style.maxHeight = applicateH + 'px';
+            var logoH = Math.max(88, Math.min(168, applicateH - 128));
+            teaser.style.setProperty('--ap-logo', logoH + 'px');
+          }
           root.style.height = available + 'px';
           root.style.minHeight = available + 'px';
           root.style.maxHeight = available + 'px';
