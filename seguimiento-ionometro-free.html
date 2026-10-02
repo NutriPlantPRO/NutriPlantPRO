@@ -36,6 +36,7 @@
       background: var(--card);
       border-bottom: 1px solid var(--line);
     }
+    .bar[hidden] { display: none !important; }
     .bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
     .bar input[type="text"], .bar select {
       font: inherit;
@@ -62,31 +63,42 @@
       flex: 1;
       min-height: 0;
       display: grid;
-      grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.8fr);
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.95fr);
     }
     .sheet, .charts {
       min-height: 0;
       overflow: auto;
       padding: 12px;
     }
+    .charts { display: flex; flex-direction: column; gap: 12px; }
     .sheet { border-right: 1px solid var(--line); }
-    table { border-collapse: collapse; min-width: 980px; width: 100%; background: var(--card); }
-    th, td { border: 1px solid var(--line); padding: 4px; vertical-align: top; }
-    th { background: #f1f5f9; font-weight: 600; font-size: 12px; text-align: center; }
+    .sheet-lead { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+    .bar select { min-width: 200px; }
+    table { border-collapse: separate; border-spacing: 0; min-width: 980px; width: 100%; background: var(--card); }
+    th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 6px; vertical-align: top; }
+    th { background: #f8fafc; font-weight: 650; font-size: 12px; text-align: center; }
     th.group-an { background: #e0e7ff; }
     th.group-cat { background: #dcfce7; }
-    th.group-edge { background: #f1f5f9; }
+    th.group-other { background: #ffedd5; color: #9a3412; }
     td.actions { white-space: nowrap; width: 1%; }
+    td.actions button { padding: 4px 7px; }
     input.cell, input.name {
       width: 100%;
-      min-width: 64px;
-      border: 0;
-      background: transparent;
+      min-width: 72px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
       font: inherit;
       color: var(--ink);
-      padding: 2px;
+      padding: 7px 8px;
+      min-height: 34px;
     }
-    input.name { min-width: 108px; }
+    input.cell::placeholder, input.name::placeholder { color: #94a3b8; }
+    input.cell:focus, input.name:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: #2563eb;
+    }
+    input.name { min-width: 120px; }
     .meq { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); min-height: 14px; padding: 0 2px 2px; }
     .ref-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
     .ref-dot.low { background: #d97706; }
@@ -125,13 +137,17 @@
     .chart {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 8px 8px 4px;
-      margin-bottom: 10px;
+      border-radius: 12px;
+      padding: 12px 12px 8px;
     }
-    .chart h3 { margin: 0 0 4px; font-size: 13px; font-weight: 650; }
-    .chart-scroll { overflow-x: auto; }
-    .chart svg { display: block; }
+    .chart-main { flex: 1.45 1 auto; min-height: 380px; }
+    .chart-side { flex: 0.9 1 auto; min-height: 250px; }
+    .chart h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
+    .chart h3 span { font-weight: 600; color: var(--muted); font-size: 13px; }
+    .chart svg { display: block; width: 100%; height: auto; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; list-style: none; margin: 8px 0 0; padding: 0; }
+    .legend li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
+    .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .hint { color: var(--muted); font-size: 13px; margin: 0; }
     @media (max-width: 860px) {
       .workspace { grid-template-columns: 1fr; }
@@ -142,15 +158,16 @@
 <body>
   <div class="app">
     <div class="bar" id="library" hidden>
-      <label>Tabla
+      <label>Tablas guardadas
         <select id="tableSelect" aria-label="Tablas guardadas"></select>
       </label>
-      <input id="tableTitle" type="text" maxlength="120" aria-label="Título de la tabla">
+      <input id="tableTitle" type="text" maxlength="120" placeholder="Nombre de esta tabla" aria-label="Nombre de esta tabla">
       <button type="button" id="newTable" class="primary">Nueva tabla</button>
       <button type="button" id="deleteTable" class="danger">Eliminar tabla</button>
     </div>
     <div class="workspace">
       <section class="sheet">
+        <p class="sheet-lead">Escribe en cada casilla el número que marca el equipo. En los nutrientes ese número es ppm; debajo aparece el meq.</p>
         <div class="sample-row">
           <label>Muestra
             <select id="sampleType" aria-label="Tipo de muestra"></select>
@@ -167,7 +184,7 @@
         </div>
         <div class="note" id="note" hidden></div>
       </section>
-      <section class="charts" id="charts" aria-label="Gráficas por columna"></section>
+      <section class="charts" id="charts" aria-label="Gráficas de nutrientes y de pH con conductividad"></section>
     </div>
   </div>
   <script src="assets/np-ionometro-core.js?v=20261002b"></script>
@@ -215,7 +232,7 @@
         '<th rowspan="2">CE<br><span style="font-weight:500">dS/m</span></th>' +
         '<th class="group-an" colspan="3">Aniones</th>' +
         '<th class="group-cat" colspan="3">Cationes</th>' +
-        '<th class="group-edge" colspan="3">Orilla</th>' +
+        '<th class="group-other" colspan="3">Otros</th>' +
         '<th rowspan="2"></th></tr>';
       var forms = table.forms || core.defaultForms();
       var titles = '<tr>';
@@ -281,10 +298,11 @@
       var html = '';
       table.rows.forEach(function (row, index) {
         html += '<tr data-row="' + index + '"' + (index === selected ? ' class="selected"' : '') + '>';
-        html += '<td><input class="name" data-field="label" value="' + escapeAttr(row.label) + '" aria-label="Título de la lectura"></td>';
+        html += '<td><input class="name" data-field="label" placeholder="Nombre" value="' + escapeAttr(row.label) + '" aria-label="Título de la lectura"></td>';
         core.COLUMNS.forEach(function (col) {
           var ion = col.kind === 'ion';
-          html += '<td><input class="cell" inputmode="decimal" data-field="' + col.id + '" value="' +
+          var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : 'ppm');
+          html += '<td class="entry"><input class="cell" inputmode="decimal" placeholder="' + placeholder + '" data-field="' + col.id + '" value="' +
             escapeAttr(row[col.id] || '') + '" aria-label="' + core.labelFor(col.id, table.forms[col.id]) + '">';
           var level = index === selected ? levelFor(table, row, col.id) : null;
           html += '<div class="meq"><span class="meq-val">' + (ion ? meqText(table, row, col.id) : '') + '</span>' +
@@ -360,76 +378,165 @@
       return '<p class="refs-lead">' + escapeAttr(lead) + '</p>' + grid + restore + stein;
     }
 
-    function renderCharts(table) {
-      var hostEl = document.getElementById('charts');
-      var html = '';
-      var count = 0;
-      core.COLUMNS.forEach(function (col) {
-        var values = core.columnValues(table.rows, col.id, table.forms);
-        if (!core.hasAny(values)) return;
-        count += 1;
-        html += chartSvg(col, table, values);
-      });
-      hostEl.innerHTML = count ? html : '<p class="hint">Cada columna con lecturas muestra aquí su gráfica.</p>';
-    }
-
-    function chartSvg(col, table, values) {
-      var runs = core.segments(values);
-      var nums = values.filter(function (value) { return typeof value === 'number'; });
+    function paddedScale(nums) {
       var min = Math.min.apply(null, nums);
       var max = Math.max.apply(null, nums);
-      if (min === max) {
-        var pad = Math.abs(min) * 0.15 || 1;
-        min -= pad;
-        max += pad;
-      } else {
-        var span = (max - min) * 0.12;
-        min -= span;
-        max += span;
+      if (!(max > min)) {
+        var pad = Math.abs(min) * 0.2 || 1;
+        return { min: min - pad, max: max + pad };
       }
-      var n = values.length;
-      var slot = 36;
-      var width = Math.max(280, 46 + n * slot);
-      var height = 168;
-      var left = 46;
-      var right = 12;
-      var top = 12;
-      var bottom = 36;
-      var plotW = width - left - right;
-      var plotH = height - top - bottom;
-      function x(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
-      function y(value) { return top + (1 - (value - min) / (max - min)) * plotH; }
+      var span = (max - min) * 0.14;
+      return { min: min - span, max: max + span };
+    }
+
+    function formatTick(value) {
+      var abs = Math.abs(value);
+      if (abs >= 100) return String(Math.round(value));
+      if (abs >= 10) return String(Math.round(value * 10) / 10);
+      return String(Math.round(value * 100) / 100);
+    }
+
+    function seriesMarkup(values, color, xAt, yAt) {
+      var runs = core.segments(values);
       var path = '';
-      runs.forEach(function (run) {
-        if (run.length < 2) return;
-        run.forEach(function (index, order) {
-          path += (order ? 'L' : 'M') + x(index).toFixed(1) + ' ' + y(values[index]).toFixed(1) + ' ';
-        });
-      });
       var dots = '';
       runs.forEach(function (run) {
-        var radius = run.length === 1 ? 5.5 : 3.2;
+        if (run.length >= 2) {
+          run.forEach(function (index, order) {
+            path += (order ? 'L' : 'M') + xAt(index).toFixed(1) + ' ' + yAt(values[index]).toFixed(1) + ' ';
+          });
+        }
+        var radius = run.length === 1 ? 5.5 : 3.6;
         run.forEach(function (index) {
-          dots += '<circle cx="' + x(index).toFixed(1) + '" cy="' + y(values[index]).toFixed(1) +
-            '" r="' + radius + '" fill="' + col.color + '"></circle>';
+          dots += '<circle cx="' + xAt(index).toFixed(1) + '" cy="' + yAt(values[index]).toFixed(1) +
+            '" r="' + radius + '" fill="' + color + '"></circle>';
         });
       });
-      var step = n > 12 ? Math.ceil(n / 8) : 1;
+      return '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></path>' + dots;
+    }
+
+    function xLabels(table, n, xAt, height) {
+      var step = n > 10 ? Math.ceil(n / 8) : 1;
       var labels = '';
       table.rows.forEach(function (row, index) {
         if (index % step !== 0 && index !== n - 1) return;
-        labels += '<text x="' + x(index).toFixed(1) + '" y="' + (height - 8) +
-          '" text-anchor="middle" font-size="10" fill="#64748b">' + escapeAttr(row.label || String(index + 1)) + '</text>';
+        var text = String(row.label || (index + 1));
+        if (text.length > 14) text = text.slice(0, 13) + '…';
+        var anchor = 'middle';
+        if (n > 1 && index === 0) anchor = 'start';
+        if (n > 1 && index === n - 1) anchor = 'end';
+        labels += '<text x="' + xAt(index).toFixed(1) + '" y="' + (height - 12) +
+          '" text-anchor="' + anchor + '" font-size="12" fill="#64748b">' + escapeAttr(text) + '</text>';
       });
-      var axis = '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (top + plotH) +
-        '" stroke="' + col.color + '" stroke-opacity="0.45"></line>' +
-        '<text x="4" y="' + (top + 10) + '" font-size="10" fill="' + col.color + '" fill-opacity="0.75">' +
-        escapeAttr(col.unit) + '</text>';
-      return '<article class="chart"><h3>' + escapeAttr(core.labelFor(col.id, table.forms[col.id])) + '</h3>' +
-        '<div class="chart-scroll"><svg width="' + width + '" height="' + height + '" role="img" aria-label="' +
-        escapeAttr(core.labelFor(col.id, table.forms[col.id])) + ' en el tiempo">' +
-        axis + '<path d="' + path + '" fill="none" stroke="' + col.color + '" stroke-width="2"></path>' +
-        dots + labels + '</svg></div></article>';
+      return labels;
+    }
+
+    function renderCharts(table) {
+      var hostEl = document.getElementById('charts');
+      var ions = nutrientChart(table);
+      var side = phEcChart(table);
+      hostEl.innerHTML = (ions || side)
+        ? ions + side
+        : '<p class="hint">Cuando haya lecturas, los nutrientes se ven juntos y el pH con la conductividad van en la otra gráfica.</p>';
+    }
+
+    function nutrientChart(table) {
+      var series = [];
+      var all = [];
+      core.COLUMNS.forEach(function (col) {
+        if (col.kind !== 'ion') return;
+        var values = core.columnValues(table.rows, col.id, table.forms);
+        if (!core.hasAny(values)) return;
+        series.push({ col: col, values: values, label: core.labelFor(col.id, table.forms[col.id]) });
+        values.forEach(function (value) {
+          if (typeof value === 'number') all.push(value);
+        });
+      });
+      if (!series.length) return '';
+      var scale = paddedScale(all);
+      var n = table.rows.length;
+      var width = 720;
+      var height = 460;
+      var left = 58;
+      var right = 16;
+      var top = 18;
+      var bottom = 44;
+      var plotW = width - left - right;
+      function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
+      function yAt(value) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * (height - top - bottom); }
+      var grid = '';
+      for (var i = 0; i < 5; i++) {
+        var value = scale.min + (scale.max - scale.min) * (i / 4);
+        var yy = yAt(value);
+        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
+        grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#64748b">' + formatTick(value) + '</text>';
+      }
+      var lines = '';
+      var legend = '';
+      series.forEach(function (item) {
+        lines += seriesMarkup(item.values, item.col.color, xAt, yAt);
+        legend += '<li><i style="background:' + item.col.color + '"></i>' + escapeAttr(item.label) + '</li>';
+      });
+      return '<article class="chart chart-main"><h3>Nutrientes <span>meq/L</span></h3>' +
+        '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Nutrientes en meq por lectura">' +
+        grid + lines + xLabels(table, n, xAt, height) + '</svg><ul class="legend">' + legend + '</ul></article>';
+    }
+
+    function phEcChart(table) {
+      var phCol = core.column('ph');
+      var ecCol = core.column('ec');
+      var ph = core.columnValues(table.rows, 'ph', table.forms);
+      var ec = core.columnValues(table.rows, 'ec', table.forms);
+      var hasPh = core.hasAny(ph);
+      var hasEc = core.hasAny(ec);
+      if (!hasPh && !hasEc) return '';
+      var phNums = ph.filter(function (value) { return typeof value === 'number'; });
+      var ecNums = ec.filter(function (value) { return typeof value === 'number'; });
+      var phScale = hasPh ? paddedScale(phNums) : null;
+      var ecScale = hasEc ? paddedScale(ecNums) : null;
+      var n = table.rows.length;
+      var width = 720;
+      var height = 280;
+      var left = 54;
+      var right = hasEc ? 58 : 16;
+      var top = 16;
+      var bottom = 44;
+      var plotW = width - left - right;
+      var plotH = height - top - bottom;
+      function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
+      function yOf(value, scale) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
+      var grid = '';
+      var axis = '';
+      if (phScale) {
+        axis += '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (top + plotH) + '" stroke="' + phCol.color + '" stroke-opacity="0.45" stroke-width="2"></line>';
+        for (var i = 0; i < 4; i++) {
+          var value = phScale.min + (phScale.max - phScale.min) * (i / 3);
+          var yy = yOf(value, phScale);
+          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
+          grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
+        }
+      }
+      if (ecScale) {
+        var xRight = left + plotW;
+        axis += '<line x1="' + xRight + '" y1="' + top + '" x2="' + xRight + '" y2="' + (top + plotH) + '" stroke="' + ecCol.color + '" stroke-opacity="0.45" stroke-width="2"></line>';
+        for (var j = 0; j < 4; j++) {
+          var ecValue = ecScale.min + (ecScale.max - ecScale.min) * (j / 3);
+          var yec = yOf(ecValue, ecScale);
+          if (!phScale) {
+            grid += '<line x1="' + left + '" y1="' + yec.toFixed(1) + '" x2="' + xRight + '" y2="' + yec.toFixed(1) + '" stroke="#e2e8f0"></line>';
+          }
+          grid += '<text x="' + (xRight + 8) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="11" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
+        }
+      }
+      var lines = '';
+      if (phScale) lines += seriesMarkup(ph, phCol.color, xAt, function (value) { return yOf(value, phScale); });
+      if (ecScale) lines += seriesMarkup(ec, ecCol.color, xAt, function (value) { return yOf(value, ecScale); });
+      var legend = '';
+      if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>pH</li>';
+      if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>CE dS/m</li>';
+      return '<article class="chart chart-side"><h3>pH y conductividad</h3>' +
+        '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="pH a la izquierda y conductividad a la derecha">' +
+        grid + axis + lines + xLabels(table, n, xAt, height) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
 
     function renderLibrary() {

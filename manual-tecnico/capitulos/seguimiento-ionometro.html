@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Seguimiento con ionómetro — Manual NutriPlant PRO</title>
-  <meta name="description" content="Bitácora de lecturas de ionómetro o fotómetro: ppm tecleado, meq según la forma del equipo, una gráfica por columna. Gratis en el navegador; en PRO, varias tablas en la cuenta.">
+  <meta name="description" content="Bitácora de lecturas de ionómetro o fotómetro: ppm tecleado, meq según la forma del equipo, nutrientes en una gráfica y pH con CE en otra. Gratis en el navegador; en PRO, varias tablas en la cuenta.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/seguimiento-ionometro.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
@@ -13,7 +13,7 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Seguimiento con ionómetro",
-  "description": "Bitácora de lecturas de ionómetro o fotómetro. El ppm se teclea y el meq se calcula con la forma que muestra el equipo. Una gráfica por columna.",
+  "description": "Bitácora de lecturas de ionómetro o fotómetro. El ppm se teclea y el meq se calcula con la forma que muestra el equipo. Los nutrientes van en una gráfica y el pH con la CE en otra.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/seguimiento-ionometro.html",
   "inLanguage": "es",
   "datePublished": "2026-10-02",
@@ -57,7 +57,7 @@
       Bitácora para anotar lecturas de <strong>ionómetro o fotómetro</strong> de solución nutritiva, extracto de pasta,
       pecíolo, foliar o savia. El usuario escribe el número que muestra el equipo, en <strong>ppm</strong>.
       Debajo, NutriPlant calcula el <strong>meq</strong> con la forma elegida en el encabezado de esa columna.
-      Cada columna con datos tiene <strong>su propia gráfica en el tiempo</strong>. Es una guía de seguimiento:
+      Los nutrientes se ven juntos en una gráfica, en meq/L. El pH y la CE van en otra. Es una guía de seguimiento:
       la decisión en campo sigue siendo del técnico.
     </p>
 
@@ -103,10 +103,11 @@
 
     <h2>Gráficas</h2>
     <p>
-      Una gráfica por columna, cada una con su escala. Los iones van en meq/L, el pH en unidades de pH y la CE en dS/m.
-      No se comparan entre sí en un solo eje. El eje horizontal es el orden de las filas, con el título que quepa.
+      Los nutrientes comparten una gráfica, en meq/L, del tamaño de esa columna. pH y conductividad van en otra:
+      el pH en el eje izquierdo y la CE en el derecho. Cada eje usa un tono más tenue del color de su línea.
+      El eje horizontal es el orden de las filas, con el título que quepa.
       Una sola lectura es un punto marcado, sin línea. Si falta un valor en medio, la línea se corta: no se une por encima del hueco y no se pone cero.
-      Una columna sin ningún número no dibuja gráfica.
+      Un nutriente sin ningún número no entra en la gráfica.
     </p>
     <p>En pantalla grande la tabla queda a la izquierda y las gráficas a la derecha. En el teléfono, primero la tabla y después las gráficas.</p>
 
@@ -176,7 +177,7 @@
       A log for <strong>ion-meter or photometer</strong> readings of nutrient solution, saturated-paste extract,
       petiole, leaf or sap. The user types the number on the display, in <strong>ppm</strong>.
       NutriPlant calculates <strong>meq</strong> underneath, using the form selected in that column’s header.
-      Each column with numbers has <strong>its own chart over time</strong>. Field decisions stay with the agronomist.
+      Nutrients share one chart, in meq/L. pH and EC share another. Field decisions stay with the agronomist.
     </p>
     <h2>Where it is</h2>
     <ul>
@@ -200,9 +201,9 @@
     <p>pH and EC are single numbers, with no meq and no form. Defaults follow the ion (what many electrodes show). A photometer that displays nitrate as N is switched to N in the header. H₂PO₄⁻ is the charge assumed for PO₄ (divide by 95, not by 3); it is not a menu option. Do not apply NutriPlant solution weights (N 14, P 31, S 16) while the meter is showing the ion.</p>
     <h2>Charts</h2>
     <p>
-      One chart per column, each on its own scale: ions in meq/L, pH as pH, EC in dS/m. They are not compared on one axis.
+      Nutrients share one meq/L chart. pH and EC are on a second chart: pH on the left axis, EC on the right, each axis in a fainter shade of its line.
       The horizontal axis is row order. One reading is a marked point. A gap breaks the line; it is not bridged and it is not drawn as zero.
-      A column with no numbers has no chart.
+      A nutrient with no numbers stays off the chart.
     </p>
     <h2>Reference parameters</h2>
     <p>

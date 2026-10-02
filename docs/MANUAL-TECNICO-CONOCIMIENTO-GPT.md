@@ -251,7 +251,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - ppm tecleado; meq = ppm ÷ peso de la forma del encabezado. La forma se guarda con la tabla; las ppm no se reescriben. Al cambiarla se actualizan meq y la gráfica de esa columna.
 - NO₃⁻ 62 o N 14 · PO₄ 95 o P 31 · SO₄²⁻ 48,03 o S 16,03 · NH₄⁺ 18,04 o N 14. Fijos: K 39,1, Ca 20,04, Mg 12,15, Na 22,99, Cl 35,45. pH y CE sin meq.
 - 95 ppm PO₄ = 1,0 meq. 280 ppm NO₃⁻ ≈ 4,5 meq; 280 ppm como N = 20 meq.
-- Una gráfica por columna. Un hueco no une la línea. % solo con ≥2 iones del grupo. CE ~10 meq/L por dS/m, orientativa.
+- Nutrientes en una gráfica (meq/L). pH y CE en otra: eje izquierdo pH, eje derecho CE. Un hueco no une la línea. % solo con ≥2 iones del grupo. CE ~10 meq/L por dS/m, orientativa.
 - Login: 1 tabla local. PRO: varias tablas en `profiles.ionometro_seguimientos` (cuenta, no proyecto).
 - **Referencia de concentración** (gratis y PRO), solo solución y pasta: franja NutriPlant de invernadero, ppm del elemento, N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. Se compara en la forma del encabezado: 280 NO₃⁻ ≈ 63 N (debajo de 140–200); en pantalla se ve 620–886 ppm NO₃⁻. Mín–máx editables; «Volver a los de NutriPlant». Pasta = misma franja, rizósfera. pH, CE, Cl, Na, NH₄ sin franja.
 - **Equilibrio tipo Steiner**, solo lectura y en % (no ppm): aniones N 20–80, P 1,25–10, S 10–70; cationes K 10–65, Ca 22,5–62,5, Mg 0,5–40.

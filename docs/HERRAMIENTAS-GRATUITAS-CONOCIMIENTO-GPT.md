@@ -107,7 +107,7 @@ Fijos: K⁺ 39,1 · Ca²⁺ 20,04 · Mg²⁺ 12,15 · Na⁺ 22,99 · Cl⁻ 35,45
 
 **Ejemplos:** 95 ppm PO₄ = 31 ppm P = 1,0 meq/L. 280 ppm como NO₃⁻ ≈ 4,5 meq; los mismos 280 leídos como N = 20 meq. Al cambiar la forma, el 280 sigue escrito; cambian el meq y la gráfica de esa columna.
 
-**Gráficas:** una por columna, escala propia (iones en meq/L, pH en pH, CE en dS/m). No van juntas. Un hueco corta la línea (no se une ni se pone cero). Columna sin números: sin gráfica.
+**Gráficas:** los nutrientes juntos, en meq/L. pH y CE en otra gráfica: eje izquierdo pH, eje derecho CE, cada eje en un tono más tenue del color de su línea. Un hueco corta la línea (no se une ni se pone cero). Nutriente sin números: no entra.
 
 **% parcial:** solo si hay al menos 2 iones del grupo (cationes K, Ca, Mg, Na, NH₄; aniones NO₃, PO₄, SO₄, Cl). Con CE, la suma de cationes medidos se compara con ~10 meq/L por dS/m. Orientativo, no es balance cerrado. H₂PO₄⁻ es la carga asumida (÷95), no una opción del menú. No dividir PO₄ entre 3.
 

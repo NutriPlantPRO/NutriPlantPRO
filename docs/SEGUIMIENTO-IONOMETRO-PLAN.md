@@ -97,7 +97,7 @@ La CE que calcula Imacimus ya sale de sus iones. No se usa como medición aparte
 
 ## Gráfica
 
-Una gráfica por columna, en el tiempo de esa columna. No van juntas para compararlas entre sí: cada una tiene su escala y no se mezclan.
+Los nutrientes van juntos en una gráfica, en meq/L. pH y CE van en otra: pH en el eje izquierdo y CE en el derecho, cada eje en un tono más tenue del color de su línea.
 
 El eje horizontal son las lecturas, en el orden de la tabla. Puede haber diez, quince, treinta o las que el usuario agregue. Con muchas, el eje muestra los títulos que quepan y se puede recorrer; los puntos están todos.
 

@@ -20,6 +20,7 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 - Knowledge: `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (**v2026.10.02**, 29 capítulos), chat del panel (`chat-simple.js`), skill del complemento público, catálogos `manual_tecnico_catalog` / `free_tools_catalog` (`ionometro_seguimiento`).
 - El complemento de ChatGPT lo consulta en la web (`lookup_chapter` / `lookup_free_tool`) cuando el sitio está publicado. No hace falta rearmar un GPT.
 - Referencia del ionómetro (gratis y Pro): franja de invernadero en solución y pasta, comparada en la forma del encabezado; mín–máx editables y vuelta a NutriPlant; Steiner solo lectura; foliar, pecíolo, savia y 2:1 sin franja. Capítulo, catálogos, `llms.txt`, chat del panel y skill del complemento.
+- Vista del ionómetro: casillas visibles, grupo «Otros», nutrientes en una gráfica (meq/L) y pH con CE en otra (ejes izquierdo y derecho).
 
 ## 2026-09-24 — SN / pasta: columna % meq · suelo: ideales CIC/relaciones
 
