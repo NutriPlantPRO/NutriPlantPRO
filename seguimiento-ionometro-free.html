@@ -85,14 +85,18 @@
       border-right: 1px solid var(--line);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: auto;
     }
     .sheet-lead, .sample-row, .tools, .note { flex: 0 0 auto; }
     .sheet-lead { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
     .bar select { min-width: 200px; }
     table { border-collapse: separate; border-spacing: 0; min-width: 980px; width: 100%; background: var(--card); }
     th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 6px; vertical-align: top; }
-    th { background: #f8fafc; font-weight: 650; font-size: 12px; text-align: center; }
+    th { background: #f8fafc; font-weight: 750; font-size: 12px; text-align: center; }
+    .table-card thead th[rowspan],
+    .table-card thead tr:last-child th { border-bottom: 2.5px solid #1e293b; }
+    .table-card th.row-head,
+    .table-card td.row-title { border-right: 2.5px solid #1e293b; background: #f8fafc; }
     th.group-an { background: #e0e7ff; }
     th.group-cat { background: #dcfce7; }
     th.group-other { background: #ffedd5; color: #9a3412; }
@@ -114,7 +118,7 @@
       outline: 2px solid #bfdbfe;
       border-color: #2563eb;
     }
-    input.name { min-width: 120px; }
+    input.name { min-width: 120px; font-weight: 750; background: #f8fafc; }
     .meq { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); min-height: 14px; padding: 0 2px 2px; }
     .ref-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
     .ref-dot.low { background: #d97706; }
@@ -209,8 +213,8 @@
     .colhead-other .form-switch button.is-on,
     .colhead-other .form-switch button.is-on:hover { background: #c2410c; color: #fff; }
     .table-card {
-      flex: 1 1 auto;
-      min-height: 0;
+      flex: 0 0 auto;
+      height: 520px;
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -274,7 +278,7 @@
     @media (max-width: 860px) {
       .workspace { grid-template-columns: 1fr; }
       .sheet { border-right: 0; border-bottom: 1px solid var(--line); overflow: auto; display: block; }
-      .table-card { max-height: 68vh; }
+      .table-card { height: 68vh; min-height: 420px; }
     }
   </style>
 </head>
@@ -371,7 +375,7 @@
 
     function renderHead(table) {
       var groups = '<tr>' +
-        '<th rowspan="2">Lectura</th>' +
+        '<th class="row-head" rowspan="2">Lectura</th>' +
         '<th rowspan="2">pH (H⁺)</th>' +
         '<th rowspan="2">CE<br><span style="font-weight:500">dS/m</span></th>' +
         '<th class="group-an" colspan="3">Aniones</th>' +
@@ -446,7 +450,7 @@
       var html = '';
       table.rows.forEach(function (row, index) {
         html += '<tr data-row="' + index + '"' + (index === selected ? ' class="selected"' : '') + '>';
-        html += '<td><input class="name" data-field="label" placeholder="' + tx('Nombre', 'Name') + '" value="' + escapeAttr(row.label) + '" aria-label="' + tx('Título de la lectura', 'Reading title') + '"></td>';
+        html += '<td class="row-title"><input class="name" data-field="label" placeholder="' + tx('Nombre', 'Name') + '" value="' + escapeAttr(row.label) + '" aria-label="' + tx('Título de la lectura', 'Reading title') + '"></td>';
         core.COLUMNS.forEach(function (col) {
           var ion = col.kind === 'ion';
           var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : 'ppm');
@@ -536,7 +540,7 @@
       });
       grid += '</div>';
       var restore = core.bandsDiffer(table.refBands)
-        ? '<p><button type="button" class="linkish" id="restoreRefs">' + tx('Restaurar NutriPlant', 'Restore NutriPlant') + '</button></p>'
+        ? '<p><button type="button" class="linkish" id="restoreRefs">' + tx('Restaurar valores de referencia NutriPlant PRO', 'Restore NutriPlant PRO reference values') + '</button></p>'
         : '';
       var stein = '<p class="stein">' + tx(
         'Steiner % · N 20–80 · P 1,25–10 · S 10–70 · K 10–65 · Ca 22,5–62,5 · Mg 0,5–40',
@@ -616,6 +620,17 @@
       return halo + '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"' + dash + '></path>' + dots + tags;
     }
 
+    function axisSpine(x1, y1, x2, y2, color) {
+      var ink = color || '#1e293b';
+      return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#ffffff" stroke-width="6.5" stroke-linecap="square"></line>' +
+        '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + ink + '" stroke-width="2.6" stroke-linecap="square"></line>';
+    }
+
+    function yAxisTitle(text, x, y, color, turn) {
+      return '<text transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + turn + ')" text-anchor="middle" font-size="13" font-weight="750" fill="' + color + '">' +
+        escapeAttr(text) + '</text>';
+    }
+
     function xLabels(table, n, xAt, axisY) {
       var step = n > 16 ? Math.ceil(n / 12) : 1;
       var labels = '';
@@ -657,37 +672,39 @@
       var n = table.rows.length;
       var width = 720;
       var height = 480;
-      var left = 58;
-      var right = 28;
-      var top = 18;
+      var left = 78;
+      var right = 24;
+      var top = 16;
       var bottom = 78;
       var plotW = width - left - right;
       var plotH = height - top - bottom;
       var baseY = top + plotH;
+      var yMid = top + plotH / 2;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yAt(value) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
-      var grid = '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + baseY + '" stroke="#334155" stroke-width="1.75"></line>' +
-        '<line x1="' + left + '" y1="' + baseY + '" x2="' + (left + plotW) + '" y2="' + baseY + '" stroke="#334155" stroke-width="1.75"></line>';
+      var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#f8fafc"></rect>';
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
-        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + (baseY) + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 6) + '" stroke="#334155" stroke-width="1.25"></line>';
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 7) + '" stroke="#1e293b" stroke-width="1.4"></line>';
       }
       niceTicks(scale, 5).forEach(function (value) {
         if (value < 0) return;
         var yy = yAt(value);
-        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e8eef5"></line>';
-        grid += '<line x1="' + (left - 6) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="#334155" stroke-width="1.25"></line>';
-        grid += '<text x="' + (left - 10) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="650" fill="#334155">' + formatTick(value) + '</text>';
+        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
+        grid += '<line x1="' + (left - 7) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="#1e293b" stroke-width="1.4"></line>';
+        grid += '<text x="' + (left - 12) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="650" fill="#1e293b">' + formatTick(value) + '</text>';
       });
+      var frame = axisSpine(left, top, left, baseY) + axisSpine(left, baseY, left + plotW, baseY) +
+        yAxisTitle('meq/L', 16, yMid, '#1e293b', -90);
       var lines = '';
       var legend = '';
       series.forEach(function (item) {
         lines += seriesMarkup(item.values, item.col.color, xAt, yAt);
         legend += '<li><i style="background:' + item.col.color + '"></i>' + escapeAttr(item.label) + '</li>';
       });
-      return '<article class="chart chart-main"><h3>' + tx('Nutrientes', 'Nutrients') + ' <span>meq/L</span></h3>' +
+      return '<article class="chart chart-main"><h3>' + tx('Nutrientes', 'Nutrients') + '</h3>' +
         '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Nutrientes en meq por lectura">' +
-        grid + lines + xLabels(table, n, xAt, baseY) + '</svg><ul class="legend">' + legend + '</ul></article>';
+        grid + lines + frame + xLabels(table, n, xAt, baseY) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
 
     function phEcChart(table) {
@@ -705,48 +722,49 @@
       var n = table.rows.length;
       var width = 720;
       var height = 340;
-      var left = 58;
-      var right = hasEc ? 62 : 24;
-      var top = 26;
+      var left = 72;
+      var right = hasEc ? 78 : 22;
+      var top = 16;
       var bottom = 78;
       var plotW = width - left - right;
       var plotH = height - top - bottom;
       var baseY = top + plotH;
+      var yMid = top + plotH / 2;
+      var xRight = left + plotW;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yOf(value, scale) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
-      var grid = '<line x1="' + left + '" y1="' + baseY + '" x2="' + (left + plotW) + '" y2="' + baseY + '" stroke="#334155" stroke-width="1.75"></line>';
-      var axis = '';
+      var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#f8fafc"></rect>';
+      var axis = axisSpine(left, baseY, xRight, baseY);
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
-        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 6) + '" stroke="#334155" stroke-width="1.25"></line>';
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 7) + '" stroke="#1e293b" stroke-width="1.4"></line>';
       }
       if (phScale) {
-        axis += '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + baseY + '" stroke="' + phCol.color + '" stroke-width="2.25"></line>';
-        axis += '<text x="' + (left + 8) + '" y="' + (top + 4) + '" font-size="12" font-weight="750" fill="' + phCol.color + '">pH</text>';
+        axis += axisSpine(left, top, left, baseY, phCol.color);
+        axis += yAxisTitle('pH', 16, yMid, phCol.color, -90);
         niceTicks(phScale, 4).forEach(function (value) {
           var yy = yOf(value, phScale);
-          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e8eef5"></line>';
-          axis += '<line x1="' + (left - 6) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="' + phCol.color + '" stroke-width="1.5"></line>';
-          axis += '<text x="' + (left - 10) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
+          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + xRight + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
+          axis += '<line x1="' + (left - 7) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="' + phCol.color + '" stroke-width="1.6"></line>';
+          axis += '<text x="' + (left - 12) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
         });
       }
       if (ecScale) {
-        var xRight = left + plotW;
-        axis += '<line x1="' + xRight + '" y1="' + top + '" x2="' + xRight + '" y2="' + baseY + '" stroke="' + ecCol.color + '" stroke-width="2.25"></line>';
-        axis += '<text x="' + (xRight - 8) + '" y="' + (top + 4) + '" text-anchor="end" font-size="12" font-weight="750" fill="' + ecCol.color + '">dS/m</text>';
+        axis += axisSpine(xRight, top, xRight, baseY, ecCol.color);
+        axis += yAxisTitle('dS/m', width - 16, yMid, ecCol.color, 90);
         niceTicks(ecScale, 4).forEach(function (ecValue) {
           var yec = yOf(ecValue, ecScale);
-          axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 6) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1.5"></line>';
-          axis += '<text x="' + (xRight + 10) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="12" font-weight="700" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
+          axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 7) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1.6"></line>';
+          axis += '<text x="' + (xRight + 12) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="12" font-weight="700" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
         });
       }
       var lines = '';
       if (phScale) lines += seriesMarkup(ph, phCol.color, xAt, function (value) { return yOf(value, phScale); }, { labelDy: -10 });
       if (ecScale) lines += seriesMarkup(ec, ecCol.color, xAt, function (value) { return yOf(value, ecScale); }, { dash: true, square: true, labelDy: 16 });
       var legend = '';
-      if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>' + tx('pH · izquierda', 'pH · left') + '</li>';
-      if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>' + tx('CE · derecha', 'EC · right') + '</li>';
-      return '<article class="chart chart-side"><h3>' + tx('pH y conductividad', 'pH and conductivity') + '</h3>' +
+      if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>pH</li>';
+      if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>CE</li>';
+      return '<article class="chart chart-side"><h3>' + tx('pH y conductividad eléctrica', 'pH and electrical conductivity') + '</h3>' +
         '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="pH a la izquierda y conductividad a la derecha">' +
         grid + axis + lines + xLabels(table, n, xAt, baseY) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
@@ -1005,7 +1023,7 @@
         var stein = document.querySelector('#note .stein');
         if (!stein) return;
         var holder = document.createElement('p');
-        holder.innerHTML = '<button type="button" class="linkish" id="restoreRefs">' + tx('Restaurar NutriPlant', 'Restore NutriPlant') + '</button>';
+        holder.innerHTML = '<button type="button" class="linkish" id="restoreRefs">' + tx('Restaurar valores de referencia NutriPlant PRO', 'Restore NutriPlant PRO reference values') + '</button>';
         stein.parentNode.insertBefore(holder, stein);
       } else if (!differ && existing && existing.parentNode) {
         existing.parentNode.remove();
