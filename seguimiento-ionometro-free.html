@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Seguimiento con ionómetro</title>
+  <script src="assets/np-prefs-bootstrap.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -57,8 +58,17 @@
       cursor: pointer;
     }
     button:hover { background: #f1f5f9; }
-    button.danger { color: #9f1239; }
-    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button.danger { color: #9f1239; border-color: #fecdd3; }
+    button.danger:hover { background: #fff1f2; }
+    button.primary {
+      background: linear-gradient(135deg, #16a34a, #0f766e);
+      color: #fff;
+      border-color: transparent;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 8px 14px;
+    }
+    button.primary:hover { background: linear-gradient(135deg, #15803d, #0f766e); color: #fff; }
     .workspace {
       flex: 1;
       min-height: 0;
@@ -104,8 +114,19 @@
     .ref-dot.low { background: #d97706; }
     .ref-dot.ok { background: #16a34a; }
     .ref-dot.high { background: #dc2626; }
-    .sample-row { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; color: var(--muted); }
-    .sample-row select { font: inherit; color: var(--ink); border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background: #fff; }
+    .sample-row { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 13px; font-weight: 650; color: var(--ink); }
+    .sample-row select {
+      font: inherit;
+      font-weight: 650;
+      color: var(--ink);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      min-width: 240px;
+      height: 38px;
+      padding: 0 12px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
     .ref-grid { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; }
     .ref-grid label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
     .ref-grid input { width: 4.2rem; font: inherit; color: var(--ink); border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 4px; }
@@ -113,14 +134,43 @@
     button.linkish { background: none; border: 0; color: var(--accent); padding: 0; font-size: 12px; }
     button.linkish:hover { background: none; text-decoration: underline; }
     tr.selected td { background: #eff6ff; }
-    select.form {
-      display: block;
-      width: 100%;
-      margin-top: 4px;
-      font: 11px inherit;
+    th.colhead { min-width: 108px; vertical-align: bottom; }
+    .colhead__name { display: block; font-size: 14px; font-weight: 750; line-height: 1.2; white-space: nowrap; }
+    .colhead__unit { display: block; margin-top: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+    .form-switch {
+      display: flex;
+      margin-top: 6px;
       border: 1px solid #cbd5e1;
-      border-radius: 4px;
+      border-radius: 8px;
+      overflow: hidden;
       background: #fff;
+    }
+    .form-switch button {
+      flex: 1 1 0;
+      border: 0;
+      border-radius: 0;
+      background: #fff;
+      color: #64748b;
+      padding: 5px 4px;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .form-switch button + button { border-left: 1px solid #e2e8f0; }
+    .form-switch button:hover { background: #f8fafc; }
+    .colhead-an .form-switch button.is-on,
+    .colhead-an .form-switch button.is-on:hover { background: #312e81; color: #fff; }
+    .colhead-cat .form-switch button.is-on,
+    .colhead-cat .form-switch button.is-on:hover { background: #166534; color: #fff; }
+    .colhead-other .form-switch button.is-on,
+    .colhead-other .form-switch button.is-on:hover { background: #c2410c; color: #fff; }
+    .table-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+      overflow: auto;
     }
     .tools { display: flex; gap: 8px; margin: 10px 0 0; }
     .note {
@@ -132,22 +182,37 @@
       border-radius: 8px;
       padding: 8px 10px;
     }
-    .note p { margin: 0 0 6px; }
-    .note p:last-child { margin: 0; }
+    .readout { display: flex; flex-direction: column; gap: 8px; }
+    .readout__line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+    .readout__k {
+      flex: 0 0 auto;
+      min-width: 5.2rem;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #1e3a8a;
+    }
+    .readout__val { font-weight: 750; color: var(--ink); }
+    .readout__gap { font-weight: 750; color: #9a3412; }
+    .readout__hint { font-size: 12px; color: var(--muted); }
+    .stein { margin: 2px 0 0; font-size: 12px; color: #64748b; }
     .chart {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 12px 12px 8px;
+      padding: 14px 14px 10px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
     }
-    .chart-main { flex: 1.45 1 auto; min-height: 380px; }
-    .chart-side { flex: 0.9 1 auto; min-height: 250px; }
-    .chart h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
+    .chart-main { flex: 1.45 1 auto; min-height: 400px; }
+    .chart-side { flex: 0.95 1 auto; min-height: 280px; }
+    .chart h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
     .chart h3 span { font-weight: 600; color: var(--muted); font-size: 13px; }
+    .chart-note { margin: 0 0 8px; font-size: 12px; color: var(--muted); line-height: 1.35; }
     .chart svg { display: block; width: 100%; height: auto; }
     .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; list-style: none; margin: 8px 0 0; padding: 0; }
-    .legend li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
-    .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .legend li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); font-weight: 600; }
+    .legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
     .hint { color: var(--muted); font-size: 13px; margin: 0; }
     @media (max-width: 860px) {
       .workspace { grid-template-columns: 1fr; }
@@ -158,29 +223,29 @@
 <body>
   <div class="app">
     <div class="bar" id="library" hidden>
-      <label>Tablas guardadas
+      <label><span data-es="Tablas guardadas" data-en="Saved tables">Tablas guardadas</span>
         <select id="tableSelect" aria-label="Tablas guardadas"></select>
       </label>
-      <input id="tableTitle" type="text" maxlength="120" placeholder="Nombre de esta tabla" aria-label="Nombre de esta tabla">
-      <button type="button" id="newTable" class="primary">Nueva tabla</button>
-      <button type="button" id="deleteTable" class="danger">Eliminar tabla</button>
+      <input id="tableTitle" type="text" maxlength="120" placeholder="Nombre de esta tabla" data-ph-es="Nombre de esta tabla" data-ph-en="Name of this table" aria-label="Nombre de esta tabla">
+      <button type="button" id="newTable" class="primary" data-es="Nueva tabla" data-en="New table">Nueva tabla</button>
+      <button type="button" id="deleteTable" class="danger" data-es="Eliminar tabla" data-en="Delete table">Eliminar tabla</button>
     </div>
     <div class="workspace">
       <section class="sheet">
-        <p class="sheet-lead">Escribe en cada casilla el número que marca el equipo. En los nutrientes ese número es ppm; debajo aparece el meq.</p>
+        <p class="sheet-lead" data-es="Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento." data-en="Type the meter number. For nutrients that is ppm; meq appears below. If there are two forms, pick ion or element.">Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento.</p>
         <div class="sample-row">
-          <label>Muestra
+          <label><span data-es="Muestra" data-en="Sample">Muestra</span>
             <select id="sampleType" aria-label="Tipo de muestra"></select>
           </label>
         </div>
-        <div style="overflow-x:auto">
+        <div class="table-card">
           <table>
             <thead id="head"></thead>
             <tbody id="body"></tbody>
           </table>
         </div>
         <div class="tools">
-          <button type="button" id="addRow" class="primary">Agregar lectura</button>
+          <button type="button" id="addRow" class="primary" data-es="Agregar lectura" data-en="Add reading">Agregar lectura</button>
         </div>
         <div class="note" id="note" hidden></div>
       </section>
@@ -195,6 +260,27 @@
     var params = new URLSearchParams(location.search);
     var pro = params.get('embed') === 'dashboard';
     var FREE_KEY = 'nutriplant_free_ionometro_v1';
+    function uiLang() {
+      try {
+        var parentPrefs = window.parent && window.parent !== window && window.parent.NpPrefs &&
+          window.parent.NpPrefs.get && window.parent.NpPrefs.get();
+        if (parentPrefs && parentPrefs.language === 'en') return 'en';
+        if (parentPrefs && parentPrefs.language === 'es') return 'es';
+      } catch (e) {}
+      var lang = document.documentElement.getAttribute('data-np-language') || document.documentElement.lang;
+      return lang === 'en' ? 'en' : 'es';
+    }
+    function tx(es, en) { return uiLang() === 'en' ? en : es; }
+    function applyLang() {
+      var en = uiLang() === 'en';
+      document.documentElement.lang = en ? 'en' : 'es';
+      document.querySelectorAll('[data-es]').forEach(function (el) {
+        el.textContent = en ? el.getAttribute('data-en') : el.getAttribute('data-es');
+      });
+      document.querySelectorAll('[data-ph-es]').forEach(function (el) {
+        el.placeholder = en ? el.getAttribute('data-ph-en') : el.getAttribute('data-ph-es');
+      });
+    }
     var state = null;
     var selected = 0;
     var saveTimer = null;
@@ -236,16 +322,21 @@
         '<th rowspan="2"></th></tr>';
       var forms = table.forms || core.defaultForms();
       var titles = '<tr>';
+      var headGroup = { no3: 'an', p: 'an', so4: 'an', k: 'cat', ca: 'cat', mg: 'cat', cl: 'other', na: 'other', nh4: 'other' };
       ['no3', 'p', 'so4', 'k', 'ca', 'mg', 'cl', 'na', 'nh4'].forEach(function (id) {
         var col = core.column(id);
-        titles += '<th>' + core.labelFor(id, forms[id]);
+        titles += '<th class="colhead colhead-' + headGroup[id] + '">';
+        titles += '<span class="colhead__name">' + core.labelFor(id, forms[id]) + '</span>';
         if (col.forms) {
-          titles += '<select class="form" data-form="' + id + '" aria-label="Forma de ' + col.label + '">';
+          titles += '<span class="form-switch" role="group" aria-label="Forma de ' + col.label + '">';
           Object.keys(col.forms).forEach(function (key) {
-            titles += '<option value="' + key + '"' + (forms[id] === key ? ' selected' : '') + '>' +
-              core.labelFor(id, key) + '</option>';
+            titles += '<button type="button" data-form="' + id + '" data-value="' + key + '"' +
+              (forms[id] === key ? ' class="is-on" aria-pressed="true"' : ' aria-pressed="false"') + '>' +
+              core.labelFor(id, key) + '</button>';
           });
-          titles += '</select>';
+          titles += '</span>';
+        } else {
+          titles += '<span class="colhead__unit">ppm</span>';
         }
         titles += '</th>';
       });
@@ -257,12 +348,6 @@
       var meq = core.meqFromPpm(id, table.forms[id], row[id]);
       return meq == null ? '' : core.formatMeq(meq) + ' meq';
     }
-
-    var LEVEL_TITLE = {
-      low: 'Debajo de la referencia',
-      ok: 'Dentro de la referencia',
-      high: 'Arriba de la referencia'
-    };
 
     function activeBands(table) {
       var bands = core.defaultRefBands();
@@ -291,27 +376,32 @@
 
     function dotHtml(level) {
       if (!level) return '';
-      return '<span class="ref-dot ' + level + '" title="' + LEVEL_TITLE[level] + '"></span>';
+      var titles = {
+        low: tx('Debajo de la guía', 'Below the guide'),
+        ok: tx('Dentro de la guía', 'Inside the guide'),
+        high: tx('Arriba de la guía', 'Above the guide')
+      };
+      return '<span class="ref-dot ' + level + '" title="' + titles[level] + '"></span>';
     }
 
     function renderBody(table) {
       var html = '';
       table.rows.forEach(function (row, index) {
         html += '<tr data-row="' + index + '"' + (index === selected ? ' class="selected"' : '') + '>';
-        html += '<td><input class="name" data-field="label" placeholder="Nombre" value="' + escapeAttr(row.label) + '" aria-label="Título de la lectura"></td>';
+        html += '<td><input class="name" data-field="label" placeholder="' + tx('Nombre', 'Name') + '" value="' + escapeAttr(row.label) + '" aria-label="' + tx('Título de la lectura', 'Reading title') + '"></td>';
         core.COLUMNS.forEach(function (col) {
           var ion = col.kind === 'ion';
           var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : 'ppm');
           html += '<td class="entry"><input class="cell" inputmode="decimal" placeholder="' + placeholder + '" data-field="' + col.id + '" value="' +
             escapeAttr(row[col.id] || '') + '" aria-label="' + core.labelFor(col.id, table.forms[col.id]) + '">';
-          var level = index === selected ? levelFor(table, row, col.id) : null;
+          var level = levelFor(table, row, col.id);
           html += '<div class="meq"><span class="meq-val">' + (ion ? meqText(table, row, col.id) : '') + '</span>' +
             dotHtml(level) + '</div></td>';
         });
         html += '<td class="actions">' +
-          '<button type="button" data-act="up" aria-label="Subir lectura">↑</button> ' +
-          '<button type="button" data-act="down" aria-label="Bajar lectura">↓</button> ' +
-          '<button type="button" data-act="del" aria-label="Eliminar lectura">×</button></td>';
+          '<button type="button" data-act="up" aria-label="' + tx('Subir lectura', 'Move reading up') + '">↑</button> ' +
+          '<button type="button" data-act="down" aria-label="' + tx('Bajar lectura', 'Move reading down') + '">↓</button> ' +
+          '<button type="button" data-act="del" aria-label="' + tx('Eliminar lectura', 'Delete reading') + '">×</button></td>';
         html += '</tr>';
       });
       document.getElementById('body').innerHTML = html;
@@ -322,71 +412,103 @@
         .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     }
 
+    function pctText(value) {
+      var rounded = Math.round(value * 10) / 10;
+      return (rounded % 1 === 0 ? String(rounded.toFixed(0)) : String(rounded)) + '%';
+    }
+
     function renderNote(table) {
       var row = table.rows[selected] || table.rows[0];
       var box = document.getElementById('note');
       if (!row) { box.hidden = true; return; }
       var prop = core.proportions(row, table.forms);
-      var parts = [];
-      if (prop.cations.length) {
-        parts.push('Cationes: ' + prop.cations.map(function (item) {
-          return core.labelFor(item.id, table.forms[item.id]) + ' ' + core.formatMeq(item.pct) + '%';
-        }).join(' · '));
-      }
+      var html = '<div class="readout">';
       if (prop.anions.length) {
-        parts.push('Aniones: ' + prop.anions.map(function (item) {
-          return core.labelFor(item.id, table.forms[item.id]) + ' ' + core.formatMeq(item.pct) + '%';
-        }).join(' · '));
+        html += '<div class="readout__line"><span class="readout__k">' + tx('Aniones', 'Anions') + '</span><span class="readout__val">' +
+          prop.anions.map(function (item) {
+            return escapeAttr(core.labelFor(item.id, table.forms[item.id])) + ' ' + pctText(item.pct);
+          }).join(' · ') + '</span></div>';
       }
-      if (prop.ecNote) {
-        parts.push(
-          'Cationes medidos ' + core.formatMeq(prop.ecNote.cationSum) + ' meq/L. Una CE de ' +
-          core.formatMeq(prop.ecNote.ec) + ' dS/m anda cerca de ' + core.formatMeq(prop.ecNote.expected) +
-          ' meq/L. La diferencia son iones que esta fila no trae. Si esa CE la calculó el ionómetro con los mismos iones, no es una medición aparte.'
-        );
+      if (prop.cations.length || prop.ecNote) {
+        html += '<div class="readout__line"><span class="readout__k">' + tx('Cationes', 'Cations') + '</span>';
+        if (prop.cations.length) {
+          html += '<span class="readout__val">' + prop.cations.map(function (item) {
+            return escapeAttr(core.labelFor(item.id, table.forms[item.id])) + ' ' + pctText(item.pct);
+          }).join(' · ') + '</span>';
+        }
+        if (prop.ecNote) {
+          var gapTitle = tx(
+            'La diferencia son iones que esta fila no trae. Si la CE salió del mismo ionómetro, no es otra medición.',
+            'The gap is ions this row does not include. If EC came from the same meter, it is not a separate reading.'
+          );
+          html += '<span class="readout__gap" title="' + escapeAttr(gapTitle) + '">CE ' +
+            core.formatMeq(prop.ecNote.ec) + ' ≈ ' + core.formatMeq(prop.ecNote.expected) + ' meq · ' +
+            tx('medidos', 'measured') + ' ' + core.formatMeq(prop.ecNote.cationSum) + '</span>';
+        }
+        html += '</div>';
       }
-      var html = parts.map(function (text) { return '<p>' + escapeAttr(text) + '</p>'; }).join('');
       html += renderRefs(table);
+      html += '</div>';
       box.hidden = false;
       box.innerHTML = html;
     }
 
     function renderRefs(table) {
       if (!core.sampleHasBand(table.sample)) {
-        return '<p class="refs-lead">Esta muestra no tiene franja de NutriPlant. Las lecturas, el meq y la gráfica siguen igual.</p>';
+        return '<p class="readout__hint">' + tx('Sin guía NutriPlant para esta muestra.', 'No NutriPlant guide for this sample.') + '</p>';
       }
       var bands = activeBands(table);
-      var lead = 'Referencia de concentración de NutriPlant para solución de invernadero. Es un parámetro, no una medición de laboratorio.';
-      if (table.sample === 'paste') {
-        lead += ' En pasta es la misma franja: solución del suelo en saturación, no el licor del riego.';
-      }
+      var hint = table.sample === 'paste'
+        ? tx('Misma guía. Es solución del suelo, no el riego.', 'Same guide. Soil solution, not the irrigation liquor.')
+        : tx('Guía de invernadero, no es laboratorio.', 'Greenhouse guide, not a lab result.');
       var grid = '<div class="ref-grid">';
       core.REF_IDS.forEach(function (id) {
         var shown = core.bandInForm(id, table.forms[id], bands[id]);
         var name = core.labelFor(id, table.forms[id]);
         grid += '<label>' + escapeAttr(name) +
-          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="min" value="' + formatRef(shown[0]) + '" aria-label="Mínimo de ' + escapeAttr(name) + '">' +
+          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="min" value="' + formatRef(shown[0]) + '" aria-label="' + escapeAttr(tx('Mínimo de ', 'Minimum ') + name) + '">' +
           '–' +
-          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="max" value="' + formatRef(shown[1]) + '" aria-label="Máximo de ' + escapeAttr(name) + '">' +
+          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="max" value="' + formatRef(shown[1]) + '" aria-label="' + escapeAttr(tx('Máximo de ', 'Maximum ') + name) + '">' +
           '</label>';
       });
       grid += '</div>';
       var restore = core.bandsDiffer(table.refBands)
-        ? '<p><button type="button" class="linkish" id="restoreRefs">Volver a los de NutriPlant</button></p>'
+        ? '<p><button type="button" class="linkish" id="restoreRefs">' + tx('Restaurar NutriPlant', 'Restore NutriPlant') + '</button></p>'
         : '';
-      var stein = '<p class="stein">Equilibrio tipo Steiner, solo lectura: aniones N 20–80 %, P 1,25–10 %, S 10–70 %. Cationes K 10–65 %, Ca 22,5–62,5 %, Mg 0,5–40 %.</p>';
-      return '<p class="refs-lead">' + escapeAttr(lead) + '</p>' + grid + restore + stein;
+      var stein = '<p class="stein">' + tx(
+        'Steiner % · N 20–80 · P 1,25–10 · S 10–70 · K 10–65 · Ca 22,5–62,5 · Mg 0,5–40',
+        'Steiner % · N 20–80 · P 1.25–10 · S 10–70 · K 10–65 · Ca 22.5–62.5 · Mg 0.5–40'
+      ) + '</p>';
+      return '<div class="readout__line"><span class="readout__k">' + tx('Guía', 'Guide') + '</span><span class="readout__hint">' +
+        escapeAttr(hint) + '</span></div>' + grid + restore + stein;
     }
 
-    function paddedScale(nums) {
+    function paddedScale(nums, minSpan, floorZero) {
       var min = Math.min.apply(null, nums);
       var max = Math.max.apply(null, nums);
-      if (!(max > min)) {
-        var pad = Math.abs(min) * 0.2 || 1;
-        return { min: min - pad, max: max + pad };
+      if (floorZero && min > 0) min = 0;
+      var span = Math.max(max - min, minSpan || 0);
+      if (!(span > 0)) span = Math.abs(min) * 0.2 || 1;
+      var mid = (Math.min.apply(null, nums) + Math.max.apply(null, nums)) / 2;
+      if (floorZero && min === 0) {
+        return { min: 0, max: Math.max(max, span) * 1.12 };
       }
-      var span = (max - min) * 0.14;
-      return { min: min - span, max: max + span };
+      var pad = span * 0.16;
+      return { min: mid - span / 2 - pad, max: mid + span / 2 + pad };
+    }
+
+    function niceTicks(scale, count) {
+      var span = scale.max - scale.min || 1;
+      var rough = span / Math.max(1, count - 1);
+      var mag = Math.pow(10, Math.floor(Math.log10(rough)));
+      var err = rough / mag;
+      var step = err >= 7.5 ? 10 * mag : err >= 3.5 ? 5 * mag : err >= 1.5 ? 2 * mag : mag;
+      var start = Math.ceil((scale.min - step * 0.001) / step) * step;
+      var ticks = [];
+      for (var value = start; value <= scale.max + step * 0.001 && ticks.length < 8; value += step) {
+        ticks.push(Math.round(value * 1000) / 1000);
+      }
+      return ticks;
     }
 
     function formatTick(value) {
@@ -396,23 +518,38 @@
       return String(Math.round(value * 100) / 100);
     }
 
-    function seriesMarkup(values, color, xAt, yAt) {
+    function seriesMarkup(values, color, xAt, yAt, opt) {
+      opt = opt || {};
       var runs = core.segments(values);
       var path = '';
       var dots = '';
+      var tags = '';
       runs.forEach(function (run) {
         if (run.length >= 2) {
           run.forEach(function (index, order) {
             path += (order ? 'L' : 'M') + xAt(index).toFixed(1) + ' ' + yAt(values[index]).toFixed(1) + ' ';
           });
         }
-        var radius = run.length === 1 ? 5.5 : 3.6;
         run.forEach(function (index) {
-          dots += '<circle cx="' + xAt(index).toFixed(1) + '" cy="' + yAt(values[index]).toFixed(1) +
-            '" r="' + radius + '" fill="' + color + '"></circle>';
+          var cx = xAt(index).toFixed(1);
+          var cy = yAt(values[index]).toFixed(1);
+          if (opt.square) {
+            dots += '<rect x="' + (cx - 4.5) + '" y="' + (cy - 4.5) + '" width="9" height="9" rx="2" fill="' + color + '" stroke="#fff" stroke-width="1.6"></rect>';
+          } else {
+            dots += '<circle cx="' + cx + '" cy="' + cy + '" r="4.4" fill="' + color + '" stroke="#fff" stroke-width="1.8"></circle>';
+          }
+          if (opt.labelDy) {
+            tags += '<text x="' + cx + '" y="' + (Number(cy) + opt.labelDy).toFixed(1) +
+              '" text-anchor="middle" font-size="11" font-weight="700" fill="' + color + '">' +
+              formatTick(values[index]) + '</text>';
+          }
         });
       });
-      return '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></path>' + dots;
+      var dash = opt.dash ? ' stroke-dasharray="7 4"' : '';
+      var halo = path
+        ? '<path d="' + path + '" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"></path>'
+        : '';
+      return halo + '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"' + dash + '></path>' + dots + tags;
     }
 
     function xLabels(table, n, xAt, height) {
@@ -437,7 +574,7 @@
       var side = phEcChart(table);
       hostEl.innerHTML = (ions || side)
         ? ions + side
-        : '<p class="hint">Cuando haya lecturas, los nutrientes se ven juntos y el pH con la conductividad van en la otra gráfica.</p>';
+        : '<p class="hint">' + tx('Con lecturas, los nutrientes van juntos y el pH con la CE en la otra gráfica.', 'With readings, nutrients share one chart and pH with EC share the other.') + '</p>';
     }
 
     function nutrientChart(table) {
@@ -453,31 +590,36 @@
         });
       });
       if (!series.length) return '';
-      var scale = paddedScale(all);
+      var scale = paddedScale(all, 0, true);
       var n = table.rows.length;
       var width = 720;
       var height = 460;
-      var left = 58;
-      var right = 16;
-      var top = 18;
-      var bottom = 44;
+      var left = 52;
+      var right = 22;
+      var top = 16;
+      var bottom = 40;
       var plotW = width - left - right;
+      var plotH = height - top - bottom;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
-      function yAt(value) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * (height - top - bottom); }
+      function yAt(value) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
       var grid = '';
-      for (var i = 0; i < 5; i++) {
-        var value = scale.min + (scale.max - scale.min) * (i / 4);
+      for (var r = 0; r < n; r++) {
+        var xx = xAt(r);
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + top + '" x2="' + xx.toFixed(1) + '" y2="' + (top + plotH) + '" stroke="#f1f5f9"></line>';
+      }
+      niceTicks(scale, 5).forEach(function (value) {
         var yy = yAt(value);
         grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
         grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#64748b">' + formatTick(value) + '</text>';
-      }
+      });
       var lines = '';
       var legend = '';
       series.forEach(function (item) {
         lines += seriesMarkup(item.values, item.col.color, xAt, yAt);
         legend += '<li><i style="background:' + item.col.color + '"></i>' + escapeAttr(item.label) + '</li>';
       });
-      return '<article class="chart chart-main"><h3>Nutrientes <span>meq/L</span></h3>' +
+      return '<article class="chart chart-main"><h3>' + tx('Nutrientes', 'Nutrients') + ' <span>meq/L</span></h3>' +
+        '<p class="chart-note">' + tx('Misma escala. Abajo = menos meq.', 'Same scale. Lower = less meq.') + '</p>' +
         '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Nutrientes en meq por lectura">' +
         grid + lines + xLabels(table, n, xAt, height) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
@@ -492,49 +634,51 @@
       if (!hasPh && !hasEc) return '';
       var phNums = ph.filter(function (value) { return typeof value === 'number'; });
       var ecNums = ec.filter(function (value) { return typeof value === 'number'; });
-      var phScale = hasPh ? paddedScale(phNums) : null;
-      var ecScale = hasEc ? paddedScale(ecNums) : null;
+      var phScale = hasPh ? paddedScale(phNums, 1.5, false) : null;
+      var ecScale = hasEc ? paddedScale(ecNums, 1, false) : null;
       var n = table.rows.length;
       var width = 720;
-      var height = 280;
-      var left = 54;
-      var right = hasEc ? 58 : 16;
-      var top = 16;
-      var bottom = 44;
+      var height = 320;
+      var left = 52;
+      var right = hasEc ? 56 : 20;
+      var top = 28;
+      var bottom = 46;
       var plotW = width - left - right;
       var plotH = height - top - bottom;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yOf(value, scale) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
       var grid = '';
       var axis = '';
+      for (var r = 0; r < n; r++) {
+        var xx = xAt(r);
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + top + '" x2="' + xx.toFixed(1) + '" y2="' + (top + plotH) + '" stroke="#f1f5f9"></line>';
+      }
       if (phScale) {
         axis += '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (top + plotH) + '" stroke="' + phCol.color + '" stroke-opacity="0.45" stroke-width="2"></line>';
-        for (var i = 0; i < 4; i++) {
-          var value = phScale.min + (phScale.max - phScale.min) * (i / 3);
+        axis += '<text x="' + left + '" y="14" font-size="12" font-weight="700" fill="' + phCol.color + '">pH</text>';
+        niceTicks(phScale, 4).forEach(function (value) {
           var yy = yOf(value, phScale);
           grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
-          grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
-        }
+          grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" font-weight="650" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
+        });
       }
       if (ecScale) {
         var xRight = left + plotW;
         axis += '<line x1="' + xRight + '" y1="' + top + '" x2="' + xRight + '" y2="' + (top + plotH) + '" stroke="' + ecCol.color + '" stroke-opacity="0.45" stroke-width="2"></line>';
-        for (var j = 0; j < 4; j++) {
-          var ecValue = ecScale.min + (ecScale.max - ecScale.min) * (j / 3);
+        axis += '<text x="' + xRight + '" y="14" text-anchor="end" font-size="12" font-weight="700" fill="' + ecCol.color + '">dS/m</text>';
+        niceTicks(ecScale, 4).forEach(function (ecValue) {
           var yec = yOf(ecValue, ecScale);
-          if (!phScale) {
-            grid += '<line x1="' + left + '" y1="' + yec.toFixed(1) + '" x2="' + xRight + '" y2="' + yec.toFixed(1) + '" stroke="#e2e8f0"></line>';
-          }
-          grid += '<text x="' + (xRight + 8) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="11" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
-        }
+          grid += '<text x="' + (xRight + 8) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="11" font-weight="650" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
+        });
       }
       var lines = '';
-      if (phScale) lines += seriesMarkup(ph, phCol.color, xAt, function (value) { return yOf(value, phScale); });
-      if (ecScale) lines += seriesMarkup(ec, ecCol.color, xAt, function (value) { return yOf(value, ecScale); });
+      if (phScale) lines += seriesMarkup(ph, phCol.color, xAt, function (value) { return yOf(value, phScale); }, { labelDy: -10 });
+      if (ecScale) lines += seriesMarkup(ec, ecCol.color, xAt, function (value) { return yOf(value, ecScale); }, { dash: true, square: true, labelDy: 16 });
       var legend = '';
-      if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>pH</li>';
-      if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>CE dS/m</li>';
-      return '<article class="chart chart-side"><h3>pH y conductividad</h3>' +
+      if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>' + tx('pH · izquierda', 'pH · left') + '</li>';
+      if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>' + tx('CE · derecha', 'EC · right') + '</li>';
+      return '<article class="chart chart-side"><h3>' + tx('pH y conductividad', 'pH and conductivity') + '</h3>' +
+        '<p class="chart-note">' + tx('Escalas distintas. pH arriba del punto, CE abajo.', 'Separate scales. pH above the point, EC below.') + '</p>' +
         '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="pH a la izquierda y conductividad a la derecha">' +
         grid + axis + lines + xLabels(table, n, xAt, height) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
@@ -553,19 +697,29 @@
       if (document.activeElement !== title) title.value = current.title || '';
     }
 
+    var SAMPLE_EN = {
+      solution: 'Nutrient solution',
+      paste: 'Saturated paste extract',
+      extract21: '2:1 extract',
+      petiole: 'Petiole',
+      foliar: 'Foliar',
+      sap: 'Sap'
+    };
+
     function renderSample(table) {
       var select = document.getElementById('sampleType');
-      if (!select.options.length) {
-        select.innerHTML = core.SAMPLE_TYPES.map(function (item) {
-          return '<option value="' + item.id + '">' + escapeAttr(item.label) + '</option>';
-        }).join('');
-      }
       var id = core.sampleType(table.sample).id;
       table.sample = id;
-      if (document.activeElement !== select) select.value = id;
+      if (document.activeElement === select) return;
+      select.innerHTML = core.SAMPLE_TYPES.map(function (item) {
+        var label = uiLang() === 'en' ? (SAMPLE_EN[item.id] || item.label) : item.label;
+        return '<option value="' + item.id + '">' + escapeAttr(label) + '</option>';
+      }).join('');
+      select.value = id;
     }
 
     function render() {
+      applyLang();
       var table = activeTable();
       if (selected >= table.rows.length) selected = table.rows.length - 1;
       if (selected < 0) selected = 0;
@@ -674,10 +828,10 @@
       return { version: 1, updatedAt: Number(raw.updatedAt) || 0, activeId: raw.activeId || tables[0].id, tables: tables };
     }
 
-    document.getElementById('head').addEventListener('change', function (event) {
-      var select = event.target.closest('select[data-form]');
-      if (!select) return;
-      activeTable().forms[select.getAttribute('data-form')] = select.value;
+    document.getElementById('head').addEventListener('click', function (event) {
+      var button = event.target.closest('button[data-form]');
+      if (!button) return;
+      activeTable().forms[button.getAttribute('data-form')] = button.getAttribute('data-value');
       render();
       scheduleSave();
     });
@@ -746,7 +900,7 @@
         tr.querySelectorAll('.meq').forEach(function (el, i) {
           var existing = el.querySelector('.ref-dot');
           if (existing) existing.remove();
-          if (index !== selected || !row) return;
+          if (!row) return;
           var level = levelFor(table, row, core.COLUMNS[i].id);
           if (!level) return;
           el.insertAdjacentHTML('beforeend', dotHtml(level));
@@ -783,7 +937,7 @@
         var stein = document.querySelector('#note .stein');
         if (!stein) return;
         var holder = document.createElement('p');
-        holder.innerHTML = '<button type="button" class="linkish" id="restoreRefs">Volver a los de NutriPlant</button>';
+        holder.innerHTML = '<button type="button" class="linkish" id="restoreRefs">' + tx('Restaurar NutriPlant', 'Restore NutriPlant') + '</button>';
         stein.parentNode.insertBefore(holder, stein);
       } else if (!differ && existing && existing.parentNode) {
         existing.parentNode.remove();
@@ -851,13 +1005,25 @@
     document.getElementById('deleteTable').addEventListener('click', function () {
       var table = activeTable();
       var name = table.title || 'esta tabla';
-      if (!window.confirm('¿Eliminar «' + name + '» y todas sus lecturas?')) return;
+      if (!window.confirm(tx('¿Eliminar «' + name + '» y sus lecturas?', 'Delete “' + name + '” and its readings?'))) return;
       state.tables = state.tables.filter(function (item) { return item.id !== table.id; });
       if (!state.tables.length) state.tables.push(blankTable('Seguimiento 1'));
       state.activeId = state.tables[0].id;
       selected = 0;
       render();
       scheduleSave();
+    });
+
+    window.addEventListener('storage', function (event) {
+      if (event.key !== 'nutriplant_ui_prefs_v1' || !event.newValue) return;
+      try {
+        var prefs = JSON.parse(event.newValue);
+        if (prefs && (prefs.language === 'en' || prefs.language === 'es')) {
+          document.documentElement.lang = prefs.language;
+          document.documentElement.setAttribute('data-np-language', prefs.language);
+        }
+      } catch (e) {}
+      render();
     });
 
     load().then(render);

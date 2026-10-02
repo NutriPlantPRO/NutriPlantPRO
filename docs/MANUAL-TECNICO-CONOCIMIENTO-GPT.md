@@ -255,7 +255,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - Login: 1 tabla local. PRO: varias tablas en `profiles.ionometro_seguimientos` (cuenta, no proyecto).
 - **Referencia de concentración** (gratis y PRO), solo solución y pasta: franja NutriPlant de invernadero, ppm del elemento, N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. Se compara en la forma del encabezado: 280 NO₃⁻ ≈ 63 N (debajo de 140–200); en pantalla se ve 620–886 ppm NO₃⁻. Mín–máx editables; «Volver a los de NutriPlant». Pasta = misma franja, rizósfera. pH, CE, Cl, Na, NH₄ sin franja.
 - **Equilibrio tipo Steiner**, solo lectura y en % (no ppm): aniones N 20–80, P 1,25–10, S 10–70; cationes K 10–65, Ca 22,5–62,5, Mg 0,5–40.
-- Foliar, pecíolo, savia y extracto 2:1 se nombran y no encienden franja (foliar de lab = % de tejido; savia en miles de ppm). Cambiar la muestra no reescribe ppm ni meq. Parámetro de apoyo, no verdad de laboratorio. Punto solo en la fila activa.
+- Foliar, pecíolo, savia y extracto 2:1 se nombran y no encienden franja (foliar de lab = % de tejido; savia en miles de ppm). Cambiar la muestra no reescribe ppm ni meq. Parámetro de apoyo, no verdad de laboratorio. El punto va en cada lectura con número.
 - `free_tools_catalog` `tool_id: "ionometro_seguimiento"`.
 
 ### 4.11 VPD y Radar Satelital (NDVI / NDMI / NDRE / RGB + relieve DEM)

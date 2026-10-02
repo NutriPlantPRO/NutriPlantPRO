@@ -146,7 +146,7 @@ En admin se ve la lista de tablas de esa cuenta.
 
 ## Fuera de esta versión
 
-- Semáforo dentro de cada celda de la tabla. La referencia va debajo, y el punto solo en la fila que se está viendo.
+- Semáforo junto al meq de cada lectura. La referencia va debajo. El punto se ve en todas las filas con número.
 - Cerrar la CE con un balance completo de aniones y cationes.
 - Recibir la lectura en mmol/L.
 - Guardar milivoltios del pH.
