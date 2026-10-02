@@ -81,7 +81,13 @@
       padding: 12px;
     }
     .charts { display: flex; flex-direction: column; gap: 12px; }
-    .sheet { border-right: 1px solid var(--line); }
+    .sheet {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sheet-lead, .sample-row, .tools, .note { flex: 0 0 auto; }
     .sheet-lead { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
     .bar select { min-width: 200px; }
     table { border-collapse: separate; border-spacing: 0; min-width: 980px; width: 100%; background: var(--card); }
@@ -127,9 +133,46 @@
       background: #fff;
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
-    .ref-grid { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; }
-    .ref-grid label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
-    .ref-grid input { width: 4.2rem; font: inherit; color: var(--ink); border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 4px; }
+    .ref-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 8px;
+      margin: 4px 0 2px;
+    }
+    .ref-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0;
+      padding: 8px 10px 10px;
+      border: 1px solid #e2e8f0;
+      border-top: 3px solid #94a3b8;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .ref-card__name {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .ref-card__unit { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
+    .ref-card__range { display: flex; align-items: center; gap: 4px; }
+    .ref-card__dash { color: #94a3b8; font-weight: 700; }
+    .ref-card input {
+      width: 100%;
+      min-width: 0;
+      font: inherit;
+      font-weight: 650;
+      color: var(--ink);
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 6px 6px;
+      background: #fff;
+    }
     .refs-lead, .stein { font-size: 12px; color: var(--muted); }
     button.linkish { background: none; border: 0; color: var(--accent); padding: 0; font-size: 12px; }
     button.linkish:hover { background: none; text-decoration: underline; }
@@ -166,11 +209,18 @@
     .colhead-other .form-switch button.is-on,
     .colhead-other .form-switch button.is-on:hover { background: #c2410c; color: #fff; }
     .table-card {
+      flex: 1 1 auto;
+      min-height: 0;
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 14px;
       box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
       overflow: auto;
+    }
+    .table-card thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
     .tools { display: flex; gap: 8px; margin: 10px 0 0; }
     .note {
@@ -208,15 +258,23 @@
     .chart-side { flex: 0.95 1 auto; min-height: 280px; }
     .chart h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
     .chart h3 span { font-weight: 600; color: var(--muted); font-size: 13px; }
-    .chart-note { margin: 0 0 8px; font-size: 12px; color: var(--muted); line-height: 1.35; }
     .chart svg { display: block; width: 100%; height: auto; }
-    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; list-style: none; margin: 8px 0 0; padding: 0; }
-    .legend li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); font-weight: 600; }
-    .legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px 10px;
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+    }
+    .chart-side .legend { grid-template-columns: 1fr 1fr; }
+    .legend li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); font-weight: 650; min-width: 0; }
+    .legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; flex: 0 0 auto; }
     .hint { color: var(--muted); font-size: 13px; margin: 0; }
     @media (max-width: 860px) {
       .workspace { grid-template-columns: 1fr; }
-      .sheet { border-right: 0; border-bottom: 1px solid var(--line); }
+      .sheet { border-right: 0; border-bottom: 1px solid var(--line); overflow: auto; display: block; }
+      .table-card { max-height: 68vh; }
     }
   </style>
 </head>
@@ -465,11 +523,16 @@
       core.REF_IDS.forEach(function (id) {
         var shown = core.bandInForm(id, table.forms[id], bands[id]);
         var name = core.labelFor(id, table.forms[id]);
-        grid += '<label>' + escapeAttr(name) +
-          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="min" value="' + formatRef(shown[0]) + '" aria-label="' + escapeAttr(tx('Mínimo de ', 'Minimum ') + name) + '">' +
-          '–' +
-          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="max" value="' + formatRef(shown[1]) + '" aria-label="' + escapeAttr(tx('Máximo de ', 'Maximum ') + name) + '">' +
-          '</label>';
+        var col = core.column(id);
+        var color = col && col.color ? col.color : '#334155';
+        grid += '<label class="ref-card" style="border-top-color:' + color + '">' +
+          '<span class="ref-card__name" style="color:' + color + '">' + escapeAttr(name) +
+          '<span class="ref-card__unit">ppm</span></span>' +
+          '<span class="ref-card__range">' +
+          '<input inputmode="decimal" data-ref="' + id + '" data-edge="min" value="' + formatRef(shown[0]) + '" aria-label="' + escapeAttr(tx('Mínimo de ', 'Minimum ') + name) + '">' +
+          '<span class="ref-card__dash">–</span>' +
+          '<input inputmode="decimal" data-ref="' + id + '" data-edge="max" value="' + formatRef(shown[1]) + '" aria-label="' + escapeAttr(tx('Máximo de ', 'Maximum ') + name) + '">' +
+          '</span></label>';
       });
       grid += '</div>';
       var restore = core.bandsDiffer(table.refBands)
@@ -491,7 +554,8 @@
       if (!(span > 0)) span = Math.abs(min) * 0.2 || 1;
       var mid = (Math.min.apply(null, nums) + Math.max.apply(null, nums)) / 2;
       if (floorZero && min === 0) {
-        return { min: 0, max: Math.max(max, span) * 1.12 };
+        var ceiling = Math.max(max, span) * 1.12;
+        return { min: -ceiling * 0.08, max: ceiling };
       }
       var pad = span * 0.16;
       return { min: mid - span / 2 - pad, max: mid + span / 2 + pad };
@@ -552,18 +616,17 @@
       return halo + '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"' + dash + '></path>' + dots + tags;
     }
 
-    function xLabels(table, n, xAt, height) {
-      var step = n > 10 ? Math.ceil(n / 8) : 1;
+    function xLabels(table, n, xAt, axisY) {
+      var step = n > 16 ? Math.ceil(n / 12) : 1;
       var labels = '';
       table.rows.forEach(function (row, index) {
         if (index % step !== 0 && index !== n - 1) return;
-        var text = String(row.label || (index + 1));
-        if (text.length > 14) text = text.slice(0, 13) + '…';
-        var anchor = 'middle';
-        if (n > 1 && index === 0) anchor = 'start';
-        if (n > 1 && index === n - 1) anchor = 'end';
-        labels += '<text x="' + xAt(index).toFixed(1) + '" y="' + (height - 12) +
-          '" text-anchor="' + anchor + '" font-size="12" fill="#64748b">' + escapeAttr(text) + '</text>';
+        var full = String(row.label || (index + 1));
+        var text = full.length > 12 ? full.slice(0, 11) + '…' : full;
+        var x = xAt(index).toFixed(1);
+        var y = (axisY + 14).toFixed(1);
+        labels += '<text transform="translate(' + x + ' ' + y + ') rotate(-48)" text-anchor="end" font-size="11" font-weight="650" fill="#334155">' +
+          '<title>' + escapeAttr(full) + '</title>' + escapeAttr(text) + '</text>';
       });
       return labels;
     }
@@ -593,24 +656,28 @@
       var scale = paddedScale(all, 0, true);
       var n = table.rows.length;
       var width = 720;
-      var height = 460;
-      var left = 52;
-      var right = 22;
-      var top = 16;
-      var bottom = 40;
+      var height = 480;
+      var left = 58;
+      var right = 28;
+      var top = 18;
+      var bottom = 78;
       var plotW = width - left - right;
       var plotH = height - top - bottom;
+      var baseY = top + plotH;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yAt(value) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
-      var grid = '';
+      var grid = '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + baseY + '" stroke="#334155" stroke-width="1.75"></line>' +
+        '<line x1="' + left + '" y1="' + baseY + '" x2="' + (left + plotW) + '" y2="' + baseY + '" stroke="#334155" stroke-width="1.75"></line>';
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
-        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + top + '" x2="' + xx.toFixed(1) + '" y2="' + (top + plotH) + '" stroke="#f1f5f9"></line>';
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + (baseY) + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 6) + '" stroke="#334155" stroke-width="1.25"></line>';
       }
       niceTicks(scale, 5).forEach(function (value) {
+        if (value < 0) return;
         var yy = yAt(value);
-        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
-        grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#64748b">' + formatTick(value) + '</text>';
+        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e8eef5"></line>';
+        grid += '<line x1="' + (left - 6) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="#334155" stroke-width="1.25"></line>';
+        grid += '<text x="' + (left - 10) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="650" fill="#334155">' + formatTick(value) + '</text>';
       });
       var lines = '';
       var legend = '';
@@ -619,9 +686,8 @@
         legend += '<li><i style="background:' + item.col.color + '"></i>' + escapeAttr(item.label) + '</li>';
       });
       return '<article class="chart chart-main"><h3>' + tx('Nutrientes', 'Nutrients') + ' <span>meq/L</span></h3>' +
-        '<p class="chart-note">' + tx('Misma escala. Abajo = menos meq.', 'Same scale. Lower = less meq.') + '</p>' +
         '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Nutrientes en meq por lectura">' +
-        grid + lines + xLabels(table, n, xAt, height) + '</svg><ul class="legend">' + legend + '</ul></article>';
+        grid + lines + xLabels(table, n, xAt, baseY) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
 
     function phEcChart(table) {
@@ -638,37 +704,40 @@
       var ecScale = hasEc ? paddedScale(ecNums, 1, false) : null;
       var n = table.rows.length;
       var width = 720;
-      var height = 320;
-      var left = 52;
-      var right = hasEc ? 56 : 20;
-      var top = 28;
-      var bottom = 46;
+      var height = 340;
+      var left = 58;
+      var right = hasEc ? 62 : 24;
+      var top = 26;
+      var bottom = 78;
       var plotW = width - left - right;
       var plotH = height - top - bottom;
+      var baseY = top + plotH;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yOf(value, scale) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
-      var grid = '';
+      var grid = '<line x1="' + left + '" y1="' + baseY + '" x2="' + (left + plotW) + '" y2="' + baseY + '" stroke="#334155" stroke-width="1.75"></line>';
       var axis = '';
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
-        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + top + '" x2="' + xx.toFixed(1) + '" y2="' + (top + plotH) + '" stroke="#f1f5f9"></line>';
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 6) + '" stroke="#334155" stroke-width="1.25"></line>';
       }
       if (phScale) {
-        axis += '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (top + plotH) + '" stroke="' + phCol.color + '" stroke-opacity="0.45" stroke-width="2"></line>';
-        axis += '<text x="' + left + '" y="14" font-size="12" font-weight="700" fill="' + phCol.color + '">pH</text>';
+        axis += '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + baseY + '" stroke="' + phCol.color + '" stroke-width="2.25"></line>';
+        axis += '<text x="' + (left + 8) + '" y="' + (top + 4) + '" font-size="12" font-weight="750" fill="' + phCol.color + '">pH</text>';
         niceTicks(phScale, 4).forEach(function (value) {
           var yy = yOf(value, phScale);
-          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
-          grid += '<text x="' + (left - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="11" font-weight="650" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
+          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e8eef5"></line>';
+          axis += '<line x1="' + (left - 6) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="' + phCol.color + '" stroke-width="1.5"></line>';
+          axis += '<text x="' + (left - 10) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
         });
       }
       if (ecScale) {
         var xRight = left + plotW;
-        axis += '<line x1="' + xRight + '" y1="' + top + '" x2="' + xRight + '" y2="' + (top + plotH) + '" stroke="' + ecCol.color + '" stroke-opacity="0.45" stroke-width="2"></line>';
-        axis += '<text x="' + xRight + '" y="14" text-anchor="end" font-size="12" font-weight="700" fill="' + ecCol.color + '">dS/m</text>';
+        axis += '<line x1="' + xRight + '" y1="' + top + '" x2="' + xRight + '" y2="' + baseY + '" stroke="' + ecCol.color + '" stroke-width="2.25"></line>';
+        axis += '<text x="' + (xRight - 8) + '" y="' + (top + 4) + '" text-anchor="end" font-size="12" font-weight="750" fill="' + ecCol.color + '">dS/m</text>';
         niceTicks(ecScale, 4).forEach(function (ecValue) {
           var yec = yOf(ecValue, ecScale);
-          grid += '<text x="' + (xRight + 8) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="11" font-weight="650" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
+          axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 6) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1.5"></line>';
+          axis += '<text x="' + (xRight + 10) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="12" font-weight="700" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
         });
       }
       var lines = '';
@@ -678,9 +747,8 @@
       if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>' + tx('pH · izquierda', 'pH · left') + '</li>';
       if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>' + tx('CE · derecha', 'EC · right') + '</li>';
       return '<article class="chart chart-side"><h3>' + tx('pH y conductividad', 'pH and conductivity') + '</h3>' +
-        '<p class="chart-note">' + tx('Escalas distintas. pH arriba del punto, CE abajo.', 'Separate scales. pH above the point, EC below.') + '</p>' +
         '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="pH a la izquierda y conductividad a la derecha">' +
-        grid + axis + lines + xLabels(table, n, xAt, height) + '</svg><ul class="legend">' + legend + '</ul></article>';
+        grid + axis + lines + xLabels(table, n, xAt, baseY) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
 
     function renderLibrary() {
