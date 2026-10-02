@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento con ionómetro</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1e293b;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f8fafc;
+      --card: #fff;
+      --accent: #1d4ed8;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font: 14px/1.4 "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+    }
+    .bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    .bar input[type="text"], .bar select {
+      font: inherit;
+      color: var(--ink);
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: #fff;
+    }
+    .bar input[type="text"] { min-width: 180px; }
+    button {
+      font: inherit;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    button:hover { background: #f1f5f9; }
+    button.danger { color: #9f1239; }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.8fr);
+    }
+    .sheet, .charts {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+    }
+    .sheet { border-right: 1px solid var(--line); }
+    table { border-collapse: collapse; min-width: 980px; width: 100%; background: var(--card); }
+    th, td { border: 1px solid var(--line); padding: 4px; vertical-align: top; }
+    th { background: #f1f5f9; font-weight: 600; font-size: 12px; text-align: center; }
+    th.group-an { background: #e0e7ff; }
+    th.group-cat { background: #dcfce7; }
+    th.group-edge { background: #f1f5f9; }
+    td.actions { white-space: nowrap; width: 1%; }
+    input.cell, input.name {
+      width: 100%;
+      min-width: 64px;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      color: var(--ink);
+      padding: 2px;
+    }
+    input.name { min-width: 108px; }
+    .meq { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); min-height: 14px; padding: 0 2px 2px; }
+    .ref-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+    .ref-dot.low { background: #d97706; }
+    .ref-dot.ok { background: #16a34a; }
+    .ref-dot.high { background: #dc2626; }
+    .sample-row { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+    .sample-row select { font: inherit; color: var(--ink); border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background: #fff; }
+    .ref-grid { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; }
+    .ref-grid label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+    .ref-grid input { width: 4.2rem; font: inherit; color: var(--ink); border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 4px; }
+    .refs-lead, .stein { font-size: 12px; color: var(--muted); }
+    button.linkish { background: none; border: 0; color: var(--accent); padding: 0; font-size: 12px; }
+    button.linkish:hover { background: none; text-decoration: underline; }
+    tr.selected td { background: #eff6ff; }
+    select.form {
+      display: block;
+      width: 100%;
+      margin-top: 4px;
+      font: 11px inherit;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #fff;
+    }
+    .tools { display: flex; gap: 8px; margin: 10px 0 0; }
+    .note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .note p { margin: 0 0 6px; }
+    .note p:last-child { margin: 0; }
+    .chart {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 8px 4px;
+      margin-bottom: 10px;
+    }
+    .chart h3 { margin: 0 0 4px; font-size: 13px; font-weight: 650; }
+    .chart-scroll { overflow-x: auto; }
+    .chart svg { display: block; }
+    .hint { color: var(--muted); font-size: 13px; margin: 0; }
+    @media (max-width: 860px) {
+      .workspace { grid-template-columns: 1fr; }
+      .sheet { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="bar" id="library" hidden>
+      <label>Tabla
+        <select id="tableSelect" aria-label="Tablas guardadas"></select>
+      </label>
+      <input id="tableTitle" type="text" maxlength="120" aria-label="Título de la tabla">
+      <button type="button" id="newTable" class="primary">Nueva tabla</button>
+      <button type="button" id="deleteTable" class="danger">Eliminar tabla</button>
+    </div>
+    <div class="workspace">
+      <section class="sheet">
+        <div class="sample-row">
+          <label>Muestra
+            <select id="sampleType" aria-label="Tipo de muestra"></select>
+          </label>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead id="head"></thead>
+            <tbody id="body"></tbody>
+          </table>
+        </div>
+        <div class="tools">
+          <button type="button" id="addRow" class="primary">Agregar lectura</button>
+        </div>
+        <div class="note" id="note" hidden></div>
+      </section>
+      <section class="charts" id="charts" aria-label="Gráficas por columna"></section>
+    </div>
+  </div>
+  <script src="assets/np-ionometro-core.js?v=20261002b"></script>
+  <script>
+  (function () {
+    'use strict';
+    var core = window.NpIonometro;
+    var params = new URLSearchParams(location.search);
+    var pro = params.get('embed') === 'dashboard';
+    var FREE_KEY = 'nutriplant_free_ionometro_v1';
+    var state = null;
+    var selected = 0;
+    var saveTimer = null;
+
+    function uid() {
+      return 'ion_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+    function userId() {
+      try { return localStorage.getItem('nutriplant_user_id') || ''; } catch (e) { return ''; }
+    }
+    function blankRow() {
+      var row = { id: uid(), label: '' };
+      core.COLUMNS.forEach(function (col) { row[col.id] = ''; });
+      return row;
+    }
+    function blankTable(title) {
+      var row = blankRow();
+      row.label = 'Lectura 1';
+      return { id: uid(), title: title || 'Seguimiento', sample: 'solution', forms: core.defaultForms(), rows: [row] };
+    }
+    function activeTable() {
+      var list = state.tables;
+      for (var i = 0; i < list.length; i++) if (list[i].id === state.activeId) return list[i];
+      state.activeId = list[0].id;
+      return list[0];
+    }
+    function host() {
+      return window.parent && window.parent !== window ? window.parent : window;
+    }
+
+    function renderHead(table) {
+      var groups = '<tr>' +
+        '<th rowspan="2">Lectura</th>' +
+        '<th rowspan="2">pH (H⁺)</th>' +
+        '<th rowspan="2">CE<br><span style="font-weight:500">dS/m</span></th>' +
+        '<th class="group-an" colspan="3">Aniones</th>' +
+        '<th class="group-cat" colspan="3">Cationes</th>' +
+        '<th class="group-edge" colspan="3">Orilla</th>' +
+        '<th rowspan="2"></th></tr>';
+      var forms = table.forms || core.defaultForms();
+      var titles = '<tr>';
+      ['no3', 'p', 'so4', 'k', 'ca', 'mg', 'cl', 'na', 'nh4'].forEach(function (id) {
+        var col = core.column(id);
+        titles += '<th>' + core.labelFor(id, forms[id]);
+        if (col.forms) {
+          titles += '<select class="form" data-form="' + id + '" aria-label="Forma de ' + col.label + '">';
+          Object.keys(col.forms).forEach(function (key) {
+            titles += '<option value="' + key + '"' + (forms[id] === key ? ' selected' : '') + '>' +
+              core.labelFor(id, key) + '</option>';
+          });
+          titles += '</select>';
+        }
+        titles += '</th>';
+      });
+      titles += '</tr>';
+      document.getElementById('head').innerHTML = groups + titles;
+    }
+
+    function meqText(table, row, id) {
+      var meq = core.meqFromPpm(id, table.forms[id], row[id]);
+      return meq == null ? '' : core.formatMeq(meq) + ' meq';
+    }
+
+    var LEVEL_TITLE = {
+      low: 'Debajo de la referencia',
+      ok: 'Dentro de la referencia',
+      high: 'Arriba de la referencia'
+    };
+
+    function activeBands(table) {
+      var bands = core.defaultRefBands();
+      var custom = table.refBands;
+      if (custom) {
+        core.REF_IDS.forEach(function (id) {
+          if (custom[id]) bands[id] = custom[id].slice();
+        });
+      }
+      return bands;
+    }
+
+    function levelFor(table, row, id) {
+      if (!core.sampleHasBand(table.sample)) return null;
+      if (core.REF_IDS.indexOf(id) < 0) return null;
+      var band = activeBands(table)[id];
+      if (!band) return null;
+      return core.refLevel(core.elementalPpm(id, table.forms[id], row[id]), band[0], band[1]);
+    }
+
+    function formatRef(value) {
+      if (value == null || !isFinite(value)) return '';
+      if (Math.abs(value) >= 20) return String(Math.round(value));
+      return core.formatMeq(value);
+    }
+
+    function dotHtml(level) {
+      if (!level) return '';
+      return '<span class="ref-dot ' + level + '" title="' + LEVEL_TITLE[level] + '"></span>';
+    }
+
+    function renderBody(table) {
+      var html = '';
+      table.rows.forEach(function (row, index) {
+        html += '<tr data-row="' + index + '"' + (index === selected ? ' class="selected"' : '') + '>';
+        html += '<td><input class="name" data-field="label" value="' + escapeAttr(row.label) + '" aria-label="Título de la lectura"></td>';
+        core.COLUMNS.forEach(function (col) {
+          var ion = col.kind === 'ion';
+          html += '<td><input class="cell" inputmode="decimal" data-field="' + col.id + '" value="' +
+            escapeAttr(row[col.id] || '') + '" aria-label="' + core.labelFor(col.id, table.forms[col.id]) + '">';
+          var level = index === selected ? levelFor(table, row, col.id) : null;
+          html += '<div class="meq"><span class="meq-val">' + (ion ? meqText(table, row, col.id) : '') + '</span>' +
+            dotHtml(level) + '</div></td>';
+        });
+        html += '<td class="actions">' +
+          '<button type="button" data-act="up" aria-label="Subir lectura">↑</button> ' +
+          '<button type="button" data-act="down" aria-label="Bajar lectura">↓</button> ' +
+          '<button type="button" data-act="del" aria-label="Eliminar lectura">×</button></td>';
+        html += '</tr>';
+      });
+      document.getElementById('body').innerHTML = html;
+    }
+
+    function escapeAttr(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    function renderNote(table) {
+      var row = table.rows[selected] || table.rows[0];
+      var box = document.getElementById('note');
+      if (!row) { box.hidden = true; return; }
+      var prop = core.proportions(row, table.forms);
+      var parts = [];
+      if (prop.cations.length) {
+        parts.push('Cationes: ' + prop.cations.map(function (item) {
+          return core.labelFor(item.id, table.forms[item.id]) + ' ' + core.formatMeq(item.pct) + '%';
+        }).join(' · '));
+      }
+      if (prop.anions.length) {
+        parts.push('Aniones: ' + prop.anions.map(function (item) {
+          return core.labelFor(item.id, table.forms[item.id]) + ' ' + core.formatMeq(item.pct) + '%';
+        }).join(' · '));
+      }
+      if (prop.ecNote) {
+        parts.push(
+          'Cationes medidos ' + core.formatMeq(prop.ecNote.cationSum) + ' meq/L. Una CE de ' +
+          core.formatMeq(prop.ecNote.ec) + ' dS/m anda cerca de ' + core.formatMeq(prop.ecNote.expected) +
+          ' meq/L. La diferencia son iones que esta fila no trae. Si esa CE la calculó el ionómetro con los mismos iones, no es una medición aparte.'
+        );
+      }
+      var html = parts.map(function (text) { return '<p>' + escapeAttr(text) + '</p>'; }).join('');
+      html += renderRefs(table);
+      box.hidden = false;
+      box.innerHTML = html;
+    }
+
+    function renderRefs(table) {
+      if (!core.sampleHasBand(table.sample)) {
+        return '<p class="refs-lead">Esta muestra no tiene franja de NutriPlant. Las lecturas, el meq y la gráfica siguen igual.</p>';
+      }
+      var bands = activeBands(table);
+      var lead = 'Referencia de concentración de NutriPlant para solución de invernadero. Es un parámetro, no una medición de laboratorio.';
+      if (table.sample === 'paste') {
+        lead += ' En pasta es la misma franja: solución del suelo en saturación, no el licor del riego.';
+      }
+      var grid = '<div class="ref-grid">';
+      core.REF_IDS.forEach(function (id) {
+        var shown = core.bandInForm(id, table.forms[id], bands[id]);
+        var name = core.labelFor(id, table.forms[id]);
+        grid += '<label>' + escapeAttr(name) +
+          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="min" value="' + formatRef(shown[0]) + '" aria-label="Mínimo de ' + escapeAttr(name) + '">' +
+          '–' +
+          ' <input inputmode="decimal" data-ref="' + id + '" data-edge="max" value="' + formatRef(shown[1]) + '" aria-label="Máximo de ' + escapeAttr(name) + '">' +
+          '</label>';
+      });
+      grid += '</div>';
+      var restore = core.bandsDiffer(table.refBands)
+        ? '<p><button type="button" class="linkish" id="restoreRefs">Volver a los de NutriPlant</button></p>'
+        : '';
+      var stein = '<p class="stein">Equilibrio tipo Steiner, solo lectura: aniones N 20–80 %, P 1,25–10 %, S 10–70 %. Cationes K 10–65 %, Ca 22,5–62,5 %, Mg 0,5–40 %.</p>';
+      return '<p class="refs-lead">' + escapeAttr(lead) + '</p>' + grid + restore + stein;
+    }
+
+    function renderCharts(table) {
+      var hostEl = document.getElementById('charts');
+      var html = '';
+      var count = 0;
+      core.COLUMNS.forEach(function (col) {
+        var values = core.columnValues(table.rows, col.id, table.forms);
+        if (!core.hasAny(values)) return;
+        count += 1;
+        html += chartSvg(col, table, values);
+      });
+      hostEl.innerHTML = count ? html : '<p class="hint">Cada columna con lecturas muestra aquí su gráfica.</p>';
+    }
+
+    function chartSvg(col, table, values) {
+      var runs = core.segments(values);
+      var nums = values.filter(function (value) { return typeof value === 'number'; });
+      var min = Math.min.apply(null, nums);
+      var max = Math.max.apply(null, nums);
+      if (min === max) {
+        var pad = Math.abs(min) * 0.15 || 1;
+        min -= pad;
+        max += pad;
+      } else {
+        var span = (max - min) * 0.12;
+        min -= span;
+        max += span;
+      }
+      var n = values.length;
+      var slot = 36;
+      var width = Math.max(280, 46 + n * slot);
+      var height = 168;
+      var left = 46;
+      var right = 12;
+      var top = 12;
+      var bottom = 36;
+      var plotW = width - left - right;
+      var plotH = height - top - bottom;
+      function x(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
+      function y(value) { return top + (1 - (value - min) / (max - min)) * plotH; }
+      var path = '';
+      runs.forEach(function (run) {
+        if (run.length < 2) return;
+        run.forEach(function (index, order) {
+          path += (order ? 'L' : 'M') + x(index).toFixed(1) + ' ' + y(values[index]).toFixed(1) + ' ';
+        });
+      });
+      var dots = '';
+      runs.forEach(function (run) {
+        var radius = run.length === 1 ? 5.5 : 3.2;
+        run.forEach(function (index) {
+          dots += '<circle cx="' + x(index).toFixed(1) + '" cy="' + y(values[index]).toFixed(1) +
+            '" r="' + radius + '" fill="' + col.color + '"></circle>';
+        });
+      });
+      var step = n > 12 ? Math.ceil(n / 8) : 1;
+      var labels = '';
+      table.rows.forEach(function (row, index) {
+        if (index % step !== 0 && index !== n - 1) return;
+        labels += '<text x="' + x(index).toFixed(1) + '" y="' + (height - 8) +
+          '" text-anchor="middle" font-size="10" fill="#64748b">' + escapeAttr(row.label || String(index + 1)) + '</text>';
+      });
+      var axis = '<line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (top + plotH) +
+        '" stroke="' + col.color + '" stroke-opacity="0.45"></line>' +
+        '<text x="4" y="' + (top + 10) + '" font-size="10" fill="' + col.color + '" fill-opacity="0.75">' +
+        escapeAttr(col.unit) + '</text>';
+      return '<article class="chart"><h3>' + escapeAttr(core.labelFor(col.id, table.forms[col.id])) + '</h3>' +
+        '<div class="chart-scroll"><svg width="' + width + '" height="' + height + '" role="img" aria-label="' +
+        escapeAttr(core.labelFor(col.id, table.forms[col.id])) + ' en el tiempo">' +
+        axis + '<path d="' + path + '" fill="none" stroke="' + col.color + '" stroke-width="2"></path>' +
+        dots + labels + '</svg></div></article>';
+    }
+
+    function renderLibrary() {
+      var bar = document.getElementById('library');
+      bar.hidden = !pro;
+      if (!pro) return;
+      var select = document.getElementById('tableSelect');
+      var current = activeTable();
+      select.innerHTML = state.tables.map(function (table) {
+        return '<option value="' + table.id + '"' + (table.id === current.id ? ' selected' : '') + '>' +
+          escapeAttr(table.title || 'Seguimiento') + '</option>';
+      }).join('');
+      var title = document.getElementById('tableTitle');
+      if (document.activeElement !== title) title.value = current.title || '';
+    }
+
+    function renderSample(table) {
+      var select = document.getElementById('sampleType');
+      if (!select.options.length) {
+        select.innerHTML = core.SAMPLE_TYPES.map(function (item) {
+          return '<option value="' + item.id + '">' + escapeAttr(item.label) + '</option>';
+        }).join('');
+      }
+      var id = core.sampleType(table.sample).id;
+      table.sample = id;
+      if (document.activeElement !== select) select.value = id;
+    }
+
+    function render() {
+      var table = activeTable();
+      if (selected >= table.rows.length) selected = table.rows.length - 1;
+      if (selected < 0) selected = 0;
+      renderLibrary();
+      renderSample(table);
+      renderHead(table);
+      renderBody(table);
+      renderNote(table);
+      renderCharts(table);
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(persist, 400);
+    }
+
+    function persist() {
+      state.updatedAt = Date.now();
+      try {
+        if (pro) {
+          var id = userId();
+          if (id && id !== 'guest') localStorage.setItem('np_ionometro_user_' + id, JSON.stringify(state));
+          var parentHost = host();
+          if (typeof parentHost.nutriplantSaveIonometroToCloud === 'function') {
+            parentHost.nutriplantSaveIonometroToCloud({ userId: id, data: state });
+          }
+        } else {
+          localStorage.setItem(FREE_KEY, JSON.stringify(state));
+        }
+      } catch (e) {}
+    }
+
+    async function load() {
+      if (!pro) {
+        var raw = null;
+        try { raw = JSON.parse(localStorage.getItem(FREE_KEY) || 'null'); } catch (e) { raw = null; }
+        state = normalize(raw) || { version: 1, activeId: '', tables: [blankTable('Seguimiento')] };
+        if (!state.tables.length) state.tables = [blankTable('Seguimiento')];
+        state.activeId = state.tables[0].id;
+        return;
+      }
+      var id = userId();
+      var local = null;
+      try { local = JSON.parse(localStorage.getItem('np_ionometro_user_' + id) || 'null'); } catch (e2) { local = null; }
+      var cloud = null;
+      try {
+        var parentHost = host();
+        if (typeof parentHost.nutriplantLoadIonometroFromCloud === 'function') {
+          cloud = await parentHost.nutriplantLoadIonometroFromCloud({ userId: id });
+        }
+      } catch (e3) { cloud = null; }
+      var chosen = local;
+      if (cloud && (!local || Number(cloud.updatedAt) > Number(local.updatedAt))) chosen = cloud;
+      state = normalize(chosen) || { version: 1, activeId: '', tables: [blankTable('Seguimiento 1')] };
+      if (!state.tables.length) state.tables = [blankTable('Seguimiento 1')];
+      if (!state.tables.some(function (table) { return table.id === state.activeId; })) {
+        state.activeId = state.tables[0].id;
+      }
+    }
+
+    function sanitizeBands(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      var bands = {};
+      core.REF_IDS.forEach(function (id) {
+        var pair = raw[id];
+        if (!pair || pair.length < 2) return;
+        var min = core.parseNumber(pair[0]);
+        var max = core.parseNumber(pair[1]);
+        if (min == null || max == null || min >= max) return;
+        var base = core.defaultRefBands()[id];
+        if (Math.abs(min - base[0]) <= 0.5 && Math.abs(max - base[1]) <= 0.5) return;
+        bands[id] = [min, max];
+      });
+      return core.bandsDiffer(bands) ? bands : null;
+    }
+
+    function normalize(raw) {
+      if (!raw || !Array.isArray(raw.tables)) return null;
+      var tables = raw.tables.map(function (table) {
+        var forms = core.defaultForms();
+        if (table.forms && typeof table.forms === 'object') {
+          Object.keys(forms).forEach(function (key) {
+            var col = core.column(key);
+            if (col.forms && col.forms[table.forms[key]] != null) forms[key] = table.forms[key];
+          });
+        }
+        var rows = Array.isArray(table.rows) && table.rows.length ? table.rows.map(function (row) {
+          var next = blankRow();
+          next.id = row && row.id ? String(row.id) : uid();
+          next.label = row && row.label ? String(row.label).slice(0, 80) : '';
+          core.COLUMNS.forEach(function (col) {
+            next[col.id] = row && row[col.id] != null ? String(row[col.id]) : '';
+          });
+          return next;
+        }) : [blankRow()];
+        return {
+          id: table.id ? String(table.id) : uid(),
+          title: table.title ? String(table.title).slice(0, 120) : 'Seguimiento',
+          sample: core.sampleType(table.sample).id,
+          refBands: sanitizeBands(table.refBands),
+          forms: forms,
+          rows: rows
+        };
+      }).filter(Boolean);
+      if (!tables.length) return null;
+      return { version: 1, updatedAt: Number(raw.updatedAt) || 0, activeId: raw.activeId || tables[0].id, tables: tables };
+    }
+
+    document.getElementById('head').addEventListener('change', function (event) {
+      var select = event.target.closest('select[data-form]');
+      if (!select) return;
+      activeTable().forms[select.getAttribute('data-form')] = select.value;
+      render();
+      scheduleSave();
+    });
+
+    document.getElementById('body').addEventListener('input', function (event) {
+      var input = event.target.closest('input[data-field]');
+      if (!input) return;
+      var tr = input.closest('tr');
+      selected = Number(tr.getAttribute('data-row'));
+      var row = activeTable().rows[selected];
+      row[input.getAttribute('data-field')] = input.value;
+      var vals = tr.querySelectorAll('.meq-val');
+      var table = activeTable();
+      core.COLUMNS.forEach(function (col, index) {
+        vals[index].textContent = col.kind === 'ion' ? meqText(table, row, col.id) : '';
+      });
+      paintDots(table);
+      renderNote(table);
+      renderCharts(table);
+      scheduleSave();
+    });
+
+    document.getElementById('body').addEventListener('click', function (event) {
+      var button = event.target.closest('button[data-act]');
+      var tr = event.target.closest('tr');
+      if (!tr) return;
+      var index = Number(tr.getAttribute('data-row'));
+      selected = index;
+      if (!button) {
+        if (event.target.closest('input')) {
+          document.querySelectorAll('#body tr').forEach(function (rowEl, rowIndex) {
+            rowEl.classList.toggle('selected', rowIndex === selected);
+          });
+          paintDots(activeTable());
+          renderNote(activeTable());
+          return;
+        }
+        render();
+        return;
+      }
+      var rows = activeTable().rows;
+      var act = button.getAttribute('data-act');
+      if (act === 'up' && index > 0) {
+        var up = rows[index - 1];
+        rows[index - 1] = rows[index];
+        rows[index] = up;
+        selected = index - 1;
+      } else if (act === 'down' && index < rows.length - 1) {
+        var down = rows[index + 1];
+        rows[index + 1] = rows[index];
+        rows[index] = down;
+        selected = index + 1;
+      } else if (act === 'del') {
+        rows.splice(index, 1);
+        if (!rows.length) rows.push(blankRow());
+        if (selected >= rows.length) selected = rows.length - 1;
+      }
+      render();
+      scheduleSave();
+    });
+
+    function paintDots(table) {
+      document.querySelectorAll('#body tr').forEach(function (tr) {
+        var index = Number(tr.getAttribute('data-row'));
+        var row = table.rows[index];
+        tr.querySelectorAll('.meq').forEach(function (el, i) {
+          var existing = el.querySelector('.ref-dot');
+          if (existing) existing.remove();
+          if (index !== selected || !row) return;
+          var level = levelFor(table, row, core.COLUMNS[i].id);
+          if (!level) return;
+          el.insertAdjacentHTML('beforeend', dotHtml(level));
+        });
+      });
+    }
+
+    function writeRef(table, id) {
+      var minEl = document.querySelector('#note input[data-ref="' + id + '"][data-edge="min"]');
+      var maxEl = document.querySelector('#note input[data-ref="' + id + '"][data-edge="max"]');
+      if (!minEl || !maxEl) return;
+      var shownMin = core.parseNumber(minEl.value);
+      var shownMax = core.parseNumber(maxEl.value);
+      if (!table.refBands) table.refBands = {};
+      if (shownMin == null || shownMax == null || shownMin >= shownMax) {
+        delete table.refBands[id];
+      } else {
+        var minE = core.elementalPpm(id, table.forms[id], shownMin);
+        var maxE = core.elementalPpm(id, table.forms[id], shownMax);
+        var base = core.defaultRefBands()[id];
+        if (minE == null || maxE == null || (Math.abs(minE - base[0]) <= 0.5 && Math.abs(maxE - base[1]) <= 0.5)) {
+          delete table.refBands[id];
+        } else {
+          table.refBands[id] = [minE, maxE];
+        }
+      }
+      if (!core.bandsDiffer(table.refBands)) table.refBands = null;
+    }
+
+    function syncRestore(table) {
+      var existing = document.getElementById('restoreRefs');
+      var differ = core.bandsDiffer(table.refBands);
+      if (differ && !existing) {
+        var stein = document.querySelector('#note .stein');
+        if (!stein) return;
+        var holder = document.createElement('p');
+        holder.innerHTML = '<button type="button" class="linkish" id="restoreRefs">Volver a los de NutriPlant</button>';
+        stein.parentNode.insertBefore(holder, stein);
+      } else if (!differ && existing && existing.parentNode) {
+        existing.parentNode.remove();
+      }
+    }
+
+    document.getElementById('sampleType').addEventListener('change', function (event) {
+      var table = activeTable();
+      table.sample = event.target.value;
+      paintDots(table);
+      renderNote(table);
+      scheduleSave();
+    });
+
+    document.getElementById('note').addEventListener('input', function (event) {
+      var input = event.target.closest('input[data-ref]');
+      if (!input) return;
+      var table = activeTable();
+      writeRef(table, input.getAttribute('data-ref'));
+      syncRestore(table);
+      paintDots(table);
+      scheduleSave();
+    });
+
+    document.getElementById('note').addEventListener('click', function (event) {
+      if (!event.target.closest('#restoreRefs')) return;
+      var table = activeTable();
+      table.refBands = null;
+      renderNote(table);
+      paintDots(table);
+      scheduleSave();
+    });
+
+    document.getElementById('addRow').addEventListener('click', function () {
+      var rows = activeTable().rows;
+      var row = blankRow();
+      row.label = 'Lectura ' + (rows.length + 1);
+      rows.push(row);
+      selected = rows.length - 1;
+      render();
+      scheduleSave();
+    });
+
+    document.getElementById('tableSelect').addEventListener('change', function (event) {
+      state.activeId = event.target.value;
+      selected = 0;
+      render();
+      scheduleSave();
+    });
+    document.getElementById('tableTitle').addEventListener('input', function (event) {
+      activeTable().title = event.target.value;
+      var select = document.getElementById('tableSelect');
+      var option = select.querySelector('option[value="' + activeTable().id + '"]');
+      if (option) option.textContent = event.target.value || 'Seguimiento';
+      scheduleSave();
+    });
+    document.getElementById('newTable').addEventListener('click', function () {
+      var table = blankTable('Seguimiento ' + (state.tables.length + 1));
+      state.tables.push(table);
+      state.activeId = table.id;
+      selected = 0;
+      render();
+      scheduleSave();
+    });
+    document.getElementById('deleteTable').addEventListener('click', function () {
+      var table = activeTable();
+      var name = table.title || 'esta tabla';
+      if (!window.confirm('¿Eliminar «' + name + '» y todas sus lecturas?')) return;
+      state.tables = state.tables.filter(function (item) { return item.id !== table.id; });
+      if (!state.tables.length) state.tables.push(blankTable('Seguimiento 1'));
+      state.activeId = state.tables[0].id;
+      selected = 0;
+      render();
+      scheduleSave();
+    });
+
+    load().then(render);
+  })();
+  </script>
+</body>
+</html>

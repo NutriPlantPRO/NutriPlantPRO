@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.09.15 · **28 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.10.02 · **30 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-09-24 · **v2026.09.24c** (SN/pasta: columna % meq; suelo: ideales CIC/relaciones)
+**Versión Knowledge:** 2026-10-02 · **v2026.10.02** (seguimiento con ionómetro; 29 capítulos)
 
 ---
 
@@ -47,6 +47,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | Slug | Título corto | Pilar |
 |------|----------------|-------|
 | `flujo-nutriplant-pro` | Guía rápida: flujo y criterio de uso | H |
+| `applicate-formacion` | Applicate: cursos y formación técnica | H |
 | `unidades-ppm-meq-oxidos` | Unidades ppm, meq, óxidos | A |
 | `porcentaje-meq-aniones-cationes` | % meq triángulos | A |
 | `analisis-suelo-fertilidad-kgha` | Suelo fertilidad kg/ha | B / C |
@@ -57,6 +58,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `granular-mezclas` | Granular: requerimiento, programa y mezclas | D |
 | `hidroponia-solucion-por-etapa` | Hidroponía: solución nutritiva por etapa | D |
 | `diseno-solucion-nutritiva-didactica` | Solución didáctica (gratis) | D |
+| `seguimiento-ionometro` | Seguimiento con ionómetro | D |
 | `vpd-deficit-presion-vapor` | VPD, Radar NDVI/NDMI/NDRE/RGB | E |
 | `balance-hidrico-riego-clima` | Balance hídrico y riego rápido (Clima) | E |
 | `ish-rendimiento-hidrico` | Rendimiento hídrico (ISH) | E |
@@ -80,6 +82,15 @@ URL: `https://nutriplantpro.com/manual-tecnico/capitulos/<slug>.html`
 ---
 
 ## 4. Capítulos — resumen técnico (detalle)
+
+### 4.0b Applicate (formación)
+
+**URL:** …/applicate-formacion.html · aula https://nutriplantpro.com/applicate
+
+- Applicate es la sección de cursos y formación técnica en nutrición vegetal: aula, biblioteca y constancias.
+- No es la suscripción de $49/5 meses, ni las calculadoras, ni el manual técnico.
+- Un curso adquirido es el pago de esa ficha y queda de por vida.
+- No inventar temario, precio ni fecha si la ficha no está publicada.
 
 ### 4.0 Flujo plataforma (Pilar 1 — leer primero si «¿por dónde empiezo?»)
 
@@ -232,6 +243,20 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - En PRO el programa se sincroniza al proyecto (`cycleProgram`); PDF `hydroCycle`; admin.
 
 **Pulso de riego:** `hidro-pulso-riego-free.html` (⏱️). `L_neto = V×ATD%×agotamiento%`; `L_pulso = L_neto/(1−drenaje%)`; minutos con goteros×L/h; × macetas. Catálogo ATD orientativo. Solo localStorage. Ver HERRAMIENTAS §⏱️.
+
+### 4.10c Seguimiento con ionómetro
+
+**URL:** …/seguimiento-ionometro.html · herramienta 🔬 `seguimiento-ionometro-free.html`.
+
+- ppm tecleado; meq = ppm ÷ peso de la forma del encabezado. La forma se guarda con la tabla; las ppm no se reescriben. Al cambiarla se actualizan meq y la gráfica de esa columna.
+- NO₃⁻ 62 o N 14 · PO₄ 95 o P 31 · SO₄²⁻ 48,03 o S 16,03 · NH₄⁺ 18,04 o N 14. Fijos: K 39,1, Ca 20,04, Mg 12,15, Na 22,99, Cl 35,45. pH y CE sin meq.
+- 95 ppm PO₄ = 1,0 meq. 280 ppm NO₃⁻ ≈ 4,5 meq; 280 ppm como N = 20 meq.
+- Una gráfica por columna. Un hueco no une la línea. % solo con ≥2 iones del grupo. CE ~10 meq/L por dS/m, orientativa.
+- Login: 1 tabla local. PRO: varias tablas en `profiles.ionometro_seguimientos` (cuenta, no proyecto).
+- **Referencia de concentración** (gratis y PRO), solo solución y pasta: franja NutriPlant de invernadero, ppm del elemento, N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. Se compara en la forma del encabezado: 280 NO₃⁻ ≈ 63 N (debajo de 140–200); en pantalla se ve 620–886 ppm NO₃⁻. Mín–máx editables; «Volver a los de NutriPlant». Pasta = misma franja, rizósfera. pH, CE, Cl, Na, NH₄ sin franja.
+- **Equilibrio tipo Steiner**, solo lectura y en % (no ppm): aniones N 20–80, P 1,25–10, S 10–70; cationes K 10–65, Ca 22,5–62,5, Mg 0,5–40.
+- Foliar, pecíolo, savia y extracto 2:1 se nombran y no encienden franja (foliar de lab = % de tejido; savia en miles de ppm). Cambiar la muestra no reescribe ppm ni meq. Parámetro de apoyo, no verdad de laboratorio. Punto solo en la fila activa.
+- `free_tools_catalog` `tool_id: "ionometro_seguimiento"`.
 
 ### 4.11 VPD y Radar Satelital (NDVI / NDMI / NDRE / RGB + relieve DEM)
 

@@ -1103,6 +1103,10 @@ body.ap-body {
   .ap-side,
   .ap-app.is-on .ap-side:hover {
     width: 72px;
+    transition: none;
+  }
+  .ap-side.is-open + .ap-shell {
+    margin-left: 72px;
   }
   .ap-side.is-open,
   .ap-app.is-on .ap-side.is-open,

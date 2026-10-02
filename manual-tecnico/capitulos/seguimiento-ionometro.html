@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento con ionómetro — Manual NutriPlant PRO</title>
+  <meta name="description" content="Bitácora de lecturas de ionómetro o fotómetro: ppm tecleado, meq según la forma del equipo, una gráfica por columna. Gratis en el navegador; en PRO, varias tablas en la cuenta.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/seguimiento-ionometro.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css?v=20260802a">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Seguimiento con ionómetro",
+  "description": "Bitácora de lecturas de ionómetro o fotómetro. El ppm se teclea y el meq se calcula con la forma que muestra el equipo. Una gráfica por columna.",
+  "url": "https://nutriplantpro.com/manual-tecnico/capitulos/seguimiento-ionometro.html",
+  "inLanguage": "es",
+  "datePublished": "2026-10-02",
+  "dateModified": "2026-10-02",
+  "author": {
+    "@type": "Person",
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com/manual-tecnico/autoria.html"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "NutriPlant PRO",
+    "url": "https://nutriplantpro.com",
+    "logo": "https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Manual Técnico NutriPlant PRO",
+    "url": "https://nutriplantpro.com/manual-tecnico/index.html"
+  }
+}
+  </script>
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav" aria-label="Enlaces"><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar D · Solución y seguimiento</p>
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
+
+    <div data-mt-lang="es">
+<span class="mt-badge">Metodología NutriPlant PRO · 2026-10</span>
+    <h1>Seguimiento con ionómetro</h1>
+    <h2>Resumen</h2>
+    <p>
+      Bitácora para anotar lecturas de <strong>ionómetro o fotómetro</strong> de solución nutritiva, extracto de pasta,
+      pecíolo, foliar o savia. El usuario escribe el número que muestra el equipo, en <strong>ppm</strong>.
+      Debajo, NutriPlant calcula el <strong>meq</strong> con la forma elegida en el encabezado de esa columna.
+      Cada columna con datos tiene <strong>su propia gráfica en el tiempo</strong>. Es una guía de seguimiento:
+      la decisión en campo sigue siendo del técnico.
+    </p>
+
+    <h2>Dónde está</h2>
+    <ul>
+      <li><strong>Herramienta gratuita</strong> (login y dashboard): icono <strong>🔬 Seguimiento con ionómetro</strong>.</li>
+      <li><strong>Sin cuenta:</strong> una sola tabla en el navegador (<code>nutriplant_free_ionometro_v1</code>). No viaja a otro dispositivo.</li>
+      <li><strong>Con cuenta PRO:</strong> varias tablas con título, guardadas en la <strong>cuenta</strong> (<code>profiles.ionometro_seguimientos</code>), visibles desde cualquier proyecto. Borrar un proyecto no las borra.</li>
+      <li>Una tabla = un tipo de muestra. No mezclar en la misma hoja el potasio de savia (miles de ppm) con el de solución.</li>
+    </ul>
+
+    <h2>Columnas</h2>
+    <p>Orden: título libre de la lectura (Semana 1, 07 ago, Malla 12) · pH · CE (dS/m) · NO₃⁻ · PO₄ · SO₄²⁻ · K⁺ · Ca²⁺ · Mg²⁺ · Cl⁻ · Na⁺ · NH₄⁺.</p>
+    <p>pH y CE son un solo número: no tienen meq ni forma. El pH 4,0 es pH 4,0. Los mV del electrodo no van en la columna de pH. La celda vacía se queda vacía.</p>
+
+    <h2>La forma del equipo se queda</h2>
+    <p>
+      Nitrato, fósforo, sulfato y amonio tienen un desplegable en el encabezado, porque la pantalla del equipo cambia y el peso equivalente también.
+      Esa elección se guarda con la tabla. En la gratuita queda en el navegador; en PRO, en la cuenta.
+      Ahí se mantiene hasta que el usuario la cambie. <strong>Las ppm escritas no se reescriben.</strong>
+      Si había 280 y se pasa de NO₃⁻ a N, la celda sigue en 280. Cambian el meq y la gráfica de esa columna.
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>Columna</th><th>Forma de inicio</th><th>Alternativa</th><th>meq/L</th></tr></thead>
+      <tbody>
+        <tr><td>Nitrato</td><td>NO₃⁻ ÷ 62</td><td>N ÷ 14</td><td>ppm ÷ peso de la forma</td></tr>
+        <tr><td>Fósforo</td><td>PO₄ ÷ 95</td><td>P ÷ 31</td><td>misma regla</td></tr>
+        <tr><td>Sulfato</td><td>SO₄²⁻ ÷ 48,03</td><td>S ÷ 16,03</td><td>misma regla</td></tr>
+        <tr><td>Amonio</td><td>NH₄⁺ ÷ 18,04</td><td>N ÷ 14</td><td>misma regla</td></tr>
+      </tbody>
+    </table>
+    <p>Pesos fijos, sin desplegable: K⁺ 39,1 · Ca²⁺ 20,04 · Mg²⁺ 12,15 · Na⁺ 22,99 · Cl⁻ 35,45.</p>
+    <div class="mt-formula">
+      95 ppm PO₄ = 31 ppm P = 1,0 meq/L<br>
+      280 ppm como NO₃⁻ ≈ 4,5 meq/L · los mismos 280 ppm leídos como N = 20 meq/L
+    </div>
+    <div class="mt-warn">
+      El inicio sigue al ion (NO₃⁻, PO₄, SO₄²⁻, NH₄⁺), que es lo que muestran muchos electrodos.
+      Un fotómetro como el Hanna HI83325 a menudo enseña nitrato como N: ahí el encabezado se cambia a N.
+      H₂PO₄⁻ es la carga que se asume en solución o savia (el PO₄ se divide entre 95, no entre 3). No es una opción del menú.
+      No usar aquí los pesos de la solución de NutriPlant (N 14, P 31, S 16) si el equipo está mostrando el ion.
+    </div>
+
+    <h2>Gráficas</h2>
+    <p>
+      Una gráfica por columna, cada una con su escala. Los iones van en meq/L, el pH en unidades de pH y la CE en dS/m.
+      No se comparan entre sí en un solo eje. El eje horizontal es el orden de las filas, con el título que quepa.
+      Una sola lectura es un punto marcado, sin línea. Si falta un valor en medio, la línea se corta: no se une por encima del hueco y no se pone cero.
+      Una columna sin ningún número no dibuja gráfica.
+    </p>
+    <p>En pantalla grande la tabla queda a la izquierda y las gráficas a la derecha. En el teléfono, primero la tabla y después las gráficas.</p>
+
+    <h2>Relación de meq, solo con lo medido</h2>
+    <p>
+      Si hay al menos dos cationes llenos (K⁺, Ca²⁺, Mg²⁺, Na⁺, NH₄⁺), cada uno se expresa como % de esa suma.
+      Igual con los aniones llenos (NO₃⁻, PO₄, SO₄²⁻, Cl⁻). Con un solo ion del grupo no hay porcentaje.
+      Si además hay CE, se compara la suma de cationes medidos con unos <strong>10 meq/L por cada dS/m</strong>.
+      La diferencia se muestra como iones no medidos (HCO₃⁻, SO₄²⁻, PO₄ u otros). Es orientativa:
+      no es un balance cerrado y la herramienta no sabe si la CE del equipo es una sonda aparte o un cálculo de sus propios iones.
+    </p>
+
+    <h2>Parámetros de referencia</h2>
+    <p>
+      Hay dos referencias distintas, y las dos son un parámetro de apoyo. La lectura del equipo también lo es:
+      tiene su margen, y la herramienta no conoce el método de extracción. La decisión sigue siendo del técnico.
+      Gratis y Pro usan la misma regla. El punto va solo en la fila que se está viendo; la hoja de lecturas no se llena de números extra.
+    </p>
+    <h3>Concentración</h3>
+    <p>
+      Sale de la franja interna de NutriPlant para solución de invernadero intensivo, la misma del análisis de solución en la plataforma.
+      Está en ppm del elemento: N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110.
+      pH, CE, Cl⁻, Na⁺ y NH₄⁺ no tienen franja.
+    </p>
+    <p>
+      Se compara en la forma del encabezado. 280 escritos como NO₃⁻ son unos 63 de N, y eso cae debajo de 140–200.
+      Los mismos 280 leídos como N quedan arriba. En pantalla, si el encabezado es NO₃⁻, la franja se muestra como 620–886 ppm de NO₃⁻, que es ese mismo 140–200 de N.
+    </p>
+    <p>
+      El mínimo y el máximo se pueden editar en esa tabla. Desde ahí, el punto usa los números del usuario.
+      <strong>Volver a los de NutriPlant</strong> aparece solo cuando alguno ya no es el de la plataforma, y restaura la franja.
+      La pasta saturada usa los mismos ppm: es la solución del suelo en saturación, no el licor del riego.
+    </p>
+    <h3>Equilibrio</h3>
+    <p>
+      Debajo, solo de lectura, va el equilibrio tipo Steiner del capítulo de diseño de solución. Es porcentaje, no ppm:
+      aniones N 20–80 %, P 1,25–10 %, S 10–70 %; cationes K 10–65 %, Ca 22,5–62,5 %, Mg 0,5–40 %.
+      El % de la fila sigue siendo solo de los iones que sí se anotaron.
+    </p>
+    <h3>Otras muestras</h3>
+    <p>
+      Foliar, pecíolo, savia y extracto 2:1 se pueden nombrar en el menú y no encienden franja.
+      El foliar de laboratorio es % de tejido seco (K 2,5 %), no ppm de un líquido. El potasio de savia o de pecíolo suele ir en miles de ppm; compararlo con 180–300 lo marcaría alto.
+      Cambiar el tipo de muestra, o la forma del encabezado, no reescribe las ppm ni el meq. Solo se actualizan la franja y el punto.
+    </p>
+    <h2>Qué no hace</h2>
+    <ul>
+      <li>No convierte las ppm al cambiar la forma ni al cambiar el tipo de muestra.</li>
+      <li>No acepta mmol en la celda: si el equipo está en mmol, el usuario pasa a mg/L antes de anotar. En monovalentes, mmol = meq; en Ca²⁺ y Mg²⁺, meq = 2 × mmol.</li>
+      <li>No pinta un semáforo en cada celda. El punto es solo de la fila activa, y solo si la muestra es solución o pasta.</li>
+      <li>No es el análisis de laboratorio de solución ni el diseño de solución nutritiva.</li>
+    </ul>
+
+    <h2>Relacionado</h2>
+    <ul>
+      <li><a href="unidades-ppm-meq-oxidos.html">Unidades: ppm, meq/L y óxidos</a> — ahí el ppm de NutriPlant es el elemento; esta bitácora sigue la pantalla del equipo.</li>
+      <li><a href="porcentaje-meq-aniones-cationes.html">% meq de los triángulos</a> — en el programa, Cl⁻ y NH₄⁺ van aparte y cada triángulo suma 100 %. Aquí el % solo usa los iones que sí se midieron.</li>
+      <li><a href="diseno-solucion-nutritiva-didactica.html">Diseño de solución nutritiva</a>.</li>
+    </ul>
+    </div>
+
+    <div data-mt-lang="en" hidden>
+<span class="mt-badge">NutriPlant PRO methodology · 2026-10</span>
+    <h1>Ion meter log</h1>
+    <h2>Summary</h2>
+    <p>
+      A log for <strong>ion-meter or photometer</strong> readings of nutrient solution, saturated-paste extract,
+      petiole, leaf or sap. The user types the number on the display, in <strong>ppm</strong>.
+      NutriPlant calculates <strong>meq</strong> underneath, using the form selected in that column’s header.
+      Each column with numbers has <strong>its own chart over time</strong>. Field decisions stay with the agronomist.
+    </p>
+    <h2>Where it is</h2>
+    <ul>
+      <li><strong>Free tool</strong> (login and dashboard): <strong>🔬 Ion meter log</strong>.</li>
+      <li><strong>No account:</strong> one table in the browser (<code>nutriplant_free_ionometro_v1</code>). It does not travel.</li>
+      <li><strong>PRO account:</strong> several titled tables on the <strong>account</strong> (<code>profiles.ionometro_seguimientos</code>), visible from any project. Deleting a project does not delete them.</li>
+      <li>One table = one sample type. Do not mix sap potassium (thousands of ppm) with solution potassium on the same sheet.</li>
+    </ul>
+    <h2>The meter form stays</h2>
+    <p>
+      Nitrate, phosphorus, sulfate and ammonium have a header menu, because the display and the equivalent weight change.
+      The choice is saved with the table and stays until the user changes it. <strong>Typed ppm are not rewritten.</strong>
+      Switching NO₃⁻ to N leaves 280 as 280; meq and that column’s chart update.
+    </p>
+    <div class="mt-formula">
+      meq/L = ppm ÷ equivalent weight of the selected form<br>
+      NO₃⁻ 62 or N 14 · PO₄ 95 or P 31 · SO₄²⁻ 48.03 or S 16.03 · NH₄⁺ 18.04 or N 14<br>
+      Fixed: K⁺ 39.1 · Ca²⁺ 20.04 · Mg²⁺ 12.15 · Na⁺ 22.99 · Cl⁻ 35.45<br>
+      95 ppm PO₄ = 31 ppm P = 1.0 meq/L · 280 ppm as NO₃⁻ ≈ 4.5 meq/L · the same 280 ppm read as N = 20 meq/L
+    </div>
+    <p>pH and EC are single numbers, with no meq and no form. Defaults follow the ion (what many electrodes show). A photometer that displays nitrate as N is switched to N in the header. H₂PO₄⁻ is the charge assumed for PO₄ (divide by 95, not by 3); it is not a menu option. Do not apply NutriPlant solution weights (N 14, P 31, S 16) while the meter is showing the ion.</p>
+    <h2>Charts</h2>
+    <p>
+      One chart per column, each on its own scale: ions in meq/L, pH as pH, EC in dS/m. They are not compared on one axis.
+      The horizontal axis is row order. One reading is a marked point. A gap breaks the line; it is not bridged and it is not drawn as zero.
+      A column with no numbers has no chart.
+    </p>
+    <h2>Reference parameters</h2>
+    <p>
+      Two references, both a guide. The meter reading is a guide too. Free and Pro share the rule. The dot sits only on the row being viewed.
+    </p>
+    <p>
+      <strong>Concentration</strong> is NutriPlant’s intensive-greenhouse band, elemental ppm: N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. It is compared in the header form: 280 typed as NO₃⁻ is about 63 N (below 140–200); the same 280 typed as N is above. On screen, an NO₃⁻ header shows that band as 620–886 ppm NO₃⁻. Min and max can be edited per table; <strong>Back to NutriPlant</strong> restores them. Saturated paste uses the same ppm: soil solution at saturation, not the irrigation liquor. pH, EC, Cl⁻, Na⁺ and NH₄⁺ have no band.
+    </p>
+    <p>
+      <strong>Balance</strong> is read-only Steiner-type text from the solution-design chapter: anions N 20–80%, P 1.25–10%, S 10–70%; cations K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%.
+    </p>
+    <p>
+      Foliar, petiole, sap and 2:1 extract can be named and show no band. Lab foliar K is 2.5% of dry tissue; sap or petiole K is often thousands of ppm. Changing the sample type does not rewrite ppm or meq.
+    </p>
+    <h2>Partial meq relation</h2>
+    <p>
+      Percentages appear only when at least two ions in the group are filled (cations K⁺, Ca²⁺, Mg²⁺, Na⁺, NH₄⁺; anions NO₃⁻, PO₄, SO₄²⁻, Cl⁻).
+      If EC is typed, measured cations are compared with about <strong>10 meq/L per dS/m</strong>. The gap is unmeasured ions. It is orientative, not a closed balance.
+    </p>
+    <h2>Related</h2>
+    <ul>
+      <li><a href="unidades-ppm-meq-oxidos.html">Units: ppm, meq/L and oxides</a>.</li>
+      <li><a href="porcentaje-meq-aniones-cationes.html">% meq triangles</a>.</li>
+      <li><a href="diseno-solucion-nutritiva-didactica.html">Nutrient-solution design</a>.</li>
+    </ul>
+    </div>
+
+    <nav class="mt-chapter-nav"><a href="diseno-solucion-nutritiva-didactica.html">Diseño de solución</a> · <a href="unidades-ppm-meq-oxidos.html">Unidades</a> · <a href="../index.html">Índice</a></nav>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+  <script src="../assets/manual-i18n.js?v=20260730n"></script>
+  <script src="../assets/manual-header.js?v=20260822newtab"></script>
+  <script src="../assets/manual-nav.js?v=20260730k"></script>
+</body>
+</html>

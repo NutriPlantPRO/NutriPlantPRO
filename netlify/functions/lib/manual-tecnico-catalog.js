@@ -5,9 +5,9 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-09-24',
+  version: '2026-10-02',
   scope:
-    'Biblioteca HTML pública, sin cuenta. 28 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO (incluye Radar Satelital / Lectura Satelital + ISH + ventanas de aplicación foliar + uniformidad de riego).',
+    'Biblioteca HTML pública, sin cuenta. 30 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO (incluye Radar Satelital / Lectura Satelital + ISH + ventanas de aplicación foliar + uniformidad de riego + seguimiento con ionómetro + Applicate).',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -30,6 +30,16 @@ module.exports = {
       pillar: '1 — Flujo de la plataforma',
       summary:
         'Entrada al manual: login vs proyecto PRO; Dato→Interpretación→Ajuste→Programa→Seguimiento; módulo por objetivo; errores comunes (suelo≠enmiendas, % meq≠CIC, etc.).',
+      status: 'published'
+    },
+    {
+      id: 'applicate_formacion',
+      slug: 'applicate-formacion',
+      title: 'Applicate: cursos y formación técnica',
+      url: `${BASE}/capitulos/applicate-formacion.html`,
+      pillar: 'Plataforma — Formación',
+      summary:
+        'Applicate es la sección de cursos y formación técnica en nutrición vegetal de NutriPlant PRO (aula, biblioteca y constancias). URL https://nutriplantpro.com/applicate. No es la suscripción de $49/5 meses ni las calculadoras ni este manual. Un curso adquirido es un pago de esa ficha y queda de por vida. No inventar temario, precio ni fecha si la ficha no está publicada.',
       status: 'published'
     },
     {
@@ -107,6 +117,16 @@ module.exports = {
       url: `${BASE}/capitulos/diseno-solucion-nutritiva-didactica.html`,
       pillar: 'E — Solución',
       summary: 'Herramienta gratis vs hidroponía proyecto; CE, triángulos, Cl, NH4.',
+      status: 'published'
+    },
+    {
+      id: 'seguimiento_ionometro',
+      slug: 'seguimiento-ionometro',
+      title: 'Seguimiento con ionómetro',
+      url: `${BASE}/capitulos/seguimiento-ionometro.html`,
+      pillar: 'D — Solución y seguimiento',
+      summary:
+        'Bitácora 🔬. ppm tecleado; meq según la forma del encabezado (NO₃⁻ 62 o N 14, PO₄ 95 o P 31). 280 NO₃⁻ ≈ 4.5 meq y ≈ 63 ppm N. Referencia en solución y pasta: franja NutriPlant de invernadero (N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110 ppm del elemento), comparada en la forma del encabezado (NO₃⁻ se muestra 620–886). Punto solo en la fila activa. Mín–máx editables; «Volver a los de NutriPlant». Steiner solo lectura (N 20–80, P 1.25–10, S 10–70; K 10–65, Ca 22.5–62.5, Mg 0.5–40). Pasta = misma franja, rizósfera. Foliar, pecíolo, savia y 2:1 sin franja. Cambiar muestra no reescribe ppm. Parámetro de apoyo, no verdad de laboratorio. Login local; PRO en profiles.ionometro_seguimientos.',
       status: 'published'
     },
     {

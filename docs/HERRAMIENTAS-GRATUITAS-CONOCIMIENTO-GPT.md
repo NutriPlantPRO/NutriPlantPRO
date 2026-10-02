@@ -11,6 +11,7 @@
 - Son **material educativo / calculadoras**; no sustituyen el programa nutricional guardado del suscriptor.
 - **Persistencia (2026):** casi todas guardan entradas en **localStorage del navegador** (`nutriplant_free_*_v1`). Al cerrar el modal o la pestaña, al volver en el **mismo navegador** se restauran los valores. **No** van a Supabase ni al proyecto del cliente.
 - **Excepción importante — 📊 Distribución por etapa:** en **login** solo localStorage del navegador. En **dashboard** (`?ctx=dashboard`): (1) **curva activa** autoguardada en el proyecto (nube + LS por proyecto); (2) **biblioteca «Mis curvas guardadas»** por usuario (LS + Supabase perfil), independiente del proyecto.
+- **Excepción — 🔬 Seguimiento con ionómetro:** en **login** una tabla en localStorage. En **dashboard PRO** varias tablas con título en el perfil (`profiles.ionometro_seguimientos`), visibles desde cualquier proyecto. Borrar un proyecto no las borra.
 
 ---
 
@@ -88,6 +89,35 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 - **No confundir con:** Análisis → Solución Nutritiva (laboratorio) ni con «Solución por etapa» del módulo PRO (diseño de una etapa activa para cálculo de sales).
 
 **API Socio:** `free_tools_catalog` con `tool_id: "hidro_solucion"`.
+
+### 🔬 Seguimiento con ionómetro (`seguimiento-ionometro-free.html`)
+
+**Qué hace:** bitácora de lecturas de ionómetro o fotómetro (solución, pasta, pecíolo, foliar o savia). El usuario teclea **ppm**. El **meq** se calcula debajo y no se edita. Una tabla = un tipo de muestra.
+
+**Forma del encabezado (se guarda con la tabla; las ppm no se reescriben):**
+
+| Columna | Inicio | Alternativa | Peso |
+|---------|--------|-------------|------|
+| Nitrato | NO₃⁻ | N | 62 o 14 |
+| Fósforo | PO₄ | P | 95 o 31 |
+| Sulfato | SO₄²⁻ | S | 48,03 o 16,03 |
+| Amonio | NH₄⁺ | N | 18,04 o 14 |
+
+Fijos: K⁺ 39,1 · Ca²⁺ 20,04 · Mg²⁺ 12,15 · Na⁺ 22,99 · Cl⁻ 35,45. pH y CE no tienen meq ni forma.
+
+**Ejemplos:** 95 ppm PO₄ = 31 ppm P = 1,0 meq/L. 280 ppm como NO₃⁻ ≈ 4,5 meq; los mismos 280 leídos como N = 20 meq. Al cambiar la forma, el 280 sigue escrito; cambian el meq y la gráfica de esa columna.
+
+**Gráficas:** una por columna, escala propia (iones en meq/L, pH en pH, CE en dS/m). No van juntas. Un hueco corta la línea (no se une ni se pone cero). Columna sin números: sin gráfica.
+
+**% parcial:** solo si hay al menos 2 iones del grupo (cationes K, Ca, Mg, Na, NH₄; aniones NO₃, PO₄, SO₄, Cl). Con CE, la suma de cationes medidos se compara con ~10 meq/L por dS/m. Orientativo, no es balance cerrado. H₂PO₄⁻ es la carga asumida (÷95), no una opción del menú. No dividir PO₄ entre 3.
+
+**Referencia (gratis y PRO).** Dos capas. (1) Concentración: franja NutriPlant de invernadero, ppm del elemento, N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. Solo solución y pasta (la pasta usa la misma franja: rizósfera, no licor). Se compara en la forma del encabezado: 280 como NO₃⁻ ≈ 63 N, debajo de 140–200; en pantalla se ve 620–886 ppm NO₃⁻. No comparar el 280 crudo contra 140–200. Punto debajo/dentro/arriba solo en la fila activa. Mín–máx editables; «Volver a los de NutriPlant». pH, CE, Cl, Na y NH₄ sin franja. (2) Equilibrio tipo Steiner, solo lectura y en porcentaje (no ppm): aniones N 20–80, P 1,25–10, S 10–70; cationes K 10–65, Ca 22,5–62,5, Mg 0,5–40. Foliar, pecíolo, savia y extracto 2:1 se nombran y no encienden franja. Cambiar la muestra no reescribe ppm ni meq. Parámetro de apoyo, no verdad de laboratorio.
+
+**Persistencia:** login `nutriplant_free_ionometro_v1` (una tabla, no viaja). PRO: varias tablas tituladas en `profiles.ionometro_seguimientos`.
+
+**API Socio / complemento:** `free_tools_catalog` con `tool_id: "ionometro_seguimiento"`. Manual: `seguimiento-ionometro`.
+
+**Errores a evitar:** aplicar pesos de solución NutriPlant (N 14, P 31, S 16) cuando el equipo muestra el ion; convertir las ppm al cambiar la forma; unir la gráfica a través de una lectura faltante; mezclar savia y solución en la misma tabla.
 
 ### ⏱️ Pulso de riego en hidroponía (`hidro-pulso-riego-free.html`)
 

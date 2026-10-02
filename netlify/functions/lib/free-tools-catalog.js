@@ -4,14 +4,14 @@
  * Mantener alineado con docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-      version: '2026-09-14',
+      version: '2026-10-02',
   scope:
-    'Herramientas HTML en iframe/modal sin cuenta (y Pronóstico agroclimático también como servicio de alertas semanales con registro). Persistencia de calculadoras: localStorage del navegador (no Supabase), salvo el flujo de alertas agroclimáticas aprobado. Misma lógica en login.html y dashboard (iconos barra).',
+    'Herramientas HTML en iframe/modal sin cuenta (y Pronóstico agroclimático también como servicio de alertas semanales con registro). Persistencia de calculadoras: localStorage del navegador (no Supabase), salvo el flujo de alertas agroclimáticas aprobado y el Seguimiento con ionómetro en dashboard PRO (varias tablas en profiles.ionometro_seguimientos, la cuenta, no el proyecto). Misma lógica en login.html y dashboard (iconos barra).',
   persistence: {
     storage: 'localStorage',
     keyPrefix: 'nutriplant_free_',
     note:
-      'Los valores del formulario se restauran al reabrir en el mismo navegador. No sincroniza entre dispositivos ni con proyectos de suscriptores.'
+      'Los valores del formulario se restauran al reabrir en el mismo navegador. No sincroniza entre dispositivos ni con proyectos de suscriptores. Excepción: Seguimiento con ionómetro en dashboard PRO guarda varias tablas tituladas en profiles.ionometro_seguimientos (cuenta del usuario, visible desde cualquier proyecto). En login, esa herramienta sigue solo en localStorage.'
   },
   tools: [
     {
@@ -59,6 +59,15 @@ module.exports = {
       lsKey: 'nutriplant_hydro_solucion_free_v1',
       summary:
         'Pestañas: (1) Programa del ciclo (etapas, catálogo Steiner/propias, ternario, gráficas meq/ppm); (2) Diseño CE→meq/%→ppm, triángulos N-P-S y K-Ca-Mg; (3) Aporte fertilizantes. Cl⁻ suma a CE; NH₄ fuera del triángulo catiónico. En PRO el programa se guarda en hidroponia.cycleProgram (PDF hydroCycle + admin). Distinto de Análisis→Solución Nutritiva (lab) y de Solución por etapa del cálculo de sales.'
+    },
+    {
+      id: 'ionometro_seguimiento',
+      title: 'Seguimiento con ionómetro',
+      file: 'seguimiento-ionometro-free.html',
+      lsKey: 'nutriplant_free_ionometro_v1',
+      manualChapter: 'seguimiento_ionometro',
+      summary:
+        'Bitácora 🔬 ionómetro/fotómetro. ppm tecleado; meq = ppm ÷ peso de la forma (NO₃⁻ 62 o N 14, PO₄ 95 o P 31, SO₄²⁻ 48.03 o S 16.03, NH₄⁺ 18.04 o N 14; K 39.1, Ca 20.04, Mg 12.15, Na 22.99, Cl 35.45). La forma se guarda; las ppm no se reescriben. Una gráfica por columna; un hueco no une la línea. Referencia (gratis y PRO), dos capas: (1) concentración NutriPlant de invernadero, ppm del elemento N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110, solo en solución y pasta (la pasta usa la misma franja: rizósfera, no licor). Se compara en la forma del encabezado: 280 como NO₃⁻ ≈ 63 N (debajo de 140–200); en pantalla esa franja se ve 620–886 ppm NO₃⁻. Punto debajo/dentro/arriba solo en la fila activa. Mín–máx editables por tabla; «Volver a los de NutriPlant» restaura. pH, CE, Cl, Na y NH₄ sin franja. (2) Equilibrio tipo Steiner, solo lectura: aniones N 20–80, P 1.25–10, S 10–70; cationes K 10–65, Ca 22.5–62.5, Mg 0.5–40. Foliar, pecíolo, savia y extracto 2:1 se nombran y no encienden franja (el foliar de lab es % de tejido; la savia va en miles de ppm). Cambiar muestra o forma no reescribe ppm ni meq. Es parámetro de apoyo, no verdad de laboratorio. Login: 1 tabla local. PRO: varias tablas en profiles.ionometro_seguimientos.'
     },
     {
       id: 'hidro_pulso_riego',

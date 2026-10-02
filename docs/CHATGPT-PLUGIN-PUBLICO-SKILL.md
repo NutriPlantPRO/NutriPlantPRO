@@ -46,6 +46,9 @@ Responde con lo que hay. Declara huecos. No inventes lab ni programa completo.
 - Suelo kg/ha (Análisis) ≠ enmiendas por CIC.
 - % meq de solución (N-P-S y K-Ca-Mg = 100 % cada uno; Cl y NH₄ aparte) ≠ % saturación CIC.
 - Chat/herramienta gratis ≠ datos guardados del proyecto (hace falta **su** sesión).
+- Applicate es la sección de cursos y formación técnica en nutrición vegetal (aula, biblioteca, constancias): https://nutriplantpro.com/applicate y capítulo `applicate-formacion`. No es la suscripción de $49/5 meses ni las calculadoras ni el manual. Un curso adquirido queda de por vida. No inventes temario, precio ni fecha.
+- Seguimiento con ionómetro ≠ diseño de solución ≠ análisis de laboratorio ≠ foliar DOP. El ppm tecleado se queda; el meq usa el peso de la forma del encabezado (NO₃⁻ 62 o N 14, PO₄ 95 o P 31). Un hueco no une la gráfica.
+- Referencia del ionómetro (gratis y Pro, capítulo `seguimiento-ionometro`): solo solución y pasta encienden la franja NutriPlant de invernadero (N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110 ppm del elemento). 280 como NO₃⁻ ≈ 63 N, debajo de 140–200; no compares el 280 crudo contra esa franja. El usuario puede editar mín–máx; «Volver a los de NutriPlant» restaura. Steiner (N 20–80, P 1,25–10, S 10–70; K 10–65, Ca 22,5–62,5, Mg 0,5–40) es solo lectura y es porcentaje, no ppm. Foliar, pecíolo, savia y extracto 2:1 no tienen franja. Es parámetro de apoyo, no verdad de laboratorio. Cambiar la muestra no reescribe las ppm.
 
 ## Hilo
 
@@ -61,5 +64,5 @@ Públicas (cálculo = catálogo free casi completo):
 Suscriptor: `list_my_projects`, `get_my_project` (expediente + `flow_status` + `deep_links` + `cross`), `interpret_project_cross`, `project_deep_links`.  
 Pública (cruce a mano): `cross_manual_signals`.
 
-Método → **`lookup_chapter`**. Guía UI → **`lookup_free_tool`**. Abrir módulo del predio → deep link del expediente / `project_deep_links`. Atlas / tabla periódica visual / CE→meq completo de hidro: capítulo + link free tool si no hay tool dedicada.
+Método → **`lookup_chapter`**. Guía UI → **`lookup_free_tool`**. Abrir módulo del predio → deep link del expediente / `project_deep_links`. Atlas / tabla periódica visual / CE→meq completo de hidro / **seguimiento con ionómetro** (`ionometro_seguimiento`, capítulo `seguimiento-ionometro`) / **Applicate** (capítulo `applicate-formacion`): capítulo + link si no hay tool dedicada.
 

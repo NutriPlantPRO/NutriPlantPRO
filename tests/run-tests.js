@@ -4,6 +4,7 @@ var suites = [
   require('./preferences.test.js'),
   require('./units.test.js'),
   require('./agronomic-units.test.js'),
+  require('./ionometro-core.test.js'),
   require('./granular-ui.test.js'),
   require('./fertigation-ui.test.js'),
   require('./amendment-ui.test.js'),

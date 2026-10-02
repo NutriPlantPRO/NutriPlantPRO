@@ -1,7 +1,7 @@
 # NutriPlant PRO — Manual Técnico (para crawlers e IA)
 
 > Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
-> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.09.14 · 28 capítulos.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.10.02 · 30 capítulos.
 
 ## Sitio
 
@@ -14,6 +14,7 @@
 ## Capítulos publicados
 
 - https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/applicate-formacion.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
@@ -24,6 +25,7 @@
 - https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/hidroponia-solucion-por-etapa.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/seguimiento-ionometro.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/ish-rendimiento-hidrico.html
@@ -56,5 +58,7 @@
 - Rendimiento hídrico (ISH): ISH=100×[1−Σ(D+Fp·E)/ΣETc]; semanas máx. 52; techo relativo al agua (≠ lámina de periodo); ver capítulo ish-rendimiento-hidrico
 - Ventanas de aplicación foliar: 1 zona/lote; matriz horaria T·HR·viento·DPV aire·lluvia; factor limitante; ver capítulo ventanas-aplicacion-foliar
 - Uniformidad de riego: DU 25% / CU / EU Keller–Karmeli; lotes y muestras; fertirriego hereda DU; ver capítulo uniformidad-riego
+- Applicate: sección de cursos y formación técnica en nutrición vegetal (aula, biblioteca, constancias). No es la suscripción de $49/5 meses ni las calculadoras. Un curso adquirido queda de por vida. No inventar temario ni precio. Ver capítulo applicate-formacion. Aula: https://nutriplantpro.com/applicate
+- Seguimiento con ionómetro: ppm tecleado; meq = ppm ÷ peso de la forma (NO₃⁻ 62 o N 14, PO₄ 95 o P 31); 280 NO₃⁻ ≈ 63 ppm N. Referencia solo en solución y pasta: franja NutriPlant de invernadero N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110, comparada en la forma del encabezado; mín–máx editables y «Volver a los de NutriPlant». Steiner solo lectura (porcentaje, no ppm). Foliar, pecíolo, savia y 2:1 sin franja. Cambiar la muestra no reescribe ppm. Parámetro de apoyo. Ver capítulo seguimiento-ionometro
 
-Actualizado: 2026-09-14
+Actualizado: 2026-10-02

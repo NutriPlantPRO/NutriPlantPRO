@@ -199,7 +199,7 @@
           <p style="margin: 8px 0 0; font-size: 15px; color: #475569; font-weight: 500; text-align: center;" data-i18n="auth.tagline">Diseña, ajusta y nutre con criterio técnico</p>
         </div>
 
-        <div style="margin: 20px 0; height: 1px; background: #e5e7eb;"></div>
+        <div class="login-split__rule" style="margin: 20px 0; height: 1px; background: #e5e7eb;"></div>
 
         <!-- Mensaje de bienvenida tras completar suscripción con PayPal (se muestra por JS) -->
         <div id="paypalSuccessWelcome" style="display: none; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
@@ -263,178 +263,12 @@
           </form>
         </div>
         
-        <div id="loginFormFooter" style="text-align: center; margin-top: 16px;">
+        <div id="loginFormFooter" class="login-split__footnote" style="text-align: center; margin-top: 16px;">
           <p style="color: #64748b; font-size: 14px; margin: 0;" id="loginFooterText">
             <span data-i18n="auth.no_account">¿No tienes una cuenta?</span> <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;" data-i18n="auth.register_link">Crear Nueva Cuenta</a>
           </p>
           <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;" data-i18n="auth.login_subscription">Suscripción: $49 USD cada 5 meses. Cancela cuando quieras desde PayPal.</p>
           <p style="color: #64748b; font-size: 13px; margin: 10px 0 0 0; line-height: 1.45;" data-i18n="auth.login_trial">Activa la suscripción para comenzar tu prueba gratuita de 10 días. Puedes cancelar antes de que termine el periodo y no se realizará ningún cargo.</p>
-        </div>
-      </div>
-      </div>
-
-      <div class="auth-card login-split__tools">
-
-        <a
-          class="login-applicate-teaser"
-          href="/applicate/"
-          data-i18n-aria-label="auth.applicate_teaser_aria"
-          aria-label="Applicate, registro gratis, próximamente"
-        >
-          <img
-            src="assets/Applicate Logo.png"
-            alt="Applicate"
-            class="login-applicate-teaser__logo"
-            width="168"
-            height="44"
-            decoding="async"
-          />
-          <div class="login-applicate-teaser__copy">
-            <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitaciones y formación</p>
-            <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Registro gratis</p>
-            <p class="login-applicate-teaser__when" data-i18n="auth.applicate_teaser_when">Próximamente</p>
-          </div>
-        </a>
-
-        <!-- Invitación a calculadoras sin registro (usuarios curiosos) -->
-        <div class="login-free-tools-banner">
-          <div class="login-free-tools-banner__aside">
-            <img
-              src="assets/N_Hoja_Azul.png"
-              alt="NutriPlant PRO"
-              class="login-free-tools-banner__logo"
-              width="52"
-              height="52"
-              decoding="async"
-            />
-          </div>
-          <p class="login-free-tools-banner__text">
-            <span data-i18n="auth.free_tools_line1">Accede a estas herramientas gratuitas de NutriPlant PRO.</span><br />
-            <span data-i18n="auth.free_tools_line2">Crea una cuenta para utilizar la plataforma completa.</span>
-          </p>
-        </div>
-
-        <!-- Herramientas gratuitas — sin registro -->
-        <div class="login-tools-scroll">
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showConversionCalculator()">
-          <span class="calculator-icon">🧮</span>
-          <span class="button-text" data-i18n="dashboard.tool_oxide">Conversor Óxido ↔ Elemental</span>
-        </button>
-        
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">🧪</span>
-          <span class="button-text" data-i18n="dashboard.tool_units">Conversor de unidades (ppm/mmol/meq)</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showMeasureUnitsCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">📐</span>
-          <span class="button-text" data-i18n="dashboard.tool_measure_units">Conversor de magnitudes físicas</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroSolutionCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">💧</span>
-          <span class="button-text" data-i18n="dashboard.tool_hydro">Diseño de solución nutritiva</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroPulseIrrigationTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">⏱️</span>
-          <span class="button-text" data-i18n="dashboard.tool_hydro_pulse">Pulso de riego en hidroponía</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">💦</span>
-          <span class="button-text" data-i18n="dashboard.tool_water">Diagnóstico de agua y acondicionamiento</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">🌡️</span>
-          <span class="button-text" data-i18n="dashboard.tool_vpd">Estimador de déficit de presión de vapor</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAgroclimateForecast()" style="margin-top: 12px;">
-          <span class="calculator-icon">🌤️</span>
-          <span class="button-text" data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVentanasFoliarTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🍃</span>
-          <span class="button-text" data-i18n="dashboard.tool_foliar_windows">Ventanas de Aplicación Foliar</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">🚜</span>
-          <span class="button-text" data-i18n="dashboard.tool_amendment">Balance de enmiendas por CIC</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showGranularMixCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">📦</span>
-          <span class="button-text" data-i18n="dashboard.tool_granular_mix">Formulación de mezclas granulares</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">⚗️</span>
-          <span class="button-text" data-i18n="dashboard.tool_fertilizer_composition">Composición de fertilizantes (%)</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showExtraccionEtapaCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">📊</span>
-          <span class="button-text" data-i18n="dashboard.tool_extraction_stage">Distribución nutrimental por etapa (%)</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">⚛️</span>
-          <span class="button-text" data-i18n="dashboard.tool_periodic">Tabla Periódica (Nutrientes Esenciales)</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAminoAcidsAtlasTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🧬</span>
-          <span class="button-text" data-i18n="dashboard.tool_atlas">Atlas Fisiológico Vegetal</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">🔺</span>
-          <span class="button-text" data-i18n="dashboard.tool_compatibility">Compatibilidad de fertilizantes</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientInteractionsTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🔗</span>
-          <span class="button-text" data-i18n="dashboard.tool_interactions">Interacciones y movilidad nutrimental</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">🌱</span>
-          <span class="button-text" data-i18n="dashboard.tool_n">Estimación de N mineralizable</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🪨</span>
-          <span class="button-text" data-i18n="dashboard.tool_soil_water">Agua en suelo y textura</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showLaminaRiegoTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🌧️</span>
-          <span class="button-text" data-i18n="dashboard.tool_irrigation">Lámina de riego y balance hídrico</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showIshRendimientoTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">📈</span>
-          <span class="button-text" data-i18n="dashboard.tool_ish">Rendimiento hídrico (ISH)</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showUniformidadRiegoTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🎯</span>
-          <span class="button-text" data-i18n="dashboard.tool_uniformidad_riego">Uniformidad de riego</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
-          <span class="calculator-icon">🧂</span>
-          <span class="button-text" data-i18n="dashboard.tool_solubility_salt">Solubilidad e índice salino</span>
-        </button>
-
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">🌍</span>
-          <span class="button-text" data-i18n="dashboard.tool_fertilizer_carbon">Huella de carbono de fertilizantes</span>
-        </button>
         </div>
       </div>
 
@@ -542,6 +376,179 @@
           </div>
         </div>
       </aside>
+      </div>
+
+
+      <div class="auth-card login-split__tools">
+
+        <a
+          class="login-applicate-teaser"
+          href="/applicate/"
+          data-i18n-aria-label="auth.applicate_teaser_aria"
+          aria-label="Applicate, registro gratis, próximamente"
+        >
+          <img
+            src="assets/Applicate Logo.png"
+            alt="Applicate"
+            class="login-applicate-teaser__logo"
+            width="168"
+            height="44"
+            decoding="async"
+          />
+          <div class="login-applicate-teaser__copy">
+            <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitaciones y formación</p>
+            <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Registro gratis</p>
+            <p class="login-applicate-teaser__when" data-i18n="auth.applicate_teaser_when">Próximamente</p>
+          </div>
+        </a>
+
+        <!-- Invitación a calculadoras sin registro (usuarios curiosos) -->
+        <div class="login-free-tools-banner">
+          <div class="login-free-tools-banner__aside">
+            <img
+              src="assets/N_Hoja_Azul.png"
+              alt="NutriPlant PRO"
+              class="login-free-tools-banner__logo"
+              width="52"
+              height="52"
+              decoding="async"
+            />
+          </div>
+          <p class="login-free-tools-banner__text">
+            <span data-i18n="auth.free_tools_line1">Accede a estas herramientas gratuitas de NutriPlant PRO.</span><br />
+            <span data-i18n="auth.free_tools_line2">Crea una cuenta para utilizar la plataforma completa.</span>
+          </p>
+        </div>
+
+        <!-- Herramientas gratuitas — sin registro -->
+        <div class="login-tools-scroll">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showConversionCalculator()">
+          <span class="calculator-icon">🧮</span>
+          <span class="button-text" data-i18n="dashboard.tool_oxide">Conversor Óxido ↔ Elemental</span>
+        </button>
+        
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧪</span>
+          <span class="button-text" data-i18n="dashboard.tool_units">Conversor de unidades (ppm/mmol/meq)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showMeasureUnitsCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">📐</span>
+          <span class="button-text" data-i18n="dashboard.tool_measure_units">Conversor de magnitudes físicas</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroSolutionCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">💧</span>
+          <span class="button-text" data-i18n="dashboard.tool_hydro">Diseño de solución nutritiva</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showIonometroSeguimiento()" style="margin-top: 12px;">
+          <span class="calculator-icon">🔬</span>
+          <span class="button-text" data-i18n="dashboard.tool_ionometro">Seguimiento con ionómetro</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroPulseIrrigationTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">⏱️</span>
+          <span class="button-text" data-i18n="dashboard.tool_hydro_pulse">Pulso de riego en hidroponía</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">💦</span>
+          <span class="button-text" data-i18n="dashboard.tool_water">Diagnóstico de agua y acondicionamiento</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌡️</span>
+          <span class="button-text" data-i18n="dashboard.tool_vpd">Estimador de déficit de presión de vapor</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAgroclimateForecast()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌤️</span>
+          <span class="button-text" data-i18n="dashboard.tool_weather">Pronóstico agroclimático</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVentanasFoliarTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🍃</span>
+          <span class="button-text" data-i18n="dashboard.tool_foliar_windows">Ventanas de Aplicación Foliar</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🚜</span>
+          <span class="button-text" data-i18n="dashboard.tool_amendment">Balance de enmiendas por CIC</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showGranularMixCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">📦</span>
+          <span class="button-text" data-i18n="dashboard.tool_granular_mix">Formulación de mezclas granulares</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">⚗️</span>
+          <span class="button-text" data-i18n="dashboard.tool_fertilizer_composition">Composición de fertilizantes (%)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showExtraccionEtapaCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">📊</span>
+          <span class="button-text" data-i18n="dashboard.tool_extraction_stage">Distribución nutrimental por etapa (%)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">⚛️</span>
+          <span class="button-text" data-i18n="dashboard.tool_periodic">Tabla Periódica (Nutrientes Esenciales)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAminoAcidsAtlasTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧬</span>
+          <span class="button-text" data-i18n="dashboard.tool_atlas">Atlas Fisiológico Vegetal</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🔺</span>
+          <span class="button-text" data-i18n="dashboard.tool_compatibility">Compatibilidad de fertilizantes</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientInteractionsTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🔗</span>
+          <span class="button-text" data-i18n="dashboard.tool_interactions">Interacciones y movilidad nutrimental</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌱</span>
+          <span class="button-text" data-i18n="dashboard.tool_n">Estimación de N mineralizable</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🪨</span>
+          <span class="button-text" data-i18n="dashboard.tool_soil_water">Agua en suelo y textura</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showLaminaRiegoTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌧️</span>
+          <span class="button-text" data-i18n="dashboard.tool_irrigation">Lámina de riego y balance hídrico</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showIshRendimientoTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">📈</span>
+          <span class="button-text" data-i18n="dashboard.tool_ish">Rendimiento hídrico (ISH)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showUniformidadRiegoTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🎯</span>
+          <span class="button-text" data-i18n="dashboard.tool_uniformidad_riego">Uniformidad de riego</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧂</span>
+          <span class="button-text" data-i18n="dashboard.tool_solubility_salt">Solubilidad e índice salino</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌍</span>
+          <span class="button-text" data-i18n="dashboard.tool_fertilizer_carbon">Huella de carbono de fertilizantes</span>
+        </button>
+        </div>
+      </div>
+
       </div>
 
         <!-- Footer: copyright y nota técnica -->
@@ -2051,6 +2058,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showIonometroSeguimiento() {
+      document.getElementById('ionometroSeguimientoModal').style.display = 'flex';
+    }
+    function closeIonometroSeguimiento() {
+      const modal = document.getElementById('ionometroSeguimientoModal');
+      const frame = document.getElementById('ionometroSeguimientoFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function showHydroPulseIrrigationTool() {
       if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('hydroPulseIrrigationToolFrame');
       document.getElementById('hydroPulseIrrigationToolModal').style.display = 'flex';
@@ -3038,6 +3055,44 @@
     </div>
   </div>
 
+  <style>
+    #ionometroSeguimientoModal.modal-overlay {
+      padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      box-sizing: border-box;
+    }
+    #ionometroSeguimientoModal .modal {
+      width: 100% !important;
+      max-width: none !important;
+      height: 100% !important;
+      max-height: none !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #ionometroSeguimientoModal .modal-header { padding: 10px 14px; flex-shrink: 0; }
+    #ionometroSeguimientoModal .modal-body {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      height: auto !important;
+    }
+    #ionometroSeguimientoModal iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+  </style>
+
   <!-- Modal de Diseño de solución nutritiva -->
   <div id="hydroSolutionCalculatorModal" class="modal-overlay">
     <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
@@ -3050,6 +3105,21 @@
       </div>
       <div class="modal-body">
         <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=login&v=20260919sidePad" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div id="ionometroSeguimientoModal" class="modal-overlay">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
+      <div class="modal-header">
+        <h2 class="modal-title">🔬 <span data-i18n="dashboard.tool_ionometro">Seguimiento con ionómetro</span></h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeIonometroSeguimiento()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="ionometroSeguimientoFrame" src="seguimiento-ionometro-free.html?embed=login&v=20261002b" title="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro"></iframe>
       </div>
     </div>
   </div>
@@ -5172,17 +5242,6 @@
 
       var syncingSocialHeight = false;
 
-      function toolsNaturalHeight(toolsEl) {
-        var cs = window.getComputedStyle(toolsEl);
-        var pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-        var banner = toolsEl.querySelector('.login-free-tools-banner');
-        var list = toolsEl.querySelector('.login-tools-scroll');
-        /* El teaser de Applicate no entra en esta cuenta: si suma, el panel de redes se alarga. */
-        var inner = (banner ? banner.offsetHeight : 0) + (list ? list.scrollHeight : 0);
-        if (inner > 80) return Math.round(inner + pad);
-        return Math.round(toolsEl.offsetHeight || 0);
-      }
-
       function syncSocialPanelHeight() {
         if (syncingSocialHeight) return;
         syncingSocialHeight = true;
@@ -5220,17 +5279,9 @@
             }
             return;
           }
-          var tools = document.querySelector('.login-split__tools');
-          var login = document.querySelector('.login-split__login');
-          var split = document.querySelector('.login-split');
-          if (!tools || !login) return;
-          var gap = 16;
-          if (split) {
-            var gapPx = parseFloat(window.getComputedStyle(split).rowGap || window.getComputedStyle(split).gap);
-            if (gapPx) gap = Math.round(gapPx);
-          }
-          var available = toolsNaturalHeight(tools) - Math.round(login.offsetHeight || 0) - gap;
-          if (available < 320) available = 320;
+          /* Alto estable en escritorio. Si sigue la lista de herramientas,
+             cada botón nuevo alarga redes y abre el hueco bajo el acceso. */
+          var available = 492;
           root.style.height = available + 'px';
           root.style.minHeight = available + 'px';
           root.style.maxHeight = available + 'px';

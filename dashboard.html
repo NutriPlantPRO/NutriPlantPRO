@@ -253,6 +253,7 @@
           </div>
           <div class="header-buttons-row header-buttons-row--tools">
           <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" data-i18n-title="dashboard.tool_hydro" data-i18n-aria-label="dashboard.tool_hydro" aria-label="Diseño de solución nutritiva">💧</button>
+          <button type="button" id="btn-ionometro-seguimiento" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showIonometroSeguimiento()" data-np-tooltip="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro" data-i18n-aria-label="dashboard.tool_ionometro" aria-label="Seguimiento con ionómetro">🔬</button>
           <button type="button" id="btn-hydro-pulse-irrigation-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroPulseIrrigationTool()" data-np-tooltip="Pulso de riego en hidroponía" data-i18n-title="dashboard.tool_hydro_pulse" data-i18n-aria-label="dashboard.tool_hydro_pulse" aria-label="Pulso de riego en hidroponía">⏱️</button>
           <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" data-i18n-title="dashboard.tool_n" data-i18n-aria-label="dashboard.tool_n" aria-label="Estimación de N mineralizable">🌱</button>
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" data-i18n-title="dashboard.tool_water" data-i18n-aria-label="dashboard.tool_water" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
@@ -5686,6 +5687,17 @@ CONTRATO:
     }
     window.closeHydroSolutionCalculator = closeHydroSolutionCalculator;
 
+    function showIonometroSeguimiento() {
+      var modal = document.getElementById('ionometroSeguimientoModal');
+      if (modal) modal.classList.add('show');
+    }
+    function closeIonometroSeguimiento() {
+      var modal = document.getElementById('ionometroSeguimientoModal');
+      if (modal) modal.classList.remove('show');
+    }
+    window.showIonometroSeguimiento = showIonometroSeguimiento;
+    window.closeIonometroSeguimiento = closeIonometroSeguimiento;
+
     window.addEventListener('message', function (event) {
       try {
         if (!event || !event.data) return;
@@ -6117,6 +6129,36 @@ CONTRATO:
         return true;
       } catch (e) {
         console.warn('Save extracción/etapa biblioteca:', e);
+        return false;
+      }
+    };
+
+    window.nutriplantLoadIonometroFromCloud = function (payload) {
+      try {
+        var userId = (payload && payload.userId) || localStorage.getItem('nutriplant_user_id') || '';
+        if (!userId || userId === 'guest') return Promise.resolve(null);
+        if (window.nutriplantSupabaseProjects && typeof window.nutriplantSupabaseProjects.fetchUserIonometro === 'function') {
+          return window.nutriplantSupabaseProjects.fetchUserIonometro(userId);
+        }
+        return Promise.resolve(null);
+      } catch (e) {
+        return Promise.resolve(null);
+      }
+    };
+
+    window.nutriplantSaveIonometroToCloud = function (payload) {
+      try {
+        var userId = (payload && payload.userId) || localStorage.getItem('nutriplant_user_id') || '';
+        var data = payload && payload.data ? payload.data : null;
+        if (!userId || userId === 'guest' || !data) return false;
+        var bucket = Object.assign({}, data, { updatedAt: Date.now() });
+        localStorage.setItem('np_ionometro_user_' + userId, JSON.stringify(bucket));
+        if (window.nutriplantSupabaseProjects && typeof window.nutriplantSupabaseProjects.syncUserIonometro === 'function') {
+          window.nutriplantSupabaseProjects.syncUserIonometro(userId, bucket);
+        }
+        return true;
+      } catch (e) {
+        console.warn('Save seguimiento ionómetro:', e);
         return false;
       }
     };
@@ -7861,6 +7903,55 @@ CONTRATO:
       </div>
       <div class="modal-body">
         <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260927tabs" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #ionometroSeguimientoModal.modal-overlay.show {
+      padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      box-sizing: border-box;
+    }
+    #ionometroSeguimientoModal .modal {
+      width: 100% !important;
+      max-width: none !important;
+      height: 100% !important;
+      max-height: none !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #ionometroSeguimientoModal .modal-header { padding: 10px 14px; flex-shrink: 0; }
+    #ionometroSeguimientoModal .modal-body {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      height: auto !important;
+    }
+    #ionometroSeguimientoModal iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+    }
+  </style>
+  <div id="ionometroSeguimientoModal" class="modal-overlay" onclick="if(event.target===this) closeIonometroSeguimiento();">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
+      <div class="modal-header">
+        <h2 class="modal-title">🔬 <span data-i18n="dashboard.tool_ionometro">Seguimiento con ionómetro</span></h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeIonometroSeguimiento()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="ionometroSeguimientoFrame" src="seguimiento-ionometro-free.html?embed=dashboard&v=20261002b" title="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

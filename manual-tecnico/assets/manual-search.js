@@ -6,6 +6,13 @@
 
   var CHAPTERS = [
     {
+      href: 'capitulos/applicate-formacion.html',
+      icon: '🎓',
+      pillar: 'Plataforma · Formación',
+      title: 'Applicate: cursos y formación técnica',
+      keywords: 'applicate aplícate aplicate cursos formación capacitación capacitación técnica nutrición vegetal constancias biblioteca aula entrenamiento training courses'
+    },
+    {
       href: 'capitulos/flujo-nutriplant-pro.html',
       icon: '🧭',
       pillar: '1 · Flujo de la plataforma',
@@ -123,6 +130,13 @@
       pillar: 'D · Programas',
       title: 'Hidroponía: solución nutritiva por etapa',
       keywords: 'hidroponía solución nutritiva etapa meq fertilizante dosis tanque nitrato calcio traer de análisis ácido mL/m³ volumen coincidencia leyenda PDF admin'
+    },
+    {
+      href: 'capitulos/seguimiento-ionometro.html',
+      icon: '🔬',
+      pillar: 'D · Solución y seguimiento',
+      title: 'Seguimiento con ionómetro',
+      keywords: 'ionómetro ionometro fotómetro fotometro savia pecíolo peciolo NO3 NO₃ PO4 PO₄ SO4 NH4 meq ppm Hanna Imacimus Horiba seguimiento lecturas'
     },
     {
       href: 'capitulos/diseno-solucion-nutritiva-didactica.html',

@@ -4,9 +4,10 @@
 
 ## Manual técnico público (prioridad para consultas agronómicas)
 
-Biblioteca abierta, sin cuenta. Metodología alineada con la aplicación. Versión v2026.09.14 · 28 capítulos.
+Biblioteca abierta, sin cuenta. Metodología alineada con la aplicación. Versión v2026.10.02 · 30 capítulos.
 
 - Índice: https://nutriplantpro.com/manual-tecnico/index.html
+- Applicate, cursos y formación: https://nutriplantpro.com/manual-tecnico/capitulos/applicate-formacion.html
 - Autoría: https://nutriplantpro.com/manual-tecnico/autoria.html
 - Guía extendida para IA: https://nutriplantpro.com/manual-tecnico/llms.txt
 
@@ -22,6 +23,7 @@ Biblioteca abierta, sin cuenta. Metodología alineada con la aplicación. Versi�
 - Granular — mezclas N-P-K: https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html
 - Hidroponía — solución por etapa: https://nutriplantpro.com/manual-tecnico/capitulos/hidroponia-solucion-por-etapa.html
 - Diseño didáctico de solución nutritiva: https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html
+- Seguimiento con ionómetro: https://nutriplantpro.com/manual-tecnico/capitulos/seguimiento-ionometro.html
 - VPD — déficit de presión de vapor: https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html
 - Balance hídrico y riego rápido: https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html
 - Rendimiento hídrico (ISH): https://nutriplantpro.com/manual-tecnico/capitulos/ish-rendimiento-hidrico.html

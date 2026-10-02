@@ -1109,6 +1109,38 @@
       } catch (e) { console.warn('⚠️ syncUserExtraccionEtapaPresets:', e); }
     },
 
+    fetchUserIonometro: async function (userId) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return null;
+      const client = getClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client.from('profiles').select('ionometro_seguimientos').eq('id', userId).single();
+        if (error) {
+          if (error.code !== 'PGRST116') console.warn('⚠️ Supabase fetch ionometro_seguimientos:', error.message);
+          return null;
+        }
+        return data && data.ionometro_seguimientos && typeof data.ionometro_seguimientos === 'object'
+          ? data.ionometro_seguimientos
+          : null;
+      } catch (e) { return null; }
+    },
+
+    syncUserIonometro: async function (userId, bucket) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return;
+      const client = getClient();
+      if (!client) return;
+      try {
+        const payload = bucket && typeof bucket === 'object'
+          ? bucket
+          : { version: 1, tables: [], updatedAt: Date.now() };
+        const { error } = await client.from('profiles').update({
+          ionometro_seguimientos: payload,
+          updated_at: new Date().toISOString()
+        }).eq('id', userId);
+        if (error) console.warn('⚠️ Supabase sync ionometro_seguimientos:', error.message);
+      } catch (e) { console.warn('⚠️ syncUserIonometro:', e); }
+    },
+
     /** Obtener bloque de notas del usuario desde Supabase (profiles.user_notes). Requiere columna user_notes (text) en profiles. */
     fetchUserNotes: async function(userId) {
       if (!userId || !UUID_REGEX.test(String(userId))) return null;
