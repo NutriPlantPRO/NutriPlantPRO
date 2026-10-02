@@ -11,7 +11,7 @@
   'use strict';
 
   var COLUMNS = [
-    { id: 'ph', kind: 'ph', label: 'pH (H⁺)', unit: 'pH', color: '#0f766e' },
+    { id: 'ph', kind: 'ph', label: 'pH', unit: 'pH', color: '#0f766e' },
     { id: 'ec', kind: 'ec', label: 'CE', unit: 'dS/m', color: '#b45309' },
     { id: 'no3', kind: 'ion', group: 'anion', label: 'NO₃⁻', unit: 'meq/L', color: '#1d4ed8', forms: { NO3: 62, N: 14 }, defaultForm: 'NO3', labelByForm: { NO3: 'NO₃⁻', N: 'N' } },
     { id: 'p', kind: 'ion', group: 'anion', label: 'PO₄', unit: 'meq/L', color: '#15803d', forms: { PO4: 95, P: 31 }, defaultForm: 'PO4', labelByForm: { PO4: 'PO₄', P: 'P' } },

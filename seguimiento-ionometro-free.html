@@ -182,6 +182,11 @@
     button.linkish { background: none; border: 0; color: var(--accent); padding: 0; font-size: 12px; }
     button.linkish:hover { background: none; text-decoration: underline; }
     tr.selected td { background: #eff6ff; }
+    th.col-ph { color: #0f766e; font-size: 14px; font-weight: 800; }
+    th.col-ec { color: #b45309; font-size: 14px; font-weight: 800; }
+    th.col-ec span { display: block; margin-top: 2px; font-size: 11px; font-weight: 650; color: #c2410c; }
+    input.cell-ph { color: #0f766e; font-weight: 750; }
+    input.cell-ec { color: #b45309; font-weight: 750; }
     th.colhead { min-width: 108px; vertical-align: bottom; }
     .colhead__name { display: block; font-size: 14px; font-weight: 750; line-height: 1.2; white-space: nowrap; }
     .colhead__unit { display: block; margin-top: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
@@ -317,7 +322,7 @@
       <section class="charts" id="charts" aria-label="Gráficas de nutrientes y de pH con conductividad"></section>
     </div>
   </div>
-  <script src="assets/np-ionometro-core.js?v=20261002b"></script>
+  <script src="assets/np-ionometro-core.js?v=20261002p"></script>
   <script>
   (function () {
     'use strict';
@@ -379,8 +384,8 @@
     function renderHead(table) {
       var groups = '<tr>' +
         '<th class="row-head" rowspan="2">Lectura</th>' +
-        '<th rowspan="2">pH (H⁺)</th>' +
-        '<th rowspan="2">CE<br><span style="font-weight:500">dS/m</span></th>' +
+        '<th class="col-ph" rowspan="2">pH</th>' +
+        '<th class="col-ec" rowspan="2">CE<br><span>dS/m</span></th>' +
         '<th class="group-an" colspan="3">Aniones</th>' +
         '<th class="group-cat" colspan="3">Cationes</th>' +
         '<th class="group-other" colspan="3">Otros</th>' +
@@ -457,7 +462,8 @@
         core.COLUMNS.forEach(function (col) {
           var ion = col.kind === 'ion';
           var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : 'ppm');
-          html += '<td class="entry"><input class="cell" inputmode="decimal" placeholder="' + placeholder + '" data-field="' + col.id + '" value="' +
+          var tone = col.id === 'ph' ? ' cell-ph' : (col.id === 'ec' ? ' cell-ec' : '');
+          html += '<td class="entry"><input class="cell' + tone + '" inputmode="decimal" placeholder="' + placeholder + '" data-field="' + col.id + '" value="' +
             escapeAttr(row[col.id] || '') + '" aria-label="' + core.labelFor(col.id, table.forms[col.id]) + '">';
           var level = levelFor(table, row, col.id);
           html += '<div class="meq"><span class="meq-val">' + (ion ? meqText(table, row, col.id) : '') + '</span>' +
