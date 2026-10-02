@@ -266,11 +266,10 @@
       padding: 14px 14px 10px;
       box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
     }
-    .chart-main { flex: 1.45 1 auto; min-height: 400px; }
-    .chart-side { flex: 0.95 1 auto; min-height: 280px; }
+    .chart-main, .chart-side { flex: 0 0 auto; }
     .chart h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
     .chart h3 span { font-weight: 600; color: var(--muted); font-size: 13px; }
-    .chart svg { display: block; width: 100%; height: auto; }
+    .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
     .legend {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -680,8 +679,8 @@
       var n = table.rows.length;
       var width = 720;
       var height = 480;
-      var left = 78;
-      var right = 24;
+      var left = 96;
+      var right = 28;
       var top = 16;
       var bottom = 78;
       var plotW = width - left - right;
@@ -703,7 +702,7 @@
         grid += '<text x="' + (left - 10) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="600" fill="#64748b">' + formatTick(value) + '</text>';
       });
       var frame = axisSpine(left, top, left, baseY) + axisSpine(left, baseY, left + plotW, baseY) +
-        yAxisTitle('meq/L', 16, yMid, '#64748b', -90);
+        yAxisTitle('meq/L', 34, yMid, '#64748b', -90);
       var lines = '';
       var legend = '';
       series.forEach(function (item) {
@@ -730,8 +729,8 @@
       var n = table.rows.length;
       var width = 720;
       var height = 340;
-      var left = 72;
-      var right = hasEc ? 78 : 22;
+      var left = 92;
+      var right = hasEc ? 96 : 28;
       var top = 16;
       var bottom = 78;
       var plotW = width - left - right;
@@ -749,7 +748,7 @@
       }
       if (phScale) {
         axis += axisSpine(left, top, left, baseY, phCol.color);
-        axis += yAxisTitle('pH', 16, yMid, phCol.color, -90);
+        axis += yAxisTitle('pH', 32, yMid, phCol.color, -90);
         niceTicks(phScale, 4).forEach(function (value) {
           var yy = yOf(value, phScale);
           grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + xRight + '" y2="' + yy.toFixed(1) + '" stroke="#f1f5f9"></line>';
@@ -759,7 +758,7 @@
       }
       if (ecScale) {
         axis += axisSpine(xRight, top, xRight, baseY, ecCol.color);
-        axis += yAxisTitle('dS/m', width - 16, yMid, ecCol.color, 90);
+        axis += yAxisTitle('dS/m', width - 32, yMid, ecCol.color, 90);
         niceTicks(ecScale, 4).forEach(function (ecValue) {
           var yec = yOf(ecValue, ecScale);
           axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 5) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1"></line>';
