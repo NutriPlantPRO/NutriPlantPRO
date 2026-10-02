@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="../dashboard.css?v=20260924meqSum">
     <script src="../subscription-config.js"></script>
     <script src="../assets/np-foliar-ratios-core.js?v=20260923ratios"></script>
+    <script src="../assets/np-ionometro-core.js?v=20261002o"></script>
     <script src="../analysis-report-render.js?v=20260924meqSum"></script>
     <script src="../assets/np-lab-type-configs.js?v=20260924meqSum"></script>
     <script src="../assets/np-analysis-compare.js?v=20260924soilRatioId"></script>
@@ -16361,6 +16362,85 @@
         });
 
         // 👤 FUNCIÓN PARA VER DETALLES COMPLETOS DEL USUARIO Y SUS PROYECTOS
+        function adminIonometroTables(bucket) {
+            if (!bucket || typeof bucket !== 'object' || !Array.isArray(bucket.tables)) return [];
+            return bucket.tables.filter(function (table) { return table && typeof table === 'object'; });
+        }
+
+        function adminIonometroTableHtml(table) {
+            var core = window.NpIonometro;
+            if (!core || !table) return '<p style="color:#64748b;">No se pudo leer esta tabla.</p>';
+            var sample = core.sampleType(table.sample);
+            var forms = table.forms && typeof table.forms === 'object' ? table.forms : core.defaultForms();
+            var rows = Array.isArray(table.rows) ? table.rows : [];
+            var head = '<th style="text-align:left;padding:8px;background:#f8fafc;position:sticky;top:0;">Lectura</th>';
+            core.COLUMNS.forEach(function (col) {
+                var name = col.kind === 'ion' ? core.labelFor(col.id, forms[col.id]) : col.label;
+                head += '<th style="padding:8px;background:#f8fafc;position:sticky;top:0;white-space:nowrap;">' + escapeHtml(name) + '</th>';
+            });
+            var body = rows.map(function (row) {
+                var cells = '<td style="padding:8px;font-weight:650;background:#f8fafc;white-space:nowrap;">' + escapeHtml((row && row.label) || '—') + '</td>';
+                core.COLUMNS.forEach(function (col) {
+                    var raw = row && row[col.id] != null ? String(row[col.id]) : '';
+                    var shown = raw ? escapeHtml(raw) : '<span style="color:#94a3b8;">—</span>';
+                    if (col.kind === 'ion' && raw) {
+                        var meq = core.meqFromPpm(col.id, forms[col.id], raw);
+                        if (meq != null) shown += '<div style="font-size:11px;color:#64748b;">' + escapeHtml(core.formatMeq(meq)) + ' meq</div>';
+                    }
+                    cells += '<td style="padding:8px;vertical-align:top;">' + shown + '</td>';
+                });
+                return '<tr style="border-bottom:1px solid #f1f5f9;">' + cells + '</tr>';
+            }).join('');
+            if (!body) body = '<tr><td colspan="' + (core.COLUMNS.length + 1) + '" style="padding:12px;color:#64748b;">Esta tabla no tiene lecturas.</td></tr>';
+            return '<p style="margin:0 0 10px;font-size:13px;color:#475569;"><strong>Muestra:</strong> ' + escapeHtml(sample.label) + '</p>' +
+                '<div style="overflow:auto;max-height:62vh;border:1px solid #e2e8f0;border-radius:10px;">' +
+                '<table style="border-collapse:collapse;width:100%;font-size:13px;min-width:880px;"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+        }
+
+        function adminRenderUserIonometro(index) {
+            var host = document.getElementById('adminIonometroTableHost');
+            var bucket = window._adminIonometroView;
+            var tables = adminIonometroTables(bucket);
+            if (!host || !tables.length) return;
+            var i = Math.max(0, Math.min(tables.length - 1, Number(index) || 0));
+            host.innerHTML = adminIonometroTableHtml(tables[i]);
+        }
+        window.adminRenderUserIonometro = adminRenderUserIonometro;
+
+        function adminOpenUserIonometro() {
+            var bucket = window._adminIonometroView;
+            var tables = adminIonometroTables(bucket);
+            var existing = document.getElementById('adminIonometroOverlay');
+            if (existing) existing.remove();
+            var overlay = document.createElement('div');
+            overlay.id = 'adminIonometroOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:57000;display:flex;align-items:center;justify-content:center;padding:20px;';
+            var options = tables.map(function (table, index) {
+                var title = table.title ? String(table.title) : ('Seguimiento ' + (index + 1));
+                return '<option value="' + index + '">' + escapeHtml(title) + '</option>';
+            }).join('');
+            var picker = tables.length
+                ? '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#334155;font-weight:650;">Tabla<select id="adminIonometroPick" onchange="adminRenderUserIonometro(this.value)" style="font:inherit;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;">' + options + '</select></label>'
+                : '';
+            var body = tables.length
+                ? '<div id="adminIonometroTableHost"></div>'
+                : '<p style="margin:0;color:#64748b;font-size:14px;line-height:1.5;">Este usuario todavía no tiene tablas de seguimiento en su cuenta. Las de la herramienta con cuenta se guardan aquí. Las del inicio de sesión, sin cuenta, quedan en el navegador de esa persona.</p>';
+            overlay.innerHTML =
+                '<div style="background:#fff;border-radius:14px;max-width:1100px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);padding:18px 18px 16px;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;">' +
+                '<h3 style="margin:0;font-size:18px;color:#1e293b;">🔬 Seguimiento con ionómetro</h3>' +
+                '<button type="button" id="adminIonometroClose" style="border:0;background:#f1f5f9;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;color:#334155;">×</button>' +
+                '</div>' + picker + '<div style="height:12px;"></div>' + body + '</div>';
+            overlay.addEventListener('click', function (event) {
+                if (event.target === overlay) overlay.remove();
+            });
+            document.body.appendChild(overlay);
+            var closeBtn = document.getElementById('adminIonometroClose');
+            if (closeBtn) closeBtn.addEventListener('click', function () { overlay.remove(); });
+            if (tables.length) adminRenderUserIonometro(0);
+        }
+        window.adminOpenUserIonometro = adminOpenUserIonometro;
+
         async function viewUserDetails(userId, fromView = null, fromViewParams = null) {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('viewUserDetails: load from cloud', e); }
@@ -16523,6 +16603,23 @@
                 : (radarCreditsBaseRemaining + radarCreditsBonus);
             var radarOverBase = Math.max(0, radarCreditsUsed - radarCreditsBase);
 
+            var adminIonometroCount = 0;
+            window._adminIonometroView = null;
+            try {
+                var ionUid = String(viewCanonicalId || '');
+                var ionIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ionUid);
+                if (ionIsUuid && window.getSupabaseClient) {
+                    var ionClient = window.getSupabaseClient();
+                    if (ionClient) {
+                        var ionRes = await ionClient.from('profiles').select('ionometro_seguimientos').eq('id', ionUid).maybeSingle();
+                        if (!ionRes.error && ionRes.data) window._adminIonometroView = ionRes.data.ionometro_seguimientos || null;
+                    }
+                }
+            } catch (ionErr) {
+                console.warn('viewUserDetails: ionómetro', ionErr);
+            }
+            adminIonometroCount = adminIonometroTables(window._adminIonometroView).length;
+
             let adminUserExtLibraryBuilt = { html: '', chartJobs: [] };
             try {
                 var adminUserExtPresets = await adminFetchUserExtraccionEtapaLibrary(viewCanonicalId);
@@ -16658,6 +16755,12 @@
                         </div>
                         
                         ${adminUserExtLibraryBuilt.html}
+
+                        <div style="background:#f8fafc;padding:20px;border-radius:8px;border-left:4px solid #0f766e;">
+                            <h3 style="margin:0 0 8px 0;color:#1e293b;font-size:18px;">🔬 Seguimiento con ionómetro</h3>
+                            <p style="margin:0 0 12px 0;color:#64748b;font-size:13px;line-height:1.45;">Tablas de la cuenta, aparte de los proyectos. ${adminIonometroCount ? escapeHtml(String(adminIonometroCount)) + (adminIonometroCount === 1 ? ' tabla guardada.' : ' tablas guardadas.') : 'Todavía no hay tablas en la nube.'}</p>
+                            <button type="button" onclick="adminOpenUserIonometro()" style="background:#0f766e;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:650;">Ver tablas de seguimiento</button>
+                        </div>
                         
                         <!-- Proyectos del Usuario -->
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">

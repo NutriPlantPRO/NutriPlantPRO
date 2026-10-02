@@ -91,12 +91,13 @@
     .sheet-lead { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
     .bar select { min-width: 200px; }
     table { border-collapse: separate; border-spacing: 0; min-width: 980px; width: 100%; background: var(--card); }
-    th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 6px; vertical-align: top; }
+    th, td { border: 0; border-bottom: 1px solid #f1f5f9; padding: 6px 8px; vertical-align: top; }
     th { background: #f8fafc; font-weight: 750; font-size: 12px; text-align: center; }
-    .table-card thead th[rowspan],
-    .table-card thead tr:last-child th { border-bottom: 2.5px solid #1e293b; }
+    .table-card thead th { border-bottom: 0; }
+    .table-card thead tr:last-child th,
+    .table-card thead th[rowspan] { box-shadow: inset 0 -1px 0 #e2e8f0; }
     .table-card th.row-head,
-    .table-card td.row-title { border-right: 2.5px solid #1e293b; background: #f8fafc; }
+    .table-card td.row-title { background: #f8fafc; }
     th.group-an { background: #e0e7ff; }
     th.group-cat { background: #dcfce7; }
     th.group-other { background: #ffedd5; color: #9a3412; }
@@ -213,8 +214,10 @@
     .colhead-other .form-switch button.is-on,
     .colhead-other .form-switch button.is-on:hover { background: #c2410c; color: #fff; }
     .table-card {
-      flex: 0 0 auto;
-      height: 520px;
+      flex: 0 0 400px;
+      height: 400px;
+      max-height: 400px;
+      min-height: 0;
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -278,7 +281,7 @@
     @media (max-width: 860px) {
       .workspace { grid-template-columns: 1fr; }
       .sheet { border-right: 0; border-bottom: 1px solid var(--line); overflow: auto; display: block; }
-      .table-card { height: 68vh; min-height: 420px; }
+      .table-card { flex-basis: 400px; height: 400px; max-height: 400px; }
     }
   </style>
 </head>
@@ -621,9 +624,8 @@
     }
 
     function axisSpine(x1, y1, x2, y2, color) {
-      var ink = color || '#1e293b';
-      return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#ffffff" stroke-width="6.5" stroke-linecap="square"></line>' +
-        '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + ink + '" stroke-width="2.6" stroke-linecap="square"></line>';
+      var ink = color || '#64748b';
+      return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + ink + '" stroke-width="1.35" stroke-linecap="square"></line>';
     }
 
     function yAxisTitle(text, x, y, color, turn) {
@@ -682,20 +684,20 @@
       var yMid = top + plotH / 2;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yAt(value) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
-      var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#f8fafc"></rect>';
+      var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#ffffff"></rect>';
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
-        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 7) + '" stroke="#1e293b" stroke-width="1.4"></line>';
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 5) + '" stroke="#64748b" stroke-width="1"></line>';
       }
       niceTicks(scale, 5).forEach(function (value) {
         if (value < 0) return;
         var yy = yAt(value);
-        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
-        grid += '<line x1="' + (left - 7) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="#1e293b" stroke-width="1.4"></line>';
-        grid += '<text x="' + (left - 12) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="650" fill="#1e293b">' + formatTick(value) + '</text>';
+        grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + (left + plotW) + '" y2="' + yy.toFixed(1) + '" stroke="#f1f5f9"></line>';
+        grid += '<line x1="' + (left - 5) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="#64748b" stroke-width="1"></line>';
+        grid += '<text x="' + (left - 10) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="600" fill="#64748b">' + formatTick(value) + '</text>';
       });
       var frame = axisSpine(left, top, left, baseY) + axisSpine(left, baseY, left + plotW, baseY) +
-        yAxisTitle('meq/L', 16, yMid, '#1e293b', -90);
+        yAxisTitle('meq/L', 16, yMid, '#64748b', -90);
       var lines = '';
       var legend = '';
       series.forEach(function (item) {
@@ -733,19 +735,19 @@
       var xRight = left + plotW;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yOf(value, scale) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
-      var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#f8fafc"></rect>';
+      var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#ffffff"></rect>';
       var axis = axisSpine(left, baseY, xRight, baseY);
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
-        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 7) + '" stroke="#1e293b" stroke-width="1.4"></line>';
+        grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 5) + '" stroke="#64748b" stroke-width="1"></line>';
       }
       if (phScale) {
         axis += axisSpine(left, top, left, baseY, phCol.color);
         axis += yAxisTitle('pH', 16, yMid, phCol.color, -90);
         niceTicks(phScale, 4).forEach(function (value) {
           var yy = yOf(value, phScale);
-          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + xRight + '" y2="' + yy.toFixed(1) + '" stroke="#e2e8f0"></line>';
-          axis += '<line x1="' + (left - 7) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="' + phCol.color + '" stroke-width="1.6"></line>';
+          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + xRight + '" y2="' + yy.toFixed(1) + '" stroke="#f1f5f9"></line>';
+          axis += '<line x1="' + (left - 5) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="' + phCol.color + '" stroke-width="1"></line>';
           axis += '<text x="' + (left - 12) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
         });
       }
@@ -754,7 +756,7 @@
         axis += yAxisTitle('dS/m', width - 16, yMid, ecCol.color, 90);
         niceTicks(ecScale, 4).forEach(function (ecValue) {
           var yec = yOf(ecValue, ecScale);
-          axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 7) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1.6"></line>';
+          axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 5) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1"></line>';
           axis += '<text x="' + (xRight + 12) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="12" font-weight="700" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
         });
       }
