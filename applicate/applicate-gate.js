@@ -1119,7 +1119,11 @@
       if (!regSheet) return;
       regSheet.hidden = true;
     }
-    if (openReg) openReg.addEventListener('click', showReg);
+    if (openReg) {
+      openReg.addEventListener('click', function () {
+        showMsg(loginMsg, 'warn', t('auth.applicate_reg_soon', 'Próximamente se habilitará el registro.'));
+      });
+    }
     if (closeReg) closeReg.addEventListener('click', hideReg);
     if (regSheet) {
       regSheet.addEventListener('click', function (e) {
