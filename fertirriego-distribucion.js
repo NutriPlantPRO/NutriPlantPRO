@@ -1980,15 +1980,12 @@
         try { w.setFertiTimeUnit(axis, { fromDistribution: true }); } catch (e5) {}
       }
       if (migratedWater) saveProjectCurve();
-      // Si ya hay curva del proyecto, no pisarla con la del programa al recargar/otro equipo
-      var hasSavedCurve = !!(saved && Array.isArray(saved.stages) && saved.stages.length);
-      if (!hasSavedCurve) {
-        try {
-          if (typeof w.fertiAdoptDistributionFromProgram === 'function') {
-            w.fertiAdoptDistributionFromProgram({ auto: true });
-          }
-        } catch (e6) {}
-      }
+      // Si el programa ya tiene dosis, el % se alinea a esa gráfica. No se reescriben las dosis al recargar.
+      try {
+        if (typeof w.fertiAdoptDistributionFromProgram === 'function') {
+          w.fertiAdoptDistributionFromProgram({ auto: true });
+        }
+      } catch (e6) {}
       return;
     }
     renderAll();
@@ -2028,9 +2025,9 @@
         if (hostEl() && hostEl().dataset.ready === '1') {
           renderAll();
         } else {
-          scheduleSave();
           scheduleDistChartRefresh();
         }
+        scheduleSave();
       }
     } finally {
       distProgramSync = false;

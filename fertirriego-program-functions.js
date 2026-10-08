@@ -3061,10 +3061,10 @@ function fertiDistSplitDiffersFromProgram(dist, layout) {
   if (!dist || !layout || !layout.splits) return true;
   const stages = Array.isArray(dist.stages) ? dist.stages : [];
   if (stages.length !== layout.periodCount) return true;
-  const macros = ['n', 'p', 'k', 'ca', 'mg', 's'];
+  const ids = Object.keys(layout.splits);
   const tol = 1.2;
-  for (let i = 0; i < macros.length; i++) {
-    const id = macros[i];
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
     const want = layout.splits[id];
     const have = dist.pct && dist.pct[id];
     if (!Array.isArray(want) || want.length !== layout.periodCount) continue;
@@ -3080,17 +3080,20 @@ function fertiAdoptDistributionFromProgram(opts) {
   const layout = fertiProgramLayoutForDistribution();
   const dist = fertiGeneratorDistributionState();
   if (opts && opts.auto) {
-    if (window._fertiDistKeepSuggestedPct || window._fertiDistStructureEdited) return false;
-    if (fertiDistIsDrivingProgram(dist)) {
-      return fertiApplyLiveDistributionToExistingProgram();
-    }
-    if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
+    // Recargar no reescribe la gráfica ya cuadrada. Si el % guardado no coincide, se alinea al programa.
+    if (window._fertiDistKeepSuggestedPct) return false;
+    if (!layout || !fertiGeneratorHasProgramDoses()) return false;
     if (!fertiDistSplitDiffersFromProgram(dist, layout)) return false;
-  } else {
-    window._fertiDistKeepSuggestedPct = false;
-    window._fertiDistDrivesProgram = false;
-    if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
+    const distCount = dist && Array.isArray(dist.stages) ? dist.stages.length : 0;
+    if (distCount === layout.periodCount && typeof window.fertiDistApplyProgramNutrientSplit === 'function') {
+      window.fertiDistApplyProgramNutrientSplit(layout.splits);
+      return true;
+    }
+    return false;
   }
+  window._fertiDistKeepSuggestedPct = false;
+  window._fertiDistDrivesProgram = false;
+  if (!layout || typeof window.fertiDistAdoptFromProgram !== 'function') return false;
   return window.fertiDistAdoptFromProgram(layout);
 }
 window.fertiAdoptDistributionFromProgram = fertiAdoptDistributionFromProgram;
