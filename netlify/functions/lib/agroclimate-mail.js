@@ -64,6 +64,21 @@ function dateLabel(iso, locale) {
   }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
+/** Weekday and short date on separate lines so the name fits a phone column. */
+function dateCellParts(iso, locale) {
+  if (!iso) return { weekday: '—', day: '', month: '' };
+  const [y, m, d] = String(iso).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const loc = locale || 'es-MX';
+  const clean = (s) => String(s || '').replace(/\./g, '').trim();
+  return {
+    weekday: clean(new Intl.DateTimeFormat(loc, { weekday: 'short', timeZone: 'UTC' }).format(dt)),
+    day: clean(new Intl.DateTimeFormat(loc, { day: 'numeric', timeZone: 'UTC' }).format(dt)),
+    month: clean(new Intl.DateTimeFormat(loc, { month: 'short', timeZone: 'UTC' }).format(dt)),
+    english: String(loc).toLowerCase().startsWith('en')
+  };
+}
+
 function statsOf(rows, kind) {
   const list = (rows || []).filter((row) => row.kind === kind);
   const nums = (key) => list.map((row) => numberOrNull(row[key])).filter((n) => n != null);
@@ -211,15 +226,22 @@ function forecastCompactTable(rows, prefs, copy) {
     'padding:7px 4px;font-size:11px;text-align:center;border:1px solid #bfdbfe;vertical-align:middle;line-height:1.3;color:#0f172a;';
   const mmDec = prefs.us ? 2 : 1;
   const body = forecast
-    .map(
-      (row) => `<tr>
-        <td style="${td}text-align:left;font-weight:800;color:#0c4a6e;white-space:nowrap;">${escapeHtml(dateLabel(row.date, prefs.locale))}</td>
+    .map((row) => {
+      const parts = dateCellParts(row.date, prefs.locale);
+      const dateLine = parts.english
+        ? `${escapeHtml(parts.month)}&#8203; ${escapeHtml(parts.day)}`
+        : `${escapeHtml(parts.day)}&#8203; ${escapeHtml(parts.month)}`;
+      return `<tr>
+        <td style="${td}text-align:center;white-space:normal;padding:6px 2px;line-height:1.15;">
+          <div style="font-weight:800;font-size:12px;color:#0c4a6e;line-height:1.15;">${escapeHtml(parts.weekday)}</div>
+          <div style="font-weight:600;font-size:10px;color:#0369a1;line-height:1.15;margin-top:2px;">${dateLine}</div>
+        </td>
         <td style="${td}"><span style="color:#ea580c;">${fmtTemp(row.tempMin, prefs.us)}</span>–<span style="color:#c2410c;font-weight:800;">${fmtTemp(row.tempMax, prefs.us)}</span></td>
         <td style="${td}"><span style="color:#0284c7;">${value(row.humidityMin, 0)}</span>–<span style="color:#0369a1;font-weight:800;">${value(row.humidityMax, 0)}</span></td>
         <td style="${td}"><span style="color:#7c3aed;">${value(row.vpdMin, 2)}</span>–<span style="color:#6d28d9;font-weight:800;">${value(row.vpdMax, 2)}</span></td>
         <td style="${td}"><span style="color:#0f766e;font-weight:700;">${fmtMm(row.et0, prefs.us, mmDec)}</span> / <span style="color:#15803d;font-weight:700;">${fmtMm(row.etc, prefs.us, mmDec)}</span> / <span style="color:#1d4ed8;font-weight:800;">${fmtMm(row.rain, prefs.us, mmDec)}</span></td>
-      </tr>`
-    )
+      </tr>`;
+    })
     .join('');
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed;">
       <thead>
@@ -292,7 +314,7 @@ function buildEmail({ subscriber, plot, snapshot, reportUrl }) {
       ? `Hello <strong>${escapeHtml(subscriber.full_name)}</strong>, ${copy.introHtml}`
       : `Hola <strong>${escapeHtml(subscriber.full_name)}</strong>, ${copy.introHtml}`;
 
-  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
+  const html = `<!doctype html><html><head><meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"><meta name="x-apple-disable-message-reformatting"></head><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
     <div style="max-width:820px;margin:0 auto;padding:18px;">
       <div style="background:#0c4a6e;padding:22px;border-radius:14px 14px 0 0;">
         <a href="https://nutriplantpro.com/" style="text-decoration:none;">
