@@ -69,6 +69,18 @@ module.exports = [
     }
   },
   {
+    name: 'ionómetro: °Bx se guarda como número y no entra al meq',
+    run: function () {
+      var values = core.columnValues([{ brix: '8,5' }, { brix: '' }], 'brix');
+      close(values[0], 8.5, 0.01);
+      assert.equal(values[1], null);
+      assert.equal(core.meqFromPpm('brix', null, 8.5), null);
+      var prop = core.proportions({ brix: 10, ec: 1.2, k: 391 }, core.defaultForms());
+      close(prop.ecNote.ec, 1.2, 0.01);
+      assert.equal(core.column('brix').kind, 'brix');
+    }
+  },
+  {
     name: 'ionómetro: foliar no enciende franja y la de NutriPlant no cuenta como editada',
     run: function () {
       assert.equal(core.sampleHasBand('foliar'), false);

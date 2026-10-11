@@ -70,8 +70,8 @@
     </ul>
 
     <h2>Columnas</h2>
-    <p>Orden: título libre de la lectura (Semana 1, 07 ago, Malla 12) · pH · CE (dS/m) · NO₃⁻ · PO₄ · SO₄²⁻ · K⁺ · Ca²⁺ · Mg²⁺ · Cl⁻ · Na⁺ · NH₄⁺.</p>
-    <p>pH y CE son un solo número: no tienen meq ni forma. El pH 4,0 es pH 4,0. Los mV del electrodo no van en la columna de pH. La celda vacía se queda vacía.</p>
+    <p>Orden: título libre de la lectura (Semana 1, 07 ago, Malla 12) · pH · CE (dS/m) · °Bx (grados Brix) · NO₃⁻ · PO₄ · SO₄²⁻ · K⁺ · Ca²⁺ · Mg²⁺ · Cl⁻ · Na⁺ · NH₄⁺.</p>
+    <p>pH, CE y °Bx son un solo número: no tienen meq ni forma. El pH 4,0 es pH 4,0. Los mV del electrodo no van en la columna de pH. °Bx es la lectura del refractómetro, pensada para pecíolo, foliar o savia; en solución o pasta se puede dejar vacía. La celda vacía se queda vacía.</p>
 
     <h2>La forma del equipo se queda</h2>
     <p>
@@ -103,8 +103,8 @@
 
     <h2>Gráficas</h2>
     <p>
-      Los nutrientes comparten una gráfica, en meq/L, del tamaño de esa columna. pH y conductividad van en otra:
-      el pH en el eje izquierdo y la CE en el derecho. Cada eje usa un tono más tenue del color de su línea.
+      Los nutrientes comparten una gráfica, en meq/L, del tamaño de esa columna. pH, conductividad y °Bx van en otra:
+      el pH en el eje izquierdo; CE y °Bx, si están, en ejes a la derecha. Cada eje usa el color de su línea.
       El eje horizontal es el orden de las filas, con el título que quepa.
       Una sola lectura es un punto marcado, sin línea. Si falta un valor en medio, la línea se corta: no se une por encima del hueco y no se pone cero.
       Un nutriente sin ningún número no entra en la gráfica.
@@ -130,7 +130,7 @@
     <p>
       Sale de la franja interna de NutriPlant para solución de invernadero intensivo, la misma del análisis de solución en la plataforma.
       Está en ppm del elemento: N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110.
-      pH, CE, Cl⁻, Na⁺ y NH₄⁺ no tienen franja.
+      pH, CE, °Bx, Cl⁻, Na⁺ y NH₄⁺ no tienen franja.
     </p>
     <p>
       Se compara en la forma del encabezado. 280 escritos como NO₃⁻ son unos 63 de N, y eso cae debajo de 140–200.
@@ -198,10 +198,10 @@
       Fixed: K⁺ 39.1 · Ca²⁺ 20.04 · Mg²⁺ 12.15 · Na⁺ 22.99 · Cl⁻ 35.45<br>
       95 ppm PO₄ = 31 ppm P = 1.0 meq/L · 280 ppm as NO₃⁻ ≈ 4.5 meq/L · the same 280 ppm read as N = 20 meq/L
     </div>
-    <p>pH and EC are single numbers, with no meq and no form. Defaults follow the ion (what many electrodes show). A photometer that displays nitrate as N is switched to N in the header. H₂PO₄⁻ is the charge assumed for PO₄ (divide by 95, not by 3); it is not a menu option. Do not apply NutriPlant solution weights (N 14, P 31, S 16) while the meter is showing the ion.</p>
+    <p>pH, EC and °Bx are single numbers, with no meq and no form. °Bx is the refractometer reading, meant for petiole, foliar or sap; it can stay empty on solution or paste. Defaults follow the ion (what many electrodes show). A photometer that displays nitrate as N is switched to N in the header. H₂PO₄⁻ is the charge assumed for PO₄ (divide by 95, not by 3); it is not a menu option. Do not apply NutriPlant solution weights (N 14, P 31, S 16) while the meter is showing the ion.</p>
     <h2>Charts</h2>
     <p>
-      Nutrients share one meq/L chart. pH and EC are on a second chart: pH on the left axis, EC on the right, each axis in a fainter shade of its line.
+      Nutrients share one meq/L chart. pH, EC and °Bx are on a second chart: pH on the left axis, EC and °Bx on the right when present, each axis in the color of its line.
       The horizontal axis is row order. One reading is a marked point. A gap breaks the line; it is not bridged and it is not drawn as zero.
       A nutrient with no numbers stays off the chart.
     </p>
@@ -210,7 +210,7 @@
       Two references, both a guide. The meter reading is a guide too. Free and Pro share the rule. The dot shows on every reading that has a number.
     </p>
     <p>
-      <strong>Concentration</strong> is NutriPlant’s intensive-greenhouse band, elemental ppm: N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. It is compared in the header form: 280 typed as NO₃⁻ is about 63 N (below 140–200); the same 280 typed as N is above. On screen, an NO₃⁻ header shows that band as 620–886 ppm NO₃⁻. Min and max can be edited per table; <strong>Back to NutriPlant</strong> restores them. Saturated paste uses the same ppm: soil solution at saturation, not the irrigation liquor. pH, EC, Cl⁻, Na⁺ and NH₄⁺ have no band.
+      <strong>Concentration</strong> is NutriPlant’s intensive-greenhouse band, elemental ppm: N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110. It is compared in the header form: 280 typed as NO₃⁻ is about 63 N (below 140–200); the same 280 typed as N is above. On screen, an NO₃⁻ header shows that band as 620–886 ppm NO₃⁻. Min and max can be edited per table; <strong>Back to NutriPlant</strong> restores them. Saturated paste uses the same ppm: soil solution at saturation, not the irrigation liquor. pH, EC, °Bx, Cl⁻, Na⁺ and NH₄⁺ have no band.
     </p>
     <p>
       <strong>Balance</strong> is read-only Steiner-type text from the solution-design chapter: anions N 20–80%, P 1.25–10%, S 10–70%; cations K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%.

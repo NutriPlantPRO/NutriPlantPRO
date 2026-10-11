@@ -90,7 +90,7 @@
     .sheet-lead, .sample-row, .tools, .note { flex: 0 0 auto; }
     .sheet-lead { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
     .bar select { min-width: 200px; }
-    table { border-collapse: separate; border-spacing: 0; min-width: 980px; width: 100%; background: var(--card); }
+    table { border-collapse: separate; border-spacing: 0; min-width: 1060px; width: 100%; background: var(--card); }
     th, td { border: 0; border-bottom: 1px solid #f1f5f9; padding: 6px 8px; vertical-align: top; }
     th { background: #f8fafc; font-weight: 750; font-size: 12px; text-align: center; }
     .table-card thead th { border-bottom: 0; }
@@ -185,8 +185,11 @@
     th.col-ph { color: #0f766e; font-size: 14px; font-weight: 800; }
     th.col-ec { color: #b45309; font-size: 14px; font-weight: 800; }
     th.col-ec span { display: block; margin-top: 2px; font-size: 11px; font-weight: 650; color: #c2410c; }
+    th.col-brix { color: #9f1239; font-size: 14px; font-weight: 800; }
+    th.col-brix span { display: block; margin-top: 2px; font-size: 11px; font-weight: 650; color: #be123c; }
     input.cell-ph { color: #0f766e; font-weight: 750; }
     input.cell-ec { color: #b45309; font-weight: 750; }
+    input.cell-brix { color: #9f1239; font-weight: 750; }
     th.colhead { min-width: 108px; vertical-align: bottom; }
     .colhead__name { display: block; font-size: 14px; font-weight: 750; line-height: 1.2; white-space: nowrap; }
     .colhead__unit { display: block; margin-top: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
@@ -301,7 +304,7 @@
     </div>
     <div class="workspace">
       <section class="sheet">
-        <p class="sheet-lead" data-es="Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento." data-en="Type the meter number. For nutrients that is ppm; meq appears below. If there are two forms, pick ion or element.">Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento.</p>
+        <p class="sheet-lead" data-es="Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento. °Bx es grados Brix del refractómetro: pecíolo, foliar o savia." data-en="Type the meter number. For nutrients that is ppm; meq appears below. If there are two forms, pick ion or element. °Bx is refractometer Brix: petiole, foliar or sap.">Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento. °Bx es grados Brix del refractómetro: pecíolo, foliar o savia.</p>
         <div class="sample-row">
           <label><span data-es="Muestra" data-en="Sample">Muestra</span>
             <select id="sampleType" aria-label="Tipo de muestra"></select>
@@ -318,10 +321,10 @@
         </div>
         <div class="note" id="note" hidden></div>
       </section>
-      <section class="charts" id="charts" aria-label="Gráficas de nutrientes y de pH con conductividad"></section>
+      <section class="charts" id="charts" aria-label="Gráficas de nutrientes y de pH, conductividad y grados Brix"></section>
     </div>
   </div>
-  <script src="assets/np-ionometro-core.js?v=20261002p"></script>
+  <script src="assets/np-ionometro-core.js?v=20261011brix"></script>
   <script>
   (function () {
     'use strict';
@@ -385,6 +388,7 @@
         '<th class="row-head" rowspan="2">Lectura</th>' +
         '<th class="col-ph" rowspan="2">pH</th>' +
         '<th class="col-ec" rowspan="2">CE<br><span>dS/m</span></th>' +
+        '<th class="col-brix" rowspan="2">°Bx<br><span>Brix</span></th>' +
         '<th class="group-an" colspan="3">Aniones</th>' +
         '<th class="group-cat" colspan="3">Cationes</th>' +
         '<th class="group-other" colspan="3">Otros</th>' +
@@ -460,8 +464,8 @@
         html += '<td class="row-title"><input class="name" data-field="label" placeholder="' + tx('Nombre', 'Name') + '" value="' + escapeAttr(row.label) + '" aria-label="' + tx('Título de la lectura', 'Reading title') + '"></td>';
         core.COLUMNS.forEach(function (col) {
           var ion = col.kind === 'ion';
-          var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : 'ppm');
-          var tone = col.id === 'ph' ? ' cell-ph' : (col.id === 'ec' ? ' cell-ec' : '');
+          var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : (col.id === 'brix' ? '°Bx' : 'ppm'));
+          var tone = col.id === 'ph' ? ' cell-ph' : (col.id === 'ec' ? ' cell-ec' : (col.id === 'brix' ? ' cell-brix' : ''));
           html += '<td class="entry"><input class="cell' + tone + '" inputmode="decimal" placeholder="' + placeholder + '" data-field="' + col.id + '" value="' +
             escapeAttr(row[col.id] || '') + '" aria-label="' + core.labelFor(col.id, table.forms[col.id]) + '">';
           var level = levelFor(table, row, col.id);
@@ -659,7 +663,7 @@
       var side = phEcChart(table);
       hostEl.innerHTML = (ions || side)
         ? ions + side
-        : '<p class="hint">' + tx('Con lecturas, los nutrientes van juntos y el pH con la CE en la otra gráfica.', 'With readings, nutrients share one chart and pH with EC share the other.') + '</p>';
+        : '<p class="hint">' + tx('Con lecturas, los nutrientes van juntos y el pH, la CE y °Bx en la otra gráfica.', 'With readings, nutrients share one chart and pH, EC and °Bx share the other.') + '</p>';
     }
 
     function nutrientChart(table) {
@@ -715,64 +719,94 @@
     }
 
     function phEcChart(table) {
-      var phCol = core.column('ph');
-      var ecCol = core.column('ec');
-      var ph = core.columnValues(table.rows, 'ph', table.forms);
-      var ec = core.columnValues(table.rows, 'ec', table.forms);
-      var hasPh = core.hasAny(ph);
-      var hasEc = core.hasAny(ec);
-      if (!hasPh && !hasEc) return '';
-      var phNums = ph.filter(function (value) { return typeof value === 'number'; });
-      var ecNums = ec.filter(function (value) { return typeof value === 'number'; });
-      var phScale = hasPh ? paddedScale(phNums, 1.5, false) : null;
-      var ecScale = hasEc ? paddedScale(ecNums, 1, false) : null;
+      var specs = [
+        { id: 'ph', axis: 'pH', legend: 'pH', labelDy: -10 },
+        { id: 'ec', axis: 'dS/m', legend: 'CE', labelDy: 16, dash: true, square: true },
+        { id: 'brix', axis: '°Bx', legend: '°Bx', labelDy: -22 }
+      ];
+      var active = [];
+      specs.forEach(function (spec) {
+        var values = core.columnValues(table.rows, spec.id, table.forms);
+        if (!core.hasAny(values)) return;
+        active.push({
+          spec: spec,
+          col: core.column(spec.id),
+          values: values,
+          nums: values.filter(function (value) { return typeof value === 'number'; })
+        });
+      });
+      if (!active.length) return '';
+      var leftItem = null;
+      var rightItems = [];
+      active.forEach(function (item) {
+        if (!leftItem && item.spec.id === 'ph') leftItem = item;
+        else rightItems.push(item);
+      });
+      if (!leftItem) leftItem = rightItems.shift();
       var n = table.rows.length;
-      var width = 720;
       var height = 340;
       var left = 92;
-      var right = hasEc ? 96 : 28;
       var top = 16;
       var bottom = 78;
-      var plotW = width - left - right;
+      var plotW = 532;
+      var rightPad = Math.max(28, rightItems.length * 78);
+      var width = left + plotW + rightPad;
       var plotH = height - top - bottom;
       var baseY = top + plotH;
       var yMid = top + plotH / 2;
       var xRight = left + plotW;
       function xAt(index) { return left + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW); }
       function yOf(value, scale) { return top + (1 - (value - scale.min) / (scale.max - scale.min)) * plotH; }
+      function paintAxis(item, x, side) {
+        var scale = paddedScale(item.nums, item.spec.id === 'ph' ? 1.5 : 1, false);
+        var color = item.col.color;
+        var titleX = side === 'left' ? 28 : x + (side === 'right' ? 52 : 0);
+        var turn = side === 'left' ? -90 : 90;
+        var markup = axisSpine(x, top, x, baseY, color);
+        markup += yAxisTitle(item.spec.axis, titleX, yMid, color, turn);
+        niceTicks(scale, 4).forEach(function (tick) {
+          var yy = yOf(tick, scale);
+          var x1 = side === 'left' ? x - 5 : x;
+          var x2 = side === 'left' ? x : x + 5;
+          var textX = side === 'left' ? x - 12 : x + 12;
+          var anchor = side === 'left' ? 'end' : 'start';
+          if (side === 'left') {
+            markup += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + xRight + '" y2="' + yy.toFixed(1) + '" stroke="#f1f5f9"></line>';
+          }
+          markup += '<line x1="' + x1 + '" y1="' + yy.toFixed(1) + '" x2="' + x2 + '" y2="' + yy.toFixed(1) + '" stroke="' + color + '" stroke-width="1"></line>';
+          markup += '<text x="' + textX + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="' + anchor + '" font-size="12" font-weight="700" fill="' + color + '">' + formatTick(tick) + '</text>';
+        });
+        item.scale = scale;
+        return markup;
+      }
       var grid = '<rect x="' + left + '" y="' + top + '" width="' + plotW + '" height="' + plotH + '" fill="#ffffff"></rect>';
-      var axis = axisSpine(left, baseY, xRight, baseY);
       for (var r = 0; r < n; r++) {
         var xx = xAt(r);
         grid += '<line x1="' + xx.toFixed(1) + '" y1="' + baseY + '" x2="' + xx.toFixed(1) + '" y2="' + (baseY + 5) + '" stroke="#64748b" stroke-width="1"></line>';
       }
-      if (phScale) {
-        axis += axisSpine(left, top, left, baseY, phCol.color);
-        axis += yAxisTitle('pH', 32, yMid, phCol.color, -90);
-        niceTicks(phScale, 4).forEach(function (value) {
-          var yy = yOf(value, phScale);
-          grid += '<line x1="' + left + '" y1="' + yy.toFixed(1) + '" x2="' + xRight + '" y2="' + yy.toFixed(1) + '" stroke="#f1f5f9"></line>';
-          axis += '<line x1="' + (left - 5) + '" y1="' + yy.toFixed(1) + '" x2="' + left + '" y2="' + yy.toFixed(1) + '" stroke="' + phCol.color + '" stroke-width="1"></line>';
-          axis += '<text x="' + (left - 12) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="' + phCol.color + '">' + formatTick(value) + '</text>';
-        });
-      }
-      if (ecScale) {
-        axis += axisSpine(xRight, top, xRight, baseY, ecCol.color);
-        axis += yAxisTitle('dS/m', width - 32, yMid, ecCol.color, 90);
-        niceTicks(ecScale, 4).forEach(function (ecValue) {
-          var yec = yOf(ecValue, ecScale);
-          axis += '<line x1="' + xRight + '" y1="' + yec.toFixed(1) + '" x2="' + (xRight + 5) + '" y2="' + yec.toFixed(1) + '" stroke="' + ecCol.color + '" stroke-width="1"></line>';
-          axis += '<text x="' + (xRight + 12) + '" y="' + (yec + 4).toFixed(1) + '" text-anchor="start" font-size="12" font-weight="700" fill="' + ecCol.color + '">' + formatTick(ecValue) + '</text>';
-        });
-      }
+      var axis = axisSpine(left, baseY, xRight, baseY);
+      axis += paintAxis(leftItem, left, 'left');
+      rightItems.forEach(function (item, index) {
+        axis += paintAxis(item, xRight + index * 78, 'right');
+      });
       var lines = '';
-      if (phScale) lines += seriesMarkup(ph, phCol.color, xAt, function (value) { return yOf(value, phScale); }, { labelDy: -10 });
-      if (ecScale) lines += seriesMarkup(ec, ecCol.color, xAt, function (value) { return yOf(value, ecScale); }, { dash: true, square: true, labelDy: 16 });
       var legend = '';
-      if (hasPh) legend += '<li><i style="background:' + phCol.color + '"></i>pH</li>';
-      if (hasEc) legend += '<li><i style="background:' + ecCol.color + '"></i>CE</li>';
-      return '<article class="chart chart-side"><h3>' + tx('pH y conductividad eléctrica', 'pH and electrical conductivity') + '</h3>' +
-        '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="pH a la izquierda y conductividad a la derecha">' +
+      active.forEach(function (item) {
+        lines += seriesMarkup(item.values, item.col.color, xAt, function (value) { return yOf(value, item.scale); }, {
+          dash: item.spec.dash,
+          square: item.spec.square,
+          labelDy: item.spec.labelDy
+        });
+        legend += '<li><i style="background:' + item.col.color + '"></i>' + item.spec.legend + '</li>';
+      });
+      var titleBits = active.map(function (item) {
+        if (item.spec.id === 'ph') return 'pH';
+        if (item.spec.id === 'ec') return tx('conductividad eléctrica', 'electrical conductivity');
+        return '°Bx';
+      });
+      var title = titleBits.join(titleBits.length === 2 ? (uiLang() === 'en' ? ' and ' : ' y ') : ', ').replace(/, ([^,]+)$/, (uiLang() === 'en' ? ' and $1' : ' y $1'));
+      return '<article class="chart chart-side"><h3>' + escapeAttr(title) + '</h3>' +
+        '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="' + escapeAttr(title) + '">' +
         grid + axis + lines + xLabels(table, n, xAt, baseY) + '</svg><ul class="legend">' + legend + '</ul></article>';
     }
 
