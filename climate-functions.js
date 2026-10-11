@@ -2681,6 +2681,12 @@
       '<h3 style="margin:0 0 8px 0;color:#0f766e;">📈 ' +
       wcT('Rendimiento hídrico (ISH)', 'Hydric yield (WSI)') +
       '</h3>' +
+      '<p style="margin:0 0 6px 0;font-size:14px;font-weight:650;color:#0f766e;">' +
+      wcT(
+        'Estrés por déficit hídrico.',
+        'Water-deficit stress.'
+      ) +
+      '</p>' +
       '<p style="margin:0 0 12px 0;font-size:14px;color:#64748b;">' +
       wcT(
         'Índice de Satisfacción Hídrica del ciclo (semanas). Punto del predio:',
@@ -2728,7 +2734,6 @@
     var today = ISH.todayIso();
     var start = ish.cycleStart || ISH.addDaysIso(today, -84);
     var end = ish.cycleEnd || today;
-    var fp = ish.fp != null ? ish.fp : ISH.DEFAULT_FP;
     var weeks = Array.isArray(ish.weeks) ? ish.weeks : [];
     var result = ish.result;
 
@@ -2759,14 +2764,7 @@
       '" style="flex:1;min-width:90px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">' +
       '<span id="climate-ish-kc-btn"></span></div>' +
       '<input type="hidden" id="climate-ish-crop" value="">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Fp</label>' +
-      '<input type="number" id="climate-ish-fp" min="0" max="1" step="0.05" value="' +
-      fp +
-      '" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">' +
-      '<p style="margin:4px 0 0;font-size:11px;color:#64748b;">' +
-      (climatePrefs().language === 'en' ? ISH.FP_HELP_EN : ISH.FP_HELP_ES) +
-      '</p></div></div>' +
+      '</div></div>' +
       '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;margin-bottom:4px;">' +
       '<input type="checkbox" id="climate-ish-macro"' +
       (ish.macroTunnelNoRain ? ' checked' : '') +
@@ -2860,7 +2858,7 @@
       ' ' +
       climateDepthUnit() +
       '</th><th style="padding:8px 6px;vertical-align:middle;font-size:11px;" title="' +
-      wcT('Exceso hídrico de la semana', 'Weekly water excess') +
+      wcT('Agua que sobró y se drenó; no baja el ISH', 'Surplus water that drained; it does not lower WSI') +
       '">' +
       wcT('Exceso', 'Excess') +
       ' ' +
@@ -2871,8 +2869,8 @@
       '</tr></thead><tbody id="climate-ish-tbody"></tbody></table></div>' +
       '<p style="margin:10px 0 12px;font-size:12px;color:#64748b;line-height:1.45;">' +
       wcT(
-        '<strong>Déficit</strong> = faltó agua vs ETc · <strong>Exceso</strong> = sobró agua vs ETc. ISH = 100 × [1 − Σ(Déficit + Fp·Exceso) / Σ ETc]',
-        '<strong>Deficit</strong> = water short vs ETc · <strong>Excess</strong> = water surplus vs ETc. WSI = 100 × [1 − Σ(Deficit + Fp·Excess) / Σ ETc]'
+        '<strong>Déficit</strong> = faltó agua vs ETc (esto baja el ISH). <strong>Exceso</strong> = sobró y se drenó; no baja el rendimiento. ISH = 100 × [1 − Σ Déficit / Σ ETc]',
+        '<strong>Deficit</strong> = water short vs ETc (this lowers WSI). <strong>Excess</strong> = surplus that drained; it does not lower yield. WSI = 100 × [1 − Σ Deficit / Σ ETc]'
       ) +
       '</p>' +
       '<div id="climate-ish-hero" style="display:none;margin-bottom:12px;padding:14px;border-radius:10px;border:1px solid #99f6e4;background:linear-gradient(135deg,#ecfeff,#f0fdf4);"></div>' +
@@ -2892,8 +2890,8 @@
       wcT('Estimado metodológico.', 'Methodological estimate.') +
       '</strong> ' +
       wcT(
-        'El ISH y la curva son una estimación según esta fórmula. Orientan el techo de rendimiento relativo al agua; no predicen la cosecha real. Validar en campo.',
-        'WSI and the curve are an estimate from this formula. They indicate the water-related yield ceiling; they do not predict actual harvest. Validate in the field.'
+        'El ISH baja solo cuando faltó agua frente a la ETc (criterio FAO). La lluvia que sobra se toma como drenaje y no resta rendimiento. No predice la cosecha real. Validar en campo.',
+        'WSI falls only when water was short of ETc (FAO). Surplus rain is treated as drainage and does not reduce yield. It does not predict actual harvest. Validate in the field.'
       ) +
       '<br><br><strong>' +
       wcT('Lectura del % que aparece:', 'How to read the % shown:') +
@@ -2918,7 +2916,7 @@
       persistClimateIshFromDom(true);
     };
     document.getElementById('climate-ish-suggest-irr').onclick = suggestClimateIshIrrigation;
-    ['climate-ish-start', 'climate-ish-end', 'climate-ish-kc', 'climate-ish-fp', 'climate-ish-irr-eff', 'climate-ish-macro'].forEach(function (id) {
+    ['climate-ish-start', 'climate-ish-end', 'climate-ish-kc', 'climate-ish-irr-eff', 'climate-ish-macro'].forEach(function (id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.onchange = function () {
@@ -2928,12 +2926,11 @@
         }
         persistClimateIshFromDom(
           id === 'climate-ish-kc' ||
-            id === 'climate-ish-fp' ||
             id === 'climate-ish-irr-eff' ||
             id === 'climate-ish-macro'
         );
       };
-      if (id === 'climate-ish-irr-eff' || id === 'climate-ish-fp' || id === 'climate-ish-kc') {
+      if (id === 'climate-ish-irr-eff' || id === 'climate-ish-kc') {
         el.oninput = function () {
           if (id === 'climate-ish-kc') {
             var v2 = el.value === '' ? null : parseFloat(el.value);
@@ -3123,8 +3120,10 @@
       (band ? (climatePrefs().language === 'en' ? band.labelEn : band.labelEs) : '') +
       '</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Σ ETc ' +
       (result.sumEtc != null ? wcResult(result.sumEtc, 'water_depth', 1) : '—') +
-      ' · Fp ' +
-      result.fp +
+      ' · Σ ' +
+      wcT('déficit', 'deficit') +
+      ' ' +
+      (result.sumPenalty != null ? wcResult(result.sumPenalty, 'water_depth', 1) : '—') +
       ' · ' +
       wcT('riego efectivo', 'eff. irrig.') +
       ' ' +
@@ -3179,12 +3178,10 @@
     var st = getIshState();
     var startEl = document.getElementById('climate-ish-start');
     var endEl = document.getElementById('climate-ish-end');
-    var fpEl = document.getElementById('climate-ish-fp');
     var irrEffEl = document.getElementById('climate-ish-irr-eff');
     var macroEl = document.getElementById('climate-ish-macro');
     st.cycleStart = startEl && startEl.value ? startEl.value : null;
     st.cycleEnd = endEl && endEl.value ? endEl.value : null;
-    st.fp = ISH.clampFp(fpEl ? fpEl.value : 0.25);
     st.irrigationEffectivePct = ISH.clampIrrigationEffectivePct(
       irrEffEl ? irrEffEl.value : st.irrigationEffectivePct
     );
@@ -3420,8 +3417,10 @@
         esc(ish.cycleStart || '—') +
         ' → ' +
         esc(ish.cycleEnd || rt('hoy', 'today')) +
-        ' · Fp ' +
-        (ish.fp != null ? ish.fp : 0.25) +
+        ' · Σ ' +
+        rt('déficit', 'deficit') +
+        ' ' +
+        (ish.result.sumPenalty != null ? ish.result.sumPenalty : '—') +
         ' · ' +
         rt('riego efectivo', 'eff. irrig.') +
         ' ' +

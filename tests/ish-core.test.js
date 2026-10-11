@@ -17,7 +17,7 @@ module.exports = [
     }
   },
   {
-    name: 'ISH: fórmula déficit + Fp·exceso',
+    name: 'ISH: fórmula FAO solo déficit; el exceso no baja el índice',
     run: function () {
       var weeks = [
         {
@@ -35,18 +35,37 @@ module.exports = [
           irrigation_mm: 0
         }
       ];
-      // kc=1 → ETc 20+20=40; D1=10 E1=0; D2=0 E2=20; Fp=0.25 → penalty=10+5=15; ISH=100*(1-15/40)=62.5
+      // kc=1 → ETc 20+20=40; D1=10 E1=0; D2=0 E2=20. El exceso no entra. ISH=100*(1-10/40)=75
       var r = NpIsh.computeIsh({ weeks: weeks, kc: 1, fp: 0.25 });
       assert.equal(r.ok, true);
       assert.equal(r.sumEtc, 40);
-      assert.equal(r.sumPenalty, 15);
-      assert.equal(r.ish, 62.5);
+      assert.equal(r.sumPenalty, 10);
+      assert.equal(r.ish, 75);
       assert.equal(r.weeks[0].deficit_mm, 10);
       assert.equal(r.weeks[1].excess_mm, 20);
-      // Semana 1: penalty 10 / 40 → 75 %. Semana 2: penalty 15 / 40 → 62.5 % (solo baja).
       assert.equal(r.weeks[0].ish_cumulative, 75);
-      assert.equal(r.weeks[1].ish_cumulative, 62.5);
+      assert.equal(r.weeks[1].ish_cumulative, 75);
       assert.equal(r.weeks[1].ish_cumulative, r.ish);
+    }
+  },
+  {
+    name: 'ISH: aguacero con déficit 0 deja el índice en 100',
+    run: function () {
+      var weeks = [
+        {
+          weekStart: '2026-10-06',
+          weekEnd: '2026-10-11',
+          rain_mm: 182.3,
+          et0_mm: 13.4,
+          irrigation_mm: 0
+        }
+      ];
+      var r = NpIsh.computeIsh({ weeks: weeks, kc: 0.57, fp: 0.25 });
+      assert.equal(r.ok, true);
+      assert.equal(r.weeks[0].deficit_mm, 0);
+      assert.ok(r.weeks[0].excess_mm > 100);
+      assert.equal(r.ish, 100);
+      assert.equal(r.weeks[0].ish_cumulative, 100);
     }
   },
   {
@@ -68,10 +87,11 @@ module.exports = [
           irrigation_mm: 0
         }
       ];
-      // D1=20, E2=20*0.25=5 con Fp 0.25; sumEtc=40; Y1=50 %, Y2=37.5 % (no sube).
+      // D1=20, E2=20 no cuenta. sumEtc=40; Y1=50 % y Y2 se queda en 50 % (no recupera).
       var r = NpIsh.computeIsh({ weeks: weeks, kc: 1, fp: 0.25 });
       assert.equal(r.weeks[0].ish_cumulative, 50);
-      assert.equal(r.weeks[1].ish_cumulative, 37.5);
+      assert.equal(r.weeks[1].ish_cumulative, 50);
+      assert.equal(r.weeks[1].excess_mm, 20);
       assert.ok(r.weeks[1].ish_cumulative <= r.weeks[0].ish_cumulative);
     }
   },

@@ -1,6 +1,7 @@
 /**
  * NutriPlant PRO — Índice de Satisfacción Hídrica (ISH) / Rendimiento hídrico
- * Fórmula tipo GEOSMET: ISH = 100 × [1 − Σ(Di + Fp·Ei) / Σ ETc]
+ * FAO (Riego y Drenaje 33 / WRSI): ISH = 100 × [1 − Σ Déficit / Σ ETc]
+ * El exceso (lluvia o riego por encima de la ETc) se toma como drenaje y no baja el índice.
  * Agregación semanal, máx. 52 semanas. Uso: gratis + pestaña Clima PRO.
  */
 (function (root, factory) {
@@ -261,7 +262,8 @@
         deficit = round1(Math.max(0, etc - supply));
         excess = round1(Math.max(0, supply - etc));
         sumEtc += etc;
-        sumPenalty += deficit + fp * excess;
+        // FAO 33 / WRSI: solo el agua que faltó baja el índice. El exceso drena.
+        sumPenalty += deficit;
       }
       row.irrigation_m3_ha =
         row.irrigation_mm != null && Number.isFinite(Number(row.irrigation_mm))
@@ -315,7 +317,7 @@
     weeks = weeks.map(function (row) {
       var out = Object.assign({}, row);
       if (out.etc_mm != null) {
-        runningPenalty += (out.deficit_mm || 0) + fp * (out.excess_mm || 0);
+        runningPenalty += out.deficit_mm || 0;
         var y = round1(Math.max(0, Math.min(100, 100 * (1 - runningPenalty / sumEtc))));
         out.ish_cumulative = y;
         out.yield_relative = y;

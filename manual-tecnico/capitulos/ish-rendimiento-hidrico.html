@@ -72,12 +72,11 @@
     </ul>
 
     <h2>Fórmula</h2>
-    <div class="mt-formula">ISH = 100 × [1 − Σ(D<sub>i</sub> + F<sub>p</sub>·E<sub>i</sub>) / Σ ETc<sub>i</sub>]</div>
+    <div class="mt-formula">ISH = 100 × [1 − Σ Déficit / Σ ETc]</div>
     <ul>
       <li><strong>ETc<sub>i</sub></strong> = ET₀<sub>i</sub> × Kc (semana <em>i</em>).</li>
-      <li><strong>D<sub>i</sub></strong> (déficit) = max(0, ETc − (lluvia + riego efectivo)).</li>
-      <li><strong>E<sub>i</sub></strong> (exceso) = max(0, (lluvia + riego efectivo) − ETc).</li>
-      <li><strong>F<sub>p</sub></strong> pondera el exceso frente al déficit (default <strong>0,25</strong>). 0 = solo sequía; 1 = exceso igual que déficit.</li>
+      <li><strong>Déficit</strong> = max(0, ETc − (lluvia + riego efectivo)). Es lo único que baja el índice (criterio FAO, Riego y Drenaje 33 / WRSI).</li>
+      <li><strong>Exceso</strong> = max(0, (lluvia + riego efectivo) − ETc). Se muestra en la tabla como agua que sobró y se drenó; <strong>no resta</strong> el ISH.</li>
     </ul>
     <p>
       Agregación: <strong>semanas</strong>, máximo <strong>52</strong>. La curva de rendimiento relativo
@@ -88,7 +87,6 @@
     <ul>
       <li><strong>Fechas de ciclo</strong> + botón <strong>Obtener lluvia y ET₀</strong> (satélite Open-Meteo) o captura manual.</li>
       <li><strong>Kc</strong> + tabla FAO-56 de consulta.</li>
-      <li><strong>Fp</strong> (una línea de ayuda junto al campo).</li>
       <li><strong>Macrotúnel / invernadero:</strong> lluvia = 0.</li>
       <li><strong>Riego opcional</strong> por semana: <strong>mm</strong> o <strong>m³/ha</strong> (1 mm = 10 m³/ha; en US: in · US gal/acre). Se convierten solos.</li>
       <li><strong>% efectivo del riego:</strong> fracción del aplicado que entra al balance (pérdidas / eficiencia). Default 100.</li>
@@ -146,15 +144,16 @@
     </ul>
 
     <h2>Formula</h2>
-    <div class="mt-formula">WSI = 100 × [1 − Σ(D<sub>i</sub> + F<sub>p</sub>·E<sub>i</sub>) / Σ ETc<sub>i</sub>]</div>
+    <div class="mt-formula">WSI = 100 × [1 − Σ Deficit / Σ ETc]</div>
     <p>
-      Weekly aggregation, max <strong>52</strong> weeks. The relative yield curve
+      Weekly aggregation, max <strong>52</strong> weeks. Only unmet ETc lowers the index (FAO).
+      Surplus rain is shown as drainage and does not reduce WSI. The relative yield curve
       <strong>only falls or holds</strong> (full-cycle Σ ETc in the denominator).
     </p>
 
     <h2>Key inputs</h2>
     <ul>
-      <li>Cycle dates + satellite rain/ET₀ (or manual), Kc, Fp (default 0.25), optional greenhouse (rain = 0).</li>
+      <li>Cycle dates + satellite rain/ET₀ (or manual), Kc, optional greenhouse (rain = 0). Surplus rain does not reduce WSI.</li>
       <li>Optional weekly irrigation: <strong>mm</strong> or <strong>m³/ha</strong> (1 mm = 10 m³/ha; US: in · US gal/acre) with <strong>effective %</strong>.</li>
       <li>PRO: pull irrigation from Rain/Irrigation only if that period is <strong>7 days</strong>.</li>
     </ul>

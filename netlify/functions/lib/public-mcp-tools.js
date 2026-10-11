@@ -200,7 +200,7 @@ const TOOLS = [
   {
     name: 'calculate_ish',
     description:
-      'ISH / rendimiento hídrico: weeks[{et0_mm, rain_mm, irrigation_mm?}] + kc (+ fp opcional). Misma fórmula que ish free.',
+      'ISH / rendimiento hídrico: weeks[{et0_mm, rain_mm, irrigation_mm?}] + kc. ISH = 100×[1−Σ déficit/ΣETc]. El exceso no resta (criterio FAO). Misma fórmula que ish free.',
     auth: false,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: {

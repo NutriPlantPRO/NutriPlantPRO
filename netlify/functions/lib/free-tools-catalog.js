@@ -241,8 +241,8 @@ module.exports = {
       lsKey: 'nutriplant_free_ish_rendimiento_v1',
       manualChapter: 'ish_rendimiento_hidrico',
       summary:
-        'Índice de Satisfacción Hídrica del ciclo (semanas, máx. 52): mapa/GPS, fechas, Kc + FAO, Fp (default 0,25), lluvia/ET₀ satélite o manual, riego opcional mm ↔ m³/ha con % efectivo. ISH = 100×[1−Σ(D+Fp·E)/ΣETc]. Misma física en Clima PRO pestaña Rendimiento hídrico. Persistencia LS; ≠ lámina de riego.',
-      formula: 'ISH = 100 * [1 - sum(Di + Fp*Ei) / sum(ETc_i)]',
+        'Índice de Satisfacción Hídrica del ciclo (semanas, máx. 52): mapa/GPS, fechas, Kc + FAO, lluvia/ET₀ satélite o manual, riego opcional mm ↔ m³/ha con % efectivo. ISH = 100×[1−Σ Déficit/ΣETc] (criterio FAO: el exceso drena y no resta). Misma física en Clima PRO pestaña Rendimiento hídrico. Persistencia LS; ≠ lámina de riego.',
+      formula: 'ISH = 100 * [1 - sum(Deficit) / sum(ETc)]',
       proEquivalent: 'Dashboard — Clima → Rendimiento hídrico'
     },
     {

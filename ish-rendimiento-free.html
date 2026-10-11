@@ -9,7 +9,7 @@
   <script src="assets/np-i18n.js?v=20260916wsi"></script>
   <script src="assets/np-units-core.js?v=20260914u2"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-water-climate-ui.js?v=20260916wsi"></script>
+  <script src="assets/np-water-climate-ui.js?v=20261011sub2"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Rendimiento hídrico (ISH) — NutriPlant PRO</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -186,6 +186,9 @@
       <h2 class="title np-free-tool-title">📈 Rendimiento hídrico (ISH)</h2>
       <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
     </div>
+    <p class="intro" style="margin-bottom:6px;font-weight:650;color:#0f766e;">
+      Estrés por déficit hídrico.
+    </p>
     <p class="intro">
       Estima el <strong>Índice de Satisfacción Hídrica (ISH)</strong> del ciclo: qué % del techo de rendimiento sostiene el agua.
       Usa clima satelital (o pluviómetro / ET₀ de campo), Kc y riego opcional por <strong>semana</strong> (máx. 52). Estimación de referencia — <strong>validar en campo</strong>.
@@ -240,11 +243,6 @@
           <input type="hidden" id="ish-crop" value="" />
           <p class="hint">Sin Kc no hay ETc ni ISH. Usa el botón <strong>Rangos FAO</strong>.</p>
         </div>
-        <div class="field">
-          <label for="ish-fp" id="ish-l-fp">Fp (exceso)</label>
-          <input id="ish-fp" type="number" min="0" max="1" step="0.05" value="0.25" />
-          <p class="hint" id="ish-fp-help"></p>
-        </div>
       </div>
       <label class="chk"><input type="checkbox" id="ish-macro" /> Macrotúnel / invernadero (lluvia = 0)</label>
       <p class="hint" id="ish-macro-hint" style="margin-top:4px;"></p>
@@ -285,7 +283,7 @@
             </th>
             <th>ETc <span data-np-unit-label="water_depth">mm</span></th>
             <th id="ish-th-deficit" class="ish-th-de" title="Déficit hídrico de la semana">Déficit <span data-np-unit-label="water_depth">mm</span></th>
-            <th id="ish-th-excess" class="ish-th-de" title="Exceso hídrico de la semana">Exceso <span data-np-unit-label="water_depth">mm</span></th>
+            <th id="ish-th-excess" class="ish-th-de" title="Agua que sobró y se drenó; no baja el ISH">Exceso <span data-np-unit-label="water_depth">mm</span></th>
             <th>ISH acum.</th>
           </tr>
         </thead>
@@ -293,8 +291,8 @@
       </table>
     </div>
     <p id="ish-legend-de" style="margin:12px 0 0;font-size:12px;color:#64748b;line-height:1.45;">
-      <strong>Déficit</strong> = faltó agua vs ETc · <strong>Exceso</strong> = sobró agua vs ETc.
-      ISH = 100 × [1 − Σ(Déficit + Fp·Exceso) / Σ ETc]
+      <strong>Déficit</strong> = faltó agua vs ETc (esto baja el ISH). <strong>Exceso</strong> = sobró y se drenó; no baja el rendimiento.
+      ISH = 100 × [1 − Σ Déficit / Σ ETc]
     </p>
 
     <div class="ish-hero" id="ish-hero" style="display:none;">
@@ -315,7 +313,7 @@
     </div>
 
     <div style="margin-top:14px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;line-height:1.5;color:#78350f;">
-      <strong>Estimado metodológico.</strong> El ISH y la curva son una <strong>estimación</strong> según esta fórmula (balance semanal lluvia/riego vs ETc, con Fp en excesos). Orientan el techo de rendimiento <em>relativo al agua</em>; <strong>no predicen la cosecha real</strong> (también pesan nutrición, sanidad, variedad, suelo, manejo). Validar siempre en campo.<br><br>
+      <strong>Estimado metodológico.</strong> El ISH y la curva son una <strong>estimación</strong> según el criterio FAO: bajan solo cuando faltó agua frente a la ETc. La lluvia que sobra se toma como drenaje y no resta rendimiento. Orientan el techo de rendimiento <em>relativo al agua</em>; <strong>no predicen la cosecha real</strong> (también pesan nutrición, sanidad, variedad, suelo, manejo). Validar siempre en campo.<br><br>
       <strong>Lectura del % que aparece:</strong> ≥85 % agua casi no limita · 70–85 % estrés acumulado · &lt;70 % techo hídrico tocado (estrés fuerte en el modelo). Ese semáforo es el mismo del resultado ISH — no un veredicto de rendimiento comercial.
     </div>
   </div>
@@ -324,7 +322,7 @@
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260801p"></script>
-  <script src="assets/np-ish-core.js?v=20260916wsi"></script>
+  <script src="assets/np-ish-core.js?v=20261011sub"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
@@ -447,21 +445,19 @@
     }
     var thExc = document.getElementById('ish-th-excess');
     if (thExc) {
-      thExc.title = t('Exceso hídrico de la semana', 'Weekly water excess');
+      thExc.title = t('Agua que sobró y se drenó; no baja el ISH', 'Surplus water that drained; it does not lower WSI');
       thExc.innerHTML = t('Exceso', 'Excess') + ' <span data-np-unit-label="water_depth"></span>';
     }
-    var lFp = document.getElementById('ish-l-fp');
-    if (lFp) lFp.textContent = t('Fp (exceso)', 'Fp (excess)');
     var legend = document.getElementById('ish-legend-de');
     if (legend) {
       legend.classList.add('notranslate');
       legend.setAttribute('translate', 'no');
       legend.innerHTML =
         '<strong>' + t('Déficit', 'Deficit') + '</strong> = ' +
-        t('faltó agua vs ETc', 'water short vs ETc') +
-        ' · <strong>' + t('Exceso', 'Excess') + '</strong> = ' +
-        t('sobró agua vs ETc', 'water surplus vs ETc') +
-        '. ' + t('ISH', 'WSI') + ' = 100 × [1 − Σ(' + t('Déficit', 'Deficit') + ' + Fp·' + t('Exceso', 'Excess') + ') / Σ ETc]';
+        t('faltó agua vs ETc (esto baja el ISH)', 'water short vs ETc (this lowers WSI)') +
+        '. <strong>' + t('Exceso', 'Excess') + '</strong> = ' +
+        t('sobró y se drenó; no baja el rendimiento', 'surplus that drained; it does not lower yield') +
+        '. ' + t('ISH', 'WSI') + ' = 100 × [1 − Σ ' + t('Déficit', 'Deficit') + ' / Σ ETc]';
     }
     if (UI && UI.applyLanguage) UI.applyLanguage(document.body);
     if (UI && UI.refreshUnitLabels) UI.refreshUnitLabels();
@@ -497,9 +493,6 @@
   function readKc() {
     var v = parseFloat(document.getElementById('ish-kc').value);
     return Number.isFinite(v) ? v : null;
-  }
-  function readFp() {
-    return ISH.clampFp(document.getElementById('ish-fp').value);
   }
   function readMacro() {
     return !!document.getElementById('ish-macro').checked;
@@ -602,7 +595,6 @@
     var result = ISH.computeIsh({
       weeks: weeks,
       kc: readKc(),
-      fp: readFp(),
       irrigationEffectivePct: readIrrigationEffectivePct(),
       macroTunnelNoRain: readMacro()
     });
@@ -620,8 +612,7 @@
       bandEl.style.color = band ? band.color : '#0f172a';
       document.getElementById('ish-meta').textContent =
         'Σ ETc ' + depthResult(result.sumEtc) +
-        ' · Σ ' + t('castigo', 'penalty') + ' ' + depthResult(result.sumPenalty) +
-        ' · Fp ' + result.fp +
+        ' · Σ ' + t('déficit', 'deficit') + ' ' + depthResult(result.sumPenalty) +
         ' · ' + t('riego efectivo', 'eff. irrig.') + ' ' + result.irrigationEffectivePct + '%';
     } else {
       hero.style.display = weeks.length ? 'flex' : 'none';
@@ -734,7 +725,6 @@
       start: document.getElementById('ish-start').value,
       end: document.getElementById('ish-end').value,
       kc: document.getElementById('ish-kc').value,
-      fp: document.getElementById('ish-fp').value,
       irrigationEffectivePct: readIrrigationEffectivePct(),
       macro: document.getElementById('ish-macro').checked,
       weeks: weeks
@@ -747,7 +737,6 @@
     if (d.start) document.getElementById('ish-start').value = d.start;
     if (d.end != null) document.getElementById('ish-end').value = d.end;
     if (d.kc != null) document.getElementById('ish-kc').value = d.kc;
-    if (d.fp != null) document.getElementById('ish-fp').value = d.fp;
     var effEl = document.getElementById('ish-irr-eff');
     if (effEl) {
       effEl.value = String(
@@ -815,7 +804,6 @@
     var startDefault = ISH.addDaysIso(today, -84);
     document.getElementById('ish-start').value = startDefault;
     document.getElementById('ish-end').value = today;
-    document.getElementById('ish-fp').value = String(ISH.DEFAULT_FP);
     var effEl0 = document.getElementById('ish-irr-eff');
     if (effEl0) effEl0.value = String(ISH.DEFAULT_IRRIGATION_EFFECTIVE_PCT);
 
@@ -825,7 +813,7 @@
     document.getElementById('ish-btn-geo').addEventListener('click', useMyLocation);
     document.getElementById('ish-btn-fetch').addEventListener('click', fetchClimate);
     document.getElementById('ish-tbody').addEventListener('input', onTableInput);
-    ['ish-start', 'ish-end', 'ish-kc', 'ish-fp', 'ish-irr-eff', 'ish-macro', 'ish-lat', 'ish-lng'].forEach(function (id) {
+    ['ish-start', 'ish-end', 'ish-kc', 'ish-irr-eff', 'ish-macro', 'ish-lat', 'ish-lng'].forEach(function (id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.addEventListener('change', function () {
@@ -833,7 +821,7 @@
         recalculate();
       });
       el.addEventListener('input', function () {
-        if (id === 'ish-kc' || id === 'ish-fp' || id === 'ish-irr-eff' || id === 'ish-macro') recalculate();
+        if (id === 'ish-kc' || id === 'ish-irr-eff' || id === 'ish-macro') recalculate();
       });
     });
 

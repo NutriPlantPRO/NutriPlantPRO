@@ -458,9 +458,9 @@
   <script src="hidroponia-functions.js?v=20260930pheno2"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
-  <script src="assets/np-ish-core.js?v=20260916wsi"></script>
+  <script src="assets/np-ish-core.js?v=20261011sub"></script>
   <script src="assets/np-soil-water-bridge.js?v=20260801y"></script>
-  <script src="climate-functions.js?v=20260916wsi"></script>
+  <script src="climate-functions.js?v=20261011sub2"></script>
   <script src="analysis-report-render.js?v=20260924meqSum"></script>
   <script src="assets/np-vpd-range-charts.js?v=20260803a"></script>
   <script src="dashboard.js?v=20260930pheno"></script>
@@ -5589,7 +5589,7 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20261011scroll';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20261011gap';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
         // Misma herramienta + misma versión de cache. Si solo cambia v=, recarga una vez (no en cada apertura).
@@ -7902,7 +7902,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20261011scroll" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20261011gap" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7951,7 +7951,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ionometroSeguimientoFrame" src="seguimiento-ionometro-free.html?embed=dashboard&v=20261011brix2" title="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="ionometroSeguimientoFrame" src="seguimiento-ionometro-free.html?embed=dashboard&v=20261011brixblue" title="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -8047,7 +8047,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=dashboard&v=20260919riegoCol" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
+        <iframe id="ishRendimientoToolFrame" src="ish-rendimiento-free.html?embed=dashboard&v=20261011sub2" title="Rendimiento hídrico (ISH)" data-i18n-title="dashboard.tool_ish" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;" allow="geolocation 'self'"></iframe>
       </div>
     </div>
   </div>

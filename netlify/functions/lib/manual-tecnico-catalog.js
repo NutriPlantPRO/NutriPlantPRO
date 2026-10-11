@@ -155,7 +155,7 @@ module.exports = {
       url: `${BASE}/capitulos/ish-rendimiento-hidrico.html`,
       pillar: 'E — Agua y clima',
       summary:
-        'ISH = 100×[1−Σ(D+Fp·E)/ΣETc]. Semanas (máx. 52); lluvia/ET₀ satélite o manual; Kc; Fp default 0,25; riego mm↔m³/ha + % efectivo. Curva de techo de rendimiento por agua (solo baja). Gratis + Clima PRO. ≠ lámina/balance de periodo.',
+        'ISH = 100×[1−Σ Déficit/ΣETc]. Semanas (máx. 52); lluvia/ET₀ satélite o manual; Kc; el exceso se muestra como drenaje y no resta (criterio FAO). Riego mm↔m³/ha + % efectivo. Curva de techo de rendimiento por agua (solo baja con el déficit). Gratis + Clima PRO. ≠ lámina/balance de periodo.',
       status: 'published'
     },
     {
