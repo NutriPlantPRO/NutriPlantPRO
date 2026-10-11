@@ -304,7 +304,7 @@
     </div>
     <div class="workspace">
       <section class="sheet">
-        <p class="sheet-lead" data-es="Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento. °Bx es grados Brix del refractómetro: pecíolo, foliar o savia." data-en="Type the meter number. For nutrients that is ppm; meq appears below. If there are two forms, pick ion or element. °Bx is refractometer Brix: petiole, foliar or sap.">Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento. °Bx es grados Brix del refractómetro: pecíolo, foliar o savia.</p>
+        <p class="sheet-lead" data-es="Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento. °Bx aparece en pecíolo, foliar, savia y extracto de raíz." data-en="Type the meter number. For nutrients that is ppm; meq appears below. If there are two forms, pick ion or element. °Bx shows for petiole, foliar, sap and root extract.">Escribe el número del equipo. En nutrientes es ppm; debajo sale el meq. Si hay dos formas, elige ion o elemento. °Bx aparece en pecíolo, foliar, savia y extracto de raíz.</p>
         <div class="sample-row">
           <label><span data-es="Muestra" data-en="Sample">Muestra</span>
             <select id="sampleType" aria-label="Tipo de muestra"></select>
@@ -324,7 +324,7 @@
       <section class="charts" id="charts" aria-label="Gráficas de nutrientes y de pH, conductividad y grados Brix"></section>
     </div>
   </div>
-  <script src="assets/np-ionometro-core.js?v=20261011brix"></script>
+  <script src="assets/np-ionometro-core.js?v=20261011brix2"></script>
   <script>
   (function () {
     'use strict';
@@ -384,11 +384,12 @@
     }
 
     function renderHead(table) {
+      var showBrix = core.sampleHasBrix(table.sample);
       var groups = '<tr>' +
         '<th class="row-head" rowspan="2">Lectura</th>' +
         '<th class="col-ph" rowspan="2">pH</th>' +
         '<th class="col-ec" rowspan="2">CE<br><span>dS/m</span></th>' +
-        '<th class="col-brix" rowspan="2">°Bx<br><span>Brix</span></th>' +
+        (showBrix ? '<th class="col-brix" rowspan="2">°Bx<br><span>Brix</span></th>' : '') +
         '<th class="group-an" colspan="3">Aniones</th>' +
         '<th class="group-cat" colspan="3">Cationes</th>' +
         '<th class="group-other" colspan="3">Otros</th>' +
@@ -457,12 +458,19 @@
       return '<span class="ref-dot ' + level + '" title="' + titles[level] + '"></span>';
     }
 
+    function visibleColumns(table) {
+      return core.COLUMNS.filter(function (col) {
+        return col.id !== 'brix' || core.sampleHasBrix(table && table.sample);
+      });
+    }
+
     function renderBody(table) {
       var html = '';
+      var columns = visibleColumns(table);
       table.rows.forEach(function (row, index) {
         html += '<tr data-row="' + index + '"' + (index === selected ? ' class="selected"' : '') + '>';
         html += '<td class="row-title"><input class="name" data-field="label" placeholder="' + tx('Nombre', 'Name') + '" value="' + escapeAttr(row.label) + '" aria-label="' + tx('Título de la lectura', 'Reading title') + '"></td>';
-        core.COLUMNS.forEach(function (col) {
+        columns.forEach(function (col) {
           var ion = col.kind === 'ion';
           var placeholder = col.id === 'ph' ? 'pH' : (col.id === 'ec' ? 'dS/m' : (col.id === 'brix' ? '°Bx' : 'ppm'));
           var tone = col.id === 'ph' ? ' cell-ph' : (col.id === 'ec' ? ' cell-ec' : (col.id === 'brix' ? ' cell-brix' : ''));
@@ -726,6 +734,7 @@
       ];
       var active = [];
       specs.forEach(function (spec) {
+        if (spec.id === 'brix' && !core.sampleHasBrix(table.sample)) return;
         var values = core.columnValues(table.rows, spec.id, table.forms);
         if (!core.hasAny(values)) return;
         active.push({
@@ -830,7 +839,8 @@
       extract21: '2:1 extract',
       petiole: 'Petiole',
       foliar: 'Foliar',
-      sap: 'Sap'
+      sap: 'Sap',
+      root: 'Root extract'
     };
 
     function renderSample(table) {
@@ -972,7 +982,7 @@
       row[input.getAttribute('data-field')] = input.value;
       var vals = tr.querySelectorAll('.meq-val');
       var table = activeTable();
-      core.COLUMNS.forEach(function (col, index) {
+      visibleColumns(table).forEach(function (col, index) {
         vals[index].textContent = col.kind === 'ion' ? meqText(table, row, col.id) : '';
       });
       paintDots(table);
@@ -1028,7 +1038,8 @@
           var existing = el.querySelector('.ref-dot');
           if (existing) existing.remove();
           if (!row) return;
-          var level = levelFor(table, row, core.COLUMNS[i].id);
+          var col = visibleColumns(table)[i];
+          var level = col ? levelFor(table, row, col.id) : null;
           if (!level) return;
           el.insertAdjacentHTML('beforeend', dotHtml(level));
         });
@@ -1074,8 +1085,7 @@
     document.getElementById('sampleType').addEventListener('change', function (event) {
       var table = activeTable();
       table.sample = event.target.value;
-      paintDots(table);
-      renderNote(table);
+      render();
       scheduleSave();
     });
 

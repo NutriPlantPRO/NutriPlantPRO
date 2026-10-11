@@ -66,12 +66,13 @@
   }
 
   var SAMPLE_TYPES = [
-    { id: 'solution', label: 'Solución nutritiva', band: true },
-    { id: 'paste', label: 'Extracto de pasta saturada', band: true },
-    { id: 'extract21', label: 'Extracto 2:1', band: false },
-    { id: 'petiole', label: 'Pecíolo', band: false },
-    { id: 'foliar', label: 'Foliar', band: false },
-    { id: 'sap', label: 'Savia', band: false }
+    { id: 'solution', label: 'Solución nutritiva', band: true, brix: false },
+    { id: 'paste', label: 'Extracto de pasta saturada', band: true, brix: false },
+    { id: 'extract21', label: 'Extracto 2:1', band: false, brix: false },
+    { id: 'petiole', label: 'Pecíolo', band: false, brix: true },
+    { id: 'foliar', label: 'Foliar', band: false, brix: true },
+    { id: 'sap', label: 'Savia', band: false, brix: true },
+    { id: 'root', label: 'Extracto de raíz', band: false, brix: true }
   ];
 
   /** ppm del elemento. Franja NutriPlant de solución de invernadero intensivo. */
@@ -96,6 +97,10 @@
 
   function sampleHasBand(id) {
     return !!sampleType(id).band;
+  }
+
+  function sampleHasBrix(id) {
+    return !!sampleType(id).brix;
   }
 
   function defaultRefBands() {
@@ -244,6 +249,7 @@
     REF_IDS: REF_IDS,
     sampleType: sampleType,
     sampleHasBand: sampleHasBand,
+    sampleHasBrix: sampleHasBrix,
     defaultRefBands: defaultRefBands,
     elementalPpm: elementalPpm,
     bandInForm: bandInForm,

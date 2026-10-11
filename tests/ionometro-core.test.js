@@ -77,7 +77,14 @@ module.exports = [
       assert.equal(core.meqFromPpm('brix', null, 8.5), null);
       var prop = core.proportions({ brix: 10, ec: 1.2, k: 391 }, core.defaultForms());
       close(prop.ecNote.ec, 1.2, 0.01);
-      assert.equal(core.column('brix').kind, 'brix');
+      assert.equal(core.sampleHasBrix('solution'), false);
+      assert.equal(core.sampleHasBrix('paste'), false);
+      assert.equal(core.sampleHasBrix('extract21'), false);
+      assert.equal(core.sampleHasBrix('petiole'), true);
+      assert.equal(core.sampleHasBrix('foliar'), true);
+      assert.equal(core.sampleHasBrix('sap'), true);
+      assert.equal(core.sampleHasBrix('root'), true);
+      assert.equal(core.sampleHasBand('root'), false);
     }
   },
   {

@@ -1466,6 +1466,9 @@
         var meqChart = rootEl.querySelector('[data-hydro-cycle-chart-meq]');
         var ppmChart = rootEl.querySelector('[data-hydro-cycle-chart-ppm]');
         if (tableHost) {
+          var prevScroll = tableHost.querySelector('.hydro-table-scroll');
+          var savedScrollLeft = prevScroll ? prevScroll.scrollLeft : 0;
+          var savedScrollTop = prevScroll ? prevScroll.scrollTop : 0;
           var head =
             '<thead><tr>' +
             '<th>' + t('Etapa', 'Stage') + '</th>' +
@@ -1500,6 +1503,18 @@
           }).join('');
           tableHost.innerHTML =
             '<div class="hydro-table-scroll"><table class="hydro-table hydro-cycle-table">' + head + '<tbody>' + body + '</tbody></table></div>';
+          var nextScroll = tableHost.querySelector('.hydro-table-scroll');
+          if (nextScroll && (savedScrollLeft || savedScrollTop)) {
+            nextScroll.scrollLeft = savedScrollLeft;
+            nextScroll.scrollTop = savedScrollTop;
+            var keepLeft = savedScrollLeft;
+            var keepTop = savedScrollTop;
+            requestAnimationFrame(function () {
+              if (!nextScroll.isConnected) return;
+              nextScroll.scrollLeft = keepLeft;
+              nextScroll.scrollTop = keepTop;
+            });
+          }
         }
         paintTernary(ternHost, api.getActive(), api, opts);
         renderCharts(meqChart, ppmChart, state.stages);

@@ -454,7 +454,7 @@
   <script src="assets/hydro-solution-catalog.js"></script>
   <script src="assets/hydro-acid-legend.js?v=20260830citricNoVol"></script>
   <script src="assets/hydro-paste-compare-report.js?v=20260919pasta"></script>
-  <script src="assets/hydro-cycle-program.js?v=20260930pheno"></script>
+  <script src="assets/hydro-cycle-program.js?v=20261011scroll"></script>
   <script src="hidroponia-functions.js?v=20260930pheno2"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
   <script src="assets/np-irrigation-balance-core.js?v=20260821kcQuiet"></script>
@@ -5589,7 +5589,7 @@ CONTRATO:
       if (frame) {
         var tab = opts.tab === 'program' || opts.tab === 'cycle' ? 'program' : (opts.tab || '');
         // URL estable: sin tab/only. El modo se controla por postMessage (evita reload y parpadeo).
-        var base = 'hidro-solucion-free.html?embed=dashboard&v=20260927tabs';
+        var base = 'hidro-solucion-free.html?embed=dashboard&v=20261011scroll';
         var cur = '';
         try { cur = frame.getAttribute('src') || ''; } catch (e) { cur = ''; }
         // Misma herramienta + misma versión de cache. Si solo cambia v=, recarga una vez (no en cada apertura).
@@ -7902,7 +7902,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260927tabs" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20261011scroll" title="Diseño de solución nutritiva" data-i18n-title="dashboard.tool_hydro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -7951,7 +7951,7 @@ CONTRATO:
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="ionometroSeguimientoFrame" src="seguimiento-ionometro-free.html?embed=dashboard&v=20261011brix" title="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="ionometroSeguimientoFrame" src="seguimiento-ionometro-free.html?embed=dashboard&v=20261011brix2" title="Seguimiento con ionómetro" data-i18n-title="dashboard.tool_ionometro" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
