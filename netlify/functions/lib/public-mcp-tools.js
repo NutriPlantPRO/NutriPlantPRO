@@ -12,7 +12,7 @@ const PUBLIC_INSTRUCTIONS = [
   'Método: dato→interpretación→ajuste→programa→seguimiento. Pregunta de método → lookup_chapter (flujo o tema) antes de improvisar.',
   'Cifra → tool. No inventes kPa, g/m³, kg/ha, labs ni clima. Cita URL del capítulo; si hay UI, también URL de herramienta gratis (lookup_free_tool / list_catalog).',
   'Cálculo free (oleadas 2–3): VPD punto, triángulos meq, DU, foliar, ISH, óxido, CIC, dureza, lámina, granular, N mineralizable, pulso hidro, magnitudes, solubilidad/IS, Mulder, extracción etapa, agua suelo, compatibilidad, composición fórmula, pronóstico punto, huella carbono.',
-  'Con sesión: get_my_project (expediente + flow_status + deep_links + cross foliar/VPD/programa). Tools: interpret_project_cross, project_deep_links. Solo su JWT.',
+  'Con sesión: get_my_project (expediente + flow_status + deep_links + cross foliar/VPD/programa). Tools: interpret_project_cross, project_deep_links. Solo su JWT. Lo que venga del proyecto está completo: fertilizantes, etapas del ciclo, aplicaciones granulares, materiales y extracción. No digas que solo viste una parte ni pidas otra consulta para completar esa lista. En laboratorio, la primera respuesta usa el reporte más reciente. El chat no se cierra: si el usuario pide más detalle, el historial u otro análisis, vuelve a llamar get_my_project (latest_only false si pide reportes anteriores). No digas que está bloqueado.',
   'Sin sesión: método + free tools; cross_manual_signals si pasan DOP/VPD/meq a mano.',
   'NO existen aquí: admin, Socio, Plan PRO, Nutri PRO privado, Invest PRO, AirCI, pagos, otros clientes.',
   'No mezclar: ISH≠lámina≠pulso≠VPD≠ventana foliar≠pronóstico; suelo kg/ha≠enmiendas CIC (también “balance de bases” / “ajuste de bases”); % meq solución≠% CIC; seguimiento con ionómetro ≠ diseño de solución ≠ análisis de laboratorio ≠ foliar DOP.',
@@ -491,7 +491,7 @@ const TOOLS = [
   {
     name: 'get_my_project',
     description:
-      'Expediente del suscriptor (solo lectura): resumen, flow_status, labs, enmiendas, programas, VPD/clima, extracción, deep_links al dashboard y cruce foliar↔VPD↔programa.',
+      'Expediente del suscriptor (solo lectura): resumen, flow_status, labs, enmiendas, programas, VPD/clima, extracción, deep_links al dashboard y cruce foliar↔VPD↔programa. Programas, fertilizantes, etapas y extracción van completos.',
     auth: true,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: {
@@ -506,7 +506,7 @@ const TOOLS = [
         },
         type: { type: 'string', description: 'Filtro lab: suelo | foliar | agua | fruta | extracto_pasta | solucion_nutritiva' },
         stage_index: { type: 'number', description: 'Etapa fertirriego (0-based)' },
-        latest_only: { type: 'boolean', description: 'Solo último reporte por tipo (default true)' },
+        latest_only: { type: 'boolean', description: 'Solo último reporte por tipo (default true). false = historial completo si el usuario pide más análisis.' },
         cross: { type: 'boolean', description: 'Forzar bloque cross aunque section no sea all' }
       }
     }

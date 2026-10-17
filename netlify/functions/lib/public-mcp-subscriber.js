@@ -228,7 +228,7 @@ async function getMyProject(user, params) {
     return {
       ok: true,
       multiple: true,
-      candidates: matches.slice(0, 8).map((r) => ({ id: r.id, name: r.name || r.title, crop: cropOf(r.data) }))
+      candidates: matches.map((r) => ({ id: r.id, name: r.name || r.title, crop: cropOf(r.data) }))
     };
   }
   const row = matches[0];

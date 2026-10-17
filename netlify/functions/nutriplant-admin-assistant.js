@@ -350,15 +350,34 @@ function countActiveUsers30d(profiles, visits) {
   return activeIds.size;
 }
 
-async function fetchProfiles(supabase) {
-  const selects = [PROFILE_SELECT, PROFILE_SELECT_FALLBACK];
+async function fetchAllProfiles(supabase, selects) {
+  const pageSize = 1000;
   let lastError = null;
   for (let i = 0; i < selects.length; i++) {
-    const { data, error } = await supabase.from('profiles').select(selects[i]);
-    if (!error) return data || [];
-    lastError = error;
+    const all = [];
+    let failed = false;
+    for (let page = 0; page < 20; page++) {
+      const from = page * pageSize;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(selects[i])
+        .range(from, from + pageSize - 1);
+      if (error) {
+        lastError = error;
+        failed = true;
+        break;
+      }
+      const rows = data || [];
+      all.push.apply(all, rows);
+      if (rows.length < pageSize) return all;
+    }
+    if (!failed) return all;
   }
   throw new Error('profiles: ' + ((lastError && lastError.message) || lastError));
+}
+
+async function fetchProfiles(supabase) {
+  return fetchAllProfiles(supabase, [PROFILE_SELECT, PROFILE_SELECT_FALLBACK]);
 }
 
 const PROFILE_STATS_SELECT =
@@ -366,14 +385,7 @@ const PROFILE_STATS_SELECT =
 const PROFILE_STATS_SELECT_FALLBACK = 'id, email, name, is_admin, subscription_status, last_login, last_payment_date, next_payment_date';
 
 async function fetchProfilesForAdminStats(supabase) {
-  const selects = [PROFILE_STATS_SELECT, PROFILE_STATS_SELECT_FALLBACK];
-  let lastError = null;
-  for (let i = 0; i < selects.length; i++) {
-    const { data, error } = await supabase.from('profiles').select(selects[i]);
-    if (!error) return data || [];
-    lastError = error;
-  }
-  throw new Error('profiles: ' + ((lastError && lastError.message) || lastError));
+  return fetchAllProfiles(supabase, [PROFILE_STATS_SELECT, PROFILE_STATS_SELECT_FALLBACK]);
 }
 
 async function fetchRecentVisitsForActive30d(supabase) {
@@ -538,21 +550,24 @@ async function handleListUsers(supabase, params) {
   list = applyBillingDateFilters(list, params);
   list = list.slice().sort(compareByNextPayment);
 
-  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 200, 1), 400);
-  const truncated = list.length > limit;
-  list = list.slice(0, limit);
+  const offset = Math.max(parseInt(params.offset, 10) || 0, 0);
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 1000, 1), 1000);
+  const truncated = list.length > offset + limit;
+  const page = list.slice(offset, offset + limit);
 
   return {
     ok: true,
     domain: 'admin',
-    count: list.length,
+    count: page.length,
+    offset,
+    next_offset: truncated ? offset + page.length : null,
     truncated,
     total_users: subscribers.length,
     subscriptions: subscriptionStatusCounts(subscribers),
     billing: billingSummaryFromUsers(subscribers),
-    users: list.map((u) => publicUserRow(u, projectsByUser[u.id] || 0)),
+    users: page.map((u) => publicUserRow(u, projectsByUser[u.id] || 0)),
     how_to_answer:
-      'Tabla: Nombre | Estado | Último pago (last_payment_date) | Próximo pago (next_payment_date). Fechas YYYY-MM-DD tal cual. null = «sin fecha» (NO inventar ni sumar 5 meses).'
+      'Tabla: Nombre | Estado | Último pago (last_payment_date) | Próximo pago (next_payment_date). Fechas YYYY-MM-DD tal cual. null = «sin fecha» (NO inventar ni sumar 5 meses). Si truncated es true, faltan usuarios. Si piden el resto, vuelve a llamar list_users con offset = next_offset. No digas que está bloqueado.'
   };
 }
 
@@ -576,20 +591,23 @@ async function handleSubscriptionRoster(supabase, params) {
   list = applyBillingDateFilters(list, params);
   list = list.slice().sort(compareByNextPayment);
 
-  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 200, 1), 400);
-  const truncated = list.length > limit;
-  list = list.slice(0, limit);
+  const offset = Math.max(parseInt(params.offset, 10) || 0, 0);
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 1000, 1), 1000);
+  const truncated = list.length > offset + limit;
+  const page = list.slice(offset, offset + limit);
 
   return {
     ok: true,
     domain: 'admin',
     generated_at: new Date().toISOString(),
     total_users: subscribers.length,
-    count: list.length,
+    count: page.length,
+    offset,
+    next_offset: truncated ? offset + page.length : null,
     truncated,
     subscriptions: subscriptionStatusCounts(subscribers),
     billing: billingSummaryFromUsers(subscribers),
-    users: list.map((u) => ({
+    users: page.map((u) => ({
       name: u.name || (u.email ? String(u.email).split('@')[0] : 'Sin nombre'),
       email: u.email || '',
       status: (u.subscription_status || 'inactive').toLowerCase(),
@@ -599,7 +617,7 @@ async function handleSubscriptionRoster(supabase, params) {
       amount_usd: parseFloat(u.subscription_amount) || 0
     })),
     how_to_answer:
-      'Empieza con total_users, overdue_count y due_next_30_days_count. Luego tabla: Nombre | Estado | Último pago | Próximo pago. Fechas YYYY-MM-DD tal cual. null = «sin fecha» (NO inventar ni calcular +5 meses). Ciclo real = $49 / 5 meses; paid_cycles = cobros PayPal reales.'
+      'Empieza con total_users, overdue_count y due_next_30_days_count. Luego tabla: Nombre | Estado | Último pago | Próximo pago. Fechas YYYY-MM-DD tal cual. null = «sin fecha» (NO inventar ni calcular +5 meses). Ciclo real = $49 / 5 meses; paid_cycles = cobros PayPal reales. Si truncated es true y piden el resto, vuelve a llamar subscription_roster con offset = next_offset. No digas que está bloqueado.'
   };
 }
 

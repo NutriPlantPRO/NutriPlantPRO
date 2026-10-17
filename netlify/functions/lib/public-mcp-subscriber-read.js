@@ -218,7 +218,7 @@ function labsDeep(data, opts) {
   const latestOnly = !(opts && (opts.latest_only === false || opts.latest_only === 'false'));
   function pack(list, summarize) {
     const arr = Array.isArray(list) ? list.filter((x) => x && typeof x === 'object') : [];
-    const chosen = latestOnly ? (latestOf(arr) ? [latestOf(arr)] : []) : arr.slice(0, 5);
+    const chosen = latestOnly ? (latestOf(arr) ? [latestOf(arr)] : []) : arr;
     return {
       reports_count: arr.length,
       latest_only: latestOnly,
@@ -233,7 +233,7 @@ function labsDeep(data, opts) {
     extracto_pasta: pack(data.extractoPastaAnalyses, summarizePastaReport),
     solucion_nutritiva: pack(data.solucionNutritivaAnalyses, summarizeSolucionReport),
     note:
-      'Labs del proyecto (solo lectura). suelo kg/ha ≠ enmiendas CIC. foliar DOP ≠ VPD. solucion_nutritiva lab ≠ hidroponia.'
+      'Labs del proyecto (solo lectura). Por defecto el reporte más reciente; reports_count es el total. Si piden historial o más análisis, se vuelve a consultar con latest_only false. suelo kg/ha ≠ enmiendas CIC. foliar DOP ≠ VPD. solucion_nutritiva lab ≠ hidroponia.'
   };
 }
 
@@ -395,27 +395,28 @@ function hydroDeep(data) {
       program_name: cp.programName || null,
       stages_count: cp.stages.length,
       active_stage_id: cp.activeStageId || null,
-      stages: cp.stages.slice(0, 12).map((st) => stageBrief(st, cp.activeStageId && st.id === cp.activeStageId))
+      stages: cp.stages.map((st) => stageBrief(st, cp.activeStageId && st.id === cp.activeStageId))
     };
   }
   return {
     has_program: !!(stages.length || fertilizers.length || cycle),
     crop_type: h.cropType || h.cultivo || h.solutionName || null,
     design_stages_count: stages.length,
+    design_stages: stages.map((st) => stageBrief(st, !!(active && st && st.id === active.id))),
     active_design_stage: stageBrief(active, true),
     fertilizers_count: fertilizers.length,
-    fertilizers_sample: fertilizers.slice(0, 8).map((f) => ({
+    fertilizers: fertilizers.map((f) => ({
       id: f.id || f.materialId || null,
       name: f.name || f.materialName || null,
       tank: f.tank || null,
-      dose: f.dose != null ? f.dose : f.amount != null ? f.amount : null
+      dose_g_per_m3: f.dose != null ? numOrNull(f.dose) : f.amount != null ? numOrNull(f.amount) : null
     })),
     volume_water_m3: numOrNull(h.volumeWaterM3),
     tank_volume_L: numOrNull(h.tankVolumeL),
     injection_L_per_m3: numOrNull(h.injectionRateLperM3),
     cycle_program: cycle,
     note:
-      'Diseño activo (stages/fertilizers) ≠ Programa del ciclo (cycleProgram) ≠ lab solucion_nutritiva.'
+      'fertilizers es la lista completa del diseño activo, no una muestra. Diseño activo ≠ Programa del ciclo (cycleProgram) ≠ lab solucion_nutritiva.'
   };
 }
 
@@ -431,12 +432,12 @@ function granularDeep(data) {
     has_program: apps.length > 0 || !!req || !!g.cropType,
     crop_type: g.cropType || null,
     applications_count: apps.length,
-    applications: apps.slice(0, 12).map((ap, i) => ({
+    applications: apps.map((ap, i) => ({
       index: i,
       name: ap.name || ap.label || ap.stage || 'Aplicación ' + (i + 1),
       dose_kg_ha: numOrNull(ap.doseKgHa != null ? ap.doseKgHa : ap.dose),
       materials: Array.isArray(ap.materials)
-        ? ap.materials.slice(0, 8).map((m) => ({
+        ? ap.materials.map((m) => ({
             name: m.name || m.id || null,
             pct: numOrNull(m.pct != null ? m.pct : m.percent),
             kg_ha: numOrNull(m.kgHa != null ? m.kgHa : m.dose)
@@ -502,7 +503,7 @@ function climateDeep(data) {
     rolling_saved: roll
       ? {
           has_data: true,
-          keys: Object.keys(roll).slice(0, 8)
+          keys: Object.keys(roll)
         }
       : { has_data: false },
     tiempo_actual_guardado: live
@@ -524,7 +525,7 @@ function extractionDeep(data) {
   const nutrients = Array.isArray(raw.nutrients) ? raw.nutrients : [];
   const stages = Array.isArray(raw.stages) ? raw.stages : [];
   const pct = raw.pct && typeof raw.pct === 'object' ? raw.pct : {};
-  const by_stage = stages.slice(0, 12).map((st, i) => {
+  const by_stage = stages.map((st, i) => {
     const name = String(st || '').trim() || 'Etapa ' + (i + 1);
     const kg_ha = {};
     nutrients.forEach((n) => {
