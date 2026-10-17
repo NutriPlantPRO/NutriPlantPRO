@@ -147,7 +147,7 @@ module.exports = {
       file: 'enmienda-free.html',
       lsKey: 'nutriplant_free_enmienda_v1',
       summary:
-        'Cationes iniciales/objetivo (%), CIC, densidad, profundidad, pH, % alcance. Enmiendas: yeso, cal, SOP, MgSO₄. Rangos ideales K 3–7%, Ca 65–75%, Mg 10–15%.'
+        'Cationes iniciales/objetivo (%), CIC, densidad, profundidad, pH, % alcance. Alias: balance de bases, ajuste de bases. Enmiendas: yeso, cal, SOP, MgSO₄. Rangos ideales K 3–7%, Ca 65–75%, Mg 10–15%.'
     },
     {
       id: 'granular_mix',

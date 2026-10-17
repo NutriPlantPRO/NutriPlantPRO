@@ -15,7 +15,8 @@ const PUBLIC_INSTRUCTIONS = [
   'Con sesión: get_my_project (expediente + flow_status + deep_links + cross foliar/VPD/programa). Tools: interpret_project_cross, project_deep_links. Solo su JWT.',
   'Sin sesión: método + free tools; cross_manual_signals si pasan DOP/VPD/meq a mano.',
   'NO existen aquí: admin, Socio, Plan PRO, Nutri PRO privado, Invest PRO, AirCI, pagos, otros clientes.',
-  'No mezclar: ISH≠lámina≠pulso≠VPD≠ventana foliar≠pronóstico; suelo kg/ha≠enmiendas CIC; % meq solución≠% CIC.',
+  'No mezclar: ISH≠lámina≠pulso≠VPD≠ventana foliar≠pronóstico; suelo kg/ha≠enmiendas CIC (también “balance de bases” / “ajuste de bases”); % meq solución≠% CIC; seguimiento con ionómetro ≠ diseño de solución ≠ análisis de laboratorio ≠ foliar DOP.',
+  'Seguimiento con ionómetro (🔬): si preguntan ionómetro, fotómetro, savia/pecíolo en ppm, °Bx de ese seguimiento o su semáforo, usa lookup_free_tool ionometro_seguimiento y lookup_chapter seguimiento-ionometro antes de improvisar. meq = ppm ÷ peso de la forma del encabezado (NO₃⁻ 62 o N 14, PO₄ 95 o P 31, SO₄²⁻ 48.03 o S 16.03, NH₄⁺ 18.04 o N 14; K 39.1, Ca 20.04, Mg 12.15, Na 22.99, Cl 35.45). Las ppm no se reescriben al cambiar forma o muestra. °Bx va con pH y CE, sin meq, solo en pecíolo, foliar, savia y extracto de raíz; no aparece en solución, pasta ni extracto 2:1. Franja NutriPlant (N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110 ppm del elemento) solo en solución y pasta, comparada en la forma: 280 como NO₃⁻ ≈ 63 N, debajo de 140–200; en pantalla se ve 620–886 ppm NO₃⁻. Steiner es % de solo lectura, no ppm. Un hueco no une la gráfica. Login: 1 tabla local. PRO: varias tablas en la cuenta, no en el proyecto. No inventes lecturas guardadas: este chat no las recibe; si el usuario no las dicta, dilo y enlaza la herramienta.',
   'Datos incompletos: declara huecos; no inventes programa ni lab. Orientativo: decide el agrónomo.'
 ].join(' ');
 
@@ -43,7 +44,7 @@ const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        q: { type: 'string', description: 'Id o nombre (vpd, lamina, enmienda, hidro_solucion, ISH…)' }
+        q: { type: 'string', description: 'Id o nombre (vpd, lamina, enmienda, hidro_solucion, ionometro_seguimiento, ISH…)' }
       },
       required: ['q']
     }
@@ -232,7 +233,7 @@ const TOOLS = [
   {
     name: 'soil_cic_balance',
     description:
-      'Balance CIC / enmienda: % actuales, ideal K5/Ca75/Mg15, Δ meq. Misma lógica que enmienda-free. ≠ kg/ha Análisis.',
+      'Balance CIC / enmienda / balance de bases / ajuste de bases: % actuales, ideal K5/Ca75/Mg15, Δ meq. Misma lógica que enmienda-free y la pestaña Balance de Bases. ≠ kg/ha Análisis.',
     auth: false,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: {
@@ -501,7 +502,7 @@ const TOOLS = [
         section: {
           type: 'string',
           description:
-            'all | labs | programs | enmiendas | vpd | clima | extraccion | cross | fertirriego | hidro | granular'
+            'all | labs | programs | enmiendas | balance_de_bases | ajuste_de_bases | vpd | clima | extraccion | cross | fertirriego | hidro | granular'
         },
         type: { type: 'string', description: 'Filtro lab: suelo | foliar | agua | fruta | extracto_pasta | solucion_nutritiva' },
         stage_index: { type: 'number', description: 'Etapa fertirriego (0-based)' },

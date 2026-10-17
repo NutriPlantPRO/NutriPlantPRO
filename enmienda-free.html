@@ -8,10 +8,10 @@
   <script src="assets/np-prefs.js"></script>
   <script src="assets/np-units-core.js?v=20260730a"></script>
   <script src="assets/np-agronomic-units.js?v=20260730a"></script>
-  <script src="assets/np-amendment-ui.js?v=20260730a"></script>
+  <script src="assets/np-amendment-ui.js?v=20261017ppm"></script>
   <script src="assets/free-tools-embed.js"></script>
   <title>Balance de enmiendas por CIC</title>
-  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="dashboard.css?v=20261017ppm" />
   <style>
     body {
       margin: 0;
@@ -170,14 +170,17 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <div></div>
           <div class="total-display">
-            <label>CIC Total:</label>
+            <div class="total-display-copy">
+              <label>CIC Total:</label>
+              <div class="cic-sum-note" id="cic-sum-note">Suma de los cationes de abajo</div>
+            </div>
             <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
           </div>
         </div>
         <div class="enmienda-units-note" role="note">
-          <strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y
+          <p class="enmienda-units-lead"><strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y
           <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica).
-          Captura los cationes del laboratorio en esas unidades; la CIC total suele venir en el reporte o como suma de cationes.
+          Captura los cationes del laboratorio en esas unidades. La CIC total es la suma de K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺ y Al³⁺ que coloques abajo.</p>
           <table>
             <thead>
               <tr>
@@ -197,36 +200,42 @@
           <div class="analysis-item cation-good">
             <label>K⁺:</label>
             <input type="number" id="k-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="cation-ppm" id="k-ppm">0 ppm</div>
             <div class="percent-display" id="k-percent">0.0%</div>
             <div class="status-icon" id="k-status">-</div>
           </div>
           <div class="analysis-item cation-good">
             <label>Ca²⁺:</label>
             <input type="number" id="ca-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="cation-ppm" id="ca-ppm">0 ppm</div>
             <div class="percent-display" id="ca-percent">0.0%</div>
             <div class="status-icon" id="ca-status">-</div>
           </div>
           <div class="analysis-item cation-good">
             <label>Mg²⁺:</label>
             <input type="number" id="mg-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="cation-ppm" id="mg-ppm">0 ppm</div>
             <div class="percent-display" id="mg-percent">0.0%</div>
             <div class="status-icon" id="mg-status">-</div>
           </div>
           <div class="analysis-item cation-acid">
             <label>H⁺:</label>
             <input type="number" id="h-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="cation-ppm" id="h-ppm">0 ppm</div>
             <div class="percent-display" id="h-percent">0.0%</div>
             <div class="status-icon" id="h-status">-</div>
           </div>
           <div class="analysis-item cation-salt">
             <label>Na⁺:</label>
             <input type="number" id="na-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="cation-ppm" id="na-ppm">0 ppm</div>
             <div class="percent-display" id="na-percent">0.0%</div>
             <div class="status-icon" id="na-status">-</div>
           </div>
           <div class="analysis-item cation-toxic">
             <label>Al³⁺:</label>
             <input type="number" id="al-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="cation-ppm" id="al-ppm">0 ppm</div>
             <div class="percent-display" id="al-percent">0.0%</div>
             <div class="status-icon" id="al-status">-</div>
           </div>
@@ -329,9 +338,35 @@
       const vals = ids.map(id => parseFloat(document.getElementById(id).value || 0));
       const cic = vals.reduce((a,b) => a + b, 0);
       document.getElementById('cic-total').value = cic.toFixed(2);
+      updateCationPpmHints();
       calculateCationPercentages(cic);
       updateCationStatusIcons();
       calculateAutomaticAdjustments();
+    }
+
+    function formatCationPpmFromMeq(meq, factor) {
+      var n = Number(meq);
+      if (!Number.isFinite(n)) return '—';
+      var ppm = n * factor;
+      var abs = Math.abs(ppm);
+      var text = (abs >= 10 || ppm === 0) ? String(Math.round(ppm)) : ppm.toFixed(1);
+      return text + ' ppm';
+    }
+
+    function updateCationPpmHints() {
+      [
+        ['k-initial', 'k-ppm', 391],
+        ['ca-initial', 'ca-ppm', 200.4],
+        ['mg-initial', 'mg-ppm', 121.5],
+        ['h-initial', 'h-ppm', 10.08],
+        ['na-initial', 'na-ppm', 230],
+        ['al-initial', 'al-ppm', 89.9]
+      ].forEach(function (row) {
+        var el = document.getElementById(row[1]);
+        if (!el) return;
+        var input = document.getElementById(row[0]);
+        el.textContent = formatCationPpmFromMeq(input ? input.value : 0, row[2]);
+      });
     }
 
     function calculateCationPercentages(cic) {

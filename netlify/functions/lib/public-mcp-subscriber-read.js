@@ -593,7 +593,7 @@ function buildDeepRead(data, params) {
   if (wantAll || section === 'labs' || section === 'analisis') {
     out.labs = labsDeep(data, params);
   }
-  if (wantAll || section === 'enmiendas' || section === 'amendments' || section === 'cic') {
+  if (wantAll || section === 'enmiendas' || section === 'amendments' || section === 'cic' || section === 'balance_de_bases' || section === 'ajuste_de_bases' || section === 'bases') {
     out.amendments = amendmentsDeep(data);
   }
   if (wantAll || section === 'programs' || section === 'programas' || section === 'fertirriego' || section === 'hidro' || section === 'granular') {

@@ -1708,7 +1708,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../assets/np-lectura-satelital.js?v=20260821chartWater"></script>
-    <script src="../assets/np-vpd-range-charts.js?v=20260803a"></script>
+    <script src="../assets/np-vpd-range-charts.js?v=20261017vpd"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
 <body class="admin-body">
@@ -15548,17 +15548,24 @@
                                     '</tbody></table>';
                                 const criticalTableHtml = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f9fafb;">' +
                                     '<th style="padding:8px;text-align:left;">Fecha/Hora</th><th style="padding:8px;text-align:right;">VPD</th><th style="padding:8px;text-align:right;">Temp</th>' +
-                                    '<th style="padding:8px;text-align:right;">HR</th><th style="padding:8px;text-align:left;">Tipo</th><th style="padding:8px;text-align:right;">Índice UV</th></tr></thead><tbody>' +
+                                    '<th style="padding:8px;text-align:right;">HR</th><th style="padding:8px;text-align:right;">Radiación</th><th style="padding:8px;text-align:left;">Tipo</th><th style="padding:8px;text-align:right;">Índice UV</th></tr></thead><tbody>' +
                                     critShown.map(function(r) {
-                                        const isHigh = r.type === 'high';
+                                        const vpdN = Number(r.vpd);
+                                        const isOptimal = r.type === 'optimal' || (r.type !== 'high' && r.type !== 'low' && Number.isFinite(vpdN) && vpdN >= 0.5 && vpdN <= 1.5);
+                                        const isHigh = !isOptimal && (r.type === 'high' || vpdN > 1.5);
+                                        const zoneColor = isOptimal ? '#15803d' : (isHigh ? '#b91c1c' : '#1d4ed8');
+                                        const zoneLabel = isOptimal ? 'Óptimo' : (isHigh ? 'Alto' : 'Bajo');
+                                        const radN = Number(r.shortwaveRadiationWm2);
+                                        const radTxt = Number.isFinite(radN) ? radN.toFixed(0) + ' W/m²' : '—';
                                         return '<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:8px;">' + escapeHtml(String(r.at || '—')) + '</td>' +
-                                            '<td style="padding:8px;text-align:right;font-weight:700;color:' + (isHigh ? '#b91c1c' : '#1d4ed8') + ';">' + Number(r.vpd || 0).toFixed(2) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;font-weight:700;color:' + zoneColor + ';">' + (Number.isFinite(vpdN) ? vpdN.toFixed(2) : '—') + '</td>' +
                                             '<td style="padding:8px;text-align:right;">' + Number(r.temperature || 0).toFixed(1) + '</td>' +
                                             '<td style="padding:8px;text-align:right;">' + Number(r.humidity || 0).toFixed(1) + '</td>' +
-                                            '<td style="padding:8px;color:' + (isHigh ? '#b91c1c' : '#1d4ed8') + ';font-weight:600;">' + (isHigh ? 'Alto' : 'Bajo') + '</td>' +
+                                            '<td style="padding:8px;text-align:right;">' + radTxt + '</td>' +
+                                            '<td style="padding:8px;color:' + zoneColor + ';font-weight:600;">' + zoneLabel + '</td>' +
                                             '<td style="padding:8px;text-align:right;">' + adminFormatUv(r.uvIndex) + ' ' + adminUvBadge(r.uvIndex) + '</td></tr>';
                                     }).join('') +
-                                    (critShown.length ? '' : '<tr><td colspan="6" style="padding:8px;color:#64748b;text-align:center;">Sin horas fuera de rango en este tramo.</td></tr>') +
+                                    (critShown.length ? '' : '<tr><td colspan="7" style="padding:8px;color:#64748b;text-align:center;">' + (critPrep.includesOptimal ? 'Sin horas en este tramo.' : 'Sin horas fuera de rango en este tramo.') + '</td></tr>') +
                                     '</tbody></table>';
                                 const shell = NPC ? NPC.buildInteractiveBlockShell({
                                     prefix: 'admin-vpd',

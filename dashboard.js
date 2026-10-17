@@ -1428,14 +1428,17 @@ function sectionTemplate(name) {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div></div>
               <div class="total-display">
-                <label><span class="notranslate" translate="no">CIC</span> Total:</label>
+                <div class="total-display-copy">
+                  <label><span class="notranslate" translate="no">CIC</span> Total:</label>
+                  <div class="cic-sum-note" id="cic-sum-note">Suma de los cationes de abajo</div>
+                </div>
                 <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
               </div>
             </div>
             <div class="enmienda-units-note" role="note">
-              <strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y
+              <p class="enmienda-units-lead"><strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y
               <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica).
-              Captura los cationes del laboratorio en esas unidades; la CIC total suele venir en el reporte o como suma de cationes.
+              Captura los cationes del laboratorio en esas unidades. La CIC total es la suma de K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺ y Al³⁺ que coloques abajo.</p>
               <table>
                 <thead>
                   <tr>
@@ -1455,36 +1458,42 @@ function sectionTemplate(name) {
               <div class="analysis-item cation-good">
                 <label class="notranslate" translate="no">K⁺:</label>
                 <input type="number" id="k-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="cation-ppm" id="k-ppm">0 ppm</div>
                 <div class="percent-display" id="k-percent">0.0%</div>
                 <div class="status-icon" id="k-status">-</div>
               </div>
               <div class="analysis-item cation-good">
                 <label class="notranslate" translate="no">Ca²⁺:</label>
                 <input type="number" id="ca-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="cation-ppm" id="ca-ppm">0 ppm</div>
                 <div class="percent-display" id="ca-percent">0.0%</div>
                 <div class="status-icon" id="ca-status">-</div>
               </div>
               <div class="analysis-item cation-good">
                 <label class="notranslate" translate="no">Mg²⁺:</label>
                 <input type="number" id="mg-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="cation-ppm" id="mg-ppm">0 ppm</div>
                 <div class="percent-display" id="mg-percent">0.0%</div>
                 <div class="status-icon" id="mg-status">-</div>
               </div>
               <div class="analysis-item cation-acid">
                 <label class="notranslate" translate="no">H⁺:</label>
                 <input type="number" id="h-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="cation-ppm" id="h-ppm">0 ppm</div>
                 <div class="percent-display" id="h-percent">0.0%</div>
                 <div class="status-icon" id="h-status">-</div>
               </div>
               <div class="analysis-item cation-salt">
                 <label class="notranslate" translate="no">Na⁺:</label>
                 <input type="number" id="na-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="cation-ppm" id="na-ppm">0 ppm</div>
                 <div class="percent-display" id="na-percent">0.0%</div>
                 <div class="status-icon" id="na-status">-</div>
               </div>
               <div class="analysis-item cation-toxic">
                 <label class="notranslate" translate="no">Al³⁺:</label>
                 <input type="number" id="al-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="cation-ppm" id="al-ppm">0 ppm</div>
                 <div class="percent-display" id="al-percent">0.0%</div>
                 <div class="status-icon" id="al-status">-</div>
               </div>
@@ -3195,7 +3204,7 @@ function renderProjectCards(p) {
     <div class="sb-chiprow">
       <button class="sb-chip" data-section="ubicacion">🛰️ <span class="text">${dashboardT('dashboard.radar', 'Radar Satelital')}</span></button>
       <button class="sb-chip" data-section="clima">🌤️ <span class="text">${dashboardT('dashboard.climate', 'Clima')}</span></button>
-      <button class="sb-chip" data-section="enmienda">🚜 <span class="text">${dashboardT('dashboard.amendment', 'Enmienda')}</span></button>
+      <button class="sb-chip np-dash-tooltip" data-section="enmienda" data-i18n-title="dashboard.amendment" data-i18n-aria-label="dashboard.amendment" data-np-tooltip="${dashboardT('dashboard.amendment', 'Balance de Bases')}" aria-label="${dashboardT('dashboard.amendment', 'Balance de Bases')}">⚖️ <span class="text">${dashboardT('dashboard.amendment', 'Balance de Bases')}</span></button>
       <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">${dashboardT('dashboard.granular', 'Nutrición Granular')}</span></button>
       <button class="sb-chip" data-section="fertirriego">📈 <span class="text">${dashboardT('dashboard.fertigation', 'Fertirriego')}</span></button>
       <button class="sb-chip" data-section="hidroponia">💧 <span class="text">${dashboardT('dashboard.hydroponics', 'Solución Nutritiva')}</span></button>
@@ -3352,6 +3361,8 @@ function calculateCIC() {
   if (cicInput) {
     cicInput.value = cic.toFixed(2);
   }
+
+  updateCationPpmHints();
   
   // Calcular porcentajes de cada catión
   calculateCationPercentages(cic);
@@ -3372,8 +3383,40 @@ function calculateCIC() {
   }
 }
 
+/** ppm en suelo = meq/100g × 10 × peso equivalente. Mismos pesos que el cálculo de enmienda. */
+function formatCationPpmFromMeq(meq, factor) {
+  var n = Number(meq);
+  if (!Number.isFinite(n)) return '—';
+  var ppm = n * factor;
+  var abs = Math.abs(ppm);
+  var text = (abs >= 10 || ppm === 0) ? String(Math.round(ppm)) : ppm.toFixed(1);
+  return text + ' ppm';
+}
+
+function updateCationPpmHints() {
+  var rows = [
+    ['k-initial', 'k-ppm', 391],
+    ['ca-initial', 'ca-ppm', 200.4],
+    ['mg-initial', 'mg-ppm', 121.5],
+    ['h-initial', 'h-ppm', 10.08],
+    ['na-initial', 'na-ppm', 230],
+    ['al-initial', 'al-ppm', 89.9]
+  ];
+  rows.forEach(function (row) {
+    var el = document.getElementById(row[1]);
+    if (!el) return;
+    el.textContent = formatCationPpmFromMeq(document.getElementById(row[0]) && document.getElementById(row[0]).value, row[2]);
+  });
+}
+
 function calculateCationPercentages(cic) {
-  if (cic === 0) return;
+  if (cic === 0) {
+    ['k-percent', 'ca-percent', 'mg-percent', 'h-percent', 'na-percent', 'al-percent'].forEach(function (id) {
+      var element = document.getElementById(id);
+      if (element) element.textContent = '0.0%';
+    });
+    return;
+  }
   
   const cations = [
     { id: 'k-percent', value: parseFloat(document.getElementById('k-initial')?.value || 0) },
@@ -16097,6 +16140,16 @@ function createReportHTML(selectedSections, chartImages, reportLanguage, reportU
           width: 100%;
           min-width: 0;
         }
+        .report-admin-table.report-vpd-hours-table {
+          width: 100%;
+          font-size: 8.5px;
+        }
+        .report-admin-table.report-vpd-hours-table th,
+        .report-admin-table.report-vpd-hours-table td {
+          padding: 3px 4px;
+          text-align: center;
+          vertical-align: middle;
+        }
         .report-admin-table.report-vpd-saved-table th,
         .report-admin-table.report-vpd-saved-table td { width: auto; }
         .report-admin-table.report-vpd-saved-table th:nth-child(1),
@@ -20715,13 +20768,33 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
         </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">⏱️ ${rt('Horas críticas', 'Critical hours')} (${criticalPrep.rows.length}) · ${getVpdCriticalDisplayLabel()}${criticalPrep.windowStart && criticalPrep.windowEnd ? ' · ' + reportEscapeHtml(reportFormatDate(criticalPrep.windowStart, reportLang)) + ' ' + rt('a', 'to') + ' ' + reportEscapeHtml(reportFormatDate(criticalPrep.windowEnd, reportLang)) : ''}</div>
-        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)} ${rt('Gráfica: barras tenues 24 h/día · línea azul VPD mín + hora · línea tinta VPD máx + hora.', 'Chart: faint 24 h/day bars · blue min VPD + time · ink max VPD + time.')}</div>` : ''}
+        <div class="report-block-title">⏱️ ${criticalPrep.includesOptimal ? rt('Todas las horas', 'All hours') + ' (' + criticalPrep.rows.length + ') · ' + rt('críticas', 'critical') + ' ' + (criticalPrep.criticalCount != null ? criticalPrep.criticalCount : criticalPrep.rows.length) : rt('Horas críticas', 'Critical hours') + ' (' + (criticalPrep.criticalCount != null ? criticalPrep.criticalCount : criticalPrep.rows.length) + ')'} · ${getVpdCriticalDisplayLabel()}${criticalPrep.windowStart && criticalPrep.windowEnd ? ' · ' + reportEscapeHtml(reportFormatDate(criticalPrep.windowStart, reportLang)) + ' ' + rt('a', 'to') + ' ' + reportEscapeHtml(reportFormatDate(criticalPrep.windowEnd, reportLang)) : ''}</div>
+        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)} ${rt('Gráfica: barras tenues 24 h/día · línea azul VPD mín + hora · línea tinta VPD máx + hora. Tabla: todas las horas del tramo. Verde = VPD óptimo (0.5–1.5), azul = bajo, tinta = alto.', 'Chart: faint 24 h/day bars · blue min VPD + time · ink max VPD + time. Table: every hour in the span. Green = optimal VPD (0.5–1.5), blue = low, ink = high.')}</div>` : ''}
         ${
           chartImages && chartImages.vpdCritical
             ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdCritical}" alt="${rt('Gráfica horas críticas VPD', 'VPD critical hours chart')}" style="display:block;width:100%;max-width:${window.NpVpdRangeCharts ? window.NpVpdRangeCharts.CRITICAL_CHART_PAGE_WIDTH : 680}px;margin:0 auto;max-height:320px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
             : '<div class="report-note">' + rt('Sin gráfica de distribución diaria (descarga la serie VPD en Clima antes del PDF).', 'No daily distribution chart (download the VPD series in Climate before the PDF).') + '</div>'
         }
+        <div class="report-vpd-table-wrap">
+        <table class="report-admin-table report-vpd-hours-table">
+          <thead>
+            <tr>
+              <th>${rt('Fecha/Hora', 'Date/Time')}</th>
+              <th>VPD</th>
+              <th>${rt('Temp', 'Temp')}</th>
+              <th>${rt('HR (%)', 'RH (%)')}</th>
+              <th>${rt('Radiación (W/m²)', 'Radiation (W/m²)')}</th>
+              <th>${rt('Tipo (VPD)', 'Type (VPD)')}</th>
+              <th>${rt('Índice UV', 'UV index')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(criticalPrep.rows && criticalPrep.rows.length)
+              ? vpdCriticalEventsRowHtml(criticalPrep.rows)
+              : '<tr><td colspan="7" style="text-align:center;color:#64748b;">' + (criticalPrep.includesOptimal ? rt('Sin horas en este tramo.', 'No hours in this span.') : rt('Sin horas fuera de rango en este tramo.', 'No out-of-range hours in this span.')) + '</td></tr>'}
+          </tbody>
+        </table>
+        </div>
       </div>
       ` : ''}
       ${savedRangeTables.length ? `
@@ -25896,7 +25969,7 @@ function prepareVpdCriticalRowsForDisplay(criticalRows, rangeEndDate, rangeStart
       rangeStartDate
     );
   }
-  return { rows: [], totalAll: 0, windowStart: null, windowEnd: null, rangeTruncated: false };
+  return { rows: [], totalAll: 0, totalCritical: 0, criticalCount: 0, includesOptimal: false, windowStart: null, windowEnd: null, rangeTruncated: false };
 }
 
 function buildVpdCriticalHoursScopeNoteHtml(prep) {
@@ -25910,7 +25983,7 @@ function getVpdCriticalValueColor(vpd) {
   if (!Number.isFinite(n)) return null;
   if (n < 0.5) return '#1d4ed8';
   if (n > 1.5) return '#7f1d1d';
-  return '#475569';
+  return '#15803d';
 }
 
 function buildVpdCriticalValueHtml(vpd) {
@@ -25923,6 +25996,7 @@ function buildVpdCriticalValueHtml(vpd) {
 function getVpdTypeMeta(type) {
   if (type === 'high') return { label: vpdUiT('Alto', 'High'), color: '#b91c1c', bg: '#fee2e2' };
   if (type === 'low') return { label: vpdUiT('Bajo', 'Low'), color: '#1d4ed8', bg: '#dbeafe' };
+  if (type === 'optimal') return { label: vpdUiT('Óptimo', 'Optimal'), color: '#15803d', bg: '#dcfce7' };
   return { label: vpdUiT('N/D', 'N/A'), color: '#64748b', bg: '#f1f5f9' };
 }
 
@@ -27322,11 +27396,26 @@ function aggregateVPDStressRows(hourlyRows, granularity) {
     });
 }
 
-function extractVPDCriticalEvents(hourlyRows) {
+function extractVPDCriticalEvents(hourlyRows, rangeStartDate, rangeEndDate) {
   if (!Array.isArray(hourlyRows)) return [];
+  var windowStart = rangeStartDate ? String(rangeStartDate).slice(0, 10) : null;
+  var windowEnd = windowStart ? addDaysIso(windowStart, VPD_CRITICAL_DISPLAY_DAYS - 1) : null;
+  var rangeEnd = rangeEndDate ? String(rangeEndDate).slice(0, 10) : null;
+  if (rangeEnd && windowEnd && compareIsoDates(windowEnd, rangeEnd) > 0) windowEnd = rangeEnd;
   return hourlyRows
-    .filter(function(r) { return Number(r.vpd) > 1.5 || Number(r.vpd) < 0.5; })
+    .filter(function(r) {
+      var v = Number(r && r.vpd);
+      if (!Number.isFinite(v)) return false;
+      var optimal = v >= 0.5 && v <= 1.5;
+      if (!optimal) return true;
+      if (!windowStart || !windowEnd) return true;
+      var d = r.date ? String(r.date).slice(0, 10) : (r.at ? String(r.at).slice(0, 10) : '');
+      if (!d) return true;
+      return compareIsoDates(d, windowStart) >= 0 && compareIsoDates(d, windowEnd) <= 0;
+    })
     .map(function(r) {
+      var v = Number(r.vpd);
+      var type = v > 1.5 ? 'high' : (v < 0.5 ? 'low' : 'optimal');
       return {
         at: formatEventTimestampLabel(r.at),
         date: r.date,
@@ -27335,7 +27424,7 @@ function extractVPDCriticalEvents(hourlyRows) {
         shortwaveRadiationWm2: Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2) : null,
         uvIndex: Number.isFinite(Number(r.uvIndex)) ? Number(r.uvIndex) : null,
         vpd: r.vpd,
-        type: Number(r.vpd) > 1.5 ? 'high' : 'low'
+        type: type
       };
     });
 }
@@ -27419,7 +27508,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
     '</tr></thead><tbody>' +
     (critShown.length
       ? vpdCriticalEventsRowHtml(critShown)
-      : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">' + vpdUiT('Sin horas fuera de rango en este tramo.', 'No out-of-range hours in this span.') + '</td></tr>') +
+      : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">' + (critPrep.includesOptimal ? vpdUiT('Sin horas en este tramo.', 'No hours in this span.') : vpdUiT('Sin horas fuera de rango en este tramo.', 'No out-of-range hours in this span.')) + '</td></tr>') +
     '</tbody></table>';
   var blockShell = NPC
     ? NPC.buildInteractiveBlockShell({
@@ -27448,16 +27537,17 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
     '<span style="font-size:12px;color:#7c2d12;">' +
     vpdUiT('Periodos:', 'Periods:') + ' ' +
     summaryRows.length +
-    ' · ' + vpdUiT('Eventos críticos (listados):', 'Critical events (listed):') + ' ' +
-    critShown.length +
-    (critPrep.rangeTruncated && critPrep.totalAll > critShown.length
-      ? ' / ' + critPrep.totalAll + ' ' + vpdUiT('en rango', 'in range')
+    ' · ' + (critPrep.includesOptimal
+      ? vpdUiT('Horas listadas:', 'Hours listed:') + ' ' + critShown.length + ' · ' + vpdUiT('críticas:', 'critical:') + ' ' + (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)
+      : vpdUiT('Eventos críticos (listados):', 'Critical events (listed):') + ' ' + (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)) +
+    (critPrep.rangeTruncated && (critPrep.totalCritical != null ? critPrep.totalCritical : critPrep.totalAll) > (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)
+      ? ' / ' + (critPrep.totalCritical != null ? critPrep.totalCritical : critPrep.totalAll) + ' ' + vpdUiT('críticas en el rango', 'critical in range')
       : '') +
     '</span></div>' +
     '<div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
     vpdUiT(
-      '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas críticas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio del periodo elegido).',
-      '<strong>Optimal range:</strong> 0.5 - 1.5 kPa · Series by period: table only · Critical hours: <strong>Chart / Table</strong> (30 days from the start of the chosen period).'
+      '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio; la tabla lista todas las horas, verde = VPD óptimo).',
+      '<strong>Optimal range:</strong> 0.5 - 1.5 kPa · Series by period: table only · Hours: <strong>Chart / Table</strong> (30 days from the start; the table lists every hour, green = optimal VPD).'
     ) +
     '</div>' +
     blockShell +
@@ -27517,13 +27607,19 @@ function renderSavedVPDRangeTableHtml(tbl) {
   var meta = (tbl && tbl.meta) ? tbl.meta : {};
   var summaryRows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
   var criticalRows = Array.isArray(tbl && tbl.criticalRows) ? tbl.criticalRows : [];
+  var criticalOnlyCount = criticalRows.filter(function (r) {
+    if (!r || r.type === 'optimal') return false;
+    if (r.type === 'high' || r.type === 'low') return true;
+    var v = Number(r.vpd);
+    return Number.isFinite(v) && (v > 1.5 || v < 0.5);
+  }).length;
   var delId = (tbl && tbl.id) ? String(tbl.id) : '';
   var delAttrEnc = delId ? encodeURIComponent(delId) : '';
   return `
     <div class="np-vpd-saved-row" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;margin-bottom:8px;">
     <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin:0;min-width:0;">
       <summary style="cursor:pointer;font-weight:600;color:#9a3412;display:block;list-style-position:outside;">
-        <span style="display:block;min-width:0;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}</span>
+        <span style="display:block;min-width:0;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalOnlyCount}</span>
       </summary>
       <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
@@ -27589,7 +27685,7 @@ async function fetchVPDRangeData(evt) {
     });
     var summaryRows = aggregateVPDStressRows(hourlyRows, granularity);
     var dailySummaryRows = aggregateVPDStressRows(hourlyRows, 'daily');
-    var criticalRows = extractVPDCriticalEvents(hourlyRows);
+    var criticalRows = extractVPDCriticalEvents(hourlyRows, startDate, endDate);
     var solarMeta = analyzeVpdRangeSolarUsage(hourlyRows);
     currentProject.vpdAnalysis.rangeState = { granularity: granularity, startDate: startDate, endDate: endDate };
     currentProject.vpdAnalysis.currentRangeTable = {

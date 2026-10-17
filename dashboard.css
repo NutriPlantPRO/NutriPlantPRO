@@ -3410,6 +3410,15 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 
 /* ===== PORCENTAJES DE CATIONES ===== */
+.cation-ppm {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
+  color: #475569;
+  letter-spacing: 0.01em;
+}
+
 .percent-display {
   font-size: 0.8rem;
   font-weight: 600;
@@ -3471,6 +3480,9 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 }
 .enmienda-units-note strong {
   color: #14532d;
+}
+.enmienda-units-lead {
+  margin: 0;
 }
 .enmienda-units-note table {
   width: 100%;
@@ -3632,6 +3644,22 @@ html.embed-login body {
   font-size: 1.25rem;
   font-weight: 600;
   color: #374151;
+}
+
+.total-display-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.cic-sum-note {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #0369a1;
+  max-width: 148px;
+  text-align: right;
 }
 
 .total-display {

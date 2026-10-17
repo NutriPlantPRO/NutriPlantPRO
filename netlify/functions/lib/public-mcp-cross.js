@@ -16,6 +16,8 @@ const SECTION_DEEP = {
   ubicacion: { key: 'ubicacion', select: 'Ubicación', label: 'Ubicación' },
   enmienda: { key: 'enmienda', select: 'Enmienda', label: 'Enmiendas / CIC' },
   enmiendas: { key: 'enmienda', select: 'Enmienda', label: 'Enmiendas / CIC' },
+  balance_de_bases: { key: 'enmienda', select: 'Enmienda', label: 'Balance de Bases' },
+  ajuste_de_bases: { key: 'enmienda', select: 'Enmienda', label: 'Balance de Bases' },
   granular: { key: 'nutricion-granular', select: 'Nutricion Granular', label: 'Nutrición granular' },
   fertirriego: { key: 'fertirriego', select: 'Fertirriego', label: 'Fertirriego' },
   hidroponia: { key: 'hidroponia', select: 'Hidroponia', label: 'Solución nutritiva / hidro' },

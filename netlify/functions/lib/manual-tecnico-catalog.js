@@ -79,7 +79,7 @@ module.exports = {
       url: `${BASE}/capitulos/enmiendas-balance-cic.html`,
       pillar: 'B — Suelo y enmiendas',
       summary:
-        'CIC en meq/100g (= cmolc/kg). Saturación % = meq/CIC×100. Meq a ajustar → kg/ha enmienda según profundidad, densidad, % suelo explorado. Distinto de reportes Análisis→Suelo (lista en nube).',
+        'CIC en meq/100g (= cmolc/kg). Saturación % = meq/CIC×100. Alias: balance de bases, ajuste de bases. Meq a ajustar → kg/ha enmienda según profundidad, densidad, % suelo explorado. Distinto de reportes Análisis→Suelo (lista en nube).',
       status: 'published'
     },
     {
@@ -126,7 +126,7 @@ module.exports = {
       url: `${BASE}/capitulos/seguimiento-ionometro.html`,
       pillar: 'D — Solución y seguimiento',
       summary:
-        'Bitácora 🔬. ppm tecleado; meq según la forma del encabezado (NO₃⁻ 62 o N 14, PO₄ 95 o P 31). Nutrientes en una gráfica (meq/L); pH y CE en otra (eje izquierdo pH, eje derecho CE). Un hueco no une la línea. 280 NO₃⁻ ≈ 4.5 meq y ≈ 63 ppm N. Referencia en solución y pasta: franja NutriPlant de invernadero (N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110 ppm del elemento), comparada en la forma del encabezado (NO₃⁻ se muestra 620–886). Punto en cada lectura con número. Mín–máx editables; «Volver a los de NutriPlant». Steiner solo lectura (N 20–80, P 1.25–10, S 10–70; K 10–65, Ca 22.5–62.5, Mg 0.5–40). Pasta = misma franja, rizósfera. Foliar, pecíolo, savia y 2:1 sin franja. Cambiar muestra no reescribe ppm. Parámetro de apoyo, no verdad de laboratorio. Login local; PRO en profiles.ionometro_seguimientos.',
+        'Bitácora 🔬. ppm tecleado; meq según la forma del encabezado (NO₃⁻ 62 o N 14, PO₄ 95 o P 31, SO₄²⁻ 48.03 o S 16.03, NH₄⁺ 18.04 o N 14; K 39.1, Ca 20.04, Mg 12.15, Na 22.99, Cl 35.45). Las ppm no se reescriben. Nutrientes en una gráfica (meq/L); pH, CE y °Bx en otra (pH a la izquierda; CE y °Bx a la derecha si hay dato). °Bx sin meq, solo pecíolo, foliar, savia y extracto de raíz; no aparece en solución, pasta ni extracto 2:1. Un hueco no une la línea. 280 NO₃⁻ ≈ 4.5 meq y ≈ 63 ppm N. Referencia en solución y pasta: franja NutriPlant de invernadero (N 140–200, P 30–60, K 180–300, Ca 140–220, Mg 40–70, S 60–110 ppm del elemento), comparada en la forma del encabezado (NO₃⁻ se muestra 620–886). Punto en cada lectura con número. Mín–máx editables; «Volver a los de NutriPlant». Steiner solo lectura (N 20–80, P 1.25–10, S 10–70; K 10–65, Ca 22.5–62.5, Mg 0.5–40). Pasta = misma franja, rizósfera. Foliar, pecíolo, savia y 2:1 sin franja. Cambiar muestra no reescribe ppm. Parámetro de apoyo, no verdad de laboratorio. ≠ diseño de solución ≠ lab ≠ foliar DOP. Login local; PRO en profiles.ionometro_seguimientos (cuenta, no proyecto).',
       status: 'published'
     },
     {

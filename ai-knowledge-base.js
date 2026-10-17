@@ -816,7 +816,7 @@ class NutriPlantAI {
       return this.generateCropResponse(message, topics);
     }
     
-    if (lowerMessage.includes('enmienda') || lowerMessage.includes('yeso') || lowerMessage.includes('cal')) {
+    if (lowerMessage.includes('enmienda') || lowerMessage.includes('balance de bases') || lowerMessage.includes('ajuste de bases') || lowerMessage.includes('yeso') || lowerMessage.includes('cal')) {
       return this.generateAmendmentResponse(message, topics);
     }
     
@@ -1570,7 +1570,7 @@ NutriPlantAI.prototype.generateIntelligentResponse = function(message, context) 
 NutriPlantAI.prototype.isSoilAnalysisQuery = function(message) {
   const soilKeywords = [
     'analizar', 'análisis', 'suelo', 'recomendar', 'recomendación',
-    'enmienda', 'enmiendas', 'cal', 'yeso', 'dolomita', 'magnesio',
+    'enmienda', 'enmiendas', 'balance de bases', 'ajuste de bases', 'cal', 'yeso', 'dolomita', 'magnesio',
     'calcio', 'potasio', 'cic', 'cationes', 'ajustar', 'ajuste',
     'sugerir', 'sugerencia', 'opciones', 'mejor', 'eficiente',
     'precisión', 'cantidad', 'aplicar', 'aplicación'

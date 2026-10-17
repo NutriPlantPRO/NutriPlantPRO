@@ -15,7 +15,8 @@
     ideal_ranges: '📊 Ideal Cation Ranges:',
     initial_analysis: '📊 Initial Soil Analysis (meq/100g or cmol⁺/kg of soil)',
     total_cec: 'Total CEC:',
-    units_note: '<strong>Units:</strong> <span class="notranslate" translate="no">meq/100g</span> and <span class="notranslate" translate="no">cmol⁺/kg</span> represent the <strong>same quantity</strong> (same numeric value). Enter laboratory cations in either unit; total CEC is usually reported by the laboratory or calculated as the cation sum.',
+    cic_sum_note: 'Sum of the cations below',
+    units_note: '<strong>Units:</strong> <span class="notranslate" translate="no">meq/100g</span> and <span class="notranslate" translate="no">cmol⁺/kg</span> represent the <strong>same quantity</strong> (same numeric value). Enter laboratory cations in either unit. Total CEC is the sum of the K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺ and Al³⁺ you enter below.',
     soil_properties: '🌱 Soil Properties',
     bulk_density: 'Bulk density',
     depth: 'Depth',
@@ -236,8 +237,9 @@
     if (headings[0]) setText(headings[0], t('ideal_ranges', '📊 Rangos Ideales de Cationes:'));
     if (headings[1]) setText(headings[1], t('initial_analysis', '📊 Análisis de Suelo Inicial (meq/100g o cmol⁺/kg de suelo)'));
     setText(container.querySelector('.total-display label'), t('total_cec', 'CIC Total:'));
-    var note = container.querySelector('.enmienda-units-note');
-    if (note) note.innerHTML = t('units_note', '<strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica). Captura los cationes del laboratorio en esas unidades; la CIC total suele venir en el reporte o como suma de cationes.');
+    setText(container.querySelector('#cic-sum-note'), t('cic_sum_note', 'Suma de los cationes de abajo'));
+    var noteLead = container.querySelector('.enmienda-units-lead');
+    if (noteLead) noteLead.innerHTML = t('units_note', '<strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica). Captura los cationes del laboratorio en esas unidades. La CIC total es la suma de K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺ y Al³⁺ que coloques abajo.');
     if (headings[2]) setText(headings[2], t('soil_properties', '🌱 Propiedades del Suelo'));
     var properties = container.querySelectorAll('.property-item');
     if (properties[0]) {

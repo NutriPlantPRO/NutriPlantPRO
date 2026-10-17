@@ -21,7 +21,7 @@ class AmendmentsModule {
   
   analyze(query, context) {
     // Lógica específica de enmiendas
-    if (query.includes('enmienda') || query.includes('cal') || query.includes('yeso')) {
+    if (query.includes('enmienda') || query.includes('balance de bases') || query.includes('ajuste de bases') || query.includes('cal') || query.includes('yeso')) {
       return this.getAmendmentsAnalysis();
     }
     
@@ -1386,7 +1386,7 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
     if (sectionTitle) {
       const titleText = sectionTitle.textContent.toLowerCase();
       console.log('🔍 Título detectado:', titleText);
-      if (titleText.includes('enmienda') || titleText.includes('amendment') || titleText.includes('calculadora')) {
+      if (titleText.includes('enmienda') || titleText.includes('balance de bases') || titleText.includes('ajuste de bases') || titleText.includes('amendment') || titleText.includes('calculadora')) {
         console.log('🔍 Detectada sección: amendments (por título)');
         return 'amendments';
       } else if (titleText.includes('nutrición') || titleText.includes('nutrition')) {

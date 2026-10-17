@@ -65,6 +65,28 @@
     return chartT('1 mes (' + CRITICAL_DISPLAY_DAYS + ' días)', '1 month (' + CRITICAL_DISPLAY_DAYS + ' days)');
   }
 
+  function isCriticalHourRow(row) {
+    if (!row) return false;
+    if (row.type === 'optimal') return false;
+    if (row.type === 'high' || row.type === 'low') return true;
+    var v = Number(row.vpd);
+    return Number.isFinite(v) && (v > 1.5 || v < 0.5);
+  }
+
+  function countCriticalHourRows(rows) {
+    var n = 0;
+    (rows || []).forEach(function (r) {
+      if (isCriticalHourRow(r)) n += 1;
+    });
+    return n;
+  }
+
+  function seriesIncludesOptimalHours(rows) {
+    return (rows || []).some(function (r) {
+      return r && r.type === 'optimal';
+    });
+  }
+
   function prepareCriticalRowsForDisplay(criticalRows, rangeEndDate, rangeStartDate) {
     var all = Array.isArray(criticalRows) ? criticalRows.slice() : [];
     var totalAll = all.length;
@@ -85,6 +107,9 @@
       return {
         rows: [],
         totalAll: totalAll,
+        totalCritical: countCriticalHourRows(all),
+        criticalCount: 0,
+        includesOptimal: seriesIncludesOptimalHours(all),
         windowStart: null,
         windowEnd: null,
         rangeStart: null,
@@ -108,9 +133,13 @@
     var fullSpan =
       rangeStart && rangeEnd ? isoDateSpanInclusiveDays(rangeStart, rangeEnd) : 0;
 
+    var includesOptimal = seriesIncludesOptimalHours(all);
     return {
       rows: rows,
       totalAll: totalAll,
+      totalCritical: countCriticalHourRows(all),
+      criticalCount: countCriticalHourRows(rows),
+      includesOptimal: includesOptimal,
       windowStart: windowStart,
       windowEnd: windowEnd,
       rangeStart: rangeStart,
@@ -119,31 +148,85 @@
     };
   }
 
+  function criticalBlockTitle(prep) {
+    prep = prep || { rows: [] };
+    var n = prep.rows ? prep.rows.length : 0;
+    var crit = prep.criticalCount != null ? prep.criticalCount : n;
+    var span =
+      prep.windowStart && prep.windowEnd
+        ? ' · ' + prep.windowStart + ' ' + chartT('a', 'to') + ' ' + prep.windowEnd
+        : '';
+    var head = prep.includesOptimal
+      ? chartT('Todas las horas', 'All hours') +
+        ' (' +
+        n +
+        ') · ' +
+        chartT('críticas', 'critical') +
+        ' ' +
+        crit
+      : chartT('Horas críticas', 'Critical hours') + ' (' + crit + ')';
+    return head + ' · ' + getCriticalDisplayLabel() + span;
+  }
+
   function buildCriticalScopeNoteHtml(prep) {
     if (!prep || !prep.windowStart || !prep.windowEnd) return '';
     var shown = prep.rows ? prep.rows.length : 0;
+    var crit = prep.criticalCount != null ? prep.criticalCount : shown;
     var periodStart = prep.rangeStart || prep.windowStart;
-    var msg = chartT(
-      'Desde el <strong>inicio del periodo que elegiste</strong> (<strong>{start}</strong>) se listan hasta <strong>{days} días</strong> de horas críticas (<strong>{w0}</strong> al <strong>{w1}</strong>). En ese tramo: <strong>{n}</strong> hora(s).',
-      'From the <strong>start of the period you chose</strong> (<strong>{start}</strong>) up to <strong>{days} days</strong> of critical hours are listed (<strong>{w0}</strong> to <strong>{w1}</strong>). In that span: <strong>{n}</strong> hour(s).'
-    )
+    var totalCrit = prep.totalCritical != null ? prep.totalCritical : prep.totalAll;
+    var msg = prep.includesOptimal
+      ? chartT(
+          'Desde el <strong>inicio del periodo que elegiste</strong> (<strong>{start}</strong>) se listan hasta <strong>{days} días</strong> de todas las horas (<strong>{w0}</strong> al <strong>{w1}</strong>). En ese tramo: <strong>{n}</strong> hora(s), de ellas <strong>{crit}</strong> fuera de rango.',
+          'From the <strong>start of the period you chose</strong> (<strong>{start}</strong>) up to <strong>{days} days</strong> of all hours are listed (<strong>{w0}</strong> to <strong>{w1}</strong>). In that span: <strong>{n}</strong> hour(s), <strong>{crit}</strong> of them out of range.'
+        )
+      : chartT(
+          'Desde el <strong>inicio del periodo que elegiste</strong> (<strong>{start}</strong>) se listan hasta <strong>{days} días</strong> de horas críticas (<strong>{w0}</strong> al <strong>{w1}</strong>). En ese tramo: <strong>{n}</strong> hora(s).',
+          'From the <strong>start of the period you chose</strong> (<strong>{start}</strong>) up to <strong>{days} days</strong> of critical hours are listed (<strong>{w0}</strong> to <strong>{w1}</strong>). In that span: <strong>{n}</strong> hour(s).'
+        );
+    msg = msg
       .replace('{start}', periodStart)
       .replace('{days}', String(CRITICAL_DISPLAY_DAYS))
       .replace('{w0}', prep.windowStart)
       .replace('{w1}', prep.windowEnd)
-      .replace('{n}', String(shown));
+      .replace('{n}', String(shown))
+      .replace('{crit}', String(crit));
     if (prep.rangeTruncated && prep.rangeEnd) {
       msg +=
         ' ' +
         chartT(
-          'El rango completo descargado en Clima ({start} a <strong>{end}</strong>) tiene <strong>{total}</strong> horas críticas. Acota fechas para ver otro tramo de 30 días.',
-          'The full range downloaded in Climate ({start} to <strong>{end}</strong>) has <strong>{total}</strong> critical hours. Narrow the dates to see another 30-day window.'
+          'El rango completo descargado en Clima ({start} a <strong>{end}</strong>) tiene <strong>{total}</strong> horas críticas. Acota fechas y vuelve a descargar para ver otro tramo de 30 días.',
+          'The full range downloaded in Climate ({start} to <strong>{end}</strong>) has <strong>{total}</strong> critical hours. Narrow the dates and download again to see another 30-day window.'
         )
           .replace('{start}', periodStart)
           .replace('{end}', prep.rangeEnd)
-          .replace('{total}', String(prep.totalAll));
+          .replace('{total}', String(totalCrit));
     }
     return msg;
+  }
+
+  function criticalTableCaptionHtml(prep) {
+    var chartBit = chartT(
+      'Gráfica: barras tenues = 24 h/día por zona VPD · línea <strong>azul</strong> = VPD mín + hora · línea <strong>tinta</strong> = VPD máx + hora (eje derecho).',
+      'Chart: faint bars = 24 h/day by VPD zone · <strong>blue</strong> line = min VPD + time · <strong>ink</strong> line = max VPD + time (right axis).'
+    );
+    if (prep && prep.includesOptimal) {
+      return (
+        chartBit +
+        ' ' +
+        chartT(
+          'Tabla: <strong>todas las horas</strong>. <strong style="color:#15803d;">Verde</strong> = VPD óptimo (0.5–1.5 kPa), <strong style="color:#1d4ed8;">azul</strong> = bajo, <strong style="color:#7f1d1d;">tinta</strong> = alto.',
+          'Table: <strong>all hours</strong>. <strong style="color:#15803d;">Green</strong> = optimal VPD (0.5–1.5 kPa), <strong style="color:#1d4ed8;">blue</strong> = low, <strong style="color:#7f1d1d;">ink</strong> = high.'
+        )
+      );
+    }
+    return (
+      chartBit +
+      ' ' +
+      chartT(
+        'Tabla: solo horas fuera de rango. Descarga de nuevo la serie para ver también las horas en VPD óptimo (verde).',
+        'Table: out-of-range hours only. Download the series again to also see optimal VPD hours (green).'
+      )
+    );
   }
 
   function mapSummaryChartItems(summaryRows) {
@@ -695,9 +778,20 @@
     return [];
   }
 
-  /** Fallback PDF: armar filas diarias desde horas críticas si no hay dailySummaryRows. */
+  function hourZoneType(row) {
+    if (!row) return 'low';
+    if (row.type === 'high' || row.type === 'low' || row.type === 'optimal') return row.type;
+    var v = Number(row.vpd);
+    if (Number.isFinite(v) && v > 1.5) return 'high';
+    if (Number.isFinite(v) && v < 0.5) return 'low';
+    if (Number.isFinite(v)) return 'optimal';
+    return 'low';
+  }
+
+  /** Fallback PDF: armar filas diarias desde horas si no hay dailySummaryRows. */
   function dailyRowsFromCriticalEvents(criticalRows, windowStart, windowEnd) {
     if (!windowStart || !windowEnd) return [];
+    var includesOptimal = seriesIncludesOptimalHours(criticalRows);
     var map = {};
     (criticalRows || []).forEach(function (r) {
       var d = resolveCriticalRowDate(r);
@@ -718,8 +812,9 @@
       }
       var g = map[d];
       var v = Number(r.vpd);
-      var t = r.type === 'high' || (Number.isFinite(v) && v > 1.5) ? 'high' : 'low';
+      var t = hourZoneType(r);
       if (t === 'high') g.hoursHigh += 1;
+      else if (t === 'optimal') g.hoursOptimal += 1;
       else g.hoursLow += 1;
       if (Number.isFinite(v)) {
         if (v > g.maxVpd) {
@@ -737,8 +832,10 @@
     while (compareIsoDates(cur, windowEnd) <= 0) {
       var g2 = map[cur];
       if (g2) {
-        var used = (g2.hoursLow || 0) + (g2.hoursHigh || 0);
-        g2.hoursOptimal = Math.max(0, 24 - used);
+        if (!includesOptimal) {
+          var used = (g2.hoursLow || 0) + (g2.hoursHigh || 0);
+          g2.hoursOptimal = Math.max(0, 24 - used);
+        }
         if (!Number.isFinite(g2.maxVpd) || g2.maxVpd === -Infinity) g2.maxVpd = null;
         if (!Number.isFinite(g2.minVpd) || g2.minVpd === Infinity) g2.minVpd = null;
         out.push(g2);
@@ -1310,7 +1407,6 @@
     cfg = cfg || {};
     var prefix = cfg.prefix || 'np-vpd';
     var critPrep = cfg.criticalPrep || { rows: [], windowStart: null, windowEnd: null };
-    var critCount = critPrep.rows ? critPrep.rows.length : 0;
     var critToggle = viewToggleButtonsHtml(prefix + '-critical');
     var granularityNote =
       cfg.granularity === 'weekly'
@@ -1318,14 +1414,7 @@
         : cfg.granularity === 'monthly'
           ? chartT('Vista mensual: máximos y mínimos por mes.', 'Monthly view: maxima and minima per month.')
           : chartT('Vista diaria: resumen por día.', 'Daily view: summary per day.');
-    var critTitle =
-      chartT('Horas críticas', 'Critical hours') + ' (' +
-      critCount +
-      ') · ' +
-      getCriticalDisplayLabel() +
-      (critPrep.windowStart && critPrep.windowEnd
-        ? ' · ' + critPrep.windowStart + ' ' + chartT('a', 'to') + ' ' + critPrep.windowEnd
-        : '');
+    var critTitle = criticalBlockTitle(critPrep);
     return (
       '<div style="margin-top:10px;border-top:1px dashed #fed7aa;padding-top:10px;">' +
       '<div style="margin-bottom:8px;"><strong style="color:#9a3412;font-size:13px;">' + chartT('Serie VPD por periodo', 'VPD series by period') + ' (' +
@@ -1348,10 +1437,9 @@
       (critPrep.windowStart
         ? '<div style="margin-bottom:6px;font-size:11px;color:#7c2d12;line-height:1.45;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
           buildCriticalScopeNoteHtml(critPrep) +
-          ' ' + chartT(
-            'Gráfica: barras tenues = 24 h/día por zona VPD · línea <strong>azul</strong> = VPD mín + hora · línea <strong>tinta</strong> = VPD máx + hora (eje derecho). Tabla: solo horas fuera de rango.',
-            'Chart: faint bars = 24 h/day by VPD zone · <strong>blue</strong> line = min VPD + time · <strong>ink</strong> line = max VPD + time (right axis). Table: out-of-range hours only.'
-          ) + '</div>'
+          ' ' +
+          criticalTableCaptionHtml(critPrep) +
+          '</div>'
         : '') +
       '<div id="' +
       prefix +
@@ -1362,7 +1450,7 @@
       '</div>' +
       '<div id="' +
       prefix +
-      '-critical-table" style="display:none;overflow:auto;max-height:240px;">' +
+      '-critical-table" style="display:none;overflow:auto;max-height:480px;">' +
       (cfg.criticalTableHtml || '') +
       '</div></div>'
     );
@@ -1377,7 +1465,10 @@
     RANGE_CHART_DASHBOARD_MAX_BARS: RANGE_CHART_DASHBOARD_MAX_BARS,
     getCriticalDisplayLabel: getCriticalDisplayLabel,
     prepareCriticalRowsForDisplay: prepareCriticalRowsForDisplay,
+    criticalBlockTitle: criticalBlockTitle,
     buildCriticalScopeNoteHtml: buildCriticalScopeNoteHtml,
+    criticalTableCaptionHtml: criticalTableCaptionHtml,
+    countCriticalHourRows: countCriticalHourRows,
     computeCriticalChartLayout: computeCriticalChartLayout,
     createRangeStackedChart: createRangeStackedChart,
     createCriticalHoursChart: createCriticalHoursChart,
