@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=71" />
+  <link rel="stylesheet" href="auth.css?v=72" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -345,8 +345,7 @@
                   class="login-social-facebook-card__feed"
                   title="Perfil de NutriPlant PRO en Facebook"
                   scrolling="no"
-                  loading="eager"
-                  src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fp%2FNutriPlant-PRO-61580040483626%2F&amp;tabs=timeline&amp;width=340&amp;height=500&amp;small_header=true&amp;adapt_container_width=true&amp;hide_cover=true&amp;show_facepile=false"
+                  src="about:blank"
                 ></iframe>
               </div>
             </div>
@@ -5181,6 +5180,7 @@
               teaser.style.removeProperty('--ap-logo');
             }
             clearEmbedHeights();
+            if (root.querySelector('[data-social-tab="facebook"].active')) fitFacebookFeed();
             return;
           }
           /* Escritorio: Applicate ocupa la diferencia entre el acceso y redes.
@@ -5265,12 +5265,38 @@
             }
             var fbCard = activePane ? activePane.querySelector('.login-social-facebook-card') : null;
             if (fbCard) {
-              fbCard.style.minHeight = Math.max(200, bodyH - 8) + 'px';
+              fbCard.style.minHeight = Math.max(360, bodyH - 8) + 'px';
+              fbCard.style.height = Math.max(360, bodyH - 8) + 'px';
+              fitFacebookFeed();
             }
           }
         } finally {
           syncingSocialHeight = false;
         }
+      }
+
+      function fitFacebookFeed() {
+        var card = root.querySelector('.login-social-facebook-card');
+        var iframe = card && card.querySelector('iframe');
+        if (!card || !iframe) return;
+        var width = Math.floor(card.clientWidth || 0);
+        if (width < 180) width = 340;
+        width = Math.max(180, Math.min(500, width));
+        var height = Math.floor(card.clientHeight || 0);
+        if (height < 360) height = 480;
+        height = Math.max(360, Math.min(700, height));
+        var prevW = parseInt(iframe.getAttribute('data-fb-w'), 10) || 0;
+        var prevH = parseInt(iframe.getAttribute('data-fb-h'), 10) || 0;
+        if (Math.abs(prevW - width) <= 16 && Math.abs(prevH - height) <= 24 && iframe.src && iframe.src.indexOf('plugins/page.php') !== -1) {
+          return;
+        }
+        iframe.setAttribute('data-fb-w', String(width));
+        iframe.setAttribute('data-fb-h', String(height));
+        var href = encodeURIComponent('https://www.facebook.com/p/NutriPlant-PRO-61580040483626/');
+        iframe.src = 'https://www.facebook.com/plugins/page.php?href=' + href +
+          '&tabs=timeline&width=' + width +
+          '&height=' + height +
+          '&small_header=false&adapt_container_width=false&hide_cover=false&show_facepile=false&locale=es_LA';
       }
 
       function showSocialTab(id) {
