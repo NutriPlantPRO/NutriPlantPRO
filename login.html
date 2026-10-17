@@ -5105,9 +5105,7 @@
         return Math.max(280, Math.min(500, width));
       }
 
-      var fbResizeTimer = null;
-      var fbLastMountedWidth = 0;
-      var fbLastMountedHeight = 0;
+      var fbMountTimer = null;
 
       function facebookEmbedHeight(container) {
         if (window.innerWidth < 700) {
@@ -5115,34 +5113,28 @@
         }
         var box = container || root.querySelector('[data-social-embed="facebook"]');
         var h = box ? Math.round(box.clientHeight || box.getBoundingClientRect().height || 0) : 0;
-        return h >= 200 ? h : 420;
+        return h >= 280 ? h : 420;
       }
 
-      function mountFacebookEmbed(container, force) {
+      function mountFacebookEmbed(container) {
         if (!container) return;
         var width = facebookEmbedWidth(container);
         var fbHeight = facebookEmbedHeight(container);
         var prevWidth = parseInt(container.dataset.fbWidth, 10) || 0;
         var prevHeight = parseInt(container.dataset.fbHeight, 10) || 0;
-        if (
-          !force &&
-          Math.abs(prevWidth - width) <= 8 &&
-          Math.abs(prevHeight - fbHeight) <= 16 &&
-          container.querySelector('iframe')
-        ) {
+        var iframe = container.querySelector('iframe');
+        if (iframe && Math.abs(prevWidth - width) <= 24 && Math.abs(prevHeight - fbHeight) <= 48) {
           return;
         }
         container.dataset.fbWidth = String(width);
         container.dataset.fbHeight = String(fbHeight);
         container.innerHTML = '';
         var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
-        // small_header=true = layout compacto: [Seguir página] + seguidores en la misma fila
-        // (con false, FB pone los seguidores debajo del nombre y agrega Compartir).
-        var iframe = createSocialIframe(
+        var iframeEl = createSocialIframe(
           'https://www.facebook.com/plugins/page.php?href=' + fbHref +
             '&tabs=timeline&width=' + width +
             '&height=' + fbHeight +
-            '&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false',
+            '&small_header=true&adapt_container_width=false&hide_cover=true&show_facepile=false&locale=es_LA',
           'NutriPlant PRO en Facebook',
           {
             scrolling: 'no',
@@ -5151,40 +5143,32 @@
             height: fbHeight
           }
         );
-        iframe.style.width = '100%';
-        iframe.style.maxWidth = '100%';
-        iframe.style.height = fbHeight + 'px';
-        iframe.style.minHeight = fbHeight + 'px';
-        container.appendChild(iframe);
+        iframeEl.loading = 'eager';
+        iframeEl.style.width = '100%';
+        iframeEl.style.maxWidth = '100%';
+        iframeEl.style.height = fbHeight + 'px';
+        iframeEl.style.minHeight = fbHeight + 'px';
+        container.appendChild(iframeEl);
         container.dataset.loaded = '1';
-        fbLastMountedWidth = width;
-        fbLastMountedHeight = fbHeight;
       }
 
-      function scheduleFacebookEmbedRefresh(container) {
+      function queueFacebookEmbed(container) {
         if (!container) return;
-        mountFacebookEmbed(container, true);
-        window.requestAnimationFrame(function () {
-          window.requestAnimationFrame(function () {
-            mountFacebookEmbed(container, false);
-          });
-        });
-      }
-
-      function queueFacebookEmbedResize(container) {
-        if (!container) return;
-        window.clearTimeout(fbResizeTimer);
-        fbResizeTimer = window.setTimeout(function () {
-          var width = facebookEmbedWidth(container);
-          var height = facebookEmbedHeight(container);
-          if (
-            !container.querySelector('iframe') ||
-            Math.abs(width - fbLastMountedWidth) > 8 ||
-            Math.abs(height - fbLastMountedHeight) > 16
-          ) {
-            mountFacebookEmbed(container, false);
-          }
-        }, 220);
+        var width = facebookEmbedWidth(container);
+        var fbHeight = facebookEmbedHeight(container);
+        var prevWidth = parseInt(container.dataset.fbWidth, 10) || 0;
+        var prevHeight = parseInt(container.dataset.fbHeight, 10) || 0;
+        if (
+          container.querySelector('iframe') &&
+          Math.abs(prevWidth - width) <= 24 &&
+          Math.abs(prevHeight - fbHeight) <= 48
+        ) {
+          return;
+        }
+        window.clearTimeout(fbMountTimer);
+        fbMountTimer = window.setTimeout(function () {
+          mountFacebookEmbed(container);
+        }, 280);
       }
 
       function loadTikTokEmbed() {
@@ -5208,7 +5192,7 @@
         if (!container) return;
 
         if (id === 'facebook') {
-          scheduleFacebookEmbedRefresh(container);
+          queueFacebookEmbed(container);
           return;
         }
 
@@ -5282,7 +5266,7 @@
               fbMobile.style.height = mobileH + 'px';
               fbMobile.style.minHeight = mobileH + 'px';
               fbMobile.style.maxHeight = mobileH + 'px';
-              mountFacebookEmbed(fbMobile, false);
+              queueFacebookEmbed(fbMobile);
             }
             return;
           }
@@ -5369,7 +5353,7 @@
           }
           var fbBox = root.querySelector('[data-social-embed="facebook"]');
           if (fbBox && root.querySelector('[data-social-tab="facebook"].active')) {
-            mountFacebookEmbed(fbBox, false);
+            queueFacebookEmbed(fbBox);
           }
         } finally {
           syncingSocialHeight = false;
