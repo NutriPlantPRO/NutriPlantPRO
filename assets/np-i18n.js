@@ -400,7 +400,7 @@
         establishment: "Establecimiento"
       },
       amendment: {
-        title: "Balance de enmiendas por CIC",
+        title: "Balance de Bases",
         soil_analysis: "Análisis de suelo inicial",
         soil_properties: "Propiedades del suelo",
         available: "Enmiendas disponibles",
@@ -459,7 +459,7 @@
         tool_vpd: "Estimador de déficit de presión de vapor",
         tool_weather: "Pronóstico agroclimático",
         tool_foliar_windows: "Ventanas de Aplicación Foliar",
-        tool_amendment: "Balance de enmiendas por CIC",
+        tool_amendment: "Balance de Bases",
         tool_granular_mix: "Formulación de mezclas granulares",
         tool_extraction_stage: "Distribución nutrimental por etapa (%)",
         tool_fertilizer_composition: "Composición de fertilizantes (%)",
@@ -1702,7 +1702,7 @@
         establishment: "Establishment"
       },
       amendment: {
-        title: "CEC Amendment Balance",
+        title: "Base Balance",
         soil_analysis: "Initial soil analysis",
         soil_properties: "Soil properties",
         available: "Available amendments",
@@ -1761,7 +1761,7 @@
         tool_vpd: "Vapor pressure deficit estimator",
         tool_weather: "Agroclimate forecast",
         tool_foliar_windows: "Foliar Application Windows",
-        tool_amendment: "CEC amendment balance",
+        tool_amendment: "Base Balance",
         tool_granular_mix: "Granular fertilizer blend formulation",
         tool_extraction_stage: "Nutrient distribution by stage (%)",
         tool_fertilizer_composition: "Fertilizer composition (%)",

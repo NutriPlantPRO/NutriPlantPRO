@@ -1408,7 +1408,7 @@ function sectionTemplate(name) {
         </div>
         <div class="enmienda-header">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 class="text-2xl font-bold text-gray-800 mb-0">🚜 Balance de enmiendas por CIC (ajuste de CIC del suelo)</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-0">⚖️ Balance de Bases</h2>
           </div>
           <div class="ideal-ranges">
             <h3>📊 Rangos Ideales de Cationes:</h3>

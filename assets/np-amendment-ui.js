@@ -11,7 +11,7 @@
   'use strict';
 
   var EN = {
-    title: '🚜 CEC Amendment Balance (soil CEC adjustment)',
+    title: '⚖️ Base Balance',
     ideal_ranges: '📊 Ideal Cation Ranges:',
     initial_analysis: '📊 Initial Soil Analysis (meq/100g or cmol⁺/kg of soil)',
     total_cec: 'Total CEC:',
@@ -233,7 +233,7 @@
     var container = root.matches && root.matches('.enmienda-container') ? root : root.querySelector('.enmienda-container');
     if (!container) return root;
     var headings = container.querySelectorAll('h3');
-    setText(container.querySelector('.enmienda-header h2'), t('title', '🚜 Balance de enmiendas por CIC (ajuste de CIC del suelo)'));
+    setText(container.querySelector('.enmienda-header h2'), t('title', '⚖️ Balance de Bases'));
     if (headings[0]) setText(headings[0], t('ideal_ranges', '📊 Rangos Ideales de Cationes:'));
     if (headings[1]) setText(headings[1], t('initial_analysis', '📊 Análisis de Suelo Inicial (meq/100g o cmol⁺/kg de suelo)'));
     setText(container.querySelector('.total-display label'), t('total_cec', 'CIC Total:'));
