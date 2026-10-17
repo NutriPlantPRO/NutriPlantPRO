@@ -15,7 +15,7 @@
     ideal_ranges: '📊 Ideal Cation Ranges:',
     initial_analysis: '📊 Initial Soil Analysis (meq/100g or cmol⁺/kg of soil)',
     total_cec: 'Total CEC:',
-    cic_sum_note: 'Sum of the cations below',
+    cic_sum_note: 'Sum of the cations in meq/100g or cmol⁺/kg of soil',
     units_note: '<strong>Units:</strong> <span class="notranslate" translate="no">meq/100g</span> and <span class="notranslate" translate="no">cmol⁺/kg</span> represent the <strong>same quantity</strong> (same numeric value). Enter laboratory cations in either unit. Total CEC is the sum of the K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺ and Al³⁺ you enter below.',
     soil_properties: '🌱 Soil Properties',
     bulk_density: 'Bulk density',
@@ -237,7 +237,7 @@
     if (headings[0]) setText(headings[0], t('ideal_ranges', '📊 Rangos Ideales de Cationes:'));
     if (headings[1]) setText(headings[1], t('initial_analysis', '📊 Análisis de Suelo Inicial (meq/100g o cmol⁺/kg de suelo)'));
     setText(container.querySelector('.total-display label'), t('total_cec', 'CIC Total:'));
-    setText(container.querySelector('#cic-sum-note'), t('cic_sum_note', 'Suma de los cationes de abajo'));
+    setText(container.querySelector('#cic-sum-note'), t('cic_sum_note', 'Suma de los cationes en meq/100g o cmol⁺/kg de suelo'));
     var noteLead = container.querySelector('.enmienda-units-lead');
     if (noteLead) noteLead.innerHTML = t('units_note', '<strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica). Captura los cationes del laboratorio en esas unidades. La CIC total es la suma de K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺ y Al³⁺ que coloques abajo.');
     if (headings[2]) setText(headings[2], t('soil_properties', '🌱 Propiedades del Suelo'));

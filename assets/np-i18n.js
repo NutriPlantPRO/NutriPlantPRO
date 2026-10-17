@@ -1719,7 +1719,7 @@
         project: "Project",
         select_project: "Select a project from the home page to begin",
         radar: "Satellite Radar",
-        amendment: "Base balance",
+        amendment: "Base Balance",
         granular: "Granular Nutrition",
         analysis: "Analysis",
         soil: "Soil",

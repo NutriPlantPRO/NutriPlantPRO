@@ -317,6 +317,7 @@ function refreshGranularDashboardChrome() {
 const DASHBOARD_SECTION_KEYS = {
   'Inicio': 'dashboard.home',
   'Ubicación': 'dashboard.radar',
+  'Enmienda': 'dashboard.amendment',
   'Hidroponia': 'dashboard.hydroponics',
   'Fertirriego': 'dashboard.fertigation',
   'Reporte': 'dashboard.report',
@@ -346,6 +347,7 @@ function getSectionInternalName(displayOrInternal) {
   if (title && title.dataset && title.dataset.npSection) return title.dataset.npSection;
   if (displayOrInternal === 'Radar Satelital' || displayOrInternal === 'Satellite Radar') return 'Ubicación';
   if (displayOrInternal === 'Solución Nutritiva' || displayOrInternal === 'Nutrient Solution') return 'Hidroponia';
+  if (displayOrInternal === 'Balance de Bases' || displayOrInternal === 'Base Balance' || displayOrInternal === 'Base balance' || displayOrInternal === 'Enmienda' || displayOrInternal === 'Amendment') return 'Enmienda';
   return displayOrInternal;
 }
 
@@ -1430,7 +1432,7 @@ function sectionTemplate(name) {
               <div class="total-display">
                 <div class="total-display-copy">
                   <label><span class="notranslate" translate="no">CIC</span> Total:</label>
-                  <div class="cic-sum-note" id="cic-sum-note">Suma de los cationes de abajo</div>
+                  <div class="cic-sum-note" id="cic-sum-note">Suma de los cationes en meq/100g o cmol⁺/kg de suelo</div>
                 </div>
                 <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
               </div>
@@ -3204,7 +3206,7 @@ function renderProjectCards(p) {
     <div class="sb-chiprow">
       <button class="sb-chip" data-section="ubicacion">🛰️ <span class="text">${dashboardT('dashboard.radar', 'Radar Satelital')}</span></button>
       <button class="sb-chip" data-section="clima">🌤️ <span class="text">${dashboardT('dashboard.climate', 'Clima')}</span></button>
-      <button class="sb-chip np-dash-tooltip" data-section="enmienda" data-i18n-title="dashboard.amendment" data-i18n-aria-label="dashboard.amendment" data-np-tooltip="${dashboardT('dashboard.amendment', 'Balance de Bases')}" aria-label="${dashboardT('dashboard.amendment', 'Balance de Bases')}">⚖️ <span class="text">${dashboardT('dashboard.amendment', 'Balance de Bases')}</span></button>
+      <button class="sb-chip" data-section="enmienda">⚖️ <span class="text">${dashboardT('dashboard.amendment', 'Balance de Bases')}</span></button>
       <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">${dashboardT('dashboard.granular', 'Nutrición Granular')}</span></button>
       <button class="sb-chip" data-section="fertirriego">📈 <span class="text">${dashboardT('dashboard.fertigation', 'Fertirriego')}</span></button>
       <button class="sb-chip" data-section="hidroponia">💧 <span class="text">${dashboardT('dashboard.hydroponics', 'Solución Nutritiva')}</span></button>
