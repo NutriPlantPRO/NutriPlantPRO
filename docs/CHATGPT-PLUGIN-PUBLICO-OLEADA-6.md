@@ -83,7 +83,7 @@ Chat/free tool ≠ datos del proyecto (hace falta su sesión).
 
 ## Lectura didáctica
 
-Si piden fertirriego, granular, solución nutritiva, programa del ciclo, análisis, clima o VPD (o «didáctico»/«tabla»/«explícame»): primero la tool. Luego tabla markdown corta solo con cifras de la respuesta (vacío = «—»; no inventes ceros) y tres líneas: alto, bajo, qué mirar después. Sin gráfica ni imagen. Con cuenta: fertirriego = etapas, kg/ha y m³/ha; granular = aplicaciones y dosis; hidro = CE y meq del diseño, y programa del ciclo aparte del lab; clima/VPD = lo que venga (referencia VPD 0,5–1,5). NDVI/NDRE no vienen aquí: no inventes imágenes. Sin cuenta: la misma tabla con el cálculo.
+Si piden el programa de fertirriego, fertilizantes, granular, solución nutritiva o programa del ciclo: tabla con el 100% de etapas, fertilizantes, materiales y elementos de la tool, nombres y unidades originales. Vacío = «—»; no inventes ceros ni recortes de cuatro elementos. Una gráfica no sustituye la tabla. Tres líneas después: alto, bajo, qué mirar. Solo recorta si el usuario lo pide (solo P y K, o una curva). Análisis, clima y VPD: todas las cifras de esa consulta.
 
 ## Tools
 
