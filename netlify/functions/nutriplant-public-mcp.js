@@ -10,6 +10,7 @@
 
 const auth = require('./lib/public-mcp-auth');
 const tools = require('./lib/public-mcp-tools');
+const usage = require('./lib/public-mcp-usage');
 
 const PROTOCOL = '2025-03-26';
 
@@ -117,6 +118,8 @@ async function handleMcpMessage(msg, event, origin) {
       const verified = await auth.verifySubscriber(bearer);
       if (verified.ok) user = verified;
     }
+
+    await usage.recordToolCall(event, user);
 
     if (tools.toolNeedsAuth(name) && !user) {
       return mcpError(id, -32001, 'Se requiere iniciar sesión de suscriptor NutriPlant PRO (Conectar cuenta).', 401, {

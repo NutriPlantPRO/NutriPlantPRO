@@ -2030,6 +2030,15 @@
                         </span>
                     </div>
                 </div>
+                <div class="stat-card" style="grid-column: 1 / -1; max-width: 100%; background: #f8fafc; border-left: 4px solid #0B1F4A;">
+                    <div class="stat-label" style="margin-bottom: 4px;">Complemento ChatGPT · NutriPlant PRO</div>
+                    <div style="font-size: 14px; color: #0f172a; line-height: 1.5;">
+                        Últimos 30 días: <strong id="gptPluginCalls30">—</strong> consultas ·
+                        <strong id="gptPluginUsers30">—</strong> usuarios
+                        <span id="gptPluginAnonNote" style="display:block;margin-top:4px;font-size:12px;color:#64748b;"></span>
+                    </div>
+                    <div id="gptPluginDays" style="margin-top:8px;font-size:13px;color:#334155;"></div>
+                </div>
                 
                 <div class="stat-card">
                     <div class="stat-number" id="activeUsers">-</div>
@@ -3078,6 +3087,63 @@
             var shell = document.getElementById('adminAppShell');
             if (gate) gate.style.display = visible ? 'none' : 'block';
             if (shell) shell.style.display = visible ? 'block' : 'none';
+        }
+
+        function loadChatgptPluginUsage(supabaseClient) {
+            var callsEl = document.getElementById('gptPluginCalls30');
+            var usersEl = document.getElementById('gptPluginUsers30');
+            var noteEl = document.getElementById('gptPluginAnonNote');
+            var daysEl = document.getElementById('gptPluginDays');
+            if (!callsEl || !supabaseClient) return;
+            var since = new Date();
+            since.setDate(since.getDate() - 29);
+            var sinceKey = since.getFullYear() + '-' + String(since.getMonth() + 1).padStart(2, '0') + '-' + String(since.getDate()).padStart(2, '0');
+            supabaseClient.from('chatgpt_public_usage_daily').select('day, actor_hash, calls').gte('day', sinceKey).then(function (r) {
+                if (r.error) {
+                    callsEl.textContent = '—';
+                    usersEl.textContent = '—';
+                    if (noteEl) noteEl.textContent = 'Falta la tabla en Supabase (supabase-chatgpt-public-usage.sql).';
+                    return;
+                }
+                var rows = r.data || [];
+                var byDay = {};
+                var users30 = {};
+                var calls30 = 0;
+                var anonCalls = 0;
+                rows.forEach(function (row) {
+                    var day = String(row.day || '').slice(0, 10);
+                    var n = Number(row.calls) || 0;
+                    if (!byDay[day]) byDay[day] = { calls: 0, users: {} };
+                    byDay[day].calls += n;
+                    calls30 += n;
+                    if (row.actor_hash === 'sin-sesion') {
+                        anonCalls += n;
+                        return;
+                    }
+                    byDay[day].users[row.actor_hash] = true;
+                    users30[row.actor_hash] = true;
+                });
+                callsEl.textContent = String(calls30);
+                usersEl.textContent = String(Object.keys(users30).length);
+                if (noteEl) {
+                    noteEl.textContent = anonCalls
+                        ? 'Sin nombre. ' + anonCalls + ' consultas no traían un chat identificable y no suman un usuario.'
+                        : 'Sin nombre. La misma persona, aunque haga muchas consultas, cuenta como un usuario.';
+                }
+                if (!daysEl) return;
+                var days = Object.keys(byDay).sort().reverse().slice(0, 14);
+                if (!days.length) {
+                    daysEl.textContent = 'Todavía no hay consultas.';
+                    return;
+                }
+                daysEl.innerHTML = days.map(function (day) {
+                    var bucket = byDay[day];
+                    var users = Object.keys(bucket.users).length;
+                    return '<div>' + day + ' · ' + bucket.calls + ' consultas · ' + users + ' usuarios</div>';
+                }).join('');
+            }).catch(function () {
+                if (noteEl) noteEl.textContent = 'No se pudo leer la métrica.';
+            });
         }
 
         function showAdminPinPanel() {
@@ -4422,6 +4488,7 @@
                             elBy.textContent = parts.length ? parts.join(' · ') : '';
                         }
                     }).catch(function() {});
+                    loadChatgptPluginUsage(supabaseClient);
                 }
             }
             // Si el backend de chat está disponible, actualizar con datos reales (USD/tokens por backend)
