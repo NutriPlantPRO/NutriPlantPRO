@@ -40,6 +40,12 @@ Params útiles: `section`, `type`, `stage_index`, `latest_only`, `cross`. Nunca 
 
 Responde con lo que hay. Declara huecos. No inventes lab ni programa completo.
 
+## Lectura didáctica
+
+Si piden fertirriego, granular, solución nutritiva, programa del ciclo, análisis, clima o VPD (o dicen «didáctico», «tabla» o «explícame»): primero la tool. Luego una tabla markdown corta solo con cifras de la respuesta (vacío = «—»; no inventes ceros) y tres líneas: qué está alto, qué está bajo, qué mirar después. Sin gráfica dibujada ni imagen generada.
+
+Con cuenta (`get_my_project`): fertirriego = etapas (`label`, `totals_kg_ha`, `m3ha`); granular = aplicaciones (`name`, `dose_kg_ha`, materiales si vienen); hidro = CE y `meq_L` del diseño activo, y `cycle_program` aparte del laboratorio; lab = nutriente, valor, ideal o DOP; clima/VPD = ET₀, lluvia, Kc, T, HR o kPa que vengan (VPD de referencia 0,5–1,5). NDVI, NDRE y mapas satelitales no vienen en este complemento: no inventes enlaces ni imágenes. Sin cuenta: la misma tabla con el resultado de la tool de cálculo.
+
 ## No mezclar
 
 - ISH ≠ lámina/balance ≠ pulso hidro ≠ VPD puntual ≠ ventana foliar ≠ pronóstico agroclimático.

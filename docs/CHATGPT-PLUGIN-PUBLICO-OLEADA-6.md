@@ -81,6 +81,10 @@ ISH ≠ lámina ≠ pulso hidro ≠ VPD ≠ ventana foliar ≠ pronóstico.
 Suelo kg/ha ≠ enmiendas CIC. % meq solución ≠ % CIC.  
 Chat/free tool ≠ datos del proyecto (hace falta su sesión).
 
+## Lectura didáctica
+
+Si piden fertirriego, granular, solución nutritiva, programa del ciclo, análisis, clima o VPD (o «didáctico»/«tabla»/«explícame»): primero la tool. Luego tabla markdown corta solo con cifras de la respuesta (vacío = «—»; no inventes ceros) y tres líneas: alto, bajo, qué mirar después. Sin gráfica ni imagen. Con cuenta: fertirriego = etapas, kg/ha y m³/ha; granular = aplicaciones y dosis; hidro = CE y meq del diseño, y programa del ciclo aparte del lab; clima/VPD = lo que venga (referencia VPD 0,5–1,5). NDVI/NDRE no vienen aquí: no inventes imágenes. Sin cuenta: la misma tabla con el cálculo.
+
 ## Tools
 
 Públicas: `lookup_chapter`, `lookup_free_tool`, `list_catalog`, conversiones, VPD, meq/sal, triángulos, DU, foliar window, ISH, CIC, dureza, lámina, granular, N mineralizable, pulso hidro, solubilidad, Mulder, extracción etapa, agua suelo, compatibilidad, fórmula, pronóstico, carbono, `cross_manual_signals`.  
