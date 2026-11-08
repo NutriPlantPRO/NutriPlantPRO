@@ -17,8 +17,9 @@ Producto acordado. **No es el GPT Socio.** El Socio vive en `/api/admin-assistan
 
 ## Cerebro vs tools
 
-- **Skill** (`docs/CHATGPT-PLUGIN-PUBLICO-SKILL.md`): piso técnico alto desde el mensaje 1. No “empieza principiante”.
+- **Skill** (`docs/CHATGPT-PLUGIN-PUBLICO-SKILL.md`): piso técnico alto desde el mensaje 1. No “empieza principiante”. Declara **dos modos** al inicio (invitado vs sesión).
 - **Tools:** calculan y citan URL. Crecen por oleadas. El cerebro ya nace completo.
+- **Mixed auth (0.7.0+):** cada tool declara `securitySchemes` (`noauth` = Manual+free; `oauth2` = proyectos). Login solo al llamar tools de suscriptor (challenge `_meta.mcp/www_authenticate`). Paquete listing: `chatgpt-plugins/nutriplant-pro/`.
 
 ## Oleadas (repo)
 

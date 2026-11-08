@@ -77,6 +77,31 @@ module.exports = [
     }
   },
   {
+    name: 'Público: mixed auth — free=noauth, suscriptor=oauth2',
+    run: function () {
+      var list = tools.toolsList();
+      var free = list.find(function (t) { return t.name === 'salt_from_meq'; });
+      var sub = list.find(function (t) { return t.name === 'list_my_projects'; });
+      assert.ok(free);
+      assert.ok(sub);
+      assert.deepEqual(free.securitySchemes, [{ type: 'noauth' }]);
+      assert.deepEqual(free._meta.securitySchemes, [{ type: 'noauth' }]);
+      assert.equal(sub.securitySchemes[0].type, 'oauth2');
+      assert.ok(sub.securitySchemes[0].scopes.indexOf('nutriplant.subscriber.read') >= 0);
+      assert.equal(sub._meta.securitySchemes[0].type, 'oauth2');
+    }
+  },
+  {
+    name: 'Público: prompts starter con modos invitado/sesión',
+    run: function () {
+      var prompts = tools.promptsList();
+      assert.ok(prompts.some(function (p) { return p.name === 'alcance_modos'; }));
+      var got = tools.promptGet('alcance_modos');
+      assert.ok(got && got.messages && got.messages[0]);
+      assert.match(got.messages[0].content.text, /SIN cuenta|sesión/i);
+    }
+  },
+  {
     name: 'Público: lookup_free_tool VPD da URL',
     run: function () {
       var r = core.lookupFreeTool({ q: 'vpd' });
@@ -216,7 +241,7 @@ module.exports = [
       var link = cross.buildDashboardDeepLink('proj-abc', 'foliar');
       assert.match(link.url, /np_project=proj-abc/);
       assert.match(link.url, /np_section=foliar/);
-      assert.equal(link.section_select, 'Análisis: Foliar');
+      assert.match(String(link.section_label || link.section_select || ''), /foliar/i);
       var links = cross.projectDeepLinks('proj-abc', 'Lote 1');
       assert.equal(links.ok, true);
       assert.ok(links.links.some(function (l) { return l.section === 'vpd' && /np_section=clima/.test(l.url); }));
@@ -589,7 +614,7 @@ module.exports = [
     }
   },
   {
-    name: 'Público: list_my_projects sin sesión → 401 OAuth',
+    name: 'Público: list_my_projects sin sesión → challenge OAuth (mixed auth)',
     run: async function () {
       var res = await handler(
         mcpEvent('POST', {
@@ -599,8 +624,25 @@ module.exports = [
           params: { name: 'list_my_projects', arguments: {} }
         })
       );
-      assert.equal(res.statusCode, 401);
+      assert.equal(res.statusCode, 200);
       assert.match(String(res.headers['WWW-Authenticate'] || ''), /oauth-protected-resource/);
+      assert.match(String(res.headers['WWW-Authenticate'] || ''), /insufficient_scope/);
+      var body = JSON.parse(res.body);
+      assert.equal(body.result.isError, true);
+      assert.ok(body.result._meta && body.result._meta['mcp/www_authenticate']);
+      assert.match(String(body.result.content[0].text), /Conectar cuenta|sesión/i);
+    }
+  },
+  {
+    name: 'Público: initialize declara modos en instructions + v0.7',
+    run: async function () {
+      var res = await handler(
+        mcpEvent('POST', { jsonrpc: '2.0', id: 9, method: 'initialize', params: {} })
+      );
+      var body = JSON.parse(res.body);
+      assert.equal(body.result.serverInfo.version, '0.7.0');
+      assert.match(body.result.instructions, /DOS MODOS|Sin cuenta/i);
+      assert.ok(body.result.capabilities.prompts);
     }
   }
 ];

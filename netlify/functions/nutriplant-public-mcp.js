@@ -51,16 +51,25 @@ function json(status, body, extra) {
   });
 }
 
-function wwwAuth(origin) {
-  return (
+function wwwAuth(origin, extra) {
+  let header =
     'Bearer realm="NutriPlant PRO", resource_metadata="' +
     origin +
-    '/.well-known/oauth-protected-resource"'
-  );
+    '/.well-known/oauth-protected-resource"';
+  if (extra && extra.error) {
+    header +=
+      ', error="' +
+      String(extra.error).replace(/"/g, '') +
+      '", error_description="' +
+      String(extra.error_description || 'Se requiere iniciar sesión de suscriptor NutriPlant PRO.')
+        .replace(/"/g, '') +
+      '"';
+  }
+  return header;
 }
 
-function mcpResult(id, result) {
-  return json(200, { jsonrpc: '2.0', id: id == null ? null : id, result });
+function mcpResult(id, result, extraHeaders) {
+  return json(200, { jsonrpc: '2.0', id: id == null ? null : id, result }, extraHeaders);
 }
 
 function mcpError(id, code, message, httpStatus, extraHeaders) {
@@ -94,8 +103,11 @@ async function handleMcpMessage(msg, event, origin) {
   if (method === 'initialize') {
     return mcpResult(id, {
       protocolVersion: PROTOCOL,
-      capabilities: { tools: { listChanged: false } },
-      serverInfo: { name: 'NutriPlant PRO', version: '0.6.0' },
+      capabilities: {
+        tools: { listChanged: false },
+        prompts: { listChanged: false }
+      },
+      serverInfo: { name: 'NutriPlant PRO', version: '0.7.0' },
       instructions: tools.PUBLIC_INSTRUCTIONS
     });
   }
@@ -105,7 +117,17 @@ async function handleMcpMessage(msg, event, origin) {
   }
 
   if (method === 'resources/list') return mcpResult(id, { resources: [] });
-  if (method === 'prompts/list') return mcpResult(id, { prompts: [] });
+
+  if (method === 'prompts/list') {
+    return mcpResult(id, { prompts: tools.promptsList() });
+  }
+
+  if (method === 'prompts/get') {
+    const promptName = msg.params && msg.params.name;
+    const prompt = tools.promptGet(promptName);
+    if (!prompt) return mcpError(id, -32602, 'Prompt desconocido: ' + String(promptName || ''));
+    return mcpResult(id, prompt);
+  }
 
   if (method === 'tools/call') {
     const name = msg.params && msg.params.name;
@@ -122,9 +144,31 @@ async function handleMcpMessage(msg, event, origin) {
     await usage.recordToolCall(event, user);
 
     if (tools.toolNeedsAuth(name) && !user) {
-      return mcpError(id, -32001, 'Se requiere iniciar sesión de suscriptor NutriPlant PRO (Conectar cuenta).', 401, {
-        'WWW-Authenticate': wwwAuth(origin)
+      // Mixed auth (OpenAI): result + isError + _meta www_authenticate dispara Conectar cuenta
+      // solo en tools de suscriptor. Las free (noauth) nunca llegan aquí.
+      const challenge = wwwAuth(origin, {
+        error: 'insufficient_scope',
+        error_description:
+          'Inicia sesión de suscriptor NutriPlant PRO para ver tus proyectos. Manual y free tools no requieren login.'
       });
+      return mcpResult(
+        id,
+        {
+          content: [
+            {
+              type: 'text',
+              text:
+                'Se requiere iniciar sesión de suscriptor NutriPlant PRO (Conectar cuenta) para esta tool. ' +
+                'Sin cuenta puedes usar Manual técnico + herramientas free (VPD, meq, capítulos, etc.).'
+            }
+          ],
+          isError: true,
+          _meta: {
+            'mcp/www_authenticate': [challenge]
+          }
+        },
+        { 'WWW-Authenticate': challenge }
+      );
     }
 
     try {
@@ -185,10 +229,15 @@ exports.handler = async function (event) {
     return json(200, {
       ok: true,
       name: 'NutriPlant PRO',
+      version: '0.7.0',
       mcp: origin + '/mcp',
       manual: 'https://nutriplantpro.com/manual-tecnico/',
       socio: false,
-      note: 'POST JSON-RPC MCP. El GPT Socio no vive aquí.'
+      modes: {
+        guest: 'Manual técnico + herramientas free (sin login)',
+        subscriber: 'OAuth opcional: solo sus proyectos (lectura)'
+      },
+      note: 'POST JSON-RPC MCP. El GPT Socio no vive aquí. Mixed auth: securitySchemes noauth|oauth2 por tool.'
     });
   }
 

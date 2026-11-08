@@ -157,8 +157,8 @@ https://developers.openai.com/plugins/deploy/submission
 | Campo | Valor |
 |-------|--------|
 | **Name** | NutriPlant PRO |
-| **Short description** | Consultor y calculadora de nutrición vegetal: labs, fertirriego, hidro, VPD y manual técnico. |
-| **Long description** | NutriPlant PRO conecta ChatGPT con el método y las herramientas de nutriplantpro.com. Sin cuenta: cálculos (meq, VPD, ISH, CIC, riego, etc.) + capítulos del manual. Con cuenta (OAuth): consulta de solo lectura de tus proyectos y deep links al dashboard. No es panel admin. Orientativo: decide el agrónomo. |
+| **Short description** | Manual + free sin login; con sesión, consulta solo tus proyectos (labs, ferti, VPD). |
+| **Long description** | NutriPlant PRO conecta ChatGPT con el método y las herramientas de nutriplantpro.com. Sin cuenta (invitado): cálculos free (meq, VPD, ISH, CIC, riego, etc.) + capítulos del Manual — no exige login. Con sesión NutriPlant (OAuth): consulta de solo lectura de tus proyectos y deep links al dashboard. El login aparece solo cuando pides tu data. No es panel admin. Orientativo: decide el agrónomo. |
 | **MCP URL** | `https://nutriplantpro.com/mcp` (Universal) |
 | **Homepage** | `https://nutriplantpro.com` |
 | **Privacy** | `https://nutriplantpro.com/politicas-privacidad.html` |

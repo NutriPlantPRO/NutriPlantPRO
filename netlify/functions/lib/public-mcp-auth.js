@@ -152,7 +152,7 @@ function authorizationServerMeta(origin) {
 function loginHtml(opts) {
   const err = opts.error
     ? '<p class="err">' + escapeHtml(opts.error) + '</p>'
-    : '<p class="hint">Misma cuenta de nutriplantpro.com. Solo verás <strong>tus</strong> proyectos.</p>';
+    : '<p class="hint">Misma cuenta de nutriplantpro.com. Solo verás <strong>tus</strong> proyectos. Manual técnico y herramientas free en ChatGPT <strong>no requieren</strong> este login.</p>';
   const fields = ['client_id', 'redirect_uri', 'state', 'code_challenge', 'resource', 'scope']
     .map((k) => {
       const v = opts[k] == null ? '' : String(opts[k]);

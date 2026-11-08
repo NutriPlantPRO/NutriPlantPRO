@@ -6,9 +6,12 @@ const freeCalc = require('./public-mcp-free-calc');
 const freeCalcExtra = require('./public-mcp-free-calc-extra');
 const cross = require('./public-mcp-cross');
 
+const SUBSCRIBER_SCOPE = 'nutriplant.subscriber.read';
+
 const PUBLIC_INSTRUCTIONS = [
-  'Eres NutriPlant PRO (plugin público). Español. Piso técnico alto: no trates al usuario como principiante.',
-  'Razón del @: ChatGPT no se pierda. Ancla = manual técnico + flujo plataforma + tools (misma lógica que free tools / web).',
+  'Eres NutriPlant PRO (plugin público). Español. Piso técnico alto desde el mensaje 1.',
+  'DOS MODOS (decláralos sin que el usuario insista): (1) Sin cuenta = Manual técnico + herramientas free (cálculos). No pidas login para VPD, meq, capítulos ni free tools. (2) Con sesión NutriPlant = además lees SOLO sus proyectos (labs, programas, VPD, clima, deep links). Si pide “mis proyectos / mi lote / mi foliar” y no hay sesión, usa la tool de suscriptor para disparar Conectar cuenta; no digas que el complemento no puede.',
+  'Razón del @: ancla = manual + flujo plataforma + tools (misma lógica que free tools / web).',
   'Método: dato→interpretación→ajuste→programa→seguimiento. Pregunta de método → lookup_chapter (flujo o tema) antes de improvisar.',
   'Cifra → tool. No inventes kPa, g/m³, kg/ha, labs ni clima. Cita URL del capítulo; si hay UI, también URL de herramienta gratis (lookup_free_tool / list_catalog).',
   'Cálculo free (oleadas 2–3): VPD punto, triángulos meq, DU, foliar, ISH, óxido, CIC, dureza, lámina, granular, N mineralizable, pulso hidro, magnitudes, solubilidad/IS, Mulder, extracción etapa, agua suelo, compatibilidad, composición fórmula, pronóstico punto, huella carbono.',
@@ -484,7 +487,7 @@ const TOOLS = [
   {
     name: 'list_my_projects',
     description:
-      'Lista SOLO los proyectos del suscriptor autenticado (JWT propio). Requiere Conectar cuenta NutriPlant PRO.',
+      'Lista SOLO los proyectos del suscriptor autenticado (JWT propio). Requiere Conectar cuenta NutriPlant PRO. Sin sesión: dispara login; no uses esta tool para cálculos free.',
     auth: true,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: { type: 'object', properties: {} }
@@ -492,7 +495,7 @@ const TOOLS = [
   {
     name: 'get_my_project',
     description:
-      'Expediente del suscriptor (solo lectura): resumen, flow_status, labs, enmiendas, programas, VPD/clima, extracción, deep_links al dashboard y cruce foliar↔VPD↔programa. Programas, fertilizantes, etapas y extracción van completos.',
+      'Expediente del suscriptor (solo lectura; requiere sesión): resumen, flow_status, labs, enmiendas, programas, VPD/clima, extracción, deep_links al dashboard y cruce foliar↔VPD↔programa. Programas, fertilizantes, etapas y extracción van completos.',
     auth: true,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: {
@@ -515,7 +518,7 @@ const TOOLS = [
   {
     name: 'interpret_project_cross',
     description:
-      'Cruce foliar (DOP) ↔ VPD ↔ programa (ferti/hidro) del proyecto del suscriptor. Señales + qué no mezclar + deep links. Solo lectura.',
+      'Cruce foliar (DOP) ↔ VPD ↔ programa (ferti/hidro) del proyecto del suscriptor (requiere sesión). Señales + qué no mezclar + deep links. Solo lectura.',
     auth: true,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: {
@@ -530,7 +533,7 @@ const TOOLS = [
   {
     name: 'project_deep_links',
     description:
-      'URLs deep link al dashboard del suscriptor (np_project + np_section) para foliar, VPD, ferti, hidro, etc.',
+      'URLs deep link al dashboard del suscriptor (requiere sesión): np_project + np_section para foliar, VPD, ferti, hidro, etc.',
     auth: true,
     annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
     inputSchema: {
@@ -558,13 +561,27 @@ const TOOLS = [
   }
 ];
 
+function securitySchemesFor(tool) {
+  if (tool && tool.auth) {
+    return [{ type: 'oauth2', scopes: [SUBSCRIBER_SCOPE] }];
+  }
+  // Invitado: Manual + free tools sin login. No mezclar oauth2 aquí o ChatGPT pide cuenta al entrar.
+  return [{ type: 'noauth' }];
+}
+
 function toolsList() {
-  return TOOLS.map((t) => ({
-    name: t.name,
-    description: t.description,
-    inputSchema: t.inputSchema,
-    annotations: t.annotations
-  }));
+  return TOOLS.map((t) => {
+    const schemes = securitySchemesFor(t);
+    return {
+      name: t.name,
+      description: t.description,
+      inputSchema: t.inputSchema,
+      annotations: t.annotations,
+      // SEP-1488 (top-level) + Apps SDK (_meta): ChatGPT mixed auth.
+      securitySchemes: schemes,
+      _meta: { securitySchemes: schemes }
+    };
+  });
 }
 
 function toolNeedsAuth(name) {
@@ -646,10 +663,89 @@ async function callTool(name, args, user) {
   }
 }
 
+const STARTER_PROMPTS = [
+  {
+    name: 'alcance_modos',
+    title: 'Qué puedo hacer (sin cuenta / con sesión)',
+    description:
+      'Declara al inicio los dos modos: Manual+free sin login, y con sesión acceso de solo lectura a los proyectos del usuario.'
+  },
+  {
+    name: 'calculo_free',
+    title: 'Cálculo free sin cuenta',
+    description: 'Ejemplo de uso invitado: VPD, meq o capítulo del manual sin pedir login.'
+  },
+  {
+    name: 'mis_proyectos',
+    title: 'Mis proyectos (con sesión)',
+    description: 'Pide listar o abrir el expediente del suscriptor; dispara Conectar cuenta si no hay sesión.'
+  }
+];
+
+function promptsList() {
+  return STARTER_PROMPTS.map((p) => ({
+    name: p.name,
+    title: p.title,
+    description: p.description
+  }));
+}
+
+function promptGet(name) {
+  const key = String(name || '').trim();
+  if (key === 'alcance_modos') {
+    return {
+      description: STARTER_PROMPTS[0].description,
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text:
+              'Desde el primer mensaje: dime qué puedes hacer SIN cuenta (Manual técnico + herramientas free) y qué puedes leer CON mi sesión NutriPlant (solo mis proyectos: labs, programas, VPD, clima, deep links). No digas que necesito login para cálculos free.'
+          }
+        }
+      ]
+    };
+  }
+  if (key === 'calculo_free') {
+    return {
+      description: STARTER_PROMPTS[1].description,
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: 'Sin iniciar sesión: interpreta VPD 2 kPa en jitomate con criterio NutriPlant y cita el capítulo.'
+          }
+        }
+      ]
+    };
+  }
+  if (key === 'mis_proyectos') {
+    return {
+      description: STARTER_PROMPTS[2].description,
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text:
+              'Con mi cuenta NutriPlant: lista mis proyectos y abre el expediente del primero (labs, programa, VPD). Si no hay sesión, inicia Conectar cuenta.'
+          }
+        }
+      ]
+    };
+  }
+  return null;
+}
+
 module.exports = {
   TOOLS,
   PUBLIC_INSTRUCTIONS,
+  SUBSCRIBER_SCOPE,
   toolsList,
   toolNeedsAuth,
-  callTool
+  callTool,
+  promptsList,
+  promptGet
 };
