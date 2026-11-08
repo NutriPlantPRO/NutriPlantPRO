@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "nutriplant-pro",
+  "name": "app-6aaafc2de7088191aaaf5a806490c801",
   "version": "1.1.0",
   "description": "Manual técnico + free tools sin login; con sesión NutriPlant, consulta solo tus proyectos.",
   "author": {
@@ -12,12 +12,13 @@
     "com.openai": {
       "interface": {
         "displayName": "NutriPlant PRO",
-        "shortDescription": "Manual + free sin login; con sesión, tus proyectos.",
-        "longDescription": "NutriPlant PRO en ChatGPT: sin cuenta usas Manual técnico y herramientas free (VPD, meq, ISH, CIC, riego…). Con sesión NutriPlant lees solo tus proyectos (labs, programas, clima) y deep links al dashboard. El login aparece solo cuando pides tu data. No es panel admin. Orientativo: decide el agrónomo.",
+        "shortDescription": "Método NutriPlant + proyectos",
+        "longDescription": "NutriPlant PRO en ChatGPT: sin cuenta usas el Manual técnico y las herramientas públicas (VPD, meq, ISH, CIC, riego…). Con sesión NutriPlant consultas solo tus proyectos (labs, programas, clima) y deep links al dashboard. El inicio de sesión aparece solo cuando pides tu data. No es panel admin. Orientativo: decide el agrónomo.",
         "developerName": "NutriPlant PRO",
         "category": "Productivity",
         "capabilities": ["Read"],
         "websiteURL": "https://nutriplantpro.com",
+        "supportURL": "https://nutriplantpro.com",
         "privacyPolicyURL": "https://nutriplantpro.com/politicas-privacidad.html",
         "termsOfServiceURL": "https://nutriplantpro.com/terminos-condiciones.html",
         "defaultPrompt": [
@@ -28,11 +29,6 @@
         "brandColor": "#0B1F4A",
         "composerIcon": "./assets/icon.png",
         "logo": "./assets/logo.png"
-      },
-      "mcpServers": {
-        "nutriplant-pro": {
-          "url": "https://nutriplantpro.com/mcp"
-        }
       }
     }
   }
