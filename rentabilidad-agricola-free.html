@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rentabilidad Agrícola | NutriPlant PRO</title>
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/free-tools-embed.js?v=20261110ra"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --green: #0f766e;
+      --green-2: #0d9488;
+      --navy: #1e3a5f;
+      --loss: #b91c1c;
+      --loss-bg: #fef2f2;
+      --amber: #92400e;
+      --amber-bg: #fffbeb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 6px; }
+    h2 { font-size: 1.15rem; margin: 0 0 6px; }
+    h3 { font-size: 0.95rem; margin: 0 0 8px; }
+    p { margin: 0 0 10px; }
+    .muted { color: var(--muted); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .hero {
+      background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 70%);
+      border-color: #99f6e4;
+    }
+    .kicker {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .choices { display: grid; gap: 10px; }
+    @media (min-width: 760px) { .choices { grid-template-columns: 1fr 1fr; } }
+    .choice {
+      text-align: left;
+      width: 100%;
+      border: 1px solid #99f6e4;
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .choice strong { display: block; font-size: 1.05rem; margin-bottom: 6px; color: var(--navy); }
+    .choice:hover, .choice:focus { border-color: var(--green-2); outline: 2px solid rgba(13, 148, 136, 0.25); }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    button, .btn {
+      font: inherit;
+      cursor: pointer;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: var(--navy);
+      padding: 10px 12px;
+      font-weight: 650;
+    }
+    button.primary { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+    button.quiet { background: transparent; }
+    button.danger { color: var(--loss); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--green-2);
+      outline-offset: 2px;
+    }
+    label { display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    label input[type="radio"] { width: auto; margin: 0 8px 0 0; vertical-align: middle; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+    .grid { display: grid; gap: 10px; }
+    @media (min-width: 720px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .field { margin-bottom: 10px; }
+    .hint { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+    .cost-row, .group-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    @media (min-width: 640px) {
+      .cost-row { grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.7fr) auto; align-items: end; }
+    }
+    .cost-row.is-hidden { display: none; }
+    .metrics { display: grid; gap: 10px; }
+    @media (min-width: 800px) { .metrics { grid-template-columns: 1fr 1fr 1fr; } }
+    .metric {
+      border: 1px solid #99f6e4;
+      background: #f0fdfa;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .metric b { display: block; font-size: 1.25rem; margin-top: 4px; }
+    .metric span { color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; }
+    .metric.loss { border-color: #fecaca; background: var(--loss-bg); }
+    .metric.loss span, .metric.loss b { color: var(--loss); }
+    .metric.navy { border-color: #cbd5e1; background: #f8fafc; }
+    .metric.navy span { color: var(--navy); }
+    .ratio-hero {
+      border-radius: 14px;
+      padding: 16px;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      margin-bottom: 10px;
+    }
+    .ratio-hero.loss { background: var(--loss-bg); border-color: #fecaca; }
+    .ratio-hero .value { font-size: 2.4rem; font-weight: 800; margin: 4px 0; letter-spacing: -0.03em; }
+    .note, .warn, .example-note {
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin: 8px 0;
+    }
+    .note { background: #f8fafc; border: 1px solid var(--line); }
+    .warn { background: var(--amber-bg); border: 1px solid #fcd34d; color: var(--amber); }
+    .example-note { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+    .error {
+      background: var(--loss-bg);
+      border: 1px solid #fecaca;
+      color: var(--loss);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 8px 0;
+    }
+    canvas { width: 100%; display: block; }
+    .chart-card { margin-top: 12px; }
+    details { margin-top: 8px; }
+    summary { cursor: pointer; font-weight: 700; color: var(--navy); }
+    .compare { display: grid; gap: 12px; }
+    @media (min-width: 800px) { .compare { grid-template-columns: 1fr 1fr; } }
+    .compare .side { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fff; }
+    .side.now { border-top: 4px solid var(--navy); }
+    .side.next { border-top: 4px solid var(--green-2); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button { padding: 7px 10px; font-size: 13px; }
+    .footer-line { font-size: 13px; color: var(--navy); font-weight: 700; margin-top: 8px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card hero" id="view-home">
+      <p class="kicker">NutriPlant PRO · herramienta gratuita</p>
+      <h1>Rentabilidad Agrícola</h1>
+      <p>Del rendimiento productivo al valor económico de tus decisiones.</p>
+      <p class="muted">Menos receta, más criterio. Los cálculos se hacen en este navegador y no se envían a NutriPlant.</p>
+      <div class="choices">
+        <button class="choice" type="button" id="open-a">
+          <strong>Conocer mis costos</strong>
+          Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.
+        </button>
+        <button class="choice" type="button" id="open-b">
+          <strong>Evaluar un nuevo manejo</strong>
+          Descubre cuánta producción o beneficio adicional necesitas para justificar una nueva inversión.
+        </button>
+      </div>
+    </section>
+
+    <section id="view-a" hidden>
+      <article class="card hero">
+        <p class="kicker">Módulo A</p>
+        <h1>Rentabilidad del cultivo</h1>
+        <p>¿Cuánto cuesta producir y cuál es mi punto de equilibrio?</p>
+        <p class="muted" id="a-message"></p>
+        <div class="row">
+          <button type="button" class="quiet" id="a-home">Inicio</button>
+          <button type="button" id="a-example">Cargar ejemplo</button>
+          <button type="button" class="quiet" id="a-reset">Reiniciar ejercicio</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Datos del ejercicio</h2>
+        <div class="grid grid-2">
+          <div class="field"><label for="a-name">Nombre del ejercicio</label><input id="a-name" type="text" maxlength="120" placeholder="Análisis económico del ciclo productivo" /></div>
+          <div class="field"><label for="a-crop">Cultivo</label><input id="a-crop" type="text" maxlength="80" placeholder="Cualquier cultivo" /></div>
+          <div class="field"><label for="a-area">Superficie (ha)</label><input id="a-area" type="text" inputmode="decimal" placeholder="Opcional" /></div>
+          <div class="field"><label for="a-period">Periodo de análisis</label><input id="a-period" type="text" maxlength="80" placeholder="Ciclo, temporada o fechas" /></div>
+          <div class="field">
+            <label for="a-currency">Moneda</label>
+            <select id="a-currency"></select>
+            <p class="hint" id="a-currency-note">Cada ejercicio usa una sola moneda. Cambiarla no convierte los importes ya escritos.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Costos del ciclo</h2>
+        <p class="muted" id="a-dup-note"></p>
+        <div class="row">
+          <button type="button" id="a-more">Mostrar más categorías</button>
+          <button type="button" id="a-group">Ver categorías agrupadas</button>
+        </div>
+        <div id="cost-list"></div>
+        <div class="grid grid-2" style="margin-top:12px">
+          <div class="field"><label for="a-new-label">Concepto propio</label><input id="a-new-label" type="text" maxlength="80" placeholder="Nombre del costo" /></div>
+          <div class="field"><label class="sr" for="a-add">Agregar</label><button type="button" id="a-add" style="margin-top:22px">Agregar concepto</button></div>
+        </div>
+        <p id="a-total-live" class="footer-line"></p>
+      </article>
+
+      <article class="card">
+        <h2>Producción e ingresos</h2>
+        <p class="muted">La cosecha no siempre es igual a lo vendido. Los kilos no comercializados suben el costo de los kilos que sí generan ingreso.</p>
+        <div class="grid grid-3">
+          <div class="field"><label for="a-harvest">Producción cosechada (kg)</label><input id="a-harvest" type="text" inputmode="decimal" placeholder="Opcional" /></div>
+          <div class="field"><label for="a-sold">Producción comercializada (kg)</label><input id="a-sold" type="text" inputmode="decimal" placeholder="Obligatoria para el costo por kg" /></div>
+          <div class="field"><label for="a-price">Precio promedio de venta por kg</label><input id="a-price" type="text" inputmode="decimal" placeholder="0.00" /></div>
+        </div>
+        <details>
+          <summary>Opciones avanzadas: otros ingresos, financiamiento y volumen de equilibrio</summary>
+          <div class="grid grid-2" style="margin-top:12px">
+            <div class="field">
+              <label for="a-byproduct">Ingresos por subproductos o segunda</label>
+              <input id="a-byproduct" type="text" inputmode="decimal" placeholder="Opcional, misma moneda" />
+            </div>
+            <div class="field">
+              <label for="a-financing">Intereses y comisiones de financiamiento</label>
+              <input id="a-financing" type="text" inputmode="decimal" placeholder="Opcional" />
+              <p class="hint">Solo intereses y comisiones. No anotes el capital del préstamo si la compra ya está en los costos.</p>
+            </div>
+            <div class="field">
+              <label for="a-fixed">Costos fijos del periodo</label>
+              <input id="a-fixed" type="text" inputmode="decimal" placeholder="Para el volumen de equilibrio" />
+            </div>
+            <div class="field">
+              <label for="a-variable">Costo variable por kg</label>
+              <input id="a-variable" type="text" inputmode="decimal" placeholder="No se asume cero" />
+              <p class="hint">El volumen de equilibrio usa estos dos datos y el precio de venta. No usa el costo total dividido entre el precio.</p>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <article class="card">
+        <h2>Análisis de escenarios</h2>
+        <p class="muted">Mueve el precio, los kilos o el costo y mira el efecto. Producir más no mantiene solos los costos.</p>
+        <div class="grid grid-3">
+          <div class="field"><label for="a-sc-price">Precio del escenario</label><input id="a-sc-price" type="text" inputmode="decimal" placeholder="Usa el precio actual si lo dejas vacío" /></div>
+          <div class="field"><label for="a-sc-sold">Producción comercializable</label><input id="a-sc-sold" type="text" inputmode="decimal" placeholder="Usa los kilos actuales si lo dejas vacío" /></div>
+          <div class="field">
+            <label for="a-sc-mode">Cómo se comportan los costos</label>
+            <select id="a-sc-mode">
+              <option value="constant_total">El costo total de este ejercicio no cambia</option>
+              <option value="custom_total">Escribir otro costo total</option>
+              <option value="fixed_plus_variable">Costos fijos + variable por kg</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" id="a-sc-total-wrap" hidden>
+          <label for="a-sc-total">Costo total de la alternativa</label>
+          <input id="a-sc-total" type="text" inputmode="decimal" />
+        </div>
+        <div class="grid grid-2" id="a-sc-var-wrap" hidden>
+          <div class="field"><label for="a-sc-fixed">Costos fijos</label><input id="a-sc-fixed" type="text" inputmode="decimal" /></div>
+          <div class="field"><label for="a-sc-var">Costo variable por kg</label><input id="a-sc-var" type="text" inputmode="decimal" /></div>
+        </div>
+      </article>
+
+      <div class="row">
+        <button type="button" class="primary" id="a-calc">Calcular y visualizar resultados</button>
+        <button type="button" id="a-edit">Modificar datos</button>
+        <button type="button" id="a-pdf">Descargar reporte PDF</button>
+        <button type="button" id="a-to-b">Usar estos datos para evaluar un manejo</button>
+      </div>
+      <div id="a-example-note"></div>
+      <div id="a-results" aria-live="polite"></div>
+    </section>
+
+    <section id="view-b" hidden>
+      <article class="card hero">
+        <p class="kicker">Módulo B</p>
+        <h1>¿Vale la pena invertir más?</h1>
+        <p>Compara tu manejo actual con una alternativa y descubre cuánto valor económico adicional puede generar.</p>
+        <p class="muted" id="b-message"></p>
+        <div class="row">
+          <button type="button" class="quiet" id="b-home">Inicio</button>
+          <button type="button" id="b-example">Cargar ejemplo</button>
+          <button type="button" class="quiet" id="b-reset">Reiniciar ejercicio</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Qué estás comparando</h2>
+        <div class="field"><label for="b-strategy">Tipo de inversión o estrategia</label><input id="b-strategy" type="text" maxlength="120" placeholder="Nutrición, fertirriego, riego, calidad, otra" /></div>
+        <div class="chips" id="b-chips">
+          <button type="button" data-chip="Programa de nutrición vegetal">Nutrición</button>
+          <button type="button" data-chip="Tecnología de fertirriego">Fertirriego</button>
+          <button type="button" data-chip="Eficiencia de riego">Riego</button>
+          <button type="button" data-chip="Manejo fitosanitario">Fitosanidad</button>
+          <button type="button" data-chip="Calidad comercial">Calidad</button>
+          <button type="button" data-chip="Cambio operativo">Operación</button>
+        </div>
+        <div class="grid grid-2" style="margin-top:12px">
+          <div class="field"><label for="b-crop">Cultivo</label><input id="b-crop" type="text" maxlength="80" /></div>
+          <div class="field"><label for="b-currency">Moneda</label><select id="b-currency"></select></div>
+        </div>
+        <fieldset style="border:0;padding:0;margin:8px 0">
+          <legend class="muted">Alcance de la comparación</legend>
+          <label><input type="radio" name="b-scope" value="intervention" /> Solo esta inversión, por ejemplo nutrición, más los costos extra que indique abajo.</label>
+          <label><input type="radio" name="b-scope" value="full_system" /> Costo completo de los dos sistemas. No vuelvas a sumar un programa que ya esté dentro.</label>
+        </fieldset>
+        <p class="hint" id="b-transfer"></p>
+      </article>
+
+      <article class="card">
+        <div class="compare">
+          <div class="side now">
+            <h2>Manejo actual</h2>
+            <div class="field"><label for="b-c-cost" id="b-c-cost-label">Costo del programa</label><input id="b-c-cost" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-c-kg">Producción comercializada (kg)</label><input id="b-c-kg" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-c-price">Precio promedio por kg</label><input id="b-c-price" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-c-other">Otros costos asociados</label><input id="b-c-other" type="text" inputmode="decimal" placeholder="Opcional" /></div>
+          </div>
+          <div class="side next">
+            <h2>Manejo mejorado</h2>
+            <div class="field"><label for="b-i-cost" id="b-i-cost-label">Costo del programa</label><input id="b-i-cost" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-i-kg">Producción comercializada (kg)</label><input id="b-i-kg" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-i-price">Precio promedio por kg</label><input id="b-i-price" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-i-other">Otros costos asociados</label><input id="b-i-other" type="text" inputmode="decimal" placeholder="Opcional" /></div>
+          </div>
+        </div>
+        <p class="hint">Si los precios cambian, el ingreso adicional es la diferencia entre los dos ingresos completos, no los kilos de diferencia por un solo precio.</p>
+      </article>
+
+      <article class="card">
+        <h2>Costos de la producción adicional</h2>
+        <p class="muted">Si no se descuentan, la herramienta habla de ventas adicionales, no de beneficio neto.</p>
+        <label><input type="radio" name="b-other" value="unspecified" /> Todavía no descuento cosecha, empaque, flete ni mano de obra extra.</label>
+        <label><input type="radio" name="b-other" value="none" /> Ya revisé esos costos y no hay otros costos incrementales.</label>
+        <label><input type="radio" name="b-other" value="lump" /> Tengo un importe total de costos incrementales.</label>
+        <label><input type="radio" name="b-other" value="per_kg" /> Tengo un costo variable por kilogramo adicional.</label>
+        <div class="grid grid-2" style="margin-top:12px">
+          <div class="field" id="b-lump-wrap" hidden>
+            <label for="b-lump">Otros costos incrementales</label>
+            <input id="b-lump" type="text" inputmode="decimal" />
+          </div>
+          <div class="field" id="b-var-wrap" hidden>
+            <label for="b-var">Costo variable incremental por kg</label>
+            <input id="b-var" type="text" inputmode="decimal" />
+          </div>
+          <div class="field">
+            <label for="b-savings">Ahorros atribuibles a la mejora</label>
+            <input id="b-savings" type="text" inputmode="decimal" placeholder="Opcional, en positivo" />
+          </div>
+        </div>
+        <p class="hint">No registres dos veces la misma partida. Un ahorro no se anota también como menor costo del programa y como ahorro.</p>
+      </article>
+
+      <article class="card">
+        <h2>Cómo leer la relación</h2>
+        <p><strong>1:1</strong> La inversión adicional se recupera, pero no deja beneficio incremental después de pagarla.</p>
+        <p><strong>3:1</strong> Por cada unidad adicional invertida se generan tres de beneficio antes de recuperar la inversión.</p>
+        <p><strong>5:1</strong> Por cada unidad adicional invertida se generan cinco de beneficio antes de recuperar la inversión.</p>
+        <p class="muted">Estas lecturas valen para la relación beneficio–costo. No se aplican igual cuando el numerador es solo ingreso por ventas.</p>
+        <p class="muted" id="b-agro"></p>
+      </article>
+
+      <div class="row">
+        <button type="button" class="primary" id="b-calc">Calcular y visualizar resultados</button>
+        <button type="button" id="b-edit">Modificar datos</button>
+        <button type="button" id="b-pdf">Descargar reporte PDF</button>
+      </div>
+      <div id="b-example-note"></div>
+      <div id="b-results" aria-live="polite"></div>
+    </section>
+    <p class="footer-line">NutriPlant PRO — Diseña. Ajusta. Nutre.</p>
+  </main>
+  <script src="assets/np-rentabilidad-core.js?v=20261110rb"></script>
+  <script>
+    (function () {
+      var R = window.NpRentabilidad;
+      var KEY = 'nutriplant_free_rentabilidad_v1';
+      var state = { view: 'home', a: blankA(), b: blankB() };
+
+      function blankA() {
+        return {
+          exerciseName: '', crop: '', areaHa: '', period: '', currency: 'USD',
+          showAll: false, grouped: false, costs: R.emptyCostLines(),
+          harvestedKg: '', soldKg: '', pricePerKg: '', byproductRevenue: '', financingCost: '',
+          fixedCosts: '', variableCostPerKg: '',
+          scenarioPrice: '', scenarioSold: '', scenarioMode: 'constant_total',
+          scenarioTotal: '', scenarioFixed: '', scenarioVariable: '', isExample: false
+        };
+      }
+      function blankB() {
+        return {
+          strategyName: '', crop: '', currency: 'USD', scope: 'intervention',
+          current: { programCost: '', soldKg: '', pricePerKg: '', associatedCosts: '' },
+          improved: { programCost: '', soldKg: '', pricePerKg: '', associatedCosts: '' },
+          otherMode: 'unspecified', otherLump: '', variablePerKg: '', savings: '',
+          transferNote: '', isExample: false
+        };
+      }
+      function esc(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function q(id) { return document.getElementById(id); }
+      function save() {
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) { /* el navegador puede bloquear el guardado local */ }
+      }
+      function showView(name) {
+        state.view = name;
+        q('view-home').hidden = name !== 'home';
+        q('view-a').hidden = name !== 'a';
+        q('view-b').hidden = name !== 'b';
+        if (name === 'a') paintA();
+        if (name === 'b') paintB();
+        save();
+      }
+      function fillCurrencies(select, selected) {
+        select.innerHTML = R.CURRENCIES.map(function (item) {
+          return '<option value="' + item.code + '">' + item.code + ' — ' + item.name + '</option>';
+        }).join('');
+        select.value = selected || 'USD';
+      }
+      function setVal(id, value) { q(id).value = value == null ? '' : value; }
+
+      function renderCosts() {
+        var host = q('cost-list');
+        if (state.a.grouped) {
+          var groups = R.summarizeGroups(state.a.costs);
+          host.innerHTML = groups.length ? groups.map(function (group) {
+            return '<div class="group-row"><strong>' + esc(group.label) + '</strong><span>' + esc(R.formatMoney(group.total, state.a.currency)) + '</span></div>';
+          }).join('') : '<p class="muted">Todavía no hay costos para agrupar.</p>';
+          q('a-group').textContent = 'Ver desglose';
+          return;
+        }
+        q('a-group').textContent = 'Ver categorías agrupadas';
+        host.innerHTML = state.a.costs.map(function (line, index) {
+          var secondary = R.COST_CATEGORIES.some(function (cat) { return cat.id === line.id && !cat.primary; });
+          var hidden = secondary && !state.a.showAll && String(line.amount).trim() === '';
+          var label = line.custom
+            ? '<input type="text" data-label="' + index + '" value="' + esc(line.label) + '" aria-label="Nombre del concepto" />'
+            : '<label>' + esc(line.label) + '</label>';
+          return '<div class="cost-row' + (hidden ? ' is-hidden' : '') + '">' + label
+            + '<input type="text" inputmode="decimal" data-cost="' + index + '" value="' + esc(line.amount) + '" aria-label="Importe de ' + esc(line.label) + '" />'
+            + '<button type="button" data-remove="' + index + '">Quitar</button></div>';
+        }).join('');
+        q('a-more').hidden = state.a.showAll || !state.a.costs.some(function (line) {
+          return R.COST_CATEGORIES.some(function (cat) { return cat.id === line.id && !cat.primary; });
+        });
+      }
+
+      function fillA() {
+        setVal('a-name', state.a.exerciseName);
+        setVal('a-crop', state.a.crop);
+        setVal('a-area', state.a.areaHa);
+        setVal('a-period', state.a.period);
+        fillCurrencies(q('a-currency'), state.a.currency);
+        setVal('a-harvest', state.a.harvestedKg);
+        setVal('a-sold', state.a.soldKg);
+        setVal('a-price', state.a.pricePerKg);
+        setVal('a-byproduct', state.a.byproductRevenue);
+        setVal('a-financing', state.a.financingCost);
+        setVal('a-fixed', state.a.fixedCosts);
+        setVal('a-variable', state.a.variableCostPerKg);
+        setVal('a-sc-price', state.a.scenarioPrice);
+        setVal('a-sc-sold', state.a.scenarioSold);
+        q('a-sc-mode').value = state.a.scenarioMode;
+        setVal('a-sc-total', state.a.scenarioTotal);
+        setVal('a-sc-fixed', state.a.scenarioFixed);
+        setVal('a-sc-var', state.a.scenarioVariable);
+        renderCosts();
+      }
+      function fillB() {
+        setVal('b-strategy', state.b.strategyName);
+        setVal('b-crop', state.b.crop);
+        fillCurrencies(q('b-currency'), state.b.currency);
+        document.querySelectorAll('input[name="b-scope"]').forEach(function (el) { el.checked = el.value === state.b.scope; });
+        document.querySelectorAll('input[name="b-other"]').forEach(function (el) { el.checked = el.value === state.b.otherMode; });
+        setVal('b-c-cost', state.b.current.programCost);
+        setVal('b-c-kg', state.b.current.soldKg);
+        setVal('b-c-price', state.b.current.pricePerKg);
+        setVal('b-c-other', state.b.current.associatedCosts);
+        setVal('b-i-cost', state.b.improved.programCost);
+        setVal('b-i-kg', state.b.improved.soldKg);
+        setVal('b-i-price', state.b.improved.pricePerKg);
+        setVal('b-i-other', state.b.improved.associatedCosts);
+        setVal('b-lump', state.b.otherLump);
+        setVal('b-var', state.b.variablePerKg);
+        setVal('b-savings', state.b.savings);
+        q('b-transfer').textContent = state.b.transferNote || '';
+        var full = state.b.scope === 'full_system';
+        q('b-c-cost-label').textContent = full ? 'Costo total del sistema actual' : 'Costo del programa';
+        q('b-i-cost-label').textContent = full ? 'Costo total del sistema mejorado' : 'Costo del programa';
+        q('b-lump-wrap').hidden = state.b.otherMode !== 'lump';
+        q('b-var-wrap').hidden = state.b.otherMode !== 'per_kg';
+      }
+
+      function metric(label, value, kind) {
+        return '<article class="metric ' + (kind || '') + '"><span>' + esc(label) + '</span><b>' + esc(value) + '</b></article>';
+      }
+      function errorsHtml(list) {
+        return '<div class="error">' + list.map(function (item) { return '<div>' + esc(item.message) + '</div>'; }).join('') + '</div>';
+      }
+
+      function paintA() {
+        q('a-message').textContent = R.MODULE_A_MESSAGE;
+        q('a-dup-note').textContent = R.DUPLICATE_COST_NOTE;
+        q('a-sc-total-wrap').hidden = state.a.scenarioMode !== 'custom_total';
+        q('a-sc-var-wrap').hidden = state.a.scenarioMode !== 'fixed_plus_variable';
+        q('a-example-note').innerHTML = state.a.isExample ? '<p class="example-note">' + esc(R.EXAMPLE_DISCLAIMER) + '</p>' : '';
+        var result = R.evaluateCrop(state.a);
+        var host = q('a-results');
+        var hasData = state.a.costs.some(function (line) { return String(line.amount).trim() !== ''; })
+          || String(state.a.soldKg).trim() || String(state.a.pricePerKg).trim();
+        q('a-total-live').textContent = result.ok && result.totalCost != null
+          ? 'Costo total: ' + R.formatMoney(result.totalCost, result.currency)
+          : '';
+        if (!hasData) {
+          host.innerHTML = '<article class="card"><p>Empieza por los costos habituales, los kilos vendidos y el precio. El resultado se actualiza al escribir.</p></article>';
+          return;
+        }
+        if (!result.ok) {
+          host.innerHTML = errorsHtml(result.errors);
+          return;
+        }
+        var cur = result.currency;
+        var cards = '';
+        if (result.costPerKg != null) cards += metric('Costo por kilogramo', R.formatPerKg(result.costPerKg, cur), 'navy');
+        if (result.breakEvenPrice != null) cards += metric('Precio de equilibrio', R.formatPerKg(result.breakEvenPrice, cur), 'navy');
+        if (result.returnOnCostPct != null) {
+          cards += metric(result.loss ? 'Rentabilidad sobre costo' : 'Rentabilidad sobre costo', R.formatPct(result.returnOnCostPct), result.loss ? 'loss' : '');
+        }
+        if (result.marginOnSalesPct != null) cards += metric('Margen sobre ventas', R.formatPct(result.marginOnSalesPct), result.loss ? 'loss' : '');
+        if (result.totalCost != null) cards += metric('Costo total', R.formatMoney(result.totalCost, cur));
+        if (result.revenue != null) cards += metric('Ingresos', R.formatMoney(result.revenue, cur));
+        if (result.profit != null) cards += metric(result.loss ? 'Pérdida' : 'Utilidad', R.formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur), result.loss ? 'loss' : '');
+        if (result.profitAfterFinancing != null) {
+          var afterLoss = result.profitAfterFinancing < 0;
+          cards += metric(afterLoss ? 'Pérdida después de financiamiento' : 'Utilidad después de financiamiento', R.formatMoney(afterLoss ? Math.abs(result.profitAfterFinancing) : result.profitAfterFinancing, cur), afterLoss ? 'loss' : 'navy');
+        }
+        var extra = '';
+        if (result.perHa) {
+          extra += '<p class="note">Por hectárea: costo ' + esc(R.formatMoney(result.perHa.cost, cur))
+            + (result.perHa.revenue == null ? '' : ', ingresos ' + esc(R.formatMoney(result.perHa.revenue, cur)))
+            + (result.perHa.profit == null ? '' : ', utilidad ' + esc(R.formatMoney(result.perHa.profit, cur)))
+            + (result.perHa.soldKg == null ? '' : ', ' + esc(R.formatKg(result.perHa.soldKg)) + '/ha') + '.</p>';
+        }
+        if (result.wasteKg != null) {
+          extra += '<p class="note">No comercializado: ' + esc(R.formatKg(result.wasteKg))
+            + '. Comercialización: ' + esc(R.formatPct(result.commercializationPct)) + '.</p>';
+        }
+        if (result.breakEvenPrice != null) {
+          extra += '<p class="note">Con los costos y el volumen comercializado de este ejercicio, necesitas vender a un precio promedio de '
+            + esc(R.formatPerKg(result.breakEvenPrice, cur))
+            + ' para recuperar los costos considerados. Si el precio real está por debajo, hay pérdida. Este precio corresponde a este volumen, no a cualquier nivel de producción.</p>';
+        }
+        var volumeBlock = '';
+        var volumeTouched = String(state.a.fixedCosts).trim() || String(state.a.variableCostPerKg).trim();
+        var volume = null;
+        if (volumeTouched) {
+          volume = R.breakEvenVolume({
+            fixedCosts: state.a.fixedCosts,
+            variableCostPerKg: state.a.variableCostPerKg,
+            pricePerKg: state.a.pricePerKg
+          });
+          volumeBlock = volume.ok
+            ? '<p class="note">Volumen de equilibrio: <strong>' + esc(R.formatKg(volume.kg)) + '</strong>. ' + esc(volume.message) + '</p>'
+            : '<p class="warn">' + esc(volume.message) + '</p>';
+        }
+        var scenario = buildScenario(result);
+        var scenarioHtml = scenarioHtmlBlock(scenario, cur);
+        var charts = '<div class="chart-card"><h3>Distribución de costos</h3><canvas id="chart-costs"></canvas></div>'
+          + '<div class="chart-card"><h3>Ingresos y costos</h3><canvas id="chart-balance"></canvas></div>'
+          + '<div class="chart-card"><h3>Escenario: ingreso y costo</h3><canvas id="chart-scenario"></canvas><p class="hint" id="scenario-note"></p></div>';
+        host.innerHTML = '<article class="card"><div class="metrics">' + cards + '</div>' + extra + volumeBlock
+          + '<p>' + esc(R.interpretationModuleA(result)) + '</p>' + scenarioHtml + charts + '</article>';
+        try { drawA(result, scenario); } catch (err) { /* las cifras ya quedaron escritas */ }
+      }
+
+      function buildScenario(result) {
+        var price = state.a.scenarioPrice === '' ? result.pricePerKg : state.a.scenarioPrice;
+        var sold = state.a.scenarioSold === '' ? result.soldKg : state.a.scenarioSold;
+        var total = state.a.scenarioMode === 'custom_total' ? state.a.scenarioTotal : result.totalCost;
+        return R.evaluateScenario({
+          soldKg: sold,
+          pricePerKg: price,
+          byproductRevenue: state.a.byproductRevenue,
+          costMode: state.a.scenarioMode,
+          totalCost: total,
+          fixedCosts: state.a.scenarioFixed,
+          variableCostPerKg: state.a.scenarioVariable
+        });
+      }
+      function scenarioHtmlBlock(scenario, currency) {
+        if (!scenario.ok) {
+          return '<h3>Escenario</h3><p class="warn">' + esc((scenario.errors[0] && scenario.errors[0].message) || 'Completa el escenario.') + '</p><p class="hint">' + esc(scenario.assumption || '') + '</p>';
+        }
+        var bits = '<h3>Escenario alternativo</h3><p class="hint">' + esc(scenario.assumption) + '</p><div class="metrics">';
+        bits += metric('Ingresos del escenario', R.formatMoney(scenario.revenue, currency));
+        bits += metric(scenario.loss ? 'Pérdida del escenario' : 'Utilidad del escenario', R.formatMoney(scenario.loss ? Math.abs(scenario.profit) : scenario.profit, currency), scenario.loss ? 'loss' : '');
+        if (scenario.returnOnCostPct != null) bits += metric('Rentabilidad del escenario', R.formatPct(scenario.returnOnCostPct), scenario.loss ? 'loss' : '');
+        if (scenario.breakEvenPrice != null) bits += metric('Precio de equilibrio', R.formatPerKg(scenario.breakEvenPrice, currency), 'navy');
+        bits += '</div>';
+        if (scenario.breakEvenVolumeKg != null) bits += '<p class="note">Volumen de equilibrio del escenario: ' + esc(R.formatKg(scenario.breakEvenVolumeKg)) + '.</p>';
+        if (scenario.referenceKgAtConstantCost != null) {
+          bits += '<p class="warn">Si ese costo total no cambia, el ingreso lo iguala en ' + esc(R.formatKg(scenario.referenceKgAtConstantCost))
+            + '. Eso no es el volumen de equilibrio cuando hay costos variables sin separar.</p>';
+        }
+        return bits;
+      }
+
+      function setupCanvas(canvas, height) {
+        var width = Math.max(280, canvas.getBoundingClientRect().width || 320);
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.height = height + 'px';
+        var ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        return { ctx: ctx, w: width, h: height };
+      }
+      function drawBars(canvas, rows) {
+        if (!canvas || !rows.length) return;
+        var view = setupCanvas(canvas, Math.max(160, rows.length * 36 + 16));
+        var ctx = view.ctx;
+        var max = Math.max.apply(null, rows.map(function (row) { return Math.abs(row.value); }).concat([1]));
+        rows.forEach(function (row, index) {
+          var y = 12 + index * 36;
+          ctx.fillStyle = '#334155';
+          ctx.font = '12px Inter, sans-serif';
+          ctx.fillText(row.label, 8, y + 12);
+          var width = (Math.abs(row.value) / max) * (view.w - 24);
+          ctx.fillStyle = row.color;
+          ctx.fillRect(8, y + 16, Math.max(2, width), 12);
+        });
+      }
+      function drawLines(canvas, points, markKg) {
+        if (!canvas || points.length < 2) return;
+        var view = setupCanvas(canvas, 220);
+        var ctx = view.ctx;
+        var pad = { l: 44, r: 12, t: 16, b: 28 };
+        var maxY = 1;
+        var maxX = 1;
+        points.forEach(function (point) {
+          maxY = Math.max(maxY, point.revenue || 0, point.cost || 0);
+          maxX = Math.max(maxX, point.kg || 0);
+        });
+        function x(kg) { return pad.l + (kg / maxX) * (view.w - pad.l - pad.r); }
+        function y(value) { return view.h - pad.b - (value / maxY) * (view.h - pad.t - pad.b); }
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.strokeRect(pad.l, pad.t, view.w - pad.l - pad.r, view.h - pad.t - pad.b);
+        function line(key, color) {
+          ctx.beginPath();
+          points.forEach(function (point, index) {
+            var px = x(point.kg);
+            var py = y(point[key] || 0);
+            if (index === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        line('cost', '#1e3a5f');
+        line('revenue', '#0d9488');
+        if (markKg != null && markKg >= 0 && markKg <= maxX) {
+          ctx.strokeStyle = '#b45309';
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(x(markKg), pad.t);
+          ctx.lineTo(x(markKg), view.h - pad.b);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        ctx.fillStyle = '#64748b';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText('Verde: ingresos   Azul: costos', pad.l, view.h - 8);
+      }
+      function drawA(result, scenario) {
+        var items = (result.costItems || []).filter(function (item) { return item.signed > 0; });
+        drawBars(q('chart-costs'), items.map(function (item) {
+          return { label: item.label, value: item.signed, color: '#0d9488' };
+        }));
+        var balance = [];
+        if (result.revenue != null) balance.push({ label: 'Ingresos', value: result.revenue, color: '#0d9488' });
+        if (result.totalCost != null) balance.push({ label: 'Costos', value: result.totalCost, color: '#1e3a5f' });
+        if (result.profit != null) balance.push({ label: result.loss ? 'Pérdida' : 'Utilidad', value: Math.abs(result.profit), color: result.loss ? '#b91c1c' : '#0f766e' });
+        drawBars(q('chart-balance'), balance);
+        var seriesInput = {
+          soldKg: scenario.soldKg,
+          pricePerKg: scenario.pricePerKg,
+          byproductRevenue: state.a.byproductRevenue,
+          costMode: state.a.scenarioMode,
+          totalCost: state.a.scenarioMode === 'custom_total' ? state.a.scenarioTotal : result.totalCost,
+          fixedCosts: state.a.scenarioFixed,
+          variableCostPerKg: state.a.scenarioVariable
+        };
+        drawLines(q('chart-scenario'), scenario.ok ? R.scenarioSeries(seriesInput) : [], scenario.breakEvenVolumeKg);
+        var note = q('scenario-note');
+        if (note) note.textContent = scenario.ok ? scenario.assumption : '';
+      }
+
+      function investmentInput() {
+        return {
+          currency: state.b.currency,
+          strategyName: state.b.strategyName,
+          scope: state.b.scope,
+          current: state.b.current,
+          improved: state.b.improved,
+          otherMode: state.b.otherMode,
+          otherLump: state.b.otherLump,
+          variablePerKg: state.b.variablePerKg,
+          savings: state.b.savings
+        };
+      }
+      function moduleBHasData() {
+        var sides = [state.b.current, state.b.improved];
+        return sides.some(function (side) {
+          return ['programCost', 'soldKg', 'pricePerKg', 'associatedCosts'].some(function (key) {
+            return String(side[key]).trim() !== '';
+          });
+        });
+      }
+      function paintB() {
+        q('b-message').textContent = R.MODULE_B_MESSAGE;
+        q('b-agro').textContent = R.AGRONOMIC_NOTE;
+        q('b-example-note').innerHTML = state.b.isExample ? '<p class="example-note">' + esc(R.EXAMPLE_DISCLAIMER) + '</p>' : '';
+        q('b-lump-wrap').hidden = state.b.otherMode !== 'lump';
+        q('b-var-wrap').hidden = state.b.otherMode !== 'per_kg';
+        var host = q('b-results');
+        if (!moduleBHasData()) {
+          host.innerHTML = '<article class="card"><p>Compara el manejo actual y la alternativa. Puedes dejar el precio igual o cambiarlo si la calidad comercial también cambia.</p></article>';
+          return;
+        }
+        var result = R.evaluateInvestment(investmentInput());
+        if (!result.ok) {
+          host.innerHTML = errorsHtml(result.errors);
+          return;
+        }
+        var cur = result.currency;
+        var primaryLabel = result.benefitCostRatioLabel ? 'Relación beneficio–costo incremental' : 'Relación ingreso adicional / inversión adicional';
+        var primaryValue = result.benefitCostRatioLabel || result.incomeRatioLabel || '—';
+        var primaryHelp = result.benefitCostRatioLabel ? result.benefitInterpretation : result.incomeInterpretation;
+        var lossHero = result.costsConsidered ? !!result.loss : (result.incomeRatio != null && result.incomeRatio < 1);
+        var cards = metric('Inversión adicional', R.formatMoney(result.investmentDelta, cur), result.investmentDelta > 0 ? 'navy' : '');
+        cards += metric('Producción adicional', (result.productionDelta > 0 ? '+' : '') + R.formatKg(result.productionDelta), result.productionDelta < 0 ? 'loss' : '');
+        cards += metric('Ingreso adicional', R.formatMoney(result.revenueDelta, cur), result.revenueDelta < 0 ? 'loss' : '');
+        if (result.costsConsidered && result.incrementalProfit != null) {
+          cards += metric(result.loss ? 'Pérdida incremental' : 'Utilidad incremental', R.formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur), result.loss ? 'loss' : '');
+        }
+        if (result.incomeRatioLabel && result.benefitCostRatioLabel) {
+          cards += metric('Ingreso / inversión', result.incomeRatioLabel, 'navy');
+        }
+        if (result.extraKgNeeded != null) cards += metric('Kg adicionales para recuperar', R.formatKg(result.extraKgNeeded), 'navy');
+        var warns = (result.warnings || []).map(function (item) { return '<p class="warn">' + esc(item.message) + '</p>'; }).join('');
+        var partial = result.costsConsidered ? '' : '<p class="warn">Falta descontar los costos de la producción adicional. La relación visible es de ventas contra inversión, no de beneficio–costo, y la utilidad neta todavía no está cerrada.</p>';
+        var origin = result.origin === 'price' ? '<p class="note">La mejora registrada se origina en el precio, no en la cantidad producida.</p>' : '';
+        host.innerHTML = '<article class="card"><div class="ratio-hero' + (lossHero ? ' loss' : '') + '"><p class="kicker">' + esc(primaryLabel) + '</p><p class="value">'
+          + esc(primaryValue) + '</p><p>' + esc(primaryHelp) + '</p></div><div class="metrics">' + cards + '</div>'
+          + partial + origin + warns
+          + '<p class="note">' + esc(result.extraKgMessage || '') + '</p>'
+          + '<p>' + esc(R.conclusionModuleB(result, { strategyName: state.b.strategyName })) + '</p>'
+          + '<div class="chart-card"><h3>Comparación de programas</h3><canvas id="chart-b-money"></canvas><canvas id="chart-b-kg"></canvas></div>'
+          + '<div class="chart-card"><h3>Valor económico incremental</h3><canvas id="chart-b-value"></canvas></div>'
+          + '<div class="chart-card"><h3>Producción para recuperar la inversión</h3><canvas id="chart-b-recover"></canvas></div></article>';
+        try { drawB(result); } catch (err) { /* las cifras ya quedaron escritas */ }
+      }
+      function drawB(result) {
+        drawBars(q('chart-b-money'), [
+          { label: 'Inversión actual', value: result.currentCost, color: '#1e3a5f' },
+          { label: 'Inversión mejorada', value: result.improvedCost, color: '#0d9488' }
+        ]);
+        drawBars(q('chart-b-kg'), [
+          { label: 'Kg actuales', value: result.currentKg, color: '#1e3a5f' },
+          { label: 'Kg del manejo comparado', value: result.improvedKg, color: '#0d9488' }
+        ]);
+        var valueRows = [{ label: 'Ingresos adicionales', value: Math.max(0, result.revenueDelta), color: '#0d9488' }];
+        if (result.costsConsidered) {
+          valueRows.push({ label: 'Otros costos incrementales', value: Math.max(0, result.otherIncremental || 0), color: '#b45309' });
+          valueRows.push({ label: 'Inversión adicional', value: Math.max(0, result.investmentDelta), color: '#1e3a5f' });
+          valueRows.push({ label: result.loss ? 'Pérdida incremental' : 'Utilidad incremental', value: Math.abs(result.incrementalProfit || 0), color: result.loss ? '#b91c1c' : '#0f766e' });
+        }
+        drawBars(q('chart-b-value'), valueRows);
+        var recover = [];
+        if (result.extraKgNeeded != null) recover.push({ label: 'Kg adicionales para recuperar', value: result.extraKgNeeded, color: '#b45309' });
+        recover.push({ label: 'Kg adicionales registrados', value: Math.max(0, result.productionDelta), color: '#0d9488' });
+        drawBars(q('chart-b-recover'), recover);
+      }
+
+      function bindA(id, key) {
+        q(id).addEventListener('input', function () {
+          state.a[key] = q(id).value;
+          state.a.isExample = false;
+          paintA();
+          save();
+        });
+      }
+      function pdfSafe(value) {
+        return String(value || '').replace(/\u2013|\u2014/g, '-').replace(/\u00ab|\u00bb/g, '"');
+      }
+      function loadJsPdf() {
+        if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+        return new Promise(function (resolve, reject) {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
+          script.onload = function () { resolve(window.jspdf.jsPDF); };
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      function writePdf(doc, report) {
+        var y = 46;
+        var left = 40;
+        var width = 515;
+        function next(height) {
+          if (y + height > 800) { doc.addPage(); y = 48; }
+        }
+        function text(value, size, color) {
+          var lines = doc.splitTextToSize(pdfSafe(value), width);
+          next(lines.length * (size + 3) + 8);
+          doc.setFontSize(size);
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(lines, left, y);
+          y += lines.length * (size + 3) + 6;
+        }
+        doc.setFillColor(15, 118, 110);
+        doc.rect(0, 0, 595, 8, 'F');
+        text('NutriPlant PRO', 11, [15, 118, 110]);
+        text(report.tool, 18, [15, 23, 42]);
+        text(report.module, 12, [30, 58, 95]);
+        text('Fecha: ' + (report.date || ''), 10, [100, 116, 139]);
+        if (report.exerciseName) text('Ejercicio: ' + report.exerciseName, 11, [15, 23, 42]);
+        if (report.strategyName) text('Estrategia: ' + report.strategyName, 11, [15, 23, 42]);
+        if (report.crop) text('Cultivo: ' + report.crop, 11, [15, 23, 42]);
+        if (report.period) text('Periodo: ' + report.period, 11, [15, 23, 42]);
+        report.sections.forEach(function (section) {
+          text(section.title, 13, [15, 118, 110]);
+          section.rows.forEach(function (item) { text(item.label + ': ' + item.value, 11, [15, 23, 42]); });
+        });
+        text('Interpretación', 13, [15, 118, 110]);
+        text(report.interpretation, 11, [15, 23, 42]);
+        report.notes.forEach(function (note) { text(note, 9, [100, 116, 139]); });
+        text(report.tagline, 11, [30, 58, 95]);
+      }
+      function canvases() {
+        return Array.prototype.map.call(document.querySelectorAll('canvas'), function (canvas) {
+          try { return canvas.toDataURL('image/png'); } catch (err) { return null; }
+        }).filter(Boolean);
+      }
+      function download(report, filename) {
+        loadJsPdf().then(function (JsPDF) {
+          var doc = new JsPDF({ unit: 'pt', format: 'a4' });
+          writePdf(doc, report);
+          canvases().forEach(function (url) {
+            doc.addPage();
+            doc.setFontSize(12);
+            doc.text('Gráfica del ejercicio', 40, 46);
+            doc.addImage(url, 'PNG', 40, 64, 515, 220);
+          });
+          doc.save(filename);
+        }).catch(function () {
+          var popup = window.open('', '_blank');
+          if (!popup) return;
+          var body = report.sections.map(function (section) {
+            return '<h2>' + esc(section.title) + '</h2><table>' + section.rows.map(function (item) {
+              return '<tr><td>' + esc(item.label) + '</td><td>' + esc(item.value) + '</td></tr>';
+            }).join('') + '</table>';
+          }).join('');
+          popup.document.write('<html><head><title>' + esc(report.tool) + '</title></head><body><h1>NutriPlant PRO</h1><h2>'
+            + esc(report.module) + '</h2>' + body + '<p>' + esc(report.interpretation) + '</p></body></html>');
+          popup.document.close();
+          popup.focus();
+          popup.print();
+        });
+      }
+
+      function today() {
+        try { return new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }); }
+        catch (err) { return new Date().toISOString().slice(0, 10); }
+      }
+      function reportA() {
+        var result = R.evaluateCrop(state.a);
+        var volume = R.breakEvenVolume({
+          fixedCosts: state.a.fixedCosts,
+          variableCostPerKg: state.a.variableCostPerKg,
+          pricePerKg: state.a.pricePerKg
+        });
+        return R.buildModuleAReport(result, {
+          date: today(),
+          exerciseName: state.a.exerciseName,
+          crop: state.a.crop,
+          period: state.a.period,
+          areaHa: result.areaHa,
+          isExample: state.a.isExample,
+          breakEvenVolumeLabel: volume.ok ? R.formatKg(volume.kg) : ''
+        });
+      }
+      function reportB() {
+        return R.buildModuleBReport(R.evaluateInvestment(investmentInput()), {
+          date: today(),
+          strategyName: state.b.strategyName,
+          crop: state.b.crop,
+          isExample: state.b.isExample
+        });
+      }
+
+      q('open-a').onclick = function () { showView('a'); };
+      q('open-b').onclick = function () { showView('b'); };
+      q('a-home').onclick = function () { showView('home'); };
+      q('b-home').onclick = function () { showView('home'); };
+      ['exerciseName', 'crop', 'areaHa', 'period', 'harvestedKg', 'soldKg', 'pricePerKg', 'byproductRevenue', 'financingCost', 'fixedCosts', 'variableCostPerKg', 'scenarioPrice', 'scenarioSold', 'scenarioTotal', 'scenarioFixed', 'scenarioVariable']
+        .forEach(function (key) {
+          var map = {
+            exerciseName: 'a-name', crop: 'a-crop', areaHa: 'a-area', period: 'a-period',
+            harvestedKg: 'a-harvest', soldKg: 'a-sold', pricePerKg: 'a-price',
+            byproductRevenue: 'a-byproduct', financingCost: 'a-financing', fixedCosts: 'a-fixed',
+            variableCostPerKg: 'a-variable', scenarioPrice: 'a-sc-price', scenarioSold: 'a-sc-sold',
+            scenarioTotal: 'a-sc-total', scenarioFixed: 'a-sc-fixed', scenarioVariable: 'a-sc-var'
+          };
+          bindA(map[key], key);
+        });
+      q('a-currency').addEventListener('change', function () {
+        state.a.currency = q('a-currency').value;
+        q('a-currency-note').textContent = 'Los importes no se convirtieron. Siguen siendo las cifras escritas, ahora leídas en ' + state.a.currency + '.';
+        renderCosts();
+        paintA();
+        save();
+      });
+      q('a-sc-mode').addEventListener('change', function () {
+        state.a.scenarioMode = q('a-sc-mode').value;
+        state.a.isExample = false;
+        paintA();
+        save();
+      });
+      q('cost-list').addEventListener('input', function (event) {
+        var cost = event.target.getAttribute('data-cost');
+        var label = event.target.getAttribute('data-label');
+        if (cost != null) state.a.costs[Number(cost)].amount = event.target.value;
+        if (label != null) state.a.costs[Number(label)].label = event.target.value;
+        state.a.isExample = false;
+        paintA();
+        save();
+      });
+      q('cost-list').addEventListener('click', function (event) {
+        var remove = event.target.getAttribute('data-remove');
+        if (remove == null) return;
+        state.a.costs.splice(Number(remove), 1);
+        state.a.isExample = false;
+        renderCosts();
+        paintA();
+        save();
+      });
+      q('a-add').onclick = function () {
+        var label = q('a-new-label').value.trim() || 'Otro costo';
+        state.a.costs.push({ id: 'custom-' + Date.now(), label: label, group: 'admin', amount: '', kind: 'cost', custom: true });
+        q('a-new-label').value = '';
+        renderCosts();
+        save();
+      };
+      q('a-more').onclick = function () { state.a.showAll = true; renderCosts(); save(); };
+      q('a-group').onclick = function () { state.a.grouped = !state.a.grouped; renderCosts(); save(); };
+      q('a-example').onclick = function () {
+        var example = R.exampleModuleA();
+        state.a = Object.assign(blankA(), example, { showAll: true, costs: example.costs.map(function (line) { return Object.assign({ custom: true }, line); }) });
+        fillA();
+        paintA();
+        save();
+      };
+      q('a-reset').onclick = function () { state.a = blankA(); fillA(); paintA(); save(); };
+      q('a-calc').onclick = function () { q('a-results').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      q('a-edit').onclick = function () { q('view-a').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      q('a-pdf').onclick = function () {
+        var result = R.evaluateCrop(state.a);
+        if (!result.ok) return;
+        download(reportA(), 'nutriplant-rentabilidad.pdf');
+      };
+      q('a-to-b').onclick = function () {
+        var result = R.evaluateCrop(state.a);
+        var hint = R.suggestModuleBFromA(state.a, result);
+        state.b.currency = hint.currency;
+        state.b.crop = hint.crop || state.a.crop;
+        if (hint.soldKg != null && hint.soldKg !== '') state.b.current.soldKg = hint.soldKg;
+        if (hint.pricePerKg != null && hint.pricePerKg !== '') state.b.current.pricePerKg = hint.pricePerKg;
+        if (hint.nutritionCost != null) {
+          state.b.current.programCost = hint.nutritionCost;
+          state.b.scope = 'intervention';
+          if (!state.b.strategyName) state.b.strategyName = 'Programa de nutrición vegetal';
+        }
+        state.b.transferNote = hint.note + (hint.totalCost != null ? ' Costo total del módulo A: ' + R.formatMoney(hint.totalCost, hint.currency) + '.' : '');
+        fillB();
+        showView('b');
+      };
+
+      function bindSide(id, side, key) {
+        q(id).addEventListener('input', function () {
+          state.b[side][key] = q(id).value;
+          state.b.isExample = false;
+          paintB();
+          save();
+        });
+      }
+      [['b-c-cost', 'current', 'programCost'], ['b-c-kg', 'current', 'soldKg'], ['b-c-price', 'current', 'pricePerKg'], ['b-c-other', 'current', 'associatedCosts'],
+        ['b-i-cost', 'improved', 'programCost'], ['b-i-kg', 'improved', 'soldKg'], ['b-i-price', 'improved', 'pricePerKg'], ['b-i-other', 'improved', 'associatedCosts']]
+        .forEach(function (item) { bindSide(item[0], item[1], item[2]); });
+      q('b-strategy').addEventListener('input', function () { state.b.strategyName = q('b-strategy').value; state.b.isExample = false; paintB(); save(); });
+      q('b-crop').addEventListener('input', function () { state.b.crop = q('b-crop').value; save(); });
+      q('b-currency').addEventListener('change', function () { state.b.currency = q('b-currency').value; paintB(); save(); });
+      q('b-lump').addEventListener('input', function () { state.b.otherLump = q('b-lump').value; state.b.isExample = false; paintB(); save(); });
+      q('b-var').addEventListener('input', function () { state.b.variablePerKg = q('b-var').value; state.b.isExample = false; paintB(); save(); });
+      q('b-savings').addEventListener('input', function () { state.b.savings = q('b-savings').value; state.b.isExample = false; paintB(); save(); });
+      document.querySelectorAll('input[name="b-scope"]').forEach(function (el) {
+        el.addEventListener('change', function () {
+          if (!el.checked) return;
+          state.b.scope = el.value;
+          fillB();
+          paintB();
+          save();
+        });
+      });
+      document.querySelectorAll('input[name="b-other"]').forEach(function (el) {
+        el.addEventListener('change', function () {
+          if (!el.checked) return;
+          state.b.otherMode = el.value;
+          state.b.isExample = false;
+          fillB();
+          paintB();
+          save();
+        });
+      });
+      q('b-chips').addEventListener('click', function (event) {
+        var name = event.target.getAttribute('data-chip');
+        if (!name) return;
+        state.b.strategyName = name;
+        setVal('b-strategy', name);
+        save();
+      });
+      q('b-example').onclick = function () {
+        var example = R.exampleModuleB();
+        state.b = Object.assign(blankB(), example, {
+          current: Object.assign({}, example.current),
+          improved: Object.assign({}, example.improved)
+        });
+        fillB();
+        paintB();
+        save();
+      };
+      q('b-reset').onclick = function () { state.b = blankB(); fillB(); paintB(); save(); };
+      q('b-calc').onclick = function () { q('b-results').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      q('b-edit').onclick = function () { q('view-b').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      q('b-pdf').onclick = function () {
+        var result = R.evaluateInvestment(investmentInput());
+        if (!result.ok) return;
+        download(reportB(), 'nutriplant-valor-inversion.pdf');
+      };
+
+      q('a-message').textContent = R.MODULE_A_MESSAGE;
+      q('b-message').textContent = R.MODULE_B_MESSAGE;
+      try {
+        var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+        if (saved && saved.a && saved.b) {
+          state.a = Object.assign(blankA(), saved.a);
+          state.b = Object.assign(blankB(), saved.b, {
+            current: Object.assign(blankB().current, saved.b.current || {}),
+            improved: Object.assign(blankB().improved, saved.b.improved || {})
+          });
+          if (!Array.isArray(state.a.costs) || !state.a.costs.length) state.a.costs = R.emptyCostLines();
+        }
+      } catch (err) { /* sigue con el ejercicio vacío */ }
+      var params = new URLSearchParams(location.search);
+      if (params.get('ejemplo') === 'a') {
+        var exampleA = R.exampleModuleA();
+        state.a = Object.assign(blankA(), exampleA, { showAll: true, costs: exampleA.costs.map(function (line) { return Object.assign({ custom: true }, line); }) });
+        state.view = 'a';
+      } else if (params.get('ejemplo') === 'b') {
+        var exampleB = R.exampleModuleB();
+        state.b = Object.assign(blankB(), exampleB, { current: Object.assign({}, exampleB.current), improved: Object.assign({}, exampleB.improved) });
+        state.view = 'b';
+      }
+      fillA();
+      fillB();
+      showView(state.view || 'home');
+    })();
+  </script>
+</body>
+</html>

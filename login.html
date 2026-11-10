@@ -272,26 +272,53 @@
         </div>
       </div>
 
-      <a
-        class="login-applicate-teaser"
-        href="/applicate/"
-        data-i18n-aria-label="auth.applicate_teaser_aria"
-        aria-label="Applicate, registro gratis, próximamente"
-      >
-        <img
-          src="assets/Applicate Logo.png"
-          alt="Applicate"
-          class="login-applicate-teaser__logo"
-          width="280"
-          height="96"
-          decoding="async"
-        />
-        <div class="login-applicate-teaser__copy">
-          <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitaciones y formación</p>
-          <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Registro gratis</p>
-          <p class="login-applicate-teaser__when" data-i18n="auth.applicate_teaser_when">Próximamente</p>
-        </div>
-      </a>
+      <div class="login-promo-stack">
+        <a
+          class="login-chatgpt-teaser"
+          href="https://chatgpt.com/plugins/plugin_asdk_app_6aaafc2de7088191aaaf5a806490c801"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-i18n-aria-label="auth.chatgpt_teaser_aria"
+          aria-label="Instalar NutriPlant PRO en ChatGPT"
+        >
+          <div class="login-chatgpt-teaser__top">
+            <span class="login-chatgpt-teaser__badge" aria-hidden="true">ChatGPT</span>
+            <h2 class="login-chatgpt-teaser__title" data-i18n="auth.chatgpt_teaser_title">NutriPlant PRO en ChatGPT</h2>
+            <p class="login-chatgpt-teaser__subtitle" data-i18n="auth.chatgpt_teaser_subtitle">Tu asistente técnico en nutrición vegetal</p>
+          </div>
+          <p class="login-chatgpt-teaser__lead" data-i18n="auth.chatgpt_teaser_lead">Consulta e interpreta con el criterio NutriPlant directamente desde ChatGPT.</p>
+          <ul class="login-chatgpt-teaser__points">
+            <li data-i18n-html="auth.chatgpt_teaser_free"><strong>Sin suscripción:</strong> Manual técnico y herramientas públicas (cálculos).</li>
+            <li data-i18n-html="auth.chatgpt_teaser_sub"><strong>¿Ya eres suscriptor?</strong> Conecta tu cuenta y consulta tus proyectos.</li>
+          </ul>
+          <span class="login-chatgpt-teaser__cta">
+            <svg class="login-chatgpt-teaser__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+            <span data-i18n="auth.chatgpt_teaser_cta">Instalar complemento en ChatGPT</span>
+          </span>
+          <p class="login-chatgpt-teaser__hint" data-i18n="auth.chatgpt_teaser_hint">Instálalo una vez y úsalo con @NutriPlant PRO en el chat.</p>
+        </a>
+
+        <a
+          class="login-applicate-teaser login-applicate-teaser--compact"
+          href="/applicate/"
+          data-i18n-aria-label="auth.applicate_teaser_aria"
+          aria-label="Applicate, registro gratis, próximamente"
+        >
+          <img
+            src="assets/Applicate Logo.png"
+            alt="Applicate"
+            class="login-applicate-teaser__logo"
+            width="160"
+            height="48"
+            decoding="async"
+          />
+          <div class="login-applicate-teaser__copy">
+            <p class="login-applicate-teaser__kicker" data-i18n="auth.applicate_teaser_kicker">Capacitaciones y formación</p>
+            <p class="login-applicate-teaser__soon" data-i18n="auth.applicate_teaser_soon">Registro gratis</p>
+            <p class="login-applicate-teaser__when" data-i18n="auth.applicate_teaser_when">Próximamente</p>
+          </div>
+        </a>
+      </div>
 
       <aside class="login-social-panel auth-card" aria-label="Redes sociales NutriPlant PRO" data-i18n-aria-label="auth.social_aria">
         <h2 class="login-social-panel__title" data-i18n="auth.social_title">Síguenos en redes</h2>
@@ -552,6 +579,11 @@
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌍</span>
           <span class="button-text" data-i18n="dashboard.tool_fertilizer_carbon">Huella de carbono de fertilizantes</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showRentabilidadAgricola()" style="margin-top: 12px;">
+          <span class="calculator-icon">💹</span>
+          <span class="button-text" data-i18n="dashboard.tool_rentabilidad">Rentabilidad Agrícola</span>
         </button>
         </div>
       </div>
@@ -1289,6 +1321,8 @@
     #fertilizerSolubilitySaltModal.modal-overlay,
     #fertilizerCarbonCalculatorModal.modal-overlay.show,
     #fertilizerCarbonCalculatorModal.modal-overlay,
+    #rentabilidadAgricolaModal.modal-overlay.show,
+    #rentabilidadAgricolaModal.modal-overlay,
     #extraccionEtapaCalculatorModal.modal-overlay.show,
     #extraccionEtapaCalculatorModal.modal-overlay,
     #periodicTableNutrientsModal.modal-overlay.show,
@@ -1335,6 +1369,9 @@
     #fertilizerCarbonCalculatorModal .modal,
     #fertilizerCarbonCalculatorModal .modal-tool-iframe-full,
     #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit,
+    #rentabilidadAgricolaModal .modal,
+    #rentabilidadAgricolaModal .modal-tool-iframe-full,
+    #rentabilidadAgricolaModal .modal-tool-iframe-fit,
     #extraccionEtapaCalculatorModal .modal,
     #extraccionEtapaCalculatorModal .modal-tool-iframe-full,
     #extraccionEtapaCalculatorModal .modal-tool-iframe-fit,
@@ -1374,6 +1411,7 @@
     #ventanasFoliarToolModal .modal-header,
     #fertilizerSolubilitySaltModal .modal-header,
     #fertilizerCarbonCalculatorModal .modal-header,
+    #rentabilidadAgricolaModal .modal-header,
     #extraccionEtapaCalculatorModal .modal-header,
     #periodicTableNutrientsModal .modal-header,
     #aminoAcidsAtlasModal .modal-header,
@@ -1402,6 +1440,8 @@
     #fertilizerSolubilitySaltModal .modal-tool-iframe-fit .modal-body,
     #fertilizerCarbonCalculatorModal .modal-body,
     #fertilizerCarbonCalculatorModal .modal-tool-iframe-fit .modal-body,
+    #rentabilidadAgricolaModal .modal-body,
+    #rentabilidadAgricolaModal .modal-tool-iframe-fit .modal-body,
     #extraccionEtapaCalculatorModal .modal-body,
     #extraccionEtapaCalculatorModal .modal-tool-iframe-fit .modal-body,
     #periodicTableNutrientsModal .modal-body,
@@ -1432,6 +1472,7 @@
     #ventanasFoliarToolModal iframe,
     #fertilizerSolubilitySaltModal iframe,
     #fertilizerCarbonCalculatorModal iframe,
+    #rentabilidadAgricolaModal iframe,
     #extraccionEtapaCalculatorModal iframe,
     #periodicTableNutrientsModal iframe,
     #aminoAcidsAtlasModal iframe,
@@ -2204,6 +2245,17 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showRentabilidadAgricola() {
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('rentabilidadAgricolaFrame');
+      document.getElementById('rentabilidadAgricolaModal').style.display = 'flex';
+    }
+    function closeRentabilidadAgricola() {
+      const modal = document.getElementById('rentabilidadAgricolaModal');
+      const frame = document.getElementById('rentabilidadAgricolaFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function clearNutrientUnitsCalculator() {
       const inputs = document.querySelectorAll('#nutrientUnitsCalculatorModal input');
       inputs.forEach(input => input.value = '');
@@ -2533,6 +2585,10 @@
       const fertilizerCarbonModal = document.getElementById('fertilizerCarbonCalculatorModal');
       if (e.target === fertilizerCarbonModal) {
         closeFertilizerCarbonCalculator();
+      }
+      const rentabilidadAgricolaModal = document.getElementById('rentabilidadAgricolaModal');
+      if (e.target === rentabilidadAgricolaModal) {
+        closeRentabilidadAgricola();
       }
       const extraccionEtapaModal = document.getElementById('extraccionEtapaCalculatorModal');
       if (e.target === extraccionEtapaModal) {
@@ -3448,6 +3504,21 @@
       </div>
       <div class="modal-body">
         <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260801s" title="Huella de carbono de fertilizantes" data-i18n-title="dashboard.tool_fertilizer_carbon"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div id="rentabilidadAgricolaModal" class="modal-overlay">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
+      <div class="modal-header">
+        <h2 class="modal-title">💹 <span data-i18n="dashboard.tool_rentabilidad">Rentabilidad Agrícola</span></h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeRentabilidadAgricola()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="rentabilidadAgricolaFrame" src="rentabilidad-agricola-free.html?embed=login&v=20261110rb" title="Rentabilidad Agrícola" data-i18n-title="dashboard.tool_rentabilidad"></iframe>
       </div>
     </div>
   </div>
@@ -5168,23 +5239,35 @@
               panelsClear.style.maxHeight = '';
             }
           };
-          var teaser = document.querySelector('.login-applicate-teaser');
+          var promoStack = document.querySelector('.login-promo-stack');
+          var chatgptTeaser = document.querySelector('.login-chatgpt-teaser');
+          var applicateTeaser = document.querySelector('.login-applicate-teaser');
           if (window.innerWidth < 700) {
             root.style.minHeight = '';
             root.style.maxHeight = '';
             root.style.height = '';
-            if (teaser) {
-              teaser.style.height = '';
-              teaser.style.minHeight = '';
-              teaser.style.maxHeight = '';
-              teaser.style.removeProperty('--ap-logo');
+            if (promoStack) {
+              promoStack.style.height = '';
+              promoStack.style.minHeight = '';
+              promoStack.style.maxHeight = '';
+            }
+            if (chatgptTeaser) {
+              chatgptTeaser.style.height = '';
+              chatgptTeaser.style.minHeight = '';
+              chatgptTeaser.style.maxHeight = '';
+            }
+            if (applicateTeaser) {
+              applicateTeaser.style.height = '';
+              applicateTeaser.style.minHeight = '';
+              applicateTeaser.style.maxHeight = '';
+              applicateTeaser.style.removeProperty('--ap-logo');
             }
             clearEmbedHeights();
             if (root.querySelector('[data-social-tab="facebook"].active')) fitFacebookFeed();
             return;
           }
-          /* Escritorio: Applicate ocupa la diferencia entre el acceso y redes.
-             Redes se queda en un alto cómodo. Las dos columnas cierran juntas. */
+          /* Escritorio: stack ChatGPT+Applicate ocupa el hueco entre acceso y redes.
+             ChatGPT crece; Applicate queda compacto. Redes en alto cómodo. */
           var toolsCol = document.querySelector('.login-split__tools');
           var loginCol = document.querySelector('.login-split__login');
           var leftCol = document.querySelector('.login-split__left');
@@ -5198,14 +5281,23 @@
           }
           var socialTarget = 460;
           var leftover = toolsH > loginH ? toolsH - loginH - gap * 2 : socialTarget + 260;
-          var applicateH = Math.max(240, Math.round(leftover - socialTarget));
-          var available = Math.max(360, Math.round(leftover - applicateH));
-          if (teaser) {
-            teaser.style.height = applicateH + 'px';
-            teaser.style.minHeight = applicateH + 'px';
-            teaser.style.maxHeight = applicateH + 'px';
-            var logoH = Math.max(88, Math.min(168, applicateH - 128));
-            teaser.style.setProperty('--ap-logo', logoH + 'px');
+          var promoH = Math.max(280, Math.round(leftover - socialTarget));
+          var available = Math.max(360, Math.round(leftover - promoH));
+          if (promoStack) {
+            promoStack.style.height = promoH + 'px';
+            promoStack.style.minHeight = promoH + 'px';
+            promoStack.style.maxHeight = promoH + 'px';
+          }
+          if (applicateTeaser) {
+            applicateTeaser.style.height = '';
+            applicateTeaser.style.minHeight = '';
+            applicateTeaser.style.maxHeight = '';
+            applicateTeaser.style.removeProperty('--ap-logo');
+          }
+          if (chatgptTeaser) {
+            chatgptTeaser.style.height = '';
+            chatgptTeaser.style.minHeight = '';
+            chatgptTeaser.style.maxHeight = '';
           }
           root.style.height = available + 'px';
           root.style.minHeight = available + 'px';

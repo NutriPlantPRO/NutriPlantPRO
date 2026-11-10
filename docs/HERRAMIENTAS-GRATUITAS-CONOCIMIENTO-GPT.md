@@ -461,6 +461,20 @@ IPCC 2019 Refinement Cap. 11 (N₂O suelo), IPCC AR6 (GWP), DESNZ/DEFRA (transpo
 
 ---
 
+### 💹 Rentabilidad Agrícola (`rentabilidad-agricola-free.html`)
+
+- **Qué responde:** cuánto cuesta producir un kilogramo y si una inversión agronómica adicional genera valor. Dos módulos independientes: rentabilidad del cultivo y comparación de manejos.
+- **Acceso:** login y dashboard, icono 💹. También `/rentabilidad-agricola-free.html`. Sin cuenta.
+- **Datos:** se calculan en el navegador. `localStorage` `nutriplant_free_rentabilidad_v1`. No van a Supabase y no hay action de cálculo: no pidas al usuario que envíe costos al servidor.
+- **Moneda:** USD, MXN o EUR. Cambiar la moneda no convierte importes.
+- **Módulo A:** costo total = suma de partidas. Costo/kg = costo / kg vendidos. Ingreso = kg × precio + otros ingresos. Utilidad = ingreso − costo. Rentabilidad sobre costo = utilidad / costo × 100. Margen sobre ventas = utilidad / ingreso × 100. Precio de equilibrio = (costo − otros ingresos) / kg vendidos, de ese volumen, no un precio universal.
+- **Volumen de equilibrio:** solo con costos fijos, costo variable por kg y precio: fijos / (precio − variable). Si el precio no supera al variable, no hay volumen positivo. No sustituir por costo total / precio.
+- **Módulo B:** ingreso adicional = ingreso del manejo comparado − ingreso actual. No usar solo (kilos de diferencia × precio nuevo) si los precios son distintos. Relación ingreso/inversión no es relación beneficio–costo. Esta última solo cuando ya se descontaron los costos incrementales. Si la inversión extra es cero o negativa, no inventar una relación.
+- **Ejemplo educativo A:** costo 15,000; 20,000 kg; precio 1 → costo 0.75/kg, ingreso 20,000, utilidad 5,000, rentabilidad 33.33 %, margen 25 %, equilibrio 0.75/kg.
+- **Ejemplo B:** nutrición 2,000 → 2,200; 20,000 → 21,000 kg; precio 1; sin otros costos → inversión 200, ingreso 1,000, relación 5:1, utilidad 800, 200 kg para recuperar.
+- **Con 0.20/kg extra:** otros costos 200, beneficio antes de la inversión 800, utilidad 600, ingreso/inversión 5:1, beneficio–costo 4:1, equilibrio 250 kg.
+- **No afirmar** que una tecnología causó el cambio. La utilidad es previa a impuestos.
+
 ## 4. % meq — criterio NutriPlant (gratis hidro + PRO)
 
 **No mezclar denominadores:**

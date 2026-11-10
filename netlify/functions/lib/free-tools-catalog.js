@@ -4,7 +4,7 @@
  * Mantener alineado con docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-      version: '2026-10-02',
+      version: '2026-11-10',
   scope:
     'Herramientas HTML en iframe/modal sin cuenta (y Pronóstico agroclimático también como servicio de alertas semanales con registro). Persistencia de calculadoras: localStorage del navegador (no Supabase), salvo el flujo de alertas agroclimáticas aprobado y el Seguimiento con ionómetro en dashboard PRO (varias tablas en profiles.ionometro_seguimientos, la cuenta, no el proyecto). Misma lógica en login.html y dashboard (iconos barra).',
   persistence: {
@@ -303,6 +303,34 @@ module.exports = {
         'scenario_a', 'scenario_b', 'active_row_index',
         'rows[].origin_country_iso', 'rows[].application_country_iso', 'rows[].entry_point_id',
         'rows[].transport_origin_km', 'rows[].transport_sea_km', 'rows[].transport_km'
+      ]
+    },
+    {
+      id: 'rentabilidad_agricola',
+      title: 'Rentabilidad Agrícola',
+      file: 'rentabilidad-agricola-free.html',
+      lsKey: 'nutriplant_free_rentabilidad_v1',
+      summary:
+        'Calculadora gratuita en el navegador: costos, costo por kg, utilidad, rentabilidad sobre costo, margen sobre ventas, precio de equilibrio y, solo si hay fijos y variable, volumen de equilibrio. Módulo B compara un manejo con otro: inversión adicional, kilos, ingreso incremental (diferencia de ingresos, no kilos × un solo precio), relación ingreso/inversión y, cuando el usuario descontó otros costos, relación beneficio-costo y utilidad incremental. No guarda datos en Supabase ni convierte divisas. No calcula impuestos.',
+      formulas: {
+        totalCost: 'suma de costos ordinarios del periodo',
+        costPerKg: 'costo total / kg comercializados',
+        revenue: 'kg comercializados × precio + otros ingresos',
+        profit: 'ingresos − costo total',
+        returnOnCost: 'utilidad / costo total × 100',
+        marginOnSales: 'utilidad / ingresos × 100',
+        breakEvenPrice: '(costo total − otros ingresos) / kg comercializados',
+        breakEvenVolume: 'costos fijos / (precio − costo variable por kg); no usar costo total / precio',
+        revenueDelta: 'ingreso del manejo comparado − ingreso del manejo actual',
+        incomeRatio: 'ingreso incremental / inversión incremental, solo si la inversión extra es positiva',
+        benefitCostRatio: '(ingreso incremental + ahorros − otros costos incrementales) / inversión incremental',
+        extraKg: 'inversión incremental / (precio − costo variable incremental por kg) cuando el precio es el mismo'
+      },
+      rules: [
+        'No llamar beneficio-costo a la relación ingreso/inversión si faltan costos de cosecha, empaque, flete o mano de obra.',
+        'No afirmar causalidad: la comparación describe los datos capturados.',
+        'Pérdida no se presenta como rentabilidad positiva.',
+        'Los datos económicos se quedan en el navegador (localStorage). No hay endpoint de cálculo en el servidor.'
       ]
     }
   ],
