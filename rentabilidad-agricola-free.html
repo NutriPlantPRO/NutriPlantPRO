@@ -200,7 +200,7 @@
       padding: 10px 12px;
       margin: 8px 0;
     }
-    canvas { width: 100%; display: block; }
+    canvas { display: block; max-width: 100%; height: auto; }
     .chart-card { margin-top: 12px; }
     details { margin-top: 8px; }
     summary { cursor: pointer; font-weight: 700; color: var(--navy); }
@@ -462,7 +462,7 @@
     </section>
     <p class="footer-line" id="footer-tagline">NutriPlant PRO — Diseña. Ajusta. Nutre.</p>
   </main>
-  <script src="assets/np-rentabilidad-core.js?v=20261110i18n"></script>
+  <script src="assets/np-rentabilidad-core.js?v=20261110charts"></script>
   <script>
     (function () {
       var R = window.NpRentabilidad;
@@ -877,7 +877,7 @@
           + '<div class="chart-card"><h3>' + esc(chartTitles[2]) + '</h3><canvas id="chart-scenario"></canvas><p class="hint" id="scenario-note"></p></div>';
         host.innerHTML = '<article class="card"><div class="metrics">' + cards + '</div>' + extra + volumeBlock
           + '<p>' + esc(R.interpretationModuleA(result, { language: L })) + '</p>' + scenarioHtml + charts + '</article>';
-        try { drawA(result, scenario); } catch (err) { /* las cifras ya quedaron escritas */ }
+        scheduleCharts('a', { result: result, scenario: scenario });
       }
 
       function buildScenario(result) {
@@ -913,16 +913,46 @@
         return bits;
       }
 
+      var chartRedrawTimer = 0;
+      var pendingCharts = { a: null, b: null };
+      function chartWidth(canvas) {
+        var parent = canvas && canvas.parentElement;
+        var w = parent ? parent.clientWidth : 0;
+        if (!(w > 40)) w = canvas.getBoundingClientRect().width;
+        if (!(w > 40) && canvas.parentElement && canvas.parentElement.parentElement) {
+          w = canvas.parentElement.parentElement.clientWidth;
+        }
+        return Math.max(280, Math.floor(w) || 320);
+      }
       function setupCanvas(canvas, height) {
-        var width = Math.max(280, canvas.getBoundingClientRect().width || 320);
+        var width = chartWidth(canvas);
         var dpr = window.devicePixelRatio || 1;
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
         var ctx = canvas.getContext('2d');
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
         return { ctx: ctx, w: width, h: height };
+      }
+      function flushCharts() {
+        if (pendingCharts.a) {
+          try { drawA(pendingCharts.a.result, pendingCharts.a.scenario); } catch (err) { /* cifras ya visibles */ }
+        }
+        if (pendingCharts.b) {
+          try { drawB(pendingCharts.b.result); } catch (err) { /* cifras ya visibles */ }
+        }
+      }
+      function scheduleCharts(kind, payload) {
+        if (kind === 'a') pendingCharts.a = payload;
+        if (kind === 'b') pendingCharts.b = payload;
+        clearTimeout(chartRedrawTimer);
+        chartRedrawTimer = setTimeout(function () {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(flushCharts);
+          });
+        }, 30);
       }
       function drawBars(canvas, rows) {
         if (!canvas || !rows.length) return;
@@ -1072,7 +1102,7 @@
           + '<div class="chart-card"><h3>' + esc(t('Comparación de programas', 'Program comparison')) + '</h3><canvas id="chart-b-money"></canvas><canvas id="chart-b-kg"></canvas></div>'
           + '<div class="chart-card"><h3>' + esc(t('Valor económico incremental', 'Incremental economic value')) + '</h3><canvas id="chart-b-value"></canvas></div>'
           + '<div class="chart-card"><h3>' + esc(t('Producción para recuperar la inversión', 'Production needed to recover the investment')) + '</h3><canvas id="chart-b-recover"></canvas></div></article>';
-        try { drawB(result); } catch (err) { /* las cifras ya quedaron escritas */ }
+        scheduleCharts('b', { result: result });
       }
       function drawB(result) {
         drawBars(q('chart-b-money'), [
@@ -1603,6 +1633,16 @@
         var key = window.NpPrefs && window.NpPrefs.KEY;
         if (event && event.key === key) onPrefsChanged();
       });
+      window.addEventListener('resize', function () {
+        if (pendingCharts.a || pendingCharts.b) scheduleCharts(pendingCharts.a ? 'a' : 'b', pendingCharts.a || pendingCharts.b);
+      });
+      if (window.ResizeObserver) {
+        var chartRo = new ResizeObserver(function () {
+          if (pendingCharts.a || pendingCharts.b) flushCharts();
+        });
+        if (q('a-results')) chartRo.observe(q('a-results'));
+        if (q('b-results')) chartRo.observe(q('b-results'));
+      }
 
       applyLanguage();
     })();

@@ -6,7 +6,7 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=20261017fbcard"></script>
+  <script defer src="assets/np-i18n.js?v=20261110fbmin"></script>
   <script defer src="assets/np-units-core.js?v=20260914u2"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=75" />
+  <link rel="stylesheet" href="auth.css?v=76" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -374,7 +374,7 @@
                   </div>
                   <div class="login-social-facebook-card__copy">
                     <strong>NutriPlant PRO</strong>
-                    <span data-i18n="auth.social_facebook_channel">Página oficial de Facebook</span>
+                    <span class="login-social-facebook-card__channel" data-i18n="auth.social_facebook_channel">Página oficial</span>
                   </div>
                 </div>
                 <div class="login-social-facebook-card__plugin">
@@ -3536,7 +3536,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="rentabilidadAgricolaFrame" src="rentabilidad-agricola-free.html?embed=login&v=20261110i18n" title="Rentabilidad Agrícola" data-i18n-title="dashboard.tool_rentabilidad"></iframe>
+        <iframe id="rentabilidadAgricolaFrame" src="rentabilidad-agricola-free.html?embed=login&v=20261110charts" title="Rentabilidad Agrícola" data-i18n-title="dashboard.tool_rentabilidad"></iframe>
       </div>
     </div>
   </div>
@@ -5388,10 +5388,9 @@
         var plugin = card && card.querySelector('.login-social-facebook-card__plugin');
         var iframe = card && card.querySelector('iframe');
         if (!card || !iframe) return;
-        // Medir el cajón del plugin (más ancho) para que quepa «Seguir página» y «Compartir».
-        var width = Math.floor((plugin && plugin.clientWidth) || card.clientWidth || 0);
-        if (width < 280) width = 360;
-        width = Math.max(340, Math.min(500, width));
+        // Ancho mínimo ~340 para que Facebook dibuje «Seguir página» y «Compartir» completos.
+        var measured = Math.floor((plugin && plugin.clientWidth) || card.clientWidth || 0);
+        var width = Math.max(340, Math.min(500, measured > 0 ? measured : 340));
         var height = 154;
         var prevW = parseInt(iframe.getAttribute('data-fb-w'), 10) || 0;
         var prevH = parseInt(iframe.getAttribute('data-fb-h'), 10) || 0;
@@ -5401,12 +5400,13 @@
         iframe.setAttribute('data-fb-w', String(width));
         iframe.setAttribute('data-fb-h', String(height));
         iframe.style.width = width + 'px';
-        iframe.style.maxWidth = '100%';
+        iframe.style.minWidth = '340px';
+        iframe.style.maxWidth = 'none';
         var href = encodeURIComponent('https://www.facebook.com/p/NutriPlant-PRO-61580040483626/');
         iframe.src = 'https://www.facebook.com/plugins/page.php?href=' + href +
           '&width=' + width +
           '&height=' + height +
-          '&small_header=false&adapt_container_width=true&hide_cover=true&show_facepile=false&locale=es_LA';
+          '&small_header=false&adapt_container_width=false&hide_cover=true&show_facepile=false&locale=es_LA';
       }
 
       function showSocialTab(id) {

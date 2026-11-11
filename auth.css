@@ -1029,6 +1029,7 @@
 .login-social-facebook-card__copy {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .login-social-facebook-card__hero strong {
@@ -1038,6 +1039,7 @@
   line-height: 1.25;
 }
 
+.login-social-facebook-card__channel,
 .login-social-facebook-card__hero span {
   display: block;
   font-size: 12px;
@@ -1048,7 +1050,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  word-break: normal;
+  word-break: keep-all;
   overflow-wrap: normal;
   hyphens: none;
 }
@@ -1056,7 +1058,8 @@
 .login-social-facebook-card__plugin {
   border: 1px solid #dbeafe;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: #fff;
   height: 154px;
   min-height: 154px;
@@ -1067,11 +1070,14 @@
   margin-left: -14px;
   margin-right: -14px;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .login-social-facebook-card__feed {
   display: block;
-  width: 100%;
+  width: 340px;
+  min-width: 340px;
+  max-width: none;
   height: 154px;
   min-height: 154px;
   max-height: 154px;
