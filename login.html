@@ -6,7 +6,7 @@
   <title data-i18n="auth.document_title">NutriPlant PRO — Iniciar sesión</title>
   <script src="assets/np-prefs-bootstrap.js"></script>
   <script defer src="assets/np-prefs.js"></script>
-  <script defer src="assets/np-i18n.js?v=20261110fbmin"></script>
+  <script defer src="assets/np-i18n.js?v=20261110fbmin2"></script>
   <script defer src="assets/np-units-core.js?v=20260914u2"></script>
   
   <!-- Iconos: escritorio + iOS / acceso directo -->
@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=76" />
+  <link rel="stylesheet" href="auth.css?v=77" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -5387,21 +5387,48 @@
         var card = root.querySelector('.login-social-facebook-card');
         var plugin = card && card.querySelector('.login-social-facebook-card__plugin');
         var iframe = card && card.querySelector('iframe');
-        if (!card || !iframe) return;
-        // Ancho mínimo ~340 para que Facebook dibuje «Seguir página» y «Compartir» completos.
-        var measured = Math.floor((plugin && plugin.clientWidth) || card.clientWidth || 0);
-        var width = Math.max(340, Math.min(500, measured > 0 ? measured : 340));
+        var channel = card && card.querySelector('.login-social-facebook-card__channel');
+        if (!card || !plugin || !iframe) return;
+        // Un solo renglón, sin soft-hyphen ni cortes raros de la P.
+        if (channel) {
+          var channelText = (window.NpI18n && typeof window.NpI18n.t === 'function')
+            ? window.NpI18n.t('auth.social_facebook_channel')
+            : 'Página oficial';
+          channel.textContent = String(channelText || 'Página oficial').replace(/\u00ad/g, '').replace(/\s+/g, ' ').trim();
+          channel.style.whiteSpace = 'nowrap';
+          channel.style.wordBreak = 'normal';
+          channel.style.overflowWrap = 'normal';
+        }
+        // Facebook necesita ~340px para dibujar «Seguir página» + «Compartir».
+        // Si el cajón es más angosto, se escala para que quepa completo (sin recortar).
+        var measured = Math.floor(plugin.clientWidth || card.clientWidth || 0);
+        var width = 340;
         var height = 154;
+        var scale = measured > 0 ? Math.min(1, measured / width) : 1;
         var prevW = parseInt(iframe.getAttribute('data-fb-w'), 10) || 0;
-        var prevH = parseInt(iframe.getAttribute('data-fb-h'), 10) || 0;
-        if (Math.abs(prevW - width) <= 8 && prevH === height && iframe.src && iframe.src.indexOf('plugins/page.php') !== -1) {
+        var prevScale = parseFloat(iframe.getAttribute('data-fb-scale') || '0') || 0;
+        if (
+          prevW === width &&
+          Math.abs(prevScale - scale) < 0.02 &&
+          iframe.src &&
+          iframe.src.indexOf('plugins/page.php') !== -1
+        ) {
+          plugin.style.height = Math.round(height * scale) + 'px';
+          iframe.style.transform = 'scale(' + scale + ')';
           return;
         }
         iframe.setAttribute('data-fb-w', String(width));
         iframe.setAttribute('data-fb-h', String(height));
+        iframe.setAttribute('data-fb-scale', String(scale));
         iframe.style.width = width + 'px';
-        iframe.style.minWidth = '340px';
+        iframe.style.minWidth = width + 'px';
         iframe.style.maxWidth = 'none';
+        iframe.style.height = height + 'px';
+        iframe.style.transform = 'scale(' + scale + ')';
+        iframe.style.transformOrigin = 'top left';
+        plugin.style.height = Math.round(height * scale) + 'px';
+        plugin.style.minHeight = Math.round(height * scale) + 'px';
+        plugin.style.maxHeight = Math.round(height * scale) + 'px';
         var href = encodeURIComponent('https://www.facebook.com/p/NutriPlant-PRO-61580040483626/');
         iframe.src = 'https://www.facebook.com/plugins/page.php?href=' + href +
           '&width=' + width +
