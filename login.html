@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=73" />
+  <link rel="stylesheet" href="auth.css?v=74" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -368,12 +368,30 @@
           <div class="login-social-pane" role="tabpanel" id="social-panel-facebook" aria-labelledby="social-tab-facebook" data-social-panel="facebook" hidden>
             <div class="login-social-pane__body">
               <div class="login-social-facebook-card">
-                <iframe
-                  class="login-social-facebook-card__feed"
-                  title="Perfil de NutriPlant PRO en Facebook"
-                  scrolling="no"
-                  src="about:blank"
-                ></iframe>
+                <div class="login-social-facebook-card__hero">
+                  <div class="login-social-facebook-card__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  </div>
+                  <div>
+                    <strong>NutriPlant PRO</strong>
+                    <span data-i18n="auth.social_facebook_channel">Página oficial de Facebook</span>
+                  </div>
+                </div>
+                <div class="login-social-facebook-card__plugin">
+                  <iframe
+                    class="login-social-facebook-card__feed"
+                    title="Perfil de NutriPlant PRO en Facebook"
+                    scrolling="no"
+                    src="about:blank"
+                  ></iframe>
+                </div>
+                <p class="login-social-facebook-card__tagline" data-i18n="auth.social_facebook_tagline">Comunidad, contenido técnico y novedades de NutriPlant PRO.</p>
+                <ul class="login-social-facebook-card__list">
+                  <li data-i18n="auth.social_facebook_item1">Publicaciones de la página</li>
+                  <li data-i18n="auth.social_facebook_item2">Novedades técnicas y agronómicas</li>
+                  <li data-i18n="auth.social_facebook_item3">Comunidad de NutriPlant PRO</li>
+                </ul>
+                <p class="login-social-facebook-card__meta" data-i18n="auth.social_facebook_meta">Página · Comunidad agronómica</p>
               </div>
             </div>
             <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--facebook" data-i18n="auth.social_cta_facebook">Ver página en Facebook</a>
@@ -582,7 +600,7 @@
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showRentabilidadAgricola()" style="margin-top: 12px;">
-          <span class="calculator-icon">💹</span>
+          <span class="calculator-icon">💲</span>
           <span class="button-text" data-i18n="dashboard.tool_rentabilidad">Rentabilidad Agrícola</span>
         </button>
         </div>
@@ -3511,7 +3529,7 @@
   <div id="rentabilidadAgricolaModal" class="modal-overlay">
     <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
-        <h2 class="modal-title">💹 <span data-i18n="dashboard.tool_rentabilidad">Rentabilidad Agrícola</span></h2>
+        <h2 class="modal-title">💲 <span data-i18n="dashboard.tool_rentabilidad">Rentabilidad Agrícola</span></h2>
         <div class="modal-header-trailing">
           <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
           <button class="modal-close" onclick="closeRentabilidadAgricola()">×</button>
@@ -5355,7 +5373,10 @@
               waCard.style.minHeight = Math.max(200, bodyH - 8) + 'px';
             }
             var fbCard = activePane ? activePane.querySelector('.login-social-facebook-card') : null;
-            if (fbCard) fitFacebookFeed();
+            if (fbCard) {
+              fbCard.style.minHeight = Math.max(200, bodyH - 8) + 'px';
+              fitFacebookFeed();
+            }
           }
         } finally {
           syncingSocialHeight = false;

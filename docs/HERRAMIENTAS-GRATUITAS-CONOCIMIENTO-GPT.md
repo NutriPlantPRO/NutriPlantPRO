@@ -461,10 +461,10 @@ IPCC 2019 Refinement Cap. 11 (N₂O suelo), IPCC AR6 (GWP), DESNZ/DEFRA (transpo
 
 ---
 
-### 💹 Rentabilidad Agrícola (`rentabilidad-agricola-free.html`)
+### 💲 Rentabilidad Agrícola (`rentabilidad-agricola-free.html`)
 
 - **Qué responde:** cuánto cuesta producir un kilogramo y si una inversión agronómica adicional genera valor. Dos módulos independientes: rentabilidad del cultivo y comparación de manejos.
-- **Acceso:** login y dashboard, icono 💹. También `/rentabilidad-agricola-free.html`. Sin cuenta.
+- **Acceso:** login y dashboard, icono 💲. También `/rentabilidad-agricola-free.html`. Sin cuenta.
 - **Datos:** se calculan en el navegador. `localStorage` `nutriplant_free_rentabilidad_v1`. No van a Supabase y no hay action de cálculo: no pidas al usuario que envíe costos al servidor.
 - **Moneda:** USD, MXN o EUR. Cambiar la moneda no convierte importes.
 - **Módulo A:** costo total = suma de partidas. Costo/kg = costo / kg vendidos. Ingreso = kg × precio + otros ingresos. Utilidad = ingreso − costo. Rentabilidad sobre costo = utilidad / costo × 100. Margen sobre ventas = utilidad / ingreso × 100. Precio de equilibrio = (costo − otros ingresos) / kg vendidos, de ese volumen, no un precio universal.
