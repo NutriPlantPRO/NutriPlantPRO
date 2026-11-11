@@ -12,50 +12,187 @@
   'use strict';
 
   var CURRENCIES = [
-    { code: 'USD', name: 'Dólar estadounidense' },
-    { code: 'MXN', name: 'Peso mexicano' },
-    { code: 'EUR', name: 'Euro' }
+    { code: 'USD', name: 'Dólar estadounidense', nameEn: 'US dollar' },
+    { code: 'MXN', name: 'Peso mexicano', nameEn: 'Mexican peso' },
+    { code: 'EUR', name: 'Euro', nameEn: 'Euro' },
+    { code: 'COP', name: 'Peso colombiano', nameEn: 'Colombian peso' },
+    { code: 'PEN', name: 'Sol peruano', nameEn: 'Peruvian sol' },
+    { code: 'CLP', name: 'Peso chileno', nameEn: 'Chilean peso' },
+    { code: 'ARS', name: 'Peso argentino', nameEn: 'Argentine peso' },
+    { code: 'PYG', name: 'Guaraní paraguayo', nameEn: 'Paraguayan guaraní' },
+    { code: 'BRL', name: 'Real brasileño', nameEn: 'Brazilian real' },
+    { code: 'MAD', name: 'Dírham marroquí', nameEn: 'Moroccan dirham' },
+    { code: 'EGP', name: 'Libra egipcia', nameEn: 'Egyptian pound' },
+    { code: 'CAD', name: 'Dólar canadiense', nameEn: 'Canadian dollar' },
+    { code: 'GTQ', name: 'Quetzal guatemalteco', nameEn: 'Guatemalan quetzal' },
+    { code: 'HNL', name: 'Lempira hondureña', nameEn: 'Honduran lempira' },
+    { code: 'NIO', name: 'Córdoba nicaragüense', nameEn: 'Nicaraguan córdoba' },
+    { code: 'CRC', name: 'Colón costarricense', nameEn: 'Costa Rican colón' },
+    { code: 'PAB', name: 'Balboa panameño', nameEn: 'Panamanian balboa' },
+    { code: 'BZD', name: 'Dólar beliceño', nameEn: 'Belize dollar' },
+    { code: 'BOB', name: 'Boliviano', nameEn: 'Bolivian boliviano' },
+    { code: 'UYU', name: 'Peso uruguayo', nameEn: 'Uruguayan peso' },
+    { code: 'DOP', name: 'Peso dominicano', nameEn: 'Dominican peso' },
+    { code: 'GBP', name: 'Libra esterlina', nameEn: 'British pound' }
   ];
 
   var COST_GROUPS = [
-    { id: 'nutricion', label: 'Nutrición vegetal' },
-    { id: 'sanidad', label: 'Sanidad del cultivo' },
-    { id: 'operacion', label: 'Operación del ciclo' },
-    { id: 'cosecha', label: 'Cosecha y comercialización' },
-    { id: 'admin', label: 'Administración y otros' }
+    { id: 'nutricion', label: 'Nutrición vegetal', labelEn: 'Plant nutrition' },
+    { id: 'sanidad', label: 'Sanidad del cultivo', labelEn: 'Crop protection' },
+    { id: 'operacion', label: 'Operación del ciclo', labelEn: 'Cycle operations' },
+    { id: 'cosecha', label: 'Cosecha y comercialización', labelEn: 'Harvest and marketing' },
+    { id: 'admin', label: 'Administración y otros', labelEn: 'Administration and other' }
   ];
 
   var COST_CATEGORIES = [
-    { id: 'nutricion', label: 'Nutrición vegetal', group: 'nutricion', primary: true },
-    { id: 'plagas', label: 'Control de plagas y enfermedades', group: 'sanidad', primary: true },
-    { id: 'malezas', label: 'Control de malezas', group: 'sanidad', primary: true },
-    { id: 'energia', label: 'Combustibles y energía', group: 'operacion', primary: true },
-    { id: 'personal', label: 'Personal operativo', group: 'operacion', primary: true },
-    { id: 'cosecha', label: 'Cosecha', group: 'cosecha', primary: true },
-    { id: 'agua', label: 'Agua y riego', group: 'operacion', primary: false },
-    { id: 'maquinaria', label: 'Maquinaria y mantenimiento', group: 'operacion', primary: false },
-    { id: 'empaque', label: 'Empaque y clasificación', group: 'cosecha', primary: false },
-    { id: 'transporte', label: 'Transporte y comercialización', group: 'cosecha', primary: false },
-    { id: 'admin', label: 'Administración', group: 'admin', primary: false },
-    { id: 'otros', label: 'Otros costos', group: 'admin', primary: false }
+    { id: 'nutricion', label: 'Nutrición vegetal', labelEn: 'Plant nutrition', group: 'nutricion', primary: true },
+    { id: 'plagas', label: 'Control de plagas y enfermedades', labelEn: 'Pest and disease control', group: 'sanidad', primary: true },
+    { id: 'malezas', label: 'Control de malezas', labelEn: 'Weed control', group: 'sanidad', primary: true },
+    { id: 'energia', label: 'Combustibles y energía', labelEn: 'Fuel and energy', group: 'operacion', primary: true },
+    { id: 'personal', label: 'Personal operativo', labelEn: 'Field labor', group: 'operacion', primary: true },
+    { id: 'cosecha', label: 'Cosecha', labelEn: 'Harvest', group: 'cosecha', primary: true },
+    { id: 'agua', label: 'Agua y riego', labelEn: 'Water and irrigation', group: 'operacion', primary: false },
+    { id: 'maquinaria', label: 'Maquinaria y mantenimiento', labelEn: 'Machinery and maintenance', group: 'operacion', primary: false },
+    { id: 'empaque', label: 'Empaque y clasificación', labelEn: 'Packing and grading', group: 'cosecha', primary: false },
+    { id: 'transporte', label: 'Transporte y comercialización', labelEn: 'Transport and marketing', group: 'cosecha', primary: false },
+    { id: 'admin', label: 'Administración', labelEn: 'Administration', group: 'admin', primary: false },
+    { id: 'otros', label: 'Otros costos', labelEn: 'Other costs', group: 'admin', primary: false }
   ];
 
-  var EXAMPLE_DISCLAIMER =
-    'Ejemplo hipotético con fines educativos. Los costos reales dependen del cultivo, región, sistema de producción y condiciones particulares.';
-  var COMPARISON_DISCLAIMER =
-    'Los resultados dependen de la información proporcionada. Las comparaciones deben realizarse bajo condiciones productivas equivalentes y considerar los costos relevantes.';
-  var AGRONOMIC_NOTE =
-    'Una respuesta productiva debe evaluarse considerando las condiciones del cultivo, calidad comercial, variación climática, manejo agronómico y costos asociados.';
-  var CAUSALITY_NOTE =
-    'La comparación describe los datos capturados. No afirma que una tecnología haya causado el cambio si el ejercicio es hipotético o no está respaldado por una evaluación bajo condiciones equivalentes.';
-  var TAX_NOTE =
-    'La utilidad presentada es previa a impuestos. El financiamiento solo entra si se registran intereses o comisiones; el capital de un préstamo no se suma otra vez si la compra ya está en los costos.';
-  var MODULE_A_MESSAGE =
-    'Producir más no siempre significa ganar más. Conoce tus costos y descubre tu rentabilidad.';
-  var MODULE_B_MESSAGE =
-    'No se trata de elegir siempre el programa más barato, sino de conocer cuánto valor genera cada dólar adicional invertido.';
-  var DUPLICATE_COST_NOTE =
-    'Evita duplicar gastos. Si una labor ya está en personal, maquinaria o un programa, no la anotes otra vez en otro concepto.';
+  var EXAMPLE_COST_LABELS = {
+    'ex-nut': { es: 'Nutrición vegetal', en: 'Plant nutrition' },
+    'ex-san': { es: 'Control de plagas y malezas', en: 'Pest and weed control' },
+    'ex-ene': { es: 'Combustibles y energía', en: 'Fuel and energy' },
+    'ex-per': { es: 'Personal operativo', en: 'Field labor' },
+    'ex-cos': { es: 'Cosecha, empaque y transporte', en: 'Harvest, packing and transport' },
+    'ex-otr': { es: 'Mantenimiento y otros gastos', en: 'Maintenance and other expenses' }
+  };
+
+  // Textos por defecto que el usuario puede ver sin haberlos escrito (ejemplos, atajos).
+  // Sirven para traducirlos al cambiar de idioma sin tocar lo que el usuario capturó.
+  var KNOWN_TEXT_PAIRS = [
+    ['Análisis económico del ciclo productivo', 'Economic analysis of the production cycle'],
+    ['Ciclo productivo', 'Production cycle'],
+    ['Programa de nutrición', 'Nutrition program'],
+    ['Programa de nutrición vegetal', 'Plant nutrition program'],
+    ['Tecnología de fertirriego', 'Fertigation technology'],
+    ['Eficiencia de riego', 'Irrigation efficiency'],
+    ['Manejo fitosanitario', 'Crop protection management'],
+    ['Calidad comercial', 'Commercial quality'],
+    ['Cambio operativo', 'Operational change'],
+    ['Otro costo', 'Other cost']
+  ];
+
+  var NOTES = {
+    es: {
+      exampleDisclaimer:
+        'Ejemplo hipotético con fines educativos. Los costos reales dependen del cultivo, región, sistema de producción y condiciones particulares.',
+      comparisonDisclaimer:
+        'Los resultados dependen de la información proporcionada. Las comparaciones deben realizarse bajo condiciones productivas equivalentes y considerar los costos relevantes.',
+      agronomicNote:
+        'Una respuesta productiva debe evaluarse considerando las condiciones del cultivo, calidad comercial, variación climática, manejo agronómico y costos asociados.',
+      causalityNote:
+        'La comparación describe los datos capturados. No afirma que una tecnología haya causado el cambio si el ejercicio es hipotético o no está respaldado por una evaluación bajo condiciones equivalentes.',
+      taxNote:
+        'La utilidad presentada es previa a impuestos. El financiamiento solo entra si se registran intereses o comisiones; el capital de un préstamo no se suma otra vez si la compra ya está en los costos.',
+      moduleA:
+        'Producir más no siempre significa ganar más. Conoce tus costos y descubre tu rentabilidad.',
+      moduleB:
+        'No se trata de elegir siempre el programa más barato, sino de conocer cuánto valor genera cada unidad monetaria adicional invertida.',
+      duplicateCost:
+        'Evita duplicar gastos. Si una labor ya está en personal, maquinaria o un programa, no la anotes otra vez en otro concepto.',
+      tagline: 'NutriPlant PRO — Diseña. Ajusta. Nutre.'
+    },
+    en: {
+      exampleDisclaimer:
+        'Hypothetical example for educational purposes. Actual costs depend on the crop, region, production system and specific conditions.',
+      comparisonDisclaimer:
+        'Results depend on the information provided. Comparisons should be made under equivalent production conditions and should include the relevant costs.',
+      agronomicNote:
+        'A production response should be evaluated considering crop conditions, commercial quality, climate variability, agronomic management and associated costs.',
+      causalityNote:
+        'The comparison describes the data entered. It does not claim that a technology caused the change if the exercise is hypothetical or not backed by an evaluation under equivalent conditions.',
+      taxNote:
+        'The profit shown is before taxes. Financing is only included if you record interest or fees; a loan principal is not added again if the purchase is already in the costs.',
+      moduleA:
+        'Producing more does not always mean earning more. Know your costs and find out your profitability.',
+      moduleB:
+        'It is not about always choosing the cheapest program, but about knowing how much value each additional unit invested generates.',
+      duplicateCost:
+        'Avoid double counting. If a task is already in labor, machinery or a program, do not enter it again under another item.',
+      tagline: 'NutriPlant PRO — Design. Adjust. Nourish.'
+    }
+  };
+
+  var EXAMPLE_DISCLAIMER = NOTES.es.exampleDisclaimer;
+  var COMPARISON_DISCLAIMER = NOTES.es.comparisonDisclaimer;
+  var AGRONOMIC_NOTE = NOTES.es.agronomicNote;
+  var CAUSALITY_NOTE = NOTES.es.causalityNote;
+  var TAX_NOTE = NOTES.es.taxNote;
+  var MODULE_A_MESSAGE = NOTES.es.moduleA;
+  var MODULE_B_MESSAGE = NOTES.es.moduleB;
+  var DUPLICATE_COST_NOTE = NOTES.es.duplicateCost;
+
+  function pick(lang, es, en) { return lang === 'en' ? en : es; }
+
+  function langOf(input) {
+    if (typeof input === 'string') return input === 'en' ? 'en' : 'es';
+    return input && input.language === 'en' ? 'en' : 'es';
+  }
+
+  function notes(lang) {
+    return NOTES[lang === 'en' ? 'en' : 'es'];
+  }
+
+  function currencyName(code, lang) {
+    for (var i = 0; i < CURRENCIES.length; i += 1) {
+      if (CURRENCIES[i].code === code) return pick(lang, CURRENCIES[i].name, CURRENCIES[i].nameEn);
+    }
+    return code;
+  }
+
+  function groupLabel(id, lang) {
+    for (var i = 0; i < COST_GROUPS.length; i += 1) {
+      if (COST_GROUPS[i].id === id) return pick(lang, COST_GROUPS[i].label, COST_GROUPS[i].labelEn);
+    }
+    return id;
+  }
+
+  function categoryLabel(id, lang) {
+    for (var i = 0; i < COST_CATEGORIES.length; i += 1) {
+      if (COST_CATEGORIES[i].id === id) return pick(lang, COST_CATEGORIES[i].label, COST_CATEGORIES[i].labelEn);
+    }
+    return null;
+  }
+
+  // Etiqueta visible de una partida. Las partidas propias conservan lo que escribió el usuario;
+  // las de catálogo (y las del ejemplo) se traducen desde su id.
+  function costLineLabel(line, lang) {
+    if (!line) return '';
+    var id = String(line.id || '');
+    var own = line.label == null ? '' : String(line.label);
+    var example = EXAMPLE_COST_LABELS[id];
+    if (example) {
+      if (!line.custom || own === example.es || own === example.en) return pick(lang, example.es, example.en);
+      return own;
+    }
+    if (!line.custom) {
+      var fromId = categoryLabel(id, lang);
+      if (fromId) return fromId;
+    }
+    return own;
+  }
+
+  // Si el texto es uno de los textos por defecto (en cualquier idioma), lo devuelve en el idioma pedido.
+  function localizeKnownText(value, lang) {
+    var text = value == null ? '' : String(value);
+    for (var i = 0; i < KNOWN_TEXT_PAIRS.length; i += 1) {
+      if (text === KNOWN_TEXT_PAIRS[i][0] || text === KNOWN_TEXT_PAIRS[i][1]) {
+        return pick(lang, KNOWN_TEXT_PAIRS[i][0], KNOWN_TEXT_PAIRS[i][1]);
+      }
+    }
+    return text;
+  }
 
   function isCurrency(code) {
     return CURRENCIES.some(function (item) { return item.code === code; });
@@ -153,22 +290,32 @@
     });
   }
 
-  function exampleModuleA() {
+  function exampleModuleA(opts) {
+    var lang = langOf(opts);
+    var costs = [
+      ['ex-nut', 'nutricion', 2000],
+      ['ex-san', 'sanidad', 2000],
+      ['ex-ene', 'operacion', 1500],
+      ['ex-per', 'operacion', 5000],
+      ['ex-cos', 'cosecha', 3000],
+      ['ex-otr', 'admin', 1500]
+    ].map(function (item) {
+      return {
+        id: item[0],
+        label: pick(lang, EXAMPLE_COST_LABELS[item[0]].es, EXAMPLE_COST_LABELS[item[0]].en),
+        group: item[1],
+        amount: item[2],
+        kind: 'cost'
+      };
+    });
     return {
       currency: 'USD',
-      exerciseName: 'Análisis económico del ciclo productivo',
+      exerciseName: pick(lang, 'Análisis económico del ciclo productivo', 'Economic analysis of the production cycle'),
       crop: '',
       areaHa: '',
-      period: 'Ciclo productivo',
+      period: pick(lang, 'Ciclo productivo', 'Production cycle'),
       isExample: true,
-      costs: [
-        { id: 'ex-nut', label: 'Nutrición vegetal', group: 'nutricion', amount: 2000, kind: 'cost' },
-        { id: 'ex-san', label: 'Control de plagas y malezas', group: 'sanidad', amount: 2000, kind: 'cost' },
-        { id: 'ex-ene', label: 'Combustibles y energía', group: 'operacion', amount: 1500, kind: 'cost' },
-        { id: 'ex-per', label: 'Personal operativo', group: 'operacion', amount: 5000, kind: 'cost' },
-        { id: 'ex-cos', label: 'Cosecha, empaque y transporte', group: 'cosecha', amount: 3000, kind: 'cost' },
-        { id: 'ex-otr', label: 'Mantenimiento y otros gastos', group: 'admin', amount: 1500, kind: 'cost' }
-      ],
+      costs: costs,
       harvestedKg: '',
       soldKg: 20000,
       pricePerKg: 1,
@@ -177,10 +324,11 @@
     };
   }
 
-  function exampleModuleB() {
+  function exampleModuleB(opts) {
+    var lang = langOf(opts);
     return {
       currency: 'USD',
-      strategyName: 'Programa de nutrición',
+      strategyName: pick(lang, 'Programa de nutrición', 'Nutrition program'),
       scope: 'intervention',
       isExample: true,
       current: { programCost: 2000, soldKg: 20000, pricePerKg: 1, associatedCosts: '' },
@@ -196,24 +344,30 @@
     list.push({ code: code, message: message });
   }
 
-  function sumCostLines(lines, errors) {
+  function sumCostLines(lines, errors, lang) {
     var total = 0;
     var items = [];
     (lines || []).forEach(function (line, index) {
       var parsed = readOptionalNumber(line && line.amount);
-      var label = (line && line.label) || ('Concepto ' + (index + 1));
+      var label = costLineLabel(line, lang) || pick(lang, 'Concepto ', 'Item ') + (index + 1);
       if (!parsed.ok) {
-        pushError(errors, 'invalid_number', 'Revisa el importe de «' + label + '».');
+        pushError(errors, 'invalid_number', pick(lang,
+          'Revisa el importe de «' + label + '».',
+          'Check the amount for “' + label + '”.'));
         return;
       }
       var amount = parsed.empty ? 0 : parsed.value;
       var kind = line && (line.kind === 'saving' || line.kind === 'adjustment') ? line.kind : 'cost';
       if (kind === 'cost' && amount < 0) {
-        pushError(errors, 'negative_cost', '«' + label + '» no puede ser negativo. Un ahorro se registra en el apartado de ahorros, no como costo ordinario.');
+        pushError(errors, 'negative_cost', pick(lang,
+          '«' + label + '» no puede ser negativo. Un ahorro se registra en el apartado de ahorros, no como costo ordinario.',
+          '“' + label + '” cannot be negative. A saving is entered in the savings section, not as an ordinary cost.'));
         return;
       }
       if (kind !== 'cost' && amount < 0) {
-        pushError(errors, 'negative_saving', 'El ahorro o ajuste de «' + label + '» se anota en positivo.');
+        pushError(errors, 'negative_saving', pick(lang,
+          'El ahorro o ajuste de «' + label + '» se anota en positivo.',
+          'The saving or adjustment for “' + label + '” is entered as a positive number.'));
         return;
       }
       var signed = kind === 'cost' ? amount : -amount;
@@ -230,13 +384,14 @@
     return { total: total, items: items };
   }
 
-  function summarizeGroups(lines) {
-    var summed = sumCostLines(lines || [], []);
+  function summarizeGroups(lines, opts) {
+    var lang = langOf(opts);
+    var summed = sumCostLines(lines || [], [], lang);
     var buckets = {};
     COST_GROUPS.forEach(function (group) {
-      buckets[group.id] = { id: group.id, label: group.label, total: 0 };
+      buckets[group.id] = { id: group.id, label: pick(lang, group.label, group.labelEn), total: 0 };
     });
-    var loose = { id: 'sin_grupo', label: 'Otros conceptos', total: 0, used: false };
+    var loose = { id: 'sin_grupo', label: pick(lang, 'Otros conceptos', 'Other items'), total: 0, used: false };
     summed.items.forEach(function (item) {
       if (buckets[item.group]) buckets[item.group].total += item.signed;
       else {
@@ -252,10 +407,12 @@
 
   function evaluateCrop(input) {
     input = input || {};
+    var lang = langOf(input);
+    var N = notes(lang);
     var errors = [];
     var notices = [];
     var currency = isCurrency(input.currency) ? input.currency : 'USD';
-    var costs = sumCostLines(input.costs, errors);
+    var costs = sumCostLines(input.costs, errors, lang);
     var harvested = readOptionalNumber(input.harvestedKg);
     var sold = readOptionalNumber(input.soldKg);
     var price = readOptionalNumber(input.pricePerKg);
@@ -264,28 +421,44 @@
     var area = readOptionalNumber(input.areaHa);
 
     [harvested, sold, price, byproduct, financing, area].forEach(function (parsed) {
-      if (!parsed.ok) pushError(errors, parsed.code, 'Hay un dato numérico que no se pudo leer.');
+      if (!parsed.ok) pushError(errors, parsed.code, pick(lang,
+        'Hay un dato numérico que no se pudo leer.',
+        'A numeric value could not be read.'));
     });
     if (harvested.ok && !harvested.empty && harvested.value < 0) {
-      pushError(errors, 'negative_production', 'La producción cosechada no puede ser negativa.');
+      pushError(errors, 'negative_production', pick(lang,
+        'La producción cosechada no puede ser negativa.',
+        'Harvested production cannot be negative.'));
     }
     if (sold.ok && !sold.empty && sold.value < 0) {
-      pushError(errors, 'negative_production', 'La producción comercializada no puede ser negativa.');
+      pushError(errors, 'negative_production', pick(lang,
+        'La producción comercializada no puede ser negativa.',
+        'Marketed production cannot be negative.'));
     }
     if (price.ok && !price.empty && price.value < 0) {
-      pushError(errors, 'negative_price', 'El precio de venta no puede ser negativo.');
+      pushError(errors, 'negative_price', pick(lang,
+        'El precio de venta no puede ser negativo.',
+        'The sale price cannot be negative.'));
     }
     if (byproduct.ok && !byproduct.empty && byproduct.value < 0) {
-      pushError(errors, 'negative_byproduct', 'Los ingresos por subproductos no pueden ser negativos.');
+      pushError(errors, 'negative_byproduct', pick(lang,
+        'Los ingresos por subproductos no pueden ser negativos.',
+        'Income from by-products cannot be negative.'));
     }
     if (financing.ok && !financing.empty && financing.value < 0) {
-      pushError(errors, 'negative_financing', 'Los intereses y comisiones se anotan en positivo.');
+      pushError(errors, 'negative_financing', pick(lang,
+        'Los intereses y comisiones se anotan en positivo.',
+        'Interest and fees are entered as positive numbers.'));
     }
     if (area.ok && !area.empty && area.value <= 0) {
-      pushError(errors, 'invalid_area', 'La superficie debe ser mayor que cero para calcular valores por hectárea.');
+      pushError(errors, 'invalid_area', pick(lang,
+        'La superficie debe ser mayor que cero para calcular valores por hectárea.',
+        'The area must be greater than zero to calculate per-hectare values.'));
     }
     if (harvested.ok && sold.ok && !harvested.empty && !sold.empty && sold.value > harvested.value) {
-      pushError(errors, 'sold_exceeds_harvest', 'La producción comercializada no puede superar la producción cosechada.');
+      pushError(errors, 'sold_exceeds_harvest', pick(lang,
+        'La producción comercializada no puede superar la producción cosechada.',
+        'Marketed production cannot exceed harvested production.'));
     }
 
     var blocked = errors.length > 0;
@@ -318,27 +491,35 @@
       } else {
         notices.push({
           code: 'sold_kg_zero',
-          message: 'Con cero kilogramos comercializados no se calcula el costo por kilogramo ni el precio de equilibrio.'
+          message: pick(lang,
+            'Con cero kilogramos comercializados no se calcula el costo por kilogramo ni el precio de equilibrio.',
+            'With zero kilograms marketed, the cost per kilogram and the break-even price are not calculated.')
         });
       }
       if (totalCost > 0) returnOnCostPct = (profit / totalCost) * 100;
       else {
         notices.push({
           code: 'no_cost_base',
-          message: 'Sin costos mayores que cero no se calcula la rentabilidad sobre el costo.'
+          message: pick(lang,
+            'Sin costos mayores que cero no se calcula la rentabilidad sobre el costo.',
+            'Without costs greater than zero, the return on cost is not calculated.')
         });
       }
       if (revenue > 0) marginOnSalesPct = (profit / revenue) * 100;
       else {
         notices.push({
           code: 'no_revenue_base',
-          message: 'Sin ingresos no se calcula el margen sobre ventas.'
+          message: pick(lang,
+            'Sin ingresos no se calcula el margen sobre ventas.',
+            'Without revenue, the margin on sales is not calculated.')
         });
       }
     } else if (!blocked) {
       notices.push({
         code: 'incomplete',
-        message: 'Para ingresos, utilidad y costo por kilogramo hacen falta los kilogramos comercializados y el precio promedio.'
+        message: pick(lang,
+          'Para ingresos, utilidad y costo por kilogramo hacen falta los kilogramos comercializados y el precio promedio.',
+          'To calculate revenue, profit and cost per kilogram, you need the kilograms marketed and the average price.')
       });
     }
 
@@ -348,7 +529,7 @@
     }
 
     if (!blocked && financingValue === 0) {
-      notices.push({ code: 'before_tax', message: TAX_NOTE });
+      notices.push({ code: 'before_tax', message: N.taxNote });
     }
 
     var perHa = null;
@@ -364,6 +545,7 @@
     var loss = profit != null && profit < 0;
     return {
       ok: !blocked,
+      language: lang,
       errors: errors,
       notices: notices,
       currency: currency,
@@ -391,22 +573,29 @@
 
   function breakEvenVolume(input) {
     input = input || {};
+    var lang = langOf(input);
     var fixed = readOptionalNumber(input.fixedCosts);
     var price = readOptionalNumber(input.pricePerKg);
     var variable = readOptionalNumber(input.variableCostPerKg);
     if (!fixed.ok || !price.ok || !variable.ok) {
-      return { ok: false, reason: 'invalid_number', kg: null, message: 'Revisa los datos del volumen de equilibrio.' };
+      return { ok: false, reason: 'invalid_number', kg: null, message: pick(lang,
+        'Revisa los datos del volumen de equilibrio.',
+        'Check the break-even volume data.') };
     }
     if (fixed.empty || price.empty || variable.empty) {
       return {
         ok: false,
         reason: 'incomplete',
         kg: null,
-        message: 'El volumen de equilibrio necesita costos fijos, costo variable por kilogramo y precio. No se sustituye por el costo total dividido entre el precio.'
+        message: pick(lang,
+          'El volumen de equilibrio necesita costos fijos, costo variable por kilogramo y precio. No se sustituye por el costo total dividido entre el precio.',
+          'Break-even volume needs fixed costs, variable cost per kilogram and price. It is not replaced by total cost divided by price.')
       };
     }
     if (fixed.value < 0 || variable.value < 0 || price.value < 0) {
-      return { ok: false, reason: 'negative', kg: null, message: 'Costos fijos, costo variable y precio deben ser cero o positivos.' };
+      return { ok: false, reason: 'negative', kg: null, message: pick(lang,
+        'Costos fijos, costo variable y precio deben ser cero o positivos.',
+        'Fixed costs, variable cost and price must be zero or positive.') };
     }
     var contribution = price.value - variable.value;
     if (contribution <= 0) {
@@ -415,7 +604,9 @@
         reason: 'no_positive_margin',
         kg: null,
         contributionPerKg: contribution,
-        message: 'Con ese precio no se alcanza un equilibrio de volumen positivo: el precio no supera el costo variable por kilogramo.'
+        message: pick(lang,
+          'Con ese precio no se alcanza un equilibrio de volumen positivo: el precio no supera el costo variable por kilogramo.',
+          'At that price there is no positive break-even volume: the price does not exceed the variable cost per kilogram.')
       };
     }
     return {
@@ -423,21 +614,28 @@
       reason: null,
       kg: fixed.value / contribution,
       contributionPerKg: contribution,
-      message: 'Volumen de equilibrio con la estructura de costos fijos y variables de este ejercicio. Corresponde a este precio y a este periodo.'
+      message: pick(lang,
+        'Volumen de equilibrio con la estructura de costos fijos y variables de este ejercicio. Corresponde a este precio y a este periodo.',
+        'Break-even volume for the fixed and variable cost structure of this exercise. It applies to this price and this period.')
     };
   }
 
   function evaluateScenario(input) {
     input = input || {};
+    var lang = langOf(input);
     var errors = [];
     var sold = readOptionalNumber(input.soldKg);
     var price = readOptionalNumber(input.pricePerKg);
     var byproduct = readOptionalNumber(input.byproductRevenue);
     if (!sold.ok || !price.ok || !byproduct.ok) {
-      pushError(errors, 'invalid_number', 'Revisa el escenario.');
+      pushError(errors, 'invalid_number', pick(lang, 'Revisa el escenario.', 'Check the scenario.'));
     }
-    if (sold.ok && !sold.empty && sold.value < 0) pushError(errors, 'negative_production', 'La producción del escenario no puede ser negativa.');
-    if (price.ok && !price.empty && price.value < 0) pushError(errors, 'negative_price', 'El precio del escenario no puede ser negativo.');
+    if (sold.ok && !sold.empty && sold.value < 0) pushError(errors, 'negative_production', pick(lang,
+      'La producción del escenario no puede ser negativa.',
+      'The scenario production cannot be negative.'));
+    if (price.ok && !price.empty && price.value < 0) pushError(errors, 'negative_price', pick(lang,
+      'El precio del escenario no puede ser negativo.',
+      'The scenario price cannot be negative.'));
     var mode = input.costMode === 'fixed_plus_variable' || input.costMode === 'custom_total'
       ? input.costMode
       : 'constant_total';
@@ -447,38 +645,58 @@
     if (mode === 'fixed_plus_variable') {
       var fixed = readOptionalNumber(input.fixedCosts);
       var variable = readOptionalNumber(input.variableCostPerKg);
-      if (!fixed.ok || !variable.ok) pushError(errors, 'invalid_number', 'Revisa la estructura de costos del escenario.');
+      if (!fixed.ok || !variable.ok) pushError(errors, 'invalid_number', pick(lang,
+        'Revisa la estructura de costos del escenario.',
+        'Check the scenario cost structure.'));
       if (fixed.empty || variable.empty) {
-        pushError(errors, 'variable_cost_required', 'Para este escenario hay que indicar costos fijos y costo variable por kilogramo. No se asume que el variable sea cero.');
+        pushError(errors, 'variable_cost_required', pick(lang,
+          'Para este escenario hay que indicar costos fijos y costo variable por kilogramo. No se asume que el variable sea cero.',
+          'For this scenario you must enter fixed costs and variable cost per kilogram. The variable cost is not assumed to be zero.'));
       } else if (fixed.value < 0 || variable.value < 0) {
-        pushError(errors, 'negative_cost', 'Los costos del escenario no pueden ser negativos.');
+        pushError(errors, 'negative_cost', pick(lang,
+          'Los costos del escenario no pueden ser negativos.',
+          'The scenario costs cannot be negative.'));
       } else if (sold.ok && !sold.empty && price.ok && !price.empty) {
         totalCost = fixed.value + variable.value * sold.value;
         volume = breakEvenVolume({
+          language: lang,
           fixedCosts: fixed.value,
           pricePerKg: price.value,
           variableCostPerKg: variable.value
         });
       }
-      assumption = 'El costo de este escenario sí cambia con los kilogramos: costos fijos más costo variable por kilogramo.';
+      assumption = pick(lang,
+        'El costo de este escenario sí cambia con los kilogramos: costos fijos más costo variable por kilogramo.',
+        'The cost of this scenario does change with kilograms: fixed costs plus variable cost per kilogram.');
     } else {
-      var custom = readOptionalNumber(mode === 'custom_total' ? input.totalCost : input.totalCost);
-      if (!custom.ok) pushError(errors, 'invalid_number', 'Revisa el costo total del escenario.');
+      var custom = readOptionalNumber(input.totalCost);
+      if (!custom.ok) pushError(errors, 'invalid_number', pick(lang,
+        'Revisa el costo total del escenario.',
+        'Check the total cost of the scenario.'));
       if (custom.empty || custom.value == null) {
-        pushError(errors, 'missing_total', 'Indica el costo total de este escenario.');
+        pushError(errors, 'missing_total', pick(lang,
+          'Indica el costo total de este escenario.',
+          'Enter the total cost for this scenario.'));
       } else if (custom.value < 0) {
-        pushError(errors, 'negative_cost', 'El costo total del escenario no puede ser negativo.');
+        pushError(errors, 'negative_cost', pick(lang,
+          'El costo total del escenario no puede ser negativo.',
+          'The total cost of the scenario cannot be negative.'));
       } else {
         totalCost = custom.value;
       }
       assumption = mode === 'custom_total'
-        ? 'Se usa el costo total escrito para la alternativa. Si ese costo esconde partidas variables, no lo tomes como volumen de equilibrio.'
-        : 'Esta alternativa mantiene constante el costo total del ejercicio. Los kilos donde el ingreso iguala ese costo no son el volumen de equilibrio si existen costos que crecen con la producción.';
+        ? pick(lang,
+          'Se usa el costo total escrito para la alternativa. Si ese costo esconde partidas variables, no lo tomes como volumen de equilibrio.',
+          'The total cost you entered is used for the alternative. If that cost hides variable items, do not take it as a break-even volume.')
+        : pick(lang,
+          'Esta alternativa mantiene constante el costo total del ejercicio. Los kilos donde el ingreso iguala ese costo no son el volumen de equilibrio si existen costos que crecen con la producción.',
+          'This alternative keeps the total cost of the exercise constant. The kilograms where revenue equals that cost are not the break-even volume if some costs grow with production.');
     }
 
     if (errors.length || sold.empty || price.empty || totalCost == null) {
       return {
         ok: false,
+        language: lang,
         errors: errors,
         costMode: mode,
         assumption: assumption,
@@ -502,6 +720,7 @@
     if (mode !== 'fixed_plus_variable' && price.value > 0) referenceKg = Math.max(0, (totalCost - extraIncome) / price.value);
     return {
       ok: true,
+      language: lang,
       errors: [],
       costMode: mode,
       assumption: assumption,
@@ -529,6 +748,7 @@
     for (var i = 0; i <= steps; i += 1) {
       var kg = (maxKg * i) / steps;
       var step = evaluateScenario({
+        language: langOf(input),
         soldKg: kg,
         pricePerKg: probe.pricePerKg,
         byproductRevenue: input.byproductRevenue || 0,
@@ -552,14 +772,16 @@
     return 'mixed';
   }
 
-  function additionalKgForRecovery(spec) {
+  function additionalKgForRecovery(spec, lang) {
     var denom = spec.priceImproved - spec.variablePerKg;
     if (!(denom > 0)) {
       return {
         ok: false,
         reason: 'no_positive_margin',
         extraKg: null,
-        message: 'No hay un equilibrio positivo en kilogramos: el precio del manejo mejorado no supera el costo variable incremental por kilogramo.'
+        message: pick(lang,
+          'No hay un equilibrio positivo en kilogramos: el precio del manejo mejorado no supera el costo variable incremental por kilogramo.',
+          'There is no positive break-even in kilograms: the price of the improved management does not exceed the incremental variable cost per kilogram.')
       };
     }
     if (!(spec.investmentDelta > 0)) {
@@ -571,27 +793,38 @@
     return { ok: true, reason: null, extraKg: improvedKg - spec.soldCurrent, improvedKg: improvedKg, message: '' };
   }
 
-  function interpretBenefitCost(ratio, currency) {
+  function interpretBenefitCost(ratio, currency, lang) {
     if (!Number.isFinite(ratio)) return '';
-    if (ratio < 1) return 'El beneficio incremental no alcanza a recuperar la inversión.';
+    if (ratio < 1) return pick(lang,
+      'El beneficio incremental no alcanza a recuperar la inversión.',
+      'The incremental benefit does not recover the investment.');
     if (Math.abs(ratio - 1) < 0.005) {
-      return 'La inversión adicional se recupera, pero no deja beneficio incremental después de pagarla.';
+      return pick(lang,
+        'La inversión adicional se recupera, pero no deja beneficio incremental después de pagarla.',
+        'The additional investment is recovered, but it leaves no incremental benefit after paying for it.');
     }
-    return 'Por cada ' + currency + ' 1 adicional invertido, se generan ' + formatRatio(ratio).replace(':1', '')
-      + ' ' + currency + ' de beneficio antes de recuperar la inversión.';
+    var n = formatRatio(ratio).replace(':1', '');
+    return pick(lang,
+      'Por cada ' + currency + ' 1 adicional invertido, se generan ' + n + ' ' + currency + ' de beneficio antes de recuperar la inversión.',
+      'For each additional ' + currency + ' 1 invested, ' + n + ' ' + currency + ' of benefit is generated before recovering the investment.');
   }
 
-  function interpretIncomeRatio(ratio, currency) {
+  function interpretIncomeRatio(ratio, currency, lang) {
     if (!Number.isFinite(ratio)) return '';
     if (ratio < 1) {
-      return 'Las ventas adicionales no alcanzan a igualar la inversión extra. Esto todavía no es beneficio neto.';
+      return pick(lang,
+        'Las ventas adicionales no alcanzan a igualar la inversión extra. Esto todavía no es beneficio neto.',
+        'The additional sales do not match the extra investment. This is not net benefit yet.');
     }
-    return 'Por cada ' + currency + ' 1 adicional invertido se generaron ' + formatRatio(ratio).replace(':1', '')
-      + ' ' + currency + ' en ventas adicionales. No confundir ventas adicionales con beneficio neto.';
+    var n = formatRatio(ratio).replace(':1', '');
+    return pick(lang,
+      'Por cada ' + currency + ' 1 adicional invertido se generaron ' + n + ' ' + currency + ' en ventas adicionales. No confundir ventas adicionales con beneficio neto.',
+      'For each additional ' + currency + ' 1 invested, ' + n + ' ' + currency + ' in additional sales were generated. Do not confuse additional sales with net benefit.');
   }
 
   function evaluateInvestment(input) {
     input = input || {};
+    var lang = langOf(input);
     var errors = [];
     var warnings = [];
     var currency = isCurrency(input.currency) ? input.currency : 'USD';
@@ -611,7 +844,9 @@
       savings: readOptionalNumber(input.savings)
     };
     Object.keys(fields).forEach(function (key) {
-      if (!fields[key].ok) pushError(errors, 'invalid_number', 'Revisa los datos de la comparación.');
+      if (!fields[key].ok) pushError(errors, 'invalid_number', pick(lang,
+        'Revisa los datos de la comparación.',
+        'Check the comparison data.'));
     });
 
     function requireNonNegative(parsed, code, message, required) {
@@ -619,29 +854,33 @@
       if (required && parsed.empty) pushError(errors, 'incomplete', message);
       else if (!parsed.empty && parsed.value < 0) pushError(errors, code, message);
     }
-    requireNonNegative(fields.currentCost, 'negative_cost', 'El costo del manejo actual no puede ser negativo.', true);
-    requireNonNegative(fields.improvedCost, 'negative_cost', 'El costo del manejo mejorado no puede ser negativo.', true);
-    requireNonNegative(fields.currentKg, 'negative_production', 'La producción del manejo actual no puede ser negativa.', true);
-    requireNonNegative(fields.improvedKg, 'negative_production', 'La producción del manejo mejorado no puede ser negativa.', true);
-    requireNonNegative(fields.currentPrice, 'negative_price', 'El precio del manejo actual no puede ser negativo.', true);
-    requireNonNegative(fields.improvedPrice, 'negative_price', 'El precio del manejo mejorado no puede ser negativo.', true);
-    requireNonNegative(fields.currentAssoc, 'negative_cost', 'Los otros costos del manejo actual no pueden ser negativos.', false);
-    requireNonNegative(fields.improvedAssoc, 'negative_cost', 'Los otros costos del manejo mejorado no pueden ser negativos.', false);
-    requireNonNegative(fields.lump, 'negative_cost', 'Los otros costos incrementales se anotan en positivo.', false);
-    requireNonNegative(fields.variable, 'negative_cost', 'El costo variable incremental por kilogramo no puede ser negativo.', false);
-    requireNonNegative(fields.savings, 'negative_saving', 'Los ahorros se anotan en positivo.', false);
+    requireNonNegative(fields.currentCost, 'negative_cost', pick(lang, 'El costo del manejo actual no puede ser negativo.', 'The cost of the current management cannot be negative.'), true);
+    requireNonNegative(fields.improvedCost, 'negative_cost', pick(lang, 'El costo del manejo mejorado no puede ser negativo.', 'The cost of the improved management cannot be negative.'), true);
+    requireNonNegative(fields.currentKg, 'negative_production', pick(lang, 'La producción del manejo actual no puede ser negativa.', 'The production of the current management cannot be negative.'), true);
+    requireNonNegative(fields.improvedKg, 'negative_production', pick(lang, 'La producción del manejo mejorado no puede ser negativa.', 'The production of the improved management cannot be negative.'), true);
+    requireNonNegative(fields.currentPrice, 'negative_price', pick(lang, 'El precio del manejo actual no puede ser negativo.', 'The price of the current management cannot be negative.'), true);
+    requireNonNegative(fields.improvedPrice, 'negative_price', pick(lang, 'El precio del manejo mejorado no puede ser negativo.', 'The price of the improved management cannot be negative.'), true);
+    requireNonNegative(fields.currentAssoc, 'negative_cost', pick(lang, 'Los otros costos del manejo actual no pueden ser negativos.', 'The other costs of the current management cannot be negative.'), false);
+    requireNonNegative(fields.improvedAssoc, 'negative_cost', pick(lang, 'Los otros costos del manejo mejorado no pueden ser negativos.', 'The other costs of the improved management cannot be negative.'), false);
+    requireNonNegative(fields.lump, 'negative_cost', pick(lang, 'Los otros costos incrementales se anotan en positivo.', 'Other incremental costs are entered as positive numbers.'), false);
+    requireNonNegative(fields.variable, 'negative_cost', pick(lang, 'El costo variable incremental por kilogramo no puede ser negativo.', 'The incremental variable cost per kilogram cannot be negative.'), false);
+    requireNonNegative(fields.savings, 'negative_saving', pick(lang, 'Los ahorros se anotan en positivo.', 'Savings are entered as positive numbers.'), false);
 
     var otherMode = input.otherMode === 'none' || input.otherMode === 'lump' || input.otherMode === 'per_kg'
       ? input.otherMode
       : 'unspecified';
     if (otherMode === 'lump' && fields.lump.ok && fields.lump.empty) {
-      pushError(errors, 'missing_lump', 'Indicaste un importe de costos incrementales, pero el campo está vacío.');
+      pushError(errors, 'missing_lump', pick(lang,
+        'Indicaste un importe de costos incrementales, pero el campo está vacío.',
+        'You indicated an amount of incremental costs, but the field is empty.'));
     }
     if (otherMode === 'per_kg' && fields.variable.ok && fields.variable.empty) {
-      pushError(errors, 'missing_variable', 'Indicaste un costo variable por kilogramo adicional, pero el campo está vacío.');
+      pushError(errors, 'missing_variable', pick(lang,
+        'Indicaste un costo variable por kilogramo adicional, pero el campo está vacío.',
+        'You indicated a variable cost per additional kilogram, but the field is empty.'));
     }
     if (errors.length) {
-      return { ok: false, errors: errors, warnings: warnings, currency: currency, otherMode: otherMode };
+      return { ok: false, language: lang, errors: errors, warnings: warnings, currency: currency, otherMode: otherMode };
     }
 
     var currentCost = fields.currentCost.value;
@@ -666,19 +905,25 @@
     if (otherMode === 'unspecified' && (Math.abs(associatedDelta) > 0 || savings > 0)) {
       warnings.push({
         code: 'partial_costs',
-        message: 'Hay otros costos o ahorros capturados, pero conviene confirmar si ya están todos los costos de la producción adicional.'
+        message: pick(lang,
+          'Hay otros costos o ahorros capturados, pero conviene confirmar si ya están todos los costos de la producción adicional.',
+          'Other costs or savings were entered, but you should confirm that all the costs of the additional production are included.')
       });
     }
     if (Math.abs(associatedDelta) > 0 && (otherMode === 'lump' || otherMode === 'per_kg')) {
       warnings.push({
         code: 'possible_double_count',
-        message: 'Revisa que los otros costos de cada columna no estén repetidos en los costos incrementales.'
+        message: pick(lang,
+          'Revisa que los otros costos de cada columna no estén repetidos en los costos incrementales.',
+          'Check that the other costs in each column are not repeated in the incremental costs.')
       });
     }
     if (input.scope === 'full_system') {
       warnings.push({
         code: 'full_system_scope',
-        message: 'Estás comparando el costo del sistema completo. No sumes otra vez un programa que ya esté dentro de ese total.'
+        message: pick(lang,
+          'Estás comparando el costo del sistema completo. No sumes otra vez un programa que ya esté dentro de ese total.',
+          'You are comparing the full system cost. Do not add a program again if it is already included in that total.')
       });
     }
 
@@ -696,14 +941,20 @@
     var benefitCostRatio = investmentDelta > 0 && costsConsidered ? benefitBefore / investmentDelta : null;
     var ratioBlockedReason = '';
     if (investmentDelta === 0) {
-      ratioBlockedReason = 'No hay inversión adicional. La relación no se divide entre cero; conviene leer el cambio de ingresos, costos y utilidad.';
+      ratioBlockedReason = pick(lang,
+        'No hay inversión adicional. La relación no se divide entre cero; conviene leer el cambio de ingresos, costos y utilidad.',
+        'There is no additional investment. The ratio is not divided by zero; read the change in revenue, costs and profit instead.');
     } else if (investmentDelta < 0) {
-      ratioBlockedReason = 'El manejo comparado cuesta menos. No se presenta una relación por cada unidad invertida de más, porque la inversión incremental es un ahorro.';
+      ratioBlockedReason = pick(lang,
+        'El manejo comparado cuesta menos. No se presenta una relación por cada unidad invertida de más, porque la inversión incremental es un ahorro.',
+        'The compared management costs less. No ratio per extra unit invested is shown, because the incremental investment is a saving.');
     }
 
     var extraKgNeeded = null;
     var extraKgMode = 'needs_variable_cost';
-    var extraKgMessage = 'Para saber cuántos kilogramos adicionales recuperan la inversión hay que confirmar el costo variable por kilogramo adicional, aunque sea cero.';
+    var extraKgMessage = pick(lang,
+      'Para saber cuántos kilogramos adicionales recuperan la inversión hay que confirmar el costo variable por kilogramo adicional, aunque sea cero.',
+      'To know how many additional kilograms recover the investment, confirm the variable cost per additional kilogram, even if it is zero.');
     if (!costsConsidered) {
       extraKgMode = 'needs_variable_cost';
     } else if (!(investmentDelta > 0)) {
@@ -719,22 +970,28 @@
         savings: savings,
         lump: lump,
         associatedDelta: associatedDelta
-      });
+      }, lang);
       if (!solved.ok && solved.reason === 'no_positive_margin') {
         extraKgMode = 'no_positive_margin';
         extraKgMessage = solved.message;
       } else if (solved.ok && solved.extraKg <= 1e-9) {
         extraKgNeeded = 0;
         extraKgMode = 'recovered_without_more_kg';
-        extraKgMessage = 'Con las condiciones registradas no hace falta comercializar más kilogramos para recuperar la inversión adicional.';
+        extraKgMessage = pick(lang,
+          'Con las condiciones registradas no hace falta comercializar más kilogramos para recuperar la inversión adicional.',
+          'With the conditions entered, no additional kilograms need to be marketed to recover the additional investment.');
       } else if (solved.ok && samePrice && Math.abs(savings) < 1e-9 && Math.abs(lump) < 1e-9 && Math.abs(associatedDelta) < 1e-9) {
         extraKgNeeded = solved.extraKg;
         extraKgMode = 'same_price';
-        extraKgMessage = 'Kilogramos adicionales para recuperar la inversión con el mismo precio y el costo variable incremental indicado.';
+        extraKgMessage = pick(lang,
+          'Kilogramos adicionales para recuperar la inversión con el mismo precio y el costo variable incremental indicado.',
+          'Additional kilograms needed to recover the investment at the same price and the incremental variable cost indicated.');
       } else if (solved.ok) {
         extraKgNeeded = solved.extraKg;
         extraKgMode = 'full_comparison';
-        extraKgMessage = 'Los precios, ahorros o costos no dependen solo de los kilos de diferencia. Este equilibrio sale de comparar los dos escenarios completos.';
+        extraKgMessage = pick(lang,
+          'Los precios, ahorros o costos no dependen solo de los kilos de diferencia. Este equilibrio sale de comparar los dos escenarios completos.',
+          'Prices, savings or costs do not depend only on the difference in kilograms. This break-even comes from comparing the two complete scenarios.');
       }
     }
 
@@ -745,6 +1002,7 @@
 
     return {
       ok: true,
+      language: lang,
       errors: [],
       warnings: warnings,
       currency: currency,
@@ -778,8 +1036,8 @@
       loss: loss,
       recovered: recovered,
       samePrice: samePrice,
-      incomeInterpretation: incomeRatio == null ? ratioBlockedReason : interpretIncomeRatio(incomeRatio, currency),
-      benefitInterpretation: benefitCostRatio == null ? '' : interpretBenefitCost(benefitCostRatio, currency)
+      incomeInterpretation: incomeRatio == null ? ratioBlockedReason : interpretIncomeRatio(incomeRatio, currency, lang),
+      benefitInterpretation: benefitCostRatio == null ? '' : interpretBenefitCost(benefitCostRatio, currency, lang)
     };
   }
 
@@ -790,80 +1048,134 @@
   function conclusionModuleB(result, meta) {
     meta = meta || {};
     if (!result || !result.ok) return '';
-    var name = meta.strategyName ? '«' + meta.strategyName + '»' : 'el manejo comparado';
+    var lang = meta.language != null ? langOf(meta) : langOf(result);
+    var N = notes(lang);
+    var name = meta.strategyName
+      ? pick(lang, '«' + meta.strategyName + '»', '“' + meta.strategyName + '”')
+      : pick(lang, 'el manejo comparado', 'the compared management');
     var cur = result.currency;
-    var parts = ['La comparación de ' + name + ' '];
-    if (result.investmentDelta > 0) parts.push('requiere ' + moneyPhrase(result.investmentDelta, cur) + ' adicionales');
-    else if (result.investmentDelta < 0) parts.push('reduce el costo del programa en ' + moneyPhrase(Math.abs(result.investmentDelta), cur));
-    else parts.push('no cambia la inversión del programa');
-    parts.push(' y ');
-    if (result.productionDelta > 0) parts.push('presenta un incremento de ' + formatKg(result.productionDelta) + ' comercializados');
-    else if (result.productionDelta < 0) parts.push('presenta ' + formatKg(Math.abs(result.productionDelta)) + ' menos comercializados');
-    else parts.push('mantiene la misma producción comercializada');
-    parts.push('. Bajo las condiciones registradas, el ingreso adicional es ' + moneyPhrase(result.revenueDelta, cur) + '. ');
+    var parts = [pick(lang, 'La comparación de ', 'The comparison of ') + name + ' '];
+    if (result.investmentDelta > 0) parts.push(pick(lang,
+      'requiere ' + moneyPhrase(result.investmentDelta, cur) + ' adicionales',
+      'requires an additional ' + moneyPhrase(result.investmentDelta, cur)));
+    else if (result.investmentDelta < 0) parts.push(pick(lang,
+      'reduce el costo del programa en ' + moneyPhrase(Math.abs(result.investmentDelta), cur),
+      'reduces the program cost by ' + moneyPhrase(Math.abs(result.investmentDelta), cur)));
+    else parts.push(pick(lang, 'no cambia la inversión del programa', 'does not change the program investment'));
+    parts.push(pick(lang, ' y ', ' and '));
+    if (result.productionDelta > 0) parts.push(pick(lang,
+      'presenta un incremento de ' + formatKg(result.productionDelta) + ' comercializados',
+      'shows an increase of ' + formatKg(result.productionDelta) + ' marketed'));
+    else if (result.productionDelta < 0) parts.push(pick(lang,
+      'presenta ' + formatKg(Math.abs(result.productionDelta)) + ' menos comercializados',
+      'shows ' + formatKg(Math.abs(result.productionDelta)) + ' less marketed'));
+    else parts.push(pick(lang, 'mantiene la misma producción comercializada', 'keeps the same marketed production'));
+    parts.push(pick(lang,
+      '. Bajo las condiciones registradas, el ingreso adicional es ' + moneyPhrase(result.revenueDelta, cur) + '. ',
+      '. Under the conditions entered, the additional revenue is ' + moneyPhrase(result.revenueDelta, cur) + '. '));
     if (!result.costsConsidered) {
-      parts.push('Esa cifra es de ventas, no de utilidad neta: todavía no se descontaron los costos de la producción adicional. ');
+      parts.push(pick(lang,
+        'Esa cifra es de ventas, no de utilidad neta: todavía no se descontaron los costos de la producción adicional. ',
+        'That figure is sales, not net profit: the costs of the additional production have not been deducted yet. '));
     } else if (result.incrementalProfit != null) {
       if (result.incrementalProfit < 0) {
-        parts.push('El resultado incremental es una pérdida de ' + moneyPhrase(Math.abs(result.incrementalProfit), cur) + '. ');
+        parts.push(pick(lang,
+          'El resultado incremental es una pérdida de ' + moneyPhrase(Math.abs(result.incrementalProfit), cur) + '. ',
+          'The incremental result is a loss of ' + moneyPhrase(Math.abs(result.incrementalProfit), cur) + '. '));
       } else {
-        parts.push('La utilidad incremental estimada es de ' + moneyPhrase(result.incrementalProfit, cur));
-        if (result.otherIncremental > 0) parts.push(', ya descontados los costos incrementales registrados y la inversión adicional');
-        else parts.push(', antes de otros gastos no registrados');
+        parts.push(pick(lang,
+          'La utilidad incremental estimada es de ' + moneyPhrase(result.incrementalProfit, cur),
+          'The estimated incremental profit is ' + moneyPhrase(result.incrementalProfit, cur)));
+        if (result.otherIncremental > 0) parts.push(pick(lang,
+          ', ya descontados los costos incrementales registrados y la inversión adicional',
+          ', after deducting the incremental costs entered and the additional investment'));
+        else parts.push(pick(lang, ', antes de otros gastos no registrados', ', before other unrecorded expenses'));
         parts.push('. ');
       }
     }
     if (result.origin === 'price') {
-      parts.push('La mejora registrada se origina en el precio, no en la cantidad producida. ');
+      parts.push(pick(lang,
+        'La mejora registrada se origina en el precio, no en la cantidad producida. ',
+        'The improvement recorded comes from price, not from the quantity produced. '));
     } else if (result.origin === 'mixed') {
-      parts.push('El cambio de ingreso combina cantidad y precio; no proviene solo de más kilogramos. ');
+      parts.push(pick(lang,
+        'El cambio de ingreso combina cantidad y precio; no proviene solo de más kilogramos. ',
+        'The change in revenue combines quantity and price; it does not come only from more kilograms. '));
     } else if (result.origin === 'none' && result.investmentDelta > 0) {
-      parts.push('La inversión adicional no se recupera con los kilogramos y el precio registrados. ');
+      parts.push(pick(lang,
+        'La inversión adicional no se recupera con los kilogramos y el precio registrados. ',
+        'The additional investment is not recovered with the kilograms and price entered. '));
     }
-    parts.push(CAUSALITY_NOTE + ' ');
-    parts.push(COMPARISON_DISCLAIMER);
+    parts.push(N.causalityNote + ' ');
+    parts.push(N.comparisonDisclaimer);
     return parts.join('');
   }
 
-  function interpretationModuleA(result) {
+  function interpretationModuleA(result, meta) {
+    var lang = meta != null ? langOf(meta) : langOf(result);
+    var N = notes(lang);
     if (!result || !result.ok || result.profit == null) {
-      return 'Completa costos, kilogramos comercializados y precio para leer el resultado económico de este periodo.';
+      return pick(lang,
+        'Completa costos, kilogramos comercializados y precio para leer el resultado económico de este periodo.',
+        'Fill in costs, kilograms marketed and price to read the economic result for this period.');
     }
     var cur = result.currency;
     if (result.loss) {
-      return 'Con los datos de este ejercicio los ingresos no cubren los costos considerados. El resultado es una pérdida de '
-        + formatMoney(Math.abs(result.profit), cur)
-        + '. El precio de equilibrio de este volumen es ' + formatPerKg(result.breakEvenPrice, cur)
-        + '. No es un precio universal para otros niveles de producción. ' + TAX_NOTE;
+      return pick(lang,
+        'Con los datos de este ejercicio los ingresos no cubren los costos considerados. El resultado es una pérdida de '
+          + formatMoney(Math.abs(result.profit), cur)
+          + '. El precio de equilibrio de este volumen es ' + formatPerKg(result.breakEvenPrice, cur)
+          + '. No es un precio universal para otros niveles de producción. ',
+        'With the data in this exercise, revenue does not cover the costs considered. The result is a loss of '
+          + formatMoney(Math.abs(result.profit), cur)
+          + '. The break-even price for this volume is ' + formatPerKg(result.breakEvenPrice, cur)
+          + '. It is not a universal price for other production levels. ') + N.taxNote;
     }
     if (Math.abs(result.profit) < 1e-9) {
-      return 'Con este volumen, el ingreso iguala los costos considerados. El precio de equilibrio es '
-        + formatPerKg(result.breakEvenPrice, cur) + '. ' + TAX_NOTE;
+      return pick(lang,
+        'Con este volumen, el ingreso iguala los costos considerados. El precio de equilibrio es '
+          + formatPerKg(result.breakEvenPrice, cur) + '. ',
+        'At this volume, revenue equals the costs considered. The break-even price is '
+          + formatPerKg(result.breakEvenPrice, cur) + '. ') + N.taxNote;
     }
-    var text = 'Con los costos y el volumen de este ejercicio, el costo por kilogramo comercializado es '
-      + formatPerKg(result.costPerKg, cur)
-      + ' y el precio de equilibrio es ' + formatPerKg(result.breakEvenPrice, cur)
-      + '. Vender a ' + formatPerKg(result.pricePerKg, cur)
-      + ' deja una utilidad de ' + formatMoney(result.profit, cur)
-      + ', equivalente a ' + formatPct(result.returnOnCostPct)
-      + ' sobre el costo y ' + formatPct(result.marginOnSalesPct)
-      + ' de margen sobre ventas. Rentabilidad sobre el costo y margen sobre ventas no son el mismo indicador. ';
+    var text = pick(lang,
+      'Con los costos y el volumen de este ejercicio, el costo por kilogramo comercializado es '
+        + formatPerKg(result.costPerKg, cur)
+        + ' y el precio de equilibrio es ' + formatPerKg(result.breakEvenPrice, cur)
+        + '. Vender a ' + formatPerKg(result.pricePerKg, cur)
+        + ' deja una utilidad de ' + formatMoney(result.profit, cur)
+        + ', equivalente a ' + formatPct(result.returnOnCostPct)
+        + ' sobre el costo y ' + formatPct(result.marginOnSalesPct)
+        + ' de margen sobre ventas. Rentabilidad sobre el costo y margen sobre ventas no son el mismo indicador. ',
+      'With the costs and volume of this exercise, the cost per kilogram marketed is '
+        + formatPerKg(result.costPerKg, cur)
+        + ' and the break-even price is ' + formatPerKg(result.breakEvenPrice, cur)
+        + '. Selling at ' + formatPerKg(result.pricePerKg, cur)
+        + ' leaves a profit of ' + formatMoney(result.profit, cur)
+        + ', equivalent to ' + formatPct(result.returnOnCostPct)
+        + ' on cost and ' + formatPct(result.marginOnSalesPct)
+        + ' margin on sales. Return on cost and margin on sales are not the same indicator. ');
     if (result.byproductRevenue > 0) {
-      text += 'El precio de equilibrio ya descuenta los otros ingresos registrados. ';
+      text += pick(lang,
+        'El precio de equilibrio ya descuenta los otros ingresos registrados. ',
+        'The break-even price already deducts the other income entered. ');
     }
     if (result.financingCost > 0 && result.profitAfterFinancing != null) {
-      text += 'Después de intereses y comisiones, la utilidad queda en ' + formatMoney(result.profitAfterFinancing, cur) + '. ';
+      text += pick(lang,
+        'Después de intereses y comisiones, la utilidad queda en ' + formatMoney(result.profitAfterFinancing, cur) + '. ',
+        'After interest and fees, the profit is ' + formatMoney(result.profitAfterFinancing, cur) + '. ');
     }
-    text += TAX_NOTE;
+    text += N.taxNote;
     return text;
   }
 
-  function suggestModuleBFromA(cropInput, cropResult) {
+  function suggestModuleBFromA(cropInput, cropResult, opts) {
+    var lang = opts != null ? langOf(opts) : langOf(cropInput);
     var nutrition = null;
     (cropInput && cropInput.costs || []).some(function (line) {
       var label = String(line.label || '');
       var id = String(line.id || '');
-      if (id === 'nutricion' || id === 'ex-nut' || /nutrici/i.test(label)) {
+      if (id === 'nutricion' || id === 'ex-nut' || /nutrici|nutrition/i.test(label)) {
         var parsed = readOptionalNumber(line.amount);
         if (parsed.ok && !parsed.empty && parsed.value > 0) nutrition = parsed.value;
         return nutrition != null;
@@ -878,7 +1190,10 @@
       pricePerKg: cropResult && cropResult.pricePerKg != null ? cropResult.pricePerKg : '',
       nutritionCost: nutrition,
       totalCost: cropResult ? cropResult.totalCost : null,
-      note: 'Se copian moneda, kilogramos y precio. Si existe la partida de nutrición, esa cifra puede usarse como costo del programa actual. El costo total del cultivo no se pega solo, para no sumarlo otra vez dentro de la comparación.'
+      note: pick(lang,
+        'Se copian moneda, kilogramos y precio. Si existe la partida de nutrición, esa cifra puede usarse como costo del programa actual. El costo total del cultivo no se pega solo, para no sumarlo otra vez dentro de la comparación.',
+        'Currency, kilograms and price are copied. If a nutrition line exists, that figure can be used as the current program cost. The total crop cost is not pasted automatically, so it is not counted again inside the comparison.'),
+      noteTotalCost: pick(lang, 'Costo total del módulo A: ', 'Module A total cost: ')
     };
   }
 
@@ -888,100 +1203,113 @@
 
   function buildModuleAReport(result, meta) {
     meta = meta || {};
+    var lang = meta.language != null ? langOf(meta) : langOf(result);
+    var N = notes(lang);
     var cur = result.currency || 'USD';
     var productive = [];
-    if (meta.areaHa) productive.push(row('Superficie', formatPlain(meta.areaHa, 2) + ' ha'));
-    if (result.soldKg != null) productive.push(row('Producción comercializada', formatKg(result.soldKg)));
-    if (result.harvestedKg != null) productive.push(row('Producción cosechada', formatKg(result.harvestedKg)));
-    if (result.wasteKg != null) productive.push(row('No comercializada', formatKg(result.wasteKg)));
-    if (result.pricePerKg != null) productive.push(row('Precio promedio', formatPerKg(result.pricePerKg, cur)));
+    if (meta.areaHa) productive.push(row(pick(lang, 'Superficie', 'Area'), formatPlain(meta.areaHa, 2) + ' ha'));
+    if (result.soldKg != null) productive.push(row(pick(lang, 'Producción comercializada', 'Marketed production'), formatKg(result.soldKg)));
+    if (result.harvestedKg != null) productive.push(row(pick(lang, 'Producción cosechada', 'Harvested production'), formatKg(result.harvestedKg)));
+    if (result.wasteKg != null) productive.push(row(pick(lang, 'No comercializada', 'Not marketed'), formatKg(result.wasteKg)));
+    if (result.pricePerKg != null) productive.push(row(pick(lang, 'Precio promedio', 'Average price'), formatPerKg(result.pricePerKg, cur)));
     var costs = (result.costItems || []).map(function (item) {
       return row(item.label, formatMoney(item.signed, cur));
     });
-    if (result.totalCost != null) costs.push(row('Costo total', formatMoney(result.totalCost, cur)));
+    if (result.totalCost != null) costs.push(row(pick(lang, 'Costo total', 'Total cost'), formatMoney(result.totalCost, cur)));
+    var lossWord = pick(lang, 'Pérdida', 'Loss');
+    var profitWord = pick(lang, 'Utilidad', 'Profit');
     var indicators = [];
-    if (result.costPerKg != null) indicators.push(row('Costo por kilogramo', formatPerKg(result.costPerKg, cur)));
-    if (result.revenue != null) indicators.push(row('Ingresos', formatMoney(result.revenue, cur)));
+    if (result.costPerKg != null) indicators.push(row(pick(lang, 'Costo por kilogramo', 'Cost per kilogram'), formatPerKg(result.costPerKg, cur)));
+    if (result.revenue != null) indicators.push(row(pick(lang, 'Ingresos', 'Revenue'), formatMoney(result.revenue, cur)));
     if (result.profit != null) {
-      indicators.push(row(result.loss ? 'Pérdida' : 'Utilidad', formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur)));
+      indicators.push(row(result.loss ? lossWord : profitWord, formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur)));
     }
     if (result.profitAfterFinancing != null) {
       var afterLoss = result.profitAfterFinancing < 0;
       indicators.push(row(
-        afterLoss ? 'Pérdida después de financiamiento' : 'Utilidad después de financiamiento',
+        afterLoss
+          ? pick(lang, 'Pérdida después de financiamiento', 'Loss after financing')
+          : pick(lang, 'Utilidad después de financiamiento', 'Profit after financing'),
         formatMoney(afterLoss ? Math.abs(result.profitAfterFinancing) : result.profitAfterFinancing, cur)
       ));
     }
-    if (result.returnOnCostPct != null) indicators.push(row('Rentabilidad sobre costo', formatPct(result.returnOnCostPct)));
-    if (result.marginOnSalesPct != null) indicators.push(row('Margen sobre ventas', formatPct(result.marginOnSalesPct)));
-    if (result.breakEvenPrice != null) indicators.push(row('Precio de equilibrio', formatPerKg(result.breakEvenPrice, cur)));
-    if (meta.breakEvenVolumeLabel) indicators.push(row('Volumen de equilibrio', meta.breakEvenVolumeLabel));
+    if (result.returnOnCostPct != null) indicators.push(row(pick(lang, 'Rentabilidad sobre costo', 'Return on cost'), formatPct(result.returnOnCostPct)));
+    if (result.marginOnSalesPct != null) indicators.push(row(pick(lang, 'Margen sobre ventas', 'Margin on sales'), formatPct(result.marginOnSalesPct)));
+    if (result.breakEvenPrice != null) indicators.push(row(pick(lang, 'Precio de equilibrio', 'Break-even price'), formatPerKg(result.breakEvenPrice, cur)));
+    if (meta.breakEvenVolumeLabel) indicators.push(row(pick(lang, 'Volumen de equilibrio', 'Break-even volume'), meta.breakEvenVolumeLabel));
     var highlights = [];
-    if (result.costPerKg != null) highlights.push({ label: 'Costo por kg', value: formatPerKg(result.costPerKg, cur), tone: 'navy' });
-    if (result.breakEvenPrice != null) highlights.push({ label: 'Precio de equilibrio', value: formatPerKg(result.breakEvenPrice, cur), tone: 'navy' });
+    if (result.costPerKg != null) highlights.push({ label: pick(lang, 'Costo por kg', 'Cost per kg'), value: formatPerKg(result.costPerKg, cur), tone: 'navy' });
+    if (result.breakEvenPrice != null) highlights.push({ label: pick(lang, 'Precio de equilibrio', 'Break-even price'), value: formatPerKg(result.breakEvenPrice, cur), tone: 'navy' });
     if (result.returnOnCostPct != null) {
       highlights.push({
-        label: 'Rentabilidad sobre costo',
+        label: pick(lang, 'Rentabilidad sobre costo', 'Return on cost'),
         value: formatPct(result.returnOnCostPct),
         tone: result.loss ? 'loss' : 'ok'
       });
     }
     if (result.profit != null) {
       highlights.push({
-        label: result.loss ? 'Pérdida' : 'Utilidad',
+        label: result.loss ? lossWord : profitWord,
         value: formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur),
         tone: result.loss ? 'loss' : 'ok'
       });
     }
     return {
+      language: lang,
       product: 'NutriPlant PRO',
-      tool: 'Rentabilidad Agrícola',
-      module: 'Rentabilidad del cultivo',
+      tool: pick(lang, 'Rentabilidad Agrícola', 'Crop Profitability'),
+      module: pick(lang, 'Rentabilidad del cultivo', 'Crop profit analysis'),
       date: meta.date || '',
       exerciseName: meta.exerciseName || '',
       crop: meta.crop || '',
       period: meta.period || '',
       loss: !!result.loss,
       highlights: highlights,
-      chartTitles: ['Distribución de costos', 'Ingresos y costos', 'Escenario: ingreso y costo'],
+      chartTitles: pick(lang,
+        ['Distribución de costos', 'Ingresos y costos', 'Escenario: ingreso y costo'],
+        ['Cost distribution', 'Revenue and costs', 'Scenario: revenue and cost']),
       sections: [
-        { title: 'Resumen productivo', rows: productive },
-        { title: 'Desglose de costos', rows: costs },
-        { title: 'Indicadores económicos', rows: indicators }
+        { title: pick(lang, 'Resumen productivo', 'Production summary'), rows: productive },
+        { title: pick(lang, 'Desglose de costos', 'Cost breakdown'), rows: costs },
+        { title: pick(lang, 'Indicadores económicos', 'Economic indicators'), rows: indicators }
       ],
-      interpretation: interpretationModuleA(result),
-      notes: [TAX_NOTE, COMPARISON_DISCLAIMER].concat(meta.isExample ? [EXAMPLE_DISCLAIMER] : []),
-      tagline: 'NutriPlant PRO — Diseña. Ajusta. Nutre.'
+      interpretation: interpretationModuleA(result, { language: lang }),
+      notes: [N.taxNote, N.comparisonDisclaimer].concat(meta.isExample ? [N.exampleDisclaimer] : []),
+      tagline: N.tagline
     };
   }
 
   function buildModuleBReport(result, meta) {
     meta = meta || {};
+    var lang = meta.language != null ? langOf(meta) : langOf(result);
+    var N = notes(lang);
     var cur = result.currency || 'USD';
     var compare = [
-      row('Inversión actual', formatMoney(result.currentCost, cur)),
-      row('Inversión del manejo comparado', formatMoney(result.improvedCost, cur)),
-      row('Diferencia de inversión', formatMoney(result.investmentDelta, cur)),
-      row('Producción actual', formatKg(result.currentKg)),
-      row('Producción del manejo comparado', formatKg(result.improvedKg)),
-      row('Diferencia de producción', (result.productionDelta > 0 ? '+' : '') + formatKg(result.productionDelta)),
-      row('Diferencia de ingresos', formatMoney(result.revenueDelta, cur))
+      row(pick(lang, 'Inversión actual', 'Current investment'), formatMoney(result.currentCost, cur)),
+      row(pick(lang, 'Inversión del manejo comparado', 'Investment of the compared management'), formatMoney(result.improvedCost, cur)),
+      row(pick(lang, 'Diferencia de inversión', 'Investment difference'), formatMoney(result.investmentDelta, cur)),
+      row(pick(lang, 'Producción actual', 'Current production'), formatKg(result.currentKg)),
+      row(pick(lang, 'Producción del manejo comparado', 'Production of the compared management'), formatKg(result.improvedKg)),
+      row(pick(lang, 'Diferencia de producción', 'Production difference'), (result.productionDelta > 0 ? '+' : '') + formatKg(result.productionDelta)),
+      row(pick(lang, 'Diferencia de ingresos', 'Revenue difference'), formatMoney(result.revenueDelta, cur))
     ];
+    var incLossWord = pick(lang, 'Pérdida incremental', 'Incremental loss');
+    var incProfitWord = pick(lang, 'Utilidad incremental', 'Incremental profit');
     var indicators = [];
     if (result.costsConsidered && result.otherIncremental != null) {
-      indicators.push(row('Otros costos incrementales', formatMoney(result.otherIncremental, cur)));
-      indicators.push(row('Beneficio antes de la inversión adicional', formatMoney(result.benefitBeforeInvestment, cur)));
+      indicators.push(row(pick(lang, 'Otros costos incrementales', 'Other incremental costs'), formatMoney(result.otherIncremental, cur)));
+      indicators.push(row(pick(lang, 'Beneficio antes de la inversión adicional', 'Benefit before the additional investment'), formatMoney(result.benefitBeforeInvestment, cur)));
       indicators.push(row(
-        result.loss ? 'Pérdida incremental' : 'Utilidad incremental',
+        result.loss ? incLossWord : incProfitWord,
         formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur)
       ));
     }
-    if (result.incomeRatioLabel) indicators.push(row('Relación ingreso adicional / inversión adicional', result.incomeRatioLabel));
-    if (result.benefitCostRatioLabel) indicators.push(row('Relación beneficio-costo incremental', result.benefitCostRatioLabel));
-    if (result.extraKgNeeded != null) indicators.push(row('Producción adicional para recuperar la inversión', formatKg(result.extraKgNeeded)));
+    if (result.incomeRatioLabel) indicators.push(row(pick(lang, 'Relación ingreso adicional / inversión adicional', 'Additional revenue / additional investment ratio'), result.incomeRatioLabel));
+    if (result.benefitCostRatioLabel) indicators.push(row(pick(lang, 'Relación beneficio-costo incremental', 'Incremental benefit-cost ratio'), result.benefitCostRatioLabel));
+    if (result.extraKgNeeded != null) indicators.push(row(pick(lang, 'Producción adicional para recuperar la inversión', 'Additional production needed to recover the investment'), formatKg(result.extraKgNeeded)));
     var ratioLabel = result.benefitCostRatioLabel
-      ? 'Relación beneficio-costo'
-      : (result.incomeRatioLabel ? 'Ingreso / inversión' : null);
+      ? pick(lang, 'Relación beneficio-costo', 'Benefit-cost ratio')
+      : (result.incomeRatioLabel ? pick(lang, 'Ingreso / inversión', 'Revenue / investment') : null);
     var ratioValue = result.benefitCostRatioLabel || result.incomeRatioLabel;
     var highlights = [];
     if (ratioLabel && ratioValue) {
@@ -991,41 +1319,47 @@
         tone: result.loss ? 'loss' : 'ok'
       });
     }
-    highlights.push({ label: 'Inversión adicional', value: formatMoney(result.investmentDelta, cur), tone: 'navy' });
+    highlights.push({ label: pick(lang, 'Inversión adicional', 'Additional investment'), value: formatMoney(result.investmentDelta, cur), tone: 'navy' });
     highlights.push({
-      label: 'Producción adicional',
+      label: pick(lang, 'Producción adicional', 'Additional production'),
       value: (result.productionDelta > 0 ? '+' : '') + formatKg(result.productionDelta),
       tone: result.productionDelta < 0 ? 'loss' : 'ok'
     });
     if (result.costsConsidered && result.incrementalProfit != null) {
       highlights.push({
-        label: result.loss ? 'Pérdida incremental' : 'Utilidad incremental',
+        label: result.loss ? incLossWord : incProfitWord,
         value: formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur),
         tone: result.loss ? 'loss' : 'ok'
       });
     }
     return {
+      language: lang,
       product: 'NutriPlant PRO',
-      tool: 'Rentabilidad Agrícola',
-      module: 'Valor de una inversión adicional',
+      tool: pick(lang, 'Rentabilidad Agrícola', 'Crop Profitability'),
+      module: pick(lang, 'Valor de una inversión adicional', 'Value of an additional investment'),
       date: meta.date || '',
       strategyName: meta.strategyName || '',
       crop: meta.crop || '',
       loss: !!result.loss,
       highlights: highlights,
-      chartTitles: [
+      chartTitles: pick(lang, [
         'Comparación de inversión',
         'Comparación de producción',
         'Valor económico incremental',
         'Producción para recuperar la inversión'
-      ],
+      ], [
+        'Investment comparison',
+        'Production comparison',
+        'Incremental economic value',
+        'Production needed to recover the investment'
+      ]),
       sections: [
-        { title: 'Comparación de programas', rows: compare },
-        { title: 'Indicadores económicos', rows: indicators }
+        { title: pick(lang, 'Comparación de programas', 'Program comparison'), rows: compare },
+        { title: pick(lang, 'Indicadores económicos', 'Economic indicators'), rows: indicators }
       ],
-      interpretation: conclusionModuleB(result, meta),
-      notes: [AGRONOMIC_NOTE, CAUSALITY_NOTE, COMPARISON_DISCLAIMER].concat(meta.isExample ? [EXAMPLE_DISCLAIMER] : []),
-      tagline: 'NutriPlant PRO — Diseña. Ajusta. Nutre.'
+      interpretation: conclusionModuleB(result, { language: lang, strategyName: meta.strategyName }),
+      notes: [N.agronomicNote, N.causalityNote, N.comparisonDisclaimer].concat(meta.isExample ? [N.exampleDisclaimer] : []),
+      tagline: N.tagline
     };
   }
 
@@ -1041,6 +1375,14 @@
     MODULE_A_MESSAGE: MODULE_A_MESSAGE,
     MODULE_B_MESSAGE: MODULE_B_MESSAGE,
     DUPLICATE_COST_NOTE: DUPLICATE_COST_NOTE,
+    pick: pick,
+    langOf: langOf,
+    notes: notes,
+    currencyName: currencyName,
+    groupLabel: groupLabel,
+    categoryLabel: categoryLabel,
+    costLineLabel: costLineLabel,
+    localizeKnownText: localizeKnownText,
     exampleModuleA: exampleModuleA,
     exampleModuleB: exampleModuleB,
     parseUserNumber: parseUserNumber,

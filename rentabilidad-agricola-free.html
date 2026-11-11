@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rentabilidad Agrícola | NutriPlant PRO</title>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/np-prefs-bootstrap.js"></script>
+  <script src="assets/np-prefs.js"></script>
   <script src="assets/free-tools-embed.js?v=20261110wide"></script>
   <style>
     :root {
@@ -213,127 +215,151 @@
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chips button { padding: 7px 10px; font-size: 13px; }
     .footer-line { font-size: 13px; color: var(--navy); font-weight: 700; margin-top: 8px; }
+    .cost-total-live {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #99f6e4;
+      background: linear-gradient(180deg, #ecfdf5 0%, #f0fdfa 100%);
+      color: var(--navy);
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+    .cost-total-live:empty { display: none; }
+    input.field-invalid {
+      border-color: #f87171;
+      background: #fef2f2;
+      box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12);
+    }
+    #a-prod-note {
+      margin-top: 10px;
+    }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="card hero" id="tool-shell">
-      <p class="kicker">NutriPlant PRO · herramienta gratuita</p>
-      <h1>Rentabilidad Agrícola</h1>
-      <p>Del rendimiento productivo al valor económico de tus decisiones.</p>
-      <p class="muted">Menos receta, más criterio. Los cálculos se hacen en este navegador y no se envían a NutriPlant.</p>
-      <div class="tabs" role="tablist" aria-label="Módulos de Rentabilidad Agrícola">
-        <button type="button" class="tab-btn active" id="tab-a" role="tab" aria-selected="true" aria-controls="view-a" data-tab="a">Conocer mis costos</button>
-        <button type="button" class="tab-btn" id="tab-b" role="tab" aria-selected="false" aria-controls="view-b" data-tab="b">Evaluar un nuevo manejo</button>
+      <p class="kicker" data-i18n="kicker">NutriPlant PRO · herramienta gratuita</p>
+      <h1 data-i18n="title">Rentabilidad Agrícola</h1>
+      <p data-i18n="subtitle">Del rendimiento productivo al valor económico de tus decisiones.</p>
+      <p class="muted" data-i18n="privacy">Menos receta, más criterio. Los cálculos se hacen en este navegador y no se envían a NutriPlant.</p>
+      <div class="tabs" role="tablist" aria-label="Módulos de Rentabilidad Agrícola" data-i18n-aria="tabs_aria">
+        <button type="button" class="tab-btn active" id="tab-a" role="tab" aria-selected="true" aria-controls="view-a" data-tab="a" data-i18n="tab_a">Conocer mis costos</button>
+        <button type="button" class="tab-btn" id="tab-b" role="tab" aria-selected="false" aria-controls="view-b" data-tab="b" data-i18n="tab_b">Evaluar un nuevo manejo</button>
       </div>
       <p class="tab-lead" id="tab-lead">Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.</p>
     </section>
 
     <section id="view-a" class="tab-pane" role="tabpanel" aria-labelledby="tab-a">
       <article class="card module-head">
-        <h2>Rentabilidad del cultivo</h2>
-        <p>¿Cuánto cuesta producir y cuál es mi punto de equilibrio?</p>
+        <h2 data-i18n="a_h2">Rentabilidad del cultivo</h2>
+        <p data-i18n="a_lead">¿Cuánto cuesta producir y cuál es mi punto de equilibrio?</p>
         <p class="muted" id="a-message"></p>
         <div class="row">
-          <button type="button" id="a-example">Cargar ejemplo</button>
-          <button type="button" class="quiet" id="a-reset">Reiniciar ejercicio</button>
+          <button type="button" id="a-example" data-i18n="load_example">Cargar ejemplo</button>
+          <button type="button" class="quiet" id="a-reset" data-i18n="reset">Reiniciar ejercicio</button>
         </div>
       </article>
 
       <article class="card">
-        <h2>Datos del ejercicio</h2>
+        <h2 data-i18n="a_data_h2">Datos del ejercicio</h2>
         <div class="grid grid-2">
-          <div class="field"><label for="a-name">Nombre del ejercicio</label><input id="a-name" type="text" maxlength="120" placeholder="Análisis económico del ciclo productivo" /></div>
-          <div class="field"><label for="a-crop">Cultivo</label><input id="a-crop" type="text" maxlength="80" placeholder="Cualquier cultivo" /></div>
-          <div class="field"><label for="a-area">Superficie (ha)</label><input id="a-area" type="text" inputmode="decimal" placeholder="Opcional" /></div>
-          <div class="field"><label for="a-period">Periodo de análisis</label><input id="a-period" type="text" maxlength="80" placeholder="Ciclo, temporada o fechas" /></div>
+          <div class="field"><label for="a-name" data-i18n="a_name">Nombre del ejercicio</label><input id="a-name" type="text" maxlength="120" placeholder="Análisis económico del ciclo productivo" data-i18n-ph="a_name_ph" /></div>
+          <div class="field"><label for="a-crop" data-i18n="crop">Cultivo</label><input id="a-crop" type="text" maxlength="80" placeholder="Cualquier cultivo" data-i18n-ph="a_crop_ph" /></div>
+          <div class="field"><label for="a-area" data-i18n="a_area">Superficie (ha)</label><input id="a-area" type="text" inputmode="decimal" placeholder="Opcional" data-i18n-ph="optional" /></div>
+          <div class="field"><label for="a-period" data-i18n="a_period">Periodo de análisis</label><input id="a-period" type="text" maxlength="80" placeholder="Ciclo, temporada o fechas" data-i18n-ph="a_period_ph" /></div>
           <div class="field">
-            <label for="a-currency">Moneda</label>
+            <label for="a-currency" data-i18n="currency">Moneda</label>
             <select id="a-currency"></select>
-            <p class="hint" id="a-currency-note">Cada ejercicio usa una sola moneda. Cambiarla no convierte los importes ya escritos.</p>
+            <p class="hint" id="a-currency-note" data-i18n="a_currency_note">Cada ejercicio usa una sola moneda. Cambiarla no convierte los importes ya escritos.</p>
           </div>
         </div>
       </article>
 
       <article class="card">
-        <h2>Costos del ciclo</h2>
+        <h2 data-i18n="a_costs_h2">Costos del ciclo</h2>
         <p class="muted" id="a-dup-note"></p>
         <div class="row">
-          <button type="button" id="a-more">Mostrar más categorías</button>
+          <button type="button" id="a-more" data-i18n="a_more">Mostrar más categorías</button>
           <button type="button" id="a-group">Ver categorías agrupadas</button>
         </div>
         <div id="cost-list"></div>
         <div class="grid grid-2" style="margin-top:12px">
-          <div class="field"><label for="a-new-label">Concepto propio</label><input id="a-new-label" type="text" maxlength="80" placeholder="Nombre del costo" /></div>
-          <div class="field"><label class="sr" for="a-add">Agregar</label><button type="button" id="a-add" style="margin-top:22px">Agregar concepto</button></div>
+          <div class="field"><label for="a-new-label" data-i18n="a_new_label">Concepto propio</label><input id="a-new-label" type="text" maxlength="80" placeholder="Nombre del costo" data-i18n-ph="a_new_ph" /></div>
+          <div class="field"><label class="sr" for="a-add" data-i18n="a_add_sr">Agregar</label><button type="button" id="a-add" style="margin-top:22px" data-i18n="a_add">Agregar concepto</button></div>
         </div>
-        <p id="a-total-live" class="footer-line"></p>
+        <p id="a-total-live" class="cost-total-live" aria-live="polite"></p>
       </article>
 
       <article class="card">
-        <h2>Producción e ingresos</h2>
-        <p class="muted">La cosecha no siempre es igual a lo vendido. Los kilos no comercializados suben el costo de los kilos que sí generan ingreso.</p>
+        <h2 data-i18n="a_prod_h2">Producción e ingresos</h2>
+        <p class="muted" data-i18n="a_prod_lead">La cosecha no siempre es igual a lo vendido. Los kilos no comercializados suben el costo de los kilos que sí generan ingreso.</p>
         <div class="grid grid-3">
-          <div class="field"><label for="a-harvest">Producción cosechada (kg)</label><input id="a-harvest" type="text" inputmode="decimal" placeholder="Opcional" /></div>
-          <div class="field"><label for="a-sold">Producción comercializada (kg)</label><input id="a-sold" type="text" inputmode="decimal" placeholder="Obligatoria para el costo por kg" /></div>
-          <div class="field"><label for="a-price">Precio promedio de venta por kg</label><input id="a-price" type="text" inputmode="decimal" placeholder="0.00" /></div>
+          <div class="field"><label for="a-harvest" data-i18n="a_harvest">Producción cosechada (kg)</label><input id="a-harvest" type="text" inputmode="decimal" placeholder="Opcional" data-i18n-ph="optional" /></div>
+          <div class="field"><label for="a-sold" data-i18n="sold_kg">Producción comercializada (kg)</label><input id="a-sold" type="text" inputmode="decimal" placeholder="Obligatoria para el costo por kg" data-i18n-ph="a_sold_ph" /></div>
+          <div class="field"><label for="a-price" data-i18n="a_price">Precio promedio de venta (<span data-a-currency>USD</span>/kg)</label><input id="a-price" type="text" inputmode="decimal" placeholder="0.00" /></div>
         </div>
+        <p id="a-prod-note" class="warn" hidden></p>
         <details>
-          <summary>Opciones avanzadas: otros ingresos, financiamiento y volumen de equilibrio</summary>
+          <summary data-i18n="a_adv">Opciones avanzadas: otros ingresos, financiamiento y volumen de equilibrio</summary>
           <div class="grid grid-2" style="margin-top:12px">
             <div class="field">
-              <label for="a-byproduct">Ingresos por subproductos o segunda</label>
-              <input id="a-byproduct" type="text" inputmode="decimal" placeholder="Opcional, misma moneda" />
+              <label for="a-byproduct" data-i18n="a_byproduct">Ingresos por subproductos o segunda (<span data-a-currency>USD</span>)</label>
+              <input id="a-byproduct" type="text" inputmode="decimal" placeholder="Opcional, importe en moneda" data-i18n-ph="a_byproduct_ph" />
+              <p class="hint" data-i18n="a_byproduct_hint">Importe en la moneda del ejercicio, no en kilogramos.</p>
             </div>
             <div class="field">
-              <label for="a-financing">Intereses y comisiones de financiamiento</label>
-              <input id="a-financing" type="text" inputmode="decimal" placeholder="Opcional" />
-              <p class="hint">Solo intereses y comisiones. No anotes el capital del préstamo si la compra ya está en los costos.</p>
+              <label for="a-financing" data-i18n="a_financing">Intereses y comisiones de financiamiento (<span data-a-currency>USD</span>)</label>
+              <input id="a-financing" type="text" inputmode="decimal" placeholder="Opcional, importe en moneda" data-i18n-ph="a_byproduct_ph" />
+              <p class="hint" data-i18n="a_financing_hint">Solo intereses y comisiones en moneda. No anotes el capital del préstamo si la compra ya está en los costos.</p>
             </div>
             <div class="field">
-              <label for="a-fixed">Costos fijos del periodo</label>
-              <input id="a-fixed" type="text" inputmode="decimal" placeholder="Para el volumen de equilibrio" />
+              <label for="a-fixed" data-i18n="a_fixed">Costos fijos del periodo (<span data-a-currency>USD</span>)</label>
+              <input id="a-fixed" type="text" inputmode="decimal" placeholder="Importe en moneda" data-i18n-ph="amount_ph" />
+              <p class="hint" data-i18n="a_fixed_hint">Importe fijo en moneda del periodo, para el volumen de equilibrio.</p>
             </div>
             <div class="field">
-              <label for="a-variable">Costo variable por kg</label>
-              <input id="a-variable" type="text" inputmode="decimal" placeholder="No se asume cero" />
-              <p class="hint">El volumen de equilibrio usa estos dos datos y el precio de venta. No usa el costo total dividido entre el precio.</p>
+              <label for="a-variable" data-i18n="a_variable">Costo variable (<span data-a-currency>USD</span>/kg)</label>
+              <input id="a-variable" type="text" inputmode="decimal" placeholder="Moneda por kilogramo" data-i18n-ph="per_kg_ph" />
+              <p class="hint" data-i18n="a_variable_hint">Costo en moneda por cada kg. El volumen de equilibrio usa fijos, este dato y el precio. No usa el costo total ÷ precio.</p>
             </div>
           </div>
         </details>
       </article>
 
       <article class="card">
-        <h2>Análisis de escenarios</h2>
-        <p class="muted">Mueve el precio, los kilos o el costo y mira el efecto. Producir más no mantiene solos los costos.</p>
+        <h2 data-i18n="a_sc_h2">Análisis de escenarios</h2>
+        <p class="muted" data-i18n="a_sc_lead">Mueve el precio, los kilos o el costo y mira el efecto. Producir más no mantiene solos los costos.</p>
         <div class="grid grid-3">
-          <div class="field"><label for="a-sc-price">Precio del escenario</label><input id="a-sc-price" type="text" inputmode="decimal" placeholder="Usa el precio actual si lo dejas vacío" /></div>
-          <div class="field"><label for="a-sc-sold">Producción comercializable</label><input id="a-sc-sold" type="text" inputmode="decimal" placeholder="Usa los kilos actuales si lo dejas vacío" /></div>
+          <div class="field"><label for="a-sc-price" data-i18n="a_sc_price">Precio del escenario (<span data-a-currency>USD</span>/kg)</label><input id="a-sc-price" type="text" inputmode="decimal" placeholder="Usa el precio actual si lo dejas vacío" data-i18n-ph="a_sc_price_ph" /></div>
+          <div class="field"><label for="a-sc-sold" data-i18n="a_sc_sold">Producción comercializable (kg)</label><input id="a-sc-sold" type="text" inputmode="decimal" placeholder="Usa los kilos actuales si lo dejas vacío" data-i18n-ph="a_sc_sold_ph" /></div>
           <div class="field">
-            <label for="a-sc-mode">Cómo se comportan los costos</label>
+            <label for="a-sc-mode" data-i18n="a_sc_mode">Cómo se comportan los costos</label>
             <select id="a-sc-mode">
-              <option value="constant_total">El costo total de este ejercicio no cambia</option>
-              <option value="custom_total">Escribir otro costo total</option>
-              <option value="fixed_plus_variable">Costos fijos + variable por kg</option>
+              <option value="constant_total" data-i18n="a_sc_opt_const">El costo total de este ejercicio no cambia</option>
+              <option value="custom_total" data-i18n="a_sc_opt_custom">Escribir otro costo total</option>
+              <option value="fixed_plus_variable" data-i18n="a_sc_opt_var">Costos fijos + variable por kg</option>
             </select>
           </div>
         </div>
         <div class="field" id="a-sc-total-wrap" hidden>
-          <label for="a-sc-total">Costo total de la alternativa</label>
-          <input id="a-sc-total" type="text" inputmode="decimal" />
+          <label for="a-sc-total" data-i18n="a_sc_total">Costo total de la alternativa (<span data-a-currency>USD</span>)</label>
+          <input id="a-sc-total" type="text" inputmode="decimal" placeholder="Importe en moneda" data-i18n-ph="amount_ph" />
         </div>
         <div class="grid grid-2" id="a-sc-var-wrap" hidden>
-          <div class="field"><label for="a-sc-fixed">Costos fijos</label><input id="a-sc-fixed" type="text" inputmode="decimal" /></div>
-          <div class="field"><label for="a-sc-var">Costo variable por kg</label><input id="a-sc-var" type="text" inputmode="decimal" /></div>
+          <div class="field"><label for="a-sc-fixed" data-i18n="a_sc_fixed">Costos fijos (<span data-a-currency>USD</span>)</label><input id="a-sc-fixed" type="text" inputmode="decimal" placeholder="Importe en moneda" data-i18n-ph="amount_ph" /></div>
+          <div class="field"><label for="a-sc-var" data-i18n="a_variable">Costo variable (<span data-a-currency>USD</span>/kg)</label><input id="a-sc-var" type="text" inputmode="decimal" placeholder="Moneda por kilogramo" data-i18n-ph="per_kg_ph" /></div>
         </div>
       </article>
 
       <div class="row">
-        <button type="button" class="primary" id="a-calc">Calcular y visualizar resultados</button>
-        <button type="button" id="a-edit">Modificar datos</button>
-        <button type="button" id="a-pdf">Descargar reporte PDF</button>
-        <button type="button" id="a-to-b">Usar estos datos para evaluar un manejo</button>
+        <button type="button" class="primary" id="a-calc" data-i18n="calc">Calcular y visualizar resultados</button>
+        <button type="button" id="a-edit" data-i18n="edit">Modificar datos</button>
+        <button type="button" id="a-pdf" data-i18n="pdf">Descargar reporte PDF</button>
+        <button type="button" id="a-to-b" data-i18n="a_to_b">Usar estos datos para evaluar un manejo</button>
       </div>
       <div id="a-example-note"></div>
       <div id="a-results" aria-live="polite"></div>
@@ -341,34 +367,34 @@
 
     <section id="view-b" class="tab-pane" role="tabpanel" aria-labelledby="tab-b" hidden>
       <article class="card module-head">
-        <h2>¿Vale la pena invertir más?</h2>
-        <p>Compara tu manejo actual con una alternativa y descubre cuánto valor económico adicional puede generar.</p>
+        <h2 data-i18n="b_h2">¿Vale la pena invertir más?</h2>
+        <p data-i18n="b_lead">Compara tu manejo actual con una alternativa y descubre cuánto valor económico adicional puede generar.</p>
         <p class="muted" id="b-message"></p>
         <div class="row">
-          <button type="button" id="b-example">Cargar ejemplo</button>
-          <button type="button" class="quiet" id="b-reset">Reiniciar ejercicio</button>
+          <button type="button" id="b-example" data-i18n="load_example">Cargar ejemplo</button>
+          <button type="button" class="quiet" id="b-reset" data-i18n="reset">Reiniciar ejercicio</button>
         </div>
       </article>
 
       <article class="card">
-        <h2>Qué estás comparando</h2>
-        <div class="field"><label for="b-strategy">Tipo de inversión o estrategia</label><input id="b-strategy" type="text" maxlength="120" placeholder="Nutrición, fertirriego, riego, calidad, otra" /></div>
+        <h2 data-i18n="b_what_h2">Qué estás comparando</h2>
+        <div class="field"><label for="b-strategy" data-i18n="b_strategy">Tipo de inversión o estrategia</label><input id="b-strategy" type="text" maxlength="120" placeholder="Nutrición, fertirriego, riego, calidad, otra" data-i18n-ph="b_strategy_ph" /></div>
         <div class="chips" id="b-chips">
-          <button type="button" data-chip="Programa de nutrición vegetal">Nutrición</button>
-          <button type="button" data-chip="Tecnología de fertirriego">Fertirriego</button>
-          <button type="button" data-chip="Eficiencia de riego">Riego</button>
-          <button type="button" data-chip="Manejo fitosanitario">Fitosanidad</button>
-          <button type="button" data-chip="Calidad comercial">Calidad</button>
-          <button type="button" data-chip="Cambio operativo">Operación</button>
+          <button type="button" data-chip="Programa de nutrición vegetal" data-chip-key="nutrition" data-i18n="chip_nutrition">Nutrición</button>
+          <button type="button" data-chip="Tecnología de fertirriego" data-chip-key="fertigation" data-i18n="chip_fertigation">Fertirriego</button>
+          <button type="button" data-chip="Eficiencia de riego" data-chip-key="irrigation" data-i18n="chip_irrigation">Riego</button>
+          <button type="button" data-chip="Manejo fitosanitario" data-chip-key="protection" data-i18n="chip_protection">Fitosanidad</button>
+          <button type="button" data-chip="Calidad comercial" data-chip-key="quality" data-i18n="chip_quality">Calidad</button>
+          <button type="button" data-chip="Cambio operativo" data-chip-key="operation" data-i18n="chip_operation">Operación</button>
         </div>
         <div class="grid grid-2" style="margin-top:12px">
-          <div class="field"><label for="b-crop">Cultivo</label><input id="b-crop" type="text" maxlength="80" /></div>
-          <div class="field"><label for="b-currency">Moneda</label><select id="b-currency"></select></div>
+          <div class="field"><label for="b-crop" data-i18n="crop">Cultivo</label><input id="b-crop" type="text" maxlength="80" /></div>
+          <div class="field"><label for="b-currency" data-i18n="currency">Moneda</label><select id="b-currency"></select></div>
         </div>
         <fieldset style="border:0;padding:0;margin:8px 0">
-          <legend class="muted">Alcance de la comparación</legend>
-          <label><input type="radio" name="b-scope" value="intervention" /> Solo esta inversión, por ejemplo nutrición, más los costos extra que indique abajo.</label>
-          <label><input type="radio" name="b-scope" value="full_system" /> Costo completo de los dos sistemas. No vuelvas a sumar un programa que ya esté dentro.</label>
+          <legend class="muted" data-i18n="b_scope_legend">Alcance de la comparación</legend>
+          <label><input type="radio" name="b-scope" value="intervention" /> <span data-i18n="b_scope_int">Solo esta inversión, por ejemplo nutrición, más los costos extra que indique abajo.</span></label>
+          <label><input type="radio" name="b-scope" value="full_system" /> <span data-i18n="b_scope_full">Costo completo de los dos sistemas. No vuelvas a sumar un programa que ya esté dentro.</span></label>
         </fieldset>
         <p class="hint" id="b-transfer"></p>
       </article>
@@ -376,76 +402,240 @@
       <article class="card">
         <div class="compare">
           <div class="side now">
-            <h2>Manejo actual</h2>
-            <div class="field"><label for="b-c-cost" id="b-c-cost-label">Costo del programa</label><input id="b-c-cost" type="text" inputmode="decimal" /></div>
-            <div class="field"><label for="b-c-kg">Producción comercializada (kg)</label><input id="b-c-kg" type="text" inputmode="decimal" /></div>
-            <div class="field"><label for="b-c-price">Precio promedio por kg</label><input id="b-c-price" type="text" inputmode="decimal" /></div>
-            <div class="field"><label for="b-c-other">Otros costos asociados</label><input id="b-c-other" type="text" inputmode="decimal" placeholder="Opcional" /></div>
+            <h2 data-i18n="b_now">Manejo actual</h2>
+            <div class="field"><label for="b-c-cost"><span id="b-c-cost-label">Costo del programa</span> (<span data-b-currency>USD</span>)</label><input id="b-c-cost" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-c-kg" data-i18n="sold_kg">Producción comercializada (kg)</label><input id="b-c-kg" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-c-price" data-i18n="b_avg_price">Precio promedio (<span data-b-currency>USD</span>/kg)</label><input id="b-c-price" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-c-other" data-i18n="b_other_assoc">Otros costos asociados (<span data-b-currency>USD</span>)</label><input id="b-c-other" type="text" inputmode="decimal" placeholder="Opcional" data-i18n-ph="optional" /></div>
           </div>
           <div class="side next">
-            <h2>Manejo mejorado</h2>
-            <div class="field"><label for="b-i-cost" id="b-i-cost-label">Costo del programa</label><input id="b-i-cost" type="text" inputmode="decimal" /></div>
-            <div class="field"><label for="b-i-kg">Producción comercializada (kg)</label><input id="b-i-kg" type="text" inputmode="decimal" /></div>
-            <div class="field"><label for="b-i-price">Precio promedio por kg</label><input id="b-i-price" type="text" inputmode="decimal" /></div>
-            <div class="field"><label for="b-i-other">Otros costos asociados</label><input id="b-i-other" type="text" inputmode="decimal" placeholder="Opcional" /></div>
+            <h2 data-i18n="b_next">Manejo mejorado</h2>
+            <div class="field"><label for="b-i-cost"><span id="b-i-cost-label">Costo del programa</span> (<span data-b-currency>USD</span>)</label><input id="b-i-cost" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-i-kg" data-i18n="sold_kg">Producción comercializada (kg)</label><input id="b-i-kg" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-i-price" data-i18n="b_avg_price">Precio promedio (<span data-b-currency>USD</span>/kg)</label><input id="b-i-price" type="text" inputmode="decimal" /></div>
+            <div class="field"><label for="b-i-other" data-i18n="b_other_assoc">Otros costos asociados (<span data-b-currency>USD</span>)</label><input id="b-i-other" type="text" inputmode="decimal" placeholder="Opcional" data-i18n-ph="optional" /></div>
           </div>
         </div>
-        <p class="hint">Si los precios cambian, el ingreso adicional es la diferencia entre los dos ingresos completos, no los kilos de diferencia por un solo precio.</p>
+        <p class="hint" data-i18n="b_price_hint">Si los precios cambian, el ingreso adicional es la diferencia entre los dos ingresos completos, no los kilos de diferencia por un solo precio.</p>
       </article>
 
       <article class="card">
-        <h2>Costos de la producción adicional</h2>
-        <p class="muted">Si no se descuentan, la herramienta habla de ventas adicionales, no de beneficio neto.</p>
-        <label><input type="radio" name="b-other" value="unspecified" /> Todavía no descuento cosecha, empaque, flete ni mano de obra extra.</label>
-        <label><input type="radio" name="b-other" value="none" /> Ya revisé esos costos y no hay otros costos incrementales.</label>
-        <label><input type="radio" name="b-other" value="lump" /> Tengo un importe total de costos incrementales.</label>
-        <label><input type="radio" name="b-other" value="per_kg" /> Tengo un costo variable por kilogramo adicional.</label>
+        <h2 data-i18n="b_extra_h2">Costos de la producción adicional</h2>
+        <p class="muted" data-i18n="b_extra_lead">Si no se descuentan, la herramienta habla de ventas adicionales, no de beneficio neto.</p>
+        <label><input type="radio" name="b-other" value="unspecified" /> <span data-i18n="b_o_unspecified">Todavía no descuento cosecha, empaque, flete ni mano de obra extra.</span></label>
+        <label><input type="radio" name="b-other" value="none" /> <span data-i18n="b_o_none">Ya revisé esos costos y no hay otros costos incrementales.</span></label>
+        <label><input type="radio" name="b-other" value="lump" /> <span data-i18n="b_o_lump">Tengo un importe total de costos incrementales.</span></label>
+        <label><input type="radio" name="b-other" value="per_kg" /> <span data-i18n="b_o_per_kg">Tengo un costo variable por kilogramo adicional.</span></label>
         <div class="grid grid-2" style="margin-top:12px">
           <div class="field" id="b-lump-wrap" hidden>
-            <label for="b-lump">Otros costos incrementales</label>
+            <label for="b-lump" data-i18n="b_lump">Otros costos incrementales (<span data-b-currency>USD</span>)</label>
             <input id="b-lump" type="text" inputmode="decimal" />
           </div>
           <div class="field" id="b-var-wrap" hidden>
-            <label for="b-var">Costo variable incremental por kg</label>
+            <label for="b-var" data-i18n="b_var">Costo variable incremental (<span data-b-currency>USD</span>/kg)</label>
             <input id="b-var" type="text" inputmode="decimal" />
           </div>
           <div class="field">
-            <label for="b-savings">Ahorros atribuibles a la mejora</label>
-            <input id="b-savings" type="text" inputmode="decimal" placeholder="Opcional, en positivo" />
+            <label for="b-savings" data-i18n="b_savings">Ahorros atribuibles a la mejora (<span data-b-currency>USD</span>)</label>
+            <input id="b-savings" type="text" inputmode="decimal" placeholder="Opcional, en positivo" data-i18n-ph="b_savings_ph" />
           </div>
         </div>
-        <p class="hint">No registres dos veces la misma partida. Un ahorro no se anota también como menor costo del programa y como ahorro.</p>
+        <p class="hint" data-i18n="b_dup_hint">No registres dos veces la misma partida. Un ahorro no se anota también como menor costo del programa y como ahorro.</p>
       </article>
 
       <article class="card">
-        <h2>Cómo leer la relación</h2>
-        <p><strong>1:1</strong> La inversión adicional se recupera, pero no deja beneficio incremental después de pagarla.</p>
-        <p><strong>3:1</strong> Por cada unidad adicional invertida se generan tres de beneficio antes de recuperar la inversión.</p>
-        <p><strong>5:1</strong> Por cada unidad adicional invertida se generan cinco de beneficio antes de recuperar la inversión.</p>
-        <p class="muted">Estas lecturas valen para la relación beneficio–costo. No se aplican igual cuando el numerador es solo ingreso por ventas.</p>
+        <h2 data-i18n="b_read_h2">Cómo leer la relación</h2>
+        <p data-i18n="b_read_1"><strong>1:1</strong> La inversión adicional se recupera, pero no deja beneficio incremental después de pagarla.</p>
+        <p data-i18n="b_read_3"><strong>3:1</strong> Por cada unidad adicional invertida se generan tres de beneficio antes de recuperar la inversión.</p>
+        <p data-i18n="b_read_5"><strong>5:1</strong> Por cada unidad adicional invertida se generan cinco de beneficio antes de recuperar la inversión.</p>
+        <p class="muted" data-i18n="b_read_note">Estas lecturas valen para la relación beneficio–costo. No se aplican igual cuando el numerador es solo ingreso por ventas.</p>
         <p class="muted" id="b-agro"></p>
       </article>
 
       <div class="row">
-        <button type="button" class="primary" id="b-calc">Calcular y visualizar resultados</button>
-        <button type="button" id="b-edit">Modificar datos</button>
-        <button type="button" id="b-pdf">Descargar reporte PDF</button>
+        <button type="button" class="primary" id="b-calc" data-i18n="calc">Calcular y visualizar resultados</button>
+        <button type="button" id="b-edit" data-i18n="edit">Modificar datos</button>
+        <button type="button" id="b-pdf" data-i18n="pdf">Descargar reporte PDF</button>
       </div>
       <div id="b-example-note"></div>
       <div id="b-results" aria-live="polite"></div>
     </section>
-    <p class="footer-line">NutriPlant PRO — Diseña. Ajusta. Nutre.</p>
+    <p class="footer-line" id="footer-tagline">NutriPlant PRO — Diseña. Ajusta. Nutre.</p>
   </main>
-  <script src="assets/np-rentabilidad-core.js?v=20261110wide"></script>
+  <script src="assets/np-rentabilidad-core.js?v=20261110i18n"></script>
   <script>
     (function () {
       var R = window.NpRentabilidad;
       var KEY = 'nutriplant_free_rentabilidad_v1';
       var state = { view: 'a', a: blankA(), b: blankB() };
+      var currencyNoteActive = false;
+
+      function prefs() {
+        try {
+          if (window.NpPrefs && typeof window.NpPrefs.get === 'function') return window.NpPrefs.get() || {};
+        } catch (err) { /* sin preferencias: español */ }
+        return { language: (window.NP_PREFS_BOOTSTRAP && window.NP_PREFS_BOOTSTRAP.language) || 'es' };
+      }
+      function lang() { return prefs().language === 'en' ? 'en' : 'es'; }
+      function t(es, en) { return lang() === 'en' ? en : es; }
+      function withLang(input) { return Object.assign({}, input, { language: lang() }); }
+      var appliedLang = lang();
+
       var TAB_LEAD = {
-        a: 'Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.',
-        b: 'Descubre cuánta producción o beneficio adicional necesitas para justificar una nueva inversión.'
+        a: ['Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.',
+          'Work out what it costs you to produce, find your break-even price and see how profitable your crop is.'],
+        b: ['Descubre cuánta producción o beneficio adicional necesitas para justificar una nueva inversión.',
+          'Find out how much extra production or benefit you need to justify a new investment.']
       };
+
+      // Inglés de los textos estáticos. El español se toma del propio HTML la primera vez.
+      var EN = {
+        kicker: 'NutriPlant PRO · free tool',
+        title: 'Crop Profitability',
+        subtitle: 'From production yield to the economic value of your decisions.',
+        privacy: 'Less recipe, more judgment. Calculations run in this browser and are not sent to NutriPlant.',
+        tab_a: 'Know my costs',
+        tab_b: 'Evaluate a new management',
+        tabs_aria: 'Crop Profitability modules',
+        a_h2: 'Crop profitability',
+        a_lead: 'How much does it cost to produce and what is my break-even point?',
+        load_example: 'Load example',
+        reset: 'Reset exercise',
+        a_data_h2: 'Exercise data',
+        a_name: 'Exercise name',
+        a_name_ph: 'Economic analysis of the production cycle',
+        crop: 'Crop',
+        a_crop_ph: 'Any crop',
+        a_area: 'Area (ha)',
+        optional: 'Optional',
+        a_period: 'Analysis period',
+        a_period_ph: 'Cycle, season or dates',
+        currency: 'Currency',
+        a_currency_note: 'Each exercise uses a single currency. Changing it does not convert amounts already entered.',
+        a_costs_h2: 'Cycle costs',
+        a_more: 'Show more categories',
+        a_new_label: 'Custom item',
+        a_new_ph: 'Cost name',
+        a_add_sr: 'Add',
+        a_add: 'Add item',
+        a_prod_h2: 'Production and revenue',
+        a_prod_lead: 'Harvest is not always equal to what is sold. Kilograms not marketed raise the cost of the kilograms that do generate revenue.',
+        a_harvest: 'Harvested production (kg)',
+        sold_kg: 'Marketed production (kg)',
+        a_sold_ph: 'Required for cost per kg',
+        a_price: 'Average sale price (<span data-a-currency>USD</span>/kg)',
+        a_adv: 'Advanced options: other income, financing and break-even volume',
+        a_byproduct: 'Income from by-products or seconds (<span data-a-currency>USD</span>)',
+        a_byproduct_ph: 'Optional, amount in currency',
+        a_byproduct_hint: 'Amount in the exercise currency, not in kilograms.',
+        a_financing: 'Financing interest and fees (<span data-a-currency>USD</span>)',
+        a_financing_hint: 'Only interest and fees in currency. Do not enter the loan principal if the purchase is already in the costs.',
+        a_fixed: 'Fixed costs for the period (<span data-a-currency>USD</span>)',
+        amount_ph: 'Amount in currency',
+        a_fixed_hint: 'Fixed amount in currency for the period, used for the break-even volume.',
+        a_variable: 'Variable cost (<span data-a-currency>USD</span>/kg)',
+        per_kg_ph: 'Currency per kilogram',
+        a_variable_hint: 'Cost in currency per kg. Break-even volume uses fixed costs, this figure and the price. It does not use total cost ÷ price.',
+        a_sc_h2: 'Scenario analysis',
+        a_sc_lead: 'Move the price, the kilograms or the cost and see the effect. Producing more does not keep costs constant on its own.',
+        a_sc_price: 'Scenario price (<span data-a-currency>USD</span>/kg)',
+        a_sc_price_ph: 'Uses the current price if left empty',
+        a_sc_sold: 'Marketable production (kg)',
+        a_sc_sold_ph: 'Uses the current kilograms if left empty',
+        a_sc_mode: 'How costs behave',
+        a_sc_opt_const: 'The total cost of this exercise does not change',
+        a_sc_opt_custom: 'Enter another total cost',
+        a_sc_opt_var: 'Fixed costs + variable per kg',
+        a_sc_total: 'Total cost of the alternative (<span data-a-currency>USD</span>)',
+        a_sc_fixed: 'Fixed costs (<span data-a-currency>USD</span>)',
+        calc: 'Calculate and visualize results',
+        edit: 'Edit data',
+        pdf: 'Download PDF report',
+        a_to_b: 'Use this data to evaluate a management change',
+        b_h2: 'Is it worth investing more?',
+        b_lead: 'Compare your current management with an alternative and find out how much additional economic value it can generate.',
+        b_what_h2: 'What you are comparing',
+        b_strategy: 'Type of investment or strategy',
+        b_strategy_ph: 'Nutrition, fertigation, irrigation, quality, other',
+        chip_nutrition: 'Nutrition',
+        chip_fertigation: 'Fertigation',
+        chip_irrigation: 'Irrigation',
+        chip_protection: 'Crop protection',
+        chip_quality: 'Quality',
+        chip_operation: 'Operations',
+        b_scope_legend: 'Scope of the comparison',
+        b_scope_int: 'Only this investment, for example nutrition, plus the extra costs you indicate below.',
+        b_scope_full: 'Full cost of both systems. Do not add a program again if it is already included.',
+        b_now: 'Current management',
+        b_next: 'Improved management',
+        b_avg_price: 'Average price (<span data-b-currency>USD</span>/kg)',
+        b_other_assoc: 'Other associated costs (<span data-b-currency>USD</span>)',
+        b_price_hint: 'If prices change, the additional revenue is the difference between the two complete revenues, not the difference in kilograms times a single price.',
+        b_extra_h2: 'Costs of the additional production',
+        b_extra_lead: 'If they are not deducted, the tool speaks of additional sales, not net benefit.',
+        b_o_unspecified: 'I have not yet deducted harvest, packing, freight or extra labor.',
+        b_o_none: 'I already reviewed those costs and there are no other incremental costs.',
+        b_o_lump: 'I have a total amount of incremental costs.',
+        b_o_per_kg: 'I have a variable cost per additional kilogram.',
+        b_lump: 'Other incremental costs (<span data-b-currency>USD</span>)',
+        b_var: 'Incremental variable cost (<span data-b-currency>USD</span>/kg)',
+        b_savings: 'Savings attributable to the improvement (<span data-b-currency>USD</span>)',
+        b_savings_ph: 'Optional, as a positive number',
+        b_dup_hint: 'Do not record the same item twice. A saving is not entered both as a lower program cost and as a saving.',
+        b_read_h2: 'How to read the ratio',
+        b_read_1: '<strong>1:1</strong> The additional investment is recovered, but it leaves no incremental benefit after paying for it.',
+        b_read_3: '<strong>3:1</strong> For each additional unit invested, three units of benefit are generated before recovering the investment.',
+        b_read_5: '<strong>5:1</strong> For each additional unit invested, five units of benefit are generated before recovering the investment.',
+        b_read_note: 'These readings apply to the benefit–cost ratio. They do not apply in the same way when the numerator is only sales revenue.'
+      };
+      var esCache = { html: {}, ph: {}, aria: {} };
+
+      var CHIPS = {
+        nutrition: ['Programa de nutrición vegetal', 'Plant nutrition program'],
+        fertigation: ['Tecnología de fertirriego', 'Fertigation technology'],
+        irrigation: ['Eficiencia de riego', 'Irrigation efficiency'],
+        protection: ['Manejo fitosanitario', 'Crop protection management'],
+        quality: ['Calidad comercial', 'Commercial quality'],
+        operation: ['Cambio operativo', 'Operational change']
+      };
+
+      function applyStaticI18n() {
+        var L = lang();
+        document.documentElement.lang = L;
+        document.documentElement.setAttribute('data-np-language', L);
+        document.title = t('Rentabilidad Agrícola | NutriPlant PRO', 'Crop Profitability | NutriPlant PRO');
+        Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (el) {
+          var key = el.getAttribute('data-i18n');
+          if (!(key in esCache.html)) esCache.html[key] = el.innerHTML;
+          var next = L === 'en' && EN[key] != null ? EN[key] : esCache.html[key];
+          if (el.innerHTML !== next) el.innerHTML = next;
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-ph]'), function (el) {
+          var key = el.getAttribute('data-i18n-ph');
+          if (!(key in esCache.ph)) esCache.ph[key] = el.getAttribute('placeholder') || '';
+          el.setAttribute('placeholder', L === 'en' && EN[key] != null ? EN[key] : esCache.ph[key]);
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (el) {
+          var key = el.getAttribute('data-i18n-aria');
+          if (!(key in esCache.aria)) esCache.aria[key] = el.getAttribute('aria-label') || '';
+          el.setAttribute('aria-label', L === 'en' && EN[key] != null ? EN[key] : esCache.aria[key]);
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('#b-chips [data-chip-key]'), function (el) {
+          var pair = CHIPS[el.getAttribute('data-chip-key')];
+          if (pair) el.setAttribute('data-chip', L === 'en' ? pair[1] : pair[0]);
+        });
+        q('footer-tagline').textContent = R.notes(L).tagline;
+        q('a-message').textContent = R.notes(L).moduleA;
+        q('b-message').textContent = R.notes(L).moduleB;
+        q('a-dup-note').textContent = R.notes(L).duplicateCost;
+        q('b-agro').textContent = R.notes(L).agronomicNote;
+        if (currencyNoteActive) q('a-currency-note').textContent = currencyChangedNote();
+        syncCurrencyLabels();
+      }
+      function currencyChangedNote() {
+        return t('Los importes no se convirtieron. Siguen siendo las cifras escritas, ahora leídas en ' + state.a.currency + '.',
+          'Amounts were not converted. They are still the figures you entered, now read as ' + state.a.currency + '.');
+      }
 
       function blankA() {
         return {
@@ -483,14 +673,15 @@
         q('tab-b').classList.toggle('active', tab === 'b');
         q('tab-a').setAttribute('aria-selected', tab === 'a' ? 'true' : 'false');
         q('tab-b').setAttribute('aria-selected', tab === 'b' ? 'true' : 'false');
-        q('tab-lead').textContent = TAB_LEAD[tab];
+        q('tab-lead').textContent = t(TAB_LEAD[tab][0], TAB_LEAD[tab][1]);
         if (tab === 'a') paintA();
         if (tab === 'b') paintB();
         save();
       }
       function fillCurrencies(select, selected) {
+        var L = lang();
         select.innerHTML = R.CURRENCIES.map(function (item) {
-          return '<option value="' + item.code + '">' + item.code + ' — ' + item.name + '</option>';
+          return '<option value="' + item.code + '">' + item.code + ' — ' + esc(R.currencyName(item.code, L)) + '</option>';
         }).join('');
         select.value = selected || 'USD';
       }
@@ -498,24 +689,26 @@
 
       function renderCosts() {
         var host = q('cost-list');
+        var L = lang();
         if (state.a.grouped) {
-          var groups = R.summarizeGroups(state.a.costs);
+          var groups = R.summarizeGroups(state.a.costs, { language: L });
           host.innerHTML = groups.length ? groups.map(function (group) {
             return '<div class="group-row"><strong>' + esc(group.label) + '</strong><span>' + esc(R.formatMoney(group.total, state.a.currency)) + '</span></div>';
-          }).join('') : '<p class="muted">Todavía no hay costos para agrupar.</p>';
-          q('a-group').textContent = 'Ver desglose';
+          }).join('') : '<p class="muted">' + esc(t('Todavía no hay costos para agrupar.', 'There are no costs to group yet.')) + '</p>';
+          q('a-group').textContent = t('Ver desglose', 'View breakdown');
           return;
         }
-        q('a-group').textContent = 'Ver categorías agrupadas';
+        q('a-group').textContent = t('Ver categorías agrupadas', 'View grouped categories');
         host.innerHTML = state.a.costs.map(function (line, index) {
           var secondary = R.COST_CATEGORIES.some(function (cat) { return cat.id === line.id && !cat.primary; });
           var hidden = secondary && !state.a.showAll && String(line.amount).trim() === '';
+          var shown = R.costLineLabel(line, L);
           var label = line.custom
-            ? '<input type="text" data-label="' + index + '" value="' + esc(line.label) + '" aria-label="Nombre del concepto" />'
-            : '<label>' + esc(line.label) + '</label>';
+            ? '<input type="text" data-label="' + index + '" value="' + esc(shown) + '" aria-label="' + esc(t('Nombre del concepto', 'Item name')) + '" />'
+            : '<label>' + esc(shown) + '</label>';
           return '<div class="cost-row' + (hidden ? ' is-hidden' : '') + '">' + label
-            + '<input type="text" inputmode="decimal" data-cost="' + index + '" value="' + esc(line.amount) + '" aria-label="Importe de ' + esc(line.label) + '" />'
-            + '<button type="button" data-remove="' + index + '">Quitar</button></div>';
+            + '<input type="text" inputmode="decimal" data-cost="' + index + '" value="' + esc(line.amount) + '" aria-label="' + esc(t('Importe de ', 'Amount for ') + shown) + '" />'
+            + '<button type="button" data-remove="' + index + '">' + esc(t('Quitar', 'Remove')) + '</button></div>';
         }).join('');
         q('a-more').hidden = state.a.showAll || !state.a.costs.some(function (line) {
           return R.COST_CATEGORIES.some(function (cat) { return cat.id === line.id && !cat.primary; });
@@ -562,8 +755,8 @@
         setVal('b-savings', state.b.savings);
         q('b-transfer').textContent = state.b.transferNote || '';
         var full = state.b.scope === 'full_system';
-        q('b-c-cost-label').textContent = full ? 'Costo total del sistema actual' : 'Costo del programa';
-        q('b-i-cost-label').textContent = full ? 'Costo total del sistema mejorado' : 'Costo del programa';
+        q('b-c-cost-label').textContent = full ? t('Costo total del sistema actual', 'Total cost of the current system') : t('Costo del programa', 'Program cost');
+        q('b-i-cost-label').textContent = full ? t('Costo total del sistema mejorado', 'Total cost of the improved system') : t('Costo del programa', 'Program cost');
         q('b-lump-wrap').hidden = state.b.otherMode !== 'lump';
         q('b-var-wrap').hidden = state.b.otherMode !== 'per_kg';
       }
@@ -575,21 +768,54 @@
         return '<div class="error">' + list.map(function (item) { return '<div>' + esc(item.message) + '</div>'; }).join('') + '</div>';
       }
 
+      function syncCurrencyLabels() {
+        var codeA = state.a.currency || 'USD';
+        var codeB = state.b.currency || 'USD';
+        Array.prototype.forEach.call(document.querySelectorAll('[data-a-currency]'), function (el) {
+          el.textContent = codeA;
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-b-currency]'), function (el) {
+          el.textContent = codeB;
+        });
+      }
+      function updateProdNote() {
+        var note = q('a-prod-note');
+        var harvestRaw = String(state.a.harvestedKg || '').trim();
+        var soldRaw = String(state.a.soldKg || '').trim();
+        var harvest = harvestRaw ? R.parseUserNumber(harvestRaw) : NaN;
+        var sold = soldRaw ? R.parseUserNumber(soldRaw) : NaN;
+        var conflict = harvestRaw && soldRaw && Number.isFinite(harvest) && Number.isFinite(sold) && sold > harvest;
+        q('a-harvest').classList.toggle('field-invalid', conflict);
+        q('a-sold').classList.toggle('field-invalid', conflict);
+        if (conflict) {
+          note.hidden = false;
+          note.textContent = t('La producción comercializada (' + R.formatKg(sold) + ') no puede ser mayor que la cosechada (' + R.formatKg(harvest) + '). Ajusta uno de los dos valores. Mientras tanto no se calculan ingresos ni costo por kilogramo.',
+            'Marketed production (' + R.formatKg(sold) + ') cannot be greater than harvested production (' + R.formatKg(harvest) + '). Adjust one of the two values. Until then, revenue and cost per kilogram are not calculated.');
+        } else {
+          note.hidden = true;
+          note.textContent = '';
+        }
+      }
       function paintA() {
-        q('a-message').textContent = R.MODULE_A_MESSAGE;
-        q('a-dup-note').textContent = R.DUPLICATE_COST_NOTE;
+        var L = lang();
+        var N = R.notes(L);
+        q('a-message').textContent = N.moduleA;
+        q('a-dup-note').textContent = N.duplicateCost;
         q('a-sc-total-wrap').hidden = state.a.scenarioMode !== 'custom_total';
         q('a-sc-var-wrap').hidden = state.a.scenarioMode !== 'fixed_plus_variable';
-        q('a-example-note').innerHTML = state.a.isExample ? '<p class="example-note">' + esc(R.EXAMPLE_DISCLAIMER) + '</p>' : '';
-        var result = R.evaluateCrop(state.a);
+        q('a-example-note').innerHTML = state.a.isExample ? '<p class="example-note">' + esc(N.exampleDisclaimer) + '</p>' : '';
+        syncCurrencyLabels();
+        updateProdNote();
+        var result = R.evaluateCrop(withLang(state.a));
         var host = q('a-results');
         var hasData = state.a.costs.some(function (line) { return String(line.amount).trim() !== ''; })
-          || String(state.a.soldKg).trim() || String(state.a.pricePerKg).trim();
-        q('a-total-live').textContent = result.ok && result.totalCost != null
-          ? 'Costo total: ' + R.formatMoney(result.totalCost, result.currency)
+          || String(state.a.soldKg).trim() || String(state.a.pricePerKg).trim() || String(state.a.harvestedKg).trim();
+        var costOnly = R.evaluateCrop({ language: L, currency: state.a.currency, costs: state.a.costs });
+        q('a-total-live').textContent = costOnly.ok && costOnly.totalCost != null
+          ? t('Costo total: ', 'Total cost: ') + R.formatMoney(costOnly.totalCost, state.a.currency)
           : '';
         if (!hasData) {
-          host.innerHTML = '<article class="card"><p>Empieza por los costos habituales, los kilos vendidos y el precio. El resultado se actualiza al escribir.</p></article>';
+          host.innerHTML = '<article class="card"><p>' + esc(t('Empieza por los costos habituales, los kilos vendidos y el precio. El resultado se actualiza al escribir.', 'Start with the usual costs, the kilograms sold and the price. The result updates as you type.')) + '</p></article>';
           return;
         }
         if (!result.ok) {
@@ -598,55 +824,59 @@
         }
         var cur = result.currency;
         var cards = '';
-        if (result.costPerKg != null) cards += metric('Costo por kilogramo', R.formatPerKg(result.costPerKg, cur), 'navy');
-        if (result.breakEvenPrice != null) cards += metric('Precio de equilibrio', R.formatPerKg(result.breakEvenPrice, cur), 'navy');
+        if (result.costPerKg != null) cards += metric(t('Costo por kilogramo', 'Cost per kilogram'), R.formatPerKg(result.costPerKg, cur), 'navy');
+        if (result.breakEvenPrice != null) cards += metric(t('Precio de equilibrio', 'Break-even price'), R.formatPerKg(result.breakEvenPrice, cur), 'navy');
         if (result.returnOnCostPct != null) {
-          cards += metric(result.loss ? 'Rentabilidad sobre costo' : 'Rentabilidad sobre costo', R.formatPct(result.returnOnCostPct), result.loss ? 'loss' : '');
+          cards += metric(t('Rentabilidad sobre costo', 'Return on cost'), R.formatPct(result.returnOnCostPct), result.loss ? 'loss' : '');
         }
-        if (result.marginOnSalesPct != null) cards += metric('Margen sobre ventas', R.formatPct(result.marginOnSalesPct), result.loss ? 'loss' : '');
-        if (result.totalCost != null) cards += metric('Costo total', R.formatMoney(result.totalCost, cur));
-        if (result.revenue != null) cards += metric('Ingresos', R.formatMoney(result.revenue, cur));
-        if (result.profit != null) cards += metric(result.loss ? 'Pérdida' : 'Utilidad', R.formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur), result.loss ? 'loss' : '');
+        if (result.marginOnSalesPct != null) cards += metric(t('Margen sobre ventas', 'Margin on sales'), R.formatPct(result.marginOnSalesPct), result.loss ? 'loss' : '');
+        if (result.totalCost != null) cards += metric(t('Costo total', 'Total cost'), R.formatMoney(result.totalCost, cur));
+        if (result.revenue != null) cards += metric(t('Ingresos', 'Revenue'), R.formatMoney(result.revenue, cur));
+        if (result.profit != null) cards += metric(result.loss ? t('Pérdida', 'Loss') : t('Utilidad', 'Profit'), R.formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur), result.loss ? 'loss' : '');
         if (result.profitAfterFinancing != null) {
           var afterLoss = result.profitAfterFinancing < 0;
-          cards += metric(afterLoss ? 'Pérdida después de financiamiento' : 'Utilidad después de financiamiento', R.formatMoney(afterLoss ? Math.abs(result.profitAfterFinancing) : result.profitAfterFinancing, cur), afterLoss ? 'loss' : 'navy');
+          cards += metric(afterLoss ? t('Pérdida después de financiamiento', 'Loss after financing') : t('Utilidad después de financiamiento', 'Profit after financing'), R.formatMoney(afterLoss ? Math.abs(result.profitAfterFinancing) : result.profitAfterFinancing, cur), afterLoss ? 'loss' : 'navy');
         }
         var extra = '';
         if (result.perHa) {
-          extra += '<p class="note">Por hectárea: costo ' + esc(R.formatMoney(result.perHa.cost, cur))
-            + (result.perHa.revenue == null ? '' : ', ingresos ' + esc(R.formatMoney(result.perHa.revenue, cur)))
-            + (result.perHa.profit == null ? '' : ', utilidad ' + esc(R.formatMoney(result.perHa.profit, cur)))
+          extra += '<p class="note">' + esc(t('Por hectárea: costo ', 'Per hectare: cost ')) + esc(R.formatMoney(result.perHa.cost, cur))
+            + (result.perHa.revenue == null ? '' : esc(t(', ingresos ', ', revenue ')) + esc(R.formatMoney(result.perHa.revenue, cur)))
+            + (result.perHa.profit == null ? '' : esc(t(', utilidad ', ', profit ')) + esc(R.formatMoney(result.perHa.profit, cur)))
             + (result.perHa.soldKg == null ? '' : ', ' + esc(R.formatKg(result.perHa.soldKg)) + '/ha') + '.</p>';
         }
         if (result.wasteKg != null) {
-          extra += '<p class="note">No comercializado: ' + esc(R.formatKg(result.wasteKg))
-            + '. Comercialización: ' + esc(R.formatPct(result.commercializationPct)) + '.</p>';
+          extra += '<p class="note">' + esc(t('No comercializado: ', 'Not marketed: ')) + esc(R.formatKg(result.wasteKg))
+            + esc(t('. Comercialización: ', '. Marketed share: ')) + esc(R.formatPct(result.commercializationPct)) + '.</p>';
         }
         if (result.breakEvenPrice != null) {
-          extra += '<p class="note">Con los costos y el volumen comercializado de este ejercicio, necesitas vender a un precio promedio de '
+          extra += '<p class="note">' + esc(t('Con los costos y el volumen comercializado de este ejercicio, necesitas vender a un precio promedio de ',
+            'With the costs and marketed volume of this exercise, you need to sell at an average price of '))
             + esc(R.formatPerKg(result.breakEvenPrice, cur))
-            + ' para recuperar los costos considerados. Si el precio real está por debajo, hay pérdida. Este precio corresponde a este volumen, no a cualquier nivel de producción.</p>';
+            + esc(t(' para recuperar los costos considerados. Si el precio real está por debajo, hay pérdida. Este precio corresponde a este volumen, no a cualquier nivel de producción.',
+              ' to recover the costs considered. If the actual price is below that, there is a loss. This price applies to this volume, not to any production level.')) + '</p>';
         }
         var volumeBlock = '';
         var volumeTouched = String(state.a.fixedCosts).trim() || String(state.a.variableCostPerKg).trim();
         var volume = null;
         if (volumeTouched) {
           volume = R.breakEvenVolume({
+            language: L,
             fixedCosts: state.a.fixedCosts,
             variableCostPerKg: state.a.variableCostPerKg,
             pricePerKg: state.a.pricePerKg
           });
           volumeBlock = volume.ok
-            ? '<p class="note">Volumen de equilibrio: <strong>' + esc(R.formatKg(volume.kg)) + '</strong>. ' + esc(volume.message) + '</p>'
+            ? '<p class="note">' + esc(t('Volumen de equilibrio: ', 'Break-even volume: ')) + '<strong>' + esc(R.formatKg(volume.kg)) + '</strong>. ' + esc(volume.message) + '</p>'
             : '<p class="warn">' + esc(volume.message) + '</p>';
         }
         var scenario = buildScenario(result);
         var scenarioHtml = scenarioHtmlBlock(scenario, cur);
-        var charts = '<div class="chart-card"><h3>Distribución de costos</h3><canvas id="chart-costs"></canvas></div>'
-          + '<div class="chart-card"><h3>Ingresos y costos</h3><canvas id="chart-balance"></canvas></div>'
-          + '<div class="chart-card"><h3>Escenario: ingreso y costo</h3><canvas id="chart-scenario"></canvas><p class="hint" id="scenario-note"></p></div>';
+        var chartTitles = t(['Distribución de costos', 'Ingresos y costos', 'Escenario: ingreso y costo'], ['Cost distribution', 'Revenue and costs', 'Scenario: revenue and cost']);
+        var charts = '<div class="chart-card"><h3>' + esc(chartTitles[0]) + '</h3><canvas id="chart-costs"></canvas></div>'
+          + '<div class="chart-card"><h3>' + esc(chartTitles[1]) + '</h3><canvas id="chart-balance"></canvas></div>'
+          + '<div class="chart-card"><h3>' + esc(chartTitles[2]) + '</h3><canvas id="chart-scenario"></canvas><p class="hint" id="scenario-note"></p></div>';
         host.innerHTML = '<article class="card"><div class="metrics">' + cards + '</div>' + extra + volumeBlock
-          + '<p>' + esc(R.interpretationModuleA(result)) + '</p>' + scenarioHtml + charts + '</article>';
+          + '<p>' + esc(R.interpretationModuleA(result, { language: L })) + '</p>' + scenarioHtml + charts + '</article>';
         try { drawA(result, scenario); } catch (err) { /* las cifras ya quedaron escritas */ }
       }
 
@@ -655,6 +885,7 @@
         var sold = state.a.scenarioSold === '' ? result.soldKg : state.a.scenarioSold;
         var total = state.a.scenarioMode === 'custom_total' ? state.a.scenarioTotal : result.totalCost;
         return R.evaluateScenario({
+          language: lang(),
           soldKg: sold,
           pricePerKg: price,
           byproductRevenue: state.a.byproductRevenue,
@@ -666,18 +897,18 @@
       }
       function scenarioHtmlBlock(scenario, currency) {
         if (!scenario.ok) {
-          return '<h3>Escenario</h3><p class="warn">' + esc((scenario.errors[0] && scenario.errors[0].message) || 'Completa el escenario.') + '</p><p class="hint">' + esc(scenario.assumption || '') + '</p>';
+          return '<h3>' + esc(t('Escenario', 'Scenario')) + '</h3><p class="warn">' + esc((scenario.errors[0] && scenario.errors[0].message) || t('Completa el escenario.', 'Complete the scenario.')) + '</p><p class="hint">' + esc(scenario.assumption || '') + '</p>';
         }
-        var bits = '<h3>Escenario alternativo</h3><p class="hint">' + esc(scenario.assumption) + '</p><div class="metrics">';
-        bits += metric('Ingresos del escenario', R.formatMoney(scenario.revenue, currency));
-        bits += metric(scenario.loss ? 'Pérdida del escenario' : 'Utilidad del escenario', R.formatMoney(scenario.loss ? Math.abs(scenario.profit) : scenario.profit, currency), scenario.loss ? 'loss' : '');
-        if (scenario.returnOnCostPct != null) bits += metric('Rentabilidad del escenario', R.formatPct(scenario.returnOnCostPct), scenario.loss ? 'loss' : '');
-        if (scenario.breakEvenPrice != null) bits += metric('Precio de equilibrio', R.formatPerKg(scenario.breakEvenPrice, currency), 'navy');
+        var bits = '<h3>' + esc(t('Escenario alternativo', 'Alternative scenario')) + '</h3><p class="hint">' + esc(scenario.assumption) + '</p><div class="metrics">';
+        bits += metric(t('Ingresos del escenario', 'Scenario revenue'), R.formatMoney(scenario.revenue, currency));
+        bits += metric(scenario.loss ? t('Pérdida del escenario', 'Scenario loss') : t('Utilidad del escenario', 'Scenario profit'), R.formatMoney(scenario.loss ? Math.abs(scenario.profit) : scenario.profit, currency), scenario.loss ? 'loss' : '');
+        if (scenario.returnOnCostPct != null) bits += metric(t('Rentabilidad del escenario', 'Scenario return'), R.formatPct(scenario.returnOnCostPct), scenario.loss ? 'loss' : '');
+        if (scenario.breakEvenPrice != null) bits += metric(t('Precio de equilibrio', 'Break-even price'), R.formatPerKg(scenario.breakEvenPrice, currency), 'navy');
         bits += '</div>';
-        if (scenario.breakEvenVolumeKg != null) bits += '<p class="note">Volumen de equilibrio del escenario: ' + esc(R.formatKg(scenario.breakEvenVolumeKg)) + '.</p>';
+        if (scenario.breakEvenVolumeKg != null) bits += '<p class="note">' + esc(t('Volumen de equilibrio del escenario: ', 'Scenario break-even volume: ')) + esc(R.formatKg(scenario.breakEvenVolumeKg)) + '.</p>';
         if (scenario.referenceKgAtConstantCost != null) {
-          bits += '<p class="warn">Si ese costo total no cambia, el ingreso lo iguala en ' + esc(R.formatKg(scenario.referenceKgAtConstantCost))
-            + '. Eso no es el volumen de equilibrio cuando hay costos variables sin separar.</p>';
+          bits += '<p class="warn">' + esc(t('Si ese costo total no cambia, el ingreso lo iguala en ', 'If that total cost does not change, revenue matches it at ')) + esc(R.formatKg(scenario.referenceKgAtConstantCost))
+            + esc(t('. Eso no es el volumen de equilibrio cuando hay costos variables sin separar.', '. That is not the break-even volume when variable costs are not separated.')) + '</p>';
         }
         return bits;
       }
@@ -748,7 +979,7 @@
         }
         ctx.fillStyle = '#64748b';
         ctx.font = '11px Inter, sans-serif';
-        ctx.fillText('Verde: ingresos   Azul: costos', pad.l, view.h - 8);
+        ctx.fillText(t('Verde: ingresos   Azul: costos', 'Green: revenue   Blue: costs'), pad.l, view.h - 8);
       }
       function drawA(result, scenario) {
         var items = (result.costItems || []).filter(function (item) { return item.signed > 0; });
@@ -756,9 +987,9 @@
           return { label: item.label, value: item.signed, color: '#0d9488' };
         }));
         var balance = [];
-        if (result.revenue != null) balance.push({ label: 'Ingresos', value: result.revenue, color: '#0d9488' });
-        if (result.totalCost != null) balance.push({ label: 'Costos', value: result.totalCost, color: '#1e3a5f' });
-        if (result.profit != null) balance.push({ label: result.loss ? 'Pérdida' : 'Utilidad', value: Math.abs(result.profit), color: result.loss ? '#b91c1c' : '#0f766e' });
+        if (result.revenue != null) balance.push({ label: t('Ingresos', 'Revenue'), value: result.revenue, color: '#0d9488' });
+        if (result.totalCost != null) balance.push({ label: t('Costos', 'Costs'), value: result.totalCost, color: '#1e3a5f' });
+        if (result.profit != null) balance.push({ label: result.loss ? t('Pérdida', 'Loss') : t('Utilidad', 'Profit'), value: Math.abs(result.profit), color: result.loss ? '#b91c1c' : '#0f766e' });
         drawBars(q('chart-balance'), balance);
         var seriesInput = {
           soldKg: scenario.soldKg,
@@ -776,6 +1007,7 @@
 
       function investmentInput() {
         return {
+          language: lang(),
           currency: state.b.currency,
           strategyName: state.b.strategyName,
           scope: state.b.scope,
@@ -796,14 +1028,17 @@
         });
       }
       function paintB() {
-        q('b-message').textContent = R.MODULE_B_MESSAGE;
-        q('b-agro').textContent = R.AGRONOMIC_NOTE;
-        q('b-example-note').innerHTML = state.b.isExample ? '<p class="example-note">' + esc(R.EXAMPLE_DISCLAIMER) + '</p>' : '';
+        var L = lang();
+        var N = R.notes(L);
+        q('b-message').textContent = N.moduleB;
+        q('b-agro').textContent = N.agronomicNote;
+        q('b-example-note').innerHTML = state.b.isExample ? '<p class="example-note">' + esc(N.exampleDisclaimer) + '</p>' : '';
         q('b-lump-wrap').hidden = state.b.otherMode !== 'lump';
         q('b-var-wrap').hidden = state.b.otherMode !== 'per_kg';
+        syncCurrencyLabels();
         var host = q('b-results');
         if (!moduleBHasData()) {
-          host.innerHTML = '<article class="card"><p>Compara el manejo actual y la alternativa. Puedes dejar el precio igual o cambiarlo si la calidad comercial también cambia.</p></article>';
+          host.innerHTML = '<article class="card"><p>' + esc(t('Compara el manejo actual y la alternativa. Puedes dejar el precio igual o cambiarlo si la calidad comercial también cambia.', 'Compare the current management and the alternative. You can keep the price the same or change it if commercial quality also changes.')) + '</p></article>';
           return;
         }
         var result = R.evaluateInvestment(investmentInput());
@@ -812,52 +1047,52 @@
           return;
         }
         var cur = result.currency;
-        var primaryLabel = result.benefitCostRatioLabel ? 'Relación beneficio–costo incremental' : 'Relación ingreso adicional / inversión adicional';
+        var primaryLabel = result.benefitCostRatioLabel ? t('Relación beneficio–costo incremental', 'Incremental benefit–cost ratio') : t('Relación ingreso adicional / inversión adicional', 'Additional revenue / additional investment ratio');
         var primaryValue = result.benefitCostRatioLabel || result.incomeRatioLabel || '—';
         var primaryHelp = result.benefitCostRatioLabel ? result.benefitInterpretation : result.incomeInterpretation;
         var lossHero = result.costsConsidered ? !!result.loss : (result.incomeRatio != null && result.incomeRatio < 1);
-        var cards = metric('Inversión adicional', R.formatMoney(result.investmentDelta, cur), result.investmentDelta > 0 ? 'navy' : '');
-        cards += metric('Producción adicional', (result.productionDelta > 0 ? '+' : '') + R.formatKg(result.productionDelta), result.productionDelta < 0 ? 'loss' : '');
-        cards += metric('Ingreso adicional', R.formatMoney(result.revenueDelta, cur), result.revenueDelta < 0 ? 'loss' : '');
+        var cards = metric(t('Inversión adicional', 'Additional investment'), R.formatMoney(result.investmentDelta, cur), result.investmentDelta > 0 ? 'navy' : '');
+        cards += metric(t('Producción adicional', 'Additional production'), (result.productionDelta > 0 ? '+' : '') + R.formatKg(result.productionDelta), result.productionDelta < 0 ? 'loss' : '');
+        cards += metric(t('Ingreso adicional', 'Additional revenue'), R.formatMoney(result.revenueDelta, cur), result.revenueDelta < 0 ? 'loss' : '');
         if (result.costsConsidered && result.incrementalProfit != null) {
-          cards += metric(result.loss ? 'Pérdida incremental' : 'Utilidad incremental', R.formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur), result.loss ? 'loss' : '');
+          cards += metric(result.loss ? t('Pérdida incremental', 'Incremental loss') : t('Utilidad incremental', 'Incremental profit'), R.formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur), result.loss ? 'loss' : '');
         }
         if (result.incomeRatioLabel && result.benefitCostRatioLabel) {
-          cards += metric('Ingreso / inversión', result.incomeRatioLabel, 'navy');
+          cards += metric(t('Ingreso / inversión', 'Revenue / investment'), result.incomeRatioLabel, 'navy');
         }
-        if (result.extraKgNeeded != null) cards += metric('Kg adicionales para recuperar', R.formatKg(result.extraKgNeeded), 'navy');
+        if (result.extraKgNeeded != null) cards += metric(t('Kg adicionales para recuperar', 'Additional kg to recover'), R.formatKg(result.extraKgNeeded), 'navy');
         var warns = (result.warnings || []).map(function (item) { return '<p class="warn">' + esc(item.message) + '</p>'; }).join('');
-        var partial = result.costsConsidered ? '' : '<p class="warn">Falta descontar los costos de la producción adicional. La relación visible es de ventas contra inversión, no de beneficio–costo, y la utilidad neta todavía no está cerrada.</p>';
-        var origin = result.origin === 'price' ? '<p class="note">La mejora registrada se origina en el precio, no en la cantidad producida.</p>' : '';
+        var partial = result.costsConsidered ? '' : '<p class="warn">' + esc(t('Falta descontar los costos de la producción adicional. La relación visible es de ventas contra inversión, no de beneficio–costo, y la utilidad neta todavía no está cerrada.', 'The costs of the additional production still need to be deducted. The ratio shown is sales against investment, not benefit–cost, and net profit is not final yet.')) + '</p>';
+        var origin = result.origin === 'price' ? '<p class="note">' + esc(t('La mejora registrada se origina en el precio, no en la cantidad producida.', 'The improvement recorded comes from price, not from the quantity produced.')) + '</p>' : '';
         host.innerHTML = '<article class="card"><div class="ratio-hero' + (lossHero ? ' loss' : '') + '"><p class="kicker">' + esc(primaryLabel) + '</p><p class="value">'
           + esc(primaryValue) + '</p><p>' + esc(primaryHelp) + '</p></div><div class="metrics">' + cards + '</div>'
           + partial + origin + warns
           + '<p class="note">' + esc(result.extraKgMessage || '') + '</p>'
-          + '<p>' + esc(R.conclusionModuleB(result, { strategyName: state.b.strategyName })) + '</p>'
-          + '<div class="chart-card"><h3>Comparación de programas</h3><canvas id="chart-b-money"></canvas><canvas id="chart-b-kg"></canvas></div>'
-          + '<div class="chart-card"><h3>Valor económico incremental</h3><canvas id="chart-b-value"></canvas></div>'
-          + '<div class="chart-card"><h3>Producción para recuperar la inversión</h3><canvas id="chart-b-recover"></canvas></div></article>';
+          + '<p>' + esc(R.conclusionModuleB(result, { language: L, strategyName: state.b.strategyName })) + '</p>'
+          + '<div class="chart-card"><h3>' + esc(t('Comparación de programas', 'Program comparison')) + '</h3><canvas id="chart-b-money"></canvas><canvas id="chart-b-kg"></canvas></div>'
+          + '<div class="chart-card"><h3>' + esc(t('Valor económico incremental', 'Incremental economic value')) + '</h3><canvas id="chart-b-value"></canvas></div>'
+          + '<div class="chart-card"><h3>' + esc(t('Producción para recuperar la inversión', 'Production needed to recover the investment')) + '</h3><canvas id="chart-b-recover"></canvas></div></article>';
         try { drawB(result); } catch (err) { /* las cifras ya quedaron escritas */ }
       }
       function drawB(result) {
         drawBars(q('chart-b-money'), [
-          { label: 'Inversión actual', value: result.currentCost, color: '#1e3a5f' },
-          { label: 'Inversión mejorada', value: result.improvedCost, color: '#0d9488' }
+          { label: t('Inversión actual', 'Current investment'), value: result.currentCost, color: '#1e3a5f' },
+          { label: t('Inversión mejorada', 'Improved investment'), value: result.improvedCost, color: '#0d9488' }
         ]);
         drawBars(q('chart-b-kg'), [
-          { label: 'Kg actuales', value: result.currentKg, color: '#1e3a5f' },
-          { label: 'Kg del manejo comparado', value: result.improvedKg, color: '#0d9488' }
+          { label: t('Kg actuales', 'Current kg'), value: result.currentKg, color: '#1e3a5f' },
+          { label: t('Kg del manejo comparado', 'Kg of compared management'), value: result.improvedKg, color: '#0d9488' }
         ]);
-        var valueRows = [{ label: 'Ingresos adicionales', value: Math.max(0, result.revenueDelta), color: '#0d9488' }];
+        var valueRows = [{ label: t('Ingresos adicionales', 'Additional revenue'), value: Math.max(0, result.revenueDelta), color: '#0d9488' }];
         if (result.costsConsidered) {
-          valueRows.push({ label: 'Otros costos incrementales', value: Math.max(0, result.otherIncremental || 0), color: '#b45309' });
-          valueRows.push({ label: 'Inversión adicional', value: Math.max(0, result.investmentDelta), color: '#1e3a5f' });
-          valueRows.push({ label: result.loss ? 'Pérdida incremental' : 'Utilidad incremental', value: Math.abs(result.incrementalProfit || 0), color: result.loss ? '#b91c1c' : '#0f766e' });
+          valueRows.push({ label: t('Otros costos incrementales', 'Other incremental costs'), value: Math.max(0, result.otherIncremental || 0), color: '#b45309' });
+          valueRows.push({ label: t('Inversión adicional', 'Additional investment'), value: Math.max(0, result.investmentDelta), color: '#1e3a5f' });
+          valueRows.push({ label: result.loss ? t('Pérdida incremental', 'Incremental loss') : t('Utilidad incremental', 'Incremental profit'), value: Math.abs(result.incrementalProfit || 0), color: result.loss ? '#b91c1c' : '#0f766e' });
         }
         drawBars(q('chart-b-value'), valueRows);
         var recover = [];
-        if (result.extraKgNeeded != null) recover.push({ label: 'Kg adicionales para recuperar', value: result.extraKgNeeded, color: '#b45309' });
-        recover.push({ label: 'Kg adicionales registrados', value: Math.max(0, result.productionDelta), color: '#0d9488' });
+        if (result.extraKgNeeded != null) recover.push({ label: t('Kg adicionales para recuperar', 'Additional kg to recover'), value: result.extraKgNeeded, color: '#b45309' });
+        recover.push({ label: t('Kg adicionales registrados', 'Additional kg recorded'), value: Math.max(0, result.productionDelta), color: '#0d9488' });
         drawBars(q('chart-b-recover'), recover);
       }
 
@@ -933,7 +1168,7 @@
           doc.setFontSize(8);
           doc.setTextColor(100, 116, 139);
           doc.text(pdfSafe(report.tagline || 'NutriPlant PRO'), left, pageH - 14);
-          doc.text('Página ' + page, right, pageH - 14, { align: 'right' });
+          doc.text(t('Página ', 'Page ') + page, right, pageH - 14, { align: 'right' });
         }
         function headerMini() {
           doc.setFillColor(15, 118, 110);
@@ -993,19 +1228,19 @@
         doc.setFontSize(11);
         doc.text('NutriPlant PRO', left + (logoData ? 36 : 0), 28);
         doc.setFontSize(18);
-        doc.text(pdfSafe(report.tool || 'Rentabilidad Agrícola'), left + (logoData ? 36 : 0), 48);
+        doc.text(pdfSafe(report.tool || t('Rentabilidad Agrícola', 'Crop Profitability')), left + (logoData ? 36 : 0), 48);
         doc.setFontSize(10);
         doc.text(pdfSafe(report.module || ''), left + (logoData ? 36 : 0), 64);
         doc.setFontSize(9);
-        doc.text('Herramienta gratuita', right, 28, { align: 'right' });
+        doc.text(t('Herramienta gratuita', 'Free tool'), right, 28, { align: 'right' });
         doc.text(pdfSafe(report.date || ''), right, 44, { align: 'right' });
         y = 96;
 
         var metaItems = [
-          ['Ejercicio', report.exerciseName],
-          ['Estrategia', report.strategyName],
-          ['Cultivo', report.crop],
-          ['Periodo', report.period]
+          [t('Ejercicio', 'Exercise'), report.exerciseName],
+          [t('Estrategia', 'Strategy'), report.strategyName],
+          [t('Cultivo', 'Crop'), report.crop],
+          [t('Periodo', 'Period'), report.period]
         ].filter(function (item) { return !!item[1]; });
         if (metaItems.length) {
           var metaH = 18 + metaItems.length * 13;
@@ -1056,7 +1291,7 @@
         });
 
         if (report.interpretation) {
-          sectionTitle('Interpretación');
+          sectionTitle(t('Interpretación', 'Interpretation'));
           var interp = doc.splitTextToSize(pdfSafe(report.interpretation), width - 20);
           var boxH = interp.length * 12 + 18;
           ensure(boxH + 8);
@@ -1070,7 +1305,7 @@
         }
 
         if (report.notes && report.notes.length) {
-          sectionTitle('Notas');
+          sectionTitle(t('Notas', 'Notes'));
           report.notes.forEach(function (note) {
             var lines = doc.splitTextToSize('• ' + pdfSafe(note), width);
             ensure(lines.length * 11 + 4);
@@ -1087,14 +1322,14 @@
           doc.addPage();
           page += 1;
           headerMini();
-          sectionTitle('Gráficas del ejercicio');
+          sectionTitle(t('Gráficas del ejercicio', 'Exercise charts'));
           var titles = report.chartTitles || [];
           images.forEach(function (url, index) {
             var chartH = images.length > 2 ? 150 : 180;
             ensure(chartH + 28);
             doc.setFontSize(10);
             doc.setTextColor(30, 58, 95);
-            doc.text(pdfSafe(titles[index] || ('Gráfica ' + (index + 1))), left, y);
+            doc.text(pdfSafe(titles[index] || (t('Gráfica ', 'Chart ') + (index + 1))), left, y);
             y += 8;
             try {
               doc.addImage(url, 'PNG', left, y, width, chartH);
@@ -1125,7 +1360,7 @@
                 + '</td><td style="padding:6px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">' + esc(item.value) + '</td></tr>';
             }).join('') + '</table>';
           }).join('');
-          popup.document.write('<html><head><title>' + esc(report.tool) + '</title></head><body style="font-family:Inter,Segoe UI,sans-serif;padding:24px;color:#0f172a">'
+          popup.document.write('<html lang="' + lang() + '"><head><meta charset="UTF-8"><title>' + esc(report.tool) + '</title></head><body style="font-family:Inter,Segoe UI,sans-serif;padding:24px;color:#0f172a">'
             + '<div style="background:#0f766e;color:#fff;padding:16px 18px;border-radius:12px;margin-bottom:16px"><div>NutriPlant PRO</div><h1 style="margin:4px 0 0">'
             + esc(report.tool) + '</h1><div>' + esc(report.module) + '</div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
             + cards + '</div>' + body + '<p style="background:#fffbeb;border:1px solid #fcd34d;padding:12px;border-radius:10px">'
@@ -1137,17 +1372,19 @@
       }
 
       function today() {
-        try { return new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }); }
+        try { return new Date().toLocaleDateString(lang() === 'en' ? 'en-US' : 'es-MX', { year: 'numeric', month: 'long', day: 'numeric' }); }
         catch (err) { return new Date().toISOString().slice(0, 10); }
       }
       function reportA() {
-        var result = R.evaluateCrop(state.a);
+        var result = R.evaluateCrop(withLang(state.a));
         var volume = R.breakEvenVolume({
+          language: lang(),
           fixedCosts: state.a.fixedCosts,
           variableCostPerKg: state.a.variableCostPerKg,
           pricePerKg: state.a.pricePerKg
         });
         return R.buildModuleAReport(result, {
+          language: lang(),
           date: today(),
           exerciseName: state.a.exerciseName,
           crop: state.a.crop,
@@ -1159,6 +1396,7 @@
       }
       function reportB() {
         return R.buildModuleBReport(R.evaluateInvestment(investmentInput()), {
+          language: lang(),
           date: today(),
           strategyName: state.b.strategyName,
           crop: state.b.crop,
@@ -1181,7 +1419,8 @@
         });
       q('a-currency').addEventListener('change', function () {
         state.a.currency = q('a-currency').value;
-        q('a-currency-note').textContent = 'Los importes no se convirtieron. Siguen siendo las cifras escritas, ahora leídas en ' + state.a.currency + '.';
+        currencyNoteActive = true;
+        q('a-currency-note').textContent = currencyChangedNote();
         renderCosts();
         paintA();
         save();
@@ -1211,7 +1450,7 @@
         save();
       });
       q('a-add').onclick = function () {
-        var label = q('a-new-label').value.trim() || 'Otro costo';
+        var label = q('a-new-label').value.trim() || t('Otro costo', 'Other cost');
         state.a.costs.push({ id: 'custom-' + Date.now(), label: label, group: 'admin', amount: '', kind: 'cost', custom: true });
         q('a-new-label').value = '';
         renderCosts();
@@ -1220,7 +1459,7 @@
       q('a-more').onclick = function () { state.a.showAll = true; renderCosts(); save(); };
       q('a-group').onclick = function () { state.a.grouped = !state.a.grouped; renderCosts(); save(); };
       q('a-example').onclick = function () {
-        var example = R.exampleModuleA();
+        var example = R.exampleModuleA({ language: lang() });
         state.a = Object.assign(blankA(), example, { showAll: true, costs: example.costs.map(function (line) { return Object.assign({ custom: true }, line); }) });
         fillA();
         paintA();
@@ -1230,13 +1469,13 @@
       q('a-calc').onclick = function () { q('a-results').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
       q('a-edit').onclick = function () { q('view-a').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
       q('a-pdf').onclick = function () {
-        var result = R.evaluateCrop(state.a);
+        var result = R.evaluateCrop(withLang(state.a));
         if (!result.ok) return;
         download(reportA(), 'nutriplant-rentabilidad.pdf');
       };
       q('a-to-b').onclick = function () {
-        var result = R.evaluateCrop(state.a);
-        var hint = R.suggestModuleBFromA(state.a, result);
+        var result = R.evaluateCrop(withLang(state.a));
+        var hint = R.suggestModuleBFromA(state.a, result, { language: lang() });
         state.b.currency = hint.currency;
         state.b.crop = hint.crop || state.a.crop;
         if (hint.soldKg != null && hint.soldKg !== '') state.b.current.soldKg = hint.soldKg;
@@ -1244,9 +1483,9 @@
         if (hint.nutritionCost != null) {
           state.b.current.programCost = hint.nutritionCost;
           state.b.scope = 'intervention';
-          if (!state.b.strategyName) state.b.strategyName = 'Programa de nutrición vegetal';
+          if (!state.b.strategyName) state.b.strategyName = t('Programa de nutrición vegetal', 'Plant nutrition program');
         }
-        state.b.transferNote = hint.note + (hint.totalCost != null ? ' Costo total del módulo A: ' + R.formatMoney(hint.totalCost, hint.currency) + '.' : '');
+        state.b.transferNote = hint.note + (hint.totalCost != null ? ' ' + hint.noteTotalCost + R.formatMoney(hint.totalCost, hint.currency) + '.' : '');
         fillB();
         showView('b');
       };
@@ -1295,7 +1534,7 @@
         save();
       });
       q('b-example').onclick = function () {
-        var example = R.exampleModuleB();
+        var example = R.exampleModuleB({ language: lang() });
         state.b = Object.assign(blankB(), example, {
           current: Object.assign({}, example.current),
           improved: Object.assign({}, example.improved)
@@ -1313,8 +1552,6 @@
         download(reportB(), 'nutriplant-valor-inversion.pdf');
       };
 
-      q('a-message').textContent = R.MODULE_A_MESSAGE;
-      q('b-message').textContent = R.MODULE_B_MESSAGE;
       try {
         var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
         if (saved && saved.a && saved.b) {
@@ -1328,18 +1565,46 @@
       } catch (err) { /* sigue con el ejercicio vacío */ }
       var params = new URLSearchParams(location.search);
       if (params.get('ejemplo') === 'a') {
-        var exampleA = R.exampleModuleA();
+        var exampleA = R.exampleModuleA({ language: lang() });
         state.a = Object.assign(blankA(), exampleA, { showAll: true, costs: exampleA.costs.map(function (line) { return Object.assign({ custom: true }, line); }) });
         state.view = 'a';
       } else if (params.get('ejemplo') === 'b') {
-        var exampleB = R.exampleModuleB();
+        var exampleB = R.exampleModuleB({ language: lang() });
         state.b = Object.assign(blankB(), exampleB, { current: Object.assign({}, exampleB.current), improved: Object.assign({}, exampleB.improved) });
         state.view = 'b';
       }
       if (state.view === 'home') state.view = 'a';
-      fillA();
-      fillB();
-      showView(state.view === 'b' ? 'b' : 'a');
+
+      // Textos por defecto (ejemplos, atajos) que acompañan al idioma; lo escrito por el usuario no se toca.
+      function relocalizeState() {
+        var L = lang();
+        state.a.exerciseName = R.localizeKnownText(state.a.exerciseName, L);
+        state.a.period = R.localizeKnownText(state.a.period, L);
+        state.b.strategyName = R.localizeKnownText(state.b.strategyName, L);
+        state.a.costs.forEach(function (line) {
+          if (line.custom) line.label = R.localizeKnownText(line.label, L);
+        });
+      }
+      function applyLanguage() {
+        appliedLang = lang();
+        relocalizeState();
+        applyStaticI18n();
+        fillA();
+        fillB();
+        showView(state.view === 'b' ? 'b' : 'a');
+        save();
+      }
+      function onPrefsChanged() {
+        if (lang() === appliedLang) return;
+        applyLanguage();
+      }
+      window.addEventListener('np:prefs-changed', onPrefsChanged);
+      window.addEventListener('storage', function (event) {
+        var key = window.NpPrefs && window.NpPrefs.KEY;
+        if (event && event.key === key) onPrefsChanged();
+      });
+
+      applyLanguage();
     })();
   </script>
 </body>

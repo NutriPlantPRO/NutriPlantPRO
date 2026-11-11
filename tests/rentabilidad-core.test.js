@@ -180,5 +180,25 @@ module.exports = [
       assert.equal(moved.nutritionCost, 2000);
       assert.notEqual(moved.nutritionCost, result.totalCost);
     }
+  },
+  {
+    name: 'Rentabilidad i18n: inglés opcional y español por defecto',
+    run: function () {
+      var es = R.evaluateInvestment(R.exampleModuleB());
+      var en = R.evaluateInvestment(Object.assign(R.exampleModuleB({ language: 'en' }), { language: 'en' }));
+      closeTo(es.incrementalProfit, en.incrementalProfit);
+      assert.match(R.conclusionModuleB(en, { language: 'en', strategyName: 'Nutrition program' }), /does not claim that a technology/);
+      assert.match(R.conclusionModuleB(es, {}), /No afirma que una tecnología/);
+      var bad = R.evaluateCrop({ language: 'en', costs: [{ label: 'Nutrition', amount: -5 }], soldKg: 1, pricePerKg: 1 });
+      assert.match(bad.errors[0].message, /cannot be negative/);
+      assert.equal(R.costLineLabel({ id: 'plagas', label: 'Control de plagas y enfermedades' }, 'en'), 'Pest and disease control');
+      assert.equal(R.currencyName('MXN', 'en'), 'Mexican peso');
+      assert.equal(R.localizeKnownText('Programa de nutrición', 'en'), 'Nutrition program');
+      assert.match(R.notes('en').moduleB, /additional unit invested/);
+      assert.doesNotMatch(R.notes('es').moduleB, /dólar/);
+      var report = R.buildModuleAReport(R.evaluateCrop(Object.assign(R.exampleModuleA({ language: 'en' }), { language: 'en' })), { language: 'en' });
+      assert.equal(report.tool, 'Crop Profitability');
+      assert.equal(report.sections[1].rows[0].label, 'Plant nutrition');
+    }
   }
 ];
