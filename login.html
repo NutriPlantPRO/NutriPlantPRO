@@ -3518,7 +3518,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="rentabilidadAgricolaFrame" src="rentabilidad-agricola-free.html?embed=login&v=20261110rb" title="Rentabilidad Agrícola" data-i18n-title="dashboard.tool_rentabilidad"></iframe>
+        <iframe id="rentabilidadAgricolaFrame" src="rentabilidad-agricola-free.html?embed=login&v=20261110wide" title="Rentabilidad Agrícola" data-i18n-title="dashboard.tool_rentabilidad"></iframe>
       </div>
     </div>
   </div>
@@ -5266,8 +5266,8 @@
             if (root.querySelector('[data-social-tab="facebook"].active')) fitFacebookFeed();
             return;
           }
-          /* Escritorio: stack ChatGPT+Applicate ocupa el hueco entre acceso y redes.
-             ChatGPT crece; Applicate queda compacto. Redes en alto cómodo. */
+          /* Escritorio: ChatGPT+Applicate a altura natural (sin recortar).
+             Redes ocupa el resto para empatar con la columna de herramientas. */
           var toolsCol = document.querySelector('.login-split__tools');
           var loginCol = document.querySelector('.login-split__login');
           var leftCol = document.querySelector('.login-split__left');
@@ -5279,14 +5279,10 @@
             var gapN = parseFloat(gapCss);
             if (gapN) gap = gapN;
           }
-          var socialTarget = 460;
-          var leftover = toolsH > loginH ? toolsH - loginH - gap * 2 : socialTarget + 260;
-          var promoH = Math.max(280, Math.round(leftover - socialTarget));
-          var available = Math.max(360, Math.round(leftover - promoH));
           if (promoStack) {
-            promoStack.style.height = promoH + 'px';
-            promoStack.style.minHeight = promoH + 'px';
-            promoStack.style.maxHeight = promoH + 'px';
+            promoStack.style.height = '';
+            promoStack.style.minHeight = '';
+            promoStack.style.maxHeight = '';
           }
           if (applicateTeaser) {
             applicateTeaser.style.height = '';
@@ -5299,6 +5295,9 @@
             chatgptTeaser.style.minHeight = '';
             chatgptTeaser.style.maxHeight = '';
           }
+          var promoH = promoStack ? promoStack.getBoundingClientRect().height : 0;
+          var leftover = toolsH > loginH ? toolsH - loginH - gap * 2 : 460 + promoH;
+          var available = Math.max(300, Math.round(leftover - promoH));
           root.style.height = available + 'px';
           root.style.minHeight = available + 'px';
           root.style.maxHeight = available + 'px';

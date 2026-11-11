@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rentabilidad Agrícola | NutriPlant PRO</title>
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
-  <script src="assets/free-tools-embed.js?v=20261110ra"></script>
+  <script src="assets/free-tools-embed.js?v=20261110wide"></script>
   <style>
     :root {
       --bg: #f1f5f9;
@@ -31,7 +31,26 @@
       font-size: 15px;
       line-height: 1.45;
     }
-    .wrap { max-width: 980px; margin: 0 auto; }
+    .wrap {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    html.embed-dashboard,
+    html.embed-login {
+      height: 100%;
+    }
+    html.embed-dashboard body,
+    html.embed-login body {
+      padding: 10px 14px 16px;
+      min-height: 100%;
+      height: auto;
+    }
+    html.embed-dashboard .wrap,
+    html.embed-login .wrap {
+      max-width: none;
+      width: 100%;
+    }
     h1 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 6px; }
     h2 { font-size: 1.15rem; margin: 0 0 6px; }
     h3 { font-size: 0.95rem; margin: 0 0 8px; }
@@ -56,20 +75,32 @@
       text-transform: uppercase;
       margin-bottom: 6px;
     }
-    .choices { display: grid; gap: 10px; }
-    @media (min-width: 760px) { .choices { grid-template-columns: 1fr 1fr; } }
-    .choice {
-      text-align: left;
-      width: 100%;
-      border: 1px solid #99f6e4;
-      background: #fff;
-      border-radius: 14px;
-      padding: 16px;
-      cursor: pointer;
-      color: var(--text);
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 4px;
     }
-    .choice strong { display: block; font-size: 1.05rem; margin-bottom: 6px; color: var(--navy); }
-    .choice:hover, .choice:focus { border-color: var(--green-2); outline: 2px solid rgba(13, 148, 136, 0.25); }
+    .tab-btn {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: var(--navy);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .tab-btn.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+    .tab-btn:hover:not(.active) {
+      border-color: var(--green-2);
+      color: var(--green);
+    }
+    .tab-lead { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .module-head h2 { margin-bottom: 4px; color: var(--navy); }
     .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
     button, .btn {
       font: inherit;
@@ -104,6 +135,12 @@
       .grid-2 { grid-template-columns: 1fr 1fr; }
       .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
     }
+    @media (min-width: 1100px) {
+      .wrap { max-width: 1400px; }
+      .grid-2 { grid-template-columns: 1fr 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    }
     .field { margin-bottom: 10px; }
     .hint { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
     .cost-row, .group-row {
@@ -114,11 +151,15 @@
       border-bottom: 1px solid var(--line);
     }
     @media (min-width: 640px) {
-      .cost-row { grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.7fr) auto; align-items: end; }
+      .cost-row { grid-template-columns: minmax(0, 1.6fr) minmax(160px, 0.7fr) auto; align-items: end; }
+    }
+    @media (min-width: 1100px) {
+      .cost-row { grid-template-columns: minmax(0, 2fr) minmax(220px, 0.55fr) auto; }
+      .compare { grid-template-columns: 1fr 1fr; gap: 16px; }
     }
     .cost-row.is-hidden { display: none; }
     .metrics { display: grid; gap: 10px; }
-    @media (min-width: 800px) { .metrics { grid-template-columns: 1fr 1fr 1fr; } }
+    @media (min-width: 800px) and (max-width: 1099px) { .metrics { grid-template-columns: 1fr 1fr 1fr; } }
     .metric {
       border: 1px solid #99f6e4;
       background: #f0fdfa;
@@ -177,31 +218,24 @@
 </head>
 <body>
   <main class="wrap">
-    <section class="card hero" id="view-home">
+    <section class="card hero" id="tool-shell">
       <p class="kicker">NutriPlant PRO · herramienta gratuita</p>
       <h1>Rentabilidad Agrícola</h1>
       <p>Del rendimiento productivo al valor económico de tus decisiones.</p>
       <p class="muted">Menos receta, más criterio. Los cálculos se hacen en este navegador y no se envían a NutriPlant.</p>
-      <div class="choices">
-        <button class="choice" type="button" id="open-a">
-          <strong>Conocer mis costos</strong>
-          Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.
-        </button>
-        <button class="choice" type="button" id="open-b">
-          <strong>Evaluar un nuevo manejo</strong>
-          Descubre cuánta producción o beneficio adicional necesitas para justificar una nueva inversión.
-        </button>
+      <div class="tabs" role="tablist" aria-label="Módulos de Rentabilidad Agrícola">
+        <button type="button" class="tab-btn active" id="tab-a" role="tab" aria-selected="true" aria-controls="view-a" data-tab="a">Conocer mis costos</button>
+        <button type="button" class="tab-btn" id="tab-b" role="tab" aria-selected="false" aria-controls="view-b" data-tab="b">Evaluar un nuevo manejo</button>
       </div>
+      <p class="tab-lead" id="tab-lead">Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.</p>
     </section>
 
-    <section id="view-a" hidden>
-      <article class="card hero">
-        <p class="kicker">Módulo A</p>
-        <h1>Rentabilidad del cultivo</h1>
+    <section id="view-a" class="tab-pane" role="tabpanel" aria-labelledby="tab-a">
+      <article class="card module-head">
+        <h2>Rentabilidad del cultivo</h2>
         <p>¿Cuánto cuesta producir y cuál es mi punto de equilibrio?</p>
         <p class="muted" id="a-message"></p>
         <div class="row">
-          <button type="button" class="quiet" id="a-home">Inicio</button>
           <button type="button" id="a-example">Cargar ejemplo</button>
           <button type="button" class="quiet" id="a-reset">Reiniciar ejercicio</button>
         </div>
@@ -305,14 +339,12 @@
       <div id="a-results" aria-live="polite"></div>
     </section>
 
-    <section id="view-b" hidden>
-      <article class="card hero">
-        <p class="kicker">Módulo B</p>
-        <h1>¿Vale la pena invertir más?</h1>
+    <section id="view-b" class="tab-pane" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <article class="card module-head">
+        <h2>¿Vale la pena invertir más?</h2>
         <p>Compara tu manejo actual con una alternativa y descubre cuánto valor económico adicional puede generar.</p>
         <p class="muted" id="b-message"></p>
         <div class="row">
-          <button type="button" class="quiet" id="b-home">Inicio</button>
           <button type="button" id="b-example">Cargar ejemplo</button>
           <button type="button" class="quiet" id="b-reset">Reiniciar ejercicio</button>
         </div>
@@ -404,12 +436,16 @@
     </section>
     <p class="footer-line">NutriPlant PRO — Diseña. Ajusta. Nutre.</p>
   </main>
-  <script src="assets/np-rentabilidad-core.js?v=20261110rb"></script>
+  <script src="assets/np-rentabilidad-core.js?v=20261110wide"></script>
   <script>
     (function () {
       var R = window.NpRentabilidad;
       var KEY = 'nutriplant_free_rentabilidad_v1';
-      var state = { view: 'home', a: blankA(), b: blankB() };
+      var state = { view: 'a', a: blankA(), b: blankB() };
+      var TAB_LEAD = {
+        a: 'Calcula cuánto te cuesta producir, identifica tu precio de equilibrio y conoce la rentabilidad de tu cultivo.',
+        b: 'Descubre cuánta producción o beneficio adicional necesitas para justificar una nueva inversión.'
+      };
 
       function blankA() {
         return {
@@ -439,12 +475,17 @@
         try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) { /* el navegador puede bloquear el guardado local */ }
       }
       function showView(name) {
-        state.view = name;
-        q('view-home').hidden = name !== 'home';
-        q('view-a').hidden = name !== 'a';
-        q('view-b').hidden = name !== 'b';
-        if (name === 'a') paintA();
-        if (name === 'b') paintB();
+        var tab = name === 'b' ? 'b' : 'a';
+        state.view = tab;
+        q('view-a').hidden = tab !== 'a';
+        q('view-b').hidden = tab !== 'b';
+        q('tab-a').classList.toggle('active', tab === 'a');
+        q('tab-b').classList.toggle('active', tab === 'b');
+        q('tab-a').setAttribute('aria-selected', tab === 'a' ? 'true' : 'false');
+        q('tab-b').setAttribute('aria-selected', tab === 'b' ? 'true' : 'false');
+        q('tab-lead').textContent = TAB_LEAD[tab];
+        if (tab === 'a') paintA();
+        if (tab === 'b') paintB();
         save();
       }
       function fillCurrencies(select, selected) {
@@ -841,66 +882,254 @@
           document.head.appendChild(script);
         });
       }
-      function writePdf(doc, report) {
-        var y = 46;
-        var left = 40;
-        var width = 515;
-        function next(height) {
-          if (y + height > 800) { doc.addPage(); y = 48; }
-        }
-        function text(value, size, color) {
-          var lines = doc.splitTextToSize(pdfSafe(value), width);
-          next(lines.length * (size + 3) + 8);
-          doc.setFontSize(size);
-          doc.setTextColor(color[0], color[1], color[2]);
-          doc.text(lines, left, y);
-          y += lines.length * (size + 3) + 6;
-        }
-        doc.setFillColor(15, 118, 110);
-        doc.rect(0, 0, 595, 8, 'F');
-        text('NutriPlant PRO', 11, [15, 118, 110]);
-        text(report.tool, 18, [15, 23, 42]);
-        text(report.module, 12, [30, 58, 95]);
-        text('Fecha: ' + (report.date || ''), 10, [100, 116, 139]);
-        if (report.exerciseName) text('Ejercicio: ' + report.exerciseName, 11, [15, 23, 42]);
-        if (report.strategyName) text('Estrategia: ' + report.strategyName, 11, [15, 23, 42]);
-        if (report.crop) text('Cultivo: ' + report.crop, 11, [15, 23, 42]);
-        if (report.period) text('Periodo: ' + report.period, 11, [15, 23, 42]);
-        report.sections.forEach(function (section) {
-          text(section.title, 13, [15, 118, 110]);
-          section.rows.forEach(function (item) { text(item.label + ': ' + item.value, 11, [15, 23, 42]); });
-        });
-        text('Interpretación', 13, [15, 118, 110]);
-        text(report.interpretation, 11, [15, 23, 42]);
-        report.notes.forEach(function (note) { text(note, 9, [100, 116, 139]); });
-        text(report.tagline, 11, [30, 58, 95]);
-      }
       function canvases() {
-        return Array.prototype.map.call(document.querySelectorAll('canvas'), function (canvas) {
-          try { return canvas.toDataURL('image/png'); } catch (err) { return null; }
+        return Array.prototype.map.call(document.querySelectorAll('#a-results canvas, #b-results canvas'), function (canvas) {
+          try {
+            if (!canvas.width || !canvas.height) return null;
+            return canvas.toDataURL('image/png');
+          } catch (err) {
+            return null;
+          }
         }).filter(Boolean);
       }
-      function download(report, filename) {
-        loadJsPdf().then(function (JsPDF) {
-          var doc = new JsPDF({ unit: 'pt', format: 'a4' });
-          writePdf(doc, report);
-          canvases().forEach(function (url) {
-            doc.addPage();
-            doc.setFontSize(12);
-            doc.text('Gráfica del ejercicio', 40, 46);
-            doc.addImage(url, 'PNG', 40, 64, 515, 220);
+      function loadLogo() {
+        return new Promise(function (resolve) {
+          var img = new Image();
+          img.onload = function () {
+            try {
+              var c = document.createElement('canvas');
+              c.width = img.naturalWidth || 128;
+              c.height = img.naturalHeight || 128;
+              c.getContext('2d').drawImage(img, 0, 0);
+              resolve(c.toDataURL('image/png'));
+            } catch (err) {
+              resolve(null);
+            }
+          };
+          img.onerror = function () { resolve(null); };
+          img.src = 'assets/N_Hoja_Azul.png';
+        });
+      }
+      function writePdf(doc, report, logoData, chartImages) {
+        var pageW = 595.28;
+        var pageH = 841.89;
+        var left = 36;
+        var right = pageW - 36;
+        var width = right - left;
+        var y = 0;
+        var page = 1;
+
+        function ensure(space) {
+          if (y + space <= pageH - 42) return;
+          footer();
+          doc.addPage();
+          page += 1;
+          headerMini();
+        }
+        function footer() {
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.6);
+          doc.line(left, pageH - 28, right, pageH - 28);
+          doc.setFontSize(8);
+          doc.setTextColor(100, 116, 139);
+          doc.text(pdfSafe(report.tagline || 'NutriPlant PRO'), left, pageH - 14);
+          doc.text('Página ' + page, right, pageH - 14, { align: 'right' });
+        }
+        function headerMini() {
+          doc.setFillColor(15, 118, 110);
+          doc.rect(0, 0, pageW, 6, 'F');
+          y = 28;
+          doc.setFontSize(9);
+          doc.setTextColor(15, 118, 110);
+          doc.text('NutriPlant PRO · ' + pdfSafe(report.tool || ''), left, y);
+          y = 44;
+        }
+        function sectionTitle(title) {
+          ensure(28);
+          doc.setFillColor(240, 253, 250);
+          doc.roundedRect(left, y, width, 22, 4, 4, 'F');
+          doc.setFillColor(15, 118, 110);
+          doc.rect(left, y, 4, 22, 'F');
+          doc.setFontSize(11);
+          doc.setTextColor(15, 118, 110);
+          doc.text(pdfSafe(title), left + 12, y + 15);
+          y += 30;
+        }
+        function kvRows(rows) {
+          (rows || []).forEach(function (item, index) {
+            ensure(18);
+            if (index % 2 === 0) {
+              doc.setFillColor(248, 250, 252);
+              doc.rect(left, y - 3, width, 16, 'F');
+            }
+            doc.setFontSize(10);
+            doc.setTextColor(71, 85, 105);
+            doc.text(pdfSafe(item.label), left + 8, y + 8);
+            doc.setTextColor(15, 23, 42);
+            doc.text(pdfSafe(item.value), right - 8, y + 8, { align: 'right' });
+            y += 16;
           });
+          y += 8;
+        }
+        function metaLine(label, value) {
+          if (!value) return;
+          ensure(14);
+          doc.setFontSize(9);
+          doc.setTextColor(100, 116, 139);
+          doc.text(pdfSafe(label), left, y);
+          doc.setTextColor(15, 23, 42);
+          doc.text(pdfSafe(value), left + 58, y);
+          y += 13;
+        }
+
+        doc.setFillColor(15, 118, 110);
+        doc.rect(0, 0, pageW, 72, 'F');
+        doc.setFillColor(13, 148, 136);
+        doc.rect(0, 72, pageW, 4, 'F');
+        if (logoData) {
+          try { doc.addImage(logoData, 'PNG', left, 16, 28, 28); } catch (err) { /* sin logo */ }
+        }
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.text('NutriPlant PRO', left + (logoData ? 36 : 0), 28);
+        doc.setFontSize(18);
+        doc.text(pdfSafe(report.tool || 'Rentabilidad Agrícola'), left + (logoData ? 36 : 0), 48);
+        doc.setFontSize(10);
+        doc.text(pdfSafe(report.module || ''), left + (logoData ? 36 : 0), 64);
+        doc.setFontSize(9);
+        doc.text('Herramienta gratuita', right, 28, { align: 'right' });
+        doc.text(pdfSafe(report.date || ''), right, 44, { align: 'right' });
+        y = 96;
+
+        var metaItems = [
+          ['Ejercicio', report.exerciseName],
+          ['Estrategia', report.strategyName],
+          ['Cultivo', report.crop],
+          ['Periodo', report.period]
+        ].filter(function (item) { return !!item[1]; });
+        if (metaItems.length) {
+          var metaH = 18 + metaItems.length * 13;
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(left, y, width, metaH, 6, 6, 'F');
+          y += 16;
+          metaItems.forEach(function (item) { metaLine(item[0], item[1]); });
+          y += 10;
+        }
+
+        var highlights = (report.highlights || []).slice(0, 4);
+        if (highlights.length) {
+          ensure(78);
+          var gap = 8;
+          var cardW = (width - gap * (highlights.length - 1)) / highlights.length;
+          highlights.forEach(function (card, index) {
+            var x = left + index * (cardW + gap);
+            var tone = card.tone || 'ok';
+            if (tone === 'loss') {
+              doc.setFillColor(254, 242, 242);
+              doc.setDrawColor(252, 165, 165);
+              doc.setTextColor(185, 28, 28);
+            } else if (tone === 'navy') {
+              doc.setFillColor(248, 250, 252);
+              doc.setDrawColor(203, 213, 225);
+              doc.setTextColor(30, 58, 95);
+            } else {
+              doc.setFillColor(240, 253, 250);
+              doc.setDrawColor(153, 246, 228);
+              doc.setTextColor(15, 118, 110);
+            }
+            doc.roundedRect(x, y, cardW, 62, 6, 6, 'FD');
+            doc.setFontSize(8);
+            var labelLines = doc.splitTextToSize(pdfSafe(card.label), cardW - 14);
+            doc.text(labelLines, x + 8, y + 14);
+            doc.setFontSize(12);
+            doc.setTextColor(15, 23, 42);
+            var valueLines = doc.splitTextToSize(pdfSafe(card.value), cardW - 14);
+            doc.text(valueLines, x + 8, y + 38);
+          });
+          y += 74;
+        }
+
+        (report.sections || []).forEach(function (section) {
+          if (!section.rows || !section.rows.length) return;
+          sectionTitle(section.title);
+          kvRows(section.rows);
+        });
+
+        if (report.interpretation) {
+          sectionTitle('Interpretación');
+          var interp = doc.splitTextToSize(pdfSafe(report.interpretation), width - 20);
+          var boxH = interp.length * 12 + 18;
+          ensure(boxH + 8);
+          doc.setFillColor(255, 251, 235);
+          doc.setDrawColor(252, 211, 77);
+          doc.roundedRect(left, y, width, boxH, 6, 6, 'FD');
+          doc.setFontSize(9);
+          doc.setTextColor(69, 26, 3);
+          doc.text(interp, left + 10, y + 14);
+          y += boxH + 12;
+        }
+
+        if (report.notes && report.notes.length) {
+          sectionTitle('Notas');
+          report.notes.forEach(function (note) {
+            var lines = doc.splitTextToSize('• ' + pdfSafe(note), width);
+            ensure(lines.length * 11 + 4);
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text(lines, left, y);
+            y += lines.length * 11 + 4;
+          });
+        }
+
+        var images = chartImages || [];
+        if (images.length) {
+          footer();
+          doc.addPage();
+          page += 1;
+          headerMini();
+          sectionTitle('Gráficas del ejercicio');
+          var titles = report.chartTitles || [];
+          images.forEach(function (url, index) {
+            var chartH = images.length > 2 ? 150 : 180;
+            ensure(chartH + 28);
+            doc.setFontSize(10);
+            doc.setTextColor(30, 58, 95);
+            doc.text(pdfSafe(titles[index] || ('Gráfica ' + (index + 1))), left, y);
+            y += 8;
+            try {
+              doc.addImage(url, 'PNG', left, y, width, chartH);
+            } catch (err) { /* si falla la imagen, sigue el texto */ }
+            y += chartH + 16;
+          });
+        }
+
+        footer();
+      }
+      function download(report, filename) {
+        Promise.all([loadJsPdf(), loadLogo()]).then(function (parts) {
+          var JsPDF = parts[0];
+          var logoData = parts[1];
+          var doc = new JsPDF({ unit: 'pt', format: 'a4' });
+          writePdf(doc, report, logoData, canvases());
           doc.save(filename);
         }).catch(function () {
           var popup = window.open('', '_blank');
           if (!popup) return;
+          var cards = (report.highlights || []).map(function (item) {
+            return '<div style="flex:1;min-width:140px;border:1px solid #99f6e4;border-radius:10px;padding:10px;background:#f0fdfa"><div style="font-size:11px;color:#0f766e;font-weight:700">'
+              + esc(item.label) + '</div><div style="font-size:18px;font-weight:800;margin-top:4px">' + esc(item.value) + '</div></div>';
+          }).join('');
           var body = report.sections.map(function (section) {
-            return '<h2>' + esc(section.title) + '</h2><table>' + section.rows.map(function (item) {
-              return '<tr><td>' + esc(item.label) + '</td><td>' + esc(item.value) + '</td></tr>';
+            return '<h2 style="color:#0f766e">' + esc(section.title) + '</h2><table style="width:100%;border-collapse:collapse">' + section.rows.map(function (item) {
+              return '<tr><td style="padding:6px;border-bottom:1px solid #e2e8f0">' + esc(item.label)
+                + '</td><td style="padding:6px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">' + esc(item.value) + '</td></tr>';
             }).join('') + '</table>';
           }).join('');
-          popup.document.write('<html><head><title>' + esc(report.tool) + '</title></head><body><h1>NutriPlant PRO</h1><h2>'
-            + esc(report.module) + '</h2>' + body + '<p>' + esc(report.interpretation) + '</p></body></html>');
+          popup.document.write('<html><head><title>' + esc(report.tool) + '</title></head><body style="font-family:Inter,Segoe UI,sans-serif;padding:24px;color:#0f172a">'
+            + '<div style="background:#0f766e;color:#fff;padding:16px 18px;border-radius:12px;margin-bottom:16px"><div>NutriPlant PRO</div><h1 style="margin:4px 0 0">'
+            + esc(report.tool) + '</h1><div>' + esc(report.module) + '</div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
+            + cards + '</div>' + body + '<p style="background:#fffbeb;border:1px solid #fcd34d;padding:12px;border-radius:10px">'
+            + esc(report.interpretation) + '</p></body></html>');
           popup.document.close();
           popup.focus();
           popup.print();
@@ -937,10 +1166,8 @@
         });
       }
 
-      q('open-a').onclick = function () { showView('a'); };
-      q('open-b').onclick = function () { showView('b'); };
-      q('a-home').onclick = function () { showView('home'); };
-      q('b-home').onclick = function () { showView('home'); };
+      q('tab-a').onclick = function () { showView('a'); };
+      q('tab-b').onclick = function () { showView('b'); };
       ['exerciseName', 'crop', 'areaHa', 'period', 'harvestedKg', 'soldKg', 'pricePerKg', 'byproductRevenue', 'financingCost', 'fixedCosts', 'variableCostPerKg', 'scenarioPrice', 'scenarioSold', 'scenarioTotal', 'scenarioFixed', 'scenarioVariable']
         .forEach(function (key) {
           var map = {
@@ -1109,9 +1336,10 @@
         state.b = Object.assign(blankB(), exampleB, { current: Object.assign({}, exampleB.current), improved: Object.assign({}, exampleB.improved) });
         state.view = 'b';
       }
+      if (state.view === 'home') state.view = 'a';
       fillA();
       fillB();
-      showView(state.view || 'home');
+      showView(state.view === 'b' ? 'b' : 'a');
     })();
   </script>
 </body>

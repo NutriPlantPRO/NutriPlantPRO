@@ -895,20 +895,44 @@
     if (result.harvestedKg != null) productive.push(row('Producción cosechada', formatKg(result.harvestedKg)));
     if (result.wasteKg != null) productive.push(row('No comercializada', formatKg(result.wasteKg)));
     if (result.pricePerKg != null) productive.push(row('Precio promedio', formatPerKg(result.pricePerKg, cur)));
-    var economic = (result.costItems || []).map(function (item) {
+    var costs = (result.costItems || []).map(function (item) {
       return row(item.label, formatMoney(item.signed, cur));
     });
-    if (result.totalCost != null) economic.push(row('Costo total', formatMoney(result.totalCost, cur)));
-    if (result.costPerKg != null) economic.push(row('Costo por kilogramo', formatPerKg(result.costPerKg, cur)));
-    if (result.revenue != null) economic.push(row('Ingresos', formatMoney(result.revenue, cur)));
-    if (result.profit != null) economic.push(row(result.loss ? 'Pérdida' : 'Utilidad', formatMoney(result.profit, cur)));
-    if (result.profitAfterFinancing != null) {
-      economic.push(row('Utilidad después de intereses y comisiones', formatMoney(result.profitAfterFinancing, cur)));
+    if (result.totalCost != null) costs.push(row('Costo total', formatMoney(result.totalCost, cur)));
+    var indicators = [];
+    if (result.costPerKg != null) indicators.push(row('Costo por kilogramo', formatPerKg(result.costPerKg, cur)));
+    if (result.revenue != null) indicators.push(row('Ingresos', formatMoney(result.revenue, cur)));
+    if (result.profit != null) {
+      indicators.push(row(result.loss ? 'Pérdida' : 'Utilidad', formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur)));
     }
-    if (result.returnOnCostPct != null) economic.push(row('Rentabilidad sobre costo', formatPct(result.returnOnCostPct)));
-    if (result.marginOnSalesPct != null) economic.push(row('Margen sobre ventas', formatPct(result.marginOnSalesPct)));
-    if (result.breakEvenPrice != null) economic.push(row('Precio de equilibrio', formatPerKg(result.breakEvenPrice, cur)));
-    if (meta.breakEvenVolumeLabel) economic.push(row('Volumen de equilibrio', meta.breakEvenVolumeLabel));
+    if (result.profitAfterFinancing != null) {
+      var afterLoss = result.profitAfterFinancing < 0;
+      indicators.push(row(
+        afterLoss ? 'Pérdida después de financiamiento' : 'Utilidad después de financiamiento',
+        formatMoney(afterLoss ? Math.abs(result.profitAfterFinancing) : result.profitAfterFinancing, cur)
+      ));
+    }
+    if (result.returnOnCostPct != null) indicators.push(row('Rentabilidad sobre costo', formatPct(result.returnOnCostPct)));
+    if (result.marginOnSalesPct != null) indicators.push(row('Margen sobre ventas', formatPct(result.marginOnSalesPct)));
+    if (result.breakEvenPrice != null) indicators.push(row('Precio de equilibrio', formatPerKg(result.breakEvenPrice, cur)));
+    if (meta.breakEvenVolumeLabel) indicators.push(row('Volumen de equilibrio', meta.breakEvenVolumeLabel));
+    var highlights = [];
+    if (result.costPerKg != null) highlights.push({ label: 'Costo por kg', value: formatPerKg(result.costPerKg, cur), tone: 'navy' });
+    if (result.breakEvenPrice != null) highlights.push({ label: 'Precio de equilibrio', value: formatPerKg(result.breakEvenPrice, cur), tone: 'navy' });
+    if (result.returnOnCostPct != null) {
+      highlights.push({
+        label: 'Rentabilidad sobre costo',
+        value: formatPct(result.returnOnCostPct),
+        tone: result.loss ? 'loss' : 'ok'
+      });
+    }
+    if (result.profit != null) {
+      highlights.push({
+        label: result.loss ? 'Pérdida' : 'Utilidad',
+        value: formatMoney(result.loss ? Math.abs(result.profit) : result.profit, cur),
+        tone: result.loss ? 'loss' : 'ok'
+      });
+    }
     return {
       product: 'NutriPlant PRO',
       tool: 'Rentabilidad Agrícola',
@@ -917,9 +941,13 @@
       exerciseName: meta.exerciseName || '',
       crop: meta.crop || '',
       period: meta.period || '',
+      loss: !!result.loss,
+      highlights: highlights,
+      chartTitles: ['Distribución de costos', 'Ingresos y costos', 'Escenario: ingreso y costo'],
       sections: [
         { title: 'Resumen productivo', rows: productive },
-        { title: 'Resumen económico', rows: economic }
+        { title: 'Desglose de costos', rows: costs },
+        { title: 'Indicadores económicos', rows: indicators }
       ],
       interpretation: interpretationModuleA(result),
       notes: [TAX_NOTE, COMPARISON_DISCLAIMER].concat(meta.isExample ? [EXAMPLE_DISCLAIMER] : []),
@@ -930,23 +958,52 @@
   function buildModuleBReport(result, meta) {
     meta = meta || {};
     var cur = result.currency || 'USD';
-    var rows = [
+    var compare = [
       row('Inversión actual', formatMoney(result.currentCost, cur)),
       row('Inversión del manejo comparado', formatMoney(result.improvedCost, cur)),
       row('Diferencia de inversión', formatMoney(result.investmentDelta, cur)),
       row('Producción actual', formatKg(result.currentKg)),
       row('Producción del manejo comparado', formatKg(result.improvedKg)),
-      row('Diferencia de producción', formatKg(result.productionDelta)),
+      row('Diferencia de producción', (result.productionDelta > 0 ? '+' : '') + formatKg(result.productionDelta)),
       row('Diferencia de ingresos', formatMoney(result.revenueDelta, cur))
     ];
+    var indicators = [];
     if (result.costsConsidered && result.otherIncremental != null) {
-      rows.push(row('Otros costos incrementales', formatMoney(result.otherIncremental, cur)));
-      rows.push(row('Beneficio antes de la inversión adicional', formatMoney(result.benefitBeforeInvestment, cur)));
-      rows.push(row(result.loss ? 'Pérdida incremental' : 'Utilidad incremental', formatMoney(result.incrementalProfit, cur)));
+      indicators.push(row('Otros costos incrementales', formatMoney(result.otherIncremental, cur)));
+      indicators.push(row('Beneficio antes de la inversión adicional', formatMoney(result.benefitBeforeInvestment, cur)));
+      indicators.push(row(
+        result.loss ? 'Pérdida incremental' : 'Utilidad incremental',
+        formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur)
+      ));
     }
-    if (result.incomeRatioLabel) rows.push(row('Relación ingreso adicional / inversión adicional', result.incomeRatioLabel));
-    if (result.benefitCostRatioLabel) rows.push(row('Relación beneficio–costo incremental', result.benefitCostRatioLabel));
-    if (result.extraKgNeeded != null) rows.push(row('Producción adicional para recuperar la inversión', formatKg(result.extraKgNeeded)));
+    if (result.incomeRatioLabel) indicators.push(row('Relación ingreso adicional / inversión adicional', result.incomeRatioLabel));
+    if (result.benefitCostRatioLabel) indicators.push(row('Relación beneficio-costo incremental', result.benefitCostRatioLabel));
+    if (result.extraKgNeeded != null) indicators.push(row('Producción adicional para recuperar la inversión', formatKg(result.extraKgNeeded)));
+    var ratioLabel = result.benefitCostRatioLabel
+      ? 'Relación beneficio-costo'
+      : (result.incomeRatioLabel ? 'Ingreso / inversión' : null);
+    var ratioValue = result.benefitCostRatioLabel || result.incomeRatioLabel;
+    var highlights = [];
+    if (ratioLabel && ratioValue) {
+      highlights.push({
+        label: ratioLabel,
+        value: ratioValue,
+        tone: result.loss ? 'loss' : 'ok'
+      });
+    }
+    highlights.push({ label: 'Inversión adicional', value: formatMoney(result.investmentDelta, cur), tone: 'navy' });
+    highlights.push({
+      label: 'Producción adicional',
+      value: (result.productionDelta > 0 ? '+' : '') + formatKg(result.productionDelta),
+      tone: result.productionDelta < 0 ? 'loss' : 'ok'
+    });
+    if (result.costsConsidered && result.incrementalProfit != null) {
+      highlights.push({
+        label: result.loss ? 'Pérdida incremental' : 'Utilidad incremental',
+        value: formatMoney(result.loss ? Math.abs(result.incrementalProfit) : result.incrementalProfit, cur),
+        tone: result.loss ? 'loss' : 'ok'
+      });
+    }
     return {
       product: 'NutriPlant PRO',
       tool: 'Rentabilidad Agrícola',
@@ -954,7 +1011,18 @@
       date: meta.date || '',
       strategyName: meta.strategyName || '',
       crop: meta.crop || '',
-      sections: [{ title: 'Comparación de programas', rows: rows }],
+      loss: !!result.loss,
+      highlights: highlights,
+      chartTitles: [
+        'Comparación de inversión',
+        'Comparación de producción',
+        'Valor económico incremental',
+        'Producción para recuperar la inversión'
+      ],
+      sections: [
+        { title: 'Comparación de programas', rows: compare },
+        { title: 'Indicadores económicos', rows: indicators }
+      ],
       interpretation: conclusionModuleB(result, meta),
       notes: [AGRONOMIC_NOTE, CAUSALITY_NOTE, COMPARISON_DISCLAIMER].concat(meta.isExample ? [EXAMPLE_DISCLAIMER] : []),
       tagline: 'NutriPlant PRO — Diseña. Ajusta. Nutre.'
