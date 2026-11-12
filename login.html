@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=80" />
+  <link rel="stylesheet" href="auth.css?v=81" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -5401,7 +5401,7 @@
         }
         // Usar el ancho real del cajón (full-bleed). Solo escalar si queda bajo 340px.
         var measured = Math.floor(plugin.clientWidth || card.clientWidth || 0);
-        var height = 190;
+        var height = 220;
         var width = Math.max(340, Math.min(500, measured || 340));
         var scale = 1;
         if (measured > 0 && measured < 340) {

@@ -1060,9 +1060,9 @@
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
-  height: 190px;
-  min-height: 190px;
-  max-height: 190px;
+  height: 220px;
+  min-height: 220px;
+  max-height: 220px;
   flex: 0 0 auto;
   /* Aprovecha todo el ancho de la tarjeta para que quepa «Compartir». */
   width: calc(100% + 28px);
@@ -1077,9 +1077,9 @@
   width: 100%;
   min-width: 340px;
   max-width: none;
-  height: 190px;
-  min-height: 190px;
-  max-height: 190px;
+  height: 220px;
+  min-height: 220px;
+  max-height: 220px;
   border: 0;
   transform-origin: top left;
 }
