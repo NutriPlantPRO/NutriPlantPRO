@@ -167,18 +167,43 @@ module.exports = [
         fertirriego: {
           program: {
             timeUnit: 'semana',
+            columns: [
+              { id: 'col1', materialId: 'nitrato_calcio_granular', name: 'Nitrato de Calcio' },
+              { id: 'col2', materialId: 'mkp', name: 'MKP' }
+            ],
             weeks: [
-              { stage: 'Veg', totals: { N_NO3: 10, N_NH4: 2, K2O: 20, P2O5: 5 } },
-              { stage: 'Rep', totals: { N_NO3: 15, K2O: 30, P2O5: 8 } }
+              {
+                stage: 'Veg',
+                totals: { N_NO3: 10, N_NH4: 2, K2O: 20, P2O5: 5, K: 16.6, P: 2.18, Ca: 7, CaO: 10 },
+                kgByCol: { col1: 12, col2: 4 }
+              },
+              {
+                stage: 'Rep',
+                totals: { N_NO3: 15, K2O: 30, P2O5: 8, K: 24.9, P: 3.49 },
+                kgByCol: { col1: 8, col2: 6 }
+              }
             ],
             chartWaterByStageM3ha: [40, 50]
           }
+        },
+        extraccionEtapa: {
+          stages: ['Veg', 'Rep'],
+          nutrients: [{ id: 'N', label: 'N', total: 100 }],
+          pct: { N: [40, 60] },
+          waterDepthByStageM3ha: [40, 50]
         }
       }, 1);
       assert.equal(r.has_program, true);
       assert.equal(r.stages_count, 2);
       assert.equal(r.selected_stage.index, 1);
       assert.equal(r.program_contribution_kg_ha_cycle.N_NO3, 25);
+      assert.ok(r.stages[0].fertilizers_kg_ha.length >= 2);
+      assert.ok(r.stages[0].meq_per_L);
+      assert.ok(r.stages[0].percent && r.stages[0].percent.anions_triangle_N_P_S);
+      assert.equal(r.chart_lamina_m3ha_by_stage[1], 50);
+      assert.ok(r.chart_nutrient_kg_ha_by_stage.N_NO3.length === 2);
+      assert.ok(r.objective_distribution_pct && r.objective_distribution_pct.has_data);
+      assert.equal(r.objective_distribution_pct.pct_by_nutrient.N[1], 60);
     }
   },
   {
@@ -212,11 +237,80 @@ module.exports = [
         soilAnalysis: {
           initial: { k: 0.4, ca: 6, mg: 1.2, h: 0.4, na: 0, al: 0, cic: 8 },
           properties: { ph: 6.5, density: 1.2, depth: 20 },
-          adjustments: { k: 0, ca: 0, mg: 0 }
+          adjustments: { k: 0.4, ca: 6, mg: 1.2, h: 0, na: 0, al: 0 }
+        },
+        amendments: {
+          selected: ['gypsum', 'custom_yeso_mix'],
+          soilReachPercent: 50,
+          results: {
+            isVisible: true,
+            amount: '200 kg/ha',
+            rawDetails: [
+              {
+                id: 'gypsum',
+                name: 'Yeso Agrícola',
+                amount: 400,
+                ca: 93.2,
+                mg: 0,
+                k: 0,
+                so4: 223.2,
+                si: 0,
+                elementoLimitante: { elemento: 'Ca' }
+              },
+              {
+                id: 'custom_yeso_mix',
+                name: 'Mix personalizado',
+                amount: 200,
+                ca: 40,
+                mg: 10,
+                k: 5,
+                so4: 0,
+                si: 0,
+                isCustom: true
+              }
+            ],
+            rawTotals: { totalCa: 133.2, totalMg: 10, totalK: 5, totalSi: 0, totalNaRemoval: 0 }
+          }
         }
       });
       assert.equal(r.has_data, true);
       assert.equal(r.initial_meq.CIC, 8);
+      assert.equal(r.current_saturation_pct.Ca, 75);
+      assert.equal(r.ideal_meq_cic.Ca, 6);
+      assert.equal(r.soil_reach_pct, 50);
+      assert.equal(r.doses_count, 2);
+      assert.equal(r.doses_kg_ha[0].dose_kg_ha, 200);
+      assert.equal(r.doses_kg_ha[1].is_custom, true);
+      assert.equal(r.totals_kg_ha.Ca, 66.6);
+    }
+  },
+  {
+    name: 'Público: ferti personalizados en catálogo',
+    run: function () {
+      var read = require('../netlify/functions/lib/public-mcp-subscriber-read.js');
+      var r = read.fertigationDeep({
+        fertirriego: {
+          customMaterials: {
+            items: [{ id: 'custom_99', name: 'Mi NPK', N_NO3: 10, P2O5: 20, K2O: 30 }]
+          },
+          program: {
+            timeUnit: 'semana',
+            columns: [
+              { id: 'c1', materialId: 'mkp', name: 'MKP' },
+              { id: 'c2', materialId: 'custom_99', name: 'Mi NPK' }
+            ],
+            weeks: [{ totals: { N_NO3: 1, P2O5: 2 }, kgByCol: { c1: 5, c2: 12 } }],
+            chartWaterByStageM3ha: [100]
+          }
+        }
+      });
+      assert.equal(r.has_program, true);
+      assert.equal(r.custom_fertilizers_in_program, 1);
+      var custom = r.fertilizers_catalog.find(function (f) { return f.material_id === 'custom_99'; });
+      assert.ok(custom);
+      assert.equal(custom.is_custom, true);
+      assert.equal(custom.composition_pct.K2O, 30);
+      assert.equal(r.stages[0].fertilizers_kg_ha[1].kg_ha, 12);
     }
   },
   {
