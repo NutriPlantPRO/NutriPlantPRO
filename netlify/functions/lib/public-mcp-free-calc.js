@@ -584,7 +584,8 @@ const GRANULAR_MATERIALS = {
   'Nitrato de Potasio': { N: 13, P2O5: 0, K2O: 46, CaO: 0, MgO: 0, SO4: 0 },
   'Nitrato de Calcio': { N: 15.5, P2O5: 0, K2O: 0, CaO: 26, MgO: 0, SO4: 0 },
   'Sulfato de Magnesio': { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 16, SO4: 40 },
-  'Complejo Triple 16': { N: 16, P2O5: 16, K2O: 16, CaO: 0, MgO: 0, SO4: 0 }
+  'Complejo Triple 16': { N: 16, P2O5: 16, K2O: 16, CaO: 0, MgO: 0, SO4: 0 },
+  '13-4-25 Zn+B': { N: 13, P2O5: 4, K2O: 25, CaO: 0, MgO: 0, SO4: 27 }
 };
 
 const GRANULAR_KEYS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4'];

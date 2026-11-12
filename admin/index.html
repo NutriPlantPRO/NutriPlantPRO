@@ -1572,6 +1572,9 @@
         #editProjectModal.modal-overlay {
             z-index: 55100 !important;
         }
+        #duplicateProjectModal.modal-overlay {
+            z-index: 55300 !important;
+        }
         #adminUserNotesModal.modal-overlay {
             z-index: 55200 !important;
         }
@@ -8647,6 +8650,13 @@
             <div id="editProjectContent"></div>
         </div>
     </div>
+
+    <!-- Modal: duplicar proyecto y asignar la copia a otro usuario -->
+    <div id="duplicateProjectModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 55300; overflow-y: auto;">
+        <div class="modal-content" style="background: white; margin: 20px auto; max-width: 640px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); padding: 24px;">
+            <div id="duplicateProjectContent"></div>
+        </div>
+    </div>
     
     <!-- Modal Bloc de notas del usuario (solo lectura, desde nube) -->
     <div id="adminUserNotesModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 55200; justify-content: center; align-items: center;">
@@ -9071,12 +9081,15 @@
                     itemId = index;
                 }
                 var safeUserRef = (itemId + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-                html += '<td style="padding: 12px; text-align: center;"><div style="display: flex; gap: 8px; justify-content: center;">';
+                html += '<td style="padding: 12px; text-align: center;"><div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">';
                 if (config.actions.edit) {
                     if (isProject) {
                         var safeId = safeUserRef;
                         var viewProjCall = config.previousViewForProject ? ('viewProjectDetailsWithReturn(\'' + safeId + '\', \'' + (config.previousViewForProject + '').replace(/'/g, "\\'") + '\', event)') : ('viewProjectDetails(\'' + safeId + '\', null, null, event)');
                         html += '<button onclick="' + viewProjCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px;">👁️ Ver</button><button onclick="editProject(\'' + safeId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
+                        if (!config.deletedProjectsMode) {
+                            html += '<button type="button" onclick="openDuplicateProjectModal(\'' + safeId + '\')" title="Crear una copia independiente en la cuenta de otro usuario" style="background: #0f766e; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">📋 Duplicar</button>';
+                        }
                     } else {
                         var prevCall = config.previousView ? ('viewUserDetails(\'' + safeUserRef + '\', ' + (config.previousView.name || 'null') + ', ' + JSON.stringify(config.previousViewParams || []) + ')') : ('viewUserDetails(\'' + safeUserRef + '\')');
                         html += '<button onclick="' + prevCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editUser(\'' + safeUserRef + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
@@ -13048,6 +13061,321 @@
             }, 300);
         }
         window.assignProjectToUser = assignProjectToUser;
+
+        function adminDuplicateProjectUsers() {
+            var list = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users))
+                ? window._adminCloudCache.users.slice()
+                : [];
+            list.sort(function(a, b) {
+                var an = String((a && (a.name || a.email)) || '').toLowerCase();
+                var bn = String((b && (b.name || b.email)) || '').toLowerCase();
+                return an.localeCompare(bn, 'es');
+            });
+            return list.filter(function(u) { return u && (u.id || u.userId) && u.email; });
+        }
+
+        function adminNewAssignedProjectId(projectName, user) {
+            var nameOrEmail = String((user && (user.name || user.email)) || 'USR');
+            var parts = nameOrEmail.trim().split(/\s+/).filter(Boolean);
+            var initials = 'USR';
+            if (parts.length >= 2) {
+                initials = (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+            } else {
+                var compact = nameOrEmail.replace(/[^A-Za-z0-9]/g, '');
+                initials = (compact.substring(0, 2) || 'USR').toUpperCase();
+            }
+            var projectPart = String(projectName || 'PROJ')
+                .trim()
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '')
+                .substring(0, 16) || 'PROJ';
+            var now = new Date();
+            var pad = function(n) { return String(n).padStart(2, '0'); };
+            var dateTime = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+            var rand = Math.random().toString(36).slice(2, 6);
+            return (initials + '_' + projectPart + '_' + dateTime + '_' + rand).substring(0, 80);
+        }
+
+        function adminProjectRowIsDeleted(row) {
+            if (!row) return false;
+            var body = row.data && typeof row.data === 'object' ? row.data : row;
+            return !!(row.is_deleted || row._is_deleted || row.deleted_at || (body && (body._is_deleted || body.is_deleted || body.deleted_at)));
+        }
+
+        async function adminFetchProjectRow(projectId) {
+            if (window.getSupabaseClient) {
+                var client = window.getSupabaseClient();
+                if (client) {
+                    var res = await client.from('projects').select('id, user_id, name, title, data, created_at, updated_at').eq('id', projectId).maybeSingle();
+                    if (!res.error && res.data) {
+                        var row = res.data;
+                        var body = row.data;
+                        if (typeof body === 'string') {
+                            try { body = JSON.parse(body); } catch (e) { body = {}; }
+                        }
+                        if (!body || typeof body !== 'object' || Array.isArray(body)) body = {};
+                        return {
+                            id: row.id,
+                            user_id: row.user_id,
+                            name: row.name || row.title || body.name || body.title || 'Sin nombre',
+                            title: row.title || row.name || body.title || body.name || '',
+                            data: body,
+                            created_at: row.created_at,
+                            updated_at: row.updated_at
+                        };
+                    }
+                }
+            }
+            var found = findProjectById(projectId);
+            if (!found || !found.project) return null;
+            var p = found.project;
+            var localBody = (p.data && typeof p.data === 'object') ? p.data : p;
+            return {
+                id: p.id || projectId,
+                user_id: p.user_id || localBody.user_id || localBody.userId || null,
+                name: p.name || localBody.name || localBody.title || 'Sin nombre',
+                title: p.title || localBody.title || localBody.name || '',
+                data: localBody,
+                created_at: p.created_at || localBody.created_at || null,
+                updated_at: p.updated_at || localBody.updated_at || null
+            };
+        }
+
+        function renderDuplicateProjectUserList() {
+            var state = window._dupAssignState;
+            var box = document.getElementById('dup-assign-user-list');
+            var qInput = document.getElementById('dup-assign-user-search');
+            if (!state || !box) return;
+            var q = (qInput && qInput.value ? qInput.value : '').trim().toLowerCase();
+            var matches = state.users.filter(function(u) {
+                if (!q) return true;
+                var blob = ((u.name || '') + ' ' + (u.email || '')).toLowerCase();
+                return blob.indexOf(q) !== -1;
+            });
+            var shown = matches.slice(0, 80);
+            if (!shown.length) {
+                box.innerHTML = '<div style="padding: 12px; color: #64748b; font-size: 13px;">Ningún usuario coincide.</div>';
+                return;
+            }
+            var html = '';
+            shown.forEach(function(u) {
+                var uid = String(u.id || u.userId);
+                var selected = state.selectedUserId === uid;
+                html += '<button type="button" data-dup-user="' + escapeHtmlAttr(uid) + '" style="display: block; width: 100%; text-align: left; padding: 8px 10px; border: none; border-bottom: 1px solid #f1f5f9; background: ' + (selected ? '#ccfbf1' : 'white') + '; cursor: pointer; font-size: 13px;">' +
+                    '<strong style="color: #134e4a;">' + escapeHtml(u.name || u.email) + '</strong>' +
+                    '<span style="color: #64748b;"> · ' + escapeHtml(u.email || '') + '</span>' +
+                    '</button>';
+            });
+            if (matches.length > shown.length) {
+                html += '<div style="padding: 8px 10px; color: #64748b; font-size: 12px;">Hay ' + matches.length + ' coincidencias. Escribe más para acotar.</div>';
+            }
+            box.innerHTML = html;
+        }
+
+        function selectDuplicateProjectUser(userId) {
+            var state = window._dupAssignState;
+            if (!state) return;
+            state.selectedUserId = String(userId || '');
+            var picked = state.users.find(function(u) { return String(u.id || u.userId) === state.selectedUserId; });
+            var label = document.getElementById('dup-assign-selected');
+            if (label) {
+                label.textContent = picked
+                    ? ('Se asignará a ' + (picked.name || picked.email) + ' · ' + (picked.email || ''))
+                    : 'Elige un usuario de la lista.';
+            }
+            renderDuplicateProjectUserList();
+        }
+
+        async function openDuplicateProjectModal(projectId) {
+            if (!projectId) return;
+            var modal = document.getElementById('duplicateProjectModal');
+            var content = document.getElementById('duplicateProjectContent');
+            if (!modal || !content) return;
+            content.innerHTML = '<p style="margin: 0; color: #64748b;">Cargando proyecto…</p>';
+            modal.style.display = 'flex';
+            if ((!window._adminCloudCache || !Array.isArray(window._adminCloudCache.users) || !window._adminCloudCache.users.length) && typeof window.nutriplantAdminLoadFromCloud === 'function') {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('openDuplicateProjectModal: load cloud', e); }
+            }
+            var row = null;
+            try {
+                row = await adminFetchProjectRow(projectId);
+            } catch (e) {
+                console.warn('openDuplicateProjectModal:', e);
+            }
+            if (!row) {
+                content.innerHTML = '<p style="margin: 0 0 12px; color: #b91c1c;">No se encontró el proyecto.</p><button type="button" onclick="closeDuplicateProjectModal()" style="padding: 10px 14px; border: none; border-radius: 8px; background: #e5e7eb; cursor: pointer;">Cerrar</button>';
+                return;
+            }
+            if (adminProjectRowIsDeleted(row)) {
+                content.innerHTML = '<p style="margin: 0 0 12px; color: #b91c1c;">Este proyecto está en la papelera. Restáuralo antes de duplicarlo.</p><button type="button" onclick="closeDuplicateProjectModal()" style="padding: 10px 14px; border: none; border-radius: 8px; background: #e5e7eb; cursor: pointer;">Cerrar</button>';
+                return;
+            }
+            var sourceName = row.name || row.title || 'Sin nombre';
+            var users = adminDuplicateProjectUsers();
+            window._dupAssignState = {
+                sourceId: row.id,
+                sourceName: sourceName,
+                users: users,
+                selectedUserId: ''
+            };
+            var defaultTitle = sourceName + ' (copia)';
+            content.innerHTML =
+                '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">' +
+                    '<h2 style="margin: 0; color: #1e293b; font-size: 22px;">Duplicar y asignar</h2>' +
+                    '<button type="button" onclick="closeDuplicateProjectModal()" style="background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 4px 12px;">×</button>' +
+                '</div>' +
+                '<p style="margin: 0 0 8px; color: #334155; font-size: 14px;">Origen: <strong>' + escapeHtml(sourceName) + '</strong></p>' +
+                '<p style="margin: 0 0 16px; color: #64748b; font-size: 13px; line-height: 1.45;">Se crea un proyecto nuevo en la cuenta que elijas. El original no cambia. Cada quien lo edita por su lado. El chat no se copia. Los fertilizantes y cultivos personalizados del perfil de origen tampoco: si el programa usa uno de esos, en la otra cuenta puede faltar el nombre del producto.</p>' +
+                '<form id="dupAssignForm" onsubmit="submitDuplicateProjectToUser(event)">' +
+                    '<label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Nombre de la copia</label>' +
+                    '<input id="dup-assign-title" type="text" required value="' + escapeHtmlAttr(defaultTitle) + '" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; margin-bottom: 14px;">' +
+                    '<label style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Usuario destino</label>' +
+                    '<input id="dup-assign-user-search" type="search" placeholder="Buscar por nombre o correo" oninput="renderDuplicateProjectUserList()" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; margin-bottom: 8px;">' +
+                    '<div id="dup-assign-user-list" style="max-height: 240px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;"></div>' +
+                    '<div id="dup-assign-selected" style="min-height: 20px; margin-bottom: 16px; color: #0f766e; font-size: 13px; font-weight: 600;">Elige un usuario de la lista.</div>' +
+                    '<div style="display: flex; gap: 12px;">' +
+                        '<button type="button" onclick="closeDuplicateProjectModal()" style="flex: 1; padding: 12px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>' +
+                        '<button type="submit" id="dup-assign-submit" style="flex: 1; padding: 12px; background: #0f766e; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Crear copia</button>' +
+                    '</div>' +
+                '</form>';
+            var listEl = document.getElementById('dup-assign-user-list');
+            if (listEl) {
+                listEl.addEventListener('click', function(ev) {
+                    var btn = ev.target.closest('button[data-dup-user]');
+                    if (!btn) return;
+                    selectDuplicateProjectUser(btn.getAttribute('data-dup-user'));
+                });
+            }
+            renderDuplicateProjectUserList();
+        }
+
+        function closeDuplicateProjectModal() {
+            var modal = document.getElementById('duplicateProjectModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitDuplicateProjectToUser(e) {
+            e.preventDefault();
+            var state = window._dupAssignState;
+            if (!state || !state.sourceId) return;
+            var titleInput = document.getElementById('dup-assign-title');
+            var title = titleInput ? titleInput.value.trim() : '';
+            if (!title) {
+                alert('Escribe el nombre de la copia.');
+                return;
+            }
+            var dest = (state.users || []).find(function(u) { return String(u.id || u.userId) === String(state.selectedUserId || ''); });
+            if (!dest) {
+                alert('Elige el usuario que recibirá la copia.');
+                return;
+            }
+            var destId = dest.id || dest.userId;
+            if (!window.getSupabaseClient || !window.getSupabaseClient()) {
+                alert('No hay sesión con la nube. Entra al admin con la cuenta de Supabase e inténtalo de nuevo.');
+                return;
+            }
+            var submitBtn = document.getElementById('dup-assign-submit');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Copiando…';
+            }
+            try {
+                var source = await adminFetchProjectRow(state.sourceId);
+                if (!source || !source.data) {
+                    alert('No se pudo leer el proyecto original.');
+                    return;
+                }
+                if (adminProjectRowIsDeleted(source)) {
+                    alert('El proyecto original está en la papelera. Restáuralo antes de duplicarlo.');
+                    return;
+                }
+                var copy = JSON.parse(JSON.stringify(source.data));
+                var now = new Date().toISOString();
+                var newId = adminNewAssignedProjectId(title, dest);
+                copy.id = newId;
+                copy.code = newId;
+                copy.name = title;
+                copy.title = title;
+                copy.user_id = destId;
+                copy.userId = destId;
+                copy.user_name = dest.name || '';
+                copy.user_email = dest.email || '';
+                copy.created_at = now;
+                copy.createdAt = now;
+                copy.updated_at = now;
+                copy.updatedAt = now;
+                copy.chat_history = [];
+                delete copy._is_deleted;
+                delete copy.is_deleted;
+                delete copy.deleted_at;
+                delete copy.deleted_by;
+                delete copy.restore_until;
+                delete copy.orphaned_at;
+                delete copy.orphaned_by;
+                delete copy.orphaned_reason;
+                delete copy._isOrphan;
+                if (copy.location && typeof copy.location === 'object') {
+                    copy.location.projectId = newId;
+                    copy.location.projectName = title;
+                    copy.location.lastUpdated = now;
+                }
+                var client = window.getSupabaseClient();
+                var inserted = await client.from('projects').insert({
+                    id: newId,
+                    user_id: destId,
+                    name: title,
+                    title: title,
+                    data: copy,
+                    updated_at: now
+                });
+                if (inserted.error) {
+                    var msg = inserted.error.message || '';
+                    var hint = /row-level security|permission|policy/i.test(msg)
+                        ? '\n\nEl admin necesita permiso para insertar proyectos. En Supabase → SQL Editor ejecuta supabase-admin-update-user-project.sql.'
+                        : '';
+                    alert('No se pudo crear la copia en la nube. ' + msg + hint);
+                    return;
+                }
+                if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                    window._adminCloudCache.projects.unshift({
+                        id: newId,
+                        user_id: destId,
+                        user_name: dest.name || dest.email || '—',
+                        name: title,
+                        title: title,
+                        data: copy,
+                        is_deleted: false,
+                        deleted_at: null,
+                        deleted_by: null,
+                        restore_until: null,
+                        created_at: now,
+                        updated_at: now
+                    });
+                }
+                closeDuplicateProjectModal();
+                alert('Listo. «' + title + '» quedó en la cuenta de ' + (dest.email || dest.name) + '.\n\nEs un proyecto nuevo, con otro id. El original sigue igual. Lo verá al entrar o al actualizar con la nube.');
+                if (typeof loadAdminStats === 'function') loadAdminStats();
+                if (typeof closeDataViewer === 'function') closeDataViewer();
+                setTimeout(function() {
+                    if (typeof showAllProjects === 'function') showAllProjects();
+                }, 300);
+            } catch (err) {
+                console.error('submitDuplicateProjectToUser:', err);
+                alert('No se pudo duplicar el proyecto. ' + (err && err.message ? err.message : ''));
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Crear copia';
+                }
+            }
+        }
+        window.openDuplicateProjectModal = openDuplicateProjectModal;
+        window.closeDuplicateProjectModal = closeDuplicateProjectModal;
+        window.renderDuplicateProjectUserList = renderDuplicateProjectUserList;
+        window.selectDuplicateProjectUser = selectDuplicateProjectUser;
+        window.submitDuplicateProjectToUser = submitDuplicateProjectToUser;
         
         async function deleteUser(userId) {
             let user = findUserForAdmin(userId);
@@ -15788,10 +16116,14 @@
                         </details>
                     </div>
                     
-                    <div style="display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    <div style="display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; flex-wrap: wrap;">
                         <button onclick="closeDataViewer()" 
                                 style="flex: 1; padding: 12px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                             Cerrar
+                        </button>
+                        <button type="button" onclick="openDuplicateProjectModal('${projectId}')"
+                                style="flex: 1; padding: 12px; background: #0f766e; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            📋 Duplicar y asignar
                         </button>
                         <button onclick="editProject('${projectId}'); closeDataViewer();" 
                                 style="flex: 1; padding: 12px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
@@ -16913,10 +17245,14 @@
                                         </div>
                                     ` : ''}
                                 </div>
-                                <div style="display: flex; gap: 8px; margin-left: 16px;">
+                                <div style="display: flex; gap: 8px; margin-left: 16px; flex-wrap: wrap;">
                                     <button onclick="viewProjectDetails('${project.id}', function() { viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams)}); }, [], event)" 
                                             style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap; display:inline-flex; align-items:center; gap:6px;">
                                         👁️ Ver Detalles
+                                    </button>
+                                    <button type="button" onclick="openDuplicateProjectModal('${project.id}')"
+                                            style="background: #0f766e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                                        📋 Duplicar
                                     </button>
                                     <button onclick="editProject('${project.id}'); closeDataViewer();" 
                                             style="background: #60a5fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap;">

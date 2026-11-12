@@ -34,7 +34,9 @@ const MATERIALS_DB = {
   // Complejos NPK
   'Complejo 12-11-18': { N: 12, P2O5: 11, K2O: 18, CaO: 0, S: 0, SO4: 24, MgO: 2.7, SiO2: 0, Zn: 0.02, Fe: 0.2, B: 0.015, Mn: 0.02, Cu: 0, Mo: 0 },
   'Complejo 12-12-17': { N: 12, P2O5: 12, K2O: 17, CaO: 0, S: 0, SO4: 24, MgO: 2, SiO2: 0, Zn: 0.01, Fe: 0, B: 0.02, Mn: 0, Cu: 0, Mo: 0 },
-  'Complejo Triple 16': { N: 16, P2O5: 16, K2O: 16, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 }
+  'Complejo Triple 16': { N: 16, P2O5: 16, K2O: 16, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+  // Misma fórmula que el soluble 13-4-25 Zn+B. En granular el N es total (5.3 nítrico + 7.7 amoniacal).
+  '13-4-25 Zn+B': { N: 13, P2O5: 4, K2O: 25, CaO: 0, S: 0, SO4: 27, MgO: 0, SiO2: 0, Zn: 0.08, Fe: 0, B: 0.08, Mn: 0, Cu: 0, Mo: 0 }
 };
 
 // Copia fija de materias primas precargadas (granular) para el modal de consulta (no se mezcla con personalizados)
