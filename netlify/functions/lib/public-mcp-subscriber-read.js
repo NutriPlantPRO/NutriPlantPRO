@@ -63,42 +63,159 @@ function soilKgHaFromReport(a) {
   };
 }
 
+function diffPct(v, o) {
+  if (v == null || o == null || o === 0) return null;
+  return Math.round(((v - o) / o) * 1000) / 10;
+}
+
+function statusVsIdeal(lab, ideal, tolPct) {
+  if (lab == null || ideal == null) return null;
+  const tol = tolPct == null ? 10 : tolPct;
+  const pct = Math.abs(diffPct(lab, ideal));
+  if (pct == null) return null;
+  if (pct <= tol) return 'ok';
+  return lab < ideal ? 'bajo' : 'alto';
+}
+
+/** Filas didácticas tipo selector de elemento (lab vs ideal / DOP). */
+function chartElementsFromPairs(pairs) {
+  const rows = (pairs || [])
+    .map((p) => {
+      if (!p || p.lab == null) return null;
+      const ideal = p.ideal != null ? p.ideal : null;
+      const dop = p.dop_percent != null ? p.dop_percent : diffPct(p.lab, ideal);
+      return {
+        id: p.id,
+        label: p.label || p.id,
+        lab: p.lab,
+        ideal,
+        unit: p.unit || null,
+        dop_or_diff_pct: dop,
+        status: p.status || statusVsIdeal(p.lab, ideal, p.tol_pct),
+        group: p.group || null
+      };
+    })
+    .filter(Boolean);
+  return rows.sort((a, b) => Math.abs(b.dop_or_diff_pct || 0) - Math.abs(a.dop_or_diff_pct || 0));
+}
+
+function fluidIonBag(bag, keys, idealObj) {
+  const out = {};
+  (keys || []).forEach((k) => {
+    const ppm = numOrNull(bag[k + '_ppm'] != null ? bag[k + '_ppm'] : bag[k]);
+    const meq = numOrNull(bag[k + '_meq']);
+    const pct = numOrNull(bag[k + '_pct']);
+    const ideal = idealObj ? numOrNull(idealObj[k]) : null;
+    out[k] = {
+      ppm,
+      meq,
+      pct_of_group: pct,
+      ideal_ppm: ideal,
+      diff_vs_ideal_ppm:
+        ppm != null && ideal != null ? round2(ppm - ideal) : null,
+      status: statusVsIdeal(ppm, ideal, 10)
+    };
+  });
+  return out;
+}
+
 function summarizeSoilReport(a) {
   if (!a) return null;
   const fert = a.fertility || {};
+  const ideal = fert.ideal || {};
   const cat = a.cations || {};
   const ph = a.phSection || {};
   const phys = a.physical || {};
+  const ratios = a.ratios || {};
+  const labPpm = {
+    mo: numOrNull(fert.mo),
+    n_no3: numOrNull(fert.nNo3),
+    p: numOrNull(fert.p),
+    k: numOrNull(fert.k),
+    ca: numOrNull(fert.ca),
+    mg: numOrNull(fert.mg),
+    na: numOrNull(fert.na),
+    s: numOrNull(fert.s),
+    fe: numOrNull(fert.fe),
+    mn: numOrNull(fert.mn),
+    b: numOrNull(fert.b),
+    zn: numOrNull(fert.zn),
+    cu: numOrNull(fert.cu),
+    al: numOrNull(fert.al),
+    moly: numOrNull(fert.moly)
+  };
+  const idealPpm = {};
+  Object.keys(labPpm).forEach((k) => {
+    const src =
+      ideal[k] != null
+        ? ideal[k]
+        : ideal[k === 'n_no3' ? 'nNo3' : k === 'moly' ? 'moly' : k];
+    const v = numOrNull(src);
+    if (v != null) idealPpm[k] = v;
+  });
+  if (ideal.nNo3 != null && idealPpm.n_no3 == null) idealPpm.n_no3 = numOrNull(ideal.nNo3);
+  const kgHa = soilKgHaFromReport(a);
+  const chartPairs = Object.keys(labPpm).map((k) => ({
+    id: k,
+    label: k === 'n_no3' ? 'N-NO₃' : k === 'moly' ? 'Mo' : k.toUpperCase(),
+    lab: labPpm[k],
+    ideal: idealPpm[k] != null ? idealPpm[k] : null,
+    unit: 'ppm',
+    group: ['fe', 'mn', 'b', 'zn', 'cu', 'al', 'moly'].indexOf(k) >= 0 ? 'micro' : 'macro'
+  }));
   return {
     ...reportMeta(a),
-    ph: numOrNull(ph.ph),
-    salinity_ds_m: numOrNull(ph.salinity),
     physical: {
       textural_class: phys.texturalClass || null,
+      saturation_point_pct: numOrNull(phys.saturationPoint),
+      field_capacity_pct: numOrNull(phys.fieldCapacity),
+      wilting_point_pct: numOrNull(phys.wiltingPoint),
+      hydraulic_conductivity: numOrNull(phys.hydraulicConductivity),
       bulk_density_g_cm3: numOrNull(phys.bulkDensity)
     },
-    fertility_lab_ppm: {
-      mo: numOrNull(fert.mo),
-      n_no3: numOrNull(fert.nNo3),
-      p: numOrNull(fert.p),
-      k: numOrNull(fert.k),
-      ca: numOrNull(fert.ca),
-      mg: numOrNull(fert.mg),
-      s: numOrNull(fert.s),
-      fe: numOrNull(fert.fe),
-      zn: numOrNull(fert.zn),
-      b: numOrNull(fert.b)
+    ph: numOrNull(ph.ph),
+    ph_buffer: numOrNull(ph.phBuffer),
+    salinity_ds_m: numOrNull(ph.salinity),
+    total_carbonates_pct: numOrNull(ph.totalCarbonates),
+    fertility: {
+      p_method: fert.pMethod || null,
+      micro_method: fert.microMethod || null,
+      b_method: fert.bMethod || null,
+      depth_cm: numOrNull(fert.depthCm),
+      root_reach_pct: numOrNull(fert.reachPct),
+      lab_ppm: labPpm,
+      ideal_ppm: idealPpm,
+      kg_ha: kgHa
     },
+    fertility_lab_ppm: labPpm,
     cations_meq_100g: {
-      k: numOrNull(cat.k),
       ca: numOrNull(cat.ca),
       mg: numOrNull(cat.mg),
+      k: numOrNull(cat.k),
       na: numOrNull(cat.na),
       al: numOrNull(cat.al),
       h: numOrNull(cat.h),
       cic: numOrNull(cat.cic)
     },
-    kg_ha: soilKgHaFromReport(a)
+    cations_pct_cic: {
+      ca: numOrNull(cat.pctCa),
+      mg: numOrNull(cat.pctMg),
+      k: numOrNull(cat.pctK),
+      na: numOrNull(cat.pctNa),
+      al: numOrNull(cat.pctAl),
+      h: numOrNull(cat.pctH)
+    },
+    ratios: {
+      ca_mg: numOrNull(ratios.caMg),
+      mg_k: numOrNull(ratios.mgK),
+      ca_mg_k: numOrNull(ratios.caMgK),
+      ca_k: numOrNull(ratios.caK)
+    },
+    kg_ha: kgHa,
+    chart_elements: chartElementsFromPairs(chartPairs),
+    presentation_hint:
+      'Tabla completa lab vs ideal (ppm) + kg/ha. Luego “selector” chart_elements (ordenado por |diff|). Cationes % CIC aparte. ≠ enmiendas CIC.',
+    note: 'Análisis de suelo completo. kg/ha ≠ enmiendas CIC.'
   };
 }
 
@@ -110,24 +227,50 @@ function summarizeFoliarReport(a) {
   const optMicro = a.optimalMicro || {};
   const defMacro = { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 };
   const defMicro = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 };
-  function row(val, opt, def) {
+  function row(val, opt, def, unit) {
     const v = numOrNull(val);
     const o = numOrNull(opt != null && opt !== '' ? opt : def);
-    let dop = null;
-    if (v != null && o != null && o !== 0) dop = Math.round(((v - o) / o) * 1000) / 10;
-    return { value: v, optimal: o, dop_percent: dop };
+    const dop = diffPct(v, o);
+    return { value: v, optimal: o, unit, dop_percent: dop, status: statusVsIdeal(v, o, 10) };
   }
   const macros = {};
+  const chartPairs = [];
   ['N', 'P', 'K', 'Ca', 'Mg', 'S'].forEach((n) => {
     const v = mac[n] != null ? mac[n] : mac[n.toLowerCase()];
-    macros[n] = row(v, optMacro[n], defMacro[n]);
+    macros[n] = row(v, optMacro[n], defMacro[n], '%');
+    chartPairs.push({
+      id: n,
+      label: n,
+      lab: macros[n].value,
+      ideal: macros[n].optimal,
+      unit: '%',
+      dop_percent: macros[n].dop_percent,
+      group: 'macro'
+    });
   });
   const micros = {};
   ['Fe', 'Mn', 'Zn', 'Cu', 'B', 'Mo'].forEach((n) => {
     const v = mic[n] != null ? mic[n] : mac[n.toLowerCase()];
-    micros[n] = row(v, optMicro[n], defMicro[n]);
+    micros[n] = row(v, optMicro[n], defMicro[n], 'ppm');
+    chartPairs.push({
+      id: n,
+      label: n,
+      lab: micros[n].value,
+      ideal: micros[n].optimal,
+      unit: 'ppm',
+      dop_percent: micros[n].dop_percent,
+      group: 'micro'
+    });
   });
-  return { ...reportMeta(a), macros, micros, note: 'DOP % vs óptimo. ≠ VPD.' };
+  return {
+    ...reportMeta(a),
+    macros,
+    micros,
+    chart_elements: chartElementsFromPairs(chartPairs),
+    presentation_hint:
+      'Tabla macros/micros con DOP %. Presenta chart_elements como “selector” (más desviado primero). ≠ VPD.',
+    note: 'DOP % vs óptimo. ≠ VPD.'
+  };
 }
 
 function summarizeAguaReport(a) {
@@ -135,26 +278,64 @@ function summarizeAguaReport(a) {
   const cat = a.cations || {};
   const an = a.anions || {};
   const g = a.general || a.water || {};
+  const micros = a.micros || {};
+  const ideal = a.ideal || {};
+  const cations = fluidIonBag(cat, ['ca', 'mg', 'k', 'na'], ideal);
+  // fallbacks legacy
+  ['ca', 'mg', 'k', 'na'].forEach((k) => {
+    if (cations[k].ppm == null) cations[k].ppm = numOrNull(g[k]);
+  });
+  const anions = fluidIonBag(an, ['no3', 'so4', 'po4', 'cl', 'hco3', 'co3'], ideal);
+  if (anions.hco3.meq == null) anions.hco3.meq = numOrNull(an.hco3_meq != null ? an.hco3_meq : g.hco3);
+  if (anions.cl.ppm == null) anions.cl.ppm = numOrNull(an.cl_ppm != null ? an.cl_ppm : g.cl);
+  const microOut = {};
+  ['b', 'fe', 'mn', 'cu', 'zn', 'mo'].forEach((k) => {
+    microOut[k] = numOrNull(micros[k]);
+  });
+  const chartPairs = [];
+  Object.keys(cations).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: cations[k].ppm,
+      ideal: cations[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'cation'
+    });
+  });
+  Object.keys(anions).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: anions[k].ppm != null ? anions[k].ppm : anions[k].meq,
+      ideal: anions[k].ideal_ppm,
+      unit: anions[k].ppm != null ? 'ppm' : 'meq/L',
+      group: 'anion'
+    });
+  });
   return {
     ...reportMeta(a),
+    m3_riego: numOrNull(a.m3Riego),
     general: {
       ce: numOrNull(g.ce),
       ph: numOrNull(g.ph),
       ras: numOrNull(g.ras != null ? g.ras : g.sar)
     },
+    cations,
+    anions,
     cations_ppm: {
-      ca: numOrNull(cat.ca_ppm != null ? cat.ca_ppm : g.ca),
-      mg: numOrNull(cat.mg_ppm != null ? cat.mg_ppm : g.mg),
-      k: numOrNull(cat.k_ppm != null ? cat.k_ppm : g.k),
-      na: numOrNull(cat.na_ppm != null ? cat.na_ppm : g.na)
+      ca: cations.ca.ppm,
+      mg: cations.mg.ppm,
+      k: cations.k.ppm,
+      na: cations.na.ppm
     },
-    anions: {
-      no3_ppm: numOrNull(an.no3_ppm),
-      so4_ppm: numOrNull(an.so4_ppm),
-      hco3_meq: numOrNull(an.hco3_meq != null ? an.hco3_meq : g.hco3),
-      cl_ppm: numOrNull(an.cl_ppm != null ? an.cl_ppm : g.cl)
-    },
-    note: 'Análisis agua del proyecto. ≠ dureza free tool genérica.'
+    micros_ppm: microOut,
+    acid_residual_meq_L: numOrNull(a.acidResidualMeq),
+    acid_id: a.acidId || null,
+    chart_elements: chartElementsFromPairs(chartPairs),
+    presentation_hint:
+      'Tabla iones (ppm/meq/% grupo) + micros + ácido residual. chart_elements como selector. ≠ dureza free tool.',
+    note: 'Análisis agua del proyecto completo. ≠ dureza free tool genérica.'
   };
 }
 
@@ -163,54 +344,243 @@ function summarizeSolucionReport(a) {
   const cat = a.cations || {};
   const an = a.anions || {};
   const g = a.general || {};
+  const ideal = a.ideal || {};
+  const micros = a.micros || {};
+  const cations = fluidIonBag(cat, ['k', 'ca', 'mg', 'na'], ideal);
+  const anions = fluidIonBag(an, ['no3', 'so4', 'po4', 'cl', 'hco3', 'co3'], ideal);
+  const microOut = {};
+  ['b', 'fe', 'mn', 'cu', 'zn', 'mo', 'n_nh4'].forEach((k) => {
+    microOut[k] = {
+      ppm: numOrNull(micros[k]),
+      ideal_ppm: numOrNull(ideal[k]),
+      status: statusVsIdeal(numOrNull(micros[k]), numOrNull(ideal[k]), 10)
+    };
+  });
+  const chartPairs = [];
+  Object.keys(cations).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: cations[k].ppm,
+      ideal: cations[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'cation'
+    });
+  });
+  Object.keys(anions).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: anions[k].ppm,
+      ideal: anions[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'anion'
+    });
+  });
+  Object.keys(microOut).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k === 'n_nh4' ? 'N-NH₄' : k.toUpperCase(),
+      lab: microOut[k].ppm,
+      ideal: microOut[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'micro'
+    });
+  });
   return {
     ...reportMeta(a),
-    general: { ce: numOrNull(g.ce), ph: numOrNull(g.ph) },
+    general: {
+      ce_ds_m: numOrNull(g.ce),
+      ph: numOrNull(g.ph),
+      ras: numOrNull(g.ras)
+    },
+    cations,
+    anions,
     cations_ppm: {
-      k: numOrNull(cat.k_ppm),
-      ca: numOrNull(cat.ca_ppm),
-      mg: numOrNull(cat.mg_ppm),
-      na: numOrNull(cat.na_ppm)
+      k: cations.k.ppm,
+      ca: cations.ca.ppm,
+      mg: cations.mg.ppm,
+      na: cations.na.ppm
     },
     anions_ppm: {
-      no3: numOrNull(an.no3_ppm),
-      so4: numOrNull(an.so4_ppm),
-      po4: numOrNull(an.po4_ppm),
-      cl: numOrNull(an.cl_ppm)
+      no3: anions.no3.ppm,
+      so4: anions.so4.ppm,
+      po4: anions.po4.ppm,
+      cl: anions.cl.ppm,
+      hco3: anions.hco3.ppm,
+      co3: anions.co3.ppm
     },
-    note: 'Lab solución nutritiva. ≠ diseño hidroponia / programa del ciclo.'
+    micros: microOut,
+    chart_elements: chartElementsFromPairs(chartPairs),
+    presentation_hint:
+      'Tabla iones ppm/meq/% + micros vs ideal. chart_elements como selector. ≠ diseño hidroponia / programa del ciclo.',
+    note: 'Lab solución nutritiva completo. ≠ diseño hidroponia / programa del ciclo.'
   };
 }
 
 function summarizePastaReport(a) {
   if (!a) return null;
+  // Prefer estructura UI (general/cations/anions); fallback values legacy
+  const g = a.general || {};
+  const cat = a.cations || {};
+  const an = a.anions || {};
+  const ideal = a.ideal || {};
+  const micros = a.micros || {};
   const vals = a.values || a.nutrients || a.elements || {};
-  const pick = {};
-  ['ce', 'ph', 'k', 'ca', 'mg', 'na', 'nNo3', 'n_no3', 'p', 'cl', 's'].forEach((k) => {
-    if (vals[k] != null && vals[k] !== '') pick[k] = vals[k];
+  const hasFluid = !!(cat.ca_ppm != null || cat.k_ppm != null || an.no3_ppm != null || g.cee != null || g.phe != null);
+  if (!hasFluid && vals && typeof vals === 'object') {
+    const pick = {};
+    Object.keys(vals).forEach((k) => {
+      if (vals[k] != null && vals[k] !== '') pick[k] = vals[k];
+    });
+    const chartPairs = Object.keys(pick).map((k) => ({
+      id: k,
+      label: k,
+      lab: numOrNull(pick[k]),
+      ideal: numOrNull(ideal[k]),
+      unit: null,
+      group: 'value'
+    }));
+    return {
+      ...reportMeta(a),
+      values: Object.keys(pick).length ? pick : null,
+      chart_elements: chartElementsFromPairs(chartPairs),
+      note: 'Extracto de pasta (formato legado values).'
+    };
+  }
+  const cations = fluidIonBag(cat, ['k', 'ca', 'mg', 'na'], ideal);
+  const anions = fluidIonBag(an, ['no3', 'so4', 'po4', 'cl', 'hco3', 'co3'], ideal);
+  const microOut = {};
+  ['b', 'fe', 'mn', 'cu', 'zn', 'mo'].forEach((k) => {
+    microOut[k] = {
+      ppm: numOrNull(micros[k]),
+      ideal_ppm: numOrNull(ideal[k]),
+      status: statusVsIdeal(numOrNull(micros[k]), numOrNull(ideal[k]), 10)
+    };
   });
-  return { ...reportMeta(a), values: Object.keys(pick).length ? pick : null, note: 'Extracto de pasta.' };
+  const chartPairs = [];
+  Object.keys(cations).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: cations[k].ppm,
+      ideal: cations[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'cation'
+    });
+  });
+  Object.keys(anions).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: anions[k].ppm,
+      ideal: anions[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'anion'
+    });
+  });
+  Object.keys(microOut).forEach((k) => {
+    chartPairs.push({
+      id: k,
+      label: k.toUpperCase(),
+      lab: microOut[k].ppm,
+      ideal: microOut[k].ideal_ppm,
+      unit: 'ppm',
+      group: 'micro'
+    });
+  });
+  return {
+    ...reportMeta(a),
+    general: {
+      ce: numOrNull(g.cee != null ? g.cee : g.ce),
+      ph: numOrNull(g.phe != null ? g.phe : g.ph),
+      ras: numOrNull(g.ras)
+    },
+    cations,
+    anions,
+    micros: microOut,
+    chart_elements: chartElementsFromPairs(chartPairs),
+    presentation_hint:
+      'Tabla iones/micros vs ideal + chart_elements (selector). Semáforo ±10 % si hay Ideal.',
+    note: 'Extracto de pasta completo.'
+  };
 }
 
 function summarizeFrutaReport(a) {
   if (!a) return null;
   const mac = a.macros || {};
+  const mic = a.micros || {};
   const calidad = a.calidad || {};
+  const calcio = a.calcio || {};
+  const optMacro = a.optimalMacro || {};
+  const optMicro = a.optimalMicro || {};
+  const optCalidad = a.optimalCalidad || {};
+  const optCalcio = a.optimalCalcio || {};
+  const defMacro = { N: 1.8, P: 0.25, K: 1.5, Ca: 0.25, Mg: 0.2, S: 0.18 };
+  const defMicro = { Fe: 80, Mn: 40, Zn: 35, Cu: 10, B: 50, Mo: 0.5 };
+  const defCalidad = { materiaSeca: 15, brix: 12, firmeza: 5, acidezTitulable: 0.5 };
+  function iccRow(val, opt, def, unit) {
+    const o = numOrNull(opt != null && opt !== '' ? opt : def);
+    const v = numOrNull(val);
+    const icc = diffPct(v, o);
+    return { value: v, optimal: o, unit: unit || null, icc_percent: icc, status: statusVsIdeal(v, o, 10) };
+  }
+  const macros = {};
+  const chartPairs = [];
+  ['N', 'P', 'K', 'Ca', 'Mg', 'S'].forEach((n) => {
+    macros[n] = iccRow(mac[n], optMacro[n], defMacro[n], '%');
+    chartPairs.push({
+      id: n,
+      label: n,
+      lab: macros[n].value,
+      ideal: macros[n].optimal,
+      unit: '%',
+      dop_percent: macros[n].icc_percent,
+      group: 'macro'
+    });
+  });
+  const micros = {};
+  ['Fe', 'Mn', 'Zn', 'Cu', 'B', 'Mo'].forEach((n) => {
+    micros[n] = iccRow(mic[n], optMicro[n], defMicro[n], 'ppm');
+    chartPairs.push({
+      id: n,
+      label: n,
+      lab: micros[n].value,
+      ideal: micros[n].optimal,
+      unit: 'ppm',
+      dop_percent: micros[n].icc_percent,
+      group: 'micro'
+    });
+  });
+  const calidadOut = {};
+  ['materiaSeca', 'brix', 'firmeza', 'acidezTitulable'].forEach((k) => {
+    calidadOut[k] = iccRow(calidad[k], optCalidad[k], defCalidad[k], null);
+    chartPairs.push({
+      id: k,
+      label: k,
+      lab: calidadOut[k].value,
+      ideal: calidadOut[k].optimal,
+      unit: null,
+      dop_percent: calidadOut[k].icc_percent,
+      group: 'calidad'
+    });
+  });
+  const calcioOut = {
+    caTotal: iccRow(calcio.caTotal, optCalcio.caTotal, 20, null),
+    caSolublePct: iccRow(calcio.caSolublePct, optCalcio.caSolublePct, 18, '%'),
+    caLigadoPct: iccRow(calcio.caLigadoPct, optCalcio.caLigadoPct, 25, '%'),
+    caInsolublePct: iccRow(calcio.caInsolublePct, optCalcio.caInsolublePct, 55, '%')
+  };
   return {
     ...reportMeta(a),
-    macros: {
-      N: numOrNull(mac.N),
-      P: numOrNull(mac.P),
-      K: numOrNull(mac.K),
-      Ca: numOrNull(mac.Ca),
-      Mg: numOrNull(mac.Mg)
-    },
-    calidad: {
-      brix: numOrNull(calidad.brix),
-      materia_seca: numOrNull(calidad.materiaSeca),
-      firmeza: numOrNull(calidad.firmeza)
-    },
-    note: 'Análisis de fruta.'
+    macros,
+    micros,
+    calidad: calidadOut,
+    calcio: calcioOut,
+    chart_elements: chartElementsFromPairs(chartPairs),
+    presentation_hint:
+      'Tabla macros/micros/calidad/Ca fraccionado con ICC %. chart_elements como selector (más desviado primero).',
+    note: 'Análisis de fruta completo (ICC % vs óptimo).'
   };
 }
 
@@ -232,8 +602,10 @@ function labsDeep(data, opts) {
     fruta: pack(data.frutaAnalyses, summarizeFrutaReport),
     extracto_pasta: pack(data.extractoPastaAnalyses, summarizePastaReport),
     solucion_nutritiva: pack(data.solucionNutritivaAnalyses, summarizeSolucionReport),
+    presentation_hint:
+      'Didáctico y visual: 1) tabla completa del reporte, 2) chart_elements como “selector de elemento” (lab | ideal | % desvío | status), ordenado por |desvío|. ChatGPT no dibuja la gráfica web: usa tabla/markdown. Si piden un solo elemento, filtra chart_elements.',
     note:
-      'Labs del proyecto (solo lectura). Por defecto el reporte más reciente; reports_count es el total. Si piden historial o más análisis, se vuelve a consultar con latest_only false. suelo kg/ha ≠ enmiendas CIC. foliar DOP ≠ VPD. solucion_nutritiva lab ≠ hidroponia.'
+      'Labs del proyecto (solo lectura) — payload completo. Por defecto el reporte más reciente; reports_count es el total. Historial: latest_only false. suelo kg/ha ≠ enmiendas CIC. foliar DOP ≠ VPD. solucion_nutritiva lab ≠ hidroponia.'
   };
 }
 
@@ -383,6 +755,33 @@ function amendmentsDeep(data) {
         : []
     : [];
 
+  const cationKeys = ['K', 'Ca', 'Mg', 'H', 'Na', 'Al'];
+  const chart_elements = chartElementsFromPairs(
+    cationKeys.map((key) => {
+      const lab = key === 'K' ? k : key === 'Ca' ? ca : key === 'Mg' ? mg : key === 'H' ? h : key === 'Na' ? na : al;
+      const ideal = compareTo ? compareTo[key] : null;
+      return {
+        id: key,
+        label: key,
+        lab,
+        ideal,
+        unit: 'meq/100g',
+        group: 'cation_cic',
+        dop_percent: delta_meq && cic > 0 ? round2(((lab - (ideal != null ? ideal : lab)) / (cic || 1)) * 100) : diffPct(lab, ideal)
+      };
+    })
+  );
+  const chart_doses = doses.map((d) => ({
+    id: d.id,
+    label: d.name,
+    lab: d.dose_kg_ha,
+    ideal: null,
+    unit: 'kg/ha',
+    group: 'amendment_dose',
+    status: d.warning ? 'alto' : null,
+    is_custom: d.is_custom
+  }));
+
   return {
     has_data: true,
     initial_meq: {
@@ -415,6 +814,10 @@ function amendmentsDeep(data) {
       na_removal: results.naRemoval || null,
       has_saved_calculation: doses.length > 0 || !!(results.isVisible || results.amount)
     },
+    chart_elements,
+    chart_doses,
+    presentation_hint:
+      'Didáctico: 1) tabla meq / % CIC / Δ, 2) chart_elements (cationes vs ideal), 3) chart_doses (enmiendas kg/ha). Filtra si piden un solo catión o una enmienda.',
     note:
       'Enmiendas / Balance de Bases completo: meq iniciales, % saturación CIC, ideal K5/Ca75/Mg15, Δ meq, % alcance, enmiendas seleccionadas y dosis kg/ha del último cálculo (incl. personalizadas). ≠ kg/ha Análisis suelo ≠ % meq solución.'
   };
@@ -788,13 +1191,37 @@ function fertigationDeep(data, stageIndexParam) {
   const req = (data.fertirriego && data.fertirriego.requirements) || null;
   const objective = fertiObjectiveDistribution(data, program);
 
+  const selectedStage = stages[idx] || null;
+  const selOxide = (selectedStage && selectedStage.totals_oxide_kg_ha) || {};
+  const chart_elements = chartElementsFromPairs(
+    Object.keys(selOxide).map((k) => ({
+      id: k,
+      label: k,
+      lab: selOxide[k],
+      ideal: null,
+      unit: 'kg/ha',
+      group: 'stage_nutrient'
+    }))
+  );
+  const chart_fertilizers = ((selectedStage && selectedStage.fertilizers_kg_ha) || [])
+    .filter((f) => f && (f.kg_ha > 0 || f.is_custom))
+    .map((f) => ({
+      id: f.material_id || f.column_id,
+      label: f.name,
+      lab: f.kg_ha,
+      ideal: null,
+      unit: f.unit || 'kg/ha',
+      group: f.is_custom ? 'custom_fertilizer' : 'fertilizer',
+      is_custom: !!f.is_custom
+    }));
+
   return {
     has_program: true,
     time_unit: timeUnit,
     stages_count: weeks.length,
     fertilizers_catalog,
     stages,
-    selected_stage: stages[idx] || null,
+    selected_stage: selectedStage,
     chart_lamina_m3ha_by_stage,
     chart_nutrient_kg_ha_by_stage,
     chart_percent_meq_anions_by_stage: chart_percent_anions_by_stage,
@@ -807,6 +1234,10 @@ function fertigationDeep(data, stageIndexParam) {
     has_requirements: !!req,
     requirements_crop: req && (req.cropType || req.crop) ? req.cropType || req.crop : null,
     custom_fertilizers_in_program: fertilizers_catalog.filter((f) => f && f.is_custom).length,
+    chart_elements,
+    chart_fertilizers,
+    presentation_hint:
+      'Didáctico: 1) tabla 100% etapas/fertilizantes, 2) chart_elements nutrientes de la etapa activa, 3) chart_fertilizers dosis, 4) series chart_* (lámina, kg/ha, % meq) y distribución %. Si piden un nutriente o una etapa, filtra; no recortes por defecto.',
     note:
       'Programa fertirriego completo: fertilizantes por etapa (incl. personalizados custom_*), totales, composición %, lámina m³/ha → ppm/meq/%, series de gráfica de nutrientes y de % meq, y distribución objetivo (%). Muestra tablas con el 100% de etapas y fertilizantes; no recortes. stage_index elige etapa activa.'
   };
@@ -857,12 +1288,32 @@ function hydroDeep(data) {
       stages: cp.stages.map((st) => stageBrief(st, cp.activeStageId && st.id === cp.activeStageId))
     };
   }
+  const activeBrief = stageBrief(active, true);
+  const chart_elements = chartElementsFromPairs(
+    meqKeys.map((k) => ({
+      id: k,
+      label: k,
+      lab: activeBrief && activeBrief.meq_L ? activeBrief.meq_L[k] : null,
+      ideal: null,
+      unit: 'meq/L',
+      group: 'design_meq'
+    }))
+  );
+  const chart_fertilizers = fertilizers.map((f) => ({
+    id: f.id || f.materialId || null,
+    label: f.name || f.materialName || f.id || null,
+    lab: f.dose != null ? numOrNull(f.dose) : f.amount != null ? numOrNull(f.amount) : null,
+    ideal: null,
+    unit: 'g/m³',
+    group: 'hydro_fertilizer'
+  })).filter((x) => x.lab != null);
+
   return {
     has_program: !!(stages.length || fertilizers.length || cycle),
     crop_type: h.cropType || h.cultivo || h.solutionName || null,
     design_stages_count: stages.length,
     design_stages: stages.map((st) => stageBrief(st, !!(active && st && st.id === active.id))),
-    active_design_stage: stageBrief(active, true),
+    active_design_stage: activeBrief,
     fertilizers_count: fertilizers.length,
     fertilizers: fertilizers.map((f) => ({
       id: f.id || f.materialId || null,
@@ -874,6 +1325,10 @@ function hydroDeep(data) {
     tank_volume_L: numOrNull(h.tankVolumeL),
     injection_L_per_m3: numOrNull(h.injectionRateLperM3),
     cycle_program: cycle,
+    chart_elements,
+    chart_fertilizers,
+    presentation_hint:
+      'Didáctico: 1) tabla etapas meq/L + micros, 2) chart_elements iones de la etapa activa, 3) chart_fertilizers dosis g/m³. Diseño ≠ ciclo ≠ lab solución.',
     note:
       'fertilizers es la lista completa del diseño activo, no una muestra. Diseño activo ≠ Programa del ciclo (cycleProgram) ≠ lab solucion_nutritiva.'
   };
@@ -934,6 +1389,41 @@ function granularDeep(data) {
     });
   });
 
+  const chart_applications = applications.map((ap) => ({
+    id: 'app_' + ap.index,
+    label: ap.name,
+    lab: ap.dose_kg_ha,
+    ideal: null,
+    unit: 'kg/ha',
+    group: 'application'
+  })).filter((x) => x.lab != null);
+  const chart_materials = [];
+  applications.forEach((ap) => {
+    (ap.materials || []).forEach((m) => {
+      if (!m) return;
+      chart_materials.push({
+        id: m.id || m.name,
+        label: (ap.name ? ap.name + ' · ' : '') + (m.name || m.id || ''),
+        lab: m.kg_ha != null ? m.kg_ha : m.blend_pct,
+        ideal: null,
+        unit: m.kg_ha != null ? 'kg/ha' : '% mezcla',
+        group: m.is_custom ? 'custom_material' : 'material',
+        is_custom: !!m.is_custom
+      });
+    });
+  });
+  const firstTotals = (applications[0] && applications[0].totals) || {};
+  const chart_elements = chartElementsFromPairs(
+    Object.keys(firstTotals || {}).map((k) => ({
+      id: k,
+      label: k,
+      lab: numOrNull(firstTotals[k]),
+      ideal: null,
+      unit: 'kg/ha',
+      group: 'app_totals'
+    }))
+  );
+
   return {
     has_program: apps.length > 0 || !!req || !!g.cropType,
     crop_type: g.cropType || null,
@@ -948,6 +1438,11 @@ function granularDeep(data) {
           nutrients: req.nutrients || req.values || req.real || null
         }
       : null,
+    chart_elements,
+    chart_applications,
+    chart_materials,
+    presentation_hint:
+      'Didáctico: 1) tabla aplicaciones/materiales, 2) chart_applications dosis, 3) chart_materials (incl. personalizados), 4) chart_elements totales de la 1ª app. Filtra si piden una aplicación o un material.',
     note:
       'Programa granular del proyecto (aplicaciones, materiales incl. personalizados, totales). ≠ fertirriego meq/% ≠ mezcla free tool suelta.'
   };
@@ -957,6 +1452,17 @@ function vpdDeep(data) {
   const vpd = data.vpdAnalysis;
   if (!vpd || typeof vpd !== 'object') {
     return { has_data: false, message: 'Sin VPD guardado en el proyecto.' };
+  }
+  const env = vpd.environmental || {};
+  const currentVpd = numOrNull(
+    env.vpd != null ? env.vpd : env.VPD != null ? env.VPD : env.vpd_kPa
+  );
+  // Franja plataforma NutriPlant orientativa 0.5–1.5 kPa
+  let vpdStatus = null;
+  if (currentVpd != null) {
+    if (currentVpd < 0.5) vpdStatus = 'bajo';
+    else if (currentVpd <= 1.5) vpdStatus = 'ok';
+    else vpdStatus = 'alto';
   }
   const out = {
     has_data: true,
@@ -976,58 +1482,56 @@ function vpdDeep(data) {
     });
     if (maxVpd) out.max_vpd_from_current_range = maxVpd;
   }
+  out.chart_elements = chartElementsFromPairs([
+    {
+      id: 'VPD',
+      label: 'VPD actual',
+      lab: currentVpd,
+      ideal: 1.0,
+      unit: 'kPa',
+      status: vpdStatus,
+      group: 'vpd',
+      tol_pct: 50
+    },
+    {
+      id: 'VPD_max_rango',
+      label: 'VPD máx. del rango guardado',
+      lab: out.max_vpd_from_current_range ? out.max_vpd_from_current_range.vpd : null,
+      ideal: 1.5,
+      unit: 'kPa',
+      group: 'vpd'
+    },
+    {
+      id: 'T',
+      label: 'Temperatura',
+      lab: numOrNull(env.temperature != null ? env.temperature : env.temp),
+      ideal: null,
+      unit: '°C',
+      group: 'env'
+    },
+    {
+      id: 'HR',
+      label: 'Humedad relativa',
+      lab: numOrNull(env.humidity != null ? env.humidity : env.rh),
+      ideal: null,
+      unit: '%',
+      group: 'env'
+    }
+  ]);
+  out.presentation_hint =
+    'Didáctico: 1) cifra VPD vs franja 0.5–1.5 kPa, 2) chart_elements (VPD/T/HR). ≠ ventana foliar ≠ pronóstico agroclimático.';
   out.note = 'VPD del predio guardado. ≠ ventana foliar ≠ pronóstico agroclimático.';
   return out;
 }
 
 function climateDeep(data) {
-  const ca = data.climateAnalysis;
-  if (!ca || typeof ca !== 'object') {
-    return { has_data: false, message: 'Sin Clima guardado (climateAnalysis).' };
-  }
-  const iqc = ca.irrigationQuickCalc || null;
-  const roll = ca.rolling || null;
-  const live = ca.lastReading || null;
-  return {
-    has_data: true,
-    last_updated: ca.lastUpdated || null,
-    last_tab: ca.lastTab || null,
-    has_rainfall: !!(ca.rainfall && ca.rainfall.monthsPrev),
-    has_et0: !!(ca.et0 && ca.et0.monthsPrev),
-    irrigation_quick_calc: iqc
-      ? {
-          kc: numOrNull(iqc.kc),
-          crop: iqc.cropName || iqc.crop || null,
-          irrigation_m3: numOrNull(iqc.irrigationValue != null ? iqc.irrigationValue : iqc.irrigationM3),
-          crop_ha: numOrNull(iqc.cropHa),
-          irrigated_ha: numOrNull(iqc.irrigatedHa)
-        }
-      : null,
-    rolling_saved: roll
-      ? {
-          has_data: true,
-          keys: Object.keys(roll)
-        }
-      : { has_data: false },
-    tiempo_actual_guardado: live
-      ? {
-          fetched_at: live.fetchedAt || null,
-          temperature_C: numOrNull(live.temperature != null ? live.temperature : live.temperature_2m),
-          rh_pct: numOrNull(live.humidity != null ? live.humidity : live.relative_humidity_2m)
-        }
-      : null,
-    note: 'Clima del proyecto (guardado). Para satélite en vivo sin guardar: calculate_irrigation_balance / agroclimate_forecast_at_point.'
-  };
+  const climateRadar = require('./public-mcp-climate-radar');
+  return climateRadar.summarizeClimateAnalysis(data && data.climateAnalysis);
 }
 
-function extractionDeep(data) {
-  const raw =
-    data.extraccionEtapa ||
-    data.extraccion ||
-    (data.calculators && data.calculators.extraccionEtapa) ||
-    null;
+function summarizeExtractionState(raw) {
   if (!raw || typeof raw !== 'object') {
-    return { has_data: false, message: 'Sin extracción / distribución objetivo por etapa guardada.' };
+    return { has_data: false, message: 'Curva vacía o incompleta.' };
   }
   const nutrients = Array.isArray(raw.nutrients) ? raw.nutrients : [];
   const stages = Array.isArray(raw.stages) ? raw.stages : [];
@@ -1056,6 +1560,27 @@ function extractionDeep(data) {
     if (water) row.m3ha_lamina = water[i] || 0;
     return row;
   });
+  const chart_elements = chartElementsFromPairs(
+    nutrients.map((n) => ({
+      id: n.id,
+      label: n.label || n.id,
+      lab: numOrNull(n.total),
+      ideal: null,
+      unit: 'kg/ha ciclo',
+      group: 'extraction_total'
+    }))
+  );
+  const chart_stages = by_stage
+    .map((row, i) => ({
+      id: 'stage_' + i,
+      label: row.stage,
+      lab: water ? water[i] : null,
+      ideal: null,
+      unit: 'm³/ha',
+      group: 'lamina'
+    }))
+    .filter((x) => x.lab != null);
+
   return {
     has_data: nutrients.length > 0 && stages.length > 0,
     axis: raw.axis || null,
@@ -1070,7 +1595,103 @@ function extractionDeep(data) {
     lamina_m3ha_by_stage: water,
     by_stage,
     chart_percent_by_nutrient: pct_by_nutrient,
-    note: 'Distribución objetivo / extracción por etapa (% y kg/ha). Es la gráfica de %; no es el programa de fertilizantes.'
+    chart_elements,
+    chart_stages,
+    presentation_hint:
+      'Didáctico: 1) tabla % y kg/ha por etapa, 2) chart_percent_by_nutrient (selector de nutriente), 3) chart_elements totales ciclo, 4) chart_stages lámina. Filtra un nutriente si lo piden. ≠ programa de fertilizantes.',
+    note: 'Distribución nutrimental por etapa (% y kg/ha). Curva de %; no es el programa de fertilizantes.'
+  };
+}
+
+function extractionDeep(data) {
+  const raw =
+    data.extraccionEtapa ||
+    data.extraccion ||
+    (data.calculators && data.calculators.extraccionEtapa) ||
+    null;
+  if (!raw || typeof raw !== 'object') {
+    return {
+      has_data: false,
+      message:
+        'Sin curva de distribución nutrimental por etapa (%) guardada en este proyecto. La biblioteca «Mis curvas» del usuario va en extraction_library.'
+    };
+  }
+  const out = summarizeExtractionState(raw);
+  out.scope = 'project_active_curve';
+  out.note =
+    (out.note || '') +
+    ' Esta es la curva activa del proyecto (calculators.extraccionEtapa). Las curvas de la biblioteca del usuario están en extraction_library.';
+  return out;
+}
+
+/**
+ * Biblioteca «Mis curvas guardadas» (por usuario, no por proyecto).
+ * bucket: { version, updatedAt, presets: [{ id, title, state, savedAt }] }
+ * También acepta presets legacy en project.calculators.extraccionEtapaPresets.
+ */
+function extractionLibraryDeep(bucketOrBuckets) {
+  const buckets = Array.isArray(bucketOrBuckets)
+    ? bucketOrBuckets
+    : bucketOrBuckets
+      ? [bucketOrBuckets]
+      : [];
+  const seen = {};
+  const merged = [];
+  buckets.forEach((bucket) => {
+    if (!bucket || typeof bucket !== 'object') return;
+    const list = Array.isArray(bucket.presets) ? bucket.presets : [];
+    list.forEach((p) => {
+      if (!p || typeof p !== 'object') return;
+      const id = typeof p.id === 'string' && p.id ? p.id : '';
+      if (id && seen[id]) return;
+      if (id) seen[id] = true;
+      merged.push(p);
+    });
+  });
+
+  const curves = merged
+    .map((p, i) => {
+      const state = p.state && typeof p.state === 'object' ? p.state : p;
+      const summarized = summarizeExtractionState(state);
+      if (!summarized.has_data) return null;
+      const title =
+        (typeof p.title === 'string' && p.title.trim()) ||
+        summarized.title ||
+        'Curva ' + (i + 1);
+      return {
+        id: (typeof p.id === 'string' && p.id) || 'curve_' + (i + 1),
+        title: String(title).slice(0, 120),
+        saved_at: p.savedAt || p.saved_at || null,
+        crop_hint: state.crop || state.cropType || state.cultivo || null,
+        axis: summarized.axis,
+        stages_count: summarized.stages_count,
+        nutrients_count: (summarized.nutrients || []).length,
+        curve: summarized
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => String(a.title).localeCompare(String(b.title), 'es'));
+
+  return {
+    has_data: curves.length > 0,
+    curves_count: curves.length,
+    curves,
+    chart_curves: curves.map((c) => ({
+      id: c.id,
+      label: c.title,
+      lab: c.stages_count,
+      ideal: null,
+      unit: 'etapas',
+      group: 'saved_curve',
+      nutrients_count: c.nutrients_count,
+      crop_hint: c.crop_hint
+    })),
+    presentation_hint:
+      'Didáctico: 1) lista chart_curves (selector de curva guardada), 2) al elegir una, muestra curve.by_stage / chart_percent_by_nutrient. Biblioteca por usuario («Mis curvas guardadas» en 📊 Distribución nutrimental por etapa). Sobrevive si borran un proyecto. ≠ curva activa del proyecto (extraction).',
+    note:
+      curves.length > 0
+        ? 'Biblioteca de curvas del suscriptor (profiles.extraccion_etapa_presets + legacy proyecto).'
+        : 'Sin curvas en «Mis curvas guardadas». El usuario las crea en la herramienta 📊 del dashboard.'
   };
 }
 
@@ -1112,9 +1733,19 @@ function buildDeepRead(data, params) {
     programs: null,
     vpd: null,
     climate: null,
-    extraction: null
+    extraction: null,
+    extraction_library: null
   };
   const wantAll = !section || section === 'all';
+  const wantExtraction =
+    wantAll ||
+    section === 'extraccion' ||
+    section === 'extraction' ||
+    section === 'distribucion' ||
+    section === 'distribucion_nutrimental' ||
+    section === 'curvas' ||
+    section === 'presets' ||
+    section === 'biblioteca_curvas';
   if (wantAll || section === 'labs' || section === 'analisis') {
     out.labs = labsDeep(data, params);
   }
@@ -1136,9 +1767,26 @@ function buildDeepRead(data, params) {
     if (section === 'granular') out.programs = { granular: out.programs.granular };
   }
   if (wantAll || section === 'vpd') out.vpd = vpdDeep(data);
-  if (wantAll || section === 'clima' || section === 'climate') out.climate = climateDeep(data);
-  if (wantAll || section === 'extraccion' || section === 'extraction' || section === 'distribucion') {
-    out.extraction = extractionDeep(data);
+  if (
+    wantAll ||
+    section === 'clima' ||
+    section === 'climate' ||
+    section === 'radar' ||
+    section === 'satelite' ||
+    section === 'satelital' ||
+    section === 'ndvi' ||
+    section === 'lectura'
+  ) {
+    out.climate = climateDeep(data);
+  }
+  if (wantExtraction || section === 'fertirriego') {
+    if (!out.extraction) out.extraction = extractionDeep(data);
+    // Legacy presets guardados dentro del proyecto (migración); la biblioteca de usuario se completa en getMyProject.
+    const projectPresets =
+      data.calculators && data.calculators.extraccionEtapaPresets
+        ? data.calculators.extraccionEtapaPresets
+        : null;
+    out.extraction_library = extractionLibraryDeep(projectPresets ? [projectPresets] : []);
   }
 
   // Compat type=suelo|foliar|agua → forzar labs + filtrar
@@ -1175,9 +1823,14 @@ module.exports = {
   vpdDeep,
   climateDeep,
   extractionDeep,
+  extractionLibraryDeep,
+  summarizeExtractionState,
   locationDeep,
   summarizeSoilReport,
   summarizeFoliarReport,
   summarizeAguaReport,
+  summarizeSolucionReport,
+  summarizePastaReport,
+  summarizeFrutaReport,
   numOrNull
 };

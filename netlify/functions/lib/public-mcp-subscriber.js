@@ -3,6 +3,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const deep = require('./public-mcp-subscriber-read');
 const cross = require('./public-mcp-cross');
+const climateRadar = require('./public-mcp-climate-radar');
 
 const ANALYSIS_KEYS = {
   suelo: 'soilAnalyses',
@@ -90,6 +91,7 @@ function summarizeProject(row) {
       granular: !!(granular && (granular.program || granular.mix || granular.materials || granular.requirements)),
       vpd: !!data.vpdAnalysis,
       clima: !!data.climateAnalysis,
+      radar: false,
       enmiendas: hasAmendments(data),
       extraccion: !!(data.extraccionEtapa || data.extraccion)
     },
@@ -238,12 +240,94 @@ async function getMyProject(user, params) {
   const data = row.data || {};
   const project = summarizeProject(row);
   const deepRead = deep.buildDeepRead(data, params || {});
+  const section = String((params && params.section) || '').toLowerCase();
+  const wantRadar =
+    !section ||
+    section === 'all' ||
+    section === 'clima' ||
+    section === 'climate' ||
+    section === 'radar' ||
+    section === 'satelite' ||
+    section === 'satelital' ||
+    section === 'ndvi' ||
+    section === 'lectura';
+  if (wantRadar) {
+    const supabase = serviceClient();
+    deepRead.radar = await climateRadar.buildSubscriberRadar(supabase, user.userId, row.id, params || {});
+    project.modules.radar = !!(deepRead.radar && deepRead.radar.has_data);
+  }
+
+  const wantExtractionLib =
+    !section ||
+    section === 'all' ||
+    section === 'extraccion' ||
+    section === 'extraction' ||
+    section === 'distribucion' ||
+    section === 'distribucion_nutrimental' ||
+    section === 'curvas' ||
+    section === 'presets' ||
+    section === 'biblioteca_curvas' ||
+    section === 'fertirriego' ||
+    section === 'programs' ||
+    section === 'programas';
+  if (wantExtractionLib) {
+    const supabase = serviceClient();
+    let profileBucket = null;
+    if (supabase) {
+      try {
+        const { data: prof, error: profErr } = await supabase
+          .from('profiles')
+          .select('extraccion_etapa_presets')
+          .eq('id', user.userId)
+          .maybeSingle();
+        if (!profErr && prof && prof.extraccion_etapa_presets) {
+          profileBucket = prof.extraccion_etapa_presets;
+        }
+      } catch (e) {
+        /* ignore profile read errors */
+      }
+    }
+    const projectPresets =
+      data.calculators && data.calculators.extraccionEtapaPresets
+        ? data.calculators.extraccionEtapaPresets
+        : null;
+    const buckets = [];
+    if (profileBucket) buckets.push(profileBucket);
+    if (projectPresets) buckets.push(projectPresets);
+    deepRead.extraction_library = deep.extractionLibraryDeep(buckets);
+    if (!deepRead.extraction) deepRead.extraction = deep.extractionDeep(data);
+    project.modules.extraccion_library = !!(
+      deepRead.extraction_library && deepRead.extraction_library.has_data
+    );
+  }
+
+  if (section === 'radar' || section === 'satelite' || section === 'satelital' || section === 'ndvi') {
+    deepRead.labs = null;
+    deepRead.amendments = null;
+    deepRead.programs = null;
+    deepRead.vpd = null;
+    deepRead.extraction = null;
+    deepRead.extraction_library = null;
+  }
+  if (
+    section === 'curvas' ||
+    section === 'presets' ||
+    section === 'biblioteca_curvas' ||
+    section === 'distribucion_nutrimental'
+  ) {
+    deepRead.labs = null;
+    deepRead.amendments = null;
+    deepRead.programs = null;
+    deepRead.vpd = null;
+    deepRead.climate = null;
+    deepRead.radar = null;
+  }
   const wantCross =
     !params ||
     params.cross === true ||
     params.cross === 'true' ||
-    String((params && params.section) || '') === 'cross' ||
-    String((params && params.section) || '') === 'all' ||
+    section === 'cross' ||
+    section === 'all' ||
     !params.section;
   const out = {
     ok: true,
@@ -263,7 +347,10 @@ async function getMyProject(user, params) {
       deepRead.labs && deepRead.labs.agua && deepRead.labs.agua.reports && deepRead.labs.agua.reports[0]
         ? deepRead.labs.agua.reports[0]
         : null,
-    programs: deepRead.programs || null
+    programs: deepRead.programs || null,
+    radar: deepRead.radar || null,
+    extraction: deepRead.extraction || null,
+    extraction_library: deepRead.extraction_library || null
   };
   if (wantCross) {
     out.cross = cross.crossProjectSignals(data, {

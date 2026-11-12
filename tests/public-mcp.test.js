@@ -149,14 +149,67 @@ module.exports = [
       var r = read.summarizeSoilReport({
         title: 'Lab1',
         date: '2026-01-01',
-        fertility: { p: 20, k: 100, ca: 800, mg: 100, depthCm: 20, reachPct: 100, ideal: { p: 30, k: 150 } },
-        physical: { bulkDensity: 1.2 },
-        cations: { k: 0.5, ca: 8, mg: 1.5, cic: 12 },
-        phSection: { ph: 6.8 }
+        fertility: {
+          p: 20,
+          k: 100,
+          ca: 800,
+          mg: 100,
+          fe: 5,
+          zn: 2,
+          depthCm: 20,
+          reachPct: 100,
+          pMethod: 'Bray',
+          microMethod: 'DTPA',
+          ideal: { p: 30, k: 150 }
+        },
+        physical: { bulkDensity: 1.2, fieldCapacity: 18, wiltingPoint: 9 },
+        cations: { k: 0.5, ca: 8, mg: 1.5, cic: 12, pctCa: 66, pctK: 4 },
+        ratios: { caMg: 5.3, caK: 16 },
+        phSection: { ph: 6.8, salinity: 1.2 }
       });
       assert.ok(r.kg_ha && r.kg_ha.nutrients.p);
       assert.equal(r.ph, 6.8);
       assert.ok(r.kg_ha.nutrients.p.kg_ha_adjustment != null);
+      assert.equal(r.fertility.p_method, 'Bray');
+      assert.equal(r.fertility.lab_ppm.fe, 5);
+      assert.equal(r.cations_pct_cic.ca, 66);
+      assert.ok(r.chart_elements && r.chart_elements.length >= 2);
+      assert.ok(r.chart_elements.some(function (e) { return e.id === 'k' && e.status === 'bajo'; }));
+      assert.ok(r.chart_elements.some(function (e) { return e.id === 'p'; }));
+    }
+  },
+  {
+    name: 'Público: labs foliar/fruta/pasta chart_elements',
+    run: function () {
+      var read = require('../netlify/functions/lib/public-mcp-subscriber-read.js');
+      var f = read.summarizeFoliarReport({
+        title: 'F1',
+        macros: { N: 2.1, Ca: 0.8, K: 3.2 },
+        micros: { Fe: 80, Zn: 20 },
+        optimalMacro: { N: 3, Ca: 1.25, K: 2.5 }
+      });
+      assert.ok(f.macros.Ca.dop_percent < 0);
+      assert.ok(f.chart_elements.some(function (e) { return e.id === 'Ca'; }));
+      var fr = read.summarizeFrutaReport({
+        macros: { N: 1.5, Ca: 0.1 },
+        micros: { B: 40 },
+        calidad: { brix: 10, materiaSeca: 14 },
+        calcio: { caTotal: 15, caSolublePct: 20 }
+      });
+      assert.ok(fr.micros.B);
+      assert.ok(fr.calcio.caTotal);
+      assert.ok(fr.chart_elements.length >= 3);
+      var p = read.summarizePastaReport({
+        general: { cee: 2.1, phe: 6.2 },
+        cations: { k_ppm: 40, ca_ppm: 120, mg_ppm: 30, na_ppm: 20 },
+        anions: { no3_ppm: 50, so4_ppm: 80, cl_ppm: 40 },
+        micros: { fe: 1.2, zn: 0.3 },
+        ideal: { k: 50, ca: 150 }
+      });
+      assert.equal(p.general.ce, 2.1);
+      assert.equal(p.cations.k.ppm, 40);
+      assert.equal(p.cations.k.diff_vs_ideal_ppm, -10);
+      assert.ok(p.chart_elements.length >= 4);
     }
   },
   {
@@ -282,6 +335,157 @@ module.exports = [
       assert.equal(r.doses_kg_ha[0].dose_kg_ha, 200);
       assert.equal(r.doses_kg_ha[1].is_custom, true);
       assert.equal(r.totals_kg_ha.Ca, 66.6);
+      assert.ok(r.chart_elements && r.chart_elements.length >= 3);
+      assert.ok(r.chart_doses && r.chart_doses.length === 2);
+      assert.match(String(r.presentation_hint || ''), /Didáctico|chart_elements/);
+    }
+  },
+  {
+    name: 'Público: biblioteca curvas extracción por etapa',
+    run: function () {
+      var read = require('../netlify/functions/lib/public-mcp-subscriber-read.js');
+      var lib = read.extractionLibraryDeep({
+        version: 1,
+        presets: [
+          {
+            id: 'c1',
+            title: 'Tomate invernadero',
+            savedAt: 1700000000000,
+            state: {
+              axis: 'etapa',
+              stages: ['Veg', 'Flor', 'Fruto'],
+              nutrients: [
+                { id: 'N', label: 'N', total: 200 },
+                { id: 'K', label: 'K', total: 250 }
+              ],
+              pct: { N: [30, 30, 40], K: [20, 40, 40] },
+              waterDepthByStageM3ha: [40, 50, 60]
+            }
+          },
+          {
+            id: 'c2',
+            title: 'Maíz',
+            state: {
+              stages: ['A', 'B'],
+              nutrients: [{ id: 'N', label: 'N', total: 180 }],
+              pct: { N: [50, 50] }
+            }
+          }
+        ]
+      });
+      assert.equal(lib.has_data, true);
+      assert.equal(lib.curves_count, 2);
+      assert.equal(lib.curves[0].title, 'Maíz');
+      assert.ok(lib.curves[1].curve.by_stage.length === 3);
+      assert.equal(lib.curves[1].curve.pct_by_nutrient.N[2], 40);
+      assert.ok(lib.chart_curves.length === 2);
+
+      var deep = read.buildDeepRead(
+        {
+          calculators: {
+            extraccionEtapa: {
+              stages: ['Veg', 'Rep'],
+              nutrients: [{ id: 'N', label: 'N', total: 100 }],
+              pct: { N: [40, 60] }
+            },
+            extraccionEtapaPresets: {
+              presets: [
+                {
+                  id: 'legacy1',
+                  title: 'Legacy proyecto',
+                  state: {
+                    stages: ['X'],
+                    nutrients: [{ id: 'P', label: 'P', total: 50 }],
+                    pct: { P: [100] }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        { section: 'distribucion_nutrimental' }
+      );
+      assert.equal(deep.extraction.has_data, true);
+      assert.equal(deep.extraction_library.has_data, true);
+      assert.equal(deep.extraction_library.curves[0].id, 'legacy1');
+    }
+  },
+  {
+    name: 'Público: clima deep completo lluvia/ET0/balance',
+    run: function () {
+      var climateRadar = require('../netlify/functions/lib/public-mcp-climate-radar.js');
+      var r = climateRadar.summarizeClimateAnalysis({
+        lastUpdated: '2026-03-01',
+        rainfall: {
+          monthsPrev: { '01': 10, '02': 20 },
+          monthsCurr: { '01': 5 },
+          previousYear: 2025,
+          currentYear: 2026,
+          years: {
+            2025: { months: { '01': 10, '02': 20 }, partial: false },
+            2026: { months: { '01': 5 }, partial: true }
+          }
+        },
+        et0: {
+          monthsPrev: { '01': 80, '02': 90 },
+          monthsCurr: { '01': 70 },
+          previousYear: 2025,
+          currentYear: 2026
+        },
+        rolling: { et0_7d: 28, rain_7d: 4, et0_30d: 110, rain_30d: 12 },
+        irrigationQuickCalc: { kc: 1.1, cropName: 'Tomate', periodDays: 7, irrigationValue: 20, irrigationUnit: 'mm', cropAreaHa: 2, irrigatedAreaHa: 2 },
+        lastReading: { fetchedAt: '2026-03-01T12:00:00Z', temperature: 24, humidity: 55, rainTodayMm: 0, et0TodayMm: 4.2 }
+      });
+      assert.equal(r.has_data, true);
+      assert.equal(r.rainfall.has_data, true);
+      assert.ok(r.rainfall.years.length >= 1);
+      assert.equal(r.et0.has_data, true);
+      assert.equal(r.rolling_windows.et0_7d_mm, 28);
+      assert.equal(r.irrigation_quick_calc.kc, 1.1);
+      assert.equal(r.tiempo_actual_guardado.temperature_c, 24);
+      assert.ok(r.chart_elements && r.chart_elements.some(function (e) { return e.id === 'et0_7d'; }));
+      assert.ok(r.chart_months && r.chart_months.length >= 1);
+      assert.match(String(r.presentation_hint || ''), /Didáctico|chart_/);
+    }
+  },
+  {
+    name: 'Público: radar snapshot arma capas desde meta',
+    run: async function () {
+      var climateRadar = require('../netlify/functions/lib/public-mcp-climate-radar.js');
+      var calls = [];
+      var fakeSb = {
+        storage: {
+          from: function () {
+            return {
+              createSignedUrl: async function (path, ttl) {
+                calls.push({ path: path, ttl: ttl });
+                return { data: { signedUrl: 'https://signed.example/' + path }, error: null };
+              }
+            };
+          }
+        }
+      };
+      var snap = await climateRadar.buildRadarImageSnapshot(fakeSb, {
+        id: 'req-1',
+        created_at: '2026-03-01T00:00:00Z',
+        month_key: '2026-03',
+        image_storage_path: 'u/p/ndvi.png',
+        meta: {
+          date_start: '2026-02-20',
+          date_end: '2026-03-01',
+          ndmi_storage_path: 'u/p/ndmi.png',
+          ndre_storage_path: 'u/p/ndre.png',
+          rgb_storage_path: 'u/p/rgb.png',
+          location_snapshot: { area_hectares: 12.5, center: { lat: 19.1, lng: -99.1 } }
+        }
+      });
+      assert.equal(snap.id, 'req-1');
+      assert.match(snap.images.ndvi.signed_url, /ndvi\.png/);
+      assert.match(snap.images.ndmi.signed_url, /ndmi\.png/);
+      assert.match(snap.images.ndre.signed_url, /ndre\.png/);
+      assert.match(snap.images.rgb.signed_url, /rgb\.png/);
+      assert.equal(snap.area_hectares, 12.5);
+      assert.equal(calls.length, 4);
     }
   },
   {
