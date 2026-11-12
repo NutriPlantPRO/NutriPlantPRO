@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=78" />
+  <link rel="stylesheet" href="auth.css?v=79" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -5403,12 +5403,14 @@
         // Si el cajón es más angosto, se escala para que quepa completo (sin recortar).
         var measured = Math.floor(plugin.clientWidth || card.clientWidth || 0);
         var width = 340;
-        var height = 154;
+        var height = 190;
         var scale = measured > 0 ? Math.min(1, measured / width) : 1;
         var prevW = parseInt(iframe.getAttribute('data-fb-w'), 10) || 0;
+        var prevH = parseInt(iframe.getAttribute('data-fb-h'), 10) || 0;
         var prevScale = parseFloat(iframe.getAttribute('data-fb-scale') || '0') || 0;
         if (
           prevW === width &&
+          prevH === height &&
           Math.abs(prevScale - scale) < 0.02 &&
           iframe.src &&
           iframe.src.indexOf('plugins/page.php') !== -1

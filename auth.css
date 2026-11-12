@@ -1060,9 +1060,9 @@
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
-  height: 154px;
-  min-height: 154px;
-  max-height: 154px;
+  height: 190px;
+  min-height: 190px;
+  max-height: 190px;
   flex: 0 0 auto;
   width: 100%;
   max-width: 100%;
@@ -1075,9 +1075,9 @@
   width: 340px;
   min-width: 340px;
   max-width: none;
-  height: 154px;
-  min-height: 154px;
-  max-height: 154px;
+  height: 190px;
+  min-height: 190px;
+  max-height: 190px;
   border: 0;
   transform-origin: top left;
 }
