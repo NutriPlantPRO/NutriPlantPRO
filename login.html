@@ -37,7 +37,7 @@
   
   <!-- Cel apilado; Fold abierto / tablet / laptop en 2 columnas -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=79" />
+  <link rel="stylesheet" href="auth.css?v=80" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -5399,12 +5399,15 @@
           channel.style.wordBreak = 'normal';
           channel.style.overflowWrap = 'normal';
         }
-        // Facebook necesita ~340px para dibujar «Seguir página» + «Compartir».
-        // Si el cajón es más angosto, se escala para que quepa completo (sin recortar).
+        // Usar el ancho real del cajón (full-bleed). Solo escalar si queda bajo 340px.
         var measured = Math.floor(plugin.clientWidth || card.clientWidth || 0);
-        var width = 340;
         var height = 190;
-        var scale = measured > 0 ? Math.min(1, measured / width) : 1;
+        var width = Math.max(340, Math.min(500, measured || 340));
+        var scale = 1;
+        if (measured > 0 && measured < 340) {
+          width = 340;
+          scale = measured / 340;
+        }
         var prevW = parseInt(iframe.getAttribute('data-fb-w'), 10) || 0;
         var prevH = parseInt(iframe.getAttribute('data-fb-h'), 10) || 0;
         var prevScale = parseFloat(iframe.getAttribute('data-fb-scale') || '0') || 0;
@@ -5416,17 +5419,17 @@
           iframe.src.indexOf('plugins/page.php') !== -1
         ) {
           plugin.style.height = Math.round(height * scale) + 'px';
-          iframe.style.transform = 'scale(' + scale + ')';
+          iframe.style.transform = scale < 1 ? 'scale(' + scale + ')' : 'none';
           return;
         }
         iframe.setAttribute('data-fb-w', String(width));
         iframe.setAttribute('data-fb-h', String(height));
         iframe.setAttribute('data-fb-scale', String(scale));
         iframe.style.width = width + 'px';
-        iframe.style.minWidth = width + 'px';
+        iframe.style.minWidth = '340px';
         iframe.style.maxWidth = 'none';
         iframe.style.height = height + 'px';
-        iframe.style.transform = 'scale(' + scale + ')';
+        iframe.style.transform = scale < 1 ? 'scale(' + scale + ')' : 'none';
         iframe.style.transformOrigin = 'top left';
         plugin.style.height = Math.round(height * scale) + 'px';
         plugin.style.minHeight = Math.round(height * scale) + 'px';
@@ -5435,7 +5438,7 @@
         iframe.src = 'https://www.facebook.com/plugins/page.php?href=' + href +
           '&width=' + width +
           '&height=' + height +
-          '&small_header=false&adapt_container_width=false&hide_cover=true&show_facepile=false&locale=es_LA';
+          '&small_header=false&adapt_container_width=true&hide_cover=true&show_facepile=false&locale=es_LA';
       }
 
       function showSocialTab(id) {
