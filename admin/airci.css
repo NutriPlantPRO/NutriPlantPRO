@@ -1224,6 +1224,25 @@ button, input, select, textarea { font: inherit; }
   display: none !important;
 }
 
+.aci-radar-meta {
+  margin: 0;
+  padding: 8px 15px;
+  font-size: 12px;
+  color: #334155;
+  background: #f0fdf4;
+  border-top: 1px solid #bbf7d0;
+}
+.aci-radar-meta.is-busy {
+  background: #fff7ed;
+  border-top-color: #fdba74;
+  color: #9a3412;
+}
+.aci-radar-meta.is-error {
+  background: #fef2f2;
+  border-top-color: #fecaca;
+  color: #991b1b;
+}
+
 .aci-map-hint {
   margin: 0 0 10px;
   padding: 8px 12px;

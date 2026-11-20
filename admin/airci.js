@@ -45,6 +45,7 @@
   var API = '/api/airci-ortho';
   var API_AI = '/api/airci-canopy-ai';
   var API_PRO = '/api/airci-canopy-detect';
+  var API_RADAR = '/api/airci-radar';
   var DETECT_MODEL_KEY = 'airci_detect_model_v2';
   var PREVIEW_WARN_BYTES = 80 * 1024 * 1024;
 
@@ -114,6 +115,10 @@
   var predioDrawing = false;
   var predioLayer = null;
   var predioVertexLayer = null;
+  var radarLayers = { ndvi: null, ndmi: null, ndre: null, rgb: null };
+  var radarActiveKey = null;
+  var radarBusy = false;
+  var radarMeta = null;
 
 
   function showError(msg) {
@@ -870,6 +875,11 @@
       } else if (map.hasLayer(canopyLabelLayer)) {
         map.removeLayer(canopyLabelLayer);
       }
+    }
+    // Capas satélite: una a la vez (chip activo)
+    if (radarActiveKey && radarLayers[radarActiveKey] && map) {
+      var satLayer = radarLayers[radarActiveKey];
+      if (!map.hasLayer(satLayer)) satLayer.addTo(map);
     }
     bringOverlaysFront();
     var legend = document.getElementById('aciLegend');
@@ -5809,13 +5819,22 @@
   }
 
   function bringOverlaysFront() {
-    // Fondo Google atrás; ortomosaico encima; copas/calibración/edición al frente
+    // Fondo Google atrás; ortomosaico; radar sat; copas/predio al frente
     if (basemapLayer && map && map.hasLayer(basemapLayer) && basemapLayer.bringToBack) {
       basemapLayer.bringToBack();
     }
     if (rasterLayer && map && map.hasLayer(rasterLayer)) {
       if (rasterLayer.setOpacity) rasterLayer.setOpacity(1);
       if (rasterLayer.bringToFront) rasterLayer.bringToFront();
+    }
+    if (radarActiveKey && radarLayers[radarActiveKey] && map && map.hasLayer(radarLayers[radarActiveKey])) {
+      if (radarLayers[radarActiveKey].bringToFront) radarLayers[radarActiveKey].bringToFront();
+    }
+    if (predioLayer && map && map.hasLayer(predioLayer) && predioLayer.bringToFront) {
+      predioLayer.bringToFront();
+    }
+    if (predioVertexLayer && map && map.hasLayer(predioVertexLayer) && predioVertexLayer.bringToFront) {
+      predioVertexLayer.bringToFront();
     }
     if (canopyOutlineLayer && map && map.hasLayer(canopyOutlineLayer) && canopyOutlineLayer.bringToFront) {
       canopyOutlineLayer.bringToFront();
@@ -5946,6 +5965,151 @@
     if (closeBtn) closeBtn.hidden = !(predioDrawing && n >= 3);
     if (clearBtn) clearBtn.hidden = n < 1;
     if (exportBtn) exportBtn.hidden = !(predioClosed && n >= 3);
+    var radarBtn = document.getElementById('aciRadarBtn');
+    if (radarBtn) {
+      radarBtn.hidden = !(predioClosed && n >= 3);
+      radarBtn.disabled = !!radarBusy || !(predioClosed && n >= 3);
+      radarBtn.textContent = radarBusy ? 'Radar…' : 'Radar satélite';
+    }
+  }
+
+  function clearRadarOverlays() {
+    Object.keys(radarLayers).forEach(function (key) {
+      var layer = radarLayers[key];
+      if (layer && map) {
+        try {
+          map.removeLayer(layer);
+        } catch (e) {}
+      }
+      radarLayers[key] = null;
+    });
+    radarActiveKey = null;
+    document.querySelectorAll('#aciLayerBar [data-sat]').forEach(function (btn) {
+      btn.disabled = true;
+      btn.classList.remove('is-active');
+    });
+    var metaEl = document.getElementById('aciRadarMeta');
+    if (metaEl) {
+      metaEl.hidden = true;
+      metaEl.textContent = '';
+      metaEl.classList.remove('is-busy', 'is-error');
+    }
+  }
+
+  function setRadarMeta(text, kind) {
+    var metaEl = document.getElementById('aciRadarMeta');
+    if (!metaEl) return;
+    metaEl.hidden = !text;
+    metaEl.textContent = text || '';
+    metaEl.classList.toggle('is-busy', kind === 'busy');
+    metaEl.classList.toggle('is-error', kind === 'error');
+  }
+
+  function showRadarSatLayer(key) {
+    if (!map || !radarLayers[key]) return;
+    Object.keys(radarLayers).forEach(function (k) {
+      var layer = radarLayers[k];
+      if (!layer) return;
+      if (k === key) {
+        if (!map.hasLayer(layer)) layer.addTo(map);
+        if (layer.setOpacity) layer.setOpacity(0.78);
+      } else if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+    radarActiveKey = key;
+    document.querySelectorAll('#aciLayerBar [data-sat]').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-sat') === key);
+    });
+    bringOverlaysFront();
+  }
+
+  function applyRadarResult(payload) {
+    if (!map || !payload || !payload.layers || !payload.bbox) {
+      throw new Error('Respuesta Radar incompleta');
+    }
+    clearRadarOverlays();
+    var b = payload.bbox;
+    var bounds = L.latLngBounds(
+      [Number(b.south), Number(b.west)],
+      [Number(b.north), Number(b.east)]
+    );
+    ['ndvi', 'ndmi', 'ndre', 'rgb'].forEach(function (key) {
+      var url = payload.layers[key];
+      if (!url) return;
+      radarLayers[key] = L.imageOverlay(url, bounds, {
+        opacity: 0.78,
+        interactive: false,
+        zIndex: 450
+      });
+      var chip = document.querySelector('#aciLayerBar [data-sat="' + key + '"]');
+      if (chip) chip.disabled = false;
+    });
+    radarMeta = payload.meta || null;
+    var m = radarMeta || {};
+    var bits = [];
+    if (m.date_start || m.date_end) {
+      bits.push('fecha ' + (m.date_start || '?') + (m.date_end && m.date_end !== m.date_start ? ' → ' + m.date_end : ''));
+    }
+    if (m.ndvi_mean != null) bits.push('NDVI medio ' + Number(m.ndvi_mean).toFixed(3));
+    if (m.ndmi_mean != null) bits.push('NDMI ' + Number(m.ndmi_mean).toFixed(3));
+    if (m.coverage && m.coverage.valid_pct != null) {
+      bits.push('cobertura útil ' + Number(m.coverage.valid_pct).toFixed(0) + '%');
+    }
+    setRadarMeta(
+      'Radar satélite listo' + (bits.length ? ' · ' + bits.join(' · ') : '') + ' · usa las capas NDVI/NDMI/NDRE/RGB sat',
+      'ok'
+    );
+    showRadarSatLayer('ndvi');
+  }
+
+  async function runAirciRadar() {
+    if (radarBusy) return;
+    if (!predioClosed || predioRing.length < 3) {
+      setMapStatus('Cierra el predio antes de pedir el Radar satélite.', 'error');
+      return;
+    }
+    var token = await getAccessToken();
+    if (!token) {
+      setMapStatus('Sin sesión Supabase. Entra de nuevo como admin.', 'error');
+      return;
+    }
+    radarBusy = true;
+    syncPredioUi();
+    setRadarMeta('Pidiendo Sentinel (NDVI/NDMI/NDRE/RGB) sobre el predio… puede tardar 1–3 min.', 'busy');
+    setMapStatus('Radar satélite · consultando pasadas…', 'ok');
+    try {
+      var res = await fetch(API_RADAR, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          polygon: predioRing,
+          max_dim: 768
+        })
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) {
+        throw new Error(
+          (data && (data.message || data.error)) || 'Error Radar HTTP ' + res.status
+        );
+      }
+      applyRadarResult(data);
+      setMapStatus('Radar listo · capa NDVI sat activa (cambia con los chips).', 'ok');
+    } catch (err) {
+      setRadarMeta(
+        'Radar falló: ' + ((err && err.message) || 'error'),
+        'error'
+      );
+      setMapStatus('Radar satélite: ' + ((err && err.message) || 'error'), 'error');
+    } finally {
+      radarBusy = false;
+      syncPredioUi();
+    }
   }
 
   function clearPredioLayers() {
@@ -6077,6 +6241,7 @@
     predioDrawing = false;
     savePredioLocal();
     clearPredioLayers();
+    clearRadarOverlays();
     syncPredioUi();
     setMapStatus('Predio borrado.', 'ok');
   }
@@ -7048,6 +7213,27 @@
       exportPredioGeoJson();
     });
   }
+  var radarBtn = document.getElementById('aciRadarBtn');
+  if (radarBtn) {
+    radarBtn.addEventListener('click', function () {
+      runAirciRadar();
+    });
+  }
+  document.querySelectorAll('#aciLayerBar [data-sat]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (btn.disabled) return;
+      var key = btn.getAttribute('data-sat');
+      if (!key || !radarLayers[key]) return;
+      if (radarActiveKey === key) {
+        // apagar
+        if (map && map.hasLayer(radarLayers[key])) map.removeLayer(radarLayers[key]);
+        radarActiveKey = null;
+        btn.classList.remove('is-active');
+        return;
+      }
+      showRadarSatLayer(key);
+    });
+  });
   syncPredioUi();
 
   var analyzeBtn = document.getElementById('aciAnalyzeBtn');

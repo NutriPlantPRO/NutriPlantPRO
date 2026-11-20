@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20261119hide2">
+  <link rel="stylesheet" href="./airci.css?v=20261119radar1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -240,6 +240,7 @@
             <button type="button" class="aci-btn aci-btn--analyze" id="aciPredioCloseBtn" hidden title="Cierra el polígono con los puntos marcados">Cerrar predio</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciPredioClearBtn" hidden title="Borra el polígono del predio">Borrar predio</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciPredioExportBtn" hidden title="Descarga GeoJSON del predio para Cursor">Descargar predio</button>
+            <button type="button" class="aci-btn aci-btn--analyze" id="aciRadarBtn" hidden title="Pide NDVI/NDMI/NDRE/RGB del satélite (Sentinel) sobre este predio">Radar satélite</button>
           </div>
         </div>
         <p class="aci-map-hint" id="aciCursorHint">
@@ -291,7 +292,12 @@
           <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Números solo con esta capa activa">Números (ID)</button>
           <button type="button" class="aci-layer-chip" data-paint-mode="pheno" data-pheno-key="dom" disabled title="Pinta por estado fenológico dominante">Fenología</button>
           <button type="button" class="aci-layer-chip" data-paint-mode="color" disabled title="AirCI Color Score 0–100 (GLI vs predio). Como NDVI relativo, pero por copa RGB">Color Score</button>
+          <button type="button" class="aci-layer-chip" data-sat="ndvi" disabled title="NDVI satélite (vigor) sobre el predio">NDVI sat</button>
+          <button type="button" class="aci-layer-chip" data-sat="ndmi" disabled title="NDMI satélite (humedad del dosel)">NDMI sat</button>
+          <button type="button" class="aci-layer-chip" data-sat="ndre" disabled title="NDRE satélite (clorofila / dosel)">NDRE sat</button>
+          <button type="button" class="aci-layer-chip" data-sat="rgb" disabled title="RGB satélite (vista natural Sentinel)">RGB sat</button>
         </div>
+        <p id="aciRadarMeta" class="aci-radar-meta" hidden role="status"></p>
         <div class="aci-result-edit" id="aciResultEdit" hidden>
           <span>Corrección manual</span>
           <button type="button" class="aci-btn aci-btn--ghost" id="aciResultEditToggle">Editar perímetros</button>
@@ -622,6 +628,6 @@
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="./airci-canopy.js?v=20260807edit17"></script>
-  <script src="./airci.js?v=20261119hide2"></script>
+  <script src="./airci.js?v=20261119radar1"></script>
 </body>
 </html>

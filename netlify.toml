@@ -61,6 +61,9 @@
 [functions."airci-canopy-detect-background"]
   timeout = 900
 
+[functions."airci-radar"]
+  timeout = 900
+
 [functions."nutriplant-admin-assistant"]
   timeout = 26
 
@@ -332,6 +335,12 @@
 [[redirects]]
   from = "/api/airci-canopy-ai"
   to = "/.netlify/functions/airci-canopy-ai"
+
+[[redirects]]
+  from = "/api/airci-radar"
+  to = "/.netlify/functions/airci-radar"
+  status = 200
+  force = true
   status = 200
   force = true
 
