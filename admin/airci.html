@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20261119hide1">
+  <link rel="stylesheet" href="./airci.css?v=20261119hide2">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -247,7 +247,7 @@
           El polígono del predio sí sirve para el análisis; las 10 copas ya no.
         </p>
         <p class="aci-predio-status" id="aciPredioStatus" hidden role="status">Predio: sin marcar</p>
-        <div class="aci-calibration" id="aciCalibration" hidden>
+        <div class="aci-calibration aci-legacy-detect-ui" id="aciCalibration" hidden aria-hidden="true">
           <div class="aci-calibration__copy">
             <strong>Calibración de copas</strong>
             <span id="aciCalibrationHint">Selecciona 10 árboles representativos del vuelo. Cada clic crea una copa inicial de 6 puntos para que tú la ajustes.</span>
@@ -260,7 +260,7 @@
             <button type="button" class="aci-btn aci-btn--analyze" id="aciCalibrationConfirm" hidden>Confirmar 10 copas</button>
           </div>
         </div>
-        <p id="aciAiUsageBar" class="aci-ai-usage" hidden role="status">
+        <p id="aciAiUsageBar" class="aci-ai-usage aci-legacy-detect-ui" hidden aria-hidden="true" role="status">
           IA AirCI · este mes: <strong id="aciAiUsageMonthReq">0</strong> consultas ·
           <strong id="aciAiUsageMonthUsd">$0.0000</strong>
           <span id="aciAiUsageByModel" class="aci-ai-usage__models"></span>
@@ -622,6 +622,6 @@
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="./airci-canopy.js?v=20260807edit17"></script>
-  <script src="./airci.js?v=20261119hide1"></script>
+  <script src="./airci.js?v=20261119hide2"></script>
 </body>
 </html>

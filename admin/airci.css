@@ -1216,8 +1216,11 @@ button, input, select, textarea { font: inherit; }
   font-weight: 750;
 }
 
-/* Flujo Cursor: nunca mostrar selector IA / Analizar (aunque JS quite hidden) */
-.aci-legacy-detect-ui {
+/* Flujo Cursor: nunca mostrar selector IA / Analizar / calibración 10 */
+.aci-legacy-detect-ui,
+.aci-calibration[hidden],
+#aciCalibration.aci-legacy-detect-ui,
+#aciAiUsageBar.aci-legacy-detect-ui {
   display: none !important;
 }
 
@@ -1424,6 +1427,9 @@ button, input, select, textarea { font: inherit; }
   border: 1px solid #93c5fd;
   border-radius: 10px;
   background: #eff6ff;
+}
+.aci-calibration[hidden] {
+  display: none !important;
 }
 .aci-calibration__copy { display: grid; gap: 2px; }
 .aci-calibration__copy strong { font-size: 13px; color: #0f3b6d; }
