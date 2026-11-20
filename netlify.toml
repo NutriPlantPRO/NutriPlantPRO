@@ -62,6 +62,9 @@
   timeout = 900
 
 [functions."airci-radar"]
+  timeout = 26
+
+[functions."airci-radar-background"]
   timeout = 900
 
 [functions."nutriplant-admin-assistant"]
@@ -339,6 +342,12 @@
 [[redirects]]
   from = "/api/airci-radar"
   to = "/.netlify/functions/airci-radar"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/airci-radar-background"
+  to = "/.netlify/functions/airci-radar-background"
   status = 200
   force = true
 

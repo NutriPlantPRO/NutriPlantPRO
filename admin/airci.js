@@ -6063,6 +6063,40 @@
     showRadarSatLayer('ndvi');
   }
 
+  async function pollAirciRadarJob(jobId, token) {
+    var started = Date.now();
+    var maxMs = 5 * 60 * 1000;
+    while (Date.now() - started < maxMs) {
+      await new Promise(function (r) {
+        setTimeout(r, 3000);
+      });
+      var res = await fetch(API_RADAR, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ action: 'status', job_id: jobId })
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (data && data.status === 'done' && data.ok && data.layers) {
+        return data;
+      }
+      if (data && (data.status === 'error' || (res.ok && data.ok === false && data.status === 'error'))) {
+        throw new Error((data && (data.message || data.error)) || 'Radar falló en background');
+      }
+      if (!res.ok && res.status !== 200) {
+        throw new Error((data && (data.message || data.error)) || 'Error Radar HTTP ' + res.status);
+      }
+      var msg = (data && data.message) || 'Generando capas satélite…';
+      setRadarMeta(msg + ' · ' + Math.round((Date.now() - started) / 1000) + 's', 'busy');
+      setMapStatus('Radar satélite · ' + msg, 'ok');
+    }
+    throw new Error('Radar tardó demasiado (>5 min). Revisa Netlify logs o reintenta.');
+  }
+
   async function runAirciRadar() {
     if (radarBusy) return;
     if (!predioClosed || predioRing.length < 3) {
@@ -6076,8 +6110,11 @@
     }
     radarBusy = true;
     syncPredioUi();
-    setRadarMeta('Pidiendo Sentinel (NDVI/NDMI/NDRE/RGB) sobre el predio… puede tardar 1–3 min.', 'busy');
-    setMapStatus('Radar satélite · consultando pasadas…', 'ok');
+    setRadarMeta(
+      'Encolando Sentinel (igual que el Radar del dashboard)… 1–3 min.',
+      'busy'
+    );
+    setMapStatus('Radar satélite · en cola…', 'ok');
     try {
       var res = await fetch(API_RADAR, {
         method: 'POST',
@@ -6097,6 +6134,14 @@
         throw new Error(
           (data && (data.message || data.error)) || 'Error Radar HTTP ' + res.status
         );
+      }
+      // Async (dashboard-style): poll until background finishes.
+      if (data.async && data.job_id) {
+        setRadarMeta('Radar en background · generando capas…', 'busy');
+        data = await pollAirciRadarJob(String(data.job_id), token);
+      }
+      if (!data.bbox || !data.layers) {
+        throw new Error('Respuesta Radar incompleta (sin capas/bbox)');
       }
       applyRadarResult(data);
       setMapStatus('Radar listo · capa NDVI sat activa (cambia con los chips).', 'ok');
