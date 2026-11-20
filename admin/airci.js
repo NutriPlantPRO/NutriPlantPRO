@@ -5964,6 +5964,7 @@
 
   function colorFnForGeoraster(georaster) {
     var maxes = georaster.maxs || [];
+    var noData = georaster.noDataValue;
     var scale = function (v, i) {
       var mx = maxes[i] != null ? maxes[i] : 255;
       if (mx > 255) return clamp255((Number(v) / mx) * 255);
@@ -5971,9 +5972,23 @@
     };
     return function (values) {
       if (!values || values[0] == null || Number.isNaN(values[0])) return null;
-      // nodata common
-      if (values[0] === 0 && values.length >= 3 && values[1] === 0 && values[2] === 0) {
-        // keep black pixels as black (soil) — don't treat as transparent
+      // Alpha / nodata de WebODM: fuera del predio → transparente (como Ortofoto ahí).
+      if (values.length >= 4) {
+        var a = Number(values[3]);
+        if (!Number.isFinite(a) || a <= 0) return null;
+      }
+      if (noData != null && Number(values[0]) === Number(noData)) return null;
+      var r0 = Number(values[0]);
+      var g0 = values.length > 1 ? Number(values[1]) : r0;
+      var b0 = values.length > 2 ? Number(values[2]) : r0;
+      // Relleno negro del GeoTIFF (no es suelo del lote; el suelo real es marrón).
+      if (
+        values.length >= 3 &&
+        r0 === 0 &&
+        g0 === 0 &&
+        b0 === 0
+      ) {
+        return null;
       }
       if (values.length >= 3) {
         return 'rgb(' + scale(values[0], 0) + ',' + scale(values[1], 1) + ',' + scale(values[2], 2) + ')';
