@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20260812div">
+  <link rel="stylesheet" href="./airci.css?v=20261119clean1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -223,7 +223,8 @@
               Importar Cursor
               <input id="aciCursorResultInput" type="file" accept=".json,application/json" hidden>
             </label>
-            <label class="aci-detect-mode" for="aciDetectModel">
+            <!-- Legacy: detección ChatGPT / Profesional — oculto; el análisis lo hace Cursor en Mac -->
+            <label class="aci-detect-mode" for="aciDetectModel" id="aciDetectModeWrap" hidden>
               <span>Detección</span>
               <select id="aciDetectModel" title="Profesional procesa el GeoTIFF completo por tiles; Local/IA son modos de prueba">
                 <option value="cloud-pro" selected>Profesional · predio completo · presupuesto $1</option>
@@ -237,6 +238,9 @@
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
           </div>
         </div>
+        <p class="aci-map-hint" id="aciCursorHint">
+          Flujo actual: <strong>Subir GeoTIFF</strong> → <strong>Importar Cursor</strong> (copas + data). Sin marcar 10 árboles ni elegir modelo de IA.
+        </p>
         <div class="aci-calibration" id="aciCalibration" hidden>
           <div class="aci-calibration__copy">
             <strong>Calibración de copas</strong>
@@ -612,6 +616,6 @@
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="./airci-canopy.js?v=20260807edit17"></script>
-  <script src="./airci.js?v=20261119nodata1"></script>
+  <script src="./airci.js?v=20261119clean1"></script>
 </body>
 </html>

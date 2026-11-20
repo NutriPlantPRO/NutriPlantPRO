@@ -13,6 +13,8 @@
   var CANOPY_BY_SITE_KEY = 'airci_canopy_by_site_v1';
   var CANOPY_HISTORY_KEY = 'airci_canopy_history_v1';
   var CANOPY_HISTORY_MAX = 5;
+  /** UI limpia: detección la hace Cursor en Mac; no calibración 10 ni selector ChatGPT. */
+  var CURSOR_FIRST_UI = true;
   var TREE_COLLAPSE_KEY = 'airci_tree_collapse_v1';
   var BASEMAP_KEY = 'airci_basemap_v1';
   /** Misma API Key que NutriPlant (map.js) — Google Maps como fondo AirCI */
@@ -2462,7 +2464,7 @@
   function renderAiUsageBar(usage) {
     var bar = document.getElementById('aciAiUsageBar');
     if (!bar) return;
-    if (!usage) {
+    if (CURSOR_FIRST_UI || !usage) {
       bar.hidden = true;
       return;
     }
@@ -3401,6 +3403,17 @@
     var reset = document.getElementById('aciCalibrationReset');
     var confirm = document.getElementById('aciCalibrationConfirm');
     var analyze = document.getElementById('aciAnalyzeBtn');
+    var detectWrap = document.getElementById('aciDetectModeWrap');
+    var aiBar = document.getElementById('aciAiUsageBar');
+    if (CURSOR_FIRST_UI) {
+      if (box) box.hidden = true;
+      if (detectWrap) detectWrap.hidden = true;
+      if (analyze) analyze.hidden = true;
+      if (aiBar) aiBar.hidden = true;
+      var fit = document.getElementById('aciFitBounds');
+      if (fit) fit.hidden = !map || !lastBounds;
+      return;
+    }
     if (!box) return;
     var visible = !!currentGeoraster;
     box.hidden = !visible;
