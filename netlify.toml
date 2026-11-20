@@ -341,8 +341,6 @@
   to = "/.netlify/functions/airci-radar"
   status = 200
   force = true
-  status = 200
-  force = true
 
 [[redirects]]
   from = "/api/airci-canopy-detect"

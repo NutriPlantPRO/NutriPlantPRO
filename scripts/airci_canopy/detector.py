@@ -19,7 +19,7 @@ from rasterio.warp import transform as warp_transform
 
 
 DETECTOR_VERSION = "airci-grid-v1.1.1"
-CLASSICAL_DETECTOR_VERSION = "airci-classical-v1.2.0"
+CLASSICAL_DETECTOR_VERSION = "airci-classical-v1.3.1"
 
 
 class DetectorError(ValueError):
@@ -147,14 +147,16 @@ def _odd(value: int) -> int:
 
 
 def _canopy_evidence(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Criterio multi-señal: no basta “más verde”.
+    """Señal de copa: verdor cromático + contraste, sin pasto soleado ni sombra pura.
 
-    En huertas con pasto limón y copa oscura, ExG puro marca el piso.
-    Aquí se premia:
-    - copa más oscura que su vecindario (contraste local),
-    - textura de follaje vs calle lisa,
-    - verdor relativo (no brillo absoluto),
-    - anillo de sombra / oscuridad amplia.
+    En huertas con calle de pasto y sombra larga, ExG/oscuridad solos fallan:
+    la sombra cae al pasto y se cuenta como árbol. Aquí se premia:
+    - croma verde (g/(r+g+b) alto) aunque la copa sea oscura,
+    - contraste local de follaje,
+    - atracción a suelo marrón bajo la hilera,
+    y se castiga:
+    - pasto claro entre hileras,
+    - sombra profunda (V bajo + S bajo).
     """
     red = rgb[:, :, 0].astype(np.float32)
     green = rgb[:, :, 1].astype(np.float32)
@@ -162,6 +164,11 @@ def _canopy_evidence(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
     lum = 0.30 * red + 0.59 * green + 0.11 * blue
     total = np.maximum(red + green + blue, 1.0)
     greenness = np.clip((2.0 * green - red - blue) / total, 0.0, 1.5)
+    gchr = (green / total) - 0.5 * ((red / total) + (blue / total))
+
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    sat = hsv[:, :, 1].astype(np.float32)
+    value = hsv[:, :, 2].astype(np.float32)
 
     height, width = lum.shape
     canopy_k = _odd(max(15, min(61, int(round(min(height, width) / 18.0)))))
@@ -177,42 +184,54 @@ def _canopy_evidence(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
     shadow_cue = np.maximum(0.0, mean_l - wide_l)
     mean_green = cv2.blur(greenness.astype(np.float32), (canopy_k, canopy_k))
 
-    # Pasto soleado: calle YA clara/verdosa + pixel más claro y poco texturizado.
-    # No confundir con copa verde brillante sobre suelo marrón (mean_l bajo).
+    # Pasto soleado entre hileras: el VECINDARIO ya es claro/verdoso.
+    # No marcar copa verde brillante sobre suelo marrón (mean_l bajo).
     grass_like = (
+        (mean_l > 122.0)
+        & (value > 130.0)
+        & (gchr > 0.028)
+        & (dark_blob < 8.0)
+        & (texture < 5.5)
+    ) | (
         (mean_l > 125.0)
         & (mean_green > 0.06)
         & (lum > mean_l + 5.0)
         & (texture < 4.8)
         & (greenness > 0.03)
     )
-    # Sombra plana / suelo negro: sin textura de hoja.
+    # Sombra proyectada: casi negra y poco saturada (no follaje).
+    pure_shadow = (value < 28.0) | ((value < 42.0) & (sat < 42.0))
     shadow_flat = (lum < 32.0) & (mean_l < 48.0) & (texture < 3.2)
     flat_field = (texture < 2.8) & (dark_blob < 3.5) & (bright_blob < 3.5)
+    # Suelo marrón bajo hilera (atrae centros de planta).
+    soil_like = (gchr < 0.02) & (value > 50.0) & (value < 190.0)
+    soil_b = cv2.blur(soil_like.astype(np.float32), (canopy_k, canopy_k))
+    grass_b = cv2.blur(grass_like.astype(np.float32), (canopy_k, canopy_k))
 
-    # Sobre suelo oscuro, la copa puede ser el blob más brillante; sobre pasto limón, el más oscuro.
-    bright_weight = np.where(mean_l < 120.0, 1.05, 0.30)
-    dark_weight = np.where(mean_l >= 120.0, 1.65, 1.15)
+    bright_weight = np.where(mean_l < 120.0, 0.95, 0.28)
+    dark_weight = np.where(mean_l >= 120.0, 1.35, 0.95)
 
     score = (
-        dark_weight * dark_blob
-        + bright_weight * np.minimum(bright_blob, 48.0)
-        + 1.15 * texture
-        + 0.80 * shadow_cue
-        + 28.0 * greenness
+        72.0 * np.clip(gchr, 0.0, 0.5)
+        + 22.0 * np.clip(greenness, 0.0, 1.2)
+        + dark_weight * np.minimum(dark_blob, 42.0)
+        + bright_weight * np.minimum(bright_blob, 40.0)
+        + 1.05 * texture
+        + 0.55 * shadow_cue
+        + 18.0 * soil_b
+        - 48.0 * grass_b
     )
-    score = np.where(grass_like, score * 0.16, score)
+    score = np.where(grass_like, score * 0.12, score)
+    score = np.where(pure_shadow, score * 0.06, score)
     score = np.where(shadow_flat, score * 0.10, score)
     score = np.where(flat_field, score * 0.28, score)
-    # Sin verdor ni blob oscuro+textura → casi seguro no es copa.
-    vegish = (greenness > 0.03) | ((dark_blob > 7.0) & (texture > 2.8))
-    score = np.where(vegish, score, score * 0.12)
+    vegish = (gchr > 0.015) | (greenness > 0.03) | ((dark_blob > 7.0) & (texture > 2.8) & (sat > 28.0))
+    score = np.where(vegish, score, score * 0.10)
 
     valid = lum > 10.0
     canopy = np.zeros_like(lum, dtype=np.uint8)
     if valid.any():
-        # Suavizar a escala de copa: el interior plano no debe quedar bajo por textura solo en el borde.
-        score = cv2.blur(score, (fine_k, fine_k))
+        score = cv2.GaussianBlur(score, (0, 0), max(0.6, fine_k / 3.0))
         sample = score[valid]
         peak = float(np.percentile(sample, 99.5))
         if peak <= 1e-6:
@@ -432,11 +451,17 @@ def _nms(candidates: Iterable[Candidate], min_distance: float) -> list[Candidate
     return kept
 
 
-def _contour_for_seed(labels: np.ndarray, x: int, y: int, radius_px: float) -> tuple[list[tuple[float, float]], float]:
-    """Obtiene el borde real de vegetación asociado a un centro de copa.
+def _contour_for_seed(
+    labels: np.ndarray,
+    x: int,
+    y: int,
+    radius_px: float,
+    value: np.ndarray | None = None,
+) -> tuple[list[tuple[float, float]], float]:
+    """Borde de copa alrededor del centro (hull suave, sin sombra profunda).
 
-    Si dos copas quedaron unidas en la máscara, limita el componente al radio
-    local del candidato para evitar que un solo perímetro cubra toda la hilera.
+    Si dos copas quedaron unidas, limita al radio local. Opcionalmente excluye
+    píxeles de sombra pura (V bajo) para no trazar la proyección.
     """
     height, width = labels.shape[:2]
     if x < 0 or y < 0 or x >= width or y >= height:
@@ -450,23 +475,111 @@ def _contour_for_seed(labels: np.ndarray, x: int, y: int, radius_px: float) -> t
         values = nearby[nearby > 0]
         if not values.size:
             return [], 0.0
-        label = int(values[0])
+        label = int(values.flat[0])
     component = (labels == label).astype(np.uint8) * 255
-    # Una copa pegada a otra se conserva cerca de su máximo local.
-    limit = max(4, int(round(radius_px * 1.35)))
+    if value is not None and value.shape[:2] == labels.shape[:2]:
+        # Quitar sombra profunda del perímetro (deja follaje).
+        component[value < 32] = 0
+    limit = max(4, int(round(radius_px * 1.25)))
     local = np.zeros_like(component)
     cv2.circle(local, (x, y), limit, 255, thickness=-1)
     component = cv2.bitwise_and(component, local)
+    if int(cv2.countNonZero(component)) < 8:
+        return [], 0.0
+    component = cv2.morphologyEx(
+        component,
+        cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)),
+    )
     contours, _ = cv2.findContours(component, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return [], 0.0
     contour = max(contours, key=cv2.contourArea)
-    if cv2.contourArea(contour) < 4:
+    area = float(cv2.contourArea(contour))
+    if area < 4:
         return [], 0.0
-    epsilon = max(1.0, 0.008 * cv2.arcLength(contour, True))
-    simplified = cv2.approxPolyDP(contour, epsilon, True).reshape(-1, 2)
+    peri = float(cv2.arcLength(contour, True))
+    if peri > 1e-6:
+        circularity = 4.0 * math.pi * area / (peri * peri)
+        if circularity < 0.14:
+            return [], 0.0
+    hull = cv2.convexHull(contour)
+    epsilon = max(1.2, 0.018 * cv2.arcLength(hull, True))
+    simplified = cv2.approxPolyDP(hull, epsilon, True).reshape(-1, 2)
+    if len(simplified) < 3:
+        simplified = hull.reshape(-1, 2)
     points = [(float(px), float(py)) for px, py in simplified]
-    return points, float(cv2.contourArea(contour))
+    return points, float(cv2.contourArea(hull))
+
+
+def _iso_contour_around_peak(
+    score_u8: np.ndarray,
+    value: np.ndarray,
+    x: int,
+    y: int,
+    radius_px: float,
+    min_radius_px: float,
+    max_radius_px: float,
+) -> tuple[list[tuple[float, float]], float, float, float]:
+    """Iso-contorno relativo al pico → hull (contorno tipo trazo visual)."""
+    height, width = score_u8.shape[:2]
+    if x < 0 or y < 0 or x >= width or y >= height:
+        return [], 0.0, float(x), float(y)
+    peak = float(score_u8[y, x])
+    if peak < 20:
+        return [], 0.0, float(x), float(y)
+    level = max(18.0, peak * 0.45)
+    lim = max(4, int(round(min(max_radius_px * 1.05, max(radius_px * 1.15, min_radius_px)))))
+    y0, y1 = max(0, y - lim), min(height, y + lim + 1)
+    x0, x1 = max(0, x - lim), min(width, x + lim + 1)
+    region = (
+        (score_u8[y0:y1, x0:x1] >= level)
+        & (value[y0:y1, x0:x1] >= 30)
+    ).astype(np.uint8) * 255
+    disk = np.zeros_like(region)
+    cv2.circle(disk, (x - x0, y - y0), lim, 255, thickness=-1)
+    region = cv2.bitwise_and(region, disk)
+    region = cv2.morphologyEx(
+        region, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    )
+    n2, labels, _stats, _cents = cv2.connectedComponentsWithStats(region, connectivity=8)
+    lid = int(labels[y - y0, x - x0]) if region[y - y0, x - x0] > 0 else 0
+    if lid == 0:
+        nearby = labels[
+            max(0, y - y0 - 3) : y - y0 + 4,
+            max(0, x - x0 - 3) : x - x0 + 4,
+        ]
+        vals = nearby[nearby > 0]
+        if not vals.size:
+            return [], 0.0, float(x), float(y)
+        lid = int(vals.flat[0])
+    comp = (labels == lid).astype(np.uint8) * 255
+    contours, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return [], 0.0, float(x), float(y)
+    contour = max(contours, key=cv2.contourArea)
+    area = float(cv2.contourArea(contour))
+    if area < math.pi * (min_radius_px * 0.35) ** 2:
+        return [], 0.0, float(x), float(y)
+    peri = float(cv2.arcLength(contour, True))
+    if peri > 1e-6 and (4.0 * math.pi * area / (peri * peri)) < 0.16:
+        return [], 0.0, float(x), float(y)
+    bx, by, bw, bh = cv2.boundingRect(contour)
+    if max(bw, bh) / max(min(bw, bh), 1) > 2.5:
+        return [], 0.0, float(x), float(y)
+    hull = cv2.convexHull(contour)
+    epsilon = max(1.2, 0.02 * cv2.arcLength(hull, True))
+    simplified = cv2.approxPolyDP(hull, epsilon, True).reshape(-1, 2)
+    if len(simplified) < 3:
+        simplified = hull.reshape(-1, 2)
+    points = [(float(px + x0), float(py + y0)) for px, py in simplified]
+    moments = cv2.moments(hull)
+    if moments["m00"] > 0:
+        mx = float(moments["m10"] / moments["m00"]) + x0
+        my = float(moments["m01"] / moments["m00"]) + y0
+    else:
+        mx, my = float(x), float(y)
+    return points, float(cv2.contourArea(hull)), mx, my
 
 
 def detect_tile(
@@ -476,86 +589,155 @@ def detect_tile(
     max_canopy_m: float,
     expected_spacing_m: float,
 ) -> list[Candidate]:
-    """Detecta centros de copa en una ventana RGB (contraste + textura + sombra + verdor)."""
+    """Detecta copas: score anti-sombra/pasto → picos (res. gruesa) → hull de follaje."""
 
-    rgb = _rgb_u8(tile)
+    rgb_full = _rgb_u8(tile)
+    if gsd_m and gsd_m > 0:
+        min_radius_full = max(2.5, (min_canopy_m * 0.5) / gsd_m)
+        max_radius_full = max(min_radius_full + 1, (max_canopy_m * 0.5) / gsd_m)
+        spacing_full = expected_spacing_m / gsd_m if expected_spacing_m > 0 else min_radius_full * 2.4
+        # ~12–20 cm/px: las copas se ven como blobs (como en visión), no ruido de hoja.
+        target_gsd = 0.16
+        scale = max(1, min(5, int(round(target_gsd / max(gsd_m, 1e-6)))))
+    else:
+        min_radius_full, max_radius_full, spacing_full = 4.0, 90.0, 14.0
+        scale = 1 if min(rgb_full.shape[0], rgb_full.shape[1]) < 700 else 3
+
+    if scale > 1:
+        rgb = cv2.resize(
+            rgb_full,
+            (max(1, rgb_full.shape[1] // scale), max(1, rgb_full.shape[0] // scale)),
+            interpolation=cv2.INTER_AREA,
+        )
+    else:
+        rgb = rgb_full
+
     canopy, lum, texture, dark_blob = _canopy_evidence(rgb)
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     value = hsv[:, :, 2]
+    sat = hsv[:, :, 1]
     valid = value > 12
     if not valid.any() or int(canopy[valid].max()) < 8:
         return []
 
+    red = rgb[:, :, 0].astype(np.float32)
+    green = rgb[:, :, 1].astype(np.float32)
+    blue = rgb[:, :, 2].astype(np.float32)
+    total = np.maximum(red + green + blue, 1.0)
+    gchr = (green / total) - 0.5 * ((red / total) + (blue / total))
+    mean_l = cv2.blur(lum, (_odd(15), _odd(15)))
+    grass_gate = (
+        (mean_l > 122.0)
+        & (value > 140)
+        & (gchr > 0.035)
+        & (lum > mean_l - 2.0)
+        & (texture < 5.0)
+    )
+    pure_shadow = (value < 28) | ((value < 40) & (sat < 40))
+
     otsu_value, _ = cv2.threshold(canopy[valid], 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    # Percentil de soporte: Otsu solo a veces corta el interior de la copa.
-    positive = canopy[valid & (canopy > 8)]
-    pct_thr = int(np.percentile(positive, 58)) if positive.size > 80 else int(otsu_value)
-    threshold = max(55, min(int(otsu_value * 0.82), pct_thr))
-    mask = ((canopy >= threshold) & valid).astype(np.uint8) * 255
+    positive = canopy[valid & (canopy > 8) & (~pure_shadow)]
+    pct_thr = int(np.percentile(positive, 50)) if positive.size > 80 else int(otsu_value)
+    threshold = max(38, min(int(otsu_value * 0.75), pct_thr))
+    mask = ((canopy >= threshold) & valid & (~pure_shadow) & (~grass_gate)).astype(np.uint8) * 255
 
-    if gsd_m and gsd_m > 0:
-        min_radius_px = max(2.5, (min_canopy_m * 0.5) / gsd_m)
-        max_radius_px = max(min_radius_px + 1, (max_canopy_m * 0.5) / gsd_m)
-        spacing_px = expected_spacing_m / gsd_m if expected_spacing_m > 0 else min_radius_px * 2.4
-    else:
-        min_radius_px = 4.0
-        max_radius_px = 90.0
-        spacing_px = 14.0
+    min_radius_px = max(2.0, min_radius_full / scale)
+    max_radius_px = max(min_radius_px + 1, max_radius_full / scale)
+    spacing_px = max(3.0, spacing_full / scale)
 
-    morphology_radius = max(1, min(12, int(round(min_radius_px * 0.12))))
-    kernel = cv2.getStructuringElement(
+    morphology_radius = max(1, min(10, int(round(min_radius_px * 0.18))))
+    close_r = max(morphology_radius + 1, int(round(min_radius_px * 0.35)))
+    open_k = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE, (_odd(morphology_radius * 2 + 1), _odd(morphology_radius * 2 + 1))
     )
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-    _, component_labels = cv2.connectedComponents((mask > 0).astype(np.uint8), connectivity=8)
+    close_k = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, (_odd(close_r * 2 + 1), _odd(close_r * 2 + 1))
+    )
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, close_k)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, open_k)
+    if int(cv2.countNonZero(mask)) < 12:
+        return []
 
     distance = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
-    peak_window = _odd(min(101, max(5, int(round(spacing_px * 0.55)))))
+    peak_window = _odd(min(81, max(5, int(round(spacing_px * 0.52)))))
     dilated = cv2.dilate(
         distance,
         cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (peak_window, peak_window)),
     )
-    min_peak = max(1.5, min_radius_px * 0.28)
-    peaks = ((distance >= dilated - 1e-4) & (distance >= min_peak)).astype(np.uint8)
+    min_peak = max(1.2, min_radius_px * 0.28)
+    peaks = ((distance >= dilated - 1e-4) & (distance >= min_peak) & (mask > 0)).astype(np.uint8)
 
     count, _labels, _stats, centroids = cv2.connectedComponentsWithStats(peaks, connectivity=8)
     found: list[Candidate] = []
     for label in range(1, count):
-        cx, cy = centroids[label]
-        x = int(round(cx))
-        y = int(round(cy))
+        cx_s, cy_s = centroids[label]
+        x = int(round(cx_s))
+        y = int(round(cy_s))
         if x < 0 or y < 0 or y >= distance.shape[0] or x >= distance.shape[1]:
             continue
+        if pure_shadow[y, x] or grass_gate[y, x]:
+            continue
+        if int(value[y, x]) < 30:
+            continue
+        if float(gchr[y, x]) < 0.008 and float(canopy[y, x]) < 65:
+            continue
         raw_radius = float(distance[y, x])
-        radius = max(min_radius_px * 0.45, min(raw_radius, max_radius_px))
+        if raw_radius < max(1.2, min_radius_px * 0.25):
+            continue
+        radius_s = max(min_radius_px * 0.45, min(raw_radius, max_radius_px))
+        contour_s, area_s, mx_s, my_s = _iso_contour_around_peak(
+            canopy, value, x, y, radius_s, min_radius_px, max_radius_px
+        )
+        if area_s <= 0:
+            # Círculo de respaldo a radio de distancia (mejor que fragmento).
+            ring_s = [
+                (cx_s + math.cos(ang) * radius_s, cy_s + math.sin(ang) * radius_s)
+                for ang in (2.0 * math.pi * i / 14.0 for i in range(14))
+            ]
+            contour_s, area_s, mx_s, my_s = ring_s, float(math.pi * radius_s * radius_s), float(cx_s), float(cy_s)
+        shift = math.hypot(mx_s - cx_s, my_s - cy_s)
+        if shift <= max(2.0, radius_s * 0.5):
+            cx_s, cy_s = mx_s, my_s
+        radius_s = max(min_radius_px * 0.4, min(max_radius_px, math.sqrt(area_s / math.pi)))
+
+        # Subir a resolución nativa del tile.
+        cx = cx_s * scale
+        cy = cy_s * scale
+        radius = radius_s * scale
+        area_px = area_s * (scale * scale)
+        contour_px = [(px * scale, py * scale) for px, py in contour_s]
+
         radius_score = min(1.0, raw_radius / max(min_radius_px, 1.0))
         score_norm = float(canopy[y, x]) / 255.0
         texture_score = min(1.0, float(texture[y, x]) / 12.0)
         dark_score = min(1.0, float(dark_blob[y, x]) / 22.0)
-        shadow_score = _shadow_support(lum, x, y, radius)
+        green_score = min(1.0, max(0.0, float(gchr[y, x]) / 0.12))
+        # shadow_support en coords del mapa de trabajo
+        shadow_score = _shadow_support(lum, x, y, radius_s)
         confidence = 100.0 * (
-            0.34 * radius_score
-            + 0.26 * score_norm
-            + 0.18 * texture_score
-            + 0.14 * dark_score
+            0.28 * radius_score
+            + 0.22 * score_norm
+            + 0.16 * texture_score
+            + 0.12 * dark_score
+            + 0.14 * green_score
             + 0.08 * shadow_score
         )
-        if confidence < 32:
+        if confidence < 34:
             continue
-        contour_px, contour_area = _contour_for_seed(component_labels, x, y, radius)
+        if area_px < math.pi * (min_radius_full * 0.35) ** 2:
+            continue
         found.append(
             Candidate(
                 x_px=float(cx),
                 y_px=float(cy),
                 radius_px=float(radius),
                 confidence=float(round(confidence, 1)),
-                area_px=contour_area if contour_area > 0 else float(math.pi * radius * radius),
+                area_px=float(area_px),
                 contour_px=contour_px,
             )
         )
 
-    return _nms(found, max(3.0, spacing_px * 0.35))
+    return _nms(found, max(3.0, spacing_full * 0.55))
 
 
 def _window_starts(length: int, tile_size: int, overlap: int) -> list[int]:

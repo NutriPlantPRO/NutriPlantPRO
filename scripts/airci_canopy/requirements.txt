@@ -5,3 +5,8 @@ opencv-python-headless>=4.10,<5
 rasterio>=1.4,<2
 requests>=2.32,<3
 supabase>=2.15,<3
+# Motor local recomendado (Mac / Cursor): DeepForest pretrained
+# Instalar en .venv: pip install torch deepforest "albumentations==1.4.18"
+# torch>=2.2
+# deepforest>=1.5,<2
+# albumentations==1.4.18
