@@ -219,6 +219,10 @@
               Subir GeoTIFF
               <input id="aciTiffInput" type="file" accept=".tif,.tiff,image/tiff" hidden>
             </label>
+            <label class="aci-btn aci-btn--ghost" title="Carga el JSON que Cursor generó en la Mac (copas + stats)">
+              Importar Cursor
+              <input id="aciCursorResultInput" type="file" accept=".json,application/json" hidden>
+            </label>
             <label class="aci-detect-mode" for="aciDetectModel">
               <span>Detección</span>
               <select id="aciDetectModel" title="Profesional procesa el GeoTIFF completo por tiles; Local/IA son modos de prueba">
@@ -608,6 +612,6 @@
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="./airci-canopy.js?v=20260807edit17"></script>
-  <script src="./airci.js?v=20260810gsd2"></script>
+  <script src="./airci.js?v=20261119cursor1"></script>
 </body>
 </html>

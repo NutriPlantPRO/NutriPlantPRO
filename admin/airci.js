@@ -6474,6 +6474,132 @@
     });
   }
 
+  function normalizeCursorImportTrees(trees) {
+    return (Array.isArray(trees) ? trees : [])
+      .map(function (t, i) {
+        if (!t || typeof t !== 'object') return null;
+        // Formato UI ya listo (run_local.py)
+        if (Array.isArray(t.latlngs) && t.latlngs.length >= 3) {
+          var sem = t.sem || professionalSem((t.sem && t.sem.key) || t.sem_key || 'verde');
+          return {
+            id: t.id != null ? t.id : i + 1,
+            stableId: t.stableId || t.stable_id || t.id || i + 1,
+            areaPx: Number(t.areaPx != null ? t.areaPx : t.area_px) || 0,
+            areaM2: t.areaM2 != null ? t.areaM2 : t.area_m2,
+            diameterM: t.diameterM != null ? t.diameterM : t.diameter_m,
+            confidence: t.confidence,
+            center: Array.isArray(t.center)
+              ? t.center
+              : [Number(t.center_lat), Number(t.center_lng)],
+            latlngs: t.latlngs,
+            sem: sem,
+            z: t.z,
+            isManual: !!t.isManual || !!t.is_manual,
+            pctVsMean: t.pctVsMean != null ? t.pctVsMean : null,
+            source: 'cursor_local'
+          };
+        }
+        // Formato crudo del detector
+        var ring = Array.isArray(t.polygon_json) ? t.polygon_json : [];
+        if (ring.length < 3) return null;
+        return {
+          id: t.tree_index != null ? t.tree_index : i + 1,
+          stableId: t.stable_id || t.tree_index || i + 1,
+          areaPx: Number(t.area_px) || 0,
+          areaM2: t.area_m2,
+          diameterM: t.diameter_m,
+          confidence: t.confidence,
+          center: [Number(t.center_lat), Number(t.center_lng)],
+          latlngs: ring,
+          sem: professionalSem(t.sem_key || 'verde'),
+          z: t.metrics_json && t.metrics_json.z,
+          isManual: !!t.is_manual,
+          pctVsMean: null,
+          source: 'cursor_local'
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function applyCursorImportPayload(payload) {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('JSON vacío o inválido');
+    }
+    var trees = normalizeCursorImportTrees(
+      payload.trees && payload.trees.length ? payload.trees : payload.trees_raw
+    );
+    if (!trees.length) {
+      throw new Error('El JSON no trae copas (trees)');
+    }
+    var stats = Object.assign({}, payload.stats || {});
+    stats.count = Number(stats.count != null ? stats.count : trees.length) || trees.length;
+    stats.source = 'cursor_local';
+    stats.hasScale = stats.gsdM != null || stats.hasScale;
+    if (stats.gsdM != null && stats.gsdCm == null) stats.gsdCm = Number(stats.gsdM) * 100;
+    if (stats.coverPct != null && stats.barePct == null) {
+      stats.barePct = Math.max(0, 100 - Number(stats.coverPct));
+    }
+    // Completar % vs media si faltó
+    var meanArea = Number(stats.meanArea) || 0;
+    if (meanArea > 0) {
+      trees.forEach(function (t) {
+        if (t.pctVsMean == null && t.areaPx != null) {
+          t.pctVsMean = ((Number(t.areaPx) - meanArea) / meanArea) * 100;
+        }
+      });
+    }
+    var result = {
+      trees: trees,
+      stats: enrichStatsFromTrees(stats, trees),
+      source: 'cursor_local'
+    };
+    professionalResultId = null;
+    professionalStats = result.stats;
+    drawCanopies(result);
+    enableLayers(['copas', 'semaforo', 'numeros']);
+    applyLayerVisibility();
+    persistCanopyResult(result);
+    var name =
+      (payload.ortho && payload.ortho.filename) ||
+      (payload.ortho && payload.ortho.path && String(payload.ortho.path).split('/').pop()) ||
+      'resultado Cursor';
+    setMapStatus(
+      'Cursor · ' +
+        result.stats.count +
+        ' copas importadas · ' +
+        name +
+        (result.stats.estimatedSpacingM
+          ? ' · espaciado ~' + Number(result.stats.estimatedSpacingM).toFixed(1) + ' m'
+          : ''),
+      'ok'
+    );
+    return result;
+  }
+
+  async function handleCursorResultFile(file) {
+    if (!file) return;
+    setMapStatus('Leyendo resultado Cursor…', 'ok');
+    try {
+      var text = await file.text();
+      var payload = JSON.parse(text);
+      applyCursorImportPayload(payload);
+    } catch (err) {
+      setMapStatus(
+        'No pude importar el JSON: ' + ((err && err.message) || 'error'),
+        'error'
+      );
+    }
+  }
+
+  var cursorResultInput = document.getElementById('aciCursorResultInput');
+  if (cursorResultInput) {
+    cursorResultInput.addEventListener('change', function () {
+      var f = cursorResultInput.files && cursorResultInput.files[0];
+      handleCursorResultFile(f);
+      cursorResultInput.value = '';
+    });
+  }
+
   var fitBtn = document.getElementById('aciFitBounds');
   if (fitBtn) {
     fitBtn.addEventListener('click', function () {
