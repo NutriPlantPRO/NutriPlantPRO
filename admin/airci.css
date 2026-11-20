@@ -1216,6 +1216,11 @@ button, input, select, textarea { font: inherit; }
   font-weight: 750;
 }
 
+/* Flujo Cursor: nunca mostrar selector IA / Analizar (aunque JS quite hidden) */
+.aci-legacy-detect-ui {
+  display: none !important;
+}
+
 .aci-map-hint {
   margin: 0 0 10px;
   padding: 8px 12px;

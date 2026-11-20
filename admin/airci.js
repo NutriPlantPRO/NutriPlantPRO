@@ -16,6 +16,26 @@
   /** UI limpia: detección la hace Cursor en Mac; no calibración 10 ni selector ChatGPT. */
   var CURSOR_FIRST_UI = true;
   var PREDIO_BY_SITE_KEY = 'airci_predio_by_site_v1';
+
+  function setAnalyzeButtonVisible(visible) {
+    var analyze = document.getElementById('aciAnalyzeBtn');
+    var detectWrap = document.getElementById('aciDetectModeWrap');
+    if (CURSOR_FIRST_UI) {
+      if (analyze) {
+        analyze.hidden = true;
+        analyze.setAttribute('aria-hidden', 'true');
+      }
+      if (detectWrap) {
+        detectWrap.hidden = true;
+        detectWrap.setAttribute('aria-hidden', 'true');
+      }
+      return;
+    }
+    if (analyze) {
+      analyze.hidden = !visible;
+      analyze.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+  }
   var TREE_COLLAPSE_KEY = 'airci_tree_collapse_v1';
   var BASEMAP_KEY = 'airci_basemap_v1';
   /** Misma API Key que NutriPlant (map.js) — Google Maps como fondo AirCI */
@@ -4904,8 +4924,7 @@
       }
       lastBounds = null;
       showMapPane(false);
-      var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-      if (analyzeBtn) analyzeBtn.hidden = true;
+      setAnalyzeButtonVisible(false);
       updateMetrics({ filename: '—', cloud: '—', cloud_sub: '—' });
       var treesEl = document.getElementById('aciMetricTrees');
       var coverEl = document.getElementById('aciMetricCover');
@@ -5434,8 +5453,7 @@
       return;
     }
     showMapPane(false);
-    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-    if (analyzeBtn) analyzeBtn.hidden = true;
+    setAnalyzeButtonVisible(false);
     setMapStatus('Este análisis aún no tiene GeoTIFF en la nube. Súbelo aquí.', 'ok');
   }
 
@@ -5479,8 +5497,7 @@
       path,
       flightId
     );
-    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-    if (analyzeBtn) analyzeBtn.hidden = false;
+    setAnalyzeButtonVisible(true);
     if (getDetectModel() === 'cloud-pro' && Number(byteSize) > PREVIEW_WARN_BYTES) {
       showMapPane(false);
       updateMetrics({
@@ -5549,8 +5566,7 @@
       rasterLayer = null;
     }
     showMapPane(false);
-    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-    if (analyzeBtn) analyzeBtn.hidden = true;
+    setAnalyzeButtonVisible(false);
     updateOpenBanner();
     setActiveTab('analisis');
     refreshProjectsUi();
@@ -6385,8 +6401,7 @@
     showMapPane(true);
     map.fitBounds(lastBounds, { padding: [24, 24] });
 
-    var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-    if (analyzeBtn) analyzeBtn.hidden = false;
+    setAnalyzeButtonVisible(true);
     syncCalibrationUi();
     loadPredioForSite(getSiteId());
     renderPredio();
@@ -6649,10 +6664,9 @@
           cloud: 'Vista local',
           cloud_sub: 'luego nube…'
         });
-        var analyzeBtnPro = document.getElementById('aciAnalyzeBtn');
-        if (analyzeBtnPro) analyzeBtnPro.hidden = false;
+        setAnalyzeButtonVisible(true);
         var uploadedPro = await uploadToCloud(file, infoPro);
-        if (uploadedPro && uploadedPro.ok && analyzeBtnPro) analyzeBtnPro.hidden = false;
+        if (uploadedPro && uploadedPro.ok) setAnalyzeButtonVisible(true);
       } catch (ePro) {
         console.error(ePro);
         // Fallback: solo nube (sin mapa local)
@@ -6679,8 +6693,7 @@
         );
         var uploaded = await uploadToCloud(file, minimalInfo);
         if (uploaded && uploaded.ok) {
-          var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-          if (analyzeBtn) analyzeBtn.hidden = false;
+          setAnalyzeButtonVisible(true);
         }
       }
       return;
@@ -6823,6 +6836,8 @@
   });
 
   loadDetectModelChoice();
+  setAnalyzeButtonVisible(false);
+  syncCalibrationUi();
   var detectModelEl = document.getElementById('aciDetectModel');
   if (detectModelEl) {
     detectModelEl.addEventListener('change', function () {

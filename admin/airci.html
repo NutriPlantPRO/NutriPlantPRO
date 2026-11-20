@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20261119predio1">
+  <link rel="stylesheet" href="./airci.css?v=20261119hide1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -224,7 +224,7 @@
               <input id="aciCursorResultInput" type="file" accept=".json,application/json" hidden>
             </label>
             <!-- Legacy: detección ChatGPT / Profesional — oculto; el análisis lo hace Cursor en Mac -->
-            <label class="aci-detect-mode" for="aciDetectModel" id="aciDetectModeWrap" hidden>
+            <label class="aci-detect-mode aci-legacy-detect-ui" for="aciDetectModel" id="aciDetectModeWrap" hidden aria-hidden="true">
               <span>Detección</span>
               <select id="aciDetectModel" title="Profesional procesa el GeoTIFF completo por tiles; Local/IA son modos de prueba">
                 <option value="cloud-pro" selected>Profesional · predio completo · presupuesto $1</option>
@@ -234,7 +234,7 @@
                 <option value="gpt-5.6-sol">Sol · rejilla árboles · ~$0.04–0.18</option>
               </select>
             </label>
-            <button type="button" class="aci-btn aci-btn--analyze" id="aciAnalyzeBtn" hidden title="Analiza el ortomosaico: detecta copas, métricas y semáforo">Analizar</button>
+            <button type="button" class="aci-btn aci-btn--analyze aci-legacy-detect-ui" id="aciAnalyzeBtn" hidden aria-hidden="true" title="Analiza el ortomosaico: detecta copas, métricas y semáforo">Analizar</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciPredioDrawBtn" title="Dibuja el contorno real del predio (sí sirve para Cursor)">Marcar predio</button>
             <button type="button" class="aci-btn aci-btn--analyze" id="aciPredioCloseBtn" hidden title="Cierra el polígono con los puntos marcados">Cerrar predio</button>
@@ -622,6 +622,6 @@
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="./airci-canopy.js?v=20260807edit17"></script>
-  <script src="./airci.js?v=20261119predio1"></script>
+  <script src="./airci.js?v=20261119hide1"></script>
 </body>
 </html>
