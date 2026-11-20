@@ -6188,15 +6188,65 @@
       return { ok: false, error: msg };
     }
 
-    setMapStatus('Subiendo ' + formatBytes(file.size) + ' a Storage…');
-    var put = await fetch(prep.upload_url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': file.type || 'image/tiff',
-        'x-upsert': 'true'
-      },
-      body: file
-    });
+    setMapStatus(
+      'Subiendo archivo de ' +
+        formatBytes(file.size) +
+        ' a Storage… 0% (el tamaño no cambia; espera el %)',
+      'ok'
+    );
+    var put;
+    try {
+      put = await new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', prep.upload_url);
+        xhr.setRequestHeader('Content-Type', file.type || 'image/tiff');
+        xhr.setRequestHeader('x-upsert', 'true');
+        xhr.upload.onprogress = function (ev) {
+          if (!ev.lengthComputable || !ev.total) return;
+          var pct = Math.max(0, Math.min(99, Math.round((100 * ev.loaded) / ev.total)));
+          setMapStatus(
+            'Subiendo a Storage… ' +
+              pct +
+              '% de ' +
+              formatBytes(file.size) +
+              ' (' +
+              formatBytes(ev.loaded) +
+              ')',
+            'ok'
+          );
+          updateMetrics(
+            Object.assign({}, info, {
+              cloud: 'Subiendo ' + pct + '%',
+              cloud_sub: formatBytes(ev.loaded) + ' / ' + formatBytes(file.size)
+            })
+          );
+        };
+        xhr.onload = function () {
+          resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            text: function () {
+              return Promise.resolve(String(xhr.responseText || ''));
+            }
+          });
+        };
+        xhr.onerror = function () {
+          reject(new Error('Red interrumpida al subir a Storage'));
+        };
+        xhr.ontimeout = function () {
+          reject(new Error('Tiempo agotado al subir a Storage'));
+        };
+        // 10 min para ortos grandes
+        xhr.timeout = 600000;
+        xhr.send(file);
+      });
+    } catch (upErr) {
+      var errNet =
+        'Fallo al subir: ' + ((upErr && upErr.message) || 'error de red');
+      setMapStatus(errNet, 'error');
+      updateMetrics(Object.assign({}, info, { cloud: 'Error', cloud_sub: 'upload' }));
+      return { ok: false, error: errNet };
+    }
     if (!put.ok) {
       var t = await put.text().catch(function () {
         return '';
@@ -6255,33 +6305,55 @@
     }
 
     if (file.size > PREVIEW_WARN_BYTES && getDetectModel() === 'cloud-pro') {
-      currentGeoraster = null;
-      clearCanopyLayers();
-      if (rasterLayer && map) {
-        try {
-          map.removeLayer(rasterLayer);
-        } catch (e0) {}
-        rasterLayer = null;
-      }
-      lastBounds = null;
-      showMapPane(false);
+      // Antes: solo subía a la nube y el mapa quedaba vacío → parecía “trabado” en 89 MB.
+      // Ahora: intenta vista local primero; la subida a Storage sigue en paralelo/después.
       setMapStatus(
         'Archivo grande (' +
           formatBytes(file.size) +
-          ') · se subirá directo; el worker lo procesará por tiles sin llenar la memoria.',
+          ') · cargando vista local; la nube puede tardar y el % sí avanza.',
         'ok'
       );
-      var minimalInfo = {
-        filename: file.name,
-        byte_size: file.size,
-        cloud: 'Vista en nube',
-        cloud_sub: 'subiendo…'
-      };
-      updateMetrics(minimalInfo);
-      var uploaded = await uploadToCloud(file, minimalInfo);
-      if (uploaded && uploaded.ok) {
-        var analyzeBtn = document.getElementById('aciAnalyzeBtn');
-        if (analyzeBtn) analyzeBtn.hidden = false;
+      try {
+        var bufPro = await file.arrayBuffer();
+        var infoPro = await renderGeotiffFromArrayBuffer(bufPro, {
+          filename: file.name,
+          byte_size: file.size,
+          cloud: 'Vista local',
+          cloud_sub: 'luego nube…'
+        });
+        var analyzeBtnPro = document.getElementById('aciAnalyzeBtn');
+        if (analyzeBtnPro) analyzeBtnPro.hidden = false;
+        var uploadedPro = await uploadToCloud(file, infoPro);
+        if (uploadedPro && uploadedPro.ok && analyzeBtnPro) analyzeBtnPro.hidden = false;
+      } catch (ePro) {
+        console.error(ePro);
+        // Fallback: solo nube (sin mapa local)
+        currentGeoraster = null;
+        clearCanopyLayers();
+        if (rasterLayer && map) {
+          try {
+            map.removeLayer(rasterLayer);
+          } catch (e0) {}
+          rasterLayer = null;
+        }
+        lastBounds = null;
+        showMapPane(false);
+        var minimalInfo = {
+          filename: file.name,
+          byte_size: file.size,
+          cloud: 'Vista en nube',
+          cloud_sub: 'subiendo…'
+        };
+        updateMetrics(minimalInfo);
+        setMapStatus(
+          'Sin vista local (memoria). Subiendo a Storage… mira el % abajo.',
+          'ok'
+        );
+        var uploaded = await uploadToCloud(file, minimalInfo);
+        if (uploaded && uploaded.ok) {
+          var analyzeBtn = document.getElementById('aciAnalyzeBtn');
+          if (analyzeBtn) analyzeBtn.hidden = false;
+        }
       }
       return;
     }
