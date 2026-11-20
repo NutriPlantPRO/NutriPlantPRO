@@ -1227,6 +1227,41 @@ button, input, select, textarea { font: inherit; }
 }
 .aci-map-hint strong { color: #0f172a; }
 
+.aci-predio-status {
+  margin: 0 0 10px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.aci-predio-status.is-drawing {
+  border-color: #f59e0b;
+  background: #fef3c7;
+  color: #92400e;
+}
+.aci-predio-status.is-ready {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.aci-predio-vertex {
+  background: transparent !important;
+  border: none !important;
+}
+.aci-predio-vertex__dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ea580c;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(194, 65, 12, 0.55);
+}
+
 .aci-upload-bar {
   display: flex;
   align-items: center;

@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="apple-touch-icon" href="../assets/pwa-icon-512.png?v=20260815r">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="./airci.css?v=20261119clean1">
+  <link rel="stylesheet" href="./airci.css?v=20261119predio1">
 </head>
 <body class="aci-body">
   <!-- Gate: mismo ritmo visual que Admin / Plan PRO -->
@@ -236,11 +236,17 @@
             </label>
             <button type="button" class="aci-btn aci-btn--analyze" id="aciAnalyzeBtn" hidden title="Analiza el ortomosaico: detecta copas, métricas y semáforo">Analizar</button>
             <button type="button" class="aci-btn aci-btn--ghost" id="aciFitBounds" hidden>Ajustar vista</button>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciPredioDrawBtn" title="Dibuja el contorno real del predio (sí sirve para Cursor)">Marcar predio</button>
+            <button type="button" class="aci-btn aci-btn--analyze" id="aciPredioCloseBtn" hidden title="Cierra el polígono con los puntos marcados">Cerrar predio</button>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciPredioClearBtn" hidden title="Borra el polígono del predio">Borrar predio</button>
+            <button type="button" class="aci-btn aci-btn--ghost" id="aciPredioExportBtn" hidden title="Descarga GeoJSON del predio para Cursor">Descargar predio</button>
           </div>
         </div>
         <p class="aci-map-hint" id="aciCursorHint">
-          Flujo actual: <strong>Subir GeoTIFF</strong> → <strong>Importar Cursor</strong> (copas + data). Sin marcar 10 árboles ni elegir modelo de IA.
+          Flujo: <strong>Subir GeoTIFF</strong> → <strong>Marcar predio</strong> (contorno) → <strong>Importar Cursor</strong> (copas).
+          El polígono del predio sí sirve para el análisis; las 10 copas ya no.
         </p>
+        <p class="aci-predio-status" id="aciPredioStatus" hidden role="status">Predio: sin marcar</p>
         <div class="aci-calibration" id="aciCalibration" hidden>
           <div class="aci-calibration__copy">
             <strong>Calibración de copas</strong>
@@ -616,6 +622,6 @@
   <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
   <script src="../nutriplant-access-pin.js"></script>
   <script src="./airci-canopy.js?v=20260807edit17"></script>
-  <script src="./airci.js?v=20261119clean1"></script>
+  <script src="./airci.js?v=20261119predio1"></script>
 </body>
 </html>

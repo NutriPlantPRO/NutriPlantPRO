@@ -15,6 +15,7 @@
   var CANOPY_HISTORY_MAX = 5;
   /** UI limpia: detección la hace Cursor en Mac; no calibración 10 ni selector ChatGPT. */
   var CURSOR_FIRST_UI = true;
+  var PREDIO_BY_SITE_KEY = 'airci_predio_by_site_v1';
   var TREE_COLLAPSE_KEY = 'airci_tree_collapse_v1';
   var BASEMAP_KEY = 'airci_basemap_v1';
   /** Misma API Key que NutriPlant (map.js) — Google Maps como fondo AirCI */
@@ -88,6 +89,11 @@
   var professionalSelectedTree = null;
   var browserSelectedTree = null;
   var professionalEditLayer = null;
+  var predioRing = [];
+  var predioClosed = false;
+  var predioDrawing = false;
+  var predioLayer = null;
+  var predioVertexLayer = null;
 
 
   function showError(msg) {
@@ -5822,6 +5828,282 @@
     }
   }
 
+  function loadPredioForSite(siteId) {
+    try {
+      var raw = localStorage.getItem(PREDIO_BY_SITE_KEY);
+      var mapObj = raw ? JSON.parse(raw) : {};
+      var entry = mapObj && siteId && mapObj[siteId] ? mapObj[siteId] : null;
+      if (!entry || !Array.isArray(entry.ring) || entry.ring.length < 3) {
+        predioRing = [];
+        predioClosed = false;
+        return;
+      }
+      predioRing = entry.ring.map(function (p) {
+        return [Number(p[0]), Number(p[1])];
+      });
+      predioClosed = !!entry.closed;
+    } catch (e) {
+      predioRing = [];
+      predioClosed = false;
+    }
+  }
+
+  function savePredioLocal() {
+    try {
+      var siteId = getSiteId();
+      var raw = localStorage.getItem(PREDIO_BY_SITE_KEY);
+      var mapObj = raw ? JSON.parse(raw) : {};
+      if (!mapObj || typeof mapObj !== 'object') mapObj = {};
+      if (!predioRing.length) {
+        delete mapObj[siteId];
+      } else {
+        mapObj[siteId] = {
+          ring: predioRing,
+          closed: !!predioClosed,
+          updated_at: Date.now()
+        };
+      }
+      localStorage.setItem(PREDIO_BY_SITE_KEY, JSON.stringify(mapObj));
+    } catch (e) {}
+  }
+
+  function predioAreaHa(ring) {
+    if (!ring || ring.length < 3) return null;
+    // Shoelace en metros locales
+    var lat0 = 0;
+    var lng0 = 0;
+    ring.forEach(function (p) {
+      lat0 += p[0];
+      lng0 += p[1];
+    });
+    lat0 /= ring.length;
+    lng0 /= ring.length;
+    var mLat = 111320.0;
+    var mLng = 111320.0 * Math.cos((lat0 * Math.PI) / 180);
+    var pts = ring.map(function (p) {
+      return [(p[1] - lng0) * mLng, (p[0] - lat0) * mLat];
+    });
+    var area = 0;
+    for (var i = 0; i < pts.length; i++) {
+      var j = (i + 1) % pts.length;
+      area += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
+    }
+    return Math.abs(area) / 2 / 10000;
+  }
+
+  function syncPredioUi() {
+    var status = document.getElementById('aciPredioStatus');
+    var drawBtn = document.getElementById('aciPredioDrawBtn');
+    var closeBtn = document.getElementById('aciPredioCloseBtn');
+    var clearBtn = document.getElementById('aciPredioClearBtn');
+    var exportBtn = document.getElementById('aciPredioExportBtn');
+    var n = predioRing.length;
+    var ha = predioClosed ? predioAreaHa(predioRing) : null;
+    if (status) {
+      status.hidden = false;
+      status.classList.toggle('is-drawing', !!predioDrawing);
+      status.classList.toggle('is-ready', !!predioClosed && n >= 3);
+      if (predioDrawing) {
+        status.textContent =
+          'Marcando predio · ' +
+          n +
+          ' punto' +
+          (n === 1 ? '' : 's') +
+          (n >= 3 ? ' · pulsa Cerrar predio' : ' · clic en el mapa');
+      } else if (predioClosed && n >= 3) {
+        status.textContent =
+          'Predio listo · ' +
+          n +
+          ' vértices' +
+          (ha != null ? ' · ~' + ha.toFixed(2) + ' ha' : '') +
+          ' · Descargar predio para Cursor';
+      } else if (n > 0) {
+        status.textContent = 'Predio incompleto · ' + n + ' puntos';
+      } else {
+        status.textContent = 'Predio: sin marcar (recomendado para el análisis)';
+      }
+    }
+    if (drawBtn) {
+      drawBtn.textContent = predioDrawing ? 'Cancelar marcado' : predioClosed ? 'Editar predio' : 'Marcar predio';
+      drawBtn.classList.toggle('is-active', !!predioDrawing);
+    }
+    if (closeBtn) closeBtn.hidden = !(predioDrawing && n >= 3);
+    if (clearBtn) clearBtn.hidden = n < 1;
+    if (exportBtn) exportBtn.hidden = !(predioClosed && n >= 3);
+  }
+
+  function clearPredioLayers() {
+    if (predioLayer && map) {
+      try {
+        map.removeLayer(predioLayer);
+      } catch (e) {}
+    }
+    if (predioVertexLayer && map) {
+      try {
+        map.removeLayer(predioVertexLayer);
+      } catch (e2) {}
+    }
+    predioLayer = null;
+    predioVertexLayer = null;
+  }
+
+  function renderPredio() {
+    if (!map || typeof L === 'undefined') {
+      syncPredioUi();
+      return;
+    }
+    clearPredioLayers();
+    if (!predioRing.length) {
+      syncPredioUi();
+      return;
+    }
+    if (!map.getPane('airciPredio')) {
+      var pane = map.createPane('airciPredio');
+      pane.style.zIndex = '620';
+    }
+    predioLayer = L.layerGroup({ pane: 'airciPredio' }).addTo(map);
+    predioVertexLayer = L.layerGroup({ pane: 'airciPredio' }).addTo(map);
+    if (predioRing.length >= 2) {
+      var line = L.polyline(predioRing, {
+        color: '#ea580c',
+        weight: 3,
+        dashArray: predioClosed ? null : '8 6',
+        opacity: 0.95
+      });
+      predioLayer.addLayer(line);
+    }
+    if (predioClosed && predioRing.length >= 3) {
+      var poly = L.polygon(predioRing, {
+        color: '#c2410c',
+        weight: 2.5,
+        fillColor: '#fb923c',
+        fillOpacity: 0.12
+      });
+      poly.bindTooltip('Contorno del predio');
+      predioLayer.addLayer(poly);
+    }
+    predioRing.forEach(function (pt, idx) {
+      var marker = L.marker(pt, {
+        draggable: true,
+        keyboard: false,
+        zIndexOffset: 700,
+        icon: L.divIcon({
+          className: 'aci-predio-vertex',
+          html: '<span class="aci-predio-vertex__dot"></span>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        })
+      });
+      marker.on('drag', function (ev) {
+        predioRing[idx] = [ev.latlng.lat, ev.latlng.lng];
+      });
+      marker.on('dragend', function () {
+        savePredioLocal();
+        renderPredio();
+        setMapStatus('Vértice del predio actualizado.', 'ok');
+      });
+      marker.on('dblclick', function (ev) {
+        if (ev && ev.originalEvent) L.DomEvent.stop(ev.originalEvent);
+        if (predioRing.length <= 3 && predioClosed) return;
+        if (predioRing.length <= 1) return;
+        predioRing.splice(idx, 1);
+        if (predioRing.length < 3) predioClosed = false;
+        savePredioLocal();
+        renderPredio();
+        setMapStatus('Punto del predio eliminado.', 'ok');
+      });
+      predioVertexLayer.addLayer(marker);
+    });
+    syncPredioUi();
+  }
+
+  function startPredioDrawing() {
+    if (predioDrawing) {
+      predioDrawing = false;
+      syncPredioUi();
+      setMapStatus('Marcado de predio cancelado.', 'ok');
+      return;
+    }
+    if (!map) {
+      setMapStatus('Sube el GeoTIFF primero para ver el mapa.', 'error');
+      return;
+    }
+    predioDrawing = true;
+    if (!predioClosed) {
+      // keep existing points if editing incomplete
+    } else {
+      // editing closed: keep ring, allow adding via... for simplicity reset to redraw
+      // User asked to mark - if already closed, "Editar" keeps vertices draggable; drawing adds points at end
+    }
+    syncPredioUi();
+    setMapStatus('Clic en el mapa para marcar el contorno del predio (orilla del lote).', 'ok');
+  }
+
+  function closePredioPolygon() {
+    if (predioRing.length < 3) {
+      setMapStatus('Necesitas al menos 3 puntos para cerrar el predio.', 'error');
+      return;
+    }
+    predioClosed = true;
+    predioDrawing = false;
+    savePredioLocal();
+    renderPredio();
+    var ha = predioAreaHa(predioRing);
+    setMapStatus(
+      'Predio cerrado' + (ha != null ? ' · ~' + ha.toFixed(2) + ' ha' : '') + '. Ya puedes Descargar predio.',
+      'ok'
+    );
+  }
+
+  function clearPredioPolygon() {
+    predioRing = [];
+    predioClosed = false;
+    predioDrawing = false;
+    savePredioLocal();
+    clearPredioLayers();
+    syncPredioUi();
+    setMapStatus('Predio borrado.', 'ok');
+  }
+
+  function exportPredioGeoJson() {
+    if (!predioClosed || predioRing.length < 3) {
+      setMapStatus('Cierra el predio antes de descargar.', 'error');
+      return;
+    }
+    var coords = predioRing.map(function (p) {
+      return [p[1], p[0]];
+    });
+    if (coords.length && (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1])) {
+      coords.push(coords[0].slice());
+    }
+    var ha = predioAreaHa(predioRing);
+    var payload = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            kind: 'airci_predio',
+            site_id: getSiteId(),
+            area_ha: ha != null ? Math.round(ha * 1000) / 1000 : null,
+            vertex_count: predioRing.length,
+            exported_at: new Date().toISOString()
+          },
+          geometry: { type: 'Polygon', coordinates: [coords] }
+        }
+      ]
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/geo+json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'airci-predio.geojson';
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+    }, 1500);
+    setMapStatus('Descargado airci-predio.geojson · guárdalo en la carpeta del campo para Cursor.', 'ok');
+  }
+
   function initMapOnce() {
     if (map || typeof L === 'undefined') return;
     var mapEl = document.getElementById('aciMap');
@@ -5864,6 +6146,20 @@
       }, 280);
     });
     map.on('click', function (event) {
+      if (predioDrawing) {
+        predioRing.push([event.latlng.lat, event.latlng.lng]);
+        predioClosed = false;
+        savePredioLocal();
+        renderPredio();
+        setMapStatus(
+          'Punto ' +
+            predioRing.length +
+            ' del predio' +
+            (predioRing.length >= 3 ? ' · ya puedes Cerrar predio' : ''),
+          'ok'
+        );
+        return;
+      }
       if (calibrationActive) {
         if (calibrationAddPoint && calibrationSelectedIndex >= 0) {
           calibrationSamples[calibrationSelectedIndex].latlngs.push([event.latlng.lat, event.latlng.lng]);
@@ -5881,6 +6177,8 @@
         else addBrowserTreeAt(event.latlng);
       }
     });
+    loadPredioForSite(peekSiteId() || getSiteId());
+    renderPredio();
   }
 
   function syncBasemapChips() {
@@ -6090,6 +6388,8 @@
     var analyzeBtn = document.getElementById('aciAnalyzeBtn');
     if (analyzeBtn) analyzeBtn.hidden = false;
     syncCalibrationUi();
+    loadPredioForSite(getSiteId());
+    renderPredio();
 
     var info = {
       filename: meta.filename,
@@ -6706,6 +7006,34 @@
       if (map && lastBounds) map.fitBounds(lastBounds, { padding: [24, 24] });
     });
   }
+
+  var predioDrawBtn = document.getElementById('aciPredioDrawBtn');
+  if (predioDrawBtn) {
+    predioDrawBtn.addEventListener('click', function () {
+      startPredioDrawing();
+    });
+  }
+  var predioCloseBtn = document.getElementById('aciPredioCloseBtn');
+  if (predioCloseBtn) {
+    predioCloseBtn.addEventListener('click', function () {
+      closePredioPolygon();
+    });
+  }
+  var predioClearBtn = document.getElementById('aciPredioClearBtn');
+  if (predioClearBtn) {
+    predioClearBtn.addEventListener('click', function () {
+      if (!predioRing.length) return;
+      if (!window.confirm('¿Borrar el polígono del predio?')) return;
+      clearPredioPolygon();
+    });
+  }
+  var predioExportBtn = document.getElementById('aciPredioExportBtn');
+  if (predioExportBtn) {
+    predioExportBtn.addEventListener('click', function () {
+      exportPredioGeoJson();
+    });
+  }
+  syncPredioUi();
 
   var analyzeBtn = document.getElementById('aciAnalyzeBtn');
   if (analyzeBtn) {
