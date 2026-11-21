@@ -244,8 +244,8 @@
           </div>
         </div>
         <p class="aci-map-hint" id="aciCursorHint">
-          Flujo: <strong>Subir GeoTIFF</strong> → <strong>Marcar predio</strong> (contorno) → <strong>Importar Cursor</strong> (copas).
-          El polígono del predio sí sirve para el análisis; las 10 copas ya no.
+          Flujo: <strong>Subir GeoTIFF</strong> → <strong>Marcar predio</strong> → <strong>Importar Cursor</strong> (cobertura / copas).
+          Primero cobertura de dosel; inventario de copas después.
         </p>
         <p class="aci-predio-status" id="aciPredioStatus" hidden role="status">Predio: sin marcar</p>
         <div class="aci-calibration aci-legacy-detect-ui" id="aciCalibration" hidden aria-hidden="true">
@@ -287,6 +287,7 @@
         <p id="aciMapStatus" class="aci-map-status" hidden role="status"></p>
         <div class="aci-layers" aria-label="Capas (puedes activar varias)" id="aciLayerBar">
           <button type="button" class="aci-layer-chip is-active" data-layer="ortho" title="Activar/desactivar ortomosaico">Ortomosaico RGB</button>
+          <button type="button" class="aci-layer-chip" data-layer="cobertura" disabled title="Máscara de cobertura de dosel (% árbol vs suelo)">Cobertura dosel</button>
           <button type="button" class="aci-layer-chip" data-layer="copas" disabled title="Contornos de copa">Copas (contorno)</button>
           <button type="button" class="aci-layer-chip" data-layer="semaforo" disabled title="Relleno por tamaño">Semáforo tamaño</button>
           <button type="button" class="aci-layer-chip" data-layer="numeros" disabled title="Números solo con esta capa activa">Números (ID)</button>

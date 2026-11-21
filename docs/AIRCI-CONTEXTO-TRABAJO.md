@@ -3,16 +3,29 @@
 Documento interno para chats / agentes. **Actualizar** cuando cambie algo importante (huerta, modelo, umbral, decisión).  
 No sustituye arquitectura (`AIRCI-CANOPY-DETECTION-ARCHITECTURE.md`) ni status legacy (`AIRCI-STATUS.md`).
 
-Última actualización: 2026-11-21
+Última actualización: 2026-11-21 (Fase A cobertura lista)
+
+---
+
+## Prioridad de producto (evitar ajuste infinito)
+
+Orden acordado (no al revés):
+
+1. **Fase A — Cobertura de dosel** (% árbol/vegetación vs suelo dentro del predio). Máscara estable + `coverPct` / `barePct`. Entregable útil sin contar cada árbol.
+2. **Fase B — Inventario de copas** (DeepForest / fine-tune) solo cuando la cobertura ya sea confiable y el productor pida conteo/ID.
+3. Densidad 404/ha = referencia blanda para Fase B, no meta de Fase A.
+
+Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
 
 ---
 
 ## Principios
 
-1. **Copas reales**, no blobs. Densidad de huerta = referencia blanda, nunca forzar conteo inventando/borrando.
-2. Motor actual preferido: **DeepForest** (pretrained o fine-tuned). Classical/OpenCV = respaldo.
-3. Umbrales (`score-thresh`, etc.) son **por huerta / corrida**, no globales del producto.
-4. Trabajo pesado (detect, fine-tune) en **Cursor/Mac** → JSON → **Importar Cursor** en AirCI. Radar satelital = async Netlify (`airci-radar-background`).
+1. **No chasing infinito de copas.** Mejor una máscara de cobertura buena que 1400 elipses a medias.
+2. Copas individuales: reales, no blobs; densidad = referencia blanda (nunca forzar conteo).
+3. Motor copas (cuando toque): **DeepForest** (+ FT por huerta). Classical = respaldo / apoyo a máscara.
+4. Umbrales son **por huerta / corrida**, no globales.
+5. Trabajo pesado en **Cursor/Mac** → JSON → **Importar Cursor**. Radar = async Netlify.
 
 ---
 
@@ -61,16 +74,27 @@ No sustituye arquitectura (`AIRCI-CANOPY-DETECTION-ARCHITECTURE.md`) ni status l
 
 ## Decisiones abiertas / siguientes
 
-- [ ] Revisar preview Campo 1 en AirCI (FP vs huecos)
-- [ ] Más etiquetas si faltan copas; subir umbral si hay basura
+- [x] Pivot: **cobertura primero**, inventario de copas después
+- [x] Motor `coverage_engine.py` + `run_coverage.py` + capa **Cobertura dosel** en AirCI
+- [ ] Validar visual Campo 1 (¿38 % se ve creíble?) y afinar percentil si hace falta
+- [ ] Pausar fine-tune de cajas salvo huecos claros tras cobertura OK
+- [ ] Deploy Netlify (cobertura + restore orto nube)
 - [ ] No asumir mismo checkpoint/umbral en otras huertas
-- [ ] (Opcional) perfil por huerta: dens. ref + weights + score default
+- [x] Reabrir orto desde nube (Cursor-first baja TIFF aunque sea >80 MB)
+
+### Cobertura Campo 1 (última)
+
+- JSON: `…/Campo 1 (13Nov26)/airci-coverage-result.json`
+- **coverPct ~38.5 %** · bare ~61.5 % · ~1.71 ha dosel · 293 polígonos
+- Comando: `scripts/airci_canopy/.venv/bin/python run_coverage.py <tif> --predio … --out …`
 
 ---
 
 ## Bitácora corta
 
-- **2026-11-21** — Fine-tune Campo 1 OK; primer save falló (`AttributeError: save`); corregido `save_model`. Detect FT → 1313@0.15 luego 1411@0.10 + target 404 blando. Radar AirCI async desplegado antes.
+- **2026-11-21** — Fase A hecha: cobertura máscara en ~2 s; Import Cursor acepta JSON sin copas; capa UI. Socio pidió ágil/profesional vs ajuste infinito de cajas.
+- **2026-11-21** — Socio: “nunca terminaremos” con ajustes de copas. Acuerdo: **Fase A cobertura** antes de seguir etiqutando/umbrales.
+- **2026-11-21** — Fine-tune Campo 1 OK; primer save falló (`AttributeError: save`); corregido `save_model`. Detect FT → 1313@0.15 luego 1411@0.10 + target 404 blando.
 - **2026-11** — Abandono calibración clásica a mano; pivot a DeepForest + etiquetado.
 
 ---

@@ -68,9 +68,10 @@
   var canopyResult = null;
   var canopyOutlineLayer = null;
   var canopyFillLayer = null;
+  var coverageLayer = null;
   var canopyLabelLayer = null;
   var activeLayer = 'ortho'; // compat: última capa tocada
-  var layerOn = { ortho: true, copas: false, semaforo: false, numeros: false };
+  var layerOn = { ortho: true, cobertura: false, copas: false, semaforo: false, numeros: false };
   var activeSemFilter = 'all';
   /** Filtrar por cambio vs vuelo anterior */
   var activeDeltaFilter = 'all';
@@ -825,7 +826,7 @@
     });
     var orthoBtn = document.querySelector('#aciLayerBar [data-layer="ortho"]');
     if (orthoBtn) orthoBtn.classList.add('is-active');
-    layerOn = { ortho: true, copas: false, semaforo: false, numeros: false };
+    layerOn = { ortho: true, cobertura: false, copas: false, semaforo: false, numeros: false };
     activeLayer = 'ortho';
     paintMode = 'sem';
     syncPaintModeUi();
@@ -846,6 +847,13 @@
         if (rasterLayer.setOpacity) rasterLayer.setOpacity(1);
       } else if (map.hasLayer(rasterLayer)) {
         map.removeLayer(rasterLayer);
+      }
+    }
+    if (coverageLayer && map) {
+      if (layerOn.cobertura) {
+        if (!map.hasLayer(coverageLayer)) coverageLayer.addTo(map);
+      } else if (map.hasLayer(coverageLayer)) {
+        map.removeLayer(coverageLayer);
       }
     }
     if (canopyOutlineLayer && map) {
@@ -899,7 +907,7 @@
     if (!Object.prototype.hasOwnProperty.call(layerOn, mode)) return;
     var next = !layerOn[mode];
     if (!next && mode === 'ortho') {
-      var otherOn = layerOn.copas || layerOn.semaforo || layerOn.numeros;
+      var otherOn = layerOn.cobertura || layerOn.copas || layerOn.semaforo || layerOn.numeros;
       if (!otherOn) {
         // dejar al menos el orto visible
         next = true;
@@ -2235,6 +2243,7 @@
       mapObj[siteId] = {
         stats: payload.stats,
         trees: payload.trees,
+        coverage: payload.coverage || null,
         flight_id: payload.flight_id || getLastFlightId() || null,
         saved_at: Date.now()
       };
@@ -2262,6 +2271,7 @@
     saveCanopyLocal(siteId, {
       stats: result.stats,
       trees: result.trees,
+      coverage: result.coverage || null,
       flight_id: flightId
     });
     var r = await apiOrtho({
@@ -2269,12 +2279,14 @@
       site_id: siteId,
       flight_id: flightId,
       stats: result.stats,
-      trees: result.trees
+      trees: result.trees || []
     });
     if (r.ok) {
+      var nTrees = (result.trees && result.trees.length) || Number(result.stats.count) || 0;
       setMapStatus(
-        result.stats.count +
-          ' copas guardadas en Supabase · cobertura ' +
+        (nTrees
+          ? nTrees + ' copas guardadas · cobertura '
+          : 'Cobertura guardada ') +
           Number(result.stats.coverPct || 0).toFixed(1) +
           '%' +
           (result.stats.match && result.stats.match.hasHistory
@@ -2341,17 +2353,42 @@
   }
 
   async function restoreCanopyForSite(siteId) {
-    function finalizeRestore(trees, stats, statusMsg) {
+    function finalizeRestore(trees, stats, statusMsg, coverage) {
       var result = {
-        trees: trees,
+        trees: trees || [],
         stats: stats || {
-          count: trees.length,
+          count: (trees && trees.length) || 0,
           coverPct: 0,
           meanArea: 0,
           stdArea: 1,
           threshold: 0
-        }
+        },
+        coverage: coverage || null
       };
+      if (coverage && coverage.polygons && coverage.polygons.length) {
+        drawCoverage(coverage);
+        enableLayers(['cobertura']);
+      }
+      if (!result.trees.length) {
+        if (coverage && coverage.polygons && coverage.polygons.length) {
+          canopyResult = result;
+          updateMetrics({
+            treeCount: 0,
+            coverPct: result.stats.coverPct != null ? result.stats.coverPct : coverage.coverPct,
+            barePct: result.stats.barePct != null ? result.stats.barePct : coverage.barePct,
+            canopyAreaM2: result.stats.canopyAreaM2,
+            bareAreaM2: result.stats.bareAreaM2,
+            orthoAreaHa: result.stats.predioAreaHa || result.stats.orthoAreaHa,
+            hasScale: result.stats.hasScale,
+            gsdCm: result.stats.gsdCm
+          });
+          showMapPane(true);
+          setMapStatus(statusMsg || 'Cobertura restaurada', 'ok');
+          applyLayerVisibility();
+          return true;
+        }
+        return false;
+      }
       if (!(result.stats.match && result.stats.match.hasHistory)) {
         var hist = loadCanopyHistory(siteId);
         if (hist.length && hist[0].trees && hist[0].trees.length) {
@@ -2388,7 +2425,8 @@
         return finalizeRestore(
           r.result.trees,
           r.result.stats,
-          r.result.trees.length + ' copas restauradas desde Supabase'
+          r.result.trees.length + ' copas restauradas desde Supabase',
+          r.result.coverage || null
         );
       }
     } catch (e) {}
@@ -2397,7 +2435,16 @@
       return finalizeRestore(
         local.trees,
         local.stats,
-        local.trees.length + ' copas restauradas (local)'
+        local.trees.length + ' copas restauradas (local)',
+        local.coverage || null
+      );
+    }
+    if (local && local.coverage && local.coverage.polygons && local.coverage.polygons.length) {
+      return finalizeRestore(
+        [],
+        local.stats,
+        'Cobertura restaurada (local)',
+        local.coverage
       );
     }
     return false;
@@ -4523,7 +4570,8 @@
     initMapOnce();
     restoreFlightHint();
     refreshProjectsUi();
-    setActiveTab('proyectos');
+    // Si ya hay TIFF en Storage, ir a Análisis y recuperarlo (no pedir re-subir).
+    setActiveTab(hasCloudFlightHint() ? 'analisis' : 'proyectos');
     refreshAiUsageBar();
     refreshStorageUsage(false);
   }
@@ -5434,6 +5482,32 @@
 
   async function loadOrthoAndCanopyForSite(siteId) {
     var orthoOk = await loadOrthoFromCloud(siteId);
+    // Cursor-first: mostrar orto + restaurar cobertura/copas; nunca auto-Analizar ChatGPT.
+    if (CURSOR_FIRST_UI) {
+      var canopyOkCursor = await restoreCanopyForSite(siteId);
+      if (orthoOk && canopyOkCursor) {
+        setMapStatus('Ortomosaico + resultado restaurados desde la nube', 'ok');
+        return;
+      }
+      if (orthoOk) {
+        setMapStatus(
+          'Ortomosaico listo desde la nube · Importar Cursor (cobertura / copas)',
+          'ok'
+        );
+        return;
+      }
+      if (canopyOkCursor) {
+        setMapStatus(
+          'Resultado restaurado. Si no ves el mapa, espera o revisa Storage.',
+          'ok'
+        );
+        return;
+      }
+      showMapPane(false);
+      setAnalyzeButtonVisible(false);
+      setMapStatus('Este análisis aún no tiene GeoTIFF en la nube. Súbelo aquí.', 'ok');
+      return;
+    }
     if (getDetectModel() === 'cloud-pro') {
       var hasProfessional = await resumeProfessionalJobForFlight();
       if (!hasProfessional && orthoOk) {
@@ -5508,7 +5582,13 @@
       flightId
     );
     setAnalyzeButtonVisible(true);
-    if (getDetectModel() === 'cloud-pro' && Number(byteSize) > PREVIEW_WARN_BYTES) {
+    // Solo el modo Professional legacy evita bajar TIFF enorme al browser.
+    // Cursor-first SIEMPRE muestra el orto (aunque pese ~90 MB).
+    if (
+      !CURSOR_FIRST_UI &&
+      getDetectModel() === 'cloud-pro' &&
+      Number(byteSize) > PREVIEW_WARN_BYTES
+    ) {
       showMapPane(false);
       updateMetrics({
         filename: filename,
@@ -5523,7 +5603,12 @@
       return true;
     }
 
-    setMapStatus('Descargando GeoTIFF desde Storage…');
+    setMapStatus(
+      Number(byteSize) > PREVIEW_WARN_BYTES
+        ? 'Descargando GeoTIFF desde la nube (' + formatBytes(byteSize) + ')…'
+        : 'Descargando GeoTIFF desde Storage…',
+      'ok'
+    );
     var signed = await apiOrtho({ action: 'signed_url', path: path, ttl_sec: 3600 });
     if (!signed.ok || !signed.url) {
       setMapStatus(signed.error || 'No hay URL firmada del TIFF', 'error');
@@ -5835,6 +5920,9 @@
     }
     if (predioVertexLayer && map && map.hasLayer(predioVertexLayer) && predioVertexLayer.bringToFront) {
       predioVertexLayer.bringToFront();
+    }
+    if (coverageLayer && map && map.hasLayer(coverageLayer) && coverageLayer.bringToFront) {
+      coverageLayer.bringToFront();
     }
     if (canopyOutlineLayer && map && map.hasLayer(canopyOutlineLayer) && canopyOutlineLayer.bringToFront) {
       canopyOutlineLayer.bringToFront();
@@ -6699,11 +6787,29 @@
         filename: f.filename,
         byte_size: f.byte_size,
         cloud: f.path ? 'En nube' : 'Solo local',
-        cloud_sub: f.path ? 'airci-orthos' : 'vuelve a subir para ver'
+        cloud_sub: f.path ? 'airci-orthos' : 'solo este equipo'
       });
-      document.getElementById('aciMapSub').textContent =
-        'Último TIFF: ' + f.filename + ' — vuelve a subir para ver mapa y copas';
+      var sub = document.getElementById('aciMapSub');
+      if (!sub) return;
+      if (f.path) {
+        sub.textContent =
+          'En nube: ' + f.filename + ' — se abre solo al entrar a Análisis';
+      } else {
+        sub.textContent =
+          'Último TIFF: ' + f.filename + ' — vuelve a subir para ver mapa';
+      }
     } catch (e) {}
+  }
+
+  function hasCloudFlightHint() {
+    try {
+      var raw = localStorage.getItem(FLIGHT_KEY);
+      if (!raw) return false;
+      var f = JSON.parse(raw);
+      return !!(f && f.path);
+    } catch (e) {
+      return false;
+    }
   }
 
   async function uploadToCloud(file, info) {
@@ -6840,9 +6946,11 @@
     saveFlightLocal(info, prep.path, prep.flight_id);
     updateMetrics(Object.assign({}, info, { cloud: 'En nube', cloud_sub: 'airci-orthos' }));
     setMapStatus(
-      getDetectModel() === 'cloud-pro'
-        ? 'GeoTIFF guardado · pulsa Analizar para iniciar AirCI Professional'
-        : 'GeoTIFF en el mapa y guardado en Supabase Storage',
+      CURSOR_FIRST_UI
+        ? 'GeoTIFF en el mapa y guardado en la nube · Importar Cursor cuando quieras'
+        : getDetectModel() === 'cloud-pro'
+          ? 'GeoTIFF guardado · pulsa Analizar para iniciar AirCI Professional'
+          : 'GeoTIFF en el mapa y guardado en Supabase Storage',
       'ok'
     );
     refreshStorageUsage(true);
@@ -7146,23 +7254,64 @@
       .filter(Boolean);
   }
 
+  function drawCoverage(coverage) {
+    if (!map || typeof L === 'undefined') return;
+    if (coverageLayer && map) {
+      try {
+        map.removeLayer(coverageLayer);
+      } catch (eCov) {}
+    }
+    coverageLayer = L.layerGroup();
+    var polys = (coverage && coverage.polygons) || [];
+    polys.forEach(function (p) {
+      var ring = p && (p.latlngs || p);
+      if (!ring || ring.length < 3) return;
+      coverageLayer.addLayer(
+        L.polygon(ring, {
+          color: '#166534',
+          weight: 1,
+          fillColor: '#22c55e',
+          fillOpacity: 0.42,
+          interactive: false
+        })
+      );
+    });
+    var covBtn = document.querySelector('#aciLayerBar [data-layer="cobertura"]');
+    if (covBtn) {
+      covBtn.disabled = false;
+      covBtn.title = 'Máscara de cobertura de dosel (% árbol vs suelo)';
+    }
+  }
+
   function applyCursorImportPayload(payload) {
     if (!payload || typeof payload !== 'object') {
       throw new Error('JSON vacío o inválido');
     }
+    var coverage =
+      payload.coverage && typeof payload.coverage === 'object' ? payload.coverage : null;
     var trees = normalizeCursorImportTrees(
       payload.trees && payload.trees.length ? payload.trees : payload.trees_raw
     );
-    if (!trees.length) {
-      throw new Error('El JSON no trae copas (trees)');
+    if (!trees.length && !(coverage && coverage.polygons && coverage.polygons.length)) {
+      throw new Error('El JSON no trae cobertura ni copas');
     }
     var stats = Object.assign({}, payload.stats || {});
+    if (coverage) {
+      if (coverage.coverPct != null) stats.coverPct = coverage.coverPct;
+      if (coverage.barePct != null) stats.barePct = coverage.barePct;
+    }
     stats.count = Number(stats.count != null ? stats.count : trees.length) || trees.length;
     stats.source = 'cursor_local';
     stats.hasScale = stats.gsdM != null || stats.hasScale;
     if (stats.gsdM != null && stats.gsdCm == null) stats.gsdCm = Number(stats.gsdM) * 100;
     if (stats.coverPct != null && stats.barePct == null) {
       stats.barePct = Math.max(0, 100 - Number(stats.coverPct));
+    }
+    if (stats.predioAreaHa != null && stats.coverPct != null && stats.canopyAreaM2 == null) {
+      stats.canopyAreaM2 = (Number(stats.predioAreaHa) * 10000 * Number(stats.coverPct)) / 100;
+    }
+    if (stats.predioAreaHa != null && stats.barePct != null && stats.bareAreaM2 == null) {
+      stats.bareAreaM2 = (Number(stats.predioAreaHa) * 10000 * Number(stats.barePct)) / 100;
     }
     // Completar % vs media si faltó
     var meanArea = Number(stats.meanArea) || 0;
@@ -7175,29 +7324,52 @@
     }
     var result = {
       trees: trees,
-      stats: enrichStatsFromTrees(stats, trees),
-      source: 'cursor_local'
+      stats: trees.length ? enrichStatsFromTrees(stats, trees) : stats,
+      source: 'cursor_local',
+      coverage: coverage
     };
     professionalResultId = null;
     professionalStats = result.stats;
-    drawCanopies(result);
-    enableLayers(['copas', 'semaforo', 'numeros']);
-    applyLayerVisibility();
+    if (coverage && coverage.polygons && coverage.polygons.length) {
+      drawCoverage(coverage);
+      enableLayers(['cobertura']);
+    }
+    if (trees.length) {
+      drawCanopies(result);
+      enableLayers(['copas', 'semaforo', 'numeros']);
+    } else {
+      // Solo cobertura: métricas sin inventar copas
+      updateMetrics({
+        treeCount: 0,
+        coverPct: result.stats.coverPct,
+        barePct: result.stats.barePct,
+        canopyAreaM2: result.stats.canopyAreaM2,
+        bareAreaM2: result.stats.bareAreaM2,
+        orthoAreaHa: result.stats.predioAreaHa || result.stats.orthoAreaHa,
+        hasScale: result.stats.hasScale,
+        gsdCm: result.stats.gsdCm
+      });
+      applyLayerVisibility();
+    }
     persistCanopyResult(result);
     var name =
       (payload.ortho && payload.ortho.filename) ||
       (payload.ortho && payload.ortho.path && String(payload.ortho.path).split('/').pop()) ||
       'resultado Cursor';
-    setMapStatus(
-      'Cursor · ' +
-        result.stats.count +
-        ' copas importadas · ' +
-        name +
-        (result.stats.estimatedSpacingM
-          ? ' · espaciado ~' + Number(result.stats.estimatedSpacingM).toFixed(1) + ' m'
-          : ''),
-      'ok'
-    );
+    var statusMsg =
+      coverage && (!trees.length || payload.mode === 'coverage')
+        ? 'Cursor · cobertura ' +
+          Number(result.stats.coverPct || 0).toFixed(1) +
+          '% · ' +
+          name
+        : 'Cursor · ' +
+          result.stats.count +
+          ' copas importadas · ' +
+          name +
+          (result.stats.estimatedSpacingM
+            ? ' · espaciado ~' + Number(result.stats.estimatedSpacingM).toFixed(1) + ' m'
+            : '');
+    setMapStatus(statusMsg, 'ok');
     return result;
   }
 
