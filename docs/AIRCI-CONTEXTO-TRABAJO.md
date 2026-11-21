@@ -17,7 +17,8 @@ Orden acordado (como el ejemplo ChatGPT):
 4. Densidad productor = dato de campo; **no es el KPI**.
 
 Socio: delineado tipo ChatGPT. Conteo fuera.  
-Socio: **“tú solo te encajonaste con el color”** — corte a heurísticas de color; no más afinaciones internas infinitas.
+Socio: **“tú solo te encajonaste con el color”** — corte a heurísticas de color.  
+Socio: el producto innovador = **agente mira la orto (tiles) y delimita**; el modelo solo propone. No “corre solo y ya”.
 
 ---
 

@@ -6,6 +6,7 @@ Criterio de borde: segmentación por modelo (box prompt), no ExG/color de suelo.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any
 
 import cv2
@@ -15,17 +16,31 @@ from rasterio.windows import Window
 
 _SAM_MODEL = None
 _SAM_WEIGHTS = None
+_DEFAULT_WEIGHTS = Path(__file__).resolve().parent / "mobile_sam.pt"
+
+
+def _resolve_weights(weights: str | Path | None) -> str:
+    if weights is None or str(weights).strip() in ("", "mobile_sam.pt"):
+        path = _DEFAULT_WEIGHTS
+    else:
+        path = Path(weights).expanduser()
+        if not path.is_file():
+            alt = Path(__file__).resolve().parent / path.name
+            path = alt if alt.is_file() else path
+    return str(path.resolve())
 
 
 def load_sam(weights: str = "mobile_sam.pt"):
     """Carga SAM una vez (reutilizable en toda la corrida)."""
     global _SAM_MODEL, _SAM_WEIGHTS
-    if _SAM_MODEL is not None and _SAM_WEIGHTS == weights:
+    resolved = _resolve_weights(weights)
+    if _SAM_MODEL is not None and _SAM_WEIGHTS == resolved:
         return _SAM_MODEL
     from ultralytics import SAM
 
-    _SAM_MODEL = SAM(weights)
-    _SAM_WEIGHTS = weights
+    print(f"SAM pesos: {resolved}", flush=True)
+    _SAM_MODEL = SAM(resolved)
+    _SAM_WEIGHTS = resolved
     return _SAM_MODEL
 
 

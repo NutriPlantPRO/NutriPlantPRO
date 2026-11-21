@@ -36,6 +36,22 @@ let pcCollectionTokenCache = null;
 let pcCollectionTokenExpiry = 0;
 const pcTokenByCollection = Object.create(null);
 
+function sleepMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchPcWithRetry(url, attempts = 4) {
+  let lastStatus = 0;
+  for (let i = 0; i < attempts; i++) {
+    const res = await fetch(url);
+    lastStatus = res.status;
+    if (res.ok) return res;
+    if (res.status !== 429 && res.status !== 502 && res.status !== 503) return res;
+    await sleepMs(400 * Math.pow(2, i) + Math.floor(Math.random() * 250));
+  }
+  return { ok: false, status: lastStatus, json: async () => ({}) };
+}
+
 async function getPcCollectionToken(collectionId) {
   const collection = String(collectionId || 'sentinel-2-l2a').trim() || 'sentinel-2-l2a';
   if (collection === 'sentinel-2-l2a') {
@@ -43,7 +59,7 @@ async function getPcCollectionToken(collectionId) {
     if (pcCollectionTokenCache && pcCollectionTokenExpiry > now + 60000) {
       return pcCollectionTokenCache;
     }
-    const res = await fetch(PC_TOKEN);
+    const res = await fetchPcWithRetry(PC_TOKEN);
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.token) return null;
@@ -59,7 +75,7 @@ async function getPcCollectionToken(collectionId) {
     collection === COP_DEM_COLLECTION
       ? PC_TOKEN_DEM
       : 'https://planetarycomputer.microsoft.com/api/sas/v1/token/' + encodeURIComponent(collection);
-  const res = await fetch(tokenUrl);
+  const res = await fetchPcWithRetry(tokenUrl);
   if (!res.ok) return null;
   const data = await res.json();
   if (!data.token) return null;
@@ -72,19 +88,19 @@ async function getPcCollectionToken(collectionId) {
 }
 
 async function signPcHref(href, collectionId) {
-  const signedUrl =
-    PC_SIGN + '?href=' + encodeURIComponent(href);
-  const res = await fetch(signedUrl);
-  if (res.ok) {
-    const data = await res.json();
-    if (data.href) return data.href;
-  }
+  // Preferir 1 token de colección (evita 429 al firmar cada banda en paralelo).
   const token = await getPcCollectionToken(collectionId);
   if (token) {
     const sep = href.includes('?') ? '&' : '?';
     return href + sep + token;
   }
-  throw new Error('PC sign HTTP ' + res.status);
+  const signedUrl = PC_SIGN + '?href=' + encodeURIComponent(href);
+  const res = await fetchPcWithRetry(signedUrl);
+  if (res.ok) {
+    const data = await res.json();
+    if (data.href) return data.href;
+  }
+  throw new Error('PC sign HTTP ' + (res.status || 429));
 }
 
 /**

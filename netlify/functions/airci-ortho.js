@@ -598,6 +598,62 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true, layer: data });
   }
 
+  if (action === 'delete_layer') {
+    const layerId = body.layer_id || body.id;
+    const siteId = body.site_id;
+    if (isUuid(layerId)) {
+      const { data, error } = await supabase
+        .from('airci_layers')
+        .delete()
+        .eq('id', layerId)
+        .eq('owner_id', auth.userId)
+        .select('id, name')
+        .maybeSingle();
+      if (error) {
+        return json(500, {
+          ok: false,
+          error: error.message,
+          setup: /airci_layers|does not exist/i.test(error.message || '')
+            ? 'supabase-airci-layers.sql'
+            : null
+        });
+      }
+      if (!data) return json(404, { ok: false, error: 'Capa no encontrada' });
+      return json(200, { ok: true, deleted: data });
+    }
+    // Borrar varias: source=chatgpt | all, requiere site_id
+    if (!isUuid(siteId)) {
+      return json(400, { ok: false, error: 'layer_id o site_id inválido' });
+    }
+    const sourceFilter = String(body.source || '')
+      .trim()
+      .toLowerCase();
+    let q = supabase
+      .from('airci_layers')
+      .delete()
+      .eq('site_id', siteId)
+      .eq('owner_id', auth.userId)
+      .select('id, name, source');
+    if (sourceFilter && sourceFilter !== 'all' && sourceFilter !== '*') {
+      q = q.eq('source', sourceFilter);
+    }
+    const { data, error } = await q;
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_layers|does not exist/i.test(error.message || '')
+          ? 'supabase-airci-layers.sql'
+          : null
+      });
+    }
+    return json(200, {
+      ok: true,
+      deleted: data || [],
+      count: (data || []).length
+    });
+  }
+
   if (action === 'save_layer') {
     const siteId = body.site_id;
     if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
@@ -1043,6 +1099,6 @@ exports.handler = async function handler(event) {
   return json(400, {
     ok: false,
     error:
-      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | save_predio | load_predio | list_layers | get_layer | save_layer | save_detect_profile | load_detect_profile | list_crop_profiles | delete_site | delete_agricola)'
+      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | save_predio | load_predio | list_layers | get_layer | save_layer | delete_layer | save_detect_profile | load_detect_profile | list_crop_profiles | delete_site | delete_agricola)'
   });
 };

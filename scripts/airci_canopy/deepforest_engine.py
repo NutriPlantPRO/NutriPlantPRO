@@ -398,7 +398,15 @@ def analyze_geotiff_deepforest(
             contour_from_sam_box = None  # type: ignore
 
         trees: list[dict] = []
+        n_boxes = len(boxes_all)
+        sam_ok = 0
+        sam_skip = 0
         for index, box in enumerate(boxes_all):
+            if contour_mode == "sam" and index % 25 == 0:
+                report(
+                    86 + int(10 * index / max(n_boxes, 1)),
+                    f"SAM contorno {index}/{n_boxes} (ok={sam_ok} skip={sam_skip})",
+                )
             xmin, ymin, xmax, ymax = box["xmin"], box["ymin"], box["xmax"], box["ymax"]
             width_px = max(1.0, xmax - xmin)
             height_px = max(1.0, ymax - ymin)
@@ -424,9 +432,11 @@ def analyze_geotiff_deepforest(
                 )
                 if refined is None:
                     # Sin máscara SAM usable → no inventar borde de color
+                    sam_skip += 1
                     continue
                 ring_px, area_px = refined
                 contour_kind = "sam_box"
+                sam_ok += 1
             elif contour_mode == "foliage":
                 refined = _refine_crown_ring_in_bbox(dataset, xmin, ymin, xmax, ymax)
                 if refined is None:

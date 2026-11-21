@@ -48,6 +48,9 @@
   var API_RADAR = '/api/airci-radar';
   var DETECT_MODEL_KEY = 'airci_detect_model_v2';
   var PREVIEW_WARN_BYTES = 80 * 1024 * 1024;
+  /** Margen al encuadrar orto/copas: espacio libre para arrastrar arriba/abajo/lados. */
+  var MAP_FIT_PADDING = [110, 110];
+  var MAP_FIT_PADDING_TREE = [72, 72];
 
   var gateEl = document.getElementById('aciGate');
   var appEl = document.getElementById('aciApp');
@@ -1399,7 +1402,7 @@
       bounds = bounds ? bounds.extend(b) : L.latLngBounds(b.getSouthWest(), b.getNorthEast());
     });
     if (bounds && bounds.isValid()) {
-      map.fitBounds(bounds, { maxZoom: 20, padding: [36, 36] });
+      map.fitBounds(bounds, { maxZoom: 20, padding: MAP_FIT_PADDING });
     }
   }
 
@@ -1965,7 +1968,7 @@
     else if (layerOn.copas && entry.outline) layer = entry.outline;
     else layer = entry.fill || entry.outline;
     if (layer && layer.getBounds) {
-      map.fitBounds(layer.getBounds(), { maxZoom: 20, padding: [40, 40] });
+      map.fitBounds(layer.getBounds(), { maxZoom: 20, padding: MAP_FIT_PADDING_TREE });
     }
     if (layer && layer.setStyle) {
       layer.setStyle({ weight: 4, color: '#0f172a', opacity: 1, fillOpacity: 0.9 });
@@ -4204,7 +4207,7 @@
           [Number(treeBbox[1]), Number(treeBbox[0])],
           [Number(treeBbox[3]), Number(treeBbox[2])]
         ],
-        { padding: [24, 24] }
+        { padding: MAP_FIT_PADDING }
       );
       professionalFittedResultId = resultId;
     }
@@ -4856,7 +4859,7 @@
       setTimeout(function () {
         if (map) {
           map.invalidateSize();
-          if (lastBounds) map.fitBounds(lastBounds, { padding: [20, 20] });
+          if (lastBounds) map.fitBounds(lastBounds, { padding: MAP_FIT_PADDING });
         }
       }, 80);
       // Si no hay TIFF en memoria pero el análisis existe, recargar de la nube
@@ -6819,7 +6822,7 @@
     if (show && map) {
       setTimeout(function () {
         map.invalidateSize();
-        if (lastBounds) map.fitBounds(lastBounds, { padding: [20, 20] });
+        if (lastBounds) map.fitBounds(lastBounds, { padding: MAP_FIT_PADDING });
       }, 80);
     }
   }
@@ -6939,7 +6942,7 @@
     bringOverlaysFront();
     lastBounds = rasterLayer.getBounds();
     showMapPane(true);
-    map.fitBounds(lastBounds, { padding: [24, 24] });
+    map.fitBounds(lastBounds, { padding: MAP_FIT_PADDING });
 
     setAnalyzeButtonVisible(true);
     syncCalibrationUi();
@@ -7741,7 +7744,7 @@
   var fitBtn = document.getElementById('aciFitBounds');
   if (fitBtn) {
     fitBtn.addEventListener('click', function () {
-      if (map && lastBounds) map.fitBounds(lastBounds, { padding: [24, 24] });
+      if (map && lastBounds) map.fitBounds(lastBounds, { padding: MAP_FIT_PADDING });
     });
   }
 
@@ -7798,12 +7801,79 @@
         );
       });
       var pick = window.prompt(
-        'Capas en la nube (escribe el número):\n' + lines.join('\n')
+        'Capas en la nube:\n' +
+          lines.join('\n') +
+          '\n\nNúmero = abrir\nb3 = borrar la 3\nbchatgpt = borrar todas ChatGPT\nbtodas = borrar todas'
       );
       if (!pick) return;
-      var idx = parseInt(pick, 10) - 1;
+      var raw = String(pick).trim().toLowerCase();
+      var delMatch = raw.match(/^b\s*(\d+)$/i) || raw.match(/^borrar\s+(\d+)$/i);
+      if (delMatch) {
+        var delIdx = parseInt(delMatch[1], 10) - 1;
+        if (delIdx < 0 || delIdx >= layers.length) {
+          setMapStatus('Número inválido', 'error');
+          return;
+        }
+        var victim = layers[delIdx];
+        if (
+          !window.confirm(
+            '¿Borrar de la nube la capa\n"' + victim.name + '" [' + victim.source + ']?'
+          )
+        ) {
+          return;
+        }
+        var delOne = await apiOrtho({ action: 'delete_layer', layer_id: victim.id });
+        if (!delOne || !delOne.ok) {
+          setMapStatus((delOne && delOne.error) || 'No pude borrar la capa', 'error');
+          return;
+        }
+        setMapStatus('Capa borrada · ' + victim.name, 'ok');
+        await refreshNamedLayersButton();
+        return;
+      }
+      if (raw === 'bchatgpt' || raw === 'borrar chatgpt' || raw === 'b chat') {
+        if (
+          !window.confirm(
+            '¿Borrar TODAS las capas source=chatgpt de este análisis en la nube?'
+          )
+        ) {
+          return;
+        }
+        var delChat = await apiOrtho({
+          action: 'delete_layer',
+          site_id: getSiteId(),
+          source: 'chatgpt'
+        });
+        if (!delChat || !delChat.ok) {
+          setMapStatus((delChat && delChat.error) || 'No pude borrar ChatGPT', 'error');
+          return;
+        }
+        setMapStatus('Borradas ' + (delChat.count || 0) + ' capas ChatGPT', 'ok');
+        await refreshNamedLayersButton();
+        return;
+      }
+      if (raw === 'btodas' || raw === 'borrar todas' || raw === 'b*') {
+        if (
+          !window.confirm('¿Borrar TODAS las capas nombradas de este análisis en la nube?')
+        ) {
+          return;
+        }
+        var delAll = await apiOrtho({
+          action: 'delete_layer',
+          site_id: getSiteId(),
+          source: 'all'
+        });
+        if (!delAll || !delAll.ok) {
+          setMapStatus((delAll && delAll.error) || 'No pude borrar capas', 'error');
+          return;
+        }
+        setMapStatus('Borradas ' + (delAll.count || 0) + ' capas', 'ok');
+        await refreshNamedLayersButton();
+        return;
+      }
+      var idx = parseInt(raw, 10) - 1;
       if (idx < 0 || idx >= layers.length) {
-        setMapStatus('Número inválido', 'error');
+        setMapStatus('Número inválido (o usa b3 / bchatgpt)', 'error');
         return;
       }
       await loadNamedLayerById(layers[idx].id);
