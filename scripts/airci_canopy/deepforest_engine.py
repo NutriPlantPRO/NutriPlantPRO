@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 from typing import Callable
 
+import cv2
 import numpy as np
 import rasterio
 from rasterio.warp import transform as warp_transform
@@ -51,6 +52,166 @@ def _bbox_to_ellipse_ring(xmin: float, ymin: float, xmax: float, ymax: float, si
         ang = (2.0 * math.pi * i) / sides
         ring.append((cx + math.cos(ang) * rx, cy + math.sin(ang) * ry))
     return ring
+
+
+def _shrink_ellipse_ring(
+    xmin: float, ymin: float, xmax: float, ymax: float, scale: float = 0.62, sides: int = 24
+) -> list[tuple[float, float]]:
+    """Fallback chico (no elipse gorda del bbox completo)."""
+    cx = (xmin + xmax) * 0.5
+    cy = (ymin + ymax) * 0.5
+    rx = max(1.0, (xmax - xmin) * 0.5 * scale)
+    ry = max(1.0, (ymax - ymin) * 0.5 * scale)
+    ring: list[tuple[float, float]] = []
+    for i in range(sides):
+        ang = (2.0 * math.pi * i) / sides
+        ring.append((cx + math.cos(ang) * rx, cy + math.sin(ang) * ry))
+    return ring
+
+
+def _refine_crown_ring_in_bbox(
+    dataset: rasterio.io.DatasetReader,
+    xmin: float,
+    ymin: float,
+    xmax: float,
+    ymax: float,
+) -> tuple[list[tuple[float, float]], float] | None:
+    """IA ubicó el árbol (bbox). Contorno = follaje real dentro de la caja.
+
+    Prioridad: verdor/sat local. Rechaza sombra y suelo. Sin GrabCut libre
+    (se comía sombra). Si no hay follaje usable → None (se descarta).
+    """
+    pad = max(2, int(round(0.05 * max(xmax - xmin, ymax - ymin))))
+    x0 = max(0, int(math.floor(xmin)) - pad)
+    y0 = max(0, int(math.floor(ymin)) - pad)
+    x1 = min(dataset.width, int(math.ceil(xmax)) + pad)
+    y1 = min(dataset.height, int(math.ceil(ymax)) + pad)
+    w = x1 - x0
+    h = y1 - y0
+    if w < 12 or h < 12:
+        return None
+
+    window = Window(x0, y0, w, h)
+    tile = dataset.read(
+        indexes=list(range(1, min(dataset.count, 3) + 1)),
+        window=window,
+        boundless=False,
+    )
+    rgb = _to_u8_rgb(tile)
+    r = rgb[:, :, 0].astype(np.float32)
+    g = rgb[:, :, 1].astype(np.float32)
+    b = rgb[:, :, 2].astype(np.float32)
+    tot = np.maximum(r + g + b, 1.0)
+    gchr = (g / tot) - 0.5 * ((r / tot) + (b / tot))
+    lum = 0.30 * r + 0.59 * g + 0.11 * b
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    sat = hsv[:, :, 1].astype(np.float32)
+    val = hsv[:, :, 2].astype(np.float32)
+
+    # Sombra proyectada / suelo: no son copa
+    shadow = (
+        ((val < 50) & (sat < 40) & (gchr < 0.018))
+        | ((val < 34) & (gchr < 0.022))
+        | ((lum < 32) & (sat < 45) & (gchr < 0.020))
+    )
+    soil = ((gchr < 0.012) & (lum > 62)) | ((gchr < 0.008) & (lum > 48))
+
+    rx0 = max(0, int(math.floor(xmin)) - x0)
+    ry0 = max(0, int(math.floor(ymin)) - y0)
+    rx1 = min(w, int(math.ceil(xmax)) - x0)
+    ry1 = min(h, int(math.ceil(ymax)) - y0)
+    if rx1 - rx0 < 8 or ry1 - ry0 < 8:
+        return None
+
+    local = np.zeros((h, w), dtype=bool)
+    local[ry0:ry1, rx0:rx1] = True
+    # Núcleo central (evita bordes de calle dentro del bbox)
+    mx0 = rx0 + max(1, (rx1 - rx0) // 10)
+    my0 = ry0 + max(1, (ry1 - ry0) // 10)
+    mx1 = rx1 - max(1, (rx1 - rx0) // 10)
+    my1 = ry1 - max(1, (ry1 - ry0) // 10)
+    core = np.zeros((h, w), dtype=bool)
+    if mx1 > mx0 and my1 > my0:
+        core[my0:my1, mx0:mx1] = True
+    else:
+        core = local
+
+    clean = local & (~shadow) & (~soil)
+    sample = gchr[clean & core]
+    if sample.size < 25:
+        sample = gchr[clean]
+    if sample.size < 12:
+        return None
+
+    # Umbral más bajo: cubrir la copa entera, no solo el núcleo brillante
+    thr_g = float(np.percentile(sample, 35))
+    thr_g = max(0.010, min(thr_g, 0.028))
+    thr_sat = float(np.percentile(sat[clean & core], 25)) if np.count_nonzero(clean & core) > 15 else 18.0
+    thr_sat = max(16.0, min(thr_sat, 45.0))
+
+    veg = clean & (gchr >= thr_g) & (sat >= thr_sat)
+    # Aguacate oscuro / verde apagado
+    veg = veg | (
+        local
+        & (~shadow)
+        & (~soil)
+        & (gchr >= max(0.008, thr_g - 0.006))
+        & (sat >= max(14.0, thr_sat - 6))
+        & (val >= 34)
+        & (val <= 200)
+    )
+
+    fg_u8 = (veg.astype(np.uint8) * 255)
+    k3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    k5 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    fg_u8 = cv2.morphologyEx(fg_u8, cv2.MORPH_OPEN, k3, iterations=1)
+    fg_u8 = cv2.morphologyEx(fg_u8, cv2.MORPH_CLOSE, k5, iterations=2)
+    # Un poco de dilatación para no quedarnos en el “punto” central
+    fg_u8 = cv2.dilate(fg_u8, k3, iterations=1)
+    fg_u8 = cv2.GaussianBlur(fg_u8, (5, 5), 0)
+    _, fg_u8 = cv2.threshold(fg_u8, 90, 255, cv2.THRESH_BINARY)
+    fg_u8 = fg_u8 & (local.astype(np.uint8) * 255)
+    fg_u8[shadow | soil] = 0
+
+    cx_c = ((xmin + xmax) * 0.5) - x0
+    cy_c = ((ymin + ymax) * 0.5) - y0
+    nlab, labels, stats, cents = cv2.connectedComponentsWithStats(fg_u8, connectivity=8)
+    best = -1
+    best_score = 1e18
+    min_a = max(20, int(0.06 * (rx1 - rx0) * (ry1 - ry0)))
+    max_a = int(0.98 * (rx1 - rx0) * (ry1 - ry0))
+    for i in range(1, nlab):
+        area = int(stats[i, cv2.CC_STAT_AREA])
+        if area < min_a or area > max_a:
+            continue
+        dx = float(cents[i][0]) - cx_c
+        dy = float(cents[i][1]) - cy_c
+        dist = dx * dx + dy * dy
+        score = dist / max(area, 1)
+        if score < best_score:
+            best_score = score
+            best = i
+    if best < 0:
+        return None
+
+    comp = (labels == best).astype(np.uint8) * 255
+    contours, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    if not contours:
+        return None
+    cnt = max(contours, key=cv2.contourArea)
+    peri = cv2.arcLength(cnt, True)
+    approx = cv2.approxPolyDP(cnt, max(0.7, 0.005 * peri), True)
+    if len(approx) < 3:
+        approx = cnt
+    ring: list[tuple[float, float]] = []
+    for p in approx.reshape(-1, 2):
+        ring.append((float(p[0] + x0), float(p[1] + y0)))
+    if len(ring) >= 3 and ring[0] != ring[-1]:
+        ring.append(ring[0])
+    area_px = float(cv2.contourArea(cnt))
+    if len(ring) < 4 or area_px < min_a * 0.4:
+        return None
+    return ring, area_px
 
 
 def _px_to_wgs84(
@@ -216,8 +377,25 @@ def analyze_geotiff_deepforest(
                 done += 1
                 report(12 + int(70 * done / total), f"DeepForest {done}/{total}")
 
-        report(84, "NMS global + geo")
+        report(84, "NMS + contorno (SAM / caja)")
         boxes_all = _nms_boxes(boxes_all, iou_threshold)
+        # Contorno: sam (default) | foliage (legacy color) | ellipse | none→ellipse_shrink
+        contour_mode = str(options.get("contour_mode") or "sam").strip().lower()
+        if options.get("refine_contours") is False:
+            contour_mode = "ellipse"
+        sam_model = None
+        if contour_mode == "sam":
+            try:
+                from sam_contour import load_sam, contour_from_sam_box
+
+                report(85, "Cargando SAM (contorno por caja)")
+                sam_model = load_sam(str(options.get("sam_weights") or "mobile_sam.pt"))
+            except Exception as exc:
+                print(f"SAM no disponible ({exc}); contorno = elipse reducida", flush=True)
+                contour_mode = "ellipse"
+                contour_from_sam_box = None  # type: ignore
+        else:
+            contour_from_sam_box = None  # type: ignore
 
         trees: list[dict] = []
         for index, box in enumerate(boxes_all):
@@ -229,19 +407,50 @@ def analyze_geotiff_deepforest(
                 diameter_m = diam_px * gsd_m
                 if diameter_m < min_canopy_m * 0.55 or diameter_m > max_canopy_m * 1.35:
                     continue
-                area_m2 = math.pi * (diameter_m * 0.5) ** 2
             else:
                 diameter_m = None
+            contour_kind = "ellipse_shrink"
+            ring_px: list[tuple[float, float]]
+            area_px: float
+            if contour_mode == "sam" and sam_model is not None and contour_from_sam_box is not None:
+                refined = contour_from_sam_box(
+                    dataset,
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                    model=sam_model,
+                    weights=str(options.get("sam_weights") or "mobile_sam.pt"),
+                )
+                if refined is None:
+                    # Sin máscara SAM usable → no inventar borde de color
+                    continue
+                ring_px, area_px = refined
+                contour_kind = "sam_box"
+            elif contour_mode == "foliage":
+                refined = _refine_crown_ring_in_bbox(dataset, xmin, ymin, xmax, ymax)
+                if refined is None:
+                    continue
+                ring_px, area_px = refined
+                contour_kind = "foliage_mask"
+            else:
+                ring_px = _shrink_ellipse_ring(xmin, ymin, xmax, ymax, scale=0.7, sides=24)
+                area_px = math.pi * (width_px * 0.5 * 0.7) * (height_px * 0.5 * 0.7)
+                contour_kind = "ellipse_shrink"
+            if gsd_m and gsd_m > 0:
+                area_m2 = float(area_px) * (gsd_m * gsd_m)
+                diameter_m = 2.0 * math.sqrt(max(area_m2, 0.0) / math.pi)
+            else:
                 area_m2 = None
-            ring_px = _bbox_to_ellipse_ring(xmin, ymin, xmax, ymax, sides=16)
-            cx = (xmin + xmax) * 0.5
-            cy = (ymin + ymax) * 0.5
+            xs = [p[0] for p in ring_px]
+            ys = [p[1] for p in ring_px]
+            cx = float(np.mean(xs)) if xs else (xmin + xmax) * 0.5
+            cy = float(np.mean(ys)) if ys else (ymin + ymax) * 0.5
             centers = _px_to_wgs84(dataset, [(cx, cy)])
-            polygon = _px_to_wgs84(dataset, ring_px)
+            polygon = _px_to_wgs84(dataset, ring_px[:-1] if len(ring_px) > 3 and ring_px[0] == ring_px[-1] else ring_px)
             if not centers or not polygon:
                 continue
             lat, lng = centers[0]
-            area_px = math.pi * (width_px * 0.5) * (height_px * 0.5)
             trees.append(
                 {
                     "tree_index": index + 1,
@@ -259,6 +468,7 @@ def analyze_geotiff_deepforest(
                         "source": "deepforest",
                         "from_calibration": False,
                         "detector": detector_version,
+                        "contour": contour_kind,
                         "bbox_px": [xmin, ymin, xmax, ymax],
                         "z": 0.0,
                     },

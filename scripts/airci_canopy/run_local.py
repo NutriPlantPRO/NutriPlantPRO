@@ -274,6 +274,12 @@ def main() -> int:
         default=None,
         help="GeoJSON del predio: recorta árboles cuyo centro quede fuera.",
     )
+    parser.add_argument(
+        "--contour",
+        choices=("sam", "foliage", "ellipse"),
+        default="sam",
+        help="Borde de copa: sam=SAM por caja DF (recomendado); foliage=legacy color; ellipse=sello.",
+    )
     args = parser.parse_args()
 
     tif = args.tif.expanduser().resolve()
@@ -305,6 +311,8 @@ def main() -> int:
         "score_thresh": float(args.score_thresh),
         "iou_threshold": 0.3,
         "patch_overlap": 0.25,
+        "contour_mode": args.contour,
+        "refine_contours": args.contour != "ellipse",
     }
     if args.weights:
         weights = args.weights.expanduser().resolve()
@@ -416,10 +424,57 @@ def main() -> int:
             "vertices": len(predio_ring),
             "areaHa": stats.get("predioAreaHa"),
         }
+
+    coverage_payload = None
+    try:
+        from franjas_engine import build_franjas_from_crowns
+
+        if ui_trees and predio_ring:
+            progress(96, "Franjas / cobertura desde contornos")
+            fr = build_franjas_from_crowns(
+                ui_trees,
+                predio_ring,
+                mean_canopy_height_m=float(options.get("mean_canopy_height_m") or 4.0),
+                ortho_path=str(tif),
+            )
+            if fr.get("ok"):
+                stats["coverPct"] = fr["coverPct"]
+                stats["barePct"] = fr["barePct"]
+                stats["canopyAreaM2"] = fr["cultivationSurfaceM2"]
+                stats["cultivationSurfaceM2"] = fr["cultivationSurfaceM2"]
+                stats["canopyVolumeM3"] = fr["canopyVolumeM3"]
+                stats["meanCanopyHeightM"] = fr["meanCanopyHeightM"]
+                stats["coverageMethod"] = fr["method"]
+                stats["franjaCount"] = fr["franjaCount"]
+                if fr.get("predioAreaHa") is not None:
+                    stats["predioAreaHa"] = fr["predioAreaHa"]
+                    stats["bareAreaM2"] = round(
+                        float(fr["predioAreaHa"]) * 10000.0 - float(fr["cultivationSurfaceM2"]),
+                        1,
+                    )
+                if fr.get("treesClean"):
+                    ui_trees = fr["treesClean"]
+                    stats["count"] = len(ui_trees)
+                    stats["resultTrees"] = len(ui_trees)
+                coverage_payload = {
+                    "method": fr["method"],
+                    "kind": "franjas",
+                    "coverPct": fr["coverPct"],
+                    "barePct": fr["barePct"],
+                    "cultivationSurfaceM2": fr["cultivationSurfaceM2"],
+                    "canopyVolumeM3": fr["canopyVolumeM3"],
+                    "meanCanopyHeightM": fr["meanCanopyHeightM"],
+                    "mergeGapM": fr["mergeGapM"],
+                    "polygons": fr["polygons"],
+                }
+    except Exception as exc:  # pragma: no cover
+        print(f"Franjas omitidas: {exc}", flush=True)
+
     payload = {
         "format": "airci_cursor_result_v1",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "source": "cursor_local",
+        "mode": "crowns_and_franjas" if coverage_payload else "crowns",
         "ortho": {
             "path": str(tif),
             "filename": tif.name,
@@ -428,6 +483,7 @@ def main() -> int:
         "stats": stats,
         "trees": ui_trees,
         "trees_raw": trees,
+        "coverage": coverage_payload,
     }
 
     json_path = out_dir / "airci-canopy-result.json"
@@ -468,14 +524,13 @@ def main() -> int:
     write_preview(tif, trees, preview_path)
 
     summary = {
-        "count": stats.get("count"),
         "coverPct": stats.get("coverPct"),
-        "gsdCm": stats.get("gsdCm"),
-        "treesPerHa": stats.get("treesPerHa"),
+        "cultivationSurfaceM2": stats.get("cultivationSurfaceM2"),
+        "canopyVolumeM3": stats.get("canopyVolumeM3"),
+        "franjaCount": stats.get("franjaCount"),
         "predioAreaHa": stats.get("predioAreaHa"),
-        "estimatedSpacingM": stats.get("estimatedSpacingM"),
-        "estimatedTreesPerHa": stats.get("estimatedTreesPerHa"),
-        "plantedBboxHa": stats.get("plantedBboxHa"),
+        "gsdCm": stats.get("gsdCm"),
+        "coverageMethod": stats.get("coverageMethod"),
         "detectorVersion": stats.get("detectorVersion"),
         "json": str(json_path),
         "light": str(light_path),

@@ -13,6 +13,8 @@ Antes de cambiar detección, etiquetado, Importar Cursor o Radar AirCI, lee y re
 
 `docs/AIRCI-CONTEXTO-TRABAJO.md`
 
-- Densidad de huerta = referencia blanda (no forzar conteo).
+- KPI = **copas + franjas → % cobertura → m² cultivo → m³** (no empatar conteo/densidad).
+- Densidad del productor = dato de referencia; **no** reportar gap vs detección ni pelear el número.
+- **NO** peinar color (ExG/suelo café-gris) como verdad de árbol/copa. Criterio = modelo + etiquetas (cajas → contornos/SAM).
 - Umbrales y checkpoints son por huerta/corrida.
 - Al cerrar trabajo sustancial, actualiza la bitácora de ese doc (pocas líneas).

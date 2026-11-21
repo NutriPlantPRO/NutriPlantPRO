@@ -234,12 +234,28 @@
     if (coverEl && info.coverPct != null) {
       coverEl.textContent = Number(info.coverPct).toFixed(1) + '%';
       if (coverSub) {
-        coverSub.textContent =
-          info.canopyAreaM2 != null && Number.isFinite(Number(info.canopyAreaM2))
-            ? Number(info.canopyAreaM2).toLocaleString('es-MX', {
-                maximumFractionDigits: 0
-              }) + ' m² copa'
-            : 'copa sobre orto';
+        var m2 =
+          info.cultivationSurfaceM2 != null
+            ? Number(info.cultivationSurfaceM2)
+            : info.canopyAreaM2 != null
+              ? Number(info.canopyAreaM2)
+              : null;
+        var vol =
+          info.canopyVolumeM3 != null && Number.isFinite(Number(info.canopyVolumeM3))
+            ? Number(info.canopyVolumeM3)
+            : null;
+        if (m2 != null && Number.isFinite(m2) && vol != null) {
+          coverSub.textContent =
+            m2.toLocaleString('es-MX', { maximumFractionDigits: 0 }) +
+            ' m² · ~' +
+            vol.toLocaleString('es-MX', { maximumFractionDigits: 0 }) +
+            ' m³';
+        } else if (m2 != null && Number.isFinite(m2)) {
+          coverSub.textContent =
+            m2.toLocaleString('es-MX', { maximumFractionDigits: 0 }) + ' m² cultivo';
+        } else {
+          coverSub.textContent = 'superficie de cultivo';
+        }
       }
     }
     if (bareEl) {
@@ -513,10 +529,10 @@
 
     var rows = [
       {
-        label: 'Árboles / copas detectadas',
+        label: 'Copas en mapa',
         value: String(s.count != null ? s.count : result.trees.length),
-        note: 'Total de copas usadas en el análisis del predio',
-        cls: 'aci-sum--accent'
+        note: 'Inventario dibujado (estimado). El KPI es el contorno, no empatar densidad.',
+        cls: ''
       },
       {
         label: 'Superficie analizada',
@@ -527,41 +543,47 @@
         cls: hasScale ? 'aci-sum--accent' : 'aci-sum--warn'
       },
       {
-        label: 'Cobertura total de copas',
+        label: 'Cobertura (franjas / dosel)',
         value: coverValue,
-        note: hasScale
-          ? '% del orto + m² de copa'
-          : 'Suma de copas ÷ área total del ortomosaico (solo %)',
+        note:
+          s.cultivationSurfaceM2 != null
+            ? Number(s.cultivationSurfaceM2).toLocaleString('es-MX', {
+                maximumFractionDigits: 0
+              }) +
+              ' m² cultivo' +
+              (s.canopyVolumeM3 != null
+                ? ' · ~' +
+                  Number(s.canopyVolumeM3).toLocaleString('es-MX', {
+                    maximumFractionDigits: 0
+                  }) +
+                  ' m³ (alt. ' +
+                  (s.meanCanopyHeightM != null ? Number(s.meanCanopyHeightM) : 4) +
+                  ' m)'
+                : '')
+            : hasScale
+              ? '% del predio + m² de dosel'
+              : 'Franjas delineadas ÷ predio',
         cls: 'aci-sum--accent'
       },
       {
         label: 'Superficie sin cobertura',
         value: bareValue,
-        note: '100% − cobertura total (suelo / huecos / calles)',
+        note: 'Calles / huecos / suelo (100% − cobertura)',
         cls: 'aci-sum--warn'
       },
       {
-        label: 'Densidad',
+        label: 'Densidad (productor)',
         value: (function () {
           var ref =
             s.targetTreesPerHa != null
               ? Number(s.targetTreesPerHa)
               : Number((collectMeta() || {}).densidad_ha);
-          var det = hasScale && s.treesPerHa != null ? Number(s.treesPerHa) : null;
           if (Number.isFinite(ref) && ref >= 50) {
-            return (
-              Math.round(ref).toLocaleString('es-MX') +
-              ' ref.' +
-              (det != null ? ' · det. ~' + Math.round(det).toLocaleString('es-MX') : '') +
-              '/ha'
-            );
-          }
-          if (det != null) {
-            return Math.round(det).toLocaleString('es-MX') + ' /ha (solo detección)';
+            return Math.round(ref).toLocaleString('es-MX') + ' /ha';
           }
           return '—';
         })(),
-        note: 'Referencia del predio (Densidad ref.). La detección es solo estimado.'
+        note: 'Lo que dijo el productor. No se compara ni se fuerza contra la detección.'
       },
       {
         label: 'GSD',
@@ -7491,7 +7513,7 @@
           color: '#166534',
           weight: 1,
           fillColor: '#22c55e',
-          fillOpacity: 0.42,
+          fillOpacity: 0.28,
           interactive: false
         })
       );
@@ -7499,7 +7521,7 @@
     var covBtn = document.querySelector('#aciLayerBar [data-layer="cobertura"]');
     if (covBtn) {
       covBtn.disabled = false;
-      covBtn.title = 'Máscara de cobertura de dosel (% árbol vs suelo)';
+      covBtn.title = 'Franjas / dosel delineado → % cobertura y superficie de cultivo';
     }
   }
 
@@ -7519,6 +7541,14 @@
     if (coverage) {
       if (coverage.coverPct != null) stats.coverPct = coverage.coverPct;
       if (coverage.barePct != null) stats.barePct = coverage.barePct;
+      if (coverage.cultivationSurfaceM2 != null) {
+        stats.cultivationSurfaceM2 = coverage.cultivationSurfaceM2;
+        stats.canopyAreaM2 = coverage.cultivationSurfaceM2;
+      }
+      if (coverage.canopyVolumeM3 != null) stats.canopyVolumeM3 = coverage.canopyVolumeM3;
+      if (coverage.meanCanopyHeightM != null) {
+        stats.meanCanopyHeightM = coverage.meanCanopyHeightM;
+      }
     }
     stats.count = Number(stats.count != null ? stats.count : trees.length) || trees.length;
     stats.source = 'cursor_local';
@@ -7527,8 +7557,17 @@
     if (stats.coverPct != null && stats.barePct == null) {
       stats.barePct = Math.max(0, 100 - Number(stats.coverPct));
     }
-    if (stats.predioAreaHa != null && stats.coverPct != null && stats.canopyAreaM2 == null) {
+    if (
+      stats.predioAreaHa != null &&
+      stats.coverPct != null &&
+      stats.canopyAreaM2 == null &&
+      stats.cultivationSurfaceM2 == null
+    ) {
       stats.canopyAreaM2 = (Number(stats.predioAreaHa) * 10000 * Number(stats.coverPct)) / 100;
+      stats.cultivationSurfaceM2 = stats.canopyAreaM2;
+    }
+    if (stats.cultivationSurfaceM2 != null && stats.canopyAreaM2 == null) {
+      stats.canopyAreaM2 = stats.cultivationSurfaceM2;
     }
     if (stats.predioAreaHa != null && stats.barePct != null && stats.bareAreaM2 == null) {
       stats.bareAreaM2 = (Number(stats.predioAreaHa) * 10000 * Number(stats.barePct)) / 100;
@@ -7603,6 +7642,8 @@
         coverPct: result.stats.coverPct,
         barePct: result.stats.barePct,
         canopyAreaM2: result.stats.canopyAreaM2,
+        cultivationSurfaceM2: result.stats.cultivationSurfaceM2,
+        canopyVolumeM3: result.stats.canopyVolumeM3,
         bareAreaM2: result.stats.bareAreaM2,
         orthoAreaHa: result.stats.predioAreaHa || result.stats.orthoAreaHa,
         hasScale: result.stats.hasScale,
@@ -7620,25 +7661,55 @@
         drawCanopies(result);
         enableLayers(['copas', 'semaforo', 'numeros']);
       }
+      if (coverage && coverage.polygons && coverage.polygons.length) {
+        updateMetrics({
+          treeCount: result.stats.count,
+          coverPct: result.stats.coverPct,
+          barePct: result.stats.barePct,
+          canopyAreaM2: result.stats.canopyAreaM2,
+          cultivationSurfaceM2: result.stats.cultivationSurfaceM2,
+          canopyVolumeM3: result.stats.canopyVolumeM3,
+          bareAreaM2: result.stats.bareAreaM2,
+          orthoAreaHa: result.stats.predioAreaHa || result.stats.orthoAreaHa,
+          hasScale: result.stats.hasScale,
+          gsdCm: result.stats.gsdCm,
+          targetTreesPerHa: result.stats.targetTreesPerHa
+        });
+      }
     }
     persistCanopyResult(result);
     var name =
       (payload.ortho && payload.ortho.filename) ||
       (payload.ortho && payload.ortho.path && String(payload.ortho.path).split('/').pop()) ||
       'resultado Cursor';
-    var statusMsg =
-      coverage && (!trees.length || payload.mode === 'coverage')
-        ? 'Cursor · cobertura ' +
-          Number(result.stats.coverPct || 0).toFixed(1) +
-          '% · ' +
-          name
-        : 'Cursor · ' +
-          result.stats.count +
-          ' copas importadas · ' +
-          name +
-          (result.stats.estimatedSpacingM
-            ? ' · espaciado ~' + Number(result.stats.estimatedSpacingM).toFixed(1) + ' m'
-            : '');
+    var coverBit =
+      result.stats.coverPct != null
+        ? Number(result.stats.coverPct).toFixed(1) + '% cobertura'
+        : null;
+    var surfBit =
+      result.stats.cultivationSurfaceM2 != null
+        ? Math.round(Number(result.stats.cultivationSurfaceM2)).toLocaleString('es-MX') + ' m²'
+        : null;
+    var volBit =
+      result.stats.canopyVolumeM3 != null
+        ? '~' +
+          Math.round(Number(result.stats.canopyVolumeM3)).toLocaleString('es-MX') +
+          ' m³'
+        : null;
+    var statusMsg;
+    if (coverage && (!trees.length || payload.mode === 'coverage')) {
+      statusMsg = 'Cursor · ' + (coverBit || 'cobertura') + (surfBit ? ' · ' + surfBit : '') + ' · ' + name;
+    } else if (coverBit) {
+      statusMsg =
+        'Cursor · ' +
+        coverBit +
+        (surfBit ? ' · ' + surfBit : '') +
+        (volBit ? ' · ' + volBit : '') +
+        ' · ' +
+        name;
+    } else {
+      statusMsg = 'Cursor · contornos importados · ' + name;
+    }
     setMapStatus(statusMsg, 'ok');
     return result;
   }

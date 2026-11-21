@@ -3,30 +3,32 @@
 Documento interno para chats / agentes. **Actualizar** cuando cambie algo importante (huerta, modelo, umbral, decisión).  
 No sustituye arquitectura (`AIRCI-CANOPY-DETECTION-ARCHITECTURE.md`) ni status legacy (`AIRCI-STATUS.md`).
 
-Última actualización: 2026-11-21 (Fase A cobertura lista)
+Última actualización: 2026-11-21 (copas + franjas → cobertura / m² / m³)
 
 ---
 
 ## Prioridad de producto (evitar ajuste infinito)
 
-Orden acordado (no al revés):
+Orden acordado (como el ejemplo ChatGPT):
 
-1. **Fase A — Cobertura de dosel** (% árbol/vegetación vs suelo dentro del predio). Máscara estable + `coverPct` / `barePct`. Entregable útil sin contar cada árbol.
-2. **Fase B — Inventario de copas** (DeepForest / fine-tune) solo cuando la cobertura ya sea confiable y el productor pida conteo/ID.
-3. Densidad 404/ha = referencia blanda para Fase B, no meta de Fase A.
+1. **Árbol sí/no** = modelo etiquetado (DeepForest FT), no color de suelo.
+2. **Contorno de copa** = segmentación aprendida / SAM sobre caja — **no** ExG ni “café vs verde”.
+3. **Franjas** → **% cobertura** → **m²** → **m³**.
+4. Densidad productor = dato de campo; **no es el KPI**.
 
-Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
+Socio: delineado tipo ChatGPT. Conteo fuera.  
+Socio: **“tú solo te encajonaste con el color”** — corte a heurísticas de color; no más afinaciones internas infinitas.
 
 ---
 
 ## Principios
 
-1. **No chasing infinito de copas.** Mejor una máscara de cobertura buena que 1400 elipses a medias.
-2. Copas individuales: reales, no blobs; densidad = referencia blanda (nunca forzar conteo).
-3. Motor copas (cuando toque): **DeepForest** (+ FT por huerta). Classical = respaldo / apoyo a máscara.
-4. Umbrales son **por huerta / corrida**, no globales.
-5. Trabajo pesado en **Cursor/Mac** → JSON → **Importar Cursor**. Radar = async Netlify.
-6. ChatGPT Socio puede **guardar capas nombradas** (`airci_save_layer`) sin pisar inventario Cursor. SQL: `supabase-airci-layers.sql`.
+1. **PROHIBIDO** peinar color (ExG/sat/suelo café-gris) como verdad de árbol/copa.
+2. Criterio = **etiquetas + modelo**. Cajas = DF FT. Contorno = **SAM por caja** (`--contour sam`), no color.
+3. **No liderar con conteo ni gap de densidad.**
+4. Umbrales/checkpoints **por huerta**.
+5. Trabajo pesado en **Cursor/Mac** → JSON → **Importar Cursor**.
+6. Capas nombradas ChatGPT: `airci_save_layer` / `supabase-airci-layers.sql`.
 
 ---
 
@@ -47,12 +49,12 @@ Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
 - Uso: `targetTreesPerHa` / `expectedTrees` en stats (~1797 esperados en predio).
 - **No** usar `estimatedTreesPerHa` del espaciado NN (se infla; ignorar para decisiones).
 
-### Última detección (fine-tuned)
+### Última corrida producto (copas + franjas)
 
-- Weights: `airci-campo1.pt`
-- `score-thresh`: **0.10** (solo esta corrida Campo 1)
-- Clip predio: **1411** árboles · **~317/ha** · cover ~30 %
-- Gap vs 404: ~22 % bajo → mejorar con más etiquetas / umbral, no con relleno artificial
+- Refine **foliage_mask** (sin GrabCut/elipse): verdor+sat dentro de caja DF, corta sombra/suelo
+- ~1196 copas en predio · área mediana ~3.2 m² · cover ~**15 %** · ~**6 560 m²**
+- Franjas v4 ancladas a contornos · JSON light listo Importar Cursor
+- Siguiente juicio visual: ¿el verde pega a la hoja o sigue corto/largo?
 
 ### Etiquetado / fine-tune
 
@@ -65,21 +67,22 @@ Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
 
 ## Código clave (repo)
 
-- `scripts/airci_canopy/run_local.py` — CLI detect → JSON AirCI
-- `scripts/airci_canopy/deepforest_engine.py` — ventanas + NMS + geo; acepta `weights`
+- `scripts/airci_canopy/run_local.py` — detect → contornos → franjas → JSON AirCI
+- `scripts/airci_canopy/deepforest_engine.py` — DF + refine contorno in-box
+- `scripts/airci_canopy/franjas_engine.py` + `run_franjas.py` — copas → franjas → cover% / m² / m³
 - `scripts/airci_canopy/labeling/finetune_deepforest.py` — fine-tune
-- `admin/airci.{html,js,css}` — UI Importar Cursor, overlays, Radar
+- `admin/airci.{html,js,css}` — Importar Cursor, capas Franjas/cobertura + Copas
 - `netlify/functions/airci-radar.js` + `airci-radar-background.js` — Radar async
 
 ---
 
 ## Decisiones abiertas / siguientes
 
-- [x] Pivot: **cobertura primero**, inventario de copas después
-- [x] Motor `coverage_engine.py` + `run_coverage.py` + capa **Cobertura dosel** en AirCI
-- [ ] Validar visual Campo 1 (¿38 % se ve creíble?) y afinar percentil si hace falta
-- [ ] Pausar fine-tune de cajas salvo huecos claros tras cobertura OK
-- [ ] Deploy Netlify (cobertura + restore orto nube)
+- [x] Contornos refine in-box
+- [x] Franjas desde contornos → cover% / m² / m³ (altura default 4 m)
+- [ ] Validar visual Campo 1: ¿franjas se ven como el ejemplo ChatGPT?
+- [ ] Ajustar altura media de copa por huerta (hoy 4 m → m³)
+- [ ] Deploy Netlify (UI franjas + métricas)
 - [ ] No asumir mismo checkpoint/umbral en otras huertas
 - [x] Reabrir orto desde nube (Cursor-first baja TIFF aunque sea >80 MB)
 
@@ -95,6 +98,14 @@ Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
 
 ## Bitácora corta
 
+- **2026-11-21** — Siguiente = SAM por caja DF (`sam_contour.py`, `--contour sam`). No más afinar color.
+- **2026-11-21** — Socio: “tú solo te encajonaste con el color”. Corte a heurísticas de color.
+- **2026-11-21** — Socio: afinar con contornos de árboles. Franjas=unión de copas (v4).
+- **2026-11-21** — Socio: “falta afinar” (escalones + sombra). v3: blur/contorno suave + rechazo sombra.
+- **2026-11-21** — Socio: suelo marcado + polígonos encima. Fix: scrub anti-suelo; copas sin traslape.
+- **2026-11-21** — Socio: copas + franjas como ChatGPT → cover% → m²/m³. `franjas_engine` + Import Cursor; KPI = superficie de cultivo.
+- **2026-11-21** — Socio: “sigues terco con el conteo”. UI Densidad = solo ref productor; KPI = contorno / franja.
+- **2026-11-21** — Socio: olvidar jabón “30 s”; acción = contornos reales. Implementado `_refine_crown_ring_in_bbox` (GrabCut+verdo local); Campo 1 re-corrido.
 - **2026-11-21** — Fase A hecha: cobertura máscara en ~2 s; Import Cursor acepta JSON sin copas; capa UI. Socio pidió ágil/profesional vs ajuste infinito de cajas.
 - **2026-11-21** — Socio: “nunca terminaremos” con ajustes de copas. Acuerdo: **Fase A cobertura** antes de seguir etiqutando/umbrales.
 - **2026-11-21** — Fine-tune Campo 1 OK; primer save falló (`AttributeError: save`); corregido `save_model`. Detect FT → 1313@0.15 luego 1411@0.10 + target 404 blando.
