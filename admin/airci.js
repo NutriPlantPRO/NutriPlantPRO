@@ -560,11 +560,8 @@
             return Math.round(det).toLocaleString('es-MX') + ' /ha (solo detección)';
           }
           return '—';
-        })()
-            : '—',
-        note: hasScale
-          ? 'Copas detectadas ÷ hectáreas del orto'
-          : 'Solo con escala geo'
+        })(),
+        note: 'Referencia del predio (Densidad ref.). La detección es solo estimado.'
       },
       {
         label: 'GSD',
