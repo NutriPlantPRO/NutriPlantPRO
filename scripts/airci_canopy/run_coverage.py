@@ -26,8 +26,8 @@ def main() -> int:
     parser.add_argument(
         "--score-percentile",
         type=float,
-        default=62.0,
-        help="Percentil del score de dosel dentro del predio (más alto = menos cobertura)",
+        default=56.0,
+        help="Percentil del contraste local suelo↔copa (más alto = menos cobertura)",
     )
     args = parser.parse_args()
 
@@ -55,10 +55,15 @@ def main() -> int:
     print(f"Cobertura: {tif}", flush=True)
     print(f"Predio: {predio_path} ({len(predio_ring)} vértices)", flush=True)
 
+    preview_path = out_dir / "airci-coverage-preview.jpg"
     stats, polygons = analyze_coverage(
         str(tif),
         predio_ring=predio_ring,
-        options={"max_dim": args.max_dim, "score_percentile": args.score_percentile},
+        options={
+            "max_dim": args.max_dim,
+            "score_percentile": args.score_percentile,
+            "preview_path": str(preview_path),
+        },
         progress=progress,
     )
     stats["source"] = "cursor_local"
@@ -117,6 +122,7 @@ def main() -> int:
         "polygonCount": stats.get("polygonCount"),
         "json": str(json_path),
         "geojson": str(geo_path),
+        "preview": str(preview_path) if preview_path.exists() else None,
     }
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0

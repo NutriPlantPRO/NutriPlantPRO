@@ -17,10 +17,10 @@ from rasterio.warp import transform as warp_transform
 from rasterio import features as rio_features
 from shapely.geometry import Polygon
 
-from detector import _canopy_evidence, _meters_per_pixel
+from detector import _meters_per_pixel
 
 
-COVERAGE_VERSION = "coverage_mask_v1"
+COVERAGE_VERSION = "coverage_local_soil_v2"
 
 
 def _predio_area_ha(ring: list[tuple[float, float]]) -> float | None:
@@ -119,9 +119,11 @@ def analyze_coverage(
             progress(max(0, min(100, int(pct))), phase)
 
     max_dim = int(options.get("max_dim") or 3500)
-    score_pct = float(options.get("score_percentile") or 62.0)  # dentro del predio
-    min_poly_m2 = float(options.get("min_poly_m2") or 2.0)
+    # Percentil del contraste local (suelo claro vecino − píxel): más alto = menos cobertura.
+    score_pct = float(options.get("score_percentile") or 56.0)
+    min_poly_m2 = float(options.get("min_poly_m2") or 1.5)
     simplify_m = float(options.get("simplify_m") or 0.35)
+    preview_path = options.get("preview_path")
 
     report(5, "Abriendo GeoTIFF (cobertura)")
     with rasterio.open(path) as dataset:
@@ -137,7 +139,7 @@ def analyze_coverage(
         scale = max(1.0, scale)
         out_w = max(64, int(round(dataset.width / scale)))
         out_h = max(64, int(round(dataset.height / scale)))
-        gsd_out = (gsd_m * scale) if gsd_m else None
+        gsd_out = (gsd_m * scale) if gsd_m else (0.05 * scale)
 
         report(15, f"Leyendo RGB {out_w}×{out_h}")
         data = dataset.read(
@@ -147,8 +149,26 @@ def analyze_coverage(
         )
         rgb = _rgb_u8(data)
 
-        report(35, "Señal de dosel")
-        canopy_score, lum, _texture, _dark = _canopy_evidence(rgb)
+        report(35, "Contraste local suelo↔copa")
+        red = rgb[:, :, 0].astype(np.float32)
+        green = rgb[:, :, 1].astype(np.float32)
+        blue = rgb[:, :, 2].astype(np.float32)
+        lum = 0.30 * red + 0.59 * green + 0.11 * blue
+        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+        sat = hsv[:, :, 1].astype(np.float32)
+        value = hsv[:, :, 2].astype(np.float32)
+        texture = np.abs(lum - cv2.blur(lum, (5, 5)))
+
+        # Suelo claro local ≈ dilatación de luminancia (~3 m de vecindario).
+        nb = max(21, int(round(3.2 / max(gsd_out, 1e-3))) | 1)
+        if nb % 2 == 0:
+            nb += 1
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (nb, nb))
+        local_bright = cv2.blur(
+            cv2.dilate(lum.astype(np.uint8), kernel).astype(np.float32),
+            (9, 9),
+        )
+        contrast = local_bright - lum
 
         if predio_ring and len(predio_ring) >= 3:
             report(50, "Máscara de predio")
@@ -156,26 +176,81 @@ def analyze_coverage(
         else:
             predio_mask = lum > 10.0
 
-        valid = predio_mask & (lum > 8.0)
+        # Sombra proyectada (oscura, poco saturada, poca textura)
+        shadow = (value < 30.0) | (
+            (value < 44.0) & (sat < 32.0) & (texture < 3.0)
+        )
+        valid = predio_mask & (lum > 4.0)
         if not valid.any():
             raise ValueError("Predio sin píxeles válidos en el orto.")
 
-        report(65, "Umbral adaptativo de cobertura")
-        sample = canopy_score[valid].astype(np.float32)
-        thr = float(np.percentile(sample, score_pct))
-        thr = max(thr, 18.0)
-        binary = (canopy_score >= thr) & valid
-        # limpieza morfológica ligera
-        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        report(65, "Umbral de cobertura (anti-sombra)")
+        sample = contrast[valid & (~shadow)]
+        if sample.size == 0:
+            sample = contrast[valid]
+        thr = float(np.percentile(sample.astype(np.float32), score_pct))
+        binary = (contrast >= thr) & valid & (~shadow) & (texture > 1.5)
+
+        open_px = max(3, int(round(0.30 / max(gsd_out, 1e-3))) | 1)
+        close_px = max(3, int(round(0.55 / max(gsd_out, 1e-3))) | 1)
+        if open_px % 2 == 0:
+            open_px += 1
+        if close_px % 2 == 0:
+            close_px += 1
         binary_u8 = binary.astype(np.uint8) * 255
-        binary_u8 = cv2.morphologyEx(binary_u8, cv2.MORPH_OPEN, k, iterations=1)
-        binary_u8 = cv2.morphologyEx(binary_u8, cv2.MORPH_CLOSE, k, iterations=2)
+        binary_u8 = cv2.morphologyEx(
+            binary_u8,
+            cv2.MORPH_OPEN,
+            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (open_px, open_px)),
+            iterations=1,
+        )
+        binary_u8 = cv2.morphologyEx(
+            binary_u8,
+            cv2.MORPH_CLOSE,
+            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (close_px, close_px)),
+            iterations=1,
+        )
+        min_area_px = max(8, int(0.25 / max(gsd_out * gsd_out, 1e-6)))
+        n_lab, labels, stats_cc, _ = cv2.connectedComponentsWithStats(binary_u8, connectivity=8)
+        clean = np.zeros_like(binary_u8)
+        for i in range(1, n_lab):
+            if stats_cc[i, cv2.CC_STAT_AREA] >= min_area_px:
+                clean[labels == i] = 255
+        binary_u8 = clean
         binary = binary_u8 > 0
 
         predio_px = int(valid.sum())
         canopy_px = int((binary & valid).sum())
         cover_pct = 100.0 * canopy_px / predio_px if predio_px else 0.0
         bare_pct = max(0.0, 100.0 - cover_pct)
+
+        if preview_path:
+            try:
+                tint = rgb.astype(np.float32).copy()
+                tint[binary] = tint[binary] * np.array([0.30, 0.80, 0.35]) + np.array(
+                    [25.0, 170.0, 45.0]
+                ) * 0.50
+                tint = np.clip(tint, 0, 255).astype(np.uint8)
+                tint[~predio_mask] = (tint[~predio_mask] * 0.22).astype(np.uint8)
+                edge = predio_mask.astype(np.uint8) * 255
+                cnts, _ = cv2.findContours(edge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(tint, cnts, -1, (0, 80, 255), 2)
+                cv2.putText(
+                    tint,
+                    f"cobertura {cover_pct:.1f}%",
+                    (16, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.1,
+                    (255, 255, 255),
+                    2,
+                )
+                cv2.imwrite(
+                    str(preview_path),
+                    cv2.cvtColor(tint, cv2.COLOR_RGB2BGR),
+                    [int(cv2.IMWRITE_JPEG_QUALITY), 88],
+                )
+            except Exception:
+                pass
 
         report(80, "Contornos de cobertura")
         contours, _ = cv2.findContours(binary_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -273,9 +348,10 @@ def analyze_coverage(
             "count": 0,
             "resultTrees": 0,
             "clippedToPredio": bool(predio_ring),
-            "validationStatus": "coverage_v1",
+            "validationStatus": "coverage_v2",
             "professional": True,
             "hasScale": gsd_m is not None,
+            "neighborhoodM": round(3.2, 2),
         }
         report(95, "Cobertura lista")
         return stats, polygons
