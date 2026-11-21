@@ -263,6 +263,12 @@ def main() -> int:
     parser.add_argument("--patch-size", type=int, default=0, help="DeepForest patch px (0=auto ~40m)")
     parser.add_argument("--score-thresh", type=float, default=0.12, help="DeepForest score mínimo")
     parser.add_argument(
+        "--weights",
+        type=Path,
+        default=None,
+        help="Checkpoint DeepForest fine-tuned (.pt/.ckpt). Si falta, usa pretrained.",
+    )
+    parser.add_argument(
         "--predio",
         type=Path,
         default=None,
@@ -300,11 +306,19 @@ def main() -> int:
         "iou_threshold": 0.3,
         "patch_overlap": 0.25,
     }
+    if args.weights:
+        weights = args.weights.expanduser().resolve()
+        if not weights.is_file():
+            print(f"No existe checkpoint: {weights}", file=sys.stderr)
+            return 1
+        options["weights"] = str(weights)
     if 20 <= float(args.trees_per_ha or 0) <= 5000:
         options["target_trees_per_ha"] = float(args.trees_per_ha)
 
     print(f"Analizando: {tif}", flush=True)
     print(f"Motor: {args.engine}", flush=True)
+    if options.get("weights"):
+        print(f"Weights: {options['weights']}", flush=True)
     if predio_ring:
         print(f"Predio: {predio_path} ({len(predio_ring)} vértices)", flush=True)
 

@@ -1,0 +1,2054 @@
+[
+  {
+    "id": 0,
+    "file": "images/tile_000.jpg",
+    "x0": 371,
+    "y0": 530,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 820,
+    "boxes": [
+      {
+        "xmin": 366.0,
+        "ymin": 367.0,
+        "xmax": 433.0,
+        "ymax": 434.0,
+        "label": "Tree",
+        "seed_id": 820
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "file": "images/tile_001.jpg",
+    "x0": 373,
+    "y0": 724,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1325,
+    "boxes": [
+      {
+        "xmin": 370.5,
+        "ymin": 370.5,
+        "xmax": 430.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 1325
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "file": "images/tile_002.jpg",
+    "x0": 381,
+    "y0": 1451,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 211,
+    "boxes": [
+      {
+        "xmin": 368.5,
+        "ymin": 368.5,
+        "xmax": 431.5,
+        "ymax": 431.5,
+        "label": "Tree",
+        "seed_id": 211
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "file": "images/tile_003.jpg",
+    "x0": 647,
+    "y0": 1845,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 782,
+    "boxes": [
+      {
+        "xmin": 367.2,
+        "ymin": 366.7,
+        "xmax": 433.8,
+        "ymax": 433.3,
+        "label": "Tree",
+        "seed_id": 782
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "file": "images/tile_004.jpg",
+    "x0": 569,
+    "y0": 2584,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 986,
+    "boxes": [
+      {
+        "xmin": 373.5,
+        "ymin": 372.5,
+        "xmax": 427.5,
+        "ymax": 426.5,
+        "label": "Tree",
+        "seed_id": 986
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "file": "images/tile_005.jpg",
+    "x0": 605,
+    "y0": 3191,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 953,
+    "boxes": [
+      {
+        "xmin": 367.5,
+        "ymin": 368.5,
+        "xmax": 431.5,
+        "ymax": 432.5,
+        "label": "Tree",
+        "seed_id": 953
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "file": "images/tile_006.jpg",
+    "x0": 816,
+    "y0": 464,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1302,
+    "boxes": [
+      {
+        "xmin": 373.2,
+        "ymin": 372.7,
+        "xmax": 426.8,
+        "ymax": 426.3,
+        "label": "Tree",
+        "seed_id": 1302
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "file": "images/tile_007.jpg",
+    "x0": 855,
+    "y0": 1166,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1468,
+    "boxes": [
+      {
+        "xmin": 371.0,
+        "ymin": 371.0,
+        "xmax": 429.0,
+        "ymax": 429.0,
+        "label": "Tree",
+        "seed_id": 1468
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "file": "images/tile_008.jpg",
+    "x0": 1009,
+    "y0": 1829,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 506,
+    "boxes": [
+      {
+        "xmin": 368.7,
+        "ymin": 368.2,
+        "xmax": 432.3,
+        "ymax": 431.8,
+        "label": "Tree",
+        "seed_id": 506
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "file": "images/tile_009.jpg",
+    "x0": 726,
+    "y0": 2239,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 324,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 369.2,
+        "xmax": 431.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 324
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "file": "images/tile_010.jpg",
+    "x0": 1038,
+    "y0": 2516,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 541,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 368.7,
+        "xmax": 430.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 541
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "file": "images/tile_011.jpg",
+    "x0": 979,
+    "y0": 3602,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 76,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 369.5,
+        "xmax": 429.5,
+        "ymax": 429.5,
+        "label": "Tree",
+        "seed_id": 76
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "file": "images/tile_012.jpg",
+    "x0": 995,
+    "y0": 3627,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 844,
+    "boxes": [
+      {
+        "xmin": 367.7,
+        "ymin": 367.2,
+        "xmax": 433.3,
+        "ymax": 432.8,
+        "label": "Tree",
+        "seed_id": 844
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "file": "images/tile_013.jpg",
+    "x0": 1130,
+    "y0": 4623,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1186,
+    "boxes": [
+      {
+        "xmin": 370.5,
+        "ymin": 370.5,
+        "xmax": 429.5,
+        "ymax": 429.5,
+        "label": "Tree",
+        "seed_id": 1186
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "file": "images/tile_014.jpg",
+    "x0": 822,
+    "y0": 5205,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 330,
+    "boxes": [
+      {
+        "xmin": 370.0,
+        "ymin": 370.0,
+        "xmax": 430.0,
+        "ymax": 430.0,
+        "label": "Tree",
+        "seed_id": 330
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "file": "images/tile_015.jpg",
+    "x0": 966,
+    "y0": 5448,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 69,
+    "boxes": [
+      {
+        "xmin": 371.2,
+        "ymin": 371.7,
+        "xmax": 428.8,
+        "ymax": 429.3,
+        "label": "Tree",
+        "seed_id": 69
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "file": "images/tile_016.jpg",
+    "x0": 1494,
+    "y0": 424,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1194,
+    "boxes": [
+      {
+        "xmin": 367.0,
+        "ymin": 367.0,
+        "xmax": 433.0,
+        "ymax": 433.0,
+        "label": "Tree",
+        "seed_id": 1194
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "file": "images/tile_017.jpg",
+    "x0": 1433,
+    "y0": 1218,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 223,
+    "boxes": [
+      {
+        "xmin": 370.7,
+        "ymin": 370.2,
+        "xmax": 429.3,
+        "ymax": 428.8,
+        "label": "Tree",
+        "seed_id": 223
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "file": "images/tile_018.jpg",
+    "x0": 1566,
+    "y0": 1783,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 81,
+    "boxes": [
+      {
+        "xmin": 370.2,
+        "ymin": 369.7,
+        "xmax": 430.8,
+        "ymax": 430.3,
+        "label": "Tree",
+        "seed_id": 81
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "file": "images/tile_019.jpg",
+    "x0": 1215,
+    "y0": 2126,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 632,
+    "boxes": [
+      {
+        "xmin": 371.0,
+        "ymin": 371.0,
+        "xmax": 429.0,
+        "ymax": 429.0,
+        "label": "Tree",
+        "seed_id": 632
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "file": "images/tile_020.jpg",
+    "x0": 1560,
+    "y0": 2538,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1524,
+    "boxes": [
+      {
+        "xmin": 372.0,
+        "ymin": 371.0,
+        "xmax": 429.0,
+        "ymax": 428.0,
+        "label": "Tree",
+        "seed_id": 1524
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "file": "images/tile_021.jpg",
+    "x0": 1590,
+    "y0": 3338,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 297,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 297
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "file": "images/tile_022.jpg",
+    "x0": 1399,
+    "y0": 3978,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 729,
+    "boxes": [
+      {
+        "xmin": 370.0,
+        "ymin": 370.0,
+        "xmax": 430.0,
+        "ymax": 430.0,
+        "label": "Tree",
+        "seed_id": 729
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "file": "images/tile_023.jpg",
+    "x0": 1555,
+    "y0": 4291,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 422,
+    "boxes": [
+      {
+        "xmin": 369.2,
+        "ymin": 369.7,
+        "xmax": 430.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 422
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "file": "images/tile_024.jpg",
+    "x0": 1432,
+    "y0": 5223,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 517,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 517
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "file": "images/tile_025.jpg",
+    "x0": 1234,
+    "y0": 5453,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 885,
+    "boxes": [
+      {
+        "xmin": 367.7,
+        "ymin": 367.2,
+        "xmax": 432.3,
+        "ymax": 431.8,
+        "label": "Tree",
+        "seed_id": 885
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "file": "images/tile_026.jpg",
+    "x0": 1790,
+    "y0": 646,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 751,
+    "boxes": [
+      {
+        "xmin": 367.5,
+        "ymin": 367.5,
+        "xmax": 432.5,
+        "ymax": 432.5,
+        "label": "Tree",
+        "seed_id": 751
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "file": "images/tile_027.jpg",
+    "x0": 2021,
+    "y0": 662,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 770,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 367.7,
+        "xmax": 431.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 770
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "file": "images/tile_028.jpg",
+    "x0": 1673,
+    "y0": 1421,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 469,
+    "boxes": [
+      {
+        "xmin": 370.0,
+        "ymin": 370.0,
+        "xmax": 430.0,
+        "ymax": 430.0,
+        "label": "Tree",
+        "seed_id": 469
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "file": "images/tile_029.jpg",
+    "x0": 2018,
+    "y0": 1897,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1470,
+    "boxes": [
+      {
+        "xmin": 371.0,
+        "ymin": 371.0,
+        "xmax": 429.0,
+        "ymax": 429.0,
+        "label": "Tree",
+        "seed_id": 1470
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "file": "images/tile_030.jpg",
+    "x0": 2020,
+    "y0": 2674,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1271,
+    "boxes": [
+      {
+        "xmin": 370.2,
+        "ymin": 369.7,
+        "xmax": 429.8,
+        "ymax": 429.3,
+        "label": "Tree",
+        "seed_id": 1271
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "file": "images/tile_031.jpg",
+    "x0": 1672,
+    "y0": 3146,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 964,
+    "boxes": [
+      {
+        "xmin": 367.5,
+        "ymin": 366.5,
+        "xmax": 433.5,
+        "ymax": 432.5,
+        "label": "Tree",
+        "seed_id": 964
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "file": "images/tile_032.jpg",
+    "x0": 1670,
+    "y0": 3921,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 934,
+    "boxes": [
+      {
+        "xmin": 370.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 934
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "file": "images/tile_033.jpg",
+    "x0": 1967,
+    "y0": 4233,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1291,
+    "boxes": [
+      {
+        "xmin": 371.2,
+        "ymin": 370.7,
+        "xmax": 428.8,
+        "ymax": 428.3,
+        "label": "Tree",
+        "seed_id": 1291
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "file": "images/tile_034.jpg",
+    "x0": 1705,
+    "y0": 5062,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 322,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 368.7,
+        "xmax": 431.8,
+        "ymax": 432.3,
+        "label": "Tree",
+        "seed_id": 322
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "file": "images/tile_035.jpg",
+    "x0": 2178,
+    "y0": 570,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 585,
+    "boxes": [
+      {
+        "xmin": 370.2,
+        "ymin": 369.7,
+        "xmax": 430.8,
+        "ymax": 430.3,
+        "label": "Tree",
+        "seed_id": 585
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "file": "images/tile_036.jpg",
+    "x0": 2336,
+    "y0": 654,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1118,
+    "boxes": [
+      {
+        "xmin": 367.2,
+        "ymin": 366.7,
+        "xmax": 432.8,
+        "ymax": 432.3,
+        "label": "Tree",
+        "seed_id": 1118
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "file": "images/tile_037.jpg",
+    "x0": 2379,
+    "y0": 1747,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1097,
+    "boxes": [
+      {
+        "xmin": 368.5,
+        "ymin": 368.5,
+        "xmax": 430.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 1097
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "file": "images/tile_038.jpg",
+    "x0": 2153,
+    "y0": 1982,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1415,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 369.2,
+        "xmax": 431.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 1415
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "file": "images/tile_039.jpg",
+    "x0": 2579,
+    "y0": 3012,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 904,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 904
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "file": "images/tile_040.jpg",
+    "x0": 2175,
+    "y0": 3586,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 382,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 429.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 382
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "file": "images/tile_041.jpg",
+    "x0": 2176,
+    "y0": 3936,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 790,
+    "boxes": [
+      {
+        "xmin": 370.7,
+        "ymin": 370.2,
+        "xmax": 429.3,
+        "ymax": 428.8,
+        "label": "Tree",
+        "seed_id": 790
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "file": "images/tile_042.jpg",
+    "x0": 2413,
+    "y0": 4361,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 933,
+    "boxes": [
+      {
+        "xmin": 366.5,
+        "ymin": 366.5,
+        "xmax": 433.5,
+        "ymax": 433.5,
+        "label": "Tree",
+        "seed_id": 933
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "file": "images/tile_043.jpg",
+    "x0": 2875,
+    "y0": 630,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1481,
+    "boxes": [
+      {
+        "xmin": 367.5,
+        "ymin": 367.5,
+        "xmax": 431.5,
+        "ymax": 431.5,
+        "label": "Tree",
+        "seed_id": 1481
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "file": "images/tile_044.jpg",
+    "x0": 2631,
+    "y0": 830,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1022,
+    "boxes": [
+      {
+        "xmin": 371.5,
+        "ymin": 371.5,
+        "xmax": 429.5,
+        "ymax": 429.5,
+        "label": "Tree",
+        "seed_id": 1022
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "file": "images/tile_045.jpg",
+    "x0": 2887,
+    "y0": 1427,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 874,
+    "boxes": [
+      {
+        "xmin": 369.0,
+        "ymin": 369.0,
+        "xmax": 432.0,
+        "ymax": 432.0,
+        "label": "Tree",
+        "seed_id": 874
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "file": "images/tile_046.jpg",
+    "x0": 2699,
+    "y0": 1895,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1310,
+    "boxes": [
+      {
+        "xmin": 370.2,
+        "ymin": 369.7,
+        "xmax": 430.8,
+        "ymax": 430.3,
+        "label": "Tree",
+        "seed_id": 1310
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "file": "images/tile_047.jpg",
+    "x0": 2944,
+    "y0": 2504,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1496,
+    "boxes": [
+      {
+        "xmin": 371.0,
+        "ymin": 370.0,
+        "xmax": 430.0,
+        "ymax": 429.0,
+        "label": "Tree",
+        "seed_id": 1496
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "file": "images/tile_048.jpg",
+    "x0": 2841,
+    "y0": 3438,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 998,
+    "boxes": [
+      {
+        "xmin": 370.0,
+        "ymin": 370.0,
+        "xmax": 431.0,
+        "ymax": 431.0,
+        "label": "Tree",
+        "seed_id": 998
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "file": "images/tile_049.jpg",
+    "x0": 2632,
+    "y0": 3728,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 12,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 369.5,
+        "xmax": 431.5,
+        "ymax": 431.5,
+        "label": "Tree",
+        "seed_id": 12
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "file": "images/tile_050.jpg",
+    "x0": 2767,
+    "y0": 4265,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1273,
+    "boxes": [
+      {
+        "xmin": 381.0,
+        "ymin": 380.0,
+        "xmax": 420.0,
+        "ymax": 419.0,
+        "label": "Tree",
+        "seed_id": 1273
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "file": "images/tile_051.jpg",
+    "x0": 3140,
+    "y0": 468,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1530,
+    "boxes": [
+      {
+        "xmin": 359.5,
+        "ymin": 358.5,
+        "xmax": 441.5,
+        "ymax": 440.5,
+        "label": "Tree",
+        "seed_id": 1530
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "file": "images/tile_052.jpg",
+    "x0": 3078,
+    "y0": 1086,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1324,
+    "boxes": [
+      {
+        "xmin": 369.0,
+        "ymin": 369.0,
+        "xmax": 431.0,
+        "ymax": 431.0,
+        "label": "Tree",
+        "seed_id": 1324
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "file": "images/tile_053.jpg",
+    "x0": 3270,
+    "y0": 1565,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1434,
+    "boxes": [
+      {
+        "xmin": 371.2,
+        "ymin": 370.7,
+        "xmax": 429.8,
+        "ymax": 429.3,
+        "label": "Tree",
+        "seed_id": 1434
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "file": "images/tile_054.jpg",
+    "x0": 3431,
+    "y0": 2032,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1445,
+    "boxes": [
+      {
+        "xmin": 368.7,
+        "ymin": 369.2,
+        "xmax": 430.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 1445
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "file": "images/tile_055.jpg",
+    "x0": 3227,
+    "y0": 2596,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 870,
+    "boxes": [
+      {
+        "xmin": 371.0,
+        "ymin": 371.0,
+        "xmax": 429.0,
+        "ymax": 429.0,
+        "label": "Tree",
+        "seed_id": 870
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "file": "images/tile_056.jpg",
+    "x0": 3367,
+    "y0": 3367,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 293,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 429.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 293
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "file": "images/tile_057.jpg",
+    "x0": 3111,
+    "y0": 3831,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 169,
+    "boxes": [
+      {
+        "xmin": 370.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 169
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "file": "images/tile_058.jpg",
+    "x0": 3650,
+    "y0": 553,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1285,
+    "boxes": [
+      {
+        "xmin": 384.0,
+        "ymin": 384.0,
+        "xmax": 416.0,
+        "ymax": 416.0,
+        "label": "Tree",
+        "seed_id": 1285
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "file": "images/tile_059.jpg",
+    "x0": 3906,
+    "y0": 1184,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 487,
+    "boxes": [
+      {
+        "xmin": 368.0,
+        "ymin": 368.0,
+        "xmax": 432.0,
+        "ymax": 432.0,
+        "label": "Tree",
+        "seed_id": 487
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "file": "images/tile_060.jpg",
+    "x0": 4001,
+    "y0": 1567,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 667,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 368.5,
+        "xmax": 431.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 667
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "file": "images/tile_061.jpg",
+    "x0": 3550,
+    "y0": 2131,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 720,
+    "boxes": [
+      {
+        "xmin": 367.5,
+        "ymin": 368.5,
+        "xmax": 431.5,
+        "ymax": 432.5,
+        "label": "Tree",
+        "seed_id": 720
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "file": "images/tile_062.jpg",
+    "x0": 3966,
+    "y0": 2767,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 282,
+    "boxes": [
+      {
+        "xmin": 370.5,
+        "ymin": 370.5,
+        "xmax": 429.5,
+        "ymax": 429.5,
+        "label": "Tree",
+        "seed_id": 282
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "file": "images/tile_063.jpg",
+    "x0": 3920,
+    "y0": 3337,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 657,
+    "boxes": [
+      {
+        "xmin": 371.2,
+        "ymin": 370.7,
+        "xmax": 429.8,
+        "ymax": 429.3,
+        "label": "Tree",
+        "seed_id": 657
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "file": "images/tile_064.jpg",
+    "x0": 3831,
+    "y0": 3793,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 668,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 368.7,
+        "xmax": 430.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 668
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "file": "images/tile_065.jpg",
+    "x0": 4213,
+    "y0": 1215,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 91,
+    "boxes": [
+      {
+        "xmin": 369.2,
+        "ymin": 368.7,
+        "xmax": 431.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 91
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "file": "images/tile_066.jpg",
+    "x0": 4152,
+    "y0": 1252,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 811,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 369.5,
+        "xmax": 430.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 811
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "file": "images/tile_067.jpg",
+    "x0": 4415,
+    "y0": 2388,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1476,
+    "boxes": [
+      {
+        "xmin": 370.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 1476
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "file": "images/tile_068.jpg",
+    "x0": 4215,
+    "y0": 2942,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1306,
+    "boxes": [
+      {
+        "xmin": 370.5,
+        "ymin": 370.5,
+        "xmax": 430.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 1306
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "file": "images/tile_069.jpg",
+    "x0": 4105,
+    "y0": 3294,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1378,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 430.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 1378
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "file": "images/tile_070.jpg",
+    "x0": 4038,
+    "y0": 3728,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1335,
+    "boxes": [
+      {
+        "xmin": 346.5,
+        "ymin": 346.5,
+        "xmax": 453.5,
+        "ymax": 453.5,
+        "label": "Tree",
+        "seed_id": 1335
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "file": "images/tile_071.jpg",
+    "x0": 4540,
+    "y0": 2369,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1146,
+    "boxes": [
+      {
+        "xmin": 370.0,
+        "ymin": 370.0,
+        "xmax": 430.0,
+        "ymax": 430.0,
+        "label": "Tree",
+        "seed_id": 1146
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "file": "images/tile_072.jpg",
+    "x0": 4541,
+    "y0": 2646,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 48,
+    "boxes": [
+      {
+        "xmin": 370.2,
+        "ymin": 369.7,
+        "xmax": 430.8,
+        "ymax": 430.3,
+        "label": "Tree",
+        "seed_id": 48
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "file": "images/tile_073.jpg",
+    "x0": 4614,
+    "y0": 3049,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1298,
+    "boxes": [
+      {
+        "xmin": 368.7,
+        "ymin": 369.2,
+        "xmax": 430.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 1298
+      }
+    ]
+  },
+  {
+    "id": 74,
+    "file": "images/tile_074.jpg",
+    "x0": 384,
+    "y0": 160,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 287,
+    "boxes": [
+      {
+        "xmin": 373.2,
+        "ymin": 373.7,
+        "xmax": 425.8,
+        "ymax": 426.3,
+        "label": "Tree",
+        "seed_id": 287
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "file": "images/tile_075.jpg",
+    "x0": 382,
+    "y0": 958,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 233,
+    "boxes": [
+      {
+        "xmin": 373.0,
+        "ymin": 374.0,
+        "xmax": 426.0,
+        "ymax": 427.0,
+        "label": "Tree",
+        "seed_id": 233
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "file": "images/tile_076.jpg",
+    "x0": 523,
+    "y0": 1474,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1304,
+    "boxes": [
+      {
+        "xmin": 378.2,
+        "ymin": 378.7,
+        "xmax": 420.8,
+        "ymax": 421.3,
+        "label": "Tree",
+        "seed_id": 1304
+      }
+    ]
+  },
+  {
+    "id": 77,
+    "file": "images/tile_077.jpg",
+    "x0": 653,
+    "y0": 2330,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 180,
+    "boxes": [
+      {
+        "xmin": 374.2,
+        "ymin": 373.7,
+        "xmax": 426.8,
+        "ymax": 426.3,
+        "label": "Tree",
+        "seed_id": 180
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "file": "images/tile_078.jpg",
+    "x0": 530,
+    "y0": 2773,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1303,
+    "boxes": [
+      {
+        "xmin": 373.0,
+        "ymin": 373.0,
+        "xmax": 427.0,
+        "ymax": 427.0,
+        "label": "Tree",
+        "seed_id": 1303
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "file": "images/tile_079.jpg",
+    "x0": 617,
+    "y0": 3216,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 454,
+    "boxes": [
+      {
+        "xmin": 376.5,
+        "ymin": 376.5,
+        "xmax": 424.5,
+        "ymax": 424.5,
+        "label": "Tree",
+        "seed_id": 454
+      }
+    ]
+  },
+  {
+    "id": 80,
+    "file": "images/tile_080.jpg",
+    "x0": 978,
+    "y0": 346,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 226,
+    "boxes": [
+      {
+        "xmin": 374.7,
+        "ymin": 374.2,
+        "xmax": 426.3,
+        "ymax": 425.8,
+        "label": "Tree",
+        "seed_id": 226
+      }
+    ]
+  },
+  {
+    "id": 81,
+    "file": "images/tile_081.jpg",
+    "x0": 830,
+    "y0": 656,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1007,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 368.7,
+        "xmax": 431.8,
+        "ymax": 432.3,
+        "label": "Tree",
+        "seed_id": 1007
+      }
+    ]
+  },
+  {
+    "id": 82,
+    "file": "images/tile_082.jpg",
+    "x0": 829,
+    "y0": 1329,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 685,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 367.7,
+        "xmax": 431.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 685
+      }
+    ]
+  },
+  {
+    "id": 83,
+    "file": "images/tile_083.jpg",
+    "x0": 792,
+    "y0": 1865,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 537,
+    "boxes": [
+      {
+        "xmin": 371.2,
+        "ymin": 370.7,
+        "xmax": 429.8,
+        "ymax": 429.3,
+        "label": "Tree",
+        "seed_id": 537
+      }
+    ]
+  },
+  {
+    "id": 84,
+    "file": "images/tile_084.jpg",
+    "x0": 831,
+    "y0": 2681,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 678,
+    "boxes": [
+      {
+        "xmin": 368.2,
+        "ymin": 367.7,
+        "xmax": 431.8,
+        "ymax": 431.3,
+        "label": "Tree",
+        "seed_id": 678
+      }
+    ]
+  },
+  {
+    "id": 85,
+    "file": "images/tile_085.jpg",
+    "x0": 832,
+    "y0": 3365,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 331,
+    "boxes": [
+      {
+        "xmin": 370.5,
+        "ymin": 370.5,
+        "xmax": 429.5,
+        "ymax": 429.5,
+        "label": "Tree",
+        "seed_id": 331
+      }
+    ]
+  },
+  {
+    "id": 86,
+    "file": "images/tile_086.jpg",
+    "x0": 824,
+    "y0": 3685,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 127,
+    "boxes": [
+      {
+        "xmin": 373.2,
+        "ymin": 372.7,
+        "xmax": 426.8,
+        "ymax": 426.3,
+        "label": "Tree",
+        "seed_id": 127
+      }
+    ]
+  },
+  {
+    "id": 87,
+    "file": "images/tile_087.jpg",
+    "x0": 825,
+    "y0": 4286,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1531,
+    "boxes": [
+      {
+        "xmin": 370.7,
+        "ymin": 371.2,
+        "xmax": 428.3,
+        "ymax": 428.8,
+        "label": "Tree",
+        "seed_id": 1531
+      }
+    ]
+  },
+  {
+    "id": 88,
+    "file": "images/tile_088.jpg",
+    "x0": 832,
+    "y0": 5340,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 448,
+    "boxes": [
+      {
+        "xmin": 368.7,
+        "ymin": 368.2,
+        "xmax": 431.3,
+        "ymax": 430.8,
+        "label": "Tree",
+        "seed_id": 448
+      }
+    ]
+  },
+  {
+    "id": 89,
+    "file": "images/tile_089.jpg",
+    "x0": 971,
+    "y0": 5578,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 73,
+    "boxes": [
+      {
+        "xmin": 368.0,
+        "ymin": 368.0,
+        "xmax": 432.0,
+        "ymax": 432.0,
+        "label": "Tree",
+        "seed_id": 73
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "file": "images/tile_090.jpg",
+    "x0": 1436,
+    "y0": 473,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 251,
+    "boxes": [
+      {
+        "xmin": 364.7,
+        "ymin": 365.2,
+        "xmax": 434.3,
+        "ymax": 434.8,
+        "label": "Tree",
+        "seed_id": 251
+      }
+    ]
+  },
+  {
+    "id": 91,
+    "file": "images/tile_091.jpg",
+    "x0": 1489,
+    "y0": 1116,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1018,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 368.5,
+        "xmax": 431.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 1018
+      }
+    ]
+  },
+  {
+    "id": 92,
+    "file": "images/tile_092.jpg",
+    "x0": 1492,
+    "y0": 1452,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 165,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 370.2,
+        "xmax": 429.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 165
+      }
+    ]
+  },
+  {
+    "id": 93,
+    "file": "images/tile_093.jpg",
+    "x0": 1432,
+    "y0": 2034,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1180,
+    "boxes": [
+      {
+        "xmin": 369.0,
+        "ymin": 369.0,
+        "xmax": 431.0,
+        "ymax": 431.0,
+        "label": "Tree",
+        "seed_id": 1180
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "file": "images/tile_094.jpg",
+    "x0": 1235,
+    "y0": 3012,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 769,
+    "boxes": [
+      {
+        "xmin": 368.0,
+        "ymin": 368.0,
+        "xmax": 432.0,
+        "ymax": 432.0,
+        "label": "Tree",
+        "seed_id": 769
+      }
+    ]
+  },
+  {
+    "id": 95,
+    "file": "images/tile_095.jpg",
+    "x0": 1540,
+    "y0": 3156,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 361,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 369.5,
+        "xmax": 430.5,
+        "ymax": 430.5,
+        "label": "Tree",
+        "seed_id": 361
+      }
+    ]
+  },
+  {
+    "id": 96,
+    "file": "images/tile_096.jpg",
+    "x0": 1421,
+    "y0": 3792,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 309,
+    "boxes": [
+      {
+        "xmin": 369.7,
+        "ymin": 369.2,
+        "xmax": 430.3,
+        "ymax": 429.8,
+        "label": "Tree",
+        "seed_id": 309
+      }
+    ]
+  },
+  {
+    "id": 97,
+    "file": "images/tile_097.jpg",
+    "x0": 1528,
+    "y0": 4780,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 360,
+    "boxes": [
+      {
+        "xmin": 368.7,
+        "ymin": 369.2,
+        "xmax": 431.3,
+        "ymax": 431.8,
+        "label": "Tree",
+        "seed_id": 360
+      }
+    ]
+  },
+  {
+    "id": 98,
+    "file": "images/tile_098.jpg",
+    "x0": 1473,
+    "y0": 5168,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 359,
+    "boxes": [
+      {
+        "xmin": 369.5,
+        "ymin": 369.5,
+        "xmax": 431.5,
+        "ymax": 431.5,
+        "label": "Tree",
+        "seed_id": 359
+      }
+    ]
+  },
+  {
+    "id": 99,
+    "file": "images/tile_099.jpg",
+    "x0": 1151,
+    "y0": 5435,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 883,
+    "boxes": [
+      {
+        "xmin": 374.7,
+        "ymin": 375.2,
+        "xmax": 424.3,
+        "ymax": 424.8,
+        "label": "Tree",
+        "seed_id": 883
+      }
+    ]
+  },
+  {
+    "id": 100,
+    "file": "images/tile_100.jpg",
+    "x0": 1688,
+    "y0": 647,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1347,
+    "boxes": [
+      {
+        "xmin": 372.2,
+        "ymin": 372.7,
+        "xmax": 426.8,
+        "ymax": 427.3,
+        "label": "Tree",
+        "seed_id": 1347
+      }
+    ]
+  },
+  {
+    "id": 101,
+    "file": "images/tile_101.jpg",
+    "x0": 2094,
+    "y0": 1026,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1448,
+    "boxes": [
+      {
+        "xmin": 368.0,
+        "ymin": 368.0,
+        "xmax": 432.0,
+        "ymax": 432.0,
+        "label": "Tree",
+        "seed_id": 1448
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "file": "images/tile_102.jpg",
+    "x0": 2030,
+    "y0": 1431,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 530,
+    "boxes": [
+      {
+        "xmin": 370.2,
+        "ymin": 370.7,
+        "xmax": 429.8,
+        "ymax": 430.3,
+        "label": "Tree",
+        "seed_id": 530
+      }
+    ]
+  },
+  {
+    "id": 103,
+    "file": "images/tile_103.jpg",
+    "x0": 1774,
+    "y0": 2254,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1278,
+    "boxes": [
+      {
+        "xmin": 372.2,
+        "ymin": 371.7,
+        "xmax": 428.8,
+        "ymax": 428.3,
+        "label": "Tree",
+        "seed_id": 1278
+      }
+    ]
+  },
+  {
+    "id": 104,
+    "file": "images/tile_104.jpg",
+    "x0": 2018,
+    "y0": 2480,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1503,
+    "boxes": [
+      {
+        "xmin": 373.0,
+        "ymin": 372.0,
+        "xmax": 428.0,
+        "ymax": 427.0,
+        "label": "Tree",
+        "seed_id": 1503
+      }
+    ]
+  },
+  {
+    "id": 105,
+    "file": "images/tile_105.jpg",
+    "x0": 1722,
+    "y0": 3017,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 447,
+    "boxes": [
+      {
+        "xmin": 366.7,
+        "ymin": 367.2,
+        "xmax": 433.3,
+        "ymax": 433.8,
+        "label": "Tree",
+        "seed_id": 447
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "file": "images/tile_106.jpg",
+    "x0": 2031,
+    "y0": 4152,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 1043,
+    "boxes": [
+      {
+        "xmin": 370.0,
+        "ymin": 370.0,
+        "xmax": 429.0,
+        "ymax": 429.0,
+        "label": "Tree",
+        "seed_id": 1043
+      }
+    ]
+  },
+  {
+    "id": 107,
+    "file": "images/tile_107.jpg",
+    "x0": 1785,
+    "y0": 4431,
+    "width": 800,
+    "height": 800,
+    "focus_seed": 83,
+    "boxes": [
+      {
+        "xmin": 367.7,
+        "ymin": 368.2,
+        "xmax": 432.3,
+        "ymax": 432.8,
+        "label": "Tree",
+        "seed_id": 83
+      }
+    ]
+  }
+]

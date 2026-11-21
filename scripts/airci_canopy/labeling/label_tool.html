@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AirCI · Etiquetar copas (~80)</title>
+  <style>
+    :root { --bg:#0f1410; --panel:#1a221c; --line:#2f3d32; --ok:#3dba6e; --warn:#e0a106; --bad:#e35d5d; --txt:#e8efe9; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:14px/1.4 system-ui,sans-serif; background:var(--bg); color:var(--txt); }
+    header { display:flex; gap:12px; flex-wrap:wrap; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); }
+    header strong { font-size:15px; }
+    button, label.file { background:#243028; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:7px 10px; cursor:pointer; }
+    button.primary { background:#1f6b3d; border-color:#2f8f52; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .stat { opacity:.85; }
+    .wrap { display:grid; grid-template-columns: 1fr 280px; gap:0; height: calc(100vh - 54px); }
+    .canvas-wrap { overflow:auto; background:#0a0d0b; display:flex; align-items:flex-start; justify-content:center; padding:12px; }
+    canvas { cursor: crosshair; max-width: none; background:#111; box-shadow:0 0 0 1px var(--line); }
+    aside { border-left:1px solid var(--line); background:var(--panel); padding:12px; overflow:auto; }
+    aside h3 { margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.04em; opacity:.75; }
+    aside ol { margin:0; padding-left:18px; }
+    aside li { margin:0 0 6px; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .hint { font-size:12px; opacity:.8; margin-top:14px; }
+    code { background:#101612; padding:1px 5px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>AirCI etiquetado</strong>
+    <label class="file">Cargar carpeta set
+      <input id="dirInput" type="file" webkitdirectory directory multiple hidden />
+    </label>
+    <button id="prevBtn">← Tile</button>
+    <button id="nextBtn">Tile →</button>
+    <span class="stat" id="tileStat">Sin set</span>
+    <span class="stat" id="boxStat"></span>
+    <button id="undoBtn">Deshacer</button>
+    <button id="delBtn">Borrar caja</button>
+    <button id="clearTileBtn">Vaciar tile</button>
+    <button class="primary" id="exportBtn">Exportar annotations.csv</button>
+  </header>
+  <div class="wrap">
+    <div class="canvas-wrap"><canvas id="cv" width="800" height="800"></canvas></div>
+    <aside>
+      <h3>Meta</h3>
+      <div id="meta">Carga el set generado por <code>prepare_label_tiles.py</code> (carpeta completa).</div>
+      <h3 style="margin-top:16px">Cómo</h3>
+      <ol>
+        <li>Arrastra para <b>nueva caja</b> (copa).</li>
+        <li>Clic en caja = seleccionar; <b>Borrar</b> o Del.</li>
+        <li>Corrige ~80 buenas en total (borra basura / ajusta / añade faltantes).</li>
+        <li><b>Exportar annotations.csv</b> → guárdalo en la carpeta del set.</li>
+      </ol>
+      <p class="hint">Objetivo: cajas pegadas al follaje, no a la sombra. Variedad: grandes, chicas, pegadas.</p>
+      <p class="hint" id="progress"></p>
+    </aside>
+  </div>
+<script>
+(function () {
+  var tiles = [];
+  var images = {}; // name -> HTMLImageElement
+  var idx = 0;
+  var selected = -1;
+  var drag = null;
+  var history = [];
+  var TARGET = 80;
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+
+  function current() { return tiles[idx] || null; }
+
+  function countGood() {
+    var n = 0;
+    tiles.forEach(function (t) { n += (t.boxes || []).length; });
+    return n;
+  }
+
+  function pushHist() {
+    var t = current();
+    if (!t) return;
+    history.push(JSON.stringify(t.boxes));
+    if (history.length > 40) history.shift();
+  }
+
+  function setStat() {
+    var t = current();
+    document.getElementById('tileStat').textContent = t
+      ? ('Tile ' + (idx + 1) + '/' + tiles.length + ' · ' + t.file)
+      : 'Sin set';
+    document.getElementById('boxStat').textContent = t
+      ? ('Cajas en tile: ' + t.boxes.length)
+      : '';
+    var total = countGood();
+    var el = document.getElementById('progress');
+    var cls = total >= TARGET ? 'ok' : (total >= TARGET * 0.5 ? 'warn' : 'bad');
+    el.innerHTML = 'Cajas totales: <b class="' + cls + '">' + total + '</b> / objetivo ~' + TARGET;
+  }
+
+  function draw() {
+    var t = current();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (!t) return;
+    var img = images[t.file];
+    if (img) ctx.drawImage(img, 0, 0);
+    (t.boxes || []).forEach(function (b, i) {
+      ctx.lineWidth = i === selected ? 3 : 2;
+      ctx.strokeStyle = i === selected ? '#5eea95' : '#ffd166';
+      ctx.fillStyle = i === selected ? 'rgba(94,234,149,.18)' : 'rgba(255,209,102,.12)';
+      var w = b.xmax - b.xmin, h = b.ymax - b.ymin;
+      ctx.fillRect(b.xmin, b.ymin, w, h);
+      ctx.strokeRect(b.xmin, b.ymin, w, h);
+    });
+    if (drag) {
+      ctx.strokeStyle = '#7ec8ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(drag.x0, drag.y0, drag.x1 - drag.x0, drag.y1 - drag.y0);
+    }
+    setStat();
+  }
+
+  function hitBox(x, y) {
+    var t = current();
+    if (!t) return -1;
+    for (var i = t.boxes.length - 1; i >= 0; i--) {
+      var b = t.boxes[i];
+      if (x >= b.xmin && x <= b.xmax && y >= b.ymin && y <= b.ymax) return i;
+    }
+    return -1;
+  }
+
+  function canvasPos(ev) {
+    var r = cv.getBoundingClientRect();
+    var scaleX = cv.width / r.width;
+    var scaleY = cv.height / r.height;
+    return { x: (ev.clientX - r.left) * scaleX, y: (ev.clientY - r.top) * scaleY };
+  }
+
+  cv.addEventListener('mousedown', function (ev) {
+    var t = current(); if (!t) return;
+    var p = canvasPos(ev);
+    var hit = hitBox(p.x, p.y);
+    if (hit >= 0) { selected = hit; draw(); return; }
+    selected = -1;
+    drag = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+    draw();
+  });
+  cv.addEventListener('mousemove', function (ev) {
+    if (!drag) return;
+    var p = canvasPos(ev);
+    drag.x1 = p.x; drag.y1 = p.y;
+    draw();
+  });
+  function endDrag() {
+    var t = current();
+    if (!drag || !t) { drag = null; return; }
+    var xmin = Math.min(drag.x0, drag.x1);
+    var xmax = Math.max(drag.x0, drag.x1);
+    var ymin = Math.min(drag.y0, drag.y1);
+    var ymax = Math.max(drag.y0, drag.y1);
+    drag = null;
+    if (xmax - xmin < 8 || ymax - ymin < 8) { draw(); return; }
+    pushHist();
+    t.boxes.push({ xmin: +xmin.toFixed(1), ymin: +ymin.toFixed(1), xmax: +xmax.toFixed(1), ymax: +ymax.toFixed(1), label: 'Tree' });
+    selected = t.boxes.length - 1;
+    draw();
+  }
+  cv.addEventListener('mouseup', endDrag);
+  cv.addEventListener('mouseleave', endDrag);
+
+  document.getElementById('delBtn').onclick = function () {
+    var t = current(); if (!t || selected < 0) return;
+    pushHist();
+    t.boxes.splice(selected, 1);
+    selected = -1;
+    draw();
+  };
+  document.getElementById('clearTileBtn').onclick = function () {
+    var t = current(); if (!t) return;
+    pushHist();
+    t.boxes = [];
+    selected = -1;
+    draw();
+  };
+  document.getElementById('undoBtn').onclick = function () {
+    var t = current(); if (!t || !history.length) return;
+    t.boxes = JSON.parse(history.pop());
+    selected = -1;
+    draw();
+  };
+  document.getElementById('prevBtn').onclick = function () {
+    if (!tiles.length) return;
+    idx = (idx - 1 + tiles.length) % tiles.length;
+    selected = -1; history = []; draw();
+  };
+  document.getElementById('nextBtn').onclick = function () {
+    if (!tiles.length) return;
+    idx = (idx + 1) % tiles.length;
+    selected = -1; history = []; draw();
+  };
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Delete' || ev.key === 'Backspace') document.getElementById('delBtn').click();
+    if (ev.key === 'ArrowRight') document.getElementById('nextBtn').click();
+    if (ev.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === 'z') document.getElementById('undoBtn').click();
+  });
+
+  document.getElementById('exportBtn').onclick = function () {
+    var lines = ['image_path,xmin,ymin,xmax,ymax,label'];
+    tiles.forEach(function (t) {
+      (t.boxes || []).forEach(function (b) {
+        lines.push([t.file, b.xmin, b.ymin, b.xmax, b.ymax, b.label || 'Tree'].join(','));
+      });
+    });
+    var blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'annotations.csv';
+    a.click();
+  };
+
+  document.getElementById('dirInput').addEventListener('change', async function (ev) {
+    var files = Array.from(ev.target.files || []);
+    if (!files.length) return;
+    var byName = {};
+    files.forEach(function (f) {
+      var parts = f.webkitRelativePath.split('/');
+      var name = parts.slice(-2).join('/'); // images/xxx.jpg or tiles.json
+      if (parts[parts.length - 1] === 'tiles.json') name = 'tiles.json';
+      if (parts[parts.length - 1] === 'manifest.json') name = 'manifest.json';
+      byName[name] = f;
+      if (parts.indexOf('images') >= 0) byName['images/' + parts[parts.length - 1]] = f;
+    });
+    if (!byName['tiles.json']) {
+      alert('Falta tiles.json en la carpeta del set');
+      return;
+    }
+    var tilesText = await byName['tiles.json'].text();
+    tiles = JSON.parse(tilesText);
+    TARGET = 80;
+    if (byName['manifest.json']) {
+      try {
+        var man = JSON.parse(await byName['manifest.json'].text());
+        if (man.target_review) TARGET = man.target_review;
+        document.getElementById('meta').textContent =
+          (man.tiles || tiles.length) + ' tiles · seeds ' + (man.seed_boxes || '?') + ' · objetivo ~' + TARGET;
+      } catch (e) {}
+    }
+    images = {};
+    await Promise.all(tiles.map(function (t) {
+      return new Promise(function (resolve) {
+        var f = byName[t.file];
+        if (!f) { resolve(); return; }
+        var url = URL.createObjectURL(f);
+        var img = new Image();
+        img.onload = function () {
+          images[t.file] = img;
+          if (t === tiles[0]) { cv.width = img.width; cv.height = img.height; }
+          resolve();
+        };
+        img.onerror = resolve;
+        img.src = url;
+      });
+    }));
+    idx = 0; selected = -1; history = [];
+    var first = current();
+    if (first && images[first.file]) {
+      cv.width = images[first.file].width;
+      cv.height = images[first.file].height;
+    }
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+---
+description: Contexto vivo AirCI (copas, DeepForest, Campo 1). Leer al trabajar AirCI/canopy.
+globs:
+  - admin/airci*
+  - scripts/airci_canopy/**
+  - netlify/functions/airci*
+  - docs/AIRCI*
+---
+
+# AirCI — contexto
+
+Antes de cambiar detección, etiquetado, Importar Cursor o Radar AirCI, lee y respeta:
+
+`docs/AIRCI-CONTEXTO-TRABAJO.md`
+
+- Densidad de huerta = referencia blanda (no forzar conteo).
+- Umbrales y checkpoints son por huerta/corrida.
+- Al cerrar trabajo sustancial, actualiza la bitácora de ese doc (pocas líneas).

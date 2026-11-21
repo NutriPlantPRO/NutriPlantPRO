@@ -1,0 +1,10 @@
+{
+  "tif": "/Users/jesusavila/Desktop/AirCI/Ojo Zarco/Campo 1 (13Nov26)/Task-of-2026-11-19T190356705Z-orthophoto.tif",
+  "predio": "/Users/jesusavila/Desktop/AirCI/Ojo Zarco/Campo 1 (13Nov26)/airci-predio.geojson",
+  "seeds": "/Users/jesusavila/Desktop/AirCI/Ojo Zarco/Campo 1 (13Nov26)/airci-canopy-result-light.json",
+  "tiles": 108,
+  "seed_boxes": 108,
+  "target_review": 80,
+  "gsd_m_approx": 0.05,
+  "note": "Corrige/borra/a\u00f1ade cajas en label_tool.html hasta ~80 buenas. Luego exporta annotations.csv"
+}

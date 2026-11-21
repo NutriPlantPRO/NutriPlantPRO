@@ -69,12 +69,15 @@ def _px_to_wgs84(
     return [[float(lat), float(lng)] for lat, lng in zip(lats, lngs)]
 
 
-def _load_model():
+def _load_model(weights: str | None = None):
     from deepforest import main as df_main
 
+    if weights:
+        model = df_main.deepforest.load_from_checkpoint(weights)
+        return model, f"finetuned:{weights}"
     model = df_main.deepforest()
     model.load_model(model_name="weecology/deepforest-tree", revision="main")
-    return model
+    return model, DEEPFOREST_VERSION
 
 
 def analyze_geotiff_deepforest(
@@ -90,8 +93,12 @@ def analyze_geotiff_deepforest(
         if progress:
             progress(max(0, min(100, int(pct))), phase)
 
-    report(5, "Cargando DeepForest pretrained")
-    model = _load_model()
+    weights = options.get("weights") or options.get("checkpoint") or None
+    if weights:
+        report(5, f"Cargando DeepForest fine-tuned ({weights})")
+    else:
+        report(5, "Cargando DeepForest pretrained")
+    model, detector_version = _load_model(str(weights) if weights else None)
 
     # ~5 cm → patch ~800 px ≈ 40 m (mismo FOV que el modelo a 10 cm / 400 px)
     provided_gsd = float(options.get("gsd_m") or 0.0) or None
@@ -251,7 +258,7 @@ def analyze_geotiff_deepforest(
                     "metrics_json": {
                         "source": "deepforest",
                         "from_calibration": False,
-                        "detector": DEEPFOREST_VERSION,
+                        "detector": detector_version,
                         "bbox_px": [xmin, ymin, xmax, ymax],
                         "z": 0.0,
                     },
@@ -302,7 +309,7 @@ def analyze_geotiff_deepforest(
             "tileSize": patch_size,
             "overlap": int(round(patch_size * patch_overlap)),
             "tilesProcessed": total,
-            "detectorVersion": DEEPFOREST_VERSION,
+            "detectorVersion": detector_version,
             "detectorMode": "deepforest",
             "professional": True,
             "validationStatus": "requires_review",
