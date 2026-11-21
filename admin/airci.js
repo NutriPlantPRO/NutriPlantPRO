@@ -6060,27 +6060,27 @@
     var btn = document.getElementById('aciNamedLayersBtn');
     if (!btn) return;
     var siteId = getSiteId();
-    if (!siteId) {
-      btn.hidden = true;
-      return;
-    }
+    // Siempre visible con mapa/site (junto a Radar), aunque aún no haya capas.
+    var show = !!(siteId && (currentGeoraster || rasterLayer || predioClosed));
+    btn.hidden = !show;
+    if (!show) return;
+    btn.textContent = 'Capas nube';
+    btn.title = 'Capas de ChatGPT / Cursor guardadas en la nube';
+    btn._layers = [];
     try {
       var r = await apiOrtho({ action: 'list_layers', site_id: siteId });
       if (r && r.ok && r.layers && r.layers.length) {
-        btn.hidden = false;
         btn.textContent = 'Capas nube (' + r.layers.length + ')';
         btn._layers = r.layers;
-      } else {
-        btn.hidden = !(r && r.setup);
-        if (r && r.setup) {
-          btn.hidden = false;
-          btn.textContent = 'Capas nube';
-          btn.title = 'Ejecuta ' + r.setup + ' en Supabase';
-        }
-        btn._layers = [];
+      } else if (r && r.setup) {
+        btn.title = 'Primero ejecuta ' + r.setup + ' en Supabase SQL Editor';
+      } else if (r && r.ok) {
+        btn.title = 'Aún no hay capas. ChatGPT las crea con airci_save_layer.';
+      } else if (r && r.error) {
+        btn.title = 'Error listando capas: ' + r.error;
       }
     } catch (e) {
-      btn.hidden = true;
+      btn.title = 'No pude listar capas (recarga o revisa deploy).';
     }
   }
 
@@ -6229,6 +6229,11 @@
       radarBtn.hidden = !(predioClosed && n >= 3);
       radarBtn.disabled = !!radarBusy || !(predioClosed && n >= 3);
       radarBtn.textContent = radarBusy ? 'Radar…' : 'Radar satélite';
+    }
+    var namedBtn = document.getElementById('aciNamedLayersBtn');
+    if (namedBtn) {
+      namedBtn.hidden = !(predioClosed && n >= 3) && !currentGeoraster && !rasterLayer;
+      if (!namedBtn.hidden) refreshNamedLayersButton();
     }
   }
 
