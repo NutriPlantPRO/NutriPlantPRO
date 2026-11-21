@@ -229,10 +229,7 @@
     }
     if (treesEl && info.treeCount != null) treesEl.textContent = String(info.treeCount);
     if (treesSub && info.treeCount != null) {
-      treesSub.textContent =
-        info.treesPerHa != null && Number.isFinite(Number(info.treesPerHa))
-          ? Math.round(Number(info.treesPerHa)).toLocaleString('es-MX') + ' /ha'
-          : 'copas detectadas';
+      treesSub.textContent = 'copas detectadas';
     }
     if (coverEl && info.coverPct != null) {
       coverEl.textContent = Number(info.coverPct).toFixed(1) + '%';
@@ -285,12 +282,34 @@
       }
     }
     if (densEl) {
-      if (info.treesPerHa != null && Number.isFinite(Number(info.treesPerHa))) {
-        densEl.textContent = Math.round(Number(info.treesPerHa)).toLocaleString('es-MX');
-        if (densSub) densSub.textContent = 'árboles / ha';
+      var refDens = null;
+      if (info.targetTreesPerHa != null && Number.isFinite(Number(info.targetTreesPerHa))) {
+        refDens = Number(info.targetTreesPerHa);
+      } else {
+        try {
+          var metaDens = Number(collectMeta().densidad_ha);
+          if (Number.isFinite(metaDens) && metaDens >= 50 && metaDens <= 5000) refDens = metaDens;
+        } catch (eDens) {}
+      }
+      var detDens =
+        info.treesPerHa != null && Number.isFinite(Number(info.treesPerHa))
+          ? Number(info.treesPerHa)
+          : null;
+      // La dens. del productor manda; la de detección es solo estimado (puede faltar copas).
+      if (refDens != null) {
+        densEl.textContent = Math.round(refDens).toLocaleString('es-MX');
+        if (densSub) {
+          densSub.textContent =
+            detDens != null
+              ? 'ref. huerta · det. ~' + Math.round(detDens).toLocaleString('es-MX')
+              : 'referencia del predio';
+        }
+      } else if (detDens != null) {
+        densEl.textContent = Math.round(detDens).toLocaleString('es-MX');
+        if (densSub) densSub.textContent = 'solo detección (pon dens. ref.)';
       } else if (info.treeCount != null) {
         densEl.textContent = '—';
-        if (densSub) densSub.textContent = 'requiere ha';
+        if (densSub) densSub.textContent = 'pon dens. ref. arriba';
       }
     }
   }
@@ -523,9 +542,25 @@
       },
       {
         label: 'Densidad',
-        value:
-          hasScale && s.treesPerHa != null
-            ? Math.round(Number(s.treesPerHa)).toLocaleString('es-MX') + ' árboles/ha'
+        value: (function () {
+          var ref =
+            s.targetTreesPerHa != null
+              ? Number(s.targetTreesPerHa)
+              : Number((collectMeta() || {}).densidad_ha);
+          var det = hasScale && s.treesPerHa != null ? Number(s.treesPerHa) : null;
+          if (Number.isFinite(ref) && ref >= 50) {
+            return (
+              Math.round(ref).toLocaleString('es-MX') +
+              ' ref.' +
+              (det != null ? ' · det. ~' + Math.round(det).toLocaleString('es-MX') : '') +
+              '/ha'
+            );
+          }
+          if (det != null) {
+            return Math.round(det).toLocaleString('es-MX') + ' /ha (solo detección)';
+          }
+          return '—';
+        })()
             : '—',
         note: hasScale
           ? 'Copas detectadas ÷ hectáreas del orto'
@@ -2092,6 +2127,7 @@
       treeCount: st.count,
       coverPct: st.coverPct,
       barePct: barePct,
+      targetTreesPerHa: st.targetTreesPerHa,
       meanArea: st.meanArea,
       meanAreaM2: st.meanAreaM2,
       hasScale: st.hasScale,
@@ -7472,6 +7508,14 @@
       drawCoverage(coverage);
       enableLayers(['cobertura']);
     }
+    // Dens. ref. del JSON → campo del predio (no pisar si ya hay valor)
+    if (result.stats.targetTreesPerHa != null) {
+      var densInput = document.getElementById('aciDensidadHa');
+      if (densInput && !String(densInput.value || '').trim()) {
+        densInput.value = String(Math.round(Number(result.stats.targetTreesPerHa)));
+        scheduleSave();
+      }
+    }
     if (trees.length) {
       drawCanopies(result);
       enableLayers(['copas', 'semaforo', 'numeros']);
@@ -7485,7 +7529,9 @@
         bareAreaM2: result.stats.bareAreaM2,
         orthoAreaHa: result.stats.predioAreaHa || result.stats.orthoAreaHa,
         hasScale: result.stats.hasScale,
-        gsdCm: result.stats.gsdCm
+        gsdCm: result.stats.gsdCm,
+        targetTreesPerHa: result.stats.targetTreesPerHa,
+        treesPerHa: result.stats.treesPerHa
       });
       applyLayerVisibility();
     }
