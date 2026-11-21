@@ -20,7 +20,7 @@ from shapely.geometry import Polygon
 from detector import _meters_per_pixel
 
 
-COVERAGE_VERSION = "coverage_local_soil_v2"
+COVERAGE_VERSION = "coverage_local_soil_v3_antishadow"
 
 
 def _predio_area_ha(ring: list[tuple[float, float]]) -> float | None:
@@ -149,15 +149,20 @@ def analyze_coverage(
         )
         rgb = _rgb_u8(data)
 
-        report(35, "Contraste local suelo↔copa")
+        report(35, "Contraste local suelo↔copa (anti-sombra)")
         red = rgb[:, :, 0].astype(np.float32)
         green = rgb[:, :, 1].astype(np.float32)
         blue = rgb[:, :, 2].astype(np.float32)
         lum = 0.30 * red + 0.59 * green + 0.11 * blue
+        tot = np.maximum(red + green + blue, 1.0)
+        # Verdor cromático: follaje > sombra gris proyectada
+        gchr = (green / tot) - 0.5 * ((red / tot) + (blue / tot))
+        exg = (2.0 * green - red - blue) / tot
         hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
         sat = hsv[:, :, 1].astype(np.float32)
         value = hsv[:, :, 2].astype(np.float32)
         texture = np.abs(lum - cv2.blur(lum, (5, 5)))
+        texture_w = np.abs(lum - cv2.blur(lum, (11, 11)))
 
         # Suelo claro local ≈ dilatación de luminancia (~3 m de vecindario).
         nb = max(21, int(round(3.2 / max(gsd_out, 1e-3))) | 1)
@@ -176,10 +181,23 @@ def analyze_coverage(
         else:
             predio_mask = lum > 10.0
 
-        # Sombra proyectada (oscura, poco saturada, poca textura)
-        shadow = (value < 30.0) | (
-            (value < 44.0) & (sat < 32.0) & (texture < 3.0)
+        # Sombra proyectada: oscura, gris (poco verde), plana.
+        # No confundir con copa oscura (más verde / más textura de follaje).
+        shadow = (
+            (value < 28.0)
+            | ((value < 48.0) & (sat < 38.0) & (gchr < 0.012) & (texture < 4.0))
+            | ((value < 55.0) & (exg < 0.02) & (texture_w < 3.5) & (gchr < 0.018))
         )
+        # Dilatar un poco la sombra para no “comer” el borde del suelo sombreado
+        shadow_u8 = (shadow.astype(np.uint8) * 255)
+        shadow_u8 = cv2.morphologyEx(
+            shadow_u8,
+            cv2.MORPH_CLOSE,
+            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)),
+            iterations=1,
+        )
+        shadow = shadow_u8 > 0
+
         valid = predio_mask & (lum > 4.0)
         if not valid.any():
             raise ValueError("Predio sin píxeles válidos en el orto.")
@@ -189,7 +207,14 @@ def analyze_coverage(
         if sample.size == 0:
             sample = contrast[valid]
         thr = float(np.percentile(sample.astype(np.float32), score_pct))
-        binary = (contrast >= thr) & valid & (~shadow) & (texture > 1.5)
+        # Candidato por contraste vs suelo local
+        by_contrast = (contrast >= thr) & valid & (~shadow)
+        # Follaje: algo de verde O textura de copa (evita sombra plana)
+        foliage_ok = (gchr > 0.014) | (exg > 0.04) | ((texture > 2.8) & (gchr > 0.008))
+        # Copas muy oscuras pero verdes
+        dark_green = (value < 90.0) & (gchr > 0.02) & (sat > 25.0) & valid & (~shadow)
+        binary = (by_contrast & foliage_ok) | dark_green
+        binary = binary & (~shadow)
 
         open_px = max(3, int(round(0.30 / max(gsd_out, 1e-3))) | 1)
         close_px = max(3, int(round(0.55 / max(gsd_out, 1e-3))) | 1)
@@ -226,10 +251,16 @@ def analyze_coverage(
 
         if preview_path:
             try:
+                from pathlib import Path as _Path
+
                 tint = rgb.astype(np.float32).copy()
                 tint[binary] = tint[binary] * np.array([0.30, 0.80, 0.35]) + np.array(
                     [25.0, 170.0, 45.0]
                 ) * 0.50
+                # Sombras rechazadas en violeta (auditoría)
+                tint[shadow & predio_mask & (~binary)] = tint[
+                    shadow & predio_mask & (~binary)
+                ] * 0.35 + np.array([120.0, 40.0, 180.0]) * 0.65
                 tint = np.clip(tint, 0, 255).astype(np.uint8)
                 tint[~predio_mask] = (tint[~predio_mask] * 0.22).astype(np.uint8)
                 edge = predio_mask.astype(np.uint8) * 255
@@ -237,16 +268,43 @@ def analyze_coverage(
                 cv2.drawContours(tint, cnts, -1, (0, 80, 255), 2)
                 cv2.putText(
                     tint,
-                    f"cobertura {cover_pct:.1f}%",
+                    f"cobertura {cover_pct:.1f}%  verde=copa  violeta=sombra rechazada",
                     (16, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    1.1,
+                    0.85,
                     (255, 255, 255),
                     2,
                 )
                 cv2.imwrite(
                     str(preview_path),
                     cv2.cvtColor(tint, cv2.COLOR_RGB2BGR),
+                    [int(cv2.IMWRITE_JPEG_QUALITY), 88],
+                )
+                # Capa de contraste (qué “ve” el algoritmo)
+                cnorm = np.zeros_like(lum, dtype=np.uint8)
+                if valid.any():
+                    c_lo = float(np.percentile(contrast[valid], 2))
+                    c_hi = float(np.percentile(contrast[valid], 98))
+                    cnorm = np.clip(
+                        (contrast - c_lo) * (255.0 / max(c_hi - c_lo, 1e-3)), 0, 255
+                    ).astype(np.uint8)
+                contrast_vis = cv2.applyColorMap(cnorm, cv2.COLORMAP_TURBO)
+                contrast_vis = cv2.cvtColor(contrast_vis, cv2.COLOR_BGR2RGB)
+                contrast_vis[~predio_mask] = (contrast_vis[~predio_mask] * 0.15).astype(np.uint8)
+                cv2.drawContours(contrast_vis, cnts, -1, (255, 255, 255), 2)
+                cv2.putText(
+                    contrast_vis,
+                    "capa contraste suelo↔copa",
+                    (16, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.0,
+                    (255, 255, 255),
+                    2,
+                )
+                cpath = _Path(str(preview_path)).with_name("airci-coverage-contrast.jpg")
+                cv2.imwrite(
+                    str(cpath),
+                    cv2.cvtColor(contrast_vis, cv2.COLOR_RGB2BGR),
                     [int(cv2.IMWRITE_JPEG_QUALITY), 88],
                 )
             except Exception:
@@ -348,10 +406,11 @@ def analyze_coverage(
             "count": 0,
             "resultTrees": 0,
             "clippedToPredio": bool(predio_ring),
-            "validationStatus": "coverage_v2",
+            "validationStatus": "coverage_v3",
             "professional": True,
             "hasScale": gsd_m is not None,
             "neighborhoodM": round(3.2, 2),
+            "antiShadow": True,
         }
         report(95, "Cobertura lista")
         return stats, polygons

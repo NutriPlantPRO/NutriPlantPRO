@@ -86,8 +86,10 @@ Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
 ### Cobertura Campo 1 (última)
 
 - JSON: `…/Campo 1 (13Nov26)/airci-coverage-result.json`
-- **coverPct ~38.5 %** · bare ~61.5 % · ~1.71 ha dosel · 293 polígonos
+- Motor: `coverage_local_soil_v3_antishadow` (contraste suelo↔copa + rechazo sombra)
+- **coverPct ~35.7 %** · bare ~64.3 % · preview + `airci-coverage-contrast.jpg`
 - Comando: `scripts/airci_canopy/.venv/bin/python run_coverage.py <tif> --predio … --out …`
+- Principio: **cobertura primero**; no confundir sombra proyectada con dosel.
 
 ---
 
