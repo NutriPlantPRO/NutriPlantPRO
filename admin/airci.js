@@ -5993,16 +5993,53 @@
       if (!entry || !Array.isArray(entry.ring) || entry.ring.length < 3) {
         predioRing = [];
         predioClosed = false;
+        // Si no hay local, intenta nube
+        restorePredioFromCloud(siteId);
         return;
       }
       predioRing = entry.ring.map(function (p) {
         return [Number(p[0]), Number(p[1])];
       });
       predioClosed = !!entry.closed;
+      // Predio viejo solo en el navegador → súbelo a la nube para ChatGPT
+      if (predioClosed && predioRing.length >= 3) {
+        persistPredioToCloud();
+      }
     } catch (e) {
       predioRing = [];
       predioClosed = false;
     }
+  }
+
+  async function restorePredioFromCloud(siteId) {
+    if (!siteId) return;
+    try {
+      var r = await apiOrtho({ action: 'load_predio', site_id: siteId });
+      if (!r || !r.ok || !r.geojson) return;
+      var geo = r.geojson;
+      var geom =
+        geo.type === 'Feature'
+          ? geo.geometry
+          : geo.type === 'FeatureCollection' && geo.features && geo.features[0]
+            ? geo.features[0].geometry
+            : geo;
+      if (!geom || geom.type !== 'Polygon' || !geom.coordinates || !geom.coordinates[0]) return;
+      var ring = geom.coordinates[0].map(function (c) {
+        return [Number(c[1]), Number(c[0])];
+      });
+      if (ring.length < 3) return;
+      predioRing = ring;
+      predioClosed = true;
+      try {
+        var raw = localStorage.getItem(PREDIO_BY_SITE_KEY);
+        var mapObj = raw ? JSON.parse(raw) : {};
+        if (!mapObj || typeof mapObj !== 'object') mapObj = {};
+        mapObj[siteId] = { ring: predioRing, closed: true, updated_at: Date.now() };
+        localStorage.setItem(PREDIO_BY_SITE_KEY, JSON.stringify(mapObj));
+      } catch (e2) {}
+      renderPredio();
+      syncPredioUi();
+    } catch (e) {}
   }
 
   function savePredioLocal() {
@@ -6045,11 +6082,18 @@
   async function persistPredioToCloud() {
     var siteId = getSiteId();
     var geo = predioRingToGeoJson(predioRing);
-    if (!siteId || !geo) return;
+    if (!siteId || !geo || !predioClosed || predioRing.length < 3) return;
     try {
       var r = await apiOrtho({ action: 'save_predio', site_id: siteId, geojson: geo });
-      if (r && r.setup) {
-        console.warn('AirCI predio nube: ejecuta', r.setup);
+      if (r && r.ok) {
+        setMapStatus('Predio también guardado en la nube (para ChatGPT)', 'ok');
+      } else if (r && r.setup) {
+        setMapStatus(
+          'Predio solo en este equipo. Ejecuta ' + r.setup + ' en Supabase para subirlo.',
+          'error'
+        );
+      } else if (r && r.error) {
+        console.warn('AirCI predio nube:', r.error);
       }
     } catch (e) {
       console.warn('AirCI predio nube', e);
