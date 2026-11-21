@@ -7550,10 +7550,10 @@
     };
     professionalResultId = null;
     professionalStats = result.stats;
-    if (coverage && coverage.polygons && coverage.polygons.length) {
-      drawCoverage(coverage);
-      enableLayers(['cobertura']);
-    }
+    var coverageOnly =
+      !!(coverage && coverage.polygons && coverage.polygons.length) &&
+      (!trees.length || payload.mode === 'coverage');
+
     // Dens. ref. del JSON → campo del predio (no pisar si ya hay valor)
     if (result.stats.targetTreesPerHa != null) {
       var densInput = document.getElementById('aciDensidadHa');
@@ -7562,11 +7562,42 @@
         scheduleSave();
       }
     }
-    if (trees.length) {
-      drawCanopies(result);
-      enableLayers(['copas', 'semaforo', 'numeros']);
-    } else {
-      // Solo cobertura: métricas sin inventar copas
+
+    if (coverageOnly) {
+      // Quitar copas viejas del mapa (antes quedaban pintadas encima)
+      if (canopyOutlineLayer && map) {
+        try {
+          map.removeLayer(canopyOutlineLayer);
+        } catch (eClr1) {}
+      }
+      if (canopyFillLayer && map) {
+        try {
+          map.removeLayer(canopyFillLayer);
+        } catch (eClr2) {}
+      }
+      if (canopyLabelLayer && map) {
+        try {
+          map.removeLayer(canopyLabelLayer);
+        } catch (eClr3) {}
+      }
+      canopyOutlineLayer = null;
+      canopyFillLayer = null;
+      canopyLabelLayer = null;
+      treeLayersById = {};
+      canopyResult = { trees: [], stats: result.stats, coverage: coverage, source: 'cursor_local' };
+      layerOn.copas = false;
+      layerOn.semaforo = false;
+      layerOn.numeros = false;
+      document
+        .querySelectorAll(
+          '#aciLayerBar [data-layer="copas"], #aciLayerBar [data-layer="semaforo"], #aciLayerBar [data-layer="numeros"]'
+        )
+        .forEach(function (btn) {
+          btn.disabled = true;
+          btn.classList.remove('is-active');
+        });
+      drawCoverage(coverage);
+      enableLayers(['cobertura']);
       updateMetrics({
         treeCount: 0,
         coverPct: result.stats.coverPct,
@@ -7577,9 +7608,18 @@
         hasScale: result.stats.hasScale,
         gsdCm: result.stats.gsdCm,
         targetTreesPerHa: result.stats.targetTreesPerHa,
-        treesPerHa: result.stats.treesPerHa
+        treesPerHa: null
       });
       applyLayerVisibility();
+    } else {
+      if (coverage && coverage.polygons && coverage.polygons.length) {
+        drawCoverage(coverage);
+        enableLayers(['cobertura']);
+      }
+      if (trees.length) {
+        drawCanopies(result);
+        enableLayers(['copas', 'semaforo', 'numeros']);
+      }
     }
     persistCanopyResult(result);
     var name =
