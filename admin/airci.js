@@ -5490,8 +5490,9 @@
         return;
       }
       if (orthoOk) {
+        refreshNamedLayersButton();
         setMapStatus(
-          'Ortomosaico listo desde la nube · Importar Cursor (cobertura / copas)',
+          'Ortomosaico listo desde la nube · Importar Cursor o Capas nube',
           'ok'
         );
         return;
@@ -5988,6 +5989,143 @@
       }
       localStorage.setItem(PREDIO_BY_SITE_KEY, JSON.stringify(mapObj));
     } catch (e) {}
+    if (predioClosed && predioRing.length >= 3) {
+      persistPredioToCloud();
+    }
+  }
+
+  function predioRingToGeoJson(ring) {
+    if (!ring || ring.length < 3) return null;
+    var coords = ring.map(function (p) {
+      return [Number(p[1]), Number(p[0])];
+    });
+    if (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1]) {
+      coords = coords.concat([coords[0]]);
+    }
+    return {
+      type: 'Feature',
+      properties: { kind: 'predio' },
+      geometry: { type: 'Polygon', coordinates: [coords] }
+    };
+  }
+
+  async function persistPredioToCloud() {
+    var siteId = getSiteId();
+    var geo = predioRingToGeoJson(predioRing);
+    if (!siteId || !geo) return;
+    try {
+      var r = await apiOrtho({ action: 'save_predio', site_id: siteId, geojson: geo });
+      if (r && r.setup) {
+        console.warn('AirCI predio nube: ejecuta', r.setup);
+      }
+    } catch (e) {
+      console.warn('AirCI predio nube', e);
+    }
+  }
+
+  async function refreshNamedLayersButton() {
+    var btn = document.getElementById('aciNamedLayersBtn');
+    if (!btn) return;
+    var siteId = getSiteId();
+    if (!siteId) {
+      btn.hidden = true;
+      return;
+    }
+    try {
+      var r = await apiOrtho({ action: 'list_layers', site_id: siteId });
+      if (r && r.ok && r.layers && r.layers.length) {
+        btn.hidden = false;
+        btn.textContent = 'Capas nube (' + r.layers.length + ')';
+        btn._layers = r.layers;
+      } else {
+        btn.hidden = !(r && r.setup);
+        if (r && r.setup) {
+          btn.hidden = false;
+          btn.textContent = 'Capas nube';
+          btn.title = 'Ejecuta ' + r.setup + ' en Supabase';
+        }
+        btn._layers = [];
+      }
+    } catch (e) {
+      btn.hidden = true;
+    }
+  }
+
+  function geometryJsonToLatLngRings(geometry) {
+    var rings = [];
+    if (!geometry || typeof geometry !== 'object') return rings;
+    function pushPoly(coords) {
+      if (!coords || !coords[0] || !coords[0].length) return;
+      var ring = coords[0].map(function (c) {
+        return [Number(c[1]), Number(c[0])];
+      });
+      if (ring.length >= 3) rings.push(ring);
+    }
+    if (geometry.type === 'FeatureCollection') {
+      (geometry.features || []).forEach(function (f) {
+        if (!f || !f.geometry) return;
+        if (f.geometry.type === 'Polygon') pushPoly(f.geometry.coordinates);
+        if (f.geometry.type === 'MultiPolygon') {
+          (f.geometry.coordinates || []).forEach(pushPoly);
+        }
+      });
+    } else if (geometry.type === 'Feature' && geometry.geometry) {
+      return geometryJsonToLatLngRings(geometry.geometry);
+    } else if (geometry.type === 'Polygon') {
+      pushPoly(geometry.coordinates);
+    } else if (geometry.type === 'MultiPolygon') {
+      (geometry.coordinates || []).forEach(pushPoly);
+    } else if (Array.isArray(geometry.polygons)) {
+      geometry.polygons.forEach(function (p) {
+        var ll = p.latlngs || p;
+        if (ll && ll.length >= 3) rings.push(ll);
+      });
+    }
+    return rings;
+  }
+
+  async function loadNamedLayerById(layerId) {
+    if (!layerId) return;
+    setMapStatus('Cargando capa de la nube…', 'ok');
+    var r = await apiOrtho({ action: 'get_layer', layer_id: layerId });
+    if (!r || !r.ok || !r.layer) {
+      setMapStatus((r && r.error) || 'No pude cargar la capa', 'error');
+      return;
+    }
+    var layer = r.layer;
+    if (String(layer.coords_space || 'wgs84') === 'image') {
+      setMapStatus(
+        'Capa "' +
+          layer.name +
+          '" está en coords de imagen; aún no se dibuja sobre el mapa georreferenciado.',
+        'error'
+      );
+      return;
+    }
+    var rings = geometryJsonToLatLngRings(layer.geometry_json);
+    if (!rings.length) {
+      setMapStatus('La capa no trae polígonos WGS84 dibujables', 'error');
+      return;
+    }
+    drawCoverage({
+      polygons: rings.map(function (latlngs) {
+        return { latlngs: latlngs };
+      }),
+      coverPct: layer.cover_pct
+    });
+    enableLayers(['cobertura']);
+    updateMetrics({
+      coverPct: layer.cover_pct,
+      barePct:
+        layer.cover_pct != null ? Math.max(0, 100 - Number(layer.cover_pct)) : null,
+      treeCount: layer.kind === 'crowns' ? rings.length : 0
+    });
+    setMapStatus(
+      'Capa nube · ' +
+        layer.name +
+        (layer.cover_pct != null ? ' · ' + Number(layer.cover_pct).toFixed(1) + '%' : ''),
+      'ok'
+    );
   }
 
   function predioAreaHa(ring) {
@@ -7428,6 +7566,44 @@
   if (predioExportBtn) {
     predioExportBtn.addEventListener('click', function () {
       exportPredioGeoJson();
+    });
+  }
+  var namedLayersBtn = document.getElementById('aciNamedLayersBtn');
+  if (namedLayersBtn) {
+    namedLayersBtn.addEventListener('click', async function () {
+      await refreshNamedLayersButton();
+      var layers = namedLayersBtn._layers || [];
+      if (!layers.length) {
+        setMapStatus(
+          'No hay capas nombradas en la nube (o falta supabase-airci-layers.sql).',
+          'ok'
+        );
+        return;
+      }
+      var lines = layers.map(function (l, i) {
+        return (
+          i +
+          1 +
+          ') ' +
+          l.name +
+          ' [' +
+          l.kind +
+          '/' +
+          l.source +
+          ']' +
+          (l.cover_pct != null ? ' ' + Number(l.cover_pct).toFixed(1) + '%' : '')
+        );
+      });
+      var pick = window.prompt(
+        'Capas en la nube (escribe el número):\n' + lines.join('\n')
+      );
+      if (!pick) return;
+      var idx = parseInt(pick, 10) - 1;
+      if (idx < 0 || idx >= layers.length) {
+        setMapStatus('Número inválido', 'error');
+        return;
+      }
+      await loadNamedLayerById(layers[idx].id);
     });
   }
   var radarBtn = document.getElementById('aciRadarBtn');

@@ -26,6 +26,7 @@ Si una sesión cae en “otro umbral más de cajas”, parar y volver a Fase A.
 3. Motor copas (cuando toque): **DeepForest** (+ FT por huerta). Classical = respaldo / apoyo a máscara.
 4. Umbrales son **por huerta / corrida**, no globales.
 5. Trabajo pesado en **Cursor/Mac** → JSON → **Importar Cursor**. Radar = async Netlify.
+6. ChatGPT Socio puede **guardar capas nombradas** (`airci_save_layer`) sin pisar inventario Cursor. SQL: `supabase-airci-layers.sql`.
 
 ---
 

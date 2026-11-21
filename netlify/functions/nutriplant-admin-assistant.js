@@ -6915,6 +6915,308 @@ async function handleRadarSearch(supabase, params) {
   };
 }
 
+function airciSetupHint(errMsg) {
+  if (/airci_layers|predio_geojson/i.test(errMsg || '')) return 'supabase-airci-layers.sql';
+  if (/airci_sites|airci_flights/i.test(errMsg || '')) return 'supabase-airci.sql';
+  return null;
+}
+
+async function handleAirciListSites(supabase, params) {
+  const q = String(params.query || params.q || params.name || '')
+    .trim()
+    .toLowerCase();
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 40, 1), 100);
+  const { data, error } = await supabase
+    .from('airci_sites')
+    .select('id, title, agricola, predio, cultivo, variedad, edad, nota, predio_geojson, updated_at')
+    .order('updated_at', { ascending: false })
+    .limit(120);
+  if (error) {
+    return {
+      ok: false,
+      domain: 'airci',
+      error: error.message,
+      setup: airciSetupHint(error.message),
+      tip: 'Ejecuta supabase-airci-layers.sql en Supabase si falta predio_geojson / airci_layers.'
+    };
+  }
+  let rows = data || [];
+  if (q) {
+    rows = rows.filter((s) => {
+      const blob = [s.title, s.agricola, s.predio, s.cultivo].join(' ').toLowerCase();
+      return blob.includes(q);
+    });
+  }
+  rows = rows.slice(0, limit).map((s) => ({
+    id: s.id,
+    title: s.title || '',
+    agricola: s.agricola || '',
+    predio: s.predio || '',
+    cultivo: s.cultivo || '',
+    variedad: s.variedad || '',
+    has_predio_polygon: !!(s.predio_geojson && typeof s.predio_geojson === 'object'),
+    updated_at: s.updated_at
+  }));
+  return {
+    ok: true,
+    domain: 'airci',
+    count: rows.length,
+    sites: rows,
+    tip: 'airci_site_detail con site_id o query (ej. "Ojo Zarco"). Guardar capa: airci_save_layer.'
+  };
+}
+
+async function handleAirciSiteDetail(supabase, params) {
+  const siteId = String(params.site_id || params.id || '').trim();
+  const q = String(params.query || params.q || params.name || '')
+    .trim()
+    .toLowerCase();
+  let site = null;
+  if (siteId && /^[0-9a-f-]{36}$/i.test(siteId)) {
+    const { data, error } = await supabase
+      .from('airci_sites')
+      .select(
+        'id, title, agricola, predio, cultivo, variedad, edad, nota, predio_geojson, updated_at'
+      )
+      .eq('id', siteId)
+      .maybeSingle();
+    if (error) {
+      return { ok: false, domain: 'airci', error: error.message, setup: airciSetupHint(error.message) };
+    }
+    site = data;
+  } else if (q) {
+    const listed = await handleAirciListSites(supabase, { query: q, limit: 5 });
+    if (!listed.ok) return listed;
+    if (!listed.sites.length) {
+      return { ok: true, domain: 'airci', found: false, message: 'No hay site AirCI con ese nombre.' };
+    }
+    if (listed.sites.length > 1) {
+      return {
+        ok: true,
+        domain: 'airci',
+        found: false,
+        message: 'Varios sites; elige uno.',
+        candidates: listed.sites
+      };
+    }
+    return handleAirciSiteDetail(supabase, { site_id: listed.sites[0].id });
+  } else {
+    return { ok: false, domain: 'airci', error: 'Falta site_id o query' };
+  }
+  if (!site) {
+    return { ok: true, domain: 'airci', found: false, message: 'Site no encontrado' };
+  }
+
+  const [flightsRes, layersRes, canopyRes] = await Promise.all([
+    supabase
+      .from('airci_flights')
+      .select('id, filename, byte_size, width_px, height_px, crs, created_at, status')
+      .eq('site_id', site.id)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('airci_layers')
+      .select('id, name, kind, source, cover_pct, coords_space, updated_at')
+      .eq('site_id', site.id)
+      .order('updated_at', { ascending: false })
+      .limit(30),
+    supabase
+      .from('airci_canopy_results')
+      .select('id, tree_count, cover_pct, source, detector_version, updated_at')
+      .eq('site_id', site.id)
+      .order('updated_at', { ascending: false })
+      .limit(3)
+  ]);
+
+  const predioGeo = site.predio_geojson || null;
+  let predioSummary = null;
+  if (predioGeo && typeof predioGeo === 'object') {
+    const geom =
+      predioGeo.type === 'Feature'
+        ? predioGeo.geometry
+        : predioGeo.type === 'FeatureCollection'
+          ? (predioGeo.features && predioGeo.features[0] && predioGeo.features[0].geometry) || null
+          : predioGeo;
+    const ring =
+      geom && geom.type === 'Polygon' && Array.isArray(geom.coordinates)
+        ? geom.coordinates[0]
+        : null;
+    predioSummary = {
+      has_polygon: true,
+      vertices: ring ? ring.length : null,
+      type: geom && geom.type
+    };
+  } else {
+    predioSummary = { has_polygon: false };
+  }
+
+  return {
+    ok: true,
+    domain: 'airci',
+    found: true,
+    site: {
+      id: site.id,
+      title: site.title,
+      agricola: site.agricola,
+      predio: site.predio,
+      cultivo: site.cultivo,
+      variedad: site.variedad,
+      edad: site.edad,
+      nota: site.nota,
+      updated_at: site.updated_at
+    },
+    predio: predioSummary,
+    flights: flightsRes.error ? [] : flightsRes.data || [],
+    flights_error: flightsRes.error ? flightsRes.error.message : null,
+    layers: layersRes.error ? [] : layersRes.data || [],
+    layers_error: layersRes.error
+      ? layersRes.error.message
+      : null,
+    layers_setup: layersRes.error ? airciSetupHint(layersRes.error.message) : null,
+    canopy_results: canopyRes.error ? [] : canopyRes.data || [],
+    tip:
+      'Capas nombradas (cobertura ChatGPT, etc.) en layers[]. Inventario Cursor/Professional en canopy_results[] (no se pisa al guardar capa). airci_save_layer / airci_get_layer.'
+  };
+}
+
+async function handleAirciListLayers(supabase, params) {
+  const siteId = String(params.site_id || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(siteId)) {
+    return { ok: false, domain: 'airci', error: 'site_id UUID requerido' };
+  }
+  const { data, error } = await supabase
+    .from('airci_layers')
+    .select(
+      'id, site_id, flight_id, name, kind, source, coords_space, cover_pct, notes, created_at, updated_at'
+    )
+    .eq('site_id', siteId)
+    .order('updated_at', { ascending: false })
+    .limit(100);
+  if (error) {
+    return {
+      ok: false,
+      domain: 'airci',
+      error: error.message,
+      setup: airciSetupHint(error.message)
+    };
+  }
+  return { ok: true, domain: 'airci', count: (data || []).length, layers: data || [] };
+}
+
+async function handleAirciGetLayer(supabase, params) {
+  const layerId = String(params.layer_id || params.id || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(layerId)) {
+    return { ok: false, domain: 'airci', error: 'layer_id UUID requerido' };
+  }
+  const includeGeometry = params.include_geometry !== false && params.include_geometry !== 'false';
+  const cols = includeGeometry
+    ? 'id, site_id, flight_id, name, kind, source, coords_space, cover_pct, stats_json, geometry_json, notes, created_at, updated_at'
+    : 'id, site_id, flight_id, name, kind, source, coords_space, cover_pct, stats_json, notes, created_at, updated_at';
+  const { data, error } = await supabase.from('airci_layers').select(cols).eq('id', layerId).maybeSingle();
+  if (error) {
+    return {
+      ok: false,
+      domain: 'airci',
+      error: error.message,
+      setup: airciSetupHint(error.message)
+    };
+  }
+  if (!data) return { ok: true, domain: 'airci', found: false, message: 'Capa no encontrada' };
+  return { ok: true, domain: 'airci', found: true, layer: data };
+}
+
+async function handleAirciSaveLayer(supabase, params) {
+  const siteId = String(params.site_id || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(siteId)) {
+    return { ok: false, domain: 'airci', error: 'site_id UUID requerido' };
+  }
+  const name = String(params.name || '').trim().slice(0, 160);
+  if (!name) return { ok: false, domain: 'airci', error: 'Falta name (ej. "Cobertura ChatGPT 21-nov")' };
+  const geometry = params.geometry_json || params.geojson || params.geometry || null;
+  if (!geometry || typeof geometry !== 'object') {
+    return {
+      ok: false,
+      domain: 'airci',
+      error: 'Falta geometry_json (GeoJSON FeatureCollection o Polygon)'
+    };
+  }
+
+  const { data: site, error: siteErr } = await supabase
+    .from('airci_sites')
+    .select('id, owner_id')
+    .eq('id', siteId)
+    .maybeSingle();
+  if (siteErr) {
+    return { ok: false, domain: 'airci', error: siteErr.message, setup: airciSetupHint(siteErr.message) };
+  }
+  if (!site) return { ok: false, domain: 'airci', error: 'site_id no existe' };
+
+  const kind = String(params.kind || 'coverage').trim().toLowerCase().slice(0, 40) || 'coverage';
+  const source = String(params.source || 'chatgpt').trim().toLowerCase().slice(0, 40) || 'chatgpt';
+  const coordsSpace =
+    String(params.coords_space || 'wgs84').trim().toLowerCase().slice(0, 20) || 'wgs84';
+  const flightId =
+    params.flight_id && /^[0-9a-f-]{36}$/i.test(String(params.flight_id))
+      ? String(params.flight_id)
+      : null;
+  const stats =
+    params.stats_json && typeof params.stats_json === 'object' ? params.stats_json : {};
+  const coverPct =
+    params.cover_pct != null
+      ? Number(params.cover_pct)
+      : stats.coverPct != null
+        ? Number(stats.coverPct)
+        : null;
+  const notes = String(params.notes || '').slice(0, 2000);
+
+  const row = {
+    site_id: site.id,
+    flight_id: flightId,
+    owner_id: site.owner_id,
+    name: name,
+    kind: kind,
+    source: source,
+    coords_space: coordsSpace,
+    cover_pct: Number.isFinite(coverPct) ? coverPct : null,
+    stats_json: stats,
+    geometry_json: geometry,
+    notes: notes,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data: existing } = await supabase
+    .from('airci_layers')
+    .select('id')
+    .eq('site_id', site.id)
+    .ilike('name', name)
+    .limit(1)
+    .maybeSingle();
+
+  const saveQ = existing
+    ? supabase.from('airci_layers').update(row).eq('id', existing.id)
+    : supabase.from('airci_layers').insert(row);
+  const { data, error } = await saveQ
+    .select('id, site_id, name, kind, source, cover_pct, coords_space, updated_at')
+    .single();
+  if (error) {
+    return {
+      ok: false,
+      domain: 'airci',
+      error: error.message,
+      setup: airciSetupHint(error.message),
+      tip: 'Si setup=supabase-airci-layers.sql, ejecútalo en Supabase SQL Editor.'
+    };
+  }
+  return {
+    ok: true,
+    domain: 'airci',
+    saved: true,
+    layer: data,
+    message:
+      'Capa guardada. No toca el inventario de copas (canopy_results). En AirCI: capas nombradas / Importar.'
+  };
+}
+
 async function handleRadarOverview(supabase, params) {
   const projects = await fetchProjects(supabase);
   const mk = radarMonthKey();
@@ -7304,8 +7606,8 @@ async function handleInvestProLists(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.15.0',
-    openapi_version: '2.15.0',
+    version: '2.16.0',
+    openapi_version: '2.16.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
@@ -7333,7 +7635,7 @@ async function handleDescribeApi() {
         action: 'nutri_pro_set_text',
         params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
       },
-      verify: 'Si describe_api devuelve version 2.15.0, el GPT tiene schema y token correctos.'
+      verify: 'Si describe_api devuelve version 2.16.0, el GPT tiene schema y token correctos.'
     },
     mcp: {
       url: nutriProPublicBaseUrl() + '/mcp-admin',
@@ -7378,13 +7680,20 @@ async function handleDescribeApi() {
         'nutri_pro_upload_status'
       ],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
+      airci: [
+        'airci_list_sites',
+        'airci_site_detail',
+        'airci_list_layers',
+        'airci_get_layer',
+        'airci_save_layer'
+      ],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
       manual_publico: ['manual_tecnico_catalog'],
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Suscriptores / cuándo pagaron / cuándo les toca: subscription_roster (lista compacta last_payment_date + next_payment_date; no inventar fechas). Totales: admin_stats. Un usuario: user_summary. Reportes laboratorio (nube): project_analyses. Clima: project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*. Invest PRO: invest_pro_overview|holdings|lists (solo lectura; no inventar precios).',
+      'Suscriptores / cuándo pagaron / cuándo les toca: subscription_roster (lista compacta last_payment_date + next_payment_date; no inventar fechas). Totales: admin_stats. Un usuario: user_summary. Reportes laboratorio (nube): project_analyses. Clima: project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. AirCI: airci_list_sites / airci_site_detail / airci_save_layer (capa nombrada; no pisa copas). Plan PRO: plan_pro_*. Invest PRO: invest_pro_overview|holdings|lists (solo lectura; no inventar precios).',
     my_programs_gpt:
       'Escritura limitada y segura para laboratorio personal de Jesús: my_program_project_create/list/get/update. Solo opera proyectos del email admin configurado (default admin@nutriplantpro.com) marcados gptPersonalProgram=true y created_by_gpt=true. Nunca edita proyectos de suscriptores.',
     climate_gpt:
@@ -7435,6 +7744,11 @@ const HANDLERS = {
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
+  airci_list_sites: (sb, p) => handleAirciListSites(sb, p || {}),
+  airci_site_detail: (sb, p) => handleAirciSiteDetail(sb, p || {}),
+  airci_list_layers: (sb, p) => handleAirciListLayers(sb, p || {}),
+  airci_get_layer: (sb, p) => handleAirciGetLayer(sb, p || {}),
+  airci_save_layer: (sb, p) => handleAirciSaveLayer(sb, p || {}),
   free_tools_catalog: (_sb, p) => handleFreeToolsCatalog(p),
   lab_analyses_catalog: (_sb, p) => handleLabAnalysesCatalog(p),
   manual_tecnico_catalog: (_sb, p) => handleManualTecnicoCatalog(p),
@@ -7451,9 +7765,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.15.0',
+      version: '2.16.0',
       description:
-        'v2.15.0 — subscription_roster: lista compacta de suscriptores con last_payment_date y next_payment_date. Invest PRO lectura. nutri_pro_file_inspect.'
+        'v2.16.0 — AirCI: airci_list_sites, airci_site_detail, airci_list_layers, airci_get_layer, airci_save_layer (capas nombradas). subscription_roster + Invest PRO + nutri_pro_file_inspect.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -7462,7 +7776,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. Suscriptores/pagos: subscription_roster. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.15.0.',
+            'Única Action ChatGPT. Body: action + params. Suscriptores/pagos: subscription_roster. AirCI: airci_*. Invest PRO: invest_pro_*. nutri_pro_ask → si falta contexto: nutri_pro_file_inspect. describe_api → version 2.16.0.',
           requestBody: {
             required: true,
             content: {

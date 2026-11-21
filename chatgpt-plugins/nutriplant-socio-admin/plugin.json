@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "nutriplant-socio-admin",
-  "version": "1.0.1",
-  "description": "Socio privado de Jesús Avila. Admin, pagos, proyectos, Plan/Nutri/Invest PRO.",
+  "version": "1.0.2",
+  "description": "Socio privado de Jesús Avila. Admin, pagos, proyectos, Plan/Nutri/Invest PRO, AirCI.",
   "author": {
     "name": "Jesús Avila Mendoza",
     "url": "https://nutriplantpro.com"

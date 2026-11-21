@@ -281,18 +281,55 @@ exports.handler = async function handler(event) {
     const { data, error } = await supabase
       .from('airci_sites')
       .select(
-        'id, title, agricola, predio, cultivo, variedad, edad, nota, created_at, updated_at'
+        'id, title, agricola, predio, cultivo, variedad, edad, nota, predio_geojson, created_at, updated_at'
       )
       .eq('owner_id', auth.userId)
       .order('updated_at', { ascending: false });
     if (error) {
+      // Retrocompat: sin columna predio_geojson aún
+      if (/predio_geojson/i.test(error.message || '')) {
+        const fallback = await supabase
+          .from('airci_sites')
+          .select(
+            'id, title, agricola, predio, cultivo, variedad, edad, nota, created_at, updated_at'
+          )
+          .eq('owner_id', auth.userId)
+          .order('updated_at', { ascending: false });
+        if (fallback.error) {
+          return json(500, {
+            ok: false,
+            error: fallback.error.message,
+            setup: 'supabase-airci.sql'
+          });
+        }
+        return json(200, {
+          ok: true,
+          sites: fallback.data || [],
+          setup_hint: 'supabase-airci-layers.sql'
+        });
+      }
       return json(500, {
         ok: false,
         error: error.message,
         setup: /airci_sites|does not exist/i.test(error.message || '') ? 'supabase-airci.sql' : null
       });
     }
-    return json(200, { ok: true, sites: data || [] });
+    const sites = (data || []).map(function (s) {
+      return {
+        id: s.id,
+        title: s.title,
+        agricola: s.agricola,
+        predio: s.predio,
+        cultivo: s.cultivo,
+        variedad: s.variedad,
+        edad: s.edad,
+        nota: s.nota,
+        has_predio_polygon: !!(s.predio_geojson && typeof s.predio_geojson === 'object'),
+        created_at: s.created_at,
+        updated_at: s.updated_at
+      };
+    });
+    return json(200, { ok: true, sites: sites });
   }
 
   if (action === 'save_canopy') {
@@ -451,6 +488,194 @@ exports.handler = async function handler(event) {
         updated_at: data.updated_at
       }
     });
+  }
+
+  if (action === 'save_predio') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+    const geo = body.geojson || body.predio_geojson || null;
+    if (!geo || typeof geo !== 'object') {
+      return json(400, { ok: false, error: 'Falta geojson del predio' });
+    }
+    const { data, error } = await supabase
+      .from('airci_sites')
+      .update({
+        predio_geojson: geo,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', siteId)
+      .eq('owner_id', auth.userId)
+      .select('id, predio_geojson, updated_at')
+      .maybeSingle();
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /predio_geojson|airci_sites/i.test(error.message || '')
+          ? 'supabase-airci-layers.sql'
+          : null
+      });
+    }
+    if (!data) return json(404, { ok: false, error: 'Site no encontrado' });
+    return json(200, { ok: true, site_id: data.id, updated_at: data.updated_at });
+  }
+
+  if (action === 'load_predio') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+    const { data, error } = await supabase
+      .from('airci_sites')
+      .select('id, predio_geojson, title, agricola, predio, updated_at')
+      .eq('id', siteId)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /predio_geojson|airci_sites/i.test(error.message || '')
+          ? 'supabase-airci-layers.sql'
+          : null
+      });
+    }
+    if (!data) return json(404, { ok: false, error: 'Site no encontrado' });
+    return json(200, {
+      ok: true,
+      site_id: data.id,
+      title: data.title,
+      agricola: data.agricola,
+      predio: data.predio,
+      geojson: data.predio_geojson || null,
+      updated_at: data.updated_at
+    });
+  }
+
+  if (action === 'list_layers') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+    const { data, error } = await supabase
+      .from('airci_layers')
+      .select(
+        'id, site_id, flight_id, name, kind, source, coords_space, cover_pct, notes, created_at, updated_at'
+      )
+      .eq('site_id', siteId)
+      .eq('owner_id', auth.userId)
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_layers|does not exist/i.test(error.message || '')
+          ? 'supabase-airci-layers.sql'
+          : null
+      });
+    }
+    return json(200, { ok: true, layers: data || [] });
+  }
+
+  if (action === 'get_layer') {
+    const layerId = body.layer_id || body.id;
+    if (!isUuid(layerId)) return json(400, { ok: false, error: 'layer_id inválido' });
+    const { data, error } = await supabase
+      .from('airci_layers')
+      .select(
+        'id, site_id, flight_id, name, kind, source, coords_space, cover_pct, stats_json, geometry_json, notes, created_at, updated_at'
+      )
+      .eq('id', layerId)
+      .eq('owner_id', auth.userId)
+      .maybeSingle();
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_layers|does not exist/i.test(error.message || '')
+          ? 'supabase-airci-layers.sql'
+          : null
+      });
+    }
+    if (!data) return json(404, { ok: false, error: 'Capa no encontrada' });
+    return json(200, { ok: true, layer: data });
+  }
+
+  if (action === 'save_layer') {
+    const siteId = body.site_id;
+    if (!isUuid(siteId)) return json(400, { ok: false, error: 'site_id inválido' });
+    const name = String(body.name || '').trim().slice(0, 160);
+    if (!name) return json(400, { ok: false, error: 'Falta name de la capa' });
+    const kind = String(body.kind || 'coverage')
+      .trim()
+      .toLowerCase()
+      .slice(0, 40);
+    const source = String(body.source || 'chatgpt')
+      .trim()
+      .toLowerCase()
+      .slice(0, 40);
+    const coordsSpace = String(body.coords_space || 'wgs84')
+      .trim()
+      .toLowerCase()
+      .slice(0, 20);
+    const flightId = isUuid(body.flight_id) ? body.flight_id : null;
+    const geometry =
+      body.geometry_json || body.geojson || body.geometry || body.coverage || null;
+    if (!geometry || typeof geometry !== 'object') {
+      return json(400, { ok: false, error: 'Falta geometry_json / geojson' });
+    }
+    const stats = body.stats_json && typeof body.stats_json === 'object' ? body.stats_json : {};
+    const coverPct =
+      body.cover_pct != null
+        ? Number(body.cover_pct)
+        : stats.coverPct != null
+          ? Number(stats.coverPct)
+          : null;
+    const notes = String(body.notes || '').slice(0, 2000);
+    const upsert = body.upsert !== false;
+
+    const row = {
+      site_id: siteId,
+      flight_id: flightId,
+      owner_id: auth.userId,
+      name: name,
+      kind: kind || 'coverage',
+      source: source || 'chatgpt',
+      coords_space: coordsSpace || 'wgs84',
+      cover_pct: Number.isFinite(coverPct) ? coverPct : null,
+      stats_json: stats,
+      geometry_json: geometry,
+      notes: notes,
+      updated_at: new Date().toISOString()
+    };
+
+    let existing = null;
+    if (upsert) {
+      const { data: found } = await supabase
+        .from('airci_layers')
+        .select('id')
+        .eq('site_id', siteId)
+        .eq('owner_id', auth.userId)
+        .ilike('name', name)
+        .limit(1)
+        .maybeSingle();
+      existing = found;
+    }
+
+    const saveQuery = existing
+      ? supabase.from('airci_layers').update(row).eq('id', existing.id)
+      : supabase.from('airci_layers').insert(row);
+    const { data, error } = await saveQuery
+      .select('id, site_id, name, kind, source, cover_pct, updated_at')
+      .single();
+
+    if (error) {
+      return json(500, {
+        ok: false,
+        error: error.message,
+        setup: /airci_layers|does not exist|predio_geojson/i.test(error.message || '')
+          ? 'supabase-airci-layers.sql'
+          : null
+      });
+    }
+    return json(200, { ok: true, layer: data });
   }
 
   if (action === 'list_flights') {
@@ -818,6 +1043,6 @@ exports.handler = async function handler(event) {
   return json(400, {
     ok: false,
     error:
-      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | save_detect_profile | load_detect_profile | list_crop_profiles | delete_site | delete_agricola)'
+      'action inválida (prepare | finalize | upsert_site | signed_url | list_sites | list_flights | save_canopy | load_canopy | save_predio | load_predio | list_layers | get_layer | save_layer | save_detect_profile | load_detect_profile | list_crop_profiles | delete_site | delete_agricola)'
   });
 };
