@@ -24,6 +24,7 @@ supabase-server-config.json
 # Archivos temporales
 *.tmp
 *.temp
+tmp/
 
 # Dependencias Node (nunca subir; cada quien hace npm install)
 node_modules/
