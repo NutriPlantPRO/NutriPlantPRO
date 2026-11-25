@@ -664,9 +664,7 @@
   var VPD_OPTIMAL_LO = 0.5;
   var VPD_OPTIMAL_HI = 1.5;
 
-  function vpdOptimalBandPlugin(opts) {
-    opts = opts || {};
-    var ink = opts.labelColor || 'rgba(21, 128, 61, 0.8)';
+  function vpdOptimalBandPlugin() {
     return {
       id: 'npVpdOptimalBand',
       beforeDatasetsDraw: function (chart) {
@@ -687,9 +685,10 @@
         ctx.beginPath();
         ctx.rect(area.left, area.top, width, area.bottom - area.top);
         ctx.clip();
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.16)';
+        // Verde más tenue que las barras de horas, para no taparlas.
+        ctx.fillStyle = 'rgba(74, 222, 128, 0.08)';
         ctx.fillRect(area.left, top, width, bottom - top);
-        ctx.strokeStyle = 'rgba(22, 163, 74, 0.5)';
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.32)';
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 4]);
         ctx.beginPath();
@@ -702,19 +701,6 @@
           ctx.lineTo(area.right, yHi);
         }
         ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = ink;
-        ctx.font = '9px sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        var midY = (top + bottom) / 2;
-        if (midY > area.top + 10 && midY < area.bottom - 10) {
-          ctx.fillText(
-            chartT('Óptimo 0.5–1.5 kPa', 'Optimal 0.5–1.5 kPa'),
-            area.right - 6,
-            midY
-          );
-        }
         ctx.restore();
       }
     };
@@ -725,9 +711,9 @@
     var gen = defaults && defaults.labels && defaults.labels.generateLabels;
     var items = typeof gen === 'function' ? gen(chart) : [];
     items.push({
-      text: chartT('Rango óptimo VPD (0.5–1.5 kPa)', 'Optimal VPD range (0.5–1.5 kPa)'),
-      fillStyle: 'rgba(34, 197, 94, 0.28)',
-      strokeStyle: 'rgba(22, 163, 74, 0.65)',
+      text: chartT('Rango óptimo de referencia', 'Reference optimal range'),
+      fillStyle: 'rgba(74, 222, 128, 0.22)',
+      strokeStyle: 'rgba(34, 197, 94, 0.45)',
       lineWidth: 1,
       hidden: false,
       datasetIndex: -1,
@@ -957,7 +943,7 @@
         }),
         datasets: criticalHoursChartDatasets(agg.items, vpdAxisMax)
       },
-      plugins: [vpdOptimalBandPlugin({ labelColor: opts.pdfExport ? 'rgba(21, 128, 61, 0.9)' : 'rgba(21, 128, 61, 0.8)' })],
+      plugins: [vpdOptimalBandPlugin()],
       options: {
         responsive: useResponsive,
         maintainAspectRatio: false,
