@@ -206,8 +206,8 @@
 
   function criticalTableCaptionHtml(prep) {
     var chartBit = chartT(
-      'Gráfica: barras tenues = 24 h/día por zona VPD · línea <strong>azul</strong> = VPD mín + hora · línea <strong>tinta</strong> = VPD máx + hora (eje derecho).',
-      'Chart: faint bars = 24 h/day by VPD zone · <strong>blue</strong> line = min VPD + time · <strong>ink</strong> line = max VPD + time (right axis).'
+      'Gráfica: barras delgadas = 24 h/día por zona VPD (eje izquierdo) · <strong style="color:#15803d;">banda verde</strong> = rango óptimo VPD 0.5–1.5 kPa (solo eje derecho, no las horas) · línea <strong>azul</strong> = VPD mín · línea <strong>tinta</strong> = VPD máx.',
+      'Chart: thin bars = 24 h/day by VPD zone (left axis) · <strong style="color:#15803d;">green band</strong> = optimal VPD range 0.5–1.5 kPa (right axis only, not the hours) · <strong>blue</strong> line = min VPD · <strong>ink</strong> line = max VPD.'
     );
     if (prep && prep.includesOptimal) {
       return (
@@ -660,6 +660,82 @@
     };
   }
 
+  /** Banda 0.5–1.5 kPa en eje VPD (derecha); no aplica al eje de horas. */
+  var VPD_OPTIMAL_LO = 0.5;
+  var VPD_OPTIMAL_HI = 1.5;
+
+  function vpdOptimalBandPlugin(opts) {
+    opts = opts || {};
+    var ink = opts.labelColor || 'rgba(21, 128, 61, 0.8)';
+    return {
+      id: 'npVpdOptimalBand',
+      beforeDatasetsDraw: function (chart) {
+        var yScale = chart.scales && chart.scales.yVpd;
+        var area = chart.chartArea;
+        if (!yScale || !area) return;
+        var yLo = yScale.getPixelForValue(VPD_OPTIMAL_LO);
+        var yHi = yScale.getPixelForValue(VPD_OPTIMAL_HI);
+        if (!Number.isFinite(yLo) || !Number.isFinite(yHi)) return;
+        var top = Math.min(yLo, yHi);
+        var bottom = Math.max(yLo, yHi);
+        top = Math.max(top, area.top);
+        bottom = Math.min(bottom, area.bottom);
+        if (bottom <= top) return;
+        var ctx = chart.ctx;
+        var width = area.right - area.left;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(area.left, area.top, width, area.bottom - area.top);
+        ctx.clip();
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.16)';
+        ctx.fillRect(area.left, top, width, bottom - top);
+        ctx.strokeStyle = 'rgba(22, 163, 74, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        if (yLo >= area.top && yLo <= area.bottom) {
+          ctx.moveTo(area.left, yLo);
+          ctx.lineTo(area.right, yLo);
+        }
+        if (yHi >= area.top && yHi <= area.bottom) {
+          ctx.moveTo(area.left, yHi);
+          ctx.lineTo(area.right, yHi);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = ink;
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        var midY = (top + bottom) / 2;
+        if (midY > area.top + 10 && midY < area.bottom - 10) {
+          ctx.fillText(
+            chartT('Óptimo 0.5–1.5 kPa', 'Optimal 0.5–1.5 kPa'),
+            area.right - 6,
+            midY
+          );
+        }
+        ctx.restore();
+      }
+    };
+  }
+
+  function criticalChartLegendLabels(chart) {
+    var defaults = w.Chart && w.Chart.defaults && w.Chart.defaults.plugins && w.Chart.defaults.plugins.legend;
+    var gen = defaults && defaults.labels && defaults.labels.generateLabels;
+    var items = typeof gen === 'function' ? gen(chart) : [];
+    items.push({
+      text: chartT('Rango óptimo VPD (0.5–1.5 kPa)', 'Optimal VPD range (0.5–1.5 kPa)'),
+      fillStyle: 'rgba(34, 197, 94, 0.28)',
+      strokeStyle: 'rgba(22, 163, 74, 0.65)',
+      lineWidth: 1,
+      hidden: false,
+      datasetIndex: -1,
+      index: items.length
+    });
+    return items;
+  }
+
   function createRangeStackedChart(canvas, summaryRows, opts) {
     if (!canvas || !w.Chart || !summaryRows || !summaryRows.length) return null;
     opts = opts || {};
@@ -881,6 +957,7 @@
         }),
         datasets: criticalHoursChartDatasets(agg.items, vpdAxisMax)
       },
+      plugins: [vpdOptimalBandPlugin({ labelColor: opts.pdfExport ? 'rgba(21, 128, 61, 0.9)' : 'rgba(21, 128, 61, 0.8)' })],
       options: {
         responsive: useResponsive,
         maintainAspectRatio: false,
@@ -891,8 +968,8 @@
         },
         datasets: {
           bar: {
-            categoryPercentage: 0.92,
-            barPercentage: 0.88
+            categoryPercentage: 0.52,
+            barPercentage: 0.72
           }
         },
         layout: {
@@ -902,11 +979,20 @@
           legend: {
             display: true,
             position: 'bottom',
+            onClick: function (e, legendItem, legend) {
+              if (!legendItem || legendItem.datasetIndex == null || legendItem.datasetIndex < 0) return;
+              var chart = legend.chart;
+              if (chart && typeof chart.toggleDataVisibility === 'function') {
+                chart.toggleDataVisibility(legendItem.datasetIndex);
+                chart.update();
+              }
+            },
             labels: {
               usePointStyle: true,
               boxWidth: 10,
               font: { size: opts.legendFontSize || 10 },
-              color: ink
+              color: ink,
+              generateLabels: criticalChartLegendLabels
             }
           },
           title: {
