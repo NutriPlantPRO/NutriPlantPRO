@@ -2669,6 +2669,7 @@ function selectSection(name, el) {
         loadVPDSavedResults();
       }
       if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+      if (typeof syncVpdRangeGranularityUi === 'function') syncVpdRangeGranularityUi();
       if (typeof window.initClimateTabs === 'function') window.initClimateTabs();
       if (typeof window.loadClimateSavedData === 'function') window.loadClimateSavedData();
     }, 100);
@@ -14368,6 +14369,7 @@ function loadOnTabChange(tabName) {
         try {
           if (typeof loadVPDSavedResults === 'function') loadVPDSavedResults();
           if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+          if (typeof syncVpdRangeGranularityUi === 'function') syncVpdRangeGranularityUi();
           if (typeof window.initClimateTabs === 'function') window.initClimateTabs();
           if (typeof window.loadClimateSavedData === 'function') window.loadClimateSavedData();
         } catch (e) {
@@ -20673,7 +20675,7 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
     return `
       <tr>
         <td>${idx + 1}</td>
-        <td>${reportEscapeHtml(meta.granularity === 'weekly' ? rt('Semanal', 'Weekly') : (meta.granularity === 'monthly' ? rt('Mensual', 'Monthly') : rt('Diario', 'Daily')))}</td>
+        <td>${reportEscapeHtml(meta.granularity === 'hourly' ? rt('Horario', 'Hourly') : (meta.granularity === 'weekly' ? rt('Semanal', 'Weekly') : (meta.granularity === 'monthly' ? rt('Mensual', 'Monthly') : rt('Diario', 'Daily'))))}</td>
         <td>${reportEscapeHtml(meta.startDate ? reportFormatDate(meta.startDate, reportLang) : '—')}</td>
         <td>${reportEscapeHtml(meta.endDate ? reportFormatDate(meta.endDate, reportLang) : '—')}</td>
         <td>${rows.length}</td>
@@ -20735,6 +20737,7 @@ function createVPDReportSectionHTML(chartImages, reportLanguage, reportUnitSyste
           <strong>${rt('Rango Óptimo:', 'Optimal range:')}</strong> 0.5 - 1.5 kPa ·
           ${reportEscapeHtml((function () {
             var g = (currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario';
+            if (g === 'hourly' || g === 'horario') return rt('Horario', 'Hourly');
             if (g === 'weekly' || g === 'semanal') return rt('Semanal', 'Weekly');
             if (g === 'monthly' || g === 'mensual') return rt('Mensual', 'Monthly');
             if (g === 'daily' || g === 'diario') return rt('Diario', 'Daily');
@@ -25837,6 +25840,7 @@ function refreshVpdAnalysisSectionIfVisible() {
       loadVPDSavedResults();
     }
     if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+    if (typeof syncVpdRangeGranularityUi === 'function') syncVpdRangeGranularityUi();
   }, 100);
 }
 
@@ -26509,6 +26513,13 @@ function createVPDSectionHTML() {
   const advData = vpdData.advanced || {};
   const history = vpdData.history || [];
   const rangeState = vpdData.rangeState || { granularity: 'daily', startDate: '', endDate: '' };
+  const rangeGranularity =
+    rangeState.granularity === 'hourly' ||
+    rangeState.granularity === 'weekly' ||
+    rangeState.granularity === 'monthly' ||
+    rangeState.granularity === 'daily'
+      ? rangeState.granularity
+      : 'daily';
   if (Array.isArray(vpdData.rangeTables)) {
     vpdData.rangeTables.forEach(function(tbl, i) {
       if (tbl && typeof tbl === 'object' && (!tbl.id || typeof tbl.id !== 'string')) {
@@ -26520,6 +26531,7 @@ function createVPDSectionHTML() {
   const todayIso = getTodayIsoDate();
   const defaultStart = rangeState.startDate || addDaysIso(todayIso, -7);
   const defaultEnd = rangeState.endDate || todayIso;
+  const hourlyDayDefault = rangeState.startDate || defaultEnd;
   
   // Ubicación para VPD: usar dataProject para no depender de currentProject desactualizado
   const vpdLocation = getVPDLocation(dataProject);
@@ -26605,28 +26617,29 @@ function createVPDSectionHTML() {
       ${hasPolygon ? `
       <div style="background: #fff7ed; border: 2px solid #fb923c; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
         <h3 style="margin: 0 0 12px 0; color: #9a3412; font-size: 18px; font-weight: 600;">
-          🗓️ Serie VPD por Rango (diario / semanal / mensual)
+          🗓️ Serie VPD por Rango (hora / diario / semanal / mensual)
         </h3>
         <p style="margin: 0 0 8px 0; color: #7c2d12; font-size: 13px;">
           Fuente geográfica: <strong>centro del polígono del proyecto</strong> (${vpdLocation.lat.toFixed(5)}, ${vpdLocation.lng.toFixed(5)}).
         </p>
         <p style="margin: 0 0 14px 0; color: #7c2d12; font-size: 13px;">
-          Fechas y horas del clima: zona horaria local del punto indicado arriba (latitud y longitud del centro del polígono).
+          Fechas y horas del clima: zona horaria local del punto indicado arriba (latitud y longitud del centro del polígono). Vista <strong>Hora</strong>: elige un día y verás la curva VPD de 00:00 a 23:59.
         </p>
         <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;align-items:end;margin-bottom:12px;">
           <div>
             <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Vista</label>
-            <select id="vpd-range-granularity" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
-              <option value="daily" ${rangeState.granularity === 'daily' ? 'selected' : ''}>Diario</option>
-              <option value="weekly" ${rangeState.granularity === 'weekly' ? 'selected' : ''}>Semanal</option>
-              <option value="monthly" ${rangeState.granularity === 'monthly' ? 'selected' : ''}>Mensual</option>
+            <select id="vpd-range-granularity" onchange="window.syncVpdRangeGranularityUi && window.syncVpdRangeGranularityUi()" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
+              <option value="hourly" ${rangeGranularity === 'hourly' ? 'selected' : ''}>Hora (1 día)</option>
+              <option value="daily" ${rangeGranularity === 'daily' ? 'selected' : ''}>Diario</option>
+              <option value="weekly" ${rangeGranularity === 'weekly' ? 'selected' : ''}>Semanal</option>
+              <option value="monthly" ${rangeGranularity === 'monthly' ? 'selected' : ''}>Mensual</option>
             </select>
           </div>
           <div>
-            <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Fecha inicio</label>
-            <input type="date" id="vpd-range-start" value="${defaultStart}" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+            <label id="vpd-range-start-label" style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">${rangeGranularity === 'hourly' ? 'Día' : 'Fecha inicio'}</label>
+            <input type="date" id="vpd-range-start" value="${rangeGranularity === 'hourly' ? hourlyDayDefault : defaultStart}" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
           </div>
-          <div>
+          <div id="vpd-range-end-wrap" style="${rangeGranularity === 'hourly' ? 'display:none;' : ''}">
             <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Fecha fin</label>
             <input type="date" id="vpd-range-end" value="${defaultEnd}" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
           </div>
@@ -26821,6 +26834,43 @@ function vpdRangeTableDomKey(table) {
   return String(m.granularity || '') + '|' + String(m.startDate || '') + '|' + String(m.endDate || '') + '|' + String((table.summaryRows && table.summaryRows.length) || 0) + '|' + String(m.vpdMode || '');
 }
 
+function syncVpdRangeGranularityUi() {
+  var g = document.getElementById('vpd-range-granularity');
+  var endWrap = document.getElementById('vpd-range-end-wrap');
+  var startLabel = document.getElementById('vpd-range-start-label');
+  var startEl = document.getElementById('vpd-range-start');
+  var endEl = document.getElementById('vpd-range-end');
+  var hourly = g && g.value === 'hourly';
+  if (endWrap) endWrap.style.display = hourly ? 'none' : '';
+  if (startLabel) startLabel.textContent = hourly ? 'Día' : 'Fecha inicio';
+  if (hourly && startEl && endEl && startEl.value) endEl.value = startEl.value;
+}
+
+function buildVpdHourlyCurveRows(hourlyRows) {
+  if (!Array.isArray(hourlyRows)) return [];
+  return hourlyRows.map(function (r) {
+    var v = Number(r && r.vpd);
+    var at = String((r && r.at) || '');
+    var label = at.length >= 16 ? at.slice(11, 16) : at;
+    return {
+      at: at,
+      date: r.date || (at ? at.slice(0, 10) : ''),
+      label: label,
+      vpd: Number.isFinite(v) ? Number(v.toFixed(2)) : null,
+      temperature: Number.isFinite(Number(r.temperature)) ? Number(r.temperature) : null,
+      humidity: Number.isFinite(Number(r.humidity)) ? Number(r.humidity) : null,
+      type: Number.isFinite(v) ? (v > 1.5 ? 'high' : v < 0.5 ? 'low' : 'optimal') : 'optimal'
+    };
+  });
+}
+
+function vpdGranularityLabel(granularity) {
+  if (granularity === 'hourly') return vpdUiT('Horario (1 día)', 'Hourly (1 day)');
+  if (granularity === 'weekly') return vpdUiT('Semanal', 'Weekly');
+  if (granularity === 'monthly') return vpdUiT('Mensual', 'Monthly');
+  return vpdUiT('Diario', 'Daily');
+}
+
 function loadVPDRangeSavedResults(opts) {
   var force = opts && opts.force === true;
   ensureVPDAnalysisStructures();
@@ -26835,7 +26885,8 @@ function loadVPDRangeSavedResults(opts) {
     table.meta,
     table.summaryRows,
     table.criticalRows || [],
-    table.dailySummaryRows || []
+    table.dailySummaryRows || [],
+    table.hourlyCurveRows || []
   );
 }
 
@@ -27337,7 +27388,7 @@ function aggregateVPDStressRows(hourlyRows, granularity) {
     var key = '';
     if (granularity === 'monthly') key = String(r.date || '').slice(0, 7);
     else if (granularity === 'weekly') key = getIsoWeekKey(r.date);
-    else key = r.date;
+    else key = r.date; // daily + hourly: un bucket por día
     if (!groups.has(key)) groups.set(key, {
       key: key,
       start: r.date,
@@ -27463,7 +27514,7 @@ function analyzeVpdRangeSolarUsage(hourlyRows) {
   };
 }
 
-function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows) {
+function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows, hourlyCurveRows) {
   var wrap = document.getElementById('vpd-range-results');
   if (!wrap) return;
   if (!Array.isArray(summaryRows) || summaryRows.length === 0) {
@@ -27474,6 +27525,10 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
   wrap.setAttribute('data-np-vpd-range-key',
     String(meta.granularity || '') + '|' + String(meta.startDate || '') + '|' + String(meta.endDate || '') + '|' + String(summaryRows.length));
   var NPC = window.NpVpdRangeCharts;
+  var isHourly = meta && meta.granularity === 'hourly';
+  var curveRows = Array.isArray(hourlyCurveRows) && hourlyCurveRows.length
+    ? hourlyCurveRows
+    : (isHourly ? buildVpdHourlyCurveRows(criticalRows) : []);
   var critPrep = prepareVpdCriticalRowsForDisplay(
     criticalRows,
     meta && meta.endDate,
@@ -27522,35 +27577,72 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
         criticalTableHtml: criticalTableHtml
       })
     : summaryTableHtml + criticalTableHtml;
+  var rangeTitle = isHourly
+    ? vpdGranularityLabel('hourly') + ' · ' + meta.startDate
+    : vpdGranularityLabel(meta.granularity) +
+      ' · ' +
+      meta.startDate +
+      ' ' +
+      vpdUiT('a', 'to') +
+      ' ' +
+      meta.endDate;
+  var rangeMetaLine = isHourly
+    ? vpdUiT('Horas del día:', 'Hours in day:') +
+      ' ' +
+      (curveRows.length || critShown.length) +
+      (summaryRows[0]
+        ? ' · ' +
+          vpdUiT('VPD máx', 'Max VPD') +
+          ' ' +
+          summaryRows[0].maxVpd +
+          ' · ' +
+          vpdUiT('VPD mín', 'Min VPD') +
+          ' ' +
+          summaryRows[0].minVpd
+        : '')
+    : vpdUiT('Periodos:', 'Periods:') +
+      ' ' +
+      summaryRows.length +
+      ' · ' +
+      (critPrep.includesOptimal
+        ? vpdUiT('Horas listadas:', 'Hours listed:') +
+          ' ' +
+          critShown.length +
+          ' · ' +
+          vpdUiT('críticas:', 'critical:') +
+          ' ' +
+          (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)
+        : vpdUiT('Eventos críticos (listados):', 'Critical events (listed):') +
+          ' ' +
+          (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)) +
+      (critPrep.rangeTruncated &&
+      (critPrep.totalCritical != null ? critPrep.totalCritical : critPrep.totalAll) >
+        (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)
+        ? ' / ' +
+          (critPrep.totalCritical != null ? critPrep.totalCritical : critPrep.totalAll) +
+          ' ' +
+          vpdUiT('críticas en el rango', 'critical in range')
+        : '');
+  var helpNote = isHourly
+    ? vpdUiT(
+        '<strong>Rango óptimo de referencia:</strong> 0.5–1.5 kPa (banda verde en la gráfica). Curva = VPD de cada hora del día elegido.',
+        '<strong>Reference optimal range:</strong> 0.5–1.5 kPa (green band on the chart). Curve = VPD for each hour of the selected day.'
+      )
+    : vpdUiT(
+        '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio; la tabla lista todas las horas, verde = VPD óptimo).',
+        '<strong>Optimal range:</strong> 0.5 - 1.5 kPa · Series by period: table only · Hours: <strong>Chart / Table</strong> (30 days from the start; the table lists every hour, green = optimal VPD).'
+      );
   wrap.innerHTML =
     '<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;">' +
     '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">' +
     '<strong style="color:#9a3412;">' +
-    (meta.granularity === 'weekly'
-      ? vpdUiT('Semanal', 'Weekly')
-      : meta.granularity === 'monthly'
-        ? vpdUiT('Mensual', 'Monthly')
-        : vpdUiT('Diario', 'Daily')) +
-    ' · ' +
-    meta.startDate +
-    ' ' + vpdUiT('a', 'to') + ' ' +
-    meta.endDate +
+    rangeTitle +
     '</strong>' +
     '<span style="font-size:12px;color:#7c2d12;">' +
-    vpdUiT('Periodos:', 'Periods:') + ' ' +
-    summaryRows.length +
-    ' · ' + (critPrep.includesOptimal
-      ? vpdUiT('Horas listadas:', 'Hours listed:') + ' ' + critShown.length + ' · ' + vpdUiT('críticas:', 'critical:') + ' ' + (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)
-      : vpdUiT('Eventos críticos (listados):', 'Critical events (listed):') + ' ' + (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)) +
-    (critPrep.rangeTruncated && (critPrep.totalCritical != null ? critPrep.totalCritical : critPrep.totalAll) > (critPrep.criticalCount != null ? critPrep.criticalCount : critShown.length)
-      ? ' / ' + (critPrep.totalCritical != null ? critPrep.totalCritical : critPrep.totalAll) + ' ' + vpdUiT('críticas en el rango', 'critical in range')
-      : '') +
+    rangeMetaLine +
     '</span></div>' +
     '<div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
-    vpdUiT(
-      '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio; la tabla lista todas las horas, verde = VPD óptimo).',
-      '<strong>Optimal range:</strong> 0.5 - 1.5 kPa · Series by period: table only · Hours: <strong>Chart / Table</strong> (30 days from the start; the table lists every hour, green = optimal VPD).'
-    ) +
+    helpNote +
     '</div>' +
     blockShell +
     '</div>';
@@ -27560,6 +27652,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
       summaryRows: summaryRows,
       criticalRows: criticalRows,
       dailySummaryRows: dailySummaryRows || [],
+      hourlyCurveRows: curveRows,
       meta: meta
     });
   }
@@ -27621,7 +27714,7 @@ function renderSavedVPDRangeTableHtml(tbl) {
     <div class="np-vpd-saved-row" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;margin-bottom:8px;">
     <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin:0;min-width:0;">
       <summary style="cursor:pointer;font-weight:600;color:#9a3412;display:block;list-style-position:outside;">
-        <span style="display:block;min-width:0;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalOnlyCount}</span>
+        <span style="display:block;min-width:0;">${meta.granularity === 'hourly' ? 'Horario' : (meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalOnlyCount}</span>
       </summary>
       <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
@@ -27667,8 +27760,14 @@ async function fetchVPDRangeData(evt) {
   var granularity = granularityEl ? granularityEl.value : 'daily';
   var startDate = dateToIsoLike(startEl ? startEl.value : '');
   var endDate = dateToIsoLike(endEl ? endEl.value : '');
-  if (!startDate || !endDate) { alert('⚠️ Selecciona fecha inicio y fin.'); return; }
-  if (compareIsoDates(startDate, endDate) > 0) { alert('⚠️ La fecha inicio debe ser menor o igual a la fecha fin.'); return; }
+  if (granularity === 'hourly') {
+    if (!startDate) { alert('⚠️ Selecciona el día para la vista horaria.'); return; }
+    endDate = startDate;
+    if (endEl) endEl.value = startDate;
+  } else {
+    if (!startDate || !endDate) { alert('⚠️ Selecciona fecha inicio y fin.'); return; }
+    if (compareIsoDates(startDate, endDate) > 0) { alert('⚠️ La fecha inicio debe ser menor o igual a la fecha fin.'); return; }
+  }
   var btn = evt && evt.target ? evt.target : null;
   var original = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Descargando...'; }
@@ -27685,9 +27784,11 @@ async function fetchVPDRangeData(evt) {
     hourlyRows.sort(function(a, b) {
       return String(a.at || '').localeCompare(String(b.at || ''));
     });
-    var summaryRows = aggregateVPDStressRows(hourlyRows, granularity);
+    var summaryAggGranularity = granularity === 'hourly' ? 'daily' : granularity;
+    var summaryRows = aggregateVPDStressRows(hourlyRows, summaryAggGranularity);
     var dailySummaryRows = aggregateVPDStressRows(hourlyRows, 'daily');
     var criticalRows = extractVPDCriticalEvents(hourlyRows, startDate, endDate);
+    var hourlyCurveRows = granularity === 'hourly' ? buildVpdHourlyCurveRows(hourlyRows) : [];
     var solarMeta = analyzeVpdRangeSolarUsage(hourlyRows);
     currentProject.vpdAnalysis.rangeState = { granularity: granularity, startDate: startDate, endDate: endDate };
     currentProject.vpdAnalysis.currentRangeTable = {
@@ -27707,13 +27808,15 @@ async function fetchVPDRangeData(evt) {
       summaryRows: summaryRows,
       dailySummaryRows: dailySummaryRows,
       criticalRows: criticalRows,
+      hourlyCurveRows: hourlyCurveRows,
       sampleHours: hourlyRows.length
     };
     renderVPDRangeResults(
       currentProject.vpdAnalysis.currentRangeTable.meta,
       summaryRows,
       criticalRows,
-      dailySummaryRows
+      dailySummaryRows,
+      hourlyCurveRows
     );
     currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
     persistVPDAnalysisAfterMutation();
@@ -27827,6 +27930,7 @@ window.toggleVPDMode = toggleVPDMode;
 window.fetchVPDRangeData = fetchVPDRangeData;
 window.saveCurrentVPDRangeTable = saveCurrentVPDRangeTable;
 window.deleteSavedVPDRangeTable = deleteSavedVPDRangeTable;
+window.syncVpdRangeGranularityUi = syncVpdRangeGranularityUi;
 
 // Clic en "Borrar" cuadro VPD rango: fuera de <summary> + delegación (evita que el navegador no dispare el onclick dentro de <details>)
 (function npSetupVpdRangeDeleteDelegation() {

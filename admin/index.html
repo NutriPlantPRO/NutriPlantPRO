@@ -1711,7 +1711,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../assets/np-lectura-satelital.js?v=20260821chartWater"></script>
-    <script src="../assets/np-vpd-range-charts.js?v=20261125vpdband2"></script>
+    <script src="../assets/np-vpd-range-charts.js?v=20261125vpdhour"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
 <body class="admin-body">
@@ -15920,6 +15920,7 @@
                                     summaryRows: summaryRows,
                                     criticalRows: criticalRows,
                                     dailySummaryRows: currentRange.dailySummaryRows || [],
+                                    hourlyCurveRows: currentRange.hourlyCurveRows || [],
                                     meta: meta
                                 };
                                 const vpdTdSep = 'border-left: 3px solid #fdba74;';
@@ -15973,7 +15974,7 @@
                                 return '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e5e7eb;">' +
                                     '<h4 style="margin:0 0 12px 0;color:#1e293b;font-size:16px;">🗓️ Serie VPD por Rango (Estrés)</h4>' +
                                     '<div style="font-size:13px;color:#92400e;background:#fffbeb;border:1px dashed #fdba74;border-radius:6px;padding:8px;margin-bottom:10px;">' +
-                                    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · <strong>Vista:</strong> ' + escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')) +
+                                    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · <strong>Vista:</strong> ' + escapeHtml(meta.granularity === 'hourly' ? 'Horario' : (meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))) +
                                     ' · <strong>Periodo:</strong> ' + escapeHtml(String(meta.startDate || '—')) + ' a ' + escapeHtml(String(meta.endDate || '—')) +
                                     '</div>' + shell + '</div>';
                             })()}
@@ -15989,7 +15990,7 @@
                                     return `
                                         <tr style="border-bottom: 1px solid #e5e7eb;">
                                             <td style="padding: 8px; width: 7%; white-space: nowrap;">${idx + 1}</td>
-                                            <td style="padding: 8px; width: 15%; white-space: nowrap;">${escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))}</td>
+                                            <td style="padding: 8px; width: 15%; white-space: nowrap;">${escapeHtml(meta.granularity === 'hourly' ? 'Horario' : (meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')))}</td>
                                             <td style="padding: 8px; width: 20%; white-space: nowrap;">${escapeHtml(String(meta.startDate || '—'))}</td>
                                             <td style="padding: 8px; width: 20%; white-space: nowrap;">${escapeHtml(String(meta.endDate || '—'))}</td>
                                             <td style="padding: 8px; width: 14%; text-align: right; white-space: nowrap;">${summary.length}</td>

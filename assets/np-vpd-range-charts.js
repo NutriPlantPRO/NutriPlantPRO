@@ -722,6 +722,188 @@
     return items;
   }
 
+  function computeHourlyCurveAxisMax(points) {
+    var maxVal = VPD_OPTIMAL_HI;
+    (points || []).forEach(function (p) {
+      if (Number.isFinite(p.vpd)) maxVal = Math.max(maxVal, p.vpd);
+    });
+    return Math.ceil(maxVal * 10) / 10 + 0.3;
+  }
+
+  function hourlyCurveTooltipCallbacks(points) {
+    return {
+      callbacks: {
+        title: function (items) {
+          var idx = items[0] && items[0].dataIndex;
+          var row = idx != null ? points[idx] : null;
+          if (!row) return '';
+          return row.at ? String(row.at).replace('T', ' ').slice(0, 16) : String(row.label || '');
+        },
+        label: function (ctx) {
+          var row = points[ctx.dataIndex];
+          if (!row) return '';
+          var v = Number.isFinite(row.vpd) ? row.vpd.toFixed(2) : '—';
+          var zone =
+            row.type === 'high'
+              ? chartT('alto', 'high')
+              : row.type === 'low'
+                ? chartT('bajo', 'low')
+                : chartT('óptimo', 'optimal');
+          return 'VPD: ' + v + ' kPa · ' + zone;
+        },
+        afterBody: function (items) {
+          var idx = items[0] && items[0].dataIndex;
+          var row = idx != null ? points[idx] : null;
+          if (!row) return [];
+          var lines = [];
+          if (Number.isFinite(row.temperature)) {
+            lines.push(chartT('Temp', 'Temp') + ': ' + Number(row.temperature).toFixed(1) + ' °C');
+          }
+          if (Number.isFinite(row.humidity)) {
+            lines.push(chartT('HR', 'RH') + ': ' + Number(row.humidity).toFixed(0) + ' %');
+          }
+          return lines;
+        }
+      }
+    };
+  }
+
+  /** Curva VPD de un día (00:00–23:59) + banda óptima; sin barras de horas. */
+  function createHourlyVpdCurveChart(canvas, points, opts) {
+    if (!canvas || !w.Chart || !points || !points.length) return null;
+    destroyChartOnCanvas(canvas);
+    opts = opts || {};
+    var dayLabel = opts.dayLabel || (points[0] && points[0].date) || '';
+    var axisMax = computeHourlyCurveAxisMax(points);
+    var ink = opts.pdfExport ? '#334155' : '#7c2d12';
+    var gridTone = opts.pdfExport ? 'rgba(148, 163, 184, 0.35)' : 'rgba(254, 215, 170, 0.45)';
+    var maxIdx = -1;
+    var minIdx = -1;
+    var maxV = -Infinity;
+    var minV = Infinity;
+    points.forEach(function (p, i) {
+      if (!Number.isFinite(p.vpd)) return;
+      if (p.vpd > maxV) {
+        maxV = p.vpd;
+        maxIdx = i;
+      }
+      if (p.vpd < minV) {
+        minV = p.vpd;
+        minIdx = i;
+      }
+    });
+    var useResponsive = opts.responsive !== false && !opts.layout;
+    var animOn = opts.animation !== false;
+    if (opts.layout) applyCriticalChartLayout(null, canvas, opts.layout, !!opts.fluid);
+    var title =
+      chartT('VPD por hora', 'Hourly VPD') +
+      (dayLabel ? ' · ' + dayLabel : '') +
+      ' · ' +
+      chartT('curva 00:00–23:59', 'curve 00:00–23:59');
+    return new w.Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: points.map(function (p) {
+          return p.label || '';
+        }),
+        datasets: [
+          {
+            label: 'VPD (kPa)',
+            yAxisID: 'yVpd',
+            data: points.map(function (p) {
+              return Number.isFinite(p.vpd) ? p.vpd : null;
+            }),
+            borderColor: '#c2410c',
+            backgroundColor: '#c2410c',
+            pointBackgroundColor: points.map(function (_p, i) {
+              if (i === maxIdx) return '#7f1d1d';
+              if (i === minIdx) return '#1d4ed8';
+              return '#c2410c';
+            }),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1.5,
+            pointRadius: points.map(function (_p, i) {
+              return i === maxIdx || i === minIdx ? 5 : 3;
+            }),
+            pointHoverRadius: 6,
+            borderWidth: 2.5,
+            tension: 0.3,
+            spanGaps: false,
+            fill: false
+          }
+        ]
+      },
+      plugins: [vpdOptimalBandPlugin()],
+      options: {
+        responsive: useResponsive,
+        maintainAspectRatio: false,
+        animation: animOn ? undefined : false,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { left: 2, right: 8, top: 4, bottom: 0 } },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            onClick: function (e, legendItem, legend) {
+              if (!legendItem || legendItem.datasetIndex == null || legendItem.datasetIndex < 0) return;
+              var chart = legend.chart;
+              if (chart && typeof chart.toggleDataVisibility === 'function') {
+                chart.toggleDataVisibility(legendItem.datasetIndex);
+                chart.update();
+              }
+            },
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              font: { size: opts.legendFontSize || 10 },
+              color: ink,
+              generateLabels: criticalChartLegendLabels
+            }
+          },
+          title: {
+            display: true,
+            text: title,
+            font: { size: opts.titleFontSize || 12, weight: '600' },
+            color: ink
+          },
+          tooltip: hourlyCurveTooltipCallbacks(points)
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: chartT('Hora del día', 'Hour of day'),
+              font: { size: 10 },
+              color: ink
+            },
+            ticks: {
+              maxRotation: 45,
+              font: { size: 9 },
+              color: ink,
+              maxTicksLimit: 12
+            },
+            grid: { color: gridTone }
+          },
+          yVpd: {
+            type: 'linear',
+            position: 'left',
+            min: 0,
+            max: axisMax,
+            title: { display: true, text: 'VPD (kPa)', font: { size: 10 }, color: ink },
+            ticks: {
+              font: { size: 9 },
+              color: ink,
+              callback: function (v) {
+                return Number(v).toFixed(1);
+              }
+            },
+            grid: { color: gridTone }
+          }
+        }
+      }
+    });
+  }
+
   function createRangeStackedChart(canvas, summaryRows, opts) {
     if (!canvas || !w.Chart || !summaryRows || !summaryRows.length) return null;
     opts = opts || {};
@@ -1332,23 +1514,61 @@
       charts.critical = null;
     }
     destroyChartOnCanvas(canvas);
-    var dailyRows = resolveCriticalChartDailyRows(cfg, prep);
-    var days =
-      prep.windowStart && prep.windowEnd
+    var isHourly = (cfg.meta && cfg.meta.granularity) === 'hourly';
+    var hourlyPoints = Array.isArray(cfg.hourlyCurveRows) ? cfg.hourlyCurveRows.slice() : [];
+    if (isHourly && !hourlyPoints.length && prep && Array.isArray(prep.rows)) {
+      hourlyPoints = prep.rows.map(function (r) {
+        var at = String((r && r.at) || '');
+        var v = Number(r && r.vpd);
+        return {
+          at: at,
+          date: resolveCriticalRowDate(r) || '',
+          label: at.length >= 16 ? at.slice(11, 16) : at,
+          vpd: Number.isFinite(v) ? Number(v.toFixed(2)) : null,
+          temperature: Number.isFinite(Number(r.temperature)) ? Number(r.temperature) : null,
+          humidity: Number.isFinite(Number(r.humidity)) ? Number(r.humidity) : null,
+          type: r.type || (Number.isFinite(v) ? (v > 1.5 ? 'high' : v < 0.5 ? 'low' : 'optimal') : 'optimal')
+        };
+      });
+    }
+    if (isHourly && !hourlyPoints.length) {
+      setCriticalChartStatus(viewport, 'empty');
+      if (viewport) {
+        requestAnimationFrame(function () {
+          viewport._npCriticalPaintLock = false;
+        });
+      }
+      return false;
+    }
+    var days = isHourly
+      ? 1
+      : prep.windowStart && prep.windowEnd
         ? isoDateSpanInclusiveDays(prep.windowStart, prep.windowEnd)
         : CRITICAL_DISPLAY_DAYS;
     var layout = measureDashboardCriticalChartLayout(days, viewport || graphPanel);
     applyCriticalChartLayout(inner, canvas, layout, true);
     try {
-      charts.critical = createCriticalHoursChart(canvas, dailyRows, prep, {
-        responsive: false,
-        maintainAspectRatio: false,
-        animation: false,
-        fluid: true,
-        summaryRows: cfg.summaryRows,
-        granularity: (cfg.meta || {}).granularity,
-        layout: layout
-      });
+      if (isHourly) {
+        charts.critical = createHourlyVpdCurveChart(canvas, hourlyPoints, {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          fluid: true,
+          layout: layout,
+          dayLabel: (cfg.meta && (cfg.meta.startDate || cfg.meta.endDate)) || ''
+        });
+      } else {
+        var dailyRows = resolveCriticalChartDailyRows(cfg, prep);
+        charts.critical = createCriticalHoursChart(canvas, dailyRows, prep, {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          fluid: true,
+          summaryRows: cfg.summaryRows,
+          granularity: (cfg.meta || {}).granularity,
+          layout: layout
+        });
+      }
     } catch (err) {
       console.warn('NpVpdRangeCharts paintCriticalChartInteractive:', err);
       charts.critical = null;
@@ -1480,21 +1700,42 @@
     var prefix = cfg.prefix || 'np-vpd';
     var critPrep = cfg.criticalPrep || { rows: [], windowStart: null, windowEnd: null };
     var critToggle = viewToggleButtonsHtml(prefix + '-critical');
-    var granularityNote =
-      cfg.granularity === 'weekly'
+    var isHourly = cfg.granularity === 'hourly';
+    var granularityNote = isHourly
+      ? chartT('Vista horaria: un día, VPD hora a hora (00:00–23:59).', 'Hourly view: one day, VPD hour by hour (00:00–23:59).')
+      : cfg.granularity === 'weekly'
         ? chartT('Vista semanal: máximos y mínimos por semana.', 'Weekly view: maxima and minima per week.')
         : cfg.granularity === 'monthly'
           ? chartT('Vista mensual: máximos y mínimos por mes.', 'Monthly view: maxima and minima per month.')
           : chartT('Vista diaria: resumen por día.', 'Daily view: summary per day.');
-    var critTitle = criticalBlockTitle(critPrep);
+    var summaryTitle = isHourly
+      ? chartT('Resumen del día', 'Day summary')
+      : chartT('Serie VPD por periodo', 'VPD series by period');
+    var summaryHint = isHourly
+      ? chartT('Máx/mín del día, horas por zona y % estrés.', 'Day max/min, hours by zone and % stress.')
+      : chartT('Tabla con VPD máx/mín, horas por zona y % estrés.', 'Table with max/min VPD, hours by zone and % stress.');
+    var critTitle = isHourly
+      ? chartT('VPD del día (por hora)', 'Day VPD (hourly)')
+      : criticalBlockTitle(critPrep);
+    var scopeNote = isHourly
+      ? chartT(
+          'Gráfica: curva de VPD del día · banda verde = rango óptimo de referencia 0.5–1.5 kPa · puntos más grandes = máx (tinta) y mín (azul). Tabla: las 24 horas.',
+          'Chart: day VPD curve · green band = reference optimal range 0.5–1.5 kPa · larger dots = max (ink) and min (blue). Table: all 24 hours.'
+        )
+      : critPrep.windowStart
+        ? buildCriticalScopeNoteHtml(critPrep) + ' ' + criticalTableCaptionHtml(critPrep)
+        : '';
     return (
       '<div style="margin-top:10px;border-top:1px dashed #fed7aa;padding-top:10px;">' +
-      '<div style="margin-bottom:8px;"><strong style="color:#9a3412;font-size:13px;">' + chartT('Serie VPD por periodo', 'VPD series by period') + ' (' +
+      '<div style="margin-bottom:8px;"><strong style="color:#9a3412;font-size:13px;">' +
+      summaryTitle +
+      ' (' +
       (cfg.summaryCount || 0) +
       ')</strong></div>' +
       '<div style="font-size:11px;color:#7c2d12;line-height:1.45;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;margin-bottom:8px;">' +
       granularityNote +
-      ' ' + chartT('Tabla con VPD máx/mín, horas por zona y % estrés.', 'Table with max/min VPD, hours by zone and % stress.') +
+      ' ' +
+      summaryHint +
       '</div>' +
       '<div style="overflow:auto;max-height:240px;">' +
       (cfg.summaryTableHtml || '') +
@@ -1506,11 +1747,9 @@
       '</strong>' +
       critToggle +
       '</div>' +
-      (critPrep.windowStart
+      (scopeNote
         ? '<div style="margin-bottom:6px;font-size:11px;color:#7c2d12;line-height:1.45;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
-          buildCriticalScopeNoteHtml(critPrep) +
-          ' ' +
-          criticalTableCaptionHtml(critPrep) +
+          scopeNote +
           '</div>'
         : '') +
       '<div id="' +
@@ -1544,6 +1783,7 @@
     computeCriticalChartLayout: computeCriticalChartLayout,
     createRangeStackedChart: createRangeStackedChart,
     createCriticalHoursChart: createCriticalHoursChart,
+    createHourlyVpdCurveChart: createHourlyVpdCurveChart,
     getReportChartUrls: getReportChartUrls,
     viewToggleButtonsHtml: viewToggleButtonsHtml,
     buildInteractiveBlockShell: buildInteractiveBlockShell,
